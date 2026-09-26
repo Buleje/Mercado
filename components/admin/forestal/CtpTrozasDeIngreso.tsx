@@ -16,6 +16,7 @@ import { documentoHtml } from "@/lib/forestal/ctp-documento-print";
 import { balanceRecepcion } from "@/lib/forestal/recepcion-trozas";
 import { cuadreDeIngreso, descuadra } from "@/lib/forestal/cuadre-trozas";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import type { FotoCarga } from "@/lib/forestal/fotos-carga";
 
 /**
  * La lista de trozas que amparó este ingreso (ADR-312).
@@ -87,7 +88,7 @@ export default function CtpTrozasDeIngreso({
   especieCientifica?: string | null;
   /** Fotos ya cargadas de esta GTF (`WoodEntry.photos`): se le pasan al panel de
    *  recepción para que "Tomar foto" arranque de lo que ya hay, no de cero. */
-  fotos?: string[] | null;
+  fotos?: readonly (FotoCarga | string)[] | null;
   /** Recargar la lista del libro: corregir el volumen cambia la fila de la tabla. */
   onIngresoCambiado?: () => void;
 }) {

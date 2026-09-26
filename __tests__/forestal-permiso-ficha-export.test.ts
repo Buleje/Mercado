@@ -259,12 +259,18 @@ describe("hojasDelFichaDePermiso — 7 hojas, totales = Σ filas, null → «—
   });
 
   it("«Guías»: con fotos, el Excel trae la cantidad y los links; el papel las miniaturiza", () => {
-    const g1 = guia("g1", { fotos: ["https://x.supabase.co/a.jpg", "https://x.supabase.co/b.jpg"] });
+    // Una legado (https) y una privada con sello (ADR-434): el link de la privada
+    // va por el panel, con dominio — sin sesión no se ve.
+    const g1 = guia("g1", {
+      fotos: [{ url: "https://x.supabase.co/a.jpg" }, { url: "priv:t1/forestal-carga/b.webp", por: "Ana" }],
+    });
     const v = armarVolumenDelPermiso(entrada({ guias: [g1] }));
     const hojas = hojasDelFichaDePermiso({ contrato, volumen: v }, AHORA);
     const guias = hojas.find((h) => h.nombre === "Guías")!;
     expect(guias.filas[0].Fotos).toBe(2);
-    expect(guias.filas[0]["Links de fotos"]).toBe("https://x.supabase.co/a.jpg https://x.supabase.co/b.jpg");
+    expect(guias.filas[0]["Links de fotos"]).toBe(
+      `https://x.supabase.co/a.jpg ${window.location.origin}/api/admin/forestal/fotos/ver?p=t1%2Fforestal-carga%2Fb.webp`,
+    );
     // `filasDeGuias` es lo que consume el papel (`tablaGuiasHtml`): la lista
     // de fotos llega intacta, sin recortar — recortar a 4 miniaturas es del
     // HTML, no del dato.

@@ -71,8 +71,9 @@ export interface CabeceraDoc {
 
 /**
  * La cabecera: identidad a la izquierda, número a la derecha. Es lo primero que
- * mira quien recibe el papel, así que el número va en caja propia y en monoespaciada
- * —los ceros y los unos de un correlativo no se confunden—.
+ * mira quien recibe el papel, así que el número va grande y en monoespaciada
+ * —los ceros y los unos de un correlativo no se confunden—, sin caja: lo
+ * destaca el tamaño, no un recuadro de color.
  */
 export function cabeceraDoc(i: CabeceraDoc): string {
   const metas = (i.meta ?? [])
@@ -99,7 +100,7 @@ export function cabeceraDoc(i: CabeceraDoc): string {
   </header>`;
 }
 
-/** El título del documento, centrado y espaciado como en el talonario. */
+/** El título del documento, sobrio y alineado al eje de la cabecera. */
 export function tituloDoc(titulo: string, subtitulo?: string): string {
   // El subtítulo va pegado abajo y chico: como línea aparte costaba 4 mm de
   // papel para decir algo que se lee de corrido con el título.
@@ -113,7 +114,10 @@ export interface FichaResumen {
   v: string;
   /** Unidad o aclaración chica al lado del valor ("m³", "piezas"). */
   u?: string;
-  /** `ok` verde, `mal` rojo, `aviso` ámbar. Sin tono, tinta normal. */
+  /**
+   * `mal` rojo y `aviso` ámbar (texto + borde, sin fondo). `ok` y sin tono van
+   * en tinta normal: lo que está bien no necesita color para leerse.
+   */
   tono?: "ok" | "mal" | "aviso";
 }
 
@@ -141,9 +145,14 @@ export function seccionDoc(titulo: string, casilleros?: string): string {
 }
 
 /**
- * Sello de goma. Existe para DECIR lo que el papel no es: una reproducción no
- * sustituye al original, y un documento que no lo aclara se termina presentando
- * como si lo hiciera.
+ * La marca de lo que el papel ES: una línea con borde fino («REPRODUCCIÓN | No
+ * sustituye el original»). Existe para DECIR lo que el papel no es: una
+ * reproducción no sustituye al original, y un documento que no lo aclara se
+ * termina presentando como si lo hiciera.
+ *
+ * `rojo` tiñe texto y borde cuando hay un problema real (guía anulada,
+ * reconstrucción sin el SNIFFS). `verde` se conserva por compatibilidad de la
+ * firma y hoy sale en tinta normal: el documento es monocromo.
  */
 export function selloDoc(texto: string, detalle?: string, tono: "rojo" | "verde" = "rojo"): string {
   return `<div class="doc-sello ${tono}">${esc(texto)}${detalle ? `<i>${esc(detalle)}</i>` : ""}</div>`;
@@ -337,11 +346,28 @@ export function marcarCortes(d: Document, cortes: ReadonlyArray<number>): void {
  * El armazón. Medidas en milímetros y tipografías en puntos porque el destino es
  * papel: en píxeles, el mismo documento cambia de tamaño según el zoom con el
  * que se abrió, y los casilleros dejan de coincidir con el talonario.
+ *
+ * ── Monocromo, a propósito (rediseño 2026-09-25) ─────────────────────────────
+ * La hoja era verde: barras rellenas, recuadro del número relleno, título en
+ * versalitas verdes. Se veía genérica y, peor, gastaba tinta de color en lo que
+ * no informa nada. Ahora la jerarquía la ponen la tipografía y el aire:
+ * · tinta casi negra para los datos, gris para los rótulos, hilos grises finos
+ *   para la grilla — se lee igual impresa en blanco y negro que en PDF;
+ * · UNA regla negra bajo la cabecera y una fina bajo cada título de sección;
+ *   nada de cajas rellenas;
+ * · el color sólo aparece cuando hay un problema real (`.mal` rojo, `.aviso`
+ *   ámbar), en texto y borde, sin fondo.
+ * Contrastes sobre blanco (AA ≥ 4,5:1): tinta #111 18,9:1 · rótulo #4d4d4d
+ * 8,5:1 · tenue #6e6e6e 5,1:1 · rojo #b3261e 6,6:1 · ámbar #8a5300 6,2:1.
+ *
+ * Los nombres de las variables (`--tinta`, `--linea-suave`…) no cambian: otras
+ * hojas del libro (legajo, GTF de salida) las usan en su propio CSS.
  */
 export const CSS_DOCUMENTO = `
   :root {
-    --tinta:#14532d; --tinta-clara:#3f7d55; --gris:#4b5563; --gris-suave:#6b7280;
-    --linea:#111827; --linea-suave:#c9d3cd; --tenue:#f2f7f4;
+    --tinta:#111111; --tinta-clara:#333333; --gris:#4d4d4d; --gris-suave:#6e6e6e;
+    --linea:#111111; --linea-suave:#cfcfcf; --tenue:#f5f5f5;
+    --mal:#b3261e; --aviso:#8a5300;
   }
   * { box-sizing:border-box; }
   /* Transparente a propósito: el visor pone el fondo con sus tokens y así la
@@ -350,7 +376,7 @@ export const CSS_DOCUMENTO = `
   html { background:transparent; }
   body {
     margin:0; padding:0; background:transparent;
-    font-family:Arial,Helvetica,sans-serif; color:#111827;
+    font-family:Arial,Helvetica,sans-serif; color:var(--tinta);
     font-size:8pt; line-height:1.28;
     -webkit-print-color-adjust:exact; print-color-adjust:exact;
     -webkit-font-smoothing:antialiased;
@@ -358,70 +384,81 @@ export const CSS_DOCUMENTO = `
   .doc-hoja {
     position:relative; width:${ANCHO_HOJA_MM}mm; min-height:297mm;
     margin:${AIRE_HOJA_MM}mm auto; padding:${MARGEN_MM}mm;
-    background:#fff; border:.3mm solid rgba(17,24,39,.18); box-shadow:0 1mm 4mm rgba(0,0,0,.28);
+    background:#fff; border:.3mm solid rgba(0,0,0,.14); box-shadow:0 1mm 4mm rgba(0,0,0,.22);
   }
   /* Dónde corta la impresora — lo calcula el visor y lo inyecta acá.
      Sólo en pantalla: en papel el corte lo hace la impresora de verdad. */
   .doc-corte { position:absolute; left:0; right:0; height:0; pointer-events:none;
-               border-top:.4mm dashed rgba(17,24,39,.28); }
+               border-top:.4mm dashed rgba(0,0,0,.28); }
   .doc-corte span { position:absolute; right:0; top:.8mm; background:#fff; padding:0 1.5mm;
                     font-size:6.2pt; letter-spacing:.6pt; text-transform:uppercase; color:var(--gris-suave); }
 
-  /* ── Cabecera ── */
-  .doc-cab { display:flex; justify-content:space-between; align-items:flex-start; gap:6mm; padding-bottom:1.8mm; border-bottom:2pt solid var(--tinta); }
-  .doc-marca { display:flex; align-items:flex-start; gap:3mm; min-width:0; }
-  .doc-mono { width:9mm; height:9mm; color:var(--tinta); flex:none; }
+  /* ── Cabecera: quién emite a la izquierda, qué papel y qué número a la derecha ── */
+  .doc-cab { display:flex; justify-content:space-between; align-items:flex-end; gap:8mm;
+             padding-bottom:2mm; border-bottom:1.2pt solid var(--linea); }
+  .doc-marca { display:flex; align-items:center; gap:3mm; min-width:0; }
+  .doc-mono { width:8.5mm; height:8.5mm; color:var(--tinta); flex:none; }
   /* El logo manda sobre el monograma, pero no sobre el papel: se le da alto y
      se deja crecer a lo ancho hasta un tope, para que un logo apaisado no
      empuje el número de la guía fuera de la hoja. */
   .doc-logo { height:12mm; max-width:34mm; object-fit:contain; flex:none; }
-  .doc-emisor { font-size:9.2pt; font-weight:bold; letter-spacing:.2pt; text-transform:uppercase; line-height:1.12; }
-  .doc-meta { font-size:6.2pt; color:var(--gris); margin-top:.2mm; line-height:1.25; }
-  .doc-id { flex:none; min-width:44mm; border:1pt solid var(--tinta); }
-  .doc-id .tipo { background:var(--tinta); color:#fff; font-size:5.8pt; font-weight:bold; letter-spacing:.9pt; text-transform:uppercase; text-align:center; padding:.8mm 2mm; }
-  .doc-id .nro { font-family:"Courier New",Courier,monospace; font-size:12.5pt; font-weight:bold; letter-spacing:.5pt; color:var(--tinta); text-align:center; padding:1.2mm 2mm .9mm; }
-  .doc-id .pie { border-top:.6pt solid var(--linea-suave); font-size:5.8pt; letter-spacing:.3pt; text-transform:uppercase; color:var(--gris-suave); text-align:center; padding:.6mm; }
+  .doc-emisor { font-size:10pt; font-weight:bold; letter-spacing:.15pt; text-transform:uppercase; line-height:1.15; }
+  .doc-meta { font-size:6.6pt; color:var(--gris); margin-top:.25mm; line-height:1.22; }
+  /* Sin caja: el número se lee por tamaño y por la monoespaciada —los ceros y
+     los unos de un correlativo no se confunden—, no por un recuadro de color. */
+  .doc-id { flex:none; text-align:right; }
+  .doc-id .tipo { font-size:6.4pt; letter-spacing:1.3pt; text-transform:uppercase; color:var(--gris-suave); }
+  .doc-id .nro { font-family:"Courier New",Courier,monospace; font-size:15pt; font-weight:bold;
+                 letter-spacing:.2pt; line-height:1.1; margin-top:.5mm; white-space:nowrap; }
+  .doc-id .pie { font-size:6.4pt; letter-spacing:.2pt; color:var(--gris-suave); margin-top:.5mm; }
 
-  /* ── Título ── */
-  .doc-titulo { text-align:center; font-size:11.5pt; font-weight:bold; letter-spacing:1.8pt; text-transform:uppercase; color:var(--tinta); margin:2.2mm 0 1.6mm; line-height:1.15; }
-  .doc-sub { display:block; font-size:6pt; font-weight:normal; letter-spacing:1pt; text-transform:uppercase; color:var(--gris-suave); margin-top:.4mm; }
+  /* ── Título: sobrio, alineado al eje de la cabecera ── */
+  .doc-titulo { font-size:13pt; font-weight:bold; letter-spacing:-.1pt; line-height:1.15; margin:2.6mm 0 0; }
+  .doc-sub { display:block; font-size:7pt; font-weight:normal; letter-spacing:0; color:var(--gris); margin-top:.4mm; }
 
-  /* ── Fichas de resumen ── */
-  .doc-res { display:flex; gap:1.2mm; margin:0 0 2mm; }
-  .doc-res .t { flex:1 1 0; min-width:0; border:.7pt solid var(--linea-suave); border-top:1.2pt solid var(--tinta); background:var(--tenue); padding:.6mm 1.2mm; }
-  .doc-res .k { font-size:5.6pt; letter-spacing:.5pt; text-transform:uppercase; color:var(--gris-suave); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .doc-res .v { font-size:9pt; font-weight:bold; color:#111827; font-variant-numeric:tabular-nums; line-height:1.2; }
-  .doc-res .v .u { font-size:6pt; font-weight:normal; color:var(--gris); }
-  .doc-res .ok { border-top-color:#15803d; } .doc-res .ok .v { color:#15803d; }
-  .doc-res .mal { border-top-color:#b91c1c; background:#fdf1f1; } .doc-res .mal .v { color:#b91c1c; }
-  .doc-res .aviso { border-top-color:#b45309; background:#fdf6ec; } .doc-res .aviso .v { color:#b45309; }
+  /* ── Resumen: una fila de pares rótulo/valor entre hilos, sin tarjetas ── */
+  .doc-res { display:flex; margin:2.2mm 0 1.8mm; border-top:.5pt solid var(--linea-suave); border-bottom:.5pt solid var(--linea-suave); }
+  .doc-res .t { flex:1 1 0; min-width:0; padding:.9mm 2.6mm; border-left:.5pt solid var(--linea-suave); }
+  .doc-res .t:first-child { border-left:none; padding-left:0; }
+  .doc-res .k { font-size:6pt; letter-spacing:.7pt; text-transform:uppercase; color:var(--gris-suave); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .doc-res .v { font-size:9.5pt; font-weight:bold; font-variant-numeric:tabular-nums; line-height:1.25; margin-top:.3mm; }
+  .doc-res .v .u { font-size:6.6pt; font-weight:normal; color:var(--gris); }
+  /* «Está bien» no lleva color: es lo normal. Lo que avisa, sí — texto y borde. */
+  .doc-res .mal .k { color:var(--mal); }
+  .doc-res .mal .v { display:inline-block; color:var(--mal); border:.8pt solid var(--mal); padding:0 1.2mm; }
+  .doc-res .aviso .k { color:var(--aviso); }
+  .doc-res .aviso .v { display:inline-block; color:var(--aviso); border:.8pt solid var(--aviso); padding:0 1.2mm; }
 
-  /* ── Secciones ── */
+  /* ── Secciones: título chico en negro, casilleros a la derecha, regla fina ──
+     La regla hace de borde superior de la tabla que sigue: sin margen abajo. */
   .doc-sec { display:flex; justify-content:space-between; align-items:baseline; gap:4mm;
-             background:var(--tinta); color:#fff; padding:.5mm 2mm; margin:1.6mm 0 .7mm;
-             font-size:6.4pt; font-weight:bold; letter-spacing:.9pt; text-transform:uppercase; }
-  .doc-sec span { font-weight:normal; font-size:5.8pt; letter-spacing:.4pt; opacity:.82; white-space:nowrap; }
+             margin:2.3mm 0 0; padding:0 0 .5mm; border-bottom:.6pt solid var(--linea);
+             font-size:6.8pt; font-weight:bold; letter-spacing:.9pt; text-transform:uppercase; }
+  .doc-sec span { font-weight:normal; font-size:6.4pt; letter-spacing:.2pt; text-transform:none; color:var(--gris-suave); white-space:nowrap; }
 
-  /* ── Sellos y chips ── */
-  .doc-sello { display:inline-block; border:1pt double #b91c1c; color:#b91c1c; padding:.8mm 2mm;
-               transform:rotate(-3.5deg); text-align:center; font-size:6.4pt; font-weight:bold;
-               letter-spacing:.8pt; text-transform:uppercase; line-height:1.2; white-space:nowrap; }
+  /* ── Sellos y chips: una línea con borde fino, sin goma ni rotación ── */
+  .doc-sello { display:inline-block; border:.7pt solid var(--tinta); color:var(--tinta); padding:.5mm 1.8mm;
+               font-size:6.4pt; font-weight:bold; letter-spacing:.9pt; text-transform:uppercase;
+               line-height:1.3; white-space:nowrap; }
+  .doc-sello i { font-style:normal; font-weight:normal; font-size:6.4pt; letter-spacing:.1pt; text-transform:none;
+                 color:var(--gris); margin-left:1.6mm; padding-left:1.6mm; border-left:.5pt solid var(--linea-suave); }
+  .doc-sello.rojo { border-color:var(--mal); color:var(--mal); }
+  /* «verde» queda por compatibilidad de la firma: ya no tiñe, es la tinta normal. */
   .doc-sello.verde { border-color:var(--tinta); color:var(--tinta); }
-  .doc-sello i { display:block; font-style:normal; font-weight:normal; font-size:5.4pt; letter-spacing:.2pt; text-transform:none; }
-  .doc-chip { display:inline-block; border:.8pt solid; padding:.5mm 1.8mm; font-size:6.8pt; font-weight:bold; letter-spacing:.6pt; text-transform:uppercase; }
-  .doc-chip.ok { color:#15803d; border-color:#15803d; background:#eef7f0; }
-  .doc-chip.mal { color:#b91c1c; border-color:#b91c1c; background:#fdf1f1; }
-  .doc-chip.neutro { color:var(--gris); border-color:#9ca3af; background:#f3f4f6; }
+  .doc-chip { display:inline-block; border:.7pt solid; padding:.4mm 1.6mm; font-size:6.8pt; font-weight:bold; letter-spacing:.6pt; text-transform:uppercase; }
+  .doc-chip.ok { color:var(--tinta); border-color:var(--tinta); }
+  .doc-chip.mal { color:var(--mal); border-color:var(--mal); }
+  .doc-chip.neutro { color:var(--gris); border-color:var(--linea-suave); }
 
   /* ── Firmas, notas y pies ── */
   .doc-firmas { display:flex; gap:8mm; margin-top:6mm; }
   .doc-firmas > div { flex:1 1 0; }
-  .doc-firmas .linea { border-bottom:.8pt solid var(--linea); height:7mm; }
-  .doc-firmas .rot { padding-top:1.2mm; font-size:6.8pt; letter-spacing:.5pt; text-transform:uppercase; color:var(--gris); text-align:center; }
-  .doc-nota { border-left:2pt solid var(--tinta); background:var(--tenue); padding:1mm 1.6mm; margin-top:1.6mm; font-size:5.8pt; line-height:1.3; color:#374151; }
+  .doc-firmas .linea { border-bottom:.6pt solid var(--linea); height:7mm; }
+  .doc-firmas .rot { padding-top:1.2mm; font-size:6.4pt; letter-spacing:.5pt; text-transform:uppercase; color:var(--gris); text-align:center; }
+  .doc-nota { margin-top:1.6mm; font-size:6.4pt; line-height:1.3; color:var(--gris); }
   .doc-nota b { color:var(--tinta); }
-  .doc-pie { display:flex; justify-content:space-between; gap:4mm; margin-top:2mm; padding-top:1mm;
-             border-top:.6pt dashed #9ca3af; font-size:6.2pt; letter-spacing:.3pt; color:var(--gris-suave); }
+  .doc-pie { display:flex; justify-content:space-between; gap:4mm; margin-top:1.4mm; padding-top:.9mm;
+             border-top:.5pt solid var(--linea-suave); font-size:6.2pt; letter-spacing:.2pt; color:var(--gris-suave); }
   .doc-corrido { display:none; }
 
   @media print {
@@ -432,7 +469,7 @@ export const CSS_DOCUMENTO = `
     /* Chrome repinta lo fijo en cada página: así la hoja 3 sigue diciendo de qué guía salió. */
     .doc-corrido { display:block; position:fixed; left:0; right:0; bottom:0;
                    border-top:.5pt solid var(--linea-suave); padding-top:1mm;
-                   font-size:6pt; color:var(--gris-suave); letter-spacing:.3pt; text-align:center; }
+                   font-size:6.2pt; color:var(--gris-suave); letter-spacing:.2pt; text-align:center; }
     thead { display:table-header-group; }
     tfoot { display:table-footer-group; }
     tr, .doc-res, .doc-firmas { break-inside:avoid; }
@@ -443,3 +480,23 @@ export const CSS_DOCUMENTO = `
   /* En pantalla el legajo se lee corrido; el aire dice dónde empieza el otro. */
   .doc-parte + .doc-parte { margin-top:14mm; }
 `;
+
+/**
+ * Espera a que las imágenes de la hoja terminen de cargar (o fallen) antes de
+ * imprimir o fotografiar el PDF. Las fotos de la carga (ADR-434) pasan por una
+ * redirección firmada y pueden tardar: imprimir antes deja el recuadro en
+ * blanco en el papel, mientras la pantalla ya las mostraba. Nunca rechaza; con
+ * `ms` de tope, una foto que no llega no congela el botón.
+ */
+export async function esperarImagenes(d: Document, ms = 8000): Promise<void> {
+  const pendientes = Array.from(d.images).filter((img) => !img.complete);
+  if (pendientes.length === 0) return;
+  const cargas = pendientes.map(
+    (img) =>
+      new Promise<void>((res) => {
+        img.addEventListener("load", () => res(), { once: true });
+        img.addEventListener("error", () => res(), { once: true });
+      }),
+  );
+  await Promise.race([Promise.all(cargas), new Promise<void>((res) => setTimeout(res, ms))]);
+}

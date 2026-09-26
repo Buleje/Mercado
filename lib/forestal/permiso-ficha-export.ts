@@ -42,6 +42,8 @@ import {
   type CtpReportFicha,
 } from "./ctp-print-shared";
 import type { Contrato } from "./contratos";
+import { srcDeFoto, type FotoCarga } from "./fotos-carga";
+import { hrefAbsolutoDeFoto, pieDeFoto } from "./sello-foto";
 import type {
   AvisosDelPermiso,
   CorridaDelPermiso,
@@ -301,8 +303,8 @@ export interface FilaGuiaExport {
   saldoM3: number;
   trozasTexto: string;
   corridasTexto: string;
-  /** URLs de las fotos de la pila (`WoodEntry.photos`). Siempre un array. */
-  fotos: string[];
+  /** Las fotos de la pila (`WoodEntry.photos`). Siempre un array. */
+  fotos: FotoCarga[];
 }
 
 /** «12 libres · 3 en lote · 2 consumidas» — sólo las cubetas con algo, en el
@@ -543,7 +545,8 @@ function hojaGuias(volumen: VolumenDelPermiso): HojaExcel {
          para abrirlas — el Excel no es donde se MIRA la foto, es de dónde se
          llega a ella. */
       Fotos: g.fotos.length,
-      "Links de fotos": g.fotos.length > 0 ? g.fotos.join(" ") : GUION,
+      // Las privadas abren por el panel (piden sesión): el link lleva el dominio.
+      "Links de fotos": g.fotos.length > 0 ? g.fotos.map((f) => hrefAbsolutoDeFoto(srcDeFoto(f))).join(" ") : GUION,
     })),
   };
 }
@@ -716,16 +719,18 @@ function tablaTipoHtml(volumen: VolumenDelPermiso): string {
  *  la foto EXISTE, no un álbum — la foto grande sigue viviendo en la URL. */
 const MAX_FOTOS_PAPEL = 4;
 
-function fotosHtml(fotos: string[], gtf: string): string {
+function fotosHtml(fotos: FotoCarga[], gtf: string): string {
   if (fotos.length === 0) return GUION;
   const miniaturas = fotos
     .slice(0, MAX_FOTOS_PAPEL)
-    .map(
-      (url) =>
-        `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer" style="display:inline-block;width:30px;height:30px;border-radius:6px;overflow:hidden;border:1px solid #cfe0d7;margin:0 3px 3px 0">
+    .map((f) => {
+      // El papel se abre en otra ventana: la URL relativa de la foto privada
+      // necesita el dominio (y la CSP del papel, `'self'` en img-src).
+      const url = hrefAbsolutoDeFoto(srcDeFoto(f));
+      return `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer" title="${esc(pieDeFoto(f))}" style="display:inline-block;width:30px;height:30px;border-radius:6px;overflow:hidden;border:1px solid #cfe0d7;margin:0 3px 3px 0">
           <img src="${esc(url)}" alt="Foto de la guía ${esc(gtf)}" style="width:100%;height:100%;object-fit:cover" />
-        </a>`,
-    )
+        </a>`;
+    })
     .join("");
   const resto = fotos.length > MAX_FOTOS_PAPEL ? ` <span class="muted">+${fotos.length - MAX_FOTOS_PAPEL}</span>` : "";
   return `${miniaturas}${resto}`;

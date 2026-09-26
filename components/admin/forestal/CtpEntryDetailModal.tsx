@@ -19,6 +19,7 @@ import TrazaForwardSection from "./CtpTrazaForward";
 import CtpTrozasDeIngreso from "./CtpTrozasDeIngreso";
 import CtpFotosDelIngreso from "./CtpFotosDelIngreso";
 import { guardarFotosDeGuia } from "@/lib/forestal/fotos-guia";
+import { normalizarFotos, type FotoCarga } from "@/lib/forestal/fotos-carga";
 import {
   AlertCircle,
   FileText,
@@ -70,13 +71,13 @@ export default function CtpEntryDetailModal({ entry, onClose, onCompletar, onCam
    * esta misma ficha— para que las dos puertas nunca queden mostrando cosas
    * distintas.
    */
-  const [fotos, setFotos] = useState<string[]>(() => (Array.isArray(entry.photos) ? entry.photos : []));
+  const [fotos, setFotos] = useState<FotoCarga[]>(() => normalizarFotos(entry.photos));
   const [guardandoFotos, setGuardandoFotos] = useState(false);
   useEffect(() => {
-    setFotos(Array.isArray(entry.photos) ? entry.photos : []);
+    setFotos(normalizarFotos(entry.photos));
   }, [entry.id, entry.photos]);
 
-  const guardarFotos = async (nuevas: string[]) => {
+  const guardarFotos = async (nuevas: FotoCarga[]) => {
     const previas = fotos;
     setFotos(nuevas);
     setGuardandoFotos(true);
@@ -310,7 +311,7 @@ export default function CtpEntryDetailModal({ entry, onClose, onCompletar, onCam
                 Fotos de la guía
               </CardTitle>
             </div>
-            <CtpFotosDelIngreso fotos={fotos} onCambio={(u) => void guardarFotos(u)} disabled={guardandoFotos} />
+            <CtpFotosDelIngreso fotos={fotos} onCambio={(u) => void guardarFotos(u)} disabled={guardandoFotos} gtf={entry.gtfNumber} />
           </section>
         </div>
 

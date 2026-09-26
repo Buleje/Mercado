@@ -16,10 +16,10 @@ import {
   AlertTriangle, Camera, Check, ChevronDown, ChevronRight, FileText, Loader2, Search, ShieldAlert, ShieldCheck,
   Sparkles, TreePine, X, ClipboardList,
 } from "@buleje/design-system/icons";
-import AdminModal from "@/components/admin/shared/AdminModal";
+import AdminModal, { CabeceraPropia } from "@/components/admin/shared/AdminModal";
 import SelectorContrato from "./SelectorContrato";
 import CtpPiezasDelIngreso from "./CtpPiezasDelIngreso";
-import { Btn, estaFueraDePlazo, Field, I, ModalFooter, PLAZO_REGISTRO_DIAS, Seccion, useAtajoGuardar } from "./ctp-shared";
+import { Btn, estaFueraDePlazo, Field, FormularioClaro, I, ModalFooter, PLAZO_REGISTRO_DIAS, Seccion, useAtajoGuardar } from "./ctp-shared";
 import CtpParteBarra from "./CtpParteBarra";
 import CtpTrozasImportModal from "./CtpTrozasImportModal";
 import CamposPersonalizados, {
@@ -37,6 +37,12 @@ import { useActionToasts, ActionToasts } from "./cubicador-toasts";
 import SegmentedControl from "@/components/ui-system/SegmentedControl";
 import { printGtfSerfor } from "@/lib/forestal/serfor-gtf-print";
 import CtpGuiaSerforHoja from "./CtpGuiaSerforHoja";
+import CtpGuiaSerforTrozas from "./CtpGuiaSerforTrozas";
+import CtpPrecioDeLaMadera, { PRECIO_VACIO, precioM3De, type PrecioDeLaMadera } from "./CtpPrecioDeLaMadera";
+import CtpProveedorEnDirectorio from "./CtpProveedorEnDirectorio";
+import { TEXTO_MOTIVO, type MotivoSalto } from "@/lib/forestal/precio-en-tanda";
+import { documentoDelTitular } from "@/lib/forestal/serfor-titular";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { ctpFichaFaltantes, type CtpFicha } from "@/lib/forestal/ctp-ficha-types";
@@ -53,6 +59,7 @@ import { gtfDatosDesdeSerfor } from "@/lib/forestal/serfor-gtf-a-datos";
 import CtpGuiaOficialForm from "./CtpGuiaOficialForm";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { tenantCacheKey, getActiveTenantSlug } from "@/lib/tenant-cache";
+import { formatTime } from "@/lib/format";
 import { PROVEEDOR_INVENTARIO_APERTURA } from "@/lib/forestal/ctp-serfor-a-libro";
 
 /** Lo que se copia al duplicar un ingreso: el camión siguiente del mismo
@@ -159,6 +166,31 @@ const TOP_SPECIES_SLUGS = ["tornillo", "capirona", "shihuahuaco", "cedro", "caob
  */
 const DRAFT_BASE = "buleje:ctp-wood-entry-draft";
 const draftKey = () => tenantCacheKey(DRAFT_BASE);
+
+/**
+ * La última consulta a SERFOR (Brandon 2026-09-25: «esa consulta se quedará
+ * hasta que se ponga otro número de registro… a pesar de cerrar o ir a otra
+ * pestaña o sección»). Antes vivía sólo en el estado del modal: cerrarlo o
+ * pasar a «Carga manual» la soltaba y había que volver a pedirla.
+ *
+ * Se reemplaza al consultar OTRO número y se borra al registrar la guía:
+ * dejarla viva después de registrada invitaba a registrarla dos veces.
+ * Sellada con el negocio, igual que el borrador.
+ */
+/** Un ingreso recién creado, listo para ponerle precio (proveedor × especie como quedó guardado). */
+type IngresoAValorizar = { id: string; proveedor: string; especie: string };
+/** Por qué el precio no entró: define qué se le ofrece al operador. */
+type TipoAvisoPrecio = "dedazo" | "permiso" | "error" | "saltadas";
+
+const SERFOR_BASE = "buleje:ctp-wood-entry-serfor";
+const serforKey = () => tenantCacheKey(SERFOR_BASE);
+type ConsultaSerforGuardada = {
+  __tenant: string | null;
+  nro: string;
+  gtf: GtfSerforLite;
+  msg: { ok: boolean; text: string } | null;
+  at: string;
+};
 /** Cómo carga este operador: se respeta su última elección entre altas. */
 const MODO_CARGA_KEY = "buleje:ctp-wood-entry-modo";
 
@@ -248,6 +280,7 @@ const INITIAL: DraftData = {
 // ═════════════════════════════════════════════════════════════════════════
 
 import CtpFotosDelIngreso from "./CtpFotosDelIngreso";
+import type { FotoCarga } from "@/lib/forestal/fotos-carga";
 
 export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, preset }: Props) {
   /* El picker ofrece las de fábrica MÁS las del catálogo de esta planta
@@ -266,12 +299,31 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
   /** La libreta del CTP (ADR-317) y qué proveedor se usó en ESTE ingreso. */
   const directorio = useDirectorioForestal();
   const partesUsadas = useRef<Set<string>>(new Set());
+  /** La ficha del directorio enlazada al titular de la guía SERFOR (por documento). */
+  const parteDelTitularRef = useRef<string | null>(null);
+  /** Lo que costó la madera (2026-09-25). Vacío = sin costo, nunca S/ 0. */
+  const [precio, setPrecio] = useState<PrecioDeLaMadera>(PRECIO_VACIO);
+  /**
+   * El ingreso YA entró pero su precio no: dedazo a confirmar, sin permiso o
+   * error. El modal se queda abierto para decirlo —la vista de Ingresos no
+   * tiene dónde mostrar este aviso—, y lo único que queda es cerrar o
+   * confirmar el precio. Registrar de nuevo no: duplicaría la guía.
+   */
+  const [precioPendiente, setPrecioPendiente] = useState<null | {
+    texto: string;
+    tipo: TipoAvisoPrecio;
+    ingresos: IngresoAValorizar[];
+    /** El precio por m³ que el servidor marcó: confirmar sólo vale para ÉSE. */
+    precioM3Avisado: number | null;
+    /** Cerrar después de registrar (lleva el aviso de campos personalizados). */
+    alTerminar: () => void;
+  }>(null);
   /** El uso se cuenta con el ingreso ya guardado, no al elegir de la lista. */
   /** Lista de trozas pegada a mano cuando SERFOR no la trajo (ADR-320). */
   /* Las fotos del ingreso (hasta 10, ADR-336): la API y la ficha ya las
      soportaban, pero acá se mandaba `photos: null` fijo y las 24 guías del
      tenant real quedaron sin una sola. */
-  const [fotos, setFotos] = useState<string[]>([]);
+  const [fotos, setFotos] = useState<FotoCarga[]>([]);
   const [trozasManuales, setTrozasManuales] = useState<TrozaImportada[]>([]);
   const [importarTrozas, setImportarTrozas] = useState(false);
   /**
@@ -284,6 +336,8 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
   /** Arranca plegado: son 20 casilleros y el alta rápida no los toca. */
   const [verGuiaOficial, setVerGuiaOficial] = useState(false);
   const marcarProveedorUsado = () => {
+    // En SERFOR, la ficha enlazada al titular (por documento) también se usó.
+    if (modo === "serfor" && parteDelTitularRef.current) partesUsadas.current.add(parteDelTitularRef.current);
     if (!partesUsadas.current.size) return;
     directorio.marcarUso({ partes: [...partesUsadas.current] });
     partesUsadas.current.clear();
@@ -300,6 +354,8 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
   const [serforMsg, setSerforMsg] = useState<{ ok: boolean; text: string } | null>(null);
   /** Ficha oficial tal como la publicó SERFOR — viaja con el ingreso para el PDF. */
   const [serforGtf, setSerforGtf] = useState<GtfSerforLite | null>(null);
+  /** Cuándo se guardó la consulta vigente (null = no hay ninguna guardada). */
+  const [serforGuardadaAt, setSerforGuardadaAt] = useState<string | null>(null);
   // Aviso flotante: el operador está mirando el formulario llenarse solo, no el
   // renglón de estado del campo.
   const { toasts, push: pushToast, dismiss: dismissToast } = useActionToasts();
@@ -378,6 +434,52 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
       }
     } catch {}
   }, [initialGtfNumber, preset]);
+
+  // La consulta a SERFOR guardada vuelve con el modal. Misma regla que el
+  // borrador: si se abrió desde la bandeja o duplicando, la intención es otra
+  // guía — restaurar ésta haría registrar la guía equivocada.
+  const serforRestauradaRef = useRef(false);
+  useEffect(() => {
+    if (initialGtfNumber || preset || serforRestauradaRef.current) return;
+    serforRestauradaRef.current = true;
+    try {
+      const raw = localStorage.getItem(serforKey());
+      if (!raw) return;
+      const c = JSON.parse(raw) as ConsultaSerforGuardada;
+      if (!c.__tenant || c.__tenant !== getActiveTenantSlug() || !c.gtf) {
+        localStorage.removeItem(serforKey());
+        return;
+      }
+      setNroRegistroSerfor(c.nro);
+      setSerforMsg(c.msg);
+      setSerforGuardadaAt(c.at);
+      // En «Desde SERFOR» manda el documento y se aplica ya. En «Carga manual»
+      // sólo vuelve la consulta, sin tocar el formulario: el borrador de ESTE
+      // alta (quizá otra guía, tipeada a mano) se acaba de restaurar arriba y
+      // la guía guardada lo pisaría. Se aplica recién al pasar a SERFOR.
+      if (modo === "serfor") aplicarGuiaSerfor(c.gtf, true);
+      else setSerforGtf(c.gtf);
+    } catch {
+      // Un JSON roto no puede trabar el alta: se descarta y se sigue.
+      try { localStorage.removeItem(serforKey()); } catch { /* sin storage */ }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- sólo al montar
+  }, [initialGtfNumber, preset]);
+
+  function guardarConsultaSerfor(nro: string, gtf: GtfSerforLite, msg: { ok: boolean; text: string } | null) {
+    const at = new Date().toISOString();
+    setSerforGuardadaAt(at);
+    try {
+      const c: ConsultaSerforGuardada = { __tenant: getActiveTenantSlug(), nro, gtf, msg, at };
+      localStorage.setItem(serforKey(), JSON.stringify(c));
+    } catch { /* sin storage: la consulta vale igual mientras el modal siga abierto */ }
+  }
+
+  function borrarConsultaSerfor() {
+    setSerforGtf(null);
+    setSerforGuardadaAt(null);
+    try { localStorage.removeItem(serforKey()); } catch { /* sin storage */ }
+  }
 
   // Duplicar un ingreso: lo que se repite camión tras camión (proveedor, origen,
   // especie, producto) llega armado; lo que cambia (GTF, volumen, piezas) queda
@@ -522,9 +624,146 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
    * ayuda, no corrige. La ficha completa queda guardada para poder reimprimir la
    * GTF después (`serforGtf`).
    */
+  /**
+   * Pone la guía de SERFOR en el formulario: la ficha, el cuerpo del documento
+   * y los campos que el libro necesita. La usan la consulta, la restauración de
+   * la consulta guardada y la vuelta a «Desde SERFOR».
+   *
+   * Pisa lo que esté vacío y respeta lo que el operador ya escribió: el sistema
+   * ayuda, no corrige — salvo con `mandaElDocumento` (modo SERFOR), donde los
+   * campos manuales están ocultos y manda el documento.
+   *
+   * `mandaElDocumento` es parámetro y no `modo === "serfor"` leído adentro: al
+   * cambiar de pestaña el estado todavía dice la anterior.
+   */
+  function aplicarGuiaSerfor(g: GtfSerforLite, mandaElDocumento: boolean): string[] {
+    setSerforGtf(g);
+    // El cuerpo del documento (propietario, destinatario, transportista) se
+    // lee de la MISMA ficha con la misma función que usa el servidor: si
+    // después se pasa a carga manual, esos casilleros ya están puestos.
+    setGtfDatos((prev) => gtfDatosDesdeSerfor(g, prev));
+    // Si la ficha trae al dueño de la madera, el bloque se abre: esconder un
+    // dato que ya existe es peor que pedirlo.
+    if ((g.propietario ?? "").trim()) setVerGuiaOficial(true);
+
+    // Fechas: SERFOR las publica dd/mm/aaaa y el input las quiere aaaa-mm-dd.
+    const aISO = (f: string | null) => {
+      const m = (f ?? "").match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+      return m ? `${m[3]}-${m[2]}-${m[1]}` : "";
+    };
+    const p0 = g.productos?.[0];
+    const piezas = (g.productos ?? []).reduce((a, x) => a + (x.cantidad ?? 0), 0);
+    const volumen = g.volumenTotal ?? (g.productos ?? []).reduce((a, x) => a + (x.volumen ?? 0), 0);
+    /**
+     * Qué campos se van a llenar se decide ANTES de tocar el estado: armar el
+     * aviso desde dentro de `setData` lo dejaba siempre en "ya estaban
+     * completos", porque el callback corre después de mostrarlo.
+     *
+     * Se respeta lo que el operador escribió; los valores que todavía son el
+     * default del formulario (la especie precargada, por ejemplo) SÍ los pisa
+     * el documento oficial: entre un default nuestro y lo que dice la guía,
+     * manda la guía.
+     *
+     * En modo SERFOR **manda el documento, siempre**: los campos manuales
+     * están ocultos, así que lo que quedó del borrador anterior no se puede
+     * ver ni corregir. Con la regla "respetar lo escrito" un ingreso de esta
+     * guía se guardaba con el titular del camión anterior — el libro decía
+     * una cosa y la GTF otra, que es justo lo que un fiscalizador cruza.
+     */
+    const cambios: Partial<DraftData> = {};
+    const llenados: string[] = [];
+    const proponer = <K extends keyof DraftData>(campo: K, valor: string, etiqueta: string, pisaDefault = false) => {
+      if (!valor) return;
+      const actual = String(data[campo] ?? "").trim();
+      const esDefault = actual === String(INITIAL[campo] ?? "").trim();
+      if (actual && !mandaElDocumento && !(pisaDefault && esDefault)) return;
+      // Con el documento mandando se escribe SIEMPRE: `data` puede ser el de
+      // un render viejo (al restaurar, el borrador todavía no llegó al
+      // closure) y saltar el campo por «ya estaba igual» dejaba el del
+      // borrador. Al toast sólo va lo que de verdad cambió.
+      if (actual === valor && !mandaElDocumento) return;
+      (cambios as Record<string, string>)[campo as string] = valor;
+      if (actual !== valor) llenados.push(etiqueta);
+    };
+
+    proponer("gtfNumber", g.gtfNumber ?? "", "N° GTF");
+    proponer("gtfDate", aISO(g.fechaExpedicion), "fecha de la guía");
+    proponer("providerName", g.titular ?? "", "titular");
+    // El del TITULAR, nunca el RUC de la instancia que registró la guía (ver
+    // `documentoDelTitular`); la misma regla que usa el servidor al registrar.
+    const docTitular = documentoDelTitular(g);
+    if (mandaElDocumento) {
+      // Con el documento mandando se escribe SIEMPRE, número y tipo juntos: si
+      // la guía no trae documento del titular, el campo queda vacío y no con el
+      // de la guía anterior; un DNI no queda rotulado «RUC» (revisión 2026-09-25).
+      if (data.providerDocument !== (docTitular?.numero ?? "")) llenados.push("documento del titular");
+      (cambios as Record<string, string>).providerDocument = docTitular?.numero ?? "";
+      if (docTitular) (cambios as Record<string, string>).providerDocumentType = docTitular.tipo;
+    } else {
+      proponer("providerDocument", docTitular?.numero ?? "", "RUC");
+      if (docTitular && !data.providerDocument.trim()) (cambios as Record<string, string>).providerDocumentType = docTitular.tipo;
+    }
+    proponer("originCode", g.numeroTitulo ?? "", "código de origen");
+    proponer("originSourceNumber", g.numeroResolucion ?? "", "N° de fuente de origen");
+    proponer("originDistrict", g.distrito ?? "", "distrito");
+    proponer("presentacion", (p0?.presentacion ?? "").toUpperCase(), "presentación", true);
+    if (volumen > 0) proponer("volumeM3", volumen.toFixed(4), "volumen");
+    if (piezas > 0) proponer("pieces", String(Math.round(piezas)), "piezas");
+    // SERFOR manda el departamento EN MAYÚSCULAS ("PASCO") y el catálogo lo
+    // tiene capitalizado ("Pasco"): comparar tal cual fallaba en silencio y el
+    // ingreso se guardaba con la región POR DEFECTO (Ucayali) para una guía de
+    // Pasco. Se compara sin tildes ni mayúsculas y se guarda el valor del
+    // catálogo.
+    const regionCatalogo = g.departamento
+      ? REGIONS_PE.find((r) => sinTildesUp(r) === sinTildesUp(g.departamento ?? ""))
+      : undefined;
+    if (regionCatalogo) proponer("originRegion", regionCatalogo, "región", true);
+    else if (g.departamento) proponer("originRegion", "Otra", "región", true);
+    // La especie y el tipo de origen del formulario arrancan con un default:
+    // el dato oficial de la guía tiene prioridad sobre él.
+    if (p0?.comun) {
+      // Si la especie de la guía está en el catálogo se elige del listado; si
+      // no, va como "otro" con su nombre — el slug para especie libre es
+      // "otro" (con "otra" el selector quedaba vacío y el ingreso sin especie).
+      const delCatalogo = findSpeciesByCommonName(p0.comun);
+      if (delCatalogo?.slug) {
+        proponer("speciesSlug", delCatalogo.slug, "especie", true);
+      } else {
+        proponer("speciesSlug", "otro", "especie", true);
+        proponer("customSpeciesName", p0.comun, "especie", true);
+      }
+    }
+    const tipo = ORIGEN_SERFOR[(g.origenRecurso ?? "").toUpperCase()];
+    if (tipo) proponer("originType", tipo, "tipo de origen", true);
+
+    if (Object.keys(cambios).length > 0) setData((prev) => ({ ...prev, ...cambios }));
+    return llenados;
+  }
+
+  /**
+   * Suelta lo que la guía llena, antes de consultar otra o de entrar a «Desde
+   * SERFOR» sin guía. Si el documento nuevo no trae un dato, el registro lo
+   * muestra vacío — nunca el del camión anterior.
+   */
+  function soltarDatosDeLaGuia() {
+    setData((prev) => ({
+      ...prev,
+      gtfNumber: "", gtfDate: "", providerName: "", providerDocument: "",
+      originCode: "", originSourceNumber: "", originDistrict: "",
+      volumeM3: "", pieces: "",
+    }));
+  }
+
+  /** Trae la guía desde la base de SERFOR por su N° de registro. */
   async function consultarSerfor() {
     const n = nroRegistroSerfor.trim();
     if (!n) { setSerforMsg({ ok: false, text: "Escribe el N° de registro de la guía (ej. 1-19-0313629)." }); return; }
+    // Otro número = otra consulta: la guía anterior se suelta YA. Si quedaba
+    // en pantalla mientras la nueva fallaba, «Registrar» registraba la vieja.
+    if (serforGtf && n !== serforGtf.numeroRegistro) {
+      borrarConsultaSerfor();
+      soltarDatosDeLaGuia();
+    }
     setSerforCargando(true); setSerforMsg(null);
     try {
       const r = await fetch(`/api/admin/forestal/gtf/serfor?numeroRegistro=${encodeURIComponent(n)}`, { credentials: "include" });
@@ -536,96 +775,13 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
         return;
       }
       const g = j.gtf as GtfSerforLite;
-      setSerforGtf(g);
-      // El cuerpo del documento (propietario, destinatario, transportista) se
-      // lee de la MISMA ficha con la misma función que usa el servidor: si
-      // después se pasa a carga manual, esos casilleros ya están puestos.
-      setGtfDatos((prev) => gtfDatosDesdeSerfor(g, prev));
-      // Si la ficha trae al dueño de la madera, el bloque se abre: esconder un
-      // dato que ya existe es peor que pedirlo.
-      if ((g.propietario ?? "").trim()) setVerGuiaOficial(true);
-
-      // Fechas: SERFOR las publica dd/mm/aaaa y el input las quiere aaaa-mm-dd.
-      const aISO = (f: string | null) => {
-        const m = (f ?? "").match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-        return m ? `${m[3]}-${m[2]}-${m[1]}` : "";
-      };
-      const p0 = g.productos?.[0];
-      const piezas = (g.productos ?? []).reduce((a, x) => a + (x.cantidad ?? 0), 0);
-      const volumen = g.volumenTotal ?? (g.productos ?? []).reduce((a, x) => a + (x.volumen ?? 0), 0);
-      /**
-       * Qué campos se van a llenar se decide ANTES de tocar el estado: armar el
-       * aviso desde dentro de `setData` lo dejaba siempre en "ya estaban
-       * completos", porque el callback corre después de mostrarlo.
-       *
-       * Se respeta lo que el operador escribió; los valores que todavía son el
-       * default del formulario (la especie precargada, por ejemplo) SÍ los pisa
-       * el documento oficial: entre un default nuestro y lo que dice la guía,
-       * manda la guía.
-       */
-      const cambios: Partial<DraftData> = {};
-      const llenados: string[] = [];
-      /**
-       * En modo SERFOR **manda el documento, siempre**: los campos manuales
-       * están ocultos, así que lo que quedó del borrador anterior no se puede
-       * ver ni corregir. Con la regla "respetar lo escrito" un ingreso de esta
-       * guía se guardaba con el titular del camión anterior — el libro decía
-       * una cosa y la GTF otra, que es justo lo que un fiscalizador cruza.
-       */
-      const mandaElDocumento = modo === "serfor";
-      const proponer = <K extends keyof DraftData>(campo: K, valor: string, etiqueta: string, pisaDefault = false) => {
-        if (!valor) return;
-        const actual = String(data[campo] ?? "").trim();
-        const esDefault = actual === String(INITIAL[campo] ?? "").trim();
-        if (actual && !mandaElDocumento && !(pisaDefault && esDefault)) return;
-        if (actual === valor) return;
-        (cambios as Record<string, string>)[campo as string] = valor;
-        llenados.push(etiqueta);
-      };
-
-      proponer("gtfNumber", g.gtfNumber ?? "", "N° GTF");
-      proponer("gtfDate", aISO(g.fechaExpedicion), "fecha de la guía");
-      proponer("providerName", g.titular ?? "", "titular");
-      proponer("providerDocument", (g.rucInstancia ?? g.propietarioDoc ?? "").split("/")[0]?.trim() ?? "", "RUC");
-      proponer("originCode", g.numeroTitulo ?? "", "código de origen");
-      proponer("originSourceNumber", g.numeroResolucion ?? "", "N° de fuente de origen");
-      proponer("originDistrict", g.distrito ?? "", "distrito");
-      proponer("presentacion", (p0?.presentacion ?? "").toUpperCase(), "presentación", true);
-      if (volumen > 0) proponer("volumeM3", volumen.toFixed(4), "volumen");
-      if (piezas > 0) proponer("pieces", String(Math.round(piezas)), "piezas");
-      // SERFOR manda el departamento EN MAYÚSCULAS ("PASCO") y el catálogo lo
-      // tiene capitalizado ("Pasco"): comparar tal cual fallaba en silencio y el
-      // ingreso se guardaba con la región POR DEFECTO (Ucayali) para una guía de
-      // Pasco. Se compara sin tildes ni mayúsculas y se guarda el valor del
-      // catálogo.
-      const regionCatalogo = g.departamento
-        ? REGIONS_PE.find((r) => sinTildesUp(r) === sinTildesUp(g.departamento ?? ""))
-        : undefined;
-      if (regionCatalogo) proponer("originRegion", regionCatalogo, "región", true);
-      else if (g.departamento) proponer("originRegion", "Otra", "región", true);
-      // La especie y el tipo de origen del formulario arrancan con un default:
-      // el dato oficial de la guía tiene prioridad sobre él.
-      if (p0?.comun) {
-        // Si la especie de la guía está en el catálogo se elige del listado; si
-        // no, va como "otro" con su nombre — el slug para especie libre es
-        // "otro" (con "otra" el selector quedaba vacío y el ingreso sin especie).
-        const delCatalogo = findSpeciesByCommonName(p0.comun);
-        if (delCatalogo?.slug) {
-          proponer("speciesSlug", delCatalogo.slug, "especie", true);
-        } else {
-          proponer("speciesSlug", "otro", "especie", true);
-          proponer("customSpeciesName", p0.comun, "especie", true);
-        }
-      }
-      const tipo = ORIGEN_SERFOR[(g.origenRecurso ?? "").toUpperCase()];
-      if (tipo) proponer("originType", tipo, "tipo de origen", true);
-
-      if (Object.keys(cambios).length > 0) setData((prev) => ({ ...prev, ...cambios }));
-
-      setSerforMsg({
+      const llenados = aplicarGuiaSerfor(g, modo === "serfor");
+      const msg = {
         ok: true,
         text: `Guía ${g.gtfNumber ?? n} · ${g.titular ?? "sin titular"} · ${g.estado ?? "sin estado"}`,
-      });
+      };
+      setSerforMsg(msg);
+      guardarConsultaSerfor(n, g, msg);
       pushToast?.({
         tono: "success",
         msg: `Guía ${g.gtfNumber ?? n} cargada desde SERFOR`,
@@ -704,13 +860,18 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
    */
   const reparto = useMemo(() => (serforGtf ? repartirGtfEnIngresos(serforGtf) : null), [serforGtf]);
 
-  const especiesResumen = useMemo(() => {
-    const deGuia = (serforGtf?.productos ?? []).map((p) => p.comun ?? p.cientifico).filter(Boolean) as string[];
-    if (deGuia.length > 1) {
-      return { titulo: `${deGuia.length} especies`, sub: deGuia.join(" · ") };
-    }
-    return { titulo: finalSpeciesName || "Sin especie", sub: finalScientificName || null };
-  }, [serforGtf, finalSpeciesName, finalScientificName]);
+  /**
+   * El RUC/DNI del titular de la guía, para buscarlo en el directorio.
+   *
+   * `providerDocument` NO sirve: en las guías de SERFOR trae el RUC de la
+   * INSTANCIA que registra (ATFFS, Gobierno Regional) — medido en Blas, el
+   * mismo RUC lo tienen dos titulares distintos (revisión 2026-09-25). La
+   * consulta pública no publica el RUC del titular; sí el del propietario del
+   * producto (casillero 15), que vale sólo si el propietario ES el titular. Si
+   * no, no hay documento y se compara por nombre.
+   */
+  const docDelTitularSerfor = useMemo(() => (serforGtf ? (documentoDelTitular(serforGtf)?.numero ?? null) : null), [serforGtf]);
+
 
   // Cubicación auto
   const autoVolume = useMemo(() => {
@@ -782,6 +943,22 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
   const isValid = missing.length === 0;
 
   /**
+   * Lo que sigue siendo el default del formulario (especie, producto, origen).
+   * Lo marcaba el panel lateral con «por defecto»; sin el panel, lo dice el pie.
+   * Cargando rápido, la especie precargada entraba al libro sin que nadie la
+   * eligiera.
+   */
+  const porDefecto = useMemo(() => {
+    const l: string[] = [];
+    if (data.speciesSlug === INITIAL.speciesSlug && !data.customSpeciesName) l.push(`Especie: ${finalSpeciesName || "sin especie"}`);
+    if (data.productType === INITIAL.productType) l.push(`Producto: ${productLabel(data.productType)}`);
+    if (data.originType === INITIAL.originType && data.originRegion === INITIAL.originRegion && !data.originDistrict) {
+      l.push(`Origen: ${originLabel(data.originType)} · ${data.originRegion}`);
+    }
+    return l;
+  }, [data.speciesSlug, data.customSpeciesName, data.productType, data.originType, data.originRegion, data.originDistrict, finalSpeciesName]);
+
+  /**
    * Dos avisos sobre las fechas, calculados con la MISMA función que juzga el
    * libro (`estaFueraDePlazo`) para que el formulario no prometa algo distinto
    * de lo que después va a mostrar la tabla:
@@ -845,10 +1022,90 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
   }, [missing]);
 
 
+  /**
+   * Valoriza los ingresos recién creados con «Poner precio» (el camino de la
+   * tanda): el total lo calcula el servidor, con su detector de dedazos y el
+   * freno de costo congelado. Devuelve null si quedó guardado (o no había
+   * precio), o lo que hay que decirle al operador.
+   */
+  async function ponerPrecioAlRegistrar(
+    ingresos: IngresoAValorizar[],
+    confirmar = false,
+  ): Promise<null | { texto: string; tipo: TipoAvisoPrecio }> {
+    const precioM3 = precioM3De(precio);
+    if (precioM3 == null || ingresos.length === 0) return null;
+    const precios = [
+      ...new Map(ingresos.map((i) => [`${i.proveedor}|${i.especie}`, { proveedor: i.proveedor, especie: i.especie, precioM3 }])).values(),
+    ];
+    try {
+      const r = await fetch("/api/admin/forestal/wood-entries/precio", {
+        method: "POST",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        credentials: "include",
+        body: JSON.stringify({
+          precios,
+          vistos: ingresos.map((i) => ({ id: i.id, antes: null })),
+          tambienConPrecio: false,
+          confirmarAvisos: confirmar,
+        }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (r.status === 409) {
+        const detalle = (j.avisos?.[0]?.avisos ?? [])[0] as string | undefined;
+        return { texto: `El precio se aleja de lo que sueles pagar${detalle ? `: ${detalle}` : "."} Revísalo: si lo corriges, se vuelve a revisar al guardarlo.`, tipo: "dedazo" };
+      }
+      if (r.status === 403) {
+        return { texto: "El precio no se guardó: cargarlo es del dueño o de un administrador (Opciones → Poner precio).", tipo: "permiso" };
+      }
+      if (!r.ok) {
+        return { texto: `El precio no se guardó (${j.message ?? `HTTP ${r.status}`}). Reintenta o cárgalo desde Opciones → Poner precio.`, tipo: "error" };
+      }
+      const saltadas = (j.saltadas ?? []) as { motivo: MotivoSalto }[];
+      if (saltadas.length > 0) {
+        return { texto: `El precio no se aplicó a ${saltadas.length} ingreso(s): ${TEXTO_MOTIVO[saltadas[0]!.motivo] ?? saltadas[0]!.motivo}.`, tipo: "saltadas" };
+      }
+      /* Si proveedor o especie no emparejan con la fila, el servidor responde
+         0 cambios y 0 saltadas: eso NO es éxito (revisión 2026-09-25). */
+      const cambios = Array.isArray(j.cambios) ? j.cambios.length : 0;
+      if (cambios < ingresos.length) {
+        return { texto: `El precio se aplicó a ${cambios} de ${ingresos.length} ingreso(s). Revisa el resto en Opciones → Poner precio.`, tipo: "saltadas" };
+      }
+      return null;
+    } catch (err) {
+      return { texto: `El precio no se guardó: ${err instanceof Error ? err.message : String(err)}. Reintenta o cárgalo desde Opciones → Poner precio.`, tipo: "error" };
+    }
+  }
+
+  /** Muestra el aviso de precio con el ingreso ya registrado (ver `precioPendiente`). */
+  function avisarPrecio(
+    aviso: { texto: string; tipo: TipoAvisoPrecio },
+    ingresos: IngresoAValorizar[],
+    alTerminar: () => void,
+  ) {
+    setPrecioPendiente({ ...aviso, ingresos, precioM3Avisado: precioM3De(precio), alTerminar });
+    setSubmitting(false);
+  }
+
+  /**
+   * Guardar el precio desde el aviso. Se lee el precio que está EN PANTALLA:
+   * si el operador lo corrigió, va sin `confirmarAvisos` y pasa otra vez por el
+   * detector de dedazos; sólo el MISMO precio avisado se confirma a ciegas.
+   * (Antes se mandaba el del momento de registrar: corregido, se guardaba el
+   * viejo y confirmado — revisión 2026-09-25.)
+   */
+  async function guardarPrecioPendiente() {
+    if (!precioPendiente) return;
+    const actual = precioM3De(precio);
+    const confirmar = precioPendiente.tipo === "dedazo" && actual != null && actual === precioPendiente.precioM3Avisado;
+    const otra = await ponerPrecioAlRegistrar(precioPendiente.ingresos, confirmar);
+    if (otra) setPrecioPendiente({ ...precioPendiente, ...otra, precioM3Avisado: actual });
+    else precioPendiente.alTerminar();
+  }
+
   // Submit
   async function handleSubmit(e: React.FormEvent, keepOpen = false) {
     e.preventDefault();
-    if (submitting) return;
+    if (submitting || precioPendiente) return;
     if (!isValid) {
       setError("Completa los campos obligatorios marcados con asterisco.");
       return;
@@ -877,12 +1134,22 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
         const j = await r.json().catch(() => ({}));
         if (!r.ok) throw new Error(j?.message ?? j?.error ?? `HTTP ${r.status}`);
         try { localStorage.removeItem(draftKey()); } catch {}
+        // Registrada la guía, la consulta guardada se va: si volviera al abrir
+        // el modal, invitaría a registrar la misma guía otra vez.
+        borrarConsultaSerfor();
         marcarProveedorUsado();
         /* Una guía que no cuadra CONSIGO MISMA no es un éxito silencioso
            (ADR-353): entra igual —el documento es el que es— pero se avisa en
            amarillo y se dice dónde queda marcada, porque si no el problema
            reaparece recién al consumir y ahí parece culpa del operador. */
         const avisos: string[] = j.avisos ?? [];
+        const creadosSerfor: IngresoAValorizar[] = ((j.ingresos ?? []) as { id: string; especie: string }[]).map((x) => ({
+          id: x.id,
+          // El mismo proveedor que guardó el servidor: el titular de la guía.
+          proveedor: serforGtf.titular?.trim() || "Sin titular declarado",
+          especie: x.especie,
+        }));
+        const avisoPrecio = await ponerPrecioAlRegistrar(creadosSerfor);
         pushToast?.({
           tono: avisos.length > 0 ? "warning" : "success",
           msg:
@@ -894,6 +1161,10 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
               ? `${avisos[0]} Queda marcada en Ingresos con el aviso naranja: tócalo para cuadrarla.`
               : `${j.ingresos?.length ?? 0} ingreso(s) · ${j.trozas ?? 0} troza(s)`,
         });
+        if (avisoPrecio) {
+          avisarPrecio(avisoPrecio, creadosSerfor, () => onSaved());
+          return;
+        }
         onSaved();
         return;
       }
@@ -905,9 +1176,12 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
         fechaRecepcion: data.fechaRecepcion ? new Date(data.fechaRecepcion).toISOString() : null,
         gtfSeries: data.gtfSeries.trim() || null,
         docType: data.docType || "GTF",
-        // La guía oficial viaja con el ingreso: después se reimprime desde acá.
-        serforNumeroRegistro: serforGtf?.numeroRegistro ?? (nroRegistroSerfor.trim() || null),
-        serforGtf: serforGtf ?? null,
+        // Por esta vía entra la carga MANUAL: la guía de SERFOR que haya quedado
+        // consultada (ahora se guarda aunque se cambie de pestaña) NO viaja.
+        // Un ingreso tipeado a mano no puede quedar marcado como verificado en
+        // SERFOR — antes daba null porque la consulta se soltaba al cambiar.
+        serforNumeroRegistro: null,
+        serforGtf: null,
         providerName: data.providerName.trim(),
         providerDocument: data.providerDocument.trim() || null,
         providerDocumentType: data.providerDocument.trim() ? data.providerDocumentType : null,
@@ -966,10 +1240,14 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
           await anotar("ingresos", payload, URL_INGRESO);
           /* La cola del patio guarda el ingreso, no su id: sin id no hay a qué
              colgar los campos personalizados. Se dice, no se pierde en silencio. */
+          const noViaja = [
+            hayPendientes(camposPendientes) ? "lo que escribiste en los campos personalizados" : null,
+            precioM3De(precio) != null ? "el precio de la madera" : null,
+          ].filter(Boolean);
           onSaved({
             offline: true,
-            camposAviso: hayPendientes(camposPendientes)
-              ? "Lo que escribiste en los campos personalizados no viaja con la guía anotada en el patio: vuelve a cargarlo al corregir el ingreso."
+            camposAviso: noViaja.length
+              ? `${noViaja.join(" y ")} no viaja con la guía anotada en el patio: vuelve a cargarlo al corregir el ingreso.`.replace(/^./, (c) => c.toUpperCase())
               : undefined,
           });
           return;
@@ -989,8 +1267,9 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
          no devuelve el id no hay ingreso al que colgarlos (ADR-427). Si fallan,
          el ingreso YA está en el libro — se avisa y no se pierde el alta. */
       let camposAviso: string | undefined;
+      // La respuesta se lee UNA vez: la usan los campos personalizados y el precio.
+      const creado = (await res.json().catch(() => ({}))) as { entry?: { id?: string } };
       if (hayPendientes(camposPendientes)) {
-        const creado = (await res.json().catch(() => ({}))) as { entry?: { id?: string } };
         const idIngreso = creado.entry?.id;
         if (!idIngreso) {
           camposAviso = "El ingreso entró, pero el servidor no devolvió su número: lo que escribiste en los campos personalizados quedó sin guardar.";
@@ -1000,6 +1279,16 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
         }
         setCamposPendientes(pendientesVacios(FORMULARIO));
       }
+
+      const creadoManual: IngresoAValorizar[] = creado.entry?.id
+        ? [{ id: creado.entry.id, proveedor: payload.providerName, especie: payload.speciesCommonName }]
+        : [];
+      const avisoPrecio = await ponerPrecioAlRegistrar(creadoManual);
+      if (avisoPrecio) {
+        avisarPrecio(avisoPrecio, creadoManual, () => onSaved(camposAviso ? { camposAviso } : undefined));
+        return;
+      }
+      setPrecio(PRECIO_VACIO);
 
       if (keepOpen) {
         setData((prev) => ({
@@ -1025,7 +1314,6 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
     }
   }
 
-  const volumeDisplay = Number(data.volumeM3) > 0 ? fmtM3(Number(data.volumeM3)) : null;
 
   // ═════════════════════════════════════════════════════════════════════
   // RENDER — dos paneles: formulario + vista previa
@@ -1034,9 +1322,10 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
   return (
     <AdminModal
       open
-      onClose={onClose}
+      onClose={precioPendiente ? precioPendiente.alTerminar : onClose}
       variant="wide"
       hideCloseButton
+      claveVentana="ctp-nuevo-ingreso"
       /* Con la guía de SERFOR el alta pasó a mostrar la ficha oficial completa
          (propietario, destinatario, transporte y la lista de trozas): 1280px se
          quedaban cortos y obligaban a scrollear de más. */
@@ -1050,19 +1339,79 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
       footer={
         <ModalFooter
           nota={
-            isValid ? (
-              <span className="flex items-center gap-1.5">
-                <Check className="h-3.5 w-3.5 text-[var(--data-success-600)]" />
-                Listo para guardar
-              </span>
-            ) : (
-              <span>
-                Faltan <span className="font-semibold text-[var(--text-secondary)]">{missing.length}</span>{" "}
-                {missing.length === 1 ? "campo" : "campos"}
-              </span>
-            )
+            /* Lo que decía el panel lateral y no se puede perder vive acá:
+               QUÉ falta (antes una lista a la vista, ahora en el ⓘ) y qué datos
+               siguen siendo el default del formulario — la especie precargada
+               entraba al libro sin que nadie la eligiera. */
+            <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
+              {isValid ? (
+                <span className="flex items-center gap-1.5">
+                  <Check className="h-3.5 w-3.5 text-[var(--data-success-600)]" />
+                  Listo para guardar
+                </span>
+              ) : (
+                <span className="flex items-center gap-1.5">
+                  <span>
+                    Faltan <span className="font-semibold text-[var(--text-secondary)]">{missing.length}</span>{" "}
+                    {missing.length === 1 ? "campo" : "campos"}
+                  </span>
+                  <InfoTip
+                    title="Falta completar"
+                    ariaLabel="Ver qué falta completar"
+                    body={
+                      <span className="block space-y-1">
+                        {missing.map((m) => (
+                          <span key={m} className="block">• {m}</span>
+                        ))}
+                      </span>
+                    }
+                  />
+                </span>
+              )}
+              {modo === "manual" && porDefecto.length > 0 && (
+                <span className="flex items-center gap-1.5 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+                  <span>
+                    {porDefecto.length} {porDefecto.length === 1 ? "dato viene" : "datos vienen"} por defecto
+                  </span>
+                  <InfoTip
+                    title="Revisa lo que vino puesto"
+                    ariaLabel="Ver qué datos vienen por defecto"
+                    body={
+                      <span className="block space-y-1">
+                        <span className="block">El formulario arranca con los valores de esta planta para ahorrar clics. Si la guía dice otra cosa, cámbialos: entran al libro tal cual.</span>
+                        {porDefecto.map((d) => (
+                          <span key={d} className="block font-semibold">• {d}</span>
+                        ))}
+                      </span>
+                    }
+                  />
+                </span>
+              )}
+            </span>
           }
         >
+          {precioPendiente ? (
+            /* El ingreso YA entró: registrar otra vez duplicaría la guía. */
+            <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
+              {(precioPendiente.tipo === "dedazo" || precioPendiente.tipo === "error") && precioM3De(precio) != null && (
+                <Btn
+                  variant="secondary"
+                  disabled={submitting}
+                  onClick={async () => {
+                    setSubmitting(true);
+                    try { await guardarPrecioPendiente(); } finally { setSubmitting(false); }
+                  }}
+                >
+                  {precioPendiente.tipo === "error"
+                    ? "Reintentar el precio"
+                    : precioM3De(precio) === precioPendiente.precioM3Avisado
+                      ? "Guardar el precio igual"
+                      : "Guardar el precio corregido"}
+                </Btn>
+              )}
+              <Btn variant="primary" onClick={precioPendiente.alTerminar} disabled={submitting}>Cerrar</Btn>
+            </div>
+          ) : (
           <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
             <Btn variant="ghost" onClick={onClose} disabled={submitting}>Cancelar</Btn>
             <Btn variant="secondary" onClick={(e) => handleSubmit(e, true)} disabled={!isValid || submitting}>Guardar y otro</Btn>
@@ -1070,12 +1419,27 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
               {submitting ? <><Loader2 className="h-4 w-4 animate-spin" />Guardando</> : "Registrar ingreso"}
             </Btn>
           </div>
+          )}
         </ModalFooter>
       }
     >
       <div className="flex h-full flex-col bg-[var(--surface-raised)]">
         {/* ── Header ──────────────────────────────────────────────────── */}
-        <header className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4 sm:px-6">
+        {/* Encabezado propio que igual es ASA de la ventana (ADR-420): se
+            arrastra, y trae restaurar / maximizar / fijar antes de la X. */}
+        <CabeceraPropia
+          className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4 sm:px-6"
+          acciones={
+            <button
+              type="button"
+              onClick={precioPendiente ? precioPendiente.alTerminar : onClose}
+              aria-label="Cerrar"
+              className="shrink-0 rounded-xl p-2 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          }
+        >
           <div className="flex min-w-0 items-center gap-3">
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[var(--data-success-100)] text-[var(--data-success-700)]">
               <TreePine className="h-5 w-5" strokeWidth={1.75} />
@@ -1089,15 +1453,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Cerrar"
-            className="shrink-0 rounded-xl p-2 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </header>
+        </CabeceraPropia>
 
         {/* ── Cuerpo: dos paneles ─────────────────────────────────────── */}
         <div className="flex min-h-0 flex-1 overflow-hidden">
@@ -1106,8 +1462,20 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
             id="wood-entry-form"
             ref={refAtajo}
             onSubmit={handleSubmit}
-            className="min-w-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6 sm:py-6"
+            // Fondo hundido: las secciones son tarjetas y se tienen que
+            // despegar del fondo para leerse como bloques separados.
+            className="min-w-0 flex-1 overflow-y-auto bg-[var(--surface-sunken)] px-5 py-5 sm:px-6 sm:py-6"
           >
+            <FormularioClaro>
+            {precioPendiente && (
+              <div role="status" className="mb-4 flex items-start gap-3 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-4 py-3 text-sm text-[var(--text-primary)] dark:bg-[var(--data-warning-500)]/10">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" />
+                <div>
+                  <strong>El ingreso quedó registrado.</strong> {precioPendiente.texto}
+                </div>
+              </div>
+            )}
+
             {error && (
               <div className="mb-6 flex items-start gap-3 rounded-xl border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-4 py-3 text-sm text-[var(--data-error-700)]">
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -1138,27 +1506,28 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                 una columna. (Sigue sin ser CSS multicol: con altura fija hace
                 column-fill:auto y desborda a una 3ª columna fuera del form.) */}
             {/* Selector de modo: es lo primero que se decide al abrir el alta. */}
-            <div className="mb-5 flex flex-wrap items-center gap-3 rounded-2xl bg-[var(--surface-sunken)] p-3">
+            <div className="mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
               <SegmentedControl
                 value={modo}
                 onChange={(v) => {
                   setModo(v);
-                  setSerforMsg(null);
-                  // La carga manual no muestra nada de SERFOR: si se vuelve a
-                  // mano, la ficha consultada se suelta. Dejarla pegada hacía
-                  // que el panel dijera "verificado en SERFOR" sobre un ingreso
-                  // que el operador terminó escribiendo a mano.
-                  if (v === "manual") { setSerforGtf(null); setNroRegistroSerfor(""); }
-                  // Y al revés: lo que la guía va a traer se suelta antes de
-                  // consultarla. Si el documento no trae un dato, el registro lo
-                  // muestra vacío — nunca el del camión anterior.
-                  else {
-                    setData((prev) => ({
-                      ...prev,
-                      gtfNumber: "", gtfDate: "", providerName: "", providerDocument: "",
-                      originCode: "", originSourceNumber: "", originDistrict: "",
-                      volumeM3: "", pieces: "",
-                    }));
+                  // La consulta a SERFOR ya NO se suelta al pasar a mano: queda
+                  // guardada hasta que se consulte otro número (Brandon
+                  // 2026-09-25). Lo que antes justificaba soltarla —el panel
+                  // lateral decía «verificado en SERFOR» sobre un ingreso
+                  // tipeado— se fue con el panel, y el alta manual no la
+                  // adjunta (ver `serforGtf: null` en el envío).
+                  if (v === "serfor") {
+                    // De vuelta en SERFOR, manda el documento guardado. Sin
+                    // guía, lo que la guía va a traer se suelta antes de
+                    // consultarla: si el documento no trae un dato, el registro
+                    // lo muestra vacío — nunca el del camión anterior.
+                    if (serforGtf) aplicarGuiaSerfor(serforGtf, true);
+                    else {
+                      soltarDatosDeLaGuia();
+                      // Sin guía, un error de una consulta anterior ya no dice nada.
+                      setSerforMsg(null);
+                    }
                   }
                 }}
                 size="lg"
@@ -1168,7 +1537,9 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                   { value: "serfor", label: "Desde SERFOR" },
                 ]}
               />
-              <p className="min-w-0 flex-1 text-xs text-[var(--text-secondary)]">
+              {/* En el celular va debajo del selector: al costado le quedaban
+                  ~50 px y salía una palabra por renglón. */}
+              <p className="w-full min-w-0 text-xs text-[var(--text-secondary)] sm:w-auto sm:flex-1">
                 {modo === "manual"
                   ? "Llenas la guía a mano, campo por campo."
                   : "Se pide la guía a SERFOR por su N° de registro y se registra lo que dice el documento oficial."}
@@ -1176,15 +1547,19 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
             </div>
 
             {modo === "serfor" && (
-              <div className="mb-5">
-                <Seccion numero={1} title="Guía en la base de SERFOR">
+              <div className="grid grid-cols-1 gap-4">
+                <Seccion
+                  numero={1}
+                  title="Guía en la base de SERFOR"
+                  hint="El N° de registro trae la guía desde la base de SERFOR y llena el ingreso con lo que dice el documento oficial. La consulta queda guardada aunque cierres el modal o cambies de pestaña: se reemplaza al consultar otro número y se borra al registrar la guía."
+                >
               {/* La vía más corta: el N° de registro del QR trae la guía desde la
                   base de SERFOR. Va PRIMERO porque, cuando la guía existe allá,
                   llena medio formulario de una. */}
               <Field
                 span={12}
                 label="N° de registro SERFOR"
-                hint="El que asigna el SNIFFS a la guía, con guiones (ej. 2-25-0002326). NO es el N° de GTF impreso."
+                hint="Es el N° de constancia del SNIFFS, el que acompaña al código QR de la guía — no el N° de GTF impreso arriba. Lleva guiones: 2-25-0002326. Trae el titular y su documento, el origen y su código, la especie, el producto y el volumen, y la lista de trozas pieza por pieza."
               >
                 <div className="flex flex-wrap gap-2">
                   <input
@@ -1205,74 +1580,152 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                     {serforCargando ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
                     Consultar SERFOR
                   </button>
+                  {serforGtf && (
+                    <button
+                      type="button"
+                      onClick={() => { void printGtfSerfor(serforGtf as never); }}
+                      className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3.5 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+                    >
+                      <FileText className="h-4 w-4" /> Imprimir la GTF
+                    </button>
+                  )}
                 </div>
-                {serforGtf && (
-                  <button
-                    type="button"
-                    onClick={() => { void printGtfSerfor(serforGtf as never); }}
-                    className="mt-2 inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--text-primary)]"
-                  >
-                    <FileText className="h-3.5 w-3.5" /> Imprimir la GTF
-                  </button>
-                )}
                 {serforMsg && (
                   <p
-                    className={`mt-2 flex items-start gap-1.5 rounded-lg px-2.5 py-2 text-xs font-medium ${
+                    className={`mt-2 flex items-start gap-1.5 rounded-lg px-2.5 py-2 text-sm font-medium ${
                       serforMsg.ok
                         ? "bg-[var(--data-success-50)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/12 dark:text-[var(--data-success-500)]"
                         : "bg-[var(--data-warning-50)] text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]"
                     }`}
                   >
-                    {serforMsg.ok ? <Check className="mt-0.5 h-3.5 w-3.5 shrink-0" /> : <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />}
-                    <span>{serforMsg.text}</span>
+                    {serforMsg.ok ? <Check className="mt-0.5 h-4 w-4 shrink-0" /> : <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />}
+                    <span className="min-w-0 flex-1">{serforMsg.text}</span>
+                    {/* Que se vea que es la consulta GUARDADA: al reabrir el modal
+                        la guía está ahí sin haberla pedido de nuevo. */}
+                    {serforMsg.ok && serforGtf && serforGuardadaAt && (
+                      <span className="shrink-0 whitespace-nowrap text-xs font-normal opacity-80">
+                        Guardada · {formatTime(serforGuardadaAt)}
+                      </span>
+                    )}
                   </p>
                 )}
               </Field>
 
-              {/* Antes de consultar, este modo era UN campo y medio modal en
-                  blanco: no decía qué iba a pasar ni dónde sacar el número, y
-                  el que no lo encontraba se quedaba mirando el vacío. Se va
-                  apenas la guía llega. */}
               {!serforGtf && (
-                <div className="sm:col-span-12 grid gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-4 sm:grid-cols-2">
-                  <div>
-                    <p className="mb-2 flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                      <ShieldCheck className="h-3.5 w-3.5" /> Qué trae la consulta
-                    </p>
-                    <ul className="space-y-1 text-sm text-[var(--text-secondary)]">
-                      {["Titular y su documento", "Origen y código de procedencia", "Especie, producto y volumen", "La lista de trozas, pieza por pieza"].map((t) => (
-                        <li key={t} className="flex items-start gap-1.5">
-                          <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--data-success-600)]" />
-                          {t}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div>
-                    <p className="mb-2 flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                      <Search className="h-3.5 w-3.5" /> Dónde está el número
-                    </p>
-                    <p className="text-sm text-[var(--text-secondary)]">
-                      Es el <strong>N° de constancia del SNIFFS</strong>, el que acompaña al código QR
-                      de la guía — no el N° de GTF impreso arriba. Tiene guiones:{" "}
-                      <span className="whitespace-nowrap font-mono text-[var(--text-primary)]">2-25-0002326</span>.
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => setModo("manual")}
-                      className="mt-3 inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
-                    >
-                      La guía no está en SERFOR — cargarla a mano
-                    </button>
-                  </div>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-2 sm:col-span-12">
+                  <span className="text-sm text-[var(--text-secondary)]">¿La guía no está en SERFOR?</span>
+                  <button
+                    type="button"
+                    onClick={() => setModo("manual")}
+                    className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+                  >
+                    Cargarla a mano
+                  </button>
                 </div>
               )}
-
                 </Seccion>
+
+                {/* La guía, las trozas y lo que la guía no trae, JUNTOS debajo de
+                    la consulta. Antes la hoja y los datos del CTP iban después
+                    del formulario manual oculto y la lista de trozas colgaba al
+                    pie de la hoja; ahora las trozas tienen su apartado. */}
+                {serforGtf && (
+                  <>
+                    <Seccion
+                      numero={2}
+                      title="Datos de la guía"
+                      hint="Como los declara el documento de SERFOR: no se editan. Los bloques siguen el orden del papel — la guía, el propietario, el destinatario, el transportista y el detalle del producto."
+                    >
+                      <CtpGuiaSerforHoja gtf={serforGtf} onImprimir={() => { void printGtfSerfor(serforGtf as never); }} />
+                    </Seccion>
+
+                    <Seccion
+                      numero={3}
+                      title="Trozas de la guía"
+                      hint="La lista de trozas (casillero 35) tal como la publica SERFOR, pieza por pieza, y cómo entra al libro: un ingreso por especie con sus trozas."
+                    >
+                      <CtpGuiaSerforTrozas key={serforGtf.numeroRegistro} gtf={serforGtf} reparto={reparto} />
+                    </Seccion>
+
+                    {/* Lo que la guía NO trae y el libro sí necesita: cuándo entró
+                        al patio y el código con el que este centro marca la
+                        madera. Son datos del CTP, no del documento — por eso se
+                        piden igual. */}
+                    <Seccion
+                      numero={4}
+                      title="Datos del ingreso al CTP"
+                      hint="Lo que la guía no trae: cuándo entró la madera al patio, el código con el que este centro la marca y lo que costó. Además, si el titular ya está en tu directorio."
+                    >
+                      <div className="min-w-0 sm:col-span-12">
+                        <p className="mb-1 text-sm font-medium text-[var(--text-primary)]">Proveedor</p>
+                        <CtpProveedorEnDirectorio
+                          nombre={serforGtf.titular ?? data.providerName}
+                          documento={docDelTitularSerfor}
+                          partes={directorio.porRol("proveedor")}
+                          onEnlazada={(p) => { parteDelTitularRef.current = p?.id ?? null; }}
+                          onAgregar={async () => {
+                            const doc = docDelTitularSerfor ?? "";
+                            const parte = await directorio.guardarParte({
+                              roles: ["proveedor"],
+                              nombre: (serforGtf.titular ?? data.providerName).trim(),
+                              ...(doc.length === 11 ? { docTipo: "RUC" as const, docNumero: doc } : doc.length === 8 ? { docTipo: "DNI" as const, docNumero: doc } : {}),
+                              tituloHabilitante: data.originCode.trim() || undefined,
+                            });
+                            partesUsadas.current.add(parte.id);
+                          }}
+                        />
+                      </div>
+                      <Field span={3} label="Fecha de ingreso al CTP" required casillero={2}>
+                        <input
+                          type="date"
+                          value={data.entryDate}
+                          onChange={(e) => update("entryDate", e.target.value)}
+                          required
+                          className={I}
+                        />
+                      </Field>
+                      <Field span={6} label="Código que asigna el CTP" casillero={10} hint="El que le pones a la troza o al paquete">
+                        <input
+                          type="text"
+                          value={data.ctpProductCode}
+                          onChange={(e) => update("ctpProductCode", e.target.value)}
+                          placeholder="T-0142 / PQ-08"
+                          className={`${I} font-mono`}
+                        />
+                      </Field>
+                      <Field span={3} label="Humedad (%)">
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          max="100"
+                          value={data.humidityPct}
+                          onChange={(e) => update("humidityPct", e.target.value)}
+                          placeholder="22"
+                          className={I}
+                        />
+                      </Field>
+                      <CtpPrecioDeLaMadera
+                        precio={precio}
+                        onCambio={setPrecio}
+                        lineas={reparto?.ok ? reparto.ingresos.map((l) => ({ etiqueta: l.especieComun, m3: l.volumenM3 })) : []}
+                      />
+                      <Field span={12} label="Observaciones del ingreso" casillero={13}>
+                        <textarea
+                          value={data.notes}
+                          onChange={(e) => update("notes", e.target.value)}
+                          rows={2}
+                          placeholder="Estado de la carga, faltantes, defectos…"
+                          className={`${I} h-auto py-2.5`}
+                        />
+                      </Field>
+                    </Seccion>
+                  </>
+                )}
               </div>
             )}
 
-            <div className={modo === "manual" ? "xl:grid xl:grid-cols-2 xl:items-start xl:gap-x-5" : "hidden"}>
+            <div className={modo === "manual" ? "grid grid-cols-1 gap-4 xl:grid-cols-2" : "hidden"}>
             {/* ─── 1 · GTF ─────────────────────────────────────────── */}
             <Seccion numero={1} title="Guía de Transporte Forestal" estado={estadoSeccion.guia}>
               {/* (3) del formato LO-CTP: casi siempre GTF, pero la madera también
@@ -1988,7 +2441,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
             </div>
 
             {/* ─── 7 · Observaciones ───────────────────────────────── */}
-            <Seccion numero={7} title="Observaciones" estado={estadoSeccion.observaciones} className="xl:col-span-2">
+            <Seccion numero={7} title="Observaciones" estado={estadoSeccion.observaciones}>
               <Field span={6} label="Defectos visibles">
                 <input
                   type="text"
@@ -1999,7 +2452,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                 />
               </Field>
               <Field span={12} label="Fotos del ingreso">
-                <CtpFotosDelIngreso fotos={fotos} onCambio={setFotos} disabled={submitting} />
+                <CtpFotosDelIngreso fotos={fotos} onCambio={setFotos} disabled={submitting} gtf={data.gtfNumber || null} />
               </Field>
               <Field span={6} label="Notas adicionales">
                 <textarea
@@ -2011,81 +2464,20 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                 />
               </Field>
             </Seccion>
+
+            {/* ─── 8 · Costo ───────────────────────────────────────── */}
+            <Seccion
+              numero={8}
+              title="Costo de la madera"
+              hint="Opcional. Lo que pagaste por esta madera, por m³ o por pie tablar: el costo lo calcula y lo guarda el servidor al registrar. Vacío = sin costo."
+            >
+              <CtpPrecioDeLaMadera
+                precio={precio}
+                onCambio={setPrecio}
+                lineas={[{ etiqueta: finalSpeciesName || "La madera", m3: Number(data.volumeM3) || 0 }]}
+              />
+            </Seccion>
             </div>
-
-            {/* La guía, a ANCHO COMPLETO: en media
-                columna la tabla de productos se cortaba y la lista de trozas
-                —lo que un fiscalizador compara pieza por pieza— quedaba
-                ilegible. Sólo existe en el modo SERFOR: en carga manual no hay
-                guía consultada que mostrar.
-
-                Trae partes que el libro NO registra —propietario del producto,
-                destinatario, transportista— pero que el fiscalizador pregunta.
-                Se muestran como vinieron de SERFOR, sin editar: son
-                declaraciones de un documento ajeno. */}
-            {modo === "serfor" && serforGtf && (
-              <Seccion
-                numero={2}
-                title="Datos de la guía · SERFOR"
-                hint="Como los declara el documento — no se editan"
-              >
-                <div className="sm:col-span-12">
-                  <CtpGuiaSerforHoja
-                    gtf={serforGtf}
-                    onImprimir={() => { void printGtfSerfor(serforGtf as never); }}
-                  />
-                </div>
-              </Seccion>
-            )}
-
-            {/* Lo que la guía NO trae y el libro sí necesita: cuándo entró al
-                patio y el código con el que este centro marca la madera. Son
-                datos del CTP, no del documento — por eso se piden igual. */}
-            {modo === "serfor" && serforGtf && (
-              <div className="mt-5">
-                <Seccion numero={3} title="Datos del ingreso al CTP" hint="Lo único que la guía no trae">
-                  <Field span={4} label="Fecha de ingreso al CTP" required casillero={2}>
-                    <input
-                      type="date"
-                      value={data.entryDate}
-                      onChange={(e) => update("entryDate", e.target.value)}
-                      required
-                      className={I}
-                    />
-                  </Field>
-                  <Field span={6} label="Código que asigna el CTP" casillero={10} hint="El que le pones a la troza o al paquete">
-                    <input
-                      type="text"
-                      value={data.ctpProductCode}
-                      onChange={(e) => update("ctpProductCode", e.target.value)}
-                      placeholder="T-0142 / PQ-08"
-                      className={`${I} font-mono`}
-                    />
-                  </Field>
-                  <Field span={4} label="Humedad (%)">
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      max="100"
-                      value={data.humidityPct}
-                      onChange={(e) => update("humidityPct", e.target.value)}
-                      placeholder="22"
-                      className={I}
-                    />
-                  </Field>
-                  <Field span={12} label="Observaciones del ingreso" casillero={13}>
-                    <textarea
-                      value={data.notes}
-                      onChange={(e) => update("notes", e.target.value)}
-                      rows={2}
-                      placeholder="Estado de la carga, faltantes, defectos…"
-                      className={`${I} h-auto py-2.5`}
-                    />
-                  </Field>
-                </Seccion>
-              </div>
-            )}
 
             {/* Lo que este negocio anota de un ingreso y el formato no pregunta
                 (ADR-427). Sólo en el alta a mano: con la guía traída del SNIFFS
@@ -2093,7 +2485,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                 un registro al que colgarle la respuesta. */}
             {modo === "manual" && (
               <CamposPersonalizados
-                className="mt-5"
+                className="mt-4"
                 formulario={FORMULARIO}
                 registroId={null}
                 etiquetaFormulario="ingresos"
@@ -2101,215 +2493,19 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                 onPendientes={setCamposPendientes}
               />
             )}
+            </FormularioClaro>
           </form>
 
-          {/* ─── Panel derecho: el registro tal como va a quedar ─────
-              Tres capas, de arriba abajo: QUÉ es (especie y volumen), SI SE
-              PUEDE guardar (progreso o lo que falta) y DE DÓNDE salió (SERFOR,
-              cuando corresponde). Antes mezclaba las tres y el operador no sabía
-              dónde mirar. */}
-          <aside className="hidden w-[340px] shrink-0 flex-col border-l border-[var(--rule-base)] bg-[var(--surface-canvas)] lg:flex">
-            <div className="flex items-center justify-between gap-2 border-b border-[var(--rule-soft)] px-5 py-3.5">
-              <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                {modo === "serfor" ? "Lo que se va a registrar" : "Vista previa del registro"}
-              </span>
-              {modo === "serfor" && serforGtf && (
-                <span className="shrink-0 rounded-full bg-[var(--data-success-500)]/15 px-2 py-0.5 text-[length:var(--ts-2xs,11px)] font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
-                  SERFOR
-                </span>
-              )}
-            </div>
-
-            <div className="flex-1 overflow-y-auto px-5 py-5">
-              {/* 1 · Qué se registra */}
-              <div className="mb-4">
-                <div className="flex items-start justify-between gap-2">
-                  <CardTitle className="text-lg font-bold leading-tight text-[var(--text-primary)]">
-                    {especiesResumen.titulo}
-                  </CardTitle>
-                  {/* La especie manda en el registro y es lo más grande del
-                      panel: si sigue siendo la que vino puesta, se dice. */}
-                  {data.speciesSlug === INITIAL.speciesSlug && !data.customSpeciesName && (
-                    <span className="mt-1 shrink-0 whitespace-nowrap rounded bg-[var(--surface-sunken)] px-1.5 py-0.5 text-[length:var(--ts-2xs,11px)] font-bold text-[var(--text-tertiary)]">
-                      por defecto
-                    </span>
-                  )}
-                  {finalCites && <CitesPill />}
-                </div>
-                {especiesResumen.sub && (
-                  <p className="mt-0.5 text-xs italic text-[var(--text-tertiary)]">{especiesResumen.sub}</p>
-                )}
-              </div>
-
-              <div className="mb-4 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-                <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                  Volumen total
-                </div>
-                <div className="mt-1 font-mono text-2xl font-bold tabular-nums text-[var(--text-primary)]">
-                  {volumeDisplay ?? fmtM3(0)}
-                  <span className="ml-1 text-sm font-medium text-[var(--text-tertiary)]">m³</span>
-                </div>
-                {autoVolume > 0 && data.productType === "rolliza" && modo === "manual" && (
-                  <div className="mt-1.5 flex items-center gap-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-                    <Sparkles className="h-3 w-3 text-[var(--data-success-600)]" />
-                    Cubicación: {fmtM3(autoVolume)} m³
-                  </div>
-                )}
-                {serforGtf?.volumenTotal != null && (
-                  <div className="mt-1.5 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-                    Declarado en la guía: {Number(serforGtf.volumenTotal).toFixed(3)} m³
-                  </div>
-                )}
-              </div>
-
-              {/* 1b · Los renglones que va a dejar la guía en el libro.
-                  Una GTF de dos especies son DOS ingresos con su volumen cada
-                  uno, no uno con el total (ADR-312): el operador tiene que ver
-                  eso ANTES de registrar, no descubrirlo en el listado. */}
-              {modo === "serfor" && reparto?.ok && reparto.ingresos.length > 0 && (
-                <div className="mb-4 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-                  <div className="mb-2 flex items-baseline justify-between gap-2">
-                    <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                      Entra al libro como
-                    </span>
-                    <span className="shrink-0 text-xs font-bold text-[var(--text-primary)]">
-                      {reparto.ingresos.length} ingreso{reparto.ingresos.length === 1 ? "" : "s"}
-                    </span>
-                  </div>
-                  <ul className="space-y-1.5">
-                    {reparto.ingresos.map((l, i) => (
-                      <li key={i} className="flex items-baseline justify-between gap-2 text-xs">
-                        <span className="min-w-0 truncate text-[var(--text-secondary)]">
-                          {l.especieComun}
-                          {l.trozas.length > 0 && (
-                            <span className="ml-1 text-[var(--text-tertiary)]">· {l.trozas.length} troza{l.trozas.length === 1 ? "" : "s"}</span>
-                          )}
-                        </span>
-                        <span className="shrink-0 font-mono font-bold tabular-nums text-[var(--text-primary)]">
-                          {fmtM3(l.volumenM3)} m³
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* La guía tiene que cuadrar consigo misma. Si la suma de sus
-                  productos no da el total que declara, o si una troza no
-                  pertenece a ninguna especie listada, se avisa ACÁ —antes de
-                  registrar— sin corregir ninguno de los dos: manda el documento. */}
-              {modo === "serfor" && reparto?.ok && reparto.avisos.length > 0 && (
-                <div className="mb-4 rounded-lg border border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] p-3 dark:bg-[var(--data-warning-500)]/10">
-                  <p className="mb-1.5 flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-                    <AlertTriangle className="h-3.5 w-3.5" /> La guía no cuadra
-                  </p>
-                  <ul className="space-y-1">
-                    {reparto.avisos.map((a, i) => (
-                      <li key={i} className="text-xs leading-snug text-[var(--text-secondary)]">{a}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {modo === "serfor" && reparto && !reparto.ok && (
-                <div className="mb-4 rounded-lg border border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/10 p-3">
-                  <p className="mb-1 flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
-                    <AlertTriangle className="h-3.5 w-3.5" /> No se puede registrar sola
-                  </p>
-                  <p className="text-xs leading-snug text-[var(--text-secondary)]">{reparto.motivo}</p>
-                </div>
-              )}
-
-              {/* 2 · Si se puede guardar */}
-              <div className="mb-5">
-                {isValid ? (
-                  <div className="flex items-center gap-2 rounded-lg bg-[var(--data-success-50)] px-3 py-2.5 text-sm font-medium text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/12 dark:text-[var(--data-success-500)]">
-                    <Check className="h-4 w-4 shrink-0" />
-                    Listo para registrar
-                  </div>
-                ) : (
-                  <div className="rounded-lg border border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] p-3 dark:bg-[var(--data-warning-500)]/10">
-                    <p className="mb-2 flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-                      <AlertTriangle className="h-3.5 w-3.5" /> Falta completar
-                    </p>
-                    <ul className="space-y-1">
-                      {missing.map((m) => (
-                        <li key={m} className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
-                          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--data-warning-500)]" />
-                          {m}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-
-              {/* 3 · El registro, campo por campo */}
-              <dl className="space-y-2.5">
-                <SummaryRow label="Documento" value={`${data.docType || "GTF"} ${data.gtfNumber.trim()}`.trim() || "—"} mono />
-                <SummaryRow label="Producto" value={productLabel(data.productType)} porDefecto={data.productType === INITIAL.productType} />
-                <SummaryRow label="Piezas" value={data.pieces ? Number(data.pieces).toLocaleString("es-PE") : "—"} />
-                <SummaryRow
-                  label="Ingreso al CTP"
-                  value={
-                    data.entryDate
-                      ? new Date(`${data.entryDate}T00:00:00.000Z`).toLocaleDateString("es-PE", {
-                          day: "2-digit", month: "short", year: "numeric", timeZone: "UTC",
-                        })
-                      : "—"
-                  }
-                />
-                <SummaryRow label="Titular" value={data.providerName.trim() || "—"} />
-                <SummaryRow
-                  label="Origen"
-                  value={`${originLabel(data.originType)}${data.originRegion && data.originRegion !== "Otra" ? ` · ${data.originRegion}` : ""}${data.originDistrict ? ` · ${data.originDistrict}` : ""}`}
-                  porDefecto={
-                    data.originType === INITIAL.originType &&
-                    data.originRegion === INITIAL.originRegion &&
-                    !data.originDistrict
-                  }
-                />
-                {data.humidityPct && <SummaryRow label="Humedad" value={`${data.humidityPct}%`} />}
-              </dl>
-
-              {/* 4 · De dónde salió (sólo si vino de SERFOR) */}
-              {modo === "serfor" && serforGtf && (
-                <div className="mt-5 rounded-xl border border-[var(--data-success-500)]/30 bg-[var(--data-success-50)] p-3.5 dark:bg-[var(--data-success-500)]/10">
-                  <div className="mb-2 flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
-                    <ShieldCheck className="h-3.5 w-3.5" /> Verificado en SERFOR
-                  </div>
-                  <dl className="space-y-2">
-                    <SummaryRow label="N° de registro" value={serforGtf.numeroRegistro} mono />
-                    <SummaryRow label="Estado" value={serforGtf.estado ?? "—"} />
-                    <SummaryRow
-                      label="Vigencia"
-                      value={[serforGtf.fechaExpedicion, serforGtf.fechaVencimiento].filter(Boolean).join(" → ") || "—"}
-                    />
-                    <SummaryRow label="Destinatario" value={serforGtf.destinatario ?? "—"} />
-                    {(serforGtf.trozas?.length ?? 0) > 0 && (
-                      <SummaryRow label="Trozas" value={`${serforGtf.trozas?.length} en la lista`} />
-                    )}
-                  </dl>
-                  {(serforGtf.productos?.length ?? 0) > 1 && (
-                    <ul className="mt-2.5 space-y-1 border-t border-[var(--data-success-500)]/20 pt-2.5">
-                      {(serforGtf.productos ?? []).map((pr, i) => (
-                        <li key={i} className="flex items-baseline justify-between gap-2 text-xs">
-                          <span className="truncate text-[var(--text-secondary)]">{pr.comun ?? pr.cientifico ?? "—"}</span>
-                          <span className="shrink-0 font-mono tabular-nums text-[var(--text-primary)]">
-                            {pr.volumen != null ? Number(pr.volumen).toFixed(3) : "—"} m³
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              )}
-            </div>
-          </aside>
         </div>
 
       </div>
-      <ActionToasts toasts={toasts} onDismiss={dismissToast} />
+      {/* Los avisos viven DENTRO del modal (su `fixed` se ancla a la caja, que
+          está trasladada), así que «abajo» era encima del pie: el de «Guía
+          cargada desde SERFOR» tapaba «Registrar ingreso». Se suben por
+          encima del pie con la variable que la pila ya respeta. */}
+      <div style={{ "--pila-toasts-bottom": "6rem" } as React.CSSProperties}>
+        <ActionToasts toasts={toasts} onDismiss={dismissToast} />
+      </div>
       {importarTrozas && (
         <CtpTrozasImportModal
           especie={finalSpeciesName}
@@ -2330,33 +2526,6 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
 
 
 
-
-/**
- * Una fila del resumen. `porDefecto` marca los valores que el operador NO
- * confirmó: el formulario arranca con especie «Tornillo», producto «Rolliza» y
- * región «Ucayali» —buenos defaults para esta planta, ahorran clicks— pero el
- * panel los mostraba igual que un dato tipeado, bajo el título «lo que se va a
- * registrar». Cargando rápido, la especie equivocada entraba al libro con el
- * panel confirmándola en grande. El dato sigue ahí; lo que cambia es que se
- * distingue a simple vista lo revisado de lo que vino puesto.
- */
-function SummaryRow({ label, value, mono, porDefecto }: { label: string; value: string; mono?: boolean; porDefecto?: boolean }) {
-  return (
-    <div className="flex items-baseline justify-between gap-3">
-      <dt className="shrink-0 text-xs text-[var(--text-tertiary)]">{label}</dt>
-      <dd
-        className={`min-w-0 truncate text-right text-sm font-medium ${porDefecto ? "text-[var(--text-tertiary)]" : "text-[var(--text-primary)]"} ${mono ? "font-mono tabular-nums" : ""}`}
-      >
-        {value}
-        {porDefecto && (
-          <span className="ml-1.5 whitespace-nowrap rounded bg-[var(--surface-sunken)] px-1.5 py-0.5 text-[length:var(--ts-2xs,11px)] font-bold text-[var(--text-tertiary)]">
-            por defecto
-          </span>
-        )}
-      </dd>
-    </div>
-  );
-}
 
 function CitesPill() {
   return (

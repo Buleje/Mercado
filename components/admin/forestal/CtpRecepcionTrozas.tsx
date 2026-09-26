@@ -12,12 +12,13 @@
  * corta la señal a la mitad.
  */
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { CardTitle, DataTable } from "@buleje/design-system";
 import { AlertTriangle, CalendarClock, Camera, Check, Hash, Loader2, PackageCheck, X } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { URL_TROZAS_RECEPCION, escribirDelPatio } from "@/lib/forestal/patio-cola";
 import { guardarFotosDeGuia } from "@/lib/forestal/fotos-guia";
+import { normalizarFotos, type FotoCarga } from "@/lib/forestal/fotos-carga";
 import {
   avisosRecepcion,
   balanceRecepcion,
@@ -34,6 +35,7 @@ import {
 import CtpRecepcionTrozaCard from "./CtpRecepcionTrozaCard";
 import CtpFotosDelIngreso from "./CtpFotosDelIngreso";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import EscanerTrozas from "./EscanerTrozas";
 
 export interface TrozaEditable extends TrozaRecepcion {
   especieComun?: string | null;
@@ -76,18 +78,34 @@ export default function CtpRecepcionTrozas({
    * roto que guarde en el vacío.
    */
   gtfNumber?: string | null;
-  fotosIniciales?: string[];
+  fotosIniciales?: readonly (FotoCarga | string)[];
   /** Avisa al padre que refresque el ingreso (la ficha, el detalle) tras guardar. */
-  onFotosGuardadas?: (fotos: string[]) => void;
+  onFotosGuardadas?: (fotos: FotoCarga[]) => void;
 }) {
-  const [fotos, setFotos] = useState<string[]>(fotosIniciales);
+  const [fotos, setFotos] = useState<FotoCarga[]>(() => normalizarFotos(fotosIniciales));
   const [guardandoFotos, setGuardandoFotos] = useState(false);
   const [errorFotos, setErrorFotos] = useState<string | null>(null);
+  const fotosRef = useRef<HTMLDivElement>(null);
+  /**
+   * «Sacar ahora» desde el pie: lleva a la sección de fotos y abre la cámara
+   * (en el celular) o el explorador. Se hace clic en el botón VISIBLE de la
+   * pieza —«Tomar foto» sólo existe a menos de `sm`— dentro del mismo gesto,
+   * que es lo que el navegador exige para abrir el selector de archivos.
+   */
+  const sacarFotoAhora = () => {
+    const caja = fotosRef.current;
+    if (!caja) return;
+    caja.scrollIntoView({ behavior: "smooth", block: "center" });
+    const boton = [...caja.querySelectorAll<HTMLButtonElement>("button:not([disabled])")].find(
+      (b) => b.offsetParent !== null,
+    );
+    boton?.click();
+  };
 
-  const cambiarFotos = async (nuevas: string[]) => {
+  const cambiarFotos = async (nuevas: FotoCarga[]) => {
     if (!gtfNumber) return;
     const previas = fotos;
-    setFotos(nuevas); // optimista: la foto ya subió a `/api/upload`, sólo falta anotarla.
+    setFotos(nuevas); // optimista: la foto ya subió al almacén, sólo falta anotarla.
     setGuardandoFotos(true);
     setErrorFotos(null);
     try {
@@ -229,19 +247,33 @@ export default function CtpRecepcionTrozas({
           en el celular "Tomar foto" abre la cámara directo. Ante el
           fiscalizador, esta foto es lo que sostiene lo que dice el papel. */}
       {gtfNumber && (
-        <div className="border-b border-[var(--rule-soft)] px-4 py-3">
+        <div ref={fotosRef} className="border-b border-[var(--rule-soft)] px-4 py-3">
           <div className="mb-1.5 flex items-center gap-2">
             <Camera className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden />
             <CardTitle as="h4" className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-secondary)]">
               Fotos de la guía
             </CardTitle>
           </div>
-          <CtpFotosDelIngreso fotos={fotos} onCambio={(u) => void cambiarFotos(u)} disabled={guardandoFotos} />
+          <CtpFotosDelIngreso fotos={fotos} onCambio={(u) => void cambiarFotos(u)} disabled={guardandoFotos} gtf={gtfNumber} />
           {errorFotos && (
             <p className="mt-1.5 text-xs text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">{errorFotos}</p>
           )}
         </div>
       )}
+
+      {/* Escanear = «llegó» (2026-09-26): se escanea cada pieza que baja del
+          camión. Una marcada como NO llegada vuelve a llegada; el contador
+          «N de M» dice cuántas faltan por pasar. */}
+      <div className="border-b border-[var(--rule-soft)] px-4 py-3">
+        <EscanerTrozas
+          trozas={conCambios}
+          total={madres.length}
+          accion="marcada como llegada"
+          /* Sólo se anota si estaba marcada como NO llegada: una que ya
+             figuraba recibida no es un cambio que guardar. */
+          onTroza={(t) => { if (t.noRecepcionada) tocar(t.id, { noRecepcionada: false }); }}
+        />
+      </div>
 
       {/* Las mismas tres acciones del alta, sobre TODAS las piezas: recibir una
           guía de sesenta y corregirla de a una son el mismo trabajo. */}
@@ -411,6 +443,25 @@ export default function CtpRecepcionTrozas({
         <span className="mr-auto text-sm text-[var(--text-tertiary)]">
           {cambios.length === 0 ? "Sin cambios todavía." : `${cambios.length} troza(s) con cambios sin guardar.`}
         </span>
+        {/* Aviso suave, NO bloquea: una recepción sin foto se guarda igual,
+            pero ante SERFOR la foto es lo que sostiene lo que se anotó. */}
+        {gtfNumber && fotos.length === 0 && (
+          <span
+            role="status"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--data-warning-500)]/40 bg-[var(--data-warning-500)]/10 px-3 py-1.5 text-sm font-semibold text-[var(--data-warning-ink)]"
+          >
+            <Camera className="h-4 w-4 shrink-0" aria-hidden />
+            Sin foto de la carga ·
+            <button
+              type="button"
+              onClick={sacarFotoAhora}
+              disabled={guardandoFotos}
+              className="font-bold underline underline-offset-2 hover:no-underline disabled:opacity-50"
+            >
+              Sacar ahora
+            </button>
+          </span>
+        )}
         <button
           type="button"
           onClick={onCerrar}

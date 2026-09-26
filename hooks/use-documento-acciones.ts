@@ -12,6 +12,7 @@
 
 import { useCallback, useState, type RefObject } from "react";
 import { documentoAPdf, nombreArchivo } from "@/lib/forestal/ctp-documento-pdf";
+import { esperarImagenes } from "@/lib/forestal/ctp-documento-print";
 import { archivarEnDrive, carpetaAnidada } from "@/lib/forestal/ctp-archivar-documento";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
@@ -78,6 +79,9 @@ export function useDocumentoAcciones({
   const armarPdf = useCallback(async () => {
     const d = marco.current?.contentDocument;
     if (!d || !doc) throw new Error("El documento todavía no terminó de dibujarse.");
+    // Las fotos de la carga (ADR-434) pueden seguir llegando: sin esperar, el
+    // PDF las fotografía como recuadros vacíos.
+    await esperarImagenes(d);
     return documentoAPdf(d, { pieCorrido: doc.pieCorrido });
   }, [doc]);
 

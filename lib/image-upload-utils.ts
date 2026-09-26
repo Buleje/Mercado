@@ -64,8 +64,13 @@ const COMPRESS_THRESHOLD_BYTES = 1.5 * 1024 * 1024;
 const COMPRESS_MAX_DIM = 1600;
 const COMPRESS_QUALITY = 0.82;
 
-/** Lo único que `/api/upload` acepta (`ALLOWED_TYPES`): lo demás hay que convertirlo o se rechaza. */
-const TIPOS_QUE_ACEPTA_EL_SERVIDOR = new Set(["image/jpeg", "image/png", "image/webp"]);
+/**
+ * Lo único que aceptan `/api/upload` y `/api/admin/forestal/fotos`: lo demás
+ * hay que convertirlo o se rechaza. Exportado para que un consumidor pueda
+ * avisar ANTES de subir si el archivo no va a poder convertirse (HEIC en un
+ * navegador que no lo decodifica) en vez de dejar que el servidor lo rechace.
+ */
+export const TIPOS_QUE_ACEPTA_EL_SERVIDOR = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 /**
  * Comprime una imagen client-side si supera 1.5MB. Redimensiona a max 1600px
@@ -92,8 +97,19 @@ export async function compressIfLarge(file: File): Promise<File> {
   if (typeof window === "undefined" || typeof document === "undefined") return file;
 
   try {
-    // El navegador no decodifica ese formato (p. ej. HEIC): se sube el original sin comprimir.
-    const bitmap = await createImageBitmap(file).catch(descartarEsperado);
+    /* `resizeWidth` le pide al navegador que achique YA en el decode, en vez de
+       materializar los 12 MP completos (~48 MB en RAM) para recién después
+       dibujarlos achicados en el canvas — la diferencia entre que un celular
+       con poca memoria aguante la foto o se quede pegado. Si el navegador no
+       soporta la opción o no decodifica el formato (p. ej. HEIC), cae al
+       decode normal; si tampoco eso funciona, se sube el original sin comprimir. */
+    const bitmap = await createImageBitmap(file, {
+      resizeWidth: COMPRESS_MAX_DIM,
+      resizeQuality: "high",
+      imageOrientation: "from-image",
+    })
+      .catch(() => createImageBitmap(file))
+      .catch(descartarEsperado);
     if (!bitmap) return file;
     const ratio = Math.min(1, COMPRESS_MAX_DIM / Math.max(bitmap.width, bitmap.height));
     const w = Math.round(bitmap.width * ratio);

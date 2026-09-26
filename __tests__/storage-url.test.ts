@@ -59,31 +59,42 @@ describe("prefijoDeFotosDelTenant", () => {
   });
 });
 
+/* Desde 2026-09-26 las fotos NUEVAS de la guía sólo entran privadas
+   (`priv:<tenant>/forestal-carga/…`): una https —aunque sea del bucket del
+   propio tenant— se rechaza. Medido ese día: 0 https guardadas en toda la base. */
+const privada = (tenantId = TENANT, archivo = "3f2a9c1e-0000-4000-8000-000000000001.webp") =>
+  `priv:${tenantId}/forestal-carga/${archivo}`;
+
 describe("fotosDelTenantSchema", () => {
-  it("acepta un array con sólo fotos propias", () => {
-    const r = fotosDelTenantSchema(TENANT).safeParse([urlPropia(), urlPropia()]);
+  it("acepta un array con sólo fotos privadas propias", () => {
+    const r = fotosDelTenantSchema(TENANT).safeParse([privada(), { url: privada(TENANT, "b.webp") }]);
     expect(r.success).toBe(true);
   });
 
+  it("rechaza una https aunque sea del bucket público del propio tenant", () => {
+    expect(fotosDelTenantSchema(TENANT).safeParse([urlPropia()]).success).toBe(false);
+  });
+
   it("rechaza si UNA sola foto del array no es propia", () => {
-    const r = fotosDelTenantSchema(TENANT).safeParse([urlPropia(), "javascript:alert(1)"]);
+    const r = fotosDelTenantSchema(TENANT).safeParse([privada(), "javascript:alert(1)"]);
     expect(r.success).toBe(false);
   });
 
   it("respeta el tope (10 por defecto)", () => {
-    const r = fotosDelTenantSchema(TENANT).safeParse(Array.from({ length: 11 }, () => urlPropia()));
+    const r = fotosDelTenantSchema(TENANT).safeParse(Array.from({ length: 11 }, (_, i) => privada(TENANT, `f${i}.webp`)));
     expect(r.success).toBe(false);
   });
 });
 
 describe("exigirFotosPropias", () => {
-  it("no tira con fotos propias o lista vacía/null", () => {
-    expect(() => exigirFotosPropias(TENANT, [urlPropia()])).not.toThrow();
+  it("no tira con fotos privadas propias o lista vacía/null", () => {
+    expect(() => exigirFotosPropias(TENANT, [privada()])).not.toThrow();
     expect(() => exigirFotosPropias(TENANT, [])).not.toThrow();
     expect(() => exigirFotosPropias(TENANT, null)).not.toThrow();
   });
 
-  it("tira si alguna foto no es de este tenant", () => {
-    expect(() => exigirFotosPropias(TENANT, [urlPropia(OTRO_TENANT)])).toThrow();
+  it("tira si alguna foto no es de este tenant, o es una https", () => {
+    expect(() => exigirFotosPropias(TENANT, [privada(OTRO_TENANT)])).toThrow();
+    expect(() => exigirFotosPropias(TENANT, [urlPropia()])).toThrow();
   });
 });

@@ -16,6 +16,7 @@
  * `/api/upload`, con el `tenantId` de quien hace el pedido.
  */
 import { z } from "zod";
+import { esPathDeCargaDelTenant, normalizarFoto, pathDeFoto, type FotoCarga } from "@/lib/forestal/fotos-carga";
 
 const STORAGE_BUCKET = "media";
 
@@ -50,13 +51,43 @@ export function esUrlDeFotoPropia(url: string, tenantId: string): boolean {
   return parsed.protocol === "https:" && url.startsWith(prefijo);
 }
 
-/** Zod para un array de fotos: sólo URLs de ESTE tenant, en nuestro storage. */
+/**
+ * ¿Esta foto se puede ACEPTAR para este tenant? Sólo la privada
+ * `priv:<tenant>/forestal-carga/<archivo>` de su carpeta.
+ *
+ * Desde 2026-09-26 una `https://` (el bucket público `media` de antes) ya no
+ * entra, ni siquiera la del propio tenant: medido ese día, 0 fotos https en
+ * `WoodEntry.photos` de TODOS los tenants — no hay legado que conservar, y
+ * una URL pública no se puede firmar ni esconder. Leerlas sigue funcionando
+ * (`normalizarFoto`), aceptarlas no.
+ */
+export function esFotoPropia(foto: FotoCarga | string, tenantId: string): boolean {
+  const path = pathDeFoto(foto);
+  return path != null && esPathDeCargaDelTenant(path, tenantId);
+}
+
+const MENSAJE_AJENA = "Sólo se aceptan fotos subidas desde este panel (almacén privado del negocio).";
+
+/**
+ * Zod para un array de fotos: objetos `FotoCarga` (o el string de la URL) con
+ * `url` privada de ESTE tenant; SIEMPRE devuelve objetos, con su `firma`.
+ * El Zod no verifica la firma ni si la foto ya estaba en la guía: eso lo decide
+ * `WoodEntriesDB` con `resolverFotosEntrantes` (necesita la base y el secreto).
+ */
 export function fotosDelTenantSchema(tenantId: string, max = 10) {
+  const objeto = z.looseObject({ url: z.string().max(500) });
   return z
     .array(
-      z.string().max(500).refine((u) => esUrlDeFotoPropia(u, tenantId), {
-        message: "Sólo se aceptan fotos subidas desde este panel (storage propio del tenant).",
-      }),
+      z
+        .union([z.string().max(500), objeto])
+        .transform((v, ctx): FotoCarga => {
+          const f = normalizarFoto(v);
+          if (!f || !esFotoPropia(f, tenantId)) {
+            ctx.addIssue({ code: "custom", message: MENSAJE_AJENA });
+            return z.NEVER;
+          }
+          return f;
+        }),
     )
     .max(max);
 }
@@ -67,10 +98,11 @@ export function fotosDelTenantSchema(tenantId: string, max = 10) {
  * HTTP. Tira `Error` genérico (no `CtpInvariantError`, que es forestal-only);
  * el llamador lo envuelve con el tipo de error que le sirva.
  */
-export function exigirFotosPropias(tenantId: string, fotos: readonly string[] | null | undefined): void {
-  for (const url of fotos ?? []) {
-    if (!esUrlDeFotoPropia(url, tenantId)) {
-      throw new Error(`Esa foto no viene del storage de este negocio: ${url.slice(0, 120)}`);
+export function exigirFotosPropias(tenantId: string, fotos: readonly (FotoCarga | string)[] | null | undefined): void {
+  for (const f of fotos ?? []) {
+    if (!esFotoPropia(f, tenantId)) {
+      const url = typeof f === "string" ? f : f?.url ?? "";
+      throw new Error(`Esa foto no viene del storage de este negocio: ${String(url).slice(0, 120)}`);
     }
   }
 }

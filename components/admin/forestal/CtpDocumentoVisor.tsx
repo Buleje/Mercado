@@ -29,9 +29,13 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import {
+  ControlesDeVentana,
+  TiradorDeVentana,
+} from "@/components/admin/shared/modal-controles-ventana";
 import {
   Check,
-  Code,
   Download,
   FileText,
   FolderPlus,
@@ -43,7 +47,7 @@ import {
   Printer,
   X,
 } from "@buleje/design-system/icons";
-import { AIRE_HOJA_MM, ANCHO_HOJA_MM, marcarCortes, paginar } from "@/lib/forestal/ctp-documento-print";
+import { AIRE_HOJA_MM, ANCHO_HOJA_MM, esperarImagenes, marcarCortes, paginar } from "@/lib/forestal/ctp-documento-print";
 import { SendWhatsAppModal } from "@/components/admin/documentos/SendWhatsAppModal";
 import { useDocumentoAcciones, type MetaArchivado } from "@/hooks/use-documento-acciones";
 
@@ -95,6 +99,12 @@ export default function CtpDocumentoVisor({
      de abajo y Escape no cierra (hook medido en el módulo, 2026-09-09). */
   const cajaRef = useRef<HTMLDivElement>(null);
   useModalAccesible(cajaRef, { onCerrar: onClose });
+  /** Ventana: se mueve, se achica y se fija (ADR-420). */
+  const ventana = useVentanaDeModal(true, {
+    ref: cajaRef,
+    aplicarTranslate: true,
+    claveMemoria: "ctp-documento-visor",
+  });
   const marco = useRef<HTMLIFrameElement>(null);
   const mesa = useRef<HTMLDivElement>(null);
   const doc = documentos[activo] ?? documentos[0];
@@ -112,7 +122,6 @@ export default function CtpDocumentoVisor({
     wasap,
     preparandoWasap,
     setWasap,
-    descargarHtml,
     descargarPdf,
     archivar,
     enviarPorWhatsapp,
@@ -135,7 +144,10 @@ export default function CtpDocumentoVisor({
    */
   const medir = useCallback(() => {
     const d = marco.current?.contentDocument;
-    if (!d) return;
+    // Mientras el iframe cambia de hoja, el documento nuevo existe pero todavía
+    // sin `<html>`: la segunda pasada (220 ms) caía justo ahí cuando la hoja
+    // trae fotos que tardan en llegar, y reventaba con «scrollHeight of null».
+    if (!d?.documentElement || !d.body) return;
     const total = Math.ceil(d.documentElement.scrollHeight);
     if (total > 0) setAlto(total);
     const { hojas, cortes } = paginar(d);
@@ -155,11 +167,13 @@ export default function CtpDocumentoVisor({
   const escala = zoom ?? Math.min(1, Math.max(0.35, (anchoMesa - 8) / ANCHO_DOC));
   const desfase = Math.max(0, (anchoMesa - ANCHO_DOC * escala) / 2);
 
-  const imprimir = useCallback(() => {
+  const imprimir = useCallback(async () => {
     // Se imprime el iframe, no la página: lo que se ve es exactamente lo que
     // sale, sin arrastrar el panel de alrededor.
     const w = marco.current?.contentWindow;
     if (!w) return;
+    // Una foto de la carga que todavía no llegó saldría en blanco en el papel.
+    await esperarImagenes(w.document);
     w.focus();
     w.print();
   }, []);
@@ -171,7 +185,7 @@ export default function CtpDocumentoVisor({
       if (e.key === "Escape") return onClose();
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "p") {
         e.preventDefault();
-        imprimir();
+        void imprimir();
       }
     };
     window.addEventListener("keydown", h);
@@ -190,15 +204,22 @@ export default function CtpDocumentoVisor({
     "grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]";
 
   return (
-    <div ref={cajaRef} tabIndex={-1}
+    <div
+      // El velo es decorativo: Escape ya cierra desde la ventana (efecto de
+      // arriba) y el diálogo es la caja de adentro.
+      role="presentation"
       className="fixed inset-0 z-modal-3 flex items-center justify-center bg-black/70 p-2 sm:p-6"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-      role="dialog"
-      aria-modal="true"
-      aria-label={doc?.nombre ?? "Documento"}
+      onClick={(e) => e.target === e.currentTarget && !ventana.fijado && onClose()}
     >
-      <div className="flex h-[min(94vh,62rem)] w-full max-w-[72rem] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]">
-        <header className="flex items-center gap-3 border-b-2 border-[var(--rule-base)] px-5 py-4 sm:px-6">
+      <div
+        ref={cajaRef}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-label={doc?.nombre ?? "Documento"}
+        className="relative flex h-[min(94vh,62rem)] w-full max-w-[72rem] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
+      >
+        <header {...ventana.asaProps} className="flex items-center gap-3 border-b-2 border-[var(--rule-base)] px-5 py-4 sm:px-6">
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
             <FileText className="h-5 w-5" aria-hidden />
           </span>
@@ -208,6 +229,7 @@ export default function CtpDocumentoVisor({
               Vista previa en tamaño A4 · {hojas} hoja{hojas === 1 ? "" : "s"} · revísalo antes de imprimir
             </p>
           </div>
+          <ControlesDeVentana ventana={ventana} />
           <button type="button" onClick={onClose} aria-label="Cerrar" className={icono}>
             <X className="h-5 w-5" aria-hidden />
           </button>
@@ -306,30 +328,28 @@ export default function CtpDocumentoVisor({
                 disabled={preparandoWasap}
                 aria-label="Enviar por WhatsApp"
                 title="Manda el PDF por WhatsApp (lo guarda en el expediente si hace falta)"
-                className={`${icono} disabled:opacity-60`}
+                className={`${btn} disabled:opacity-60`}
               >
                 {preparandoWasap ? (
                   <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
                 ) : (
                   <MessageCircle className="h-4 w-4" aria-hidden />
                 )}
+                <span className="max-sm:sr-only">WhatsApp</span>
               </button>
             )}
+            {/* «Descargar HTML» (ícono «<>») se sacó el 2026-09-25: el PDF ya
+                baja el mismo documento, y un archivo HTML suelto no le sirve a
+                nadie en el negocio — era una opción de programador. La función
+                sigue en `useDocumentoAcciones` por si se necesita. */}
             <button
               type="button"
-              onClick={descargarHtml}
-              aria-label="Descargar el documento HTML"
-              title="Descargar el HTML (se reimprime tal cual desde cualquier navegador)"
-              className={icono}
-            >
-              <Code className="h-4 w-4" aria-hidden />
-            </button>
-            <button
-              type="button"
-              onClick={imprimir}
+              onClick={() => void imprimir()}
+              aria-label="Imprimir"
               className="inline-flex h-11 items-center gap-2 rounded-2xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-5 text-base font-semibold text-white transition hover:brightness-110"
             >
-              <Printer className="h-4 w-4" aria-hidden /> <span className="max-sm:sr-only">Imprimir</span> PDF
+              {/* Decía «Imprimir PDF»: imprime; el PDF tiene su propio botón. */}
+              <Printer className="h-4 w-4" aria-hidden /> <span className="max-sm:sr-only">Imprimir</span>
             </button>
           </div>
         </div>
@@ -380,11 +400,13 @@ export default function CtpDocumentoVisor({
             </span>
           ) : (
             <>
-              «Descargar PDF» baja el archivo tal cual se ve, con sus {hojas} hoja{hojas === 1 ? "" : "s"}.
-              <span className="max-sm:hidden"> La línea tenue sobre la hoja marca dónde corta cada página A4.</span>
+              Así sale al imprimir y en el PDF: {hojas} hoja{hojas === 1 ? "" : "s"} A4.
+              <span className="max-sm:hidden"> La línea tenue marca dónde corta cada página.</span>
             </>
           )}
         </p>
+
+        <TiradorDeVentana ventana={ventana} />
       </div>
 
       {/* El modal del Drive vive en z-[60] y el visor en z-[70]: sin este
