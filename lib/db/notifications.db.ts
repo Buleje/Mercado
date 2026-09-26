@@ -97,6 +97,32 @@ export const NotificationLogsDB = {
     for (const f of filas) if (!visto.has(f.type)) visto.set(f.type, f);
     return [...visto.values()].map(mapNotificationLog);
   },
+  /**
+   * Los últimos N envíos de una familia («reporte_diario:<id>:»), del más nuevo
+   * al más viejo: el historial de UN reporte diario (ADR-439), con cada
+   * destinatario en su renglón — `ultimosPorTipo` se queda con uno por canal.
+   */
+  /**
+   * Cuántos renglones de un tipo (por prefijo) hay desde un instante: los topes
+   * diarios de los reportes (ADR-439) se cuentan acá, en la base, y no en
+   * memoria del proceso — en Vercel cada invocación puede ser otra instancia.
+   */
+  async contarDesde(tenantId: string, prefijo: string, desde: Date): Promise<number> {
+    if (!tenantId) throw new Error("tenantId is required");
+    return prisma.notificationLog.count({
+      where: { tenantId, type: { startsWith: prefijo }, createdAt: { gte: desde } },
+    });
+  },
+
+  async recientesPorPrefijo(tenantId: string, prefijo: string, limite = 12): Promise<DbNotificationLog[]> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const filas = await prisma.notificationLog.findMany({
+      where: { tenantId, type: { startsWith: prefijo } },
+      orderBy: { createdAt: "desc" },
+      take: Math.min(Math.max(limite, 1), 50),
+    });
+    return filas.map(mapNotificationLog);
+  },
 };
 
 // ── Admin Chat DB ─────────────────────────────────────────────────────────────

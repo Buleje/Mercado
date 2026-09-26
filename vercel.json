@@ -39,6 +39,9 @@
     },
     "app/api/cron/vendor-reverify/route.ts": {
       "maxDuration": 300
+    },
+    "app/api/cron/reportes-diarios/**": {
+      "maxDuration": 300
     }
   },
   "git": {
@@ -407,6 +410,22 @@
     {
       "path": "/api/cron/ia-salud",
       "schedule": "0 11 * * *"
+    },
+    {
+      "path": "/api/cron/reportes-diarios/0700",
+      "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/reportes-diarios/1300",
+      "schedule": "0 18 * * *"
+    },
+    {
+      "path": "/api/cron/reportes-diarios/1800",
+      "schedule": "0 23 * * *"
+    },
+    {
+      "path": "/api/cron/reportes-diarios/2100",
+      "schedule": "0 2 * * *"
     }
   ]
 }

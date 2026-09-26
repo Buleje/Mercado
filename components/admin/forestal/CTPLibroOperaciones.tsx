@@ -23,9 +23,11 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import {
   Boxes,
   Building2,
+  CalendarClock,
   BarChart3,
   ClipboardList,
   Coins,
@@ -65,6 +67,7 @@ import { abrirDossierFiscalizacion } from "@/lib/forestal/ctp-dossier-abrir";
 import { resolveCtpPeriod, type CtpPeriodKey } from "@/lib/forestal/ctp-period";
 import { useVistaModulo, type ParamsDeVista } from "@/hooks/use-vista-modulo";
 import { PARAM_CONTRATO, PARAM_SECCION_FICHA } from "./ficha-del-permiso-url";
+import { PARAM_TROZA } from "@/lib/forestal/ctp-troza-etiquetas";
 import CtpPeriodPicker, { type CtpCustomRange } from "./CtpPeriodPicker";
 import CtpIngresosView from "./CtpIngresosView";
 import CtpOperacionSwitcher from "./CtpOperacionSwitcher";
@@ -113,6 +116,9 @@ import {
   type CtpIngresosFiltroRapido,
 } from "./ctp-shared";
 import { CTP_VISTAS } from "@/lib/admin/subvistas-modulos";
+
+/* Reportes diarios por correo/WhatsApp (ADR-439): se baja sólo al abrirlo desde Opciones. */
+const CtpReportesDiariosModal = dynamic(() => import("./CtpReportesDiariosModal"), { ssr: false });
 
 type CtpView =
   | "ingresos"
@@ -264,6 +270,9 @@ const SIN_PERIODO: CtpView[] = [
 
 const PARAMS_DE_VISTA_CTP: ParamsDeVista<CtpView> = {
   contratos: [PARAM_CONTRATO, PARAM_SECCION_FICHA],
+  /* La ficha de una troza (ADR-436): al irse de Trozas, si quedó abierta, se
+     borra — igual que `contrato` en Contratos. */
+  trozas: [PARAM_TROZA],
 };
 
 export default function CTPLibroOperaciones() {
@@ -306,6 +315,7 @@ export default function CTPLibroOperaciones() {
   /** El otro importador: el archivo que devuelve el SNIFFS, no la plantilla. */
   const [showSerforImport, setShowSerforImport] = useState(false);
   const [showVaciar, setShowVaciar] = useState(false);
+  const [showReportes, setShowReportes] = useState(false);
   // Remonta la vista de Ingresos tras importar → re-fetch de la lista.
   const [ingresosKey, setIngresosKey] = useState(0);
   /** Buscador de guías del libro (atajo `b`): "¿qué pasó con esta GTF?". */
@@ -496,6 +506,15 @@ export default function CTPLibroOperaciones() {
         busy: exporting === "interno",
         disabled: exporting !== null,
         onSelect: () => void exportar("interno"),
+      },
+      {
+        /* El libro sale solo a la hora elegida, por correo y/o WhatsApp
+           (Brandon 2026-09-26, ADR-439). */
+        id: "reportes-diarios",
+        label: "Reportes diarios",
+        hint: "Producción, madera que entró, despachos, patio, plata y pendientes — por correo o WhatsApp a tu hora",
+        icon: CalendarClock,
+        onSelect: () => setShowReportes(true),
       },
       {
         /* UN solo importador. Antes había dos —la plantilla propia y el reporte
@@ -749,6 +768,8 @@ export default function CTPLibroOperaciones() {
           onVaciado={() => setIngresosKey((k) => k + 1)}
         />
       )}
+
+      {showReportes && <CtpReportesDiariosModal onClose={() => setShowReportes(false)} />}
 
       {showSerforImport && (
         <CtpSerforImportModal

@@ -180,3 +180,20 @@ export async function sendAvisoPlazosCtp(
       error: { message: err instanceof Error ? err.message : String(err) },
     }));
 }
+
+/**
+ * Reporte diario forestal (ADR-439). El html lo arma `armarReporteForestal`
+ * (ya escapado, sin imágenes externas); acá sólo se manda.
+ *
+ * A diferencia de los demás, SIN clave de Resend no finge éxito: devuelve el
+ * error «no configurado», porque el historial del reporte tiene que decir que
+ * no salió — el `noopClient` devolvía `undefined` y eso se leía como enviado.
+ */
+export async function sendReporteDiario(to: string, asunto: string, html: string): Promise<EmailSendResult> {
+  if (!RESEND_KEY) return { error: { message: "Correo no configurado en el servidor (falta RESEND_API_KEY)." } };
+  return resend.emails
+    .send({ from: FROM, to, subject: asunto, html })
+    .catch((err: unknown): EmailSendResult => ({
+      error: { message: err instanceof Error ? err.message : String(err) },
+    }));
+}
