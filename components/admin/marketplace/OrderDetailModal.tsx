@@ -13,6 +13,8 @@
  */
 import { useEffect, useRef } from "react";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import {
   X,
   Phone,
@@ -61,6 +63,8 @@ export function OrderDetailModal({ order, loading, onClose, onWhatsApp, onChange
   // `activo`: si el detalle vuelve vacío el componente devuelve null con el
   // modal «abierto»; sin esto la trampa de foco quedaba sobre un nodo ido.
   useModalAccesible(cajaRef, { onCerrar: onClose, cerrarConEscape: false, activo: !!order || !!loading });
+  // Se queda montado y devuelve null sin orden: la ventana va con lo que se ve.
+  const ventana = useVentanaDeModal(Boolean(order) || Boolean(loading), { ref: cajaRef, aplicarTranslate: true, claveMemoria: "marketplace-orden-detalle" });
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -94,13 +98,14 @@ export function OrderDetailModal({ order, loading, onClose, onWhatsApp, onChange
   }
 
   return (
-    <div ref={cajaRef} tabIndex={-1}
+    <div
       className="fixed inset-0 z-system flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-md p-0 sm:p-4"
-      onClick={onClose}
-      role="dialog"
-      aria-modal="true"
+      onClick={(e) => { if (e.target === e.currentTarget && !ventana.fijado) onClose(); }}
     >
       <div
+        ref={cajaRef} tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
         className={cn(
           "relative w-full max-w-2xl max-h-[95vh] sm:max-h-[90vh]",
           "flex flex-col overflow-hidden",
@@ -111,7 +116,7 @@ export function OrderDetailModal({ order, loading, onClose, onWhatsApp, onChange
         onClick={(e) => e.stopPropagation()}
       >
         {/* ── Header (sticky, hero) ─────────────────────── */}
-        <header className="relative shrink-0 border-b-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-6 pt-5 pb-4">
+        <header {...ventana.asaProps} className="relative shrink-0 border-b-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-6 pt-5 pb-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
               <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
@@ -141,13 +146,16 @@ export function OrderDetailModal({ order, loading, onClose, onWhatsApp, onChange
               )}
             </div>
 
-            <button
-              onClick={onClose}
-              className="h-9 w-9 rounded-xl flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-raised)] hover:text-[var(--text-primary)] border-2 border-transparent hover:border-[var(--rule-base)] transition-colors"
-              aria-label="Cerrar"
-            >
-              <X className="h-5 w-5" />
-            </button>
+            <span className="ml-auto flex items-center gap-1 shrink-0">
+              <ControlesDeVentana ventana={ventana} />
+              <button
+                onClick={onClose}
+                className="h-9 w-9 rounded-xl flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-raised)] hover:text-[var(--text-primary)] border-2 border-transparent hover:border-[var(--rule-base)] transition-colors"
+                aria-label="Cerrar"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </span>
           </div>
 
           {/* Status + total row */}
@@ -368,6 +376,7 @@ export function OrderDetailModal({ order, loading, onClose, onWhatsApp, onChange
             </div>
           </footer>
         )}
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

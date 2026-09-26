@@ -11,6 +11,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import {
   X,
   Search,
@@ -75,6 +77,12 @@ export default function StoreLinkerModal({
   /* Escape ya lo maneja el atajo propio de esta pantalla: el hook pone
        el foco, la trampa de Tab y el scroll, no una segunda salida. */
   useModalAccesible(cajaRef, { onCerrar: onClose, cerrarConEscape: false, activo: open });
+  /** Ventana: se mueve, se achica y se fija (ADR-420). */
+  const ventana = useVentanaDeModal(open, {
+    ref: cajaRef,
+    aplicarTranslate: true,
+    claveMemoria: "store-linker",
+  });
   const [search, setSearch] = useState("");
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const [products, setProducts] = useState<CatalogProduct[] | null>(null);
@@ -175,21 +183,23 @@ export default function StoreLinkerModal({
   const selectedStore = stores.find((s) => s.slug === selectedSlug);
 
   return (
-    <div ref={cajaRef} tabIndex={-1}
+    <div
       className="fixed inset-0 z-[90] flex items-stretch justify-center bg-black/70 backdrop-blur-sm p-2 sm:p-6"
-      role="dialog"
-      aria-modal="true"
-      aria-label={title}
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget && !ventana.fijado) onClose();
       }}
       onKeyDown={(e) => {
         if (e.key === "Escape") onClose();
       }}
     >
-      <div className="relative flex w-full max-w-6xl flex-col rounded-3xl bg-[var(--surface-raised)] shadow-2xl overflow-hidden border border-[var(--rule-soft)]">
+      <div ref={cajaRef} tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        className="relative flex w-full max-w-6xl flex-col rounded-3xl bg-[var(--surface-raised)] shadow-2xl overflow-hidden border border-[var(--rule-soft)]"
+      >
         {/* Header */}
-        <header className="flex flex-wrap items-center gap-3 border-b-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-5 py-3">
+        <header {...ventana.asaProps} className="flex flex-wrap items-center gap-3 border-b-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-5 py-3">
           <div className="flex-1 min-w-0">
             <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]">
               Marketplace · Vincular tiendas
@@ -208,6 +218,9 @@ export default function StoreLinkerModal({
             </span>
             <span className="text-xs text-[var(--text-tertiary)]">/ {stores.length}</span>
           </div>
+          <span className="ml-auto flex items-center gap-1 shrink-0">
+            <ControlesDeVentana ventana={ventana} />
+          </span>
           <button
             type="button"
             onClick={onClose}
@@ -496,6 +509,8 @@ export default function StoreLinkerModal({
             Listo
           </button>
         </footer>
+
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

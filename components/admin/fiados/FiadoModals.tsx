@@ -8,6 +8,8 @@ import React, { useCallback, useId, useRef } from "react";
 import { toast } from "sonner";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { formatCurrency, formatDateLong, formatTime } from "@/lib/format";
 import {
   X, DollarSign,
@@ -118,6 +120,7 @@ export default function FiadoModals({
   const cobroTitleId = useId();
   const cerrarCobro = useCallback(() => setShowCobroMasivo(false), [setShowCobroMasivo]);
   useModalAccesible(cobroPanelRef, { onCerrar: cerrarCobro, activo: showCobroMasivo, cerrarConEscape: false });
+  const ventanaCobro = useVentanaDeModal(showCobroMasivo, { ref: cobroPanelRef, aplicarTranslate: true, claveMemoria: "fiados-cobro-masivo" });
 
   const reciboPanelRef = useRef<HTMLDivElement>(null);
   const reciboTitleId = useId();
@@ -128,11 +131,13 @@ export default function FiadoModals({
   const compromisoTitleId = useId();
   const cerrarCompromiso = useCallback(() => setShowCompromiso(false), [setShowCompromiso]);
   useModalAccesible(compromisoPanelRef, { onCerrar: cerrarCompromiso, activo: showCompromiso && !!selected, cerrarConEscape: false });
+  const ventanaCompromiso = useVentanaDeModal(showCompromiso && !!selected, { ref: compromisoPanelRef, aplicarTranslate: true, claveMemoria: "fiados-compromiso-pago" });
 
   const debtorsMapPanelRef = useRef<HTMLDivElement>(null);
   const debtorsMapTitleId = useId();
   const cerrarDebtorsMap = useCallback(() => setShowDebtorsMap(false), [setShowDebtorsMap]);
   useModalAccesible(debtorsMapPanelRef, { onCerrar: cerrarDebtorsMap, activo: showDebtorsMap, cerrarConEscape: false });
+  const ventanaMapa = useVentanaDeModal(showDebtorsMap, { ref: debtorsMapPanelRef, aplicarTranslate: true, claveMemoria: "fiados-mapa-deudores" });
 
   return (
     <>
@@ -265,15 +270,18 @@ export default function FiadoModals({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               className="fixed inset-0 z-[60] flex items-center justify-center p-4"
-              onClick={e => e.target === e.currentTarget && setShowCobroMasivo(false)}
+              onClick={e => e.target === e.currentTarget && !ventanaCobro.fijado && setShowCobroMasivo(false)}
             >
               <div ref={cobroPanelRef} role="dialog" aria-modal="true" aria-labelledby={cobroTitleId} tabIndex={-1}
-                className="w-full max-w-md bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 max-h-[80vh] overflow-y-auto">
-                <div className="flex items-center justify-between">
+                className="relative w-full max-w-md bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 max-h-[80vh] overflow-y-auto">
+                <div {...ventanaCobro.asaProps} className="flex items-center justify-between">
                   <CardTitle id={cobroTitleId} className="text-lg font-bold text-[var(--text-primary)]">Cobro Masivo</CardTitle>
-                  <button aria-label="Cerrar" onClick={() => setShowCobroMasivo(false)} className="p-1.5 rounded-xl hover:bg-[var(--rule-soft)]">
-                    <X className="h-4 w-4 text-[var(--text-secondary)]" />
-                  </button>
+                  <span className="ml-auto flex items-center gap-1">
+                    <ControlesDeVentana ventana={ventanaCobro} />
+                    <button aria-label="Cerrar" onClick={() => setShowCobroMasivo(false)} className="p-1.5 rounded-xl hover:bg-[var(--rule-soft)]">
+                      <X className="h-4 w-4 text-[var(--text-secondary)]" />
+                    </button>
+                  </span>
                 </div>
 
                 <p className="text-sm text-[var(--text-secondary)]">
@@ -339,6 +347,7 @@ export default function FiadoModals({
                     Confirmar cobro
                   </button>
                 </div>
+                <TiradorDeVentana ventana={ventanaCobro} />
               </div>
             </m.div>
           </>
@@ -478,17 +487,20 @@ export default function FiadoModals({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               className="fixed inset-0 z-[70] flex items-center justify-center p-4"
-              onClick={e => e.target === e.currentTarget && setShowCompromiso(false)}
+              onClick={e => e.target === e.currentTarget && !ventanaCompromiso.fijado && setShowCompromiso(false)}
             >
               <div id="compromiso-printable" ref={compromisoPanelRef} role="dialog" aria-modal="true" aria-labelledby={compromisoTitleId} tabIndex={-1}
-                className="w-full max-w-md bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 max-h-[90vh] overflow-y-auto print:shadow-none print:border print:max-h-none">
-                <div className="flex items-center justify-between print:hidden">
+                className="relative w-full max-w-md bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 max-h-[90vh] overflow-y-auto print:shadow-none print:border print:max-h-none">
+                <div {...ventanaCompromiso.asaProps} className="flex items-center justify-between print:hidden">
                   <CardTitle id={compromisoTitleId} className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
                     <PenTool className="h-5 w-5 text-primary" /> Compromiso de Pago
                   </CardTitle>
-                  <button aria-label="Cerrar" onClick={() => setShowCompromiso(false)} className="p-1.5 rounded-xl hover:bg-[var(--rule-soft)]">
-                    <X className="h-4 w-4 text-[var(--text-secondary)]" />
-                  </button>
+                  <span className="ml-auto flex items-center gap-1">
+                    <ControlesDeVentana ventana={ventanaCompromiso} />
+                    <button aria-label="Cerrar" onClick={() => setShowCompromiso(false)} className="p-1.5 rounded-xl hover:bg-[var(--rule-soft)]">
+                      <X className="h-4 w-4 text-[var(--text-secondary)]" />
+                    </button>
+                  </span>
                 </div>
 
                 {/* Form fields (hidden in print) */}
@@ -684,6 +696,7 @@ export default function FiadoModals({
                     Confirmar e Imprimir
                   </button>
                 </div>
+                <TiradorDeVentana ventana={ventanaCompromiso} />
               </div>
             </m.div>
           </>
@@ -709,15 +722,16 @@ export default function FiadoModals({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               className="fixed inset-0 z-[70] flex items-center justify-center p-4"
-              onClick={e => e.target === e.currentTarget && setShowDebtorsMap(false)}
+              onClick={e => e.target === e.currentTarget && !ventanaMapa.fijado && setShowDebtorsMap(false)}
             >
               <div ref={debtorsMapPanelRef} role="dialog" aria-modal="true" aria-labelledby={debtorsMapTitleId} tabIndex={-1}
-                className="w-full max-w-lg bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl max-h-[85vh] flex flex-col">
-                <div className="px-5 py-4 border-b border-[var(--rule-base)] flex items-center justify-between">
+                className="relative w-full max-w-lg bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl max-h-[85vh] flex flex-col">
+                <div {...ventanaMapa.asaProps} className="px-5 py-4 border-b border-[var(--rule-base)] flex items-center justify-between">
                   <CardTitle id={debtorsMapTitleId} className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
                     <MapPin className="h-5 w-5 text-primary" /> Mapa de deudores
                   </CardTitle>
                   <div className="flex items-center gap-2">
+                    <ControlesDeVentana ventana={ventanaMapa} />
                     <button
                       onClick={() => {
                         const deudores = fiados
@@ -858,6 +872,7 @@ export default function FiadoModals({
                     );
                   })()}
                 </div>
+                <TiradorDeVentana ventana={ventanaMapa} />
               </div>
             </m.div>
           </>

@@ -21,6 +21,8 @@
  */
 
 import { useVisiblePolling } from "@/components/superadmin/_shared/useVisiblePolling";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import {
   useCallback,
   useEffect,
@@ -1099,22 +1101,32 @@ function ProofModal({
     };
   }, []);
 
+  /* La caja del diálogo: es lo que la ventana mide, mueve y achica. */
+  const cajaRef = useRef<HTMLDivElement>(null);
+  /** Ventana: se mueve, se achica y se fija (ADR-420). */
+  const ventana = useVentanaDeModal(true, {
+    ref: cajaRef,
+    aplicarTranslate: true,
+    claveMemoria: "pagos-pendientes-proof",
+  });
+
   return (
     <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="proof-modal-title"
       className="fixed inset-0 z-[80] flex items-stretch sm:items-center justify-center bg-black/65 sm:p-4 backdrop-blur-sm"
-      onClick={onClose}
+      onClick={() => { if (!ventana.fijado) onClose(); }}
       onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
     >
       <div
+        ref={cajaRef} tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="proof-modal-title"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={(e) => e.stopPropagation()}
-        className="flex w-full max-w-full sm:max-w-4xl h-full sm:h-auto sm:max-h-[92vh] flex-col overflow-hidden sm:rounded-3xl border-0 sm:border border-[var(--rule-soft)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
+        className="relative flex w-full max-w-full sm:max-w-4xl h-full sm:h-auto sm:max-h-[92vh] flex-col overflow-hidden sm:rounded-3xl border-0 sm:border border-[var(--rule-soft)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
       >
         {/* Header */}
-        <div className="flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-4 sm:px-5 py-3.5">
+        <div {...ventana.asaProps} className="flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-4 sm:px-5 py-3.5">
           <div className="flex items-center gap-3 min-w-0">
             <span
               className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-extrabold uppercase tracking-wider ${status.pill}`}
@@ -1135,6 +1147,9 @@ function ProofModal({
               </h2>
             </div>
           </div>
+          <span className="ml-auto flex items-center gap-1 shrink-0">
+            <ControlesDeVentana ventana={ventana} />
+          </span>
           <button
             onClick={onClose}
             aria-label="Cerrar"
@@ -1369,6 +1384,8 @@ function ProofModal({
             </div>
           )}
         </div>
+
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

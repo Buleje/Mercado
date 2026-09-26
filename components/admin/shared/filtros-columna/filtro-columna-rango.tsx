@@ -48,7 +48,9 @@ export function FiltroColumnaRango({
   placeholder = "Todos",
   className = "",
 }: FiltroColumnaRangoProps) {
-  const { ref, alAbrir, estilo } = usePopoverCabecera(170, 240);
+  /* El ancho que se mide tiene que ser el que se dibuja (`w-64`/`w-60`): con
+     240 fijo, el de fechas (256) se salía por la derecha en un celular. */
+  const { ref, alAbrir, estilo } = usePopoverCabecera(170, esFecha ? 256 : 240);
   const min = valor?.min ?? null;
   const max = valor?.max ?? null;
   const activo = rangoActivo(valor);
@@ -56,7 +58,9 @@ export function FiltroColumnaRango({
   const resumen = !activo
     ? placeholder
     : min != null && max != null
-      ? `${formatear(min)} – ${formatear(max)}`
+      ? min === max
+        ? formatear(min)
+        : `${formatear(min)} – ${formatear(max)}`
       : min != null
         ? `≥ ${formatear(min)}`
         : `≤ ${formatear(max as string | number)}`;
@@ -117,6 +121,17 @@ export function FiltroColumnaRango({
             className={esFecha ? `${campo} w-28` : campo}
           />
         </div>
+        {/* Buscar UN día es lo más común con una fecha (Brandon, 2026-09-26):
+            se elige el «desde» y un clic lo vuelve el día entero. */}
+        {esFecha && min != null && max !== min && (
+          <button
+            type="button"
+            onClick={() => onChange({ min: String(min), max: String(min) })}
+            className="mt-2 block text-sm font-bold text-[var(--accent-ink)] hover:underline dark:text-[var(--accent)]"
+          >
+            Sólo el {formatearFechaCorta(String(min))}
+          </button>
+        )}
         {activo && (
           <button
             type="button"

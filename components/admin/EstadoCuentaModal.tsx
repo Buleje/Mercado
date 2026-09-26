@@ -7,6 +7,8 @@ import {
   MessageCircle, Printer, AlertCircle,
 } from "@buleje/design-system/icons";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { cn } from "@/lib/utils";
 import { formatCurrency, formatDate, formatDateNumeric } from "@/lib/format";
 
@@ -167,12 +169,18 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
   const modalRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
   useModalAccesible(modalRef, { onCerrar: onClose });
+  /** Ventana: se mueve, se achica y se fija (ADR-420). */
+  const ventana = useVentanaDeModal(true, {
+    ref: modalRef,
+    aplicarTranslate: true,
+    claveMemoria: "estado-de-cuenta",
+  });
 
   return (
     <div className="modal-backdrop p-4">
-      <div ref={modalRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-xl max-w-2xl w-full max-h-[90vh] flex flex-col">
+      <div ref={modalRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="relative bg-[var(--surface-raised)] rounded-xl max-w-2xl w-full max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
+        <div {...ventana.asaProps} className="flex items-center justify-between p-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
           <div>
             <CardTitle id={titleId} className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
               <CreditCard className="h-5 w-5 text-primary" />
@@ -182,6 +190,9 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
               {customerName ?? customerPhone}
             </p>
           </div>
+          <span className="ml-auto flex items-center gap-1">
+            <ControlesDeVentana ventana={ventana} />
+          </span>
           <button aria-label="Cerrar" onClick={onClose} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
             <X className="h-5 w-5 text-[var(--text-tertiary)]" />
           </button>
@@ -356,6 +367,7 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
             <MessageCircle className="h-4 w-4" /> WhatsApp
           </button>
         </div>
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

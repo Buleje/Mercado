@@ -14,6 +14,8 @@
 import { useId, useMemo, useRef, useState } from "react";
 import { Check, Paintbrush, X } from "@buleje/design-system/icons";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import {
   celdasQueCumplen, COLORES_REGLA, describirRegla, type Comparador, type Regla,
 } from "@/lib/documentos/hoja-reglas";
@@ -50,9 +52,10 @@ export default function ReglaResaltado({
   const titleId = useId();
   const modalRef = useRef<HTMLDivElement>(null);
   useModalAccesible(modalRef, { onCerrar });
+  const ventana = useVentanaDeModal(true, { ref: modalRef, aplicarTranslate: true, claveMemoria: "hoja-regla-resaltado" });
 
   return (
-    <div className="fixed inset-0 z-modal-3 flex items-center justify-center bg-black/50 p-4" onClick={onCerrar}>
+    <div className="fixed inset-0 z-modal-3 flex items-center justify-center bg-black/50 p-4" onClick={() => { if (!ventana.fijado) onCerrar(); }}>
       <div
         ref={modalRef}
         role="dialog"
@@ -60,11 +63,12 @@ export default function ReglaResaltado({
         aria-labelledby={titleId}
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-[26rem] overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
+        className="relative w-full max-w-[26rem] overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
       >
-        <div className="flex items-center gap-2 border-b border-[var(--rule-base)] px-4 py-3">
+        <div {...ventana.asaProps} className="flex items-center gap-2 border-b border-[var(--rule-base)] px-4 py-3">
           <Paintbrush className="h-4 w-4 text-[var(--accent)]" />
           <p id={titleId} className="flex-1 text-sm font-extrabold text-[var(--text-primary)]">Resaltar por regla</p>
+          <ControlesDeVentana ventana={ventana} />
           <button onClick={onCerrar} aria-label="Cerrar" className="rounded-xl p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]">
             <X className="h-4 w-4" />
           </button>
@@ -134,6 +138,7 @@ export default function ReglaResaltado({
             <Paintbrush className="h-4 w-4" /> Resaltar {coincidencias.length > 0 ? coincidencias.length : ""}
           </button>
         </div>
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

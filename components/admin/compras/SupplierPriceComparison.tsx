@@ -5,6 +5,8 @@ import { useId, useRef, useState, useEffect } from "react";
 import { TrendingUp, TrendingDown, AlertTriangle, BarChart3, X, Check } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { formatCurrency, formatDate, formatDateShort } from "@/lib/format";
 
 type Comparacion = {
@@ -42,6 +44,7 @@ export function QuotationComparator({ orders, suppliers }: {
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   useModalAccesible(panelRef, { onCerrar: () => setOpen(false), activo: open });
+  const ventana = useVentanaDeModal(open, { ref: panelRef, aplicarTranslate: true, claveMemoria: "comparar-cotizaciones" });
 
   if (!open) {
     return (
@@ -105,15 +108,18 @@ export function QuotationComparator({ orders, suppliers }: {
   const savings = worstTotal - bestTotal;
 
   return (
-    <div className="modal-backdrop p-4" onClick={() => setOpen(false)}>
-      <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-xl w-full max-w-3xl max-h-[85vh] overflow-y-auto p-5 space-y-4" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between">
+    <div className="modal-backdrop p-4" onClick={(e) => { if (e.target === e.currentTarget && !ventana.fijado) setOpen(false); }}>
+      <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="relative bg-[var(--surface-raised)] rounded-xl w-full max-w-3xl max-h-[85vh] overflow-y-auto p-5 space-y-4" onClick={e => e.stopPropagation()}>
+        <div {...ventana.asaProps} className="flex items-center justify-between">
           <CardTitle id={titleId} className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
             <BarChart3 className="h-5 w-5 text-[var(--text-secondary)]" /> Comparar cotizaciones completas
           </CardTitle>
-          <button aria-label="Cerrar" onClick={() => setOpen(false)} className="p-1.5 rounded-xl hover:bg-[var(--rule-soft)] transition-colors">
-            <X className="h-5 w-5 text-[var(--text-tertiary)]" />
-          </button>
+          <span className="ml-auto flex items-center gap-1">
+            <ControlesDeVentana ventana={ventana} />
+            <button aria-label="Cerrar" onClick={() => setOpen(false)} className="p-1.5 rounded-xl hover:bg-[var(--rule-soft)] transition-colors">
+              <X className="h-5 w-5 text-[var(--text-tertiary)]" />
+            </button>
+          </span>
         </div>
 
         {/* Step 1: Select OCs */}
@@ -218,6 +224,7 @@ export function QuotationComparator({ orders, suppliers }: {
             )}
           </div>
         )}
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

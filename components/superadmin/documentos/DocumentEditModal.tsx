@@ -7,6 +7,8 @@ import { DOC_CATEGORIES } from "@/lib/types/documents";
 import type { DbDocument } from "@/lib/types/documents";
 import { CAT_LABEL, toDateInput } from "./shared";
 import type { DocMetaPatch } from "./use-superadmin-documents";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 
 interface Props {
   doc: DbDocument;
@@ -34,6 +36,7 @@ export default function DocumentEditModal({ doc, onClose, onSave }: Props) {
   const [expiresAt, setExpiresAt] = useState(toDateInput(doc.expiresAt));
   const [saving, setSaving] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
+  const ventana = useVentanaDeModal(true, { ref: dialogRef, aplicarTranslate: true, claveMemoria: "sa-document-edit" });
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -60,7 +63,7 @@ export default function DocumentEditModal({ doc, onClose, onSave }: Props) {
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget && !ventana.fijado) onClose();
       }}
     >
       <div
@@ -68,18 +71,21 @@ export default function DocumentEditModal({ doc, onClose, onSave }: Props) {
         role="dialog"
         aria-modal="true"
         aria-label="Editar documento"
-        className="w-full max-w-md rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-[var(--shadow-lg)] p-5 space-y-4"
+        className="relative w-full max-w-md rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-[var(--shadow-lg)] p-5 space-y-4"
       >
-        <div className="flex items-center justify-between">
+        <div {...ventana.asaProps} className="flex items-center justify-between">
           <h2 className="text-lg font-extrabold text-[var(--text-primary)]">Editar documento</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Cerrar"
-            className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          <span className="flex items-center gap-1">
+            <ControlesDeVentana ventana={ventana} />
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Cerrar"
+              className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </span>
         </div>
 
         <label className="block space-y-1">
@@ -155,6 +161,7 @@ export default function DocumentEditModal({ doc, onClose, onSave }: Props) {
             Guardar
           </button>
         </div>
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

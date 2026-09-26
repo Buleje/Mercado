@@ -10,6 +10,8 @@ import {
 import { cn } from "@/lib/utils";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { formatCurrency } from "@/lib/format";
 
 type OCItem = {
@@ -60,6 +62,7 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   useModalAccesible(panelRef, { onCerrar: onClose, activo: true });
+  const ventana = useVentanaDeModal(true, { ref: panelRef, aplicarTranslate: true, claveMemoria: "oc-recepcion" });
 
   const [step, setStep] = useState(1);
   const [receivedItems, setReceivedItems] = useState<ReceivedItem[]>(
@@ -156,9 +159,9 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
 
   return (
     <div className="modal-backdrop p-4">
-      <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="relative bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
+        <div {...ventana.asaProps} className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
           <div>
             <SectionTitle id={titleId} className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
               Recepcion de Pedido
@@ -167,9 +170,12 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
               OC #{ocId.slice(-8).toUpperCase()} - Paso {step} de 3
             </p>
           </div>
-          <button aria-label="Cerrar" onClick={onClose} className="p-2 rounded-xl hover:bg-[var(--rule-soft)] transition-colors">
-            <X className="h-5 w-5 text-[var(--text-secondary)]" />
-          </button>
+          <span className="ml-auto flex items-center gap-1">
+            <ControlesDeVentana ventana={ventana} />
+            <button aria-label="Cerrar" onClick={onClose} className="p-2 rounded-xl hover:bg-[var(--rule-soft)] transition-colors">
+              <X className="h-5 w-5 text-[var(--text-secondary)]" />
+            </button>
+          </span>
         </div>
 
         {/* Step indicator */}
@@ -441,6 +447,7 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
             </button>
           )}
         </div>
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

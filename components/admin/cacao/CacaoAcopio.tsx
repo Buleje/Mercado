@@ -28,6 +28,7 @@ import {
 } from "@buleje/design-system/icons";
 import { DataTable, StatCard } from "@buleje/design-system";
 import { FiltroColumnaMulti } from "@/components/admin/shared/filtros-columna";
+import { useOrdenColumnas, EnOrden, BotonRestablecerColumnas } from "@/components/admin/shared/columnas-ordenables";
 import type { FacetaOpcion } from "@/lib/admin/filtros-columna";
 import LibroChrome, { type LibroAction } from "@/components/admin/shared/libro-chrome";
 import { IconAction, TablaSkeleton } from "@/components/admin/shared/module-primitives";
@@ -138,6 +139,8 @@ export default function CacaoAcopio() {
   const [varFilter, setVarFilter] = useState<string[]>([]);
   const [gradoFilter, setGradoFilter] = useState<string[]>([]);
   const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" }>({ key: "fecha", dir: "desc" });
+  // Columnas de la tabla de Acopio: arrastrar el título para reordenarlas.
+  const ordenAcopio = useOrdenColumnas("cacao-acopio-lotes", ["lote", "fecha", "productor", "variedad", "pesoKg", "humedad", "grado", "totalPagado"]);
 
   const load = useCallback(
     async (v: CacaoView, fOverride?: { from?: string; to?: string }) => {
@@ -493,6 +496,7 @@ export default function CacaoAcopio() {
               <Download className="h-4 w-4" />
               CSV
             </button>
+            <BotonRestablecerColumnas cambiado={ordenAcopio.cambiado} onRestablecer={ordenAcopio.restablecer} />
           </div>
           {showFilters && (
             <div className="grid grid-cols-2 gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)]/40 p-4">
@@ -606,35 +610,44 @@ export default function CacaoAcopio() {
               con la fecha partida en tres líneas. */}
           <div className="hidden overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] sm:block">
             <DataTable filtrable className="w-full text-sm">
-              <thead className="bg-[var(--surface-sunken)] text-left">
+              <thead ref={ordenAcopio.refCabecera} className="bg-[var(--surface-sunken)] text-left">
                 <tr>
-                  <Th>Lote</Th>
-                  <SortTh label="Fecha" col="fecha" sort={sort} onSort={toggleSort} className="hidden sm:table-cell" />
-                  <Th>Productor</Th>
-                  <Th className="hidden md:table-cell">
-                    <span className="block">Variedad</span>
-                    <FiltroColumnaMulti
-                      label="Variedad"
-                      value={varFilter}
-                      options={varOptions}
-                      onChange={setVarFilter}
-                      placeholder="Todas"
-                    />
-                  </Th>
-                  <SortTh label="Peso (kg)" col="pesoKg" sort={sort} onSort={toggleSort} align="right" />
-                  <Th className="hidden text-right sm:table-cell">Humedad</Th>
-                  <Th className="hidden md:table-cell">
-                    <span className="block">Grado</span>
-                    <FiltroColumnaMulti
-                      label="Grado"
-                      value={gradoFilter}
-                      options={gradoOptions}
-                      etiqueta={(v) => (v === SIN_GRADO ? "Sin clasificar" : GRADO_LABEL[v as CacaoGrado] ?? v)}
-                      onChange={setGradoFilter}
-                      placeholder="Todos"
-                    />
-                  </Th>
-                  <SortTh label="Liquidación" col="totalPagado" sort={sort} onSort={toggleSort} align="right" />
+                  <EnOrden
+                    orden={ordenAcopio.orden}
+                    celdas={{
+                      lote: <Th col="lote">Lote</Th>,
+                      fecha: <SortTh label="Fecha" col="fecha" sort={sort} onSort={toggleSort} className="hidden sm:table-cell" />,
+                      productor: <Th col="productor">Productor</Th>,
+                      variedad: (
+                        <Th col="variedad" className="hidden md:table-cell">
+                          <span className="block">Variedad</span>
+                          <FiltroColumnaMulti
+                            label="Variedad"
+                            value={varFilter}
+                            options={varOptions}
+                            onChange={setVarFilter}
+                            placeholder="Todas"
+                          />
+                        </Th>
+                      ),
+                      pesoKg: <SortTh label="Peso (kg)" col="pesoKg" sort={sort} onSort={toggleSort} align="right" />,
+                      humedad: <Th col="humedad" className="hidden text-right sm:table-cell">Humedad</Th>,
+                      grado: (
+                        <Th col="grado" className="hidden md:table-cell">
+                          <span className="block">Grado</span>
+                          <FiltroColumnaMulti
+                            label="Grado"
+                            value={gradoFilter}
+                            options={gradoOptions}
+                            etiqueta={(v) => (v === SIN_GRADO ? "Sin clasificar" : GRADO_LABEL[v as CacaoGrado] ?? v)}
+                            onChange={setGradoFilter}
+                            placeholder="Todos"
+                          />
+                        </Th>
+                      ),
+                      totalPagado: <SortTh label="Liquidación" col="totalPagado" sort={sort} onSort={toggleSort} align="right" />,
+                    }}
+                  />
                   <Th className="text-right">Acción</Th>
                 </tr>
               </thead>
@@ -651,69 +664,82 @@ export default function CacaoAcopio() {
                       onKeyDown={(e) => { if (e.target !== e.currentTarget) return; if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setLoteDrawerId(l.id); } }}
                       className={`cursor-pointer border-t border-[var(--rule-soft)] transition hover:bg-[var(--surface-sunken)] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--accent)] ${annul ? "opacity-50" : ""}`}
                     >
-                      <Td>
-                        <span className="font-mono text-sm font-bold text-[var(--text-primary)]">
-                          {l.loteCode}
-                        </span>
-                        {annul && (
-                          <span className="ml-2 rounded bg-[var(--surface-sunken)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">
-                            ANULADO
-                          </span>
-                        )}
-                      </Td>
-                      <Td className="hidden text-[var(--text-secondary)] sm:table-cell">
-                        {fdate(l.fecha)}
-                      </Td>
-                      <Td className="font-medium text-[var(--text-primary)]">
-                        {l.productorNombre ?? "—"}
-                        {l.productorNombre && !l.productorId && (
-                          <span
-                            title="Productor no vinculado al padrón"
-                            className="ml-1.5 inline-flex rounded bg-[var(--data-warning-100)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)]"
-                          >
-                            sin vincular
-                          </span>
-                        )}
-                        {l.parcelaCodigo && (
-                          <span
-                            title={`Origen: sección ${l.parcelaCodigo} (Campo)`}
-                            className="ml-1.5 inline-flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]"
-                          >
-                            <Trees className="h-3 w-3" />origen {l.parcelaCodigo}
-                          </span>
-                        )}
-                      </Td>
-                      <Td className="hidden text-[var(--text-secondary)] md:table-cell">
-                        {l.variedad ?? "—"}{" "}
-                        <span className="text-xs text-[var(--text-tertiary)]">
-                          {l.tipoGrano === "humedo" ? "(húmedo)" : ""}
-                        </span>
-                      </Td>
-                      <Td className="text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
-                        {n2(l.pesoKg)}
-                      </Td>
-                      <Td className="hidden text-right font-mono tabular-nums sm:table-cell">
-                        <span
-                          className={
-                            l.humedadPct && Number(l.humedadPct) > 7
-                              ? "text-[var(--data-warning-700)]"
-                              : "text-[var(--text-secondary)]"
-                          }
-                        >
-                          {l.humedadPct ? `${Number(l.humedadPct).toFixed(1)}%` : "—"}
-                        </span>
-                      </Td>
-                      <Td className="hidden md:table-cell">
-                        <GradoBadge grado={l.grado} />
-                      </Td>
-                      <Td className="text-right">
-                        <div className="flex flex-col items-end gap-1">
-                          <span className="font-mono font-bold tabular-nums text-[var(--text-primary)]">
-                            {l.totalPagado ? `S/ ${n2(l.totalPagado)}` : "—"}
-                          </span>
-                          {l.totalPagado && <PagoBadge estado={l.estadoPago} saldo={saldoDe(l)} />}
-                        </div>
-                      </Td>
+                      <EnOrden
+                        orden={ordenAcopio.orden}
+                        celdas={{
+                          lote: (
+                            <Td>
+                              <span className="font-mono text-sm font-bold text-[var(--text-primary)]">
+                                {l.loteCode}
+                              </span>
+                              {annul && (
+                                <span className="ml-2 rounded bg-[var(--surface-sunken)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">
+                                  ANULADO
+                                </span>
+                              )}
+                            </Td>
+                          ),
+                          fecha: <Td className="hidden text-[var(--text-secondary)] sm:table-cell">{fdate(l.fecha)}</Td>,
+                          productor: (
+                            <Td className="font-medium text-[var(--text-primary)]">
+                              {l.productorNombre ?? "—"}
+                              {l.productorNombre && !l.productorId && (
+                                <span
+                                  title="Productor no vinculado al padrón"
+                                  className="ml-1.5 inline-flex rounded bg-[var(--data-warning-100)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)]"
+                                >
+                                  sin vincular
+                                </span>
+                              )}
+                              {l.parcelaCodigo && (
+                                <span
+                                  title={`Origen: sección ${l.parcelaCodigo} (Campo)`}
+                                  className="ml-1.5 inline-flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]"
+                                >
+                                  <Trees className="h-3 w-3" />origen {l.parcelaCodigo}
+                                </span>
+                              )}
+                            </Td>
+                          ),
+                          variedad: (
+                            <Td className="hidden text-[var(--text-secondary)] md:table-cell">
+                              {l.variedad ?? "—"}{" "}
+                              <span className="text-xs text-[var(--text-tertiary)]">
+                                {l.tipoGrano === "humedo" ? "(húmedo)" : ""}
+                              </span>
+                            </Td>
+                          ),
+                          pesoKg: <Td className="text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{n2(l.pesoKg)}</Td>,
+                          humedad: (
+                            <Td className="hidden text-right font-mono tabular-nums sm:table-cell">
+                              <span
+                                className={
+                                  l.humedadPct && Number(l.humedadPct) > 7
+                                    ? "text-[var(--data-warning-700)]"
+                                    : "text-[var(--text-secondary)]"
+                                }
+                              >
+                                {l.humedadPct ? `${Number(l.humedadPct).toFixed(1)}%` : "—"}
+                              </span>
+                            </Td>
+                          ),
+                          grado: (
+                            <Td className="hidden md:table-cell">
+                              <GradoBadge grado={l.grado} />
+                            </Td>
+                          ),
+                          totalPagado: (
+                            <Td className="text-right">
+                              <div className="flex flex-col items-end gap-1">
+                                <span className="font-mono font-bold tabular-nums text-[var(--text-primary)]">
+                                  {l.totalPagado ? `S/ ${n2(l.totalPagado)}` : "—"}
+                                </span>
+                                {l.totalPagado && <PagoBadge estado={l.estadoPago} saldo={saldoDe(l)} />}
+                              </div>
+                            </Td>
+                          ),
+                        }}
+                      />
                       <Td className="text-right">
                         {annul ? (
                           <span className="text-xs text-[var(--text-tertiary)]">—</span>
@@ -752,29 +778,32 @@ export default function CacaoAcopio() {
               {rows.length > 0 && (
                 <tfoot>
                   <tr className="border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]/60">
-                    <Td className="font-bold text-[var(--text-secondary)]">
-                      Total · {rows.length} lote{rows.length === 1 ? "" : "s"}
-                    </Td>
-                    <Td className="hidden sm:table-cell" />
-                    <Td />
-                    <Td className="hidden md:table-cell" />
-                    <Td className="text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
-                      {n2(rowTotals.kg)}
-                    </Td>
-                    <Td className="hidden sm:table-cell" />
-                    <Td className="hidden md:table-cell" />
-                    <Td className="text-right">
-                      <div className="flex flex-col items-end gap-0.5">
-                        <span className="font-mono font-bold tabular-nums text-[var(--text-primary)]">
-                          S/ {n2(rowTotals.liquidacion)}
-                        </span>
-                        {rowTotals.saldo > 0 && (
-                          <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)]">
-                            S/ {n2(rowTotals.saldo)} por pagar
-                          </span>
-                        )}
-                      </div>
-                    </Td>
+                    <EnOrden
+                      orden={ordenAcopio.orden}
+                      celdas={{
+                        lote: <Td className="font-bold text-[var(--text-secondary)]">Total · {rows.length} lote{rows.length === 1 ? "" : "s"}</Td>,
+                        fecha: <Td className="hidden sm:table-cell" />,
+                        productor: <Td />,
+                        variedad: <Td className="hidden md:table-cell" />,
+                        pesoKg: <Td className="text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{n2(rowTotals.kg)}</Td>,
+                        humedad: <Td className="hidden sm:table-cell" />,
+                        grado: <Td className="hidden md:table-cell" />,
+                        totalPagado: (
+                          <Td className="text-right">
+                            <div className="flex flex-col items-end gap-0.5">
+                              <span className="font-mono font-bold tabular-nums text-[var(--text-primary)]">
+                                S/ {n2(rowTotals.liquidacion)}
+                              </span>
+                              {rowTotals.saldo > 0 && (
+                                <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)]">
+                                  S/ {n2(rowTotals.saldo)} por pagar
+                                </span>
+                              )}
+                            </div>
+                          </Td>
+                        ),
+                      }}
+                    />
                     <Td />
                   </tr>
                 </tfoot>
@@ -1049,9 +1078,9 @@ export default function CacaoAcopio() {
   );
 }
 
-function Th({ children, className }: { children: React.ReactNode; className?: string }) {
+function Th({ children, className, col }: { children: React.ReactNode; className?: string; col?: string }) {
   return (
-    <th className={`px-4 py-3 font-bold text-[var(--text-primary)] ${className ?? ""}`}>
+    <th data-col={col} className={`px-4 py-3 font-bold text-[var(--text-primary)] ${className ?? ""}`}>
       {children}
     </th>
   );
@@ -1077,7 +1106,7 @@ function SortTh({
   const active = sort.key === col;
   const Icon = active ? (sort.dir === "asc" ? ArrowUp : ArrowDown) : ArrowUpDown;
   return (
-    <th className={`px-4 py-3 ${align === "right" ? "text-right" : ""} ${className ?? ""}`}>
+    <th data-col={col} className={`px-4 py-3 ${align === "right" ? "text-right" : ""} ${className ?? ""}`}>
       <button
         type="button"
         onClick={() => onSort(col)}

@@ -125,12 +125,17 @@ export function portadaLegajo(i: {
   </div>`;
 }
 
+/**
+ * Estilos propios del índice: mismos tokens que el resto del libro
+ * (`--tenue`/`--tinta`/`--linea`), sin verde ni relleno de fondo — el
+ * encabezado copia al `.det` de la GTF y el total del legajo se distingue por
+ * la regla superior, no por una fila pintada.
+ */
 export const CSS_LEGAJO = `
   .lg { width:100%; border-collapse:collapse; }
-  .lg th, .lg td { border:.6pt solid #9aa5a0; padding:1.2mm 1.5mm; font-size:7.4pt; }
-  .lg thead th { background:var(--tinta); color:#fff; border-color:#0d3b20; font-weight:bold;
-                 font-size:6.8pt; letter-spacing:.3pt; text-transform:uppercase; text-align:center; }
-  .lg tbody tr:nth-child(even) td { background:#f4f8f6; }
+  .lg th, .lg td { border:.5pt solid var(--linea-suave); padding:1.2mm 1.5mm; font-size:7.4pt; }
+  .lg thead th { background:var(--tenue); color:var(--tinta); border-color:var(--linea-suave); border-bottom-color:var(--linea);
+                 font-weight:bold; font-size:6.8pt; letter-spacing:.3pt; text-transform:uppercase; text-align:center; }
   .lg td.c { text-align:center; }
   .lg td.r { text-align:right; }
   .lg td.cod { font-family:"Courier New",Courier,monospace; font-weight:bold; }
@@ -139,6 +144,6 @@ export const CSS_LEGAJO = `
   .lg .w-n { width:10mm; } .lg .w-c { width:11mm; } .lg .w-v { width:20mm; }
   .lg .w-f { width:18mm; } .lg .w-e { width:18mm; }
   .lg .vacio { text-align:center; padding:8mm; color:var(--gris-suave); font-style:italic; }
-  .lg tfoot td { background:#e7efea; font-weight:bold; border-color:#7f8f87; }
-  .lg tfoot .lbl { text-align:right; text-transform:uppercase; letter-spacing:.4pt; font-size:6.8pt; }
+  .lg tfoot td { border-top:.8pt solid var(--linea); font-weight:bold; }
+  .lg tfoot .lbl { text-align:right; text-transform:uppercase; letter-spacing:.4pt; font-size:6.8pt; color:var(--gris); }
 `;

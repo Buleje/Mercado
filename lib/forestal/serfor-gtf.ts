@@ -20,6 +20,8 @@
  * con su timeout y su rate limit.
  */
 
+import { repararFichaSerfor } from "./serfor-texto-danado";
+
 /** Base de la consulta pública (Módulo de Control del SNIFFS). */
 export const SERFOR_GTF_CONSULTA = "https://sniffs.serfor.gob.pe/control/gtf/consultas/consultarGtf.do";
 
@@ -404,5 +406,8 @@ export function parsearConsultaGtf(html: string, numeroRegistro: string): Result
     campos,
   };
 
-  return { estado: "encontrada", mensaje: null, gtf };
+  // SERFOR publica algunos campos con la letra dañada en SU base (UTF-8 leído
+  // como Latin-1: «MUÃ?OZ»). Se repara acá, una vez, sin adivinar: ver
+  // `serfor-texto-danado`. Todo lo que sale de esta ficha ya viene limpio.
+  return { estado: "encontrada", mensaje: null, gtf: repararFichaSerfor(gtf) };
 }

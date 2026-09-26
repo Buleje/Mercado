@@ -1,6 +1,8 @@
 "use client";
 import { CardTitle, StatCard } from "@buleje/design-system";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { Field } from "@/components/admin/shared/Field";
 import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
@@ -227,6 +229,7 @@ function NewCouponModal({
   /* Escape ya lo maneja el atajo propio de esta pantalla: el hook pone
        el foco, la trampa de Tab y el scroll, no una segunda salida. */
   useModalAccesible(cajaRef, { onCerrar: onClose, cerrarConEscape: false });
+  const ventana = useVentanaDeModal(true, { ref: cajaRef, aplicarTranslate: true, claveMemoria: "marketplace-nuevo-cupon" });
   const isPercent = form.discountType === "percent";
   const previewValue = form.discountValue
     ? isPercent
@@ -244,23 +247,26 @@ function NewCouponModal({
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-modal flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-modal flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget && !ventana.fijado) onClose(); }}>
       <div ref={cajaRef} tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-[var(--surface-raised)] rounded-3xl shadow-[var(--shadow-xl)] border border-[var(--rule-base)]"
+        className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-[var(--surface-raised)] rounded-3xl shadow-[var(--shadow-xl)] border border-[var(--rule-base)]"
         role="dialog"
         aria-modal="true"
         aria-label="Crear nuevo cupón"
       >
         {/* Header con preview del cupón */}
-        <div className="relative overflow-hidden rounded-t-3xl bg-linear-to-br from-primary/15 via-primary/5 to-transparent p-6 border-b border-[var(--rule-base)]">
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 h-8 w-8 inline-flex items-center justify-center rounded-full bg-[var(--surface-raised)] border border-[var(--rule-base)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:border-[var(--text-tertiary)] transition-colors"
-            aria-label="Cerrar"
-          >
-            <X className="h-4 w-4" />
-          </button>
+        <div {...ventana.asaProps} className="relative overflow-hidden rounded-t-3xl bg-linear-to-br from-primary/15 via-primary/5 to-transparent p-6 border-b border-[var(--rule-base)]">
+          <span className="absolute top-4 right-4 flex items-center gap-1">
+            <ControlesDeVentana ventana={ventana} />
+            <button
+              onClick={onClose}
+              className="h-8 w-8 inline-flex items-center justify-center rounded-full bg-[var(--surface-raised)] border border-[var(--rule-base)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:border-[var(--text-tertiary)] transition-colors"
+              aria-label="Cerrar"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </span>
 
           <div className="flex items-center gap-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-primary mb-1">
             <Ticket className="h-3.5 w-3.5" />
@@ -474,6 +480,7 @@ function NewCouponModal({
             </button>
           </div>
         </div>
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

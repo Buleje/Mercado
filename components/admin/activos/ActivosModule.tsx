@@ -15,6 +15,8 @@
 import { useCallback, useEffect, useState, useRef } from "react";
 import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { toast } from "sonner";
 import {
   Construction, Plus, X, Loader2, TrendingUp, Fuel,
@@ -983,19 +985,31 @@ function ModalShell({ title, subtitle, onClose, children, icon: Icon = Construct
   /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra (mismo arreglo que AssetDetailDrawer). */
   const cajaRef = useRef<HTMLDivElement>(null);
   useModalAccesible(cajaRef, { onCerrar: onClose });
+  /** Ventana: se mueve, se achica y se fija (ADR-420) — shell compartido por todos los modales de Activos. */
+  const ventana = useVentanaDeModal(true, {
+    ref: cajaRef,
+    aplicarTranslate: true,
+    // Parte fija del título: «Alquiler — Excavadora 3» es el mismo modal para
+    // cada máquina (la posición no se guarda por máquina).
+    claveMemoria: `activos-modal:${title.split(/ — | de /)[0]}`,
+  });
   return (
-    <div className="fixed inset-0 z-modal flex items-end justify-center bg-black/60 backdrop-blur-[2px] sm:items-center sm:p-4" role="presentation" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div ref={cajaRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label={title} className="max-h-[92dvh] w-full overflow-y-auto rounded-t-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)] sm:max-w-2xl sm:rounded-2xl">
-        <div className="sticky top-0 z-10 flex items-start gap-3 border-b-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] px-6 py-5">
+    <div className="fixed inset-0 z-modal flex items-end justify-center bg-black/60 backdrop-blur-[2px] sm:items-center sm:p-4" role="presentation" onClick={(e) => { if (e.target === e.currentTarget && !ventana.fijado) onClose(); }}>
+      <div ref={cajaRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label={title} className="relative max-h-[92dvh] w-full overflow-y-auto rounded-t-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)] sm:max-w-2xl sm:rounded-2xl">
+        <div {...ventana.asaProps} className="sticky top-0 z-10 flex items-start gap-3 border-b-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] px-6 py-5">
           <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Icon className="h-6 w-6" strokeWidth={2.1} /></span>
           <div className="min-w-0 flex-1">
             <p className="text-[length:var(--ts-2xs,0.6875rem)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">Activos & Maquinaria</p>
             <CardTitle as="h2" className="text-xl leading-tight">{title}</CardTitle>
             <p className="mt-0.5 text-sm text-[var(--text-secondary)]">{subtitle}</p>
           </div>
+          <span className="ml-auto flex shrink-0 items-center gap-1">
+            <ControlesDeVentana ventana={ventana} />
+          </span>
           <button type="button" onClick={onClose} aria-label="Cerrar" className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"><X className="h-5 w-5" /></button>
         </div>
         <div className="p-6">{children}</div>
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

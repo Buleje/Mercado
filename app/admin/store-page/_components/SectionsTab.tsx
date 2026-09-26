@@ -18,6 +18,8 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import {
   Plus,
@@ -464,19 +466,25 @@ function TemplatesModal({
   /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
   const cajaRef = useRef<HTMLDivElement>(null);
   useModalAccesible(cajaRef, { onCerrar: onClose });
+  /** Ventana: se mueve, se achica y se fija (ADR-420). */
+  const ventana = useVentanaDeModal(true, {
+    ref: cajaRef,
+    aplicarTranslate: true,
+    claveMemoria: "store-templates",
+  });
   return (
-    <div ref={cajaRef} tabIndex={-1}
-      role="dialog"
-      aria-modal="true"
-      aria-label="Elige una plantilla"
+    <div
+      role="presentation"
       className="fixed inset-0 z-modal flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-      onClick={onClose}
+      onClick={(e) => { if (e.target === e.currentTarget && !ventana.fijado) onClose(); }}
     >
-      <div
-        className="w-full max-w-3xl max-h-[90vh] flex flex-col rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-[var(--shadow-xl)] overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
+      <div ref={cajaRef} tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Elige una plantilla"
+        className="relative w-full max-w-3xl max-h-[90vh] flex flex-col rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-[var(--shadow-xl)] overflow-hidden"
       >
-        <header className="flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] px-5 py-4 sm:px-6">
+        <header {...ventana.asaProps} className="flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] px-5 py-4 sm:px-6">
           <div>
             <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]">
               Galería de plantillas
@@ -485,6 +493,9 @@ function TemplatesModal({
               Elige una sección para agregar
             </SectionTitle>
           </div>
+          <span className="ml-auto flex items-center gap-1">
+            <ControlesDeVentana ventana={ventana} />
+          </span>
           <button
             type="button"
             onClick={onClose}
@@ -520,6 +531,7 @@ function TemplatesModal({
             </button>
           ))}
         </div>
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

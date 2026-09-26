@@ -28,6 +28,8 @@
 
 import { useState, useEffect, useId, useMemo, useCallback, useRef } from "react";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { DataTable } from "@buleje/design-system";
 import {
   Upload,
@@ -645,9 +647,10 @@ function PreviewModal({
   const tituloId = useId();
   // Escape lo maneja el hook (cede si hay otro diálogo encima).
   useModalAccesible(panelRef, { onCerrar: onClose, activo: true });
+  const ventana = useVentanaDeModal(true, { ref: panelRef, aplicarTranslate: true, claveMemoria: "documentos-preview" });
 
   return (
-    <div className="fixed inset-0 z-modal flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-modal flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget && !ventana.fijado) onClose(); }}>
       <div
         ref={panelRef}
         role="dialog"
@@ -655,10 +658,10 @@ function PreviewModal({
         aria-labelledby={tituloId}
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-5xl max-h-[90vh] overflow-hidden bg-[var(--surface-raised)] rounded-3xl shadow-[var(--shadow-xl)] flex flex-col"
+        className="relative w-full max-w-5xl max-h-[90vh] overflow-hidden bg-[var(--surface-raised)] rounded-3xl shadow-[var(--shadow-xl)] flex flex-col"
       >
         {/* Header */}
-        <header className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[var(--rule-base)] shrink-0">
+        <header {...ventana.asaProps} className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[var(--rule-base)] shrink-0">
           <div className="flex items-center gap-3 min-w-0">
             <span className={cn("flex h-10 w-10 items-center justify-center rounded-xl shrink-0", bg)}>
               <Icon className={cn("h-5 w-5", tint)} />
@@ -680,6 +683,7 @@ function PreviewModal({
                 <Download className="h-3.5 w-3.5" /> Descargar
               </a>
             )}
+            <ControlesDeVentana ventana={ventana} />
             <button
               onClick={onClose}
               className="h-8 w-8 inline-flex items-center justify-center rounded-full bg-[var(--surface-sunken)] border border-[var(--rule-base)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
@@ -817,6 +821,7 @@ function PreviewModal({
             </div>
           </aside>
         </div>
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

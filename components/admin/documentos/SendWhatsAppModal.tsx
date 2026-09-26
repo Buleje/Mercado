@@ -24,6 +24,8 @@
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import {
   MessageCircle, X, Search, User, Link2, Copy, Check, Send, Loader2, PenLine, FileWarning,
   Paperclip, Share2, AlertCircle, Lock,
@@ -163,6 +165,7 @@ export function SendWhatsAppModal({ docs, mode = "share", telefono, onClose }: {
   const panelRef = useRef<HTMLDivElement>(null);
   // Escape ya lo maneja el efecto de más abajo (window keydown).
   useModalAccesible(panelRef, { onCerrar: onClose, activo: true, cerrarConEscape: false });
+  const ventana = useVentanaDeModal(true, { ref: panelRef, aplicarTranslate: true, claveMemoria: "send-whatsapp" });
 
   const problemas = useMemo(
     () => docs.map((d) => ({ doc: d, motivo: noEntraComoArchivo(d) })).filter((x) => x.motivo),
@@ -336,7 +339,7 @@ export function SendWhatsAppModal({ docs, mode = "share", telefono, onClose }: {
   return (
     <div
       className="fixed inset-0 z-modal-2 flex items-center justify-center bg-black/50 p-4"
-      onClick={onClose}
+      onClick={() => { if (!ventana.fijado) onClose(); }}
       onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
     >
       <div
@@ -345,12 +348,12 @@ export function SendWhatsAppModal({ docs, mode = "share", telefono, onClose }: {
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="flex max-h-[90vh] w-full max-w-[34rem] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
+        className="relative flex max-h-[90vh] w-full max-w-[34rem] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center gap-3 border-b border-[var(--rule-base)] px-5 py-4">
+        <div {...ventana.asaProps} className="flex items-center gap-3 border-b border-[var(--rule-base)] px-5 py-4">
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--data-success-50)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]">
             {isSign ? <PenLine className="h-5 w-5" /> : <MessageCircle className="h-5 w-5" />}
           </span>
@@ -358,6 +361,7 @@ export function SendWhatsAppModal({ docs, mode = "share", telefono, onClose }: {
             <p id={titleId} className="text-sm font-extrabold text-[var(--text-primary)]">{isSign ? "Solicitar firma" : multi ? `Enviar ${docs.length} documentos por WhatsApp` : "Enviar por WhatsApp"}</p>
             <p className="truncate text-xs text-[var(--text-tertiary)]">{multi ? docs.map((d) => d.name).join(" · ") : doc?.name}</p>
           </div>
+          <ControlesDeVentana ventana={ventana} />
           <button onClick={onClose} className="rounded-xl p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Cerrar"><X className="h-4 w-4" /></button>
         </div>
 
@@ -614,6 +618,7 @@ export function SendWhatsAppModal({ docs, mode = "share", telefono, onClose }: {
             </button>
           )}
         </div>
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

@@ -21,6 +21,8 @@
 import { useState, useEffect, useMemo, useRef, type ReactNode } from "react";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import {
   X,
   Tag,
@@ -88,6 +90,7 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
   /* Escape ya lo maneja el atajo propio de esta pantalla: el hook pone
        el foco, la trampa de Tab y el scroll, no una segunda salida. */
   useModalAccesible(cajaRef, { onCerrar: onClose, cerrarConEscape: false, activo: open });
+  const ventana = useVentanaDeModal(open, { ref: cajaRef, aplicarTranslate: true, claveMemoria: "pos-gasto-recurrente" });
   // ── State ─────────────────────────────────────────────────────────
   const [customCats, setCustomCats] = useState<ExpenseCategoryDef[]>([]);
   const allCats = useMemo(
@@ -240,17 +243,18 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
   const SelectedIcon = getCategoryIcon(selectedCategory.iconKey);
 
   return (
-    <div ref={cajaRef} tabIndex={-1}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="recurring-expense-title"
+    <div
       className="fixed inset-0 z-modal flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto"
-      onClick={(e) => { if (e.target === e.currentTarget && !submitting) onClose(); }}
+      onClick={(e) => { if (e.target === e.currentTarget && !submitting && !ventana.fijado) onClose(); }}
       onKeyDown={(e) => { if (e.key === "Escape" && !submitting) onClose(); }}
     >
-      <div className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] w-full max-w-3xl my-8 overflow-hidden border border-[var(--rule-base)]">
+      <div ref={cajaRef} tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="recurring-expense-title"
+        className="relative bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] w-full max-w-3xl my-8 overflow-hidden border border-[var(--rule-base)]">
         {/* ── Header ── */}
-        <header className={cn("px-5 sm:px-6 py-4 border-b border-[var(--rule-base)] flex items-center gap-3", colorCls.bg)}>
+        <header {...ventana.asaProps} className={cn("px-5 sm:px-6 py-4 border-b border-[var(--rule-base)] flex items-center gap-3", colorCls.bg)}>
           <span className={cn("inline-flex items-center justify-center h-12 w-12 rounded-xl ring-1", colorCls.iconBg, colorCls.border)}>
             <SelectedIcon className={cn("h-6 w-6", colorCls.text)} strokeWidth={2} />
           </span>
@@ -262,15 +266,18 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
               Configura un pago fijo (alquiler, internet, etc.) para registrarlo en 1 click cuando llegue la fecha.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={submitting}
-            aria-label="Cerrar"
-            className="shrink-0 h-10 w-10 inline-flex items-center justify-center rounded-xl text-[var(--text-secondary)] hover:bg-white/60 dark:hover:bg-white/10 transition-colors disabled:opacity-50"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          <span className="ml-auto flex items-center gap-1 shrink-0">
+            <ControlesDeVentana ventana={ventana} />
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={submitting}
+              aria-label="Cerrar"
+              className="h-10 w-10 inline-flex items-center justify-center rounded-xl text-[var(--text-secondary)] hover:bg-white/60 dark:hover:bg-white/10 transition-colors disabled:opacity-50"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </span>
         </header>
 
         {/* ── Body ── */}
@@ -607,6 +614,7 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
             Guardar gasto recurrente
           </button>
         </footer>
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

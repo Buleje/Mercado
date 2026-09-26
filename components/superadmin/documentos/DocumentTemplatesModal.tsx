@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Sparkles,
   FileText,
@@ -11,6 +11,8 @@ import {
 } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import type { DbDocumentTemplate, TemplateField } from "@/lib/types/documents";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 
 interface Props {
   onClose: () => void;
@@ -32,6 +34,8 @@ export default function DocumentTemplatesModal({ onClose, onGenerated }: Props) 
   const [generating, setGenerating] = useState(false);
   const [success, setSuccess] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const ventana = useVentanaDeModal(true, { ref: dialogRef, aplicarTranslate: true, claveMemoria: "sa-document-templates" });
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -167,31 +171,35 @@ export default function DocumentTemplatesModal({ onClose, onGenerated }: Props) 
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget && !ventana.fijado) onClose();
       }}
     >
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-label="Generar documento desde plantilla"
-        className="w-full max-w-3xl max-h-[85vh] flex flex-col rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-[var(--shadow-lg)]"
+        className="relative w-full max-w-3xl max-h-[85vh] flex flex-col rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-[var(--shadow-lg)]"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)]">
+        <div {...ventana.asaProps} className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)]">
           <div className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-[var(--text-secondary)]" />
             <h2 className="text-lg font-extrabold text-[var(--text-primary)]">
               Generar documento desde plantilla
             </h2>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Cerrar"
-            className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          <span className="flex items-center gap-1">
+            <ControlesDeVentana ventana={ventana} />
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Cerrar"
+              className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </span>
         </div>
 
         {/* Body: list + form */}
@@ -295,6 +303,7 @@ export default function DocumentTemplatesModal({ onClose, onGenerated }: Props) 
             )}
           </div>
         </div>
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

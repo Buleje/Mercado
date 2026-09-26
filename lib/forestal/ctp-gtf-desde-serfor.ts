@@ -237,13 +237,15 @@ export function documentoGtfSerfor(
   </div>`;
 }
 
-/** Lo que la hoja de la guía agrega al armazón compartido. */
+/**
+ * Lo que la hoja de la guía agrega al armazón compartido.
+ *
+ * La franja «de dónde salen estos datos» (`.gtf-proc`) vive en `CSS_GTF_OFICIAL`
+ * porque la comparte con la reconstrucción del libro; acá queda sólo el aviso
+ * de guía anulada, el único color de la hoja que no es tinta.
+ */
 export const CSS_GTF_SERFOR = `
-  .gtf-proc { display:flex; align-items:center; gap:2.5mm; border:.6pt solid var(--linea-suave);
-              border-left:2pt solid var(--tinta); background:#fafcfb; padding:.8mm 1.6mm; margin-bottom:.6mm; }
-  .gtf-proc .txt { font-size:5.8pt; line-height:1.25; color:#374151; }
-  .gtf-proc .txt b { color:var(--tinta); }
-  .gtf-proc .alerta { display:block; margin-top:.8mm; color:#b91c1c; font-weight:bold; letter-spacing:.3pt; }
+  .gtf-proc .alerta { display:block; margin-top:.6mm; color:var(--mal); font-weight:bold; letter-spacing:.3pt; }
 `;
 
 /** El cuerpo completo de la guía de ingreso, listo para el visor. */

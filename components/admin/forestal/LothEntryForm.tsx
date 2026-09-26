@@ -21,7 +21,7 @@ import {
   ShieldAlert,
   Camera,
 } from "@buleje/design-system/icons";
-import AdminModal from "@/components/admin/shared/AdminModal";
+import AdminModal, { CabeceraPropia } from "@/components/admin/shared/AdminModal";
 import { CardTitle } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -724,10 +724,22 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
   }
 
   return (
-    <AdminModal open onClose={onClose} variant="wide" hideCloseButton className="sm:max-w-[1200px]">
+    <AdminModal open onClose={onClose} variant="wide" hideCloseButton claveVentana="loth-entry" className="sm:max-w-[1200px]">
       <div className="flex h-full max-h-[92vh] flex-col bg-[var(--surface-raised)]">
-        {/* Header */}
-        <header className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4 sm:px-6">
+        {/* Header — y asa de la ventana (ADR-420). */}
+        <CabeceraPropia
+          className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4 sm:px-6"
+          acciones={
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Cerrar"
+              className="shrink-0 rounded-xl p-2 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          }
+        >
           <div className="flex min-w-0 items-center gap-3">
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[var(--data-success-100)] text-[var(--data-success-700)]">
               <TreePine className="h-5 w-5" strokeWidth={1.75} />
@@ -741,15 +753,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Cerrar"
-            className="shrink-0 rounded-xl p-2 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </header>
+        </CabeceraPropia>
 
         <div className="flex min-h-0 flex-1 overflow-hidden">
         <form id="loth-entry-form" onSubmit={handleSubmit} className="min-w-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6 sm:grid sm:grid-cols-2 sm:gap-x-5 sm:gap-y-4 sm:content-start [&>*]:min-w-0 max-sm:space-y-4">

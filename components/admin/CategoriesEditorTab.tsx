@@ -6,6 +6,8 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Field } from "@/components/admin/shared/Field";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import {
   Loader2, Save, Check, GripVertical, Eye, EyeOff,
   ArrowUp, ArrowDown, Layers, Search, Globe, Tag, FileText, Link2, Sparkles,
@@ -215,6 +217,12 @@ export default function CategoriesEditorTab() {
   const newFormPanelRef = useRef<HTMLDivElement>(null);
   const cerrarNewForm = useCallback(() => { setShowNewForm(false); setNewCatName(""); }, []);
   useModalAccesible(newFormPanelRef, { onCerrar: cerrarNewForm, activo: showNewForm });
+  /** Ventana: se mueve, se achica y se fija (ADR-420). */
+  const ventana = useVentanaDeModal(showNewForm, {
+    ref: newFormPanelRef,
+    aplicarTranslate: true,
+    claveMemoria: "categorias-nueva",
+  });
 
   // Reordena moviendo el item `from` a la posición `to` (drag & drop).
   const moveTo = useCallback((from: number, to: number) => {
@@ -388,7 +396,7 @@ export default function CategoriesEditorTab() {
       {showNewForm && (
         <div
           className="fixed inset-0 z-system flex items-center justify-center bg-black/55 backdrop-blur-[2px] p-4"
-          onClick={cerrarNewForm}
+          onClick={(e) => { if (e.target === e.currentTarget && !ventana.fijado) cerrarNewForm(); }}
         >
           <div
             ref={newFormPanelRef}
@@ -396,10 +404,9 @@ export default function CategoriesEditorTab() {
             aria-modal="true"
             aria-labelledby="new-cat-title"
             tabIndex={-1}
-            onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-md rounded-3xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-[var(--shadow-xl)] overflow-hidden outline-none"
+            className="relative w-full max-w-md rounded-3xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-[var(--shadow-xl)] overflow-hidden outline-none"
           >
-            <header className="flex items-start gap-3 border-b-2 border-[var(--rule-soft)] px-5 py-5 sm:px-6">
+            <header {...ventana.asaProps} className="flex items-start gap-3 border-b-2 border-[var(--rule-soft)] px-5 py-5 sm:px-6">
               <span aria-hidden className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
                 <Tag className="h-6 w-6" strokeWidth={2.25} />
               </span>
@@ -414,6 +421,9 @@ export default function CategoriesEditorTab() {
                   Aparece en el POS, en el formulario de productos y en tu tienda online.
                 </p>
               </div>
+              <span className="ml-auto flex items-center gap-1 self-start">
+                <ControlesDeVentana ventana={ventana} />
+              </span>
               <button
                 type="button"
                 onClick={() => { setShowNewForm(false); setNewCatName(""); }}
@@ -485,6 +495,7 @@ export default function CategoriesEditorTab() {
                 Crear categoría
               </button>
             </footer>
+            <TiradorDeVentana ventana={ventana} />
           </div>
         </div>
       )}

@@ -9,6 +9,8 @@ import { useState, useEffect, useCallback, useMemo, useRef, useId } from "react"
 import { m, AnimatePresence } from "@/components/admin/providers";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/format";
 import {
   Search, Plus, X, ChevronLeft, ChevronRight, Loader2, AlertTriangle,
@@ -467,6 +469,12 @@ export default function NotasCreditoModule() {
   const detailPanelRef = useRef<HTMLDivElement>(null);
   // Escape ya lo maneja el efecto de más abajo (centraliza showNew/selected/showShortcuts).
   useModalAccesible(wizardPanelRef, { onCerrar: () => resetWizard(), activo: showNew, cerrarConEscape: false });
+  /** Ventana: se mueve, se achica y se fija (ADR-420). */
+  const ventanaWizard = useVentanaDeModal(showNew, {
+    ref: wizardPanelRef,
+    aplicarTranslate: true,
+    claveMemoria: "notas-credito-nueva",
+  });
   useModalAccesible(detailPanelRef, { onCerrar: () => setSelected(null), activo: !!selected, cerrarConEscape: false });
 
   // ── Keyboard Shortcuts ────────────────────────────────────────────────────
@@ -1406,7 +1414,7 @@ export default function NotasCreditoModule() {
           <>
             <m.div key="nnc-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="modal-backdrop" onClick={() => resetWizard()} />
             <m.div key="nnc-modal" initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="fixed inset-0 z-modal flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && resetWizard()}>
+              className="fixed inset-0 z-modal flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && !ventanaWizard.fijado && resetWizard()}>
               <div
                 ref={wizardPanelRef}
                 role="dialog"
@@ -1414,18 +1422,21 @@ export default function NotasCreditoModule() {
                 aria-labelledby={wizardTitleId}
                 tabIndex={-1}
                 className={cn(
-                "w-full bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden",
+                "relative w-full bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden",
                 wizardStep === 0 ? "max-w-3xl" : "max-w-xl"
               )}>
                 {/* Wizard Header */}
                 <div className="px-5 pt-5 pb-0">
-                  <div className="flex items-center justify-between mb-4">
+                  <div {...ventanaWizard.asaProps} className="flex items-center justify-between mb-4">
                     <CardTitle id={wizardTitleId} className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
                       <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
                         <CreditCard className="h-4 w-4 text-primary" />
                       </div>
                       Nueva Nota de Cr{"\u00e9"}dito
                     </CardTitle>
+                    <span className="ml-auto flex items-center gap-1">
+                      <ControlesDeVentana ventana={ventanaWizard} />
+                    </span>
                     <button onClick={resetWizard} aria-label="Cerrar" className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
                       <X className="h-5 w-5" />
                     </button>
@@ -1775,6 +1786,7 @@ export default function NotasCreditoModule() {
                     </div>
                   )}
                 </div>
+                <TiradorDeVentana ventana={ventanaWizard} />
               </div>
             </m.div>
           </>

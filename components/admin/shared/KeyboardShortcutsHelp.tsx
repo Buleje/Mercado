@@ -18,13 +18,15 @@
  *     document.addEventListener("keydown", h);
  *     return () => document.removeEventListener("keydown", h);
  *   }, [toggle]);
+ *
+ * 2026-09-25 (ADR-420): pasado de `Dialog.Root` directo a `AdminModal` — el
+ * Radix a mano no traía mover/achicar/fijar y era un caso trivial (diálogo
+ * centrado, sin variantes especiales) para migrar.
  */
 
-import * as Dialog from "@radix-ui/react-dialog";
-import { X, Keyboard } from "@buleje/design-system/icons";
+import { Keyboard } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
-import { cn } from "@/lib/utils";
-import { usePanelTokens } from "./use-panel-tokens";
+import AdminModal from "./AdminModal";
 
 interface Shortcut {
   keys: string[];
@@ -81,76 +83,45 @@ interface Props {
 }
 
 export function KeyboardShortcutsHelp({ open, onClose, sections = DEFAULT_SECTIONS }: Props) {
-  /* Portal a <body> y además montado FUERA de [data-area=admin] (providers):
-     sin esto el acento era coral y los grises los de la tienda (1/8 tokens). */
-  const panelTokens = usePanelTokens(open);
   return (
-    <Dialog.Root open={open} onOpenChange={(v) => !v && onClose()}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="modal-backdrop" />
-        <Dialog.Content
-          style={panelTokens}
-          className={cn(
-            "fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50",
-            "max-w-2xl w-[calc(100vw-2rem)] max-h-[85vh]",
-            "bg-[var(--surface-canvas)] rounded-xl shadow-[var(--shadow-xl)] border border-[var(--rule-base)] flex flex-col outline-none",
-          )}
-        >
-          <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)] shrink-0">
-            <div className="flex items-center gap-2.5">
-              <div className="h-8 w-8 rounded-lg bg-[var(--surface-sunken)] flex items-center justify-center text-[var(--text-secondary)]">
-                <Keyboard className="h-4 w-4" strokeWidth={1.75} />
-              </div>
-              <div>
-                <Dialog.Title className="font-display text-lg font-normal text-[var(--text-primary)] tracking-tight">
-                  Atajos de teclado
-                </Dialog.Title>
-                <Dialog.Description className="text-xs text-[var(--text-tertiary)]">
-                  Maneja el admin sin salir del teclado
-                </Dialog.Description>
-              </div>
-            </div>
-            <Dialog.Close asChild>
-              <button
-                aria-label="Cerrar"
-                className="h-8 w-8 rounded-lg flex items-center justify-center text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] transition-colors"
-              >
-                <X className="h-4 w-4" strokeWidth={1.75} />
-              </button>
-            </Dialog.Close>
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-5 space-y-6">
-            {sections.map((section) => (
-              <section key={section.title}>
-                <CardTitle as="h3" className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-3">
-                  {section.title}
-                </CardTitle>
-                <dl className="divide-y divide-[var(--rule-soft)]">
-                  {section.items.map((item, i) => (
-                    <div key={i} className="flex items-center justify-between gap-4 py-2">
-                      <dt className="text-sm text-[var(--text-primary)] flex-1 min-w-0">
-                        {item.description}
-                      </dt>
-                      <dd className="flex items-center gap-1 shrink-0">
-                        {item.keys.map((k, ki) => (
-                          <kbd
-                            key={ki}
-                            className="inline-flex items-center justify-center min-w-[1.75rem] h-6 px-1.5 rounded-md border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-xs font-mono font-semibold text-[var(--text-secondary)]"
-                          >
-                            {k}
-                          </kbd>
-                        ))}
-                      </dd>
-                    </div>
-                  ))}
-                </dl>
-              </section>
-            ))}
-          </div>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+    <AdminModal
+      open={open}
+      onClose={onClose}
+      title="Atajos de teclado"
+      description="Maneja el admin sin salir del teclado"
+      icon={Keyboard}
+      variant="wide"
+      claveVentana="atajos-de-teclado"
+    >
+      <div className="space-y-6 px-5 py-5">
+        {sections.map((section) => (
+          <section key={section.title}>
+            <CardTitle as="h3" className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-3">
+              {section.title}
+            </CardTitle>
+            <dl className="divide-y divide-[var(--rule-soft)]">
+              {section.items.map((item, i) => (
+                <div key={i} className="flex items-center justify-between gap-4 py-2">
+                  <dt className="text-sm text-[var(--text-primary)] flex-1 min-w-0">
+                    {item.description}
+                  </dt>
+                  <dd className="flex items-center gap-1 shrink-0">
+                    {item.keys.map((k, ki) => (
+                      <kbd
+                        key={ki}
+                        className="inline-flex items-center justify-center min-w-[1.75rem] h-6 px-1.5 rounded-md border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-xs font-mono font-semibold text-[var(--text-secondary)]"
+                      >
+                        {k}
+                      </kbd>
+                    ))}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+        ))}
+      </div>
+    </AdminModal>
   );
 }
 

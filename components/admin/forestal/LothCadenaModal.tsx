@@ -20,7 +20,7 @@ import {
   Truck,
   ArrowRight,
 } from "@buleje/design-system/icons";
-import AdminModal from "@/components/admin/shared/AdminModal";
+import AdminModal, { CabeceraPropia } from "@/components/admin/shared/AdminModal";
 import { CardTitle } from "@buleje/design-system";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { formatDate } from "@/lib/format";
@@ -101,9 +101,16 @@ export default function LothCadenaModal({ code, onClose }: { code: string; onClo
   }, [load]);
 
   return (
-    <AdminModal open onClose={onClose} variant="info" hideCloseButton>
+    <AdminModal open onClose={onClose} variant="info" hideCloseButton claveVentana="loth-cadena">
       <div className="flex max-h-[92vh] flex-col bg-[var(--surface-raised)]">
-        <header className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4 sm:px-6">
+        <CabeceraPropia
+          className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4 sm:px-6"
+          acciones={
+            <button type="button" onClick={onClose} aria-label="Cerrar" className="shrink-0 rounded-xl p-2 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]">
+              <X className="h-4 w-4" />
+            </button>
+          }
+        >
           <div className="flex min-w-0 items-center gap-3">
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[var(--data-success-100)] text-[var(--data-success-700)]">
               <TreePine className="h-5 w-5" strokeWidth={1.75} />
@@ -115,10 +122,7 @@ export default function LothCadenaModal({ code, onClose }: { code: string; onClo
               <p className="truncate text-xs text-[var(--text-tertiary)]">Del árbol al despacho, con su autorización</p>
             </div>
           </div>
-          <button type="button" onClick={onClose} aria-label="Cerrar" className="shrink-0 rounded-xl p-2 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]">
-            <X className="h-4 w-4" />
-          </button>
-        </header>
+        </CabeceraPropia>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6">
           {loading && (

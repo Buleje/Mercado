@@ -15,6 +15,8 @@
 
 import { useCallback, useState, useRef } from "react";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import Cropper, { type Area } from "react-easy-crop";
 import {
   ZoomIn,
@@ -102,6 +104,12 @@ export default function ImageCropEditor({
        el foco, la trampa de Tab y el scroll, no una segunda salida. */
   // `activo`: el uploader lo deja montado cerrado (`if (!open …) return null`).
   useModalAccesible(cajaRef, { onCerrar: onCancel, cerrarConEscape: false, activo: open && !!srcDataUrl });
+  /** Ventana: se mueve, se achica y se fija (ADR-420). */
+  const ventana = useVentanaDeModal(open && !!srcDataUrl, {
+    ref: cajaRef,
+    aplicarTranslate: true,
+    claveMemoria: "image-crop-editor",
+  });
   const [crop, setCrop] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
@@ -136,21 +144,23 @@ export default function ImageCropEditor({
   if (!open || !srcDataUrl) return null;
 
   return (
-    <div ref={cajaRef} tabIndex={-1}
+    <div
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Ajustar imagen"
       onClick={(e) => {
-        if (e.target === e.currentTarget && !working) onCancel();
+        if (e.target === e.currentTarget && !working && !ventana.fijado) onCancel();
       }}
       onKeyDown={(e) => {
         if (e.key === "Escape" && !working) onCancel();
       }}
     >
-      <div className="relative w-full max-w-3xl rounded-3xl bg-[var(--surface-raised)] shadow-2xl overflow-hidden border border-[var(--rule-soft)]">
+      <div ref={cajaRef} tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Ajustar imagen"
+        className="relative w-full max-w-3xl rounded-3xl bg-[var(--surface-raised)] shadow-2xl overflow-hidden border border-[var(--rule-soft)]"
+      >
         {/* Header */}
-        <header className="flex items-center justify-between gap-3 border-b-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-5 py-3">
+        <header {...ventana.asaProps} className="flex items-center justify-between gap-3 border-b-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-5 py-3">
           <div className="min-w-0 flex-1">
             <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]">
               Editor de imagen
@@ -159,6 +169,9 @@ export default function ImageCropEditor({
               Ajustá tu imagen
             </h2>
           </div>
+          <span className="ml-auto flex items-center gap-1 shrink-0">
+            <ControlesDeVentana ventana={ventana} />
+          </span>
           <button
             type="button"
             onClick={onCancel}
@@ -284,6 +297,8 @@ export default function ImageCropEditor({
             {working ? "Procesando…" : "Aplicar y subir"}
           </button>
         </footer>
+
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

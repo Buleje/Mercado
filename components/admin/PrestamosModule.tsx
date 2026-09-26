@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { escapeHtml } from "@/lib/safe-html";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import {
@@ -20,6 +22,7 @@ import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar, { type AdminTab } from "@/components/admin/shared/AdminTabBar";
 import { Field } from "@/components/admin/shared/Field";
 import { FiltroColumnaMulti, FiltroColumnaRango } from "@/components/admin/shared/filtros-columna";
+import { useOrdenColumnas, EnOrden, BotonRestablecerColumnas } from "@/components/admin/shared/columnas-ordenables";
 import type { Rango } from "@/lib/admin/filtros-columna";
 import { cn } from "@/lib/utils";
 import { useSettings } from "@/contexts/settings-context";
@@ -609,6 +612,9 @@ export default function PrestamosModule() {
   // Bulk selection (mejora 9)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
+  // Columnas de la tabla de cartera: arrastrar el título para reordenarlas.
+  const ordenCartera = useOrdenColumnas("prestamos-cartera", ["cliente", "sistema", "monto", "tasa", "cuotas", "saldo", "status"]);
+
   // Refinanciar modal (mejora 15)
   const [showRefinanciar, setShowRefinanciar] = useState(false);
   const [refMonto, setRefMonto] = useState("");
@@ -918,6 +924,12 @@ export default function PrestamosModule() {
   const refinanciarPanelRef = useRef<HTMLDivElement>(null);
   const cerrarRefinanciar = useCallback(() => setShowRefinanciar(false), []);
   useModalAccesible(refinanciarPanelRef, { onCerrar: cerrarRefinanciar, activo: showRefinanciar && !!selected });
+  /** Ventana: se mueve, se achica y se fija (ADR-420). */
+  const ventanaRefinanciar = useVentanaDeModal(showRefinanciar && !!selected, {
+    ref: refinanciarPanelRef,
+    aplicarTranslate: true,
+    claveMemoria: "prestamos-refinanciar",
+  });
 
   const cancelPanelRef = useRef<HTMLDivElement>(null);
   const cerrarCancelConfirm = useCallback(() => setShowCancelConfirm(false), []);
@@ -926,6 +938,13 @@ export default function PrestamosModule() {
   const pagoPanelRef = useRef<HTMLDivElement>(null);
   const cerrarPago = useCallback(() => setShowPago(false), []);
   useModalAccesible(pagoPanelRef, { onCerrar: cerrarPago, activo: showPago && !!selected });
+  /** Ventana: se mueve, se achica y se fija (ADR-420). Sin fila de encabezado propia: `asaAutomatica` engancha el título. */
+  const ventanaPago = useVentanaDeModal(showPago && !!selected, {
+    ref: pagoPanelRef,
+    aplicarTranslate: true,
+    asaAutomatica: true,
+    claveMemoria: "prestamos-pagar-cuota",
+  });
 
   // `resetCreateForm` no está memoizada (se redefine cada render); un ref
   // evita que `cerrarCreate` cambie de identidad en cada tecleo del form
@@ -935,6 +954,12 @@ export default function PrestamosModule() {
   const createPanelRef = useRef<HTMLDivElement>(null);
   const cerrarCreate = useCallback(() => { setShowCreate(false); resetCreateFormRef.current(); }, []);
   useModalAccesible(createPanelRef, { onCerrar: cerrarCreate, activo: showCreate });
+  /** Ventana: se mueve, se achica y se fija (ADR-420). */
+  const ventanaCreate = useVentanaDeModal(showCreate, {
+    ref: createPanelRef,
+    aplicarTranslate: true,
+    claveMemoria: "prestamos-crear",
+  });
 
   // Bank presets para autocompletar campos
   const BANK_PRESETS: Array<{ nombre: string; entidadTipo: PrestamoEntidadTipo; tasaRef: string; moraRef: string; teaRef: string; sistema: SistemaAmortizacion }> = [
@@ -1192,6 +1217,7 @@ export default function PrestamosModule() {
             <button onClick={() => { fetchPrestamos(); fetchResumen(); }} title="Recargar" className="p-2.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)] transition-colors">
               <RotateCcw className="h-4 w-4 text-[var(--text-tertiary)]" />
             </button>
+            <BotonRestablecerColumnas cambiado={ordenCartera.cambiado} onRestablecer={ordenCartera.restablecer} />
           </div>
           <AnimatePresence>
             {showFilters && (
@@ -1282,40 +1308,53 @@ export default function PrestamosModule() {
             <>
               <div className="-mx-4 sm:mx-0">
                 <DataTable className="min-w-[600px] sm:min-w-0">
-                  <thead>
+                  <thead ref={ordenCartera.refCabecera}>
                     <tr className="border-b border-[var(--rule-soft)]">
                       <th className="w-8">
                         <input type="checkbox" checked={selectedIds.size > 0 && selectedIds.size === paginated.length} onChange={toggleSelectAll} aria-label="Seleccionar todos" className="rounded accent-blue-600 cursor-pointer" />
                       </th>
-                      <th>Cliente</th>
-                      <th className="text-center hidden sm:table-cell">
-                        <span className="block">Sys</span>
-                        <FiltroColumnaMulti
-                          label="Sistema"
-                          value={filterSistema}
-                          options={(["FRANCES", "ALEMAN", "AMERICANO"] as SistemaAmortizacion[]).map((s) => ({ value: s, count: prestamos.filter((p) => p.sistemaAmortizacion === s).length }))}
-                          etiqueta={(v) => SISTEMA_LABELS[v as SistemaAmortizacion] ?? v}
-                          onChange={(v) => { setFilterSistema(v as SistemaAmortizacion[]); setPage(1); }}
-                          placeholder="Todos"
-                          className="mx-auto"
-                        />
-                      </th>
-                      <th className="text-right cursor-pointer select-none hover:text-[var(--text-primary)]" onClick={() => handleSort("monto")}>
-                        <span className="flex items-center justify-end gap-1">Monto {sortKey === "monto" ? (sortDir === "asc" ? "↑" : "↓") : <ArrowUpDown className="h-3 w-3 opacity-40" />}</span>
-                        {/* `role="presentation"` corta la burbuja del click del filtro antes
-                            de que llegue al onClick de ordenar del `<th>` padre. */}
-                        <div role="presentation" onClick={(e) => e.stopPropagation()}>
-                          <FiltroColumnaRango label="Monto" unidad="S/" paso={10} valor={montoRango} onChange={(r) => { setMontoRango(r as Rango<number>); setPage(1); }} placeholder="Todos" className="ml-auto" />
-                        </div>
-                      </th>
-                      <th className="text-right hidden sm:table-cell cursor-pointer select-none hover:text-[var(--text-primary)]" onClick={() => handleSort("tasaInteres")}>
-                        <span className="flex items-center justify-end gap-1">Tasa {sortKey === "tasaInteres" ? (sortDir === "asc" ? "↑" : "↓") : <ArrowUpDown className="h-3 w-3 opacity-40" />}</span>
-                      </th>
-                      <th className="text-right hidden sm:table-cell cursor-pointer select-none hover:text-[var(--text-primary)]" onClick={() => handleSort("numeroCuotas")}>
-                        <span className="flex items-center justify-end gap-1">Cuotas {sortKey === "numeroCuotas" ? (sortDir === "asc" ? "↑" : "↓") : <ArrowUpDown className="h-3 w-3 opacity-40" />}</span>
-                      </th>
-                      <th className="text-right">Saldo</th>
-                      <th>Status</th>
+                      <EnOrden
+                        orden={ordenCartera.orden}
+                        celdas={{
+                          cliente: <th data-col="cliente">Cliente</th>,
+                          sistema: (
+                            <th data-col="sistema" className="text-center hidden sm:table-cell">
+                              <span className="block">Sys</span>
+                              <FiltroColumnaMulti
+                                label="Sistema"
+                                value={filterSistema}
+                                options={(["FRANCES", "ALEMAN", "AMERICANO"] as SistemaAmortizacion[]).map((s) => ({ value: s, count: prestamos.filter((p) => p.sistemaAmortizacion === s).length }))}
+                                etiqueta={(v) => SISTEMA_LABELS[v as SistemaAmortizacion] ?? v}
+                                onChange={(v) => { setFilterSistema(v as SistemaAmortizacion[]); setPage(1); }}
+                                placeholder="Todos"
+                                className="mx-auto"
+                              />
+                            </th>
+                          ),
+                          monto: (
+                            <th data-col="monto" className="text-right cursor-pointer select-none hover:text-[var(--text-primary)]" onClick={() => handleSort("monto")}>
+                              <span className="flex items-center justify-end gap-1">Monto {sortKey === "monto" ? (sortDir === "asc" ? "↑" : "↓") : <ArrowUpDown className="h-3 w-3 opacity-40" />}</span>
+                              {/* `role="presentation"` corta la burbuja del click del filtro antes
+                                  de que llegue al onClick de ordenar del `<th>` padre. */}
+                              <div role="presentation" onClick={(e) => e.stopPropagation()}>
+                                <FiltroColumnaRango label="Monto" unidad="S/" paso={10} valor={montoRango} onChange={(r) => { setMontoRango(r as Rango<number>); setPage(1); }} placeholder="Todos" className="ml-auto" />
+                              </div>
+                            </th>
+                          ),
+                          tasa: (
+                            <th data-col="tasa" className="text-right hidden sm:table-cell cursor-pointer select-none hover:text-[var(--text-primary)]" onClick={() => handleSort("tasaInteres")}>
+                              <span className="flex items-center justify-end gap-1">Tasa {sortKey === "tasaInteres" ? (sortDir === "asc" ? "↑" : "↓") : <ArrowUpDown className="h-3 w-3 opacity-40" />}</span>
+                            </th>
+                          ),
+                          cuotas: (
+                            <th data-col="cuotas" className="text-right hidden sm:table-cell cursor-pointer select-none hover:text-[var(--text-primary)]" onClick={() => handleSort("numeroCuotas")}>
+                              <span className="flex items-center justify-end gap-1">Cuotas {sortKey === "numeroCuotas" ? (sortDir === "asc" ? "↑" : "↓") : <ArrowUpDown className="h-3 w-3 opacity-40" />}</span>
+                            </th>
+                          ),
+                          saldo: <th data-col="saldo" className="text-right">Saldo</th>,
+                          status: <th data-col="status">Status</th>,
+                        }}
+                      />
                     </tr>
                   </thead>
                   <tbody>
@@ -1356,39 +1395,50 @@ export default function PrestamosModule() {
                           <td className="w-8" onClick={e => e.stopPropagation()}>
                             <input type="checkbox" checked={selectedIds.has(p.id)} onChange={() => toggleSelect(p.id)} aria-label={`Seleccionar préstamo de ${p.entidadNombre || p.customerId}`} className="rounded accent-blue-600 cursor-pointer" />
                           </td>
-                          <td>
-                            <div className="flex items-center gap-2">
-                              <div className="relative h-8 w-8 rounded-full bg-secondary/20 flex items-center justify-center shrink-0">
-                                <User className="h-4 w-4 text-secondary" />
-                                <span className={cn("absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white", riskDot)} title={tieneVenc ? "Cuota vencida" : venceSemana ? "Vence esta semana" : "Al día"} />
-                              </div>
-                              <div className="min-w-0">
-                                <p className="font-medium text-[var(--text-primary)] truncate">{p.entidadNombre || p.customerId}</p>
-                                <div className="w-full bg-[var(--surface-sunken)] rounded-full h-1.5 mt-1">
-                                  <div className="bg-[var(--accent)] h-1.5 rounded-full" style={{ width: `${p.numeroCuotas > 0 ? (cuotasPagadas / p.numeroCuotas) * 100 : 0}%` }} />
-                                </div>
-                                <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{cuotasPagadas}/{p.numeroCuotas} cuotas</span>
-                                {proxVence && (
-                                  <span className="ml-1 text-[length:var(--ts-2xs)] bg-[var(--data-warning-100)] text-[var(--data-warning-500)] px-1.5 py-0.5 rounded-full">
-                                    {new Date(proxVence.fechaVence).toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit" })} · {formatCurrency(proxVence.monto)}
+                          <EnOrden
+                            orden={ordenCartera.orden}
+                            celdas={{
+                              cliente: (
+                                <td>
+                                  <div className="flex items-center gap-2">
+                                    <div className="relative h-8 w-8 rounded-full bg-secondary/20 flex items-center justify-center shrink-0">
+                                      <User className="h-4 w-4 text-secondary" />
+                                      <span className={cn("absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white", riskDot)} title={tieneVenc ? "Cuota vencida" : venceSemana ? "Vence esta semana" : "Al día"} />
+                                    </div>
+                                    <div className="min-w-0">
+                                      <p className="font-medium text-[var(--text-primary)] truncate">{p.entidadNombre || p.customerId}</p>
+                                      <div className="w-full bg-[var(--surface-sunken)] rounded-full h-1.5 mt-1">
+                                        <div className="bg-[var(--accent)] h-1.5 rounded-full" style={{ width: `${p.numeroCuotas > 0 ? (cuotasPagadas / p.numeroCuotas) * 100 : 0}%` }} />
+                                      </div>
+                                      <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{cuotasPagadas}/{p.numeroCuotas} cuotas</span>
+                                      {proxVence && (
+                                        <span className="ml-1 text-[length:var(--ts-2xs)] bg-[var(--data-warning-100)] text-[var(--data-warning-500)] px-1.5 py-0.5 rounded-full">
+                                          {new Date(proxVence.fechaVence).toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit" })} · {formatCurrency(proxVence.monto)}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </td>
+                              ),
+                              sistema: (
+                                <td className="hidden sm:table-cell text-center">
+                                  <span className={cn("inline-flex items-center px-1.5 py-0.5 rounded text-[length:var(--ts-2xs)] font-bold", sisBg)}>{sisBadge}</span>
+                                </td>
+                              ),
+                              monto: <td className="num font-medium text-[var(--text-primary)]">{formatCurrency(p.monto)}</td>,
+                              tasa: <td className="num text-[var(--text-secondary)] hidden sm:table-cell">{p.tasaInteres}%</td>,
+                              cuotas: <td className="num text-[var(--text-secondary)] hidden sm:table-cell">{p.numeroCuotas}</td>,
+                              saldo: <td className="num font-bold text-[var(--text-primary)]">{formatCurrency(saldoPend)}</td>,
+                              status: (
+                                <td>
+                                  <span className={cn("inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold", meta.bg, meta.color)}>
+                                    <StatusIcon className="h-3 w-3" />
+                                    {meta.label}
                                   </span>
-                                )}
-                              </div>
-                            </div>
-                          </td>
-                          <td className="hidden sm:table-cell text-center">
-                            <span className={cn("inline-flex items-center px-1.5 py-0.5 rounded text-[length:var(--ts-2xs)] font-bold", sisBg)}>{sisBadge}</span>
-                          </td>
-                          <td className="num font-medium text-[var(--text-primary)]">{formatCurrency(p.monto)}</td>
-                          <td className="num text-[var(--text-secondary)] hidden sm:table-cell">{p.tasaInteres}%</td>
-                          <td className="num text-[var(--text-secondary)] hidden sm:table-cell">{p.numeroCuotas}</td>
-                          <td className="num font-bold text-[var(--text-primary)]">{formatCurrency(saldoPend)}</td>
-                          <td>
-                            <span className={cn("inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold", meta.bg, meta.color)}>
-                              <StatusIcon className="h-3 w-3" />
-                              {meta.label}
-                            </span>
-                          </td>
+                                </td>
+                              ),
+                            }}
+                          />
                         </tr>
                       );
                     })}
@@ -2316,10 +2366,13 @@ ${cuotas.map(c => { const row = `<tr>
         {showRefinanciar && selected && (
           <>
             <m.div key="ref-bd" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="modal-backdrop" style={{ zIndex: 60 }} onClick={() => setShowRefinanciar(false)} />
-            <m.div key="ref-modal" initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }} className="fixed inset-0 z-modal-2 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && setShowRefinanciar(false)}>
-              <div ref={refinanciarPanelRef} role="dialog" aria-modal="true" aria-label="Refinanciar préstamo" tabIndex={-1} className="w-full max-w-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 outline-none">
-                <div className="flex items-center justify-between">
+            <m.div key="ref-modal" initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }} className="fixed inset-0 z-modal-2 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && !ventanaRefinanciar.fijado && setShowRefinanciar(false)}>
+              <div ref={refinanciarPanelRef} role="dialog" aria-modal="true" aria-label="Refinanciar préstamo" tabIndex={-1} className="relative w-full max-w-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 outline-none">
+                <div {...ventanaRefinanciar.asaProps} className="flex items-center justify-between">
                   <CardTitle className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2"><RotateCcw className="h-5 w-5 text-[var(--data-success-500)]" /> Refinanciar Préstamo</CardTitle>
+                  <span className="ml-auto flex items-center gap-1">
+                    <ControlesDeVentana ventana={ventanaRefinanciar} />
+                  </span>
                   <button aria-label="Cerrar" onClick={() => setShowRefinanciar(false)}><X className="h-4 w-4 text-[var(--text-secondary)]" /></button>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -2335,6 +2388,7 @@ ${cuotas.map(c => { const row = `<tr>
                     {refinancing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />} Refinanciar
                   </button>
                 </div>
+                <TiradorDeVentana ventana={ventanaRefinanciar} />
               </div>
             </m.div>
           </>
@@ -2386,10 +2440,13 @@ ${cuotas.map(c => { const row = `<tr>
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               className="fixed inset-0 z-modal-2 flex items-center justify-center p-4"
-              onClick={e => e.target === e.currentTarget && setShowPago(false)}
+              onClick={e => e.target === e.currentTarget && !ventanaPago.fijado && setShowPago(false)}
             >
-              <div ref={pagoPanelRef} role="dialog" aria-modal="true" aria-label="Pagar cuota" tabIndex={-1} className="w-full max-w-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 outline-none">
-                <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Pagar Cuota</CardTitle>
+              <div ref={pagoPanelRef} role="dialog" aria-modal="true" aria-label="Pagar cuota" tabIndex={-1} className="relative w-full max-w-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 outline-none">
+                <div {...ventanaPago.asaProps} className="flex items-center justify-between gap-2">
+                  <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Pagar Cuota</CardTitle>
+                  <ControlesDeVentana ventana={ventanaPago} />
+                </div>
                 <Field label="Monto del pago (S/)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                   <input
                     type="number"
@@ -2414,6 +2471,7 @@ ${cuotas.map(c => { const row = `<tr>
                     Pagar
                   </button>
                 </div>
+                <TiradorDeVentana ventana={ventanaPago} />
               </div>
             </m.div>
           </>
@@ -2438,17 +2496,20 @@ ${cuotas.map(c => { const row = `<tr>
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               className="fixed inset-0 z-modal flex items-center justify-center p-4 overflow-y-auto"
-              onClick={e => e.target === e.currentTarget && (() => { setShowCreate(false); resetCreateForm(); })()}
+              onClick={e => e.target === e.currentTarget && !ventanaCreate.fijado && (() => { setShowCreate(false); resetCreateForm(); })()}
             >
-              <div ref={createPanelRef} role="dialog" aria-modal="true" aria-label="Crear préstamo" tabIndex={-1} className="w-full max-w-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 my-4 outline-none">
+              <div ref={createPanelRef} role="dialog" aria-modal="true" aria-label="Crear préstamo" tabIndex={-1} className="relative w-full max-w-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 my-4 outline-none">
                 {/* Header */}
-                <div className="flex items-center justify-between">
+                <div {...ventanaCreate.asaProps} className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Crear Préstamo</CardTitle>
                     <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
                       Paso {createStep} de 2
                     </span>
                   </div>
+                  <span className="ml-auto flex items-center gap-1">
+                    <ControlesDeVentana ventana={ventanaCreate} />
+                  </span>
                   <button aria-label="Cerrar" onClick={() => { setShowCreate(false); resetCreateForm(); }} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)]">
                     <X className="h-4 w-4 text-[var(--text-secondary)]" />
                   </button>
@@ -2784,6 +2845,7 @@ ${cuotas.map(c => { const row = `<tr>
                     </div>
                   </div>
                 )}
+                <TiradorDeVentana ventana={ventanaCreate} />
               </div>
             </m.div>
           </>

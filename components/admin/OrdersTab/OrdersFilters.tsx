@@ -5,6 +5,8 @@ import { CardTitle } from "@buleje/design-system";
 import { Field } from "@/components/admin/shared/Field";
 import { X, Search } from "@buleje/design-system/icons";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { cn } from "@/lib/utils";
 import type { OrderFilters, FiltersAction, OrderSource } from "./types";
 import { STATUS_LABELS } from "./types";
@@ -34,11 +36,12 @@ export function OrdersFilters({ filters, dispatch, repartidores, repartidor, onR
   const repartidorId = useId();
   const modalRef = useRef<HTMLDivElement>(null);
   useModalAccesible(modalRef, { onCerrar: onClose });
+  const ventana = useVentanaDeModal(true, { ref: modalRef, aplicarTranslate: true, claveMemoria: "pedidos-filtros" });
 
   return (
     <div
       className="fixed inset-0 z-modal flex items-center justify-center p-4 bg-black/50"
-      onClick={onClose}
+      onClick={(e) => { if (e.target === e.currentTarget && !ventana.fijado) onClose(); }}
     >
       <div
         ref={modalRef}
@@ -46,21 +49,24 @@ export function OrdersFilters({ filters, dispatch, repartidores, repartidor, onR
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="bg-[var(--surface-raised)] rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col"
+        className="relative bg-[var(--surface-raised)] rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
+        <div {...ventana.asaProps} className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
           <div>
             <CardTitle id={titleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">Filtros Avanzados</CardTitle>
             <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-0.5">Afina tu búsqueda de pedidos</p>
           </div>
-          <button aria-label="Cerrar"
-            onClick={onClose}
-            className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--rule-soft)] transition-colors"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          <span className="ml-auto flex items-center gap-1">
+            <ControlesDeVentana ventana={ventana} />
+            <button aria-label="Cerrar"
+              onClick={onClose}
+              className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--rule-soft)] transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </span>
         </div>
 
         <div className="overflow-y-auto flex-1 p-5 space-y-4">
@@ -281,6 +287,7 @@ export function OrdersFilters({ filters, dispatch, repartidores, repartidor, onR
             Aplicar filtros
           </button>
         </div>
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

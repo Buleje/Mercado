@@ -817,7 +817,7 @@ function EmptyState({ onPick }: { onPick: (prompt: string) => void }) {
         Asistente de tu negocio
       </SectionTitle>
       <p className="text-base text-[var(--text-secondary)] leading-relaxed max-w-xl">
-        Contame qué pasó y lo anoto donde va — gastos, ingresos, adelantos, cobros.
+        Cuéntame qué pasó y lo anoto donde va — gastos, ingresos, adelantos, cobros.
         Y si quieres entender el negocio, pregúntame: respondo con datos reales y
         ejemplos fáciles.
       </p>

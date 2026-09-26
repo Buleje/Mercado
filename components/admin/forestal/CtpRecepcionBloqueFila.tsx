@@ -15,7 +15,7 @@ import { loQueFaltaRecibir } from "@/lib/forestal/recepcion-guias";
 import { diaDelLibro, type PropuestaDeLlegada, type RevisionDeLlegada } from "@/lib/forestal/fecha-de-llegada";
 import { formatCurrency } from "@/lib/format";
 import { formatDate } from "./ctp-shared";
-import { AvisosDeLlegada, CampoFechaDeLlegada } from "./CtpFechaDeLlegada";
+import { AvisosDeLlegada, CampoFechaDeLlegada, ConfirmarVencida } from "./CtpFechaDeLlegada";
 import type { GuiaParaBloque } from "./CtpRecepcionBloqueModal";
 
 const CAMPO =
@@ -27,6 +27,7 @@ export default function CtpRecepcionBloqueFila({
   propuesta,
   revision,
   hoy,
+  vencimiento,
   enviando,
   intentado,
   onTocar,
@@ -37,6 +38,8 @@ export default function CtpRecepcionBloqueFila({
   /** Lo que dice `revisarLlegada` de la fecha elegida; `null` si no está marcada. */
   revision: RevisionDeLlegada | null;
   hoy: string;
+  /** El vencimiento de la guía (ADR-434 §Vencimiento), si el papel lo trae. */
+  vencimiento: string | null;
   enviando: boolean;
   intentado: boolean;
   onTocar: (parche: Partial<MarcaDeGuia>) => void;
@@ -99,7 +102,8 @@ export default function CtpRecepcionBloqueFila({
               min={diaGuia}
               max={hoy}
               disabled={enviando}
-              invalido={intentado && Boolean(revision?.bloqueo)}
+              invalido={(intentado && Boolean(revision?.bloqueo)) || Boolean(revision?.vencida)}
+              vencimiento={vencimiento}
             />
             <label className="block text-sm">
               <span className="mb-1 block font-bold text-[var(--text-secondary)]">
@@ -133,6 +137,16 @@ export default function CtpRecepcionBloqueFila({
               </span>
             </label>
           </div>
+          {revision?.vencida && (
+            <ConfirmarVencida
+              id={`vencida-${g.clave}`}
+              vencida={revision.vencida}
+              acepta={m.aceptaVencida}
+              motivo={m.motivoVencida}
+              disabled={enviando}
+              onCambio={onTocar}
+            />
+          )}
           <AvisosDeLlegada revision={revision} />
         </>
       )}

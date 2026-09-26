@@ -30,6 +30,7 @@ import {
   useAtajoGuardar,
   useCierreSeguro,
   type WoodEntry,
+  FormularioClaro,
 } from "./ctp-shared";
 import CtpIngresoPartesForm from "./CtpIngresoPartesForm";
 import CamposPersonalizados from "@/components/admin/shared/CamposPersonalizados";
@@ -303,7 +304,11 @@ export default function CtpIngresoEditModal({
         </ModalFooter>
       }
     >
-      <div ref={bodyRef} className={MODAL_BODY}>
+      {/* Mismo estilo «claro» que el alta (Brandon 2026-09-25: «mismo diseño
+          al corregir»): tarjetas por sección y ayudas en ⓘ, sobre fondo
+          hundido para que cada bloque se lea separado. */}
+      <div ref={bodyRef} className={`${MODAL_BODY} bg-[var(--surface-sunken)]`}>
+        <FormularioClaro>
         {error && (
           <div className="mb-4 flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -313,8 +318,8 @@ export default function CtpIngresoEditModal({
 
         {/* Mismas secciones y mismos números que el alta: quien corrige un
             ingreso ya llenó ese formulario y busca los campos donde estaban. */}
-        <div className="grid gap-x-8 md:grid-cols-2">
-          <div>
+        <div className="grid gap-4 md:grid-cols-2 md:items-start">
+          <div className="grid gap-4">
             <Seccion numero={1} title="Documento de origen">
               <Field span={6} label="Fecha de la operación" required casillero={2}>
                 <input
@@ -480,7 +485,7 @@ export default function CtpIngresoEditModal({
             </Seccion>
           </div>
 
-          <div>
+          <div className="grid gap-4">
             <Seccion numero={4} title="Especie forestal">
               <Field span={12} label="Especie" required casillero={7}>
                 <input
@@ -624,11 +629,12 @@ export default function CtpIngresoEditModal({
             (ADR-427). El ingreso ya existe, así que se guarda solo: no espera
             al botón de «Guardar corrección», que manda sólo los casilleros. */}
         <CamposPersonalizados
-          className="mt-5"
+          className="mt-4"
           formulario={FORMULARIO}
           registroId={entry.id}
           etiquetaFormulario="ingresos"
         />
+        </FormularioClaro>
       </div>
     </AdminModal>
   );

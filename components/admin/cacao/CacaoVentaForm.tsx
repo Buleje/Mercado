@@ -18,7 +18,7 @@ import {
   PackageCheck,
 } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
-import AdminModal from "@/components/admin/shared/AdminModal";
+import AdminModal, { CabeceraPropia } from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
   CACAO_VENTA_CANALES,
@@ -185,7 +185,7 @@ export default function CacaoVentaForm({ onClose, onSaved }: Props) {
   }
 
   return (
-    <AdminModal open onClose={onClose} variant="wide" hideCloseButton className="!max-w-[900px]"
+    <AdminModal open onClose={onClose} variant="wide" hideCloseButton claveVentana="cacao-registrar-venta" className="sm:max-w-[900px]"
       footer={
         <div className="flex items-center justify-end gap-2">
           <button
@@ -215,7 +215,19 @@ export default function CacaoVentaForm({ onClose, onSaved }: Props) {
       }
     >
       <div className="flex h-full max-h-[90vh] flex-col bg-[var(--surface-raised)]">
-        <header className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4">
+        <CabeceraPropia
+          className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4"
+          acciones={
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Cerrar"
+              className="rounded-xl p-2 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          }
+        >
           <div className="flex items-center gap-3">
             <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
               <Coins className="h-5 w-5" strokeWidth={1.75} />
@@ -229,15 +241,7 @@ export default function CacaoVentaForm({ onClose, onSaved }: Props) {
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Cerrar"
-            className="rounded-xl p-2 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </header>
+        </CabeceraPropia>
 
         <div className="flex-1 overflow-y-auto">
           <div className="grid lg:grid-cols-[minmax(0,1fr)_300px]">

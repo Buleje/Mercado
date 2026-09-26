@@ -14,6 +14,11 @@ import { useEffect, useId, useRef, useState } from "react";
 import { MapPin, Undo2, Check, X, Trash2, Loader2, Layers } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import {
+  ControlesDeVentana,
+  TiradorDeVentana,
+} from "@/components/admin/shared/modal-controles-ventana";
 import { BRAND_GEO } from "@/lib/geo";
 import { polygonAreaHa, ringToGeoJsonPolygon, geoJsonPolygonToRing, type LatLng } from "@/lib/forestal/loth-geo";
 
@@ -131,16 +136,31 @@ export default function CtpOriginPolygonModal({ originCode, initialPolygonJson, 
   const titleId = useId();
   const modalRef = useRef<HTMLDivElement>(null);
   useModalAccesible(modalRef, { onCerrar: onClose });
+  /** Ventana: se mueve, se achica y se fija (ADR-420). */
+  const ventana = useVentanaDeModal(true, {
+    ref: modalRef,
+    aplicarTranslate: true,
+    claveMemoria: "ctp-origen-poligono",
+  });
+  // El mapa Leaflet cachea su tamaño al iniciar: si la ventana se achica o
+  // agranda a mano, sin esto quedaba con tiles a medio pintar y los clics ya
+  // no correspondían al punto que se ve.
+  useEffect(() => {
+    mapRef.current?.invalidateSize();
+  }, [ventana.estilo.width, ventana.estilo.height]);
 
   return (
-    <div className="fixed inset-0 z-system flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div ref={modalRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="flex max-h-[92vh] w-[min(94vw,900px)] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-xl" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between border-b-2 border-[var(--rule-base)] px-5 py-3">
+    <div className="fixed inset-0 z-system flex items-center justify-center bg-black/50 p-4" onClick={(e) => e.target === e.currentTarget && !ventana.fijado && onClose()}>
+      <div ref={modalRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="relative flex max-h-[92vh] w-[min(94vw,900px)] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-xl">
+        <div {...ventana.asaProps} className="flex items-center justify-between border-b-2 border-[var(--rule-base)] px-5 py-3">
           <div className="flex items-center gap-2">
             <MapPin className="h-4 w-4 text-[var(--brand-ink)] dark:text-[var(--text-primary)]" />
             <CardTitle id={titleId} as="h3" className="text-base font-bold text-[var(--text-primary)]">Dibujar parcela · {originCode}</CardTitle>
           </div>
-          <button type="button" onClick={onClose} aria-label="Cerrar" className="grid h-9 w-9 place-items-center rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]">
+          <span className="ml-auto flex items-center gap-1">
+            <ControlesDeVentana ventana={ventana} />
+          </span>
+          <button type="button" onClick={onClose} aria-label="Cerrar" className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -174,6 +194,8 @@ export default function CtpOriginPolygonModal({ originCode, initialPolygonJson, 
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Guardar polígono
           </button>
         </div>
+
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

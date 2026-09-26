@@ -1021,7 +1021,7 @@ export const AdminSidebar = React.memo(function AdminSidebar({
                       )}
 
                       {totalAlerts > 0 && (
-                        <span className="text-[length:var(--ts-2xs)] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center bg-[var(--data-error-500)] text-white leading-none animate-pulse">
+                        <span className="text-[length:var(--ts-2xs)] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center bg-[var(--data-error-700)] text-white leading-none animate-pulse">
                           {totalAlerts}
                         </span>
                       )}
@@ -1111,7 +1111,7 @@ export const AdminSidebar = React.memo(function AdminSidebar({
                                     </span>
                                   )}
                                   {subAlertCount > 0 && (
-                                    <span className="text-[length:var(--ts-2xs)] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center bg-[var(--data-error-500)] text-white leading-none ml-auto animate-pulse">
+                                    <span className="text-[length:var(--ts-2xs)] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center bg-[var(--data-error-700)] text-white leading-none ml-auto animate-pulse">
                                       {subAlertCount}
                                     </span>
                                   )}
@@ -1212,7 +1212,7 @@ export const AdminSidebar = React.memo(function AdminSidebar({
                   )}
                   {alertCount > 0 && (
                     <span
-                      className="absolute -top-0.5 -right-0.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--data-error-500)] text-white text-xs font-extrabold tabular-nums leading-none ring-2 ring-[var(--surface-raised)] dark:ring-[var(--surface-canvas)] shadow-sm"
+                      className="absolute -top-0.5 -right-0.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--data-error-700)] text-white text-xs font-extrabold tabular-nums leading-none ring-2 ring-[var(--surface-raised)] dark:ring-[var(--surface-canvas)] shadow-sm"
                       title={`${alertCount} ${alertCount === 1 ? "alerta" : "alertas"} sin leer`}
                     >
                       {alertCount > 9 ? "9+" : alertCount}

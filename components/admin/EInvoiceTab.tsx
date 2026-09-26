@@ -3,6 +3,7 @@
 import { CardTitle, DataTable } from "@buleje/design-system";
 import { Field } from "@/components/admin/shared/Field";
 import { FiltroColumnaMulti } from "@/components/admin/shared/filtros-columna";
+import { BotonRestablecerColumnas, EnOrden, useOrdenColumnas } from "@/components/admin/shared/columnas-ordenables";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useMemo, useEffect, useCallback, useId, useRef } from "react";
 import {
@@ -10,6 +11,8 @@ import {
   XCircle, Clock, Send, AlertTriangle, Receipt, Loader2,
 } from "@buleje/design-system/icons";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { cn, exportToCSV } from "@/lib/utils";
 import dynamic from "next/dynamic";
 import { formatDateNumeric, formatNumber } from "@/lib/format";
@@ -68,6 +71,9 @@ const STATUS_META: Record<DocStatus, { label: string; color: string; icon: typeo
   pendiente: { label: "Pendiente", color: "text-[var(--data-warning-500)]",   icon: Clock },
 };
 
+/** Las columnas de datos en su orden de fábrica (Ver/PDF es fija, al final). */
+const COLS_EINVOICE = ["serieNro", "fecha", "tipo", "cliente", "total", "estado"] as const;
+
 const EMPTY_FORM: EmitForm = {
   orderId: "",
   tipoDoc: "03",
@@ -88,6 +94,7 @@ export default function EInvoiceTab() {
   const [filterStatus, setFilterStatus] = useState<DocStatus[]>([]);
   const [detail, setDetail] = useState<EDocument | null>(null);
   const [, setLoadingDocs] = useState(true);
+  const orden = useOrdenColumnas("einvoice-comprobantes", COLS_EINVOICE);
 
   // Emisión
   const [emitForm, setEmitForm] = useState<EmitForm | null>(null);
@@ -269,6 +276,17 @@ export default function EInvoiceTab() {
   const emitTitleId = useId();
   useModalAccesible(detailModalRef, { onCerrar: cerrarDetail, activo: !!detail });
   useModalAccesible(emitModalRef, { onCerrar: cerrarEmit, activo: emitForm !== null });
+  /** Ventana: se mueve, se achica y se fija (ADR-420). */
+  const ventanaDetalle = useVentanaDeModal(!!detail, {
+    ref: detailModalRef,
+    aplicarTranslate: true,
+    claveMemoria: "efactura-detalle",
+  });
+  const ventanaEmit = useVentanaDeModal(emitForm !== null, {
+    ref: emitModalRef,
+    aplicarTranslate: true,
+    claveMemoria: "efactura-emitir",
+  });
 
   return (
     <div className="space-y-3 sm:space-y-6">
@@ -359,6 +377,7 @@ export default function EInvoiceTab() {
             className="w-full pl-9 pr-3 h-10 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]"
           />
         </div>
+        <BotonRestablecerColumnas cambiado={orden.cambiado} onRestablecer={orden.restablecer} />
       </div>
 
       {/* En el celular la tabla es tarjetas (`.admin-mobile-cards` esconde el
@@ -401,34 +420,43 @@ export default function EInvoiceTab() {
           </div>
         ) : (
           <DataTable className="min-w-[640px]">
-              <thead>
+              <thead ref={orden.refCabecera}>
                 <tr>
-                  <th>Serie-Nro</th>
-                  <th>Fecha</th>
-                  <th>
-                    <span className="block">Tipo</span>
-                    <FiltroColumnaMulti
-                      label="Tipo"
-                      value={filterType}
-                      options={(Object.keys(TYPE_META) as DocType[]).map(t => ({ value: t, count: docs.filter(d => d.type === t).length }))}
-                      etiqueta={(v) => TYPE_META[v as DocType]?.label ?? v}
-                      onChange={(v) => setFilterType(v as DocType[])}
-                      placeholder="Todos"
-                    />
-                  </th>
-                  <th>Cliente</th>
-                  <th>Total</th>
-                  <th>
-                    <span className="block">Estado</span>
-                    <FiltroColumnaMulti
-                      label="Estado"
-                      value={filterStatus}
-                      options={(Object.keys(STATUS_META) as DocStatus[]).map(s => ({ value: s, count: docs.filter(d => d.status === s).length }))}
-                      etiqueta={(v) => STATUS_META[v as DocStatus]?.label ?? v}
-                      onChange={(v) => setFilterStatus(v as DocStatus[])}
-                      placeholder="Todos"
-                    />
-                  </th>
+                  <EnOrden
+                    orden={orden.orden}
+                    celdas={{
+                      serieNro: <th data-col="serieNro">Serie-Nro</th>,
+                      fecha: <th data-col="fecha">Fecha</th>,
+                      tipo: (
+                        <th data-col="tipo">
+                          <span className="block">Tipo</span>
+                          <FiltroColumnaMulti
+                            label="Tipo"
+                            value={filterType}
+                            options={(Object.keys(TYPE_META) as DocType[]).map(t => ({ value: t, count: docs.filter(d => d.type === t).length }))}
+                            etiqueta={(v) => TYPE_META[v as DocType]?.label ?? v}
+                            onChange={(v) => setFilterType(v as DocType[])}
+                            placeholder="Todos"
+                          />
+                        </th>
+                      ),
+                      cliente: <th data-col="cliente">Cliente</th>,
+                      total: <th data-col="total">Total</th>,
+                      estado: (
+                        <th data-col="estado">
+                          <span className="block">Estado</span>
+                          <FiltroColumnaMulti
+                            label="Estado"
+                            value={filterStatus}
+                            options={(Object.keys(STATUS_META) as DocStatus[]).map(s => ({ value: s, count: docs.filter(d => d.status === s).length }))}
+                            etiqueta={(v) => STATUS_META[v as DocStatus]?.label ?? v}
+                            onChange={(v) => setFilterStatus(v as DocStatus[])}
+                            placeholder="Todos"
+                          />
+                        </th>
+                      ),
+                    }}
+                  />
                   <th></th>
                 </tr>
               </thead>
@@ -437,23 +465,34 @@ export default function EInvoiceTab() {
                   const StatusIcon = STATUS_META[d.status].icon;
                   return (
                     <tr key={d.id}>
-                      <td className="font-mono font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{d.serie}-{d.number}</td>
-                      <td className="text-[var(--text-secondary)]">{d.date}</td>
-                      <td>
-                        <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", TYPE_META[d.type].bg, TYPE_META[d.type].color)}>
-                          {TYPE_META[d.type].label}
-                        </span>
-                      </td>
-                      <td className="text-[var(--text-primary)] dark:text-[var(--text-primary)]">
-                        {d.clientName}<br />
-                        <span className="text-xs text-[var(--text-tertiary)]">{d.clientRUC}</span>
-                      </td>
-                      <td className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(d.total)}</td>
-                      <td>
-                        <span className={cn("flex items-center gap-1 text-xs font-bold", STATUS_META[d.status].color)}>
-                          <StatusIcon className="h-3 w-3" />{STATUS_META[d.status].label}
-                        </span>
-                      </td>
+                      <EnOrden
+                        orden={orden.orden}
+                        celdas={{
+                          serieNro: <td className="font-mono font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{d.serie}-{d.number}</td>,
+                          fecha: <td className="text-[var(--text-secondary)]">{d.date}</td>,
+                          tipo: (
+                            <td>
+                              <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", TYPE_META[d.type].bg, TYPE_META[d.type].color)}>
+                                {TYPE_META[d.type].label}
+                              </span>
+                            </td>
+                          ),
+                          cliente: (
+                            <td className="text-[var(--text-primary)] dark:text-[var(--text-primary)]">
+                              {d.clientName}<br />
+                              <span className="text-xs text-[var(--text-tertiary)]">{d.clientRUC}</span>
+                            </td>
+                          ),
+                          total: <td className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(d.total)}</td>,
+                          estado: (
+                            <td>
+                              <span className={cn("flex items-center gap-1 text-xs font-bold", STATUS_META[d.status].color)}>
+                                <StatusIcon className="h-3 w-3" />{STATUS_META[d.status].label}
+                              </span>
+                            </td>
+                          ),
+                        }}
+                      />
                       <td className="flex items-center gap-2">
                         <button aria-label="Ver" onClick={() => setDetail(d)} className="text-primary hover:underline text-xs font-bold">
                           <Eye className="h-3.5 w-3.5 inline" />
@@ -480,10 +519,13 @@ export default function EInvoiceTab() {
 
       {/* Detail modal */}
       {detail && (
-        <div className="modal-backdrop p-4" role="presentation" onClick={e => e.target === e.currentTarget && setDetail(null)}>
-          <div ref={detailModalRef} role="dialog" aria-modal="true" aria-labelledby={detailTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6 w-full max-w-lg space-y-4">
-            <div className="flex items-center justify-between">
+        <div className="modal-backdrop p-4" role="presentation" onClick={e => e.target === e.currentTarget && !ventanaDetalle.fijado && setDetail(null)}>
+          <div ref={detailModalRef} role="dialog" aria-modal="true" aria-labelledby={detailTitleId} tabIndex={-1} className="relative bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6 w-full max-w-lg space-y-4">
+            <div {...ventanaDetalle.asaProps} className="flex items-center justify-between">
               <CardTitle id={detailTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{detail.serie}-{detail.number}</CardTitle>
+              <span className="ml-auto flex items-center gap-1">
+                <ControlesDeVentana ventana={ventanaDetalle} />
+              </span>
               <button aria-label="Cerrar" onClick={() => setDetail(null)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
@@ -518,18 +560,22 @@ export default function EInvoiceTab() {
                 <Download className="h-4 w-4" /> Descargar PDF
               </a>
             )}
+            <TiradorDeVentana ventana={ventanaDetalle} />
           </div>
         </div>
       )}
 
       {/* Emit modal */}
       {emitForm !== null && (
-        <div className="modal-backdrop p-4" role="presentation" onClick={e => e.target === e.currentTarget && !emitLoading && setEmitForm(null)}>
-          <div ref={emitModalRef} role="dialog" aria-modal="true" aria-labelledby={emitTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 sm:p-6 w-full max-w-md space-y-4">
-            <div className="flex items-center justify-between">
+        <div className="modal-backdrop p-4" role="presentation" onClick={e => e.target === e.currentTarget && !emitLoading && !ventanaEmit.fijado && setEmitForm(null)}>
+          <div ref={emitModalRef} role="dialog" aria-modal="true" aria-labelledby={emitTitleId} tabIndex={-1} className="relative bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 sm:p-6 w-full max-w-md space-y-4">
+            <div {...ventanaEmit.asaProps} className="flex items-center justify-between">
               <CardTitle id={emitTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
                 <Send className="h-4 w-4 text-primary" /> Emitir comprobante SUNAT
               </CardTitle>
+              <span className="ml-auto flex items-center gap-1">
+                <ControlesDeVentana ventana={ventanaEmit} />
+              </span>
               {!emitLoading && (
                 <button aria-label="Cerrar" onClick={() => setEmitForm(null)}>
                   <X className="h-4 w-4 text-[var(--text-tertiary)]" />
@@ -630,6 +676,7 @@ export default function EInvoiceTab() {
                 )}
               </button>
             </div>
+            <TiradorDeVentana ventana={ventanaEmit} />
           </div>
         </div>
       )}

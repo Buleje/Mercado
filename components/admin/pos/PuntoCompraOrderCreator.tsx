@@ -3,6 +3,8 @@
 import { CardTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useId, useRef } from "react";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { cn } from "@/lib/utils";
 import { X, Search, Loader2, CheckCircle2, User, ShoppingCart } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -137,27 +139,31 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
   const titleId = useId();
   const modalRef = useRef<HTMLDivElement>(null);
   useModalAccesible(modalRef, { onCerrar: onClose, activo: open });
+  const ventana = useVentanaDeModal(open, { ref: modalRef, aplicarTranslate: true, claveMemoria: "pos-crear-pedido-cliente" });
 
   if (!open) return null;
 
   return (
     <div className="modal-backdrop p-4">
-      <div ref={modalRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
+      <div ref={modalRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="relative bg-[var(--surface-raised)] rounded-xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
+        <div {...ventana.asaProps} className="flex items-center justify-between p-4 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
           <div className="flex items-center gap-2">
             <ShoppingCart className="h-4 w-4 text-primary" />
             <CardTitle id={titleId} className="text-sm font-bold text-[var(--text-primary)]">
               Crear pedido de cliente
             </CardTitle>
           </div>
-          <button aria-label="Cerrar"
-            type="button"
-            onClick={onClose}
-            className="h-7 w-7 rounded-full flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] transition-colors"
-          >
-            <X className="h-4 w-4" />
-          </button>
+          <span className="ml-auto flex items-center gap-1">
+            <ControlesDeVentana ventana={ventana} />
+            <button aria-label="Cerrar"
+              type="button"
+              onClick={onClose}
+              className="h-7 w-7 rounded-full flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </span>
         </div>
 
         {/* Content */}
@@ -360,6 +366,7 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
             </>
           )}
         </div>
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

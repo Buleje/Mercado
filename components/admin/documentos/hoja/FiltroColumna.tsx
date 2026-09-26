@@ -13,6 +13,8 @@ import { useMemo, useRef, useState } from "react";
 import { CardTitle } from "@buleje/design-system";
 import { Check, Search, X } from "@buleje/design-system/icons";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { valoresDeColumna } from "@/lib/documentos/hoja-analisis";
 import type { CeldaHoja } from "@/lib/documentos/xlsx-formato";
 
@@ -56,23 +58,27 @@ export default function FiltroColumna({
   // siempre activo mientras el componente vive.
   const panelRef = useRef<HTMLDivElement>(null);
   useModalAccesible(panelRef, { onCerrar });
+  const ventana = useVentanaDeModal(true, { ref: panelRef, aplicarTranslate: true, claveMemoria: "hoja-filtro-columna" });
 
   return (
-    <div className="fixed inset-0 z-modal flex items-center justify-center bg-black/40 p-4" onMouseDown={onCerrar}>
+    <div className="fixed inset-0 z-modal flex items-center justify-center bg-black/40 p-4" onMouseDown={() => { if (!ventana.fijado) onCerrar(); }}>
       <div
         ref={panelRef}
         onMouseDown={(e) => e.stopPropagation()}
         role="dialog"
         aria-label={`Filtrar la columna ${etiqueta}`}
         tabIndex={-1}
-        className="flex max-h-[80vh] w-full max-w-[24rem] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-lg)] outline-none"
+        className="relative flex max-h-[80vh] w-full max-w-[24rem] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-lg)] outline-none"
       >
-        <div className="flex items-center justify-between border-b-2 border-[var(--rule-base)] px-4 py-3">
+        <div {...ventana.asaProps} className="flex items-center justify-between border-b-2 border-[var(--rule-base)] px-4 py-3">
           <CardTitle as="h2">Filtrar por la columna {etiqueta}</CardTitle>
-          <button type="button" onClick={onCerrar} title="Cerrar"
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]">
-            <X className="h-4 w-4" aria-hidden /><span className="sr-only">Cerrar</span>
-          </button>
+          <span className="flex items-center gap-1">
+            <ControlesDeVentana ventana={ventana} />
+            <button type="button" onClick={onCerrar} title="Cerrar"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]">
+              <X className="h-4 w-4" aria-hidden /><span className="sr-only">Cerrar</span>
+            </button>
+          </span>
         </div>
 
         <div className="border-b border-[var(--rule-base)] p-3">
@@ -147,6 +153,7 @@ export default function FiltroColumna({
             </button>
           </div>
         </div>
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

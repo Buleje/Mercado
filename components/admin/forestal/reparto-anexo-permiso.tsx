@@ -37,6 +37,12 @@ import { slugKey } from "@/lib/forestal/sembrar-reparto";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
 import { FiltroColumnaMulti } from "@/components/admin/shared/filtros-columna";
 import { formatNumber } from "@/lib/format";
+import { BotonRestablecerColumnas, EnOrden, useOrdenColumnas } from "@/components/admin/shared/columnas-ordenables";
+
+/** Las columnas movibles del detalle por medida (Brandon, 2026-09-26). Precio
+ *  e Importe están siempre (`conValor` es constante), así que van fijas acá. */
+const ORDEN_DETALLE_DEFECTO = ["especie", "tipo", "medida", "piezas", "m3", "pieTablar", "precio", "importe"] as const;
+const COLS_ETIQUETA = new Set(["especie", "tipo", "medida"]);
 
 const TH =
   "px-2 py-1 text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]";
@@ -174,6 +180,10 @@ export default function AnexoPorPermiso({
     [filas, fEspecie, fTipo, fMedida],
   );
   const acotada = filasVisibles.length !== filas.length;
+  const ordenDetalle = useOrdenColumnas("anexo-permiso-detalle", ORDEN_DETALLE_DEFECTO);
+  /** El primer id de las tres columnas de etiqueta que quede visible en el
+   *  orden elegido: ahí va «Total del anexo» (el resto, celda vacía). */
+  const primerLabel = ordenDetalle.orden.find((id) => COLS_ETIQUETA.has(id));
   /** Qué sale de cada especie y tipo — la lectura de negocio del permiso. */
   const resumen = useMemo(() => (actual ? resumenPorEspecieTipo(actual, precio) : []), [actual, precio]);
   /* El importe del permiso: la suma de la columna, que es lo que se cobra. */
@@ -416,97 +426,150 @@ export default function AnexoPorPermiso({
 
           {abierta && (
           <div className="overflow-x-auto px-3 pb-3">
+            <div className="mb-1 flex justify-end">
+              <BotonRestablecerColumnas cambiado={ordenDetalle.cambiado} onRestablecer={ordenDetalle.restablecer} />
+            </div>
             <table className="w-full">
-              <thead>
+              <thead ref={ordenDetalle.refCabecera}>
                 <tr className="border-b border-[var(--rule-soft)]">
-                  <th className={TH}>
-                    <span className="block">Especie</span>
-                    <FiltroColumnaMulti
-                      label="Especie"
-                      value={fEspecie}
-                      options={opciones.especies}
-                      onChange={setFEspecie}
-                      placeholder="Todas"
-                    />
-                  </th>
-                  <th className={TH}>
-                    <span className="block">Tipo</span>
-                    <FiltroColumnaMulti label="Tipo" value={fTipo} options={opciones.tipos} onChange={setFTipo} />
-                  </th>
-                  <th className={TH}>
-                    <span className="block">Medida</span>
-                    <FiltroColumnaMulti
-                      label="Medida"
-                      value={fMedida}
-                      options={opciones.medidas}
-                      onChange={setFMedida}
-                      placeholder="Todas"
-                    />
-                  </th>
-                  <th className={`${TH} text-right`}>Piezas</th>
-                  <th className={`${TH} text-right`}>m³</th>
-                  <th className={`${TH} text-right`}>Pie tablar</th>
-                  {conValor && <th className={`${TH} text-right`}>Precio S/ PT</th>}
-                  {conValor && <th className={`${TH} text-right`}>Importe S/</th>}
+                  <EnOrden
+                    orden={ordenDetalle.orden}
+                    celdas={{
+                      especie: (
+                        <th data-col="especie" className={TH}>
+                          <span className="block">Especie</span>
+                          <FiltroColumnaMulti
+                            label="Especie"
+                            value={fEspecie}
+                            options={opciones.especies}
+                            onChange={setFEspecie}
+                            placeholder="Todas"
+                          />
+                        </th>
+                      ),
+                      tipo: (
+                        <th data-col="tipo" className={TH}>
+                          <span className="block">Tipo</span>
+                          <FiltroColumnaMulti label="Tipo" value={fTipo} options={opciones.tipos} onChange={setFTipo} />
+                        </th>
+                      ),
+                      medida: (
+                        <th data-col="medida" className={TH}>
+                          <span className="block">Medida</span>
+                          <FiltroColumnaMulti
+                            label="Medida"
+                            value={fMedida}
+                            options={opciones.medidas}
+                            onChange={setFMedida}
+                            placeholder="Todas"
+                          />
+                        </th>
+                      ),
+                      piezas: <th data-col="piezas" className={`${TH} text-right`}>Piezas</th>,
+                      m3: <th data-col="m3" className={`${TH} text-right`}>m³</th>,
+                      pieTablar: <th data-col="pieTablar" className={`${TH} text-right`}>Pie tablar</th>,
+                      precio: conValor && <th data-col="precio" className={`${TH} text-right`}>Precio S/ PT</th>,
+                      importe: conValor && <th data-col="importe" className={`${TH} text-right`}>Importe S/</th>,
+                    }}
+                  />
                 </tr>
               </thead>
               <tbody>
                 {filasVisibles.map((f) => (
                   <tr key={f.clave} className="border-b border-[var(--rule-soft)] last:border-0">
-                    <td className={TD}>{f.especie}</td>
-                    <td className={TD}>{f.tipo}</td>
-                    <td className={`${TD} font-mono`}>{f.medida}</td>
-                    <td className={NUM}>{fmtPiezas(f.piezas)}</td>
-                    <td className={`${NUM} font-bold text-[var(--text-primary)]`}>{fmtM3(f.m3)}</td>
-                    <td className={NUM}>{fmtPt(f.pieTablar)}</td>
-                    {/* Acá el precio NO se edita: es el de su especie·tipo, que
-                        se pone arriba. Dos casillas para el mismo número son dos
-                        formas de contradecirse. */}
-                    {conValor && (
-                      <td className={`${NUM} text-[var(--text-tertiary)]`}>
-                        {f.pieTablar > 0 && f.valor > 0 ? fmtSoles(f.valor / f.pieTablar) : "—"}
-                      </td>
-                    )}
-                    {conValor && (
-                      <td className={`${NUM} font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]`}>
-                        {fmtSoles(f.valor)}
-                      </td>
-                    )}
+                    <EnOrden
+                      orden={ordenDetalle.orden}
+                      celdas={{
+                        especie: <td className={TD}>{f.especie}</td>,
+                        tipo: <td className={TD}>{f.tipo}</td>,
+                        medida: <td className={`${TD} font-mono`}>{f.medida}</td>,
+                        piezas: <td className={NUM}>{fmtPiezas(f.piezas)}</td>,
+                        m3: <td className={`${NUM} font-bold text-[var(--text-primary)]`}>{fmtM3(f.m3)}</td>,
+                        pieTablar: <td className={NUM}>{fmtPt(f.pieTablar)}</td>,
+                        /* Acá el precio NO se edita: es el de su especie·tipo, que
+                           se pone arriba. Dos casillas para el mismo número son dos
+                           formas de contradecirse. */
+                        precio: conValor && (
+                          <td className={`${NUM} text-[var(--text-tertiary)]`}>
+                            {f.pieTablar > 0 && f.valor > 0 ? fmtSoles(f.valor / f.pieTablar) : "—"}
+                          </td>
+                        ),
+                        importe: conValor && (
+                          <td className={`${NUM} font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]`}>
+                            {fmtSoles(f.valor)}
+                          </td>
+                        ),
+                      }}
+                    />
                   </tr>
                 ))}
               </tbody>
               <tfoot>
                 <tr className="border-t-2 border-[var(--rule-base)]">
-                  <td className={`${TD} font-bold text-[var(--text-primary)]`} colSpan={3}>
-                    {/* El total es SIEMPRE el del anexo entero: es lo que va al
-                        papel. Si la tabla está acotada se dice, para que nadie
-                        copie el número de arriba creyendo que es lo que ve. */}
-                    Total del anexo
-                    {acotada && (
-                      <span className="ml-1.5 font-normal text-[var(--text-tertiary)]">
-                        · mostrando {filasVisibles.length} de {filas.length} medidas
-                      </span>
-                    )}
-                  </td>
-                  <td className={`${NUM} font-bold text-[var(--text-primary)]`}>
-                    {fmtPiezas(actual.totalPiezas)}
-                  </td>
-                  <td className={`${NUM} font-bold text-[var(--text-primary)]`}>
-                    {fmtM3(actual.totalM3)}
-                  </td>
-                  <td className={`${NUM} font-bold text-[var(--text-primary)]`}>
-                    {fmtPt(actual.totalPt)}
-                  </td>
-                  {conValor && (
-                    <td className={`${NUM} font-bold text-[var(--text-primary)]`}>
-                      {actual.totalPt > 0 ? fmtSoles(importeTotal / actual.totalPt) : "—"}
-                    </td>
-                  )}
-                  {conValor && (
-                    <td className={`${NUM} font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]`}>
-                      {fmtSoles(importeTotal)}
-                    </td>
-                  )}
+                  {/* El total es SIEMPRE el del anexo entero: es lo que va al
+                      papel. Si la tabla está acotada se dice. La leyenda va bajo
+                      la primera columna de etiqueta que quede visible (las
+                      columnas se arrastran); las otras dos, celda vacía. */}
+                  <EnOrden
+                    orden={ordenDetalle.orden}
+                    celdas={{
+                      especie: (
+                        <td className={`${TD} font-bold text-[var(--text-primary)]`}>
+                          {primerLabel === "especie" && (
+                            <>
+                              Total del anexo
+                              {acotada && (
+                                <span className="ml-1.5 font-normal text-[var(--text-tertiary)]">
+                                  · mostrando {filasVisibles.length} de {filas.length} medidas
+                                </span>
+                              )}
+                            </>
+                          )}
+                        </td>
+                      ),
+                      tipo: (
+                        <td className={`${TD} font-bold text-[var(--text-primary)]`}>
+                          {primerLabel === "tipo" && (
+                            <>
+                              Total del anexo
+                              {acotada && (
+                                <span className="ml-1.5 font-normal text-[var(--text-tertiary)]">
+                                  · mostrando {filasVisibles.length} de {filas.length} medidas
+                                </span>
+                              )}
+                            </>
+                          )}
+                        </td>
+                      ),
+                      medida: (
+                        <td className={`${TD} font-bold text-[var(--text-primary)]`}>
+                          {primerLabel === "medida" && (
+                            <>
+                              Total del anexo
+                              {acotada && (
+                                <span className="ml-1.5 font-normal text-[var(--text-tertiary)]">
+                                  · mostrando {filasVisibles.length} de {filas.length} medidas
+                                </span>
+                              )}
+                            </>
+                          )}
+                        </td>
+                      ),
+                      piezas: <td className={`${NUM} font-bold text-[var(--text-primary)]`}>{fmtPiezas(actual.totalPiezas)}</td>,
+                      m3: <td className={`${NUM} font-bold text-[var(--text-primary)]`}>{fmtM3(actual.totalM3)}</td>,
+                      pieTablar: <td className={`${NUM} font-bold text-[var(--text-primary)]`}>{fmtPt(actual.totalPt)}</td>,
+                      precio: conValor && (
+                        <td className={`${NUM} font-bold text-[var(--text-primary)]`}>
+                          {actual.totalPt > 0 ? fmtSoles(importeTotal / actual.totalPt) : "—"}
+                        </td>
+                      ),
+                      importe: conValor && (
+                        <td className={`${NUM} font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]`}>
+                          {fmtSoles(importeTotal)}
+                        </td>
+                      ),
+                    }}
+                  />
                 </tr>
               </tfoot>
             </table>

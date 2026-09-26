@@ -19,6 +19,8 @@ import { SectionTitle } from "@buleje/design-system";
 
 import { useRef, useId } from "react";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import type { MeteringSnapshot } from "@/components/admin/unified/MeteringCard/types";
 import {
   computeTrafficLight,
@@ -146,6 +148,12 @@ export function QuotaAlertModal({ snapshot, onClose, upgradeHref = "/admin/billi
   // Foco al abrir + trampa de Tab + Escape + scroll bloqueado, todo en uno
   // (reemplaza los tres useEffect manuales que hacían lo mismo por separado).
   useModalAccesible(dialogRef, { onCerrar: onClose });
+  /** Ventana: se mueve, se achica y se fija (ADR-420). */
+  const ventana = useVentanaDeModal(true, {
+    ref: dialogRef,
+    aplicarTranslate: true,
+    claveMemoria: "cuota-detalle",
+  });
 
   const showUpgrade = snapshot.plan === "free" || snapshot.plan === "starter";
 
@@ -155,23 +163,26 @@ export function QuotaAlertModal({ snapshot, onClose, upgradeHref = "/admin/billi
       <div
         className="fixed inset-0 z-modal bg-black/50 dark:bg-black/70 backdrop-blur-sm"
         aria-hidden="true"
-        onClick={onClose}
+        onClick={() => { if (!ventana.fijado) onClose(); }}
       />
 
       {/* Dialog */}
       <div
-        ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        aria-describedby={descId}
-        tabIndex={-1}
+        role="presentation"
         className="fixed inset-0 z-modal flex items-end sm:items-center justify-center p-4"
       >
-        <div className="relative w-full max-w-lg max-h-[85vh] flex flex-col rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)]">
+        <div
+          ref={dialogRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={titleId}
+          aria-describedby={descId}
+          tabIndex={-1}
+          className="relative w-full max-w-lg max-h-[85vh] flex flex-col rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)]"
+        >
 
           {/* Header */}
-          <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-[var(--rule-base)] flex-shrink-0">
+          <div {...ventana.asaProps} className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-[var(--rule-base)] flex-shrink-0">
             <div>
               <SectionTitle
                 id={titleId}
@@ -190,6 +201,9 @@ export function QuotaAlertModal({ snapshot, onClose, upgradeHref = "/admin/billi
               </p>
             </div>
 
+            <span className="ml-auto flex items-center gap-1">
+              <ControlesDeVentana ventana={ventana} />
+            </span>
             <button
               ref={closeRef}
               onClick={onClose}
@@ -239,6 +253,7 @@ export function QuotaAlertModal({ snapshot, onClose, upgradeHref = "/admin/billi
               )}
             </div>
           </div>
+          <TiradorDeVentana ventana={ventana} />
         </div>
       </div>
     </>

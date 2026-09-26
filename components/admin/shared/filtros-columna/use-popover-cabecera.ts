@@ -79,6 +79,11 @@ export function usePopoverCabecera(alto: number, ancho = 256) {
   return { ref, alAbrir, estilo };
 }
 
-/** El disparador del desplegable: mismo alto y borde en todas las cabeceras. */
+/**
+ * El disparador del desplegable: mismo alto y borde en todas las cabeceras.
+ * `min-w-24!` con `!`: `app/globals.css` pone `* { min-width: 0 }` fuera de
+ * capa y anula cualquier `min-w-*` normal (medido 2026-09-26: 6 de 12 por
+ * debajo de 96 px, el más chico en 61).
+ */
 export const SUMMARY_CABECERA =
-  "flex h-9 min-w-24 max-w-56 cursor-pointer list-none items-center justify-between gap-1 rounded-lg border-[1.5px] bg-[var(--surface-raised)] pl-2.5 pr-2 text-sm font-medium text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none [&::-webkit-details-marker]:hidden";
+  "flex h-9 min-w-24! max-w-56 cursor-pointer list-none items-center justify-between gap-1 rounded-lg border-[1.5px] bg-[var(--surface-raised)] pl-2.5 pr-2 text-sm font-medium text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none [&::-webkit-details-marker]:hidden";

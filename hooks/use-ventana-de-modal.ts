@@ -218,6 +218,64 @@ function buscarAsa(caja: HTMLElement): HTMLElement | null {
   return nodo;
 }
 
+/**
+ * Lo que tapa la pantalla detrás de la caja y hay que apagar al fijar.
+ *
+ * Antes sólo se buscaba `.modal-backdrop`, y 81 de los 113 modales a mano no
+ * llevan esa clase (revisión 2026-09-25): su velo es el contenedor
+ * `fixed inset-0` que centra la caja, o un hermano `absolute inset-0`. Fijados,
+ * dejaban de cerrarse al tocar afuera pero la pantalla de atrás seguía sin
+ * poder tocarse — «fijar» a medias. Se apagan los tres casos:
+ *   · el ancestro con `.modal-backdrop`;
+ *   · el ancestro `position: fixed` más cercano (el contenedor centrador);
+ *   · los hermanos de la caja que cubren toda la ventana (velo aparte).
+ * `pointer-events` se hereda: con el contenedor en `none`, el velo hermano que
+ * vive adentro también deja pasar el clic; la caja se prende a mano.
+ */
+function velosDe(caja: HTMLElement): HTMLElement[] {
+  const velos: HTMLElement[] = [];
+  const conClase = caja.closest<HTMLElement>(".modal-backdrop");
+  if (conClase && conClase !== caja) velos.push(conClase);
+  for (let el = caja.parentElement; el && el !== document.body; el = el.parentElement) {
+    if (getComputedStyle(el).position === "fixed") {
+      if (!velos.includes(el)) velos.push(el);
+      break;
+    }
+  }
+  /* Y lo que TAPA la pantalla fuera de la caja, esté donde esté en el árbol:
+     velos hermanos del contenedor, o sueltos — Recetas pinta un
+     `div.modal-backdrop` vacío en otra rama (medido 2026-09-25: fijado, el
+     clic afuera seguía cayendo ahí). Se mira la pila de elementos en los
+     cuatro bordes, fuera de la caja, y se toma todo lo que cubre la ventana
+     entera; al primer elemento que no la cubre (el menú lateral, la página)
+     se corta: eso es la pantalla de atrás y se deja en paz. */
+  const r = caja.getBoundingClientRect();
+  const W = window.innerWidth;
+  const H = window.innerHeight;
+  const bordes: [number, number][] = [[2, H / 2], [W - 3, H / 2], [W / 2, 2], [W / 2, H - 3]];
+  /* jsdom (tests) y algún navegador viejo no traen `elementsFromPoint`: sin
+     él no hay forma de saber qué tapa la pantalla, y no se apaga ningún velo. */
+  if (typeof document.elementsFromPoint !== "function") return velos;
+  for (const [x, y] of bordes) {
+    if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) continue;
+    for (const el of document.elementsFromPoint(x, y)) {
+      if (!(el instanceof HTMLElement) || el === caja || caja.contains(el)) break;
+      /* Otro modal debajo (uno abierto desde otro): su contenedor también
+         tapa la pantalla, pero apagarlo dejaría ese modal entero sin
+         responder. Fijar el de arriba es para trabajar en lo de abajo. */
+      if (!el.contains(caja) && el.querySelector('[role="dialog"], [role="alertdialog"]')) break;
+      const pos = getComputedStyle(el).position;
+      const e = el.getBoundingClientRect();
+      // «Tapa la pantalla» = ≥ 90 % de ancho y alto: el velo de Recetas mide
+      // 1600 × 876 en una ventana de 900 (deja la franja del aviso de arriba).
+      // El menú lateral (276 px) queda muy lejos de ese umbral.
+      if ((pos !== "fixed" && pos !== "absolute") || e.width < W * 0.9 || e.height < H * 0.9) break;
+      if (!velos.includes(el)) velos.push(el);
+    }
+  }
+  return velos;
+}
+
 export function useVentanaDeModal(abierto: boolean, opts: OpcionesVentana = {}): VentanaDeModal {
   const {
     claveMemoria,
@@ -677,13 +735,11 @@ export function useVentanaDeModal(abierto: boolean, opts: OpcionesVentana = {}):
      * segundo, el propio modal heredaría el `none` del padre.
      */
     const caja = contenedor();
-    const velo = caja?.closest<HTMLElement>(".modal-backdrop") ?? null;
-    const previoVelo = velo?.style.pointerEvents ?? null;
+    const velos = caja ? velosDe(caja) : [];
+    const previosVelos = velos.map((v) => v.style.pointerEvents);
     const previoCaja = caja?.style.pointerEvents ?? null;
-    if (velo && velo !== caja) {
-      velo.style.pointerEvents = "none";
-      if (caja) caja.style.pointerEvents = "auto";
-    }
+    for (const v of velos) v.style.pointerEvents = "none";
+    if (caja && velos.length > 0) caja.style.pointerEvents = "auto";
 
     const alEnfocar = (ev: FocusEvent) => {
       const el = contenedor();
@@ -692,7 +748,7 @@ export function useVentanaDeModal(abierto: boolean, opts: OpcionesVentana = {}):
     window.addEventListener("focusin", alEnfocar, true);
     return () => {
       body.style.pointerEvents = previo;
-      if (velo && previoVelo !== null) velo.style.pointerEvents = previoVelo;
+      velos.forEach((v, i) => { v.style.pointerEvents = previosVelos[i] ?? ""; });
       if (caja && previoCaja !== null) caja.style.pointerEvents = previoCaja;
       window.removeEventListener("focusin", alEnfocar, true);
     };
@@ -761,6 +817,10 @@ export function useVentanaDeModal(abierto: boolean, opts: OpcionesVentana = {}):
       role: "group",
       tabIndex: 0,
       "aria-label": ETIQUETA_ASA,
+      /* Marca para el foco inicial: el asa es enfocable (flechas = mover) y un
+         modal no puede arrancar con el foco en ella. `AdminModal` la saltea
+         por esta marca, esté en su header o en un encabezado propio. */
+      "data-ventana-asa": "true",
       onPointerDown: alBajarEnAsa,
       onPointerMove: alMoverEnAsa,
       onPointerUp: alSoltarEnAsa,
@@ -773,7 +833,7 @@ export function useVentanaDeModal(abierto: boolean, opts: OpcionesVentana = {}):
         /* Arrastrar por el header no debería ir seleccionando el título. */
         userSelect: "none",
       },
-    };
+    } as HTMLAttributes<HTMLElement>;
   }, [activa, maximizado, alBajarEnAsa, alMoverEnAsa, alSoltarEnAsa, alTeclaEnAsa]);
 
   const redimensionProps = useMemo<HTMLAttributes<HTMLElement>>(() => {

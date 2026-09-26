@@ -38,6 +38,7 @@ import {
   X,
 } from "@buleje/design-system/icons";
 import CtpKpi, { DesgloseSimple, type FilaDesglose } from "./CtpKpi";
+import { EnOrden, BotonRestablecerColumnas, useOrdenColumnas } from "@/components/admin/shared/columnas-ordenables";
 import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
 import { ctpGet, invalidarCtp } from "@/lib/forestal/ctp-fetch";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -276,6 +277,15 @@ const COLUMNAS_DISPONIBLES_OPCIONALES = [
   { key: "permiso", label: "N° Permiso", porDefecto: false },
 ] as const;
 
+/**
+ * Las columnas que se arrastran (Brandon, 2026-09-26): la casilla de elegir y
+ * «Acciones» quedan fijas — no son datos de la fila.
+ */
+const ORDEN_DISPONIBLES_DEFECTO = [
+  "codigo", "producto", "especie", "presentacion", "medidas",
+  "piezas", "volumen", "pieTablar", "valor", "lote", "edad", "saldo", "permiso",
+] as const;
+
 const CAMPO =
   "h-12 w-full rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]";
 
@@ -293,6 +303,7 @@ function ThOrdenableConFiltro<C extends string>({
   onOrdenar,
   label,
   filtro,
+  col,
 }: {
   campo: C;
   orden: { by: C; dir: "asc" | "desc" };
@@ -300,11 +311,14 @@ function ThOrdenableConFiltro<C extends string>({
   label: React.ReactNode;
   /** El `FiltroColumnaMulti` de esta columna, o nada si no aplica. */
   filtro?: React.ReactNode;
+  /** El id que arrastra `useOrdenColumnas`. */
+  col?: string;
 }) {
   const activo = orden.by === campo;
   const Icono = !activo ? ArrowUpDown : orden.dir === "asc" ? ArrowUp : ArrowDown;
   return (
     <th
+      data-col={col}
       aria-sort={activo ? (orden.dir === "asc" ? "ascending" : "descending") : "none"}
       className="px-3 py-2 font-bold"
     >
@@ -338,6 +352,11 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
     "ctp-disponibles-cols",
     COLUMNAS_DISPONIBLES_OPCIONALES,
   );
+  /* Se arrastran los títulos de la cabecera para cambiarlas de lugar
+     (Brandon, 2026-09-26). Nombre `ordenCols` y no `orden`: la tabla ya usa
+     `orden`/`setOrden` para el CRITERIO de orden (por cuál columna y en qué
+     sentido) — son dos cosas distintas que conviven en la misma cabecera. */
+  const ordenCols = useOrdenColumnas("ctp-disponibles", ORDEN_DISPONIBLES_DEFECTO);
   /** Ficha del paquete abierta desde su código (ADR-366). */
   const [fichaPaquete, setFichaPaquete] = useState<string | null>(null);
   /** El paquete al que se le está cargando o corrigiendo la escuadría. */
@@ -1336,6 +1355,7 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
           visibles={colsVisibles}
           onChange={setColsVisibles}
         />
+        <BotonRestablecerColumnas cambiado={ordenCols.cambiado} onRestablecer={ordenCols.restablecer} />
       </div>
 
       {kpiPanel}
@@ -1349,7 +1369,7 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
       />
 
       <TablaCtp>
-        <TheadCtp>
+        <TheadCtp ref={ordenCols.refCabecera}>
           <tr>
             <th className="w-10 px-2 py-2">
               {/* Tildar todo lo que se está viendo: con el filtro puesto, «todo»
@@ -1371,91 +1391,110 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
                 }
               />
             </th>
-            {/* Ordenables las que se comparan: «cuál es el más viejo», «cuál
-                tiene más piezas», «cuál vale más». Sin esto había que exportar
-                a Excel para contestarlas. */}
-            <ThOrdenable campo="codigo" orden={orden} onOrdenar={ordenarPor}>
-              Código paquete
-            </ThOrdenable>
-            {/* Autofiltro tipo Excel en el propio encabezado (Brandon,
-                2026-09-24): Producto y Especie son columnas fijas, siempre a
-                la vista, así que su filtro vive acá y no en la barra de
-                arriba. El permiso se queda afuera — su columna es opcional y
-                arranca apagada (`colsVisibles.permiso`), y un filtro escondido
-                detrás de una columna que nadie prendió no se encuentra. */}
-            <ThOrdenableConFiltro
-              campo="producto"
-              orden={orden}
-              onOrdenar={ordenarPor}
-              label="Producto"
-              filtro={
-                (opciones.productos.length > 0 || producto.length > 0) && (
-                  <FiltroColumnaMulti
+            {/* Las movibles, en el orden que dejó el operador (Brandon,
+                2026-09-26). Ordenables las que se comparan: «cuál es el más
+                viejo», «cuál tiene más piezas», «cuál vale más». */}
+            <EnOrden
+              orden={ordenCols.orden}
+              celdas={{
+                codigo: (
+                  <ThOrdenable campo="codigo" orden={orden} onOrdenar={ordenarPor} col="codigo">
+                    Código paquete
+                  </ThOrdenable>
+                ),
+                /* Autofiltro tipo Excel en el propio encabezado (Brandon,
+                   2026-09-24): Producto y Especie son columnas fijas, siempre a
+                   la vista, así que su filtro vive acá y no en la barra de
+                   arriba. El permiso se queda afuera — su columna es opcional y
+                   arranca apagada (`colsVisibles.permiso`), y un filtro escondido
+                   detrás de una columna que nadie prendió no se encuentra. */
+                producto: (
+                  <ThOrdenableConFiltro
+                    campo="producto"
+                    orden={orden}
+                    onOrdenar={ordenarPor}
                     label="Producto"
-                    value={producto}
-                    options={opciones.productos.map((p) => ({
-                      value: p,
-                      count: pesos.productos.get(claveEspecie(p))?.count ?? 0,
-                      peso: pesos.productos.get(claveEspecie(p))?.peso ?? 0,
-                    }))}
-                    etiqueta={productLabel}
-                    onChange={setProducto}
-                    placeholder="Todos"
+                    col="producto"
+                    filtro={
+                      (opciones.productos.length > 0 || producto.length > 0) && (
+                        <FiltroColumnaMulti
+                          label="Producto"
+                          value={producto}
+                          options={opciones.productos.map((p) => ({
+                            value: p,
+                            count: pesos.productos.get(claveEspecie(p))?.count ?? 0,
+                            peso: pesos.productos.get(claveEspecie(p))?.peso ?? 0,
+                          }))}
+                          etiqueta={productLabel}
+                          onChange={setProducto}
+                          placeholder="Todos"
+                        />
+                      )
+                    }
                   />
-                )
-              }
-            />
-            <ThOrdenableConFiltro
-              campo="especie"
-              orden={orden}
-              onOrdenar={ordenarPor}
-              label="Especie"
-              filtro={
-                (opciones.especies.length > 0 || especie.length > 0) && (
-                  <FiltroColumnaMulti
+                ),
+                especie: (
+                  <ThOrdenableConFiltro
+                    campo="especie"
+                    orden={orden}
+                    onOrdenar={ordenarPor}
                     label="Especie"
-                    value={especie}
-                    options={opciones.especies.map((e) => ({
-                      value: e,
-                      count: pesos.especies.get(claveEspecie(e))?.count ?? 0,
-                      peso: pesos.especies.get(claveEspecie(e))?.peso ?? 0,
-                    }))}
-                    onChange={setEspecie}
-                    placeholder="Todas"
+                    col="especie"
+                    filtro={
+                      (opciones.especies.length > 0 || especie.length > 0) && (
+                        <FiltroColumnaMulti
+                          label="Especie"
+                          value={especie}
+                          options={opciones.especies.map((e) => ({
+                            value: e,
+                            count: pesos.especies.get(claveEspecie(e))?.count ?? 0,
+                            peso: pesos.especies.get(claveEspecie(e))?.peso ?? 0,
+                          }))}
+                          onChange={setEspecie}
+                          placeholder="Todas"
+                        />
+                      )
+                    }
                   />
-                )
-              }
+                ),
+                presentacion: colsVisibles.presentacion && <th data-col="presentacion" className="px-3 py-2 font-bold">Presentación</th>,
+                medidas: colsVisibles.medidas && <th data-col="medidas" className="px-3 py-2 font-bold">Medidas</th>,
+                /* Piezas · m³ · PT, pegadas (2026-09-09): el pie tablar estaba
+                   dos columnas más allá, detrás de «Corrida / lote». */
+                piezas: (
+                  <ThOrdenable campo="piezas" orden={orden} onOrdenar={ordenarPor} align="right" col="piezas">
+                    Piezas
+                  </ThOrdenable>
+                ),
+                volumen: (
+                  <ThOrdenable campo="volumen" orden={orden} onOrdenar={ordenarPor} align="right" col="volumen">
+                    Volumen
+                  </ThOrdenable>
+                ),
+                pieTablar: colsVisibles.pieTablar && (
+                  <ThOrdenable campo="pieTablar" orden={orden} onOrdenar={ordenarPor} align="right" col="pieTablar">
+                    Pie tablar
+                  </ThOrdenable>
+                ),
+                valor: colsVisibles.valor && (
+                  <ThOrdenable campo="valor" orden={orden} onOrdenar={ordenarPor} align="right" col="valor">
+                    Valor (S/)
+                  </ThOrdenable>
+                ),
+                lote: colsVisibles.lote && <th data-col="lote" className="px-3 py-2 font-bold">Corrida / lote</th>,
+                edad: colsVisibles.edad && (
+                  <ThOrdenable campo="edad" orden={orden} onOrdenar={ordenarPor} align="right" col="edad">
+                    Parado hace
+                  </ThOrdenable>
+                ),
+                saldo: (
+                  <ThOrdenable campo="saldo" orden={orden} onOrdenar={ordenarPor} align="right" col="saldo">
+                    Saldo corrida
+                  </ThOrdenable>
+                ),
+                permiso: colsVisibles.permiso && <th data-col="permiso" className="px-3 py-2 font-bold">N° Permiso</th>,
+              }}
             />
-            {colsVisibles.presentacion && <th className="px-3 py-2 font-bold">Presentación</th>}
-            {colsVisibles.medidas && <th className="px-3 py-2 font-bold">Medidas</th>}
-            {/* Piezas · m³ · PT, pegadas (2026-09-09): el pie tablar estaba
-                dos columnas más allá, detrás de «Corrida / lote». */}
-            <ThOrdenable campo="piezas" orden={orden} onOrdenar={ordenarPor} align="right">
-              Piezas
-            </ThOrdenable>
-            <ThOrdenable campo="volumen" orden={orden} onOrdenar={ordenarPor} align="right">
-              Volumen
-            </ThOrdenable>
-            {colsVisibles.pieTablar && (
-              <ThOrdenable campo="pieTablar" orden={orden} onOrdenar={ordenarPor} align="right">
-                Pie tablar
-              </ThOrdenable>
-            )}
-            {colsVisibles.valor && (
-              <ThOrdenable campo="valor" orden={orden} onOrdenar={ordenarPor} align="right">
-                Valor (S/)
-              </ThOrdenable>
-            )}
-            {colsVisibles.lote && <th className="px-3 py-2 font-bold">Corrida / lote</th>}
-            {colsVisibles.edad && (
-              <ThOrdenable campo="edad" orden={orden} onOrdenar={ordenarPor} align="right">
-                Parado hace
-              </ThOrdenable>
-            )}
-            <ThOrdenable campo="saldo" orden={orden} onOrdenar={ordenarPor} align="right">
-              Saldo corrida
-            </ThOrdenable>
-            {colsVisibles.permiso && <th className="px-3 py-2 font-bold">N° Permiso</th>}
             <th className="px-3 py-2 text-right font-bold">Acciones</th>
           </tr>
         </TheadCtp>
@@ -1524,189 +1563,206 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
                   }
                 />
               </td>
-              <td className="px-3 py-2 font-mono font-bold text-[var(--text-primary)]">
-                {/* El código abre la ficha del paquete (ADR-366): es el número
-                    que alguien tiene delante y la puerta a su origen. */}
-                {p?.codigo ? (
-                  <button
-                    type="button"
-                    onClick={() => setFichaPaquete(p.codigo)}
-                    title={`Ver de qué corrida y de qué madera salió ${p.codigo}`}
-                    className="rounded-xl underline decoration-dotted underline-offset-4 transition-colors hover:text-[var(--accent)]"
-                  >
-                    {p.codigo}
-                  </button>
-                ) : (
-                  <span className="font-sans text-[var(--text-tertiary)]">sin paquete</span>
-                )}
-              </td>
-              <td className="px-3 py-2 text-[var(--text-secondary)]">
-                <div className="flex flex-wrap items-center gap-1">
-                  {productLabel(p?.producto ?? c.producto ?? "")}
-                  {/* Misma marca que escribe el importador del libro
-                      (`ctp-serfor-a-libro.ts`): sin esto un paquete importado se
-                      ve igual que uno recién aserrado, y son datos de calidad
-                      distinta. El predicado es único (`lotes-aserrio.ts`). */}
-                  {esInventarioDeApertura(c.observations) && (
-                    <span
-                      title="Existencia de apertura: entró por el importador del libro"
-                      className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--data-info-500)]/15 px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-info-700)] dark:text-[var(--data-info-500)]"
-                    >
-                      <Download className="h-3 w-3 shrink-0" aria-hidden /> Importado
-                    </span>
-                  )}
-                  {/* Madera de tercero (ADR-412): lo que el centro asierra por
-                      encargo NO es suyo. Va en la fila del producto porque es
-                      ahí donde se decide despacharlo, y despachar lo ajeno como
-                      propio es el error que este chip existe para evitar. */}
-                  {c.duenoMadera === "tercero" && (
-                    <span
-                      title={
-                        c.titularNombre
-                          ? `La madera es de ${c.titularNombre} — el centro la asierra por encargo`
-                          : "Madera de un tercero: el centro la asierra por encargo"
-                      }
-                      className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--data-info-500)]/15 px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-info-700)] dark:text-[var(--data-info-500)]"
-                    >
-                      <Users className="h-3 w-3 shrink-0" aria-hidden />
-                      {c.titularNombre ?? "De tercero"}
-                    </span>
-                  )}
-                  {/* Reservado para alguien (ADR-418): sigue en el patio y sigue
-                      contando en los m³, pero ya tiene dueño. Una reserva
-                      vencida que nadie soltó es stock congelado por error, y la
-                      pastilla lo dice en rojo. */}
-                  {apartado && (
-                    <CeldaApartado
-                      apartado={apartado}
-                      ahora={ahora ?? undefined}
-                      onAbrir={() =>
-                        setApartando({
-                          filas: [
-                            {
-                              ctpEntryId: c.id,
-                              paqueteId: p?.id ?? null,
-                              etiqueta: p?.codigo ?? `Corrida N° ${c.lineNo ?? "—"}`,
-                              volumenM3: p?.volumenM3 ?? c.disponible,
-                              piezas: p?.cantidad ?? null,
-                            },
-                          ],
-                          apartadoActual: apartado,
-                        })
-                      }
-                    />
-                  )}
-                  {c.usadoAt && (
-                    <span
-                      title={
-                        c.usadoMotivo
-                          ? `Marcado como usado: ${c.usadoMotivo}`
-                          : "Marcado como usado"
-                      }
-                      className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--data-warning-500)]/15 px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
-                    >
-                      <CheckCircle2 className="h-3 w-3 shrink-0" aria-hidden /> Usado
-                    </span>
-                  )}
-                </div>
-              </td>
-              <td className="px-3 py-2 text-[var(--text-secondary)]">{c.especie ?? "—"}</td>
-              {colsVisibles.presentacion && (
-                <td className="px-3 py-2 text-[var(--text-tertiary)]">
-                  {p?.presentacion ?? c.presentacion ?? "—"}
-                </td>
-              )}
-              {colsVisibles.medidas && (
-                <td className="px-3 py-2 font-mono text-xs text-[var(--text-secondary)]">
-                  {/* El `—` mudo pasó a ser puerta: sin escuadría el volumen de
-                      este paquete no tiene contra qué cotejarse (27 de 33 en el
-                      libro real). Con ella, al lado va el veredicto del cuadre. */}
-                  <CeldaEscuadria
-                    paquete={p}
-                    onEditar={() =>
-                      p &&
-                      setEscuadria({
-                        id: p.id,
-                        codigo: p.codigo,
-                        ctpEntryId: c.id,
-                        lineNo: c.lineNo,
-                        producto: p.producto ?? c.producto,
-                        especie: c.especie,
-                        cantidad: p.cantidad,
-                        volumenM3: p.volumenM3,
-                        espesorCm: p.espesorCm,
-                        anchoCm: p.anchoCm,
-                        largoM: p.largoM,
-                      })
-                    }
-                  />
-                </td>
-              )}
-              <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
-                {p ? nf(p.cantidad) : "—"}
-              </td>
-              <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
-                {fmtM3(p?.volumenM3 ?? c.disponible)}
-              </td>
-              {/* Pie tablar: es la unidad en la que se canta y se vende en el
-                  patio; el libro guarda m³ y la conversión se hacía aparte. */}
-              {colsVisibles.pieTablar && (
-                <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
-                  {formatNumber(pieTablarDe(p?.volumenM3 ?? c.disponible))}
-                </td>
-              )}
-              {colsVisibles.valor && (
-                <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
-                  {valorSoles == null ? (
-                    /* Un guion, nunca S/ 0: el costo de la guía todavía no se
-                       cargó y un cero afirmaría que esa madera no costó nada. */
-                    <span
-                      title="No se puede valorizar: falta el costo de la guía que trajo esta madera"
-                      className="text-[var(--text-tertiary)]"
-                    >
-                      —
-                    </span>
-                  ) : (
-                    `${formatCurrency(valorSoles)}`
-                  )}
-                </td>
-              )}
-              {colsVisibles.lote && (
-                <td className="px-3 py-2 text-xs text-[var(--text-tertiary)]">
-                  <span className="font-mono">N° {c.lineNo ?? "—"}</span>
-                  {c.lote && <span className="ml-1 font-mono">· {c.lote}</span>}
-                  <div>{fmtDia(c.fecha)}</div>
-                </td>
-              )}
-              {colsVisibles.edad && (
-                <td className="px-3 py-2 text-right">
-                  {dias == null ? (
-                    <span className="text-[var(--text-tertiary)]">—</span>
-                  ) : (
-                    <span
-                      title={`Aserrado el ${fmtDia(c.fecha)}`}
-                      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-mono text-[length:var(--ts-2xs)] font-bold tabular-nums ${EDAD_TONO[tramo ?? "fresco"]}`}
-                    >
-                      {fmtEdad(dias)}
-                    </span>
-                  )}
-                </td>
-              )}
-              <td className="px-3 py-2 text-right">
-                <span className="font-mono font-bold tabular-nums text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
-                  {fmtM3(c.disponible)}
-                </span>
-                {c.despachado > 0 && (
-                  <div className="font-mono text-xs text-[var(--text-tertiary)]">
-                    de {fmtM3(c.producido)} · salió {fmtM3(c.despachado)}
-                  </div>
-                )}
-              </td>
-              {colsVisibles.permiso && (
-                <td className="px-3 py-2 font-mono text-xs text-[var(--text-secondary)]">
-                  {c.titularOrigen?.length ? c.titularOrigen.join(" · ") : "—"}
-                </td>
-              )}
+              {/* Las movibles, en el orden que dejó el operador: el MISMO de la
+                  cabecera, o un m³ cae bajo el título de otra columna. */}
+              <EnOrden
+                orden={ordenCols.orden}
+                celdas={{
+                  codigo: (
+                    <td className="px-3 py-2 font-mono font-bold text-[var(--text-primary)]">
+                      {/* El código abre la ficha del paquete (ADR-366): es el número
+                          que alguien tiene delante y la puerta a su origen. */}
+                      {p?.codigo ? (
+                        <button
+                          type="button"
+                          onClick={() => setFichaPaquete(p.codigo)}
+                          title={`Ver de qué corrida y de qué madera salió ${p.codigo}`}
+                          className="rounded-xl underline decoration-dotted underline-offset-4 transition-colors hover:text-[var(--accent)]"
+                        >
+                          {p.codigo}
+                        </button>
+                      ) : (
+                        <span className="font-sans text-[var(--text-tertiary)]">sin paquete</span>
+                      )}
+                    </td>
+                  ),
+                  producto: (
+                    <td className="px-3 py-2 text-[var(--text-secondary)]">
+                      <div className="flex flex-wrap items-center gap-1">
+                        {productLabel(p?.producto ?? c.producto ?? "")}
+                        {/* Misma marca que escribe el importador del libro
+                            (`ctp-serfor-a-libro.ts`): sin esto un paquete importado se
+                            ve igual que uno recién aserrado, y son datos de calidad
+                            distinta. El predicado es único (`lotes-aserrio.ts`). */}
+                        {esInventarioDeApertura(c.observations) && (
+                          <span
+                            title="Existencia de apertura: entró por el importador del libro"
+                            className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--data-info-500)]/15 px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-info-700)] dark:text-[var(--data-info-500)]"
+                          >
+                            <Download className="h-3 w-3 shrink-0" aria-hidden /> Importado
+                          </span>
+                        )}
+                        {/* Madera de tercero (ADR-412): lo que el centro asierra por
+                            encargo NO es suyo. Va en la fila del producto porque es
+                            ahí donde se decide despacharlo, y despachar lo ajeno como
+                            propio es el error que este chip existe para evitar. */}
+                        {c.duenoMadera === "tercero" && (
+                          <span
+                            title={
+                              c.titularNombre
+                                ? `La madera es de ${c.titularNombre} — el centro la asierra por encargo`
+                                : "Madera de un tercero: el centro la asierra por encargo"
+                            }
+                            className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--data-info-500)]/15 px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-info-700)] dark:text-[var(--data-info-500)]"
+                          >
+                            <Users className="h-3 w-3 shrink-0" aria-hidden />
+                            {c.titularNombre ?? "De tercero"}
+                          </span>
+                        )}
+                        {/* Reservado para alguien (ADR-418): sigue en el patio y sigue
+                            contando en los m³, pero ya tiene dueño. Una reserva
+                            vencida que nadie soltó es stock congelado por error, y la
+                            pastilla lo dice en rojo. */}
+                        {apartado && (
+                          <CeldaApartado
+                            apartado={apartado}
+                            ahora={ahora ?? undefined}
+                            onAbrir={() =>
+                              setApartando({
+                                filas: [
+                                  {
+                                    ctpEntryId: c.id,
+                                    paqueteId: p?.id ?? null,
+                                    etiqueta: p?.codigo ?? `Corrida N° ${c.lineNo ?? "—"}`,
+                                    volumenM3: p?.volumenM3 ?? c.disponible,
+                                    piezas: p?.cantidad ?? null,
+                                  },
+                                ],
+                                apartadoActual: apartado,
+                              })
+                            }
+                          />
+                        )}
+                        {c.usadoAt && (
+                          <span
+                            title={
+                              c.usadoMotivo
+                                ? `Marcado como usado: ${c.usadoMotivo}`
+                                : "Marcado como usado"
+                            }
+                            className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--data-warning-500)]/15 px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
+                          >
+                            <CheckCircle2 className="h-3 w-3 shrink-0" aria-hidden /> Usado
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                  ),
+                  especie: <td className="px-3 py-2 text-[var(--text-secondary)]">{c.especie ?? "—"}</td>,
+                  presentacion: colsVisibles.presentacion && (
+                    <td className="px-3 py-2 text-[var(--text-tertiary)]">
+                      {p?.presentacion ?? c.presentacion ?? "—"}
+                    </td>
+                  ),
+                  medidas: colsVisibles.medidas && (
+                    <td className="px-3 py-2 font-mono text-xs text-[var(--text-secondary)]">
+                      {/* El `—` mudo pasó a ser puerta: sin escuadría el volumen de
+                          este paquete no tiene contra qué cotejarse (27 de 33 en el
+                          libro real). Con ella, al lado va el veredicto del cuadre. */}
+                      <CeldaEscuadria
+                        paquete={p}
+                        onEditar={() =>
+                          p &&
+                          setEscuadria({
+                            id: p.id,
+                            codigo: p.codigo,
+                            ctpEntryId: c.id,
+                            lineNo: c.lineNo,
+                            producto: p.producto ?? c.producto,
+                            especie: c.especie,
+                            cantidad: p.cantidad,
+                            volumenM3: p.volumenM3,
+                            espesorCm: p.espesorCm,
+                            anchoCm: p.anchoCm,
+                            largoM: p.largoM,
+                          })
+                        }
+                      />
+                    </td>
+                  ),
+                  piezas: (
+                    <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                      {p ? nf(p.cantidad) : "—"}
+                    </td>
+                  ),
+                  volumen: (
+                    <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
+                      {fmtM3(p?.volumenM3 ?? c.disponible)}
+                    </td>
+                  ),
+                  /* Pie tablar: es la unidad en la que se canta y se vende en el
+                     patio; el libro guarda m³ y la conversión se hacía aparte. */
+                  pieTablar: colsVisibles.pieTablar && (
+                    <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                      {formatNumber(pieTablarDe(p?.volumenM3 ?? c.disponible))}
+                    </td>
+                  ),
+                  valor: colsVisibles.valor && (
+                    <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                      {valorSoles == null ? (
+                        /* Un guion, nunca S/ 0: el costo de la guía todavía no se
+                           cargó y un cero afirmaría que esa madera no costó nada. */
+                        <span
+                          title="No se puede valorizar: falta el costo de la guía que trajo esta madera"
+                          className="text-[var(--text-tertiary)]"
+                        >
+                          —
+                        </span>
+                      ) : (
+                        `${formatCurrency(valorSoles)}`
+                      )}
+                    </td>
+                  ),
+                  lote: colsVisibles.lote && (
+                    <td className="px-3 py-2 text-xs text-[var(--text-tertiary)]">
+                      <span className="font-mono">N° {c.lineNo ?? "—"}</span>
+                      {c.lote && <span className="ml-1 font-mono">· {c.lote}</span>}
+                      <div>{fmtDia(c.fecha)}</div>
+                    </td>
+                  ),
+                  edad: colsVisibles.edad && (
+                    <td className="px-3 py-2 text-right">
+                      {dias == null ? (
+                        <span className="text-[var(--text-tertiary)]">—</span>
+                      ) : (
+                        <span
+                          title={`Aserrado el ${fmtDia(c.fecha)}`}
+                          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-mono text-[length:var(--ts-2xs)] font-bold tabular-nums ${EDAD_TONO[tramo ?? "fresco"]}`}
+                        >
+                          {fmtEdad(dias)}
+                        </span>
+                      )}
+                    </td>
+                  ),
+                  saldo: (
+                    <td className="px-3 py-2 text-right">
+                      <span className="font-mono font-bold tabular-nums text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
+                        {fmtM3(c.disponible)}
+                      </span>
+                      {c.despachado > 0 && (
+                        <div className="font-mono text-xs text-[var(--text-tertiary)]">
+                          de {fmtM3(c.producido)} · salió {fmtM3(c.despachado)}
+                        </div>
+                      )}
+                    </td>
+                  ),
+                  permiso: colsVisibles.permiso && (
+                    <td className="px-3 py-2 font-mono text-xs text-[var(--text-secondary)]">
+                      {c.titularOrigen?.length ? c.titularOrigen.join(" · ") : "—"}
+                    </td>
+                  ),
+                }}
+              />
               {/**
                * Qué se puede HACER con esta madera, en la fila donde se la mira
                * (ADR-367). Antes la vista era sólo de consulta: para reprocesar
@@ -1836,53 +1892,71 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
         {ordenadas.length > 0 && (
           <tfoot className="border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]">
             <tr>
-              <td
-                colSpan={4 + (colsVisibles.presentacion ? 1 : 0) + (colsVisibles.medidas ? 1 : 0)}
-                className="px-3 py-2 text-sm font-bold text-[var(--text-secondary)]"
-              >
-                {corridasALaVista} {corridasALaVista === 1 ? "corrida" : "corridas"} ·{" "}
-                {ordenadas.length} {ordenadas.length === 1 ? "fila" : "filas"}
-              </td>
-              <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
-                {nf(totalPiezas)}
-              </td>
-              {/* El total de una columna es la SUMA DE ESA COLUMNA. Antes venía
-                  del KPI (saldo por corrida) y con un aviso tildado habría
-                  quedado mostrando el total de filas que no están en pantalla. */}
-              <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
-                {fmtM3(volumenALaVista)}
-              </td>
-              {colsVisibles.pieTablar && (
-                <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
-                  {formatNumber(pieTablarDe(volumenALaVista))}
-                </td>
-              )}
-              {colsVisibles.valor && (
-                <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
-                  {/* Sin total si falta valorizar alguna fila: un subtotal
-                      presentado como total es la mentira más fácil de creer. */}
-                  {valorDelStock.filasSinValor > 0 || valorDelStock.filasValorizadas === 0 ? (
-                    <span
-                      title={`Faltan ${valorDelStock.filasSinValor} filas por valorizar`}
-                      className="font-sans text-[length:var(--ts-2xs)] font-normal text-[var(--text-tertiary)]"
-                    >
-                      parcial
-                    </span>
-                  ) : (
-                    `${formatCurrency(valorDelStock.totalSoles)}`
-                  )}
-                </td>
-              )}
-              {colsVisibles.lote && <td />}
-              {colsVisibles.edad && (
-                <td className="px-3 py-2 text-right font-mono text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-                  {edadDelStock.masViejoDias == null
-                    ? "—"
-                    : `el más viejo: ${fmtEdad(edadDelStock.masViejoDias)}`}
-                </td>
-              )}
+              {/* Casilla de elegir: fija. */}
               <td />
-              {colsVisibles.permiso && <td />}
+              {/* El resto pinta con el MISMO orden que la cabecera: el total
+                  tiene que caer bajo su columna, la arrastre donde la
+                  arrastre. */}
+              <EnOrden
+                orden={ordenCols.orden}
+                celdas={{
+                  codigo: (
+                    <td className="px-3 py-2 text-sm font-bold text-[var(--text-secondary)]">
+                      {corridasALaVista} {corridasALaVista === 1 ? "corrida" : "corridas"} ·{" "}
+                      {ordenadas.length} {ordenadas.length === 1 ? "fila" : "filas"}
+                    </td>
+                  ),
+                  producto: <td />,
+                  especie: <td />,
+                  presentacion: colsVisibles.presentacion && <td />,
+                  medidas: colsVisibles.medidas && <td />,
+                  piezas: (
+                    <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
+                      {nf(totalPiezas)}
+                    </td>
+                  ),
+                  /* El total de una columna es la SUMA DE ESA COLUMNA. Antes venía
+                     del KPI (saldo por corrida) y con un aviso tildado habría
+                     quedado mostrando el total de filas que no están en pantalla. */
+                  volumen: (
+                    <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
+                      {fmtM3(volumenALaVista)}
+                    </td>
+                  ),
+                  pieTablar: colsVisibles.pieTablar && (
+                    <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
+                      {formatNumber(pieTablarDe(volumenALaVista))}
+                    </td>
+                  ),
+                  valor: colsVisibles.valor && (
+                    <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
+                      {/* Sin total si falta valorizar alguna fila: un subtotal
+                          presentado como total es la mentira más fácil de creer. */}
+                      {valorDelStock.filasSinValor > 0 || valorDelStock.filasValorizadas === 0 ? (
+                        <span
+                          title={`Faltan ${valorDelStock.filasSinValor} filas por valorizar`}
+                          className="font-sans text-[length:var(--ts-2xs)] font-normal text-[var(--text-tertiary)]"
+                        >
+                          parcial
+                        </span>
+                      ) : (
+                        `${formatCurrency(valorDelStock.totalSoles)}`
+                      )}
+                    </td>
+                  ),
+                  lote: colsVisibles.lote && <td />,
+                  edad: colsVisibles.edad && (
+                    <td className="px-3 py-2 text-right font-mono text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+                      {edadDelStock.masViejoDias == null
+                        ? "—"
+                        : `el más viejo: ${fmtEdad(edadDelStock.masViejoDias)}`}
+                    </td>
+                  ),
+                  saldo: <td />,
+                  permiso: colsVisibles.permiso && <td />,
+                }}
+              />
+              {/* Acciones: fija, sin total. */}
               <td />
             </tr>
           </tfoot>

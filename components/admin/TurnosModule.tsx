@@ -5,6 +5,8 @@ import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { useState, useEffect, useCallback, useId, useRef } from "react";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import {
   Clock, Play, Square, DollarSign, Loader2, AlertTriangle,
   User, ChevronLeft, ChevronRight, X, ShoppingCart, Download,
@@ -272,18 +274,22 @@ export default function TurnosModule() {
   const createCajeroTitleId = useId();
   const closeCreateCajeroModal = useCallback(() => { if (!creatingCajero) setShowCreateCajero(false); }, [creatingCajero]);
   useModalAccesible(createCajeroModalRef, { activo: showCreateCajero, cerrarConEscape: false });
+  const ventanaCreateCajero = useVentanaDeModal(showCreateCajero, { ref: createCajeroModalRef, aplicarTranslate: true, claveMemoria: "turnos-nueva-cajera" });
 
   const cierreModalRef = useRef<HTMLDivElement>(null);
   const cierreTitleId = useId();
   useModalAccesible(cierreModalRef, { activo: showCierre, cerrarConEscape: false });
+  const ventanaCierre = useVentanaDeModal(showCierre, { ref: cierreModalRef, aplicarTranslate: true, claveMemoria: "turnos-cerrar-turno" });
 
   const diffConfirmModalRef = useRef<HTMLDivElement>(null);
   const diffConfirmTitleId = useId();
   useModalAccesible(diffConfirmModalRef, { activo: showDiffConfirm, cerrarConEscape: false });
+  const ventanaDiffConfirm = useVentanaDeModal(showDiffConfirm, { ref: diffConfirmModalRef, aplicarTranslate: true, claveMemoria: "turnos-diferencia-caja" });
 
   const resumenModalRef = useRef<HTMLDivElement>(null);
   const resumenTitleId = useId();
   useModalAccesible(resumenModalRef, { activo: showResumen, cerrarConEscape: false });
+  const ventanaResumen = useVentanaDeModal(showResumen, { ref: resumenModalRef, aplicarTranslate: true, claveMemoria: "turnos-resumen-turno" });
 
   // FIX 2026-07-08 (reporte ventas-caja bug 6): al abrir el modal de cierre,
   // cargar el efectivo ESPERADO real desde los movimientos de la caja
@@ -1420,7 +1426,7 @@ export default function TurnosModule() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.18 }}
             className="modal-backdrop p-4"
-            onClick={e => e.target === e.currentTarget && closeCreateCajeroModal()}
+            onClick={e => e.target === e.currentTarget && !ventanaCreateCajero.fijado && closeCreateCajeroModal()}
           >
             <m.div
               key="create-cajero-modal"
@@ -1433,9 +1439,9 @@ export default function TurnosModule() {
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 10 }}
               transition={{ duration: 0.2 }}
-              className="w-full max-w-md bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] flex flex-col overflow-hidden"
+              className="relative w-full max-w-md bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] flex flex-col overflow-hidden"
             >
-              <div className="px-6 py-5 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex items-center justify-between">
+              <div {...ventanaCreateCajero.asaProps} className="px-6 py-5 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                     <User className="h-5 w-5 text-primary" strokeWidth={2} />
@@ -1445,6 +1451,9 @@ export default function TurnosModule() {
                     <p className="text-sm text-[var(--text-tertiary)]">Se crea con rol Cajero y queda disponible al instante</p>
                   </div>
                 </div>
+                <span className="ml-auto flex items-center gap-1">
+                  <ControlesDeVentana ventana={ventanaCreateCajero} />
+                </span>
                 <button
                   onClick={closeCreateCajeroModal}
                   aria-label="Cerrar"
@@ -1513,6 +1522,7 @@ export default function TurnosModule() {
                   Crear y seleccionar
                 </button>
               </div>
+              <TiradorDeVentana ventana={ventanaCreateCajero} />
             </m.div>
           </m.div>
         )}
@@ -1528,7 +1538,7 @@ export default function TurnosModule() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.18 }}
             className="modal-backdrop p-4"
-            onClick={e => { if (e.target === e.currentTarget) resetCierreState(); }}
+            onClick={e => { if (e.target === e.currentTarget && !ventanaCierre.fijado) resetCierreState(); }}
           >
             <m.div
               ref={cierreModalRef}
@@ -1540,10 +1550,10 @@ export default function TurnosModule() {
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 10 }}
               transition={{ duration: 0.2 }}
-              className="w-full max-w-lg bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-h-[92vh] flex flex-col overflow-hidden"
+              className="relative w-full max-w-lg bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-h-[92vh] flex flex-col overflow-hidden"
             >
               {/* Header — icono + titulo + X */}
-              <div className="px-6 py-5 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex items-center justify-between">
+              <div {...ventanaCierre.asaProps} className="px-6 py-5 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-xl bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15 flex items-center justify-center shrink-0">
                     <Square className="h-5 w-5 text-[var(--data-error-500)]" strokeWidth={2} />
@@ -1553,6 +1563,9 @@ export default function TurnosModule() {
                     <p className="text-sm text-[var(--text-tertiary)]">Cuenta el efectivo final y confirma el cierre</p>
                   </div>
                 </div>
+                <span className="ml-auto flex items-center gap-1">
+                  <ControlesDeVentana ventana={ventanaCierre} />
+                </span>
                 <button onClick={resetCierreState} aria-label="Cerrar" className="p-2 hover:bg-[var(--surface-sunken)] rounded-xl transition-colors">
                   <X className="h-5 w-5 text-[var(--text-tertiary)]" />
                 </button>
@@ -1774,6 +1787,7 @@ export default function TurnosModule() {
                   Confirmar cierre
                 </button>
               </div>
+              <TiradorDeVentana ventana={ventanaCierre} />
             </m.div>
           </m.div>
         )}
@@ -1798,7 +1812,7 @@ export default function TurnosModule() {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.18 }}
               className="modal-backdrop p-4 z-[60]"
-              onClick={e => e.target === e.currentTarget && !closing && setShowDiffConfirm(false)}
+              onClick={e => e.target === e.currentTarget && !closing && !ventanaDiffConfirm.fijado && setShowDiffConfirm(false)}
             >
               <m.div
                 key="diff-confirm-modal"
@@ -1811,9 +1825,9 @@ export default function TurnosModule() {
                 animate={{ scale: 1, y: 0 }}
                 exit={{ scale: 0.95, y: 10 }}
                 transition={{ duration: 0.2 }}
-                className="w-full max-w-md bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--data-error-500)]/30 overflow-hidden"
+                className="relative w-full max-w-md bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--data-error-500)]/30 overflow-hidden"
               >
-                <div className="px-6 py-5 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10 flex items-center gap-3">
+                <div {...ventanaDiffConfirm.asaProps} className="px-6 py-5 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10 flex items-center gap-3">
                   <div className="h-10 w-10 rounded-xl bg-[var(--data-error-500)]/15 flex items-center justify-center shrink-0">
                     <AlertTriangle className="h-5 w-5 text-[var(--data-error-500)]" strokeWidth={2} />
                   </div>
@@ -1821,6 +1835,9 @@ export default function TurnosModule() {
                     <CardTitle id={diffConfirmTitleId} className="text-lg font-bold text-[var(--data-error-500)]">Diferencia alta</CardTitle>
                     <p className="text-sm text-[var(--text-secondary)]">Antes de cerrar, anota qué pasó</p>
                   </div>
+                  <span className="ml-auto flex items-center gap-1">
+                    <ControlesDeVentana ventana={ventanaDiffConfirm} />
+                  </span>
                 </div>
 
                 <div className="px-6 py-5 space-y-4">
@@ -1892,6 +1909,7 @@ export default function TurnosModule() {
                     Cerrar con nota
                   </button>
                 </div>
+                <TiradorDeVentana ventana={ventanaDiffConfirm} />
               </m.div>
             </m.div>
           );
@@ -1907,7 +1925,7 @@ export default function TurnosModule() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="modal-backdrop p-4"
-            onClick={e => e.target === e.currentTarget && setShowResumen(false)}
+            onClick={e => e.target === e.currentTarget && !ventanaResumen.fijado && setShowResumen(false)}
           >
             <m.div
               key="resumen-modal"
@@ -1920,13 +1938,16 @@ export default function TurnosModule() {
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 10 }}
               transition={{ duration: 0.2 }}
-              className="w-full max-w-lg bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] p-6 space-y-4 max-h-[92vh] overflow-y-auto" id="turno-resumen"
+              className="relative w-full max-w-lg bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] p-6 space-y-4 max-h-[92vh] overflow-y-auto" id="turno-resumen"
             >
-                <div className="flex items-center justify-between">
+                <div {...ventanaResumen.asaProps} className="flex items-center justify-between">
                   <CardTitle id={resumenTitleId} className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
                     <Trophy className="h-5 w-5 text-[var(--data-warning-500)]" />
                     Resumen del Turno
                   </CardTitle>
+                  <span className="ml-auto flex items-center gap-1">
+                    <ControlesDeVentana ventana={ventanaResumen} />
+                  </span>
                   <button aria-label="Cerrar" onClick={() => setShowResumen(false)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] ">
                     <X className="h-4 w-4 text-[var(--text-secondary)]" />
                   </button>
@@ -2208,6 +2229,7 @@ export default function TurnosModule() {
                     Cerrar
                   </button>
                 </div>
+                <TiradorDeVentana ventana={ventanaResumen} />
             </m.div>
           </m.div>
         )}

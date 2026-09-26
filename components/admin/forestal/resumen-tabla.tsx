@@ -19,6 +19,7 @@ import { fmtM3, fmtPct, fmtPiezas, fmtPt, fmtSoles } from "@/lib/forestal/cubica
 import type { TipoComercial } from "@/lib/forestal/cubicacion-tipo";
 import { TipoBadge } from "./tipo-badge";
 import { FiltroColumnaMulti } from "@/components/admin/shared/filtros-columna";
+import { BotonRestablecerColumnas, EnOrden, useOrdenColumnas } from "@/components/admin/shared/columnas-ordenables";
 
 /**
  * Tarjeta de sección: misma caja para las siete lecturas del lote.
@@ -124,6 +125,14 @@ const NUM = "text-right font-mono tabular-nums";
  * "¿en qué se me fue el volumen?", y eso se contesta comparando largos de barra,
  * no leyendo seis porcentajes en fila.
  */
+/**
+ * Las columnas de `TablaGrupos` que se arrastran (Brandon, 2026-09-26). Una
+ * sola clave para TODAS las tablas de resumen: en una pantalla hay una por
+ * especie, y verlas con órdenes distintos obligaría a releer cada cabecera.
+ * `useLocalStorage` avisa a las demás instancias, así que se mueven juntas.
+ */
+const ORDEN_GRUPOS = ["grupo", "piezas", "m3", "pt", "participacion", "precio", "importe"] as const;
+
 export function TablaGrupos({ grupos, total, primeraCol, conValor, esTipo, caption, compacta, seleccion }: {
   grupos: GrupoResumen[];
   total: ResumenLote["total"];
@@ -212,13 +221,22 @@ export function TablaGrupos({ grupos, total, primeraCol, conValor, esTipo, capti
     );
     return acum;
   }, [filtrada, visibles, total]);
+  const orden = useOrdenColumnas("ctp-resumen-grupos", ORDEN_GRUPOS);
   const claves = seleccion ? visibles.map(seleccion.claveDe) : [];
   const todasMarcadas = seleccion != null && claves.length > 0 && claves.every((k) => seleccion.marcadas.has(k));
   return (
+    <>
+    {/* Sólo aparece con el orden cambiado: sin él, una columna arrastrada por
+        error no tiene vuelta atrás a la vista. */}
+    {orden.cambiado && (
+      <div className="-mb-1 flex justify-end">
+        <BotonRestablecerColumnas cambiado onRestablecer={orden.restablecer} soloIcono className="h-8 w-8" />
+      </div>
+    )}
     <div className={`overflow-x-auto rounded-xl border border-[var(--rule-base)] ${larga ? "max-h-[70vh] overflow-y-auto" : ""}`}>
       <DataTable className={`w-full text-sm ${compacta ? (conValor ? "min-w-[560px]" : "min-w-[400px]") : "min-w-[480px]"}`}>
         {caption && <caption className="sr-only">{caption}</caption>}
-        <thead className="sticky top-0 z-10 bg-[var(--surface-sunken)]">
+        <thead ref={orden.refCabecera} className="sticky top-0 z-10 bg-[var(--surface-sunken)]">
           <tr>
             {seleccion && (
               <th scope="col" className={`${TH} w-8 text-center`}>
@@ -232,30 +250,43 @@ export function TablaGrupos({ grupos, total, primeraCol, conValor, esTipo, capti
                 />
               </th>
             )}
-            <th scope="col" className={TH}>
-              <span className="block">{primeraCol}</span>
-              {grupos.length > 2 && (
-                <FiltroColumnaMulti
-                  label={primeraCol}
-                  value={elegidos}
-                  options={opcionesCol}
-                  // El primitivo compartido no tiene un `label` por opción (es
-                  // genérico): acá la clave y el rótulo del grupo son cosas
-                  // distintas («ROLLIZA» vs «Rolliza comercial»), así que se
-                  // traduce con `etiqueta` en vez de perder el texto legible.
-                  etiqueta={(v) => opcionesCol.find((o) => o.value === v)?.label ?? v}
-                  onChange={setElegidos}
-                  placeholder="Todos"
-                />
-              )}
-            </th>
-            {/* Piezas · m³ · PT, la convención del módulo (2026-09-09). */}
-            <th scope="col" className={`${TH} text-right`}>Piezas</th>
-            <th scope="col" className={`${TH} text-right`}>Volumen m³</th>
-            <th scope="col" className={`${TH} text-right`}>Pie tablar</th>
-            <th scope="col" className={`${TH} ${compacta ? "w-[22%]" : "w-[26%]"}`}>Participación</th>
-            {conRendimiento && <th scope="col" className={`${TH} text-right`} title="Precio unitario del grupo: lo que sale cada pie tablar (importe ÷ PT)">Precio S/ PT</th>}
-            {conValor && <th scope="col" className={`${TH} text-right`} title="Pie tablar × precio unitario">Importe S/</th>}
+            <EnOrden
+              orden={orden.orden}
+              celdas={{
+                grupo: (
+                  <th scope="col" data-col="grupo" className={TH}>
+                    <span className="block">{primeraCol}</span>
+                    {grupos.length > 2 && (
+                      <FiltroColumnaMulti
+                        label={primeraCol}
+                        value={elegidos}
+                        options={opcionesCol}
+                        // El primitivo compartido no tiene un `label` por opción (es
+                        // genérico): acá la clave y el rótulo del grupo son cosas
+                        // distintas («ROLLIZA» vs «Rolliza comercial»), así que se
+                        // traduce con `etiqueta` en vez de perder el texto legible.
+                        etiqueta={(v) => opcionesCol.find((o) => o.value === v)?.label ?? v}
+                        onChange={setElegidos}
+                        placeholder="Todos"
+                      />
+                    )}
+                  </th>
+                ),
+                /* Piezas · m³ · PT, la convención del módulo (2026-09-09). */
+                piezas: <th scope="col" data-col="piezas" className={`${TH} text-right`}>Piezas</th>,
+                m3: <th scope="col" data-col="m3" className={`${TH} text-right`}>Volumen m³</th>,
+                pt: <th scope="col" data-col="pt" className={`${TH} text-right`}>Pie tablar</th>,
+                participacion: (
+                  <th scope="col" data-col="participacion" className={`${TH} ${compacta ? "w-[22%]" : "w-[26%]"}`}>Participación</th>
+                ),
+                precio: conRendimiento && (
+                  <th scope="col" data-col="precio" className={`${TH} text-right`} title="Precio unitario del grupo: lo que sale cada pie tablar (importe ÷ PT)">Precio S/ PT</th>
+                ),
+                importe: conValor && (
+                  <th scope="col" data-col="importe" className={`${TH} text-right`} title="Pie tablar × precio unitario">Importe S/</th>
+                ),
+              }}
+            />
           </tr>
         </thead>
         <tbody>
@@ -280,37 +311,46 @@ export function TablaGrupos({ grupos, total, primeraCol, conValor, esTipo, capti
                   />
                 </td>
               )}
-              {/* El grupo que manda lleva la marca al costado: es el que define
-                  el precio del lote y en una lista de doce se perdía. */}
-              <td className={`${TD} border-l-[3px] font-bold text-[var(--text-primary)] ${i === 0 && visibles.length > 1 ? "border-l-[var(--accent)]" : "border-l-transparent"}`}>
-                {esTipo ? <TipoBadge tipo={g.label as TipoComercial} /> : g.label}
-              </td>
-              <td className={`${TD} ${NUM} text-[var(--text-secondary)]`}>{fmtPiezas(g.cantidad)}</td>
-              <td className={`${TD} ${NUM} font-bold text-[var(--text-primary)]`}>{fmtM3(g.m3)}</td>
-              <td className={`${TD} ${NUM} text-[var(--text-secondary)]`}>{fmtPt(g.pieTablar)}</td>
-              <td className={TD}>
-                <div className="flex items-center gap-2">
-                  {/* En mobile la fila se vuelve card y la barra queda de un
-                      píxel: ahí manda el porcentaje solo. */}
-                  <div className="hidden h-2 min-w-[2.5rem] flex-1 overflow-hidden rounded-full bg-[var(--surface-sunken)] sm:block">
-                    <div className="h-full rounded-full bg-[var(--accent)]" style={{ width: `${Math.min(100, g.pctPt)}%` }} />
-                  </div>
-                  <span className={`shrink-0 text-right font-mono text-xs tabular-nums text-[var(--text-tertiary)] ${compacta ? "w-11" : "w-14"}`}>{fmtPct(g.pctPt)}%</span>
-                </div>
-              </td>
-              {conRendimiento && (
-                <td className={`${TD} ${NUM} text-[var(--text-secondary)]`}>
-                  {g.pieTablar > 0 ? fmtSoles(g.valor / g.pieTablar) : "—"}
-                </td>
-              )}
-              {conValor && (
-                <td
-                  className={`${TD} ${NUM} font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]`}
-                  title={`${fmtPt(g.pieTablar)} PT × S/ ${g.pieTablar > 0 ? fmtSoles(g.valor / g.pieTablar) : "0.00"}`}
-                >
-                  {fmtSoles(g.valor)}
-                </td>
-              )}
+              <EnOrden
+                orden={orden.orden}
+                celdas={{
+                  /* El grupo que manda lleva la marca al costado: es el que define
+                     el precio del lote y en una lista de doce se perdía. */
+                  grupo: (
+                    <td className={`${TD} border-l-[3px] font-bold text-[var(--text-primary)] ${i === 0 && visibles.length > 1 ? "border-l-[var(--accent)]" : "border-l-transparent"}`}>
+                      {esTipo ? <TipoBadge tipo={g.label as TipoComercial} /> : g.label}
+                    </td>
+                  ),
+                  piezas: <td className={`${TD} ${NUM} text-[var(--text-secondary)]`}>{fmtPiezas(g.cantidad)}</td>,
+                  m3: <td className={`${TD} ${NUM} font-bold text-[var(--text-primary)]`}>{fmtM3(g.m3)}</td>,
+                  pt: <td className={`${TD} ${NUM} text-[var(--text-secondary)]`}>{fmtPt(g.pieTablar)}</td>,
+                  participacion: (
+                    <td className={TD}>
+                      <div className="flex items-center gap-2">
+                        {/* En mobile la fila se vuelve card y la barra queda de un
+                            píxel: ahí manda el porcentaje solo. */}
+                        <div className="hidden h-2 min-w-[2.5rem] flex-1 overflow-hidden rounded-full bg-[var(--surface-sunken)] sm:block">
+                          <div className="h-full rounded-full bg-[var(--accent)]" style={{ width: `${Math.min(100, g.pctPt)}%` }} />
+                        </div>
+                        <span className={`shrink-0 text-right font-mono text-xs tabular-nums text-[var(--text-tertiary)] ${compacta ? "w-11" : "w-14"}`}>{fmtPct(g.pctPt)}%</span>
+                      </div>
+                    </td>
+                  ),
+                  precio: conRendimiento && (
+                    <td className={`${TD} ${NUM} text-[var(--text-secondary)]`}>
+                      {g.pieTablar > 0 ? fmtSoles(g.valor / g.pieTablar) : "—"}
+                    </td>
+                  ),
+                  importe: conValor && (
+                    <td
+                      className={`${TD} ${NUM} font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]`}
+                      title={`${fmtPt(g.pieTablar)} PT × S/ ${g.pieTablar > 0 ? fmtSoles(g.valor / g.pieTablar) : "0.00"}`}
+                    >
+                      {fmtSoles(g.valor)}
+                    </td>
+                  ),
+                }}
+              />
             </tr>
             );
           })}
@@ -320,28 +360,37 @@ export function TablaGrupos({ grupos, total, primeraCol, conValor, esTipo, capti
         <tfoot className="sticky bottom-0 bg-[var(--surface-raised)]">
           <tr className="border-t-2 border-[var(--accent)]/40 bg-primary/10 font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
             {seleccion && <td className={TD} />}
-            <th scope="row" className={`${TD} whitespace-nowrap text-left`}>
-              {filtrada
-                ? `Filtrado · ${visibles.length} de ${grupos.length}`
-                : compacta
-                  ? "Total"
-                  : `Total · ${grupos.length} ${grupos.length === 1 ? "grupo" : "grupos"}`}
-            </th>
-            <td className={`${TD} ${NUM}`}>{fmtPiezas(totalVisible.cantidad)}</td>
-            <td className={`${TD} ${NUM}`}>{fmtM3(totalVisible.m3)}</td>
-            <td className={`${TD} ${NUM}`}>{fmtPt(totalVisible.pieTablar)}</td>
-            <td className={`${TD} text-[length:var(--ts-2xs)] uppercase tracking-wide`}>{fmtPct(totalVisible.pct)}%</td>
-            {conRendimiento && (
-              <td className={`${TD} ${NUM}`}>
-                {totalVisible.pieTablar > 0 ? fmtSoles(totalVisible.valor / totalVisible.pieTablar) : "—"}
-              </td>
-            )}
-            {/* La suma de la columna Importe: el número por el que se abre esta
-                pantalla cuando hay precio cargado. */}
-            {conValor && <td className={`${TD} ${NUM}`}>{fmtSoles(totalVisible.valor)}</td>}
+            {/* Cada total bajo SU columna, en el orden que eligió el operador. */}
+            <EnOrden
+              orden={orden.orden}
+              celdas={{
+                grupo: (
+                  <th scope="row" className={`${TD} whitespace-nowrap text-left`}>
+                    {filtrada
+                      ? `Filtrado · ${visibles.length} de ${grupos.length}`
+                      : compacta
+                        ? "Total"
+                        : `Total · ${grupos.length} ${grupos.length === 1 ? "grupo" : "grupos"}`}
+                  </th>
+                ),
+                piezas: <td className={`${TD} ${NUM}`}>{fmtPiezas(totalVisible.cantidad)}</td>,
+                m3: <td className={`${TD} ${NUM}`}>{fmtM3(totalVisible.m3)}</td>,
+                pt: <td className={`${TD} ${NUM}`}>{fmtPt(totalVisible.pieTablar)}</td>,
+                participacion: <td className={`${TD} text-[length:var(--ts-2xs)] uppercase tracking-wide`}>{fmtPct(totalVisible.pct)}%</td>,
+                precio: conRendimiento && (
+                  <td className={`${TD} ${NUM}`}>
+                    {totalVisible.pieTablar > 0 ? fmtSoles(totalVisible.valor / totalVisible.pieTablar) : "—"}
+                  </td>
+                ),
+                /* La suma de la columna Importe: el número por el que se abre esta
+                   pantalla cuando hay precio cargado. */
+                importe: conValor && <td className={`${TD} ${NUM}`}>{fmtSoles(totalVisible.valor)}</td>,
+              }}
+            />
           </tr>
         </tfoot>
       </DataTable>
     </div>
+    </>
   );
 }

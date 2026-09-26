@@ -12,6 +12,8 @@
 
 import { useState, useRef } from "react";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { X, Plus, Trash2, Loader2, CheckCircle2, Package } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 
@@ -57,6 +59,12 @@ export default function TenantAddProductModal({
   const [groups, setGroups] = useState<Group[]>([]);
   const [saving, setSaving] = useState(false);
   useModalAccesible(cajaRef, { onCerrar: saving ? undefined : onClose, activo: open });
+  /** Ventana: se mueve, se achica y se fija (ADR-420). */
+  const ventana = useVentanaDeModal(open, {
+    ref: cajaRef,
+    aplicarTranslate: true,
+    claveMemoria: "tenant-add-product",
+  });
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
@@ -154,21 +162,22 @@ export default function TenantAddProductModal({
   };
 
   return (
-    <div ref={cajaRef} tabIndex={-1}
-      role="dialog"
-      aria-modal="true"
-      aria-label={`Agregar producto a ${tenantName}`}
+    <div
       className="fixed inset-0 z-[8000] flex items-end sm:items-center justify-center bg-black/55 backdrop-blur-sm p-0 sm:p-4"
-      onClick={onClose}
+      onClick={() => { if (!ventana.fijado) onClose(); }}
       onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
     >
       <div
+        ref={cajaRef} tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Agregar producto a ${tenantName}`}
         className="relative w-full max-w-3xl max-h-[92vh] flex flex-col overflow-hidden rounded-t-2xl sm:rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-[var(--shadow-xl)]"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex shrink-0 items-center justify-between border-b border-[var(--rule-soft)] px-5 py-4">
+        <div {...ventana.asaProps} className="flex shrink-0 items-center justify-between border-b border-[var(--rule-soft)] px-5 py-4">
           <div>
             <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
               SUPERADMIN · AGREGAR PRODUCTO
@@ -178,6 +187,9 @@ export default function TenantAddProductModal({
               {tenantName}
             </h2>
           </div>
+          <span className="ml-auto flex items-center gap-1 shrink-0">
+            <ControlesDeVentana ventana={ventana} />
+          </span>
           <button
             onClick={onClose}
             aria-label="Cerrar"
@@ -421,6 +433,8 @@ export default function TenantAddProductModal({
             {saving ? "Creando…" : "Crear producto"}
           </button>
         </div>
+
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

@@ -27,12 +27,12 @@
  *   · centered-sm — max-w-sm (confirmaciones)
  */
 
-import { useRef } from "react";
+import { createContext, useContext, useRef, type ReactNode } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { X, type LucideIcon } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-import { useVentanaDeModal, type OpcionesVentana } from "@/hooks/use-ventana-de-modal";
+import { useVentanaDeModal, type OpcionesVentana, type VentanaDeModal } from "@/hooks/use-ventana-de-modal";
 import { ControlesDeVentana, TiradorDeVentana } from "./modal-controles-ventana";
 import { usePanelTokens } from "./use-panel-tokens";
 
@@ -174,6 +174,48 @@ const ENFOCABLES =
 const POSICION_VENTANA =
   "bottom-0 left-0 right-0 sm:bottom-auto sm:right-auto sm:top-1/2 sm:left-1/2 sm:translate-x-[calc(-50%_+_var(--ventana-x,0px))] sm:translate-y-[calc(-50%_+_var(--ventana-y,0px))]";
 
+/**
+ * La ventana del modal, para el contenido que dibuja su PROPIO encabezado.
+ *
+ * Un `AdminModal` con `hideCloseButton` y sin `title` no pinta header: el
+ * llamador pone el suyo adentro de `children`. Seguía siendo ventana (el
+ * tirador de la esquina estaba) pero sin asa para arrastrar ni los botones de
+ * restaurar/maximizar/fijar — medido 2026-09-25: 8 modales así, entre ellos
+ * «Nuevo ingreso de madera». Brandon: «que se aplique mover el modal,
+ * restablecer, como en los demás… a todo lo que haya en modal».
+ */
+const VentanaDelModal = createContext<VentanaDeModal | null>(null);
+
+/**
+ * Encabezado propio de un `AdminModal`: lo vuelve asa de arrastre y le pone
+ * los controles de ventana ANTES de `acciones` (la X del llamador), en el
+ * mismo orden que el header estándar. Fuera de un `AdminModal`, o sin ventana
+ * (celular, `fullscreen`, `side`), es un `<header>` común.
+ */
+export function CabeceraPropia({
+  className,
+  children,
+  acciones,
+}: {
+  className?: string;
+  children: ReactNode;
+  /** Lo que va a la derecha, después de los controles: normalmente la X. */
+  acciones?: ReactNode;
+}) {
+  const ventana = useContext(VentanaDelModal);
+  return (
+    <header {...(ventana?.asaProps ?? {})} className={className}>
+      {children}
+      {(ventana?.activa || acciones) && (
+        <div className="flex shrink-0 items-center gap-0.5">
+          {ventana && <ControlesDeVentana ventana={ventana} />}
+          {acciones}
+        </div>
+      )}
+    </header>
+  );
+}
+
 export default function AdminModal({
   open,
   onClose,
@@ -259,7 +301,7 @@ export default function AdminModal({
             if (!caja) return;
             const asa = caja.firstElementChild;
             const primero = [...caja.querySelectorAll<HTMLElement>(ENFOCABLES)].find(
-              (el) => el !== asa && !el.hasAttribute("data-ventana-control"),
+              (el) => el !== asa && !el.hasAttribute("data-ventana-asa") && !el.hasAttribute("data-ventana-control"),
             );
             if (!primero) return;
             e.preventDefault();
@@ -337,7 +379,9 @@ export default function AdminModal({
               su contenido y empuja lo que venga después fuera del modal (el
               footer de los formularios de alta quedaba invisible, con el botón
               "Registrar" incluido). */}
-          <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <VentanaDelModal.Provider value={ventana}>{children}</VentanaDelModal.Provider>
+          </div>
 
           {/* Footer fijo — vive FUERA del scroll: las acciones de un formulario
               largo no deberían exigir llegar al final para aparecer. */}

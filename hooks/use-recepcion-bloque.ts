@@ -32,6 +32,8 @@ export interface PedidoDeGuia {
   observacion?: string;
   /** `AAAA-MM-DD` en que llegó ESTA guía (ADR-434): cada una con la suya, no un «hoy» para todas. */
   fecha: string;
+  /** Llegó después del vencimiento de su guía y se confirmó con motivo (ADR-434 §Vencimiento). */
+  vencida?: { motivo: string };
 }
 
 export interface FalloDeGuia {
@@ -71,6 +73,7 @@ export function useRecepcionBloque() {
                 ids: p.ids,
                 fecha: p.fecha,
                 ...(p.observacion?.trim() ? { observacion: p.observacion.trim() } : {}),
+                ...(p.vencida ? { aceptaVencida: true, motivoVencida: p.vencida.motivo.trim() } : {}),
               }),
             });
             const datos = await leerJson<{ message?: string; error?: string; recepcionados?: number }>(res);

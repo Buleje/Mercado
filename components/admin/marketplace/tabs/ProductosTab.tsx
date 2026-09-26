@@ -1,6 +1,8 @@
 "use client";
 import { useState, useEffect, useId, useRef } from "react";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { DataTable, SectionTitle } from "@buleje/design-system";
 import { AlertCircle, Check, CheckCircle, ExternalLink, Eye, EyeOff, ImageOff, Megaphone, Minus, Package, PackageX, Pencil, RefreshCw, Search, Sparkles, TrendingDown, TrendingUp, X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -695,6 +697,7 @@ function BoostModal({
   /* Escape ya lo maneja el atajo propio de esta pantalla: el hook pone
        el foco, la trampa de Tab y el scroll, no una segunda salida. */
   useModalAccesible(cajaRef, { onCerrar: onClose, cerrarConEscape: false });
+  const ventana = useVentanaDeModal(true, { ref: cajaRef, aplicarTranslate: true, claveMemoria: "marketplace-boost-producto" });
   const existing = product.boost;
   const [bidAmount, setBidAmount] = useState<string>(existing ? String(existing.bidAmount) : "3");
   const [days, setDays] = useState<string>("7");
@@ -733,17 +736,18 @@ function BoostModal({
   }
 
   return (
-    <div ref={cajaRef} tabIndex={-1}
-      role="dialog"
-      aria-modal="true"
-      onClick={onClose}
+    <div
+      onClick={(e) => { if (e.target === e.currentTarget && !ventana.fijado) onClose(); }}
       className="fixed inset-0 z-system flex items-center justify-center bg-black/55 backdrop-blur-[2px] p-4"
     >
       <div
+        ref={cajaRef} tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg rounded-3xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-[var(--shadow-xl)] overflow-hidden"
+        className="relative w-full max-w-lg rounded-3xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-[var(--shadow-xl)] overflow-hidden"
       >
-        <header className="flex items-start gap-3 border-b-2 border-[var(--rule-soft)] px-5 py-5 sm:px-6">
+        <header {...ventana.asaProps} className="flex items-start gap-3 border-b-2 border-[var(--rule-soft)] px-5 py-5 sm:px-6">
           <span aria-hidden className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--brand-secondary)]/15 text-[var(--brand-secondary)] shrink-0">
             <Sparkles className="h-6 w-6" strokeWidth={2.25} />
           </span>
@@ -758,14 +762,17 @@ function BoostModal({
               {product.name}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Cerrar"
-            className="h-10 w-10 rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          <span className="ml-auto flex items-center gap-1 shrink-0">
+            <ControlesDeVentana ventana={ventana} />
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Cerrar"
+              className="h-10 w-10 rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </span>
         </header>
 
         {existing ? (
@@ -840,6 +847,7 @@ function BoostModal({
             </>
           )}
         </footer>
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

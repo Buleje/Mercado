@@ -3,6 +3,8 @@
 import { CardTitle, DataTable, BlockTitle } from "@buleje/design-system";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, startTransition } from "react";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import {
   Calculator, Download, X, Eye,
   CheckCircle2, AlertTriangle, TrendingDown, TrendingUp,
@@ -417,6 +419,7 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
   const detailTitleId = useId();
   const detailPanelRef = useRef<HTMLDivElement>(null);
   useModalAccesible(detailPanelRef, { onCerrar: () => setDetail(null), activo: !!detail });
+  const ventanaDetalle = useVentanaDeModal(!!detail, { ref: detailPanelRef, aplicarTranslate: true, claveMemoria: "cash-audit-detalle" });
 
   const inflightRef = useRef<AbortController | null>(null);
   const loadAudits = useCallback(() => {
@@ -593,14 +596,17 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
 
       {/* Detail Modal */}
       {detail && (
-        <div className="modal-backdrop p-4" onClick={() => setDetail(null)}>
-          <div ref={detailPanelRef} role="dialog" aria-modal="true" aria-labelledby={detailTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6 w-full max-w-md space-y-4 max-h-[80vh] overflow-auto" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
+        <div className="modal-backdrop p-4" onClick={(e) => { if (e.target === e.currentTarget && !ventanaDetalle.fijado) setDetail(null); }}>
+          <div ref={detailPanelRef} role="dialog" aria-modal="true" aria-labelledby={detailTitleId} tabIndex={-1} className="relative bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6 w-full max-w-md space-y-4 max-h-[80vh] overflow-auto" onClick={e => e.stopPropagation()}>
+            <div {...ventanaDetalle.asaProps} className="flex items-center justify-between">
               <div>
                 <CardTitle id={detailTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Cuadre — {detail.date} {detail.shift}</CardTitle>
                 <p className="text-xs text-[var(--text-tertiary)]">{detail.cashier}{detail.closedBy ? ` · Cerrado por: ${detail.closedBy}` : " · Turno abierto"}</p>
               </div>
-              <button aria-label="Cerrar" onClick={() => setDetail(null)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
+              <span className="ml-auto flex items-center gap-1">
+                <ControlesDeVentana ventana={ventanaDetalle} />
+                <button aria-label="Cerrar" onClick={() => setDetail(null)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
+              </span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-sm text-center">
@@ -654,6 +660,7 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
             })()}
 
             {detail.notes && <p className="text-sm text-[var(--text-tertiary)] italic">&quot;{detail.notes}&quot;</p>}
+            <TiradorDeVentana ventana={ventanaDetalle} />
           </div>
         </div>
       )}

@@ -15,9 +15,10 @@ import { ForestRecepcionDB, MAX_GUIAS_CONTEXTO } from "@/lib/db/forest-recepcion
  * GET   `?gtf=A&gtf=B` → `{ hoy, guias: ContextoDeLlegada[] }`: lo que la pantalla
  *       necesita para proponer, avisar y frenar ANTES de guardar (corridas del
  *       permiso, trozas ya aserradas, meses cerrados, costo congelado).
- * PATCH `{ action: "corregir_recepcion", gtfNumber, fecha, motivo }`: corrige la
- *       recepción de una guía ya recibida. Los guards viven en
- *       `ForestRecepcionDB.corregir`, dentro de la transacción.
+ * PATCH `{ action: "corregir_recepcion", gtfNumber, fecha, motivo, aceptaVencida?, motivoVencida? }`:
+ *       corrige la recepción de una guía ya recibida. Los guards viven en
+ *       `ForestRecepcionDB.corregir`, dentro de la transacción; una fecha
+ *       posterior al vencimiento de la guía pide `aceptaVencida` + motivo (422).
  *
  * Recibir una guía nueva sigue siendo `PATCH /wood-entries` con
  * `recepcionar_guia` (ADR-351): el bloque ahora manda la fecha de CADA guía.
@@ -76,6 +77,13 @@ const corregirSchema = z.object({
   fecha: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, "Usa el formato AAAA-MM-DD"),
   /** Por qué cambia una fecha del libro: va al rastro de cada asiento. */
   motivo: z.string().trim().min(3, "Escribe el motivo (mínimo 3 letras).").max(300),
+  /**
+   * La nueva llegada cae después del vencimiento de la guía y quien corrige
+   * confirma que fue así, con su propio motivo (ADR-434 §Vencimiento). Sin
+   * esto, esa fecha se rechaza con 422 `GUIA_VENCIDA`.
+   */
+  aceptaVencida: z.boolean().optional(),
+  motivoVencida: z.string().trim().max(300).optional(),
 });
 
 export const PATCH = withApiHandler("forestal-recepcion-patch", async (req: NextRequest) => {
@@ -105,7 +113,14 @@ export const PATCH = withApiHandler("forestal-recepcion-patch", async (req: Next
   try {
     const r = await ForestRecepcionDB.corregir(
       auth.tenantId,
-      { gtfNumber: parsed.data.gtfNumber, fecha: parsed.data.fecha, motivo: parsed.data.motivo },
+      {
+        gtfNumber: parsed.data.gtfNumber,
+        fecha: parsed.data.fecha,
+        motivo: parsed.data.motivo,
+        ...(parsed.data.aceptaVencida
+          ? { aceptaVencida: true, motivoVencida: parsed.data.motivoVencida ?? "" }
+          : {}),
+      },
       auth.username ?? "unknown",
     );
     /* La guía se busca con el tenant en el WHERE: la de otro tenant no existe acá. */

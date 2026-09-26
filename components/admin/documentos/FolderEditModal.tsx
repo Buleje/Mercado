@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils";
 import type { DbDocumentFolder } from "@/lib/types/documents";
 import { FOLDER_COLORS, FOLDER_ICON_OPTIONS, FolderGlyph } from "./folder-visuals";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 
 /**
  * Editar una carpeta: nombre + color + ícono. Persiste vía PATCH
@@ -28,6 +30,7 @@ export function FolderEditModal({
   const titleId = useId();
   const nombreId = useId();
   useModalAccesible(panelRef, { onCerrar: onClose });
+  const ventana = useVentanaDeModal(true, { ref: panelRef, aplicarTranslate: true, claveMemoria: "folder-edit" });
 
   const save = async () => {
     const trimmed = name.trim();
@@ -42,21 +45,22 @@ export function FolderEditModal({
   };
 
   return (
-    <div className="fixed inset-0 z-modal-2 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-modal-2 flex items-center justify-center bg-black/50 p-4" onClick={() => { if (!ventana.fijado) onClose(); }}>
       <div
         ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="w-full max-w-[28rem] rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
+        className="relative w-full max-w-[28rem] rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center gap-3 border-b border-[var(--rule-base)] px-5 py-4">
+        <div {...ventana.asaProps} className="flex items-center gap-3 border-b border-[var(--rule-base)] px-5 py-4">
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--surface-sunken)]">
             <FolderGlyph folder={{ icon, color }} className="h-5 w-5" active />
           </span>
           <p id={titleId} className="flex-1 text-sm font-extrabold text-[var(--text-primary)]">Editar carpeta</p>
+          <ControlesDeVentana ventana={ventana} />
           <button onClick={onClose} className="rounded-xl p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Cerrar"><X className="h-4 w-4" /></button>
         </div>
 
@@ -134,6 +138,7 @@ export function FolderEditModal({
             <Check className="h-4 w-4" /> Guardar
           </button>
         </div>
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

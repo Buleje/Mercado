@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import { toast } from "sonner";
 import { X, Package, Check, Loader2 } from "@buleje/design-system/icons";
@@ -41,6 +43,7 @@ export function ReorderModal({ open, candidates, onClose, onSuccess }: Props) {
   /* Escape ya lo maneja el atajo propio de esta pantalla: el hook pone
        el foco, la trampa de Tab y el scroll, no una segunda salida. */
   useModalAccesible(cajaRef, { onCerrar: onClose, cerrarConEscape: false, activo: open });
+  const ventana = useVentanaDeModal(open, { ref: cajaRef, aplicarTranslate: true, claveMemoria: "inventario-generar-oc" });
   const [selection, setSelection] = useState<Map<string, number>>(new Map());
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -131,7 +134,7 @@ export function ReorderModal({ open, candidates, onClose, onSuccess }: Props) {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
             className="modal-backdrop"
-            onClick={onClose}
+            onClick={() => { if (!ventana.fijado) onClose(); }}
           />
           <m.div
             key="modal"
@@ -148,14 +151,14 @@ export function ReorderModal({ open, candidates, onClose, onSuccess }: Props) {
               aria-modal="true"
               aria-labelledby="reorder-title"
               className={cn(
-                "pointer-events-auto w-full max-w-2xl max-h-[85vh] flex flex-col",
+                "relative pointer-events-auto w-full max-w-2xl max-h-[85vh] flex flex-col",
                 "rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]",
                 "shadow-[var(--shadow-xl)] shadow-black/20",
                 "overflow-hidden",
               )}
             >
               {/* Header */}
-              <div className="flex items-start justify-between border-b border-[var(--rule-soft)] px-5 py-4 sm:px-6">
+              <div {...ventana.asaProps} className="flex items-start justify-between border-b border-[var(--rule-soft)] px-5 py-4 sm:px-6">
                 <div className="flex items-start gap-3">
                   <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
                     <Package className="h-5 w-5" />
@@ -175,14 +178,17 @@ export function ReorderModal({ open, candidates, onClose, onSuccess }: Props) {
                     </p>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={onClose}
-                  aria-label="Cerrar"
-                  className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"
-                >
-                  <X className="h-4 w-4" />
-                </button>
+                <span className="ml-auto flex items-center gap-1 shrink-0">
+                  <ControlesDeVentana ventana={ventana} />
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    aria-label="Cerrar"
+                    className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </span>
               </div>
 
               {/* Items list */}
@@ -311,6 +317,7 @@ export function ReorderModal({ open, candidates, onClose, onSuccess }: Props) {
                   </button>
                 </div>
               </div>
+              <TiradorDeVentana ventana={ventana} />
             </div>
           </m.div>
         </>

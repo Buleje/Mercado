@@ -18,6 +18,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
   X,
@@ -72,6 +74,12 @@ export default function HealthCheckActionModal({
   /* Escape ya lo maneja el atajo propio de esta pantalla: el hook pone
        el foco, la trampa de Tab y el scroll, no una segunda salida. */
   useModalAccesible(cajaRef, { onCerrar: onClose, cerrarConEscape: false, activo: open });
+  /** Ventana: se mueve, se achica y se fija (ADR-420). */
+  const ventana = useVentanaDeModal(open, {
+    ref: cajaRef,
+    aplicarTranslate: true,
+    claveMemoria: "health-check-action",
+  });
   const fieldType = fieldTypeFor(checkId);
   const [value, setValue] = useState<string>(currentValue ?? "");
   const [yapeEnabled, setYapeEnabled] = useState(false);
@@ -188,19 +196,21 @@ export default function HealthCheckActionModal({
   if (!open) return null;
 
   return (
-    <div ref={cajaRef} tabIndex={-1}
-      role="dialog"
-      aria-modal="true"
-      aria-label={`Editar ${checkLabel}`}
+    <div
       className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget && !ventana.fijado) onClose();
       }}
       onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
     >
-      <div className="w-full max-w-lg rounded-2xl bg-[var(--surface-canvas)] shadow-2xl overflow-hidden">
+      <div ref={cajaRef} tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Editar ${checkLabel}`}
+        className="relative w-full max-w-lg rounded-2xl bg-[var(--surface-canvas)] shadow-2xl overflow-hidden"
+      >
         {/* Header */}
-        <div className="flex items-start justify-between gap-3 px-5 py-4 border-b border-[var(--rule-base)]">
+        <div {...ventana.asaProps} className="flex items-start justify-between gap-3 px-5 py-4 border-b border-[var(--rule-base)]">
           <div className="min-w-0">
             <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
               {tenantName}
@@ -209,6 +219,9 @@ export default function HealthCheckActionModal({
               {checkLabel}
             </p>
           </div>
+          <span className="ml-auto flex items-center gap-1 shrink-0">
+            <ControlesDeVentana ventana={ventana} />
+          </span>
           <button
             type="button"
             onClick={onClose}
@@ -405,6 +418,8 @@ export default function HealthCheckActionModal({
             )}
           </button>
         </div>
+
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

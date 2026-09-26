@@ -57,6 +57,17 @@ describe("Repartir la GTF en ingresos", () => {
   it("no inventa avisos cuando la guía cuadra", () => {
     expect(r.avisos).toEqual([]);
   });
+
+  it("`orden` es la posición de la troza en la lista de la guía (base 0)", () => {
+    // Del `orden` depende el apartado de trozas del alta (CtpGuiaSerforTrozas):
+    // con él sabe a qué ingreso va cada fila sin comparar nombres de especie.
+    // Si pasara a contar desde 1, cada especie filtraría la troza vecina.
+    const ordenes = r.ingresos.flatMap((i) => i.trozas.map((t) => t.orden)).sort((a, b) => a - b);
+    expect(ordenes).toEqual(guiaReal.trozas.map((_, i) => i));
+    for (const ing of r.ingresos) {
+      for (const t of ing.trozas) expect(t.codificacion).toBe(guiaReal.trozas[t.orden]!.codificacion ?? null);
+    }
+  });
 });
 
 describe("Medidas de la troza", () => {

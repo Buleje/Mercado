@@ -29,6 +29,7 @@ import { SectionTitle } from "@buleje/design-system";
 import { AlertTriangle, RefreshCw, Search } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import type { EstadoTroza } from "@/lib/forestal/trozas-patio";
+import { escribirTrozaEnUrl, trozaDeUrl } from "@/lib/forestal/ctp-troza-etiquetas";
 import CtpApartarEnLoteModal from "./CtpApartarEnLoteModal";
 import CtpCodigosDuplicados from "./CtpCodigosDuplicados";
 import CtpTrozaFichaModal from "./CtpTrozaFichaModal";
@@ -60,8 +61,18 @@ export default function CtpTrozasView() {
   const [guia, setGuia] = useState<string[]>([]);
   const [titulo, setTitulo] = useState<string[]>([]);
   const [buscadorAbierto, setBuscadorAbierto] = useState(false);
-  /** La pieza cuya historia se está mirando. */
-  const [ficha, setFicha] = useState<string | null>(null);
+  /**
+   * La pieza cuya historia se está mirando. Arranca con `?troza=<id>` si la
+   * URL lo trae (ADR-436): así el QR de una etiqueta pegada en el patio abre
+   * directo la ficha, sin pasar por la lista. `escribirTrozaEnUrl` mantiene la
+   * URL sincronizada mientras se abre y se cierra, para que el link se pueda
+   * compartir y un refresh no reabra una ficha ya cerrada.
+   */
+  const [ficha, setFichaState] = useState<string | null>(() => trozaDeUrl());
+  const abrirFicha = (id: string | null) => {
+    setFichaState(id);
+    escribirTrozaEnUrl(id);
+  };
   /** Las piezas que van camino a un lote. */
   const [apartando, setApartando] = useState<{ id: string; codigo: string | null; especie: string | null }[] | null>(null);
 
@@ -122,14 +133,14 @@ export default function CtpTrozasView() {
         onGuia={setGuia}
         titulo={titulo}
         onTitulo={setTitulo}
-        onVerFicha={setFicha}
+        onVerFicha={(id) => abrirFicha(id)}
         onApartar={setApartando}
       />
 
       {ficha && (
         /* `onVerOtra` deja saltar de un pedazo a su madre sin cerrar: el
            retrozado es justo donde uno quiere ir y volver. */
-        <CtpTrozaFichaModal trozaId={ficha} onClose={() => setFicha(null)} onVerOtra={setFicha} />
+        <CtpTrozaFichaModal trozaId={ficha} onClose={() => abrirFicha(null)} onVerOtra={abrirFicha} />
       )}
       {apartando && (
         <CtpApartarEnLoteModal

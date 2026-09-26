@@ -202,7 +202,7 @@ export function htmlListaTrozas(i: ListaTrozasInput): string {
         <td class="c tot">${i.trozas.length ? piezas : ""}</td>
         <td class="r tot">${total.toFixed(3)}</td>
       </tr>
-      <tr class="rot"><td colspan="9" class="r">T O T A L&nbsp;&nbsp;M O V I L I Z A D O&nbsp;&nbsp;(m³)</td><td class="r">${total.toFixed(3)}</td></tr>
+      <tr class="rot"><td colspan="9" class="r">Total movilizado (m³)</td><td class="r">${total.toFixed(3)}</td></tr>
     </tfoot>
   </table>
 
@@ -230,43 +230,58 @@ export function htmlListaTrozas(i: ListaTrozasInput): string {
   </div>`;
 }
 
+/**
+ * La lista en el mismo idioma que la GTF: monocromo, encabezado en gris tenue
+ * con una regla negra, filas separadas por hilos y el total cerrado por dos
+ * reglas —la única «caja» de la hoja, porque es el número que se cruza—. El
+ * espaciado del «TOTAL MOVILIZADO» lo pone el CSS, no espacios en el texto:
+ * con letras separadas a mano el lector de pantalla y la búsqueda del PDF
+ * leían «T O T A L».
+ */
 export const CSS_LISTA_TROZAS = `
   .lt { width:100%; border-collapse:collapse; margin:0; }
-  .lt th, .lt td { border:.6pt solid #9aa5a0; padding:1.1mm 1.4mm; font-size:7.2pt; }
-  .lt thead th { background:var(--tinta); color:#fff; font-weight:bold; text-align:center; letter-spacing:.3pt;
-                 border-color:#0d3b20; font-size:6.8pt; text-transform:uppercase; }
-  .lt thead th.sub i { display:block; font-style:normal; font-weight:normal; opacity:.75; font-size:6pt; }
+  .lt th, .lt td { border-bottom:.5pt solid var(--linea-suave); padding:1.1mm 1.4mm; font-size:7.2pt; }
+  .lt thead th { background:var(--tenue); color:var(--tinta); font-weight:bold; text-align:center; letter-spacing:.3pt;
+                 font-size:6.4pt; text-transform:uppercase; vertical-align:bottom;
+                 border:.5pt solid var(--linea-suave); border-bottom-color:var(--linea); }
+  .lt thead tr:first-child th { border-top:.6pt solid var(--linea); }
+  /* Pegada a su sección, la regla de la sección ya es el borde de arriba. */
+  .doc-sec + .lt thead tr:first-child th { border-top:none; }
+  .lt thead th:first-child { border-left:none; }
+  .lt thead tr:first-child th:last-child, .lt thead tr:last-child th:last-child { border-right:none; }
+  .lt thead th.sub i { display:block; font-style:normal; font-weight:normal; text-transform:none; color:var(--gris-suave); font-size:6.2pt; }
   /* Anchos fijos para lo que mide siempre igual (números y códigos): así el aire
      sobrante se lo quedan los nombres, que son los que se partían en dos líneas
      y duplicaban el alto de TODAS las filas. */
   .lt .w-n { width:7mm; } .lt .w-c { width:11mm; } .lt .w-v { width:19mm; }
   .lt .w-d { width:11mm; } .lt .w-p { width:26mm; } .lt .w-cod { width:19mm; } .lt .w-com { width:25mm; }
-  .lt tbody tr:nth-child(even) td { background:#f4f8f6; }
   .lt td.c { text-align:center; }
   .lt td.r { text-align:right; }
   .lt td.n { color:var(--gris-suave); font-size:6.6pt; }
   /* El producto se imprime como viene de la guía: forzarlo a mayúsculas lo
      partía en dos líneas y estiraba TODAS las filas por una columna que casi
      siempre dice lo mismo. */
-  .lt td.prod { color:#374151; }
-  .lt tfoot .lbl { font-weight:normal; font-size:6.8pt; letter-spacing:.4pt; text-transform:uppercase; color:var(--gris); }
-  .lt td.sci { font-style:italic; color:#374151; }
+  .lt td.prod { color:var(--tinta-clara); }
+  .lt td.sci { font-style:italic; color:var(--tinta-clara); }
   .lt td.cod { font-family:"Courier New",Courier,monospace; font-weight:bold; letter-spacing:.2pt; }
   .lt td.vol { font-variant-numeric:tabular-nums; font-weight:bold; }
-  .lt .vacio { text-align:center; padding:8mm; color:var(--gris-suave); font-style:italic; background:#fafbfa; }
-  .lt tfoot td { background:#e7efea; font-weight:bold; border-color:#7f8f87; }
+  .lt .vacio { text-align:center; padding:8mm; color:var(--gris-suave); font-style:italic; }
+  .lt tfoot td { font-weight:bold; border-top:.8pt solid var(--linea); border-bottom:none; }
+  .lt tfoot .lbl { font-weight:normal; font-size:6.4pt; letter-spacing:.5pt; text-transform:uppercase; color:var(--gris); }
   .lt tfoot .lid { text-align:left; font-family:"Courier New",Courier,monospace; letter-spacing:.2pt; }
   .lt tfoot .tot { font-variant-numeric:tabular-nums; }
-  .lt tfoot tr.rot td { background:var(--tinta); color:#fff; font-size:7.6pt; letter-spacing:.6pt; border-color:#0d3b20; }
+  .lt tfoot tr.rot td { border-top:.5pt solid var(--linea-suave); border-bottom:1.2pt solid var(--linea);
+                        font-size:6.8pt; letter-spacing:1.6pt; text-transform:uppercase; padding-top:1.4mm; padding-bottom:1.4mm; }
+  .lt tfoot tr.rot td:last-child { font-size:10pt; letter-spacing:0; font-variant-numeric:tabular-nums; }
 
   .lt.esp { margin-top:0; }
   .lt.esp td { font-size:7.4pt; }
 
-  .lt-pie { width:100%; border-collapse:collapse; }
+  .lt-pie { width:100%; border-collapse:collapse; margin-top:1.4mm; }
   .lt-pie td { vertical-align:top; font-size:7.4pt; padding:0 0 0 6mm; }
-  .lt-pie .obs { width:48%; padding:0 6mm 0 0; }
-  .lt-pie .obs .n { font-weight:bold; color:var(--tinta); font-size:6.8pt; }
-  .lt-pie .obs-v { min-height:16mm; border:.6pt solid #9aa5a0; border-top:none; padding:1.5mm; margin-top:1mm; background:#fafcfb; }
+  .lt-pie .obs { width:48%; padding:0 6mm 0 0; color:var(--gris); }
+  .lt-pie .obs .n { color:var(--gris-suave); font-size:6.8pt; }
+  .lt-pie .obs-v { min-height:16mm; border:.5pt solid var(--linea-suave); padding:1.5mm; margin-top:1mm; color:var(--tinta); }
   .lt-pie .fir .doc-firmas { margin-top:1mm; gap:6mm; }
   .lt-pie .fir .doc-firmas .linea { height:14mm; }
 `;

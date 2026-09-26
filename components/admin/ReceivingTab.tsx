@@ -4,6 +4,8 @@ import { CardTitle, DataTable, LoadingState, SectionTitle, BlockTitle } from "@b
 import { Field } from "@/components/admin/shared/Field";
 import { useState, useEffect, useId, useMemo, useCallback, useRef } from "react";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import {
   PackageCheck, Download, Search, Eye, X,
   Camera, AlertTriangle, CheckCircle2, XCircle,
@@ -15,6 +17,7 @@ import ProductCombobox, { type ProductOption } from "@/components/admin/shared/P
 import { formatCurrency, formatDate } from "@/lib/format";
 import { enRango, rangoActivo, textoDeRango, type ChipFiltro, type FacetaOpcion, type Rango } from "@/lib/admin/filtros-columna";
 import { ChipsDeFiltros, FiltroColumnaMulti, FiltroColumnaRango } from "@/components/admin/shared/filtros-columna";
+import { useOrdenColumnas, EnOrden, BotonRestablecerColumnas } from "@/components/admin/shared/columnas-ordenables";
 
 interface PendingOC {
   id: string;
@@ -90,14 +93,18 @@ export default function ReceivingTab() {
   const [proveedorFiltro, setProveedorFiltro] = useState<string[]>([]);
   // Fecha programada, en su columna: "entre estas fechas".
   const [programadaRango, setProgramadaRango] = useState<Rango<string>>({ min: null, max: null });
+  // Columnas de la tabla: arrastrar el título para reordenarlas.
+  const ordenRecepciones = useOrdenColumnas("recepciones-lista", ["ref", "proveedor", "programada", "recibida", "inspector", "estado", "fotos", "nc"]);
   const [detail, setDetail]             = useState<Reception | null>(null);
   const [showNew, setShowNew]           = useState(false);
   const detailTitleId = useId();
   const detailPanelRef = useRef<HTMLDivElement>(null);
   useModalAccesible(detailPanelRef, { onCerrar: () => setDetail(null), activo: !!detail });
+  const ventanaDetalle = useVentanaDeModal(!!detail, { ref: detailPanelRef, aplicarTranslate: true, claveMemoria: "recepcion-detalle" });
   const newTitleId = useId();
   const newPanelRef = useRef<HTMLDivElement>(null);
   useModalAccesible(newPanelRef, { onCerrar: () => setShowNew(false), activo: showNew });
+  const ventanaNueva = useVentanaDeModal(showNew, { ref: newPanelRef, aplicarTranslate: true, claveMemoria: "recepcion-nueva" });
 
   // Órdenes pendientes de recibir (para el dropdown del modal)
   const [pendingOCs, setPendingOCs] = useState<PendingOC[]>([]);
@@ -338,6 +345,7 @@ export default function ReceivingTab() {
           >
             <Plus className="h-4 w-4" /> Nueva recepción
           </button>
+          <BotonRestablecerColumnas cambiado={ordenRecepciones.cambiado} onRestablecer={ordenRecepciones.restablecer} />
         </div>
       </div>
 
@@ -442,43 +450,54 @@ export default function ReceivingTab() {
           <LoadingState />
         ) : (
           <DataTable filtrable className="min-w-[720px]">
-              <thead>
+              <thead ref={ordenRecepciones.refCabecera}>
                 <tr>
-                  <th>Ref</th>
-                  <th>
-                    <span className="block">Proveedor</span>
-                    <FiltroColumnaMulti
-                      label="Proveedor"
-                      value={proveedorFiltro}
-                      options={proveedorFaceta}
-                      onChange={setProveedorFiltro}
-                      placeholder="Todos"
-                    />
-                  </th>
-                  <th>
-                    <span className="block">Programada</span>
-                    <FiltroColumnaRango
-                      label="Programada"
-                      esFecha
-                      valor={programadaRango}
-                      onChange={(r) => setProgramadaRango(r as Rango<string>)}
-                    />
-                  </th>
-                  <th>Recibida</th>
-                  <th>Inspector</th>
-                  <th>
-                    <span className="block">Estado</span>
-                    <FiltroColumnaMulti
-                      label="Estado"
-                      value={estadoFiltro}
-                      options={estadoFaceta}
-                      etiqueta={(v) => STATUS_MAP[v as ReceptionStatus]?.label ?? v}
-                      onChange={(v) => setEstadoFiltro(v as ReceptionStatus[])}
-                      placeholder="Todos"
-                    />
-                  </th>
-                  <th className="text-center">Fotos</th>
-                  <th className="text-center">NC</th>
+                  <EnOrden
+                    orden={ordenRecepciones.orden}
+                    celdas={{
+                      ref: <th data-col="ref">Ref</th>,
+                      proveedor: (
+                        <th data-col="proveedor">
+                          <span className="block">Proveedor</span>
+                          <FiltroColumnaMulti
+                            label="Proveedor"
+                            value={proveedorFiltro}
+                            options={proveedorFaceta}
+                            onChange={setProveedorFiltro}
+                            placeholder="Todos"
+                          />
+                        </th>
+                      ),
+                      programada: (
+                        <th data-col="programada">
+                          <span className="block">Programada</span>
+                          <FiltroColumnaRango
+                            label="Programada"
+                            esFecha
+                            valor={programadaRango}
+                            onChange={(r) => setProgramadaRango(r as Rango<string>)}
+                          />
+                        </th>
+                      ),
+                      recibida: <th data-col="recibida">Recibida</th>,
+                      inspector: <th data-col="inspector">Inspector</th>,
+                      estado: (
+                        <th data-col="estado">
+                          <span className="block">Estado</span>
+                          <FiltroColumnaMulti
+                            label="Estado"
+                            value={estadoFiltro}
+                            options={estadoFaceta}
+                            etiqueta={(v) => STATUS_MAP[v as ReceptionStatus]?.label ?? v}
+                            onChange={(v) => setEstadoFiltro(v as ReceptionStatus[])}
+                            placeholder="Todos"
+                          />
+                        </th>
+                      ),
+                      fotos: <th data-col="fotos" className="text-center">Fotos</th>,
+                      nc: <th data-col="nc" className="text-center">NC</th>,
+                    }}
+                  />
                   <th></th>
                 </tr>
               </thead>
@@ -487,35 +506,48 @@ export default function ReceivingTab() {
                   const discrepancies = getDiscrepancies(r.items);
                   return (
                     <tr key={r.id}>
-                      <td>
-                        <div className="font-mono text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{r.ref}</div>
-                        <div className="font-mono text-xs text-[var(--text-tertiary)]">{r.orderRef}</div>
-                      </td>
-                      <td className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{r.supplier}</td>
-                      <td className="text-[var(--text-secondary)] dark:text-muted text-xs">{fmtDate(r.scheduledDate)}</td>
-                      <td className="text-[var(--text-secondary)] dark:text-muted text-xs">{r.receivedDate ? fmtDate(r.receivedDate) : "—"}</td>
-                      <td className="text-xs text-[var(--text-secondary)] dark:text-muted">{r.inspector || "—"}</td>
-                      <td>
-                        <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", STATUS_MAP[r.status].bg, STATUS_MAP[r.status].color)}>
-                          {STATUS_MAP[r.status].label}
-                        </span>
-                      </td>
-                      <td className="text-center">
-                        {r.photos > 0 ? (
-                          <span className="flex items-center justify-center gap-0.5 text-xs text-[var(--text-secondary)]">
-                            <Camera className="h-3 w-3" />{r.photos}
-                          </span>
-                        ) : <span className="text-[var(--text-tertiary)] text-xs">—</span>}
-                      </td>
-                      <td className="text-center">
-                        {r.nonConformities > 0 ? (
-                          <span className="bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] text-xs font-bold px-2 py-0.5 rounded-full">
-                            {r.nonConformities}
-                          </span>
-                        ) : discrepancies.length === 0 ? (
-                          <CheckCircle2 className="h-3.5 w-3.5 text-[var(--data-success-500)] mx-auto" />
-                        ) : null}
-                      </td>
+                      <EnOrden
+                        orden={ordenRecepciones.orden}
+                        celdas={{
+                          ref: (
+                            <td>
+                              <div className="font-mono text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{r.ref}</div>
+                              <div className="font-mono text-xs text-[var(--text-tertiary)]">{r.orderRef}</div>
+                            </td>
+                          ),
+                          proveedor: <td className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{r.supplier}</td>,
+                          programada: <td className="text-[var(--text-secondary)] dark:text-muted text-xs">{fmtDate(r.scheduledDate)}</td>,
+                          recibida: <td className="text-[var(--text-secondary)] dark:text-muted text-xs">{r.receivedDate ? fmtDate(r.receivedDate) : "—"}</td>,
+                          inspector: <td className="text-xs text-[var(--text-secondary)] dark:text-muted">{r.inspector || "—"}</td>,
+                          estado: (
+                            <td>
+                              <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", STATUS_MAP[r.status].bg, STATUS_MAP[r.status].color)}>
+                                {STATUS_MAP[r.status].label}
+                              </span>
+                            </td>
+                          ),
+                          fotos: (
+                            <td className="text-center">
+                              {r.photos > 0 ? (
+                                <span className="flex items-center justify-center gap-0.5 text-xs text-[var(--text-secondary)]">
+                                  <Camera className="h-3 w-3" />{r.photos}
+                                </span>
+                              ) : <span className="text-[var(--text-tertiary)] text-xs">—</span>}
+                            </td>
+                          ),
+                          nc: (
+                            <td className="text-center">
+                              {r.nonConformities > 0 ? (
+                                <span className="bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] text-xs font-bold px-2 py-0.5 rounded-full">
+                                  {r.nonConformities}
+                                </span>
+                              ) : discrepancies.length === 0 ? (
+                                <CheckCircle2 className="h-3.5 w-3.5 text-[var(--data-success-500)] mx-auto" />
+                              ) : null}
+                            </td>
+                          ),
+                        }}
+                      />
                       <td>
                         <button aria-label="Ver" onClick={() => setDetail(r)} className="p-1 rounded-xl hover:bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] transition">
                           <Eye className="h-3.5 w-3.5" />
@@ -534,25 +566,28 @@ export default function ReceivingTab() {
 
       {/* Detail Modal */}
       {detail && (
-        <div className="modal-backdrop p-4" onClick={() => setDetail(null)}>
+        <div className="modal-backdrop p-4" onClick={(e) => { if (e.target === e.currentTarget && !ventanaDetalle.fijado) setDetail(null); }}>
           <div
             ref={detailPanelRef}
             role="dialog"
             aria-modal="true"
             aria-labelledby={detailTitleId}
             tabIndex={-1}
-            className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 sm:p-6 w-full max-w-2xl space-y-4 max-h-[85vh] overflow-auto"
+            className="relative bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 sm:p-6 w-full max-w-2xl space-y-4 max-h-[85vh] overflow-auto"
             onClick={e => e.stopPropagation()}
           >
-            <div className="flex items-start justify-between">
+            <div {...ventanaDetalle.asaProps} className="flex items-start justify-between">
               <div>
                 <CardTitle id={detailTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{detail.ref}</CardTitle>
                 <p className="text-xs text-[var(--text-tertiary)] mt-0.5">OC: {detail.orderRef} · {detail.supplier}</p>
                 {detail.inspector && <p className="text-xs text-[var(--text-tertiary)]">Inspector: {detail.inspector}</p>}
               </div>
-              <button aria-label="Cerrar" onClick={() => setDetail(null)} className="p-1 rounded-xl hover:bg-[var(--rule-soft)] ">
-                <X className="h-4 w-4 text-[var(--text-tertiary)]" />
-              </button>
+              <span className="ml-auto flex items-center gap-1">
+                <ControlesDeVentana ventana={ventanaDetalle} />
+                <button aria-label="Cerrar" onClick={() => setDetail(null)} className="p-1 rounded-xl hover:bg-[var(--rule-soft)] ">
+                  <X className="h-4 w-4 text-[var(--text-tertiary)]" />
+                </button>
+              </span>
             </div>
 
             {/* Discrepancy alert */}
@@ -616,25 +651,29 @@ export default function ReceivingTab() {
                 <span className="flex items-center gap-1 text-[var(--data-success-500)]"><CheckCircle2 className="h-4 w-4" /> Sin no conformidades</span>
               )}
             </div>
+            <TiradorDeVentana ventana={ventanaDetalle} />
           </div>
         </div>
       )}
 
       {/* New reception modal */}
       {showNew && (
-        <div className="modal-backdrop p-4" onClick={() => setShowNew(false)}>
+        <div className="modal-backdrop p-4" onClick={(e) => { if (e.target === e.currentTarget && !ventanaNueva.fijado) setShowNew(false); }}>
           <div
             ref={newPanelRef}
             role="dialog"
             aria-modal="true"
             aria-labelledby={newTitleId}
             tabIndex={-1}
-            className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 sm:p-6 w-full max-w-2xl space-y-4 max-h-[90vh] overflow-auto"
+            className="relative bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 sm:p-6 w-full max-w-2xl space-y-4 max-h-[90vh] overflow-auto"
             onClick={e => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between">
+            <div {...ventanaNueva.asaProps} className="flex items-center justify-between">
               <CardTitle id={newTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Nueva recepción de mercadería</CardTitle>
-              <button aria-label="Cerrar" onClick={() => setShowNew(false)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
+              <span className="ml-auto flex items-center gap-1">
+                <ControlesDeVentana ventana={ventanaNueva} />
+                <button aria-label="Cerrar" onClick={() => setShowNew(false)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
+              </span>
             </div>
 
             {/* Dropdown OC pendiente — auto-completa todo */}
@@ -774,6 +813,7 @@ export default function ReceivingTab() {
                 Guardar recepción
               </button>
             </div>
+            <TiradorDeVentana ventana={ventanaNueva} />
           </div>
         </div>
       )}

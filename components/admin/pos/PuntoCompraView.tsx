@@ -32,6 +32,8 @@ import { SectionTitle, CardTitle, DataTable } from "@buleje/design-system";
 import Image from "next/image";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { cn } from "@/lib/utils";
 import { usePOSSound } from "./usePOSSound";
 import PuntoCompraProductCard from "./PuntoCompraProductCard";
@@ -234,6 +236,7 @@ export default function PuntoCompraView() {
   }, [creatingSupplier]);
   const nuevoProveedorModalRef = useRef<HTMLDivElement>(null);
   useModalAccesible(nuevoProveedorModalRef, { onCerrar: cerrarNuevoProveedor, activo: showNewSupplier });
+  const ventanaNuevoProveedor = useVentanaDeModal(showNewSupplier, { ref: nuevoProveedorModalRef, aplicarTranslate: true, claveMemoria: "pos-nuevo-proveedor" });
 
   // ── Fetch inicial + cargar borrador ─────────────────────────────────────────
   useEffect(() => {
@@ -2260,29 +2263,34 @@ export default function PuntoCompraView() {
         // eslint-disable-next-line jsx-a11y/click-events-have-key-events -- clic afuera cierra por mouse; el teclado ya cierra con Escape vía useModalAccesible
         <div
           className="fixed inset-0 z-system flex items-center justify-center bg-black/50 p-4"
-          onClick={(e) => e.target === e.currentTarget && cerrarNuevoProveedor()}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="punto-compra-nuevo-proveedor"
-          ref={nuevoProveedorModalRef}
-          tabIndex={-1}
+          onClick={(e) => e.target === e.currentTarget && !ventanaNuevoProveedor.fijado && cerrarNuevoProveedor()}
         >
-          <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-md p-6 space-y-5">
-            <div className="flex items-start justify-between">
+          <div
+            className="relative bg-[var(--surface-raised)] rounded-xl w-full max-w-md p-6 space-y-5"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="punto-compra-nuevo-proveedor"
+            ref={nuevoProveedorModalRef}
+            tabIndex={-1}
+          >
+            <div {...ventanaNuevoProveedor.asaProps} className="flex items-start justify-between">
               <div>
                 <CardTitle as="h3" id="punto-compra-nuevo-proveedor" className="text-lg font-extrabold text-[var(--text-primary)]">Nuevo proveedor</CardTitle>
                 <p className="text-xs text-[var(--text-secondary)] mt-0.5">
                   Se guarda en tu lista de proveedores y se selecciona en esta orden.
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={cerrarNuevoProveedor}
-                aria-label="Cerrar"
-                className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors"
-              >
-                <XIcon className="h-5 w-5 text-[var(--text-tertiary)]" />
-              </button>
+              <span className="ml-auto flex items-center gap-1">
+                <ControlesDeVentana ventana={ventanaNuevoProveedor} />
+                <button
+                  type="button"
+                  onClick={cerrarNuevoProveedor}
+                  aria-label="Cerrar"
+                  className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors"
+                >
+                  <XIcon className="h-5 w-5 text-[var(--text-tertiary)]" />
+                </button>
+              </span>
             </div>
 
             <div className="space-y-3">
@@ -2427,6 +2435,7 @@ export default function PuntoCompraView() {
                 {creatingSupplier ? "Creando..." : "Crear y seleccionar"}
               </button>
             </div>
+            <TiradorDeVentana ventana={ventanaNuevoProveedor} />
           </div>
         </div>
       )}

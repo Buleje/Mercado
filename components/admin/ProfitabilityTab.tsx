@@ -10,8 +10,11 @@ import {
 import { cn, exportToCSV } from "@/lib/utils";
 import { useProductProfitability } from "@/hooks/use-product-profitability";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { formatCurrency, formatNumber } from "@/lib/format";
 import { FiltroColumnaMulti } from "@/components/admin/shared/filtros-columna";
+import { useOrdenColumnas, EnOrden, BotonRestablecerColumnas } from "@/components/admin/shared/columnas-ordenables";
 import type { FacetaOpcion } from "@/lib/admin/filtros-columna";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -58,6 +61,22 @@ export default function ProfitabilityTab() {
   // El propio Escape de abajo ya cierra el detalle — el hook sólo aporta foco
   // inicial + trampa de Tab (por eso cerrarConEscape: false).
   useModalAccesible(detailPanelRef, { cerrarConEscape: false, activo: !!detail });
+  /** Ventana: se mueve, se achica y se fija (ADR-420). */
+  const ventanaDetalle = useVentanaDeModal(!!detail, {
+    ref: detailPanelRef,
+    aplicarTranslate: true,
+    claveMemoria: "profitability-detalle-producto",
+  });
+
+  // Columnas de la tabla: arrastrar el título para reordenarlas.
+  const ordenProf = useOrdenColumnas("profitability-productos", ["producto", "categoria", "unidades", "ingresos", "costo", "margen", "pct"]);
+  /** Ids sin total propio (texto): mientras queden AL FRENTE (arrastre) se funden
+   *  con «#» en una sola etiqueta «Totales»; si una columna con total se cuela
+   *  antes, la que quedó atrás pinta una celda vacía para no correr el resto. */
+  const idsSinTotal = new Set(["producto", "categoria"]);
+  let antesDeLosTotales = 0;
+  while (antesDeLosTotales < ordenProf.orden.length && idsSinTotal.has(ordenProf.orden[antesDeLosTotales])) antesDeLosTotales++;
+  const idsFundidos = new Set(ordenProf.orden.slice(0, antesDeLosTotales));
 
   const periodo = since ? `desde ${since}` : `últimos ${days} días`;
 
@@ -263,6 +282,7 @@ export default function ProfitabilityTab() {
           <option value="revenue">Mayor ingreso</option>
           <option value="unitsSold">Mayor volumen</option>
         </select>
+        <BotonRestablecerColumnas cambiado={ordenProf.cambiado} onRestablecer={ordenProf.restablecer} />
       </div>
 
       {/* En el celular la tabla es tarjetas (`.admin-mobile-cards` esconde el
@@ -276,25 +296,32 @@ export default function ProfitabilityTab() {
 
       {/* Table */}
       <DataTable filtrable className="min-w-[600px]">
-        <thead>
+        <thead ref={ordenProf.refCabecera}>
           <tr className="border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
             <th>#</th>
-            <th>Producto</th>
-            <th>
-              <span className="block">Categoría</span>
-              <FiltroColumnaMulti
-                label="Categoría"
-                value={catFilter}
-                options={catOptions}
-                onChange={setCatFilter}
-                placeholder="Todas"
-              />
-            </th>
-            <th className="text-right">Uds.</th>
-            <th className="text-right">Ingresos</th>
-            <th className="text-right">Costo</th>
-            <th className="text-right">Margen</th>
-            <th className="text-right">%</th>
+            <EnOrden
+              orden={ordenProf.orden}
+              celdas={{
+                producto: <th data-col="producto">Producto</th>,
+                categoria: (
+                  <th data-col="categoria">
+                    <span className="block">Categoría</span>
+                    <FiltroColumnaMulti
+                      label="Categoría"
+                      value={catFilter}
+                      options={catOptions}
+                      onChange={setCatFilter}
+                      placeholder="Todas"
+                    />
+                  </th>
+                ),
+                unidades: <th data-col="unidades" className="text-right">Uds.</th>,
+                ingresos: <th data-col="ingresos" className="text-right">Ingresos</th>,
+                costo: <th data-col="costo" className="text-right">Costo</th>,
+                margen: <th data-col="margen" className="text-right">Margen</th>,
+                pct: <th data-col="pct" className="text-right">%</th>,
+              }}
+            />
             <th />
           </tr>
         </thead>
@@ -321,28 +348,37 @@ export default function ProfitabilityTab() {
           {filtered.map((l, i) => (
             <tr key={l.id}>
               <td className="text-xs text-[var(--text-tertiary)]">{i + 1}</td>
-              <td className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{l.product}</td>
-              <td className="text-xs text-[var(--text-secondary)] dark:text-muted">{l.category}</td>
-              <td className="text-right text-[var(--text-secondary)] dark:text-muted">{formatNumber(l.unitsSold)}</td>
-              <td className="text-right text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(l.revenue)}</td>
-              <td className="text-right text-[var(--text-secondary)]">
-                <span className="inline-flex items-center justify-end gap-1">
-                  {l.costEstimated && (
-                    <AlertTriangle
-                      className="h-3.5 w-3.5 text-[var(--data-warning-500)] shrink-0"
-                      aria-label="Costo aproximado: la venta no guardó el costo del momento"
-                    />
-                  )}
-                  {fmt(l.cogs)}
-                </span>
-              </td>
-              <td className={cn("text-right font-bold", l.grossMargin >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{fmt(l.grossMargin)}</td>
-              <td className="text-right">
-                <span className={cn("inline-flex items-center gap-0.5 text-xs font-bold", l.marginPct >= 35 ? "text-[var(--data-success-500)]" : l.marginPct >= 25 ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]")}>
-                  {l.marginPct >= 35 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
-                  {pct(l.marginPct)}
-                </span>
-              </td>
+              <EnOrden
+                orden={ordenProf.orden}
+                celdas={{
+                  producto: <td className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{l.product}</td>,
+                  categoria: <td className="text-xs text-[var(--text-secondary)] dark:text-muted">{l.category}</td>,
+                  unidades: <td className="text-right text-[var(--text-secondary)] dark:text-muted">{formatNumber(l.unitsSold)}</td>,
+                  ingresos: <td className="text-right text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(l.revenue)}</td>,
+                  costo: (
+                    <td className="text-right text-[var(--text-secondary)]">
+                      <span className="inline-flex items-center justify-end gap-1">
+                        {l.costEstimated && (
+                          <AlertTriangle
+                            className="h-3.5 w-3.5 text-[var(--data-warning-500)] shrink-0"
+                            aria-label="Costo aproximado: la venta no guardó el costo del momento"
+                          />
+                        )}
+                        {fmt(l.cogs)}
+                      </span>
+                    </td>
+                  ),
+                  margen: <td className={cn("text-right font-bold", l.grossMargin >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{fmt(l.grossMargin)}</td>,
+                  pct: (
+                    <td className="text-right">
+                      <span className={cn("inline-flex items-center gap-0.5 text-xs font-bold", l.marginPct >= 35 ? "text-[var(--data-success-500)]" : l.marginPct >= 25 ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]")}>
+                        {l.marginPct >= 35 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                        {pct(l.marginPct)}
+                      </span>
+                    </td>
+                  ),
+                }}
+              />
               <td>
                 <button aria-label="Ver" onClick={() => setDetail(l)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)] hover:bg-primary/10 dark:hover:bg-primary/15"><Eye className="h-3.5 w-3.5" /></button>
               </td>
@@ -351,14 +387,25 @@ export default function ProfitabilityTab() {
         </tbody>
         <tfoot className="border-t-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] dark:bg-surface/50">
           <tr className="font-extrabold">
-            <td colSpan={3} className="text-xs uppercase text-[var(--text-secondary)]">
+            {/* Producto/Categoría no tienen total propio: se funden en esta
+                etiqueta junto con «#», contando cuántas quedan al frente hoy
+                (las columnas se arrastran) — el resto de la fila sigue el
+                MISMO orden que la cabecera. */}
+            <td colSpan={1 + antesDeLosTotales} className="text-xs uppercase text-[var(--text-secondary)]">
               {isFiltered ? `Totales (${filtered.length} de ${lines.length})` : "Totales"}
             </td>
-            <td className="text-right text-[var(--text-primary)] dark:text-[var(--text-primary)]">{formatNumber(visibleTotals.units)}</td>
-            <td className="text-right text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(visibleTotals.revenue)}</td>
-            <td className="text-right text-[var(--text-secondary)]">{fmt(visibleTotals.cogs)}</td>
-            <td className="text-right text-[var(--data-success-500)]">{fmt(visibleTotals.grossMargin)}</td>
-            <td className="text-right text-[var(--data-success-500)]">{pct(visibleTotals.marginPct)}</td>
+            <EnOrden
+              orden={ordenProf.orden}
+              celdas={{
+                producto: idsFundidos.has("producto") ? false : <td />,
+                categoria: idsFundidos.has("categoria") ? false : <td />,
+                unidades: <td className="text-right text-[var(--text-primary)] dark:text-[var(--text-primary)]">{formatNumber(visibleTotals.units)}</td>,
+                ingresos: <td className="text-right text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(visibleTotals.revenue)}</td>,
+                costo: <td className="text-right text-[var(--text-secondary)]">{fmt(visibleTotals.cogs)}</td>,
+                margen: <td className="text-right text-[var(--data-success-500)]">{fmt(visibleTotals.grossMargin)}</td>,
+                pct: <td className="text-right text-[var(--data-success-500)]">{pct(visibleTotals.marginPct)}</td>,
+              }}
+            />
             <td />
           </tr>
         </tfoot>
@@ -371,8 +418,8 @@ export default function ProfitabilityTab() {
           role="button"
           tabIndex={0}
           aria-label="Cerrar detalle"
-          onClick={() => setDetail(null)}
-          onKeyDown={e => { if (e.key === "Enter" || e.key === " ") setDetail(null); }}
+          onClick={() => { if (!ventanaDetalle.fijado) setDetail(null); }}
+          onKeyDown={e => { if ((e.key === "Enter" || e.key === " ") && !ventanaDetalle.fijado) setDetail(null); }}
         >
           <div
             ref={detailPanelRef}
@@ -380,12 +427,15 @@ export default function ProfitabilityTab() {
             aria-modal="true"
             aria-label="Detalle de producto"
             tabIndex={-1}
-            className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6 w-full max-w-sm space-y-4"
+            className="relative bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6 w-full max-w-sm space-y-4"
             onClick={e => e.stopPropagation()}
             onKeyDown={e => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between">
+            <div {...ventanaDetalle.asaProps} className="flex items-center justify-between">
               <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm">Detalle de producto</CardTitle>
+              <span className="ml-auto flex items-center gap-1">
+                <ControlesDeVentana ventana={ventanaDetalle} />
+              </span>
               <button onClick={() => setDetail(null)} aria-label="Cerrar"><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
             </div>
             <div className="space-y-2 text-sm">
@@ -401,6 +451,7 @@ export default function ProfitabilityTab() {
                 </div>
               ))}
             </div>
+            <TiradorDeVentana ventana={ventanaDetalle} />
           </div>
         </div>
       )}

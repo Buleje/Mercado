@@ -32,6 +32,11 @@ import { piezasLibres, volumenLibre, type LoteAserrio } from "@/lib/forestal/lot
 import { largoMaxEnMetros, type TrozaAVincular } from "@/lib/forestal/vincular-produccion";
 import { repartirEnTanda, resumenDeTanda, type CorridaEnTanda } from "@/lib/forestal/vincular-en-tanda";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import {
+  ControlesDeVentana,
+  TiradorDeVentana,
+} from "@/components/admin/shared/modal-controles-ventana";
 import { Btn } from "./ctp-shared";
 
 const TH = "px-2 py-1.5 text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]";
@@ -216,6 +221,12 @@ export default function CtpVincularEnTandaModal({
   const [error, setError] = useState<string | null>(null);
   const cajaRef = useRef<HTMLDivElement>(null);
   useModalAccesible(cajaRef, { onCerrar: guardando ? undefined : onCerrar });
+  /** Ventana: se mueve, se achica y se fija (ADR-420). */
+  const ventana = useVentanaDeModal(true, {
+    ref: cajaRef,
+    aplicarTranslate: true,
+    claveMemoria: "ctp-vincular-en-tanda",
+  });
 
   const vincular = async () => {
     if (!lote || !reparto || reparto.vinculables === 0) return;
@@ -279,9 +290,9 @@ export default function CtpVincularEnTandaModal({
         role="dialog"
         aria-modal="true"
         aria-label="Ponerle el lote a varias producciones"
-        className="flex max-h-[92vh] w-full max-w-4xl flex-col rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-lg)]"
+        className="relative flex max-h-[92vh] w-full max-w-4xl flex-col rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-lg)]"
       >
-        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4 sm:px-6">
+        <div {...ventana.asaProps} className="flex shrink-0 items-start justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4 sm:px-6">
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
               <CardTitle as="h3" className="flex items-center gap-2 font-display text-lg">
@@ -297,6 +308,9 @@ export default function CtpVincularEnTandaModal({
               {corridas.length} producci{corridas.length === 1 ? "ón marcada" : "ones marcadas"} sin materia prima.
             </p>
           </div>
+          <span className="ml-auto flex items-center gap-1">
+            <ControlesDeVentana ventana={ventana} />
+          </span>
           <button
             type="button"
             onClick={onCerrar}
@@ -492,6 +506,8 @@ export default function CtpVincularEnTandaModal({
             </Btn>
           </div>
         </div>
+
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

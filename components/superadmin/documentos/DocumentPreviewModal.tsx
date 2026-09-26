@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { X, Loader2, FileText, Download, Eye } from "@buleje/design-system/icons";
 import type { DbDocument } from "@/lib/types/documents";
 import { fmtBytes } from "./shared";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 
 interface Props {
   doc: DbDocument;
@@ -15,6 +17,8 @@ export default function DocumentPreviewModal({ doc, onClose }: Props) {
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const ventana = useVentanaDeModal(true, { ref: dialogRef, aplicarTranslate: true, claveMemoria: "sa-document-preview" });
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -130,17 +134,18 @@ export default function DocumentPreviewModal({ doc, onClose }: Props) {
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget && !ventana.fijado) onClose();
       }}
     >
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-label={`Vista previa: ${doc.name}`}
-        className="flex flex-col w-full max-w-4xl max-h-[90vh] rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-[var(--shadow-lg)]"
+        className="relative flex flex-col w-full max-w-4xl max-h-[90vh] rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-[var(--shadow-lg)]"
       >
         {/* Header */}
-        <div className="flex items-center justify-between gap-3 px-5 py-4 border-b-2 border-[var(--rule-base)] shrink-0">
+        <div {...ventana.asaProps} className="flex items-center justify-between gap-3 px-5 py-4 border-b-2 border-[var(--rule-base)] shrink-0">
           <div className="flex items-center gap-2 min-w-0">
             <Eye className="h-5 w-5 shrink-0 text-[var(--text-tertiary)]" />
             <span className="text-base font-extrabold text-[var(--text-primary)] truncate">
@@ -151,6 +156,7 @@ export default function DocumentPreviewModal({ doc, onClose }: Props) {
             </span>
           </div>
           <div className="flex items-center gap-2 shrink-0">
+            <ControlesDeVentana ventana={ventana} />
             {signedUrl && (
               <button
                 type="button"
@@ -175,6 +181,7 @@ export default function DocumentPreviewModal({ doc, onClose }: Props) {
 
         {/* Body */}
         <div className="flex flex-1 flex-col overflow-auto">{renderBody()}</div>
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

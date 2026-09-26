@@ -6,6 +6,8 @@ import { activateProps } from "@/components/admin/shared/a11y";
 import Image from "next/image";
 import { Field } from "@/components/admin/shared/Field";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import {
   Save, Eye, Loader2, Check, GripVertical,
   Megaphone, Grid3x3, ShoppingBag, Tag,
@@ -421,20 +423,25 @@ function SectionEditorModal({
   const titleId = useId();
   const modalRef = useRef<HTMLDivElement>(null);
   useModalAccesible(modalRef, { onCerrar: onClose });
+  /** Ventana: se mueve, se achica y se fija (ADR-420). */
+  const ventana = useVentanaDeModal(true, {
+    ref: modalRef,
+    aplicarTranslate: true,
+    claveMemoria: "storefront-editar-seccion",
+  });
 
   return (
-    <div className="modal-backdrop flex items-center justify-center p-4" onClick={onClose}>
+    <div className="modal-backdrop flex items-center justify-center p-4" onClick={(e) => { if (e.target === e.currentTarget && !ventana.fijado) onClose(); }}>
       <div
         ref={modalRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="bg-[var(--surface-raised)] rounded-2xl w-full max-w-5xl max-h-[92vh] overflow-hidden border border-[var(--rule-base)] dark:border-[var(--rule-base)] flex flex-col shadow-[var(--shadow-xl)]"
-        onClick={(e) => e.stopPropagation()}
+        className="relative bg-[var(--surface-raised)] rounded-2xl w-full max-w-5xl max-h-[92vh] overflow-hidden border border-[var(--rule-base)] dark:border-[var(--rule-base)] flex flex-col shadow-[var(--shadow-xl)]"
       >
         {/* Header con kicker descriptivo + counter */}
-        <div className="flex items-center justify-between px-6 py-4 border-b-2 border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0 bg-linear-to-r from-primary/5 to-transparent dark:from-primary/10">
+        <div {...ventana.asaProps} className="flex items-center justify-between px-6 py-4 border-b-2 border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0 bg-linear-to-r from-primary/5 to-transparent dark:from-primary/10">
           <div className="flex items-center gap-3">
             <div className="h-11 w-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
               <Package className="h-5 w-5 text-primary" />
@@ -444,6 +451,9 @@ function SectionEditorModal({
               <SectionTitle id={titleId} className="text-[var(--text-primary)]">{sectionLabel}</SectionTitle>
             </div>
           </div>
+          <span className="ml-auto flex items-center gap-1">
+            <ControlesDeVentana ventana={ventana} />
+          </span>
           <button
             onClick={onClose}
             className="h-9 w-9 rounded-xl flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--rule-soft)] transition-colors"
@@ -739,6 +749,7 @@ function SectionEditorModal({
             </button>
           </div>
         </div>
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

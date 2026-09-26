@@ -20,6 +20,8 @@
  */
 
 import { useEffect, useRef, useState, useCallback, useMemo, Fragment } from "react";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { useBannerHistory } from "./hooks/useBannerHistory";
 import { useBannerCanvas } from "./hooks/useBannerCanvas";
 import { useStudioKeyboard } from "./hooks/useStudioKeyboard";
@@ -2153,6 +2155,14 @@ function ProductCatalogModal({
   onClose: () => void;
 }) {
   const dark = theme === "dark";
+  /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
+  const cajaRef = useRef<HTMLDivElement>(null);
+  /** Ventana: se mueve, se achica y se fija (ADR-420). */
+  const ventana = useVentanaDeModal(true, {
+    ref: cajaRef,
+    aplicarTranslate: true,
+    claveMemoria: "banner-studio-catalogo",
+  });
   const [step, setStep] = useState<"stores" | "products">(initialStoreSlug ? "products" : "stores");
   const [activeStore, setActiveStore] = useState<CatalogStore | null>(null);
   const [stores, setStores] = useState<CatalogStore[]>([]);
@@ -2228,23 +2238,24 @@ function ProductCatalogModal({
 
   return (
     <div
-      role="dialog"
-      aria-modal="true"
-      aria-label="Catálogo de productos"
       className="fixed inset-0 z-[110] flex items-center justify-center p-4 sm:p-8 bg-black/70"
-      onClick={onClose}
+      onClick={() => { if (!ventana.fijado) onClose(); }}
       onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
     >
       <div
+        ref={cajaRef} tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Catálogo de productos"
         onClick={stopPropagation}
         onKeyDown={(e) => e.stopPropagation()}
         className={cn(
-          "w-full max-w-5xl max-h-[90vh] flex flex-col rounded-2xl shadow-2xl overflow-hidden",
+          "relative w-full max-w-5xl max-h-[90vh] flex flex-col rounded-2xl shadow-2xl overflow-hidden",
           dark ? "bg-[#0c1015] border border-[rgb(var(--st-fg)/0.1)]" : "bg-[var(--surface-raised)] border border-black/10",
         )}
       >
         {/* Header */}
-        <header className={cn("shrink-0 px-5 py-3 flex items-center gap-3 border-b", dark ? "border-[rgb(var(--st-fg)/0.1)] bg-black/40" : "border-black/10 bg-[#f4f5f7]")}>
+        <header {...ventana.asaProps} className={cn("shrink-0 px-5 py-3 flex items-center gap-3 border-b", dark ? "border-[rgb(var(--st-fg)/0.1)] bg-black/40" : "border-black/10 bg-[#f4f5f7]")}>
           <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--accent)] text-[rgb(var(--st-fg))] shrink-0">
             <Search className="h-4 w-4" />
           </span>
@@ -2269,6 +2280,9 @@ function ProductCatalogModal({
               Tiendas
             </button>
           )}
+          <span className="flex items-center gap-1 shrink-0">
+            <ControlesDeVentana ventana={ventana} />
+          </span>
           <button
             type="button"
             onClick={onClose}
@@ -2422,6 +2436,8 @@ function ProductCatalogModal({
             })()
           )}
         </div>
+
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

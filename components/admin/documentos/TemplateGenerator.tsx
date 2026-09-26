@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { logger } from "@/lib/logger";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { fetchTemplates, generateFromTemplate } from "@/hooks/use-documents";
 import type { DbDocument, DbDocumentTemplate } from "@/lib/types/documents";
 import { SendWhatsAppModal } from "./SendWhatsAppModal";
@@ -34,6 +36,7 @@ export function TemplateGenerator({ onClose, onGenerated }: Props) {
   // Escape lo maneja el hook (y cede si hay una confirmación encima). El
   // listener propio en `window` que convivía con éste se quitó: cerraba igual.
   useModalAccesible(panelRef, { onCerrar: onClose, activo: true });
+  const ventana = useVentanaDeModal(true, { ref: panelRef, aplicarTranslate: true, claveMemoria: "template-generator" });
 
   useEffect(() => {
     fetchTemplates().then((t) => { setTemplates(t); setLoading(false); }).catch(() => setLoading(false));
@@ -124,7 +127,7 @@ export function TemplateGenerator({ onClose, onGenerated }: Props) {
   return (
     <div
       className="fixed inset-0 z-modal flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-      onClick={onClose}
+      onClick={() => { if (!ventana.fijado) onClose(); }}
       onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
     >
       <div
@@ -135,9 +138,9 @@ export function TemplateGenerator({ onClose, onGenerated }: Props) {
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
         onKeyDown={(e) => e.stopPropagation()}
-        className="w-full max-w-5xl max-h-[90vh] overflow-hidden bg-[var(--surface-raised)] rounded-3xl shadow-[var(--shadow-xl)] flex flex-col"
+        className="relative w-full max-w-5xl max-h-[90vh] overflow-hidden bg-[var(--surface-raised)] rounded-3xl shadow-[var(--shadow-xl)] flex flex-col"
       >
-        <header className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[var(--rule-base)] shrink-0">
+        <header {...ventana.asaProps} className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[var(--rule-base)] shrink-0">
           <div className="flex items-center gap-3">
             <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-100">
               <Sparkles className="h-5 w-5 text-[var(--accent)]" />
@@ -147,9 +150,12 @@ export function TemplateGenerator({ onClose, onGenerated }: Props) {
               <p className="text-xs text-[var(--text-secondary)]">Contratos, recibos, cotizaciones y acuerdos listos en 1 minuto.</p>
             </div>
           </div>
-          <button aria-label="Cerrar" onClick={onClose} className="h-8 w-8 inline-flex items-center justify-center rounded-full bg-[var(--rule-soft)] border border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-slate-900">
-            <X className="h-4 w-4" />
-          </button>
+          <span className="flex items-center gap-1">
+            <ControlesDeVentana ventana={ventana} />
+            <button aria-label="Cerrar" onClick={onClose} className="h-8 w-8 inline-flex items-center justify-center rounded-full bg-[var(--rule-soft)] border border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-slate-900">
+              <X className="h-4 w-4" />
+            </button>
+          </span>
         </header>
 
         <div className="flex-1 overflow-hidden grid grid-cols-1 md:grid-cols-[280px_1fr] min-h-0">
@@ -312,6 +318,7 @@ export function TemplateGenerator({ onClose, onGenerated }: Props) {
             )}
           </div>
         </div>
+        <TiradorDeVentana ventana={ventana} />
       </div>
 
       {/* El envío se monta encima: al cerrarlo se vuelve al generador. */}

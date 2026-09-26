@@ -5,6 +5,8 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { Field } from "@/components/admin/shared/Field";
 import { useState, useEffect, useCallback, useRef, useId } from "react";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import {
   AlertOctagon,
   Calendar,
@@ -124,6 +126,12 @@ export default function ExpiredBatchesWidget() {
   const mermaModalRef = useRef<HTMLDivElement>(null);
   const mermaModalTitleId = useId();
   useModalAccesible(mermaModalRef, { onCerrar: closeModal, activo: modal.open });
+  /** Ventana: se mueve, se achica y se fija (ADR-420). */
+  const ventanaMerma = useVentanaDeModal(modal.open, {
+    ref: mermaModalRef,
+    aplicarTranslate: true,
+    claveMemoria: "merma-registrar",
+  });
 
   const toggleBatch = (id: string) => {
     setModal((prev) => {
@@ -479,7 +487,7 @@ export default function ExpiredBatchesWidget() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
             className="fixed inset-0 z-modal flex items-center justify-center bg-black/40 dark:bg-black/60 px-4"
-            onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}
+            onClick={(e) => { if (e.target === e.currentTarget && !ventanaMerma.fijado) closeModal(); }}
           >
             <m.div
               key="merma-modal"
@@ -492,16 +500,19 @@ export default function ExpiredBatchesWidget() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96, y: 12 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
-              className="w-full max-w-md rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] dark:border-[var(--rule-base)] overflow-hidden"
+              className="relative w-full max-w-md rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] dark:border-[var(--rule-base)] overflow-hidden"
             >
               {/* Cabecera */}
-              <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+              <div {...ventanaMerma.asaProps} className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                 <div className="flex items-center gap-2">
                   <ClipboardList className="h-4 w-4 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" />
                   <SectionTitle id={mermaModalTitleId} className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                     Registrar merma
                   </SectionTitle>
                 </div>
+                <span className="ml-auto flex items-center gap-1">
+                  <ControlesDeVentana ventana={ventanaMerma} />
+                </span>
                 <button
                   type="button"
                   aria-label="Cerrar"
@@ -604,6 +615,7 @@ export default function ExpiredBatchesWidget() {
                   Confirmar registro ({modal.selected.size})
                 </button>
               </div>
+              <TiradorDeVentana ventana={ventanaMerma} />
             </m.div>
           </m.div>
         )}

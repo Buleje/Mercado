@@ -11,6 +11,7 @@
  */
 
 import { FileCheck, PenLine } from "@buleje/design-system/icons";
+import { EnOrden } from "@/components/admin/shared/columnas-ordenables";
 import { LABEL_BLOQUEO, motivoBloqueo, type TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import { diasEnPatio, SEVERIDAD_TRAMO_DIAS, tramoDeDias } from "@/lib/forestal/patio-resumen";
 import { fechaCorta } from "@/lib/forestal/plazo-de-apartado";
@@ -113,6 +114,8 @@ export interface FilaTrozaProps {
   /** El lote que se está cargando: sus piezas se ven y se eligen. */
   loteId?: string;
   onSacarDelLote?: (trozaId: string) => void;
+  /** El orden que dejó el operador arrastrando los títulos de la cabecera. */
+  orden: readonly string[];
 }
 
 export default function CtpTrozasIngresadasFila({
@@ -123,6 +126,7 @@ export default function CtpTrozasIngresadasFila({
   onAlternar,
   loteId,
   onSacarDelLote,
+  orden,
 }: FilaTrozaProps) {
   const bloqueo = motivoBloqueo(t);
   const enLote = Boolean(t.loteAserrioId);
@@ -146,54 +150,70 @@ export default function CtpTrozasIngresadasFila({
           />
         </td>
       )}
-      {/* La guía con de dónde salió su dato (SERFOR / a mano): era una columna
-          propia que en el patio real decía lo mismo fila tras fila. */}
-      <td className="whitespace-nowrap px-2! py-2 text-sm">
-        <span className="flex items-center gap-1.5">
-          <span className="font-bold text-[var(--text-primary)]">{t.gtfNumber ?? "—"}</span>
-          <OrigenDelDato origen={t.origenDato} />
-        </span>
-      </td>
-      <td className="px-2! py-2 text-sm text-[var(--text-secondary)]">{t.permiso ?? "—"}</td>
-      {/* Codificación del bosque y, si la tiene, el código de planta: dos
-          columnas casi siempre vacías una de las dos (medido en main). */}
-      <td className="whitespace-nowrap px-2! py-2 text-[var(--text-secondary)]">
-        {t.codificacion ?? "—"}
-        {t.codigoPlanta && <span className="text-sm"> · planta {t.codigoPlanta}</span>}
-      </td>
-      <td className="px-2! py-2 text-[var(--text-secondary)]">{t.especieComun ?? "—"}</td>
-      <td className="px-2! py-2 text-sm text-[var(--text-secondary)]"><Medidas t={t} /></td>
-      <td className="px-2! py-2 text-right font-bold tabular-nums text-[var(--text-primary)]">
-        {t.volumenM3 != null ? fmtM3(Number(t.volumenM3)) : "—"}
-      </td>
-      <td className="px-2! py-2 text-sm">
-        {delLote ? (
-          <span className="inline-flex items-center gap-1">
-            <span className="rounded-lg bg-primary/15 px-1.5 py-0.5 font-bold text-[var(--text-primary)]">en este lote</span>
-            {onSacarDelLote && (
-              <button
-                type="button"
-                onClick={() => onSacarDelLote(t.id)}
-                aria-label={`Sacar la troza ${codigo} del lote y devolverla al patio`}
-                className="inline-flex min-h-6 items-center rounded-lg px-1.5 text-[var(--text-secondary)] underline underline-offset-2 hover:text-[var(--data-error-700)] dark:hover:text-[var(--data-error-500)]"
-              >
-                sacar
-              </button>
-            )}
-          </span>
-        ) : enLote ? (
-          <span className="rounded-lg bg-primary/10 px-1.5 py-0.5 font-bold text-[var(--text-primary)]">
-            {t.loteAserrioCode ?? "en un lote"}
-          </span>
-        ) : bloqueo ? (
-          <span className="text-[var(--text-secondary)]">{LABEL_BLOQUEO[bloqueo]}</span>
-        ) : (
-          <span className="font-semibold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">Libre</span>
-        )}
-      </td>
-      <td className="px-2! py-2 text-sm"><EnElPatio t={t} ahora={ahora} /></td>
-      {/* Fecha del ASIENTO de la guía en el libro. No es la recepción física. */}
-      <td className="whitespace-nowrap px-2! py-2 text-sm text-[var(--text-secondary)]">{fmtDia(t.fechaIngreso)}</td>
+      {/* Las movibles, en el orden que dejó el operador (el mismo que la
+          cabecera): un m³ bajo el título equivocado sería un dato mal
+          declarado, no sólo un desorden visual. */}
+      <EnOrden
+        orden={orden}
+        celdas={{
+          /* La guía con de dónde salió su dato (SERFOR / a mano): era una
+             columna propia que en el patio real decía lo mismo fila tras fila. */
+          guia: (
+            <td className="whitespace-nowrap px-2! py-2 text-sm">
+              <span className="flex items-center gap-1.5">
+                <span className="font-bold text-[var(--text-primary)]">{t.gtfNumber ?? "—"}</span>
+                <OrigenDelDato origen={t.origenDato} />
+              </span>
+            </td>
+          ),
+          permiso: <td className="px-2! py-2 text-sm text-[var(--text-secondary)]">{t.permiso ?? "—"}</td>,
+          /* Codificación del bosque y, si la tiene, el código de planta: dos
+             columnas casi siempre vacías una de las dos (medido en main). */
+          codigo: (
+            <td className="whitespace-nowrap px-2! py-2 text-[var(--text-secondary)]">
+              {t.codificacion ?? "—"}
+              {t.codigoPlanta && <span className="text-sm"> · planta {t.codigoPlanta}</span>}
+            </td>
+          ),
+          especie: <td className="px-2! py-2 text-[var(--text-secondary)]">{t.especieComun ?? "—"}</td>,
+          medidas: <td className="px-2! py-2 text-sm text-[var(--text-secondary)]"><Medidas t={t} /></td>,
+          volumen: (
+            <td className="px-2! py-2 text-right font-bold tabular-nums text-[var(--text-primary)]">
+              {t.volumenM3 != null ? fmtM3(Number(t.volumenM3)) : "—"}
+            </td>
+          ),
+          estado: (
+            <td className="px-2! py-2 text-sm">
+              {delLote ? (
+                <span className="inline-flex items-center gap-1">
+                  <span className="rounded-lg bg-primary/15 px-1.5 py-0.5 font-bold text-[var(--text-primary)]">en este lote</span>
+                  {onSacarDelLote && (
+                    <button
+                      type="button"
+                      onClick={() => onSacarDelLote(t.id)}
+                      aria-label={`Sacar la troza ${codigo} del lote y devolverla al patio`}
+                      className="inline-flex min-h-6 items-center rounded-lg px-1.5 text-[var(--text-secondary)] underline underline-offset-2 hover:text-[var(--data-error-700)] dark:hover:text-[var(--data-error-500)]"
+                    >
+                      sacar
+                    </button>
+                  )}
+                </span>
+              ) : enLote ? (
+                <span className="rounded-lg bg-primary/10 px-1.5 py-0.5 font-bold text-[var(--text-primary)]">
+                  {t.loteAserrioCode ?? "en un lote"}
+                </span>
+              ) : bloqueo ? (
+                <span className="text-[var(--text-secondary)]">{LABEL_BLOQUEO[bloqueo]}</span>
+              ) : (
+                <span className="font-semibold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">Libre</span>
+              )}
+            </td>
+          ),
+          patio: <td className="px-2! py-2 text-sm"><EnElPatio t={t} ahora={ahora} /></td>,
+          /* Fecha del ASIENTO de la guía en el libro. No es la recepción física. */
+          asiento: <td className="whitespace-nowrap px-2! py-2 text-sm text-[var(--text-secondary)]">{fmtDia(t.fechaIngreso)}</td>,
+        }}
+      />
     </tr>
   );
 }

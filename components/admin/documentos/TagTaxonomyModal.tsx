@@ -5,6 +5,8 @@ import { Tag, X, Pencil, Trash2, Check, Loader2 } from "@buleje/design-system/ic
 import { fetchTags, renameDocTag, deleteDocTag } from "@/hooks/use-documents";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 
 type TagRow = { tag: string; count: number };
 
@@ -24,6 +26,7 @@ export function TagTaxonomyModal({ onChanged, onClose }: { onChanged: () => void
   const panelRef = useRef<HTMLDivElement>(null);
   // Escape ya lo maneja el efecto de más abajo (respeta `editing`).
   useModalAccesible(panelRef, { onCerrar: onClose, activo: true, cerrarConEscape: false });
+  const ventana = useVentanaDeModal(true, { ref: panelRef, aplicarTranslate: true, claveMemoria: "tag-taxonomy" });
 
   const load = () => {
     setLoading(true);
@@ -92,14 +95,15 @@ export function TagTaxonomyModal({ onChanged, onClose }: { onChanged: () => void
   };
 
   return (
-    <div className="fixed inset-0 z-modal-2 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="flex max-h-[85vh] w-full max-w-[30rem] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center gap-3 border-b border-[var(--rule-base)] px-5 py-4">
+    <div className="fixed inset-0 z-modal-2 flex items-center justify-center bg-black/50 p-4" onClick={() => { if (!ventana.fijado) onClose(); }}>
+      <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="relative flex max-h-[85vh] w-full max-w-[30rem] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]" onClick={(e) => e.stopPropagation()}>
+        <div {...ventana.asaProps} className="flex items-center gap-3 border-b border-[var(--rule-base)] px-5 py-4">
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Tag className="h-5 w-5" /></span>
           <div className="min-w-0 flex-1">
             <p id={titleId} className="text-sm font-extrabold text-[var(--text-primary)]">Etiquetas</p>
             <p className="text-xs text-[var(--text-tertiary)]">Renombra, fusiona o borra en todos los documentos</p>
           </div>
+          <ControlesDeVentana ventana={ventana} />
           <button onClick={onClose} className="rounded-xl p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Cerrar"><X className="h-4 w-4" /></button>
         </div>
 
@@ -143,6 +147,7 @@ export function TagTaxonomyModal({ onChanged, onClose }: { onChanged: () => void
           </span>
           <button onClick={onClose} className="rounded-xl px-4 py-2 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Listo</button>
         </div>
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

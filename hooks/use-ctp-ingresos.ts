@@ -19,6 +19,7 @@ import type { WoodEntry, WoodEntryStats } from "@/components/admin/forestal/ctp-
 import type { GuiaIngreso } from "@/lib/forestal/ingresos-por-guia";
 import { useContratoActivo } from "@/contexts/contrato-activo-context";
 import { conContratoId } from "@/lib/forestal/contrato-filtro";
+import { aplicarFiltrosColumna, type FiltrosColumnaIngresos } from "@/lib/forestal/ingresos-filtros-columna";
 
 export const CTP_PAGE_SIZE = 50;
 /** Tope de la descarga: un CSV de 5000 filas ya son ~1.5 MB y varias páginas de
@@ -74,6 +75,8 @@ export interface CtpIngresosFiltros {
    * `cerrada` el archivo de GTF ingresadas. Vacío = las dos.
    */
   recepcion?: "pendiente" | "cerrada" | "";
+  /** Los autofiltros de cabecera sin otro control: documento, SNIFFS, fechas, cantidad… (2026-09-26). */
+  columnas?: FiltrosColumnaIngresos;
 }
 
 interface UseCtpIngresosArgs {
@@ -158,7 +161,7 @@ export function useCtpIngresos({
   // Descarta respuestas de un fetch viejo que llega tarde y pisaría al nuevo.
   const requestSeq = useRef(0);
 
-  const { status, search, species, provider, product, permiso, cites, late, sinOrigen, sinCosto, recepcion } = filtros;
+  const { status, search, species, provider, product, permiso, cites, late, sinOrigen, sinCosto, recepcion, columnas } = filtros;
   /* «Solo este permiso» de la banda: viaja como parámetro y filtra el servidor.
      Va en `armarParams`, así tabla, KPIs, mes anterior y descarga hablan del
      mismo conjunto. */
@@ -185,11 +188,12 @@ export function useCtpIngresos({
     if (sinOrigen) params.set("sin_origen", "1");
     if (sinCosto) params.set("sin_costo", "1");
     if (recepcion) params.set("recepcion", recepcion);
+    aplicarFiltrosColumna(params, columnas);
     conContratoId(params, contratoFiltro);
     params.set("sort", sort.by);
     params.set("dir", sort.dir);
     return params;
-  }, [status, search, species, provider, product, permiso, cites, late, sinOrigen, sinCosto, recepcion, contratoFiltro, sort.by, sort.dir]);
+  }, [status, search, species, provider, product, permiso, cites, late, sinOrigen, sinCosto, recepcion, columnas, contratoFiltro, sort.by, sort.dir]);
 
   const baseParams = useMemo(() => armarParams(period), [armarParams, period]);
 

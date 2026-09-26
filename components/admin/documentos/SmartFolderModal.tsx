@@ -6,6 +6,8 @@ import { CardTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import type { SmartFolder, SmartFolderRules } from "@/lib/documentos/smart-folders";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 
 /**
  * Modal para crear/editar una carpeta inteligente (filtro guardado). No mueve
@@ -21,6 +23,7 @@ export function SmartFolderModal({ initial, onSave, onClose }: { initial?: Smart
   const panelRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
   useModalAccesible(panelRef, { onCerrar: onClose });
+  const ventana = useVentanaDeModal(true, { ref: panelRef, aplicarTranslate: true, claveMemoria: "smart-folder" });
 
   const set = (patch: Partial<SmartFolderRules>) => setR((prev) => ({ ...prev, ...patch }));
 
@@ -41,12 +44,15 @@ export function SmartFolderModal({ initial, onSave, onClose }: { initial?: Smart
   const labelCls = "text-xs font-bold text-[var(--text-secondary)]";
 
   return (
-    <div className="fixed inset-0 z-modal-2 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-modal-2 flex items-center justify-center bg-black/50 p-4" onClick={() => { if (!ventana.fijado) onClose(); }}>
       <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1}
-        className="w-full max-w-[30rem] rounded-2xl bg-[var(--surface-raised)] p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
-        <div className="mb-3 flex items-center justify-between">
+        className="relative w-full max-w-[30rem] rounded-2xl bg-[var(--surface-raised)] p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <div {...ventana.asaProps} className="mb-3 flex items-center justify-between">
           <CardTitle id={titleId} as="h3" className="inline-flex items-center gap-2 text-base font-bold text-[var(--text-primary)]"><Sparkles className="h-5 w-5 text-primary" /> Carpeta inteligente</CardTitle>
-          <button onClick={onClose} className="rounded-xl p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Cerrar"><X className="h-5 w-5" /></button>
+          <span className="flex items-center gap-1">
+            <ControlesDeVentana ventana={ventana} />
+            <button onClick={onClose} className="rounded-xl p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Cerrar"><X className="h-5 w-5" /></button>
+          </span>
         </div>
         <p className="mb-3 text-xs text-[var(--text-secondary)]">Agrupa dinámicamente los documentos que cumplen estas reglas. No mueve archivos.</p>
 
@@ -95,6 +101,7 @@ export function SmartFolderModal({ initial, onSave, onClose }: { initial?: Smart
           <button onClick={onClose} className="rounded-xl px-4 py-2 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
           <button onClick={save} className={cn("rounded-xl bg-primary px-4 min-h-10 text-sm font-semibold text-white hover:bg-primary/90")}>Guardar carpeta</button>
         </div>
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

@@ -27,8 +27,9 @@ import type { FacetaOpcion, Rango } from "@/components/admin/shared/filtros-colu
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { formatNumber } from "@/lib/format";
 import { CtpPaginacion, FilaVacia, TablaCtp, TbodyCtp, usePaginacion } from "./ctp-tabla";
-import CtpTrozasIngresadasThead from "./CtpTrozasIngresadasThead";
+import CtpTrozasIngresadasThead, { ORDEN_TROZAS_INGRESADAS_DEFECTO } from "./CtpTrozasIngresadasThead";
 import CtpTrozasIngresadasFila, { LeyendaOrigenDato } from "./CtpTrozasIngresadasFila";
+import { BotonRestablecerColumnas, useOrdenColumnas } from "@/components/admin/shared/columnas-ordenables";
 
 type Multi = {
   value: readonly string[];
@@ -123,6 +124,9 @@ export default function CtpTrozasIngresadas({
 }) {
   const fc = filtrosColumna ?? {};
   const idTitulo = useId();
+  /* Se arrastran los títulos de la cabecera para cambiarlas de lugar
+     (Brandon, 2026-09-26). */
+  const orden = useOrdenColumnas("ctp-trozas-ingresadas", ORDEN_TROZAS_INGRESADAS_DEFECTO);
   const hoy = useMemo(() => ahora ?? new Date(), [ahora]);
   const columnas = seleccionable ? 10 : 9;
   /* `px-2!`: el `DataTable` del DS fuerza `px-3` con un selector descendiente;
@@ -156,6 +160,7 @@ export default function CtpTrozasIngresadas({
       onAlternar={alternar}
       loteId={loteId}
       onSacarDelLote={onSacarDelLote}
+      orden={orden.orden}
     />
   );
 
@@ -182,8 +187,9 @@ export default function CtpTrozasIngresadas({
             )}
           </div>
         </div>
-        {(accion || menuAgrupar) && (
+        {(accion || menuAgrupar || orden.cambiado) && (
           <div className="flex flex-wrap items-center justify-end gap-2">
+            <BotonRestablecerColumnas cambiado={orden.cambiado} onRestablecer={orden.restablecer} />
             {accion}
             {menuAgrupar}
           </div>
@@ -231,6 +237,7 @@ export default function CtpTrozasIngresadas({
           libres={libres}
           seleccion={seleccion}
           onSeleccion={onSeleccion}
+          orden={orden}
         />
         <TbodyCtp>
           {filas.length === 0 && (

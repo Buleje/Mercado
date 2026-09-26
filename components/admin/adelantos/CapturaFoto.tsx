@@ -20,6 +20,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { leerJson } from "@/lib/errores/sin-dato";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { Camera, RefreshCw, X } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
@@ -41,6 +43,7 @@ export default function CapturaFoto({
   const [tomada, setTomada] = useState<string | null>(null);
   const [subiendo, setSubiendo] = useState(false);
   useModalAccesible(cajaRef, { onCerrar: subiendo ? undefined : onCerrar });
+  const ventana = useVentanaDeModal(true, { ref: cajaRef, aplicarTranslate: true, claveMemoria: "adelantos-foto-comprobante" });
   const [error, setError] = useState<string | null>(null);
 
   /** Apagar la cámara al salir: dejarla prendida enciende el LED y gasta batería. */
@@ -122,22 +125,25 @@ export default function CapturaFoto({
 
   return (
     /* z-[60]: por encima del modal de alta (z-50), que sigue montado detrás. */
-    <div className="fixed inset-0 z-modal-2 flex items-center justify-center bg-black/60 p-4" role="presentation" onClick={(e) => e.target === e.currentTarget && onCerrar()}>
+    <div className="fixed inset-0 z-modal-2 flex items-center justify-center bg-black/60 p-4" role="presentation" onClick={(e) => e.target === e.currentTarget && !ventana.fijado && onCerrar()}>
       <div ref={cajaRef} tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-label="Tomar foto del comprobante"
-        className="w-full max-w-lg overflow-hidden rounded-2xl bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
+        className="relative w-full max-w-lg overflow-hidden rounded-2xl bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
       >
-        <div className="flex items-center justify-between px-5 py-3">
+        <div {...ventana.asaProps} className="flex items-center justify-between px-5 py-3">
           <p className="text-base font-extrabold text-[var(--text-primary)]">Foto del comprobante</p>
-          <button
-            onClick={onCerrar}
-            aria-label="Cerrar"
-            className="flex h-9 w-9 items-center justify-center rounded-full text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          <span className="ml-auto flex items-center gap-1">
+            <ControlesDeVentana ventana={ventana} />
+            <button
+              onClick={onCerrar}
+              aria-label="Cerrar"
+              className="flex h-9 w-9 items-center justify-center rounded-full text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </span>
         </div>
 
         <div className="relative aspect-[4/3] bg-black">
@@ -181,6 +187,7 @@ export default function CapturaFoto({
             </button>
           )}
         </div>
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

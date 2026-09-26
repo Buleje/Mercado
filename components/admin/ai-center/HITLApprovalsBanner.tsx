@@ -27,6 +27,8 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import React, { useState, useEffect, useCallback, useId, useRef } from "react";
 import { AlertTriangle, CheckCircle2, XCircle, Loader2, Clock } from "@buleje/design-system/icons";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 
 interface PendingApproval {
   id: string;
@@ -63,6 +65,12 @@ export default function HITLApprovalsBanner() {
     setSelected(null);
   }, []);
   useModalAccesible(detalleRef, { onCerrar: cerrarDetalle, activo: !!selected });
+  /** Ventana: se mueve, se achica y se fija (ADR-420) — útil para leer el JSON de parámetros con el resto de la pantalla a la vista. */
+  const ventanaDetalle = useVentanaDeModal(!!selected, {
+    ref: detalleRef,
+    aplicarTranslate: true,
+    claveMemoria: "hitl-aprobacion",
+  });
 
   // ── Fetch pendientes ───────────────────────────────────────────────────────
   const fetchApprovals = useCallback(async () => {
@@ -194,7 +202,7 @@ export default function HITLApprovalsBanner() {
       {selected && (
         <div
           className="modal-backdrop flex items-center justify-center p-4"
-          onClick={(e) => e.target === e.currentTarget && cerrarDetalle()}
+          onClick={(e) => e.target === e.currentTarget && !ventanaDetalle.fijado && cerrarDetalle()}
         >
           <div
             ref={detalleRef}
@@ -202,9 +210,9 @@ export default function HITLApprovalsBanner() {
             aria-modal="true"
             aria-labelledby={detalleTituloId}
             tabIndex={-1}
-            className="bg-[var(--surface-canvas)] border border-[var(--rule-base)] rounded-xl max-w-lg w-full p-6"
+            className="relative bg-[var(--surface-canvas)] border border-[var(--rule-base)] rounded-xl max-w-lg w-full p-6"
           >
-            <div className="flex items-start gap-3 mb-4">
+            <div {...ventanaDetalle.asaProps} className="flex items-start gap-3 mb-4">
               <div className="w-10 h-10 rounded-xl bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/40 flex items-center justify-center shrink-0">
                 <AlertTriangle className="w-5 h-5 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" />
               </div>
@@ -216,6 +224,9 @@ export default function HITLApprovalsBanner() {
                   Solicitada por <strong>{selected.requestedBy}</strong> · hace {formatAge(selected.ageSeconds)}
                 </p>
               </div>
+              <span className="ml-auto flex items-center gap-1 self-start">
+                <ControlesDeVentana ventana={ventanaDetalle} />
+              </span>
             </div>
 
             <div className="space-y-3 mb-5">
@@ -264,6 +275,7 @@ export default function HITLApprovalsBanner() {
             {error && (
               <p className="text-xs text-[var(--data-error-500)] mt-3 text-center">{error}</p>
             )}
+            <TiradorDeVentana ventana={ventanaDetalle} />
           </div>
         </div>
       )}

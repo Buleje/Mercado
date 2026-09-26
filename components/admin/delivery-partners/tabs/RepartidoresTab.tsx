@@ -8,7 +8,10 @@ import { tenantFetch } from "@/lib/tenant-fetch";
 import { TableSkeleton, VehicleIcon, vehicleKind, vehicleLabel, toNum, type DeliveryPartner } from "@/components/admin/delivery-partners/shared";
 import { Field } from "@/components/admin/shared/Field";
 import { FiltroColumnaMulti } from "@/components/admin/shared/filtros-columna";
+import { useOrdenColumnas, EnOrden, BotonRestablecerColumnas } from "@/components/admin/shared/columnas-ordenables";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { formatCurrency } from "@/lib/format";
 
 const NetworkToggleCard = dynamic(
@@ -62,6 +65,12 @@ function PartnerModal({
   // El propio Escape de abajo ya cierra el modal — el hook sólo aporta foco
   // inicial + trampa de Tab (por eso cerrarConEscape: false).
   useModalAccesible(panelRef, { cerrarConEscape: false });
+  /** Ventana: se mueve, se achica y se fija (ADR-420). */
+  const ventana = useVentanaDeModal(true, {
+    ref: panelRef,
+    aplicarTranslate: true,
+    claveMemoria: "repartidor-form",
+  });
 
   // FIX 2026-05-06 (audit team): a11y modal — Esc cierra
   useEffect(() => {
@@ -90,21 +99,24 @@ function PartnerModal({
   return (
     <div
       className="fixed inset-0 z-modal flex items-center justify-center p-4 bg-black/50"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
+      onClick={(e) => { if (e.target === e.currentTarget && !ventana.fijado) onClose(); }}
       role="presentation"
     >
       <div
         ref={panelRef}
-        className="bg-[var(--surface-raised)] rounded-2xl w-full max-w-md shadow-[var(--shadow-xl)] border border-[var(--rule-base)]"
+        className="relative bg-[var(--surface-raised)] rounded-2xl w-full max-w-md shadow-[var(--shadow-xl)] border border-[var(--rule-base)]"
         role="dialog"
         aria-modal="true"
         aria-labelledby="partner-modal-title"
         tabIndex={-1}
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)]">
+        <div {...ventana.asaProps} className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)]">
           <CardTitle id="partner-modal-title" className="font-extrabold text-[var(--text-primary)]">
             {partner?.id ? "Editar repartidor" : "Nuevo repartidor"}
           </CardTitle>
+          <span className="ml-auto flex items-center gap-1">
+            <ControlesDeVentana ventana={ventana} />
+          </span>
           <button
             type="button"
             onClick={onClose}
@@ -243,6 +255,7 @@ function PartnerModal({
             </button>
           </div>
         </form>
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );
@@ -330,6 +343,8 @@ export function RepartidoresTab() {
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
+  // Columnas de la tabla: arrastrar el título para reordenarlas.
+  const ordenRepartidores = useOrdenColumnas("delivery-repartidores", ["repartidor", "zona", "tarifa", "rating", "estado"]);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -633,6 +648,7 @@ export function RepartidoresTab() {
             <Download className="h-4 w-4" />
             CSV
           </button>
+          <BotonRestablecerColumnas cambiado={ordenRepartidores.cambiado} onRestablecer={ordenRepartidores.restablecer} />
         </div>
       )}
 
@@ -714,7 +730,7 @@ export function RepartidoresTab() {
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <DataTable className="w-full">
-              <thead className="bg-[var(--surface-sunken)] border-b border-[var(--rule-base)]">
+              <thead ref={ordenRepartidores.refCabecera} className="bg-[var(--surface-sunken)] border-b border-[var(--rule-base)]">
                 <tr>
                   <th className="text-left px-3 py-4 w-10">
                     <input
@@ -728,43 +744,52 @@ export function RepartidoresTab() {
                       className="h-4 w-4 rounded border border-[var(--rule-base)] accent-[var(--accent)] cursor-pointer"
                     />
                   </th>
-                  <th className="text-left px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Repartidor</th>
-                  <th className="text-left px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] hidden sm:table-cell">
-                    <span className="block">Zona / Vehículo</span>
-                    <div className="mt-1.5 flex flex-col gap-1">
-                      <FiltroColumnaMulti
-                        label="Zona"
-                        value={zoneFilter}
-                        options={uniqueZones.map((z) => ({ value: z, count: partners.filter((p) => p.zone === z).length }))}
-                        onChange={setZoneFilter}
-                        placeholder="Todas"
-                      />
-                      <FiltroColumnaMulti
-                        label="Vehículo"
-                        value={vehicleFilter}
-                        options={uniqueVehicles.map((v) => ({ value: v, count: partners.filter((p) => vehicleKind(p.vehicleType) === v).length }))}
-                        etiqueta={vehicleLabel}
-                        onChange={setVehicleFilter}
-                        placeholder="Todos"
-                      />
-                    </div>
-                  </th>
-                  <th className="text-right px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Tarifa</th>
-                  <th className="text-center px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Rating</th>
-                  <th className="text-center px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                    <span className="block">Estado</span>
-                    <FiltroColumnaMulti
-                      label="Estado"
-                      value={statusFilter}
-                      options={[
-                        { value: "Activo", count: partners.filter((p) => p.isActive).length },
-                        { value: "Inactivo", count: partners.filter((p) => !p.isActive).length },
-                      ]}
-                      onChange={setStatusFilter}
-                      placeholder="Todos"
-                      className="mx-auto"
-                    />
-                  </th>
+                  <EnOrden
+                    orden={ordenRepartidores.orden}
+                    celdas={{
+                      repartidor: <th data-col="repartidor" className="text-left px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Repartidor</th>,
+                      zona: (
+                        <th data-col="zona" className="text-left px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] hidden sm:table-cell">
+                          <span className="block">Zona / Vehículo</span>
+                          <div className="mt-1.5 flex flex-col gap-1">
+                            <FiltroColumnaMulti
+                              label="Zona"
+                              value={zoneFilter}
+                              options={uniqueZones.map((z) => ({ value: z, count: partners.filter((p) => p.zone === z).length }))}
+                              onChange={setZoneFilter}
+                              placeholder="Todas"
+                            />
+                            <FiltroColumnaMulti
+                              label="Vehículo"
+                              value={vehicleFilter}
+                              options={uniqueVehicles.map((v) => ({ value: v, count: partners.filter((p) => vehicleKind(p.vehicleType) === v).length }))}
+                              etiqueta={vehicleLabel}
+                              onChange={setVehicleFilter}
+                              placeholder="Todos"
+                            />
+                          </div>
+                        </th>
+                      ),
+                      tarifa: <th data-col="tarifa" className="text-right px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Tarifa</th>,
+                      rating: <th data-col="rating" className="text-center px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Rating</th>,
+                      estado: (
+                        <th data-col="estado" className="text-center px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                          <span className="block">Estado</span>
+                          <FiltroColumnaMulti
+                            label="Estado"
+                            value={statusFilter}
+                            options={[
+                              { value: "Activo", count: partners.filter((p) => p.isActive).length },
+                              { value: "Inactivo", count: partners.filter((p) => !p.isActive).length },
+                            ]}
+                            onChange={setStatusFilter}
+                            placeholder="Todos"
+                            className="mx-auto"
+                          />
+                        </th>
+                      ),
+                    }}
+                  />
                   <th className="text-right px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Acciones</th>
                 </tr>
               </thead>
@@ -790,59 +815,74 @@ export function RepartidoresTab() {
                         className="h-4 w-4 rounded border border-[var(--rule-base)] accent-[var(--accent)] cursor-pointer"
                       />
                     </td>
-                    <td className="px-4 py-4">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={cn(
-                            "h-12 w-12 rounded-2xl flex items-center justify-center text-xl font-extrabold shrink-0 border border-transparent",
-                            zc.bg,
-                            zc.text,
-                          )}
-                          title={`Zona: ${p.zone}`}
-                        >
-                          {(p.name || "?").trim().split(/\s+/).slice(0, 2).map((s) => s[0]?.toUpperCase() ?? "").join("")}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-sm font-extrabold text-[var(--text-primary)] leading-tight">{p.name}</p>
-                          {p.phone && (
-                            <p className="text-xs text-[var(--text-tertiary)] font-mono flex items-center gap-1 mt-1">
-                              <Phone className="h-3 w-3 shrink-0" />
-                              {p.phone}
+                    <EnOrden
+                      orden={ordenRepartidores.orden}
+                      celdas={{
+                        repartidor: (
+                          <td className="px-4 py-4">
+                            <div className="flex items-center gap-3">
+                              <div
+                                className={cn(
+                                  "h-12 w-12 rounded-2xl flex items-center justify-center text-xl font-extrabold shrink-0 border border-transparent",
+                                  zc.bg,
+                                  zc.text,
+                                )}
+                                title={`Zona: ${p.zone}`}
+                              >
+                                {(p.name || "?").trim().split(/\s+/).slice(0, 2).map((s) => s[0]?.toUpperCase() ?? "").join("")}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-sm font-extrabold text-[var(--text-primary)] leading-tight">{p.name}</p>
+                                {p.phone && (
+                                  <p className="text-xs text-[var(--text-tertiary)] font-mono flex items-center gap-1 mt-1">
+                                    <Phone className="h-3 w-3 shrink-0" />
+                                    {p.phone}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                        ),
+                        zona: (
+                          <td className="px-4 py-4 hidden sm:table-cell">
+                            <p className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-1.5">
+                              <MapPin className="h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)]" />
+                              {p.zone}
                             </p>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 hidden sm:table-cell">
-                      <p className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-1.5">
-                        <MapPin className="h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)]" />
-                        {p.zone}
-                      </p>
-                      <p className="text-xs text-[var(--text-tertiary)] mt-1 flex items-center gap-1.5">
-                        <VehicleIcon type={p.vehicleType} className="h-3.5 w-3.5" />
-                        <span className="font-semibold capitalize">{vehicleLabel(p.vehicleType)}</span>
-                      </p>
-                    </td>
-                    <td className="px-4 py-4 text-right text-base font-extrabold tabular-nums text-[var(--text-primary)]">
-                      {formatCurrency(toNum(p.fee))}
-                    </td>
-                    <td className="px-4 py-4 text-center">
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-extrabold bg-[var(--data-warning-50)] text-[var(--data-warning-500)] tabular-nums">
-                        <Star className="h-3.5 w-3.5 fill-[var(--data-warning-500)]" />
-                        {toNum(p.rating).toFixed(1)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4 text-center">
-                      <span className={cn(
-                        "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold",
-                        p.isActive
-                          ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
-                          : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
-                      )}>
-                        <span className={cn("h-1.5 w-1.5 rounded-full", p.isActive ? "bg-[var(--data-success-500)]" : "bg-[var(--text-tertiary)]")} />
-                        {p.isActive ? "Activo" : "Inactivo"}
-                      </span>
-                    </td>
+                            <p className="text-xs text-[var(--text-tertiary)] mt-1 flex items-center gap-1.5">
+                              <VehicleIcon type={p.vehicleType} className="h-3.5 w-3.5" />
+                              <span className="font-semibold capitalize">{vehicleLabel(p.vehicleType)}</span>
+                            </p>
+                          </td>
+                        ),
+                        tarifa: (
+                          <td className="px-4 py-4 text-right text-base font-extrabold tabular-nums text-[var(--text-primary)]">
+                            {formatCurrency(toNum(p.fee))}
+                          </td>
+                        ),
+                        rating: (
+                          <td className="px-4 py-4 text-center">
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-extrabold bg-[var(--data-warning-50)] text-[var(--data-warning-500)] tabular-nums">
+                              <Star className="h-3.5 w-3.5 fill-[var(--data-warning-500)]" />
+                              {toNum(p.rating).toFixed(1)}
+                            </span>
+                          </td>
+                        ),
+                        estado: (
+                          <td className="px-4 py-4 text-center">
+                            <span className={cn(
+                              "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold",
+                              p.isActive
+                                ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
+                                : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
+                            )}>
+                              <span className={cn("h-1.5 w-1.5 rounded-full", p.isActive ? "bg-[var(--data-success-500)]" : "bg-[var(--text-tertiary)]")} />
+                              {p.isActive ? "Activo" : "Inactivo"}
+                            </span>
+                          </td>
+                        ),
+                      }}
+                    />
                     <td className="px-4 py-4 text-right">
                       <div className="flex items-center justify-end gap-1.5">
                         {wa && (

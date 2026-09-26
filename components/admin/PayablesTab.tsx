@@ -13,6 +13,8 @@ import type { DbPayable, DbSupplier, PaymentMethod } from "@/lib/jsondb";
 import { cn } from "@/lib/utils";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import TableSkeleton from "@/components/admin/shared/TableSkeleton";
@@ -51,6 +53,7 @@ export default function PayablesTab() {
   const addTitleId = useId();
   const addPanelRef = useRef<HTMLDivElement>(null);
   useModalAccesible(addPanelRef, { onCerrar: () => setShowAdd(false), activo: showAdd });
+  const ventanaAdd = useVentanaDeModal(showAdd, { ref: addPanelRef, aplicarTranslate: true, claveMemoria: "cuentas-por-pagar-nueva" });
 
   // Add form
   const [addForm, setAddForm] = useState({ supplierId: "", description: "", amount: "", dueDate: "" });
@@ -329,11 +332,14 @@ export default function PayablesTab() {
       )}
       {/* ── Add payable modal ── */}
       {showAdd && (
-      <div className="fixed inset-0 z-modal flex items-end sm:items-center justify-center bg-black/50" onClick={(e) => e.target === e.currentTarget && setShowAdd(false)}>
-        <div ref={addPanelRef} role="dialog" aria-modal="true" aria-labelledby={addTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] w-full sm:max-w-lg sm:rounded-xl rounded-t-2xl overflow-y-auto max-h-[90dvh]">
-          <div className="flex items-center justify-between px-5 py-4 border-b sticky top-0 bg-[var(--surface-raised)] z-10">
+      <div className="fixed inset-0 z-modal flex items-end sm:items-center justify-center bg-black/50" onClick={(e) => e.target === e.currentTarget && !ventanaAdd.fijado && setShowAdd(false)}>
+        <div ref={addPanelRef} role="dialog" aria-modal="true" aria-labelledby={addTitleId} tabIndex={-1} className="relative bg-[var(--surface-raised)] w-full sm:max-w-lg sm:rounded-xl rounded-t-2xl overflow-y-auto max-h-[90dvh]">
+          <div {...ventanaAdd.asaProps} className="flex items-center justify-between px-5 py-4 border-b sticky top-0 bg-[var(--surface-raised)] z-10">
             <CardTitle id={addTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><CreditCard className="h-5 w-5 text-primary" /> Nueva cuenta por pagar</CardTitle>
-            <button aria-label="Cerrar" onClick={() => setShowAdd(false)} className="p-1.5 rounded-xl hover:bg-[var(--rule-soft)] transition-colors"><X className="h-5 w-5 text-[var(--text-secondary)] dark:text-muted" /></button>
+            <span className="ml-auto flex items-center gap-1">
+              <ControlesDeVentana ventana={ventanaAdd} />
+              <button aria-label="Cerrar" onClick={() => setShowAdd(false)} className="p-1.5 rounded-xl hover:bg-[var(--rule-soft)] transition-colors"><X className="h-5 w-5 text-[var(--text-secondary)] dark:text-muted" /></button>
+            </span>
           </div>
           <form onSubmit={addPayable} className="p-5 space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
@@ -360,6 +366,7 @@ export default function PayablesTab() {
               </button>
             </div>
           </form>
+          <TiradorDeVentana ventana={ventanaAdd} />
         </div>
       </div>
       )}

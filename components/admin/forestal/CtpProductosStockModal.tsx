@@ -28,10 +28,19 @@ import type { DestinatarioDeGuia } from "@/lib/forestal/cliente-de-la-guia";
 import { hoyEnLima } from "@/lib/forestal/semana-de-registro";
 import { useTratoDeVenta } from "./hooks/use-trato-de-venta";
 import { Btn, ModalFooter, productLabel } from "./ctp-shared";
-import { CtpPaginacion, FilaVacia, TablaCtp, TbodyCtp, TheadCtp, usePaginacion } from "./ctp-tabla";
+import { CtpPaginacion, FilaVacia, TablaCtp, TbodyCtp, usePaginacion } from "./ctp-tabla";
 import { formatDateNumeric } from "@/lib/format";
 import { FiltroColumnaMulti, type FacetaOpcion } from "@/components/admin/shared/filtros-columna";
 import { CampoDeFiltro } from "./ctp-filtros-panel";
+import { BotonRestablecerColumnas, EnOrden, useOrdenColumnas } from "@/components/admin/shared/columnas-ordenables";
+
+/** Las columnas movibles, en su orden de fábrica (Brandon, 2026-09-26: arrastrar
+ *  el título para personalizar el orden). */
+const ORDEN_STOCK_DEFECTO = [
+  "gtfOrigen", "titular", "produccion", "lote", "paquete", "linea",
+  "especie", "producto", "espesor", "ancho", "largo", "cantidad",
+  "presentacion", "volumen", "medida",
+] as const;
 
 const CAMPO =
   "h-12 w-full rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]";
@@ -231,6 +240,7 @@ export default function CtpProductosStockModal({
   }
 
   const todasEnPagina = enPagina.length > 0 && enPagina.every((f) => elegidas.has(f.uid));
+  const orden = useOrdenColumnas("ctp-productos-stock", ORDEN_STOCK_DEFECTO);
 
   return (
     <AdminModal
@@ -324,8 +334,14 @@ export default function CtpProductosStockModal({
           </div>
         </div>
 
+        <div className="flex justify-end">
+          <BotonRestablecerColumnas cambiado={orden.cambiado} onRestablecer={orden.restablecer} />
+        </div>
         <TablaCtp altoMax="max-h-[52vh]">
-          <TheadCtp>
+          <thead
+            ref={orden.refCabecera}
+            className="sticky top-0 z-10 bg-[var(--surface-sunken)] text-left align-top text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]"
+          >
             <tr>
               <th className="px-2 py-2">
                 <input
@@ -342,35 +358,49 @@ export default function CtpProductosStockModal({
                   className="h-4 w-4 accent-[var(--accent)]"
                 />
               </th>
-              <th className="px-3 py-2 font-bold">GTF origen</th>
-              <th className="px-3 py-2 font-bold">
-                <span className="block">Titular de origen</span>
-                <FiltroColumnaMulti label="Titular de origen" value={titularFiltro} options={opciones.titulares} onChange={setTitularFiltro} placeholder="Todos" />
-              </th>
-              <th className="px-3 py-2 font-bold">Producción</th>
-              <th className="px-3 py-2 font-bold">
-                <span className="block">Lote</span>
-                <FiltroColumnaMulti label="Lote" value={loteFiltro} options={opciones.lotes} onChange={setLoteFiltro} placeholder="Todos" />
-              </th>
-              <th className="px-3 py-2 font-bold">Paquete</th>
-              <th className="px-3 py-2 font-bold">Línea</th>
-              <th className="px-3 py-2 font-bold">
-                <span className="block">Especie</span>
-                <FiltroColumnaMulti label="Especie" value={especieFiltro} options={opciones.especies} onChange={setEspecieFiltro} placeholder="Todas" />
-              </th>
-              <th className="px-3 py-2 font-bold">
-                <span className="block">Producto</span>
-                <FiltroColumnaMulti label="Producto" value={productoFiltro} options={opciones.productos} etiqueta={productLabel} onChange={setProductoFiltro} placeholder="Todos" />
-              </th>
-              <th className="px-3 py-2 text-right font-bold">Esp. (cm)</th>
-              <th className="px-3 py-2 text-right font-bold">Ancho (cm)</th>
-              <th className="px-3 py-2 text-right font-bold">Largo (m)</th>
-              <th className="px-3 py-2 text-right font-bold">Cantidad</th>
-              <th className="px-3 py-2 font-bold">Presentación</th>
-              <th className="px-3 py-2 text-right font-bold">Volumen</th>
-              <th className="px-3 py-2 font-bold">Medida</th>
+              {/* Movibles: se arrastran del título (Alt+←/→ con el teclado). */}
+              <EnOrden
+                orden={orden.orden}
+                celdas={{
+                  gtfOrigen: <th data-col="gtfOrigen" className="px-3 py-2 font-bold">GTF origen</th>,
+                  titular: (
+                    <th data-col="titular" className="px-3 py-2 font-bold">
+                      <span className="block">Titular de origen</span>
+                      <FiltroColumnaMulti label="Titular de origen" value={titularFiltro} options={opciones.titulares} onChange={setTitularFiltro} placeholder="Todos" />
+                    </th>
+                  ),
+                  produccion: <th data-col="produccion" className="px-3 py-2 font-bold">Producción</th>,
+                  lote: (
+                    <th data-col="lote" className="px-3 py-2 font-bold">
+                      <span className="block">Lote</span>
+                      <FiltroColumnaMulti label="Lote" value={loteFiltro} options={opciones.lotes} onChange={setLoteFiltro} placeholder="Todos" />
+                    </th>
+                  ),
+                  paquete: <th data-col="paquete" className="px-3 py-2 font-bold">Paquete</th>,
+                  linea: <th data-col="linea" className="px-3 py-2 font-bold">Línea</th>,
+                  especie: (
+                    <th data-col="especie" className="px-3 py-2 font-bold">
+                      <span className="block">Especie</span>
+                      <FiltroColumnaMulti label="Especie" value={especieFiltro} options={opciones.especies} onChange={setEspecieFiltro} placeholder="Todas" />
+                    </th>
+                  ),
+                  producto: (
+                    <th data-col="producto" className="px-3 py-2 font-bold">
+                      <span className="block">Producto</span>
+                      <FiltroColumnaMulti label="Producto" value={productoFiltro} options={opciones.productos} etiqueta={productLabel} onChange={setProductoFiltro} placeholder="Todos" />
+                    </th>
+                  ),
+                  espesor: <th data-col="espesor" className="px-3 py-2 text-right font-bold">Esp. (cm)</th>,
+                  ancho: <th data-col="ancho" className="px-3 py-2 text-right font-bold">Ancho (cm)</th>,
+                  largo: <th data-col="largo" className="px-3 py-2 text-right font-bold">Largo (m)</th>,
+                  cantidad: <th data-col="cantidad" className="px-3 py-2 text-right font-bold">Cantidad</th>,
+                  presentacion: <th data-col="presentacion" className="px-3 py-2 font-bold">Presentación</th>,
+                  volumen: <th data-col="volumen" className="px-3 py-2 text-right font-bold">Volumen</th>,
+                  medida: <th data-col="medida" className="px-3 py-2 font-bold">Medida</th>,
+                }}
+              />
             </tr>
-          </TheadCtp>
+          </thead>
           <TbodyCtp>
             {enPagina.length === 0 && (
               <FilaVacia cols={16}>
@@ -407,41 +437,56 @@ export default function CtpProductosStockModal({
                       className="h-4 w-4 accent-[var(--accent)]"
                     />
                   </td>
-                  <td className="px-3 py-2 font-mono text-xs text-[var(--text-secondary)]">{f.gtfOrigen.join(" · ") || "—"}</td>
-                  <td className="max-w-[16rem] px-3 py-2 text-xs text-[var(--text-secondary)]">{f.titularOrigen.join(" · ") || "—"}</td>
-                  <td className="px-3 py-2 text-xs tabular-nums text-[var(--text-secondary)]">
-                    {fmtDia(f.fechaProduccion)}
-                    <div className="font-mono text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">#{f.lineNo ?? "—"}</div>
-                  </td>
-                  <td className="px-3 py-2 font-mono text-xs text-[var(--text-secondary)]">{f.lote ?? "—"}</td>
-                  <td className="px-3 py-2 font-mono text-sm font-bold text-[var(--text-primary)]">{f.codigo ?? <span className="font-sans font-normal text-[var(--text-tertiary)]">sin paquete</span>}</td>
-                  <td className="px-3 py-2 font-mono text-xs text-[var(--text-tertiary)]">{f.linea ?? "—"}</td>
-                  <td className="px-3 py-2 text-[var(--text-secondary)]">{f.especie ?? "—"}</td>
-                  <td className="px-3 py-2 text-xs text-[var(--text-secondary)]">{productLabel(f.producto ?? "")}</td>
-                  <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">{f.espesorCm ?? "—"}</td>
-                  <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">{f.anchoCm ?? "—"}</td>
-                  <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">{f.largoM ?? "—"}</td>
-                  <td className="px-3 py-2 text-right">
-                    <input
-                      type="number" min="0" step="1" value={f.cantidad}
-                      onChange={(e) => editar(f.uid, "cantidad", e.target.value)}
-                      aria-label={`Cantidad de ${f.codigo ?? "la corrida"}`}
-                      className={CELDA_NUM}
-                    />
-                  </td>
-                  <td className="px-3 py-2 text-xs text-[var(--text-tertiary)]">{f.presentacion ?? "—"}</td>
-                  <td className="px-3 py-2 text-right">
-                    <input
-                      type="number" min="0" step="0.0001" value={f.volumen}
-                      onChange={(e) => editar(f.uid, "volumen", e.target.value)}
-                      aria-label={`Volumen de ${f.codigo ?? "la corrida"}`}
-                      className={`${CELDA_NUM} ${excede ? "border-[var(--data-error-500)]" : ""}`}
-                    />
-                    <div className="mt-0.5 font-mono text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-                      saldo {Number(f.disponibleCorrida).toFixed(4)}
-                    </div>
-                  </td>
-                  <td className="px-3 py-2 text-xs text-[var(--text-tertiary)]">{MEDIDA[f.unidad] ?? f.unidad}</td>
+                  <EnOrden
+                    orden={orden.orden}
+                    celdas={{
+                      gtfOrigen: <td className="px-3 py-2 font-mono text-xs text-[var(--text-secondary)]">{f.gtfOrigen.join(" · ") || "—"}</td>,
+                      titular: <td className="max-w-[16rem] px-3 py-2 text-xs text-[var(--text-secondary)]">{f.titularOrigen.join(" · ") || "—"}</td>,
+                      produccion: (
+                        <td className="px-3 py-2 text-xs tabular-nums text-[var(--text-secondary)]">
+                          {fmtDia(f.fechaProduccion)}
+                          <div className="font-mono text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">#{f.lineNo ?? "—"}</div>
+                        </td>
+                      ),
+                      lote: <td className="px-3 py-2 font-mono text-xs text-[var(--text-secondary)]">{f.lote ?? "—"}</td>,
+                      paquete: (
+                        <td className="px-3 py-2 font-mono text-sm font-bold text-[var(--text-primary)]">
+                          {f.codigo ?? <span className="font-sans font-normal text-[var(--text-tertiary)]">sin paquete</span>}
+                        </td>
+                      ),
+                      linea: <td className="px-3 py-2 font-mono text-xs text-[var(--text-tertiary)]">{f.linea ?? "—"}</td>,
+                      especie: <td className="px-3 py-2 text-[var(--text-secondary)]">{f.especie ?? "—"}</td>,
+                      producto: <td className="px-3 py-2 text-xs text-[var(--text-secondary)]">{productLabel(f.producto ?? "")}</td>,
+                      espesor: <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">{f.espesorCm ?? "—"}</td>,
+                      ancho: <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">{f.anchoCm ?? "—"}</td>,
+                      largo: <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">{f.largoM ?? "—"}</td>,
+                      cantidad: (
+                        <td className="px-3 py-2 text-right">
+                          <input
+                            type="number" min="0" step="1" value={f.cantidad}
+                            onChange={(e) => editar(f.uid, "cantidad", e.target.value)}
+                            aria-label={`Cantidad de ${f.codigo ?? "la corrida"}`}
+                            className={CELDA_NUM}
+                          />
+                        </td>
+                      ),
+                      presentacion: <td className="px-3 py-2 text-xs text-[var(--text-tertiary)]">{f.presentacion ?? "—"}</td>,
+                      volumen: (
+                        <td className="px-3 py-2 text-right">
+                          <input
+                            type="number" min="0" step="0.0001" value={f.volumen}
+                            onChange={(e) => editar(f.uid, "volumen", e.target.value)}
+                            aria-label={`Volumen de ${f.codigo ?? "la corrida"}`}
+                            className={`${CELDA_NUM} ${excede ? "border-[var(--data-error-500)]" : ""}`}
+                          />
+                          <div className="mt-0.5 font-mono text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+                            saldo {Number(f.disponibleCorrida).toFixed(4)}
+                          </div>
+                        </td>
+                      ),
+                      medida: <td className="px-3 py-2 text-xs text-[var(--text-tertiary)]">{MEDIDA[f.unidad] ?? f.unidad}</td>,
+                    }}
+                  />
                 </tr>
               );
             })}

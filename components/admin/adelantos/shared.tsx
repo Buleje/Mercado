@@ -8,6 +8,8 @@
 
 import { useEffect, type ComponentType, type ReactNode, useRef } from "react";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { CardTitle } from "@buleje/design-system";
 import { X } from "@buleje/design-system/icons";
 import { formatCurrency } from "@/lib/currency";
@@ -182,6 +184,14 @@ export function ModalShell({
   /* Escape ya lo maneja el atajo propio de esta pantalla: el hook pone
        el foco, la trampa de Tab y el scroll, no una segunda salida. */
   useModalAccesible(cajaRef, { onCerrar: onClose, cerrarConEscape: false });
+  // La clave es la parte FIJA del título: «Liquidar la cuenta de Juan» y «… de
+  // Rosa» son el mismo modal. Con el título entero se recordaba una posición por
+  // persona (revisión 2026-09-25).
+  const ventana = useVentanaDeModal(true, {
+    ref: cajaRef,
+    aplicarTranslate: true,
+    claveMemoria: `adelantos-modal:${title.split(/ — | de /)[0]}`,
+  });
   /**
    * Escape cierra. Es la regla de la casa para todo modal (click-fuera +
    * Escape) y acá faltaba: se salía sólo tocando el fondo.
@@ -194,26 +204,29 @@ export function ModalShell({
 
   const ancho = ANCHOS[size ?? (wide ? "md" : "sm")];
   return (
-    <div className="fixed inset-0 z-modal flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-modal flex items-center justify-center bg-black/50 p-4" onClick={(e) => { if (e.target === e.currentTarget && !ventana.fijado) onClose(); }}>
       <div ref={cajaRef} tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className={`flex w-full ${ancho} max-h-[92vh] flex-col overflow-hidden rounded-2xl bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]`}
+        className={`relative flex w-full ${ancho} max-h-[92vh] flex-col overflow-hidden rounded-2xl bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]`}
       >
-        <div className="flex shrink-0 items-start justify-between gap-3 px-6 pb-3 pt-5">
+        <div {...ventana.asaProps} className="flex shrink-0 items-start justify-between gap-3 px-6 pb-3 pt-5">
           <div className="min-w-0">
             <CardTitle className="text-lg font-extrabold text-[var(--text-primary)]">{title}</CardTitle>
             {subtitle && <div className="mt-0.5 text-sm font-medium text-[var(--text-tertiary)]">{subtitle}</div>}
           </div>
-          <button
-            onClick={onClose}
-            aria-label="Cerrar"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          <span className="ml-auto flex shrink-0 items-center gap-1">
+            <ControlesDeVentana ventana={ventana} />
+            <button
+              onClick={onClose}
+              aria-label="Cerrar"
+              className="flex h-9 w-9 items-center justify-center rounded-full text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </span>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto pb-5 pt-2 px-5 sm:px-6">
           <div className="space-y-4">{children}</div>
@@ -221,6 +234,7 @@ export function ModalShell({
         {footer && (
           <div className="shrink-0 bg-[var(--surface-sunken)] px-6 py-4 shadow-[0_-1px_0_0_var(--rule-soft)]">{footer}</div>
         )}
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

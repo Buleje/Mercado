@@ -25,6 +25,11 @@
 import { useMemo, useState, useRef } from "react";
 import { leerJson } from "@/lib/errores/sin-dato";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import {
+  ControlesDeVentana,
+  TiradorDeVentana,
+} from "@/components/admin/shared/modal-controles-ventana";
 import { AlertTriangle, Check, Loader2, Lock, X } from "@buleje/design-system/icons";
 import { SectionTitle } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -146,6 +151,12 @@ export default function CtpEditarLineaModal({
 
   const [guardando, setGuardando] = useState(false);
   useModalAccesible(cajaRef, { onCerrar: guardando ? undefined : onCerrar });
+  /** Ventana: se mueve, se achica y se fija (ADR-420). */
+  const ventana = useVentanaDeModal(true, {
+    ref: cajaRef,
+    aplicarTranslate: true,
+    claveMemoria: "ctp-editar-linea",
+  });
   const [error, setError] = useState<string | null>(null);
   /** Lo que el servidor NO aplicó, con su motivo. Se muestra y no se cierra. */
   const [sinAplicar, setSinAplicar] = useState<string[]>([]);
@@ -337,15 +348,15 @@ export default function CtpEditarLineaModal({
   return (
     <div
       className="modal-backdrop fixed inset-0 z-system flex items-center justify-center bg-black/50 p-4"
-      onMouseDown={(e) => { if (e.target === e.currentTarget) onCerrar(); }}
+      onMouseDown={(e) => { if (e.target === e.currentTarget && !ventana.fijado) onCerrar(); }}
     >
       <div ref={cajaRef} tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-label={`Editar la corrida N° ${linea.lineNo ?? ""}`}
-        className="max-h-[90vh] w-full max-w-2xl overflow-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 shadow-[var(--shadow-lg)]"
+        className="relative max-h-[90vh] w-full max-w-2xl overflow-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 shadow-[var(--shadow-lg)]"
       >
-        <div className="mb-1 flex items-start justify-between gap-3">
+        <div {...ventana.asaProps} className="mb-1 flex items-start justify-between gap-3">
           <div>
             <div className="flex items-center gap-1.5">
               <SectionTitle className="text-base font-extrabold text-[var(--text-primary)]">
@@ -362,6 +373,9 @@ export default function CtpEditarLineaModal({
               {formatDateNumeric(linea.fecha, { soloFecha: true })}
             </p>
           </div>
+          <span className="ml-auto flex items-center gap-1">
+            <ControlesDeVentana ventana={ventana} />
+          </span>
           <button
             type="button"
             onClick={onCerrar}
@@ -510,6 +524,8 @@ export default function CtpEditarLineaModal({
             Guardar cambios
           </button>
         </div>
+
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

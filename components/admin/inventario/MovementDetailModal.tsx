@@ -19,6 +19,8 @@ import { AlertTriangle, Loader2, Undo2, X, type LucideIcon } from "@buleje/desig
 import { csrfHeaders } from "@/lib/csrf-client";
 import { cn } from "@/lib/utils";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { formatDate, formatDateLong, formatTime } from "@/lib/format";
 
 export type MovementDetail = {
@@ -97,6 +99,7 @@ export default function MovementDetailModal({
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   useModalAccesible(panelRef, { onCerrar: () => { if (!revirtiendo) onClose(); }, activo: true });
+  const ventana = useVentanaDeModal(true, { ref: panelRef, aplicarTranslate: true, claveMemoria: "inventario-detalle-movimiento" });
 
   const m = movimiento;
   const bloqueo = motivoNoReversible(m);
@@ -136,10 +139,10 @@ export default function MovementDetailModal({
   return (
     <div
       className="fixed inset-0 z-modal flex items-end justify-center bg-black/60 backdrop-blur-[2px] sm:items-center sm:p-4"
-      onClick={(e) => e.target === e.currentTarget && !revirtiendo && onClose()}
+      onClick={(e) => e.target === e.currentTarget && !revirtiendo && !ventana.fijado && onClose()}
     >
-      <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="max-h-[92dvh] w-full overflow-y-auto rounded-t-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-xl sm:max-w-lg sm:rounded-2xl">
-        <div className="sticky top-0 z-dropdown flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)]/95 px-6 py-4 backdrop-blur">
+      <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="relative max-h-[92dvh] w-full overflow-y-auto rounded-t-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-xl sm:max-w-lg sm:rounded-2xl">
+        <div {...ventana.asaProps} className="sticky top-0 z-dropdown flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)]/95 px-6 py-4 backdrop-blur">
           <div className="min-w-0">
             <SectionTitle id={titleId} as="h2" className="truncate text-lg font-bold leading-tight text-[var(--text-primary)]">{m.productName}</SectionTitle>
             <p className="text-sm text-[var(--text-secondary)]">
@@ -148,9 +151,12 @@ export default function MovementDetailModal({
               {formatTime(fecha)}
             </p>
           </div>
-          <button onClick={onClose} aria-label="Cerrar" className="h-9 w-9 shrink-0 rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">
-            <X className="h-5 w-5" />
-          </button>
+          <span className="ml-auto flex items-center gap-1 shrink-0">
+            <ControlesDeVentana ventana={ventana} />
+            <button onClick={onClose} aria-label="Cerrar" className="h-9 w-9 rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">
+              <X className="h-5 w-5" />
+            </button>
+          </span>
         </div>
 
         <div className="space-y-4 p-6">
@@ -233,6 +239,7 @@ export default function MovementDetailModal({
 
           <p className="text-sm text-[var(--text-tertiary)]">Id del movimiento: {m.id}</p>
         </div>
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

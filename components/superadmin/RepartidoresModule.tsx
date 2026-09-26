@@ -23,6 +23,8 @@ import {
   type ReactNode, useRef } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import {
   Loader2,
   Search,
@@ -1195,10 +1197,16 @@ function Modal({
   /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
   const cajaRef = useRef<HTMLDivElement>(null);
   useModalAccesible(cajaRef, { onCerrar: onClose });
+  /** Ventana: se mueve, se achica y se fija (ADR-420). */
+  const ventana = useVentanaDeModal(true, {
+    ref: cajaRef,
+    aplicarTranslate: true,
+    claveMemoria: "repartidores-modal",
+  });
   return (
     <div
       className="fixed inset-0 z-[60] flex items-center justify-center px-4 py-6"
-      onClick={onClose}
+      onClick={() => { if (!ventana.fijado) onClose(); }}
       onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
     >
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
@@ -1209,7 +1217,7 @@ function Modal({
         onClick={(e) => e.stopPropagation()}
         onKeyDown={(e) => e.stopPropagation()}
       >
-        <header className="px-5 py-4 border-b border-[var(--rule-base)] flex items-start gap-3">
+        <header {...ventana.asaProps} className="px-5 py-4 border-b border-[var(--rule-base)] flex items-start gap-3">
           <div
             className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0"
             style={{ backgroundColor: iconBg, color: iconColor }}
@@ -1222,6 +1230,9 @@ function Modal({
               <p className="mt-0.5 text-sm text-[var(--text-secondary)]">{subtitle}</p>
             )}
           </div>
+          <span className="ml-auto flex items-center gap-1 shrink-0">
+            <ControlesDeVentana ventana={ventana} />
+          </span>
           <button
             type="button"
             onClick={onClose}
@@ -1232,6 +1243,7 @@ function Modal({
           </button>
         </header>
         {children}
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

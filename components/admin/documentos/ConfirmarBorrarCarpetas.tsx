@@ -4,6 +4,8 @@ import { useCallback, useRef, useState } from "react";
 import { Trash2, X, FolderX, FileWarning, Loader2, Undo2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 
 export interface BorradoCarpetas {
   /** Llevarse los documentos de adentro a la papelera. */
@@ -48,6 +50,7 @@ export function ConfirmarBorrarCarpetas({
   const modalRef = useRef<HTMLDivElement>(null);
   const cerrar = useCallback(() => { if (!ocupado) onCancelar(); }, [ocupado, onCancelar]);
   useModalAccesible(modalRef, { onCerrar: cerrar });
+  const ventana = useVentanaDeModal(true, { ref: modalRef, aplicarTranslate: true, claveMemoria: "confirmar-borrar-carpetas" });
 
   const conSub = subcarpetas > 0 && incluirSubcarpetas;
   const documentos = documentosDirectos + (conSub ? documentosEnSubcarpetas : 0);
@@ -69,7 +72,7 @@ export function ConfirmarBorrarCarpetas({
   return (
     <div
       className="fixed inset-0 z-modal-3 flex items-center justify-center bg-black/50 p-4"
-      onClick={cerrar}
+      onClick={() => { if (!ventana.fijado) cerrar(); }}
       role="presentation"
     >
       <div
@@ -78,10 +81,10 @@ export function ConfirmarBorrarCarpetas({
         aria-modal="true"
         aria-label={`Eliminar ${nombres.length} carpeta(s)`}
         tabIndex={-1}
-        className="w-full max-w-[34rem] rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
+        className="relative w-full max-w-[34rem] rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center gap-3 border-b border-[var(--rule-base)] px-5 py-4">
+        <div {...ventana.asaProps} className="flex items-center gap-3 border-b border-[var(--rule-base)] px-5 py-4">
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--data-error-500)]/15 text-[var(--data-error-700)] dark:text-[var(--data-error)]">
             <FolderX className="h-5 w-5" />
           </span>
@@ -93,6 +96,7 @@ export function ConfirmarBorrarCarpetas({
               {visibles.join(", ")}{resto > 0 ? ` y ${resto} más` : ""}
             </p>
           </div>
+          <ControlesDeVentana ventana={ventana} />
           <button
             onClick={onCancelar}
             disabled={!!ocupado}
@@ -174,6 +178,7 @@ export function ConfirmarBorrarCarpetas({
             </p>
           )}
         </div>
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

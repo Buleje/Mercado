@@ -18,6 +18,8 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { DbProduct } from "@/lib/jsondb";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 
 interface BankItem { id: string; name: string; imageUrl: string }
 interface BankCategory { id: string; name: string; description?: string; items: BankItem[] }
@@ -47,6 +49,7 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   useModalAccesible(panelRef, { onCerrar: () => onOpenChange(false), activo: open });
+  const ventana = useVentanaDeModal(open, { ref: panelRef, aplicarTranslate: true, claveMemoria: "inventario-asignar-imagenes" });
 
   const reloadBank = useCallback(async () => {
     setLoadingBank(true);
@@ -221,11 +224,11 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
   return (
     <div
       className="fixed inset-0 z-system bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4"
-      onClick={(e) => e.target === e.currentTarget && onOpenChange(false)}
+      onClick={(e) => e.target === e.currentTarget && !ventana.fijado && onOpenChange(false)}
     >
-      <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="bg-[var(--surface-canvas)] w-full h-full sm:h-[92vh] sm:max-w-[1400px] sm:rounded-2xl overflow-hidden flex flex-col shadow-[var(--shadow-xl)]">
+      <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="relative bg-[var(--surface-canvas)] w-full h-full sm:h-[92vh] sm:max-w-[1400px] sm:rounded-2xl overflow-hidden flex flex-col shadow-[var(--shadow-xl)]">
         {/* Header */}
-        <div className="shrink-0 px-4 sm:px-6 py-4 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] flex items-center gap-3">
+        <div {...ventana.asaProps} className="shrink-0 px-4 sm:px-6 py-4 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] flex items-center gap-3">
           <div className="h-11 w-11 rounded-xl bg-linear-to-br from-primary to-[var(--data-success-500)] text-white flex items-center justify-center shrink-0">
             <Sparkles className="h-5 w-5" />
           </div>
@@ -243,14 +246,17 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
               <Package className="h-4 w-4" /> {totalPending} pendientes
             </div>
           </div>
-          <button
-            onClick={() => onOpenChange(false)}
-            className="p-2 rounded-xl hover:bg-[var(--surface-sunken)] shrink-0"
-            aria-label="Cerrar"
-            title="Cerrar"
-          >
-            <X className="h-5 w-5 text-[var(--text-tertiary)]" />
-          </button>
+          <span className="ml-auto flex items-center gap-1 shrink-0">
+            <ControlesDeVentana ventana={ventana} />
+            <button
+              onClick={() => onOpenChange(false)}
+              className="p-2 rounded-xl hover:bg-[var(--surface-sunken)]"
+              aria-label="Cerrar"
+              title="Cerrar"
+            >
+              <X className="h-5 w-5 text-[var(--text-tertiary)]" />
+            </button>
+          </span>
         </div>
 
         {/* Body — split view */}
@@ -516,6 +522,7 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
             {totalAssigned > 0 ? `Listo (${totalAssigned} asignadas)` : "Cerrar"}
           </button>
         </footer>
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

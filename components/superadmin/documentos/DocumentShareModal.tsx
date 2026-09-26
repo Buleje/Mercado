@@ -14,6 +14,8 @@ import {
 import type { DbDocument, DbDocumentShare } from "@/lib/types/documents";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { fmtDate } from "./shared";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 
 interface Props {
   doc: DbDocument;
@@ -39,6 +41,7 @@ export default function DocumentShareModal({ doc, onClose }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
+  const ventana = useVentanaDeModal(true, { ref: dialogRef, aplicarTranslate: true, claveMemoria: "sa-document-share" });
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -128,7 +131,7 @@ export default function DocumentShareModal({ doc, onClose }: Props) {
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget && !ventana.fijado) onClose();
       }}
     >
       <div
@@ -136,24 +139,27 @@ export default function DocumentShareModal({ doc, onClose }: Props) {
         role="dialog"
         aria-modal="true"
         aria-label="Compartir documento"
-        className="w-full max-w-lg rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-[var(--shadow-lg)] p-5 space-y-4 max-h-[90vh] flex flex-col"
+        className="relative w-full max-w-lg rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-[var(--shadow-lg)] p-5 space-y-4 max-h-[90vh] flex flex-col"
       >
         {/* Header */}
-        <div className="flex items-center justify-between shrink-0">
+        <div {...ventana.asaProps} className="flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
             <Share2 className="h-5 w-5 text-[var(--text-secondary)]" />
             <h2 className="text-lg font-extrabold text-[var(--text-primary)]">
               Compartir documento
             </h2>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Cerrar"
-            className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          <span className="flex items-center gap-1">
+            <ControlesDeVentana ventana={ventana} />
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Cerrar"
+              className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </span>
         </div>
 
         <p className="text-sm text-[var(--text-secondary)] shrink-0 truncate">{doc.name}</p>
@@ -279,6 +285,7 @@ export default function DocumentShareModal({ doc, onClose }: Props) {
             })
           )}
         </div>
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

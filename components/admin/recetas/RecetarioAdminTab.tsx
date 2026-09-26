@@ -12,6 +12,7 @@ import {
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { Field } from "@/components/admin/shared/Field";
 import { FiltroColumnaMulti } from "@/components/admin/shared/filtros-columna";
+import { useOrdenColumnas, EnOrden, BotonRestablecerColumnas } from "@/components/admin/shared/columnas-ordenables";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
 
@@ -60,6 +61,8 @@ export default function RecetarioAdminTab() {
   // Categoria es una columna de la tabla: autofiltro en su `<th>` (Brandon
   // 2026-09-24), `[]` = todas, admite varias a la vez.
   const [filterCat, setFilterCat] = useState<string[]>([]);
+  // Columnas de la tabla: arrastrar el título para reordenarlas.
+  const ordenRecetario = useOrdenColumnas("recetario-lista", ["receta", "categoria", "ingredientes", "costo", "estado"]);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<RecetaPublica | null>(null);
   const [saving, setSaving] = useState(false);
@@ -307,6 +310,7 @@ export default function RecetarioAdminTab() {
           <Plus className="h-4 w-4" />
           Nueva Receta
         </button>
+        <BotonRestablecerColumnas cambiado={ordenRecetario.cambiado} onRestablecer={ordenRecetario.restablecer} />
       </div>
 
       {/* Table */}
@@ -327,23 +331,30 @@ export default function RecetarioAdminTab() {
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden ">
           <div className="overflow-x-auto">
             <DataTable className="w-full text-sm">
-              <thead>
+              <thead ref={ordenRecetario.refCabecera}>
                 <tr className="border-b border-[var(--rule-soft)] text-left">
-                  <th className="px-4 py-3 font-semibold text-[var(--text-secondary)]">Receta</th>
-                  <th className="px-4 py-3 font-semibold text-[var(--text-secondary)] hidden sm:table-cell">
-                    <span className="block">Categoria</span>
-                    <FiltroColumnaMulti
-                      label="Categoria"
-                      value={filterCat}
-                      options={CATEGORIAS.map(c => ({ value: c, count: recetas.filter(r => r.categoria === c).length }))}
-                      onChange={setFilterCat}
-                      placeholder="Todas"
-                      className="font-normal"
-                    />
-                  </th>
-                  <th className="px-4 py-3 font-semibold text-[var(--text-secondary)] text-center hidden md:table-cell">Ing.</th>
-                  <th className="px-4 py-3 font-semibold text-[var(--text-secondary)] text-right">Costo</th>
-                  <th className="px-4 py-3 font-semibold text-[var(--text-secondary)] text-center">Estado</th>
+                  <EnOrden
+                    orden={ordenRecetario.orden}
+                    celdas={{
+                      receta: <th data-col="receta" className="px-4 py-3 font-semibold text-[var(--text-secondary)]">Receta</th>,
+                      categoria: (
+                        <th data-col="categoria" className="px-4 py-3 font-semibold text-[var(--text-secondary)] hidden sm:table-cell">
+                          <span className="block">Categoria</span>
+                          <FiltroColumnaMulti
+                            label="Categoria"
+                            value={filterCat}
+                            options={CATEGORIAS.map(c => ({ value: c, count: recetas.filter(r => r.categoria === c).length }))}
+                            onChange={setFilterCat}
+                            placeholder="Todas"
+                            className="font-normal"
+                          />
+                        </th>
+                      ),
+                      ingredientes: <th data-col="ingredientes" className="px-4 py-3 font-semibold text-[var(--text-secondary)] text-center hidden md:table-cell">Ing.</th>,
+                      costo: <th data-col="costo" className="px-4 py-3 font-semibold text-[var(--text-secondary)] text-right">Costo</th>,
+                      estado: <th data-col="estado" className="px-4 py-3 font-semibold text-[var(--text-secondary)] text-center">Estado</th>,
+                    }}
+                  />
                   <th className="px-4 py-3 font-semibold text-[var(--text-secondary)] text-right">Acciones</th>
                 </tr>
               </thead>
@@ -363,36 +374,47 @@ export default function RecetarioAdminTab() {
                 )}
                 {filtered.map(r => (
                   <tr key={r._noteId || r.id} className="border-b border-gray-50 hover:bg-[var(--surface-sunken)] transition-colors">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg">{r.emoji}</span>
-                        <div>
-                          <p className="font-medium text-[var(--text-primary)]">{r.nombre}</p>
-                          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] flex items-center gap-2">
-                            <span className="flex items-center gap-0.5"><Clock className="h-3 w-3" />{r.tiempoMinutos}min</span>
-                            <span className="flex items-center gap-0.5"><Users className="h-3 w-3" />{r.porciones}p</span>
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-[var(--text-secondary)] hidden sm:table-cell">
-                      <span className="text-xs bg-[var(--rule-soft)] px-2 py-1 rounded-lg">{r.categoria}</span>
-                    </td>
-                    <td className="px-4 py-3 text-center text-[var(--text-secondary)] hidden md:table-cell">{r.ingredientes?.length || 0}</td>
-                    <td className="px-4 py-3 text-right font-bold text-[var(--text-primary)]">{formatCurrency(r.totalIngredientes || 0)}</td>
-                    <td className="px-4 py-3 text-center">
-                      <button
-                        onClick={() => toggleActiva(r)}
-                        className={cn(
-                          "inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[length:var(--ts-2xs)] font-bold transition-colors",
-                          r.activa !== false
-                            ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
-                            : "bg-[var(--rule-soft)] text-[var(--text-secondary)]"
-                        )}
-                      >
-                        {r.activa !== false ? <><Eye className="h-3 w-3" /> Activa</> : <><EyeOff className="h-3 w-3" /> Inactiva</>}
-                      </button>
-                    </td>
+                    <EnOrden
+                      orden={ordenRecetario.orden}
+                      celdas={{
+                        receta: (
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              <span className="text-lg">{r.emoji}</span>
+                              <div>
+                                <p className="font-medium text-[var(--text-primary)]">{r.nombre}</p>
+                                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] flex items-center gap-2">
+                                  <span className="flex items-center gap-0.5"><Clock className="h-3 w-3" />{r.tiempoMinutos}min</span>
+                                  <span className="flex items-center gap-0.5"><Users className="h-3 w-3" />{r.porciones}p</span>
+                                </p>
+                              </div>
+                            </div>
+                          </td>
+                        ),
+                        categoria: (
+                          <td className="px-4 py-3 text-[var(--text-secondary)] hidden sm:table-cell">
+                            <span className="text-xs bg-[var(--rule-soft)] px-2 py-1 rounded-lg">{r.categoria}</span>
+                          </td>
+                        ),
+                        ingredientes: <td className="px-4 py-3 text-center text-[var(--text-secondary)] hidden md:table-cell">{r.ingredientes?.length || 0}</td>,
+                        costo: <td className="px-4 py-3 text-right font-bold text-[var(--text-primary)]">{formatCurrency(r.totalIngredientes || 0)}</td>,
+                        estado: (
+                          <td className="px-4 py-3 text-center">
+                            <button
+                              onClick={() => toggleActiva(r)}
+                              className={cn(
+                                "inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[length:var(--ts-2xs)] font-bold transition-colors",
+                                r.activa !== false
+                                  ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
+                                  : "bg-[var(--rule-soft)] text-[var(--text-secondary)]"
+                              )}
+                            >
+                              {r.activa !== false ? <><Eye className="h-3 w-3" /> Activa</> : <><EyeOff className="h-3 w-3" /> Inactiva</>}
+                            </button>
+                          </td>
+                        ),
+                      }}
+                    />
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1">
                         <button

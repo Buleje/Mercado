@@ -4,6 +4,8 @@ import { CardTitle, LoadingState } from "@buleje/design-system";
 import { useState, useCallback, useEffect, useId, useRef } from "react";
 import { Field } from "@/components/admin/shared/Field";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import { X, Search, Loader2, Check, RotateCcw, Package, FileText } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -206,6 +208,7 @@ export default function POSReturnModal({
   const titleId = useId();
   const modalRef = useRef<HTMLDivElement>(null);
   useModalAccesible(modalRef, { onCerrar: resetAndClose, cerrarConEscape: false, activo: isOpen });
+  const ventana = useVentanaDeModal(isOpen, { ref: modalRef, aplicarTranslate: true, claveMemoria: "pos-devolucion" });
 
   if (!isOpen) return null;
 
@@ -226,19 +229,22 @@ export default function POSReturnModal({
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
         transition={{ duration: 0.2, ease: "easeOut" }}
         className="fixed inset-0 z-modal flex items-center justify-center p-4"
-        onClick={e => e.target === e.currentTarget && resetAndClose()}
+        onClick={e => e.target === e.currentTarget && !ventana.fijado && resetAndClose()}
       >
-        <div ref={modalRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="w-full max-w-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl max-h-[90vh] flex flex-col overflow-hidden">
+        <div ref={modalRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="relative w-full max-w-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl max-h-[90vh] flex flex-col overflow-hidden">
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-[var(--rule-soft)]">
+          <div {...ventana.asaProps} className="flex items-center justify-between p-4 border-b border-[var(--rule-soft)]">
             <CardTitle id={titleId} className="text-base font-extrabold text-[var(--text-primary)] flex items-center gap-2">
               <RotateCcw className="h-4 w-4 text-secondary" />
               Devolucion
               {step < 3 && <span className="text-xs font-normal text-[var(--text-tertiary)]">Paso {step}/2</span>}
             </CardTitle>
-            <button onClick={resetAndClose} aria-label="Cerrar" className="p-1.5 rounded-xl hover:bg-[var(--rule-soft)] transition-colors">
-              <X className="h-4 w-4 text-[var(--text-secondary)]" />
-            </button>
+            <span className="ml-auto flex items-center gap-1">
+              <ControlesDeVentana ventana={ventana} />
+              <button onClick={resetAndClose} aria-label="Cerrar" className="p-1.5 rounded-xl hover:bg-[var(--rule-soft)] transition-colors">
+                <X className="h-4 w-4 text-[var(--text-secondary)]" />
+              </button>
+            </span>
           </div>
 
           {/* Step 1: Search sale */}
@@ -504,6 +510,7 @@ export default function POSReturnModal({
               </button>
             </div>
           )}
+          <TiradorDeVentana ventana={ventana} />
         </div>
       </m.div>
     </AnimatePresence>

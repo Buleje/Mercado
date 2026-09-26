@@ -35,6 +35,7 @@ import {
 import { IconAction, productLabel } from "./ctp-shared";
 import { type FacetaOpcion } from "./ctp-filtros-panel";
 import { FiltroColumnaMulti, FiltroColumnaRango } from "@/components/admin/shared/filtros-columna";
+import { EnOrden, BotonRestablecerColumnas, useOrdenColumnas } from "@/components/admin/shared/columnas-ordenables";
 import { estadoDeGuia } from "@/lib/forestal/gtf-estado";
 import { CAMPO_RANGO_META, type CampoRango, type RangoNumerico } from "@/lib/forestal/ctp-secciones-filtro";
 import type { totalesDeSeccion } from "@/lib/forestal/ctp-secciones-filtro";
@@ -148,6 +149,19 @@ export interface CtpEntriesTablaProps {
 const COLS_PRODUCCION_DEFECTO: ColsProduccionVisibles = {
   consumido: true, piezas: true, rend: true, salida: true, permiso: false,
 };
+
+/**
+ * Las columnas que se arrastran (Brandon, 2026-09-26): Producción y Despacho
+ * son la MISMA tabla con dos juegos de columnas, así que cada una guarda su
+ * propio orden (`orden-columnas:ctp-entries-<sección>`). La casilla de cobro,
+ * el N° de línea y Acciones quedan fijos — no son columnas de dato.
+ */
+const ORDEN_PRODUCCION_DEFECTO = [
+  "fecha", "especie", "producto", "consumido", "cantidad", "piezas", "rend", "salida", "permiso", "estado",
+] as const;
+const ORDEN_DESPACHO_DEFECTO = [
+  "fecha", "especie", "producto", "cantidad", "piezas", "gtfSalida", "destino", "estado",
+] as const;
 
 
 /**
@@ -347,11 +361,11 @@ function RendimientoCell({ productType, rendimientoPct }: { productType: string 
  * —así una columna sin faceta (GTF salida) no cambia de forma— y con él, la
  * columna se acota desde donde se la está leyendo.
  */
-function ThFiltro({ label, filtro, className }: {
-  label: string; filtro?: FiltroDeColumna; className?: string;
+function ThFiltro({ label, filtro, className, col }: {
+  label: string; filtro?: FiltroDeColumna; className?: string; col?: string;
 }) {
   return (
-    <Th className={className}>
+    <Th className={className} data-col={col}>
       <span className="block">{label}</span>
       {filtro && <FiltroColumnaMulti label={label} {...propsDeFiltroColumna(filtro)} />}
     </Th>
@@ -359,13 +373,13 @@ function ThFiltro({ label, filtro, className }: {
 }
 
 /** Cabecera de columna numérica con su rango debajo del título. */
-function ThRango({ campo, rango, className }: {
-  campo: CampoRango; rango?: RangoDeColumna; className?: string;
+function ThRango({ campo, rango, className, col }: {
+  campo: CampoRango; rango?: RangoDeColumna; className?: string; col?: string;
 }) {
   const meta = CAMPO_RANGO_META[campo];
   const etiqueta = campo === "consumido" ? "Consumido (m³)" : meta.label;
   return (
-    <Th className={className}>
+    <Th className={className} data-col={col}>
       <span className="block">{etiqueta}</span>
       {rango && (
         <FiltroColumnaRango
@@ -384,17 +398,17 @@ function ThRango({ campo, rango, className }: {
   );
 }
 
-function SortTh({ label, by, sort, onSort, className, campoRango, rango }: {
+function SortTh({ label, by, sort, onSort, className, campoRango, rango, col }: {
   label: string; by: SortKey; sort: { by: SortKey | null; dir: "asc" | "desc" }; onSort: (by: SortKey) => void; className?: string;
   /** Se ordena Y se acota desde la misma cabecera (Rend.). */
-  campoRango?: CampoRango; rango?: RangoDeColumna;
+  campoRango?: CampoRango; rango?: RangoDeColumna; col?: string;
 }) {
   const active = sort.by === by;
   const Ico = active ? (sort.dir === "asc" ? ArrowUp : ArrowDown) : ArrowUpDown;
   const right = className?.includes("text-right");
   const meta = campoRango ? CAMPO_RANGO_META[campoRango] : null;
   return (
-    <th className={`px-4 py-3 font-bold ${className ?? ""}`}>
+    <th data-col={col} className={`px-4 py-3 font-bold ${className ?? ""}`}>
       <button
         type="button"
         onClick={() => onSort(by)}
@@ -488,6 +502,12 @@ export default function CtpEntriesTabla({
   const hayAnulados = visible.some((e) => e.status === "anulado");
   const mostrarCheckboxCobro = section === "produccion" && Boolean(onSeleccionCobro);
   const registradasVisibles = mostrarCheckboxCobro ? visible.filter(puedeMarcarseParaCobro) : [];
+  /* Producción y Despacho son la misma tabla con dos juegos de columnas: cada
+     sección arrastra y recuerda el suyo (Brandon, 2026-09-26). */
+  const orden = useOrdenColumnas(
+    `ctp-entries-${section}`,
+    section === "produccion" ? ORDEN_PRODUCCION_DEFECTO : ORDEN_DESPACHO_DEFECTO,
+  );
 
   /**
    * Lo que se hace de vez en cuando, plegado — y lo que borra, separado.
@@ -552,13 +572,19 @@ export default function CtpEntriesTabla({
 
   return (
     <>
+      {/* Sólo aparece cuando se arrastró una columna: no hay barra propia para
+          esta tabla (vive en la vista), así que el botón cuelga de la tabla
+          misma. */}
+      <div className="hidden justify-end sm:flex">
+        <BotonRestablecerColumnas cambiado={orden.cambiado} onRestablecer={orden.restablecer} />
+      </div>
       {/* ── Desktop: tabla (≥640px). El `hidden` a <640px gana sobre la
              auto-conversión genérica del shell, dejando lugar a las cards. ── */}
       <div className="hidden overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] sm:block">
         <DataTable className="w-full text-sm">
           {/* `align-top`: con el autofiltro debajo del título, las cabeceras sin
               filtro tienen que quedar arriba y no centradas contra los selects. */}
-          <thead className="bg-[var(--surface-sunken)] text-left align-top">
+          <thead ref={orden.refCabecera} className="bg-[var(--surface-sunken)] text-left align-top">
             <tr>
               {mostrarCheckboxCobro && (
                 <Th className="w-10">
@@ -573,22 +599,39 @@ export default function CtpEntriesTabla({
                 </Th>
               )}
               <Th className="w-12 text-right">#</Th>
-              <SortTh label="Fecha" by="fecha" sort={sort} onSort={onSort} />
-              <ThFiltro label="Especie" filtro={fc.species} />
-              <ThFiltro label="Producto" filtro={fc.product} />
-              {section === "produccion" ? (
-                <>
-                  {cv.consumido && <ThRango campo="consumido" rango={fc.rangos?.consumido} className="text-right" />}
-                  {/* «Producido» no lleva rango: su unidad cambia por línea
-                      (m³/pt/kg) y un «entre 10 y 20» mezclaría magnitudes. */}
-                  <SortTh label="Producido" by="cantidad" sort={sort} onSort={onSort} className="text-right" />
-                  {cv.piezas && <ThRango campo="piezas" rango={fc.rangos?.piezas} className="text-right" />}
-                  {cv.rend && <SortTh label="Rend." by="rend" sort={sort} onSort={onSort} className="text-right" campoRango="rend" rango={fc.rangos?.rend} />}
-                  {cv.salida && <ThFiltro label="Salida" filtro={fc.salida} />}
-                  {cv.permiso && <ThFiltro label="N° Permiso" filtro={fc.permiso} />}
-                </>
-              ) : (<><SortTh label="Cantidad" by="cantidad" sort={sort} onSort={onSort} className="text-right" /><Th className="text-right">Piezas</Th><Th>GTF salida</Th><ThFiltro label="Destino" filtro={fc.destino} /></>)}
-              {hayAnulados && <Th>Estado</Th>}
+              {/* Las movibles, en el orden que dejó el operador (Brandon, 2026-09-26). */}
+              <EnOrden
+                orden={orden.orden}
+                celdas={{
+                  fecha: <SortTh label="Fecha" by="fecha" sort={sort} onSort={onSort} col="fecha" />,
+                  especie: <ThFiltro label="Especie" filtro={fc.species} col="especie" />,
+                  producto: <ThFiltro label="Producto" filtro={fc.product} col="producto" />,
+                  ...(section === "produccion"
+                    ? {
+                        consumido: cv.consumido && (
+                          <ThRango campo="consumido" rango={fc.rangos?.consumido} className="text-right" col="consumido" />
+                        ),
+                        /* «Producido» no lleva rango: su unidad cambia por línea
+                           (m³/pt/kg) y un «entre 10 y 20» mezclaría magnitudes. */
+                        cantidad: <SortTh label="Producido" by="cantidad" sort={sort} onSort={onSort} className="text-right" col="cantidad" />,
+                        piezas: cv.piezas && (
+                          <ThRango campo="piezas" rango={fc.rangos?.piezas} className="text-right" col="piezas" />
+                        ),
+                        rend: cv.rend && (
+                          <SortTh label="Rend." by="rend" sort={sort} onSort={onSort} className="text-right" campoRango="rend" rango={fc.rangos?.rend} col="rend" />
+                        ),
+                        salida: cv.salida && <ThFiltro label="Salida" filtro={fc.salida} col="salida" />,
+                        permiso: cv.permiso && <ThFiltro label="N° Permiso" filtro={fc.permiso} col="permiso" />,
+                      }
+                    : {
+                        cantidad: <SortTh label="Cantidad" by="cantidad" sort={sort} onSort={onSort} className="text-right" col="cantidad" />,
+                        piezas: <Th className="text-right" data-col="piezas">Piezas</Th>,
+                        gtfSalida: <Th data-col="gtfSalida">GTF salida</Th>,
+                        destino: <ThFiltro label="Destino" filtro={fc.destino} col="destino" />,
+                      }),
+                  estado: hayAnulados && <Th data-col="estado">Estado</Th>,
+                }}
+              />
               <Th className="text-right">Acciones</Th>
             </tr>
           </thead>
@@ -609,75 +652,86 @@ export default function CtpEntriesTabla({
                   </Td>
                 )}
                 <Td className="text-right font-mono text-xs text-[var(--text-tertiary)]">{e.lineNo}</Td>
-                <Td className="font-medium text-[var(--text-primary)]">{fmtDate(e.entryDate)}</Td>
-                <Td>
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-[var(--text-primary)]">{e.speciesCommon ?? "—"}</span>
-                    {e.cites && <span className="rounded-full bg-[var(--data-error-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)]">CITES</span>}
-                  </div>
-                  {e.speciesScientific && <div className="text-xs italic text-[var(--text-tertiary)]">{e.speciesScientific}</div>}
-                </Td>
-                <Td>
-                  <div className="flex flex-wrap items-center gap-1">
-                    <span className="rounded-full bg-[var(--surface-canvas)] px-2 py-0.5 text-xs font-medium text-[var(--text-secondary)]">{e.productType ? productLabel(e.productType) : "—"}</span>
-                    <ImportadoBadge entry={e} />
-                  </div>
-                  {e.codigoProducto && (
-                    <div className="mt-0.5 font-mono text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{e.codigoProducto}</div>
-                  )}
-                  {/* Una línea nacida de un reproceso (ADR-316) se veía idéntica
-                      a una producción nueva: sin esto, el volumen re-aserrado
-                      parece madera que apareció de la nada. */}
-                  {e.codigoRaiz && (
-                    <div
-                      className="mt-0.5 font-mono text-[length:var(--ts-2xs)] text-[var(--data-info-700)] dark:text-[var(--data-info-500)]"
-                      title={`Esta línea salió de reprocesar ${e.codigoRaiz}`}
-                    >
-                      ↻ viene de {e.codigoRaiz}
-                    </div>
-                  )}
-                </Td>
-                {section === "produccion" ? (
-                  <>
-                    {cv.consumido && (
-                      <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
-                        {n4(e.volumeInputM3)}
-                        <OrigenBadge entry={e} />
+                {/* Las movibles pintan con el MISMO orden de la cabecera: si no,
+                    un m³ cae bajo el título de otra columna. */}
+                <EnOrden
+                  orden={orden.orden}
+                  celdas={{
+                    fecha: <Td className="font-medium text-[var(--text-primary)]">{fmtDate(e.entryDate)}</Td>,
+                    especie: (
+                      <Td>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-[var(--text-primary)]">{e.speciesCommon ?? "—"}</span>
+                          {e.cites && <span className="rounded-full bg-[var(--data-error-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)]">CITES</span>}
+                        </div>
+                        {e.speciesScientific && <div className="text-xs italic text-[var(--text-tertiary)]">{e.speciesScientific}</div>}
                       </Td>
-                    )}
-                    <Td className="text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
-                      {n4(e.quantity, e.unit)} <span className="text-xs font-normal text-[var(--text-tertiary)]">{e.unit}</span>
-                      <AserrioChip entry={e} />
-                    </Td>
-                    {cv.piezas && (
-                      <Td className="text-right font-mono tabular-nums text-[var(--text-primary)]">{e.pieces ?? "—"}</Td>
-                    )}
-                    {cv.rend && (
-                      <Td className="text-right"><RendimientoCell productType={e.productType} rendimientoPct={e.rendimientoPct} /></Td>
-                    )}
-                    {cv.salida && <Td><SalidaBadge entry={e} /></Td>}
-                    {cv.permiso && (
-                      <Td className="font-mono text-xs text-[var(--text-secondary)]">
-                        {e.permisoOrigen?.length ? e.permisoOrigen.join(" · ") : "—"}
+                    ),
+                    producto: (
+                      <Td>
+                        <div className="flex flex-wrap items-center gap-1">
+                          <span className="rounded-full bg-[var(--surface-canvas)] px-2 py-0.5 text-xs font-medium text-[var(--text-secondary)]">{e.productType ? productLabel(e.productType) : "—"}</span>
+                          <ImportadoBadge entry={e} />
+                        </div>
+                        {e.codigoProducto && (
+                          <div className="mt-0.5 font-mono text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{e.codigoProducto}</div>
+                        )}
+                        {/* Una línea nacida de un reproceso (ADR-316) se veía idéntica
+                            a una producción nueva: sin esto, el volumen re-aserrado
+                            parece madera que apareció de la nada. */}
+                        {e.codigoRaiz && (
+                          <div
+                            className="mt-0.5 font-mono text-[length:var(--ts-2xs)] text-[var(--data-info-700)] dark:text-[var(--data-info-500)]"
+                            title={`Esta línea salió de reprocesar ${e.codigoRaiz}`}
+                          >
+                            ↻ viene de {e.codigoRaiz}
+                          </div>
+                        )}
                       </Td>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <Td className="text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
-                      {n4(e.quantity, e.unit)} <span className="text-xs font-normal text-[var(--text-tertiary)]">{e.unit}</span>
-                      <AtribucionBadge entry={e} />
-                    </Td>
-                    <Td className="text-right font-mono tabular-nums text-[var(--text-primary)]">{e.pieces ?? "—"}</Td>
-                    <Td className="font-mono text-xs font-bold text-[var(--text-primary)]">{e.gtfNumber ?? "—"}</Td>
-                    <Td className="text-[var(--text-secondary)]">{e.destino ?? "—"}</Td>
-                  </>
-                )}
-                {hayAnulados && <Td>{e.status === "anulado"
-                  ? <span className="inline-flex items-center gap-1 rounded-full bg-[var(--surface-sunken)] px-2.5 py-1 text-xs font-bold text-[var(--text-secondary)]"><XIcon className="h-3 w-3" />Anulado</span>
-                  : <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-success-100)] px-2.5 py-1 text-xs font-bold text-[var(--data-success-700)]">Registrado</span>}
-                  {e.annulledReason && <div className="mt-1 text-xs text-[var(--data-error-700)]">{e.annulledReason}</div>}
-                </Td>}
+                    ),
+                    ...(section === "produccion"
+                      ? {
+                          consumido: cv.consumido && (
+                            <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                              {n4(e.volumeInputM3)}
+                              <OrigenBadge entry={e} />
+                            </Td>
+                          ),
+                          cantidad: (
+                            <Td className="text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
+                              {n4(e.quantity, e.unit)} <span className="text-xs font-normal text-[var(--text-tertiary)]">{e.unit}</span>
+                              <AserrioChip entry={e} />
+                            </Td>
+                          ),
+                          piezas: cv.piezas && (
+                            <Td className="text-right font-mono tabular-nums text-[var(--text-primary)]">{e.pieces ?? "—"}</Td>
+                          ),
+                          rend: cv.rend && (
+                            <Td className="text-right"><RendimientoCell productType={e.productType} rendimientoPct={e.rendimientoPct} /></Td>
+                          ),
+                          salida: cv.salida && <Td><SalidaBadge entry={e} /></Td>,
+                          permiso: cv.permiso && (
+                            <Td className="font-mono text-xs text-[var(--text-secondary)]">
+                              {e.permisoOrigen?.length ? e.permisoOrigen.join(" · ") : "—"}
+                            </Td>
+                          ),
+                        }
+                      : {
+                          cantidad: (
+                            <Td className="text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
+                              {n4(e.quantity, e.unit)} <span className="text-xs font-normal text-[var(--text-tertiary)]">{e.unit}</span>
+                              <AtribucionBadge entry={e} />
+                            </Td>
+                          ),
+                          piezas: <Td className="text-right font-mono tabular-nums text-[var(--text-primary)]">{e.pieces ?? "—"}</Td>,
+                          gtfSalida: <Td className="font-mono text-xs font-bold text-[var(--text-primary)]">{e.gtfNumber ?? "—"}</Td>,
+                          destino: <Td className="text-[var(--text-secondary)]">{e.destino ?? "—"}</Td>,
+                        }),
+                    estado: hayAnulados && (e.status === "anulado"
+                      ? <Td><span className="inline-flex items-center gap-1 rounded-full bg-[var(--surface-sunken)] px-2.5 py-1 text-xs font-bold text-[var(--text-secondary)]"><XIcon className="h-3 w-3" />Anulado</span>{e.annulledReason && <div className="mt-1 text-xs text-[var(--data-error-700)]">{e.annulledReason}</div>}</Td>
+                      : <Td><span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-success-100)] px-2.5 py-1 text-xs font-bold text-[var(--data-success-700)]">Registrado</span></Td>),
+                  }}
+                />
                 <Td className="text-right">
                   {e.status === "registrado" ? (
                     /**
@@ -751,30 +805,49 @@ export default function CtpEntriesTabla({
           {visible.length > 0 && (
             <tfoot className="border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]">
               <tr>
-                <td colSpan={mostrarCheckboxCobro ? 5 : 4} className="px-4 py-3 text-sm font-bold text-[var(--text-secondary)]">
-                  {totalesVista.lineas} {totalesVista.lineas === 1 ? "línea vigente" : "líneas vigentes"} en pantalla
-                </td>
-                {section === "produccion" ? (
-                  <>
-                    {cv.consumido && (
-                      <td className="px-4 py-3 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{fmtM3(totalesVista.consumido)}</td>
-                    )}
-                    <td className="px-4 py-3 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{fmtM3(totalesVista.cantidad)}</td>
-                    {cv.piezas && (
-                      <td className="px-4 py-3 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{totalesVista.piezas}</td>
-                    )}
-                    {cv.rend && <td />}
-                    {cv.salida && <td />}
-                    {cv.permiso && <td />}
-                    <td colSpan={hayAnulados ? 2 : 1} />
-                  </>
-                ) : (
-                  <>
-                    <td className="px-4 py-3 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{fmtM3(totalesVista.cantidad)}</td>
-                    <td className="px-4 py-3 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{totalesVista.piezas}</td>
-                    <td colSpan={hayAnulados ? 4 : 3} />
-                  </>
-                )}
+                {/* Checkbox de cobro + «#»: fijas, no se arrastran. */}
+                <td colSpan={mostrarCheckboxCobro ? 2 : 1} />
+                {/* El resto pinta con el MISMO `orden` que la cabecera: el total
+                    tiene que caer bajo su columna, la arrastre donde la
+                    arrastre. */}
+                <EnOrden
+                  orden={orden.orden}
+                  celdas={{
+                    fecha: (
+                      <td className="px-4 py-3 text-sm font-bold text-[var(--text-secondary)]">
+                        {totalesVista.lineas} {totalesVista.lineas === 1 ? "línea vigente" : "líneas vigentes"} en pantalla
+                      </td>
+                    ),
+                    especie: <td />,
+                    producto: <td />,
+                    ...(section === "produccion"
+                      ? {
+                          consumido: cv.consumido && (
+                            <td className="px-4 py-3 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{fmtM3(totalesVista.consumido)}</td>
+                          ),
+                          cantidad: (
+                            <td className="px-4 py-3 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{fmtM3(totalesVista.cantidad)}</td>
+                          ),
+                          piezas: cv.piezas && (
+                            <td className="px-4 py-3 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{totalesVista.piezas}</td>
+                          ),
+                          rend: cv.rend && <td />,
+                          salida: cv.salida && <td />,
+                          permiso: cv.permiso && <td />,
+                        }
+                      : {
+                          cantidad: (
+                            <td className="px-4 py-3 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{fmtM3(totalesVista.cantidad)}</td>
+                          ),
+                          piezas: <td className="px-4 py-3 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{totalesVista.piezas}</td>,
+                          gtfSalida: <td />,
+                          destino: <td />,
+                        }),
+                    estado: hayAnulados && <td />,
+                  }}
+                />
+                {/* Acciones: fija, sin total. */}
+                <td />
               </tr>
             </tfoot>
           )}

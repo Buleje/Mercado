@@ -14,6 +14,10 @@ import {
 import { formatDateShort, formatNumber, formatTime } from "@/lib/format";
 import { FiltroColumna } from "@/components/admin/shared/filtros-columna";
 import type { FacetaOpcion } from "@/lib/admin/filtros-columna";
+import { BotonRestablecerColumnas, EnOrden, useOrdenColumnas } from "@/components/admin/shared/columnas-ordenables";
+
+/** Las columnas de datos en su orden de fábrica (checkbox y acciones no aplican acá). */
+const COLS_AUDITORIA = ["fecha", "accion", "entidad", "detalle", "usuario"] as const;
 
 interface AuditEntry {
   id: string;
@@ -78,6 +82,7 @@ export default function AuditTrailModule() {
   const [entityFilter, setEntityFilter] = useState("");
   const [actionFilter, setActionFilter] = useState("");
   const [period, setPeriod] = useState<Period>("all");
+  const orden = useOrdenColumnas("auditoria-trail", COLS_AUDITORIA);
 
   /** Vuelve a la vista sin filtros: el vacío casi siempre es un filtro de más. */
   const resetFiltros = useCallback(() => {
@@ -232,6 +237,7 @@ export default function AuditTrailModule() {
           >
             <RefreshCw className={cn("h-5 w-5", loading && "animate-spin")} />
           </button>
+          <BotonRestablecerColumnas cambiado={orden.cambiado} onRestablecer={orden.restablecer} />
         </div>
       </div>
 
@@ -266,36 +272,45 @@ export default function AuditTrailModule() {
             {/* Desktop: tabla */}
             <div className="hidden sm:block">
               <DataTable filtrable>
-                <thead>
+                <thead ref={orden.refCabecera}>
                   <tr>
-                    <th>Fecha</th>
-                    <th>
-                      <span className="block">Acción</span>
-                      <FiltroColumna
-                        label="Acción"
-                        value={actionFilter || undefined}
-                        options={(summary?.byAction ?? []).map((a): FacetaOpcion => ({ value: a.action, count: a.count }))}
-                        etiqueta={actionLabel}
-                        onChange={(v) => { setActionFilter(v ?? ""); setPage(0); }}
-                        placeholder="Todas"
-                      />
-                    </th>
-                    <th>
-                      <span className="block">Entidad</span>
-                      <select
-                        aria-label="Filtrar por Entidad"
-                        title="Filtrar por Entidad"
-                        value={entityFilter}
-                        onChange={(e) => { setEntityFilter(e.target.value); setPage(0); }}
-                        className={`mt-1.5 block h-9 max-w-40 rounded-lg border-[1.5px] bg-[var(--surface-raised)] px-2 text-sm font-normal normal-case tracking-normal text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none ${
-                          entityFilter ? "border-[var(--accent)] bg-primary/10 font-bold" : "border-[var(--rule-base)]"
-                        }`}
-                      >
-                        {ENTITIES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-                      </select>
-                    </th>
-                    <th>Detalle</th>
-                    <th>Usuario</th>
+                    <EnOrden
+                      orden={orden.orden}
+                      celdas={{
+                        fecha: <th data-col="fecha">Fecha</th>,
+                        accion: (
+                          <th data-col="accion">
+                            <span className="block">Acción</span>
+                            <FiltroColumna
+                              label="Acción"
+                              value={actionFilter || undefined}
+                              options={(summary?.byAction ?? []).map((a): FacetaOpcion => ({ value: a.action, count: a.count }))}
+                              etiqueta={actionLabel}
+                              onChange={(v) => { setActionFilter(v ?? ""); setPage(0); }}
+                              placeholder="Todas"
+                            />
+                          </th>
+                        ),
+                        entidad: (
+                          <th data-col="entidad">
+                            <span className="block">Entidad</span>
+                            <select
+                              aria-label="Filtrar por Entidad"
+                              title="Filtrar por Entidad"
+                              value={entityFilter}
+                              onChange={(e) => { setEntityFilter(e.target.value); setPage(0); }}
+                              className={`mt-1.5 block h-9 max-w-40 rounded-lg border-[1.5px] bg-[var(--surface-raised)] px-2 text-sm font-normal normal-case tracking-normal text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none ${
+                                entityFilter ? "border-[var(--accent)] bg-primary/10 font-bold" : "border-[var(--rule-base)]"
+                              }`}
+                            >
+                              {ENTITIES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                            </select>
+                          </th>
+                        ),
+                        detalle: <th data-col="detalle">Detalle</th>,
+                        usuario: <th data-col="usuario">Usuario</th>,
+                      }}
+                    />
                   </tr>
                 </thead>
                 <tbody>
@@ -303,37 +318,50 @@ export default function AuditTrailModule() {
                     const { day, time } = fmtDate(log.createdAt);
                     return (
                       <tr key={log.id}>
-                        <td className="whitespace-nowrap">
-                          <div className="flex items-center gap-1.5 text-[var(--text-secondary)]">
-                            <Clock className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
-                            <span className="text-sm tabular-nums">{day} · {time}</span>
-                          </div>
-                        </td>
-                        <td><ActionBadge action={log.action} /></td>
-                        <td>
-                          <div className="flex items-center gap-1.5">
-                            <FileText className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
-                            <span className="text-sm font-semibold text-[var(--text-primary)]">{log.entity}</span>
-                            {log.entityId && (
-                              <span className="text-[length:var(--ts-xs)] font-mono text-[var(--text-tertiary)]">#{log.entityId.slice(0, 8)}</span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="max-w-sm">
-                          <p className="truncate text-sm text-[var(--text-secondary)]" title={log.detail || undefined}>{log.detail || "—"}</p>
-                        </td>
-                        <td>
-                          <div className="flex items-center gap-1.5">
-                            <User className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
-                            <span className="text-sm font-medium text-[var(--text-primary)]">{log.user || "sistema"}</span>
-                          </div>
-                          {log.ipAddress && (
-                            <div className="mt-0.5 flex items-center gap-1 text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
-                              <Globe className="h-3 w-3 shrink-0" aria-hidden />
-                              <span className="font-mono">{log.ipAddress.replace(/^::ffff:/, "")}</span>
-                            </div>
-                          )}
-                        </td>
+                        <EnOrden
+                          orden={orden.orden}
+                          celdas={{
+                            fecha: (
+                              <td className="whitespace-nowrap">
+                                <div className="flex items-center gap-1.5 text-[var(--text-secondary)]">
+                                  <Clock className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
+                                  <span className="text-sm tabular-nums">{day} · {time}</span>
+                                </div>
+                              </td>
+                            ),
+                            accion: <td><ActionBadge action={log.action} /></td>,
+                            entidad: (
+                              <td>
+                                <div className="flex items-center gap-1.5">
+                                  <FileText className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
+                                  <span className="text-sm font-semibold text-[var(--text-primary)]">{log.entity}</span>
+                                  {log.entityId && (
+                                    <span className="text-[length:var(--ts-xs)] font-mono text-[var(--text-tertiary)]">#{log.entityId.slice(0, 8)}</span>
+                                  )}
+                                </div>
+                              </td>
+                            ),
+                            detalle: (
+                              <td className="max-w-sm">
+                                <p className="truncate text-sm text-[var(--text-secondary)]" title={log.detail || undefined}>{log.detail || "—"}</p>
+                              </td>
+                            ),
+                            usuario: (
+                              <td>
+                                <div className="flex items-center gap-1.5">
+                                  <User className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
+                                  <span className="text-sm font-medium text-[var(--text-primary)]">{log.user || "sistema"}</span>
+                                </div>
+                                {log.ipAddress && (
+                                  <div className="mt-0.5 flex items-center gap-1 text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
+                                    <Globe className="h-3 w-3 shrink-0" aria-hidden />
+                                    <span className="font-mono">{log.ipAddress.replace(/^::ffff:/, "")}</span>
+                                  </div>
+                                )}
+                              </td>
+                            ),
+                          }}
+                        />
                       </tr>
                     );
                   })}

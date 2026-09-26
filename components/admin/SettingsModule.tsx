@@ -2,6 +2,8 @@
 import { useState, useEffect, useRef, useCallback, useMemo, useId } from "react";
 import { descartarEsperado, sinDato } from "@/lib/errores/sin-dato";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import Image from "next/image";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import { cn } from "@/lib/utils";
@@ -452,6 +454,12 @@ export default function SettingsModule({
   const restoreTitleId = useId();
   const cerrarRestore = useCallback(() => { if (!restoring) setShowRestoreModal(false); }, [restoring]);
   useModalAccesible(restorePanelRef, { onCerrar: cerrarRestore, activo: showRestoreModal });
+  /** Ventana: se mueve, se achica y se fija (ADR-420). */
+  const ventanaRestore = useVentanaDeModal(showRestoreModal, {
+    ref: restorePanelRef,
+    aplicarTranslate: true,
+    claveMemoria: "settings-restaurar-bd",
+  });
 
   const mobileNavRef = useRef<HTMLDivElement>(null);
   const mobileNavTitleId = useId();
@@ -462,6 +470,12 @@ export default function SettingsModule({
   const mapPickerTitleId = useId();
   const cerrarMapPicker = useCallback(() => setShowMapPicker(false), []);
   useModalAccesible(mapPickerPanelRef, { onCerrar: cerrarMapPicker, activo: showMapPicker });
+  /** Ventana: se mueve, se achica y se fija (ADR-420). */
+  const ventanaMapPicker = useVentanaDeModal(showMapPicker, {
+    ref: mapPickerPanelRef,
+    aplicarTranslate: true,
+    claveMemoria: "settings-ubicacion-negocio",
+  });
 
   // Subscription
   const [planName, setPlanName] = useState("free");
@@ -1765,11 +1779,14 @@ export default function SettingsModule({
 
       {/* Restore modal */}
       {showRestoreModal && (
-        <div className="modal-backdrop p-4" role="presentation" onClick={(e) => e.target === e.currentTarget && !restoring && setShowRestoreModal(false)}>
+        <div className="modal-backdrop p-4" role="presentation" onClick={(e) => e.target === e.currentTarget && !restoring && !ventanaRestore.fijado && setShowRestoreModal(false)}>
           <div ref={restorePanelRef} role="dialog" aria-modal="true" aria-labelledby={restoreTitleId} tabIndex={-1}
-            className="bg-[var(--surface-raised)] rounded-xl w-full max-w-lg">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+            className="relative bg-[var(--surface-raised)] rounded-xl w-full max-w-lg">
+            <div {...ventanaRestore.asaProps} className="flex items-center justify-between px-6 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               <CardTitle id={restoreTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Restaurar Base de Datos</CardTitle>
+              <span className="ml-auto flex items-center gap-1">
+                <ControlesDeVentana ventana={ventanaRestore} />
+              </span>
               {!restoring && <button aria-label="Cerrar" onClick={() => setShowRestoreModal(false)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:bg-[var(--rule-soft)]"><X className="h-5 w-5" /></button>}
             </div>
             <div className="px-6 py-5 space-y-4">
@@ -1823,6 +1840,7 @@ export default function SettingsModule({
                 </button>}
               </>)}
             </div>
+            <TiradorDeVentana ventana={ventanaRestore} />
           </div>
         </div>
       )}
@@ -2138,7 +2156,7 @@ export default function SettingsModule({
 
       {/* Map picker modal */}
       {showMapPicker && (
-        <div className="fixed inset-0 z-modal flex items-center justify-center p-4 bg-black/60" role="presentation" onClick={() => setShowMapPicker(false)}>
+        <div className="fixed inset-0 z-modal flex items-center justify-center p-4 bg-black/60" role="presentation" onClick={(e) => { if (e.target === e.currentTarget && !ventanaMapPicker.fijado) setShowMapPicker(false); }}>
           <m.div
             ref={mapPickerPanelRef}
             role="dialog"
@@ -2147,11 +2165,13 @@ export default function SettingsModule({
             tabIndex={-1}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-[var(--surface-raised)] rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col"
-            onClick={e => e.stopPropagation()}
+            className="relative bg-[var(--surface-raised)] rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col"
           >
-            <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+            <div {...ventanaMapPicker.asaProps} className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               <CardTitle id={mapPickerTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Ubicación del negocio</CardTitle>
+              <span className="ml-auto flex items-center gap-1">
+                <ControlesDeVentana ventana={ventanaMapPicker} />
+              </span>
               <button aria-label="Cerrar" onClick={() => setShowMapPicker(false)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:bg-[var(--rule-soft)]"><X className="h-5 w-5" /></button>
             </div>
             <div className="p-4 flex flex-col gap-3">
@@ -2164,6 +2184,7 @@ export default function SettingsModule({
               <button onClick={() => setShowMapPicker(false)} className="px-4 py-2.5 rounded-xl text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--rule-soft)]">Cancelar</button>
               <button onClick={() => setShowMapPicker(false)} className="px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary/90">Confirmar</button>
             </div>
+            <TiradorDeVentana ventana={ventanaMapPicker} />
           </m.div>
         </div>
       )}

@@ -19,6 +19,8 @@ export interface PedidoDeCorreccion {
   gtfNumber: string;
   /** `AAAA-MM-DD`: el día que la madera llegó de verdad. */
   fecha: string;
+  /** Esa fecha cae después del vencimiento de la guía y se confirmó con motivo (ADR-434 §Vencimiento). */
+  vencida?: { motivo: string };
 }
 
 export interface ResultadoCorreccion {
@@ -42,7 +44,13 @@ export function useCorregirRecepcion() {
               method: "PATCH",
               headers: csrfHeaders({ "Content-Type": "application/json" }),
               credentials: "include",
-              body: JSON.stringify({ action: "corregir_recepcion", gtfNumber: p.gtfNumber, fecha: p.fecha, motivo }),
+              body: JSON.stringify({
+                action: "corregir_recepcion",
+                gtfNumber: p.gtfNumber,
+                fecha: p.fecha,
+                motivo,
+                ...(p.vencida ? { aceptaVencida: true, motivoVencida: p.vencida.motivo.trim() } : {}),
+              }),
             });
             const datos = await leerJson<{
               message?: string;

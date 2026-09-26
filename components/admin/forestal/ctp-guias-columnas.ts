@@ -47,7 +47,7 @@ export const COLUMNAS_GUIAS_OPCIONALES: readonly {
   { key: "sniffs", label: "N° SNIFFS", porDefecto: false, grupo: "El papel" },
   // De dónde viene — proveedor y permiso van en la MISMA celda si están los dos.
   { key: "proveedor", label: "Proveedor", grupo: "De dónde viene" },
-  { key: "permiso", label: "N° Permiso (junto al proveedor)", grupo: "De dónde viene" },
+  { key: "permiso", label: "N° Permiso", grupo: "De dónde viene" },
   { key: "origen", label: "Origen (región/distrito)", porDefecto: false, grupo: "De dónde viene" },
   // Qué trae
   { key: "producto", label: "Producto", porDefecto: false, grupo: "Qué trae" },
@@ -115,7 +115,8 @@ export function columnasVivas(cols: ColsGuiasVisibles): { izquierda: number; der
     cols.documento,
     cols.fechaGuia,
     cols.sniffs,
-    cols.proveedor || cols.permiso,
+    cols.proveedor,
+    cols.permiso,
     cols.origen,
     cols.recepcion,
     cols.producto,
@@ -136,4 +137,29 @@ export function useColumnasGuias() {
     return true;
   });
   return useColumnasVisibles(CLAVE_COLS_GUIAS, COLUMNAS_GUIAS_OPCIONALES);
+}
+
+/**
+ * Las columnas que se pueden ARRASTRAR a otro lugar (Brandon, 2026-09-26), en
+ * su orden de fábrica. Quedan fuera la casilla de marcar y «Acciones», que
+ * viven en los bordes. Proveedor y permiso son DOS columnas desde el
+ * 2026-09-26 (Brandon: «separar la columna proveedor · permiso en dos»).
+ */
+export const ORDEN_GUIAS_DEFECTO = [
+  "fecha", "tipoDoc", "documento", "fechaGuia", "sniffs", "proveedor", "permiso", "origen", "recepcion", "producto",
+  "especies", "cantidad", "piezas", "trozas", "unidad", "costo", "registro", "estado",
+] as const;
+export type ColGuia = (typeof ORDEN_GUIAS_DEFECTO)[number];
+/** Dónde se guarda el orden (`orden-columnas:<clave>`). */
+export const CLAVE_ORDEN_GUIAS = "ctp-ingresos-guias";
+
+/** ¿Se pinta esta columna? Fecha, especies y cantidad identifican la fila: siempre. */
+export function colGuiaVisible(id: ColGuia, cols: ColsGuiasVisibles): boolean {
+  if (id === "fecha" || id === "especies" || id === "cantidad") return true;
+  return cols[id];
+}
+
+/** Las visibles, en el orden elegido: la cabecera, la fila y el pie cuentan con la MISMA lista. */
+export function guiasVisiblesEnOrden(orden: readonly string[], cols: ColsGuiasVisibles): ColGuia[] {
+  return (orden as ColGuia[]).filter((id) => colGuiaVisible(id, cols));
 }

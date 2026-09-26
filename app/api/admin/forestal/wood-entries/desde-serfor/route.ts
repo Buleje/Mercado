@@ -13,6 +13,7 @@ import { gtfDatosDesdeSerfor } from "@/lib/forestal/serfor-gtf-a-datos";
 import { findSpeciesByCommonName } from "@/data/forestry-species";
 import { ORIGEN_SERFOR, regionDeSerfor } from "@/lib/forestal/serfor-origen";
 import type { WoodOriginType } from "@/lib/generated/prisma/client";
+import { documentoDelTitular } from "@/lib/forestal/serfor-titular";
 
 /**
  * POST /api/admin/forestal/wood-entries/desde-serfor
@@ -37,20 +38,19 @@ const Body = z.object({
 });
 
 /**
- * El documento del titular y su tipo, deducido del número que realmente se
- * guarda. 11 dígitos = RUC, 8 = DNI; cualquier otra cosa se guarda sin tipo
- * antes que con uno inventado.
+ * El documento del proveedor que guarda el libro: el del TITULAR, o nada.
+ *
+ * Antes tomaba primero `rucInstancia` —el RUC de la ATFFS o del Gobierno
+ * Regional que REGISTRÓ la guía— y lo guardaba como si fuera del proveedor:
+ * medido 2026-09-25 en Blas, 26 de 26 ingresos, y el RUC 20562836927 en dos
+ * titulares distintos. Ahora sale de `documentoDelTitular` (el del propietario
+ * del producto, sólo si es el mismo titular); si la guía no lo trae, va vacío.
  */
 function docDelTitular(
-  ruc: string | null | undefined,
-  propietario: string | null | undefined,
+  gtf: Parameters<typeof documentoDelTitular>[0],
 ): { providerDocument: string | null; providerDocumentType: "RUC" | "DNI" | null } {
-  const n = (ruc ?? propietario ?? "").split("/")[0]?.trim().replace(/\D/g, "") ?? "";
-  if (!n) return { providerDocument: null, providerDocumentType: null };
-  return {
-    providerDocument: n,
-    providerDocumentType: n.length === 11 ? "RUC" : n.length === 8 ? "DNI" : null,
-  };
+  const d = documentoDelTitular(gtf);
+  return { providerDocument: d?.numero ?? null, providerDocumentType: d?.tipo ?? null };
 }
 
 export async function POST(req: NextRequest) {
@@ -120,10 +120,9 @@ export async function POST(req: NextRequest) {
       gtfNumber: gtf.gtfNumber.trim(),
       gtfDate: aFecha(gtf.fechaExpedicion),
       providerName: gtf.titular?.trim() || "Sin titular declarado",
-      // El tipo se deduce del documento QUE SE GUARDA, no de uno de los dos
-      // candidatos: si la guía no trae `rucInstancia` pero sí el del propietario,
-      // el número se guardaba con tipo NULL —incluso siendo un RUC de 11 dígitos.
-      ...docDelTitular(gtf.rucInstancia, gtf.propietarioDoc),
+      // El documento del TITULAR (nunca el RUC de la instancia que registra),
+      // con su tipo deducido del número que se guarda.
+      ...docDelTitular(gtf),
       originType,
       originCode: gtf.numeroTitulo ?? null,
       originSourceNumber: gtf.numeroResolucion ?? null,

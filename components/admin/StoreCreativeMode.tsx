@@ -3,6 +3,8 @@
 import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import Image from "next/image";
 import {
   X,
@@ -2819,6 +2821,12 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
   const shortcutsPanelRef = useRef<HTMLDivElement>(null);
   const cerrarShortcuts = useCallback(() => setShowShortcuts(false), []);
   useModalAccesible(shortcutsPanelRef, { onCerrar: cerrarShortcuts, cerrarConEscape: false, activo: showShortcuts });
+  /** Ventana: se mueve, se achica y se fija (ADR-420). */
+  const ventanaShortcuts = useVentanaDeModal(showShortcuts, {
+    ref: shortcutsPanelRef,
+    aplicarTranslate: true,
+    claveMemoria: "creative-mode-atajos",
+  });
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const tgt = e.target as HTMLElement | null;
@@ -2909,10 +2917,13 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
       {/* #16 Modal de atajos de teclado (Lote H) */}
       {showShortcuts && (
         <div className="fixed inset-0 z-modal-2 flex items-center justify-center p-4">
-          <button type="button" aria-label="Cerrar" onClick={() => setShowShortcuts(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          <button type="button" aria-label="Cerrar" onClick={() => { if (!ventanaShortcuts.fijado) setShowShortcuts(false); }} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
           <div ref={shortcutsPanelRef} role="dialog" aria-modal="true" aria-label="Atajos de teclado" tabIndex={-1} className="relative w-full max-w-sm rounded-2xl border border-white/10 bg-[#16181d] p-4 shadow-[var(--shadow-xl)] outline-none">
-            <div className="mb-3 flex items-center justify-between">
+            <div {...ventanaShortcuts.asaProps} className="mb-3 flex items-center justify-between">
               <p className="inline-flex items-center gap-2 text-sm font-bold text-white"><Keyboard className="h-4 w-4" /> Atajos de teclado</p>
+              <span className="ml-auto flex items-center gap-1">
+                <ControlesDeVentana ventana={ventanaShortcuts} />
+              </span>
               <button type="button" onClick={() => setShowShortcuts(false)} aria-label="Cerrar" className="rounded-xl p-1 text-[var(--text-tertiary)] transition-colors hover:bg-white/10 hover:text-white"><X className="h-4 w-4" /></button>
             </div>
             <ul className="space-y-1.5">
@@ -2932,6 +2943,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 </li>
               ))}
             </ul>
+            <TiradorDeVentana ventana={ventanaShortcuts} />
           </div>
         </div>
       )}

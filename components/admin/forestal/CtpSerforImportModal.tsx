@@ -20,6 +20,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import {
+  ControlesDeVentana,
+  TiradorDeVentana,
+} from "@/components/admin/shared/modal-controles-ventana";
 import { AlertTriangle, CheckCircle, Download, FileText, Upload, X } from "@buleje/design-system/icons";
 import { SectionTitle } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -108,6 +113,12 @@ export default function CtpSerforImportModal({ onClose, onImportado }: { onClose
      de abajo y Escape no cierra (hook medido en el módulo, 2026-09-09). */
   const cajaRef = useRef<HTMLDivElement>(null);
   useModalAccesible(cajaRef, { onCerrar: onClose });
+  /** Ventana: se mueve, se achica y se fija (ADR-420). */
+  const ventana = useVentanaDeModal(true, {
+    ref: cajaRef,
+    aplicarTranslate: true,
+    claveMemoria: "ctp-importar-libro",
+  });
   const [nombreArchivo, setNombreArchivo] = useState<string | null>(null);
   const [secciones, setSecciones] = useState<SeccionDelLibro[]>([]);
   const [faltantes, setFaltantes] = useState<{ formato: FormatoCtp; labels: string[] }[]>([]);
@@ -381,20 +392,19 @@ export default function CtpSerforImportModal({ onClose, onImportado }: { onClose
   return (
     <div
       className="fixed inset-0 z-modal flex items-center justify-center bg-black/50 p-4"
-      onClick={onClose}
+      onClick={(e) => { if (e.target === e.currentTarget && !ventana.fijado) onClose(); }}
       onKeyDown={(e) => {
         if (e.key === "Escape") onClose();
       }}
     >
       <div ref={cajaRef} tabIndex={-1}
-        onClick={(e) => e.stopPropagation()}
         onKeyDown={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-label="Importar el libro"
-        className="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
+        className="relative flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
       >
-        <div className="flex shrink-0 items-start justify-between gap-3 px-6 pb-3 pt-5">
+        <div {...ventana.asaProps} className="flex shrink-0 items-start justify-between gap-3 px-6 pb-3 pt-5">
           <div className="flex items-center gap-1.5">
             <SectionTitle as="h2" className="text-lg font-extrabold text-[var(--text-primary)]">
               Importar el libro
@@ -405,6 +415,9 @@ export default function CtpSerforImportModal({ onClose, onImportado }: { onClose
               example="Reconozco las cinco secciones por sus columnas — no hace falta elegirlas de una lista ni acertar el orden."
             />
           </div>
+          <span className="ml-auto flex items-center gap-1">
+            <ControlesDeVentana ventana={ventana} />
+          </span>
           <button
             onClick={onClose}
             aria-label="Cerrar"
@@ -826,6 +839,8 @@ export default function CtpSerforImportModal({ onClose, onImportado }: { onClose
             </>
           )}
         </div>
+
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

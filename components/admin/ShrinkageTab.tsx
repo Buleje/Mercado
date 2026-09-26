@@ -4,7 +4,10 @@ import { CardTitle, DataTable, SectionTitle, StatCard } from "@buleje/design-sys
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useEffect, useMemo, useState, useRef, useId, useCallback } from "react";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { FiltroColumnaMulti } from "@/components/admin/shared/filtros-columna";
+import { useOrdenColumnas, EnOrden, BotonRestablecerColumnas } from "@/components/admin/shared/columnas-ordenables";
 import type { FacetaOpcion } from "@/lib/admin/filtros-columna";
 import {
   Package,
@@ -125,11 +128,14 @@ export default function ShrinkageTab() {
    *  vacío = todos, OR adentro de la columna. Vivía como 5 botones pastilla
    *  sueltos arriba de la tabla; ahora es el autofiltro del `<th>Motivo`. */
   const [causeFilter, setCauseFilter] = useState<string[]>([]);
+  // Columnas de la tabla: arrastrar el título para reordenarlas.
+  const ordenMermas = useOrdenColumnas("mermas-lista", ["fecha", "producto", "cantidad", "costo", "perdida", "motivo"]);
   const [detail, setDetail] = useState<ShrinkageRecord | null>(null);
   const detailPanelRef = useRef<HTMLDivElement>(null);
   const detailTitleId = useId();
   const cerrarDetail = useCallback(() => setDetail(null), []);
   useModalAccesible(detailPanelRef, { onCerrar: cerrarDetail, activo: !!detail });
+  const ventanaDetalle = useVentanaDeModal(!!detail, { ref: detailPanelRef, aplicarTranslate: true, claveMemoria: "mermas-detalle" });
   const [form, setForm] = useState({ productId: "", quantity: "", cause: "vencimiento" as ShrinkageCause, notes: "", reportedBy: "Almacenero" });
 
   useEffect(() => {
@@ -270,6 +276,7 @@ export default function ShrinkageTab() {
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
           <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar producto o categoria..." className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] h-11 pl-10 pr-4 text-sm dark:border-[var(--rule-base)] " />
         </div>
+        <BotonRestablecerColumnas cambiado={ordenMermas.cambiado} onRestablecer={ordenMermas.restablecer} />
       </div>
 
       {/* En el celular la tabla es tarjetas (`.admin-mobile-cards` esconde el
@@ -289,24 +296,31 @@ export default function ShrinkageTab() {
       )}
 
       <DataTable filtrable className="min-w-[600px]">
-            <thead>
+            <thead ref={ordenMermas.refCabecera}>
               <tr>
-                <th>Fecha</th>
-                <th>Producto</th>
-                <th className="text-right">Cantidad</th>
-                <th className="text-right">Costo u.</th>
-                <th className="text-right">Perdida</th>
-                <th>
-                  <span className="block">Motivo</span>
-                  <FiltroColumnaMulti
-                    label="Motivo"
-                    value={causeFilter}
-                    options={causeOptions}
-                    etiqueta={(v) => CAUSE_META[v as ShrinkageCause]?.label ?? v}
-                    onChange={setCauseFilter}
-                    placeholder="Todos"
-                  />
-                </th>
+                <EnOrden
+                  orden={ordenMermas.orden}
+                  celdas={{
+                    fecha: <th data-col="fecha">Fecha</th>,
+                    producto: <th data-col="producto">Producto</th>,
+                    cantidad: <th data-col="cantidad" className="text-right">Cantidad</th>,
+                    costo: <th data-col="costo" className="text-right">Costo u.</th>,
+                    perdida: <th data-col="perdida" className="text-right">Perdida</th>,
+                    motivo: (
+                      <th data-col="motivo">
+                        <span className="block">Motivo</span>
+                        <FiltroColumnaMulti
+                          label="Motivo"
+                          value={causeFilter}
+                          options={causeOptions}
+                          etiqueta={(v) => CAUSE_META[v as ShrinkageCause]?.label ?? v}
+                          onChange={setCauseFilter}
+                          placeholder="Todos"
+                        />
+                      </th>
+                    ),
+                  }}
+                />
                 <th className="text-center">Detalle</th>
               </tr>
             </thead>
@@ -319,19 +333,28 @@ export default function ShrinkageTab() {
               )}
               {filtered.map((record) => (
                 <tr key={record.id}>
-                  <td className="text-[var(--text-secondary)] dark:text-muted">{formatDateNumeric(record.date)}</td>
-                  <td>
-                    <div>
-                      <p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{record.product}</p>
-                      <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{record.category}</p>
-                    </div>
-                  </td>
-                  <td className="text-right font-bold text-[var(--data-error-500)]">-{record.quantity}</td>
-                  <td className="text-right text-[var(--text-secondary)] dark:text-muted">{fmt(record.unitCost)}</td>
-                  <td className="text-right font-extrabold text-[var(--data-error-500)]">{fmt(record.totalLoss)}</td>
-                  <td>
-                    <span className={cn("inline-flex rounded-full px-2 py-1 text-xs font-bold", CAUSE_META[record.cause].bg, CAUSE_META[record.cause].color)}>{CAUSE_META[record.cause].label}</span>
-                  </td>
+                  <EnOrden
+                    orden={ordenMermas.orden}
+                    celdas={{
+                      fecha: <td className="text-[var(--text-secondary)] dark:text-muted">{formatDateNumeric(record.date)}</td>,
+                      producto: (
+                        <td>
+                          <div>
+                            <p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{record.product}</p>
+                            <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{record.category}</p>
+                          </div>
+                        </td>
+                      ),
+                      cantidad: <td className="text-right font-bold text-[var(--data-error-500)]">-{record.quantity}</td>,
+                      costo: <td className="text-right text-[var(--text-secondary)] dark:text-muted">{fmt(record.unitCost)}</td>,
+                      perdida: <td className="text-right font-extrabold text-[var(--data-error-500)]">{fmt(record.totalLoss)}</td>,
+                      motivo: (
+                        <td>
+                          <span className={cn("inline-flex rounded-full px-2 py-1 text-xs font-bold", CAUSE_META[record.cause].bg, CAUSE_META[record.cause].color)}>{CAUSE_META[record.cause].label}</span>
+                        </td>
+                      ),
+                    }}
+                  />
                   <td className="text-center">
                     <button aria-label="Ver" onClick={() => setDetail(record)} className="rounded-xl border border-[var(--rule-base)] p-2 text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] dark:border-[var(--rule-base)] "><Eye className="h-4 w-4" /></button>
                   </td>
@@ -343,13 +366,16 @@ export default function ShrinkageTab() {
       {detail && (
         <div className="modal-backdrop p-4">
           <div ref={detailPanelRef} role="dialog" aria-modal="true" aria-labelledby={detailTitleId} tabIndex={-1}
-            className="w-full max-w-lg rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 sm:p-6 dark:border-[var(--rule-base)] ">
-            <div className="mb-4 flex items-start justify-between">
+            className="relative w-full max-w-lg rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 sm:p-6 dark:border-[var(--rule-base)] ">
+            <div {...ventanaDetalle.asaProps} className="mb-4 flex items-start justify-between">
               <div>
                 <CardTitle id={detailTitleId} className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Detalle de la pérdida</CardTitle>
                 <p className="text-sm text-[var(--text-secondary)] dark:text-muted">{detail.product}</p>
               </div>
-              <button aria-label="Cerrar" onClick={() => setDetail(null)} className="rounded-xl p-2 text-[var(--text-secondary)] hover:bg-[var(--rule-soft)] "><X className="h-4 w-4" /></button>
+              <span className="ml-auto flex items-center gap-1">
+                <ControlesDeVentana ventana={ventanaDetalle} />
+                <button aria-label="Cerrar" onClick={() => setDetail(null)} className="rounded-xl p-2 text-[var(--text-secondary)] hover:bg-[var(--rule-soft)] "><X className="h-4 w-4" /></button>
+              </span>
             </div>
             <div className="space-y-3 text-sm">
               <p><strong>Fecha:</strong> {formatDateTime(detail.date)}</p>
@@ -361,6 +387,7 @@ export default function ShrinkageTab() {
                 {detail.notes || "Sin notas adicionales."}
               </div>
             </div>
+            <TiradorDeVentana ventana={ventanaDetalle} />
           </div>
         </div>
       )}

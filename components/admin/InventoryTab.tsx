@@ -3,6 +3,8 @@
 import { CardTitle, DataTable, StatCard, SectionTitle, BlockTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useId, useRef, useMemo, type FormEvent } from "react";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import {
   Package, AlertTriangle, ArrowUp, ArrowDown, RefreshCw,
   Search, Loader2, ClipboardList, Plus, Pencil, Trash2,
@@ -45,6 +47,13 @@ import { usePagination, Paginator } from "@/hooks/use-pagination";
 import { formatCurrency } from "@/lib/format";
 import { enRango, rangoActivo, textoDeRango, type ChipFiltro, type FacetaOpcion, type Rango } from "@/lib/admin/filtros-columna";
 import { ChipsDeFiltros, FiltroColumnaMulti, FiltroColumnaRango } from "@/components/admin/shared/filtros-columna";
+import { BotonRestablecerColumnas, EnOrden, useOrdenColumnas } from "@/components/admin/shared/columnas-ordenables";
+
+/** Las columnas de datos en su orden de fábrica (casilla y Acciones son fijas). */
+const COLS_INVENTARIO = [
+  "img", "producto", "categoria", "precio", "historial", "badge", "stock",
+  "costoProm", "rotacion", "cambio30d", "vence", "estado",
+] as const;
 
 const BarcodeScanner = dynamic(() => import("@/components/admin/BarcodeScanner"), { ssr: false });
 const ExpandedStockModal = dynamic(() => import("@/components/admin/inventario/ExpandedStockModal"), { ssr: false });
@@ -157,8 +166,14 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
   const [editModalProduct, setEditModalProduct] = useState<DbProduct | null>(null);
   const [editForm, setEditForm] = useState<Partial<DbProduct & { expiryDate?: string; isVariant?: boolean; variantOf?: string; variantAttr?: string; trackStock?: boolean }>>({});
   const [saving, setSaving] = useState(false);
+  const editModalRef = useRef<HTMLDivElement>(null);
+  const ventanaEdit = useVentanaDeModal(!!editModalProduct, { ref: editModalRef, aplicarTranslate: true, claveMemoria: "inventario-editar-producto" });
   const [showAdd, setShowAdd] = useState(false);
+  const addModalRef = useRef<HTMLDivElement>(null);
+  const ventanaAdd = useVentanaDeModal(showAdd, { ref: addModalRef, aplicarTranslate: true, claveMemoria: "inventario-nuevo-producto" });
   const [showPicker, setShowPicker] = useState(false);
+  const pickerModalRef = useRef<HTMLDivElement>(null);
+  const ventanaPicker = useVentanaDeModal(showPicker, { ref: pickerModalRef, aplicarTranslate: true, claveMemoria: "inventario-agregar-catalogo" });
   const [pickerSearch, setPickerSearch] = useState("");
   const [pickerCat, setPickerCat] = useState("todos");
   // trackStock: Brandon 2026-06-06 — cuando false, el producto es de stock
@@ -243,6 +258,8 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
   // Bulk selection
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [bulkModal, setBulkModal] = useState(false);
+  const bulkModalRef = useRef<HTMLDivElement>(null);
+  const ventanaBulk = useVentanaDeModal(bulkModal, { ref: bulkModalRef, aplicarTranslate: true, claveMemoria: "inventario-edicion-masiva" });
   const [bulkField, setBulkField] = useState<"active" | "category" | "price" | "priceDelta" | "pricePercent" | "stock" | "stockMin" | "stockMax" | "badge">("active");
   const [bulkValue, setBulkValue] = useState("");
   const [bulkSaving, setBulkSaving] = useState(false);
@@ -267,6 +284,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
   const autoReorderPanelRef = useRef<HTMLDivElement>(null);
   const autoReorderTitleId = useId();
   useModalAccesible(autoReorderPanelRef, { onCerrar: () => setShowAutoReorder(null), activo: showAutoReorder !== null });
+  const ventanaAutoReorder = useVentanaDeModal(showAutoReorder !== null, { ref: autoReorderPanelRef, aplicarTranslate: true, claveMemoria: "inventario-auto-reorden" });
 
   // Mejora 6 nueva: QR modal
   const [showQRProduct, setShowQRProduct] = useState<DbProduct | null>(null);
@@ -275,6 +293,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
   const qrPanelRef = useRef<HTMLDivElement>(null);
   const qrTitleId = useId();
   useModalAccesible(qrPanelRef, { onCerrar: () => setShowQRProduct(null), activo: !!showQRProduct });
+  const ventanaQR = useVentanaDeModal(!!showQRProduct, { ref: qrPanelRef, aplicarTranslate: true, claveMemoria: "inventario-qr" });
   useEffect(() => {
     if (!showQRProduct) { setQrDataUrl(null); return; }
     const payload = `PROD:${showQRProduct.id}|${showQRProduct.name}|S/${showQRProduct.price}`;
@@ -290,6 +309,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
 
   // Expanded table modal
   const [showExpandedTable, setShowExpandedTable] = useState(false);
+  const orden = useOrdenColumnas("inventario-productos", COLS_INVENTARIO);
 
   // CSV Import
   const csvImportRef = useRef<HTMLInputElement>(null);
@@ -1806,6 +1826,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
               >
                 <Layers className="h-3.5 w-3.5" /> {showExtendedCols ? "Menos columnas" : "Mas columnas"}
               </button>
+              <BotonRestablecerColumnas cambiado={orden.cambiado} onRestablecer={orden.restablecer} />
               <button
                 onClick={() => setShowExpandedTable(true)}
                 className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:border-[var(--data-success-500)]/30 dark:bg-primary/15 dark:text-[var(--data-success-500)] hover:bg-primary/10 dark:hover:bg-primary/15 transition-colors"
@@ -2056,51 +2077,64 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
           )}>
             <div className="max-h-[65vh] overflow-y-auto">
               <DataTable stickyHeader filtrable className="min-w-[600px]">
-                <thead>
+                <thead ref={orden.refCabecera}>
                   <tr>
                     <th className="w-10">
                       <input type="checkbox" aria-label="Seleccionar todos" checked={filteredProducts.length > 0 && selectedIds.size === filteredProducts.length} onChange={toggleSelectAll} className="rounded border-[var(--rule-base)] text-primary focus:ring-primary" />
                     </th>
-                    <th className="w-12">Img</th>
-                    <th>Producto</th>
-                    <th>
-                      <span className="block">Categoría</span>
-                      <FiltroColumnaMulti
-                        label="Categoría"
-                        value={catFilter}
-                        options={dynamicCategories.filter(c => c.id !== "todos").map((c): FacetaOpcion => ({ value: c.id, count: c.count }))}
-                        etiqueta={(id) => dynamicCategories.find(c => c.id === id)?.label ?? id}
-                        onChange={setCatFilter}
-                        placeholder="Todas"
-                      />
-                    </th>
-                    <th>Precio</th>
-                    <th className={cn(!showExtendedCols && "hidden")}>Historial</th>
-                    <th className={cn(!showExtendedCols && "hidden")}>Badge</th>
-                    <th>
-                      <span className="block">Stock</span>
-                      <FiltroColumnaRango label="Stock" paso={1} valor={stockRango} onChange={(r) => setStockRango(r as Rango<number>)} />
-                    </th>
-                    <th className={cn(!showExtendedCols && "hidden")} title="Basado en las ultimas compras">Costo Prom.</th>
-                    <th className={cn(!showExtendedCols && "hidden")}>Rotacion</th>
-                    <th className={cn(!showExtendedCols && "hidden")}>Cambio 30d</th>
-                    <th className={cn(!showExtendedCols && "hidden")}>
-                      <span className="block">Vence</span>
-                      <FiltroColumnaRango label="Vence" esFecha valor={vencRango} onChange={(r) => setVencRango(r as Rango<string>)} />
-                    </th>
-                    <th>
-                      <span className="block">Estado</span>
-                      <FiltroColumnaMulti
-                        label="Estado"
-                        value={estadoFiltro}
-                        options={[
-                          { value: "Activo", count: activeProducts },
-                          { value: "Inactivo", count: totalProducts - activeProducts },
-                        ]}
-                        onChange={setEstadoFiltro}
-                        placeholder="Todos"
-                      />
-                    </th>
+                    <EnOrden
+                      orden={orden.orden}
+                      celdas={{
+                        img: <th data-col="img" className="w-12">Img</th>,
+                        producto: <th data-col="producto">Producto</th>,
+                        categoria: (
+                          <th data-col="categoria">
+                            <span className="block">Categoría</span>
+                            <FiltroColumnaMulti
+                              label="Categoría"
+                              value={catFilter}
+                              options={dynamicCategories.filter(c => c.id !== "todos").map((c): FacetaOpcion => ({ value: c.id, count: c.count }))}
+                              etiqueta={(id) => dynamicCategories.find(c => c.id === id)?.label ?? id}
+                              onChange={setCatFilter}
+                              placeholder="Todas"
+                            />
+                          </th>
+                        ),
+                        precio: <th data-col="precio">Precio</th>,
+                        historial: <th data-col="historial" className={cn(!showExtendedCols && "hidden")}>Historial</th>,
+                        badge: <th data-col="badge" className={cn(!showExtendedCols && "hidden")}>Badge</th>,
+                        stock: (
+                          <th data-col="stock">
+                            <span className="block">Stock</span>
+                            <FiltroColumnaRango label="Stock" paso={1} valor={stockRango} onChange={(r) => setStockRango(r as Rango<number>)} />
+                          </th>
+                        ),
+                        costoProm: <th data-col="costoProm" className={cn(!showExtendedCols && "hidden")} title="Basado en las ultimas compras">Costo Prom.</th>,
+                        rotacion: <th data-col="rotacion" className={cn(!showExtendedCols && "hidden")}>Rotacion</th>,
+                        cambio30d: <th data-col="cambio30d" className={cn(!showExtendedCols && "hidden")}>Cambio 30d</th>,
+                        vence: (
+                          <th data-col="vence" className={cn(!showExtendedCols && "hidden")}>
+                            <span className="block">Vence</span>
+                            <FiltroColumnaRango label="Vence" esFecha valor={vencRango} onChange={(r) => setVencRango(r as Rango<string>)} />
+                          </th>
+                        ),
+                        estado: (
+                          <th data-col="estado">
+                            <span className="block">Estado</span>
+                            <FiltroColumnaMulti
+                              label="Estado"
+                              value={estadoFiltro}
+                              options={[
+                                { value: "Activo", count: activeProducts },
+                                { value: "Inactivo", count: totalProducts - activeProducts },
+                              ]}
+                              onChange={setEstadoFiltro}
+                              placeholder="Todos"
+                            />
+                          </th>
+                        ),
+                      }}
+                    />
                     <th>Acciones</th>
                   </tr>
                 </thead>
@@ -2123,132 +2157,159 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                         <td>
                           <input type="checkbox" aria-label={`Seleccionar ${p.name}`} checked={selectedIds.has(p.id)} onChange={() => toggleSelect(p.id)} className="rounded border-[var(--rule-base)] text-primary focus:ring-primary" />
                         </td>
-                        <td>
-                          {p.image ? (
-                            /* El `overflow-hidden` va en un envoltorio INTERNO,
-                               no en el span de afuera: cuando la URL de la foto
-                               no carga (el catálogo trae enlaces externos que
-                               se caen), el navegador dibuja el texto alternativo
-                               —el nombre completo del producto— y sin recorte
-                               estiraba la fila de 70 a 161px. Medido en el
-                               inventario real: filas de 70, 70, 121, 141 y 161px
-                               en la misma tabla. Afuera queda el badge de aviso,
-                               que se posiciona sobre el borde y sí tiene que
-                               poder salirse. */
-                            <span className="relative inline-block shrink-0 h-10 w-10">
-                              <span className="block h-10 w-10 overflow-hidden rounded-md">
-                                <Image src={p.image} alt={p.name} width={40} height={40} className="h-10 w-10 object-cover" />
-                              </span>
-                              <ImageWarningBadge image={p.image} />
-                            </span>
-                          ) : (
-                            <div className="w-10 h-10 rounded-md bg-[var(--surface-sunken)] flex items-center justify-center">
-                              <Package className="h-4 w-4 text-[var(--text-tertiary)] dark:text-muted" />
-                            </div>
-                          )}
-                        </td>
-                        <td>
-                          <div className="flex flex-wrap items-center gap-2">
-                            {/* Mejora 5R2: Semaforo de stock */}
-                            {(() => {
-                              const stockMin = p.stockMin ?? 5;
-                              // Brandon 2026-06-01: distinguir "no gestiona stock"
-                              // (undefined → restaurante que no controla inventario)
-                              // de "agotado" (stock 0). Antes `?? 0` pintaba ambos
-                              // como agotado.
-                              if (p.stock === undefined || p.stock === null) return <span className="w-2.5 h-2.5 rounded-full bg-[var(--rule-base)] inline-block shrink-0" title="Sin control de stock" />;
-                              const stock = p.stock;
-                              if (stock === 0) return <span className="w-2.5 h-2.5 rounded-full bg-black inline-block shrink-0" title="Agotado" />;
-                              if (stock <= stockMin) return <span className="w-2.5 h-2.5 rounded-full bg-[var(--data-error-500)] inline-block shrink-0" title="Critico" />;
-                              if (stock <= stockMin * 2) return <span className="w-2.5 h-2.5 rounded-full bg-[var(--data-warning-500)] inline-block shrink-0" title="Bajo" />;
-                              return <span className="w-2.5 h-2.5 rounded-full bg-primary/10 inline-block shrink-0" title="OK" />;
-                            })()}
-                            <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate-25">{p.name}</span>
-                            {/* Mejora QW-10i: Badge alta rentabilidad */}
-                            {topRentables.includes(p.id) && (
-                              <StatusBadge variant="success" label="Alta rentabilidad" size="sm" />
-                            )}
-                            {!p.active && (
-                              <StatusBadge variant="neutral" label="Inactivo" icon={EyeOff} size="sm" />
-                            )}
-                          </div>
-                        </td>
-                        <td className="text-[var(--text-secondary)] dark:text-muted">
-                          {catLabelOf(p.category)}
-                        </td>
-                        <td className="font-bold text-primary">{formatCurrency(Number(p.price))}</td>
-                        <td className={cn(!showExtendedCols && "hidden")}>
-                          <PriceSparkline productId={p.id} />
-                        </td>
-                        <td className={cn(!showExtendedCols && "hidden")}>
-                          {p.badge ? <span className="inline-flex px-2 py-0.5 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-semibold">{p.badge}</span> : <span className="text-[var(--text-tertiary)] dark:text-muted">—</span>}
-                        </td>
-                        <td>
-                          {/* Brandon 2026-06-06: barra visual de nivel de stock
-                              (estado por color + marcador del mínimo) en vez del
-                              número plano. Ver StockLevelBar. */}
-                          <StockLevelBar
-                            stock={p.stock}
-                            stockMin={p.stockMin}
-                            stockMax={p.stockMax}
-                            unit={p.unit}
-                          />
-                        </td>
-                        {/* Mejora 6R2: Costo promedio ponderado */}
-                        <td className={cn(!showExtendedCols && "hidden")}>
-                          {p.costPrice != null && p.costPrice > 0
-                            ? <span className="font-mono text-xs text-[var(--text-primary)] dark:text-[var(--text-primary)]" title="Basado en las ultimas compras">{formatCurrency(Number(p.costPrice))}</span>
-                            : <span className="text-[var(--text-tertiary)] dark:text-muted">—</span>
-                          }
-                        </td>
-                        {/* Mejora 6: Rotation indicator */}
-                        <td className={cn(!showExtendedCols && "hidden")}>
-                          {(() => {
-                            const spw = computeSalesPerWeek(p.id, movements);
-                            const info = getRotationInfo(spw, p.stock ?? 0);
-                            if (!info) return <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">Normal</span>;
-                            return (
-                              <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold", info.className)}>
-                                {info.level === "rápido" && <TrendingUp className="h-2.5 w-2.5" />}
-                                {info.label}
-                              </span>
-                            );
-                          })()}
-                        </td>
-                        {/* Mejora 7: Stock change last 30 days */}
-                        <td className={cn(!showExtendedCols && "hidden")}>
-                          {(() => {
-                            const delta = computeStockChange(p.id, movements);
-                            if (delta > 0) return <span className="text-xs font-bold text-[var(--data-success-500)]"><ArrowUp className="h-3 w-3 inline" /> +{delta}</span>;
-                            if (delta < 0) return <span className="text-xs font-bold text-[var(--data-error-500)]"><ArrowDown className="h-3 w-3 inline" /> {delta}</span>;
-                            return <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">&#8594; 0</span>;
-                          })()}
-                        </td>
-                        {/* Vencimiento (2026-09-22): antes sólo un conteo en el
-                            KPI, sin columna ni forma de acotar la tabla. */}
-                        <td className={cn(!showExtendedCols && "hidden")}>
-                          {(() => {
-                            const v = expiryOf(p);
-                            if (!v) return <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">—</span>;
-                            return (
-                              <span className={cn("text-xs tabular-nums", isExpiringSoon(p) && "font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]")}>
-                                {new Date(`${v}T00:00:00Z`).toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" })}
-                              </span>
-                            );
-                          })()}
-                        </td>
-                        <td>
-                          <button
-                            onClick={() => toggleActive(p)}
-                            className={cn(
-                              "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold transition-colors",
-                              p.active ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] hover:bg-primary/10" : "bg-[var(--surface-sunken)] dark:bg-accent text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)]"
-                            )}
-                          >
-                            <span className={cn("h-1.5 w-1.5 rounded-full", p.active ? "bg-primary/10" : "bg-gray-400")} />
-                            {p.active ? "Activo" : "Inactivo"}
-                          </button>
-                        </td>
+                        <EnOrden
+                          orden={orden.orden}
+                          celdas={{
+                            img: (
+                              <td>
+                                {p.image ? (
+                                  /* El `overflow-hidden` va en un envoltorio INTERNO,
+                                     no en el span de afuera: cuando la URL de la foto
+                                     no carga (el catálogo trae enlaces externos que
+                                     se caen), el navegador dibuja el texto alternativo
+                                     —el nombre completo del producto— y sin recorte
+                                     estiraba la fila de 70 a 161px. Medido en el
+                                     inventario real: filas de 70, 70, 121, 141 y 161px
+                                     en la misma tabla. Afuera queda el badge de aviso,
+                                     que se posiciona sobre el borde y sí tiene que
+                                     poder salirse. */
+                                  <span className="relative inline-block shrink-0 h-10 w-10">
+                                    <span className="block h-10 w-10 overflow-hidden rounded-md">
+                                      <Image src={p.image} alt={p.name} width={40} height={40} className="h-10 w-10 object-cover" />
+                                    </span>
+                                    <ImageWarningBadge image={p.image} />
+                                  </span>
+                                ) : (
+                                  <div className="w-10 h-10 rounded-md bg-[var(--surface-sunken)] flex items-center justify-center">
+                                    <Package className="h-4 w-4 text-[var(--text-tertiary)] dark:text-muted" />
+                                  </div>
+                                )}
+                              </td>
+                            ),
+                            producto: (
+                              <td>
+                                <div className="flex flex-wrap items-center gap-2">
+                                  {/* Mejora 5R2: Semaforo de stock */}
+                                  {(() => {
+                                    const stockMin = p.stockMin ?? 5;
+                                    // Brandon 2026-06-01: distinguir "no gestiona stock"
+                                    // (undefined → restaurante que no controla inventario)
+                                    // de "agotado" (stock 0). Antes `?? 0` pintaba ambos
+                                    // como agotado.
+                                    if (p.stock === undefined || p.stock === null) return <span className="w-2.5 h-2.5 rounded-full bg-[var(--rule-base)] inline-block shrink-0" title="Sin control de stock" />;
+                                    const stock = p.stock;
+                                    if (stock === 0) return <span className="w-2.5 h-2.5 rounded-full bg-black inline-block shrink-0" title="Agotado" />;
+                                    if (stock <= stockMin) return <span className="w-2.5 h-2.5 rounded-full bg-[var(--data-error-500)] inline-block shrink-0" title="Critico" />;
+                                    if (stock <= stockMin * 2) return <span className="w-2.5 h-2.5 rounded-full bg-[var(--data-warning-500)] inline-block shrink-0" title="Bajo" />;
+                                    return <span className="w-2.5 h-2.5 rounded-full bg-primary/10 inline-block shrink-0" title="OK" />;
+                                  })()}
+                                  <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate-25">{p.name}</span>
+                                  {/* Mejora QW-10i: Badge alta rentabilidad */}
+                                  {topRentables.includes(p.id) && (
+                                    <StatusBadge variant="success" label="Alta rentabilidad" size="sm" />
+                                  )}
+                                  {!p.active && (
+                                    <StatusBadge variant="neutral" label="Inactivo" icon={EyeOff} size="sm" />
+                                  )}
+                                </div>
+                              </td>
+                            ),
+                            categoria: (
+                              <td className="text-[var(--text-secondary)] dark:text-muted">
+                                {catLabelOf(p.category)}
+                              </td>
+                            ),
+                            precio: <td className="font-bold text-primary">{formatCurrency(Number(p.price))}</td>,
+                            historial: (
+                              <td className={cn(!showExtendedCols && "hidden")}>
+                                <PriceSparkline productId={p.id} />
+                              </td>
+                            ),
+                            badge: (
+                              <td className={cn(!showExtendedCols && "hidden")}>
+                                {p.badge ? <span className="inline-flex px-2 py-0.5 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-semibold">{p.badge}</span> : <span className="text-[var(--text-tertiary)] dark:text-muted">—</span>}
+                              </td>
+                            ),
+                            stock: (
+                              <td>
+                                {/* Brandon 2026-06-06: barra visual de nivel de stock
+                                    (estado por color + marcador del mínimo) en vez del
+                                    número plano. Ver StockLevelBar. */}
+                                <StockLevelBar
+                                  stock={p.stock}
+                                  stockMin={p.stockMin}
+                                  stockMax={p.stockMax}
+                                  unit={p.unit}
+                                />
+                              </td>
+                            ),
+                            /* Mejora 6R2: Costo promedio ponderado */
+                            costoProm: (
+                              <td className={cn(!showExtendedCols && "hidden")}>
+                                {p.costPrice != null && p.costPrice > 0
+                                  ? <span className="font-mono text-xs text-[var(--text-primary)] dark:text-[var(--text-primary)]" title="Basado en las ultimas compras">{formatCurrency(Number(p.costPrice))}</span>
+                                  : <span className="text-[var(--text-tertiary)] dark:text-muted">—</span>
+                                }
+                              </td>
+                            ),
+                            /* Mejora 6: Rotation indicator */
+                            rotacion: (
+                              <td className={cn(!showExtendedCols && "hidden")}>
+                                {(() => {
+                                  const spw = computeSalesPerWeek(p.id, movements);
+                                  const info = getRotationInfo(spw, p.stock ?? 0);
+                                  if (!info) return <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">Normal</span>;
+                                  return (
+                                    <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold", info.className)}>
+                                      {info.level === "rápido" && <TrendingUp className="h-2.5 w-2.5" />}
+                                      {info.label}
+                                    </span>
+                                  );
+                                })()}
+                              </td>
+                            ),
+                            /* Mejora 7: Stock change last 30 days */
+                            cambio30d: (
+                              <td className={cn(!showExtendedCols && "hidden")}>
+                                {(() => {
+                                  const delta = computeStockChange(p.id, movements);
+                                  if (delta > 0) return <span className="text-xs font-bold text-[var(--data-success-500)]"><ArrowUp className="h-3 w-3 inline" /> +{delta}</span>;
+                                  if (delta < 0) return <span className="text-xs font-bold text-[var(--data-error-500)]"><ArrowDown className="h-3 w-3 inline" /> {delta}</span>;
+                                  return <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">&#8594; 0</span>;
+                                })()}
+                              </td>
+                            ),
+                            /* Vencimiento (2026-09-22): antes sólo un conteo en el
+                               KPI, sin columna ni forma de acotar la tabla. */
+                            vence: (
+                              <td className={cn(!showExtendedCols && "hidden")}>
+                                {(() => {
+                                  const v = expiryOf(p);
+                                  if (!v) return <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">—</span>;
+                                  return (
+                                    <span className={cn("text-xs tabular-nums", isExpiringSoon(p) && "font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]")}>
+                                      {new Date(`${v}T00:00:00Z`).toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" })}
+                                    </span>
+                                  );
+                                })()}
+                              </td>
+                            ),
+                            estado: (
+                              <td>
+                                <button
+                                  onClick={() => toggleActive(p)}
+                                  className={cn(
+                                    "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold transition-colors",
+                                    p.active ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] hover:bg-primary/10" : "bg-[var(--surface-sunken)] dark:bg-accent text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)]"
+                                  )}
+                                >
+                                  <span className={cn("h-1.5 w-1.5 rounded-full", p.active ? "bg-primary/10" : "bg-gray-400")} />
+                                  {p.active ? "Activo" : "Inactivo"}
+                                </button>
+                              </td>
+                            ),
+                          }}
+                        />
                         <td>
                           <div className="flex items-center gap-1">
                             <button onClick={() => openEditModal(p)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-primary hover:bg-primary/8 transition-colors" title="Editar">
@@ -2403,9 +2464,9 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
           return true;
         });
         return (
-          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-[2px] sm:p-4" onClick={(e) => e.target === e.currentTarget && setShowPicker(false)}>
-            <div className="bg-[var(--surface-raised)] w-full sm:max-w-4xl sm:rounded-2xl rounded-t-2xl overflow-hidden max-h-[92dvh] flex flex-col border border-[var(--rule-base)] shadow-[var(--shadow-xl)]">
-              <div className="flex items-start gap-3 px-5 sm:px-6 py-5 border-b-2 border-[var(--rule-soft)] sticky top-0 bg-[var(--surface-raised)] z-10">
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-[2px] sm:p-4" onClick={(e) => e.target === e.currentTarget && !ventanaPicker.fijado && setShowPicker(false)}>
+            <div ref={pickerModalRef} role="dialog" aria-modal="true" aria-label="Agregar al catálogo" tabIndex={-1} className="relative bg-[var(--surface-raised)] w-full sm:max-w-4xl sm:rounded-2xl rounded-t-2xl overflow-hidden max-h-[92dvh] flex flex-col border border-[var(--rule-base)] shadow-[var(--shadow-xl)]">
+              <div {...ventanaPicker.asaProps} className="flex items-start gap-3 px-5 sm:px-6 py-5 border-b-2 border-[var(--rule-soft)] sticky top-0 bg-[var(--surface-raised)] z-10">
                 <span aria-hidden className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                   <PackagePlus className="h-6 w-6" strokeWidth={2.1} />
                 </span>
@@ -2415,6 +2476,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                   <p className="mt-0.5 text-sm text-[var(--text-secondary)] leading-snug">Toca un producto para editarlo, o crea uno nuevo.</p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
+                  <ControlesDeVentana ventana={ventanaPicker} />
                   <button
                     onClick={() => { setShowPicker(false); setShowAdd(true); }}
                     className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--accent)] px-3.5 min-h-10 text-sm font-semibold text-white hover:bg-[var(--accent)]/90 transition-colors"
@@ -2506,6 +2568,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                   </div>
                 )}
               </div>
+              <TiradorDeVentana ventana={ventanaPicker} />
             </div>
           </div>
         );
@@ -2513,16 +2576,19 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
 
       {/* ── Add product modal ── */}
       {showAdd && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-[2px] sm:p-4" onClick={(e) => e.target === e.currentTarget && setShowAdd(false)}>
-          <div className="bg-[var(--surface-raised)] w-full sm:max-w-5xl sm:rounded-2xl rounded-t-2xl overflow-y-auto max-h-[92dvh] border border-[var(--rule-base)] shadow-xl">
-            <div className="sticky top-0 z-10 flex items-center justify-between gap-3 px-6 py-4 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)]/95 backdrop-blur">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-[2px] sm:p-4" onClick={(e) => e.target === e.currentTarget && !ventanaAdd.fijado && setShowAdd(false)}>
+          <div ref={addModalRef} role="dialog" aria-modal="true" aria-label="Nuevo producto" tabIndex={-1} className="relative bg-[var(--surface-raised)] w-full sm:max-w-5xl sm:rounded-2xl rounded-t-2xl overflow-y-auto max-h-[92dvh] border border-[var(--rule-base)] shadow-xl">
+            <div {...ventanaAdd.asaProps} className="sticky top-0 z-10 flex items-center justify-between gap-3 px-6 py-4 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)]/95 backdrop-blur">
               <div className="min-w-0">
                 <SectionTitle className="text-[var(--text-primary)]">Nuevo producto</SectionTitle>
                 <p className="text-xs text-[var(--text-tertiary)]">Producto físico o servicio del catálogo</p>
               </div>
-              <button onClick={() => setShowAdd(false)} aria-label="Cerrar" className="shrink-0 h-9 w-9 rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors">
-                <X className="h-5 w-5" />
-              </button>
+              <span className="ml-auto flex items-center gap-1 shrink-0">
+                <ControlesDeVentana ventana={ventanaAdd} />
+                <button onClick={() => setShowAdd(false)} aria-label="Cerrar" className="h-9 w-9 rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors">
+                  <X className="h-5 w-5" />
+                </button>
+              </span>
             </div>
             <form onSubmit={addProduct} className="p-6 space-y-6">
               {/* Vista previa compacta — solo mobile (en desktop va la tarjeta sticky de la derecha) */}
@@ -3129,22 +3195,26 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                 </button>
               </div>
             </form>
+            <TiradorDeVentana ventana={ventanaAdd} />
           </div>
         </div>
       )}
 
       {/* ── Edit product modal ── */}
       {editModalProduct && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-[2px] sm:p-4" onClick={(e) => e.target === e.currentTarget && closeEditModal()}>
-          <div className="bg-[var(--surface-raised)] w-full sm:max-w-3xl sm:rounded-2xl rounded-t-2xl overflow-y-auto max-h-[92dvh] border border-[var(--rule-base)] shadow-xl">
-            <div className="sticky top-0 z-10 flex items-center justify-between gap-3 px-6 py-4 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)]/95 backdrop-blur">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-[2px] sm:p-4" onClick={(e) => e.target === e.currentTarget && !ventanaEdit.fijado && closeEditModal()}>
+          <div ref={editModalRef} role="dialog" aria-modal="true" aria-label={`Editar ${editModalProduct.name}`} tabIndex={-1} className="relative bg-[var(--surface-raised)] w-full sm:max-w-3xl sm:rounded-2xl rounded-t-2xl overflow-y-auto max-h-[92dvh] border border-[var(--rule-base)] shadow-xl">
+            <div {...ventanaEdit.asaProps} className="sticky top-0 z-10 flex items-center justify-between gap-3 px-6 py-4 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)]/95 backdrop-blur">
               <div className="min-w-0">
                 <p className="text-xs font-medium text-[var(--text-tertiary)]">Editar {(editForm.type ?? "product") === "service" ? "servicio" : "producto"}</p>
                 <SectionTitle className="text-[var(--text-primary)] truncate">{editModalProduct.name}</SectionTitle>
               </div>
-              <button onClick={closeEditModal} aria-label="Cerrar" className="shrink-0 h-9 w-9 rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors">
-                <X className="h-5 w-5" />
-              </button>
+              <span className="ml-auto flex items-center gap-1 shrink-0">
+                <ControlesDeVentana ventana={ventanaEdit} />
+                <button onClick={closeEditModal} aria-label="Cerrar" className="h-9 w-9 rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors">
+                  <X className="h-5 w-5" />
+                </button>
+              </span>
             </div>
             <div className="p-6 space-y-6">
               {/* Vista previa en vivo */}
@@ -3526,6 +3596,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                 </button>
               </div>
             </div>
+            <TiradorDeVentana ventana={ventanaEdit} />
           </div>
         </div>
       )}
@@ -3714,10 +3785,13 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
       {/* Bulk edit modal */}
       {bulkModal && (
         <div className="modal-backdrop flex items-center justify-center p-4">
-          <div className="bg-[var(--surface-raised)] rounded-xl max-w-sm w-full overflow-hidden">
-            <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+          <div ref={bulkModalRef} role="dialog" aria-modal="true" aria-label="Edición masiva" tabIndex={-1} className="relative bg-[var(--surface-raised)] rounded-xl max-w-sm w-full overflow-hidden">
+            <div {...ventanaBulk.asaProps} className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Edición masiva — {selectedIds.size} producto{selectedIds.size > 1 ? "s" : ""}</CardTitle>
-              <button aria-label="Cerrar" onClick={() => setBulkModal(false)} className="p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5"><X className="h-5 w-5" /></button>
+              <span className="ml-auto flex items-center gap-1">
+                <ControlesDeVentana ventana={ventanaBulk} />
+                <button aria-label="Cerrar" onClick={() => setBulkModal(false)} className="p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5"><X className="h-5 w-5" /></button>
+              </span>
             </div>
             <div className="px-3 sm:px-6 py-5 space-y-4">
               <Field label="Campo a modificar" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
@@ -3814,6 +3888,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                 {bulkSaving ? "Aplicando…" : "Aplicar"}
               </button>
             </div>
+            <TiradorDeVentana ventana={ventanaBulk} />
           </div>
         </div>
       )}
@@ -3878,21 +3953,24 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
       {/* Mejora 6 nueva: QR Modal */}
       {showQRProduct && (
         <>
-          <div className="modal-backdrop" onClick={() => setShowQRProduct(null)} />
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && setShowQRProduct(null)}>
+          <div className="modal-backdrop" onClick={() => !ventanaQR.fijado && setShowQRProduct(null)} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && !ventanaQR.fijado && setShowQRProduct(null)}>
             <div
               ref={qrPanelRef}
               role="dialog"
               aria-modal="true"
               aria-labelledby={qrTitleId}
               tabIndex={-1}
-              className="w-full max-w-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-5 space-y-4 text-center"
+              className="relative w-full max-w-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-5 space-y-4 text-center"
             >
-              <div className="flex items-center justify-between">
+              <div {...ventanaQR.asaProps} className="flex items-center justify-between">
                 <CardTitle id={qrTitleId} className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Codigo QR</CardTitle>
-                <button aria-label="Cerrar" onClick={() => setShowQRProduct(null)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] ">
-                  <X className="h-4 w-4 text-[var(--text-secondary)]" />
-                </button>
+                <span className="ml-auto flex items-center gap-1">
+                  <ControlesDeVentana ventana={ventanaQR} />
+                  <button aria-label="Cerrar" onClick={() => setShowQRProduct(null)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] ">
+                    <X className="h-4 w-4 text-[var(--text-secondary)]" />
+                  </button>
+                </span>
               </div>
               {qrDataUrl ? (
                 /* eslint-disable-next-line @next/next/no-img-element -- data URL local, next/image no aplica */
@@ -3935,6 +4013,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                   Descargar
                 </a>
               </div>
+              <TiradorDeVentana ventana={ventanaQR} />
             </div>
           </div>
         </>
@@ -3943,21 +4022,24 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
       {/* Mejora 5 nueva: Auto-reorden modal */}
       {showAutoReorder !== null && (
         <>
-          <div className="modal-backdrop" onClick={() => setShowAutoReorder(null)} />
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && setShowAutoReorder(null)}>
+          <div className="modal-backdrop" onClick={() => !ventanaAutoReorder.fijado && setShowAutoReorder(null)} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && !ventanaAutoReorder.fijado && setShowAutoReorder(null)}>
             <div
               ref={autoReorderPanelRef}
               role="dialog"
               aria-modal="true"
               aria-labelledby={autoReorderTitleId}
               tabIndex={-1}
-              className="w-full max-w-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-5 space-y-4"
+              className="relative w-full max-w-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-5 space-y-4"
             >
-              <div className="flex items-center justify-between">
+              <div {...ventanaAutoReorder.asaProps} className="flex items-center justify-between">
                 <CardTitle id={autoReorderTitleId} className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Configurar Auto-Reorden</CardTitle>
-                <button aria-label="Cerrar" onClick={() => setShowAutoReorder(null)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] ">
-                  <X className="h-4 w-4 text-[var(--text-secondary)]" />
-                </button>
+                <span className="ml-auto flex items-center gap-1">
+                  <ControlesDeVentana ventana={ventanaAutoReorder} />
+                  <button aria-label="Cerrar" onClick={() => setShowAutoReorder(null)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] ">
+                    <X className="h-4 w-4 text-[var(--text-secondary)]" />
+                  </button>
+                </span>
               </div>
               <Field label="Reordenar cuando stock sea menor o igual a:" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                 <input
@@ -3981,6 +4063,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                   Guardar
                 </button>
               </div>
+              <TiradorDeVentana ventana={ventanaAutoReorder} />
             </div>
           </div>
         </>

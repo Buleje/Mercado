@@ -26,6 +26,8 @@ import {
 import type { DbDocument, DbDocumentAuditLog, DocAction } from "@/lib/types/documents";
 import { fmtDate } from "./shared";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 
 // ── types ────────────────────────────────────────────────────────────────────
 
@@ -105,6 +107,7 @@ export default function DocumentActivityModal({ doc, onClose }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
+  const ventana = useVentanaDeModal(true, { ref: dialogRef, aplicarTranslate: true, claveMemoria: "sa-document-activity" });
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -144,7 +147,7 @@ export default function DocumentActivityModal({ doc, onClose }: Props) {
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget && !ventana.fijado) onClose();
       }}
     >
       <div
@@ -152,11 +155,11 @@ export default function DocumentActivityModal({ doc, onClose }: Props) {
         role="dialog"
         aria-modal="true"
         aria-label="Registro de actividad"
-        className="w-full max-w-lg rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-[var(--shadow-lg)] flex flex-col"
+        className="relative w-full max-w-lg rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-[var(--shadow-lg)] flex flex-col"
         style={{ maxHeight: "85vh" }}
       >
         {/* Header */}
-        <div className="flex items-start justify-between px-5 pt-5 pb-3 shrink-0">
+        <div {...ventana.asaProps} className="flex items-start justify-between px-5 pt-5 pb-3 shrink-0">
           <div className="min-w-0 flex-1">
             <h2 className="text-lg font-extrabold text-[var(--text-primary)]">
               Registro de actividad
@@ -165,6 +168,7 @@ export default function DocumentActivityModal({ doc, onClose }: Props) {
               {doc.name}
             </p>
           </div>
+          <ControlesDeVentana ventana={ventana} />
           <button
             type="button"
             onClick={onClose}
@@ -267,6 +271,7 @@ export default function DocumentActivityModal({ doc, onClose }: Props) {
             </div>
           </>
         )}
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

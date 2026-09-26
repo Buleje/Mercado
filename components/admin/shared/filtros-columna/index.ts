@@ -7,6 +7,7 @@
 export { FiltroColumna, type FiltroColumnaProps } from "./filtro-columna";
 export { FiltroColumnaMulti, type FiltroColumnaMultiProps } from "./filtro-columna-multi";
 export { FiltroColumnaRango, type FiltroColumnaRangoProps } from "./filtro-columna-rango";
+export { FiltroColumnaTexto, type FiltroColumnaTextoProps } from "./filtro-columna-texto";
 export { ChipsDeFiltros, type ChipsDeFiltrosProps } from "./chips-de-filtros";
 export { usePopoverCabecera, SUMMARY_CABECERA, type PosicionPopover } from "./use-popover-cabecera";
 export { useFiltrosDeColumna, type UseFiltrosDeColumnaResult } from "./use-filtros-de-columna";

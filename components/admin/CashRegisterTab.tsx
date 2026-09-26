@@ -15,6 +15,8 @@ import { Field } from "@/components/admin/shared/Field";
 import { activateProps } from "@/components/admin/shared/a11y";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
@@ -648,6 +650,13 @@ export default function CashRegisterTab() {
   useModalAccesible(arqueoModalRef, { onCerrar: cerrarArqueo, activo: showArqueo });
   useModalAccesible(arqueoGuiadoModalRef, { onCerrar: cerrarArqueoGuiado, activo: showArqueoGuiado });
   useModalAccesible(detailModalRef, { onCerrar: cerrarDetail, activo: !!detailRegister });
+
+  const ventanaOpen = useVentanaDeModal(showOpen, { ref: openModalRef, aplicarTranslate: true, claveMemoria: "caja-abrir" });
+  const ventanaClose = useVentanaDeModal(showClose, { ref: closeModalRef, aplicarTranslate: true, claveMemoria: "caja-cerrar" });
+  const ventanaMovement = useVentanaDeModal(showMovement, { ref: movementModalRef, aplicarTranslate: true, claveMemoria: "caja-movimiento" });
+  const ventanaArqueo = useVentanaDeModal(showArqueo, { ref: arqueoModalRef, aplicarTranslate: true, claveMemoria: "caja-arqueo" });
+  const ventanaArqueoGuiado = useVentanaDeModal(showArqueoGuiado, { ref: arqueoGuiadoModalRef, aplicarTranslate: true, claveMemoria: "caja-arqueo-guiado" });
+  const ventanaDetail = useVentanaDeModal(!!detailRegister, { ref: detailModalRef, aplicarTranslate: true, claveMemoria: "caja-detalle" });
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -1505,10 +1514,10 @@ export default function CashRegisterTab() {
 
       {/* Open register modal */}
       {showOpen && (
-        <div className="modal-backdrop p-4" onClick={e => e.target === e.currentTarget && setShowOpen(false)} onKeyDown={e => { if (e.key === "Escape") setShowOpen(false); }}>
-          <div ref={openModalRef} role="dialog" aria-modal="true" aria-labelledby={openTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-md w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-[var(--dur-fast)]" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()}>
+        <div className="modal-backdrop p-4" onClick={e => e.target === e.currentTarget && !ventanaOpen.fijado && setShowOpen(false)} onKeyDown={e => { if (e.key === "Escape") setShowOpen(false); }}>
+          <div ref={openModalRef} role="dialog" aria-modal="true" aria-labelledby={openTitleId} tabIndex={-1} className="relative bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-md w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-[var(--dur-fast)]" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()}>
             {/* Header */}
-            <div className="px-6 py-5 border-b border-[var(--rule-soft)] flex items-center justify-between">
+            <div {...ventanaOpen.asaProps} className="px-6 py-5 border-b border-[var(--rule-soft)] flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                   <Unlock className="h-5 w-5 text-primary" strokeWidth={2} />
@@ -1518,9 +1527,12 @@ export default function CashRegisterTab() {
                   <p className="text-sm text-[var(--text-tertiary)]">Registra el efectivo inicial del día</p>
                 </div>
               </div>
-              <button onClick={() => setShowOpen(false)} aria-label="Cerrar" className="p-2 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
-                <X className="h-5 w-5 text-[var(--text-tertiary)]" />
-              </button>
+              <span className="ml-auto flex items-center gap-1 shrink-0">
+                <ControlesDeVentana ventana={ventanaOpen} />
+                <button onClick={() => setShowOpen(false)} aria-label="Cerrar" className="p-2 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
+                  <X className="h-5 w-5 text-[var(--text-tertiary)]" />
+                </button>
+              </span>
             </div>
 
             {/* Body */}
@@ -1596,6 +1608,7 @@ export default function CashRegisterTab() {
                 Abrir caja
               </button>
             </div>
+            <TiradorDeVentana ventana={ventanaOpen} />
           </div>
         </div>
       )}
@@ -1632,10 +1645,10 @@ export default function CashRegisterTab() {
         };
         
         return (
-        <div className="modal-backdrop p-4" onClick={e => e.target === e.currentTarget && setShowClose(false)} onKeyDown={e => { if (e.key === "Escape") setShowClose(false); }}>
-          <div ref={closeModalRef} role="dialog" aria-modal="true" aria-labelledby={closeTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-lg w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-[var(--dur-fast)]" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()}>
+        <div className="modal-backdrop p-4" onClick={e => e.target === e.currentTarget && !ventanaClose.fijado && setShowClose(false)} onKeyDown={e => { if (e.key === "Escape") setShowClose(false); }}>
+          <div ref={closeModalRef} role="dialog" aria-modal="true" aria-labelledby={closeTitleId} tabIndex={-1} className="relative bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-lg w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-[var(--dur-fast)]" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()}>
             {/* Header */}
-            <div className="px-6 py-5 border-b border-[var(--rule-soft)] flex items-center justify-between">
+            <div {...ventanaClose.asaProps} className="px-6 py-5 border-b border-[var(--rule-soft)] flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-xl bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15 flex items-center justify-center shrink-0">
                   <Lock className="h-5 w-5 text-[var(--data-error-500)]" strokeWidth={2} />
@@ -1645,9 +1658,12 @@ export default function CashRegisterTab() {
                   <p className="text-sm text-[var(--text-tertiary)]">Cuenta el efectivo final y cierra el día</p>
                 </div>
               </div>
-              <button onClick={() => { setShowClose(false); setDenominations({}); }} aria-label="Cerrar" className="p-2 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
-                <X className="h-5 w-5 text-[var(--text-tertiary)]" />
-              </button>
+              <span className="ml-auto flex items-center gap-1 shrink-0">
+                <ControlesDeVentana ventana={ventanaClose} />
+                <button onClick={() => { setShowClose(false); setDenominations({}); }} aria-label="Cerrar" className="p-2 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
+                  <X className="h-5 w-5 text-[var(--text-tertiary)]" />
+                </button>
+              </span>
             </div>
 
             {/* Body scrollable */}
@@ -1798,6 +1814,7 @@ export default function CashRegisterTab() {
                 Confirmar cierre
               </button>
             </div>
+            <TiradorDeVentana ventana={ventanaClose} />
           </div>
         </div>
         );
@@ -1805,10 +1822,10 @@ export default function CashRegisterTab() {
 
       {/* Add movement modal */}
       {showMovement && (
-        <div className="modal-backdrop p-4" onClick={e => e.target === e.currentTarget && setShowMovement(false)} onKeyDown={e => { if (e.key === "Escape") setShowMovement(false); }}>
-          <div ref={movementModalRef} role="dialog" aria-modal="true" aria-labelledby={movementTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-md w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-[var(--dur-fast)]" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()}>
+        <div className="modal-backdrop p-4" onClick={e => e.target === e.currentTarget && !ventanaMovement.fijado && setShowMovement(false)} onKeyDown={e => { if (e.key === "Escape") setShowMovement(false); }}>
+          <div ref={movementModalRef} role="dialog" aria-modal="true" aria-labelledby={movementTitleId} tabIndex={-1} className="relative bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-md w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-[var(--dur-fast)]" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()}>
             {/* Header */}
-            <div className="px-6 py-5 border-b border-[var(--rule-soft)] flex items-center justify-between">
+            <div {...ventanaMovement.asaProps} className="px-6 py-5 border-b border-[var(--rule-soft)] flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className={cn(
                   "h-10 w-10 rounded-xl flex items-center justify-center shrink-0",
@@ -1827,9 +1844,12 @@ export default function CashRegisterTab() {
                   </p>
                 </div>
               </div>
-              <button onClick={() => setShowMovement(false)} aria-label="Cerrar" className="p-2 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
-                <X className="h-5 w-5 text-[var(--text-tertiary)]" />
-              </button>
+              <span className="ml-auto flex items-center gap-1 shrink-0">
+                <ControlesDeVentana ventana={ventanaMovement} />
+                <button onClick={() => setShowMovement(false)} aria-label="Cerrar" className="p-2 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
+                  <X className="h-5 w-5 text-[var(--text-tertiary)]" />
+                </button>
+              </span>
             </div>
 
             {/* Body */}
@@ -1922,6 +1942,7 @@ export default function CashRegisterTab() {
                 Registrar
               </button>
             </div>
+            <TiradorDeVentana ventana={ventanaMovement} />
           </div>
         </div>
       )}
@@ -1944,10 +1965,10 @@ export default function CashRegisterTab() {
         const difference = countedCash - expectedCash;
         
         return (
-          <div className="modal-backdrop p-4" onClick={e => e.target === e.currentTarget && setShowArqueo(false)} onKeyDown={e => { if (e.key === "Escape") setShowArqueo(false); }}>
-            <div ref={arqueoModalRef} role="dialog" aria-modal="true" aria-labelledby={arqueoTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-md w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-[var(--dur-fast)]" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()}>
+          <div className="modal-backdrop p-4" onClick={e => e.target === e.currentTarget && !ventanaArqueo.fijado && setShowArqueo(false)} onKeyDown={e => { if (e.key === "Escape") setShowArqueo(false); }}>
+            <div ref={arqueoModalRef} role="dialog" aria-modal="true" aria-labelledby={arqueoTitleId} tabIndex={-1} className="relative bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-md w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-[var(--dur-fast)]" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()}>
               {/* Header */}
-              <div className="px-6 py-5 border-b border-[var(--rule-soft)] flex items-center justify-between">
+              <div {...ventanaArqueo.asaProps} className="px-6 py-5 border-b border-[var(--rule-soft)] flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                     <Scan className="h-5 w-5 text-[var(--data-success-500)]" strokeWidth={2} />
@@ -1957,9 +1978,12 @@ export default function CashRegisterTab() {
                     <p className="text-sm text-[var(--text-tertiary)]">Verificación rápida sin cerrar caja</p>
                   </div>
                 </div>
-                <button onClick={() => { setShowArqueo(false); setArqueoDenoms({}); setArqueoError(null); }} aria-label="Cerrar" className="p-2 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
-                  <X className="h-5 w-5 text-[var(--text-tertiary)]" />
-                </button>
+                <span className="ml-auto flex items-center gap-1 shrink-0">
+                  <ControlesDeVentana ventana={ventanaArqueo} />
+                  <button onClick={() => { setShowArqueo(false); setArqueoDenoms({}); setArqueoError(null); }} aria-label="Cerrar" className="p-2 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
+                    <X className="h-5 w-5 text-[var(--text-tertiary)]" />
+                  </button>
+                </span>
               </div>
 
               {/* Body */}
@@ -2117,6 +2141,7 @@ export default function CashRegisterTab() {
                   </button>
                 </div>
               </div>
+              <TiradorDeVentana ventana={ventanaArqueo} />
             </div>
           </div>
         );
@@ -2124,10 +2149,10 @@ export default function CashRegisterTab() {
 
       {/* Arqueo Guiado modal */}
       {showArqueoGuiado && currentRegister && (
-        <div className="modal-backdrop p-4" onClick={e => e.target === e.currentTarget && setShowArqueoGuiado(false)} onKeyDown={e => { if (e.key === "Escape") setShowArqueoGuiado(false); }}>
-          <div ref={arqueoGuiadoModalRef} role="dialog" aria-modal="true" aria-labelledby={arqueoGuiadoTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-lg w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-[var(--dur-fast)]" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()}>
+        <div className="modal-backdrop p-4" onClick={e => e.target === e.currentTarget && !ventanaArqueoGuiado.fijado && setShowArqueoGuiado(false)} onKeyDown={e => { if (e.key === "Escape") setShowArqueoGuiado(false); }}>
+          <div ref={arqueoGuiadoModalRef} role="dialog" aria-modal="true" aria-labelledby={arqueoGuiadoTitleId} tabIndex={-1} className="relative bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-lg w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-[var(--dur-fast)]" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()}>
             {/* Header */}
-            <div className="px-6 py-5 border-b border-[var(--rule-soft)] flex items-center justify-between">
+            <div {...ventanaArqueoGuiado.asaProps} className="px-6 py-5 border-b border-[var(--rule-soft)] flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-xl bg-[var(--surface-sunken)] flex items-center justify-center shrink-0">
                   <Calculator className="h-5 w-5 text-primary" strokeWidth={2} />
@@ -2137,9 +2162,12 @@ export default function CashRegisterTab() {
                   <p className="text-sm text-[var(--text-tertiary)]">Cuenta billetes, monedas y métodos de pago</p>
                 </div>
               </div>
-              <button onClick={() => setShowArqueoGuiado(false)} aria-label="Cerrar" className="p-2 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
-                <X className="h-5 w-5 text-[var(--text-tertiary)]" />
-              </button>
+              <span className="ml-auto flex items-center gap-1 shrink-0">
+                <ControlesDeVentana ventana={ventanaArqueoGuiado} />
+                <button onClick={() => setShowArqueoGuiado(false)} aria-label="Cerrar" className="p-2 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
+                  <X className="h-5 w-5 text-[var(--text-tertiary)]" />
+                </button>
+              </span>
             </div>
 
             {/* Body scrollable */}
@@ -2417,20 +2445,22 @@ export default function CashRegisterTab() {
                 {arqueoError}
               </p>
             )}
+            <TiradorDeVentana ventana={ventanaArqueoGuiado} />
           </div>
         </div>
       )}
 
       {/* Detail register modal (history) */}
       {detailRegister && (
-        <div className="modal-backdrop p-4" onClick={() => setDetailRegister(null)} onKeyDown={e => { if (e.key === "Escape") setDetailRegister(null); }}>
-          <div ref={detailModalRef} role="dialog" aria-modal="true" aria-labelledby={detailTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-xl max-w-lg w-full max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()}>
-            <div className="px-2 sm:px-4 py-2 sm:py-3 border-b flex items-center justify-between">
+        <div className="modal-backdrop p-4" onClick={() => !ventanaDetail.fijado && setDetailRegister(null)} onKeyDown={e => { if (e.key === "Escape") setDetailRegister(null); }}>
+          <div ref={detailModalRef} role="dialog" aria-modal="true" aria-labelledby={detailTitleId} tabIndex={-1} className="relative bg-[var(--surface-raised)] rounded-xl max-w-lg w-full max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()}>
+            <div {...ventanaDetail.asaProps} className="px-2 sm:px-4 py-2 sm:py-3 border-b flex items-center justify-between">
               <div>
                 <CardTitle id={detailTitleId} className="text-sm font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Detalle de caja</CardTitle>
                 <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">{fmtDate(detailRegister.openedAt)} → {detailRegister.closedAt ? fmtDate(detailRegister.closedAt) : "—"}</p>
               </div>
-              <div className="flex items-center gap-1">
+              <div className="ml-auto flex items-center gap-1">
+                <ControlesDeVentana ventana={ventanaDetail} />
                 <button onClick={() => window.print()} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] print:hidden" title="Imprimir resumen">
                   <Printer className="h-4 w-4 text-[var(--text-secondary)] dark:text-muted" />
                 </button>
@@ -2506,6 +2536,7 @@ export default function CashRegisterTab() {
                 );
               })}
             </div>
+            <TiradorDeVentana ventana={ventanaDetail} />
           </div>
         </div>
       )}

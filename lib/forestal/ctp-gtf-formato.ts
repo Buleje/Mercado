@@ -302,52 +302,85 @@ export function cuerpoGtfOficial(i: CuerpoGtfInput): string {
 /**
  * Los estilos del formato: Arial y A4, como manda la RDE 122-2015-SERFOR-DE.
  *
- * Dos decisiones de lectura que no son cosméticas:
- * · **el rótulo arriba y el dato abajo** — los valores reales (una dirección, una
- *   razón social) son largos y en línea corrida empujaban el casillero siguiente;
- *   apilados, todas las filas miden lo mismo y el dato se encuentra siempre en el
- *   mismo lugar del casillero;
+ * Decisiones de lectura que no son cosméticas:
+ * · **rótulo y dato en la misma línea**, rótulo gris y dato en negro — el
+ *   fiscalizador busca por número de casillero y lee el valor; el rótulo sólo
+ *   confirma que está en el lugar correcto, así que no compite con el dato;
  * · **`b:empty` con línea punteada** — un casillero sin dato queda con un renglón
  *   para llenar a mano, que es exactamente lo que se hace con él. Antes era un
- *   hueco mudo que se confundía con un error de impresión.
+ *   hueco mudo que se confundía con un error de impresión;
+ * · **grilla de hilos grises, sin bordes laterales afuera** — la tabla se lee
+ *   por filas; el marco exterior no informa nada y sí ensucia la hoja;
+ * · **columnas cortas del (37) sin partir** — «MADERA EN ROLLO» y «Metros
+ *   Cúbicos» en dos renglones duplicaban el alto de cada fila y una guía de
+ *   cuatro especies se iba a dos hojas.
  *
  * Depende de los tokens de `CSS_DOCUMENTO` (`--tinta`, `--gris`…): estas reglas
  * se inyectan siempre DESPUÉS del armazón compartido.
  */
 export const CSS_GTF_OFICIAL = `
-  .cas { width:100%; border-collapse:collapse; margin:0 0 .8mm; table-layout:fixed; }
-  .cas td.c { border:.6pt solid #9aa5a0; padding:.9mm 1.2mm; vertical-align:top; line-height:1.25; }
-  .cas .n { display:inline-block; min-width:4.2mm; margin-right:.6mm; padding:0 .4mm;
-            border:.5pt solid var(--tinta); color:var(--tinta);
-            font-size:5.6pt; font-weight:bold; text-align:center; vertical-align:.4mm; }
-  .cas .l { font-size:6pt; letter-spacing:.2pt; text-transform:uppercase; color:var(--gris-suave); }
+  /* ── Casilleros ── */
+  .cas { width:100%; border-collapse:collapse; margin:0; table-layout:fixed; }
+  .cas td.c { border:.5pt solid var(--linea-suave); padding:.75mm 1.5mm; vertical-align:top; line-height:1.22; }
+  .cas td.c:first-child { border-left:none; padding-left:0; }
+  .cas td.c:last-child { border-right:none; }
+  /* La regla de la sección hace de borde superior: sin hilo doble. */
+  .doc-sec + .cas tr:first-child td.c { border-top:none; }
+  .cas .n { color:var(--gris-suave); font-size:6pt; font-variant-numeric:tabular-nums; margin-right:.5mm; }
+  .cas .l { font-size:6pt; letter-spacing:.25pt; text-transform:uppercase; color:var(--gris); }
   .cas b { font-size:8pt; word-wrap:break-word; }
   /* Un casillero sin dato queda con renglón para llenar a mano, no como un hueco
      mudo que se confunde con un error de impresión. */
-  .cas b:empty { display:inline-block; min-width:18mm; border-bottom:.5pt dotted #b6c0ba; }
+  .cas b:empty { display:inline-block; min-width:18mm; border-bottom:.5pt dotted #9a9a9a; }
   .sec { font-size:8pt; font-weight:bold; margin:4px 0 2px; }
-  .ck { display:inline-block; margin:0 1.6mm 0 0; white-space:nowrap; }
-  .ck .lb { font-size:5.6pt; }
-  .ck .bx { display:inline-block; min-width:3.4mm; border:.6pt solid var(--linea); text-align:center;
-            font-size:6.6pt; font-weight:bold; margin-left:.7mm; background:#fff; }
+  /* (5) Origen del recurso: casillas cuadradas, la marcada con X en negro. */
+  .ck { display:inline-block; margin:0 1.4mm 0 0; white-space:nowrap; }
+  .cas .l + .ck { margin-left:1.4mm; }
+  .ck .lb { font-size:6pt; color:var(--tinta-clara); }
+  .ck .bx { display:inline-block; width:3mm; height:3mm; line-height:2.8mm; border:.6pt solid var(--tinta);
+            text-align:center; font-size:6.6pt; font-weight:bold; margin-left:.7mm; vertical-align:middle; }
+
+  /* ── (37) Detalle del producto ── */
   .det { width:100%; border-collapse:collapse; margin:0; }
-  .det th, .det td { border:.6pt solid #9aa5a0; padding:.6mm 1mm; font-size:6.4pt; line-height:1.18; }
-  .det thead th { background:var(--tinta); color:#fff; border-color:#0d3b20; font-weight:bold;
-                  font-size:6pt; letter-spacing:.2pt; text-transform:uppercase; text-align:center; }
-  .det tbody tr:nth-child(even) td { background:#f4f8f6; }
+  .det th, .det td { border-bottom:.5pt solid var(--linea-suave); padding:.7mm 1.2mm; font-size:6.8pt; line-height:1.2; }
+  .det thead th { background:var(--tenue); color:var(--tinta); font-weight:bold; font-size:6.2pt; letter-spacing:.3pt;
+                  text-transform:uppercase; text-align:center; vertical-align:bottom;
+                  border:.5pt solid var(--linea-suave); border-bottom-color:var(--linea); }
+  .det thead tr:first-child th { border-top:.6pt solid var(--linea); }
+  .det thead th:first-child { border-left:none; }
+  .det thead tr:first-child th:last-child, .det thead tr:last-child th:last-child { border-right:none; }
+  /* Producto, presentación y unidad dicen casi siempre lo mismo y son cortos:
+     en un renglón. El nombre científico se queda con el aire que sobra. */
+  .det tbody td:nth-child(3), .det tbody td:nth-child(4), .det tbody td:nth-child(6) { white-space:nowrap; }
   .det td.num { text-align:right; font-variant-numeric:tabular-nums; font-weight:bold; }
-  .det .vacio { text-align:center; color:var(--gris-suave); font-style:italic; padding:4mm; background:#fafbfa; }
-  .det tfoot td { background:#e7efea; border-color:#7f8f87; }
-  .det .tot { font-weight:bold; letter-spacing:.3pt; }
-  .pie { width:100%; border-collapse:collapse; margin-top:1.2mm; }
-  .pie td { padding:0 0 0 5mm; font-size:7pt; vertical-align:top; }
-  .pie .est { width:34%; padding:1.2mm; text-align:center; }
-  .pie .est.ok { background:var(--tinta); color:#fff; }
-  .pie .est.ok .reg { display:block; margin-top:.6mm; font-size:6.6pt; font-family:"Courier New",Courier,monospace; }
-  .pie .est.sin { border:.8pt dashed #9ca3af; background:#f6f7f6; }
-  .pie .est .sinreg { font-size:6.6pt; color:var(--gris); }
-  .pie .firma { font-size:6.2pt; letter-spacing:.3pt; text-transform:uppercase; color:var(--gris); }
-  .pie .firma .n { font-weight:bold; color:var(--tinta); }
-  .pie .linea { border-bottom:.7pt solid var(--linea); height:4.5mm; }
-  .legal { font-size:5.4pt; margin-top:1.2mm; line-height:1.25; color:var(--gris); }
+  .det .vacio { text-align:center; color:var(--gris-suave); font-style:italic; padding:4mm; }
+  .det tfoot td { border-top:.8pt solid var(--linea); border-bottom:none; padding-top:.9mm; }
+  .det tfoot td.tot:first-child { text-align:right; font-size:6.4pt; letter-spacing:.8pt; text-transform:uppercase; color:var(--gris); }
+  .det tfoot td.num.tot { font-size:9pt; }
+
+  /* ── Estado ante la ARFFS y firmas (39)(40) ── */
+  table.pie { width:100%; border-collapse:collapse; margin-top:2.2mm; }
+  table.pie td { padding:0 0 0 6mm; font-size:7pt; vertical-align:top; }
+  table.pie .est { width:34%; padding:1mm 2mm; text-align:left; }
+  table.pie .est.ok { border:.8pt solid var(--tinta); }
+  table.pie .est.ok b { font-size:6.8pt; letter-spacing:1pt; }
+  table.pie .est.ok .reg { display:block; margin-top:.5mm; font-size:8pt; font-weight:bold;
+                           font-family:"Courier New",Courier,monospace; }
+  table.pie .est.sin { border:.6pt dashed #9a9a9a; }
+  table.pie .est .sinreg { font-size:6.6pt; color:var(--gris); }
+  table.pie .firma { font-size:6.2pt; letter-spacing:.4pt; text-transform:uppercase; color:var(--gris); }
+  table.pie .firma .n { color:var(--gris-suave); }
+  table.pie .linea { border-bottom:.6pt solid var(--linea); height:4.2mm; }
+  .legal { font-size:6pt; margin:1.8mm 0 0; line-height:1.3; color:var(--gris); }
+
+  /* ── De dónde salen los datos (reproducción del SNIFFS o reconstrucción del libro) ──
+     Vive acá y no en la hoja de SERFOR: la reconstrucción del libro usa la
+     misma franja y sólo carga este CSS — sin estas reglas su marca se montaba
+     encima del texto. */
+  .gtf-proc { margin:0; font-size:6.4pt; line-height:1.45; color:var(--gris); }
+  /* La marca abre el párrafo y el texto corre a su lado y por debajo: una
+     franja de dos renglones, no un recuadro con la marca flotando. */
+  .gtf-proc .doc-sello { margin-right:1.8mm; vertical-align:.2mm; line-height:1.15; padding:.25mm 1.6mm; }
+  .gtf-proc .txt { display:inline; }
+  .gtf-proc .txt b { color:var(--tinta); }
 `;

@@ -19,6 +19,8 @@
 
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
   X,
@@ -134,6 +136,12 @@ export default function HealthFillAllModal({
   /* Escape ya lo maneja el atajo propio de esta pantalla: el hook pone
        el foco, la trampa de Tab y el scroll, no una segunda salida. */
   useModalAccesible(cajaRef, { onCerrar: saving ? undefined : onClose, cerrarConEscape: false, activo: open });
+  /** Ventana: se mueve, se achica y se fija (ADR-420). */
+  const ventana = useVentanaDeModal(open, {
+    ref: cajaRef,
+    aplicarTranslate: true,
+    claveMemoria: "health-fill-all",
+  });
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [openSections, setOpenSections] = useState<Set<string>>(
     new Set(["identidad", "pagos", "comercial"]),
@@ -341,19 +349,21 @@ export default function HealthFillAllModal({
   if (!open) return null;
 
   return (
-    <div ref={cajaRef} tabIndex={-1}
-      role="dialog"
-      aria-modal="true"
-      aria-label={`Rellenar datos de ${tenantName}`}
+    <div
       className="fixed inset-0 z-[80] flex items-start sm:items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto"
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget && !ventana.fijado) onClose();
       }}
       onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
     >
-      <div className="w-full max-w-3xl my-4 rounded-2xl bg-[var(--surface-canvas)] shadow-2xl flex flex-col max-h-[90vh]">
+      <div ref={cajaRef} tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Rellenar datos de ${tenantName}`}
+        className="relative w-full max-w-3xl my-4 rounded-2xl bg-[var(--surface-canvas)] shadow-2xl flex flex-col max-h-[90vh]"
+      >
         {/* Header */}
-        <div className="flex items-start justify-between gap-3 px-5 py-4 border-b border-[var(--rule-base)] shrink-0">
+        <div {...ventana.asaProps} className="flex items-start justify-between gap-3 px-5 py-4 border-b border-[var(--rule-base)] shrink-0">
           <div className="min-w-0">
             <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
               Rellenar datos del tenant
@@ -365,6 +375,9 @@ export default function HealthFillAllModal({
               /{tenantSlug} · Llená todo lo que falte y guardá una sola vez
             </p>
           </div>
+          <span className="ml-auto flex items-center gap-1 shrink-0">
+            <ControlesDeVentana ventana={ventana} />
+          </span>
           <button
             type="button"
             onClick={onClose}
@@ -679,6 +692,8 @@ export default function HealthFillAllModal({
             )}
           </button>
         </div>
+
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

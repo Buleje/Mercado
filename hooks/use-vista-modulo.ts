@@ -57,6 +57,9 @@ export const PARAMS_DE_VISTA = [
   /* El permiso abierto en Libro CTP → Contratos (ADR-432,
      `ficha-del-permiso-url`). Su sección viaja en `seccion`, ya listado. */
   "contrato",
+  /* La troza abierta en Libro CTP → Trozas, cuando se llega por el QR de una
+     etiqueta (ADR-436, `ctp-troza-etiquetas`). */
+  "troza",
 ] as const;
 
 /** Lee la vista que pide la URL, validada contra las que el módulo declara. */

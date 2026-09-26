@@ -16,7 +16,8 @@ export interface FiltroColumnaProps {
   /** Cómo se llama la columna: arma el `aria-label` del control. */
   label: string;
   value: string | undefined;
-  options: readonly FacetaOpcion[];
+  /** Sin `count`, la opción va sin número: un valor fijo (Con/Sin) que nadie contó. */
+  options: readonly (Omit<FacetaOpcion, "count"> & { count?: number })[];
   /** Traduce el valor crudo a etiqueta legible. */
   etiqueta?: (v: string) => string;
   onChange: (v: string | undefined) => void;
@@ -42,7 +43,7 @@ export function FiltroColumna({
       onChange={(e) => onChange(e.target.value || undefined)}
       aria-label={`Filtrar por ${label}`}
       title={`Filtrar por ${label}`}
-      className={`mt-1.5 block h-9 max-w-56 rounded-lg border-[1.5px] bg-[var(--surface-raised)] px-2 text-sm font-normal normal-case tracking-normal text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none disabled:opacity-50 ${
+      className={`mt-1.5 block h-9 min-w-24! max-w-56 rounded-lg border-[1.5px] bg-[var(--surface-raised)] px-2 text-sm font-normal normal-case tracking-normal text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none disabled:opacity-50 ${
         value ? "border-[var(--accent)] bg-primary/10 font-bold" : "border-[var(--rule-base)]"
       } ${className}`}
     >

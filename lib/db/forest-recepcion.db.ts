@@ -26,15 +26,21 @@ import { limaDateKey } from "@/lib/utils";
 import { auditCtpEsperando } from "@/lib/forestal/ctp-audit";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
 import {
+  bloqueoDeVencida,
   choquesConLaSierra,
   ddmm,
   diaDelLibro,
   mensajeDeChoque,
   revisarLlegada,
   sigueALaGuia,
+  vencidaAlLlegar,
+  vencimientoDeGuia,
+  type ConfirmacionDeVencida,
   type ContextoDeLlegada,
   type CorridaDelPermiso,
   type PiezaAserrada,
+  type VencidaAlLlegar,
+  type VigenciaDeGuia,
 } from "@/lib/forestal/fecha-de-llegada";
 import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
 import { CTP_TX_OPTS, CtpInvariantError } from "./forest-ctp-consumo.db";
@@ -51,6 +57,82 @@ const txt = (v: string | null | undefined) => (v ?? "").trim();
 
 /** Una fecha date-only `AAAA-MM-DD` como la guarda el libro: medianoche UTC. */
 const aFechaDelLibro = (dia: string) => new Date(`${dia}T00:00:00.000Z`);
+
+/** `AAAA-MM-DD` → «dd/mm/aaaa», para el rastro. */
+const dma = (dia: string) => `${ddmm(dia)}/${dia.slice(0, 4)}`;
+
+/**
+ * Expedición y vencimiento de cada guía (ADR-434 §Vencimiento), leídos de la
+ * ficha de SERFOR y del cuerpo transcrito. Sólo los CUATRO textos, por SQL:
+ * la ficha entera es un JSON grande (la lista de trozas va adentro) y para
+ * dos fechas no se trae. La interpretación es la misma función pura que usa
+ * la pantalla (`vencimientoDeGuia`).
+ */
+async function vigenciasDe(
+  db: Db,
+  tenantId: string,
+  gtfNumbers: readonly string[],
+): Promise<Map<string, VigenciaDeGuia>> {
+  const salida = new Map<string, VigenciaDeGuia>();
+  if (gtfNumbers.length === 0) return salida;
+  const filas = await db.$queryRaw<
+    { gtfNumber: string | null; exp: string | null; ven: string | null; ini: string | null; fin: string | null }[]
+  >`
+    SELECT "gtfNumber",
+      "serforGtf"->>'fechaExpedicion' AS exp,
+      "serforGtf"->>'fechaVencimiento' AS ven,
+      "gtfDatos"->'traslado'->>'fechaInicio' AS ini,
+      "gtfDatos"->'traslado'->>'fechaFin' AS fin
+    FROM "WoodEntry"
+    WHERE "tenantId" = ${tenantId} AND "gtfNumber" = ANY(${[...gtfNumbers]}::text[])
+      AND "deletedAt" IS NULL AND "status" NOT IN ('anulado', 'rechazado')
+    ORDER BY "gtfNumber", "id"
+  `;
+  const porGuia = new Map<string, { serforGtf: unknown; gtfDatos: unknown }[]>();
+  for (const f of Array.isArray(filas) ? filas : []) {
+    const gtf = txt(f?.gtfNumber);
+    if (!gtf) continue;
+    const lista = porGuia.get(gtf) ?? [];
+    lista.push({
+      serforGtf: { fechaExpedicion: f.exp, fechaVencimiento: f.ven },
+      gtfDatos: { traslado: { fechaInicio: f.ini, fechaFin: f.fin } },
+    });
+    porGuia.set(gtf, lista);
+  }
+  for (const [gtf, lineas] of porGuia) salida.set(gtf, vencimientoDeGuia(lineas));
+  return salida;
+}
+
+/**
+ * El rastro de una llegada confirmada después del vencimiento: un renglón por
+ * asiento, esperado (queda escrito ANTES de responder).
+ */
+async function auditarVencida(
+  tenantId: string,
+  ids: readonly string[],
+  gtf: string,
+  dia: string,
+  vencida: VencidaAlLlegar,
+  motivo: string,
+  user: string,
+  como: "recibió" | "corrigió la recepción de",
+): Promise<void> {
+  const detalle =
+    `${como === "recibió" ? "Recibió" : "Corrigió la recepción de"} la guía ${gtf} con llegada el ${dma(dia)}, ` +
+    `después de su vencimiento (${dma(vencida.vencimiento)}): confirmó que la madera viajó con la guía vencida · motivo: ${motivo.trim()}`;
+  await Promise.all(
+    ids.map((id) =>
+      auditCtpEsperando({
+        tenantId,
+        action: "ctp_ingreso_recepcion_vencida",
+        entity: "WoodEntry",
+        entityId: id,
+        detail: detalle,
+        user,
+      }),
+    ),
+  );
+}
 
 /**
  * Arma el contexto de varias guías con UNA tanda de consultas (no una por
@@ -87,7 +169,7 @@ async function armarContextos(
     ...new Set(asientos.filter((a) => !a.contratoId).map((a) => txt(a.originCode)).filter(Boolean)),
   ];
 
-  const [especiesTrozas, aserradas, congelados, corridas] = await Promise.all([
+  const [especiesTrozas, aserradas, congelados, corridas, vigencias] = await Promise.all([
     ids.length
       ? db.woodEntryTroza.findMany({
           where: { tenantId, woodEntryId: { in: ids } },
@@ -136,6 +218,7 @@ async function armarContextos(
           select: { contratoId: true, originCode: true, speciesCommon: true, entryDate: true },
         })
       : Promise.resolve([]),
+    vigenciasDe(db, tenantId, pedidas),
   ]);
 
   const recepcionDeAsiento = new Map(asientos.map((a) => [a.id, a.fechaRecepcion]));
@@ -206,6 +289,9 @@ async function armarContextos(
       guia: guias.at(-1) ?? null,
       asiento: dias(suyos.map((a) => a.entryDate))[0] ?? null,
       recepcion: recepciones[0] ?? null,
+      ultimaRecepcion: recepciones.at(-1) ?? null,
+      expedicion: vigencias.get(gtf)?.expedicion ?? null,
+      vencimiento: vigencias.get(gtf)?.vencimiento ?? null,
       recepcionPareja: recepciones.length === suyos.length && new Set(recepciones).size === 1,
       filasSinRecibir: suyos.filter((a) => !a.fechaRecepcion).map((a) => txt(a.speciesCommonName) || a.id),
       registradoEl: registros.length ? new Date(registros[0]).toISOString() : null,
@@ -238,6 +324,8 @@ export interface CorreccionDeRecepcion {
   trozas: number;
   /** Lo que la pantalla mostró como aviso: el servidor lo devuelve para el rastro. */
   avisos: string[];
+  /** La nueva llegada cae después del vencimiento y se confirmó: `AAAA-MM-DD` del vencimiento. */
+  vencida?: string;
 }
 
 export const ForestRecepcionDB = {
@@ -265,7 +353,12 @@ export const ForestRecepcionDB = {
    */
   async corregir(
     tenantId: string,
-    input: { gtfNumber: string; fecha: string; motivo: string },
+    /**
+     * `aceptaVencida` + `motivoVencida`: la nueva llegada cae después del
+     * vencimiento de la guía y quien corrige confirma que fue así (ADR-434
+     * §Vencimiento). Sin eso, esa fecha se rechaza con `GUIA_VENCIDA`.
+     */
+    input: { gtfNumber: string; fecha: string; motivo: string } & ConfirmacionDeVencida,
     user: string,
   ): Promise<CorreccionDeRecepcion | null> {
     if (!tenantId) throw new Error("tenantId is required");
@@ -300,7 +393,7 @@ export const ForestRecepcionDB = {
       const ctx = contextos[0];
       if (!ctx) return null;
 
-      const revision = revisarLlegada(input.fecha, ctx, hoy, "corregir");
+      const revision = revisarLlegada(input.fecha, ctx, hoy, "corregir", input);
       if (revision.bloqueo) {
         throw new CtpInvariantError(revision.bloqueo.mensaje, revision.bloqueo.codigo, {
           gtfNumber: gtf,
@@ -308,6 +401,7 @@ export const ForestRecepcionDB = {
           ...(revision.bloqueo.codigo === "T3_ASERRADA_ANTES_DE_LLEGAR"
             ? { corridas: choquesConLaSierra(input.fecha, ctx.piezasAserradas) }
             : {}),
+          ...(revision.vencida ? { vencimiento: revision.vencida.vencimiento } : {}),
         });
       }
 
@@ -343,12 +437,14 @@ export const ForestRecepcionDB = {
         asientos: ids.length,
         trozas: siguen.length,
         avisos: revision.avisos,
+        ...(revision.vencida ? { vencida: revision.vencida.vencimiento } : {}),
         ids,
+        vencidaConfirmada: revision.vencida ?? null,
       };
     }, CTP_TX_OPTS);
 
     if (!resultado) return null;
-    const { ids, ...salida } = resultado;
+    const { ids, vencidaConfirmada, ...salida } = resultado;
 
     /* El rastro va ANTES de responder: «queda auditada» es parte del pedido, y
        en Vercel lo que corre después de la respuesta puede no terminar. Un
@@ -359,9 +455,10 @@ export const ForestRecepcionDB = {
       `${ddmm(salida.despues)}/${salida.despues.slice(0, 4)}` +
       ` · ${salida.trozas} troza${salida.trozas === 1 ? "" : "s"} con la fecha nueva` +
       ` · motivo: ${motivo}` +
+      (vencidaConfirmada ? ` · después del vencimiento (${dma(vencidaConfirmada.vencimiento)}), confirmado` : "") +
       (salida.avisos.length > 0 ? ` · avisos al guardar: ${salida.avisos.join(" ")}` : "");
-    await Promise.all(
-      ids.map((id) =>
+    await Promise.all([
+      ...ids.map((id) =>
         auditCtpEsperando({
           tenantId,
           action: "ctp_ingreso_recepcion_corregida",
@@ -371,7 +468,21 @@ export const ForestRecepcionDB = {
           user,
         }),
       ),
-    );
+      ...(vencidaConfirmada
+        ? [
+            auditarVencida(
+              tenantId,
+              ids,
+              salida.gtfNumber,
+              salida.despues,
+              vencidaConfirmada,
+              input.motivoVencida ?? "",
+              user,
+              "corrigió la recepción de",
+            ),
+          ]
+        : []),
+    ]);
     invalidar(tenantId);
     return salida;
   },
@@ -384,7 +495,13 @@ export const ForestRecepcionDB = {
    *
    * No reemplaza el guard con lock de `exigirLlegadaCompatible`: lo adelanta.
    */
-  async revisarAntesDeRecibir(tenantId: string, woodEntryIds: readonly string[], dia: string): Promise<void> {
+  async revisarAntesDeRecibir(
+    tenantId: string,
+    woodEntryIds: readonly string[],
+    dia: string,
+    /** Llegada después del vencimiento confirmada con motivo (ADR-434 §Vencimiento). */
+    confirmacion: ConfirmacionDeVencida = {},
+  ): Promise<void> {
     if (!tenantId) throw new Error("tenantId is required");
     if (woodEntryIds.length === 0) return;
     const guias = await prisma.woodEntry.findMany({
@@ -401,11 +518,58 @@ export const ForestRecepcionDB = {
       cierres,
     );
     for (const ctx of contextos) {
-      const { bloqueo } = revisarLlegada(dia, ctx, hoy, "recibir");
+      const { bloqueo, vencida } = revisarLlegada(dia, ctx, hoy, "recibir", confirmacion);
       if (bloqueo) {
-        throw new CtpInvariantError(bloqueo.mensaje, bloqueo.codigo, { gtfNumber: ctx.gtfNumber, fecha: dia });
+        /* Con el N° de guía adelante: «Recepcionar seleccionadas» manda varias
+           guías en un pedido y el mensaje tiene que decir cuál frenó. */
+        throw new CtpInvariantError(
+          bloqueo.codigo === "GUIA_VENCIDA" ? `Guía ${ctx.gtfNumber} — ${bloqueo.mensaje}` : bloqueo.mensaje,
+          bloqueo.codigo,
+          { gtfNumber: ctx.gtfNumber, fecha: dia, ...(vencida ? { vencimiento: vencida.vencimiento } : {}) },
+        );
       }
     }
+  },
+
+  /**
+   * La guía vencida al RECIBIR un asiento (ADR-434 §Vencimiento), para cada
+   * puerta que fecha la llegada —la del bloque, la de la ficha y la de un
+   * asiento suelto—: si `dia` cae después del vencimiento de la guía y no se
+   * confirmó con motivo, frena con `GUIA_VENCIDA`. Confirmado, devuelve la
+   * vencida para que quien recibe la audite; sin vencimiento conocido, `null`.
+   */
+  async exigirGuiaVigente(
+    tenantId: string,
+    gtfNumber: string,
+    dia: string,
+    confirmacion: ConfirmacionDeVencida = {},
+  ): Promise<VencidaAlLlegar | null> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const gtf = txt(gtfNumber);
+    const vigencia = (await vigenciasDe(prisma, tenantId, [gtf])).get(gtf) ?? null;
+    const vencida = vencidaAlLlegar(dia, vigencia);
+    const bloqueo = bloqueoDeVencida(vencida, confirmacion);
+    if (bloqueo) {
+      throw new CtpInvariantError(`Guía ${gtf} — ${bloqueo.mensaje}`, bloqueo.codigo, {
+        gtfNumber: gtf,
+        fecha: dia,
+        vencimiento: vencida?.vencimiento,
+      });
+    }
+    return vencida;
+  },
+
+  /** El rastro de una recepción confirmada después del vencimiento (lo llama `recepcionar`). */
+  async auditarRecepcionVencida(
+    tenantId: string,
+    woodEntryId: string,
+    gtfNumber: string,
+    dia: string,
+    vencida: VencidaAlLlegar,
+    motivo: string,
+    user: string,
+  ): Promise<void> {
+    await auditarVencida(tenantId, [woodEntryId], gtfNumber, dia, vencida, motivo, user, "recibió");
   },
 
   /**

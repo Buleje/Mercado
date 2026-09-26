@@ -7,6 +7,8 @@ import { useState, useEffect, useCallback, useMemo, useRef, useId, type FormEven
 import dynamic from "next/dynamic";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import {
   Trash2, Plus, ChevronDown, ChevronUp, Package,
@@ -421,6 +423,7 @@ export default function PurchaseOrdersTab() {
   const createModalRef = useRef<HTMLDivElement>(null);
   const closeCreateModal = useCallback(() => setShowCreate(false), []);
   useModalAccesible(createModalRef, { onCerrar: closeCreateModal, activo: showCreate });
+  const ventanaCreate = useVentanaDeModal(showCreate, { ref: createModalRef, aplicarTranslate: true, claveMemoria: "oc-nueva-orden" });
 
   const recurringModalRef = useRef<HTMLDivElement>(null);
   const recurringTitleId = useId();
@@ -433,9 +436,11 @@ export default function PurchaseOrdersTab() {
   const addItemModalRef = useRef<HTMLDivElement>(null);
   const closeAddItemModal = useCallback(() => setShowAddItemModal(false), []);
   useModalAccesible(addItemModalRef, { onCerrar: closeAddItemModal, activo: showAddItemModal });
+  const ventanaAddItem = useVentanaDeModal(showAddItemModal, { ref: addItemModalRef, aplicarTranslate: true, claveMemoria: "oc-agregar-producto" });
   const scannerModalRef = useRef<HTMLDivElement>(null);
   const closeScannerModal = useCallback(() => setShowScanner(false), []);
   useModalAccesible(scannerModalRef, { onCerrar: closeScannerModal, activo: showScanner });
+  const ventanaScanner = useVentanaDeModal(showScanner, { ref: scannerModalRef, aplicarTranslate: true, claveMemoria: "oc-escanear-codigo" });
   const [addItemMode, setAddItemMode] = useState<"search" | "new">("search");
   /* Foco en el buscador sin `autoFocus` (jsx-a11y/no-autofocus): al abrir y al volver
      a «Buscar existente». En un rAF: useModalAccesible enfoca la X en el suyo,
@@ -1336,7 +1341,7 @@ export default function PurchaseOrdersTab() {
         <div
           role="presentation"
           className="fixed inset-0 z-modal flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 overflow-y-auto"
-          onClick={(e) => e.target === e.currentTarget && closeCreateModal()}
+          onClick={(e) => e.target === e.currentTarget && !ventanaCreate.fijado && closeCreateModal()}
         >
           <div
             ref={createModalRef}
@@ -1344,9 +1349,9 @@ export default function PurchaseOrdersTab() {
             aria-modal="true"
             aria-labelledby="create-oc-title"
             tabIndex={-1}
-            className="bg-[var(--surface-raised)] w-full sm:max-w-3xl sm:rounded-2xl rounded-t-3xl shadow-[var(--shadow-xl)] flex flex-col max-h-[92dvh] border-0 sm:border-2 sm:border-[var(--rule-base)] overflow-hidden">
+            className="relative bg-[var(--surface-raised)] w-full sm:max-w-3xl sm:rounded-2xl rounded-t-3xl shadow-[var(--shadow-xl)] flex flex-col max-h-[92dvh] border-0 sm:border-2 sm:border-[var(--rule-base)] overflow-hidden">
             {/* Header */}
-            <header className="px-5 sm:px-6 py-4 border-b-2 border-[var(--rule-base)] flex items-center gap-3 bg-linear-to-r from-primary/5 to-transparent">
+            <header {...ventanaCreate.asaProps} className="px-5 sm:px-6 py-4 border-b-2 border-[var(--rule-base)] flex items-center gap-3 bg-linear-to-r from-primary/5 to-transparent">
               <span className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-primary/15 border border-primary/30 shrink-0">
                 <FileText className="h-6 w-6 text-primary" strokeWidth={2.2} />
               </span>
@@ -1354,14 +1359,17 @@ export default function PurchaseOrdersTab() {
                 <SectionTitle id="create-oc-title" className="text-lg font-extrabold">Nueva orden de compra</SectionTitle>
                 <p className="text-sm text-[var(--text-secondary)]">Elige proveedor, suma productos y guarda. Después puedes marcarla como recibida cuando llegue la mercadería.</p>
               </div>
-              <button
-                type="button"
-                onClick={() => setShowCreate(false)}
-                aria-label="Cerrar"
-                className="shrink-0 h-10 w-10 inline-flex items-center justify-center rounded-xl text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
-              >
-                <X className="h-5 w-5" />
-              </button>
+              <span className="ml-auto flex items-center gap-1 shrink-0">
+                <ControlesDeVentana ventana={ventanaCreate} />
+                <button
+                  type="button"
+                  onClick={() => setShowCreate(false)}
+                  aria-label="Cerrar"
+                  className="h-10 w-10 inline-flex items-center justify-center rounded-xl text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </span>
             </header>
 
             {/* Body */}
@@ -1717,6 +1725,7 @@ export default function PurchaseOrdersTab() {
                 </div>
               </footer>
             </form>
+            <TiradorDeVentana ventana={ventanaCreate} />
           </div>
         </div>
       )}
@@ -2078,16 +2087,19 @@ export default function PurchaseOrdersTab() {
         <div
           role="presentation"
           className="fixed inset-0 z-modal flex items-end sm:items-center justify-center bg-black/50"
-          onClick={(e) => e.target === e.currentTarget && setShowAddItemModal(false)}
+          onClick={(e) => e.target === e.currentTarget && !ventanaAddItem.fijado && setShowAddItemModal(false)}
         >
-          <div ref={addItemModalRef} role="dialog" aria-modal="true" aria-label="Agregar producto" tabIndex={-1} className="bg-[var(--surface-raised)] w-full sm:max-w-lg sm:rounded-xl rounded-t-2xl max-h-[85dvh] flex flex-col overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-4 border-b">
+          <div ref={addItemModalRef} role="dialog" aria-modal="true" aria-label="Agregar producto" tabIndex={-1} className="relative bg-[var(--surface-raised)] w-full sm:max-w-lg sm:rounded-xl rounded-t-2xl max-h-[85dvh] flex flex-col overflow-hidden">
+            <div {...ventanaAddItem.asaProps} className="flex items-center justify-between px-5 py-4 border-b">
               <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
                 <Plus className="h-5 w-5 text-primary" /> Agregar producto
               </CardTitle>
-              <button aria-label="Cerrar" onClick={() => setShowAddItemModal(false)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
-                <X className="h-5 w-5 text-[var(--text-secondary)] dark:text-muted" />
-              </button>
+              <span className="ml-auto flex items-center gap-1">
+                <ControlesDeVentana ventana={ventanaAddItem} />
+                <button aria-label="Cerrar" onClick={() => setShowAddItemModal(false)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
+                  <X className="h-5 w-5 text-[var(--text-secondary)] dark:text-muted" />
+                </button>
+              </span>
             </div>
             {/* Tabs */}
             <div className="flex border-b px-5 shrink-0">
@@ -2247,6 +2259,7 @@ export default function PurchaseOrdersTab() {
                 </form>
               )}
             </div>
+            <TiradorDeVentana ventana={ventanaAddItem} />
           </div>
         </div>
       )}
@@ -2296,15 +2309,19 @@ export default function PurchaseOrdersTab() {
 
       {/* Barcode scanner modal */}
       {showScanner && (
-        <div className="fixed inset-0 z-modal flex items-end sm:items-center justify-center bg-black/50" role="presentation" onClick={(e) => e.target === e.currentTarget && setShowScanner(false)}>
-          <div ref={scannerModalRef} role="dialog" aria-modal="true" aria-label="Escanear código de barras" tabIndex={-1} className="bg-[var(--surface-raised)] w-full sm:max-w-md sm:rounded-xl rounded-t-2xl overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-4 border-b">
+        <div className="fixed inset-0 z-modal flex items-end sm:items-center justify-center bg-black/50" role="presentation" onClick={(e) => e.target === e.currentTarget && !ventanaScanner.fijado && setShowScanner(false)}>
+          <div ref={scannerModalRef} role="dialog" aria-modal="true" aria-label="Escanear código de barras" tabIndex={-1} className="relative bg-[var(--surface-raised)] w-full sm:max-w-md sm:rounded-xl rounded-t-2xl overflow-hidden">
+            <div {...ventanaScanner.asaProps} className="flex items-center justify-between px-5 py-4 border-b">
               <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Escanear código de barras</CardTitle>
-              <button aria-label="Cerrar" onClick={() => setShowScanner(false)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors"><X className="h-5 w-5 text-[var(--text-secondary)] dark:text-muted" /></button>
+              <span className="ml-auto flex items-center gap-1">
+                <ControlesDeVentana ventana={ventanaScanner} />
+                <button aria-label="Cerrar" onClick={() => setShowScanner(false)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors"><X className="h-5 w-5 text-[var(--text-secondary)] dark:text-muted" /></button>
+              </span>
             </div>
             <div className="p-4">
               <BarcodeScanner onDetected={handleScan} onClose={() => setShowScanner(false)} />
             </div>
+            <TiradorDeVentana ventana={ventanaScanner} />
           </div>
         </div>
       )}

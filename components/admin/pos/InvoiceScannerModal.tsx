@@ -3,6 +3,8 @@
 import { DataTable, LoadingState, SectionTitle } from "@buleje/design-system";
 import { useState, useRef, useCallback, useEffect, useId } from "react";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import {
   Camera,
   Upload,
@@ -246,6 +248,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
   const titleId = useId();
   const modalRef = useRef<HTMLDivElement>(null);
   useModalAccesible(modalRef, { onCerrar: handleClose, activo: open });
+  const ventana = useVentanaDeModal(open, { ref: modalRef, aplicarTranslate: true, claveMemoria: "pos-escanear-factura" });
 
   if (!open) return null;
 
@@ -260,21 +263,24 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
     <div className="modal-backdrop flex items-center justify-center p-4">
       <div ref={modalRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)]">
         {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)] bg-[var(--surface-raised)] rounded-t-2xl">
+        <div {...ventana.asaProps} className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)] bg-[var(--surface-raised)] rounded-t-2xl">
           <div className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-primary" />
             <SectionTitle id={titleId} className="text-base font-semibold text-[var(--text-primary)]">
               Escanear Factura
             </SectionTitle>
           </div>
-          <button
-            type="button"
-            onClick={handleClose}
-            className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] transition-colors"
-            aria-label="Cerrar"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          <span className="ml-auto flex items-center gap-1">
+            <ControlesDeVentana ventana={ventana} />
+            <button
+              type="button"
+              onClick={handleClose}
+              className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] transition-colors"
+              aria-label="Cerrar"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </span>
         </div>
 
         {/* Body */}
@@ -541,6 +547,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
 
         {/* Hidden canvas for capturing */}
         <canvas ref={canvasRef} className="hidden" />
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

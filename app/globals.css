@@ -1472,6 +1472,14 @@ body {
  * no cambian en nada, porque no hay ninguna utility peleando esas
  * propiedades. */
 @layer components {
+/* Columnas que se arrastran (useOrdenColumnas, 2026-09-26): la mano dice «se
+   puede mover», la columna que viaja se atenúa y una raya del acento marca de
+   qué lado cae. Inset y no borde: un borde movería el ancho de la columna. */
+thead th[data-col] { cursor: grab; }
+thead th[data-col] :is(input, textarea, select, details[open] > :not(summary)) { cursor: auto; }
+thead th[data-arrastrando] { opacity: 0.45; cursor: grabbing; }
+thead th[data-soltar="antes"] { box-shadow: inset 3px 0 0 var(--accent); }
+thead th[data-soltar="despues"] { box-shadow: inset -3px 0 0 var(--accent); }
 .modal-backdrop {
   position: fixed;
   inset: 0;

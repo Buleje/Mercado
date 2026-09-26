@@ -11,6 +11,7 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import { DataTable, StatCard } from "@buleje/design-system";
 import { FiltroColumnaMulti } from "@/components/admin/shared/filtros-columna";
+import { useOrdenColumnas, EnOrden, BotonRestablecerColumnas } from "@/components/admin/shared/columnas-ordenables";
 import type { FacetaOpcion } from "@/lib/admin/filtros-columna";
 import {
   HeartHandshake,
@@ -198,6 +199,8 @@ function MembersTab({
   // en la cabecera) — vivían como dos `<select>` sueltos en la barra.
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [planFilter, setPlanFilter] = useState<string[]>([]);
+  // Columnas de la tabla: arrastrar el título para reordenarlas.
+  const ordenMiembros = useOrdenColumnas("socio-miembros", ["miembro", "plan", "renovacion", "cashback", "pedidos", "estado"]);
 
   const filtered = useMemo(() => {
     return members.filter((m) => {
@@ -251,6 +254,7 @@ function MembersTab({
           <Download className="h-4 w-4" />
           CSV
         </button>
+        <BotonRestablecerColumnas cambiado={ordenMiembros.cambiado} onRestablecer={ordenMiembros.restablecer} />
       </div>
 
       {/* En el celular la tabla es tarjetas (`.admin-mobile-cards` esconde el
@@ -294,35 +298,44 @@ function MembersTab({
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <DataTable filtrable className="w-full text-sm">
-              <thead className="bg-[var(--surface-alt)] border-b border-[var(--rule-base)]">
+              <thead ref={ordenMiembros.refCabecera} className="bg-[var(--surface-alt)] border-b border-[var(--rule-base)]">
                 <tr>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Miembro</th>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide hidden sm:table-cell">
-                    <span className="block">Plan</span>
-                    <FiltroColumnaMulti
-                      label="Plan"
-                      value={planFilter}
-                      options={planOptions}
-                      etiqueta={(v) => PLAN_LABELS[v as SocioMember["plan"]] ?? v}
-                      onChange={setPlanFilter}
-                      placeholder="Todos"
-                    />
-                  </th>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide hidden md:table-cell">Renovación</th>
-                  <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide hidden lg:table-cell">Cashback</th>
-                  <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide hidden lg:table-cell">Pedidos</th>
-                  <th className="text-center px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">
-                    <span className="block">Estado</span>
-                    <FiltroColumnaMulti
-                      label="Estado"
-                      value={statusFilter}
-                      options={statusOptions}
-                      etiqueta={(v) => STATUS_LABELS[v as SocioMember["status"]] ?? v}
-                      onChange={setStatusFilter}
-                      placeholder="Todos"
-                      className="mx-auto"
-                    />
-                  </th>
+                  <EnOrden
+                    orden={ordenMiembros.orden}
+                    celdas={{
+                      miembro: <th data-col="miembro" className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Miembro</th>,
+                      plan: (
+                        <th data-col="plan" className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide hidden sm:table-cell">
+                          <span className="block">Plan</span>
+                          <FiltroColumnaMulti
+                            label="Plan"
+                            value={planFilter}
+                            options={planOptions}
+                            etiqueta={(v) => PLAN_LABELS[v as SocioMember["plan"]] ?? v}
+                            onChange={setPlanFilter}
+                            placeholder="Todos"
+                          />
+                        </th>
+                      ),
+                      renovacion: <th data-col="renovacion" className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide hidden md:table-cell">Renovación</th>,
+                      cashback: <th data-col="cashback" className="text-right px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide hidden lg:table-cell">Cashback</th>,
+                      pedidos: <th data-col="pedidos" className="text-right px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide hidden lg:table-cell">Pedidos</th>,
+                      estado: (
+                        <th data-col="estado" className="text-center px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">
+                          <span className="block">Estado</span>
+                          <FiltroColumnaMulti
+                            label="Estado"
+                            value={statusFilter}
+                            options={statusOptions}
+                            etiqueta={(v) => STATUS_LABELS[v as SocioMember["status"]] ?? v}
+                            onChange={setStatusFilter}
+                            placeholder="Todos"
+                            className="mx-auto"
+                          />
+                        </th>
+                      ),
+                    }}
+                  />
                   <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Acciones</th>
                 </tr>
               </thead>
@@ -343,36 +356,41 @@ function MembersTab({
                 )}
                 {filtered.map((m) => (
                   <tr key={m.id} className="hover:bg-[var(--surface-alt)] transition-colors">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <div className="h-8 w-8 rounded-full bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] text-white flex items-center justify-center text-xs font-bold shrink-0">
-                          {m.name.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <p className="font-bold text-[var(--text-primary)] text-sm">{m.name}</p>
-                          <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{m.phone}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 hidden sm:table-cell">
-                      <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-bold bg-[var(--rule-soft)] text-[var(--text-primary)]">
-                        {PLAN_LABELS[m.plan]}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-[var(--text-secondary)] hidden md:table-cell">
-                      {fmtDate(m.renewsAt)}
-                    </td>
-                    <td className="px-4 py-3 text-right font-bold text-primary hidden lg:table-cell">
-                      {fmt(m.totalCashback)}
-                    </td>
-                    <td className="px-4 py-3 text-right text-[var(--text-secondary)] hidden lg:table-cell">
-                      {m.ordersCount}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <span className={cn("inline-flex px-2.5 py-1 rounded-full text-xs font-bold", STATUS_STYLES[m.status])}>
-                        {STATUS_LABELS[m.status]}
-                      </span>
-                    </td>
+                    <EnOrden
+                      orden={ordenMiembros.orden}
+                      celdas={{
+                        miembro: (
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              <div className="h-8 w-8 rounded-full bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] text-white flex items-center justify-center text-xs font-bold shrink-0">
+                                {m.name.charAt(0).toUpperCase()}
+                              </div>
+                              <div>
+                                <p className="font-bold text-[var(--text-primary)] text-sm">{m.name}</p>
+                                <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{m.phone}</p>
+                              </div>
+                            </div>
+                          </td>
+                        ),
+                        plan: (
+                          <td className="px-4 py-3 hidden sm:table-cell">
+                            <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-bold bg-[var(--rule-soft)] text-[var(--text-primary)]">
+                              {PLAN_LABELS[m.plan]}
+                            </span>
+                          </td>
+                        ),
+                        renovacion: <td className="px-4 py-3 text-[var(--text-secondary)] hidden md:table-cell">{fmtDate(m.renewsAt)}</td>,
+                        cashback: <td className="px-4 py-3 text-right font-bold text-primary hidden lg:table-cell">{fmt(m.totalCashback)}</td>,
+                        pedidos: <td className="px-4 py-3 text-right text-[var(--text-secondary)] hidden lg:table-cell">{m.ordersCount}</td>,
+                        estado: (
+                          <td className="px-4 py-3 text-center">
+                            <span className={cn("inline-flex px-2.5 py-1 rounded-full text-xs font-bold", STATUS_STYLES[m.status])}>
+                              {STATUS_LABELS[m.status]}
+                            </span>
+                          </td>
+                        ),
+                      }}
+                    />
                     <td className="px-4 py-3 text-right">
                       <button
                         onClick={() => onSelect(m)}

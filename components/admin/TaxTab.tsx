@@ -13,6 +13,10 @@ import StatusBadge from "./shared/StatusBadge";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { FiltroColumnaMulti } from "@/components/admin/shared/filtros-columna";
 import type { FacetaOpcion } from "@/lib/admin/filtros-columna";
+import { BotonRestablecerColumnas, EnOrden, useOrdenColumnas } from "@/components/admin/shared/columnas-ordenables";
+
+/** Las columnas de datos en su orden de fábrica (Acc. es fija, al final). */
+const COLS_TAX = ["fecha", "tipo", "doc", "entidad", "base", "igv", "total", "estado"] as const;
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -67,6 +71,7 @@ export default function TaxTab() {
   /** Filtro de la columna "Estado" (Pendiente/Declarado) — antes no existía
    *  ningún filtro sobre esa columna. */
   const [estadoFilter, setEstadoFilter] = useState<string[]>([]);
+  const orden = useOrdenColumnas("tax-libro-tributario", COLS_TAX);
 
   useEffect(() => {
     let active = true;
@@ -238,53 +243,72 @@ export default function TaxTab() {
                 {v === "resumen" ? "Todos" : v === "ventas" ? "Libro de ventas" : "Libro de compras"}
               </button>
             ))}
+            <BotonRestablecerColumnas cambiado={orden.cambiado} onRestablecer={orden.restablecer} />
           </div>
 
           {/* Table */}
           <div className="bg-[var(--surface-raised)]">
             <DataTable filtrable className="min-w-[600px]">
-              <thead>
+              <thead ref={orden.refCabecera}>
                 <tr>
-                  <th>Fecha</th>
-                  <th>Tipo</th>
-                  <th className="hidden sm:table-cell">Doc</th>
-                  <th>Entidad</th>
-                  <th className="text-right hidden sm:table-cell">Base</th>
-                  <th className="text-right">IGV</th>
-                  <th className="text-right">Total</th>
-                  <th className="text-center hidden sm:table-cell">
-                    <span className="block">Estado</span>
-                    <FiltroColumnaMulti
-                      label="Estado"
-                      value={estadoFilter}
-                      options={estadoOptions}
-                      etiqueta={(v) => (v === "declarado" ? "Declarado" : "Pendiente")}
-                      onChange={setEstadoFilter}
-                      placeholder="Todos"
-                      className="mx-auto"
-                    />
-                  </th>
+                  <EnOrden
+                    orden={orden.orden}
+                    celdas={{
+                      fecha: <th data-col="fecha">Fecha</th>,
+                      tipo: <th data-col="tipo">Tipo</th>,
+                      doc: <th data-col="doc" className="hidden sm:table-cell">Doc</th>,
+                      entidad: <th data-col="entidad">Entidad</th>,
+                      base: <th data-col="base" className="text-right hidden sm:table-cell">Base</th>,
+                      igv: <th data-col="igv" className="text-right">IGV</th>,
+                      total: <th data-col="total" className="text-right">Total</th>,
+                      estado: (
+                        <th data-col="estado" className="text-center hidden sm:table-cell">
+                          <span className="block">Estado</span>
+                          <FiltroColumnaMulti
+                            label="Estado"
+                            value={estadoFilter}
+                            options={estadoOptions}
+                            etiqueta={(v) => (v === "declarado" ? "Declarado" : "Pendiente")}
+                            onChange={setEstadoFilter}
+                            placeholder="Todos"
+                            className="mx-auto"
+                          />
+                        </th>
+                      ),
+                    }}
+                  />
                   <th className="text-center hidden sm:table-cell">Acc.</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredLines.map(line => (
                   <tr key={line.id}>
-                    <td className="text-xs text-[var(--text-secondary)] dark:text-muted">{fmtDate(line.date)}</td>
-                    <td>
-                      <StatusBadge variant={line.type === "venta" ? "success" : "neutral"} label={line.type === "venta" ? "V" : "C"} size="sm" />
-                    </td>
-                    <td className="text-xs text-[var(--text-secondary)] dark:text-muted hidden sm:table-cell font-mono">{line.serie}-{line.number}</td>
-                    <td>
-                      <p className="text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate max-w-[140px]">{line.entity}</p>
-                      <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">{line.entityDoc}</p>
-                    </td>
-                    <td className="text-right text-sm text-[var(--text-secondary)] dark:text-muted hidden sm:table-cell">{fmt(line.base)}</td>
-                    <td className="text-right font-semibold text-[var(--data-warning-500)]">{fmt(line.igv)}</td>
-                    <td className="text-right font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(line.total)}</td>
-                    <td className="text-center hidden sm:table-cell">
-                      <StatusBadge variant={line.status === "declarado" ? "success" : "pending"} label={line.status === "declarado" ? "Declarado" : "Pendiente"} size="sm" />
-                    </td>
+                    <EnOrden
+                      orden={orden.orden}
+                      celdas={{
+                        fecha: <td className="text-xs text-[var(--text-secondary)] dark:text-muted">{fmtDate(line.date)}</td>,
+                        tipo: (
+                          <td>
+                            <StatusBadge variant={line.type === "venta" ? "success" : "neutral"} label={line.type === "venta" ? "V" : "C"} size="sm" />
+                          </td>
+                        ),
+                        doc: <td className="text-xs text-[var(--text-secondary)] dark:text-muted hidden sm:table-cell font-mono">{line.serie}-{line.number}</td>,
+                        entidad: (
+                          <td>
+                            <p className="text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate max-w-[140px]">{line.entity}</p>
+                            <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">{line.entityDoc}</p>
+                          </td>
+                        ),
+                        base: <td className="text-right text-sm text-[var(--text-secondary)] dark:text-muted hidden sm:table-cell">{fmt(line.base)}</td>,
+                        igv: <td className="text-right font-semibold text-[var(--data-warning-500)]">{fmt(line.igv)}</td>,
+                        total: <td className="text-right font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(line.total)}</td>,
+                        estado: (
+                          <td className="text-center hidden sm:table-cell">
+                            <StatusBadge variant={line.status === "declarado" ? "success" : "pending"} label={line.status === "declarado" ? "Declarado" : "Pendiente"} size="sm" />
+                          </td>
+                        ),
+                      }}
+                    />
                     <td className="text-center hidden sm:table-cell">
                       {line.status === "pendiente" && (
                         <button onClick={() => handleDeclare(line.id)} className="text-xs px-2.5 py-1 rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/20 font-semibold transition-colors">Declarar</button>

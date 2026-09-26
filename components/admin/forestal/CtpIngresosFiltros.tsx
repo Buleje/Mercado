@@ -13,6 +13,7 @@
 import { ArrowLeftRight, BarChart3, Coins, Download, FileStack, Plus, RefreshCw, Search, X } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import CtpFiltrosPanel, { BotonFiltros, BTN_FILTRO, usePanelFiltros } from "./ctp-filtros-panel";
+import { etiquetaDePermiso, type FiltroMovil } from "./CtpGuiasFiltrosCabecera";
 import { STATUS_META, productLabel, type WoodEntryStats, type WoodEntryStatus } from "./ctp-shared";
 
 const STATUS_ORDER: WoodEntryStatus[] = ["pendiente", "validado", "procesado", "rechazado", "anulado"];
@@ -95,6 +96,15 @@ export interface CtpIngresosFiltrosProps {
   onPonerPrecio?: () => void;
   /** Abre «Acomodar trozas en su especie» para todas las guías (ADR-435). Sin esto no se ofrece. */
   onAcomodar?: () => void;
+  /**
+   * Los autofiltros de la cabecera (fecha, documento, N° SNIFFS, cantidad…)
+   * para el celular, donde no hay tabla (Brandon, 2026-09-26). Son los MISMOS
+   * nodos que arma `filtrosDeCabeceraGuiasMovil`: un estado, dos lugares.
+   */
+  filtrosMovil?: FiltroMovil[];
+  /** Hay algún autofiltro de columna puesto (para ofrecer quitarlos). */
+  hayFiltroMovil?: boolean;
+  onLimpiarMovil?: () => void;
 }
 
 export default function CtpIngresosFiltros({
@@ -123,6 +133,9 @@ export default function CtpIngresosFiltros({
   antes,
   onPonerPrecio,
   onAcomodar,
+  filtrosMovil,
+  hayFiltroMovil = false,
+  onLimpiarMovil,
 }: CtpIngresosFiltrosProps) {
   /* Una COLUMNA acotada cuenta 1, tenga uno o cinco valores elegidos. */
   const puesto = (v: string | readonly string[] | undefined) => (Array.isArray(v) ? v.length > 0 : !!v);
@@ -130,6 +143,7 @@ export default function CtpIngresosFiltros({
     (puesto(facetas.species) ? 1 : 0) +
     (puesto(facetas.provider) ? 1 : 0) +
     (puesto(facetas.product) ? 1 : 0) +
+    (puesto(facetas.permiso) ? 1 : 0) +
     (facetas.cites !== undefined ? 1 : 0) +
     (facetas.late ? 1 : 0) +
     (facetas.sinOrigen ? 1 : 0);
@@ -326,7 +340,34 @@ export default function CtpIngresosFiltros({
             { id: "species", label: "Especie", value: facetas.species, options: stats?.species ?? [], soloMobile: enCabecera },
             { id: "provider", label: "Proveedor", value: facetas.provider, options: stats?.providers ?? [], soloMobile: enCabecera },
             { id: "product", label: "Producto", value: facetas.product, options: stats?.products ?? [], etiqueta: productLabel },
+            /* El permiso vive en la cabecera junto al proveedor; en el celular no tenía dónde elegirse. */
+            { id: "permiso", label: "Permiso", value: facetas.permiso, options: stats?.permisos ?? [], soloMobile: enCabecera, etiqueta: etiquetaDePermiso(stats) },
           ]}
+          extra={
+            filtrosMovil && filtrosMovil.length > 0 ? (
+              <div className="sm:hidden" data-testid="filtros-columna-movil">
+                <span className="text-sm font-bold text-[var(--text-primary)]">Por columna</span>
+                <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-3">
+                  {filtrosMovil.map((f) => (
+                    <div key={f.id} className="flex min-w-0 flex-col">
+                      <span className="text-sm font-medium text-[var(--text-secondary)]">{f.label}</span>
+                      {f.nodo}
+                    </div>
+                  ))}
+                </div>
+                {hayFiltroMovil && onLimpiarMovil && (
+                  <button
+                    type="button"
+                    onClick={onLimpiarMovil}
+                    className="mt-3 inline-flex h-11 items-center gap-1 rounded-full px-3 text-sm font-bold text-[var(--text-secondary)] underline-offset-2 hover:text-[var(--text-primary)] hover:underline"
+                  >
+                    <X className="h-3.5 w-3.5" aria-hidden />
+                    Quitar los filtros por columna
+                  </button>
+                )}
+              </div>
+            ) : undefined
+          }
           /* Una marca sólo se ofrece si HAY qué marcar en el período.
              Las tres viven además como pastilla arriba (`BarraDeuda`) y como
              tarjeta —CITES—, así que dibujarlas siempre significaba ofrecer el

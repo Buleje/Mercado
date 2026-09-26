@@ -81,13 +81,27 @@ export function TablaCtp({
   );
 }
 
-/** Cabecera estándar: sticky, en mayúsculas chicas, sobre el fondo hundido. */
-export function TheadCtp({ children }: { children: React.ReactNode }) {
+/**
+ * Cabecera estándar: sticky, en mayúsculas chicas, sobre el fondo hundido.
+ *
+ * `ref` (React 19, sin `forwardRef`): la cuelga `useOrdenColumnas` cuando la
+ * tabla deja arrastrar sus columnas — sin uso, no cambia nada.
+ */
+export function TheadCtp({
+  children,
+  ref,
+}: {
+  children: React.ReactNode;
+  ref?: React.Ref<HTMLTableSectionElement>;
+}) {
   return (
     /* `align-top`: las cabeceras llevan controles debajo del título (buscador,
        autofiltro) y sin esto las columnas sin control quedan centradas contra
        ellos, como si el título flotara. */
-    <thead className="sticky top-0 z-10 bg-[var(--surface-sunken)] text-left align-top text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+    <thead
+      ref={ref}
+      className="sticky top-0 z-10 bg-[var(--surface-sunken)] text-left align-top text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]"
+    >
       {children}
     </thead>
   );
@@ -111,6 +125,8 @@ export function ThOrdenable<C extends string>({
   align = "left",
   className,
   children,
+  /** El id que arrastra `useOrdenColumnas`, cuando la tabla lo permite. */
+  col,
 }: {
   campo: C;
   orden: { by: C; dir: "asc" | "desc" };
@@ -118,11 +134,13 @@ export function ThOrdenable<C extends string>({
   align?: "left" | "right";
   className?: string;
   children: React.ReactNode;
+  col?: string;
 }) {
   const activo = orden.by === campo;
   const Icono = !activo ? ArrowUpDown : orden.dir === "asc" ? ArrowUp : ArrowDown;
   return (
     <th
+      data-col={col}
       aria-sort={activo ? (orden.dir === "asc" ? "ascending" : "descending") : "none"}
       className={`px-3 py-2 font-bold ${align === "right" ? "text-right" : ""} ${className ?? ""}`}
     >

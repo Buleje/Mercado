@@ -13,7 +13,7 @@
  * cero es una trampa.
  */
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { ChevronDown, SlidersHorizontal, X } from "@buleje/design-system/icons";
 import { usePopoverCabecera } from "@/components/admin/shared/filtros-columna";
 
@@ -131,6 +131,7 @@ export default function CtpFiltrosPanel({
   onToggle,
   onLimpiar,
   tituloToggles = "Marcas",
+  extra,
 }: {
   id: string;
   selects: FiltroSelect[];
@@ -140,6 +141,8 @@ export default function CtpFiltrosPanel({
   onToggle: (id: string) => void;
   onLimpiar: () => void;
   tituloToggles?: string;
+  /** Campos propios de una vista (p. ej. los autofiltros de columna en el celular), después de los selects. */
+  extra?: ReactNode;
 }) {
   return (
     <div
@@ -149,6 +152,7 @@ export default function CtpFiltrosPanel({
       {selects.map((s) => (
         <SelectFaceta key={s.id} filtro={s} onChange={(v) => onSelect(s.id, v)} />
       ))}
+      {extra}
       {/* Sin nada más que las marcas, el panel quedaría mudo sobre dónde fueron
           a parar los filtros de columna. Se dice, una sola vez y sólo cuando
           hay tabla (≥640px). */}

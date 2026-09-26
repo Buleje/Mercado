@@ -395,6 +395,32 @@ export function nombresDelLibroQueCoinciden(
   ).map((x) => x.nombre);
 }
 
+/**
+ * La ficha del Directorio que corresponde al titular de una guía (alta de
+ * ingreso, Brandon 2026-09-25: «que el proveedor quede enlazado a su ficha»).
+ *
+ * Primero por DOCUMENTO, exacto: el RUC que trae la guía no depende de cómo se
+ * escribió el nombre. Si no hay documento o no coincide, por nombre con la
+ * misma vara laxa que usa la ficha para armar su historial
+ * (`nombresDelLibroQueCoinciden`) — «COMUNIDAD NATIVA SANTA ROSA DE CHIVIS»
+ * encuentra a la ficha «COMUNIDAD SANTA ROSA DE CHIVIS». `por` dice cuál de las
+ * dos fue: el nombre sólo sugiere, el documento enlaza.
+ */
+export function parteDelTitular<T extends { nombre: string; docNumero?: string | null }>(
+  partes: readonly T[],
+  titular: { nombre: string; documento?: string | null },
+): { parte: T; por: "documento" | "nombre" } | null {
+  const doc = normalizarDocumento(titular.documento ?? "");
+  if (doc.length >= 8) {
+    const porDoc = partes.find((p) => normalizarDocumento(p.docNumero ?? "") === doc);
+    if (porDoc) return { parte: porDoc, por: "documento" };
+  }
+  const nombre = titular.nombre.trim();
+  if (!nombre) return null;
+  const porNombre = partes.find((p) => nombresDelLibroQueCoinciden(p.nombre, [nombre]).length > 0);
+  return porNombre ? { parte: porNombre, por: "nombre" } : null;
+}
+
 export function partesParecidas<T extends { id?: string; nombre: string }>(
   nombre: string,
   existentes: readonly T[],

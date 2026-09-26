@@ -88,12 +88,24 @@ interface UsageStats {
 
 const USAGE_STORAGE = "chat-ia-usage";
 
+/** free/starter/pro/enterprise (lib/billing/wire-up/usage-tiers.ts) → copy en español. */
+const PLAN_LABELS_ES: Record<string, string> = {
+  free: "Gratis",
+  starter: "Starter",
+  pro: "Pro",
+  enterprise: "Empresa",
+};
+
+function etiquetaPlan(plan: string): string {
+  return PLAN_LABELS_ES[plan.toLowerCase()] ?? plan;
+}
+
 function useUsage() {
   const [usage, setUsage] = useState<UsageStats>({
     used: 0,
     limit: 100,
     resetAt: getNextReset(),
-    plan: "Free",
+    plan: "free",
   });
 
   useEffect(() => {
@@ -206,13 +218,13 @@ export default function ChatIAModule() {
   );
 
   const usageBar = (
-    <div className="shrink-0 min-w-[180px]">
-      <div className="flex items-center justify-between mb-1">
+    <div className="shrink-0 min-w-[220px]">
+      <div className="flex items-center justify-between gap-3 mb-1">
         <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-          Consultas · {usage.plan}
+          Consultas · {etiquetaPlan(usage.plan)}
         </span>
-        <span className="text-xs font-extrabold tabular-nums text-[var(--text-primary)]">
-          {usage.used} <span className="text-[var(--text-tertiary)] font-semibold">/ {usage.limit}</span>
+        <span className="text-xs font-extrabold tabular-nums text-[var(--text-primary)] whitespace-nowrap">
+          {usage.used} de {usage.limit}
         </span>
       </div>
       <div className="h-1.5 rounded-full bg-[var(--surface-sunken)] overflow-hidden">
@@ -220,7 +232,7 @@ export default function ChatIAModule() {
           className={cn("h-full rounded-full transition-all duration-300", usageColor)}
           style={{ width: `${usagePct}%` }}
           role="progressbar"
-          aria-label={`Consultas usadas del plan ${usage.plan}`}
+          aria-label={`Consultas usadas del plan ${etiquetaPlan(usage.plan)}`}
           aria-valuenow={usage.used}
           aria-valuemin={0}
           aria-valuemax={usage.limit}

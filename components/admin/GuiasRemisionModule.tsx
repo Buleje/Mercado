@@ -6,6 +6,8 @@ import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import { useState, useEffect, useCallback, useRef, useId } from "react";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import type { ReactNode } from "react";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import {
@@ -497,6 +499,12 @@ export default function GuiasRemisionModule() {
   // no cerraba nunca (smoke 2026-09-13). El hook la cierra desde cualquier foco.
   useModalAccesible(detailPanelRef, { onCerrar: cerrarSelected, activo: !!selected, cerrarConEscape: false });
   useModalAccesible(newPanelRef, { onCerrar: cerrarNew, activo: showNew });
+  /** Ventana: se mueve, se achica y se fija (ADR-420). */
+  const ventanaNew = useVentanaDeModal(showNew, {
+    ref: newPanelRef,
+    aplicarTranslate: true,
+    claveMemoria: "guias-remision-nueva",
+  });
 
   // ── Fetch guias ──
   const fetchGuias = useCallback(async () => {
@@ -1204,13 +1212,16 @@ export default function GuiasRemisionModule() {
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
               className="fixed inset-0 z-modal flex items-start justify-center p-4 overflow-y-auto"
-              onClick={e => e.target === e.currentTarget && setShowNew(false)}
+              onClick={e => e.target === e.currentTarget && !ventanaNew.fijado && setShowNew(false)}
             >
               <div ref={newPanelRef} role="dialog" aria-modal="true" aria-labelledby={newTitleId} tabIndex={-1}
-                className="w-full max-w-3xl bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl flex flex-col max-h-[90vh] my-8">
+                className="relative w-full max-w-3xl bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl flex flex-col max-h-[90vh] my-8">
                 {/* UX Mejora 12: Sticky header */}
-                <div className="sticky top-0 z-10 bg-[var(--surface-raised)] border-b border-[var(--rule-base)] px-6 py-4 flex items-center justify-between rounded-t-2xl">
+                <div {...ventanaNew.asaProps} className="sticky top-0 z-10 bg-[var(--surface-raised)] border-b border-[var(--rule-base)] px-6 py-4 flex items-center justify-between rounded-t-2xl">
                   <CardTitle id={newTitleId} className="text-lg font-semibold text-[var(--text-primary)]">Nueva Guía de Remisión</CardTitle>
+                  <span className="ml-auto flex items-center gap-1">
+                    <ControlesDeVentana ventana={ventanaNew} />
+                  </span>
                   <button aria-label="Cerrar" onClick={() => setShowNew(false)} className="p-1 hover:bg-[var(--surface-sunken)] rounded-xl transition-colors">
                     <X className="h-5 w-5 text-[var(--text-secondary)]" />
                   </button>
@@ -1371,6 +1382,7 @@ export default function GuiasRemisionModule() {
                     Crear Guía
                   </button>
                 </div>
+                <TiradorDeVentana ventana={ventanaNew} />
               </div>
             </m.div>
           </>

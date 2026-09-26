@@ -19,6 +19,11 @@ import { construirAnexo04, fmtAnexo } from "@/lib/forestal/anexo04-serfor";
 import { validarAnexo04, avisosDeProcedencia, anexoPresentable, type AvisoAnexo04, type DeclaradoEnLibro, type ProcedenciaBloques } from "@/lib/forestal/anexo04-validacion";
 import { useAnexo04Datos } from "@/hooks/use-anexo04-datos";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import {
+  ControlesDeVentana,
+  TiradorDeVentana,
+} from "@/components/admin/shared/modal-controles-ventana";
 import Anexo04Campos from "./Anexo04Campos";
 import Anexo04Origen, { ORIGEN_ACTUAL } from "./Anexo04Origen";
 import Anexo04Historial, { ICONO_HISTORIAL } from "./Anexo04Historial";
@@ -134,6 +139,12 @@ export default function Anexo04Modal({
      para no cerrar el anexo entero mientras se escriben las observaciones). */
   const cajaRef = useRef<HTMLDivElement>(null);
   useModalAccesible(cajaRef, { cerrarConEscape: false });
+  /** Ventana: se mueve, se achica y se fija (ADR-420). */
+  const ventana = useVentanaDeModal(true, {
+    ref: cajaRef,
+    aplicarTranslate: true,
+    claveMemoria: "ctp-anexo04",
+  });
 
   /**
    * El anexo abre EN BLANCO (Brandon, 2026-08). Nada se rellena solo: ni el N°
@@ -311,15 +322,15 @@ export default function Anexo04Modal({
   return (
     <div
       className="modal-backdrop fixed inset-0 z-modal flex items-center justify-center bg-black/60 p-3"
-      onClick={(e) => { if (e.target === e.currentTarget) onCerrar(); }}
+      onClick={(e) => { if (e.target === e.currentTarget && !ventana.fijado) onCerrar(); }}
     >
       {/* Alto ACOTADO y scroll adentro (Brandon 2026-09-09: «está muy
           alargado»): antes el modal crecía con su contenido y el backdrop
           scrolleaba la página entera, así que el pie con «Descargar PDF»
           quedaba a dos pantallas del título. Ahora el marco entra siempre en la
           ventana, el pie está fijo y lo que scrollea es cada columna. */}
-      <div ref={cajaRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Vista previa del Anexo N° 04" className="flex max-h-[94vh] w-full max-w-[76rem] flex-col rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 shadow-[var(--shadow-lg)]">
-        <div className="flex shrink-0 items-start justify-between gap-3">
+      <div ref={cajaRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Vista previa del Anexo N° 04" className="relative flex max-h-[94vh] w-full max-w-[76rem] flex-col rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 shadow-[var(--shadow-lg)]">
+        <div {...ventana.asaProps} className="flex shrink-0 items-start justify-between gap-3">
           <div className="min-w-0">
             <CardTitle as="h3" className="flex items-center gap-2 text-base font-bold text-[var(--text-primary)]">
               <FileText className="h-5 w-5 text-[var(--accent)]" /> Vista previa · ANEXO N° 04
@@ -378,6 +389,9 @@ export default function Anexo04Modal({
               )}
             </p>
           </div>
+          <span className="ml-auto flex items-center gap-1">
+            <ControlesDeVentana ventana={ventana} />
+          </span>
           <button type="button" onClick={onCerrar} aria-label="Cerrar" className="rounded-xl p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]">
             <X className="h-5 w-5" />
           </button>
@@ -521,6 +535,8 @@ export default function Anexo04Modal({
             onDescargar={descargarPdf}
           />
         </div>
+
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

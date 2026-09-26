@@ -18,6 +18,8 @@
  */
 
 import { tomar } from "./serfor-gtf";
+import { repararFichaSerfor } from "./serfor-texto-danado";
+import { documentoDelTitular } from "./serfor-titular";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Apartado 1 — Fuente de origen o procedencia de la madera
@@ -115,6 +117,20 @@ function rucTitular(ingreso: IngresoParaFuente, ficha: Record<string, unknown> |
   if (campos && typeof campos === "object") {
     const crudo = tomar(campos as Record<string, string>, "RUC del titular", "RUC titular");
     if (crudo) return crudo.trim();
+  }
+  if (ficha) {
+    /* Se corrige AL LEER (2026-09-25): hasta ese día el alta desde SERFOR
+       guardaba en `providerDocument` el RUC de la instancia —26 de 26 en Blas—,
+       así que caer a ese campo declaraba justo lo que advierte el comentario de
+       arriba. Con la ficha a mano se usa el del propietario si ES el titular
+       (`documentoDelTitular`, sobre la ficha reparada: «MUÃ?OZ» no coincidía
+       con «MUÑOZ»). */
+    const delTitular = documentoDelTitular(repararFichaSerfor(ficha) as Parameters<typeof documentoDelTitular>[0]);
+    if (delTitular) return delTitular.numero;
+    // El documento guardado vale sólo si NO es el de la instancia que registra.
+    const instancia = String(ficha.rucInstancia ?? "").replace(/\D/g, "");
+    const guardado = txt(ingreso.providerDocument).replace(/\D/g, "");
+    return guardado && guardado !== instancia ? txt(ingreso.providerDocument) : "";
   }
   return txt(ingreso.providerDocument);
 }

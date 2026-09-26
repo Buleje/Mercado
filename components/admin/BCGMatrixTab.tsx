@@ -2,6 +2,8 @@
 import { CardTitle, DataTable, LoadingState, SectionTitle } from "@buleje/design-system";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import {
   Star, Download, Eye,
   Coins, HelpCircle, TrendingDown,
@@ -37,6 +39,12 @@ export default function BCGMatrixTab() {
   const detailTitleId = useId();
   const cerrarDetail = useCallback(() => setDetail(null), []);
   useModalAccesible(detailModalRef, { onCerrar: cerrarDetail, activo: !!detail });
+  /** Ventana: se mueve, se achica y se fija (ADR-420). */
+  const ventanaDetalle = useVentanaDeModal(!!detail, {
+    ref: detailModalRef,
+    aplicarTranslate: true,
+    claveMemoria: "bcg-detalle-producto",
+  });
 
   useEffect(() => {
     fetch("/api/analytics/bcg", { credentials: "include" })
@@ -208,10 +216,13 @@ export default function BCGMatrixTab() {
 
       {/* Detail modal */}
       {detail && (
-        <div className="modal-backdrop p-4" onClick={cerrarDetail}>
-          <div ref={detailModalRef} role="dialog" aria-modal="true" aria-labelledby={detailTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
-            <div className="px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex items-center justify-between">
+        <div className="modal-backdrop p-4" onClick={(e) => { if (e.target === e.currentTarget && !ventanaDetalle.fijado) cerrarDetail(); }}>
+          <div ref={detailModalRef} role="dialog" aria-modal="true" aria-labelledby={detailTitleId} tabIndex={-1} className="relative bg-[var(--surface-raised)] rounded-xl w-full max-w-md">
+            <div {...ventanaDetalle.asaProps} className="px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex items-center justify-between">
               <CardTitle id={detailTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{detail.name}</CardTitle>
+              <span className="ml-auto flex items-center gap-1">
+                <ControlesDeVentana ventana={ventanaDetalle} />
+              </span>
               <button onClick={cerrarDetail} aria-label="Cerrar" className="text-base sm:text-xl font-bold text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]">×</button>
             </div>
             <div className="px-3 sm:px-6 py-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -233,6 +244,7 @@ export default function BCGMatrixTab() {
               </div>
               <div className="col-span-2 bg-primary/10 dark:bg-primary/15 rounded-xl p-3"><span className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Recomendación</span><p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mt-1">{Q_CONFIG[detail.quadrant].desc}</p></div>
             </div>
+            <TiradorDeVentana ventana={ventanaDetalle} />
           </div>
         </div>
       )}

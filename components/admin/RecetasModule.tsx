@@ -6,6 +6,8 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import React, { useState, useEffect, useCallback, useMemo, useRef, useId } from "react";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import {
   Search, Plus, X, Loader2, AlertTriangle, ChevronLeft, ChevronRight,
@@ -360,6 +362,13 @@ export default function RecetasModule() {
 
   useModalAccesible(detailPanelRef, { onCerrar: cerrarSelected, activo: !!selected, cerrarConEscape: false });
   useModalAccesible(producirPanelRef, { onCerrar: cerrarProducir, activo: showProducir && !!selected, cerrarConEscape: false });
+  /** Ventana: se mueve, se achica y se fija (ADR-420). Sin fila de encabezado propia: `asaAutomatica` engancha el título. */
+  const ventanaProducir = useVentanaDeModal(showProducir && !!selected, {
+    ref: producirPanelRef,
+    aplicarTranslate: true,
+    asaAutomatica: true,
+    claveMemoria: "recetas-producir-lote",
+  });
 
   // ── Open detail ────────────────────────────────────────────────────────────
 
@@ -398,6 +407,12 @@ export default function RecetasModule() {
   // (coordina cuál cierra según cuál está abierto) — acá sólo se pide el foco
   // atrapado y la semántica de diálogo.
   useModalAccesible(newPanelRef, { onCerrar: resetNew, activo: showNew, cerrarConEscape: false });
+  /** Ventana: se mueve, se achica y se fija (ADR-420). */
+  const ventanaNew = useVentanaDeModal(showNew, {
+    ref: newPanelRef,
+    aplicarTranslate: true,
+    claveMemoria: "recetas-nueva",
+  });
 
   const addIngrediente = () => {
     setNewIngredientes(prev => [...prev, { productoId: "", cantidad: "", unidad: "unidad" }]);
@@ -967,15 +982,18 @@ export default function RecetasModule() {
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
               className="fixed inset-0 z-modal flex items-center justify-center p-4"
-              onClick={e => e.target === e.currentTarget && resetNew()}
+              onClick={e => e.target === e.currentTarget && !ventanaNew.fijado && resetNew()}
             >
               <div ref={newPanelRef} role="dialog" aria-modal="true" aria-labelledby={newTitleId} tabIndex={-1}
-                className="w-full max-w-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl flex flex-col max-h-[90vh]">
+                className="relative w-full max-w-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl flex flex-col max-h-[90vh]">
                 {/* UX Mejora 12: Sticky header */}
-                <div className="sticky top-0 z-dropdown bg-[var(--surface-raised)] border-b border-[var(--rule-base)] px-6 py-4 flex items-center justify-between rounded-t-2xl">
+                <div {...ventanaNew.asaProps} className="sticky top-0 z-dropdown bg-[var(--surface-raised)] border-b border-[var(--rule-base)] px-6 py-4 flex items-center justify-between rounded-t-2xl">
                   <CardTitle id={newTitleId} className="text-lg font-semibold text-[var(--text-primary)]">
                     Nueva Receta — Paso {step}/3
                   </CardTitle>
+                  <span className="ml-auto flex items-center gap-1">
+                    <ControlesDeVentana ventana={ventanaNew} />
+                  </span>
                   <button aria-label="Cerrar" onClick={resetNew} className="p-1 hover:bg-[var(--rule-soft)] rounded-xl transition-colors">
                     <X className="h-5 w-5 text-[var(--text-secondary)]" />
                   </button>
@@ -1128,6 +1146,7 @@ export default function RecetasModule() {
                     </button>
                   )}
                 </div>
+                <TiradorDeVentana ventana={ventanaNew} />
               </div>
             </m.div>
           </>
@@ -1152,11 +1171,14 @@ export default function RecetasModule() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               className="fixed inset-0 z-modal-2 flex items-center justify-center p-4"
-              onClick={e => e.target === e.currentTarget && setShowProducir(false)}
+              onClick={e => e.target === e.currentTarget && !ventanaProducir.fijado && setShowProducir(false)}
             >
               <div ref={producirPanelRef} role="dialog" aria-modal="true" aria-labelledby={producirTitleId} tabIndex={-1}
-                className="w-full max-w-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4">
-                <CardTitle id={producirTitleId} className="text-lg font-bold text-[var(--text-primary)]">Producir Lote</CardTitle>
+                className="relative w-full max-w-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4">
+                <div {...ventanaProducir.asaProps} className="flex items-center justify-between gap-2">
+                  <CardTitle id={producirTitleId} className="text-lg font-bold text-[var(--text-primary)]">Producir Lote</CardTitle>
+                  <ControlesDeVentana ventana={ventanaProducir} />
+                </div>
                 <p className="text-sm text-[var(--text-secondary)]">
                   Receta: <span className="font-bold text-[var(--text-primary)]">{selected.nombre}</span>
                 </p>
@@ -1286,6 +1308,7 @@ export default function RecetasModule() {
                     Producir
                   </button>
                 </div>
+                <TiradorDeVentana ventana={ventanaProducir} />
               </div>
             </m.div>
           </>

@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import type { DbDocument, DbDocumentVersion } from "@/lib/types/documents";
 import { fmtBytes, fmtDate } from "./shared";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 
 interface Props {
   doc: DbDocument;
@@ -27,6 +29,8 @@ export default function DocumentVersionsModal({ doc, onClose, onChanged }: Props
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const ventana = useVentanaDeModal(true, { ref: dialogRef, aplicarTranslate: true, claveMemoria: "sa-document-versions" });
 
   const loadVersions = useCallback(async () => {
     setLoading(true);
@@ -100,31 +104,35 @@ export default function DocumentVersionsModal({ doc, onClose, onChanged }: Props
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget && !ventana.fijado) onClose();
       }}
     >
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-label="Historial de versiones"
-        className="flex w-full max-w-lg flex-col rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 shadow-[var(--shadow-lg)] max-h-[90vh] gap-4"
+        className="relative flex w-full max-w-lg flex-col rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 shadow-[var(--shadow-lg)] max-h-[90vh] gap-4"
       >
         {/* Header */}
-        <div className="flex shrink-0 items-center justify-between">
+        <div {...ventana.asaProps} className="flex shrink-0 items-center justify-between">
           <div className="flex items-center gap-2">
             <History className="h-5 w-5 text-[var(--text-secondary)]" />
             <h2 className="text-lg font-extrabold text-[var(--text-primary)]">
               Historial de versiones
             </h2>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Cerrar"
-            className="rounded-xl p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          <span className="flex items-center gap-1">
+            <ControlesDeVentana ventana={ventana} />
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Cerrar"
+              className="rounded-xl p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </span>
         </div>
 
         {/* Doc name + explanation */}
@@ -230,6 +238,7 @@ export default function DocumentVersionsModal({ doc, onClose, onChanged }: Props
             </button>
           </div>
         </div>
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

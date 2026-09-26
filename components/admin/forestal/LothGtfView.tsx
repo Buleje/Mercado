@@ -20,6 +20,11 @@ import VerificarGtfSerfor from "./VerificarGtfSerfor";
 import { formatDateNumeric } from "@/lib/format";
 import { FiltroColumnaMulti, type FacetaOpcion } from "@/components/admin/shared/filtros-columna";
 import { CampoDeFiltro } from "./ctp-filtros-panel";
+import { BotonRestablecerColumnas, EnOrden, useOrdenColumnas } from "@/components/admin/shared/columnas-ordenables";
+
+/** Las columnas movibles de la tabla de GTF, en su orden de fábrica
+ *  (Brandon, 2026-09-26). «Acciones» queda fija al final. */
+const ORDEN_GTF_DEFECTO = ["gtf", "fecha", "tipo", "titular", "destino", "volumen", "estado"] as const;
 
 interface GtfItem {
   code?: string | null; species?: string | null; scientific?: string | null; cites?: boolean;
@@ -219,6 +224,7 @@ export default function LothGtfView({
   const volumenFiltrado = filtradas.filter((g) => g.status !== "anulada").reduce((a, g) => a + Number(g.volumenTotalM3 ?? 0), 0);
 
   useEffect(() => setPagina(0), [busqueda, tipoFiltro, estadoFiltro]);
+  const orden = useOrdenColumnas("loth-gtf", ORDEN_GTF_DEFECTO);
 
   return (
     <div className="space-y-5">
@@ -267,15 +273,18 @@ export default function LothGtfView({
       {/* Buscar: Tipo y Estado son columnas de la tabla, se filtran desde su
           propio <th> más abajo. */}
       {!loading && gtfs.length > 0 && (
-        <div className="flex h-11 min-w-[16rem] flex-1 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3">
-          <Search className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" />
-          <input
-            type="text"
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-            placeholder="Buscar por N° de guía, titular, destino, transportista o placa…"
-            className="w-full bg-transparent text-base text-[var(--text-primary)] outline-none"
-          />
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex h-11 min-w-[16rem] flex-1 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3">
+            <Search className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" />
+            <input
+              type="text"
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              placeholder="Buscar por N° de guía, titular, destino, transportista o placa…"
+              className="w-full bg-transparent text-base text-[var(--text-primary)] outline-none"
+            />
+          </div>
+          <BotonRestablecerColumnas cambiado={orden.cambiado} onRestablecer={orden.restablecer} />
         </div>
       )}
 
@@ -341,35 +350,44 @@ export default function LothGtfView({
       {!loading && (
         <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
           <DataTable filtrable className="w-full text-sm">
-            <thead className="bg-[var(--surface-sunken)] text-left align-top">
+            <thead ref={orden.refCabecera} className="bg-[var(--surface-sunken)] text-left align-top">
               <tr>
-                <th className="px-4 py-2.5 font-bold text-[var(--text-primary)]">N° GTF</th>
-                <th className="px-4 py-2.5 font-bold text-[var(--text-primary)]">Fecha</th>
-                <th className="px-4 py-2.5 font-bold text-[var(--text-primary)]">
-                  <span className="block">Tipo</span>
-                  <FiltroColumnaMulti
-                    label="Tipo"
-                    value={tipoFiltro}
-                    options={opcionesColumna.tipo}
-                    etiqueta={(v) => ETIQUETA_TIPO[v] ?? v}
-                    onChange={setTipoFiltro}
-                    placeholder="Todos"
-                  />
-                </th>
-                <th className="px-4 py-2.5 font-bold text-[var(--text-primary)]">Titular</th>
-                <th className="px-4 py-2.5 font-bold text-[var(--text-primary)]">Destino</th>
-                <th className="px-4 py-2.5 text-right font-bold text-[var(--text-primary)]">Vol. m³</th>
-                <th className="px-4 py-2.5 font-bold text-[var(--text-primary)]">
-                  <span className="block">Estado</span>
-                  <FiltroColumnaMulti
-                    label="Estado"
-                    value={estadoFiltro}
-                    options={opcionesColumna.estado}
-                    etiqueta={(v) => ETIQUETA_ESTADO[v] ?? v}
-                    onChange={setEstadoFiltro}
-                    placeholder="Todos"
-                  />
-                </th>
+                <EnOrden
+                  orden={orden.orden}
+                  celdas={{
+                    gtf: <th data-col="gtf" className="px-4 py-2.5 font-bold text-[var(--text-primary)]">N° GTF</th>,
+                    fecha: <th data-col="fecha" className="px-4 py-2.5 font-bold text-[var(--text-primary)]">Fecha</th>,
+                    tipo: (
+                      <th data-col="tipo" className="px-4 py-2.5 font-bold text-[var(--text-primary)]">
+                        <span className="block">Tipo</span>
+                        <FiltroColumnaMulti
+                          label="Tipo"
+                          value={tipoFiltro}
+                          options={opcionesColumna.tipo}
+                          etiqueta={(v) => ETIQUETA_TIPO[v] ?? v}
+                          onChange={setTipoFiltro}
+                          placeholder="Todos"
+                        />
+                      </th>
+                    ),
+                    titular: <th data-col="titular" className="px-4 py-2.5 font-bold text-[var(--text-primary)]">Titular</th>,
+                    destino: <th data-col="destino" className="px-4 py-2.5 font-bold text-[var(--text-primary)]">Destino</th>,
+                    volumen: <th data-col="volumen" className="px-4 py-2.5 text-right font-bold text-[var(--text-primary)]">Vol. m³</th>,
+                    estado: (
+                      <th data-col="estado" className="px-4 py-2.5 font-bold text-[var(--text-primary)]">
+                        <span className="block">Estado</span>
+                        <FiltroColumnaMulti
+                          label="Estado"
+                          value={estadoFiltro}
+                          options={opcionesColumna.estado}
+                          etiqueta={(v) => ETIQUETA_ESTADO[v] ?? v}
+                          onChange={setEstadoFiltro}
+                          placeholder="Todos"
+                        />
+                      </th>
+                    ),
+                  }}
+                />
                 <th className="px-4 py-2.5 font-bold text-[var(--text-primary)]">Acciones</th>
               </tr>
             </thead>
@@ -382,13 +400,18 @@ export default function LothGtfView({
                     g.gtfNumber === focusGtf ? "bg-[var(--data-info-500)]/15 outline outline-2 -outline-offset-2 outline-[var(--data-info-500)]" : ""
                   }`}
                 >
-                  <td className="px-4 py-2.5"><span className="font-mono font-bold text-[var(--text-primary)]">{g.gtfNumber}</span></td>
-                  <td className="px-4 py-2.5 text-[var(--text-secondary)]">{fmtDate(g.gtfDate)}</td>
-                  <td className="px-4 py-2.5"><span className="rounded-full bg-[var(--surface-canvas)] px-2 py-0.5 text-xs text-[var(--text-secondary)]">{g.tipo === "producto" ? "Producto" : "Trozas"}</span></td>
-                  <td className="px-4 py-2.5 text-[var(--text-primary)]">{g.titularName ?? "—"}</td>
-                  <td className="px-4 py-2.5 text-[var(--text-secondary)]">{g.destino ?? "—"}</td>
-                  <td className="px-4 py-2.5 text-right"><span className="font-mono font-bold tabular-nums text-[var(--text-primary)]">{g.volumenTotalM3 ? fmtM3(Number(g.volumenTotalM3)) : "—"}</span></td>
-                  <td className="px-4 py-2.5">{g.status === "anulada" ? <span className="rounded-full bg-[var(--data-error-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)]">ANULADA</span> : <span className="rounded-full bg-[var(--data-success-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-700)]">Emitida</span>}</td>
+                  <EnOrden
+                    orden={orden.orden}
+                    celdas={{
+                      gtf: <td className="px-4 py-2.5"><span className="font-mono font-bold text-[var(--text-primary)]">{g.gtfNumber}</span></td>,
+                      fecha: <td className="px-4 py-2.5 text-[var(--text-secondary)]">{fmtDate(g.gtfDate)}</td>,
+                      tipo: <td className="px-4 py-2.5"><span className="rounded-full bg-[var(--surface-canvas)] px-2 py-0.5 text-xs text-[var(--text-secondary)]">{g.tipo === "producto" ? "Producto" : "Trozas"}</span></td>,
+                      titular: <td className="px-4 py-2.5 text-[var(--text-primary)]">{g.titularName ?? "—"}</td>,
+                      destino: <td className="px-4 py-2.5 text-[var(--text-secondary)]">{g.destino ?? "—"}</td>,
+                      volumen: <td className="px-4 py-2.5 text-right"><span className="font-mono font-bold tabular-nums text-[var(--text-primary)]">{g.volumenTotalM3 ? fmtM3(Number(g.volumenTotalM3)) : "—"}</span></td>,
+                      estado: <td className="px-4 py-2.5">{g.status === "anulada" ? <span className="rounded-full bg-[var(--data-error-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)]">ANULADA</span> : <span className="rounded-full bg-[var(--data-success-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-700)]">Emitida</span>}</td>,
+                    }}
+                  />
                   <td className="px-4 py-2.5">
                     <div className="flex items-center justify-end gap-2">
                       {g.tipo !== "producto" && g.status !== "anulada" && sinIngresar.has(g.gtfNumber) && (

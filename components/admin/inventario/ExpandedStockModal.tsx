@@ -7,6 +7,8 @@ import { cn } from "@/lib/utils";
 import type { DbProduct, DbInventoryMovement } from "@/lib/jsondb";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { formatCurrency } from "@/lib/format";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -73,6 +75,7 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   useModalAccesible(panelRef, { onCerrar: onClose, activo: true });
+  const ventana = useVentanaDeModal(true, { ref: panelRef, aplicarTranslate: true, claveMemoria: "inventario-completo" });
 
   useScrollLock(true);
 
@@ -135,10 +138,10 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
   }, [enriched, search, sortKey, sortDir]);
 
   return (
-    <div className="modal-backdrop flex items-center justify-center" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="bg-[var(--surface-raised)] w-[95vw] max-w-7xl h-[90vh] rounded-xl flex flex-col overflow-hidden">
+    <div className="modal-backdrop flex items-center justify-center" onClick={e => e.target === e.currentTarget && !ventana.fijado && onClose()}>
+      <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="relative bg-[var(--surface-raised)] w-[95vw] max-w-7xl h-[90vh] rounded-xl flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)] shrink-0">
+        <div {...ventana.asaProps} className="flex items-center justify-between px-6 py-4 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)] shrink-0">
           <div>
             <SectionTitle id={titleId} className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Inventario completo</SectionTitle>
             <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{filtered.length} productos activos</p>
@@ -154,6 +157,7 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
                 className="pl-9 pr-3 h-10 w-56 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
             </div>
+            <ControlesDeVentana ventana={ventana} />
             <button aria-label="Cerrar" onClick={onClose} className="p-2 rounded-xl hover:bg-[var(--rule-soft)] transition-colors">
               <X className="h-5 w-5 text-[var(--text-secondary)]" />
             </button>
@@ -309,6 +313,7 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
           <span className="text-[var(--data-warning-500)] font-semibold">{filtered.filter(p => p.margin && p.margin.pct < 15).length} margen bajo (&lt;15%)</span>
           <span className="text-[var(--data-success-500)] font-semibold">{filtered.filter(p => p.margin && p.margin.pct >= 30).length} margen alto (&gt;30%)</span>
         </div>
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

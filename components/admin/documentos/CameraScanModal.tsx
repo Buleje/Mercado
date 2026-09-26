@@ -5,6 +5,8 @@ import { X, Camera, Image as ImageIcon, FileText, Loader2, Trash2 } from "@bulej
 import { CardTitle } from "@buleje/design-system";
 import { scanToPdf } from "@/hooks/use-documents";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 
 /**
  * Escáner multipágina: captura varias fotos con la cámara (getUserMedia) o las
@@ -23,6 +25,7 @@ export function CameraScanModal({ folderId, onClose, onDone }: { folderId: strin
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   useModalAccesible(panelRef, { onCerrar: onClose, activo: true });
+  const ventana = useVentanaDeModal(true, { ref: panelRef, aplicarTranslate: true, claveMemoria: "camera-scan" });
 
   const stopCamera = useCallback(() => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -80,11 +83,14 @@ export function CameraScanModal({ folderId, onClose, onDone }: { folderId: strin
   };
 
   return (
-    <div className="fixed inset-0 z-modal-2 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="flex max-h-[90vh] w-full max-w-[34rem] flex-col overflow-hidden rounded-2xl bg-[var(--surface-raised)] shadow-xl" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between border-b border-[var(--rule-base)] p-4">
+    <div className="fixed inset-0 z-modal-2 flex items-center justify-center bg-black/50 p-4" onClick={() => { if (!ventana.fijado) onClose(); }}>
+      <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="relative flex max-h-[90vh] w-full max-w-[34rem] flex-col overflow-hidden rounded-2xl bg-[var(--surface-raised)] shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <div {...ventana.asaProps} className="flex items-center justify-between border-b border-[var(--rule-base)] p-4">
           <CardTitle id={titleId} as="h3" className="inline-flex items-center gap-2 text-base font-bold text-[var(--text-primary)]"><Camera className="h-5 w-5 text-primary" /> Escanear a PDF</CardTitle>
-          <button onClick={onClose} className="rounded-xl p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Cerrar"><X className="h-5 w-5" /></button>
+          <span className="flex items-center gap-1">
+            <ControlesDeVentana ventana={ventana} />
+            <button onClick={onClose} className="rounded-xl p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Cerrar"><X className="h-5 w-5" /></button>
+          </span>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4">
@@ -148,6 +154,7 @@ export function CameraScanModal({ folderId, onClose, onDone }: { folderId: strin
             {busy ? "Creando…" : `Crear PDF (${pages.length})`}
           </button>
         </div>
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

@@ -4,6 +4,8 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
 import { Field } from "@/components/admin/shared/Field";
 import { SectionTitle } from "@buleje/design-system";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import {
   AlertTriangle, CheckCircle, Clock, Download, Loader2,
   Search, ShieldCheck, Plus, X, Trash2, TrendingDown,
@@ -250,6 +252,7 @@ function RegisterBatchModal({ products, onClose, onSaved }: { products: Product[
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   useModalAccesible(panelRef, { onCerrar: onClose, activo: true });
+  const ventana = useVentanaDeModal(true, { ref: panelRef, aplicarTranslate: true, claveMemoria: "inventario-registrar-lote" });
   const selected = products.find(p => p.id === productId) ?? null;
   const matches = useMemo(() => { const q = psearch.toLowerCase(); return (q ? products.filter(p => p.name.toLowerCase().includes(q)) : products).slice(0, 8); }, [products, psearch]);
 
@@ -274,11 +277,14 @@ function RegisterBatchModal({ products, onClose, onSaved }: { products: Product[
   };
 
   return (
-    <div className="fixed inset-0 z-modal flex items-end justify-center bg-black/60 backdrop-blur-[2px] sm:items-center sm:p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="max-h-[92dvh] w-full overflow-y-auto rounded-t-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-xl sm:max-w-lg sm:rounded-2xl">
-        <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)]/95 px-6 py-4 backdrop-blur">
+    <div className="fixed inset-0 z-modal flex items-end justify-center bg-black/60 backdrop-blur-[2px] sm:items-center sm:p-4" onClick={(e) => e.target === e.currentTarget && !ventana.fijado && onClose()}>
+      <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="relative max-h-[92dvh] w-full overflow-y-auto rounded-t-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-xl sm:max-w-lg sm:rounded-2xl">
+        <div {...ventana.asaProps} className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)]/95 px-6 py-4 backdrop-blur">
           <div><SectionTitle id={titleId} as="h2" className="text-lg font-bold leading-tight text-[var(--text-primary)]">Registrar lote</SectionTitle><p className="text-xs text-[var(--text-tertiary)]">Mercadería con fecha de vencimiento</p></div>
-          <button onClick={onClose} aria-label="Cerrar" className="h-9 w-9 rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"><X className="h-5 w-5" /></button>
+          <span className="ml-auto flex items-center gap-1 shrink-0">
+            <ControlesDeVentana ventana={ventana} />
+            <button onClick={onClose} aria-label="Cerrar" className="h-9 w-9 rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"><X className="h-5 w-5" /></button>
+          </span>
         </div>
         <div className="space-y-4 p-6">
           <div>
@@ -309,6 +315,7 @@ function RegisterBatchModal({ products, onClose, onSaved }: { products: Product[
             <button type="button" onClick={save} disabled={saving} className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-white hover:bg-primary/90 disabled:opacity-50">{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" strokeWidth={2.5} />}{saving ? "Guardando…" : "Registrar lote"}</button>
           </div>
         </div>
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

@@ -10,6 +10,10 @@ import { cn, exportToCSV } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
 import { FiltroColumna } from "@/components/admin/shared/filtros-columna";
 import type { FacetaOpcion } from "@/lib/admin/filtros-columna";
+import { BotonRestablecerColumnas, EnOrden, useOrdenColumnas } from "@/components/admin/shared/columnas-ordenables";
+
+/** Las columnas de datos en su orden de fábrica. */
+const COLS_META_VS_REAL = ["categoria", "depto", "mes", "presupuesto", "real", "variacion", "barra", "estado"] as const;
 
 /* ── Types ──────────────────────────────────────────────────── */
 type ExpenseItem = {
@@ -268,6 +272,7 @@ export default function BudgetVsRealTab() {
    *  default de "último mes" se puede reponer; después, "Limpiar" (volver a
    *  "Todos los meses") debe quedarse así, no reponer el último mes solo. */
   const [monthTouched, setMonthTouched] = useState(false);
+  const orden = useOrdenColumnas("presupuesto-meta-vs-real", COLS_META_VS_REAL);
 
   // Config de presupuesto
   const [budgetConfig, setBudgetConfig] = useState<BudgetConfig>({ month: ym, salesGoal: 0, expensesGoal: 0 });
@@ -687,6 +692,7 @@ export default function BudgetVsRealTab() {
           onChange={(e) => setSearch(e.target.value)}
           className="px-4 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] text-sm outline-none focus:border-primary transition-colors w-48 min-h-[44px]"
         />
+        <BotonRestablecerColumnas cambiado={orden.cambiado} onRestablecer={orden.restablecer} />
       </div>
 
       {/* En el celular la tabla es tarjetas (`.admin-mobile-cards` esconde el
@@ -722,45 +728,56 @@ export default function BudgetVsRealTab() {
 
       {/* Tabla de detalle por categoría */}
       <DataTable filtrable className="min-w-[600px]">
-        <thead>
+        <thead ref={orden.refCabecera}>
           <tr className="border-b border-[var(--rule-base)]">
-            <th>Categoría</th>
-            <th>
-              <span className="block">Depto</span>
-              <FiltroColumna
-                label="Depto"
-                value={deptFilter}
-                options={deptOptions}
-                onChange={setDeptFilter}
-                placeholder="Todos"
-              />
-            </th>
-            <th>
-              <span className="block">Mes</span>
-              <FiltroColumna
-                label="Mes"
-                value={effectiveMonthFilter === "all" ? undefined : effectiveMonthFilter}
-                options={monthOptions}
-                onChange={handleMonthFilterChange}
-                placeholder="Todos"
-              />
-            </th>
-            <th className="text-right">Presupuesto</th>
-            <th className="text-right">Real</th>
-            <th className="text-right">Variación</th>
-            <th className="text-center">Barra</th>
-            <th className="text-center">
-              <span className="block">Estado</span>
-              <FiltroColumna
-                label="Estado"
-                value={alertFilter}
-                options={estadoOptions}
-                etiqueta={(v) => ESTADOS.find((e) => e.value === v)?.label ?? v}
-                onChange={setAlertFilter}
-                placeholder="Todos"
-                className="mx-auto"
-              />
-            </th>
+            <EnOrden
+              orden={orden.orden}
+              celdas={{
+                categoria: <th data-col="categoria">Categoría</th>,
+                depto: (
+                  <th data-col="depto">
+                    <span className="block">Depto</span>
+                    <FiltroColumna
+                      label="Depto"
+                      value={deptFilter}
+                      options={deptOptions}
+                      onChange={setDeptFilter}
+                      placeholder="Todos"
+                    />
+                  </th>
+                ),
+                mes: (
+                  <th data-col="mes">
+                    <span className="block">Mes</span>
+                    <FiltroColumna
+                      label="Mes"
+                      value={effectiveMonthFilter === "all" ? undefined : effectiveMonthFilter}
+                      options={monthOptions}
+                      onChange={handleMonthFilterChange}
+                      placeholder="Todos"
+                    />
+                  </th>
+                ),
+                presupuesto: <th data-col="presupuesto" className="text-right">Presupuesto</th>,
+                real: <th data-col="real" className="text-right">Real</th>,
+                variacion: <th data-col="variacion" className="text-right">Variación</th>,
+                barra: <th data-col="barra" className="text-center">Barra</th>,
+                estado: (
+                  <th data-col="estado" className="text-center">
+                    <span className="block">Estado</span>
+                    <FiltroColumna
+                      label="Estado"
+                      value={alertFilter}
+                      options={estadoOptions}
+                      etiqueta={(v) => ESTADOS.find((e) => e.value === v)?.label ?? v}
+                      onChange={setAlertFilter}
+                      placeholder="Todos"
+                      className="mx-auto"
+                    />
+                  </th>
+                ),
+              }}
+            />
           </tr>
         </thead>
         <tbody>
@@ -770,45 +787,56 @@ export default function BudgetVsRealTab() {
             const status = Math.abs(variance) <= 10 ? "ok" : variance > 10 ? "over" : "under";
             return (
               <tr key={b.id}>
-                <td className="font-semibold text-[var(--text-primary)]">{b.category}</td>
-                <td className="text-[var(--text-secondary)]">{b.department}</td>
-                <td className="text-xs text-[var(--text-tertiary)]">{b.month}</td>
-                <td className="text-right font-mono text-[var(--text-primary)]">{fmt(b.budgeted)}</td>
-                <td className="text-right font-mono font-bold text-[var(--text-primary)]">{fmt(b.actual)}</td>
-                <td className={cn(
-                  "text-right font-bold",
-                  status === "over" ? "text-[var(--data-error-500)]" : status === "under" ? "text-[var(--data-success-500)]" : "text-[var(--text-secondary)]"
-                )}>
-                  {fmtPct(variance)}
-                </td>
-                <td>
-                  <div className="w-full h-2.5 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
-                    <div
-                      className={cn(
-                        "h-full rounded-full transition-all",
-                        status === "over" ? "bg-[var(--data-error-500)]" : status === "under" ? "bg-primary/10" : "bg-primary/10"
-                      )}
-                      style={{ width: `${Math.min(pctUsed, 100)}%` }}
-                    />
-                  </div>
-                </td>
-                <td className="text-center">
-                  {status === "ok" && (
-                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] text-xs font-bold">
-                      <CheckCircle className="h-3 w-3" /> OK
-                    </span>
-                  )}
-                  {status === "over" && (
-                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[var(--data-error-100)] text-[var(--data-error-500)] text-xs font-bold">
-                      <AlertTriangle className="h-3 w-3" /> Exceso
-                    </span>
-                  )}
-                  {status === "under" && (
-                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] text-xs font-bold">
-                      <TrendingDown className="h-3 w-3" /> Ahorro
-                    </span>
-                  )}
-                </td>
+                <EnOrden
+                  orden={orden.orden}
+                  celdas={{
+                    categoria: <td className="font-semibold text-[var(--text-primary)]">{b.category}</td>,
+                    depto: <td className="text-[var(--text-secondary)]">{b.department}</td>,
+                    mes: <td className="text-xs text-[var(--text-tertiary)]">{b.month}</td>,
+                    presupuesto: <td className="text-right font-mono text-[var(--text-primary)]">{fmt(b.budgeted)}</td>,
+                    real: <td className="text-right font-mono font-bold text-[var(--text-primary)]">{fmt(b.actual)}</td>,
+                    variacion: (
+                      <td className={cn(
+                        "text-right font-bold",
+                        status === "over" ? "text-[var(--data-error-500)]" : status === "under" ? "text-[var(--data-success-500)]" : "text-[var(--text-secondary)]"
+                      )}>
+                        {fmtPct(variance)}
+                      </td>
+                    ),
+                    barra: (
+                      <td>
+                        <div className="w-full h-2.5 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
+                          <div
+                            className={cn(
+                              "h-full rounded-full transition-all",
+                              status === "over" ? "bg-[var(--data-error-500)]" : status === "under" ? "bg-primary/10" : "bg-primary/10"
+                            )}
+                            style={{ width: `${Math.min(pctUsed, 100)}%` }}
+                          />
+                        </div>
+                      </td>
+                    ),
+                    estado: (
+                      <td className="text-center">
+                        {status === "ok" && (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] text-xs font-bold">
+                            <CheckCircle className="h-3 w-3" /> OK
+                          </span>
+                        )}
+                        {status === "over" && (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[var(--data-error-100)] text-[var(--data-error-500)] text-xs font-bold">
+                            <AlertTriangle className="h-3 w-3" /> Exceso
+                          </span>
+                        )}
+                        {status === "under" && (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] text-xs font-bold">
+                            <TrendingDown className="h-3 w-3" /> Ahorro
+                          </span>
+                        )}
+                      </td>
+                    ),
+                  }}
+                />
               </tr>
             );
           })}
