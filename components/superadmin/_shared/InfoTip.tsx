@@ -145,15 +145,31 @@ export function InfoTip({ title, what, body, affects, example, side = "right", c
 
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    /* Este ⓘ vive tanto dentro de un `AdminModal` (Radix Dialog, cuyo
+       `DismissableLayer` escucha Escape en captura sobre `document` y sólo
+       respeta `defaultPrevented`) como dentro de un modal a mano
+       (`useModalAccesible`, que escucha en captura sobre `document` y cierra
+       sin mirar `defaultPrevented` — ver memoria
+       `escape-combobox-dentro-de-modal-a-mano`). Un solo `preventDefault` no
+       alcanza para el segundo caso: hace falta cortar la propagación ANTES de
+       que baje a `document`, y eso sólo se logra escuchando en captura sobre
+       `window` (un peldaño más arriba) y llamando `stopPropagation`. Medido
+       26-09: sin esto, Escape con el tip abierto se llevaba las DOS capas —
+       el tip Y el modal detrás, con un formulario a medio llenar. */
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      e.preventDefault();
+      e.stopPropagation();
+      setOpen(false);
+    };
     const onDoc = (e: MouseEvent) => {
       const t = e.target as Node;
       if (wrapRef.current?.contains(t) || popRef.current?.contains(t)) return;
       setOpen(false);
     };
-    window.addEventListener("keydown", onKey);
+    window.addEventListener("keydown", onKey, true);
     document.addEventListener("mousedown", onDoc);
-    return () => { window.removeEventListener("keydown", onKey); document.removeEventListener("mousedown", onDoc); };
+    return () => { window.removeEventListener("keydown", onKey, true); document.removeEventListener("mousedown", onDoc); };
   }, [open]);
 
   useEffect(() => () => { if (closeTimer.current) clearTimeout(closeTimer.current); }, []);

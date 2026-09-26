@@ -24,12 +24,14 @@ import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import type { CtpSort, CtpSortField } from "@/hooks/use-ctp-ingresos";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
 import type { GuiaIngreso } from "@/lib/forestal/ingresos-por-guia";
+import { guiaTildada, tildeDeGuia } from "@/lib/forestal/recepcion-bloque";
 import { type FacetaOpcion } from "./ctp-filtros-panel";
 import { FiltroColumnaMulti } from "@/components/admin/shared/filtros-columna";
 import CtpGuiaCardMobile from "./CtpGuiaCardMobile";
 import FilaGuia from "./CtpGuiaFila";
 import { useEspeciesFotos } from "./hooks/use-especies-fotos";
-import { COLS_GUIAS_DEFECTO, columnasVivas, type ColsGuiasVisibles } from "./ctp-guias-columnas";
+import { COLS_GUIAS_DEFECTO, ORDEN_GUIAS_DEFECTO, guiasVisiblesEnOrden, type ColGuia, type ColsGuiasVisibles } from "./ctp-guias-columnas";
+import { EnOrden, type UseOrdenColumnasResult } from "@/components/admin/shared/columnas-ordenables";
 import { TablaSkeleton, type WoodEntry } from "./ctp-shared";
 
 /* Las columnas se definen en `ctp-guias-columnas.ts`; se re-exportan acá
@@ -89,6 +91,17 @@ export interface CtpGuiasTableProps {
   };
   /** Qué columnas opcionales se ven. Sin esto, las de por defecto. */
   cols?: ColsGuiasVisibles;
+  /**
+   * El orden que dejó el operador arrastrando los títulos (2026-09-26). Sin
+   * esto, el de fábrica y sin arrastre.
+   */
+  ordenCols?: Pick<UseOrdenColumnasResult, "orden" | "refCabecera">;
+  /**
+   * El autofiltro de cada columna que no es especie/proveedor/permiso: lo arma
+   * la vista (`filtrosDeCabeceraGuias`), que es dueña de esos estados; la tabla
+   * sólo lo pone bajo su título.
+   */
+  filtrosCabecera?: Partial<Record<ColGuia, React.ReactNode>>;
   /** Hay algún filtro activo → el vacío significa "no coincide", no "no hay". */
   filtered: boolean;
   /** Qué filtros están puestos, para nombrarlos en el vacío (ADR-352). */
@@ -97,8 +110,6 @@ export interface CtpGuiasTableProps {
   onLimpiarFiltros?: () => void;
   selectedIds: string[];
   setSelectedIds: React.Dispatch<React.SetStateAction<string[]>>;
-  /** Ids de asientos pendientes en la página — los que se pueden marcar. */
-  pendingIds: string[];
   busy: string | null;
   rejectingId: string | null;
   rejectReason: string;
@@ -128,6 +139,8 @@ export interface CtpGuiasTableProps {
   onCorregirRecepcion?: (guia: GuiaIngreso<WoodEntry>) => void;
   /** Lleva cada troza a la fila de su especie, sólo en ESTA guía (ADR-435). */
   onAcomodar?: (guia: GuiaIngreso<WoodEntry>) => void;
+  /** Etiquetas QR de las trozas de esta guía que siguen en el patio (ADR-436). */
+  onImprimirEtiquetas?: (guia: GuiaIngreso<WoodEntry>) => void;
   sort: CtpSort;
   onSort: (field: CtpSortField) => void;
 }
@@ -161,7 +174,13 @@ function useDesbordaAncho() {
 export default function CtpGuiasTable(props: CtpGuiasTableProps) {
   /* Las columnas que el operador dejó prendidas. Sin el prop, las de defecto. */
   const cols = props.cols ?? COLS_GUIAS_DEFECTO;
-  const vivas = columnasVivas(cols);
+  const orden = props.ordenCols?.orden ?? ORDEN_GUIAS_DEFECTO;
+  const fc = props.filtrosCabecera ?? {};
+  /* El pie pone el m³ bajo «Cantidad» esté donde esté: cuenta cuántas
+     visibles quedan a cada lado en el MISMO orden que la cabecera. */
+  const visibles = guiasVisiblesEnOrden(orden, cols);
+  const antesDeCantidad = visibles.indexOf("cantidad");
+  const despuesDeCantidad = visibles.length - antesDeCantidad - 1;
 
   const {
     guias,
@@ -172,7 +191,6 @@ export default function CtpGuiasTable(props: CtpGuiasTableProps) {
     onLimpiarFiltros,
     selectedIds,
     setSelectedIds,
-    pendingIds,
     sort,
     onSort,
     onDetail,
@@ -197,16 +215,23 @@ export default function CtpGuiasTable(props: CtpGuiasTableProps) {
     onEdit: props.onEdit,
   };
 
-  /** Marcar la guía marca TODOS sus asientos pendientes: la acción en lote
-   *  trabaja sobre asientos, pero el operador eligió un papel. */
-  const pendientesDe = (g: GuiaIngreso<WoodEntry>) =>
-    g.lineas.filter((l) => l.status === "pendiente").map((l) => l.id);
-  const marcada = (g: GuiaIngreso<WoodEntry>) => {
-    const ids = pendientesDe(g);
-    return ids.length > 0 && ids.every((id) => selectedIds.includes(id));
-  };
+  /** Marcar la guía marca sus asientos: la acción en lote trabaja sobre
+   *  asientos, pero el operador eligió un papel. UN tilde para recibir,
+   *  validar y rechazar (`tildeDeGuia`, 2026-09-26): una guía validada a mano y
+   *  sin recibir también se tilda. */
+  const tildes = new Map(guias.map((g) => [g.clave, tildeDeGuia(g)]));
+  const marcada = (g: GuiaIngreso<WoodEntry>) => guiaTildada(g, selectedIds);
   const alternarGuia = (g: GuiaIngreso<WoodEntry>, checked: boolean) => {
-    const ids = pendientesDe(g);
+    const ids = tildes.get(g.clave)?.ids ?? [];
+    setSelectedIds((prev) => (checked ? [...new Set([...prev, ...ids])] : prev.filter((x) => !ids.includes(x))));
+  };
+  const motivoSinTilde = (g: GuiaIngreso<WoodEntry>) => tildes.get(g.clave)?.motivo ?? null;
+  /* «Todas» = las tildables EN PANTALLA; las demás no se tocan. */
+  const tildables = guias.filter((g) => (tildes.get(g.clave)?.ids.length ?? 0) > 0);
+  const tildadas = tildables.filter(marcada).length;
+  const todas = tildables.length > 0 && tildadas === tildables.length;
+  const alternarTodas = (checked: boolean) => {
+    const ids = tildables.flatMap((g) => tildes.get(g.clave)?.ids ?? []);
     setSelectedIds((prev) => (checked ? [...new Set([...prev, ...ids])] : prev.filter((x) => !ids.includes(x))));
   };
   const alternarDetalle = (clave: string) =>
@@ -222,6 +247,13 @@ export default function CtpGuiasTable(props: CtpGuiasTableProps) {
     { vol: 0, pz: 0, lineas: 0 },
   );
 
+  const leyendaPie = (
+    <>
+      {guias.length} guía{guias.length === 1 ? "" : "s"} en pantalla · {totalPagina.lineas} asiento
+      {totalPagina.lineas === 1 ? "" : "s"} del libro
+    </>
+  );
+
   /* Lo mismo que necesitan la fila y la tarjeta: una lista, dos superficies. */
   const manejadores = {
     onVerGuia: props.onVerGuia,
@@ -233,12 +265,13 @@ export default function CtpGuiasTable(props: CtpGuiasTableProps) {
     onCostear: props.onCostear,
     onCorregirRecepcion: props.onCorregirRecepcion,
     onAcomodar: props.onAcomodar,
+    onImprimirEtiquetas: props.onImprimirEtiquetas,
   };
 
   return (
     <>
       <span id="ctp-select-all-label" className="sr-only">
-        Seleccionar todos los ingresos pendientes de esta página
+        Seleccionar las {tildables.length} guías de esta página que se pueden recibir, validar o rechazar
       </span>
 
       {/* ── Desktop (≥640px) ── */}
@@ -250,68 +283,82 @@ export default function CtpGuiasTable(props: CtpGuiasTableProps) {
           }`}
         >
           <DataTable className="w-full text-sm">
-            <thead className="sticky top-0 z-10 bg-[var(--surface-sunken)] text-left align-top">
+            <thead ref={props.ordenCols?.refCabecera} className="sticky top-0 z-10 bg-[var(--surface-sunken)] text-left align-top">
               <tr>
                 <Th className="w-8">
                   <input
                     type="checkbox"
                     aria-labelledby="ctp-select-all-label"
-                    disabled={pendingIds.length === 0}
-                    checked={pendingIds.length > 0 && pendingIds.every((id) => selectedIds.includes(id))}
-                    onChange={(e) => setSelectedIds(e.target.checked ? pendingIds : [])}
-                    className="h-4 w-4 accent-[var(--brand-ink)]"
+                    disabled={tildables.length === 0}
+                    checked={todas}
+                    ref={(el) => {
+                      if (el) el.indeterminate = tildadas > 0 && !todas;
+                    }}
+                    onChange={(e) => alternarTodas(e.target.checked)}
+                    className="h-5 w-5 accent-[var(--brand-ink)]"
                   />
                 </Th>
-                {/* La celda trae también el N° de libro, rotulado («N° 96»). */}
-                <ThSort field="entryDate" sort={sort} onSort={onSort}>Fecha</ThSort>
-                {cols.tipoDoc && <Th>Tipo</Th>}
-                {cols.documento && <Th>Documento</Th>}
-                {cols.fechaGuia && <Th>Fecha del documento</Th>}
-                {cols.sniffs && <Th>N° SNIFFS</Th>}
-                {/* Proveedor y permiso comparten celda (2026-09-25), y cada uno
-                    conserva SU autofiltro: se ordena por proveedor y se acota
-                    por cualquiera de los dos desde la misma cabecera. */}
-                {(cols.proveedor || cols.permiso) && (
-                  <th
-                    data-label={[cols.proveedor && "Proveedor", cols.permiso && "Permiso"].filter(Boolean).join(" · ")}
-                    aria-sort={
-                      !cols.proveedor ? undefined : sort.by !== "providerName" ? "none" : sort.dir === "asc" ? "ascending" : "descending"
-                    }
-                    className={`${TH_CLS} align-top`}
-                  >
-                    {cols.proveedor ? (
-                      <BotonOrden field="providerName" sort={sort} onSort={onSort}>
-                        {cols.permiso ? "Proveedor · Permiso" : "Proveedor"}
-                      </BotonOrden>
-                    ) : (
-                      <span className="px-1">N° Permiso</span>
-                    )}
-                    {cols.proveedor && props.filtrosColumna?.provider && (
-                      <FiltroColumnaMulti
-                        label="Proveedor"
-                        {...propsDeFiltroColumna({ placeholder: cols.permiso ? "Proveedor: todos" : undefined, ...props.filtrosColumna.provider })}
-                      />
-                    )}
-                    {cols.permiso && props.filtrosColumna?.permiso && (
-                      <FiltroColumnaMulti
-                        label="permiso"
-                        {...propsDeFiltroColumna({ placeholder: cols.proveedor ? "Permiso: todos" : undefined, ...props.filtrosColumna.permiso })}
-                      />
-                    )}
-                  </th>
-                )}
-                {cols.origen && <Th>Origen</Th>}
-                {cols.recepcion && <Th>Recepción</Th>}
-                {cols.producto && <Th>Producto</Th>}
-                {/* Ya no es «la» especie: es la lista de lo que trae el papel. */}
-                <ThSort field="speciesCommonName" sort={sort} onSort={onSort} filtro={props.filtrosColumna?.species}>Especies</ThSort>
-                <ThSort field="volumeM3" sort={sort} onSort={onSort} align="right">Cantidad</ThSort>
-                {cols.piezas && <Th className="text-right">Piezas</Th>}
-                {cols.trozas && <Th className="text-right">Trozas</Th>}
-                {cols.unidad && <Th>Unidad</Th>}
-                {cols.costo && <Th className="text-right">Valorizado</Th>}
-                {cols.registro && <Th>Registró</Th>}
-                {cols.estado && <Th>Estado</Th>}
+                {/* Las movibles, en el orden que dejó el operador (se arrastran
+                    del título; Alt+←/→ con el teclado). Cada una con SU
+                    autofiltro debajo (Brandon, 2026-09-26). */}
+                <EnOrden
+                  orden={orden}
+                  celdas={{
+                    /* La celda trae también el N° de libro, rotulado («N° 96»). */
+                    fecha: (
+                      <ThSort col="fecha" field="entryDate" sort={sort} onSort={onSort} extra={fc.fecha}>
+                        Fecha
+                      </ThSort>
+                    ),
+                    tipoDoc: cols.tipoDoc && <Th col="tipoDoc" titulo="Tipo" filtro={fc.tipoDoc} />,
+                    documento: cols.documento && <Th col="documento" titulo="Documento" filtro={fc.documento} />,
+                    fechaGuia: cols.fechaGuia && <Th col="fechaGuia" titulo="Fecha del documento" filtro={fc.fechaGuia} />,
+                    sniffs: cols.sniffs && <Th col="sniffs" titulo="N° SNIFFS" filtro={fc.sniffs} />,
+                    /* Proveedor y permiso, cada uno en su columna con SU
+                       autofiltro (2026-09-26; antes compartían celda). */
+                    proveedor: cols.proveedor && (
+                      <th
+                        data-col="proveedor"
+                        aria-sort={sort.by !== "providerName" ? "none" : sort.dir === "asc" ? "ascending" : "descending"}
+                        className={`${TH_CLS} align-top`}
+                      >
+                        <BotonOrden field="providerName" sort={sort} onSort={onSort}>
+                          Proveedor
+                        </BotonOrden>
+                        {props.filtrosColumna?.provider && (
+                          <FiltroColumnaMulti label="Proveedor" {...propsDeFiltroColumna(props.filtrosColumna.provider)} />
+                        )}
+                      </th>
+                    ),
+                    permiso: cols.permiso && (
+                      <Th col="permiso" titulo="N° Permiso">
+                        {props.filtrosColumna?.permiso && (
+                          <FiltroColumnaMulti label="permiso" {...propsDeFiltroColumna(props.filtrosColumna.permiso)} />
+                        )}
+                      </Th>
+                    ),
+                    origen: cols.origen && <Th col="origen" titulo="Origen" filtro={fc.origen} />,
+                    recepcion: cols.recepcion && <Th col="recepcion" titulo="Recepción" filtro={fc.recepcion} />,
+                    producto: cols.producto && <Th col="producto" titulo="Producto" filtro={fc.producto} />,
+                    /* Ya no es «la» especie: es la lista de lo que trae el papel. */
+                    especies: (
+                      <ThSort col="especies" field="speciesCommonName" sort={sort} onSort={onSort} filtro={props.filtrosColumna?.species}>
+                        Especies
+                      </ThSort>
+                    ),
+                    cantidad: (
+                      <ThSort col="cantidad" field="volumeM3" sort={sort} onSort={onSort} align="right" extra={fc.cantidad}>
+                        Cantidad
+                      </ThSort>
+                    ),
+                    piezas: cols.piezas && <Th col="piezas" titulo="Piezas" filtro={fc.piezas} className="text-right" />,
+                    trozas: cols.trozas && <Th col="trozas" titulo="Trozas" filtro={fc.trozas} className="text-right" />,
+                    unidad: cols.unidad && <Th col="unidad" titulo="Unidad" filtro={fc.unidad} />,
+                    costo: cols.costo && <Th col="costo" titulo="Valorizado" filtro={fc.costo} className="text-right" />,
+                    registro: cols.registro && <Th col="registro" titulo="Registró" filtro={fc.registro} />,
+                    estado: cols.estado && <Th col="estado" titulo="Estado" filtro={fc.estado} />,
+                  }}
+                />
                 <Th className="text-right">Acciones</Th>
               </tr>
             </thead>
@@ -322,7 +369,9 @@ export default function CtpGuiasTable(props: CtpGuiasTableProps) {
                   guia={g}
                   abierta={abiertas.has(g.clave)}
                   marcada={marcada(g)}
+                  motivoSinTilde={motivoSinTilde(g)}
                   cols={cols}
+                  orden={orden}
                   fotosEspecie={fotosEspecie}
                   actionProps={actionProps}
                   {...manejadores}
@@ -334,14 +383,13 @@ export default function CtpGuiasTable(props: CtpGuiasTableProps) {
             {guias.length > 0 && (
               <tfoot className="border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]">
                 <tr>
-                  {/* El colSpan cuenta las columnas VIVAS (`columnasVivas`): con
-                      una apagada, un número fijo corría el total una celda y el
-                      m³ caía bajo otra columna. Las DOS fijas de la izquierda
-                      —casilla y fecha·N°— más las opcionales prendidas más
-                      «Especies». */}
-                  <td colSpan={3 + vivas.izquierda} className="px-2! py-2.5 text-sm font-bold text-[var(--text-secondary)]">
-                    {guias.length} guía{guias.length === 1 ? "" : "s"} en pantalla · {totalPagina.lineas} asiento
-                    {totalPagina.lineas === 1 ? "" : "s"} del libro
+                  {/* El m³ cae bajo «Cantidad» esté donde esté (las columnas se
+                      arrastran): lo de antes, en una celda; lo de después, en
+                      otra. La leyenda va a la izquierda si hay lugar; con
+                      «Cantidad» pegada al borde, a su derecha — en la casilla
+                      de marcar sola no entra. */}
+                  <td colSpan={1 + antesDeCantidad} className="px-2! py-2.5 text-sm font-bold text-[var(--text-secondary)]">
+                    {antesDeCantidad >= 2 && leyendaPie}
                   </td>
                   <td className="px-2! py-2.5 text-right">
                     <div className="whitespace-nowrap font-bold tabular-nums text-[var(--text-primary)]">
@@ -352,7 +400,9 @@ export default function CtpGuiasTable(props: CtpGuiasTableProps) {
                       {totalPagina.pz} piezas
                     </div>
                   </td>
-                  <td colSpan={1 + vivas.derecha} />
+                  <td colSpan={1 + despuesDeCantidad} className="px-2! py-2.5 text-sm font-bold text-[var(--text-secondary)]">
+                    {antesDeCantidad < 2 && leyendaPie}
+                  </td>
                 </tr>
               </tfoot>
             )}
@@ -375,6 +425,7 @@ export default function CtpGuiasTable(props: CtpGuiasTableProps) {
               guia={g}
               fotosEspecie={fotosEspecie}
               marcada={marcada(g)}
+              motivoSinTilde={motivoSinTilde(g)}
               onAlternarMarca={(v) => alternarGuia(g, v)}
               actionProps={actionProps}
               {...manejadores}
@@ -432,8 +483,34 @@ export default function CtpGuiasTable(props: CtpGuiasTableProps) {
 /** `px-2!`: `DataTable` fuerza `px-3` en `thead th` (ver `Td` en `CtpGuiaFila`). */
 const TH_CLS = "px-2! py-2.5 font-bold text-[var(--text-primary)]";
 
-function Th({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <th className={`${TH_CLS} ${className ?? ""}`}>{children}</th>;
+/**
+ * Un título de columna. Con `col`, la columna se arrastra (`data-col`, lo
+ * escucha `useOrdenColumnas` en el `<thead>`); con `filtro`, lleva su
+ * autofiltro debajo del título.
+ */
+function Th({
+  children,
+  className,
+  col,
+  titulo,
+  filtro,
+}: {
+  children?: React.ReactNode;
+  className?: string;
+  col?: ColGuia;
+  titulo?: string;
+  filtro?: React.ReactNode;
+}) {
+  return (
+    <th data-col={col} className={`${TH_CLS} ${col ? "align-top" : ""} ${className ?? ""}`}>
+      {/* Mismo aspecto que los títulos que ordenan (un `<button>` no hereda
+          las versalitas del `<thead>`): si no, «DOCUMENTO» gritaba al lado
+          de «Fecha». */}
+      {titulo && <span className="block px-1 py-0.5 normal-case tracking-normal">{titulo}</span>}
+      {children}
+      {filtro && <div className={className?.includes("text-right") ? "flex justify-end" : undefined}>{filtro}</div>}
+    </th>
+  );
 }
 
 /** El título que ordena. Separado del `<th>` para la celda compartida
@@ -476,6 +553,9 @@ function ThSort({
   children,
   /** El autofiltro debajo del título: se ordena Y se acota desde la misma cabecera. */
   filtro,
+  /** Otro autofiltro ya armado (rango de fecha o de m³). */
+  extra,
+  col,
 }: {
   field: CtpSortField;
   sort: CtpSort;
@@ -483,10 +563,13 @@ function ThSort({
   align?: "left" | "right";
   children: React.ReactNode;
   filtro?: FiltroColumnaGuias;
+  extra?: React.ReactNode;
+  col?: ColGuia;
 }) {
   const activo = sort.by === field;
   return (
     <th
+      data-col={col}
       aria-sort={activo ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}
       className={`${TH_CLS} align-top ${align === "right" ? "text-right" : ""}`}
     >
@@ -495,6 +578,7 @@ function ThSort({
       </BotonOrden>
       {/* Título arriba, autofiltro debajo — igual que en las otras tablas del libro. */}
       {filtro && <FiltroColumnaMulti label={String(children)} {...propsDeFiltroColumna(filtro)} />}
+      {extra && <div className={align === "right" ? "flex justify-end" : undefined}>{extra}</div>}
     </th>
   );
 }

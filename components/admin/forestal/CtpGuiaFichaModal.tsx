@@ -4,32 +4,44 @@
  * La ficha de la guía — todo lo que el libro sabe de ella, y el botón para
  * recibirla (ADR-350).
  *
- * El papel imprimible ya existía (ADR-348) y sirve para el expediente. Lo que
- * faltaba es la pantalla donde se REVISA antes de recibir: sus casilleros, sus
- * asientos del libro y su lista de trozas, con «Recepcionar» ahí mismo.
+ * Rediseño 2026-09-26 (Brandon: «un rediseño completo y mejor elaborado… que
+ * en una fila haya 2 o más bloques»). Antes: dos pestañas («El documento» /
+ * «Las trozas») con los casilleros apilados en 6 secciones; sin plata, sin
+ * papeles, sin fotos, sin etiquetas ni estado de cada troza. Ahora: una
+ * cabecera con la identidad de la guía y su estado en pastillas, y una grilla
+ * de bloques —una pregunta cada uno— que a ≥56rem de modal va en 2 columnas y
+ * a ≥72rem en 3 (container query: manda el ancho del modal, no el de la
+ * ventana, que cambia 300 px con la barra lateral).
  *
  * Recibir en otra pantalla que la que se revisa termina en guías recibidas sin
- * mirar. Acá se ve lo que falta —los casilleros vacíos se muestran vacíos— y se
- * decide con eso a la vista.
+ * mirar: «Recepcionar» sigue en el pie, con todo a la vista.
  */
 
-import { useMemo, useState } from "react";
-import { AlertTriangle, ArrowLeftRight, FileText, Loader2, PackageCheck, Scale } from "@buleje/design-system/icons";
-import { CardTitle } from "@buleje/design-system";
+import { useMemo } from "react";
+import { FileText, Loader2, PackageCheck } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
-import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { useDocumentosGuia } from "@/hooks/use-documentos-guia";
+import { usePlataDeGuia } from "@/hooks/use-plata-de-guia";
 import { cuadreDeIngreso, descuadra } from "@/lib/forestal/cuadre-trozas";
-import { nTrozas, trozasPorFila } from "@/lib/forestal/acomodar-trozas";
+import { trozasPorFila } from "@/lib/forestal/acomodar-trozas";
+import { mensajeDeVencida, vencimientoDeGuia, yaRecibida } from "@/lib/forestal/fecha-de-llegada";
+import { lineaDeTiempo, resumirTrozas, ddmm } from "@/lib/forestal/ficha-guia-resumen";
+import { normalizarFotos } from "@/lib/forestal/fotos-carga";
 import { completitudFicha, seccionesDeGuia, type LineaConGuia } from "@/lib/forestal/guia-ficha";
 import type { GuiaIngreso } from "@/lib/forestal/ingresos-por-guia";
-import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
-import { Btn, ModalBody, ModalFooter } from "./ctp-shared";
-import { formatDate, productLabel, StatusBadge, type WoodEntry, type WoodEntryStatus } from "./ctp-shared";
-import { CtpPaginacion, FilaVacia, TablaCtp, TbodyCtp, TheadCtp, usePaginacion } from "./ctp-tabla";
-import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
-import { formatDateNumeric, formatNumber } from "@/lib/format";
+import { ptDeLinea } from "@/lib/forestal/plata-de-guia";
+import { Btn, ModalBody, ModalFooter, type WoodEntry } from "./ctp-shared";
+import FichaCabecera from "./ficha-guia/FichaCabecera";
+import FichaAvisos from "./ficha-guia/FichaAvisos";
+import BloqueMadera from "./ficha-guia/BloqueMadera";
+import BloqueRecepcion from "./ficha-guia/BloqueRecepcion";
+import BloquePlata from "./ficha-guia/BloquePlata";
+import BloqueTrozas from "./ficha-guia/BloqueTrozas";
+import BloqueDocumentoGtf from "./ficha-guia/BloqueDocumentoGtf";
+import BloquePapeles from "./ficha-guia/BloquePapeles";
+import BloqueFotos from "./ficha-guia/BloqueFotos";
 
-/** Una pieza de la guía, como la devuelve el endpoint de trozas. */
+/** Una pieza de la guía, como la devuelve el endpoint de trozas (`serializar`). */
 export interface TrozaDeFicha {
   id: string;
   /** La fila (asiento por especie) de la que cuelga. */
@@ -45,41 +57,34 @@ export interface TrozaDeFicha {
   fechaRecepcion?: string | null;
   noRecepcionada?: boolean | null;
   consumidaEnId?: string | null;
-}
-
-const n4 = (v: unknown) => {
-  const n = Number(v ?? 0);
-  return Number.isFinite(n) ? fmtM3(n) : "—";
-};
-
-function Seccion({ titulo, rango, children }: { titulo: string; rango?: string; children: React.ReactNode }) {
-  return (
-    <section className="rounded-xl border border-[var(--rule-base)]">
-      <CardTitle as="h3" className="flex flex-wrap items-baseline justify-between gap-2 rounded-t-xl bg-[var(--surface-sunken)] px-3 py-2">
-        <span className="text-sm font-bold text-[var(--text-primary)]">{titulo}</span>
-        {rango && <span className="text-xs text-[var(--text-tertiary)]">{rango}</span>}
-      </CardTitle>
-      <div className="p-3">{children}</div>
-    </section>
-  );
+  /* Viajan en el JSON desde ADR-363/436; la ficha dice con ellos DÓNDE está cada una. */
+  despachadaEnId?: string | null;
+  descarte?: boolean | null;
+  retrozos?: number | null;
+  etiquetadaEn?: string | null;
 }
 
 export default function CtpGuiaFichaModal({
   guia,
   trozas,
-  cargandoTrozas,
   recepcionando,
   error,
   onRecepcionar,
   onVerDocumento,
   onCuadrar,
   onAcomodar,
+  onPlata,
+  onDocumentos,
+  onEtiquetas,
+  onFotos,
+  onCorregirRecepcion,
   onClose,
 }: {
   guia: GuiaIngreso<WoodEntry>;
   /** Las piezas de todos sus asientos. `null` mientras cargan. */
   trozas: TrozaDeFicha[] | null;
-  cargandoTrozas: boolean;
+  /** Legado: hoy «cargando» es `trozas == null`. */
+  cargandoTrozas?: boolean;
   recepcionando: boolean;
   error: string | null;
   /** Recepciona la guía entera: fecha sus piezas, la fecha y la valida (ADR-339). */
@@ -89,22 +94,22 @@ export default function CtpGuiaFichaModal({
   onCuadrar?: () => void;
   /** Lleva cada troza a la fila de su especie (ADR-435). */
   onAcomodar?: () => void;
+  /* Los otros papeles de la guía. Cada uno REEMPLAZA la ficha (no se apilan
+     modales: obligaría a cerrar dos veces). Sin el manejador no se ofrece. */
+  onPlata?: () => void;
+  onDocumentos?: () => void;
+  onEtiquetas?: () => void;
+  onFotos?: () => void;
+  onCorregirRecepcion?: () => void;
   onClose: () => void;
 }) {
-  const [verTodas, setVerTodas] = useState(false);
-  const [vista, setVista] = useState<"documento" | "trozas">("documento");
-  const secciones = useMemo(
-    () => seccionesDeGuia(guia as unknown as GuiaIngreso<LineaConGuia>),
-    [guia],
-  );
-  const completitud = useMemo(() => completitudFicha(secciones), [secciones]);
+  const plata = usePlataDeGuia(guia.gtfNumber);
+  const docs = useDocumentosGuia(guia.gtfNumber);
 
-  /* El mismo cálculo que el chip de la tabla: un solo criterio de descuadre en
-     todo el libro, o la ficha diría que cuadra lo que el listado marca en rojo. */
+  const secciones = useMemo(() => seccionesDeGuia(guia as unknown as GuiaIngreso<LineaConGuia>), [guia]);
+  const completitud = useMemo(() => completitudFicha(secciones), [secciones]);
+  /* El mismo cálculo que el chip de la tabla: un solo criterio de descuadre. */
   const cuadre = cuadreDeIngreso(guia.volumenM3, guia.trozasM3, guia.trozasCount);
-  const piezas = trozas ?? [];
-  /* Cada fila con SUS trozas (ADR-435): cuántas cuelgan de cada especie y
-     cuáles están en la fila de otra que la guía sí tiene. */
   const porFila = useMemo(
     () =>
       trozasPorFila(
@@ -113,35 +118,60 @@ export default function CtpGuiaFichaModal({
       ),
     [guia.lineas, trozas],
   );
-  const { visibles, rango, porPagina, setPorPagina, ir } = usePaginacion(piezas);
-  const recibidas = piezas.filter((t) => t.fechaRecepcion || t.noRecepcionada).length;
+  const resumen = useMemo(() => (trozas ? resumirTrozas(trozas) : null), [trozas]);
+  const vigencia = useMemo(() => vencimientoDeGuia(guia.lineas), [guia.lineas]);
+  const tiempo = useMemo(
+    () =>
+      lineaDeTiempo({
+        lineas: guia.lineas,
+        expedicion: vigencia.expedicion,
+        vencimiento: vigencia.vencimiento,
+        piezasDecididas: guia.trozasDecididas,
+        piezasTotal: guia.trozasCount,
+      }),
+    [guia.lineas, guia.trozasDecididas, guia.trozasCount, vigencia],
+  );
+  const fotos = useMemo(() => normalizarFotos(guia.lineas[0]?.photos), [guia.lineas]);
+  /* ≈ pt aserrable: el MISMO cálculo que «Plata de la guía» (rolliza al 56 %).
+     La ficha vieja decía m³ × 424 y la misma pila salía con dos cifras. */
+  const pt = guia.lineas.reduce((s, l) => s + ptDeLinea({ volumeM3: Number(l.volumeM3) || 0, productType: l.productType }), 0);
+  const especies = useMemo(
+    () => [...new Set((trozas ?? []).map((t) => t.especieComun ?? "").filter(Boolean))],
+    [trozas],
+  );
+
+  const llego = tiempo.hitos.find((h) => h.clave === "llego")?.dia ?? null;
+  const vencida =
+    vigencia.vencimiento && tiempo.recibidaVencida
+      ? mensajeDeVencida(vigencia.vencimiento)
+      : vigencia.vencimiento && tiempo.vencidaSinRecibir
+        ? `La guía venció el ${ddmm(vigencia.vencimiento)} y la madera todavía no figura recibida.`
+        : null;
   /** Una guía ya recibida no se vuelve a recibir: el botón lo dice, no lo esconde. */
   const yaRecepcionada = guia.status !== "pendiente" && guia.trozasDecididas >= guia.trozasCount;
+  const ocupado = recepcionando;
 
   return (
     <AdminModal
       open
       onClose={recepcionando ? () => {} : onClose}
       variant="info"
+      className="sm:max-w-[80rem]"
       icon={FileText}
-      title={`Guía ${guia.gtfNumber}`}
-      description={`${guia.providerName} · ${guia.lineas.length} asiento${guia.lineas.length === 1 ? "" : "s"} · ${fmtM3(guia.volumenM3)} m³`}
+      title="Ficha de la guía"
+      claveVentana="ctp-guia-ficha"
       footer={
         <ModalFooter
           error={error}
           nota={
             <span className="font-mono tabular-nums">
-              {completitud.llenos}/{completitud.total} casilleros · {guia.trozasCount} pieza
-              {guia.trozasCount === 1 ? "" : "s"}
-              {guia.trozasCount > 0 && ` · ${guia.trozasDecididas}/${guia.trozasCount} recibidas`}
+              {completitud.llenos}/{completitud.total} casilleros
+              {guia.trozasCount > 0 && ` · ${guia.trozasDecididas}/${guia.trozasCount} piezas recibidas`}
             </span>
           }
         >
           <Btn variant="secondary" onClick={onClose} disabled={recepcionando}>
             Cerrar
-          </Btn>
-          <Btn variant="secondary" onClick={onVerDocumento} disabled={recepcionando}>
-            <FileText className="h-4 w-4" /> Ver el documento
           </Btn>
           <Btn variant="primary" onClick={onRecepcionar} disabled={recepcionando || yaRecepcionada}>
             {recepcionando ? <Loader2 className="h-4 w-4 animate-spin" /> : <PackageCheck className="h-4 w-4" />}
@@ -150,326 +180,77 @@ export default function CtpGuiaFichaModal({
         </ModalFooter>
       }
     >
-      <ModalBody className="space-y-3">
-        {/* Qué es esto y en qué estado está, antes de cualquier casillero. */}
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl bg-[var(--surface-sunken)] px-3 py-2 text-sm">
-          {guia.statusMixto ? (
-            <span className="font-bold text-[var(--text-secondary)]">
-              Asientos en {Object.keys(guia.porEstado).length} estados distintos
-            </span>
-          ) : (
-            <StatusBadge status={guia.status as WoodEntryStatus} />
-          )}
-          <span className="text-[var(--text-secondary)]">
-            Ingresada el <b className="text-[var(--text-primary)]">{formatDate(guia.entryDate)}</b>
-          </span>
-          <span className="text-[var(--text-secondary)]">
-            Folio{" "}
-            <b className="font-mono text-[var(--text-primary)]">
-              {guia.libroDesde == null
-                ? "—"
-                : guia.libroHasta && guia.libroHasta !== guia.libroDesde
-                  ? `${guia.libroDesde}–${guia.libroHasta}`
-                  : guia.libroDesde}
-            </b>
-          </span>
-          <span className="font-mono tabular-nums text-[var(--text-secondary)]">
-            {fmtM3(guia.volumenM3)} m³ · {formatNumber(pieTablarDe(guia.volumenM3))} pt
-          </span>
+      <ModalBody className="@container/ficha space-y-4">
+        <FichaCabecera
+          guia={guia}
+          ptAserrable={pt}
+          trozas={resumen}
+          plata={plata.dto}
+          docsLlenos={docs.datos?.llenos ?? null}
+          fotos={fotos.length}
+          llego={llego}
+          alerta={vencida}
+          atajos={{ onVerDocumento, onPlata, onDocumentos, onEtiquetas, onFotos }}
+          ocupado={ocupado}
+        />
+
+        <FichaAvisos
+          descuadre={descuadra(cuadre) ? { declarado: guia.volumenM3, trozas: guia.trozasM3 ?? 0 } : null}
+          enOtraFila={porFila.enOtraFila.size}
+          vencida={vencida}
+          onCuadrar={onCuadrar}
+          onAcomodar={onAcomodar}
+          ocupado={ocupado}
+        />
+
+        {/* Orden por pregunta: qué trae · cuándo llegó · cuánto costó; después
+            dónde está cada troza y qué dice el papel; al final lo que acompaña.
+            `dense` deja que un bloque angosto suba al hueco que deja uno ancho. */}
+        <div className="grid grid-cols-1 gap-4 grid-flow-row-dense @min-[56rem]/ficha:grid-cols-2 @min-[72rem]/ficha:grid-cols-3">
+          <BloqueMadera guia={guia} trozasPorFila={trozas ? porFila.cuantas : null} indice={1} />
+          <BloqueRecepcion
+            hitos={tiempo.hitos}
+            piezasDecididas={guia.trozasDecididas}
+            piezasTotal={guia.trozasCount}
+            onCorregir={yaRecibida(guia) ? onCorregirRecepcion : undefined}
+            ocupado={ocupado}
+            indice={2}
+          />
+          <BloquePlata
+            dto={plata.dto}
+            cargando={plata.cargando}
+            error={plata.error}
+            onReintentar={() => void plata.cargar()}
+            onAbrir={onPlata}
+            ocupado={ocupado}
+            indice={3}
+          />
+          <BloqueTrozas
+            trozas={trozas}
+            resumen={resumen}
+            enOtraFila={porFila.enOtraFila}
+            especies={especies}
+            indice={4}
+            className="@min-[56rem]/ficha:col-span-2"
+          />
+          <BloqueDocumentoGtf
+            secciones={secciones}
+            llenos={completitud.llenos}
+            total={completitud.total}
+            onVerDocumento={onVerDocumento}
+            ocupado={ocupado}
+            indice={5}
+          />
+          <BloquePapeles
+            datos={docs.datos}
+            cargando={docs.cargando}
+            error={docs.error}
+            onAbrir={onDocumentos}
+            ocupado={ocupado}
+            indice={6}
+          />
+          <BloqueFotos fotos={fotos} onFotos={onFotos} ocupado={ocupado} indice={7} className="@min-[72rem]/ficha:col-span-2" />
         </div>
-
-        {/* El descuadre del documento, ANTES de recibirlo (ADR-353). Recibir una
-            guía que no cuadra consigo misma deja la sorpresa para el consumo,
-            que es donde ya no se entiende de dónde salió. */}
-        {descuadra(cuadre) && (
-          <div className="flex flex-wrap items-start gap-2 rounded-xl bg-[var(--data-warning-500)]/12 px-3 py-2 text-sm text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-            <span className="flex-1">
-              <b>Esta guía no cuadra consigo misma.</b> Declara{" "}
-              <span className="font-mono tabular-nums">{fmtM3(guia.volumenM3)} m³</span> por especie y su lista de
-              trozas suma <span className="font-mono tabular-nums">{fmtM3(guia.trozasM3 ?? 0)} m³</span>. Se puede
-              recibir igual —el documento es el que es— pero no se va a poder consumir hasta cuadrarla.
-            </span>
-            {onCuadrar && (
-              <Btn variant="secondary" onClick={onCuadrar} disabled={recepcionando}>
-                <Scale className="h-4 w-4" /> Cuadrar
-              </Btn>
-            )}
-          </div>
-        )}
-
-        {/* Trozas colgadas de la fila de otra especie de esta misma guía
-            (ADR-435): el consumo y el descuento del permiso le suman a la
-            especie equivocada hasta que se acomodan. */}
-        {porFila.enOtraFila.size > 0 && (
-          <div className="flex flex-wrap items-center gap-2 rounded-xl bg-[var(--data-warning-500)]/12 px-3 py-2 text-sm text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-            <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
-            <span className="flex-1">
-              <b>{nTrozas(porFila.enOtraFila.size)}</b> {porFila.enOtraFila.size === 1 ? "está" : "están"} en la fila de otra
-              especie.
-            </span>
-            <InfoTip
-              icono="ayuda"
-              title="Trozas en otra fila"
-              what="Esta guía tiene una fila por especie. Cada troza tiene que colgar de la fila de SU especie: si no, el consumo y el descuento del permiso le suman a otra."
-              affects="«Acomodar» sólo las cambia de fila dentro de esta guía. No toca lo declarado ni lo ya consumido."
-            />
-            {onAcomodar && (
-              <Btn variant="secondary" onClick={onAcomodar} disabled={recepcionando}>
-                <ArrowLeftRight className="h-4 w-4" /> Acomodar trozas
-              </Btn>
-            )}
-          </div>
-        )}
-
-        {completitud.faltan.length > 0 && (
-          <p className="flex items-start gap-2 rounded-xl bg-[var(--data-warning-500)]/12 px-3 py-2 text-sm text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-            <span>
-              <b>Faltan {completitud.faltan.length} casilleros</b> del formato:{" "}
-              {completitud.faltan.slice(0, 6).join(" · ")}
-              {completitud.faltan.length > 6 ? ` y ${completitud.faltan.length - 6} más` : ""}. Se pueden completar
-              editando el ingreso; recepcionar no los exige.
-            </span>
-          </p>
-        )}
-
-        {/* ── Las dos vistas ─────────────────────────────────────────────── */}
-        {/* El papel por un lado, la madera por el otro. Son las dos preguntas
-            que se hacen frente a una guía —«¿el documento está completo?» y
-            «¿qué trozas trae?»— y juntas en un scroll de dos metros obligan a
-            pasar por la que no se está mirando. El contador va en la pestaña:
-            se ve qué falta sin entrar. */}
-        <div role="tablist" aria-label="Vistas de la guía" className="flex gap-1 rounded-xl bg-[var(--surface-sunken)] p-1">
-          {([
-            { id: "documento" as const, label: "El documento", detalle: `${completitud.llenos}/${completitud.total} casilleros` },
-            { id: "trozas" as const, label: "Las trozas", detalle: `${piezas.length} ${piezas.length === 1 ? "pieza" : "piezas"}` },
-          ]).map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              role="tab"
-              aria-selected={vista === t.id}
-              onClick={() => setVista(t.id)}
-              className={`flex-1 rounded-xl px-3 min-h-10 text-sm font-semibold transition-colors ${
-                vista === t.id
-                  ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-[var(--shadow-sm)]"
-                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-              }`}
-            >
-              {t.label}{" "}
-              <span className="font-mono text-[length:var(--ts-2xs)] font-normal text-[var(--text-tertiary)]">{t.detalle}</span>
-            </button>
-          ))}
-        </div>
-
-        {vista === "documento" && (
-          <>
-        {/* ── Las especies del papel: un asiento por especie (ADR-312) ── */}
-        <Seccion titulo={`Detalle del producto · ${guia.especies.length} especie(s)`} rango="casilleros (37a) a (37g)">
-          <TablaCtp>
-            <TheadCtp>
-              <tr>
-                <th className="px-3 py-2 font-bold">N° libro</th>
-                <th className="px-3 py-2 font-bold">Especie</th>
-                <th className="px-3 py-2 font-bold">Producto</th>
-                <th className="px-3 py-2 text-right font-bold">Piezas</th>
-                <th className="px-3 py-2 text-right font-bold" title="Las trozas que cuelgan de esta fila, contra las piezas que declara">
-                  Trozas
-                </th>
-                <th className="px-3 py-2 text-right font-bold">Volumen</th>
-                <th className="px-3 py-2 font-bold">Estado</th>
-              </tr>
-            </TheadCtp>
-            <TbodyCtp>
-              {guia.lineas.map((l) => (
-                <tr key={l.id}>
-                  <td className="px-3 py-2 font-mono tabular-nums text-[var(--text-tertiary)]">{l.libroNro ?? "—"}</td>
-                  <td className="px-3 py-2">
-                    <span className="font-bold text-[var(--text-primary)]">{l.speciesCommonName}</span>
-                    {l.speciesScientificName && (
-                      <span className="ml-2 text-xs italic text-[var(--text-tertiary)]">{l.speciesScientificName}</span>
-                    )}
-                    {l.speciesCites && (
-                      <span className="ml-2 rounded-full bg-[var(--data-error-100)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)]">
-                        CITES
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-3 py-2 text-[var(--text-secondary)]">{productLabel(l.productType)}</td>
-                  <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
-                    {l.pieces ?? "—"}
-                  </td>
-                  <td
-                    className={`px-3 py-2 text-right font-mono tabular-nums ${
-                      trozas != null && (porFila.cuantas.get(l.id) ?? 0) !== (l.pieces ?? 0)
-                        ? "font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
-                        : "text-[var(--text-secondary)]"
-                    }`}
-                  >
-                    {trozas == null ? "…" : (porFila.cuantas.get(l.id) ?? 0)}
-                  </td>
-                  <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
-                    {n4(l.volumeM3)}
-                  </td>
-                  <td className="px-3 py-2">
-                    <StatusBadge status={l.status} />
-                  </td>
-                </tr>
-              ))}
-            </TbodyCtp>
-          </TablaCtp>
-        </Seccion>
-
-        {/* ── Los casilleros del documento ── */}
-        {secciones.map((s) => (
-          <Seccion key={s.titulo} titulo={s.titulo} rango={s.rango}>
-            <dl className="grid gap-x-4 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
-              {s.campos.map((c) => (
-                <div key={c.label}>
-                  <dt className="text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
-                    {c.casillero && <span className="mr-1 font-mono">({c.casillero})</span>}
-                    {c.label}
-                  </dt>
-                  {/* Vacío se dibuja vacío: un campo que desaparece hace creer
-                      que la guía no lo necesita.
-
-                      Y lo que escribió una persona se ve distinto de lo que
-                      dice el papel (ADR-392): un fiscalizador pregunta de dónde
-                      sale cada número, y «lo dice la guía» no es lo mismo que
-                      «lo transcribió el almacenero». El tono informativo, no de
-                      alarma — completar un casillero es lo correcto, no un
-                      problema. */}
-                  <dd
-                    className={
-                      c.manual
-                        ? "text-sm font-medium text-[var(--data-info-700)] dark:text-[var(--data-info-500)]"
-                        : c.valor
-                          ? "text-sm text-[var(--text-primary)]"
-                          : "text-sm text-[var(--text-tertiary)]"
-                    }
-                    title={
-                      c.manual
-                        ? `Completado a mano${c.manual.por ? ` por ${c.manual.por}` : ""}${
-                            c.manual.el ? ` el ${formatDateNumeric(c.manual.el)}` : ""
-                          }`
-                        : undefined
-                    }
-                  >
-                    {c.valor ?? "—"}
-                    {c.manual && (
-                      <span className="ml-1.5 align-middle text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] opacity-70">
-                        a mano
-                      </span>
-                    )}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-          </Seccion>
-        ))}
-
-          </>
-        )}
-
-        {vista === "trozas" && (
-          <>
-        {/* ── La lista de trozas ── */}
-        <Seccion titulo={`Lista de trozas · ${piezas.length}`} rango="anexo del casillero (35)">
-          {cargandoTrozas ? (
-            <p className="py-4 text-center text-sm text-[var(--text-tertiary)]">Leyendo las piezas de la guía…</p>
-          ) : (
-            <>
-              <TablaCtp>
-                <TheadCtp>
-                  <tr>
-                    <th className="px-3 py-2 font-bold">N°</th>
-                    <th className="px-3 py-2 font-bold">Codificación</th>
-                    <th className="px-3 py-2 font-bold">Cód. planta</th>
-                    <th className="px-3 py-2 font-bold">Especie</th>
-                    <th className="px-3 py-2 font-bold">Medidas</th>
-                    <th className="px-3 py-2 text-right font-bold">Volumen</th>
-                    <th className="px-3 py-2 font-bold">Recepción</th>
-                  </tr>
-                </TheadCtp>
-                <TbodyCtp>
-                  {(verTodas ? piezas : visibles).length === 0 && (
-                    <FilaVacia cols={7}>
-                      Esta guía no tiene piezas cargadas. Se pueden agregar desde el ingreso, pieza por pieza o
-                      importando la lista.
-                    </FilaVacia>
-                  )}
-                  {(verTodas ? piezas : visibles).map((t, i) => (
-                    <tr key={t.id} className="hover:bg-[var(--surface-sunken)]">
-                      <td className="px-3 py-2 font-mono tabular-nums text-[var(--text-tertiary)]">
-                        {verTodas ? i + 1 : rango.inicio + i + 1}
-                      </td>
-                      <td className="px-3 py-2 font-mono font-bold text-[var(--text-primary)]">
-                        {t.codificacion ?? "—"}
-                      </td>
-                      <td className="px-3 py-2 font-mono text-[var(--text-secondary)]">{t.codigoPlanta ?? "—"}</td>
-                      <td className="px-3 py-2 text-[var(--text-secondary)]">
-                        {t.especieComun ?? "—"}
-                        {porFila.enOtraFila.has(t.id) && (
-                          <span className="ml-1.5 rounded-full bg-[var(--data-warning-500)]/12 px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-                            en fila {porFila.enOtraFila.get(t.id)}
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-3 py-2 font-mono text-xs text-[var(--text-secondary)]">
-                        {t.d1Cm && t.d2Cm && t.largoM ? `${t.d1Cm} × ${t.d2Cm} cm · ${t.largoM} m` : "—"}
-                      </td>
-                      <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-primary)]">
-                        {n4(t.volumenM3)}
-                      </td>
-                      <td className="px-3 py-2 text-xs">
-                        {t.noRecepcionada ? (
-                          <span className="font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-                            No llegó
-                          </span>
-                        ) : t.fechaRecepcion ? (
-                          <span className="text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
-                            {formatDate(t.fechaRecepcion)}
-                          </span>
-                        ) : (
-                          <span className="text-[var(--text-tertiary)]">sin fechar</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </TbodyCtp>
-              </TablaCtp>
-
-              {!verTodas && piezas.length > 25 ? (
-                <CtpPaginacion
-                  rango={rango}
-                  porPagina={porPagina}
-                  onPorPagina={setPorPagina}
-                  onIr={ir}
-                  sustantivo="pieza"
-                  extra={
-                    <button
-                      type="button"
-                      onClick={() => setVerTodas(true)}
-                      className="font-bold text-[var(--accent-ink)] underline dark:text-[var(--accent)]"
-                    >
-                      ver las {piezas.length} de una
-                    </button>
-                  }
-                />
-              ) : (
-                piezas.length > 0 && (
-                  <p className="pt-2 text-sm text-[var(--text-tertiary)]">
-                    <span className="font-mono tabular-nums text-[var(--text-secondary)]">{piezas.length} piezas</span>{" "}
-                    · {recibidas} con decisión de recepción
-                  </p>
-                )
-              )}
-            </>
-          )}
-        </Seccion>
-          </>
-        )}
       </ModalBody>
     </AdminModal>
   );

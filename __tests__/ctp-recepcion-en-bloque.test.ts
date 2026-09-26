@@ -11,10 +11,16 @@ import { describe, expect, it } from "vitest";
 
 import {
   MARCA_VACIA,
+  aplicarMismaFecha,
+  guiaTildada,
+  marcasIniciales,
   problemaDeFecha,
+  tildadasParaRecibir,
+  tildeDeGuia,
   problemasDelBloque,
   repartirCosto,
   resumenDelBloque,
+  tocarMarca,
   type GuiaDelBloque,
   type Marcas,
 } from "@/lib/forestal/recepcion-bloque";
@@ -112,5 +118,127 @@ describe("el resumen que se ve antes de apretar", () => {
     expect(r.conCosto).toBe(1);
     expect(r.soles).toBe(500);
     expect(resumenDelBloque(guias, {}).guias).toBe(0);
+  });
+});
+
+describe("elegir en la tabla y recibir con la misma fecha (2026-09-26)", () => {
+  const sinRecibir = {
+    clave: "A",
+    status: "validado",
+    lineas: [
+      { id: "a1", status: "validado", fechaRecepcion: null },
+      { id: "a2", status: "rechazado", fechaRecepcion: null },
+    ],
+    trozasCount: 3,
+    trozasDecididas: 0,
+  };
+  const recibida = {
+    clave: "B",
+    status: "validado",
+    lineas: [{ id: "b1", status: "validado", fechaRecepcion: "2026-09-10" }],
+    trozasCount: 2,
+    trozasDecididas: 2,
+  };
+  const pendienteRecibida = {
+    clave: "C",
+    status: "pendiente",
+    lineas: [{ id: "c1", status: "pendiente", fechaRecepcion: "2026-09-10" }],
+    trozasCount: 0,
+    trozasDecididas: 0,
+  };
+
+  it("una validada a mano y sin recibir SE PUEDE tildar (antes el tilde era sólo de pendientes)", () => {
+    expect(tildeDeGuia(sinRecibir)).toEqual({ ids: ["a1"], recepcionable: true, motivo: null });
+  });
+
+  it("una ya recibida y validada tiene el tilde apagado y dice por qué", () => {
+    expect(tildeDeGuia(recibida)).toEqual({ ids: [], recepcionable: false, motivo: "ya está recibida y validada" });
+    expect(tildeDeGuia({ ...recibida, status: "rechazado" }).motivo).toBe("está rechazada");
+  });
+
+  it("una pendiente de validar ya recibida se tilda para validar, pero no entra a recibir", () => {
+    const t = tildeDeGuia(pendienteRecibida);
+    expect(t.ids).toEqual(["c1"]);
+    expect(t.recepcionable).toBe(false);
+    expect(tildadasParaRecibir([sinRecibir, pendienteRecibida], ["a1", "c1"]).map((g) => g.clave)).toEqual(["A"]);
+  });
+
+  it("tildada = todos los asientos de su tilde están elegidos", () => {
+    expect(guiaTildada(sinRecibir, ["a1"])).toBe(true);
+    expect(guiaTildada(sinRecibir, [])).toBe(false);
+    expect(guiaTildada(recibida, ["b1"])).toBe(false);
+  });
+
+  it("el bloque abierto desde la tabla arranca marcado, cada guía con SU propuesta", () => {
+    const m = marcasIniciales(["A", "D"], (c) => (c === "A" ? "2026-09-02" : null));
+    expect(m.A).toMatchObject({ marcada: true, fecha: "2026-09-02" });
+    expect(m.D).toMatchObject({ marcada: true, fecha: "" });
+  });
+
+  it("«misma fecha para todas» pisa sólo las marcadas y no toca lo demás de la fila", () => {
+    const marcas: Marcas = {
+      A: { ...MARCA_VACIA, marcada: true, fecha: "2026-09-02", observacion: "vino mojada" },
+      B: { ...MARCA_VACIA, marcada: false, fecha: "" },
+      C: { ...MARCA_VACIA, marcada: true, fecha: "2026-09-05", aceptaVencida: true, motivoVencida: "lluvia" },
+    };
+    const r = aplicarMismaFecha(marcas, "2026-09-20", () => null);
+    expect(r.A).toMatchObject({ fecha: "2026-09-20", observacion: "vino mojada" });
+    expect(r.B.fecha).toBe("");
+    expect(r.C).toMatchObject({ fecha: "2026-09-20", aceptaVencida: true, motivoVencida: "lluvia" });
+    expect(marcas.A.fecha).toBe("2026-09-02");
+  });
+
+  /* Revisión 26-09: vaciar el campo dejaba la fecha común en todas las filas,
+     y volver a ponerla pisaba las que se corrigieron a mano. */
+  const propuestaDe = (c: string) => ({ A: "2026-09-02", B: "2026-09-04" })[c] ?? null;
+
+  it("vaciar el campo común devuelve a cada guía SU propuesta (no deja la común)", () => {
+    const comun = aplicarMismaFecha(marcasIniciales(["A", "B"], propuestaDe), "2026-09-20", propuestaDe);
+    expect(comun.A.fecha).toBe("2026-09-20");
+    const r = aplicarMismaFecha(comun, "", propuestaDe);
+    expect(r.A.fecha).toBe("2026-09-02");
+    expect(r.B.fecha).toBe("2026-09-04");
+  });
+
+  it("una fecha a medio tipear no pisa nada", () => {
+    const marcas: Marcas = { A: { ...MARCA_VACIA, marcada: true, fecha: "2026-09-02" } };
+    expect(aplicarMismaFecha(marcas, "2026-09", propuestaDe)).toBe(marcas);
+  });
+
+  it("la fila corregida a mano no la pisa la fecha común, ni al ponerla ni al vaciarla", () => {
+    let m = aplicarMismaFecha(marcasIniciales(["A", "B"], propuestaDe), "2026-09-20", propuestaDe);
+    m = tocarMarca(m, "A", { fecha: "2026-09-07" }, "2026-09-20"); // corregida en su fila
+    expect(m.A).toMatchObject({ fecha: "2026-09-07", fechaAMano: true });
+
+    const otra = aplicarMismaFecha(m, "2026-09-21", propuestaDe);
+    expect(otra.A.fecha).toBe("2026-09-07"); // respetada
+    expect(otra.B.fecha).toBe("2026-09-21");
+
+    const vacia = aplicarMismaFecha(otra, "", propuestaDe);
+    expect(vacia.A.fecha).toBe("2026-09-07"); // tampoco vuelve a la propuesta
+    expect(vacia.B.fecha).toBe("2026-09-04");
+  });
+
+  it("marcar una guía DESPUÉS de poner la fecha común la trae con la común (salvo que ya se corrigió a mano)", () => {
+    const vacia: Marcas = {};
+    const m = tocarMarca(vacia, "A", { marcada: true, fecha: "2026-09-02" }, "2026-09-20");
+    expect(m.A).toMatchObject({ marcada: true, fecha: "2026-09-20" });
+    expect(m.A.fechaAMano).toBeFalsy(); // el tilde no es una corrección a mano
+
+    const aMano = tocarMarca({ A: { ...MARCA_VACIA, fecha: "2026-09-07", fechaAMano: true } }, "A", { marcada: true }, "2026-09-20");
+    expect(aMano.A.fecha).toBe("2026-09-07");
+  });
+
+  it("tocar la observación o el costo no marca la fecha como corregida", () => {
+    const m = tocarMarca(marcar("A"), "A", { observacion: "vino mojada" }, "");
+    expect(m.A.fechaAMano).toBeFalsy();
+  });
+
+  it("la fecha común futura se aplica, pero el bloque la frena guía por guía", () => {
+    const g = guia("A");
+    const r = aplicarMismaFecha(marcar("A"), "2999-01-01", () => null);
+    expect(problemasDelBloque([g], r).map((p) => p.motivo)).toEqual([
+      "La recepción no puede ser de un día que todavía no llegó.",
+    ]);
   });
 });
