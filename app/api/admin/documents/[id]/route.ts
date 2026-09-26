@@ -9,6 +9,8 @@ import { assertCsrf } from "@/lib/auth/csrf";
 import { ESTADOS_DOC } from "@/lib/documents/estados-doc";
 import { conDescripcionPropia } from "@/lib/documents/texto-buscable";
 
+const ROLES_ETIQUETAS_DE_GUIA = new Set(["admin", "owner", "almacenero"]);
+
 
 const PatchBody = z.object({
   name: z.string().min(1).max(255).optional(),
@@ -82,6 +84,21 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
 
     const before = await DocumentsDB.getById(auth.tenantId, id, auth.role);
     if (!before) return NextResponse.json({ error: "not_found" }, { status: 404 });
+
+    /* Las etiquetas `gtf:`/`casillero:` meten o sacan un papel del casillero de
+       una guía (ADR-438): sólo los roles que manejan esos documentos pueden
+       tocarlas desde el Drive general. */
+    if (parsed.data.tags) {
+      const deGuia = (t: string) => /^(gtf|casillero):/i.test(t);
+      const antes = (before.tags ?? []).filter(deGuia).sort().join("|");
+      const despues = parsed.data.tags.filter(deGuia).sort().join("|");
+      if (antes !== despues && !ROLES_ETIQUETAS_DE_GUIA.has(auth.role)) {
+        return NextResponse.json(
+          { error: "forbidden", message: "Solo admin, dueño o almacenero cambian a qué guía pertenece un documento." },
+          { status: 403 },
+        );
+      }
+    }
 
     const expiresAtDate =
       parsed.data.expiresAt === undefined

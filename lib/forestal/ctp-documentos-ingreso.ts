@@ -15,10 +15,12 @@
 
 import { documentoHtml } from "./ctp-documento-print";
 import { CARPETA_GUIAS } from "./ctp-archivar-documento";
+import { tagCasillero, tagGtf } from "./documentos-guia";
 import { CSS_GTF_SERFOR, documentoGtfSerfor, trozasDesdeSerfor } from "./ctp-gtf-desde-serfor";
 import { CSS_GTF_OFICIAL, fechaGtf } from "./ctp-gtf-formato";
 import { CSS_LISTA_TROZAS, htmlListaTrozas } from "./ctp-lista-trozas";
 import type { GtfSerfor } from "./serfor-gtf";
+import { repararFichaSerfor } from "./serfor-texto-danado";
 import {
   documentoGtfDesdeLibro,
   trozasDesdeLibro,
@@ -57,6 +59,12 @@ export function metaArchivado(e: IngresoConGuia, nombreDoc: string): {
       numero,
       e.providerName,
       e.speciesCommonName,
+      /* ADR-438: con estas dos cae directo en su casillero de «Documentos de
+         la guía». Van con el N° del LIBRO (la llave de la guía), no el de la
+         ficha de SERFOR, que puede venir escrito distinto. */
+      ...(e.gtfNumber?.trim()
+        ? [tagGtf(e.gtfNumber), tagCasillero(nombreDoc.startsWith("GTF") ? "gtf" : "lista_trozas")]
+        : []),
     ].filter((t): t is string => Boolean(t && t.trim())),
     descripcion:
       `${nombreDoc} — ${g?.titular ?? e.providerName}. ` +
@@ -102,7 +110,9 @@ export function papelesDeIngreso(
   opts: { impresoEl?: string; logo?: string | null } = {},
 ): PapelesDeIngreso | null {
   if (!e.serforGtf) return null;
-  const g = e.serforGtf as GtfSerfor;
+  // Reparada AL LEER: las fichas guardadas antes del 2026-09-25 traen el texto
+  // que SERFOR publica dañado («MUÃ?OZ»); el papel sale con el nombre sano.
+  const g = repararFichaSerfor(e.serforGtf as GtfSerfor);
   const numero = g.gtfNumber ?? e.gtfNumber;
   const trozas = trozasDesdeSerfor(g);
 

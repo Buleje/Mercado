@@ -18,9 +18,11 @@
 import { csrfHeaders } from "@/lib/csrf-client";
 import { MAX_UPLOAD_SIZE } from "@/lib/types/documents";
 import { logger } from "@/lib/logger";
+import { CARPETA_GUIAS } from "./documentos-guia";
 
-/** Dónde viven las guías del libro. Un solo nombre, para que no se dispersen. */
-export const CARPETA_GUIAS = "Guías forestales (GTF)";
+/** Dónde viven las guías del libro. Un solo nombre, para que no se dispersen:
+ *  vive en `documentos-guia.ts` porque el servidor también archiva ahí (ADR-438). */
+export { CARPETA_GUIAS };
 
 interface CarpetaDrive {
   id: string;
