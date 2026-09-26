@@ -59,7 +59,7 @@ type Respuesta = {
   gtfs?: unknown;
   anexos?: unknown;
   stats?: { byStatus?: Record<string, number>; lateCount?: number; sinCostoCount?: number; sinCostoM3?: number };
-  saldos?: { materiaPrima?: unknown; productos?: unknown };
+  saldos?: { materiaPrima?: { especiesEnNegativo?: number } & Record<string, unknown>; productos?: unknown };
   /** `?varadas=`: sólo el conteo, para no traerse el patio entero. */
   piezas?: number;
   m3?: number;
@@ -221,7 +221,10 @@ export function useCtpPendientes(period: CtpPeriod): CtpPendientesState {
           corridasSinOrigen: Number(sinOrigen?.sinOrigen?.corridas) || 0,
           corridasSinOrigenDetalle: sinOrigen?.sinOrigen?.detalle ?? [],
           saldosNegativos:
-            arr<{ negativa?: boolean }>(saldos?.saldos?.materiaPrima).filter((s) => s.negativa).length +
+            /* `materiaPrima` es un resumen ({ especiesEnNegativo: n, … }), no una
+               lista: el filtro de antes daba siempre 0 (main 26-09: 1 especie
+               de rolliza en negativo y la tira decía 0). */
+            (Number(saldos?.saldos?.materiaPrima?.especiesEnNegativo) || 0) +
             arr<{ negativo?: boolean }>(saldos?.saldos?.productos).filter((s) => s.negativo).length,
           trozasVaradas: varadas?.piezas ?? 0,
           ingresosSinCosto: we?.stats?.sinCostoCount ?? 0,
