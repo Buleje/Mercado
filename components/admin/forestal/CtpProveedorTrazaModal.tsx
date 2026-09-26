@@ -55,6 +55,11 @@ export default function CtpProveedorTrazaModal({ proveedor, onClose }: { proveed
 
   const b = datos?.balance;
   const unitario = b ? costoPorM3Proveedor(b) : null;
+  /* Madera de servicio (ADR-437 §1): ajena, sólo se asierra — no se factura.
+     Sin contarla aparte, un titular de puro servicio leería «sin factura». */
+  const deServicio = datos?.guias.filter((g) => g.maderaDeTercero).length ?? 0;
+  const soloServicio = !!b && b.costoTotal == null && b.guiasSinCosto === 0 && deServicio > 0;
+  const notaServicio = deServicio > 0 ? ` · ${deServicio} de servicio` : "";
 
   return (
     <AdminModal
@@ -110,18 +115,26 @@ export default function CtpProveedorTrazaModal({ proveedor, onClose }: { proveed
                 label="Costo de compra"
                 valor={b.costoTotal == null ? "—" : soles(b.costoTotal)}
                 pie={
-                  b.costoTotal == null
-                    ? "sin factura cargada"
-                    : b.guiasSinCosto > 0
-                      ? `${b.guiasSinCosto} guía(s) sin factura`
-                      : "todas facturadas"
+                  soloServicio
+                    ? "madera de servicio: no se compra"
+                    : b.costoTotal == null
+                      ? `sin factura cargada${notaServicio}`
+                      : b.guiasSinCosto > 0
+                        ? `${b.guiasSinCosto} guía(s) sin factura${notaServicio}`
+                        : `todas facturadas${notaServicio}`
                 }
                 tono={b.costoTotal == null ? "muted" : "ok"}
               />
               <Dato
                 label="S/ por m³"
                 valor={unitario == null ? "—" : soles(unitario)}
-                pie={unitario == null ? "falta factura" : `sobre ${fmtM3(b.volumenConCostoM3)} m³ facturados`}
+                pie={
+                  unitario != null
+                    ? `sobre ${fmtM3(b.volumenConCostoM3)} m³ facturados`
+                    : soloServicio
+                      ? "no hay madera comprada"
+                      : "falta factura"
+                }
                 tono={unitario == null ? "muted" : "ok"}
               />
             </div>
@@ -170,7 +183,14 @@ export default function CtpProveedorTrazaModal({ proveedor, onClose }: { proveed
                         {fecha(g.entryDate)}
                       </span>
                       <span className="w-32 shrink-0 truncate font-mono text-xs text-[var(--text-primary)]">{g.gtfNumber}</span>
-                      <span className="min-w-0 flex-1 truncate text-[var(--text-secondary)]">{g.especie}</span>
+                      <span className="min-w-0 flex-1 truncate text-[var(--text-secondary)]">
+                        {g.especie}
+                        {g.maderaDeTercero && (
+                          <span className="ml-1.5 text-xs text-[var(--text-tertiary)]" title="Madera ajena: sólo se asierra, no lleva factura">
+                            de servicio
+                          </span>
+                        )}
+                      </span>
                       <span className="w-20 text-right font-mono tabular-nums text-[var(--text-primary)]">{fmtM3(g.volumeM3)}</span>
                       <span
                         className="w-20 text-right font-mono text-xs tabular-nums text-[var(--text-tertiary)]"

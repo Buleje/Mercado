@@ -14,6 +14,8 @@ import {
 } from "./misc.db";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { decodeExpenseDescription, type ExpenseMeta } from "@/lib/expense-meta";
+import { FILTRO_REQUIERE_COSTO } from "@/lib/forestal/madera-de-servicio";
+import { estadoDePagoDeGuias, type EstadoPagoGuia } from "@/lib/forestal/plata-de-guia";
 
 // perf audit P1: invalidación de caché tras writes. `revalidateTag` lanza si se
 // llama fuera de un contexto de request de Next (ej. unit tests que invocan la
@@ -69,8 +71,12 @@ export type DbExpense = {
 /** Cuánto de un gasto ya salió de la caja. `sin_registro` = la OC no tiene `Payable`. */
 export type EstadoPagoGasto = "pagado" | "parcial" | "pendiente" | "sin_registro";
 
-/** De dónde sale cada línea del historial. */
-export type FuenteHistorial = "expense" | "purchase" | "flete" | "adelanto" | "caja";
+/**
+ * De dónde sale cada línea del historial. `madera` = una guía forestal COMPRADA
+ * con costo (ADR-437 §9): la madera no genera un `Expense`, así que sin esta
+ * fuente no aparecía en ningún lado de Mi Plata.
+ */
+export type FuenteHistorial = "expense" | "purchase" | "flete" | "adelanto" | "caja" | "madera";
 
 /**
  * Qué es la plata de esta línea. NO todo lo que sale de la caja es un gasto, y
@@ -120,6 +126,8 @@ export type DbHistorialGasto = {
    * operación y una deuda terminaban siendo la misma cadena de texto.
    */
   saldoPendiente?: number;
+  /** Sólo `madera`: el N° de la guía (la ficha se abre por él). */
+  gtfNumber?: string;
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -511,6 +519,7 @@ export const ExpensesDB = {
     const needFletes = source === "all" || source === "flete";
     const needAdelantos = source === "all" || source === "adelanto";
     const needCaja = source === "all" || source === "caja";
+    const needMadera = source === "all" || source === "madera";
 
     const [expenses, purchases] = await Promise.all([
       needExpenses
@@ -629,6 +638,15 @@ export const ExpensesDB = {
         })).map((a) => a.codigoOperacion).filter((c): c is string => Boolean(c))
       : [];
 
+    /* La madera comprada y su estado de pago (ADR-437 §9), y qué salidas de
+       caja son el pago de una guía que ya se lista como `madera`. */
+    const [madera, liquidacionesQueDuplican] = await Promise.all([
+      needMadera ? maderaDelHistorial(tenantId, hayFechas ? dateFilter : null) : Promise.resolve([]),
+      needCaja && egresosCaja.length > 0
+        ? liquidacionesQuePagaronGuias(tenantId, egresosCaja.map((m) => m.id))
+        : Promise.resolve(new Map<string, string>()),
+    ]);
+
     const items: DbHistorialGasto[] = [
       ...expenses.map((e) => {
         const { description, meta } = decodeExpenseDescription(e.description ?? "");
@@ -743,7 +761,11 @@ export const ExpensesDB = {
         // Entregar un adelanto deja DOS rastros: el `Adelanto` y el egreso de
         // caja que lo pagó. Se reconoce por el código de operación que el
         // movimiento lleva en la descripción («Adelanto ADL-2026-0021 · …»).
-        const codigoQueDuplica = codigosDeAdelanto.find((c) => m.description?.includes(c));
+        /* Pagar guías con una liquidación (ADR-437 §9) deja la guía en `madera`
+           con su estado de pago Y la salida de caja: se reconoce por el id exacto
+           del movimiento que la liquidación guardó, no por el texto. */
+        const codigoQueDuplica =
+          liquidacionesQueDuplican.get(m.id) ?? codigosDeAdelanto.find((c) => m.description?.includes(c));
         return {
           id: `caj-${m.id}`,
           refId: m.id,
@@ -759,8 +781,143 @@ export const ExpensesDB = {
           ...(codigoQueDuplica ? { duplicaDe: codigoQueDuplica } : {}),
         };
       }),
+      ...madera,
     ];
 
     return items.sort((a, b) => Date.parse(b.fecha) - Date.parse(a.fecha));
   },
 };
+
+const r2 = (n: number) => Math.round(n * 100) / 100;
+
+/**
+ * Una fila por guía COMPRADA con costo (ADR-437 §9): la de servicio no se
+ * compró (`FILTRO_REQUIERE_COSTO`) y la que no tiene costo no es plata contada.
+ *
+ * El estado de pago se DERIVA (§7, nunca se guarda) con `estadoDePagoDeGuias`,
+ * la misma regla que el modal de la guía: sobre TODAS las guías y movimientos
+ * de cada proveedor, no sólo las del rango — el reparto por antigüedad de un
+ * pago depende de las guías más viejas. Una guía que no entró a ninguna cuenta
+ * (sin proveedor con ficha) queda `sin_registro`: no se afirma ni que se pagó ni
+ * que se debe.
+ */
+async function maderaDelHistorial(
+  tenantId: string,
+  rango: Record<string, Date> | null,
+): Promise<DbHistorialGasto[]> {
+  const asientos = await prisma.woodEntry.findMany({
+    where: {
+      tenantId,
+      deletedAt: null,
+      status: { notIn: ["rechazado", "anulado"] },
+      ...FILTRO_REQUIERE_COSTO,
+      costoTotal: { not: null },
+      ...(rango ? { entryDate: rango } : {}),
+    },
+    select: { gtfNumber: true, entryDate: true, costoTotal: true, moneda: true, providerName: true, speciesCommonName: true },
+    orderBy: { entryDate: "desc" },
+    take: 5_000,
+  });
+  if (asientos.length === 0) return [];
+
+  /* La cuenta es en soles: un asiento en otra moneda no se suma a soles. */
+  const porGuia = new Map<string, { fecha: Date; monto: number; proveedor: string; especies: Set<string> }>();
+  for (const a of asientos) {
+    if ((a.moneda ?? "PEN") !== "PEN") continue;
+    const gtf = a.gtfNumber.trim();
+    if (!gtf) continue;
+    const g = porGuia.get(gtf) ?? { fecha: a.entryDate, monto: 0, proveedor: (a.providerName ?? "").trim(), especies: new Set<string>() };
+    g.monto = r2(g.monto + toNumOrZero(a.costoTotal));
+    if (a.entryDate < g.fecha) g.fecha = a.entryDate;
+    if (a.speciesCommonName?.trim()) g.especies.add(a.speciesCommonName.trim());
+    porGuia.set(gtf, g);
+  }
+  if (porGuia.size === 0) return [];
+
+  /* Quién es el proveedor de cada guía: el abono `madera` vivo que la nombra. */
+  const abonos = await prisma.forestCuentaMov.findMany({
+    where: { tenantId, deletedAt: null, concepto: "madera", tipo: "abono", gtfNumber: { in: [...porGuia.keys()] } },
+    select: { parteId: true, parteNombre: true, gtfNumber: true },
+  });
+  const parteDe = new Map(abonos.map((a) => [a.gtfNumber ?? "", { parteId: a.parteId, nombre: a.parteNombre }]));
+  const partes = [...new Set(abonos.map((a) => a.parteId))];
+  const movs = partes.length
+    ? await prisma.forestCuentaMov.findMany({
+        where: { tenantId, deletedAt: null, parteId: { in: partes } },
+        select: { parteId: true, tipo: true, concepto: true, monto: true, gtfNumber: true, fecha: true },
+      })
+    : [];
+  const estados = new Map<string, EstadoPagoGuia>();
+  if (movs.length > 0) {
+    const guiasDeLasPartes = movs
+      .filter((m) => m.tipo === "abono" && m.concepto === "madera" && m.gtfNumber?.trim())
+      .map((m) => ({ gtfNumber: (m.gtfNumber ?? "").trim(), parteId: m.parteId, fecha: m.fecha.toISOString(), monto: toNumOrZero(m.monto) }));
+    const lista = estadoDePagoDeGuias(
+      guiasDeLasPartes,
+      movs.map((m) => ({
+        parteId: m.parteId,
+        tipo: m.tipo as "cargo" | "abono",
+        concepto: m.concepto,
+        monto: toNumOrZero(m.monto),
+        gtfNumber: m.gtfNumber?.trim() || null,
+      })),
+    );
+    for (const e of lista) estados.set(e.gtfNumber, e);
+  }
+
+  return [...porGuia.entries()].map(([gtf, g]) => {
+    const parte = parteDe.get(gtf);
+    const e = estados.get(gtf);
+    const pagado = e ? Math.min(r2(e.pagado), g.monto) : 0;
+    const estadoPago: EstadoPagoGasto = !e
+      ? "sin_registro"
+      : e.estado === "pagada"
+        ? "pagado"
+        : e.estado === "parcial"
+          ? "parcial"
+          : "pendiente";
+    const especies = [...g.especies];
+    return {
+      id: `mad-${gtf}`,
+      refId: gtf,
+      source: "madera" as const,
+      clase: "gasto" as const,
+      fecha: g.fecha.toISOString(),
+      category: "Madera (guías)",
+      description: [`Guía ${gtf}`, especies.length ? especies.slice(0, 3).join(", ") + (especies.length > 3 ? "…" : "") : null]
+        .filter(Boolean)
+        .join(" · "),
+      amount: g.monto,
+      recurring: false,
+      estadoPago,
+      montoPagado: pagado,
+      gtfNumber: gtf,
+      ...(parte?.nombre || g.proveedor ? { supplierName: parte?.nombre || g.proveedor } : {}),
+    };
+  });
+}
+
+/**
+ * Egresos de caja que son el pago de guías hecho con una liquidación viva
+ * (ADR-437 §9): `cajaMovimientoId` → código LIQ. Sólo las que imputaron el pago
+ * a alguna guía; un pago suelto a la cuenta no es «la otra cara» de una fila `madera`.
+ */
+async function liquidacionesQuePagaronGuias(tenantId: string, egresoIds: readonly string[]): Promise<Map<string, string>> {
+  const filas = await prisma.liquidacionCuenta.findMany({
+    where: { tenantId, anuladaAt: null, pagoDireccion: "hecho", cajaMovimientoId: { in: [...egresoIds] } },
+    select: { codigo: true, cajaMovimientoId: true, detalle: true },
+  });
+  const out = new Map<string, string>();
+  for (const f of filas) {
+    if (!f.cajaMovimientoId) continue;
+    const movs = (f.detalle as { movimientos?: unknown } | null)?.movimientos;
+    const pagoGuias =
+      Array.isArray(movs) &&
+      movs.some((m) => {
+        const x = m as { paso?: unknown; gtfNumber?: unknown };
+        return x.paso === "pago" && typeof x.gtfNumber === "string" && x.gtfNumber.trim() !== "";
+      });
+    if (pagoGuias) out.set(f.cajaMovimientoId, f.codigo);
+  }
+  return out;
+}

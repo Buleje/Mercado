@@ -21,8 +21,10 @@ import {
   type ReferenciasDePrecio,
 } from "@/lib/forestal/precio-en-tanda";
 import { formatNumber } from "@/lib/format";
+import { FILTRO_REQUIERE_COSTO } from "@/lib/forestal/madera-de-servicio";
 import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
 import { ingresosConCostoCongelado } from "./costo-congelado.db";
+import { ForestCuentaDB } from "./forest-cuenta.db";
 
 /**
  * WoodEntriesPrecioDB — poner precio a la madera en tanda (proveedor × especie).
@@ -50,6 +52,7 @@ const SELECT_FILA = {
   costoTotal: true,
   moneda: true,
   status: true,
+  maderaDeTercero: true,
   contrato: { select: { codigo: true } },
 } satisfies Prisma.WoodEntrySelect;
 
@@ -76,6 +79,7 @@ function aFila(r: FilaDb, cierres: CtpCierrePeriodo[], congelados: ReadonlySet<s
     moneda: r.moneda,
     status: r.status,
     permiso: r.contrato?.codigo ?? null,
+    maderaDeTercero: r.maderaDeTercero,
     bloqueo: cerrado
       ? { tipo: "periodo-cerrado", periodo: cerrado.label }
       : congelados.has(r.id)
@@ -180,7 +184,7 @@ export const WoodEntriesPrecioDB = {
         ? Promise.resolve(filas)
         : prisma.woodEntry
             .findMany({
-              where: { ...whereValorizable(tenantId), costoTotal: { not: null } },
+              where: { ...whereValorizable(tenantId), ...FILTRO_REQUIERE_COSTO, costoTotal: { not: null } },
               select: SELECT_FILA,
               take: TOPE_FILAS,
             })
@@ -220,8 +224,9 @@ export const WoodEntriesPrecioDB = {
   async vista(tenantId: string): Promise<PrecioEnTandaVista> {
     if (!tenantId) throw new Error("tenantId is required");
     const [rows, cierres] = await Promise.all([
+      /* La madera de servicio no se compró (ADR-437 §1): ni se ofrece ni pesa en las referencias. */
       prisma.woodEntry.findMany({
-        where: whereValorizable(tenantId),
+        where: { ...whereValorizable(tenantId), ...FILTRO_REQUIERE_COSTO },
         select: SELECT_FILA,
         orderBy: [{ entryDate: "desc" }, { id: "asc" }],
         take: TOPE_FILAS + 1,
@@ -272,6 +277,11 @@ export const WoodEntriesPrecioDB = {
     const cierres = await ForestCtpCierreDB.list(tenantId);
     const plan = await prisma.$transaction(
       async (tx) => {
+        /* 1. Las guías, ordenadas, ANTES que las filas: el mismo orden que el
+           modal de la guía y la liquidación (`ForestCuentaDB.bloquearGuiasEnTx`),
+           porque acá se cambia el costo que vale su abono `madera`. */
+        const previas = await tx.woodEntry.findMany({ where: { tenantId, id: { in: ids } }, select: { gtfNumber: true } });
+        const guiasBloqueadas = new Set(await ForestCuentaDB.bloquearGuiasEnTx(tx, tenantId, previas.map((p) => p.gtfNumber)));
         await tx.$queryRaw`
           SELECT "id" FROM "WoodEntry"
           WHERE "id" IN (${Prisma.join(ids)}) AND "tenantId" = ${tenantId}
@@ -289,13 +299,29 @@ export const WoodEntriesPrecioDB = {
           vistos: input.vistos,
         });
         for (const c of p.cambios) {
+          if (!guiasBloqueadas.has(c.gtfNumber.trim())) {
+            /* La fila cambió de guía entre la lectura y el lock: no se escribe
+               plata sobre una guía que no está bloqueada. */
+            throw new Error(`La guía ${c.gtfNumber} cambió mientras se ponía el precio. Vuelve a abrir la tanda.`);
+          }
           const r = await tx.woodEntry.updateMany({
-            where: { id: c.id, tenantId, deletedAt: null, status: { in: [...ESTADOS_VALORIZABLES] } },
-            data: { costoTotal: new Prisma.Decimal(c.despues.toFixed(2)), moneda: "PEN" },
+            where: { id: c.id, tenantId, deletedAt: null, status: { in: [...ESTADOS_VALORIZABLES] }, ...FILTRO_REQUIERE_COSTO },
+            // Sin el acta vieja (ADR-437 §3): si no, el modal precarga el total
+            // anterior y «Guardar el costo» deshace la tanda (QA 26-09: 1000 vs 1500).
+            data: { costoTotal: new Prisma.Decimal(c.despues.toFixed(2)), moneda: "PEN", costoDetalle: Prisma.DbNull },
           });
           if (r.count !== 1) throw new Error(`No se pudo escribir el costo de la guía ${c.gtfNumber}`);
         }
-        return p;
+        /* 2. El abono `madera` de cada guía tocada (ADR-437 §4) pasa a valer su
+           costo nuevo, en la MISMA tx. Sin esto, «también las que ya tienen
+           precio» cambiaba el costo y la cuenta del proveedor seguía diciendo el
+           monto viejo (revisión 2026-09-26). Una guía no anotada no se toca. */
+        const cuentas: { gtfNumber: string; cuenta: "actualizada" | "baja" }[] = [];
+        for (const gtf of [...new Set(p.cambios.map((c) => c.gtfNumber.trim()))].sort()) {
+          const cuenta = await ForestCuentaDB.resincronizarMaderaDeGuiaEnTx(tx, tenantId, gtf);
+          if (cuenta !== "sin_cuenta") cuentas.push({ gtfNumber: gtf, cuenta });
+        }
+        return { ...p, cuentas };
       },
       { timeout: 30_000, maxWait: 10_000 },
     );
@@ -308,10 +334,21 @@ export const WoodEntriesPrecioDB = {
           logger.warn("[wood-entries-precio] no se pudo invalidar la caché", { error: String(err), pref });
         }
       }
+      if (plan.cuentas.length > 0) ForestCuentaDB.invalidar(tenantId);
     }
 
     /* Una tanda que no cambió nada no deja rastro: no hubo escritura. */
     if (plan.cambios.length > 0) await auditarTanda(tenantId, plan, user);
+    for (const c of plan.cuentas) {
+      await auditCtpEsperando({
+        tenantId,
+        action: c.cuenta === "baja" ? "ctp_cuenta_delete" : "ctp_cuenta_update",
+        entity: "ForestCuentaMov",
+        entityId: c.gtfNumber,
+        detail: `Precio en tanda: la madera de la guía ${c.gtfNumber} en la cuenta del proveedor pasa a valer su costo nuevo`,
+        user,
+      });
+    }
 
     return { estado: "hecho", cambios: plan.cambios, saltadas: plan.saltadas, totales: plan.totales };
   },

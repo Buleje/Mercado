@@ -13,6 +13,7 @@ import {
   clasificarAdelantos,
   detalleDeLiquidacion,
   fechaDeudaViva,
+  guiasPendientesDe,
   huellaDe,
   imputarFifo,
   intencionDejarEnCero,
@@ -292,8 +293,165 @@ describe("fecha de la liquidación", () => {
     expect(r.success ? "" : r.error.issues[0]?.message).toBe("La fecha no puede ser futura: usa la de hoy o una pasada.");
   });
 
+  it("una fecha que no existe en el calendario se rechaza (2025-13-01, 2026-02-31)", () => {
+    expect(liquidacionInputSchema.safeParse({ ...base, fecha: "2025-13-01" }).success).toBe(false);
+    expect(liquidacionInputSchema.safeParse({ ...base, fecha: "2026-02-31" }).success).toBe(false);
+  });
+
+  it("una guía de 80 caracteres se puede imputar (mismo largo que en la guía); de 81, no", () => {
+    const con = (gtfNumber: string) => ({ ...base, fecha: "2026-01-02", imputacion: { guias: [{ gtfNumber, monto: 10, paso: "cruce" }] } });
+    expect(liquidacionInputSchema.safeParse(con("G".repeat(80))).success).toBe(true);
+    expect(liquidacionInputSchema.safeParse(con("G".repeat(81))).success).toBe(false);
+  });
+
   it("hoy (Lima) y una fecha pasada se aceptan", () => {
     expect(liquidacionInputSchema.safeParse({ ...base, fecha: limaDateKey() }).success).toBe(true);
     expect(liquidacionInputSchema.safeParse({ ...base, fecha: "2026-01-02" }).success).toBe(true);
+  });
+});
+
+/* ── ADR-437 §6: pagar guías con nombre ─────────────────────────────────────── */
+
+describe("guías: lo pendiente de cada una (ADR-437 §7)", () => {
+  /* A (500, la más vieja) y B (300); un pago que nombra B (100) y uno suelto (200). */
+  const movsGuias = [
+    mov({ id: "ga", fecha: "2026-08-01", tipo: "abono", concepto: "madera", monto: 500, gtfNumber: "GTF-A" }),
+    mov({ id: "gb", fecha: "2026-08-10", tipo: "abono", concepto: "madera", monto: 300, gtfNumber: "GTF-B" }),
+    mov({ id: "pb", fecha: "2026-08-12", tipo: "cargo", concepto: "pago_hecho", monto: 100, gtfNumber: "GTF-B" }),
+    mov({ id: "ps", fecha: "2026-08-15", tipo: "cargo", concepto: "pago_hecho", monto: 200 }),
+  ];
+
+  it("lo que nombra una guía la cubre; lo suelto cubre por antigüedad", () => {
+    expect(guiasPendientesDe(movsGuias).map((g) => [g.gtfNumber, g.pagado, g.pendiente])).toEqual([
+      ["GTF-A", 200, 300],
+      ["GTF-B", 100, 200],
+    ]);
+  });
+
+  it("un pago suelto cubre primero lo que se le debe por OTRA cosa (revisión 2026-09-26)", () => {
+    const movs = [
+      mov({ id: "g", fecha: "2026-08-01", tipo: "abono", concepto: "madera", monto: 1000, gtfNumber: "GTF-G" }),
+      mov({ id: "a", fecha: "2026-08-02", tipo: "abono", concepto: "aserrio_recibido", monto: 1000 }),
+      mov({ id: "p", fecha: "2026-08-03", tipo: "cargo", concepto: "pago_hecho", monto: 1000 }),
+    ];
+    expect(guiasPendientesDe(movs).map((g) => [g.gtfNumber, g.pendiente])).toEqual([["GTF-G", 1000]]);
+  });
+
+  it("una guía pagada del todo no se lista; sin abonos de madera con guía, lista vacía", () => {
+    const pagada = [...movsGuias, mov({ id: "px", fecha: "2026-08-20", tipo: "cargo", concepto: "pago_hecho", monto: 200, gtfNumber: "GTF-B" })];
+    expect(guiasPendientesDe(pagada).map((g) => g.gtfNumber)).toEqual(["GTF-A"]);
+    expect(guiasPendientesDe([mov()])).toEqual([]);
+  });
+
+  const conGuias = () =>
+    partidas({
+      adelantos: [],
+      cruzable: false,
+      forestal: { saldo: -500, desde: "2026-08-01", movimientos: movsGuias, guias: guiasPendientesDe(movsGuias) },
+    });
+
+  it("el pago hecho se parte: uno por guía con su número y el resto sin guía, sumando exacto", () => {
+    const r = plan(
+      conGuias(),
+      intencion({
+        pago: { direccion: "hecho", monto: 400, metodo: "efectivo", moverCaja: true },
+        imputacion: { guias: [{ gtfNumber: "GTF-B", monto: 150, paso: "pago" }, { gtfNumber: "GTF-B", monto: 50, paso: "pago" }] },
+      }),
+    );
+    expect(r.movimientos.map((m) => [m.concepto, m.monto, m.gtfNumber ?? null])).toEqual([
+      ["pago_hecho", 200, "GTF-B"],
+      ["pago_hecho", 200, null],
+    ]);
+    expect(r.movimientos.reduce((a, m) => a + m.monto, 0)).toBe(400);
+    expect(r.caja).toEqual({ tipo: "egreso", monto: 400, metodo: "efectivo" });
+    expect(r.despues.maderaSaldo).toBe(-100);
+    /* Lo cubierto: B por su nombre; el resto por antigüedad, empezando por A. */
+    const cub = r.cubiertos.map((c) => [c.movimientoId, c.cubierto, c.porGuia ?? false]);
+    expect(cub).toEqual([["ga", 200, false], ["gb", 200, true]]);
+    expect(leerPlan(r, "Juana")[0]).toMatch(/^Le pagas .*200.* a Juana por la guía GTF-B\.$/);
+    expect(leerPlan(r, "Juana")[1]).toMatch(/^Le pagas .*200.* a Juana\.$/);
+  });
+
+  it("a una guía no se le imputa más que lo que le falta, y la cifra se dice", () => {
+    const e = errores(
+      conGuias(),
+      intencion({
+        pago: { direccion: "hecho", monto: 400, metodo: "yape", moverCaja: false },
+        imputacion: { guias: [{ gtfNumber: "GTF-B", monto: 200.01, paso: "pago" }] },
+      }),
+    );
+    expect(e[0]).toMatch(/GTF-B le falta .*200.*no se le pueden imputar .*200[.,]01/);
+  });
+
+  it("la misma guía en el cruce y en el pago suma contra lo que le falta", () => {
+    const p = partidas({ forestal: { saldo: -500, desde: "2026-08-01", movimientos: movsGuias, guias: guiasPendientesDe(movsGuias) } });
+    const e = errores(
+      p,
+      intencion({
+        compensar: 150,
+        pago: { direccion: "hecho", monto: 100, metodo: "yape", moverCaja: false },
+        imputacion: { guias: [{ gtfNumber: "GTF-B", monto: 150, paso: "cruce" }, { gtfNumber: "GTF-B", monto: 100, paso: "pago" }] },
+      }),
+    );
+    expect(e[0]).toMatch(/GTF-B le falta/);
+  });
+
+  it("guía ajena o ya pagada, pago recibido, o más a guías que el paso: se rechaza", () => {
+    const pago = (direccion: "hecho" | "recibido", monto: number) => ({ direccion, monto, metodo: "efectivo" as const, moverCaja: false });
+    expect(errores(conGuias(), intencion({ pago: pago("hecho", 100), imputacion: { guias: [{ gtfNumber: "GTF-Z", monto: 50, paso: "pago" }] } }))[0]).toMatch(
+      /GTF-Z no tiene nada pendiente/,
+    );
+    const debe = partidas({ adelantos: [], cruzable: false, forestal: { saldo: 300, desde: "2026-08-01", movimientos: [mov({ tipo: "cargo", monto: 300 })], guias: [{ gtfNumber: "GTF-A", fecha: "2026-08-01", monto: 500, pagado: 0, pendiente: 500 }] } });
+    expect(errores(debe, intencion({ pago: pago("recibido", 100), imputacion: { guias: [{ gtfNumber: "GTF-A", monto: 50, paso: "pago" }] } }))[0]).toMatch(
+      /no con uno que recibes/,
+    );
+    expect(errores(conGuias(), intencion({ pago: pago("hecho", 100), imputacion: { guias: [{ gtfNumber: "GTF-A", monto: 150, paso: "pago" }] } }))[0]).toMatch(
+      /A las guías van .*150.* y el pago es .*100/,
+    );
+    const cruzable = partidas({ forestal: { saldo: -500, desde: "2026-08-01", movimientos: movsGuias, guias: guiasPendientesDe(movsGuias) } });
+    expect(errores(cruzable, intencion({ compensar: 100, imputacion: { guias: [{ gtfNumber: "GTF-A", monto: 120, paso: "cruce" }] } }))[0]).toMatch(
+      /A las guías van .*120.* y el cruce es .*100/,
+    );
+  });
+
+  it("el cruce también se parte por guía", () => {
+    const p = partidas({ forestal: { saldo: -500, desde: "2026-08-01", movimientos: movsGuias, guias: guiasPendientesDe(movsGuias) } });
+    const r = plan(p, intencion({ compensar: 500, imputacion: { guias: [{ gtfNumber: "GTF-A", monto: 300, paso: "cruce" }] } }));
+    expect(r.movimientos.map((m) => [m.concepto, m.monto, m.gtfNumber ?? null])).toEqual([
+      ["compensacion", 300, "GTF-A"],
+      ["compensacion", 200, null],
+    ]);
+  });
+
+  it("la huella mira las guías: la de antes de ADR-437 no cambia, un número de guía o lo pendiente sí", () => {
+    /* `8057d3f6` = la huella de `partidas()` con el código de ADR-413 (medido
+       contra `git show HEAD:lib/cuentas/liquidacion.ts`): un cliente con la
+       versión vieja no recibe un 409 falso. */
+    expect(huellaDe(partidas())).toBe("8057d3f6");
+    const base = conGuias();
+    const otraGuia = { ...base, forestal: { ...base.forestal!, movimientos: base.forestal!.movimientos.map((m) => (m.id === "pb" ? { ...m, gtfNumber: "GTF-A" } : m)) } };
+    expect(huellaDe(otraGuia)).not.toBe(huellaDe(base));
+    const otroPendiente = { ...base, forestal: { ...base.forestal!, guias: base.forestal!.guias!.map((g) => ({ ...g, pendiente: g.pendiente - 1 })) } };
+    expect(huellaDe(otroPendiente)).not.toBe(huellaDe(base));
+  });
+
+  it("sin guías, lo cubierto es exactamente lo de antes", () => {
+    const movs = [mov({ id: "1", fecha: "2026-08-01", tipo: "abono", monto: 500 }), mov({ id: "2", fecha: "2026-08-05", tipo: "abono", monto: 300 })];
+    expect(cargosCubiertosPorAntiguedad(movs, 600, [])).toEqual(cargosCubiertosPorAntiguedad(movs, 600));
+    expect(cargosCubiertosPorAntiguedad(movs, 600).every((c) => c.porGuia === undefined && c.gtfNumber === undefined)).toBe(true);
+  });
+
+  it("entrada: hasta 100 guías con paso válido; comprobantes con forma de foto, hasta 10", () => {
+    const base = { idempotencyKey: crypto.randomUUID(), persona: { parteId: "p1" }, fecha: "2026-09-01", compensar: 0, huella: "abcd1234", pago: { direccion: "hecho", monto: 10, metodo: "yape", moverCaja: true } };
+    const g = (n: number) => Array.from({ length: n }, (_, i) => ({ gtfNumber: `GTF-${i}`, monto: 0.1, paso: "pago" }));
+    expect(liquidacionInputSchema.safeParse({ ...base, imputacion: { guias: g(100) } }).success).toBe(true);
+    expect(liquidacionInputSchema.safeParse({ ...base, imputacion: { guias: g(101) } }).success).toBe(false);
+    expect(liquidacionInputSchema.safeParse({ ...base, imputacion: { guias: [{ gtfNumber: "GTF-1", monto: 1, paso: "otro" }] } }).success).toBe(false);
+    expect(liquidacionInputSchema.safeParse({ ...base, imputacion: { guias: [{ gtfNumber: "GTF-1", monto: 0, paso: "pago" }] } }).success).toBe(false);
+    const foto = { url: "priv:t1/forestal-carga/abc.webp", subidaEn: "2026-09-26T10:00:00.000Z", firma: "a".repeat(64) };
+    const ok = liquidacionInputSchema.safeParse({ ...base, comprobantes: [foto] });
+    expect(ok.success && ok.data.comprobantes?.[0]).toEqual(foto);
+    expect(liquidacionInputSchema.safeParse({ ...base, comprobantes: [{ url: "javascript:alert(1)" }] }).success).toBe(false);
+    expect(liquidacionInputSchema.safeParse({ ...base, comprobantes: Array.from({ length: 11 }, (_, i) => ({ url: `priv:t1/forestal-carga/${i}.webp` })) }).success).toBe(false);
   });
 });

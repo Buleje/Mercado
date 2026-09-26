@@ -76,9 +76,11 @@ interface CogsDTO {
   cogs: number | null;
   costoUnitario: number | null;
   moneda: string | null;
-  motivo: "ok" | "sin_atribucion" | "falta_costo" | "monedas_mezcladas" | "sin_cantidad";
+  motivo: "ok" | "sin_atribucion" | "falta_costo" | "monedas_mezcladas" | "sin_cantidad" | "madera_de_servicio" | "mixto_servicio";
+  /** Sólo con `mixto_servicio`: costo de la parte tuya. Opcional: respuestas de antes no lo traen. */
+  cogsPropio?: number | null;
   sinAtribuir: number;
-  detalle: { lineNo: number; quantity: number; costoUnitario: number | null; costo: number | null; congelado: boolean }[];
+  detalle: { lineNo: number; quantity: number; costoUnitario: number | null; costo: number | null; congelado: boolean; maderaDeServicio?: boolean; mezclaServicio?: boolean }[];
 }
 
 /** Por qué la cadena NO está completa, en el idioma del operador. */
@@ -94,6 +96,8 @@ const COGS_MOTIVO: Record<Exclude<CogsDTO["motivo"], "ok">, string> = {
   falta_costo: "Una o más corridas no tienen costo de materia prima (guía sin factura). Sin factura el costo es desconocido, no 0.",
   monedas_mezcladas: "Las corridas mezclan monedas distintas — no se puede sumar un total honesto.",
   sin_cantidad: "El despacho no declara cantidad.",
+  madera_de_servicio: "Servicio: salió de madera ajena que solo aserraste. No lleva costo de madera — lo que cobras es el aserrío.",
+  mixto_servicio: "Mezcla madera tuya y madera ajena que solo aserraste. La parte ajena no lleva costo de madera, así que el despacho entero no tiene un costo honesto: la venta cuenta, pero queda incompleto en la rentabilidad.",
 };
 
 /** `${valor} ${unidad}` con la precisión de tres decimales de SERFOR, salvo que
@@ -306,6 +310,10 @@ export default function CtpDespachoDetalleModal({ entry, onClose }: { entry: Des
                                   {money(costo.costo, cogs?.moneda ?? "PEN")}
                                   {costo.congelado && <Snowflake className="h-3 w-3 text-[var(--data-info-500)]" aria-label="Costo congelado al cierre de la corrida" />}
                                 </span>
+                              ) : costo?.maderaDeServicio ? (
+                                <span className="text-xs text-[var(--text-secondary)]" title="Madera ajena: no lleva costo de madera">servicio</span>
+                              ) : costo?.mezclaServicio ? (
+                                <span className="text-xs text-[var(--text-secondary)]" title="La corrida mezcló madera tuya y ajena: su costo no se separa por dueño">mixta</span>
                               ) : (
                                 <span className="text-xs text-[var(--text-tertiary)]">s/costo</span>
                               )}
@@ -338,8 +346,13 @@ export default function CtpDespachoDetalleModal({ entry, onClose }: { entry: Des
                 </div>
               ) : (
                 <p className="text-sm text-[var(--text-tertiary)]">
-                  <strong className="text-[var(--text-secondary)]">Costo desconocido.</strong>{" "}
+                  {/* Servicio no es «desconocido»: no hay costo de madera que conocer. */}
+                  <strong className="text-[var(--text-secondary)]">{cogs?.motivo === "madera_de_servicio" ? "Servicio." : cogs?.motivo === "mixto_servicio" ? "Incompleto." : "Costo desconocido."}</strong>{" "}
                   {cogs ? COGS_MOTIVO[cogs.motivo as Exclude<CogsDTO["motivo"], "ok">] ?? "" : ""}
+                  {/* Lo que SÍ se sabe, dicho aparte: nunca entra al margen. */}
+                  {cogs?.motivo === "mixto_servicio" && cogs.cogsPropio != null && (
+                    <> La parte tuya cuesta <strong className="font-mono tabular-nums text-[var(--text-secondary)]">{money(cogs.cogsPropio, cogs.moneda)}</strong>.</>
+                  )}
                 </p>
               )}
             </section>

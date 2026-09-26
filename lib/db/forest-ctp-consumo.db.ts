@@ -83,6 +83,9 @@ export class CtpInvariantError extends Error {
       | "I2_SOBRE_CONSUMO"
       /** Dato del usuario que no cuadra fuera de un invariante numérico (ADR-395). */
       | "VALIDACION"
+      /** Una foto de la carga que no se puede guardar: sin firma del servidor,
+       *  datos cambiados después de subirla, o ya usada en otra guía. Va 400. */
+      | "FOTO_NO_VALIDA"
       /**
        * La materia prima propuesta no alcanza para lo que la corrida declara
        * (ADR-417). Se rechaza en vez de vincular de a poco: `sumar-corrida`
@@ -156,6 +159,10 @@ export class CtpInvariantError extends Error {
       /** T3 (ADR-433): la troza entró al patio DESPUÉS de la fecha de la
        *  corrida. El libro diría que se aserró madera que todavía no llegó. */
       | "T3_ASERRADA_ANTES_DE_LLEGAR"
+      /** ADR-434 §Vencimiento: la llegada cae después del vencimiento de la
+       *  guía y nadie lo confirmó con motivo. No es un «no»: con
+       *  `aceptaVencida` + motivo se guarda y queda auditado. */
+      | "GUIA_VENCIDA"
       // ── Salida de trozas sin aserrar (ADR-363) ──
       /** La pieza no puede subir al camión entera: ya la comió una corrida, ya
        *  salió en otro despacho, no llegó al patio, es descarte o es la madre
@@ -201,7 +208,11 @@ export interface CostoDeLinea {
   costoUnitario: number | null;
   moneda: string | null;
   /** Por qué el costo es null, para que la UI lo explique en vez de mostrar "—". */
-  motivo: "ok" | "sin_consumos" | "falta_factura" | "monedas_mezcladas" | "sin_produccion";
+  /* `madera_de_servicio` (ADR-437 §1): la corrida comió madera ajena — no se
+     compró, no hay factura que esperar ni costo de materia prima que calcular. */
+  /* `mixto_servicio` (revisión 26-09): comió madera propia (con factura) Y de
+     servicio — no hay faltante, pero el costo por unidad no se separa por dueño. */
+  motivo: "ok" | "sin_consumos" | "falta_factura" | "monedas_mezcladas" | "sin_produccion" | "madera_de_servicio" | "mixto_servicio";
   congelado: boolean;
   atribuidoM3: number;
   sinAtribuirM3: number;
@@ -535,6 +546,8 @@ export class ForestCtpConsumoDB {
             costoTotal: true,
             moneda: true,
             entryDate: true,
+            /* ADR-437 §1: la de servicio no tiene factura que esperar. */
+            maderaDeTercero: true,
           },
         },
       },
@@ -592,8 +605,26 @@ export class ForestCtpConsumoDB {
       };
     }
 
-    // Monedas: las del ingreso mandan; mezclarlas invalida la suma.
-    const monedas = new Set(consumos.map((c) => c.woodEntry.moneda ?? "PEN"));
+    /* Madera de servicio (ADR-437 §1): no es nuestra, no lleva costo. No es
+       «falta factura» (esa espera un papel que nunca va a llegar). Sólo se
+       declara «de servicio» si TODA la madera consumida lo es: si hay madera
+       propia, sus facturas se revisan primero — antes la marca de servicio
+       ganaba y una factura propia faltante no aparecía (revisión 26-09). */
+    const esServicio = (c: (typeof consumos)[number]) => c.costoUnitarioSnap == null && c.woodEntry.maderaDeTercero;
+    const propios = consumos.filter((c) => !esServicio(c));
+    if (propios.length === 0) {
+      return {
+        ...base,
+        costoMateriaPrima: null,
+        costoTotal: null,
+        costoUnitario: null,
+        motivo: "madera_de_servicio",
+      };
+    }
+
+    // Monedas: las del ingreso mandan; mezclarlas invalida la suma. La de
+    // servicio no tiene precio de compra: su moneda no entra a la pregunta.
+    const monedas = new Set(propios.map((c) => c.woodEntry.moneda ?? "PEN"));
     if (monedas.size > 1) {
       return {
         ...base,
@@ -605,7 +636,7 @@ export class ForestCtpConsumoDB {
     }
 
     let costoMateriaPrima = 0;
-    for (const c of consumos) {
+    for (const c of propios) {
       // Congelado gana: es el costo con el que se reportó el período.
       const unitario =
         c.costoUnitarioSnap != null
@@ -624,6 +655,20 @@ export class ForestCtpConsumoDB {
         };
       }
       costoMateriaPrima += unitario * Number(c.volumeM3);
+    }
+
+    /* Propia completa + algo de servicio: no hay faltante, pero tampoco un
+       costo por unidad — el producto no se separa por dueño, y promediar sólo
+       lo comprado sobre todo lo producido lo diluiría. `null` honesto, con su
+       motivo: el despacho que salga de acá queda «mixto» (incompleto). */
+    if (propios.length < consumos.length) {
+      return {
+        ...base,
+        costoMateriaPrima: null,
+        costoTotal: null,
+        costoUnitario: null,
+        motivo: "mixto_servicio",
+      };
     }
 
     const costoTotal = r2(costoMateriaPrima + (costoProceso ?? 0));
@@ -653,12 +698,17 @@ export class ForestCtpConsumoDB {
     return prisma.$transaction(async (tx) => {
       const consumos = await tx.forestCtpConsumo.findMany({
         where: { tenantId, ctpEntryId },
-        include: { woodEntry: { select: { costoTotal: true, volumeM3: true, gtfNumber: true } } },
+        include: { woodEntry: { select: { costoTotal: true, volumeM3: true, gtfNumber: true, maderaDeTercero: true } } },
       });
       if (consumos.length === 0) throw new Error("La línea no tiene consumos que congelar");
 
+      /* La madera de servicio (ADR-437 §1) no tiene factura que faltar: no
+         frena el cierre. Tampoco se congela: no hay costo que fijar, y el CHECK
+         `ForestCtpConsumo_congelado_coherente` exige snap y fecha juntos (un
+         snap 0 fingiría madera gratis). Su atribución la protege el mes
+         cerrado, igual que a cualquier escritura del libro. */
       const sinFactura = consumos.filter(
-        (c) => c.costoUnitarioSnap == null && c.woodEntry.costoTotal == null,
+        (c) => c.costoUnitarioSnap == null && !c.woodEntry.maderaDeTercero && c.woodEntry.costoTotal == null,
       );
       if (sinFactura.length > 0) {
         throw new CtpInvariantError(
@@ -670,8 +720,13 @@ export class ForestCtpConsumoDB {
 
       const now = new Date();
       const congelados: string[] = [];
+      const deServicio: string[] = [];
       for (const c of consumos) {
         if (c.costoUnitarioSnap != null) continue; // ya congelado: no se repisa
+        if (c.woodEntry.maderaDeTercero) {
+          deServicio.push(c.woodEntry.gtfNumber);
+          continue;
+        }
         const unitario = r2(Number(c.woodEntry.costoTotal) / Number(c.woodEntry.volumeM3));
         await tx.forestCtpConsumo.update({
           where: { id: c.id },
@@ -686,9 +741,15 @@ export class ForestCtpConsumoDB {
         action: "ctp_costo_congelar",
         entity: "ForestCtpEntry",
         entityId: ctpEntryId,
-        detail: congelados.length
-          ? `Costo congelado al cierre — ${congelados.join(", ")}. La línea queda inmutable.`
-          : "Congelado sin cambios: todos los consumos ya estaban congelados.",
+        detail:
+          (congelados.length
+            ? `Costo congelado al cierre — ${congelados.join(", ")}. La línea queda inmutable.`
+            : deServicio.length
+              ? "Sin costo que congelar"
+              : "Congelado sin cambios: todos los consumos ya estaban congelados.") +
+          (deServicio.length
+            ? ` · Madera de servicio sin costo (no se congela): ${[...new Set(deServicio)].join(", ")}.`
+            : ""),
         user,
       });
 

@@ -28,12 +28,12 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
 import { auditCtp } from "@/lib/forestal/ctp-audit";
-import { decidirCogs } from "@/lib/forestal/ctp-cogs";
+import { corridaDeServicio, corridaMixta, decidirCogs, type MotivoCogs } from "@/lib/forestal/ctp-cogs";
 import { ForestCtpFichaDB } from "./forest-ctp-ficha.db";
 import { CtpInvariantError, ForestCtpConsumoDB, CTP_TX_OPTS } from "./forest-ctp-consumo.db";
 import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
 import { ForestAnexosDB } from "./forest-anexos.db";
-import { decidirMargen, type MargenMotivo } from "@/lib/forestal/ctp-pnl";
+import { agregarPnl, decidirMargen, type FilaPnl, type MargenMotivo, type PnlAgregado } from "@/lib/forestal/ctp-pnl";
 import { guiaEditable } from "@/lib/forestal/gtf-estado";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
 import { sinDato } from "@/lib/errores/sin-dato";
@@ -41,8 +41,6 @@ import { sinDato } from "@/lib/errores/sin-dato";
 const CACHE_PREFIX = "forest-ctp";
 /** 4 decimales — precisión forestal (volúmenes/cantidades). */
 const r4 = (n: number) => Math.round(n * 10000) / 10000;
-/** 2 decimales — plata. */
-const r2 = (n: number) => Math.round(n * 100) / 100;
 
 /** Un origen sólo cuenta si su línea de despacho sigue viva (espejo de CONSUMO_VIGENTE). */
 export const ORIGEN_VIGENTE = {
@@ -61,7 +59,11 @@ export interface CogsDespacho {
   costoUnitario: number | null;
   moneda: string | null;
   /** Por qué es null, para que la UI lo explique en vez de mostrar "—". */
-  motivo: "ok" | "sin_atribucion" | "falta_costo" | "monedas_mezcladas" | "sin_cantidad";
+  /* `madera_de_servicio` (ADR-437 §1): salió de madera ajena — no lleva costo de madera y NO es un faltante.
+     `mixto_servicio` (revisión 26-09): mezcla propia y de servicio — INCOMPLETO, se avisa. */
+  motivo: MotivoCogs;
+  /** Sólo con `mixto_servicio`: costo de la parte comprada (null si una corrida mixta no lo separa). */
+  cogsPropio: number | null;
   /** Lo despachado que NO tiene corrida atribuida: su costo es desconocido por definición. */
   sinAtribuir: number;
   detalle: {
@@ -71,6 +73,10 @@ export interface CogsDespacho {
     costoUnitario: number | null;
     costo: number | null;
     congelado: boolean;
+    /** Corrida de madera ajena: la pantalla dice «servicio», no «sin costo». */
+    maderaDeServicio: boolean;
+    /** Corrida que mezcló madera propia y ajena: la pantalla dice «mixta». */
+    mezclaServicio: boolean;
   }[];
 }
 
@@ -87,23 +93,8 @@ export interface MargenDespacho {
   motivo: MargenMotivo;
 }
 
-/** P&L agregado de un período (ADR-141). El margen cubre SOLO los completos. */
-export interface PnlPeriodo {
-  despachos: number;
-  /** Con venta Y costo conocidos → contribuyen al margen. */
-  completos: number;
-  sinVenta: number;
-  sinCosto: number;
-  ventasTotal: number;
-  cogsTotal: number;
-  /** Σ(venta − cogs) sobre los completos. */
-  margenTotal: number;
-  margenPct: number | null;
-  moneda: string;
-  porProducto: { producto: string; ventas: number; cogs: number; margen: number; margenPct: number | null }[];
-  /** Detalle por despacho: para editar la venta y ver el margen fila por fila. */
-  porDespacho: { id: string; lineNo: number; producto: string; gtfSalida: string | null; valorVenta: number | null; cogs: number | null; margen: number | null; margenPct: number | null; motivo: MargenDespacho["motivo"] }[];
-}
+/** P&L agregado de un período (ADR-141). La forma y la suma viven en `lib/forestal/ctp-pnl.ts` (pura, con tests). */
+export type PnlPeriodo = PnlAgregado;
 
 export interface TrazabilidadDespacho {
   /** Sin huecos: cada unidad despachada tiene una corrida y un ingreso detrás. */
@@ -361,6 +352,8 @@ export class ForestCtpDespachoDB {
           select: {
             id: true, lineNo: true, entryDate: true, productType: true,
             speciesCommon: true, quantity: true, unit: true,
+            // ADR-412/437: una corrida «de tercero» sin costo es madera de servicio.
+            duenoMadera: true,
           },
         },
       },
@@ -413,6 +406,8 @@ export class ForestCtpDespachoDB {
         costoUnitario: costos[i].costoUnitario,
         moneda: costos[i].moneda,
         congelado: costos[i].congelado,
+        maderaDeServicio: corridaDeServicio({ ...costos[i], duenoMadera: o.produccion.duenoMadera }),
+        mezclaServicio: corridaMixta(costos[i]),
       })),
     });
   }
@@ -503,7 +498,7 @@ export class ForestCtpDespachoDB {
       ? await prisma.forestCtpDespachoOrigen.findMany({
           where: { tenantId, despachoEntryId: { in: despachos.map((d) => d.id) } },
           orderBy: { createdAt: "asc" },
-          include: { produccion: { select: { id: true, lineNo: true } } },
+          include: { produccion: { select: { id: true, lineNo: true, duenoMadera: true } } },
         })
       : [];
 
@@ -522,7 +517,7 @@ export class ForestCtpDespachoDB {
       ),
     );
 
-    const margenes: MargenDespacho[] = despachos.map((d) => {
+    const filas: FilaPnl[] = despachos.map((d) => {
       const origenes = porDespachoId.get(d.id) ?? [];
       // MISMA función que `cogsDeDespacho`: el P&L no puede dar otro número que la ficha.
       const cogsR = decidirCogs({
@@ -536,49 +531,21 @@ export class ForestCtpDespachoDB {
             costoUnitario: c?.costoUnitario ?? null,
             moneda: c?.moneda ?? null,
             congelado: c?.congelado ?? false,
+            maderaDeServicio: c ? corridaDeServicio({ ...c, duenoMadera: o.produccion.duenoMadera }) : false,
+            mezclaServicio: c ? corridaMixta(c) : false,
           };
         }),
       });
       const venta = d.valorVenta != null ? Number(d.valorVenta) : null;
       const { margen, margenPct, motivo } = decidirMargen(venta, cogsR.cogs, cogsR.motivo);
-      return { valorVenta: venta, cogs: cogsR.cogs, margen, margenPct, moneda: cogsR.moneda ?? "PEN", motivo };
+      return {
+        id: d.id, lineNo: d.lineNo, producto: `${d.productType ?? "—"} · ${d.speciesCommon ?? "—"}`, gtfSalida: d.gtfNumber ?? null,
+        valorVenta: venta, cogs: cogsR.cogs, margen, margenPct, moneda: cogsR.moneda ?? "PEN", motivo,
+      };
     });
 
-    let completos = 0, sinVenta = 0, sinCosto = 0, ventasTotal = 0, cogsTotal = 0, margenTotal = 0;
-    const monedas = new Set<string>();
-    const prod: Record<string, { producto: string; ventas: number; cogs: number; margen: number }> = {};
-    const porDespacho: PnlPeriodo["porDespacho"] = [];
-
-    despachos.forEach((d, i) => {
-      const m = margenes[i];
-      monedas.add(m.moneda);
-      const producto = `${d.productType ?? "—"} · ${d.speciesCommon ?? "—"}`;
-      porDespacho.push({ id: d.id, lineNo: d.lineNo, producto, gtfSalida: d.gtfNumber ?? null, valorVenta: m.valorVenta, cogs: m.cogs, margen: m.margen, margenPct: m.margenPct, motivo: m.motivo });
-      if (m.margen == null) {
-        if (m.motivo === "sin_venta") sinVenta++; else sinCosto++;
-        return;
-      }
-      completos++;
-      ventasTotal += m.valorVenta ?? 0;
-      cogsTotal += m.cogs ?? 0;
-      margenTotal += m.margen;
-      prod[producto] ??= { producto, ventas: 0, cogs: 0, margen: 0 };
-      prod[producto].ventas += m.valorVenta ?? 0;
-      prod[producto].cogs += m.cogs ?? 0;
-      prod[producto].margen += m.margen;
-    });
-
-    return {
-      despachos: despachos.length,
-      completos, sinVenta, sinCosto,
-      ventasTotal: r2(ventasTotal), cogsTotal: r2(cogsTotal), margenTotal: r2(margenTotal),
-      margenPct: ventasTotal > 0 ? r2((margenTotal / ventasTotal) * 100) : null,
-      moneda: monedas.size === 1 ? [...monedas][0] : "PEN",
-      porProducto: Object.values(prod)
-        .map((p) => ({ ...p, ventas: r2(p.ventas), cogs: r2(p.cogs), margen: r2(p.margen), margenPct: p.ventas > 0 ? r2((p.margen / p.ventas) * 100) : null }))
-        .sort((a, b) => b.margen - a.margen),
-      porDespacho,
-    };
+    // La suma (completos / incompletos / de servicio / mixtos) es pura y tiene tests.
+    return agregarPnl(filas);
   }
 
   /**

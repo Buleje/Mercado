@@ -164,8 +164,19 @@ export interface BloqueBalance {
  */
 export interface BalanceContrato {
   contratoId: string;
-  /** Lo que ENTRÓ: la madera que amparó el permiso. */
+  /** Lo que ENTRÓ y se COMPRÓ: la madera que amparó el permiso, sin la de servicio. */
   madera: BloqueBalance;
+  /**
+   * Madera de servicio (ADR-437 §1): entró bajo el permiso pero no se compró
+   * —se asierra para su dueño—. Sin plata ni «sin precio»; sólo cuántas guías y
+   * cuántos m³. Opcional: una respuesta en caché de antes no la trae.
+   *
+   * `documentos` cuenta ASIENTOS (una fila por especie, ADR-312); `guias`
+   * cuenta GTF distintas —una guía con dos especies es UNA guía, no dos—.
+   * `duenos` son los nombres únicos, para nombrarlos en la misma línea
+   * («8 guías de servicio (WASACO) · 135,59 m³»).
+   */
+  servicio?: { documentos: number; m3: number; guias?: number; duenos?: string[] };
   produccion: BloqueBalance;
   /**
    * Lo que se VENDIÓ de este permiso (ADR-141, `ForestCtpEntry.valorVenta`).
@@ -199,6 +210,7 @@ export interface BalanceContrato {
  */
 export function resumirBalance(b: BalanceContrato) {
   const egresos = b.madera.monto + b.gastos.monto + b.fletes.monto + b.adelantos.monto;
+  const m3Entrado = (b.madera.m3 ?? 0) + (b.servicio?.m3 ?? 0);
   const porRecuperar = b.adelantosSaldo + (b.cuentaCargos.monto - b.cuentaAbonos.monto);
   /**
    * Lo ganado: lo vendido menos lo puesto.
@@ -219,16 +231,17 @@ export function resumirBalance(b: BalanceContrato) {
     ganancia,
     /** Cuánto queda de cada sol vendido, después de lo puesto. `null` sin ventas. */
     margenPct: ganancia != null && ventas > 0 ? (ganancia / ventas) * 100 : null,
-    m3Ingresados: b.madera.m3 ?? 0,
+    /* Todo lo que entró, comprado o de servicio: la sierra corta las dos. */
+    m3Ingresados: m3Entrado,
     m3Producidos: b.produccion.m3 ?? 0,
-    /** Cuánto costó cada m³ que entró. `null` cuando no hay volumen: dividir
-     *  por cero para mostrar «S/ 0 por m³» sería declarar un costo que nadie
-     *  midió. */
+    /** Cuánto costó cada m³ COMPRADO (la de servicio no tiene costo, ADR-437).
+     *  `null` cuando no hay volumen: dividir por cero para mostrar «S/ 0 por
+     *  m³» sería declarar un costo que nadie midió. */
     costoPorM3: (b.madera.m3 ?? 0) > 0 ? egresos / (b.madera.m3 as number) : null,
     /** Rendimiento: qué fracción del volumen que entró salió como producto. */
+    /* Sobre TODO lo que entró: la producción incluye lo aserrado para terceros
+       (ADR-437 §1), y dividirla sólo por lo comprado daría más de 100 %. */
     rendimientoPct:
-      (b.madera.m3 ?? 0) > 0 && (b.produccion.m3 ?? 0) > 0
-        ? ((b.produccion.m3 as number) / (b.madera.m3 as number)) * 100
-        : null,
+      m3Entrado > 0 && (b.produccion.m3 ?? 0) > 0 ? ((b.produccion.m3 as number) / m3Entrado) * 100 : null,
   };
 }

@@ -17,6 +17,14 @@
  * cifra (decisión por defecto de Brandon, ADR-413 «Dudas»): el vuelto se da en
  * el acto.
  *
+ * ## Guías (ADR-437 §6)
+ *
+ * Dentro de la cuenta forestal, un pago o un cruce se puede imputar a guías de
+ * compra con nombre (`imputacion.guias`). Cada guía recibe `≤` lo que tiene
+ * pendiente —calculado dentro del lock, y en la huella— y el movimiento se
+ * parte en uno por guía (con `gtfNumber`) más el resto sin guía. Relaja ADR-413
+ * §3 («no se elige cargo») sólo para guías.
+ *
  * ## Céntimos en cada paso
  *
  * `0.1 + 0.2` da `0.30000000000000004`; cada suma se redondea apenas se hace.
@@ -32,6 +40,8 @@ import { leerNeto } from "@/lib/adelantos/cuenta-unificada";
 import { formatCurrency } from "@/lib/currency";
 import { limaDateKey } from "@/lib/utils";
 import { calcularSaldo, type Concepto, type MovimientoCuenta, type TipoMov } from "@/lib/forestal/cuenta-corriente";
+import { normalizarFoto, type FotoCarga } from "@/lib/forestal/fotos-carga";
+import { esDiaDelCalendario, estadoDePagoDeGuias, type GuiaParaPago } from "@/lib/forestal/plata-de-guia";
 
 export type { MetodoPago };
 export type DireccionPago = "recibido" | "hecho";
@@ -66,8 +76,36 @@ export interface PartidasDePersona {
   cruzable: boolean;
   /** Ya en orden FIFO. */
   adelantos: PartidaAdelanto[];
-  forestal: { saldo: number; desde: string | null; movimientos: MovimientoCuenta[] } | null;
+  forestal: {
+    saldo: number;
+    desde: string | null;
+    movimientos: MovimientoCuenta[];
+    /**
+     * Guías de compra de la persona con algo pendiente (ADR-437 §7), derivadas
+     * de `movimientos` con `guiasPendientesDe`. Opcional: sin guías, ausente.
+     */
+    guias?: GuiaPendiente[];
+  } | null;
   fuera: PartidaFuera[];
+}
+
+/** Una guía de compra con lo que falta pagarle. Derivado, nunca guardado (ADR-437 §7). */
+export interface GuiaPendiente {
+  gtfNumber: string;
+  /** Fecha del abono `madera` de la guía (ISO): el orden «por antigüedad». */
+  fecha: string;
+  /** Lo que vale la madera de la guía. */
+  monto: number;
+  pagado: number;
+  /** > 0: sólo se listan las que tienen algo pendiente. */
+  pendiente: number;
+}
+
+/** Cuánto de un paso va a una guía con nombre. */
+export interface ImputacionGuia {
+  gtfNumber: string;
+  monto: number;
+  paso: "cruce" | "pago";
 }
 
 export interface SaldosPersona {
@@ -86,6 +124,8 @@ export interface IntencionLiquidacion {
   imputacion?: {
     compensacion?: { adelantoId: string; monto: number }[];
     pago?: { partida: "forestal" | `adelanto:${string}` | string; monto: number }[];
+    /** ADR-437 §6: parte del cruce o del pago hecho que va a guías con nombre. Lo demás, sin guía. */
+    guias?: ImputacionGuia[];
   };
   notas?: string;
 }
@@ -104,6 +144,8 @@ export interface MovimientoPlaneado {
   monto: number;
   paso: "cruce" | "pago";
   notas: string;
+  /** La guía a la que se imputa (ADR-437 §6). Ausente/`null` = sin guía. */
+  gtfNumber?: string | null;
 }
 
 export interface CargoCubierto {
@@ -113,6 +155,10 @@ export interface CargoCubierto {
   referencia: string | null;
   cubierto: number;
   total: number;
+  /** La guía del movimiento cubierto, si la tiene (ADR-437). */
+  gtfNumber?: string | null;
+  /** Cubierto por nombrar su guía, no por antigüedad (ADR-437 §7). */
+  porGuia?: boolean;
 }
 
 export interface PlanLiquidacion {
@@ -149,6 +195,8 @@ export interface LiquidacionDTO {
   creadaPor: string;
   creadaEn: string;
   anulada: { en: string; por: string; motivo: string; reversionCajaId: string | null } | null;
+  /** Fotos del comprobante del pago (ADR-437 §6). Privadas: se ven con `srcDeFoto`. */
+  comprobantes?: FotoCarga[];
 }
 
 // ── Partidas ─────────────────────────────────────────────────────────────────
@@ -248,41 +296,137 @@ export function fechaDeudaViva(movs: readonly MovimientoCuenta[]): string | null
   return Math.abs(saldo) <= EPS ? null : desde;
 }
 
+const gtfDe = (m: { gtfNumber?: string | null }): string | null => m.gtfNumber?.trim() || null;
+
 /**
  * Qué movimientos de la deuda cubre un monto, por antigüedad.
  *
  * Es un DERIVADO: la cuenta no imputa por documento (ADR-322 §1). Primero lo
  * que ya se pagó en contra cubre a los más viejos, y lo que se liquida ahora
  * cubre lo que queda. La pantalla y el papel lo rotulan «por antigüedad».
+ *
+ * Excepción de ADR-437 §7: lo que NOMBRA una guía (`gtfNumber`) cubre primero
+ * el movimiento de esa guía —lo ya pagado y, con `guias`, lo que se imputa
+ * ahora—; sólo lo que sobra sigue por antigüedad. Sin guías en juego el
+ * resultado es exactamente el de antes.
  */
-export function cargosCubiertosPorAntiguedad(movs: readonly MovimientoCuenta[], monto: number): CargoCubierto[] {
+export function cargosCubiertosPorAntiguedad(
+  movs: readonly MovimientoCuenta[],
+  monto: number,
+  guias: readonly { gtfNumber: string; monto: number }[] = [],
+): CargoCubierto[] {
   const saldo = calcularSaldo([...movs]).saldo;
   if (Math.abs(saldo) <= EPS || !(monto > EPS)) return [];
   const deLaDeuda: TipoMov = saldo > 0 ? "cargo" : "abono";
-  const abiertos: { m: MovimientoCuenta; abierto: number }[] = [];
-  for (const m of cronologico(movs)) {
+  const orden = cronologico(movs);
+  const abiertos: { m: MovimientoCuenta; abierto: number }[] = orden
+    .filter((m) => m.tipo === deLaDeuda)
+    .map((m) => ({ m, abierto: r2(m.monto) }));
+  /* Cubre `q` en los abiertos de la guía `g`; devuelve lo que no entró. */
+  const aSuGuia = (g: string, q: number, anotar?: (a: { m: MovimientoCuenta }, t: number) => void): number => {
+    for (const a of abiertos) {
+      if (q <= EPS) break;
+      if (gtfDe(a.m) !== g || a.abierto <= EPS) continue;
+      const t = r2(Math.min(a.abierto, q));
+      a.abierto = r2(a.abierto - t);
+      q = r2(q - t);
+      anotar?.(a, t);
+    }
+    return q;
+  };
+
+  /* 1. Lo ya pagado que nombra una guía, a su guía; lo que sobra queda para el paso 2. */
+  const sobra = new Map<string, number>();
+  for (const m of orden) {
+    if (m.tipo === deLaDeuda) continue;
+    const g = gtfDe(m);
+    sobra.set(m.id, g ? aSuGuia(g, r2(m.monto)) : r2(m.monto));
+  }
+  /* 2. El resto de lo ya pagado, por antigüedad: sólo alcanza a lo anterior a él. */
+  const vistos: { m: MovimientoCuenta; abierto: number }[] = [];
+  for (const m of orden) {
     if (m.tipo === deLaDeuda) {
-      abiertos.push({ m, abierto: r2(m.monto) });
+      const a = abiertos.find((x) => x.m === m);
+      if (a) vistos.push(a);
       continue;
     }
-    let q = r2(m.monto);
-    for (const a of abiertos) {
+    let q = sobra.get(m.id) ?? 0;
+    for (const a of vistos) {
       if (q <= EPS) break;
       const t = Math.min(a.abierto, q);
       a.abierto = r2(a.abierto - t);
       q = r2(q - t);
     }
   }
+
+  /* 3. Lo de ahora: primero las guías con nombre, después por antigüedad. */
+  const cubierto = new Map<string, { t: number; porGuia: boolean }>();
+  const anotar = (porGuia: boolean) => (a: { m: MovimientoCuenta }, t: number) => {
+    const c = cubierto.get(a.m.id) ?? { t: 0, porGuia: false };
+    cubierto.set(a.m.id, { t: r2(c.t + t), porGuia: c.porGuia || porGuia });
+  };
   let queda = r2(monto);
-  const out: CargoCubierto[] = [];
+  for (const g of guias) {
+    const pedido = r2(Math.min(Math.max(0, g.monto), queda));
+    if (pedido <= EPS) continue;
+    const noEntro = aSuGuia(g.gtfNumber.trim(), pedido, anotar(true));
+    queda = r2(queda - pedido + noEntro);
+  }
   for (const a of abiertos) {
     if (queda <= EPS) break;
     if (a.abierto <= EPS) continue;
     const t = r2(Math.min(a.abierto, queda));
-    out.push({ movimientoId: a.m.id, fecha: a.m.fecha, concepto: a.m.concepto, referencia: a.m.referencia, cubierto: t, total: a.m.monto });
+    a.abierto = r2(a.abierto - t);
     queda = r2(queda - t);
+    anotar(false)(a, t);
+  }
+
+  const out: CargoCubierto[] = [];
+  for (const a of abiertos) {
+    const c = cubierto.get(a.m.id);
+    if (!c || c.t <= EPS) continue;
+    const g = gtfDe(a.m);
+    out.push({
+      movimientoId: a.m.id,
+      fecha: a.m.fecha,
+      concepto: a.m.concepto,
+      referencia: a.m.referencia,
+      cubierto: c.t,
+      total: a.m.monto,
+      ...(g ? { gtfNumber: g } : {}),
+      ...(c.porGuia ? { porGuia: true } : {}),
+    });
   }
   return out;
+}
+
+/**
+ * Las guías de compra de una parte con algo pendiente, desde sus movimientos
+ * (ADR-437 §7): cada abono `madera` con `gtfNumber` es una guía; los cargos que
+ * la nombran la cubren y los demás cubren por antigüedad (`estadoDePagoDeGuias`,
+ * la MISMA regla que el modal de la guía). Lo pagado de más no se lista.
+ */
+export function guiasPendientesDe(movimientos: readonly MovimientoCuenta[]): GuiaPendiente[] {
+  const porGuia = new Map<string, GuiaParaPago>();
+  for (const m of movimientos) {
+    const g = gtfDe(m);
+    if (!g || m.tipo !== "abono" || m.concepto !== "madera") continue;
+    const ya = porGuia.get(g);
+    porGuia.set(
+      g,
+      ya
+        ? { ...ya, monto: r2(ya.monto + m.monto), fecha: m.fecha < ya.fecha ? m.fecha : ya.fecha }
+        : { gtfNumber: g, parteId: m.parteId, fecha: m.fecha, monto: r2(m.monto) },
+    );
+  }
+  if (porGuia.size === 0) return [];
+  /* Una sola parte por lista: la de las guías (la cuenta que se liquida es una). */
+  const parteId = [...porGuia.values()][0].parteId;
+  const guias = [...porGuia.values()].map((g) => ({ ...g, parteId }));
+  const movs = movimientos.map((m) => ({ parteId, tipo: m.tipo, concepto: m.concepto, monto: m.monto, gtfNumber: gtfDe(m) }));
+  return estadoDePagoDeGuias(guias, movs)
+    .filter((e) => e.pendiente > EPS)
+    .map((e) => ({ gtfNumber: e.gtfNumber, fecha: e.fecha, monto: e.monto, pagado: e.pagado, pendiente: e.pendiente }));
 }
 
 // ── Plan ─────────────────────────────────────────────────────────────────────
@@ -297,6 +441,75 @@ function agrupar(filas: readonly { clave: string; monto: number }[]): Reparto {
     if (v > EPS) m.set(f.clave, r2((m.get(f.clave) ?? 0) + v));
   }
   return [...m.entries()].map(([clave, monto]) => ({ clave, monto }));
+}
+
+/** Suma las imputaciones repetidas (misma guía y paso) y descarta las de menos de un céntimo. */
+function agruparGuias(filas: readonly ImputacionGuia[]): ImputacionGuia[] {
+  const m = new Map<string, ImputacionGuia>();
+  for (const f of filas) {
+    const gtfNumber = f.gtfNumber.trim();
+    const v = r2(Math.max(0, Number(f.monto) || 0));
+    if (!gtfNumber || v <= EPS) continue;
+    const k = `${f.paso}|${gtfNumber}`;
+    const ya = m.get(k);
+    m.set(k, { gtfNumber, paso: f.paso, monto: r2((ya?.monto ?? 0) + v) });
+  }
+  return [...m.values()];
+}
+
+/** Lo que va a cada guía, sumando los dos pasos (para lo cubierto). */
+function porGuiaSumado(guias: readonly ImputacionGuia[]): { gtfNumber: string; monto: number }[] {
+  const m = new Map<string, number>();
+  for (const g of guias) m.set(g.gtfNumber, r2((m.get(g.gtfNumber) ?? 0) + g.monto));
+  return [...m.entries()].map(([gtfNumber, monto]) => ({ gtfNumber, monto }));
+}
+
+/**
+ * `≤` en cada guía y en cada paso. Sólo bajan lo que le debes (el cruce y el
+ * pago hecho): un pago recibido no paga una guía tuya. `null` = todo en regla.
+ */
+function validarGuias(
+  p: PartidasDePersona,
+  guias: readonly ImputacionGuia[],
+  compensar: number,
+  pago: IntencionLiquidacion["pago"],
+): string | null {
+  if (!p.forestal) return "Esta persona no tiene cuenta forestal: no hay guías que pagarle.";
+  const pendiente = new Map((p.forestal.guias ?? []).map((g) => [g.gtfNumber.trim(), g.pendiente]));
+  const total = porGuiaSumado(guias);
+  for (const g of total) {
+    const debe = pendiente.get(g.gtfNumber);
+    if (debe == null) return `La guía ${g.gtfNumber} no tiene nada pendiente con ${p.persona.nombre}.`;
+    if (g.monto > debe + EPS) return `A la guía ${g.gtfNumber} le falta ${soles(debe)}: no se le pueden imputar ${soles(g.monto)}.`;
+  }
+  const suma = (paso: "cruce" | "pago") => guias.filter((g) => g.paso === paso).reduce((a, g) => r2(a + g.monto), 0);
+  const cruce = suma("cruce");
+  if (cruce > EPS && cruce > compensar + EPS) {
+    return `A las guías van ${soles(cruce)} del cruce, y el cruce es ${soles(compensar)}.`;
+  }
+  const pagoGuias = suma("pago");
+  if (pagoGuias > EPS) {
+    if (!pago || pago.direccion !== "hecho") return "Una guía se paga con un pago que le haces, no con uno que recibes.";
+    if (pagoGuias > pago.monto + EPS) return `A las guías van ${soles(pagoGuias)} del pago, y el pago es ${soles(pago.monto)}.`;
+  }
+  return null;
+}
+
+/**
+ * Un movimiento forestal partido: uno por guía (con `gtfNumber`) y el resto sin
+ * guía. La suma de las partes es el movimiento entero, al céntimo.
+ */
+function partirPorGuia(base: MovimientoPlaneado, guias: readonly ImputacionGuia[]): MovimientoPlaneado[] {
+  if (guias.length === 0) return [base];
+  const partes: MovimientoPlaneado[] = guias.map((g) => ({
+    ...base,
+    monto: g.monto,
+    gtfNumber: g.gtfNumber,
+    notas: `${base.notas} · guía ${g.gtfNumber}`,
+  }));
+  const resto = r2(base.monto - guias.reduce((a, g) => r2(a + g.monto), 0));
+  if (resto > EPS) partes.push({ ...base, monto: resto });
+  return partes;
 }
 
 /**
@@ -339,6 +552,15 @@ export function planLiquidacion(p: PartidasDePersona, intencion: IntencionLiquid
     return true;
   };
 
+  /* Guías con nombre (ADR-437 §6): se validan contra lo pendiente de cada una
+     y contra el paso al que pertenecen, y parten su movimiento. */
+  const pedidasGuias = agruparGuias(intencion.imputacion?.guias ?? []);
+  const guiasDe = (paso: "cruce" | "pago") => pedidasGuias.filter((g) => g.paso === paso);
+  if (pedidasGuias.length > 0) {
+    const errGuias = validarGuias(p, pedidasGuias, compensar, pago);
+    if (errGuias) return { ok: false, errores: [errGuias] };
+  }
+
   // 1. Cruzar
   if (compensar > EPS) {
     if (!p.cruzable || forestal == null) {
@@ -356,13 +578,12 @@ export function planLiquidacion(p: PartidasDePersona, intencion: IntencionLiquid
       entregas.push({ adelantoId: r.clave, codigo: porId.get(r.clave)?.codigo ?? null, valor: r.monto, paso: "cruce", descripcion: "Cruce con la cuenta forestal" });
     }
     forestal = r2(forestal + compensar);
-    movimientos.push({
-      tipo: "cargo",
-      concepto: "compensacion",
-      monto: compensar,
-      paso: "cruce",
-      notas: `Cruce con ${reparto.map((r) => codigoDe(r.clave)).join(", ")}`,
-    });
+    movimientos.push(
+      ...partirPorGuia(
+        { tipo: "cargo", concepto: "compensacion", monto: compensar, paso: "cruce", notas: `Cruce con ${reparto.map((r) => codigoDe(r.clave)).join(", ")}` },
+        guiasDe("cruce"),
+      ),
+    );
   }
 
   // 2. Pagar
@@ -419,7 +640,12 @@ export function planLiquidacion(p: PartidasDePersona, intencion: IntencionLiquid
       const leDebes = forestal != null ? r2(Math.max(0, -forestal)) : 0;
       if (pago.monto > leDebes + EPS) return { ok: false, errores: [`Le debes ${soles(leDebes)}: el pago no puede pasar de eso.`] };
       forestal = r2((forestal ?? 0) + pago.monto);
-      movimientos.push({ tipo: "cargo", concepto: "pago_hecho", monto: pago.monto, paso: "pago", notas: `Pago entregado (${pago.metodo})` });
+      movimientos.push(
+        ...partirPorGuia(
+          { tipo: "cargo", concepto: "pago_hecho", monto: pago.monto, paso: "pago", notas: `Pago entregado (${pago.metodo})` },
+          guiasDe("pago"),
+        ),
+      );
     }
   }
 
@@ -436,7 +662,9 @@ export function planLiquidacion(p: PartidasDePersona, intencion: IntencionLiquid
       pago,
       antes,
       despues: { adelantosTeDebe, maderaSaldo, neto: r2(adelantosTeDebe + maderaSaldo) },
-      cubiertos: p.forestal ? cargosCubiertosPorAntiguedad(p.forestal.movimientos, reduccionForestal) : [],
+      cubiertos: p.forestal
+        ? cargosCubiertosPorAntiguedad(p.forestal.movimientos, reduccionForestal, porGuiaSumado(pedidasGuias))
+        : [],
       fuera: p.fuera,
     },
   };
@@ -486,9 +714,17 @@ export function huellaDe(p: PartidasDePersona): string {
     /* Las fechas entran: el reparto FIFO sale de ellas, y cambiar la fecha de un
        movimiento o de un adelanto cambia a quién se imputa sin mover un saldo. */
     ...p.adelantos.map((a) => `a:${a.adelantoId}:${a.saldo.toFixed(2)}:${a.fecha}`).sort(),
+    /* La guía de cada movimiento entra sólo si la tiene: lo anterior a ADR-437
+       da la misma huella que antes. */
     p.forestal
-      ? `f:${p.forestal.saldo.toFixed(2)}:${p.forestal.movimientos.map((m) => `${m.id}:${m.tipo}:${m.monto.toFixed(2)}:${m.fecha}`).sort().join(",")}`
+      ? `f:${p.forestal.saldo.toFixed(2)}:${p.forestal.movimientos
+          .map((m) => `${m.id}:${m.tipo}:${m.monto.toFixed(2)}:${m.fecha}${gtfDe(m) ? `:${gtfDe(m)}` : ""}`)
+          .sort()
+          .join(",")}`
       : "f:-",
+    /* Lo pendiente de cada guía (ADR-437 §6): imputar a una guía que cambió
+       entre la vista previa y el confirmar es imputar a otra cosa. */
+    ...(p.forestal?.guias ?? []).map((g) => `g:${g.gtfNumber}:${g.pendiente.toFixed(2)}`).sort(),
     ...p.fuera.map((f) => `x:${f.etiqueta}:${f.moneda}:${f.monto.toFixed(2)}`).sort(),
   ].join("|");
   let h = 0x811c9dc5;
@@ -524,10 +760,10 @@ export function leerPlan(plan: PlanLiquidacion, nombre: string): string[] {
   for (const m of plan.movimientos) {
     lineas.push(
       m.concepto === "compensacion"
-        ? `En la cuenta forestal se anota el cruce por ${soles(m.monto)}.`
+        ? `En la cuenta forestal se anota el cruce por ${soles(m.monto)}${m.gtfNumber ? ` (guía ${m.gtfNumber})` : ""}.`
         : m.concepto === "pago"
           ? `En la cuenta forestal se abonan ${soles(m.monto)} de su pago.`
-          : `Le pagas ${soles(m.monto)} a ${nombre}.`,
+          : `Le pagas ${soles(m.monto)} a ${nombre}${m.gtfNumber ? ` por la guía ${m.gtfNumber}` : ""}.`,
     );
   }
   if (plan.caja) {
@@ -601,6 +837,16 @@ export function textoLiquidacion(d: LiquidacionDTO): string {
 
 const METODOS = ["efectivo", "yape", "plin", "tarjeta", "transferencia"] as const;
 const monto = z.number().min(0).max(9_999_999);
+const comprobanteSchema = z
+  .union([z.string().max(500), z.looseObject({ url: z.string().max(500) })])
+  .transform((v, ctx): FotoCarga => {
+    const f = normalizarFoto(v);
+    if (!f) {
+      ctx.addIssue({ code: "custom", message: "Esa foto del comprobante no es válida: súbela de nuevo." });
+      return z.NEVER;
+    }
+    return f;
+  });
 
 export const liquidacionInputSchema = z
   .object({
@@ -613,6 +859,8 @@ export const liquidacionInputSchema = z
     fecha: z
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/)
+      /* `2026-02-31` pasaba el regex y `new Date` lo volvía 3 de marzo en silencio. */
+      .refine(esDiaDelCalendario, "Esa fecha no existe en el calendario.")
       .refine((f) => f <= limaDateKey(), "La fecha no puede ser futura: usa la de hoy o una pasada."),
     compensar: monto,
     pago: z
@@ -622,10 +870,20 @@ export const liquidacionInputSchema = z
       .object({
         compensacion: z.array(z.object({ adelantoId: z.string().min(1).max(40), monto })).max(200).optional(),
         pago: z.array(z.object({ partida: z.string().regex(/^(forestal|adelanto:[\w-]{1,40})$/), monto })).max(200).optional(),
+        /* ADR-437 §6: la parte del cruce o del pago hecho que va a guías con nombre. */
+        guias: z
+          /* 80 = el mismo largo que acepta la guía (`plata-de-guia.ts`): con 60, una
+             guía de nombre largo se veía en el modal y no se podía pagar. */
+          .array(z.object({ gtfNumber: z.string().trim().min(1).max(80), monto: monto.positive(), paso: z.enum(["cruce", "pago"]) }))
+          .max(100)
+          .optional(),
       })
       .optional(),
     huella: z.string().min(1).max(64),
     notas: z.string().trim().max(500).optional(),
+    /* Fotos del comprobante (ADR-437 §6). Acá sólo la forma; la firma HMAC, que
+       sean de este negocio y que no sean de otro pago los valida el servidor. */
+    comprobantes: z.array(comprobanteSchema).max(10).optional(),
   })
   .refine((d) => d.compensar > 0 || d.pago != null, "No hay nada que liquidar");
 export type LiquidacionInput = z.infer<typeof liquidacionInputSchema>;

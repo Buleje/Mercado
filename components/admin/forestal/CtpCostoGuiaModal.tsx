@@ -1,230 +1,341 @@
 "use client";
 
 /**
- * «¿Cuánto pagaste por esta guía?» — el costo, en el momento en que se sabe.
+ * «Plata de la guía» (ADR-437) — cáscara.
  *
- * Medido en el tenant forestal: **0 % del patio valorizado** (0 m³ de 32.933) y
- * la rentabilidad del libro entero en S/ 0.00. La pantalla para cargar el costo
- * existe desde agosto, pero vive en la pestaña Rentabilidad: hay que acordarse
- * de ir. Y nadie va.
+ * Antes era «¿Cuánto pagaste por esta guía?»: un total repartido por volumen y
+ * guardado con N PATCH sueltos. Medido en Blas (26-09): 0 de 11 guías con
+ * costo, y 8 de ellas ni siquiera eran compradas (madera de WASACO que Blas
+ * sólo asierra). Ahora la guía responde cuatro preguntas, cada una en su
+ * sección:
+ *   1. ¿La compraste o es de otro?  → `SeccionServicio` / `SeccionCompra`
+ *   2. ¿Cuánto costó cada especie?  → `SeccionCompra` (+ `TablaPorEspecie`)
+ *   3. ¿Cuánto te costó puesta acá? → `SeccionPuesto` (fletes y gastos)
+ *   4. ¿Ya la pagaste?              → `SeccionPago` (una liquidación LIQ)
+ * y se guarda con UN `PUT` (una transacción: o todo o nada).
  *
- * Este modal aparece **al recepcionar la guía**, que es cuando la factura del
- * proveedor está sobre la mesa. No bloquea —«Después» cierra y la guía queda
- * recepcionada igual— porque el libro admite huecos: lo que no admite es
- * inventar un costo.
- *
- * El total se REPARTE entre los asientos de la guía en proporción a su volumen:
- * una GTF con dos especies son dos asientos (ADR-312) y el costo es uno solo.
+ * Se abre al recepcionar (la factura está sobre la mesa) y desde «Más → Plata
+ * de la guía». No bloquea: «Cerrar» deja la guía recepcionada igual.
  */
 
 import { useMemo, useState } from "react";
-import { Coins, Loader2 } from "@buleje/design-system/icons";
+import { AlertTriangle, CheckCircle2, Coins, Loader2, Sparkles } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
-import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
-import { Btn, ModalBody, ModalFooter } from "./ctp-shared";
+import { useDirectorioForestal } from "@/hooks/use-directorio-forestal";
+import {
+  candidatoFleteDe,
+  useBorradorCompra,
+  usePagoDeGuia,
+  usePlataDeGuia,
+} from "@/hooks/use-plata-de-guia";
 import {
   sugerirCostoPorM3,
   textoDeOrigen,
   type IngresoValorizable,
 } from "@/lib/forestal/costo-sugerido";
-import { formatCurrency, formatNumber } from "@/lib/format";
+import type { CandidatoFlete } from "@/lib/forestal/fletes";
+import { formatNumber } from "@/lib/format";
+import { Btn, ModalBody, ModalFooter } from "./ctp-shared";
+import CtpFleteModal from "./CtpFleteModal";
+import { Opciones } from "./costo-guia/comun";
+import SeccionCompra from "./costo-guia/SeccionCompra";
+import SeccionCuenta from "./costo-guia/SeccionCuenta";
+import SeccionPago from "./costo-guia/SeccionPago";
+import SeccionPuesto from "./costo-guia/SeccionPuesto";
+import SeccionServicio from "./costo-guia/SeccionServicio";
 
-const CAMPO =
-  "h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-base tabular-nums text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]";
-
-const soles = (n: number) => `${formatCurrency(n)}`;
-const r2 = (n: number) => Math.round(n * 100) / 100;
-
-/** Lo que se necesita de la guía recién recepcionada. */
+/** Lo que se necesita de la guía para abrir el modal (el resto lo trae el GET). */
 export interface GuiaACostear {
   gtfNumber: string;
   providerName: string | null;
   especie: string | null;
   volumenM3: number;
-  /** Los asientos de la guía: entre ellos se reparte el total. */
   lineas: { id: string; volumeM3: number | string | null }[];
+  /** `AAAA-MM-DD` de la guía: fecha del flete que se propone. */
+  fecha?: string | null;
+  /** Código del permiso de origen, para que el flete sugiera su contrato. */
+  originCode?: string | null;
 }
+
+type Tipo = "compra" | "servicio";
 
 export default function CtpCostoGuiaModal({
   guia,
   historial,
-  onGuardar,
+  onGuardado,
   onClose,
 }: {
   guia: GuiaACostear;
-  /** Los ingresos que ya tienen costo: de ahí sale la sugerencia. */
+  /** Los ingresos que ya tienen costo: de ahí sale la sugerencia de precio. */
   historial: readonly IngresoValorizable[];
-  /** Guarda el costo de cada asiento. Devuelve `false` si algo falló. */
-  onGuardar: (porAsiento: { id: string; costoTotal: number }[]) => Promise<boolean>;
+  /** Algo se escribió (costo, servicio, gasto, flete o pago): la bandeja relee. */
+  onGuardado: (mensaje: string) => void;
   onClose: () => void;
 }) {
-  const [total, setTotal] = useState("");
-  const [guardando, setGuardando] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const plata = usePlataDeGuia(guia.gtfNumber);
+  const { dto } = plata;
+  const dir = useDirectorioForestal();
+  const partes = useMemo(() => dir.partes.filter((p) => p.activo !== false), [dir.partes]);
+  const b = useBorradorCompra(dto);
+  const pago = usePagoDeGuia(dto?.cuenta?.parteId ?? null, guia.gtfNumber);
 
-  const sugerida = useMemo(
-    () => sugerirCostoPorM3(historial, { especie: guia.especie, proveedor: guia.providerName }),
-    [historial, guia.especie, guia.providerName],
-  );
-
-  const vol = guia.volumenM3 > 0 ? guia.volumenM3 : 0;
-  const totalNum = total.trim() === "" ? null : Number(total);
-  const valido = totalNum != null && Number.isFinite(totalNum) && totalNum > 0;
-  /* El mismo dinero con dos caras, como el pie tablar ↔ m³ del modal de
-     producción: la factura viene por el total y el precio se habla por m³. */
-  const porM3 = valido && vol > 0 ? r2(totalNum / vol) : null;
-
-  /**
-   * El reparto entre asientos. Al último se le da el RESTO y no su proporción:
-   * tres asientos de 1/3 redondeados dejarían un céntimo suelto, y el libro
-   * tiene que sumar exactamente lo que dice la factura.
-   */
-  const reparto = useMemo(() => {
-    if (!valido || guia.lineas.length === 0) return [];
-    const vols = guia.lineas.map((l) => Math.max(0, Number(l.volumeM3) || 0));
-    const suma = vols.reduce((a, b) => a + b, 0);
-    let asignado = 0;
-    return guia.lineas.map((l, i) => {
-      const ultimo = i === guia.lineas.length - 1;
-      const parte = ultimo
-        ? r2(totalNum - asignado)
-        : suma > 0
-          ? r2((totalNum * vols[i]) / suma)
-          : r2(totalNum / guia.lineas.length);
-      asignado = r2(asignado + parte);
-      return { id: l.id, costoTotal: parte, volumeM3: vols[i] };
-    });
-  }, [valido, totalNum, guia.lineas]);
-
-  async function guardar() {
-    if (!valido) return;
-    setGuardando(true);
-    setError(null);
-    const ok = await onGuardar(reparto.map(({ id, costoTotal }) => ({ id, costoTotal })));
-    setGuardando(false);
-    if (ok) onClose();
-    else
-      setError(
-        guia.lineas.length > 1
-          ? "No se pudo guardar el costo de todos los asientos. Vuelve a darle a Guardar: se reescribe, no se suma."
-          : "No se pudo guardar el costo. La guía quedó recepcionada igual; se puede cargar desde Rentabilidad.",
-      );
+  /* Se siembran del DTO la primera vez que llega (mismo patrón que el borrador). */
+  const [sembrado, setSembrado] = useState<string | null>(null);
+  const [tipo, setTipo] = useState<Tipo>("compra");
+  const [duenoId, setDuenoId] = useState<string | null>(null);
+  if (dto && sembrado !== dto.gtfNumber) {
+    setSembrado(dto.gtfNumber);
+    setTipo(dto.tipo);
+    setDuenoId(dto.dueno?.parteId ?? null);
   }
 
+  const [guardando, setGuardando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [aviso, setAviso] = useState<string | null>(null);
+  /** El flete se anota en SU modal; éste se esconde mientras (dos diálogos apilados se pisan). */
+  const [flete, setFlete] = useState<CandidatoFlete | null>(null);
+  /* Vive acá y no en la sección: mientras se anota el flete este modal se
+     cierra, y al volver «Puesto en patio» tiene que seguir abierto. */
+  const [puestoAbierto, setPuestoAbierto] = useState(false);
+  const [cuentaAbierta, setCuentaAbierta] = useState(false);
+
+  const sugerencia = useMemo(() => {
+    /* La propia guía no es antecedente de sí misma: sin este filtro, al
+       reabrirla sugería «lo último que pagaste… (esta misma guía)». */
+    const propios = new Set(guia.lineas.map((l) => l.id));
+    const antecedentes = historial.filter((h) => !propios.has(h.id));
+    const s = sugerirCostoPorM3(antecedentes, { especie: guia.especie, proveedor: guia.providerName });
+    return s ? { porM3: s.porM3, texto: textoDeOrigen(s, guia.especie, guia.providerName) } : null;
+  }, [historial, guia.lineas, guia.especie, guia.providerName]);
+
+  const vistos = dto?.lineas.map((l) => ({ id: l.id, antes: l.costoTotal })) ?? [];
+  /* Era de servicio y ahora dice «la compré»: primero se le quita la marca
+     (queda sin costo) y, si el precio ya está, se guarda en el mismo acto. */
+  const quitaServicio = dto?.tipo === "servicio" && tipo === "compra";
+  const puedeGuardar =
+    !!dto &&
+    !guardando &&
+    dto.bloqueo?.codigo !== "GUIA_ANULADA" &&
+    (tipo === "servicio" ? Boolean(duenoId) : quitaServicio || (Boolean(b.cuerpo) && !dto.bloqueo));
+
+  async function quitarYGuardar() {
+    if (!dto) return { ok: false as const, mensaje: "La guía todavía se está leyendo." };
+    const r = await plata.guardar({ tipo: "quitar_servicio", gtfNumber: dto.gtfNumber, vistos });
+    if (!r.ok || !b.cuerpo || dto.bloqueo) return r;
+    return plata.guardar(b.cuerpo);
+  }
+
+  async function guardar() {
+    if (!dto || !puedeGuardar) return;
+    setGuardando(true);
+    setError(null);
+    setAviso(null);
+    const r =
+      tipo === "servicio"
+        ? await plata.guardar({
+            tipo: "servicio",
+            gtfNumber: dto.gtfNumber,
+            duenoParteId: duenoId as string,
+            vistos,
+          })
+        : quitaServicio
+          ? await quitarYGuardar()
+          : b.cuerpo
+            ? await plata.guardar(b.cuerpo)
+            : { ok: false as const, mensaje: "Falta completar el precio." };
+    setGuardando(false);
+    if (!r.ok) return setError(r.mensaje);
+    const msg =
+      tipo === "servicio"
+        ? `Guía ${dto.gtfNumber}: madera de servicio de ${partes.find((p) => p.id === duenoId)?.nombre ?? "su dueño"}`
+        : `Guía ${dto.gtfNumber}: costo guardado`;
+    setAviso(
+      tipo === "servicio"
+        ? "Marcada de servicio: ya no pide costo."
+        : "Guardado. Ya puedes llevar el pago abajo.",
+    );
+    onGuardado(msg);
+    void pago.recargar();
+  }
+
+  async function abrirFlete() {
+    const base: CandidatoFlete = {
+      gtfNumber: guia.gtfNumber,
+      fecha: guia.fecha ?? dto?.lineas[0]?.entryDate ?? "",
+      proveedorNombre: guia.providerName,
+      volumenM3: guia.volumenM3 || null,
+      placa: null,
+      transportistaNombre: null,
+      conductorNombre: null,
+      tipoTransporte: "privado",
+      originCode: guia.originCode ?? null,
+    };
+    setFlete(await candidatoFleteDe(base));
+  }
+
+  const sug = dto?.duenoSugerido ?? null;
+  const descripcion = `${guia.gtfNumber}${guia.providerName ? ` · ${guia.providerName}` : ""} · ${guia.especie ?? "sin especie"} · ${formatNumber(guia.volumenM3, { max: 3 })} m³`;
+
   return (
-    <AdminModal
-      open
-      onClose={guardando ? () => {} : onClose}
-      variant="default"
-      icon={Coins}
-      title="¿Cuánto pagaste por esta guía?"
-      description={`${guia.gtfNumber}${guia.providerName ? ` · ${guia.providerName}` : ""} · ${guia.especie ?? "sin especie"} · ${formatNumber(vol, { max: 3 })} m³`}
-      footer={
-        <ModalFooter error={error}>
-          {/* «Después» no es cancelar: la guía YA se recepcionó. El libro admite
-              el hueco; lo que no admite es un costo inventado. */}
-          <Btn variant="secondary" onClick={onClose} disabled={guardando}>
-            Después
-          </Btn>
-          <Btn variant="primary" onClick={() => void guardar()} disabled={!valido || guardando}>
-            {guardando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Coins className="h-4 w-4" />}
-            Guardar el costo
-          </Btn>
-        </ModalFooter>
-      }
-    >
-      <ModalBody className="space-y-3">
-        {/* La sugerencia sale del propio libro y DICE de dónde: un número sin
-            origen se copia sin pensarlo. */}
-        {sugerida && (
-          <button
-            type="button"
-            onClick={() => setTotal(String(r2(sugerida.porM3 * vol)))}
-            className="block w-full rounded-xl border-2 border-[var(--accent)]/40 bg-primary/10 px-3 py-2 text-left text-sm transition-colors hover:bg-primary/20"
-          >
-            {/* Dos filas y no tres columnas: el texto de origen es una frase, y
-                comprimido en una columna angosta se partía en cinco renglones. */}
-            <span className="flex items-baseline justify-between gap-3">
-              <span className="font-mono text-base font-bold tabular-nums text-[var(--text-primary)]">
-                {soles(sugerida.porM3)} por m³
+    <>
+      <AdminModal
+        open={!flete}
+        onClose={guardando ? () => {} : onClose}
+        variant="wide"
+        icon={Coins}
+        title="Plata de la guía"
+        description={descripcion}
+        footer={
+          <ModalFooter error={error}>
+            {aviso && (
+              <span
+                role="status"
+                className="mr-auto inline-flex items-center gap-1.5 text-sm font-bold text-[var(--data-success-ink)]"
+              >
+                <CheckCircle2 className="h-4 w-4" aria-hidden /> {aviso}
               </span>
-              <span className="shrink-0 font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
-                usar ({soles(r2(sugerida.porM3 * vol))})
-              </span>
-            </span>
-            <span className="mt-0.5 block text-[var(--text-secondary)]">
-              {textoDeOrigen(sugerida, guia.especie, guia.providerName)}
-            </span>
-          </button>
-        )}
-
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="block text-sm">
-<div className="mb-1 flex items-center gap-1.5 font-bold text-[var(--text-secondary)]">
-<span aria-hidden="true" className="contents">Total pagado (S/)</span>
-<InfoTip
-                title="Total pagado"
-                what="Sin costo, lo que salga de esta madera no puede mostrar margen — el libro no lo inventa."
-                affects="Se puede cargar después desde Gestión → Rentabilidad."
-              />
-</div>
-<label className="block">
-<span className="sr-only">Total pagado (S/)</span>
-            <input
-              // eslint-disable-next-line jsx-a11y/no-autofocus -- primer campo al abrir el modal de costo, foco intencional
-              autoFocus
-              type="number"
-              min={0}
-              step="0.01"
-              value={total}
-              onChange={(e) => setTotal(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && valido) void guardar();
-              }}
-              placeholder="0.00"
-              className={CAMPO}
-            />
-          </label>
-</div>
-          <label className="block text-sm">
-            <span className="mb-1 block font-bold text-[var(--text-secondary)]">Precio por m³ (S/)</span>
-            <input
-              type="number"
-              min={0}
-              step="0.01"
-              /* Sin volumen no hay precio unitario que valga: habilitado
-                 multiplicaría por 0 y dejaría el total en «gratis». */
-              disabled={vol <= 0}
-              title={vol <= 0 ? "La guía no declara volumen: carga el total" : undefined}
-              value={porM3 ?? ""}
-              onChange={(e) => {
-                const p = Number(e.target.value);
-                setTotal(e.target.value === "" || !Number.isFinite(p) ? "" : String(r2(p * vol)));
-              }}
-              placeholder="0.00"
-              className={CAMPO}
-            />
-          </label>
-        </div>
-
-        {/* Con más de un asiento, se dice CÓMO se reparte: el operador cargó un
-            número y en el libro van a quedar dos. */}
-        {reparto.length > 1 && (
-          <div className="rounded-xl border border-[var(--rule-base)] p-3 text-sm">
-            <p className="mb-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-              Se reparte entre los {reparto.length} asientos de la guía, por volumen
+            )}
+            <Btn variant="secondary" onClick={onClose} disabled={guardando}>
+              {aviso ? "Cerrar" : "Después"}
+            </Btn>
+            <Btn variant="primary" onClick={() => void guardar()} disabled={!puedeGuardar}>
+              {guardando ? (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+              ) : (
+                <Coins className="h-4 w-4" aria-hidden />
+              )}
+              {tipo === "servicio"
+                ? "Guardar como servicio"
+                : quitaServicio && !b.cuerpo
+                  ? "Quitar la marca de servicio"
+                  : "Guardar el costo"}
+            </Btn>
+          </ModalFooter>
+        }
+      >
+        <ModalBody className="space-y-3">
+          {!dto && plata.cargando && (
+            <p className="flex items-center gap-2 py-8 text-sm text-[var(--text-tertiary)]">
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> Leyendo la plata de la guía…
             </p>
-            <ul className="space-y-1">
-              {reparto.map((a) => (
-                <li key={a.id} className="flex items-baseline justify-between gap-2 text-[var(--text-secondary)]">
-                  <span className="font-mono tabular-nums">{formatNumber(a.volumeM3, { max: 3 })} m³</span>
-                  <span className="font-mono font-bold tabular-nums text-[var(--text-primary)]">{soles(a.costoTotal)}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </ModalBody>
-    </AdminModal>
+          )}
+          {!dto && !plata.cargando && plata.error && (
+            <div className="space-y-2">
+              <p
+                role="alert"
+                className="flex items-start gap-2 text-sm font-bold text-[var(--data-error-ink)]"
+              >
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden /> {plata.error}
+              </p>
+              <Btn size="sm" variant="secondary" onClick={() => void plata.cargar()}>
+                Reintentar
+              </Btn>
+            </div>
+          )}
+
+          {dto && (
+            <>
+              <div className="flex flex-wrap items-center gap-2">
+                <Opciones
+                  etiqueta="¿De quién es la madera?"
+                  valor={tipo}
+                  onCambio={setTipo}
+                  opciones={[
+                    { v: "compra", l: "La compré" },
+                    { v: "servicio", l: "Es de otro, sólo la asierro" },
+                  ]}
+                />
+              </div>
+              {tipo === "compra" && sug && dto.sinCosto > 0 && dto.tipo === "compra" && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTipo("servicio");
+                    if (sug.parteId) setDuenoId(sug.parteId);
+                  }}
+                  className="flex w-full items-start gap-2 rounded-xl border-2 border-[var(--accent)]/40 bg-[var(--accent)]/10 px-3 py-2 text-left text-sm hover:bg-[var(--accent)]/20"
+                >
+                  <Sparkles
+                    className="mt-0.5 h-4 w-4 shrink-0 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+                    aria-hidden
+                  />
+                  <span>
+                    <span className="block font-bold text-[var(--text-primary)]">
+                      ¿Es madera de {sug.nombre}?
+                    </span>
+                    <span className="block text-[var(--text-secondary)]">{sug.motivo}</span>
+                  </span>
+                </button>
+              )}
+              {dto.mezclada && (
+                <p className="flex items-start gap-2 text-sm font-bold text-[var(--data-warning-ink)]">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+                  Unos asientos de esta guía están de servicio y otros no. Al guardar quedan todos
+                  iguales.
+                </p>
+              )}
+              {dto.bloqueo && (tipo === "compra" || dto.bloqueo.codigo === "GUIA_ANULADA") && (
+                <p className="flex items-start gap-2 text-sm font-bold text-[var(--data-warning-ink)]">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />{" "}
+                  {dto.bloqueo.mensaje}
+                </p>
+              )}
+
+              {tipo === "servicio" ? (
+                <SeccionServicio dto={dto} partes={partes} duenoId={duenoId} onDueno={setDuenoId} />
+              ) : (
+                <SeccionCompra dto={dto} partes={partes} b={b} sugerencia={sugerencia} />
+              )}
+
+              <SeccionPuesto
+                dto={dto}
+                onAgregarFlete={() => void abrirFlete()}
+                onAgregarGasto={async (g) => {
+                  const r = await plata.agregarGasto(g);
+                  if (r.ok) onGuardado(`Gasto anotado en la guía ${guia.gtfNumber}`);
+                  return r;
+                }}
+                onBorrarGasto={plata.borrarGasto}
+                abierto={puestoAbierto}
+                onAlternar={() => setPuestoAbierto((v) => !v)}
+              />
+
+              {dto.tipo === "compra" && tipo === "compra" && (
+                <SeccionPago
+                  dto={dto}
+                  pago={pago}
+                  onPagado={(codigo) => {
+                    void plata.cargar();
+                    onGuardado(
+                      `Pago registrado${codigo ? ` · ${codigo}` : ""} · guía ${guia.gtfNumber}`,
+                    );
+                  }}
+                />
+              )}
+
+              <SeccionCuenta
+                dto={dto}
+                esServicio={dto.tipo === "servicio" || tipo === "servicio"}
+                abierto={cuentaAbierta}
+                onAlternar={() => setCuentaAbierta((v) => !v)}
+                onCerrarModal={onClose}
+              />
+            </>
+          )}
+        </ModalBody>
+      </AdminModal>
+
+      {flete && (
+        <CtpFleteModal
+          flete={null}
+          prellenado={flete}
+          onGuardar={async (input) => {
+            await plata.guardarFlete(input);
+            onGuardado(`Flete anotado en la guía ${guia.gtfNumber}`);
+          }}
+          onClose={() => setFlete(null)}
+        />
+      )}
+    </>
   );
 }

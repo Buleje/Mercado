@@ -12,7 +12,7 @@
  */
 
 import {
-  Banknote, HandCoins, Receipt, Route, Truck, type LucideIcon,
+  Banknote, HandCoins, Receipt, Route, TreePine, Truck, type LucideIcon,
 } from "@buleje/design-system/icons";
 import type { FuenteHistorial } from "./shared";
 
@@ -67,5 +67,14 @@ export const SOURCE_META: Record<FuenteHistorial, MetaFuente> = {
     tone: "var(--text-secondary)",
     contraparte: "Registrado por",
     destino: { href: "?tab=ventas-caja&vista=caja-registradora", label: "Ver en Caja" },
+  },
+  /* ADR-437: la madera de una guía de compra, con su estado de pago. Se toca
+     desde la fila de la guía («Plata de la guía»), no desde acá. */
+  madera: {
+    label: "Madera",
+    icon: TreePine,
+    tone: "var(--data-success-ink)",
+    contraparte: "Proveedor",
+    destino: { href: "?tab=ctp-libro-operaciones&vista=ingresos", label: "Ver en Ingresos" },
   },
 };

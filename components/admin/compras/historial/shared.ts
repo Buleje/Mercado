@@ -9,7 +9,13 @@ import type { ExpenseMeta } from "@/lib/expense-meta";
 
 export type EstadoPago = "pagado" | "parcial" | "pendiente" | "sin_registro";
 
-export type FuenteHistorial = "expense" | "purchase" | "flete" | "adelanto" | "caja";
+/**
+ * `madera` (ADR-437): una fila por guía de compra con costo — la madera que se
+ * le debe o se le pagó al proveedor. No es un `Expense`: vive en la cuenta del
+ * proveedor, y el pago que la cubrió (una liquidación LIQ-…) queda marcado
+ * como duplicado de ella.
+ */
+export type FuenteHistorial = "expense" | "purchase" | "flete" | "adelanto" | "caja" | "madera";
 
 /**
  * No todo lo que sale de la caja es un gasto:
@@ -78,6 +84,7 @@ export const ORIGEN_LABELS: Record<FuenteHistorial, string> = {
   flete: "Flete",
   adelanto: "Adelanto al personal",
   caja: "Retiro de caja",
+  madera: "Madera de una guía",
 };
 
 export const CLASE_LABELS: Record<ClaseMovimiento, string> = {
@@ -96,6 +103,26 @@ export const CLASE_MOTIVO: Record<ClaseMovimiento, string | null> = {
   anticipo: "No suma al total gastado: la plata salió de la caja pero vuelve como trabajo o descuento de sueldo.",
   caja: "No suma al total gastado: un retiro de caja suele ser la otra cara de un gasto que ya está cargado aparte.",
 };
+
+/**
+ * Qué decir de un movimiento que ya está contado en otra fila.
+ *
+ * El pago de una liquidación que cubrió guías (`LIQ-…`) sale de la caja, pero
+ * la plata ya figura en la fila «Madera» de cada guía: se dice DÓNDE está
+ * contada, no sólo que está repetida (ADR-437 §9).
+ */
+export function textoDuplicado(duplicaDe: string): { corto: string; largo: string } {
+  if (/^LIQ-/i.test(duplicaDe)) {
+    return {
+      corto: `Ya contada en Madera · ${duplicaDe}`,
+      largo: `Este pago (${duplicaDe}) cubrió guías de madera que ya están listadas como «Madera». Es la misma plata con dos rastros — no la cuentes dos veces.`,
+    };
+  }
+  return {
+    corto: `Ya listado como ${duplicaDe}`,
+    largo: `La misma salida ya está listada como ${duplicaDe}. Es un solo movimiento de plata con dos rastros — no lo cuentes dos veces.`,
+  };
+}
 
 export const ESTADO_PAGO_LABELS: Record<EstadoPago, string> = {
   pagado: "Pagado",

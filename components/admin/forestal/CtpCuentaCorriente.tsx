@@ -15,7 +15,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Loader2, Plus, Trash2, Wallet } from "@buleje/design-system/icons";
 import {
-  CONCEPTOS,
+  CONCEPTOS_MANUALES,
   CONCEPTO_LABEL,
   TIPO_SUGERIDO,
   calcularSaldo,
@@ -161,7 +161,15 @@ export default function CtpCuentaCorriente({ fletes }: { fletes: Flete[] }) {
             variant={nuevo ? "dark" : "primary"}
             onClick={() =>
               setNuevo((v) =>
-                v ? null : { parteId: partes[0]?.id ?? "", concepto: "adelanto", tipo: "cargo", monto: "", fecha: hoy() },
+                v
+                  ? null
+                  : {
+                      parteId: partes[0]?.id ?? "",
+                      concepto: CONCEPTOS_MANUALES[0],
+                      tipo: TIPO_SUGERIDO[CONCEPTOS_MANUALES[0]],
+                      monto: "",
+                      fecha: hoy(),
+                    },
               )
             }
           >
@@ -193,7 +201,9 @@ export default function CtpCuentaCorriente({ fletes }: { fletes: Flete[] }) {
               setNuevo({ ...nuevo, concepto: c, tipo: TIPO_SUGERIDO[c] });
             }}
           >
-            {CONCEPTOS.map((c) => (
+            {/* Sólo lo que se anota a mano: el adelanto vive en Adelantos y el cruce
+                lo escribe una liquidación (ADR-437 §5); el servidor los rechaza. */}
+            {CONCEPTOS_MANUALES.map((c) => (
               <option key={c} value={c}>{CONCEPTO_LABEL[c]}</option>
             ))}
           </select>

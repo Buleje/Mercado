@@ -4,6 +4,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { logger } from "@/lib/logger";
 import {
+  ComprobanteNoValidoError,
   CuentaForestalDeshabilitadaError,
   LiquidacionCuentaDB,
   PersonaNoEncontradaError,
@@ -17,6 +18,9 @@ import { liquidacionInputSchema } from "@/lib/cuentas/liquidacion";
  * /api/adelantos/cuentas/liquidaciones (ADR-413)
  * GET `?beneficiario=&parte=&anuladas=1` → `{ liquidaciones }`
  * POST liquidar → 201 `{ liquidacion, caja }` · 200 `{ liquidacion, repetida: true }`
+ *   ADR-437 §6: `imputacion.guias[{ gtfNumber, monto, paso }]` (≤ lo pendiente de
+ *   cada guía, validado dentro del lock → 422 `plan_invalido`) y `comprobantes`
+ *   (fotos firmadas al subirlas → 422 `comprobante_no_valido`).
  * Sólo admin y dueño (decisión por defecto de Brandon).
  */
 
@@ -90,6 +94,9 @@ export async function POST(req: NextRequest) {
     }
     if (e instanceof SinVinculoError) {
       return NextResponse.json({ error: "sin_vinculo", message: e.message }, { status: 409, headers: noStore });
+    }
+    if (e instanceof ComprobanteNoValidoError) {
+      return NextResponse.json({ error: "comprobante_no_valido", message: e.message }, { status: 422, headers: noStore });
     }
     if (e instanceof PersonaNoEncontradaError) {
       return NextResponse.json({ error: "persona_no_encontrada", message: e.message }, { status: 404, headers: noStore });

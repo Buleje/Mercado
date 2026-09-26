@@ -23,6 +23,7 @@ import { Coins, Loader2, Save } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import type { PlanDePrecio } from "@/lib/forestal/precio-en-tanda";
+import { requiereCosto } from "@/lib/forestal/madera-de-servicio";
 import { formatNumber } from "@/lib/format";
 import { Btn, ModalBody, ModalFooter } from "./ctp-shared";
 import CtpPrecioTandaGrupos from "./CtpPrecioTandaGrupos";
@@ -103,7 +104,12 @@ export default function CtpPonerPrecioModal({
 
   const sinPrecio = datos?.grupos.reduce((a, p) => a + p.sinPrecio, 0) ?? 0;
   const m3SinPrecio = datos?.grupos.reduce((a, p) => a + p.m3SinPrecio, 0) ?? 0;
-  const filasPorFila = (datos?.filas ?? []).filter((f) => verTodasFilas || f.costoTotal == null);
+  /* Sólo las que llevan precio (ADR-437 §1): la madera de servicio no se
+     compró y una anulada no cuenta — ofrecerlas en «Por fila» terminaba en un
+     409 al guardar y engordaba el «de N guías». Misma regla que los grupos. */
+  const llevanPrecio = (datos?.filas ?? []).filter((f) => requiereCosto(f));
+  const deServicio = (datos?.filas ?? []).filter((f) => f.maderaDeTercero === true).length;
+  const filasPorFila = llevanPrecio.filter((f) => verTodasFilas || f.costoTotal == null);
 
   return (
     <AdminModal
@@ -114,7 +120,7 @@ export default function CtpPonerPrecioModal({
       title="Poner precio a la madera"
       description={
         datos
-          ? `${permiso ? `${permiso} · ` : ""}${sinPrecio} de ${datos.filas.length} guías sin precio · ${formatNumber(m3SinPrecio, 2)} m³`
+          ? `${permiso ? `${permiso} · ` : ""}${sinPrecio} de ${llevanPrecio.length} guías sin precio · ${formatNumber(m3SinPrecio, 2)} m³${deServicio > 0 ? ` · ${deServicio} de servicio, sin precio` : ""}`
           : "Cargando las guías…"
       }
       footer={
@@ -223,7 +229,7 @@ export default function CtpPonerPrecioModal({
               onClick={() => setVerTodasFilas((v) => !v)}
               className="inline-flex h-10 items-center rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
             >
-              {verTodasFilas ? "Ver sólo las que faltan" : `Ver todas (${datos.filas.length})`}
+              {verTodasFilas ? "Ver sólo las que faltan" : `Ver todas (${llevanPrecio.length})`}
             </button>
             {filasPorFila.length === 0 ? (
               <p className="text-sm text-[var(--text-tertiary)]">

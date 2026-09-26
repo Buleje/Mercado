@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
 import { auditCtp } from "@/lib/forestal/ctp-audit";
+import { normalizarFotos, type FotoCarga } from "@/lib/forestal/fotos-carga";
+import { FILTRO_REQUIERE_COSTO } from "@/lib/forestal/madera-de-servicio";
 import {
   codigoSospechoso,
   normalizarCodigoContrato,
@@ -71,11 +73,35 @@ const txt = (v: string | null | undefined): string | null => {
 };
 const iso = (d: Date | null): string | null => (d ? d.toISOString() : null);
 const num = (v: Prisma.Decimal | null): number | null => (v == null ? null : Number(v));
-/** `WoodEntry.photos` es un `Json?` sin forma garantizada por la DB: sólo un
- *  array de strings cuenta, cualquier otra cosa (viejo dato corrupto, `null`)
- *  se lee como sin fotos — nunca revienta la ficha del permiso. */
-const fotosDe = (v: Prisma.JsonValue | null): string[] =>
-  Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
+/** `WoodEntry.photos` es un `Json?` sin forma garantizada por la DB: URLs
+ *  legado (string) y `FotoCarga` con sello (ADR-434, 2026-09-26) conviven; lo
+ *  que no sea una foto se descarta — nunca revienta la ficha del permiso. */
+const fotosDe = (v: Prisma.JsonValue | null): FotoCarga[] => normalizarFotos(v);
+
+/**
+ * Resume las filas de madera de SERVICIO (ADR-437 §1): guías DISTINTAS, m³ y
+ * dueños únicos — una GTF con dos especies (ADR-312) es UNA guía, no dos, así
+ * que no sale de un `groupBy`/`_count` por asiento. `documentos` sigue siendo
+ * asientos (mismo criterio que `madera`); `guias`/`duenos` son lo nuevo.
+ */
+function resumenDeServicio(
+  filas: ReadonlyArray<{ gtfNumber: string; volumeM3: Prisma.Decimal | number; duenoNombre: string | null }>,
+): { documentos: number; m3: number; guias: number; duenos: string[] } {
+  const gtfs = new Set<string>();
+  const duenos = new Set<string>();
+  let m3 = 0;
+  for (const f of filas) {
+    gtfs.add(f.gtfNumber);
+    m3 += Number(f.volumeM3);
+    if (f.duenoNombre) duenos.add(f.duenoNombre);
+  }
+  return {
+    documentos: filas.length,
+    m3: Math.round(m3 * 10000) / 10000,
+    guias: gtfs.size,
+    duenos: [...duenos].sort((a, b) => a.localeCompare(b, "es")),
+  };
+}
 
 function aContrato(r: ContratoRow): Contrato {
   return {
@@ -435,17 +461,28 @@ export class ForestContratoDB {
   static async balances(tenantId: string): Promise<Map<string, BalanceContrato>> {
     if (!tenantId) throw new Error("tenantId is required");
     const vivos = { tenantId, contratoId: { not: null } } as const;
-    const [madera, sinPrecio, produccion, gastos, fletes, adelantos, cuenta, ventasFilas] = await Promise.all([
+    const [madera, sinPrecio, servicio, produccion, gastos, fletes, adelantos, cuenta, ventasFilas] = await Promise.all([
+      /* La madera COMPRADA (ADR-437 §1): la de servicio no lleva costo, no
+         cuenta «sin precio» y va en su propio bloque. */
       prisma.woodEntry.groupBy({
         by: ["contratoId"],
-        where: { ...vivos, deletedAt: null, status: { notIn: ["rechazado", "anulado"] } },
+        where: { ...vivos, deletedAt: null, status: { notIn: ["rechazado", "anulado"] }, ...FILTRO_REQUIERE_COSTO },
         _count: { _all: true },
         _sum: { volumeM3: true, costoTotal: true },
       }),
       prisma.woodEntry.groupBy({
         by: ["contratoId"],
-        where: { ...vivos, deletedAt: null, status: { notIn: ["rechazado", "anulado"] }, costoTotal: null },
+        where: { ...vivos, deletedAt: null, status: { notIn: ["rechazado", "anulado"] }, costoTotal: null, ...FILTRO_REQUIERE_COSTO },
         _count: { _all: true },
+      }),
+      /* `findMany` y no `groupBy`: una guía distinta (`gtfNumber`) y sus dueños
+         no salen de un `groupBy` por contrato — una GTF con dos especies son
+         dos asientos, y agruparlos por contrato solo no dice cuántas GUÍAS ni
+         de quién son (ADR-437 §1). Pocas filas: la de servicio es la excepción,
+         no la regla (Blas: 21 asientos en total). */
+      prisma.woodEntry.findMany({
+        where: { ...vivos, deletedAt: null, status: { notIn: ["rechazado", "anulado"] }, maderaDeTercero: true },
+        select: { contratoId: true, gtfNumber: true, volumeM3: true, duenoNombre: true },
       }),
       prisma.forestCtpEntry.groupBy({
         by: ["contratoId"],
@@ -501,6 +538,7 @@ export class ForestContratoDB {
         .set(id, {
           contratoId: id,
           madera: { documentos: 0, monto: 0, m3: 0, sinValorizar: 0 },
+          servicio: { documentos: 0, m3: 0 },
           produccion: { documentos: 0, monto: 0, m3: 0 },
           ventas: { documentos: 0, monto: 0, sinValorizar: 0 },
           gastos: { documentos: 0, monto: 0 },
@@ -518,6 +556,14 @@ export class ForestContratoDB {
       b.madera = { documentos: g._count._all, monto: n(g._sum.costoTotal), m3: n(g._sum.volumeM3), sinValorizar: 0 };
     }
     for (const g of sinPrecio) if (g.contratoId) de(g.contratoId).madera.sinValorizar = g._count._all;
+    const filasServicioPorContrato = new Map<string, typeof servicio>();
+    for (const g of servicio) {
+      if (!g.contratoId) continue;
+      const l = filasServicioPorContrato.get(g.contratoId) ?? [];
+      l.push(g);
+      filasServicioPorContrato.set(g.contratoId, l);
+    }
+    for (const [id, filas] of filasServicioPorContrato) de(id).servicio = resumenDeServicio(filas);
     for (const g of produccion)
       if (g.contratoId) de(g.contratoId).produccion = { documentos: g._count._all, monto: 0, m3: n(g._sum.quantity) };
     for (const g of gastos)
@@ -623,14 +669,28 @@ export class ForestContratoDB {
         ? { [campo]: { ...(rango.desde ? { gte: rango.desde } : {}), ...(rango.hasta ? { lte: rango.hasta } : {}) } }
         : {};
 
-    const [madera, maderaSinPrecio, produccion, gastos, fletes, adelantos, cargos, abonos] = await Promise.all([
+    const guiasVivas = {
+      tenantId,
+      contratoId,
+      deletedAt: null,
+      status: { notIn: ["rechazado", "anulado"] },
+      ...enRango("entryDate"),
+    } satisfies Prisma.WoodEntryWhereInput;
+    const [madera, maderaSinPrecio, servicio, produccion, gastos, fletes, adelantos, cargos, abonos] = await Promise.all([
+      /* La madera COMPRADA (ADR-437 §1); la de servicio va aparte y nunca cuenta «sin precio». */
       prisma.woodEntry.aggregate({
-        where: { tenantId, contratoId, deletedAt: null, status: { notIn: ["rechazado", "anulado"] }, ...enRango("entryDate") },
+        where: { ...guiasVivas, ...FILTRO_REQUIERE_COSTO },
         _count: { _all: true },
         _sum: { volumeM3: true, costoTotal: true },
       }),
       prisma.woodEntry.count({
-        where: { tenantId, contratoId, deletedAt: null, status: { notIn: ["rechazado", "anulado"] }, costoTotal: null, ...enRango("entryDate") },
+        where: { ...guiasVivas, ...FILTRO_REQUIERE_COSTO, costoTotal: null },
+      }),
+      /* `findMany` y no `aggregate`: la guía distinta y el dueño no salen de un
+         conteo de asientos (mismo motivo que en `balances()`). */
+      prisma.woodEntry.findMany({
+        where: { ...guiasVivas, maderaDeTercero: true },
+        select: { gtfNumber: true, volumeM3: true, duenoNombre: true },
       }),
       prisma.forestCtpEntry.aggregate({
         where: { tenantId, contratoId, deletedAt: null, status: { not: "anulado" }, ...enRango("entryDate") },
@@ -677,6 +737,7 @@ export class ForestContratoDB {
         m3: n(madera._sum.volumeM3),
         sinValorizar: maderaSinPrecio,
       },
+      servicio: resumenDeServicio(servicio),
       produccion: { documentos: produccion._count._all, monto: 0, m3: n(produccion._sum.quantity) },
       ventas,
       gastos: { documentos: gastos._count._all, monto: n(gastos._sum.amount) },
@@ -744,6 +805,7 @@ export class ForestContratoDB {
           providerName: true,
           photos: true,
           costoTotal: true,
+          maderaDeTercero: true,
         },
       }),
       WoodEntriesDB.trozasComoConsumibles(tenantId, { contratoId }),
@@ -854,6 +916,8 @@ export class ForestContratoDB {
         proveedor: txt(g.providerName),
         fotos: fotosDe(g.photos),
         costo: g.costoTotal == null ? null : Number(g.costoTotal),
+        /* ADR-437 §1: la de servicio no lleva costo y no cuenta «sin precio» (`resumirPrecio`). */
+        maderaDeTercero: g.maderaDeTercero,
       })),
       trozas,
       consumos: [

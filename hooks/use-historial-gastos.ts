@@ -11,7 +11,7 @@
  * Acá el resumen sale SIEMPRE de la misma lista que se dibuja.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   construirCsv, mesDe, normalizar, periodoADadas, resumirItems,
   type FuenteHistorial, type HistorialItem, type KpisServidor, type Orden, type Period,
@@ -48,7 +48,15 @@ export function useHistorialGastos() {
    */
   const [ocultarDuplicados, setOcultarDuplicados] = useState(true);
 
+  /**
+   * Sólo la última carga escribe. Tocar «Todo» y enseguida elegir «Madera»
+   * disparaba dos pedidos; el primero (todas las fuentes, más lento) volvía
+   * DESPUÉS y pisaba la lista filtrada: el selector decía «Madera de guías» y
+   * la tabla mostraba estibas y alquileres (medido 2026-09-26).
+   */
+  const ultima = useRef(0);
   const fetchHistorial = useCallback(async () => {
+    const mia = ++ultima.current;
     setLoading(true);
     setError(null);
     try {
@@ -61,13 +69,15 @@ export function useHistorialGastos() {
       const res = await fetch(`/api/expenses/historial?${params.toString()}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
+      if (mia !== ultima.current) return;
       setItems(Array.isArray(data.items) ? data.items : []);
       setKpisServidor(data.kpis ?? null);
     } catch (err) {
+      if (mia !== ultima.current) return;
       console.warn("[useHistorialGastos] fetch failed", err);
       setError("No se pudo cargar el historial. Intenta de nuevo.");
     } finally {
-      setLoading(false);
+      if (mia === ultima.current) setLoading(false);
     }
   }, [period, sourceFilter]);
 

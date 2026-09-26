@@ -1051,23 +1051,38 @@ export const AdelantosDB = {
     adelantosAbiertos: number;
     adelantosLiquidados: number;
     beneficiarios: number;
+    /**
+     * Lo mismo por moneda (reporte diario, ADR-439). `saldoPendiente` de arriba
+     * suma soles y dólares sin tipo de cambio: sirve de conteo en el módulo,
+     * pero una cifra de plata que sale del panel va separada.
+     */
+    porMoneda: { moneda: string; saldoPendiente: number; adelantosAbiertos: number }[];
   }> {
     const [adelantos, totalBenef] = await Promise.all([
       prisma.adelanto.findMany({
         where: { tenantId, status: { not: "CANCELADO" } },
-        select: { montoAdelantado: true, saldoPendiente: true, status: true },
+        select: { montoAdelantado: true, saldoPendiente: true, status: true, moneda: true },
       }),
       prisma.adelantoBeneficiario.count({ where: { tenantId } }),
     ]);
     let totalAdelantado = 0, saldoPos = 0, excedente = 0, abiertos = 0, liquidados = 0;
+    const porMoneda = new Map<string, { saldo: number; abiertos: number }>();
     for (const a of adelantos) {
       const monto = toNum(a.montoAdelantado);
       const saldo = toNum(a.saldoPendiente);
+      const m = porMoneda.get(a.moneda || "PEN") ?? { saldo: 0, abiertos: 0 };
       totalAdelantado += monto;
-      if (saldo > 0) saldoPos += saldo;
+      if (saldo > 0) {
+        saldoPos += saldo;
+        m.saldo += saldo;
+      }
       if (saldo < 0) excedente += -saldo;
-      if (a.status === "ABIERTO") abiertos++;
+      if (a.status === "ABIERTO") {
+        abiertos++;
+        m.abiertos++;
+      }
       if (a.status === "LIQUIDADO") liquidados++;
+      porMoneda.set(a.moneda || "PEN", m);
     }
     const totalLiquidado = adelantos.reduce(
       (s, a) => s + Math.min(toNum(a.montoAdelantado), toNum(a.montoAdelantado) - toNum(a.saldoPendiente)),
@@ -1082,6 +1097,10 @@ export const AdelantosDB = {
       adelantosAbiertos: abiertos,
       adelantosLiquidados: liquidados,
       beneficiarios: totalBenef,
+      /* Soles primero; después las demás por código. */
+      porMoneda: [...porMoneda.entries()]
+        .map(([moneda, v]) => ({ moneda, saldoPendiente: r(v.saldo), adelantosAbiertos: v.abiertos }))
+        .sort((a, b) => (a.moneda === "PEN" ? -1 : b.moneda === "PEN" ? 1 : a.moneda.localeCompare(b.moneda))),
     };
   },
 

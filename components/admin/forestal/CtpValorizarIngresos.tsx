@@ -27,11 +27,33 @@ import { CardTitle, StatCard } from "@buleje/design-system";
 import { AlertCircle, Coins, PackageOpen, Percent } from "@buleje/design-system/icons";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
 import { esValorizable } from "@/lib/forestal/precio-en-tanda";
+import { requiereCosto } from "@/lib/forestal/madera-de-servicio";
+import { formatNumber } from "@/lib/format";
 import CtpValorizarFilas, { m3De, numDe, solesDe, type IngresoValorizable } from "./CtpValorizarFilas";
 import CtpPonerPrecioModal from "./CtpPonerPrecioModal";
 
 const API = "/api/admin/forestal/wood-entries";
 const TOPE = 200;
+
+/** El asiento como llega del listado: trae la marca de servicio (ADR-437). */
+type IngresoConServicio = IngresoValorizable & { maderaDeTercero?: boolean; duenoNombre?: string | null };
+
+/** Lo que es madera de servicio en el período: se nombra, no se cuenta como «sin costo». */
+interface ResumenServicio {
+  guias: number;
+  m3: number;
+  duenos: string[];
+}
+
+function resumirServicio(filas: readonly IngresoConServicio[]): ResumenServicio | null {
+  const de = filas.filter((e) => e.maderaDeTercero === true);
+  if (de.length === 0) return null;
+  return {
+    guias: new Set(de.map((e) => e.gtfNumber)).size,
+    m3: de.reduce((t, e) => t + (numDe(e.volumeM3) ?? 0), 0),
+    duenos: [...new Set(de.map((e) => e.duenoNombre?.trim()).filter((x): x is string => Boolean(x)))],
+  };
+}
 
 export default function CtpValorizarIngresos({ period }: { period: CtpPeriod }) {
   const [ingresos, setIngresos] = useState<IngresoValorizable[] | null>(null);
@@ -40,6 +62,7 @@ export default function CtpValorizarIngresos({ period }: { period: CtpPeriod }) 
   const [error, setError] = useState<string | null>(null);
   const [verTodos, setVerTodos] = useState(false);
   const [enTanda, setEnTanda] = useState(false);
+  const [servicio, setServicio] = useState<ResumenServicio | null>(null);
   /**
    * Sale del período.
    *
@@ -61,8 +84,11 @@ export default function CtpValorizarIngresos({ period }: { period: CtpPeriod }) 
       const j = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(j.message ?? j.error ?? `HTTP ${r.status}`);
       // Sólo los que pesan en el balance: un anulado o rechazado no lleva costo.
-      const vivos = (j.entries as IngresoValorizable[]).filter((e) => esValorizable(e.status));
-      setIngresos(vivos);
+      const vivos = (j.entries as IngresoConServicio[]).filter((e) => esValorizable(e.status));
+      /* La madera de servicio (ADR-437) no se compró: no lleva costo ni cuenta
+         como «sin costo». Sale de la lista y se nombra aparte. */
+      setServicio(resumirServicio(vivos));
+      setIngresos(vivos.filter((e) => requiereCosto(e)));
       setTotal(Number(j.total) || vivos.length);
       setError(null);
     } catch (e) {
@@ -135,6 +161,16 @@ export default function CtpValorizarIngresos({ period }: { period: CtpPeriod }) 
         <StatCard density="compact" icon={PackageOpen} label="Costo promedio" value={resumen.costoM3 == null ? "—" : `${solesDe(resumen.costoM3, resumen.moneda)}/m³`} subValue={resumen.mezcladas ? "no se puede promediar" : "de lo que sí tiene factura"} emphasis="neutral" />
         <StatCard density="compact" icon={AlertCircle} label="Sin costo" value={String(resumen.sinCosto)} subValue="no entran al margen" emphasis={resumen.sinCosto > 0 ? "warning" : "success"} />
       </div>
+
+      {servicio && (
+        <p className="text-sm text-[var(--text-secondary)]">
+          <span className="font-bold text-[var(--text-primary)]">
+            {servicio.guias} {servicio.guias === 1 ? "guía" : "guías"} de servicio
+            {servicio.duenos.length > 0 ? ` (${servicio.duenos.join(", ")})` : ""}
+          </span>{" "}
+          · {formatNumber(servicio.m3, 2)} m³ — no llevan costo: la madera es de otro, sólo la asierras.
+        </p>
+      )}
 
       {resumen.truncada && (
         <p className="rounded-xl border-2 border-[var(--data-info-500)] bg-[var(--data-info-50)] p-3 text-sm text-[var(--data-info-700)] dark:bg-transparent dark:text-[var(--data-info-500)]">

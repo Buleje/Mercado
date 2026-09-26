@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { decidirCogs, type OrigenParaCogs } from "@/lib/forestal/ctp-cogs";
+import { corridaDeServicio, corridaMixta, decidirCogs, type OrigenParaCogs } from "@/lib/forestal/ctp-cogs";
 
 const origen = (o: Partial<OrigenParaCogs> = {}): OrigenParaCogs => ({
   lineNo: 1,
@@ -114,5 +114,134 @@ describe("decidirCogs — redondeos", () => {
   it("la moneda del despacho se conserva cuando no se puede costear", () => {
     const r = decidirCogs({ declarado: 10, moneda: "USD", origenes: [] });
     expect(r.moneda).toBe("USD");
+  });
+});
+
+describe("decidirCogs — madera de servicio (ADR-437 §1): no lleva costo y NO es faltante", () => {
+  it("un despacho de madera ajena da motivo «madera_de_servicio», no «falta_costo»", () => {
+    // Blas 26-09: las corridas de WASACO no tienen costo (la madera no se compró).
+    const r = decidirCogs({
+      declarado: 10,
+      moneda: "PEN",
+      origenes: [origen({ quantity: 10, costoUnitario: null, maderaDeServicio: true })],
+    });
+    expect(r.cogs).toBeNull(); // nunca 0: un 0 fingiría margen 100 %
+    expect(r.motivo).toBe("madera_de_servicio");
+    expect(r.detalle[0].maderaDeServicio).toBe(true);
+  });
+
+  it("una corrida COMPRADA sin factura sigue siendo faltante aunque el despacho mezcle servicio", () => {
+    const r = decidirCogs({
+      declarado: 20,
+      moneda: "PEN",
+      origenes: [
+        origen({ quantity: 10, costoUnitario: null, maderaDeServicio: true }),
+        origen({ lineNo: 2, quantity: 10, costoUnitario: null }),
+      ],
+    });
+    expect(r.motivo).toBe("falta_costo");
+  });
+
+  it("comprada con costo + servicio = MIXTO: la parte propia se costea, pero el despacho queda incompleto", () => {
+    // Revisión 26-09: salía «servicio» y la venta (S/ 9 000 en la repro) se
+    // caía del P&L sin contarse como incompleta ni avisar.
+    const r = decidirCogs({
+      declarado: 20,
+      moneda: "PEN",
+      origenes: [
+        origen({ quantity: 10, costoUnitario: 5 }),
+        origen({ lineNo: 2, quantity: 10, costoUnitario: null, maderaDeServicio: true }),
+      ],
+    });
+    expect(r.cogs).toBeNull(); // el costo parcial solo inflaría el margen
+    expect(r.motivo).toBe("mixto_servicio");
+    expect(r.cogsPropio).toBe(50); // lo que sí se sabe, dicho aparte
+    expect(r.detalle[0].costo).toBe(50);
+    expect(r.detalle[1].maderaDeServicio).toBe(true);
+  });
+
+  it("una corrida que mezcla madera propia y ajena (corrida mixta) también hace mixto el despacho", () => {
+    const r = decidirCogs({
+      declarado: 10,
+      moneda: "PEN",
+      origenes: [origen({ quantity: 10, costoUnitario: null, mezclaServicio: true })],
+    });
+    expect(r.motivo).toBe("mixto_servicio"); // no «falta_costo»: no hay factura que esperar
+    expect(r.cogs).toBeNull();
+    expect(r.cogsPropio).toBeNull(); // la corrida mixta no se separa por dueño
+    expect(r.detalle[0].mezclaServicio).toBe(true);
+  });
+
+  it("todo de servicio (sin nada propio) sigue siendo «madera_de_servicio», no mixto", () => {
+    const r = decidirCogs({
+      declarado: 20,
+      moneda: "PEN",
+      origenes: [
+        origen({ quantity: 10, costoUnitario: null, maderaDeServicio: true }),
+        origen({ lineNo: 2, quantity: 10, costoUnitario: null, maderaDeServicio: true }),
+      ],
+    });
+    expect(r.motivo).toBe("madera_de_servicio");
+    expect(r.cogsPropio).toBeNull();
+  });
+
+  it("la moneda de una corrida de servicio no cuenta como «monedas mezcladas»", () => {
+    const r = decidirCogs({
+      declarado: 20,
+      moneda: "PEN",
+      origenes: [
+        origen({ quantity: 10, costoUnitario: 5 }),
+        origen({ lineNo: 2, quantity: 10, costoUnitario: null, moneda: "USD", maderaDeServicio: true }),
+      ],
+    });
+    expect(r.motivo).toBe("mixto_servicio");
+  });
+
+  it("el volumen sin corrida sigue siendo un hueco aunque lo atribuido sea de servicio", () => {
+    const r = decidirCogs({
+      declarado: 20,
+      moneda: "PEN",
+      origenes: [origen({ quantity: 15, costoUnitario: null, maderaDeServicio: true })],
+    });
+    expect(r.motivo).toBe("sin_atribucion");
+    expect(r.sinAtribuir).toBe(5);
+  });
+
+  it("sin la marca, el comportamiento de antes no cambia", () => {
+    const r = decidirCogs({ declarado: 10, moneda: "PEN", origenes: [origen({ quantity: 10, costoUnitario: null })] });
+    expect(r.motivo).toBe("falta_costo");
+    expect(r.detalle[0].maderaDeServicio).toBe(false);
+  });
+});
+
+describe("corridaDeServicio — de dónde sale la marca", () => {
+  it("consumió una guía de servicio (costoDeLinea → madera_de_servicio)", () => {
+    expect(corridaDeServicio({ motivo: "madera_de_servicio", costoUnitario: null, duenoMadera: null })).toBe(true);
+  });
+
+  it("corrida «de tercero» sin consumos (las de WASACO en Blas)", () => {
+    expect(corridaDeServicio({ motivo: "sin_consumos", costoUnitario: null, duenoMadera: "tercero" })).toBe(true);
+  });
+
+  it("de tercero pero CON costo conocido: la marca no esconde un número que existe", () => {
+    expect(corridaDeServicio({ motivo: "ok", costoUnitario: 12.5, duenoMadera: "tercero" })).toBe(false);
+  });
+
+  it("de tercero pero con una factura faltante: NO es servicio (esa factura sí se espera)", () => {
+    // Revisión 26-09: bastaba «tercero + sin costo» y un falta_factura quedaba escondido.
+    expect(corridaDeServicio({ motivo: "falta_factura", costoUnitario: null, duenoMadera: "tercero" })).toBe(false);
+    expect(corridaDeServicio({ motivo: "monedas_mezcladas", costoUnitario: null, duenoMadera: "tercero" })).toBe(false);
+  });
+
+  it("una corrida mixta no es de servicio: es mixta", () => {
+    const c = { motivo: "mixto_servicio", costoUnitario: null, duenoMadera: "tercero" };
+    expect(corridaDeServicio(c)).toBe(false);
+    expect(corridaMixta(c)).toBe(true);
+    expect(corridaMixta({ motivo: "madera_de_servicio", costoUnitario: null })).toBe(false);
+  });
+
+  it("corrida propia o sin declarar, sin factura: NO es servicio (sigue siendo faltante)", () => {
+    expect(corridaDeServicio({ motivo: "falta_factura", costoUnitario: null, duenoMadera: "propia" })).toBe(false);
+    expect(corridaDeServicio({ motivo: "sin_consumos", costoUnitario: null, duenoMadera: null })).toBe(false);
   });
 });

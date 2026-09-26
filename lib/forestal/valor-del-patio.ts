@@ -21,6 +21,8 @@
  * testea sin navegador.
  */
 
+import { requiereCosto } from "./madera-de-servicio";
+
 /** Un consumo de materia prima atado a la corrida, con lo que se sepa del costo. */
 export interface ConsumoCosteable {
   volumeM3: number;
@@ -29,6 +31,8 @@ export interface ConsumoCosteable {
   costoTotalGuia: number | null;
   volumenGuiaM3: number | null;
   gtfNumber: string | null;
+  /** La guía es madera de servicio (ADR-437 §1): no se compró, no se valoriza ni cuenta «sin costo». */
+  maderaDeTercero?: boolean | null;
 }
 
 /** Una guía de ingreso con su plata, para valorizar sin consumos. */
@@ -36,6 +40,8 @@ export interface GuiaCosteable {
   gtfNumber: string;
   costoTotal: number | null;
   volumeM3: number | null;
+  /** Madera de servicio (ADR-437 §1): no se valoriza ni cuenta «sin costo». Opcional. */
+  maderaDeTercero?: boolean | null;
 }
 
 /** De dónde salió el costo. Se muestra: un número sin origen se copia sin pensarlo. */
@@ -58,6 +64,12 @@ export interface ValorDeCorrida {
   /** Qué guías se usaron y cuáles no tenían costo: la pantalla las nombra. */
   guiasUsadas: string[];
   guiasSinCosto: string[];
+  /**
+   * Guías de madera de servicio (ADR-437 §1) que toca la corrida: no se
+   * costean — no son «sin costo» — y no entran al valor. Opcional para no
+   * romper a quien arma el resultado a mano.
+   */
+  guiasDeServicio?: string[];
   /** El rendimiento con el que se convirtió troza→producto (0..1), y de dónde salió. */
   rendimiento: number | null;
   rendimientoDe: "asiento" | "derivado" | "supuesto" | null;
@@ -139,7 +151,8 @@ function costoMateriaPrima(
   c: CorridaValorizable,
 ): { porM3: number; origen: Exclude<OrigenValor, "sin-costo">; guiasUsadas: string[] } | null {
   // 1. Costo congelado al cierre: es el que ya se declaró, gana sobre todo.
-  const congelados = c.costoConsumos.flatMap((k) => {
+  const compradas = c.costoConsumos.filter((k) => requiereCosto({ maderaDeTercero: k.maderaDeTercero }));
+  const congelados = compradas.flatMap((k) => {
     const vol = pos(k.volumeM3);
     const unitario = pos(k.costoUnitarioSnap);
     return vol != null && unitario != null ? [{ vol, unitario, gtf: visible(k.gtfNumber) }] : [];
@@ -147,7 +160,7 @@ function costoMateriaPrima(
   if (congelados.length > 0) return { ...ponderado(congelados), origen: "consumo-congelado" };
 
   // 2. Consumos vivos: el costo de la guía prorrateado por lo que se consumió de ella.
-  const vivos = c.costoConsumos.flatMap((k) => {
+  const vivos = compradas.flatMap((k) => {
     const vol = pos(k.volumeM3);
     const total = pos(k.costoTotalGuia);
     const volGuia = pos(k.volumenGuiaM3);
@@ -164,6 +177,7 @@ function costoMateriaPrima(
   const mapa = new Map<string, number>();
   const volDe = new Map<string, number>();
   for (const g of c.costoPorGtf) {
+    if (!requiereCosto({ maderaDeTercero: g.maderaDeTercero })) continue;
     const total = pos(g.costoTotal);
     const vol = pos(g.volumeM3);
     if (total != null && vol != null) {
@@ -191,7 +205,7 @@ function costoMateriaPrima(
  * guía que sí tiene costo —aunque no haya aportado a la fuente ganadora— no
  * hay que ir a costearla de nuevo.
  */
-function guiasDeLaCorrida(c: CorridaValorizable): { candidatas: string[]; sinCosto: string[] } {
+function guiasDeLaCorrida(c: CorridaValorizable): { candidatas: string[]; sinCosto: string[]; deServicio: string[] } {
   const candidatas: string[] = [];
   const push = (g: string | null | undefined) => {
     const v = visible(g);
@@ -215,10 +229,18 @@ function guiasDeLaCorrida(c: CorridaValorizable): { candidatas: string[]; sinCos
       .map((k) => clave(k.gtfNumber)),
   );
 
+  /* La madera de servicio no se costea (ADR-437 §1): basta que UNA de las dos
+     vías la marque — el catálogo por GTF o el consumo — para no mandarla a
+     «Faltan costear». */
+  const servicio = new Set([
+    ...c.costoPorGtf.filter((g) => g.maderaDeTercero === true).map((g) => clave(g.gtfNumber)),
+    ...c.costoConsumos.filter((k) => k.maderaDeTercero === true).map((k) => clave(k.gtfNumber)),
+  ]);
+  const deServicio = candidatas.filter((g) => servicio.has(clave(g)));
   const sinCosto = candidatas.filter(
-    (g) => !conCostoEnCatalogo.has(clave(g)) && !conCostoEnConsumo.has(clave(g)),
+    (g) => !servicio.has(clave(g)) && !conCostoEnCatalogo.has(clave(g)) && !conCostoEnConsumo.has(clave(g)),
   );
-  return { candidatas, sinCosto };
+  return { candidatas, sinCosto, deServicio };
 }
 
 /**
@@ -231,7 +253,7 @@ function guiasDeLaCorrida(c: CorridaValorizable): { candidatas: string[]; sinCos
  */
 export function valorDeCorrida(c: CorridaValorizable): ValorDeCorrida {
   const { r, de } = rendimientoDeLaCorrida(c);
-  const { sinCosto } = guiasDeLaCorrida(c);
+  const { sinCosto, deServicio } = guiasDeLaCorrida(c);
   const fuente = costoMateriaPrima(c);
 
   if (fuente == null || r == null) {
@@ -242,6 +264,7 @@ export function valorDeCorrida(c: CorridaValorizable): ValorDeCorrida {
          impresión de que el número se calculó con ellas. */
       guiasUsadas: [],
       guiasSinCosto: sinCosto,
+      guiasDeServicio: deServicio,
       rendimiento: r,
       rendimientoDe: de,
     };
@@ -252,6 +275,7 @@ export function valorDeCorrida(c: CorridaValorizable): ValorDeCorrida {
     origen: fuente.origen,
     guiasUsadas: fuente.guiasUsadas,
     guiasSinCosto: sinCosto,
+    guiasDeServicio: deServicio,
     rendimiento: r,
     rendimientoDe: de,
   };

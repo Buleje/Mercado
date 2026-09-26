@@ -185,6 +185,7 @@ export default function HistorialGastosTab() {
               <option value="flete">Fletes</option>
               <option value="adelanto">Adelantos al personal</option>
               <option value="caja">Retiros de caja</option>
+              <option value="madera">Madera de guías</option>
             </select>
           </label>
           {/* Lo que se cuenta como gasto y lo que no viven en la misma tabla a

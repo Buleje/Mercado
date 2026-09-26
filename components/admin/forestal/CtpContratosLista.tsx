@@ -17,6 +17,7 @@ import { ChevronRight, FileSignature, Search } from "@buleje/design-system/icons
 import { DataTable, EmptyState } from "@buleje/design-system";
 import { resumirBalance, type BalanceContrato, type Contrato } from "@/lib/forestal/contratos";
 import { ESTADO_CLASE, ESTADO_LABEL, soles, TIPO_LABEL, vigenciaTexto } from "./contratos-ui";
+import { textoDeServicio } from "./CtpContratoBalance";
 import { formatNumber } from "@/lib/format";
 
 /* Sin constantes de padding ni de tipografía: `DataTable` pinta `thead`, `td`
@@ -59,6 +60,7 @@ function CeldasDePlata({ balance }: { balance?: BalanceContrato }) {
   }
   const r = resumirBalance(balance);
   const m3 = balance.madera.m3 ?? 0;
+  const servicio = textoDeServicio(balance);
   return (
     <>
       <td className={`${TD} text-right`}>
@@ -71,8 +73,14 @@ function CeldasDePlata({ balance }: { balance?: BalanceContrato }) {
               {balance.madera.documentos} {balance.madera.documentos === 1 ? "ingreso" : "ingresos"}
             </span>
           </>
-        ) : (
+        ) : !servicio ? (
           <span className="text-[var(--text-tertiary)]">—</span>
+        ) : null}
+        {/* ADR-437: la de servicio no es compra — se nombra aparte, sin plata. */}
+        {servicio && (
+          <span title={servicio} className="block whitespace-nowrap text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
+            + {formatNumber(balance.servicio?.m3 ?? 0, { max: 3 })} m³ de servicio
+          </span>
         )}
       </td>
       <td className={`${TD} text-right`}>

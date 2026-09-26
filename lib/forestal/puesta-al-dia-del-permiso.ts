@@ -10,7 +10,9 @@
  * Las cuatro piezas YA existen (ADR-432/433/434/435); acá no se decide nada
  * nuevo, sólo se cuenta con sus mismas reglas:
  *  1. Fecha de llegada: `llegadaSospechosa` (recibida después de corridas de su
- *     permiso y especie). Sin eso, T3 frena el descuento (ADR-433/434).
+ *     permiso y especie). Sin eso, T3 frena el descuento (ADR-433/434). El
+ *     detalle suma las recibidas después del vencimiento de su guía
+ *     (`recibidaVencida`, ADR-434 §Vencimiento), sin abrir el paso por eso.
  *  2. Trozas en su especie: la vista previa de «Acomodar» (ADR-435). Una troza
  *     en la fila de otra especie frena el descuento (I2 es por fila).
  *  3. Precio: filas del permiso sin `costoTotal` — el mismo conteo que
@@ -27,8 +29,9 @@
  */
 
 import type { PlanAcomodo } from "./acomodar-trozas";
+import { esSinCosto, requiereCosto } from "./madera-de-servicio";
 import { fmtM3 } from "./cubicacion-formato";
-import { corridasAntesDeLaLlegada, ddmm, llegadaSospechosa, type ContextoDeLlegada } from "./fecha-de-llegada";
+import { corridasAntesDeLaLlegada, ddmm, llegadaSospechosa, recibidaVencida, type ContextoDeLlegada } from "./fecha-de-llegada";
 import type { PlanDescontar } from "./vincular-desde-permiso";
 import type { GuiaDelPermiso } from "./volumen-del-permiso";
 
@@ -89,6 +92,12 @@ export interface ResumenFecha {
   sierraDesde: string | null;
   /** Guías del permiso que no se pudieron revisar (tope del endpoint). */
   sinRevisar: number;
+  /**
+   * GTF recibidas después del vencimiento de su guía (ADR-434 §Vencimiento).
+   * Va en el detalle y NO abre el paso: si la madera de verdad llegó así y se
+   * confirmó, el paso quedaría abierto para siempre.
+   */
+  vencidas?: string[];
 }
 
 /**
@@ -102,6 +111,7 @@ export function resumirFecha(gtfs: readonly string[], contextos: readonly Contex
   const sospechosas: string[] = [];
   const sinRecibir: string[] = [];
   const recibidasEl = new Set<string>();
+  const vencidas: string[] = [];
   let sierraDesde: string | null = null;
   let sinRevisar = 0;
   for (const gtf of unicas) {
@@ -114,13 +124,14 @@ export function resumirFecha(gtfs: readonly string[], contextos: readonly Contex
       sinRecibir.push(gtf);
       continue;
     }
+    if (recibidaVencida(ctx)) vencidas.push(gtf);
     if (!llegadaSospechosa(ctx)) continue;
     sospechosas.push(gtf);
     if (ctx.recepcion) recibidasEl.add(ctx.recepcion);
     const antes = corridasAntesDeLaLlegada(ctx.recepcion ?? "", ctx.especies, ctx.corridas);
     for (const a of antes) if (sierraDesde == null || a.desde < sierraDesde) sierraDesde = a.desde;
   }
-  return { sospechosas, sinRecibir, recibidasEl: [...recibidasEl].sort(), sierraDesde, sinRevisar };
+  return { sospechosas, sinRecibir, recibidasEl: [...recibidasEl].sort(), sierraDesde, sinRevisar, vencidas };
 }
 
 /** Una guía YA recibida del permiso, con la forma que pide «Corregir la recepción». */
@@ -203,20 +214,28 @@ export interface ResumenPrecio {
   /** Filas de ingreso (una por especie de cada GTF) sin costo cargado. */
   sinPrecio: number;
   m3SinPrecio: number;
+  /** Filas que llevan costo: las de madera de servicio (ADR-437 §1) no cuentan. */
   filas: number;
 }
+
+/** Una fila del permiso para el paso 3. `maderaDeTercero` opcional: sin él, decide sólo el costo. */
+export type FilaParaPrecioDelPermiso = Pick<GuiaDelPermiso, "m3" | "costo"> & { maderaDeTercero?: boolean | null };
 
 /**
  * Paso 3, del volumen de la ficha: las filas vivas del permiso sin
  * `costoTotal` (sin factura es `null`, nunca 0). Mismo filtro que
  * `balance().madera.sinValorizar`, así la lista y «Plata» dicen lo mismo.
+ *
+ * La madera de servicio (ADR-437 §1) no se compró: no lleva costo y no es un
+ * «pon precio» pendiente — el mismo `esSinCosto` que usan los demás lectores.
  */
-export function resumirPrecio(guias: readonly Pick<GuiaDelPermiso, "m3" | "costo">[]): ResumenPrecio {
-  const sin = guias.filter((g) => g.costo == null);
+export function resumirPrecio(guias: readonly FilaParaPrecioDelPermiso[]): ResumenPrecio {
+  const llevan = guias.filter((g) => requiereCosto({ maderaDeTercero: g.maderaDeTercero }));
+  const sin = llevan.filter((g) => esSinCosto({ maderaDeTercero: g.maderaDeTercero, costoTotal: g.costo }));
   return {
     sinPrecio: sin.length,
     m3SinPrecio: Math.round(sin.reduce((a, g) => a + (g.m3 ?? 0), 0) * 10_000) / 10_000,
-    filas: guias.length,
+    filas: llevan.length,
   };
 }
 
@@ -301,6 +320,8 @@ function pasoFecha(d: Dato<ResumenFecha>): PasoPuestaAlDia {
   if (d.estado !== "listo") return sinSaber(b, d);
   const f = d.valor;
   const cola = f.sinRevisar > 0 ? ` · ${plural(f.sinRevisar, "guía", "guías")} sin revisar` : "";
+  const nVencidas = f.vencidas?.length ?? 0;
+  const vencidas = nVencidas > 0 ? `${nVencidas === 1 ? "1 recibida" : `${nVencidas} recibidas`} después del vencimiento` : "";
   if (f.sospechosas.length > 0) {
     const n = f.sospechosas.length;
     const recibidas = f.recibidasEl.length > 0 ? `Figuran recibidas el ${fechas(f.recibidasEl)}` : "Figuran recibidas";
@@ -309,7 +330,7 @@ function pasoFecha(d: Dato<ResumenFecha>): PasoPuestaAlDia {
       estado: "pendiente",
       faltan: n,
       titulo: `Corrige la fecha de llegada de ${plural(n, "guía", "guías")}`,
-      detalle: `${recibidas}${f.sierraDesde ? `, y la sierra ya cortaba su madera desde el ${ddmm(f.sierraDesde)}` : ""}${cola}`,
+      detalle: `${recibidas}${f.sierraDesde ? `, y la sierra ya cortaba su madera desde el ${ddmm(f.sierraDesde)}` : ""}${vencidas ? `, y ${vencidas}` : ""}${cola}`,
       accion: "Corregir fechas",
     };
   }
@@ -324,7 +345,10 @@ function pasoFecha(d: Dato<ResumenFecha>): PasoPuestaAlDia {
       accion: null,
     };
   }
-  return { ...b, estado: "hecho", faltan: 0, titulo: b.nombre, detalle: f.sinRevisar > 0 ? cola.slice(3) : null, accion: null };
+  const nota = [vencidas ? `${vencidas} de su guía (confírmalo o corrígelo en Ingresos)` : "", f.sinRevisar > 0 ? cola.slice(3) : ""]
+    .filter(Boolean)
+    .join(" · ");
+  return { ...b, estado: "hecho", faltan: 0, titulo: b.nombre, detalle: nota || null, accion: null };
 }
 
 function pasoTrozas(d: Dato<ResumenTrozas>): PasoPuestaAlDia {

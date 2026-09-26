@@ -62,8 +62,15 @@ export const CONCEPTO_LABEL: Record<Concepto, string> = {
   otro: "Otro",
 };
 
-/** Lo que se puede anotar a mano. El cruce sólo lo escribe una liquidación. */
-export const CONCEPTOS_MANUALES: readonly Concepto[] = CONCEPTOS.filter((c) => c !== "compensacion");
+/**
+ * Lo que se puede anotar a mano. El cruce sólo lo escribe una liquidación.
+ * `adelanto` tampoco (ADR-437 §5): la plata adelantada vive en Adelantos, y
+ * anotarla también acá la contaría dos veces en «Cuenta por persona» (0 filas
+ * reales con ese concepto al 26-09). Sigue en `CONCEPTOS` para leer lo viejo.
+ */
+export const CONCEPTOS_MANUALES: readonly Concepto[] = CONCEPTOS.filter(
+  (c) => c !== "compensacion" && c !== "adelanto",
+);
 
 /**
  * El tipo que corresponde a cada concepto. Se sugiere, no se impone: hay
@@ -105,6 +112,12 @@ export interface MovimientoCuenta {
   ctpEntryId?: string | null;
   /** La liquidación de la que salió (ADR-413): se corrige anulándola. Opcional. */
   liquidacionId?: string | null;
+  /**
+   * La guía a la que pertenece (ADR-437): el abono `madera` de una compra y los
+   * pagos imputados a esa guía. Con valor en un abono `madera`, se corrige
+   * desde la guía. Opcional: lo anterior a ADR-437 no lo trae.
+   */
+  gtfNumber?: string | null;
 }
 
 const texto = (max: number) => z.string().trim().max(max);

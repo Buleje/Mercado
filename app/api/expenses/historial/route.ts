@@ -5,6 +5,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { toErrorPayload } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
+import type { FuenteHistorial } from "@/lib/db/finance.db";
 
 /**
  * GET /api/expenses/historial
@@ -16,13 +17,20 @@ import { logger } from "@/lib/logger";
  *
  * Query params:
  *  - from, to (ISO datetime)
- *  - source (all | expense | purchase) — default all
+ *  - source (all | expense | purchase | flete | adelanto | caja | madera) — default all
+ *    `madera` = guías forestales COMPRADAS con costo y su estado de pago
+ *    (ADR-437 §9). Ya viene en `all`; sin aceptarla acá no se podía filtrar.
  */
+
+/* Atada al tipo de la DB class (`satisfies`); el desglose `porSource` de abajo
+   es un `Record<FuenteHistorial, number>` literal, así que una fuente nueva
+   allá que falte acá es un error de tipos, no un hueco silencioso. */
+const FUENTES = ["expense", "purchase", "flete", "adelanto", "caja", "madera"] as const satisfies readonly FuenteHistorial[];
 
 const QuerySchema = z.object({
   from: z.string().datetime().optional(),
   to: z.string().datetime().optional(),
-  source: z.enum(["all", "expense", "purchase", "flete", "adelanto", "caja"]).optional().default("all"),
+  source: z.enum(["all", ...FUENTES]).optional().default("all"),
 });
 
 export async function GET(req: NextRequest) {
@@ -70,6 +78,17 @@ export async function GET(req: NextRequest) {
     const sumaDe = (pred: (i: (typeof items)[number]) => boolean) =>
       redondear(items.filter(pred).reduce((s, i) => s + i.amount, 0));
 
+    /* Una clave por fuente. `madera` = Σ costo de las guías compradas del
+       período (ADR-437 §9); ya está dentro de «Total gastado» (clase `gasto`). */
+    const porSource: Record<FuenteHistorial, number> = {
+      expense: sumaDe((i) => i.source === "expense"),
+      purchase: sumaDe((i) => i.source === "purchase"),
+      flete: sumaDe((i) => i.source === "flete"),
+      adelanto: sumaDe((i) => i.source === "adelanto"),
+      caja: sumaDe((i) => i.source === "caja"),
+      madera: sumaDe((i) => i.source === "madera"),
+    };
+
     return NextResponse.json({
       items,
       kpis: {
@@ -78,13 +97,7 @@ export async function GET(req: NextRequest) {
         totalPorPagar: redondear(totalGastado - totalPagado),
         cantidadGastos: gastos.length,
         porCategoria,
-        porSource: {
-          expense: sumaDe((i) => i.source === "expense"),
-          purchase: sumaDe((i) => i.source === "purchase"),
-          flete: sumaDe((i) => i.source === "flete"),
-          adelanto: sumaDe((i) => i.source === "adelanto"),
-          caja: sumaDe((i) => i.source === "caja"),
-        },
+        porSource,
         // Fuera del total, para que se vean sin contaminarlo.
         totalAnticipos: sumaDe((i) => i.clase === "anticipo"),
         totalRetirosCaja: sumaDe((i) => i.clase === "caja"),

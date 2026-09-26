@@ -24,10 +24,12 @@ export interface Pendiente {
    * no en la lista entera. Hoy lo entiende Ingresos: `"pendiente"` (estado) y
    * `"fuera-de-plazo"`.
    */
-  filtro?: "pendiente" | "fuera-de-plazo";
+  filtro?: "pendiente" | "fuera-de-plazo" | "sin-pagar";
 }
 
 import type { CorridaSinOrigen } from "./loctp-consumos-analisis";
+import type { GuiasSinPagarDeParte } from "./plata-de-guia";
+import { formatCurrency } from "@/lib/format";
 
 export interface DatosPendientes {
   /** Ingresos de materia prima en estado "pendiente". */ ingresosPendientes: number;
@@ -76,6 +78,22 @@ export interface DatosPendientes {
    * son dos urgencias distintas. `dias` viene NEGATIVO (días ya transcurridos).
    */
   permisosVencidosDetalle?: readonly { codigo: string; dias: number }[];
+  /**
+   * Guías RECIBIDAS sin una sola foto de la carga (2026-09-26, «pedila al
+   * recibir»). La foto de la pila es lo que sostiene el papel si la madera
+   * que bajó no es la que dice la guía; se saca en el patio o no se saca.
+   * Medido: Blas 0 de 12 guías con foto.
+   */
+  guiasSinFoto?: number;
+  /** Cuáles (las más recientes primero) — el detalle nombra las tres primeras. */
+  guiasSinFotoDetalle?: readonly { gtf: string }[];
+  /**
+   * Guías de COMPRA con algo por pagar, una fila por proveedor (ADR-437 §10).
+   * Tampoco es un papel: es plata que se debe. `atrasado` sólo si la ficha dice
+   * crédito y ya pasó el plazo; si no, `pendiente`. Nunca `bloquea`: el libro
+   * cierra igual con deudas.
+   */
+  guiasSinPagar?: readonly GuiasSinPagarDeParte[];
 }
 
 /** A partir de acá una troza parada empieza a costar. Mismo corte que el patio. */
@@ -107,6 +125,15 @@ export function diaEnPeriodo(dia: string, desde: string, hasta: string): boolean
   if (desde && dia < desde) return false;
   if (hasta && dia > hasta) return false;
   return true;
+}
+
+/** «GTF 001-123, 001-124, 001-125 y 4 más». */
+function detalleGuiasSinFoto(detalle: readonly { gtf: string }[], total: number): string {
+  const cola = "Sin foto de la pila no hay cómo probar qué bajó del camión: súbela desde el ingreso.";
+  if (detalle.length === 0) return cola;
+  const lista = detalle.slice(0, 3).map((g) => g.gtf).join(", ");
+  const resto = total > 3 ? ` y ${total - 3} más` : "";
+  return `GTF ${lista}${resto}. ${cola}`;
 }
 
 const ORDEN: Record<UrgenciaPendiente, number> = { bloquea: 0, atrasado: 1, pendiente: 2 };
@@ -216,6 +243,17 @@ export function pendientesDelLibro(d: DatosPendientes): Pendiente[] {
       detalle: "La madera en troza se mancha y se raja: conviene aserrarlas primero.",
       vista: "trozas",
     },
+    /* Evidencia, no papel: el libro cierra igual sin fotos —por eso
+       «pendiente»—, pero una guía recibida sin foto no tiene cómo probar qué
+       bajó del camión si después alguien lo discute. */
+    {
+      clave: "guias-sin-foto",
+      urgencia: "pendiente",
+      cantidad: d.guiasSinFoto ?? 0,
+      titulo: (d.guiasSinFoto ?? 0) === 1 ? "Guía recibida sin foto de la carga" : "Guías recibidas sin foto de la carga",
+      detalle: detalleGuiasSinFoto(d.guiasSinFotoDetalle ?? [], d.guiasSinFoto ?? 0),
+      vista: "ingresos",
+    },
     /* Tampoco es un papel: es la mitad de la cuenta. El libro cierra igual sin
        costos —a SERFOR no le interesan— pero el margen de todo lo que salga de
        esa madera queda en "no sé". */
@@ -236,6 +274,25 @@ export function pendientesDelLibro(d: DatosPendientes): Pendiente[] {
       vista: "rentabilidad",
     },
   ];
+
+  /* Una línea por proveedor: «3 guías sin pagar a Nelly · S/ 12 400». Juntar a
+     todos en un número escondería a quién se le debe, que es la pregunta. */
+  for (const d0 of d.guiasSinPagar ?? []) {
+    if (d0.guias <= 0 || d0.pendiente <= 0) continue;
+    const [, mm, dd] = d0.desde.slice(0, 10).split("-");
+    todos.push({
+      clave: `guias-sin-pagar:${d0.parteId}`,
+      urgencia: d0.nivel,
+      cantidad: d0.guias,
+      titulo: `${d0.guias} ${d0.guias === 1 ? "guía" : "guías"} sin pagar a ${d0.parteNombre} · ${formatCurrency(d0.pendiente)}`,
+      detalle:
+        d0.nivel === "atrasado"
+          ? `Se pasó el plazo de crédito. La más vieja es del ${dd}/${mm}.`
+          : `La más vieja es del ${dd}/${mm}. Se paga desde «Plata de la guía».`,
+      vista: "ingresos",
+      filtro: "sin-pagar",
+    });
+  }
 
   return todos
     .filter((p) => p.cantidad > 0)

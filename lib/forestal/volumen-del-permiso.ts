@@ -59,6 +59,7 @@ import { PT_POR_M3, pieTablarAserrableDe } from "./cubicacion";
 import { RENDIMIENTO_META } from "./loctp-catalogos";
 import { claveEspecie } from "./loth-constants";
 import { enPatio, porRecepcionarDelPatio } from "./patio-por-permiso";
+import type { FotoCarga } from "./fotos-carga";
 
 /* ─────────────────────────── Salida (lo que lee la pantalla) ─────────────────────────── */
 
@@ -111,17 +112,23 @@ export interface GuiaDelPermiso {
   trozas: TrozasDeGuia | null;
   /** Las corridas que comieron de esta guía, en orden de fecha. */
   consumos: ConsumoDeGuia[];
-  /** URLs de las fotos de la pila (`WoodEntry.photos`, compartidas por TODAS las
+  /** Las fotos de la pila (`WoodEntry.photos`, compartidas por TODAS las
    *  filas de esta GTF — ver `fotosGuia` en `wood-entries.db.ts`). Siempre un
    *  array, nunca `null`: sin fotos es `[]`, no un hueco que haya que chequear
-   *  en cada pantalla. */
-  fotos: string[];
+   *  en cada pantalla. Pintar con `srcDeFoto` (las nuevas son privadas). */
+  fotos: FotoCarga[];
   /**
    * `WoodEntry.costoTotal` de esta fila: lo que costó la madera. `null` = sin
    * precio cargado (sin factura es `null`, nunca 0). Opcional para no romper a
    * quien arma una guía a mano; el servidor lo manda siempre.
    */
   costo?: number | null;
+  /**
+   * Madera de servicio (ADR-437 §1): ajena, sólo se asierra. No lleva costo y
+   * no cuenta «sin precio» — leerla con `esSinCosto` (`madera-de-servicio.ts`),
+   * nunca con `costo == null` a secas. Opcional como `costo`; sin él, `false`.
+   */
+  maderaDeTercero?: boolean;
 }
 
 /** atada = `contratoId` es este permiso · heredada = sin contrato y comió de guías de este permiso. */
@@ -285,9 +292,11 @@ export interface GuiaEntrada {
   piezas: number;
   proveedor: string | null;
   /** Ver `GuiaDelPermiso.fotos`. Siempre un array. */
-  fotos: string[];
+  fotos: FotoCarga[];
   /** `WoodEntry.costoTotal`; `null` = sin precio. Ver `GuiaDelPermiso.costo`. */
   costo?: number | null;
+  /** `WoodEntry.maderaDeTercero`. Ver `GuiaDelPermiso.maderaDeTercero`. */
+  maderaDeTercero?: boolean;
 }
 
 /** Un `ForestCtpConsumo` de una corrida VIVA (sin baja, no anulada). */
@@ -639,6 +648,7 @@ export function armarVolumenDelPermiso(e: EntradaVolumenDelPermiso): VolumenDelP
       consumos,
       fotos: g.fotos,
       costo: g.costo == null ? null : numero(g.costo),
+      maderaDeTercero: g.maderaDeTercero === true,
     };
   });
   guias.sort((a, b) => tiempo(a.fecha) - tiempo(b.fecha) || texto(a.gtf, b.gtf) || texto(a.id, b.id));

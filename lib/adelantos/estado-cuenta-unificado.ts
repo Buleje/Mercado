@@ -42,7 +42,7 @@
  * PURO: sin React, sin fetch, sin Prisma.
  */
 
-import { CONCEPTO_LABEL, type MovimientoCuenta } from "@/lib/forestal/cuenta-corriente";
+import { CONCEPTO_LABEL, type Concepto, type MovimientoCuenta } from "@/lib/forestal/cuenta-corriente";
 import { leerNeto, montoEnMoneda } from "@/lib/adelantos/cuenta-unificada";
 import { STORE_TIMEZONE } from "@/lib/utils";
 
@@ -73,7 +73,7 @@ export function formatearDia(iso: string, formato: Intl.DateTimeFormatOptions): 
 }
 
 /** "2026-09-05", con el mismo criterio que `formatearDia` — la clave para ordenar. */
-function claveDia(iso: string): string {
+export function claveDia(iso: string): string {
   const d = new Date(iso);
   return d.toLocaleDateString("en-CA", { timeZone: esDiaSinHora(d) ? "UTC" : STORE_TIMEZONE });
 }
@@ -108,6 +108,13 @@ export interface LineaEstadoCuenta {
   moneda: string;
   /** Saldo corrido DESPUÉS de esta línea — un acumulador POR MONEDA. */
   acumulado: number;
+  /**
+   * Sólo en las líneas forestales: el concepto crudo y la guía (ADR-437). Los
+   * pide el filtro por tipo del modal «Plata de la guía»; opcionales para no
+   * tocar a quien arma líneas a mano (PDF, tests).
+   */
+  conceptoForestal?: Concepto;
+  gtfNumber?: string | null;
 }
 
 export interface TotalesPata {
@@ -170,6 +177,8 @@ export function estadoCuentaUnificado(
       referencia: m.referencia,
       monto: m.tipo === "cargo" ? m.monto : -m.monto,
       moneda: m.moneda || "PEN",
+      conceptoForestal: m.concepto,
+      gtfNumber: m.gtfNumber ?? null,
     });
   }
 

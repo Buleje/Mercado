@@ -1374,6 +1374,11 @@ model Expense {
   contratoId String?
   contrato   ForestContrato? @relation(fields: [contratoId], references: [id], onDelete: SetNull)
 
+  /// De qué guía forestal es este gasto (ADR-437): estiba, descarga, carguío,
+  /// cubicación, vigilancia… Suma al costo PUESTO EN PATIO (derivado), nunca a
+  /// `WoodEntry.costoTotal`: el P&L ya cuenta los `Expense`.
+  gtfNumber String?
+
   @@index([category])
   @@index([date])
   @@index([tenantId])
@@ -1383,6 +1388,7 @@ model Expense {
   @@index([tenantId, recurring, date])
   @@index([templateId])
   @@index([tenantId, contratoId])
+  @@index([tenantId, gtfNumber])
 }
 
 /// (ADR-375) Cuánto se planea gastar por mes en cada categoría.
@@ -5555,6 +5561,9 @@ model LiquidacionCuenta {
   anuladaPor       String?
   motivoAnulacion  String?
   cajaReversionId  String?
+  /// Fotos del comprobante del pago (ADR-437): `FotoCarga[]` privadas, se
+  /// sirven con URL firmada (ADR-434/436). NULL = no se adjuntó ninguna.
+  comprobantes     Json?
 
   @@unique([tenantId, codigo])
   @@unique([tenantId, idempotencyKey])
@@ -5765,6 +5774,30 @@ model WoodEntry {
   contratoId String?
   contrato   ForestContrato? @relation(fields: [contratoId], references: [id], onDelete: SetNull)
 
+  // ── La plata de la guía (ADR-437) ────────────────────
+  /// Madera de SERVICIO: no es nuestra, sólo la aserramos (p. ej. la de WASACO
+  /// en Blas). Se escribe por GUÍA —todos los asientos vivos del mismo
+  /// `gtfNumber` en una transacción, nunca mezclada—. No lleva costo
+  /// (`costoTotal` queda NULL, nunca 0), no cuenta como «sin costo», no entra al
+  /// valor del patio. Booleano y no enum nullable: con NULL cada `where`
+  /// necesitaría `OR null` y alguno de los ~40 lectores se olvidaría. Leer con
+  /// `FILTRO_REQUIERE_COSTO` / `requiereCosto()` (lib/forestal/madera-de-servicio.ts).
+  maderaDeTercero  Boolean @default(false)
+  /// Dueño de la madera de servicio: ficha del directorio (`ForestParty`), la
+  /// misma con la que ADR-412 cobra el aserrío. Sin FK, como `ctpEntryId`.
+  duenoParteId     String?
+  /// Foto del nombre del dueño al marcarla: la ficha puede renombrarse o darse
+  /// de baja y el acta sigue diciendo con quién era.
+  duenoNombre      String?
+  /// A quién le pagas esta madera (`ForestParty`). NUNCA se deriva de
+  /// `providerDocument` (es el RUC de la ATFFS, no del titular). NULL = sin
+  /// ficha: el costo se guarda pero no entra a ninguna cuenta.
+  proveedorParteId String?
+  /// Acta del precio (`costoDetalleSchema` v1: modo total|especie, unidad
+  /// m3|pt, precio, cantidad de la factura, ≈pt derivado, total factura). El
+  /// costo sigue siendo `costoTotal`; esto explica de dónde salió.
+  costoDetalle     Json?
+
   @@index([tenantId, entryDate(sort: Desc)])
   @@index([tenantId, status])
   @@index([tenantId, gtfNumber])
@@ -5773,6 +5806,8 @@ model WoodEntry {
   @@index([tenantId, libroNro])
   @@index([deletedAt])
   @@index([tenantId, contratoId])
+  @@index([tenantId, proveedorParteId])
+  @@index([tenantId, duenoParteId])
 }
 
 /// Una troza de la lista que ampara la GTF (ADR-312).
@@ -5829,6 +5864,13 @@ model WoodEntryTroza {
   /// Distinto de `WoodEntry.ctpProductCode`, que identifica la carga entera:
   /// acá se identifica la pieza, que es lo que después se busca en el patio.
   codigoPlanta   String?
+  /// Cuándo se imprimió por ÚLTIMA vez la etiqueta QR de esta pieza (ADR-436).
+  /// NULL = nunca se etiquetó. Lo sella `WoodEntriesDB.marcarEtiquetadas` al
+  /// imprimir: sin esto el patio no sabía qué palos ya llevaban su chapa.
+  etiquetadaEn      DateTime?
+  /// Cuántas veces se imprimió su etiqueta (ADR-436). >1 = reimpresión: la
+  /// chapa se perdió o se cambió, y eso se tiene que poder contar.
+  etiquetasImpresas Int       @default(0)
   /// La guía la declara pero no llegó al patio. NO se borra la fila: el
   /// documento dice que existe, y esconderla sería alterar el acta. El volumen
   /// que sí llegó se deriva sumando las recepcionadas.
@@ -5906,11 +5948,17 @@ model WoodEntryTroza {
   @@index([tenantId, woodEntryId])
   @@index([tenantId, codificacion])
   @@index([tenantId, loteAserrioId])
-  /// ⚠️ En la BASE hay además un índice ÚNICO PARCIAL sobre
-  /// (`tenantId`, `codigoPlanta`) WHERE codigoPlanta IS NOT NULL (migración 336).
-  /// Prisma no sabe expresar índices parciales, así que vive sólo en el SQL —
-  /// no lo borres creyendo que es drift. El guard app-level está en
-  /// `WoodEntriesDB.create` y `actualizarRecepcion`.
+  /// El código de planta es ÚNICO por negocio, garantizado por la base: índice
+  /// único parcial `WoodEntryTroza_tenant_codigoPlanta_unico` sobre
+  /// `("tenantId", upper(btrim("codigoPlanta"))) WHERE "codigoPlanta" IS NOT NULL
+  /// AND btrim("codigoPlanta") <> ''` (aplicado 2026-09-26, ADR-436; SQL en
+  /// `prisma/migrations/adr-436-codigo-planta-unico.sql`). Prisma no sabe
+  /// declarar un índice parcial ni sobre expresión: vive SÓLO en ese .sql — no
+  /// borrarlo por no verlo acá. Mira la tabla, no el estado del ingreso (una
+  /// pieza anulada conserva su número). El guard `guardCodigoPlantaUnico`
+  /// compara igual y existe para decir CUÁL pieza choca; si el índice frena
+  /// primero, `traducirChoqueCodigoPlanta` lo vuelve CODIGO_PLANTA_DUPLICADO.
+  /// Este btree no único sigue sirviendo la búsqueda exacta (`buscarTrozaPorCodigo`).
   @@index([tenantId, codigoPlanta])
   @@index([tenantId, fechaRecepcion])
   @@index([tenantId, consumidaEnId])
@@ -7179,6 +7227,14 @@ model ForestCuentaMov {
   /// De qué liquidación salió el movimiento (ADR-413). Texto sin FK, como
   /// `ctpEntryId`; siempre se lee junto con `tenantId`.
   liquidacionId String?
+  /// De qué guía es (ADR-437). El abono `madera` de una compra lleva su guía y
+  /// es ÚNICO entre los vivos con un índice PARCIAL en SQL
+  /// (`ForestCuentaMov_tenantId_gtf_madera_vivo_key`: `("tenantId","gtfNumber")
+  /// WHERE concepto = 'madera' AND gtfNumber IS NOT NULL AND deletedAt IS NULL`,
+  /// migración `20260926_guia_plata_adr437`), que Prisma no expresa — no
+  /// borrarlo por no verlo acá. Los pagos imputados a una guía también la
+  /// llevan y pueden ser varios.
+  gtfNumber     String?
 
   notas     String?
   createdBy String
@@ -7199,6 +7255,7 @@ model ForestCuentaMov {
   @@index([deletedAt])
   @@index([tenantId, liquidacionId])
   @@index([tenantId, contratoId])
+  @@index([tenantId, gtfNumber])
 }
 
 /// ══════════════════════════════════════════════════════════════════════════
@@ -8175,4 +8232,48 @@ model CampoPersonalizadoValor {
   /// Una respuesta por campo y por registro.
   @@unique([tenantId, campoId, registroId])
   @@index([tenantId, registroId])
+}
+
+// ─── Reportes diarios forestales (ADR-439) ───────────────
+/// Un reporte que sale solo, por correo y/o WhatsApp, a la hora que el dueño
+/// eligió (hora de Lima). Un negocio puede tener varios: «Cierre del día» a las
+/// 18:00 para el dueño, «Resumen de la semana» los sábados para el contador.
+/// El historial de envíos NO vive acá: cada intento queda en `NotificationLog`
+/// con `type = "reporte_diario:<id>:<canal>"`, salga o falle.
+model ForestReporteDiario {
+  id       String @id @default(cuid())
+  tenantId String
+
+  nombre String
+  activo Boolean @default(true)
+
+  /// «HH:MM» en hora de Lima, de media en media hora («18:00», «18:30»).
+  hora String  @default("18:00")
+  /// Días de la semana en que sale: 0 = domingo … 6 = sábado.
+  dias Int[]   @default([1, 2, 3, 4, 5, 6])
+
+  porCorreo   Boolean  @default(true)
+  porWhatsapp Boolean  @default(true)
+  correos     String[] @default([])
+  /// Sólo dígitos, como los entiende la API de WhatsApp («51987654321»).
+  telefonos   String[] @default([])
+
+  /// Qué bloques trae: produccion | tala | ingresos | despachos | patio |
+  /// plata | pendientes | plazos (`SECCIONES_REPORTE` en lib/forestal/reporte-diario.ts).
+  secciones String[] @default([])
+  /// De qué días habla: hoy | ayer | semana.
+  rango     String   @default("hoy")
+
+  /// El día de Lima («2026-09-26») del último envío PROGRAMADO. Es la llave de
+  /// idempotencia: el despachador lo reclama con un `updateMany` condicionado,
+  /// así dos disparos del cron el mismo día no mandan el reporte dos veces.
+  /// «Enviar ahora» no lo toca.
+  ultimaFechaEnviada String?
+
+  creadoPor String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([activo])
 }

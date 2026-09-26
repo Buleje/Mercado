@@ -22,6 +22,8 @@
  * Puro: recibe filas ya leídas, sin Prisma ni red.
  */
 
+import { esSinCosto } from "./madera-de-servicio";
+
 export type FilaIngresoProveedor = {
   woodEntryId: string;
   gtfNumber: string;
@@ -35,6 +37,8 @@ export type FilaIngresoProveedor = {
   status: string;
   /** S/ de la factura del proveedor. `null` = todavía no llegó (ADR-134). */
   costoTotal: number | null;
+  /** Madera de servicio (ADR-437 §1): ajena, no lleva factura. Opcional: sin él, comprada. */
+  maderaDeTercero?: boolean;
 };
 
 export type FilaConsumoProveedor = {
@@ -80,6 +84,8 @@ export interface GuiaDelProveedor {
   saldoM3: number;
   status: string;
   costoTotal: number | null;
+  /** Madera de servicio (ADR-437 §1): no cuenta como «sin factura». */
+  maderaDeTercero: boolean;
 }
 
 export interface EspecieDelProveedor {
@@ -115,7 +121,8 @@ export interface TrazabilidadProveedor {
     rendimientoPct: number | null;
     /** S/ de las facturas cargadas. `null` si NINGUNA llegó — nunca 0. */
     costoTotal: number | null;
-    /** Cuántas guías siguen sin factura: sin esto el costo total engaña. */
+    /** Cuántas guías siguen sin factura: sin esto el costo total engaña. No
+     *  cuenta la madera de servicio ni las anuladas/rechazadas (`esSinCosto`). */
     guiasSinCosto: number;
     /** m³ de las guías QUE SÍ tienen factura — el divisor honesto del S//m³. */
     volumenConCostoM3: number;
@@ -157,6 +164,7 @@ export function construirTrazabilidadProveedor(
         saldoM3: r4(Math.max(0, i.volumeM3 - consumidoM3)),
         status: i.status,
         costoTotal: i.costoTotal,
+        maderaDeTercero: i.maderaDeTercero === true,
       };
     })
     .sort((a, b) => b.entryDate.localeCompare(a.entryDate));
@@ -249,7 +257,10 @@ export function construirTrazabilidadProveedor(
       // pésimo" cuando en realidad todavía no se procesó nada.
       rendimientoPct: consumidoM3 > 0 ? Number(((producido / consumidoM3) * 100).toFixed(2)) : null,
       costoTotal,
-      guiasSinCosto: guias.length - conCosto.length,
+      /* La misma regla que Ingresos y la ficha del permiso (ADR-437 §1): la
+         madera de servicio no se compró y una anulada no cuenta — ninguna de
+         las dos es «factura pendiente». */
+      guiasSinCosto: guias.filter(esSinCosto).length,
       volumenConCostoM3,
     },
     huecos,

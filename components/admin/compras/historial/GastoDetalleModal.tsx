@@ -22,7 +22,7 @@ import HistorialDeCambios from "./HistorialDeCambios";
 import { SOURCE_META } from "./fuentes";
 import {
   CLASE_MOTIVO, ESTADO_PAGO_LABELS, ORIGEN_LABELS,
-  fmt, formatDate, type EstadoPago, type HistorialItem,
+  fmt, formatDate, textoDuplicado, type EstadoPago, type HistorialItem,
 } from "./shared";
 
 const ESTADO_VARIANTE: Record<EstadoPago, "success" | "warning" | "error" | "neutral"> = {
@@ -195,11 +195,7 @@ export default function GastoDetalleModal({
         )}
 
         {item.duplicaDe && (
-          <Nota icono={Copy}>
-            La misma salida ya está listada como{" "}
-            <span className="font-bold">{item.duplicaDe}</span>. Es un solo movimiento de plata
-            con dos rastros — no lo cuentes dos veces.
-          </Nota>
+          <Nota icono={Copy}>{textoDuplicado(item.duplicaDe).largo}</Nota>
         )}
 
         <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">

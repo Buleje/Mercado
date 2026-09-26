@@ -21,6 +21,11 @@ import { formatNumber } from "@/lib/format";
 interface PnlDespacho { id: string; lineNo: number; producto: string; gtfSalida: string | null; valorVenta: number | null; cogs: number | null; margen: number | null; margenPct: number | null; motivo: string }
 interface Pnl {
   despachos: number; completos: number; sinVenta: number; sinCosto: number;
+  /** ADR-437: despachos de madera ajena — no son incompletos. Opcional: respuestas de antes no lo traen. */
+  deServicio?: number;
+  /** Revisión 26-09: de los «sin costo», cuántos mezclan madera propia y de servicio, y cuánto venden sin margen. Opcionales: respuestas de antes no los traen. */
+  mixtos?: number;
+  ventasSinMargen?: number;
   ventasTotal: number; cogsTotal: number; margenTotal: number; margenPct: number | null; moneda: string;
   porProducto: { producto: string; ventas: number; cogs: number; margen: number; margenPct: number | null }[];
   porDespacho: PnlDespacho[];
@@ -29,7 +34,7 @@ interface Pnl {
 const CTP = "/api/admin/forestal/ctp";
 const money = (n: number | null, m = "PEN") => n == null ? "—" : `${m === "PEN" ? "S/" : m} ${formatNumber(n, 2)}`;
 const pct = (n: number | null) => n == null ? "—" : `${formatNumber(n, { max: 1 })}%`;
-const MOTIVO_LABEL: Record<string, string> = { sin_venta: "sin valor de venta", sin_costo: "sin costo (falta factura)", sin_atribucion: "sin origen atribuido", falta_costo: "falta factura de una guía", monedas_mezcladas: "monedas mezcladas", sin_cantidad: "sin cantidad" };
+const MOTIVO_LABEL: Record<string, string> = { sin_venta: "sin valor de venta", sin_costo: "sin costo (falta factura)", sin_atribucion: "sin origen atribuido", falta_costo: "falta factura de una guía", monedas_mezcladas: "monedas mezcladas", sin_cantidad: "sin cantidad", madera_de_servicio: "servicio (madera ajena, sin costo de madera)", mixto_servicio: "mezcla madera tuya y de servicio (incompleto)" };
 
 export default function CtpRentabilidadPanel({ period }: { period: CtpPeriod }) {
   const [pnl, setPnl] = useState<Pnl | null>(null);
@@ -138,14 +143,14 @@ export default function CtpRentabilidadPanel({ period }: { period: CtpPeriod }) 
 
       {/* Resumen — StatCard del DS (mismo patrón que Ingresos/Producción/Saldos) */}
       <div className="grid gap-3 sm:grid-cols-4">
-        <StatCard density="compact" icon={Coins} label="Ventas" value={money(pnl.ventasTotal, pnl.moneda)} subValue={`${pnl.completos} despachos costeados`} emphasis="neutral" />
+        <StatCard density="compact" icon={Coins} label="Ventas" value={money(pnl.ventasTotal, pnl.moneda)} subValue={`${pnl.completos} despachos costeados${pnl.deServicio ? ` · ${pnl.deServicio} de servicio` : ""}`} emphasis="neutral" />
         <StatCard density="compact" icon={Wallet} label="COGS" value={money(pnl.cogsTotal, pnl.moneda)} subValue="costo de lo vendido" emphasis="neutral" />
         <StatCard density="compact" icon={TrendingUp} label="Margen" value={money(pnl.margenTotal, pnl.moneda)} subValue={pct(pnl.margenPct)} emphasis={pnl.margenTotal < 0 ? "error" : "success"} />
-        <StatCard density="compact" icon={AlertCircle} label="Incompletos" value={`${pnl.sinVenta + pnl.sinCosto}`} subValue={`${pnl.sinVenta} sin venta · ${pnl.sinCosto} sin costo`} emphasis={pnl.sinVenta + pnl.sinCosto > 0 ? "warning" : "neutral"} />
+        <StatCard density="compact" icon={AlertCircle} label="Incompletos" value={`${pnl.sinVenta + pnl.sinCosto}`} subValue={`${pnl.sinVenta} sin venta · ${pnl.sinCosto} sin costo${pnl.mixtos ? ` (${pnl.mixtos} mixtos)` : ""}`} emphasis={pnl.sinVenta + pnl.sinCosto > 0 ? "warning" : "neutral"} />
       </div>
 
       {(pnl.sinVenta > 0 || pnl.sinCosto > 0) && (
-        <p className="rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] p-3 text-xs text-[var(--data-warning-700)]">El margen cubre solo los {pnl.completos} despachos con venta Y costo conocidos. {pnl.sinVenta} sin valor de venta y {pnl.sinCosto} sin costo (falta factura o atribución) NO se suman — no se inventa margen.</p>
+        <p className="rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] p-3 text-xs text-[var(--data-warning-700)]">El margen cubre solo los {pnl.completos} despachos con venta Y costo conocidos. {pnl.sinVenta} sin valor de venta y {pnl.sinCosto} sin costo (falta factura o atribución{pnl.mixtos ? `, o ${pnl.mixtos} que mezclan madera tuya y de servicio` : ""}) NO se suman — no se inventa margen.{pnl.ventasSinMargen ? ` Ventas registradas que quedan fuera del margen: ${money(pnl.ventasSinMargen, pnl.moneda)}.` : ""}</p>
       )}
 
       {/* Insight accionable: mejor y peor producto del período. */}

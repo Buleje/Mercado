@@ -30,8 +30,27 @@ import {
 import { Kicker, StatCard, WarningAlert } from "@buleje/design-system";
 import { fmtM3, fmtPct } from "@/lib/forestal/cubicacion-formato";
 import type { BalanceContrato, resumirBalance } from "@/lib/forestal/contratos";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import CtpContratoCuentas from "./CtpContratoCuentas";
 import { hayEgresosImputados, hayMovimiento, soles } from "./contratos-ui";
+
+/**
+ * La madera de servicio del permiso (ADR-437), en una línea: «8 guías de
+ * servicio (WASACO) · 135,59 m³ — no llevan costo». Entró bajo el permiso pero
+ * no se compró: se nombra para que el «sin precio» no la cuente y nadie la
+ * busque en la plata. `null` si no hay.
+ *
+ * El balance trae `documentos` (asientos); si además trae `guias` y `duenos`
+ * se dice por guía y con el dueño, que es como se habla en el patio.
+ */
+export function textoDeServicio(balance: BalanceContrato): string | null {
+  const s = balance.servicio as (BalanceContrato["servicio"] & { guias?: number; duenos?: string[] }) | undefined;
+  if (!s || s.documentos <= 0) return null;
+  const n = s.guias ?? s.documentos;
+  const que = s.guias != null ? (n === 1 ? "guía" : "guías") : n === 1 ? "ingreso" : "ingresos";
+  const duenos = s.duenos && s.duenos.length > 0 ? ` (${s.duenos.join(", ")})` : "";
+  return `${n} ${que} de servicio${duenos} · ${fmtM3(s.m3)} m³ — no llevan costo`;
+}
 
 /** Una cifra grande del encabezado: rótulo arriba, número en mono abajo. */
 function CifraHero({
@@ -111,6 +130,7 @@ export default function CtpContratoBalance({
 
   const m = balance.madera;
   const sinValorizar = m.sinValorizar ?? 0;
+  const servicio = textoDeServicio(balance);
   /** Ningún ingreso tiene precio: los egresos no incluyen la madera. */
   const todoSinPrecio = m.documentos > 0 && sinValorizar >= m.documentos;
   /** Sin egresos registrados no hay costo por m³ que mostrar: un «S/ 0 por m³»
@@ -164,6 +184,17 @@ export default function CtpContratoBalance({
               : "El costo por m³ está calculado sólo con los ingresos que sí tienen precio. El resto se carga en Ingresos → Opciones → Poner precio."
           }
         />
+      )}
+
+      {servicio && (
+        <p className="flex flex-wrap items-center gap-1.5 text-sm text-[var(--text-secondary)]">
+          <span className="font-bold text-[var(--text-primary)]">{servicio}</span>
+          <InfoTip
+            title="Madera de servicio"
+            what="Entró bajo este permiso pero no la compraste: la asierras para su dueño."
+            affects="No suma a los egresos ni al costo por m³; sí al rendimiento, porque la sierra la corta igual."
+          />
+        </p>
       )}
 
       {/* ── Volumen: lo que entró y lo que salió de la sierra ── */}

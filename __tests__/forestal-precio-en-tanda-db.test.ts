@@ -18,20 +18,50 @@ const H = vi.hoisted(() => {
     countPorUpdate: 1,
     locks: 0,
     auditorias: [] as { action: string; detail: string }[],
+    /* ADR-437: el abono `madera` de cada guía anotada, por gtf. */
+    abonos: new Map<string, { id: string; monto: number }>(),
+    abonosEscritos: [] as { id: string; monto: string }[],
+    locksGuia: [] as string[],
+    orden: [] as string[],
   };
   const tx = {
     $queryRaw: async () => {
       estado.locks++;
+      estado.orden.push("filas");
       return [];
+    },
+    $executeRaw: async (strings: TemplateStringsArray, ...vals: unknown[]) => {
+      if (strings.join("?").includes("pg_advisory_xact_lock")) {
+        estado.locksGuia.push(String(vals[0]));
+        estado.orden.push(`lock:${String(vals[0])}`);
+      }
+      return 1;
     },
     woodEntry: {
       findMany: async () => estado.filas,
       updateMany: async (args: { where: Record<string, unknown>; data: Record<string, unknown> }) => {
         estado.updates.push(args);
+        const f = estado.filas.find((x) => x.id === args.where.id);
+        if (f) f.costoTotal = String(args.data.costoTotal);
         return { count: estado.countPorUpdate };
       },
+      /* La suma que usa la re-sincronización: costo vivo en soles de la guía. */
+      aggregate: async (args: { where: { gtfNumber: string } }) => {
+        const suma = estado.filas
+          .filter((f) => f.gtfNumber === args.where.gtfNumber && f.costoTotal != null && (f.moneda ?? "PEN") === "PEN")
+          .reduce((t, f) => t + Number(f.costoTotal), 0);
+        return { _sum: { costoTotal: suma } };
+      },
+      count: async () => 0,
     },
     forestCtpConsumo: { findMany: async () => estado.congelados },
+    forestCuentaMov: {
+      findFirst: async (args: { where: { gtfNumber: string } }) => estado.abonos.get(args.where.gtfNumber) ?? null,
+      update: async (args: { where: { id: string }; data: { monto?: { toString(): string } } }) => {
+        if (args.data.monto) estado.abonosEscritos.push({ id: args.where.id, monto: args.data.monto.toString() });
+        return {};
+      },
+    },
   };
   return { estado, tx };
 });
@@ -84,6 +114,10 @@ beforeEach(() => {
   H.estado.countPorUpdate = 1;
   H.estado.locks = 0;
   H.estado.auditorias = [];
+  H.estado.abonos = new Map();
+  H.estado.abonosEscritos = [];
+  H.estado.locksGuia = [];
+  H.estado.orden = [];
   vi.mocked(invalidateByPrefix).mockClear();
 });
 
@@ -120,6 +154,22 @@ describe("WoodEntriesPrecioDB.ponerPrecio", () => {
       ["ctp_ingreso_costo", "GTF-a en tanda · sin costo → S/ 1695.60"],
       ["ctp_ingreso_costo", "GTF-b en tanda · sin costo → S/ 1509.12"],
     ]);
+  });
+
+  it("ADR-437: con «también las que ya tienen precio», el abono madera de la guía anotada pasa a valer el costo nuevo, en la misma tx", async () => {
+    H.estado.filas = [filaDb("a", "Mashonaste", "9.4200", { costoTotal: "1000.00" }), filaDb("b", "Ana Caspi", "8.3840")];
+    H.estado.abonos.set("GTF-a", { id: "mov-a", monto: 1000 });
+    const r = await WoodEntriesPrecioDB.ponerPrecio(
+      "tenant-qa",
+      input(180, { tambienConPrecio: true, vistos: [{ id: "a", antes: 1000 }, { id: "b", antes: null }] }),
+      "qaadmin",
+    );
+    expect(r.estado).toBe("hecho");
+    // El abono viejo (S/ 1000) no queda: vale lo que la guía vale ahora.
+    expect(H.estado.abonosEscritos).toEqual([{ id: "mov-a", monto: "1695.6" }]);
+    // Las guías se bloquean ANTES que las filas, en orden (mismo orden que el modal y la liquidación).
+    expect(H.estado.locksGuia).toEqual(["guia-plata:tenant-qa:GTF-a", "guia-plata:tenant-qa:GTF-b"]);
+    expect(H.estado.orden.indexOf("filas")).toBeGreaterThan(H.estado.orden.indexOf("lock:guia-plata:tenant-qa:GTF-b"));
   });
 
   it("un dedazo sin confirmar NO escribe nada y devuelve el aviso", async () => {

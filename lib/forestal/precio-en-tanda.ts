@@ -26,6 +26,7 @@ import { claveEspecie } from "./loth-constants";
 import { PT_POR_M3 } from "./cubicacion";
 import { RENDIMIENTO_META } from "./loctp-catalogos";
 import { formatNumber } from "@/lib/format";
+import { requiereCosto } from "./madera-de-servicio";
 
 /** Lo que cuenta en el balance del permiso: todo menos rechazado y anulado. */
 export const ESTADOS_VALORIZABLES = ["pendiente", "validado", "procesado"] as const;
@@ -53,6 +54,12 @@ export interface FilaParaPrecio {
   /** El código del permiso que ampara la guía, o `null` si no está atada. */
   permiso: string | null;
   bloqueo: BloqueoPrecio | null;
+  /**
+   * Madera de servicio (ADR-437 §1): no se compró, no lleva precio. No entra a
+   * los grupos ni a las referencias, y si llega a la tanda se salta con su
+   * motivo. Opcional: sin el dato, la fila se trata como comprada.
+   */
+  maderaDeTercero?: boolean | null;
 }
 
 // ─── Dinero exacto ──────────────────────────────────────────────────────────
@@ -168,7 +175,7 @@ export function agruparParaPrecio(filas: readonly FilaParaPrecio[]): GrupoProvee
   }
   const grupos = new Map<string, Acc>();
   for (const f of filas) {
-    if (!esValorizable(f.status)) continue;
+    if (!esValorizable(f.status) || !requiereCosto({ maderaDeTercero: f.maderaDeTercero })) continue;
     const clave = claveGrupo(f.providerName, f.speciesCommonName);
     const g =
       grupos.get(clave) ??
@@ -263,7 +270,8 @@ export type MotivoSalto =
   | "ya-tiene-precio"
   | "sin-cambio"
   | "cambio-mientras-tanto"
-  | "no-valorizable";
+  | "no-valorizable"
+  | "madera-de-servicio";
 
 export const TEXTO_MOTIVO: Record<MotivoSalto, string> = {
   "periodo-cerrado": "su mes está cerrado",
@@ -273,6 +281,7 @@ export const TEXTO_MOTIVO: Record<MotivoSalto, string> = {
   "sin-cambio": "ya tenía ese mismo precio",
   "cambio-mientras-tanto": "alguien la cambió mientras mirabas",
   "no-valorizable": "está anulada, rechazada o ya no existe",
+  "madera-de-servicio": "es madera de servicio: no se compró, no lleva precio",
 };
 
 export interface CambioDePrecio {
@@ -344,6 +353,7 @@ export function planDePrecio(
     if (vistos && !vistos.has(f.id)) continue;
     encontradas.add(f.id);
     if (!esValorizable(f.status)) { saltar(f, "no-valorizable"); continue; }
+    if (!requiereCosto({ maderaDeTercero: f.maderaDeTercero })) { saltar(f, "madera-de-servicio"); continue; }
     if (vistos && (vistos.get(f.id) ?? null) !== f.costoTotal) { saltar(f, "cambio-mientras-tanto"); continue; }
     if (f.costoTotal != null && !opts.tambienConPrecio) { saltar(f, "ya-tiene-precio"); continue; }
     if (f.bloqueo?.tipo === "periodo-cerrado") { saltar(f, "periodo-cerrado", f.bloqueo.periodo); continue; }
@@ -443,6 +453,7 @@ export function referenciasDesde(e: EntradasDeReferencia): ReferenciasDePrecio {
   const todos: number[] = [];
   for (const f of e.filas) {
     if (!esValorizable(f.status) || f.costoTotal == null || !(f.costoTotal > 0) || !(f.volumeM3 > 0)) continue;
+    if (!requiereCosto({ maderaDeTercero: f.maderaDeTercero })) continue;
     if ((f.moneda ?? "PEN") !== "PEN") continue;
     const porM3 = r2(f.costoTotal / f.volumeM3);
     const k = claveEspecie(f.speciesCommonName);

@@ -65,7 +65,42 @@ export class MovimientoDeLiquidacionError extends Error {
   }
 }
 
+/**
+ * El abono es la madera de una guía de compra (ADR-437 §4): se corrige desde la
+ * guía («¿Cuánto pagaste por esta guía?»). Editarlo acá dejaría a la guía
+ * diciendo un costo y a la cuenta otro por la misma madera.
+ */
+export class MaderaDeGuiaError extends Error {
+  constructor(readonly gtfNumber: string) {
+    super(`Este abono es la madera de la guía ${gtfNumber}: se corrige desde la guía, en «¿Cuánto pagaste?».`);
+    this.name = "MaderaDeGuiaError";
+  }
+}
+
+/**
+ * La guía ya tiene pagos imputados (ADR-437 §4/§6): darla de baja en la cuenta
+ * o pasarla a otra persona dejaría esos pagos colgando de una deuda que ya no
+ * existe. Se anula primero la liquidación que la pagó. → 409 `TIENE_PAGOS`.
+ */
+export class GuiaConPagosError extends Error {
+  readonly code = "TIENE_PAGOS";
+  constructor(
+    readonly gtfNumber: string,
+    readonly pagado: number,
+  ) {
+    super(
+      `La guía ${gtfNumber} ya tiene S/ ${pagado.toFixed(2)} pagados: anula primero la liquidación que la pagó.`,
+    );
+    this.name = "GuiaConPagosError";
+  }
+}
+
 type Row = Prisma.ForestCuentaMovGetPayload<Record<string, never>>;
+
+/** Tira `MaderaDeGuiaError` si el movimiento es el abono de madera de una guía. */
+function assertNoEsMaderaDeGuia(row: Pick<Row, "concepto" | "gtfNumber">): void {
+  if (row.concepto === "madera" && row.gtfNumber) throw new MaderaDeGuiaError(row.gtfNumber);
+}
 
 /** Tira `MovimientoDeLiquidacionError` si el movimiento salió de una liquidación. */
 async function assertNoEsDeLiquidacion(tenantId: string, row: Pick<Row, "liquidacionId" | "referencia">): Promise<void> {
@@ -103,6 +138,7 @@ function aMov(r: Row): MovimientoCuenta {
     notas: r.notas,
     ctpEntryId: r.ctpEntryId ?? null,
     liquidacionId: r.liquidacionId ?? null,
+    gtfNumber: r.gtfNumber ?? null,
   };
 }
 
@@ -232,6 +268,7 @@ export const ForestCuentaDB = {
       ? await prisma.forestCuentaMov.findFirst({ where: { id: input.id, tenantId, deletedAt: null } })
       : null;
     if (existente) {
+      assertNoEsMaderaDeGuia(existente);
       await assertNoEsCargoDeCorrida(tenantId, existente);
       await assertNoEsDeLiquidacion(tenantId, existente);
     }
@@ -257,6 +294,7 @@ export const ForestCuentaDB = {
     if (!tenantId) throw new Error("tenantId is required");
     const row = await prisma.forestCuentaMov.findFirst({ where: { id, tenantId, deletedAt: null } });
     if (!row) return false;
+    assertNoEsMaderaDeGuia(row);
     await assertNoEsCargoDeCorrida(tenantId, row);
     await assertNoEsDeLiquidacion(tenantId, row);
     await prisma.forestCuentaMov.update({ where: { id }, data: { deletedAt: new Date() } });
@@ -369,6 +407,55 @@ export const ForestCuentaDB = {
     return rows.map(aMov);
   },
 
+  /**
+   * Los movimientos vivos de una parte, SIN tope, fuera de una transacción.
+   * El estado de pago de una guía y el aviso «sin pagar» tienen que leer la
+   * MISMA cuenta: con el `take: 2000` de `listar` una parte con mucha historia
+   * daba otro estado en el modal que en la tira (revisión 2026-09-26).
+   */
+  async movimientosDeParte(tenantId: string, parteId: string): Promise<MovimientoCuenta[]> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const rows = await prisma.forestCuentaMov.findMany({
+      where: { tenantId, parteId, deletedAt: null },
+      orderBy: [{ fecha: "asc" }, { createdAt: "asc" }],
+    });
+    return rows.map(aMov);
+  },
+
+  // ── Locks de plata (ADR-437): guías primero, personas después ──
+
+  /**
+   * Advisory lock por GUÍA, en orden de número. Lo toman todos los que escriben
+   * la plata de una guía (costo, marca de servicio, abono `madera`, precio en
+   * tanda, mover un asiento de guía) y la liquidación que le imputa pagos.
+   *
+   * ORDEN FIJO en todo el sistema: primero las guías (ordenadas), después la
+   * persona (`bloquearPartesEnTx`). Antes, el modal tomaba la guía y la
+   * liquidación la persona, y ninguno esperaba al otro: una liquidación podía
+   * validar «≤ pendiente» contra un abono que otro estaba cambiando.
+   */
+  async bloquearGuiasEnTx(tx: Prisma.TransactionClient, tenantId: string, gtfNumbers: ReadonlyArray<string | null | undefined>): Promise<string[]> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const gtfs = [...new Set(gtfNumbers.map((g) => (g ?? "").trim()).filter(Boolean))].sort();
+    for (const gtf of gtfs) {
+      // `$executeRaw` con plantilla = parámetros ($1), nunca interpolación.
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`guia-plata:${tenantId}:${gtf}`}))`;
+    }
+    return gtfs;
+  },
+
+  /**
+   * Advisory lock por PERSONA de la cuenta forestal (la misma clave que usa la
+   * liquidación, ADR-413), en orden de id. Siempre DESPUÉS de las guías.
+   */
+  async bloquearPartesEnTx(tx: Prisma.TransactionClient, tenantId: string, parteIds: ReadonlyArray<string | null | undefined>): Promise<void> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const ids = [...new Set(parteIds.filter((p): p is string => Boolean(p)))].sort();
+    for (const id of ids) {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`liq:${tenantId}:parte:${id}`}))`;
+    }
+  },
+
   /** Saldo de una parte sumado en la base (cargos − abonos), sin tope de filas. */
   async saldoDeParteEnTx(tx: Prisma.TransactionClient, tenantId: string, parteId: string): Promise<number> {
     if (!tenantId) throw new Error("tenantId is required");
@@ -395,7 +482,9 @@ export const ForestCuentaDB = {
   async crearDeLiquidacionEnTx(
     tx: Prisma.TransactionClient,
     tenantId: string,
-    input: MovimientoInput & { liquidacionId: string },
+    /* `gtfNumber` (ADR-437 §6): la pata imputada a una guía la nombra, así el
+       estado de pago la aplica a ESA guía y no por antigüedad. */
+    input: MovimientoInput & { liquidacionId: string; gtfNumber?: string | null },
     usuario: string,
   ): Promise<MovimientoCuenta> {
     if (!tenantId) throw new Error("tenantId is required");
@@ -414,6 +503,7 @@ export const ForestCuentaDB = {
         referencia: input.referencia?.trim() || null,
         notas: input.notas?.trim() || null,
         liquidacionId: input.liquidacionId,
+        gtfNumber: input.gtfNumber?.trim() || null,
         createdBy: usuario || "unknown",
       },
     });
@@ -428,6 +518,161 @@ export const ForestCuentaDB = {
       data: { deletedAt: new Date() },
     });
     return count;
+  },
+
+  // ── La madera de una guía de compra (ADR-437 §4): primitivas dentro de la tx de otro ──
+
+  /**
+   * Lo que ya se pagó imputado a una guía: los cargos vivos que la nombran
+   * (`gtfNumber`), de la parte indicada o de cualquiera. Sumado en la base.
+   */
+  async pagosImputadosEnTx(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+    gtfNumber: string,
+    parteId?: string,
+  ): Promise<number> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const agg = await tx.forestCuentaMov.aggregate({
+      where: { tenantId, gtfNumber, tipo: "cargo", deletedAt: null, ...(parteId ? { parteId } : {}) },
+      _sum: { monto: true },
+    });
+    return Math.round(Number(agg._sum.monto ?? 0) * 100) / 100;
+  },
+
+  /**
+   * UN abono `madera` por guía (índice único parcial
+   * `ForestCuentaMov_tenantId_gtf_madera_vivo_key`). Si ya existe, se actualiza
+   * monto, fecha y permiso; si cambia la persona y la guía ya tiene pagos
+   * imputados a la anterior, `GuiaConPagosError` (esos pagos quedarían
+   * colgando). Sin auditoría suelta: la escribe quien guarda la guía, una vez.
+   */
+  async upsertMaderaDeGuiaEnTx(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+    input: {
+      gtfNumber: string;
+      parteId: string;
+      parteNombre: string;
+      monto: number;
+      /** Día de la guía (date-only, UTC). */
+      fecha: Date;
+      contratoId: string | null;
+    },
+    usuario: string,
+  ): Promise<{ movimiento: MovimientoCuenta; antes: { parteId: string; monto: number } | null }> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const gtf = input.gtfNumber.trim();
+    if (!gtf) throw new Error("La guía tiene que tener número para anotarse en la cuenta.");
+    if (!(input.monto > 0)) throw new Error("La madera de la guía tiene que valer más de cero para anotarse.");
+    const actual = await tx.forestCuentaMov.findFirst({
+      where: { tenantId, gtfNumber: gtf, concepto: "madera", deletedAt: null },
+    });
+    if (actual && actual.parteId !== input.parteId) {
+      const pagado = await this.pagosImputadosEnTx(tx, tenantId, gtf, actual.parteId);
+      if (pagado > 0) throw new GuiaConPagosError(gtf, pagado);
+    }
+    const datos = {
+      parteId: input.parteId,
+      parteNombre: input.parteNombre.trim(),
+      fecha: input.fecha,
+      tipo: "abono",
+      concepto: "madera",
+      monto: new Prisma.Decimal(input.monto.toFixed(2)),
+      moneda: "PEN",
+      referencia: gtf,
+      gtfNumber: gtf,
+      contratoId: input.contratoId,
+      notas: `Madera de la guía ${gtf}`,
+    };
+    const row = actual
+      ? await tx.forestCuentaMov.update({ where: { id: actual.id }, data: datos })
+      : await tx.forestCuentaMov.create({ data: { tenantId, ...datos, createdBy: usuario || "unknown" } });
+    return {
+      movimiento: aMov(row),
+      antes: actual ? { parteId: actual.parteId, monto: Number(actual.monto) } : null,
+    };
+  },
+
+  /**
+   * Baja lógica del abono `madera` de una guía (anulada, rechazada, pasada a
+   * servicio o sin anotar). Con `exigirSinPagos`, si la guía tiene pagos
+   * imputados tira `GuiaConPagosError` y no toca nada. Devuelve cuántos bajó (0 o 1).
+   */
+  async bajaMaderaDeGuiaEnTx(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+    gtfNumber: string,
+    opts: { exigirSinPagos: boolean },
+  ): Promise<number> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const gtf = gtfNumber.trim();
+    if (!gtf) return 0;
+    if (opts.exigirSinPagos) {
+      const pagado = await this.pagosImputadosEnTx(tx, tenantId, gtf);
+      if (pagado > 0) throw new GuiaConPagosError(gtf, pagado);
+    }
+    const { count } = await tx.forestCuentaMov.updateMany({
+      where: { tenantId, gtfNumber: gtf, concepto: "madera", deletedAt: null },
+      data: { deletedAt: new Date() },
+    });
+    return count;
+  },
+
+  /**
+   * Re-sincroniza el abono `madera` con lo que QUEDA vivo de la guía, después
+   * de anular/rechazar/borrar uno de sus asientos, cambiarle el costo o
+   * moverlo de guía: si quedan asientos con costo, el abono pasa a valer su
+   * suma; si no queda ninguno, se da de baja. Sólo toca guías que YA estaban
+   * anotadas. Devuelve lo que hizo.
+   *
+   * SÓLO SOLES (revisión 2026-09-26). La cuenta corriente es en soles y el
+   * forestal no tiene tipo de cambio guardado en ningún lado: convertir un
+   * costo en USD sería inventar la tasa y presentar un derivado como la deuda.
+   * Un asiento con costo en otra moneda NO entra a la suma y se avisa en el log;
+   * las puertas que escriben costo (`setCosto`) ya no dejan poner otra moneda
+   * en una guía anotada, así que esto es la defensa del dato viejo.
+   */
+  async resincronizarMaderaDeGuiaEnTx(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+    gtfNumber: string,
+  ): Promise<"sin_cuenta" | "actualizada" | "baja"> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const gtf = gtfNumber.trim();
+    const mov = await tx.forestCuentaMov.findFirst({
+      where: { tenantId, gtfNumber: gtf, concepto: "madera", deletedAt: null },
+    });
+    if (!mov) return "sin_cuenta";
+    const vivos = {
+      tenantId,
+      gtfNumber: gtf,
+      deletedAt: null,
+      status: { notIn: ["anulado", "rechazado"] },
+      maderaDeTercero: false,
+      costoTotal: { not: null },
+    } satisfies Prisma.WoodEntryWhereInput;
+    const agg = await tx.woodEntry.aggregate({
+      where: { ...vivos, OR: [{ moneda: "PEN" }, { moneda: null }] },
+      _sum: { costoTotal: true },
+    });
+    const otraMoneda = await tx.woodEntry.count({
+      where: { ...vivos, NOT: { OR: [{ moneda: "PEN" }, { moneda: null }] } },
+    });
+    if (otraMoneda > 0) {
+      logger.warn("[forest-cuenta] asientos con costo en otra moneda fuera del abono de la guía", {
+        tenantId,
+        gtfNumber: gtf,
+        asientos: otraMoneda,
+      });
+    }
+    const suma = Math.round(Number(agg._sum.costoTotal ?? 0) * 100) / 100;
+    if (suma > 0) {
+      await tx.forestCuentaMov.update({ where: { id: mov.id }, data: { monto: new Prisma.Decimal(suma.toFixed(2)) } });
+      return "actualizada";
+    }
+    await tx.forestCuentaMov.update({ where: { id: mov.id }, data: { deletedAt: new Date() } });
+    return "baja";
   },
 
   invalidar(tenantId: string): void {

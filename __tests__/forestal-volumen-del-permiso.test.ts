@@ -19,6 +19,7 @@ import {
   type EntradaVolumenDelPermiso,
   type GuiaEntrada,
 } from "@/lib/forestal/volumen-del-permiso";
+import { resumirPrecio } from "@/lib/forestal/puesta-al-dia-del-permiso";
 
 const PERMISO = "ctr_este";
 const OTRO = "ctr_otro";
@@ -559,13 +560,32 @@ describe("armarVolumenDelPermiso — fotos de la guía", () => {
     const v = armarVolumenDelPermiso(
       entrada({
         guias: [
-          guia("g1", { fotos: ["https://x.supabase.co/a.jpg", "https://x.supabase.co/b.jpg"] }),
+          guia("g1", { fotos: [{ url: "https://x.supabase.co/a.jpg" }, { url: "priv:t1/forestal-carga/b.webp", sellada: true }] }),
           guia("g2", { fotos: [] }),
         ],
       }),
     );
     const porId = new Map(v.guias.map((g) => [g.id, g]));
-    expect(porId.get("g1")?.fotos).toEqual(["https://x.supabase.co/a.jpg", "https://x.supabase.co/b.jpg"]);
+    expect(porId.get("g1")?.fotos).toEqual([{ url: "https://x.supabase.co/a.jpg" }, { url: "priv:t1/forestal-carga/b.webp", sellada: true }]);
     expect(porId.get("g2")?.fotos).toEqual([]);
+  });
+});
+
+describe("armarVolumenDelPermiso — madera de servicio (ADR-437 §1)", () => {
+  it("la marca llega a la fila y la guía de servicio no cuenta «sin precio» en la ficha", () => {
+    const v = armarVolumenDelPermiso(
+      entrada({
+        guias: [
+          guia("wasaco", { m3: 20, costo: null, maderaDeTercero: true }),
+          guia("comprada", { m3: 5, costo: null }),
+          guia("pagada", { m3: 3, costo: 900 }),
+        ],
+      }),
+    );
+    const porId = new Map(v.guias.map((g) => [g.id, g]));
+    expect(porId.get("wasaco")?.maderaDeTercero).toBe(true);
+    // Sin la marca en la entrada, la fila sale comprada: nunca `undefined`.
+    expect(porId.get("comprada")?.maderaDeTercero).toBe(false);
+    expect(resumirPrecio(v.guias)).toEqual({ sinPrecio: 1, m3SinPrecio: 5, filas: 2 });
   });
 });

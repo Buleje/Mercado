@@ -146,6 +146,23 @@ describe("costos", () => {
     expect(costoPorM3Proveedor(t.balance)).toBe(300);
     expect(t.balance.guiasSinCosto).toBe(1);
   });
+
+  it("la madera de servicio y la anulada no son «sin factura» (ADR-437 §1)", () => {
+    const t = construirTrazabilidadProveedor(
+      [
+        ingreso({ woodEntryId: "w1", costoTotal: null, maderaDeTercero: true }),
+        ingreso({ woodEntryId: "w2", costoTotal: null, status: "anulado" }),
+        ingreso({ woodEntryId: "w3", costoTotal: null }),
+      ],
+      [],
+      [],
+      [],
+    );
+    expect(t.guias.find((g) => g.woodEntryId === "w1")?.maderaDeTercero).toBe(true);
+    expect(t.guias.find((g) => g.woodEntryId === "w3")?.maderaDeTercero).toBe(false);
+    expect(t.balance.guiasSinCosto).toBe(1);
+    expect(t.balance.costoTotal).toBeNull();
+  });
 });
 
 describe("agrupaciones", () => {

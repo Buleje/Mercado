@@ -70,7 +70,7 @@ interface CostoDTO {
   costoTotal: number | null;
   costoUnitario: number | null;
   moneda: string | null;
-  motivo: "ok" | "sin_consumos" | "falta_factura" | "monedas_mezcladas" | "sin_produccion";
+  motivo: "ok" | "sin_consumos" | "falta_factura" | "monedas_mezcladas" | "sin_produccion" | "madera_de_servicio" | "mixto_servicio";
   congelado: boolean;
   atribuidoM3: number;
   sinAtribuirM3: number;
@@ -84,6 +84,8 @@ const COSTO_MOTIVO: Record<Exclude<CostoDTO["motivo"], "ok">, string> = {
   falta_factura: "Alguna guía consumida no tiene factura todavía. Sin factura el costo es desconocido, no 0.",
   monedas_mezcladas: "Las guías consumidas mezclan monedas distintas — no se puede sumar un total honesto.",
   sin_produccion: "La línea no declara cantidad producida.",
+  madera_de_servicio: "La madera es de un tercero (servicio de aserrío): no se compró, así que no tiene costo de materia prima.",
+  mixto_servicio: "La corrida mezcló madera tuya (con factura) y madera de un tercero: el producto no se separa por dueño, así que no hay un costo por unidad honesto. Lo que salga de acá queda incompleto en la rentabilidad.",
 };
 
 const n4 = (v: number) => v.toFixed(4);
@@ -349,8 +351,14 @@ export default function CtpProduccionDetalleModal({ entry, onClose }: { entry: P
                     variant="secondary"
                     className="w-full"
                     onClick={() => setConfirmFreeze(true)}
-                    disabled={costo.motivo === "falta_factura"}
-                    title={costo.motivo === "falta_factura" ? "Falta al menos una factura: no hay costo que congelar" : undefined}
+                    disabled={costo.motivo === "falta_factura" || costo.motivo === "madera_de_servicio"}
+                    title={
+                      costo.motivo === "falta_factura"
+                        ? "Falta al menos una factura: no hay costo que congelar"
+                        : costo.motivo === "madera_de_servicio"
+                          ? "Madera de un tercero: no tiene costo que congelar"
+                          : undefined
+                    }
                   >
                     <Snowflake className="h-4 w-4" /> Congelar costo (cierre de período)
                   </Btn>

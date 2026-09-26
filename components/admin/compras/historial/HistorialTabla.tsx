@@ -16,7 +16,7 @@ import StatusBadge from "@/components/admin/shared/StatusBadge";
 import { cn } from "@/lib/utils";
 import { SOURCE_META } from "./fuentes";
 import {
-  ESTADO_PAGO_LABELS, fmt, formatDate,
+  ESTADO_PAGO_LABELS, fmt, formatDate, textoDuplicado,
   type EstadoPago, type HistorialItem, type Orden,
 } from "./shared";
 
@@ -179,7 +179,7 @@ export default function HistorialTabla({
                           monto: ahí no entra y se montaba sobre el botón. */}
                       {item.duplicaDe && (
                         <span className="block truncate text-sm font-semibold text-[var(--text-secondary)]">
-                          Ya listado como {item.duplicaDe}
+                          {textoDuplicado(item.duplicaDe).corto}
                         </span>
                       )}
                     </td>

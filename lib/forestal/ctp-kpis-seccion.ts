@@ -39,24 +39,47 @@ export interface KpisSeccion {
   piezas: number;
 }
 
+/** Una corrida como la necesita el rendimiento: estructural, sirve la fila de Prisma o la del JSON. */
+export interface LineaConRendimiento {
+  status?: string | null;
+  rendimientoPct?: unknown;
+  volumeInputM3?: unknown;
+}
+
+/**
+ * El rendimiento del libro: PONDERADO por volumen consumido, sólo sobre
+ * corridas registradas con entrada (`volumeInputM3 > 0`) y rendimiento
+ * declarado. La media simple hacía pesar igual una línea de 0.5 m³ que una de
+ * 50 m³, y el promedio de planta no es eso.
+ *
+ * Una corrida SIN entrada no entra ni al numerador ni al divisor: sumar lo que
+ * produjo sin sumar de qué madera salió infla el rendimiento (el reporte
+ * diario decía 41,6 % donde el libro dice 38,5 %; una semana, 135 %). Es la
+ * MISMA función para la cabecera de Producción y para el reporte diario.
+ *
+ * `pct` = `null` si no hay ninguna corrida con entrada: «sin dato», no 0 %.
+ */
+export function rendimientoPonderado(lineas: readonly LineaConRendimiento[]): { pct: number | null; entradaM3: number } {
+  let pesoTotal = 0;
+  let sumaPonderada = 0;
+  for (const e of lineas) {
+    if (e.status != null && e.status !== "registrado") continue;
+    const rend = Number(e.rendimientoPct ?? 0);
+    const vol = Number(e.volumeInputM3 ?? 0);
+    if (rend > 0 && vol > 0) {
+      sumaPonderada += rend * vol;
+      pesoTotal += vol;
+    }
+  }
+  return { pct: pesoTotal > 0 ? sumaPonderada / pesoTotal : null, entradaM3: pesoTotal };
+}
+
 export function calcularKpisSeccion(entriesDeKpis: CtpEntry[], section: CtpSection): KpisSeccion {
 
     const reg = entriesDeKpis.filter((e) => e.status === "registrado");
     const totalQty = reg.reduce((a, e) => a + Number(e.quantity ?? 0), 0);
     const consumido = reg.reduce((a, e) => a + Number(e.volumeInputM3 ?? 0), 0);
-    // Rendimiento PONDERADO por volumen consumido: la media simple hacía pesar
-    // igual una línea de 0.5 m³ que una de 50 m³, y el promedio de planta no es eso.
-    let pesoTotal = 0;
-    let sumaPonderada = 0;
-    for (const e of reg) {
-      const rend = Number(e.rendimientoPct ?? 0);
-      const vol = Number(e.volumeInputM3 ?? 0);
-      if (rend > 0 && vol > 0) {
-        sumaPonderada += rend * vol;
-        pesoTotal += vol;
-      }
-    }
-    const avgRend = pesoTotal > 0 ? sumaPonderada / pesoTotal : 0;
+    const avgRend = rendimientoPonderado(reg).pct ?? 0;
 
     /**
      * Las corridas ABIERTAS (ADR-340): consumieron y no dijeron qué salió.

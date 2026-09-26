@@ -16,11 +16,14 @@ import {
   type MetodoPago,
   type ResultadoMovimiento,
 } from "@/lib/adelantos/movimiento-caja";
+import { normalizarFotos, type FotoCarga } from "@/lib/forestal/fotos-carga";
+import { FotoNoValidaError, resolverFotosEntrantes } from "@/lib/forestal/fotos-carga-firma";
 import {
   clasificarAdelantos,
   descripcionEntrega,
   detalleDeLiquidacion,
   fechaDeudaViva,
+  guiasPendientesDe,
   huellaDe,
   motivoNoSePuedeAnular,
   notasMovimiento,
@@ -92,6 +95,14 @@ export class NoEsLaUltimaError extends Error {
   }
 }
 
+/** Una foto del comprobante que no se puede guardar (ADR-437 §6). La ruta la vuelve 422. */
+export class ComprobanteNoValidoError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ComprobanteNoValidoError";
+  }
+}
+
 export class LiquidacionYaAnuladaError extends Error {
   constructor(readonly codigo: string) {
     super(`La liquidación ${codigo} ya está anulada.`);
@@ -135,7 +146,47 @@ function aDTO(r: Row): LiquidacionDTO {
     anulada: r.anuladaAt
       ? { en: r.anuladaAt.toISOString(), por: r.anuladaPor ?? "", motivo: r.motivoAnulacion ?? "", reversionCajaId: r.cajaReversionId }
       : null,
+    comprobantes: normalizarFotos(r.comprobantes),
   };
+}
+
+/**
+ * Las fotos del comprobante que se guardan (ADR-437 §6): privadas de ESTE
+ * negocio, con la firma HMAC de cuando se subieron (`resolverFotosEntrantes`,
+ * la misma puerta que las fotos de la carga) y que no sean el comprobante de
+ * OTRA liquidación viva — un comprobante prueba un solo pago. Una anulada lo
+ * libera: rehacer el pago con la misma foto es lo esperable.
+ */
+async function comprobantesValidos(tx: Tx, tenantId: string, entrantes: readonly FotoCarga[]): Promise<FotoCarga[]> {
+  if (entrantes.length === 0) return [];
+  /* Un lock por negocio ANTES de mirar si la foto ya es de otra liquidación: el
+     lock de persona no alcanza, porque dos pagos a DOS personas con la misma
+     foto pasaban los dos el chequeo (ninguno veía al otro sin commitear). Se
+     suelta al terminar la transacción, con la cabecera ya escrita. */
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`liq:${tenantId}:comprobantes`}))`;
+  const urls = entrantes.map((f) => f.url);
+  const otras = await tx.$queryRaw<{ codigo: string; url: string }[]>`
+    SELECT l."codigo", f->>'url' AS url
+      FROM "LiquidacionCuenta" l, jsonb_array_elements(l."comprobantes") f
+     WHERE l."tenantId" = ${tenantId}
+       AND l."anuladaAt" IS NULL
+       AND jsonb_typeof(l."comprobantes") = 'array'
+       AND f->>'url' = ANY(${urls})
+  `;
+  if (otras.length > 0) {
+    const n = urls.indexOf(otras[0].url) + 1;
+    throw new ComprobanteNoValidoError(
+      `La foto ${n} ya es el comprobante de ${otras[0].codigo}: un comprobante prueba un solo pago. Saca una nueva.`,
+    );
+  }
+  try {
+    /* Propósito `comprobante`: una foto firmada como evidencia de la CARGA no
+       vale como comprobante de un pago (la firma lleva el propósito). */
+    return resolverFotosEntrantes(tenantId, entrantes, [], new Map(), "comprobante");
+  } catch (e) {
+    if (e instanceof FotoNoValidaError) throw new ComprobanteNoValidoError(e.message);
+    throw e;
+  }
 }
 
 /**
@@ -206,7 +257,10 @@ async function leerPartidas(
        sola, y dos consultas en paralelo sobre ella no ganan nada. */
     const movimientos = await ForestCuentaDB.movimientosDeParteEnTx(tx, tenantId, parteId);
     const saldo = await ForestCuentaDB.saldoDeParteEnTx(tx, tenantId, parteId);
-    forestal = { saldo, desde: fechaDeudaViva(movimientos), movimientos };
+    /* Lo pendiente de cada guía sale de los MISMOS movimientos, leídos dentro
+       del lock cuando se crea (ADR-437 §6): lo que se valida es lo que se escribe. */
+    const guias = guiasPendientesDe(movimientos);
+    forestal = { saldo, desde: fechaDeudaViva(movimientos), movimientos, ...(guias.length > 0 ? { guias } : {}) };
   }
 
   return {
@@ -227,14 +281,16 @@ async function leerPartidas(
   };
 }
 
-/** Las claves de los locks de persona, siempre en el mismo orden. */
+/**
+ * Las claves de los locks de persona, siempre en el mismo orden. Van DESPUÉS
+ * de los de guía (`ForestCuentaDB.bloquearGuiasEnTx`); la clave de la parte es
+ * la de `ForestCuentaDB.bloquearPartesEnTx`, la que toma el modal de la guía.
+ */
 async function bloquearPersona(tx: Tx, tenantId: string, ids: { beneficiarioId: string | null; parteId: string | null }) {
   if (ids.beneficiarioId) {
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`liq:${tenantId}:benef:${ids.beneficiarioId}`}))`;
   }
-  if (ids.parteId) {
-    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`liq:${tenantId}:parte:${ids.parteId}`}))`;
-  }
+  await ForestCuentaDB.bloquearPartesEnTx(tx, tenantId, [ids.parteId]);
 }
 
 /** La entrega se fecha con la hora real si es de hoy, y al mediodía de Lima si no. */
@@ -274,10 +330,22 @@ export const LiquidacionCuentaDB = {
         );
         if (tocaForestal && parteAjena) throw new SinVinculoError();
         if (tocaForestal && !forestalHabilitada) throw new CuentaForestalDeshabilitadaError();
+        /* Primero las guías de la persona (ordenadas), después la persona: el
+           MISMO orden que el modal de la guía (`GuiaPlataDB`), así un costo o
+           una marca de servicio no cambia el abono de una guía mientras acá se
+           valida «≤ pendiente» contra él (revisión 2026-09-26). */
+        await ForestCuentaDB.bloquearGuiasEnTx(tx, tenantId, [
+          ...(previa.partidas.forestal?.movimientos ?? [])
+            .filter((m) => m.tipo === "abono" && m.concepto === "madera")
+            .map((m) => m.gtfNumber),
+          ...(input.imputacion?.guias ?? []).map((g) => g.gtfNumber),
+        ]);
         await bloquearPersona(tx, tenantId, previa.partidas.persona);
 
         const ya = await tx.liquidacionCuenta.findFirst({ where: { tenantId, idempotencyKey: input.idempotencyKey } });
         if (ya) return { repetida: true as const, row: ya };
+        /* Después de la idempotencia: el reintento del mismo acto trae las mismas fotos. */
+        const comprobantes = await comprobantesValidos(tx, tenantId, input.comprobantes ?? []);
 
         if (previa.partidas.persona.beneficiarioId) {
           await tx.$queryRaw`
@@ -335,6 +403,7 @@ export const LiquidacionCuentaDB = {
             cajaResultado: pago?.moverCaja ? null : "no_mover",
             detalle: {} as Prisma.InputJsonValue,
             notas: input.notas?.trim() || null,
+            ...(comprobantes.length > 0 ? { comprobantes: comprobantes as unknown as Prisma.InputJsonValue } : {}),
             createdBy: usuario || "unknown",
           },
         });
@@ -369,6 +438,9 @@ export const LiquidacionCuentaDB = {
               referencia: codigo,
               notas: notasMovimiento(m, codigo),
               liquidacionId: cab.id,
+              /* La pata imputada a una guía lleva su número (ADR-437 §6): así
+                 la guía sabe qué la pagó. Se escribe en el mismo `create`. */
+              gtfNumber: m.gtfNumber ?? null,
             },
             usuario,
           );
@@ -416,6 +488,13 @@ export const LiquidacionCuentaDB = {
     const partes = [
       plan.compensado > 0 ? `cruce S/ ${plan.compensado.toFixed(2)}` : null,
       plan.pago ? `pago ${plan.pago.direccion} S/ ${plan.pago.monto.toFixed(2)} (${plan.pago.metodo})` : null,
+      plan.movimientos.some((m) => m.gtfNumber)
+        ? `guías: ${plan.movimientos
+            .filter((m) => m.gtfNumber)
+            .map((m) => `${m.gtfNumber} S/ ${m.monto.toFixed(2)} (${m.paso})`)
+            .join(", ")}`
+        : null,
+      (input.comprobantes?.length ?? 0) > 0 ? `${input.comprobantes?.length} foto(s) de comprobante` : null,
       `${plan.entregas.length} entrega(s) en adelantos · ${plan.movimientos.length} movimiento(s) en la cuenta forestal`,
       `caja: ${row.cajaResultado ?? "sin datos"}`,
     ].filter(Boolean);

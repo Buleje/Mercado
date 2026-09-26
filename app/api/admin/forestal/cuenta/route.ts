@@ -10,9 +10,10 @@ import {
   ForestCuentaDB,
   FleteYaCargadoError,
   GuiaYaAnotadaError,
+  MaderaDeGuiaError,
   MovimientoDeLiquidacionError,
 } from "@/lib/db/forest-cuenta.db";
-import { movimientoInputSchema } from "@/lib/forestal/cuenta-corriente";
+import { CONCEPTOS_MANUALES, movimientoInputSchema } from "@/lib/forestal/cuenta-corriente";
 
 /**
  * /api/admin/forestal/cuenta — cuenta corriente con las partes (ADR-322).
@@ -48,13 +49,24 @@ export const GET = withApiHandler("forestal-cuenta-get", async (req: NextRequest
   }
 });
 
-/* Un cruce con adelantos (ADR-413) sólo lo escribe una liquidación: anotado a
-   mano le falta la otra pata. */
+/* Sólo los conceptos que se anotan a mano (ADR-437 §5):
+   · `compensacion` — un cruce con adelantos (ADR-413) lo escribe una
+     liquidación: anotado a mano le falta la otra pata.
+   · `adelanto` — la plata adelantada vive en Adelantos; anotada también acá
+     se contaría dos veces en «Cuenta por persona». */
+const MOTIVO_NO_MANUAL: Partial<Record<string, string>> = {
+  compensacion: "Un cruce con adelantos se hace desde «Liquidar cuenta»: anotado a mano le falta la otra pata.",
+  adelanto: "Un adelanto se anota en Adelantos: anotado también acá se contaría dos veces en la cuenta de la persona.",
+};
 const postSchema = movimientoInputSchema
   .extend({ id: z.string().trim().max(40).optional() })
-  .refine((d) => d.concepto !== "compensacion", {
-    message: "Un cruce con adelantos se hace desde «Liquidar cuenta»: anotado a mano le falta la otra pata.",
-    path: ["concepto"],
+  .superRefine((d, ctx) => {
+    if (CONCEPTOS_MANUALES.includes(d.concepto)) return;
+    ctx.addIssue({
+      code: "custom",
+      message: MOTIVO_NO_MANUAL[d.concepto] ?? "Ese concepto no se anota a mano.",
+      path: ["concepto"],
+    });
   });
 
 /** La venta de una guía: dos movimientos en un acto, idempotente por N° de guía. */
@@ -104,9 +116,13 @@ export const POST = withApiHandler("forestal-cuenta-post", async (req: NextReque
 
   const parsed = postSchema.safeParse(body);
   if (!parsed.success) {
+    /* `message` = la primera causa en palabras: la pantalla muestra `message` y,
+       sin él, sólo «No se pudo guardar el movimiento». 400: el cuerpo no es un
+       movimiento que se pueda anotar (mismo código que `invalid_json`). */
+    const issues = parsed.error.issues.map((i) => ({ path: i.path.join("."), message: i.message }));
     return NextResponse.json(
-      { error: "validation_error", issues: parsed.error.issues.map((i) => ({ path: i.path.join("."), message: i.message })) },
-      { status: 422 },
+      { error: "validation_error", message: issues[0]?.message ?? "Datos inválidos.", issues },
+      { status: 400 },
     );
   }
   try {
@@ -123,6 +139,10 @@ export const POST = withApiHandler("forestal-cuenta-post", async (req: NextReque
     /* Una pata de una liquidación (ADR-413) se corrige anulando la liquidación. */
     if (err instanceof MovimientoDeLiquidacionError) {
       return NextResponse.json({ error: "movimiento_de_liquidacion", message: err.message }, { status: 409 });
+    }
+    /* El abono de madera de una guía (ADR-437 §4) se corrige desde la guía. */
+    if (err instanceof MaderaDeGuiaError) {
+      return NextResponse.json({ error: "madera_de_guia", message: err.message, gtfNumber: err.gtfNumber }, { status: 409 });
     }
     if (err instanceof Error && err.message.startsWith("La fecha")) {
       return NextResponse.json({ error: "fecha_invalida", message: err.message }, { status: 422 });
@@ -151,6 +171,9 @@ export const DELETE = withApiHandler("forestal-cuenta-delete", async (req: NextR
     }
     if (err instanceof MovimientoDeLiquidacionError) {
       return NextResponse.json({ error: "movimiento_de_liquidacion", message: err.message }, { status: 409 });
+    }
+    if (err instanceof MaderaDeGuiaError) {
+      return NextResponse.json({ error: "madera_de_guia", message: err.message, gtfNumber: err.gtfNumber }, { status: 409 });
     }
     logger.error("[cuenta.DELETE] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });

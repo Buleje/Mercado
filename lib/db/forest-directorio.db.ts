@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
 import { logger } from "@/lib/logger";
-import { auditCtp } from "@/lib/forestal/ctp-audit";
+import { auditCtp, auditCtpEsperando } from "@/lib/forestal/ctp-audit";
 import { CONSUMO_VIGENTE } from "@/lib/db/forest-ctp-consumo.db";
 import type {
   FilaConsumoProveedor,
@@ -656,6 +656,7 @@ export const ForestDirectorioDB = {
         volumeM3: true,
         status: true,
         costoTotal: true,
+        maderaDeTercero: true,
       },
       orderBy: { entryDate: "desc" },
       take: 1000,
@@ -673,6 +674,8 @@ export const ForestDirectorioDB = {
       volumeM3: Number(e.volumeM3),
       status: e.status,
       costoTotal: e.costoTotal == null ? null : Number(e.costoTotal),
+      /* ADR-437 §1: la de servicio no cuenta «sin factura» en la trazabilidad. */
+      maderaDeTercero: e.maderaDeTercero,
     }));
     if (!ingresos.length) return { ingresos, consumos: [], corridas: [], despachos: [], nombresEncontrados };
 
@@ -744,6 +747,74 @@ export const ForestDirectorioDB = {
     }));
 
     return { ingresos, consumos, corridas, despachos, nombresEncontrados };
+  },
+
+  /**
+   * Ata una guía de COMPRA a la ficha de quien la vendió (`WoodEntry.
+   * proveedorParteId`, ADR-437 §2) sin tocar la plata: ni costo ni cuenta. Es
+   * el enlace que el modal «Plata de la guía» propone primero; sirve para las
+   * guías que ya estaban en el libro cuando la ficha nació.
+   *
+   * No pisa: si un asiento vivo ya apunta a OTRA ficha, frena (cambiar de
+   * proveedor se hace desde el modal, que mueve la cuenta con él). Una guía de
+   * servicio no tiene a quién pagarle: frena también. La condición va en el
+   * WHERE del `updateMany` —no en un `if` antes— para que dos llamadas a la vez
+   * no se pisen. Nunca se decide por `providerDocument` (RUC de la ATFFS).
+   */
+  async enlazarProveedorDeGuia(
+    tenantId: string,
+    input: { gtfNumber: string; parteId: string },
+    usuario: string,
+  ): Promise<{ enlazados: number; yaEstaban: number }> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const gtf = input.gtfNumber.trim();
+    if (!gtf) throw new Error("gtfNumber is required");
+    const parte = await prisma.forestParty.findFirst({
+      where: { id: input.parteId, tenantId, deletedAt: null },
+      select: { id: true, nombre: true },
+    });
+    if (!parte) throw new Error("Esa ficha no está en el directorio de este negocio");
+
+    const vivos = {
+      tenantId,
+      gtfNumber: gtf,
+      deletedAt: null,
+      status: { notIn: ["anulado", "rechazado"] },
+    } satisfies Prisma.WoodEntryWhereInput;
+    const asientos = await prisma.woodEntry.findMany({
+      where: vivos,
+      select: { id: true, maderaDeTercero: true, proveedorParteId: true },
+    });
+    if (asientos.length === 0) throw new Error(`La guía ${gtf} no tiene asientos vivos`);
+    if (asientos.some((a) => a.maderaDeTercero)) {
+      throw new Error(`La guía ${gtf} es madera de servicio: no se le compra a nadie`);
+    }
+    if (asientos.some((a) => a.proveedorParteId && a.proveedorParteId !== parte.id)) {
+      throw new Error(`La guía ${gtf} ya está atada a otra ficha: cámbiala desde «Plata de la guía»`);
+    }
+    const yaEstaban = asientos.filter((a) => a.proveedorParteId === parte.id).length;
+
+    const { count } = await prisma.woodEntry.updateMany({
+      where: { ...vivos, tenantId, maderaDeTercero: false, proveedorParteId: null },
+      data: { proveedorParteId: parte.id },
+    });
+    if (count > 0) {
+      await auditCtpEsperando({
+        tenantId,
+        action: "ctp_ingreso_update",
+        entity: "WoodEntry",
+        entityId: gtf,
+        detail: `Ató la guía ${gtf} al proveedor ${parte.nombre} del directorio (${count} asiento${count === 1 ? "" : "s"})`,
+        user: usuario,
+      });
+    }
+    this.invalidar(tenantId);
+    try {
+      invalidateByPrefix(`wood-entries:${tenantId}`);
+    } catch (err) {
+      logger.error("[forest-directorio] no se pudo invalidar la caché de ingresos", { error: String(err), tenantId });
+    }
+    return { enlazados: count, yaEstaban };
   },
 
   invalidar(tenantId: string): void {

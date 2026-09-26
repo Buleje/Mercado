@@ -11,6 +11,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ctpGet } from "@/lib/forestal/ctp-fetch";
 import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
 import type { CorridaSinOrigen } from "@/lib/forestal/loctp-consumos-analisis";
+import type { GuiasSinPagarDeParte } from "@/lib/forestal/plata-de-guia";
 import {
   diaDeFechaOnly, diaDeLimiteLocal, diaEnPeriodo, pendientesDelLibro, TROZAS_VARADAS_DIAS,
   type DatosPendientes, type Pendiente,
@@ -30,6 +31,8 @@ const VACIO: DatosPendientes = {
   despachosSinGtf: 0, despachosSinAnexo: 0, corridasSinOrigen: 0, saldosNegativos: 0,
   trozasVaradas: 0, ingresosSinCosto: 0, m3SinCosto: 0,
   permisosVencidos: 0, permisosVencidosDetalle: [],
+  guiasSinFoto: 0, guiasSinFotoDetalle: [],
+  guiasSinPagar: [],
 };
 
 /** Lo que se le lee a `/api/admin/forestal/contratos` para medirle la vigencia. */
@@ -67,6 +70,10 @@ type Respuesta = {
   contratos?: unknown;
   /** `ctp?reservasVencidas=1`: reservas vivas con el plazo pasado. */
   reservasVencidas?: unknown;
+  /** `wood-entries?sinFoto=1`: guías recibidas sin foto de la carga. */
+  sinFoto?: { guias?: number; detalle?: { gtf: string }[] };
+  /** `guias/plata?sinPagar=1` (ADR-437): compras con algo por pagar, por proveedor. */
+  porParte?: unknown;
 };
 
 /** Lo que devuelve el hook. Exportado: el shell lo carga una vez y lo reparte
@@ -171,8 +178,13 @@ export function useCtpPendientes(period: CtpPeriod): CtpPendientesState {
          venció en marzo sigue vencido hoy, y acotarlo al mes elegido lo
          escondería justo cuando más importa. */
       json("/api/admin/forestal/contratos"),
+      /* Guías recibidas sin foto de la carga, del período (como los ingresos). */
+      json(`/api/admin/forestal/wood-entries?sinFoto=1&${q}`),
+      /* Sin período, como los permisos vencidos: una guía de marzo sin pagar se
+         sigue debiendo hoy. */
+      json("/api/admin/forestal/guias/plata?sinPagar=1"),
     ])
-      .then(([we, gtf, desp, anexos, saldos, varadas, porVarar, ficha, sinOrigen, contratos]) => {
+      .then(([we, gtf, desp, anexos, saldos, varadas, porVarar, ficha, sinOrigen, contratos, sinFoto, sinPagar]) => {
         if (miCarga !== cargaRef.current) return;   // llegó tarde: manda la más nueva
         const despachos = arr<{ status?: string; gtfNumber?: string | null; id: string }>(desp?.entries)
           .filter((e) => e.status === "registrado");
@@ -216,6 +228,9 @@ export function useCtpPendientes(period: CtpPeriod): CtpPendientesState {
           m3SinCosto: we?.stats?.sinCostoM3 ?? 0,
           permisosVencidos: yaVencidos.length,
           permisosVencidosDetalle: yaVencidos.map((a) => ({ codigo: a.codigo || "sin código", dias: a.dias })),
+          guiasSinFoto: Number(sinFoto?.sinFoto?.guias) || 0,
+          guiasSinFotoDetalle: arr<{ gtf: string }>(sinFoto?.sinFoto?.detalle),
+          guiasSinPagar: arr<GuiasSinPagarDeParte>(sinPagar?.porParte),
         });
 
         /* ── Lo que se viene ──────────────────────────────────────────────
