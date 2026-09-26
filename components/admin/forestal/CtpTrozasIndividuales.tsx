@@ -16,59 +16,24 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { DataTable } from "@buleje/design-system";
-import { Download, Loader2, PackageOpen, Search } from "@buleje/design-system/icons";
-import { LABEL_BLOQUEO, motivoBloqueo } from "@/lib/forestal/consumo-trozas";
+import { Download, Loader2, PackageOpen, QrCode, Search, Tag } from "@buleje/design-system/icons";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { useEtiquetasDelPatio, useImprimirEtiquetasTrozas } from "@/hooks/use-imprimir-etiquetas-trozas";
+import { diaCortoDeEtiqueta, diaDeEtiqueta, type TrozaEtiquetable } from "@/lib/forestal/ctp-troza-etiquetas";
+import CtpEtiquetasTrozasModal from "./CtpEtiquetasTrozasModal";
+import { estado, exportarTrozasCsv, type TrozaIndividual } from "./ctp-trozas-individuales";
 import EspecieFoto from "./EspecieFoto";
 import { useEspeciesFotos } from "./hooks/use-especies-fotos";
 import { formatDateNumeric } from "@/lib/format";
 
-export interface TrozaIndividual {
-  id: string;
-  orden: number;
-  codificacion: string | null;
-  codigoPlanta: string | null;
-  parcela: string | null;
-  especieComun: string | null;
-  especieCientifica: string | null;
-  dimensiones: string | null;
-  d1Cm: number | null;
-  d2Cm: number | null;
-  largoM: number | null;
-  diametroCm: number | null;
-  volumenM3: number | null;
-  noRecepcionada?: boolean | null;
-  descarte?: boolean | null;
-  trozaOrigenId?: string | null;
-  consumidaEnId?: string | null;
-  retrozos?: number;
-  ingreso: { id: string; gtfNumber: string; providerName: string; entryDate: string };
-}
+export type { TrozaIndividual };
 
 const n = (v: number | null | undefined, dec = 2) => (v == null ? "—" : v.toFixed(dec));
 const TH = "px-3 py-2.5 text-left align-bottom text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]";
 const TD = "px-3 py-2.5 align-middle";
 const NUM = "text-right font-mono tabular-nums";
 
-/** Qué se puede decir de la pieza en una palabra. */
-function estado(t: TrozaIndividual): { label: string; cls: string } {
-  const m = motivoBloqueo({
-    id: t.id,
-    woodEntryId: t.ingreso.id,
-    codificacion: t.codificacion,
-    especieComun: t.especieComun,
-    volumenM3: t.volumenM3,
-    consumidaEnId: t.consumidaEnId,
-    noRecepcionada: t.noRecepcionada,
-    descarte: t.descarte,
-    trozaOrigenId: t.trozaOrigenId,
-    retrozos: t.retrozos,
-  });
-  if (m === null) return { label: "En patio", cls: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" };
-  if (m === "ya_consumida") return { label: "Aserrada", cls: "text-[var(--text-tertiary)]" };
-  return { label: LABEL_BLOQUEO[m], cls: "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" };
-}
 
 export default function CtpTrozasIndividuales({ period }: { period: CtpPeriod }) {
   const [datos, setDatos] = useState<{ trozas: TrozaIndividual[]; total: number; volumenM3: number } | null>(null);
@@ -76,6 +41,27 @@ export default function CtpTrozasIndividuales({ period }: { period: CtpPeriod })
   const [error, setError] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const { indice: fotosEspecie } = useEspeciesFotos();
+  /** Las tildadas para «Imprimir etiquetas (N)» (ADR-436). Sólo entran las
+   *  «En patio»: el checkbox de las demás sale deshabilitado. */
+  const { seleccion, alternar, elegirTodas, limpiar, modalIds, abrir, cerrar } = useImprimirEtiquetasTrozas();
+  const { etiquetas, actualizar: actualizarEtiquetas } = useEtiquetasDelPatio();
+  /** Filtro rápido: sólo las que están en el patio y todavía no llevan etiqueta. */
+  const [sinEtiqueta, setSinEtiqueta] = useState(false);
+  const etiquetadaEn = (t: TrozaIndividual) => t.etiquetadaEn ?? etiquetas.get(t.id) ?? null;
+
+  /** El modal imprimió: se sella la fecha y, si numeró, el código nuevo sale en la fila. */
+  const alImprimir = (trozas: TrozaEtiquetable[]) => {
+    actualizarEtiquetas(trozas);
+    const nuevas = new Map(trozas.map((t) => [t.id, t]));
+    setDatos((d) => d && {
+      ...d,
+      trozas: d.trozas.map((t) => {
+        const n2 = nuevas.get(t.id);
+        return n2 ? { ...t, codigoPlanta: n2.codigoPlanta ?? t.codigoPlanta, etiquetadaEn: n2.etiquetadaEn ?? t.etiquetadaEn } : t;
+      }),
+    });
+    limpiar();
+  };
 
   useEffect(() => {
     let vivo = true;
@@ -94,31 +80,20 @@ export default function CtpTrozasIndividuales({ period }: { period: CtpPeriod })
   /** El buscador filtra en el cliente: ya está todo el período en memoria. */
   const filtradas = useMemo(() => {
     const t = q.trim().toLowerCase();
-    if (!t || !datos) return datos?.trozas ?? [];
-    return datos.trozas.filter((x) =>
+    let lista = datos?.trozas ?? [];
+    if (sinEtiqueta) lista = lista.filter((x) => estado(x).libre && !(x.etiquetadaEn ?? etiquetas.get(x.id)));
+    if (!t) return lista;
+    return lista.filter((x) =>
       [x.codificacion, x.codigoPlanta, x.especieComun, x.ingreso.gtfNumber, x.parcela]
         .some((v) => (v ?? "").toLowerCase().includes(t)),
     );
-  }, [q, datos]);
+  }, [q, datos, sinEtiqueta, etiquetas]);
 
   const sumaVisible = filtradas.reduce((a, t) => a + (t.volumenM3 ?? 0), 0);
+  const libresVisibles = useMemo(() => filtradas.filter((t) => estado(t).libre), [filtradas]);
 
-  const exportar = () => {
-    const cab = ["N°", "Codigo troza", "Codigo planta", "Parcela", "Especie", "Cientifico", "D1(cm)", "D2(cm)", "Largo(m)", "Diametro(cm)", "Volumen(m3)", "GTF", "Fecha", "Estado"];
-    const filas = filtradas.map((t, i) => [
-      i + 1, t.codificacion ?? "", t.codigoPlanta ?? "", t.parcela ?? "", t.especieComun ?? "", t.especieCientifica ?? "",
-      t.d1Cm ?? "", t.d2Cm ?? "", t.largoM ?? "", t.diametroCm ?? "", t.volumenM3 ?? "",
-      t.ingreso.gtfNumber, String(t.ingreso.entryDate).slice(0, 10), estado(t).label,
-    ]);
-    /* `;` y coma decimal: el mismo criterio que el resto del libro, que es lo
-       que espera el Excel en es-PE. */
-    const cel = (v: unknown) => { const s = String(v ?? ""); return /[";\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
-    const csv = "﻿" + [cab, ...filas].map((f) => f.map((v) => cel(typeof v === "number" ? String(v).replace(".", ",") : v)).join(";")).join("\r\n");
-    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
-    const a = document.createElement("a");
-    a.href = url; a.download = `trozas-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click(); setTimeout(() => URL.revokeObjectURL(url), 2000);
-  };
+  const exportar = () => exportarTrozasCsv(filtradas);
+
 
   if (cargando) {
     return (
@@ -155,7 +130,7 @@ export default function CtpTrozasIndividuales({ period }: { period: CtpPeriod })
             className="h-10 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] pl-9 pr-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
           />
         </label>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <span className="font-mono text-sm tabular-nums text-[var(--text-secondary)]">
             <b className="text-[var(--text-primary)]">{filtradas.length}</b>
             {filtradas.length !== datos.total && <> de {datos.total}</>} trozas · {fmtM3(sumaVisible)} m³
@@ -163,14 +138,48 @@ export default function CtpTrozasIndividuales({ period }: { period: CtpPeriod })
           <button type="button" onClick={exportar} className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]">
             <Download className="h-4 w-4" /> CSV
           </button>
+          <button
+            type="button"
+            aria-pressed={sinEtiqueta}
+            onClick={() => setSinEtiqueta((v) => !v)}
+            className={`inline-flex h-10 items-center gap-1.5 rounded-xl border px-3 text-sm font-semibold transition-colors ${
+              sinEtiqueta
+                ? "border-[var(--accent)] bg-primary/10 text-[var(--text-primary)] dark:bg-[var(--accent)]/12"
+                : "border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+            }`}
+          >
+            <Tag className="h-4 w-4" /> Sin etiqueta
+          </button>
+          <button
+            type="button"
+            onClick={() => abrir()}
+            disabled={seleccion.size === 0}
+            title="Código, especie, medidas, QR a la ficha y código de barras — para pegar en el rollo"
+            className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <QrCode className="h-4 w-4" />
+            Imprimir etiquetas {seleccion.size > 0 ? `(${seleccion.size})` : ""}
+          </button>
         </div>
       </div>
+
+      {modalIds && <CtpEtiquetasTrozasModal ids={modalIds} onClose={cerrar} onListo={alImprimir} />}
 
       <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
         <DataTable className="w-full min-w-[1000px] text-sm">
           <caption className="sr-only">Trozas del período, una fila por pieza</caption>
           <thead className="sticky top-0 z-10 bg-[var(--surface-sunken)]">
             <tr>
+              <th scope="col" className={`${TH} w-8`}>
+                <input
+                  type="checkbox"
+                  aria-label="Tildar todas las trozas en patio de esta lista"
+                  checked={libresVisibles.length > 0 && libresVisibles.every((t) => seleccion.has(t.id))}
+                  disabled={libresVisibles.length === 0}
+                  onChange={(e) => elegirTodas(e.target.checked ? libresVisibles.map((t) => t.id) : [])}
+                  className="h-4 w-4 accent-[var(--accent)]"
+                />
+              </th>
               <th scope="col" className={`${TH} w-12 text-right`}>N°</th>
               <th scope="col" className={TH}>Código troza</th>
               <th scope="col" className={TH} title="El que marcó este centro al recibirla">Código planta</th>
@@ -182,13 +191,24 @@ export default function CtpTrozasIndividuales({ period }: { period: CtpPeriod })
               <th scope="col" className={`${TH} text-right`}>Volumen m³</th>
               <th scope="col" className={TH}>GTF</th>
               <th scope="col" className={TH}>Estado</th>
+              <th scope="col" className={TH} title="Cuándo se imprimió su última etiqueta QR">Etiqueta</th>
             </tr>
           </thead>
           <tbody>
             {filtradas.map((t, i) => {
               const e = estado(t);
               return (
-                <tr key={t.id} className="border-t border-[var(--rule-soft)] transition-colors even:bg-[var(--surface-canvas)]/50 hover:bg-primary/5">
+                <tr key={t.id} className={`border-t border-[var(--rule-soft)] transition-colors even:bg-[var(--surface-canvas)]/50 hover:bg-primary/5 ${seleccion.has(t.id) ? "bg-primary/5" : ""}`}>
+                  <td className={TD}>
+                    <input
+                      type="checkbox"
+                      checked={seleccion.has(t.id)}
+                      disabled={!e.libre}
+                      onChange={() => alternar(t.id)}
+                      aria-label={`Tildar la troza ${t.codificacion ?? t.codigoPlanta ?? i + 1}${e.libre ? "" : ` (${e.label.toLowerCase()}: no se puede etiquetar)`}`}
+                      className="h-4 w-4 cursor-pointer accent-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-40"
+                    />
+                  </td>
                   <td className={`${TD} ${NUM} text-[var(--text-tertiary)]`}>{i + 1}</td>
                   <td className={`${TD} font-mono font-bold text-[var(--text-primary)]`}>
                     {t.codificacion ?? "—"}
@@ -217,18 +237,21 @@ export default function CtpTrozasIndividuales({ period }: { period: CtpPeriod })
                     </span>
                   </td>
                   <td className={`${TD} text-xs font-bold ${e.cls}`}>{e.label}</td>
+                  <td className={`${TD} ${NUM} text-xs text-[var(--text-secondary)]`} title={diaDeEtiqueta(etiquetadaEn(t)) || "Sin etiqueta"}>
+                    {diaCortoDeEtiqueta(etiquetadaEn(t)) || "—"}
+                  </td>
                 </tr>
               );
             })}
           </tbody>
           <tfoot className="sticky bottom-0 bg-[var(--surface-raised)]">
             <tr className="border-t-2 border-[var(--accent)]/40 bg-primary/10 font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
-              <th scope="row" colSpan={8} className={`${TD} text-left`}>
+              <th scope="row" colSpan={9} className={`${TD} text-left`}>
                 Total · {filtradas.length} {filtradas.length === 1 ? "troza" : "trozas"}
                 {filtradas.length !== datos.total && <span className="font-normal"> (de {datos.total} del período)</span>}
               </th>
               <td className={`${TD} ${NUM}`}>{fmtM3(sumaVisible)}</td>
-              <td className={TD} colSpan={2} />
+              <td className={TD} colSpan={3} />
             </tr>
           </tfoot>
         </DataTable>

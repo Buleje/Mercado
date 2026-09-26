@@ -13,12 +13,14 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AlertTriangle, Loader2, Search, WifiOff, X } from "@buleje/design-system/icons";
+import { AlertTriangle, Camera, Loader2, Search, WifiOff, X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { fichaDeTroza, type TonoPatio } from "@/lib/forestal/patio-vista";
 import { antiguedad, buscarLocal, esViejo, guardar, leer } from "@/lib/forestal/patio-cache";
 import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { consumibleDeFicha, exactasPrimero, leerEscaneo, type FichaTrozaJson } from "@/lib/forestal/leer-escaneo-troza";
+import { CamaraEscaneo } from "./EscanerTrozas";
 
 /** El tono decide el color de TODA la ficha: se lee de lejos, no en detalle. */
 const TONO: Record<TonoPatio, { caja: string; chip: string }> = {
@@ -45,35 +47,84 @@ export default function PatioBuscador() {
   /** Cuándo se guardó lo que se está mostrando. `null` = vino del servidor. */
   const [desdeCache, setDesdeCache] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [camara, setCamara] = useState(false);
+  /** La última búsqueda pedida. Dos lecturas seguidas con mala señal: la
+   *  respuesta de la PRIMERA puede llegar después y pisar la ficha de la
+   *  segunda. Sólo pinta la que sigue siendo la última. */
+  const pedidoRef = useRef(0);
+  const abortRef = useRef<AbortController | null>(null);
 
   // Se abre enfocado: la primera acción del patio es tipear un número.
   useEffect(() => {
     inputRef.current?.focus();
+    return () => abortRef.current?.abort();
   }, []);
 
-  const buscar = useCallback(async () => {
-    const texto = q.trim();
-    if (!texto) return;
+  /**
+   * Busca lo tipeado o lo escaneado (2026-09-26). La pistola lectora es un
+   * teclado: tipea en este mismo campo y da Enter. Un QR de etiqueta trae el
+   * id de la troza —se pide su ficha—; un código de barras o un tipeo, el
+   * código, y la pieza EXACTA sale arriba de sus parecidas.
+   */
+  const buscar = useCallback(async (entrada?: string) => {
+    const crudo = (entrada ?? q).trim();
+    if (!crudo) return;
+    const lectura = leerEscaneo(crudo);
+    if (!lectura) {
+      setError("Eso no es el código de una troza.");
+      setHallazgos(null);
+      return;
+    }
+    if (lectura.tipo === "codigo" && entrada != null) setQ(lectura.codigo);
+    const n = ++pedidoRef.current;
+    abortRef.current?.abort();
+    const ac = new AbortController();
+    abortRef.current = ac;
+    const vigente = () => n === pedidoRef.current;
     setBuscando(true);
     setError(null);
     setDesdeCache(null);
     try {
-      const r = await fetch(
-        `/api/admin/forestal/trozas?codificacion=${encodeURIComponent(texto)}&limite=20`,
-        { credentials: "include" },
-      );
-      if (!r.ok) throw new Error(`El servidor respondió ${r.status}`);
-      const d = (await r.json()) as {
-        trozas?: (TrozaConsumible & { ingreso?: { gtfNumber?: string | null } })[];
-      };
-      // El buscador devuelve la guía anidada en `ingreso`; el endpoint del patio
-      // la manda plana. Se normaliza acá y no se toca el contrato: hay otras
-      // vistas leyendo `ingreso`, y sin esto la ficha mostraba "Guía —" teniendo
-      // el dato — que en el patio es justo lo que hace falta para ir a buscarla.
-      const normalizadas = (d.trozas ?? []).map((t) => ({
-        ...t,
-        gtfNumber: t.gtfNumber ?? t.ingreso?.gtfNumber ?? null,
-      }));
+      let normalizadas: TrozaConsumible[];
+      if (lectura.tipo === "id") {
+        const r = await fetch(`/api/admin/forestal/trozas/ficha?id=${encodeURIComponent(lectura.id)}`, {
+          credentials: "include",
+          signal: ac.signal,
+        });
+        if (!vigente()) return;
+        if (r.status === 404) {
+          setQ("");
+          setHallazgos([]);
+          return;
+        }
+        if (!r.ok) throw new Error(`El servidor respondió ${r.status}`);
+        const t = consumibleDeFicha((await r.json()) as FichaTrozaJson);
+        if (!vigente()) return;
+        setQ(t.codigoPlanta || t.codificacion || "");
+        normalizadas = [t];
+      } else {
+        const r = await fetch(
+          `/api/admin/forestal/trozas?codificacion=${encodeURIComponent(lectura.codigo)}&limite=20`,
+          { credentials: "include", signal: ac.signal },
+        );
+        if (!vigente()) return;
+        if (!r.ok) throw new Error(`El servidor respondió ${r.status}`);
+        const d = (await r.json()) as {
+          trozas?: (TrozaConsumible & { ingreso?: { gtfNumber?: string | null } })[];
+        };
+        if (!vigente()) return;
+        // El buscador devuelve la guía anidada en `ingreso`; el endpoint del patio
+        // la manda plana. Se normaliza acá y no se toca el contrato: hay otras
+        // vistas leyendo `ingreso`, y sin esto la ficha mostraba "Guía —" teniendo
+        // el dato — que en el patio es justo lo que hace falta para ir a buscarla.
+        normalizadas = exactasPrimero(
+          (d.trozas ?? []).map((t) => ({
+            ...t,
+            gtfNumber: t.gtfNumber ?? t.ingreso?.gtfNumber ?? null,
+          })),
+          lectura.codigo,
+        );
+      }
       setHallazgos(normalizadas);
       // Se acumula lo consultado para poder responder lo mismo sin señal. Se
       // fusiona por id: cada búsqueda trae un pedacito del patio y pisar el
@@ -85,18 +136,29 @@ export default function PatioBuscador() {
         await guardar("trozas", [...porId.values()]);
       })();
     } catch {
+      // Cancelada por una lectura más nueva: esa es la que pinta.
+      if (!vigente()) return;
       // El servidor no contestó: se busca en lo último que se alcanzó a ver.
       // No es un error que tape la pantalla — es el caso normal en el patio.
       const cache = await leer<TrozaConsumible>("trozas");
+      if (!vigente()) return;
       if (!cache || cache.datos.length === 0) {
-        setError("Sin señal y sin nada guardado todavía. Conectate una vez para poder consultar después.");
+        setError("Sin señal y sin nada guardado todavía. Conéctate una vez para poder consultar después.");
         setHallazgos(null);
       } else {
-        setHallazgos(buscarLocal(cache.datos, texto));
+        setHallazgos(
+          lectura.tipo === "id"
+            ? cache.datos.filter((t) => t.id === lectura.id)
+            : exactasPrimero(buscarLocal(cache.datos, lectura.codigo), lectura.codigo),
+        );
         setDesdeCache(cache.guardadoEn);
       }
     } finally {
-      setBuscando(false);
+      if (vigente()) {
+        setBuscando(false);
+        /* Con la pistola, la próxima lectura REEMPLAZA a esta (no se pega detrás). */
+        if (document.activeElement === inputRef.current) inputRef.current?.select();
+      }
     }
   }, [q]);
 
@@ -115,13 +177,21 @@ export default function PatioBuscador() {
               onChange={(e) => setQ(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && void buscar()}
               inputMode="search"
-              placeholder="El número de la testa: 118"
-              className="w-full bg-transparent text-lg text-[var(--text-primary)] outline-none"
+              placeholder="Escanea o tipea: 118"
+              className="w-full bg-transparent dark:bg-transparent text-lg text-[var(--text-primary)] outline-none focus-visible:[box-shadow:none]! focus-visible:outline-none!"
             />
             {q && (
               <button
                 type="button"
-                onClick={() => { setQ(""); setHallazgos(null); inputRef.current?.focus(); }}
+                onClick={() => {
+                  /* Lo que estaba en vuelo ya no es de nadie: no puede volver a pintar. */
+                  pedidoRef.current += 1;
+                  abortRef.current?.abort();
+                  setBuscando(false);
+                  setQ("");
+                  setHallazgos(null);
+                  inputRef.current?.focus();
+                }}
                 aria-label="Borrar la búsqueda"
                 className="shrink-0 rounded-full p-1 text-[var(--text-tertiary)]"
               >
@@ -129,6 +199,14 @@ export default function PatioBuscador() {
               </button>
             )}
           </div>
+          <button
+            type="button"
+            onClick={() => setCamara(true)}
+            aria-label="Escanear la etiqueta con la cámara"
+            className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] transition-colors hover:border-[var(--accent)]"
+          >
+            <Camera className="h-6 w-6" aria-hidden />
+          </button>
           <button
             type="button"
             onClick={() => void buscar()}
@@ -139,6 +217,20 @@ export default function PatioBuscador() {
             Buscar
           </button>
         </div>
+
+        {/* Una lectura, un veredicto: la cámara se cierra y la ficha queda a la vista. */}
+        {camara && (
+          <CamaraEscaneo
+            onLectura={(texto) => {
+              setCamara(false);
+              void buscar(texto);
+            }}
+            onCerrar={() => {
+              setCamara(false);
+              requestAnimationFrame(() => inputRef.current?.focus());
+            }}
+          />
+        )}
 
         {error && (
           <p className="flex items-start gap-2 rounded-2xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-4 py-3 text-base text-[var(--data-error-700)] dark:bg-transparent dark:text-[var(--data-error-500)]">

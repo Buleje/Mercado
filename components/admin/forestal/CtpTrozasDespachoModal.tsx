@@ -28,10 +28,15 @@ import {
 import { r4, uidDeFila, type FilaDespacho } from "@/lib/forestal/despacho-lista";
 import { Btn, ModalFooter } from "./ctp-shared";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
-import { CtpPaginacion, FilaVacia, TablaCtp, TbodyCtp, TheadCtp, usePaginacion } from "./ctp-tabla";
+import { CtpPaginacion, FilaVacia, TablaCtp, TbodyCtp, usePaginacion } from "./ctp-tabla";
 import { formatDateNumeric } from "@/lib/format";
 import { FiltroColumnaMulti, type FacetaOpcion } from "@/components/admin/shared/filtros-columna";
 import { CampoDeFiltro } from "./ctp-filtros-panel";
+import { BotonRestablecerColumnas, EnOrden, useOrdenColumnas } from "@/components/admin/shared/columnas-ordenables";
+import EscanerTrozas, { bloqueoDeConsumo } from "./EscanerTrozas";
+
+/** Las columnas movibles, en su orden de fábrica (Brandon, 2026-09-26). */
+const ORDEN_TROZAS_DEFECTO = ["codigo", "marca", "especie", "gtf", "titulo", "recepcion", "largo", "volumen", "estado"] as const;
 
 const CAMPO =
   "h-12 w-full rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]";
@@ -134,6 +139,15 @@ export default function CtpTrozasDespachoModal({
 
   const seleccionadas = useMemo(() => visibles.filter((t) => elegidas.has(t.id)), [visibles, elegidas]);
   const totalM3 = r4(seleccionadas.reduce((a, t) => a + Number(t.volumenM3 ?? 0), 0));
+  const orden = useOrdenColumnas("ctp-trozas-despacho", ORDEN_TROZAS_DEFECTO);
+
+  /* Escanear = tildar (2026-09-26). «Ya estaba» cubre lo tildado acá y lo que
+     ya está en la lista de la guía; lo escondido por un filtro no se tilda
+     porque el pie sólo cuenta lo visible. */
+  const yaEnLaGuia = useMemo(() => new Set([...yaElegidas, ...elegidas]), [yaElegidas, elegidas]);
+  const idsVisibles = useMemo(() => new Set(visibles.map((t) => t.id)), [visibles]);
+  const bloqueoDespacho = (t: TrozaConsumible): string | null =>
+    bloqueoDeConsumo(t) ?? (idsVisibles.has(t.id) ? null : "No se ve con los filtros de ahora: límpialos para tildarla");
 
   return (
     <AdminModal
@@ -182,6 +196,13 @@ export default function CtpTrozasDespachoModal({
           />
         </label>
 
+        <EscanerTrozas
+          trozas={trozas}
+          yaElegidas={yaEnLaGuia}
+          bloqueo={bloqueoDespacho}
+          onTroza={(t) => setElegidas((prev) => new Set(prev).add(t.id))}
+        />
+
         {/* En el celular la tabla es tarjetas (el <thead> se esconde): Especie
             y GTF de ingreso se repiten acá, sólo visibles ahí. */}
         <div className="grid grid-cols-2 gap-2 sm:hidden">
@@ -208,27 +229,42 @@ export default function CtpTrozasDespachoModal({
           </span>
         </label>
 
+        <div className="flex justify-end">
+          <BotonRestablecerColumnas cambiado={orden.cambiado} onRestablecer={orden.restablecer} />
+        </div>
         <TablaCtp altoMax="max-h-[52vh]">
-          <TheadCtp>
+          <thead
+            ref={orden.refCabecera}
+            className="sticky top-0 z-10 bg-[var(--surface-sunken)] text-left align-top text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]"
+          >
             <tr>
               <th className="px-2 py-2" />
-              <th className="px-3 py-2 font-bold">Código</th>
-              <th className="px-3 py-2 font-bold">Marca de planta</th>
-              <th className="px-3 py-2 font-bold">
-                <span className="block">Especie</span>
-                <FiltroColumnaMulti label="Especie" value={especieFiltro} options={opciones.especies} onChange={setEspecieFiltro} placeholder="Todas" />
-              </th>
-              <th className="px-3 py-2 font-bold">
-                <span className="block">GTF de ingreso</span>
-                <FiltroColumnaMulti label="GTF de ingreso" value={gtfFiltro} options={opciones.guias} onChange={setGtfFiltro} placeholder="Todas" />
-              </th>
-              <th className="px-3 py-2 font-bold">Título habilitante</th>
-              <th className="px-3 py-2 font-bold">Recepción</th>
-              <th className="px-3 py-2 text-right font-bold">Largo (m)</th>
-              <th className="px-3 py-2 text-right font-bold">Volumen (m³)</th>
-              <th className="px-3 py-2 font-bold">Estado</th>
+              <EnOrden
+                orden={orden.orden}
+                celdas={{
+                  codigo: <th data-col="codigo" className="px-3 py-2 font-bold">Código</th>,
+                  marca: <th data-col="marca" className="px-3 py-2 font-bold">Marca de planta</th>,
+                  especie: (
+                    <th data-col="especie" className="px-3 py-2 font-bold">
+                      <span className="block">Especie</span>
+                      <FiltroColumnaMulti label="Especie" value={especieFiltro} options={opciones.especies} onChange={setEspecieFiltro} placeholder="Todas" />
+                    </th>
+                  ),
+                  gtf: (
+                    <th data-col="gtf" className="px-3 py-2 font-bold">
+                      <span className="block">GTF de ingreso</span>
+                      <FiltroColumnaMulti label="GTF de ingreso" value={gtfFiltro} options={opciones.guias} onChange={setGtfFiltro} placeholder="Todas" />
+                    </th>
+                  ),
+                  titulo: <th data-col="titulo" className="px-3 py-2 font-bold">Título habilitante</th>,
+                  recepcion: <th data-col="recepcion" className="px-3 py-2 font-bold">Recepción</th>,
+                  largo: <th data-col="largo" className="px-3 py-2 text-right font-bold">Largo (m)</th>,
+                  volumen: <th data-col="volumen" className="px-3 py-2 text-right font-bold">Volumen (m³)</th>,
+                  estado: <th data-col="estado" className="px-3 py-2 font-bold">Estado</th>,
+                }}
+              />
             </tr>
-          </TheadCtp>
+          </thead>
           <TbodyCtp>
             {enPagina.length === 0 && (
               <FilaVacia cols={10}>
@@ -263,23 +299,32 @@ export default function CtpTrozasDespachoModal({
                       className="h-4 w-4 accent-[var(--accent)] disabled:opacity-40"
                     />
                   </td>
-                  <td className="px-3 py-2 font-mono text-sm font-bold text-[var(--text-primary)]">{t.codificacion ?? "—"}</td>
-                  <td className="px-3 py-2 font-mono text-xs text-[var(--text-secondary)]">{t.codigoPlanta ?? "—"}</td>
-                  <td className="px-3 py-2 text-[var(--text-secondary)]">{t.especieComun ?? "—"}</td>
-                  <td className="px-3 py-2 font-mono text-xs text-[var(--text-secondary)]">{t.gtfNumber ?? "—"}</td>
-                  <td className="max-w-[14rem] truncate px-3 py-2 text-xs text-[var(--text-tertiary)]">{t.permiso ?? "—"}</td>
-                  <td className="px-3 py-2 text-xs tabular-nums text-[var(--text-tertiary)]">{fmtDia(t.fechaRecepcion ?? t.fechaIngreso)}</td>
-                  <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">{t.largoM ?? "—"}</td>
-                  <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
-                    {fmtM3(Number(t.volumenM3 ?? 0))}
-                  </td>
-                  <td className="px-3 py-2 text-xs">
-                    {bloqueo ? (
-                      <span className="text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">{LABEL_BLOQUEO[bloqueo]}</span>
-                    ) : (
-                      <span className="text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">En el patio</span>
-                    )}
-                  </td>
+                  <EnOrden
+                    orden={orden.orden}
+                    celdas={{
+                      codigo: <td className="px-3 py-2 font-mono text-sm font-bold text-[var(--text-primary)]">{t.codificacion ?? "—"}</td>,
+                      marca: <td className="px-3 py-2 font-mono text-xs text-[var(--text-secondary)]">{t.codigoPlanta ?? "—"}</td>,
+                      especie: <td className="px-3 py-2 text-[var(--text-secondary)]">{t.especieComun ?? "—"}</td>,
+                      gtf: <td className="px-3 py-2 font-mono text-xs text-[var(--text-secondary)]">{t.gtfNumber ?? "—"}</td>,
+                      titulo: <td className="max-w-[14rem] truncate px-3 py-2 text-xs text-[var(--text-tertiary)]">{t.permiso ?? "—"}</td>,
+                      recepcion: <td className="px-3 py-2 text-xs tabular-nums text-[var(--text-tertiary)]">{fmtDia(t.fechaRecepcion ?? t.fechaIngreso)}</td>,
+                      largo: <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">{t.largoM ?? "—"}</td>,
+                      volumen: (
+                        <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
+                          {fmtM3(Number(t.volumenM3 ?? 0))}
+                        </td>
+                      ),
+                      estado: (
+                        <td className="px-3 py-2 text-xs">
+                          {bloqueo ? (
+                            <span className="text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">{LABEL_BLOQUEO[bloqueo]}</span>
+                          ) : (
+                            <span className="text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">En el patio</span>
+                          )}
+                        </td>
+                      ),
+                    }}
+                  />
                 </tr>
               );
             })}

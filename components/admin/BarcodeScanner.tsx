@@ -1,14 +1,26 @@
 "use client";
 
 import { CardTitle, LoadingState } from "@buleje/design-system";
-import { useEffect, useId, useRef, useState, useCallback } from "react";
+import { useEffect, useId, useRef, useState, useCallback, type ReactNode } from "react";
 import { Camera, X, SwitchCamera, Flashlight, FlashlightOff } from "@buleje/design-system/icons";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 
 type Props = {
   onDetected: (code: string) => void;
   onClose: () => void;
+  /**
+   * Sigue leyendo después de cada código (escanear una pila de trozas de
+   * corrido). El mismo código no se vuelve a leer hasta pasados unos segundos:
+   * la cámara lo sigue viendo mientras el operario mueve el celular.
+   */
+  continuo?: boolean;
+  /** Lo que se muestra bajo el video — en modo continuo, el resultado de la última lectura. */
+  pie?: ReactNode;
 };
+
+/** En modo continuo: pausa entre lecturas y ventana en que el MISMO código se ignora. */
+const PAUSA_CONTINUO_MS = 1200;
+const REPETIDO_MS = 3000;
 
 const BEEP_FREQ = 1800;
 const BEEP_DURATION = 150;
@@ -31,13 +43,20 @@ function playBeep() {
   }
 }
 
-export default function BarcodeScanner({ onDetected, onClose }: Props) {
+export default function BarcodeScanner({ onDetected, onClose, continuo = false, pie }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const detectedRef = useRef(false);
   const scanTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const tituloId = useId();
+  /* El lazo de lectura se arma una vez al montar: sin el ref, en modo continuo
+     cada lectura llamaría al `onDetected` del primer render, con datos viejos. */
+  const onDetectedRef = useRef(onDetected);
+  useEffect(() => {
+    onDetectedRef.current = onDetected;
+  }, [onDetected]);
+  const ultimoRef = useRef<{ codigo: string; en: number } | null>(null);
 
   const [error, setError] = useState("");
   const [starting, setStarting] = useState(true);
@@ -106,11 +125,15 @@ export default function BarcodeScanner({ onDetected, onClose }: Props) {
         try {
           const results = await detector.detect(video);
           if (results.length > 0 && !detectedRef.current) {
-            detectedRef.current = true;
             const code = results[0].rawValue;
+            const previo = ultimoRef.current;
+            if (continuo && previo && previo.codigo === code && Date.now() - previo.en < REPETIDO_MS) return;
+            detectedRef.current = true;
+            ultimoRef.current = { codigo: code, en: Date.now() };
             playBeep();
             try { navigator.vibrate?.(200); } catch { /* not supported */ }
-            onDetected(code);
+            onDetectedRef.current(code);
+            if (continuo) setTimeout(() => { detectedRef.current = false; }, PAUSA_CONTINUO_MS);
           }
         } catch {
           // detect() can fail on some frames, just skip
@@ -120,7 +143,7 @@ export default function BarcodeScanner({ onDetected, onClose }: Props) {
       setError("No se pudo acceder a la cámara. Verifica los permisos.");
       setStarting(false);
     }
-  }, [stopCamera, onDetected]);
+  }, [stopCamera, continuo]);
 
   useEffect(() => {
     startCamera(facingMode);
@@ -167,7 +190,7 @@ export default function BarcodeScanner({ onDetected, onClose }: Props) {
           </div>
           <button aria-label="Cerrar"
             onClick={cerrar}
-            className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
           >
             <X className="h-5 w-5" />
           </button>
@@ -205,6 +228,12 @@ export default function BarcodeScanner({ onDetected, onClose }: Props) {
           )}
         </div>
 
+        {pie && (
+          <div className="border-b border-[var(--rule-soft)] px-2 py-2 sm:px-4" aria-live="polite">
+            {pie}
+          </div>
+        )}
+
         {/* Controls */}
         <div className="px-2 sm:px-4 py-2 sm:py-3 flex items-center justify-between">
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted">
@@ -214,7 +243,7 @@ export default function BarcodeScanner({ onDetected, onClose }: Props) {
             {hasTorch && (
               <button
                 onClick={handleToggleTorch}
-                className="p-2 rounded-xl text-[var(--text-secondary)] dark:text-muted hover:text-primary hover:bg-primary/10 transition-colors"
+                className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-[var(--text-secondary)] dark:text-muted hover:text-primary hover:bg-primary/10 transition-colors"
                 title={torchOn ? "Apagar linterna" : "Encender linterna"}
               >
                 {torchOn
@@ -224,7 +253,7 @@ export default function BarcodeScanner({ onDetected, onClose }: Props) {
             )}
             <button
               onClick={handleSwitchCamera}
-              className="p-2 rounded-xl text-[var(--text-secondary)] dark:text-muted hover:text-primary hover:bg-primary/10 transition-colors"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-[var(--text-secondary)] dark:text-muted hover:text-primary hover:bg-primary/10 transition-colors"
               title="Cambiar cámara"
             >
               <SwitchCamera className="h-4 w-4" />

@@ -10,9 +10,9 @@
  * acotadas. Este componente es la ACCIÓN — qué se eligió, el acta y el consumo.
  */
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Check, Flame, PackageOpen } from "@buleje/design-system/icons";
-import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
+import { norm, type TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import type { LoteAserrio } from "@/lib/forestal/lotes-aserrio";
 import { pieTablarAserrableDe } from "@/lib/forestal/cubicacion";
 import { RENDIMIENTO_META } from "@/lib/forestal/loctp-catalogos";
@@ -26,6 +26,7 @@ import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import type { EstadoLotesAserrio } from "./hooks/use-lotes-aserrio";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { formatNumber } from "@/lib/format";
+import EscanerTrozas, { bloqueoDeConsumo } from "./EscanerTrozas";
 
 export default function CtpCargarSierra({
   lote,
@@ -91,6 +92,33 @@ export default function CtpCargarSierra({
     preseleccionado.current = lote.id;
     onSeleccion(new Set(yaEnElLote.map((t) => t.id)));
   }, [lote.id, yaEnElLote, onSeleccion]);
+
+  /* Escanear = tildar (2026-09-26). Se busca en TODO el patio leído para poder
+     decir por qué una pieza no entra; sólo se tilda lo que la tabla deja tildar
+     (`libres`): lo tildado fuera de ahí no llegaría al consumo. */
+  const idsLibres = useMemo(() => new Set(libres.map((t) => t.id)), [libres]);
+  const bloqueoEnSierra = useCallback(
+    (t: TrozaConsumible): string | null => {
+      const motivo = bloqueoDeConsumo(t);
+      if (motivo) return motivo;
+      if (t.guiaRecepcionada === false) return "Su guía todavía no se recibió";
+      if (t.loteAserrioId && t.loteAserrioId !== lote.id) return `Está apartada en el lote ${t.loteAserrioCode ?? "de otro"}`;
+      if (!idsLibres.has(t.id)) {
+        /* Lo que el lote no puede tomar (ADR-342/393) antes que el filtro: si
+           no, «límpialos» manda a limpiar un filtro que no la va a traer. */
+        if (norm(t.especieComun) !== norm(lote.speciesCommon)) {
+          return `Es ${t.especieComun ?? "de otra especie"} y el lote es de ${lote.speciesCommon}`;
+        }
+        const permisoLote = (lote.permiso ?? "").trim();
+        if (permisoLote && (t.permiso ?? "").trim() !== permisoLote) {
+          return `Es de otro permiso: el lote sólo toma madera del ${permisoLote}`;
+        }
+        return "No se ve con los filtros de ahora: límpialos para tildarla";
+      }
+      return null;
+    },
+    [idsLibres, lote.id, lote.permiso, lote.speciesCommon],
+  );
 
   /**
    * Lo que entra a la sierra es **lo tildado**, y nada más (ADR-356).
@@ -189,6 +217,12 @@ export default function CtpCargarSierra({
         </span>
       </header>
 
+      <EscanerTrozas
+        trozas={estado.trozas}
+        yaElegidas={seleccion}
+        bloqueo={bloqueoEnSierra}
+        onTroza={(t) => onSeleccion(new Set(seleccion).add(t.id))}
+      />
 
       {/* La tabla del patio es la MISMA que se mira sin lote elegido: acá sólo
           se le encienden los tildes y llega acotada a la especie del lote

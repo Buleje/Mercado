@@ -23,16 +23,19 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
-  AlertTriangle, ArrowLeft, Loader2, PackageCheck, TreePine, WifiOff,
+  AlertTriangle, ArrowLeft, ChevronRight, ClipboardList, Loader2, PackageCheck, TreePine, WifiOff,
 } from "@buleje/design-system/icons";
 import { PageTitle, SectionTitle } from "@buleje/design-system";
 import { usePatioCola } from "@/hooks/use-patio-cola";
+import { conteoDeHoyEnCurso } from "@/hooks/use-conteo-patio";
 import { pendienteDeRecepcion } from "@/lib/forestal/patio-vista";
 import { antiguedad, guardar, leer } from "@/lib/forestal/patio-cache";
+import type { FotoCarga } from "@/lib/forestal/fotos-carga";
 import CtpPatioBandeja from "./CtpPatioBandeja";
 import CtpRecepcionTrozas, { type TrozaEditable } from "./CtpRecepcionTrozas";
 import PatioBuscador from "./PatioBuscador";
 import PatioConsumo from "./PatioConsumo";
+import PatioConteo from "./PatioConteo";
 import { formatDateShort } from "@/lib/format";
 
 interface GuiaPatio {
@@ -42,7 +45,8 @@ interface GuiaPatio {
   speciesCommonName: string;
   volumeM3: number | string;
   entryDate: string;
-  photos?: string[] | null;
+  /** `/wood-entries` ya normaliza a `FotoCarga[]` (legado string admitido igual). */
+  photos?: (FotoCarga | string)[] | null;
 }
 
 
@@ -66,6 +70,13 @@ export default function PatioModo() {
   const [verTodasLasGuias, setVerTodasLasGuias] = useState(false);
   const [avisoCola, setAvisoCola] = useState<string | null>(null);
   const [guiasDeCache, setGuiasDeCache] = useState<string | null>(null);
+  /** «Contar el patio» (ADR-436): ocupa la pantalla entera, como la recepción. */
+  const [contando, setContando] = useState(false);
+  /** Un conteo de hoy a medias: el botón lo dice para no empezar otro sin querer. */
+  const [enCurso, setEnCurso] = useState<{ contadas: number; total: number } | null>(null);
+  useEffect(() => {
+    if (!contando) setEnCurso(conteoDeHoyEnCurso());
+  }, [contando]);
 
 
   const pedir = useCallback(async <T,>(url: string): Promise<T> => {
@@ -109,6 +120,8 @@ export default function PatioModo() {
     [pedir],
   );
 
+
+  if (contando) return <PatioConteo onVolver={() => setContando(false)} />;
 
   if (recibiendo) {
     const p = pendienteDeRecepcion(recibiendo.trozas);
@@ -176,6 +189,27 @@ export default function PatioModo() {
 
       {/* Pregunta 1: ¿qué es esta pieza? */}
       <PatioBuscador />
+
+      {/* Pregunta 4: ¿está todo lo que el libro dice que hay en la pila? */}
+      <button
+        type="button"
+        onClick={() => setContando(true)}
+        className="flex w-full items-center gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3 min-h-14 text-left transition-colors hover:border-[var(--accent)]"
+        data-abrir-conteo
+      >
+        <ClipboardList className="h-6 w-6 shrink-0 text-[var(--accent)]" aria-hidden />
+        <span className="min-w-0 flex-1">
+          <span className="block text-base font-bold text-[var(--text-primary)]">
+            {enCurso ? "Seguir el conteo del patio" : "Contar el patio"}
+          </span>
+          <span className="block text-base text-[var(--text-secondary)]">
+            {enCurso
+              ? `${enCurso.contadas} de ${enCurso.total} contadas hoy`
+              : "Escanea la pila y mira qué falta y qué sobra"}
+          </span>
+        </span>
+        <ChevronRight className="h-5 w-5 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
+      </button>
 
       {/* Pregunta 2: llegó el camión, ¿qué le falta a esta guía? */}
       <section className="space-y-2">

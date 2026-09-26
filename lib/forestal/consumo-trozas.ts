@@ -108,6 +108,13 @@ export interface TrozaConsumible {
   retrozos?: number;
   /** El pedazo que no sirve: ocupa volumen pero no es producto. */
   descarte?: boolean | null;
+  /**
+   * Cuándo se imprimió por última vez su etiqueta QR (ADR-436), ISO. `null` =
+   * nunca: la pieza está en la pila sin chapa.
+   */
+  etiquetadaEn?: string | null;
+  /** Cuántas veces se imprimió su etiqueta. >1 = reimpresión (ADR-436). */
+  etiquetasImpresas?: number;
 }
 
 /** Por qué una troza no se puede elegir. `null` = está disponible. */

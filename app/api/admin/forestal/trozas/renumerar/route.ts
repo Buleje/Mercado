@@ -14,10 +14,10 @@ import { ctpErrorResponse } from "@/lib/forestal/ctp-api-errors";
  * Es la única vía para tocar un código ya asignado, y existe por una razón
  * concreta: el libro heredó 61 códigos repetidos de antes de que la unicidad
  * fuera regla. Mientras exista uno, dos piezas de la pila comparten la marca
- * pintada y el índice único de Postgres no se puede crear.
+ * pintada.
  *
- * Al terminar intenta poner ese candado: cuando el último duplicado se resuelve,
- * el problema deja de ser posible sin que nadie tenga que acordarse.
+ * Al terminar devuelve el estado del candado —el índice único de Postgres,
+ * creado el 2026-09-26 (ADR-436)— para que la pantalla diga si ya está puesto.
  */
 
 const schema = z.object({
@@ -55,9 +55,9 @@ export async function POST(req: NextRequest) {
       parsed.data.trozaIds,
       auth.username ?? "unknown",
     );
-    // El candado se intenta SIEMPRE, no sólo cuando la limpieza salió redonda:
+    // El estado se relee SIEMPRE, no sólo cuando la limpieza salió redonda:
     // la última pieza puede haberla resuelto otra pestaña.
-    const candado = await WoodEntriesDB.intentarCandadoCodigoPlanta();
+    const candado = await WoodEntriesDB.estadoCandadoCodigoPlanta(auth.tenantId);
     return NextResponse.json({ ...r, candado });
   } catch (e) {
     return ctpErrorResponse(e, "forestal.trozas.renumerar", "");

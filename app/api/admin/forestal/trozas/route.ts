@@ -179,7 +179,7 @@ export async function GET(req: NextRequest) {
     if (parsed.data.duplicados === "1") {
       const [grupos, candado] = await Promise.all([
         WoodEntriesDB.codigosPlantaDuplicados(auth.tenantId),
-        WoodEntriesDB.intentarCandadoCodigoPlanta(),
+        WoodEntriesDB.estadoCandadoCodigoPlanta(auth.tenantId),
       ]);
       return NextResponse.json({ grupos, candado });
     }
@@ -282,6 +282,8 @@ function serializar(t: {
   fechaConsumo?: Date | string | null;
   _count?: { retrozos: number };
   retrozos?: unknown[];
+  etiquetadaEn?: Date | string | null;
+  etiquetasImpresas?: number | null;
 }) {
   const num = (v: unknown) => (v == null ? null : Number(v));
   return {
@@ -334,5 +336,9 @@ function serializar(t: {
     loteAserrioStatus: t.loteAserrio?.status ?? null,
     descarte: Boolean(t.descarte),
     retrozos: t._count?.retrozos ?? t.retrozos?.length ?? 0,
+    // Última etiqueta impresa (ADR-436): la columna «Etiqueta» y el filtro
+    // «Sin etiqueta» de la tabla por pieza leen de acá.
+    etiquetadaEn: t.etiquetadaEn ? new Date(t.etiquetadaEn).toISOString() : null,
+    etiquetasImpresas: t.etiquetasImpresas ?? 0,
   };
 }

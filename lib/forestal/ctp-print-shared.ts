@@ -129,7 +129,14 @@ export const CTP_REPORT_BASE_CSS = `
  * Abre el reporte en una ventana imprimible (guardar como PDF). Inyecta el CSS
  * base + el CSS específico del reporte y dispara `window.print()`.
  */
-export function openCtpReport(opts: { title: string; css?: string; body: string }): void {
+export function openCtpReport(opts: {
+  title: string;
+  css?: string;
+  body: string;
+  /** Ventana abierta en el MISMO clic, antes de esperar al servidor: después de
+   *  un `await` el navegador la trata como pop-up y la bloquea (ADR-436). */
+  ventana?: Window | null;
+}): void {
   // Barra con botón de impresión en vez de auto-disparar `window.print()`: el
   // auto-print bloqueaba la ventana en entornos sin manejador de diálogo (headless/
   // automatización) y sorprendía al usuario. Ahora el reporte se ve primero y el
@@ -144,16 +151,20 @@ export function openCtpReport(opts: { title: string; css?: string; body: string 
      olvido en cualquiera de los ~12 reportes sería XSS con la sesión del admin.
      Con esta CSP el documento no ejecuta script alguno, y el botón de imprimir
      se ata desde afuera con `addEventListener` (un `onclick` inline también
-     quedaría bloqueado). Estilos inline sí: el reporte es puro CSS. */
-  const csp = `default-src 'none'; style-src 'unsafe-inline'; img-src data: https:; font-src data:`;
+     quedaría bloqueado). Estilos inline sí: el reporte es puro CSS.
+     `'self'` en img-src (ADR-434, 2026-09-26): las fotos de la carga son
+     privadas y se sirven por `/api/admin/forestal/fotos/ver` del MISMO panel
+     (con sesión); sin él, en dev (http://localhost) no cargaban. */
+  const csp = `default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data: https:; font-src data:`;
   const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${csp}"><title>${esc(opts.title)}</title>
 <style>${CTP_REPORT_BASE_CSS}${barCss}${opts.css ?? ""}</style></head><body>
 <div class="print-bar"><button type="button" id="ctp-print">Imprimir / Guardar como PDF</button></div>
 ${opts.body}
 </body></html>`;
-  const w = window.open("", "_blank", "width=980,height=760");
+  const w = opts.ventana ?? window.open("", "_blank", "width=980,height=760");
   if (!w)
     throw new Error("El navegador bloqueó la ventana. Permite pop-ups para descargar el reporte.");
+  w.document.open(); // reemplaza el «Generando…» si la ventana vino abierta del clic
   w.document.write(html);
   w.document.close();
   w.document.getElementById("ctp-print")?.addEventListener("click", () => w.print());
