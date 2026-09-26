@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
-import { WoodEntriesDB, WOOD_ENTRY_SORT_FIELDS } from "@/lib/db/wood-entries.db";
+import {
+  WoodEntriesDB,
+  WOOD_ENTRY_SORT_FIELDS,
+  type WoodEntryFiltrosCabecera,
+} from "@/lib/db/wood-entries.db";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { ctpErrorResponse } from "@/lib/forestal/ctp-api-errors";
@@ -12,6 +16,8 @@ import { gtfDatosSchema } from "@/lib/forestal/ctp-gtf-datos";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { leerContratoId } from "@/lib/forestal/contrato-filtro";
 import { fotosDelTenantSchema } from "@/lib/storage-url";
+import { normalizarFotos } from "@/lib/forestal/fotos-carga";
+import { FILTROS_PAGO } from "@/lib/forestal/ingresos-filtros-columna";
 
 /**
  * /api/admin/forestal/wood-entries
@@ -193,6 +199,84 @@ async function ensureSpecializationOrDeny(tenantId: string) {
   return null;
 }
 
+/**
+ * `photos` sale SIEMPRE como `FotoCarga[]` (2026-09-26): en la base conviven el
+ * string viejo (URL pública) y el objeto nuevo (`priv:`). La pantalla recibe una
+ * sola forma y arma el `src` con `srcDeFoto`. Cubre las dos respuestas del
+ * listado: `entries[]` (por asiento) y `guias[].lineas[]` (por guía).
+ */
+function conFotosNormalizadas<T>(r: T): T {
+  const fila = (x: unknown) =>
+    x && typeof x === "object" && "photos" in x ? { ...x, photos: normalizarFotos((x as { photos: unknown }).photos) } : x;
+  const o = r as { entries?: unknown; guias?: unknown };
+  const out: Record<string, unknown> = { ...(r as object) };
+  if (Array.isArray(o.entries)) out.entries = o.entries.map(fila);
+  if (Array.isArray(o.guias)) {
+    out.guias = o.guias.map((g: unknown) =>
+      g && typeof g === "object" && Array.isArray((g as { lineas?: unknown }).lineas)
+        ? { ...g, lineas: (g as { lineas: unknown[] }).lineas.map(fila) }
+        : g,
+    );
+  }
+  return out as T;
+}
+
+// ─── Autofiltro de la cabecera (Ingresos, 2026-09-26) ─────────────────────
+
+const diaSchema = z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/);
+/* `z.coerce.number()` convierte "" en 0: un tope vacío tiene que ser «sin
+   tope», así que el vacío se descarta antes de coercionar. */
+const topeSchema = z.string().trim().min(1).transform(Number).pipe(z.number().finite().nonnegative());
+const trozasSchema = z.enum(["con", "sin"]);
+/**
+ * `pago` (ADR-437 §10 y §7 — la tira «guías sin pagar» salta acá) es el ÚNICO
+ * filtro de la cabecera que responde 400 con un valor inválido: los demás
+ * degradan en silencio porque son texto libre de un buscador; éste viene de un
+ * link con un valor fijo (`servicio | sin-pagar | pagada`) y un valor roto ahí
+ * significa un bug propio, no un tipeo del usuario.
+ */
+const pagoSchema = z.enum(FILTROS_PAGO);
+
+/**
+ * Los filtros por columna de la tabla de Ingresos. Un valor inválido (fecha
+ * mal escrita, número NaN) se IGNORA — no es un 400 ni un 500: una URL vieja o
+ * un tipeo a medias no puede tumbar el libro.
+ */
+function leerFiltrosCabecera(sp: URLSearchParams): WoodEntryFiltrosCabecera | undefined {
+  const texto = (k: string) => {
+    const v = (sp.get(k) ?? "").trim().slice(0, 120);
+    return v || undefined;
+  };
+  const dia = (k: string) => {
+    const r = diaSchema.safeParse(sp.get(k) ?? "");
+    return r.success ? r.data : undefined;
+  };
+  const tope = (k: string) => {
+    const r = topeSchema.safeParse(sp.get(k) ?? "");
+    return r.success ? r.data : undefined;
+  };
+  const trozas = trozasSchema.safeParse(sp.get("trozas"));
+  const c: WoodEntryFiltrosCabecera = {
+    doc: texto("doc"),
+    sniffs: texto("sniffs"),
+    tipo: texto("tipo"),
+    origen: texto("origen"),
+    unidad: texto("unidad"),
+    registro: texto("registro"),
+    fechaDesde: dia("fecha_desde"),
+    fechaHasta: dia("fecha_hasta"),
+    gtfDesde: dia("gtf_desde"),
+    gtfHasta: dia("gtf_hasta"),
+    trozas: trozas.success ? trozas.data : undefined,
+    conCosto: sp.get("con_costo") === "1" || undefined,
+    volMin: tope("vol_min"),
+    volMax: tope("vol_max"),
+    pzMin: tope("pz_min"),
+    pzMax: tope("pz_max"),
+  };
+  return Object.values(c).some((v) => v !== undefined) ? c : undefined;
+}
+
 // ─── GET — list ──────────────────────────────────────────────────────────
 
 export const GET = withApiHandler("forestal-wood-entries-get", async (req: NextRequest) => {
@@ -206,7 +290,9 @@ export const GET = withApiHandler("forestal-wood-entries-get", async (req: NextR
   if (guard) return guard;
 
   const url = new URL(req.url);
-  const status = url.searchParams.get("status");
+  /* Repetible (`?status=pendiente&status=validado`) desde el autofiltro de la
+     cabecera (2026-09-26): OR adentro. Uno solo sigue valiendo. */
+  const statusRaw = url.searchParams.getAll("status").filter((v) => v.trim() !== "");
   const search = url.searchParams.get("search");
   /**
    * Especie, proveedor, producto y permiso admiten VARIOS valores
@@ -247,11 +333,22 @@ export const GET = withApiHandler("forestal-wood-entries-get", async (req: NextR
   const contrato = leerContratoId(url.searchParams);
   if (!contrato.ok) return NextResponse.json({ error: contrato.error }, { status: 400 });
 
-  // Validate status if provided
-  const statusParsed = status ? statusEnum.safeParse(status) : null;
-  if (statusParsed && !statusParsed.success) {
+  // Validate status if provided — cada valor contra el enum; uno raro es un 400
+  // (el contrato de siempre: un estado inventado no se degrada a «todos»).
+  const statusParsed = z.array(statusEnum).safeParse(statusRaw);
+  if (!statusParsed.success) {
     return NextResponse.json({ error: "invalid_status" }, { status: 400 });
   }
+  const estados = [...new Set(statusParsed.data)];
+
+  /* `?pago=` salta desde la tira «guías sin pagar»/«de servicio» — un valor
+     roto es un bug propio, no un tipeo (ver `pagoSchema`). */
+  const pagoRaw = url.searchParams.get("pago");
+  const pagoParsed = pagoRaw != null ? pagoSchema.safeParse(pagoRaw) : undefined;
+  if (pagoParsed && !pagoParsed.success) {
+    return NextResponse.json({ error: "invalid_pago" }, { status: 400 });
+  }
+  const pago = pagoParsed?.success ? pagoParsed.data : undefined;
 
   // Fechas inválidas → sin límite (no reventar el listado por un query param).
   const parseDate = (raw: string | null) => {
@@ -261,7 +358,7 @@ export const GET = withApiHandler("forestal-wood-entries-get", async (req: NextR
   };
 
   const filters = {
-    status: statusParsed?.success ? statusParsed.data : undefined,
+    status: estados.length > 0 ? estados : undefined,
     speciesCommonName: speciesCommonName.length > 0 ? speciesCommonName : undefined,
     gtfNumber: gtfNumber ?? undefined,
     fromDate: parseDate(fromDate),
@@ -276,6 +373,9 @@ export const GET = withApiHandler("forestal-wood-entries-get", async (req: NextR
     sinOrigenCode: sinOrigen || undefined,
     sinCosto: sinCosto || undefined,
     recepcion,
+    /* `pago` no sale de `leerFiltrosCabecera` (esa función degrada valores
+       rotos en silencio; acá ya se validó y devolvió 400 si hacía falta). */
+    cabecera: pago ? { ...(leerFiltrosCabecera(url.searchParams) ?? {}), pago } : leerFiltrosCabecera(url.searchParams),
     sortBy: sortParsed.success ? sortParsed.data : undefined,
     sortDir: dirParsed.success ? dirParsed.data : undefined,
     limit,
@@ -288,15 +388,25 @@ export const GET = withApiHandler("forestal-wood-entries-get", async (req: NextR
   const porGuia = url.searchParams.get("agrupar") === "guia";
 
   try {
+    /* ?sinFoto=1 → las guías RECIBIDAS sin foto de la carga, para la tira de
+       pendientes (período + permiso, como el resto). Sólo el agregado. */
+    if (url.searchParams.get("sinFoto") === "1") {
+      const sinFoto = await WoodEntriesDB.guiasRecibidasSinFoto(auth.tenantId, {
+        fromDate: filters.fromDate,
+        toDate: filters.toDate,
+        contratoId: filters.contratoId,
+      });
+      return NextResponse.json({ sinFoto });
+    }
     if (porGuia) {
       if (url.searchParams.get("stats") === "1") {
         const [result, stats] = await Promise.all([
           WoodEntriesDB.listPorGuia(auth.tenantId, filters),
           WoodEntriesDB.stats(auth.tenantId, filters),
         ]);
-        return NextResponse.json({ ...result, stats });
+        return NextResponse.json({ ...conFotosNormalizadas(result), stats });
       }
-      return NextResponse.json(await WoodEntriesDB.listPorGuia(auth.tenantId, filters));
+      return NextResponse.json(conFotosNormalizadas(await WoodEntriesDB.listPorGuia(auth.tenantId, filters)));
     }
     // ?stats=1 → adjunta los agregados del período (calculados en DB) a la misma
     // respuesta. Van juntos, no en dos requests: así KPIs y tabla describen
@@ -306,10 +416,10 @@ export const GET = withApiHandler("forestal-wood-entries-get", async (req: NextR
         WoodEntriesDB.list(auth.tenantId, filters),
         WoodEntriesDB.stats(auth.tenantId, filters),
       ]);
-      return NextResponse.json({ ...result, stats });
+      return NextResponse.json({ ...conFotosNormalizadas(result), stats });
     }
     const result = await WoodEntriesDB.list(auth.tenantId, filters);
-    return NextResponse.json(result);
+    return NextResponse.json(conFotosNormalizadas(result));
   } catch (err) {
     logger.error("[wood-entries.GET] failed", { error: String(err) });
     // Dev-mode: expone mensaje + stack truncado para debug rápido.
@@ -351,6 +461,13 @@ const recepcionGuiaSchema = z.object({
    * propia y no se inventa una — el libro es un formato oficial.
    */
   observacion: z.string().trim().max(300).optional(),
+  /**
+   * La llegada cae después del vencimiento de la guía y quien recibe confirma
+   * que fue así, con motivo (ADR-434 §Vencimiento). Sin esto, esa fecha se
+   * rechaza con 422 `GUIA_VENCIDA`; el motivo lo exige la regla pura.
+   */
+  aceptaVencida: z.boolean().optional(),
+  motivoVencida: z.string().trim().max(300).optional(),
 });
 
 /**
@@ -461,6 +578,7 @@ export const PATCH = withApiHandler("forestal-wood-entries-patch", async (req: N
       parsed.data.fecha,
       auth.username ?? "unknown",
       parsed.data.observacion,
+      { aceptaVencida: parsed.data.aceptaVencida, motivoVencida: parsed.data.motivoVencida },
     );
     /* Un fallo parcial NO es un 200 silencioso: la guía quedó a medias y la
        pantalla tiene que poder decir cuál falta. */

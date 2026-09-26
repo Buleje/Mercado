@@ -16,14 +16,19 @@ const H = vi.hoisted(() => ({
 }));
 
 vi.mock("server-only", () => ({}));
-vi.mock("@/lib/prisma", () => ({
-  prisma: {
+vi.mock("@/lib/prisma", () => {
+  const prisma: Record<string, unknown> = {
     woodEntry: {
       findFirst: vi.fn(async () => H.entry),
-      update: vi.fn(async (args: { data: Record<string, unknown> }) => {
+      /* `setCosto` escribe con `updateMany` dentro de una tx (ADR-437: la marca
+         de servicio va en el WHERE) y relee la fila. */
+      updateMany: vi.fn(async (args: { where: Record<string, unknown>; data: Record<string, unknown> }) => {
+        if (args.where.maderaDeTercero === false && H.entry?.maderaDeTercero === true) return { count: 0 };
         H.updates.push(args);
-        return { ...H.entry, ...args.data };
+        H.entry = { ...H.entry, ...args.data };
+        return { count: 1 };
       }),
+      findFirstOrThrow: vi.fn(async () => H.entry),
     },
     forestCtpConsumo: {
       findMany: vi.fn(async (args: unknown) => {
@@ -31,8 +36,12 @@ vi.mock("@/lib/prisma", () => ({
         return H.congelados;
       }),
     },
-  },
-}));
+    /* La guía no está anotada en ninguna cuenta: la re-sincronización no hace nada. */
+    forestCuentaMov: { findFirst: vi.fn(async () => null) },
+  };
+  prisma.$transaction = vi.fn(async (fn: (tx: unknown) => Promise<unknown>) => fn(prisma));
+  return { prisma };
+});
 vi.mock("@/lib/cache", () => ({ invalidateByPrefix: vi.fn(), invalidate: vi.fn() }));
 vi.mock("@/lib/logger", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() } }));
 vi.mock("@/lib/forestal/ctp-audit", async (real) => ({
@@ -89,6 +98,17 @@ describe("WoodEntriesDB.setCosto — mismo freno que la tanda", () => {
     await expect(WoodEntriesDB.setCosto("tenant-qa", "w1", { costoTotal: null }, "qaadmin")).rejects.toMatchObject({
       code: "CONGELADO",
     });
+    expect(H.updates).toEqual([]);
+  });
+
+  it("madera de servicio (ADR-437) no lleva costo — ni 0 — y no escribe", async () => {
+    H.entry = guia({ maderaDeTercero: true, duenoNombre: "WASACO", costoTotal: null });
+    for (const costoTotal of [100, 0]) {
+      const err = await WoodEntriesDB.setCosto("tenant-qa", "w1", { costoTotal }, "qaadmin").catch((e) => e);
+      expect(err).toBeInstanceOf(CtpInvariantError);
+      expect(err).toMatchObject({ code: "ESTADO_NO_EDITABLE", detail: { motivo: "ES_MADERA_DE_SERVICIO" } });
+      expect(String(err.message)).toMatch(/servicio de WASACO/);
+    }
     expect(H.updates).toEqual([]);
   });
 

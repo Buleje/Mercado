@@ -96,6 +96,8 @@ export type CtpAuditEntity =
   // modelo Prisma: es el PAPEL que se entregó, guardado para poder re-imprimir
   // el mismo documento ante una fiscalización.
   | "ForestAnexo04"
+  /** Un reporte diario por correo/WhatsApp (ADR-439): a quién le llega qué del libro. */
+  | "ForestReporteDiario"
   | "Tenant";
 
 /**
@@ -179,11 +181,22 @@ export type CtpAuditAction =
   | "ctp_ingreso_recepcion"
   /** Corrigió la fecha de llegada de una guía ya recibida, con motivo: antes → después (ADR-434). */
   | "ctp_ingreso_recepcion_corregida"
+  /**
+   * Recibió o corrigió una guía con una llegada POSTERIOR a su vencimiento,
+   * confirmándolo con motivo (ADR-434 §Vencimiento). Aparte, para que «qué
+   * madera viajó con la guía vencida» sea un filtro y no una búsqueda en texto.
+   */
+  | "ctp_ingreso_recepcion_vencida"
   | "ctp_ingreso_reject"
   | "ctp_ingreso_annul"
   | "ctp_ingreso_delete"
   /** Recepción física de las trozas de una guía (ADR-325): qué llegó y qué no. */
   | "ctp_troza_recepcion"
+  /** Al anular/rechazar/borrar un ingreso, sus trozas SUELTAN el código de
+   *  planta (el índice único lo seguía ocupando): el renglón dice cuál tenía cada una. */
+  | "ctp_troza_codigo_soltado"
+  /** Alguien abrió una foto privada de la carga (GPS + nombre: Ley 29733). */
+  | "ctp_foto_ver"
   // Líneas de producción / despacho
   | "ctp_linea_create"
   /** Cerró una corrida abierta en el patio declarando qué salió (ADR-340). */
@@ -230,6 +243,10 @@ export type CtpAuditAction =
   | "ctp_trozas_consumidas"
   /** Qué PIEZAS salieron sin aserrar en un despacho (ADR-363). */
   | "ctp_trozas_despachadas"
+  /** Se imprimieron etiquetas QR de piezas y, si faltaba, se les dio su código
+   *  de planta correlativo (ADR-436). El código nuevo es la marca que se pinta
+   *  en el palo: un fiscalizador tiene que poder ver cuándo nació. */
+  | "ctp_trozas_etiquetadas"
   | "ctp_origenes_set"
   /** Qué corridas alimentan un reproceso (ADR-316). Espeja `ctp_origenes_set`:
    *  también descuenta stock, así que también deja rastro. */
@@ -334,7 +351,14 @@ export type CtpAuditAction =
   | "ctp_plan_baja"
   | "ctp_anexo04_emit"
   | "ctp_anexo04_update"
-  | "ctp_anexo04_delete";
+  | "ctp_anexo04_delete"
+  // Reportes diarios por correo y WhatsApp (ADR-439): el libro sale del panel
+  // hacia terceros (contador, regente), así que quién lo prendió y a quién va
+  // tiene que quedar escrito. «Enviar ahora» también.
+  | "ctp_reporte_diario_crear"
+  | "ctp_reporte_diario_actualizar"
+  | "ctp_reporte_diario_eliminar"
+  | "ctp_reporte_diario_enviar";
 
 /** Lo que describe un evento del libro. */
 export interface CtpAuditParams {

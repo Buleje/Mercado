@@ -8,6 +8,7 @@ import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { ctpErrorResponse } from "@/lib/forestal/ctp-api-errors";
 import { withApiHandler } from "@/lib/api-handler";
+import { normalizarFotos } from "@/lib/forestal/fotos-carga";
 import { TIPOS_DOCUMENTO_LOCTP, UNIDADES_LOCTP } from "@/lib/forestal/loctp-campos";
 
 /**
@@ -102,6 +103,9 @@ const patchSchema = z.discriminatedUnion("action", [
       .trim()
       .regex(/^\d{4}-\d{2}-\d{2}$/, "Usa el formato AAAA-MM-DD")
       .optional(),
+    /* Llegada después del vencimiento de la guía, confirmada con motivo (ADR-434 §Vencimiento). */
+    aceptaVencida: z.boolean().optional(),
+    motivoVencida: z.string().trim().max(300).optional(),
   }),
   z.object({ action: z.literal("reject"), reason: z.string().trim().min(3).max(500) }),
   // Anular un ingreso YA validado (con motivo). Distinto de reject (pre-validación).
@@ -181,7 +185,8 @@ export const GET = withApiHandler(
     if (!entry) {
       return NextResponse.json({ error: "not_found" }, { status: 404 });
     }
-    return NextResponse.json({ entry });
+    /* `photos` en una sola forma (`FotoCarga[]`): string viejo u objeto nuevo. */
+    return NextResponse.json({ entry: { ...entry, photos: normalizarFotos(entry.photos) } });
   },
 );
 
@@ -281,6 +286,8 @@ export const PATCH = withApiHandler(
           id,
           parsed.data.fecha,
           auth.username ?? "unknown",
+          undefined,
+          { aceptaVencida: parsed.data.aceptaVencida, motivoVencida: parsed.data.motivoVencida },
         );
         if (!r) return NextResponse.json({ error: "not_found" }, { status: 404 });
         return NextResponse.json(r);

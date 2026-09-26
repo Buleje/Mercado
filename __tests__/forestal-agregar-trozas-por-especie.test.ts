@@ -29,9 +29,12 @@ const H = vi.hoisted(() => {
     audit: [] as { entityId: string; detail: string }[],
   };
   const tx = {
+    /* ADR-437: el alta bloquea la guía y hereda su plata (marca de servicio, dueño). */
+    $executeRaw: async () => 1,
     woodEntry: {
       aggregate: async () => ({ _max: { libroNro: 10 } }),
-      create: async (a: { data: Record<string, unknown> }) => ({ id: "nueva", ...a.data }),
+      create: async (a: { data: Record<string, unknown> }) => ({ id: "nueva", costoTotal: null, ...a.data }),
+      findFirst: async () => null,
     },
     woodEntryTroza: {
       findMany: async (a: { where: { woodEntryId: { in: string[] } } }) =>

@@ -16,9 +16,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { formatDateNumeric } from "@/lib/format";
 import { useMiRol } from "@/hooks/use-mi-rol";
-import { AlertCircle, PackageCheck, ThumbsDown, ThumbsUp } from "@buleje/design-system/icons";
+import { AlertCircle, PackageCheck } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
-import BulkActionsBar from "@/components/admin/shared/BulkActionsBar";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useGuardarPrefs, usePrefsIniciales } from "@/hooks/use-ctp-ingresos-prefs";
 import {
@@ -40,15 +39,21 @@ import { documentoHtml } from "@/lib/forestal/ctp-documento-print";
 import { CSS_LISTA_TROZAS, htmlListaTrozas } from "@/lib/forestal/ctp-lista-trozas";
 import { CSS_LEGAJO, portadaLegajo } from "@/lib/forestal/ctp-legajo";
 import { metaArchivado, papelesDeGuia, papelesDeIngreso } from "@/lib/forestal/ctp-documentos-ingreso";
+import { hojaFotosDeLaCarga } from "@/lib/forestal/ctp-fotos-papel";
+import { normalizarFotos } from "@/lib/forestal/fotos-carga";
 import { useLogosTitulares } from "@/hooks/use-logos-titulares";
 import CtpArchivadorAuto, { type GuiaParaArchivar } from "./CtpArchivadorAuto";
 import { hayNovedades } from "@/lib/forestal/ctp-cola-archivado";
 import type { GtfSerfor } from "@/lib/forestal/serfor-gtf";
 import type { GuiaIngreso } from "@/lib/forestal/ingresos-por-guia";
 import { ctpGet, invalidarCtp } from "@/lib/forestal/ctp-fetch";
-import { csrfHeaders } from "@/lib/csrf-client";
-import { tieneCosto } from "@/lib/forestal/costo-sugerido";
+import { esSinCosto } from "@/lib/forestal/madera-de-servicio";
 import { faltaRecibirMadera } from "@/lib/forestal/recepcion-guias";
+import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
+import CtpEtiquetasTrozasModal from "./CtpEtiquetasTrozasModal";
+import CtpDocumentosGuiaModal from "./CtpDocumentosGuiaModal";
+import { DocumentosGuiaProvider } from "./ctp-documentos-guia-contexto";
+import { useConteoDocumentosGuias } from "@/hooks/use-documentos-guia";
 import type { ResultadoBloque } from "@/hooks/use-recepcion-bloque";
 import { logger } from "@/lib/logger";
 
@@ -74,7 +79,14 @@ import CtpIngresoCadenaModal from "./CtpIngresoCadenaModal";
 import CtpIngresoEditModal from "./CtpIngresoEditModal";
 import { useActionToasts, ActionToasts } from "./cubicador-toasts";
 import CtpGuiasTable, { COLUMNAS_GUIAS_OPCIONALES } from "./CtpGuiasTable";
-import { useColumnasGuias } from "./ctp-guias-columnas";
+import { CLAVE_ORDEN_GUIAS, ORDEN_GUIAS_DEFECTO, useColumnasGuias } from "./ctp-guias-columnas";
+import { etiquetaDePermiso, filtrosDeCabeceraGuias, filtrosDeCabeceraGuiasMovil } from "./CtpGuiasFiltrosCabecera";
+import { BotonRestablecerColumnas, useOrdenColumnas } from "@/components/admin/shared/columnas-ordenables";
+import {
+  hayFiltroDeColumna,
+  textosDeFiltrosColumna,
+  type FiltrosColumnaIngresos,
+} from "@/lib/forestal/ingresos-filtros-columna";
 import CtpCuadrarGuiaModal from "./CtpCuadrarGuiaModal";
 import CtpGuiaFichaModal from "./CtpGuiaFichaModal";
 import CtpAcomodarTrozasModal from "./CtpAcomodarTrozasModal";
@@ -82,9 +94,11 @@ import type { AlcanceAcomodoCliente } from "@/hooks/use-acomodar-trozas";
 import CtpCostoGuiaModal, { type GuiaACostear } from "./CtpCostoGuiaModal";
 import CtpPonerPrecioModal from "./CtpPonerPrecioModal";
 import CtpRecepcionBloqueModal, { type GuiaParaBloque } from "./CtpRecepcionBloqueModal";
+import CtpGuiasSeleccionBarra from "./CtpGuiasSeleccionBarra";
 import CtpCorregirRecepcionModal from "./CtpCorregirRecepcionModal";
 import CtpAvisoLlegadaTardia from "./CtpAvisoLlegadaTardia";
-import { ddmm, yaRecibida } from "@/lib/forestal/fecha-de-llegada";
+import { ddmm, estadoDeVencimiento, yaRecibida } from "@/lib/forestal/fecha-de-llegada";
+import { limaDateKey } from "@/lib/utils";
 import CtpTrozasIndividuales from "./CtpTrozasIndividuales";
 import CtpIngresosKpis from "./CtpIngresosKpis";
 import CtpKpiFiltros, { camposDeIngresos, notaDeFiltros } from "./CtpKpiFiltros";
@@ -135,6 +149,8 @@ const costeableDeGuia = (guia: GuiaIngreso<WoodEntry>): GuiaACostear => ({
   especie: guia.lineas[0]?.speciesCommonName ?? null,
   volumenM3: guia.lineas.reduce((a, l) => a + (Number(l.volumeM3) || 0), 0),
   lineas: guia.lineas.map((l) => ({ id: l.id, volumeM3: l.volumeM3 })),
+  fecha: guia.lineas[0]?.entryDate?.slice(0, 10) ?? null,
+  originCode: guia.lineas[0]?.originCode ?? null,
 });
 
 /** La fecha de hoy como se escribe en el papel. */
@@ -176,6 +192,14 @@ export default function CtpIngresosView({
   /* 2026-09-25: clave `-v2` porque cambió el defecto; la elección hecha con la
      vieja se migra una vez (`migrarColumnasGuias`). */
   const [colsGuias, setColsGuias] = useColumnasGuias();
+  /* El orden de las columnas, arrastrando los títulos (Brandon, 2026-09-26). */
+  const ordenGuias = useOrdenColumnas(CLAVE_ORDEN_GUIAS, ORDEN_GUIAS_DEFECTO);
+  /**
+   * Los autofiltros de cabecera que no tenían otro control: documento, SNIFFS,
+   * fechas, cantidad… (2026-09-26). No se recuerdan entre visitas, igual que
+   * la búsqueda: un N° de guía tipeado ayer vacía la bandeja de hoy sin aviso.
+   */
+  const [colFiltros, setColFiltros] = useState<FiltrosColumnaIngresos>({});
   /**
    * El ARCHIVO se ordena por lo último RECIBIDO (ADR-351).
    *
@@ -207,6 +231,9 @@ export default function CtpIngresosView({
   const [guiaEntry, setGuiaEntry] = useState<WoodEntry | null>(null);
   /** El papel de una GUÍA entera (ADR-348): su GTF y su lista de trozas. */
   const [docGuia, setDocGuia] = useState<GuiaIngreso<WoodEntry> | null>(null);
+  /** Las piezas de una guía que van al modal de etiquetas QR (ADR-436). */
+  const [etiquetasGuia, setEtiquetasGuia] = useState<{ ids: string[]; contexto: string } | null>(null);
+  const [docsGuia, setDocsGuia] = useState<GuiaIngreso<WoodEntry> | null>(null);
   const [docTrozas, setDocTrozas] = useState<TrozaDeGuia[] | null>(null);
   /** La FICHA de la guía (ADR-350): se revisa y se recibe en el mismo lugar. */
   const [fichaGuia, setFichaGuia] = useState<GuiaIngreso<WoodEntry> | null>(null);
@@ -228,6 +255,8 @@ export default function CtpIngresosView({
   const [cuadreGuia, setCuadreGuia] = useState<GuiaIngreso<WoodEntry> | null>(null);
   /** Recibir varias guías en un acto: el caso real son 10 esperando hace días. */
   const [bloqueAbierto, setBloqueAbierto] = useState(false);
+  /** Las guías tildadas en la tabla con que se abre el bloque (claves); `null` = cerrado. */
+  const [bloqueElegidas, setBloqueElegidas] = useState<string[] | null>(null);
   /** Corregir la fecha de llegada de guías ya recibidas (ADR-434); `inicial` = la fila desde la que se abrió. */
   const [corregirRecepcion, setCorregirRecepcion] = useState<{ inicial: string | null } | null>(null);
   const [guiaHoja, setGuiaHoja] = useState(0);
@@ -272,8 +301,10 @@ export default function CtpIngresosView({
   useEffect(() => { setRecepcionSel(recepcion ?? ""); }, [recepcion]);
 
   const filtros = useMemo(
-    () => ({ status: statusFilter, search, recepcion: recepcionSel, ...facetas }),
-    [statusFilter, search, recepcionSel, facetas],
+    () => ({ status: statusFilter, search, recepcion: recepcionSel, ...facetas,
+      /* «Sin costo» (tarjeta o panel) gana sobre el «Con precio» de la cabecera: juntos darían cero. */
+      columnas: facetas.sinCosto ? { ...colFiltros, conCosto: undefined } : colFiltros }),
+    [statusFilter, search, recepcionSel, facetas, colFiltros],
   );
 
   useGuardarPrefs(useMemo(() => ({ statusFilter, facetas, sort }), [statusFilter, facetas, sort]), recepcion ?? "todas");
@@ -301,7 +332,7 @@ export default function CtpIngresosView({
   useEffect(() => {
     setPage(0);
     setSelectedIds([]);
-  }, [search, statusFilter, facetas, period, sort, recepcionSel]);
+  }, [search, statusFilter, facetas, colFiltros, period, sort, recepcionSel]);
 
   // Llegó desde un aviso ("2 fuera de plazo", "1 CITES sin permiso"): la lista
   // se abre mostrando ESOS casos. El filtro pedido reemplaza al que hubiera —
@@ -309,6 +340,8 @@ export default function CtpIngresosView({
   useEffect(() => {
     if (!filtroRapido) return;
     setSearchInput("");
+    /* Y los de cabecera: un «Documento: 123» tipeado vaciaría el salto. */
+    setColFiltros({});
     /* El salto manda: si la guía buscada ya se recepcionó, la bandeja la
        escondería y el click terminaría en una lista vacía. */
     setRecepcionSel("");
@@ -321,6 +354,11 @@ export default function CtpIngresosView({
     } else if (filtroRapido.tipo === "sin-origen") {
       setStatusFilter("");
       setFacetas({ sinOrigen: true });
+    } else if (filtroRapido.tipo === "sin-pagar") {
+      /* «3 guías sin pagar a Nelly» (ADR-437): las compras con algo pendiente. */
+      setStatusFilter("");
+      setFacetas({});
+      setColFiltros({ pago: "sin-pagar" });
     } else {
       setStatusFilter("");
       setFacetas({ cites: true });
@@ -478,6 +516,14 @@ export default function CtpIngresosView({
     () => selectedIds.filter((id) => pendingIds.includes(id)),
     [selectedIds, pendingIds],
   );
+  /* El motivo del rechazo en lote cuenta GUÍAS, como el resto de la barra
+     (`CtpGuiasSeleccionBarra`): «2 guías» explica lo que el operador eligió
+     —el papel—, no los 5 asientos que ese papel puede traer (dos especies en
+     la misma GTF son dos asientos, ADR-346). */
+  const guiasDelRechazo = useMemo(
+    () => guias.filter((g) => g.lineas.some((l) => selectedPending.includes(l.id))).length,
+    [guias, selectedPending],
+  );
 
   // Atajos del teclado para la carga en tanda: el almacenero valida 20 guías
   // seguidas y soltar el mouse para cada una cuesta más que la validación.
@@ -579,43 +625,22 @@ export default function CtpIngresosView({
         "Está arriba de todo en «GTF ingresadas», y sus piezas ya se pueden llevar a la sierra desde Consumos.",
     });
     encolarArchivado(guia.lineas);
-    /* Sólo si NO tiene costo: preguntar por algo ya contestado es ruido, y el
-       operador aprende a cerrar el modal sin leerlo. */
-    if (!guia.lineas.some(tieneCosto)) setCostoGuia(costeableDeGuia(guia));
+    /* Sólo si TODA la guía espera costo: preguntar por algo ya contestado es
+       ruido, y el operador aprende a cerrar el modal sin leerlo. Una guía de
+       madera de servicio no lo espera nunca (ADR-437). */
+    if (guia.lineas.length > 0 && guia.lineas.every((l) => esSinCosto(l))) setCostoGuia(costeableDeGuia(guia));
     return true;
   }
 
   /**
-   * Guarda el costo de cada asiento de la guía. Devuelve `false` si alguno
-   * falló: el modal lo dice y no cierra —la plata cargada a medias es peor que
-   * no cargada, porque el margen que muestre va a estar mal y nadie lo va a
-   * saber.
+   * La plata de la guía se guarda DENTRO del modal con un solo `PUT` (ADR-437):
+   * antes eran N PATCH sueltos y una falla a la mitad dejaba media factura.
+   * Acá sólo se relee la bandeja cuando algo se escribió.
    */
-  async function guardarCostoGuia(porAsiento: { id: string; costoTotal: number }[]): Promise<boolean> {
-    const rs = await Promise.all(
-      porAsiento.map((a) =>
-        fetch(`/api/admin/forestal/wood-entries/${encodeURIComponent(a.id)}`, {
-          method: "PATCH",
-          headers: csrfHeaders({ "Content-Type": "application/json" }),
-          credentials: "include",
-          body: JSON.stringify({ action: "set_costo", costoTotal: a.costoTotal, moneda: "PEN" }),
-        })
-          .then((r) => r.ok)
-          .catch((err) => {
-            logger.error("[ingresos] no se pudo guardar el costo", { error: String(err) });
-            return false;
-          }),
-      ),
-    );
-    if (rs.some((ok) => !ok)) return false;
+  function alGuardarPlata(mensaje: string) {
     invalidarCtp("wood-entries");
     void reload();
-    pushToast({
-      tono: "success",
-      msg: `Costo cargado — ${porAsiento.length} asiento${porAsiento.length === 1 ? "" : "s"}`,
-      detail: "Ya cuenta para el margen y para el valor del patio.",
-    });
-    return true;
+    pushToast({ tono: "success", msg: mensaje });
   }
 
   /**
@@ -637,7 +662,7 @@ export default function CtpIngresosView({
     if (r.fallaron.length > 0) {
       pushToast({
         tono: "error",
-        msg: `${r.fallaron.length} no entró${r.fallaron.length === 1 ? "" : "s"}`,
+        msg: `${r.fallaron.length} no ${r.fallaron.length === 1 ? "entró" : "entraron"}`,
         detail: r.fallaron.map((f) => `${f.gtfNumber}: ${f.motivo}`).join(" · "),
       });
     }
@@ -696,6 +721,30 @@ export default function CtpIngresosView({
     }
   }, [piezasDeGuia]);
 
+  /**
+   * Etiquetas QR de las trozas de esta guía que HOY siguen en el patio
+   * (ADR-436). Se pide el patio entero y se filtra por GTF en vez de traer
+   * las piezas del ingreso: así la etiqueta refleja el estado de VERDAD
+   * —consumida, despachada, sin recepcionar— y no lo que la guía declaró.
+   */
+  const imprimirEtiquetasDeGuia = useCallback(async (guia: GuiaIngreso<WoodEntry>) => {
+    try {
+      const r = await fetch("/api/admin/forestal/trozas/patio", { credentials: "include" });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const j = (await r.json()) as { trozas?: TrozaConsumible[] };
+      const deLaGuia = (j.trozas ?? []).filter((t) => t.gtfNumber === guia.gtfNumber);
+      if (deLaGuia.length === 0) {
+        pushToast({ tono: "warning", msg: "Sin trozas en el patio", detail: `La guía ${guia.gtfNumber} no tiene piezas cargadas en el patio.` });
+        return;
+      }
+      /* El modal dice cuántas siguen en el patio, cuáles ya tienen etiqueta y
+         cuáles no tienen código, y deja elegir el formato antes de imprimir. */
+      setEtiquetasGuia({ ids: deLaGuia.map((t) => t.id), contexto: `Guía ${guia.gtfNumber}` });
+    } catch (err) {
+      pushToast({ tono: "error", msg: "No se pudieron generar las etiquetas", detail: err instanceof Error ? err.message : String(err) });
+    }
+  }, [pushToast]);
+
   /** Duplicar: abre el form con lo que se repite; GTF y volumen quedan vacíos. */
   const duplicar = useCallback((e: WoodEntry) => {
     setFormGtf(null);
@@ -752,7 +801,8 @@ export default function CtpIngresosView({
   const hayFiltro = Boolean(
     statusFilter || search ||
     [facetas.species, facetas.provider, facetas.product, facetas.permiso].some((v) => listaDe(v).length > 0) ||
-    facetas.cites !== undefined || facetas.late || facetas.sinOrigen || facetas.sinCosto,
+    facetas.cites !== undefined || facetas.late || facetas.sinOrigen || facetas.sinCosto ||
+    hayFiltroDeColumna(colFiltros),
   );
   /** Qué está filtrando, con nombre: el vacío tiene que poder explicarse. */
   const filtrosActivos = useMemo(
@@ -768,8 +818,9 @@ export default function CtpIngresosView({
         facetas.late ? "fuera de plazo" : "",
         facetas.sinOrigen ? "sin código de origen" : "",
         facetas.sinCosto ? "sin costo" : "",
+        ...textosDeFiltrosColumna(filtros.columnas),
       ].filter(Boolean),
-    [statusFilter, search, facetas],
+    [statusFilter, search, facetas, filtros.columnas],
   );
   /**
    * Los campos de la fila de filtros del ARCHIVO (ADR-400).
@@ -790,16 +841,29 @@ export default function CtpIngresosView({
    * sobre todo el período— para que el número del aviso y las filas de abajo
    * nunca digan cosas distintas; si hay más, se llega paginando o filtrando.
    */
+  /* ADR-438: el «3/6 docs» de las guías en pantalla, en UN pedido, y el modal. */
+  const conteoDocs = useConteoDocumentosGuias(guias.map((g) => g.gtfNumber));
+  const ctxDocs = useMemo(() => ({ llenos: conteoDocs.llenos, abrir: setDocsGuia }), [conteoDocs.llenos]);
   const porRecibir = useMemo(() => guias.filter((g) => faltaRecibirMadera(g)), [guias]);
   /** Las guías EN PANTALLA que ya se recibieron: las que se pueden corregir (ADR-434). */
   const recibidas = useMemo(() => guias.filter((g) => yaRecibida(g)), [guias]);
   const gtfsRecibidas = useMemo(() => recibidas.map((g) => g.gtfNumber), [recibidas]);
+  /* ADR-434 §Vencimiento: las que figuran recibidas con la guía ya vencida, y
+     las por recibir cuya guía ya venció. La MISMA regla que el chip de la fila. */
+  const vencidas = useMemo(() => {
+    const hoy = limaDateKey();
+    return {
+      recibidas: recibidas.filter((g) => estadoDeVencimiento(g, hoy)?.tipo === "recibida_vencida").map((g) => g.gtfNumber),
+      porRecibir: porRecibir.filter((g) => estadoDeVencimiento(g, hoy)?.tipo === "vencida_sin_recibir").length,
+    };
+  }, [recibidas, porRecibir]);
 
   /** Saca TODO lo que filtra. El período no: ése se ve arriba y es otra decisión. */
   const limpiarFiltros = useCallback(() => {
     setStatusFilter("");
     setSearchInput("");
     setFacetas({});
+    setColFiltros({});
   }, []);
 
   /**
@@ -809,6 +873,18 @@ export default function CtpIngresosView({
    * ocupe mucho espacio»). Antes vivía en su propia fila debajo de los KPIs;
    * ahora comparte fila con el botón que los pliega.
    */
+  /** Lo que necesitan los autofiltros de cabecera: la tabla y el panel del celular los arman igual. */
+  const argsCabecera = {
+    col: colFiltros,
+    setCol: setColFiltros,
+    statusFilter,
+    setStatusFilter,
+    recepcionSel,
+    setRecepcionSel,
+    facetas,
+    setFacetas,
+    stats,
+  };
   const barraFiltros = (boton: React.ReactNode) => (
     <CtpIngresosFiltros
       antes={boton}
@@ -823,8 +899,9 @@ export default function CtpIngresosView({
              que muestra todo igual, y el desplegable abría cortado a la
              izquierda (x=−25 a 400 px, 2026-09-25) para elegir algo que ahí
              no cambia nada. */
-          <div className="max-sm:hidden">
+          <div className="flex items-center gap-1 max-sm:hidden">
             <ColumnasMenu columnas={COLUMNAS_GUIAS_OPCIONALES} visibles={colsGuias} onChange={setColsGuias} className="h-9 rounded-full" />
+            <BotonRestablecerColumnas cambiado={ordenGuias.cambiado} onRestablecer={ordenGuias.restablecer} />
           </div>
         ) : undefined
       }
@@ -857,6 +934,16 @@ export default function CtpIngresosView({
       facetas={facetas}
       onFacetas={setFacetas}
       enCabecera={modo === "guia"}
+      /* En el celular la tabla por guía es una pila de tarjetas: sus
+         autofiltros de cabecera se ofrecen dentro de «Filtros». */
+      filtrosMovil={modo === "guia" ? filtrosDeCabeceraGuiasMovil(argsCabecera) : undefined}
+      /* Recepción no cuenta: la pone también «Por recepcionar / Todas» de arriba,
+         y quitarla desde acá dejaría ese selector diciendo otra cosa. */
+      hayFiltroMovil={hayFiltroDeColumna(colFiltros) || !!facetas.sinCosto}
+      onLimpiarMovil={() => {
+        setColFiltros({});
+        setFacetas((f) => ({ ...f, sinCosto: undefined }));
+      }}
       stats={stats}
       loading={loading}
       dashboardOn={showDashboard}
@@ -943,7 +1030,12 @@ export default function CtpIngresosView({
         sinOrigenOn={facetas.sinOrigen === true}
         onSinOrigen={() => setFacetas((f) => ({ ...f, sinOrigen: f.sinOrigen ? undefined : true }))}
         sinCostoOn={facetas.sinCosto === true}
-        onSinCosto={() => setFacetas((f) => ({ ...f, sinCosto: f.sinCosto ? undefined : true }))}
+        onSinCosto={() => {
+          /* «Sin costo» y el «Con precio» de la cabecera se excluyen: los dos
+             juntos dan cero filas y la cabecera seguiría diciendo «Con precio». */
+          setFacetas((f) => ({ ...f, sinCosto: f.sinCosto ? undefined : true }));
+          setColFiltros((f) => ({ ...f, conCosto: undefined }));
+        }}
         /* El período completo, para dibujar el ritmo diario con los días vacíos. */
         period={period}
         /* Los mismos filtros que recortan la tabla gobiernan las cifras
@@ -975,7 +1067,13 @@ export default function CtpIngresosView({
             <span className="font-mono tabular-nums">
               {porRecibir.reduce((a, g) => a + Math.max(0, g.trozasCount - g.trozasDecididas), 0)} trozas
             </span>{" "}
-            sin fechar.
+            sin fechar
+            {vencidas.porRecibir > 0 && (
+              <b className="text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+                {" "}· {vencidas.porRecibir} con la guía ya vencida
+              </b>
+            )}
+            .
             <InfoTip icono="ayuda" title="Guías sin recibir" what="Hasta que se reciban, esa madera no aparece en Consumos." />
           </p>
           <button
@@ -989,7 +1087,11 @@ export default function CtpIngresosView({
       )}
 
       {/* ADR-434: recibidas después de que la sierra ya cortaba su permiso. */}
-      <CtpAvisoLlegadaTardia gtfs={gtfsRecibidas} onCorregir={() => setCorregirRecepcion({ inicial: null })} />
+      <CtpAvisoLlegadaTardia
+        gtfs={gtfsRecibidas}
+        vencidas={vencidas.recibidas}
+        onCorregir={() => setCorregirRecepcion({ inicial: null })}
+      />
 
       {error && (
         <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
@@ -1007,70 +1109,33 @@ export default function CtpIngresosView({
         </div>
       )}
 
-      <BulkActionsBar
-        selectedIds={selectedPending}
-        totalCount={pendingIds.length}
-        onSelectAll={() => setSelectedIds(pendingIds)}
-        onClearSelection={() => { setSelectedIds([]); setBulkRejecting(false); }}
-        actions={[
-          /* En la bandeja, la acción del patio es RECEPCIONAR (ADR-339): fecha
-             las piezas que bajaron, fecha la guía y la valida — un paso, y la
-             guía se va sola a «GTF ingresadas». Validar sigue existiendo para
-             quien sólo quiere aceptar el papel. */
-          ...(recepcion === "pendiente"
-            ? [
-                {
-                  id: "recepcionar",
-                  label: "Recepcionar seleccionadas",
-                  icon: PackageCheck,
-                  onClick: async (ids: string[]) => {
-                    setBusy("bulk");
-                    const marcados = entries.filter((e) => ids.includes(e.id));
-                    const fallaron = await recepcionarMany(ids);
-                    setSelectedIds([]);
-                    setBusy(null);
-                    if (fallaron === 0) {
-                      pushToast({
-                        tono: "success",
-                        msg: `${ids.length} guía${ids.length === 1 ? "" : "s"} recepcionada${ids.length === 1 ? "" : "s"}`,
-                        detail:
-                          "Están arriba de todo en «GTF ingresadas», y sus piezas ya se pueden llevar a la sierra desde Consumos.",
-                      });
-                    }
-                    encolarArchivado(marcados);
-                  },
-                },
-              ]
-            : []),
-          {
-            id: "validate",
-            label: "Validar seleccionados",
-            icon: ThumbsUp,
-            onClick: async (ids) => {
-              setBusy("bulk");
-              const marcados = entries.filter((e) => ids.includes(e.id));
-              await validateMany(ids);
-              setSelectedIds([]);
-              setBusy(null);
-              encolarArchivado(marcados);
-            },
-          },
-          {
-            id: "reject",
-            label: "Rechazar seleccionados",
-            icon: ThumbsDown,
-            variant: "danger",
-            // No dispara nada todavía: rechazar exige motivo, y un lote sin
-            // motivo es un rechazo que después nadie puede explicar.
-            onClick: () => { setBulkRejecting(true); setBulkReason(""); },
-          },
-        ]}
+      {/* UN tilde para recibir, validar y rechazar (2026-09-26): recepcionar
+          abre el bloque ya marcado, con la fecha de cada guía y sus avisos. */}
+      <CtpGuiasSeleccionBarra
+        guias={guias}
+        selectedIds={selectedIds}
+        busy={busy === "bulk"}
+        onSeleccionarTodas={(ids) => setSelectedIds((prev) => [...new Set([...prev, ...ids])])}
+        onLimpiar={() => { setSelectedIds([]); setBulkRejecting(false); }}
+        onRecepcionar={(claves) => setBloqueElegidas(claves)}
+        onValidar={async (ids) => {
+          setBusy("bulk");
+          const marcados = entries.filter((e) => ids.includes(e.id));
+          await validateMany(ids);
+          setSelectedIds([]);
+          setBusy(null);
+          encolarArchivado(marcados);
+        }}
+        /* No dispara nada todavía: rechazar exige motivo, y un lote sin
+           motivo es un rechazo que después nadie puede explicar. */
+        onRechazar={() => { setBulkRejecting(true); setBulkReason(""); }}
       />
 
       {bulkRejecting && selectedPending.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 rounded-xl border-2 border-[var(--data-error-500)]/40 bg-[var(--data-error-50)] p-3 dark:bg-[var(--data-error-500)]/12">
           <label htmlFor="ctp-bulk-reason" className="text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
-            Motivo del rechazo de {selectedPending.length}:
+            Motivo del rechazo de {guiasDelRechazo} guía{guiasDelRechazo === 1 ? "" : "s"}
+            {" "}({selectedPending.length} asiento{selectedPending.length === 1 ? "" : "s"}):
           </label>
           <input
             id="ctp-bulk-reason"
@@ -1110,6 +1175,7 @@ export default function CtpIngresosView({
       {modo === "troza" ? (
         <CtpTrozasIndividuales period={period} />
       ) : (
+      <DocumentosGuiaProvider value={ctxDocs}>
       <CtpGuiasTable
         guias={guias}
         /* Autofiltros de cabecera: mismo `facetas` que el panel (dos lugares, un filtro). */
@@ -1133,22 +1199,17 @@ export default function CtpIngresosView({
             value: facetas.permiso,
             options: stats?.permisos ?? [],
             onChange: (v) => setFacetas((f) => ({ ...f, permiso: v.length > 0 ? v : undefined })),
-            etiqueta: (v) => {
-              const p = stats?.permisos?.find((x) => x.value === v);
-              if (!p) return v;
-              return [v, p.resoluciones[0] ? `Res. ${p.resoluciones[0]}` : null, p.proveedores[0]]
-                .filter(Boolean)
-                .join(" · ");
-            },
+            etiqueta: etiquetaDePermiso(stats),
           },
         }}
         cols={colsGuias}
+        ordenCols={ordenGuias}
+        filtrosCabecera={filtrosDeCabeceraGuias(argsCabecera)}
         loading={loading}
         period={period}
         filtered={hayFiltro}
         filtrosActivos={filtrosActivos}
         onLimpiarFiltros={limpiarFiltros}
-        pendingIds={pendingIds}
         selectedIds={selectedIds}
         setSelectedIds={setSelectedIds}
         busy={busy}
@@ -1179,9 +1240,11 @@ export default function CtpIngresosView({
         onCorregirRecepcion={firma ? (g) => setCorregirRecepcion({ inicial: g.clave }) : undefined}
         /* ADR-435 desde la fila o la tarjeta: sólo ESTA guía, sin pasar por la ficha. */
         onAcomodar={firma ? (g) => setAcomodar({ alcance: { woodEntryId: g.lineas[0]!.id }, descripcion: `Guía ${g.gtfNumber}`, desdeFicha: false }) : undefined}
+        onImprimirEtiquetas={(g) => void imprimirEtiquetasDeGuia(g)}
         sort={sort}
         onSort={ordenar}
       />
+      </DocumentosGuiaProvider>
       )}
 
       <CtpIngresosPaginacion
@@ -1236,9 +1299,16 @@ export default function CtpIngresosView({
           logo: logoDe(guiaEntry.providerName, guiaEntry.providerDocument),
         });
         if (!papeles) return null;
+        // Las fotos de la carga, como última hoja (ADR-434): la GTF queda tal cual.
+        const fotos = hojaFotosDeLaCarga({
+          gtf: papeles.guia.gtfNumber ?? guiaEntry.gtfNumber,
+          emisor: papeles.guia.titular ?? guiaEntry.providerName,
+          fotos: normalizarFotos(guiaEntry.photos),
+          logo: logoDe(guiaEntry.providerName, guiaEntry.providerDocument),
+        });
         return (
           <CtpDocumentoVisor
-            documentos={[papeles.gtf, ...(papeles.lista ? [papeles.lista] : [])]}
+            documentos={[papeles.gtf, ...(papeles.lista ? [papeles.lista] : []), ...(fotos ? [fotos] : [])]}
             activo={guiaHoja}
             onActivo={setGuiaHoja}
             // Se archiva con el N° de guía, el proveedor y la especie: son los
@@ -1249,12 +1319,18 @@ export default function CtpIngresosView({
         );
       })()}
 
-      {bloqueAbierto && (
+      {(bloqueAbierto || bloqueElegidas) && (
         <CtpRecepcionBloqueModal
-          guias={porRecibir as unknown as GuiaParaBloque[]}
-          onClose={() => setBloqueAbierto(false)}
+          /* Desde la tabla: sólo las tildadas, ya marcadas. Desde el aviso: todas, en cero. */
+          guias={
+            (bloqueElegidas ? porRecibir.filter((g) => bloqueElegidas.includes(g.clave)) : porRecibir) as unknown as GuiaParaBloque[]
+          }
+          preseleccion={bloqueElegidas ?? undefined}
+          onClose={() => { setBloqueAbierto(false); setBloqueElegidas(null); }}
           onListo={(r) => {
+            if (bloqueElegidas) setSelectedIds([]);
             setBloqueAbierto(false);
+            setBloqueElegidas(null);
             invalidarCtp("wood-entries");
             void reload();
             /* Las recibidas se van al expediente solas, igual que al validar. */
@@ -1299,7 +1375,7 @@ export default function CtpIngresosView({
         <CtpCostoGuiaModal
           guia={costoGuia}
           historial={entries}
-          onGuardar={guardarCostoGuia}
+          onGuardado={alGuardarPlata}
           onClose={() => setCostoGuia(null)}
         />
       )}
@@ -1347,6 +1423,13 @@ export default function CtpIngresosView({
                   setAcomodar({ alcance: { woodEntryId: fichaGuia.lineas[0]!.id }, descripcion: `Guía ${fichaGuia.gtfNumber}`, desdeFicha: true })
               : undefined
           }
+          /* Los atajos de la cabecera de la ficha (rediseño 09-26): cada uno
+             REEMPLAZA la ficha, igual que el documento y el cuadre. */
+          onPlata={() => { const g = fichaGuia; setFichaGuia(null); setFichaTrozas(null); setCostoGuia(costeableDeGuia(g)); }}
+          onDocumentos={() => { const g = fichaGuia; setFichaGuia(null); setFichaTrozas(null); setDocsGuia(g); }}
+          onEtiquetas={() => { const g = fichaGuia; setFichaGuia(null); setFichaTrozas(null); void imprimirEtiquetasDeGuia(g); }}
+          onFotos={fichaGuia.lineas[0] ? () => { const e = fichaGuia.lineas[0]!; setFichaGuia(null); setFichaTrozas(null); setDetail(e); } : undefined}
+          onCorregirRecepcion={firma ? () => { const g = fichaGuia; setFichaGuia(null); setFichaTrozas(null); setCorregirRecepcion({ inicial: g.clave }); } : undefined}
           onClose={() => { setFichaGuia(null); setFichaTrozas(null); setFichaError(null); }}
         />
       )}
@@ -1381,13 +1464,19 @@ export default function CtpIngresosView({
       )}
 
       {docGuia && docTrozas != null && (() => {
-        const papeles = papelesDeGuia(docGuia, docTrozas, {
-          impresoEl: hoyPE(),
-          logo: logoDe(docGuia.providerName, docGuia.lineas[0].providerDocument),
+        const logo = logoDe(docGuia.providerName, docGuia.lineas[0].providerDocument);
+        const papeles = papelesDeGuia(docGuia, docTrozas, { impresoEl: hoyPE(), logo });
+        // Las fotos se guardan en TODAS las filas de la GTF; se juntan por si
+        // alguna fila quedó con una lista distinta (dato viejo).
+        const fotos = hojaFotosDeLaCarga({
+          gtf: docGuia.gtfNumber,
+          emisor: docGuia.providerName,
+          fotos: normalizarFotos(docGuia.lineas.flatMap((l) => normalizarFotos(l.photos))),
+          logo,
         });
         return (
           <CtpDocumentoVisor
-            documentos={[papeles.gtf, ...(papeles.lista ? [papeles.lista] : [])]}
+            documentos={[papeles.gtf, ...(papeles.lista ? [papeles.lista] : []), ...(fotos ? [fotos] : [])]}
             activo={guiaHoja}
             onActivo={setGuiaHoja}
             onArchivar={(d) => metaArchivado(docGuia.lineas[0], d.nombre)}
@@ -1483,6 +1572,18 @@ export default function CtpIngresosView({
             void reload();
             pushToast({ tono: "success", msg: "Ingreso corregido", detail: "El cambio quedó registrado en el historial del ingreso." });
           }}
+        />
+      )}
+      {etiquetasGuia && (
+        <CtpEtiquetasTrozasModal ids={etiquetasGuia.ids} contexto={etiquetasGuia.contexto} onClose={() => setEtiquetasGuia(null)} />
+      )}
+      {docsGuia && (
+        <CtpDocumentosGuiaModal
+          gtf={docsGuia.gtfNumber}
+          contexto={docsGuia.providerName}
+          onClose={() => { setDocsGuia(null); void conteoDocs.refrescar(); }}
+          /* El visor es un overlay a mano: con este modal Radix abierto quedaría sin clics. */
+          onArmarGtf={() => { const g = docsGuia; setDocsGuia(null); void verDocumento(g); }}
         />
       )}
       <ActionToasts toasts={toasts} onDismiss={dismissToast} />

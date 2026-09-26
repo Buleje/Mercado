@@ -30,9 +30,11 @@ import { cuadreDeIngreso, descuadra } from "@/lib/forestal/cuadre-trozas";
 import ActionMenu from "@/components/admin/shared/action-menu";
 import CtpEntryActions from "./CtpEntryActions";
 import EspecieFoto from "./EspecieFoto";
+import CtpChipVencimiento from "./CtpChipVencimiento";
+import { ChipDocumentosGuia, useDocumentosGuiaCtx } from "./ctp-documentos-guia-contexto";
 import type { useEspeciesFotos } from "./hooks/use-especies-fotos";
 import { accionesDeGuia, type ManejadoresDeGuia } from "./ctp-guia-acciones";
-import type { AccionesDeAsiento } from "./CtpGuiaFila";
+import { ChipServicio, type AccionesDeAsiento } from "./CtpGuiaFila";
 import { StatusBadge, formatDate, productLabel, type WoodEntry, type WoodEntryStatus } from "./ctp-shared";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
@@ -45,6 +47,7 @@ export default function CtpGuiaCardMobile({
   guia,
   fotosEspecie,
   marcada,
+  motivoSinTilde,
   onAlternarMarca,
   actionProps,
   onVerGuia,
@@ -56,10 +59,13 @@ export default function CtpGuiaCardMobile({
   onCostear,
   onCorregirRecepcion,
   onAcomodar,
+  onImprimirEtiquetas,
 }: Omit<ManejadoresDeGuia, "asientos" | "onStartReject" | "onDetail" | "onChain" | "onDuplicate" | "onEdit"> & {
   guia: Guia;
   fotosEspecie: ReturnType<typeof useEspeciesFotos>["indice"];
   marcada: boolean;
+  /** Por qué no se puede tildar (`tildeDeGuia`); `null` = se puede. */
+  motivoSinTilde: string | null;
   onAlternarMarca: (v: boolean) => void;
   actionProps: AccionesDeAsiento;
   onVerFicha: (g: Guia) => void;
@@ -79,12 +85,17 @@ export default function CtpGuiaCardMobile({
   /* «Rechazar» desde el menú abre el motivo acá mismo, como en la fila. */
   const enRechazo = actionProps.rejectingId === primera.id;
 
+  const docsGuia = useDocumentosGuiaCtx();
   const masAcciones = accionesDeGuia(guia, {
+    /* Los casilleros de papeles (ADR-438): vienen del contexto de la vista. */
+    onDocumentos: docsGuia?.abrir,
+    docsLlenos: docsGuia?.llenos[guia.gtfNumber],
     onVerDocumento,
     onVerGuia,
     onCostear,
     onCorregirRecepcion,
     onAcomodar,
+    onImprimirEtiquetas,
     onDetail: actionProps.onDetail,
     onChain: actionProps.onChain,
     onDuplicate: actionProps.onDuplicate,
@@ -100,15 +111,18 @@ export default function CtpGuiaCardMobile({
       }`}
     >
       <header className="flex items-start gap-3">
-        {pendientes > 0 && (
-          <input
-            type="checkbox"
-            aria-label={`Seleccionar la guía ${guia.gtfNumber}`}
-            checked={marcada}
-            onChange={(e) => onAlternarMarca(e.target.checked)}
-            className="mt-1 h-5 w-5 shrink-0 accent-[var(--brand-ink)]"
-          />
-        )}
+        <input
+          type="checkbox"
+          aria-label={
+            motivoSinTilde
+              ? `No se puede seleccionar la guía ${guia.gtfNumber}: ${motivoSinTilde}`
+              : `Seleccionar la guía ${guia.gtfNumber}`
+          }
+          disabled={motivoSinTilde != null}
+          checked={marcada}
+          onChange={(e) => onAlternarMarca(e.target.checked)}
+          className="mt-1 h-6 w-6 shrink-0 accent-[var(--brand-ink)] disabled:opacity-30"
+        />
         <div className="min-w-0 flex-1">
           <button
             type="button"
@@ -127,6 +141,8 @@ export default function CtpGuiaCardMobile({
                 <Download className="h-3 w-3 shrink-0" aria-hidden /> Importado
               </span>
             )}
+            {/* Madera de servicio (ADR-437): de quién es, igual que en la tabla. */}
+            <ChipServicio guia={guia} />
           </p>
           {/* El permiso, que en la tabla va con su rótulo bajo el proveedor
               (ADR-400): acá igual, como dato con nombre. */}
@@ -139,6 +155,9 @@ export default function CtpGuiaCardMobile({
           <p className="text-sm text-[var(--text-tertiary)]">
             {formatDate(guia.entryDate)} · {guia.lineas.length} asiento{guia.lineas.length === 1 ? "" : "s"} del libro
           </p>
+          {/* ADR-434 §Vencimiento: recibida después de que venció su guía, o vencida sin recibir. */}
+          <CtpChipVencimiento guia={guia} className="mt-1" />
+          <ChipDocumentosGuia guia={guia} className="mt-1" />{/* ADR-438 */}
         </div>
         {guia.statusMixto ? (
           <span

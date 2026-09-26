@@ -12,6 +12,7 @@ import { leerGtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 import { esCampoSinDato, marcadorDeAusencia } from "@/lib/forestal/campo-sin-dato";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { claveDeGuia, resumirGuia, type GuiaIngreso } from "@/lib/forestal/ingresos-por-guia";
+import { resumirIngresosPorGuia, type IngresosPorGuia } from "@/lib/forestal/reporte-diario-ingresos";
 import type {
   WoodEntryStatus,
   WoodOriginType,
@@ -21,6 +22,8 @@ import type {
 import { invalidateByPrefix } from "@/lib/cache";
 import { exigirFotosPropias } from "@/lib/storage-url";
 import { detalleDeFotosGuia, diffFotosGuia, motivoSiNoPuedeGuardar } from "@/lib/forestal/fotos-guia-diff";
+import { normalizarFotos, tieneFotos, urlsDeFotos, type FotoCarga } from "@/lib/forestal/fotos-carga";
+import { FotoNoValidaError, resolverFotosEntrantes } from "@/lib/forestal/fotos-carga-firma";
 import { ForestEspeciesDB } from "./forest-especies.db";
 import { mismaEspecie } from "@/lib/forestal/loth-constants";
 import { colocarAlCargar, type FilaQueRecibe, type NotaDeColocacion } from "@/lib/forestal/acomodar-trozas";
@@ -29,13 +32,18 @@ import { auditCtp, m3 } from "@/lib/forestal/ctp-audit";
 import { calcularRetrozado, type RetrozoNuevo } from "@/lib/forestal/ctp-retrozado";
 import type { CambioRecepcion } from "@/lib/forestal/recepcion-trozas";
 import { guiaRecibida, type TrozaConsumible } from "@/lib/forestal/consumo-trozas";
+import { asignarCorrelativos, planearEtiquetado, tieneCodigoPlanta } from "@/lib/forestal/etiquetado-trozas";
 import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
 import { CtpInvariantError, exigirIngresoAntesDeLaCorrida } from "./forest-ctp-consumo.db";
 import { exigirCostoNoCongelado } from "./costo-congelado.db";
+import { ForestCuentaDB } from "./forest-cuenta.db";
+import { FILTRO_REQUIERE_COSTO, FILTRO_REQUIERE_COSTO_SQL } from "@/lib/forestal/madera-de-servicio";
 import { ForestContratoDB } from "@/lib/db/forest-contrato.db";
 import { ForestRecepcionDB } from "./forest-recepcion.db";
-import { problemaDeLlegada } from "@/lib/forestal/fecha-de-llegada";
+import { problemaDeLlegada, type ConfirmacionDeVencida } from "@/lib/forestal/fecha-de-llegada";
 import { limaDateKey } from "@/lib/utils";
+import type { FiltroPago } from "@/lib/forestal/ingresos-filtros-columna";
+import { GuiaPlataDB } from "./guia-plata.db";
 
 /**
  * Alta de una GTF de SERFOR completa (ADR-312): la cabecera es del documento y
@@ -198,7 +206,8 @@ export interface WoodEntryCreateInput {
 
   // Trazabilidad
   notes?: string | null;
-  photos?: string[] | null;
+  /** Fotos de la carga (ADR-434): objetos `FotoCarga`; un string suelto es el formato viejo. */
+  photos?: (FotoCarga | string)[] | null;
   /**
    * El cuerpo del documento que ampara el ingreso: propietario del producto,
    * destinatario, transportista y vehículo (ADR-336). Forma validada por
@@ -234,7 +243,8 @@ export type WoodEntrySortField = (typeof WOOD_ENTRY_SORT_FIELDS)[number];
  * URLs guardadas y los llamadores viejos no cambian.
  */
 export interface WoodEntryListFilters {
-  status?: WoodEntryStatus;
+  /** Uno o varios estados (autofiltro de la cabecera, 2026-09-26): OR adentro. */
+  status?: WoodEntryStatus | readonly WoodEntryStatus[];
   speciesCommonName?: string | readonly string[];
   gtfNumber?: string;
   fromDate?: Date;
@@ -278,10 +288,100 @@ export interface WoodEntryListFilters {
    * `cerrada` el archivo de «GTF ingresadas». Sin valor = las dos.
    */
   recepcion?: "pendiente" | "cerrada";
+  /**
+   * Autofiltro en la CABECERA de cada columna de Ingresos (Brandon, 2026-09-26).
+   * Texto = `contains` sin mayúsculas; fechas = días `AAAA-MM-DD` inclusivos,
+   * que se CRUZAN con el período (`fromDate`/`toDate`), no lo reemplazan.
+   */
+  cabecera?: WoodEntryFiltrosCabecera;
   sortBy?: WoodEntrySortField;
   sortDir?: "asc" | "desc";
   limit?: number;
   offset?: number;
+}
+
+/**
+ * Los filtros de la cabecera de Ingresos (una columna → su filtro).
+ *
+ * Los de ASIENTO van a `buildListWhere` y a su espejo SQL `buildLateConditions`.
+ * Los de GUÍA (`vol*`, `pz*`) filtran por lo que muestra la columna: la SUMA de
+ * los asientos de la guía — los resuelve `withGuiaFilter`.
+ */
+export interface WoodEntryFiltrosCabecera {
+  /** N° de documento (`gtfNumber`), contains. */
+  doc?: string;
+  /** Constancia del SNIFFS (`serforNumeroRegistro`), contains. */
+  sniffs?: string;
+  /** Tipo de documento; un `docType` vacío es una GTF (es su default). */
+  tipo?: string;
+  /** Región o distrito de origen, contains. */
+  origen?: string;
+  /** Unidad de medida (`unit`), contains. */
+  unidad?: string;
+  /** Quién registró o validó (`createdBy`/`validatedBy` = username), contains. */
+  registro?: string;
+  /** Fecha del asiento (`entryDate`), días inclusivos. */
+  fechaDesde?: string;
+  fechaHasta?: string;
+  /** Fecha de la guía (`gtfDate`), días inclusivos. */
+  gtfDesde?: string;
+  gtfHasta?: string;
+  /** `con` = tiene lista de trozas · `sin` = no tiene. */
+  trozas?: "con" | "sin";
+  /** Sólo los que tienen costo cargado (el opuesto de `sinCosto`). */
+  conCosto?: boolean;
+  /** Σ m³ de la GUÍA, inclusivo. */
+  volMin?: number;
+  volMax?: number;
+  /** Σ piezas de la GUÍA, inclusivo. */
+  pzMin?: number;
+  pzMax?: number;
+  /**
+   * La plata de la guía (ADR-437 §7 y §10): `servicio` = madera ajena
+   * (`maderaDeTercero`, columna directa); `sin-pagar`/`pagada` son el estado
+   * DERIVADO de la cuenta corriente (`GuiaPlataDB.estadoPagoPorGuia`) — se
+   * resuelve en `withPagoFilter`, nunca acá (esta función es sync).
+   */
+  pago?: FiltroPago;
+}
+
+/**
+ * Un día `AAAA-MM-DD` como rango UTC `[gte, lt)`.
+ *
+ * `hasta` es inclusivo: se traduce a `lt` el día SIGUIENTE, así una fecha con
+ * hora (un `gtfDate` importado con 10:30) cae adentro. `entryDate`/`gtfDate`
+ * son date-only guardados a medianoche UTC. Un día inválido (`2026-02-31`,
+ * texto) se ignora — un query param roto no vacía el libro ni tira 500.
+ */
+export function rangoDeDias(
+  desde: string | undefined,
+  hasta: string | undefined,
+): { gte?: Date; lt?: Date } {
+  const dia = (s: string | undefined): Date | undefined => {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec((s ?? "").trim());
+    if (!m) return undefined;
+    const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
+    const f = new Date(Date.UTC(y, mo - 1, d));
+    // `Date.UTC(2026, 1, 31)` es el 3 de marzo: se rechaza en vez de correrse.
+    return f.getUTCFullYear() === y && f.getUTCMonth() === mo - 1 && f.getUTCDate() === d ? f : undefined;
+  };
+  const r: { gte?: Date; lt?: Date } = {};
+  const g = dia(desde);
+  const h = dia(hasta);
+  if (g) r.gte = g;
+  if (h) r.lt = new Date(h.getTime() + 86_400_000);
+  return r;
+}
+
+/** Texto de la cabecera, recortado; vacío = sin filtro. */
+function textoDe(v: string | undefined): string | undefined {
+  const t = (v ?? "").trim();
+  return t ? t : undefined;
+}
+
+/** `tipo` pedido abarca a las GTF sin `docType` (el default de la columna). */
+function tipoIncluyeGtf(tipo: string): boolean {
+  return "gtf".includes(tipo.toLowerCase());
 }
 
 /** Un asiento con el resumen de sus piezas — lo que devuelven `list` y `listPorGuia`. */
@@ -310,7 +410,9 @@ export function buildListWhere(
 ): Prisma.WoodEntryWhereInput {
   const where: Prisma.WoodEntryWhereInput = { tenantId, deletedAt: null };
 
-  if (filters.status) where.status = filters.status;
+  const estados = valoresDe(filters.status);
+  if (estados.length === 1) where.status = estados[0];
+  else if (estados.length > 1) where.status = { in: [...estados] };
   /* Varios valores por campo = OR adentro del campo. Van por `AND` y cada uno
      con su propio `OR`: `where.OR` de arriba ya es de la búsqueda libre, y
      pisarlo haría que buscar + filtrar devuelva cualquier cosa. */
@@ -351,10 +453,18 @@ export function buildListWhere(
     ];
   }
   if (filters.sinCosto) {
+    /* La madera de servicio no se compró: no le falta costo (ADR-437 §1). */
     where.AND = [
       ...(Array.isArray(where.AND) ? where.AND : where.AND ? [where.AND] : []),
-      { costoTotal: null },
+      { costoTotal: null, ...FILTRO_REQUIERE_COSTO },
     ];
+  }
+  /* La cabecera va entera por `AND`, al final: `entryDate` ya lo ocupa el
+     período y `OR` la búsqueda libre; ponerla en el campo pisaría uno de los
+     dos. Espejo exacto en `condicionesCabeceraSql`. */
+  const cab = condicionesCabecera(filters.cabecera);
+  if (cab.length > 0) {
+    where.AND = [...(Array.isArray(where.AND) ? where.AND : where.AND ? [where.AND] : []), ...cab];
   }
   if (filters.fromDate || filters.toDate) {
     where.entryDate = {};
@@ -375,6 +485,75 @@ export function buildListWhere(
   }
 
   return where;
+}
+
+/** Los filtros de ASIENTO de la cabecera como condiciones de Prisma (una por columna). */
+function condicionesCabecera(c: WoodEntryFiltrosCabecera | undefined): Prisma.WoodEntryWhereInput[] {
+  if (!c) return [];
+  const out: Prisma.WoodEntryWhereInput[] = [];
+  const hay = (v: string) => ({ contains: v, mode: "insensitive" as const });
+  const doc = textoDe(c.doc);
+  if (doc) out.push({ gtfNumber: hay(doc) });
+  const sniffs = textoDe(c.sniffs);
+  if (sniffs) out.push({ serforNumeroRegistro: hay(sniffs) });
+  const tipo = textoDe(c.tipo);
+  if (tipo) {
+    out.push(tipoIncluyeGtf(tipo) ? { OR: [{ docType: hay(tipo) }, { docType: null }] } : { docType: hay(tipo) });
+  }
+  const origen = textoDe(c.origen);
+  if (origen) out.push({ OR: [{ originRegion: hay(origen) }, { originDistrict: hay(origen) }] });
+  const unidad = textoDe(c.unidad);
+  if (unidad) out.push({ unit: hay(unidad) });
+  const registro = textoDe(c.registro);
+  if (registro) out.push({ OR: [{ createdBy: hay(registro) }, { validatedBy: hay(registro) }] });
+  const fecha = rangoDeDias(c.fechaDesde, c.fechaHasta);
+  if (fecha.gte || fecha.lt) out.push({ entryDate: fecha });
+  const gtf = rangoDeDias(c.gtfDesde, c.gtfHasta);
+  if (gtf.gte || gtf.lt) out.push({ gtfDate: gtf });
+  if (c.trozas === "con") out.push({ trozas: { some: {} } });
+  else if (c.trozas === "sin") out.push({ trozas: { none: {} } });
+  if (c.conCosto) out.push({ costoTotal: { not: null } });
+  return out;
+}
+
+/** Espejo SQL de `condicionesCabecera` — placeholders, nunca interpolación. */
+export function condicionesCabeceraSql(c: WoodEntryFiltrosCabecera | undefined): Prisma.Sql[] {
+  if (!c) return [];
+  const out: Prisma.Sql[] = [];
+  const like = (v: string) => `%${v}%`;
+  const doc = textoDe(c.doc);
+  if (doc) out.push(Prisma.sql`"gtfNumber" ILIKE ${like(doc)}`);
+  const sniffs = textoDe(c.sniffs);
+  if (sniffs) out.push(Prisma.sql`"serforNumeroRegistro" ILIKE ${like(sniffs)}`);
+  const tipo = textoDe(c.tipo);
+  if (tipo) {
+    out.push(
+      tipoIncluyeGtf(tipo)
+        ? Prisma.sql`("docType" ILIKE ${like(tipo)} OR "docType" IS NULL)`
+        : Prisma.sql`"docType" ILIKE ${like(tipo)}`,
+    );
+  }
+  const origen = textoDe(c.origen);
+  if (origen) {
+    out.push(Prisma.sql`("originRegion" ILIKE ${like(origen)} OR "originDistrict" ILIKE ${like(origen)})`);
+  }
+  const unidad = textoDe(c.unidad);
+  if (unidad) out.push(Prisma.sql`"unit" ILIKE ${like(unidad)}`);
+  const registro = textoDe(c.registro);
+  if (registro) {
+    out.push(Prisma.sql`("createdBy" ILIKE ${like(registro)} OR "validatedBy" ILIKE ${like(registro)})`);
+  }
+  const fecha = rangoDeDias(c.fechaDesde, c.fechaHasta);
+  if (fecha.gte) out.push(Prisma.sql`"entryDate" >= ${fecha.gte}`);
+  if (fecha.lt) out.push(Prisma.sql`"entryDate" < ${fecha.lt}`);
+  const gtf = rangoDeDias(c.gtfDesde, c.gtfHasta);
+  if (gtf.gte) out.push(Prisma.sql`"gtfDate" >= ${gtf.gte}`);
+  if (gtf.lt) out.push(Prisma.sql`"gtfDate" < ${gtf.lt}`);
+  const conTrozas = Prisma.sql`EXISTS (SELECT 1 FROM "WoodEntryTroza" t WHERE t."woodEntryId" = "WoodEntry"."id")`;
+  if (c.trozas === "con") out.push(conTrozas);
+  else if (c.trozas === "sin") out.push(Prisma.sql`NOT ${conTrozas}`);
+  if (c.conCosto) out.push(Prisma.sql`"costoTotal" IS NOT NULL`);
+  return out;
 }
 
 /**
@@ -416,13 +595,17 @@ function buildLateConditions(
   if (filters.sinOrigenCode) {
     conditions.push(Prisma.sql`("originCode" IS NULL OR "originCode" = '')`);
   }
-  if (filters.sinCosto) conditions.push(Prisma.sql`"costoTotal" IS NULL`);
+  if (filters.sinCosto) conditions.push(Prisma.sql`"costoTotal" IS NULL AND ${Prisma.raw(FILTRO_REQUIERE_COSTO_SQL)}`);
+  conditions.push(...condicionesCabeceraSql(filters.cabecera));
   if (filters.fromDate) conditions.push(Prisma.sql`"entryDate" >= ${filters.fromDate}`);
   if (filters.toDate) conditions.push(Prisma.sql`"entryDate" <= ${filters.toDate}`);
   if (filters.search) {
     const like = `%${filters.search}%`;
+    /* Los cinco campos de la búsqueda de `buildListWhere` (contrato y N° de
+       resolución entraron el 2026-09-01 y este espejo se había quedado en tres:
+       buscar por contrato acotaba la tabla pero no «fuera de plazo»). */
     conditions.push(
-      Prisma.sql`("gtfNumber" ILIKE ${like} OR "providerName" ILIKE ${like} OR "speciesCommonName" ILIKE ${like})`,
+      Prisma.sql`("gtfNumber" ILIKE ${like} OR "providerName" ILIKE ${like} OR "speciesCommonName" ILIKE ${like} OR "originCode" ILIKE ${like} OR "originSourceNumber" ILIKE ${like})`,
     );
   }
   return conditions;
@@ -512,17 +695,32 @@ const RECEPCION_CERRADA_SQL = Prisma.sql`(
  * `pendiente` = la bandeja del patio (lo que falta recibir) · `cerrada` = el
  * archivo de GTF ingresadas. Sin el filtro, las dos vistas mostrarían lo mismo.
  */
+/**
+ * Los ids con recepción cerrada. No depende de ningún otro filtro, así que las
+ * lecturas EN VUELO del mismo tenant se comparten (la tabla, los KPIs y cada
+ * faceta la piden a la vez); se borra al resolver, nunca sirve un dato viejo.
+ */
+const recepcionEnVuelo = new Map<string, Promise<string[]>>();
+function idsRecepcionados(tenantId: string): Promise<string[]> {
+  const previa = recepcionEnVuelo.get(tenantId);
+  if (previa) return previa;
+  const p = prisma.$queryRaw<{ id: string }[]>`
+    SELECT "id" FROM "WoodEntry"
+    WHERE "tenantId" = ${tenantId} AND "deletedAt" IS NULL AND ${RECEPCION_CERRADA_SQL}
+  `
+    .then((rows) => rows.map((r) => r.id))
+    .finally(() => recepcionEnVuelo.delete(tenantId));
+  recepcionEnVuelo.set(tenantId, p);
+  return p;
+}
+
 async function withRecepcionFilter(
   tenantId: string,
   filters: WoodEntryListFilters,
   where: Prisma.WoodEntryWhereInput,
 ): Promise<Prisma.WoodEntryWhereInput> {
   if (!filters.recepcion) return where;
-  const rows = await prisma.$queryRaw<{ id: string }[]>`
-    SELECT "id" FROM "WoodEntry"
-    WHERE "tenantId" = ${tenantId} AND "deletedAt" IS NULL AND ${RECEPCION_CERRADA_SQL}
-  `;
-  const ids = rows.map((r) => r.id);
+  const ids = await idsRecepcionados(tenantId);
   /* Va por `AND` y no sobre `where.id`: el filtro de fuera de plazo ya usa `id`
      y pisarlo dejaría activo sólo uno de los dos — la tabla mostraría un
      conjunto que ningún filtro pidió. */
@@ -531,6 +729,137 @@ async function withRecepcionFilter(
     ...where,
     AND: [...previas, { id: filters.recepcion === "cerrada" ? { in: ids } : { notIn: ids } }],
   };
+}
+
+/**
+ * Acota a las guías de la pastilla «plata de la guía» (ADR-437 §10; la tira
+ * «guías sin pagar» salta acá con `pago=sin-pagar`).
+ *
+ *  · `servicio` es una columna: filtra directo, sin ir a la cuenta.
+ *  · `sin-pagar`/`pagada` es el estado DERIVADO de `GuiaPlataDB.estadoPagoPorGuia`
+ *    (single source con la tira de pendientes y el modal «¿Cuánto pagaste?»):
+ *    nunca se recalcula acá. Una guía sin abono `madera` en la cuenta (sin
+ *    costo anotado) no aparece en ningún lado — no es "pagada" ni "sin pagar".
+ */
+async function withPagoFilter(
+  tenantId: string,
+  filters: WoodEntryListFilters,
+  where: Prisma.WoodEntryWhereInput,
+): Promise<Prisma.WoodEntryWhereInput> {
+  const pago = filters.cabecera?.pago;
+  if (!pago) return where;
+  const previas = Array.isArray(where.AND) ? where.AND : where.AND ? [where.AND] : [];
+  if (pago === "servicio") {
+    return { ...where, AND: [...previas, { maderaDeTercero: true }] };
+  }
+  const estados = await GuiaPlataDB.estadoPagoPorGuia(tenantId);
+  const gtfs = [...estados.entries()]
+    .filter(([, estado]) => (pago === "pagada" ? estado === "pagada" : estado !== "pagada"))
+    .map(([gtf]) => gtf);
+  // Cero guías = `in: []`, que no trae nada (mismo criterio que `withGuiaFilter`).
+  return { ...where, AND: [...previas, { gtfNumber: { in: gtfs }, maderaDeTercero: false }] };
+}
+
+/** ¿La guía entra en los topes de la cabecera? Un tope ausente = sin tope. */
+export function guiaEnTopes(
+  sumas: { volumeM3: number; pieces: number },
+  c: Pick<WoodEntryFiltrosCabecera, "volMin" | "volMax" | "pzMin" | "pzMax">,
+): boolean {
+  const ok = (v: number, min?: number, max?: number) =>
+    (min == null || v >= min) && (max == null || v <= max);
+  return ok(sumas.volumeM3, c.volMin, c.volMax) && ok(sumas.pieces, c.pzMin, c.pzMax);
+}
+
+/**
+ * Acota a las GUÍAS cuya suma cae en los topes de m³ / piezas (cabecera).
+ *
+ * La columna muestra el total de la guía, así que el filtro compara contra ESE
+ * total y no contra cada asiento: con «m³ ≥ 10» una guía de 6 + 6 entra entera.
+ * Se resuelven primero las claves (serie + número) con el resto del `where` ya
+ * aplicado —la suma es la de lo que la tabla muestra— y se restringe por ellas.
+ * Va por `AND` al final, igual que recepción: `list`, `listPorGuia` y `stats`
+ * pasan por acá y no pueden describir conjuntos distintos. Cero guías = un
+ * `where` que no trae nada (`id in []`), nunca «sin filtro».
+ */
+/** ¿Hay algún tope de m³ / piezas por guía en la cabecera? */
+function tieneTopesDeGuia(c: WoodEntryFiltrosCabecera | undefined): boolean {
+  return Boolean(c) && (c?.volMin != null || c?.volMax != null || c?.pzMin != null || c?.pzMax != null);
+}
+
+async function withGuiaFilter(
+  filters: WoodEntryListFilters,
+  where: Prisma.WoodEntryWhereInput,
+): Promise<Prisma.WoodEntryWhereInput> {
+  const c = filters.cabecera;
+  if (!c || !tieneTopesDeGuia(c)) return where;
+  const topes = { volMin: c.volMin, volMax: c.volMax, pzMin: c.pzMin, pzMax: c.pzMax };
+  const ids = await idsDeGuiasEnTopes(where, topes);
+  const previas = Array.isArray(where.AND) ? where.AND : where.AND ? [where.AND] : [];
+  /* Por `id` y no por `OR` de (serie, número): el `id IN` va por la clave
+     primaria, y un OR de pares se repetía en cada una de las ~17 consultas de
+     `stats()`. Cero guías = `in: []`, que no trae nada. */
+  return { ...where, AND: [...previas, { id: { in: ids } }] };
+}
+
+/**
+ * Las consultas EN VUELO de `idsDeGuiasEnTopes`, por `where` + topes.
+ *
+ * `listPorGuia` y `stats` corren en paralelo en el mismo pedido y, sin filtro
+ * de estado, arman el MISMO `where`: sin esto la misma lectura salía dos veces.
+ * Sólo se comparte lo que está en vuelo —se borra al resolver—, así que nunca
+ * sirve un resultado viejo después de una escritura.
+ */
+const guiasEnVuelo = new Map<string, Promise<string[]>>();
+
+/** Los asientos de las guías cuya SUMA (m³ / piezas) cae en los topes. Una sola lectura. */
+function idsDeGuiasEnTopes(
+  where: Prisma.WoodEntryWhereInput,
+  topes: Pick<WoodEntryFiltrosCabecera, "volMin" | "volMax" | "pzMin" | "pzMax">,
+): Promise<string[]> {
+  const clave = JSON.stringify([where, topes]);
+  const previa = guiasEnVuelo.get(clave);
+  if (previa) return previa;
+  const r4 = (n: number) => Math.round(n * 10000) / 10000;
+  const p = prisma.woodEntry
+    .findMany({ where, select: { id: true, gtfSeries: true, gtfNumber: true, volumeM3: true, pieces: true } })
+    .then((filas) => {
+      /* Se suma acá y no con un `groupBy`: el `groupBy` devuelve las claves y
+         hacía falta OTRA pasada para llegar a los ids. */
+      const porGuia = new Map<string, { ids: string[]; volumeM3: number; pieces: number }>();
+      for (const f of filas) {
+        const k = claveDeGuia(f);
+        const g = porGuia.get(k) ?? { ids: [], volumeM3: 0, pieces: 0 };
+        g.ids.push(f.id);
+        g.volumeM3 += Number(f.volumeM3);
+        g.pieces += f.pieces ?? 0;
+        porGuia.set(k, g);
+      }
+      return [...porGuia.values()]
+        .filter((g) => guiaEnTopes({ volumeM3: r4(g.volumeM3), pieces: g.pieces }, topes))
+        .flatMap((g) => g.ids);
+    })
+    .finally(() => guiasEnVuelo.delete(clave));
+  guiasEnVuelo.set(clave, p);
+  return p;
+}
+
+/** La cadena completa de filtros del listado — una sola, para `list`, `listPorGuia` y `stats`. */
+async function whereDelListado(
+  tenantId: string,
+  filters: WoodEntryListFilters,
+): Promise<Prisma.WoodEntryWhereInput> {
+  return withPagoFilter(
+    tenantId,
+    filters,
+    await withGuiaFilter(
+      filters,
+      await withRecepcionFilter(
+        tenantId,
+        filters,
+        await withLateFilter(tenantId, filters, buildListWhere(tenantId, filters)),
+      ),
+    ),
+  );
 }
 
 /** Campos corregibles de un ingreso pendiente. Fuera quedan `status`,
@@ -690,6 +1019,12 @@ export interface WoodEntryStats {
   registroDiasHabilesProm: number | null;
   registroDiasHabilesMax: number | null;
   byStatus: Record<WoodEntryStatus, number>;
+  /**
+   * Los estados presentes, con su peso — la faceta del autofiltro «Estado».
+   * Excluye su propio filtro (como `species`/`providers`): elegido «pendiente»,
+   * «validado» sigue en la lista para poder sumarlo.
+   */
+  statuses: WoodEntryFacet[];
   /** Especies / proveedores / productos presentes en el período (top 30 por volumen). */
   species: WoodEntryFacet[];
   providers: WoodEntryFacet[];
@@ -703,10 +1038,12 @@ export interface WoodEntryStats {
  * piezas con el mismo número son dos piezas que el patio no puede distinguir, y
  * un inventario que no distingue sus piezas no prueba nada ante OSINFOR.
  *
- * El guard vive acá —en la capa DB— y no sólo en el índice de Postgres porque
- * la base heredó códigos repetidos de antes de esta regla (migración 336: el
- * índice único se crea recién cuando esos duplicados se limpien). Hasta
- * entonces esto es lo único que impide fabricar uno nuevo.
+ * La garantía real es el índice único parcial `INDICE_CODIGO_PLANTA_UNICO`
+ * (ADR-436, creado el 2026-09-26): dos clics simultáneos no pasan. Este guard
+ * sigue porque dice CUÁL pieza ya tiene el número; el índice sólo dice «no».
+ * Por eso compara igual que el índice —`upper(btrim(...))`, y SIN mirar el
+ * estado del ingreso—: si el guard diera por libre un código que el índice
+ * rechaza, el aviso previo mentiría y el choque llegaría sin nombre.
  *
  * `excluirIds` deja fuera a las propias filas que se están editando: al guardar
  * la misma troza con el mismo código, chocar consigo misma sería absurdo.
@@ -719,6 +1056,10 @@ async function guardCodigoPlantaUnico(
 ): Promise<void> {
   const limpios = codigos.map((c) => (c ?? "").trim()).filter(Boolean);
   if (limpios.length === 0) return;
+  /* El mismo candado que `marcarEtiquetadas` y `renumerarCodigosPlanta`
+     (ADR-436): sin él, un alta y una tanda de etiquetas leen a la vez que el
+     número está libre y lo ponen en dos palos. Se suelta con la transacción. */
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`ctp-codigo-planta:${tenantId}`}))`;
 
   // 1 · Repetidos dentro del MISMO pedido. Rechazarlos con "ya existe" sería
   //     mentir: todavía no existe ninguno, vienen los dos en el mismo POST.
@@ -742,24 +1083,28 @@ async function guardCodigoPlantaUnico(
   //     porque la comparación tiene que ser insensible a mayúsculas ("13/a" y
   //     "13/A" son la misma marca sobre la misma madera) y `in` + `mode` no lo
   //     garantiza. Parametrizado: el código llega del cliente.
+  //     Las piezas de ingresos ANULADOS cuentan: su fila sigue en la tabla y
+  //     el índice único la mira. Desde 2026-09-26 anular/rechazar/borrar
+  //     suelta los códigos (`soltarCodigosPlanta`), así que esto sólo pasa con
+  //     una fila anterior a eso que la limpieza no alcanzó.
   const enUso = await tx.$queryRaw<
-    { codigoPlanta: string; codificacion: string | null; gtfNumber: string }[]
+    { codigoPlanta: string; codificacion: string | null; gtfNumber: string; anulado: boolean }[]
   >`
-    SELECT t."codigoPlanta", t."codificacion", e."gtfNumber"
+    SELECT t."codigoPlanta", t."codificacion", e."gtfNumber",
+           (e."deletedAt" IS NOT NULL OR e."status" IN ('anulado', 'rechazado')) AS anulado
     FROM "WoodEntryTroza" t
     JOIN "WoodEntry" e ON e."id" = t."woodEntryId"
     WHERE t."tenantId" = ${tenantId}
-      AND UPPER(t."codigoPlanta") = ANY(${[...vistos]})
+      AND UPPER(BTRIM(t."codigoPlanta")) = ANY(${[...vistos]})
       AND NOT (t."id" = ANY(${excluirIds.length > 0 ? excluirIds : [""]}))
-      AND e."deletedAt" IS NULL
-      AND e."status" NOT IN ('anulado', 'rechazado')
     LIMIT 20
   `;
   if (enUso.length > 0) {
     const detalle = enUso
       .map(
         (t) =>
-          `${t.codigoPlanta} (GTF ${t.gtfNumber}${t.codificacion ? `, troza ${t.codificacion}` : ""})`,
+          `${t.codigoPlanta} (GTF ${t.gtfNumber}${t.codificacion ? `, troza ${t.codificacion}` : ""}` +
+          `${t.anulado ? ", ingreso anulado" : ""})`,
       )
       .join("; ");
     throw new CtpInvariantError(
@@ -769,6 +1114,116 @@ async function guardCodigoPlantaUnico(
       { codigos: enUso.map((t) => t.codigoPlanta) },
     );
   }
+}
+
+/**
+ * El índice único parcial que garantiza el código de planta en la base
+ * (ADR-436): `("tenantId", upper(btrim("codigoPlanta")))` donde hay código.
+ * Vive sólo en `prisma/migrations/adr-436-codigo-planta-unico.sql` — Prisma no
+ * sabe declarar un índice sobre expresión ni parcial.
+ */
+export const INDICE_CODIGO_PLANTA_UNICO = "WoodEntryTroza_tenant_codigoPlanta_unico";
+
+/**
+ * ¿Este error es el índice de arriba rechazando un código repetido?
+ *
+ * Se reconoce por el NOMBRE del índice y no por el código de Prisma a secas:
+ * según la vía, el choque llega como `P2002` (createMany) o como `P2010` con el
+ * 23505 del driver adentro (UPDATE crudo), y un P2002 de otra restricción no es
+ * este problema. El nombre viaja en el mensaje de Postgres en los dos casos.
+ */
+export function esChoqueCodigoPlanta(err: unknown): boolean {
+  if (!err || typeof err !== "object") return false;
+  const e = err as { message?: unknown; meta?: unknown; cause?: unknown };
+  let texto = String(e.message ?? "");
+  try {
+    texto += ` ${JSON.stringify(e.meta ?? null)} ${String((e.cause as { message?: unknown } | undefined)?.message ?? "")}`;
+  } catch {
+    /* meta circular: con el mensaje alcanza */
+  }
+  return texto.includes(INDICE_CODIGO_PLANTA_UNICO);
+}
+
+/**
+ * El guard ya avisa con nombre y apellido, pero entre su lectura y el INSERT
+ * hay una ventana que sólo cierra el índice. Si el índice es el que frena, el
+ * operador tiene que ver el mismo 422 «código repetido», no un 500 mudo.
+ */
+function traducirChoqueCodigoPlanta(err: unknown): never {
+  if (esChoqueCodigoPlanta(err)) {
+    throw new CtpInvariantError(
+      "Ese código de planta ya está puesto en otra troza del libro. " +
+        "El código se pinta sobre la troza: dos piezas con el mismo número no se pueden distinguir en el patio.",
+      "CODIGO_PLANTA_DUPLICADO",
+      { indice: INDICE_CODIGO_PLANTA_UNICO },
+    );
+  }
+  throw err;
+}
+
+/** Una troza que soltó su código de planta: lo que tenía, para la auditoría. */
+export interface CodigoSoltado {
+  id: string;
+  codigoPlanta: string;
+  codificacion: string | null;
+}
+
+/**
+ * Al ANULAR, RECHAZAR o BORRAR (soft) un ingreso, sus trozas sueltan el código
+ * de planta (2026-09-26).
+ *
+ * El índice único `INDICE_CODIGO_PLANTA_UNICO` mira TODAS las filas, también
+ * las de ingresos muertos: la troza anulada seguía ocupando el número, y el
+ * camino que el propio libro indica —«anula los ingresos y vuelve a cargarla»—
+ * chocaba al recargar la hoja de SERFOR con su «Código Planta». En `main`, 149
+ * piezas de ingresos borrados retenían su número. La madera de un ingreso
+ * muerto no está en el patio: su número no identifica ninguna pieza.
+ *
+ * Va DENTRO de la transacción del cambio de estado: o el ingreso muere y suelta
+ * sus números, o no pasa nada. Lo que tenía cada troza queda en la auditoría
+ * (`detalleCodigosSoltados`). No existe «restaurar» un ingreso: si algún día
+ * existe, tiene que re-asignar desde ese renglón y avisar cuál quedó sin código.
+ */
+async function soltarCodigosPlanta(
+  tx: Prisma.TransactionClient,
+  tenantId: string,
+  woodEntryIds: string[],
+): Promise<CodigoSoltado[]> {
+  if (woodEntryIds.length === 0) return [];
+  const conCodigo = await tx.woodEntryTroza.findMany({
+    where: { tenantId, woodEntryId: { in: woodEntryIds }, codigoPlanta: { not: null } },
+    select: { id: true, codigoPlanta: true, codificacion: true },
+    orderBy: { orden: "asc" },
+  });
+  const soltados = conCodigo
+    .filter((t) => (t.codigoPlanta ?? "").trim() !== "")
+    .map((t) => ({ id: t.id, codigoPlanta: t.codigoPlanta!.trim(), codificacion: t.codificacion }));
+  if (soltados.length > 0) {
+    await tx.woodEntryTroza.updateMany({
+      where: { tenantId, id: { in: soltados.map((t) => t.id) } },
+      data: { codigoPlanta: null },
+    });
+  }
+  return soltados;
+}
+
+/** Cuántas piezas se nombran en un renglón antes de resumir «y N más». */
+const MAX_CODIGOS_EN_DETALLE = 60;
+
+/**
+ * El renglón de auditoría de los códigos soltados: antes → después por pieza,
+ * para que se pueda contestar «¿qué número tenía esta troza?» sin la fila.
+ */
+export function detalleCodigosSoltados(gtf: string, motivo: string, soltados: readonly CodigoSoltado[]): string {
+  const piezas = soltados
+    .slice(0, MAX_CODIGOS_EN_DETALLE)
+    .map((t) => `${t.codigoPlanta}${t.codificacion ? ` (troza ${t.codificacion})` : ""} → sin código`);
+  const resto = soltados.length - piezas.length;
+  return (
+    `Liberó el código de planta de ${soltados.length} troza(s) de la GTF ${gtf} (${motivo}): ` +
+    piezas.join("; ") +
+    (resto > 0 ? `; y ${resto} más` : "")
+  );
 }
 
 /**
@@ -782,6 +1237,47 @@ async function guardCodigoPlantaUnico(
  */
 export function vivaLinea(l: { status: string; deletedAt: Date | null } | null): boolean {
   return Boolean(l && l.status === "registrado" && !l.deletedAt);
+}
+
+/**
+ * La plata que comparten los asientos VIVOS de una guía (ADR-437 §1-2): si es
+ * de servicio, de quién es la madera, y a quién se le paga. Un asiento que
+ * entra a la guía (alta o mudanza de guía) la hereda: si no, la guía queda
+ * mezclada —una especie «de servicio» y otra «pide costo»— y el modal de la
+ * plata ya no sabe qué es. `null` = la guía no tiene asientos vivos (nueva).
+ * Si alguna hermana está marcada de servicio, gana esa (la marca se escribe
+ * por guía entera; una mezcla vieja no debe contagiar «pide costo»).
+ */
+async function plataDeLaGuiaEnTx(
+  tx: Prisma.TransactionClient,
+  tenantId: string,
+  gtfNumber: string,
+  excluirId?: string,
+): Promise<{ maderaDeTercero: boolean; duenoParteId: string | null; duenoNombre: string | null; proveedorParteId: string | null } | null> {
+  const h = await tx.woodEntry.findFirst({
+    where: {
+      tenantId,
+      gtfNumber,
+      deletedAt: null,
+      status: { notIn: ["anulado", "rechazado"] },
+      ...(excluirId ? { id: { not: excluirId } } : {}),
+    },
+    orderBy: [{ maderaDeTercero: "desc" }, { entryDate: "asc" }, { id: "asc" }],
+    select: { maderaDeTercero: true, duenoParteId: true, duenoNombre: true, proveedorParteId: true },
+  });
+  if (!h) return null;
+  return h.maderaDeTercero
+    ? { maderaDeTercero: true, duenoParteId: h.duenoParteId, duenoNombre: h.duenoNombre, proveedorParteId: null }
+    : { maderaDeTercero: false, duenoParteId: null, duenoNombre: null, proveedorParteId: h.proveedorParteId };
+}
+
+/** El freno de «servicio no lleva costo» cuando un asiento CON costo entra a una guía de servicio. */
+function costoEnGuiaDeServicio(gtfNumber: string, dueno: string | null): CtpInvariantError {
+  return new CtpInvariantError(
+    `La guía ${gtfNumber} es madera de servicio${dueno ? ` de ${dueno}` : ""}: no lleva costo. Quítale el costo a este asiento o la marca de servicio a la guía.`,
+    "ESTADO_NO_EDITABLE",
+    { motivo: "ES_MADERA_DE_SERVICIO", gtfNumber },
+  );
 }
 
 export class WoodEntriesDB {
@@ -836,6 +1332,14 @@ export class WoodEntriesDB {
       );
     }
 
+    /* Fotos: lo ya guardado en ESTA guía (otra especie de la misma GTF) se
+       conserva como está; lo nuevo necesita la firma del servidor y no puede
+       ser evidencia de otra guía (2026-09-26). */
+    const fotosFinales =
+      input.photos && input.photos.length > 0
+        ? await WoodEntriesDB.resolverFotosDeGuia(tenantId, input.gtfNumber.trim(), normalizarFotos(input.photos))
+        : [];
+
     // El folio del libro (columna 1 del formato oficial) y el INSERT van en la
     /* La especie se escribe como la escribe esta planta (ADR-410): si el
        catálogo conoce la clave, manda su grafía y su binomio. Una guía que dice
@@ -870,7 +1374,16 @@ export class WoodEntriesDB {
     // MISMA transacción: si se calcula fuera, dos ingresos simultáneos se llevan
     // el mismo número y el libro queda con folios repetidos — lo primero que
     // mira un fiscalizador. Mismo patrón que `lineNo` de ForestCtpEntry.
+    let cuentaDeLaGuia: "sin_cuenta" | "actualizada" | "baja" = "sin_cuenta";
     const entry = await prisma.$transaction(async (tx) => {
+      /* La plata de la guía (ADR-437): con la guía bloqueada —mismo lock que el
+         modal de la plata—, el asiento nuevo hereda la marca de servicio y el
+         dueño, o a quién se le paga, de sus hermanas vivas. Sin esto, una
+         especie que se agrega a una guía de WASACO pedía costo (revisión 2026-09-26). */
+      const gtfAlta = input.gtfNumber.trim();
+      await ForestCuentaDB.bloquearGuiasEnTx(tx, tenantId, [gtfAlta]);
+      const plataGuia = await plataDeLaGuiaEnTx(tx, tenantId, gtfAlta);
+      if (plataGuia?.maderaDeTercero && input.costoTotal != null) throw costoEnGuiaDeServicio(gtfAlta, plataGuia.duenoNombre);
       const max = await tx.woodEntry.aggregate({
         where: { tenantId },
         _max: { libroNro: true },
@@ -879,6 +1392,7 @@ export class WoodEntriesDB {
       const creado = await tx.woodEntry.create({
         data: {
           tenantId,
+          ...(plataGuia ?? {}),
           libroNro,
           entryDate: input.entryDate ?? new Date(),
           supplierId: input.supplierId ?? null,
@@ -915,7 +1429,8 @@ export class WoodEntriesDB {
           humidityPct: input.humidityPct != null ? new Prisma.Decimal(input.humidityPct) : null,
           defectsNotes: input.defectsNotes ?? null,
           notes: input.notes ?? null,
-          photos: input.photos ? (input.photos as Prisma.InputJsonValue) : Prisma.DbNull,
+          /* Siempre objetos: las nuevas, tal como las firmó el servidor al subirlas. */
+          photos: fotosFinales.length > 0 ? (fotosFinales as unknown as Prisma.InputJsonValue) : Prisma.DbNull,
           gtfDatos: input.gtfDatos ? (input.gtfDatos as Prisma.InputJsonValue) : Prisma.DbNull,
           status: "pendiente",
           createdBy: input.createdBy,
@@ -1023,8 +1538,15 @@ export class WoodEntriesDB {
           })),
         });
       }
+      /* Con costo en una guía ya anotada, el abono `madera` pasa a valer la suma. */
+      if (creado.costoTotal != null) {
+        cuentaDeLaGuia = await ForestCuentaDB.resincronizarMaderaDeGuiaEnTx(tx, tenantId, gtfAlta);
+      }
       return creado;
-    });
+    }).catch(traducirChoqueCodigoPlanta);
+    if (cuentaDeLaGuia !== "sin_cuenta") {
+      WoodEntriesDB.auditarCuentaDeGuia(tenantId, entry.gtfNumber, cuentaDeLaGuia, "agregó un asiento con costo", input.createdBy);
+    }
 
     auditCtp({
       tenantId,
@@ -1309,6 +1831,7 @@ export class WoodEntriesDB {
         select: {
           id: true,
           codificacion: true,
+          codigoPlanta: true,
           noRecepcionada: true,
           consumidaEnId: true,
           // El ESTADO de la corrida, no sólo el id: si se anuló, la troza está
@@ -1355,18 +1878,40 @@ export class WoodEntriesDB {
       }
 
       // El código de planta sigue siendo único después de editar (ADR-336). Se
-      // excluyen las trozas que se están tocando: si la pieza guarda el mismo
-      // código que ya tenía, chocaría consigo misma.
+      // excluyen SÓLO las trozas que mandan código: si guarda el mismo que ya
+      // tenía chocaría consigo misma, y si lo cambia, el viejo se suelta abajo.
+      // Una troza del pedido que no toca su código lo sigue ocupando: esa sí cuenta.
       await guardCodigoPlantaUnico(
         tx,
         tenantId,
         cambios
           .filter((c) => c.codigoPlanta !== undefined && !c.noRecepcionada)
           .map((c) => c.codigoPlanta),
-        ids,
+        cambios.filter((c) => c.codigoPlanta !== undefined).map((c) => c.id),
       );
 
       const limpiar = (v: string | null | undefined) => (v ?? "").trim() || null;
+
+      // Intercambiar números (101↔102) choca con el índice único si se escribe
+      // de una: Postgres chequea cada fila al actualizarla, y la 101 todavía
+      // está en la otra troza (23505, verificado 2026-09-26). Primero se
+      // SUELTAN los códigos que cambian y después se escriben los nuevos, en
+      // la misma transacción: nadie ve el intermedio sin código.
+      const clave = (v: string | null | undefined) => (v ?? "").trim().toUpperCase();
+      const cambiosDeCodigo = cambios
+        .filter((c) => c.codigoPlanta !== undefined && clave(c.codigoPlanta) !== clave(previaPorId.get(c.id)?.codigoPlanta))
+        .map((c) => ({
+          id: c.id,
+          antes: (previaPorId.get(c.id)?.codigoPlanta ?? "").trim() || null,
+          despues: limpiar(c.codigoPlanta),
+          codificacion: previaPorId.get(c.id)?.codificacion ?? null,
+        }));
+      if (cambiosDeCodigo.length > 0) {
+        await tx.woodEntryTroza.updateMany({
+          where: { tenantId, woodEntryId, id: { in: cambiosDeCodigo.map((c) => c.id) } },
+          data: { codigoPlanta: null },
+        });
+      }
 
       // UNA query para las N trozas, no un UPDATE por fila.
       //
@@ -1419,7 +1964,15 @@ export class WoodEntriesDB {
         entityId: woodEntryId,
         detail:
           `Actualizó la recepción de ${cambios.length} troza(s) de la GTF ${entry.gtfNumber}` +
-          (faltantes.length > 0 ? ` · marcó como NO recibidas: ${faltantes.join(", ")}` : ""),
+          (faltantes.length > 0 ? ` · marcó como NO recibidas: ${faltantes.join(", ")}` : "") +
+          /* El número pintado es lo que identifica la pieza: su cambio se narra
+             con el antes y el después, no como «actualizó». */
+          (cambiosDeCodigo.length > 0
+            ? ` · código de planta: ${cambiosDeCodigo
+                .slice(0, 60)
+                .map((c) => `${c.codificacion ?? c.id} ${c.antes ?? "sin código"} → ${c.despues ?? "sin código"}`)
+                .join(", ")}${cambiosDeCodigo.length > 60 ? ` y ${cambiosDeCodigo.length - 60} más` : ""}`
+            : ""),
         user: usuario,
       });
       try {
@@ -1427,7 +1980,7 @@ export class WoodEntriesDB {
       } catch {}
 
       return { actualizadas: cambios.length };
-    });
+    }).catch(traducirChoqueCodigoPlanta);
   }
 
   /**
@@ -1482,7 +2035,7 @@ export class WoodEntriesDB {
    */
   static async trozasDelPatio(
     tenantId: string,
-    opts: { limite?: number; loteId?: string; contratoId?: string } = {},
+    opts: { limite?: number; loteId?: string; contratoId?: string; ids?: string[] } = {},
   ) {
     if (!tenantId) throw new Error("tenantId is required");
     return prisma.woodEntryTroza.findMany({
@@ -1553,7 +2106,7 @@ export class WoodEntriesDB {
    */
   static async trozasComoConsumibles(
     tenantId: string,
-    opts: { limite?: number; loteId?: string; contratoId?: string } = {},
+    opts: { limite?: number; loteId?: string; contratoId?: string; ids?: string[] } = {},
   ): Promise<TrozaConsumible[]> {
     const filas = await WoodEntriesDB.trozasDelPatio(tenantId, opts);
     const consumido = await WoodEntriesDB.consumidoPorIngreso(
@@ -1616,6 +2169,10 @@ export class WoodEntriesDB {
       retrozos: t._count.retrozos,
       loteAserrioId: t.loteAserrioId,
       loteAserrioCode: t.loteAserrio?.code ?? null,
+      /* El sello de la etiqueta QR (ADR-436): la pantalla dice «ya etiquetada»
+         y cuántas veces se reimprimió. */
+      etiquetadaEn: t.etiquetadaEn ? t.etiquetadaEn.toISOString() : null,
+      etiquetasImpresas: t.etiquetasImpresas,
     }));
   }
 
@@ -1682,12 +2239,16 @@ export class WoodEntriesDB {
    */
   static wherePatio(
     tenantId: string,
-    opts: { loteId?: string; contratoId?: string } = {},
+    opts: { loteId?: string; contratoId?: string; ids?: string[] } = {},
   ): Prisma.WoodEntryTrozaWhereInput {
     if (!tenantId) throw new Error("tenantId is required");
     return {
       tenantId,
       ...(opts.loteId ? { loteAserrioId: opts.loteId } : {}),
+      /* `ids` acota a piezas puntuales (las etiquetas, ADR-436). Un array VACÍO
+         no es «sin filtro»: es «ninguna» — si no, pedir cero piezas devolvería
+         el patio entero. */
+      ...(opts.ids ? { id: { in: opts.ids } } : {}),
       entry: {
         deletedAt: null,
         status: { notIn: ["anulado", "rechazado"] },
@@ -1712,7 +2273,7 @@ export class WoodEntriesDB {
     const filas = await prisma.$queryRaw<{ max: number | null }[]>`
       SELECT MAX(CAST("codigoPlanta" AS BIGINT)) AS max
       FROM "WoodEntryTroza"
-      WHERE "tenantId" = ${tenantId} AND "codigoPlanta" ~ '^[0-9]+$'
+      WHERE "tenantId" = ${tenantId} AND "codigoPlanta" ~ '^[0-9]{1,15}$'
     `;
     const max = filas[0]?.max == null ? 0 : Number(filas[0].max);
     return max + 1;
@@ -1753,15 +2314,15 @@ export class WoodEntriesDB {
       FROM "WoodEntryTroza" t
       JOIN "WoodEntry" e ON e."id" = t."woodEntryId"
       WHERE t."tenantId" = ${tenantId}
-        AND t."codigoPlanta" IS NOT NULL AND t."codigoPlanta" <> ''
-        AND UPPER(t."codigoPlanta") IN (
-          SELECT UPPER(t2."codigoPlanta")
+        AND t."codigoPlanta" IS NOT NULL AND BTRIM(t."codigoPlanta") <> ''
+        AND UPPER(BTRIM(t."codigoPlanta")) IN (
+          SELECT UPPER(BTRIM(t2."codigoPlanta"))
           FROM "WoodEntryTroza" t2
           WHERE t2."tenantId" = ${tenantId}
-            AND t2."codigoPlanta" IS NOT NULL AND t2."codigoPlanta" <> ''
-          GROUP BY UPPER(t2."codigoPlanta") HAVING COUNT(*) > 1
+            AND t2."codigoPlanta" IS NOT NULL AND BTRIM(t2."codigoPlanta") <> ''
+          GROUP BY UPPER(BTRIM(t2."codigoPlanta")) HAVING COUNT(*) > 1
         )
-      ORDER BY UPPER(t."codigoPlanta"), t."createdAt"
+      ORDER BY UPPER(BTRIM(t."codigoPlanta")), t."createdAt"
     `;
     /*
      * Las piezas de ingresos ANULADOS entran a la lista aunque no haya madera
@@ -1778,7 +2339,7 @@ export class WoodEntriesDB {
     // que mantener sincronizada.
     const grupos = new Map<string, typeof filas>();
     for (const f of filas) {
-      const k = f.codigoPlanta.toUpperCase();
+      const k = f.codigoPlanta.trim().toUpperCase();
       const g = grupos.get(k);
       if (g) g.push(f);
       else grupos.set(k, [f]);
@@ -1871,10 +2432,14 @@ export class WoodEntriesDB {
     if (elegibles.length === 0) return { renumeradas: [], omitidas };
 
     const renumeradas = await prisma.$transaction(async (tx) => {
+      /* El mismo candado que `marcarEtiquetadas` (ADR-436): sin él, renumerar
+         mientras otra tablet imprime etiquetas lee el mismo MAX y pinta el
+         mismo número en dos palos. */
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`ctp-codigo-planta:${tenantId}`}))`;
       const max = await tx.$queryRaw<{ max: number | null }[]>`
         SELECT MAX(CAST("codigoPlanta" AS BIGINT)) AS max
         FROM "WoodEntryTroza"
-        WHERE "tenantId" = ${tenantId} AND "codigoPlanta" ~ '^[0-9]+$'
+        WHERE "tenantId" = ${tenantId} AND "codigoPlanta" ~ '^[0-9]{1,15}$'
       `;
       let n = (max[0]?.max == null ? 0 : Number(max[0].max)) + 1;
       const salida = elegibles.map((p) => {
@@ -1900,7 +2465,7 @@ export class WoodEntriesDB {
         WHERE t."id" = v.id AND t."tenantId" = ${tenantId}
       `;
       return salida;
-    });
+    }).catch(traducirChoqueCodigoPlanta);
 
     auditCtp({
       tenantId,
@@ -1923,36 +2488,180 @@ export class WoodEntriesDB {
   }
 
   /**
-   * Pone el candado definitivo: el índice único de Postgres sobre
-   * (`tenantId`, `codigoPlanta`).
+   * Sella la impresión de etiquetas QR y, si se pide, numera las que no tienen
+   * código de planta (ADR-436).
    *
-   * Se intenta después de cada limpieza. Falla en silencio —devuelve `false`—
-   * mientras quede un duplicado, incluso de OTRO tenant: el índice es de la
-   * tabla entera. Con el índice puesto, ni un bug futuro ni una importación
-   * pueden volver a duplicar una marca.
+   * Qué hace, en este orden:
+   * 1. Lee las piezas pedidas con la MISMA lectura que el patio
+   *    (`trozasComoConsumibles`) y las reparte con `planearEtiquetado`: la que
+   *    no está en el patio (consumida, despachada, no llegó, descarte, madre
+   *    retrozada, sin volumen) se omite con el rótulo de `LABEL_BLOQUEO`.
+   * 2. `asignarCodigo`: la elegible sin código recibe `MAX(numérico) + 1` — el
+   *    criterio de `renumerarCodigosPlanta`. Un mes CERRADO no se toca: la pieza
+   *    se etiqueta igual, con el código del bosque, y vuelve en `sinCodigoNuevo`.
+   * 3. Sella `etiquetadaEn = ahora` y `etiquetasImpresas + 1` en UNA query.
+   *
+   * La numeración va bajo `pg_advisory_xact_lock` por negocio: sin él, dos
+   * tablets imprimiendo a la vez leen el mismo MAX y el índice único
+   * (`INDICE_CODIGO_PLANTA_UNICO`) tumbaría la segunda tanda entera en vez de
+   * darle el número siguiente. Y el UPDATE del código lleva «sigue sin código» en el WHERE: si
+   * otra pantalla le puso uno mientras tanto, no se pisa.
    */
-  static async intentarCandadoCodigoPlanta(): Promise<{
+  static async marcarEtiquetadas(
+    tenantId: string,
+    trozaIds: string[],
+    opts: { asignarCodigo: boolean; usuario?: string },
+  ): Promise<{
+    trozas: TrozaConsumible[];
+    asignados: { id: string; codigo: string }[];
+    omitidas: { id: string; motivo: string }[];
+    sinCodigoNuevo: { id: string; motivo: string }[];
+    repetidos: { codigo: string; ids: string[] }[];
+  }> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const pedidos = [...new Set(trozaIds.map((i) => i.trim()).filter(Boolean))];
+    const vacio = { trozas: [], asignados: [], omitidas: [], sinCodigoNuevo: [], repetidos: [] };
+    if (pedidos.length === 0) return vacio;
+
+    const piezas = await WoodEntriesDB.trozasComoConsumibles(tenantId, {
+      ids: pedidos,
+      limite: pedidos.length,
+    });
+
+    /* El cierre se consulta una vez por MES y sólo para las que se van a
+       numerar: a las que ya tienen código no se les escribe nada del libro. */
+    const cerradoPorId = new Map<string, string | null>();
+    if (opts.asignarCodigo) {
+      const porMes = new Map<string, string | null>();
+      for (const t of piezas) {
+        if (tieneCodigoPlanta(t.codigoPlanta) || t.fechaIngreso == null) continue;
+        const fecha = new Date(t.fechaIngreso as unknown as string | Date);
+        if (Number.isNaN(fecha.getTime())) continue;
+        const clave = fecha.toISOString().slice(0, 7);
+        if (!porMes.has(clave)) {
+          const cerrado = await ForestCtpCierreDB.closedPeriodOf(tenantId, fecha);
+          porMes.set(clave, cerrado ? cerrado.label : null);
+        }
+        cerradoPorId.set(t.id, porMes.get(clave) ?? null);
+      }
+    }
+    const plan = planearEtiquetado(pedidos, piezas, {
+      asignarCodigo: opts.asignarCodigo,
+      periodoCerrado: (t) => cerradoPorId.get(t.id) ?? null,
+    });
+    if (plan.etiquetar.length === 0) return { ...vacio, omitidas: plan.omitidas };
+
+    const asignados = await prisma.$transaction(async (tx) => {
+      let hechos: { id: string; codigo: string }[] = [];
+      if (plan.aNumerar.length > 0) {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`ctp-codigo-planta:${tenantId}`}))`;
+        const max = await tx.$queryRaw<{ max: bigint | number | null }[]>`
+          SELECT MAX(CAST("codigoPlanta" AS BIGINT)) AS max
+          FROM "WoodEntryTroza"
+          WHERE "tenantId" = ${tenantId} AND "codigoPlanta" ~ '^[0-9]{1,15}$'
+        `;
+        const propuestos = asignarCorrelativos(
+          plan.aNumerar,
+          (max[0]?.max == null ? 0 : Number(max[0].max)) + 1,
+        );
+        hechos = await tx.$queryRaw<{ id: string; codigo: string }[]>`
+          UPDATE "WoodEntryTroza" AS t
+          SET "codigoPlanta" = v.codigo
+          FROM (VALUES ${Prisma.join(propuestos.map((p) => Prisma.sql`(${p.id}::text, ${p.codigo}::text)`))})
+            AS v(id, codigo)
+          WHERE t."id" = v.id AND t."tenantId" = ${tenantId}
+            AND (t."codigoPlanta" IS NULL OR btrim(t."codigoPlanta") = '')
+          RETURNING t."id" AS id, t."codigoPlanta" AS codigo
+        `;
+      }
+      await tx.woodEntryTroza.updateMany({
+        where: { tenantId, id: { in: plan.etiquetar } },
+        data: { etiquetadaEn: new Date(), etiquetasImpresas: { increment: 1 } },
+      });
+      return hechos;
+    }).catch(traducirChoqueCodigoPlanta);
+
+    auditCtp({
+      tenantId,
+      action: "ctp_trozas_etiquetadas",
+      entity: "WoodEntryTroza",
+      entityId: plan.etiquetar[0] ?? "",
+      detail:
+        `Imprimió la etiqueta de ${plan.etiquetar.length} troza(s)` +
+        (asignados.length > 0
+          ? ` · código de planta nuevo: ${asignados
+              .slice(0, 10)
+              .map((a) => a.codigo)
+              .join(", ")}${asignados.length > 10 ? "…" : ""}`
+          : "") +
+        (plan.omitidas.length > 0 ? ` · omitidas ${plan.omitidas.length}` : ""),
+      user: opts.usuario ?? "unknown",
+    });
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    } catch {}
+
+    /* Se releen para devolver el código nuevo y el sello tal como quedaron. */
+    const [trozas, duplicados] = await Promise.all([
+      WoodEntriesDB.trozasComoConsumibles(tenantId, {
+        ids: plan.etiquetar,
+        limite: plan.etiquetar.length,
+      }),
+      WoodEntriesDB.codigosPlantaDuplicados(tenantId),
+    ]);
+    const orden = new Map(plan.etiquetar.map((id, i) => [id, i]));
+    trozas.sort((a, b) => (orden.get(a.id) ?? 0) - (orden.get(b.id) ?? 0));
+    /* Una etiqueta con un código que está en OTRO palo también es una etiqueta
+       que miente: se avisa cuál, con todas sus piezas, para resolverlo. */
+    const codigosImpresos = new Set(
+      trozas.map((t) => t.codigoPlanta?.trim().toUpperCase()).filter((c): c is string => !!c),
+    );
+    const repetidos = duplicados
+      .filter((g) => codigosImpresos.has(g.codigo))
+      .map((g) => ({ codigo: g.codigo, ids: g.piezas.map((p) => p.id) }));
+
+    return { trozas, asignados, omitidas: plan.omitidas, sinCodigoNuevo: plan.sinCodigoNuevo, repetidos };
+  }
+
+  /**
+   * ¿Está puesto el candado —el índice único `INDICE_CODIGO_PLANTA_UNICO`— y
+   * cuántos códigos repetidos le quedan a ESTE negocio?
+   *
+   * Sólo LEE. Hasta el 2026-09-26 esto intentaba crear el índice desde el
+   * request cada vez que no quedaban repetidos, con otro nombre y sin
+   * `upper(btrim())`: nunca llegó a correr (un «118» repetido en `main` lo
+   * frenó) y habría creado un índice más flojo que la regla del guard. Ahora el
+   * índice vive en `prisma/migrations/adr-436-codigo-planta-unico.sql`, se
+   * aplicó con `CONCURRENTLY` por el pooler de sesión, y un GET no hace DDL.
+   *
+   * `creado` exige `indisvalid`: un `CREATE INDEX CONCURRENTLY` interrumpido
+   * deja el índice en el catálogo pero INVÁLIDO, y ése no frena nada.
+   */
+  static async estadoCandadoCodigoPlanta(tenantId: string): Promise<{
     creado: boolean;
     duplicadosRestantes: number;
   }> {
-    const dup = await prisma.$queryRaw<{ n: bigint }[]>`
-      SELECT COUNT(*)::bigint AS n FROM (
-        SELECT "tenantId", UPPER("codigoPlanta")
-        FROM "WoodEntryTroza"
-        WHERE "codigoPlanta" IS NOT NULL AND "codigoPlanta" <> ''
-        GROUP BY 1, 2 HAVING COUNT(*) > 1
-      ) x
-    `;
-    const restantes = Number(dup[0]?.n ?? 0);
-    if (restantes > 0) return { creado: false, duplicadosRestantes: restantes };
-    // 248 filas: el lock de la tabla dura milisegundos, no hace falta CONCURRENTLY
-    // (que además no puede correr dentro de una transacción).
-    await prisma.$executeRawUnsafe(
-      `CREATE UNIQUE INDEX IF NOT EXISTS "WoodEntryTroza_tenant_codigoPlanta_key"
-         ON "WoodEntryTroza" ("tenantId", "codigoPlanta")
-         WHERE "codigoPlanta" IS NOT NULL AND "codigoPlanta" <> ''`,
-    );
-    return { creado: true, duplicadosRestantes: 0 };
+    if (!tenantId) throw new Error("tenantId is required");
+    const [idx, dup] = await Promise.all([
+      prisma.$queryRaw<{ valido: boolean }[]>`
+        SELECT i.indisvalid AS valido
+        FROM pg_class c JOIN pg_index i ON i.indexrelid = c.oid
+        WHERE c.relname = ${INDICE_CODIGO_PLANTA_UNICO}
+      `,
+      prisma.$queryRaw<{ n: bigint }[]>`
+        SELECT COUNT(*)::bigint AS n FROM (
+          SELECT UPPER(BTRIM("codigoPlanta"))
+          FROM "WoodEntryTroza"
+          WHERE "tenantId" = ${tenantId}
+            AND "codigoPlanta" IS NOT NULL AND BTRIM("codigoPlanta") <> ''
+          GROUP BY 1 HAVING COUNT(*) > 1
+        ) x
+      `,
+    ]);
+    return {
+      creado: idx[0]?.valido === true,
+      duplicadosRestantes: Number(dup[0]?.n ?? 0),
+    };
   }
 
   /**
@@ -1961,7 +2670,8 @@ export class WoodEntriesDB {
    * Es el mismo criterio del guard que rechaza al guardar (`guardCodigoPlantaUnico`),
    * expuesto para poder avisarlo ANTES: descubrir la colisión al apretar
    * "Registrar" —con la lista de sesenta piezas ya llena— es descubrirla tarde.
-   * Los ingresos anulados no cuentan: su código volvió a estar libre.
+   * Los ingresos anulados SÍ cuentan: su fila sigue en la tabla y el índice
+   * único la mira, así que su código no está libre (ADR-436).
    */
   static async codigosPlantaEnUso(
     tenantId: string,
@@ -1977,9 +2687,7 @@ export class WoodEntriesDB {
       FROM "WoodEntryTroza" t
       JOIN "WoodEntry" e ON e."id" = t."woodEntryId"
       WHERE t."tenantId" = ${tenantId}
-        AND UPPER(t."codigoPlanta") = ANY(${claves})
-        AND e."deletedAt" IS NULL
-        AND e."status" NOT IN ('anulado', 'rechazado')
+        AND UPPER(BTRIM(t."codigoPlanta")) = ANY(${claves})
       LIMIT 200
     `;
     return filas.map((f) => ({
@@ -2851,11 +3559,7 @@ export class WoodEntriesDB {
   static async list(tenantId: string, filters: WoodEntryListFilters = {}) {
     if (!tenantId) throw new Error("tenantId is required");
 
-    const where = await withRecepcionFilter(
-      tenantId,
-      filters,
-      await withLateFilter(tenantId, filters, buildListWhere(tenantId, filters)),
-    );
+    const where = await whereDelListado(tenantId, filters);
 
     const limit = Math.min(Math.max(filters.limit ?? 50, 1), 500);
     const offset = Math.max(filters.offset ?? 0, 0);
@@ -2939,17 +3643,46 @@ export class WoodEntriesDB {
    * guía, no por asiento) y se ordenan acá; los asientos que viajan son sólo
    * los de la página.
    */
+  /**
+   * Los ingresos VIGENTES del período contados por guía (reporte diario,
+   * ADR-439): mismos filtros que `stats`/`listPorGuia` (`whereDelListado`) y
+   * el MISMO predicado de recepción que la bandeja (`idsRecepcionados`). El
+   * conteo lo hace `resumirIngresosPorGuia`, puro y probado.
+   */
+  static async resumenPorGuia(tenantId: string, filters: WoodEntryListFilters = {}): Promise<IngresosPorGuia> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const { status: _s, limit: _l, offset: _o, ...periodo } = filters;
+    const where = await whereDelListado(tenantId, periodo);
+    const [filas, recibidos] = await Promise.all([
+      prisma.woodEntry.findMany({
+        where: { ...where, status: { notIn: ["rechazado", "anulado"] } },
+        select: {
+          id: true,
+          gtfSeries: true,
+          gtfNumber: true,
+          maderaDeTercero: true,
+          speciesCommonName: true,
+          providerName: true,
+          volumeM3: true,
+        },
+        /* Un período de días, no el libro entero: el tope es una red. */
+        take: 5000,
+      }),
+      idsRecepcionados(tenantId),
+    ]);
+    return resumirIngresosPorGuia(
+      filas.map((f) => ({ ...f, volumeM3: f.volumeM3 == null ? null : Number(f.volumeM3) })),
+      new Set(recibidos),
+    );
+  }
+
   static async listPorGuia(
     tenantId: string,
     filters: WoodEntryListFilters = {},
   ): Promise<{ guias: GuiaIngreso<WoodEntryConTrozas>[]; total: number; lineas: number }> {
     if (!tenantId) throw new Error("tenantId is required");
 
-    const where = await withRecepcionFilter(
-      tenantId,
-      filters,
-      await withLateFilter(tenantId, filters, buildListWhere(tenantId, filters)),
-    );
+    const where = await whereDelListado(tenantId, filters);
 
     const limit = Math.min(Math.max(filters.limit ?? 50, 1), 500);
     const offset = Math.max(filters.offset ?? 0, 0);
@@ -3211,11 +3944,7 @@ export class WoodEntriesDB {
      * comentario: `list` y `stats` filtran igual, o los KPIs encabezan una tabla
      * que habla de otra cosa. Medido: la opción decía 55.78 m³ y la tarjeta 49.
      */
-    const where = await withRecepcionFilter(
-      tenantId,
-      periodFilters,
-      await withLateFilter(tenantId, periodFilters, buildListWhere(tenantId, periodFilters)),
-    );
+    const where = await whereDelListado(tenantId, periodFilters);
     // Las cifras OFICIALES (total, volumen, CITES, especies, fuera de plazo) NO
     // deben contar ingresos RECHAZADOS ni ANULADOS: no forman parte del libro y
     // no pueden aparecer en lo que se declara a SERFOR (QA 2026-07-17). El
@@ -3247,9 +3976,18 @@ export class WoodEntriesDB {
     const andDelPeriodo = comoLista(where.AND).slice(
       comoLista(buildListWhere(tenantId, periodFilters).AND).length,
     );
-    const whereSin = (
-      campo: "speciesCommonName" | "providerName" | "productType" | "originCode",
-    ): Prisma.WoodEntryWhereInput => {
+    /* «Fuera de plazo» y los topes por guía se resuelven a una lista de ids
+       calculada CON todos los filtros, especie incluida: conservarla en la
+       faceta de especie dejaba el desplegable con sólo lo ya elegido
+       («m³ ≥ 10» + Tornillo → sólo Tornillo). Con cualquiera de los dos activo,
+       la faceta rearma la cadena entera sin su columna. */
+    const recalcula = Boolean(periodFilters.late) || tieneTopesDeGuia(periodFilters.cabecera);
+    type CampoFaceta = "speciesCommonName" | "providerName" | "productType" | "originCode";
+    const whereSin = async (campo: CampoFaceta): Promise<Prisma.WoodEntryWhereInput> => {
+      if (recalcula) {
+        const w = await whereDelListado(tenantId, { ...periodFilters, [campo]: undefined });
+        return { ...w, status: { notIn: ["rechazado", "anulado"] as WoodEntryStatus[] } };
+      }
       /* Se rearma con `buildListWhere` sin ese campo, para no tener que
          deshacer a mano el `AND`/`OR` que dejó cuando trae varios valores. */
       const base = buildListWhere(tenantId, { ...periodFilters, [campo]: undefined });
@@ -3262,18 +4000,23 @@ export class WoodEntriesDB {
       };
     };
 
+    const [whereSinEspecie, whereSinProveedor, whereSinProducto, whereSinPermiso] = await Promise.all([
+      whereSin("speciesCommonName"),
+      whereSin("providerName"),
+      whereSin("productType"),
+      whereSin("originCode"),
+    ]);
+
     // Fuera de plazo = días HÁBILES(operación → registro) > PLAZO (2, RDE
-    // D000025-2023), con los mismos filtros del período. Mismo predicado que
-    // usa el FILTRO de la tabla (`withLateFilter`): el KPI no puede contar 3 y
-    // la tabla listar 2.
-    const condFueraDePlazo = lateConditions(tenantId, periodFilters);
+    // D000025-2023). Se cuenta con el MISMO filtro de la tabla
+    // (`withLateFilter`): el KPI no puede contar 3 y la tabla listar 2.
 
     const [
       agg,
       byStatusRows,
       speciesRows,
       citesAgg,
-      lateRows,
+      lateCount,
       providerRows,
       productRows,
       permisoRows,
@@ -3293,10 +4036,17 @@ export class WoodEntriesDB {
         _count: { _all: true },
       }),
       // byStatus usa `where` completo (incluye rechazado/anulado): es el desglose.
-      prisma.woodEntry.groupBy({ by: ["status"], where, _count: { _all: true } }),
+      /* También es la faceta de la cabecera «Estado» (`statuses`): `stats()`
+         ignora `filters.status`, así que ya se calcula SIN su propio filtro. */
+      prisma.woodEntry.groupBy({
+        by: ["status"],
+        where,
+        _count: { _all: true },
+        _sum: { volumeM3: true },
+      }),
       prisma.woodEntry.groupBy({
         by: ["speciesCommonName"],
-        where: whereSin("speciesCommonName"),
+        where: whereSinEspecie,
         _count: { _all: true },
         _sum: { volumeM3: true },
       }),
@@ -3305,23 +4055,25 @@ export class WoodEntriesDB {
         _sum: { volumeM3: true },
         _count: { _all: true },
       }),
-      prisma.$queryRaw<{ count: bigint }[]>`
-        SELECT COUNT(*)::bigint AS count
-        FROM "WoodEntry"
-        WHERE ${Prisma.join(condFueraDePlazo, " AND ")}
-      `,
+      /* Mismo predicado SQL que el filtro «fuera de plazo» (`withLateFilter`),
+         contado sobre el `where` de la tabla: así respeta también recepción y
+         los topes por guía de la cabecera, que no son SQL. Clic en el KPI =
+         esa misma cantidad de filas. */
+      withLateFilter(tenantId, { ...periodFilters, late: true }, whereVigente).then((w) =>
+        prisma.woodEntry.count({ where: w }),
+      ),
       // Facetas del período: alimentan los selectores de filtro con lo que
       // REALMENTE hay (un desplegable con las 9 especies del catálogo cuando
       // el mes tuvo 2 obliga a adivinar cuál trae resultados).
       prisma.woodEntry.groupBy({
         by: ["providerName"],
-        where: whereSin("providerName"),
+        where: whereSinProveedor,
         _count: { _all: true },
         _sum: { volumeM3: true },
       }),
       prisma.woodEntry.groupBy({
         by: ["productType"],
-        where: whereSin("productType"),
+        where: whereSinProducto,
         _count: { _all: true },
       }),
       /* Los permisos del período, con su proveedor y su resolución (ADR-400).
@@ -3330,7 +4082,7 @@ export class WoodEntriesDB {
          tiene que elegir, y el mismo contrato puede llegar por dos proveedores. */
       prisma.woodEntry.groupBy({
         by: ["originCode", "providerName", "originSourceNumber"],
-        where: whereSin("originCode"),
+        where: whereSinPermiso,
         _count: { _all: true },
         _sum: { volumeM3: true },
       }),
@@ -3344,7 +4096,8 @@ export class WoodEntriesDB {
       /* `aggregate` y no `count`: hace falta el VOLUMEN además de la cantidad,
          y son la misma pasada. Ver `sinCostoM3`. */
       prisma.woodEntry.aggregate({
-        where: { ...whereVigente, costoTotal: null },
+        /* Sin la madera de servicio: no se compró, no le falta costo (ADR-437 §1). */
+        where: { ...whereVigente, costoTotal: null, ...FILTRO_REQUIERE_COSTO },
         _count: { _all: true },
         _sum: { volumeM3: true },
       }),
@@ -3416,6 +4169,13 @@ export class WoodEntriesDB {
       anulado: 0,
     };
     for (const row of byStatusRows) byStatus[row.status] = row._count._all;
+    const statuses: WoodEntryFacet[] = byStatusRows
+      .map((r) => ({
+        value: r.status,
+        count: r._count._all,
+        volumeM3: Math.round((r._sum.volumeM3?.toNumber() ?? 0) * 10000) / 10000,
+      }))
+      .sort((a, b) => b.count - a.count);
 
     const r4 = (n: number) => Math.round(n * 10000) / 10000;
     // Facetas ordenadas por volumen (lo que más pesa primero) y acotadas: el
@@ -3474,7 +4234,7 @@ export class WoodEntriesDB {
       speciesCount: speciesRows.length,
       citesCount: citesAgg._count._all,
       citesVolumeM3: r4(citesAgg._sum.volumeM3?.toNumber() ?? 0),
-      lateCount: Number(lateRows[0]?.count ?? 0),
+      lateCount,
       sinOrigenCount,
       sinCostoCount: sinCostoAgg._count._all,
       sinCostoM3: Number(sinCostoAgg._sum.volumeM3 ?? 0),
@@ -3496,6 +4256,7 @@ export class WoodEntriesDB {
         registroRows[0]?.prom == null ? null : Math.round(Number(registroRows[0].prom) * 10) / 10,
       registroDiasHabilesMax: registroRows[0]?.max == null ? null : Number(registroRows[0].max),
       byStatus,
+      statuses,
       species: faceta(speciesRows, (r) => r.speciesCommonName),
       providers: faceta(providerRows, (r) => r.providerName),
       products: faceta(productRows, (r) => r.productType),
@@ -3756,10 +4517,10 @@ export class WoodEntriesDB {
   static async fotosGuia(
     tenantId: string,
     gtfNumber: string,
-    fotos: string[],
+    fotos: readonly (FotoCarga | string)[],
     user = "unknown",
     role?: string,
-  ) {
+  ): Promise<{ ok: true; asientos: number; fotos: FotoCarga[] }> {
     if (!tenantId) throw new Error("tenantId is required");
     const gtf = (gtfNumber ?? "").trim();
     if (!gtf) throw new Error("gtfNumber is required");
@@ -3779,11 +4540,12 @@ export class WoodEntriesDB {
 
     /* Las filas de una misma GTF SIEMPRE deberían tener las mismas fotos (se
        escriben todas juntas): la primera manda para calcular el «antes». */
-    const previas = Array.isArray(asientos[0]!.photos)
-      ? (asientos[0]!.photos as unknown[]).filter((x): x is string => typeof x === "string")
-      : [];
-    const nuevas = fotos.slice(0, 10);
-    const diff = diffFotosGuia(previas, nuevas);
+    const previas = normalizarFotos(asientos[0]!.photos);
+    /* Lo ya guardado se conserva como está en la base; lo nuevo tiene que
+       traer la firma del servidor (hora, lugar, sello y autor intactos desde
+       que se subió) y no ser evidencia de otra guía. */
+    const nuevas = await WoodEntriesDB.resolverFotosDeGuia(tenantId, gtf, normalizarFotos(fotos).slice(0, 10));
+    const diff = diffFotosGuia(urlsDeFotos(previas), urlsDeFotos(nuevas));
 
     const motivoDenegado = motivoSiNoPuedeGuardar(diff.quitadas, role);
     if (motivoDenegado) throw new CtpInvariantError(motivoDenegado, "VALIDACION");
@@ -3795,20 +4557,99 @@ export class WoodEntriesDB {
 
     await prisma.woodEntry.updateMany({
       where: { tenantId, gtfNumber: gtf, deletedAt: null },
-      data: { photos: nuevas as Prisma.InputJsonValue },
+      data: { photos: nuevas as unknown as Prisma.InputJsonValue },
     });
     auditCtp({
       tenantId,
       action: "ctp_ingreso_update",
       entity: "WoodEntry",
       entityId: asientos[0]!.id,
-      detail: detalleDeFotosGuia(gtf, asientos.length, previas, nuevas, diff),
+      detail: detalleDeFotosGuia(gtf, asientos.length, urlsDeFotos(previas), urlsDeFotos(nuevas), diff),
       user,
     });
     try {
       invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
     } catch {}
     return { ok: true, asientos: asientos.length, fotos: nuevas };
+  }
+
+  /**
+   * Las fotos que se guardan en la guía `gtf` a partir de las que mandó el
+   * cliente (2026-09-26, `resolverFotosEntrantes`):
+   *  - «ya guardadas» = las de CUALQUIER fila de esta guía (también de una
+   *    anulada o borrada: la foto sigue siendo de esa carga) → la versión de la base;
+   *  - nuevas → firma válida, privada del tenant y no presente en OTRA guía
+   *    (incluso anulada: una foto es evidencia de una sola carga).
+   * Tira `CtpInvariantError("FOTO_NO_VALIDA")`, que la ruta vuelve 400.
+   */
+  private static async resolverFotosDeGuia(
+    tenantId: string,
+    gtf: string,
+    entrantes: FotoCarga[],
+  ): Promise<FotoCarga[]> {
+    if (entrantes.length === 0) return [];
+    const filas = await prisma.woodEntry.findMany({
+      where: { tenantId, gtfNumber: gtf },
+      select: { photos: true },
+    });
+    const previas = filas.flatMap((f) => normalizarFotos(f.photos));
+    const urls = entrantes.map((f) => f.url);
+    const otras = await prisma.$queryRaw<{ url: string; gtfNumber: string }[]>`
+      SELECT DISTINCT f->>'url' AS url, e."gtfNumber"
+      FROM "WoodEntry" e
+      CROSS JOIN LATERAL jsonb_array_elements(
+        CASE WHEN jsonb_typeof(e."photos") = 'array' THEN e."photos" ELSE '[]'::jsonb END
+      ) AS f
+      WHERE e."tenantId" = ${tenantId}
+        AND e."gtfNumber" <> ${gtf}
+        AND jsonb_typeof(f) = 'object'
+        AND f->>'url' = ANY(${urls})
+    `;
+    try {
+      return resolverFotosEntrantes(tenantId, entrantes, previas, new Map(otras.map((o) => [o.url, o.gtfNumber])));
+    } catch (e) {
+      if (e instanceof FotoNoValidaError) throw new CtpInvariantError(e.message, "FOTO_NO_VALIDA");
+      throw e;
+    }
+  }
+
+  /**
+   * Guías RECIBIDAS sin una sola foto de la carga — el pendiente «pedila al
+   * recibir» (2026-09-26). Recibida = recepción cerrada (el MISMO predicado que
+   * «GTF ingresadas», `recepcion: "cerrada"`), vigente (ni rechazada ni
+   * anulada ni borrada) y dentro del período/permiso pedido, igual que el resto
+   * de la tira. Se cuenta por GUÍA, no por asiento: una GTF multi-especie son
+   * varias filas con las MISMAS fotos, y con que una tenga foto la guía la tiene.
+   *
+   * Medido al escribirlo: Blas 0 de 12 guías con foto — el pendiente nace lleno.
+   */
+  static async guiasRecibidasSinFoto(
+    tenantId: string,
+    filtros: Pick<WoodEntryListFilters, "fromDate" | "toDate" | "contratoId"> = {},
+  ): Promise<{ guias: number; m3: number; detalle: { gtf: string; fecha: string; m3: number }[] }> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const where = await whereDelListado(tenantId, { ...filtros, recepcion: "cerrada" });
+    const filas = await prisma.woodEntry.findMany({
+      where: { ...where, status: { notIn: ["rechazado", "anulado"] } },
+      select: { gtfNumber: true, photos: true, volumeM3: true, entryDate: true, fechaRecepcion: true },
+      take: 5000,
+    });
+    const porGuia = new Map<string, { conFoto: boolean; m3: number; fecha: Date }>();
+    for (const f of filas) {
+      const g = porGuia.get(f.gtfNumber) ?? { conFoto: false, m3: 0, fecha: f.fechaRecepcion ?? f.entryDate };
+      g.conFoto ||= tieneFotos(f.photos);
+      g.m3 += Number(f.volumeM3 ?? 0);
+      porGuia.set(f.gtfNumber, g);
+    }
+    const sin = [...porGuia.entries()]
+      .filter(([, g]) => !g.conFoto)
+      .map(([gtf, g]) => ({ gtf, fecha: g.fecha.toISOString(), m3: Math.round(g.m3 * 1000) / 1000 }))
+      .sort((a, b) => b.fecha.localeCompare(a.fecha));
+    return {
+      guias: sin.length,
+      m3: Math.round(sin.reduce((a, g) => a + g.m3, 0) * 1000) / 1000,
+      detalle: sin.slice(0, 20),
+    };
   }
 
   static async update(tenantId: string, id: string, input: WoodEntryUpdateInput, user: string) {
@@ -3947,7 +4788,40 @@ export class WoodEntriesDB {
       data.camposManuales = procedencia as Prisma.InputJsonValue;
     }
 
-    const entry = await prisma.woodEntry.update({ where: { id }, data });
+    /*
+     * Mudar el asiento a OTRA guía (ADR-437, revisión 2026-09-26): la plata va
+     * por guía. Con las dos guías bloqueadas (en orden, el mismo lock que el
+     * modal de la plata y la liquidación): el asiento hereda la marca de
+     * servicio / dueño / a quién se le paga de la guía destino, y el abono
+     * `madera` de la vieja y de la nueva pasan a valer lo que queda vivo en
+     * cada una. Antes el abono de la vieja seguía cobrando la especie que se fue.
+     */
+    const gtfViejo = actual.gtfNumber.trim();
+    const gtfNuevo = input.gtfNumber !== undefined ? input.gtfNumber.trim() : gtfViejo;
+    let cuentas: { gtfNumber: string; cuenta: "actualizada" | "baja" }[] = [];
+    const entry =
+      gtfNuevo === gtfViejo
+        ? await prisma.woodEntry.update({ where: { id }, data })
+        : await prisma.$transaction(async (tx) => {
+            await ForestCuentaDB.bloquearGuiasEnTx(tx, tenantId, [gtfViejo, gtfNuevo]);
+            const destino = await plataDeLaGuiaEnTx(tx, tenantId, gtfNuevo, id);
+            if (destino?.maderaDeTercero && actual.costoTotal != null) throw costoEnGuiaDeServicio(gtfNuevo, destino.duenoNombre);
+            const e = await tx.woodEntry.update({ where: { id }, data: { ...data, ...(destino ?? {}) } });
+            for (const gtf of [gtfViejo, gtfNuevo].sort()) {
+              const cuenta = await ForestCuentaDB.resincronizarMaderaDeGuiaEnTx(tx, tenantId, gtf);
+              if (cuenta !== "sin_cuenta") cuentas = [...cuentas, { gtfNumber: gtf, cuenta }];
+            }
+            return e;
+          });
+    for (const c of cuentas) {
+      WoodEntriesDB.auditarCuentaDeGuia(
+        tenantId,
+        c.gtfNumber,
+        c.cuenta,
+        c.gtfNumber === gtfViejo ? `movió un asiento a la guía ${gtfNuevo}` : `trajo un asiento de la guía ${gtfViejo}`,
+        user,
+      );
+    }
 
     // Qué cambió, en el idioma del libro: "volumen 5.2000 → 5.4000".
     const cambios = describirCambios(actual, entry);
@@ -4012,17 +4886,61 @@ export class WoodEntriesDB {
         { status: actual.status },
       );
     }
+    /* Madera de servicio (ADR-437 §1): no se compró, no lleva costo — ni 0.
+       Por esta puerta sale 422 (`ctpErrorResponse`); la ruta de la plata de la
+       guía responde 409 `ES_MADERA_DE_SERVICIO`. */
+    if (actual.maderaDeTercero) {
+      throw new CtpInvariantError(
+        `La guía ${actual.gtfNumber} es madera de servicio${actual.duenoNombre ? ` de ${actual.duenoNombre}` : ""}: no lleva costo. Quítale la marca de servicio si en realidad la compraste.`,
+        "ESTADO_NO_EDITABLE",
+        { motivo: "ES_MADERA_DE_SERVICIO", gtfNumber: actual.gtfNumber },
+      );
+    }
     await WoodEntriesDB.assertPeriodoAbierto(tenantId, id, "valorizar");
     /* Reabrir el mes no descongela: si una corrida ya copió el costo de esta
        guía a su acta, cambiarlo acá la contradice. Mismo freno que la tanda. */
     await exigirCostoNoCongelado(prisma, tenantId, id, actual.gtfNumber);
 
-    const entry = await prisma.woodEntry.update({
-      where: { id },
-      data: {
-        costoTotal: input.costoTotal != null ? new Prisma.Decimal(input.costoTotal) : null,
-        ...(input.moneda !== undefined ? { moneda: input.moneda ?? "PEN" } : {}),
-      },
+    /* En una tx: la marca de servicio va en el WHERE (si otro la marcó en el
+       medio, no se escribe costo), y si la guía ya estaba anotada en la cuenta
+       del proveedor (ADR-437 §4) el abono `madera` pasa a valer la suma nueva. */
+    const { entry, cuenta } = await prisma.$transaction(async (tx) => {
+      const res = await tx.woodEntry.updateMany({
+        where: { id, tenantId, deletedAt: null, ...FILTRO_REQUIERE_COSTO },
+        data: {
+          costoTotal: input.costoTotal != null ? new Prisma.Decimal(input.costoTotal) : null,
+          ...(input.moneda !== undefined ? { moneda: input.moneda ?? "PEN" } : {}),
+          /* El acta (ADR-437 §3) describe cómo se llegó al costo ANTERIOR: si
+             queda, el modal la precarga y un «Guardar» devuelve el valor viejo. */
+          costoDetalle: Prisma.DbNull,
+        },
+      });
+      if (res.count !== 1) {
+        throw new CtpInvariantError(
+          `La guía ${actual.gtfNumber} cambió mientras la valorizabas (pasó a madera de servicio o se dio de baja).`,
+          "ESTADO_NO_EDITABLE",
+          { motivo: "ES_MADERA_DE_SERVICIO", gtfNumber: actual.gtfNumber },
+        );
+      }
+      const entry = await tx.woodEntry.findFirstOrThrow({ where: { id, tenantId } });
+      /* La cuenta del proveedor es en soles y no hay tipo de cambio guardado:
+         un costo en otra moneda en una guía ya anotada quedaría fuera del abono
+         sin que nadie lo vea. Se frena acá, con el camino (revisión 2026-09-26). */
+      if (entry.costoTotal != null && (entry.moneda ?? "PEN") !== "PEN") {
+        const anotada = await tx.forestCuentaMov.findFirst({
+          where: { tenantId, gtfNumber: actual.gtfNumber.trim(), concepto: "madera", deletedAt: null },
+          select: { parteNombre: true },
+        });
+        if (anotada) {
+          throw new CtpInvariantError(
+            `La guía ${actual.gtfNumber} está anotada en soles en la cuenta de ${anotada.parteNombre}: su costo tiene que ir en soles (PEN). Conviértelo con el tipo de cambio de la factura.`,
+            "VALIDACION",
+            { motivo: "MONEDA_DE_LA_CUENTA", moneda: entry.moneda, gtfNumber: actual.gtfNumber },
+          );
+        }
+      }
+      const cuenta = await ForestCuentaDB.resincronizarMaderaDeGuiaEnTx(tx, tenantId, actual.gtfNumber);
+      return { entry, cuenta };
     });
 
     const antes = actual.costoTotal != null ? `S/ ${actual.costoTotal.toString()}` : "sin costo";
@@ -4032,12 +4950,19 @@ export class WoodEntriesDB {
       action: "ctp_ingreso_costo",
       entity: "WoodEntry",
       entityId: entry.id,
-      detail: `Valorizó el ingreso ${actual.gtfNumber} · ${antes} → ${despues}`,
+      detail: `Valorizó el ingreso ${actual.gtfNumber} · ${antes} → ${despues}${
+        cuenta === "actualizada"
+          ? " · se actualizó la madera de la guía en la cuenta del proveedor"
+          : cuenta === "baja"
+            ? " · la guía quedó sin costo: se quitó de la cuenta del proveedor"
+            : ""
+      }`,
       user,
     });
     try {
       invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
     } catch {}
+    if (cuenta !== "sin_cuenta") ForestCuentaDB.invalidar(tenantId);
     return entry;
   }
 
@@ -4186,6 +5111,10 @@ export class WoodEntriesDB {
         desdePorFila.set(filaId, previas.reduce((max, t) => Math.max(max, t.orden ?? 0), 0));
       }
 
+      /* Completar la lista de una guía también pinta códigos: era la única de
+         las cuatro altas que no pasaba por el guard (ADR-436). */
+      await guardCodigoPlantaUnico(tx, tenantId, nuevas.map((t) => t.codigoPlanta));
+
       await tx.woodEntryTroza.createMany({
         data: [...porFila].flatMap(([filaId, suyas]) => suyas.map((t, i) => ({
           tenantId,
@@ -4223,7 +5152,7 @@ export class WoodEntriesDB {
           c.nota ? [{ codigo: c.troza.codificacion, especie: c.troza.especieComun, nota: c.nota }] : [],
         ),
       };
-    });
+    }).catch(traducirChoqueCodigoPlanta);
 
     if (resultado.agregadas > 0) {
       /* Un renglón por fila que recibió piezas: el historial de cada ingreso
@@ -4309,6 +5238,12 @@ export class WoodEntriesDB {
      * de auditoría, que es el registro oficial de quién hizo qué en el libro.
      */
     observacion?: string,
+    /**
+     * La llegada cae después del vencimiento de la guía y quien recibe lo
+     * confirma con motivo (ADR-434 §Vencimiento). Sin eso, esa fecha se
+     * rechaza con `GUIA_VENCIDA`: vale para las tres puertas que reciben.
+     */
+    confirmacion?: ConfirmacionDeVencida,
   ) {
     if (!tenantId) throw new Error("tenantId is required");
     const actual = await prisma.woodEntry.findFirst({
@@ -4331,6 +5266,8 @@ export class WoodEntriesDB {
     if (fechaImposible) {
       throw new CtpInvariantError(`Guía ${actual.gtfNumber}: ${fechaImposible}`, "VALIDACION", { fecha: dia });
     }
+    /* ADR-434 §Vencimiento: después del vencimiento de la guía, sólo confirmado con motivo. */
+    const vencida = await ForestRecepcionDB.exigirGuiaVigente(tenantId, actual.gtfNumber, dia, confirmacion);
 
     const { piezas } = await prisma.$transaction(async (tx) => {
       /* T3 al revés (ADR-434): una troza sin fecha que ya se aserró no queda fechada después de su corrida. */
@@ -4365,15 +5302,29 @@ export class WoodEntriesDB {
         (piezas > 0
           ? ` · ${piezas} pieza${piezas === 1 ? "" : "s"} fechada${piezas === 1 ? "" : "s"}`
           : "") +
-        (observacion?.trim() ? ` · observación: ${observacion.trim()}` : ""),
+        (observacion?.trim() ? ` · observación: ${observacion.trim()}` : "") +
+        (vencida ? ` · después del vencimiento de la guía (${vencida.vencimiento}), confirmado` : ""),
       user,
     });
+    /* La vencida confirmada va en su propio renglón, esperado: es lo que se
+       filtra cuando alguien pregunta qué madera viajó con la guía vencida. */
+    if (vencida) {
+      await ForestRecepcionDB.auditarRecepcionVencida(
+        tenantId,
+        id,
+        actual.gtfNumber,
+        dia,
+        vencida,
+        confirmacion?.motivoVencida ?? "",
+        user,
+      );
+    }
     try {
       invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
     } catch {
       /* cache best-effort */
     }
-    return { entry, piezas, fecha: dia };
+    return { entry, piezas, fecha: dia, ...(vencida ? { vencida: vencida.vencimiento } : {}) };
   }
 
   /**
@@ -4395,6 +5346,8 @@ export class WoodEntriesDB {
     user: string,
     /** Lo que se vio al recibir; queda en el rastro de CADA asiento de la guía. */
     observacion?: string,
+    /** Llegada después del vencimiento, confirmada con motivo (ADR-434 §Vencimiento). */
+    confirmacion?: ConfirmacionDeVencida,
   ): Promise<{
     recepcionados: number;
     piezas: number;
@@ -4407,14 +5360,14 @@ export class WoodEntriesDB {
     let piezas = 0;
     /* ADR-434: la guía entera se revisa ANTES del primer asiento (fecha posible,
        mes abierto, trozas ya aserradas): frenar en el segundo la dejaría a medias. */
-    await ForestRecepcionDB.revisarAntesDeRecibir(tenantId, ids, dia);
+    await ForestRecepcionDB.revisarAntesDeRecibir(tenantId, ids, dia, confirmacion);
 
     /* En serie y ordenado: los asientos de una guía tocan las mismas filas de
        `WoodEntryTroza` y en paralelo se pisan los locks. Son dos o cinco, no
        quinientos: la latencia no es el problema, la consistencia sí. */
     for (const id of [...ids].sort()) {
       try {
-        const r = await WoodEntriesDB.recepcionar(tenantId, id, dia, user, observacion);
+        const r = await WoodEntriesDB.recepcionar(tenantId, id, dia, user, observacion, confirmacion);
         if (r) {
           recepcionados += 1;
           piezas += r.piezas;
@@ -4434,15 +5387,23 @@ export class WoodEntriesDB {
   static async reject(tenantId: string, id: string, validatorId: string, reason: string) {
     if (!tenantId) throw new Error("tenantId is required");
     if (!reason?.trim()) throw new Error("rejection reason is required");
-    const entry = await prisma.woodEntry.update({
-      where: { id, tenantId } satisfies Prisma.WoodEntryWhereUniqueInput,
-      data: {
-        status: "rechazado",
-        validatedBy: validatorId,
-        validatedAt: new Date(),
-        rejectionReason: reason.trim(),
-      },
+    const { entry, soltados, cuenta } = await prisma.$transaction(async (tx) => {
+      const entry = await tx.woodEntry.update({
+        where: { id, tenantId } satisfies Prisma.WoodEntryWhereUniqueInput,
+        data: {
+          status: "rechazado",
+          validatedBy: validatorId,
+          validatedAt: new Date(),
+          rejectionReason: reason.trim(),
+        },
+      });
+      const soltados = await soltarCodigosPlanta(tx, tenantId, [id]);
+      /* La madera de la guía en la cuenta del proveedor (ADR-437 §4) pasa a
+         valer lo que queda vivo; si no queda nada, baja lógica. */
+      const cuenta = await ForestCuentaDB.resincronizarMaderaDeGuiaEnTx(tx, tenantId, entry.gtfNumber);
+      return { entry, soltados, cuenta };
     });
+    WoodEntriesDB.auditarCuentaDeGuia(tenantId, entry.gtfNumber, cuenta, "rechazó un asiento", validatorId);
     auditCtp({
       tenantId,
       action: "ctp_ingreso_reject",
@@ -4451,6 +5412,7 @@ export class WoodEntriesDB {
       detail: `Rechazó el ingreso ${entry.gtfNumber} · ${entry.speciesCommonName} · motivo: ${reason.trim()}`,
       user: validatorId,
     });
+    WoodEntriesDB.auditarCodigosSoltados(tenantId, id, entry.gtfNumber, "ingreso rechazado", soltados, validatorId);
     try {
       invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
     } catch {}
@@ -4467,6 +5429,32 @@ export class WoodEntriesDB {
    * consumos apuntando a materia prima que desapareció del saldo (rompe I2). El
    * operador debe corregir/anular esas corridas primero (QA 2026-07-17).
    */
+  /**
+   * Renglón de auditoría + invalidación cuando dar de baja un asiento movió el
+   * abono `madera` de su guía en la cuenta del proveedor (ADR-437 §4).
+   */
+  private static auditarCuentaDeGuia(
+    tenantId: string,
+    gtfNumber: string,
+    cuenta: "sin_cuenta" | "actualizada" | "baja",
+    accion: string,
+    user: string,
+  ): void {
+    if (cuenta === "sin_cuenta") return;
+    auditCtp({
+      tenantId,
+      action: cuenta === "baja" ? "ctp_cuenta_delete" : "ctp_cuenta_update",
+      entity: "ForestCuentaMov",
+      entityId: gtfNumber,
+      detail:
+        cuenta === "baja"
+          ? `Se ${accion} de la guía ${gtfNumber} y no le queda costo vivo: su madera salió de la cuenta del proveedor`
+          : `Se ${accion} de la guía ${gtfNumber}: la madera en la cuenta del proveedor pasa a valer lo que queda vivo`,
+      user: user || "unknown",
+    });
+    ForestCuentaDB.invalidar(tenantId);
+  }
+
   static async annul(tenantId: string, id: string, user: string, reason: string) {
     if (!tenantId) throw new Error("tenantId is required");
     if (!reason?.trim()) throw new Error("annul reason is required");
@@ -4479,10 +5467,17 @@ export class WoodEntriesDB {
         "Este ingreso ya se consumió en una corrida de producción. Corrige o anula esas corridas antes de anular el ingreso.",
       );
     }
-    const entry = await prisma.woodEntry.update({
-      where: { id, tenantId } satisfies Prisma.WoodEntryWhereUniqueInput,
-      data: { status: "anulado", rejectionReason: reason.trim() },
+    const { entry, soltados, cuenta } = await prisma.$transaction(async (tx) => {
+      const entry = await tx.woodEntry.update({
+        where: { id, tenantId } satisfies Prisma.WoodEntryWhereUniqueInput,
+        data: { status: "anulado", rejectionReason: reason.trim() },
+      });
+      const soltados = await soltarCodigosPlanta(tx, tenantId, [id]);
+      /* ADR-437 §4: la madera anotada en la cuenta sigue a lo que queda vivo. */
+      const cuenta = await ForestCuentaDB.resincronizarMaderaDeGuiaEnTx(tx, tenantId, entry.gtfNumber);
+      return { entry, soltados, cuenta };
     });
+    WoodEntriesDB.auditarCuentaDeGuia(tenantId, entry.gtfNumber, cuenta, "anuló un asiento", user);
     auditCtp({
       tenantId,
       action: "ctp_ingreso_annul",
@@ -4491,6 +5486,7 @@ export class WoodEntriesDB {
       detail: `Anuló el ingreso ${entry.gtfNumber} · ${entry.speciesCommonName} · ${m3(Number(entry.volumeM3))} · motivo: ${reason.trim()}`,
       user,
     });
+    WoodEntriesDB.auditarCodigosSoltados(tenantId, id, entry.gtfNumber, "ingreso anulado", soltados, user);
     try {
       invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
     } catch {}
@@ -4651,6 +5647,26 @@ export class WoodEntriesDB {
     return { entry, troza: null };
   }
 
+  /** El renglón «Código de planta liberado» (antes → después), si hubo alguno. */
+  private static auditarCodigosSoltados(
+    tenantId: string,
+    woodEntryId: string,
+    gtf: string,
+    motivo: string,
+    soltados: readonly CodigoSoltado[],
+    user: string,
+  ): void {
+    if (soltados.length === 0) return;
+    auditCtp({
+      tenantId,
+      action: "ctp_troza_codigo_soltado",
+      entity: "WoodEntry",
+      entityId: woodEntryId,
+      detail: detalleCodigosSoltados(gtf, motivo, soltados),
+      user,
+    });
+  }
+
   /**
    * Soft delete. No borra físicamente; el registro sigue en la DB y el evento
    * queda en el ActivityLog (un ingreso que "desaparece" de un libro fiscalizado
@@ -4659,10 +5675,17 @@ export class WoodEntriesDB {
   static async softDelete(tenantId: string, id: string, user = "unknown") {
     if (!tenantId) throw new Error("tenantId is required");
     await WoodEntriesDB.assertPeriodoAbierto(tenantId, id, "eliminar");
-    const entry = await prisma.woodEntry.update({
-      where: { id, tenantId } satisfies Prisma.WoodEntryWhereUniqueInput,
-      data: { deletedAt: new Date() },
+    const { entry, soltados, cuenta } = await prisma.$transaction(async (tx) => {
+      const entry = await tx.woodEntry.update({
+        where: { id, tenantId } satisfies Prisma.WoodEntryWhereUniqueInput,
+        data: { deletedAt: new Date() },
+      });
+      const soltados = await soltarCodigosPlanta(tx, tenantId, [id]);
+      /* ADR-437 §4: la madera anotada en la cuenta sigue a lo que queda vivo. */
+      const cuenta = await ForestCuentaDB.resincronizarMaderaDeGuiaEnTx(tx, tenantId, entry.gtfNumber);
+      return { entry, soltados, cuenta };
     });
+    WoodEntriesDB.auditarCuentaDeGuia(tenantId, entry.gtfNumber, cuenta, "eliminó un asiento", user);
     auditCtp({
       tenantId,
       action: "ctp_ingreso_delete",
@@ -4671,6 +5694,7 @@ export class WoodEntriesDB {
       detail: `Eliminó (soft) el ingreso ${entry.gtfNumber} · ${entry.speciesCommonName} · ${m3(Number(entry.volumeM3))}`,
       user,
     });
+    WoodEntriesDB.auditarCodigosSoltados(tenantId, id, entry.gtfNumber, "ingreso eliminado", soltados, user);
     try {
       invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
     } catch {}

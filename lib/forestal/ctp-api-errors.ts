@@ -40,9 +40,11 @@ export function ctpValidationResponse(error: z.ZodError): NextResponse {
  */
 export function ctpErrorResponse(err: unknown, ctx: string, tenantId: string): NextResponse {
   if (err instanceof CtpInvariantError) {
+    /* Una foto rechazada es un pedido mal formado (firma que no cuadra, foto de
+       otra guía), no un dato del libro que no cuadra: 400, como el Zod. */
     return NextResponse.json(
       { error: err.code, message: err.message, detail: err.detail },
-      { status: 422 },
+      { status: err.code === "FOTO_NO_VALIDA" ? 400 : 422 },
     );
   }
   logger.error(`[${ctx}] failed`, { error: String(err), tenantId });

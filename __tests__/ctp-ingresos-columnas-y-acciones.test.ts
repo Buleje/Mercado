@@ -68,8 +68,8 @@ describe("migrarColumnasGuias", () => {
 });
 
 describe("columnasVivas", () => {
-  it("proveedor y permiso cuentan UNA celda (la comparten)", () => {
-    expect(columnasVivas(COLS_GUIAS_DEFECTO).izquierda).toBe(2); // documento + proveedor·permiso
+  it("proveedor y permiso son DOS columnas (Brandon, 2026-09-26)", () => {
+    expect(columnasVivas(COLS_GUIAS_DEFECTO).izquierda).toBe(3); // documento + proveedor + permiso
     expect(columnasVivas({ ...COLS_GUIAS_DEFECTO, proveedor: false }).izquierda).toBe(2);
     expect(columnasVivas({ ...COLS_GUIAS_DEFECTO, proveedor: false, permiso: false }).izquierda).toBe(1);
   });
@@ -144,7 +144,8 @@ describe("accionesDeGuia — el «Más» de la fila y de la tarjeta", () => {
 
   it("las fotos abren el detalle del primer asiento y dicen cuántas hay", () => {
     const h = manejadores();
-    const g = guia([linea({ photos: ["a.jpg", "b.jpg"] })]);
+    // Legado (https) y privada con sello (ADR-434): las dos cuentan; basura no.
+    const g = guia([linea({ photos: ["https://x.supabase.co/a.jpg", { url: "priv:t1/forestal-carga/b.webp" }, "a.jpg"] })]);
     const fotos = accionesDeGuia(g, h).find((a) => a.id === "fotos")!;
     expect(fotos.label).toBe("Fotos de la carga (2)");
     fotos.onSelect();
@@ -179,8 +180,11 @@ describe("accionesDeAsiento — el «Más» de un asiento desplegado", () => {
     expect(acc.find((a) => a.id === "rechazar")?.label).toBe("Anular el asiento");
   });
 
-  it("la GTF de SERFOR sólo si la vista la pasa (el asiento trae la ficha)", () => {
-    expect(accionesDeAsiento(linea(), { ...h(), onVerGuia: vi.fn() }).map((a) => a.id)).toContain("gtf");
+  /* «Ver la GTF de SERFOR» salió del asiento (revisión de Brandon 25-09, «que
+     no haya duplicados»): todos los asientos comparten la MISMA GTF y el
+     «Documento de la guía» de la fila de arriba ya la abre. */
+  it("el asiento no repite la GTF de SERFOR aunque la vista la pase", () => {
+    expect(accionesDeAsiento(linea(), { ...h(), onVerGuia: vi.fn() }).map((a) => a.id)).not.toContain("gtf");
     expect(accionesDeAsiento(linea(), h()).map((a) => a.id)).not.toContain("gtf");
   });
 });

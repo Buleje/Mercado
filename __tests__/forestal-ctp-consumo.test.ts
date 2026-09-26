@@ -772,6 +772,79 @@ describe.skipIf(!HAS_DB)("Congelado al cierre de período (ADR-134 D8)", () => {
     });
   }, 30_000);
 
+  it("madera de servicio (ADR-437 §1): no frena el cierre, no se congela (sin snap no hay costo) y el costo dice por qué", async () => {
+    const ing = await crearIngreso(10); // sin factura, y nunca la va a tener
+    await prisma.woodEntry.update({ where: { id: ing.id }, data: { maderaDeTercero: true } });
+    const linea = await crearLinea(10, 8);
+    await ForestCtpConsumoDB.setConsumos(TENANT, linea.id, [{ woodEntryId: ing.id, volumeM3: 10 }], P);
+
+    const antes = await ForestCtpConsumoDB.costoDeLinea(TENANT, linea.id);
+    expect(antes.motivo).toBe("madera_de_servicio");
+    expect(antes.costoMateriaPrima).toBeNull(); // null, nunca 0
+
+    // No tira (el cierre no la cuenta «sin costear») y no inventa un snap: el
+    // CHECK congelado_coherente exige snap y fecha juntos, y un 0 sería mentira.
+    const frozen = await ForestCtpConsumoDB.congelarCosto(TENANT, linea.id, P);
+    expect(frozen.every((f) => f.costoUnitarioSnap == null && f.congeladoAt == null)).toBe(true);
+    expect((await ForestCtpConsumoDB.costoDeLinea(TENANT, linea.id)).motivo).toBe("madera_de_servicio");
+  }, 30_000);
+
+  it("servicio + comprada sin factura: la comprada sigue frenando el congelado", async () => {
+    const servicio = await crearIngreso(5);
+    await prisma.woodEntry.update({ where: { id: servicio.id }, data: { maderaDeTercero: true } });
+    const comprada = await crearIngreso(5); // sin factura
+    const linea = await crearLinea(10, 8);
+    await ForestCtpConsumoDB.setConsumos(
+      TENANT,
+      linea.id,
+      [
+        { woodEntryId: servicio.id, volumeM3: 5 },
+        { woodEntryId: comprada.id, volumeM3: 5 },
+      ],
+      P,
+    );
+    await expect(ForestCtpConsumoDB.congelarCosto(TENANT, linea.id, P)).rejects.toMatchObject({ code: "CONGELADO" });
+  }, 30_000);
+
+  it("servicio + comprada sin factura: el costo dice «falta_factura», no «servicio» (revisión 26-09)", async () => {
+    // Antes la marca de servicio se miraba primero y escondía la factura que SÍ falta.
+    const servicio = await crearIngreso(5);
+    await prisma.woodEntry.update({ where: { id: servicio.id }, data: { maderaDeTercero: true } });
+    const comprada = await crearIngreso(5); // sin factura
+    const linea = await crearLinea(10, 8);
+    await ForestCtpConsumoDB.setConsumos(
+      TENANT,
+      linea.id,
+      [
+        { woodEntryId: servicio.id, volumeM3: 5 },
+        { woodEntryId: comprada.id, volumeM3: 5 },
+      ],
+      P,
+    );
+    const c = await ForestCtpConsumoDB.costoDeLinea(TENANT, linea.id);
+    expect(c.motivo).toBe("falta_factura");
+    expect(c.costoUnitario).toBeNull();
+  }, 30_000);
+
+  it("servicio + comprada CON factura: «mixto_servicio» (ni servicio entero ni faltante), sin costo por unidad", async () => {
+    const servicio = await crearIngreso(5);
+    await prisma.woodEntry.update({ where: { id: servicio.id }, data: { maderaDeTercero: true } });
+    const comprada = await crearIngreso(5, 2000);
+    const linea = await crearLinea(10, 8);
+    await ForestCtpConsumoDB.setConsumos(
+      TENANT,
+      linea.id,
+      [
+        { woodEntryId: servicio.id, volumeM3: 5 },
+        { woodEntryId: comprada.id, volumeM3: 5 },
+      ],
+      P,
+    );
+    const c = await ForestCtpConsumoDB.costoDeLinea(TENANT, linea.id);
+    expect(c.motivo).toBe("mixto_servicio");
+    expect(c.costoUnitario).toBeNull(); // el producto no se separa por dueño: promediar lo diluiría
+  }, 30_000);
+
   it("congela snap + fecha juntos, y la línea queda inmutable", async () => {
     const ing = await crearIngreso(10, 4200); // S/420/m³
     const linea = await crearLinea(10, 8);
@@ -851,12 +924,12 @@ describe.skipIf(!HAS_DB)("Cierre de período: las trozas también quedan congela
     });
     await conMesCerrado(async () => {
       await expect(
-        WoodEntriesDB.actualizarRecepcion(TENANT, w.id, [{ id: t.id, codigoPlanta: "999" }], P),
+        WoodEntriesDB.actualizarRecepcion(TENANT, w.id, [{ id: t.id, codigoPlanta: `${P}-999` }], P),
       ).rejects.toMatchObject({ code: "PERIODO_CERRADO" });
     });
     // Con el mes abierto, el MISMO cambio pasa: el guard no bloquea de más.
     await expect(
-      WoodEntriesDB.actualizarRecepcion(TENANT, w.id, [{ id: t.id, codigoPlanta: "999" }], P),
+      WoodEntriesDB.actualizarRecepcion(TENANT, w.id, [{ id: t.id, codigoPlanta: `${P}-999` }], P),
     ).resolves.toMatchObject({ actualizadas: 1 });
   }, 40_000);
 
@@ -1053,7 +1126,7 @@ describe.skipIf(!HAS_DB)("Una troza no puede estar consumida y no recibida", () 
     ).rejects.toMatchObject({ code: "ESTADO_NO_EDITABLE" });
     // El mensaje tiene que decir el camino, no sólo "no se puede".
     await WoodEntriesDB.actualizarRecepcion(TENANT, w.id, [{ id: t.id, noRecepcionada: true }], P).catch(
-      (e: { message: string }) => expect(e.message).toMatch(/Sacala primero del consumo/),
+      (e: { message: string }) => expect(e.message).toMatch(/Sácala primero del consumo/),
     );
   }, 40_000);
 
@@ -1084,7 +1157,7 @@ describe.skipIf(!HAS_DB)("Una troza no puede estar consumida y no recibida", () 
       data: { tenantId: TENANT, woodEntryId: w.id, orden: 1, codificacion: `${P}-SET${Date.now()}`, volumenM3: 5 },
     });
     await WoodEntriesDB.actualizarRecepcion(
-      TENANT, w.id, [{ id: t.id, codigoPlanta: "118", parcela: "PC-03", recepcionObs: "rajadura" }], P,
+      TENANT, w.id, [{ id: t.id, codigoPlanta: `${P}-118`, parcela: "PC-03", recepcionObs: "rajadura" }], P,
     );
     // Segunda pasada: SÓLO la parcela.
     await WoodEntriesDB.actualizarRecepcion(TENANT, w.id, [{ id: t.id, parcela: "PC-09" }], P);
@@ -1093,7 +1166,7 @@ describe.skipIf(!HAS_DB)("Una troza no puede estar consumida y no recibida", () 
       select: { codigoPlanta: true, parcela: true, recepcionObs: true, noRecepcionada: true },
     });
     expect(final).toMatchObject({
-      codigoPlanta: "118",       // intacto
+      codigoPlanta: `${P}-118`,       // intacto
       parcela: "PC-09",          // cambiado
       recepcionObs: "rajadura",  // intacto
       noRecepcionada: false,
@@ -1118,7 +1191,7 @@ describe.skipIf(!HAS_DB)("Una troza no puede estar consumida y no recibida", () 
     await WoodEntriesDB.actualizarRecepcion(
       TENANT, w.id,
       [
-        { id: ts[0].id, codigoPlanta: "201" },
+        { id: ts[0].id, codigoPlanta: `${P}-201` },
         { id: ts[1].id, parcela: "PC-07" },
         { id: ts[2].id, noRecepcionada: true, recepcionObs: "no llegó en el camión" },
       ],
@@ -1129,7 +1202,7 @@ describe.skipIf(!HAS_DB)("Una troza no puede estar consumida y no recibida", () 
       orderBy: { orden: "asc" },
       select: { codigoPlanta: true, parcela: true, noRecepcionada: true, recepcionObs: true },
     });
-    expect(finales[0]).toMatchObject({ codigoPlanta: "201", parcela: null, noRecepcionada: false });
+    expect(finales[0]).toMatchObject({ codigoPlanta: `${P}-201`, parcela: null, noRecepcionada: false });
     expect(finales[1]).toMatchObject({ codigoPlanta: null, parcela: "PC-07", noRecepcionada: false });
     expect(finales[2]).toMatchObject({ noRecepcionada: true, recepcionObs: "no llegó en el camión" });
   }, 40_000);
@@ -1139,7 +1212,7 @@ describe.skipIf(!HAS_DB)("Una troza no puede estar consumida y no recibida", () 
     // Poner el código de planta o la parcela no contradice nada: sólo el
     // "no llegó" es incompatible con haberla aserrado.
     await expect(
-      WoodEntriesDB.actualizarRecepcion(TENANT, w.id, [{ id: t.id, codigoPlanta: "118", parcela: "PC-03" }], P),
+      WoodEntriesDB.actualizarRecepcion(TENANT, w.id, [{ id: t.id, codigoPlanta: `${P}-118`, parcela: "PC-03" }], P),
     ).resolves.toMatchObject({ actualizadas: 1 });
   }, 40_000);
 });

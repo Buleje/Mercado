@@ -3601,6 +3601,8 @@ export class ForestCtpDB {
                 originCode: true,
                 costoTotal: true,
                 volumeM3: true,
+                /* ADR-437 §1: la madera de servicio no se valoriza ni va a «Faltan costear». */
+                maderaDeTercero: true,
               },
             },
           },
@@ -3708,6 +3710,7 @@ export class ForestCtpDB {
             costoTotalGuia: x.woodEntry?.costoTotal != null ? Number(x.woodEntry.costoTotal) : null,
             volumenGuiaM3: x.woodEntry?.volumeM3 != null ? Number(x.woodEntry.volumeM3) : null,
             gtfNumber: x.woodEntry?.gtfNumber ?? null,
+            maderaDeTercero: x.woodEntry?.maderaDeTercero === true,
           })),
           paquetes: c.paquetes.map((p) => ({
             id: p.id,
@@ -3754,19 +3757,26 @@ export class ForestCtpDB {
     const guias = gtfsDelResultado.length
       ? await prisma.woodEntry.findMany({
           where: { tenantId, gtfNumber: { in: gtfsDelResultado }, deletedAt: null },
-          select: { gtfNumber: true, costoTotal: true, volumeM3: true },
+          select: { gtfNumber: true, costoTotal: true, volumeM3: true, maderaDeTercero: true },
         })
       : [];
     /* Una guía es N filas (una por especie/producto): se suman, porque la
        factura del proveedor ampara el camión entero. `costoTotal` null en todas
-       ⇒ null, no 0 — un 0 fingiría que la madera salió gratis. */
-    const costoDeGuia = new Map<string, { costoTotal: number | null; volumeM3: number | null }>();
+       ⇒ null, no 0 — un 0 fingiría que la madera salió gratis.
+       `maderaDeTercero` (ADR-437 §1) se escribe en TODOS los asientos de la
+       guía a la vez: basta uno marcado para que la guía entera sea de servicio,
+       y `valor-del-patio` no la valoriza ni la manda a «Faltan costear». */
+    const costoDeGuia = new Map<
+      string,
+      { costoTotal: number | null; volumeM3: number | null; maderaDeTercero: boolean }
+    >();
     for (const g of guias) {
-      const prev = costoDeGuia.get(g.gtfNumber) ?? { costoTotal: null, volumeM3: null };
+      const prev = costoDeGuia.get(g.gtfNumber) ?? { costoTotal: null, volumeM3: null, maderaDeTercero: false };
       costoDeGuia.set(g.gtfNumber, {
         costoTotal:
           g.costoTotal != null ? (prev.costoTotal ?? 0) + Number(g.costoTotal) : prev.costoTotal,
         volumeM3: g.volumeM3 != null ? (prev.volumeM3 ?? 0) + Number(g.volumeM3) : prev.volumeM3,
+        maderaDeTercero: prev.maderaDeTercero || g.maderaDeTercero,
       });
     }
     const corridasConCosto = conSaldo.map((c) => ({
@@ -3777,6 +3787,7 @@ export class ForestCtpDB {
         gtfNumber: gtf,
         costoTotal: costoDeGuia.get(gtf)?.costoTotal ?? null,
         volumeM3: costoDeGuia.get(gtf)?.volumeM3 ?? null,
+        maderaDeTercero: costoDeGuia.get(gtf)?.maderaDeTercero ?? false,
       })),
     }));
 

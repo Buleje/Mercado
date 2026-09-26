@@ -8,8 +8,10 @@
 import {
   Children,
   cloneElement,
+  createContext,
   isValidElement,
   useCallback,
+  useContext,
   useEffect,
   useId,
   useRef,
@@ -17,6 +19,7 @@ import {
   type ReactElement,
 } from "react";
 import { CardTitle } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { AlertCircle, AlertTriangle, Check, CheckCircle2, Clock, Columns3, Copy, ExternalLink, X as XIcon } from "@buleje/design-system/icons";
@@ -24,6 +27,7 @@ import { PLAZO_REGISTRO_DIAS, diasDeRegistro, estaFueraDePlazo, parseCitesPermis
 import { cuadreDeIngreso, descuadra } from "@/lib/forestal/cuadre-trozas";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { formatDate as formatDateCanon, formatDateTime as formatDateTimeCanon } from "@/lib/format";
+import type { FotoCarga } from "@/lib/forestal/fotos-carga";
 
 // Re-exportados: single source vive en lib/forestal/ctp-compliance.ts (lo
 // consume también lib/forestal/ctp-export.ts, que no puede importar de acá).
@@ -82,7 +86,7 @@ export const CTP_MODULE_TAB_ID = "ctp-libro-operaciones";
  * dice "2 ingresos fuera de plazo" y aterriza en la lista completa obliga a
  * buscar los 2 a ojo; con esto el destino ya muestra exactamente esos.
  */
-export type CtpIngresosFiltroRapido = "pendiente" | "fuera-de-plazo" | "cites" | "sin-origen";
+export type CtpIngresosFiltroRapido = "pendiente" | "fuera-de-plazo" | "cites" | "sin-origen" | "sin-pagar";
 
 /** El filtro + un contador: repetir el mismo salto tiene que volver a aplicarlo
  *  (si no, la segunda vez el efecto no cambia de valor y no pasa nada). */
@@ -160,6 +164,13 @@ export interface WoodEntry {
    */
   costoTotal?: number | string | null;
   moneda?: string | null;
+  /**
+   * Madera de servicio (ADR-437): no se compró, se asierra para su dueño. No
+   * lleva costo ni cuenta como «sin costo» — decidir con `esSinCosto()`.
+   */
+  maderaDeTercero?: boolean;
+  /** Foto del nombre del dueño cuando es de servicio (la ficha es `duenoParteId`). */
+  duenoNombre?: string | null;
   originRegion: string | null;
   originDistrict: string | null;
   speciesCommonName: string;
@@ -184,7 +195,8 @@ export interface WoodEntry {
   humidityPct: string | null;
   defectsNotes: string | null;
   notes: string | null;
-  photos: string[] | null;
+  /** Legado: URLs sueltas; desde 2026-09-26, `FotoCarga` con sello. Leer con `normalizarFotos`. */
+  photos: (FotoCarga | string)[] | null;
   status: WoodEntryStatus;
   validatedBy: string | null;
   validatedAt: string | null;
@@ -361,6 +373,26 @@ export const I =
   "w-full h-11 rounded-xl border-[1.5px] border-[var(--rule-base)] bg-[var(--surface-raised)] px-3.5 text-sm text-[var(--text-primary)] outline-none transition-[border-color,box-shadow] duration-150 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)] disabled:cursor-not-allowed disabled:bg-[var(--surface-sunken)] disabled:text-[var(--text-tertiary)] placeholder:text-[var(--text-tertiary)]";
 
 /** Cuántas de las 12 columnas ocupa un campo en `CampoGrid`. */
+/**
+ * Estilo «claro» de un formulario del libro (Brandon 2026-09-25, alta de
+ * ingreso: «que los datos y campos sean más claros y fáciles de entender»).
+ *
+ * Cambia DOS cosas y nada más, sólo dentro del proveedor:
+ *   · cada `Seccion` pasa a ser una tarjeta con su título a tamaño de lectura
+ *     —el rótulo en versalitas de 11 px se perdía entre los campos y dos
+ *     secciones vecinas se leían como una sola;
+ *   · la ayuda de cada `Field` (y la de la sección) va a un ⓘ al lado del
+ *     rótulo en vez de un renglón gris debajo (regla 9 de ui-components).
+ *
+ * Es opt-in a propósito: `Field` y `Seccion` los usan 46 formularios. Los
+ * demás siguen iguales hasta que se decida llevarlo a cada uno.
+ */
+const EstiloFormulario = createContext<"clasico" | "claro">("clasico");
+
+export function FormularioClaro({ children }: { children: React.ReactNode }) {
+  return <EstiloFormulario.Provider value="claro">{children}</EstiloFormulario.Provider>;
+}
+
 export type CampoSpan = 2 | 3 | 4 | 6 | 8 | 12;
 
 const SPAN_CLASS: Record<CampoSpan, string> = {
@@ -413,8 +445,12 @@ export function Field({
   children: React.ReactNode;
 }) {
   const base = useId();
+  const claro = useContext(EstiloFormulario) === "claro";
+  // En estilo claro la ayuda vive en un ⓘ (portal): no hay nodo al que apuntar
+  // con `aria-describedby`, así que no se declara un id que no existe.
+  const ayudaEnIcono = claro && Boolean(hint) && !noAplica;
   const idCampo = `${base}-campo`;
-  const idAyuda = hint ? `${base}-ayuda` : undefined;
+  const idAyuda = hint && !ayudaEnIcono ? `${base}-ayuda` : undefined;
   const idNoAplica = `${base}-noaplica`;
 
   /**
@@ -462,6 +498,28 @@ export function Field({
         })
       : children;
 
+  const rotulo = (
+    <label
+      id={`${base}-rotulo`}
+      {...(esControl ? { htmlFor: idCampo } : {})}
+      className={`${ayudaEnIcono ? "min-w-0" : "mb-1"} flex items-center gap-1.5 text-sm font-medium text-[var(--text-primary)]`}
+    >
+      <span className="truncate">{label}</span>
+      {required && <span className="text-[var(--data-error-600)]" aria-hidden="true">*</span>}
+      {casillero != null && (
+        <span
+          title={`Casillero (${casillero}) del formato oficial LO-CTP`}
+          // Fuera del nombre accesible: el número es una ayuda visual para
+          // cruzar con el papel, no parte de cómo se llama el campo.
+          aria-hidden="true"
+          className="shrink-0 rounded bg-[var(--surface-sunken)] px-1.5 py-0.5 text-[length:var(--ts-2xs,11px)] font-bold tabular-nums text-[var(--text-tertiary)]"
+        >
+          {casillero}
+        </span>
+      )}
+    </label>
+  );
+
   return (
     // Sin `span` NO se pone clase: los formularios que envuelven en un grid de 2
     // columnas (no de 12) heredan su propio ancho. Un `col-span-12` por defecto
@@ -472,25 +530,15 @@ export function Field({
       className={`block min-w-0 ${span ? SPAN_CLASS[span] : ""}`}
       {...(esControl ? {} : { role: "group", "aria-labelledby": `${base}-rotulo` })}
     >
-      <label
-        id={`${base}-rotulo`}
-        {...(esControl ? { htmlFor: idCampo } : {})}
-        className="mb-1 flex items-center gap-1.5 text-sm font-medium text-[var(--text-primary)]"
-      >
-        <span className="truncate">{label}</span>
-        {required && <span className="text-[var(--data-error-600)]" aria-hidden="true">*</span>}
-        {casillero != null && (
-          <span
-            title={`Casillero (${casillero}) del formato oficial LO-CTP`}
-            // Fuera del nombre accesible: el número es una ayuda visual para
-            // cruzar con el papel, no parte de cómo se llama el campo.
-            aria-hidden="true"
-            className="shrink-0 rounded bg-[var(--surface-sunken)] px-1.5 py-0.5 text-[length:var(--ts-2xs,11px)] font-bold tabular-nums text-[var(--text-tertiary)]"
-          >
-            {casillero}
-          </span>
-        )}
-      </label>
+      {ayudaEnIcono ? (
+        /* El ⓘ va AFUERA del <label>: adentro, tocarlo enfocaría el campo. */
+        <div className="mb-1 flex items-center gap-1.5">
+          {rotulo}
+          <InfoTip title={label} what={hint} ariaLabel={`Ayuda: ${label}`} />
+        </div>
+      ) : (
+        rotulo
+      )}
       {control}
       {noAplica ? (
         /* El motivo ocupa el lugar de la ayuda: quien mira el formulario no
@@ -501,7 +549,7 @@ export function Field({
           <span>No aplica: {noAplica}</span>
         </span>
       ) : (
-        hint && (
+        hint && !ayudaEnIcono && (
           <span id={idAyuda} className="mt-1 block text-xs leading-snug text-[var(--text-tertiary)]">
             {hint}
           </span>
@@ -649,6 +697,42 @@ export function Seccion({
   children: React.ReactNode;
   className?: string;
 }) {
+  const claro = useContext(EstiloFormulario) === "claro";
+  if (claro) {
+    return (
+      <section
+        className={`min-w-0 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 shadow-[var(--shadow-sm)] sm:p-5 ${className}`}
+      >
+        <div className="mb-3.5 flex min-w-0 items-center gap-2.5">
+          {numero != null && (
+            <span
+              aria-hidden="true"
+              className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[var(--accent-soft)] text-xs font-bold tabular-nums text-[var(--accent-ink)] dark:text-[var(--accent)]"
+            >
+              {numero}
+            </span>
+          )}
+          <CardTitle as="h3" className="min-w-0 text-base font-bold leading-snug text-[var(--text-primary)]">
+            {title}
+          </CardTitle>
+          {hint && <InfoTip title={title} what={hint} ariaLabel={`Ayuda: ${title}`} />}
+          {/* En tarjeta el estado se DICE: el punto de 6 px del estilo clásico
+              no se distinguía de un adorno. */}
+          {estado === "ok" && (
+            <span className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--data-success-500)]/15 px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
+              <Check className="h-3 w-3" strokeWidth={3} aria-hidden /> Completa
+            </span>
+          )}
+          {estado === "pendiente" && (
+            <span className="ml-auto shrink-0 rounded-full bg-[var(--data-warning-500)]/15 px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+              Falta completar
+            </span>
+          )}
+        </div>
+        <CampoGrid>{children}</CampoGrid>
+      </section>
+    );
+  }
   return (
     <section className={`break-inside-avoid border-t border-[var(--rule-base)] pt-4 mt-4 first:mt-0 first:border-t-0 first:pt-0 ${className}`}>
       <div className="mb-2.5 flex items-baseline gap-2">

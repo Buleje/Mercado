@@ -10,6 +10,8 @@
 import { useCallback, useRef, useState } from "react";
 import { ChevronRight, Axe, Camera, Truck, X } from "@buleje/design-system/icons";
 import { fmtPiezas } from "@/lib/forestal/cubicacion-formato";
+import { srcDeFoto, type FotoCarga } from "@/lib/forestal/fotos-carga";
+import { pieDeFoto } from "@/lib/forestal/sello-foto";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import type {
   CorridaDelPermiso,
@@ -81,8 +83,8 @@ export const nLinea = (n: number | null | undefined) => (n == null ? "Sin N°" :
  * de otro botón es HTML inválido y le rompe el foco a un lector de pantalla.
  * Por eso las fotos van en su propia franja, debajo del encabezado.
  */
-function FotosDeGuia({ fotos, gtf }: { fotos: string[]; gtf: string }) {
-  const [ampliada, setAmpliada] = useState<string | null>(null);
+function FotosDeGuia({ fotos, gtf }: { fotos: FotoCarga[]; gtf: string }) {
+  const [ampliada, setAmpliada] = useState<FotoCarga | null>(null);
   const cerrar = useCallback(() => setAmpliada(null), []);
   const dialogRef = useRef<HTMLDivElement>(null);
   useModalAccesible(dialogRef, { onCerrar: cerrar, activo: ampliada != null });
@@ -91,16 +93,16 @@ function FotosDeGuia({ fotos, gtf }: { fotos: string[]; gtf: string }) {
     <>
       <div className="flex flex-wrap items-center gap-1.5 border-t border-[var(--rule-soft)] px-3 py-2">
         <Camera className="h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
-        {fotos.map((url, i) => (
+        {fotos.map((f, i) => (
           <button
-            key={url}
+            key={f.url}
             type="button"
-            onClick={() => setAmpliada(url)}
+            onClick={() => setAmpliada(f)}
             aria-label={`Ampliar foto ${i + 1} de la GTF ${gtf}`}
             className="h-10 w-10 shrink-0 overflow-hidden rounded-lg border border-[var(--rule-base)] transition-colors hover:border-[var(--accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
           >
             {/* eslint-disable-next-line @next/next/no-img-element -- subida del tenant, sin dominio fijo */}
-            <img src={url} alt="" className="h-full w-full object-cover" loading="lazy" />
+            <img src={srcDeFoto(f)} alt="" className="h-full w-full object-cover" loading="lazy" />
           </button>
         ))}
       </div>
@@ -129,10 +131,15 @@ function FotosDeGuia({ fotos, gtf }: { fotos: string[]; gtf: string }) {
             </button>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={ampliada}
+              src={srcDeFoto(ampliada)}
               alt={`Foto de la GTF ${gtf}`}
-              className="pointer-events-auto max-h-[90vh] max-w-full rounded-2xl object-contain shadow-[var(--shadow-xl)]"
+              className="pointer-events-auto max-h-[85vh] max-w-full rounded-2xl object-contain shadow-[var(--shadow-xl)]"
             />
+            {(ampliada.tomadaEn || ampliada.por) && (
+              <p className="pointer-events-auto absolute inset-x-4 bottom-4 text-center text-sm font-semibold text-white">
+                {pieDeFoto(ampliada)}
+              </p>
+            )}
           </div>
         </div>
       )}
