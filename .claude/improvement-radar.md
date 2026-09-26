@@ -514,3 +514,29 @@ Premio si funciona: 1.676 `useMemo` + 2.151 `useCallback` + 63 `memo()` escritos
 - **A/B de densidad medido (09-22, `reports/visual-verify/2026-09-22-densidad-ab/`)**: en `?tab=inicio&vista=caja` (9 StatCard en default) simular p-4 sobre p-5 baja cada tarjeta 8 px y no cambia la lectura. Lo que SÍ se ve: a 1366 px la grilla de **6 KPIs parte el monto en dos líneas** («S/» / «9,970.00») en Egresos, Balance y Utilidad. Es layout, no padding: 6 columnas → 3 bajo 1440 px, o valor `text-xl whitespace-nowrap tabular-nums`. Revisar la misma grilla en Ventas/Productos/Clientes de Inicio (6 StatCard cada uno).
 - Falta el gate `ds-no-z-arbitrary-admin` (avisar ante `z-[N]` nuevo en admin) — escribirlo cuando se cierren los 7.
 - `BottomSheet` (ui-system, compartido con la tienda) sigue en `z-50` numérico a propósito.
+
+---
+
+## Skills sugeridos por compound-learning (auto, 2026-09-25)
+
+Detectados 7 patrones con ≥5 co-edits sin skill creado.
+Mostrando top 3. Para crear skill: usá `/luis` o decí "crea skill para X".
+
+### [pending] pat-coedit-1790301384529-iv0u
+- **Tipo:** `co_edit_cluster` (6 occurrences)
+- **Files:** `components/admin/forestal/CtpBuscarGtf.tsx`, `components/admin/forestal/CtpCotejoSniffsPanel.tsx`, `components/admin/forestal/CtpEditarLineaModal.tsx`, `components/admin/forestal/CtpImportModal.tsx`, `components/admin/forestal/CtpResumenPermisoModal.tsx`, `components/admin/forestal/CtpSaldosGraficos.tsx`, `components/admin/forestal/LothCaratulaForm.tsx`, `components/admin/forestal/LothCierrePanel.tsx`, `components/admin/forestal/LothRentabilidadPanel.tsx`, `components/admin/forestal/LothTraceEmbudo.tsx`, `components/admin/forestal/LothTraceUmbralesModal.tsx`, `components/admin/forestal/loth-analitica-piezas.tsx`
+- **Sugerencia:** Files [components/admin/forestal/CtpBuscarGtf.tsx, components/admin/forestal/CtpCotejoSniffsPanel.tsx, components/admin/forestal/CtpEditarLineaModal.tsx, components/admin/forestal/CtpImportModal.tsx, components/admin/forestal/CtpResumenPermisoModal.tsx, components/admin/forestal/CtpSaldosGraficos.tsx, components/admin/forestal/LothCaratulaForm.tsx, components/admin/forestal/LothCierrePanel.tsx, components/admin/forestal/LothRentabilidadPanel.tsx, components/admin/forestal/LothTraceEmbudo.tsx, components/admin/forestal/LothTraceUmbralesModal.tsx, components/admin/forestal/loth-analitica-piezas.tsx] are always edited together. Consider creating a skill that pre-loads all 12 files.
+- **Last seen:** 2026-09-25T01:56:18.787Z
+
+### [pending] pat-coedit-1790301384529-0q13
+- **Tipo:** `co_edit_cluster` (14 occurrences)
+- **Files:** `components/admin/forestal/CubicadorMadera.tsx`, `components/admin/forestal/cubicador-entrada-voz.tsx`
+- **Sugerencia:** Files [components/admin/forestal/CubicadorMadera.tsx, components/admin/forestal/cubicador-entrada-voz.tsx] are always edited together. Consider creating a skill that pre-loads all 2 files.
+- **Last seen:** 2026-09-23T20:13:36.867Z
+
+### [pending] pat-coedit-1790301384530-ygjj
+- **Tipo:** `co_edit_cluster` (5 occurrences)
+- **Files:** `__tests__/cubicador-atajo-pausa.test.ts`, `components/admin/forestal/cubicador-entrada-voz.tsx`, `lib/forestal/cubicador-atajo-pausa.ts`
+- **Sugerencia:** Files [__tests__/cubicador-atajo-pausa.test.ts, components/admin/forestal/cubicador-entrada-voz.tsx, lib/forestal/cubicador-atajo-pausa.ts] are always edited together. Consider creating a skill that pre-loads all 3 files.
+- **Last seen:** 2026-09-23T20:12:49.372Z
+
