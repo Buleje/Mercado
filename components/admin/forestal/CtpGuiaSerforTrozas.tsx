@@ -16,7 +16,7 @@
  *   · un buscador por codificación;
  *   · «Ampliar»: la misma tabla a pantalla completa, para cotejar una guía de
  *     ochenta trozas sin el alto de 26 rem del apartado;
- *   · las medidas en columnas: Ø1 · Ø2 · largo, en el orden en que las publica
+ *   · las medidas en columnas: D1 · D2 · largo, en el orden en que las publica
  *     SERFOR (`medidasDeTroza`). Sólo cuando la guía es de madera rolliza: en
  *     un producto aserrado «2 X 8 X 10» son pulgadas y pies, y rotularlas como
  *     diámetros sería inventar.
@@ -95,7 +95,11 @@ export default function CtpGuiaSerforTrozas({ gtf, reparto }: { gtf: GtfSerfor; 
     filas.length > 0 &&
     productos.length > 0 &&
     productos.every((p) => /roll|troz/i.test(p.tipoProducto ?? "")) &&
-    filas.every((f) => f.largo != null && f.d1 != null);
+    /* Basta con que ALGUNA traiga medidas: antes se exigía que todas, y en Blas
+       (77 de 84 sin D1/D2) la guía entera caía a «Dimensiones» en una sola
+       columna. Brandon (26-09): «en la guía, lista de trozas, estén D1, D2 y
+       largo» — la que falta dice «—». */
+    filas.some((f) => f.largo != null || f.d1 != null || f.d2 != null);
 
   const visibles = useMemo(() => {
     const t = q.trim().toLowerCase();
@@ -326,10 +330,10 @@ function TablaDeTrozas({
                   {partirMedidas ? (
                     <>
                       <th className="px-3 py-2 text-right font-semibold" title="Diámetro 1, como lo publica SERFOR">
-                        Ø1 (cm)
+                        D1 (cm)
                       </th>
                       <th className="px-3 py-2 text-right font-semibold" title="Diámetro 2, como lo publica SERFOR">
-                        Ø2 (cm)
+                        D2 (cm)
                       </th>
                       <th className="px-3 py-2 text-right font-semibold">Largo (m)</th>
                     </>
@@ -405,7 +409,7 @@ function TablaDeTrozas({
                   <span className="text-[var(--text-tertiary)]">
                     {" · "}
                     {partirMedidas
-                      ? `Ø ${formatNumber(f.d1, 1)} / ${formatNumber(f.d2, 1)} cm · ${formatNumber(f.largo, 2)} m`
+                      ? `D1 ${formatNumber(f.d1, 1)} · D2 ${formatNumber(f.d2, 1)} cm · L ${formatNumber(f.largo, 2)} m`
                       : (f.dimensiones ?? "sin medidas")}
                   </span>
                 </p>

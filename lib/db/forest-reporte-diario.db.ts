@@ -2,7 +2,9 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { auditCtp, type CtpAuditAction } from "@/lib/forestal/ctp-audit";
 import { NotificationLogsDB } from "@/lib/db/notifications.db";
+import { PlatformSettingsDB } from "@/lib/db/platform-settings.db";
 import {
+  CLAVE_LATIDO_HORA_EXACTA,
   RANGOS_REPORTE,
   SECCIONES_REPORTE,
   TOPE_REPORTES_ACTIVOS,
@@ -209,6 +211,21 @@ export const ForestReporteDiarioDB = {
       data: { ultimaFechaEnviada: valor },
     });
     return r.count === 1;
+  },
+
+  /**
+   * El latido del disparador de la hora exacta (`DISPARO_HORA_EXACTA`). Es
+   * GLOBAL a propósito, como el despachador: un solo job manda los reportes
+   * de todos los negocios, y lo que se mide es si ese job está vivo.
+   */
+  async marcarLatidoHoraExacta(ahora: Date): Promise<void> {
+    await PlatformSettingsDB.set(CLAVE_LATIDO_HORA_EXACTA, ahora.toISOString(), "cron");
+  },
+
+  /** La última llamada del disparador exacto (ISO), o `null` si nunca llamó. */
+  async latidoHoraExacta(): Promise<string | null> {
+    const v = await PlatformSettingsDB.get<unknown>(CLAVE_LATIDO_HORA_EXACTA);
+    return typeof v === "string" ? v : null;
   },
 
   /** Los últimos envíos de un reporte (el historial vive en `NotificationLog`). */

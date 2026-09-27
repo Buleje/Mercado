@@ -33,6 +33,7 @@ import { escribirTrozaEnUrl, trozaDeUrl } from "@/lib/forestal/ctp-troza-etiquet
 import CtpApartarEnLoteModal from "./CtpApartarEnLoteModal";
 import { CtpArmarLoteEscaneoSuelto } from "./CtpArmarLoteEscaneoModal";
 import CtpCodigosDuplicados from "./CtpCodigosDuplicados";
+import CtpConteosPatio from "./CtpConteosPatio";
 import CtpTrozaFichaModal from "./CtpTrozaFichaModal";
 import EscanerTrozas from "./EscanerTrozas";
 import CtpTrozasBuscador from "./CtpTrozasBuscador";
@@ -98,12 +99,16 @@ export default function CtpTrozasView() {
             affects="Consumos cuenta m³ por guía; acá la unidad es la pieza."
           />
         </div>
-        <button
-          type="button" onClick={() => void recargar()} disabled={cargando}
-          className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:opacity-60"
-        >
-          <RefreshCw className={`h-4 w-4 ${cargando ? "animate-spin" : ""}`} /> Actualizar
-        </button>
+        <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
+          {/* El conteo físico del patio (acta del modo patio, 2026-09-26). */}
+          <CtpConteosPatio />
+          <button
+            type="button" onClick={() => void recargar()} disabled={cargando}
+            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:opacity-60"
+          >
+            <RefreshCw className={`h-4 w-4 ${cargando ? "animate-spin" : ""}`} /> Actualizar
+          </button>
+        </div>
       </header>
 
       {error && (

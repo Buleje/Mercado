@@ -4,6 +4,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { WoodEntriesDB } from "@/lib/db/wood-entries.db";
 import { ctpErrorResponse } from "@/lib/forestal/ctp-api-errors";
+import { normalizarFotos } from "@/lib/forestal/fotos-carga";
 
 /**
  * GET /api/admin/forestal/trozas/ficha?id=<trozaId> — la historia de una pieza.
@@ -66,6 +67,14 @@ export async function GET(req: NextRequest) {
         fechaRetrozo: t.fechaRetrozo,
         fechaConsumo: t.fechaConsumo,
         fechaDespacho: t.fechaDespacho,
+        /* Cubicación Oxapampa (2026-09-26): el pt comercial, congelado al guardar. */
+        oxD1Pulg: num(t.oxD1Pulg),
+        oxD2Pulg: num(t.oxD2Pulg),
+        oxLargoPies: num(t.oxLargoPies),
+        oxPt: num(t.oxPt),
+        oxMedidoEn: t.oxMedidoEn,
+        oxMedidoPor: t.oxMedidoPor,
+        d1d2MedidoEnPlanta: t.d1d2MedidoEnPlanta,
       },
       ingreso: {
         id: t.entry.id,
@@ -81,6 +90,10 @@ export async function GET(req: NextRequest) {
         permiso: t.entry.originCode,
         resolucion: t.entry.originSourceNumber,
         volumenM3: num(t.entry.volumeM3),
+        /* Fotos de la carga de su guía (ADR-434). Las privadas viajan como
+           `priv:<path>` y se ven por `/fotos/ver`, que pide sesión del mismo
+           negocio: acá no se firma nada. */
+        fotos: normalizarFotos(t.entry.photos),
       },
       madre: t.trozaOrigen
         ? { ...t.trozaOrigen, volumenM3: num(t.trozaOrigen.volumenM3) }

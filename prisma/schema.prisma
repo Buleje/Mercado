@@ -5871,6 +5871,27 @@ model WoodEntryTroza {
   /// Cuántas veces se imprimió su etiqueta (ADR-436). >1 = reimpresión: la
   /// chapa se perdió o se cambió, y eso se tiene que poder contar.
   etiquetasImpresas Int       @default(0)
+
+  // ── Cubicación Oxapampa (Brandon 2026-09-26) ─────────────────────────
+  /// Las puntas en PULGADAS y el largo en PIES, medidos en el patio por el
+  /// aserradero. Es el dato COMERCIAL —con él se paga la madera al dueño, el
+  /// flete y el servicio—; la cubicación del LIBRO sigue siendo `volumenM3`
+  /// (Smalian de la guía), que esto no toca. Por eso tampoco lo frena el mes
+  /// cerrado (como `etiquetadaEn`, ADR-436).
+  oxD1Pulg    Decimal?  @db.Decimal(8, 2)
+  oxD2Pulg    Decimal?  @db.Decimal(8, 2)
+  oxLargoPies Decimal?  @db.Decimal(8, 2)
+  /// pt = Dp² × L / 24.5 (`ptOxapampa`, `lib/forestal/cubicacion-oxapampa.ts`).
+  /// Lo calcula el SERVIDOR al guardar y queda CONGELADO: si mañana cambia la
+  /// fórmula, lo que ya se pagó con este número no se reescribe.
+  oxPt        Decimal?  @db.Decimal(12, 2)
+  oxMedidoEn  DateTime?
+  oxMedidoPor String?
+  /// `d1Cm`/`d2Cm` los cargó la PLANTA porque la guía no los traía (en Blas,
+  /// 77 de 84 trozas). Sólo se escriben sobre NULL: el dato de SERFOR nunca se
+  /// pisa, y con esta marca el libro sabe de quién es cada centímetro.
+  d1d2MedidoEnPlanta Boolean @default(false)
+
   /// La guía la declara pero no llegó al patio. NO se borra la fila: el
   /// documento dice que existe, y esconderla sería alterar el acta. El volumen
   /// que sí llegó se deriva sumando las recepcionadas.
@@ -8276,4 +8297,57 @@ model ForestReporteDiario {
 
   @@index([tenantId])
   @@index([activo])
+}
+
+/// El acta de un conteo físico del patio (Brandon 2026-09-26, sobre ADR-436).
+///
+/// El conteo se hace en la tablet con el escáner y vive en su localStorage
+/// mientras se cuenta (sin señal también); al terminar se guarda ACÁ para que
+/// el historial y las diferencias los vea todo el negocio, no sólo ese equipo.
+/// Es un acta, no un asiento del libro: no mueve saldos ni la frena el cierre.
+///
+/// Los totales los recalcula el servidor (`resumirConteo`) sobre la foto del
+/// patio que el equipo usó — la de ESE momento: el patio pudo cambiar después y
+/// el acta tiene que decir lo que se contó contra lo que se esperaba entonces.
+model ForestPatioConteo {
+  id       String   @id @default(cuid())
+  tenantId String
+  /// El día del conteo en Lima (AAAA-MM-DD del equipo).
+  fecha    DateTime @db.Date
+  /// Quién contó, como lo mostró el equipo. `registradoPor` = la sesión que lo subió.
+  hechoPor      String
+  registradoPor String?
+
+  /// Cuándo empezó el conteo en el equipo. Es la llave de idempotencia
+  /// (`@@unique`): guardar dos veces el mismo conteo —doble toque, o «Seguir
+  /// contando» y terminar de nuevo— actualiza su acta en vez de duplicarla.
+  iniciadoEn  DateTime
+  terminadoEn DateTime?
+  /// Cuándo se trajo la foto del patio contra la que se contó.
+  fotoEn      DateTime?
+  /// El servidor no mandó el patio entero: alguna sorpresa puede ser falsa.
+  truncado    Boolean   @default(false)
+
+  esperadas  Int
+  contadas   Int
+  m3Esperado Decimal? @db.Decimal(12, 4)
+  m3Contado  Decimal? @db.Decimal(12, 4)
+
+  /// Esperadas y NO escaneadas: `[{ id, codigo, especieComun, gtfNumber, volumenM3 }]`.
+  faltantes Json
+  /// Piezas del libro escaneadas que NO se esperaban (consumida, despachada, no
+  /// llegó… o salió del patio mientras se contaba): `[{ trozaId, codigo, motivo, motivoTexto, … }]`.
+  sobrantes Json
+  /// Códigos leídos que no son de ninguna troza: `[{ codigo, en }]`.
+  sorpresas Json?
+  /// El conteo entero del equipo (`ConteoPatio`: foto + lecturas), para
+  /// reimprimir el acta igual. La lista no lo trae: sólo el detalle por id.
+  detalle   Json?
+  notas     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, iniciadoEn])
+  @@index([tenantId, fecha])
 }

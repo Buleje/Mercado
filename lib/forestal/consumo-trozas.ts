@@ -119,6 +119,24 @@ export interface TrozaConsumible {
   etiquetadaEn?: string | null;
   /** Cuántas veces se imprimió su etiqueta. >1 = reimpresión (ADR-436). */
   etiquetasImpresas?: number;
+  /**
+   * Cubicación OXAPAMPA tomada en el patio (Brandon 2026-09-26): puntas en
+   * pulgadas y largo en pies. Es el dato COMERCIAL (pago al dueño, flete,
+   * servicio); el del libro sigue siendo `volumenM3`. `null` = no se midió.
+   */
+  oxD1Pulg?: number | null;
+  oxD2Pulg?: number | null;
+  oxLargoPies?: number | null;
+  /** pt = Dp² × L / 24.5, calculado por el servidor al guardar y CONGELADO. */
+  oxPt?: number | null;
+  /** Cuándo se cubicó (ISO) y quién. */
+  oxMedidoEn?: string | null;
+  oxMedidoPor?: string | null;
+  /**
+   * `d1Cm`/`d2Cm` los cargó la planta porque la guía no los traía. `false` =
+   * vienen de la guía (o no hay). El dato de SERFOR nunca se pisa.
+   */
+  d1d2MedidoEnPlanta?: boolean;
 }
 
 /** Por qué una troza no se puede elegir. `null` = está disponible. */

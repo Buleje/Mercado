@@ -50,22 +50,25 @@ const LA_MAS_LARGA = troza({
   constanciaSniffs: "1-19-0313629",
   proveedor: "COMUNIDAD NATIVA SANTA ROSA DE MASHANGAY", // 41
   permiso: "10-HUA-PUE/PER-FMP-2026-007", // 27
-});
+  oxPt: 1234.56,
+} as TrozaConsumible & { oxPt: number });
 
 describe("textoFichaDeTroza", () => {
   it("lleva lo que pidió Brandon: código, especie, m³, medidas, N° de registro, GTF, titular y permiso", () => {
     const f = textoFichaDeTroza(troza({ d1Cm: 45, d2Cm: 48 }));
     const lineas = f.split("\n");
     expect(lineas[0]).toBe("TROZA 118");
-    expect(f).toContain("Especie: Tornillo");
-    expect(f).toContain("Volumen: 0.647 m³");
-    expect(f).toContain("Medidas: D1 45 · D2 48 cm · L 4.20 m");
-    expect(f).toContain("N° registro: 45");
-    expect(f).toContain("GTF: 001-0000201");
-    expect(f).toContain("SNIFFS: 1-19-0313629");
-    expect(f).toContain("Titular: COMUNIDAD NATIVA SANTA ROSA");
-    expect(f).toContain("Permiso: 19-SEC/REG-PLT-2021-017");
-    expect(f).toContain("Cód. bosque: 13/A (0000008)");
+    expect(f).toContain("🌳 Tornillo");
+    expect(f).toContain("📦 0.647 m³");
+    expect(f).toContain("📏 D1 45 · D2 48 cm · L 4.20 m");
+    expect(f).toContain("🧾 Reg. N° 45");
+    expect(f).toContain("🚚 GTF 001-0000201");
+    expect(f).toContain("🔎 SNIFFS 1-19-0313629");
+    expect(f).toContain("👤 COMUNIDAD NATIVA SANTA ROSA");
+    expect(f).toContain("📜 Permiso 19-SEC/REG-PLT-2021-017");
+    expect(f).not.toContain("0000008"); // el código del bosque no va en el QR (sí impreso)
+    /* La raya separa la madera de sus papeles. */
+    expect(lineas.indexOf("──────")).toBe(lineas.findIndex((l) => l.startsWith("🧾")) - 1);
   });
 
   it("lo que falta no se escribe (ni «null» ni «undefined»), salvo las medidas: D1, D2 y largo van siempre", () => {
@@ -73,15 +76,15 @@ describe("textoFichaDeTroza", () => {
       troza({ largoM: null, libroNro: null, constanciaSniffs: null, permiso: null, proveedor: "  " }),
     );
     expect(f).not.toMatch(/null|undefined/);
-    expect(f).toContain("Medidas: D1 — · D2 — · L —");
-    expect(f).not.toContain("Titular");
-    expect(f).not.toContain("N° registro");
+    expect(f).toContain("📏 D1 — · D2 — · L —");
+    expect(f).not.toContain("👤");
+    expect(f).not.toContain("Reg. N°");
   });
 
   it("sin marca de planta, el código de arriba es el del bosque y no se repite abajo", () => {
     const f = textoFichaDeTroza(troza({ codigoPlanta: null }));
     expect(f.split("\n")[0]).toBe("TROZA 13/A (0000008)");
-    expect(f).not.toContain("Cód. bosque");
+    expect(f.split("\n").filter((l) => l.includes("0000008"))).toHaveLength(1);
   });
 
   it("nunca lleva DNI ni RUC: la etiqueta queda a la vista en la madera", () => {
@@ -89,6 +92,13 @@ describe("textoFichaDeTroza", () => {
     const f = textoFichaDeTroza(conDocumento);
     expect(f).not.toContain("20600000001");
     expect(f).not.toMatch(/^(RUC|DNI|Documento)/m);
+  });
+});
+
+describe("PT Oxapampa en la ficha", () => {
+  it("si la troza ya se cubicó, va su PT entero; si no, no hay línea", () => {
+    expect(textoFichaDeTroza({ ...troza(), oxPt: 163.4 })).toContain("🪚 163 PT Oxapampa");
+    expect(textoFichaDeTroza(troza())).not.toContain("🪚");
   });
 });
 
@@ -144,7 +154,8 @@ describe("leer la ficha escaneada", () => {
     expect(leerEscaneo(textoFichaDeTroza(troza()))).toEqual({ tipo: "codigo", codigo: "118" });
   });
 
-  it("las líneas sueltas de la ficha se reconocen (no avisan «ninguna troza»)", () => {
+  it("las líneas sueltas de la ficha (ícono o raya) se reconocen: no avisan «ninguna troza»", () => {
+    for (const l of textoFichaDeTroza(troza()).split("\n").slice(1)) expect(esLineaDeFicha(l), l).toBe(true);
     expect(esLineaDeFicha("Titular: COMUNIDAD NATIVA SANTA ROSA")).toBe(true);
     expect(esLineaDeFicha("N° registro: 45")).toBe(true);
     expect(esLineaDeFicha("118")).toBe(false);
@@ -160,6 +171,12 @@ describe("etiqueta con dos QR", () => {
     expect(html).toContain('class="etq dos"');
     expect(html).toContain('class="chico"');
     expect(html).toContain("Ficha de la troza 118");
+  });
+
+  it("con la cubicación Oxapampa, el pie lleva su PT; sin ella, no", () => {
+    const con = htmlEtiqueta({ ...troza(), oxPt: 195.92 }, svg, { formato: "a4-3x7", barras: true, qrChicoSvg: svg });
+    expect(con).toContain('<b class="ptox">196 PT</b>');
+    expect(htmlEtiqueta(troza(), svg, { formato: "a4-3x7", barras: true })).not.toContain("ptox");
   });
 
   it("sin el chico queda la etiqueta de antes: un QR", () => {

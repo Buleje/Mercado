@@ -24,11 +24,20 @@
  * cámara agarra este QR en vez del chico, igual sabe qué pieza es
  * (`codigoDeFichaTexto`, que usa `leer-escaneo-troza.ts`).
  *
+ * Presentación «tipo imagen» (Brandon, 26-09: «quiero el texto sea tipo
+ * formato imagen bien presentado»): un QR sin internet sólo puede traer texto,
+ * así que cada línea arranca con un ícono de texto (emoji) que el celular pinta
+ * en color —Google Lens y la cámara de Android lo muestran como una tarjeta—, y
+ * una raya separa lo físico de la madera (arriba) de sus papeles (abajo). La
+ * regla del panel «sin emojis» es para la interfaz, donde hay íconos Lucide;
+ * acá no existe otra forma de dibujar. El ícono además ahorra bytes frente a
+ * «Especie: » (4 contra 9).
+ *
  * PURO y client-safe (sin "use client": lo usan la impresión y el lector).
  */
 
 import { formatNumber } from "@/lib/format";
-import { fmtM3 } from "./cubicacion-formato";
+import { fmtM3, fmtPt } from "./cubicacion-formato";
 import { esSinCodigo, type TrozaConsumible } from "./consumo-trozas";
 
 /** La primera palabra de la ficha: marca que el texto es una ficha de troza. */
@@ -80,12 +89,30 @@ const texto = (v: string | number | null | undefined) => {
   return s ? s : null;
 };
 
+/** El ícono de cada línea: también sirve para reconocer una línea suelta. */
+export const ICONOS_FICHA = {
+  especie: "🌳",
+  volumen: "📦",
+  medidas: "📏",
+  pt: "🪚",
+  registro: "🧾",
+  gtf: "🚚",
+  sniffs: "🔎",
+  titular: "👤",
+  permiso: "📜",
+} as const;
+
+/** La raya entre la madera y sus papeles. */
+export const RAYA_FICHA = "──────";
+
 /**
- * La ficha en líneas `Clave: valor`. Lo que falta no se escribe (una etiqueta
- * llena de «—» no se lee); el código siempre va, aunque sea «—».
+ * La ficha como tarjeta de texto: `TROZA <código>`, lo físico (especie, m³,
+ * D1·D2·largo, PT Oxapampa si ya se cubicó), una raya y los papeles (registro,
+ * GTF, SNIFFS, titular, permiso). Lo que falta no se
+ * escribe, salvo las medidas: D1, D2 y largo van siempre («—» si falta).
  */
 export function textoFichaDeTroza(
-  t: Pick<
+  t: { oxPt?: number | null } & Pick<
     TrozaConsumible,
     | "codigoPlanta"
     | "codificacion"
@@ -103,23 +130,29 @@ export function textoFichaDeTroza(
   >,
 ): string {
   const codigo = codigoDeEtiqueta(t);
-  const bosque = texto(t.codificacion);
   const vol = t.volumenM3 != null && Number.isFinite(Number(t.volumenM3)) ? `${fmtM3(Number(t.volumenM3))} m³` : null;
-  const lineas: [string, string | null][] = [
-    ["Especie", texto(t.especieComun)],
-    ["Volumen", vol],
-    ["Medidas", medidasDeFicha(t)],
-    ["N° registro", texto(t.libroNro)],
-    ["GTF", texto(t.gtfNumber)],
-    ["SNIFFS", texto(t.constanciaSniffs)],
-    ["Titular", texto(t.proveedor)],
-    ["Permiso", texto(t.permiso)],
-    /* La marca del bosque sólo si no es la que ya va arriba. */
-    ["Cód. bosque", bosque && !esSinMarca(bosque) && bosque !== codigo ? bosque : null],
+  const pt = t.oxPt != null && Number.isFinite(Number(t.oxPt)) && Number(t.oxPt) > 0 ? `${fmtPt(Number(t.oxPt))} PT Oxapampa` : null;
+  const linea = (icono: string, v: string | null) => (v == null ? null : `${icono} ${v}`);
+  const madera = [
+    linea(ICONOS_FICHA.especie, texto(t.especieComun)),
+    linea(ICONOS_FICHA.volumen, vol),
+    linea(ICONOS_FICHA.medidas, medidasDeFicha(t)),
+    linea(ICONOS_FICHA.pt, pt),
   ];
+  const papeles = [
+    linea(ICONOS_FICHA.registro, t.libroNro != null ? `Reg. N° ${t.libroNro}` : null),
+    linea(ICONOS_FICHA.gtf, texto(t.gtfNumber) && `GTF ${texto(t.gtfNumber)}`),
+    linea(ICONOS_FICHA.sniffs, texto(t.constanciaSniffs) && `SNIFFS ${texto(t.constanciaSniffs)}`),
+    linea(ICONOS_FICHA.titular, texto(t.proveedor)),
+    linea(ICONOS_FICHA.permiso, texto(t.permiso) && `Permiso ${texto(t.permiso)}`),
+    /* El código del bosque NO va: no estaba en lo pedido, ya sale impreso en
+       la etiqueta y con él una troza real de Blas pasaba a la versión 11 del
+       QR (289 bytes; módulo de 0,27 mm en el rollo de 17 mm). */
+  ].filter((l): l is string => l != null);
   return [
     `${ENCABEZADO_FICHA} ${codigo}`,
-    ...lineas.filter((l): l is [string, string] => l[1] != null).map(([k, v]) => `${k}: ${v}`),
+    ...madera.filter((l): l is string => l != null),
+    ...(papeles.length > 0 ? [RAYA_FICHA, ...papeles] : []),
   ].join("\n");
 }
 
@@ -149,11 +182,19 @@ export function esFichaDeTroza(leido: string | null | undefined): boolean {
   return new RegExp(`^${ENCABEZADO_FICHA}\\s`, "i").test((leido ?? "").replace(/^\uFEFF/, "").trim());
 }
 
-/** Las claves de las líneas de la ficha, para reconocer una línea suelta. */
-const CLAVES_FICHA = ["Especie", "Volumen", "Medidas", "N° registro", "GTF", "SNIFFS", "Titular", "Permiso", "Cód. bosque"];
+/**
+ * Cómo arranca una línea de la ficha: su ícono o la raya. También las claves
+ * `Clave:` de la primera versión (26-09), por si alguna etiqueta ya impresa
+ * las trae.
+ */
+const MARCAS_FICHA = [...Object.values(ICONOS_FICHA), RAYA_FICHA.charAt(0)];
+const CLAVES_VIEJAS = ["Especie", "Volumen", "Medidas", "N° registro", "GTF", "SNIFFS", "Titular", "Permiso", "Cód. bosque"];
 
-/** La primera clave de la ficha seguida de «:», dondequiera que aparezca. */
-const CORTE_DE_CLAVE = new RegExp(`(?:${CLAVES_FICHA.map((k) => k.replace(".", "\\.")).join("|")}):`, "i");
+/** Donde empieza la primera línea de la ficha, dondequiera que aparezca (texto pegado). */
+const CORTE_DE_CLAVE = new RegExp(
+  `(?:${[...MARCAS_FICHA, ...CLAVES_VIEJAS.map((k) => `${k.replace(".", "\\.")}:`)].join("|")})`,
+  "i",
+);
 
 /**
  * ¿Es una línea suelta de la ficha (`Titular: …`)? La pistola 2D manda la
@@ -162,5 +203,8 @@ const CORTE_DE_CLAVE = new RegExp(`(?:${CLAVES_FICHA.map((k) => k.replace(".", "
  */
 export function esLineaDeFicha(leido: string | null | undefined): boolean {
   const s = (leido ?? "").trim();
-  return CLAVES_FICHA.some((k) => s.toLowerCase().startsWith(`${k.toLowerCase()}:`));
+  return (
+    MARCAS_FICHA.some((m) => s.startsWith(m)) ||
+    CLAVES_VIEJAS.some((k) => s.toLowerCase().startsWith(`${k.toLowerCase()}:`))
+  );
 }

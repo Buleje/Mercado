@@ -10,6 +10,8 @@
  *   1. *"¿La 118 la puedo mandar a la sierra?"* — el buscador de arriba.
  *   2. *"Llegó el camión, ¿qué le falta a esta guía?"* — la lista del medio.
  *   3. *"Estos palos van al carro, ¿a qué corrida?"* — el bloque de abajo.
+ *   4-6. Contar el patio, medir escaneando (PT Oxapampa) y armar lotes: cada
+ *      uno ocupa la pantalla entera (`AccionDelPatio` los abre).
  *
  * Sin sidebar ni tabs a propósito: cada elemento que no sirve en el patio es un
  * lugar donde tocar por error con el guante puesto. Lo que se anota sin señal
@@ -23,7 +25,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
-  AlertTriangle, ArrowLeft, ChevronRight, ClipboardList, Layers, Loader2, PackageCheck, TreePine, WifiOff,
+  AlertTriangle, ArrowLeft, ClipboardList, Layers, Loader2, PackageCheck, Ruler, TreePine, WifiOff,
 } from "@buleje/design-system/icons";
 import { PageTitle, SectionTitle } from "@buleje/design-system";
 import { usePatioCola } from "@/hooks/use-patio-cola";
@@ -37,6 +39,8 @@ import PatioBuscador from "./PatioBuscador";
 import PatioConsumo from "./PatioConsumo";
 import PatioConteo from "./PatioConteo";
 import PatioArmarLote from "./PatioArmarLote";
+import PatioMedir from "./PatioMedir";
+import AccionDelPatio from "./patio-modo-acciones";
 import { formatDateShort } from "@/lib/format";
 
 interface GuiaPatio {
@@ -75,6 +79,8 @@ export default function PatioModo() {
   const [contando, setContando] = useState(false);
   /** «Armar un lote escaneando» (2026-09-26): pantalla entera, como el conteo. */
   const [armandoLote, setArmandoLote] = useState(false);
+  /** «Medir escaneando» (2026-09-26): pantalla entera, como el conteo. */
+  const [midiendo, setMidiendo] = useState(false);
   /** Un conteo de hoy a medias: el botón lo dice para no empezar otro sin querer. */
   const [enCurso, setEnCurso] = useState<{ contadas: number; total: number } | null>(null);
   useEffect(() => {
@@ -126,6 +132,9 @@ export default function PatioModo() {
 
   if (contando) return <PatioConteo onVolver={() => setContando(false)} />;
   if (armandoLote) return <PatioArmarLote online={cola.online} onVolver={() => setArmandoLote(false)} />;
+  if (midiendo) {
+    return <PatioMedir online={cola.online} pendientes={cola.pendientes} onVolver={() => setMidiendo(false)} />;
+  }
 
   if (recibiendo) {
     const p = pendienteDeRecepcion(recibiendo.trozas);
@@ -195,40 +204,31 @@ export default function PatioModo() {
       <PatioBuscador />
 
       {/* Pregunta 4: ¿está todo lo que el libro dice que hay en la pila? */}
-      <button
-        type="button"
+      <AccionDelPatio
+        icono={ClipboardList}
+        titulo={enCurso ? "Seguir el conteo del patio" : "Contar el patio"}
+        detalle={enCurso ? `${enCurso.contadas} de ${enCurso.total} contadas hoy` : "Escanea la pila y mira qué falta y qué sobra"}
         onClick={() => setContando(true)}
-        className="flex w-full items-center gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3 min-h-14 text-left transition-colors hover:border-[var(--accent)]"
         data-abrir-conteo
-      >
-        <ClipboardList className="h-6 w-6 shrink-0 text-[var(--accent)]" aria-hidden />
-        <span className="min-w-0 flex-1">
-          <span className="block text-base font-bold text-[var(--text-primary)]">
-            {enCurso ? "Seguir el conteo del patio" : "Contar el patio"}
-          </span>
-          <span className="block text-base text-[var(--text-secondary)]">
-            {enCurso
-              ? `${enCurso.contadas} de ${enCurso.total} contadas hoy`
-              : "Escanea la pila y mira qué falta y qué sobra"}
-          </span>
-        </span>
-        <ChevronRight className="h-5 w-5 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
-      </button>
+      />
+
+      {/* ¿Cuánto PT tiene esta troza? (cubicación Oxapampa, 2026-09-26) */}
+      <AccionDelPatio
+        icono={Ruler}
+        titulo="Medir escaneando"
+        detalle="Escanea la troza y anota sus puntas y su largo: sale el PT"
+        onClick={() => setMidiendo(true)}
+        data-abrir-medir
+      />
 
       {/* Pregunta 5: esta pila va junta al carro — guardarla como lote. */}
-      <button
-        type="button"
+      <AccionDelPatio
+        icono={Layers}
+        titulo="Armar lotes escaneando"
+        detalle="Escanea la pila, aunque esté mezclada: sale un lote por especie"
         onClick={() => setArmandoLote(true)}
-        className="flex w-full items-center gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3 min-h-14 text-left transition-colors hover:border-[var(--accent)]"
         data-abrir-armar-lote
-      >
-        <Layers className="h-6 w-6 shrink-0 text-[var(--accent)]" aria-hidden />
-        <span className="min-w-0 flex-1">
-          <span className="block text-base font-bold text-[var(--text-primary)]">Armar lotes escaneando</span>
-          <span className="block text-base text-[var(--text-secondary)]">Escanea la pila, aunque esté mezclada: sale un lote por especie</span>
-        </span>
-        <ChevronRight className="h-5 w-5 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
-      </button>
+      />
 
       {/* Pregunta 2: llegó el camión, ¿qué le falta a esta guía? */}
       <section className="space-y-2">

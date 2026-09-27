@@ -19,6 +19,7 @@ import { Camera, ScanBarcode } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import {
+  VENTANA_FICHA_MS,
   buscarTrozaEscaneada,
   esEcoDeEtiqueta,
   esFichaDeTroza,
@@ -84,6 +85,8 @@ export default function EscanerTrozas<T extends TrozaDelEscaner>({
   const contador = useRef(0);
   /** La última troza aceptada y cuándo: el 2º código de su etiqueta no es otra lectura. */
   const ultimaRef = useRef<{ id: string; en: number } | null>(null);
+  /** Hasta cuándo lo que llega es el resto de una ficha que la pistola sigue tipeando. */
+  const fichaHastaRef = useRef(0);
 
   const avisar = useCallback((tono: Tono, mensaje: string, candidatas?: T[]) => {
     contador.current += 1;
@@ -116,15 +119,19 @@ export default function EscanerTrozas<T extends TrozaDelEscaner>({
       /* Una pistola 2D en modo teclado tipea la ficha del QR grande línea por
          línea: la primera (`TROZA 118`) ya trajo la pieza; `Titular: …` y las
          demás no son códigos y no deben avisar «ninguna troza». */
+      const enFicha = Date.now() < fichaHastaRef.current;
       if (esLineaDeFicha(crudo)) {
         /* Tipear la ficha entera le lleva 1-3 s a la pistola: el eco de la
            misma etiqueta (su QR chico o sus barras) se mide desde la última
            línea, no desde la primera. */
         if (ultimaRef.current) ultimaRef.current = { ...ultimaRef.current, en: Date.now() };
+        fichaHastaRef.current = Date.now() + VENTANA_FICHA_MS;
         return;
       }
+      if (esFichaDeTroza(crudo)) fichaHastaRef.current = Date.now() + VENTANA_FICHA_MS;
       const lectura = leerEscaneo(crudo);
       if (!lectura) {
+        if (enFicha) return;
         if (esFichaDeTroza(crudo)) avisar("no", "Esa troza no tiene código: escanea su QR chico.");
         else if (crudo.trim()) avisar("no", "Eso no es el código de una troza.");
         return;
@@ -143,6 +150,11 @@ export default function EscanerTrozas<T extends TrozaDelEscaner>({
           `El código ${lectura.tipo === "codigo" ? lectura.codigo : ""} está en ${r.trozas.length} trozas: elige cuál.`,
           r.trozas,
         );
+      }
+      /* El resto de una ficha tipeada sin sus íconos: no es un código perdido. */
+      if (enFicha && lectura.tipo === "codigo") {
+        fichaHastaRef.current = Date.now() + VENTANA_FICHA_MS;
+        return;
       }
       const propio = onDesconocido?.(lectura.tipo === "id" ? lectura.id : lectura.codigo);
       avisar(

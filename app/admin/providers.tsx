@@ -36,6 +36,13 @@ const FAB_EXCLUDED_PATHS = [
   "/admin/login",
   "/admin/kiosk",
   "/admin/pos-mobile",
+  // La tarjeta de la troza que abre el QR: sus salidas van en una barra fija
+  // abajo, a todo el ancho del celular: el FAB (fijo abajo a la derecha)
+  // quedaría encima de «Ver en el libro».
+  "/admin/q/",
+  // Modo patio (tablet de pie): «Guardar y siguiente» de «Medir escaneando» va
+  // abajo a todo el ancho y el FAB le tapaba el borde a 400 px (26-09).
+  "/admin/patio",
 ];
 
 /** Tabs donde el FAB sobra — el propio modulo tiene sus acciones principales

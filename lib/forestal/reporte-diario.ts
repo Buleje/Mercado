@@ -79,6 +79,43 @@ export const TOPE_INTENTOS_DIA = 3;
 export const DISPAROS_LIMA = ["07:00", "13:00", "18:00", "21:00"] as const;
 const ULTIMO_DISPARO = DISPAROS_LIMA[DISPAROS_LIMA.length - 1];
 
+/**
+ * El disparador de la HORA EXACTA (runbook `docs/runbooks/reportes-hora-exacta.md`):
+ * un job de Supabase (`pg_cron` + `pg_net`) llama a
+ * `/api/cron/reportes-diarios/hora-exacta` a las :00 y :30 de cada hora. Cada
+ * llamada deja un LATIDO; con uno reciente, el editor promete la hora exacta
+ * («Llega a las 18:30») en vez de la ventana de Vercel («21:00–21:59»).
+ *
+ * Se mide, no se configura: si el job se apaga, a la hora deja de haber
+ * latido y la pantalla vuelve sola a prometer la ventana de Vercel. Un
+ * interruptor en Ajustes seguiría diciendo «18:30» con el job muerto.
+ *
+ * Etiqueta propia y no la raíz: una llamada a mano a la raíz (una prueba con
+ * curl) no debe hacerle creer a la pantalla que hay disparador.
+ */
+export const DISPARO_HORA_EXACTA = "hora-exacta";
+export const CLAVE_LATIDO_HORA_EXACTA = "reportes-diarios:latido-hora-exacta";
+/** Dos tics de 30 min + 5 de margen: un tic perdido no apaga la promesa; dos seguidos, sí. */
+export const VIGENCIA_LATIDO_MIN = 65;
+
+/** ¿Esta llamada al cron es la del disparador exacto? (`/…/reportes-diarios/hora-exacta`) */
+export function esDisparoHoraExacta(pathname: string): boolean {
+  return pathname.replace(/\/+$/, "").split("/").pop() === DISPARO_HORA_EXACTA;
+}
+
+/**
+ * ¿El disparador exacto está vivo? `latido` = ISO de su última llamada.
+ * Un latido algo «del futuro» (relojes de dos servidores) cuenta como vivo;
+ * uno roto o de hace más de `VIGENCIA_LATIDO_MIN`, no.
+ */
+export function horaExactaViva(latido: string | null | undefined, ahora: Date): boolean {
+  if (!latido) return false;
+  const t = Date.parse(latido);
+  if (!Number.isFinite(t)) return false;
+  const edadMs = ahora.getTime() - t;
+  return edadMs < VIGENCIA_LATIDO_MIN * 60_000 && edadMs > -5 * 60_000;
+}
+
 // ── Validación ────────────────────────────────────────────────────────────────
 
 /**
@@ -308,10 +345,13 @@ export function disparoQueLoManda(hora: string): string | null {
 /**
  * Cuándo le llega, dicho para el editor. Con sólo los crons de Vercel no se
  * puede prometer el minuto: se promete la ventana del disparo que lo manda.
+ * Con el disparador exacto vivo (`horaExacta`, medido por su latido), sale en
+ * el tic de su media hora: se promete la hora.
  */
-export function cuandoSale(hora: string): string {
+export function cuandoSale(hora: string, horaExacta = false): string {
   const v = ventanaDeHora(hora);
   if (!v) return `Después de las ${ULTIMO_DISPARO} no hay envío automático: elige una hora más temprana.`;
+  if (horaExacta) return `Llega a las ${hora}.`;
   return v.desde === hora ? `Llega entre las ${v.desde} y las ${v.hasta}.` : `Llega a más tardar entre las ${v.desde} y las ${v.hasta}.`;
 }
 

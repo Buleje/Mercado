@@ -217,6 +217,16 @@ export function consumibleDeFicha(f: FichaTrozaJson): TrozaConsumible {
  */
 export const ECO_DE_ETIQUETA_MS = 2000;
 
+/**
+ * Después de leer `TROZA <código>` (la ficha del QR grande), lo que llega en
+ * estos ms y no es una troza se toma como el resto de la ficha que la pistola
+ * sigue tipeando, y se calla. Hace falta porque una pistola en modo teclado
+ * puede no tipear los íconos (emoji) con que arranca cada línea: sin ellos,
+ * `Cachimbo` o `2.412 m³` no se reconocen como línea de la ficha (revisión
+ * 26-09). Se renueva con cada línea: una ficha larga no se sale de la ventana.
+ */
+export const VENTANA_FICHA_MS = 3000;
+
 /** ¿Esta lectura es el segundo código de la etiqueta que se acaba de aceptar? */
 export function esEcoDeEtiqueta(
   ultima: { id: string; en: number } | null,

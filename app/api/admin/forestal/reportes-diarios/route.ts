@@ -3,13 +3,14 @@ import { assertCsrf } from "@/lib/auth/csrf";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { withApiHandler } from "@/lib/api-handler";
 import { ForestReporteDiarioDB } from "@/lib/db/forest-reporte-diario.db";
-import { DISPAROS_LIMA, reporteDiarioSchema } from "@/lib/forestal/reporte-diario";
+import { DISPAROS_LIMA, horaExactaViva, reporteDiarioSchema } from "@/lib/forestal/reporte-diario";
 import { autorizarReportes, errorDeValidacion, errorInterno, leerJson, SIN_CACHE } from "@/lib/forestal/reporte-diario-ruta";
 
 /**
  * /api/admin/forestal/reportes-diarios — los reportes diarios del libro (ADR-439).
  *
- * GET  → `{ reportes, envios: { [id]: NotificationLog[] }, disparos, canales }`
+ * GET  → `{ reportes, envios: { [id]: NotificationLog[] }, disparos, horaExacta, canales }`
+ *        (`horaExacta` = el disparador de cada media hora llamó hace < 65 min).
  * POST → crea uno (`reporteDiarioSchema`).
  *
  * `requireAdmin` + rol explícito admin/dueño → CSRF en escrituras → rate limit
@@ -33,11 +34,21 @@ export const GET = withApiHandler("forestal-reportes-diarios-get", async (req: N
   if (rl) return rl;
   try {
     const reportes = await ForestReporteDiarioDB.listar(auth.tenantId);
-    const envios = Object.fromEntries(
-      await Promise.all(reportes.map(async (r) => [r.id, await ForestReporteDiarioDB.envios(auth.tenantId, r.id, 8)] as const)),
-    );
+    const [pares, latido] = await Promise.all([
+      Promise.all(reportes.map(async (r) => [r.id, await ForestReporteDiarioDB.envios(auth.tenantId, r.id, 8)] as const)),
+      /* Sin latido legible se promete la ventana de Vercel: prometer de menos, nunca de más. */
+      ForestReporteDiarioDB.latidoHoraExacta().catch(() => null),
+    ]);
+    const envios = Object.fromEntries(pares);
     return NextResponse.json(
-      { reportes, envios, disparos: DISPAROS_LIMA, canales: canalesConfigurados(), moduloHabilitado: auth.moduloHabilitado },
+      {
+        reportes,
+        envios,
+        disparos: DISPAROS_LIMA,
+        horaExacta: horaExactaViva(latido, new Date()),
+        canales: canalesConfigurados(),
+        moduloHabilitado: auth.moduloHabilitado,
+      },
       { headers: SIN_CACHE },
     );
   } catch (err) {

@@ -98,6 +98,8 @@ export type CtpAuditEntity =
   | "ForestAnexo04"
   /** Un reporte diario por correo/WhatsApp (ADR-439): a quién le llega qué del libro. */
   | "ForestReporteDiario"
+  /** El acta de un conteo físico del patio (2026-09-26): qué faltó y qué sobró. */
+  | "ForestPatioConteo"
   | "Tenant";
 
 /**
@@ -195,6 +197,15 @@ export type CtpAuditAction =
   /** Al anular/rechazar/borrar un ingreso, sus trozas SUELTAN el código de
    *  planta (el índice único lo seguía ocupando): el renglón dice cuál tenía cada una. */
   | "ctp_troza_codigo_soltado"
+  /** Cubicó (o corrigió) trozas en fórmula Oxapampa: pulgadas, pies y el pt
+   *  CONGELADO con el que se paga (2026-09-26). El detalle narra antes → después:
+   *  es plata de un tercero. Aparte de la recepción: no es un dato del libro. */
+  | "ctp_troza_cubicacion_oxapampa"
+  /** Cargó en planta los D1/D2 en cm que la guía no traía. Sólo sobre vacío:
+   *  el dato de SERFOR no se pisa. Éste SÍ es del libro (lo frena el cierre). */
+  | "ctp_troza_d1d2_planta"
+  /** Guardó (o actualizó) el acta de un conteo físico del patio. */
+  | "ctp_patio_conteo"
   /** Alguien abrió una foto privada de la carga (GPS + nombre: Ley 29733). */
   | "ctp_foto_ver"
   // Líneas de producción / despacho

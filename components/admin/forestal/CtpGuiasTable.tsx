@@ -141,6 +141,8 @@ export interface CtpGuiasTableProps {
   onAcomodar?: (guia: GuiaIngreso<WoodEntry>) => void;
   /** Etiquetas QR de las trozas de esta guía que siguen en el patio (ADR-436). */
   onImprimirEtiquetas?: (guia: GuiaIngreso<WoodEntry>) => void;
+  /** La planilla «Cubicar Oxapampa» de las trozas de esta guía (2026-09-26). */
+  onCubicarOxapampa?: (guia: GuiaIngreso<WoodEntry>) => void;
   sort: CtpSort;
   onSort: (field: CtpSortField) => void;
 }
@@ -266,6 +268,7 @@ export default function CtpGuiasTable(props: CtpGuiasTableProps) {
     onCorregirRecepcion: props.onCorregirRecepcion,
     onAcomodar: props.onAcomodar,
     onImprimirEtiquetas: props.onImprimirEtiquetas,
+    onCubicarOxapampa: props.onCubicarOxapampa,
   };
 
   return (

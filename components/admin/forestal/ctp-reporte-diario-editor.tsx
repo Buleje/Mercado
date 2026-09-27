@@ -34,14 +34,17 @@ const chip = (on: boolean) =>
   }`;
 
 /**
- * Cada hora dice en qué ventana llega de verdad: los disparos son 4 al día y
- * caen en cualquier minuto de su hora. Después de las 21:00 no hay disparo, así
- * que esas horas no se ofrecen (el servidor también las rechaza).
+ * Cada hora dice en qué ventana llega de verdad: sin el disparador exacto, los
+ * disparos son 4 al día y caen en cualquier minuto de su hora. Con él vivo
+ * (`horaExacta`, lo mide el servidor por su latido) sale a su media hora y el
+ * rótulo es la hora sola. Después de las 21:00 no hay envío, así que esas
+ * horas no se ofrecen (el servidor también las rechaza).
  */
-const HORAS = HORAS_DEL_EDITOR.map((h) => {
+const HORAS_VENTANA = HORAS_DEL_EDITOR.map((h) => {
   const v = ventanaDeHora(h);
   return { valor: h, rotulo: v ? `${h} · llega ${v.desde}–${v.hasta}` : h };
 });
+const HORAS_EXACTAS = HORAS_DEL_EDITOR.map((h) => ({ valor: h, rotulo: h }));
 
 export const BORRADOR_NUEVO: ReporteDiarioInput = {
   nombre: "Cierre del día",
@@ -62,11 +65,14 @@ export default function ReporteDiarioEditor({
   borrador,
   onCambio,
   canales,
+  horaExacta = false,
 }: {
   borrador: ReporteDiarioInput;
   onCambio: (b: ReporteDiarioInput) => void;
   canales: { correo: boolean; whatsapp: boolean };
+  horaExacta?: boolean;
 }) {
+  const horas = horaExacta ? HORAS_EXACTAS : HORAS_VENTANA;
   const set = <K extends keyof ReporteDiarioInput>(k: K, v: ReporteDiarioInput[K]) => onCambio({ ...borrador, [k]: v });
 
   return (
@@ -79,7 +85,7 @@ export default function ReporteDiarioEditor({
           <select className={I} value={borrador.hora} onChange={(e) => set("hora", e.target.value)}>
             {/* Un reporte guardado antes con una hora que ya no se ofrece se ve igual, para poder cambiarla. */}
             {!HORAS_DEL_EDITOR.includes(borrador.hora) && <option value={borrador.hora}>{borrador.hora} · no sale</option>}
-            {HORAS.map((h) => (
+            {horas.map((h) => (
               <option key={h.valor} value={h.valor}>
                 {h.rotulo}
               </option>
@@ -87,7 +93,7 @@ export default function ReporteDiarioEditor({
           </select>
         </Field>
       </div>
-      <p className="-mt-2 text-sm text-[var(--text-secondary)]">{cuandoSale(borrador.hora)}</p>
+      <p className="-mt-2 text-sm text-[var(--text-secondary)]">{cuandoSale(borrador.hora, horaExacta)}</p>
 
       <Field label="Qué días sale">
         <div className="flex flex-wrap gap-1.5">

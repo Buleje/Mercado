@@ -58,6 +58,26 @@ describe("PatioBuscador · pistola 2D leyendo el QR grande (ficha en texto)", ()
     await waitFor(() => expect(campo.value).toBe("TROZA 118"));
   });
 
+  it("una pistola que no tipea los íconos: las líneas sin emoji tampoco pisan la búsqueda", async () => {
+    const urls: string[] = [];
+    vi.stubGlobal("fetch", async (u: string) => {
+      urls.push(String(u));
+      const q = decodeURIComponent(String(u).split("codificacion=")[1] ?? "");
+      return new Response(JSON.stringify({ trozas: q.startsWith("118") ? [T118] : [] }), { status: 200 });
+    });
+    render(<PatioBuscador />);
+    const campo = screen.getByPlaceholderText("Escanea o tipea: 118") as HTMLInputElement;
+    fireEvent.change(campo, { target: { value: "TROZA 118" } });
+    fireEvent.keyDown(campo, { key: "Enter" });
+    await waitFor(() => expect(screen.getAllByText(/Tornillo/).length).toBeGreaterThan(0));
+    for (const linea of [" Tornillo", " 1.200 m", " D1 45 · D2 48 cm · L 4.20 m", " COMUNIDAD NATIVA SANTA ROSA"]) {
+      fireEvent.change(campo, { target: { value: linea } });
+      fireEvent.keyDown(campo, { key: "Enter" });
+    }
+    expect(urls).toHaveLength(1);
+    expect(screen.queryByText(/Ninguna troza con ese número/)).toBeNull();
+  });
+
   it("la ficha de una pieza sin código avisa que se escanee el QR chico", async () => {
     vi.stubGlobal("fetch", async () => new Response(JSON.stringify({ trozas: [] }), { status: 200 }));
     render(<PatioBuscador />);

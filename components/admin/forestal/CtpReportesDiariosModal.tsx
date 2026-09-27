@@ -169,7 +169,7 @@ export default function CtpReportesDiariosModal({ onClose }: { onClose: () => vo
           <div className="grid gap-4 lg:grid-cols-[16rem_minmax(0,1fr)]">
             <ReporteDiarioLista reportes={rd.reportes} envios={rd.envios} elegido={elegido} onElegir={elegir} onNuevo={() => elegir("nuevo")} />
             <div className="min-w-0 space-y-5">
-              <ReporteDiarioEditor borrador={borrador} onCambio={setBorrador} canales={rd.canales} />
+              <ReporteDiarioEditor borrador={borrador} onCambio={setBorrador} canales={rd.canales} horaExacta={rd.horaExacta} />
               {guardado && (
                 <section aria-labelledby="reporte-envios-titulo" className="space-y-2">
                   <CardTitle as="h3" id="reporte-envios-titulo" className="text-sm font-bold text-[var(--text-primary)]">

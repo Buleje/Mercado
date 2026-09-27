@@ -284,6 +284,13 @@ function serializar(t: {
   retrozos?: unknown[];
   etiquetadaEn?: Date | string | null;
   etiquetasImpresas?: number | null;
+  oxD1Pulg?: unknown;
+  oxD2Pulg?: unknown;
+  oxLargoPies?: unknown;
+  oxPt?: unknown;
+  oxMedidoEn?: Date | string | null;
+  oxMedidoPor?: string | null;
+  d1d2MedidoEnPlanta?: boolean;
 }) {
   const num = (v: unknown) => (v == null ? null : Number(v));
   return {
@@ -340,5 +347,15 @@ function serializar(t: {
     // «Sin etiqueta» de la tabla por pieza leen de acá.
     etiquetadaEn: t.etiquetadaEn ? new Date(t.etiquetadaEn).toISOString() : null,
     etiquetasImpresas: t.etiquetasImpresas ?? 0,
+    /* Cubicación Oxapampa (2026-09-26). Esta lista es WHITELIST: sin estas
+       líneas la ficha de la guía y el buscador dirían «sin cubicar» sobre una
+       troza cubicada. `oxPt` es el congelado al guardar. */
+    oxD1Pulg: num(t.oxD1Pulg),
+    oxD2Pulg: num(t.oxD2Pulg),
+    oxLargoPies: num(t.oxLargoPies),
+    oxPt: num(t.oxPt),
+    oxMedidoEn: t.oxMedidoEn ? new Date(t.oxMedidoEn).toISOString() : null,
+    oxMedidoPor: t.oxMedidoPor ?? null,
+    d1d2MedidoEnPlanta: Boolean(t.d1d2MedidoEnPlanta),
   };
 }

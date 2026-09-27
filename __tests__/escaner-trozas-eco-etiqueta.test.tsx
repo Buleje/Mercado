@@ -88,3 +88,28 @@ describe("EscanerTrozas · QR + Code128 de la misma etiqueta", () => {
     expect(aviso()?.textContent).toContain("Troza 119 · Cumala tildada");
   });
 });
+
+describe("EscanerTrozas · la ficha del QR grande tipeada por una pistola", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it("las líneas que siguen a «TROZA 118» (con o sin íconos) no avisan «ninguna troza»", () => {
+    const reloj = vi.spyOn(Date, "now").mockReturnValue(20_000);
+    render(<Arnes />);
+    escanear("TROZA 118");
+    expect(aviso()?.textContent).toContain("Troza 118 · Tornillo tildada");
+    for (const [i, linea] of ["🌳 Tornillo", " 1.200 m", " D1 45 · D2 48 cm · L 4.20 m", "Titular: X"].entries()) {
+      reloj.mockReturnValue(20_300 + i * 300);
+      escanear(linea);
+      expect(aviso()?.textContent, linea).toContain("tildada");
+    }
+  });
+
+  it("pasada la ventana, un código que no existe sí avisa", () => {
+    const reloj = vi.spyOn(Date, "now").mockReturnValue(30_000);
+    render(<Arnes />);
+    escanear("TROZA 118");
+    reloj.mockReturnValue(30_000 + 3_500);
+    escanear("999");
+    expect(aviso()?.textContent).toContain("Ninguna troza con el código 999");
+  });
+});

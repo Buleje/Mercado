@@ -34,6 +34,7 @@ import type { CambioRecepcion } from "@/lib/forestal/recepcion-trozas";
 import { guiaRecibida, type TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import { asignarCorrelativos, planearEtiquetado, tieneCodigoPlanta } from "@/lib/forestal/etiquetado-trozas";
 import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
+import { closedPeriodOf } from "@/lib/forestal/ctp-cierre-types";
 import { CtpInvariantError, exigirIngresoAntesDeLaCorrida } from "./forest-ctp-consumo.db";
 import { exigirCostoNoCongelado } from "./costo-congelado.db";
 import { ForestCuentaDB } from "./forest-cuenta.db";
@@ -44,6 +45,8 @@ import { problemaDeLlegada, type ConfirmacionDeVencida } from "@/lib/forestal/fe
 import { limaDateKey } from "@/lib/utils";
 import type { FiltroPago } from "@/lib/forestal/ingresos-filtros-columna";
 import { GuiaPlataDB } from "./guia-plata.db";
+import { planearMedida, type CambioMedidaTroza, type PlanMedida } from "@/lib/forestal/medidas-troza";
+import { fmtPt } from "@/lib/forestal/cubicacion-formato";
 
 /**
  * Alta de una GTF de SERFOR completa (ADR-312): la cabecera es del documento y
@@ -2178,6 +2181,15 @@ export class WoodEntriesDB {
          y cuántas veces se reimprimió. */
       etiquetadaEn: t.etiquetadaEn ? t.etiquetadaEn.toISOString() : null,
       etiquetasImpresas: t.etiquetasImpresas,
+      /* Cubicación Oxapampa (2026-09-26): el pt con que se paga. `oxPt` es el
+         CONGELADO al guardar, no se recalcula acá. */
+      oxD1Pulg: num(t.oxD1Pulg),
+      oxD2Pulg: num(t.oxD2Pulg),
+      oxLargoPies: num(t.oxLargoPies),
+      oxPt: num(t.oxPt),
+      oxMedidoEn: t.oxMedidoEn ? t.oxMedidoEn.toISOString() : null,
+      oxMedidoPor: t.oxMedidoPor,
+      d1d2MedidoEnPlanta: t.d1d2MedidoEnPlanta,
     }));
   }
 
@@ -2626,6 +2638,215 @@ export class WoodEntriesDB {
       .map((g) => ({ codigo: g.codigo, ids: g.piezas.map((p) => p.id) }));
 
     return { trozas, asignados, omitidas: plan.omitidas, sinCodigoNuevo: plan.sinCodigoNuevo, repetidos };
+  }
+
+  /**
+   * Guarda lo que el aserradero midió en el patio (Brandon 2026-09-26).
+   *
+   * Dos cosas, con reglas distintas (la decisión por pieza es `planearMedida`,
+   * pura y con test):
+   * - **Oxapampa** (pulgadas, pies): el pt lo calcula ACÁ el servidor con
+   *   `ptOxapampa` y queda congelado en `oxPt`. Es dato comercial: no lo frena
+   *   el mes cerrado y se puede corregir (vuelve a calcular y a congelar).
+   * - **D1/D2 en cm** cuando la guía no los trajo: sólo sobre NULL —el
+   *   `COALESCE` del UPDATE lo garantiza aunque otra tablet escriba en el
+   *   medio— y con el período abierto. Marca `d1d2MedidoEnPlanta` y completa
+   *   `diametroCm` (el promedio de los dos) SÓLO si también estaba vacío.
+   *   `volumenM3` no se toca: el volumen del libro sigue siendo el de la guía.
+   *
+   * Un UPDATE para las N piezas, bajo lock por pieza con `ORDER BY id` (dos
+   * tablets midiendo la misma guía no se abrazan). Devuelve las piezas releídas
+   * con la lectura del patio y lo que NO se guardó de cada una.
+   */
+  static async guardarMedidasTrozas(
+    tenantId: string,
+    cambios: CambioMedidaTroza[],
+    usuario = "unknown",
+  ): Promise<{ trozas: TrozaConsumible[]; rechazadas: { id: string; motivo: string }[] }> {
+    if (!tenantId) throw new Error("tenantId is required");
+    /* La misma pieza dos veces en el pedido: vale la última (la que se tipeó después). */
+    const porId = new Map<string, CambioMedidaTroza>();
+    for (const c of cambios) {
+      const id = c.id.trim();
+      if (id) porId.set(id, { ...c, id });
+    }
+    const ids = [...porId.keys()];
+    if (ids.length === 0) return { trozas: [], rechazadas: [] };
+
+    /* Los cierres se leen UNA vez (KV, fuera de la transacción) y cada pieza se
+       mira con la función pura. Antes se memorizaba por mes UTC: los cierres se
+       guardan en hora de Lima (`from` 05:00Z) y las guías a 00:00Z, así que la
+       guía del día 1 y la del 15 caían en la misma «clave» y quedaba lo que
+       dijera la primera fila que llegaba (revisión 26-09, reproducido). Sólo
+       importa para los centímetros. */
+    const [fechas, cierres] = await Promise.all([
+      prisma.woodEntryTroza.findMany({
+        where: { tenantId, id: { in: ids } },
+        select: { id: true, entry: { select: { entryDate: true } } },
+      }),
+      ForestCtpCierreDB.list(tenantId),
+    ]);
+    const cerradoPorId = new Map<string, string | null>();
+    for (const f of fechas) {
+      cerradoPorId.set(f.id, closedPeriodOf(cierres, f.entry.entryDate)?.label ?? null);
+    }
+
+    const num = (v: unknown) => (v == null ? null : Number(v));
+    const ahora = new Date().toISOString();
+
+    const { planes, antesPorId } = await prisma.$transaction(async (tx) => {
+      const filas = await tx.$queryRaw<
+        {
+          id: string;
+          codificacion: string | null;
+          codigoPlanta: string | null;
+          oxD1Pulg: unknown;
+          oxD2Pulg: unknown;
+          oxLargoPies: unknown;
+          oxPt: unknown;
+          d1Cm: unknown;
+          d2Cm: unknown;
+          noRecepcionada: boolean;
+          guiaViva: boolean;
+        }[]
+      >`
+        SELECT t."id", t."codificacion", t."codigoPlanta",
+               t."oxD1Pulg", t."oxD2Pulg", t."oxLargoPies", t."oxPt",
+               t."d1Cm", t."d2Cm", t."noRecepcionada",
+               (e."deletedAt" IS NULL AND e."status" NOT IN ('anulado', 'rechazado')) AS "guiaViva"
+        FROM "WoodEntryTroza" t
+        JOIN "WoodEntry" e ON e."id" = t."woodEntryId"
+        WHERE t."tenantId" = ${tenantId} AND t."id" = ANY(${ids}::text[])
+        ORDER BY t."id"
+        FOR UPDATE OF t
+      `;
+      const estado = new Map(filas.map((f) => [f.id, f]));
+      const planes: PlanMedida[] = ids.map((id) => {
+        const f = estado.get(id);
+        return planearMedida(
+          porId.get(id)!,
+          f && {
+            id: f.id,
+            oxD1Pulg: num(f.oxD1Pulg),
+            oxD2Pulg: num(f.oxD2Pulg),
+            oxLargoPies: num(f.oxLargoPies),
+            d1Cm: num(f.d1Cm),
+            d2Cm: num(f.d2Cm),
+            noRecepcionada: f.noRecepcionada,
+            guiaViva: f.guiaViva,
+            periodoCerrado: cerradoPorId.get(id) ?? null,
+          },
+        );
+      });
+
+      const aEscribir = planes.filter((p) => p.ox || p.cm);
+      if (aEscribir.length > 0) {
+        /* Los `::numeric`/`::boolean` NO son decoración: dentro de un VALUES
+           Postgres no infiere el tipo de un parámetro (ver `actualizarRecepcion`). */
+        const valores = aEscribir.map(
+          (p) => Prisma.sql`(
+            ${p.id}::text, ${p.ox != null}::boolean,
+            ${p.ox?.d1 ?? null}::numeric, ${p.ox?.d2 ?? null}::numeric,
+            ${p.ox?.largo ?? null}::numeric, ${p.ox?.pt ?? null}::numeric,
+            ${p.cm?.d1 ?? null}::numeric, ${p.cm?.d2 ?? null}::numeric
+          )`,
+        );
+        /* Borrar las tres medidas Oxapampa borra también quién y cuándo: una
+           troza sin cubicar no tiene «cubicada por». */
+        await tx.$executeRaw`
+          UPDATE "WoodEntryTroza" AS t SET
+            "oxD1Pulg"    = CASE WHEN v.set_ox THEN v.ox_d1 ELSE t."oxD1Pulg" END,
+            "oxD2Pulg"    = CASE WHEN v.set_ox THEN v.ox_d2 ELSE t."oxD2Pulg" END,
+            "oxLargoPies" = CASE WHEN v.set_ox THEN v.ox_l  ELSE t."oxLargoPies" END,
+            "oxPt"        = CASE WHEN v.set_ox THEN v.ox_pt ELSE t."oxPt" END,
+            "oxMedidoEn"  = CASE
+              WHEN NOT v.set_ox THEN t."oxMedidoEn"
+              WHEN v.ox_d1 IS NULL AND v.ox_d2 IS NULL AND v.ox_l IS NULL THEN NULL
+              ELSE ${ahora}::timestamp END,
+            "oxMedidoPor" = CASE
+              WHEN NOT v.set_ox THEN t."oxMedidoPor"
+              WHEN v.ox_d1 IS NULL AND v.ox_d2 IS NULL AND v.ox_l IS NULL THEN NULL
+              ELSE ${usuario}::text END,
+            -- Sólo sobre vacío: si otra pantalla lo llenó mientras tanto, queda el suyo.
+            "d1Cm" = COALESCE(t."d1Cm", v.d1),
+            "d2Cm" = COALESCE(t."d2Cm", v.d2),
+            "diametroCm" = CASE
+              WHEN t."diametroCm" IS NULL AND (v.d1 IS NOT NULL OR v.d2 IS NOT NULL)
+                AND COALESCE(t."d1Cm", v.d1) IS NOT NULL AND COALESCE(t."d2Cm", v.d2) IS NOT NULL
+              THEN round((COALESCE(t."d1Cm", v.d1) + COALESCE(t."d2Cm", v.d2)) / 2, 2)
+              ELSE t."diametroCm" END,
+            "d1d2MedidoEnPlanta" = t."d1d2MedidoEnPlanta"
+              OR (t."d1Cm" IS NULL AND v.d1 IS NOT NULL)
+              OR (t."d2Cm" IS NULL AND v.d2 IS NOT NULL)
+          FROM (VALUES ${Prisma.join(valores)})
+            AS v(id, set_ox, ox_d1, ox_d2, ox_l, ox_pt, d1, d2)
+          WHERE t."id" = v.id AND t."tenantId" = ${tenantId}
+        `;
+      }
+      return { planes, antesPorId: estado };
+    });
+
+    /* ── Auditoría: el pt es plata de un tercero, se narra antes → después ── */
+    const nombre = (id: string) => {
+      const f = antesPorId.get(id);
+      return f?.codigoPlanta?.trim() || f?.codificacion?.trim() || id;
+    };
+    const conOx = planes.filter((p) => p.ox);
+    if (conOx.length > 0) {
+      const pt = (v: number | null) => (v == null ? "sin pt" : `${fmtPt(v)} pt`);
+      const total = conOx.reduce((s, p) => s + (p.ox?.pt ?? 0), 0);
+      auditCtp({
+        tenantId,
+        action: "ctp_troza_cubicacion_oxapampa",
+        entity: "WoodEntryTroza",
+        entityId: conOx[0].id,
+        detail:
+          `Cubicó en Oxapampa ${conOx.length} troza(s) · Σ ${fmtPt(total)} pt: ` +
+          conOx
+            .slice(0, 40)
+            .map((p) => {
+              const antes = num(antesPorId.get(p.id)?.oxPt);
+              return `${nombre(p.id)} ${p.ox?.d1 ?? "—"}"×${p.ox?.d2 ?? "—"}"×${p.ox?.largo ?? "—"}' ${pt(antes)} → ${pt(p.ox?.pt ?? null)}`;
+            })
+            .join(", ") +
+          (conOx.length > 40 ? ` y ${conOx.length - 40} más` : ""),
+        user: usuario,
+      });
+    }
+    const conCm = planes.filter((p) => p.cm);
+    if (conCm.length > 0) {
+      auditCtp({
+        tenantId,
+        action: "ctp_troza_d1d2_planta",
+        entity: "WoodEntryTroza",
+        entityId: conCm[0].id,
+        detail:
+          `Cargó en planta D1/D2 que la guía no traía en ${conCm.length} troza(s): ` +
+          conCm
+            .slice(0, 40)
+            .map((p) => `${nombre(p.id)} ${p.cm?.d1 ?? "—"}×${p.cm?.d2 ?? "—"} cm`)
+            .join(", ") +
+          (conCm.length > 40 ? ` y ${conCm.length - 40} más` : ""),
+        user: usuario,
+      });
+    }
+    if (conOx.length > 0 || conCm.length > 0) {
+      try {
+        invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+      } catch {}
+    }
+
+    const encontradas = ids.filter((id) => antesPorId.has(id));
+    const trozas = await WoodEntriesDB.trozasComoConsumibles(tenantId, {
+      ids: encontradas,
+      limite: Math.max(encontradas.length, 1),
+    });
+    const orden = new Map(ids.map((id, i) => [id, i]));
+    trozas.sort((a, b) => (orden.get(a.id) ?? 0) - (orden.get(b.id) ?? 0));
+    return {
+      trozas,
+      rechazadas: planes.flatMap((p) => p.rechazos.map((motivo) => ({ id: p.id, motivo }))),
+    };
   }
 
   /**
@@ -3445,6 +3666,9 @@ export class WoodEntriesDB {
                N° de registro del libro, como la ficha que lleva el QR. */
             serforNumeroRegistro: true,
             volumeM3: true,
+            /* Las fotos de la carga (ADR-434, iguales en todas las filas de la
+               guía): la tarjeta del QR (`/admin/q/<id>`) muestra la primera. */
+            photos: true,
           },
         },
         trozaOrigen: {

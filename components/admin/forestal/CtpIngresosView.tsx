@@ -89,6 +89,7 @@ import {
 } from "@/lib/forestal/ingresos-filtros-columna";
 import CtpCuadrarGuiaModal from "./CtpCuadrarGuiaModal";
 import CtpGuiaFichaModal from "./CtpGuiaFichaModal";
+import CtpCubicarOxapampaModal from "./CtpCubicarOxapampaModal";
 import CtpAcomodarTrozasModal from "./CtpAcomodarTrozasModal";
 import type { AlcanceAcomodoCliente } from "@/hooks/use-acomodar-trozas";
 import CtpCostoGuiaModal, { type GuiaACostear } from "./CtpCostoGuiaModal";
@@ -249,6 +250,12 @@ export default function CtpIngresosView({
   const [ponerPrecio, setPonerPrecio] = useState(false);
   const [fichaTrozas, setFichaTrozas] = useState<TrozaDeGuia[] | null>(null);
   const [fichaError, setFichaError] = useState<string | null>(null);
+  /**
+   * La planilla «Cubicar Oxapampa» (2026-09-26): desde la ficha se abre ENCIMA
+   * de ella (`desdeFicha`); desde el menú de la guía, sola. `trozas: null` =
+   * cargando.
+   */
+  const [cubicar, setCubicar] = useState<{ guia: GuiaIngreso<WoodEntry>; trozas: TrozaDeGuia[] | null; desdeFicha: boolean } | null>(null);
   /** «Acomodar trozas en su especie» (ADR-435): de la ficha (una guía) o de Opciones (todas). */
   const [acomodar, setAcomodar] = useState<{ alcance: AlcanceAcomodoCliente; descripcion: string; desdeFicha: boolean } | null>(null);
   /** La guía que se está CUADRANDO: declara un volumen y sus piezas suman otro (ADR-353). */
@@ -744,6 +751,39 @@ export default function CtpIngresosView({
       pushToast({ tono: "error", msg: "No se pudieron generar las etiquetas", detail: err instanceof Error ? err.message : String(err) });
     }
   }, [pushToast]);
+
+  /** Abre «Cubicar Oxapampa»; si no vienen las piezas (desde el menú), las pide. */
+  const abrirCubicar = useCallback(
+    async (guia: GuiaIngreso<WoodEntry>, desdeFicha: boolean, ya?: TrozaDeGuia[] | null) => {
+      setCubicar({ guia, trozas: ya ?? null, desdeFicha });
+      if (ya) return;
+      try {
+        const trozas = await piezasDeGuia(guia);
+        setCubicar((c) => (c && c.guia.clave === guia.clave ? { ...c, trozas } : c));
+      } catch (err) {
+        setCubicar(null);
+        pushToast({ tono: "error", msg: "No se pudieron leer las trozas", detail: err instanceof Error ? err.message : String(err) });
+      }
+    },
+    [piezasDeGuia, pushToast],
+  );
+
+  /**
+   * Después de guardar medidas: la planilla y la ficha de atrás releen las
+   * piezas (el PATCH ya invalidó el caché de trozas). La planilla no pisa lo
+   * tipeado: sólo toma el código y las medidas de la guía para mostrar.
+   */
+  const releerCubicada = useCallback(
+    (guia: GuiaIngreso<WoodEntry>) => {
+      piezasDeGuia(guia)
+        .then((trozas) => {
+          setCubicar((c) => (c && c.guia.clave === guia.clave ? { ...c, trozas } : c));
+          if (fichaGuia?.clave === guia.clave) setFichaTrozas(trozas);
+        })
+        .catch((err) => logger.warn("[ingresos] no se pudieron releer las piezas cubicadas", { error: String(err) }));
+    },
+    [piezasDeGuia, fichaGuia],
+  );
 
   /** Duplicar: abre el form con lo que se repite; GTF y volumen quedan vacíos. */
   const duplicar = useCallback((e: WoodEntry) => {
@@ -1241,6 +1281,7 @@ export default function CtpIngresosView({
         /* ADR-435 desde la fila o la tarjeta: sólo ESTA guía, sin pasar por la ficha. */
         onAcomodar={firma ? (g) => setAcomodar({ alcance: { woodEntryId: g.lineas[0]!.id }, descripcion: `Guía ${g.gtfNumber}`, desdeFicha: false }) : undefined}
         onImprimirEtiquetas={(g) => void imprimirEtiquetasDeGuia(g)}
+        onCubicarOxapampa={(g) => void abrirCubicar(g, false)}
         sort={sort}
         onSort={ordenar}
       />
@@ -1430,7 +1471,20 @@ export default function CtpIngresosView({
           onEtiquetas={() => { const g = fichaGuia; setFichaGuia(null); setFichaTrozas(null); void imprimirEtiquetasDeGuia(g); }}
           onFotos={fichaGuia.lineas[0] ? () => { const e = fichaGuia.lineas[0]!; setFichaGuia(null); setFichaTrozas(null); setDetail(e); } : undefined}
           onCorregirRecepcion={firma ? () => { const g = fichaGuia; setFichaGuia(null); setFichaTrozas(null); setCorregirRecepcion({ inicial: g.clave }); } : undefined}
+          /* La planilla SÍ se apila: se mide, se guarda y se vuelve a la ficha
+             con la lista ya releída. */
+          onCubicar={() => void abrirCubicar(fichaGuia, true, fichaTrozas)}
           onClose={() => { setFichaGuia(null); setFichaTrozas(null); setFichaError(null); }}
+        />
+      )}
+
+      {cubicar && (
+        <CtpCubicarOxapampaModal
+          contexto={`Guía ${cubicar.guia.gtfNumber} · ${cubicar.guia.providerName}`}
+          trozas={cubicar.trozas}
+          aboveModals={cubicar.desdeFicha}
+          onGuardado={() => releerCubicada(cubicar.guia)}
+          onClose={() => setCubicar(null)}
         />
       )}
 

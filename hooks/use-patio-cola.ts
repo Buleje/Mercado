@@ -5,10 +5,21 @@
  *
  * Escucha `online`/`offline` y sincroniza sola al volver la conexión. También
  * reintenta cada tanto estando online: el `online` del navegador miente seguido
- * en el patio (wifi conectado, sin salida real a internet).
+ * en el patio (wifi conectado, sin salida real a internet). Y sube al momento
+ * cuando se lo piden (`pedirSubida`: algo quedó detrás de otra anotación con
+ * señal); un pedido que llega con una vuelta en curso no se pierde: se hace
+ * otra vuelta al terminar.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { contar, EVENTO_CAMBIO, listar, reintentar, sincronizar, type AnotacionPatio } from "@/lib/forestal/patio-cola";
+import {
+  contar,
+  EVENTO_CAMBIO,
+  EVENTO_SUBIR,
+  listar,
+  reintentar,
+  sincronizar,
+  type AnotacionPatio,
+} from "@/lib/forestal/patio-cola";
 
 /** Cada cuánto se reintenta estando online (ms). */
 const LATIDO = 60_000;
@@ -31,6 +42,8 @@ export function usePatioCola(): PatioColaState {
   const [rechazadas, setRechazadas] = useState(0);
   const [sincronizando, setSincronizando] = useState(false);
   const corriendo = useRef(false);
+  /** Se pidió subir con una vuelta en curso: al terminar, otra. */
+  const otraVuelta = useRef(false);
 
   const refrescar = useCallback(async () => {
     try {
@@ -45,16 +58,23 @@ export function usePatioCola(): PatioColaState {
   }, []);
 
   const sync = useCallback(async () => {
-    if (corriendo.current) return;
+    if (corriendo.current) {
+      otraVuelta.current = true;
+      return;
+    }
     corriendo.current = true;
     setSincronizando(true);
     try {
-      await sincronizar();
+      do {
+        otraVuelta.current = false;
+        await sincronizar();
+      } while (otraVuelta.current);
       await refrescar();
     } catch {
       // Un fallo de sync no rompe la pantalla: queda para el próximo latido.
     } finally {
       corriendo.current = false;
+      otraVuelta.current = false;
       setSincronizando(false);
     }
   }, [refrescar]);
@@ -69,14 +89,17 @@ export function usePatioCola(): PatioColaState {
     const alVolver = () => { setOnline(true); void sync(); };
     const alCaerse = () => setOnline(false);
     const alAnotar = () => { void refrescar(); };
+    const alPedir = () => { if (navigator.onLine) void sync(); };
     window.addEventListener("online", alVolver);
     window.addEventListener("offline", alCaerse);
     window.addEventListener(EVENTO_CAMBIO, alAnotar);
+    window.addEventListener(EVENTO_SUBIR, alPedir);
     const t = setInterval(() => { if (navigator.onLine) void sync(); }, LATIDO);
     return () => {
       window.removeEventListener("online", alVolver);
       window.removeEventListener("offline", alCaerse);
       window.removeEventListener(EVENTO_CAMBIO, alAnotar);
+      window.removeEventListener(EVENTO_SUBIR, alPedir);
       clearInterval(t);
     };
   }, [refrescar, sync]);

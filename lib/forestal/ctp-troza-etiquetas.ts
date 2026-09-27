@@ -38,6 +38,7 @@
 import { motivoBloqueo, type TrozaConsumible } from "./consumo-trozas";
 import { formatDateNumeric, formatWeekday } from "@/lib/format";
 import { code128Svg } from "./code128";
+import { fmtPt } from "./cubicacion-formato";
 import { esc, openCtpReport } from "./ctp-print-shared";
 import { PARAM_TROZA, TAB_LIBRO_CTP, urlCortaDeTroza } from "./ctp-troza-url";
 import { codigoDeEtiqueta, medidasDeFicha, partesDeMedidas, textoFichaDeTroza } from "./ficha-texto-troza";
@@ -263,6 +264,11 @@ export function htmlEtiqueta(
   /* D1·D2 en una línea y largo·m³ en otra: en una sola, el «…» del sticker se
      comía el largo o los m³. */
   const segunda = [largo, vol].filter(Boolean).join(" · ");
+  /* El PT Oxapampa (la cubicación propia, con la que se compra, vende y paga
+     flete) va en el pie cuando la troza ya se cubicó: en la etiqueta no entra
+     otra línea sin achicar el código. Va antes del permiso para que, si falta
+     lugar, el «…» se coma el permiso (que igual está en la ficha del QR). */
+  const ptOx = t.oxPt != null && Number.isFinite(Number(t.oxPt)) && Number(t.oxPt) > 0 ? `${fmtPt(Number(t.oxPt))} PT` : null;
   const dos = Boolean(opts.qrChicoSvg);
   return `<div class="etq${dos ? " dos" : ""}">
     <div class="txt">
@@ -275,7 +281,7 @@ export function htmlEtiqueta(
     ${barras ? `<div class="bar">${barras}</div>` : ""}
     <div class="qr" role="img" aria-label="${dos ? `Ficha de la troza ${esc(codigo)}` : `QR ${esc(codigo)}`}">${qrSvg}</div>
     ${dos ? `<div class="chico" role="img" aria-label="Troza ${esc(codigo)} en el sistema">${opts.qrChicoSvg}</div>` : ""}
-    <div class="pie"><span>${esc(t.gtfNumber ?? "sin GTF")}</span>${t.permiso ? `<span>${esc(t.permiso)}</span>` : ""}</div>
+    <div class="pie"><span>${esc(t.gtfNumber ?? "sin GTF")}</span>${ptOx ? `<b class="ptox">${esc(ptOx)}</b>` : ""}${t.permiso ? `<span class="perm">${esc(t.permiso)}</span>` : ""}</div>
   </div>`;
 }
 
@@ -308,6 +314,8 @@ export function cssEtiquetas(formato: FormatoEtiqueta): string {
     .pie { grid-area: pie; display: flex; justify-content: space-between; gap: 2mm; font-family: "Courier New", monospace; line-height: 1.15;
            border-top: .5pt dashed #000; white-space: nowrap; overflow: hidden; }
     .pie span { overflow: hidden; text-overflow: ellipsis; }
+    .pie > :first-child, .pie .ptox { white-space: nowrap; flex-shrink: 0; }
+    .pie .perm { min-width: 0; }
   `;
   switch (formato) {
     case "a4-3x7":
@@ -350,7 +358,7 @@ export function cssEtiquetas(formato: FormatoEtiqueta): string {
         /* En 28 mm no entran la GTF y el permiso: quedaba «001-00… 19-SEC/REG-PL…».
            Va la GTF entera; el permiso está en la ficha del QR grande. */
         .etq.dos .pie { border-top: 0; padding-top: 0; }
-        .etq.dos .pie span + span { display: none; }
+        .etq.dos .pie .perm { display: none; }
         .etq.dos .bar { align-self: end; }`;
     case "rollo-100x50":
       return `${comun}

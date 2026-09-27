@@ -60,6 +60,7 @@ export default function CtpGuiaCardMobile({
   onCorregirRecepcion,
   onAcomodar,
   onImprimirEtiquetas,
+  onCubicarOxapampa,
 }: Omit<ManejadoresDeGuia, "asientos" | "onStartReject" | "onDetail" | "onChain" | "onDuplicate" | "onEdit"> & {
   guia: Guia;
   fotosEspecie: ReturnType<typeof useEspeciesFotos>["indice"];
@@ -96,6 +97,7 @@ export default function CtpGuiaCardMobile({
     onCorregirRecepcion,
     onAcomodar,
     onImprimirEtiquetas,
+    onCubicarOxapampa,
     onDetail: actionProps.onDetail,
     onChain: actionProps.onChain,
     onDuplicate: actionProps.onDuplicate,

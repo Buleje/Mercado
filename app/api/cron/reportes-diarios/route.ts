@@ -8,8 +8,10 @@ import { cronReportesDiarios } from "@/lib/forestal/reporte-diario-cron";
  * reporte sale una sola vez por día. Por eso sirve cualquier disparador:
  *  · los crons diarios de `vercel.json` (plan Hobby: sólo diarios, y cada uno
  *    cae en cualquier minuto de su hora — ver `DISPAROS_LIMA`);
- *  · un disparador externo cada 30 min (cron-job.org, Supabase pg_cron, GitHub
- *    Actions) con `Authorization: Bearer <CRON_SECRET>`, para la hora exacta.
+ *  · un disparador externo cada 30 min, para la hora exacta: ése llama a
+ *    `/api/cron/reportes-diarios/hora-exacta` (deja el latido que hace que el
+ *    editor prometa la hora; runbook `docs/runbooks/reportes-hora-exacta.md`).
+ *    La raíz despacha igual, pero sin latido.
  *
  * `vercel.json` llama a `/api/cron/reportes-diarios/<hora>` (ver `[disparo]`):
  * una ruta por disparo para que cada cron tenga su propio path.

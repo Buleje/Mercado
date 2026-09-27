@@ -2,8 +2,9 @@
  * ctp-troza-url — las direcciones de la ficha de una troza, sin nada de cliente.
  *
  * Vive aparte de `ctp-troza-etiquetas.ts` (que es `"use client"` porque abre la
- * ventana de impresión) para que la ruta corta `/admin/q/[id]` —un route
- * handler del servidor— pueda armar el mismo destino sin importar código de navegador.
+ * ventana de impresión) para que la ruta corta `/admin/q/[id]` —desde el
+ * 2026-09-26 la tarjeta de la troza, una página que valida el id en el
+ * servidor— pueda usarlas sin importar código de navegador.
  *
  * Por qué una ruta corta: el QR de la etiqueta codificaba
  * `/admin?tab=ctp-libro-operaciones&vista=trozas&troza=<id>` (93 caracteres →

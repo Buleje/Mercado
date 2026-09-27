@@ -44,10 +44,12 @@ interface Estado {
   reportes: ReporteDiario[];
   envios: Record<string, EnvioDeReporte[]>;
   disparos: string[];
+  /** El disparador de cada media hora está vivo (latido < 65 min): se promete la hora exacta. */
+  horaExacta: boolean;
   canales: { correo: boolean; whatsapp: boolean };
 }
 
-const VACIO: Estado = { reportes: [], envios: {}, disparos: [], canales: { correo: true, whatsapp: true } };
+const VACIO: Estado = { reportes: [], envios: {}, disparos: [], horaExacta: false, canales: { correo: true, whatsapp: true } };
 
 /** `{ ok, j }` sin tirar: un 422 trae el motivo que hay que mostrar. */
 async function pedir<T>(url: string, init: RequestInit = {}): Promise<{ ok: true; j: T } | { ok: false; motivo: string }> {

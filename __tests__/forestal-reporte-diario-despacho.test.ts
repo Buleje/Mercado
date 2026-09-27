@@ -205,6 +205,26 @@ describe("si fallaron TODOS los canales, se reintenta en el próximo disparo del
     expect(H.estado.filas[0].ultimaFechaEnviada).toBe("2026-09-26");
   });
 
+  it("hora exacta (tics cada 30 min): uno de las 18:30 sale en el tic de las 18:30, una vez; caído, 3 intentos y cierra", async () => {
+    // pg_cron `*/30` llega ~2 s después de cada tic: 18:00, 18:30, 19:00 … 20:30 de Lima.
+    const tics = Array.from({ length: 6 }, (_, i) => new Date(Date.parse("2026-09-26T18:00:02-05:00") + i * 30 * 60_000));
+    H.estado.correoOk = true;
+    H.estado.filas = [fila({ hora: "18:30" })];
+    const enviadosOk = [];
+    for (const t of tics) enviadosOk.push((await despacharReportesDiarios(t)).enviados);
+    expect(enviadosOk).toEqual([0, 1, 0, 0, 0, 0]);
+
+    // Con los dos canales caídos: 18:30, 19:00 y 19:30; después, el día queda cerrado.
+    H.estado.correoOk = false;
+    H.estado.correos = [];
+    H.estado.filas = [fila({ id: "rep2", hora: "18:30" })];
+    const intentos = [];
+    for (const t of tics) intentos.push((await despacharReportesDiarios(t)).enviados);
+    expect(intentos).toEqual([0, 1, 1, 1, 0, 0]);
+    expect(H.estado.correos).toHaveLength(TOPE_INTENTOS_DIA);
+    expect(H.estado.filas[0].ultimaFechaEnviada).toBe("2026-09-26");
+  });
+
   it("al día siguiente, la marca de reintento de ayer no le impide salir", async () => {
     H.estado.correoOk = true;
     H.estado.filas = [fila({ ultimaFechaEnviada: "2026-09-25#2" })];

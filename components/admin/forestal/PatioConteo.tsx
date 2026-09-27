@@ -8,14 +8,16 @@
  * contra lo que de verdad se encuentra. Acá lo esperado es el patio libre —
  * `motivoBloqueo === null` Y la guía ya recepcionada (`aTrozaDelConteo`: una
  * guía cargada al libro pero que no bajó del camión no es patio físico) — y
- * el resultado son tres listas: Encontradas, Faltan y Sorpresas. El conteo se
- * guarda en el equipo (sobrevive a recargar y a perder señal) y al terminar
- * sale un acta imprimible. No escribe en la base.
+ * el resultado son tres listas: Encontradas, Faltan y Sorpresas. Mientras se
+ * cuenta, todo se guarda en el equipo (sobrevive a recargar y a perder señal).
+ * Al terminar sale el acta imprimible y el acta se guarda en el libro
+ * (`useActaDelConteo`, 2026-09-26) para que la vea todo el negocio en la
+ * pestaña Trozas. No mueve saldos.
  */
 
 import { useMemo, useState } from "react";
 import {
-  AlertTriangle, ArrowLeft, CheckCircle2, ClipboardList, Loader2, RotateCcw, WifiOff,
+  AlertTriangle, ArrowLeft, CheckCircle2, ClipboardCheck, ClipboardList, Loader2, RotateCcw, WifiOff,
 } from "@buleje/design-system/icons";
 import { PageTitle } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -26,12 +28,49 @@ import { openCtpReport } from "@/lib/forestal/ctp-print-shared";
 import { LABEL_BLOQUEO } from "@/lib/forestal/consumo-trozas";
 import EscanerTrozas, { nombreDeTroza } from "./EscanerTrozas";
 import ListasDelConteo from "./patio-conteo-listas";
+import { useActaDelConteo, type EstadoActa } from "./hooks/use-acta-del-conteo";
 
 const BOTON =
   "inline-flex h-12 items-center justify-center gap-2 rounded-2xl px-4 text-base font-bold transition-colors";
 const BOTON_BORDE = `${BOTON} border border-[var(--rule-base)] text-[var(--text-primary)] hover:border-[var(--accent)]`;
 const AVISO_AMBAR =
   "flex items-start gap-2 rounded-2xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/10 px-4 py-3 text-base font-bold text-[var(--data-warning-ink)] dark:text-[var(--data-warning-500)]";
+
+/** Qué pasó con el acta en el libro, en una línea. */
+function EstadoDelActa({ estado, mensaje, onReintentar }: { estado: EstadoActa; mensaje: string | null; onReintentar: () => void }) {
+  if (estado === "nada") return null;
+  if (estado === "subiendo") {
+    return (
+      <p className="flex items-center gap-2 text-base text-[var(--text-secondary)]" role="status">
+        <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> Guardando el acta en el libro…
+      </p>
+    );
+  }
+  if (estado === "guardada") {
+    return (
+      <p className="flex items-start gap-2 text-base font-bold text-[var(--data-success-ink)] dark:text-[var(--data-success-500)]" role="status" data-acta-estado="guardada">
+        <ClipboardCheck className="mt-0.5 h-5 w-5 shrink-0" aria-hidden /> Acta guardada en el libro: la ven todos en Trozas.
+      </p>
+    );
+  }
+  if (estado === "en-equipo") {
+    return (
+      <p className={AVISO_AMBAR} role="status" data-acta-estado="en-equipo">
+        <WifiOff className="mt-0.5 h-5 w-5 shrink-0" aria-hidden /> Sin señal: el acta quedó en esta tablet y se sube sola al volver la señal.
+      </p>
+    );
+  }
+  return (
+    <div className="space-y-2" role="alert" data-acta-estado="error">
+      <p className={AVISO_AMBAR}>
+        <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" aria-hidden /> El acta no se guardó en el libro: {mensaje}
+      </p>
+      <button type="button" onClick={onReintentar} className={BOTON_BORDE}>
+        <RotateCcw className="h-5 w-5" aria-hidden /> Reintentar
+      </button>
+    </div>
+  );
+}
 
 /** Abre el acta en el MISMO clic: tras un `await` el navegador bloquea la ventana. */
 function abrirActa(c: ConteoPatio, negocio: string | null): string | null {
@@ -48,6 +87,7 @@ export default function PatioConteo({ onVolver }: { onVolver: () => void }) {
   const [errorActa, setErrorActa] = useState<string | null>(null);
   const [borrando, setBorrando] = useState(false);
   const { conteo } = h;
+  const acta = useActaDelConteo(conteo);
   const resumen = useMemo(() => (conteo ? resumirConteo(conteo) : null), [conteo]);
   const yaContadas = useMemo(
     () => new Set((conteo?.lecturas ?? []).flatMap((l) => (l.trozaId ? [l.trozaId] : []))),
@@ -85,7 +125,7 @@ export default function PatioConteo({ onVolver }: { onVolver: () => void }) {
         <InfoTip
           title="Contar el patio"
           what="Escanea cada troza que ves en la pila. Te dice cuáles faltan y cuáles no deberían estar."
-          affects="Se guarda en este equipo: si recargas o pierdes señal, sigues donde ibas. No cambia el libro."
+          affects="Mientras cuentas se guarda en este equipo: si recargas o pierdes señal, sigues donde ibas. Al terminar, el acta queda en el libro (pestaña Trozas) para todos. No mueve saldos."
           example="Encuentras 80 de 84: las 4 que faltan salen por especie o guía para ir a buscarlas."
           side="left"
         />
@@ -157,6 +197,7 @@ export default function PatioConteo({ onVolver }: { onVolver: () => void }) {
                 <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0" aria-hidden />
                 Conteo terminado {fechaHoraCorta(conteo.terminadoEn ?? conteo.iniciadoEn)}.
               </p>
+              <EstadoDelActa estado={acta.estado} mensaje={acta.mensaje} onReintentar={acta.reintentar} />
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"

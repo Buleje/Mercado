@@ -19,6 +19,7 @@ import { fichaDeTroza, type TonoPatio } from "@/lib/forestal/patio-vista";
 import { antiguedad, buscarLocal, esViejo, guardar, leer } from "@/lib/forestal/patio-cache";
 import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import {
+  VENTANA_FICHA_MS,
   consumibleDeFicha,
   esFichaDeTroza,
   esLineaDeFicha,
@@ -65,6 +66,8 @@ export default function PatioBuscador() {
   const abortRef = useRef<AbortController | null>(null);
   /** Lo último que se buscó: vuelve al campo si la pistola tipea una línea suelta de la ficha. */
   const ultimaBusquedaRef = useRef("");
+  /** Hasta cuándo lo que llega es el resto de una ficha que la pistola sigue tipeando. */
+  const fichaHastaRef = useRef(0);
 
   // Se abre enfocado: la primera acción del patio es tipear un número.
   useEffect(() => {
@@ -84,9 +87,21 @@ export default function PatioBuscador() {
     /* La pistola 2D tipea la ficha del QR grande línea por línea: `TROZA 118`
        ya buscó; `Titular: …` y las demás no son códigos y no pueden pisar esa
        búsqueda con «ninguna troza» (revisión 26-09, reproducido). */
-    if (esLineaDeFicha(crudo)) return;
-    ultimaBusquedaRef.current = crudo;
+    if (esLineaDeFicha(crudo)) {
+      fichaHastaRef.current = Date.now() + VENTANA_FICHA_MS;
+      return;
+    }
     const lectura = leerEscaneo(crudo);
+    /* Sin sus íconos (una pistola que no tipea emoji), `Cachimbo` o `2.412 m³`
+       llegan como si fueran un código: dentro de la ventana de la ficha se
+       callan, salvo otra ficha o el QR chico de otra troza. */
+    if (Date.now() < fichaHastaRef.current && !esFichaDeTroza(crudo) && lectura?.tipo !== "id") {
+      fichaHastaRef.current = Date.now() + VENTANA_FICHA_MS;
+      setQ(ultimaBusquedaRef.current);
+      return;
+    }
+    if (esFichaDeTroza(crudo)) fichaHastaRef.current = Date.now() + VENTANA_FICHA_MS;
+    ultimaBusquedaRef.current = crudo;
     if (!lectura) {
       setError(esFichaDeTroza(crudo) ? "Esa troza no tiene código: escanea su QR chico." : "Eso no es el código de una troza.");
       setHallazgos(null);

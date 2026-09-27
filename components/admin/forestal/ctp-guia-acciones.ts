@@ -22,6 +22,7 @@ import {
   FolderOpen,
   Pencil,
   QrCode,
+  Ruler,
   Share2,
   ThumbsDown,
 } from "@buleje/design-system/icons";
@@ -49,6 +50,12 @@ export interface ManejadoresDeGuia {
    * (ADR-436). Sin esto no se ofrece «Etiquetas de sus trozas».
    */
   onImprimirEtiquetas?: (g: Guia) => void;
+  /**
+   * La planilla «Cubicar Oxapampa» de las trozas de esta guía (2026-09-26):
+   * pulgadas y pies → PT, con que se paga madera, flete y servicio. Sin esto
+   * no se ofrece.
+   */
+  onCubicarOxapampa?: (g: Guia) => void;
   /** Los casilleros de papeles de la guía (ADR-438). Sin esto no se ofrece. */
   onDocumentos?: (g: Guia) => void;
   /** Cuántos de los 6 casilleros tienen archivo (para el rótulo); sin medir, `undefined`. */
@@ -116,6 +123,18 @@ export function accionesDeGuia(guia: Guia, h: ManejadoresDeGuia): MenuAccion[] {
           hint: "QR grande con la ficha (se lee sin internet), QR chico del sistema y código de barras",
           icon: QrCode,
           onSelect: () => h.onImprimirEtiquetas?.(guia),
+        } satisfies MenuAccion]
+      : []),
+    /* La medida propia, con la cinta en pulgadas y pies: la de SERFOR (m³,
+       Smalian) queda para el libro. Sólo con trozas cargadas: sin piezas no
+       hay filas que medir. */
+    ...(h.onCubicarOxapampa && guia.trozasCount > 0
+      ? [{
+          id: "cubicar-oxapampa",
+          label: "Cubicar Oxapampa",
+          hint: "Cada troza en pulgadas y pies → PT para pagar madera, flete y servicio",
+          icon: Ruler,
+          onSelect: () => h.onCubicarOxapampa?.(guia),
         } satisfies MenuAccion]
       : []),
     /* Las fotos se guardan en TODAS las filas de la GTF (ADR-434): abrir el

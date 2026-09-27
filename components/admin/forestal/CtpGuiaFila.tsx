@@ -104,6 +104,7 @@ export default function FilaGuia({
   onCorregirRecepcion,
   onAcomodar,
   onImprimirEtiquetas,
+  onCubicarOxapampa,
   onAlternarDetalle,
   onAlternarMarca,
 }: FilaGuiaProps) {
@@ -139,6 +140,7 @@ export default function FilaGuia({
     onCorregirRecepcion,
     onAcomodar,
     onImprimirEtiquetas,
+    onCubicarOxapampa,
     onDetail: actionProps.onDetail,
     onChain: actionProps.onChain,
     onDuplicate: actionProps.onDuplicate,

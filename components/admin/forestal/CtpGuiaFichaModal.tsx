@@ -30,6 +30,7 @@ import { normalizarFotos } from "@/lib/forestal/fotos-carga";
 import { completitudFicha, seccionesDeGuia, type LineaConGuia } from "@/lib/forestal/guia-ficha";
 import type { GuiaIngreso } from "@/lib/forestal/ingresos-por-guia";
 import { ptDeLinea } from "@/lib/forestal/plata-de-guia";
+import { resumenOxapampa } from "@/lib/forestal/cubicacion-oxapampa";
 import { Btn, ModalBody, ModalFooter, type WoodEntry } from "./ctp-shared";
 import FichaCabecera from "./ficha-guia/FichaCabecera";
 import FichaAvisos from "./ficha-guia/FichaAvisos";
@@ -52,6 +53,8 @@ export interface TrozaDeFicha {
   especieCientifica?: string | null;
   d1Cm?: number | null;
   d2Cm?: number | null;
+  /** El diámetro declarado como UN número, cuando la guía no trae D1/D2. */
+  diametroCm?: number | null;
   largoM?: number | null;
   volumenM3?: number | string | null;
   fechaRecepcion?: string | null;
@@ -62,6 +65,15 @@ export interface TrozaDeFicha {
   descarte?: boolean | null;
   retrozos?: number | null;
   etiquetadaEn?: string | null;
+  /* Cubicación Oxapampa (2026-09-26), del mismo `serializar` del endpoint de
+     trozas (`?woodEntryId=`): pulgadas, pies y el pt congelado al guardar. */
+  oxD1Pulg?: number | null;
+  oxD2Pulg?: number | null;
+  oxLargoPies?: number | null;
+  oxPt?: number | null;
+  oxMedidoEn?: string | null;
+  /** D1/D2 en cm cargados en planta porque la guía no los traía. */
+  d1d2MedidoEnPlanta?: boolean | null;
 }
 
 export default function CtpGuiaFichaModal({
@@ -78,6 +90,7 @@ export default function CtpGuiaFichaModal({
   onEtiquetas,
   onFotos,
   onCorregirRecepcion,
+  onCubicar,
   onClose,
 }: {
   guia: GuiaIngreso<WoodEntry>;
@@ -101,6 +114,8 @@ export default function CtpGuiaFichaModal({
   onEtiquetas?: () => void;
   onFotos?: () => void;
   onCorregirRecepcion?: () => void;
+  /** «Cubicar Oxapampa»: se abre ENCIMA de la ficha (planilla que vuelve a ella). */
+  onCubicar?: () => void;
   onClose: () => void;
 }) {
   const plata = usePlataDeGuia(guia.gtfNumber);
@@ -135,6 +150,7 @@ export default function CtpGuiaFichaModal({
   /* ≈ pt aserrable: el MISMO cálculo que «Plata de la guía» (rolliza al 56 %).
      La ficha vieja decía m³ × 424 y la misma pila salía con dos cifras. */
   const pt = guia.lineas.reduce((s, l) => s + ptDeLinea({ volumeM3: Number(l.volumeM3) || 0, productType: l.productType }), 0);
+  const oxapampa = useMemo(() => (trozas ? { ...resumenOxapampa(trozas), total: trozas.length } : null), [trozas]);
   const especies = useMemo(
     () => [...new Set((trozas ?? []).map((t) => t.especieComun ?? "").filter(Boolean))],
     [trozas],
@@ -224,6 +240,7 @@ export default function CtpGuiaFichaModal({
             onAbrir={onPlata}
             ocupado={ocupado}
             indice={3}
+            pt={{ estimado: pt, oxapampa }}
           />
           <BloqueTrozas
             trozas={trozas}
@@ -232,6 +249,8 @@ export default function CtpGuiaFichaModal({
             especies={especies}
             indice={4}
             className="@min-[56rem]/ficha:col-span-2"
+            onCubicar={onCubicar}
+            ocupado={ocupado}
           />
           <BloqueDocumentoGtf
             secciones={secciones}
