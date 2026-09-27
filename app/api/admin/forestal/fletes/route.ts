@@ -5,7 +5,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
-import { ForestFleteDB } from "@/lib/db/forest-flete.db";
+import { FleteError, ForestFleteDB } from "@/lib/db/forest-flete.db";
 import { ESTADOS_PAGO, fleteInputSchema, type EstadoPago } from "@/lib/forestal/fletes";
 
 /**
@@ -13,8 +13,10 @@ import { ESTADOS_PAGO, fleteInputSchema, type EstadoPago } from "@/lib/forestal/
  *
  * GET    lista (`desde`, `hasta` ISO · `estadoPago` · `gtf`) · `?candidatos=1`
  *        trae las guías de ingreso con transportista/placa que aún no tienen
- *        su viaje anotado (ADR-318 addendum, Brandon 2026-08-20)
- * POST   alta/edición (`id` para editar)
+ *        su viaje anotado (ADR-318 addendum, Brandon 2026-08-20) · `?ptGuia=<gtf>`
+ *        el PT de esa guía para cobrar por pt (ADR-440 §6): `{ pt }`
+ * POST   alta/edición (`id` para editar). Con `tarifaPorPt` el monto lo pone el
+ *        servidor; 409 `CUBICACION_CAMBIO` · 422 `SIN_GUIA`/`GUIA_SIN_PT`
  * PATCH  marca pagado/pendiente
  * DELETE baja lógica (`?id=`)
  *
@@ -49,6 +51,18 @@ export const GET = withApiHandler("forestal-fletes-get", async (req: NextRequest
   const sp = req.nextUrl.searchParams;
   const estadoRaw = (sp.get("estadoPago") ?? "").trim();
   const estadoPago = (ESTADOS_PAGO as readonly string[]).includes(estadoRaw) ? (estadoRaw as EstadoPago) : undefined;
+
+  const ptGuia = (sp.get("ptGuia") ?? "").trim();
+  if (ptGuia) {
+    if (ptGuia.length > 80) return NextResponse.json({ error: "gtf_invalida" }, { status: 400 });
+    try {
+      const pt = await ForestFleteDB.ptDeGuia(auth.tenantId, ptGuia);
+      return NextResponse.json({ pt });
+    } catch (err) {
+      logger.error("[fletes.GET ptGuia] failed", { error: String(err), tenantId: auth.tenantId });
+      return NextResponse.json({ error: "internal_error" }, { status: 500 });
+    }
+  }
 
   if (sp.get("candidatos") === "1") {
     try {
@@ -108,6 +122,9 @@ export const POST = withApiHandler("forestal-fletes-post", async (req: NextReque
     const flete = await ForestFleteDB.guardar(auth.tenantId, parsed.data, auth.username ?? "unknown");
     return NextResponse.json({ flete });
   } catch (err) {
+    if (err instanceof FleteError) {
+      return NextResponse.json({ error: err.code, message: err.message }, { status: err.status });
+    }
     // Fecha mal formada es dato del operador, no fallo del server.
     if (err instanceof Error && err.message.startsWith("La fecha")) {
       return NextResponse.json({ error: "fecha_invalida", message: err.message }, { status: 422 });

@@ -172,7 +172,17 @@ export default function SeccionCompra({
       </Bloque>
 
       <Bloque
-        titulo="Cuánto costó"
+        titulo={
+          <>
+            Cuánto costó
+            <InfoTip
+              title="Con qué pie tablar se paga"
+              what="Por pt: manda la cantidad de la factura. Si no la tiene, el PT Oxapampa cuando mediste TODAS las trozas de esa especie; si falta alguna, el ≈ estimado (m³ al rendimiento)."
+              affects="Al guardar queda sellado con cuál se pagó: si después vuelves a medir, lo pagado no cambia (se te ofrece «Usar la de hoy»)."
+              example="Tornillo: 10 de 10 cubicadas → 3 120 pt Oxapampa × S/ 1,80 = S/ 5 616,00"
+            />
+          </>
+        }
         extra={
           <Opciones
             etiqueta="Cómo viene la factura"

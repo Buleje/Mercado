@@ -10,50 +10,88 @@
 import { AlertTriangle, Coins, RefreshCw } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { fmtPt } from "@/lib/forestal/cubicacion-formato";
-import type { PlataDeGuiaDTO } from "@/lib/forestal/plata-de-guia";
+import { textoFuentePt, type PlataDeGuiaDTO, type PtParaPagar } from "@/lib/forestal/plata-de-guia";
 import { formatNumber } from "@/lib/format";
 import { ChipPago, soles } from "../costo-guia/comun";
 import { BOTON_BLOQUE, BloqueCargando, BloqueFicha, Cifra } from "./comun";
 
 /**
- * Los dos PT de la guía, lado a lado (Brandon, 2026-09-26): el ≈ aserrable que
- * hoy usa la plata (m³ de la guía al rendimiento) y el Oxapampa medido troza
- * por troza. SÓLO se muestra: ningún monto cambia (el enchufe al pago lo
- * decide el dueño). Sin la cuenta de cubicadas, un total a medias parece el
- * de la guía entera.
+ * Los dos PT de la guía, lado a lado (Brandon, 2026-09-26): el ≈ aserrable
+ * (m³ de la guía al rendimiento) y el Oxapampa medido troza por troza — y con
+ * CUÁL se paga (ADR-440 §6): Oxapampa si están todas las trozas cubicadas; si
+ * no, el estimado. Los números salen del servidor (`dto.ptGuia`: sólo trozas
+ * originales que llegaron, cada una en su especie); mientras viaja el DTO, lo
+ * que la ficha ya tiene.
  */
 function DosPt({
   estimado,
   oxapampa,
+  guia,
+  pagada,
+  servicio,
 }: {
   estimado: number;
   oxapampa: { pt: number; cubicadas: number; total: number } | null;
+  guia: PtParaPagar | null;
+  /** Lo que ya se pagó por pt, sellado en el acta. */
+  pagada: { pt: number; fuente: string } | null;
+  /** Madera de servicio: no se le paga la madera a nadie (el flete sí puede ir por pt). */
+  servicio: boolean;
 }) {
+  const ox = guia ? { pt: guia.oxapampa ?? 0, cubicadas: guia.cubicadas, total: guia.total } : oxapampa;
+  const est = guia?.estimado ?? estimado;
   return (
-    <div className="grid grid-cols-2 gap-3 border-t border-[var(--rule-soft)] pt-3">
-      <Cifra valor={`≈${formatNumber(estimado)}`} rotulo="pt estimado (rendimiento)" />
-      <div className="min-w-0">
-        <div className="flex items-center gap-1 font-mono text-lg font-bold tabular-nums leading-tight text-[var(--text-primary)]">
-          {oxapampa == null ? (
-            "…"
-          ) : oxapampa.cubicadas === 0 ? (
-            <span className="text-[var(--text-tertiary)]">Sin cubicar</span>
-          ) : (
-            fmtPt(oxapampa.pt)
-          )}
-          <InfoTip
-            title="Dos pies tablares"
-            what="«≈ estimado» sale del m³ de la guía al rendimiento de aserrío: es el que usa hoy la plata. «PT Oxapampa» es tu medida en el patio, troza por troza: (promedio de las puntas)² × largo ÷ 24.5."
-            affects="Todavía no cambia ningún monto: se muestra al lado para comparar."
-            example="≈ 3 309 pt estimado · 3 120 PT Oxapampa (84 de 84 trozas)"
-          />
-        </div>
-        <div className="text-xs font-semibold text-[var(--text-tertiary)]">
-          PT Oxapampa{oxapampa ? ` · ${oxapampa.cubicadas} de ${oxapampa.total} trozas` : ""}
+    <div className="space-y-2 border-t border-[var(--rule-soft)] pt-3">
+      <div className="grid grid-cols-2 gap-3">
+        <Cifra valor={`≈${formatNumber(est)}`} rotulo="pt estimado (rendimiento)" />
+        <div className="min-w-0">
+          <div className="flex items-center gap-1 font-mono text-lg font-bold tabular-nums leading-tight text-[var(--text-primary)]">
+            {ox == null ? (
+              "…"
+            ) : ox.cubicadas === 0 ? (
+              <span className="text-[var(--text-tertiary)]">Sin cubicar</span>
+            ) : (
+              fmtPt(ox.pt)
+            )}
+            <InfoTip
+              title="Con qué pie tablar se paga"
+              what="«≈ estimado» sale del m³ de la guía al rendimiento de aserrío. «PT Oxapampa» es tu medida en el patio, troza por troza: (promedio de las puntas)² × largo ÷ 24.5. Se paga con el PT Oxapampa cuando mediste TODAS las trozas; si falta alguna, con el ≈ estimado."
+              affects="Lo pagado queda sellado: si después vuelves a medir, la plata ya guardada no cambia."
+              example="≈ 3 309 pt estimado · 3 120 PT Oxapampa (84 de 84) → se paga con 3 120"
+            />
+          </div>
+          <div className="text-xs font-semibold text-[var(--text-tertiary)]">
+            PT Oxapampa{ox ? ` · ${ox.cubicadas} de ${ox.total} trozas` : ""}
+          </div>
         </div>
       </div>
+      {guia && !servicio && (
+        <p
+          className={`text-sm font-semibold ${guia.fuente === "oxapampa" ? "text-[var(--data-success-ink)]" : "text-[var(--data-warning-ink)]"}`}
+        >
+          Se paga con {textoFuentePt(guia)}
+          {guia.noLlegaron > 0 ? ` · ${guia.noLlegaron} no llegaron` : ""}
+        </p>
+      )}
+      {pagada && (
+        <p className="text-sm text-[var(--text-secondary)]">
+          Madera pagada con {fmtPt(pagada.pt)} pt {pagada.fuente}
+        </p>
+      )}
     </div>
   );
+}
+
+/** Lo que el acta dice que se pagó por pt (sellado por el servidor). */
+function ptPagado(dto: PlataDeGuiaDTO | null): { pt: number; fuente: string } | null {
+  const selladas = (dto?.lineas ?? []).filter((l) => l.costoTotal != null && l.costoDetalle?.ptUsado != null && l.costoDetalle.fuentePt);
+  if (selladas.length === 0) return null;
+  const fuentes = new Set(selladas.map((l) => l.costoDetalle?.fuentePt));
+  const f = fuentes.size > 1 ? "varias" : [...fuentes][0];
+  return {
+    pt: selladas.reduce((t, l) => t + (l.costoDetalle?.ptUsado ?? 0), 0),
+    fuente: f === "oxapampa" ? "Oxapampa" : f === "factura" ? "de la factura" : f === "estimado" ? "≈ estimado" : "(de varias fuentes)",
+  };
 }
 
 function LineaPersona({ persona }: { persona: NonNullable<PlataDeGuiaDTO["persona"]> }) {
@@ -91,7 +129,7 @@ export default function BloquePlata({
   onAbrir?: () => void;
   ocupado: boolean;
   indice: number;
-  /** Los dos PT de la guía: sólo se muestran. `oxapampa: null` = trozas cargando. */
+  /** Los dos PT de la guía mientras viaja el DTO (después manda `dto.ptGuia`). `oxapampa: null` = trozas cargando. */
   pt?: { estimado: number; oxapampa: { pt: number; cubicadas: number; total: number } | null };
 }) {
   const servicio = dto?.tipo === "servicio";
@@ -223,7 +261,15 @@ export default function BloquePlata({
             )}
           </div>
         ) : null}
-        {pt && <DosPt estimado={pt.estimado} oxapampa={pt.oxapampa} />}
+        {(pt || dto) && (
+          <DosPt
+            estimado={pt?.estimado ?? dto?.ptGuia.estimado ?? 0}
+            oxapampa={pt?.oxapampa ?? null}
+            guia={dto?.ptGuia ?? null}
+            pagada={ptPagado(dto)}
+            servicio={servicio}
+          />
+        )}
       </div>
     </BloqueFicha>
   );

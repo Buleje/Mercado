@@ -5,8 +5,16 @@ import { invalidateByPrefix } from "@/lib/cache";
 import { logger } from "@/lib/logger";
 import { auditCtp } from "@/lib/forestal/ctp-audit";
 import { normalizarPlaca } from "@/lib/forestal/directorio";
-import { agruparCandidatosPorGuia, candidatoDesdeIngreso, type CandidatoFlete } from "@/lib/forestal/fletes";
+import {
+  agruparCandidatosPorGuia,
+  candidatoDesdeIngreso,
+  cobroPorPt,
+  type CandidatoFlete,
+  type CodigoCobroPt,
+} from "@/lib/forestal/fletes";
+import type { PtParaPagar } from "@/lib/forestal/plata-de-guia";
 import { WoodEntriesDB } from "@/lib/db/wood-entries.db";
+import { GuiaPlataDB } from "@/lib/db/guia-plata.db";
 import type { EstadoPago, Flete, FleteInput, Pagador, TipoFlete, TipoTransporte } from "@/lib/forestal/fletes";
 
 /**
@@ -26,6 +34,20 @@ import type { EstadoPago, Flete, FleteInput, Pagador, TipoFlete, TipoTransporte 
 const CACHE_PREFIX = "forest-flete";
 
 type FleteRow = Prisma.ForestFleteGetPayload<Record<string, never>>;
+
+/** Error de negocio del cobro por pt (ADR-440 §6): la ruta lo devuelve con su status. */
+export class FleteError extends Error {
+  constructor(
+    readonly code: CodigoCobroPt | "SIN_GUIA",
+    readonly status: 409 | 422,
+    message: string,
+  ) {
+    super(message);
+    this.name = "FleteError";
+  }
+}
+
+const decimalONull = (v: Prisma.Decimal | number | null | undefined): number | null => (v == null ? null : Number(v));
 
 const vacioANull = (v: string | undefined | null): string | null => {
   const t = (v ?? "").trim();
@@ -63,6 +85,11 @@ function aFlete(r: FleteRow): Flete {
     fechaPago: r.fechaPago ? r.fechaPago.toISOString() : null,
     notas: r.notas,
     contratoId: r.contratoId,
+    /* `?? null`: con el cliente de Prisma viejo (dev server sin reiniciar)
+       estas columnas no vienen en la fila. */
+    tarifaPorPt: decimalONull(r.tarifaPorPt ?? null),
+    ptCobrado: decimalONull(r.ptCobrado ?? null),
+    ptFuente: r.ptFuente === "oxapampa" || r.ptFuente === "estimado" ? r.ptFuente : null,
   };
 }
 
@@ -93,11 +120,60 @@ export const ForestFleteDB = {
     return rows.map(aFlete);
   },
 
-  /** Alta o edición de un viaje. */
+  /**
+   * El PT de una guía para cobrar un viaje por pt (la vista previa del modal):
+   * el MISMO que usa `guardar`. `null` si la guía no existe en este tenant.
+   */
+  async ptDeGuia(tenantId: string, gtfNumber: string): Promise<PtParaPagar | null> {
+    if (!tenantId) throw new Error("tenantId is required");
+    return GuiaPlataDB.ptDeGuia(tenantId, gtfNumber);
+  },
+
+  /**
+   * Alta o edición de un viaje. Con `tarifaPorPt` el MONTO lo pone el servidor
+   * (tarifa × PT de la guía, `cobroPorPt`) y el PT queda congelado en la fila;
+   * el `monto` que mande la pantalla se ignora.
+   */
   async guardar(tenantId: string, input: FleteInput & { id?: string }, usuario: string): Promise<Flete> {
     if (!tenantId) throw new Error("tenantId is required");
     const fecha = fechaUtc(input.fecha);
     if (!fecha) throw new Error("La fecha del viaje es obligatoria (YYYY-MM-DD).");
+
+    const existente = input.id
+      ? await prisma.forestFlete.findFirst({ where: { id: input.id, tenantId, deletedAt: null } })
+      : null;
+
+    let monto = input.monto ?? null;
+    /* Las columnas del cobro por pt se escriben SÓLO si hay algo que escribir o
+       que limpiar: un viaje «a mano» no las nombra, así guardar sigue andando
+       con el cliente de Prisma viejo (dev server sin reiniciar). */
+    let cobro: { tarifaPorPt: Prisma.Decimal | null; ptCobrado: Prisma.Decimal | null; ptFuente: string | null } | null = null;
+    let textoCobro = "";
+    if (input.tarifaPorPt != null) {
+      const gtf = vacioANull(input.gtfNumber);
+      if (input.tipo !== "ingreso" || !gtf) {
+        throw new FleteError("SIN_GUIA", 422, "Para cobrar por pie tablar el viaje tiene que traer madera de una guía: pon el N° de guía.");
+      }
+      const vigente = await GuiaPlataDB.ptDeGuia(tenantId, gtf);
+      if (!vigente) {
+        throw new FleteError("SIN_GUIA", 422, `No encuentro la guía ${gtf} entre tus ingresos: cobra este viaje por monto.`);
+      }
+      const previo =
+        existente && existente.gtfNumber === gtf
+          ? { ptCobrado: decimalONull(existente.ptCobrado ?? null), ptFuente: existente.ptFuente ?? null }
+          : null;
+      const r = cobroPorPt({ tarifaPorPt: input.tarifaPorPt, ptVisto: input.ptVisto, vigente, previo });
+      if (!r.ok) throw new FleteError(r.codigo, r.codigo === "CUBICACION_CAMBIO" ? 409 : 422, r.mensaje);
+      monto = r.monto;
+      cobro = {
+        tarifaPorPt: new Prisma.Decimal(input.tarifaPorPt),
+        ptCobrado: new Prisma.Decimal(r.pt.toFixed(2)),
+        ptFuente: r.fuente,
+      };
+      textoCobro = ` · S/ ${input.tarifaPorPt} × ${r.pt.toFixed(2)} pt ${r.fuente === "oxapampa" ? "Oxapampa" : "≈ estimado"}${r.congelado ? " (el ya cobrado)" : ""}`;
+    } else if (existente?.tarifaPorPt != null) {
+      cobro = { tarifaPorPt: null, ptCobrado: null, ptFuente: null };
+    }
 
     const pagado = input.estadoPago === "pagado";
     const datos = {
@@ -117,7 +193,7 @@ export const ForestFleteDB = {
       proveedorNombre: vacioANull(input.proveedorNombre),
       volumenM3: input.volumenM3 == null ? null : new Prisma.Decimal(input.volumenM3),
       // Sin monto → null, NUNCA 0: un flete sin precio todavía no es gratis.
-      monto: input.monto == null ? null : new Prisma.Decimal(input.monto),
+      monto: monto == null ? null : new Prisma.Decimal(monto),
       moneda: vacioANull(input.moneda) ?? "PEN",
       pagaQuien: input.pagaQuien,
       estadoPago: input.estadoPago,
@@ -125,11 +201,8 @@ export const ForestFleteDB = {
       fechaPago: pagado ? (fechaUtc(input.fechaPago) ?? new Date()) : null,
       notas: vacioANull(input.notas),
       contratoId: vacioANull(input.contratoId),
+      ...(cobro ?? {}),
     };
-
-    const existente = input.id
-      ? await prisma.forestFlete.findFirst({ where: { id: input.id, tenantId, deletedAt: null } })
-      : null;
 
     const row = existente
       ? await prisma.forestFlete.update({ where: { id: existente.id }, data: datos })
@@ -144,6 +217,7 @@ export const ForestFleteDB = {
         `${existente ? "Editó" : "Registró"} el flete del ${input.fecha}` +
         `${row.placa ? ` · placa ${row.placa}` : ""}` +
         `${row.monto == null ? " · sin monto" : ` · S/ ${Number(row.monto).toFixed(2)}`}` +
+        textoCobro +
         `${row.gtfNumber ? ` · GTF ${row.gtfNumber}` : ""}`,
       user: usuario,
     });

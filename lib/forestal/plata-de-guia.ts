@@ -19,13 +19,19 @@
  *    otra cosa (aserrío recibido…) se cubre antes que las guías.
  *  · Costo puesto en patio = madera + fletes del CTP + gastos; un flete sin
  *    monto lo deja «incompleto», nunca suma 0.
+ *  · PT para pagar (ADR-440 §6): factura > Oxapampa (sólo con TODAS las trozas
+ *    originales de la línea cubicadas) > ≈ estimado. El que se usó queda
+ *    SELLADO en el acta por el servidor: re-medir después no cambia lo pagado.
  *
  * PURO y client-safe: sin React, sin fetch, sin Prisma.
  */
 
 import { z } from "zod";
 import { limaDateKey } from "@/lib/utils";
+import { formatNumber } from "@/lib/format";
 import { PT_POR_M3, pieTablarAserrableDe } from "./cubicacion";
+import { resumenOxapampa, type TrozaConOxapampa } from "./cubicacion-oxapampa";
+import { filaDeEspecie } from "./acomodar-trozas";
 import { RENDIMIENTO_META } from "./loctp-catalogos";
 import { mismaEntidadPorNombre, normalizarNombre } from "./directorio-desde-guias";
 import type { MovimientoCuenta } from "./cuenta-corriente";
@@ -87,6 +93,10 @@ const vistos = z
   .array(z.object({ id: idCorto, antes: z.number().finite().nullable() }))
   .max(50);
 
+/** De dónde salió el PT con el que se pagó una línea (ADR-440 §6). */
+export const FUENTES_PT = ["factura", "oxapampa", "estimado"] as const;
+export type FuentePt = (typeof FUENTES_PT)[number];
+
 /** El acta de cómo se llegó al costo de UN asiento (`WoodEntry.costoDetalle`). */
 export const costoDetalleSchema = z.object({
   v: z.literal(1),
@@ -96,6 +106,16 @@ export const costoDetalleSchema = z.object({
   cantidadFactura: z.number().positive().max(10_000_000).nullable(),
   ptDerivado: z.number().nonnegative().nullable(),
   totalFactura: soles,
+  /* ── Sello del PT (ADR-440 §6). Opcionales: las actas guardadas antes no los
+     traen y siguen siendo válidas. El cliente manda `ptUsado` (lo que
+     multiplicó); el SERVIDOR lo contrasta con la cubicación y escribe los
+     cuatro — la fuente nunca sale del navegador. ── */
+  /** El PT que se multiplicó (unidad pt). `null` en m³ o en reparto del total. */
+  ptUsado: z.number().nonnegative().max(10_000_000).nullable().optional(),
+  fuentePt: z.enum(FUENTES_PT).nullable().optional(),
+  /** Trozas cubicadas y trozas de la línea al sellar («10 de 10»). */
+  ptCubicadas: z.number().int().nonnegative().max(100_000).nullable().optional(),
+  ptTrozas: z.number().int().nonnegative().max(100_000).nullable().optional(),
 });
 export type CostoDetalle = z.infer<typeof costoDetalleSchema>;
 
@@ -219,6 +239,12 @@ export interface LineaPlataDTO {
   costoDetalle: CostoDetalle | null;
   /** ≈ pt NUESTRO (rolliza: aserrable 56 %; aserrada: m³ × 424). Se muestra con «≈». */
   ptDerivado: number;
+  /**
+   * El PT con el que se paga HOY esta línea si la factura no trae cantidad
+   * (ADR-440 §6): el Oxapampa de sus trozas originales cuando están TODAS
+   * cubicadas; si no, el ≈ estimado. Lo ya pagado vive en `costoDetalle.ptUsado`.
+   */
+  ptPago: PtParaPagar;
   /** Alguna corrida ya congeló el costo de este asiento al cierre. */
   congelado: boolean;
   /** El mes del asiento está cerrado. */
@@ -248,6 +274,11 @@ export interface FleteDeGuia {
   estadoPago: string;
   transportistaNombre: string | null;
   placa: string | null;
+  /** S/ por pt cuando el flete se cobra por pie tablar (ADR-440 §6). `null` = monto a mano. */
+  tarifaPorPt: number | null;
+  /** El PT con el que se cobró, congelado al guardar, y de dónde salió. */
+  ptCobrado: number | null;
+  ptFuente: "oxapampa" | "estimado" | null;
 }
 
 /** El abono `madera` de la guía en la cuenta del proveedor (ADR-437 §4). */
@@ -298,6 +329,8 @@ export interface PlataDeGuiaDTO {
   fletes: FleteDeGuia[];
   gastos: GastoGuia[];
   costoPuesto: CostoPuesto;
+  /** El PT de la guía entera para cobrar por pt (flete): Oxapampa sólo si TODAS sus líneas lo son. */
+  ptGuia: PtParaPagar;
   /** Por qué no se puede guardar el costo, si no se puede. */
   bloqueo: { codigo: "GUIA_ANULADA" | "PERIODO_CERRADO" | "COSTO_CONGELADO"; mensaje: string } | null;
 }
@@ -314,6 +347,177 @@ export function ptDeLinea(l: { volumeM3: number; productType: string | null | un
   const m3 = Number(l.volumeM3);
   if (!(m3 > 0)) return 0;
   return (l.productType ?? "rolliza") === "rolliza" ? pieTablarAserrableDe(m3, RENDIMIENTO_META) : Math.round(m3 * PT_POR_M3);
+}
+
+// ── PT para pagar: el Oxapampa cuando la línea está cubicada entera ─────────
+
+/**
+ * Lo mínimo de una troza para llevarla a su línea y cubicarla. `woodEntryId`
+ * es la fila de la que CUELGA (en una GTF multi-especie puede ser la de otra
+ * especie: ADR-435).
+ */
+export interface TrozaParaPt extends TrozaConOxapampa {
+  woodEntryId: string;
+  especieComun?: string | null;
+  especieCientifica?: string | null;
+  /** Con valor = pedazo de un retrozado: su madera ya es la de la madre (no suma dos veces). */
+  trozaOrigenId?: string | null;
+  /** La guía la declara pero no bajó del camión: no se mide, no se paga por Oxapampa. */
+  noRecepcionada?: boolean | null;
+}
+
+export interface LineaParaPt {
+  id: string;
+  speciesCommonName: string | null;
+  speciesScientificName?: string | null;
+}
+
+/** El PT Oxapampa de UNA línea: sus trozas ORIGINALES que llegaron. */
+export interface OxapampaDeLinea {
+  pt: number;
+  cubicadas: number;
+  /** Trozas originales que llegaron: las que hay que cubicar para pagar por Oxapampa. */
+  total: number;
+  /** Declaradas en la guía que no llegaron: no cuentan ni para el total. */
+  noLlegaron: number;
+}
+
+/**
+ * El PT Oxapampa de cada línea de la guía (una línea = una especie, ADR-312).
+ *
+ *  · Sólo trozas ORIGINALES (`trozaOrigenId` null): un pedazo retrozado es la
+ *    misma madera que su madre — contarlos juntos la paga dos veces (T1).
+ *  · Cada troza va a la línea de SU especie (`filaDeEspecie`, el criterio de
+ *    ADR-435): en Blas las trozas de una GTF multi-especie cuelgan de una sola
+ *    fila. Sin línea de su especie (o con dos), se queda en la que cuelga.
+ *  · Una troza que no llegó no se puede medir: sale del total («N de M») y se
+ *    cuenta aparte. Así una guía con una pieza perdida puede pagarse igual por
+ *    lo que SÍ llegó y se midió.
+ *  · Trozas de filas que no están en `lineas` (anuladas) no cuentan.
+ */
+export function oxapampaPorLinea(lineas: readonly LineaParaPt[], trozas: readonly TrozaParaPt[]): Map<string, OxapampaDeLinea> {
+  const filas = lineas.map((l) => ({ id: l.id, especie: l.speciesCommonName, cientifico: l.speciesScientificName ?? null }));
+  const ids = new Set(filas.map((f) => f.id));
+  const grupos = new Map<string, TrozaParaPt[]>(filas.map((f) => [f.id, []]));
+  const perdidas = new Map<string, number>();
+  for (const t of trozas) {
+    if (t.trozaOrigenId) continue;
+    if (!ids.has(t.woodEntryId)) continue;
+    const destino =
+      filas.length > 1
+        ? (filaDeEspecie({ especieComun: t.especieComun, especieCientifica: t.especieCientifica }, filas).fila?.id ?? t.woodEntryId)
+        : t.woodEntryId;
+    if (t.noRecepcionada) {
+      perdidas.set(destino, (perdidas.get(destino) ?? 0) + 1);
+      continue;
+    }
+    grupos.get(destino)?.push(t);
+  }
+  const out = new Map<string, OxapampaDeLinea>();
+  for (const f of filas) {
+    const grupo = grupos.get(f.id) ?? [];
+    const r = resumenOxapampa(grupo);
+    out.set(f.id, { pt: r.pt, cubicadas: r.cubicadas, total: grupo.length, noLlegaron: perdidas.get(f.id) ?? 0 });
+  }
+  return out;
+}
+
+/** El PT con el que se paga una línea (o la guía) cuando la factura no trae cantidad. */
+export interface PtParaPagar {
+  pt: number;
+  fuente: "oxapampa" | "estimado";
+  /** El ≈ pt por rendimiento (se muestra al lado, para comparar). */
+  estimado: number;
+  /** Σ PT Oxapampa de lo cubicado aunque falten trozas; `null` sin ninguna cubicada. */
+  oxapampa: number | null;
+  cubicadas: number;
+  total: number;
+  noLlegaron: number;
+}
+
+const r2pt = (n: number): number => Math.round((n + Number.EPSILON) * 100) / 100;
+
+/**
+ * Oxapampa sólo con la línea cubicada ENTERA (todas sus trozas originales que
+ * llegaron, al menos una); si falta una, el ≈ estimado — un total a medias
+ * pagaría de menos sin decirlo. Sin lista de trozas (aserrada, guía vieja):
+ * estimado.
+ */
+export function ptParaPagar(estimado: number, ox: OxapampaDeLinea | null | undefined): PtParaPagar {
+  const o = ox ?? { pt: 0, cubicadas: 0, total: 0, noLlegaron: 0 };
+  const entera = o.total > 0 && o.cubicadas === o.total && o.pt > 0;
+  return {
+    pt: entera ? o.pt : estimado,
+    fuente: entera ? "oxapampa" : "estimado",
+    estimado,
+    oxapampa: o.cubicadas > 0 ? o.pt : null,
+    cubicadas: o.cubicadas,
+    total: o.total,
+    noLlegaron: o.noLlegaron,
+  };
+}
+
+/**
+ * El PT de la guía ENTERA (para cobrar un flete por pt): Oxapampa sólo si
+ * TODAS sus líneas lo son; si no, Σ ≈ estimado de todas. No se mezclan las dos
+ * medidas en una suma: «3 000 pt» mitad medidos y mitad estimados no es
+ * ninguna de las dos cosas.
+ */
+export function ptDeLaGuia(lineas: readonly PtParaPagar[]): PtParaPagar {
+  const entera = lineas.length > 0 && lineas.every((l) => l.fuente === "oxapampa");
+  let estimado = 0;
+  let ox = 0;
+  let conOx = false;
+  let cubicadas = 0;
+  let total = 0;
+  let noLlegaron = 0;
+  for (const l of lineas) {
+    estimado += l.estimado;
+    if (l.oxapampa != null) {
+      ox += l.oxapampa;
+      conOx = true;
+    }
+    cubicadas += l.cubicadas;
+    total += l.total;
+    noLlegaron += l.noLlegaron;
+  }
+  return {
+    pt: r2pt(entera ? ox : estimado),
+    fuente: entera ? "oxapampa" : "estimado",
+    estimado: r2pt(estimado),
+    oxapampa: conOx ? r2pt(ox) : null,
+    cubicadas,
+    total,
+    noLlegaron,
+  };
+}
+
+/** «PT Oxapampa · 10 de 10 cubicadas» / «≈ estimado · 4 de 10 cubicadas». Una sola frase para toda la app. */
+export function textoFuentePt(p: Pick<PtParaPagar, "fuente" | "cubicadas" | "total">): string {
+  const cuenta = p.total > 0 ? ` · ${p.cubicadas} de ${p.total} cubicadas` : " · sin lista de trozas";
+  return `${p.fuente === "oxapampa" ? "PT Oxapampa" : "≈ estimado"}${cuenta}`;
+}
+
+/** ¿El acta de este costo multiplicó un PT sin cantidad de factura? (el que se sella). */
+export function esPtDerivado(d: Pick<CostoDetalle, "modo" | "unidad" | "cantidadFactura"> | null | undefined): boolean {
+  return d != null && d.modo === "especie" && d.unidad === "pt" && d.cantidadFactura == null;
+}
+
+/**
+ * El PT con el que el borrador multiplica una línea: el SELLADO si esa línea
+ * ya se pagó por pt (una re-medición posterior no cambia lo pagado), salvo que
+ * la persona pida «usar la cubicación de hoy»; si no, el vigente.
+ */
+export function ptDelBorrador(
+  l: Pick<LineaPlataDTO, "costoTotal" | "costoDetalle" | "ptPago">,
+  usarVigente = false,
+): { pt: number; fuente: "oxapampa" | "estimado"; congelado: boolean } {
+  const d = l.costoDetalle;
+  const sellado = d && esPtDerivado(d) ? (d.ptUsado ?? d.ptDerivado ?? null) : null;
+  if (!usarVigente && l.costoTotal != null && sellado != null && sellado > 0) {
+    return { pt: sellado, fuente: d?.fuentePt === "oxapampa" ? "oxapampa" : "estimado", congelado: true };
+  }
+  return { pt: l.ptPago.pt, fuente: l.ptPago.fuente, congelado: false };
 }
 
 // ── Reparto y precio por especie ────────────────────────────────────────────
@@ -357,6 +561,11 @@ export interface LineaParaPrecio {
   id: string;
   volumeM3: number;
   productType: string | null | undefined;
+  /**
+   * El PT con que se multiplica cuando la unidad es pt y la factura no trae
+   * cantidad (`ptParaPagar` o `ptDelBorrador`). Ausente = el ≈ estimado.
+   */
+  ptPago?: { pt: number; fuente: "oxapampa" | "estimado" } | null;
 }
 
 export interface PrecioDeEspecie {
@@ -374,12 +583,28 @@ export interface CostoDeEspecie {
   /** `true` si la cantidad salió de nuestro cálculo (≈pt o m³ del libro) y no de la factura. */
   cantidadDerivada: boolean;
   ptDerivado: number;
+  /** De dónde salió el PT multiplicado; `null` si se pagó por m³. */
+  fuentePt: FuentePt | null;
+}
+
+/** La cantidad que se multiplica: la de la factura; si no, el m³ del libro o el PT para pagar. */
+function cantidadDe(
+  l: LineaParaPrecio,
+  unidad: "m3" | "pt",
+  cantidadFactura: number | null,
+): { cantidad: number; fuentePt: FuentePt | null } {
+  if (cantidadFactura != null) return { cantidad: cantidadFactura, fuentePt: unidad === "pt" ? "factura" : null };
+  if (unidad === "m3") return { cantidad: Number(l.volumeM3) || 0, fuentePt: null };
+  const pago = l.ptPago ?? { pt: ptDeLinea(l), fuente: "estimado" as const };
+  return { cantidad: pago.pt, fuentePt: pago.fuente };
 }
 
 /**
  * Precio por especie: cada asiento vale precio × cantidad, redondeado al
- * céntimo. La cantidad es la de la FACTURA si se tipeó; si no, el m³ del libro
- * o el ≈pt nuestro — y se marca `cantidadDerivada` para rotularlo.
+ * céntimo. La cantidad es la de la FACTURA si se tipeó (manda sobre todo); si
+ * no, el m³ del libro o —en pt— el PT para pagar (Oxapampa con la línea
+ * cubicada entera; si no, el ≈ estimado). `cantidadDerivada` y `fuentePt`
+ * dicen de dónde salió, para rotularlo.
  */
 export function costoPorEspecie(
   lineas: readonly LineaParaPrecio[],
@@ -389,10 +614,15 @@ export function costoPorEspecie(
   for (const l of lineas) {
     const p = precios[l.id];
     if (!p || !(p.precio > 0)) continue;
-    const pt = ptDeLinea(l);
-    const derivada = p.cantidadFactura == null;
-    const cantidad = derivada ? (p.unidad === "m3" ? Number(l.volumeM3) || 0 : pt) : p.cantidadFactura!;
-    out.push({ id: l.id, costoTotal: r2(p.precio * cantidad), cantidad, cantidadDerivada: derivada, ptDerivado: pt });
+    const { cantidad, fuentePt } = cantidadDe(l, p.unidad, p.cantidadFactura);
+    out.push({
+      id: l.id,
+      costoTotal: r2(p.precio * cantidad),
+      cantidad,
+      cantidadDerivada: p.cantidadFactura == null,
+      ptDerivado: ptDeLinea(l),
+      fuentePt,
+    });
   }
   return out;
 }
@@ -419,13 +649,18 @@ export interface Cuadre {
  * elige la persona («Ajustar S/ X en Tornillo»). No se ofrece si dejaría a esa
  * especie en negativo.
  */
+/** La especie de MAYOR volumen (desempate por id): la única que el ajuste puede mover. */
+export function especieMayor<T extends { id: string; volumeM3: number }>(lineas: readonly T[]): T | undefined {
+  return [...lineas].sort((a, b) => Number(b.volumeM3) - Number(a.volumeM3) || a.id.localeCompare(b.id))[0];
+}
+
 export function cuadrarConFactura(lineas: readonly LineaParaCuadrar[], totalFactura: number): Cuadre {
   const sumaC = lineas.reduce((t, l) => t + aCentimos(l.costoTotal), 0);
   const difC = aCentimos(totalFactura) - sumaC;
   const suma = deCentimos(sumaC);
   const diferencia = deCentimos(difC);
   if (Math.abs(diferencia) <= TOLERANCIA_SOLES) return { cierra: true, suma, diferencia: 0, ajuste: null };
-  const mayor = [...lineas].sort((a, b) => Number(b.volumeM3) - Number(a.volumeM3) || a.id.localeCompare(b.id))[0];
+  const mayor = especieMayor(lineas);
   if (!mayor) return { cierra: false, suma, diferencia, ajuste: null };
   const nuevoC = aCentimos(mayor.costoTotal) + difC;
   return {
@@ -440,6 +675,125 @@ export function cuadrarConFactura(lineas: readonly LineaParaCuadrar[], totalFact
 export function aplicarAjuste<T extends { id: string; costoTotal: number }>(lineas: readonly T[], ajuste: Cuadre["ajuste"]): T[] {
   if (!ajuste) return [...lineas];
   return lineas.map((l) => (l.id === ajuste.id ? { ...l, costoTotal: ajuste.nuevoCosto } : l));
+}
+
+// ── Sellar el acta en el servidor (ADR-440 §6) ──────────────────────────────
+
+export type CodigoSello = "CUBICACION_CAMBIO" | "COSTO_NO_CUADRA";
+
+/** Un asiento como lo lee el servidor DENTRO de la transacción del guardado. */
+export interface AsientoParaSellar {
+  id: string;
+  speciesCommonName: string;
+  volumeM3: number;
+  /** Lo que tiene guardado hoy (lo que se pagó la vez pasada). */
+  costoTotal: number | null;
+  costoDetalle: CostoDetalle | null;
+  /** El PT vigente según el servidor (cubicación de hoy). */
+  ptPago: PtParaPagar;
+}
+
+export type ResultadoSello =
+  | { ok: true; detalles: Map<string, CostoDetalle> }
+  | { ok: false; codigo: CodigoSello; woodEntryId: string; mensaje: string };
+
+const mismoPt = (a: number, b: number): boolean => Math.abs(a - b) <= 0.005;
+/** Medio céntimo: por debajo, un costo «sin precio» es cero. */
+const TOLERANCIA_SIN_PRECIO = 0.005;
+const SIN_SELLO = { ptUsado: null, fuentePt: null, ptCubicadas: null, ptTrozas: null } as const;
+
+/**
+ * El servidor decide con qué PT se pagó cada línea y lo SELLA en el acta. El
+ * navegador sólo dice qué PT multiplicó (`ptUsado`); la fuente, las cubicadas
+ * y el total de trozas los escribe esto.
+ *
+ * Línea en pt sin cantidad de factura — el PT que vio el cliente tiene que ser:
+ *  1. el VIGENTE (cubicación de hoy) → se sella con su fuente; o
+ *  2. el que ya estaba SELLADO en ese asiento → se conserva el sello viejo: una
+ *     re-medición después de pagar no cambia lo pagado, aunque se corrija el
+ *     precio o el proveedor.
+ *  Si no es ninguno, alguien midió mientras la persona miraba → `CUBICACION_CAMBIO`.
+ *
+ * Totales en el servidor: en «por especie» cada costo tiene que ser precio ×
+ * cantidad al céntimo, salvo la especie de MAYOR volumen (la única que el
+ * «Ajustar S/ X» puede mover; Σ = factura ya lo exige el Zod). En «un total»
+ * no hay PT: se reparte por m³ y el acta queda sin sello.
+ */
+export function sellarActas(
+  lineas: ReadonlyArray<{ woodEntryId: string; costoTotal: number; detalle: CostoDetalle }>,
+  asientos: readonly AsientoParaSellar[],
+): ResultadoSello {
+  const porId = new Map(asientos.map((a) => [a.id, a]));
+  const mayor = especieMayor(asientos.map((a) => ({ id: a.id, volumeM3: Number(a.volumeM3) || 0 })))?.id ?? null;
+  const detalles = new Map<string, CostoDetalle>();
+  for (const l of lineas) {
+    const a = porId.get(l.woodEntryId);
+    if (!a) continue; // la DB class ya exigió que las líneas sean los asientos vivos
+    const d = l.detalle;
+    if (d.modo !== "especie") {
+      detalles.set(a.id, { ...d, ...SIN_SELLO });
+      continue;
+    }
+    let cantidad: number;
+    let sello: Pick<CostoDetalle, "ptUsado" | "fuentePt" | "ptCubicadas" | "ptTrozas"> = { ...SIN_SELLO };
+    if (d.cantidadFactura != null) {
+      cantidad = d.cantidadFactura;
+      if (d.unidad === "pt") sello = { ptUsado: cantidad, fuentePt: "factura", ptCubicadas: null, ptTrozas: null };
+    } else if (d.unidad === "m3") {
+      cantidad = Number(a.volumeM3) || 0;
+    } else {
+      const visto = d.ptUsado ?? d.ptDerivado ?? null;
+      const v = a.ptPago;
+      const prev = a.costoTotal != null && a.costoDetalle && esPtDerivado(a.costoDetalle) ? a.costoDetalle : null;
+      const prevPt = prev ? (prev.ptUsado ?? prev.ptDerivado ?? null) : null;
+      if (visto != null && mismoPt(visto, v.pt)) {
+        cantidad = v.pt;
+        sello = { ptUsado: v.pt, fuentePt: v.fuente, ptCubicadas: v.cubicadas, ptTrozas: v.total };
+      } else if (visto != null && prev && prevPt != null && mismoPt(visto, prevPt)) {
+        cantidad = prevPt;
+        sello = {
+          ptUsado: prevPt,
+          fuentePt: prev.fuentePt ?? "estimado",
+          ptCubicadas: prev.ptCubicadas ?? null,
+          ptTrozas: prev.ptTrozas ?? null,
+        };
+      } else {
+        return {
+          ok: false,
+          codigo: "CUBICACION_CAMBIO",
+          woodEntryId: a.id,
+          mensaje:
+            visto == null
+              ? `No llegó con qué pie tablar calculaste ${a.speciesCommonName}. Vuelve a abrir la plata de la guía.`
+              : `La cubicación de ${a.speciesCommonName} cambió mientras la mirabas: calculaste con ${formatNumber(visto, { max: 2 })} pt y hoy da ${formatNumber(v.pt, { max: 2 })} pt (${textoFuentePt(v)}). Vuelve a abrir la plata de la guía para ver el monto nuevo.`,
+        };
+      }
+    }
+    /* Sin precio no hay cuenta que verificar: un costo mayor que 0 sin precio
+       pasaba sin controlar (revisión de seguridad 26-09). Costo 0 sin precio
+       sigue valiendo (la línea todavía no se paga). */
+    if (d.precio == null && a.id !== mayor && l.costoTotal > TOLERANCIA_SIN_PRECIO) {
+      return {
+        ok: false,
+        codigo: "COSTO_NO_CUADRA",
+        woodEntryId: a.id,
+        mensaje: `Falta el precio de ${a.speciesCommonName}: el costo (S/ ${l.costoTotal.toFixed(2)}) tiene que ser precio × cantidad. Vuelve a abrir la plata de la guía.`,
+      };
+    }
+    if (d.precio != null && a.id !== mayor) {
+      const esperado = r2(d.precio * cantidad);
+      if (Math.abs(aCentimos(esperado) - aCentimos(l.costoTotal)) > 1) {
+        return {
+          ok: false,
+          codigo: "COSTO_NO_CUADRA",
+          woodEntryId: a.id,
+          mensaje: `El costo de ${a.speciesCommonName} (S/ ${l.costoTotal.toFixed(2)}) no es precio × cantidad (S/ ${esperado.toFixed(2)}). Vuelve a abrir la plata de la guía.`,
+        };
+      }
+    }
+    detalles.set(a.id, { ...d, ...sello });
+  }
+  return { ok: true, detalles };
 }
 
 // ── A quién se le paga ──────────────────────────────────────────────────────

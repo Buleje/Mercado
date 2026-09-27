@@ -7175,6 +7175,16 @@ model ForestFlete {
   monto     Decimal? @db.Decimal(12, 2)
   moneda    String?  @default("PEN")
 
+  /// Cobrar el viaje por pie tablar (ADR-440 §6, Brandon 2026-09-26): S/ por
+  /// pt. Con esto el SERVIDOR pone `monto` = tarifa × PT de la guía (Oxapampa
+  /// con la guía cubicada entera; si no, ≈ estimado). NULL = monto a mano.
+  tarifaPorPt Decimal? @db.Decimal(12, 4)
+  /// El PT con el que se cobró, CONGELADO al guardar: re-medir la guía después
+  /// no cambia un flete ya anotado.
+  ptCobrado   Decimal? @db.Decimal(12, 2)
+  /// `oxapampa` | `estimado` — de dónde salió `ptCobrado`.
+  ptFuente    String?
+
   /// Quién lo paga: `ctp` | `proveedor` (se descuenta de su liquidación) | `destinatario`.
   pagaQuien  String    @default("ctp")
   /// `pendiente` | `pagado`.

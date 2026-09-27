@@ -19,12 +19,18 @@ import {
   costoPuestoEnPatio,
   estadoDePagoDeGuias,
   guiasSinPagarPorParte,
+  oxapampaPorLinea,
   proveedorDeLaGuia,
+  ptDeLaGuia,
   ptDeLinea,
+  ptParaPagar,
+  sellarActas,
+  textoFuentePt,
   type CategoriaGastoGuia,
   type CostoDetalle,
   type EstadoPago,
   type EstadoPagoGuia,
+  type FleteDeGuia,
   type GastoGuia,
   type GastoGuiaInput,
   type GuardarCompraInput,
@@ -33,6 +39,7 @@ import {
   type LineaPlataDTO,
   type MetodoPagoGuia,
   type PlataDeGuiaDTO,
+  type PtParaPagar,
   type ResumenPersona,
 } from "@/lib/forestal/plata-de-guia";
 import { ForestCuentaDB } from "./forest-cuenta.db";
@@ -72,6 +79,8 @@ export type CodigoPlataGuia =
   | "COSTO_CONGELADO"
   | "LINEAS_NO_COINCIDEN"
   | "CAMBIO_EN_EL_MEDIO"
+  | "CUBICACION_CAMBIO"
+  | "COSTO_NO_CUADRA"
   | "PARTE_NO_ENCONTRADA";
 
 const STATUS_DE: Record<CodigoPlataGuia, 404 | 409 | 422> = {
@@ -83,6 +92,8 @@ const STATUS_DE: Record<CodigoPlataGuia, 404 | 409 | 422> = {
   COSTO_CONGELADO: 409,
   LINEAS_NO_COINCIDEN: 422,
   CAMBIO_EN_EL_MEDIO: 409,
+  CUBICACION_CAMBIO: 409,
+  COSTO_NO_CUADRA: 422,
   PARTE_NO_ENCONTRADA: 422,
 };
 
@@ -178,6 +189,60 @@ async function exigirCostoEditable(
   if (congelados.size > 0) throw new PlataGuiaError("COSTO_CONGELADO", mensajeCostoCongelado(gtfNumber));
 }
 
+/** Lo que hace falta de un asiento para saber con qué PT se paga. */
+type AsientoPt = {
+  id: string;
+  speciesCommonName: string;
+  speciesScientificName: string | null;
+  volumeM3: Prisma.Decimal | number;
+  productType: string;
+};
+type LectorPt = Pick<Tx, "woodEntry" | "woodEntryTroza">;
+
+/**
+ * El PT con que se paga HOY cada línea (ADR-440 §6): las trozas de la guía en
+ * UNA consulta, cada una a la línea de su especie, sólo las originales que
+ * llegaron; Oxapampa si la línea está cubicada entera, si no ≈ estimado.
+ * Lee `oxPt` (el pt CONGELADO de cada troza), nunca recalcula la fórmula.
+ */
+async function ptVigentePorLinea(db: LectorPt, tenantId: string, asientos: readonly AsientoPt[]): Promise<Map<string, PtParaPagar>> {
+  if (asientos.length === 0) return new Map();
+  const trozas = await db.woodEntryTroza.findMany({
+    where: { tenantId, woodEntryId: { in: asientos.map((a) => a.id) } },
+    select: {
+      woodEntryId: true,
+      especieComun: true,
+      especieCientifica: true,
+      trozaOrigenId: true,
+      noRecepcionada: true,
+      oxPt: true,
+      oxD1Pulg: true,
+      oxD2Pulg: true,
+      oxLargoPies: true,
+    },
+  });
+  const ox = oxapampaPorLinea(
+    asientos.map((a) => ({ id: a.id, speciesCommonName: a.speciesCommonName, speciesScientificName: a.speciesScientificName })),
+    trozas.map((t) => ({
+      woodEntryId: t.woodEntryId,
+      especieComun: t.especieComun,
+      especieCientifica: t.especieCientifica,
+      trozaOrigenId: t.trozaOrigenId,
+      noRecepcionada: t.noRecepcionada,
+      oxPt: num(t.oxPt),
+      oxD1Pulg: num(t.oxD1Pulg),
+      oxD2Pulg: num(t.oxD2Pulg),
+      oxLargoPies: num(t.oxLargoPies),
+    })),
+  );
+  return new Map(
+    asientos.map((a) => [
+      a.id,
+      ptParaPagar(ptDeLinea({ volumeM3: Number(a.volumeM3), productType: String(a.productType) }), ox.get(a.id)),
+    ]),
+  );
+}
+
 function invalidar(tenantId: string): void {
   for (const pref of PREFIJOS_CACHE) {
     try {
@@ -236,7 +301,7 @@ export const GuiaPlataDB = {
     const base = vivos.length > 0 ? vivos : asientos;
     const contratoId = base.find((a) => a.contratoId)?.contratoId ?? null;
 
-    const [contrato, cierres, congelados, partes, cuentaRow, fletes, gastos] = await Promise.all([
+    const [contrato, cierres, congelados, partes, cuentaRow, fletes, gastos, ptPorLinea] = await Promise.all([
       contratoId
         ? prisma.forestContrato.findFirst({
             where: { id: contratoId, tenantId },
@@ -253,6 +318,7 @@ export const GuiaPlataDB = {
       prisma.forestCuentaMov.findFirst({ where: { tenantId, gtfNumber: gtf, concepto: "madera", deletedAt: null } }),
       prisma.forestFlete.findMany({ where: { tenantId, gtfNumber: gtf, deletedAt: null }, orderBy: { fecha: "asc" } }),
       prisma.expense.findMany({ where: { tenantId, gtfNumber: gtf }, orderBy: [{ date: "asc" }, { createdAt: "asc" }] }),
+      ptVigentePorLinea(prisma, tenantId, base),
     ]);
 
     const lineas: LineaPlataDTO[] = base.map((a) => ({
@@ -266,6 +332,7 @@ export const GuiaPlataDB = {
       costoTotal: num(a.costoTotal),
       costoDetalle: leerDetalle(a.costoDetalle),
       ptDerivado: ptDeLinea({ volumeM3: Number(a.volumeM3), productType: String(a.productType) }),
+      ptPago: ptPorLinea.get(a.id) ?? ptParaPagar(ptDeLinea({ volumeM3: Number(a.volumeM3), productType: String(a.productType) }), null),
       congelado: congelados.has(a.id),
       periodoCerrado: closedPeriodOf(cierres, a.entryDate) != null,
     }));
@@ -342,7 +409,7 @@ export const GuiaPlataDB = {
     }) : null;
 
     const gastosDto = gastos.map(aGasto);
-    const fletesDto = fletes.map((f) => ({
+    const fletesDto: FleteDeGuia[] = fletes.map((f) => ({
       id: f.id,
       fecha: dia(f.fecha),
       tipo: f.tipo,
@@ -351,6 +418,11 @@ export const GuiaPlataDB = {
       estadoPago: f.estadoPago,
       transportistaNombre: f.transportistaNombre ?? null,
       placa: f.placa ?? null,
+      /* `?? null`: con el cliente de Prisma viejo (dev server sin reiniciar)
+         las tres columnas no vienen y serían `undefined`. */
+      tarifaPorPt: num(f.tarifaPorPt ?? null),
+      ptCobrado: num(f.ptCobrado ?? null),
+      ptFuente: f.ptFuente === "oxapampa" || f.ptFuente === "estimado" ? f.ptFuente : null,
     }));
     const volumen = vivos.reduce((t, a) => t + Number(a.volumeM3), 0);
     const costoPuesto = costoPuestoEnPatio({
@@ -398,8 +470,27 @@ export const GuiaPlataDB = {
       fletes: fletesDto,
       gastos: gastosDto,
       costoPuesto,
+      ptGuia: ptDeLaGuia(lineas.map((l) => l.ptPago)),
       bloqueo,
     };
+  },
+
+  /**
+   * El PT de la guía ENTERA para cobrar por pt (flete, ADR-440 §6): Oxapampa
+   * sólo si TODAS sus líneas vivas lo son; si no, Σ ≈ estimado. `null` si la
+   * guía no tiene asientos vivos en este tenant. `db` = la tx del que escribe.
+   */
+  async ptDeGuia(tenantId: string, gtfNumber: string, db: LectorPt = prisma): Promise<PtParaPagar | null> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const gtf = gtfNumber.trim();
+    if (!gtf) return null;
+    const asientos = await db.woodEntry.findMany({
+      where: { tenantId, gtfNumber: gtf, deletedAt: null, status: { notIn: [...ESTADOS_MUERTOS] } },
+      select: { id: true, speciesCommonName: true, speciesScientificName: true, volumeM3: true, productType: true },
+    });
+    if (asientos.length === 0) return null;
+    const mapa = await ptVigentePorLinea(db, tenantId, asientos);
+    return ptDeLaGuia([...mapa.values()]);
   },
 
   /**
@@ -506,11 +597,37 @@ export const GuiaPlataDB = {
       }
       exigirVistos(input.vistos, asientos);
 
+      /* El PT con que se paga lo decide y lo SELLA el servidor, con la
+         cubicación leída ACÁ, dentro de la tx (ADR-440 §6). */
+      const vigente = await ptVigentePorLinea(tx, tenantId, asientos);
+      const sello = sellarActas(
+        input.lineas,
+        asientos.map((a) => ({
+          id: a.id,
+          speciesCommonName: a.speciesCommonName,
+          volumeM3: Number(a.volumeM3),
+          costoTotal: num(a.costoTotal),
+          costoDetalle: leerDetalle(a.costoDetalle),
+          ptPago: vigente.get(a.id) ?? ptParaPagar(ptDeLinea({ volumeM3: Number(a.volumeM3), productType: String(a.productType) }), null),
+        })),
+      );
+      if (!sello.ok) throw new PlataGuiaError(sello.codigo, sello.mensaje);
+
       const porId = new Map(asientos.map((a) => [a.id, a]));
       const cambian = input.lineas.filter((l) => {
         const a = porId.get(l.woodEntryId)!;
         const antes = num(a.costoTotal);
-        return antes == null || Math.abs(antes - l.costoTotal) > TOLERANCIA_SOLES;
+        if (antes == null || Math.abs(antes - l.costoTotal) > TOLERANCIA_SOLES) return true;
+        /* El PT sellado también es el acta: en mes cerrado o costo congelado no
+           se reescribe con otro PT u otra fuente aunque el monto quede igual
+           (revisión de seguridad 26-09). */
+        const prev = leerDetalle(a.costoDetalle);
+        const nuevo = sello.detalles.get(l.woodEntryId);
+        const ptAntes = prev?.ptUsado ?? null;
+        const ptNuevo = nuevo?.ptUsado ?? null;
+        const ptCambia =
+          ptAntes == null || ptNuevo == null ? ptAntes !== ptNuevo : Math.abs(ptAntes - ptNuevo) > 0.005;
+        return ptCambia || (prev?.fuentePt ?? null) !== (nuevo?.fuentePt ?? null);
       });
       await exigirCostoEditable(
         tx,
@@ -526,7 +643,7 @@ export const GuiaPlataDB = {
           data: {
             costoTotal: new Prisma.Decimal(l.costoTotal.toFixed(2)),
             moneda: "PEN",
-            costoDetalle: l.detalle as Prisma.InputJsonValue,
+            costoDetalle: (sello.detalles.get(l.woodEntryId) ?? l.detalle) as Prisma.InputJsonValue,
             proveedorParteId: proveedor?.id ?? null,
           },
         });
@@ -554,7 +671,7 @@ export const GuiaPlataDB = {
         const bajas = await ForestCuentaDB.bajaMaderaDeGuiaEnTx(tx, tenantId, gtf, { exigirSinPagos: true });
         if (bajas > 0) cuenta = "quitada";
       }
-      return { asientos, total, cuenta, cambian };
+      return { asientos, total, cuenta, cambian, detalles: sello.detalles };
     }, OPCIONES_TX);
 
     const porId = new Map(r.asientos.map((a) => [a.id, a]));
@@ -562,12 +679,17 @@ export const GuiaPlataDB = {
       r.cambian.map((l) => {
         const a = porId.get(l.woodEntryId)!;
         const antes = a.costoTotal != null ? `S/ ${Number(a.costoTotal).toFixed(2)}` : "sin costo";
+        const d = r.detalles.get(l.woodEntryId);
+        const pt =
+          d?.ptUsado != null && d.fuentePt
+            ? ` · ${d.ptUsado.toFixed(2)} pt ${d.fuentePt === "factura" ? "de la factura" : textoFuentePt({ fuente: d.fuentePt, cubicadas: d.ptCubicadas ?? 0, total: d.ptTrozas ?? 0 })}`
+            : "";
         return auditCtpEsperando({
           tenantId,
           action: "ctp_ingreso_costo",
           entity: "WoodEntry",
           entityId: a.id,
-          detail: `Valorizó el ingreso ${gtf} · ${a.speciesCommonName} · ${antes} → S/ ${l.costoTotal.toFixed(2)} (${l.detalle.modo === "especie" ? "precio por especie" : "reparto del total"}; factura S/ ${input.totalFactura.toFixed(2)})`,
+          detail: `Valorizó el ingreso ${gtf} · ${a.speciesCommonName} · ${antes} → S/ ${l.costoTotal.toFixed(2)} (${l.detalle.modo === "especie" ? "precio por especie" : "reparto del total"}; factura S/ ${input.totalFactura.toFixed(2)}${pt})`,
           user: usuario,
         });
       }),

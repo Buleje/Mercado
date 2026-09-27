@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   costoPorM3,
+  diaDeHoyDelViaje,
   faltantesFlete,
   fleteInputSchema,
   porProveedor,
@@ -38,6 +39,9 @@ const flete = (over: Partial<Flete> = {}): Flete => ({
   pagaQuien: "ctp",
   estadoPago: "pendiente",
   fechaPago: null,
+  tarifaPorPt: null,
+  ptCobrado: null,
+  ptFuente: null,
   notas: null,
   contratoId: null,
   ...over,
@@ -187,5 +191,14 @@ describe("validación del input", () => {
     const r = fleteInputSchema.safeParse({ fecha: "2026-07-10" });
     expect(r.success && r.data.pagaQuien).toBe("ctp");
     expect(r.success && r.data.estadoPago).toBe("pendiente");
+  });
+});
+
+describe("diaDeHoyDelViaje — el alta propone HOY en Lima, no en UTC", () => {
+  it("a las 22:30 de Pucallpa (03:30 UTC del día siguiente) sigue siendo hoy", () => {
+    expect(diaDeHoyDelViaje(new Date("2026-09-27T03:30:00.000Z"))).toBe("2026-09-26");
+  });
+  it("de día coincide con UTC", () => {
+    expect(diaDeHoyDelViaje(new Date("2026-09-27T15:00:00.000Z"))).toBe("2026-09-27");
   });
 });

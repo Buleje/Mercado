@@ -14,7 +14,7 @@ import { useId } from "react";
 import { Scale } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { formatNumber } from "@/lib/format";
-import type { PlataDeGuiaDTO } from "@/lib/forestal/plata-de-guia";
+import { ptDelBorrador, type FuentePt, type PlataDeGuiaDTO } from "@/lib/forestal/plata-de-guia";
 import type { UnidadPrecio, useBorradorCompra } from "@/hooks/use-plata-de-guia";
 import { CAMPO, soles } from "./comun";
 
@@ -23,6 +23,16 @@ type Borrador = ReturnType<typeof useBorradorCompra>;
 const GRILLA =
   "sm:grid sm:grid-cols-[minmax(0,1.3fr)_5.5rem_minmax(0,1fr)_minmax(0,1fr)_6.5rem] sm:items-center sm:gap-2";
 const CHICO = `${CAMPO} h-10 px-2 text-sm`;
+
+/** «3 120 pt Oxapampa» / «≈ 3 674 pt»: el PT con su fuente, en una sola forma. */
+const conFuente = (pt: number, fuente: "oxapampa" | "estimado") =>
+  fuente === "oxapampa" ? `${formatNumber(pt, 0)} pt Oxapampa` : `≈ ${formatNumber(pt, 0)} pt`;
+
+const CON: Record<FuentePt, string> = {
+  factura: "con la cantidad de la factura",
+  oxapampa: "con PT Oxapampa",
+  estimado: "con ≈ pt estimado",
+};
 
 export default function TablaPorEspecie({ dto, b }: { dto: PlataDeGuiaDTO; b: Borrador }) {
   const idFactura = useId();
@@ -44,10 +54,18 @@ export default function TablaPorEspecie({ dto, b }: { dto: PlataDeGuiaDTO; b: Bo
       {dto.lineas.map((l) => {
         const f = b.filas[l.id] ?? { unidad: "m3" as UnidadPrecio, precio: "", cantidad: "" };
         const c = calculo.lineas.find((x) => x.id === l.id);
+        /* El PT que se multiplica: el ya pagado (sellado) salvo «usar la de hoy». */
+        const pago = ptDelBorrador(l, Boolean(b.ptHoy[l.id]));
+        const sellado = ptDelBorrador(l, false);
+        const remedida =
+          f.unidad === "pt" && f.cantidad.trim() === "" && sellado.congelado && Math.abs(sellado.pt - l.ptPago.pt) > 0.005;
+        /* Placeholder corto: en el celular el campo mide ~100 px («277 pt Oxa…» se cortaba). */
         const nuestra =
           f.unidad === "m3"
             ? `${formatNumber(l.volumeM3, { max: 3 })} m³`
-            : `≈ ${formatNumber(l.ptDerivado, 0)} pt`;
+            : `${pago.fuente === "oxapampa" ? "" : "≈ "}${formatNumber(pago.pt, 0)} pt`;
+        const cambio =
+          l.costoTotal != null && c?.costoTotal != null && Math.abs(l.costoTotal - c.costoTotal) > 0.005;
         return (
           <div key={l.id} className={`rounded-xl border border-[var(--rule-soft)] p-2 ${GRILLA}`}>
             <div className="min-w-0">
@@ -55,8 +73,35 @@ export default function TablaPorEspecie({ dto, b }: { dto: PlataDeGuiaDTO; b: Bo
                 {l.speciesCommonName}
               </div>
               <div className="text-sm tabular-nums text-[var(--text-secondary)]">
-                {formatNumber(l.volumeM3, { max: 3 })} m³ · ≈ {formatNumber(l.ptDerivado, 0)} pt
+                {formatNumber(l.volumeM3, { max: 3 })} m³ · {conFuente(pago.pt, pago.fuente)}
+                {!pago.congelado && l.ptPago.total > 0 && (
+                  <span className="text-[var(--text-tertiary)]">
+                    {" "}
+                    · {l.ptPago.cubicadas} de {l.ptPago.total} cubicadas
+                  </span>
+                )}
               </div>
+              {remedida && (
+                <div className="mt-1 flex flex-wrap items-center gap-x-2 text-xs text-[var(--text-secondary)]">
+                  <span>
+                    Pagado con {conFuente(sellado.pt, sellado.fuente)} · hoy da{" "}
+                    {sellado.fuente === l.ptPago.fuente
+                      ? `${formatNumber(l.ptPago.pt, 0)} pt`
+                      : conFuente(l.ptPago.pt, l.ptPago.fuente)}
+                    <span className="text-[var(--text-tertiary)]">
+                      {" "}
+                      ({l.ptPago.cubicadas} de {l.ptPago.total} cubicadas)
+                    </span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => b.usarPtDeHoy(l.id, !b.ptHoy[l.id])}
+                    className="h-8 rounded-lg px-1.5 font-bold text-[var(--accent-ink)] hover:underline dark:text-[var(--accent)]"
+                  >
+                    {b.ptHoy[l.id] ? "Dejar lo pagado" : "Usar la de hoy"}
+                  </button>
+                </div>
+              )}
             </div>
             <div className="mt-2 grid grid-cols-3 gap-2 sm:contents">
               <select
@@ -100,9 +145,16 @@ export default function TablaPorEspecie({ dto, b }: { dto: PlataDeGuiaDTO; b: Bo
               ) : (
                 soles(c.costoTotal)
               )}
-              {c?.costoTotal != null && c.cantidadDerivada && (
+              {c?.costoTotal != null && (c.fuentePt != null || c.cantidadDerivada) && (
+                <span
+                  className={`block text-xs font-normal ${c.fuentePt === "estimado" ? "text-[var(--data-warning-ink)]" : "text-[var(--text-tertiary)]"}`}
+                >
+                  {c.fuentePt ? CON[c.fuentePt] : "con el m³ del libro"}
+                </span>
+              )}
+              {cambio && (
                 <span className="block text-xs font-normal text-[var(--text-tertiary)]">
-                  con la cantidad nuestra
+                  antes {soles(l.costoTotal)}
                 </span>
               )}
             </div>

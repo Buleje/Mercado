@@ -25,8 +25,11 @@ import {
   aplicarAjuste,
   costoPorEspecie,
   cuadrarConFactura,
+  esPtDerivado,
+  ptDelBorrador,
   repartirPorVolumen,
   type Cuadre,
+  type FuentePt,
   type GastoGuiaInput,
   type GuardarCompraInput,
   type GuardarPlataGuiaInput,
@@ -262,6 +265,15 @@ function preciosDe(
 }
 
 /**
+ * Las líneas con el PT que el borrador multiplica (ADR-440 §6): el SELLADO si
+ * ya se pagó por pt —re-medir después no cambia lo pagado—, salvo las que la
+ * persona pidió recalcular con la cubicación de hoy.
+ */
+function lineasParaPrecio(lineas: PlataDeGuiaDTO["lineas"], ptHoy: Readonly<Record<string, boolean>>) {
+  return lineas.map((l) => ({ ...l, ptPago: ptDelBorrador(l, Boolean(ptHoy[l.id])) }));
+}
+
+/**
  * El ajuste que se eligió la vez pasada, reconstruido. El acta guarda precio y
  * cantidad, no el ajuste: sin esto, reabrir una guía ajustada mostraba «Faltan
  * S/ 3,40» sobre un costo que ya cerraba al céntimo (medido en QA 26-09).
@@ -273,7 +285,7 @@ function ajusteGuardado(
   factura: number | null,
 ): Cuadre["ajuste"] {
   if (factura == null) return null;
-  const costos = costoPorEspecie(dto.lineas, preciosDe(dto.lineas, filas));
+  const costos = costoPorEspecie(lineasParaPrecio(dto.lineas, {}), preciosDe(dto.lineas, filas));
   if (costos.length !== dto.lineas.length) return null;
   const c = cuadrarConFactura(
     costos.map((x) => {
@@ -299,6 +311,8 @@ export interface LineaCalculada {
   /** La cantidad que se multiplicó y si salió de la factura o de nuestro cálculo. */
   cantidad: number | null;
   cantidadDerivada: boolean;
+  /** De dónde salió el PT multiplicado; `null` si fue por m³ o reparto del total. */
+  fuentePt: FuentePt | null;
 }
 
 const SIN_LINEAS: PlataDeGuiaDTO["lineas"] = [];
@@ -317,6 +331,8 @@ export function useBorradorCompra(dto: PlataDeGuiaDTO | null) {
   const [ajuste, setAjuste] = useState<Cuadre["ajuste"]>(null);
   const [proveedorId, setProveedorId] = useState<string | null>(null);
   const [anotarEnCuenta, setAnotarEnCuenta] = useState(true);
+  /** Líneas ya pagadas por pt que la persona pidió recalcular con la cubicación de hoy. */
+  const [ptHoy, setPtHoy] = useState<Record<string, boolean>>({});
 
   if (dto && sembrado !== dto.gtfNumber) {
     const detalle0 = dto.lineas.find((l) => l.costoDetalle)?.costoDetalle ?? null;
@@ -335,8 +351,10 @@ export function useBorradorCompra(dto: PlataDeGuiaDTO | null) {
       ajusteGuardado(dto, filas0, detalle0?.modo === "especie" ? detalle0.totalFactura : null),
     );
     setProveedorId(dto.proveedor?.seguro ? dto.proveedor.parteId : null);
+    setPtHoy({});
   }
   const lineasDto = dto?.lineas ?? SIN_LINEAS;
+  const lineasPrecio = useMemo(() => lineasParaPrecio(lineasDto, ptHoy), [lineasDto, ptHoy]);
 
   /* Cualquier cambio invalida el ajuste elegido: se ajustó una diferencia que ya no es la misma. */
   const cambiarFila = useCallback((id: string, v: Partial<FilaPrecio>) => {
@@ -354,6 +372,11 @@ export function useBorradorCompra(dto: PlataDeGuiaDTO | null) {
     setAjuste(null);
     setModo(m);
   }, []);
+  /** «Usar la cubicación de hoy» en una línea ya pagada por pt (o volver a lo pagado). */
+  const usarPtDeHoy = useCallback((id: string, si: boolean) => {
+    setAjuste(null);
+    setPtHoy((p) => ({ ...p, [id]: si }));
+  }, []);
 
   const calculo = useMemo(() => {
     const totalNum = num(total);
@@ -367,10 +390,11 @@ export function useBorradorCompra(dto: PlataDeGuiaDTO | null) {
         costoTotal: porId.get(l.id) ?? null,
         cantidad: l.volumeM3,
         cantidadDerivada: true,
+        fuentePt: null,
       }));
     } else {
       const costos = new Map(
-        costoPorEspecie(lineasDto, preciosDe(lineasDto, filas)).map((c) => [c.id, c]),
+        costoPorEspecie(lineasPrecio, preciosDe(lineasDto, filas)).map((c) => [c.id, c]),
       );
       lineas = lineasDto.map((l) => {
         const c = costos.get(l.id);
@@ -379,6 +403,7 @@ export function useBorradorCompra(dto: PlataDeGuiaDTO | null) {
           costoTotal: c?.costoTotal ?? null,
           cantidad: c?.cantidad ?? null,
           cantidadDerivada: c?.cantidadDerivada ?? true,
+          fuentePt: c?.fuentePt ?? null,
         };
       });
       /* El ajuste lo ELIGIÓ la persona («Ajustar S/ X en Tornillo»); nunca se aplica solo. */
@@ -414,7 +439,7 @@ export function useBorradorCompra(dto: PlataDeGuiaDTO | null) {
       cuadre,
       listo: Boolean(completas && factura != null && factura > 0 && cuadre?.cierra),
     };
-  }, [modo, total, filas, ajuste, lineasDto]);
+  }, [modo, total, filas, ajuste, lineasDto, lineasPrecio]);
 
   /** El cuerpo del PUT; `null` si todavía no se puede guardar. */
   const cuerpo = useMemo((): GuardarCompraInput | null => {
@@ -434,17 +459,27 @@ export function useBorradorCompra(dto: PlataDeGuiaDTO | null) {
         const f = filas[l.id];
         const precio = modo === "especie" && f ? num(f.precio) : porM3;
         const cant = modo === "especie" && f ? num(f.cantidad) : null;
+        const unidad = modo === "especie" && f ? f.unidad : "m3";
+        const cantidadFactura = cant != null && cant > 0 ? cant : null;
+        /* El PT que multiplicamos: el servidor lo contrasta con la cubicación
+           y SELLA la fuente (nunca sale de acá). */
+        const ptUsado = esPtDerivado({ modo, unidad, cantidadFactura })
+          ? (c?.cantidad ?? null)
+          : unidad === "pt"
+            ? cantidadFactura
+            : null;
         return {
           woodEntryId: l.id,
           costoTotal: r2(c?.costoTotal ?? 0),
           detalle: {
             v: 1 as const,
             modo,
-            unidad: modo === "especie" && f ? f.unidad : "m3",
+            unidad,
             precio: precio != null && precio > 0 && precio <= 100_000 ? precio : null,
-            cantidadFactura: cant != null && cant > 0 ? cant : null,
+            cantidadFactura,
             ptDerivado: Math.max(0, l.ptDerivado),
             totalFactura: r2(factura),
+            ptUsado,
           },
         };
       }),
@@ -464,6 +499,8 @@ export function useBorradorCompra(dto: PlataDeGuiaDTO | null) {
     setProveedorId,
     anotarEnCuenta,
     setAnotarEnCuenta,
+    ptHoy,
+    usarPtDeHoy,
     calculo,
     cuerpo,
   };

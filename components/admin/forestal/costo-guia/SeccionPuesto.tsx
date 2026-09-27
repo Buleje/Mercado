@@ -20,6 +20,7 @@ import {
   type PlataDeGuiaDTO,
 } from "@/lib/forestal/plata-de-guia";
 import type { Resultado } from "@/hooks/use-plata-de-guia";
+import { formatNumber } from "@/lib/format";
 import { Btn } from "../ctp-shared";
 import { Bloque, diaCorto, soles } from "./comun";
 import FormGasto from "./FormGasto";
@@ -118,6 +119,13 @@ export default function SeccionPuesto({
                     <span className="min-w-0 truncate text-[var(--text-secondary)]">
                       {diaCorto(f.fecha)} · {f.transportistaNombre ?? "sin transportista"}
                       {f.placa ? ` · ${f.placa}` : ""}
+                      {f.tarifaPorPt != null && f.ptCobrado != null && (
+                        <span className="text-[var(--text-tertiary)]">
+                          {" "}
+                          · S/ {formatNumber(f.tarifaPorPt, { max: 4 })} × {formatNumber(f.ptCobrado, 0)} pt
+                          {f.ptFuente === "oxapampa" ? " Oxapampa" : " ≈ estimado"}
+                        </span>
+                      )}
                     </span>
                     <span className="shrink-0 font-bold tabular-nums text-[var(--text-primary)]">
                       {f.pagaQuien === "proveedor" ? (

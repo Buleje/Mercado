@@ -40,6 +40,7 @@ const GUIA = {
 const linea = (id: string, especie: string, m3: number) => ({
   id, speciesCommonName: especie, productType: "rolliza", volumeM3: m3, pieces: 10, status: "validado",
   entryDate: "2026-09-20", costoTotal: null, costoDetalle: null, ptDerivado: Math.round(m3 * 237), congelado: false, periodoCerrado: false,
+  ptPago: { pt: Math.round(m3 * 237), fuente: "estimado" as const, estimado: Math.round(m3 * 237), oxapampa: null, cubicadas: 0, total: 10, noLlegaron: 0 },
 });
 
 const DTO: PlataDeGuiaDTO = {
@@ -48,6 +49,7 @@ const DTO: PlataDeGuiaDTO = {
   mezclada: false, dueno: null, duenoSugerido: null, contrato: null, proveedor: null,
   totalMadera: null, sinCosto: 2, cuenta: null, pago: null, persona: null, fletes: [], gastos: [],
   costoPuesto: { madera: null, fletes: 0, fletesSinMonto: 0, fletesDelProveedor: 0, gastos: 0, total: 0, incompleto: true, faltantes: ["el costo de la madera"], porM3: null },
+  ptGuia: { pt: Math.round(24.75 * 237), fuente: "estimado", estimado: Math.round(24.75 * 237), oxapampa: null, cubicadas: 0, total: 20, noLlegaron: 0 },
   bloqueo: null,
 };
 

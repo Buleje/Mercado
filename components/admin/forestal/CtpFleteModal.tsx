@@ -16,6 +16,7 @@ import { Loader2, Save, Truck } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import SelectorContrato from "./SelectorContrato";
 import { useDirectorioForestal } from "@/hooks/use-directorio-forestal";
+import { usePtDeGuia } from "@/hooks/use-pt-de-guia";
 import { claveBusqueda, formatearPlaca, normalizarPlaca } from "@/lib/forestal/directorio";
 import {
   ESTADOS_PAGO,
@@ -27,16 +28,20 @@ import {
   TIPOS_TRANSPORTE,
   TIPO_TRANSPORTE_LABEL,
   costoPorM3,
+  diaDeHoyDelViaje,
+  montoPorPt,
   type CandidatoFlete,
   type Flete,
   type FleteInput,
 } from "@/lib/forestal/fletes";
 import { Btn, Field, I, ModalBody, ModalFooter, Seccion, useAtajoGuardar, useCierreSeguro, useHayCambios } from "./ctp-shared";
 import { formatCurrency } from "@/lib/format";
+import { Opciones } from "./costo-guia/comun";
+import CobroFletePorPt from "./costo-guia/CobroFletePorPt";
 
 type Borrador = FleteInput & { id?: string };
 
-const hoy = () => new Date().toISOString().slice(0, 10);
+const hoy = () => diaDeHoyDelViaje();
 
 function aBorrador(f: Flete | null): Borrador {
   if (!f) {
@@ -73,6 +78,8 @@ function aBorrador(f: Flete | null): Borrador {
     fechaPago: f.fechaPago ? f.fechaPago.slice(0, 10) : "",
     notas: f.notas ?? "",
     contratoId: f.contratoId,
+    tarifaPorPt: f.tarifaPorPt,
+    ptVisto: f.ptCobrado,
   };
 }
 
@@ -226,7 +233,23 @@ export default function CtpFleteModal({
 
   useAutoMatchDirectorio(!flete && Boolean(prellenado), dir, { transportistas, conductores, proveedores }, setB);
 
-  const unitario = costoPorM3({ monto: b.monto ?? null, volumenM3: b.volumenM3 ?? null });
+  /* Cobrar por pie tablar (ADR-440 §6): el monto sale de tarifa × PT de la
+     guía. Lo pone el servidor; acá se ve ANTES de guardar con la misma cuenta. */
+  const [porPt, setPorPt] = useState(flete?.tarifaPorPt != null);
+  const [usarPtHoy, setUsarPtHoy] = useState(false);
+  const gtf = (b.gtfNumber ?? "").trim();
+  const cobraPorPt = porPt && b.tipo === "ingreso";
+  const ptGuia = usePtDeGuia(cobraPorPt ? gtf : null);
+  const cobrado =
+    flete?.ptCobrado != null && (flete.gtfNumber ?? "") === gtf ? { pt: flete.ptCobrado, fuente: flete.ptFuente } : null;
+  const ptElegido = cobrado && !usarPtHoy ? cobrado.pt : (ptGuia.pt?.pt ?? null);
+  const montoPt =
+    cobraPorPt && b.tarifaPorPt != null && b.tarifaPorPt > 0 && ptElegido != null && ptElegido > 0
+      ? montoPorPt(b.tarifaPorPt, ptElegido)
+      : null;
+  const montoVista = cobraPorPt ? montoPt : (b.monto ?? null);
+
+  const unitario = costoPorM3({ monto: montoVista, volumenM3: b.volumenM3 ?? null });
 
   /**
    * "Para avisar si la carga no entra" decía la ficha del vehículo desde que se
@@ -264,10 +287,17 @@ export default function CtpFleteModal({
       setError("La fecha del viaje es obligatoria.");
       return;
     }
+    if (cobraPorPt) {
+      if (!gtf) return setError("Para cobrar por pie tablar el viaje tiene que traer madera de una guía: pon el N° de guía.");
+      if (!(b.tarifaPorPt != null && b.tarifaPorPt > 0)) return setError("Falta la tarifa por pt.");
+      if (ptElegido == null) return setError("Todavía no se leyó el pie tablar de la guía.");
+    }
     setGuardando(true);
     setError(null);
     try {
-      await onGuardar(b);
+      await onGuardar(
+        cobraPorPt ? { ...b, ptVisto: ptElegido, monto: montoPt } : { ...b, tarifaPorPt: null, ptVisto: null },
+      );
       (onGuardado ?? onClose)();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -420,6 +450,35 @@ export default function CtpFleteModal({
         </Seccion>
 
         <Seccion numero={3} title="Cuánto" hint="Sin monto queda pendiente de cerrar, no en cero">
+          {b.tipo === "ingreso" && (
+            <Field label="Cómo se cobra" span={12} hint="Por pie tablar: tu tarifa × el PT de la guía">
+              <Opciones
+                etiqueta="Cómo se cobra el flete"
+                valor={porPt ? "pt" : "monto"}
+                onCambio={(v) => setPorPt(v === "pt")}
+                opciones={[
+                  { v: "monto", l: "Un monto" },
+                  { v: "pt", l: "Por pie tablar" },
+                ]}
+              />
+            </Field>
+          )}
+          {cobraPorPt && (
+            <CobroFletePorPt
+              tarifa={b.tarifaPorPt ?? null}
+              onTarifa={(v) => set({ tarifaPorPt: v })}
+              vigente={ptGuia.pt}
+              cargando={Boolean(gtf) && ptGuia.cargando}
+              error={ptGuia.error}
+              noExiste={ptGuia.noExiste}
+              cobrado={cobrado}
+              usarHoy={usarPtHoy}
+              onUsarHoy={setUsarPtHoy}
+              ptElegido={ptElegido}
+              monto={montoPt}
+              montoAntes={flete?.monto ?? null}
+            />
+          )}
           <Field
             label="Volumen movido (m³)"
             span={4}
@@ -436,13 +495,18 @@ export default function CtpFleteModal({
           </Field>
           {/* El costo por m³ se calcula, pero vive en el pie: ahí se lee sin
               perder de vista los dos campos que lo producen. */}
-          <Field label="Monto del flete (S/)" span={4} hint="Vacío = todavía no se sabe">
+          <Field
+            label="Monto del flete (S/)"
+            span={4}
+            hint={cobraPorPt ? "Tarifa × pie tablar: lo calcula el sistema" : "Vacío = todavía no se sabe"}
+          >
             <input
               type="number"
               step="0.01"
               min="0"
+              disabled={cobraPorPt}
               className={`${I} text-right font-mono tabular-nums`}
-              value={b.monto ?? ""}
+              value={montoVista ?? ""}
               onChange={(e) => set({ monto: e.target.value === "" ? null : Number(e.target.value) })}
             />
           </Field>

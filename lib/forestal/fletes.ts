@@ -23,6 +23,9 @@
 
 import { z } from "zod";
 import { leerGtfDatos } from "./ctp-gtf-datos";
+import { formatNumber } from "@/lib/format";
+import { limaDateKey } from "@/lib/utils";
+import type { PtParaPagar } from "./plata-de-guia";
 
 // ── Vocabulario ─────────────────────────────────────────────────────────────
 
@@ -95,11 +98,29 @@ export interface Flete {
   notas: string | null;
   /** El permiso bajo el que se hizo el viaje (ADR-421). */
   contratoId: string | null;
+  /** S/ por pie tablar cuando el viaje se cobra por pt (ADR-440 §6). `null` = monto a mano. */
+  tarifaPorPt: number | null;
+  /** El PT de la guía con el que se cobró, CONGELADO al guardar. */
+  ptCobrado: number | null;
+  /** De dónde salió `ptCobrado`: Oxapampa (guía cubicada entera) o ≈ estimado. */
+  ptFuente: "oxapampa" | "estimado" | null;
+}
+
+/**
+ * El día del viaje que propone un alta nueva: HOY EN LIMA. Con
+ * `toISOString()` (UTC) un viaje anotado desde las 19:00 de Pucallpa salía con
+ * fecha de mañana (medido 26-09 a las 22:xx: «27 set.»).
+ */
+export function diaDeHoyDelViaje(ahora: Date = new Date()): string {
+  return limaDateKey(ahora);
 }
 
 // ── Esquemas ────────────────────────────────────────────────────────────────
 
 const texto = (max: number) => z.string().trim().max(max);
+
+/** S/ por pie tablar. S/ 1 000 por pt ya es un error de dedo (lo normal: céntimos). */
+export const TARIFA_PT_MAX = 1000;
 
 export const fleteInputSchema = z.object({
   /** `YYYY-MM-DD` — fecha del viaje. */
@@ -125,6 +146,20 @@ export const fleteInputSchema = z.object({
   /** El permiso bajo el que se hizo el viaje (ADR-421). Opcional: un viaje
    *  interno de planta no pertenece a ningún contrato. */
   contratoId: texto(64).optional().nullable(),
+  /** Cobrar por pie tablar (ADR-440 §6): con esto el SERVIDOR pone el monto
+   *  (tarifa × PT de la guía) y el `monto` que venga se ignora. */
+  tarifaPorPt: z
+    .number()
+    .positive("La tarifa tiene que ser mayor a cero")
+    .max(TARIFA_PT_MAX)
+    /* La columna guarda 4 decimales: con un quinto, el monto saldría de una
+       tarifa distinta a la que queda escrita. */
+    .refine((v) => Math.abs(v * 10_000 - Math.round(v * 10_000)) < 1e-6, "Como mucho 4 decimales")
+    .optional()
+    .nullable(),
+  /** El PT que la persona vio al cobrar por pt. Tiene que ser el de hoy o el
+   *  ya cobrado de este viaje: si no, alguien midió en el medio (409). */
+  ptVisto: z.number().nonnegative().max(10_000_000).optional().nullable(),
 });
 export type FleteInput = z.infer<typeof fleteInputSchema>;
 
@@ -366,4 +401,61 @@ export function faltantesFlete(f: Flete): string[] {
   if (f.volumenM3 == null) faltan.push("volumen (sin él no hay S//m³)");
   if (!f.gtfNumber) faltan.push("guía (sin ella no se ata al libro)");
   return faltan;
+}
+
+// ── Flete por pie tablar (ADR-440 §6) ──────────────────────────────────────
+
+export type CodigoCobroPt = "FALTA_PT_VISTO" | "CUBICACION_CAMBIO" | "GUIA_SIN_PT";
+
+export type CobroPorPt =
+  | { ok: true; pt: number; fuente: "oxapampa" | "estimado"; monto: number; congelado: boolean }
+  | { ok: false; codigo: CodigoCobroPt; mensaje: string };
+
+const mismoPt = (a: number, b: number) => Math.abs(a - b) <= 0.005;
+
+/** tarifa × pt al céntimo. La MISMA cuenta en la vista previa y en el servidor. */
+export function montoPorPt(tarifaPorPt: number, pt: number): number {
+  return Math.round((tarifaPorPt * pt + Number.EPSILON) * 100) / 100;
+}
+
+/**
+ * Cuánto vale un viaje cobrado por pt: tarifa × PT de la guía, al céntimo. El
+ * PT lo pone el SERVIDOR (`ptDeLaGuia`: Oxapampa con la guía cubicada entera;
+ * si no, ≈ estimado). El `ptVisto` de la pantalla tiene que ser:
+ *  1. el vigente → se cobra con él; o
+ *  2. el que este viaje YA cobró → se conserva (congelado): re-medir la guía
+ *     después no cambia un flete anotado, aunque se corrija la tarifa.
+ * Si no es ninguno, alguien midió mientras se miraba → `CUBICACION_CAMBIO`.
+ */
+export function cobroPorPt(input: {
+  tarifaPorPt: number;
+  ptVisto: number | null | undefined;
+  vigente: Pick<PtParaPagar, "pt" | "fuente" | "cubicadas" | "total">;
+  previo: { ptCobrado: number | null; ptFuente: string | null } | null;
+}): CobroPorPt {
+  const { tarifaPorPt, ptVisto, vigente, previo } = input;
+  if (ptVisto == null) {
+    return { ok: false, codigo: "FALTA_PT_VISTO", mensaje: "Falta el pie tablar con el que calculaste el flete. Vuelve a abrirlo." };
+  }
+  let pt: number;
+  let fuente: "oxapampa" | "estimado";
+  let congelado = false;
+  if (mismoPt(ptVisto, vigente.pt)) {
+    pt = vigente.pt;
+    fuente = vigente.fuente;
+  } else if (previo?.ptCobrado != null && mismoPt(ptVisto, previo.ptCobrado)) {
+    pt = previo.ptCobrado;
+    fuente = previo.ptFuente === "oxapampa" ? "oxapampa" : "estimado";
+    congelado = true;
+  } else {
+    return {
+      ok: false,
+      codigo: "CUBICACION_CAMBIO",
+      mensaje: `La cubicación de la guía cambió mientras mirabas: calculaste con ${formatNumber(ptVisto, { max: 2 })} pt y hoy da ${formatNumber(vigente.pt, { max: 2 })} pt. Vuelve a abrir el viaje para ver el monto nuevo.`,
+    };
+  }
+  if (!(pt > 0)) {
+    return { ok: false, codigo: "GUIA_SIN_PT", mensaje: "La guía no tiene pie tablar para cobrar (ni cubicado ni estimado): anota el monto a mano." };
+  }
+  return { ok: true, pt, fuente, monto: montoPorPt(tarifaPorPt, pt), congelado };
 }

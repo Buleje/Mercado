@@ -37,7 +37,7 @@ import CtpFletesCandidatosBanner from "./CtpFletesCandidatosBanner";
 import CtpCuentaCorriente from "./CtpCuentaCorriente";
 import { Btn, IconAction, TablaSkeleton, VistaHeader } from "./ctp-shared";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
-import { formatCurrency, formatDateShort } from "@/lib/format";
+import { formatCurrency, formatDateShort, formatNumber } from "@/lib/format";
 
 type Pestaña = "viajes" | "transportistas" | "proveedores" | "cuenta";
 
@@ -299,6 +299,9 @@ function ListaViajes({
                   TIPO_FLETE_LABEL[f.tipo],
                   f.volumenM3 != null ? `${fmtM3(Number(f.volumenM3))} m³` : null,
                   unitario != null ? `${soles(unitario)}/m³` : null,
+                  f.tarifaPorPt != null && f.ptCobrado != null
+                    ? `S/ ${formatNumber(f.tarifaPorPt, { max: 4 })} × ${formatNumber(f.ptCobrado, 0)} pt ${f.ptFuente === "oxapampa" ? "Oxapampa" : "≈ estimado"}`
+                    : null,
                   PAGADOR_LABEL[f.pagaQuien],
                   f.proveedorNombre,
                 ]
