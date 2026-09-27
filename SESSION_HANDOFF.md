@@ -1,3 +1,18 @@
+# SESSION HANDOFF — 2026-09-26 (noche): QR de ficha, lotes por especie, cubicación Oxapampa, pago por PT, WhatsApp del negocio
+
+**Estado:** push al día (`f914f7278`). Árbol limpio. Commits de la sesión: `2800f6bd8` (QR ficha + lotes por especie), `9bb4cc551` (Oxapampa, medir escaneando, acta del conteo, tarjeta de troza), `849854759` (WhatsApp del negocio), `f914f7278` (pago madera/flete por PT Oxapampa).
+
+**PENDIENTE — decisiones de Brandon antes de pasar a producción** (runbook `docs/runbooks/deploy-rama-a-produccion.md`):
+1. Producción = deploy por CLI del 16-07 (rama `prod`, commit `7774f5ca`), no `master`. Los previews fallan por `DATABASE_URL` de **Preview** en Vercel: host `aws-0` y usuario `app_user` → debe ser `postgres.<ref>@aws-1-us-east-2.pooler.supabase.com:6543`. Revisar también `DIRECT_URL`/`AUTH_SECRET` en Preview y Production.
+2. Riesgos al desplegar: caja de Blas abierta desde el 11-06 (el cierre automático la cerraría sin conteo a las 18:00); 13 crons nuevos (3 mandan WhatsApp de madrugada); 10 migraciones aplicadas a mano sin marcar (NUNCA `prisma migrate deploy` sin `migrate resolve --applied`); backup off-site 0/167; simulacro DR hace 130 días; Rolling Releases no disponible. Rollback: Instant Rollback a `dpl_EWnizDb4JVE2JPkqG7FYnmQ6VmM2`.
+3. Un `vercel login` de un agente entró a otra cuenta (`bulejelauea-9406`): revisar.
+
+**PENDIENTE — canales** (Brandon, en Meta): agregar su número a la lista permitida del número de prueba; crear plantilla `aviso_libro_ctp` (Utilidad, español, con texto fijo alrededor de {{1}}: «Aviso del Libro CTP: {{1}}. Detalle en el panel.»). Correo: `RESEND_FROM_EMAIL` con `onboarding@resend.dev` sólo entrega al dueño; en Vercel Production hay que ponerla también. `buleje.pe` no existe en DNS. Reportes a la hora exacta: runbook `docs/runbooks/reportes-hora-exacta.md` (pg_cron + pg_net + Vault), no aplicado.
+
+**Otros:** «hoy» en UTC en 21 archivos de `components/admin/forestal` (a las 19:00 Lima proponen mañana; sólo se arregló el alta de flete). `CtpPatioBandeja.tsx` usa `text-xs`/`ts-2xs`.
+
+---
+
 # SESSION HANDOFF — 2026-09-24 (cierre): colores del logo, indicadores en la barra y filtros en el encabezado
 
 **Estado:** push al día. Árbol limpio salvo `.claude/improvement-radar.md` (ruido del hook de co-edición; no se commitea).
