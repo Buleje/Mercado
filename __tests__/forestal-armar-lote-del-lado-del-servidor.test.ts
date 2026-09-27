@@ -64,6 +64,9 @@ const H = vi.hoisted(() => {
   };
 
   const tx = {
+    /* El lock `FOR UPDATE ORDER BY id` de las piezas (ADR-441, mismo orden que
+       el lote mixto): en el doble no bloquea nada. */
+    $queryRaw: async () => [],
     forestLoteAserrio: { findFirst: async () => estado.lote },
     woodEntryTroza: {
       findMany: async () => estado.pedidas,

@@ -43,10 +43,19 @@ const H = vi.hoisted(() => {
     audit: [] as { action: string; entityId: string; detail: string }[],
   };
   const trozaFindMany = async (a: {
-    where: { tenantId: string; woodEntryId?: string | { in: string[] }; id?: { in: string[] }; codigoPlanta?: unknown };
+    where: {
+      tenantId: string;
+      woodEntryId?: string | { in: string[] };
+      id?: { in: string[] };
+      codigoPlanta?: unknown;
+      /* ADR-441: anular/rechazar/borrar sueltan antes las reservas de un lote
+         mixto (`loteMixtoId: { not: null }`). Estas trozas no están en ninguno. */
+      loteMixtoId?: unknown;
+    };
   }) =>
     estado.trozas.filter((t) => {
       if (t.tenantId !== a.where.tenantId) return false;
+      if (a.where.loteMixtoId) return false;
       const we = a.where.woodEntryId;
       if (typeof we === "string" && t.woodEntryId !== we) return false;
       if (we && typeof we === "object" && !we.in.includes(t.woodEntryId)) return false;

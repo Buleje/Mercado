@@ -67,6 +67,7 @@ import CtpAvisoSinEspecie, { AvisoEspeciePuesta } from "./CtpAvisoSinEspecie";
 import CtpLoQueSeDeclara from "./CtpLoQueSeDeclara";
 import CtpServicioProduccion from "./CtpServicioProduccion";
 import CtpGruposDeDueno, { AvisoDuenoRegistrado } from "./CtpGruposDeDueno";
+import CtpMixtoDelAsiento from "./CtpMixtoDelAsiento";
 
 import type { BorradorDeclaracion } from "./hooks/use-declarar-por-dueno";
 
@@ -92,7 +93,14 @@ interface Props {
    */
   onRegistrado: (
     mensaje: string,
-    detalle: { quedan: readonly PiezaCubicada[]; codigos: readonly string[] },
+    detalle: {
+      quedan: readonly PiezaCubicada[];
+      codigos: readonly string[];
+      /** Las corridas que se acaban de crear (una por especie). */
+      corridas: readonly string[];
+      /** «¿De qué lote mixto salió?» (ADR-441): con él, se abre la vinculación armada. */
+      loteMixtoId: string | null;
+    },
   ) => void;
 }
 
@@ -100,6 +108,8 @@ export default function CtpDeclararProduccionModal(props: Props) {
   /* El borrador y el dueño elegido viven acá afuera: cerrar para volver a
      cubicar no los borra. */
   const porDueno = useDeclararPorDueno(props.piezas);
+  /* El mixto elegido también sobrevive a cerrar para volver a cubicar. */
+  const [loteMixtoId, setLoteMixtoId] = useState<string | null>(null);
   if (!props.abierto) return null;
   return (
     <Dialogo
@@ -109,6 +119,8 @@ export default function CtpDeclararProduccionModal(props: Props) {
         props.onCerrar();
       }}
       porDueno={porDueno}
+      loteMixtoId={loteMixtoId}
+      onLoteMixto={setLoteMixtoId}
     />
   );
 }
@@ -121,7 +133,13 @@ function Dialogo({
   trozas,
   onRegistrado,
   porDueno,
-}: Omit<Props, "abierto" | "piezas"> & { porDueno: DeclararPorDueno }) {
+  loteMixtoId,
+  onLoteMixto,
+}: Omit<Props, "abierto" | "piezas"> & {
+  porDueno: DeclararPorDueno;
+  loteMixtoId: string | null;
+  onLoteMixto: (id: string | null) => void;
+}) {
   const { borrador, setBorrador, piezas, grupo, separados } = porDueno;
   const cambiar = (parcial: Partial<BorradorDeclaracion>) =>
     setBorrador((b) => ({ ...b, ...parcial }));
@@ -255,7 +273,12 @@ function Dialogo({
        libreta entera como siempre. */
     const { quedan, ids, mensaje } = porDueno.registrado(mensajeDeRegistro(resp, servicio, cliente));
     quitarDeLaLibretaProduccion(ids);
-    onRegistrado(mensaje, { quedan, codigos: paquetes.map((p) => p.codigo) });
+    onRegistrado(mensaje, {
+      quedan,
+      codigos: paquetes.map((p) => p.codigo),
+      corridas: resp.corridas.map((c) => c.id),
+      loteMixtoId,
+    });
   };
 
   const nota =
@@ -395,6 +418,7 @@ function Dialogo({
             onUsarEspecie={(nombre) => cambiar({ especieParaSinEspecie: nombre })}
           />
         </Seccion>
+        <CtpMixtoDelAsiento valor={loteMixtoId} onCambiar={onLoteMixto} />
       </ModalBody>
     </AdminModal>
   );

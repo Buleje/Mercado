@@ -132,7 +132,17 @@ export function duenosDeAnotacion(section: string, payload: Record<string, unkno
   if (section === "conteo" && esObjeto(payload.conteo) && typeof payload.conteo.iniciadoEn === "string") {
     return [`conteo:${payload.conteo.iniciadoEn}`];
   }
+  /* Apartar y sacar una troza del lote mixto (ADR-441): «sacar» no puede
+     llegar antes que el «apartar» que quedó sin subir. */
+  if (section === "lote-mixto") return idsDeTrozas(payload).map((id) => `mixto:${id}`);
   return [];
+}
+
+/** Los ids de `trozaIds` (apartar/sacar del mixto), sin vacíos. */
+function idsDeTrozas(payload: Record<string, unknown>): string[] {
+  return Array.isArray(payload.trozaIds)
+    ? (payload.trozaIds as unknown[]).filter((id): id is string => typeof id === "string" && id.length > 0)
+    : [];
 }
 
 /**
@@ -168,13 +178,19 @@ export function delMismoDueno(
  * guardado un PT que el libro no tenía. Devuelve el motivo (de las piezas de
  * esta anotación) o `null` si entró todo.
  */
-export function rechazoDentroDelOk(payload: Record<string, unknown>, cuerpo: unknown): string | null {
+export function rechazoDentroDelOk(
+  payload: Record<string, unknown>,
+  cuerpo: unknown,
+  section?: string,
+): string | null {
   if (!esObjeto(cuerpo) || !Array.isArray(cuerpo.rechazadas)) return null;
   const ids = new Set(
     (Array.isArray(payload.trozas) ? (payload.trozas as unknown[]) : [])
       .map((t) => (esObjeto(t) && typeof t.id === "string" ? t.id : null))
       .filter((id): id is string => id != null),
   );
+  /* El mixto aparta por `trozaIds` y responde `{ agregadas, rechazadas }`. */
+  if (section === "lote-mixto") for (const id of idsDeTrozas(payload)) ids.add(id);
   /* Sólo las piezas de ESTA anotación: sin piezas en el payload no hay de qué hablar. */
   if (ids.size === 0) return null;
   const motivos = (cuerpo.rechazadas as unknown[])
@@ -266,6 +282,11 @@ export function resumirAnotacion(section: string, p: Record<string, unknown>): s
     return `Medidas de ${trozas.length || "?"} trozas`;
   }
   if (section === "conteo" && esObjeto(p.conteo)) return resumenDeActa(p.conteo);
+  if (section === "lote-mixto") {
+    const n = piezas("trozaIds");
+    const verbo = p.accion === "quitar" ? "Sacar del lote mixto" : "Apartar en el lote mixto";
+    return `${verbo}: ${n ?? "?"} troza${n === 1 ? "" : "s"}`;
+  }
 
   const partes = [
     s("speciesCommon") ?? s("speciesCommonName") ?? s("productType") ?? section,
@@ -440,7 +461,7 @@ export async function sincronizar(): Promise<ResumenSync> {
       const veredicto = clasificarRespuesta(r.status, r.ok);
       if (veredicto === "ok") {
         const cuerpo: unknown = await r.json().catch(() => null);
-        const motivo = rechazoDentroDelOk(a.payload, cuerpo);
+        const motivo = rechazoDentroDelOk(a.payload, cuerpo, a.section);
         if (motivo) {
           await marcar(a.id, { estado: "rechazado", motivo });
           rechazadas++;

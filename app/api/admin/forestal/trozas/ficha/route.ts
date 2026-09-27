@@ -5,6 +5,7 @@ import { isSpecializationEnabled } from "@/lib/specializations";
 import { WoodEntriesDB } from "@/lib/db/wood-entries.db";
 import { ctpErrorResponse } from "@/lib/forestal/ctp-api-errors";
 import { normalizarFotos } from "@/lib/forestal/fotos-carga";
+import { mixtoVivo } from "@/lib/forestal/lote-mixto";
 
 /**
  * GET /api/admin/forestal/trozas/ficha?id=<trozaId> — la historia de una pieza.
@@ -110,6 +111,10 @@ export async function GET(req: NextRequest) {
         usada: Boolean(r.consumidaEnId || r.despachadaEnId),
       })),
       lote: t.loteAserrio,
+      /* El lote MIXTO donde está apartada (ADR-441), sólo si sigue abierto: es
+         lo que el escáner mira para decir «ya está en otro mixto» (LM1) y lo
+         que apaga «Armar lote» en la tarjeta (LM4). */
+      loteMixto: mixtoVivo(t.loteMixto) && t.loteMixto ? { id: t.loteMixto.id, code: t.loteMixto.code } : null,
       corrida: t.consumidaEn
         ? {
             id: t.consumidaEn.id,

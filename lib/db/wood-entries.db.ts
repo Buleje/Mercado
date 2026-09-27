@@ -47,6 +47,8 @@ import type { FiltroPago } from "@/lib/forestal/ingresos-filtros-columna";
 import { GuiaPlataDB } from "./guia-plata.db";
 import { planearMedida, type CambioMedidaTroza, type PlanMedida } from "@/lib/forestal/medidas-troza";
 import { fmtPt } from "@/lib/forestal/cubicacion-formato";
+import { mensajeApartadasEnMixto, mixtoVivo } from "@/lib/forestal/lote-mixto";
+import { logger } from "@/lib/logger";
 
 /**
  * Alta de una GTF de SERFOR completa (ADR-312): la cabecera es del documento y
@@ -395,6 +397,51 @@ type WoodEntryConTrozas = Prisma.WoodEntryGetPayload<object> & {
 };
 
 const CACHE_PREFIX = "wood-entries";
+
+/**
+ * Lo que se lee del LOTE MIXTO de una troza (ADR-441). El estado viaja porque
+ * decide: una reserva en un mixto repartido, anulado o borrado ya no aparta nada
+ * (`mixtoVivo`) — mismo criterio que la corrida y el despacho.
+ */
+const SELECT_LOTE_MIXTO = { id: true, code: true, status: true, deletedAt: true } as const;
+
+/**
+ * LM4 en los tres escritores que NO pasan por un lote (ADR-441): el consumo a
+ * mano en una corrida, el despacho sin aserrar y el retrozado. Una pieza
+ * apartada en un mixto ABIERTO está por ir a la sierra con su pila: si se
+ * consume, se despacha o se corta por otro camino, el reparto la suelta en
+ * silencio y la pila pierde una troza que el operador escaneó.
+ *
+ * Tira con el código del escritor (T1/T2/…); el mensaje dice en qué mixto está
+ * y qué hacer (`mensajeApartadasEnMixto`). El llamador decide cuáles revisar:
+ * las que ya eran de esa corrida o ese despacho no se revisan, así un asiento
+ * viejo que quedó con una pieza en un mixto todavía se puede corregir.
+ */
+function exigirFueraDelMixto(
+  trozas: readonly {
+    id: string;
+    codificacion: string | null;
+    codigoPlanta?: string | null;
+    loteMixto?: { code: string; status: string; deletedAt: Date | null } | null;
+  }[],
+  code: "T1_TROZA_NO_CONSUMIBLE" | "T2_TROZA_NO_DESPACHABLE" | "ESTADO_NO_EDITABLE",
+): void {
+  const apartadas = trozas.filter((t) => mixtoVivo(t.loteMixto));
+  if (apartadas.length === 0) return;
+  throw new CtpInvariantError(
+    mensajeApartadasEnMixto(
+      apartadas.map((t) => ({
+        codigo: t.codigoPlanta?.trim() || t.codificacion?.trim() || t.id,
+        mixto: t.loteMixto!.code,
+      })),
+    ),
+    code,
+    {
+      trozas: apartadas.map((t) => t.id),
+      lotesMixtos: [...new Set(apartadas.map((t) => t.loteMixto!.code))],
+    },
+  );
+}
 
 /** Lo elegido de un filtro, siempre como lista y sin vacíos. */
 function valoresDe<T extends string>(v: T | readonly T[] | undefined): T[] {
@@ -1210,6 +1257,44 @@ async function soltarCodigosPlanta(
   return soltados;
 }
 
+/** Una troza que tenía apartada un lote mixto y se soltó con su ingreso. */
+interface ReservaSoltada {
+  id: string;
+  codigo: string | null;
+  mixto: string;
+}
+
+/**
+ * Anular, rechazar o borrar un ingreso SUELTA las trozas que tenía apartadas en
+ * un lote mixto (ADR-441), igual que suelta sus códigos de planta: la madera de
+ * un ingreso muerto no está en el patio, y dejarla en la pila la repartiría a
+ * un lote de aserrío. Va DENTRO de la transacción del cambio de estado y ANTES
+ * de `soltarCodigosPlanta` (para poder nombrar la pieza por su chapa).
+ */
+async function soltarReservasMixto(
+  tx: Prisma.TransactionClient,
+  tenantId: string,
+  woodEntryIds: string[],
+): Promise<ReservaSoltada[]> {
+  if (woodEntryIds.length === 0) return [];
+  const apartadas = await tx.woodEntryTroza.findMany({
+    where: { tenantId, woodEntryId: { in: woodEntryIds }, loteMixtoId: { not: null } },
+    select: { id: true, codigoPlanta: true, codificacion: true, loteMixto: { select: { code: true } } },
+    orderBy: { orden: "asc" },
+  });
+  if (apartadas.length > 0) {
+    await tx.woodEntryTroza.updateMany({
+      where: { tenantId, id: { in: apartadas.map((t) => t.id) } },
+      data: { loteMixtoId: null, reservadaMixtoEn: null },
+    });
+  }
+  return apartadas.map((t) => ({
+    id: t.id,
+    codigo: t.codigoPlanta?.trim() || t.codificacion?.trim() || null,
+    mixto: t.loteMixto?.code ?? "mixto",
+  }));
+}
+
 /** Cuántas piezas se nombran en un renglón antes de resumir «y N más». */
 const MAX_CODIGOS_EN_DETALLE = 60;
 
@@ -1773,6 +1858,9 @@ export class WoodEntriesDB {
         // patio, y sin mirarlo la pieza quedaría bloqueada para siempre.
         despachadaEn: { select: { id: true, status: true, deletedAt: true } },
         loteAserrio: { select: { id: true, code: true, status: true } },
+        /* El lote MIXTO donde está apartada (ADR-441), con su estado: una de
+           las TRES lecturas de la troza — las tres dicen lo mismo. */
+        loteMixto: { select: SELECT_LOTE_MIXTO },
         _count: { select: { retrozos: true } },
       },
     });
@@ -2096,6 +2184,9 @@ export class WoodEntriesDB {
         // ofrece piezas que ya están reservadas para otra corrida y la pantalla
         // de Trozas no puede decir dónde está la que se busca.
         loteAserrio: { select: { id: true, code: true, status: true } },
+        /* El lote MIXTO donde está apartada (ADR-441): sin esto el picker la
+           ofrecería para un lote y el servidor la rechazaría (LM4). */
+        loteMixto: { select: SELECT_LOTE_MIXTO },
         _count: { select: { retrozos: true } },
       },
     });
@@ -2177,6 +2268,9 @@ export class WoodEntriesDB {
       retrozos: t._count.retrozos,
       loteAserrioId: t.loteAserrioId,
       loteAserrioCode: t.loteAserrio?.code ?? null,
+      /* ADR-441: sólo si ese mixto sigue abierto — el estado, no el id pelado. */
+      loteMixtoId: mixtoVivo(t.loteMixto) ? t.loteMixtoId : null,
+      loteMixtoCode: mixtoVivo(t.loteMixto) ? (t.loteMixto?.code ?? null) : null,
       /* El sello de la etiqueta QR (ADR-436): la pantalla dice «ya etiquetada»
          y cuántas veces se reimprimió. */
       etiquetadaEn: t.etiquetadaEn ? t.etiquetadaEn.toISOString() : null,
@@ -2972,6 +3066,9 @@ export class WoodEntriesDB {
           // lo mismo que la corrida: un despacho anulado devuelve la troza al
           // patio, y sin mirarlo la pieza quedaría bloqueada para siempre.
           despachadaEn: { select: { id: true, status: true, deletedAt: true } },
+          /* El listado por pieza de Ingresos pasa por el mismo `serializar()`:
+             sin esto diría «libre» de una pieza apartada en un mixto (ADR-441). */
+          loteMixto: { select: SELECT_LOTE_MIXTO },
           _count: { select: { retrozos: true } },
         },
       }),
@@ -3095,6 +3192,8 @@ export class WoodEntriesDB {
             entry: {
               select: { status: true, deletedAt: true, gtfNumber: true, fechaRecepcion: true, entryDate: true },
             },
+            /* LM4 (ADR-441): apartada en un mixto abierto, va con su pila. */
+            loteMixto: { select: SELECT_LOTE_MIXTO },
             _count: { select: { retrozos: true } },
           },
         });
@@ -3108,6 +3207,12 @@ export class WoodEntriesDB {
             },
           );
         }
+        /* Sólo las que ENTRAN ahora, como T3: la que esta corrida ya tenía no
+           se revisa, así la corrida se puede seguir corrigiendo. */
+        exigirFueraDelMixto(
+          candidatas.filter((t) => t.consumidaEnId !== ctpEntryId),
+          "T1_TROZA_NO_CONSUMIBLE",
+        );
         /** Tomada por OTRA corrida que sigue viva. Si esa corrida se anuló o se
          *  borró, la pieza está libre aunque la columna todavía la apunte. */
         const tomadaPorOtra = (t: (typeof candidatas)[number]) =>
@@ -3228,6 +3333,8 @@ export class WoodEntriesDB {
         consumidaEn: { select: { status: true, deletedAt: true } },
         despachadaEn: { select: { status: true, deletedAt: true } },
         entry: { select: { status: true, deletedAt: true } },
+        codigoPlanta: true,
+        loteMixto: { select: SELECT_LOTE_MIXTO },
         _count: { select: { retrozos: true } },
       },
     });
@@ -3241,6 +3348,9 @@ export class WoodEntriesDB {
         },
       );
     }
+    /* LM4 antes de crear la línea: un despacho fantasma no debe nacer por una
+       pieza que está en una pila por aserrar. */
+    exigirFueraDelMixto(candidatas, "T2_TROZA_NO_DESPACHABLE");
     const malas = WoodEntriesDB.trozasNoDespachables(candidatas, null);
     if (malas.length > 0) {
       throw new CtpInvariantError(
@@ -3332,6 +3442,9 @@ export class WoodEntriesDB {
             consumidaEn: { select: { status: true, deletedAt: true } },
             despachadaEn: { select: { status: true, deletedAt: true } },
             entry: { select: { status: true, deletedAt: true } },
+            codigoPlanta: true,
+            /* LM4 (ADR-441): apartada en un mixto abierto, va con su pila. */
+            loteMixto: { select: SELECT_LOTE_MIXTO },
             _count: { select: { retrozos: true } },
           },
         });
@@ -3346,6 +3459,12 @@ export class WoodEntriesDB {
           );
         }
 
+        /* Sólo las que SUBEN ahora al camión: las que este despacho ya llevaba
+           no se revisan (mismo criterio que `trozasNoDespachables`). */
+        exigirFueraDelMixto(
+          candidatas.filter((t) => t.despachadaEnId !== despachoEntryId),
+          "T2_TROZA_NO_DESPACHABLE",
+        );
         const malas = WoodEntriesDB.trozasNoDespachables(candidatas, despachoEntryId);
         if (malas.length > 0) {
           throw new CtpInvariantError(
@@ -3424,6 +3543,9 @@ export class WoodEntriesDB {
         include: {
           retrozos: { select: { volumenM3: true, largoM: true, descarte: true } },
           entry: { select: { id: true, gtfNumber: true, status: true, deletedAt: true } },
+          /* LM4 (ADR-441): una madre apartada en un mixto abierto va entera a
+             la sierra con su pila; cortarla la sacaría de la pila en silencio. */
+          loteMixto: { select: SELECT_LOTE_MIXTO },
         },
       });
       if (!madre)
@@ -3447,6 +3569,7 @@ export class WoodEntriesDB {
           { trozaId },
         );
       }
+      exigirFueraDelMixto([madre], "ESTADO_NO_EDITABLE");
       // Cierre de período (ADR-139): el corte va al Apartado 2 del libro del mes
       // en que se hizo, así que es la fecha del CORTE la que manda — no la de la
       // guía por la que entró la troza.
@@ -3690,6 +3813,9 @@ export class WoodEntriesDB {
           },
         },
         loteAserrio: { select: { id: true, code: true, status: true, speciesCommon: true } },
+        /* El lote MIXTO (ADR-441): la ficha es lo que lee el escáner, y ahí se
+           decide «ya está en OTRO mixto» antes de mandar nada al servidor. */
+        loteMixto: { select: SELECT_LOTE_MIXTO },
         consumidaEn: {
           select: {
             id: true,
@@ -3732,7 +3858,8 @@ export class WoodEntriesDB {
       where: { tenantId, woodEntryId, trozaOrigenId: null },
       orderBy: { orden: "asc" },
       include: {
-        retrozos: { orderBy: { orden: "asc" } },
+        /* Un pedazo también se aparta en un mixto (ADR-441): su fila lo dice. */
+        retrozos: { orderBy: { orden: "asc" }, include: { loteMixto: { select: SELECT_LOTE_MIXTO } } },
         // Igual que `trozasDelPatio` y `buscarTrozas`: quien lee una troza tiene
         // que poder saber si ya se aserró, y con el ESTADO de la corrida, no con
         // el id pelado. Las tres lecturas de la misma pieza dicen lo mismo.
@@ -3742,6 +3869,7 @@ export class WoodEntriesDB {
         // patio, y sin mirarlo la pieza quedaría bloqueada para siempre.
         despachadaEn: { select: { id: true, status: true, deletedAt: true } },
         loteAserrio: { select: { id: true, code: true, status: true } },
+        loteMixto: { select: SELECT_LOTE_MIXTO },
       },
     });
   }
@@ -5619,7 +5747,7 @@ export class WoodEntriesDB {
   static async reject(tenantId: string, id: string, validatorId: string, reason: string) {
     if (!tenantId) throw new Error("tenantId is required");
     if (!reason?.trim()) throw new Error("rejection reason is required");
-    const { entry, soltados, cuenta } = await prisma.$transaction(async (tx) => {
+    const { entry, soltados, cuenta, reservas } = await prisma.$transaction(async (tx) => {
       const entry = await tx.woodEntry.update({
         where: { id, tenantId } satisfies Prisma.WoodEntryWhereUniqueInput,
         data: {
@@ -5629,11 +5757,12 @@ export class WoodEntriesDB {
           rejectionReason: reason.trim(),
         },
       });
+      const reservas = await soltarReservasMixto(tx, tenantId, [id]);
       const soltados = await soltarCodigosPlanta(tx, tenantId, [id]);
       /* La madera de la guía en la cuenta del proveedor (ADR-437 §4) pasa a
          valer lo que queda vivo; si no queda nada, baja lógica. */
       const cuenta = await ForestCuentaDB.resincronizarMaderaDeGuiaEnTx(tx, tenantId, entry.gtfNumber);
-      return { entry, soltados, cuenta };
+      return { entry, soltados, cuenta, reservas };
     });
     WoodEntriesDB.auditarCuentaDeGuia(tenantId, entry.gtfNumber, cuenta, "rechazó un asiento", validatorId);
     auditCtp({
@@ -5645,6 +5774,7 @@ export class WoodEntriesDB {
       user: validatorId,
     });
     WoodEntriesDB.auditarCodigosSoltados(tenantId, id, entry.gtfNumber, "ingreso rechazado", soltados, validatorId);
+    WoodEntriesDB.auditarReservasSoltadas(tenantId, id, entry.gtfNumber, "ingreso rechazado", reservas, validatorId);
     try {
       invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
     } catch {}
@@ -5699,15 +5829,16 @@ export class WoodEntriesDB {
         "Este ingreso ya se consumió en una corrida de producción. Corrige o anula esas corridas antes de anular el ingreso.",
       );
     }
-    const { entry, soltados, cuenta } = await prisma.$transaction(async (tx) => {
+    const { entry, soltados, cuenta, reservas } = await prisma.$transaction(async (tx) => {
       const entry = await tx.woodEntry.update({
         where: { id, tenantId } satisfies Prisma.WoodEntryWhereUniqueInput,
         data: { status: "anulado", rejectionReason: reason.trim() },
       });
+      const reservas = await soltarReservasMixto(tx, tenantId, [id]);
       const soltados = await soltarCodigosPlanta(tx, tenantId, [id]);
       /* ADR-437 §4: la madera anotada en la cuenta sigue a lo que queda vivo. */
       const cuenta = await ForestCuentaDB.resincronizarMaderaDeGuiaEnTx(tx, tenantId, entry.gtfNumber);
-      return { entry, soltados, cuenta };
+      return { entry, soltados, cuenta, reservas };
     });
     WoodEntriesDB.auditarCuentaDeGuia(tenantId, entry.gtfNumber, cuenta, "anuló un asiento", user);
     auditCtp({
@@ -5719,6 +5850,7 @@ export class WoodEntriesDB {
       user,
     });
     WoodEntriesDB.auditarCodigosSoltados(tenantId, id, entry.gtfNumber, "ingreso anulado", soltados, user);
+    WoodEntriesDB.auditarReservasSoltadas(tenantId, id, entry.gtfNumber, "ingreso anulado", reservas, user);
     try {
       invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
     } catch {}
@@ -5899,6 +6031,37 @@ export class WoodEntriesDB {
     });
   }
 
+  /** El renglón «soltó N trozas del lote mixto» (ADR-441), si hubo alguna. */
+  private static auditarReservasSoltadas(
+    tenantId: string,
+    woodEntryId: string,
+    gtf: string,
+    motivo: string,
+    soltadas: readonly ReservaSoltada[],
+    user: string,
+  ): void {
+    if (soltadas.length === 0) return;
+    const mixtos = [...new Set(soltadas.map((t) => t.mixto))].join(", ");
+    const piezas = soltadas.slice(0, MAX_CODIGOS_EN_DETALLE).map((t) => t.codigo ?? t.id);
+    const resto = soltadas.length - piezas.length;
+    auditCtp({
+      tenantId,
+      action: "ctp_lote_mixto_soltado",
+      entity: "WoodEntry",
+      entityId: woodEntryId,
+      detail:
+        `Soltó ${soltadas.length} troza(s) de la GTF ${gtf} apartadas en el lote mixto ${mixtos} (${motivo}): ` +
+        piezas.join(", ") +
+        (resto > 0 ? ` y ${resto} más` : ""),
+      user,
+    });
+    try {
+      invalidateByPrefix(`forestal:lote-mixto:${tenantId}`);
+    } catch (err) {
+      logger.warn("[wood-entries] no se pudo invalidar el caché del lote mixto", { error: String(err) });
+    }
+  }
+
   /**
    * Soft delete. No borra físicamente; el registro sigue en la DB y el evento
    * queda en el ActivityLog (un ingreso que "desaparece" de un libro fiscalizado
@@ -5907,15 +6070,16 @@ export class WoodEntriesDB {
   static async softDelete(tenantId: string, id: string, user = "unknown") {
     if (!tenantId) throw new Error("tenantId is required");
     await WoodEntriesDB.assertPeriodoAbierto(tenantId, id, "eliminar");
-    const { entry, soltados, cuenta } = await prisma.$transaction(async (tx) => {
+    const { entry, soltados, cuenta, reservas } = await prisma.$transaction(async (tx) => {
       const entry = await tx.woodEntry.update({
         where: { id, tenantId } satisfies Prisma.WoodEntryWhereUniqueInput,
         data: { deletedAt: new Date() },
       });
+      const reservas = await soltarReservasMixto(tx, tenantId, [id]);
       const soltados = await soltarCodigosPlanta(tx, tenantId, [id]);
       /* ADR-437 §4: la madera anotada en la cuenta sigue a lo que queda vivo. */
       const cuenta = await ForestCuentaDB.resincronizarMaderaDeGuiaEnTx(tx, tenantId, entry.gtfNumber);
-      return { entry, soltados, cuenta };
+      return { entry, soltados, cuenta, reservas };
     });
     WoodEntriesDB.auditarCuentaDeGuia(tenantId, entry.gtfNumber, cuenta, "eliminó un asiento", user);
     auditCtp({
@@ -5927,6 +6091,7 @@ export class WoodEntriesDB {
       user,
     });
     WoodEntriesDB.auditarCodigosSoltados(tenantId, id, entry.gtfNumber, "ingreso eliminado", soltados, user);
+    WoodEntriesDB.auditarReservasSoltadas(tenantId, id, entry.gtfNumber, "ingreso eliminado", reservas, user);
     try {
       invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
     } catch {}

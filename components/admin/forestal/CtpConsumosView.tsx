@@ -24,6 +24,7 @@ import CtpResumenPermisoModal from "./CtpResumenPermisoModal";
 import { useActionToasts, ActionToasts } from "./cubicador-toasts";
 import { useConsumosSeccion2 } from "./hooks/use-consumos-seccion2";
 import { usePatioConsumos } from "./hooks/use-patio-consumos";
+import type { LoteAProducir } from "./CtpLotesView";
 
 /** Los ids de las pestañas: `useApartado` los valida al montar. */
 const PESTANAS: readonly Apartado[] = [{ id: "patio", label: "Patio" }, { id: "seccion2", label: "Sección 2 · Consumos" }];
@@ -33,9 +34,12 @@ export default function CtpConsumosView({
   onIr,
   presetLoteId,
   onPresetLoteUsado,
+  onProducir,
 }: {
   period: CtpPeriod;
   onIr?: (vista: string) => void;
+  /** Producir con un lote (el que salió de un lote mixto): cruza a Producción. */
+  onProducir?: (lote: LoteAProducir) => void;
   /** Lote que llega desde la pestaña Lotes con «Cargar» (ADR-342). */
   presetLoteId?: string | null;
   onPresetLoteUsado?: () => void;
@@ -105,6 +109,7 @@ export default function CtpConsumosView({
           <CtpConsumosPatio
             estado={p}
             onIr={onIr}
+            onProducir={onProducir}
             pushToast={push}
             onResumenPermiso={abrirResumen}
             onConsumido={() => void s2.recargar()}

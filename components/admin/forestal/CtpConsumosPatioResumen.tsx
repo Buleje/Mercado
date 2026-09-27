@@ -19,7 +19,7 @@
  * el mismo trato que ya tenían los indicadores.
  */
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { ChevronDown, FileDown } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -39,11 +39,14 @@ export default function CtpConsumosPatioResumen({
   estado,
   trabajando,
   onIr,
+  mixto,
 }: {
   estado: EstadoPatioConsumos;
   /** Hay un lote elegido: la tabla por permiso y la tira de lotes ceden la pantalla. */
   trabajando: boolean;
   onIr?: (vista: string) => void;
+  /** La línea del lote mixto (ADR-441): lo que espera repartirse, junto a los lotes que esperan la sierra. */
+  mixto?: ReactNode;
 }) {
   const { lotes, carga, porPermiso, patio } = estado;
   const idTitulo = useId();
@@ -147,6 +150,7 @@ export default function CtpConsumosPatioResumen({
       {onIr && !trabajando && (
         <CtpLotesTira enLinea lotes={carga.lotesAbiertos} cargando={lotes.cargando} error={lotes.error} onIr={() => onIr("lotes")} />
       )}
+      {!trabajando && mixto}
     </section>
   );
 }

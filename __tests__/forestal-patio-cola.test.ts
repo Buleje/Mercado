@@ -211,3 +211,23 @@ describe("rechazoDentroDelOk — un 200 que igual rechaza", () => {
     expect(rechazoDentroDelOk({ conteo: {} }, { rechazadas: [{ id: "t1", motivo: "x" }] })).toBeNull();
   });
 });
+
+describe("lote mixto (ADR-441) en la cola del patio", () => {
+  it("apartar/sacar es de cada troza: sacar no se adelanta al apartar que no subió", () => {
+    expect(duenosDeAnotacion("lote-mixto", { accion: "agregar", loteMixtoId: "M1", trozaIds: ["t1", "t2", ""] })).toEqual([
+      "mixto:t1",
+      "mixto:t2",
+    ]);
+    expect(modoDelDueno("lote-mixto")).toBe("detras");
+    // El consumo sigue sin dueño: el cambio no lo toca.
+    expect(duenosDeAnotacion("consumo", { trozaIds: ["t1"] })).toEqual([]);
+  });
+
+  it("un 200 con `rechazadas` de sus `trozaIds` queda rechazado con el motivo; en otra sección, no", () => {
+    const payload = { accion: "agregar", loteMixtoId: "M1", trozaIds: ["t1"] };
+    const cuerpo = { agregadas: 0, yaEstaban: 0, rechazadas: [{ id: "t1", codigo: "118", motivo: "Su guía no se recibió" }] };
+    expect(rechazoDentroDelOk(payload, cuerpo, "lote-mixto")).toBe("Su guía no se recibió");
+    expect(rechazoDentroDelOk(payload, cuerpo, "consumo")).toBeNull();
+    expect(rechazoDentroDelOk(payload, { agregadas: 1, yaEstaban: 0, rechazadas: [] }, "lote-mixto")).toBeNull();
+  });
+});

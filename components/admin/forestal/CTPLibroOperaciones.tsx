@@ -676,6 +676,11 @@ export default function CTPLibroOperaciones() {
             onIr={irA}
             presetLoteId={loteACargar?.id ?? null}
             onPresetLoteUsado={() => setLoteACargar(null)}
+            onProducir={(lote) => {
+              /* Un lote que salió del lote mixto (ADR-441) va a Producción como desde Lotes. */
+              setLoteAProducir(lote);
+              setView("produccion");
+            }}
           />
         )}
         {view === "produccion" && (

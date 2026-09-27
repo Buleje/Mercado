@@ -6,6 +6,8 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { ForestLoteAserrioDB } from "@/lib/db/forest-lote-aserrio.db";
+import { ForestVincularCorridaDB } from "@/lib/db/forest-vincular-corrida.db";
+import { vincularCorridaSchema } from "@/lib/forestal/vincular-desde-mixto";
 import { ctpErrorResponse } from "@/lib/forestal/ctp-api-errors";
 
 /**
@@ -13,7 +15,8 @@ import { ctpErrorResponse } from "@/lib/forestal/ctp-api-errors";
  *
  * GET    → los lotes del tenant con sus piezas.
  * POST   → abre un lote para una especie.
- * PATCH  → guarda o saca piezas / edita la nota.
+ * PATCH  → guarda o saca piezas / edita la nota / vincula una corrida sin
+ *          origen con las trozas de uno o más lotes (ADR-441).
  * DELETE → deshace un lote abierto (sus piezas vuelven al patio).
  *
  * El lote COMERCIAL (`/lotes`) es otra cosa: agrupa producción terminada.
@@ -248,6 +251,12 @@ const patchSchema = z.discriminatedUnion("accion", [
     accion: z.literal("reabrir"),
     loteId: z.string().trim().min(1).max(60),
   }),
+  /**
+   * VINCULAR una corrida sin origen con las trozas de 1 a 6 lotes (ADR-441):
+   * la producción del día que salió de un lote mixto. Todo o nada, en una sola
+   * transacción. El esquema lo comparte la pantalla (`vincular-desde-mixto.ts`).
+   */
+  vincularCorridaSchema.extend({ accion: z.literal("vincular-corrida") }),
 ]);
 
 async function guard(req: NextRequest, roles: AdminRole[] = ["admin", "almacenero", "owner"]) {
@@ -292,7 +301,16 @@ export async function POST(req: NextRequest) {
     try { body = await req.json(); } catch { return NextResponse.json({ error: "invalid_json" }, { status: 400 }); }
     const parsed = postSchema.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json({ error: "validation_error", issues: parsed.error.issues.map((i) => ({ path: i.path.join("."), message: i.message })) }, { status: 400 });
+      /* `message` es lo que muestra la pantalla (los modales leen `j.message`):
+         sin él decía «El servidor respondió 400» en vez del porqué. */
+      return NextResponse.json(
+        {
+          error: "validation_error",
+          message: parsed.error.issues[0]?.message ?? "Datos inválidos.",
+          issues: parsed.error.issues.map((i) => ({ path: i.path.join("."), message: i.message })),
+        },
+        { status: 400 },
+      );
     }
     const user = g.auth.username ?? "unknown";
     if (parsed.data.modo === "inventario") {
@@ -327,7 +345,16 @@ export async function PATCH(req: NextRequest) {
     try { body = await req.json(); } catch { return NextResponse.json({ error: "invalid_json" }, { status: 400 }); }
     const parsed = patchSchema.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json({ error: "validation_error", issues: parsed.error.issues.map((i) => ({ path: i.path.join("."), message: i.message })) }, { status: 400 });
+      /* `message` es lo que muestra la pantalla (los modales leen `j.message`):
+         sin él decía «El servidor respondió 400» en vez del porqué. */
+      return NextResponse.json(
+        {
+          error: "validation_error",
+          message: parsed.error.issues[0]?.message ?? "Datos inválidos.",
+          issues: parsed.error.issues.map((i) => ({ path: i.path.join("."), message: i.message })),
+        },
+        { status: 400 },
+      );
     }
     const d = parsed.data;
     const user = g.auth.username ?? "unknown";
@@ -351,6 +378,21 @@ export async function PATCH(req: NextRequest) {
           error: "forbidden",
           message:
             "Deshacer un lote con producción declarada anula asientos del Libro de Operaciones. " +
+            "Sólo el dueño o un administrador puede hacerlo.",
+        },
+        { status: 403 },
+      );
+    }
+    /* Vincular también (decisión 2 de Brandon, ADR-441): cambia la materia prima
+       de un asiento que se presenta ante SERFOR, como Declarar. El chequeo es
+       explícito y no por `requireAdmin`: el «management tier» deja pasar a
+       `manager` aunque la lista diga admin/owner. */
+    if (d.accion === "vincular-corrida" && !["admin", "owner"].includes(g.auth.role)) {
+      return NextResponse.json(
+        {
+          error: "forbidden",
+          message:
+            "Vincular una corrida con su madera cambia un asiento del Libro de Operaciones. " +
             "Sólo el dueño o un administrador puede hacerlo.",
         },
         { status: 403 },
@@ -388,6 +430,19 @@ export async function PATCH(req: NextRequest) {
         fecha: d.fecha ? new Date(`${d.fecha}T12:00:00.000Z`) : undefined,
         user,
       });
+      return NextResponse.json(r);
+    }
+    if (d.accion === "vincular-corrida") {
+      /* Día suelto → mediodía UTC, como `consumir`: a medianoche Lima lo corre. */
+      const r = await ForestVincularCorridaDB.vincularCorrida(
+        g.auth.tenantId,
+        {
+          corridaId: d.corridaId,
+          partes: d.partes,
+          fecha: d.fecha ? new Date(`${d.fecha}T12:00:00.000Z`) : undefined,
+        },
+        user,
+      );
       return NextResponse.json(r);
     }
     if (d.accion === "cerrar") {

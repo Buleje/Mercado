@@ -30,6 +30,8 @@ import CtpTrozasIngresadas, { type FiltrosPatioColumna } from "./CtpTrozasIngres
 import type { ActionToast } from "./cubicador-toasts";
 import { useRegistrarJornadas } from "./hooks/use-registrar-jornadas";
 import type { EstadoPatioConsumos } from "./hooks/use-patio-consumos";
+import { useLoteMixtoEnConsumos } from "./CtpLoteMixtoPuerta";
+import type { LoteAProducir } from "./CtpLotesView";
 
 type PushToast = (t: Omit<ActionToast, "id" | "exiting">) => number;
 
@@ -47,9 +49,12 @@ export default function CtpConsumosPatio({
   pushToast,
   onResumenPermiso,
   onConsumido,
+  onProducir,
 }: {
   estado: EstadoPatioConsumos;
   onIr?: (vista: string) => void;
+  /** Producir con un lote que salió del lote mixto (cruza a Producción). */
+  onProducir?: (lote: LoteAProducir) => void;
   pushToast: PushToast;
   /** Abre el modal de lo que ENTRÓ por permiso (lo consumido incluido). */
   onResumenPermiso: () => void;
@@ -59,6 +64,11 @@ export default function CtpConsumosPatio({
   const { lotes, carga, patio, porPermiso } = estado;
   const { loteElegido, lotesAbiertos, seleccion, setSeleccion, fechaConsumo } = carga;
   const jornadas = useRegistrarJornadas(lotes);
+  const mixto = useLoteMixtoEnConsumos({
+    estado,
+    onProducir,
+    onAviso: (msg) => pushToast({ tono: "success", msg }),
+  });
   const [agruparPatio, setAgruparPatio] = useState<AgrupacionPatio>("ninguna");
   /** Un consumo con piezas rechazadas: el toast lo corta, acá se lee entero. */
   const [rechazo, setRechazo] = useState<string | null>(null);
@@ -146,7 +156,9 @@ export default function CtpConsumosPatio({
   const trabajando = loteElegido != null;
   /* La acción y la barra van DENTRO de la tarjeta de la tabla, la de mirar o
      la de cargar la sierra: son de esa tabla. */
-  const accion = <CtpConsumosPatioAccion estado={estado} onIrALotes={onIr ? () => onIr("lotes") : undefined} />;
+  const accion = (
+    <CtpConsumosPatioAccion estado={estado} onIrALotes={onIr ? () => onIr("lotes") : undefined} mixto={mixto.boton} />
+  );
   const barra = <CtpPatioFiltros filtro={patio} />;
   return (
     <div className="space-y-4">
@@ -158,7 +170,8 @@ export default function CtpConsumosPatio({
         </p>
       )}
 
-      <CtpConsumosPatioResumen estado={estado} trabajando={trabajando} onIr={onIr} />
+      <CtpConsumosPatioResumen estado={estado} trabajando={trabajando} onIr={onIr} mixto={mixto.tarjeta} />
+      {mixto.modales}
 
       {estado.piezasOcultasDelLote > 0 && (
         <p role="status" className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-2xl border-2 border-[var(--data-warning-500)] px-4 py-3 text-sm text-[var(--text-primary)]">

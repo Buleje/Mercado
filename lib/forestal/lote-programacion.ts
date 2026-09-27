@@ -76,7 +76,9 @@ export function trozasDelLote(
        que poder verla para sacarla, no esconderla. */
     if (t.loteAserrioId === lote.id) return true;
     if (permiso && (t.permiso ?? "").trim() !== permiso) return false;
-    return !t.loteAserrioId && motivoBloqueo(t) === null;
+    /* Apartada en un lote mixto (ADR-441, LM4): el servidor la rechaza hasta
+       que el mixto se reparta; ofrecerla sería prometer lo que no entra. */
+    return !t.loteAserrioId && !t.loteMixtoId && motivoBloqueo(t) === null;
   });
 }
 
@@ -99,7 +101,12 @@ export interface DisponiblePermiso {
 /** Las trozas que el modal puede ofrecer: recibidas, libres y sin bloqueo. */
 function ofrecibles(trozas: readonly TrozaConsumible[]): TrozaConsumible[] {
   return trozas.filter(
-    (t) => t.guiaRecepcionada !== false && !t.loteAserrioId && !t.consumidaEnId && motivoBloqueo(t) === null,
+    (t) =>
+      t.guiaRecepcionada !== false &&
+      !t.loteAserrioId &&
+      !t.loteMixtoId &&
+      !t.consumidaEnId &&
+      motivoBloqueo(t) === null,
   );
 }
 
@@ -148,7 +155,7 @@ export function disponiblePorEspecie(
     /* Mismo criterio que `trozasDelLote`: si acá se contara la madera sin
        recibir, el modal ofrecería una especie que después no aparece. */
     if (t.guiaRecepcionada === false) continue;
-    if (t.loteAserrioId || t.consumidaEnId || motivoBloqueo(t) !== null) continue;
+    if (t.loteAserrioId || t.loteMixtoId || t.consumidaEnId || motivoBloqueo(t) !== null) continue;
     if (permiso && (t.permiso ?? "").trim() !== permiso) continue;
     const nombre = (t.especieComun ?? "").trim();
     /* Por CLAVE, no por texto: con «Tornillo» y «TORNILLO» en el patio, la

@@ -5919,6 +5919,15 @@ model WoodEntryTroza {
   loteAserrioId String?
   loteAserrio   ForestLoteAserrio? @relation("TrozasDelLote", fields: [loteAserrioId], references: [id], onDelete: SetNull)
 
+  /// El LOTE MIXTO donde está apartada (ADR-441): la pila escaneada de varias
+  /// especies, antes de repartirse en lotes de aserrío. LM1: un solo mixto.
+  /// LM2: el mixto O un lote de aserrío, nunca los dos — al repartir, esta
+  /// columna vuelve a NULL y `loteAserrioId` apunta al lote hijo.
+  loteMixtoId      String?
+  loteMixto        ForestLoteMixto? @relation("TrozasDelMixto", fields: [loteMixtoId], references: [id], onDelete: SetNull)
+  /// Cuándo se apartó en el mixto (el orden en que se escaneó la pila).
+  reservadaMixtoEn DateTime?
+
   /// La corrida que se comió ESTA troza. NULL = sigue en el patio.
   ///
   /// El consumo del libro sigue siendo `ForestCtpConsumo` (ingreso → corrida en
@@ -5969,6 +5978,7 @@ model WoodEntryTroza {
   @@index([tenantId, woodEntryId])
   @@index([tenantId, codificacion])
   @@index([tenantId, loteAserrioId])
+  @@index([tenantId, loteMixtoId])
   /// El código de planta es ÚNICO por negocio, garantizado por la base: índice
   /// único parcial `WoodEntryTroza_tenant_codigoPlanta_unico` sobre
   /// `("tenantId", upper(btrim("codigoPlanta"))) WHERE "codigoPlanta" IS NOT NULL
@@ -6835,11 +6845,62 @@ model ForestLoteAserrio {
   contratoId String?
   contrato   ForestContrato? @relation(fields: [contratoId], references: [id], onDelete: SetNull)
 
+  /// De qué LOTE MIXTO salió este lote al repartirse (ADR-441). NULL = se armó
+  /// directo. `SetNull`: el lote y sus trozas existen aunque el mixto no.
+  loteMixtoId String?
+  loteMixto   ForestLoteMixto? @relation("LotesDelMixto", fields: [loteMixtoId], references: [id], onDelete: SetNull)
+
   @@index([tenantId, code])
   @@index([tenantId, status])
   @@index([tenantId, speciesCommon])
   @@index([tenantId, ordenProduccion])
   @@index([tenantId, contratoId])
+  @@index([tenantId, loteMixtoId])
+}
+
+/// LOTE MIXTO (ADR-441): la pila escaneada en Consumos, de varias especies y
+/// permisos, que vive en el servidor para que varios equipos y días sumen a la
+/// misma. No va a la sierra así: «Terminar y repartir» la parte, en UNA
+/// transacción, en un lote de aserrío por especie+permiso (L-A1, ADR-393).
+///
+/// No es un `ForestLoteAserrio` con una marca: ese lote supone UNA especie en
+/// todo el servidor y el cliente (alternativa descartada en el ADR).
+///
+/// ⚠️ En la BASE el código es único SÓLO entre mixtos vivos: índice ÚNICO
+/// PARCIAL `ForestLoteMixto_tenantId_code_vivo_key` sobre (`tenantId`, `code`)
+/// WHERE deletedAt IS NULL (migración 20260927_lote_mixto_adr441). Prisma no
+/// sabe declararlo: acá queda el índice común. No pongas `@@unique`.
+model ForestLoteMixto {
+  id       String @id @default(cuid())
+  tenantId String
+
+  /// Correlativo por negocio: LM-2026-001 (bajo `pg_advisory_xact_lock`).
+  code String
+
+  /// abierto = se escanea y se aparta · repartido = ya salió en lotes hijos
+  /// · anulado = se deshizo, sus trozas volvieron al patio.
+  status String @default("abierto")
+
+  notes String?
+
+  /// El permiso de trabajo activo al abrirlo (la banda del libro). Referencia
+  /// suelta a `ForestContrato`: el mixto mezcla permisos a propósito; lo que se
+  /// declara lo dice cada lote hijo.
+  contratoId String?
+
+  abiertoEn   DateTime  @default(now())
+  repartidoEn DateTime?
+
+  createdBy String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  trozas WoodEntryTroza[]    @relation("TrozasDelMixto")
+  lotes  ForestLoteAserrio[] @relation("LotesDelMixto")
+
+  @@index([tenantId, status])
+  @@index([tenantId, code])
 }
 
 model ForestProdLote {

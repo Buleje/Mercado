@@ -42,6 +42,8 @@ export type CtpAuditEntity =
   | "ForestProdLote"
   /** Lote de ASERRÍO (ADR-334): la materia prima agrupada antes de la sierra. */
   | "ForestLoteAserrio"
+  /** Lote MIXTO (ADR-441): la pila escaneada de varias especies, antes de repartirse. */
+  | "ForestLoteMixto"
   /** El permiso bajo el que se trabaja (ADR-421): a él se le imputan la madera,
    *  los gastos, los fletes y los adelantos. Quién lo creó y quién le ató
    *  registros es parte de la trazabilidad de la plata, no sólo del papel. */
@@ -128,12 +130,24 @@ export type CtpAuditAction =
   | "ctp_lote_aserrio_delete"
   | "ctp_lote_aserrio_trozas_add"
   | "ctp_lote_aserrio_trozas_remove"
+  // ── Lote mixto (ADR-441): la pila escaneada que se reparte por especie+permiso ──
+  | "ctp_lote_mixto_create"
+  | "ctp_lote_mixto_trozas_add"
+  | "ctp_lote_mixto_trozas_remove"
+  /** Terminó la pila: un lote de aserrío por especie+permiso, en una transacción. */
+  | "ctp_lote_mixto_repartir"
+  | "ctp_lote_mixto_anular"
+  /** Anular/rechazar/borrar un ingreso soltó las trozas que tenía apartadas en un mixto. */
+  | "ctp_lote_mixto_soltado"
   | "ctp_lote_aserrio_consumir"
   // Piezas sumadas a una corrida que todavía no declaró (ADR-364). Va aparte de
   // `consumir` porque no abre un asiento: le CAMBIA la materia prima a uno que
   // ya existe, y eso mueve su rendimiento — es justo lo que un fiscalizador
   // querría poder reconstruir.
   | "ctp_corrida_sumar_piezas"
+  // Una corrida SIN origen se vincula con las trozas de uno o más lotes, todo
+  // en un acto (ADR-441): volumen, consumo por guía, piezas y cierre de lotes.
+  | "ctp_corrida_vincular"
   // Y el reverso: piezas mal tildadas que salen de una corrida abierta. Va
   // aparte de `annul` porque la corrida sobrevive — es una corrección, no un
   // asiento muerto.

@@ -106,6 +106,18 @@ export interface TrozaConsumible {
    */
   loteAserrioId?: string | null;
   loteAserrioCode?: string | null;
+  /**
+   * El LOTE MIXTO donde está apartada (ADR-441). El servidor lo manda en `null`
+   * si ese mixto ya no está abierto — mismo criterio que la corrida: se mira el
+   * estado, no el id pelado.
+   *
+   * Como `loteAserrioId`, NO entra a `motivoBloqueo`: la pieza sigue en la pila
+   * (el conteo físico la encuentra, la etiqueta se imprime). Lo que impide es
+   * armarla en un lote o consumirla sin repartir el mixto (LM4):
+   * `motivoFueraDeLaPila` y los selectores de lote la dejan afuera.
+   */
+  loteMixtoId?: string | null;
+  loteMixtoCode?: string | null;
   /** Es un pedazo de otra troza (ADR-313). */
   trozaOrigenId?: string | null;
   /** Cuántos pedazos tiene: una madre partida ya no entra entera a la sierra. */

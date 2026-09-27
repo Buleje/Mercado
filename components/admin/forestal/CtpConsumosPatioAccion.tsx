@@ -16,7 +16,7 @@
  * renglones en 124 px).
  */
 
-import { useId } from "react";
+import { useId, type ReactNode } from "react";
 import { Boxes } from "@buleje/design-system/icons";
 import ActionMenu from "@/components/admin/shared/action-menu";
 import type { EstadoPatioConsumos } from "./hooks/use-patio-consumos";
@@ -27,29 +27,38 @@ const CLASE_FECHA =
 export default function CtpConsumosPatioAccion({
   estado,
   onIrALotes,
+  mixto,
 }: {
   estado: EstadoPatioConsumos;
   onIrALotes?: () => void;
+  /** El botón «Lote mixto» (ADR-441): va primero, antes de elegir un lote. */
+  mixto?: ReactNode;
 }) {
   const { loteElegido, loteCarga, lotesParaElegir, opcionesLote, fechaConsumo, setFechaConsumo } = estado.carga;
   const idFecha = useId();
 
   /* Sin ningún lote, un selector vacío no es una acción: va el camino. */
   if (lotesParaElegir.length === 0) {
-    return onIrALotes ? (
-      <button
-        type="button"
-        onClick={onIrALotes}
-        className="inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)]"
-      >
-        <Boxes className="h-4 w-4" aria-hidden />
-        Programar un lote para cargar la sierra
-      </button>
-    ) : null;
+    return (
+      <>
+        {mixto}
+        {onIrALotes && (
+          <button
+            type="button"
+            onClick={onIrALotes}
+            className="inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)]"
+          >
+            <Boxes className="h-4 w-4" aria-hidden />
+            Programar un lote para cargar la sierra
+          </button>
+        )}
+      </>
+    );
   }
 
   return (
     <>
+      {!loteCarga && mixto}
       {loteCarga && (
         <div className="flex items-center gap-2">
           <label htmlFor={idFecha} className="whitespace-nowrap text-sm font-bold text-[var(--text-secondary)]">

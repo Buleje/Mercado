@@ -49,6 +49,7 @@ import { paquetesDeLoCubicado } from "@/lib/forestal/declarar-produccion";
 import { gruposPorDueno } from "@/lib/forestal/declarar-por-dueno";
 import CubicadorMadera from "./CubicadorMadera";
 import CtpDeclararProduccionModal from "./CtpDeclararProduccionModal";
+import CtpVincularMixtoModal from "./CtpVincularMixtoModal";
 import CtpSemanaDeProduccion from "./CtpSemanaDeProduccion";
 import { useJornadasDeProduccion } from "./hooks/use-jornadas-produccion";
 import { useTrozasParaCodigo } from "./hooks/use-trozas-para-codigo";
@@ -80,6 +81,10 @@ export default function CtpProducirSinLoteModal({
 }) {
   const [piezas, setPiezas] = useState<PiezaCubicada[]>([]);
   const [declarando, setDeclarando] = useState(false);
+  /* ADR-441: las corridas de esta declaración (todos los dueños) y, si se
+     eligió un lote mixto, la vinculación armada que se abre al terminar. */
+  const corridasDeclaradas = useRef<string[]>([]);
+  const [vincular, setVincular] = useState<{ mixtoId: string; corridas: string[]; mensaje: string } | null>(null);
   /* Registrar vacía la libreta —o le quita sólo las piezas del dueño que se
      declaró—: el cubicador se vuelve a montar para leerla así; si alguien deja
      este modal abierto, no puede re-declarar lo mismo. */
@@ -294,11 +299,20 @@ export default function CtpProducirSinLoteModal({
         fecha={fecha}
         onFecha={elegirFecha}
         trozas={trozasParaCodigo.trozas}
-        onRegistrado={(mensaje, { quedan, codigos }) => {
+        onRegistrado={(mensaje, { quedan, codigos, corridas, loteMixtoId }) => {
           setLibreta((n) => n + 1);
+          corridasDeclaradas.current.push(...corridas);
           if (quedan.length === 0) {
             setDeclarando(false);
             setPiezas([]);
+            /* Con un lote mixto elegido (ADR-441), antes de cerrar se abre la
+               vinculación armada con TODAS las corridas de esta declaración. */
+            if (loteMixtoId) {
+              setVincular({ mixtoId: loteMixtoId, corridas: [...corridasDeclaradas.current], mensaje });
+              corridasDeclaradas.current = [];
+              return;
+            }
+            corridasDeclaradas.current = [];
             onListo(mensaje);
             return;
           }
@@ -313,6 +327,19 @@ export default function CtpProducirSinLoteModal({
           onCambioEnElLibro?.();
         }}
       />
+      {vincular && (
+        <CtpVincularMixtoModal
+          aboveModals
+          dia={fecha}
+          soloCorridas={vincular.corridas}
+          mixtoId={vincular.mixtoId}
+          onClose={() => {
+            const { mensaje } = vincular;
+            setVincular(null);
+            onListo(mensaje);
+          }}
+        />
+      )}
     </div>
   );
 }

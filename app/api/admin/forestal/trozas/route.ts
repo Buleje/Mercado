@@ -7,6 +7,7 @@ import { logger } from "@/lib/logger";
 import { WoodEntriesDB } from "@/lib/db/wood-entries.db";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { ctpErrorResponse } from "@/lib/forestal/ctp-api-errors";
+import { mixtoVivo } from "@/lib/forestal/lote-mixto";
 
 /**
  * GET /api/admin/forestal/trozas?codificacion=106/C
@@ -279,6 +280,8 @@ function serializar(t: {
   fechaDespacho?: Date | string | null;
   loteAserrioId?: string | null;
   loteAserrio?: { id: string; code: string; status: string } | null;
+  loteMixtoId?: string | null;
+  loteMixto?: { id: string; code: string; status: string; deletedAt: Date | null } | null;
   fechaConsumo?: Date | string | null;
   _count?: { retrozos: number };
   retrozos?: unknown[];
@@ -341,6 +344,12 @@ function serializar(t: {
     loteAserrioId: t.loteAserrioId ?? null,
     loteAserrioCode: t.loteAserrio?.code ?? null,
     loteAserrioStatus: t.loteAserrio?.status ?? null,
+    /* El lote MIXTO donde está apartada (ADR-441). WHITELIST: sin estas dos
+       líneas el buscador y la ficha de la guía la declararían libre para un
+       lote que el servidor le va a rechazar (LM4). Sólo si el mixto sigue
+       abierto: mismo criterio que el patio (`trozasComoConsumibles`). */
+    loteMixtoId: mixtoVivo(t.loteMixto) ? (t.loteMixtoId ?? null) : null,
+    loteMixtoCode: mixtoVivo(t.loteMixto) ? (t.loteMixto?.code ?? null) : null,
     descarte: Boolean(t.descarte),
     retrozos: t._count?.retrozos ?? t.retrozos?.length ?? 0,
     // Última etiqueta impresa (ADR-436): la columna «Etiqueta» y el filtro

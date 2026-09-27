@@ -164,6 +164,8 @@ export interface FichaTrozaJson {
     fechaRecepcion?: string | null;
   };
   lote?: { id: string; code: string } | null;
+  /** El lote mixto abierto donde está apartada (ADR-441); `null` = en ninguno. */
+  loteMixto?: { id: string; code: string } | null;
   retrozos?: unknown[];
   corrida?: { id: string; vigente: boolean } | null;
   despacho?: { id: string; vigente: boolean } | null;
@@ -200,6 +202,8 @@ export function consumibleDeFicha(f: FichaTrozaJson): TrozaConsumible {
     guiaFechaRecepcion: f.ingreso.fechaRecepcion ?? null,
     loteAserrioId: f.lote?.id ?? null,
     loteAserrioCode: f.lote?.code ?? null,
+    loteMixtoId: f.loteMixto?.id ?? null,
+    loteMixtoCode: f.loteMixto?.code ?? null,
     noRecepcionada: f.troza.noRecepcionada ?? null,
     descarte: f.troza.descarte ?? null,
     retrozos: f.retrozos?.length ?? 0,

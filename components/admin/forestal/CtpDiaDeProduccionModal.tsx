@@ -26,7 +26,7 @@
  */
 
 import { useCallback, useMemo, useState } from "react";
-import { AlertTriangle, Boxes, Copy, Download, Info, Loader2 } from "@buleje/design-system/icons";
+import { AlertTriangle, Boxes, Copy, Download, Info, Link2, Loader2 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import EncimaDeRadix from "@/components/admin/shared/encima-de-radix";
 import SegmentedControl from "@/components/ui-system/SegmentedControl";
@@ -54,6 +54,7 @@ import { Cifra, TablaPorDiaEspecieTipo, TablaPorEspecie } from "./ctp-resumen-jo
 import CtpPiezaPorPiezaTabla from "./CtpPiezaPorPiezaTabla";
 import CtpEscuadriaPaqueteModal, { type PaqueteAMedir } from "./CtpEscuadriaPaqueteModal";
 import CtpEditarLineaModal, { type LineaEditable } from "./CtpEditarLineaModal";
+import CtpVincularMixtoModal, { puedeFirmarVinculo } from "./CtpVincularMixtoModal";
 import { useJornadasConPaquetes } from "./hooks/use-jornadas-con-paquetes";
 import { lineaEditableDe, paqueteAMedirDe } from "./dia-de-produccion-puertas";
 
@@ -83,7 +84,10 @@ export default function CtpDiaDeProduccionModal({
   onEditado?: () => void;
 }) {
   const { datos, error, releyendo, recargar } = useJornadasConPaquetes([dia]);
-  const puedeEditar = puedePedir("PATCH /api/admin/forestal/ctp", useMiRol());
+  const rol = useMiRol();
+  const puedeEditar = puedePedir("PATCH /api/admin/forestal/ctp", rol);
+  /* Vincular con un lote mixto (ADR-441): sólo dueño o administrador. */
+  const [vinculando, setVinculando] = useState(false);
   const [vista, setVista] = useState<Vista>("piezas");
   const [midiendo, setMidiendo] = useState<PaqueteAMedir | null>(null);
   const [editando, setEditando] = useState<LineaEditable | null>(null);
@@ -263,6 +267,17 @@ export default function CtpDiaDeProduccionModal({
                     )}
                     Excel
                   </button>
+                  {puedeFirmarVinculo(rol) && (
+                    <button
+                      type="button"
+                      onClick={() => setVinculando(true)}
+                      title="Atar las corridas de este día a las trozas del lote mixto de donde salieron"
+                      className="inline-flex h-11 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
+                    >
+                      <Link2 className="h-4 w-4" aria-hidden />
+                      Vincular con lote mixto
+                    </button>
+                  )}
                   {onCopiarAlCubicado && (
                     <Btn
                       variant="primary"
@@ -318,6 +333,14 @@ export default function CtpDiaDeProduccionModal({
           )}
 
           {/* Adentro del árbol de este modal: Radix lo apila encima como hijo. */}
+          {vinculando && (
+            <CtpVincularMixtoModal
+              aboveModals
+              dia={dia}
+              onClose={() => setVinculando(false)}
+              onVinculado={despuesDeEscribir}
+            />
+          )}
           {midiendo && (
             <CtpEscuadriaPaqueteModal
               paquete={midiendo}

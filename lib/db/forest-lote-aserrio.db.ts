@@ -18,6 +18,10 @@ import {
   TOPE_RENDIMIENTO_PCT,
 } from "@/lib/forestal/vincular-produccion";
 import { ForestContratoDB } from "@/lib/db/forest-contrato.db";
+import { mixtoVivo } from "@/lib/forestal/lote-mixto";
+
+/** El cliente de siempre o el de una transacción abierta (`crearEnTx`). */
+type Db = typeof prisma | Prisma.TransactionClient;
 
 /**
  * Lote de ASERRÍO (ADR-334): las trozas de una misma especie que van juntas a
@@ -149,8 +153,15 @@ export interface LoteInventarioInput {
  * —todas sus listas filtran `guiaRecepcionada !== false`— pero el escritor las
  * aceptaba: un POST armaba el lote igual, y de ahí salía una corrida que
  * declara haber aserrado madera que nunca bajó del camión.
+ *
+ * ## Apartada en un LOTE MIXTO (ADR-441, LM4)
+ *
+ * `loteMixto` opcional, como `despachadaEn`: cuando viene y ese mixto sigue
+ * abierto, la pieza no entra a un lote ni se consume — «está en LM-…:
+ * repártelo». Es la misma función que usa el mixto para apartar (LM3): ahí se
+ * llama con `loteMixto: null` sobre sus propias piezas.
  */
-function motivoNoElegible(t: {
+export function motivoNoElegible(t: {
   consumidaEnId: string | null;
   noRecepcionada: boolean;
   descarte: boolean;
@@ -158,6 +169,7 @@ function motivoNoElegible(t: {
   fechaRecepcion?: Date | null;
   _count?: { retrozos: number };
   despachadaEn?: { status: string; deletedAt: Date | null } | null;
+  loteMixto?: { code: string; status: string; deletedAt: Date | null } | null;
   entry?: {
     status: string;
     deletedAt: Date | null;
@@ -173,6 +185,7 @@ function motivoNoElegible(t: {
   ) {
     return "la guía de ingreso está anulada o rechazada";
   }
+  if (t.loteMixto && mixtoVivo(t.loteMixto)) return motivoEnMixto(t.loteMixto.code);
   if (t.noRecepcionada) return "no llegó al patio";
   /* El motivo dice el CAMINO, no un «no se puede» pelado: la guía se recibe en
      Ingresos y la madera queda disponible el mismo día. */
@@ -192,6 +205,11 @@ function motivoNoElegible(t: {
   return null;
 }
 
+/** LM4 en palabras: dónde está y qué hacer. */
+function motivoEnMixto(code: string): string {
+  return `está en el lote mixto ${code}: repártelo primero`;
+}
+
 export class ForestLoteAserrioDB {
   /**
    * El siguiente correlativo del año: LA-2026-001.
@@ -199,10 +217,10 @@ export class ForestLoteAserrioDB {
    * Se calcula del último code del tenant y no de un contador: un contador que
    * se desincroniza deja huecos en un libro que se presenta numerado.
    */
-  private static async siguienteCode(tenantId: string): Promise<string> {
+  private static async siguienteCode(tenantId: string, db: Db = prisma): Promise<string> {
     const anio = new Date().getFullYear();
     const prefijo = `LA-${anio}-`;
-    const ultimo = await prisma.forestLoteAserrio.findFirst({
+    const ultimo = await db.forestLoteAserrio.findFirst({
       where: { tenantId, code: { startsWith: prefijo } },
       orderBy: { code: "desc" },
       select: { code: true },
@@ -229,10 +247,11 @@ export class ForestLoteAserrioDB {
     tenantId: string,
     pedido: string | null | undefined,
     excluirLoteId?: string,
+    db: Db = prisma,
   ): Promise<string> {
     const limpio = pedido?.trim();
-    if (!limpio) return ForestLoteAserrioDB.siguienteCode(tenantId);
-    const enUso = await prisma.forestLoteAserrio.findFirst({
+    if (!limpio) return ForestLoteAserrioDB.siguienteCode(tenantId, db);
+    const enUso = await db.forestLoteAserrio.findFirst({
       where: {
         tenantId,
         code: limpio,
@@ -749,6 +768,35 @@ export class ForestLoteAserrioDB {
     });
   }
 
+  /**
+   * La fila de un lote nuevo, UNA vez para `create` y `crearEnTx`: dos altas
+   * escritas a mano divergen a la primera columna nueva.
+   */
+  private static datosDeAlta(
+    tenantId: string,
+    input: LoteAserrioInput,
+    code: string,
+    contratoId: string | null,
+  ) {
+    const especie = input.speciesCommon.trim();
+    if (!especie) throw new CtpInvariantError("El lote necesita una especie.", "LOTE_SIN_ESPECIE");
+    return {
+      tenantId,
+      code,
+      speciesCommon: especie,
+      speciesScientific: input.speciesScientific?.trim() || null,
+      notes: input.notes?.trim() || null,
+      ordenProduccion: input.ordenProduccion?.trim() || null,
+      tipoProductoConsumir: input.tipoProductoConsumir?.trim() || null,
+      /* El título habilitante que el lote va a consumir (ADR-393). */
+      permiso: input.permiso?.trim() || null,
+      contratoId,
+      inicioProceso: input.inicioProceso ?? null,
+      finProceso: input.finProceso ?? null,
+      createdBy: input.createdBy,
+    };
+  }
+
   static async create(tenantId: string, input: LoteAserrioInput) {
     if (!tenantId) throw new Error("tenantId is required");
     const especie = input.speciesCommon.trim();
@@ -760,21 +808,7 @@ export class ForestLoteAserrioDB {
        sería pedir dos veces el mismo dato. */
     const contratoId = input.contratoId ?? (await ForestContratoDB.idPorCodigo(tenantId, input.permiso));
     const lote = await prisma.forestLoteAserrio.create({
-      data: {
-        tenantId,
-        code,
-        speciesCommon: especie,
-        speciesScientific: input.speciesScientific?.trim() || null,
-        notes: input.notes?.trim() || null,
-        ordenProduccion: input.ordenProduccion?.trim() || null,
-        tipoProductoConsumir: input.tipoProductoConsumir?.trim() || null,
-        /* El título habilitante que el lote va a consumir (ADR-393). */
-        permiso: input.permiso?.trim() || null,
-        contratoId,
-        inicioProceso: input.inicioProceso ?? null,
-        finProceso: input.finProceso ?? null,
-        createdBy: input.createdBy,
-      },
+      data: ForestLoteAserrioDB.datosDeAlta(tenantId, input, code, contratoId),
     });
     auditCtp({
       tenantId,
@@ -790,6 +824,40 @@ export class ForestLoteAserrioDB {
       /* cache best-effort */
     }
     return lote;
+  }
+
+  /**
+   * El MISMO alta que `create`, dentro de una transacción ajena (ADR-441: el
+   * reparto de un lote mixto abre N lotes y mueve sus trozas todo o nada).
+   *
+   * Lo que cambia, todo por estar adentro de otra transacción:
+   *  · el correlativo se toma bajo `pg_advisory_xact_lock` y se lee con `tx`.
+   *    Con el cliente de afuera no vería los lotes que esta misma transacción
+   *    ya abrió, repetiría el código, el índice único parcial lo rechazaría y
+   *    el reparto entero se caería;
+   *  · no audita ni invalida caché: si la transacción se revierte, un renglón
+   *    «abrió el lote LA-…» mentiría. Lo hace quien la confirma;
+   *  · `contratoId: null` explícito se respeta (quien llama ya lo resolvió con
+   *    `tx`); `undefined` lo busca como `create`.
+   */
+  static async crearEnTx(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+    input: LoteAserrioInput & { loteMixtoId?: string | null },
+  ) {
+    if (!tenantId) throw new Error("tenantId is required");
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`ctp-lote-aserrio:${tenantId}`}))`;
+    const code = await ForestLoteAserrioDB.codigoAUsar(tenantId, input.code, undefined, tx);
+    const contratoId =
+      input.contratoId !== undefined
+        ? input.contratoId
+        : await ForestContratoDB.idPorCodigo(tenantId, input.permiso);
+    return tx.forestLoteAserrio.create({
+      data: {
+        ...ForestLoteAserrioDB.datosDeAlta(tenantId, input, code, contratoId),
+        loteMixtoId: input.loteMixtoId ?? null,
+      },
+    });
   }
 
   /**
@@ -961,11 +1029,24 @@ export class ForestLoteAserrioDB {
         );
       }
 
+      /* Lock de las piezas en orden (T1): el mixto aparta las suyas igual
+         (`ForestLoteMixtoDB.reservar`), y sin el mismo orden dos pedidos que se
+         cruzan sobre dos trozas se abrazan en un deadlock. */
+      const pedidas = [...new Set(trozaIds)];
+      await tx.$queryRaw`
+        SELECT "id" FROM "WoodEntryTroza"
+        WHERE "id" = ANY(${pedidas}::text[]) AND "tenantId" = ${tenantId}
+        ORDER BY "id"
+        FOR UPDATE
+      `;
+
       const trozas = await tx.woodEntryTroza.findMany({
         where: { id: { in: trozaIds }, tenantId },
         include: {
           _count: { select: { retrozos: true } },
           despachadaEn: { select: { status: true, deletedAt: true } },
+          /* LM4 (ADR-441): apartada en un mixto abierto no entra a un lote. */
+          loteMixto: { select: { code: true, status: true, deletedAt: true } },
           entry: {
             select: {
               status: true,
@@ -986,6 +1067,13 @@ export class ForestLoteAserrioDB {
       const aceptadas: string[] = [];
       for (const t of trozas) {
         const codigo = t.codificacion ?? t.codigoPlanta;
+        /* LM4 primero: con la pieza en un mixto, lo que hay que hacer es
+           repartirlo — decirle «es de otra especie» la mandaría a otro lote que
+           también la rechazaría. */
+        if (t.loteMixto && mixtoVivo(t.loteMixto)) {
+          rechazadas.push({ id: t.id, codigo, motivo: motivoEnMixto(t.loteMixto.code) });
+          continue;
+        }
         /* L-A1: una especie por lote, comparada con `claveEspecie` — la misma
            función que el resto del libro. Con un `trim().toLowerCase()` propio,
            «Ishpíngo» y «Ishpingo» eran especies distintas y la troza se
@@ -1042,10 +1130,33 @@ export class ForestLoteAserrioDB {
       }
 
       if (aceptadas.length > 0) {
-        await tx.woodEntryTroza.updateMany({
-          where: { id: { in: aceptadas }, tenantId },
+        /* `loteMixtoId: null` en el WHERE es LM2 escrito en la base: si un mixto
+           la apartó entre la lectura y acá, la fila no se toca. */
+        const escritas = await tx.woodEntryTroza.updateMany({
+          where: { id: { in: aceptadas }, tenantId, loteMixtoId: null },
           data: { loteAserrioId: loteId },
         });
+        if (escritas.count < aceptadas.length) {
+          const quedaron = await tx.woodEntryTroza.findMany({
+            /* `not` solo excluiría los NULL (SQL `<>`): la que no se escribió
+               quedó justamente en NULL. */
+            where: {
+              id: { in: aceptadas },
+              tenantId,
+              OR: [{ loteAserrioId: null }, { loteAserrioId: { not: loteId } }],
+            },
+            select: { id: true, codificacion: true, codigoPlanta: true, loteMixto: { select: { code: true } } },
+          });
+          const fuera = new Set(quedaron.map((t) => t.id));
+          aceptadas.splice(0, aceptadas.length, ...aceptadas.filter((id) => !fuera.has(id)));
+          for (const t of quedaron) {
+            rechazadas.push({
+              id: t.id,
+              codigo: t.codificacion ?? t.codigoPlanta,
+              motivo: motivoEnMixto(t.loteMixto?.code ?? "abierto"),
+            });
+          }
+        }
       }
 
       if (aceptadas.length > 0) {
@@ -1119,6 +1230,8 @@ export class ForestLoteAserrioDB {
             // de que este lote entrara a la sierra — sin esto quedaba con
             // despachadaEnId Y consumidaEnId vivos a la vez, doble-contada.
             despachadaEn: { select: { status: true, deletedAt: true } },
+            /* LM4 (ADR-441): una pieza apartada en un mixto abierto no se consume. */
+            loteMixto: { select: { code: true, status: true, deletedAt: true } },
             codigoPlanta: true,
             codificacion: true,
             entry: {
@@ -1283,10 +1396,29 @@ export class ForestLoteAserrioDB {
           fechaRecepcion: true,
           codigoPlanta: true,
           codificacion: true,
+          loteMixto: { select: { code: true, status: true, deletedAt: true } },
           entry: { select: { gtfNumber: true, fechaRecepcion: true, entryDate: true } },
         },
       });
-      exigirIngresoAntesDeLaCorrida(pedidasAntes, { id: null, lineNo: null, fecha: fecha ?? new Date() });
+      /* LM4 (ADR-441): las apartadas en un lote mixto no entran —
+         `agregarTrozas` las devuelve en `rechazadas`—. Si TODAS lo están, se
+         dice eso y no un «el lote no tiene piezas» que no explica nada. */
+      const enMixto = pedidasAntes.filter((t) => t.loteMixto && mixtoVivo(t.loteMixto));
+      if (enMixto.length > 0 && enMixto.length === new Set(trozaIds).size) {
+        const t = enMixto[0];
+        throw new CtpInvariantError(
+          `La troza ${t.codigoPlanta ?? t.codificacion ?? t.id} ${motivoEnMixto(t.loteMixto!.code)}` +
+            (enMixto.length > 1 ? ` (y ${enMixto.length - 1} más)` : "") +
+            ": el mixto se consume después de repartirlo en lotes por especie.",
+          "LOTE_NO_EDITABLE",
+          { trozas: enMixto.map((x) => x.id), loteMixto: t.loteMixto!.code },
+        );
+      }
+      const enMixtoIds = new Set(enMixto.map((t) => t.id));
+      exigirIngresoAntesDeLaCorrida(
+        pedidasAntes.filter((t) => !enMixtoIds.has(t.id)),
+        { id: null, lineNo: null, fecha: fecha ?? new Date() },
+      );
     }
 
     /* Primero las piezas al lote: si alguna no entra, se dice cuál y por qué
@@ -1313,6 +1445,8 @@ export class ForestLoteAserrioDB {
             descarte: true,
             _count: { select: { retrozos: true } },
             despachadaEn: { select: { status: true, deletedAt: true } },
+            /* LM4 (ADR-441): una pieza apartada en un mixto abierto no se consume. */
+            loteMixto: { select: { code: true, status: true, deletedAt: true } },
             codigoPlanta: true,
             codificacion: true,
             entry: {
@@ -1338,9 +1472,16 @@ export class ForestLoteAserrioDB {
     const pedidas = trozaIds.length > 0 ? new Set(trozaIds) : null;
     const libres = pedidas ? disponibles.filter((t) => pedidas.has(t.id)) : disponibles;
     if (libres.length === 0) {
+      /* Si las elegidas no entraron, el porqué de cada una es la respuesta
+         (LM4 incluido): «no tiene piezas» a secas obliga a adivinar. */
+      const porque = agregado.rechazadas
+        .slice(0, 5)
+        .map((r) => `${r.codigo ?? r.id}: ${r.motivo}`)
+        .join(" · ");
       throw new CtpInvariantError(
-        `El lote ${lote.code} no tiene piezas que consumir.`,
+        `El lote ${lote.code} no tiene piezas que consumir.` + (porque ? ` ${porque}.` : ""),
         "LOTE_NO_EDITABLE",
+        agregado.rechazadas.length > 0 ? { rechazadas: agregado.rechazadas } : undefined,
       );
     }
     const volumenM3 =
@@ -1526,6 +1667,8 @@ export class ForestLoteAserrioDB {
                 descarte: true,
                 _count: { select: { retrozos: true } },
                 despachadaEn: { select: { status: true, deletedAt: true } },
+                /* LM4 (ADR-441): una pieza apartada en un mixto abierto no se consume. */
+                loteMixto: { select: { code: true, status: true, deletedAt: true } },
                 codigoPlanta: true,
                 codificacion: true,
                 entry: {

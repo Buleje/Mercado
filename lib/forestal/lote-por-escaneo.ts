@@ -30,14 +30,28 @@ const texto = (v: string | null | undefined) => v?.trim() || null;
 /**
  * Por qué ESTA pieza no puede entrar a la pila. `null` = entra.
  * El texto se lee en voz alta frente al tronco: dice qué es y qué hacer.
+ *
+ * `loteMixtoId` = la pila que se está escaneando es ESE lote mixto (ADR-441):
+ * una pieza que ya está en él entra (re-escanearla no es un error); una que
+ * está en OTRO mixto, no — LM1, un solo mixto. Sin `loteMixtoId` (el armado de
+ * lotes por escaneo de siempre) cualquier mixto la deja afuera: LM4, primero
+ * se reparte.
  */
-export function motivoFueraDeLaPila(t: TrozaConsumible): string | null {
+export function motivoFueraDeLaPila(
+  t: TrozaConsumible,
+  opts: { loteMixtoId?: string | null } = {},
+): string | null {
   const m = motivoBloqueo(t);
   if (m) return LABEL_BLOQUEO[m];
   if (t.guiaRecepcionada === false) {
     return `${t.gtfNumber ? `Su guía ${t.gtfNumber}` : "Su guía"} no se recibió: recíbela en Ingresos`;
   }
   if (t.loteAserrioId) return `Ya está en el lote ${t.loteAserrioCode ?? "de otra pila"}`;
+  if (t.loteMixtoId && t.loteMixtoId !== opts.loteMixtoId) {
+    return opts.loteMixtoId
+      ? `Ya está en el lote mixto ${t.loteMixtoCode ?? "de otra pila"}`
+      : `Está en el lote mixto ${t.loteMixtoCode ?? "abierto"}: repártelo primero`;
+  }
   if (!texto(t.especieComun))
     return "No tiene especie: corrígela en su guía antes de armar el lote";
   return null;

@@ -21,8 +21,9 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
-import { auditCtp, m3 } from "@/lib/forestal/ctp-audit";
+import { auditCtp, auditCtpEsperando, m3 } from "@/lib/forestal/ctp-audit";
 import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
+import { closedPeriodOf, type CtpCierrePeriodo } from "@/lib/forestal/ctp-cierre-types";
 import {
   diaDelLibro,
   mensajeEntroDespues,
@@ -72,6 +73,17 @@ const r2 = (n: number) => Math.round(n * 100) / 100;
 export interface ConsumoInput {
   woodEntryId: string;
   volumeM3: number | string;
+}
+
+/** Un consumo como lo devuelve `setConsumos`: con la guía y la especie del ingreso. */
+export type ConsumoConGuia = Prisma.ForestCtpConsumoGetPayload<{
+  include: { woodEntry: { select: { gtfNumber: true; speciesCommonName: true } } };
+}>;
+
+/** Lo que `setConsumosEnTx` escribió, y el renglón que `despuesDeConsumos` narra tras el commit. */
+export interface ConsumosEscritos {
+  consumos: ConsumoConGuia[];
+  auditoria: string;
 }
 
 /** Error de invariante: el caller lo mapea a 422, no a 500. */
@@ -287,6 +299,51 @@ export class ForestCtpConsumoDB {
     if (!ctpEntryId) throw new Error("ctpEntryId is required");
     if (!createdBy?.trim()) throw new Error("createdBy is required");
 
+    /* Los cierres se leen ANTES de abrir la transacción: son un KV que se lee
+       con el cliente global, y adentro pedirían una SEGUNDA conexión mientras
+       la tx retiene la suya (con el pool chico, varias a la vez pueden quedarse
+       esperándose entre sí). Es la misma lectura que antes, un instante antes. */
+    const cierres = await ForestCtpCierreDB.list(tenantId);
+    const escritos = await prisma.$transaction(
+      (tx) => ForestCtpConsumoDB.setConsumosEnTx(tx, tenantId, ctpEntryId, consumos, createdBy, { cierres }),
+      CTP_TX_OPTS,
+    );
+    await ForestCtpConsumoDB.despuesDeConsumos(tenantId, ctpEntryId, escritos, createdBy);
+    return escritos.consumos;
+  }
+
+  /**
+   * El núcleo de `setConsumos` DENTRO de una transacción ajena (ADR-441).
+   *
+   * Existe para que un escritor que hace MÁS que atribuir m³ —vincular una
+   * corrida con sus trozas: volumen, consumos por guía y piezas— lo haga en UNA
+   * sola transacción. Antes, `sumarACorrida` escribía el volumen, llamaba a
+   * `setConsumos` (otra tx) y marcaba las piezas (una tercera): si la tercera
+   * fallaba quedaban m³ atribuidos sin piezas, y dos vinculaciones de la misma
+   * troza no se veían entre sí.
+   *
+   * Las reglas son LAS MISMAS, en el mismo orden (I1, I2, cierre, congelado,
+   * lock de la línea y de los ingresos `ORDER BY id`): esto es un corte, no una
+   * segunda versión. Lo que NO hace es auditar ni invalidar la caché: eso va
+   * DESPUÉS del commit (`despuesDeConsumos`) — un renglón escrito antes de un
+   * rollback narraría una atribución que nunca existió.
+   *
+   * `cierres` los lee el llamador ANTES de abrir la transacción
+   * (`ForestCtpCierreDB.list`): leerlos acá adentro usaba el cliente global y
+   * pedía otra conexión del pool con la de la tx tomada.
+   */
+  static async setConsumosEnTx(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+    ctpEntryId: string,
+    consumos: ConsumoInput[],
+    createdBy: string,
+    { cierres }: { cierres: CtpCierrePeriodo[] },
+  ): Promise<ConsumosEscritos> {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (!ctpEntryId) throw new Error("ctpEntryId is required");
+    if (!createdBy?.trim()) throw new Error("createdBy is required");
+
     // Un mismo ingreso 2 veces en el payload = el UNIQUE lo rechazaría con un
     // error críptico de Postgres; mejor decirlo claro (y sumar es del caller).
     const ids = consumos.map((c) => c.woodEntryId);
@@ -306,13 +363,11 @@ export class ForestCtpConsumoDB {
 
     // Cierre de período (ADR-139): la atribución de una corrida de un mes cerrado
     // es inmutable (además del guard de costo congelado de más abajo).
-    const entryCons = await prisma.forestCtpEntry.findFirst({
+    const entryCons = await tx.forestCtpEntry.findFirst({
       where: { id: ctpEntryId, tenantId },
       select: { entryDate: true },
     });
-    const cerradoCons = entryCons
-      ? await ForestCtpCierreDB.closedPeriodOf(tenantId, entryCons.entryDate)
-      : null;
+    const cerradoCons = entryCons ? closedPeriodOf(cierres, entryCons.entryDate) : null;
     if (cerradoCons) {
       throw new CtpInvariantError(
         `El período ${cerradoCons.label} está cerrado: no se puede cambiar la materia prima de una corrida de un mes cerrado.`,
@@ -321,213 +376,226 @@ export class ForestCtpConsumoDB {
       );
     }
 
-    return prisma.$transaction(async (tx) => {
-      // 1. Lock de la línea. Placeholders $1/$2 — nunca interpolación (regla 11).
-      const locked = await tx.$queryRaw<{ id: string; volumeInputM3: Prisma.Decimal | null }[]>`
-        SELECT "id", "volumeInputM3" FROM "ForestCtpEntry"
-        WHERE "id" = ${ctpEntryId} AND "tenantId" = ${tenantId} AND "deletedAt" IS NULL
+    // 1. Lock de la línea. Placeholders $1/$2 — nunca interpolación (regla 11).
+    const locked = await tx.$queryRaw<{ id: string; volumeInputM3: Prisma.Decimal | null }[]>`
+      SELECT "id", "volumeInputM3" FROM "ForestCtpEntry"
+      WHERE "id" = ${ctpEntryId} AND "tenantId" = ${tenantId} AND "deletedAt" IS NULL
+      FOR UPDATE
+    `;
+    if (locked.length === 0) throw new Error("Línea CTP no encontrada");
+
+    // 2. Congelado ⇒ inmutable (el costo del período ya se reportó).
+    const yaCongelado = await tx.forestCtpConsumo.count({
+      where: { ctpEntryId, tenantId, congeladoAt: { not: null } },
+    });
+    if (yaCongelado > 0) {
+      throw new CtpInvariantError(
+        "Esta línea ya tiene el costo congelado: no se puede cambiar su atribución.",
+        "CONGELADO",
+      );
+    }
+
+    // 3. Lock de los INGRESOS — el recurso realmente disputado (ver cabecera).
+    //    Ordenado por id para que dos transacciones concurrentes tomen las
+    //    mismas guías en el mismo orden y no se deadlockeen entre sí.
+    //    A partir de acá, cualquier otra tx que quiera estos ingresos espera,
+    //    así que el cálculo de disponible de abajo ya no puede quedar viejo.
+    //    (ids vacío = borrar toda la atribución: no hay nada que lockear, y
+    //    `IN ()` sería SQL inválido.)
+    if (ids.length > 0) {
+      await tx.$queryRaw`
+        SELECT "id" FROM "WoodEntry"
+        WHERE "id" IN (${Prisma.join(ids)}) AND "tenantId" = ${tenantId} AND "deletedAt" IS NULL
+        ORDER BY "id"
         FOR UPDATE
       `;
-      if (locked.length === 0) throw new Error("Línea CTP no encontrada");
+    }
 
-      // 2. Congelado ⇒ inmutable (el costo del período ya se reportó).
-      const yaCongelado = await tx.forestCtpConsumo.count({
-        where: { ctpEntryId, tenantId, congeladoAt: { not: null } },
-      });
-      if (yaCongelado > 0) {
-        throw new CtpInvariantError(
-          "Esta línea ya tiene el costo congelado: no se puede cambiar su atribución.",
-          "CONGELADO",
-        );
-      }
+    // 4. Los ingresos citados deben ser de ESTE tenant y estar vivos.
+    //    El FK de Postgres no lo garantiza (D3) — probado en el ensayo.
+    const ingresos = await tx.woodEntry.findMany({
+      where: { id: { in: ids }, tenantId, deletedAt: null },
+      select: { id: true, volumeM3: true, gtfNumber: true },
+    });
+    if (ingresos.length !== ids.length) {
+      const vistos = new Set(ingresos.map((i) => i.id));
+      throw new CtpInvariantError(
+        "Algún ingreso citado no existe, fue borrado, o pertenece a otra tienda.",
+        "TENANT_MISMATCH",
+        { faltantes: ids.filter((id) => !vistos.has(id)) },
+      );
+    }
 
-      // 3. Lock de los INGRESOS — el recurso realmente disputado (ver cabecera).
-      //    Ordenado por id para que dos transacciones concurrentes tomen las
-      //    mismas guías en el mismo orden y no se deadlockeen entre sí.
-      //    A partir de acá, cualquier otra tx que quiera estos ingresos espera,
-      //    así que el cálculo de disponible de abajo ya no puede quedar viejo.
-      //    (ids vacío = borrar toda la atribución: no hay nada que lockear, y
-      //    `IN ()` sería SQL inválido.)
-      if (ids.length > 0) {
-        await tx.$queryRaw`
-          SELECT "id" FROM "WoodEntry"
-          WHERE "id" IN (${Prisma.join(ids)}) AND "tenantId" = ${tenantId} AND "deletedAt" IS NULL
-          ORDER BY "id"
-          FOR UPDATE
-        `;
-      }
+    // 5. I1 — Σ atribuido ≤ declarado en el acta.
+    const declarado = locked[0].volumeInputM3 ? Number(locked[0].volumeInputM3) : null;
+    const totalAtribuido = consumos.reduce((a, c) => a + Number(c.volumeM3), 0);
+    if (declarado != null && r4(totalAtribuido) > r4(declarado)) {
+      throw new CtpInvariantError(
+        `Estás atribuyendo ${r4(totalAtribuido)} m³ pero la línea declara ${r4(declarado)} m³ consumidos.`,
+        "I1_SOBRE_ATRIBUCION",
+        { atribuido: r4(totalAtribuido), declarado: r4(declarado) },
+      );
+    }
 
-      // 4. Los ingresos citados deben ser de ESTE tenant y estar vivos.
-      //    El FK de Postgres no lo garantiza (D3) — probado en el ensayo.
-      const ingresos = await tx.woodEntry.findMany({
-        where: { id: { in: ids }, tenantId, deletedAt: null },
-        select: { id: true, volumeM3: true, gtfNumber: true },
-      });
-      if (ingresos.length !== ids.length) {
-        const vistos = new Set(ingresos.map((i) => i.id));
-        throw new CtpInvariantError(
-          "Algún ingreso citado no existe, fue borrado, o pertenece a otra tienda.",
-          "TENANT_MISMATCH",
-          { faltantes: ids.filter((id) => !vistos.has(id)) },
-        );
-      }
-
-      // 5. I1 — Σ atribuido ≤ declarado en el acta.
-      const declarado = locked[0].volumeInputM3 ? Number(locked[0].volumeInputM3) : null;
-      const totalAtribuido = consumos.reduce((a, c) => a + Number(c.volumeM3), 0);
-      if (declarado != null && r4(totalAtribuido) > r4(declarado)) {
-        throw new CtpInvariantError(
-          `Estás atribuyendo ${r4(totalAtribuido)} m³ pero la línea declara ${r4(declarado)} m³ consumidos.`,
-          "I1_SOBRE_ATRIBUCION",
-          { atribuido: r4(totalAtribuido), declarado: r4(declarado) },
-        );
-      }
-
-      // 6. I2 — ningún ingreso consumido por encima de su volumen, contando lo
-      //    que YA consumen OTRAS líneas (excluyendo esta, que se reemplaza).
-      const otros = await tx.forestCtpConsumo.groupBy({
-        by: ["woodEntryId"],
-        where: {
-          tenantId,
-          woodEntryId: { in: ids },
-          ctpEntryId: { not: ctpEntryId },
-          ...CONSUMO_VIGENTE, // una línea anulada no sigue reservando materia prima
-        },
-        _sum: { volumeM3: true },
-      });
-      const yaConsumido = new Map(otros.map((o) => [o.woodEntryId, Number(o._sum.volumeM3 ?? 0)]));
-
-      for (const c of consumos) {
-        const ingreso = ingresos.find((i) => i.id === c.woodEntryId)!;
-        const disponible = Number(ingreso.volumeM3) - (yaConsumido.get(c.woodEntryId) ?? 0);
-        if (r4(Number(c.volumeM3)) > r4(disponible)) {
-          /**
-           * DOS causas distintas, dos mensajes distintos (ADR-359).
-           *
-           * I2 se aplica **por guía**, no sobre el total del lote: un lote de
-           * 12.928 m³ puede rendir 7.105 sin problema y aun así una de sus guías
-           * estar mal declarada. El mensaje viejo —«sólo tiene 4.161 sin
-           * consumir; estás pidiendo 8.247»— mandaba a buscar un cupo que no
-           * existe, cuando lo que pasa es que el documento se contradice.
-           *
-           * Si NADA de esa guía se consumió todavía y aun así se pasa, no falta
-           * cupo: la guía declara menos de lo que miden sus propias piezas.
-           */
-          const nadaConsumido = (yaConsumido.get(c.woodEntryId) ?? 0) === 0;
-          throw new CtpInvariantError(
-            nadaConsumido
-              ? `La guía ${ingreso.gtfNumber} declara ${r4(Number(ingreso.volumeM3))} m³ en su cabecera, ` +
-                  `pero las piezas que estás llevando a la sierra suman ${r4(Number(c.volumeM3))} m³. ` +
-                  `La guía no cuadra consigo misma — el total del lote no es el problema, es esa guía. ` +
-                  `Cuádrala en Ingresos: toca el aviso naranja de su fila.`
-              : `De la guía ${ingreso.gtfNumber} quedan ${r4(disponible)} m³ sin consumir ` +
-                  `(declara ${r4(Number(ingreso.volumeM3))} y ya se consumieron ` +
-                  `${r4(yaConsumido.get(c.woodEntryId) ?? 0)}), y estás pidiendo ${r4(Number(c.volumeM3))} m³.`,
-            "I2_SOBRE_CONSUMO",
-            {
-              gtfNumber: ingreso.gtfNumber,
-              disponible: r4(disponible),
-              pedido: r4(Number(c.volumeM3)),
-              volumenIngreso: r4(Number(ingreso.volumeM3)),
-            },
-          );
-        }
-      }
-
-      // 7. Estado ANTERIOR — para que la auditoría diga de qué a qué cambió la
-      //    atribución. "Cambió el origen" no le sirve a nadie en una
-      //    fiscalización; "de 001-0000120: 8.45 a 001-0000131: 8.45" sí.
-      const antes = await tx.forestCtpConsumo.findMany({
-        where: { ctpEntryId, tenantId },
-        include: { woodEntry: { select: { gtfNumber: true } } },
-      });
-
-      // 8. Reemplazo atómico. Sin soft-delete: el consumo es detalle editable,
-      //    no acta — el acta (volumeInputM3/gtfIngreso) no se toca nunca.
-      await tx.forestCtpConsumo.deleteMany({ where: { ctpEntryId, tenantId } });
-      if (consumos.length > 0) {
-        await tx.forestCtpConsumo.createMany({
-          data: consumos.map((c) => ({
-            tenantId,
-            ctpEntryId,
-            woodEntryId: c.woodEntryId,
-            volumeM3: new Prisma.Decimal(c.volumeM3),
-            createdBy,
-          })),
-        });
-      }
-
-      /**
-       * La corrida que NUNCA declaró su materia prima la completa acá.
-       *
-       * Hay líneas viejas —importadas o cargadas antes de que el lote existiera—
-       * con `volumeInputM3` en null: declararon producto y no de qué madera
-       * salió. Su rendimiento queda en blanco y ningún despacho que las cite se
-       * puede certificar. Decir de qué guías salió es decir cuánto entró: es el
-       * MISMO número por construcción, no una estimación.
-       *
-       * Sólo cuando está vacío. Un acta que ya declaró su volumen no se toca por
-       * este camino —eso lo prohíbe ADR-364— y bajar el consumo de una corrida
-       * declarada le cambiaría el rendimiento a espaldas del operador.
-       */
-      if (declarado == null && totalAtribuido > 0) {
-        /**
-         * Y el rendimiento sale solo, con la misma fórmula del resto del libro.
-         *
-         * Sin esto la corrida quedaba con entrada y salida y la columna «Rend.»
-         * en blanco: los dos números estaban ahí y nadie los dividía. El
-         * rendimiento es DERIVADO, no un dato aparte — si se puede calcular, se
-         * calcula.
-         */
-        const linea = await tx.forestCtpEntry.findUnique({
-          where: { id: ctpEntryId },
-          select: { section: true, quantity: true, unit: true },
-        });
-        const salida = linea?.quantity == null ? 0 : Number(linea.quantity);
-        const rendimiento =
-          linea?.section === "produccion" && linea.unit === "m3" && salida > 0
-            ? Math.round((salida / r4(totalAtribuido)) * 10000) / 100
-            : undefined;
-        await tx.forestCtpEntry.update({
-          where: { id: ctpEntryId },
-          data: {
-            volumeInputM3: new Prisma.Decimal(r4(totalAtribuido)),
-            ...(rendimiento != null ? { rendimientoPct: new Prisma.Decimal(rendimiento) } : {}),
-          },
-        });
-      }
-
-      const result = await tx.forestCtpConsumo.findMany({
-        where: { ctpEntryId, tenantId },
-        include: { woodEntry: { select: { gtfNumber: true, speciesCommonName: true } } },
-      });
-
-      const fmt = (rows: { volumeM3: Prisma.Decimal; woodEntry: { gtfNumber: string } }[]) =>
-        rows.length === 0
-          ? "(sin atribución)"
-          : rows.map((r) => `${r.woodEntry.gtfNumber}: ${m3(Number(r.volumeM3))}`).join(", ");
-      auditCtp({
+    // 6. I2 — ningún ingreso consumido por encima de su volumen, contando lo
+    //    que YA consumen OTRAS líneas (excluyendo esta, que se reemplaza).
+    const otros = await tx.forestCtpConsumo.groupBy({
+      by: ["woodEntryId"],
+      where: {
         tenantId,
-        action: "ctp_consumos_set",
-        entity: "ForestCtpEntry",
-        entityId: ctpEntryId,
-        detail:
-          `Origen de la materia prima: ${fmt(antes)} → ${fmt(result)}` +
-          /* Que el acta pasó de no tener volumen a tenerlo es un cambio del
-             libro, no un detalle del formulario: se narra. */
-          (declarado == null && totalAtribuido > 0
-            ? ` · la corrida no declaraba materia prima y quedó en ${m3(r4(totalAtribuido))}`
-            : ""),
-        user: createdBy,
-      });
+        woodEntryId: { in: ids },
+        ctpEntryId: { not: ctpEntryId },
+        ...CONSUMO_VIGENTE, // una línea anulada no sigue reservando materia prima
+      },
+      _sum: { volumeM3: true },
+    });
+    const yaConsumido = new Map(otros.map((o) => [o.woodEntryId, Number(o._sum.volumeM3 ?? 0)]));
 
-      try {
-        invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
-      } catch {
-        /* cache best-effort */
+    for (const c of consumos) {
+      const ingreso = ingresos.find((i) => i.id === c.woodEntryId)!;
+      const disponible = Number(ingreso.volumeM3) - (yaConsumido.get(c.woodEntryId) ?? 0);
+      if (r4(Number(c.volumeM3)) > r4(disponible)) {
+        /**
+         * DOS causas distintas, dos mensajes distintos (ADR-359).
+         *
+         * I2 se aplica **por guía**, no sobre el total del lote: un lote de
+         * 12.928 m³ puede rendir 7.105 sin problema y aun así una de sus guías
+         * estar mal declarada. El mensaje viejo —«sólo tiene 4.161 sin
+         * consumir; estás pidiendo 8.247»— mandaba a buscar un cupo que no
+         * existe, cuando lo que pasa es que el documento se contradice.
+         *
+         * Si NADA de esa guía se consumió todavía y aun así se pasa, no falta
+         * cupo: la guía declara menos de lo que miden sus propias piezas.
+         */
+        const nadaConsumido = (yaConsumido.get(c.woodEntryId) ?? 0) === 0;
+        throw new CtpInvariantError(
+          nadaConsumido
+            ? `La guía ${ingreso.gtfNumber} declara ${r4(Number(ingreso.volumeM3))} m³ en su cabecera, ` +
+                `pero las piezas que estás llevando a la sierra suman ${r4(Number(c.volumeM3))} m³. ` +
+                `La guía no cuadra consigo misma — el total del lote no es el problema, es esa guía. ` +
+                `Cuádrala en Ingresos: toca el aviso naranja de su fila.`
+            : `De la guía ${ingreso.gtfNumber} quedan ${r4(disponible)} m³ sin consumir ` +
+                `(declara ${r4(Number(ingreso.volumeM3))} y ya se consumieron ` +
+                `${r4(yaConsumido.get(c.woodEntryId) ?? 0)}), y estás pidiendo ${r4(Number(c.volumeM3))} m³.`,
+          "I2_SOBRE_CONSUMO",
+          {
+            gtfNumber: ingreso.gtfNumber,
+            disponible: r4(disponible),
+            pedido: r4(Number(c.volumeM3)),
+            volumenIngreso: r4(Number(ingreso.volumeM3)),
+          },
+        );
       }
-      return result;
-    }, CTP_TX_OPTS);
+    }
+
+    // 7. Estado ANTERIOR — para que la auditoría diga de qué a qué cambió la
+    //    atribución. "Cambió el origen" no le sirve a nadie en una
+    //    fiscalización; "de 001-0000120: 8.45 a 001-0000131: 8.45" sí.
+    const antes = await tx.forestCtpConsumo.findMany({
+      where: { ctpEntryId, tenantId },
+      include: { woodEntry: { select: { gtfNumber: true } } },
+    });
+
+    // 8. Reemplazo atómico. Sin soft-delete: el consumo es detalle editable,
+    //    no acta — el acta (volumeInputM3/gtfIngreso) no se toca nunca.
+    await tx.forestCtpConsumo.deleteMany({ where: { ctpEntryId, tenantId } });
+    if (consumos.length > 0) {
+      await tx.forestCtpConsumo.createMany({
+        data: consumos.map((c) => ({
+          tenantId,
+          ctpEntryId,
+          woodEntryId: c.woodEntryId,
+          volumeM3: new Prisma.Decimal(c.volumeM3),
+          createdBy,
+        })),
+      });
+    }
+
+    /**
+     * La corrida que NUNCA declaró su materia prima la completa acá.
+     *
+     * Hay líneas viejas —importadas o cargadas antes de que el lote existiera—
+     * con `volumeInputM3` en null: declararon producto y no de qué madera
+     * salió. Su rendimiento queda en blanco y ningún despacho que las cite se
+     * puede certificar. Decir de qué guías salió es decir cuánto entró: es el
+     * MISMO número por construcción, no una estimación.
+     *
+     * Sólo cuando está vacío. Un acta que ya declaró su volumen no se toca por
+     * este camino —eso lo prohíbe ADR-364— y bajar el consumo de una corrida
+     * declarada le cambiaría el rendimiento a espaldas del operador.
+     */
+    if (declarado == null && totalAtribuido > 0) {
+      /**
+       * Y el rendimiento sale solo, con la misma fórmula del resto del libro.
+       *
+       * Sin esto la corrida quedaba con entrada y salida y la columna «Rend.»
+       * en blanco: los dos números estaban ahí y nadie los dividía. El
+       * rendimiento es DERIVADO, no un dato aparte — si se puede calcular, se
+       * calcula.
+       */
+      const linea = await tx.forestCtpEntry.findUnique({
+        where: { id: ctpEntryId },
+        select: { section: true, quantity: true, unit: true },
+      });
+      const salida = linea?.quantity == null ? 0 : Number(linea.quantity);
+      const rendimiento =
+        linea?.section === "produccion" && linea.unit === "m3" && salida > 0
+          ? Math.round((salida / r4(totalAtribuido)) * 10000) / 100
+          : undefined;
+      await tx.forestCtpEntry.update({
+        where: { id: ctpEntryId },
+        data: {
+          volumeInputM3: new Prisma.Decimal(r4(totalAtribuido)),
+          ...(rendimiento != null ? { rendimientoPct: new Prisma.Decimal(rendimiento) } : {}),
+        },
+      });
+    }
+
+    const result = await tx.forestCtpConsumo.findMany({
+      where: { ctpEntryId, tenantId },
+      include: { woodEntry: { select: { gtfNumber: true, speciesCommonName: true } } },
+    });
+
+    const fmt = (rows: { volumeM3: Prisma.Decimal; woodEntry: { gtfNumber: string } }[]) =>
+      rows.length === 0
+        ? "(sin atribución)"
+        : rows.map((r) => `${r.woodEntry.gtfNumber}: ${m3(Number(r.volumeM3))}`).join(", ");
+    const auditoria =
+      `Origen de la materia prima: ${fmt(antes)} → ${fmt(result)}` +
+      /* Que el acta pasó de no tener volumen a tenerlo es un cambio del
+         libro, no un detalle del formulario: se narra. */
+      (declarado == null && totalAtribuido > 0
+        ? ` · la corrida no declaraba materia prima y quedó en ${m3(r4(totalAtribuido))}`
+        : "");
+    return { consumos: result, auditoria };
+  }
+
+  /**
+   * Lo que va DESPUÉS del commit de `setConsumosEnTx`: la caché y el renglón
+   * del libro. El renglón se ESPERA (`auditCtpEsperando`): en Vercel lo que
+   * sigue corriendo después de responder puede no terminar, y de dónde salió
+   * la materia prima de una corrida es lo primero que pregunta SERFOR. Nunca
+   * tira: auditar no deshace un consumo ya escrito.
+   */
+  static async despuesDeConsumos(
+    tenantId: string,
+    ctpEntryId: string,
+    escritos: ConsumosEscritos,
+    user: string,
+  ): Promise<void> {
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    } catch {
+      /* cache best-effort */
+    }
+    await auditCtpEsperando({
+      tenantId,
+      action: "ctp_consumos_set",
+      entity: "ForestCtpEntry",
+      entityId: ctpEntryId,
+      detail: escritos.auditoria,
+      user,
+    });
   }
 
   /** Consumos de una línea, con la guía y especie de cada ingreso. */
