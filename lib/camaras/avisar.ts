@@ -12,7 +12,8 @@ import "server-only";
  */
 
 import { logger } from "@/lib/logger";
-import { sendWhatsAppTextWithRetry } from "@/lib/whatsapp";
+import { enviarWhatsAppDelNegocio } from "@/lib/whatsapp-tenant";
+import { resumenEnvioWhatsApp } from "@/lib/whatsapp/aviso-plantilla";
 import { CamarasDB } from "@/lib/db/camaras.db";
 import { debeAvisar, textoDelAviso, type Camara, type Captura } from "./camaras";
 
@@ -29,11 +30,23 @@ export async function avisarSiCorresponde(
 
   const base = process.env.NEXT_PUBLIC_BASE_URL ?? "https://www.buleje.pe";
   const texto = textoDelAviso(actual, captura.lectura, ahora, `${base}/admin?tab=camaras`);
-  const mandado = await sendWhatsAppTextWithRetry(actual.avisos.whatsapp, texto);
-  if (!mandado) {
-    logger.warn("[camaras.avisar] no se pudo mandar el WhatsApp", { tenantId, camaraId: actual.id, capturaId: captura.id });
+  /* Con el número del negocio (el del bot) si tiene uno activo; si no, con la
+     cuenta del servidor. Dos reintentos sólo ante fallas pasajeras (red, 5xx),
+     como hacía `sendWhatsAppTextWithRetry`. Nunca tira. */
+  const wa = await enviarWhatsAppDelNegocio(tenantId, actual.avisos.whatsapp, texto, {
+    contexto: "camaras",
+    reintentos: 2,
+  });
+  const constancia = resumenEnvioWhatsApp(wa);
+  if (!wa.ok) {
+    logger.warn("[camaras.avisar] no se pudo mandar el WhatsApp", {
+      tenantId,
+      camaraId: actual.id,
+      capturaId: captura.id,
+      constancia,
+    });
     return;
   }
   await CamarasDB.marcarAvisada(tenantId, actual.id, ahora);
-  logger.info("[camaras.avisar] aviso mandado", { tenantId, camaraId: actual.id, capturaId: captura.id });
+  logger.info("[camaras.avisar] aviso mandado", { tenantId, camaraId: actual.id, capturaId: captura.id, constancia });
 }

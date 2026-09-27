@@ -7,7 +7,8 @@ import { ForestCtpFichaDB } from "@/lib/db/forest-ctp-ficha.db";
 import { ForestLoteAserrioDB } from "@/lib/db/forest-lote-aserrio.db";
 import { NotificationCenterDB } from "@/lib/db/notification-center.db";
 import { NotificationLogsDB } from "@/lib/db/notifications.db";
-import { sendWhatsAppText } from "@/lib/whatsapp";
+import { enviarWhatsAppDelNegocio } from "@/lib/whatsapp-tenant";
+import { describirEnvioWhatsApp, sufijoDeFallo } from "@/lib/whatsapp/aviso-plantilla";
 import { sendAvisoPlazosCtp } from "@/lib/email/resend";
 import { construirAviso, fraseLote, frasePlazo } from "@/lib/forestal/ctp-aviso-plazos";
 import { documentosVencimientoDeFicha } from "@/lib/forestal/ctp-ficha-types";
@@ -231,19 +232,20 @@ export const GET = withCronAuth("forestal-plazos", async () => {
         continue;
       }
 
-      let motivoWa = "";
-      const ok = await sendWhatsAppText(phone, aviso.whatsapp).catch((err) => {
-        motivoWa = String(err).slice(0, 200);
-        logger.error("[cron/forestal-plazos] whatsapp falló", { tenantId, err: motivoWa });
-        return false;
+      /* Con el número del negocio (el del bot, `TenantWhatsAppConfig`) si tiene
+         uno activo; si no, con la cuenta del servidor. La config se guarda con
+         el cuid, no con el slug: por eso `tenant.id`. Nunca tira. */
+      const wa = await enviarWhatsAppDelNegocio(tenant?.id ?? tenantId, phone, aviso.whatsapp, {
+        contexto: "ctp_plazos",
       });
-      if (ok) {
+      if (wa.ok) {
         whatsappEnviados += 1;
-        await registrar(tenantId, "whatsapp", phone, true, aviso.titulo);
+        await registrar(tenantId, "whatsapp", phone, true, `${aviso.titulo} · ${describirEnvioWhatsApp(wa)}`);
       } else {
         whatsappFallidos += 1;
-        logger.error("[cron/forestal-plazos] whatsapp NO enviado", { tenantId });
-        await registrar(tenantId, "whatsapp", phone, false, motivoWa || "la API respondió que no");
+        const motivoWa = `${(wa.error ?? "la API respondió que no").slice(0, 400)}${sufijoDeFallo(wa.via)}`;
+        logger.error("[cron/forestal-plazos] whatsapp NO enviado", { tenantId, via: wa.via, modo: wa.modo });
+        await registrar(tenantId, "whatsapp", phone, false, motivoWa);
       }
     } catch (err) {
       // Un tenant que falla no puede dejar sin aviso a los demás.

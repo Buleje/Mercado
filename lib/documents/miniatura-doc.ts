@@ -58,7 +58,13 @@ export async function fuenteParaMiniaturas(): Promise<string | null> {
 
   const { GlobalFonts } = await import("@napi-rs/canvas");
   for (const candidata of FUENTES) {
-    const ruta = candidata.startsWith("/") ? candidata : path.join(process.cwd(), candidata);
+    // `turbopackIgnore`: sin él, Turbopack no puede resolver `cwd + variable` y
+    // traza el PROYECTO ENTERO (16 671 archivos, build de Vercel 26-09) dentro
+    // de la función de /thumbnail. Los .ttf de Geist ya viajan por
+    // `outputFileTracingIncludes` en next.config.ts.
+    const ruta = candidata.startsWith("/")
+      ? candidata
+      : path.join(/* turbopackIgnore: true */ process.cwd(), candidata);
     if (!existsSync(ruta)) continue;
     try {
       if (GlobalFonts.registerFromPath(ruta, FAMILIA)) {

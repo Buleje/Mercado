@@ -3,7 +3,8 @@ import { withCronAuth } from "@/lib/cron-auth";
 import { prisma } from "@/lib/prisma";
 import { ContractsDB } from "@/lib/db/contracts.db";
 import { NotificationCenterDB } from "@/lib/db/notification-center.db";
-import { sendWhatsAppText } from "@/lib/whatsapp";
+import { enviarWhatsAppDelNegocio } from "@/lib/whatsapp-tenant";
+import { resumenEnvioWhatsApp } from "@/lib/whatsapp/aviso-plantilla";
 import { logger } from "@/lib/logger";
 
 /**
@@ -53,6 +54,8 @@ export const GET = withCronAuth("contratos-vencimiento", async () => {
   let whatsappEnviados = 0;
   let sinTelefono = 0;
   let whatsappFallidos = 0;
+  /** Aceptados como texto libre: Meta los descarta si el dueño no escribió en 24 h. */
+  let whatsappSinGarantia = 0;
 
   for (const [tenantId, contratos] of porTenant) {
     contratos.sort((a, b) => a.fechaVencimiento.getTime() - b.fechaVencimiento.getTime());
@@ -81,6 +84,10 @@ export const GET = withCronAuth("contratos-vencimiento", async () => {
         select: { ownerPhone: true, name: true },
       });
       const phone = tenant?.ownerPhone?.replace(/\D/g, "");
+      /* Cómo le fue al WhatsApp, para el evento de cada contrato: «Aviso
+         enviado» a secas decía lo mismo con el WhatsApp caído. */
+      let resumenWa = "sin WhatsApp: el negocio no tiene teléfono cargado";
+      let whatsapp: Record<string, unknown> | null = null;
       if (!phone || phone.length < 9) {
         sinTelefono += 1;
         logger.warn("[cron/contratos-vencimiento] tenant sin ownerPhone", { tenantId, contratos: n });
@@ -99,17 +106,18 @@ export const GET = withCronAuth("contratos-vencimiento", async () => {
         ]
           .filter(Boolean)
           .join("\n");
-        const ok = await sendWhatsAppText(phone, msg).catch((err) => {
-          logger.error("[cron/contratos-vencimiento] whatsapp falló", {
-            tenantId,
-            err: String(err).slice(0, 200),
-          });
-          return false;
-        });
-        if (ok) whatsappEnviados += 1;
-        else {
+        /* Con el número del negocio (el del bot) si tiene uno activo; si no,
+           con la cuenta del servidor. Plantilla si hay una aprobada; si no,
+           texto libre (y la constancia lo dice). Nunca tira. */
+        const wa = await enviarWhatsAppDelNegocio(tenantId, phone, msg, { contexto: "contratos-vencimiento" });
+        resumenWa = resumenEnvioWhatsApp(wa);
+        whatsapp = { ok: wa.ok, via: wa.via, modo: wa.modo, plantilla: wa.plantilla, wamid: wa.wamid, puedeNoLlegar: wa.puedeNoLlegar, error: wa.error };
+        if (wa.ok) {
+          whatsappEnviados += 1;
+          if (wa.puedeNoLlegar) whatsappSinGarantia += 1;
+        } else {
           whatsappFallidos += 1;
-          logger.error("[cron/contratos-vencimiento] whatsapp NO enviado", { tenantId, contratos: n });
+          logger.error("[cron/contratos-vencimiento] whatsapp NO enviado", { tenantId, contratos: n, constancia: resumenWa });
         }
       }
 
@@ -119,8 +127,9 @@ export const GET = withCronAuth("contratos-vencimiento", async () => {
           tenantId,
           c.id,
           "VENCIMIENTO_AVISADO",
-          `Aviso enviado: ${textoCorto(diasHasta(c.fechaVencimiento))}`,
+          `Aviso enviado: ${textoCorto(diasHasta(c.fechaVencimiento))} · ${resumenWa}`.slice(0, 500),
           "cron",
+          whatsapp ? { whatsapp } : undefined,
         );
       }
       tenantsNotificados += 1;
@@ -137,5 +146,6 @@ export const GET = withCronAuth("contratos-vencimiento", async () => {
     whatsappEnviados,
     sinTelefono,
     whatsappFallidos,
+    whatsappSinGarantia,
   });
 });

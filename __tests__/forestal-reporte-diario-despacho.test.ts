@@ -18,6 +18,7 @@ const H = vi.hoisted(() => {
     previosHoy: 0,
     correos: [] as string[],
     whatsapps: [] as string[],
+    whatsappTenants: [] as string[],
     correoOk: false,
     whatsappOk: false,
     tenantsInactivos: new Set<string>(),
@@ -85,11 +86,13 @@ vi.mock("@/lib/email/resend", () => ({
     return H.estado.correoOk ? { data: { id: "x" } } : { error: { message: "The buleje.pe domain is not verified." } };
   },
 }));
-vi.mock("@/lib/whatsapp", () => ({
-  sendWhatsAppText: async (to: string) => {
+vi.mock("@/lib/whatsapp-tenant", () => ({
+  enviarWhatsAppDelNegocio: async (tenantId: string, to: string) => {
     H.estado.whatsapps.push(to);
-    if (H.estado.whatsappOk) return true;
-    throw new Error("WhatsApp API error: 401 Invalid OAuth access token");
+    H.estado.whatsappTenants.push(tenantId);
+    const base = { via: "negocio", modo: "texto", plantilla: null, puedeNoLlegar: true, nota: null };
+    if (H.estado.whatsappOk) return { ...base, ok: true, wamid: "wamid.PRUEBA", error: null };
+    return { ...base, ok: false, wamid: null, error: "WhatsApp API error: 401 Invalid OAuth access token" };
   },
 }));
 
@@ -129,6 +132,7 @@ beforeEach(() => {
     previosHoy: 0,
     correos: [],
     whatsapps: [],
+    whatsappTenants: [],
     correoOk: false,
     whatsappOk: false,
     tenantsInactivos: new Set(),
@@ -172,6 +176,18 @@ describe("despacharReportesDiarios — idempotencia", () => {
       expect.objectContaining({ type: "reporte_diario:rep1:email", recipient: "qa.demo.backend@ejemplo.pe", status: "failed", tenantId: "t-blas", message: expect.stringContaining("not verified") }),
       expect.objectContaining({ type: "reporte_diario:rep1:whatsapp", recipient: "51900000000", status: "failed", tenantId: "t-blas", message: expect.stringContaining("401") }),
     ]);
+  });
+
+  it("el WhatsApp sale con la cuenta DEL NEGOCIO del reporte y el log dice cómo salió (texto libre + wamid)", async () => {
+    H.estado.whatsappOk = true;
+    H.estado.filas = [fila()];
+    await despacharReportesDiarios(a18);
+    expect(H.estado.whatsappTenants).toEqual(["t-blas"]);
+    const wa = H.estado.logs.find((l) => l.type === "reporte_diario:rep1:whatsapp");
+    expect(wa).toMatchObject({ status: "sent", recipient: "51900000000" });
+    expect(wa?.message).toContain("wamid.PRUEBA");
+    expect(wa?.message).toContain("puede no llegar");
+    expect(wa?.message).toContain("número del negocio");
   });
 
   it("un canal apagado no se usa aunque tenga destinatarios", async () => {

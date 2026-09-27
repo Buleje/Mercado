@@ -3,7 +3,8 @@ import { withCronAuth } from "@/lib/cron-auth";
 import { prisma } from "@/lib/prisma";
 import { DocumentsDB } from "@/lib/db/documents.db";
 import { NotificationCenterDB } from "@/lib/db/notification-center.db";
-import { sendWhatsAppText } from "@/lib/whatsapp";
+import { enviarWhatsAppDelNegocio } from "@/lib/whatsapp-tenant";
+import { resumenEnvioWhatsApp } from "@/lib/whatsapp/aviso-plantilla";
 import { sendSuperAdminAlert } from "@/lib/mailer-superadmin";
 import { SUPERADMIN_DOCS_TENANT } from "@/lib/documents/superadmin-vault";
 import { logger } from "@/lib/logger";
@@ -41,6 +42,8 @@ export const GET = withCronAuth("documentos-vencimiento", async () => {
    *  notificación igual y el envío se caía con un `.catch` mudo. */
   let sinTelefono = 0;
   let whatsappFallidos = 0;
+  /** Aceptados como texto libre: Meta los descarta si el dueño no escribió en 24 h. */
+  let whatsappSinGarantia = 0;
 
   for (const [tenantId, docs] of porTenant) {
     const n = docs.length;
@@ -114,14 +117,17 @@ export const GET = withCronAuth("documentos-vencimiento", async () => {
         ]
           .filter(Boolean)
           .join("\n");
-        const ok = await sendWhatsAppText(phone, msg).catch((err) => {
-          logger.error("[cron/documentos-vencimiento] whatsapp falló", { tenantId, err: String(err).slice(0, 200) });
-          return false;
-        });
-        if (ok) whatsappEnviados += 1;
-        else {
+        /* Con el número del negocio (el del bot) si tiene uno activo; si no,
+           con la cuenta del servidor. Plantilla si hay una aprobada; si no,
+           texto libre (y la constancia lo dice). Nunca tira. */
+        const wa = await enviarWhatsAppDelNegocio(tenantId, phone, msg, { contexto: "documentos-vencimiento" });
+        if (wa.ok) {
+          whatsappEnviados += 1;
+          if (wa.puedeNoLlegar) whatsappSinGarantia += 1;
+          logger.info("[cron/documentos-vencimiento] whatsapp aceptado", { tenantId, constancia: resumenEnvioWhatsApp(wa) });
+        } else {
           whatsappFallidos += 1;
-          logger.error("[cron/documentos-vencimiento] whatsapp NO enviado", { tenantId, docs: n });
+          logger.error("[cron/documentos-vencimiento] whatsapp NO enviado", { tenantId, docs: n, constancia: resumenEnvioWhatsApp(wa) });
         }
       }
 
@@ -141,6 +147,7 @@ export const GET = withCronAuth("documentos-vencimiento", async () => {
     // Se reportan para que el tablero de crons muestre el aviso que NO llegó,
     // en vez de un "ok: true" que tapa el problema.
     whatsappFallidos,
+    whatsappSinGarantia,
     sinTelefono,
   });
 });

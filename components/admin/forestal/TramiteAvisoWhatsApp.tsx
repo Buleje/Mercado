@@ -58,12 +58,15 @@ export default function TramiteAvisoWhatsApp({
         credentials: "include",
         body: JSON.stringify({ telefono: limpio, mensaje }),
       });
-      const data = (await r.json().catch(() => ({}))) as { message?: string };
+      const data = (await r.json().catch(() => ({}))) as { message?: string; puedeNoLlegar?: boolean };
       if (!r.ok) {
         setAviso(data.message ?? "No se pudo mandar el aviso.");
         return;
       }
-      setAviso("Aviso enviado.");
+      /* Sin plantilla aprobada sale como texto libre: Meta sólo lo entrega si
+         el destinatario escribió al número en las últimas 24 h (y si no, lo
+         descarta sin avisar). «Aviso enviado» a secas prometía de más. */
+      setAviso(data.puedeNoLlegar ? "Enviado como texto libre: puede no llegar si no te escribió en las últimas 24 h." : "Aviso enviado.");
       setAbierto(false);
     } catch {
       setAviso("No se pudo conectar con el servidor.");

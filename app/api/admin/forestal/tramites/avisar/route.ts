@@ -6,7 +6,8 @@ import { assertCsrf } from "@/lib/auth/csrf";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
-import { sendWhatsAppQueued } from "@/lib/whatsapp";
+import { enviarWhatsAppDelNegocio } from "@/lib/whatsapp-tenant";
+import { describirEnvioWhatsApp, explicarFalloWhatsApp, sufijoDeFallo } from "@/lib/whatsapp/aviso-plantilla";
 
 /**
  * /api/admin/forestal/tramites/avisar — POST
@@ -15,7 +16,10 @@ import { sendWhatsAppQueued } from "@/lib/whatsapp";
  * que ya se ve en el catálogo, ADR-364 rondas de plazo): el mensaje lo arma
  * el CLIENTE a partir de `tramitesPorVencer` — el mismo dato que ya está en
  * pantalla, no uno recalculado aparte que pudiera decir otra cosa — y este
- * endpoint es sólo el relay autenticado hacia `sendWhatsAppQueued`.
+ * endpoint es sólo el relay autenticado hacia `enviarWhatsAppDelNegocio`: con
+ * el número del negocio (el del bot) si tiene uno activo, si no con la cuenta
+ * del servidor; plantilla aprobada si la hay, si no texto libre (y lo dice).
+ * Directo y no por la cola: quien apretó el botón espera saber si salió.
  *
  * Guard: requireAdmin → CSRF → rate limit STRICT (manda un mensaje real, no
  * es una lectura) → `spec:forestal:tramites` (la misma spec que el tab).
@@ -57,20 +61,30 @@ export const POST = withApiHandler("forestal-tramites-avisar-post", async (req: 
   }
 
   try {
-    // `queued:true` = en la cola (durable); `queued:false` con jobId="direct"
-    // = se mandó igual por la vía directa. Sólo `queued:false` SIN jobId es
-    // una falla real (sin configurar, o circuito abierto).
-    const { queued, jobId } = await sendWhatsAppQueued(parsed.data.telefono, parsed.data.mensaje, {
-      tenantId: auth.tenantId,
-      context: "tramites-vencimiento",
+    const wa = await enviarWhatsAppDelNegocio(auth.tenantId, parsed.data.telefono, parsed.data.mensaje, {
+      contexto: "tramites-avisar",
+      reintentos: 1,
+      pausaMs: 1000,
     });
-    if (!queued && !jobId) {
+    if (!wa.ok) {
+      const explicado = explicarFalloWhatsApp(`${wa.error ?? ""}${sufijoDeFallo(wa.via)}`);
       return NextResponse.json(
-        { error: "whatsapp_no_disponible", message: "El WhatsApp del negocio no está configurado o no respondió. Prueba de nuevo en un rato." },
-        { status: 409 },
+        {
+          error: "whatsapp_no_disponible",
+          message: explicado ?? "El WhatsApp del negocio no está configurado o no respondió. Prueba de nuevo en un rato.",
+        },
+        { status: wa.via ? 422 : 409 },
       );
     }
-    return NextResponse.json({ ok: true });
+    logger.info("[tramites.avisar.POST] enviado", { tenantId: auth.tenantId, constancia: describirEnvioWhatsApp(wa) });
+    return NextResponse.json({
+      ok: true,
+      modo: wa.modo,
+      puedeNoLlegar: wa.puedeNoLlegar,
+      ...(wa.puedeNoLlegar
+        ? { aviso: "Salió como texto libre: llega sólo si ese número le escribió al negocio en las últimas 24 h." }
+        : {}),
+    });
   } catch (err) {
     logger.error("[tramites.avisar.POST] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });

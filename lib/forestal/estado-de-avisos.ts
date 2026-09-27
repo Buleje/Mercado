@@ -16,6 +16,8 @@
  * PURO y client-safe: la lectura la hace `NotificationLogsDB`.
  */
 
+import { fueConNumeroDelNegocio } from "@/lib/whatsapp/aviso-plantilla";
+
 export interface EnvioDeAviso {
   type: string;
   recipient: string;
@@ -60,8 +62,24 @@ export function comoArreglar(canal: CanalAviso, motivo: string | null): string |
   if (m.includes("domain is not verified") || m.includes("not verified")) {
     return "El dominio del remitente no está verificado en Resend: verifícalo en resend.com/domains.";
   }
+  /* Los códigos de Meta antes que «oauth»: el 131030 de la lista permitida
+     también trae `"type":"OAuthException"` (medido 26-09 con la cuenta de Blas)
+     y se leía como token vencido. */
+  if (canal === "whatsapp") {
+    if (m.includes("131030") || m.includes("allowed list")) {
+      return "La cuenta de WhatsApp está en modo prueba: agrega ese número a la lista permitida en Meta.";
+    }
+    if (m.includes("131047") || m.includes("re-engagement")) {
+      return "Ese número no le escribió al negocio en las últimas 24 h: hace falta una plantilla aprobada en Meta.";
+    }
+    if (m.includes("132001") || m.includes("template name does not exist")) {
+      return "Meta no tiene aprobada la plantilla de avisos con ese nombre en español.";
+    }
+  }
   if (m.includes("oauth") || m.includes("access token") || m.includes("401")) {
-    return "El token de WhatsApp venció o es inválido: renovalo en la configuración de WhatsApp.";
+    return fueConNumeroDelNegocio(motivo)
+      ? "El token de WhatsApp del número del negocio venció o es inválido: guarda uno nuevo en Mensajes → Bot WhatsApp."
+      : "El token de WhatsApp venció o es inválido: renuévalo en la configuración de WhatsApp.";
   }
   if (m.includes("429") || m.includes("rate")) {
     return "El proveedor está limitando los envíos: se reintenta en la próxima corrida.";

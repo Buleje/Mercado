@@ -7,7 +7,7 @@
  * quien tiene que arreglarlo.
  */
 import { CheckCircle2, Mail, MessageCircle, XCircle } from "@buleje/design-system/icons";
-import { explicarFalloEnvio, type CanalReporte } from "@/lib/forestal/reporte-diario";
+import { explicarEnvioOk, explicarFalloEnvio, type CanalReporte } from "@/lib/forestal/reporte-diario";
 import { formatDateTimeShort } from "@/lib/format";
 import type { EnvioDeReporte, ResultadoEnvio } from "./hooks/use-reportes-diarios";
 
@@ -39,7 +39,7 @@ export function ResultadoDeEnvio({ resultados }: { resultados: ResultadoEnvio[] 
   return (
     <ul className="space-y-1.5" aria-label="Resultado del envío">
       {resultados.map((r) => (
-        <Estado key={`${r.canal}-${r.destino}`} ok={r.ok} canal={r.canal} destino={r.destino} texto={r.ok ? "Salió." : r.explicacion ?? "No salió."} />
+        <Estado key={`${r.canal}-${r.destino}`} ok={r.ok} canal={r.canal} destino={r.destino} texto={r.ok ? r.explicacion ?? "Salió." : r.explicacion ?? "No salió."} />
       ))}
     </ul>
   );
@@ -51,7 +51,8 @@ export default function ReporteDiarioEnvios({ envios }: { envios: EnvioDeReporte
   const ultimos = (["email", "whatsapp"] as const)
     .map((c) => envios.find((e) => canalDe(e.type) === c))
     .filter((e): e is EnvioDeReporte => Boolean(e));
-  const texto = (e: EnvioDeReporte) => (e.status === "sent" ? "Salió." : explicarFalloEnvio(canalDe(e.type), e.message));
+  const texto = (e: EnvioDeReporte) =>
+    e.status === "sent" ? explicarEnvioOk(canalDe(e.type), e.message) : explicarFalloEnvio(canalDe(e.type), e.message);
   return (
     <div className="space-y-2">
       <ul className="space-y-1.5" aria-label="Último envío por canal">

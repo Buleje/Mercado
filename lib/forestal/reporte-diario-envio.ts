@@ -3,7 +3,8 @@ import { ForestReporteDiarioDB } from "@/lib/db/forest-reporte-diario.db";
 import { juntarDatosReporte } from "@/lib/db/forest-reporte-diario-datos.db";
 import { NotificationLogsDB } from "@/lib/db/notifications.db";
 import { sendReporteDiario } from "@/lib/email/resend";
-import { sendWhatsAppText } from "@/lib/whatsapp";
+import { enviarWhatsAppDelNegocio } from "@/lib/whatsapp-tenant";
+import { describirEnvioWhatsApp, sufijoDeFallo } from "@/lib/whatsapp/aviso-plantilla";
 import { auditCtp } from "@/lib/forestal/ctp-audit";
 import { logger } from "@/lib/logger";
 import { armarReporteForestal, type ReporteArmado } from "./reporte-diario-armado";
@@ -12,6 +13,7 @@ import {
   TOPE_ENVIAR_AHORA_DIA,
   TOPE_INTENTOS_DIA,
   TOPE_MENSAJES_DIA,
+  explicarEnvioOk,
   explicarFalloEnvio,
   inicioDelDiaLima,
   intentosDeHoy,
@@ -43,8 +45,13 @@ export interface ResultadoEnvio {
   ok: boolean;
   /** Lo que devolvió Meta/Resend, tal cual. */
   error: string | null;
-  /** Lo mismo, en palabras de qué hacer. */
+  /** Lo mismo, en palabras de qué hacer; si salió, la advertencia que corresponda (WhatsApp de texto libre). */
   explicacion: string | null;
+  /**
+   * Lo que queda en `NotificationLog` además del asunto: cómo salió el WhatsApp
+   * (plantilla o texto libre), por qué número y su `wamid`. `null` en correo.
+   */
+  constancia?: string | null;
 }
 
 /** Arma el reporte con los datos de HOY (Lima) sin mandar nada: la vista previa. */
@@ -66,12 +73,14 @@ export async function armarReporteDe(
 }
 
 async function registrar(tenantId: string, reporteId: string, res: ResultadoEnvio, detalleOk: string) {
+  const ok = [detalleOk, res.constancia].filter(Boolean).join(" · ");
+  const fallo = `${(res.error ?? "rechazado sin motivo").slice(0, 400)}${res.constancia ?? ""}`;
   await NotificationLogsDB.add(
     {
       type: tipoDeLog(reporteId, res.canal),
       recipient: res.destino,
       status: res.ok ? "sent" : "failed",
-      message: (res.ok ? detalleOk : res.error ?? "rechazado sin motivo").slice(0, 500),
+      message: (res.ok ? ok : fallo).slice(0, 500),
     },
     tenantId,
   ).catch((err) =>
@@ -85,16 +94,21 @@ async function porCorreo(destino: string, armado: ReporteArmado): Promise<Result
   return { canal: "email", destino, ok: !error, error, explicacion: error ? explicarFalloEnvio("email", error) : null };
 }
 
-async function porWhatsapp(destino: string, armado: ReporteArmado): Promise<ResultadoEnvio> {
-  let error: string | null;
-  try {
-    /* `false` sin tirar = no hay cuenta de WhatsApp conectada en este servidor. */
-    const ok = await sendWhatsAppText(destino, armado.texto);
-    error = ok ? null : "WhatsApp no configurado en el servidor (faltan WHATSAPP_API_URL / WHATSAPP_API_TOKEN).";
-  } catch (err) {
-    error = err instanceof Error ? err.message : String(err);
+/**
+ * Con el número del negocio si tiene uno conectado; si no, con la cuenta del
+ * servidor. Plantilla si el negocio tiene una aprobada; si no, texto libre con
+ * su advertencia (ver `enviarWhatsAppDelNegocio`).
+ */
+async function porWhatsapp(tenantId: string, destino: string, armado: ReporteArmado): Promise<ResultadoEnvio> {
+  const r = await enviarWhatsAppDelNegocio(tenantId, destino, armado.texto, { contexto: "reporte_diario" });
+  if (!r.ok) {
+    const error = r.error ?? "rechazado sin motivo";
+    const constancia = sufijoDeFallo(r.via);
+    return { canal: "whatsapp", destino, ok: false, error, explicacion: explicarFalloEnvio("whatsapp", `${error}${constancia}`), constancia };
   }
-  return { canal: "whatsapp", destino, ok: !error, error, explicacion: error ? explicarFalloEnvio("whatsapp", error) : null };
+  const constancia = describirEnvioWhatsApp(r);
+  const explicacion = r.puedeNoLlegar ? explicarEnvioOk("whatsapp", constancia) : null;
+  return { canal: "whatsapp", destino, ok: true, error: null, explicacion, constancia };
 }
 
 /** El negocio ya mandó hoy todos los mensajes de reportes que se le permiten. */
@@ -167,7 +181,7 @@ export async function enviarReporteDiario(
       if (resultados.length === 0) throw new SinTiempoError();
       break;
     }
-    const res = d.canal === "email" ? await porCorreo(d.destino, armado) : await porWhatsapp(d.destino, armado);
+    const res = d.canal === "email" ? await porCorreo(d.destino, armado) : await porWhatsapp(tenantId, d.destino, armado);
     resultados.push(res);
     await registrar(tenantId, reporte.id, res, `${marca}${armado.asunto}`);
   }

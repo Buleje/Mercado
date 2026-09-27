@@ -10,6 +10,7 @@
  * despachador del cron (¿le toca a este reporte ahora?). Se prueba sin base.
  */
 import { z } from "zod";
+import { esTextoLibreSinGarantia, explicarFalloWhatsApp, PLANTILLA_AVISOS_POR_DEFECTO } from "@/lib/whatsapp/aviso-plantilla";
 
 // ── Qué trae un reporte ───────────────────────────────────────────────────────
 
@@ -376,29 +377,8 @@ export function explicarFalloEnvio(canal: CanalReporte, crudo: string | null | u
     return `Se llegó al tope de ${TOPE_MENSAJES_DIA} mensajes por día del negocio: sale mañana, o quita destinatarios.`;
   }
   if (canal === "whatsapp") {
-    if (m.includes("no configurado")) return "WhatsApp: este servidor no tiene la cuenta de WhatsApp conectada.";
-    /* Meta distingue el token que VENCIÓ del que ni siquiera es un token («Cannot
-       parse access token»: cortado, con comillas de más o de otra app). Medido
-       26-09 con la clave de este servidor: es el segundo caso. */
-    if (m.includes("cannot parse access token") || m.includes("malformed")) {
-      return "WhatsApp: el token cargado no es válido (Meta no lo puede leer) — copia otra vez el token permanente del usuario del sistema en Meta y cárgalo en Vercel.";
-    }
-    if (m.includes("expired") || m.includes("session has been invalidated")) {
-      return "WhatsApp: el token venció — genera uno permanente en Meta (usuario del sistema) y cárgalo en Vercel.";
-    }
-    /* «error: 401» y no «401» suelto: un número de teléfono puede contener 401. */
-    if (/error: 401\b/.test(m) || m.includes("oauth") || m.includes("access token")) {
-      return "WhatsApp: Meta rechazó el token — renuévalo en Meta (usuario del sistema) y cárgalo en Vercel.";
-    }
-    if (m.includes("131047") || m.includes("re-engagement") || m.includes("24 hour")) {
-      return "WhatsApp: ese número no te escribió en las últimas 24 h — mándale un «hola» al número del negocio o aprueba una plantilla en Meta.";
-    }
-    if (m.includes("131030") || m.includes("allowed list")) {
-      return "WhatsApp: la cuenta está en modo prueba — agrega ese número a la lista permitida en Meta.";
-    }
-    if (m.includes("131026") || m.includes("not a valid whatsapp") || m.includes("undeliverable")) {
-      return "WhatsApp: ese número no tiene WhatsApp o está mal escrito.";
-    }
+    const explicado = explicarFalloWhatsApp(crudo);
+    if (explicado) return explicado;
     if (m.includes("circuit") || m.includes("timeout") || m.includes("fetch failed")) {
       return "WhatsApp: Meta no respondió. Si no salió por ningún canal se reintenta solo en el próximo disparo del día; si no, usa «Enviar ahora».";
     }
@@ -419,6 +399,18 @@ export function explicarFalloEnvio(canal: CanalReporte, crudo: string | null | u
     return "Correo: Resend frenó por exceso de envíos. Si no salió por ningún canal se reintenta solo en el próximo disparo del día; si no, usa «Enviar ahora».";
   }
   return `El correo no salió${crudo ? `: ${crudo.slice(0, 140)}` : "."}`;
+}
+
+/**
+ * Qué decir de un envío que SALIÓ. Un WhatsApp de texto libre lo acepta Meta y
+ * lo descarta si ese número no le escribió al negocio en 24 h: decir «Salió» a
+ * secas haría creer que llegó.
+ */
+export function explicarEnvioOk(canal: CanalReporte, constancia: string | null | undefined): string {
+  if (canal === "whatsapp" && esTextoLibreSinGarantia(constancia)) {
+    return `Meta lo aceptó como texto libre: llega sólo si ese número le escribió al negocio en las últimas 24 h. Para que llegue siempre, aprueba la plantilla «${PLANTILLA_AVISOS_POR_DEFECTO}» en Meta.`;
+  }
+  return "Salió.";
 }
 
 /** El `type` de `NotificationLog` de cada envío: con el id adentro para leer el historial de UN reporte. */

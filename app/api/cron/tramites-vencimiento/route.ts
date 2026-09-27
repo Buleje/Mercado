@@ -4,7 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { ForestTramitesDB } from "@/lib/db/forest-tramites.db";
 import { tramitesPorVencer } from "@/lib/forestal/tramites-registro";
 import { mensajeAvisoTramites } from "@/lib/forestal/tramites-aviso-mensaje";
-import { sendWhatsAppText } from "@/lib/whatsapp";
+import { enviarWhatsAppDelNegocio } from "@/lib/whatsapp-tenant";
+import { resumenEnvioWhatsApp } from "@/lib/whatsapp/aviso-plantilla";
 import { logger } from "@/lib/logger";
 
 /**
@@ -32,6 +33,8 @@ export const GET = withCronAuth("tramites-vencimiento", async () => {
   let tenantsConAviso = 0;
   let whatsappEnviados = 0;
   let whatsappFallidos = 0;
+  /** Aceptados como texto libre: Meta los descarta si el dueño no escribió en 24 h. */
+  let whatsappSinGarantia = 0;
   let sinTelefono = 0;
 
   for (const { tenantId, tramites } of porTenant) {
@@ -44,7 +47,7 @@ export const GET = withCronAuth("tramites-vencimiento", async () => {
       // que `forestal-plazos`.
       const tenant = await prisma.tenant.findFirst({
         where: { OR: [{ id: tenantId }, { slug: tenantId }] },
-        select: { ownerPhone: true },
+        select: { id: true, ownerPhone: true },
       });
       const phone = tenant?.ownerPhone?.replace(/\D/g, "");
       if (!phone || phone.length < 9) {
@@ -54,19 +57,23 @@ export const GET = withCronAuth("tramites-vencimiento", async () => {
       }
 
       const mensaje = mensajeAvisoTramites(porVencer);
-      const ok = await sendWhatsAppText(phone, mensaje).catch((err) => {
-        logger.error("[cron/tramites-vencimiento] whatsapp falló", { tenantId, err: String(err).slice(0, 200) });
-        return false;
-      });
-      if (ok) {
+      /* Con el número del negocio (el del bot) si tiene uno activo; si no, con
+         la cuenta del servidor. La config se guarda con el cuid: `tenant.id`.
+         Plantilla aprobada si la hay; si no, texto libre (Meta lo acepta y lo
+         descarta fuera de las 24 h: se sella igual, como antes, y se cuenta
+         aparte para que el tablero de crons lo muestre). Nunca tira. */
+      const wa = await enviarWhatsAppDelNegocio(tenant?.id ?? tenantId, phone, mensaje, { contexto: "tramites-vencimiento" });
+      if (wa.ok) {
         whatsappEnviados += 1;
+        if (wa.puedeNoLlegar) whatsappSinGarantia += 1;
+        logger.info("[cron/tramites-vencimiento] whatsapp aceptado", { tenantId, constancia: resumenEnvioWhatsApp(wa) });
         await ForestTramitesDB.marcarAvisoVencimientoEnviado(
           tenantId,
           porVencer.map((t) => t.id),
         );
       } else {
         whatsappFallidos += 1;
-        logger.error("[cron/tramites-vencimiento] whatsapp NO enviado", { tenantId, n: porVencer.length });
+        logger.error("[cron/tramites-vencimiento] whatsapp NO enviado", { tenantId, n: porVencer.length, constancia: resumenEnvioWhatsApp(wa) });
       }
     } catch (err) {
       // Un tenant que falla no puede dejar sin aviso a los demás.
@@ -79,6 +86,7 @@ export const GET = withCronAuth("tramites-vencimiento", async () => {
     tenantsConAviso,
     whatsappEnviados,
     whatsappFallidos,
+    whatsappSinGarantia,
     sinTelefono,
   });
 });

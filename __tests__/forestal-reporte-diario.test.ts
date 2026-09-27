@@ -246,7 +246,7 @@ describe("explicarFalloEnvio — los errores reales de Blas (NotificationLog, 12
     expect(explicarFalloEnvio("whatsapp", "WhatsApp API error: 400 (#131047) Re-engagement message")).toMatch(/24 h/);
   });
   it("sin credenciales en el servidor", () => {
-    expect(explicarFalloEnvio("whatsapp", "WhatsApp no configurado en el servidor")).toMatch(/no tiene la cuenta/);
+    expect(explicarFalloEnvio("whatsapp", "WhatsApp no configurado en el servidor")).toMatch(/ni este servidor tienen una cuenta/);
     expect(explicarFalloEnvio("email", "Correo no configurado en el servidor")).toMatch(/no tiene el servicio/);
   });
 });
