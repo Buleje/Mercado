@@ -23,7 +23,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
-  AlertTriangle, ArrowLeft, ChevronRight, ClipboardList, Loader2, PackageCheck, TreePine, WifiOff,
+  AlertTriangle, ArrowLeft, ChevronRight, ClipboardList, Layers, Loader2, PackageCheck, TreePine, WifiOff,
 } from "@buleje/design-system/icons";
 import { PageTitle, SectionTitle } from "@buleje/design-system";
 import { usePatioCola } from "@/hooks/use-patio-cola";
@@ -36,6 +36,7 @@ import CtpRecepcionTrozas, { type TrozaEditable } from "./CtpRecepcionTrozas";
 import PatioBuscador from "./PatioBuscador";
 import PatioConsumo from "./PatioConsumo";
 import PatioConteo from "./PatioConteo";
+import PatioArmarLote from "./PatioArmarLote";
 import { formatDateShort } from "@/lib/format";
 
 interface GuiaPatio {
@@ -72,6 +73,8 @@ export default function PatioModo() {
   const [guiasDeCache, setGuiasDeCache] = useState<string | null>(null);
   /** «Contar el patio» (ADR-436): ocupa la pantalla entera, como la recepción. */
   const [contando, setContando] = useState(false);
+  /** «Armar un lote escaneando» (2026-09-26): pantalla entera, como el conteo. */
+  const [armandoLote, setArmandoLote] = useState(false);
   /** Un conteo de hoy a medias: el botón lo dice para no empezar otro sin querer. */
   const [enCurso, setEnCurso] = useState<{ contadas: number; total: number } | null>(null);
   useEffect(() => {
@@ -122,6 +125,7 @@ export default function PatioModo() {
 
 
   if (contando) return <PatioConteo onVolver={() => setContando(false)} />;
+  if (armandoLote) return <PatioArmarLote online={cola.online} onVolver={() => setArmandoLote(false)} />;
 
   if (recibiendo) {
     const p = pendienteDeRecepcion(recibiendo.trozas);
@@ -207,6 +211,21 @@ export default function PatioModo() {
               ? `${enCurso.contadas} de ${enCurso.total} contadas hoy`
               : "Escanea la pila y mira qué falta y qué sobra"}
           </span>
+        </span>
+        <ChevronRight className="h-5 w-5 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
+      </button>
+
+      {/* Pregunta 5: esta pila va junta al carro — guardarla como lote. */}
+      <button
+        type="button"
+        onClick={() => setArmandoLote(true)}
+        className="flex w-full items-center gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3 min-h-14 text-left transition-colors hover:border-[var(--accent)]"
+        data-abrir-armar-lote
+      >
+        <Layers className="h-6 w-6 shrink-0 text-[var(--accent)]" aria-hidden />
+        <span className="min-w-0 flex-1">
+          <span className="block text-base font-bold text-[var(--text-primary)]">Armar lotes escaneando</span>
+          <span className="block text-base text-[var(--text-secondary)]">Escanea la pila, aunque esté mezclada: sale un lote por especie</span>
         </span>
         <ChevronRight className="h-5 w-5 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
       </button>

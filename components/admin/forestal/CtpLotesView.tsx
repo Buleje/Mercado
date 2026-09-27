@@ -23,6 +23,7 @@ import {
   PackageOpen,
   Plus,
   RefreshCw,
+  ScanBarcode,
   ScanText,
   Search,
   TreePine,
@@ -49,6 +50,7 @@ import { useLotesAserrio } from "./hooks/use-lotes-aserrio";
 import { useEspeciesFotos } from "./hooks/use-especies-fotos";
 import CtpLoteCard from "./CtpLoteCard";
 import CtpLoteArmarModal, { type MaterialDeInventario } from "./CtpLoteArmarModal";
+import CtpArmarLoteEscaneoModal from "./CtpArmarLoteEscaneoModal";
 import CtpLoteDetalleModal from "./CtpLoteDetalleModal";
 import CtpLoteProductosModal from "./CtpLoteProductosModal";
 import CtpDespacharDesdeLotesModal from "./CtpDespacharDesdeLotesModal";
@@ -95,6 +97,7 @@ export default function CtpLotesView({
     error,
     recargar,
     crearConTrozas,
+    agregarTrozas,
     crearInventario,
     quitarTroza,
     editarLote,
@@ -113,6 +116,8 @@ export default function CtpLotesView({
      no de trabajo. El default es el que dice qué mirar primero. */
   const [orden, setOrden] = useState<OrdenLotes>("urgencia");
   const [armar, setArmar] = useState(false);
+  /** «Armar escaneando» (2026-09-26): la pila se arma con la pistola, no en una tabla. */
+  const [escaneando, setEscaneando] = useState(false);
   /** Importar la lista de programaciones del SNIFFS (ADR-398). */
   const [importar, setImportar] = useState(false);
   /** La mesa de lo que no cuadra con el SNIFFS, y el lote que se está resolviendo. */
@@ -355,6 +360,18 @@ export default function CtpLotesView({
             13 y el 15», no producto por producto. Arma la MISMA guía. */}
         <Btn variant="secondary" onClick={() => setDespachando(true)}>
           <Truck className="h-4 w-4" /> Despachar desde lotes
+        </Btn>
+        <Btn
+          variant="secondary"
+          onClick={() => {
+            /* La carga de la pestaña puede ser de hace rato: la pila se arma
+               contra el patio de AHORA, o la limpieza saca piezas por un
+               motivo que ya no aplica (revisión 26-09). */
+            void recargar();
+            setEscaneando(true);
+          }}
+        >
+          <ScanBarcode className="h-4 w-4" /> Armar escaneando
         </Btn>
         <Btn variant="primary" onClick={() => setArmar(true)}>
           <Plus className="h-4 w-4" /> Armar lote
@@ -684,6 +701,21 @@ export default function CtpLotesView({
             })
           }
           onClose={() => setImportar(false)}
+        />
+      )}
+
+      {escaneando && (
+        <CtpArmarLoteEscaneoModal
+          estado={{ lotes, trozas, cargando, error, crearConTrozas, agregarTrozas, deshacer }}
+          onClose={() => setEscaneando(false)}
+          onProducir={(l) => {
+            setEscaneando(false);
+            onProducir(l);
+          }}
+          onCargar={(l) => {
+            setEscaneando(false);
+            onCargar(l);
+          }}
         />
       )}
 

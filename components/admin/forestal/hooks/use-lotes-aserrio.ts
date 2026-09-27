@@ -27,6 +27,18 @@ import type {
 
 export type { CambiosLote, EstadoLotesAserrio, ResultadoGuardado, TrozaRechazada } from "./use-lotes-aserrio-tipos";
 
+/** Se abrió el lote pero no se le pudieron meter las piezas: el lote existe y está vacío. */
+export class LoteCreadoSinPiezasError extends Error {
+  constructor(
+    readonly loteId: string,
+    readonly code: string,
+    causa: unknown,
+  ) {
+    super(causa instanceof Error ? causa.message : String(causa));
+    this.name = "LoteCreadoSinPiezasError";
+  }
+}
+
 const API = "/api/admin/forestal/lotes-aserrio";
 
 /** Toda escritura tira el caché del módulo: si no, la próxima lectura miente. */
@@ -137,8 +149,16 @@ export function useLotesAserrio(opts: { contratoId?: string | null } = {}): Esta
         await recargar();
         return { loteId, code: creado.lote.code, agregadas: 0, rechazadas: [] };
       }
-      const r = await agregarTrozas(loteId, trozaIds);
-      return { ...r, code: creado.lote.code };
+      try {
+        const r = await agregarTrozas(loteId, trozaIds);
+        return { ...r, code: creado.lote.code };
+      } catch (e) {
+        /* El lote YA existe: quien llama tiene que saberlo para reintentar
+           sumando a ése y no abrir otro (revisión 26-09: el reintento dejaba
+           un lote vacío por cada falla). */
+        await recargar();
+        throw new LoteCreadoSinPiezasError(loteId, creado.lote.code, e);
+      }
     },
     [agregarTrozas, recargar],
   );

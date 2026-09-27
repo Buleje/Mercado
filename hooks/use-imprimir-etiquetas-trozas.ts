@@ -63,6 +63,8 @@ export interface RespuestaEtiquetas {
 export interface OpcionesGenerar {
   formato: FormatoEtiqueta;
   barras: boolean;
+  /** QR grande con la ficha en texto (se lee sin internet) + QR chico del sistema. */
+  fichaEnQr: boolean;
   asignarCodigo: boolean;
   soloSinEtiqueta: boolean;
 }
@@ -137,6 +139,7 @@ export function useGenerarEtiquetasTrozas(ids: readonly string[], soloSinEtiquet
         origin: window.location.origin,
         formato: opts.formato,
         barras: opts.barras,
+        fichaEnQr: opts.fichaEnQr,
         ventana,
       });
       if (impresas === 0) ventana.close();

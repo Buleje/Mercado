@@ -56,6 +56,7 @@ function Casilla({ checked, onChange, children, ayuda }: { checked: boolean; onC
 export default function CtpEtiquetasTrozasModal({ ids, contexto, onClose, onListo, aboveModals }: CtpEtiquetasTrozasModalProps) {
   const [formato, setFormato] = useFormatoEtiquetaRecordado();
   const [barras, setBarras] = useState(true);
+  const [fichaEnQr, setFichaEnQr] = useState(true);
   const [asignar, setAsignar] = useState(true);
   const [soloSinEtiqueta, setSoloSinEtiqueta] = useState(false);
   const { errorCarga, resumen, generar, generando, errorGenerar, resultado } = useGenerarEtiquetasTrozas(ids, soloSinEtiqueta);
@@ -72,7 +73,7 @@ export default function CtpEtiquetasTrozasModal({ ids, contexto, onClose, onList
   }, [resumen]);
 
   const alGenerar = async () => {
-    const r = await generar({ formato, barras, asignarCodigo: asignar, soloSinEtiqueta });
+    const r = await generar({ formato, barras, fichaEnQr, asignarCodigo: asignar, soloSinEtiqueta });
     if (!r) return;
     onListo?.(r.trozas);
     const partes = [
@@ -175,15 +176,28 @@ export default function CtpEtiquetasTrozasModal({ ids, contexto, onClose, onList
                 </Casilla>
               )}
               <Casilla
+                checked={fichaEnQr}
+                onChange={setFichaEnQr}
+                ayuda={
+                  <InfoTip
+                    title="Dos QR"
+                    what="El QR grande lleva la ficha escrita: código, especie, m³, medidas, N° de registro, GTF, titular y permiso. Cualquier celular la lee con la cámara, sin internet."
+                    affects="El QR chico abre la troza en el sistema: es el que escaneas para armar lotes. Si lo apagas, queda un solo QR, el del sistema."
+                  />
+                }
+              >
+                Ficha en el QR (sin internet)
+              </Casilla>
+              <Casilla
                 checked={barras}
                 onChange={setBarras}
-                ayuda={<InfoTip title="Código de barras" what="Barras Code 128 del código, para la pistola lectora de la balanza o del almacén. El QR abre la ficha con el celular." />}
+                ayuda={<InfoTip title="Código de barras" what="Barras Code 128 del código, para la pistola lectora de la balanza o del almacén." />}
               >
                 Código de barras
               </Casilla>
             </div>
 
-            <CtpEtiquetasFormatos valor={formato} onCambio={setFormato} />
+            <CtpEtiquetasFormatos valor={formato} onCambio={setFormato} conFicha={fichaEnQr} />
           </>
         )}
 

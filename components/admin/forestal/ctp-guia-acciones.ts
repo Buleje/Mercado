@@ -113,7 +113,7 @@ export function accionesDeGuia(guia: Guia, h: ManejadoresDeGuia): MenuAccion[] {
       ? [{
           id: "etiquetas",
           label: "Etiquetas de sus trozas",
-          hint: "Código, especie, medidas y un QR a la ficha — para pegar en el rollo",
+          hint: "QR grande con la ficha (se lee sin internet), QR chico del sistema y código de barras",
           icon: QrCode,
           onSelect: () => h.onImprimirEtiquetas?.(guia),
         } satisfies MenuAccion]

@@ -154,7 +154,7 @@ export default function CtpTrozasIndividuales({ period }: { period: CtpPeriod })
             type="button"
             onClick={() => abrir()}
             disabled={seleccion.size === 0}
-            title="Código, especie, medidas, QR a la ficha y código de barras — para pegar en el rollo"
+            title="QR grande con la ficha (se lee sin internet), QR chico del sistema y código de barras — para pegar en el rollo"
             className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-50"
           >
             <QrCode className="h-4 w-4" />

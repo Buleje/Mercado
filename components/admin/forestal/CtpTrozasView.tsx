@@ -31,12 +31,17 @@ import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import type { EstadoTroza } from "@/lib/forestal/trozas-patio";
 import { escribirTrozaEnUrl, trozaDeUrl } from "@/lib/forestal/ctp-troza-etiquetas";
 import CtpApartarEnLoteModal from "./CtpApartarEnLoteModal";
+import { CtpArmarLoteEscaneoSuelto } from "./CtpArmarLoteEscaneoModal";
 import CtpCodigosDuplicados from "./CtpCodigosDuplicados";
 import CtpTrozaFichaModal from "./CtpTrozaFichaModal";
+import EscanerTrozas from "./EscanerTrozas";
 import CtpTrozasBuscador from "./CtpTrozasBuscador";
 import CtpTrozasLista from "./CtpTrozasLista";
 import CtpTrozasPatio from "./CtpTrozasPatio";
 import { useTrozasPatio } from "./hooks/use-trozas-patio";
+
+/** El escáner de fichas no marca nada: todas se pueden volver a mirar. */
+const SIN_MARCAR: ReadonlySet<string> = new Set();
 
 export default function CtpTrozasView() {
   const { trozas, meta, cargando, error, recargar } = useTrozasPatio();
@@ -75,6 +80,12 @@ export default function CtpTrozasView() {
   };
   /** Las piezas que van camino a un lote. */
   const [apartando, setApartando] = useState<{ id: string; codigo: string | null; especie: string | null }[] | null>(null);
+  /**
+   * La troza desde cuya ficha se abrió «Armar un lote» (2026-09-26): arranca en
+   * la pila y se siguen escaneando las demás. La ficha se cierra antes: un
+   * modal encima de otro es el que se monta detrás.
+   */
+  const [armandoCon, setArmandoCon] = useState<string | null>(null);
 
   return (
     <div data-vista-trozas className="space-y-2.5">
@@ -106,6 +117,17 @@ export default function CtpTrozasView() {
           por su código—. Se esconde solo cuando no queda ninguno (ADR-336) y
           entra en una línea: el problema se anuncia, pero no tapa el patio. */}
       <CtpCodigosDuplicados />
+
+      {/* Escanear = ver su ficha (Brandon, 2026-09-26): guía, permiso, m³,
+          medidas, fechas, lote y lo que pasó con ella. Sin «ya estaba»: se
+          puede volver a mirar la misma pieza cuantas veces haga falta. */}
+      <EscanerTrozas
+        trozas={trozas}
+        yaElegidas={SIN_MARCAR}
+        accion="— su ficha abierta"
+        mostrarCuenta={false}
+        onTroza={(t) => abrirFicha(t.id)}
+      />
 
       <CtpTrozasPatio
         trozas={trozas}
@@ -140,7 +162,25 @@ export default function CtpTrozasView() {
       {ficha && (
         /* `onVerOtra` deja saltar de un pedazo a su madre sin cerrar: el
            retrozado es justo donde uno quiere ir y volver. */
-        <CtpTrozaFichaModal trozaId={ficha} onClose={() => abrirFicha(null)} onVerOtra={abrirFicha} />
+        <CtpTrozaFichaModal
+          trozaId={ficha}
+          onClose={() => abrirFicha(null)}
+          onVerOtra={abrirFicha}
+          onArmarLote={(id) => {
+            abrirFicha(null);
+            setArmandoCon(id);
+          }}
+        />
+      )}
+      {armandoCon && (
+        <CtpArmarLoteEscaneoSuelto
+          inicial={[armandoCon]}
+          onClose={() => {
+            setArmandoCon(null);
+            /* Las piezas que entraron a un lote cambian de estado en la lista. */
+            void recargar();
+          }}
+        />
       )}
       {apartando && (
         <CtpApartarEnLoteModal

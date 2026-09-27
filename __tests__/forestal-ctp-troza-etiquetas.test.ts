@@ -63,22 +63,25 @@ describe("trozasEtiquetables", () => {
   });
 });
 
-describe("medidasEtiqueta", () => {
-  it("con las tres medidas: el diámetro mayor primero, el menor después", () => {
-    // d1 y d2 no siempre vienen en orden (uno es un extremo, el otro el opuesto).
-    expect(medidasEtiqueta({ d1Cm: 39, d2Cm: 45, largoM: 6.16 })).toBe("Ø 45×39 cm · L 6.16 m");
+describe("medidasEtiqueta — D1, D2 y largo SIEMPRE, con su nombre (Brandon 26-09)", () => {
+  it("con las tres medidas: D1 y D2 como vienen, no reordenadas", () => {
+    expect(medidasEtiqueta({ d1Cm: 39, d2Cm: 45, largoM: 6.16 })).toBe("D1 39 · D2 45 cm · L 6.16 m");
   });
 
-  it("con un solo diámetro (Blas: la mitad de las trozas trae sólo uno)", () => {
-    expect(medidasEtiqueta({ d1Cm: 45, d2Cm: null, largoM: 6.16 })).toBe("Ø 45 cm · L 6.16 m");
+  it("con un solo diámetro, el otro sale «—»", () => {
+    expect(medidasEtiqueta({ d1Cm: 45, d2Cm: null, largoM: 6.16 })).toBe("D1 45 · D2 — cm · L 6.16 m");
   });
 
-  it("sin diámetro, sólo el largo — sin «Ø — cm» (77 de 84 trozas de Blas no lo traen)", () => {
-    expect(medidasEtiqueta({ d1Cm: null, d2Cm: null, largoM: 6.16 })).toBe("L 6.16 m");
+  it("sin D1/D2 igual se imprimen, con «—» (77 de 84 trozas de Blas no los traen: hay que medirlas)", () => {
+    expect(medidasEtiqueta({ d1Cm: null, d2Cm: null, largoM: 6.16 })).toBe("D1 — · D2 — · L 6.16 m");
   });
 
-  it("sin ninguna medida, cadena vacía — nunca 0", () => {
-    expect(medidasEtiqueta({ d1Cm: null, d2Cm: null, largoM: null })).toBe("");
+  it("con sólo el diámetro declarado como un número, va entre paréntesis", () => {
+    expect(medidasEtiqueta({ d1Cm: null, d2Cm: null, diametroCm: 44, largoM: 5 })).toBe("D1 — · D2 — (Ø 44 cm) · L 5.00 m");
+  });
+
+  it("sin ninguna medida, guiones — nunca 0", () => {
+    expect(medidasEtiqueta({ d1Cm: null, d2Cm: null, largoM: null })).toBe("D1 — · D2 — · L —");
   });
 });
 
@@ -140,7 +143,7 @@ describe("código de la etiqueta", () => {
   });
 
   it("el tamaño baja con el largo y nunca pasa el techo del formato", () => {
-    expect(tamanoCodigoPt("7", "testa-a6")).toBe(120);
+    expect(tamanoCodigoPt("7", "testa-a6")).toBe(100);
     expect(tamanoCodigoPt("115-A", "testa-a6")).toBeGreaterThan(60);
     expect(tamanoCodigoPt("PQ-2609-004", "a4-3x7")).toBeLessThan(tamanoCodigoPt("115", "a4-3x7"));
     expect(tamanoCodigoPt("X".repeat(80), "rollo-50x30")).toBe(7);

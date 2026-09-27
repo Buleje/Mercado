@@ -21,6 +21,9 @@ import {
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { usePlantaUbicacion } from "./hooks/use-planta-ubicacion";
 import { formatDate } from "@/lib/format";
+import { consumibleDeFicha } from "@/lib/forestal/leer-escaneo-troza";
+import { motivoFueraDeLaPila } from "@/lib/forestal/lote-por-escaneo";
+import { Btn, ModalBody, ModalFooter } from "./ctp-shared";
 
 const fecha = (iso: string | null | undefined) =>
   iso ? formatDate(iso, { soloFecha: true }) : null;
@@ -52,9 +55,15 @@ export interface CtpTrozaFichaModalProps {
   onClose: () => void;
   /** Para saltar de un pedazo a su madre sin cerrar y volver a buscar. */
   onVerOtra?: (id: string) => void;
+  /**
+   * «Armar un lote con esta troza» (2026-09-26): el QR de la etiqueta abre esta
+   * ficha y desde acá la pieza va directo a la pila. Sólo se ofrece si la
+   * troza se puede consumir; sin la prop, la ficha no lo ofrece.
+   */
+  onArmarLote?: (trozaId: string) => void;
 }
 
-export default function CtpTrozaFichaModal({ trozaId, onClose, onVerOtra }: CtpTrozaFichaModalProps) {
+export default function CtpTrozaFichaModal({ trozaId, onClose, onVerOtra, onArmarLote }: CtpTrozaFichaModalProps) {
   const [f, setF] = useState<Ficha | null>(null);
   const [error, setError] = useState<string | null>(null);
   const canchas = usePlantaUbicacion();
@@ -80,6 +89,10 @@ export default function CtpTrozaFichaModal({ trozaId, onClose, onVerOtra }: CtpT
   const recibida = Boolean(
     t?.fechaRecepcion || f?.ingreso.fechaRecepcion || f?.ingreso.status === "validado",
   );
+  /* La MISMA regla que la pila del escáner (`motivoFueraDeLaPila`): ofrecer
+     armar un lote con una pieza que la pila rechaza sería un botón que miente. */
+  const armable =
+    Boolean(onArmarLote) && f != null && motivoFueraDeLaPila({ ...consumibleDeFicha(f), guiaRecepcionada: recibida }) === null;
 
   return (
     <AdminModal
@@ -89,6 +102,15 @@ export default function CtpTrozaFichaModal({ trozaId, onClose, onVerOtra }: CtpT
       description={f ? `${t?.especieComun ?? "Sin especie"} · ${n(t?.volumenM3)} m³` : "Buscando su historia…"}
       icon={PackageOpen}
       className="max-w-3xl"
+      footer={
+        armable && onArmarLote ? (
+          <ModalFooter>
+            <Btn variant="primary" onClick={() => onArmarLote(trozaId)}>
+              <Layers className="h-4 w-4" aria-hidden /> Armar un lote con esta troza
+            </Btn>
+          </ModalFooter>
+        ) : undefined
+      }
     >
       {!f && !error && (
         <p className="flex items-center justify-center gap-2 text-sm text-[var(--text-secondary)] px-5 py-10 sm:px-6">
@@ -96,13 +118,17 @@ export default function CtpTrozaFichaModal({ trozaId, onClose, onVerOtra }: CtpT
         </p>
       )}
       {error && (
-        <p className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm font-bold text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
-          {error}
-        </p>
+        <ModalBody>
+          <p className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm font-bold text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
+            {error}
+          </p>
+        </ModalBody>
       )}
 
+      {/* ModalBody pone el margen: sin él, las cuatro tarjetas de medidas y
+          la línea de tiempo tocaban el borde del modal (medido a 1280 px). */}
       {f && t && (
-        <div className="space-y-3">
+        <ModalBody className="space-y-3">
           {/* ── Lo que mide ──────────────────────────────────────────────── */}
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             <Dato label="Volumen" valor={`${n(t.volumenM3)} m³`} fuerte />
@@ -243,7 +269,7 @@ export default function CtpTrozaFichaModal({ trozaId, onClose, onVerOtra }: CtpT
               {t.observaciones && <p>{t.observaciones}</p>}
             </div>
           )}
-        </div>
+        </ModalBody>
       )}
     </AdminModal>
   );

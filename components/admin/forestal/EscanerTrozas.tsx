@@ -21,6 +21,8 @@ import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import {
   buscarTrozaEscaneada,
   esEcoDeEtiqueta,
+  esFichaDeTroza,
+  esLineaDeFicha,
   leerEscaneo,
 } from "@/lib/forestal/leer-escaneo-troza";
 import {
@@ -111,9 +113,20 @@ export default function EscanerTrozas<T extends TrozaDelEscaner>({
 
   const procesar = useCallback(
     (crudo: string) => {
+      /* Una pistola 2D en modo teclado tipea la ficha del QR grande línea por
+         línea: la primera (`TROZA 118`) ya trajo la pieza; `Titular: …` y las
+         demás no son códigos y no deben avisar «ninguna troza». */
+      if (esLineaDeFicha(crudo)) {
+        /* Tipear la ficha entera le lleva 1-3 s a la pistola: el eco de la
+           misma etiqueta (su QR chico o sus barras) se mide desde la última
+           línea, no desde la primera. */
+        if (ultimaRef.current) ultimaRef.current = { ...ultimaRef.current, en: Date.now() };
+        return;
+      }
       const lectura = leerEscaneo(crudo);
       if (!lectura) {
-        if (crudo.trim()) avisar("no", "Eso no es el código de una troza.");
+        if (esFichaDeTroza(crudo)) avisar("no", "Esa troza no tiene código: escanea su QR chico.");
+        else if (crudo.trim()) avisar("no", "Eso no es el código de una troza.");
         return;
       }
       const r = buscarTrozaEscaneada(trozas, lectura);

@@ -46,6 +46,10 @@ export interface TrozaConsumible {
   guiaCites?: boolean;
   /** La guía por la que entró — para agrupar y para el filtro. */
   gtfNumber?: string | null;
+  /** (1) N° de registro del asiento en el libro de operaciones (`WoodEntry.libroNro`). */
+  libroNro?: number | null;
+  /** N° de constancia de registro del SNIFFS de su guía (`1-19-0313629`). */
+  constanciaSniffs?: string | null;
   proveedor?: string | null;
   /** Cuándo bajó la pieza del camión (ADR-336). */
   fechaRecepcion?: string | null;
@@ -148,7 +152,7 @@ export const LABEL_BLOQUEO: Record<MotivoBloqueo, string> = {
   ya_despachada: "Ya salió despachada sin aserrar",
   no_recepcionada: "No llegó al patio",
   descarte: "Descarte del retrozado: no es producto",
-  madre_retrozada: "Se cortó en pedazos: consumí los pedazos",
+  madre_retrozada: "Se cortó en pedazos: consume los pedazos",
   sin_volumen: "Sin volumen registrado",
 };
 

@@ -13,14 +13,22 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AlertTriangle, Camera, Loader2, Search, WifiOff, X } from "@buleje/design-system/icons";
+import { AlertTriangle, Camera, History, Loader2, Search, WifiOff, X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { fichaDeTroza, type TonoPatio } from "@/lib/forestal/patio-vista";
 import { antiguedad, buscarLocal, esViejo, guardar, leer } from "@/lib/forestal/patio-cache";
 import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
-import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
-import { consumibleDeFicha, exactasPrimero, leerEscaneo, type FichaTrozaJson } from "@/lib/forestal/leer-escaneo-troza";
+import {
+  consumibleDeFicha,
+  esFichaDeTroza,
+  esLineaDeFicha,
+  exactasPrimero,
+  leerEscaneo,
+  type FichaTrozaJson,
+} from "@/lib/forestal/leer-escaneo-troza";
 import { CamaraEscaneo } from "./EscanerTrozas";
+import FichaTrozaResumen from "./FichaTrozaResumen";
+import CtpTrozaFichaModal from "./CtpTrozaFichaModal";
 
 /** El tono decide el color de TODA la ficha: se lee de lejos, no en detalle. */
 const TONO: Record<TonoPatio, { caja: string; chip: string }> = {
@@ -48,11 +56,15 @@ export default function PatioBuscador() {
   const [desdeCache, setDesdeCache] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [camara, setCamara] = useState(false);
+  /** La troza cuya historia completa se está mirando (`CtpTrozaFichaModal`). */
+  const [ficha, setFicha] = useState<string | null>(null);
   /** La última búsqueda pedida. Dos lecturas seguidas con mala señal: la
    *  respuesta de la PRIMERA puede llegar después y pisar la ficha de la
    *  segunda. Sólo pinta la que sigue siendo la última. */
   const pedidoRef = useRef(0);
   const abortRef = useRef<AbortController | null>(null);
+  /** Lo último que se buscó: vuelve al campo si la pistola tipea una línea suelta de la ficha. */
+  const ultimaBusquedaRef = useRef("");
 
   // Se abre enfocado: la primera acción del patio es tipear un número.
   useEffect(() => {
@@ -69,9 +81,14 @@ export default function PatioBuscador() {
   const buscar = useCallback(async (entrada?: string) => {
     const crudo = (entrada ?? q).trim();
     if (!crudo) return;
+    /* La pistola 2D tipea la ficha del QR grande línea por línea: `TROZA 118`
+       ya buscó; `Titular: …` y las demás no son códigos y no pueden pisar esa
+       búsqueda con «ninguna troza» (revisión 26-09, reproducido). */
+    if (esLineaDeFicha(crudo)) return;
+    ultimaBusquedaRef.current = crudo;
     const lectura = leerEscaneo(crudo);
     if (!lectura) {
-      setError("Eso no es el código de una troza.");
+      setError(esFichaDeTroza(crudo) ? "Esa troza no tiene código: escanea su QR chico." : "Eso no es el código de una troza.");
       setHallazgos(null);
       return;
     }
@@ -110,7 +127,16 @@ export default function PatioBuscador() {
         if (!vigente()) return;
         if (!r.ok) throw new Error(`El servidor respondió ${r.status}`);
         const d = (await r.json()) as {
-          trozas?: (TrozaConsumible & { ingreso?: { gtfNumber?: string | null } })[];
+          trozas?: (TrozaConsumible & {
+            ingreso?: {
+              gtfNumber?: string | null;
+              libroNro?: number | null;
+              serforNumeroRegistro?: string | null;
+              originCode?: string | null;
+              providerName?: string | null;
+              entryDate?: string | null;
+            };
+          })[];
         };
         if (!vigente()) return;
         // El buscador devuelve la guía anidada en `ingreso`; el endpoint del patio
@@ -121,6 +147,12 @@ export default function PatioBuscador() {
           (d.trozas ?? []).map((t) => ({
             ...t,
             gtfNumber: t.gtfNumber ?? t.ingreso?.gtfNumber ?? null,
+            libroNro: t.libroNro ?? t.ingreso?.libroNro ?? null,
+            constanciaSniffs: t.constanciaSniffs ?? t.ingreso?.serforNumeroRegistro ?? null,
+            /* Lo que la ficha muestra (2026-09-26): permiso, titular y fecha de la guía. */
+            permiso: t.permiso ?? t.ingreso?.originCode ?? null,
+            proveedor: t.proveedor ?? t.ingreso?.providerName ?? null,
+            fechaIngreso: t.fechaIngreso ?? t.ingreso?.entryDate ?? null,
           })),
           lectura.codigo,
         );
@@ -154,15 +186,12 @@ export default function PatioBuscador() {
         setDesdeCache(cache.guardadoEn);
       }
     } finally {
-      if (vigente()) {
-        setBuscando(false);
-        /* Con la pistola, la próxima lectura REEMPLAZA a esta (no se pega detrás). */
-        if (document.activeElement === inputRef.current) inputRef.current?.select();
-      }
+      if (vigente()) setBuscando(false);
     }
   }, [q]);
 
   return (
+    <>
       <section className="space-y-3">
         <label htmlFor="patio-buscar" className="block text-base font-bold text-[var(--text-primary)]">
           ¿Qué troza estás mirando?
@@ -175,7 +204,21 @@ export default function PatioBuscador() {
               ref={inputRef}
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && void buscar()}
+              onKeyDown={(e) => {
+                if (e.key !== "Enter") return;
+                const campo = e.currentTarget;
+                if (esLineaDeFicha(campo.value)) {
+                  /* Una línea suelta de la ficha: el campo vuelve a lo buscado. */
+                  setQ(ultimaBusquedaRef.current);
+                  requestAnimationFrame(() => inputRef.current?.select());
+                  return;
+                }
+                /* Con la pistola, la próxima lectura REEMPLAZA a ésta (no se pega
+                   detrás). Se selecciona YA, en el Enter: hacerlo cuando volvía la
+                   búsqueda seleccionaba media línea que la pistola seguía tipeando. */
+                void buscar();
+                campo.select();
+              }}
               inputMode="search"
               placeholder="Escanea o tipea: 118"
               className="w-full bg-transparent dark:bg-transparent text-lg text-[var(--text-primary)] outline-none focus-visible:[box-shadow:none]! focus-visible:outline-none!"
@@ -275,25 +318,23 @@ export default function PatioBuscador() {
                   <span className={cn("rounded-full px-3 py-1 text-base font-bold", tono.chip)}>{f.titulo}</span>
                 </div>
                 {f.detalle && <p className="mt-1 text-base text-[var(--text-secondary)]">{f.detalle}</p>}
-                <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-base">
-                  <Dato k="Especie" v={t.especieComun ?? "—"} />
-                  <Dato k="Volumen" v={t.volumenM3 != null ? `${fmtM3(Number(t.volumenM3))} m³` : "—"} />
-                  <Dato k="Guía" v={t.gtfNumber ?? "—"} mono />
-                  {f.codigoAlterno && <Dato k="Cód. guía" v={f.codigoAlterno} mono />}
-                </dl>
+                {/* Todo lo que se pregunta frente al tronco (Brandon, 2026-09-26):
+                    guía, permiso, m³, medidas, fechas, lote. La historia
+                    —corrida, despacho, pedazos— es la ficha, a un toque. */}
+                <FichaTrozaResumen troza={t} className="mt-2" />
+                <button
+                  type="button"
+                  onClick={() => setFicha(t.id)}
+                  className="mt-3 inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-semibold text-[var(--text-primary)] hover:border-[var(--accent)]"
+                >
+                  <History className="h-5 w-5" aria-hidden /> Ver su historia completa
+                </button>
               </li>
             );
           })}
         </ul>
       </section>
-  );
-}
-
-function Dato({ k, v, mono }: { k: string; v: string; mono?: boolean }) {
-  return (
-    <>
-      <dt className="text-[var(--text-tertiary)]">{k}</dt>
-      <dd className={cn("text-right text-[var(--text-primary)]", mono && "font-mono")}>{v}</dd>
+      {ficha && <CtpTrozaFichaModal trozaId={ficha} onClose={() => setFicha(null)} onVerOtra={setFicha} />}
     </>
   );
 }

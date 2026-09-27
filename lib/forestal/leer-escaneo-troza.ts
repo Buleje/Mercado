@@ -5,8 +5,10 @@
  * pistola lectora —que para la computadora es un teclado: tipea el código y
  * da Enter— la troza queda marcada sin buscarla en la tabla.
  *
- * Un escaneo puede traer tres cosas:
- *   · el QR nuevo de la etiqueta: `https://<host>/admin/q/<trozaId>`;
+ * Un escaneo puede traer cuatro cosas:
+ *   · el QR chico de la etiqueta: `https://<host>/admin/q/<trozaId>`;
+ *   · el QR grande, con la ficha en texto (`TROZA 118\nEspecie: …`,
+ *     `ficha-texto-troza.ts`): vale su primera línea, el código;
  *   · el QR viejo: `…/admin?tab=…&vista=trozas&troza=<trozaId>`;
  *   · un código de barras (Code128) o un tipeo: el código de planta (`118`,
  *     `115-A`) o la codificación del bosque (`13/A (0000008)`).
@@ -18,6 +20,9 @@
  */
 
 import { esSinCodigo, type TrozaConsumible } from "./consumo-trozas";
+import { codigoDeFichaTexto, esFichaDeTroza, esLineaDeFicha } from "./ficha-texto-troza";
+
+export { esFichaDeTroza, esLineaDeFicha };
 
 export type LecturaEscaneo = { tipo: "id"; id: string } | { tipo: "codigo"; codigo: string };
 
@@ -52,6 +57,14 @@ export function claveDeCodigo(v: string | null | undefined): string {
 export function leerEscaneo(texto: string | null | undefined): LecturaEscaneo | null {
   const crudo = (texto ?? "").trim();
   if (!crudo) return null;
+
+  /* La ficha en texto trae el código en su primera línea: la cámara del
+     sistema puede agarrar el QR grande en vez del chico. */
+  const deFicha = codigoDeFichaTexto(crudo);
+  if (deFicha) return { tipo: "codigo", codigo: deFicha.replace(/\s+/g, " ").toUpperCase() };
+  /* `TROZA —`: la ficha de una pieza sin código. Buscarla entera como código
+     daba «ninguna troza con el código TROZA — ESPECIE: …». */
+  if (esFichaDeTroza(crudo)) return null;
 
   const esDireccion = /^[a-z][a-z0-9+.-]*:\/\//i.test(crudo) || crudo.startsWith("/admin");
   if (esDireccion) {
@@ -128,17 +141,29 @@ export interface FichaTrozaJson {
     codificacion: string | null;
     codigoPlanta: string | null;
     especieComun: string | null;
+    especieCientifica?: string | null;
+    parcela?: string | null;
     volumenM3: number | null;
+    d1Cm?: number | null;
+    d2Cm?: number | null;
+    diametroCm?: number | null;
     largoM?: number | null;
     noRecepcionada?: boolean | null;
     descarte?: boolean | null;
+    fechaRecepcion?: string | null;
   };
   ingreso: {
     id: string;
+    libroNro?: number | null;
+    constanciaSniffs?: string | null;
     gtfNumber: string | null;
     permiso?: string | null;
+    resolucion?: string | null;
     proveedor?: string | null;
+    entryDate?: string | null;
+    fechaRecepcion?: string | null;
   };
+  lote?: { id: string; code: string } | null;
   retrozos?: unknown[];
   corrida?: { id: string; vigente: boolean } | null;
   despacho?: { id: string; vigente: boolean } | null;
@@ -156,11 +181,25 @@ export function consumibleDeFicha(f: FichaTrozaJson): TrozaConsumible {
     codificacion: f.troza.codificacion,
     codigoPlanta: f.troza.codigoPlanta,
     especieComun: f.troza.especieComun,
+    especieCientifica: f.troza.especieCientifica ?? null,
+    parcela: f.troza.parcela ?? null,
     volumenM3: f.troza.volumenM3,
+    d1Cm: f.troza.d1Cm ?? null,
+    d2Cm: f.troza.d2Cm ?? null,
+    diametroCm: f.troza.diametroCm ?? null,
     largoM: f.troza.largoM ?? null,
     gtfNumber: f.ingreso.gtfNumber,
+    libroNro: f.ingreso.libroNro ?? null,
+    constanciaSniffs: f.ingreso.constanciaSniffs ?? null,
     permiso: f.ingreso.permiso ?? null,
+    resolucion: f.ingreso.resolucion ?? null,
     proveedor: f.ingreso.proveedor ?? null,
+    /* Lo que la ficha del patio muestra al escanear (2026-09-26): fechas y lote. */
+    fechaIngreso: f.ingreso.entryDate ?? null,
+    fechaRecepcion: f.troza.fechaRecepcion ?? null,
+    guiaFechaRecepcion: f.ingreso.fechaRecepcion ?? null,
+    loteAserrioId: f.lote?.id ?? null,
+    loteAserrioCode: f.lote?.code ?? null,
     noRecepcionada: f.troza.noRecepcionada ?? null,
     descarte: f.troza.descarte ?? null,
     retrozos: f.retrozos?.length ?? 0,

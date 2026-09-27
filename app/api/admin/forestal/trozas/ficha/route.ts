@@ -70,6 +70,7 @@ export async function GET(req: NextRequest) {
       ingreso: {
         id: t.entry.id,
         libroNro: t.entry.libroNro,
+        constanciaSniffs: t.entry.serforNumeroRegistro,
         gtfNumber: t.entry.gtfNumber,
         proveedor: t.entry.providerName,
         entryDate: t.entry.entryDate,

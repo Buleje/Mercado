@@ -42,8 +42,8 @@ export function useFormatoEtiquetaRecordado() {
   return [formato, elegir] as const;
 }
 
-/** El dibujito: la etiqueta a escala, con su QR, sus barras y el código. */
-function Miniatura({ f }: { f: FormatoEtiquetaInfo }) {
+/** El dibujito: la etiqueta a escala, con su QR (o sus dos QR), sus barras y el código. */
+function Miniatura({ f, conFicha }: { f: FormatoEtiquetaInfo; conFicha: boolean }) {
   if (f.id === "a4-3x7") {
     return (
       <span aria-hidden className="grid h-12 w-9 grid-cols-3 gap-px rounded-sm border border-[var(--rule-strong)] bg-[var(--surface-raised)] p-0.5">
@@ -59,6 +59,7 @@ function Miniatura({ f }: { f: FormatoEtiquetaInfo }) {
   const w = Math.round(f.anchoMm * esc);
   const h = Math.round(f.altoMm * esc);
   const qr = Math.round(f.qrMm * esc);
+  const chico = Math.max(3, Math.round(f.qrChicoMm * esc));
   const vertical = f.id === "testa-a6";
   return (
     <span
@@ -70,7 +71,13 @@ function Miniatura({ f }: { f: FormatoEtiquetaInfo }) {
         <span className={`rounded-[1px] bg-[var(--text-primary)] ${vertical ? "h-2.5 w-4/5" : "h-1 w-3/4"}`} />
         <span className="h-1 w-full bg-[repeating-linear-gradient(90deg,var(--text-primary)_0_1px,transparent_1px_2px)]" />
       </span>
-      <span style={{ width: qr, height: qr }} className="shrink-0 rounded-[1px] border-2 border-[var(--text-primary)]" />
+      {/* En fila, el chico al pie del grande: apilados no entran en el rollo ancho. */}
+      <span className="flex shrink-0 items-end gap-px">
+        {conFicha && (
+          <span style={{ width: chico, height: chico }} className="shrink-0 rounded-[1px] border border-[var(--text-primary)]" />
+        )}
+        <span style={{ width: qr, height: qr }} className="shrink-0 rounded-[1px] border-2 border-[var(--text-primary)]" />
+      </span>
     </span>
   );
 }
@@ -78,9 +85,12 @@ function Miniatura({ f }: { f: FormatoEtiquetaInfo }) {
 export default function CtpEtiquetasFormatos({
   valor,
   onCambio,
+  conFicha = true,
 }: {
   valor: FormatoEtiqueta;
   onCambio: (f: FormatoEtiqueta) => void;
+  /** La etiqueta lleva el QR de la ficha + el chico del sistema. */
+  conFicha?: boolean;
 }) {
   return (
     <fieldset>
@@ -106,7 +116,7 @@ export default function CtpEtiquetasFormatos({
                 className="sr-only"
               />
               <span className="flex h-14 items-center justify-center">
-                <Miniatura f={f} />
+                <Miniatura f={f} conFicha={conFicha} />
               </span>
               <span className="text-sm font-bold leading-tight text-[var(--text-primary)]">{f.nombre}</span>
               <span className="text-xs leading-snug text-[var(--text-secondary)]">{f.uso}</span>

@@ -2051,6 +2051,9 @@ export class WoodEntriesDB {
         entry: {
           select: {
             id: true,
+            /* (1) N° de registro del libro: va en la ficha que lleva el QR de
+               la etiqueta (2026-09-26), la que se lee sin internet. */
+            libroNro: true,
             gtfNumber: true,
             providerName: true,
             entryDate: true,
@@ -2131,6 +2134,8 @@ export class WoodEntriesDB {
       largoM: num(t.largoM),
       volumenM3: num(t.volumenM3),
       gtfNumber: t.entry.gtfNumber,
+      libroNro: t.entry.libroNro,
+      constanciaSniffs: t.entry.serforNumeroRegistro,
       proveedor: t.entry.providerName,
       fechaIngreso: t.entry.entryDate as unknown as string,
       fechaRecepcion: t.fechaRecepcion as unknown as string | null,
@@ -3436,6 +3441,9 @@ export class WoodEntriesDB {
             status: true,
             originCode: true,
             originSourceNumber: true,
+            /* La constancia del SNIFFS: la ficha del patio la muestra junto al
+               N° de registro del libro, como la ficha que lleva el QR. */
+            serforNumeroRegistro: true,
             volumeM3: true,
           },
         },
