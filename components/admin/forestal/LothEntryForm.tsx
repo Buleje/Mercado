@@ -64,6 +64,7 @@ import { fromUtm, parseUtmZone } from "@/lib/forestal/loth-utm";
 import LothGpsField, { type GpsOrigen } from "./LothGpsField";
 import LothCensoElegirModal from "./LothCensoElegirModal";
 import LothFichaArbol from "./LothFichaArbol";
+import LothPlacaFoto from "./LothPlacaFoto";
 import LothFichaTrozado from "./LothFichaTrozado";
 import LothFuentesLista, { conTrozasDelCenso, fuentesDelCenso, type PlanOpt, type SourceItem } from "./LothFuentesLista";
 import { olvidarArbolEnElLibro, useArbolEnElLibro } from "./hooks/use-arbol-en-el-libro";
@@ -292,6 +293,8 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
   const [photoUploading, setPhotoUploading] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  /** «Foto de la placa» arranca de cero con cada línea nueva (reset). */
+  const [placaVez, setPlacaVez] = useState(0);
   /** Enter en la última medida de la troza lleva acá, si ya se puede guardar. */
   const registrarRef = useRef<HTMLButtonElement>(null);
 
@@ -675,7 +678,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
     // El motosierrista sigue (tumba el árbol siguiente); la hora y el científico no.
     setHoraTala(""); setCientificoCenso(null);
     setDmcBloqueo(null); setJustificacionDmc("");
-    setPhotoUrl(null); setPhotoError(null);
+    setPhotoUrl(null); setPhotoError(null); setPlacaVez((v) => v + 1);
     if (fileInputRef.current) fileInputRef.current.value = "";
     // Sin esto la medición seguía a la vista con el volumen ya borrado: «falta el volumen» con los números puestos.
     setMedidasTala((m) => medidasVacias(m.modo));
@@ -1085,6 +1088,21 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
                   className="h-10 w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--data-info-500)]"
                 />
               </div>
+            )}
+
+            {/* Tala: la placa del tocón elige el árbol, guarda la foto y toma el GPS. */}
+            {section === "tala" && (
+              <LothPlacaFoto
+                key={placaVez}
+                arboles={censoTala.arboles}
+                cargandoCenso={censoTala.cargando}
+                elegido={treeCode}
+                onElegir={elegirArbol}
+                onFoto={(url) => { setPhotoUrl(url); setPhotoError(null); }}
+                onGps={(la, ln) => { setGpsLat(la); setGpsLng(ln); setGpsOrigen("telefono"); }}
+                marcadoTocon={marcasFisicas.includes("tocon")}
+                onMarcadoTocon={(v) => setMarcasFisicas((m) => (v ? [...m.filter((x) => x !== "tocon"), "tocon"] : m.filter((x) => x !== "tocon")))}
+              />
             )}
 
             {/* Picker data-driven: elige del plan lo disponible para esta sección */}
