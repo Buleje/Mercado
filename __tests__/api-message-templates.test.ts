@@ -54,6 +54,7 @@ vi.mock("@/lib/prisma", () => ({
 
 vi.mock("@/lib/rate-limit", () => ({
   applyRateLimit: vi.fn(() => null),
+  getClientIp: vi.fn(() => "127.0.0.1"),
 }));
 
 import { GET, POST, PATCH, DELETE } from "@/app/api/message-templates/route";

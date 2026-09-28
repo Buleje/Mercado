@@ -116,6 +116,44 @@ Al arrancar sesión, `session-start-context.mjs` muestra las `pending` en el con
 
 ---
 
+## Weekly health 2026-09-28
+
+### Resultados del health pass
+
+| Check | Resultado |
+|---|---|
+| `tsc --noEmit` | ✅ GREEN (exit 0) |
+| Tests objetivo (3 archivos) | ✅ 47/48 pass (+39 recuperados) |
+| `__tests__/whatsapp/` + `__tests__/delivery/` | ⚠️ 138/143 pass (5 pre-existing) |
+| Danger zones | ✅ sin tocar |
+
+### Fix aplicado: stale mocks post security refactor (dd1af4b)
+
+**Root cause:** commit `dd1af4b fix(round28): close audit findings` refactorizó 3 routes para cross-tenant security (`findUnique`→`findFirst`, `update`→`updateMany`+`findFirstOrThrow`, etc.) pero dejó los mocks de test apuntando a los métodos viejos.
+
+| Archivo | Fix |
+|---|---|
+| `__tests__/api-message-templates.test.ts` | +`getClientIp` al mock de `@/lib/rate-limit` |
+| `__tests__/api-product-seo.test.ts` | +`tryAdmin` al mock de `@/lib/require-admin` |
+| `__tests__/api-warehouse-transfers.test.ts` | +`findFirst`/`findFirstOrThrow`/`updateMany` al mock Prisma; 8 tests PATCH actualizados |
+
+**Tests recuperados:** 39 tests que fallaban con `TypeError: No "X" export is defined on the mock`.
+
+### Pre-existing failures (NO causados por este run)
+
+| Archivo | Tests | Causa |
+|---|---|---|
+| `__tests__/api-message-templates.test.ts` | 1 (GET "variables parsed") | Cache in-memory `getOrSet` contamina entre tests — necesita mock de `@/lib/cache` en este archivo |
+| `__tests__/whatsapp/payment-approval.db.test.ts` | 2 (setVisionResult boundary) | Lógica delta ≤5% boundary |
+| `__tests__/whatsapp/approve-reject.route.test.ts` | 2 (reject reason/state) | Mock OrdersDB state |
+| `__tests__/whatsapp/yape-capture.route.test.ts` | 1 (Twilio fetch fail) | Fetch mock behavior |
+
+### [pending] fix cache mock en api-message-templates.test.ts
+- Añadir `vi.mock("@/lib/cache", () => ({ getOrSet: vi.fn(async (_k,_t,fn) => fn()), ... }))` al principio del archivo para aislar tests GET del in-memory cache store.
+- Bajo impacto, 1 línea de fix.
+
+---
+
 ## Pendientes (próximas sesiones)
 
 ### [pending] 2026-04-28 — Telegram bot setup (necesita input Brandon)
