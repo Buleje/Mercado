@@ -303,8 +303,11 @@ describe.skipIf(!HAS_DB)("vincular trozas sueltas (base real)", () => {
     /* Sin producido conocido (0) se propone TODA la madera usable: la de este caso entra. */
     const toda = await ForestVincularTrozasDB.propuesta(TENANT, { especie: ESPECIE, fecha: "2099-04-10", m3: 0, permiso: PERMISO });
     expect(toda.ok && toda.propuesta.some((p) => p.trozaId === t.id)).toBe(true);
+    /* ADR-447: «OTRO-PERMISO» no tiene ninguna guía en el libro → el arreglo es
+       cargar su guía (antes: «sin trozas», sin decir por qué). */
     const otro = await ForestVincularTrozasDB.propuesta(TENANT, { especie: ESPECIE, fecha: "2099-04-10", m3: 0.3, permiso: "OTRO-PERMISO" });
-    expect(otro.ok && otro.motivo).toBe("sin_trozas_de_la_especie");
+    expect(otro.ok && otro.motivo).toBe("guia_sin_trozas");
+    expect(otro.ok && otro.arreglo).toEqual({ tipo: "cargar_guia", permiso: "OTRO-PERMISO", guias: [] });
     await expect(
       ForestVincularTrozasDB.propuesta(TENANT, { especie: ESPECIE, fecha: "2099-04-10", m3: 0.3, contratoId: "ctr_de_otro_negocio" }),
     ).resolves.toMatchObject({ ok: false, error: "contrato_no_existe" });

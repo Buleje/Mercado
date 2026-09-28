@@ -130,13 +130,21 @@ describe("el motivo es el arreglo más corto", () => {
     expect(r.motivo).toBe("llegada_posterior");
   });
 
-  it("Tornillo de otro permiso → sin_trozas_de_la_especie, nombrando el permiso", () => {
+  it("Tornillo de otro permiso → permiso_distinto (ADR-447), nombrando el permiso y proponiéndolo", () => {
     const r = proponerTrozas(
       corrida({ especie: "Tornillo", m3Producido: 3.8, permiso: { contratoId: "ctr_096", codigo: "19-SEC/REG-PLT-2025-096" } }),
       [troza({ especie: "Tornillo", m3: 1, permiso: PLT }), troza({ especie: "Tornillo", m3: 1, permiso: PLT })],
     );
-    expect(r.motivo).toBe("sin_trozas_de_la_especie");
-    expect(r.detalle).toBe("Las 2 trozas de Tornillo que hay son de otro permiso (19-SEC/REG-PLT-2021-017).");
+    expect(r.motivo).toBe("permiso_distinto");
+    expect(r.detalle).toBe(
+      "Las 2 trozas de Tornillo que hay son de otro permiso (19-SEC/REG-PLT-2021-017). Si la corrida salió de esa madera, corrige su permiso.",
+    );
+    expect(r.arreglo).toEqual({
+      tipo: "corregir_corrida",
+      campo: "permiso",
+      actual: "19-SEC/REG-PLT-2025-096",
+      propuestos: [{ codigo: PLT.codigo, contratoId: null, trozas: 2, m3: 2 }],
+    });
   });
 
   it("especie sin ninguna troza en el patio (Tacho) → sin_trozas_de_la_especie", () => {
@@ -146,6 +154,7 @@ describe("el motivo es el arreglo más corto", () => {
       detalle: "No hay trozas de Tacho en el patio.",
       propuesta: [],
       m3Propuesto: 0,
+      arreglo: { tipo: "ninguno" },
     });
   });
 

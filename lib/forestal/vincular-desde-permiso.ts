@@ -250,7 +250,12 @@ export function repartoDelGrupo(
   pool: readonly TrozaConsumible[],
   meta: number = RENDIMIENTO_META,
   contexto: { desde: string | null; hayAptas: boolean } = { desde: null, hayAptas: pool.length > 0 },
-): { reparto: CorridaDelReparto[]; sugeridas: string[] } {
+): {
+  reparto: CorridaDelReparto[];
+  sugeridas: string[];
+  /** Las trozas de cada corrida que se ofrece (`frena == null`), en el orden del pool (ADR-447). */
+  porCorrida: Record<string, string[]>;
+} {
   const r = repartirEnTanda(
     corridas,
     { code: "", especie, status: "abierto" },
@@ -281,7 +286,13 @@ export function repartoDelGrupo(
     };
   });
   const enUso = new Set(r.filas.filter((_, k) => reparto[k]!.frena == null).flatMap((f) => f.trozas.map((t) => t.id)));
-  return { reparto, sugeridas: pool.filter((t) => enUso.has(t.id)).map((t) => t.id) };
+  const orden = new Map(pool.map((t, i) => [t.id, i]));
+  const porCorrida: Record<string, string[]> = {};
+  r.filas.forEach((f, k) => {
+    if (reparto[k]!.frena != null) return;
+    porCorrida[f.corrida.id] = f.trozas.map((t) => t.id).sort((a, b) => (orden.get(a) ?? 0) - (orden.get(b) ?? 0));
+  });
+  return { reparto, sugeridas: pool.filter((t) => enUso.has(t.id)).map((t) => t.id), porCorrida };
 }
 
 /**

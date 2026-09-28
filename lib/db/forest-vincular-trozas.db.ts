@@ -2,26 +2,47 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
+import { logger } from "@/lib/logger";
+import { limaDateKey } from "@/lib/utils";
+import { esEsperaDeLockVencida } from "@/lib/errores/codigo-pg";
+import { esChoqueDeLocks } from "@/lib/forestal/ctp-api-errors";
 import { auditCtpEsperando, m3 } from "@/lib/forestal/ctp-audit";
+import { guiaRecibida } from "@/lib/forestal/consumo-trozas";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
 import { closedPeriodOf, type CtpCierrePeriodo } from "@/lib/forestal/ctp-cierre-types";
+import { diaDelLibro } from "@/lib/forestal/recepcion-antes-de-la-sierra";
 import { MAX_PARTES_POR_CORRIDA } from "@/lib/forestal/vincular-desde-mixto";
+import { pasaElTope } from "@/lib/forestal/vincular-produccion";
 import {
+  proponerTandaDeOrigen,
+  simularArreglos,
+  type PropuestaDeTandaOrigen,
+  type SimulacionDeArreglos,
+} from "@/lib/forestal/origen-en-tanda";
+import {
+  MAX_CORRIDAS_POR_TANDA,
   clavePermiso,
   corridaParaDiagnostico,
   diagnosticarCorrida,
   diagnosticarSinOrigen,
+  m3DeProducto,
+  permisoRef,
   problemaAlVincular,
   proponerTrozas,
   trozaParaDiagnostico,
+  type ContextoDelPatio,
   type CorridaLeida,
   type CorridaParaDiagnostico,
   type DiagnosticoCorrida,
   type DiagnosticoSinOrigen,
+  type GuiaDelLibro,
   type PermisoRef,
   type PropuestaDeTrozas,
+  type ResultadoCorridaEnTanda,
+  type ResultadoTandaVincular,
   type TrozaLeida,
   type TrozaParaDiagnostico,
+  type TrozaTomada,
   type VincularTrozasPedido,
 } from "@/lib/forestal/vincular-trozas";
 import { CTP_TX_OPTS, CtpInvariantError } from "./forest-ctp-consumo.db";
@@ -101,6 +122,7 @@ const SELECT_TROZA = {
       fechaRecepcion: true,
       entryDate: true,
       gtfNumber: true,
+      gtfDate: true,
       speciesCommonName: true,
       volumeM3: true,
       contratoId: true,
@@ -116,15 +138,14 @@ type FilaTroza = Prisma.WoodEntryTrozaGetPayload<{ select: typeof SELECT_TROZA }
 const NOMBRADAS = 5;
 const MAX_TROZAS_PATIO = 5000;
 const r4 = (n: number) => Math.round(n * 10_000) / 10_000 || 0;
+const nroDe = (lineNo: number | null) => (lineNo != null ? `N° ${lineNo}` : "sin número");
 
-/** El permiso de una punta: contrato vivo si lo hay; si no, el código escrito. */
-function permisoDe(contratoId: string | null, contrato: { codigo: string; deletedAt: Date | null } | null, originCode: string | null): PermisoRef {
-  const vivo = contrato && !contrato.deletedAt ? contrato : null;
-  return {
-    contratoId: vivo ? contratoId : null,
-    codigo: vivo?.codigo?.trim() || originCode?.trim() || null,
-  };
-}
+/** El permiso de una punta: contrato vivo si lo hay; si no, el código escrito (`permisoRef`, la misma regla que el vinculador de lotes). */
+const permisoDe = (
+  contratoId: string | null,
+  contrato: { codigo: string; deletedAt: Date | null } | null,
+  originCode: string | null,
+): PermisoRef => permisoRef(contratoId, contrato, originCode);
 
 /** La fila de Prisma, en la forma plana que entiende el módulo puro. */
 function leida(t: FilaTroza, consumido: Map<string, number>, corridaViva: Map<string, boolean>): TrozaLeida {
@@ -166,6 +187,7 @@ function leida(t: FilaTroza, consumido: Map<string, number>, corridaViva: Map<st
       consumidoM3: consumido.get(t.woodEntryId) ?? 0,
       contratoId: permiso.contratoId,
       permisoCodigo: permiso.codigo,
+      gtfDate: t.entry.gtfDate,
     },
   };
 }
@@ -222,6 +244,115 @@ async function trozasCandidatas(tenantId: string): Promise<TrozaParaDiagnostico[
   const vivas = await corridasVivasDeLotes(prisma, tenantId, filas);
   return filas.map((t) => trozaParaDiagnostico(leida(t, consumido, vivas)));
 }
+
+/**
+ * Las trozas que YA entraron a una corrida viva (ADR-447): no están en el
+ * patio, pero dicen adónde fue la madera que a otra corrida le falta. Sin esto
+ * la bandeja decía «No hay trozas de Cachimbo en el patio» con las 12 dentro de
+ * la N° 61.
+ */
+async function trozasTomadas(tenantId: string): Promise<TrozaTomada[]> {
+  const filas = await prisma.woodEntryTroza.findMany({
+    where: { tenantId, consumidaEn: { is: { status: "registrado", deletedAt: null } } },
+    select: {
+      id: true,
+      especieComun: true,
+      volumenM3: true,
+      consumidaEn: { select: { id: true, lineNo: true, entryDate: true, quantity: true, unit: true } },
+      entry: { select: { contratoId: true, originCode: true, contrato: { select: { codigo: true, deletedAt: true } } } },
+    },
+    orderBy: { createdAt: "desc" },
+    take: MAX_TROZAS_PATIO,
+  });
+  return filas.flatMap((t) => {
+    const c = t.consumidaEn;
+    if (!c) return [];
+    const producido = m3DeProducto(c.quantity == null ? null : Number(c.quantity), c.unit);
+    return [
+      {
+        id: t.id,
+        especie: t.especieComun,
+        m3: Number(t.volumenM3 ?? 0) || 0,
+        permiso: permisoDe(t.entry.contratoId, t.entry.contrato, t.entry.originCode),
+        corrida: {
+          id: c.id,
+          lineNo: c.lineNo,
+          fecha: diaDelLibro(c.entryDate) ?? "",
+          m3Producido: producido > 0 ? producido : null,
+        },
+      },
+    ];
+  });
+}
+
+/**
+ * Las filas de guía vivas del libro, tengan o no trozas: para decir «el permiso
+ * no tiene ninguna guía» o «la guía no tiene su lista de trozas» (ADR-447).
+ */
+async function guiasDelLibro(tenantId: string): Promise<GuiaDelLibro[]> {
+  const filas = await prisma.woodEntry.findMany({
+    where: { tenantId, deletedAt: null, status: { notIn: ["anulado", "rechazado"] } },
+    select: {
+      id: true,
+      gtfNumber: true,
+      speciesCommonName: true,
+      volumeM3: true,
+      status: true,
+      fechaRecepcion: true,
+      contratoId: true,
+      originCode: true,
+      contrato: { select: { codigo: true, deletedAt: true } },
+      _count: { select: { trozas: true } },
+    },
+    orderBy: { entryDate: "desc" },
+    take: MAX_TROZAS_PATIO,
+  });
+  return filas.map((w) => ({
+    id: w.id,
+    gtfNumber: w.gtfNumber,
+    especie: w.speciesCommonName,
+    m3: Number(w.volumeM3) || 0,
+    recibida: guiaRecibida({ estado: w.status, fechaRecepcionGuia: w.fechaRecepcion, fechaRecepcionTroza: null }),
+    trozas: w._count.trozas,
+    permiso: permisoDe(w.contratoId, w.contrato, w.originCode),
+  }));
+}
+
+/** Lo que el diagnóstico mira además del patio. En serie: son dos lecturas cortas. */
+async function contextoDelPatio(tenantId: string): Promise<ContextoDelPatio> {
+  const tomadas = await trozasTomadas(tenantId);
+  const guias = await guiasDelLibro(tenantId);
+  return { tomadas, guias, hoy: limaDateKey() };
+}
+
+/**
+ * Otra tanda de este negocio tiene tomado el bloqueo de la tanda. Si pasa en la
+ * PRIMERA corrida (`pg_try_advisory_xact_lock`), la ruta responde 409 y no se
+ * escribió nada. En las siguientes (esperan el bloqueo hasta 15 s) esa corrida
+ * vuelve como `error` `TANDA_EN_CURSO` y las anteriores quedan escritas.
+ */
+export class TandaEnCursoError extends Error {
+  constructor() {
+    super("Otra tanda de vinculación está en curso en este negocio: espera unos segundos y vuelve a intentar.");
+    this.name = "TandaEnCursoError";
+  }
+}
+
+/** Una corrida de la tanda: el lock de fila que no llega en 15 s es «reintenta», no una tx colgada. */
+const ESPERA_LOCKS_MS = 15_000;
+/**
+ * Una corrida de la tanda son ~30 consultas con sus locks; contra la base desde
+ * el panel local cada una va y vuelve por el pooler (~0,1 s). Los 20 s de
+ * `CTP_TX_OPTS` no alcanzan si además espera un lock (15 s como mucho).
+ */
+const TX_TANDA = { timeout: 45_000, maxWait: 15_000 } as const;
+/**
+ * Pasado esto no se EMPIEZA otra corrida: lo que falta vuelve `pendiente`. Con
+ * la última corrida en curso (≤ 45 s de tx + sus renglones) el pedido termina
+ * antes de los 300 s de `maxDuration` de la ruta en `vercel.json`.
+ */
+const PLAZO_TANDA_MS = 240_000;
+const claveTanda = (tenantId: string) => `ctp-vincular-tanda:${tenantId}`;
 
 /** Lo que se lee de una corrida para diagnosticarla. */
 const SELECT_CORRIDA = {
@@ -292,14 +423,22 @@ interface Escrito {
   loteNuevo: { id: string; code: string; trozas: number; m3: number; liberadas: number } | null;
 }
 
+export interface EntradasDelDiagnostico {
+  corridas: CorridaParaDiagnostico[];
+  trozas: TrozaParaDiagnostico[];
+  contexto: ContextoDelPatio;
+}
+
 export class ForestVincularTrozasDB {
   /**
-   * Todas las corridas sin origen del negocio, con su motivo y su propuesta.
-   * «Sin origen» es la regla de `corridaSinOrigen`: sin consumos ni reprocesos.
+   * Lo que el diagnóstico LEE, tal cual: las corridas sin origen, las trozas
+   * candidatas y el contexto (tomadas, guías, hoy). Separado para que las
+   * mediciones y el fixture de Blas (`__tests__/fixtures/blas-sin-origen-…`)
+   * usen exactamente lo mismo que el servidor.
    */
-  static async diagnostico(tenantId: string): Promise<DiagnosticoSinOrigen> {
+  static async entradasDelDiagnostico(tenantId: string): Promise<EntradasDelDiagnostico> {
     if (!tenantId) throw new Error("tenantId is required");
-    const corridas = await prisma.forestCtpEntry.findMany({
+    const filas = await prisma.forestCtpEntry.findMany({
       where: {
         tenantId,
         section: "produccion",
@@ -314,14 +453,38 @@ export class ForestVincularTrozasDB {
     });
     const lotes = await lotesPorCorrida(
       tenantId,
-      corridas.map((c) => c.id),
+      filas.map((c) => c.id),
     );
     const trozas = await trozasCandidatas(tenantId);
     const cierres = await ForestCtpCierreDB.list(tenantId);
-    return diagnosticarSinOrigen(
-      corridas.map((c) => conCierre(corridaParaDiagnostico(corridaLeida(c, lotes.get(c.id) ?? 0)), c.entryDate, cierres)),
+    const contexto = await contextoDelPatio(tenantId);
+    return {
+      corridas: filas.map((c) => conCierre(corridaParaDiagnostico(corridaLeida(c, lotes.get(c.id) ?? 0)), c.entryDate, cierres)),
       trozas,
-    );
+      contexto,
+    };
+  }
+
+  /**
+   * Todas las corridas sin origen del negocio, con su motivo, su propuesta y su
+   * arreglo. «Sin origen» es la regla de `corridaSinOrigen`: sin consumos ni
+   * reprocesos.
+   */
+  static async diagnostico(tenantId: string): Promise<DiagnosticoSinOrigen> {
+    const { corridas, trozas, contexto } = await ForestVincularTrozasDB.entradasDelDiagnostico(tenantId);
+    return diagnosticarSinOrigen(corridas, trozas, undefined, { contexto });
+  }
+
+  /**
+   * La tanda que se propone (ADR-447): por especie + permiso, ninguna troza en
+   * dos corridas, y qué pasaría con cada arreglo. Sólo lee.
+   */
+  static async tanda(tenantId: string): Promise<{ propuesta: PropuestaDeTandaOrigen; simulacion: SimulacionDeArreglos }> {
+    const { corridas, trozas, contexto } = await ForestVincularTrozasDB.entradasDelDiagnostico(tenantId);
+    return {
+      propuesta: proponerTandaDeOrigen(corridas, trozas, undefined, { contexto }),
+      simulacion: simularArreglos(corridas, trozas, contexto),
+    };
   }
 
   /** El diagnóstico de UNA corrida, o por qué no se diagnostica. */
@@ -345,11 +508,14 @@ export class ForestVincularTrozasDB {
     const lotes = await lotesPorCorrida(tenantId, [c.id]);
     const trozas = await trozasCandidatas(tenantId);
     const cierres = await ForestCtpCierreDB.list(tenantId);
+    const contexto = await contextoDelPatio(tenantId);
     return {
       ok: true,
       diagnostico: diagnosticarCorrida(
         conCierre(corridaParaDiagnostico(corridaLeida(c, lotes.get(c.id) ?? 0)), c.entryDate, cierres),
         trozas,
+        undefined,
+        { contexto },
       ),
     };
   }
@@ -374,9 +540,12 @@ export class ForestVincularTrozasDB {
       permiso = { contratoId: k.id, codigo: k.codigo };
     }
     const trozas = await trozasCandidatas(tenantId);
+    const contexto = await contextoDelPatio(tenantId);
     return {
       ok: true,
-      ...proponerTrozas({ especie: input.especie, permiso, fecha: input.fecha, m3Producido: input.m3 }, trozas),
+      ...proponerTrozas({ especie: input.especie, permiso, fecha: input.fecha, m3Producido: input.m3 }, trozas, undefined, {
+        contexto,
+      }),
     };
   }
 
@@ -415,10 +584,19 @@ export class ForestVincularTrozasDB {
       (tx) => ForestVincularTrozasDB.vincularEnTx(tx, tenantId, corridaId, pedidas, usuario, cierres),
       CTP_TX_OPTS,
     );
+    return { corridaId, ...(await ForestVincularTrozasDB.despuesDelCommit(tenantId, escrito, usuario)) };
+  }
 
-    /* Después del commit: la caché del lote nuevo, su renglón y, en orden, los
-       de la vinculación (`despuesDeVincular` invalida el libro, los lotes y el
-       patio, y espera sus renglones). */
+  /**
+   * Después del commit: la caché del lote nuevo, su renglón y, en orden, los de
+   * la vinculación (`despuesDeVincular` invalida el libro, los lotes y el patio,
+   * y espera sus renglones).
+   */
+  private static async despuesDelCommit(
+    tenantId: string,
+    escrito: Escrito,
+    usuario: string,
+  ): Promise<{ trozas: number; m3: number; lotesArmados: string[]; rendimientoPct: number | null; sobreElTope: boolean }> {
     const { loteNuevo } = escrito;
     if (loteNuevo) {
       try {
@@ -442,13 +620,301 @@ export class ForestVincularTrozasDB {
     }
     const r = await ForestVincularCorridaDB.despuesDeVincular(tenantId, escrito.vinculo, usuario);
     return {
-      corridaId,
       trozas: r.piezas,
       m3: r.volumenM3,
       lotesArmados: loteNuevo ? [loteNuevo.code] : [],
       rendimientoPct: r.rendimientoPct,
       sobreElTope: r.sobreElTope,
     };
+  }
+
+  /**
+   * Vincula VARIAS corridas, cada una con las trozas que la persona confirmó en
+   * la propuesta de la tanda (ADR-447 §4).
+   *
+   *  · UNA transacción por corrida, la más vieja primero: una rechazada no
+   *    deshace las anteriores, y cada una se decide bajo lock sobre lo que dejó
+   *    la anterior (una troza que ya tomó otra corrida la frena por T1).
+   *  · El bloqueo de la tanda vive en cada transacción (`xact`): se suelta
+   *    ENTRE corridas. La primera lo pide con `pg_try_advisory_xact_lock`: si
+   *    otra tanda lo tiene, `TandaEnCursoError` (409) y no se escribió nada.
+   *    Las siguientes lo ESPERAN hasta 15 s (`lock_timeout` LOCAL de la tx,
+   *    nunca de sesión en el pooler), así que dos tandas que empezaron casi
+   *    juntas se TURNAN corrida por corrida: el 409 sólo protege el arranque.
+   *    Los datos quedan bien igual: cada troza se decide bajo su FOR UPDATE (T1).
+   *  · Idempotente: la corrida que ya tiene su madera vuelve «ya_vinculada» (y
+   *    dice si son las mismas trozas: un reintento), sin escribir. Si son las
+   *    mismas y el renglón `ctp_corrida_vincular` no está (el corte cayó entre
+   *    el commit y la auditoría), se repone.
+   *  · Los cierres de período se leen antes de CADA corrida: si alguien cierra
+   *    el mes en medio de la tanda, las que siguen lo ven.
+   *  · Plazo: pasados 240 s no se empieza otra corrida; las que faltan vuelven
+   *    `pendiente` para el pedido siguiente.
+   *  · Cada corrida pasa por `vincularEnTx` → `vincularCorridaEnTx`: las reglas
+   *    (permiso, T1, T3, volumen, I1/I2, mes cerrado) viven una sola vez.
+   */
+  static async vincularTanda(
+    tenantId: string,
+    pedidos: readonly VincularTrozasPedido[],
+    usuario: string,
+    /** `plazoMs`: sólo para probar el corte; la ruta usa el de siempre (240 s). */
+    { plazoMs = PLAZO_TANDA_MS }: { plazoMs?: number } = {},
+  ): Promise<ResultadoTandaVincular> {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (!usuario?.trim()) throw new Error("usuario is required");
+    if (pedidos.length === 0 || pedidos.length > MAX_CORRIDAS_POR_TANDA) {
+      throw new CtpInvariantError(`Una tanda lleva de 1 a ${MAX_CORRIDAS_POR_TANDA} corridas.`, "VALIDACION");
+    }
+    const limpios = pedidos.map((p) => ({ corridaId: p.corridaId.trim(), trozaIds: p.trozaIds.map((id) => id.trim()) }));
+    const ids = limpios.map((p) => p.corridaId);
+    if (new Set(ids).size !== ids.length) {
+      throw new CtpInvariantError("Una corrida aparece dos veces en la tanda.", "VALIDACION");
+    }
+    const todas = limpios.flatMap((p) => p.trozaIds);
+    if (new Set(todas).size !== todas.length) {
+      throw new CtpInvariantError("Una troza aparece dos veces en la tanda: cada pieza entra a una sola corrida.", "VALIDACION");
+    }
+
+    /* Una corrida de otro negocio hace que la tanda entera sea un pedido
+       ajeno: 404 antes de escribir nada. */
+    const corridas = await prisma.forestCtpEntry.findMany({
+      where: { tenantId, id: { in: ids }, deletedAt: null },
+      select: { id: true, lineNo: true, entryDate: true },
+    });
+    const porId = new Map(corridas.map((c) => [c.id, c]));
+    const faltan = ids.filter((id) => !porId.has(id));
+    if (faltan.length > 0) {
+      throw new CtpInvariantError(
+        `${faltan.length === 1 ? "Una corrida de la tanda no existe" : `${faltan.length} corridas de la tanda no existen`} en este negocio.`,
+        "TENANT_MISMATCH",
+        { corridas: faltan },
+      );
+    }
+    const enOrden = [...limpios].sort((a, b) => {
+      const ca = porId.get(a.corridaId)!;
+      const cb = porId.get(b.corridaId)!;
+      return ca.entryDate.getTime() - cb.entryDate.getTime() || ca.lineNo - cb.lineNo;
+    });
+
+    const inicio = Date.now();
+    const resultados: ResultadoCorridaEnTanda[] = [];
+    for (const [i, p] of enOrden.entries()) {
+      const lineNo = porId.get(p.corridaId)?.lineNo ?? null;
+      const base = { corridaId: p.corridaId, lineNo };
+      if (i > 0 && Date.now() - inicio >= plazoMs) {
+        resultados.push({
+          ...base,
+          estado: "pendiente",
+          mensaje: `La corrida ${nroDe(lineNo)} no se alcanzó a vincular en este pedido: vuelve a mandarla.`,
+        });
+        continue;
+      }
+      try {
+        /* Los cierres, antes de CADA transacción (KV con el cliente global: adentro
+           pediría otra conexión): un mes cerrado en medio de la tanda frena a las
+           que siguen. */
+        const cierres = await ForestCtpCierreDB.list(tenantId);
+        const hecho = await prisma.$transaction(async (tx) => {
+          /* LOCAL: vale sólo en esta transacción. */
+          await tx.$queryRaw`SELECT set_config('lock_timeout', ${`${ESPERA_LOCKS_MS}ms`}, true)`;
+          if (i === 0) {
+            const [fila] = await tx.$queryRaw<{ ok: boolean }[]>`
+              SELECT pg_try_advisory_xact_lock(hashtext(${claveTanda(tenantId)})) AS ok
+            `;
+            if (!fila?.ok) throw new TandaEnCursoError();
+          } else {
+            try {
+              await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${claveTanda(tenantId)}))`;
+            } catch (e) {
+              if (esEsperaDeLockVencida(e)) throw new TandaEnCursoError();
+              throw e;
+            }
+          }
+          /* ¿Ya tiene su madera? La corrida se bloquea ANTES de mirar (el mismo
+             lock que toma `vincularEnTx` después: en la misma tx no espera). */
+          await tx.$queryRaw`
+            SELECT "id" FROM "ForestCtpEntry"
+            WHERE "id" = ${p.corridaId} AND "tenantId" = ${tenantId} AND "deletedAt" IS NULL
+            FOR UPDATE
+          `;
+          const yaTiene = await tx.forestCtpEntry.findFirst({
+            where: { id: p.corridaId, tenantId },
+            select: { _count: { select: { consumos: true, trozasConsumidas: true } } },
+          });
+          if (yaTiene && (yaTiene._count.consumos > 0 || yaTiene._count.trozasConsumidas > 0)) {
+            const suyas = await tx.woodEntryTroza.findMany({
+              where: { tenantId, consumidaEnId: p.corridaId },
+              select: { id: true },
+            });
+            const pedidas = new Set(p.trozaIds);
+            const mismas = suyas.length === pedidas.size && suyas.every((t) => pedidas.has(t.id));
+            /* Sólo si son LAS MISMAS trozas: otra madera vino por otro camino,
+               con su propio renglón. Adentro se arma; se escribe después del
+               commit (con la tx tomada pediría otra conexión del pool). */
+            const renglon = mismas ? await ForestVincularTrozasDB.renglonFaltante(tx, tenantId, p.corridaId) : null;
+            return { ya: true as const, trozas: suyas.length, mismas, renglon };
+          }
+          return {
+            ya: false as const,
+            escrito: await ForestVincularTrozasDB.vincularEnTx(tx, tenantId, p.corridaId, p.trozaIds, usuario, cierres),
+          };
+        }, TX_TANDA);
+
+        if (hecho.ya) {
+          /* Reponer el renglón no cambia el estado: la corrida ya está vinculada. */
+          const repuesto = hecho.renglon
+            ? await ForestVincularTrozasDB.reponerRenglon(tenantId, p.corridaId, hecho.renglon, usuario).catch((err: unknown) => {
+                logger.error("[forest-vincular-trozas.vincularTanda] no se pudo reponer el renglón", {
+                  error: String(err),
+                  tenantId,
+                  corridaId: p.corridaId,
+                });
+                return false;
+              })
+            : false;
+          resultados.push({
+            ...base,
+            estado: "ya_vinculada",
+            trozas: hecho.trozas,
+            mismas: hecho.mismas,
+            mensaje: hecho.mismas
+              ? `La corrida ${nroDe(lineNo)} ya estaba vinculada con estas trozas.` +
+                (repuesto ? " Faltaba su renglón en el historial y se repuso." : "")
+              : `La corrida ${nroDe(lineNo)} ya tenía su madera (${hecho.trozas} troza${hecho.trozas === 1 ? "" : "s"}): no se le sumó nada.`,
+          });
+          continue;
+        }
+        /* Ya está escrita: si la narración (caché, renglones) fallara, la
+           corrida sigue siendo «vinculada» — decir «error» invitaría a
+           reintentar lo que ya se hizo. */
+        const r = await ForestVincularTrozasDB.despuesDelCommit(tenantId, hecho.escrito, usuario).catch((err: unknown) => {
+          logger.error("[forest-vincular-trozas.vincularTanda] vinculada, pero falló lo de después del commit", {
+            error: String(err),
+            tenantId,
+            corridaId: p.corridaId,
+          });
+          const v = hecho.escrito.vinculo;
+          return {
+            trozas: v.porParte.reduce((a, x) => a + x.piezas, 0),
+            m3: v.volumenTotal,
+            lotesArmados: hecho.escrito.loteNuevo ? [hecho.escrito.loteNuevo.code] : [],
+            rendimientoPct: v.rendimientoPct,
+            sobreElTope: pasaElTope(v.rendimientoPct),
+          };
+        });
+        resultados.push({ ...base, estado: "vinculada", ...r });
+      } catch (e) {
+        if (e instanceof TandaEnCursoError) {
+          /* La primera: nada escrito, la ruta dice 409. Después: ésta no se
+             intentó y las demás siguen (la otra tanda terminará lo suyo). */
+          if (i === 0) throw e;
+          resultados.push({ ...base, estado: "error", codigo: "TANDA_EN_CURSO", mensaje: e.message });
+          continue;
+        }
+        if (e instanceof CtpInvariantError) {
+          resultados.push({ ...base, estado: "bloqueada", codigo: e.code, mensaje: e.message });
+          continue;
+        }
+        if (esEsperaDeLockVencida(e) || esChoqueDeLocks(e)) {
+          resultados.push({
+            ...base,
+            estado: "error",
+            codigo: "LIBRO_OCUPADO",
+            mensaje: "Otra operación del libro tenía tomadas estas trozas: no se vinculó; vuelve a intentar en unos segundos.",
+          });
+          continue;
+        }
+        logger.error("[forest-vincular-trozas.vincularTanda] corrida falló", { error: String(e), tenantId, corridaId: p.corridaId });
+        resultados.push({
+          ...base,
+          estado: "error",
+          codigo: "INTERNO",
+          mensaje: "No se pudo vincular esta corrida por un error del servidor; las demás siguen.",
+        });
+      }
+    }
+
+    const cuenta = (e: ResultadoCorridaEnTanda["estado"]) => resultados.filter((r) => r.estado === e).length;
+    const vinculadas = resultados.filter((r): r is Extract<ResultadoCorridaEnTanda, { estado: "vinculada" }> => r.estado === "vinculada");
+    return {
+      corridas: resultados,
+      resumen: {
+        vinculadas: vinculadas.length,
+        yaVinculadas: cuenta("ya_vinculada"),
+        bloqueadas: cuenta("bloqueada"),
+        errores: cuenta("error"),
+        pendientes: cuenta("pendiente"),
+        trozas: vinculadas.reduce((a, r) => a + r.trozas, 0),
+        m3: r4(vinculadas.reduce((a, r) => a + r.m3, 0)),
+      },
+    };
+  }
+
+  /**
+   * La corrida ya está vinculada con sus trozas pero su renglón
+   * `ctp_corrida_vincular` no está (el corte cayó entre el commit y la
+   * auditoría): el detalle, armado desde lo que quedó en el libro, para
+   * reponerlo. `null` = el renglón está (o la corrida no).
+   *
+   * Lee por `tx`, dentro de la transacción de la tanda; escribe `reponerRenglon`
+   * después del commit.
+   */
+  private static async renglonFaltante(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+    corridaId: string,
+  ): Promise<string | null> {
+    const hay = await tx.activityLog.count({ where: { tenantId, action: "ctp_corrida_vincular", entityId: corridaId } });
+    if (hay > 0) return null;
+    const c = await tx.forestCtpEntry.findFirst({
+      where: { id: corridaId, tenantId },
+      select: { lineNo: true, speciesCommon: true, volumeInputM3: true, rendimientoPct: true },
+    });
+    if (!c) return null;
+    const piezas = await tx.woodEntryTroza.findMany({
+      where: { tenantId, consumidaEnId: corridaId },
+      select: { volumenM3: true, loteAserrioId: true },
+    });
+    const lotes = await tx.forestLoteAserrio.findMany({
+      where: { tenantId, id: { in: [...new Set(piezas.map((t) => t.loteAserrioId).filter((id): id is string => Boolean(id)))] } },
+      select: { id: true, code: true },
+    });
+    const codigo = new Map(lotes.map((l) => [l.id, l.code]));
+    const porLote = new Map<string, { piezas: number; m3: number }>();
+    for (const t of piezas) {
+      const k = (t.loteAserrioId && codigo.get(t.loteAserrioId)) || "sin lote";
+      const x = porLote.get(k) ?? { piezas: 0, m3: 0 };
+      x.piezas += 1;
+      x.m3 = r4(x.m3 + (Number(t.volumenM3 ?? 0) || 0));
+      porLote.set(k, x);
+    }
+    const rendimiento = c.rendimientoPct == null ? null : Number(c.rendimientoPct);
+    return (
+      `Vinculó la corrida N° ${c.lineNo} (${c.speciesCommon ?? "sin especie"}) con ${piezas.length} troza${piezas.length === 1 ? "" : "s"}: ` +
+      [...porLote.entries()].map(([code, x]) => `${code} ${x.piezas} pz · ${m3(x.m3)}`).join(" + ") +
+      ` = ${m3(c.volumeInputM3 == null ? null : Number(c.volumeInputM3))}` +
+      (rendimiento != null ? ` · rendimiento ${rendimiento} %` : "") +
+      " · renglón repuesto al reintentar: la vinculación había quedado escrita sin él"
+    );
+  }
+
+  /**
+   * Escribe el renglón repuesto, después del commit y esperándolo. Se vuelve a
+   * contar justo antes: otro reintento que pasó por acá en el medio ya lo
+   * escribió (la ventana es la de un renglón, no la de la tanda).
+   */
+  private static async reponerRenglon(tenantId: string, corridaId: string, detail: string, usuario: string): Promise<boolean> {
+    const hay = await prisma.activityLog.count({ where: { tenantId, action: "ctp_corrida_vincular", entityId: corridaId } });
+    if (hay > 0) return false;
+    await auditCtpEsperando({
+      tenantId,
+      action: "ctp_corrida_vincular",
+      entity: "ForestCtpEntry",
+      entityId: corridaId,
+      detail,
+      user: usuario,
+    });
+    return true;
   }
 
   /** El núcleo de `vincularTrozas`, dentro de su transacción. */

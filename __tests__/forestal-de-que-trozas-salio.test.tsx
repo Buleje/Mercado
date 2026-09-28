@@ -222,6 +222,7 @@ describe("la bandeja y los mensajes", () => {
     detalle: "",
     propuesta: gtfs.map((g, i) => ({ trozaId: `${id}-${i}`, codigo: "X", m3: 0.5, gtfNumber: g, especie: "Tornillo" })),
     m3Propuesto: 0,
+    arreglo: { tipo: "ninguno" },
   });
 
   it("una fila por motivo, en el orden en que se resuelve, con guías distintas", () => {
@@ -237,6 +238,10 @@ describe("la bandeja y los mensajes", () => {
         llegada_posterior: 2,
         fila_de_otra_especie: 0,
         guia_sin_recibir: 0,
+        tomada_por_otra_corrida: 0,
+        permiso_distinto: 0,
+        especie_parecida: 0,
+        guia_sin_trozas: 0,
         apertura: 0,
         sin_trozas_de_la_especie: 1,
       },

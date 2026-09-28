@@ -2,34 +2,53 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import type { AdminRole } from "@/lib/session";
-import { applyRateLimit } from "@/lib/rate-limit";
+import { applyRateLimit, applyRateLimitWithTenant, RateLimitPresets } from "@/lib/rate-limit";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { logger } from "@/lib/logger";
 import { CtpInvariantError } from "@/lib/db/forest-ctp-consumo.db";
-import { ForestVincularTrozasDB } from "@/lib/db/forest-vincular-trozas.db";
+import { ForestVincularTrozasDB, TandaEnCursoError } from "@/lib/db/forest-vincular-trozas.db";
 import { esChoqueDeLocks, MENSAJE_CHOQUE_DE_LOCKS } from "@/lib/forestal/ctp-api-errors";
-import { vincularTrozasSchema, type ResultadoVincularTrozas } from "@/lib/forestal/vincular-trozas";
+import {
+  vincularTandaSchema,
+  vincularTrozasSchema,
+  type ResultadoTandaVincular,
+  type ResultadoVincularTrozas,
+} from "@/lib/forestal/vincular-trozas";
 
 /**
  * «Saber de qué trozas salió» (Libro CTP): por qué cada corrida no tiene su
  * madera y, cuando se puede, con qué trozas se vincula.
  *
- * GET  ?diagnostico=1                          → `DiagnosticoSinOrigen`
+ * GET  ?diagnostico=1                          → `DiagnosticoSinOrigen` (cada corrida con su `arreglo`, ADR-447)
  * GET  ?corridaId=<id>                         → `DiagnosticoCorrida` de una
  * GET  ?propuesta=1&especie=&fecha=&m3=[&contratoId=|&permiso=]
- *                                              → `{ propuesta, motivo, detalle, m3Propuesto }`
+ *                                              → `{ propuesta, motivo, detalle, m3Propuesto, arreglo }`
  *      (la corrida todavía no existe: el modal de declarar)
+ * GET  ?tanda=1                                → `{ propuesta: PropuestaDeTandaOrigen, simulacion: SimulacionDeArreglos }`
+ *      (ADR-447: qué se vincula junto, ninguna troza en dos corridas; sólo lee)
  * POST `{ corridaId, trozaIds }`               → `ResultadoVincularTrozas`
  *      201 vinculada · 400 pedido mal armado · 404 no es de este negocio ·
  *      409 el libro no lo admite (permiso, T1, T3, volumen, I2, mes cerrado)
  *      o chocó con otra persona. Siempre con `message` en una frase.
+ * POST `{ tanda: [{ corridaId, trozaIds }, …] }` (1 a 15) → `{ ok: true, tanda: ResultadoTandaVincular }`
+ *      200 con el estado de CADA corrida (`vinculada | ya_vinculada | bloqueada | error | pendiente`):
+ *      una tx por corrida, una rechazada no deshace las demás; pasados 240 s
+ *      las que faltan vuelven `pendiente` (se mandan en otro pedido) · 400
+ *      pedido mal armado (más de 15, troza repetida, corrida repetida) · 404
+ *      una corrida no es de este negocio (no se escribe nada) · 409
+ *      `TANDA_EN_CURSO` otra tanda tenía el bloqueo al ARRANCAR (no se escribe
+ *      nada; si pasa en una corrida posterior, ésa vuelve `error` y las
+ *      anteriores quedan escritas) · 429 límite propio del negocio (MODERATE).
+ *      `maxDuration` 300 s en `vercel.json`.
  *
- * Roles: leer, los mismos que Lotes de aserrío (`admin`/`almacenero`/`owner`).
- * Vincular, sólo `admin`/`owner` — la decisión 2 de Brandon para ADR-441:
- * cambia la materia prima de un asiento que se presenta ante SERFOR. El chequeo
- * del rol va explícito además de `requireAdmin`, porque el «management tier»
- * deja pasar a `manager` aunque la lista diga admin/owner.
+ * Roles: leer, los de Lotes de aserrío (`admin`/`almacenero`/`owner`) y también
+ * `manager`, que entra por el «management tier» de `requireAdmin` — leer el
+ * diagnóstico no cambia nada, así que se le deja a propósito. Vincular, sólo
+ * `admin`/`owner` — la decisión 2 de Brandon para ADR-441: cambia la materia
+ * prima de un asiento que se presenta ante SERFOR. Ahí el chequeo del rol va
+ * explícito además de `requireAdmin`, porque el «management tier» dejaría
+ * pasar a `manager` aunque la lista diga admin/owner.
  */
 
 const LEER: AdminRole[] = ["admin", "almacenero", "owner"];
@@ -39,6 +58,7 @@ const idCorto = z.string().trim().min(1).max(40);
 
 const querySchema = z.union([
   z.object({ diagnostico: z.literal("1") }),
+  z.object({ tanda: z.literal("1") }),
   z.object({ corridaId: idCorto }),
   z.object({
     propuesta: z.literal("1"),
@@ -86,7 +106,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(
         {
           error: "invalid_query",
-          message: "Pide ?diagnostico=1, ?corridaId=<id> o ?propuesta=1 con especie, fecha y m3.",
+          message: "Pide ?diagnostico=1, ?tanda=1, ?corridaId=<id> o ?propuesta=1 con especie, fecha y m3.",
           issues: parsed.error.issues.map((i) => ({ path: i.path.join("."), message: i.message })),
         },
         { status: 400 },
@@ -95,6 +115,9 @@ export async function GET(req: NextRequest) {
     const q = parsed.data;
     if ("diagnostico" in q) {
       return NextResponse.json(await ForestVincularTrozasDB.diagnostico(tenantId));
+    }
+    if ("tanda" in q) {
+      return NextResponse.json(await ForestVincularTrozasDB.tanda(tenantId));
     }
     if ("corridaId" in q) {
       const r = await ForestVincularTrozasDB.diagnosticoDeCorrida(tenantId, q.corridaId);
@@ -141,6 +164,11 @@ export async function POST(req: NextRequest) {
   } catch {
     return noOk("invalid_json", "El pedido no es JSON.", 400);
   }
+  /* La tanda (ADR-447) es aditiva: sin la clave `tanda`, el pedido de una
+     corrida sigue exactamente como antes. */
+  if (body && typeof body === "object" && "tanda" in body) {
+    return postTanda(req, body, tenantId, g.auth.username ?? "unknown");
+  }
   const parsed = vincularTrozasSchema.safeParse(body);
   if (!parsed.success) {
     const i = parsed.error.issues[0];
@@ -171,5 +199,33 @@ export async function POST(req: NextRequest) {
     }
     logger.error("[forestal.ctp.vincular-trozas.POST] failed", { error: String(e), tenantId });
     return noOk("internal_error", "No se pudo vincular. Vuelve a intentar.", 500);
+  }
+}
+
+/** `POST { tanda }`: una transacción por corrida; el estado de cada una en la respuesta. */
+async function postTanda(req: NextRequest, body: unknown, tenantId: string, usuario: string): Promise<Response> {
+  /* Una tanda son hasta 15 transacciones con locks: límite propio por IP y por
+     negocio, aparte del GENEROUS que comparte con las lecturas (seguridad S1).
+     MODERATE como «Guías sin registrar» (ADR-446); la clave sin «:» porque
+     `applyRateLimit` toma lo de antes del primero como tenant. */
+  const rl = applyRateLimitWithTenant(req, "MODERATE", tenantId, "ctp-vincular-tanda", RateLimitPresets.MODERATE);
+  if (rl) return rl;
+  const parsed = vincularTandaSchema.safeParse(body);
+  if (!parsed.success) {
+    const i = parsed.error.issues[0];
+    const vacia = i?.path.length === 1 && i.path[0] === "tanda" && i.code === "too_small";
+    return noOk("validation_error", vacia ? "Elige al menos una corrida." : (i?.message ?? "Datos inválidos."), 400);
+  }
+  try {
+    const tanda = await ForestVincularTrozasDB.vincularTanda(tenantId, parsed.data.tanda, usuario);
+    return NextResponse.json({ ok: true, tanda } satisfies { ok: true; tanda: ResultadoTandaVincular });
+  } catch (e) {
+    if (e instanceof TandaEnCursoError) return noOk("TANDA_EN_CURSO", e.message, 409);
+    if (e instanceof CtpInvariantError) {
+      const status = e.code === "VALIDACION" ? 400 : e.code === "TENANT_MISMATCH" ? 404 : 409;
+      return noOk(e.code, e.message, status);
+    }
+    logger.error("[forestal.ctp.vincular-trozas.POST tanda] failed", { error: String(e), tenantId });
+    return noOk("internal_error", "No se pudo vincular la tanda. Vuelve a intentar.", 500);
   }
 }

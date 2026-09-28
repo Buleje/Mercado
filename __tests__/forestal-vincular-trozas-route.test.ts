@@ -14,11 +14,20 @@ const H = vi.hoisted(() => ({
   diagnosticoDeCorrida: vi.fn(),
   propuesta: vi.fn(),
   vincular: vi.fn(),
+  tanda: vi.fn(),
+  vincularTanda: vi.fn(),
+  rlTenant: vi.fn((): Response | null => null),
+  /* La clase real del error: la ruta la distingue con `instanceof`. */
+  TandaEnCursoError: class TandaEnCursoError extends Error {},
 }));
 
 vi.mock("@/lib/require-admin", () => ({ requireAdmin: H.requireAdmin }));
 vi.mock("@/lib/auth/csrf", () => ({ assertCsrf: H.csrf }));
-vi.mock("@/lib/rate-limit", () => ({ applyRateLimit: vi.fn(() => null) }));
+vi.mock("@/lib/rate-limit", () => ({
+  applyRateLimit: vi.fn(() => null),
+  applyRateLimitWithTenant: H.rlTenant,
+  RateLimitPresets: { MODERATE: { maxReqs: 20, windowSec: 300 } },
+}));
 vi.mock("@/lib/specializations", () => ({ isSpecializationEnabled: H.spec }));
 vi.mock("@/lib/logger", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() } }));
 vi.mock("@/lib/prisma", () => ({ prisma: {} }));
@@ -28,7 +37,10 @@ vi.mock("@/lib/db/forest-vincular-trozas.db", () => ({
     diagnosticoDeCorrida: H.diagnosticoDeCorrida,
     propuesta: H.propuesta,
     vincularTrozas: H.vincular,
+    tanda: H.tanda,
+    vincularTanda: H.vincularTanda,
   },
+  TandaEnCursoError: H.TandaEnCursoError,
 }));
 
 import { GET, POST } from "@/app/api/admin/forestal/ctp/vincular-trozas/route";
@@ -63,6 +75,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   H.csrf.mockImplementation(() => null);
   H.spec.mockImplementation(async () => true);
+  H.rlTenant.mockImplementation(() => null);
   H.vincular.mockResolvedValue({
     corridaId: "c54",
     trozas: 2,
@@ -208,5 +221,83 @@ describe("POST", () => {
     const res = await post(PEDIDO);
     expect(res.status).toBe(500);
     expect(JSON.stringify(await res.json())).not.toContain("relation");
+  });
+});
+
+describe("la tanda (ADR-447)", () => {
+  const TANDA = { tanda: [PEDIDO, { corridaId: "c55", trozaIds: ["t3"] }] };
+  const RESULTADO = {
+    corridas: [
+      { corridaId: "c54", lineNo: 54, estado: "vinculada", trozas: 2, m3: 1.2, lotesArmados: ["LA-1"], rendimientoPct: 50, sobreElTope: false },
+      { corridaId: "c55", lineNo: 55, estado: "bloqueada", codigo: "T3_ASERRADA_ANTES_DE_LLEGAR", mensaje: "llegó después" },
+    ],
+    resumen: { vinculadas: 1, yaVinculadas: 0, bloqueadas: 1, errores: 0, pendientes: 0, trozas: 2, m3: 1.2 },
+  };
+
+  it("GET ?tanda=1 lee con los roles de leer y el tenant de la sesión", async () => {
+    sesion("almacenero");
+    H.tanda.mockResolvedValue({ propuesta: { grupos: [], listas: 0, vinculables: 0, m3Producido: 0, m3Trozas: 0, pedido: [] }, simulacion: {} });
+    const res = await get("tanda=1");
+    expect(res.status).toBe(200);
+    expect(H.tanda).toHaveBeenCalledWith("tenant-qa");
+  });
+
+  it("POST { tanda } → 200 con el estado de cada corrida; lo de UNA corrida sigue igual", async () => {
+    H.vincularTanda.mockResolvedValue(RESULTADO);
+    const res = await post(TANDA);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true, tanda: RESULTADO });
+    expect(H.vincularTanda).toHaveBeenCalledWith("tenant-qa", TANDA.tanda, "qa-admin");
+    expect(H.vincular).not.toHaveBeenCalled();
+  });
+
+  it("400: tanda vacía, más de 15, una troza repetida (en dos corridas o en la misma) o una corrida dos veces — sin tocar la base", async () => {
+    const vacia = await post({ tanda: [] });
+    expect(vacia.status).toBe(400);
+    expect(await vacia.json()).toMatchObject({ message: "Elige al menos una corrida." });
+    /* El tope es 15 por pedido (una tx por corrida, dentro de los 300 s de la ruta). */
+    const quince = Array.from({ length: 15 }, (_, i) => ({ corridaId: `c${i}`, trozaIds: [`t${i}`] }));
+    H.vincularTanda.mockResolvedValueOnce(RESULTADO);
+    expect((await post({ tanda: quince })).status).toBe(200);
+    const dieciseis = await post({ tanda: [...quince, { corridaId: "c15", trozaIds: ["t15"] }] });
+    expect(dieciseis.status).toBe(400);
+    expect(await dieciseis.json()).toMatchObject({ message: expect.stringMatching(/hasta 15 corridas/) });
+    H.vincularTanda.mockClear();
+    const enLaMisma = await post({ tanda: [{ corridaId: "c54", trozaIds: ["t1", "t1"] }] });
+    expect(enLaMisma.status).toBe(400);
+    expect(await enLaMisma.json()).toMatchObject({ message: expect.stringMatching(/dos veces en la misma corrida/) });
+    const dosVeces = await post({ tanda: [PEDIDO, { corridaId: "c55", trozaIds: ["t2"] }] });
+    expect(dosVeces.status).toBe(400);
+    expect(await dosVeces.json()).toMatchObject({ message: expect.stringMatching(/dos corridas/) });
+    expect((await post({ tanda: [PEDIDO, PEDIDO] })).status).toBe(400);
+    expect(H.vincularTanda).not.toHaveBeenCalled();
+  });
+
+  it("límite propio por negocio para el POST de tanda (MODERATE): 429 sin tocar la base; con el tenant de la sesión", async () => {
+    H.rlTenant.mockImplementationOnce(() => new Response(JSON.stringify({ error: "Too many requests" }), { status: 429 }));
+    expect((await post(TANDA)).status).toBe(429);
+    expect(H.vincularTanda).not.toHaveBeenCalled();
+    expect(H.rlTenant.mock.calls[0]!.slice(1, 4)).toEqual(["MODERATE", "tenant-qa", "ctp-vincular-tanda"]);
+    /* El pedido de UNA corrida no pasa por ese límite. */
+    H.rlTenant.mockClear();
+    await post(PEDIDO);
+    expect(H.rlTenant).not.toHaveBeenCalled();
+  });
+
+  it("vincular en tanda: almacenero y manager se quedan en 403", async () => {
+    sesion("almacenero");
+    expect((await post(TANDA)).status).toBe(403);
+    sesion("manager");
+    expect((await post(TANDA)).status).toBe(403);
+    expect(H.vincularTanda).not.toHaveBeenCalled();
+  });
+
+  it("409 si otra tanda está escribiendo; 404 si una corrida es de otro negocio", async () => {
+    H.vincularTanda.mockRejectedValueOnce(new H.TandaEnCursoError("Otra tanda de vinculación está en curso"));
+    const ocupada = await post(TANDA);
+    expect(ocupada.status).toBe(409);
+    expect(await ocupada.json()).toMatchObject({ ok: false, error: "TANDA_EN_CURSO" });
+    H.vincularTanda.mockRejectedValueOnce(new CtpInvariantError("Una corrida de la tanda no existe en este negocio.", "TENANT_MISMATCH"));
+    expect((await post(TANDA)).status).toBe(404);
   });
 });

@@ -15,6 +15,11 @@
  * la corrida se vincula con dos partes. Las que no entraron se destildan
  * (`excluidas`) y quedan como saldo en su lote.
  *
+ * El permiso (ADR-447): una corrida que DECLARA permiso sólo recibe madera de
+ * él (lote y guía de la troza); el servidor rechaza la otra con
+ * `PERMISO_DISTINTO`. Una corrida sin permiso sigue tomando la de los dos
+ * permisos, que es lo que decidió Brandon para el mixto.
+ *
  * El modo `justo56` es la alternativa manual: sólo las trozas que hacen falta
  * para llegar al 56 % (el techo de la plaza, ADR-358), con el mismo reparto que
  * la tanda de siempre (`repartirEnTanda`).
@@ -42,6 +47,7 @@ import {
 import { RENDIMIENTO_META } from "./loctp-catalogos";
 import { claveEspecie } from "./loth-constants";
 import { codigoDeTroza, ordenarTrozas, trozaAVincular } from "./vincular-desde-permiso";
+import { clavePermiso, mismoPermiso } from "./vincular-trozas";
 import { repartirEnTanda, type CorridaEnTanda } from "./vincular-en-tanda";
 import {
   pasaElTope,
@@ -140,6 +146,15 @@ export interface CorridaDelMixto {
   largoMaxPiezaM?: number | null;
   /** Ya tiene materia prima (consumos, volumen de entrada o lote): ADR-364 la cierra. */
   tieneMateriaPrima?: boolean;
+  /**
+   * El permiso que declara la corrida (código). Con permiso, sólo se le ofrece
+   * madera de SU permiso —el lote y la guía de cada troza—, porque el servidor
+   * (`vincularCorridaEnTx`, ADR-447) rechaza la otra con `PERMISO_DISTINTO`.
+   * Sin permiso (`null`/ausente), toda la de su especie, de los permisos que
+   * sean: la Mashonaste de dos permisos de ADR-441 se vincula así A PROPÓSITO
+   * (decisión de Brandon; el servidor lo admite porque no hay qué comparar).
+   */
+  permiso?: string | null;
 }
 
 /** Un lote hijo del mixto: una especie y un permiso, con sus trozas. */
@@ -404,16 +419,48 @@ export function planDelMixto(
     }
   }
 
-  /* 3 · El reparto, especie por especie, sobre la madera en el orden de la sierra. */
+  /* 3 · El reparto, especie por especie, sobre la madera en el orden de la sierra.
+     Dentro de la especie, por permiso (ADR-447): primero las corridas CON
+     permiso, cada una sólo con la madera de su permiso (lote Y guía de la
+     troza: lo que mira el servidor); después las sin permiso, con lo que quede
+     de cualquier permiso (el caso de ADR-441, a propósito). */
   const asignadas = new Map<string, TrozaAVincular[]>();
+  /** El pool de CADA corrida (el de su grupo): con él se dice por qué no le tocó madera. */
   const poolDe = new Map<string, TrozaAVincular[]>();
+  /** Corridas con permiso cuya especie sólo tiene madera de OTRO permiso en el mixto: los permisos de esa madera. */
+  const otroPermiso = new Map<string, string[]>();
   for (const [clave, cs] of corridasPorEspecie) {
     const candidatas = porEspecie.get(clave) ?? [];
-    const pool = ordenarTrozas(candidatas.map((c) => c.troza)).map((t) => trozaAVincular(t, fechaIngresoDeTroza(t)));
-    poolDe.set(clave, pool);
-    if (pool.length === 0) continue;
     const especie = cs[0]!.especie?.trim() || clave;
-    for (const [id, ts] of repartir(cs.map(enTanda), especie, pool, modo, meta)) asignadas.set(id, ts);
+    const porPermiso = new Map<string, CorridaDelMixto[]>();
+    for (const c of cs) {
+      const k = clavePermiso({ contratoId: null, codigo: c.permiso ?? null }) ?? "";
+      porPermiso.set(k, [...(porPermiso.get(k) ?? []), c]);
+    }
+    const grupos = [...porPermiso.entries()].sort(([a], [b]) => (a ? 0 : 1) - (b ? 0 : 1) || a.localeCompare(b));
+    const tomadas = new Set<string>();
+    for (const [k, gcs] of grupos) {
+      const ref = { contratoId: null, codigo: gcs[0]!.permiso ?? null };
+      const libres = candidatas.filter((x) => !tomadas.has(x.troza.id));
+      const suyas = k
+        ? libres.filter(
+            (x) =>
+              mismoPermiso(ref, { contratoId: null, codigo: x.lote.permiso }) &&
+              mismoPermiso(ref, { contratoId: null, codigo: x.troza.permiso ?? null }),
+          )
+        : libres;
+      const pool = ordenarTrozas(suyas.map((x) => x.troza)).map((t) => trozaAVincular(t, fechaIngresoDeTroza(t)));
+      for (const c of gcs) poolDe.set(c.id, pool);
+      if (k && pool.length === 0 && libres.length > 0) {
+        const permisos = [...new Set(libres.map((x) => x.lote.permiso ?? x.troza.permiso ?? "").filter(Boolean))];
+        for (const c of gcs) otroPermiso.set(c.id, permisos);
+      }
+      if (pool.length === 0) continue;
+      for (const [id, ts] of repartir(gcs.map(enTanda), especie, pool, modo, meta)) {
+        asignadas.set(id, ts);
+        for (const t of ts) tomadas.add(t.id);
+      }
+    }
   }
 
   /* 4 · I2 por guía sobre TODO lo propuesto: dos corridas pueden tirar de la misma guía. */
@@ -447,7 +494,7 @@ export function planDelMixto(
     }
     const clave = claveEspecie(c.especie);
     const mias = asignadas.get(c.id) ?? [];
-    const pool = poolDe.get(clave) ?? [];
+    const pool = poolDe.get(c.id) ?? [];
     const tanda = enTanda(c);
 
     /* Partes por lote, en el orden de los códigos: es como se leen en la pantalla. */
@@ -493,8 +540,12 @@ export function planDelMixto(
           ? "regla"
           : null;
     const especie = c.especie?.trim() || clave;
+    const ajenos = otroPermiso.get(c.id);
     const mensaje =
-      frena === "sin-trozas"
+      frena === "sin-trozas" && ajenos
+        ? `Las trozas de ${especie} del mixto son de otro permiso${ajenos.length > 0 ? ` (${ajenos.join(", ")})` : ""} ` +
+          `y la corrida es del ${c.permiso}: corrige el permiso de la corrida o vincúlala con madera de su permiso.`
+        : frena === "sin-trozas"
         ? `No hay trozas de ${especie} libres en el mixto ni en sus lotes.`
         : frena === "fecha"
           ? `Todas las trozas de ${especie} entraron al patio después del ${tanda.fecha}: no pudieron estar en esa sierra.`

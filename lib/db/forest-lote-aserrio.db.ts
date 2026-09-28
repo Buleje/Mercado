@@ -34,7 +34,7 @@ import {
 import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
 import { closedPeriodOf } from "@/lib/forestal/ctp-cierre-types";
 import { formatDateNumeric, formatDateTime } from "@/lib/format";
-import { mismoPermiso } from "@/lib/forestal/vincular-trozas";
+import { mismoPermiso, permisoRef } from "@/lib/forestal/vincular-trozas";
 
 /** El cliente de siempre o el de una transacción abierta (`crearEnTx`). */
 type Db = typeof prisma | Prisma.TransactionClient;
@@ -1822,6 +1822,11 @@ export class ForestLoteAserrioDB {
                     fechaRecepcion: true,
                     gtfNumber: true,
                     entryDate: true,
+                    /* El permiso de la GUÍA (ADR-447): un lote «de todos» trae
+                       piezas de cualquier título; la verdad vive en el ingreso. */
+                    contratoId: true,
+                    originCode: true,
+                    contrato: { select: { codigo: true, deletedAt: true } },
                   },
                 },
               },
@@ -1872,6 +1877,27 @@ export class ForestLoteAserrioDB {
           throw new CtpInvariantError(
             `Ninguna de las piezas elegidas está disponible en el lote ${lote.code}.`,
             "LOTE_NO_EDITABLE",
+          );
+        }
+
+        /* El permiso de la guía de CADA pieza (ADR-447, el mismo chequeo que
+           `vincularCorridaEnTx`): el del lote no alcanza, porque un lote «de
+           todos los permisos» (ADR-393) deja pasar piezas de otro título. */
+        const permisoCorrida = { contratoId: corrida.contratoId, codigo: corrida.originCode };
+        const deOtroPermiso = libres
+          .map((t) => ({ t, p: permisoRef(t.entry.contratoId, t.entry.contrato, t.entry.originCode) }))
+          .filter(({ p }) => !mismoPermiso(p, permisoCorrida));
+        if (deOtroPermiso.length > 0) {
+          const nombradas = deOtroPermiso
+            .slice(0, 5)
+            .map(({ t, p }) => `${t.codigoPlanta ?? t.codificacion ?? t.id} (guía ${t.entry.gtfNumber}: ${p.codigo ?? "sin código"})`)
+            .join("; ");
+          const resto = deOtroPermiso.length > 5 ? ` y ${deOtroPermiso.length - 5} más` : "";
+          throw new CtpInvariantError(
+            `${deOtroPermiso.length === 1 ? "Esta pieza es" : `${deOtroPermiso.length} piezas son`} de otro permiso que la corrida N° ${corrida.lineNo} ` +
+              `(${corrida.originCode ?? "sin código"}): ${nombradas}${resto}. Quítalas de la selección o corrige el permiso de la corrida.`,
+            "PERMISO_DISTINTO",
+            { trozas: deOtroPermiso.map(({ t }) => t.id) },
           );
         }
 

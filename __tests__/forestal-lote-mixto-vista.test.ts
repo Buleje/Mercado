@@ -128,11 +128,15 @@ describe("vincular el día con el mixto", () => {
       fecha: "2026-09-25",
       largoMaxPiezaM: 4.27,
       tieneMateriaPrima: false,
+      permiso: null,
     });
     expect(corridaAlMixto({ ...corridaDelDia, volumenConsumidoM3: 1.2, paquetes: [] })).toMatchObject({
       largoMaxPiezaM: null,
       tieneMateriaPrima: true,
     });
+    /* ADR-447: el permiso del asiento viaja a la propuesta; con dos, ninguno (no se elige uno). */
+    expect(corridaAlMixto({ ...corridaDelDia, permisos: ["10-HUA-PUE/PER-FMP-2026-007"] }).permiso).toBe("10-HUA-PUE/PER-FMP-2026-007");
+    expect(corridaAlMixto({ ...corridaDelDia, permisos: ["A", "B"] }).permiso).toBeNull();
   });
 
   it("ptDeCorrida: el medido de los paquetes; si falta uno, m³ × 424", () => {

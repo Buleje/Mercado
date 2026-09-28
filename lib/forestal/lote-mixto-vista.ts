@@ -135,6 +135,8 @@ export function corridaAlMixto(c: {
   dia: string;
   volumenConsumidoM3: number | null;
   paquetes: readonly { largoM: number | null }[];
+  /** Permisos de la corrida (`CorridaDelDia.permisos`): sin origen, el que declara el asiento. */
+  permisos?: readonly string[];
 }): CorridaDelMixto {
   const largos = c.paquetes.map((p) => Number(p.largoM)).filter((v) => Number.isFinite(v) && v > 0);
   return {
@@ -145,6 +147,9 @@ export function corridaAlMixto(c: {
     fecha: c.dia,
     largoMaxPiezaM: largos.length > 0 ? Math.max(...largos) : null,
     tieneMateriaPrima: (Number(c.volumenConsumidoM3) || 0) > 0,
+    /* Un permiso = el de la corrida (ADR-447: sólo madera de él). Dos o más
+       sólo pasa con la corrida ya vinculada, que igual queda fuera. */
+    permiso: c.permisos?.length === 1 ? c.permisos[0]!.trim() || null : null,
   };
 }
 

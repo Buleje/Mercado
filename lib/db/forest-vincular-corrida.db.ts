@@ -28,6 +28,10 @@
  *    consumida por una corrida viva, ni despachada, ni de guía anulada o sin
  *    recibir, ni descarte, ni madre retrozada, ni sin volumen.
  *  · T3: ninguna troza entró al patio después de la fecha de la corrida.
+ *  · El permiso (ADR-447): cada lote, y la guía de cada troza, es del título
+ *    habilitante de la corrida (`mismoPermiso`; sin dato en una punta no se
+ *    afirma que difieren). Antes sólo lo miraba `vincularTrozas`, y la acción
+ *    `vincular-corrida` de Lotes llegaba acá sin ese control.
  *  · Mes cerrado y costo congelado bloquean.
  *  · Producido ≤ trozas (10 litros de tolerancia): de la sierra no sale más de
  *    lo que entró. El 56 % avisa (`sobreElTope`) y se guarda el rendimiento REAL.
@@ -50,6 +54,7 @@ import {
   TOPE_RENDIMIENTO_PCT,
 } from "@/lib/forestal/vincular-produccion";
 import { diaDelLibro } from "@/lib/forestal/recepcion-antes-de-la-sierra";
+import { mismoPermiso, permisoRef, type PermisoRef } from "@/lib/forestal/vincular-trozas";
 import {
   CTP_TX_OPTS,
   CtpInvariantError,
@@ -113,6 +118,9 @@ interface CorridaBloqueada {
   unit: string | null;
   entryDate: Date;
   aperturaDeclaradaAt: Date | null;
+  /** El título habilitante de la corrida (ADR-421/447): contrato o código escrito. */
+  contratoId: string | null;
+  originCode: string | null;
 }
 
 /** Lo que `vincularCorridaEnTx` escribió: lo que `despuesDeVincular` narra y devuelve. */
@@ -145,7 +153,17 @@ const SELECT_TROZA = {
   codificacion: true,
   _count: { select: { retrozos: true } },
   entry: {
-    select: { status: true, deletedAt: true, fechaRecepcion: true, gtfNumber: true, entryDate: true },
+    select: {
+      status: true,
+      deletedAt: true,
+      fechaRecepcion: true,
+      gtfNumber: true,
+      entryDate: true,
+      /* El permiso de la guía (ADR-447): la verdad de qué título ampara la pieza. */
+      contratoId: true,
+      originCode: true,
+      contrato: { select: { codigo: true, deletedAt: true } },
+    },
   },
 } satisfies Prisma.WoodEntryTrozaSelect;
 
@@ -181,6 +199,25 @@ function motivoNoVinculable(t: TrozaLeida): string | null {
   if (t._count.retrozos > 0) return "se cortó en pedazos: vincula los pedazos";
   if (!(Number(t.volumenM3 ?? 0) > 0)) return "no tiene volumen registrado";
   return null;
+}
+
+/**
+ * El permiso de la corrida bloqueada: su contrato VIVO si lo tiene, si no el
+ * código escrito (`permisoRef`, la misma regla que `vincularTrozas`). El
+ * contrato sólo se lee si la corrida lo cita.
+ */
+async function permisoDeLaCorrida(
+  tx: Prisma.TransactionClient,
+  tenantId: string,
+  corrida: Pick<CorridaBloqueada, "contratoId" | "originCode">,
+): Promise<PermisoRef> {
+  const contrato = corrida.contratoId
+    ? await tx.forestContrato.findFirst({
+        where: { id: corrida.contratoId, tenantId },
+        select: { codigo: true, deletedAt: true },
+      })
+    : null;
+  return permisoRef(corrida.contratoId ?? null, contrato, corrida.originCode ?? null);
 }
 
 export class ForestVincularCorridaDB {
@@ -250,7 +287,8 @@ export class ForestVincularCorridaDB {
     // ── 1. La corrida, bloqueada antes de leerla ─────────────────────────
     const bloqueada = await tx.$queryRaw<CorridaBloqueada[]>`
       SELECT "id", "lineNo", "section", "status", "quantity", "volumeInputM3",
-             "speciesCommon", "unit", "entryDate", "aperturaDeclaradaAt"
+             "speciesCommon", "unit", "entryDate", "aperturaDeclaradaAt",
+             "contratoId", "originCode"
       FROM "ForestCtpEntry"
       WHERE "id" = ${corridaId} AND "tenantId" = ${tenantId} AND "deletedAt" IS NULL
       FOR UPDATE
@@ -344,7 +382,15 @@ export class ForestVincularCorridaDB {
     `;
     const lotes = await tx.forestLoteAserrio.findMany({
       where: { id: { in: loteIds }, tenantId, deletedAt: null },
-      select: { id: true, code: true, status: true, speciesCommon: true },
+      select: {
+        id: true,
+        code: true,
+        status: true,
+        speciesCommon: true,
+        permiso: true,
+        contratoId: true,
+        contrato: { select: { codigo: true, deletedAt: true } },
+      },
     });
     const lotePorId = new Map(lotes.map((l) => [l.id, l]));
     const faltanLotes = loteIds.filter((id) => !lotePorId.has(id));
@@ -376,6 +422,24 @@ export class ForestVincularCorridaDB {
             : `Los lotes elegidos son de especies distintas (${lotes.map((x) => `${x.code}: ${x.speciesCommon}`).join(", ")}): una corrida es de una sola especie.`,
           "LOTE_NO_EDITABLE",
           { loteId: l.id },
+        );
+      }
+    }
+
+    /* El permiso (ADR-447), bajo el lock de los lotes: una corrida sale de la
+       madera de SU título habilitante. Sin dato en una punta no se afirma que
+       difieren (el lote «de todos» de ADR-393, la corrida vieja sin permiso):
+       para eso está la guía de cada troza, que se mira más abajo. */
+    const permisoCorrida = await permisoDeLaCorrida(tx, tenantId, corrida);
+    const nombrePermiso = (p: PermisoRef) => p.codigo ?? "sin código";
+    for (const l of lotes) {
+      const permisoLote = permisoRef(l.contratoId, l.contrato, l.permiso);
+      if (!mismoPermiso(permisoLote, permisoCorrida)) {
+        throw new CtpInvariantError(
+          `El lote ${l.code} es del permiso ${nombrePermiso(permisoLote)} y la corrida ${nro} es del ${nombrePermiso(permisoCorrida)}: ` +
+            "una corrida sale de la madera de su permiso. Elige un lote de su permiso o corrige el permiso de la corrida.",
+          "PERMISO_DISTINTO",
+          { loteId: l.id, permisoLote: permisoLote.codigo, permisoCorrida: permisoCorrida.codigo },
         );
       }
     }
@@ -439,6 +503,26 @@ export class ForestVincularCorridaDB {
           `a la corrida ${nro}: ${nombradas}${resto}. Quítalas de la selección y vuelve a firmar.`,
         "T1_TROZA_NO_CONSUMIBLE",
         { trozas: problemas },
+      );
+    }
+
+    /* El permiso de la GUÍA de cada troza (ADR-447): un lote «de todos los
+       permisos» (ADR-393) puede traer piezas de otro título. La verdad de qué
+       permiso ampara la pieza vive en su ingreso. */
+    const deOtroPermiso = trozas
+      .map((t) => ({ t, p: permisoRef(t.entry.contratoId, t.entry.contrato, t.entry.originCode) }))
+      .filter(({ p }) => !mismoPermiso(p, permisoCorrida));
+    if (deOtroPermiso.length > 0) {
+      const nombradas = deOtroPermiso
+        .slice(0, NOMBRADAS)
+        .map(({ t, p }) => `${codigoDe(t)} (guía ${t.entry.gtfNumber}: ${nombrePermiso(p)})`)
+        .join("; ");
+      const resto = deOtroPermiso.length > NOMBRADAS ? ` y ${deOtroPermiso.length - NOMBRADAS} más` : "";
+      throw new CtpInvariantError(
+        `${deOtroPermiso.length === 1 ? "Esta troza es" : `${deOtroPermiso.length} trozas son`} de otro permiso que la corrida ${nro} ` +
+          `(${nombrePermiso(permisoCorrida)}): ${nombradas}${resto}. Quítalas de la selección o corrige el permiso de la corrida.`,
+        "PERMISO_DISTINTO",
+        { trozas: deOtroPermiso.map(({ t }) => t.id), permisoCorrida: permisoCorrida.codigo },
       );
     }
 

@@ -318,3 +318,47 @@ describe("problemaDePartes — el pedido antes de la base", () => {
     expect(vincularCorridaSchema.safeParse({ corridaId: "c", partes: [{ loteId: "A", trozaIds: ["1"] }] }).success).toBe(true);
   });
 });
+
+describe("planDelMixto — el permiso de la corrida (ADR-447)", () => {
+  it("corrida con permiso P1 y lotes P1 + P2: sólo se ofrece la parte de P1 (el servidor rechaza la otra)", () => {
+    const c = planDelMixto({ corridas: [corrida({ permiso: "CON-P1" })], lotes: [loteA(), loteB()] }).propuestas[0]!;
+    expect(c.partes.map((x) => x.permiso)).toEqual(["CON-P1"]);
+    expect(c.pedido?.partes).toEqual([{ loteId: "LA", trozaIds: ["m1", "m2"] }]);
+    expect(c.trozaM3).toBe(2);
+  });
+
+  it("corrida con permiso P1 y sólo madera de P2: no sale `puedeVincular` y dice que es de otro permiso", () => {
+    const c = planDelMixto({ corridas: [corrida({ permiso: "CON-P1" })], lotes: [loteB()] }).propuestas[0]!;
+    expect(c.puedeVincular).toBe(false);
+    expect(c.pedido).toBeNull();
+    expect(c.mensaje).toMatch(/son de otro permiso \(CON-P2\) y la corrida es del CON-P1/);
+  });
+
+  it("la GUÍA de la troza también cuenta: en un lote «de todos», la troza de P2 no va a una corrida P1", () => {
+    const deTodos: LoteDelMixto = {
+      id: "LX",
+      code: "LA-2026-013",
+      especie: "Mashonaste",
+      permiso: null,
+      trozas: [troza({ id: "x1", permiso: "CON-P1", volumenM3: 1 }), troza({ id: "x2", permiso: "CON-P2", volumenM3: 1 })],
+    };
+    const c = planDelMixto({ corridas: [corrida({ permiso: "CON-P1" })], lotes: [deTodos] }).propuestas[0]!;
+    expect(c.pedido?.partes).toEqual([{ loteId: "LX", trozaIds: ["x1"] }]);
+  });
+
+  it("corrida SIN permiso: sigue tomando los dos permisos, como decidió Brandon para el mixto (ADR-441)", () => {
+    const c = planDelMixto({ corridas: [corrida({ permiso: null })], lotes: [loteA(), loteB()] }).propuestas[0]!;
+    expect(c.puedeVincular).toBe(true);
+    expect(c.partes.map((x) => x.permiso)).toEqual(["CON-P1", "CON-P2"]);
+  });
+
+  it("una con permiso y otra sin él, de la misma especie: la de permiso toma el suyo primero y ninguna troza va a dos", () => {
+    const p = planDelMixto({
+      corridas: [corrida({ id: "sin", fecha: "2026-09-24", permiso: null }), corrida({ id: "p2", fecha: "2026-09-25", permiso: "CON-P2" })],
+      lotes: [loteA(), loteB()],
+    });
+    const [sin, p2] = [p.propuestas.find((x) => x.corrida.id === "sin")!, p.propuestas.find((x) => x.corrida.id === "p2")!];
+    expect(p2.pedido?.partes).toEqual([{ loteId: "LB", trozaIds: ["m3"] }]);
+    expect(sin.pedido?.partes).toEqual([{ loteId: "LA", trozaIds: ["m1", "m2"] }]);
+  });
+});

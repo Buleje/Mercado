@@ -89,6 +89,7 @@ const vencidaCon = (g: GuiaParaCorregir, ctx: ContextoDeLlegada | null): boolean
 export default function CtpCorregirRecepcionModal({
   guias,
   inicial,
+  marcadas,
   onListo,
   onClose,
 }: {
@@ -96,6 +97,12 @@ export default function CtpCorregirRecepcionModal({
   guias: readonly GuiaParaCorregir[];
   /** La guía desde cuya fila se abrió: viene marcada. */
   inicial?: string | null;
+  /**
+   * Varias guías marcadas desde el arranque, cada una con la fecha de su guía
+   * (la bandeja «¿De qué trozas salió?», ADR-447: «Corregir la llegada de 8
+   * guías» abre con las 8). El motivo y la revisión de cada una siguen igual.
+   */
+  marcadas?: readonly string[];
   onListo: (r: ResultadoCorreccion) => void;
   onClose: () => void;
 }) {
@@ -118,10 +125,12 @@ export default function CtpCorregirRecepcionModal({
     );
 
   const [marcas, setMarcas] = useState<Record<string, Marca>>(() => {
-    const g = guias.find((x) => x.clave === inicial);
-    return g
-      ? { [g.clave]: { ...SIN_MARCA, marcada: true, fecha: propuestaDe(g)?.dia ?? "" } }
-      : {};
+    const claves = new Set([...(inicial ? [inicial] : []), ...(marcadas ?? [])]);
+    return Object.fromEntries(
+      guias
+        .filter((g) => claves.has(g.clave))
+        .map((g) => [g.clave, { ...SIN_MARCA, marcada: true, fecha: propuestaDe(g)?.dia ?? "" }]),
+    );
   });
   const marcaDe = (clave: string): Marca => marcas[clave] ?? SIN_MARCA;
   const tocar = (clave: string, parche: Partial<Marca>) =>
@@ -130,12 +139,12 @@ export default function CtpCorregirRecepcionModal({
   /* La que se abrió primero; después las sospechosas o recibidas vencidas; después el resto. */
   const ordenadas = useMemo(() => {
     const peso = (g: GuiaParaCorregir) => {
-      if (g.clave === inicial) return 0;
+      if (g.clave === inicial || marcadas?.includes(g.clave)) return 0;
       const ctx = contextoDe(g.gtfNumber);
       return (ctx && llegadaSospechosa(ctx)) || vencidaCon(g, ctx) ? 1 : 2;
     };
     return [...guias].sort((a, b) => peso(a) - peso(b) || a.gtfNumber.localeCompare(b.gtfNumber));
-  }, [guias, inicial, contextoDe]);
+  }, [guias, inicial, marcadas, contextoDe]);
 
   const revisar = (g: GuiaParaCorregir, m: Marca): RevisionDeLlegada => {
     const ctx = contextoDe(g.gtfNumber);

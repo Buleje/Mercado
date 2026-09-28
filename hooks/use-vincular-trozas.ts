@@ -14,18 +14,25 @@
  *    corrida queda declarada sin origen y se dice por qué: nunca se pierde la
  *    declaración.
  *  - `useDiagnosticoSinOrigen`: la bandeja de las ya declaradas, por motivo.
+ *  - `leerTandaDeOrigen` / `vincularEnTanda` (ADR-447): la propuesta de todas
+ *    juntas, por especie y permiso, y el POST de una tanda. Los usa
+ *    `useOrigenEnTanda`.
  *
  * Nada se vincula sin que alguien lo confirme: la propuesta sólo marca.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { esperaLegible } from "@/components/admin/forestal/guias-sin-registrar-pantalla";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
+import type { PropuestaDeTandaOrigen, SimulacionDeArreglos } from "@/lib/forestal/origen-en-tanda";
 import type {
   DiagnosticoCorrida,
   DiagnosticoSinOrigen,
   MotivoSinOrigen,
+  ResultadoTandaVincular,
   ResultadoVincularTrozas,
   TrozaPropuesta,
+  VincularTrozasPedido,
 } from "@/lib/forestal/vincular-trozas";
 
 export const URL_VINCULAR_TROZAS = "/api/admin/forestal/ctp/vincular-trozas";
@@ -369,6 +376,10 @@ export const ORDEN_MOTIVOS: readonly MotivoSinOrigen[] = [
   "llegada_posterior",
   "fila_de_otra_especie",
   "guia_sin_recibir",
+  "tomada_por_otra_corrida",
+  "permiso_distinto",
+  "especie_parecida",
+  "guia_sin_trozas",
   "apertura",
   "sin_trozas_de_la_especie",
 ];
@@ -377,11 +388,104 @@ export function filasDeBandeja(d: DiagnosticoSinOrigen): FilaDeBandeja[] {
   return ORDEN_MOTIVOS.map((motivo) => {
     const corridas = d.corridas.filter((c) => c.motivo === motivo);
     const trozas = corridas.flatMap((c) => c.propuesta);
+    /* Sin propuesta (llegada, recibir), las guías las nombra el arreglo
+       (ADR-447): «Corrige la llegada de 8 guías», no «Trozas llegadas después». */
+    const delArreglo = corridas.flatMap((c) =>
+      c.arreglo?.tipo === "corregir_llegada" || c.arreglo?.tipo === "recibir_guia" ? c.arreglo.guias.map((g) => g.gtfNumber) : [],
+    );
     return {
       motivo,
       corridas,
-      guias: new Set(trozas.map((t) => t.gtfNumber).filter(Boolean)).size,
+      guias: new Set([...trozas.map((t) => t.gtfNumber), ...delArreglo].filter(Boolean)).size,
       trozas: new Set(trozas.map((t) => t.trozaId)).size,
     };
   }).filter((f) => f.corridas.length > 0);
+}
+
+// ── La tanda (ADR-447) ──────────────────────────────────────────────────────
+
+/** `GET ?tanda=1`: qué se vincula junto y qué dejaría cada arreglo. Sólo lee. */
+export interface TandaDeOrigen {
+  propuesta: PropuestaDeTandaOrigen;
+  simulacion: SimulacionDeArreglos;
+}
+
+export type RespuestaDeTanda<T> =
+  | { ok: true; datos: T }
+  | {
+      ok: false;
+      status: number;
+      codigo: string | null;
+      mensaje: string;
+      /** 429 o «otra tanda en curso»: cuánto esperar antes de reintentar. */
+      esperarSeg: number | null;
+    };
+
+/** Cuántos segundos pide esperar un 429: el cuerpo (`retryAfter`) o la cabecera `Retry-After`. */
+function segundosDeEspera(r: Response, j: Record<string, unknown> | null): number | null {
+  const n = Number(typeof j?.retryAfter === "number" ? j.retryAfter : r.headers.get("Retry-After"));
+  return Number.isFinite(n) && n > 0 ? Math.ceil(n) : null;
+}
+
+function fallaDeTanda(r: Response, j: Record<string, unknown> | null): RespuestaDeTanda<never> {
+  const codigo = typeof j?.error === "string" ? j.error : null;
+  const delServidor = typeof j?.message === "string" && j.message ? j.message : "";
+  if (r.status === 429) {
+    const seg = segundosDeEspera(r, j) ?? 60;
+    return {
+      ok: false,
+      status: 429,
+      codigo,
+      mensaje: `Llegaste al límite de vínculos de la tienda: espera ${esperaLegible(seg)} y vuelve a intentar.`,
+      esperarSeg: seg,
+    };
+  }
+  return {
+    ok: false,
+    status: r.status,
+    codigo,
+    mensaje:
+      codigo === "TANDA_EN_CURSO"
+        ? delServidor || "Otra tanda se está vinculando en este momento. Espera un poco y vuelve a intentar."
+        : delServidor || (r.status === 403 ? "Sólo el dueño o un administrador vincula las trozas." : mensajePorStatus(r.status)),
+    esperarSeg: codigo === "TANDA_EN_CURSO" ? 5 : null,
+  };
+}
+
+const SIN_CONEXION = { ok: false, status: 0, codigo: null, mensaje: "Sin conexión con el servidor.", esperarSeg: null } as const;
+
+export async function leerTandaDeOrigen(): Promise<RespuestaDeTanda<TandaDeOrigen>> {
+  try {
+    const r = await fetch(`${URL_VINCULAR_TROZAS}?tanda=1`, { credentials: "include", cache: "no-store" });
+    const j = await leerJson(r);
+    if (r.ok && j && typeof j.propuesta === "object" && j.propuesta && typeof j.simulacion === "object") {
+      return { ok: true, datos: j as unknown as TandaDeOrigen };
+    }
+    return r.ok ? { ...SIN_CONEXION, status: r.status, mensaje: "El servidor no mandó la propuesta." } : fallaDeTanda(r, j);
+  } catch {
+    return SIN_CONEXION;
+  }
+}
+
+/**
+ * `POST { tanda }`: una transacción por corrida en el servidor, la más vieja
+ * primero; la respuesta dice cómo terminó CADA una. Nunca tira.
+ */
+export async function vincularEnTanda(
+  tanda: readonly VincularTrozasPedido[],
+): Promise<RespuestaDeTanda<ResultadoTandaVincular>> {
+  try {
+    const r = await fetch(URL_VINCULAR_TROZAS, {
+      method: "POST",
+      credentials: "include",
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ tanda }),
+    });
+    const j = await leerJson(r);
+    const t = j?.tanda as ResultadoTandaVincular | undefined;
+    if (r.ok && j?.ok === true && t && Array.isArray(t.corridas)) return { ok: true, datos: t };
+    return r.ok ? { ...SIN_CONEXION, status: r.status, mensaje: "El servidor no dijo cómo terminó la tanda." } : fallaDeTanda(r, j);
+  } catch {
+    return SIN_CONEXION;
+  }
 }

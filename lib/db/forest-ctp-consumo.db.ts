@@ -177,6 +177,10 @@ export class CtpInvariantError extends Error {
       /** T3 (ADR-433): la troza entró al patio DESPUÉS de la fecha de la
        *  corrida. El libro diría que se aserró madera que todavía no llegó. */
       | "T3_ASERRADA_ANTES_DE_LLEGAR"
+      /** ADR-447: el lote (o la guía de la troza) es de OTRO título
+       *  habilitante que la corrida. Vincularla diría que la madera de un
+       *  permiso salió de otro: el saldo de los dos queda mal ante SERFOR. */
+      | "PERMISO_DISTINTO"
       /** ADR-434 §Vencimiento: la llegada cae después del vencimiento de la
        *  guía y nadie lo confirmó con motivo. No es un «no»: con
        *  `aceptaVencida` + motivo se guarda y queda auditado. */

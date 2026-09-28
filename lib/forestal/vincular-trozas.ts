@@ -31,6 +31,17 @@
  * Así el mensaje nombra el arreglo mínimo: si con corregir una fecha alcanza, no
  * se le pide recibir otra guía.
  *
+ * ## «No hay madera» se dice al final (ADR-447)
+ *
+ * Antes de decir que no hay madera se mira adónde fue: si OTRA corrida viva la
+ * tiene (`tomada_por_otra_corrida`: la N° 61 con las 12 de Cachimbo), si hay
+ * una especie de nombre parecido (`especie_parecida`: «Huayruro» para
+ * «Huayruro Negro», que NO se iguala en la regla), si las libres son de otro
+ * permiso (`permiso_distinto`) o si al permiso le falta la guía o su lista de
+ * trozas (`guia_sin_trozas`). Cada motivo trae su `arreglo`: el dato para abrir
+ * el modal que ya existe. Ninguno se aplica solo. Sin `contexto` (tomadas,
+ * guías, hoy), los motivos que lo necesitan no se dicen.
+ *
  * ## La propuesta
  *
  * Sólo con motivo `lista`. Primero las piezas ya apartadas en un lote abierto de
@@ -52,6 +63,7 @@ import { formatNumber } from "@/lib/format";
 import { normalizarCodigoContrato } from "./contratos";
 import { PT_POR_M3 } from "./cubicacion";
 import { guiaRecibida, type TrozaConsumible } from "./consumo-trozas";
+import { propuestaDeLlegada, sigueALaGuia, type FuenteDeLlegada } from "./fecha-de-llegada";
 import { RENDIMIENTO_META } from "./loctp-catalogos";
 import { claveEspecie } from "./loth-constants";
 import { diaDelLibro, ingresoDeLaTroza } from "./recepcion-antes-de-la-sierra";
@@ -68,6 +80,118 @@ export const vincularTrozasSchema = z.object({
 });
 export type VincularTrozasPedido = z.infer<typeof vincularTrozasSchema>;
 
+/**
+ * Corridas por pedido de tanda. Cada una es su propia transacción (~30
+ * consultas con sus locks): 15 entran holgadas en el plazo de la ruta
+ * (`maxDuration` 300 s en `vercel.json`); una tanda más grande se manda en
+ * varios pedidos, y lo que no alcanzó a entrar vuelve `pendiente`.
+ */
+export const MAX_CORRIDAS_POR_TANDA = 15;
+
+/**
+ * Vincular en tanda (ADR-447 §4): cada corrida con las trozas que la persona
+ * confirmó en la propuesta. Una troza en dos corridas, una troza dos veces en
+ * la misma, o una corrida dos veces, es un pedido mal armado (400) antes de
+ * tocar la base.
+ */
+export const vincularTandaSchema = z
+  .object({
+    tanda: z
+      .array(vincularTrozasSchema)
+      .min(1)
+      .max(MAX_CORRIDAS_POR_TANDA, `Una tanda lleva hasta ${MAX_CORRIDAS_POR_TANDA} corridas: manda el resto en otra.`),
+  })
+  .superRefine((v, ctx) => {
+    const corridas = new Set<string>();
+    /* De qué corrida es cada troza ya vista: la frase dice si se repite en la
+       MISMA corrida o en dos. */
+    const dueña = new Map<string, number>();
+    for (const [i, p] of v.tanda.entries()) {
+      if (corridas.has(p.corridaId)) {
+        ctx.addIssue({ code: "custom", path: ["tanda", i, "corridaId"], message: "Una corrida aparece dos veces en la tanda." });
+      }
+      corridas.add(p.corridaId);
+      for (const t of p.trozaIds) {
+        const previa = dueña.get(t);
+        if (previa != null) {
+          ctx.addIssue({
+            code: "custom",
+            path: ["tanda", i, "trozaIds"],
+            message:
+              previa === i
+                ? "Una troza aparece dos veces en la misma corrida: cada pieza entra una sola vez."
+                : "Una troza aparece en dos corridas de la tanda: cada pieza entra a una sola.",
+          });
+          return;
+        }
+        dueña.set(t, i);
+      }
+    }
+  });
+export type VincularTandaPedido = z.infer<typeof vincularTandaSchema>;
+
+/** Cómo terminó UNA corrida de la tanda. Las demás siguen aunque ésta no. */
+export type ResultadoCorridaEnTanda =
+  | {
+      corridaId: string;
+      lineNo: number | null;
+      estado: "vinculada";
+      trozas: number;
+      m3: number;
+      lotesArmados: string[];
+      rendimientoPct: number | null;
+      sobreElTope: boolean;
+    }
+  | {
+      corridaId: string;
+      lineNo: number | null;
+      /** Ya tenía origen (un reintento, u otra pestaña): no se escribió nada. */
+      estado: "ya_vinculada";
+      /** Piezas que ya tiene marcadas. */
+      trozas: number;
+      /** Son exactamente las pedidas: fue un reintento. */
+      mismas: boolean;
+      mensaje: string;
+    }
+  | {
+      corridaId: string;
+      lineNo: number | null;
+      /** El libro dijo que no (T1, T3, permiso, volumen, I2, mes cerrado): nada escrito de esta. */
+      estado: "bloqueada";
+      codigo: string;
+      mensaje: string;
+    }
+  | {
+      corridaId: string;
+      lineNo: number | null;
+      /** Otra operación tenía las trozas, otra tanda arrancó en el medio, o falló el servidor. */
+      estado: "error";
+      codigo: "LIBRO_OCUPADO" | "TANDA_EN_CURSO" | "INTERNO";
+      mensaje: string;
+    }
+  | {
+      corridaId: string;
+      lineNo: number | null;
+      /** Se acabó el plazo del pedido antes de empezarla: no se tocó; se manda en otro pedido. */
+      estado: "pendiente";
+      mensaje: string;
+    };
+
+export interface ResultadoTandaVincular {
+  /** En el orden en que se escribieron: la más vieja primero. */
+  corridas: ResultadoCorridaEnTanda[];
+  resumen: {
+    vinculadas: number;
+    yaVinculadas: number;
+    bloqueadas: number;
+    errores: number;
+    /** No se alcanzaron a intentar (plazo del pedido): van en el siguiente. */
+    pendientes: number;
+    trozas: number;
+    m3: number;
+  };
+}
+
 export type MotivoSinOrigen =
   /** Hay propuesta que pasa todas las reglas. */
   | "lista"
@@ -76,11 +200,24 @@ export type MotivoSinOrigen =
   /** Hay trozas, pero anotadas en la fila de otra especie de su guía. */
   | "fila_de_otra_especie"
   | "guia_sin_recibir"
+  /**
+   * Las trozas de la especie y el permiso ya entraron a OTRA corrida viva
+   * (ADR-447: en Blas la N° 61 tomó las 12 de Cachimbo y la N° 62 las 7 de
+   * Panguana). Decirle «no hay trozas en el patio» era falso: hubo, y otra
+   * corrida las tiene. Lo decide la persona, nunca se mueven solas.
+   */
+  | "tomada_por_otra_corrida"
+  /** Hay trozas libres de la especie, pero todas de OTRO permiso (la Copaiba del 2024-008). */
+  | "permiso_distinto"
+  /** No hay de la especie, pero sí de una de nombre parecido («Huayruro» para «Huayruro Negro»). */
+  | "especie_parecida"
+  /** El permiso no tiene ninguna guía en el libro, o su guía no tiene la lista de trozas. */
+  | "guia_sin_trozas"
   /** Lote de inventario / madera de antes del libro: va por «Declarar apertura». */
   | "apertura"
   /**
-   * No hay madera usable de la especie: ninguna troza, todas de otro permiso,
-   * no alcanzan para lo producido, o su guía ya no tiene volumen libre.
+   * No hay madera usable de la especie: ninguna troza, no alcanzan para lo
+   * producido, o su guía ya no tiene volumen libre.
    */
   | "sin_trozas_de_la_especie";
 
@@ -90,9 +227,146 @@ export const MOTIVOS_SIN_ORIGEN: readonly MotivoSinOrigen[] = [
   "llegada_posterior",
   "fila_de_otra_especie",
   "guia_sin_recibir",
+  "tomada_por_otra_corrida",
+  "permiso_distinto",
+  "especie_parecida",
+  "guia_sin_trozas",
   "apertura",
   "sin_trozas_de_la_especie",
 ];
+
+// ── El arreglo: qué se hace, dónde, con qué dato (ADR-447) ──────────────────
+
+/** Una guía a corregir o a recibir, con la llegada que se propone y de dónde sale. */
+export interface GuiaDelArreglo {
+  gtfNumber: string;
+  /** Las filas (`WoodEntry`) de esa guía que tienen las trozas de la corrida. */
+  woodEntryIds: string[];
+  trozas: number;
+  m3: number;
+  /** La llegada que figura hoy (la primera de sus trozas); `null` = no se recibió. */
+  llegada: string | null;
+  /**
+   * La que se PROPONE (ADR-434 §1): la fecha de la guía, o la del asiento si la
+   * guía no trae. Nunca futura. Se confirma en «Corregir la recepción» con
+   * motivo: acá no se escribe. `null` = no hay de dónde sacarla.
+   */
+  propuesta: string | null;
+  fuente: FuenteDeLlegada | null;
+  /** Con la propuesta, la madera ya estaba en el patio el día de la corrida. */
+  sirve: boolean;
+}
+
+/** Una corrida viva que ya tiene las trozas que a ésta le faltan. */
+export interface TomadaPor {
+  corridaId: string;
+  lineNo: number | null;
+  /** AAAA-MM-DD. */
+  fecha: string;
+  /** m³ de producto de AQUELLA corrida; `null` = no declara lo producido. */
+  m3Producido: number | null;
+  /** Todavía no declara lo producido. */
+  abierta: boolean;
+  trozas: number;
+  m3: number;
+  /**
+   * (lo de ésta + lo de aquella) ÷ la madera que aquella tomó × 100: si las dos
+   * salieron de esas trozas, rinden esto juntas. `null` = no se puede calcular.
+   */
+  sumadasPct: number | null;
+}
+
+/**
+ * El arreglo más corto de una corrida sin origen, con el dato que la pantalla
+ * necesita para abrir el modal que YA existe. Nada de esto se aplica solo:
+ * cada uno es un botón que la persona aprieta y confirma.
+ */
+export type ArregloDeCorrida =
+  /** Nada que arreglar en el libro: está lista, o no hay madera y hay que esperarla. */
+  | { tipo: "ninguno" }
+  /** «Corregir la recepción» (ADR-434) de estas guías. */
+  | { tipo: "corregir_llegada"; guias: GuiaDelArreglo[] }
+  /**
+   * «Recibir en bloque» de estas guías. `corregirTambien` = las guías ya
+   * recibidas cuyas trozas también hacen falta y llegaron después: recibir solo
+   * no alcanza.
+   */
+  | { tipo: "recibir_guia"; guias: GuiaDelArreglo[]; corregirTambien?: GuiaDelArreglo[] }
+  /** «Acomodar trozas en su especie» (ADR-435). */
+  | {
+      tipo: "acomodar_trozas";
+      guias: { gtfNumber: string; woodEntryIds: string[]; especieDeLaFila: string | null; trozas: number }[];
+    }
+  /** «Declarar apertura» (ADR-394). */
+  | { tipo: "declarar_apertura" }
+  /** Otra corrida tiene la madera: la persona decide si la suelta (nunca solo). */
+  | { tipo: "soltar_corrida"; corridas: TomadaPor[] }
+  /** El permiso de la corrida no es el de la madera: se corrige en su ficha (ADR-401). */
+  | {
+      tipo: "corregir_corrida";
+      campo: "permiso";
+      actual: string | null;
+      propuestos: { codigo: string; contratoId: string | null; trozas: number; m3: number }[];
+    }
+  /** «Es la misma especie»: se corrige en la ficha de la corrida. `propuesta: null` = no dice su especie. */
+  | { tipo: "corregir_corrida"; campo: "especie"; actual: string; propuesta: string | null; trozas: number; m3: number }
+  /** Registrar la guía del permiso, o cargar la lista de trozas de la que ya está (`guias` vacío = el permiso no tiene ninguna). */
+  | {
+      tipo: "cargar_guia";
+      permiso: string | null;
+      guias: { woodEntryId: string; gtfNumber: string; especie: string | null; m3: number; recibida: boolean }[];
+    };
+
+// ── Lo que el patio no tiene pero explica por qué falta (ADR-447) ───────────
+
+/** La corrida viva que tomó una troza. */
+export interface CorridaTomadora {
+  id: string;
+  lineNo: number | null;
+  /** AAAA-MM-DD. */
+  fecha: string;
+  /** m³ de producto; `null` = todavía no declara lo producido. */
+  m3Producido: number | null;
+}
+
+/** Una troza que ya entró a OTRA corrida viva: no está en el patio, pero dice adónde fue. */
+export interface TrozaTomada {
+  id: string;
+  especie: string | null;
+  m3: number;
+  /** El permiso de su guía. */
+  permiso: PermisoRef;
+  corrida: CorridaTomadora;
+}
+
+/** Una fila de guía viva del libro (`WoodEntry`), tenga o no trozas. */
+export interface GuiaDelLibro {
+  id: string;
+  gtfNumber: string;
+  especie: string | null;
+  m3: number;
+  recibida: boolean;
+  /** Trozas listadas en la fila; 0 = la guía está pero sin su lista de piezas. */
+  trozas: number;
+  permiso: PermisoRef;
+}
+
+/** Lo que el diagnóstico mira además del patio: sin esto, los motivos nuevos no se dicen. */
+export interface ContextoDelPatio {
+  tomadas: readonly TrozaTomada[];
+  guias: readonly GuiaDelLibro[];
+  /** Hoy en Lima (AAAA-MM-DD, `limaDateKey`): la llegada propuesta nunca es futura. */
+  hoy: string;
+}
+
+export interface OpcionesDeDiagnostico {
+  contexto?: ContextoDelPatio | null;
+  /**
+   * SÓLO para medir cuánto frena la regla del permiso (`simularArreglos`):
+   * nunca para proponer ni vincular.
+   */
+  ignorarPermiso?: boolean;
+}
 
 export interface TrozaPropuesta {
   trozaId: string;
@@ -115,6 +389,8 @@ export interface DiagnosticoCorrida {
   detalle: string;
   propuesta: TrozaPropuesta[];
   m3Propuesto: number;
+  /** El arreglo, con el dato para abrir su modal (ADR-447). Siempre viene del servidor. */
+  arreglo: ArregloDeCorrida;
   /**
    * El mes de la corrida está CERRADO (ADR-139): nombre del período, o `null`.
    * El motivo sigue hablando de la madera; esto dice que además el libro no se
@@ -195,6 +471,23 @@ export function clavePermiso(p: PermisoRef): string | null {
 }
 
 /**
+ * El permiso de una fila del libro (guía, corrida o lote): el contrato VIVO si
+ * lo tiene (ADR-421); si no, el código escrito. Una sola regla para los dos
+ * vinculadores: si divergieran, uno aceptaría lo que el otro rechaza.
+ */
+export function permisoRef(
+  contratoId: string | null,
+  contrato: { codigo: string; deletedAt: Date | string | null } | null | undefined,
+  texto: string | null | undefined,
+): PermisoRef {
+  const vivo = contrato && !contrato.deletedAt ? contrato : null;
+  return {
+    contratoId: vivo ? contratoId : null,
+    codigo: vivo?.codigo?.trim() || texto?.trim() || null,
+  };
+}
+
+/**
  * El estado de una troza tal como lo lee el servidor, ya derivado: el ESTADO de
  * la corrida que la tomó (una anulada devolvió la madera al patio), del
  * despacho, del mixto y del lote — nunca el id pelado.
@@ -266,6 +559,22 @@ export interface TrozaParaDiagnostico {
   fuera: string | null;
   /** El lote ABIERTO donde ya está apartada; `null` si está suelta o liberada. */
   lote: { id: string; code: string; especie: string | null; permiso: string | null } | null;
+  /**
+   * Las fechas con que se propone corregir o recibir su llegada (ADR-447). Sin
+   * esto, el arreglo no puede proponer fecha (no se inventa).
+   */
+  llegada?: {
+    /** `gtfDate` de su guía: la fecha que declara el papel (AAAA-MM-DD). */
+    guia: string | null;
+    /** `entryDate` del asiento de su guía. */
+    asiento: string | null;
+    /**
+     * Toma la fecha nueva al corregir la guía: no tiene fecha propia, o tiene la
+     * misma que su asiento (`sigueALaGuia`, ADR-434). Una que bajó en otro viaje
+     * conserva la suya y el arreglo de la guía no la mueve.
+     */
+    sigueALaGuia: boolean;
+  };
 }
 
 /** La corrida (o la que se va a declarar) como la mira la propuesta. */
@@ -291,6 +600,12 @@ export interface CorridaParaDiagnostico extends CorridaParaProponer {
   materiaPrimaSinTrozas: string | null;
   /** El período cerrado donde cae la corrida («julio de 2026»), o `null`. */
   mesCerrado?: string | null;
+  /**
+   * Qué clase de materia prima sin trozas declara (acompaña a
+   * `materiaPrimaSinTrozas`): sólo el lote de inventario y el volumen escrito se
+   * arreglan declarando apertura.
+   */
+  materiaPrima?: "apertura_declarada" | "lote_inventario" | "volumen_escrito" | "piezas_sin_consumo" | null;
 }
 
 export interface PropuestaDeTrozas {
@@ -298,6 +613,7 @@ export interface PropuestaDeTrozas {
   detalle: string;
   propuesta: TrozaPropuesta[];
   m3Propuesto: number;
+  arreglo: ArregloDeCorrida;
 }
 
 // ── El cálculo ──────────────────────────────────────────────────────────────
@@ -336,7 +652,7 @@ function ordenSierra(a: TrozaParaDiagnostico, b: TrozaParaDiagnostico): number {
 }
 
 /** Primero lo apartado en un lote abierto (por lote), después lo suelto. */
-function ordenPropuesta(a: TrozaParaDiagnostico, b: TrozaParaDiagnostico): number {
+export function ordenPropuesta(a: TrozaParaDiagnostico, b: TrozaParaDiagnostico): number {
   const la = a.lote?.code ?? null;
   const lb = b.lote?.code ?? null;
   if (la && !lb) return -1;
@@ -346,7 +662,7 @@ function ordenPropuesta(a: TrozaParaDiagnostico, b: TrozaParaDiagnostico): numbe
 }
 
 /** La troza como la recibe el reparto de siempre (`repartoDelGrupo`). */
-function comoConsumible(t: TrozaParaDiagnostico): TrozaConsumible {
+export function comoConsumible(t: TrozaParaDiagnostico): TrozaConsumible {
   return {
     id: t.id,
     woodEntryId: t.fila.id,
@@ -359,7 +675,7 @@ function comoConsumible(t: TrozaParaDiagnostico): TrozaConsumible {
   };
 }
 
-function aPropuesta(t: TrozaParaDiagnostico): TrozaPropuesta {
+export function aPropuesta(t: TrozaParaDiagnostico): TrozaPropuesta {
   return {
     trozaId: t.id,
     codigo: t.codigo ?? t.id,
@@ -375,24 +691,188 @@ function aPropuesta(t: TrozaParaDiagnostico): TrozaPropuesta {
  * vinculador exige que cada lote sea de la especie de la corrida (L-A1), y un
  * lote es de un título habilitante (ADR-393).
  */
-function loteAjeno(
+export function loteAjeno(
   corrida: Pick<CorridaParaProponer, "permiso">,
   clave: string,
   lote: TrozaParaDiagnostico["lote"],
+  ignorarPermiso = false,
 ): "especie" | "permiso" | null {
   if (!lote) return null;
   const claveLote = claveEspecie(lote.especie);
   if (claveLote && claveLote !== clave) return "especie";
-  if (!mismoPermiso(corrida.permiso, { contratoId: null, codigo: lote.permiso })) return "permiso";
+  if (!ignorarPermiso && !mismoPermiso(corrida.permiso, { contratoId: null, codigo: lote.permiso })) return "permiso";
   return null;
 }
 
-const sinPropuesta = (motivo: MotivoSinOrigen, detalle: string): PropuestaDeTrozas => ({
+const NINGUNO: ArregloDeCorrida = { tipo: "ninguno" };
+
+const sinPropuesta = (
+  motivo: MotivoSinOrigen,
+  detalle: string,
+  arreglo: ArregloDeCorrida = NINGUNO,
+): PropuestaDeTrozas => ({
   motivo,
   detalle,
   propuesta: [],
   m3Propuesto: 0,
+  arreglo,
 });
+
+const r1 = (n: number) => Math.round(n * 10) / 10;
+
+/** El número de una corrida en una frase: «N° 61», o «otra corrida» sin número. */
+const nroDe = (lineNo: number | null) => (lineNo != null ? `N° ${lineNo}` : "sin número");
+
+/**
+ * Las guías de estas trozas, una por GTF, con la llegada que se propone (la de
+ * la guía, ADR-434 §1: nunca inventada ni futura) y si con ella alcanza.
+ */
+function guiasDelArreglo(ts: readonly TrozaParaDiagnostico[], dia: string, hoy: string): GuiaDelArreglo[] {
+  const porGtf = new Map<string, TrozaParaDiagnostico[]>();
+  for (const t of ts) {
+    const k = t.gtfNumber?.trim() || "";
+    porGtf.set(k, [...(porGtf.get(k) ?? []), t]);
+  }
+  return [...porGtf.entries()]
+    .map(([gtfNumber, xs]) => {
+      const fechas = xs.find((x) => x.llegada)?.llegada ?? null;
+      const p = fechas ? propuestaDeLlegada({ guia: fechas.guia, asiento: fechas.asiento }, hoy, false) : null;
+      const recibidas = xs.filter((x) => x.guiaRecibida);
+      return {
+        gtfNumber,
+        woodEntryIds: [...new Set(xs.map((x) => x.fila.id))],
+        trozas: xs.length,
+        m3: suma(xs),
+        llegada: recibidas.length > 0 ? (recibidas.map((x) => x.fechaIngreso ?? "").filter(Boolean).sort()[0] ?? null) : null,
+        propuesta: p?.dia ?? null,
+        fuente: p?.fuente ?? null,
+        sirve: p != null && (!dia || p.dia <= dia),
+      };
+    })
+    .sort((a, b) => a.gtfNumber.localeCompare(b.gtfNumber, "es-PE", { numeric: true }));
+}
+
+/** ¿`a` y `b` son la misma especie con un apellido de más? («huayruro» / «huayruro negro»). Sólo sugiere, nunca iguala. */
+export function especiesParecidas(a: string | null | undefined, b: string | null | undefined): boolean {
+  const ka = claveEspecie(a);
+  const kb = claveEspecie(b);
+  if (!ka || !kb || ka === kb) return false;
+  return ka.startsWith(`${kb} `) || kb.startsWith(`${ka} `);
+}
+
+/**
+ * Otra corrida viva tiene las trozas de la especie y el permiso: se dice cuál,
+ * con cuánta madera, y cuánto rinden las dos juntas. Es el caso de Cachimbo en
+ * Blas: la bandeja decía «No hay trozas en el patio» porque la N° 61 las tomó.
+ */
+function tomadaPorOtra(
+  corrida: CorridaParaProponer,
+  especie: string,
+  clave: string,
+  ctx: ContextoDelPatio | null,
+  permisoOk: (p: PermisoRef) => boolean,
+): PropuestaDeTrozas | null {
+  if (!ctx) return null;
+  const suyas = ctx.tomadas.filter(
+    (t) => claveEspecie(t.especie) === clave && permisoOk(t.permiso) && t.corrida.id !== (corrida.id ?? ""),
+  );
+  if (suyas.length === 0) return null;
+  const producido = Math.max(0, r4(corrida.m3Producido || 0));
+  const porCorrida = new Map<string, TrozaTomada[]>();
+  for (const t of suyas) porCorrida.set(t.corrida.id, [...(porCorrida.get(t.corrida.id) ?? []), t]);
+  const corridas: TomadaPor[] = [...porCorrida.values()]
+    .map((ts) => {
+      const c = ts[0]!.corrida;
+      const m3 = suma(ts);
+      const otra = c.m3Producido != null && c.m3Producido > 0 ? c.m3Producido : null;
+      return {
+        corridaId: c.id,
+        lineNo: c.lineNo,
+        fecha: c.fecha,
+        m3Producido: otra,
+        abierta: otra == null,
+        trozas: ts.length,
+        m3,
+        sumadasPct: m3 > 0 && producido > 0 ? r1(((producido + (otra ?? 0)) / m3) * 100) : null,
+      };
+    })
+    .sort((a, b) => b.m3 - a.m3 || a.fecha.localeCompare(b.fecha));
+  const a = corridas[0]!;
+  const resto = corridas.length - 1;
+  return {
+    ...sinPropuesta(
+      "tomada_por_otra_corrida",
+      `${a.trozas === 1 ? "La troza" : `Las ${a.trozas} trozas`} de ${especie} de este permiso ` +
+        `(${fm3(a.m3)}) ya ${a.trozas === 1 ? "entró" : "entraron"} a la corrida ${nroDe(a.lineNo)} del ${ddmm(a.fecha)}` +
+        (a.abierta ? ", que todavía no declara lo producido" : "") +
+        (resto > 0 ? ` (y otras a ${resto === 1 ? "1 corrida más" : `${resto} corridas más`})` : "") +
+        "." +
+        (a.sumadasPct != null ? ` Si esta salió de la misma madera, las dos juntas rinden ${formatNumber(a.sumadasPct, 1)} %.` : "") +
+        ` Decide si la ${nroDe(a.lineNo)} suelta sus trozas o si esta queda sin origen.`,
+      { tipo: "soltar_corrida", corridas },
+    ),
+  };
+}
+
+/** En el patio no está la especie, pero sí una de nombre parecido del mismo permiso. */
+function especieParecida(
+  especie: string,
+  trozas: readonly TrozaParaDiagnostico[],
+  permisoOk: (p: PermisoRef) => boolean,
+): PropuestaDeTrozas | null {
+  const parecidas = trozas.filter((t) => t.fuera == null && permisoOk(t.permiso) && especiesParecidas(t.especie, especie));
+  if (parecidas.length === 0) return null;
+  const porEspecie = new Map<string, TrozaParaDiagnostico[]>();
+  for (const t of parecidas) {
+    const k = claveEspecie(t.especie);
+    porEspecie.set(k, [...(porEspecie.get(k) ?? []), t]);
+  }
+  const [ts] = [...porEspecie.values()].sort((a, b) => suma(b) - suma(a));
+  const nombre = ts![0]!.especie?.trim() || "";
+  const m3 = suma(ts!);
+  return sinPropuesta(
+    "especie_parecida",
+    `En el patio no hay ${especie}, pero hay ${ts!.length === 1 ? "1 troza" : `${ts!.length} trozas`} de «${nombre}» ` +
+      `(${fm3(m3)}) de este permiso: si es la misma especie, corrige la especie de la corrida.`,
+    { tipo: "corregir_corrida", campo: "especie", actual: especie, propuesta: nombre, trozas: ts!.length, m3 },
+  );
+}
+
+/**
+ * El permiso de la corrida no tiene ninguna guía en el libro, o la que tiene de
+ * esta especie no trae su lista de trozas: la madera existe en papel y no en el
+ * patio. Sin permiso en la corrida no hay nada que afirmar.
+ */
+function faltaLaGuia(corrida: CorridaParaProponer, clave: string, ctx: ContextoDelPatio | null): PropuestaDeTrozas | null {
+  if (!ctx || !clavePermiso(corrida.permiso)) return null;
+  const permiso = corrida.permiso.codigo?.trim() || null;
+  /* Sólo las guías que DICEN su permiso: con una punta sin dato `mismoPermiso`
+     no afirma nada, y acá hay que afirmar que la guía es de este permiso. */
+  const delPermiso = ctx.guias.filter((g) => clavePermiso(g.permiso) && mismoPermiso(corrida.permiso, g.permiso));
+  if (delPermiso.length === 0) {
+    return sinPropuesta(
+      "guia_sin_trozas",
+      `El permiso ${permiso ?? "de la corrida"} no tiene ninguna guía en Ingresos: registra la guía de esta madera, ` +
+        "o corrige el permiso de la corrida si salió de otro.",
+      { tipo: "cargar_guia", permiso, guias: [] },
+    );
+  }
+  const sinTrozas = delPermiso.filter((g) => g.trozas === 0 && (!claveEspecie(g.especie) || claveEspecie(g.especie) === clave));
+  if (sinTrozas.length === 0) return null;
+  const gtfs = nombrar(sinTrozas.map((g) => g.gtfNumber));
+  const pendiente = sinTrozas.some((g) => !g.recibida);
+  return sinPropuesta(
+    "guia_sin_trozas",
+    `${sinTrozas.length === 1 ? "La guía" : "Las guías"} ${gtfs} de este permiso no ${sinTrozas.length === 1 ? "tiene" : "tienen"} su lista de trozas` +
+      (pendiente ? " y todavía no se recibió" : "") +
+      ": cárgala en Ingresos.",
+    {
+      tipo: "cargar_guia",
+      permiso,
+      guias: sinTrozas.map((g) => ({ woodEntryId: g.id, gtfNumber: g.gtfNumber, especie: g.especie, m3: g.m3, recibida: g.recibida })),
+    },
+  );
+}
 
 /**
  * Qué trozas le tocan a una corrida (existente o por declarar), o por qué
@@ -402,40 +882,80 @@ export function proponerTrozas(
   corrida: CorridaParaProponer,
   trozas: readonly TrozaParaDiagnostico[],
   meta: number = RENDIMIENTO_META,
+  opciones: OpcionesDeDiagnostico = {},
 ): PropuestaDeTrozas {
+  const ctx = opciones.contexto ?? null;
+  const ignorarPermiso = opciones.ignorarPermiso === true;
+  const permisoOk = (p: PermisoRef) => ignorarPermiso || mismoPermiso(corrida.permiso, p);
+  /* Sin contexto no hay «hoy»: la propuesta de llegada no se acota a él. */
+  const hoy = ctx?.hoy ?? "9999-12-31";
   const especie = corrida.especie?.trim() || "";
   const clave = claveEspecie(especie);
   if (!clave) {
     return sinPropuesta(
       "sin_trozas_de_la_especie",
       "La corrida no dice su especie: complétala antes de buscarle trozas.",
+      { tipo: "corregir_corrida", campo: "especie", actual: "", propuesta: null, trozas: 0, m3: 0 },
     );
   }
   const dia = diaDelLibro(corrida.fecha) ?? "";
   const necesario = Math.max(0, r4(corrida.m3Producido || 0));
 
+  /* «No hay madera» se dice sólo después de mirar adónde fue (otra corrida), si
+     hay una especie de nombre parecido y si al permiso le falta la guía. Es lo
+     que la bandeja de Blas no miraba: decía «No hay trozas de Cachimbo en el
+     patio» con las 12 dentro de la N° 61 (ADR-447). */
+  /* La especie parecida sólo cuando NO hay ni una troza de la especie: si hay
+     y no alcanzan, «en el patio no hay X» sería falso. */
+  const sinMadera = (detalle: string, hayDeLaEspecie: boolean): PropuestaDeTrozas =>
+    tomadaPorOtra(corrida, especie, clave, ctx, permisoOk) ??
+    (hayDeLaEspecie ? null : especieParecida(especie, trozas, permisoOk)) ??
+    faltaLaGuia(corrida, clave, ctx) ??
+    sinPropuesta("sin_trozas_de_la_especie", detalle);
+
   const deEspecie = trozas.filter((t) => claveEspecie(t.especie) === clave);
-  if (deEspecie.length === 0) {
-    return sinPropuesta("sin_trozas_de_la_especie", `No hay trozas de ${especie} en el patio.`);
-  }
+  if (deEspecie.length === 0) return sinMadera(`No hay trozas de ${especie} en el patio.`, false);
   const libres = deEspecie.filter((t) => t.fuera == null);
-  if (libres.length === 0) {
-    return sinPropuesta(
-      "sin_trozas_de_la_especie",
-      `Las trozas de ${especie} que hay ya se usaron o no pueden ir a la sierra.`,
-    );
-  }
+  if (libres.length === 0) return sinMadera(`Las trozas de ${especie} que hay ya se usaron o no pueden ir a la sierra.`, true);
   /* El permiso, antes que todo lo demás: la regla nueva rechaza otra guía
      aunque todo lo demás esté bien. El lote abierto que la tiene también tiene
      que ser del permiso (ADR-393) y de la especie (L-A1). */
-  const delPermiso = libres.filter(
-    (t) => mismoPermiso(corrida.permiso, t.permiso) && !loteAjeno(corrida, clave, t.lote),
-  );
+  const delPermiso = libres.filter((t) => permisoOk(t.permiso) && !loteAjeno(corrida, clave, t.lote, ignorarPermiso));
   if (delPermiso.length === 0) {
-    const permisos = nombrar(libres.map((t) => t.permiso.codigo ?? "").filter(Boolean));
+    const tomada = tomadaPorOtra(corrida, especie, clave, ctx, permisoOk);
+    if (tomada) return tomada;
+    const deOtroPermiso = libres.filter((t) => !permisoOk(t.permiso));
+    /* Del permiso pero en un lote de otra especie o permiso: el arreglo es
+       sacarla de ese lote, no tocar la corrida. */
+    if (deOtroPermiso.length === 0) {
+      const lotes = nombrar(libres.map((t) => t.lote?.code ?? "").filter(Boolean));
+      return sinPropuesta(
+        "sin_trozas_de_la_especie",
+        `Las ${libres.length} trozas de ${especie} de este permiso están en ${lotes ? `el lote ${lotes}` : "un lote"} ` +
+          "de otra especie o de otro permiso: sácalas de ahí en Consumos.",
+      );
+    }
+    const guia = faltaLaGuia(corrida, clave, ctx);
+    if (guia) return guia;
+    const porPermiso = new Map<string, { codigo: string; contratoId: string | null; trozas: number; m3: number }>();
+    for (const t of deOtroPermiso) {
+      const k = clavePermiso(t.permiso) ?? "";
+      const p = porPermiso.get(k) ?? { codigo: t.permiso.codigo ?? "", contratoId: t.permiso.contratoId, trozas: 0, m3: 0 };
+      p.trozas += 1;
+      p.m3 = r4(p.m3 + t.m3);
+      porPermiso.set(k, p);
+    }
+    const permisos = nombrar(deOtroPermiso.map((t) => t.permiso.codigo ?? "").filter(Boolean));
     return sinPropuesta(
-      "sin_trozas_de_la_especie",
-      `Las ${libres.length} trozas de ${especie} que hay son de otro permiso${permisos ? ` (${permisos})` : ""}.`,
+      "permiso_distinto",
+      `Las ${deOtroPermiso.length} trozas de ${especie} que hay son de otro permiso${permisos ? ` (${permisos})` : ""}. ` +
+        "Si la corrida salió de esa madera, corrige su permiso.",
+      {
+        tipo: "corregir_corrida",
+        campo: "permiso",
+        actual: corrida.permiso.codigo?.trim() || null,
+        propuestos: [...porPermiso.values()].filter((p) => p.codigo).sort((a, b) => b.m3 - a.m3),
+      },
     );
   }
 
@@ -446,7 +966,7 @@ export function proponerTrozas(
      en el servidor). Revisión 27-09. */
   const corridaSinPermiso =
     !corrida.permiso.contratoId && !normalizarCodigoContrato(corrida.permiso.codigo ?? "");
-  const candidatas = corridaSinPermiso ? deUnSoloPermiso(delPermiso) : delPermiso;
+  const candidatas = corridaSinPermiso && !ignorarPermiso ? deUnSoloPermiso(delPermiso) : delPermiso;
 
   /* Cada troza se detiene en la primera regla que no pasa. */
   const evaluadas: Evaluada[] = candidatas.map((t) => {
@@ -499,6 +1019,7 @@ export function proponerTrozas(
           : ""),
       propuesta: elegidas.map(aPropuesta),
       m3Propuesto,
+      arreglo: NINGUNO,
     };
   }
 
@@ -514,9 +1035,9 @@ export function proponerTrozas(
     }
   }
   if (!alcanza) {
-    return sinPropuesta(
-      "sin_trozas_de_la_especie",
+    return sinMadera(
       `Las trozas de ${especie} de este permiso suman ${fm3(acumulado)} y la corrida produjo ${fm3(necesario)}: faltan trozas.`,
+      true,
     );
   }
   /* Las que hacen falta: las de esa etapa y todas las de arriba. De ellas sale
@@ -537,14 +1058,33 @@ export function proponerTrozas(
         : ` Además, ${conFilaAjena} de ellas ${conFilaAjena === 1 ? "está anotada" : "están anotadas"} en la fila de otra especie de su guía.`
       : "";
 
+  /* Las guías que además hay que acomodar o corregir, para que el arreglo no
+     prometa que con un solo paso alcanza. */
+  const acomodar = (ts: readonly TrozaParaDiagnostico[]): Extract<ArregloDeCorrida, { tipo: "acomodar_trozas" }>["guias"] => {
+    const porGtf = new Map<string, TrozaParaDiagnostico[]>();
+    for (const t of ts) porGtf.set(t.gtfNumber ?? "", [...(porGtf.get(t.gtfNumber ?? "") ?? []), t]);
+    return [...porGtf.entries()].map(([gtfNumber, xs]) => ({
+      gtfNumber,
+      woodEntryIds: [...new Set(xs.map((x) => x.fila.id))],
+      especieDeLaFila: xs[0]!.fila.especie,
+      trozas: xs.length,
+    }));
+  };
+
   switch (alcanza) {
     case "sin_recibir": {
       const guias = [...new Set(deLaEtapa.map((t) => t.gtfNumber ?? "").filter(Boolean))];
+      const tarde = necesarias.filter((e) => e.etapa === "tarde").map((e) => e.t);
       return sinPropuesta(
         "guia_sin_recibir",
         guias.length > 1
           ? `Las guías ${nombrar(guias)} todavía no se recibieron: recíbelas en Ingresos.`
           : `La guía ${guias[0] ?? "de estas trozas"} todavía no se recibió: recíbela en Ingresos.`,
+        {
+          tipo: "recibir_guia",
+          guias: guiasDelArreglo(deLaEtapa, dia, hoy),
+          ...(tarde.length > 0 ? { corregirTambien: guiasDelArreglo(tarde, dia, hoy) } : {}),
+        },
       );
     }
     case "tarde": {
@@ -557,6 +1097,7 @@ export function proponerTrozas(
           (primera ? ` (la primera, el ${f(primera)})` : "") +
           ": corrige la fecha de llegada en Ingresos." +
           colaFila,
+        { tipo: "corregir_llegada", guias: guiasDelArreglo(deLaEtapa, dia, hoy) },
       );
     }
     case "otra_fila": {
@@ -564,6 +1105,7 @@ export function proponerTrozas(
       return sinPropuesta(
         "fila_de_otra_especie",
         `Las trozas de ${especie} están anotadas en la fila de ${filas} de su guía: acomódalas en Ingresos.`,
+        { tipo: "acomodar_trozas", guias: acomodar(deLaEtapa) },
       );
     }
     case "sin_saldo": {
@@ -621,6 +1163,7 @@ export function diagnosticarCorrida(
   corrida: CorridaParaDiagnostico,
   trozas: readonly TrozaParaDiagnostico[],
   meta: number = RENDIMIENTO_META,
+  opciones: OpcionesDeDiagnostico = {},
 ): DiagnosticoCorrida {
   const base = {
     corridaId: corrida.id,
@@ -630,9 +1173,21 @@ export function diagnosticarCorrida(
     permiso: corrida.permiso.codigo?.trim() || null,
     m3Producido: r4(corrida.m3Producido || 0),
   };
+  /* Sólo el lote de inventario y el volumen escrito se arreglan declarando
+     apertura: la ya declarada no pide nada, y la de piezas sin consumo se anula
+     y se vuelve a declarar (lo dice el detalle). Sin la clase (una lectura
+     vieja), «Declarar apertura» como hasta hoy. */
+  const aperturaSeArregla =
+    corrida.materiaPrima == null ||
+    corrida.materiaPrima === "lote_inventario" ||
+    corrida.materiaPrima === "volumen_escrito";
   const r = corrida.materiaPrimaSinTrozas
-    ? sinPropuesta("apertura", corrida.materiaPrimaSinTrozas)
-    : proponerTrozas(corrida, trozas, meta);
+    ? sinPropuesta(
+        "apertura",
+        corrida.materiaPrimaSinTrozas,
+        aperturaSeArregla ? { tipo: "declarar_apertura" } : NINGUNO,
+      )
+    : proponerTrozas(corrida, trozas, meta, opciones);
   const mesCerrado = corrida.mesCerrado?.trim() || null;
   /* Con el mes cerrado el servidor rechaza cualquier vínculo (PERIODO_CERRADO):
      se dice en la misma frase, para que «lista» no prometa lo que el POST niega. */
@@ -659,10 +1214,11 @@ export function diagnosticarSinOrigen(
   corridas: readonly CorridaParaDiagnostico[],
   trozas: readonly TrozaParaDiagnostico[],
   meta: number = RENDIMIENTO_META,
+  opciones: OpcionesDeDiagnostico = {},
 ): DiagnosticoSinOrigen {
   const orden = new Map(MOTIVOS_SIN_ORIGEN.map((m, i) => [m, i]));
   const lista = corridas
-    .map((c) => diagnosticarCorrida(c, trozas, meta))
+    .map((c) => diagnosticarCorrida(c, trozas, meta, opciones))
     .sort(
       (a, b) =>
         (orden.get(a.motivo) ?? 9) - (orden.get(b.motivo) ?? 9) ||
@@ -754,6 +1310,8 @@ export interface TrozaLeida {
     contratoId: string | null;
     /** `ForestContrato.codigo` si hay contrato; si no, `originCode`. */
     permisoCodigo: string | null;
+    /** `gtfDate`: la fecha que declara el papel. Con ella se propone la llegada (ADR-447). */
+    gtfDate?: Fecha;
   };
 }
 
@@ -804,6 +1362,11 @@ export function trozaParaDiagnostico(t: TrozaLeida): TrozaParaDiagnostico {
       t.lote && t.lote.status === "abierto"
         ? { id: t.lote.id, code: t.lote.code, especie: t.lote.especie, permiso: t.lote.permiso }
         : null,
+    llegada: {
+      guia: diaDelLibro(t.guia.gtfDate ?? null),
+      asiento: diaDelLibro(t.guia.entryDate ?? null),
+      sigueALaGuia: sigueALaGuia({ fechaPropia: t.fechaRecepcion, fechaDeSuAsiento: t.guia.fechaRecepcion }),
+    },
   };
 }
 
@@ -852,6 +1415,15 @@ export function corridaParaDiagnostico(c: CorridaLeida): CorridaParaDiagnostico 
         : c.piezas > 0
           ? "Tiene trozas marcadas sin su consumo por guía: anúlala y vuelve a declararla."
           : null;
+  const materiaPrima: CorridaParaDiagnostico["materiaPrima"] = c.aperturaDeclarada
+    ? "apertura_declarada"
+    : c.lotes > 0
+      ? "lote_inventario"
+      : entrada > 0
+        ? "volumen_escrito"
+        : c.piezas > 0
+          ? "piezas_sin_consumo"
+          : null;
   return {
     id: c.id,
     lineNo: c.lineNo,
@@ -860,5 +1432,6 @@ export function corridaParaDiagnostico(c: CorridaLeida): CorridaParaDiagnostico 
     fecha: diaDelLibro(c.entryDate ?? null) ?? "",
     m3Producido: m3DeProducto(c.quantity, c.unit),
     materiaPrimaSinTrozas,
+    materiaPrima,
   };
 }
