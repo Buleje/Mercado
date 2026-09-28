@@ -15,10 +15,15 @@
  *
  * En el trozado (`para="trozado"`) es al revés: se elige uno que YA tiene su
  * línea de tala, y el modal abre en «Talados».
+ *
+ * Con `onElegirVarios` (la tala de varios, Brandon 28-09: «marcas en Ver censo
+ * los árboles que tumbaste») cada disponible lleva su casilla y el pie ofrece
+ * «Talar los N elegidos». Los que no se deben tumbar se marcan igual, pero
+ * piden confirmar todos juntos antes de pasar a la planilla.
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, Loader2, MapPin, RefreshCw, Search, ShieldAlert, Trees } from "@buleje/design-system/icons";
+import { AlertTriangle, Loader2, MapPin, RefreshCw, Search, Trees } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import {
@@ -36,6 +41,8 @@ import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { formatNumber } from "@/lib/format";
 import type { CensoDeTala } from "./hooks/use-censo-de-tala";
 import LothCensoElegirTabla, { type OrdenCenso } from "./LothCensoElegirTabla";
+import { AvisoMarcados, AvisoPendiente, BotonesMarcados } from "./LothCensoMarcados";
+import { useMarcadosDelCenso, type ElegirVarios } from "./hooks/use-marcados-del-censo";
 
 interface Props {
   open: boolean;
@@ -50,6 +57,10 @@ interface Props {
   onElegir: (a: ArbolParaElegir) => void;
   /** Tala: un árbol en pie. Trozado: uno con su tala en el libro. */
   para?: "tala" | "trozado";
+  /** Tala de varios: casillas + el botón del pie (`etiqueta` dice qué hace con los N). */
+  onElegirVarios?: ElegirVarios;
+  /** Los que ya están en la planilla: se ven, pero no se ofrecen otra vez. */
+  enPlanilla?: ReadonlySet<string>;
 }
 
 const INPUT =
@@ -57,7 +68,7 @@ const INPUT =
 const BTN =
   "inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-60";
 
-export default function LothCensoElegirModal({ open, onClose, censo, planLabel, elegido, posicion, onElegir, para = "tala" }: Props) {
+export default function LothCensoElegirModal({ open, onClose, censo, planLabel, elegido, posicion, onElegir, para = "tala", onElegirVarios, enPlanilla }: Props) {
   const [filtro, setFiltro] = useState<FiltroCenso>(para === "trozado" ? "talados" : "disponibles");
   const [texto, setTexto] = useState("");
   const [orden, setOrden] = useState<OrdenCenso>({ columna: "codigo", dir: "asc" });
@@ -67,6 +78,9 @@ export default function LothCensoElegirModal({ open, onClose, censo, planLabel, 
   /** El árbol que pide confirmar antes de cargarlo (semillero, bajo DMC…). */
   const [pendiente, setPendiente] = useState<ArbolParaElegir | null>(null);
   const confirmarRef = useRef<HTMLButtonElement>(null);
+  /** Tala de varios: lo marcado, en el orden en que se marcó. */
+  const multi = para === "tala" && onElegirVarios != null;
+  const marcas = useMarcadosDelCenso(open, multi ? onElegirVarios : undefined);
 
   /* Por los números: el formulario arma el objeto en cada render. */
   const latForm = posicion?.lat;
@@ -159,10 +173,20 @@ export default function LothCensoElegirModal({ open, onClose, censo, planLabel, 
             {taladoLibroM3 > 0 && (
               <> · <span className="font-mono font-bold tabular-nums text-[var(--text-primary)]">{fmtM3(taladoLibroM3)}</span> m³ talados en el libro</>
             )}
+            {multi && marcas.lista.length > 0 && (
+              <>
+                {" "}· <span className="font-mono font-bold tabular-nums text-[var(--accent-ink)] dark:text-[var(--accent)]">{marcas.lista.length}</span>{" "}
+                {marcas.lista.length === 1 ? "marcado" : "marcados"}
+              </>
+            )}
           </p>
-          <button type="button" onClick={onClose} className="inline-flex h-10 items-center rounded-xl px-3 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]">
-            Cerrar
-          </button>
+          <BotonesMarcados
+            n={multi ? marcas.lista.length : null}
+            etiqueta={onElegirVarios?.etiqueta(marcas.lista.length) ?? ""}
+            onDesmarcar={() => marcas.marcar(marcas.lista, false)}
+            onCerrar={onClose}
+            onElegir={() => marcas.elegir()}
+          />
         </div>
       }
     >
@@ -197,7 +221,7 @@ export default function LothCensoElegirModal({ open, onClose, censo, planLabel, 
                     ? "«En el libro» sale de las líneas asentadas: en el trozado se elige un árbol que ya tiene su tala; el que no la tiene no tiene qué trozar."
                     : "«En el libro» sale de las líneas asentadas: si el árbol ya tiene tala, no se elige aunque el censo diga «en pie»."
                 }
-                affects="Semillero o remanente del regente y bajo DMC se ven, pero piden confirmar: tumbarlos es infracción."
+                affects={`Semillero o remanente del regente y bajo DMC se ven, pero piden confirmar: tumbarlos es infracción.${multi ? " Con las casillas marcas varios y los llevas juntos a una planilla." : ""}`}
                 example="Categoría POA «Semillero» sin que el regente lo diga: es la reserva que calcula el plan con los más gruesos."
               />
             </span>
@@ -226,27 +250,16 @@ export default function LothCensoElegirModal({ open, onClose, censo, planLabel, 
         )}
 
         {pendiente?.reparo && (
-          <div
-            role="alert"
-            className={`flex flex-wrap items-start gap-3 rounded-xl border-2 px-3 py-2.5 text-sm ${
-              pendiente.reparo.nivel === "infraccion"
-                ? "border-[var(--data-error-500)]/60 bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]"
-                : "border-[var(--data-warning-500)]/60 bg-[var(--data-warning-500)]/10 text-[var(--data-warning-ink)] dark:text-[var(--data-warning-500)]"
-            }`}
-          >
-            <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
-            <div className="min-w-0 flex-1">
-              <b>Árbol {pendiente.treeCode}: {pendiente.reparo.titulo}.</b> {pendiente.reparo.detalle}
-            </div>
-            <div className="flex shrink-0 gap-2">
-              <button type="button" onClick={() => setPendiente(null)} className="inline-flex h-9 items-center rounded-lg px-3 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">
-                Volver
-              </button>
-              <button ref={confirmarRef} type="button" onClick={() => elegir(pendiente)} className="inline-flex h-9 items-center rounded-lg border-2 border-current px-3 text-sm font-bold">
-                Elegirlo igual
-              </button>
-            </div>
-          </div>
+          <AvisoPendiente arbol={pendiente} reparo={pendiente.reparo} confirmarRef={confirmarRef} onVolver={() => setPendiente(null)} onElegir={() => elegir(pendiente)} />
+        )}
+
+        {marcas.confirmando && marcas.conReparo.length > 0 && (
+          <AvisoMarcados
+            conReparo={marcas.conReparo}
+            seguirRef={marcas.seguirRef}
+            onDesmarcar={() => marcas.marcar(marcas.conReparo, false)}
+            onSeguir={() => marcas.elegir(true)}
+          />
         )}
 
         {censo.error ? (
@@ -268,6 +281,9 @@ export default function LothCensoElegirModal({ open, onClose, censo, planLabel, 
             onElegir={elegir}
             vacio={vacio}
             para={para}
+            marcados={multi ? marcas.ids : undefined}
+            onMarcar={multi ? marcas.marcar : undefined}
+            enPlanilla={enPlanilla}
           />
         )}
         {censo.truncado && (

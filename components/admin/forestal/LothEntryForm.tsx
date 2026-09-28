@@ -71,6 +71,7 @@ import { olvidarArbolEnElLibro, useArbolEnElLibro } from "./hooks/use-arbol-en-e
 import { restanteTrozado, siguienteCodigoDeTroza } from "@/lib/forestal/loth-restante";
 import LothTalaDatosInternos from "./LothTalaDatosInternos";
 import { olvidarCensoDeTala, useCensoDeTala } from "./hooks/use-censo-de-tala";
+import type { TandaTalaInicial } from "./hooks/use-tala-en-tanda";
 import { arbolDeTroza, type ArbolParaElegir } from "@/lib/forestal/loth-censo-uso";
 import LothAvisoTransformacion from "./LothAvisoTransformacion";
 import { cientificoDeEspecie } from "@/lib/forestal/especies-catalogo";
@@ -108,6 +109,12 @@ interface Props {
    * Trozado elige esa tala (después de «Talar y trozar»).
    */
   arbolInicial?: string | null;
+  /**
+   * Tala: «Talar los N elegidos» en «Ver censo» lleva los árboles marcados a
+   * la planilla de tala en tanda, con la fecha, el motosierrista y la hora
+   * que ya tenía este formulario. Sin la prop, «Ver censo» elige de a uno.
+   */
+  onTalarVarios?: (t: TandaTalaInicial) => void;
 }
 
 /** Las secciones de transformación: las que casi siempre van en el Libro CTP.
@@ -162,7 +169,7 @@ const FIELDS: Record<LothSection, Set<string>> = {
  */
 const smalian = smalianVolume;
 
-export default function LothEntryForm({ section, caratulaId, onClose, onSaved, plantilla, corrigeLineNo, onIrAlCtp, arbolInicial }: Props) {
+export default function LothEntryForm({ section, caratulaId, onClose, onSaved, plantilla, corrigeLineNo, onIrAlCtp, arbolInicial, onTalarVarios }: Props) {
   /**
    * Qué especies ofrece este libro.
    *
@@ -1531,6 +1538,22 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
             elegido={treeCode}
             posicion={gpsOrigen === "telefono" && gpsLat != null && gpsLng != null ? { lat: gpsLat, lng: gpsLng } : null}
             onElegir={elegirArbol}
+            onElegirVarios={
+              section === "tala" && corrigeLineNo == null && onTalarVarios
+                ? {
+                    etiqueta: (n) => (n === 0 ? "Talar los elegidos" : n === 1 ? "Talar el elegido" : `Talar los ${n} elegidos`),
+                    onElegir: (arboles) => {
+                      setVerCenso(false);
+                      onTalarVarios({
+                        planId,
+                        planLabel,
+                        arboles,
+                        comunes: { fecha: entryDate, motosierrista, motosierristaId, hora: horaTala, modo: medidasTala.modo },
+                      });
+                    },
+                  }
+                : undefined
+            }
           />
         )}
       </div>

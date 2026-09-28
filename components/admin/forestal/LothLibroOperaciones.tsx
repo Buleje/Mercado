@@ -68,6 +68,8 @@ import LothSeccionTabla, { type ColDef } from "./LothSeccionTabla";
 import LothLineaDetalleModal from "./LothLineaDetalleModal";
 import LothImportLineasModal from "./LothImportLineasModal";
 import LothTrozadoMultipleModal from "./LothTrozadoMultipleModal";
+import LothTalaTandaModal from "./LothTalaTandaModal";
+import type { TandaTalaInicial } from "./hooks/use-tala-en-tanda";
 import LothDespachoGuiaModal from "./LothDespachoGuiaModal";
 import type { FilaImport } from "@/lib/forestal/loth-import-lineas";
 import {
@@ -258,6 +260,10 @@ export default function LothLibroOperaciones() {
   const [anularLineas, setAnularLineas] = useState<LothEntry[]>([]);
   const [showImport, setShowImport] = useState(false);
   const [showTrozar, setShowTrozar] = useState(false);
+  /** «Talar varios árboles»: lo marcado en «Ver censo», en una planilla (28-09). */
+  const [tandaTala, setTandaTala] = useState<TandaTalaInicial | null>(null);
+  /** «Trozar estos árboles» después de la tanda: el trozado ofrece sólo ésos. */
+  const [trozarSolo, setTrozarSolo] = useState<readonly string[] | null>(null);
   /** «Despachar con guía»: la GTF completa y sus líneas de despacho en un registro. */
   const [showDespachoGuia, setShowDespachoGuia] = useState(false);
   /** Censo del plan activo — alimenta el cuadro "censo vs realidad". */
@@ -1180,6 +1186,13 @@ export default function LothLibroOperaciones() {
             setCorrigeLineNo(null);
             setArbolInicial(null);
           }}
+          onTalarVarios={(t) => {
+            setShowForm(false);
+            setPlantilla(null);
+            setCorrigeLineNo(null);
+            setArbolInicial(null);
+            setTandaTala(t);
+          }}
           onSaved={(opts) => {
             if (!opts?.keepOpen) {
               setShowForm(false);
@@ -1232,10 +1245,28 @@ export default function LothLibroOperaciones() {
         }
       />
 
+      {tandaTala && (
+        <LothTalaTandaModal
+          inicial={tandaTala}
+          caratulaId={caratula?.id ?? null}
+          onClose={() => setTandaTala(null)}
+          onGuardadas={refreshAll}
+          onTrozar={(codigos) => {
+            setTandaTala(null);
+            setSection("trozado");
+            setTrozarSolo(codigos);
+            setShowTrozar(true);
+          }}
+        />
+      )}
+
       <LothTrozadoMultipleModal
         open={showTrozar}
-        talas={allEntries.filter((e) => e.section === "tala" && e.status === "registrado" && e.treeCode)}
-        onClose={() => setShowTrozar(false)}
+        talas={allEntries.filter((e) => e.section === "tala" && e.status === "registrado" && e.treeCode && (!trozarSolo || trozarSolo.includes(e.treeCode)))}
+        onClose={() => {
+          setShowTrozar(false);
+          setTrozarSolo(null);
+        }}
         onGuardar={(arbol, trozas) =>
           crearLineas(
             trozas.map((t) => ({

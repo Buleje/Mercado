@@ -8,6 +8,9 @@
  * modal la tabla no se vuelve tarjetas en el celular (el portal queda fuera
  * del shell del panel) y a 400 px scrollea de costado — sin fijarla, la acción
  * quedaba fuera de la pantalla.
+ *
+ * Con `marcados` (la tala de varios, 28-09) cada árbol disponible lleva su
+ * casilla junto al código, y la cabecera marca todos los de la lista.
  */
 
 import type { ReactNode } from "react";
@@ -29,17 +32,20 @@ const FIJA = "sticky right-0 z-[1] bg-[var(--surface-raised)] shadow-[-8px_0_8px
 
 const dec = (v: number | null, min: number, max: number) => (v == null ? "—" : formatNumber(v, { min, max }));
 
-function Cabecera({ col, label, orden, onOrdenar, derecha }: {
+function Cabecera({ col, label, orden, onOrdenar, derecha, antes }: {
   col: ColumnaCenso;
   label: string;
   orden: OrdenCenso;
   onOrdenar: (c: ColumnaCenso) => void;
   derecha?: boolean;
+  /** Lo que va antes del botón de orden (la casilla de «marcar todos»). */
+  antes?: ReactNode;
 }) {
   const activo = orden.columna === col;
   const Icono = !activo ? ArrowUpDown : orden.dir === "asc" ? ArrowUp : ArrowDown;
   return (
     <th scope="col" aria-sort={activo ? (orden.dir === "asc" ? "ascending" : "descending") : "none"} className={`${TH} ${derecha ? "text-right" : ""}`}>
+      {antes}
       <button
         type="button"
         onClick={() => onOrdenar(col)}
@@ -84,7 +90,10 @@ export function sePuedeElegir(a: ArbolParaElegir, para: "tala" | "trozado"): boo
   return para === "trozado" ? a.uso?.tala != null : a.disponibilidad === "disponible";
 }
 
-export default function LothCensoElegirTabla({ arboles, orden, onOrdenar, distancias, elegido, onElegir, vacio, para = "tala" }: {
+/** La casilla de un árbol: del tamaño de un dedo, pegada al código. */
+const CASILLA = "mr-2 h-5 w-5 shrink-0 cursor-pointer align-middle accent-[var(--accent-dark)]";
+
+export default function LothCensoElegirTabla({ arboles, orden, onOrdenar, distancias, elegido, onElegir, vacio, para = "tala", marcados, onMarcar, enPlanilla }: {
   arboles: readonly ArbolParaElegir[];
   orden: OrdenCenso;
   onOrdenar: (c: ColumnaCenso) => void;
@@ -95,14 +104,44 @@ export default function LothCensoElegirTabla({ arboles, orden, onOrdenar, distan
   onElegir: (a: ArbolParaElegir) => void;
   vacio: ReactNode;
   para?: "tala" | "trozado";
+  /** Tala de varios: los ids marcados. Sin esto, no hay casillas. */
+  marcados?: ReadonlySet<string>;
+  onMarcar?: (arboles: readonly ArbolParaElegir[], marcar: boolean) => void;
+  /** Los que ya están en la planilla de la tala de varios: no se ofrecen otra vez. */
+  enPlanilla?: ReadonlySet<string>;
 }) {
   const conDistancia = distancias != null;
+  const conCasillas = marcados != null && onMarcar != null;
+  const yaEnPlanilla = (a: ArbolParaElegir) => enPlanilla?.has(a.id) ?? false;
+  const marcables = conCasillas ? arboles.filter((a) => sePuedeElegir(a, para) && !yaEnPlanilla(a)) : [];
+  const nMarcados = marcables.filter((a) => marcados?.has(a.id)).length;
+  const todos = marcables.length > 0 && nMarcados === marcables.length;
   const columnas = 9 + (conDistancia ? 1 : 0);
   return (
     <DataTable className="w-full text-sm" stickyHeader wrapperClassName="max-h-[min(58vh,34rem)]">
       <thead className="bg-[var(--surface-sunken)]">
         <tr>
-          <Cabecera col="codigo" label="Código" orden={orden} onOrdenar={onOrdenar} />
+          <Cabecera
+            col="codigo"
+            label="Código"
+            orden={orden}
+            onOrdenar={onOrdenar}
+            antes={
+              conCasillas && (
+                <input
+                  type="checkbox"
+                  checked={todos}
+                  disabled={marcables.length === 0}
+                  ref={(el) => {
+                    if (el) el.indeterminate = nMarcados > 0 && !todos;
+                  }}
+                  onChange={() => onMarcar(marcables, !todos)}
+                  aria-label={`Marcar los ${marcables.length} disponibles de la lista`}
+                  className={CASILLA}
+                />
+              )
+            }
+          />
           {/* Pegada al código: ordenado por cercanía es la columna que manda, y
               al final quedaba tapada por «Elegir» a 1280 (medido 28-09). */}
           {conDistancia && <Cabecera col="distancia" label="Distancia" orden={orden} onOrdenar={onOrdenar} derecha />}
@@ -122,15 +161,37 @@ export default function LothCensoElegirTabla({ arboles, orden, onOrdenar, distan
           const infraccion = a.reparo?.nivel === "infraccion";
           const segunda = [a.speciesScientific, a.speciesNative].filter(Boolean);
           const d = distancias?.get(a.id);
-          const elegible = sePuedeElegir(a, para);
-          const motivo = para === "trozado" ? "sin tala en el libro, no hay qué trozar" : (a.motivoNoDisponible ?? "no disponible");
+          const enLaPlanilla = yaEnPlanilla(a);
+          const elegible = sePuedeElegir(a, para) && !enLaPlanilla;
+          const marcado = conCasillas && elegible && marcados.has(a.id);
+          const motivo = enLaPlanilla
+            ? "ya está en la planilla"
+            : para === "trozado"
+              ? "sin tala en el libro, no hay qué trozar"
+              : (a.motivoNoDisponible ?? "no disponible");
           return (
             <tr
               key={a.id}
               data-arbol={a.treeCode}
-              className={`border-t border-[var(--rule-soft)] align-top ${esElegido ? "bg-[var(--accent)]/10" : infraccion && para === "tala" ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10" : ""} ${!elegible ? "text-[var(--text-secondary)]" : ""}`}
+              className={`border-t border-[var(--rule-soft)] align-top ${esElegido || marcado ? "bg-[var(--accent)]/10" : infraccion && para === "tala" ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10" : ""} ${!elegible ? "text-[var(--text-secondary)]" : ""}`}
             >
-              <td className="px-2 py-2"><span className="whitespace-nowrap"><Mono bold>{a.treeCode}</Mono></span></td>
+              <td className="px-2 py-2">
+                <span className="flex items-center whitespace-nowrap">
+                  {conCasillas &&
+                    (elegible ? (
+                      <input
+                        type="checkbox"
+                        checked={marcado}
+                        onChange={(e) => onMarcar([a], e.target.checked)}
+                        aria-label={`Marcar el árbol ${a.treeCode}`}
+                        className={CASILLA}
+                      />
+                    ) : (
+                      <span className="mr-2 inline-block h-5 w-5 shrink-0" aria-hidden="true" />
+                    ))}
+                  <Mono bold>{a.treeCode}</Mono>
+                </span>
+              </td>
               {conDistancia && <td className="px-2 py-2 text-right"><span className="whitespace-nowrap"><Mono>{d == null ? "—" : formatDistance(d)}</Mono></span></td>}
               <td className="px-2 py-2">
                 <div className="min-w-[9rem]">
@@ -161,7 +222,7 @@ export default function LothCensoElegirTabla({ arboles, orden, onOrdenar, distan
                 )}
               </td>
               <td className="px-2 py-2"><EnElLibro a={a} /></td>
-              <td className={`px-2 py-1.5 text-right ${FIJA} ${esElegido ? "bg-[var(--surface-sunken)]" : ""}`}>
+              <td className={`px-2 py-1.5 text-right ${FIJA} ${esElegido || marcado ? "bg-[var(--surface-sunken)]" : ""}`}>
                 {elegible ? (
                   <button
                     type="button"
@@ -175,6 +236,8 @@ export default function LothCensoElegirTabla({ arboles, orden, onOrdenar, distan
                   >
                     {esElegido ? "Elegido" : "Elegir"}
                   </button>
+                ) : enLaPlanilla ? (
+                  <span className="inline-flex h-9 items-center whitespace-nowrap px-1 text-xs font-semibold text-[var(--text-secondary)]">En la planilla</span>
                 ) : (
                   /* El porqué ya está en «En el libro»; acá sólo que no se elige. */
                   <span
