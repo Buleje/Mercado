@@ -40,6 +40,11 @@ export function useSeccion2Kpis(s2: EstadoConsumosSeccion2, period: CtpPeriod) {
       alto: "sm",
       claveMemoria: "consumos-seccion2",
       filtrosActivos: s2.cuantosFiltros,
+      /* Brandon 27-09 «Disponibles sin 0 al cargar»: mientras el primer
+         fetch no vuelve (o volvió sin nada por un error), «0 consumos» se
+         lee como «no hay nada» — mismo bug ya resuelto en Productos y
+         Trozas disponibles (kpis-plegables.tsx). */
+      sinDatosAun: (s2.cargandoInicial || s2.error != null) && s2.filas.length === 0,
       filtros: <NotaFiltrosKpi nota={nota} onLimpiar={s2.limpiar} />,
       resumen:
         s2.cargandoInicial
