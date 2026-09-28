@@ -1,6 +1,6 @@
 # ADR-446 — Registrar en el libro la salida de un Anexo 04 guardado, y la GTF con el largo real de su talonario
 
-**Estado:** Propuesto (2026-09-28) — **7 de 10 decisiones tomadas** (28-09); faltan 3 (5, 8 y 9), que se pueden resolver al confirmar cada guía (sección «Decisiones»). No construir antes.
+**Estado:** Aceptado y construido (2026-09-28): talonario `8a9721f78`, puente `e3eb18571`, pantalla «Guías sin registrar» `fcd6d8ab4`. Revisado por reviewer y security (sin críticos). **En Blas no se registró nada todavía:** Brandon confirma guía por guía desde la pantalla. Pendiente: «Nuevo despacho» guarda el número sin lock (`forest-ctp.db.ts` ~1097); decisiones 5, 8 y 9 se resuelven al confirmar cada guía.
 **Relacionados:** ADR-444 (un paquete en UNA guía vigente), ADR-445 (origen y salida del día), ADR-437 (madera de servicio WASACO).
 
 ## Contexto
