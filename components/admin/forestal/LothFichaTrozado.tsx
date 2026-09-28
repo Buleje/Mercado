@@ -10,12 +10,16 @@
  *
  * Pasarse de lo talado no se frena acá —lo rechaza T4 al guardar, con su
  * mensaje—: se avisa en ámbar mientras se mide, que es cuando se corrige.
+ *
+ * «Trozar un árbol» (varias de una vez) usa la misma ficha con `lote`: lo que
+ * queda resta lo ya trozado Y todas las trozas nuevas.
  */
 
 import { AlertTriangle, Loader2, RefreshCw, TreePine } from "@buleje/design-system/icons";
 import { diaDelLibro, type ArbolParaElegir } from "@/lib/forestal/loth-censo-uso";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { restanteTrozado, siguienteCodigoDeTroza, type TalaDelArbol } from "@/lib/forestal/loth-restante";
+import { restanteDeLote } from "@/lib/forestal/loth-trozado-multiple";
 import type { ArbolEnElLibroEstado } from "./hooks/use-arbol-en-el-libro";
 import LothRestante from "./LothRestante";
 import { AMBAR, CabeceraArbol, CAJA, Dato, dec, KICKER } from "./loth-ficha-ui";
@@ -28,8 +32,10 @@ interface Props {
   codigo: string;
   libro: ArbolEnElLibroEstado;
   /** La troza que se está midiendo. */
-  troza: { codigo: string; volumenM3: number | null };
-  onUsarCodigo: (codigo: string) => void;
+  troza?: { codigo: string; volumenM3: number | null };
+  /** Varias trozas nuevas a la vez («Trozar un árbol»): reemplaza a `troza`. */
+  lote?: { codigo: string; volumenM3: number | null }[];
+  onUsarCodigo?: (codigo: string) => void;
 }
 
 const GPS_ORIGEN: Record<string, string> = {
@@ -66,7 +72,9 @@ function TalaDelArbolCaja({ tala }: { tala: TalaDelArbol }) {
   );
 }
 
-export default function LothFichaTrozado({ arbol, cargandoCenso, codigo, libro, troza, onUsarCodigo }: Props) {
+const SIN_TROZA = { codigo: "", volumenM3: null };
+
+export default function LothFichaTrozado({ arbol, cargandoCenso, codigo, libro, troza = SIN_TROZA, lote, onUsarCodigo }: Props) {
   const code = codigo.trim();
   if (!code) {
     return (
@@ -78,9 +86,12 @@ export default function LothFichaTrozado({ arbol, cargandoCenso, codigo, libro, 
   }
 
   const d = libro.datos;
-  const r = d ? restanteTrozado(d, { trozaCode: troza.codigo, volumeM3: troza.volumenM3 }) : null;
-  const siguiente = d && r?.repetida ? siguienteCodigoDeTroza(code, d.trozas) : null;
-  const enCurso = troza.codigo.trim();
+  const rl = d && lote ? restanteDeLote(d, lote.map((t) => ({ trozaCode: t.codigo, volumeM3: t.volumenM3 }))) : null;
+  const r = rl ?? (d ? restanteTrozado(d, { trozaCode: troza.codigo, volumeM3: troza.volumenM3 }) : null);
+  const siguiente = d && r?.repetida && !lote ? siguienteCodigoDeTroza(code, d.trozas) : null;
+  const enCurso = lote ? "" : troza.codigo.trim();
+  /** Las que se están midiendo, con su volumen (o «midiendo…»). */
+  const nuevas = lote ?? (enCurso && !r?.repetida ? [{ codigo: enCurso, volumenM3: troza.volumenM3 }] : []);
 
   return (
     <div className="space-y-3" data-ficha-trozado={code}>
@@ -123,19 +134,30 @@ export default function LothFichaTrozado({ arbol, cargandoCenso, codigo, libro, 
             titulo="Lo que queda por trozar"
             grupos={[
               {
-                filas: [
-                  { label: "Talado", m3: r.taladoM3 },
-                  { label: `Trozado (${r.trozas})`, m3: r.trozadoM3, resta: true },
-                  { label: r.excede ? "Se pasa" : "Queda", m3: r.restanteM3, total: true, aviso: r.excede },
-                ],
+                filas: rl
+                  ? [
+                      { label: "Talado", m3: r.taladoM3 },
+                      { label: `Ya trozado (${rl.asentadas})`, m3: rl.asentadoM3, resta: true },
+                      { label: `Estas trozas (${rl.nuevas})`, m3: rl.nuevasM3, resta: true },
+                      { label: r.excede ? "Se pasa" : "Queda", m3: r.restanteM3, total: true, aviso: r.excede },
+                    ]
+                  : [
+                      { label: "Talado", m3: r.taladoM3 },
+                      { label: `Trozado (${r.trozas})`, m3: r.trozadoM3, resta: true },
+                      { label: r.excede ? "Se pasa" : "Queda", m3: r.restanteM3, total: true, aviso: r.excede },
+                    ],
               },
             ]}
-            what="Lo talado − lo que ya se trozó de este árbol, con la troza que estás midiendo."
+            what={
+              rl
+                ? "Lo talado − lo que el libro ya tiene trozado de este árbol − las trozas que estás cargando."
+                : "Lo talado − lo que ya se trozó de este árbol, con la troza que estás midiendo."
+            }
           />
           {r.excede && r.restanteM3 != null && (
             <p className={`flex items-start gap-1.5 rounded-lg border px-2 py-1.5 text-xs font-semibold ${AMBAR}`}>
               <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              Pasa lo talado por {fmtM3(-r.restanteM3)} m³: el libro no lo acepta. Revisa las medidas de la troza.
+              Pasa lo talado por {fmtM3(-r.restanteM3)} m³: el libro no lo acepta. Revisa las medidas {lote ? "de las trozas" : "de la troza"}.
             </p>
           )}
           {r.taladoM3 == null && (
@@ -156,15 +178,15 @@ export default function LothFichaTrozado({ arbol, cargandoCenso, codigo, libro, 
                 <span className="font-mono tabular-nums">{t.volumeM3 == null ? "—" : fmtM3(t.volumeM3)} m³</span>
               </li>
             ))}
-            {enCurso && !r?.repetida && (
-              <li className="flex items-baseline justify-between gap-2 py-0.5 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
-                <span className="font-mono tabular-nums">{enCurso} <span className="font-sans font-semibold">(esta)</span></span>
-                <span className="font-mono tabular-nums">{troza.volumenM3 == null ? "midiendo…" : `${fmtM3(troza.volumenM3)} m³`}</span>
+            {nuevas.map((t) => (
+              <li key={t.codigo} className="flex items-baseline justify-between gap-2 py-0.5 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
+                <span className="font-mono tabular-nums">{t.codigo} <span className="font-sans font-semibold">{lote ? "(nueva)" : "(esta)"}</span></span>
+                <span className="font-mono tabular-nums">{t.volumenM3 == null ? "midiendo…" : `${fmtM3(t.volumenM3)} m³`}</span>
               </li>
-            )}
+            ))}
           </ul>
-          {d.trozas.length === 0 && !enCurso && <p className="text-xs text-[var(--text-tertiary)]">Todavía no salió ninguna troza.</p>}
-          {r?.repetida && siguiente && (
+          {d.trozas.length === 0 && nuevas.length === 0 && <p className="text-xs text-[var(--text-tertiary)]">Todavía no salió ninguna troza.</p>}
+          {r?.repetida && siguiente && onUsarCodigo && (
             <div role="alert" className={`mt-2 flex flex-wrap items-center gap-2 rounded-lg border px-2 py-1.5 text-xs font-semibold ${AMBAR}`}>
               <span className="min-w-0 flex-1">{enCurso} ya está en la línea N° {r.repetida.lineNo}.</span>
               <button type="button" onClick={() => onUsarCodigo(siguiente)} className="inline-flex h-8 shrink-0 items-center rounded-lg border-2 border-current px-2 font-bold">

@@ -292,6 +292,8 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
   const [photoUploading, setPhotoUploading] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  /** Enter en la última medida de la troza lleva acá, si ya se puede guardar. */
+  const registrarRef = useRef<HTMLButtonElement>(null);
 
   // ── Plan + picker de ítems disponibles (flujo data-driven, ADR-127) ──
   const [plans, setPlans] = useState<PlanOpt[]>([]);
@@ -619,6 +621,13 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
   const trozaRepetida = corrigeLineNo == null ? (restoTrozado?.repetida ?? null) : null;
   /** Guardar pide los obligatorios Y, en 4-6, haber contestado en qué libro va. */
   const puedeGuardar = isValid && !faltaConfirmarTh && !yaTaladoEnLibro && !trozaRepetida;
+  /** Enter en la última medida: al botón de guardar si ya se puede; si no, sigue el bloque de abajo. */
+  const irARegistrar = () => {
+    const boton = registrarRef.current;
+    if (!boton || !puedeGuardar || submitting) return false;
+    boton.focus();
+    return true;
+  };
   const motivoBloqueo = yaTaladoEnLibro
     ? `El árbol ${treeCode.trim()} ya se taló en la línea N° ${yaTaladoEnLibro.lineNo}: elige otro del censo`
     : trozaRepetida
@@ -951,6 +960,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
               Guardar y otro
             </button>
             <button
+              ref={registrarRef}
               type="submit"
               form="loth-entry-form"
               disabled={!puedeGuardar || submitting}
@@ -1383,6 +1393,9 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
                 forma={formaMedicion}
                 onForma={setFormaMedicion}
                 seccion={section}
+                /* Trozado: la medida es lo último que se llena. Tala sigue al
+                   bloque de abajo (observaciones, motosierrista). */
+                alTerminar={section === "trozado" ? irARegistrar : undefined}
               />
             )}
 

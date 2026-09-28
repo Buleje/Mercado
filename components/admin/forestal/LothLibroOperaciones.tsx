@@ -1191,6 +1191,9 @@ export default function LothLibroOperaciones() {
               lengthM: t.lengthM,
               volumeM3: t.volumeM3,
               isRama: t.isRama,
+              // Las medidas cruzadas de cada troza (ADR-422): sin esto el
+              // múltiple guardaba sólo el promedio aunque se midiera en cruz.
+              medicionCruda: t.medicionCruda,
             })),
           )
         }

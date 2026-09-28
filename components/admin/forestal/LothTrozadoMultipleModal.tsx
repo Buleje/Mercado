@@ -5,46 +5,46 @@
  *
  * Un fuste se corta en cinco o seis trozas; registrarlas era abrir cinco veces
  * el formulario completo y volver a tipear árbol, especie y fecha cada vez. Acá
- * se elige el árbol una vez y se agregan renglones: el código sale solo (A, B,
- * C…), el volumen se calcula por Smalian renglón por renglón, y el total se
- * compara **contra lo que ese árbol declaró al talarse**, que es el control que
- * de verdad importa (el trozado no puede superar la tala).
+ * se elige el árbol una vez y se agregan renglones: el código sigue a lo que el
+ * libro ya trozó (A-D asentadas → E, F, G…), el volumen sale por Smalian
+ * renglón por renglón y lo que queda se compara **contra la tala del árbol,
+ * restando también lo ya trozado** (el trozado no puede superar la tala: T4).
+ *
+ * Igual que el Trozado de a una (Brandon 28-09: «Trozado múltiple igual»): la
+ * misma ficha lateral (`LothFichaTrozado` con `lote`), las dos formas de
+ * anotar el Ø con la elección fijada en el equipo, y las flechas/Enter para
+ * moverse entre las medidas.
  */
 
-import { useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
-import {
-  ControlesDeVentana,
-  TiradorDeVentana,
-} from "@/components/admin/shared/modal-controles-ventana";
-import { DataTable } from "@buleje/design-system";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
+import { usePanelTokens } from "@/components/admin/shared/use-panel-tokens";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
-import { AlertTriangle, Loader2, Plus, Scissors, Trash2, X } from "@buleje/design-system/icons";
-import { smalianVolume, type LothEntryDTO } from "@/lib/forestal/loth-constants";
+import { Scissors, X } from "@buleje/design-system/icons";
+import type { LothEntryDTO } from "@/lib/forestal/loth-constants";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import type { FormaMedicion } from "@/lib/forestal/loth-forma-medicion";
+import {
+  calcularRenglones,
+  renglonesEnForma,
+  renglonVacio,
+  restanteDeLote,
+  trozasParaAsentar,
+  type RenglonTroza,
+  type TrozaParaAsentar,
+} from "@/lib/forestal/loth-trozado-multiple";
+import { useArbolDelCenso } from "./hooks/use-arbol-del-censo";
+import { olvidarArbolEnElLibro, useArbolEnElLibro } from "./hooks/use-arbol-en-el-libro";
+import { useFormaMedicion } from "./hooks/use-forma-medicion";
+import LothFichaTrozado from "./LothFichaTrozado";
+import { SelectorFormaMedicion } from "./LothMedicionPartes";
+import LothTrozadoMultiplePie from "./LothTrozadoMultiplePie";
+import LothTrozasRenglones from "./LothTrozasRenglones";
 
-interface Renglon {
-  id: number;
-  sufijo: string;
-  diamMayor: string;
-  diamMenor: string;
-  largo: string;
-  isRama: boolean;
-}
-
-const LETRAS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-const nuevoRenglon = (i: number): Renglon => ({
-  id: i,
-  sufijo: LETRAS[i % LETRAS.length],
-  diamMayor: "",
-  diamMenor: "",
-  largo: "",
-  isRama: false,
-});
-
-const INPUT =
-  "h-11 w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-center font-mono text-sm tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
+const RENGLONES_INICIALES = () => [renglonVacio(0), renglonVacio(1)];
 
 export default function LothTrozadoMultipleModal({
   open,
@@ -56,10 +56,7 @@ export default function LothTrozadoMultipleModal({
   /** Talas registradas: de acá sale el árbol, su especie y su volumen tumbado. */
   talas: LothEntryDTO[];
   onClose: () => void;
-  onGuardar: (
-    arbol: LothEntryDTO,
-    trozas: { trozaCode: string; diamMayorM: number; diamMenorM: number; lengthM: number; volumeM3: number; isRama: boolean }[],
-  ) => Promise<{ creadas: number; errores: string[] }>;
+  onGuardar: (arbol: LothEntryDTO, trozas: TrozaParaAsentar[]) => Promise<{ creadas: number; errores: string[] }>;
 }) {
   /* Sin esto el foco se queda atrás del modal: Tab se va a la pantalla
      de abajo y Escape no cierra (hook medido en el módulo, 2026-09-09). */
@@ -68,8 +65,15 @@ export default function LothTrozadoMultipleModal({
      con el ref vacío y no vuelve a mirar cuando el modal aparece. */
   const cajaRef = useRef<HTMLDivElement>(null);
   const [arbolId, setArbolId] = useState<string>("");
-  const [renglones, setRenglones] = useState<Renglon[]>([nuevoRenglon(0), nuevoRenglon(1)]);
+  const [renglones, setRenglones] = useState<RenglonTroza[]>(RENGLONES_INICIALES);
+  const sigId = useRef(2);
   const [guardando, setGuardando] = useState(false);
+  const [resultado, setResultado] = useState<{ creadas: number; errores: string[]; intentadas: number } | null>(null);
+  const [forma, setForma] = useFormaMedicion();
+  /* En portal, como AdminModal: dentro del panel, `.admin-mobile-cards`
+     volvía tarjetas a 400 px la tablita de «Lo que queda» de la ficha
+     (medido 28-09). Fuera del panel hay que traer sus tokens. */
+  const tokens = usePanelTokens(open);
   useModalAccesible(cajaRef, { onCerrar: guardando ? undefined : onClose, activo: open });
   /**
    * Ventana: se mueve, se achica y se fija (ADR-420).
@@ -78,58 +82,63 @@ export default function LothTrozadoMultipleModal({
    * talado están en la tabla del libro, detrás. Con seis trozas cargadas el
    * modal tapa justo la fila contra la que hay que cotejar; corrido a un lado
    * se tipea mirando el dato, sin cerrar y perder los renglones a medio llenar.
+   * Clave nueva con la ficha: una ventana recordada a 52rem apretaba la columna.
    */
   const ventana = useVentanaDeModal(open, {
     ref: cajaRef,
     aplicarTranslate: true,
-    claveMemoria: "loth-trozado-multiple",
+    claveMemoria: "loth-trozado-multiple-ficha",
   });
-  const [resultado, setResultado] = useState<{ creadas: number; errores: string[] } | null>(null);
+
+  /* Asentado lo anterior, abrir de nuevo arranca limpio (antes volvía el
+     «Entraron 3 de 3» de la vez pasada). A medio llenar, no se pierde nada. */
+  useEffect(() => {
+    if (!open || !resultado) return;
+    setResultado(null);
+    setRenglones(RENGLONES_INICIALES());
+    // Sólo al abrir: `resultado` cambia al asentar, con el modal abierto.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   const arbol = useMemo(() => talas.find((t) => t.id === arbolId) ?? null, [talas, arbolId]);
-  const taladoM3 = arbol?.volumeM3 != null ? Number(arbol.volumeM3) : 0;
+  const code = open && arbol?.treeCode ? arbol.treeCode.trim() : "";
+  const libro = useArbolEnElLibro(code);
+  const censo = useArbolDelCenso(code);
 
-  const calculadas = renglones.map((r) => {
-    const dM = Number(r.diamMayor);
-    const dm = Number(r.diamMenor);
-    const L = Number(r.largo);
-    const vol = smalianVolume(dM, dm, L);
-    return { ...r, dM, dm, L, vol, completo: vol > 0 };
-  });
-  const listas = calculadas.filter((r) => r.completo);
-  const totalM3 = Math.round(listas.reduce((a, r) => a + r.vol, 0) * 10000) / 10000;
-  // El trozado no puede superar lo tumbado: es el invariante que la analítica
-  // reporta como error, y acá se ve ANTES de asentar.
-  const excede = taladoM3 > 0 && totalM3 > taladoM3 * 1.005;
-  const rendimiento = taladoM3 > 0 ? (totalM3 / taladoM3) * 100 : null;
+  const calculadas = calcularRenglones(renglones, forma, code, libro.datos?.trozas ?? []);
+  const listas = trozasParaAsentar(calculadas, forma);
+  const aMedias = calculadas.filter((r) => r.aMedias);
+  const lote = calculadas.map((r) => ({ codigo: r.codigo, volumenM3: r.volumenM3 }));
+  const resto = libro.datos ? restanteDeLote(libro.datos, lote.map((t) => ({ trozaCode: t.codigo, volumeM3: t.volumenM3 }))) : null;
+  const totalM3 = listas.reduce((s, t) => s + t.volumeM3, 0);
 
   if (!open) return null;
 
+  const elegirForma = (f: FormaMedicion) => {
+    setRenglones((rs) => renglonesEnForma(rs, f));
+    setForma(f);
+  };
+  const cambiar = (id: number, cambio: (r: RenglonTroza) => RenglonTroza) =>
+    setRenglones((rs) => rs.map((r) => (r.id === id ? cambio(r) : r)));
+
   const guardar = async () => {
-    if (!arbol) return;
+    // Sin el libro los códigos repetirían los asentados (ver el pie).
+    if (!arbol || !libro.datos) return;
     setGuardando(true);
     try {
-      setResultado(
-        await onGuardar(
-          arbol,
-          listas.map((r) => ({
-            trozaCode: `${arbol.treeCode}-${r.sufijo}`,
-            diamMayorM: r.dM,
-            diamMenorM: r.dm,
-            lengthM: r.L,
-            volumeM3: r.vol,
-            isRama: r.isRama,
-          })),
-        ),
-      );
+      const r = await onGuardar(arbol, listas);
+      setResultado({ ...r, intentadas: listas.length });
+      // La próxima ficha de este árbol lee el libro de nuevo, con estas trozas.
+      olvidarArbolEnElLibro();
     } finally {
       setGuardando(false);
     }
   };
 
-  return (
+  return createPortal(
     <div
-      className="modal-backdrop fixed inset-0 z-modal-2 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+      style={tokens}
+      className="modal-backdrop fixed inset-0 z-modal-2 flex items-center justify-center bg-black/50 p-2 backdrop-blur-sm sm:p-4"
       /* El velo es decorativo: el diálogo es la caja de adentro. Cerrar tocando
          afuera es un atajo —Escape y la X hacen lo mismo con teclado. */
       role="presentation"
@@ -140,7 +149,7 @@ export default function LothTrozadoMultipleModal({
       }}
     >
       {/* El diálogo en sí: acá viven el foco, el arrastre y el tamaño —
-          el velo de atrás no se mueve. */}
+          el velo de atrás no se mueve. Mismo ancho que «Nueva línea · Trozado». */}
       <div
         ref={cajaRef}
         tabIndex={-1}
@@ -148,13 +157,10 @@ export default function LothTrozadoMultipleModal({
         aria-modal="true"
         aria-label="Trozar un árbol"
         /* `relative`: el tirador de redimensión se ancla a esta esquina. */
-        className="relative flex max-h-[90vh] w-full max-w-[52rem] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
+        className="relative flex max-h-[92vh] w-full max-w-[44rem] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)] lg:max-w-[62rem]"
       >
         {/* Cabecera — y asa para arrastrar la ventana. */}
-        <header
-          {...ventana.asaProps}
-          className="flex items-start justify-between gap-3 border-b-2 border-[var(--rule-base)] px-5 py-3"
-        >
+        <header {...ventana.asaProps} className="flex items-start justify-between gap-3 border-b-2 border-[var(--rule-base)] px-4 py-3 sm:px-5">
           <div className="flex items-center gap-1.5">
             <p className="flex items-center gap-2 text-sm font-black uppercase tracking-widest text-[var(--text-secondary)]">
               <Scissors className="h-4 w-4" /> Trozar un árbol
@@ -162,8 +168,8 @@ export default function LothTrozadoMultipleModal({
             <InfoTip
               title="Trozar un árbol"
               what="Todas las trozas del mismo fuste, de una vez."
-              affects="El código (A, B, C…) y el volumen (Smalian) salen solos por renglón."
-              example="Eliges el árbol 001-TOR y cargas sus 5 trozas sin volver a tipear especie ni fecha."
+              affects="El código sigue a lo que el libro ya trozó de ese árbol (A-D asentadas → E) y el volumen (Smalian) sale solo por renglón."
+              example="Eliges el árbol 85-TOR y cargas sus trozas sin volver a tipear especie ni fecha. Flechas y Enter te llevan de medida en medida."
             />
           </div>
           {/* `ml-auto`: la cabecera reparte con `justify-between`, así que sin
@@ -181,11 +187,11 @@ export default function LothTrozadoMultipleModal({
           </button>
         </header>
 
-        <div className="min-h-0 flex-1 space-y-3 overflow-auto px-5 py-4">
+        <div className="min-h-0 flex-1 overflow-auto px-4 py-4 sm:px-5">
           {resultado ? (
             <div className="rounded-xl border-2 border-[var(--data-success-500)] bg-[var(--data-success-500)]/10 p-4">
               <p className="text-base font-bold text-[var(--text-primary)]">
-                Entraron {resultado.creadas} de {listas.length} trozas
+                Entraron {resultado.creadas} de {resultado.intentadas} trozas
               </p>
               {resultado.errores.length > 0 && (
                 <ul className="mt-2 space-y-1 text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
@@ -196,8 +202,10 @@ export default function LothTrozadoMultipleModal({
               )}
             </div>
           ) : (
-            <>
-              <label className="block">
+            /* Tres hijos, como «Nueva línea»: [árbol] · [ficha, a la derecha
+               desde lg] · [trozas]. En el celular salen en ese orden. */
+            <div className="space-y-4 lg:grid lg:grid-cols-[minmax(0,1fr)_18rem] lg:grid-rows-[auto_1fr] lg:gap-x-5 lg:gap-y-4 lg:space-y-0">
+              <label className="block lg:col-start-1 lg:row-start-1">
                 <span className="text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Árbol talado</span>
                 <select
                   value={arbolId}
@@ -213,148 +221,49 @@ export default function LothTrozadoMultipleModal({
                 </select>
               </label>
 
+              <aside
+                aria-label="Ficha del árbol"
+                className="lg:sticky lg:top-0 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:max-h-[calc(92vh-10rem)] lg:self-start lg:overflow-y-auto"
+              >
+                <LothFichaTrozado arbol={censo.arbol} cargandoCenso={censo.cargando} codigo={code} libro={libro} lote={lote} />
+              </aside>
+
               {arbol && (
-                <>
-                  <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
-                    <DataTable className="w-full text-sm">
-                      <thead className="bg-[var(--surface-sunken)] text-left">
-                        <tr>
-                          <th className="px-3 py-2 font-bold">Troza</th>
-                          <th className="px-3 py-2 font-bold">Ø mayor (m)</th>
-                          <th className="px-3 py-2 font-bold">Ø menor (m)</th>
-                          <th className="px-3 py-2 font-bold">Largo (m)</th>
-                          <th className="px-3 py-2 text-right font-bold">Volumen m³</th>
-                          <th className="px-3 py-2 font-bold">Rama</th>
-                          <th className="px-3 py-2" />
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {calculadas.map((r, i) => (
-                          <tr key={r.id} className="border-t border-[var(--rule-soft)]">
-                            <td className="px-3 py-2 font-mono font-bold text-[var(--text-primary)]">
-                              {arbol.treeCode}-{r.sufijo}
-                            </td>
-                            <td className="px-3 py-2">
-                              <input
-                                type="number"
-                                step="0.01"
-                                value={r.diamMayor}
-                                onChange={(e) => setRenglones((rs) => rs.map((x, j) => (j === i ? { ...x, diamMayor: e.target.value } : x)))}
-                                className={INPUT}
-                              />
-                            </td>
-                            <td className="px-3 py-2">
-                              <input
-                                type="number"
-                                step="0.01"
-                                value={r.diamMenor}
-                                onChange={(e) => setRenglones((rs) => rs.map((x, j) => (j === i ? { ...x, diamMenor: e.target.value } : x)))}
-                                className={INPUT}
-                              />
-                            </td>
-                            <td className="px-3 py-2">
-                              <input
-                                type="number"
-                                step="0.1"
-                                value={r.largo}
-                                onChange={(e) => setRenglones((rs) => rs.map((x, j) => (j === i ? { ...x, largo: e.target.value } : x)))}
-                                className={INPUT}
-                              />
-                            </td>
-                            <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
-                              {r.vol > 0 ? fmtM3(r.vol) : "—"}
-                            </td>
-                            <td className="px-3 py-2">
-                              <input
-                                type="checkbox"
-                                checked={r.isRama}
-                                onChange={(e) => setRenglones((rs) => rs.map((x, j) => (j === i ? { ...x, isRama: e.target.checked } : x)))}
-                                aria-label={`La troza ${r.sufijo} viene de una rama`}
-                                className="h-4 w-4 cursor-pointer accent-[var(--data-info-600)]"
-                              />
-                            </td>
-                            <td className="px-3 py-2 text-right">
-                              {renglones.length > 1 && (
-                                <button
-                                  type="button"
-                                  onClick={() => setRenglones((rs) => rs.filter((_, j) => j !== i))}
-                                  aria-label={`Quitar la troza ${r.sufijo}`}
-                                  className="rounded-xl p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--data-error-500)]/10 hover:text-[var(--data-error-700)] dark:hover:text-[var(--data-error-500)]"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </button>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </DataTable>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setRenglones((rs) => [...rs, nuevoRenglon(rs.length)])}
-                    className="inline-flex h-11 items-center gap-2 rounded-xl border border-dashed border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
-                  >
-                    <Plus className="h-4 w-4" /> Agregar troza
-                  </button>
-
-                  {/* El control que importa: lo trozado contra lo tumbado. */}
-                  <div
-                    className={`rounded-xl border-2 p-3 ${
-                      excede
-                        ? "border-[var(--data-error-500)] bg-[var(--data-error-500)]/10"
-                        : "border-[var(--rule-base)] bg-[var(--surface-canvas)]"
-                    }`}
-                  >
-                    <div className="flex flex-wrap items-baseline justify-between gap-2">
-                      <span className="text-sm font-bold text-[var(--text-primary)]">
-                        {listas.length} troza{listas.length === 1 ? "" : "s"} ·{" "}
-                        <span className="font-mono tabular-nums">{fmtM3(totalM3)} m³</span>
-                      </span>
-                      <span className="text-sm text-[var(--text-secondary)]">
-                        de <span className="font-mono tabular-nums">{fmtM3(taladoM3)} m³</span> tumbados
-                        {rendimiento != null && (
-                          <b className="ml-2 font-mono tabular-nums text-[var(--text-primary)]">{rendimiento.toFixed(1)}%</b>
-                        )}
-                      </span>
-                    </div>
-                    {excede && (
-                      <p className="mt-1.5 flex items-start gap-1.5 text-sm font-semibold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
-                        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                        Las trozas suman más que el árbol tumbado. Revisa las medidas: el libro lo va a marcar como error de invariante.
-                      </p>
-                    )}
-                  </div>
-                </>
+                <div className="space-y-3 lg:col-start-1 lg:row-start-2">
+                  <SelectorFormaMedicion forma={forma} onForma={elegirForma} />
+                  <LothTrozasRenglones
+                    forma={forma}
+                    renglones={calculadas}
+                    onMedidas={(id, medidas) => cambiar(id, (r) => ({ ...r, medidas }))}
+                    onRama={(id, isRama) => cambiar(id, (r) => ({ ...r, isRama }))}
+                    onQuitar={(id) => setRenglones((rs) => rs.filter((r) => r.id !== id))}
+                    onAgregar={() => {
+                      const id = sigId.current++;
+                      setRenglones((rs) => [...rs, renglonVacio(id)]);
+                    }}
+                  />
+                </div>
               )}
-            </>
+            </div>
           )}
         </div>
 
-        <footer className="flex flex-wrap items-center justify-end gap-2 border-t-2 border-[var(--rule-base)] px-5 py-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex h-11 items-center rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)]"
-          >
-            {resultado ? "Cerrar" : "Cancelar"}
-          </button>
-          {!resultado && (
-            <button
-              type="button"
-              onClick={guardar}
-              disabled={!arbol || listas.length === 0 || guardando}
-              className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
-            >
-              {guardando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Scissors className="h-4 w-4" />}
-              {guardando ? "Asentando…" : `Asentar ${listas.length} troza${listas.length === 1 ? "" : "s"}`}
-            </button>
-          )}
-        </footer>
+        <LothTrozadoMultiplePie
+          hayResultado={resultado != null}
+          hayArbol={arbol != null}
+          libro={{ leido: libro.datos != null, error: libro.error }}
+          resto={resto}
+          aMedias={aMedias.map((r) => r.codigo)}
+          listas={listas.length}
+          totalM3={totalM3}
+          guardando={guardando}
+          onCerrar={onClose}
+          onAsentar={guardar}
+        />
 
         <TiradorDeVentana ventana={ventana} />
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

@@ -31,7 +31,19 @@ import {
   type TipoDescuento,
 } from "@/lib/forestal/loth-tala";
 import { cambiarForma, derivarTala, type FormaMedicion, type MedidasTala } from "@/lib/forestal/loth-forma-medicion";
-import { DiametrosPromediados, INPUT_MEDIDA as INPUT, Resultado, SeccionDiametro, SelectorFormaMedicion } from "./LothMedicionPartes";
+import {
+  CampoMedida,
+  CampoMetros,
+  DiametrosPromediados,
+  INPUT_MEDIDA as INPUT,
+  Resultado,
+  SeccionDiametro,
+  SelectorFormaMedicion,
+} from "./LothMedicionPartes";
+import { moverEntreMedidas } from "./navegar-medidas";
+
+/** Lo mismo que dice el ⓘ, para el lector de pantalla al entrar al bloque. */
+export const AYUDA_TECLADO = "Con el teclado: flechas o Enter para pasar al campo vecino; Shift+Enter vuelve al anterior.";
 
 export default function LothMedicionFuste({
   medidas,
@@ -39,6 +51,7 @@ export default function LothMedicionFuste({
   forma,
   onForma,
   seccion = "tala",
+  alTerminar,
 }: {
   medidas: MedidasTala;
   onChange: (m: MedidasTala) => void;
@@ -50,6 +63,11 @@ export default function LothMedicionFuste({
    * se hizo sobre el fuste, en Tala. Ver `obligatoriedadTrozado`.
    */
   seccion?: "tala" | "trozado";
+  /**
+   * Enter en el último campo: adónde va (el botón de guardar, si ya se puede).
+   * Devuelve `false` para seguir al bloque de abajo.
+   */
+  alTerminar?: () => boolean;
 }) {
   const esTala = seccion === "tala";
   const oblig = esTala ? obligatoriedadTala(medidas.modo) : obligatoriedadTrozado();
@@ -85,8 +103,11 @@ export default function LothMedicionFuste({
   return (
     <section
       aria-label={esTala ? "Medición del fuste" : "Medición de la troza"}
+      /* Flechas y Enter entre los campos de medida, como en una planilla. */
+      onKeyDown={(e) => moverEntreMedidas(e, alTerminar)}
       className="space-y-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3"
     >
+      <p className="sr-only">{AYUDA_TECLADO}</p>
       <header className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-1">
           <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
@@ -100,6 +121,7 @@ export default function LothMedicionFuste({
             title={esTala ? "Medición del fuste" : "Medición de la troza"}
             what={oblig.razon}
             affects={`${forma === "promedio" ? "D1 y D2 ya promediados van tal cual al libro." : "Dos medidas cruzadas por sección: el libro consigna el promedio."} ${esTala ? "La longitud aprovechable es la total menos los descuentos." : ""}`.trim()}
+            body={AYUDA_TECLADO}
             example="Volumen (Smalian) = 0.7854 × ((Ø mayor + Ø menor)/2)² × longitud aprovechable"
           />
         </div>
@@ -171,13 +193,9 @@ export default function LothMedicionFuste({
           <span className="mb-1 block text-xs font-semibold text-[var(--text-secondary)]">
             {esTala ? "Longitud total (m)" : "Longitud de la troza (m)"}
           </span>
-          <input
-            type="number"
-            step="0.01"
-            min="0"
-            inputMode="decimal"
-            value={medidas.totalM}
-            onChange={(e) => onChange({ ...medidas, totalM: e.target.value, origenCenso: false })}
+          <CampoMedida
+            valor={medidas.totalM}
+            onValor={(v) => onChange({ ...medidas, totalM: v, origenCenso: false })}
             placeholder="15.00"
             className={`${INPUT} w-full`}
           />
@@ -202,13 +220,9 @@ export default function LothMedicionFuste({
             <span className="min-w-0 flex-1 truncate text-sm text-[var(--text-secondary)]" title={tipo?.ayuda}>
               − {tipo?.label ?? dd.tipo}
             </span>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              inputMode="decimal"
-              value={dd.metros || ""}
-              onChange={(e) => setDescuento(i, Number(e.target.value))}
+            <CampoMetros
+              metros={dd.metros}
+              onMetros={(m) => setDescuento(i, m)}
               aria-label={`Metros descontados por ${tipo?.label ?? dd.tipo}`}
               placeholder="0.00"
               className={`${INPUT} h-9 w-24 text-right`}
