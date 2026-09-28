@@ -56,6 +56,9 @@ const createSchema = z.object({
   // Forma explícita en vez de `z.any()`: lo que entra al libro se valida.
   medicionCruda: z
     .object({
+      // Cómo se anotó el Ø: «promedio» = D1/D2 ya promediados en campo, y
+      // entonces `mayor`/`menor` van vacíos (no se inventan cruzadas).
+      forma: z.enum(["cruzadas", "promedio"]).optional(),
       mayor: z.array(z.number().positive()).max(6),
       menor: z.array(z.number().positive()).max(6),
       totalM: z.number().positive().nullable(),

@@ -11,6 +11,10 @@
  * vista previa… dale mejor y compacto»). La vista previa del registro repetía
  * lo que ya estaba escrito a la izquierda y costaba 300 px de ancho: el modal
  * medía 1200 px para un formulario de dos columnas de campos.
+ *
+ * Tala y Trozado llevan a la derecha la ficha del árbol (28-09): en Tala lo que
+ * dice el censo y lo que queda; en Trozado además la línea de tala y las
+ * trozas que ya salieron, con lo que queda por trozar.
  */
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
@@ -23,7 +27,6 @@ import {
   Check,
   ShieldAlert,
   Camera,
-  Table,
 } from "@buleje/design-system/icons";
 import AdminModal, { CabeceraPropia } from "@/components/admin/shared/AdminModal";
 import { CardTitle } from "@buleje/design-system";
@@ -38,7 +41,17 @@ import {
   type LothEntryDTO,
   type LothSection,
 } from "@/lib/forestal/loth-constants";
-import LothMedicionFuste, { derivarTala, type MedidasTala } from "./LothMedicionFuste";
+import LothMedicionFuste from "./LothMedicionFuste";
+import {
+  conMedidasDelCenso,
+  derivarTala,
+  formaDeLaLinea,
+  medicionCrudaDe,
+  medidasDePlantilla,
+  medidasVacias,
+  type MedidasTala,
+} from "@/lib/forestal/loth-forma-medicion";
+import { useFormaMedicion } from "./hooks/use-forma-medicion";
 import LothTalaObservaciones from "./LothTalaObservaciones";
 import {
   componerObservaciones,
@@ -48,17 +61,21 @@ import {
 } from "@/lib/forestal/loth-tala";
 import { estadoVencimiento, permisoParaEspecie, type LothCitesPermiso } from "@/lib/forestal/loth-cites-types";
 import { fromUtm, parseUtmZone } from "@/lib/forestal/loth-utm";
-import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import LothGpsField, { type GpsOrigen } from "./LothGpsField";
 import LothCensoElegirModal from "./LothCensoElegirModal";
 import LothFichaArbol from "./LothFichaArbol";
+import LothFichaTrozado from "./LothFichaTrozado";
+import LothFuentesLista, { conTrozasDelCenso, fuentesDelCenso, type PlanOpt, type SourceItem } from "./LothFuentesLista";
+import { olvidarArbolEnElLibro, useArbolEnElLibro } from "./hooks/use-arbol-en-el-libro";
+import { restanteTrozado, siguienteCodigoDeTroza } from "@/lib/forestal/loth-restante";
 import LothTalaDatosInternos from "./LothTalaDatosInternos";
 import { olvidarCensoDeTala, useCensoDeTala } from "./hooks/use-censo-de-tala";
-import { ordenarCenso, type ArbolParaElegir } from "@/lib/forestal/loth-censo-uso";
+import { arbolDeTroza, type ArbolParaElegir } from "@/lib/forestal/loth-censo-uso";
 import LothAvisoTransformacion from "./LothAvisoTransformacion";
 import { cientificoDeEspecie } from "@/lib/forestal/especies-catalogo";
 import { useEspeciesCatalogo } from "./hooks/use-especies-catalogo";
 import { logger } from "@/lib/logger";
+import { Casilla, CitesPill, cls, etiquetaPlan, Field } from "./loth-entry-form-ui";
 
 interface Props {
   section: LothSection;
@@ -196,6 +213,16 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
   const [entryDate, setEntryDate] = useState(plantilla?.entryDate?.slice(0, 10) ?? new Date().toISOString().slice(0, 10));
   const [treeCode, setTreeCode] = useState(plantilla?.treeCode ?? "");
   const [trozaCode, setTrozaCode] = useState(plantilla?.trozaCode ?? "");
+  /**
+   * El código de troza que puso el formulario (no el operador): ése se puede
+   * mover a la letra libre. Duplicar una troza es registrar la SIGUIENTE del
+   * mismo árbol: su código también se mueve (corregir, no).
+   */
+  const trozaSugerida = useRef<string | null>(section === "trozado" && !corrigeLineNo ? (plantilla?.trozaCode ?? null) : null);
+  const sugerirTroza = (c: string) => {
+    trozaSugerida.current = c;
+    return c;
+  };
   const [despachoCode, setDespachoCode] = useState(plantilla?.despachoCode ?? "");
   const [isRama, setIsRama] = useState(plantilla?.isRama ?? false);
   const [speciesSlug, setSpeciesSlug] = useState(slugDePlantilla ?? "tornillo");
@@ -215,33 +242,9 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
    * oficial—; acá se guarda cómo se llegó a esos números, que es lo que el
    * motosierrista tiene en la mano. Ver `lib/forestal/loth-tala.ts`.
    */
-  const [medidasTala, setMedidasTala] = useState<MedidasTala>(() => {
-    // Si la línea de la que se parte guardó cómo se midió (ADR-422), se
-    // restaura tal cual: duplicar la troza siguiente del mismo árbol no debería
-    // obligar a volver a tipear las dos medidas cruzadas.
-    const cruda = plantilla?.medicionCruda;
-    if (cruda && (cruda.mayor?.length || cruda.menor?.length || cruda.totalM != null)) {
-      const aTexto = (ns: number[] | undefined) => {
-        const base = (ns ?? []).map(String);
-        while (base.length < 2) base.push("");
-        return base;
-      };
-      return {
-        modo: null,
-        mayor: aTexto(cruda.mayor),
-        menor: aTexto(cruda.menor),
-        totalM: cruda.totalM != null ? String(cruda.totalM) : "",
-        descuentos: (cruda.descuentos ?? []) as MedidasTala["descuentos"],
-      };
-    }
-    return {
-      modo: null,
-      mayor: [plantilla?.diamMayorM ?? "", ""],
-      menor: [plantilla?.diamMenorM ?? "", ""],
-      totalM: plantilla?.lengthM ?? "",
-      descuentos: [],
-    };
-  });
+  const [medidasTala, setMedidasTala] = useState<MedidasTala>(() => medidasDePlantilla(plantilla));
+  /** «D1 y D2 promediados» o «Varias medidas por Ø»: fijada en el equipo, para Tala y Trozado. */
+  const [formaMedicion, setFormaMedicion] = useFormaMedicion(formaDeLaLinea(plantilla?.medicionCruda));
   /** Los casos que el item 10 tipifica, en vez de un textarea en blanco. */
   const [motivosTala, setMotivosTala] = useState<MotivoTala[]>([]);
   const [detalleMotivo, setDetalleMotivo] = useState("");
@@ -291,15 +294,6 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // ── Plan + picker de ítems disponibles (flujo data-driven, ADR-127) ──
-  interface PlanOpt { id: string; planType: string; planNumber: string | null; titularName: string }
-  interface SourceItem {
-    kind: string; code: string | null; species: string | null; scientific: string | null; cites?: boolean;
-    dapM?: number | null; hcM?: number | null; vol?: number | null; productType?: string | null;
-    quantity?: number | null; unit?: string | null; meta?: string | null; trozaCode?: string | null;
-    utmZona?: string | null; utmX?: number | null; utmY?: number | null;
-    /** Tala: lo que hay que saber antes de tumbarlo (semillero, bajo DMC…). */
-    aviso?: string | null;
-  }
   const [plans, setPlans] = useState<PlanOpt[]>([]);
   const [planId, setPlanId] = useState<string | null>(null);
   // Especies autorizadas del plan (normalizadas) — para avisar en vivo si la
@@ -308,13 +302,14 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
 
   const [sources, setSources] = useState<SourceItem[]>([]);
   const [loadingSrc, setLoadingSrc] = useState(false);
-  const [srcQuery, setSrcQuery] = useState("");
   /** La primera carga de fuentes ya respondió (para elegir el árbol inicial). */
   const [fuentesListas, setFuentesListas] = useState(false);
   const [planesListos, setPlanesListos] = useState(false);
 
-  /** Tala: el censo del plan cruzado con el libro — lista corta, «Ver censo» y ficha. */
-  const censoTala = useCensoDeTala(planId, section === "tala");
+  /** Tala y Trozado: la ficha del árbol al lado del formulario. */
+  const conFicha = section === "tala" || section === "trozado";
+  /** El censo del plan cruzado con el libro — lista corta (tala), «Ver censo» y ficha. */
+  const censoTala = useCensoDeTala(planId, conFicha);
   const [verCenso, setVerCenso] = useState(false);
   /** El científico que el censo trae para ESA especie (lo anotó el regente). */
   const [cientificoCenso, setCientificoCenso] = useState<{ especie: string; cientifico: string } | null>(null);
@@ -406,21 +401,18 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
       // mayor y Ø menor a la vez —fingiendo dos medidas cruzadas que nadie
       // tomó, y dando un volumen cilíndrico—; ahora entra como primera medida
       // y la pantalla avisa que hay que confirmarla contra el tocón.
-      if (it.dapM || it.hcM) {
-        setMedidasTala((m) => ({
-          ...m,
-          mayor: [it.dapM ? String(it.dapM) : "", ""],
-          menor: ["", ""],
-          totalM: it.hcM ? String(it.hcM) : m.totalM,
-          origenCenso: true,
-        }));
-      }
+      if (it.dapM || it.hcM) setMedidasTala((m) => conMedidasDelCenso(m, it.dapM, it.hcM));
       aplicarCoordCenso(it.code, it.utmZona ?? null, it.utmX ?? null, it.utmY ?? null);
     } else if (section === "trozado") {
-      // Prefill un código de troza COMPLETO y válido (árbol + "-A"); el operador lo
-      // ajusta a B/C… para las siguientes trozas del mismo árbol. Antes quedaba
-      // "002-TOR-" con el guión colgando y parecía roto.
-      if (it.code) { setTreeCode(it.code); setTrozaCode((c) => c || `${it.code}-A`); }
+      // Prefill un código de troza COMPLETO y válido (árbol + "-A"); cuando el
+      // libro responde, pasa a la primera letra libre si «-A» ya salió. Antes
+      // quedaba "002-TOR-" con el guión colgando y parecía roto. Uno de OTRO
+      // árbol (o el que se sugirió) se reemplaza: si no, el 111 quedaba con 85-TOR-A.
+      if (it.code) {
+        const code = it.code;
+        setTreeCode(code);
+        setTrozaCode((c) => (!c.trim() || c === trozaSugerida.current || arbolDeTroza(c) !== code ? sugerirTroza(`${code}-A`) : c));
+      }
     } else if (section === "despacho_troza" || section === "consumo_troza") {
       if (it.code) setTrozaCode(it.code);
       if (section === "consumo_troza" && it.vol) setVolumeM3(String(it.vol));
@@ -437,57 +429,18 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
       if (it.trozaCode) setTrozaCode(it.trozaCode);
     }
   }
-  const SOURCE_TITLE: Record<LothSection, string> = {
-    tala: "Elige el árbol del censo",
-    trozado: "Elige la tala a trozar",
-    despacho_troza: "Elige la troza a despachar",
-    consumo_troza: "Elige la troza a consumir",
-    producto_terminado: "Elige la troza consumida (materia prima)",
-    despacho_producto: "Elige el producto a despachar",
-  };
-  /** Tala: lo disponible sale del censo cruzado con el libro (un talado no se ofrece). */
-  const sourcesTala = useMemo<SourceItem[]>(
-    () =>
-      ordenarCenso(censoTala.arboles.filter((a) => a.disponibilidad === "disponible"), "codigo", "asc").map((a) => ({
-        kind: "censo",
-        code: a.treeCode,
-        species: a.speciesCommon,
-        scientific: a.speciesScientific,
-        cites: a.cites,
-        dapM: a.dapM,
-        hcM: a.hcM,
-        vol: a.volM3,
-        utmZona: a.utmZona,
-        utmX: a.utmX,
-        utmY: a.utmY,
-        aviso: a.reparo ? (a.reparo.nivel === "infraccion" ? "No se tala" : "Semillero del plan") : null,
-      })),
-    [censoTala.arboles],
+  /** Tala: el censo cruzado con el libro. Trozado: las talas, con cuántas trozas ya salieron. */
+  const fuentes = useMemo(
+    () => (section === "tala" ? fuentesDelCenso(censoTala.arboles) : section === "trozado" ? conTrozasDelCenso(sources, censoTala.arboles) : sources),
+    [section, censoTala.arboles, sources],
   );
-  const fuentes = section === "tala" ? sourcesTala : sources;
-  const cargandoFuentes = section === "tala" ? censoTala.cargando : loadingSrc;
-  const filteredSources = useMemo(() => {
-    const q = srcQuery.trim().toLowerCase();
-    const list = q
-      ? fuentes.filter((s) => (s.code ?? "").toLowerCase().includes(q) || (s.species ?? "").toLowerCase().includes(q) || (s.productType ?? "").toLowerCase().includes(q))
-      : fuentes;
-    return list.slice(0, 60);
-  }, [fuentes, srcQuery]);
 
   // ── Censo: autocompletado data-driven (ADR-126) ──────────────────────
-  interface CensusTree {
-    treeCode: string; speciesCommon: string | null; speciesScientific: string | null;
-    cites: boolean; dapM: string | null; alturaComercialM: string | null;
-    volumenEstimadoM3: string | null; estado: string;
-    utmZona: string | null; utmX: string | null; utmY: string | null;
-  }
-  const [censusTree, setCensusTree] = useState<CensusTree | null>(null);
   /** Coordenada UTM del árbol elegido (del picker o del lookup por código). */
   const [censoUtm, setCensoUtm] = useState<{ code: string; zona: string | null; x: number; y: number } | null>(null);
   /** T8: el backend rechazó la tala por estar bajo el DMC; hay que justificar. */
   const [dmcBloqueo, setDmcBloqueo] = useState<string | null>(null);
   const [justificacionDmc, setJustificacionDmc] = useState("");
-  const [censusChecked, setCensusChecked] = useState(false);
 
   /**
    * El censo ya trae la coordenada del árbol: la operación la hereda como GPS
@@ -513,15 +466,17 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
     }
   }
 
+  /**
+   * Tipeado el código del árbol: la especie, el científico y la coordenada del
+   * censo. Del plan elegido sin otra consulta; de otro plan, se pregunta. (Las
+   * medidas NO: acá se copiaba el DAP como Ø mayor Y Ø menor sin pasar por la
+   * medición —dos medidas que nadie tomó—, y la ficha ya muestra el censo.)
+   */
   async function lookupCensus(code: string) {
     const c = code.trim();
-    setCensusChecked(false);
-    setCensusTree(null);
     if (!c) return;
-    // Tala: el censo del plan ya está cargado; sin otra consulta.
-    const local = section === "tala" ? censoTala.arboles.find((a) => a.treeCode === c) : undefined;
+    const local = conFicha ? censoTala.arboles.find((a) => a.treeCode === c) : undefined;
     if (local) {
-      setCensusChecked(true);
       applySpecies(local.speciesCommon);
       setCientificoCenso(local.speciesScientific ? { especie: local.speciesCommon, cientifico: local.speciesScientific } : null);
       aplicarCoordCenso(local.treeCode, local.utmZona, local.utmX, local.utmY);
@@ -529,25 +484,15 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
     }
     try {
       const r = await fetch(`/api/admin/forestal/plan/census?treeCode=${encodeURIComponent(c)}`, { credentials: "include" });
-      setCensusChecked(true);
       if (!r.ok) return;
-      const tree = (await r.json()).tree as CensusTree | null;
+      const tree = (await r.json()).tree as {
+        treeCode: string; speciesCommon: string | null; utmZona: string | null; utmX: string | null; utmY: string | null;
+      } | null;
       if (!tree) return;
-      setCensusTree(tree);
-      // Inyecta la especie del censo
-      const common = (tree.speciesCommon ?? "").toLowerCase();
-      const slugMatch = speciesOptions.find((s) => s.commonName.toLowerCase() === common);
-      if (slugMatch) setSpeciesSlug(slugMatch.slug);
-      else if (tree.speciesCommon) { setSpeciesSlug("otro"); setCustomSpecies(tree.speciesCommon); }
+      applySpecies(tree.speciesCommon);
       aplicarCoordCenso(tree.treeCode, tree.utmZona, tree.utmX ? Number(tree.utmX) : null, tree.utmY ? Number(tree.utmY) : null);
-      // Prefill de medidas estimadas (solo en Tala; el usuario ajusta a lo real)
-      if (section === "tala") {
-        if (tree.dapM && !diamMayor) setDiamMayor(String(Number(tree.dapM)));
-        if (tree.dapM && !diamMenor) setDiamMenor(String(Number(tree.dapM)));
-        if (tree.alturaComercialM && !lengthM) setLengthM(String(Number(tree.alturaComercialM)));
-      }
-    } catch {
-      setCensusChecked(true);
+    } catch (err) {
+      logger.error("[LothEntryForm] censo por código failed", { error: String(err) });
     }
   }
 
@@ -586,7 +531,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
    * longitud aprovechable, volumen) se deriva de ellas, para que la columna
    * oficial y lo que se midió no puedan separarse.
    */
-  const derivados = useMemo(() => derivarTala(medidasTala), [medidasTala]);
+  const derivados = useMemo(() => derivarTala(medidasTala, formaMedicion), [medidasTala, formaMedicion]);
   useEffect(() => {
     if (section !== "tala" && section !== "trozado") return;
     setDiamMayor(derivados.diamMayorM != null ? String(derivados.diamMayorM) : "");
@@ -642,25 +587,47 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
   }, [fields, section, treeCode, trozaCode, speciesName, gtfNumber, volumeM3, quantity, autoVolume, productType, corrigeLineNo, correctionNote, derivados, obligTala]);
 
   const isValid = missing.length === 0;
-  /** Tala: el árbol cuya ficha se muestra (el del código, esté o no disponible). */
-  const conFicha = section === "tala";
-  const arbolFicha = conFicha ? censoTala.arboles.find((a) => a.treeCode === treeCode.trim()) ?? null : null;
+  /**
+   * El árbol cuya ficha se muestra (el del código, esté o no disponible). En
+   * el trozado, si no se tipeó, el que sale del código de troza («85-TOR-E»).
+   */
+  const codigoFicha =
+    section === "trozado" ? treeCode.trim() || (trozaCode.trim() ? arbolDeTroza(trozaCode) : "") : treeCode.trim();
+  const arbolFicha = conFicha ? censoTala.arboles.find((a) => a.treeCode === codigoFicha) ?? null : null;
+  /** Trozado: la tala y las trozas del árbol, como están asentadas en el libro. */
+  const libroArbol = useArbolEnElLibro(section === "trozado" ? codigoFicha : "");
+  /* La troza que sugirió el formulario pasa a la primera libre cuando llega el libro. */
+  useEffect(() => {
+    const d = libroArbol.datos;
+    if (!d || !trozaCode || trozaCode !== trozaSugerida.current) return;
+    const libre = siguienteCodigoDeTroza(d.treeCode, d.trozas);
+    if (libre !== trozaCode) setTrozaCode(sugerirTroza(libre));
+    // Sólo cuando responde el libro: lo que tipea el operador no se toca.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [libroArbol.datos]);
   /**
    * Ya tiene tala vigente en el libro: T3 lo rechazaría al guardar. Se frena
    * antes, con la línea a la vista. Una corrección no entra acá (enmienda esa
    * misma línea), y un árbol «talado» sólo en el censo, sin línea, sí se deja
    * registrar: justamente es la línea que falta.
    */
-  const yaTaladoEnLibro = conFicha && corrigeLineNo == null ? (arbolFicha?.uso?.tala ?? null) : null;
+  const yaTaladoEnLibro = section === "tala" && corrigeLineNo == null ? (arbolFicha?.uso?.tala ?? null) : null;
+  /** Trozado: lo que queda del árbol con esta troza (la ficha lo pinta; acá, para el pie). */
+  const restoTrozado =
+    section === "trozado" && libroArbol.datos ? restanteTrozado(libroArbol.datos, { trozaCode, volumeM3: derivados.volumenM3 }) : null;
+  /** El código de troza ya está asentado — T3 lo rechazaría al guardar. */
+  const trozaRepetida = corrigeLineNo == null ? (restoTrozado?.repetida ?? null) : null;
   /** Guardar pide los obligatorios Y, en 4-6, haber contestado en qué libro va. */
-  const puedeGuardar = isValid && !faltaConfirmarTh && !yaTaladoEnLibro;
+  const puedeGuardar = isValid && !faltaConfirmarTh && !yaTaladoEnLibro && !trozaRepetida;
   const motivoBloqueo = yaTaladoEnLibro
     ? `El árbol ${treeCode.trim()} ya se taló en la línea N° ${yaTaladoEnLibro.lineNo}: elige otro del censo`
-    : faltaConfirmarTh
-      ? "Marca «La transformé dentro del título habilitante» para guardar"
-      : !isValid
-        ? `Falta: ${missing.join(", ")}`
-        : undefined;
+    : trozaRepetida
+      ? `La troza ${trozaCode.trim()} ya está en la línea N° ${trozaRepetida.lineNo}: usa la letra que sigue`
+      : faltaConfirmarTh
+        ? "Marca «La transformé dentro del título habilitante» para guardar"
+        : !isValid
+          ? `Falta: ${missing.join(", ")}`
+          : undefined;
 
   async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -701,6 +668,8 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
     setDmcBloqueo(null); setJustificacionDmc("");
     setPhotoUrl(null); setPhotoError(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
+    // Sin esto la medición seguía a la vista con el volumen ya borrado: «falta el volumen» con los números puestos.
+    setMedidasTala((m) => medidasVacias(m.modo));
   }
 
   async function handleSubmit(e: React.FormEvent, keepOpen = false) {
@@ -714,7 +683,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
       setError("Si la madera va a una planta, esto se registra en el Libro CTP. Si la transformaste dentro del título habilitante, marca la casilla de arriba.");
       return;
     }
-    if (yaTaladoEnLibro && motivoBloqueo) {
+    if ((yaTaladoEnLibro || trozaRepetida) && motivoBloqueo) {
       setError(`${motivoBloqueo}.`);
       return;
     }
@@ -749,17 +718,9 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
       // Tala: el estado de la línea sale de los casos del item 10, no de dos
       // checkboxes que podían contradecir al texto de observaciones.
       if (section === "tala" || section === "trozado") {
-        // ADR-422: de dónde salieron el Ø promedio y la longitud. Sin esto, la
-        // cuenta no se puede reconstruir después.
-        const nums = (arr: string[]) => arr.map(Number).filter((n) => Number.isFinite(n) && n > 0);
-        const cruda = {
-          mayor: nums(medidasTala.mayor),
-          menor: nums(medidasTala.menor),
-          totalM: Number(medidasTala.totalM) > 0 ? Number(medidasTala.totalM) : null,
-          descuentos: medidasTala.descuentos.filter((d) => d.metros > 0),
-        };
-        const midioAlgo = cruda.mayor.length > 0 || cruda.menor.length > 0 || cruda.totalM != null;
-        payload.medicionCruda = midioAlgo ? cruda : null;
+        // ADR-422: de dónde salieron el Ø promedio y la longitud, y en qué forma
+        // se anotó el Ø. Sin esto, la cuenta no se puede reconstruir después.
+        payload.medicionCruda = medicionCrudaDe(medidasTala, formaMedicion);
       }
       if (section === "tala") {
         payload.discarded = motivosTala.includes("descartado");
@@ -828,12 +789,20 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
         }
         throw new Error(r.message ?? (r.issues && r.issues[0]?.message) ?? r.error ?? `HTTP ${res.status}`);
       }
-      // Lo recordado del censo ya no vale: este árbol dejó de estar disponible.
+      // Lo recordado del censo y del árbol ya no vale: cambió lo que el libro dice de él.
       olvidarCensoDeTala();
+      olvidarArbolEnElLibro();
       // La vista ofrece «Trozarlo ahora» con el árbol recién tumbado.
       const arbolTalado = section === "tala" ? treeCode.trim() || null : null;
       if (keepOpen) {
+        // Trozado: «Guardar y otro» es la troza siguiente del MISMO árbol.
+        const seguirArbol = section === "trozado" ? treeCode.trim() : "";
         reset();
+        if (seguirArbol) {
+          setTreeCode(seguirArbol);
+          setTrozaCode(sugerirTroza(`${seguirArbol}-A`));
+          libroArbol.recargar();
+        }
         setSubmitting(false);
         // Sigue abierto: la lista y el censo tienen que dejar de ofrecer el recién talado.
         if (section === "tala") censoTala.recargar();
@@ -851,8 +820,13 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
   /** Elegido en «Ver censo»: lo mismo que tocarlo en la lista corta. */
   function elegirArbol(a: ArbolParaElegir) {
     setVerCenso(false);
-    setCensusChecked(false);
-    setCensusTree(null);
+    if (section === "trozado") {
+      // La tala del libro, si la lista la tiene (trae su volumen y especie).
+      pickSource(sources.find((x) => x.code === a.treeCode) ?? {
+        kind: "tala", code: a.treeCode, species: a.speciesCommon, scientific: a.speciesScientific, cites: a.cites, vol: a.uso?.tala?.volumeM3 ?? null,
+      });
+      return;
+    }
     pickSource({
       kind: "censo", code: a.treeCode, species: a.speciesCommon, scientific: a.speciesScientific, cites: a.cites,
       dapM: a.dapM, hcM: a.hcM, vol: a.volM3, utmZona: a.utmZona, utmX: a.utmX, utmY: a.utmY,
@@ -945,10 +919,17 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
       footer={
         <div className="flex items-center justify-between gap-3">
           <p id={idEstado} title={motivoBloqueo} className="hidden min-w-0 items-center gap-1.5 truncate text-xs text-[var(--text-tertiary)] sm:flex">
-            {puedeGuardar ? (
+            {puedeGuardar && restoTrozado?.excede ? (
+              /* Aviso, no bloqueo: lo decide T4 al guardar, con su mensaje. */
+              <span className="flex min-w-0 items-center gap-1.5 font-semibold text-[var(--data-warning-ink)] dark:text-[var(--data-warning-500)]">
+                <AlertTriangle className="h-3.5 w-3.5 shrink-0" /><span className="truncate">Se pasa de lo talado</span>
+              </span>
+            ) : puedeGuardar ? (
               <><Check className="h-3.5 w-3.5 shrink-0 text-[var(--data-success-600)]" /><span>Listo para registrar</span></>
             ) : yaTaladoEnLibro ? (
               <span className="truncate">Ya talado en la línea N° {yaTaladoEnLibro.lineNo}</span>
+            ) : trozaRepetida ? (
+              <span className="truncate">Troza ya asentada en la línea N° {trozaRepetida.lineNo}</span>
             ) : !isValid ? (
               <span>Faltan <span className="font-semibold text-[var(--text-secondary)]">{missing.length}</span> {missing.length === 1 ? "campo" : "campos"}</span>
             ) : (
@@ -1097,111 +1078,45 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
             )}
 
             {/* Picker data-driven: elige del plan lo disponible para esta sección */}
-            <section aria-label={SOURCE_TITLE[section]} className="space-y-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex min-w-0 items-center gap-1">
-                  <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)]">
-                    {SOURCE_TITLE[section]}
-                  </span>
-                  <InfoTip
-                    icono="ayuda"
-                    title={SOURCE_TITLE[section]}
-                    what="Elige de la lista para autocompletar la línea, o cárgala a mano abajo."
-                    affects="Sólo aparece lo que el plan elegido tiene disponible para esta etapa."
-                  />
-                </div>
-                <select
-                  value={planId ?? ""}
-                  onChange={(e) => setPlanId(e.target.value || null)}
-                  aria-label="Elegir plan de manejo"
-                  className="h-9 max-w-full truncate rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-xs font-bold text-[var(--text-primary)] outline-none"
-                >
-                  {plans.length === 0 && <option value="">Sin plan</option>}
-                  {plans.map((p) => (
-                    <option key={p.id} value={p.id}>{etiquetaPlan(p)}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="relative min-w-0 flex-1">
-                  <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--text-tertiary)]" />
-                  <input
-                    type="text"
-                    value={srcQuery}
-                    onChange={(e) => setSrcQuery(e.target.value)}
-                    aria-label="Buscar por código o especie"
-                    placeholder="Buscar por código o especie..."
-                    className={`${cls.input} h-9 pl-8`}
-                  />
-                </div>
-                {/* El censo entero, con lo que ya se taló y lo que no se toca
-                    (Brandon 28-09: «un botón… una tabla… para tomar mejores
-                    decisiones»). */}
-                {section === "tala" && (
-                  <button
-                    type="button"
-                    onClick={() => setVerCenso(true)}
-                    className="inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border border-[var(--rule-strong)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)]"
-                  >
-                    <Table className="h-4 w-4 text-[var(--accent-ink)] dark:text-[var(--accent)]" />
-                    Ver censo
-                    {censoTala.arboles.length > 0 && (
-                      <span className="font-mono text-xs tabular-nums text-[var(--text-tertiary)]">{censoTala.arboles.length}</span>
-                    )}
-                  </button>
-                )}
-              </div>
-              <div className="max-h-40 divide-y divide-[var(--rule-soft)] overflow-y-auto rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)]">
-                {cargandoFuentes ? (
-                  <div className="flex items-center gap-2 px-3 py-3 text-sm text-[var(--text-tertiary)]"><Loader2 className="h-4 w-4 animate-spin" /> Cargando…</div>
-                ) : section === "tala" && censoTala.error ? (
-                  <div role="alert" className="flex items-center justify-between gap-2 px-3 py-2.5 text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
-                    <span>{censoTala.error}</span>
-                    <button type="button" onClick={censoTala.recargar} className="shrink-0 font-semibold underline underline-offset-2">Reintentar</button>
-                  </div>
-                ) : filteredSources.length === 0 ? (
-                  <div className="px-3 py-3 text-center text-sm text-[var(--text-tertiary)]">
-                    Nada disponible en este plan para esta etapa.{section !== "tala" && " Registra primero la etapa anterior."}
-                  </div>
-                ) : (
-                  filteredSources.map((it, i) => (
-                    <button
-                      key={`${it.code}-${i}`}
-                      type="button"
-                      onClick={() => pickSource(it)}
-                      className="flex min-h-9 w-full items-center justify-between gap-3 px-3 text-left transition-colors hover:bg-[var(--surface-sunken)]"
-                    >
-                      <span className="flex min-w-0 items-center gap-2 truncate">
-                        <span className="font-mono text-sm font-bold text-[var(--text-primary)]">{it.code ?? it.productType ?? "—"}</span>
-                        {it.species && <span className="truncate text-sm text-[var(--text-secondary)]">{it.species}</span>}
-                        {it.cites && <CitesPill />}
-                        {it.aviso && (
-                          <span className="shrink-0 rounded bg-[var(--data-warning-100)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/15 dark:text-[var(--data-warning-500)]">
-                            {it.aviso}
-                          </span>
-                        )}
-                      </span>
-                      <span className="shrink-0 font-mono text-xs tabular-nums text-[var(--text-tertiary)]">
-                        {it.dapM ? `Ø ${Number(it.dapM).toFixed(2)}m ` : ""}
-                        {it.vol != null ? `${fmtM3(it.vol)} m³` : it.quantity != null ? `${Number(it.quantity).toFixed(2)} ${it.unit ?? ""}` : ""}
-                      </span>
-                    </button>
-                  ))
-                )}
-              </div>
-            </section>
+            <LothFuentesLista
+              section={section}
+              planId={planId}
+              plans={plans}
+              onPlan={setPlanId}
+              fuentes={fuentes}
+              cargando={section === "tala" ? censoTala.cargando : loadingSrc}
+              error={section === "tala" ? censoTala.error : null}
+              onReintentar={censoTala.recargar}
+              onElegir={pickSource}
+              verCenso={conFicha ? { total: censoTala.arboles.length, onAbrir: () => setVerCenso(true) } : null}
+            />
           </div>
 
           {conFicha && (
-            <aside aria-label="Ficha del árbol" className="lg:sticky lg:top-[4.5rem] lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-start">
-              <LothFichaArbol
-                arbol={arbolFicha}
-                cargando={censoTala.cargando}
-                codigo={treeCode}
-                medido={{ diamMayorM: derivados.diamMayorM, longitudM: derivados.longitudM, volumenM3: derivados.volumenM3 }}
-                medidasDelCenso={Boolean(medidasTala.origenCenso)}
-                gps={gpsLat != null && gpsLng != null ? { lat: gpsLat, lng: gpsLng, origen: gpsOrigen } : null}
-              />
+            /* Tope de alto con scroll propio: la ficha del trozado mide ~670 px y
+               a 1280×900 el cuerpo del modal deja ~620 debajo de la cabecera —
+               pegada arriba, lo de abajo quedaba fuera de la vista. */
+            <aside aria-label="Ficha del árbol" className="lg:sticky lg:top-[4.5rem] lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:max-h-[calc(85vh-11rem)] lg:self-start lg:overflow-y-auto">
+              {section === "tala" ? (
+                <LothFichaArbol
+                  arbol={arbolFicha}
+                  cargando={censoTala.cargando}
+                  codigo={treeCode}
+                  medido={{ diamMayorM: derivados.diamMayorM, longitudM: derivados.longitudM, volumenM3: derivados.volumenM3 }}
+                  medidasDelCenso={Boolean(medidasTala.origenCenso)}
+                  gps={gpsLat != null && gpsLng != null ? { lat: gpsLat, lng: gpsLng, origen: gpsOrigen } : null}
+                  censo={censoTala.arboles}
+                />
+              ) : (
+                <LothFichaTrozado
+                  arbol={arbolFicha}
+                  cargandoCenso={censoTala.cargando}
+                  codigo={codigoFicha}
+                  libro={libroArbol}
+                  troza={{ codigo: trozaCode, volumenM3: derivados.volumenM3 }}
+                  onUsarCodigo={setTrozaCode}
+                />
+              )}
             </aside>
           )}
 
@@ -1244,7 +1159,21 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
 
               {fields.has("trozaCode") && (
                 <Field label="Código de troza" required hint="Código del árbol + letra/número por nivel de trozado (ej. 1-MIS-A)" className="col-span-3">
-                  <input type="text" value={trozaCode} onChange={(e) => setTrozaCode(e.target.value)} placeholder="1-MIS-A" className={cls.input} />
+                  <input
+                    type="text"
+                    value={trozaCode}
+                    onChange={(e) => setTrozaCode(e.target.value)}
+                    // Sin árbol tipeado, sale del código de troza («85-TOR-E» → 85-TOR), a la vista y editable.
+                    onBlur={(e) => {
+                      const arbol = e.target.value.includes("-") ? arbolDeTroza(e.target.value) : "";
+                      if (section === "trozado" && !treeCode.trim() && arbol) {
+                        setTreeCode(arbol);
+                        void lookupCensus(arbol);
+                      }
+                    }}
+                    placeholder="1-MIS-A"
+                    className={cls.input}
+                  />
                 </Field>
               )}
 
@@ -1419,29 +1348,6 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
               )}
             </div>
 
-            {/* Banner: datos jalados del censo (data-driven) */}
-            {fields.has("treeCode") && !conFicha && censusTree && (
-              <div className="flex items-start gap-2 rounded-lg border border-[var(--data-success-500)]/40 bg-[var(--data-success-500)]/10 px-3 py-2 text-xs text-[var(--data-success-ink)] dark:text-[var(--data-success-500)]">
-                <Check className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                <span className="min-w-0">
-                  <span className="font-bold">Jalado del censo:</span>{" "}
-                  {censusTree.speciesCommon}
-                  {censusTree.dapM ? ` · DAP ${Number(censusTree.dapM).toFixed(2)} m` : ""}
-                  {censusTree.alturaComercialM ? ` · Hc ${Number(censusTree.alturaComercialM).toFixed(2)} m` : ""}
-                  {censusTree.volumenEstimadoM3 ? ` · vol. est. ${fmtM3(Number(censusTree.volumenEstimadoM3))} m³` : ""}
-                  {censusTree.estado === "talado" && (
-                    <span className="ml-1 font-bold text-[var(--data-warning-ink)] dark:text-[var(--data-warning-500)]">· ya marcado como talado</span>
-                  )}
-                </span>
-                <InfoTip title="Datos del censo" what="Especie y medidas precargadas del censo: ajusta los Ø y el largo a lo medido en campo." />
-              </div>
-            )}
-            {fields.has("treeCode") && !conFicha && censusChecked && !censusTree && treeCode.trim() && (
-              <p className="rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-xs text-[var(--text-tertiary)]">
-                Este código no está en el censo del plan — se registra como código libre.
-              </p>
-            )}
-
             {fields.has("species") && cites && (() => {
               const permiso = permisoParaEspecie({ permisos: citesPermisos }, speciesName);
               const est = permiso ? estadoVencimiento(permiso.vencimiento) : null;
@@ -1471,7 +1377,13 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
                 pide el formato. Los items 6 y 7 de las dos secciones repiten la
                 misma instrucción («2 o más medidas de forma cruzada»). */}
             {(section === "tala" || section === "trozado") && (
-              <LothMedicionFuste medidas={medidasTala} onChange={setMedidasTala} seccion={section} />
+              <LothMedicionFuste
+                medidas={medidasTala}
+                onChange={setMedidasTala}
+                forma={formaMedicion}
+                onForma={setFormaMedicion}
+                seccion={section}
+              />
             )}
 
             {section === "tala" && (
@@ -1578,8 +1490,9 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
           </div>
         </form>
 
-        {section === "tala" && (
+        {conFicha && (
           <LothCensoElegirModal
+            para={section === "trozado" ? "trozado" : "tala"}
             open={verCenso}
             onClose={() => setVerCenso(false)}
             censo={censoTala}
@@ -1593,101 +1506,5 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
     </AdminModal>
   );
 }
-
-/**
- * «Plan PO 12 — Maderera El Aguajal SAC». El número del plan muchas veces ya
- * trae el tipo («PO 12»): pegarle el tipo adelante daba «Plan PO PO 12».
- */
-function etiquetaPlan(p: { planType: string; planNumber: string | null; titularName: string }): string {
-  const numero = (p.planNumber ?? "").trim();
-  const tipo = numero.toLowerCase().startsWith(p.planType.toLowerCase()) ? "" : p.planType;
-  return `Plan ${[tipo, numero].filter(Boolean).join(" ")} — ${p.titularName}`;
-}
-
-// ─── Sub-components ─────────────────────────────────────────────────────────
-
-/**
- * Un campo con su rótulo. `min-h-6` en el rótulo: el ⓘ mide 24 px y un rótulo
- * sin ayuda, 20 — sin igualarlos, las cajas de una misma fila de la grilla
- * arrancan 4 px corridas.
- */
-function Field({ label, required, hint, className = "", children }: { label: string; required?: boolean; hint?: string; className?: string; children: React.ReactNode }) {
-  const rotulo = (
-    <>
-      {label}
-      {required && <span className="text-[var(--data-error-600)]">*</span>}
-    </>
-  );
-  if (!hint) {
-    return (
-      <label className={`block ${className}`}>
-        <span className="mb-1 flex min-h-6 items-center gap-1 text-sm font-medium text-[var(--text-primary)]">{rotulo}</span>
-        {children}
-      </label>
-    );
-  }
-  /* Con ayuda, el ⓘ va FUERA del <label>: adentro, el campo se anunciaba
-     «Código de troza Información: Código de troza» y buscarlo por su rótulo
-     encontraba el botón. El <label> conserva el nombre para el lector. */
-  return (
-    <div className={`block ${className}`}>
-      <div className="mb-1 flex min-h-6 items-center gap-1 text-sm font-medium text-[var(--text-primary)]">
-        <span aria-hidden="true" className="flex items-center gap-1">{rotulo}</span>
-        <InfoTip icono="ayuda" title={label} what={hint} />
-      </div>
-      <label className="block">
-        <span className="sr-only">{label}</span>
-        {children}
-      </label>
-    </div>
-  );
-}
-
-/**
- * Casilla de la grilla: la altura de un input y pegada abajo (`self-end`), para
- * que quede a la par del campo de al lado. A 400 px ocupa la fila entera: en
- * media fila el rótulo partía en tres renglones.
- */
-function Casilla({
-  checked,
-  onChange,
-  acento = "marca",
-  title,
-  children,
-}: {
-  checked: boolean;
-  onChange: (v: boolean) => void;
-  acento?: "marca" | "error";
-  title?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <label
-      title={title}
-      className="col-span-6 flex h-10 cursor-pointer items-center gap-2 self-end rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] sm:col-span-3"
-    >
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
-        className={`h-4 w-4 shrink-0 ${acento === "error" ? "accent-[var(--data-error-600)]" : "accent-[var(--accent-dark)]"}`}
-      />
-      <span className="min-w-0 truncate">{children}</span>
-    </label>
-  );
-}
-
-function CitesPill() {
-  return (
-    <span className="inline-flex shrink-0 items-center rounded bg-[var(--data-error-100)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--data-error-700)]">
-      CITES
-    </span>
-  );
-}
-
-const cls = {
-  input:
-    "w-full h-10 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/20 placeholder:text-[var(--text-tertiary)]",
-};
 
 export { LOTH_SECTIONS };

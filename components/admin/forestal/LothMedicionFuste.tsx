@@ -13,6 +13,9 @@
  *
  * Acá se capturan las medidas crudas y el libro se queda con lo que el formato
  * oficial pide. La aritmética la hace `lib/forestal/loth-tala.ts`.
+ *
+ * Dos formas de anotar el Ø (28-09): «D1 y D2 promediados» o «Varias medidas
+ * por Ø». La elegida queda fijada en el equipo; ver `loth-forma-medicion.ts`.
  */
 
 import { useMemo } from "react";
@@ -23,75 +26,25 @@ import {
   MODOS_UI,
   obligatoriedadTala,
   obligatoriedadTrozado,
-  promedioCruzado,
-  fusteIrregular,
   calcularLongitud,
-  volumenDeMedidas,
   TIPOS_DESCUENTO,
-  type DescuentoLongitud,
-  type ModoAprovechamiento,
   type TipoDescuento,
 } from "@/lib/forestal/loth-tala";
-
-export interface MedidasTala {
-  modo: ModoAprovechamiento | null;
-  /** Las dos (o más) medidas cruzadas de la sección mayor. */
-  mayor: string[];
-  /** Ídem sección menor. */
-  menor: string[];
-  /** Longitud total del fuste, antes de descuentos. */
-  totalM: string;
-  descuentos: DescuentoLongitud[];
-  /**
-   * Los números vinieron del censo, no de la forcípula. El DAP es del árbol EN
-   * PIE y la altura comercial es una estimación: sirven para arrancar, pero el
-   * libro consigna lo que se midió en el tocón. Mientras esté en true, la
-   * pantalla lo dice en vez de disfrazar un estimado de medición.
-   */
-  origenCenso?: boolean;
-}
-
-export interface DerivadosTala {
-  diamMayorM: number | null;
-  diamMenorM: number | null;
-  longitudM: number | null;
-  volumenM3: number | null;
-  excedeDescuento: boolean;
-}
-
-export function derivarTala(m: MedidasTala): DerivadosTala {
-  const num = (s: string) => {
-    const n = Number(s);
-    return Number.isFinite(n) && n > 0 ? n : null;
-  };
-  const mayor = promedioCruzado(m.mayor.map(num));
-  const menor = promedioCruzado(m.menor.map(num));
-  const largo = calcularLongitud(num(m.totalM), m.descuentos);
-  return {
-    diamMayorM: mayor,
-    diamMenorM: menor,
-    longitudM: largo.aprovechableM,
-    volumenM3: volumenDeMedidas(m.mayor.map(num), m.menor.map(num), largo.aprovechableM),
-    excedeDescuento: largo.excede,
-  };
-}
-
-/**
- * Sin `w-full`: dos utilidades de ancho en el mismo elemento las resuelve el
- * orden del CSS, no el del string, así que `${INPUT} w-24` quedaba en ancho
- * completo y empujaba fuera la etiqueta del descuento. El ancho lo pone cada
- * uso.
- */
-const INPUT =
-  "h-10 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-mono tabular-nums text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--data-success-500)]";
+import { cambiarForma, derivarTala, type FormaMedicion, type MedidasTala } from "@/lib/forestal/loth-forma-medicion";
+import { DiametrosPromediados, INPUT_MEDIDA as INPUT, Resultado, SeccionDiametro, SelectorFormaMedicion } from "./LothMedicionPartes";
 
 export default function LothMedicionFuste({
   medidas,
   onChange,
+  forma,
+  onForma,
   seccion = "tala",
 }: {
   medidas: MedidasTala;
   onChange: (m: MedidasTala) => void;
+  /** «D1 y D2 promediados» o «Varias medidas por Ø» (fijada en el equipo). */
+  forma: FormaMedicion;
+  onForma: (f: FormaMedicion) => void;
   /**
    * Trozado mide la misma cruz pero no elige modo ni descuenta aletas: eso ya
    * se hizo sobre el fuste, en Tala. Ver `obligatoriedadTrozado`.
@@ -100,7 +53,7 @@ export default function LothMedicionFuste({
 }) {
   const esTala = seccion === "tala";
   const oblig = esTala ? obligatoriedadTala(medidas.modo) : obligatoriedadTrozado();
-  const d = useMemo(() => derivarTala(medidas), [medidas]);
+  const d = useMemo(() => derivarTala(medidas, forma), [medidas, forma]);
   const largo = calcularLongitud(Number(medidas.totalM) || null, medidas.descuentos);
 
   const setMedida = (campo: "mayor" | "menor", i: number, v: string) => {
@@ -108,6 +61,11 @@ export default function LothMedicionFuste({
     arr[i] = v;
     // Tocar una medida a mano es medir: el aviso del censo deja de aplicar.
     onChange({ ...medidas, [campo]: arr, origenCenso: false });
+  };
+  const setPromedio = (campo: "d1" | "d2", v: string) => onChange({ ...medidas, [campo]: v, origenCenso: false });
+  const elegirForma = (f: FormaMedicion) => {
+    onChange(cambiarForma(medidas, f));
+    onForma(f);
   };
 
   const addDescuento = (tipo: TipoDescuento) =>
@@ -141,7 +99,7 @@ export default function LothMedicionFuste({
             icono="ayuda"
             title={esTala ? "Medición del fuste" : "Medición de la troza"}
             what={oblig.razon}
-            affects="Dos medidas cruzadas por sección: el libro consigna el promedio. La longitud aprovechable es la total menos los descuentos."
+            affects={`${forma === "promedio" ? "D1 y D2 ya promediados van tal cual al libro." : "Dos medidas cruzadas por sección: el libro consigna el promedio."} ${esTala ? "La longitud aprovechable es la total menos los descuentos." : ""}`.trim()}
             example="Volumen (Smalian) = 0.7854 × ((Ø mayor + Ø menor)/2)² × longitud aprovechable"
           />
         </div>
@@ -170,6 +128,9 @@ export default function LothMedicionFuste({
         )}
       </header>
 
+      {/* Arriba del bloque: cambia qué se tipea, no qué va al libro. */}
+      {oblig.diametros && <SelectorFormaMedicion forma={forma} onForma={elegirForma} />}
+
       {medidas.origenCenso && (
         <p className="flex items-start gap-2 rounded-lg border border-[var(--data-warning-500)]/50 bg-[var(--data-warning-500)]/10 px-3 py-1.5 text-xs font-semibold text-[var(--data-warning-ink)] dark:text-[var(--data-warning-500)]">
           <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
@@ -181,8 +142,11 @@ export default function LothMedicionFuste({
         </p>
       )}
 
-      {/* Diámetros: dos medidas cruzadas por sección, el promedio lo hace el libro */}
-      {oblig.diametros && (
+      {/* Diámetros: ya promediados (D1/D2) o dos medidas cruzadas por sección */}
+      {oblig.diametros && forma === "promedio" && (
+        <DiametrosPromediados d1={medidas.d1} d2={medidas.d2} onD1={(v) => setPromedio("d1", v)} onD2={(v) => setPromedio("d2", v)} />
+      )}
+      {oblig.diametros && forma === "cruzadas" && (
         <div className="grid gap-2 sm:grid-cols-2">
           <SeccionDiametro
             titulo="Ø sección mayor"
@@ -287,91 +251,5 @@ export default function LothMedicionFuste({
         </p>
       )}
     </section>
-  );
-}
-
-/** Un número que sale de la cuenta, no que se tipea: misma altura que el input de al lado. */
-function Resultado({
-  rotulo,
-  valor,
-  destacado = false,
-  className = "",
-}: {
-  rotulo: string;
-  valor: string;
-  destacado?: boolean;
-  className?: string;
-}) {
-  return (
-    <div className={className}>
-      <span className="mb-1 block text-xs font-semibold text-[var(--text-secondary)]">{rotulo}</span>
-      <output
-        aria-label={rotulo}
-        className={`flex h-10 items-center justify-end rounded-lg px-3 font-mono tabular-nums text-[var(--text-primary)] ${
-          destacado ? "bg-primary/10 text-base font-bold dark:bg-primary/20" : "bg-[var(--surface-sunken)] text-sm font-semibold"
-        }`}
-      >
-        {valor}
-      </output>
-    </div>
-  );
-}
-
-/** Una sección del fuste: N medidas cruzadas y el promedio que va al libro. */
-function SeccionDiametro({
-  titulo,
-  medidas,
-  promedio,
-  onMedida,
-  onAgregar,
-}: {
-  titulo: string;
-  medidas: string[];
-  promedio: number | null;
-  onMedida: (i: number, v: string) => void;
-  onAgregar: () => void;
-}) {
-  const irregular = fusteIrregular(medidas.map((m) => Number(m) || null));
-  return (
-    <div className="space-y-1.5 rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-2.5">
-      <div className="flex items-baseline justify-between gap-2">
-        <span className="text-xs font-semibold text-[var(--text-secondary)]">{titulo}</span>
-        <span className="font-mono text-sm font-bold tabular-nums text-[var(--text-primary)]" title="Promedio que va al libro">
-          {promedio != null ? `${promedio.toFixed(3)} m` : "—"}
-        </span>
-      </div>
-      <div className="flex flex-wrap gap-1.5">
-        {medidas.map((v, i) => (
-          <input
-            key={i}
-            type="number"
-            step="0.001"
-            min="0"
-            inputMode="decimal"
-            value={v}
-            onChange={(e) => onMedida(i, e.target.value)}
-            aria-label={`${titulo} — medida cruzada ${i + 1}`}
-            placeholder={i === 0 ? "1.30" : "1.10"}
-            className={`${INPUT} w-24`}
-          />
-        ))}
-        {medidas.length < 4 && (
-          <button
-            type="button"
-            onClick={onAgregar}
-            className="grid h-10 w-10 place-items-center rounded-lg border border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
-            aria-label={`Agregar otra medida cruzada a ${titulo}`}
-            title="Agregar otra medida cruzada"
-          >
-            <Plus className="h-4 w-4" />
-          </button>
-        )}
-      </div>
-      {irregular && (
-        <p className="text-xs font-semibold text-[var(--data-warning-ink)] dark:text-[var(--data-warning-500)]">
-          Las medidas difieren mucho: toma una tercera para el promedio.
-        </p>
-      )}
-    </div>
   );
 }

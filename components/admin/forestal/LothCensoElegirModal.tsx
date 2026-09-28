@@ -12,6 +12,9 @@
  * Elegir un árbol disponible lo carga en el formulario. Un talado o descartado
  * no se elige y dice por qué. Uno que no se debe tumbar (semillero o
  * remanente del regente, bajo DMC) se ve igual, pero pide confirmar.
+ *
+ * En el trozado (`para="trozado"`) es al revés: se elige uno que YA tiene su
+ * línea de tala, y el modal abre en «Talados».
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -45,6 +48,8 @@ interface Props {
   /** GPS del teléfono que ya tiene el formulario: las distancias salen solas. */
   posicion: { lat: number; lng: number } | null;
   onElegir: (a: ArbolParaElegir) => void;
+  /** Tala: un árbol en pie. Trozado: uno con su tala en el libro. */
+  para?: "tala" | "trozado";
 }
 
 const INPUT =
@@ -52,8 +57,8 @@ const INPUT =
 const BTN =
   "inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-60";
 
-export default function LothCensoElegirModal({ open, onClose, censo, planLabel, elegido, posicion, onElegir }: Props) {
-  const [filtro, setFiltro] = useState<FiltroCenso>("disponibles");
+export default function LothCensoElegirModal({ open, onClose, censo, planLabel, elegido, posicion, onElegir, para = "tala" }: Props) {
+  const [filtro, setFiltro] = useState<FiltroCenso>(para === "trozado" ? "talados" : "disponibles");
   const [texto, setTexto] = useState("");
   const [orden, setOrden] = useState<OrdenCenso>({ columna: "codigo", dir: "asc" });
   const [pos, setPos] = useState(posicion);
@@ -119,7 +124,7 @@ export default function LothCensoElegirModal({ open, onClose, censo, planLabel, 
   }
 
   function elegir(a: ArbolParaElegir) {
-    if (a.reparo && pendiente?.id !== a.id) {
+    if (para === "tala" && a.reparo && pendiente?.id !== a.id) {
       setPendiente(a);
       return;
     }
@@ -187,7 +192,11 @@ export default function LothCensoElegirModal({ open, onClose, censo, planLabel, 
               <InfoTip
                 icono="ayuda"
                 title="Cómo se lee"
-                what="«En el libro» sale de las líneas asentadas: si el árbol ya tiene tala, no se elige aunque el censo diga «en pie»."
+                what={
+                  para === "trozado"
+                    ? "«En el libro» sale de las líneas asentadas: en el trozado se elige un árbol que ya tiene su tala; el que no la tiene no tiene qué trozar."
+                    : "«En el libro» sale de las líneas asentadas: si el árbol ya tiene tala, no se elige aunque el censo diga «en pie»."
+                }
                 affects="Semillero o remanente del regente y bajo DMC se ven, pero piden confirmar: tumbarlos es infracción."
                 example="Categoría POA «Semillero» sin que el regente lo diga: es la reserva que calcula el plan con los más gruesos."
               />
@@ -258,6 +267,7 @@ export default function LothCensoElegirModal({ open, onClose, censo, planLabel, 
             elegido={elegido}
             onElegir={elegir}
             vacio={vacio}
+            para={para}
           />
         )}
         {censo.truncado && (

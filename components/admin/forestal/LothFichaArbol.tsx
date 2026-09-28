@@ -8,10 +8,10 @@
  *
  * NO es la «vista previa del registro» que se quitó el 28-09 (repetía lo que
  * ya estaba escrito a la izquierda): acá no hay un solo dato del formulario,
- * salvo la comparación, que es lo que el formulario no dice.
+ * salvo la comparación y lo que queda, que es lo que el formulario no dice.
  */
 
-import type { ReactNode } from "react";
+import { useMemo } from "react";
 import { AlertTriangle, MapPin, ShieldAlert, TreePine } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import {
@@ -22,11 +22,13 @@ import {
   type ArbolParaElegir,
   type Comparacion,
 } from "@/lib/forestal/loth-censo-uso";
+import { restanteDeEspecie, restanteDelArbol } from "@/lib/forestal/loth-restante";
 import { formatDistance } from "@/lib/forestal/loth-utm";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { formatNumber } from "@/lib/format";
 import type { GpsOrigen } from "./LothGpsField";
-import { CategoriaTag, CitesPill } from "./loth-plan-ui";
+import LothRestante, { type GrupoRestante } from "./LothRestante";
+import { AMBAR, CabeceraArbol, CAJA, dec as m, ROJO } from "./loth-ficha-ui";
 
 interface Props {
   arbol: ArbolParaElegir | null;
@@ -37,21 +39,8 @@ interface Props {
   /** Las medidas todavía son las del censo (nadie midió el tocón). */
   medidasDelCenso: boolean;
   gps: { lat: number; lng: number; origen: GpsOrigen | null } | null;
-}
-
-const CAJA = "rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3";
-const ROJO = "border-[var(--data-error-500)]/60 bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]";
-const AMBAR = "border-[var(--data-warning-500)]/60 bg-[var(--data-warning-500)]/10 text-[var(--data-warning-ink)] dark:text-[var(--data-warning-500)]";
-
-const m = (v: number | null, min: number, max: number) => (v == null ? "—" : formatNumber(v, { min, max }));
-
-function Dato({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="min-w-0">
-      <dt className="text-xs text-[var(--text-tertiary)]">{label}</dt>
-      <dd className="font-mono text-sm font-bold tabular-nums text-[var(--text-primary)]">{children}</dd>
-    </div>
-  );
+  /** El censo del plan cruzado con el libro: para lo que queda de la especie. */
+  censo: readonly ArbolParaElegir[];
 }
 
 function FilaComparacion({ label, c, unidad, formato }: { label: string; c: Comparacion; unidad: string; formato: (v: number) => string }) {
@@ -68,7 +57,38 @@ function FilaComparacion({ label, c, unidad, formato }: { label: string; c: Comp
   );
 }
 
-export default function LothFichaArbol({ arbol, cargando, codigo, medido, medidasDelCenso, gps }: Props) {
+/** La resta del árbol y la de su especie en el plan, en una caja. */
+function gruposRestante(r: ReturnType<typeof restanteDelArbol>, esp: ReturnType<typeof restanteDeEspecie>): GrupoRestante[] {
+  const pasa = r.restanteM3 != null && r.restanteM3 < 0;
+  const grupos: GrupoRestante[] = [
+    {
+      titulo: "Este árbol",
+      filas: [
+        { label: "Censo (estimado)", m3: r.censoM3 },
+        { label: "Talado (medido)", m3: r.taladoM3, resta: true },
+        { label: pasa ? "Pasa al censo" : "Restante", m3: r.restanteM3, total: true, aviso: pasa },
+      ],
+    },
+  ];
+  if (esp) {
+    grupos.push({
+      titulo: `${esp.especie} en el plan · ${esp.arboles} ${esp.arboles === 1 ? "árbol" : "árboles"}`,
+      filas: [
+        { label: "Censado", m3: esp.censadoM3 },
+        { label: `Talado (${esp.talados})`, m3: esp.taladoM3, resta: true },
+        { label: "Restante", m3: esp.restanteM3, total: true, aviso: esp.restanteM3 < 0 },
+      ],
+    });
+  }
+  return grupos;
+}
+
+export default function LothFichaArbol({ arbol, cargando, codigo, medido, medidasDelCenso, gps, censo }: Props) {
+  const especie = useMemo(
+    () => (arbol ? restanteDeEspecie(censo, arbol.speciesCommon, arbol.treeCode, medidasDelCenso ? null : medido.volumenM3) : null),
+    [arbol, censo, medido.volumenM3, medidasDelCenso],
+  );
+
   if (!arbol) {
     const tipeado = codigo.trim();
     return (
@@ -91,35 +111,7 @@ export default function LothFichaArbol({ arbol, cargando, codigo, medido, medida
 
   return (
     <div className="space-y-3" data-ficha-arbol={arbol.treeCode}>
-      <div className={CAJA}>
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Ficha del árbol</p>
-            <p className="font-mono text-xl font-bold tabular-nums text-[var(--text-primary)]">{arbol.treeCode}</p>
-          </div>
-          <CategoriaTag categoria={arbol.categoria ?? undefined} />
-        </div>
-        <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">
-          {arbol.speciesCommon}
-          {arbol.cites && <> <CitesPill /></>}
-        </p>
-        {(arbol.speciesScientific || arbol.speciesNative) && (
-          <p className="text-xs text-[var(--text-secondary)]">
-            {arbol.speciesScientific && <i>{arbol.speciesScientific}</i>}
-            {arbol.speciesScientific && arbol.speciesNative && " · "}
-            {arbol.speciesNative && <span title="Nombre en idioma nativo">{arbol.speciesNative}</span>}
-          </p>
-        )}
-        <dl className="mt-2.5 grid grid-cols-3 gap-2">
-          <Dato label="DAP">{m(arbol.dapM, 2, 3)} m</Dato>
-          <Dato label="Hc">{m(arbol.hcM, 0, 2)} m</Dato>
-          <Dato label="Vol. est.">{arbol.volM3 == null ? "—" : fmtM3(arbol.volM3)} m³</Dato>
-        </dl>
-        <p className="mt-2 text-xs text-[var(--text-secondary)]">
-          Condición del regente: <span className="font-semibold text-[var(--text-primary)]">{arbol.condicion || "—"}</span>
-          {arbol.notes && <> · {arbol.notes}</>}
-        </p>
-      </div>
+      <CabeceraArbol arbol={arbol} />
 
       {arbol.disponibilidad !== "disponible" && (
         <div role="alert" className={`flex items-start gap-2 rounded-xl border-2 px-3 py-2 text-sm ${ROJO}`}>
@@ -180,6 +172,12 @@ export default function LothFichaArbol({ arbol, cargando, codigo, medido, medida
           </>
         )}
       </div>
+
+      <LothRestante
+        titulo="Lo que queda"
+        grupos={gruposRestante(restanteDelArbol(arbol.volM3, midio ? medido.volumenM3 : null), especie)}
+        what={`Censo − lo medido al tumbarlo = lo que queda del árbol. En la especie: lo censado − lo que el libro ya taló${midio ? ", con este árbol" : ""}.${especie?.talasSinVolumen ? ` ${especie.talasSinVolumen} ${especie.talasSinVolumen === 1 ? "tala sin volumen no suma" : "talas sin volumen no suman"}.` : ""}`}
+      />
 
       <div className={CAJA}>
         <div className="flex items-center gap-1.5">

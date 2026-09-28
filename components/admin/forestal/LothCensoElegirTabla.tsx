@@ -76,7 +76,15 @@ function EnElLibro({ a }: { a: ArbolParaElegir }) {
   );
 }
 
-export default function LothCensoElegirTabla({ arboles, orden, onOrdenar, distancias, elegido, onElegir, vacio }: {
+/**
+ * Para qué se elige: en la tala, un árbol en pie; en el trozado, uno que ya
+ * tiene su línea de tala (el que no la tiene no tiene qué trozar).
+ */
+export function sePuedeElegir(a: ArbolParaElegir, para: "tala" | "trozado"): boolean {
+  return para === "trozado" ? a.uso?.tala != null : a.disponibilidad === "disponible";
+}
+
+export default function LothCensoElegirTabla({ arboles, orden, onOrdenar, distancias, elegido, onElegir, vacio, para = "tala" }: {
   arboles: readonly ArbolParaElegir[];
   orden: OrdenCenso;
   onOrdenar: (c: ColumnaCenso) => void;
@@ -86,6 +94,7 @@ export default function LothCensoElegirTabla({ arboles, orden, onOrdenar, distan
   elegido: string;
   onElegir: (a: ArbolParaElegir) => void;
   vacio: ReactNode;
+  para?: "tala" | "trozado";
 }) {
   const conDistancia = distancias != null;
   const columnas = 9 + (conDistancia ? 1 : 0);
@@ -113,11 +122,13 @@ export default function LothCensoElegirTabla({ arboles, orden, onOrdenar, distan
           const infraccion = a.reparo?.nivel === "infraccion";
           const segunda = [a.speciesScientific, a.speciesNative].filter(Boolean);
           const d = distancias?.get(a.id);
+          const elegible = sePuedeElegir(a, para);
+          const motivo = para === "trozado" ? "sin tala en el libro, no hay qué trozar" : (a.motivoNoDisponible ?? "no disponible");
           return (
             <tr
               key={a.id}
               data-arbol={a.treeCode}
-              className={`border-t border-[var(--rule-soft)] align-top ${esElegido ? "bg-[var(--accent)]/10" : infraccion ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10" : ""} ${a.disponibilidad !== "disponible" ? "text-[var(--text-secondary)]" : ""}`}
+              className={`border-t border-[var(--rule-soft)] align-top ${esElegido ? "bg-[var(--accent)]/10" : infraccion && para === "tala" ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10" : ""} ${!elegible ? "text-[var(--text-secondary)]" : ""}`}
             >
               <td className="px-2 py-2"><span className="whitespace-nowrap"><Mono bold>{a.treeCode}</Mono></span></td>
               {conDistancia && <td className="px-2 py-2 text-right"><span className="whitespace-nowrap"><Mono>{d == null ? "—" : formatDistance(d)}</Mono></span></td>}
@@ -151,7 +162,7 @@ export default function LothCensoElegirTabla({ arboles, orden, onOrdenar, distan
               </td>
               <td className="px-2 py-2"><EnElLibro a={a} /></td>
               <td className={`px-2 py-1.5 text-right ${FIJA} ${esElegido ? "bg-[var(--surface-sunken)]" : ""}`}>
-                {a.disponibilidad === "disponible" ? (
+                {elegible ? (
                   <button
                     type="button"
                     onClick={() => onElegir(a)}
@@ -168,8 +179,8 @@ export default function LothCensoElegirTabla({ arboles, orden, onOrdenar, distan
                   /* El porqué ya está en «En el libro»; acá sólo que no se elige. */
                   <span
                     role="img"
-                    aria-label={`No se puede elegir: ${a.motivoNoDisponible ?? "no disponible"}`}
-                    title={a.motivoNoDisponible ?? undefined}
+                    aria-label={`No se puede elegir: ${motivo}`}
+                    title={motivo}
                     className="inline-grid h-9 w-9 place-items-center text-[var(--text-tertiary)]"
                   >
                     <Ban className="h-4 w-4" aria-hidden="true" />

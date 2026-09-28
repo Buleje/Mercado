@@ -513,6 +513,8 @@ export interface LothEntryDTO {
   consumoInterno: boolean;
   /** Cómo se midió, para poder reconstruir el promedio (ADR-422). */
   medicionCruda?: {
+    /** «promedio» = D1/D2 ya promediados en campo (arreglos vacíos). Sin dato = cruzadas. */
+    forma?: "cruzadas" | "promedio";
     mayor: number[];
     menor: number[];
     totalM: number | null;
