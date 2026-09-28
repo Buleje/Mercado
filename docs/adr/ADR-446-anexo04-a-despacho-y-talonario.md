@@ -1,6 +1,6 @@
 # ADR-446 — Registrar en el libro la salida de un Anexo 04 guardado, y la GTF con el largo real de su talonario
 
-**Estado:** Propuesto (2026-09-28) — **3 de 10 decisiones tomadas** (28-09); faltan 7 (sección «Decisiones»). No construir antes.
+**Estado:** Propuesto (2026-09-28) — **7 de 10 decisiones tomadas** (28-09); faltan 3 (5, 8 y 9), que se pueden resolver al confirmar cada guía (sección «Decisiones»). No construir antes.
 **Relacionados:** ADR-444 (un paquete en UNA guía vigente), ADR-445 (origen y salida del día), ADR-437 (madera de servicio WASACO).
 
 ## Contexto
@@ -65,11 +65,11 @@ El modal de despacho actual (no ofrece corridas «usado», no es atómico) · af
 ## Decisiones de Brandon (pendientes)
 
 1. ✅ **La guía 064 viajó con el Anexo de 256 piezas (25/09, 19,720 m³).** El de 251 (24/09) queda marcado «reemplazado», no se borra.
-2. En la 064 salieron 16 piezas de Azúcar huayo sin producción anotada: anotarla antes.
-3. Los despachos del 27-28/09 salieron con 19-00000: ¿fueron reales? ¿qué número tenían? (preguntado el 28-09, sin respuesta todavía)
-4. ¿La serie del talonario es 19-001 con 7 dígitos?
+2. ✅ **Anotar la producción de Azúcar huayo** (16 piezas, 0,92 m³) antes de registrar la 064, así entra entera.
+3. ✅ **Eran pruebas: anulados el 28-09** (despachos #1 SL-680 y #4 SL-682, con motivo, por `ForestCtpDB.annul`). Blas queda con 0 despachos vigentes.
+4. ✅ **Serie 19-001, correlativo de 7 dígitos** (19-001-0000065 es el siguiente).
 5. Guías 060 y 062 (09/09): ¿salieron del inventario del 1 de agosto?
-6. Sobran ~8 m³ del inventario de agosto: ¿vendido sin guía, merma o sigue en el patio?
+6. ✅ **Los ~8 m³ sobrantes siguen en el patio:** al registrar las guías, el resto vuelve a Productos disponibles (se le quita «usado» SÓLO a ese resto, no automáticamente a toda la corrida).
 7. ✅ **El Tornillo del inventario del 1 de agosto es de WASACO (servicio):** sin precio de venta ni costo (`valorVenta` null), igual que el permiso de Santos Muñoz.
 8. ~2 m³ de Tornillo corto y tablas sin producción de ese tipo: ¿anotar producción o dejar sin origen?
 9. Guías 059 y 061 sin anexo: ¿existen?
