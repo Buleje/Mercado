@@ -4,6 +4,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { WoodEntriesDB, TOPE_TROZAS_POR_INGRESO } from "@/lib/db/wood-entries.db";
+import { GuiasGuardadasDB } from "@/lib/db/guias-guardadas.db";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { ctpErrorResponse } from "@/lib/forestal/ctp-api-errors";
@@ -315,6 +316,22 @@ export const PATCH = withApiHandler(
           parsed.data.fields,
           auth.username ?? "unknown",
         );
+        /* ADR-442: corregir la GTF o el N° de registro puede hacer que el
+           ingreso reconozca una guía guardada: sus papeles pasan también acá. */
+        const f = parsed.data.fields;
+        if (f.gtfNumber !== undefined || f.serforNumeroRegistro !== undefined) {
+          GuiasGuardadasDB.alRegistrarIngreso(
+            auth.tenantId,
+            {
+              gtfNumber: f.gtfNumber ?? actual.gtfNumber,
+              serforNumeroRegistro:
+                f.serforNumeroRegistro !== undefined ? f.serforNumeroRegistro : actual.serforNumeroRegistro,
+            },
+            auth.username ?? "unknown",
+          ).catch((err) =>
+            logger.error("[wood-entries.PATCH] enlazar guía guardada failed", { error: String(err) }),
+          );
+        }
       } else if (parsed.data.action === "set_costo") {
         const actual = await WoodEntriesDB.getById(auth.tenantId, id);
         if (!actual) return NextResponse.json({ error: "not_found" }, { status: 404 });

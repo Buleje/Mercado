@@ -10,7 +10,7 @@
  * con su volumen), así que ningún filtro devuelve vacío por adivinar mal.
  */
 
-import { ArrowLeftRight, BarChart3, Coins, Download, FileStack, Plus, RefreshCw, Search, X } from "@buleje/design-system/icons";
+import { ArrowLeftRight, BarChart3, Coins, Download, FileStack, FolderOpen, FolderPlus, Plus, RefreshCw, Search, X } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import CtpFiltrosPanel, { BotonFiltros, BTN_FILTRO, usePanelFiltros } from "./ctp-filtros-panel";
 import { etiquetaDePermiso, type FiltroMovil } from "./CtpGuiasFiltrosCabecera";
@@ -105,6 +105,13 @@ export interface CtpIngresosFiltrosProps {
   /** Hay algún autofiltro de columna puesto (para ofrecer quitarlos). */
   hayFiltroMovil?: boolean;
   onLimpiarMovil?: () => void;
+  /**
+   * Guardar una guía antes de que llegue la madera (ADR-442): su N° de
+   * registro, su GTF y sus papeles. Sin esto no se ofrece.
+   */
+  onGuardarGuia?: () => void;
+  /** Abre el listado de guías guardadas (por ingresar / ya ingresadas). */
+  onGuiasGuardadas?: () => void;
 }
 
 export default function CtpIngresosFiltros({
@@ -136,6 +143,8 @@ export default function CtpIngresosFiltros({
   filtrosMovil,
   hayFiltroMovil = false,
   onLimpiarMovil,
+  onGuardarGuia,
+  onGuiasGuardadas,
 }: CtpIngresosFiltrosProps) {
   /* Una COLUMNA acotada cuenta 1, tenga uno o cinco valores elegidos. */
   const puesto = (v: string | readonly string[] | undefined) => (Array.isArray(v) ? v.length > 0 : !!v);
@@ -187,6 +196,18 @@ export default function CtpIngresosFiltros({
             hint: "En las guías de varias especies, cada troza a la fila de su especie · primero ves qué se mueve",
             icon: ArrowLeftRight,
             onSelect: onAcomodar,
+          } satisfies MenuAccion,
+        ]
+      : []),
+    /* ADR-442: las guías guardadas antes del ingreso, con sus papeles. */
+    ...(onGuiasGuardadas
+      ? [
+          {
+            id: "guardadas",
+            label: "Guías guardadas",
+            hint: "Las que guardaste antes del ingreso, con sus documentos · por ingresar o ya ingresadas",
+            icon: FolderOpen,
+            onSelect: onGuiasGuardadas,
           } satisfies MenuAccion,
         ]
       : []),
@@ -271,7 +292,7 @@ export default function CtpIngresosFiltros({
               donde además cada uno gana la línea que explica qué hace (ADR-360). */}
           <ActionMenu
             label="Opciones"
-            title="Desglose por especie, descargar, legajo y recargar"
+            title="Desglose por especie, guías guardadas, descargar, legajo y recargar"
             actions={opciones}
             size="md"
             compactoEnMovil
@@ -288,6 +309,21 @@ export default function CtpIngresosFiltros({
             >
               <FileStack className={`h-4 w-4 ${armandoLegajo ? "animate-pulse" : ""}`} />
               <span>{armandoLegajo ? "Armando…" : `Legajo (${legajoCount})`}</span>
+            </button>
+          )}
+          {/* ADR-442: la guía se guarda ANTES de que llegue la madera. Sólo el
+              ícono hasta 1536 px: a 1280 el rótulo empujaba la fila fuera de la
+              pantalla y el buscador quedaba en «Buscar por C» (medido 27-09).
+              El nombre completo va en el `title` y en el lector de pantalla. */}
+          {onGuardarGuia && (
+            <button
+              type="button"
+              onClick={onGuardarGuia}
+              title="Guardar guía: sus datos y sus papeles antes de que llegue la madera"
+              className="inline-flex h-12 w-12 shrink-0 items-center justify-center gap-2 rounded-2xl border-2 border-[var(--accent)] bg-[var(--surface-raised)] text-base font-semibold text-[var(--accent-ink)] transition hover:bg-primary/10 dark:text-[var(--accent)] 2xl:w-auto 2xl:px-4"
+            >
+              <FolderPlus className="h-5 w-5 shrink-0" aria-hidden />
+              <span className="max-2xl:sr-only">Guardar guía</span>
             </button>
           )}
           <button

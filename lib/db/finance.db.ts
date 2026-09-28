@@ -2,6 +2,7 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { cacheLife, cacheTag, revalidateTag } from "next/cache";
 import { logger } from "@/lib/logger";
+import { contratoPropio } from "./contrato-propio.db";
 import type {
   Payable as PPayable,
   Payment as PPayment,
@@ -389,7 +390,7 @@ export const ExpensesDB = {
         createdBy: data.createdBy ?? null,
         notes: data.notes ?? null,
         templateId: data.templateId ?? null,
-        contratoId: data.contratoId ?? null,
+        contratoId: await contratoPropio(tenantId, data.contratoId),
         // Una plantilla no se pagó: se acordó. Sólo el gasto ejecutado lleva
         // fecha de pago, y por defecto es la fecha del gasto.
         paidAt: data.paidAt ? new Date(data.paidAt) : data.recurring ? null : fecha,

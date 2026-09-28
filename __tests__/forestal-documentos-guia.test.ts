@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   CASILLEROS_GUIA,
   agruparPorCasillero,
-  carpetaGuiaPorFecha,
+  carpetaGuiaPorTitular,
   casilleroDeDocumento,
   casillerosLlenos,
   esPdfPorFirma,
@@ -79,13 +79,27 @@ describe("casilleros de la guía (ADR-438)", () => {
     expect(etiquetasDeBusqueda(["QA-1", " "])).toEqual(["gtf:QA-1", "gtf:qa-1", "QA-1"]);
   });
 
-  it("carpeta por año/mes del ingreso; sin fecha, la raíz de las guías", () => {
-    expect(carpetaGuiaPorFecha("2026-09-24T00:00:00.000Z")).toEqual([
+  it("carpeta del titular › su permiso › la guía (ADR-442); la / del permiso no abre carpetas", () => {
+    expect(
+      carpetaGuiaPorTitular({
+        titular: "COMUNIDAD NATIVA SANTA ROSA DE CHIVIS",
+        permiso: "19-SEC/REG-PLT-2021-017",
+        gtfNumber: "019-001-0000003",
+      }),
+    ).toEqual([
       "Guías forestales (GTF)",
-      "2026",
-      "09",
+      "COMUNIDAD NATIVA SANTA ROSA DE CHIVIS",
+      "19-SEC-REG-PLT-2021-017",
+      "GTF 019-001-0000003",
     ]);
-    expect(carpetaGuiaPorFecha(null)).toEqual(["Guías forestales (GTF)"]);
+    expect(carpetaGuiaPorTitular({ titular: "  ", permiso: null, gtfNumber: "QA-1" })).toEqual([
+      "Guías forestales (GTF)",
+      "Sin titular",
+      "Sin permiso",
+      "GTF QA-1",
+    ]);
+    const [, titular] = carpetaGuiaPorTitular({ titular: "A:B*C\u202E?", gtfNumber: "1" });
+    expect(titular).toBe("A B C");
   });
 
   it("el nombre dice qué es y de qué guía, sin caracteres que rompan el archivo", () => {

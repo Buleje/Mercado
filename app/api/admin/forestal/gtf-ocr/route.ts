@@ -7,6 +7,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { aiCostGuard } from "@/lib/ai/cost-control";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
+import { esNumeroRegistroValido, normalizarNumeroRegistro } from "@/lib/forestal/serfor-gtf";
 
 /**
  * /api/admin/forestal/gtf-ocr — extrae los datos de una GTF (Guía de Transporte
@@ -14,6 +15,11 @@ import { logger } from "@/lib/logger";
  * /api/ocr/invoice (auth + aiCostGuard + Vision OpenAI→Anthropic + Zod), acotado
  * al vocabulario de una GTF peruana. NO reemplaza la validación humana: el
  * operador revisa y corrige antes de guardar.
+ *
+ * ADR-442 (27-09): también lee el N° de REGISTRO del SNIFFS (`110-19-0469779`),
+ * que no es el N° de GTF impreso. Con él la guía guardada se busca en SERFOR y
+ * la ficha oficial manda; por eso un número que no tiene la forma, o que es
+ * la misma GTF leída dos veces, sale VACÍO: nunca un número adivinado.
  */
 
 const MAX_IMAGE_B64_BYTES = 10_000_000;
@@ -33,15 +39,51 @@ const GtfSchema = z.object({
   ruc: z.string().default(""),
   fecha: z.string().default(""),
   origen: z.string().default(""),
+  /** ADR-442. Opcional para quien no lo usa (el alta de ingreso lo ignora). */
+  /* OpenAI responde JSON libre: un `null` acá no puede tumbar toda la lectura
+     (también la del alta de ingreso, que ni usa este campo). */
+  numeroRegistro: z.preprocess((v) => (v == null ? "" : v), z.string()).default(""),
 });
+
+const soloDigitos = (v: string) => v.replace(/\D/g, "");
+
+/**
+ * El N° de registro sólo pasa si tiene la forma del SNIFFS y no es la GTF
+ * leída en otra casilla: los dos son dígitos con guiones y el modelo puede
+ * repetir uno en el lugar del otro. Ante la duda, vacío.
+ */
+/** Forma de un N° de GTF (`019-001-0000004`, `019-0000001`): NO es un registro. */
+const FORMA_GTF = /^\d{3}(-\d{3})?-\d{7}$/;
+
+function registroLeido(registro: string, gtf: string, serie: string): string {
+  /* Si el modelo copió el rótulo («N° REGISTRO : 1-19-0313629»), vale el
+     número que trae, tal cual: sacar la etiqueta no es adivinar. */
+  const n = normalizarNumeroRegistro(registro).match(/\d[\d-]*\d/)?.[0] ?? "";
+  if (!n || !esNumeroRegistroValido(n)) return "";
+  /* Con la serie aparte (número `0000004`, serie `019-001`) la GTF entera es
+     serie + número: compararla sólo con el número la dejaba pasar. */
+  const d = soloDigitos(n);
+  if (gtf && (d === soloDigitos(gtf) || d === soloDigitos(`${serie}${gtf}`))) return "";
+  if (FORMA_GTF.test(n)) return "";
+  return n;
+}
+
+/** Anthropic exige el tipo real de la imagen: una PNG anunciada como JPEG se rechaza. */
+function tipoDeImagen(image: string): "image/jpeg" | "image/png" | "image/webp" | "image/gif" {
+  const m = image.match(/^data:(image\/(?:jpeg|png|webp|gif));base64,/);
+  return (m?.[1] as "image/png" | "image/webp" | "image/gif" | undefined) ?? "image/jpeg";
+}
 
 const PROMPT =
   "Extrae los datos de esta Guía de Transporte Forestal (GTF) peruana de SERFOR. " +
   "Devuelve SOLO JSON válido sin markdown con: gtfNumber (número de la guía), gtfSeries (serie si aparece), " +
   "especie (nombre común de la especie forestal), especieCientifica (nombre científico si aparece), " +
   "volumenM3 (volumen total en m³ como número), proveedor (titular/remitente), ruc (RUC del titular), " +
-  'fecha (YYYY-MM-DD), origen (concesión/predio/comunidad de procedencia). ' +
-  'Formato: {"gtfNumber":"","gtfSeries":"","especie":"","especieCientifica":"","volumenM3":0,"proveedor":"","ruc":"","fecha":"","origen":""}. ' +
+  'fecha (YYYY-MM-DD), origen (concesión/predio/comunidad de procedencia), ' +
+  "numeroRegistro (N° de registro o constancia de registro del MC SNIFFS de SERFOR: dígitos con guiones como " +
+  "110-19-0469779 o 1-19-0313629; suele estar junto al código QR o en el recuadro del estado, rotulado " +
+  "«N° REGISTRO»; NO es el N° de GTF impreso como 019-001-0000004 — si sólo ves ese, deja numeroRegistro vacío). " +
+  'Formato: {"gtfNumber":"","gtfSeries":"","especie":"","especieCientifica":"","volumenM3":0,"proveedor":"","ruc":"","fecha":"","origen":"","numeroRegistro":""}. ' +
   "Si un dato no se lee, dejalo vacío o 0.";
 
 async function ensureSpec(tenantId: string) {
@@ -91,6 +133,7 @@ export async function POST(req: NextRequest) {
       content = (await res.json()).choices?.[0]?.message?.content ?? "";
     } else if (anthropic) {
       const imageData = image.startsWith("data:") ? image.split(",")[1] : image;
+      const mediaType = tipoDeImagen(image);
       const res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-api-key": anthropic, "anthropic-version": "2023-06-01" },
@@ -105,8 +148,9 @@ export async function POST(req: NextRequest) {
           thinking: { type: "disabled" },
           // El JSON pasa a estar garantizado por la API en vez de pedido por
           // prompt. Los campos son EXACTAMENTE los de `GtfSchema` y del PROMPT
-          // de arriba — este cambio no reinterpreta la guía ni agrega campos:
-          // qué se extrae de una GTF es materia de SERFOR, no de un refactor.
+          // de arriba: qué se extrae de una GTF es materia de SERFOR, no de un
+          // refactor. ADR-442 (27-09) suma `numeroRegistro` (la constancia del
+          // SNIFFS, para buscar la ficha oficial) en los tres lugares a la vez.
           output_config: {
             format: {
               type: "json_schema",
@@ -122,18 +166,19 @@ export async function POST(req: NextRequest) {
                   ruc: { type: "string" },
                   fecha: { type: "string" },
                   origen: { type: "string" },
+                  numeroRegistro: { type: "string" },
                 },
                 // Todos requeridos a propósito: el contrato del PROMPT es
                 // "si un dato no se lee, dejalo vacío o 0", no omitirlo.
                 required: [
                   "gtfNumber", "gtfSeries", "especie", "especieCientifica",
-                  "volumenM3", "proveedor", "ruc", "fecha", "origen",
+                  "volumenM3", "proveedor", "ruc", "fecha", "origen", "numeroRegistro",
                 ],
                 additionalProperties: false,
               },
             },
           },
-          messages: [{ role: "user", content: [{ type: "image", source: { type: "base64", media_type: "image/jpeg", data: imageData } }, { type: "text", text: PROMPT }] }],
+          messages: [{ role: "user", content: [{ type: "image", source: { type: "base64", media_type: mediaType, data: imageData } }, { type: "text", text: PROMPT }] }],
         }),
       });
       if (!res.ok) return NextResponse.json({ error: `API error: ${res.status}` }, { status: 502 });
@@ -150,7 +195,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No se pudo interpretar la GTF", raw: content }, { status: 422 });
     }
     await aiCostGuard.recordSpend(auth.tenantId, OCR_COST_USD);
-    return NextResponse.json(result.data);
+    const d = result.data;
+    return NextResponse.json({ ...d, numeroRegistro: registroLeido(d.numeroRegistro, d.gtfNumber, d.gtfSeries) });
   } catch (error) {
     logger.error("[gtf-ocr] failed", { error: String(error), tenantId: auth.tenantId });
     return NextResponse.json({ error: `Error procesando la GTF: ${error instanceof Error ? error.message : "desconocido"}` }, { status: 500 });

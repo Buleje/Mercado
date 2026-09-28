@@ -61,6 +61,7 @@ import { agregarSinOrigen, type CorridaSinOrigen } from "@/lib/forestal/loctp-co
 import { reservasVencidas, type ReservaVencida } from "@/lib/forestal/reservas-vencidas";
 import { limaDateKey } from "@/lib/utils";
 import { ForestContratoDB } from "@/lib/db/forest-contrato.db";
+import { contratoPropio } from "./contrato-propio.db";
 
 export const CTP_SECTIONS = ["produccion", "despacho"] as const;
 export type CtpSection = (typeof CTP_SECTIONS)[number];
@@ -830,7 +831,10 @@ export class ForestCtpDB {
           gtfIngreso: input.gtfIngreso?.trim() || null,
           materiaPrimaRef: input.materiaPrimaRef?.trim() || null,
           originCode: input.originCode?.trim() || null,
-          contratoId: input.contratoId ?? (await ForestContratoDB.idPorCodigo(tenantId, input.originCode)),
+          /* Un permiso ajeno o dado de baja no se acepta: se deduce del código. */
+          contratoId:
+            (await contratoPropio(tenantId, input.contratoId)) ??
+            (await ForestContratoDB.idPorCodigo(tenantId, input.originCode)),
           /* Lo que llegue se normaliza con las reglas del libro: «de tercero»
              sin nombre y «propia» con titular no se guardan a medias. */
           ...(() => {

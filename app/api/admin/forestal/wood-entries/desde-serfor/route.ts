@@ -5,6 +5,10 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { WoodEntriesDB } from "@/lib/db/wood-entries.db";
+import { GuiasGuardadasDB } from "@/lib/db/guias-guardadas.db";
+import { ForestContratoDB } from "@/lib/db/forest-contrato.db";
+import type { GtfSerfor } from "@/lib/forestal/serfor-gtf";
+import { auditCtp } from "@/lib/forestal/ctp-audit";
 import { CtpInvariantError } from "@/lib/db/forest-ctp-consumo.db";
 import { esNumeroRegistroValido, normalizarNumeroRegistro } from "@/lib/forestal/serfor-gtf";
 import { consultarGtfEnSerfor } from "@/lib/forestal/serfor-gtf-fetch";
@@ -27,6 +31,10 @@ import { documentoDelTitular } from "@/lib/forestal/serfor-titular";
  * "verificado en SERFOR" puesto por nosotros—, y la verificación que no hace el
  * servidor no es verificación.
  */
+
+/** Hasta cuántos días vale la ficha guardada con la guía si SERFOR no responde
+ *  (ADR-442): una GTF vence en días y SERFOR puede anularla después. */
+const FICHA_GUARDADA_MAX_DIAS = 30;
 
 const Body = z.object({
   numeroRegistro: z.string().trim().min(1).max(30),
@@ -74,18 +82,47 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 1 · La ficha, pedida por el servidor.
-    const consulta = await consultarGtfEnSerfor(numero);
-    if (!consulta.ok) {
-      return NextResponse.json({ error: "serfor_sin_respuesta", message: consulta.mensaje }, { status: 502 });
-    }
-    if (consulta.resultado.estado !== "encontrada" || !consulta.resultado.gtf) {
+    // 1 · La ficha, pedida por el servidor. La guía guardada antes (ADR-442),
+    //     si la hay, aporta el permiso elegido y el respaldo sin SERFOR.
+    const [consulta, guardada] = await Promise.all([
+      consultarGtfEnSerfor(numero),
+      GuiasGuardadasDB.filaPor(auth.tenantId, { numeroRegistro: numero }),
+    ]);
+    let gtf: GtfSerfor;
+    let fichaGuardada = false;
+    /* Un 200 de mantenimiento llega `ok` con estado «sin_respuesta»: para el
+       respaldo cuenta igual que SERFOR caído. */
+    const serforCaido = !consulta.ok || consulta.resultado.estado === "sin_respuesta";
+    if (serforCaido) {
+      /* ADR-442: si SERFOR no responde y la guía se guardó antes con su ficha
+         —pedida por ESTE servidor, nunca la del navegador—, se registra con
+         esa. El camión no espera a que SERFOR vuelva. */
+      const vigente =
+        guardada?.serforGtf &&
+        guardada.serforConsultadaEn &&
+        Date.now() - guardada.serforConsultadaEn.getTime() <= FICHA_GUARDADA_MAX_DIAS * 86_400_000;
+      if (!guardada || !vigente) {
+        const mensaje = consulta.ok ? (consulta.resultado.mensaje ?? "SERFOR no respondió.") : consulta.mensaje;
+        return NextResponse.json(
+          {
+            error: "serfor_sin_respuesta",
+            message: guardada?.serforGtf
+              ? `${mensaje} La ficha guardada con la guía tiene más de ${FICHA_GUARDADA_MAX_DIAS} días: vuelve a intentar cuando SERFOR responda.`
+              : mensaje,
+          },
+          { status: 502 },
+        );
+      }
+      gtf = guardada.serforGtf as unknown as GtfSerfor;
+      fichaGuardada = true;
+    } else if (!consulta.ok || consulta.resultado.estado !== "encontrada" || !consulta.resultado.gtf) {
       return NextResponse.json(
-        { error: "guia_no_encontrada", message: consulta.resultado.mensaje ?? "SERFOR no encontró esa guía." },
+        { error: "guia_no_encontrada", message: (consulta.ok && consulta.resultado.mensaje) || "SERFOR no encontró esa guía." },
         { status: 404 },
       );
+    } else {
+      gtf = consulta.resultado.gtf;
     }
-    const gtf = consulta.resultado.gtf;
 
     // 2 · Repartir en ingresos: uno por especie, con sus trozas.
     const reparto = repartirGtfEnIngresos(gtf);
@@ -98,6 +135,11 @@ export async function POST(req: NextRequest) {
         { status: 422 },
       );
     }
+
+    const permisoGuardadoVigente =
+      guardada?.contratoId && (await ForestContratoDB.get(auth.tenantId, guardada.contratoId))
+        ? guardada.contratoId
+        : null;
 
     // 3 · Los datos del documento que el libro guarda como cabecera.
     const regionCatalogo = regionDeSerfor(gtf.departamento);
@@ -125,6 +167,12 @@ export async function POST(req: NextRequest) {
       ...docDelTitular(gtf),
       originType,
       originCode: gtf.numeroTitulo ?? null,
+      // El permiso que se eligió al guardar la guía; sin él, el servidor lo
+      // deduce del código del título (como siempre).
+      // Si ese permiso se dio de baja después (el código se puede volver a
+      // cargar con otro id), se deduce del código del título: el modo SERFOR
+      // no tiene selector de permiso y un 422 dejaba la guía sin poder entrar.
+      contratoId: permisoGuardadoVigente ?? undefined,
       originSourceNumber: gtf.numeroResolucion ?? null,
       // "Otra" no es una región: en la columna del libro se guarda vacío.
       originRegion: regionCatalogo && regionCatalogo !== "Otra" ? regionCatalogo : null,
@@ -153,8 +201,32 @@ export async function POST(req: NextRequest) {
       createdBy: auth.username ?? "unknown",
     });
 
+    /* ADR-442: los papeles de la guía guardada pasan a este ingreso (sólo hace
+       falta si la GTF quedó escrita distinto; con la misma, ya aparecen). Si
+       la guía se guardó a mano, recibe ahora la ficha oficial: así su carpeta
+       y la del «Guardar en el expediente» son la misma. */
+    GuiasGuardadasDB.alRegistrarIngreso(
+      auth.tenantId,
+      { gtfNumber: gtf.gtfNumber.trim(), serforNumeroRegistro: gtf.numeroRegistro || numero },
+      auth.username ?? "unknown",
+      fichaGuardada ? null : gtf,
+    ).catch((err) => logger.error("[wood-entries.desde-serfor] enlazar guía guardada failed", { error: String(err) }));
+    if (fichaGuardada && guardada) {
+      /* Un ingreso con la ficha guardada no es uno verificado en vivo: queda
+         dicho en la auditoría, con la fecha de esa ficha. */
+      auditCtp({
+        tenantId: auth.tenantId,
+        action: "ctp_guia_guardada_editar",
+        entity: "ForestGuiaGuardada",
+        entityId: guardada.id,
+        detail: `SERFOR no respondió: la GTF ${gtf.gtfNumber} entró al libro con la ficha guardada el ${guardada.serforConsultadaEn?.toISOString().slice(0, 10) ?? "s/f"}`,
+        user: auth.username ?? "unknown",
+      });
+    }
+
     return NextResponse.json({
       ok: true,
+      fichaGuardada,
       ingresos: creados.map((e) => ({
         id: e.id,
         libroNro: e.libroNro,
@@ -165,7 +237,12 @@ export async function POST(req: NextRequest) {
       gtfNumber: gtf.gtfNumber,
       numeroRegistro: gtf.numeroRegistro || numero,
       trozas: reparto.ingresos.reduce((a, l) => a + l.trozas.length, 0),
-      avisos: reparto.avisos,
+      avisos: fichaGuardada
+        ? [
+            ...reparto.avisos,
+            `SERFOR no respondió: se registró con la ficha guardada el ${guardada?.serforConsultadaEn?.toISOString().slice(0, 10) ?? "s/f"}.`,
+          ]
+        : reparto.avisos,
     }, { status: 201 });
   } catch (e) {
     if (e instanceof CtpInvariantError) {

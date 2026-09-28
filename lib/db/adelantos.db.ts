@@ -2,6 +2,7 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { limaDateKey } from "@/lib/utils";
 import { logger } from "@/lib/logger";
+import { contratoPropio } from "./contrato-propio.db";
 import type { Prisma } from "@/lib/generated/prisma/client";
 import {
   PREFIJO_ADELANTO,
@@ -750,7 +751,7 @@ export const AdelantosDB = {
         saldoPendiente: monto, // arranca con saldo completo a favor del negocio
         codigoOperacion: await siguienteCodigoDeTenant(tenantId),
         reciboManual: data.reciboManual?.trim() || null,
-        contratoId: data.contratoId ?? null,
+        contratoId: await contratoPropio(tenantId, data.contratoId),
         notas: [data.notas?.trim(), excedioLimite].filter(Boolean).join(" · ") || null,
         comprobanteUrl: data.comprobanteUrl?.trim() || null,
         // Dato de referencia: uno sin el otro no dice nada, así que se guardan

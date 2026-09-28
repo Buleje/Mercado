@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
 import { logger } from "@/lib/logger";
+import { contratoPropio } from "./contrato-propio.db";
 import { auditCtp } from "@/lib/forestal/ctp-audit";
 import { normalizarPlaca } from "@/lib/forestal/directorio";
 import {
@@ -200,7 +201,7 @@ export const ForestFleteDB = {
       // Marcar pagado sin fecha deja la deuda saldada "algún día": se asume hoy.
       fechaPago: pagado ? (fechaUtc(input.fechaPago) ?? new Date()) : null,
       notas: vacioANull(input.notas),
-      contratoId: vacioANull(input.contratoId),
+      contratoId: await contratoPropio(tenantId, vacioANull(input.contratoId)),
       ...(cobro ?? {}),
     };
 

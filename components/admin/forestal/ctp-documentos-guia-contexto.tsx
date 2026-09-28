@@ -45,12 +45,18 @@ const TONO = {
     "bg-[var(--data-success-500)]/15 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
 } as const;
 
+/** El color del «3/6 docs»: gris vacío, azul a medias, verde completo. Lo usan
+ *  también las guías guardadas antes del ingreso (ADR-442). */
+export function tonoDeDocs(n: number): string {
+  return n === 0 ? TONO.vacio : n >= TOTAL_CASILLEROS ? TONO.completo : TONO.parcial;
+}
+
 /** Chip-botón «3/6 docs»: abre los casilleros de la guía. */
 export function ChipDocumentosGuia({ guia, className = "" }: { guia: Guia; className?: string }) {
   const ctx = useDocumentosGuiaCtx();
   const n = ctx?.llenos[guia.gtfNumber];
   if (!ctx || n == null) return null;
-  const tono = n === 0 ? TONO.vacio : n >= TOTAL_CASILLEROS ? TONO.completo : TONO.parcial;
+  const tono = tonoDeDocs(n);
   return (
     <button
       type="button"

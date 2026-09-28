@@ -20,7 +20,7 @@ import type { DbDocument } from "@/lib/types/documents";
 import type { DatosDeGuia } from "@/lib/db/ctp-guia-documentos.db";
 import {
   MAX_BYTES_DOC_GUIA,
-  carpetaGuiaPorFecha,
+  carpetaGuiaPorTitular,
   esPdfPorFirma,
   etiquetasDeDocumentoGuia,
   nombreDeDocumentoGuia,
@@ -99,7 +99,13 @@ export interface GuardarDocGuia {
 /** Sube al Drive y lo deja etiquetado en su casillero. `null` si el storage falló. */
 export async function guardarDocumentoDeGuia(o: GuardarDocGuia): Promise<DbDocument | null> {
   const { tenantId, archivo } = o;
-  const ruta = carpetaGuiaPorFecha(o.guia.entryDate).join("/");
+  /* ADR-442: la carpeta del titular y su permiso, con una carpeta por guía
+     (antes, año/mes del ingreso: lo de un mismo permiso quedaba repartido). */
+  const ruta = carpetaGuiaPorTitular({
+    titular: o.guia.titular,
+    permiso: o.guia.permiso,
+    gtfNumber: o.guia.gtfNumber,
+  }).join("/");
   let folderId: string | null = null;
   try {
     folderId =

@@ -21,26 +21,48 @@ export interface DatosDeGuia {
   gtfNumber: string;
   entryDate: string | null;
   providerName: string | null;
+  /** Para la carpeta del Drive (ADR-442): titular y permiso de la guía. */
+  titular: string | null;
+  permiso: string | null;
+  /** De dónde salió: el libro o una guía guardada antes del ingreso. */
+  origen: "ingreso" | "guardada";
 }
 
 export class CtpGuiaDocumentosDB {
-  /** La guía viva del tenant, o `null` (otro tenant, anulada del todo, o no existe → 404). */
+  /**
+   * La guía viva del tenant, o `null` (otro tenant, anulada del todo, o no
+   * existe → 404). Vale el ingreso del libro O una guía guardada antes del
+   * ingreso (ADR-442): así los papeles se suben antes de que llegue el camión
+   * y siguen a la mano si el ingreso se borra.
+   *
+   * La carpeta sale de la guía guardada cuando la hay (titular y permiso tal
+   * como se guardaron), para que el ingreso no abra una carpeta hermana con el
+   * nombre escrito distinto.
+   */
   static async datosDeGuia(tenantId: string, gtfNumber: string): Promise<DatosDeGuia | null> {
     if (!tenantId) throw new Error("tenantId is required");
     const gtf = gtfNumber.trim();
     if (!gtf) return null;
-    const e = await prisma.woodEntry.findFirst({
-      where: { tenantId, gtfNumber: gtf, deletedAt: null },
-      orderBy: { entryDate: "asc" },
-      select: { gtfNumber: true, entryDate: true, providerName: true },
-    });
-    return e
-      ? {
-          gtfNumber: e.gtfNumber,
-          entryDate: e.entryDate?.toISOString() ?? null,
-          providerName: e.providerName ?? null,
-        }
-      : null;
+    const [e, g] = await Promise.all([
+      prisma.woodEntry.findFirst({
+        where: { tenantId, gtfNumber: gtf, deletedAt: null },
+        orderBy: { entryDate: "asc" },
+        select: { gtfNumber: true, entryDate: true, providerName: true, originCode: true },
+      }),
+      prisma.forestGuiaGuardada.findFirst({
+        where: { tenantId, gtfNumber: gtf, deletedAt: null },
+        select: { gtfNumber: true, titularNombre: true, permisoCodigo: true, gtfDate: true },
+      }),
+    ]);
+    if (!e && !g) return null;
+    return {
+      gtfNumber: e?.gtfNumber ?? g?.gtfNumber ?? gtf,
+      entryDate: e?.entryDate?.toISOString() ?? g?.gtfDate?.toISOString() ?? null,
+      providerName: e?.providerName ?? g?.titularNombre ?? null,
+      titular: g?.titularNombre ?? e?.providerName ?? null,
+      permiso: g?.permisoCodigo ?? e?.originCode ?? null,
+      origen: e ? "ingreso" : "guardada",
+    };
   }
 
   /**

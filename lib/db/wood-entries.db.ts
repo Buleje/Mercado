@@ -1368,6 +1368,20 @@ function costoEnGuiaDeServicio(gtfNumber: string, dueno: string | null): CtpInva
   );
 }
 
+/**
+ * El permiso que manda la pantalla tiene que ser de ESTE negocio. `contratoId`
+ * es una FK global: sin esto, un id de otro tenant quedaba aceptado y el
+ * ingreso imputado a un contrato ajeno (hallazgo de la revisión de ADR-442,
+ * 2026-09-27 — la guía guardada ya lo validaba; el alta, no).
+ */
+async function contratoDelTenant(tenantId: string, contratoId: string): Promise<string> {
+  if (await ForestContratoDB.get(tenantId, contratoId)) return contratoId;
+  throw new CtpInvariantError(
+    "Ese permiso no está en tu lista de permisos. Elígelo de nuevo o deja que se deduzca del código del título.",
+    "VALIDACION",
+  );
+}
+
 export class WoodEntriesDB {
   /**
    * Crea un nuevo ingreso de madera al CTP.
@@ -1378,7 +1392,9 @@ export class WoodEntriesDB {
        cargado, queda imputado solo (ADR-421). Se resuelve ACÁ, fuera de la
        transacción: una consulta a otra tabla adentro alarga el lock del folio
        sin ninguna razón. */
-    const contratoDelCodigo = input.contratoId ?? (await ForestContratoDB.idPorCodigo(tenantId, input.originCode));
+    const contratoDelCodigo = input.contratoId
+      ? await contratoDelTenant(tenantId, input.contratoId)
+      : await ForestContratoDB.idPorCodigo(tenantId, input.originCode);
     if (!tenantId) throw new Error("tenantId is required");
     if (!input.gtfNumber?.trim()) throw new Error("gtfNumber is required");
     if (!input.providerName?.trim()) throw new Error("providerName is required");
@@ -1713,7 +1729,9 @@ export class WoodEntriesDB {
       );
     }
 
-    const contratoDeLasLineas = input.contratoId ?? (await ForestContratoDB.idPorCodigo(tenantId, input.originCode));
+    const contratoDeLasLineas = input.contratoId
+      ? await contratoDelTenant(tenantId, input.contratoId)
+      : await ForestContratoDB.idPorCodigo(tenantId, input.originCode);
 
     const creados = await prisma.$transaction(async (tx) => {
       // El folio se lee UNA vez y avanza en memoria: leerlo por línea dentro de

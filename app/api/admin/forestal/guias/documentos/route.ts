@@ -259,7 +259,7 @@ export const DELETE = withApiHandler("forestal-guia-docs-delete", async (req: Ne
      plata de la guía (mismo helper que `guias/plata/route.ts`). Sin este
      chequeo, un encargado podía vaciar el expediente que pide una
      fiscalización. */
-  const rol = soloAdminODueno(auth.role);
+  const rol = soloAdminODueno(auth.role, "quitar un documento de la guía");
   if (rol) return rol;
   const body = deleteSchema.safeParse(await req.json().catch(() => null));
   if (!body.success)

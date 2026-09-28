@@ -6903,6 +6903,60 @@ model ForestLoteMixto {
   @@index([tenantId, code])
 }
 
+/// Guía guardada ANTES de registrar el ingreso (ADR-442): el N° de registro
+/// SNIFFS, el N° de GTF, el titular, su permiso, la ficha de SERFOR (pedida
+/// por el SERVIDOR) y sus papeles en el Drive.
+///
+/// Los papeles NO cuelgan de esta fila: son documentos del Drive con las
+/// etiquetas de ADR-438 (`gtf:<N°>` + `casillero:<clave>`), en la carpeta
+/// «Guías forestales (GTF) / <titular> / <permiso> / GTF <N°>». Por eso, al
+/// registrar el ingreso con esa GTF (o ese N° de registro), los casilleros del
+/// ingreso los muestran solos; y borrar el ingreso no borra ni la guía ni sus
+/// papeles.
+///
+/// «¿Ya entró al libro?» NO se guarda: se deduce de si hay un `WoodEntry` vivo
+/// con la misma GTF o el mismo N° de registro. Un estado guardado quedaba
+/// «ingresada» después de borrar el ingreso.
+///
+/// Únicos por negocio entre las VIVAS (índices parciales en la migración
+/// `20260927_guias_guardadas_adr442`; Prisma no sabe declararlos).
+model ForestGuiaGuardada {
+  id       String @id @default(cuid())
+  tenantId String
+
+  /// N° de constancia de registro del SNIFFS (`110-19-0469779`), normalizado
+  /// con `normalizarNumeroRegistro`. Con él se consulta la guía en SERFOR y se
+  /// reconoce al registrar el ingreso.
+  numeroRegistro String?
+  /// N° de la GTF (`019-001-0000003`): la llave de los casilleros (ADR-438).
+  gtfNumber      String
+  gtfDate        DateTime?
+
+  /// Snapshot del papel: el directorio puede cambiar y la guía sigue diciendo esto.
+  titularNombre String?
+  titularDoc    String?
+  /// Título habilitante (`19-SEC/REG-PLT-2021-017`) = `WoodEntry.originCode`.
+  permisoCodigo String?
+  /// Referencia suelta a `ForestContrato` (mismo criterio que `ForestLoteMixto`).
+  contratoId    String?
+
+  /// La ficha OFICIAL tal como la devolvió SERFOR al servidor. Nunca la que
+  /// manda el navegador: el alta desde SERFOR la usa si SERFOR no responde.
+  serforGtf          Json?
+  serforConsultadaEn DateTime?
+
+  notas String?
+
+  createdBy String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([tenantId, deletedAt])
+  @@index([tenantId, gtfNumber])
+  @@index([tenantId, numeroRegistro])
+}
+
 model ForestProdLote {
   id       String @id @default(cuid())
   tenantId String

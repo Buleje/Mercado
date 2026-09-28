@@ -13,7 +13,7 @@
  * descarga de lo filtrado.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { formatDateNumeric } from "@/lib/format";
 import { useMiRol } from "@/hooks/use-mi-rol";
 import { AlertCircle, PackageCheck } from "@buleje/design-system/icons";
@@ -106,6 +106,10 @@ import CtpKpiFiltros, { camposDeIngresos, notaDeFiltros } from "./CtpKpiFiltros"
 import CtpGtfIngresadasKpis from "./CtpGtfIngresadasKpis";
 import CtpIngresosFiltros, { type CtpFacetasActivas } from "./CtpIngresosFiltros";
 import CtpGuiasBandeja from "./CtpGuiasBandeja";
+import CtpGuiasGuardadasBandeja from "./CtpGuiasGuardadasBandeja";
+import CtpGuiasGuardadasCapa, { type ModalGuardadas } from "./CtpGuiasGuardadasCapa";
+import { detalleDeGuia } from "@/hooks/use-guias-guardadas";
+import type { GuiaGuardadaDetalle, GuiaGuardadaVista } from "@/lib/forestal/guias-guardadas";
 import CtpIngresosPaginacion from "./CtpIngresosPaginacion";
 import {
   ColumnasMenu,
@@ -278,6 +282,11 @@ export default function CtpIngresosView({
   const [formGtf, setFormGtf] = useState<string | null>(null);
   const [formPreset, setFormPreset] = useState<WoodEntryPreset | undefined>(undefined);
   const [bandejaKey, setBandejaKey] = useState(0);
+  /* ADR-442: la guía guardada antes del ingreso con la que se abre el alta, el
+     modal de guías guardadas que está abierto y la llave que relee su bandeja. */
+  const [guiaGuardadaForm, setGuiaGuardadaForm] = useState<GuiaGuardadaDetalle | null>(null);
+  const [modalGuardadas, setModalGuardadas] = useState<ModalGuardadas>(null);
+  const [guardadasKey, setGuardadasKey] = useState(0);
   // Rechazo en lote: el motivo es obligatorio, así que se pide una vez para todos.
   const [bulkRejecting, setBulkRejecting] = useState(false);
   const [bulkReason, setBulkReason] = useState("");
@@ -884,6 +893,34 @@ export default function CtpIngresosView({
   /* ADR-438: el «3/6 docs» de las guías en pantalla, en UN pedido, y el modal. */
   const conteoDocs = useConteoDocumentosGuias(guias.map((g) => g.gtfNumber));
   const ctxDocs = useMemo(() => ({ llenos: conteoDocs.llenos, abrir: setDocsGuia }), [conteoDocs.llenos]);
+
+  /* ADR-442: «Ingresar» una guía guardada abre el alta ya llena con ella (el
+     formulario necesita la ficha: si la lista no la trae, se pide). */
+  /* Cada «Ingresar» numera su pedido: si mientras llegaba el detalle se abrió
+     otra alta («Nuevo ingreso», tecla N), la respuesta tardía se descarta en
+     vez de pisar lo que ya se está escribiendo. */
+  const turnoIngresar = useRef(0);
+  const showFormRef = useRef(showForm);
+  useEffect(() => {
+    showFormRef.current = showForm;
+  }, [showForm]);
+  const ingresarGuardada = useCallback(
+    async (g: GuiaGuardadaVista | GuiaGuardadaDetalle) => {
+      const mio = ++turnoIngresar.current;
+      const det = await detalleDeGuia(g);
+      if (mio !== turnoIngresar.current || showFormRef.current) return;
+      if (!det) {
+        pushToast({ tono: "error", msg: "No se pudo leer la guía guardada", detail: "Prueba de nuevo en un momento." });
+        return;
+      }
+      setModalGuardadas(null);
+      setFormGtf(null);
+      setFormPreset(undefined);
+      setGuiaGuardadaForm(det);
+      setShowForm(true);
+    },
+    [pushToast],
+  );
   const porRecibir = useMemo(() => guias.filter((g) => faltaRecibirMadera(g)), [guias]);
   /** Las guías EN PANTALLA que ya se recibieron: las que se pueden corregir (ADR-434). */
   const recibidas = useMemo(() => guias.filter((g) => yaRecibida(g)), [guias]);
@@ -989,7 +1026,9 @@ export default function CtpIngresosView({
       dashboardOn={showDashboard}
       onDashboard={() => setShowDashboard((v) => !v)}
       onReload={() => void reload()}
-      onNuevo={() => { setFormGtf(null); setFormPreset(undefined); setShowForm(true); }}
+      onNuevo={() => { setFormGtf(null); setFormPreset(undefined); setGuiaGuardadaForm(null); setShowForm(true); }}
+      onGuardarGuia={() => setModalGuardadas({ tipo: "guia", id: null })}
+      onGuiasGuardadas={() => setModalGuardadas({ tipo: "lista" })}
       onDescargar={() => void descargar()}
       descargando={descargando}
       totalFiltrado={total}
@@ -1090,7 +1129,18 @@ export default function CtpIngresosView({
 
       {/* Puente monte→planta: guías emitidas en Títulos Habilitantes sin ingresar. */}
       {!esArchivo && (
-      <CtpGuiasBandeja key={bandejaKey} onIngresar={(n) => { setFormPreset(undefined); setFormGtf(n); setShowForm(true); }} />
+      <CtpGuiasBandeja key={bandejaKey} onIngresar={(n) => { setFormPreset(undefined); setGuiaGuardadaForm(null); setFormGtf(n); setShowForm(true); }} />
+      )}
+
+      {/* ADR-442: las guías guardadas antes de que llegue la madera, esperando su ingreso. */}
+      {!esArchivo && (
+        <CtpGuiasGuardadasBandeja
+          recargarKey={guardadasKey}
+          onAbrir={(g) => setModalGuardadas({ tipo: "guia", id: g.id, inicial: g })}
+          onDocumentos={(g) => setModalGuardadas({ tipo: "docs", guia: g })}
+          onIngresar={(g) => void ingresarGuardada(g)}
+          onVerTodas={() => setModalGuardadas({ tipo: "lista" })}
+        />
       )}
 
       {/* La madera que bajó pero que el libro todavía no fechó. No es un error:
@@ -1302,12 +1352,16 @@ export default function CtpIngresosView({
         <WoodEntryForm
           initialGtfNumber={formGtf ?? undefined}
           preset={formPreset}
-          onClose={() => { setShowForm(false); setFormGtf(null); setFormPreset(undefined); }}
+          guiaGuardada={guiaGuardadaForm}
+          onClose={() => { setShowForm(false); setFormGtf(null); setFormPreset(undefined); setGuiaGuardadaForm(null); }}
           onSaved={(o) => {
             setShowForm(false);
             setFormGtf(null);
             setFormPreset(undefined);
+            setGuiaGuardadaForm(null);
             setBandejaKey((k) => k + 1); // la guía ingresada sale de la bandeja
+            setGuardadasKey((k) => k + 1); // y la guardada pasa a «ya ingresada»
+            void conteoDocs.refrescar(); // sus papeles ya cuentan en la fila nueva
             void reload();
             // Sin señal el ingreso NO está en el libro: decirlo, no dar por guardado.
             if (o?.offline) {
@@ -1640,6 +1694,12 @@ export default function CtpIngresosView({
           onArmarGtf={() => { const g = docsGuia; setDocsGuia(null); void verDocumento(g); }}
         />
       )}
+      <CtpGuiasGuardadasCapa
+        abierto={modalGuardadas}
+        onCerrar={() => setModalGuardadas(null)}
+        onCambio={() => setGuardadasKey((k) => k + 1)}
+        onIngresar={(g) => void ingresarGuardada(g)}
+      />
       <ActionToasts toasts={toasts} onDismiss={dismissToast} />
     </div>
   );

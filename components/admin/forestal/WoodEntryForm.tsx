@@ -61,6 +61,8 @@ import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { tenantCacheKey, getActiveTenantSlug } from "@/lib/tenant-cache";
 import { formatTime } from "@/lib/format";
 import { PROVEEDOR_INVENTARIO_APERTURA } from "@/lib/forestal/ctp-serfor-a-libro";
+import { claveRegistro, type GuiaGuardadaDetalle } from "@/lib/forestal/guias-guardadas";
+import CtpAvisoGuiaGuardada, { diaDeLima, useGuiaGuardadaPorClave } from "./CtpAvisoGuiaGuardada";
 
 /** Lo que se copia al duplicar un ingreso: el camión siguiente del mismo
  *  proveedor y la misma concesión. Nunca la GTF ni el volumen. */
@@ -95,6 +97,9 @@ interface Props {
   initialGtfNumber?: string;
   /** Duplicar: campos repetidos ya cargados (ver WoodEntryPreset). */
   preset?: WoodEntryPreset;
+  /** La guía guardada antes de que llegue el camión (ADR-442): la vista de
+   *  Ingresos la pasa al tocar «Ingresar». Sus datos llegan puestos. */
+  guiaGuardada?: GuiaGuardadaDetalle | null;
 }
 
 // Guía emitida (ForestGtf) — para importar sus datos al ingreso.
@@ -282,7 +287,7 @@ const INITIAL: DraftData = {
 import CtpFotosDelIngreso from "./CtpFotosDelIngreso";
 import type { FotoCarga } from "@/lib/forestal/fotos-carga";
 
-export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, preset }: Props) {
+export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, preset, guiaGuardada }: Props) {
   /* El picker ofrece las de fábrica MÁS las del catálogo de esta planta
      (ADR-410): «Panguana» y «Yacuchapana» entran por la GTF todas las semanas y
      el código no las conoce — sin esto hay que elegir «Otro» y tipearlas cada
@@ -411,11 +416,34 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
   const [loadingGuias, setLoadingGuias] = useState(false);
   const [guiaQuery, setGuiaQuery] = useState("");
 
+  /* Guía guardada antes del ingreso (ADR-442): se reconoce por el N° de
+     registro (SERFOR) o por la GTF (manual) mientras se tipea, y el aviso junto
+     al campo dice que sus papeles se enlazan solos al registrar. */
+  const [guiaPuestaId, setGuiaPuestaId] = useState<string | null>(null);
+  /** Ingresos registrados con el modal abierto: lo que se sabía de las guías queda viejo. */
+  const [registrados, setRegistrados] = useState(0);
+  const guiaReconocida = useGuiaGuardadaPorClave(
+    modo === "serfor" ? nroRegistroSerfor : data.gtfNumber,
+    guiaGuardada,
+    registrados,
+  );
+  const guiaPuesta =
+    guiaReconocida != null &&
+    (guiaPuestaId === guiaReconocida.id ||
+      // La consulta a SERFOR de ESA guía ya llenó el formulario.
+      (modo === "serfor" &&
+        serforGtf != null &&
+        claveRegistro(serforGtf.numeroRegistro) != null &&
+        claveRegistro(serforGtf.numeroRegistro) === claveRegistro(guiaReconocida.numeroRegistro)));
+  const avisoGuiaGuardada = guiaReconocida ? (
+    <CtpAvisoGuiaGuardada guia={guiaReconocida} puesta={guiaPuesta} onUsar={() => usarGuiaGuardada(guiaReconocida)} />
+  ) : null;
+
   // Load draft del localStorage. Si el form abre desde la bandeja monte→planta
-  // (initialGtfNumber) o duplicando un ingreso (preset), la intención es
-  // explícita: eso pisa al borrador.
+  // (initialGtfNumber), duplicando un ingreso (preset) o desde una guía
+  // guardada (ADR-442), la intención es explícita: eso pisa al borrador.
   useEffect(() => {
-    if (initialGtfNumber || preset) return;
+    if (initialGtfNumber || preset || guiaGuardada) return;
     try {
       const raw = localStorage.getItem(draftKey());
       if (raw) {
@@ -433,14 +461,16 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
         }
       }
     } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- sólo al montar
   }, [initialGtfNumber, preset]);
 
   // La consulta a SERFOR guardada vuelve con el modal. Misma regla que el
-  // borrador: si se abrió desde la bandeja o duplicando, la intención es otra
-  // guía — restaurar ésta haría registrar la guía equivocada.
+  // borrador: si se abrió desde la bandeja, duplicando o desde una guía
+  // guardada, la intención es otra guía — restaurar ésta haría registrar la
+  // guía equivocada.
   const serforRestauradaRef = useRef(false);
   useEffect(() => {
-    if (initialGtfNumber || preset || serforRestauradaRef.current) return;
+    if (initialGtfNumber || preset || guiaGuardada || serforRestauradaRef.current) return;
     serforRestauradaRef.current = true;
     try {
       const raw = localStorage.getItem(serforKey());
@@ -520,6 +550,17 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
     void cargarGuia(initialGtfNumber);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- solo al montar con la guía
   }, [initialGtfNumber]);
+
+  // Guía guardada antes del ingreso (ADR-442): el alta abre con sus datos
+  // puestos. El borrador y la consulta SERFOR guardada NO se restauran encima
+  // (ver los dos efectos de arriba); ref guard por el doble montaje.
+  const guiaGuardadaAplicadaRef = useRef(false);
+  useEffect(() => {
+    if (!guiaGuardada || guiaGuardadaAplicadaRef.current) return;
+    guiaGuardadaAplicadaRef.current = true;
+    usarGuiaGuardada(guiaGuardada);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- sólo al montar con la guía
+  }, [guiaGuardada]);
 
   // Auto-guardar borrador
   useEffect(() => {
@@ -797,6 +838,66 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
     } finally {
       setSerforCargando(false);
     }
+  }
+
+  /**
+   * Pone en el formulario lo que ya se guardó de la guía (ADR-442): la abre la
+   * vista de Ingresos o el «Usar sus datos» del aviso junto al campo.
+   *
+   * Con la ficha de SERFOR → «Desde SERFOR», con el MISMO camino que la
+   * consulta (`aplicarGuiaSerfor` con el documento mandando) y SIN volver a
+   * pedirla: al registrar, el servidor la pide igual. Sin ficha → carga manual
+   * con la GTF, el titular, el permiso y su vínculo ya puestos.
+   *
+   * No escribe la consulta guardada en localStorage: la guía guardada ya vive
+   * en el servidor. Si había otra consulta con OTRO número, se suelta como al
+   * consultar otro número (si no, «Registrar» registraba la vieja).
+   */
+  function usarGuiaGuardada(g: GuiaGuardadaDetalle) {
+    setGuiaPuestaId(g.id);
+    const cuando = diaDeLima(g.createdAt);
+    const nro = (g.numeroRegistro ?? g.serforGtf?.numeroRegistro ?? "").trim();
+    if (g.serforGtf && nro) {
+      if (serforGtf && claveRegistro(serforGtf.numeroRegistro) !== claveRegistro(nro)) {
+        borrarConsultaSerfor();
+        soltarDatosDeLaGuia();
+      }
+      setModo("serfor");
+      setNroRegistroSerfor(nro);
+      aplicarGuiaSerfor(g.serforGtf, true);
+      // Sin el «Guardada · hh:mm» de la consulta: la fecha que vale es la de la guía.
+      setSerforGuardadaAt(null);
+      setSerforMsg({
+        ok: true,
+        text: `Datos de la guía guardada el ${cuando} · Guía ${g.serforGtf.gtfNumber ?? g.gtfNumber} · ${g.serforGtf.titular ?? g.titularNombre ?? "sin titular"}`,
+      });
+      if (g.contratoId) update("contratoId", g.contratoId);
+      return;
+    }
+    setModo("manual");
+    const titular = g.titularNombre?.trim() ?? "";
+    const doc = g.titularDoc?.trim() ?? "";
+    const digitos = doc.replace(/\D/g, "").length;
+    setData((prev) => {
+      // Número y tipo de documento van con el titular: uno nuevo sin documento
+      // no se queda con el del camión anterior.
+      const otroTitular = Boolean(titular) && titular.toUpperCase() !== prev.providerName.trim().toUpperCase();
+      return {
+        ...prev,
+        gtfNumber: g.gtfNumber?.trim() || prev.gtfNumber,
+        gtfDate: g.gtfDate ?? prev.gtfDate,
+        providerName: titular || prev.providerName,
+        providerDocument: doc || (otroTitular ? "" : prev.providerDocument),
+        providerDocumentType: digitos === 8 ? "DNI" : digitos === 11 ? "RUC" : prev.providerDocumentType,
+        originCode: g.permisoCodigo?.trim() || prev.originCode,
+        contratoId: g.contratoId ?? prev.contratoId,
+      };
+    });
+    pushToast?.({
+      tono: "success",
+      msg: `Datos de la guía guardada el ${cuando}`,
+      detail: "GTF, titular y permiso puestos. La especie y el volumen los pones tú.",
+    });
   }
 
   async function cargarGuia(num?: string) {
@@ -1138,6 +1239,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
         // el modal, invitaría a registrar la misma guía otra vez.
         borrarConsultaSerfor();
         marcarProveedorUsado();
+        setRegistrados((n) => n + 1);
         /* Una guía que no cuadra CONSIGO MISMA no es un éxito silencioso
            (ADR-353): entra igual —el documento es el que es— pero se avisa en
            amarillo y se dice dónde queda marcada, porque si no el problema
@@ -1262,6 +1364,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
 
       try { localStorage.removeItem(draftKey()); } catch {}
       marcarProveedorUsado();
+      setRegistrados((n) => n + 1);
 
       /* Los campos personalizados se guardan recién acá: hasta que el servidor
          no devuelve el id no hay ingreso al que colgarlos (ADR-427). Si fallan,
@@ -1609,6 +1712,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                     )}
                   </p>
                 )}
+                {avisoGuiaGuardada}
               </Field>
 
               {!serforGtf && (
@@ -1799,6 +1903,8 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                     />
                   </label>
                 </div>
+                {/* Este bloque sigue montado (oculto) en «Desde SERFOR»: el aviso, sólo en su modo. */}
+                {modo === "manual" && avisoGuiaGuardada}
               </Field>
               {showGuias && (
                 <div className="space-y-2 rounded-xl border border-[var(--data-success-500)] bg-[var(--data-success-50)] p-2">

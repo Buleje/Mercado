@@ -14,8 +14,7 @@
  */
 
 import { documentoHtml } from "./ctp-documento-print";
-import { CARPETA_GUIAS } from "./ctp-archivar-documento";
-import { tagCasillero, tagGtf } from "./documentos-guia";
+import { carpetaGuiaPorTitular, tagCasillero, tagGtf } from "./documentos-guia";
 import { CSS_GTF_SERFOR, documentoGtfSerfor, trozasDesdeSerfor } from "./ctp-gtf-desde-serfor";
 import { CSS_GTF_OFICIAL, fechaGtf } from "./ctp-gtf-formato";
 import { CSS_LISTA_TROZAS, htmlListaTrozas } from "./ctp-lista-trozas";
@@ -33,6 +32,8 @@ export interface IngresoConGuia {
   serforGtf?: unknown;
   gtfNumber: string;
   providerName: string;
+  /** El permiso (título habilitante): segundo nivel de la carpeta (ADR-442). */
+  originCode?: string | null;
   /** Para etiquetar y describir el archivo en el Drive. */
   libroNro?: number | null;
   entryDate?: string;
@@ -70,21 +71,15 @@ export function metaArchivado(e: IngresoConGuia, nombreDoc: string): {
       `${nombreDoc} — ${g?.titular ?? e.providerName}. ` +
       `Ingreso al libro N° ${e.libroNro ?? "s/n"}${e.entryDate ? ` del ${e.entryDate.slice(0, 10)}` : ""}` +
       `${e.volumeM3 ? `, ${e.volumeM3} m³` : ""}${e.speciesCommonName ? ` de ${e.speciesCommonName}` : ""}.`,
-    carpetaRuta: carpetaGuiaPorFecha(e.entryDate),
+    /* ADR-442: la MISMA carpeta que los casilleros (titular › permiso › GTF),
+       antes año/mes del ingreso. El titular y el permiso de la ficha de SERFOR
+       mandan: son los que usa la guía guardada para su carpeta. */
+    carpetaRuta: carpetaGuiaPorTitular({
+      titular: g?.titular ?? e.providerName,
+      permiso: g?.numeroTitulo ?? e.originCode ?? null,
+      gtfNumber: e.gtfNumber,
+    }),
   };
-}
-
-/**
- * Carpeta anidada por año/mes del ingreso (Brandon 2026-08-26: "organizá
- * también las GTF" — la misma carpeta plana que ya tenía trámites). Sin
- * fecha (no debería pasar en un ingreso validado) cae a la raíz de
- * `CARPETA_GUIAS`, para no perder el documento por un dato ausente.
- */
-function carpetaGuiaPorFecha(entryDate?: string): string[] {
-  const fecha = (entryDate ?? "").slice(0, 10);
-  const [anio, mes] = fecha.split("-");
-  if (!anio || !mes) return [CARPETA_GUIAS];
-  return [CARPETA_GUIAS, anio, mes];
 }
 
 export interface HojaDeIngreso {

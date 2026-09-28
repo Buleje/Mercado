@@ -14,11 +14,15 @@ export const ROLES_ESCRIBEN_PLATA_GUIA = ["admin", "owner"] as const;
  *
  * `null` = puede seguir; si no, el 403 que devuelve la ruta tal cual.
  */
-export function soloAdminODueno(role: string): NextResponse | null {
+export function soloAdminODueno(
+  role: string,
+  /** Qué se quería hacer, para el 403 («quitar un documento de la guía»). */
+  que = "cambiar la plata de una guía",
+): NextResponse | null {
   return (ROLES_ESCRIBEN_PLATA_GUIA as readonly string[]).includes(role)
     ? null
     : NextResponse.json(
-        { error: "forbidden", message: "Solo el administrador o el dueño pueden cambiar la plata de una guía." },
+        { error: "forbidden", message: `Solo el administrador o el dueño pueden ${que}.` },
         { status: 403 },
       );
 }

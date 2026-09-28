@@ -1,7 +1,7 @@
 # ADR-438 — Documentos de la guía: un casillero por papel, dentro del Drive
 
 - **Fecha:** 2026-09-26
-- **Estado:** aceptado (implementado)
+- **Estado:** aceptado (implementado) · guard y carpeta ampliados por ADR-442 (guías guardadas antes del ingreso; carpeta titular › permiso › GTF)
 - **Pedido por:** Brandon (26-09): «por cada guía de ingreso, un apartado para agregar documentos (fotos, PDF, etc.) con un casillero para cada uno: factura, guía de remisión del remitente, guía del transportista, lista de trozas, GTF y otros».
 - **Depende de:** ADR-306/307 (Drive, carpetas en árbol, contratos archivados) · ADR-434 (fotos privadas de la carga, firma HMAC) · «Documento de la guía» / «Guardar en el expediente» (`CtpDocumentoVisor`, `use-documento-acciones`).
 

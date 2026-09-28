@@ -78,6 +78,9 @@ export type CtpAuditEntity =
   // libro (al libro entra después como producción, con su propio registro).
   | "ForestCubicacion"
   | "ForestDistribucion"
+  /** Guía guardada antes del ingreso (ADR-442): el N° de registro, la GTF, el
+   *  titular y el permiso con que se reconocerá al llegar el camión. */
+  | "ForestGuiaGuardada"
   /** Trámite/oficio presentado a la autoridad (ADR-308). */
   | "ForestTramite"
   /** Registro de Plantación Forestal — RNPF (ADR-380). */
@@ -383,7 +386,11 @@ export type CtpAuditAction =
   | "ctp_reporte_diario_crear"
   | "ctp_reporte_diario_actualizar"
   | "ctp_reporte_diario_eliminar"
-  | "ctp_reporte_diario_enviar";
+  | "ctp_reporte_diario_enviar"
+  // Guía guardada antes del ingreso (ADR-442).
+  | "ctp_guia_guardada_crear"
+  | "ctp_guia_guardada_editar"
+  | "ctp_guia_guardada_eliminar";
 
 /** Lo que describe un evento del libro. */
 export interface CtpAuditParams {

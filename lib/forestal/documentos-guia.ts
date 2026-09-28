@@ -184,11 +184,52 @@ export function llenosPorGuia(
   return out;
 }
 
-/** Carpeta del Drive por año/mes del ingreso; sin fecha, la raíz de las guías. */
-export function carpetaGuiaPorFecha(entryDate?: string | null): string[] {
-  const [anio, mes] = (entryDate ?? "").slice(0, 10).split("-");
-  if (!anio || !mes) return [CARPETA_GUIAS];
-  return [CARPETA_GUIAS, anio, mes];
+/**
+ * Un nombre de carpeta a partir de un dato del papel. La `/` es el separador
+ * de rutas de `createFolderTree`: el permiso «19-SEC/REG-PLT-2021-017» sin esto
+ * se abría en tres carpetas. Tampoco van `\ : * ? " < > |` (la carpeta se
+ * sincroniza con Windows, ADR-307) ni marcas invisibles.
+ */
+export function segmentoDeCarpeta(v: string | null | undefined): string {
+  return (v ?? "")
+    .replace(/[\u200B-\u200F\u202A-\u202E\u2066-\u2069]/g, "")
+    .replace(/[\\/]+/g, "-")
+    .replace(/[:*?"<>|]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    /* 80 = lo que guarda `createFolderTree`; más largo, la carpeta se
+       duplicaba en cada subida (busca por el nombre entero, guarda cortado). */
+    .slice(0, 80)
+    .trim()
+    .replace(/^\.+|\.+$/g, "")
+    .trim();
+}
+
+export const SIN_TITULAR = "Sin titular";
+export const SIN_PERMISO = "Sin permiso";
+
+/**
+ * Carpeta del Drive de UNA guía (ADR-442): el titular, su permiso y la guía.
+ *
+ *   Guías forestales (GTF) / COMUNIDAD NATIVA SANTA ROSA DE CHIVIS /
+ *     19-SEC-REG-PLT-2021-017 / GTF 019-001-0000003
+ *
+ * Dos niveles (titular → permiso) y no uno «titular · permiso»: un titular
+ * puede tener varios permisos (ADR-425) y así quedan juntos. Sin dato, la
+ * carpeta lo dice («Sin titular»): el papel nunca se pierde por un dato ausente.
+ */
+export function carpetaGuiaPorTitular(o: {
+  titular?: string | null;
+  permiso?: string | null;
+  gtfNumber: string;
+}): string[] {
+  const gtf = segmentoDeCarpeta(o.gtfNumber);
+  return [
+    CARPETA_GUIAS,
+    segmentoDeCarpeta(o.titular) || SIN_TITULAR,
+    segmentoDeCarpeta(o.permiso) || SIN_PERMISO,
+    gtf ? `GTF ${gtf}` : "GTF sin número",
+  ];
 }
 
 /** «Factura — GTF 019-0000003 (IMG_2031).webp»: dice qué es aunque se lo mire suelto en el Drive. */

@@ -11,6 +11,7 @@ import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { ctpErrorResponse } from "@/lib/forestal/ctp-api-errors";
 import { withApiHandler } from "@/lib/api-handler";
+import { GuiasGuardadasDB } from "@/lib/db/guias-guardadas.db";
 import { TIPOS_DOCUMENTO_LOCTP, UNIDADES_LOCTP } from "@/lib/forestal/loctp-campos";
 import { gtfDatosSchema } from "@/lib/forestal/ctp-gtf-datos";
 import { assertCsrf } from "@/lib/auth/csrf";
@@ -629,6 +630,14 @@ export const POST = withApiHandler("forestal-wood-entries-post", async (req: Nex
       ...parsed.data,
       createdBy: auth.username ?? "unknown",
     });
+    /* ADR-442: si había una guía guardada con este N° de registro y otra
+       escritura de la GTF, sus papeles pasan también a este ingreso. En
+       segundo plano: el ingreso ya quedó. */
+    GuiasGuardadasDB.alRegistrarIngreso(
+      auth.tenantId,
+      { gtfNumber: parsed.data.gtfNumber, serforNumeroRegistro: parsed.data.serforNumeroRegistro ?? null },
+      auth.username ?? "unknown",
+    ).catch((err) => logger.error("[wood-entries.POST] enlazar guía guardada failed", { error: String(err) }));
     return NextResponse.json({ entry }, { status: 201 });
   } catch (err) {
     // Los invariantes del libro (período cerrado, GTF duplicada) llegan como
