@@ -201,10 +201,23 @@ export function analizarPoa(opts: {
   species: PoaSpecies[];
   areaHa: number | null;
   config?: Partial<PoaConfig>;
+  /**
+   * Árboles (por `id`) que el LIBRO ya asentó como talados, aunque el censo
+   * todavía diga `en_pie`. El censo pasa a «talado» con un fire-and-forget
+   * después de asentar la línea de tala, y si eso falla —o el censo se
+   * reimporta— queda «en pie» un árbol ya tumbado (memoria
+   * `loth-censo-uso`). Sin este cruce, ese árbol puede competir por el mayor
+   * DAP y ganarle el lugar al que sí sigue en pie: un semillero que en
+   * realidad es un tocón. Manda el libro, nunca el `estado` del censo.
+   */
+  taladosEnLibro?: ReadonlySet<string>;
 }): PoaAnalisis {
   const config: PoaConfig = { ...defaultPoaConfig(), ...opts.config };
   const pct = Math.max(0, Math.min(100, Number(config.semillerosPct) || 0));
   const autorizadas = new Map(opts.species.map((s) => [normEspecie(s.speciesCommon), s]));
+  const taladosEnLibro = opts.taladosEnLibro;
+  /** El estado que de verdad manda: el del libro, si lo tiene, si no el del censo. */
+  const estadoReal = (t: PoaTree): string => (taladosEnLibro?.has(t.id) ? "talado" : t.estado);
 
   // 1. Agrupar el censo por especie.
   const porEspecie = new Map<string, { nombre: string; trees: PoaTree[] }>();
@@ -223,8 +236,8 @@ export function analizarPoa(opts: {
     const { cm: dmcCm, fuente } = dmcParaEspecie(grupo.nombre, config.dmcOverrides);
     const aut = autorizadas.get(key);
 
-    const enPie = grupo.trees.filter((t) => t.estado === "en_pie");
-    const talados = grupo.trees.filter((t) => t.estado === "talado").length;
+    const enPie = grupo.trees.filter((t) => estadoReal(t) === "en_pie");
+    const talados = grupo.trees.filter((t) => estadoReal(t) === "talado").length;
 
     // Los que superan el DMC, de mayor a menor DAP: los primeros son semilleros.
     const conDap = enPie.filter((t) => t.dapM != null && Number.isFinite(t.dapM));
@@ -247,8 +260,8 @@ export function analizarPoa(opts: {
         dmcFuente: fuente,
       });
     };
-    for (const t of grupo.trees.filter((x) => x.estado === "talado")) marcar(t, "talado");
-    for (const t of grupo.trees.filter((x) => x.estado === "descartado")) marcar(t, "descartado");
+    for (const t of grupo.trees.filter((x) => estadoReal(x) === "talado")) marcar(t, "talado");
+    for (const t of grupo.trees.filter((x) => estadoReal(x) === "descartado")) marcar(t, "descartado");
     for (const t of semilleros) marcar(t, "semillero");
     for (const t of aprovechables) marcar(t, "aprovechable");
     for (const t of bajo) marcar(t, "bajo_dmc");

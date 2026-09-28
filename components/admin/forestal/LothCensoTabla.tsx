@@ -11,8 +11,10 @@
 
 import type { ReactNode } from "react";
 import { DataTable } from "@buleje/design-system";
-import { Trash2, TreePine } from "@buleje/design-system/icons";
+import { AlertTriangle, Trash2, TreePine } from "@buleje/design-system/icons";
 import type { CATEGORIA_LABEL } from "@/lib/forestal/loth-poa";
+import { CLASE_ARBOL_LABEL, poaDiscrepa } from "@/lib/forestal/loth-mapa-arboles";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { formatNumber, type Decimales } from "@/lib/format";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import type { ArbolCenso } from "./loth-censo-arbol";
@@ -54,6 +56,14 @@ export default function LothCensoTabla({ arboles, vacio, sinCoincidencias, fuera
           {COLUMNAS.map((c) => (
             <th key={c.label} data-label={c.label} className={`whitespace-nowrap px-2.5 py-2 font-bold text-[var(--text-primary)] ${c.derecha ? "text-right" : ""}`}>
               {c.dosLineas ? <>{c.dosLineas[0]}<br />{c.dosLineas[1]}</> : c.label}
+              {c.label === "Categoría POA" && (
+                <InfoTip
+                  title="Condición vs. categoría POA"
+                  what="«Condición» es lo que declaró el regente en la hoja del censo; «Categoría POA» es lo que calcula el sistema con el DMC y el % de semilleros del plan."
+                  affects="Manda lo que firma la resolución aprobada, no el cálculo de esta pantalla. Cuando no coinciden, la fila lo marca para que lo revises antes de talar."
+                  example="Regente: «Aprovechable». Sistema: «Semillero» (es de los más gruesos de su especie) → se marca la discrepancia."
+                />
+              )}
             </th>
           ))}
           <th className="px-2.5 py-2"><span className="sr-only">Acciones</span></th>
@@ -63,6 +73,8 @@ export default function LothCensoTabla({ arboles, vacio, sinCoincidencias, fuera
         {arboles.map((t) => {
           const fuera = fueraDelPlan(t.speciesCommon);
           const segunda = [t.speciesScientific, t.speciesNative].filter(Boolean);
+          const categoria = categorias.get(t.id);
+          const discrepa = poaDiscrepa({ condicion: t.condicion, categoria });
           return (
             <tr key={t.id} className={`border-t border-[var(--rule-soft)] align-top ${fuera ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/12" : ""}`}>
               <Td><span className="whitespace-nowrap"><Mono bold>{t.treeCode}</Mono></span></Td>
@@ -103,7 +115,20 @@ export default function LothCensoTabla({ arboles, vacio, sinCoincidencias, fuera
                   {t.notes && <span className="block max-w-[10rem] truncate text-xs text-[var(--text-tertiary)]" title={t.notes}>{t.notes}</span>}
                 </div>
               </Td>
-              <Td><CategoriaTag categoria={categorias.get(t.id)} /></Td>
+              <Td>
+                <div className="flex items-center gap-1">
+                  <CategoriaTag categoria={categoria} />
+                  {discrepa && (
+                    <span
+                      title={`El regente declaró otra condición: el sistema calcula «${CLASE_ARBOL_LABEL[discrepa]}»`}
+                      className="inline-flex h-4 w-4 shrink-0 items-center justify-center text-[var(--data-warning-600)] dark:text-[var(--data-warning-500)]"
+                    >
+                      <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
+                      <span className="sr-only">Discrepa con lo que declaró el regente</span>
+                    </span>
+                  )}
+                </div>
+              </Td>
               <Td><EstadoTag estado={t.estado} /></Td>
               <Td derecha>
                 <button type="button" onClick={() => onBorrar(t)} title={`Borrar ${t.treeCode}`} aria-label={`Borrar el árbol ${t.treeCode}`} className="-my-1 grid h-8 w-8 place-items-center rounded-lg text-[var(--data-error-600)] hover:bg-[var(--data-error-50)] hover:text-[var(--data-error-700)] dark:hover:bg-[var(--data-error-500)]/12">

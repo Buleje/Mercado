@@ -117,6 +117,17 @@ describe("clasificación del censo", () => {
     expect(r.arboles.find((a) => a.treeCode === "T3")?.categoria).toBe("descartado");
   });
 
+  it("un árbol que el LIBRO ya taló nunca gana el lugar de semillero, aunque el censo lo tenga en pie", () => {
+    // T2 es el de mayor DAP (95 cm): sin el cruce con el libro, ganaría el
+    // semillero y dejaría al que sigue en pie (T4, 80 cm) sin reserva.
+    const trees = [arbol("T1", "Tornillo", 70), arbol("T2", "Tornillo", 95), arbol("T3", "Tornillo", 65), arbol("T4", "Tornillo", 80)];
+    const r = analizarPoa({ trees, species, areaHa: 10, config: { semillerosPct: 25 }, taladosEnLibro: new Set(["T2"]) });
+    expect(r.arboles.find((a) => a.treeCode === "T2")?.categoria).toBe("talado");
+    expect(r.arboles.find((a) => a.categoria === "semillero")?.treeCode).toBe("T4"); // el que sigue en pie con mayor DAP
+    expect(r.especies[0].talados).toBe(1);
+    expect(r.especies[0].semilleros).toBe(1);
+  });
+
   it("un árbol sin DAP no suma volumen aprovechable", () => {
     const r = analizarPoa({ trees: [arbol("T1", "Tornillo", null, 9)], species, areaHa: 10 });
     expect(r.especies[0].sinDap).toBe(1);

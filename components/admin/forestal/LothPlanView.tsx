@@ -353,6 +353,7 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
               config={d.poaConfig}
               saving={d.poaSaving}
               sucio={d.poaSucio}
+              semillerosDeclarados={d.semillerosDeclarados}
               onConfig={d.setPoaConfig}
               onSave={d.savePoaConfig}
             />

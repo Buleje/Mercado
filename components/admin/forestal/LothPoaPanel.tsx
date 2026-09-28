@@ -14,7 +14,7 @@
  * parámetros y la lectura.
  */
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { AlertTriangle, BarChart3, Check, Info, Loader2, Printer, Save, Settings2, TreePine, XCircle } from "@buleje/design-system/icons";
 import { DataTable } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -44,6 +44,8 @@ interface Props {
   saving: boolean;
   /** Hay parámetros cambiados sin guardar: sólo entonces aparece «Guardar». */
   sucio?: boolean;
+  /** Semilleros que el REGENTE declaró en la hoja del censo (columna «Condición»). */
+  semillerosDeclarados: number;
   onConfig: (next: PoaConfig) => void;
   onSave: () => void;
   /** Sin él no hay botón: en la vista del plan el anexo vive en «Opciones». */
@@ -61,13 +63,18 @@ const NIVEL_CLASS = {
   info: "text-[var(--text-tertiary)]",
 } as const;
 
-export default function LothPoaPanel({ analisis, config, saving, sucio = false, onConfig, onSave, onPrint }: Props) {
+export default function LothPoaPanel({ analisis, config, saving, sucio = false, semillerosDeclarados, onConfig, onSave, onPrint }: Props) {
   const [editando, setEditando] = useState(false);
   const [todasLasAlertas, setTodasLasAlertas] = useState(false);
   const [kpisAbiertos, setKpisAbiertos] = useLocalStorage<boolean>(CLAVE_INDICADORES_POA, false);
   const { especies, totales, intensidad } = analisis;
   const alertas = useMemo(() => ordenarAlertas(analisis.alertas), [analisis.alertas]);
   const intensidadTxt = intensidad.m3PorHa != null ? `${Number(intensidad.m3PorHa).toFixed(2)} m³/ha` : "—";
+  /* El regente y el sistema pueden contar distinto: el regente marca «Semillero»
+     en la hoja antes de conocer el DMC ni el %; el sistema recién puede calcular
+     con el censo cargado. Ninguno de los dos está «mal» — la resolución
+     aprobada es la que manda sobre cuál árbol queda en pie. */
+  const semillerosDifieren = semillerosDeclarados !== totales.semilleros;
 
   return (
     <BloquePlan
@@ -128,7 +135,7 @@ export default function LothPoaPanel({ analisis, config, saving, sucio = false, 
         <p className="flex flex-wrap items-center gap-x-2 gap-y-1 border-b border-[var(--rule-soft)] px-4 py-2.5 text-sm">
           <CifraLinea valor={String(totales.aprovechables)} label={`aprovechables (${fmtM3(totales.volumenAprovechableM3)} m³)`} tono="ok" />
           <span aria-hidden="true" className="text-[var(--text-tertiary)]">·</span>
-          <CifraLinea valor={String(totales.semilleros)} label="semilleros en pie" />
+          <CifraLinea valor={String(totales.semilleros)} label="semilleros en pie" tono={semillerosDifieren ? "warn" : undefined} />
           <span aria-hidden="true" className="text-[var(--text-tertiary)]">·</span>
           <CifraLinea valor={String(totales.bajoDmc)} label="bajo DMC" tono={totales.bajoDmc > 0 ? "warn" : undefined} />
           <span aria-hidden="true" className="text-[var(--text-tertiary)]">·</span>
@@ -137,7 +144,20 @@ export default function LothPoaPanel({ analisis, config, saving, sucio = false, 
       )}
       <div id="loth-plan-poa-indicadores" hidden={!kpisAbiertos} className="grid gap-2 border-b border-[var(--rule-soft)] p-4 sm:grid-cols-2 lg:grid-cols-4">
         <Kpi label="Aprovechables" valor={String(totales.aprovechables)} sub={`${fmtM3(totales.volumenAprovechableM3)} m³`} tone="success" />
-        <Kpi label="Semilleros en pie" valor={String(totales.semilleros)} sub={`${config.semillerosPct}% de los ≥ DMC`} tone="accent" />
+        <Kpi
+          label="Semilleros en pie"
+          valor={String(totales.semilleros)}
+          sub={`${config.semillerosPct}% de los ≥ DMC · el regente declaró ${semillerosDeclarados}`}
+          tone={semillerosDifieren ? "warning" : "accent"}
+          info={
+            <InfoTip
+              title="Regente vs. sistema"
+              what="El regente marca «Semillero» en la hoja del censo, antes de saber el DMC o el % que fija el plan. El sistema recién puede calcularlo con el censo cargado."
+              affects="Manda lo que firma la resolución aprobada del plan, no el cálculo de esta pantalla: el cálculo es una ayuda para revisar antes de talar, no un reemplazo."
+              example={`Acá: el regente declaró ${semillerosDeclarados} · el sistema reserva ${totales.semilleros}.`}
+            />
+          }
+        />
         <Kpi label="Bajo DMC" valor={String(totales.bajoDmc)} sub="no aprovechables por norma" tone="warning" />
         <Kpi
           label="Intensidad"
@@ -152,6 +172,16 @@ export default function LothPoaPanel({ analisis, config, saving, sucio = false, 
           tone="info"
         />
       </div>
+      {semillerosDifieren && (
+        <p className="flex items-start gap-2 border-b border-[var(--rule-soft)] bg-[var(--data-warning-500)]/8 px-4 py-2 text-sm text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+          <span>
+            El regente declaró <b>{semillerosDeclarados}</b> semillero{semillerosDeclarados === 1 ? "" : "s"} en el censo y el
+            sistema reserva <b>{totales.semilleros}</b>. Revisa la especie antes de talar — en el Censo, la columna
+            «Condición» es la del regente y «Categoría POA» la del cálculo.
+          </span>
+        </p>
+      )}
 
       {/* Parámetros */}
       {editando && <LothPoaParametros especies={especies} config={config} onConfig={onConfig} />}
@@ -283,7 +313,7 @@ export default function LothPoaPanel({ analisis, config, saving, sucio = false, 
   );
 }
 
-function Kpi({ label, valor, sub, tone }: { label: string; valor: string; sub: string; tone: "success" | "warning" | "accent" | "info" }) {
+function Kpi({ label, valor, sub, tone, info }: { label: string; valor: string; sub: string; tone: "success" | "warning" | "accent" | "info"; info?: ReactNode }) {
   const color =
     tone === "success"
       ? "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
@@ -294,7 +324,10 @@ function Kpi({ label, valor, sub, tone }: { label: string; valor: string; sub: s
           : "text-[var(--text-primary)]";
   return (
     <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
-      <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">{label}</p>
+      <p className="flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
+        {label}
+        {info}
+      </p>
       <p className={`font-mono text-2xl font-black tabular-nums ${color}`}>{valor}</p>
       <p className="text-xs font-semibold text-[var(--text-tertiary)]">{sub}</p>
     </div>

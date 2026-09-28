@@ -11,6 +11,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { analizarPoa, defaultPoaConfig, type PoaAnalisis, type PoaConfig } from "@/lib/forestal/loth-poa";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
+import { normalizarCondicion } from "@/lib/forestal/loth-mapa-arboles";
 import { analizarZafra } from "@/lib/forestal/loth-zafra";
 import { csrfHeaders } from "@/lib/csrf-client";
 import type { FichaEspecie } from "../LothEspecieFichas";
@@ -25,6 +26,12 @@ import {
   type Tree,
 } from "../loth-plan-shared";
 
+/** Lo mínimo de `usoCenso` (`ForestLothDB.usoDelCenso`) que el POA necesita. */
+interface UsoDelLibro {
+  treeCode: string;
+  tala: unknown;
+}
+
 export function useLothPlan(reloadSignal?: number) {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [planId, setPlanId] = useState<string | null>(null);
@@ -36,6 +43,8 @@ export function useLothPlan(reloadSignal?: number) {
   /** La especie fuera del plan que se está resolviendo. */
   const [especieFuera, setEspecieFuera] = useState<string | null>(null);
   const [censusStat, setCensusStat] = useState<CensusStat[]>([]);
+  /** Qué árboles ya taló el LIBRO (por código), aunque el censo diga «en pie». */
+  const [usoCenso, setUsoCenso] = useState<UsoDelLibro[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showPlanForm, setShowPlanForm] = useState(false);
@@ -70,7 +79,7 @@ export function useLothPlan(reloadSignal?: number) {
   const loadDetail = useCallback(async (id: string) => {
     const pedido = ++ultimoPedido.current;
     try {
-      const [d, c, b, poa] = await Promise.all([
+      const [d, c, b, poa, u] = await Promise.all([
         fetch(`/api/admin/forestal/plan?planId=${id}`, { credentials: "include" }),
         /* El límite va EXPLÍCITO: el POA se calcula sobre estas filas, así que
            cuánto se trae es una decisión de esta pantalla y no un default que
@@ -78,6 +87,9 @@ export function useLothPlan(reloadSignal?: number) {
         fetch(`/api/admin/forestal/plan/census?planId=${id}&limit=${CENSO_LIMITE}`, { credentials: "include" }),
         fetch(`/api/admin/forestal/plan?balance=${id}`, { credentials: "include" }),
         fetch(`/api/admin/forestal/loth/poa?planId=${id}`, { credentials: "include" }),
+        /* Qué taló el LIBRO de verdad: el `estado` del censo se escribe
+           fire-and-forget y puede quedar atrás (manda el libro, no el censo). */
+        fetch(`/api/admin/forestal/loth?usoCenso=1`, { credentials: "include" }),
       ]);
       if (pedido !== ultimoPedido.current) return;
       if (d.ok) { const j = await d.json(); setSpecies(j.species ?? []); setCensusStat(j.censusSummary ?? []); }
@@ -96,6 +108,7 @@ export function useLothPlan(reloadSignal?: number) {
         setPoaConfig(cfg);
         setPoaGuardado(cfg);
       }
+      if (u.ok) setUsoCenso(((await u.json()).usos ?? []) as UsoDelLibro[]);
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     /* También si falló: el error ya está a la vista y la carga no queda
        girando para siempre. */
@@ -163,9 +176,17 @@ export function useLothPlan(reloadSignal?: number) {
   // Nombres autorizados (normalizados) — el censo y el croquis marcan lo que cae fuera.
   const authorizedSet = useMemo(() => new Set(species.map((s) => claveEspecie(s.speciesCommon))), [species]);
 
+  /** Árboles que el libro ya taló (por id), aunque el censo diga «en pie». */
+  const taladosEnLibro = useMemo(() => {
+    const codigosTalados = new Set(usoCenso.filter((u) => u.tala).map((u) => u.treeCode));
+    return new Set(trees.filter((t) => codigosTalados.has(t.treeCode)).map((t) => t.id));
+  }, [usoCenso, trees]);
+
   /**
    * El POA cruza el censo con el DMC de cada especie: cuántos árboles se pueden
    * tumbar de verdad, cuántos quedan de semilleros y con qué intensidad.
+   * `taladosEnLibro` manda sobre el `estado` del censo: un árbol que el libro
+   * ya tumbó no puede competir por el lugar de semillero.
    */
   const poa: PoaAnalisis = useMemo(
     () =>
@@ -185,11 +206,23 @@ export function useLothPlan(reloadSignal?: number) {
         })),
         areaHa: plan?.areaHa != null ? Number(plan.areaHa) : null,
         config: poaConfig,
+        taladosEnLibro,
       }),
-    [trees, species, plan, poaConfig],
+    [trees, species, plan, poaConfig, taladosEnLibro],
   );
   /** Categoría POA por árbol — la muestra el censo como badge. */
   const categoriaPorArbol = useMemo(() => new Map(poa.arboles.map((a) => [a.id, a.categoria])), [poa.arboles]);
+  /**
+   * Cuántos semilleros declaró el REGENTE en la hoja del censo (columna
+   * `condicion`), para compararlo con los que reserva el sistema
+   * (`poa.totales.semilleros`). Sobre árboles en pie: uno ya talado no cuenta,
+   * declarado o no — es del pasado, no de la próxima tala.
+   */
+  const semillerosDeclarados = useMemo(
+    () =>
+      trees.filter((t) => t.estado === "en_pie" && !taladosEnLibro.has(t.id) && normalizarCondicion((t as { condicion?: string | null }).condicion) === "semillero").length,
+    [trees, taladosEnLibro],
+  );
 
   /* Lo que necesita el plan de tala: el árbol con su categoría del POA (que es
      la que decide si se puede tumbar) y el saldo VIVO por especie, que sale del
@@ -266,7 +299,7 @@ export function useLothPlan(reloadSignal?: number) {
     especieFuera, setEspecieFuera, loading, error, showPlanForm, setShowPlanForm, balance,
     poaConfig, setPoaConfig, poaSaving, savePoaConfig, loadPlans, loadDetail,
     autorizadoTotal, controlRows, fichasEspecie, movilizadoTotal, aprovechamientoPct, saldoTotal,
-    georrefPct, noAutorizadas, okCount, authorizedSet, poa, categoriaPorArbol,
+    georrefPct, noAutorizadas, okCount, authorizedSet, poa, categoriaPorArbol, semillerosDeclarados,
     arbolesParaTalar, saldosPorEspecie, zafra,
   };
 }
