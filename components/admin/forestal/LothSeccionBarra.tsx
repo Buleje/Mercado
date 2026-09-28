@@ -15,13 +15,18 @@
  * Herramientas —la acción de todos los días, a dos clics y sin verse—.
  */
 
-import type { Dispatch, SetStateAction } from "react";
+import type { ComponentType, Dispatch, SetStateAction } from "react";
 import { Plus, Search } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import type { FiltroSeccion } from "@/lib/forestal/loth-seccion";
 
 const CAMPO =
   "flex h-12 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm focus-within:border-[var(--accent)] focus-within:ring-2 focus-within:ring-[var(--accent-muted)]";
+
+const PRIMARIO =
+  "inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-4 text-sm font-bold text-white shadow-sm transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 max-sm:flex-1";
+const SECUNDARIO =
+  "inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 max-sm:flex-1";
 
 export default function LothSeccionBarra({
   search,
@@ -33,6 +38,7 @@ export default function LothSeccionBarra({
   especies,
   opciones,
   onNuevaLinea,
+  principal,
 }: {
   search: string;
   onSearch: (v: string) => void;
@@ -44,6 +50,12 @@ export default function LothSeccionBarra({
   especies: string[];
   opciones: MenuAccion[];
   onNuevaLinea: () => void;
+  /**
+   * La acción de todos los días de ESTA sección, cuando no es «Nueva línea»:
+   * en Despacho de trozas es «Despachar con guía» (28-09-2026) — la guía y sus
+   * líneas en un solo registro. Con ella, «Nueva línea» pasa a secundario.
+   */
+  principal?: { label: string; title?: string; icon: ComponentType<{ className?: string }>; onClick: () => void };
 }) {
   return (
     <div className="flex flex-wrap items-start gap-2">
@@ -112,11 +124,17 @@ export default function LothSeccionBarra({
         <button
           type="button"
           onClick={onNuevaLinea}
-          className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-4 text-sm font-bold text-white shadow-sm transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 max-sm:flex-1"
+          className={principal ? SECUNDARIO : PRIMARIO}
         >
           <Plus className="h-4 w-4" aria-hidden="true" />
           Nueva línea
         </button>
+        {principal && (
+          <button type="button" onClick={principal.onClick} title={principal.title} className={PRIMARIO}>
+            <principal.icon className="h-4 w-4" aria-hidden="true" />
+            {principal.label}
+          </button>
+        )}
       </div>
     </div>
   );

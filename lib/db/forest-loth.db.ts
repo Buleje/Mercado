@@ -22,6 +22,9 @@ import { ForestLothPoaDB } from "@/lib/db/forest-loth-poa.db";
 import { dmcParaEspecie } from "@/lib/forestal/loth-poa";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { resumirUsoDelCenso, type UsoArbolCenso } from "@/lib/forestal/loth-censo-uso";
+import { GtfDuplicateError } from "@/lib/db/forest-gtf.db";
+import type { GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
+import { PRODUCTO_TROZA, type TrozaDelLibro } from "@/lib/forestal/loth-guia-despacho";
 
 export { LOTH_SECTIONS };
 export type { LothSection };
@@ -69,7 +72,9 @@ export class LothInvariantError extends Error {
       // P1 — la línea cae en un mes cerrado: el acta es inmutable hasta reabrir.
       | "PERIODO_CERRADO"
       // Una carátula con líneas vivas es un libro que existe: no se borra.
-      | "CARATULA_CON_LINEAS",
+      | "CARATULA_CON_LINEAS"
+      // Una guía ampara UN título: trozas de dos planes son dos guías.
+      | "GUIA_VARIOS_PLANES",
     readonly detail?: Record<string, unknown>,
   ) {
     super(message);
@@ -266,52 +271,7 @@ export class ForestLothDB {
       });
       const lineNo = (max._max.lineNo ?? 0) + 1;
 
-      return tx.forestLothEntry.create({
-        data: {
-          tenantId,
-          caratulaId,
-          planId: input.planId ?? null,
-          section: input.section,
-          lineNo,
-          entryDate,
-          treeCode: input.treeCode?.trim() || null,
-          trozaCode: input.trozaCode?.trim() || null,
-          despachoCode: input.despachoCode?.trim() || null,
-          isRama: input.isRama ?? false,
-          speciesCommon: input.speciesCommon?.trim() || null,
-          speciesScientific: input.speciesScientific?.trim() || null,
-          cites: input.cites ?? false,
-          diamMayorM: dec(input.diamMayorM),
-          diamMenorM: dec(input.diamMenorM),
-          lengthM: dec(input.lengthM),
-          volumeM3: dec(input.volumeM3),
-          productType: input.productType?.trim() || null,
-          quantity: dec(input.quantity),
-          unit: input.unit?.trim() || null,
-          pieces: input.pieces ?? null,
-          gtfNumber: input.gtfNumber?.trim() || null,
-          discarded: input.discarded ?? false,
-          consumoInterno: input.consumoInterno ?? false,
-          medicionCruda: (input.medicionCruda ?? undefined) as never,
-          marcadoFuste: input.marcadoFuste ?? false,
-          marcadoTocon: input.marcadoTocon ?? false,
-          // La justificación del DMC queda EN el libro: es la explicación que
-          // el titular tiene que poder mostrar en una fiscalización.
-          observations: buildObservations(input),
-          correctsLineNo: input.correctsLineNo ?? null,
-          correctionNote: input.correctionNote?.trim() || null,
-          gpsLat: dec(input.gpsLat),
-          gpsLng: dec(input.gpsLng),
-          photoUrl: input.photoUrl?.trim() || null,
-          // Sin coordenada no hay origen que declarar.
-          gpsOrigen: input.gpsLat != null && input.gpsLng != null ? (input.gpsOrigen ?? null) : null,
-          motosierrista: input.motosierrista?.trim() || null,
-          motosierristaId: input.motosierrista?.trim() ? (input.motosierristaId?.trim() || null) : null,
-          horaTala: input.horaTala?.trim() || null,
-          status: "registrado",
-          createdBy: input.createdBy,
-        },
-      });
+      return tx.forestLothEntry.create({ data: ForestLothDB.datosDeLinea(tenantId, input, entryDate, caratulaId, lineNo) });
     }, LOTH_TX_OPTS);
 
     auditLoth({
@@ -324,6 +284,338 @@ export class ForestLothDB {
     });
     try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
     return entry;
+  }
+
+  // ─── Despacho con guía (28-09-2026) ────────────────────────────────────
+
+  /**
+   * Las trozas del Trozado que todavía pueden salir en una guía: registradas,
+   * con código y sin despacho ni consumo vivo (T1). Es la misma regla que el
+   * picker de «Nueva línea» (`availableSource("despacho_troza")`), pero con las
+   * medidas y el plan de cada troza: la guía imprime D1·D2·L y agrupa por plan.
+   */
+  static async trozasParaGuia(tenantId: string): Promise<TrozaDelLibro[]> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const rows = await prisma.forestLothEntry.findMany({
+      where: {
+        tenantId,
+        deletedAt: null,
+        status: "registrado",
+        section: { in: ["trozado", "despacho_troza", "consumo_troza"] },
+        trozaCode: { not: null },
+      },
+      select: {
+        id: true, section: true, lineNo: true, entryDate: true, planId: true, treeCode: true, trozaCode: true,
+        speciesCommon: true, speciesScientific: true, cites: true,
+        diamMayorM: true, diamMenorM: true, lengthM: true, volumeM3: true,
+      },
+      orderBy: [{ treeCode: "asc" }, { trozaCode: "asc" }],
+      take: 5000,
+    });
+    const salieron = new Set(rows.filter((r) => r.section !== "trozado").map((r) => r.trozaCode));
+    const n = (v: Prisma.Decimal | null) => (v == null ? null : Number(v));
+    return rows
+      .filter((r) => r.section === "trozado" && r.trozaCode && !salieron.has(r.trozaCode))
+      .map((r) => ({
+        id: r.id,
+        lineNo: r.lineNo,
+        planId: r.planId,
+        fecha: r.entryDate.toISOString().slice(0, 10),
+        codigo: r.trozaCode as string,
+        arbol: r.treeCode,
+        comun: r.speciesCommon,
+        cientifico: r.speciesScientific,
+        cites: r.cites,
+        diamMayorM: n(r.diamMayorM),
+        diamMenorM: n(r.diamMenorM),
+        lengthM: n(r.lengthM),
+        volumeM3: n(r.volumeM3),
+      }));
+  }
+
+  /**
+   * Registra la GUÍA y sus N líneas de Despacho de trozas en UNA transacción.
+   *
+   * Antes eran dos actos en dos pantallas: emitir la GTF no asentaba el
+   * despacho, y asentar el despacho no emitía guía — de ahí las guías
+   * «declaradas en el libro y no emitidas» y las emitidas sin despacho. Acá es
+   * todo o nada: si una troza ya salió (T1), no está trozada (T2), su especie
+   * no está en el plan (T7) o se pasa de lo autorizado (T6), no queda ni la
+   * guía ni ninguna línea.
+   *
+   * Lo que viaja lo decide la BASE: el cliente manda los códigos y las medidas,
+   * la especie y el volumen salen de la línea de Trozado de cada troza.
+   */
+  static async despacharConGuia(
+    tenantId: string,
+    input: {
+      gtfNumber: string;
+      gtfDate: Date;
+      trozaCodes: string[];
+      gtfDatos: GtfDatos;
+      titularName: string | null;
+      observations?: string | null;
+      createdBy: string;
+    },
+  ) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const num = input.gtfNumber.trim();
+    if (!num) throw new Error("gtfNumber is required");
+    const codes = [...new Set(input.trozaCodes.map((c) => c.trim()).filter(Boolean))].sort();
+    if (codes.length === 0) throw new Error("trozaCodes is required");
+
+    const cerrado = await ForestLothCierreDB.closedPeriodOf(tenantId, input.gtfDate);
+    if (cerrado) {
+      throw new LothInvariantError(
+        `El período ${cerrado.label} está cerrado: no se puede despachar con fecha de un mes cerrado. Reábrelo si necesitas corregir.`,
+        "PERIODO_CERRADO",
+        { periodKey: cerrado.periodKey },
+      );
+    }
+    const caratula = await ForestLothDB.getActiveCaratula(tenantId);
+    const caratulaId = caratula?.id ?? null;
+
+    const resultado = await prisma.$transaction(async (tx) => {
+      // 1. El número de la guía: una GTF no se anota dos veces (mismo lock que `ForestGtfDB.create`).
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`gtf:${tenantId}:${num}`}))`;
+      const dup = await tx.forestGtf.findFirst({ where: { tenantId, gtfNumber: num, deletedAt: null }, select: { id: true } });
+      if (dup) throw new GtfDuplicateError(num);
+
+      // 2. Las trozas, como las declaró el Trozado.
+      const trozados = await tx.forestLothEntry.findMany({
+        where: { tenantId, section: "trozado", status: "registrado", deletedAt: null, trozaCode: { in: codes } },
+        select: {
+          trozaCode: true, treeCode: true, planId: true, speciesCommon: true, speciesScientific: true, cites: true,
+          diamMayorM: true, diamMenorM: true, lengthM: true, volumeM3: true,
+        },
+      });
+      const porCodigo = new Map(trozados.map((t) => [t.trozaCode as string, t]));
+      const planes = [...new Set(trozados.map((t) => t.planId ?? null))];
+      if (planes.length > 1) {
+        throw new LothInvariantError(
+          "Estas trozas son de dos planes de manejo distintos. Una guía ampara un solo título habilitante: haz una guía por plan.",
+          "GUIA_VARIOS_PLANES",
+          { planes },
+        );
+      }
+      const planId = planes[0] ?? null;
+
+      // 3. Una línea de Despacho por troza, con las invariantes de siempre.
+      //    El correlativo se toma UNA vez bajo lock y se incrementa acá.
+      await tx.$queryRaw`
+        SELECT "id" FROM "ForestLothEntry"
+        WHERE "tenantId" = ${tenantId} AND "section" = 'despacho_troza'
+          AND "caratulaId" IS NOT DISTINCT FROM ${caratulaId} AND "deletedAt" IS NULL
+        ORDER BY "id"
+        FOR UPDATE
+      `;
+      const max = await tx.forestLothEntry.aggregate({
+        where: { tenantId, caratulaId, section: "despacho_troza" },
+        _max: { lineNo: true },
+      });
+      let lineNo = max._max.lineNo ?? 0;
+      const lineas = [];
+      for (const trozaCode of codes) {
+        const linea: LothEntryCreateInput = {
+          caratulaId,
+          planId: porCodigo.get(trozaCode)?.planId ?? planId,
+          section: "despacho_troza",
+          entryDate: input.gtfDate,
+          trozaCode,
+          gtfNumber: num,
+          createdBy: input.createdBy,
+        };
+        // T2 (sin trozado) y T1 (ya salió) salen de acá con su mensaje.
+        await ForestLothDB.enforceInvariants(tx, tenantId, linea);
+        lineNo += 1;
+        lineas.push(await tx.forestLothEntry.create({ data: ForestLothDB.datosDeLinea(tenantId, linea, input.gtfDate, caratulaId, lineNo) }));
+      }
+
+      // 4. La guía, con la foto de lo que viaja.
+      const n = (v: Prisma.Decimal | null) => (v == null ? null : Number(v));
+      const items = codes.map((code) => {
+        const t = porCodigo.get(code);
+        return {
+          code,
+          treeCode: t?.treeCode ?? null,
+          species: t?.speciesCommon ?? null,
+          scientific: t?.speciesScientific ?? null,
+          cites: t?.cites ?? false,
+          diamMayorM: n(t?.diamMayorM ?? null),
+          diamMenorM: n(t?.diamMenorM ?? null),
+          lengthM: n(t?.lengthM ?? null),
+          volumeM3: n(t?.volumeM3 ?? null),
+          productType: PRODUCTO_TROZA,
+          pieces: 1,
+        };
+      });
+      const volumen = r4(items.reduce((a, it) => a + (it.volumeM3 ?? 0), 0));
+      const d = input.gtfDatos;
+      const plan = planId
+        ? await tx.forestPlan.findFirst({ where: { tenantId, id: planId }, select: { parcelaCorta: true } })
+        : null;
+      const gtf = await tx.forestGtf.create({
+        data: {
+          tenantId,
+          planId,
+          gtfNumber: num,
+          gtfDate: input.gtfDate,
+          tipo: "trozas",
+          titularName: input.titularName?.trim() || null,
+          tituloHabilitante: d.titulos[0]?.trim() || null,
+          parcelaCorta: plan?.parcelaCorta ?? null,
+          transportista: d.transportista.nombre.trim() || null,
+          transportistaDoc: d.transportista.docNumero.trim() || null,
+          conductor: d.vehiculo.conductor.trim() || null,
+          conductorLicencia: d.vehiculo.licencia.trim() || null,
+          placaVehiculo: d.vehiculo.placa.trim() || null,
+          origen: d.traslado.puntoPartida.trim() || null,
+          destino: d.destinatario.nombre.trim() || null,
+          items: items as unknown as Prisma.InputJsonValue,
+          volumenTotalM3: volumen > 0 ? new Prisma.Decimal(volumen) : null,
+          piezasTotal: items.length,
+          observations: input.observations?.trim() || d.observaciones.trim() || null,
+          gtfDatos: d as unknown as Prisma.InputJsonValue,
+          createdBy: input.createdBy,
+        },
+      });
+      return { gtf, lineas, volumen };
+    }, { timeout: 60_000, maxWait: 10_000 });
+
+    auditLoth({
+      tenantId,
+      action: "loth_gtf_create",
+      entity: "ForestGtf",
+      entityId: resultado.gtf.id,
+      detail: `Despachó con la GTF ${num}: ${resultado.lineas.length} troza(s), ${fmtM3(resultado.volumen)} m³${resultado.gtf.destino ? ` → ${resultado.gtf.destino}` : ""}`,
+      user: input.createdBy,
+    });
+    for (const l of resultado.lineas) {
+      auditLoth({
+        tenantId,
+        action: "loth_linea_create",
+        entity: "ForestLothEntry",
+        entityId: l.id,
+        detail: describeEntry(l),
+        user: input.createdBy,
+      });
+    }
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+      invalidateByPrefix(`forest-gtf:${tenantId}`);
+    } catch { /* cache best-effort */ }
+    return resultado;
+  }
+
+  /**
+   * Anula la guía Y sus líneas de Despacho de trozas, juntas. Es la vuelta
+   * atrás de `despacharConGuia`: si sólo se anulara el papel, las trozas
+   * seguirían «despachadas» (T1) y no podrían ir en la guía corregida.
+   * Nada se borra: guía y líneas quedan visibles con su motivo.
+   */
+  static async anularGuiaConDespachos(tenantId: string, gtfId: string, reason: string, user = "unknown") {
+    if (!tenantId) throw new Error("tenantId is required");
+    const motivo = reason?.trim();
+    if (!motivo) throw new Error("reason is required");
+    const gtf = await prisma.forestGtf.findFirst({ where: { tenantId, id: gtfId, deletedAt: null } });
+    if (!gtf) return null;
+    const lineasVivas = await prisma.forestLothEntry.findMany({
+      where: { tenantId, section: "despacho_troza", gtfNumber: gtf.gtfNumber, status: "registrado", deletedAt: null },
+      select: { id: true, entryDate: true },
+    });
+    for (const l of lineasVivas) {
+      const cerrado = await ForestLothCierreDB.closedPeriodOf(tenantId, l.entryDate);
+      if (cerrado) {
+        throw new LothInvariantError(
+          `El período ${cerrado.label} está cerrado: no se pueden anular sus despachos. Reábrelo primero.`,
+          "PERIODO_CERRADO",
+          { periodKey: cerrado.periodKey },
+        );
+      }
+    }
+    const [anulada, lineas] = await prisma.$transaction(async (tx) => {
+      const g = await tx.forestGtf.update({
+        where: { id: gtf.id, tenantId } satisfies Prisma.ForestGtfWhereUniqueInput,
+        data: { status: "anulada", annulledReason: motivo },
+      });
+      const r = await tx.forestLothEntry.updateMany({
+        where: { tenantId, id: { in: lineasVivas.map((l) => l.id) } },
+        data: { status: "anulado", annulledReason: `Se anuló la GTF ${gtf.gtfNumber}: ${motivo}`.slice(0, 500) },
+      });
+      return [g, r.count] as const;
+    }, LOTH_TX_OPTS);
+    auditLoth({
+      tenantId,
+      action: "loth_gtf_annul",
+      entity: "ForestGtf",
+      entityId: gtf.id,
+      detail: `Anuló la GTF ${gtf.gtfNumber} y ${lineas} línea(s) de despacho. Motivo: ${motivo}`,
+      user,
+    });
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+      invalidateByPrefix(`forest-gtf:${tenantId}`);
+    } catch { /* cache best-effort */ }
+    return { gtf: anulada, lineasAnuladas: lineas };
+  }
+
+  /**
+   * La fila de una línea nueva, tal como se inserta. Una sola definición para
+   * el alta de a una (`create`) y para el despacho con guía (`despacharConGuia`):
+   * si cada una armara la suya, la segunda se quedaría corta el día que se sume
+   * un campo (memoria «campos copiados a mano se quedan cortos»).
+   */
+  private static datosDeLinea(
+    tenantId: string,
+    input: LothEntryCreateInput,
+    entryDate: Date,
+    caratulaId: string | null,
+    lineNo: number,
+  ): Prisma.ForestLothEntryUncheckedCreateInput {
+    return {
+      tenantId,
+      caratulaId,
+      planId: input.planId ?? null,
+      section: input.section,
+      lineNo,
+      entryDate,
+      treeCode: input.treeCode?.trim() || null,
+      trozaCode: input.trozaCode?.trim() || null,
+      despachoCode: input.despachoCode?.trim() || null,
+      isRama: input.isRama ?? false,
+      speciesCommon: input.speciesCommon?.trim() || null,
+      speciesScientific: input.speciesScientific?.trim() || null,
+      cites: input.cites ?? false,
+      diamMayorM: dec(input.diamMayorM),
+      diamMenorM: dec(input.diamMenorM),
+      lengthM: dec(input.lengthM),
+      volumeM3: dec(input.volumeM3),
+      productType: input.productType?.trim() || null,
+      quantity: dec(input.quantity),
+      unit: input.unit?.trim() || null,
+      pieces: input.pieces ?? null,
+      gtfNumber: input.gtfNumber?.trim() || null,
+      discarded: input.discarded ?? false,
+      consumoInterno: input.consumoInterno ?? false,
+      medicionCruda: (input.medicionCruda ?? undefined) as never,
+      marcadoFuste: input.marcadoFuste ?? false,
+      marcadoTocon: input.marcadoTocon ?? false,
+      // La justificación del DMC queda EN el libro: es la explicación que
+      // el titular tiene que poder mostrar en una fiscalización.
+      observations: buildObservations(input),
+      correctsLineNo: input.correctsLineNo ?? null,
+      correctionNote: input.correctionNote?.trim() || null,
+      gpsLat: dec(input.gpsLat),
+      gpsLng: dec(input.gpsLng),
+      photoUrl: input.photoUrl?.trim() || null,
+      // Sin coordenada no hay origen que declarar.
+      gpsOrigen: input.gpsLat != null && input.gpsLng != null ? (input.gpsOrigen ?? null) : null,
+      motosierrista: input.motosierrista?.trim() || null,
+      motosierristaId: input.motosierrista?.trim() ? (input.motosierristaId?.trim() || null) : null,
+      horaTala: input.horaTala?.trim() || null,
+      status: "registrado",
+      createdBy: input.createdBy,
+    };
   }
 
   /**

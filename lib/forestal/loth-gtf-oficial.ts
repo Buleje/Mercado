@@ -120,7 +120,9 @@ export function fichaDesdeCaratula(caratula: LothGtfCaratula | null, doc: LothGt
     razonSocial,
     ruc: caratula?.ruc ?? "",
     direccion: caratula?.direccion ?? "",
-    departamento: caratula?.departamento ?? "",
+    // El bloque (2)–(12) lee `region` (así se llama en la Ficha del CTP):
+    // con `departamento` el casillero (10) salía en blanco teniendo el dato.
+    region: caratula?.departamento ?? "",
     provincia: caratula?.provincia ?? "",
     distrito: caratula?.distrito ?? "",
     titulos: codigoTitulo ? [{ codigo: codigoTitulo, tipo: "concesion" }] : [],
@@ -137,7 +139,9 @@ export function datosDesdeGtf(doc: LothGtfDoc): GtfDatos {
     transportista: {
       ...base.transportista,
       nombre: doc.transportista ?? "",
-      documento: doc.transportistaDoc ?? "",
+      // `docNumero`, no `documento`: el cast a `GtfDatos` de abajo escondía el
+      // nombre equivocado y el RUC del transportista nunca llegaba al papel.
+      docNumero: doc.transportistaDoc ?? "",
     },
     vehiculo: {
       ...base.vehiculo,
@@ -147,10 +151,10 @@ export function datosDesdeGtf(doc: LothGtfDoc): GtfDatos {
     },
     traslado: {
       ...base.traslado,
-      origen: doc.origen ?? "",
-      destino: doc.destino ?? "",
+      puntoPartida: doc.origen ?? "",
+      puntoLlegada: doc.destino ?? "",
     },
-  } as GtfDatos;
+  };
 }
 
 export interface DocumentoGtfLoth {

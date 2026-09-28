@@ -96,7 +96,7 @@ const MODO_LABEL: Record<string, string> = {
  * texto. Se dibujan TODAS y se cruza la que corresponde — así se lee igual que
  * el talonario, donde el fiscalizador ve de un vistazo cuáles NO son.
  */
-const ORIGENES: ReadonlyArray<{ clave: string; label: string }> = [
+export const ORIGENES: ReadonlyArray<{ clave: string; label: string }> = [
   { clave: "concesion", label: "Concesión" },
   { clave: "permiso", label: "Permiso" },
   { clave: "autorizacion", label: "Autorización" },

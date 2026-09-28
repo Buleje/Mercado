@@ -176,7 +176,30 @@ export const gtfDatosSchema = z.object({
     listaTrozasNro: texto(40).default(""),
     /** (36) N° de la GTF de origen, cuando la madera viene amparada por otra. */
     gtfOrigenNro: texto(40).default(""),
-  }).default({ autoridad: "", planManejoTipo: "", guiaRemisionNro: "", listaTrozasNro: "", gtfOrigenNro: "" }),
+    /*
+     * El título habilitante tal como sale en la guía — casilleros (5), (8),
+     * el representante bajo el (7) y (10)(11)(12).
+     *
+     * En la guía del CTP salen de la Ficha y acá quedan vacíos. La guía del
+     * Libro TH (28-09-2026) los guarda CON la guía: la emite el titular del
+     * bosque, su identidad sale de la carátula y del plan de manejo, y si
+     * mañana alguien corrige la carátula, la guía que ya viajó tiene que seguir
+     * diciendo lo que dijo.
+     */
+    /** (5) Origen del recurso: la casilla que se cruza (`concesion`, `permiso`, `autorizacion`…). */
+    origenRecurso: texto(40).default(""),
+    /** (8) N° de la resolución que aprobó el título. */
+    resolucion: texto(120).default(""),
+    /** Representante legal del titular (va bajo el casillero (7)). */
+    representanteLegal: texto(200).default(""),
+    /** (10)(11)(12) Dónde está el título habilitante. */
+    departamento: texto(80).default(""),
+    provincia: texto(80).default(""),
+    distrito: texto(80).default(""),
+  }).default({
+    autoridad: "", planManejoTipo: "", guiaRemisionNro: "", listaTrozasNro: "", gtfOrigenNro: "",
+    origenRecurso: "", resolucion: "", representanteLegal: "", departamento: "", provincia: "", distrito: "",
+  }),
 
   observaciones: texto(600).default(""),
 });

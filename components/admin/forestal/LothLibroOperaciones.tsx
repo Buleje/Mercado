@@ -67,6 +67,7 @@ import LothSeccionTabla, { type ColDef } from "./LothSeccionTabla";
 import LothLineaDetalleModal from "./LothLineaDetalleModal";
 import LothImportLineasModal from "./LothImportLineasModal";
 import LothTrozadoMultipleModal from "./LothTrozadoMultipleModal";
+import LothDespachoGuiaModal from "./LothDespachoGuiaModal";
 import type { FilaImport } from "@/lib/forestal/loth-import-lineas";
 import {
   FILTRO_VACIO,
@@ -256,6 +257,8 @@ export default function LothLibroOperaciones() {
   const [anularLineas, setAnularLineas] = useState<LothEntry[]>([]);
   const [showImport, setShowImport] = useState(false);
   const [showTrozar, setShowTrozar] = useState(false);
+  /** «Despachar con guía»: la GTF completa y sus líneas de despacho en un registro. */
+  const [showDespachoGuia, setShowDespachoGuia] = useState(false);
   /** Censo del plan activo — alimenta el cuadro "censo vs realidad". */
   const [censoArboles, setCensoArboles] = useState<
     { treeCode: string; speciesCommon: string; dapM: number | null; volumenEstimadoM3: number | null; estado: string }[]
@@ -941,6 +944,16 @@ export default function LothLibroOperaciones() {
         especies={especiesSeccion}
         opciones={opcionesSeccion}
         onNuevaLinea={() => setShowForm(true)}
+        principal={
+          section === "despacho_troza"
+            ? {
+                label: "Despachar con guía",
+                title: "Arma la guía de transporte completa con las trozas que salen y las asienta en el libro",
+                icon: Truck,
+                onClick: () => setShowDespachoGuia(true),
+              }
+            : undefined
+        }
       />
 
       {error && (
@@ -1038,7 +1051,11 @@ export default function LothLibroOperaciones() {
               : "Ninguna línea coincide con el filtro."}
           </p>
           <p className="mt-1 text-sm">
-            {entries.length === 0 ? "Usa «Nueva línea» para registrar el primer movimiento." : "Prueba con otro período o estado."}
+            {entries.length > 0
+              ? "Prueba con otro período o estado."
+              : section === "despacho_troza"
+                ? "Usa «Despachar con guía»: la guía y sus trozas se registran juntas."
+                : "Usa «Nueva línea» para registrar el primer movimiento."}
           </p>
         </div>
       )}
@@ -1122,6 +1139,10 @@ export default function LothLibroOperaciones() {
             }
           }}
         />
+      )}
+
+      {showDespachoGuia && (
+        <LothDespachoGuiaModal onClose={() => setShowDespachoGuia(false)} onRegistrada={refreshAll} />
       )}
 
       <LothImportLineasModal

@@ -16,15 +16,19 @@ import { esRolValido, parteInputSchema, type RolParte } from "@/lib/forestal/dir
  * DELETE baja lógica (`?id=`)
  * PATCH  marca uso — se llama cuando la parte entra en un documento real
  *
- * Guard: `spec:forestal:ctp-libro` · rate-limit GENEROUS bucket 'ctp'.
+ * Guard: `spec:forestal:ctp-libro` o `spec:forestal:loth-libro` · rate-limit GENEROUS bucket 'ctp'.
  */
 
 async function ensureSpec(tenantId: string) {
-  const ok = await isSpecializationEnabled(tenantId, "spec:forestal:ctp-libro");
+  /* La libreta es de los DOS libros (28-09-2026): la guía del bosque también
+     elige destinatario, transportista, chofer y camión de acá. */
+  const ok =
+    (await isSpecializationEnabled(tenantId, "spec:forestal:ctp-libro")) ||
+    (await isSpecializationEnabled(tenantId, "spec:forestal:loth-libro"));
   return ok
     ? null
     : NextResponse.json(
-        { error: "specialization_disabled", message: "El módulo CTP no está habilitado para este tenant." },
+        { error: "specialization_disabled", message: "Ni el Libro CTP ni el Libro de Títulos Habilitantes están habilitados para este negocio." },
         { status: 403 },
       );
 }

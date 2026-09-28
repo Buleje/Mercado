@@ -7,6 +7,7 @@ import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
 import { auditLoth } from "@/lib/forestal/loth-audit";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
+import type { GtfUsada } from "@/lib/forestal/gtf-talonario";
 
 const CACHE_PREFIX = "forest-gtf";
 
@@ -199,6 +200,41 @@ export class ForestGtfDB {
       }
     }
     return `${s}-${String(maxN + 1).padStart(width, "0")}`;
+  }
+
+  /**
+   * Los números del talonario ya usados en este libro, del más nuevo al más
+   * viejo — anuladas incluidas: un número de talonario que se usó no vuelve.
+   * Alimenta `proponerGtfLoth` (el siguiente se propone y el operador lo confirma).
+   */
+  static async numerosUsados(tenantId: string): Promise<GtfUsada[]> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const rows = await prisma.forestGtf.findMany({
+      where: { tenantId, deletedAt: null },
+      orderBy: { createdAt: "desc" },
+      select: { gtfNumber: true, gtfDate: true, status: true },
+      take: 2000,
+    });
+    return rows.map((r) => ({
+      numero: r.gtfNumber,
+      fuente: r.status === "anulada" ? ("despacho_anulado" as const) : ("despacho" as const),
+      fecha: r.gtfDate ? r.gtfDate.toISOString().slice(0, 10) : null,
+    }));
+  }
+
+  /**
+   * El cuerpo de la última guía emitida con los casilleros completos: de ahí
+   * se heredan el destinatario, el transportista, el camión y el chofer, que
+   * casi nunca cambian de un viaje al siguiente.
+   */
+  static async ultimaConDatos(tenantId: string): Promise<unknown | null> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const g = await prisma.forestGtf.findFirst({
+      where: { tenantId, deletedAt: null, status: "emitida", gtfDatos: { not: Prisma.DbNull } },
+      orderBy: { createdAt: "desc" },
+      select: { gtfDatos: true },
+    });
+    return g?.gtfDatos ?? null;
   }
 
   static async list(tenantId: string) {

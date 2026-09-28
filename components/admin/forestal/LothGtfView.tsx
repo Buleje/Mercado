@@ -21,6 +21,12 @@ import { formatDateNumeric } from "@/lib/format";
 import { FiltroColumnaMulti, type FacetaOpcion } from "@/components/admin/shared/filtros-columna";
 import { CampoDeFiltro } from "./ctp-filtros-panel";
 import { BotonRestablecerColumnas, EnOrden, useOrdenColumnas } from "@/components/admin/shared/columnas-ordenables";
+import { leerGtfDatos } from "@/lib/forestal/ctp-gtf-datos";
+import { piezasDeItems } from "@/lib/forestal/loth-guia-despacho";
+import { papelesGuiaLoth } from "@/lib/forestal/loth-guia-print";
+import LothDespachoGuiaModal from "./LothDespachoGuiaModal";
+import { archivoDeGuiaLoth } from "./LothGuiaRegistrada";
+import CtpDocumentoVisor, { type DocumentoImprimible } from "./CtpDocumentoVisor";
 
 /** Las columnas movibles de la tabla de GTF, en su orden de fábrica
  *  (Brandon, 2026-09-26). «Acciones» queda fija al final. */
@@ -37,6 +43,8 @@ interface Gtf {
   conductorLicencia: string | null; placaVehiculo: string | null; origen: string | null; destino: string | null;
   items: GtfItem[] | null; volumenTotalM3: string | null; piezasTotal: number | null;
   observations: string | null; status: string; annulledReason: string | null;
+  /** Casilleros completos (2)–(38): sólo las guías hechas con «Despachar con guía». */
+  gtfDatos?: unknown;
 }
 
 const smalian = (dM: number, dm: number, L: number) =>
@@ -57,6 +65,12 @@ export default function LothGtfView({
   const [gtfs, setGtfs] = useState<Gtf[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  /** «Despachar con guía»: la guía completa con sus líneas de despacho. */
+  const [showDespacho, setShowDespacho] = useState(false);
+  /** Los papeles de una guía completa, abiertos en el visor. */
+  const [hojas, setHojas] = useState<{ g: Gtf; docs: DocumentoImprimible[]; activo: number } | null>(null);
+  /** Cuántas líneas de despacho vivas lleva cada guía: anularla las libera. */
+  const [despachosPorGuia, setDespachosPorGuia] = useState<Map<string, number>>(new Map());
   const [error, setError] = useState<string | null>(null);
   const [annulId, setAnnulId] = useState<string | null>(null);
   // Puente inverso: GTF de trozas emitidas que aún no ingresaron al CTP —
@@ -105,6 +119,12 @@ export default function LothGtfView({
               .map((l) => l.gtfNumber as string),
           );
           setDeclaradasSinEmitir([...declaradas].filter((g) => !vivas.has(g)).sort());
+          const porGuia = new Map<string, number>();
+          for (const l of lineas) {
+            if (l.status === "anulado" || l.section !== "despacho_troza" || !l.gtfNumber) continue;
+            porGuia.set(l.gtfNumber, (porGuia.get(l.gtfNumber) ?? 0) + 1);
+          }
+          setDespachosPorGuia(porGuia);
         }
       } catch (err) {
         // Falla blanda: sin el cruce no se acusa a nadie.
@@ -146,12 +166,35 @@ export default function LothGtfView({
    * obligatorio y se pide en un modal, no en un input de 8rem dentro de la celda
    * (donde no entraba una razón de verdad y se perdía al hacer scroll).
    */
-  async function annul(id: string, reason: string) {
-    await fetch("/api/admin/forestal/gtf", {
+  async function annul(id: string, reason: string, conDespachos: boolean) {
+    /* Con despachos: la guía y sus líneas juntas (las trozas vuelven a quedar
+       libres para la guía corregida). Sin: sólo el papel, como siempre. */
+    const r = await fetch("/api/admin/forestal/loth/despacho-guia", {
       method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), credentials: "include",
-      body: JSON.stringify({ id, action: "annul", reason }),
+      body: JSON.stringify({ id, action: "anular", reason, conDespachos }),
     });
+    if (!r.ok) {
+      const j = (await r.json().catch(() => ({}))) as { message?: string };
+      setError(j.message ?? `No se pudo anular la guía (${r.status})`);
+    }
     setAnnulId(null); load();
+  }
+
+  /** Imprime: la guía completa va al visor con su lista; la anotada a mano, a la hoja de siempre. */
+  function imprimirHoja(g: Gtf) {
+    if (!g.gtfDatos) {
+      printGtfOficial(g, caratula);
+      return;
+    }
+    const papeles = papelesGuiaLoth({
+      gtfNumber: g.gtfNumber,
+      gtfDate: (g.gtfDate ?? "").slice(0, 10),
+      titular: g.titularName ?? "",
+      datos: leerGtfDatos(g.gtfDatos),
+      piezas: piezasDeItems(g.items),
+      anulada: g.status === "anulada" ? g.annulledReason ?? "Anulada" : null,
+    });
+    setHojas({ g, docs: [papeles.gtf, papeles.lista], activo: 0 });
   }
 
   const gtfAnular = annulId ? gtfs.find((g) => g.id === annulId) ?? null : null;
@@ -230,9 +273,26 @@ export default function LothGtfView({
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-sm text-[var(--text-tertiary)]"><Truck className="h-4 w-4" /> Guías de Transporte Forestal · interno (oficial = SNIFFS)</div>
-        <button type="button" onClick={() => setShowForm(true)} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-semibold text-white hover:opacity-90">
-          <Plus className="h-4 w-4" /> Emitir GTF
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          {/* La guía anotada a mano sigue: sirve para las salidas que YA están
+              en el libro y no tienen su guía (el aviso rojo de abajo). */}
+          <button
+            type="button"
+            onClick={() => setShowForm(true)}
+            title="Para despachos que ya están en el libro y no tienen su guía"
+            className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--accent)]"
+          >
+            <Plus className="h-4 w-4" /> Anotar una guía
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowDespacho(true)}
+            title="La guía completa con sus trozas: se asienta el despacho en el libro en el mismo paso"
+            className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-semibold text-white hover:opacity-90"
+          >
+            <Truck className="h-4 w-4" /> Despachar con guía
+          </button>
+        </div>
       </div>
 
       {/* Las guías que el libro declara y nadie emitió. Acá sí sirve: quien puede
@@ -342,8 +402,33 @@ export default function LothGtfView({
         description="La guía queda en el libro con su motivo. No se borra."
         icon={Ban}
       >
-        {gtfAnular && <AnularGtfForm gtf={gtfAnular} onConfirm={(r) => annul(gtfAnular.id, r)} onCancel={() => setAnnulId(null)} />}
+        {gtfAnular && (
+          <AnularGtfForm
+            gtf={gtfAnular}
+            despachos={despachosPorGuia.get(gtfAnular.gtfNumber) ?? 0}
+            onConfirm={(r, conDespachos) => annul(gtfAnular.id, r, conDespachos)}
+            onCancel={() => setAnnulId(null)}
+          />
+        )}
       </AdminModal>
+
+      {showDespacho && (
+        <LothDespachoGuiaModal onClose={() => setShowDespacho(false)} onRegistrada={() => void load()} />
+      )}
+      {hojas && (
+        <CtpDocumentoVisor
+          documentos={hojas.docs}
+          activo={hojas.activo}
+          onActivo={(i) => setHojas((h) => (h ? { ...h, activo: i } : h))}
+          onClose={() => setHojas(null)}
+          onArchivar={(doc) =>
+            archivoDeGuiaLoth(
+              { gtfNumber: hojas.g.gtfNumber, titular: hojas.g.titularName ?? "", datos: leerGtfDatos(hojas.g.gtfDatos) },
+              doc,
+            )
+          }
+        />
+      )}
 
       {loading && <div className="p-6 text-center text-[var(--text-tertiary)]"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></div>}
 
@@ -426,7 +511,7 @@ export default function LothGtfView({
                       )}
                       <button
                         type="button"
-                        onClick={() => printGtfOficial(g, caratula)}
+                        onClick={() => imprimirHoja(g)}
                         title="Imprimir en la hoja de casilleros SERFOR (mismo formato que el Libro CTP)"
                         className="inline-flex h-8 items-center gap-1 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
                       >
@@ -504,13 +589,25 @@ function ResumenChip({ valor, label, sufijo, tono }: { valor: number | string; l
  * Cuerpo del modal de anulación. El motivo va a `annulledReason` y queda en el
  * libro: es lo que lee un fiscalizador para entender por qué esa guía no vale.
  */
-function AnularGtfForm({ gtf, onConfirm, onCancel }: { gtf: Gtf; onConfirm: (r: string) => void; onCancel: () => void }) {
+function AnularGtfForm({
+  gtf,
+  despachos,
+  onConfirm,
+  onCancel,
+}: {
+  gtf: Gtf;
+  /** Líneas de despacho vivas con el N° de esta guía. */
+  despachos: number;
+  onConfirm: (r: string, conDespachos: boolean) => void;
+  onCancel: () => void;
+}) {
   const [r, setR] = useState("");
+  const [conDespachos, setConDespachos] = useState(true);
   const [busy, setBusy] = useState(false);
   const valido = r.trim().length >= 3;
   return (
     <form
-      onSubmit={(e) => { e.preventDefault(); if (!valido || busy) return; setBusy(true); onConfirm(r.trim()); }}
+      onSubmit={(e) => { e.preventDefault(); if (!valido || busy) return; setBusy(true); onConfirm(r.trim(), despachos > 0 && conDespachos); }}
       className="space-y-4 p-5"
     >
       <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] p-3 text-sm text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
@@ -531,6 +628,15 @@ function AnularGtfForm({ gtf, onConfirm, onCancel }: { gtf: Gtf; onConfirm: (r: 
         />
         <span className="mt-1 block text-xs text-[var(--text-tertiary)]">Mínimo 3 caracteres. Queda registrado en el libro.</span>
       </label>
+      {despachos > 0 && (
+        <label className="flex cursor-pointer items-start gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3 text-sm text-[var(--text-primary)]">
+          <input type="checkbox" checked={conDespachos} onChange={(e) => setConDespachos(e.target.checked)} className="mt-0.5 h-4 w-4 accent-[var(--data-error-600)]" />
+          <span>
+            Anular también {despachos === 1 ? "la línea" : `las ${despachos} líneas`} de despacho de esta guía.
+            <span className="block text-xs text-[var(--text-secondary)]">Las trozas vuelven a quedar libres para ir en la guía corregida.</span>
+          </span>
+        </label>
+      )}
       <div className="flex justify-end gap-2">
         <button type="button" onClick={onCancel} className="h-11 rounded-xl px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
         <button type="submit" disabled={!valido || busy} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--data-error-600)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50">

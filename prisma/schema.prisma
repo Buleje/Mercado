@@ -6313,6 +6313,11 @@ model ForestGtf {
   volumenTotalM3 Decimal? @db.Decimal(12, 4)
   piezasTotal    Int?
   observations   String?
+  /// El cuerpo de la guía con los casilleros del formato SERFOR (2)–(38): el
+  /// MISMO esquema que la GTF de salida del CTP (`gtfDatosSchema`, validado con
+  /// Zod). null = guía anotada con el formulario corto de antes (28-09-2026:
+  /// «Despachar con guía» desde la sección Despacho del Libro TH).
+  gtfDatos       Json?
 
   status         String    @default("emitida") // emitida | anulada
   annulledReason String?
