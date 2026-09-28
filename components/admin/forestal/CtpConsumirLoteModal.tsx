@@ -22,20 +22,22 @@ import {
   Layers,
   Loader2,
   PackageOpen,
-  Scale,
   Search,
   TreePine,
   X,
 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import { useMiRol } from "@/hooks/use-mi-rol";
 import CtpSemanaDeRegistro from "./CtpSemanaDeRegistro";
+import CtpAvisosDeCupo from "./ctp-avisos-de-cupo";
+import CtpAcomodarTrozasModal from "./CtpAcomodarTrozasModal";
 import { useJornadasDeProduccion } from "./hooks/use-jornadas-produccion";
 import { esIsoValido, hoyEnLima } from "@/lib/forestal/semana-de-registro";
 import {
   agruparPorGuia,
   avisosSeleccion,
   cuposDeGuia,
-  motivoDeCupo,
+  frenaElActa,
   totalesSeleccion,
   type TrozaConsumible,
 } from "@/lib/forestal/consumo-trozas";
@@ -106,6 +108,7 @@ export default function CtpConsumirLoteModal({
   error,
   onConfirmar,
   onCuadrar,
+  onAcomodado,
   onClose,
 }: {
   lote: LoteAserrio;
@@ -120,6 +123,11 @@ export default function CtpConsumirLoteModal({
   onConfirmar: (datos: ConfirmacionConsumo) => void;
   /** Abre el cuadre de una guía que se contradice a sí misma (ADR-353). */
   onCuadrar?: (woodEntryId: string, gtfNumber: string | null) => void;
+  /**
+   * Después de «Acomodar trozas» (ADR-435, 27-09): quien abrió el acta relee el
+   * patio y el acta recalcula SIN cerrarse — las piezas elegidas siguen ahí.
+   */
+  onAcomodado?: () => void;
   onClose: () => void;
 }) {
   const [dia, setDia] = useState(fecha);
@@ -143,7 +151,15 @@ export default function CtpConsumirLoteModal({
    * llegar tarde: acá se ve mientras se arma, con la guía culpable señalada.
    */
   const cupos = useMemo(() => cuposDeGuia(finales), [finales]);
-  const excesos = useMemo(() => cupos.filter((c) => c.exceso > 0), [cupos]);
+  /* Frena: pasarse del tope de la fila, o trozas en la fila de otra especie —
+     consumidas así, su m³ queda en la fila equivocada y ya no se acomodan. */
+  const frenos = useMemo(() => cupos.filter(frenaElActa), [cupos]);
+  /** Las guías que se están acomodando desde acá (encima del acta). */
+  const [acomodar, setAcomodar] = useState<string[] | null>(null);
+  /* Acomodar lo firma admin o dueño (el POST pide lo mismo; mientras el rol
+     no llegó, se ofrece y decide el servidor). */
+  const rol = useMiRol();
+  const puedeAcomodar = rol == null || rol === "admin" || rol === "owner" || rol === "superadmin";
 
   const listadas = useMemo(() => {
     const q = norm(busqueda);
@@ -157,7 +173,7 @@ export default function CtpConsumirLoteModal({
   const futura = dia > hoyISO();
   /* Con un exceso, el acta NO se puede firmar: el servidor la va a rechazar y
      apretar para enterarse es el camino que este aviso viene a evitar. */
-  const listo = finales.length > 0 && !guardando && !futura && excesos.length === 0;
+  const listo = finales.length > 0 && !guardando && !futura && frenos.length === 0 && !acomodar;
 
   const firmar = () => {
     if (!listo) return;
@@ -235,6 +251,28 @@ export default function CtpConsumirLoteModal({
           />
         </div>
 
+        {/* Lo que frena el acta, ARRIBA (lo primero que se mira: «Consumir»
+            está apagado por esto) y UNA caja por causa con su arreglo al lado
+            (ADR-353 · agrupado 27-09): acomodar las trozas encima del acta, o
+            cuadrar la guía (eso reemplaza el acta, lo decide quien la abrió). */}
+        <CtpAvisosDeCupo
+          cupos={frenos}
+          ocupado={guardando}
+          puedeAcomodar={puedeAcomodar}
+          onAcomodar={setAcomodar}
+          onCuadrar={onCuadrar}
+        />
+        {acomodar && (
+          <CtpAcomodarTrozasModal
+            alcance={{ woodEntryIds: acomodar }}
+            descripcion={`Desde el acta del lote ${lote.code}`}
+            loteId={lote.id}
+            aboveModals
+            onClose={() => setAcomodar(null)}
+            onAcomodado={() => onAcomodado?.()}
+          />
+        )}
+
         <p className="rounded-xl bg-[var(--surface-sunken)] px-3 py-2 text-sm text-[var(--text-secondary)]">
           Al consumir, estas piezas dejan el patio y quedan en el libro con la fecha elegida. Se abre la corrida del lote{" "}
           <b className="font-mono text-[var(--text-primary)]">{lote.code}</b> con esta materia prima;{" "}
@@ -299,24 +337,6 @@ export default function CtpConsumirLoteModal({
           </p>
         )}
 
-        {/* Lo que no va a entrar, con su causa y qué hacer (ADR-353). Cuando el
-            problema es que el documento se contradice, el arreglo va ACÁ: mandar
-            a otra pestaña por un botón que podemos poner al lado es fricción. */}
-        {excesos.map((c) => (
-          <div
-            key={c.woodEntryId}
-            className="flex flex-wrap items-start gap-2 rounded-xl bg-[var(--data-error-500)]/12 px-3 py-2 text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
-          >
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-            <span className="flex-1">{motivoDeCupo(c)}</span>
-            {c.descuadrado && onCuadrar && (
-              <Btn variant="secondary" onClick={() => onCuadrar(c.woodEntryId, c.gtfNumber)} disabled={guardando}>
-                <Scale className="h-4 w-4" /> Cuadrar la guía
-              </Btn>
-            )}
-          </div>
-        ))}
-
         {avisos.map((a) => (
           <p
             key={a}
@@ -336,7 +356,7 @@ export default function CtpConsumirLoteModal({
             <tbody className="divide-y divide-[var(--rule-soft)]">
               {porGuia.map((g) => {
                 const cupo = cupos.find((c) => c.woodEntryId === g.woodEntryId);
-                const pasado = (cupo?.exceso ?? 0) > 0;
+                const pasado = cupo ? frenaElActa(cupo) : false;
                 return (
                   <tr key={g.woodEntryId} className={pasado ? "bg-[var(--data-error-500)]/8" : undefined}>
                     <td className="px-3 py-2 font-mono font-bold text-[var(--text-primary)]">{g.gtfNumber ?? "—"}</td>

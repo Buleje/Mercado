@@ -26,7 +26,13 @@ import { normalizarFotos, tieneFotos, urlsDeFotos, type FotoCarga } from "@/lib/
 import { FotoNoValidaError, resolverFotosEntrantes } from "@/lib/forestal/fotos-carga-firma";
 import { ForestEspeciesDB } from "./forest-especies.db";
 import { mismaEspecie } from "@/lib/forestal/loth-constants";
-import { colocarAlCargar, type FilaQueRecibe, type NotaDeColocacion } from "@/lib/forestal/acomodar-trozas";
+import {
+  claveDeLaGuia,
+  colocarAlCargar,
+  filaDeEspecie,
+  type FilaQueRecibe,
+  type NotaDeColocacion,
+} from "@/lib/forestal/acomodar-trozas";
 import { PLAZO_REGISTRO_DIAS, estaFueraDePlazo } from "@/lib/forestal/ctp-compliance";
 import { auditCtp, m3 } from "@/lib/forestal/ctp-audit";
 import { calcularRetrozado, type RetrozoNuevo } from "@/lib/forestal/ctp-retrozado";
@@ -2164,6 +2170,10 @@ export class WoodEntriesDB {
                la etiqueta (2026-09-26), la que se lee sin internet. */
             libroNro: true,
             gtfNumber: true,
+            /* Serie + especie de la FILA (ADR-435): con esto el picker sabe si
+               la pieza cuelga de la fila de otra especie de su guía. */
+            gtfSeries: true,
+            speciesCommonName: true,
             providerName: true,
             entryDate: true,
             status: true,
@@ -2211,6 +2221,46 @@ export class WoodEntriesDB {
   }
 
   /**
+   * Por cada troza que cuelga de la fila de OTRA especie de su guía, la fila de
+   * la suya (ADR-435). Mismo criterio que «Acomodar trozas» (`filaDeEspecie`
+   * sobre las filas vivas de la MISMA guía, serie + número): si el acta y el
+   * acomodo discreparan, el botón ofrecería mover lo que el acomodo no mueve.
+   *
+   * Una sola consulta por las guías del patio, y sólo si alguna tiene 2+ filas
+   * candidatas; una guía de una especie no tiene a dónde llevar nada.
+   */
+  static async filaDeSuEspecie(
+    tenantId: string,
+    trozas: readonly {
+      id: string;
+      woodEntryId: string;
+      especieComun: string | null;
+      especieCientifica: string | null;
+      entry: { gtfNumber: string; gtfSeries: string | null };
+    }[],
+  ): Promise<Map<string, string>> {
+    const out = new Map<string, string>();
+    const numeros = [...new Set(trozas.map((t) => t.entry.gtfNumber).filter(Boolean))];
+    if (numeros.length === 0) return out;
+    const hermanas = await prisma.woodEntry.findMany({
+      where: { tenantId, deletedAt: null, gtfNumber: { in: numeros }, status: { notIn: ["anulado", "rechazado"] } },
+      select: { id: true, gtfNumber: true, gtfSeries: true, speciesCommonName: true, speciesScientificName: true },
+    });
+    const porGuia = new Map<string, { id: string; especie: string | null; cientifico: string | null }[]>();
+    for (const h of hermanas) {
+      const k = claveDeLaGuia(h.gtfSeries, h.gtfNumber);
+      porGuia.set(k, [...(porGuia.get(k) ?? []), { id: h.id, especie: h.speciesCommonName, cientifico: h.speciesScientificName }]);
+    }
+    for (const t of trozas) {
+      const filasGuia = porGuia.get(claveDeLaGuia(t.entry.gtfSeries, t.entry.gtfNumber)) ?? [];
+      if (filasGuia.length < 2) continue;
+      const d = filaDeEspecie(t, filasGuia);
+      if (d.fila && d.fila.id !== t.woodEntryId) out.set(t.id, d.fila.id);
+    }
+    return out;
+  }
+
+  /**
    * El patio, ya en la forma que necesita un picker de consumo
    * (`TrozaConsumible`, `lib/forestal/consumo-trozas.ts`) — mismo mapeo que
    * antes vivía SOLO en `GET /api/admin/forestal/trozas/patio`, movido acá
@@ -2224,10 +2274,13 @@ export class WoodEntriesDB {
     opts: { limite?: number; loteId?: string; contratoId?: string; ids?: string[] } = {},
   ): Promise<TrozaConsumible[]> {
     const filas = await WoodEntriesDB.trozasDelPatio(tenantId, opts);
-    const consumido = await WoodEntriesDB.consumidoPorIngreso(
-      tenantId,
-      filas.map((t) => t.woodEntryId),
-    );
+    const [consumido, filaDeSuEspecie] = await Promise.all([
+      WoodEntriesDB.consumidoPorIngreso(
+        tenantId,
+        filas.map((t) => t.woodEntryId),
+      ),
+      WoodEntriesDB.filaDeSuEspecie(tenantId, filas),
+    ]);
     const num = (v: unknown) => (v == null ? null : Number(v));
     return filas.map((t) => ({
       id: t.id,
@@ -2272,6 +2325,11 @@ export class WoodEntriesDB {
       origenDato: t.entry.serforNumeroRegistro ? ("serfor" as const) : ("manual" as const),
       guiaVolumenM3: num(t.entry.volumeM3),
       guiaConsumidoM3: consumido.get(t.woodEntryId) ?? 0,
+      /* ADR-435: la especie de la fila y, si la pieza cuelga de la de OTRA
+         especie, la fila de la suya. El acta dice «acomódalas» en vez de
+         «la guía no cuadra» (Blas 27-09: 29 trozas en 8 guías). */
+      guiaEspecie: t.entry.speciesCommonName,
+      filaDeSuEspecieId: filaDeSuEspecie.get(t.id) ?? null,
       consumidaEnId:
         t.consumidaEn && t.consumidaEn.status === "registrado" && !t.consumidaEn.deletedAt
           ? t.consumidaEnId

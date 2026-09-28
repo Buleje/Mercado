@@ -148,7 +148,7 @@ export default function CtpCargarSierra({
       const rech = r.rechazadas;
       onConsumido(
         `Consumí ${r.piezas} troza${r.piezas === 1 ? "" : "s"} · ${fmtM3(r.volumenM3)} m³ en el lote ${lote.code}. ` +
-          `Quedó abierta la corrida N° ${r.corrida.lineNo}: declarale la producción.` +
+          `Quedó abierta la corrida N° ${r.corrida.lineNo}: declárale la producción.` +
           (rech.length > 0
             ? ` No entraron ${rech.length}: ${rech.slice(0, 3).map((x) => `${x.codigo ?? "?"} (${x.motivo})`).join(", ")}`
             : ""),
@@ -310,6 +310,10 @@ export default function CtpCargarSierra({
             setConfirmando(false);
             setCuadre({ woodEntryId, gtfNumber });
           }}
+          /* Acomodar NO reemplaza el acta (27-09): se abre encima, y al volver
+             el patio releído trae cada troza en su fila — el acta recalcula
+             los avisos con las mismas piezas elegidas. */
+          onAcomodado={() => void estado.recargar()}
           onClose={() => setConfirmando(false)}
         />
       )}

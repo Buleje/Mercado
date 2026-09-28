@@ -47,3 +47,16 @@ Consecuencias: el consumo por pieza agrupa por `woodEntryId` y el tope I2 es por
 - **Bloquear toda troza retrozada**: ver decisión 4.
 - **Elegir la primera fila de la especie** cuando hay dos: una troza de Cumala *Virola* terminaría en la fila de Cumala *Iryanthera*.
 - **Partir una guía NUEVA del inventario en una fila por especie** al importar: crea folios y un m³ «declarado» que el archivo no declara por especie. Hoy la fila se crea y las trozas de otra especie se avisan (0 casos en los datos reales al 25-09). Queda anotado como mejora.
+
+## Enmienda 2026-09-27 — acomodar desde el acta de consumo
+
+**Qué pasó.** En Blas, el acta «Consumir 12 trozas en el lote LA-2026-011» mostraba tres avisos rojos «la guía no cuadra consigo misma» y un botón «Cuadrar la guía». Las guías cuadraban: sus trozas de Cachimbo colgaban de la fila de otra especie (0000005, 0000006, 0000008, 0000009). Y como las 12 estaban apartadas en el lote abierto, «Acomodar» las dejaba quietas (regla 4): el acta no tenía salida.
+
+**Decisión.**
+
+1. El acta y el mensaje del servidor distinguen una tercera causa, `otra_fila`, antes del descuadre: la troza cuelga de la fila de otra especie que su guía SÍ tiene (`TrozaConsumible.filaDeSuEspecieId`, mismo criterio `filaDeEspecie`). El botón es «Acomodar trozas»; «Cuadrar la guía» queda sólo para el descuadre real. También frena la guía que todavía entra en el tope: consumida así, su m³ queda en la fila equivocada y ya no se puede acomodar.
+2. Alcance nuevo `woodEntryIds` (las guías que frenan un acta) y opción `loteId`: **las trozas apartadas en ESE lote abierto sí se mueven**. La pieza sigue en su lote; sólo cambia de fila. El acomodo bloquea el lote (`FOR UPDATE`) antes que las trozas.
+3. Para cerrar la ventana de la regla 4, `ForestLoteAserrioDB.consumir` bloquea el lote y las piezas (mismo orden) en su segundo paso y compara la fila de cada una con la usada al anotar los m³. Si cambió, tira `TROZA_CAMBIO_DE_FILA` y `consumirEnPatio` retira la corrida.
+
+**Pendiente.** `sumarACorrida` tiene el mismo patrón en dos pasos y todavía no compara la fila: con `loteId`, un acomodo que caiga entre sus dos pasos dejaría el m³ en la fila vieja (mismo riesgo que la regla 4 describe, acotado a ese lote).
+

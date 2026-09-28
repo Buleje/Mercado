@@ -81,6 +81,24 @@ export interface TrozaConsumible {
   guiaVolumenM3?: number | null;
   guiaConsumidoM3?: number | null;
   /**
+   * La especie de la FILA del libro de la que cuelga la pieza
+   * (`WoodEntry.speciesCommonName`) — lo que declara `guiaVolumenM3`. Casi
+   * siempre es la de la troza; cuando no, la troza quedó en la fila de otra
+   * especie de su guía (ADR-435).
+   */
+  guiaEspecie?: string | null;
+  /**
+   * La fila de la MISMA guía que es de la especie de esta troza, cuando NO es
+   * la fila de la que cuelga (ADR-435, `filaDeEspecie`). `null` = está en su
+   * fila, o su guía no tiene otra: «Acomodar trozas» no tendría a dónde
+   * llevarla.
+   *
+   * En Blas (27-09): 29 trozas de 8 guías, 76,7 m³. El acta leía el tope de la
+   * fila equivocada y lo llamaba «la guía no cuadra consigo misma» — la guía
+   * cuadraba; las trozas estaban en otra fila.
+   */
+  filaDeSuEspecieId?: string | null;
+  /**
    * Ya consumida en otra corrida: no se puede volver a elegir.
    *
    * El endpoint lo manda en `null` cuando la corrida que la tomó está anulada o
@@ -505,10 +523,38 @@ export function avisosSeleccion(trozas: readonly TrozaConsumible[]): string[] {
   return avisos;
 }
 
+/**
+ * Por qué una guía frena el acta (ADR-353 · afinado 27-09).
+ *
+ *  · `otra_fila` — las trozas elegidas cuelgan de la fila de OTRA especie de su
+ *    guía (ADR-435). La guía está bien; el arreglo es «Acomodar trozas».
+ *  · `descuadre` — la fila declara menos que sus propias piezas de su especie,
+ *    sin nada consumido: el documento se contradice. El arreglo es cuadrarla.
+ *  · `sin_cupo` — ya se consumió parte y no alcanza: el arreglo es elegir menos.
+ *
+ * Antes las dos primeras eran una sola («la guía no cuadra consigo misma») y en
+ * Blas mandaba a cambiar cifras oficiales que estaban bien: 0000009 declara
+ * 10,677 m³ de Cachimbo y 8,309 de Yacuchapana, pero sus 7 trozas colgaban de
+ * la fila de Yacuchapana.
+ */
+export type CausaDeCupo = "otra_fila" | "descuadre" | "sin_cupo";
+
+/** Trozas elegidas de una fila que son de otra especie con fila propia en la guía. */
+export interface TrozasEnOtraFila {
+  especie: string;
+  piezas: number;
+  m3: number;
+}
+
 /** Lo que una guía puede aportar todavía, contra lo que la selección le pide. */
 export interface CupoDeGuia {
   woodEntryId: string;
   gtfNumber: string | null;
+  /**
+   * La especie de la FILA (lo que el asiento declara). Antes se leía de la
+   * primera troza, y el aviso decía «declara 8,309 m³ de Cachimbo» con el
+   * volumen de la fila de Yacuchapana.
+   */
   especie: string | null;
   /** m³ que el asiento del libro declara. */
   declarado: number | null;
@@ -520,12 +566,14 @@ export interface CupoDeGuia {
   pedido: number;
   /** Cuánto se pasa. 0 = entra. */
   exceso: number;
+  /** Las elegidas que están en la fila de otra especie de su guía, por especie. */
+  enOtraFila: TrozasEnOtraFila[];
+  /** Qué la frena; `null` = entra y está en su fila. */
+  causa: CausaDeCupo | null;
   /**
-   * El asiento declara MENOS de lo que suman sus propias piezas cargadas.
-   *
-   * No es que falte cupo: es que el ingreso está mal declarado y ninguna
-   * combinación de piezas va a entrar. Se distingue porque el arreglo es otro —
-   * corregir el ingreso, no elegir menos madera.
+   * El asiento declara MENOS de lo que suman sus propias piezas cargadas
+   * (`causa === "descuadre"`). Se conserva para quien sólo pregunta «¿hay que
+   * cuadrar?»: una troza en la fila de otra especie NO lo enciende.
    */
   descuadrado: boolean;
 }
@@ -539,73 +587,171 @@ export interface CupoDeGuia {
  * la causa. Esta función deja decirlo antes.
  */
 export function cuposDeGuia(trozas: readonly TrozaConsumible[]): CupoDeGuia[] {
-  const porGuia = new Map<string, CupoDeGuia & { piezasCargadas: number }>();
+  type Acc = Omit<CupoDeGuia, "enOtraFila" | "causa"> & { otra: Map<string, TrozasEnOtraFila> };
+  const porGuia = new Map<string, Acc>();
   for (const t of trozas) {
     const previa = porGuia.get(t.woodEntryId);
     const declarado = t.guiaVolumenM3 ?? null;
     const consumido = Number(t.guiaConsumidoM3 ?? 0);
-    const fila =
+    const fila: Acc =
       previa ??
       {
         woodEntryId: t.woodEntryId,
         gtfNumber: t.gtfNumber ?? null,
-        especie: t.especieComun ?? null,
+        especie: t.guiaEspecie ?? t.especieComun ?? null,
         declarado,
         consumido,
         disponible: declarado == null ? null : r4(declarado - consumido),
         pedido: 0,
         exceso: 0,
         descuadrado: false,
-        piezasCargadas: 0,
+        otra: new Map(),
       };
     if (!previa) porGuia.set(t.woodEntryId, fila);
-    fila.pedido = r4(fila.pedido + Number(t.volumenM3 ?? 0));
-    fila.piezasCargadas += 1;
+    const m3 = Number(t.volumenM3 ?? 0);
+    fila.pedido = r4(fila.pedido + m3);
+    if (t.filaDeSuEspecieId && t.filaDeSuEspecieId !== t.woodEntryId) {
+      const especie = t.especieComun?.trim() || "otra especie";
+      const acc = fila.otra.get(especie) ?? { especie, piezas: 0, m3: 0 };
+      acc.piezas += 1;
+      acc.m3 = r4(acc.m3 + m3);
+      fila.otra.set(especie, acc);
+    }
   }
 
-  return [...porGuia.values()].map((f) => {
+  return [...porGuia.values()].map(({ otra, ...f }) => {
     /* Tolerancia de un LITRO: el aserradero mide con cinta y tres decimales de
        redondeo no son un exceso (misma regla que el resto del libro). */
-    const exceso = f.disponible == null ? 0 : Math.max(0, r4(f.pedido - f.disponible));
-    return {
-      woodEntryId: f.woodEntryId,
-      gtfNumber: f.gtfNumber,
-      especie: f.especie,
-      declarado: f.declarado,
-      consumido: f.consumido,
-      disponible: f.disponible,
-      pedido: f.pedido,
-      exceso: exceso > 0.001 ? exceso : 0,
-      /* Si NADA está consumido y aun así se pasa, el problema no es el cupo: es
-         que el asiento declara menos de lo que miden sus piezas. */
-      descuadrado: exceso > 0.001 && f.consumido === 0,
-    };
+    const bruto = f.disponible == null ? 0 : Math.max(0, r4(f.pedido - f.disponible));
+    const exceso = bruto > 0.001 ? bruto : 0;
+    const enOtraFila = [...otra.values()].sort((a, b) => b.m3 - a.m3);
+    /* La troza en la fila de otra especie va PRIMERO, aunque todavía entre en
+       el tope: consumida así, su m³ se anota en la fila equivocada y
+       «Acomodar» ya no la puede mover (su consumo quedó en esa fila). */
+    const causa: CausaDeCupo | null =
+      enOtraFila.length > 0 ? "otra_fila" : exceso === 0 ? null : f.consumido === 0 ? "descuadre" : "sin_cupo";
+    return { ...f, exceso, enOtraFila, causa, descuadrado: causa === "descuadre" };
   });
 }
+
+/** ¿Esta guía impide firmar el acta? Pasarse del tope, o trozas en otra fila. */
+export const frenaElActa = (c: CupoDeGuia): boolean => c.causa != null;
 
 /** Las guías que no entran, con la frase que explica por qué. */
 export function motivosDeCupo(cupos: readonly CupoDeGuia[]): string[] {
   return cupos.filter((c) => c.exceso > 0).map(motivoDeCupo);
 }
 
+/** «Cachimbo», «Cachimbo y Copal», «Cachimbo, Copal y Tornillo». */
+function enLista(xs: readonly string[]): string {
+  if (xs.length <= 1) return xs[0] ?? "";
+  return `${xs.slice(0, -1).join(", ")} y ${xs[xs.length - 1]}`;
+}
+
 /**
- * Por qué esta guía no deja consumir, en una frase.
+ * La frase de una guía trabada en la fila de otra especie. La usan el acta y
+ * el mensaje del servidor (`forest-ctp-consumo.db.ts`): la misma madera se
+ * explica con las mismas palabras en los dos lados.
+ */
+export function fraseTrozasEnOtraFila(gtf: string | null, especies: readonly string[], fila: string | null): string {
+  return (
+    `Las trozas de ${enLista(especies) || "otra especie"} de la guía ${gtf ?? "—"} están en la fila de ` +
+    `${fila ?? "otra especie"}. La guía está bien: solo hay que acomodarlas.`
+  );
+}
+
+/**
+ * Por qué esta guía no deja consumir, en una o dos frases cortas.
  *
- * Separado del plural porque la pantalla necesita el cupo AL LADO del texto:
- * cuando el problema es que el documento no cuadra, el aviso lleva su propio
- * botón de cuadre y mandar al operador a otra pestaña sobra (ADR-353).
+ * Es la versión suelta (la usan la vinculación desde un lote mixto y los
+ * mensajes que viajan como texto). El acta agrupa con `avisosDeCupo`.
  */
 export function motivoDeCupo(c: CupoDeGuia): string {
+  const gtf = c.gtfNumber ?? "—";
+  if (c.causa === "otra_fila") return fraseTrozasEnOtraFila(gtf, c.enOtraFila.map((o) => o.especie), c.especie);
   if (c.descuadrado) {
     return (
-      `La guía ${c.gtfNumber ?? "—"} declara ${fmtM3(c.declarado ?? 0)} m³ de ${c.especie ?? "esa especie"} ` +
-      `en su cabecera, pero su lista de trozas suma ${fmtM3(c.pedido)} m³. La guía no cuadra consigo misma: ` +
-      `hay que cuadrarla antes de llevar estas piezas a la sierra.`
+      `La guía ${gtf} no cuadra consigo misma: declara ${fmtM3(c.declarado ?? 0)} m³ de ${c.especie ?? "esa especie"} ` +
+      `y sus trozas suman ${fmtM3(c.pedido)} m³. Hay que cuadrarla.`
     );
   }
   return (
-    `De la guía ${c.gtfNumber ?? "—"} quedan ${fmtM3(c.disponible ?? 0)} m³ sin consumir ` +
-    `(declara ${fmtM3(c.declarado ?? 0)} y ya se consumieron ${fmtM3(c.consumido)}), ` +
-    `y estás pidiendo ${fmtM3(c.pedido)} m³. Saca ${fmtM3(c.exceso)} m³ de esa guía.`
+    `La guía ${gtf} no alcanza: saca ${fmtM3(c.exceso)} m³. ` +
+    `Quedan ${fmtM3(c.disponible ?? 0)} de ${fmtM3(c.declarado ?? 0)} m³ y pides ${fmtM3(c.pedido)}.`
   );
+}
+
+/** Un aviso del acta: UNA caja por causa, con la lista de guías que la tienen. */
+export interface AvisoDeCupo {
+  causa: CausaDeCupo;
+  /** Corto (≤ 12 palabras): qué pasa. */
+  titulo: string;
+  /** Segunda línea: qué hacer. */
+  detalle: string;
+  /** Una línea por guía, con sus cifras (sin el N° de guía: va aparte). */
+  guias: { woodEntryId: string; gtfNumber: string | null; linea: string }[];
+}
+
+const ORDEN_CAUSA: readonly CausaDeCupo[] = ["otra_fila", "descuadre", "sin_cupo"];
+
+/**
+ * Los avisos del acta, agrupados (Brandon, 27-09: «explica de manera sencilla»).
+ *
+ * Tres guías con el mismo problema son UN aviso con la lista y UN botón, no
+ * tres cajas rojas con párrafos de tres renglones. Primero lo que se arregla
+ * con un clic (acomodar), después cuadrar, al final lo que pide elegir menos.
+ */
+export function avisosDeCupo(cupos: readonly CupoDeGuia[]): AvisoDeCupo[] {
+  const avisos: AvisoDeCupo[] = [];
+  for (const causa of ORDEN_CAUSA) {
+    const de = cupos.filter((c) => c.causa === causa);
+    if (de.length === 0) continue;
+    const una = de.length === 1;
+    const gtf = de[0]!.gtfNumber ?? "—";
+    const guias = de.map((c) => ({ woodEntryId: c.woodEntryId, gtfNumber: c.gtfNumber, linea: lineaDeCupo(c) }));
+    if (causa === "otra_fila") {
+      avisos.push({
+        causa,
+        titulo: una ? `La guía ${gtf} tiene sus trozas en otra fila` : `${de.length} guías tienen sus trozas en otra fila`,
+        detalle: una
+          ? "La guía está bien: solo hay que acomodar sus trozas."
+          : "Las guías están bien: solo hay que acomodar sus trozas.",
+        guias,
+      });
+    } else if (causa === "descuadre") {
+      avisos.push({
+        causa,
+        titulo: una ? `La guía ${gtf} no cuadra consigo misma` : `${de.length} guías no cuadran consigo mismas`,
+        detalle: una
+          ? "Declara menos de lo que suman sus trozas: hay que cuadrarla."
+          : "Declaran menos de lo que suman sus trozas: hay que cuadrarlas.",
+        guias,
+      });
+    } else {
+      avisos.push({
+        causa,
+        titulo: una ? `La guía ${gtf} no alcanza para lo que elegiste` : `${de.length} guías no alcanzan para lo que elegiste`,
+        detalle: una ? "Saca trozas de esa guía o elige de otra." : "Saca trozas de esas guías o elige de otras.",
+        guias,
+      });
+    }
+  }
+  return avisos;
+}
+
+/**
+ * La línea de UNA guía dentro de su aviso: las cifras que deciden, SIN el N° de
+ * guía (la pantalla lo pone al lado, en su tipografía de código).
+ */
+function lineaDeCupo(c: CupoDeGuia): string {
+  if (c.causa === "otra_fila") {
+    const trozas = c.enOtraFila
+      .map((o) => `${o.piezas} ${o.piezas === 1 ? "troza" : "trozas"} de ${o.especie} (${fmtM3(o.m3)} m³)`)
+      .join(" y ");
+    return `${trozas} en la fila de ${c.especie ?? "otra especie"}`;
+  }
+  if (c.causa === "descuadre") {
+    return `declara ${fmtM3(c.declarado ?? 0)} m³ de ${c.especie ?? "esa especie"}; sus trozas suman ${fmtM3(c.pedido)}`;
+  }
+  return `saca ${fmtM3(c.exceso)} m³ (quedan ${fmtM3(c.disponible ?? 0)} de ${fmtM3(c.declarado ?? 0)})`;
 }

@@ -35,7 +35,7 @@ const H = vi.hoisted(() => {
     fechaRetrozo: null,
     consumidaEn: null as { status: string; deletedAt: Date | null } | null,
     despachadaEn: null as { status: string; deletedAt: Date | null } | null,
-    loteAserrio: null as { code: string; status: string } | null,
+    loteAserrio: null as { id?: string; code: string; status: string } | null,
   });
 
   const estado = {
@@ -49,6 +49,10 @@ const H = vi.hoisted(() => {
     bloqueadas: [] as string[],
     /** Un id que el UPDATE «no encuentra» (simula una pieza que cambió). */
     fallarId: null as string | null,
+    /** El lote de aserrío que existe en la base (para `loteId`). */
+    lote: null as { id: string; status: string } | null,
+    /** Los lotes bloqueados con FOR UPDATE. */
+    lotesBloqueados: [] as string[],
   };
 
   const aplicarUpdate = (args: { where: { tenantId: string; id: { in: string[] }; woodEntryId: { in: string[] } }; data: { woodEntryId: string } }) => {
@@ -66,11 +70,11 @@ const H = vi.hoisted(() => {
 
   const cliente = {
     woodEntry: {
-      findMany: async (args: { where: { tenantId: string; id?: string; contratoId?: string; gtfNumber?: { in: string[] } } }) =>
+      findMany: async (args: { where: { tenantId: string; id?: string | { in: string[] }; contratoId?: string; gtfNumber?: { in: string[] } } }) =>
         estado.filas.filter(
           (f) =>
             args.where.tenantId === "t-blas" &&
-            (args.where.id ? f.id === args.where.id : true) &&
+            (typeof args.where.id === "string" ? f.id === args.where.id : args.where.id ? args.where.id.in.includes(f.id) : true) &&
             (args.where.contratoId ? f.contratoId === args.where.contratoId : true) &&
             (args.where.gtfNumber ? args.where.gtfNumber.in.includes(f.gtfNumber) : true),
         ),
@@ -89,7 +93,11 @@ const H = vi.hoisted(() => {
         estado.tocoConsumo = true;
       },
     },
-    $queryRaw: async (_sql: TemplateStringsArray, ...valores: unknown[]) => {
+    $queryRaw: async (sql: TemplateStringsArray, ...valores: unknown[]) => {
+      if (sql.join("?").includes("ForestLoteAserrio")) {
+        if (sql.join("?").includes("FOR UPDATE")) estado.lotesBloqueados.push(String(valores[0]));
+        return estado.lote && estado.lote.id === valores[0] && valores[1] === "t-blas" ? [estado.lote] : [];
+      }
       estado.bloqueos++;
       estado.bloqueadas = (valores[1] as string[]) ?? [];
       return [];
@@ -148,6 +156,8 @@ beforeEach(() => {
   H.estado.audit = [];
   H.estado.bloqueadas = [];
   H.estado.fallarId = null;
+  H.estado.lote = null;
+  H.estado.lotesBloqueados = [];
 });
 
 /** Lo que la vista previa mostró: troza → fila de destino. */
@@ -227,5 +237,51 @@ describe("AcomodarTrozasDB.aplicar", () => {
     const r = await AcomodarTrozasDB.aplicar("t-otro", { todas: true }, "qa");
     expect(r.movidas).toBe(0);
     expect(H.estado.updates).toEqual([]);
+  });
+  /* 27-09 · Desde el acta de consumo del lote LA-2026-011 (Blas): las 12
+     trozas de Cachimbo estaban APARTADAS en ese lote, y el acomodo las dejaba
+     quietas («está en el lote…»). El acta quedaba sin salida. */
+  it("con `loteId` de un lote abierto, sus trozas apartadas SÍ se mueven (y el lote se bloquea)", async () => {
+    H.estado.lote = { id: "lote-011", status: "abierto" };
+    for (const t of H.estado.trozas) t.loteAserrio = { id: "lote-011", code: "LA-2026-011", status: "abierto" };
+    const sin = await AcomodarTrozasDB.planear("t-blas", { woodEntryId: "copal" });
+    expect(sin.totales.mover).toBe(0);
+    expect(new Set(sin.guias[0]!.quietas.map((q) => q.motivo))).toEqual(new Set(["en_lote"]));
+
+    const plan = await AcomodarTrozasDB.planear("t-blas", { woodEntryId: "copal" }, { loteId: "lote-011" });
+    expect(plan.totales.mover).toBe(6);
+    const r = await AcomodarTrozasDB.aplicar("t-blas", { woodEntryId: "copal" }, "qa", { loteId: "lote-011" });
+    expect(r.movidas).toBe(6);
+    expect(H.estado.lotesBloqueados).toEqual(["lote-011"]);
+    expect(H.estado.tocoConsumo).toBe(false);
+  });
+
+  it("`loteId` sólo libera ESE lote, y sólo si sigue abierto", async () => {
+    H.estado.trozas[0]!.loteAserrio = { id: "otro", code: "LA-2026-004", status: "abierto" };
+    H.estado.trozas[1]!.loteAserrio = { id: "lote-011", code: "LA-2026-011", status: "abierto" };
+    H.estado.lote = { id: "lote-011", status: "consumido" };
+    const cerrado = await AcomodarTrozasDB.planear("t-blas", { todas: true }, { loteId: "lote-011" });
+    expect(cerrado.guias[0]!.quietas.map((q) => q.trozaId).sort()).toEqual(["115-A", "115-B"]);
+
+    H.estado.lote = { id: "lote-011", status: "abierto" };
+    const abierto = await AcomodarTrozasDB.planear("t-blas", { todas: true }, { loteId: "lote-011" });
+    expect(abierto.guias[0]!.quietas.map((q) => [q.trozaId, q.lote])).toEqual([["115-A", "LA-2026-004"]]);
+  });
+
+  it("un `loteId` de otro negocio no libera nada", async () => {
+    H.estado.lote = { id: "lote-011", status: "abierto" };
+    H.estado.trozas[0]!.loteAserrio = { id: "lote-011", code: "LA-2026-011", status: "abierto" };
+    const plan = await AcomodarTrozasDB.planear("t-otro", { todas: true }, { loteId: "lote-011" });
+    expect(plan.guias).toEqual([]);
+    const blas = await AcomodarTrozasDB.planear("t-blas", { todas: true }, { loteId: "lote-ajeno" });
+    expect(blas.guias[0]!.quietas.map((q) => q.motivo)).toEqual(["en_lote"]);
+  });
+
+  it("varias guías por id (las que frenan un acta): mira sus filas y nada más", async () => {
+    H.estado.filas.push({ ...H.fila("otra", "Tornillo", 1, 1), gtfNumber: "010-001-0000099" });
+    H.estado.filas.push({ ...H.fila("otra-2", "Copal", 1, 1), gtfNumber: "010-001-0000099" });
+    const plan = await AcomodarTrozasDB.planear("t-blas", { woodEntryIds: ["copal"] });
+    expect(plan.guias.map((g) => g.gtf)).toEqual(["010-001-0000005"]);
+    await expect(AcomodarTrozasDB.planear("t-blas", { woodEntryIds: ["no-existe"] })).rejects.toBeInstanceOf(AlcanceNoEncontrado);
   });
 });

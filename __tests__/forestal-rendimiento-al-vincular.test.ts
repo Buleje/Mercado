@@ -86,9 +86,19 @@ vi.mock("@/lib/prisma", () => ({
 }));
 vi.mock("@/lib/cache", () => ({ invalidateByPrefix: () => {} }));
 vi.mock("@/lib/forestal/ctp-audit", () => ({ auditCtp: () => {} }));
+/* Desde el 27-09 la atribución va DENTRO de la tx (`setConsumosEnTx`) y los
+   cierres se leen antes de abrirla: el mismo espía cuenta las dos puertas. */
+vi.mock("@/lib/db/forest-ctp-cierre.db", () => ({ ForestCtpCierreDB: { list: async () => [] } }));
 vi.mock("@/lib/db/forest-ctp-consumo.db", async (real) => {
   const mod = (await real()) as Record<string, unknown>;
-  return { ...mod, ForestCtpConsumoDB: { setConsumos: H.estado.setConsumos } };
+  return {
+    ...mod,
+    ForestCtpConsumoDB: {
+      setConsumos: H.estado.setConsumos,
+      setConsumosEnTx: H.estado.setConsumos,
+      despuesDeConsumos: async () => {},
+    },
+  };
 });
 
 import { ForestLoteAserrioDB } from "@/lib/db/forest-lote-aserrio.db";

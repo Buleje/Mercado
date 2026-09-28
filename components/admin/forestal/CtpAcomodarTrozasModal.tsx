@@ -8,8 +8,10 @@
  * Huánuco). Acá se ve, antes de tocar nada, qué troza pasa de qué fila a cuál
  * y cómo queda cada fila contra lo que declara; con un clic se acomoda.
  *
- * Se abre desde la ficha de la guía (una guía) y desde «Opciones» de Ingresos
- * (todas). Mover una troza es un acto explícito: nada se acomoda solo.
+ * Se abre desde la ficha de la guía (una guía), desde «Opciones» de Ingresos
+ * (todas) y desde el acta de consumo (las guías que la frenan, con las trozas
+ * apartadas en ESE lote incluidas). Mover una troza es un acto explícito: nada
+ * se acomoda solo.
  */
 
 import { ArrowLeftRight, Check, Loader2 } from "@buleje/design-system/icons";
@@ -25,6 +27,7 @@ export default function CtpAcomodarTrozasModal({
   alcance,
   descripcion,
   aboveModals = false,
+  loteId = null,
   onClose,
   onAcomodado,
 }: {
@@ -33,13 +36,17 @@ export default function CtpAcomodarTrozasModal({
   descripcion: string;
   /** Se abre desde otro modal (la ficha de la guía): tiene que quedar encima. */
   aboveModals?: boolean;
+  /** Desde el acta de un lote: sus trozas apartadas también se acomodan. */
+  loteId?: string | null;
   onClose: () => void;
   /** Después de mover: para que quien la abrió relea sus trozas. */
   onAcomodado?: (r: ResultadoAcomodo) => void;
 }) {
-  const { plan, cargando, aplicando, error, resultado, aplicar } = useAcomodarTrozas(alcance);
+  const { plan, cargando, aplicando, error, resultado, aplicar } = useAcomodarTrozas(alcance, { loteId });
   const t = plan?.totales;
-  const unaGuia = "woodEntryId" in alcance;
+  /* Pocas guías con nombre (una, o las 2-3 que frenan un acta): todas a la
+     vista y con su lista abierta. En tanda, plegadas. */
+  const unaGuia = "woodEntryId" in alcance || ("woodEntryIds" in alcance && alcance.woodEntryIds.length <= 3);
   /* En tanda se listan sólo las guías con algo que decir: las que ya estaban
      en orden no aportan nada y alargan el scroll. */
   const guias = (plan?.guias ?? []).filter(

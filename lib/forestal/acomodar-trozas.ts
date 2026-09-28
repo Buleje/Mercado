@@ -590,7 +590,8 @@ const nombreTraba: Record<TrabaDeFila, string> = {
 /** Por qué una troza no se movió, en una línea. */
 export function porQueNoSeMueve(q: Pick<TrozaQuieta, "motivo" | "fila" | "destino" | "lote">): string {
   const m = q.motivo;
-  if (m === "en_lote") return `está en el lote ${q.lote ?? "abierto"}, sin aserrar todavía`;
+  /* La salida existe (27-09): desde el acta de ESE lote sí se acomoda. */
+  if (m === "en_lote") return `está en el lote ${q.lote ?? "abierto"}: acomódala desde «Revisar y consumir» de ese lote`;
   if (m === "consumida") return "ya entró a una corrida: su m³ está descontado en la fila donde está";
   if (m === "despachada") return "ya salió despachada sin aserrar";
   if (m === "corte_en_mes_cerrado") return "se retrozó en un mes cerrado";

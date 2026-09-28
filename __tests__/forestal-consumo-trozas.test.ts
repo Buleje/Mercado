@@ -10,6 +10,9 @@ import {
   type TrozaConsumible,
   cuposDeGuia,
   motivosDeCupo,
+  motivoDeCupo,
+  avisosDeCupo,
+  frenaElActa,
 } from "@/lib/forestal/consumo-trozas";
 
 /**
@@ -209,13 +212,17 @@ describe("cuposDeGuia — el tope de I2, antes de firmar (ADR-353)", () => {
     // No es culpa de quien consume: el mensaje manda a CUADRAR la guía (ADR-353).
     const [malDeclarado] = cuposDeGuia([pieza({ volumenM3: 8.247, guiaVolumenM3: 4.161, guiaConsumidoM3: 0 })]);
     expect(malDeclarado.descuadrado).toBe(true);
+    expect(malDeclarado.causa).toBe("descuadre");
     expect(motivosDeCupo([malDeclarado])[0]).toMatch(/no cuadra consigo misma/);
-    expect(motivosDeCupo([malDeclarado])[0]).toMatch(/cuadrarla antes de llevar/);
+    expect(motivosDeCupo([malDeclarado])[0]).toMatch(/Hay que cuadrarla/);
+    // La especie que nombra es la de la FILA, con el volumen de la fila.
+    expect(motivosDeCupo([malDeclarado])[0]).toMatch(/declara 4.161 m³ de Mashonaste y sus trozas suman 8.247/);
 
     // Con consumo previo, es cupo: el arreglo es elegir menos.
     const [sinCupo] = cuposDeGuia([pieza({ volumenM3: 6, guiaVolumenM3: 10, guiaConsumidoM3: 8 })]);
     expect(sinCupo.descuadrado).toBe(false);
-    expect(motivosDeCupo([sinCupo])[0]).toMatch(/Saca 4.000 m³/);
+    expect(sinCupo.causa).toBe("sin_cupo");
+    expect(motivosDeCupo([sinCupo])[0]).toMatch(/saca 4.000 m³/);
   });
 
   it("un litro de redondeo NO es un exceso", () => {
@@ -261,5 +268,123 @@ describe("bloquesDeGuiaDe — sembrar la Distribución de rolliza desde el Libro
   it("sin permiso en la troza, el bloque queda con `null` — no con un string vacío que parezca dato", () => {
     const [b] = bloquesDeGuiaDe([troza({ permiso: undefined })]);
     expect(b.permiso).toBeNull();
+  });
+});
+
+/**
+ * El caso de Blas del 27-09 (lote LA-2026-011, 12 trozas de Cachimbo): el acta
+ * decía «la guía 010-001-0000009 declara 8.309 m³ de Cachimbo… no cuadra
+ * consigo misma». Medido en la base: la guía cuadra (Cachimbo 10,677 ·
+ * Yacuchapana 8,309 en la cabecera y en la lista), pero sus 4 trozas de
+ * Cachimbo colgaban de la fila de Yacuchapana. Mismo patrón en 0000005, 0000006
+ * y 0000008 — 8 guías, 29 trozas en Blas (ADR-435).
+ */
+describe("cuposDeGuia — trozas en la fila de otra especie (Blas 27-09)", () => {
+  /** Una troza de Cachimbo colgada de la fila de otra especie de su guía. */
+  const cachimbo = (id: string, m3: number, fila: { id: string; gtf: string; especie: string; declara: number; suFila: string }) =>
+    troza({
+      id,
+      woodEntryId: fila.id,
+      gtfNumber: fila.gtf,
+      especieComun: "Cachimbo",
+      volumenM3: m3,
+      guiaEspecie: fila.especie,
+      guiaVolumenM3: fila.declara,
+      guiaConsumidoM3: 0,
+      filaDeSuEspecieId: fila.suFila,
+    });
+  const g09 = { id: "yacuchapana-09", gtf: "010-001-0000009", especie: "Yacuchapana", declara: 8.309, suFila: "cachimbo-09" };
+  const g05 = { id: "copal-05", gtf: "010-001-0000005", especie: "Copal", declara: 1.752, suFila: "cachimbo-05" };
+  const g06 = { id: "shimbillo-06", gtf: "010-001-0000006", especie: "Shimbillo", declara: 4.102, suFila: "cachimbo-06" };
+  const g08 = { id: "azucar-08", gtf: "010-001-0000008", especie: "Azucar huayo", declara: 6.049, suFila: "cachimbo-08" };
+  const lote011 = [
+    cachimbo("157A", 4.469, g09),
+    cachimbo("157B", 2.8, g09),
+    cachimbo("232A", 2.14, g09),
+    cachimbo("232B", 1.268, g09),
+    cachimbo("115-A", 2.808, g05),
+    cachimbo("115-B", 2.153, g05),
+    cachimbo("115-C", 1.956, g05),
+    cachimbo("226-B", 1.44, g05),
+    cachimbo("233-A", 3.453, g05),
+    cachimbo("233-B", 2.394, g06),
+    cachimbo("233-C", 1.917, g06),
+    cachimbo("226-A", 2.149, g08),
+  ];
+
+  it("0000009: no es un descuadre — nombra Cachimbo en la fila de Yacuchapana, con sus m³", () => {
+    const c = cuposDeGuia(lote011).find((x) => x.gtfNumber === "010-001-0000009")!;
+    expect(c).toMatchObject({ especie: "Yacuchapana", declarado: 8.309, pedido: 10.677, causa: "otra_fila", descuadrado: false });
+    expect(c.enOtraFila).toEqual([{ especie: "Cachimbo", piezas: 4, m3: 10.677 }]);
+    const frase = motivoDeCupo(c);
+    expect(frase).toBe(
+      "Las trozas de Cachimbo de la guía 010-001-0000009 están en la fila de Yacuchapana. La guía está bien: solo hay que acomodarlas.",
+    );
+    // El bug: la especie del lote con el volumen de la fila de otra especie.
+    expect(frase).not.toMatch(/8.309 m³ de Cachimbo/);
+    expect(frase).not.toMatch(/no cuadra/);
+  });
+
+  it("también frena la guía que TODAVÍA entra (0000008): consumida así, su m³ queda en la fila equivocada", () => {
+    const c = cuposDeGuia(lote011).find((x) => x.gtfNumber === "010-001-0000008")!;
+    expect(c.exceso).toBe(0);
+    expect(c.causa).toBe("otra_fila");
+    expect(frenaElActa(c)).toBe(true);
+  });
+
+  it("las 4 guías son UN aviso con la lista y un título corto, no cuatro cajas", () => {
+    const avisos = avisosDeCupo(cuposDeGuia(lote011));
+    expect(avisos).toHaveLength(1);
+    const [a] = avisos;
+    expect(a.causa).toBe("otra_fila");
+    expect(a.titulo).toBe("4 guías tienen sus trozas en otra fila");
+    expect(a.titulo.split(/\s+/).length).toBeLessThanOrEqual(12);
+    expect(a.detalle).toBe("Las guías están bien: solo hay que acomodar sus trozas.");
+    expect(a.guias.map((g) => g.gtfNumber).sort()).toEqual([
+      "010-001-0000005",
+      "010-001-0000006",
+      "010-001-0000008",
+      "010-001-0000009",
+    ]);
+    expect(a.guias.find((g) => g.gtfNumber === "010-001-0000005")!.linea).toBe(
+      "5 trozas de Cachimbo (11.810 m³) en la fila de Copal",
+    );
+  });
+
+  it("después de acomodar (cada troza en su fila) el acta ya no frena", () => {
+    const acomodadas = lote011.map((t) => ({
+      ...t,
+      woodEntryId: t.filaDeSuEspecieId!,
+      guiaEspecie: "Cachimbo",
+      filaDeSuEspecieId: null,
+      /* Lo que declara cada fila de Cachimbo en Blas. */
+      guiaVolumenM3: { "cachimbo-09": 10.677, "cachimbo-05": 11.81, "cachimbo-06": 4.311, "cachimbo-08": 2.149 }[t.filaDeSuEspecieId!]!,
+    }));
+    const cupos = cuposDeGuia(acomodadas);
+    expect(cupos.filter(frenaElActa)).toEqual([]);
+    expect(avisosDeCupo(cupos)).toEqual([]);
+  });
+
+  it("una troza en SU fila no se marca aunque traiga el campo", () => {
+    const [c] = cuposDeGuia([troza({ woodEntryId: "w1", filaDeSuEspecieId: "w1", guiaVolumenM3: 10 })]);
+    expect(c.causa).toBeNull();
+    expect(c.enOtraFila).toEqual([]);
+  });
+
+  it("causas distintas = avisos distintos, en el orden en que se arreglan (acomodar, cuadrar, elegir menos)", () => {
+    const cupos = cuposDeGuia([
+      troza({ id: "a", woodEntryId: "sin-cupo", gtfNumber: "C", volumenM3: 6, guiaVolumenM3: 10, guiaConsumidoM3: 8 }),
+      troza({ id: "b", woodEntryId: "mal", gtfNumber: "B", volumenM3: 9, guiaVolumenM3: 4, guiaConsumidoM3: 0 }),
+      cachimbo("c", 4.469, g09),
+    ]);
+    const avisos = avisosDeCupo(cupos);
+    expect(avisos.map((a) => a.causa)).toEqual(["otra_fila", "descuadre", "sin_cupo"]);
+    expect(avisos.map((a) => a.titulo)).toEqual([
+      "La guía 010-001-0000009 tiene sus trozas en otra fila",
+      "La guía B no cuadra consigo misma",
+      "La guía C no alcanza para lo que elegiste",
+    ]);
+    for (const a of avisos) expect(a.titulo.split(/\s+/).length).toBeLessThanOrEqual(12);
+    expect(avisos[2]!.guias[0]!.linea).toBe("saca 4.000 m³ (quedan 2.000 de 10.000)");
   });
 });

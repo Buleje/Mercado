@@ -29,6 +29,8 @@ import {
   mensajeEntroDespues,
   trozasQueEntraronDespues,
 } from "@/lib/forestal/recepcion-antes-de-la-sierra";
+import { claveDeLaGuia, filaDeEspecie } from "@/lib/forestal/acomodar-trozas";
+import { fraseTrozasEnOtraFila } from "@/lib/forestal/consumo-trozas";
 
 const CACHE_PREFIX = "forest-ctp";
 
@@ -272,6 +274,48 @@ export function exigirIngresoAntesDeLaCorrida(
   });
 }
 
+/**
+ * ¿La fila tiene trozas de OTRA especie que su guía sí tiene como fila propia?
+ * (ADR-435). Devuelve esas especies y la de la fila, o `null`.
+ *
+ * Sólo se pregunta cuando I2 ya va a rechazar: es el caso de Blas (27-09) en el
+ * que el mensaje decía «la guía no cuadra consigo misma» y la guía cuadraba —
+ * las trozas de Cachimbo de 0000009 colgaban de la fila de Yacuchapana. El
+ * criterio es el de «Acomodar trozas» (`filaDeEspecie`), para que el mensaje
+ * no mande a acomodar algo que el acomodo no movería.
+ */
+async function especiesEnOtraFila(
+  tx: Prisma.TransactionClient,
+  tenantId: string,
+  woodEntryId: string,
+): Promise<{ fila: string; especies: string[] } | null> {
+  const fila = await tx.woodEntry.findFirst({
+    where: { id: woodEntryId, tenantId },
+    select: { gtfNumber: true, gtfSeries: true, speciesCommonName: true },
+  });
+  if (!fila) return null;
+  const clave = claveDeLaGuia(fila.gtfSeries, fila.gtfNumber);
+  const hermanas = (
+    await tx.woodEntry.findMany({
+      where: { tenantId, deletedAt: null, gtfNumber: fila.gtfNumber, status: { notIn: ["anulado", "rechazado"] } },
+      select: { id: true, gtfSeries: true, gtfNumber: true, speciesCommonName: true, speciesScientificName: true },
+    })
+  )
+    .filter((h) => claveDeLaGuia(h.gtfSeries, h.gtfNumber) === clave)
+    .map((h) => ({ id: h.id, especie: h.speciesCommonName, cientifico: h.speciesScientificName }));
+  if (hermanas.length < 2) return null;
+  const trozas = await tx.woodEntryTroza.findMany({
+    where: { tenantId, woodEntryId },
+    select: { especieComun: true, especieCientifica: true },
+  });
+  const especies = new Set<string>();
+  for (const t of trozas) {
+    const d = filaDeEspecie(t, hermanas);
+    if (d.fila && d.fila.id !== woodEntryId) especies.add((t.especieComun ?? "").trim() || d.fila.especie || "otra especie");
+  }
+  return especies.size > 0 ? { fila: fila.speciesCommonName, especies: [...especies].sort((a, b) => a.localeCompare(b, "es")) } : null;
+}
+
 export class ForestCtpConsumoDB {
   /**
    * Reemplaza el set de consumos de una línea, validando I1 + I2 + tenant
@@ -468,21 +512,27 @@ export class ForestCtpConsumoDB {
          * cupo: la guía declara menos de lo que miden sus propias piezas.
          */
         const nadaConsumido = (yaConsumido.get(c.woodEntryId) ?? 0) === 0;
+        /* Una TERCERA causa (27-09), antes que las otras dos: las trozas
+           cuelgan de la fila de otra especie de su guía (ADR-435). La guía
+           está bien; decirle «no cuadra» mandaba a cambiar cifras oficiales. */
+        const otraFila = await especiesEnOtraFila(tx, tenantId, c.woodEntryId);
         throw new CtpInvariantError(
-          nadaConsumido
-            ? `La guía ${ingreso.gtfNumber} declara ${r4(Number(ingreso.volumeM3))} m³ en su cabecera, ` +
-                `pero las piezas que estás llevando a la sierra suman ${r4(Number(c.volumeM3))} m³. ` +
-                `La guía no cuadra consigo misma — el total del lote no es el problema, es esa guía. ` +
-                `Cuádrala en Ingresos: toca el aviso naranja de su fila.`
-            : `De la guía ${ingreso.gtfNumber} quedan ${r4(disponible)} m³ sin consumir ` +
-                `(declara ${r4(Number(ingreso.volumeM3))} y ya se consumieron ` +
-                `${r4(yaConsumido.get(c.woodEntryId) ?? 0)}), y estás pidiendo ${r4(Number(c.volumeM3))} m³.`,
+          otraFila
+            ? `${fraseTrozasEnOtraFila(ingreso.gtfNumber, otraFila.especies, otraFila.fila)} ` +
+                `Hazlo en Ingresos › Opciones › Acomodar trozas.`
+            : nadaConsumido
+              ? `La guía ${ingreso.gtfNumber} no cuadra consigo misma: declara ${r4(Number(ingreso.volumeM3))} m³ ` +
+                  `y las piezas que llevas suman ${r4(Number(c.volumeM3))} m³. ` +
+                  `El lote no es el problema, es esa guía: cuádrala en Ingresos.`
+              : `La guía ${ingreso.gtfNumber} no alcanza: quedan ${r4(disponible)} m³ ` +
+                  `de ${r4(Number(ingreso.volumeM3))} y pides ${r4(Number(c.volumeM3))} m³.`,
           "I2_SOBRE_CONSUMO",
           {
             gtfNumber: ingreso.gtfNumber,
             disponible: r4(disponible),
             pedido: r4(Number(c.volumeM3)),
             volumenIngreso: r4(Number(ingreso.volumeM3)),
+            causa: otraFila ? "otra_fila" : nadaConsumido ? "descuadre" : "sin_cupo",
           },
         );
       }

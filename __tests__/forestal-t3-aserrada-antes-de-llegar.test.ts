@@ -189,10 +189,22 @@ vi.mock("@/lib/forestal/ctp-audit", async (real) => ({
   ...((await real()) as Record<string, unknown>),
   auditCtp: () => {},
 }));
-vi.mock("@/lib/db/forest-ctp-cierre.db", () => ({ ForestCtpCierreDB: { closedPeriodOf: async () => null } }));
+/* Desde el 27-09 la atribución de sumar/consumir va DENTRO de la tx
+   (`setConsumosEnTx`) y los cierres se leen antes de abrirla: el mismo espía
+   cuenta las dos puertas. */
+vi.mock("@/lib/db/forest-ctp-cierre.db", () => ({
+  ForestCtpCierreDB: { closedPeriodOf: async () => null, list: async () => [] },
+}));
 vi.mock("@/lib/db/forest-ctp-consumo.db", async (real) => {
   const mod = (await real()) as Record<string, unknown>;
-  return { ...mod, ForestCtpConsumoDB: { setConsumos: H.estado.setConsumos } };
+  return {
+    ...mod,
+    ForestCtpConsumoDB: {
+      setConsumos: H.estado.setConsumos,
+      setConsumosEnTx: H.estado.setConsumos,
+      despuesDeConsumos: async () => {},
+    },
+  };
 });
 
 import { ForestLoteAserrioDB } from "@/lib/db/forest-lote-aserrio.db";

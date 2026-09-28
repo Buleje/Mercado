@@ -17,8 +17,12 @@ import { leerJson } from "@/lib/errores/sin-dato";
 import { invalidarCtp } from "@/lib/forestal/ctp-fetch";
 import type { PlanAcomodo } from "@/lib/forestal/acomodar-trozas";
 
-/** Qué guías mirar: una (por cualquiera de sus filas), las de un permiso, o todas. */
-export type AlcanceAcomodoCliente = { woodEntryId: string } | { contratoId: string } | { todas: true };
+/** Qué guías mirar: una (por cualquiera de sus filas), varias, las de un permiso, o todas. */
+export type AlcanceAcomodoCliente =
+  | { woodEntryId: string }
+  | { woodEntryIds: string[] }
+  | { contratoId: string }
+  | { todas: true };
 
 export interface ResultadoAcomodo {
   movidas: number;
@@ -29,23 +33,30 @@ export interface ResultadoAcomodo {
 
 const URL_ACOMODAR = "/api/admin/forestal/wood-entries/acomodar-trozas";
 
-const aQuery = (a: AlcanceAcomodoCliente): string =>
-  "woodEntryId" in a
+const aQuery = (a: AlcanceAcomodoCliente, loteId: string | null): string =>
+  ("woodEntryId" in a
     ? `woodEntryId=${encodeURIComponent(a.woodEntryId)}`
-    : "contratoId" in a
-      ? `contratoId=${encodeURIComponent(a.contratoId)}`
-      : "todas=1";
+    : "woodEntryIds" in a
+      ? `woodEntryIds=${a.woodEntryIds.map(encodeURIComponent).join(",")}`
+      : "contratoId" in a
+        ? `contratoId=${encodeURIComponent(a.contratoId)}`
+        : "todas=1") + (loteId ? `&loteId=${encodeURIComponent(loteId)}` : "");
 
 const mensajeDe = (j: { message?: string; error?: string } | null, status: number) =>
   j?.message ?? (j?.error ? `No se pudo (${j.error}).` : `No se pudo (HTTP ${status}).`);
 
-export function useAcomodarTrozas(alcance: AlcanceAcomodoCliente) {
+/**
+ * @param opts.loteId Desde el acta de un lote (27-09): sus trozas apartadas
+ *   también se acomodan (el servidor lo exige abierto).
+ */
+export function useAcomodarTrozas(alcance: AlcanceAcomodoCliente, opts: { loteId?: string | null } = {}) {
+  const loteId = opts.loteId ?? null;
   const [plan, setPlan] = useState<PlanAcomodo | null>(null);
   const [cargando, setCargando] = useState(true);
   const [aplicando, setAplicando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resultado, setResultado] = useState<ResultadoAcomodo | null>(null);
-  const query = aQuery(alcance);
+  const query = aQuery(alcance, loteId);
 
   useEffect(() => {
     let vivo = true;
@@ -81,7 +92,7 @@ export function useAcomodarTrozas(alcance: AlcanceAcomodoCliente) {
         method: "POST",
         credentials: "include",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ ...alcance, movimientos }),
+        body: JSON.stringify({ ...alcance, ...(loteId ? { loteId } : {}), movimientos }),
       });
       const j = await leerJson<ResultadoAcomodo & { despues?: PlanAcomodo; message?: string; error?: string }>(r);
       if (!r.ok || !j) {
@@ -99,7 +110,7 @@ export function useAcomodarTrozas(alcance: AlcanceAcomodoCliente) {
     } finally {
       setAplicando(false);
     }
-  }, [plan, alcance]);
+  }, [plan, alcance, loteId]);
 
   return { plan, cargando, aplicando, error, resultado, aplicar };
 }

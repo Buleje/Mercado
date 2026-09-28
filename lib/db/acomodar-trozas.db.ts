@@ -35,11 +35,31 @@ import { vivaLinea } from "./wood-entries.db";
  * ni aunque le llegue un id armado a mano.
  */
 
-/** Qué guías mirar. */
-export type AlcanceAcomodo = { woodEntryId: string } | { contratoId: string } | { todas: true };
+/** Qué guías mirar: una, varias (las que frenan un acta, 27-09), las de un permiso, o todas. */
+export type AlcanceAcomodo =
+  | { woodEntryId: string }
+  | { woodEntryIds: string[] }
+  | { contratoId: string }
+  | { todas: true };
+
+/**
+ * Opciones del acomodo.
+ *
+ * `loteId`: las trozas apartadas en ESE lote abierto también se mueven (27-09).
+ * La regla general no cambia —una troza en un lote abierto se queda, porque
+ * consumir un lote anota los m³ por fila y marca las piezas en dos pasos—, pero
+ * desde el acta de ese mismo lote el operador está POR consumirlo: sin esto, las
+ * 12 trozas de Cachimbo de LA-2026-011 (Blas) no se podían ni acomodar ni
+ * consumir. La pieza sigue en su lote; sólo cambia de fila. El lote se bloquea
+ * (`FOR UPDATE`, antes que las trozas: el orden de `vincular`) y tiene que
+ * seguir abierto.
+ */
+export interface OpcionesAcomodo {
+  loteId?: string | null;
+}
 
 /** Lo que la DB class necesita del cliente (la tx o `prisma`). */
-type Cliente = Pick<Prisma.TransactionClient, "woodEntry" | "woodEntryTroza" | "forestCtpConsumo">;
+type Cliente = Pick<Prisma.TransactionClient, "woodEntry" | "woodEntryTroza" | "forestCtpConsumo" | "$queryRaw">;
 
 const CACHE_INGRESOS = "wood-entries";
 const CACHE_LIBRO = "forest-ctp";
@@ -79,11 +99,18 @@ async function filasDelAlcance(db: Cliente, tenantId: string, alcance: AlcanceAc
           where: { tenantId, id: alcance.woodEntryId, deletedAt: null },
           select: { gtfNumber: true, gtfSeries: true },
         })
-      : await db.woodEntry.findMany({
-          where: { tenantId, contratoId: alcance.contratoId, deletedAt: null },
-          select: { gtfNumber: true, gtfSeries: true },
-        });
-  if ("woodEntryId" in alcance && semilla.length === 0) throw new AlcanceNoEncontrado();
+      : "woodEntryIds" in alcance
+        ? await db.woodEntry.findMany({
+            where: { tenantId, id: { in: alcance.woodEntryIds }, deletedAt: null },
+            select: { gtfNumber: true, gtfSeries: true },
+          })
+        : await db.woodEntry.findMany({
+            where: { tenantId, contratoId: alcance.contratoId, deletedAt: null },
+            select: { gtfNumber: true, gtfSeries: true },
+          });
+  /* Pedir guías con nombre y no encontrar NINGUNA en este libro es un 404 (id
+     ajeno o borrado); con varias, alcanza con que una exista. */
+  if (("woodEntryId" in alcance || "woodEntryIds" in alcance) && semilla.length === 0) throw new AlcanceNoEncontrado();
   if (semilla.length === 0) return [];
 
   const claves = new Set(semilla.map((s) => claveDeLaGuia(s.gtfSeries, s.gtfNumber)));
@@ -117,8 +144,32 @@ const guiaCambio = (detalle: Record<string, unknown>) =>
     { motivo: "GUIA_CAMBIO", ...detalle },
   );
 
-/** Lee todo lo que el plan necesita y lo arma. */
-async function leerYPlanear(db: Cliente, tenantId: string, alcance: AlcanceAcomodo) {
+/**
+ * El id del lote si existe en este negocio y sigue ABIERTO; si no, `null` (sus
+ * trozas no se liberan). Con `bloquear`, dentro de la tx y `FOR UPDATE`.
+ */
+async function loteAbiertoDe(
+  db: Cliente,
+  tenantId: string,
+  loteId: string | null,
+  bloquear: boolean,
+): Promise<string | null> {
+  if (!loteId) return null;
+  const filas = bloquear
+    ? await db.$queryRaw<{ id: string; status: string }[]>`
+        SELECT "id", "status" FROM "ForestLoteAserrio"
+        WHERE "id" = ${loteId} AND "tenantId" = ${tenantId} AND "deletedAt" IS NULL
+        FOR UPDATE
+      `
+    : await db.$queryRaw<{ id: string; status: string }[]>`
+        SELECT "id", "status" FROM "ForestLoteAserrio"
+        WHERE "id" = ${loteId} AND "tenantId" = ${tenantId} AND "deletedAt" IS NULL
+      `;
+  return filas[0]?.status === "abierto" ? filas[0].id : null;
+}
+
+/** Lee todo lo que el plan necesita y lo arma. `loteLibre` = el lote abierto cuyas trozas SÍ se mueven. */
+async function leerYPlanear(db: Cliente, tenantId: string, alcance: AlcanceAcomodo, loteLibre: string | null = null) {
   const filas = deGuiasDeVariasFilas(await filasDelAlcance(db, tenantId, alcance));
   const ids = filas.map((f) => f.id);
   if (ids.length === 0) return { plan: planearAcomodo([], []), ids };
@@ -146,7 +197,7 @@ async function leerYPlanear(db: Cliente, tenantId: string, alcance: AlcanceAcomo
         fechaRetrozo: true,
         consumidaEn: { select: { status: true, deletedAt: true } },
         despachadaEn: { select: { status: true, deletedAt: true } },
-        loteAserrio: { select: { code: true, status: true } },
+        loteAserrio: { select: { id: true, code: true, status: true } },
       },
     }),
   ]);
@@ -160,7 +211,10 @@ async function leerYPlanear(db: Cliente, tenantId: string, alcance: AlcanceAcomo
           ...t,
           consumidaViva: vivaLinea(t.consumidaEn),
           despachadaViva: vivaLinea(t.despachadaEn),
-          loteAbierto: t.loteAserrio?.status === "abierto" ? t.loteAserrio.code : null,
+          loteAbierto:
+            t.loteAserrio?.status === "abierto" && !(loteLibre && t.loteAserrio.id === loteLibre)
+              ? t.loteAserrio.code
+              : null,
         },
         mesCerrado,
       ),
@@ -193,9 +247,10 @@ function detalleDeGuia(gtf: string, movidas: readonly MovimientoDeTroza[]): stri
 
 export const AcomodarTrozasDB = {
   /** La vista previa. No escribe nada. */
-  async planear(tenantId: string, alcance: AlcanceAcomodo): Promise<PlanAcomodo> {
+  async planear(tenantId: string, alcance: AlcanceAcomodo, opts: OpcionesAcomodo = {}): Promise<PlanAcomodo> {
     if (!tenantId) throw new Error("tenantId is required");
-    return (await leerYPlanear(prisma, tenantId, alcance)).plan;
+    const loteLibre = await loteAbiertoDe(prisma, tenantId, opts.loteId ?? null, false);
+    return (await leerYPlanear(prisma, tenantId, alcance, loteLibre)).plan;
   },
 
   /**
@@ -210,12 +265,16 @@ export const AcomodarTrozasDB = {
     tenantId: string,
     alcance: AlcanceAcomodo,
     user: string,
-    opts: { movimientos?: readonly { trozaId: string; haciaId: string }[] } = {},
+    opts: OpcionesAcomodo & { movimientos?: readonly { trozaId: string; haciaId: string }[] } = {},
   ): Promise<{ movidas: number; m3Movidos: number; yaNoSePudieron: number; guias: number; despues: PlanAcomodo }> {
     if (!tenantId) throw new Error("tenantId is required");
     const pedidas = opts.movimientos ? new Map(opts.movimientos.map((m) => [m.trozaId, m.haciaId])) : null;
 
     const hecho = await prisma.$transaction(async (tx) => {
+      /* 0 · El lote cuyas trozas se liberan, bloqueado ANTES que las trozas (el
+         orden de `vincular`): si ya no está abierto, sus trozas vuelven a ser
+         intocables y el plan las lista como quietas. */
+      const loteLibre = await loteAbiertoDe(tx, tenantId, opts.loteId ?? null, true);
       /* 1 · Las filas del alcance (sólo guías de 2+ filas) y, con ellas, las
          trozas bloqueadas en orden de id: un consumo o un despacho que llegue
          a la vez espera su turno. */
@@ -231,7 +290,7 @@ export const AcomodarTrozasDB = {
       }
 
       /* 2 · El plan, releído con las piezas ya bloqueadas. */
-      const { plan } = await leerYPlanear(tx, tenantId, alcance);
+      const { plan } = await leerYPlanear(tx, tenantId, alcance, loteLibre);
 
       let movidas = 0;
       let yaNoSePudieron = 0;
@@ -290,7 +349,7 @@ export const AcomodarTrozasDB = {
       }
     }
 
-    const despues = (await leerYPlanear(prisma, tenantId, alcance)).plan;
+    const despues = (await leerYPlanear(prisma, tenantId, alcance, await loteAbiertoDe(prisma, tenantId, opts.loteId ?? null, false))).plan;
     const m3Movidos =
       Math.round(hecho.porGuia.reduce((s, g) => s + g.movidas.reduce((a, m) => a + (m.m3 ?? 0), 0), 0) * 10_000) / 10_000;
     return {

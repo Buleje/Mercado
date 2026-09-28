@@ -211,7 +211,7 @@ describe("planearAcomodo — lo que ya está cargado", () => {
       ["en-lote", "en_lote", "LA-2026-004"],
       ["madre", "en_lote", "LA-2026-005"],
     ]);
-    expect(porQueNoSeMueve(g.quietas[0]!)).toBe("está en el lote LA-2026-004, sin aserrar todavía");
+    expect(porQueNoSeMueve(g.quietas[0]!)).toBe("está en el lote LA-2026-004: acomódala desde «Revisar y consumir» de ese lote");
   });
 
   it("una fila anulada no recibe, y sus propias piezas no se mencionan", () => {

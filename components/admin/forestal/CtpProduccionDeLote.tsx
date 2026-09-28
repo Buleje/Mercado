@@ -23,8 +23,11 @@ import { invalidarCtp } from "@/lib/forestal/ctp-fetch";
 import type { ResultadoCobro } from "@/lib/forestal/tarifa-aserrio";
 import { mensajeCobroAserrio } from "./hooks/guardar-produccion-corrida";
 import { corridasAMedioDeclarar, origenesDeTrozas } from "@/lib/forestal/produccion-paquetes";
-import { cuposDeGuia, motivoDeCupo } from "@/lib/forestal/consumo-trozas";
+import { cuposDeGuia, frenaElActa } from "@/lib/forestal/consumo-trozas";
+import { useMiRol } from "@/hooks/use-mi-rol";
 import CtpCuadrarGuiaModal from "./CtpCuadrarGuiaModal";
+import CtpAcomodarTrozasModal from "./CtpAcomodarTrozasModal";
+import CtpAvisosDeCupo from "./ctp-avisos-de-cupo";
 import CtpProduccionPendiente from "./CtpProduccionPendiente";
 import CtpBarraSeleccion, { CifraSeleccion } from "./ctp-barra-seleccion";
 import { pieTablarDe, type LoteAserrio } from "@/lib/forestal/lotes-aserrio";
@@ -294,7 +297,12 @@ export default function CtpProduccionDeLote({
    * las dos pantallas dirían cosas distintas de la misma madera.
    */
   const cupos = useMemo(() => cuposDeGuia(alConsumo), [alConsumo]);
-  const excesos = useMemo(() => cupos.filter((c) => c.exceso > 0), [cupos]);
+  /* El MISMO freno que el acta de Consumos (27-09): pasarse del tope o trozas
+     en la fila de otra especie de su guía (ADR-435). */
+  const excesos = useMemo(() => cupos.filter(frenaElActa), [cupos]);
+  const [acomodar, setAcomodar] = useState<string[] | null>(null);
+  const rol = useMiRol();
+  const puedeAcomodar = rol == null || rol === "admin" || rol === "owner" || rol === "superadmin";
   const [cuadre, setCuadre] = useState<{ woodEntryId: string; gtfNumber: string | null } | null>(null);
 
   const material: MaterialAConsumir = useMemo(
@@ -388,7 +396,7 @@ export default function CtpProduccionDeLote({
       if (!r.ok) {
         throw new Error(
           `${json?.message ?? json?.error ?? `El servidor respondió ${r.status}`} ` +
-            `(la corrida N° ${consumo.corrida.lineNo} quedó abierta con su materia prima: declarale la producción desde la tabla).`,
+            `(la corrida N° ${consumo.corrida.lineNo} quedó abierta con su materia prima: declárale la producción desde la tabla).`,
         );
       }
 
@@ -660,26 +668,28 @@ export default function CtpProduccionDeLote({
           accionDisabled={excesos.length > 0}
           /* El botón apagado sin decir por qué se lee como que la pantalla está
              rota: el motivo del tope va acá, y el detalle con su arreglo abajo. */
-          aviso={excesos.length > 0 ? "Una guía se pasa de su tope — mira el aviso de abajo" : null}
+          aviso={excesos.length > 0 ? "Una guía frena la producción: mira el aviso de abajo" : null}
           onAccion={() => { setError(null); setAbierto(true); }}
         />
       )}
 
       {/* Lo que frena la producción, con su causa y el botón para arreglarlo
           (ADR-359). El total del lote puede estar bien y una de sus guías no. */}
-      {excesos.map((c) => (
-        <div
-          key={c.woodEntryId}
-          className="flex flex-wrap items-start gap-2 rounded-xl bg-[var(--data-error-500)]/12 px-3 py-2 text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
-        >
-          <span className="flex-1">{motivoDeCupo(c)}</span>
-          {c.descuadrado && (
-            <Btn variant="secondary" onClick={() => setCuadre({ woodEntryId: c.woodEntryId, gtfNumber: c.gtfNumber })}>
-              Cuadrar la guía
-            </Btn>
-          )}
-        </div>
-      ))}
+      <CtpAvisosDeCupo
+        cupos={excesos}
+        puedeAcomodar={puedeAcomodar}
+        onAcomodar={setAcomodar}
+        onCuadrar={(woodEntryId, gtfNumber) => setCuadre({ woodEntryId, gtfNumber })}
+      />
+      {acomodar && (
+        <CtpAcomodarTrozasModal
+          alcance={{ woodEntryIds: acomodar }}
+          descripcion={`Desde la producción del lote ${lote.code}`}
+          loteId={lote.id}
+          onClose={() => setAcomodar(null)}
+          onAcomodado={() => void estado.recargar()}
+        />
+      )}
 
       {cuadre && (
         <CtpCuadrarGuiaModal

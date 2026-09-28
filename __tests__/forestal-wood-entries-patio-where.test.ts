@@ -8,7 +8,10 @@
  *  · sin filtro → todas las del tenant, exactamente como antes;
  *  · otro tenant → nunca, aunque su guía tenga el MISMO id de contrato;
  *  · la lista y el conteo filtran IGUAL (si no, «hay N y ves M» miente);
- *  · el mapeo publica `diametroCm` y `guiaCites` (derivado de la guía).
+ *  · el mapeo publica `diametroCm` y `guiaCites` (derivado de la guía);
+ *  · y `filaDeSuEspecieId` (ADR-435, 27-09): la troza que cuelga de la fila de
+ *    OTRA especie de su guía apunta a la de la suya — sólo dentro de la MISMA
+ *    guía y del MISMO negocio.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -38,7 +41,7 @@ function cumple(fila: Fila, where: Record<string, unknown> | undefined): boolean
   return true;
 }
 
-const H = vi.hoisted(() => ({ filas: [] as Record<string, unknown>[], wheres: [] as unknown[] }));
+const H = vi.hoisted(() => ({ filas: [] as Record<string, unknown>[], wheres: [] as unknown[], guias: [] as Record<string, unknown>[] }));
 
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/prisma", () => {
@@ -54,6 +57,14 @@ vi.mock("@/lib/prisma", () => {
         count: vi.fn(async ({ where }: { where: Record<string, unknown> }) => filtrar(where).length),
       },
       forestCtpConsumo: { groupBy: vi.fn(async () => []) },
+      /* Las filas hermanas de cada guía (`filaDeSuEspecie`). No suma al log de
+         `wheres`: ese compara la lista del patio contra su conteo. */
+      woodEntry: {
+        findMany: vi.fn(async ({ where }: { where: Record<string, unknown> }) => {
+          const f = (globalThis as unknown as { __cumple: (a: Fila, b: Record<string, unknown>) => boolean }).__cumple;
+          return H.guias.filter((x) => f(x, where));
+        }),
+      },
     },
   };
 });
@@ -137,6 +148,7 @@ const ids = (xs: { id: unknown }[]) => xs.map((x) => String(x.id)).sort();
 beforeEach(() => {
   H.filas = FILAS;
   H.wheres = [];
+  H.guias = [g1, g2, g3, g4, gAnulada];
 });
 
 describe("trozasDelPatio / contarTrozasDelPatio — «Solo este permiso»", () => {
@@ -201,5 +213,43 @@ describe("trozasComoConsumibles — diámetro y guía CITES", () => {
   it("una guía sin CITES da guiaCites=false, y el filtro por contrato llega al mapeo", async () => {
     const r = await WoodEntriesDB.trozasComoConsumibles(T, { contratoId: C2 });
     expect(r.map((t) => [t.id, t.guiaCites])).toEqual([["t3", false]]);
+  });
+});
+
+/* Blas 27-09: la guía 0000009 tiene fila de Cachimbo (10,677) y de Yacuchapana
+   (8,309), y sus 4 trozas de Cachimbo colgaban de la de Yacuchapana. */
+describe("trozasComoConsumibles — la troza en la fila de otra especie (ADR-435)", () => {
+  const extra = { gtfNumber: "010-001-0000009", gtfSeries: null };
+  const cachimbo = guia("w-cach", T, null, { ...extra, speciesCommonName: "Cachimbo", volumeM3: 10.677 });
+  const yacu = guia("w-yacu", T, null, { ...extra, speciesCommonName: "Yacuchapana", volumeM3: 8.309 });
+  /* Otro negocio con el MISMO número de guía y una fila de Cachimbo: no cuenta. */
+  const ajena = guia("w-ajena", OTRO, null, { ...extra, speciesCommonName: "Cachimbo" });
+  const anulada = guia("w-anul", T, null, { ...extra, speciesCommonName: "Copal", status: "anulado" });
+
+  beforeEach(() => {
+    H.guias = [cachimbo, yacu, ajena, anulada];
+    H.filas = [
+      troza("157A", yacu, { especieComun: "Cachimbo" }),
+      troza("y-1", yacu, { especieComun: "Yacuchapana" }),
+      troza("c-1", cachimbo, { especieComun: "Cachimbo" }),
+      troza("cop", yacu, { especieComun: "Copal" }),
+    ];
+  });
+
+  it("apunta a la fila de su especie; la que está en la suya queda en null", async () => {
+    const r = await WoodEntriesDB.trozasComoConsumibles(T);
+    const por = Object.fromEntries(r.map((t) => [t.id, [t.guiaEspecie, t.filaDeSuEspecieId]]));
+    expect(por["157A"]).toEqual(["Yacuchapana", "w-cach"]);
+    expect(por["y-1"]).toEqual(["Yacuchapana", null]);
+    expect(por["c-1"]).toEqual(["Cachimbo", null]);
+    /* Copal sólo tiene una fila ANULADA: no hay a dónde acomodarla. */
+    expect(por["cop"]).toEqual(["Yacuchapana", null]);
+  });
+
+  it("la fila hermana se pide con el tenant en el where (nunca la de otro negocio)", async () => {
+    await WoodEntriesDB.trozasComoConsumibles(T);
+    const { prisma } = await import("@/lib/prisma");
+    const llamada = vi.mocked(prisma.woodEntry.findMany).mock.calls.at(-1)![0] as { where: Record<string, unknown> };
+    expect(llamada.where.tenantId).toBe(T);
   });
 });

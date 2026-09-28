@@ -534,6 +534,22 @@ export class ForestLoteMixtoDB {
     const mixto = await ForestLoteMixtoDB.bloquear(tx, tenantId, loteMixtoId, "exclusivo");
     ForestLoteMixtoDB.exigirAbierto(mixto, "repartir de nuevo");
 
+    /* Los lotes a los que se SUMA, bloqueados en orden y ANTES que las trozas
+       (27-09): nadie los consume ni los cierra mientras reciben la madera, y el
+       orden es el de `vincularCorrida` y el del acomodo desde el acta (lote →
+       trozas). Al revés, repartir y «Acomodar trozas» sobre el mismo lote se
+       abrazaban (40P01). */
+    const destinos = opts.destinos ?? {};
+    const idsDestino = [...new Set(Object.values(destinos))];
+    if (idsDestino.length > 0) {
+      await tx.$queryRaw`
+        SELECT "id" FROM "ForestLoteAserrio"
+        WHERE "id" = ANY(${idsDestino}::text[]) AND "tenantId" = ${tenantId}
+        ORDER BY "id"
+        FOR UPDATE
+      `;
+    }
+
     await tx.$queryRaw`
       SELECT "id" FROM "WoodEntryTroza"
       WHERE "tenantId" = ${tenantId} AND "loteMixtoId" = ${loteMixtoId}
@@ -566,18 +582,9 @@ export class ForestLoteMixtoDB {
       );
     }
 
-    /* Los lotes a los que se SUMA, bloqueados en orden: nadie los consume ni
-       los cierra mientras reciben la madera. */
-    const destinos = opts.destinos ?? {};
-    const idsDestino = [...new Set(Object.values(destinos))];
+    /* Los lotes a los que se suma (ya bloqueados arriba). */
     let abiertos: LoteAbiertoParaReparto[] = [];
     if (idsDestino.length > 0) {
-      await tx.$queryRaw`
-        SELECT "id" FROM "ForestLoteAserrio"
-        WHERE "id" = ANY(${idsDestino}::text[]) AND "tenantId" = ${tenantId}
-        ORDER BY "id"
-        FOR UPDATE
-      `;
       const lotes = await tx.forestLoteAserrio.findMany({
         where: { tenantId, id: { in: idsDestino }, deletedAt: null },
         select: {
