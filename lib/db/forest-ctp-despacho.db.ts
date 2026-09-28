@@ -27,7 +27,8 @@ import { explicarSaldo, saldosDeCorridas } from "./forest-ctp-saldo-corrida";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
-import { auditCtp } from "@/lib/forestal/ctp-audit";
+import { auditCtp, auditCtpEsperando } from "@/lib/forestal/ctp-audit";
+import { closedPeriodOf, type CtpCierrePeriodo } from "@/lib/forestal/ctp-cierre-types";
 import { corridaDeServicio, corridaMixta, decidirCogs, type MotivoCogs } from "@/lib/forestal/ctp-cogs";
 import { ForestCtpFichaDB } from "./forest-ctp-ficha.db";
 import { CtpInvariantError, ForestCtpConsumoDB, CTP_TX_OPTS } from "./forest-ctp-consumo.db";
@@ -50,6 +51,30 @@ export const ORIGEN_VIGENTE = {
 export interface OrigenInput {
   produccionEntryId: string;
   quantity: number | string;
+}
+
+/** Un despacho cuenta mientras su línea siga viva: borrador o emitido, no anulado ni borrado. */
+const DESPACHO_VIGENTE = ORIGEN_VIGENTE.despacho;
+
+/**
+ * La salida de UNA troza sin aserrar (ADR-363) guarda en `codigoProducto` el
+ * código de la PIEZA (`codigoPlanta`/codificación), y ese código puede ser igual
+ * al de un paquete: en Blas los paquetes «55»…«72» comparten número con 18
+ * trozas libres. Esa línea no lleva ningún paquete, así que no cuenta para «un
+ * paquete, una guía» (ADR-444). La marca que persiste es la pieza colgada del
+ * despacho (`despachadaEnId`), no `desdeTrozas`, que sólo vive en el alta.
+ */
+const NO_ES_SALIDA_DE_TROZAS = { trozasDespachadas: { none: {} } } as const;
+
+/** Un origen como lo devuelve `setOrigenes`: con la corrida que lo sostiene. */
+export type OrigenConCorrida = Prisma.ForestCtpDespachoOrigenGetPayload<{
+  include: { produccion: { select: { lineNo: true; productType: true; speciesCommon: true } } };
+}>;
+
+/** Lo que `setOrigenesEnTx` escribió, y el renglón que `despuesDeOrigenes` narra tras el commit. */
+export interface OrigenesEscritos {
+  origenes: OrigenConCorrida[];
+  auditoria: string;
 }
 
 export interface CogsDespacho {
@@ -151,6 +176,48 @@ export class ForestCtpDespachoDB {
     if (!despachoEntryId) throw new Error("despachoEntryId is required");
     if (!user?.trim()) throw new Error("user is required");
 
+    /* Los cierres se leen ANTES de abrir la transacción, como en `setConsumos`:
+       son un KV que se lee con el cliente global, y adentro pedirían una
+       segunda conexión del pool mientras la tx retiene la suya. */
+    const cierres = await ForestCtpCierreDB.list(tenantId);
+    const escritos = await prisma.$transaction(
+      (tx) => ForestCtpDespachoDB.setOrigenesEnTx(tx, tenantId, despachoEntryId, origenes, user, { cierres }),
+      CTP_TX_OPTS,
+    );
+    await ForestCtpDespachoDB.despuesDeOrigenes(tenantId, despachoEntryId, escritos, user);
+    return escritos.origenes;
+  }
+
+  /**
+   * El núcleo de `setOrigenes` DENTRO de una transacción ajena (ADR-444).
+   *
+   * Existe para que el ALTA de un despacho y su atribución sean un solo acto.
+   * Antes `ForestCtpDB.create` grababa la línea en una transacción y validaba
+   * los orígenes en OTRA: si I5 o el producto rechazaban, el operador veía un
+   * 422 con la línea ya grabada, y cada reintento del modal de la guía sumaba
+   * otra línea igual (medido 27-09 en `main`).
+   *
+   * Las reglas son LAS MISMAS y en el mismo orden (tenant, orientación,
+   * producto, I4, I5, lock de las corridas `ORDER BY id`): es un corte, no una
+   * segunda versión. Lo que NO hace es auditar ni invalidar la caché: eso va
+   * DESPUÉS del commit (`despuesDeOrigenes`) — un renglón escrito antes de un
+   * rollback narraría una atribución que nunca existió.
+   *
+   * `cierres` los lee el llamador ANTES de abrir la transacción
+   * (`ForestCtpCierreDB.list`), por la misma razón que en `setConsumosEnTx`.
+   */
+  static async setOrigenesEnTx(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+    despachoEntryId: string,
+    origenes: OrigenInput[],
+    user: string,
+    { cierres }: { cierres: CtpCierrePeriodo[] },
+  ): Promise<OrigenesEscritos> {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (!despachoEntryId) throw new Error("despachoEntryId is required");
+    if (!user?.trim()) throw new Error("user is required");
+
     const ids = origenes.map((o) => o.produccionEntryId);
     if (new Set(ids).size !== ids.length) {
       throw new CtpInvariantError(
@@ -171,8 +238,11 @@ export class ForestCtpDespachoDB {
 
     // Cierre de período (ADR-139): la atribución de origen de un despacho de un
     // mes cerrado es inmutable.
-    const despOrig = await prisma.forestCtpEntry.findFirst({ where: { id: despachoEntryId, tenantId }, select: { entryDate: true } });
-    const cerradoOrig = despOrig ? await ForestCtpCierreDB.closedPeriodOf(tenantId, despOrig.entryDate) : null;
+    const despOrig = await tx.forestCtpEntry.findFirst({
+      where: { id: despachoEntryId, tenantId },
+      select: { entryDate: true },
+    });
+    const cerradoOrig = despOrig ? closedPeriodOf(cierres, despOrig.entryDate) : null;
     if (cerradoOrig) {
       throw new CtpInvariantError(
         `El período ${cerradoOrig.label} está cerrado: no se puede cambiar el origen de un despacho de un mes cerrado.`,
@@ -181,164 +251,305 @@ export class ForestCtpDespachoDB {
       );
     }
 
-    return prisma.$transaction(async (tx) => {
-      // 1. La línea destino existe, es de este tenant y ES un despacho.
-      const despacho = await tx.forestCtpEntry.findFirst({
-        where: { id: despachoEntryId, tenantId, deletedAt: null },
-        select: { id: true, section: true, quantity: true, unit: true, productType: true, speciesCommon: true, lineNo: true },
-      });
-      if (!despacho) throw new Error("Línea de despacho no encontrada");
-      if (despacho.section !== "despacho") {
-        throw new CtpInvariantError(
-          "Sólo una línea de despacho puede tener orígenes de producción.",
-          "TENANT_MISMATCH",
-          { section: despacho.section },
-        );
-      }
-
-      // 2. Lock de las CORRIDAS — el recurso disputado (ver cabecera).
-      if (ids.length > 0) {
-        await tx.$queryRaw`
-          SELECT "id" FROM "ForestCtpEntry"
-          WHERE "id" IN (${Prisma.join(ids)}) AND "tenantId" = ${tenantId} AND "deletedAt" IS NULL
-          ORDER BY "id"
-          FOR UPDATE
-        `;
-      }
-
-      // 3. Las corridas citadas: de este tenant, vivas, y de sección producción.
-      //    El FK de Postgres no garantiza ni el tenant ni la ORIENTACIÓN (aceptaría
-      //    un despacho citando a otro despacho) — ADR-135 D5.
-      const corridas = await tx.forestCtpEntry.findMany({
-        where: { id: { in: ids }, tenantId, deletedAt: null, status: "registrado" },
-        select: { id: true, lineNo: true, section: true, quantity: true, unit: true, productType: true, speciesCommon: true },
-      });
-      if (corridas.length !== ids.length) {
-        const vistas = new Set(corridas.map((c) => c.id));
-        throw new CtpInvariantError(
-          "Alguna corrida citada no existe, fue anulada, o pertenece a otra tienda.",
-          "TENANT_MISMATCH",
-          { faltantes: ids.filter((id) => !vistas.has(id)) },
-        );
-      }
-      const noProduccion = corridas.filter((c) => c.section !== "produccion");
-      if (noProduccion.length > 0) {
-        throw new CtpInvariantError(
-          "Un despacho sale de corridas de producción, no de otros despachos.",
-          "TENANT_MISMATCH",
-          { lineas: noProduccion.map((c) => c.lineNo) },
-        );
-      }
-
-      // 4. Mismo producto y misma unidad: atribuir tablones a un despacho de
-      //    leña, o m³ contra kg, sería un número que no significa nada.
-      /* Tres comparaciones y CADA UNA con su criterio, que no es lo mismo:
-         · la ESPECIE va con `claveEspecie` —se tipea a mano y una tilde no la
-           convierte en otra madera—;
-         · el PRODUCTO va crudo (sólo trim+minúsculas): sale de un `<select>` del
-           catálogo oficial, así que no tiene variantes de tipeo, y `claveEspecie`
-           ignora lo que va entre paréntesis — con ella, «MADERA ASERRADA
-           (COMERCIAL)» y «(CORTA)» pasaban a ser el mismo producto y se podía
-           atribuir una corrida de corta a un despacho de comercial;
-         · la UNIDAD, cruda también: «m3» y «pt» no son variantes de escritura,
-           son magnitudes distintas. */
-      const distinto = corridas.filter(
-        (c) =>
-          (c.productType ?? "").trim().toLowerCase() !== (despacho.productType ?? "").trim().toLowerCase() ||
-          claveEspecie(c.speciesCommon) !== claveEspecie(despacho.speciesCommon) ||
-          (c.unit ?? "") !== (despacho.unit ?? ""),
+    // 1. La línea destino existe, es de este tenant y ES un despacho.
+    const despacho = await tx.forestCtpEntry.findFirst({
+      where: { id: despachoEntryId, tenantId, deletedAt: null },
+      select: {
+        id: true, section: true, quantity: true, unit: true, productType: true, speciesCommon: true, lineNo: true,
+        codigoProducto: true,
+      },
+    });
+    if (!despacho) throw new Error("Línea de despacho no encontrada");
+    if (despacho.section !== "despacho") {
+      throw new CtpInvariantError(
+        "Sólo una línea de despacho puede tener orígenes de producción.",
+        "TENANT_MISMATCH",
+        { section: despacho.section },
       );
-      if (distinto.length > 0) {
-        throw new CtpInvariantError(
-          `El despacho es de ${despacho.productType ?? "—"} · ${despacho.speciesCommon ?? "—"} (${despacho.unit ?? "—"}); ` +
-            `la corrida #${distinto[0].lineNo} es de ${distinto[0].productType ?? "—"} · ${distinto[0].speciesCommon ?? "—"} (${distinto[0].unit ?? "—"}).`,
-          "TENANT_MISMATCH",
-          { lineas: distinto.map((c) => c.lineNo) },
-        );
-      }
+    }
 
-      // 5. I4 — Σ atribuido ≤ lo que el despacho declara haber sacado.
-      const declarado = despacho.quantity ? Number(despacho.quantity) : null;
-      const totalAtribuido = origenes.reduce((a, o) => a + Number(o.quantity), 0);
-      if (declarado != null && r4(totalAtribuido) > r4(declarado)) {
+    // 2. Lock de las CORRIDAS — el recurso disputado (ver cabecera).
+    if (ids.length > 0) {
+      await tx.$queryRaw`
+        SELECT "id" FROM "ForestCtpEntry"
+        WHERE "id" IN (${Prisma.join(ids)}) AND "tenantId" = ${tenantId} AND "deletedAt" IS NULL
+        ORDER BY "id"
+        FOR UPDATE
+      `;
+    }
+
+    // 3. Las corridas citadas: de este tenant, vivas, y de sección producción.
+    //    El FK de Postgres no garantiza ni el tenant ni la ORIENTACIÓN (aceptaría
+    //    un despacho citando a otro despacho) — ADR-135 D5.
+    const corridas = await tx.forestCtpEntry.findMany({
+      where: { id: { in: ids }, tenantId, deletedAt: null, status: "registrado" },
+      select: { id: true, lineNo: true, section: true, quantity: true, unit: true, productType: true, speciesCommon: true },
+    });
+    if (corridas.length !== ids.length) {
+      const vistas = new Set(corridas.map((c) => c.id));
+      throw new CtpInvariantError(
+        "Alguna corrida citada no existe, fue anulada, o pertenece a otra tienda.",
+        "TENANT_MISMATCH",
+        { faltantes: ids.filter((id) => !vistas.has(id)) },
+      );
+    }
+    const noProduccion = corridas.filter((c) => c.section !== "produccion");
+    if (noProduccion.length > 0) {
+      throw new CtpInvariantError(
+        "Un despacho sale de corridas de producción, no de otros despachos.",
+        "TENANT_MISMATCH",
+        { lineas: noProduccion.map((c) => c.lineNo) },
+      );
+    }
+
+    // 4. Mismo producto y misma unidad: atribuir tablones a un despacho de
+    //    leña, o m³ contra kg, sería un número que no significa nada.
+    /* Tres comparaciones y CADA UNA con su criterio, que no es lo mismo:
+       · la ESPECIE va con `claveEspecie` —se tipea a mano y una tilde no la
+         convierte en otra madera—;
+       · el PRODUCTO va crudo (sólo trim+minúsculas): sale de un `<select>` del
+         catálogo oficial, así que no tiene variantes de tipeo, y `claveEspecie`
+         ignora lo que va entre paréntesis — con ella, «MADERA ASERRADA
+         (COMERCIAL)» y «(CORTA)» pasaban a ser el mismo producto y se podía
+         atribuir una corrida de corta a un despacho de comercial;
+       · la UNIDAD, cruda también: «m3» y «pt» no son variantes de escritura,
+         son magnitudes distintas.
+       El producto de la corrida, o el del PAQUETE QUE VA EN ESTA LÍNEA
+       (ADR-444): `despacho.codigoProducto` → ese paquete, de ESA corrida. El
+       paquete pertenece a su corrida (ADR-349) y puede declarar un producto
+       más fino que ella: en Blas 174 paquetes dicen «(COMERCIAL)» colgados de
+       una corrida «(TABLA)», y la guía sale con el producto del paquete. NO
+       vale el de cualquier paquete de la corrida: con eso una salida
+       «(COMERCIAL)» sin código sacaba 2 m³ de una corrida «(TABLA)» que tenía
+       0,5 comerciales —la misma puerta «corta contra comercial» de arriba—, y
+       en Blas hay 30 corridas con paquetes de productos mezclados. Por lo
+       mismo, lo que se le atribuye a la corrida por ese paquete no pasa de lo
+       que el paquete mide. La especie y la unidad siguen siendo las de la
+       corrida: esas no cambian de un paquete a otro. Sin código de paquete, la
+       comparación es la estricta de siempre. */
+    const claveProducto = (v: string | null | undefined) => (v ?? "").trim().toLowerCase();
+    const codigoLinea = (despacho.codigoProducto ?? "").trim();
+    const paqueteDeLaLinea =
+      codigoLinea && ids.length > 0
+        ? await tx.forestCtpPaquete.findFirst({
+            where: { tenantId, codigo: codigoLinea, ctpEntryId: { in: ids }, deletedAt: null },
+            select: { codigo: true, ctpEntryId: true, productType: true, volumenM3: true },
+          })
+        : null;
+    const productoDespacho = claveProducto(despacho.productType);
+    /** La corrida sólo cuadra por el producto de SU paquete nombrado en la línea. */
+    const cuadraPorPaquete = (c: { id: string }) =>
+      paqueteDeLaLinea?.ctpEntryId === c.id &&
+      paqueteDeLaLinea.productType != null &&
+      claveProducto(paqueteDeLaLinea.productType) === productoDespacho;
+    const distinto = corridas.filter(
+      (c) =>
+        (claveProducto(c.productType) !== productoDespacho && !cuadraPorPaquete(c)) ||
+        claveEspecie(c.speciesCommon) !== claveEspecie(despacho.speciesCommon) ||
+        (c.unit ?? "") !== (despacho.unit ?? ""),
+    );
+    if (distinto.length > 0) {
+      throw new CtpInvariantError(
+        `El despacho es de ${despacho.productType ?? "—"} · ${despacho.speciesCommon ?? "—"} (${despacho.unit ?? "—"}); ` +
+          `la corrida #${distinto[0].lineNo} es de ${distinto[0].productType ?? "—"} · ${distinto[0].speciesCommon ?? "—"} (${distinto[0].unit ?? "—"}).`,
+        "TENANT_MISMATCH",
+        { lineas: distinto.map((c) => c.lineNo) },
+      );
+    }
+
+    //    El producto de la corrida que sólo cuadra por el paquete: hasta lo que
+    //    el paquete mide (≤, nunca ==: puede salir menos).
+    const porPaquete = corridas.find((c) => claveProducto(c.productType) !== productoDespacho && cuadraPorPaquete(c));
+    if (porPaquete && paqueteDeLaLinea) {
+      const pedido = r4(Number(origenes.find((o) => o.produccionEntryId === porPaquete.id)?.quantity ?? 0));
+      const mide = r4(Number(paqueteDeLaLinea.volumenM3));
+      if (pedido > mide) {
         throw new CtpInvariantError(
-          `Estás atribuyendo ${r4(totalAtribuido)} pero el despacho declara ${r4(declarado)}.`,
+          `El paquete ${paqueteDeLaLinea.codigo} es de ${paqueteDeLaLinea.productType} y mide ${mide}; ` +
+            `la línea le atribuye ${pedido} a la corrida #${porPaquete.lineNo}, que es de ${porPaquete.productType ?? "—"}. ` +
+            `Lo que pasa de ${mide} no es de ese producto.`,
           "I4_SOBRE_ATRIBUCION_DESPACHO",
-          { atribuido: r4(totalAtribuido), declarado: r4(declarado) },
+          { codigo: paqueteDeLaLinea.codigo, pedido, mide, lineNo: porPaquete.lineNo },
         );
       }
+    }
 
-      // 6. I5 — ninguna corrida despachada por encima de lo que produjo,
-      //    contando lo que YA sacan OTROS despachos. Esto es lo que I3 no ve.
-      //
-      //    Desde ADR-316 el saldo lo calcula `saldosDeCorridas`, porque el
-      //    despacho dejó de ser el único consumidor: el REPROCESO también saca
-      //    producto. Con dos cálculos separados, producir 10, reprocesar 8 y
-      //    despachar 10 pasaba las dos validaciones por su cuenta.
-      const saldos = await saldosDeCorridas(tx, tenantId, ids, { despachoEntryId });
+    // 5. I4 — Σ atribuido ≤ lo que el despacho declara haber sacado.
+    const declarado = despacho.quantity ? Number(despacho.quantity) : null;
+    const totalAtribuido = origenes.reduce((a, o) => a + Number(o.quantity), 0);
+    if (declarado != null && r4(totalAtribuido) > r4(declarado)) {
+      throw new CtpInvariantError(
+        `Estás atribuyendo ${r4(totalAtribuido)} pero el despacho declara ${r4(declarado)}.`,
+        "I4_SOBRE_ATRIBUCION_DESPACHO",
+        { atribuido: r4(totalAtribuido), declarado: r4(declarado) },
+      );
+    }
 
-      for (const o of origenes) {
-        const corrida = corridas.find((c) => c.id === o.produccionEntryId)!;
-        const saldo = saldos.get(o.produccionEntryId);
-        const producido = saldo?.producido ?? 0;
-        const disponible = saldo?.disponible ?? 0;
-        if (r4(Number(o.quantity)) > r4(disponible)) {
-          throw new CtpInvariantError(
-            `La corrida #${corrida.lineNo} produjo ${r4(producido)} y sólo le quedan ${r4(disponible)} disponibles` +
-              (saldo ? explicarSaldo(saldo) : "") +
-              `; estás pidiendo ${r4(Number(o.quantity))}.`,
-            "I5_SOBRE_SALIDA_PRODUCCION",
-            {
-              lineNo: corrida.lineNo,
-              producido: r4(producido),
-              disponible: r4(disponible),
-              despachado: saldo?.despachado ?? 0,
-              reprocesado: saldo?.reprocesado ?? 0,
-              pedido: r4(Number(o.quantity)),
-            },
-          );
-        }
+    // 6. I5 — ninguna corrida despachada por encima de lo que produjo,
+    //    contando lo que YA sacan OTROS despachos. Esto es lo que I3 no ve.
+    //
+    //    Desde ADR-316 el saldo lo calcula `saldosDeCorridas`, porque el
+    //    despacho dejó de ser el único consumidor: el REPROCESO también saca
+    //    producto. Con dos cálculos separados, producir 10, reprocesar 8 y
+    //    despachar 10 pasaba las dos validaciones por su cuenta.
+    const saldos = await saldosDeCorridas(tx, tenantId, ids, { despachoEntryId });
+
+    for (const o of origenes) {
+      const corrida = corridas.find((c) => c.id === o.produccionEntryId)!;
+      const saldo = saldos.get(o.produccionEntryId);
+      const producido = saldo?.producido ?? 0;
+      const disponible = saldo?.disponible ?? 0;
+      if (r4(Number(o.quantity)) > r4(disponible)) {
+        throw new CtpInvariantError(
+          `La corrida #${corrida.lineNo} produjo ${r4(producido)} y sólo le quedan ${r4(disponible)} disponibles` +
+            (saldo ? explicarSaldo(saldo) : "") +
+            `; estás pidiendo ${r4(Number(o.quantity))}.`,
+          "I5_SOBRE_SALIDA_PRODUCCION",
+          {
+            lineNo: corrida.lineNo,
+            producido: r4(producido),
+            disponible: r4(disponible),
+            despachado: saldo?.despachado ?? 0,
+            reprocesado: saldo?.reprocesado ?? 0,
+            pedido: r4(Number(o.quantity)),
+          },
+        );
       }
+    }
 
-      // 7. Estado anterior — para que el audit diga de qué a qué (no "cambió").
-      const antes = await tx.forestCtpDespachoOrigen.findMany({
-        where: { despachoEntryId, tenantId },
-        include: { produccion: { select: { lineNo: true } } },
+    // 7. Estado anterior — para que el audit diga de qué a qué (no "cambió").
+    const antes = await tx.forestCtpDespachoOrigen.findMany({
+      where: { despachoEntryId, tenantId },
+      include: { produccion: { select: { lineNo: true } } },
+    });
+
+    // 8. Reemplazo atómico. El acta (gtfNumber/destino) no se toca nunca.
+    await tx.forestCtpDespachoOrigen.deleteMany({ where: { despachoEntryId, tenantId } });
+    if (origenes.length > 0) {
+      await tx.forestCtpDespachoOrigen.createMany({
+        data: origenes.map((o) => ({
+          tenantId,
+          despachoEntryId,
+          produccionEntryId: o.produccionEntryId,
+          quantity: new Prisma.Decimal(o.quantity),
+          createdBy: user,
+        })),
       });
+    }
 
-      // 8. Reemplazo atómico. El acta (gtfNumber/destino) no se toca nunca.
-      await tx.forestCtpDespachoOrigen.deleteMany({ where: { despachoEntryId, tenantId } });
-      if (origenes.length > 0) {
-        await tx.forestCtpDespachoOrigen.createMany({
-          data: origenes.map((o) => ({
-            tenantId,
-            despachoEntryId,
-            produccionEntryId: o.produccionEntryId,
-            quantity: new Prisma.Decimal(o.quantity),
-            createdBy: user,
-          })),
-        });
-      }
+    const result = await tx.forestCtpDespachoOrigen.findMany({
+      where: { despachoEntryId, tenantId },
+      include: { produccion: { select: { lineNo: true, productType: true, speciesCommon: true } } },
+    });
 
-      const result = await tx.forestCtpDespachoOrigen.findMany({
-        where: { despachoEntryId, tenantId },
-        include: { produccion: { select: { lineNo: true, productType: true, speciesCommon: true } } },
-      });
+    const fmt = (rows: { quantity: Prisma.Decimal; produccion: { lineNo: number } }[]) =>
+      rows.length === 0 ? "(sin atribución)" : rows.map((r) => `corrida #${r.produccion.lineNo}: ${Number(r.quantity)}`).join(", ");
+    return {
+      origenes: result,
+      auditoria: `Origen del despacho #${despacho.lineNo}: ${fmt(antes)} → ${fmt(result)}`,
+    };
+  }
 
-      const fmt = (rows: { quantity: Prisma.Decimal; produccion: { lineNo: number } }[]) =>
-        rows.length === 0 ? "(sin atribución)" : rows.map((r) => `corrida #${r.produccion.lineNo}: ${Number(r.quantity)}`).join(", ");
-      auditCtp({
-        tenantId,
-        action: "ctp_origenes_set",
-        entity: "ForestCtpEntry",
-        entityId: despachoEntryId,
-        detail: `Origen del despacho #${despacho.lineNo}: ${fmt(antes)} → ${fmt(result)}`,
-        user,
-      });
+  /**
+   * Lo que va DESPUÉS del commit de `setOrigenesEnTx`: la caché y el renglón
+   * del libro. El renglón se ESPERA, como el de los consumos: de qué corrida
+   * salió un despacho es lo que pregunta un fiscalizador, y en Vercel lo que
+   * corre después de responder puede no terminar. Nunca tira.
+   */
+  static async despuesDeOrigenes(
+    tenantId: string,
+    despachoEntryId: string,
+    escritos: OrigenesEscritos,
+    user: string,
+  ): Promise<void> {
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    } catch {
+      /* cache best-effort */
+    }
+    await auditCtpEsperando({
+      tenantId,
+      action: "ctp_origenes_set",
+      entity: "ForestCtpEntry",
+      entityId: despachoEntryId,
+      detail: escritos.auditoria,
+      user,
+    });
+  }
 
-      try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
-      return result;
-    }, CTP_TX_OPTS);
+  /**
+   * Un paquete, una guía vigente (ADR-444).
+   *
+   * El despacho guarda el código del paquete en `codigoProducto` (lo escribe
+   * `payloadDeFila`; el código es único por tenant y la línea sólo lo escribe
+   * al crearse). Si ese código es de un paquete de la planta y ya hay un
+   * despacho VIVO que lo lleva —borrador o emitido da igual: los dos dicen
+   * «este bulto va en ese camión»—, el alta se rechaza. Anular aquella guía lo
+   * libera sola: el criterio es el estado del despacho, no una marca en el
+   * paquete, así que no hay nada que «desmarcar» y no se puede desincronizar.
+   *
+   * LOCKEA EL PAQUETE y relee bajo el lock: dos altas del mismo bulto a la vez
+   * se turnan, y la segunda ya ve a la primera confirmada (READ COMMITTED lee
+   * lo confirmado en cada sentencia). Sin el lock las dos leerían «libre». Se
+   * llama después del lock de las corridas (I3) y antes del INSERT: el orden
+   * del libro es la corrida y después lo que cuelga de ella.
+   *
+   * Un código que no es de ningún paquete (texto libre del formulario manual,
+   * una corrida vieja sin paquetes) no se juzga: devuelve null.
+   */
+  static async exigirPaqueteLibreEnTx(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+    codigoProducto: string | null | undefined,
+  ): Promise<{ id: string; codigo: string; ctpEntryId: string } | null> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const codigo = (codigoProducto ?? "").trim();
+    if (!codigo) return null;
+
+    const bloqueados = await tx.$queryRaw<{ id: string; codigo: string; ctpEntryId: string }[]>`
+      SELECT "id", "codigo", "ctpEntryId" FROM "ForestCtpPaquete"
+      WHERE "tenantId" = ${tenantId} AND "codigo" = ${codigo} AND "deletedAt" IS NULL
+      FOR UPDATE
+    `;
+    const paquete = bloqueados[0];
+    if (!paquete) return null;
+
+    const previo = await tx.forestCtpEntry.findFirst({
+      where: { tenantId, section: "despacho", codigoProducto: codigo, ...DESPACHO_VIGENTE, ...NO_ES_SALIDA_DE_TROZAS },
+      orderBy: { lineNo: "asc" },
+      select: { id: true, lineNo: true, gtfNumber: true },
+    });
+    if (previo) {
+      const guia = previo.gtfNumber?.trim() ? `la guía ${previo.gtfNumber.trim()}` : "una guía en borrador";
+      throw new CtpInvariantError(
+        `El paquete ${codigo} ya va en ${guia} (línea N° ${previo.lineNo} de Despacho). ` +
+          "Un paquete sale en una sola guía: si esa guía está mal, anúlala y vuelve a registrar el paquete.",
+        "PAQUETE_YA_DESPACHADO",
+        { codigo, despachoEntryId: previo.id, lineNo: previo.lineNo, gtfNumber: previo.gtfNumber },
+      );
+    }
+    return paquete;
+  }
+
+  /**
+   * Los códigos de paquete que ya viajan en una guía viva (ADR-444).
+   *
+   * UNA consulta para todos (`codigoProducto in [...]`, nunca una por
+   * paquete). Es el mismo criterio que la guarda del alta
+   * (`exigirPaqueteLibreEnTx`): lo usan «Productos disponibles» —y a través de
+   * ella el selector de la guía, el resumen y el mapa de planta— y la campana
+   * de reservas vencidas. Si dos lecturas usaran criterios parecidos, la
+   * pantalla ofrecería un paquete que el servidor rechaza.
+   */
+  static async codigosDespachados(tenantId: string, codigos: readonly string[]): Promise<Set<string>> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const unicos = [...new Set(codigos.map((c) => c.trim()).filter(Boolean))];
+    if (unicos.length === 0) return new Set();
+    const filas = await prisma.forestCtpEntry.findMany({
+      where: { tenantId, section: "despacho", codigoProducto: { in: unicos }, ...DESPACHO_VIGENTE, ...NO_ES_SALIDA_DE_TROZAS },
+      select: { codigoProducto: true },
+    });
+    return new Set(filas.map((f) => f.codigoProducto).filter((c): c is string => Boolean(c)));
   }
 
   /** Orígenes de un despacho, con la corrida de cada uno. */

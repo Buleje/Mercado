@@ -21,6 +21,9 @@ const H = vi.hoisted(() => ({
   findFirst: vi.fn(),
   updateMany: vi.fn(),
   findMany: vi.fn(),
+  /* Los despachos vivos que llevan un paquete (ADR-444): la campana no cuenta
+     la reserva de un paquete que ya va en una guía. */
+  despachosConPaquete: vi.fn(async (): Promise<{ codigoProducto: string | null }[]> => []),
   audit: vi.fn(),
   saldos: vi.fn(
     async (_tx: unknown, _tenantId: string, _ids: string[]): Promise<Map<string, { disponible: number }>> =>
@@ -36,6 +39,7 @@ vi.mock("@/lib/prisma", () => ({
       updateMany: H.updateMany,
       findMany: H.findMany,
     },
+    forestCtpEntry: { findMany: H.despachosConPaquete },
   },
 }));
 vi.mock("@/lib/cache", () => ({ invalidateByPrefix: vi.fn(), invalidate: vi.fn() }));
@@ -216,6 +220,37 @@ describe("reservasVencidas — la lectura para los pendientes", () => {
     expect(H.saldos.mock.calls[0]![1]).toBe(TENANT);
     expect(H.saldos.mock.calls[0]![2]).toEqual(["c29", "c31"]);
     expect(lista.map((r) => r.id)).toEqual(["ap-en-patio"]);
+  });
+
+  it("no cuenta la reserva de un paquete que ya va en una guía viva (ADR-444)", async () => {
+    H.saldos.mockResolvedValue(new Map([["c29", { disponible: 5.154 }]]));
+    H.findMany.mockResolvedValue([
+      {
+        ...viva(),
+        ctpEntry: { lineNo: 29, speciesCommon: "Cachimbo", productType: "MADERA ASERRADA (COMERCIAL)" },
+        paquete: { codigo: "SL-7", volumenM3: "1.2500" },
+      },
+    ]);
+    H.despachosConPaquete.mockResolvedValueOnce([{ codigoProducto: "SL-7" }]);
+    const lista = await ForestCtpDB.reservasVencidas(TENANT, new Date("2026-09-23T12:00:00-05:00"));
+    expect(lista).toEqual([]);
+    /* UNA consulta, del tenant, sólo despachos vivos con esos códigos. */
+    expect(H.despachosConPaquete).toHaveBeenCalledTimes(1);
+    expect(H.despachosConPaquete.mock.calls[0]).toEqual([
+      {
+        where: {
+          tenantId: TENANT,
+          section: "despacho",
+          codigoProducto: { in: ["SL-7"] },
+          deletedAt: null,
+          status: "registrado",
+          /* La salida de una TROZA guarda el código de la pieza, que puede ser
+             igual al de un paquete: no lo lleva. */
+          trozasDespachadas: { none: {} },
+        },
+        select: { codigoProducto: true },
+      },
+    ]);
   });
 
   it("sin candidatas no pide saldos", async () => {

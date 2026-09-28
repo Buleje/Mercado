@@ -114,6 +114,10 @@ export class CtpInvariantError extends Error {
       | "I4_SOBRE_ATRIBUCION_DESPACHO"
       /** Una corrida despachada dos veces (≅ I2). Lo que I3 no puede ver. */
       | "I5_SOBRE_SALIDA_PRODUCCION"
+      /** El paquete ya viaja en otra guía viva (borrador o emitida). Un bulto
+       *  físico sube a un solo camión: se anula esa guía antes de volver a
+       *  usarlo (ADR-444). Va 409: choca con un despacho que ya existe. */
+      | "PAQUETE_YA_DESPACHADO"
       | "TENANT_MISMATCH"
       | "CONGELADO"
       /** Se quiso corregir un ingreso que ya no está pendiente: ahí el camino

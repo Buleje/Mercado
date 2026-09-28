@@ -478,8 +478,9 @@ export interface CtpEntryInput {
   consumos?: { woodEntryId: string; volumeM3: number | string }[];
   /**
    * De qué corridas salió el producto de este despacho (ADR-135).
-   * Se escriben con `ForestCtpDespachoDB.setOrigenes`, que valida I4/I5,
-   * tenant, orientación y que el producto/unidad coincidan.
+   * Se escriben con `ForestCtpDespachoDB.setOrigenesEnTx` DENTRO de la misma
+   * transacción del INSERT (ADR-444), que valida I4/I5, tenant, orientación y
+   * que el producto/unidad coincidan: si algo tira, la línea no queda.
    */
   origenes?: { produccionEntryId: string; quantity: number | string }[];
   /**
@@ -682,6 +683,8 @@ export class ForestCtpDB {
     tx: Prisma.TransactionClient,
     tenantId: string,
     input: CtpEntryInput,
+    /** El llamador ya tomó `bloquearProduccion` en esta tx (ADR-444). */
+    { yaBloqueado = false }: { yaBloqueado?: boolean } = {},
   ): Promise<void> {
     const pedido = Number(input.quantity ?? 0);
     if (pedido <= 0) return; // Sin cantidad no hay nada que validar.
@@ -689,13 +692,7 @@ export class ForestCtpDB {
     const key = productKey(input.productType, input.speciesCommon);
 
     // Lock de las líneas de producción del producto = el recurso disputado.
-    await tx.$queryRaw`
-      SELECT "id" FROM "ForestCtpEntry"
-      WHERE "tenantId" = ${tenantId} AND "deletedAt" IS NULL
-        AND "status" = 'registrado' AND "section" = 'produccion'
-      ORDER BY "id"
-      FOR UPDATE
-    `;
+    if (!yaBloqueado) await ForestCtpDB.bloquearProduccion(tx, tenantId);
 
     const lineas = await tx.forestCtpEntry.findMany({
       where: { tenantId, deletedAt: null, status: "registrado" },
@@ -764,6 +761,24 @@ export class ForestCtpDB {
     }
   }
 
+  /**
+   * El lock de I3: las líneas de producción vivas del tenant, `ORDER BY id`.
+   * Suelto de `assertStockDisponible` para que el alta de un despacho pueda
+   * tomarlo PRIMERO y recién después juzgar el paquete (ADR-444) — el orden del
+   * libro es la corrida y luego lo que cuelga de ella — sin que el mensaje de
+   * stock tape al del paquete: sacar dos veces el último bulto de un producto
+   * decía «sólo quedan 0,5» cuando la causa era «ya va en otra guía».
+   */
+  private static async bloquearProduccion(tx: Prisma.TransactionClient, tenantId: string): Promise<void> {
+    await tx.$queryRaw`
+      SELECT "id" FROM "ForestCtpEntry"
+      WHERE "tenantId" = ${tenantId} AND "deletedAt" IS NULL
+        AND "status" = 'registrado' AND "section" = 'produccion'
+      ORDER BY "id"
+      FOR UPDATE
+    `;
+  }
+
   static async create(tenantId: string, input: CtpEntryInput) {
     if (!tenantId) throw new Error("tenantId is required");
     if (!CTP_SECTIONS.includes(input.section)) throw new Error(`invalid section: ${input.section}`);
@@ -805,15 +820,33 @@ export class ForestCtpDB {
     const especie = await ForestEspeciesDB.resolverEspecie(tenantId, input.speciesCommon);
     const cientifico = input.speciesScientific?.trim() || especie.cientifico;
 
+    /* Los cierres para la atribución de la salida se leen ANTES de abrir la
+       transacción (como en `setConsumos`): leerlos adentro pedía otra conexión
+       del pool con la de la tx tomada. Sin orígenes no hacen falta. */
+    const cierresOrigenes = input.origenes?.length ? await ForestCtpCierreDB.list(tenantId) : [];
+
     // La validación de stock y el INSERT van en UNA transacción: si se valida
     // fuera, entre el chequeo y el insert entra otro despacho y el guard no sirve.
-    const entry = await prisma.$transaction(async (tx) => {
+    /* Y la atribución a corridas TAMBIÉN (ADR-444): antes iba en otra
+       transacción después del INSERT, así que un I5 o un producto que no
+       cuadraba devolvía 422 con la línea ya grabada — y cada reintento del
+       modal de la guía sumaba otra igual. Ahora un rechazo no deja nada. */
+    const { entry, origenesEscritos } = await prisma.$transaction(async (tx) => {
       /* Una salida de trozas SIN ASERRAR no se mide contra `producido −
          despachado` (ADR-363): su stock son las PIEZAS, y T2 ya validó que cada
          una esté libre. Medirla con I3 daría stock 0 —nadie produjo madera en
          rollo— y rechazaría una venta legítima. */
       if (input.section === "despacho" && !input.desdeTrozas) {
-        await ForestCtpDB.assertStockDisponible(tx, tenantId, input);
+        /* Un paquete, una guía vigente (ADR-444). Orden de locks: las corridas
+           (I3) y después el paquete; y el paquete se JUZGA antes que el stock,
+           porque cuando falla por las dos razones la de verdad es la suya. Las
+           trozas no pasan por acá: su código es el de una pieza, y T2 las cuida. */
+        /* Siempre, aunque la línea no traiga cantidad (I3 no aplica): sin él,
+           un despacho sin cantidad tomaba el paquete y DESPUÉS las corridas
+           de sus orígenes — el orden al revés del resto. */
+        await ForestCtpDB.bloquearProduccion(tx, tenantId);
+        await ForestCtpDespachoDB.exigirPaqueteLibreEnTx(tx, tenantId, input.codigoProducto);
+        await ForestCtpDB.assertStockDisponible(tx, tenantId, input, { yaBloqueado: true });
       }
 
       const max = await tx.forestCtpEntry.aggregate({
@@ -822,7 +855,7 @@ export class ForestCtpDB {
       });
       const lineNo = (max._max.lineNo ?? 0) + 1;
 
-      return tx.forestCtpEntry.create({
+      const creada = await tx.forestCtpEntry.create({
         data: {
           tenantId,
           section: input.section,
@@ -896,6 +929,16 @@ export class ForestCtpDB {
             : {}),
         },
       });
+
+      /* La salida valida I4/I5 + orientación + producto (ADR-135) con las
+         corridas bloqueadas, en ESTA transacción (ADR-444): si tira, el INSERT
+         de arriba se deshace con ella. */
+      const escritos = input.origenes?.length
+        ? await ForestCtpDespachoDB.setOrigenesEnTx(tx, tenantId, creada.id, input.origenes, input.createdBy, {
+            cierres: cierresOrigenes,
+          })
+        : null;
+      return { entry: creada, origenesEscritos: escritos };
     }, CTP_TX_OPTS);
 
     auditCtp({
@@ -903,9 +946,12 @@ export class ForestCtpDB {
       action: "ctp_linea_create",
       entity: "ForestCtpEntry",
       entityId: entry.id,
-      detail: `Registró la línea #${entry.lineNo} de ${input.section} · ${entry.speciesCommon ?? "sin especie"} · ${entry.productType ?? "sin producto"}${entry.quantity != null ? ` · ${Number(entry.quantity)} ${entry.unit ?? ""}` : ""}`,
+      detail: `Registró la línea #${entry.lineNo} de ${input.section} · ${entry.speciesCommon ?? "sin especie"} · ${entry.productType ?? "sin producto"}${entry.codigoProducto ? ` · ${entry.codigoProducto}` : ""}${entry.quantity != null ? ` · ${Number(entry.quantity)} ${entry.unit ?? ""}` : ""}`,
       user: input.createdBy,
     });
+    if (origenesEscritos) {
+      await ForestCtpDespachoDB.despuesDeOrigenes(tenantId, entry.id, origenesEscritos, input.createdBy);
+    }
 
     // La atribución de materia prima va por su propia vía: valida I1/I2 y que
     // los ingresos sean del tenant (ADR-134 D7). Si viola una invariante tira,
@@ -913,10 +959,6 @@ export class ForestCtpDB {
     // que es justo lo que el operador tiene que ir a corregir.
     if (input.consumos?.length) {
       await ForestCtpConsumoDB.setConsumos(tenantId, entry.id, input.consumos, input.createdBy);
-    }
-    // Ídem para la salida: valida I4/I5 + orientación + producto (ADR-135).
-    if (input.origenes?.length) {
-      await ForestCtpDespachoDB.setOrigenes(tenantId, entry.id, input.origenes, input.createdBy);
     }
 
     try {
@@ -2830,14 +2872,23 @@ export class ForestCtpDB {
       },
     });
     if (filas.length === 0) return [];
-    const saldos = await saldosDeCorridas(
-      prisma,
-      tenantId,
-      filas.map((a) => a.ctpEntryId),
-    );
+    /* El paquete que ya va en una guía viva tampoco está en Disponibles
+       (ADR-444): su reserva no frena nada. Mismo criterio que la pantalla. */
+    const [saldos, despachados] = await Promise.all([
+      saldosDeCorridas(
+        prisma,
+        tenantId,
+        filas.map((a) => a.ctpEntryId),
+      ),
+      ForestCtpDespachoDB.codigosDespachados(
+        tenantId,
+        filas.flatMap((a) => (a.paquete?.codigo ? [a.paquete.codigo] : [])),
+      ),
+    ]);
     return reservasVencidas(
       filas
         .filter((a) => tieneDisponible(saldos.get(a.ctpEntryId)))
+        .filter((a) => !(a.paquete?.codigo && despachados.has(a.paquete.codigo)))
         .map((a) => ({
         id: a.id,
         para: a.para,
@@ -3616,13 +3667,31 @@ export class ForestCtpDB {
     if (corridas.length === 0)
       return { corridas: [], totales: { volumen: 0, paquetes: 0, corridas: 0 } };
 
-    const saldos = await saldosDeCorridas(
-      prisma,
-      tenantId,
-      corridas.map((c) => c.id),
-    );
+    /* Un paquete que ya va en una guía viva —borrador o emitida— ya no está en
+       la pila (ADR-444). Antes se listaban todos los paquetes vivos y el tope
+       `min(paquete, saldo)` del selector disfrazaba el que ya había salido: la
+       misma pila se ofrecía dos veces. Es el criterio de la guarda del alta
+       (`exigirPaqueteLibreEnTx`), en UNA consulta para todos. */
+    const [saldos, despachados] = await Promise.all([
+      saldosDeCorridas(
+        prisma,
+        tenantId,
+        corridas.map((c) => c.id),
+      ),
+      ForestCtpDespachoDB.codigosDespachados(
+        tenantId,
+        corridas.flatMap((c) => c.paquetes.map((p) => p.codigo)),
+      ),
+    ]);
 
     const conSaldo = corridas
+      /* Una corrida que empaquetó y ya despachó TODOS sus paquetes no tiene
+         nada en la pila: el saldo que le quede es una diferencia del libro
+         (se declaró menos de lo que el paquete medía), no un bulto que se pueda
+         cargar. Sin este corte volvía como «corrida sin paquetes» y se ofrecía
+         entera. El saldo sigue a la vista en Saldos. */
+      .filter((c) => c.paquetes.length === 0 || c.paquetes.some((p) => !despachados.has(p.codigo)))
+      .map((c) => ({ ...c, paquetes: c.paquetes.filter((p) => !despachados.has(p.codigo)) }))
       .map((c) => {
         const s = saldos.get(c.id);
         const disponible = s?.disponible ?? 0;

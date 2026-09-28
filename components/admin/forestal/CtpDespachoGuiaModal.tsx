@@ -472,7 +472,9 @@ export default function CtpDespachoGuiaModal({
     const hechas: string[] = [];
     /** La primera línea creada: es la que ancla el QR de verificación del papel. */
     let primera: { id: string; lineNo: number } | null = null;
-    let fallo: { rotulo: string; motivo: string } | null = null;
+    /* `codigo` = el del servidor: un paquete que ya va en otra guía (409,
+       ADR-444) no entra reintentando, hay que sacarlo de la lista. */
+    let fallo: { rotulo: string; motivo: string; codigo?: string } | null = null;
     for (let i = 0; i < envios.length; i++) {
       setAvance({ hechas: i, total: envios.length });
       try {
@@ -482,8 +484,13 @@ export default function CtpDespachoGuiaModal({
           credentials: "include",
           body: JSON.stringify(envios[i]!.payload),
         });
-        const creada: { entry?: { id?: string; lineNo?: number }; message?: string } = await r.json().catch(() => ({}));
-        if (!r.ok) throw new Error(creada.message ?? `HTTP ${r.status}`);
+        const creada: { entry?: { id?: string; lineNo?: number }; message?: string; error?: string } = await r
+          .json()
+          .catch(() => ({}));
+        if (!r.ok) {
+          fallo = { rotulo: envios[i]!.rotulo, motivo: creada.message ?? `HTTP ${r.status}`, codigo: creada.error };
+          break;
+        }
         hechas.push(...envios[i]!.uids);
         if (!primera && creada.entry?.id) primera = { id: creada.entry.id, lineNo: creada.entry.lineNo ?? 0 };
       } catch (e) {
@@ -506,8 +513,18 @@ export default function CtpDespachoGuiaModal({
     }
     // Lo que entró se saca de la lista: reintentar no puede duplicarlo.
     setFilas((prev) => prev.filter((f) => !hechas.includes(f.uid)));
+    /* Con un solo producto no hay «resto» ni «de 1»: se dice qué hacer con ese. */
+    const solo = filas.length === 1;
     setError(
-      `Se registraron ${hechas.length} de ${filas.length} productos. «${fallo.rotulo}» no entró: ${fallo.motivo}. Lo que falta quedó en la lista para reintentar.`,
+      (solo ? "" : `Se registraron ${hechas.length} de ${filas.length} productos. `) +
+        `«${fallo.rotulo}» no entró: ${fallo.motivo}` +
+        (fallo.codigo === "PAQUETE_YA_DESPACHADO"
+          ? solo
+            ? " Quítalo de la lista y elige otro producto."
+            : " Quítalo de la lista para registrar el resto."
+          : solo
+            ? ". Quedó en la lista para reintentar."
+            : ". Lo que falta quedó en la lista para reintentar."),
     );
     setTab("productos");
   }

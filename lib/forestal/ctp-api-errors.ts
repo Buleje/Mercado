@@ -89,10 +89,15 @@ export function esChoqueDeLocks(err: unknown): boolean {
 export function ctpErrorResponse(err: unknown, ctx: string, tenantId: string): NextResponse {
   if (err instanceof CtpInvariantError) {
     /* Una foto rechazada es un pedido mal formado (firma que no cuadra, foto de
-       otra guía), no un dato del libro que no cuadra: 400, como el Zod. */
+       otra guía), no un dato del libro que no cuadra: 400, como el Zod. Un
+       paquete que ya viaja en otra guía choca con un recurso que existe: 409
+       (ADR-444) — reintentar el mismo pedido no lo arregla, anular esa guía sí. */
     return NextResponse.json(
       { error: err.code, message: err.message, detail: err.detail },
-      { status: err.code === "FOTO_NO_VALIDA" ? 400 : 422 },
+      {
+        status:
+          err.code === "FOTO_NO_VALIDA" ? 400 : err.code === "PAQUETE_YA_DESPACHADO" ? 409 : 422,
+      },
     );
   }
   if (esChoqueDeLocks(err)) {
