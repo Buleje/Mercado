@@ -180,6 +180,10 @@ async function main() {
 
   const devStatus = await checkDevServer();
   log(`Dev server (${BASE}): ${devStatus === "running" ? "✅ running" : `⚠️ ${devStatus}`}`);
+  // Modo trabajo (`~/.local/bin/panel-trabajo`, 27-09): el :3000 es el panel COMPILADO → un cambio de código no se ve.
+  if (devStatus === "running" && spawnSync("pgrep", ["-f", "next start -p 3000"]).status === 0) {
+    log("   🟢 MODO TRABAJO (panel compilado): los cambios de código NO se ven hasta correr `panel-desarrollo`");
+  }
 
   // Si dev no arranca, lo lanzamos en BG fire-and-forget
   if (devStatus === "down") {
