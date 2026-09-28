@@ -4,18 +4,21 @@
  * LothEntryForm — Modal de registro de línea del LO-TH (ADR-125).
  *
  * Form adaptable por sección (6 secciones SERFOR). Comparte el lenguaje visual
- * del WoodEntryForm (tokens DS, dark-mode safe) pero en una sola columna por ser
- * formularios cortos. Volumen por fórmula SERFOR (Smalian) en tala/trozado.
+ * del WoodEntryForm (tokens DS, dark-mode safe). Volumen por fórmula SERFOR
+ * (Smalian) en tala/trozado.
+ *
+ * Una columna, con los campos cortos en grilla (Brandon 2026-09-28: «quita la
+ * vista previa… dale mejor y compacto»). La vista previa del registro repetía
+ * lo que ya estaba escrito a la izquierda y costaba 300 px de ancho: el modal
+ * medía 1200 px para un formulario de dos columnas de campos.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   TreePine,
   AlertTriangle,
-  AlertCircle,
   Loader2,
   X,
-  Sparkles,
   Search,
   Check,
   ShieldAlert,
@@ -28,6 +31,7 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { listSpecies, findSpeciesByCommonName } from "@/data/forestry-species";
 import {
   claveEspecie,
+  LOTH_SECTION_GROUPS,
   LOTH_SECTIONS,
   smalianVolume,
   type LothEntryDTO,
@@ -45,9 +49,9 @@ import { estadoVencimiento, permisoParaEspecie, type LothCitesPermiso } from "@/
 import { fromUtm, parseUtmZone } from "@/lib/forestal/loth-utm";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import LothGpsField from "./LothGpsField";
+import LothAvisoTransformacion from "./LothAvisoTransformacion";
 import { cientificoDeEspecie } from "@/lib/forestal/especies-catalogo";
 import { useEspeciesCatalogo } from "./hooks/use-especies-catalogo";
-import { formatNumber } from "@/lib/format";
 import { logger } from "@/lib/logger";
 
 interface Props {
@@ -65,7 +69,18 @@ interface Props {
   plantilla?: LothEntryDTO | null;
   /** N° de línea que esta nueva corrige. Presente = modo subsanación. */
   corrigeLineNo?: number | null;
+  /**
+   * Secciones 4-6: lleva al Libro CTP, que es donde va la madera que se
+   * transforma en una planta. Sin la prop, el aviso sale sin el botón.
+   */
+  onIrAlCtp?: () => void;
 }
+
+/** Las secciones de transformación: las que casi siempre van en el Libro CTP.
+ * Salen del mismo grupo que usa el riel, para que las dos pantallas no difieran. */
+const SECCIONES_DE_TRANSFORMACION: ReadonlySet<LothSection> = new Set(
+  LOTH_SECTION_GROUPS.find((g) => g.key === "transformacion")?.sections ?? [],
+);
 
 export const SECTION_META: Record<
   LothSection,
@@ -113,7 +128,7 @@ const FIELDS: Record<LothSection, Set<string>> = {
  */
 const smalian = smalianVolume;
 
-export default function LothEntryForm({ section, caratulaId, onClose, onSaved, plantilla, corrigeLineNo }: Props) {
+export default function LothEntryForm({ section, caratulaId, onClose, onSaved, plantilla, corrigeLineNo, onIrAlCtp }: Props) {
   /**
    * Qué especies ofrece este libro.
    *
@@ -235,6 +250,14 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
   const [observations, setObservations] = useState(plantilla && !corrigeLineNo ? (plantilla.observations ?? "") : "");
   /** Por qué se corrige. SERFOR pide que la enmienda diga su motivo. */
   const [correctionNote, setCorrectionNote] = useState("");
+  /**
+   * Secciones 4-6: «la transformé dentro del TH». Sin marcarla no se guarda.
+   * Partiendo de una línea que ya está en el libro (duplicar o corregir), eso
+   * ya se contestó cuando se asentó: arranca marcada.
+   */
+  const esTransformacion = SECCIONES_DE_TRANSFORMACION.has(section);
+  const [transformeEnTh, setTransformeEnTh] = useState(Boolean(plantilla));
+  const faltaConfirmarTh = esTransformacion && !transformeEnTh;
 
   const [speciesQuery, setSpeciesQuery] = useState("");
   /* Sólo para completar el nombre científico de una especie tipeada a mano. */
@@ -541,24 +564,13 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
   }, [fields, section, treeCode, trozaCode, speciesName, gtfNumber, volumeM3, quantity, autoVolume, productType, corrigeLineNo, correctionNote, derivados, obligTala]);
 
   const isValid = missing.length === 0;
-
-  // Vista previa: qué código encabeza la tarjeta y qué número se destaca, según sección.
-  const previewEntity = fields.has("productType")
-    ? productType
-    : trozaCode.trim() || treeCode.trim() || despachoCode.trim() || meta.short;
-  const highlight = useMemo(() => {
-    if (fields.has("volume")) {
-      const vol = Number(volumeM3) > 0 ? Number(volumeM3) : autoVolume;
-      return { label: "Volumen (Smalian)", value: vol > 0 ? formatNumber(vol, { max: 4 }) : "0", unit: "m³" };
-    }
-    if (fields.has("volumeManual")) {
-      return { label: "Volumen consumido", value: volumeM3 ? formatNumber(Number(volumeM3), { max: 4 }) : "0", unit: "m³" };
-    }
-    if (fields.has("quantity")) {
-      return { label: section === "despacho_producto" ? "A despachar" : "Producido", value: quantity ? formatNumber(Number(quantity), { max: 4 }) : "0", unit: unit === "m3" ? "m³" : unit === "kg" ? "Kg" : "Unidad" };
-    }
-    return { label: "N° de GTF", value: gtfNumber.trim() || "—", unit: "" };
-  }, [fields, volumeM3, autoVolume, quantity, unit, section, gtfNumber]);
+  /** Guardar pide los obligatorios Y, en 4-6, haber contestado en qué libro va. */
+  const puedeGuardar = isValid && !faltaConfirmarTh;
+  const motivoBloqueo = faltaConfirmarTh
+    ? "Marca «La transformé dentro del título habilitante» para guardar"
+    : !isValid
+      ? `Falta: ${missing.join(", ")}`
+      : undefined;
 
   async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -604,6 +616,10 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
     if (submitting) return;
     if (!isValid) {
       setError("Completa los campos obligatorios marcados con asterisco.");
+      return;
+    }
+    if (faltaConfirmarTh) {
+      setError("Si la madera va a una planta, esto se registra en el Libro CTP. Si la transformaste dentro del título habilitante, marca la casilla de arriba.");
       return;
     }
     setError(null);
@@ -723,12 +739,73 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
     }
   }
 
+
+  /** El aviso de 4-6 manda al Libro CTP: la línea a medio cargar se descarta. */
+  const irAlCtp = onIrAlCtp
+    ? () => {
+        onClose();
+        onIrAlCtp();
+      }
+    : undefined;
+  const spanCantidad = fields.has("pieces") ? "col-span-2" : "col-span-3";
+  const idEstado = useId();
+
   return (
-    <AdminModal open onClose={onClose} variant="wide" hideCloseButton claveVentana="loth-entry" className="sm:max-w-[1200px]">
-      <div className="flex h-full max-h-[92vh] flex-col bg-[var(--surface-raised)]">
-        {/* Header — y asa de la ventana (ADR-420). */}
+    <AdminModal
+      open
+      onClose={onClose}
+      variant="wide"
+      hideCloseButton
+      claveVentana="loth-entry"
+      className="sm:max-w-[44rem]"
+      // El pie va por prop, FUERA del scroll: adentro, con el cuerpo en 92vh y
+      // el modal en 85vh, «Registrar línea» quedaba 63 px debajo del borde y
+      // hacía falta un segundo scroll para llegar (medido 28-09 a 1280×900).
+      footer={
+        <div className="flex items-center justify-between gap-3">
+          <p id={idEstado} title={motivoBloqueo} className="hidden min-w-0 items-center gap-1.5 truncate text-xs text-[var(--text-tertiary)] sm:flex">
+            {puedeGuardar ? (
+              <><Check className="h-3.5 w-3.5 shrink-0 text-[var(--data-success-600)]" /><span>Listo para registrar</span></>
+            ) : !isValid ? (
+              <span>Faltan <span className="font-semibold text-[var(--text-secondary)]">{missing.length}</span> {missing.length === 1 ? "campo" : "campos"}</span>
+            ) : (
+              <span className="truncate">Falta marcar la casilla de arriba</span>
+            )}
+          </p>
+          <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
+            <button type="button" onClick={onClose} disabled={submitting} className="inline-flex h-10 items-center whitespace-nowrap rounded-xl px-3 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]">
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={(e) => handleSubmit(e, true)}
+              disabled={!puedeGuardar || submitting}
+              title={motivoBloqueo}
+              aria-describedby={idEstado}
+              className="inline-flex h-10 items-center whitespace-nowrap rounded-xl border border-[var(--rule-strong)] bg-[var(--surface-raised)] px-3 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Guardar y otro
+            </button>
+            <button
+              type="submit"
+              form="loth-entry-form"
+              disabled={!puedeGuardar || submitting}
+              title={motivoBloqueo}
+              aria-describedby={idEstado}
+              className="inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-xl bg-[var(--accent-dark)] px-3.5 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {submitting ? (<><Loader2 className="h-4 w-4 animate-spin" />Guardando</>) : "Registrar línea"}
+            </button>
+          </div>
+        </div>
+      }
+    >
+      <div className="flex h-full flex-col bg-[var(--surface-raised)]">
+        {/* Header — y asa de la ventana (ADR-420). `sticky`: fuera de la
+            ventana el que scrollea es el cuerpo del AdminModal, no el form, y
+            sin esto el título se iba con el primer campo. */}
         <CabeceraPropia
-          className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4 sm:px-6"
+          className="sticky top-0 z-10 flex shrink-0 items-center justify-between gap-3 border-b border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 py-3 sm:px-6"
           acciones={
             <button
               type="button"
@@ -741,7 +818,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
           }
         >
           <div className="flex min-w-0 items-center gap-3">
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[var(--data-success-100)] text-[var(--data-success-700)]">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:bg-primary/20 dark:text-[var(--accent)]">
               <TreePine className="h-5 w-5" strokeWidth={1.75} />
             </span>
             <div className="min-w-0">
@@ -755,18 +832,21 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
           </div>
         </CabeceraPropia>
 
-        <div className="flex min-h-0 flex-1 overflow-hidden">
-        <form id="loth-entry-form" onSubmit={handleSubmit} className="min-w-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6 sm:grid sm:grid-cols-2 sm:gap-x-5 sm:gap-y-4 sm:content-start [&>*]:min-w-0 max-sm:space-y-4">
+        <form id="loth-entry-form" onSubmit={handleSubmit} className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4 sm:px-6">
+          {esTransformacion && (
+            <LothAvisoTransformacion confirmado={transformeEnTh} onConfirmado={setTransformeEnTh} onIrAlCtp={irAlCtp} />
+          )}
+
           {error && (
-            <div className="flex items-start gap-3 rounded-xl border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-4 py-3 text-sm text-[var(--data-error-700)] sm:col-span-2">
+            <div role="alert" className="flex items-start gap-2.5 rounded-xl border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-3 py-2.5 text-sm text-[var(--data-error-700)] dark:border-[var(--data-error-500)]/40 dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
               <div>{error}</div>
             </div>
           )}
 
           {dmcBloqueo && (
-            <div className="space-y-2 rounded-xl border-2 border-[var(--data-error-500)]/60 bg-[var(--data-error-50)] px-4 py-3 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)] sm:col-span-2">
-              <div className="flex items-start gap-3">
+            <div className="space-y-2 rounded-xl border-2 border-[var(--data-error-500)]/60 bg-[var(--data-error-50)] px-3 py-2.5 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
+              <div className="flex items-start gap-2.5">
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                 <div><b>Bajo el diámetro mínimo de corta.</b> {dmcBloqueo}</div>
               </div>
@@ -775,7 +855,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
                 onChange={(e) => setJustificacionDmc(e.target.value)}
                 placeholder="Motivo (ej. árbol caído por viento, autorización especial N°…)"
                 aria-label="Justificación de la tala bajo DMC"
-                className="h-12 w-full rounded-xl border-2 border-[var(--data-error-500)]/50 bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)]"
+                className="h-10 w-full rounded-lg border-2 border-[var(--data-error-500)]/50 bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)]"
               />
               <p className="text-xs font-semibold opacity-80">
                 Con el motivo escrito la línea se registra y queda anotada en el libro y en la auditoría.
@@ -784,30 +864,60 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
           )}
 
           {speciesFueraDelPlan && (
-            <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-warning-500)]/60 bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/15 px-4 py-3 text-sm text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)] sm:col-span-2">
+            <div className="flex items-start gap-2 rounded-xl border border-[var(--data-warning-500)]/60 bg-[var(--data-warning-500)]/10 px-3 py-2 text-sm text-[var(--data-warning-ink)] dark:text-[var(--data-warning-500)]">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-              <div>
-                <b>&ldquo;{speciesName}&rdquo; no está autorizada en el plan de manejo.</b> No vas a poder
-                despacharla ni emitir la GTF hasta agregarla en <b>Plan de Manejo · Especies autorizadas</b>.
-              </div>
+              <span className="min-w-0">
+                <b>&ldquo;{speciesName}&rdquo; no está autorizada en el plan.</b> Agrégala en Plan de Manejo · Especies autorizadas.
+              </span>
+              <InfoTip
+                title="Especie fuera del plan"
+                what="Sin estar en las especies autorizadas del plan no vas a poder despacharla ni emitir la GTF."
+              />
             </div>
           )}
 
-          <Field label="Fecha" required>
-            <input type="date" value={entryDate} onChange={(e) => setEntryDate(e.target.value)} required className={cls.input} />
-          </Field>
+          {corrigeLineNo != null && (
+            <div className="space-y-2 rounded-xl border-2 border-[var(--data-info-500)] bg-[var(--data-info-500)]/10 p-3">
+              <div className="flex items-center gap-1">
+                <p className="text-sm font-bold text-[var(--data-info-700)] dark:text-[var(--data-info-500)]">
+                  Subsanación de la línea N° {corrigeLineNo}
+                </p>
+                <InfoTip
+                  title="Subsanación"
+                  what={`La línea N° ${corrigeLineNo} no se borra: queda en el libro marcada como corregida por esta.`}
+                  affects="Así lo pide SERFOR: la enmienda tiene que poder leerse."
+                />
+              </div>
+              <input
+                type="text"
+                value={correctionNote}
+                onChange={(e) => setCorrectionNote(e.target.value)}
+                aria-label="Motivo de la corrección"
+                placeholder="Motivo de la corrección (ej.: el Ø mayor se anotó en cm, no en m)"
+                className="h-10 w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--data-info-500)]"
+              />
+            </div>
+          )}
 
-          {/* Picker data-driven: elegí del plan lo disponible para esta sección */}
-          <div className="space-y-2 rounded-xl border border-[var(--data-success-500)] bg-[var(--data-success-50)] p-3 sm:col-span-2">
+          {/* Picker data-driven: elige del plan lo disponible para esta sección */}
+          <section aria-label={SOURCE_TITLE[section]} className="space-y-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-success-700)]">
-                {SOURCE_TITLE[section]}
-              </span>
+              <div className="flex min-w-0 items-center gap-1">
+                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)]">
+                  {SOURCE_TITLE[section]}
+                </span>
+                <InfoTip
+                  icono="ayuda"
+                  title={SOURCE_TITLE[section]}
+                  what="Elige de la lista para autocompletar la línea, o cárgala a mano abajo."
+                  affects="Sólo aparece lo que el plan elegido tiene disponible para esta etapa."
+                />
+              </div>
               <select
                 value={planId ?? ""}
                 onChange={(e) => setPlanId(e.target.value || null)}
                 aria-label="Elegir plan de manejo"
-                className="h-8 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-xs font-bold text-[var(--text-primary)] outline-none"
+                className="h-9 max-w-full truncate rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-xs font-bold text-[var(--text-primary)] outline-none"
               >
                 {plans.length === 0 && <option value="">Sin plan</option>}
                 {plans.map((p) => (
@@ -821,15 +931,16 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
                 type="text"
                 value={srcQuery}
                 onChange={(e) => setSrcQuery(e.target.value)}
+                aria-label="Buscar por código o especie"
                 placeholder="Buscar por código o especie..."
                 className={`${cls.input} h-9 pl-8`}
               />
             </div>
-            <div className="max-h-44 divide-y divide-[var(--rule-soft)] overflow-y-auto rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)]">
+            <div className="max-h-40 divide-y divide-[var(--rule-soft)] overflow-y-auto rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)]">
               {loadingSrc ? (
-                <div className="flex items-center gap-2 px-3 py-4 text-sm text-[var(--text-tertiary)]"><Loader2 className="h-4 w-4 animate-spin" /> Cargando…</div>
+                <div className="flex items-center gap-2 px-3 py-3 text-sm text-[var(--text-tertiary)]"><Loader2 className="h-4 w-4 animate-spin" /> Cargando…</div>
               ) : filteredSources.length === 0 ? (
-                <div className="px-3 py-4 text-center text-sm text-[var(--text-tertiary)]">
+                <div className="px-3 py-3 text-center text-sm text-[var(--text-tertiary)]">
                   Nada disponible en este plan para esta etapa.{section !== "tala" && " Registra primero la etapa anterior."}
                 </div>
               ) : (
@@ -838,7 +949,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
                     key={`${it.code}-${i}`}
                     type="button"
                     onClick={() => pickSource(it)}
-                    className="flex w-full items-center justify-between gap-3 px-3 min-h-10 text-left transition-colors hover:bg-[var(--data-success-50)]"
+                    className="flex min-h-9 w-full items-center justify-between gap-3 px-3 text-left transition-colors hover:bg-[var(--surface-sunken)]"
                   >
                     <span className="flex min-w-0 items-center gap-2 truncate">
                       <span className="font-mono text-sm font-bold text-[var(--text-primary)]">{it.code ?? it.productType ?? "—"}</span>
@@ -853,196 +964,241 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
                 ))
               )}
             </div>
-            <p className="text-[length:var(--ts-2xs)] text-[var(--data-success-700)]">
-              Selecciona de la lista para autocompletar, o carga manualmente abajo.
-            </p>
-          </div>
-
-          {fields.has("treeCode") && (
-            <Field label="Código del árbol" required={!fields.has("trozaCode")} hint="El código del censo forestal — punto de partida de la trazabilidad">
-              <input
-                type="text"
-                value={treeCode}
-                onChange={(e) => setTreeCode(e.target.value)}
-                onBlur={(e) => lookupCensus(e.target.value)}
-                placeholder="1-MIS"
-                className={cls.input}
-              />
-            </Field>
-          )}
-
-          {/* Banner: datos jalados del censo (data-driven) */}
-          {fields.has("treeCode") && censusTree && (
-            <div className="flex items-start gap-2.5 rounded-xl border border-[var(--data-success-500)] bg-[var(--data-success-50)] px-3 py-2.5 text-xs text-[var(--data-success-700)] sm:col-span-2">
-              <Check className="mt-0.5 h-4 w-4 shrink-0" />
-              <div>
-                <span className="font-bold">Jalado del censo:</span>{" "}
-                {censusTree.speciesCommon}
-                {censusTree.dapM ? ` · DAP ${Number(censusTree.dapM).toFixed(2)} m` : ""}
-                {censusTree.alturaComercialM ? ` · Hc ${Number(censusTree.alturaComercialM).toFixed(2)} m` : ""}
-                {censusTree.volumenEstimadoM3 ? ` · vol. est. ${fmtM3(Number(censusTree.volumenEstimadoM3))} m³` : ""}
-                {censusTree.estado === "talado" && (
-                  <span className="ml-1 font-bold text-[var(--data-warning-700)]">· ya marcado como talado</span>
-                )}
-                <div className="mt-0.5 text-[var(--data-success-700)] opacity-80">Especie y medidas precargadas — ajusta los Ø y el largo a lo medido en campo.</div>
-              </div>
-            </div>
-          )}
-          {fields.has("treeCode") && censusChecked && !censusTree && treeCode.trim() && (
-            <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-xs text-[var(--text-tertiary)] sm:col-span-2">
-              Este código no está en el censo del plan — se registra como código libre.
-            </div>
-          )}
-
-          {fields.has("trozaCode") && (
-            <Field label="Código de troza" required hint="Código del árbol + letra/número por nivel de trozado (ej. 1-MIS-A)">
-              <input type="text" value={trozaCode} onChange={(e) => setTrozaCode(e.target.value)} placeholder="1-MIS-A" className={cls.input} />
-            </Field>
-          )}
-
-          {corrigeLineNo != null && (
-            <div className="rounded-xl border-2 border-[var(--data-info-500)] bg-[var(--data-info-500)]/10 p-3 sm:col-span-2">
-              <p className="text-sm font-bold text-[var(--data-info-700)] dark:text-[var(--data-info-500)]">
-                Subsanación de la línea N° {corrigeLineNo}
-              </p>
-              <p className="mt-0.5 text-xs text-[var(--text-secondary)]">
-                La línea N° {corrigeLineNo} <b>no se borra</b>: queda en el libro marcada como corregida por esta. Así lo pide SERFOR —
-                la enmienda tiene que poder leerse.
-              </p>
-              <input
-                type="text"
-                value={correctionNote}
-                onChange={(e) => setCorrectionNote(e.target.value)}
-                placeholder="Motivo de la corrección (ej.: el Ø mayor se anotó en cm, no en m)"
-                className="mt-2 h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--data-info-500)]"
-              />
-            </div>
-          )}
+          </section>
 
           {/* Despacho de PT sin troza de origen: se guarda igual (el libro admite
               huecos), pero la trazabilidad de esa línea deja de llegar al árbol
               y su volumen se reparte por especie. Decirlo acá es mucho más
               barato que descubrirlo en la vista «Por árbol». */}
           {section === "despacho_producto" && !trozaCode.trim() && (
-            <div className="rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/10 px-3 py-2 text-xs font-semibold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)] sm:col-span-2">
-              Sin troza de origen esta salida no se puede atribuir a un árbol: su volumen se reparte por especie entre todos los de{" "}
-              {speciesName || "esa especie"}. Elige el producto desde la lista de arriba para que herede su troza.
+            <div className="flex items-start gap-2 rounded-lg border border-[var(--data-warning-500)]/60 bg-[var(--data-warning-500)]/10 px-3 py-2 text-xs font-semibold text-[var(--data-warning-ink)] dark:text-[var(--data-warning-500)]">
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              <span className="min-w-0">Sin troza de origen: elige el producto de la lista para que herede la suya.</span>
+              <InfoTip
+                title="Troza de origen"
+                what={`Sin troza esta salida no se puede atribuir a un árbol: su volumen se reparte por especie entre todos los de ${speciesName || "esa especie"}.`}
+                affects="La vista «Por árbol» del libro."
+              />
             </div>
           )}
 
-          {fields.has("despachoCode") && (
-            <Field label="Código de despacho" hint="Solo si despachas con un código distinto al de la troza">
-              <input type="text" value={despachoCode} onChange={(e) => setDespachoCode(e.target.value)} placeholder="Opcional" className={cls.input} />
+          {/* Los datos de la línea: grilla de 6, cada campo corto ocupa media fila. */}
+          <div className="grid grid-cols-6 gap-x-3 gap-y-3 [&>*]:min-w-0">
+            <Field label="Fecha" required className="col-span-3">
+              <input type="date" value={entryDate} onChange={(e) => setEntryDate(e.target.value)} required className={cls.input} />
             </Field>
-          )}
 
-          {fields.has("isRama") && (
-            <label className="flex items-center gap-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2.5 text-sm text-[var(--text-primary)]">
-              <input type="checkbox" checked={isRama} onChange={(e) => setIsRama(e.target.checked)} className="h-4 w-4 accent-[var(--data-success-600)]" />
-              Proviene de una <span className="font-semibold">rama aprovechable</span> (R)
-            </label>
-          )}
+            {fields.has("treeCode") && (
+              <Field label="Código del árbol" required={!fields.has("trozaCode")} hint="El código del censo forestal — punto de partida de la trazabilidad" className="col-span-3">
+                <input
+                  type="text"
+                  value={treeCode}
+                  onChange={(e) => setTreeCode(e.target.value)}
+                  onBlur={(e) => lookupCensus(e.target.value)}
+                  placeholder="1-MIS"
+                  className={cls.input}
+                />
+              </Field>
+            )}
 
-          {fields.has("species") && (
-            <Field label="Especie" required={section === "tala" || section === "trozado" || section === "producto_terminado"}>
-              <button type="button" onClick={() => setShowPicker((v) => !v)} className={`${cls.input} flex items-center justify-between text-left`}>
-                <span className="flex min-w-0 items-center gap-2 truncate">
-                  <span className="truncate font-medium">{speciesName || "Seleccionar especie..."}</span>
-                  {cites && <CitesPill />}
-                </span>
-                <Search className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" />
-              </button>
-            </Field>
-          )}
+            {fields.has("trozaCode") && (
+              <Field label="Código de troza" required hint="Código del árbol + letra/número por nivel de trozado (ej. 1-MIS-A)" className="col-span-3">
+                <input type="text" value={trozaCode} onChange={(e) => setTrozaCode(e.target.value)} placeholder="1-MIS-A" className={cls.input} />
+              </Field>
+            )}
 
-          {fields.has("species") && showPicker && (
-            <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3 sm:col-span-2">
-              <input
-                type="text"
-                value={speciesQuery}
-                onChange={(e) => setSpeciesQuery(e.target.value)}
-                placeholder="Buscar por nombre común o científico..."
-                className={`${cls.input} mb-2`}
-              />
-              {!speciesQuery && (
-                <div className="mb-2 flex flex-wrap gap-1.5">
-                  {TOP_SPECIES_SLUGS.map((slug) => {
-                    const s = speciesOptions.find((x) => x.slug === slug);
-                    if (!s) return null;
-                    const active = speciesSlug === slug;
-                    return (
-                      <button
-                        key={slug}
-                        type="button"
-                        onClick={() => { setSpeciesSlug(slug); setShowPicker(false); setSpeciesQuery(""); }}
-                        className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors ${
-                          active
-                            ? "border-[var(--data-success-500)] bg-[var(--data-success-50)] text-[var(--data-success-700)]"
-                            : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)]"
-                        }`}
-                      >
-                        {s.commonName}
-                      </button>
-                    );
-                  })}
-                  <button
-                    type="button"
-                    onClick={() => { setSpeciesSlug("otro"); setShowPicker(false); setSpeciesQuery(""); }}
-                    className="rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 py-1 text-xs font-medium text-[var(--text-secondary)] hover:border-[var(--rule-strong)]"
-                  >
-                    Otra…
-                  </button>
-                </div>
-              )}
-              <div className="max-h-56 divide-y divide-[var(--rule-soft)] overflow-y-auto rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)]">
-                {filteredSpecies.length === 0 && (
-                  <div className="px-3 py-4 text-center text-sm text-[var(--text-tertiary)]">Sin resultados</div>
+            {fields.has("despachoCode") && (
+              <Field label="Código de despacho" hint="Solo si despachas con un código distinto al de la troza" className="col-span-3">
+                <input type="text" value={despachoCode} onChange={(e) => setDespachoCode(e.target.value)} placeholder="Opcional" className={cls.input} />
+              </Field>
+            )}
+
+            {fields.has("gtf") && (
+              <Field label="N° de GTF" required hint="Debe coincidir con la fecha de emisión de la guía" className="col-span-3">
+                <input type="text" value={gtfNumber} onChange={(e) => setGtfNumber(e.target.value)} placeholder="001-0000120" className={`${cls.input} font-mono`} />
+              </Field>
+            )}
+
+            {fields.has("productType") && (
+              <Field label="Tipo de producto" required className="col-span-3">
+                <select value={productType} onChange={(e) => setProductType(e.target.value)} className={cls.input}>
+                  {PRODUCT_TYPES.map((p) => <option key={p} value={p}>{p}</option>)}
+                </select>
+              </Field>
+            )}
+
+            {fields.has("species") && (
+              <Field label="Especie" required={section === "tala" || section === "trozado" || section === "producto_terminado"} className="col-span-3">
+                <button type="button" onClick={() => setShowPicker((v) => !v)} aria-expanded={showPicker} className={`${cls.input} flex items-center justify-between text-left`}>
+                  <span className="flex min-w-0 items-center gap-2 truncate">
+                    <span className="truncate font-medium">{speciesName || "Seleccionar especie..."}</span>
+                    {cites && <CitesPill />}
+                  </span>
+                  <Search className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" />
+                </button>
+              </Field>
+            )}
+
+            {fields.has("species") && showPicker && (
+              <div className="col-span-6 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
+                <input
+                  type="text"
+                  value={speciesQuery}
+                  onChange={(e) => setSpeciesQuery(e.target.value)}
+                  aria-label="Buscar especie"
+                  placeholder="Buscar por nombre común o científico..."
+                  className={`${cls.input} mb-2 h-9`}
+                />
+                {!speciesQuery && (
+                  <div className="mb-2 flex flex-wrap gap-1.5">
+                    {TOP_SPECIES_SLUGS.map((slug) => {
+                      const s = speciesOptions.find((x) => x.slug === slug);
+                      if (!s) return null;
+                      const active = speciesSlug === slug;
+                      return (
+                        <button
+                          key={slug}
+                          type="button"
+                          onClick={() => { setSpeciesSlug(slug); setShowPicker(false); setSpeciesQuery(""); }}
+                          className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors ${
+                            active
+                              ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+                              : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)]"
+                          }`}
+                        >
+                          {s.commonName}
+                        </button>
+                      );
+                    })}
+                    <button
+                      type="button"
+                      onClick={() => { setSpeciesSlug("otro"); setShowPicker(false); setSpeciesQuery(""); }}
+                      className="rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 py-1 text-xs font-medium text-[var(--text-secondary)] hover:border-[var(--rule-strong)]"
+                    >
+                      Otra…
+                    </button>
+                  </div>
                 )}
-                {filteredSpecies.map((s) => (
-                  <button
-                    key={s.slug}
-                    type="button"
-                    onClick={() => { setSpeciesSlug(s.slug); setShowPicker(false); setSpeciesQuery(""); }}
-                    className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left transition-colors hover:bg-[var(--surface-sunken)]"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5 truncate">
-                        <span className="text-sm font-medium text-[var(--text-primary)]">{s.commonName}</span>
-                        {s.cites && <CitesPill />}
+                <div className="max-h-48 divide-y divide-[var(--rule-soft)] overflow-y-auto rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)]">
+                  {filteredSpecies.length === 0 && (
+                    <div className="px-3 py-3 text-center text-sm text-[var(--text-tertiary)]">Sin resultados</div>
+                  )}
+                  {filteredSpecies.map((s) => (
+                    <button
+                      key={s.slug}
+                      type="button"
+                      onClick={() => { setSpeciesSlug(s.slug); setShowPicker(false); setSpeciesQuery(""); }}
+                      className="flex w-full items-center justify-between gap-3 px-3 py-1.5 text-left transition-colors hover:bg-[var(--surface-sunken)]"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 truncate">
+                          <span className="text-sm font-medium text-[var(--text-primary)]">{s.commonName}</span>
+                          {s.cites && <CitesPill />}
+                        </div>
+                        {s.scientificName && (
+                          <div className="truncate text-xs italic text-[var(--text-tertiary)]">{s.scientificName}</div>
+                        )}
                       </div>
-                      {s.scientificName && (
-                        <div className="truncate text-xs italic text-[var(--text-tertiary)]">{s.scientificName}</div>
-                      )}
-                    </div>
-                  </button>
-                ))}
+                    </button>
+                  ))}
+                </div>
               </div>
+            )}
+
+            {fields.has("species") && isCustom && (
+              <Field label="Nombre de la especie" required className="col-span-3">
+                <input type="text" value={customSpecies} onChange={(e) => setCustomSpecies(e.target.value)} placeholder="ej: Aguano masha" className={cls.input} />
+              </Field>
+            )}
+
+            {/* Sección 6 · item 6: el nombre científico es una columna del formato.
+                La nota al pie del Anexo 02 exceptúa a los productos formados por
+                más de una especie (carbón, entre otros): ahí no es obligatorio ni
+                el nombre común ni el científico. */}
+            {fields.has("scientific") && (
+              <Field
+                label="Nombre científico"
+                hint="Columna 6 del formato. Si el producto mezcla especies (ej. carbón), puede ir vacío"
+                className="col-span-6"
+              >
+                <input
+                  type="text"
+                  value={scientificManual ?? scientific ?? ""}
+                  onChange={(e) => setScientificManual(e.target.value)}
+                  placeholder="ej: Cedrelinga catenaeformis"
+                  className={`${cls.input} italic`}
+                />
+              </Field>
+            )}
+
+            {fields.has("isRama") && (
+              <Casilla checked={isRama} onChange={setIsRama} title="Proviene de una rama aprovechable (R)">
+                De una <span className="font-semibold">rama aprovechable</span> (R)
+              </Casilla>
+            )}
+
+            {fields.has("volumeManual") && (
+              <Field label="Volumen (m³)" required className="col-span-3">
+                <input type="number" step="0.0001" min="0.0001" value={volumeM3} onChange={(e) => setVolumeM3(e.target.value)} placeholder="0.0000" className={`${cls.input} font-mono tabular-nums`} />
+              </Field>
+            )}
+
+            {fields.has("consumoInterno") && (
+              <Casilla checked={consumoInterno} onChange={setConsumoInterno} title="Consumo interno (campamento, puentes, etc.)">
+                Consumo interno <span className="text-[var(--text-tertiary)]">(campamento, puentes)</span>
+              </Casilla>
+            )}
+
+            {/* En tala, «descartado» dejó de ser un checkbox suelto: es uno de los
+                casos del item 10, y viaja junto con su motivo y el término exacto. */}
+            {fields.has("discarded") && section !== "tala" && (
+              <Casilla checked={discarded} onChange={setDiscarded} acento="error" title="Descartado: no aprovechable. Anota el motivo en Observaciones.">
+                Descartado <span className="text-[var(--text-tertiary)]">(no aprovechable)</span>
+              </Casilla>
+            )}
+
+            {fields.has("pieces") && (
+              <Field label="N° piezas" className={spanCantidad}>
+                <input type="number" min="0" value={pieces} onChange={(e) => setPieces(e.target.value)} placeholder="25" className={cls.input} />
+              </Field>
+            )}
+            {fields.has("quantity") && (
+              <Field label="Cantidad" required className={spanCantidad}>
+                <input type="number" step="0.0001" min="0" value={quantity} onChange={(e) => setQuantity(e.target.value)} placeholder="3.5620" className={`${cls.input} font-mono tabular-nums`} />
+              </Field>
+            )}
+            {fields.has("unit") && (
+              <Field label="Unidad" required className={spanCantidad}>
+                <select value={unit} onChange={(e) => setUnit(e.target.value as "m3" | "kg" | "unidad")} className={cls.input}>
+                  <option value="m3">m³</option>
+                  <option value="kg">Kg</option>
+                  <option value="unidad">Unidad</option>
+                </select>
+              </Field>
+            )}
+          </div>
+
+          {/* Banner: datos jalados del censo (data-driven) */}
+          {fields.has("treeCode") && censusTree && (
+            <div className="flex items-start gap-2 rounded-lg border border-[var(--data-success-500)]/40 bg-[var(--data-success-500)]/10 px-3 py-2 text-xs text-[var(--data-success-ink)] dark:text-[var(--data-success-500)]">
+              <Check className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              <span className="min-w-0">
+                <span className="font-bold">Jalado del censo:</span>{" "}
+                {censusTree.speciesCommon}
+                {censusTree.dapM ? ` · DAP ${Number(censusTree.dapM).toFixed(2)} m` : ""}
+                {censusTree.alturaComercialM ? ` · Hc ${Number(censusTree.alturaComercialM).toFixed(2)} m` : ""}
+                {censusTree.volumenEstimadoM3 ? ` · vol. est. ${fmtM3(Number(censusTree.volumenEstimadoM3))} m³` : ""}
+                {censusTree.estado === "talado" && (
+                  <span className="ml-1 font-bold text-[var(--data-warning-ink)] dark:text-[var(--data-warning-500)]">· ya marcado como talado</span>
+                )}
+              </span>
+              <InfoTip title="Datos del censo" what="Especie y medidas precargadas del censo: ajusta los Ø y el largo a lo medido en campo." />
             </div>
           )}
-
-          {fields.has("species") && isCustom && (
-            <Field label="Nombre de la especie" required>
-              <input type="text" value={customSpecies} onChange={(e) => setCustomSpecies(e.target.value)} placeholder="ej: Aguano masha" className={cls.input} />
-            </Field>
-          )}
-
-          {/* Sección 6 · item 6: el nombre científico es una columna del formato.
-              La nota al pie del Anexo 02 exceptúa a los productos formados por
-              más de una especie (carbón, entre otros): ahí no es obligatorio ni
-              el nombre común ni el científico. */}
-          {fields.has("scientific") && (
-            <Field
-              label="Nombre científico"
-              hint="Columna 6 del formato. Si el producto mezcla especies (ej. carbón), puede ir vacío"
-            >
-              <input
-                type="text"
-                value={scientificManual ?? scientific ?? ""}
-                onChange={(e) => setScientificManual(e.target.value)}
-                placeholder="ej: Cedrelinga catenaeformis"
-                className={`${cls.input} italic`}
-              />
-            </Field>
+          {fields.has("treeCode") && censusChecked && !censusTree && treeCode.trim() && (
+            <p className="rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-xs text-[var(--text-tertiary)]">
+              Este código no está en el censo del plan — se registra como código libre.
+            </p>
           )}
 
           {fields.has("species") && cites && (() => {
@@ -1050,8 +1206,8 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
             const est = permiso ? estadoVencimiento(permiso.vencimiento) : null;
             const ok = permiso && est !== "vencido";
             return (
-              <div className={`flex items-start gap-2.5 rounded-xl border px-3 py-2.5 text-xs sm:col-span-2 ${ok ? "border-[var(--data-success-100)] bg-[var(--data-success-50)] text-[var(--data-success-700)]" : "border-[var(--data-error-100)] bg-[var(--data-error-50)] text-[var(--data-error-700)]"}`}>
-                <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
+              <div className={`flex items-start gap-2 rounded-lg border px-3 py-2 text-xs ${ok ? "border-[var(--data-success-500)]/40 bg-[var(--data-success-500)]/10 text-[var(--data-success-ink)] dark:text-[var(--data-success-500)]" : "border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/10 text-[var(--data-error-ink)] dark:text-[var(--data-error-500)]"}`}>
+                <ShieldAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                 <div>
                   <span className="font-bold">Especie CITES.</span>{" "}
                   {permiso ? (
@@ -1077,97 +1233,6 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
             <LothMedicionFuste medidas={medidasTala} onChange={setMedidasTala} seccion={section} />
           )}
 
-          {fields.has("diams") && section !== "tala" && section !== "trozado" && (
-            <>
-              <div className="grid grid-cols-3 gap-3 sm:col-span-2">
-                <Field label="Ø mayor (m)" hint="Promedio 2 medidas">
-                  <input type="number" step="0.001" min="0" value={diamMayor} onChange={(e) => setDiamMayor(e.target.value)} placeholder="0.96" className={cls.input} />
-                </Field>
-                <Field label="Ø menor (m)">
-                  <input type="number" step="0.001" min="0" value={diamMenor} onChange={(e) => setDiamMenor(e.target.value)} placeholder="0.65" className={cls.input} />
-                </Field>
-                <Field label="Longitud (m)">
-                  <input type="number" step="0.01" min="0" value={lengthM} onChange={(e) => setLengthM(e.target.value)} placeholder="16" className={cls.input} />
-                </Field>
-              </div>
-              <Field label="Volumen (m³)" hint="Smalian: 0.7854 × ((Ø mayor + Ø menor)/2)² × Longitud">
-                <div className="relative">
-                  <input
-                    type="number" step="0.0001" min="0"
-                    value={volumeM3}
-                    onChange={(e) => setVolumeM3(e.target.value)}
-                    placeholder={autoVolume > 0 ? autoVolume.toFixed(4) : "0.0000"}
-                    className={`${cls.input} pr-32 font-mono tabular-nums`}
-                  />
-                  {autoVolume > 0 && Number(volumeM3) !== autoVolume && (
-                    <button
-                      type="button"
-                      onClick={() => setVolumeM3(autoVolume.toFixed(4))}
-                      title="Aplicar fórmula Smalian"
-                      className="absolute right-1.5 top-1/2 inline-flex h-8 -translate-y-1/2 items-center gap-1 rounded-lg bg-[var(--data-success-100)] px-2.5 text-xs font-bold text-[var(--data-success-700)] transition-colors hover:bg-[var(--data-success-100)]"
-                    >
-                      <Sparkles className="h-3 w-3" />
-                      {autoVolume.toFixed(4)}
-                    </button>
-                  )}
-                </div>
-              </Field>
-            </>
-          )}
-
-          {fields.has("volumeManual") && (
-            <Field label="Volumen (m³)" required>
-              <input type="number" step="0.0001" min="0.0001" value={volumeM3} onChange={(e) => setVolumeM3(e.target.value)} placeholder="0.0000" className={`${cls.input} font-mono tabular-nums`} />
-            </Field>
-          )}
-
-          {fields.has("productType") && (
-            <Field label="Tipo de producto" required>
-              <select value={productType} onChange={(e) => setProductType(e.target.value)} className={cls.input}>
-                {PRODUCT_TYPES.map((p) => <option key={p} value={p}>{p}</option>)}
-              </select>
-            </Field>
-          )}
-
-          {(fields.has("quantity") || fields.has("unit") || fields.has("pieces")) && (
-            <div className="grid grid-cols-3 gap-3 sm:col-span-2">
-              {fields.has("pieces") && (
-                <Field label="N° piezas">
-                  <input type="number" min="0" value={pieces} onChange={(e) => setPieces(e.target.value)} placeholder="25" className={cls.input} />
-                </Field>
-              )}
-              {fields.has("quantity") && (
-                <Field label="Cantidad" required>
-                  <input type="number" step="0.0001" min="0" value={quantity} onChange={(e) => setQuantity(e.target.value)} placeholder="3.5620" className={`${cls.input} font-mono tabular-nums`} />
-                </Field>
-              )}
-              {fields.has("unit") && (
-                <Field label="Unidad" required>
-                  <select value={unit} onChange={(e) => setUnit(e.target.value as "m3" | "kg" | "unidad")} className={cls.input}>
-                    <option value="m3">m³</option>
-                    <option value="kg">Kg</option>
-                    <option value="unidad">Unidad</option>
-                  </select>
-                </Field>
-              )}
-            </div>
-          )}
-
-          {fields.has("gtf") && (
-            <Field label="N° de GTF" required hint="Debe coincidir con la fecha de emisión de la guía">
-              <input type="text" value={gtfNumber} onChange={(e) => setGtfNumber(e.target.value)} placeholder="001-0000120" className={`${cls.input} font-mono`} />
-            </Field>
-          )}
-
-          {/* En tala, «descartado» dejó de ser un checkbox suelto: es uno de los
-              casos del item 10, y viaja junto con su motivo y el término exacto. */}
-          {fields.has("discarded") && section !== "tala" && (
-            <label className="flex items-center gap-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2.5 text-sm text-[var(--text-primary)]">
-              <input type="checkbox" checked={discarded} onChange={(e) => setDiscarded(e.target.checked)} className="h-4 w-4 accent-[var(--data-error-600)]" />
-              Descartado <span className="text-[var(--text-tertiary)]">(no aprovechable — anota el motivo abajo)</span>
-            </label>
-          )}
-
           {section === "tala" && (
             <LothTalaObservaciones
               motivos={motivosTala}
@@ -1183,23 +1248,24 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
             />
           )}
 
-          {fields.has("consumoInterno") && (
-            <label className="flex items-center gap-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2.5 text-sm text-[var(--text-primary)]">
-              <input type="checkbox" checked={consumoInterno} onChange={(e) => setConsumoInterno(e.target.checked)} className="h-4 w-4 accent-[var(--data-success-600)]" />
-              Consumo interno <span className="text-[var(--text-tertiary)]">(campamento, puentes, etc.)</span>
-            </label>
-          )}
+          {/* Evidencia de campo (GPS + foto), en una fila de botones */}
+          <section aria-label="Evidencia de campo" className="space-y-2 border-t border-[var(--rule-soft)] pt-3">
+            <div className="flex items-center gap-1.5">
+              <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
+                Evidencia de campo
+              </CardTitle>
+              {section === "tala" ? (
+                <InfoTip
+                  title="Evidencia de campo"
+                  what="La foto del tocón con el código visible es la prueba del marcado."
+                  affects="Es lo que sostiene la línea si te supervisan."
+                />
+              ) : (
+                <span className="text-xs text-[var(--text-tertiary)]">opcional</span>
+              )}
+            </div>
 
-          {/* Evidencia de campo (GPS + foto) */}
-          <div className="space-y-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4 sm:col-span-2">
-            <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
-              Evidencia de campo{" "}
-              <span className="font-normal text-[var(--text-tertiary)]">
-                {section === "tala" ? "(la foto del tocón es la prueba del marcado)" : "(opcional)"}
-              </span>
-            </CardTitle>
-
-            {/* GPS — teléfono, censo o UTM tecleada */}
+            {/* GPS — teléfono, censo o UTM tecleada; la foto va en la misma fila */}
             <LothGpsField
               lat={gpsLat}
               lng={gpsLng}
@@ -1208,10 +1274,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
                 setGpsLng(ln);
               }}
               censo={censoUtm}
-            />
-
-            {/* Foto */}
-            <div className="space-y-2">
+            >
               <input
                 ref={fileInputRef}
                 type="file"
@@ -1224,96 +1287,40 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={photoUploading}
-                className="inline-flex h-12 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {photoUploading
                   ? <Loader2 className="h-4 w-4 animate-spin" />
-                  : <Camera className="h-4 w-4 text-[var(--data-success-600)]" />
+                  : <Camera className="h-4 w-4 text-[var(--accent-ink)] dark:text-[var(--accent)]" />
                 }
-                {photoUploading ? "Subiendo foto…" : photoUrl ? "Cambiar foto" : "Subir foto del tocón / troza"}
+                {photoUploading ? "Subiendo foto…" : photoUrl ? "Cambiar foto" : "Foto del tocón / troza"}
               </button>
-              {photoError && (
-                <p className="flex items-center gap-1.5 text-xs text-[var(--data-error-700)]">
-                  <AlertTriangle className="h-3.5 w-3.5 shrink-0" />{photoError}
-                </p>
-              )}
-              {photoUrl && (
-                <a href={photoUrl} target="_blank" rel="noopener noreferrer" className="block">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={photoUrl}
-                    alt="Foto de evidencia de campo"
-                    className="h-28 w-auto rounded-lg border border-[var(--rule-base)] object-cover transition-opacity hover:opacity-80"
-                  />
-                </a>
-              )}
-            </div>
-          </div>
+            </LothGpsField>
+            {photoError && (
+              <p className="flex items-center gap-1.5 text-xs text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+                <AlertTriangle className="h-3.5 w-3.5 shrink-0" />{photoError}
+              </p>
+            )}
+            {photoUrl && (
+              <a href={photoUrl} target="_blank" rel="noopener noreferrer" className="inline-block">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={photoUrl}
+                  alt="Foto de evidencia de campo"
+                  className="h-20 w-auto rounded-lg border border-[var(--rule-base)] object-cover transition-opacity hover:opacity-80"
+                />
+              </a>
+            )}
+          </section>
 
-          <div className="sm:col-span-2">
+          {/* En tala la nota libre ya está en «Observaciones (item 10)», con el
+              mismo estado: repetirla acá eran dos cajas que se pisaban. */}
+          {section !== "tala" && (
             <Field label="Observaciones">
-              <textarea value={observations} onChange={(e) => setObservations(e.target.value)} rows={2} placeholder="Información adicional relevante..." className={`${cls.input} h-auto resize-none py-2.5`} />
+              <textarea value={observations} onChange={(e) => setObservations(e.target.value)} rows={2} placeholder="Información adicional relevante..." className={`${cls.input} h-auto resize-none py-2`} />
             </Field>
-          </div>
+          )}
         </form>
-
-        {/* Panel derecho: vista previa en vivo (lg+) */}
-        <aside className="hidden w-[300px] shrink-0 flex-col border-l border-[var(--rule-base)] bg-[var(--surface-canvas)] lg:flex">
-          <div className="border-b border-[var(--rule-soft)] px-5 py-3.5">
-            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Vista previa del registro</span>
-          </div>
-          <div className="flex-1 overflow-y-auto px-5 py-5">
-            <div className="mb-5">
-              <CardTitle className="text-lg font-bold leading-tight text-[var(--text-primary)]">{previewEntity}</CardTitle>
-              <p className="mt-0.5 text-xs italic text-[var(--text-tertiary)]">{meta.label}</p>
-            </div>
-            <div className="mb-5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-              <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">{highlight.label}</div>
-              <div className="mt-1 font-mono text-2xl font-bold tabular-nums text-[var(--text-primary)]">{highlight.value}{highlight.unit && <span className="ml-1 text-sm font-medium text-[var(--text-tertiary)]">{highlight.unit}</span>}</div>
-            </div>
-            <dl className="space-y-2.5">
-              <PreviewRow label="Fecha" value={entryDate || "—"} />
-              {fields.has("treeCode") && <PreviewRow label="Árbol" value={treeCode.trim() || "—"} mono />}
-              {fields.has("trozaCode") && <PreviewRow label="Troza" value={trozaCode.trim() || "—"} mono />}
-              {fields.has("despachoCode") && <PreviewRow label="Despacho" value={despachoCode.trim() || "—"} mono />}
-              {fields.has("species") && <PreviewRow label="Especie" value={speciesName || "—"} />}
-              {fields.has("gtf") && <PreviewRow label="GTF" value={gtfNumber.trim() || "—"} mono />}
-              {fields.has("pieces") && <PreviewRow label="Piezas" value={pieces ? formatNumber(Number(pieces)) : "—"} />}
-              {fields.has("discarded") && <PreviewRow label="Estado" value={discarded ? "Descartado" : "Aprovechable"} />}
-              {fields.has("consumoInterno") && <PreviewRow label="Consumo interno" value={consumoInterno ? "Sí" : "No"} />}
-            </dl>
-          </div>
-          <div className="border-t border-[var(--rule-soft)] px-5 py-4">
-            {isValid ? (
-              <div className="flex items-center gap-2 rounded-lg bg-[var(--data-success-50)] px-3 py-2 text-sm font-medium text-[var(--data-success-700)]"><Check className="h-4 w-4 shrink-0" /> Listo para registrar</div>
-            ) : (
-              <div className="flex items-center gap-2 rounded-lg bg-[var(--data-warning-50)] px-3 py-2 text-sm font-medium text-[var(--data-warning-700)]"><AlertCircle className="h-4 w-4 shrink-0" /> Faltan {missing.length} {missing.length === 1 ? "campo" : "campos"}</div>
-            )}
-          </div>
-        </aside>
-        </div>
-
-        {/* Footer */}
-        <footer className="flex shrink-0 items-center justify-between gap-3 border-t border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 py-3.5 sm:px-6">
-          <div className="hidden items-center gap-1.5 text-xs text-[var(--text-tertiary)] sm:flex">
-            {isValid ? (
-              <><Check className="h-3.5 w-3.5 text-[var(--data-success-600)]" /><span>Listo para registrar</span></>
-            ) : (
-              <span>Faltan <span className="font-semibold text-[var(--text-secondary)]">{missing.length}</span> {missing.length === 1 ? "campo" : "campos"}</span>
-            )}
-          </div>
-          <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
-            <button type="button" onClick={onClose} disabled={submitting} className="inline-flex h-10 items-center rounded-xl px-4 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]">
-              Cancelar
-            </button>
-            <button type="button" onClick={(e) => handleSubmit(e, true)} disabled={!isValid || submitting} className="inline-flex h-10 items-center rounded-xl border border-[var(--rule-strong)] bg-[var(--surface-raised)] px-3.5 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-50">
-              Guardar y otro
-            </button>
-            <button type="submit" form="loth-entry-form" disabled={!isValid || submitting} className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent-dark)] px-4 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50">
-              {submitting ? (<><Loader2 className="h-4 w-4 animate-spin" />Guardando</>) : "Registrar línea"}
-            </button>
-          </div>
-        </footer>
       </div>
     </AdminModal>
   );
@@ -1321,7 +1328,12 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
 
 // ─── Sub-components ─────────────────────────────────────────────────────────
 
-function Field({ label, required, hint, children }: { label: string; required?: boolean; hint?: string; children: React.ReactNode }) {
+/**
+ * Un campo con su rótulo. `min-h-6` en el rótulo: el ⓘ mide 24 px y un rótulo
+ * sin ayuda, 20 — sin igualarlos, las cajas de una misma fila de la grilla
+ * arrancan 4 px corridas.
+ */
+function Field({ label, required, hint, className = "", children }: { label: string; required?: boolean; hint?: string; className?: string; children: React.ReactNode }) {
   const rotulo = (
     <>
       {label}
@@ -1330,8 +1342,8 @@ function Field({ label, required, hint, children }: { label: string; required?: 
   );
   if (!hint) {
     return (
-      <label className="block">
-        <span className="mb-1.5 flex items-center gap-1 text-sm font-medium text-[var(--text-primary)]">{rotulo}</span>
+      <label className={`block ${className}`}>
+        <span className="mb-1 flex min-h-6 items-center gap-1 text-sm font-medium text-[var(--text-primary)]">{rotulo}</span>
         {children}
       </label>
     );
@@ -1340,8 +1352,8 @@ function Field({ label, required, hint, children }: { label: string; required?: 
      «Código de troza Información: Código de troza» y buscarlo por su rótulo
      encontraba el botón. El <label> conserva el nombre para el lector. */
   return (
-    <div className="block">
-      <div className="mb-1.5 flex items-center gap-1 text-sm font-medium text-[var(--text-primary)]">
+    <div className={`block ${className}`}>
+      <div className="mb-1 flex min-h-6 items-center gap-1 text-sm font-medium text-[var(--text-primary)]">
         <span aria-hidden="true" className="flex items-center gap-1">{rotulo}</span>
         <InfoTip icono="ayuda" title={label} what={hint} />
       </div>
@@ -1353,6 +1365,40 @@ function Field({ label, required, hint, children }: { label: string; required?: 
   );
 }
 
+/**
+ * Casilla de la grilla: la altura de un input y pegada abajo (`self-end`), para
+ * que quede a la par del campo de al lado. A 400 px ocupa la fila entera: en
+ * media fila el rótulo partía en tres renglones.
+ */
+function Casilla({
+  checked,
+  onChange,
+  acento = "marca",
+  title,
+  children,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  acento?: "marca" | "error";
+  title?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label
+      title={title}
+      className="col-span-6 flex h-10 cursor-pointer items-center gap-2 self-end rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] sm:col-span-3"
+    >
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        className={`h-4 w-4 shrink-0 ${acento === "error" ? "accent-[var(--data-error-600)]" : "accent-[var(--accent-dark)]"}`}
+      />
+      <span className="min-w-0 truncate">{children}</span>
+    </label>
+  );
+}
+
 function CitesPill() {
   return (
     <span className="inline-flex shrink-0 items-center rounded bg-[var(--data-error-100)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--data-error-700)]">
@@ -1361,18 +1407,9 @@ function CitesPill() {
   );
 }
 
-function PreviewRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
-  return (
-    <div className="flex items-baseline justify-between gap-3">
-      <dt className="shrink-0 text-xs text-[var(--text-tertiary)]">{label}</dt>
-      <dd className={`min-w-0 truncate text-right text-sm font-medium text-[var(--text-primary)] ${mono ? "font-mono tabular-nums" : ""}`}>{value}</dd>
-    </div>
-  );
-}
-
 const cls = {
   input:
-    "w-full h-10 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--data-success-600)] focus:ring-1 focus:ring-[var(--data-success-600)]/20 placeholder:text-[var(--text-tertiary)]",
+    "w-full h-10 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/20 placeholder:text-[var(--text-tertiary)]",
 };
 
 export { LOTH_SECTIONS };

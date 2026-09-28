@@ -30,14 +30,16 @@ interface Props {
   onChange: (lat: number | null, lng: number | null) => void;
   /** Coordenada del árbol censado que se está registrando (si la tiene). */
   censo?: CensoUtm | null;
+  /** Lo que va en la MISMA fila de botones (la foto de evidencia, en el LO-TH). */
+  children?: React.ReactNode;
 }
 
 const INPUT =
-  "h-12 w-36 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 font-mono text-sm text-[var(--text-primary)]";
+  "h-10 w-36 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 font-mono text-sm text-[var(--text-primary)]";
 const BTN =
-  "inline-flex h-12 items-center gap-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-60";
+  "inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-60";
 
-export default function LothGpsField({ lat, lng, onChange, censo }: Props) {
+export default function LothGpsField({ lat, lng, onChange, censo, children }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [manual, setManual] = useState(false);
@@ -98,7 +100,7 @@ export default function LothGpsField({ lat, lng, onChange, censo }: Props) {
       <div className="flex flex-wrap gap-2">
         <button type="button" onClick={capturar} disabled={loading} className={BTN}>
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin className="h-4 w-4 text-[var(--data-success-600)]" />}
-          {loading ? "Obteniendo GPS…" : lat != null ? "Actualizar ubicación GPS" : "Capturar ubicación GPS"}
+          {loading ? "Obteniendo GPS…" : lat != null ? "Actualizar GPS" : "Capturar GPS"}
         </button>
         {censo && (
           <button type="button" onClick={usarCenso} className={BTN} title={`Coordenada del árbol ${censo.code} en el censo`}>
@@ -108,6 +110,7 @@ export default function LothGpsField({ lat, lng, onChange, censo }: Props) {
         <button type="button" onClick={() => setManual((v) => !v)} className={BTN}>
           {manual ? "Cerrar UTM" : "Escribir UTM"}
         </button>
+        {children}
       </div>
 
       {manual && (
@@ -127,7 +130,7 @@ export default function LothGpsField({ lat, lng, onChange, censo }: Props) {
           <button
             type="button"
             onClick={aplicarManual}
-            className="inline-flex h-12 items-center rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-semibold text-white hover:opacity-90"
+            className="inline-flex h-10 items-center rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-semibold text-white hover:opacity-90"
           >
             Aplicar
           </button>

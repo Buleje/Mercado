@@ -17,6 +17,11 @@
  * Por eso van plegadas tras «En el TH», con su cuenta a la vista para que una
  * línea asentada ahí nunca quede escondida, y la preferencia se recuerda.
  *
+ * Con la respuesta de la carátula («¿asierras dentro del título habilitante?»,
+ * 2026-09-28) deja de adivinar: «No» esconde las tres y deja sólo el camino al
+ * Libro CTP; «Sí» las muestra abiertas, sin plegar. Sin respuesta, plegadas
+ * como antes. Una sección con líneas, o la que estás mirando, nunca se esconde.
+ *
  * En angosto el riel se desliza en vez de envolver (mismo criterio que el riel
  * de vistas de la cabina), con el borde derecho desvanecido para que se note
  * que sigue, y la sección activa se trae a la vista sola.
@@ -44,6 +49,7 @@ export default function LothSeccionesRiel({
   contar,
   onSection,
   onIrAlCtp,
+  transformaEnElTh = null,
 }: {
   section: LothSection;
   /** Líneas vigentes de cada sección (las que declara el libro). */
@@ -51,6 +57,8 @@ export default function LothSeccionesRiel({
   onSection: (s: LothSection) => void;
   /** Si el negocio tiene Libro CTP: a dónde va la transformación. */
   onIrAlCtp?: () => void;
+  /** Respuesta de la carátula: true asierra en el TH, false va a planta, null sin responder. */
+  transformaEnElTh?: boolean | null;
 }) {
   const rielRef = useRef<HTMLDivElement>(null);
   const grupoId = useId();
@@ -58,8 +66,12 @@ export default function LothSeccionesRiel({
   /* La sección en la que estás nunca queda plegada (llegar a Consumo desde un
      aviso tiene que mostrar Consumo). */
   const activaEnElTh = EN_EL_TH.includes(section);
-  const abierto = verEnElTh || activaEnElTh;
   const lineasEnElTh = EN_EL_TH.reduce((a, s) => a + contar(s), 0);
+  const abierto = transformaEnElTh === true || verEnElTh || activaEnElTh;
+  /* «Va a una planta» y nada asentado ahí: las tres no tienen nada que mostrar. */
+  const vaAPlanta = transformaEnElTh === false && lineasEnElTh === 0 && !activaEnElTh;
+  /* «Sí, asierro en el bosque»: son parte del trabajo diario, no se pliegan. */
+  const sinPlegar = transformaEnElTh === true;
 
   /* Sólo el scroll HORIZONTAL del riel: `scrollIntoView` también movería la
      página en vertical si el riel quedara fuera de pantalla, y un salto de
@@ -118,7 +130,18 @@ export default function LothSeccionesRiel({
 
         <span aria-hidden="true" className="mx-1 h-6 w-px shrink-0 bg-[var(--rule-base)]" />
 
+        {vaAPlanta ? (
+          <VaAPlanta onIrAlCtp={onIrAlCtp} />
+        ) : (
         <div className="flex shrink-0 items-center gap-1">
+          {sinPlegar ? (
+            <Kicker
+              title="Transformación en el título habilitante (RDE 264-2019, secciones 4 a 6)."
+              className="hidden shrink-0 px-1 @min-[52rem]:inline"
+            >
+              En el TH
+            </Kicker>
+          ) : (
           <button
             type="button"
             onClick={alternarEnElTh}
@@ -139,6 +162,7 @@ export default function LothSeccionesRiel({
               </span>
             )}
           </button>
+          )}
           <div
             id={grupoId}
             role="group"
@@ -169,8 +193,37 @@ export default function LothSeccionesRiel({
             </button>
           )}
         </div>
+        )}
       </div>
     </nav>
+  );
+}
+
+/** Lo que queda de las secciones 4-6 cuando la carátula dice que la madera va a una planta. */
+function VaAPlanta({ onIrAlCtp }: { onIrAlCtp?: () => void }) {
+  const ayuda =
+    "Tu carátula dice que la madera va a una planta: su consumo, producto y despacho se registran en el Libro CTP. " +
+    "En el libro impreso las secciones 4 a 6 salen en blanco, como pide SERFOR. Para cambiarlo, edita la carátula.";
+  if (!onIrAlCtp) {
+    return (
+      <span title={ayuda} className="inline-flex h-10 shrink-0 items-center px-2 text-sm font-semibold text-[var(--text-tertiary)]">
+        4–6 van a la planta
+      </span>
+    );
+  }
+  return (
+    <button
+      type="button"
+      onClick={onIrAlCtp}
+      title={ayuda}
+      className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl px-2 text-sm font-semibold text-[var(--accent-ink)] transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 dark:text-[var(--accent)]"
+    >
+      <span className="text-[var(--text-tertiary)]">
+        <span className="tabular-nums">4–6</span> van a la planta ·
+      </span>
+      Libro CTP
+      <ArrowRight className="h-4 w-4" aria-hidden="true" />
+    </button>
   );
 }
 

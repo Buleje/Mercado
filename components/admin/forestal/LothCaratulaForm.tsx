@@ -5,8 +5,8 @@
  * Crea o edita los datos del titular / documento de gestión / tomo.
  */
 
-import { useEffect, useState } from "react";
-import { FileText, Loader2, X, AlertTriangle, Check, AlertCircle, Plus, Trash2, ShieldAlert } from "@buleje/design-system/icons";
+import { useEffect, useId, useState } from "react";
+import { FileText, Loader2, X, AlertTriangle, Check, Plus, Trash2, ShieldAlert } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import AdminModal, { CabeceraPropia } from "@/components/admin/shared/AdminModal";
@@ -37,14 +37,23 @@ interface Caratula {
 
 interface Props {
   current: Caratula | null;
+  /** ¿Asierra dentro del TH? true / false / null = sin responder (KV aparte, ver ForestLothTransformacionDB). */
+  transformaEnElTh?: boolean | null;
   onClose: () => void;
   onSaved: () => void;
 }
 
 const REGIONS_PE = ["Loreto", "Ucayali", "Madre de Dios", "San Martín", "Junín", "Pasco", "Huánuco", "Amazonas", "Cusco", "Otra"];
 
-export default function LothCaratulaForm({ current, onClose, onSaved }: Props) {
+/** Las dos respuestas, en el orden en que se dan: la mayoría lleva la troza a una planta. */
+const OPCIONES_TRANSFORMA: { valor: boolean; label: string }[] = [
+  { valor: false, label: "No, la llevo a una planta" },
+  { valor: true, label: "Sí, asierro en el bosque" },
+];
+
+export default function LothCaratulaForm({ current, transformaEnElTh = null, onClose, onSaved }: Props) {
   const [submitting, setSubmitting] = useState(false);
+  const [enElTh, setEnElTh] = useState<boolean | null>(transformaEnElTh);
   const [error, setError] = useState<string | null>(null);
   const [f, setF] = useState({
     registroNumber: current?.registroNumber ?? "",
@@ -67,6 +76,7 @@ export default function LothCaratulaForm({ current, onClose, onSaved }: Props) {
 
   const set = (k: keyof typeof f, v: string) => setF((p) => ({ ...p, [k]: v }));
   const isValid = f.titularName.trim().length >= 2;
+  const idEstado = useId();
 
   /**
    * El titular del libro se tipeaba a mano, con el RUC, el domicilio y el
@@ -132,6 +142,7 @@ export default function LothCaratulaForm({ current, onClose, onSaved }: Props) {
       const body: Record<string, unknown> = {};
       for (const [k, v] of Object.entries(f)) body[k] = typeof v === "string" && v.trim() === "" ? null : v;
       body.titularName = f.titularName.trim();
+      body.transformaEnElTh = enElTh;
 
       const res = await fetch("/api/admin/forestal/loth/caratula", {
         method: current ? "PATCH" : "POST",
@@ -163,10 +174,44 @@ export default function LothCaratulaForm({ current, onClose, onSaved }: Props) {
   }
 
   return (
-    <AdminModal open onClose={onClose} variant="wide" hideCloseButton claveVentana="loth-caratula" className="sm:max-w-[1200px]">
-      <div className="flex h-full max-h-[92vh] flex-col bg-[var(--surface-raised)]">
+    <AdminModal
+      open
+      onClose={onClose}
+      variant="wide"
+      hideCloseButton
+      claveVentana="loth-caratula"
+      // Mismo formato que «Nueva línea» (28-09): una columna, sin vista previa
+      // (repetía lo que ya se lee en el formulario) y el pie fuera del scroll.
+      className="sm:max-w-[44rem]"
+      footer={
+        <div className="flex items-center justify-between gap-3">
+          <p id={idEstado} className="hidden min-w-0 items-center gap-1.5 truncate text-xs text-[var(--text-tertiary)] sm:flex">
+            {isValid ? (
+              <><Check className="h-3.5 w-3.5 shrink-0 text-[var(--data-success-600)]" /><span>Listo para {current ? "actualizar" : "crear"}</span></>
+            ) : (
+              <span>Falta el titular</span>
+            )}
+          </p>
+          <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
+            <button type="button" onClick={onClose} disabled={submitting} className="inline-flex h-10 items-center whitespace-nowrap rounded-xl px-3 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]">
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              form="loth-caratula-form"
+              disabled={!isValid || submitting}
+              aria-describedby={idEstado}
+              className="inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-xl bg-[var(--accent-dark)] px-3.5 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {submitting ? (<><Loader2 className="h-4 w-4 animate-spin" />Guardando</>) : current ? "Actualizar carátula" : "Crear carátula"}
+            </button>
+          </div>
+        </div>
+      }
+    >
+      <div className="flex h-full flex-col bg-[var(--surface-raised)]">
         <CabeceraPropia
-          className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4 sm:px-6"
+          className="sticky top-0 z-10 flex shrink-0 items-center justify-between gap-3 border-b border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 py-3 sm:px-6"
           acciones={
             <button type="button" onClick={onClose} aria-label="Cerrar" className="shrink-0 rounded-xl p-2 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]">
               <X className="h-4 w-4" />
@@ -191,8 +236,7 @@ export default function LothCaratulaForm({ current, onClose, onSaved }: Props) {
           </div>
         </CabeceraPropia>
 
-        <div className="flex min-h-0 flex-1 overflow-hidden">
-        <form id="loth-caratula-form" onSubmit={submit} className="min-w-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6 sm:grid sm:grid-cols-2 sm:gap-x-5 sm:gap-y-4 sm:content-start [&>*]:min-w-0 max-sm:space-y-4">
+        <form id="loth-caratula-form" onSubmit={submit} className="min-w-0 flex-1 px-5 py-4 sm:px-6 sm:grid sm:grid-cols-2 sm:gap-x-4 sm:gap-y-3 sm:content-start [&>*]:min-w-0 max-sm:space-y-3">
           {error && (
             <div className="flex items-start gap-3 rounded-xl border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-4 py-3 text-sm text-[var(--data-error-700)] sm:col-span-2">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -233,7 +277,7 @@ export default function LothCaratulaForm({ current, onClose, onSaved }: Props) {
             <Field label="N° de tomo"><input type="text" value={f.tomo} onChange={(e) => set("tomo", e.target.value)} placeholder="PO 12 - Tomo I" className={cls.input} /></Field>
           </div>
 
-          <div className="grid grid-cols-3 gap-3 sm:col-span-2">
+          <div className="grid grid-cols-1 gap-3 min-[480px]:grid-cols-3 sm:col-span-2">
             <Field label="Documento de gestión">
               <select value={f.docGestionType} onChange={(e) => set("docGestionType", e.target.value)} className={cls.input}>
                 <option value="PO">PO</option>
@@ -245,9 +289,44 @@ export default function LothCaratulaForm({ current, onClose, onSaved }: Props) {
             <Field label="N° resolución"><input type="text" value={f.resolucionNumber} onChange={(e) => set("resolucionNumber", e.target.value)} placeholder="RDF N° 001-2019..." className={cls.input} /></Field>
           </div>
 
+          {/* Decide si las secciones 4-6 se muestran: ver ForestLothTransformacionDB. */}
+          <div className="sm:col-span-2">
+            <span id="loth-transforma-rotulo" className="mb-1.5 flex items-center gap-1 text-sm font-medium text-[var(--text-primary)]">
+              ¿Asierras la madera dentro del título habilitante?
+              <InfoTip
+                title="Consumo, producto y despacho (secciones 4 a 6)"
+                what="Sólo se llenan si transformas la madera dentro del título habilitante. Si la llevas a una planta, eso se registra en el Libro CTP."
+                affects="Con «No», esas tres secciones se esconden de la pantalla. En el libro impreso salen en blanco, como pide SERFOR."
+                example="Si tus trozas salen con GTF a tu aserradero: «No, la llevo a una planta»."
+              />
+            </span>
+            <div role="radiogroup" aria-labelledby="loth-transforma-rotulo" className="grid grid-cols-1 gap-2 min-[480px]:grid-cols-2">
+              {OPCIONES_TRANSFORMA.map((o) => {
+                const elegida = enElTh === o.valor;
+                return (
+                  <button
+                    key={o.label}
+                    type="button"
+                    role="radio"
+                    aria-checked={elegida}
+                    onClick={() => setEnElTh(elegida ? null : o.valor)}
+                    className={`inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-center text-sm font-medium leading-snug transition-colors ${
+                      elegida
+                        ? "border-[var(--data-success-600)] bg-[var(--data-success-50)] text-[var(--data-success-700)]"
+                        : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+                    }`}
+                  >
+                    {elegida && <Check className="h-4 w-4 shrink-0" />}
+                    {o.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           <Field label="Domicilio"><input type="text" value={f.domicilio} onChange={(e) => set("domicilio", e.target.value)} placeholder="Coronel Portillo Km 15" className={cls.input} /></Field>
 
-          <div className="grid grid-cols-3 gap-3 sm:col-span-2">
+          <div className="grid grid-cols-1 gap-3 min-[480px]:grid-cols-3 sm:col-span-2">
             <Field label="Departamento">
               <select value={f.departamento} onChange={(e) => set("departamento", e.target.value)} className={cls.input}>
                 {REGIONS_PE.map((r) => <option key={r} value={r}>{r}</option>)}
@@ -338,49 +417,6 @@ export default function LothCaratulaForm({ current, onClose, onSaved }: Props) {
           </div>
         </form>
 
-        {/* Panel derecho: vista previa en vivo (lg+) */}
-        <aside className="hidden w-[300px] shrink-0 flex-col border-l border-[var(--rule-base)] bg-[var(--surface-canvas)] lg:flex">
-          <div className="border-b border-[var(--rule-soft)] px-5 py-3.5">
-            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Vista previa de la carátula</span>
-          </div>
-          <div className="flex-1 overflow-y-auto px-5 py-5">
-            <div className="mb-5">
-              <CardTitle className="text-lg font-bold leading-tight text-[var(--text-primary)]">{f.titularName.trim() || "Titular sin nombre"}</CardTitle>
-              {f.representanteLegal.trim() && <p className="mt-0.5 text-xs italic text-[var(--text-tertiary)]">Rep. legal: {f.representanteLegal.trim()}</p>}
-            </div>
-            <div className="mb-5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-              <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Documento de gestión</div>
-              <div className="mt-1 text-lg font-bold text-[var(--text-primary)]">{f.docGestionType}</div>
-              {f.docGestionName.trim() && <div className="mt-0.5 text-xs text-[var(--text-tertiary)]">{f.docGestionName.trim()}</div>}
-            </div>
-            <dl className="space-y-2.5">
-              <PreviewRow label="RUC" value={f.ruc.trim() || "—"} mono />
-              <PreviewRow label="Título habilitante" value={f.tituloHabilitante.trim() || "—"} mono />
-              <PreviewRow label="Registro del libro" value={f.registroNumber.trim() || "—"} mono />
-              <PreviewRow label="Tomo" value={f.tomo.trim() || "—"} />
-              <PreviewRow label="Departamento" value={f.departamento || "—"} />
-              <PreviewRow label="Provincia" value={f.provincia.trim() || "—"} />
-              <PreviewRow label="Distrito" value={f.distrito.trim() || "—"} />
-            </dl>
-          </div>
-          <div className="border-t border-[var(--rule-soft)] px-5 py-4">
-            {isValid ? (
-              <div className="flex items-center gap-2 rounded-lg bg-[var(--data-success-50)] px-3 py-2 text-sm font-medium text-[var(--data-success-700)]"><Check className="h-4 w-4 shrink-0" /> Listo para {current ? "actualizar" : "crear"}</div>
-            ) : (
-              <div className="flex items-center gap-2 rounded-lg bg-[var(--data-warning-50)] px-3 py-2 text-sm font-medium text-[var(--data-warning-700)]"><AlertCircle className="h-4 w-4 shrink-0" /> Completa el titular</div>
-            )}
-          </div>
-        </aside>
-        </div>
-
-        <footer className="flex shrink-0 items-center justify-end gap-2 border-t border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 py-3.5 sm:px-6">
-          <button type="button" onClick={onClose} disabled={submitting} className="inline-flex h-10 items-center rounded-xl px-4 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]">
-            Cancelar
-          </button>
-          <button type="submit" form="loth-caratula-form" disabled={!isValid || submitting} className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent-dark)] px-4 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50">
-            {submitting ? (<><Loader2 className="h-4 w-4 animate-spin" />Guardando</>) : current ? "Actualizar carátula" : "Crear carátula"}
-          </button>
-        </footer>
       </div>
     </AdminModal>
   );
@@ -396,15 +432,6 @@ function Field({ label, required, hint, children }: { label: string; required?: 
       {children}
       {hint && <span className="mt-1 block text-xs text-[var(--text-tertiary)]">{hint}</span>}
     </label>
-  );
-}
-
-function PreviewRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
-  return (
-    <div className="flex items-baseline justify-between gap-3">
-      <dt className="shrink-0 text-xs text-[var(--text-tertiary)]">{label}</dt>
-      <dd className={`min-w-0 truncate text-right text-sm font-medium text-[var(--text-primary)] ${mono ? "font-mono tabular-nums" : ""}`}>{value}</dd>
-    </div>
   );
 }
 

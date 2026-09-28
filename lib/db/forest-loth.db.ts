@@ -66,7 +66,9 @@ export class LothInvariantError extends Error {
       | "T6_EXCESO_AUTORIZADO"
       | "T7_ESPECIE_NO_AUTORIZADA"
       // P1 — la línea cae en un mes cerrado: el acta es inmutable hasta reabrir.
-      | "PERIODO_CERRADO",
+      | "PERIODO_CERRADO"
+      // Una carátula con líneas vivas es un libro que existe: no se borra.
+      | "CARATULA_CON_LINEAS",
     readonly detail?: Record<string, unknown>,
   ) {
     super(message);
@@ -1069,6 +1071,39 @@ export class ForestLothDB {
       entity: "ForestLothCaratula",
       entityId: id,
       detail: `Actualizó la carátula: ${Object.keys(patch).join(", ")}`,
+      user,
+    });
+    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
+    return caratula;
+  }
+
+  /**
+   * Baja lógica de una carátula cargada por error (p. ej. de prueba).
+   *
+   * Sólo si ya no le cuelga ninguna línea viva: una carátula con líneas es la
+   * identidad de un libro que existe, y borrarla dejaría esas líneas sin
+   * titular en el formato SERFOR. Primero se sacan las líneas.
+   */
+  static async softDeleteCaratula(tenantId: string, id: string, user = "unknown") {
+    if (!tenantId) throw new Error("tenantId is required");
+    const lineasVivas = await prisma.forestLothEntry.count({ where: { tenantId, caratulaId: id, deletedAt: null } });
+    if (lineasVivas > 0) {
+      throw new LothInvariantError(
+        `La carátula tiene ${lineasVivas} línea(s) en el libro: no se puede borrar mientras las tenga.`,
+        "CARATULA_CON_LINEAS",
+        { lineasVivas },
+      );
+    }
+    const caratula = await prisma.forestLothCaratula.update({
+      where: { id, tenantId } satisfies Prisma.ForestLothCaratulaWhereUniqueInput,
+      data: { deletedAt: new Date(), isActive: false },
+    });
+    auditLoth({
+      tenantId,
+      action: "loth_caratula_delete",
+      entity: "ForestLothCaratula",
+      entityId: id,
+      detail: `Borró (soft-delete) la carátula: ${caratula.titularName}${caratula.tituloHabilitante ? ` · TH ${caratula.tituloHabilitante}` : ""}`,
       user,
     });
     try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }

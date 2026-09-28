@@ -16,6 +16,7 @@
 
 import { ClipboardCheck, TreePine, Check } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import {
   MARCAS_FISICAS,
   MOTIVOS_TALA,
@@ -62,14 +63,24 @@ export default function LothTalaObservaciones({
     onMarcas(marcas.includes(k) ? marcas.filter((x) => x !== k) : [...marcas, k]);
 
   return (
-    <section className="space-y-4 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4 sm:col-span-2">
+    <section
+      aria-label="Marcado y observaciones"
+      className="space-y-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3"
+    >
       {/* Item 3 — el código marcado en el árbol */}
-      <div className="space-y-2">
-        <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
-          <TreePine className="h-4 w-4 text-[var(--data-success-700)]" strokeWidth={1.75} />
-          Marcado del código en campo
-        </CardTitle>
-        <div className="flex flex-wrap gap-2">
+      <div className="space-y-1.5">
+        <div className="flex items-center gap-1">
+          <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
+            <TreePine className="h-4 w-4 text-[var(--accent-ink)] dark:text-[var(--accent)]" strokeWidth={1.75} />
+            Marcado del código en campo
+          </CardTitle>
+          <InfoTip
+            title="Marcado del código (item 3)"
+            what="El código va marcado en el fuste Y en el tocón, con placa, plástico o pintura esmalte."
+            affects="Es lo primero que verifica un supervisor de OSINFOR en campo."
+          />
+        </div>
+        <div className="flex flex-wrap gap-1.5">
           {MARCAS_FISICAS.map((m) => {
             const activo = marcas.includes(m.key);
             return (
@@ -78,16 +89,16 @@ export default function LothTalaObservaciones({
                 type="button"
                 aria-pressed={activo}
                 onClick={() => toggleMarca(m.key)}
-                className={`inline-flex min-h-10 items-center gap-2 rounded-xl border px-3 text-sm font-medium transition-colors ${
+                className={`inline-flex min-h-9 items-center gap-2 rounded-lg border px-3 text-sm font-medium transition-colors ${
                   activo
-                    ? "border-[var(--data-success-500)] bg-[var(--data-success-50)] text-[var(--data-success-700)]"
+                    ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                     : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)]"
                 }`}
               >
                 <span
                   className={`grid h-4 w-4 shrink-0 place-items-center rounded border ${
                     activo
-                      ? "border-[var(--data-success-500)] bg-[var(--data-success-500)] text-[var(--surface-raised)]"
+                      ? "border-[var(--accent-dark)] bg-[var(--accent-dark)] text-white"
                       : "border-[var(--rule-strong)]"
                   }`}
                 >
@@ -99,25 +110,33 @@ export default function LothTalaObservaciones({
           })}
         </div>
         <p className="text-xs text-[var(--text-tertiary)]">
-          {marcado.completo
-            ? "Fuste y tocón marcados — es lo que el supervisor verifica en campo."
-            : `Falta declarar: ${marcado.faltan.join(" y ")}. Con placa, plástico o pintura esmalte.`}
+          {marcado.completo ? "Fuste y tocón marcados." : `Falta declarar: ${marcado.faltan.join(" y ")}.`}
         </p>
         {marcado.completo && !tieneFoto && (
-          <p className="text-xs font-semibold text-[var(--data-warning-700)]">
-            Declaraste el marcado pero no hay foto. Súbela abajo, en Evidencia de campo: una foto del tocón con el
-            código visible es lo que sostiene esta línea si te supervisan.
+          <p className="flex items-center gap-1 text-xs font-semibold text-[var(--data-warning-ink)] dark:text-[var(--data-warning-500)]">
+            <span>Falta la foto del tocón con el código visible (abajo, en Evidencia de campo).</span>
+            <InfoTip
+              title="Foto del marcado"
+              what="Declaraste el marcado pero no hay foto: una foto del tocón con el código visible es lo que sostiene esta línea si te supervisan."
+            />
           </p>
         )}
       </div>
 
       {/* Item 10 — los casos que la norma tipifica */}
-      <div className="space-y-2 border-t border-[var(--rule-soft)] pt-4">
-        <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
-          <ClipboardCheck className="h-4 w-4 text-[var(--data-info-600)]" strokeWidth={1.75} />
-          Observaciones
-          <span className="font-normal text-[var(--text-tertiary)]">(item 10)</span>
-        </CardTitle>
+      <div className="space-y-1.5 border-t border-[var(--rule-soft)] pt-3">
+        <div className="flex items-center gap-1">
+          <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
+            <ClipboardCheck className="h-4 w-4 text-[var(--data-info-600)]" strokeWidth={1.75} />
+            Observaciones
+            <span className="font-normal text-[var(--text-tertiary)]">(item 10)</span>
+          </CardTitle>
+          <InfoTip
+            title="Observaciones (item 10)"
+            what="La norma nombra estos casos y el término exacto que hay que escribir: elegirlos deja la palabra que el fiscalizador busca."
+            example="«Descartado», «Consumo interno», el nombre científico."
+          />
+        </div>
         <div className="flex flex-wrap gap-1.5">
           {MOTIVOS_TALA.map((m) => {
             const activo = motivos.includes(m.key);
@@ -128,9 +147,9 @@ export default function LothTalaObservaciones({
                 aria-pressed={activo}
                 title={m.ayuda}
                 onClick={() => toggle(m.key)}
-                className={`min-h-9 rounded-xl border px-3 text-xs font-bold transition-colors ${
+                className={`min-h-9 rounded-lg border px-3 text-xs font-bold transition-colors ${
                   activo
-                    ? "border-[var(--data-info-600)] bg-[var(--data-info-50)] text-[var(--data-info-700)]"
+                    ? "border-[var(--data-info-600)] bg-[var(--data-info-500)]/10 text-[var(--data-info-700)] dark:text-[var(--data-info-500)]"
                     : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)]"
                 }`}
               >
@@ -142,7 +161,7 @@ export default function LothTalaObservaciones({
 
         {pideDetalle && (
           <label className="block">
-            <span className="mb-1 block text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+            <span className="mb-1 block text-xs font-semibold text-[var(--text-secondary)]">
               Motivo (la norma pide detallarlo)
             </span>
             <input
@@ -150,23 +169,23 @@ export default function LothTalaObservaciones({
               value={detalle}
               onChange={(e) => onDetalle(e.target.value)}
               placeholder="ej. hueco de base a copa"
-              className="h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--data-info-600)]"
+              className="h-10 w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--data-info-600)]"
             />
           </label>
         )}
 
         {pideCientifico && (
-          <p className="rounded-xl bg-[var(--surface-sunken)] px-3 py-2 text-xs text-[var(--text-secondary)]">
-            Se va a consignar el nombre científico{" "}
+          <p className="rounded-lg bg-[var(--surface-sunken)] px-3 py-1.5 text-xs text-[var(--text-secondary)]">
+            Se consigna el nombre científico{" "}
             <span className="font-semibold italic text-[var(--text-primary)]">
               {nombreCientifico || "— elige una especie que lo tenga"}
             </span>{" "}
-            en la columna de observaciones, como pide el item 10.
+            en observaciones (item 10).
           </p>
         )}
 
         <label className="block">
-          <span className="mb-1 block text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+          <span className="mb-1 block text-xs font-semibold text-[var(--text-secondary)]">
             Nota adicional (opcional)
           </span>
           <textarea
@@ -174,17 +193,15 @@ export default function LothTalaObservaciones({
             onChange={(e) => onTextoLibre(e.target.value)}
             rows={2}
             placeholder="Lo que no entre en los casos de arriba"
-            className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--data-info-600)]"
+            className="w-full resize-none rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--data-info-600)]"
           />
         </label>
 
         {preview && (
-          <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 py-2">
-            <span className="block text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-              Así queda en el libro
-            </span>
-            <span className="text-sm text-[var(--text-primary)]">{preview}</span>
-          </div>
+          <p className="rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 py-1.5 text-sm text-[var(--text-primary)]">
+            <span className="mr-1.5 text-xs font-semibold text-[var(--text-tertiary)]">Así queda en el libro:</span>
+            {preview}
+          </p>
         )}
       </div>
     </section>

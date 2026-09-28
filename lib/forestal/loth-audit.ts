@@ -46,6 +46,7 @@ export type LothAuditAction =
   // Carátula (identidad del título habilitante que encabeza el libro)
   | "loth_caratula_create"
   | "loth_caratula_update"
+  | "loth_caratula_delete"
   // Catálogo de permisos CITES del libro (KV)
   | "loth_cites_update"
   // Guía de Transporte Forestal (GTF)
@@ -59,7 +60,9 @@ export type LothAuditAction =
   // Referencias + cuadro de acceso del plano (KV)
   | "loth_cartografia_update"
   // Parámetros del POA: DMC por especie y semilleros (KV)
-  | "loth_poa_config_update";
+  | "loth_poa_config_update"
+  // ¿Asierra dentro del TH o la madera va a una planta? (KV, por carátula)
+  | "loth_transformacion_update";
 
 /**
  * Registra un evento del LO-TH. No se await-ea a propósito: la auditoría no debe

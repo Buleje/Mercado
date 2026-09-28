@@ -211,6 +211,8 @@ export default function LothLibroOperaciones() {
   const [entries, setEntries] = useState<LothEntry[]>([]);
   const [stats, setStats] = useState<SectionStat[]>([]);
   const [caratula, setCaratula] = useState<Caratula | null>(null);
+  /** ¿Asierra dentro del TH? Decide si se ven las secciones 4-6 (ForestLothTransformacionDB). */
+  const [transformaEnElTh, setTransformaEnElTh] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -390,7 +392,11 @@ export default function LothLibroOperaciones() {
         fetch(`/api/admin/forestal/loth/caratula`, { credentials: "include" }),
       ]);
       if (statsRes.ok) setStats((await statsRes.json()).stats ?? []);
-      if (caratulaRes.ok) setCaratula((await caratulaRes.json()).active ?? null);
+      if (caratulaRes.ok) {
+        const json = await caratulaRes.json();
+        setCaratula(json.active ?? null);
+        setTransformaEnElTh(typeof json.transformaEnElTh === "boolean" ? json.transformaEnElTh : null);
+      }
     } catch {
       /* meta es best-effort; no rompe la vista */
     }
@@ -616,6 +622,10 @@ export default function LothLibroOperaciones() {
   // Puente al Libro CTP: sólo si el negocio lo tiene (spec habilitada).
   const { enabledKeys } = useEnabledSpecs();
   const hayLibroCtp = enabledKeys.has("spec:forestal:ctp-libro");
+  /** A dónde va la transformación: el riel y el aviso del modal usan el mismo camino. */
+  const irAlCtp = hayLibroCtp
+    ? () => window.dispatchEvent(new CustomEvent("admin:navigate", { detail: { moduleId: CTP_MODULE_TAB_ID } }))
+    : undefined;
   const { estado: gtfEnCtp } = useGtfEnCtp(
     section === "despacho_troza" ? entries.map((e) => e.gtfNumber) : [],
     hayLibroCtp && view === "secciones" && section === "despacho_troza",
@@ -693,19 +703,27 @@ export default function LothLibroOperaciones() {
              del título habilitante: ése va siempre y entero. El titular sólo
              desde 1800 px: medido a 1650 con «17-CPO/C-J-045-26», dentro de
              13rem el titular quedaba en «M…» y además le recortaba el código.
+             El código no se achica nunca (`shrink-0`): con 12rem un
+             «10-HUA-PUE/PER-FMP-2026-007» salía cortado. Sin código, el que
+             identifica es el titular, en letra normal y entero hasta 18rem
+             (28-09: «Maderera El Aguaja…» en mono dentro de 12rem).
              Sin carátula sí es un aviso, y el borde de color va a 2 px. */
           className={`inline-flex h-10 items-center gap-2 rounded-xl px-3 text-sm transition-colors ${
             caratula
-              ? "max-w-[12rem] border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] min-[1800px]:max-w-[22rem]"
+              ? "max-w-[18rem] border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] min-[1800px]:max-w-[26rem]"
               : "border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] font-semibold text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]"
           }`}
         >
           <FileText className="h-4 w-4 shrink-0" aria-hidden="true" />
           {caratula ? (
             <>
-              <span className="min-w-0 truncate font-mono text-xs font-bold tabular-nums">
-                {caratula.tituloHabilitante ?? caratula.titularName}
-              </span>
+              {caratula.tituloHabilitante ? (
+                <span className="shrink-0 whitespace-nowrap font-mono text-xs font-bold tabular-nums">
+                  {caratula.tituloHabilitante}
+                </span>
+              ) : (
+                <span className="min-w-0 truncate font-semibold">{caratula.titularName}</span>
+              )}
               {caratula.tituloHabilitante && (
                 <span className="hidden min-w-0 flex-1 basis-0 truncate text-[var(--text-tertiary)] min-[1800px]:inline">
                   {caratula.titularName}
@@ -846,11 +864,8 @@ export default function LothLibroOperaciones() {
         section={section}
         contar={(s) => statBy.get(s)?.count ?? 0}
         onSection={setSection}
-        onIrAlCtp={
-          hayLibroCtp
-            ? () => window.dispatchEvent(new CustomEvent("admin:navigate", { detail: { moduleId: CTP_MODULE_TAB_ID } }))
-            : undefined
-        }
+        onIrAlCtp={irAlCtp}
+        transformaEnElTh={transformaEnElTh}
       />
 
       {/* Título de la sección + sus indicadores, plegables y recordados (una
@@ -1029,6 +1044,7 @@ export default function LothLibroOperaciones() {
           caratulaId={caratula?.id ?? null}
           plantilla={plantilla}
           corrigeLineNo={corrigeLineNo}
+          onIrAlCtp={irAlCtp}
           onClose={() => {
             setShowForm(false);
             setPlantilla(null);
@@ -1154,6 +1170,7 @@ export default function LothLibroOperaciones() {
       {showCaratula && (
         <LothCaratulaForm
           current={caratula}
+          transformaEnElTh={transformaEnElTh}
           onClose={() => setShowCaratula(false)}
           onSaved={() => { setShowCaratula(false); refreshAll(); }}
         />
