@@ -20,6 +20,7 @@ import { fmtAnexo } from "@/lib/forestal/anexo04-serfor";
 import { exportarBandejaAnexos } from "@/lib/forestal/anexo04-excel";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { formatDate } from "@/lib/format";
+import { BotonGuiasSinRegistrar } from "./CtpGuiasSinRegistrarEntrada";
 
 const fecha = (iso: string) => {
   try { return formatDate(iso, { soloFecha: true }); }
@@ -61,7 +62,7 @@ export default function Anexo04Historial({
 
   const borrar = async (a: AnexoEmitido) => {
     setBorrando(a.id);
-    if (!(await onQuitar(a.id))) onError?.("No se pudo borrar del historial.");
+    if (!(await onQuitar(a.id))) onError?.(a.despachoIds?.length ? "Este anexo ya tiene su salida en el libro: no se edita ni se borra." : "No se pudo borrar del historial.");
     setBorrando(null);
   };
 
@@ -91,6 +92,7 @@ export default function Anexo04Historial({
             : `${visibles.length} de ${lista.length}`}
         </span>
         <div className="flex items-center gap-1.5">
+        <BotonGuiasSinRegistrar />
         <button
           type="button"
           onClick={() => onPdfLote(visibles)}

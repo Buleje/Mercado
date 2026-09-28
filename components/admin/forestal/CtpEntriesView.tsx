@@ -56,7 +56,8 @@ import CtpProduccionPendiente from "./CtpProduccionPendiente";
 import CtpPapelesDespachoModal from "./CtpPapelesDespachoModal";
 import CtpCorridaSinDeclarar from "./CtpCorridaSinDeclarar";
 import CtpSeccionKpis from "./CtpSeccionKpis";
-import BarraDeuda, { type DeudaItem } from "@/components/admin/shared/BarraDeuda";
+import type { DeudaItem } from "@/components/admin/shared/BarraDeuda";
+import { BarraDeudaConGuias } from "./CtpGuiasSinRegistrarEntrada";
 import CtpElegirLoteModal from "./CtpElegirLoteModal";
 import CtpSinCertificar, { type DespachoSinCertificar } from "./CtpSinCertificar";
 import { esLoteDeInventario, margenLote } from "@/lib/forestal/lotes-aserrio";
@@ -1468,7 +1469,7 @@ export function CtpEntriesView({
           Antes: tres tarjetas de KPI perdidas entre las cifras del proceso MÁS
           este cartel ámbar repitiendo las mismas corridas sin materia prima.
           Ahora el cartel es el detalle que se despliega desde su pastilla. */}
-      <BarraDeuda items={deudas} />
+      <BarraDeudaConGuias items={deudas} section={section} onCambio={() => void load()} />
 
       {/* «Elegir otras trozas a mano» desde la bandeja: el vinculador de
           siempre, por lote, con las cinco reglas revisadas ANTES de escribir. */}
