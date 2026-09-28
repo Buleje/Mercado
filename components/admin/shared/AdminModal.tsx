@@ -27,7 +27,7 @@
  *   · centered-sm — max-w-sm (confirmaciones)
  */
 
-import { createContext, useContext, useRef, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { X, type LucideIcon } from "@buleje/design-system/icons";
@@ -204,7 +204,7 @@ export function CabeceraPropia({
 }) {
   const ventana = useContext(VentanaDelModal);
   return (
-    <header {...(ventana?.asaProps ?? {})} className={className}>
+    <header {...(ventana?.asaProps ?? {})} data-cabecera-propia="" className={className}>
       {children}
       {(ventana?.activa || acciones) && (
         <div className="flex shrink-0 items-center gap-0.5">
@@ -240,6 +240,24 @@ export default function AdminModal({
      única forma confiable de preguntarle a ESTE diálogo si tiene un menú
      marcado como abierto. */
   const contentRef = useRef<HTMLDivElement>(null);
+  /* Con encabezado propio (sin `title`) el título oculto de Radix decía
+     «Modal»: el lector de pantalla anunciaba «Modal, diálogo» al abrir «Nueva
+     línea» o la carátula (8 modales así, medido 2026-09-28). Se nombra con el
+     primer título (h1-h3) de `CabeceraPropia`, el mismo que se ve. */
+  const idBase = useId();
+  const [idTituloPropio, setIdTituloPropio] = useState<string | null>(null);
+  useEffect(() => {
+    if (!open || title) return;
+    // Un cuadro después del montaje: el contenido va en un portal.
+    const cuadro = requestAnimationFrame(() => {
+      const titulo = contentRef.current?.querySelector<HTMLElement>("[data-cabecera-propia] :is(h1, h2, h3)");
+      if (!titulo) return;
+      if (!titulo.id) titulo.id = `${idBase}-titulo-propio`;
+      setIdTituloPropio(titulo.id);
+    });
+    return () => cancelAnimationFrame(cuadro);
+  }, [open, title, idBase]);
+  const nombradoPor = !title && idTituloPropio ? { "aria-labelledby": idTituloPropio } : {};
   const opcionesVentana: OpcionesVentana = typeof configVentana === "object" ? configVentana : {};
   const ventana = useVentanaDeModal(open, {
     ...opcionesVentana,
@@ -269,6 +287,7 @@ export default function AdminModal({
         <Dialog.Content
           ref={contentRef}
           aria-describedby={description ? undefined : undefined}
+          {...nombradoPor}
           style={{ ...panelTokens, ...ventana.estilo }}
           className={cn(
             "fixed z-modal bg-[var(--surface-raised)] overflow-hidden flex flex-col shadow-[var(--shadow-xl)] outline-none",
