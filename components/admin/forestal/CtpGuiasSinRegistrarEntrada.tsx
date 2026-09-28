@@ -18,6 +18,7 @@ import { createPortal } from "react-dom";
 import { FileStack } from "@buleje/design-system/icons";
 import BarraDeuda, { type DeudaItem } from "@/components/admin/shared/BarraDeuda";
 import { useGuiasSinRegistrar, type EstadoGuiasSinRegistrar } from "@/hooks/use-guias-sin-registrar";
+import { useConteoGuiasSinRegistrar } from "@/hooks/use-conteo-guias-sin-registrar";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 const CtpGuiasSinRegistrarModal = dynamic(() => import("./CtpGuiasSinRegistrarModal"), { ssr: false });
@@ -164,10 +165,15 @@ export function BarraDeudaConGuias({
 }
 
 function BarraDeDespacho({ items, onCambio }: { items: DeudaItem[]; onCambio?: () => void }) {
-  const estado = useGuiasSinRegistrar({ cargarAlMontar: true, onCambio });
+  /* La propuesta completa (qué corrida cubre cada línea) sólo hace falta
+     adentro del modal: al entrar a Despacho, la pastilla pinta con el conteo
+     liviano (`?contar=1`, sin `estadoDelLibro` ni `proponerTanda` — medido en
+     Blas, 3,4 s → los ms del conteo) y `abrir()` recién ahí pide la propuesta. */
+  const estado = useGuiasSinRegistrar({ onCambio });
+  const conteoLigero = useConteoGuiasSinRegistrar(true);
   const { abierto, abrir, cerrar } = useAbrirReleyendo(estado);
-  const guias = estado.datos?.tanda.guias.length ?? 0;
-  const m3 = estado.datos?.tanda.resumen.totalM3 ?? 0;
+  const guias = estado.datos ? estado.datos.tanda.guias.length : (conteoLigero.conteo?.guias ?? 0);
+  const m3 = estado.datos ? estado.datos.tanda.resumen.totalM3 : (conteoLigero.conteo?.totalM3 ?? 0);
   const todos = useMemo<DeudaItem[]>(
     () =>
       guias > 0
@@ -196,9 +202,10 @@ function BarraDeDespacho({ items, onCambio }: { items: DeudaItem[]; onCambio?: (
 
 /** Botón de la bandeja de anexos emitidos: sólo si hay guías por registrar. */
 export function BotonGuiasSinRegistrar() {
-  const estado = useGuiasSinRegistrar({ cargarAlMontar: true });
+  const estado = useGuiasSinRegistrar({});
+  const conteoLigero = useConteoGuiasSinRegistrar(true);
   const { abierto, abrir, cerrar } = useAbrirReleyendo(estado);
-  const guias = estado.datos?.tanda.guias.length ?? 0;
+  const guias = estado.datos ? estado.datos.tanda.guias.length : (conteoLigero.conteo?.guias ?? 0);
   /* Registrar la última no esconde el botón con el modal abierto. */
   if (guias === 0 && !abierto) return null;
   return (

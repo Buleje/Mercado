@@ -100,6 +100,11 @@ export const ICONOS_FICHA = {
   sniffs: "🔎",
   titular: "👤",
   permiso: "📜",
+  /* Sumados para la ficha del Libro TH (28-09): mismo encabezado/formato que
+     la de arriba, así la pistola de recepción del CTP lee las dos igual. */
+  cientifico: "🔬",
+  arbol: "🌲",
+  plan: "📋",
 } as const;
 
 /** La raya entre la madera y sus papeles. */
@@ -172,6 +177,95 @@ export function codigoDeFichaTexto(leido: string | null | undefined): string | n
      código termina donde empieza la primera clave de la ficha. */
   const codigo = m?.[1]?.split(CORTE_DE_CLAVE, 1)[0]?.trim();
   return codigo && !esSinMarca(codigo) ? codigo : null;
+}
+
+/**
+ * D1/D2/largo del Libro TH: `LothEntryDTO` guarda los diámetros en METROS
+ * (`diamMayorM`/`diamMenorM`), no en cm como la troza del CTP — se convierte
+ * acá, una sola vez, para que la ficha impresa hable en la misma unidad que
+ * lee cualquier celular (cm). Igual que `partesDeMedidas`: D1, D2 y largo
+ * SIEMPRE, con «—» si falta.
+ */
+export function partesDeMedidasLoth(e: {
+  diamMayorM: string | number | null;
+  diamMenorM: string | number | null;
+  lengthM: string | number | null;
+}): { diametros: string; largo: string } {
+  const num = (v: string | number | null | undefined) => {
+    if (v == null) return null;
+    const x = Number(v);
+    return Number.isFinite(x) ? x : null;
+  };
+  const d1 = num(e.diamMayorM);
+  const d2 = num(e.diamMenorM);
+  const d1cm = d1 != null ? cm(d1 * 100) : null;
+  const d2cm = d2 != null ? cm(d2 * 100) : null;
+  const diametros = `D1 ${d1cm ?? "—"} · D2 ${d2cm ?? "—"}${d1cm || d2cm ? " cm" : ""}`;
+  const largoV = num(e.lengthM);
+  const largo = largoV != null ? `L ${formatNumber(largoV, 2)} m` : "L —";
+  return { diametros, largo };
+}
+
+/** «D1 45 · D2 48 cm · L 4.20 m» del Libro TH (ver `partesDeMedidasLoth`). */
+export function medidasDeFichaLoth(e: {
+  diamMayorM: string | number | null;
+  diamMenorM: string | number | null;
+  lengthM: string | number | null;
+}): string {
+  const { diametros, largo } = partesDeMedidasLoth(e);
+  return `${diametros} · ${largo}`;
+}
+
+/** El código grande de la etiqueta del Libro TH: la troza, o el árbol si no la tiene. */
+export function codigoDeEtiquetaLoth(e: { trozaCode: string | null; treeCode: string | null }): string {
+  const t = (e.trozaCode ?? "").trim();
+  if (t) return t;
+  const a = (e.treeCode ?? "").trim();
+  return a || "—";
+}
+
+/**
+ * La ficha de una línea del Libro TH, como texto dentro del QR — MISMO
+ * encabezado (`TROZA <código>`), mismos íconos y misma raya que
+ * `textoFichaDeTroza` del CTP: la pistola de recepción del CTP la reconoce
+ * sin distinguir de qué libro salió (Brandon, 2026-09-28: «que la lea la
+ * misma pistola»). Contenido pedido: especie común/científica, D1·D2·largo,
+ * volumen, árbol de origen, permiso/título habilitante y plan de manejo.
+ */
+export function textoFichaDeTrozaLoth(
+  e: {
+    trozaCode: string | null;
+    treeCode: string | null;
+    speciesCommon: string | null;
+    speciesScientific: string | null;
+    volumeM3: string | number | null;
+    diamMayorM: string | number | null;
+    diamMenorM: string | number | null;
+    lengthM: string | number | null;
+    gtfNumber: string | null;
+  },
+  opts: { tituloHabilitante?: string | null; planNumber?: string | null } = {},
+): string {
+  const codigo = codigoDeEtiquetaLoth(e);
+  const vol = e.volumeM3 != null && Number.isFinite(Number(e.volumeM3)) ? `${fmtM3(Number(e.volumeM3))} m³` : null;
+  const linea = (icono: string, v: string | null) => (v == null ? null : `${icono} ${v}`);
+  const madera = [
+    linea(ICONOS_FICHA.especie, texto(e.speciesCommon)),
+    linea(ICONOS_FICHA.cientifico, texto(e.speciesScientific)),
+    linea(ICONOS_FICHA.medidas, medidasDeFichaLoth(e)),
+    linea(ICONOS_FICHA.volumen, vol),
+  ];
+  const papeles = [
+    linea(ICONOS_FICHA.arbol, texto(e.treeCode) && `Árbol ${texto(e.treeCode)}`),
+    linea(ICONOS_FICHA.permiso, texto(opts.tituloHabilitante) && `Permiso ${texto(opts.tituloHabilitante)}`),
+    linea(ICONOS_FICHA.plan, texto(opts.planNumber) && `Plan ${texto(opts.planNumber)}`),
+    linea(ICONOS_FICHA.gtf, texto(e.gtfNumber) && `GTF ${texto(e.gtfNumber)}`),
+  ].filter((l): l is string => l != null);
+  return [
+    `${ENCABEZADO_FICHA} ${codigo}`,
+    ...madera.filter((l): l is string => l != null),
+    ...(papeles.length > 0 ? [RAYA_FICHA, ...papeles] : []),
+  ].join("\n");
 }
 
 /**

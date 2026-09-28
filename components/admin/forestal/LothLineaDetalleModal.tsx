@@ -9,7 +9,7 @@
  * corrige —o fue corregida por— otra.
  */
 
-import { Camera, Clock, Link2, MapPin, User, X } from "@buleje/design-system/icons";
+import { Camera, Clock, Link2, MapPin, QrCode, User, X } from "@buleje/design-system/icons";
 import { useRef } from "react";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
@@ -44,12 +44,15 @@ export default function LothLineaDetalleModal({
   corregidaPorLineNo,
   onClose,
   onVerCadena,
+  onImprimirEtiqueta,
 }: {
   linea: LothEntryDTO | null;
   /** N° de la línea que enmienda a ésta, si existe. */
   corregidaPorLineNo?: number | null;
   onClose: () => void;
   onVerCadena?: (code: string) => void;
+  /** Sólo para líneas de Trozado: imprime la etiqueta QR de ESTA troza (28-09). */
+  onImprimirEtiqueta?: (linea: LothEntryDTO) => void;
 }) {
   /* Sin esto el foco se queda atrás del modal: Tab se va a la pantalla
      de abajo y Escape no cierra (hook medido en el módulo, 2026-09-09). */
@@ -269,6 +272,15 @@ export default function LothLineaDetalleModal({
         </div>
 
         <footer className="flex flex-wrap items-center justify-end gap-2 border-t-2 border-[var(--rule-base)] px-5 py-3">
+          {linea.section === "trozado" && codigo && onImprimirEtiqueta && (
+            <button
+              type="button"
+              onClick={() => onImprimirEtiqueta(linea)}
+              className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+            >
+              <QrCode className="h-4 w-4" /> Imprimir etiqueta
+            </button>
+          )}
           {codigo && onVerCadena && (
             <button
               type="button"

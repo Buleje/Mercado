@@ -396,6 +396,24 @@ export class ForestCtpGuiaDesdeAnexoDB {
   }
 
   /**
+   * Sólo el conteo (2026-09-28): la pastilla de Despacho no necesita la
+   * propuesta entera (qué corrida cubre cada línea) para decir «9 guías, 12,4
+   * m³» — sólo el KV de anexos y los despachos vivos por número de guía. Se
+   * salta `estadoDelLibro` (hasta 5000 corridas + saldos + orígenes) y
+   * `proponerTanda`, que es lo que tarda: medido en Blas, 3,4 s → contra esto.
+   * `contarPendientes` es la MITAD barata de `pendientes`: comparte
+   * `bandejaConfiable`+`clasificarAnexos`, nunca diverge en qué cuenta como
+   * pendiente porque es el mismo código.
+   */
+  static async contarPendientes(tenantId: string): Promise<{ guias: number; totalM3: number }> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const { lista, vigentes } = await bandejaConfiable(prisma, tenantId, await ForestAnexosDB.list(tenantId));
+    const { pendientes } = clasificarAnexos(lista, vigentes);
+    const totalM3 = Math.round(pendientes.reduce((a, p) => a + p.totalM3, 0) * 10000) / 10000;
+    return { guias: pendientes.length, totalM3 };
+  }
+
+  /**
    * La tanda como quedaría, sin escribir nada. `guias = null` = todas las
    * pendientes; si no, sólo esas, con las elecciones de origen de cada una.
    */

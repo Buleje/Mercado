@@ -17,6 +17,10 @@ import { ForestCtpGuiaDesdeAnexoDB } from "@/lib/db/forest-ctp-guia-desde-anexo.
  * GET  ?pendientes=1   — los Anexos 04 cuya salida no está en el libro, con la
  *                         propuesta de cada guía en el orden en que se
  *                         registrarían (la más vieja primero).
+ * GET  ?contar=1        — sólo cuántas hay y su m³ (sin armar propuestas): lo
+ *                         que pinta la pastilla de Despacho al entrar. Mismo
+ *                         guard y misma clasificación que `?pendientes=1`,
+ *                         mucho más barato (2026-09-28, ADR-446 ronda 2).
  * GET  ?anexoId=…      — un anexo: su estado y lo que pasaría si se registra AHORA.
  * POST                 — registra una tanda (una transacción por guía) o, con
  *                         `simular: true`, devuelve la tanda como quedaría con
@@ -90,15 +94,19 @@ export const GET = withApiHandler("forestal-anexos-a-despacho-get", async (req: 
   const url = new URL(req.url);
   const anexoId = url.searchParams.get("anexoId")?.trim() ?? "";
   const pendientes = url.searchParams.get("pendientes");
+  const contar = url.searchParams.get("contar");
   if (anexoId.length > 60) return NextResponse.json({ error: "invalid_anexo_id" }, { status: 400 });
-  if (!anexoId && pendientes !== "1") {
+  if (!anexoId && pendientes !== "1" && contar !== "1") {
     /* Un parámetro mal escrito no devuelve «todo» en silencio. */
     return NextResponse.json(
-      { error: "missing_param", message: "Pide ?pendientes=1 o ?anexoId=<id del anexo>." },
+      { error: "missing_param", message: "Pide ?pendientes=1, ?contar=1 o ?anexoId=<id del anexo>." },
       { status: 400 },
     );
   }
   try {
+    if (!anexoId && contar === "1") {
+      return NextResponse.json(await ForestCtpGuiaDesdeAnexoDB.contarPendientes(auth.tenantId));
+    }
     const data = anexoId
       ? await ForestCtpGuiaDesdeAnexoDB.proponer(auth.tenantId, anexoId)
       : await ForestCtpGuiaDesdeAnexoDB.pendientes(auth.tenantId);

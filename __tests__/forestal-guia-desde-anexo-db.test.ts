@@ -330,6 +330,35 @@ describe.skipIf(!HAS_DB)("ADR-446 · registrar guías desde su Anexo 04 (op-qa-u
   );
 
   it(
+    "contarPendientes() dice lo mismo que pendientes(): la pastilla no puede mentir por ir liviana",
+    async () => {
+      await inventario();
+      const g1 = await anexo("C1", gtf(), "2026-08-24", [comercial(6)]);
+      const g2 = await anexo("C2", gtf(), "2026-08-25", [comercial(7)]);
+      const pend = await ForestCtpGuiaDesdeAnexoDB.pendientes(T);
+      const idsPropios = new Set([g1.id, g2.id]);
+      const guiasPropias = pend.tanda.guias.filter((x) => idsPropios.has(x.anexoId));
+      expect(guiasPropias).toHaveLength(2);
+      const m3Propio = guiasPropias.reduce((a, x) => a + x.totalM3, 0);
+
+      const conteo = await ForestCtpGuiaDesdeAnexoDB.contarPendientes(T);
+      /* No hay forma de aislar SOLO estas dos en el conteo global (no separa por
+         anexo), así que se compara contra el mismo total que ve `pendientes()`
+         en esta tienda de pruebas: si el número de guías difiere, uno de los
+         dos caminos se desincronizó de `clasificarAnexos`. El m³ puede diferir
+         unos mililitros: `contarPendientes` suma el `totalM3` DECLARADO del
+         Anexo 04 (el papel), `pendientes()` recomputa por grupo tras cubicar
+         y repartir piezas — dos redondeos `r4` en cadenas distintas. Medido:
+         0,0008 m³ (menos de un litro) sobre 2,55 m³ — la misma tolerancia de
+         "resto de montón" que ya usa el propio módulo (`TOL_RESTO_M3`). */
+      expect(conteo.guias).toBe(pend.tanda.guias.length);
+      expect(conteo.totalM3).toBeCloseTo(pend.tanda.resumen.totalM3, 2);
+      expect(m3Propio).toBeGreaterThan(0);
+    },
+    120_000,
+  );
+
+  it(
     "una guía que ya está en Despacho sin venir del anexo no se registra dos veces (por tramos)",
     async () => {
       await inventario();

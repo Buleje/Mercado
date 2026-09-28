@@ -38,6 +38,7 @@ import ContratoActivoChip from "@/components/admin/forestal/ContratoActivoChip";
 import { downloadLothExcel, printLothLibro } from "@/lib/forestal/loth-print";
 import { printLothInforme } from "@/lib/forestal/loth-informe-print";
 import { printTrozaLabels } from "@/lib/forestal/loth-labels";
+import { imprimirEtiquetasTrozasLoth } from "@/lib/forestal/loth-troza-etiquetas";
 import {
   estaFueraDePlazo,
   LOTH_SECTIONS,
@@ -263,6 +264,8 @@ export default function LothLibroOperaciones() {
   const [censoArboles, setCensoArboles] = useState<
     { treeCode: string; speciesCommon: string; dapM: number | null; volumenEstimadoM3: number | null; estado: string }[]
   >([]);
+  /** N° del plan activo — va en la etiqueta de la troza (28-09). */
+  const [planNumeroActivo, setPlanNumeroActivo] = useState<string | null>(null);
   /**
    * N° de las guías realmente emitidas. Cruzarlas contra las que el libro
    * declara destapa la GTF fantasma: un despacho que nombra una guía que nadie
@@ -331,6 +334,50 @@ export default function LothLibroOperaciones() {
     } finally {
       setPrintingLabels(false);
     }
+  }
+
+  const [printingLabelsCtp, setPrintingLabelsCtp] = useState(false);
+
+  /**
+   * «Imprimir etiquetas» de Trozado (28-09): la ficha en el QR usa el MISMO
+   * formato que ya lee la recepción del Libro CTP (ADR-436) — así una troza
+   * que sale del TH y entra al CTP se reconoce con la misma pistola. La
+   * ventana se abre YA, en el clic: después de un `await` el navegador la
+   * bloquea como pop-up (mismo gotcha que las etiquetas del CTP).
+   */
+  async function doPrintLabelsCtp(lineas: LothEntry[], ventana: Window | null) {
+    if (!ventana) {
+      setError("El navegador bloqueó la ventana de impresión. Permite ventanas emergentes para este sitio.");
+      return;
+    }
+    setPrintingLabelsCtp(true);
+    setError(null);
+    try {
+      const count = await imprimirEtiquetasTrozasLoth(lineas, {
+        origin: window.location.origin,
+        tituloHabilitante: caratula?.tituloHabilitante ?? null,
+        planNumber: planNumeroActivo,
+        ventana,
+      });
+      if (count === 0) {
+        setError("Ninguna de estas líneas tiene código de troza o de árbol todavía.");
+        ventana.close();
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+      try { ventana.close(); } catch { /* ya cerrada */ }
+    } finally {
+      setPrintingLabelsCtp(false);
+    }
+  }
+
+  /** Abre la ventana en el clic (sincrónico) y recién ahí arma la hoja. */
+  function alImprimirEtiquetasCtp(lineas: LothEntry[]) {
+    const ventana = window.open("", "_blank", "width=980,height=760");
+    ventana?.document.write(
+      '<!doctype html><meta charset="utf-8"><title>Generando etiquetas…</title><p style="font:16px system-ui;padding:24px">Generando etiquetas…</p>',
+    );
+    void doPrintLabelsCtp(lineas, ventana);
   }
 
   async function doExport(kind: "pdf" | "excel") {
@@ -495,7 +542,9 @@ export default function LothLibroOperaciones() {
       // El censo del plan activo: sin él, la trazabilidad arranca en la tala y
       // el volumen ESTIMADO (el que sustenta la autorización) no se compara.
       const planRes = await fetch("/api/admin/forestal/plan?active=1", { credentials: "include" });
-      const planId = planRes.ok ? ((await planRes.json()).active?.id ?? null) : null;
+      const planJson = planRes.ok ? await planRes.json() : null;
+      const planId = planJson?.active?.id ?? null;
+      setPlanNumeroActivo(planJson?.active?.planNumber ?? null);
       if (planId) {
         const cRes = await fetch(`/api/admin/forestal/plan/census?planId=${encodeURIComponent(planId)}`, { credentials: "include" });
         if (cRes.ok) {
@@ -979,6 +1028,17 @@ export default function LothLibroOperaciones() {
           >
             <QrCode className="h-4 w-4" /> Etiquetas QR
           </button>
+          {section === "trozado" && (
+            <button
+              type="button"
+              onClick={() => alImprimirEtiquetasCtp(seleccionadas)}
+              disabled={printingLabelsCtp}
+              title="La ficha del QR se lee con la misma pistola que recibe trozas en el Libro CTP"
+              className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--accent)] px-4 text-sm font-semibold text-[var(--accent-ink)] hover:bg-[var(--accent)]/12 disabled:opacity-50 dark:text-[var(--accent)]"
+            >
+              <QrCode className="h-4 w-4" /> Imprimir etiquetas
+            </button>
+          )}
           <button
             type="button"
             onClick={() => descargarCsv(seleccionadas, `libro-th-${section}-seleccion.csv`)}
@@ -1204,6 +1264,7 @@ export default function LothLibroOperaciones() {
         corregidaPorLineNo={detalle ? (correcciones.corregidaPor.get(detalle.lineNo) ?? null) : null}
         onClose={() => setDetalle(null)}
         onVerCadena={(code) => setCadenaCode(code)}
+        onImprimirEtiqueta={(linea) => alImprimirEtiquetasCtp([linea])}
       />
 
       {/* Anular 1..N con un solo motivo. El libro no borra: la línea queda con
