@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { ForestLothDB, LOTH_SECTIONS } from "@/lib/db/forest-loth.db";
 import { ForestPlanDB } from "@/lib/db/forest-plan.db";
+import { ColaboradoresDB } from "@/lib/db/rrhh-colaboradores.db";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
@@ -14,6 +15,7 @@ import { lothErrorResponse, lothValidationResponse } from "@/lib/forestal/loth-a
  *
  * GET  — lista entries (?section, ?caratulaId, ?search, ?includeAnnulled)
  *        ?stats=1 → resumen por sección
+ *        ?usoCenso=1 → por árbol: su tala, trozas, despachadas y consumidas
  * POST — crea entry (status registrado, lineNo correlativo automático)
  *
  * Guard: requireAdmin → rate limit STRICT → spec:forestal:loth-libro
@@ -73,6 +75,18 @@ const createSchema = z.object({
   gpsLat: z.coerce.number().min(-90).max(90).nullable().optional(),
   gpsLng: z.coerce.number().min(-180).max(180).nullable().optional(),
   photoUrl: z.string().trim().max(500).nullable().optional(),
+  // De dónde salió el GPS: el tocón (teléfono), la coordenada del censo o una UTM tipeada.
+  gpsOrigen: z.enum(["telefono", "censo", "utm"]).nullable().optional(),
+
+  // Datos INTERNOS de la tala: no salen en el formato SERFOR.
+  motosierrista: z.string().trim().max(120).nullable().optional(),
+  motosierristaId: z.string().trim().max(60).nullable().optional(),
+  horaTala: z
+    .string()
+    .trim()
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "La hora va como HH:MM (ej. 09:30)")
+    .nullable()
+    .optional(),
 });
 
 async function ensureSpecOrDeny(tenantId: string) {
@@ -111,6 +125,12 @@ export const GET = withApiHandler("forestal-loth-get", async (req: NextRequest) 
 
     if (url.searchParams.get("despachables") === "1") {
       return NextResponse.json({ items: await ForestLothDB.despachablesResueltos(auth.tenantId) });
+    }
+
+    // Qué hizo el libro con cada árbol del censo (tala, trozas, despachos):
+    // el modal «Ver censo» de la tala lo cruza con el censo.
+    if (url.searchParams.get("usoCenso") === "1") {
+      return NextResponse.json({ usos: await ForestLothDB.usoDelCenso(auth.tenantId) });
     }
 
     if (url.searchParams.get("trozaCodes") === "1") {
@@ -175,8 +195,15 @@ export const POST = withApiHandler("forestal-loth-post", async (req: NextRequest
   if (!parsed.success) return lothValidationResponse(parsed.error);
 
   try {
+    // El motosierrista elegido de RRHH tiene que ser de ESTE negocio: un id
+    // ajeno se descarta (queda el nombre tipeado).
+    const motosierristaId =
+      parsed.data.motosierristaId && (await ColaboradoresDB.existe(auth.tenantId, parsed.data.motosierristaId))
+        ? parsed.data.motosierristaId
+        : null;
     const entry = await ForestLothDB.create(auth.tenantId, {
       ...parsed.data,
+      motosierristaId,
       createdBy: auth.username ?? "unknown",
     });
     // ADR-126: al talar, el árbol del censo pasa a "talado" (consume saldo).

@@ -17,6 +17,15 @@ import { useState } from "react";
 import { AlertTriangle, ExternalLink, Loader2, MapPin, Trees, X } from "@buleje/design-system/icons";
 import { formatUtmFull, fromUtm, parseUtmZone, toUtm } from "@/lib/forestal/loth-utm";
 
+/** De dónde salió la coordenada (se guarda con la línea: `gpsOrigen`). */
+export type GpsOrigen = "telefono" | "censo" | "utm";
+
+const ORIGEN_LABEL: Record<GpsOrigen, string> = {
+  telefono: "del teléfono",
+  censo: "copiada del censo",
+  utm: "UTM escrita a mano",
+};
+
 export interface CensoUtm {
   code: string;
   zona: string | null;
@@ -27,7 +36,10 @@ export interface CensoUtm {
 interface Props {
   lat: number | null;
   lng: number | null;
-  onChange: (lat: number | null, lng: number | null) => void;
+  /** `origen`: el teléfono, el censo o una UTM tipeada; `null` al quitarla. */
+  onChange: (lat: number | null, lng: number | null, origen: GpsOrigen | null) => void;
+  /** De dónde salió la coordenada actual (para decirlo al lado). */
+  origen?: GpsOrigen | null;
   /** Coordenada del árbol censado que se está registrando (si la tiene). */
   censo?: CensoUtm | null;
   /** Lo que va en la MISMA fila de botones (la foto de evidencia, en el LO-TH). */
@@ -39,7 +51,7 @@ const INPUT =
 const BTN =
   "inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-60";
 
-export default function LothGpsField({ lat, lng, onChange, censo, children }: Props) {
+export default function LothGpsField({ lat, lng, onChange, origen = null, censo, children }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [manual, setManual] = useState(false);
@@ -56,7 +68,7 @@ export default function LothGpsField({ lat, lng, onChange, censo, children }: Pr
     setError(null);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        onChange(pos.coords.latitude, pos.coords.longitude);
+        onChange(pos.coords.latitude, pos.coords.longitude, "telefono");
         setLoading(false);
       },
       (err) => {
@@ -71,7 +83,7 @@ export default function LothGpsField({ lat, lng, onChange, censo, children }: Pr
     if (!censo) return;
     const { zone, south } = parseUtmZone(censo.zona);
     const [la, ln] = fromUtm(censo.x, censo.y, zone, south);
-    onChange(la, ln);
+    onChange(la, ln, "censo");
     setError(null);
   };
 
@@ -88,7 +100,7 @@ export default function LothGpsField({ lat, lng, onChange, censo, children }: Pr
       setError("Esas coordenadas caen fuera del planeta: revisa la zona UTM.");
       return;
     }
-    onChange(la, ln);
+    onChange(la, ln, "utm");
     setError(null);
     setManual(false);
   };
@@ -151,6 +163,7 @@ export default function LothGpsField({ lat, lng, onChange, censo, children }: Pr
             <span className="font-mono tabular-nums">
               {lat.toFixed(6)}, {lng.toFixed(6)}
             </span>
+            {origen && <span className="text-[var(--text-secondary)]">· {ORIGEN_LABEL[origen]}</span>}
             <a
               href={`https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=17/${lat}/${lng}`}
               target="_blank"
@@ -161,7 +174,7 @@ export default function LothGpsField({ lat, lng, onChange, censo, children }: Pr
             </a>
             <button
               type="button"
-              onClick={() => onChange(null, null)}
+              onClick={() => onChange(null, null, null)}
               className="inline-flex items-center gap-0.5 text-[var(--text-tertiary)] underline underline-offset-2"
             >
               <X className="h-3 w-3" /> quitar

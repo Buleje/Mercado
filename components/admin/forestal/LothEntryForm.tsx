@@ -23,6 +23,7 @@ import {
   Check,
   ShieldAlert,
   Camera,
+  Table,
 } from "@buleje/design-system/icons";
 import AdminModal, { CabeceraPropia } from "@/components/admin/shared/AdminModal";
 import { CardTitle } from "@buleje/design-system";
@@ -48,7 +49,12 @@ import {
 import { estadoVencimiento, permisoParaEspecie, type LothCitesPermiso } from "@/lib/forestal/loth-cites-types";
 import { fromUtm, parseUtmZone } from "@/lib/forestal/loth-utm";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
-import LothGpsField from "./LothGpsField";
+import LothGpsField, { type GpsOrigen } from "./LothGpsField";
+import LothCensoElegirModal from "./LothCensoElegirModal";
+import LothFichaArbol from "./LothFichaArbol";
+import LothTalaDatosInternos from "./LothTalaDatosInternos";
+import { olvidarCensoDeTala, useCensoDeTala } from "./hooks/use-censo-de-tala";
+import { ordenarCenso, type ArbolParaElegir } from "@/lib/forestal/loth-censo-uso";
 import LothAvisoTransformacion from "./LothAvisoTransformacion";
 import { cientificoDeEspecie } from "@/lib/forestal/especies-catalogo";
 import { useEspeciesCatalogo } from "./hooks/use-especies-catalogo";
@@ -58,7 +64,11 @@ interface Props {
   section: LothSection;
   caratulaId?: string | null;
   onClose: () => void;
-  onSaved: (opts?: { keepOpen?: boolean }) => void;
+  /**
+   * `arbolTalado`: la tala que se acaba de asentar — la vista ofrece seguir
+   * con el trozado de ese árbol («Talar y trozar»).
+   */
+  onSaved: (opts?: { keepOpen?: boolean; arbolTalado?: string | null }) => void;
   /**
    * Línea de la que se parte. Sirve para dos cosas distintas:
    *  · **duplicar** (registrar la troza siguiente del mismo árbol sin volver a
@@ -74,6 +84,12 @@ interface Props {
    * transforma en una planta. Sin la prop, el aviso sale sin el botón.
    */
   onIrAlCtp?: () => void;
+  /**
+   * Código de árbol con el que arranca el formulario: en Tala lo busca en el
+   * censo y lo elige (enlace `?nuevaTala=<código>` desde otras pantallas); en
+   * Trozado elige esa tala (después de «Talar y trozar»).
+   */
+  arbolInicial?: string | null;
 }
 
 /** Las secciones de transformación: las que casi siempre van en el Libro CTP.
@@ -128,7 +144,7 @@ const FIELDS: Record<LothSection, Set<string>> = {
  */
 const smalian = smalianVolume;
 
-export default function LothEntryForm({ section, caratulaId, onClose, onSaved, plantilla, corrigeLineNo, onIrAlCtp }: Props) {
+export default function LothEntryForm({ section, caratulaId, onClose, onSaved, plantilla, corrigeLineNo, onIrAlCtp, arbolInicial }: Props) {
   /**
    * Qué especies ofrece este libro.
    *
@@ -267,6 +283,8 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
   // ── GPS + foto de evidencia ───────────────────────────────────────────
   const [gpsLat, setGpsLat] = useState<number | null>(null);
   const [gpsLng, setGpsLng] = useState<number | null>(null);
+  /** De dónde salió: sin esto no se distingue el tocón de la copia del censo. */
+  const [gpsOrigen, setGpsOrigen] = useState<GpsOrigen | null>(null);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [photoUploading, setPhotoUploading] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
@@ -279,6 +297,8 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
     dapM?: number | null; hcM?: number | null; vol?: number | null; productType?: string | null;
     quantity?: number | null; unit?: string | null; meta?: string | null; trozaCode?: string | null;
     utmZona?: string | null; utmX?: number | null; utmY?: number | null;
+    /** Tala: lo que hay que saber antes de tumbarlo (semillero, bajo DMC…). */
+    aviso?: string | null;
   }
   const [plans, setPlans] = useState<PlanOpt[]>([]);
   const [planId, setPlanId] = useState<string | null>(null);
@@ -289,6 +309,19 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
   const [sources, setSources] = useState<SourceItem[]>([]);
   const [loadingSrc, setLoadingSrc] = useState(false);
   const [srcQuery, setSrcQuery] = useState("");
+  /** La primera carga de fuentes ya respondió (para elegir el árbol inicial). */
+  const [fuentesListas, setFuentesListas] = useState(false);
+  const [planesListos, setPlanesListos] = useState(false);
+
+  /** Tala: el censo del plan cruzado con el libro — lista corta, «Ver censo» y ficha. */
+  const censoTala = useCensoDeTala(planId, section === "tala");
+  const [verCenso, setVerCenso] = useState(false);
+  /** El científico que el censo trae para ESA especie (lo anotó el regente). */
+  const [cientificoCenso, setCientificoCenso] = useState<{ especie: string; cientifico: string } | null>(null);
+  /** Datos internos de la tala: NO salen en el formato SERFOR. */
+  const [motosierrista, setMotosierrista] = useState(plantilla?.motosierrista ?? "");
+  const [motosierristaId, setMotosierristaId] = useState<string | null>(plantilla?.motosierristaId ?? null);
+  const [horaTala, setHoraTala] = useState("");
 
   // Catálogo de permisos CITES de la carátula — para acreditar la especie protegida.
   const [citesPermisos, setCitesPermisos] = useState<LothCitesPermiso[]>([]);
@@ -319,6 +352,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
         setPlans(pl);
         setPlanId(active?.id ?? pl[0]?.id ?? null);
       } catch { /* se puede registrar sin plan (código libre) */ }
+      if (!cancel) setPlanesListos(true);
     })();
     return () => { cancel = true; };
   }, []);
@@ -331,9 +365,11 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
       const r = await fetch(`/api/admin/forestal/loth?${q.toString()}`, { credentials: "include" });
       setSources(r.ok ? (await r.json()).items ?? [] : []);
     } catch { setSources([]); }
-    finally { setLoadingSrc(false); }
+    finally { setLoadingSrc(false); setFuentesListas(true); }
   }, [section]);
-  useEffect(() => { loadSources(planId); }, [planId, loadSources]);
+  /* En tala la lista sale del censo ya cruzado con el libro (`censoTala`):
+     pedir además `?available=tala` era otra consulta para un subconjunto. */
+  useEffect(() => { if (section !== "tala") loadSources(planId); }, [planId, loadSources, section]);
 
   // Cargar las especies autorizadas del plan seleccionado (para el aviso en vivo).
   useEffect(() => {
@@ -364,6 +400,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
     applySpecies(it.species);
     if (section === "tala") {
       if (it.code) setTreeCode(it.code);
+      setCientificoCenso(it.species && it.scientific ? { especie: it.species, cientifico: it.scientific } : null);
       // El censo arranca la medición, no la reemplaza: el DAP es del árbol EN
       // PIE y la altura comercial es estimada. Antes se copiaba el DAP en Ø
       // mayor y Ø menor a la vez —fingiendo dos medidas cruzadas que nadie
@@ -408,13 +445,34 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
     producto_terminado: "Elige la troza consumida (materia prima)",
     despacho_producto: "Elige el producto a despachar",
   };
+  /** Tala: lo disponible sale del censo cruzado con el libro (un talado no se ofrece). */
+  const sourcesTala = useMemo<SourceItem[]>(
+    () =>
+      ordenarCenso(censoTala.arboles.filter((a) => a.disponibilidad === "disponible"), "codigo", "asc").map((a) => ({
+        kind: "censo",
+        code: a.treeCode,
+        species: a.speciesCommon,
+        scientific: a.speciesScientific,
+        cites: a.cites,
+        dapM: a.dapM,
+        hcM: a.hcM,
+        vol: a.volM3,
+        utmZona: a.utmZona,
+        utmX: a.utmX,
+        utmY: a.utmY,
+        aviso: a.reparo ? (a.reparo.nivel === "infraccion" ? "No se tala" : "Semillero del plan") : null,
+      })),
+    [censoTala.arboles],
+  );
+  const fuentes = section === "tala" ? sourcesTala : sources;
+  const cargandoFuentes = section === "tala" ? censoTala.cargando : loadingSrc;
   const filteredSources = useMemo(() => {
     const q = srcQuery.trim().toLowerCase();
     const list = q
-      ? sources.filter((s) => (s.code ?? "").toLowerCase().includes(q) || (s.species ?? "").toLowerCase().includes(q) || (s.productType ?? "").toLowerCase().includes(q))
-      : sources;
+      ? fuentes.filter((s) => (s.code ?? "").toLowerCase().includes(q) || (s.species ?? "").toLowerCase().includes(q) || (s.productType ?? "").toLowerCase().includes(q))
+      : fuentes;
     return list.slice(0, 60);
-  }, [sources, srcQuery]);
+  }, [fuentes, srcQuery]);
 
   // ── Censo: autocompletado data-driven (ADR-126) ──────────────────────
   interface CensusTree {
@@ -436,17 +494,22 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
    * si todavía no tiene una (el GPS del teléfono, más preciso, siempre gana).
    */
   function aplicarCoordCenso(code: string | null, zona: string | null, x: number | null, y: number | null) {
+    /* La coordenada tomada en el tocón (o tipeada) no se pisa; la copiada del
+       censo sí: al cambiar de árbol, la línea se llevaba la del anterior. */
+    const copiada = gpsOrigen === "censo";
     if (x == null || y == null || x <= 0 || y <= 0) {
       setCensoUtm(null);
+      if (copiada) { setGpsLat(null); setGpsLng(null); setGpsOrigen(null); }
       return;
     }
     setCensoUtm({ code: code ?? "", zona, x, y });
-    if (gpsLat != null || gpsLng != null) return;
+    if ((gpsLat != null || gpsLng != null) && !copiada) return;
     const { zone, south } = parseUtmZone(zona);
     const [la, ln] = fromUtm(x, y, zone, south);
     if (Number.isFinite(la) && Number.isFinite(ln) && Math.abs(la) <= 90 && Math.abs(ln) <= 180) {
       setGpsLat(la);
       setGpsLng(ln);
+      setGpsOrigen("censo");
     }
   }
 
@@ -455,6 +518,15 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
     setCensusChecked(false);
     setCensusTree(null);
     if (!c) return;
+    // Tala: el censo del plan ya está cargado; sin otra consulta.
+    const local = section === "tala" ? censoTala.arboles.find((a) => a.treeCode === c) : undefined;
+    if (local) {
+      setCensusChecked(true);
+      applySpecies(local.speciesCommon);
+      setCientificoCenso(local.speciesScientific ? { especie: local.speciesCommon, cientifico: local.speciesScientific } : null);
+      aplicarCoordCenso(local.treeCode, local.utmZona, local.utmX, local.utmY);
+      return;
+    }
     try {
       const r = await fetch(`/api/admin/forestal/plan/census?treeCode=${encodeURIComponent(c)}`, { credentials: "include" });
       setCensusChecked(true);
@@ -497,6 +569,12 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
     ? (matched?.scientificName ?? cientificoDeEspecie(customSpecies, catalogoEspecies.catalogo))
     : selected?.scientificName || null;
   const cites = isCustom ? matched?.cites ?? false : selected?.cites ?? false;
+  /* El del censo manda si es de la MISMA especie que la línea: lo anotó el
+     regente para ese árbol. Medido 28-09 en Blas: la tala de la Copaiba 111
+     quedó sin científico aunque el censo trae «Copaifera reticulata Ducke». */
+  const cientificoDelCenso =
+    cientificoCenso && claveEspecie(cientificoCenso.especie) === claveEspecie(speciesName) ? cientificoCenso.cientifico : null;
+  const cientificoEfectivo = (scientificManual ?? cientificoDelCenso ?? scientific)?.trim() || null;
 
   const autoVolume = useMemo(() => {
     if (!fields.has("volume")) return 0;
@@ -564,13 +642,25 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
   }, [fields, section, treeCode, trozaCode, speciesName, gtfNumber, volumeM3, quantity, autoVolume, productType, corrigeLineNo, correctionNote, derivados, obligTala]);
 
   const isValid = missing.length === 0;
+  /** Tala: el árbol cuya ficha se muestra (el del código, esté o no disponible). */
+  const conFicha = section === "tala";
+  const arbolFicha = conFicha ? censoTala.arboles.find((a) => a.treeCode === treeCode.trim()) ?? null : null;
+  /**
+   * Ya tiene tala vigente en el libro: T3 lo rechazaría al guardar. Se frena
+   * antes, con la línea a la vista. Una corrección no entra acá (enmienda esa
+   * misma línea), y un árbol «talado» sólo en el censo, sin línea, sí se deja
+   * registrar: justamente es la línea que falta.
+   */
+  const yaTaladoEnLibro = conFicha && corrigeLineNo == null ? (arbolFicha?.uso?.tala ?? null) : null;
   /** Guardar pide los obligatorios Y, en 4-6, haber contestado en qué libro va. */
-  const puedeGuardar = isValid && !faltaConfirmarTh;
-  const motivoBloqueo = faltaConfirmarTh
-    ? "Marca «La transformé dentro del título habilitante» para guardar"
-    : !isValid
-      ? `Falta: ${missing.join(", ")}`
-      : undefined;
+  const puedeGuardar = isValid && !faltaConfirmarTh && !yaTaladoEnLibro;
+  const motivoBloqueo = yaTaladoEnLibro
+    ? `El árbol ${treeCode.trim()} ya se taló en la línea N° ${yaTaladoEnLibro.lineNo}: elige otro del censo`
+    : faltaConfirmarTh
+      ? "Marca «La transformé dentro del título habilitante» para guardar"
+      : !isValid
+        ? `Falta: ${missing.join(", ")}`
+        : undefined;
 
   async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -605,7 +695,9 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
     setDiamMayor(""); setDiamMenor(""); setLengthM(""); setVolumeM3("");
     setQuantity(""); setPieces(""); setGtfNumber(""); setDiscarded(false);
     setConsumoInterno(false); setObservations("");
-    setGpsLat(null); setGpsLng(null); setCensoUtm(null);
+    setGpsLat(null); setGpsLng(null); setGpsOrigen(null); setCensoUtm(null);
+    // El motosierrista sigue (tumba el árbol siguiente); la hora y el científico no.
+    setHoraTala(""); setCientificoCenso(null);
     setDmcBloqueo(null); setJustificacionDmc("");
     setPhotoUrl(null); setPhotoError(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -620,6 +712,10 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
     }
     if (faltaConfirmarTh) {
       setError("Si la madera va a una planta, esto se registra en el Libro CTP. Si la transformaste dentro del título habilitante, marca la casilla de arriba.");
+      return;
+    }
+    if (yaTaladoEnLibro && motivoBloqueo) {
+      setError(`${motivoBloqueo}.`);
       return;
     }
     setError(null);
@@ -645,7 +741,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
             ? componerObservaciones({
                 motivos: motivosTala,
                 detalle: detalleMotivo,
-                nombreCientifico: scientific,
+                nombreCientifico: cientificoEfectivo,
                 textoLibre: observations,
               }) || null
             : observations.trim() || null,
@@ -683,7 +779,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
       if (fields.has("isRama")) payload.isRama = isRama;
       if (fields.has("species")) {
         payload.speciesCommon = speciesName || null;
-        payload.speciesScientific = (scientificManual ?? scientific)?.trim() || null;
+        payload.speciesScientific = cientificoEfectivo;
         payload.cites = cites;
       }
       if (fields.has("diams")) {
@@ -707,7 +803,13 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
       if (justificacionDmc.trim()) payload.justificacionDmc = justificacionDmc.trim();
       payload.gpsLat = gpsLat ?? null;
       payload.gpsLng = gpsLng ?? null;
+      payload.gpsOrigen = gpsLat != null && gpsLng != null ? gpsOrigen : null;
       payload.photoUrl = photoUrl ?? null;
+      if (section === "tala") {
+        payload.motosierrista = motosierrista.trim() || null;
+        payload.motosierristaId = motosierrista.trim() ? motosierristaId : null;
+        payload.horaTala = horaTala || null;
+      }
 
       const res = await fetch("/api/admin/forestal/loth", {
         method: "POST",
@@ -726,12 +828,18 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
         }
         throw new Error(r.message ?? (r.issues && r.issues[0]?.message) ?? r.error ?? `HTTP ${res.status}`);
       }
+      // Lo recordado del censo ya no vale: este árbol dejó de estar disponible.
+      olvidarCensoDeTala();
+      // La vista ofrece «Trozarlo ahora» con el árbol recién tumbado.
+      const arbolTalado = section === "tala" ? treeCode.trim() || null : null;
       if (keepOpen) {
         reset();
         setSubmitting(false);
-        onSaved({ keepOpen: true });
+        // Sigue abierto: la lista y el censo tienen que dejar de ofrecer el recién talado.
+        if (section === "tala") censoTala.recargar();
+        onSaved({ keepOpen: true, arbolTalado });
       } else {
-        onSaved();
+        onSaved({ arbolTalado });
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -739,6 +847,76 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
     }
   }
 
+
+  /** Elegido en «Ver censo»: lo mismo que tocarlo en la lista corta. */
+  function elegirArbol(a: ArbolParaElegir) {
+    setVerCenso(false);
+    setCensusChecked(false);
+    setCensusTree(null);
+    pickSource({
+      kind: "censo", code: a.treeCode, species: a.speciesCommon, scientific: a.speciesScientific, cites: a.cites,
+      dapM: a.dapM, hcM: a.hcM, vol: a.volM3, utmZona: a.utmZona, utmX: a.utmX, utmY: a.utmY,
+    });
+  }
+
+  /**
+   * El árbol con el que llega el formulario (`?nuevaTala=` o «Trozarlo
+   * ahora»). Se atiende UNA vez, cuando lo que hay que buscar ya cargó. Si el
+   * código es de otro plan, primero se cambia a ese plan.
+   */
+  const inicialAtendido = useRef(false);
+  const inicialOtroPlan = useRef(false);
+  useEffect(() => {
+    const code = arbolInicial?.trim();
+    if (!code || inicialAtendido.current) return;
+    if (section === "tala") {
+      if (!planesListos || (planId && (censoTala.cargando || censoTala.listoPara !== planId))) return;
+      const a = censoTala.arboles.find((x) => x.treeCode === code);
+      if (a) {
+        inicialAtendido.current = true;
+        // Uno que no se puede talar igual se muestra: la ficha dice por qué.
+        if (a.disponibilidad === "disponible") elegirArbol(a);
+        else setTreeCode(code);
+        return;
+      }
+      if (inicialOtroPlan.current) {
+        inicialAtendido.current = true;
+        setTreeCode(code);
+        return;
+      }
+      inicialOtroPlan.current = true;
+      fetch(`/api/admin/forestal/plan/census?treeCode=${encodeURIComponent(code)}`, { credentials: "include" })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((j: { tree?: { planId?: string | null } | null } | null) => {
+          const otro = j?.tree?.planId ?? null;
+          if (otro && otro !== planId && plans.some((p) => p.id === otro)) {
+            setPlanId(otro);
+            return;
+          }
+          inicialAtendido.current = true;
+          setTreeCode(code);
+        })
+        .catch((err) => {
+          inicialAtendido.current = true;
+          setTreeCode(code);
+          logger.error("[LothEntryForm] árbol inicial failed", { error: String(err) });
+        });
+    } else if (section === "trozado") {
+      if (!fuentesListas || loadingSrc) return;
+      inicialAtendido.current = true;
+      const it = sources.find((x) => x.code === code);
+      if (it) pickSource(it);
+      else {
+        setTreeCode(code);
+        setTrozaCode((c) => c || `${code}-A`);
+      }
+    }
+    // pickSource/elegirArbol se redefinen en cada render: lo que decide son los datos.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [arbolInicial, section, planesListos, planId, plans, censoTala.cargando, censoTala.listoPara, censoTala.arboles, fuentesListas, loadingSrc, sources]);
+
+  const planSel = plans.find((p) => p.id === planId) ?? null;
+  const planLabel = planSel ? etiquetaPlan(planSel) : null;
 
   /** El aviso de 4-6 manda al Libro CTP: la línea a medio cargar se descarta. */
   const irAlCtp = onIrAlCtp
@@ -756,8 +934,11 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
       onClose={onClose}
       variant="wide"
       hideCloseButton
-      claveVentana="loth-entry"
-      className="sm:max-w-[44rem]"
+      // Tala: el formulario y la ficha del árbol lado a lado (Brandon 28-09:
+      // «hazlo más ancho para que todo esté mejor acoplado»). Clave propia:
+      // una ventana recordada a 44 rem no aprieta la ficha.
+      claveVentana={conFicha ? "loth-entry-tala" : "loth-entry"}
+      className={conFicha ? "sm:max-w-[44rem] lg:max-w-[62rem]" : "sm:max-w-[44rem]"}
       // El pie va por prop, FUERA del scroll: adentro, con el cuerpo en 92vh y
       // el modal en 85vh, «Registrar línea» quedaba 63 px debajo del borde y
       // hacía falta un segundo scroll para llegar (medido 28-09 a 1280×900).
@@ -766,6 +947,8 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
           <p id={idEstado} title={motivoBloqueo} className="hidden min-w-0 items-center gap-1.5 truncate text-xs text-[var(--text-tertiary)] sm:flex">
             {puedeGuardar ? (
               <><Check className="h-3.5 w-3.5 shrink-0 text-[var(--data-success-600)]" /><span>Listo para registrar</span></>
+            ) : yaTaladoEnLibro ? (
+              <span className="truncate">Ya talado en la línea N° {yaTaladoEnLibro.lineNo}</span>
             ) : !isValid ? (
               <span>Faltan <span className="font-semibold text-[var(--text-secondary)]">{missing.length}</span> {missing.length === 1 ? "campo" : "campos"}</span>
             ) : (
@@ -832,498 +1015,593 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
           </div>
         </CabeceraPropia>
 
-        <form id="loth-entry-form" onSubmit={handleSubmit} className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4 sm:px-6">
-          {esTransformacion && (
-            <LothAvisoTransformacion confirmado={transformeEnTh} onConfirmado={setTransformeEnTh} onIrAlCtp={irAlCtp} />
-          )}
+        {/* Tala en escritorio: grilla de dos columnas — arriba a la izquierda
+            avisos y buscador, abajo los datos, y la ficha del árbol a la
+            derecha, pegajosa. En el celular la ficha cae justo después del
+            buscador. Sin `overflow` propio: el que scrollea es el cuerpo del
+            modal, y un ancestro con overflow apaga el `sticky`. */}
+        <form
+          id="loth-entry-form"
+          onSubmit={handleSubmit}
+          className={
+            conFicha
+              ? "min-h-0 flex-1 space-y-4 px-5 py-4 sm:px-6 lg:grid lg:grid-cols-[minmax(0,1fr)_18rem] lg:grid-rows-[auto_1fr] lg:gap-x-5"
+              : "min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4 sm:px-6"
+          }
+        >
+          <div className="space-y-4 lg:col-start-1 lg:row-start-1">
+            {esTransformacion && (
+              <LothAvisoTransformacion confirmado={transformeEnTh} onConfirmado={setTransformeEnTh} onIrAlCtp={irAlCtp} />
+            )}
 
-          {error && (
-            <div role="alert" className="flex items-start gap-2.5 rounded-xl border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-3 py-2.5 text-sm text-[var(--data-error-700)] dark:border-[var(--data-error-500)]/40 dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-              <div>{error}</div>
-            </div>
-          )}
-
-          {dmcBloqueo && (
-            <div className="space-y-2 rounded-xl border-2 border-[var(--data-error-500)]/60 bg-[var(--data-error-50)] px-3 py-2.5 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
-              <div className="flex items-start gap-2.5">
+            {error && (
+              <div role="alert" className="flex items-start gap-2.5 rounded-xl border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-3 py-2.5 text-sm text-[var(--data-error-700)] dark:border-[var(--data-error-500)]/40 dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                <div><b>Bajo el diámetro mínimo de corta.</b> {dmcBloqueo}</div>
+                <div>{error}</div>
               </div>
-              <input
-                value={justificacionDmc}
-                onChange={(e) => setJustificacionDmc(e.target.value)}
-                placeholder="Motivo (ej. árbol caído por viento, autorización especial N°…)"
-                aria-label="Justificación de la tala bajo DMC"
-                className="h-10 w-full rounded-lg border-2 border-[var(--data-error-500)]/50 bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)]"
-              />
-              <p className="text-xs font-semibold opacity-80">
-                Con el motivo escrito la línea se registra y queda anotada en el libro y en la auditoría.
-              </p>
-            </div>
-          )}
+            )}
 
-          {speciesFueraDelPlan && (
-            <div className="flex items-start gap-2 rounded-xl border border-[var(--data-warning-500)]/60 bg-[var(--data-warning-500)]/10 px-3 py-2 text-sm text-[var(--data-warning-ink)] dark:text-[var(--data-warning-500)]">
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-              <span className="min-w-0">
-                <b>&ldquo;{speciesName}&rdquo; no está autorizada en el plan.</b> Agrégala en Plan de Manejo · Especies autorizadas.
-              </span>
-              <InfoTip
-                title="Especie fuera del plan"
-                what="Sin estar en las especies autorizadas del plan no vas a poder despacharla ni emitir la GTF."
-              />
-            </div>
-          )}
-
-          {corrigeLineNo != null && (
-            <div className="space-y-2 rounded-xl border-2 border-[var(--data-info-500)] bg-[var(--data-info-500)]/10 p-3">
-              <div className="flex items-center gap-1">
-                <p className="text-sm font-bold text-[var(--data-info-700)] dark:text-[var(--data-info-500)]">
-                  Subsanación de la línea N° {corrigeLineNo}
-                </p>
-                <InfoTip
-                  title="Subsanación"
-                  what={`La línea N° ${corrigeLineNo} no se borra: queda en el libro marcada como corregida por esta.`}
-                  affects="Así lo pide SERFOR: la enmienda tiene que poder leerse."
+            {dmcBloqueo && (
+              <div className="space-y-2 rounded-xl border-2 border-[var(--data-error-500)]/60 bg-[var(--data-error-50)] px-3 py-2.5 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
+                <div className="flex items-start gap-2.5">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                  <div><b>Bajo el diámetro mínimo de corta.</b> {dmcBloqueo}</div>
+                </div>
+                <input
+                  value={justificacionDmc}
+                  onChange={(e) => setJustificacionDmc(e.target.value)}
+                  placeholder="Motivo (ej. árbol caído por viento, autorización especial N°…)"
+                  aria-label="Justificación de la tala bajo DMC"
+                  className="h-10 w-full rounded-lg border-2 border-[var(--data-error-500)]/50 bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)]"
                 />
+                <p className="text-xs font-semibold opacity-80">
+                  Con el motivo escrito la línea se registra y queda anotada en el libro y en la auditoría.
+                </p>
               </div>
-              <input
-                type="text"
-                value={correctionNote}
-                onChange={(e) => setCorrectionNote(e.target.value)}
-                aria-label="Motivo de la corrección"
-                placeholder="Motivo de la corrección (ej.: el Ø mayor se anotó en cm, no en m)"
-                className="h-10 w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--data-info-500)]"
-              />
-            </div>
-          )}
+            )}
 
-          {/* Picker data-driven: elige del plan lo disponible para esta sección */}
-          <section aria-label={SOURCE_TITLE[section]} className="space-y-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex min-w-0 items-center gap-1">
-                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)]">
-                  {SOURCE_TITLE[section]}
+            {speciesFueraDelPlan && (
+              <div className="flex items-start gap-2 rounded-xl border border-[var(--data-warning-500)]/60 bg-[var(--data-warning-500)]/10 px-3 py-2 text-sm text-[var(--data-warning-ink)] dark:text-[var(--data-warning-500)]">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                <span className="min-w-0">
+                  <b>&ldquo;{speciesName}&rdquo; no está autorizada en el plan.</b> Agrégala en Plan de Manejo · Especies autorizadas.
                 </span>
                 <InfoTip
-                  icono="ayuda"
-                  title={SOURCE_TITLE[section]}
-                  what="Elige de la lista para autocompletar la línea, o cárgala a mano abajo."
-                  affects="Sólo aparece lo que el plan elegido tiene disponible para esta etapa."
+                  title="Especie fuera del plan"
+                  what="Sin estar en las especies autorizadas del plan no vas a poder despacharla ni emitir la GTF."
                 />
               </div>
-              <select
-                value={planId ?? ""}
-                onChange={(e) => setPlanId(e.target.value || null)}
-                aria-label="Elegir plan de manejo"
-                className="h-9 max-w-full truncate rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-xs font-bold text-[var(--text-primary)] outline-none"
-              >
-                {plans.length === 0 && <option value="">Sin plan</option>}
-                {plans.map((p) => (
-                  <option key={p.id} value={p.id}>Plan {p.planType} {p.planNumber ?? ""} — {p.titularName}</option>
-                ))}
-              </select>
-            </div>
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--text-tertiary)]" />
-              <input
-                type="text"
-                value={srcQuery}
-                onChange={(e) => setSrcQuery(e.target.value)}
-                aria-label="Buscar por código o especie"
-                placeholder="Buscar por código o especie..."
-                className={`${cls.input} h-9 pl-8`}
-              />
-            </div>
-            <div className="max-h-40 divide-y divide-[var(--rule-soft)] overflow-y-auto rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)]">
-              {loadingSrc ? (
-                <div className="flex items-center gap-2 px-3 py-3 text-sm text-[var(--text-tertiary)]"><Loader2 className="h-4 w-4 animate-spin" /> Cargando…</div>
-              ) : filteredSources.length === 0 ? (
-                <div className="px-3 py-3 text-center text-sm text-[var(--text-tertiary)]">
-                  Nada disponible en este plan para esta etapa.{section !== "tala" && " Registra primero la etapa anterior."}
-                </div>
-              ) : (
-                filteredSources.map((it, i) => (
-                  <button
-                    key={`${it.code}-${i}`}
-                    type="button"
-                    onClick={() => pickSource(it)}
-                    className="flex min-h-9 w-full items-center justify-between gap-3 px-3 text-left transition-colors hover:bg-[var(--surface-sunken)]"
-                  >
-                    <span className="flex min-w-0 items-center gap-2 truncate">
-                      <span className="font-mono text-sm font-bold text-[var(--text-primary)]">{it.code ?? it.productType ?? "—"}</span>
-                      {it.species && <span className="truncate text-sm text-[var(--text-secondary)]">{it.species}</span>}
-                      {it.cites && <CitesPill />}
-                    </span>
-                    <span className="shrink-0 font-mono text-xs tabular-nums text-[var(--text-tertiary)]">
-                      {it.dapM ? `Ø ${Number(it.dapM).toFixed(2)}m ` : ""}
-                      {it.vol != null ? `${fmtM3(it.vol)} m³` : it.quantity != null ? `${Number(it.quantity).toFixed(2)} ${it.unit ?? ""}` : ""}
-                    </span>
-                  </button>
-                ))
-              )}
-            </div>
-          </section>
+            )}
 
-          {/* Despacho de PT sin troza de origen: se guarda igual (el libro admite
-              huecos), pero la trazabilidad de esa línea deja de llegar al árbol
-              y su volumen se reparte por especie. Decirlo acá es mucho más
-              barato que descubrirlo en la vista «Por árbol». */}
-          {section === "despacho_producto" && !trozaCode.trim() && (
-            <div className="flex items-start gap-2 rounded-lg border border-[var(--data-warning-500)]/60 bg-[var(--data-warning-500)]/10 px-3 py-2 text-xs font-semibold text-[var(--data-warning-ink)] dark:text-[var(--data-warning-500)]">
-              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              <span className="min-w-0">Sin troza de origen: elige el producto de la lista para que herede la suya.</span>
-              <InfoTip
-                title="Troza de origen"
-                what={`Sin troza esta salida no se puede atribuir a un árbol: su volumen se reparte por especie entre todos los de ${speciesName || "esa especie"}.`}
-                affects="La vista «Por árbol» del libro."
+            {corrigeLineNo != null && (
+              <div className="space-y-2 rounded-xl border-2 border-[var(--data-info-500)] bg-[var(--data-info-500)]/10 p-3">
+                <div className="flex items-center gap-1">
+                  <p className="text-sm font-bold text-[var(--data-info-700)] dark:text-[var(--data-info-500)]">
+                    Subsanación de la línea N° {corrigeLineNo}
+                  </p>
+                  <InfoTip
+                    title="Subsanación"
+                    what={`La línea N° ${corrigeLineNo} no se borra: queda en el libro marcada como corregida por esta.`}
+                    affects="Así lo pide SERFOR: la enmienda tiene que poder leerse."
+                  />
+                </div>
+                <input
+                  type="text"
+                  value={correctionNote}
+                  onChange={(e) => setCorrectionNote(e.target.value)}
+                  aria-label="Motivo de la corrección"
+                  placeholder="Motivo de la corrección (ej.: el Ø mayor se anotó en cm, no en m)"
+                  className="h-10 w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--data-info-500)]"
+                />
+              </div>
+            )}
+
+            {/* Picker data-driven: elige del plan lo disponible para esta sección */}
+            <section aria-label={SOURCE_TITLE[section]} className="space-y-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex min-w-0 items-center gap-1">
+                  <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)]">
+                    {SOURCE_TITLE[section]}
+                  </span>
+                  <InfoTip
+                    icono="ayuda"
+                    title={SOURCE_TITLE[section]}
+                    what="Elige de la lista para autocompletar la línea, o cárgala a mano abajo."
+                    affects="Sólo aparece lo que el plan elegido tiene disponible para esta etapa."
+                  />
+                </div>
+                <select
+                  value={planId ?? ""}
+                  onChange={(e) => setPlanId(e.target.value || null)}
+                  aria-label="Elegir plan de manejo"
+                  className="h-9 max-w-full truncate rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-xs font-bold text-[var(--text-primary)] outline-none"
+                >
+                  {plans.length === 0 && <option value="">Sin plan</option>}
+                  {plans.map((p) => (
+                    <option key={p.id} value={p.id}>{etiquetaPlan(p)}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="relative min-w-0 flex-1">
+                  <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--text-tertiary)]" />
+                  <input
+                    type="text"
+                    value={srcQuery}
+                    onChange={(e) => setSrcQuery(e.target.value)}
+                    aria-label="Buscar por código o especie"
+                    placeholder="Buscar por código o especie..."
+                    className={`${cls.input} h-9 pl-8`}
+                  />
+                </div>
+                {/* El censo entero, con lo que ya se taló y lo que no se toca
+                    (Brandon 28-09: «un botón… una tabla… para tomar mejores
+                    decisiones»). */}
+                {section === "tala" && (
+                  <button
+                    type="button"
+                    onClick={() => setVerCenso(true)}
+                    className="inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border border-[var(--rule-strong)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)]"
+                  >
+                    <Table className="h-4 w-4 text-[var(--accent-ink)] dark:text-[var(--accent)]" />
+                    Ver censo
+                    {censoTala.arboles.length > 0 && (
+                      <span className="font-mono text-xs tabular-nums text-[var(--text-tertiary)]">{censoTala.arboles.length}</span>
+                    )}
+                  </button>
+                )}
+              </div>
+              <div className="max-h-40 divide-y divide-[var(--rule-soft)] overflow-y-auto rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)]">
+                {cargandoFuentes ? (
+                  <div className="flex items-center gap-2 px-3 py-3 text-sm text-[var(--text-tertiary)]"><Loader2 className="h-4 w-4 animate-spin" /> Cargando…</div>
+                ) : section === "tala" && censoTala.error ? (
+                  <div role="alert" className="flex items-center justify-between gap-2 px-3 py-2.5 text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+                    <span>{censoTala.error}</span>
+                    <button type="button" onClick={censoTala.recargar} className="shrink-0 font-semibold underline underline-offset-2">Reintentar</button>
+                  </div>
+                ) : filteredSources.length === 0 ? (
+                  <div className="px-3 py-3 text-center text-sm text-[var(--text-tertiary)]">
+                    Nada disponible en este plan para esta etapa.{section !== "tala" && " Registra primero la etapa anterior."}
+                  </div>
+                ) : (
+                  filteredSources.map((it, i) => (
+                    <button
+                      key={`${it.code}-${i}`}
+                      type="button"
+                      onClick={() => pickSource(it)}
+                      className="flex min-h-9 w-full items-center justify-between gap-3 px-3 text-left transition-colors hover:bg-[var(--surface-sunken)]"
+                    >
+                      <span className="flex min-w-0 items-center gap-2 truncate">
+                        <span className="font-mono text-sm font-bold text-[var(--text-primary)]">{it.code ?? it.productType ?? "—"}</span>
+                        {it.species && <span className="truncate text-sm text-[var(--text-secondary)]">{it.species}</span>}
+                        {it.cites && <CitesPill />}
+                        {it.aviso && (
+                          <span className="shrink-0 rounded bg-[var(--data-warning-100)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/15 dark:text-[var(--data-warning-500)]">
+                            {it.aviso}
+                          </span>
+                        )}
+                      </span>
+                      <span className="shrink-0 font-mono text-xs tabular-nums text-[var(--text-tertiary)]">
+                        {it.dapM ? `Ø ${Number(it.dapM).toFixed(2)}m ` : ""}
+                        {it.vol != null ? `${fmtM3(it.vol)} m³` : it.quantity != null ? `${Number(it.quantity).toFixed(2)} ${it.unit ?? ""}` : ""}
+                      </span>
+                    </button>
+                  ))
+                )}
+              </div>
+            </section>
+          </div>
+
+          {conFicha && (
+            <aside aria-label="Ficha del árbol" className="lg:sticky lg:top-[4.5rem] lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-start">
+              <LothFichaArbol
+                arbol={arbolFicha}
+                cargando={censoTala.cargando}
+                codigo={treeCode}
+                medido={{ diamMayorM: derivados.diamMayorM, longitudM: derivados.longitudM, volumenM3: derivados.volumenM3 }}
+                medidasDelCenso={Boolean(medidasTala.origenCenso)}
+                gps={gpsLat != null && gpsLng != null ? { lat: gpsLat, lng: gpsLng, origen: gpsOrigen } : null}
               />
-            </div>
+            </aside>
           )}
 
-          {/* Los datos de la línea: grilla de 6, cada campo corto ocupa media fila. */}
-          <div className="grid grid-cols-6 gap-x-3 gap-y-3 [&>*]:min-w-0">
-            <Field label="Fecha" required className="col-span-3">
-              <input type="date" value={entryDate} onChange={(e) => setEntryDate(e.target.value)} required className={cls.input} />
-            </Field>
+          <div className="space-y-4 lg:col-start-1 lg:row-start-2">
 
-            {fields.has("treeCode") && (
-              <Field label="Código del árbol" required={!fields.has("trozaCode")} hint="El código del censo forestal — punto de partida de la trazabilidad" className="col-span-3">
-                <input
-                  type="text"
-                  value={treeCode}
-                  onChange={(e) => setTreeCode(e.target.value)}
-                  onBlur={(e) => lookupCensus(e.target.value)}
-                  placeholder="1-MIS"
-                  className={cls.input}
+            {/* Despacho de PT sin troza de origen: se guarda igual (el libro admite
+                huecos), pero la trazabilidad de esa línea deja de llegar al árbol
+                y su volumen se reparte por especie. Decirlo acá es mucho más
+                barato que descubrirlo en la vista «Por árbol». */}
+            {section === "despacho_producto" && !trozaCode.trim() && (
+              <div className="flex items-start gap-2 rounded-lg border border-[var(--data-warning-500)]/60 bg-[var(--data-warning-500)]/10 px-3 py-2 text-xs font-semibold text-[var(--data-warning-ink)] dark:text-[var(--data-warning-500)]">
+                <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                <span className="min-w-0">Sin troza de origen: elige el producto de la lista para que herede la suya.</span>
+                <InfoTip
+                  title="Troza de origen"
+                  what={`Sin troza esta salida no se puede atribuir a un árbol: su volumen se reparte por especie entre todos los de ${speciesName || "esa especie"}.`}
+                  affects="La vista «Por árbol» del libro."
                 />
-              </Field>
-            )}
-
-            {fields.has("trozaCode") && (
-              <Field label="Código de troza" required hint="Código del árbol + letra/número por nivel de trozado (ej. 1-MIS-A)" className="col-span-3">
-                <input type="text" value={trozaCode} onChange={(e) => setTrozaCode(e.target.value)} placeholder="1-MIS-A" className={cls.input} />
-              </Field>
-            )}
-
-            {fields.has("despachoCode") && (
-              <Field label="Código de despacho" hint="Solo si despachas con un código distinto al de la troza" className="col-span-3">
-                <input type="text" value={despachoCode} onChange={(e) => setDespachoCode(e.target.value)} placeholder="Opcional" className={cls.input} />
-              </Field>
-            )}
-
-            {fields.has("gtf") && (
-              <Field label="N° de GTF" required hint="Debe coincidir con la fecha de emisión de la guía" className="col-span-3">
-                <input type="text" value={gtfNumber} onChange={(e) => setGtfNumber(e.target.value)} placeholder="001-0000120" className={`${cls.input} font-mono`} />
-              </Field>
-            )}
-
-            {fields.has("productType") && (
-              <Field label="Tipo de producto" required className="col-span-3">
-                <select value={productType} onChange={(e) => setProductType(e.target.value)} className={cls.input}>
-                  {PRODUCT_TYPES.map((p) => <option key={p} value={p}>{p}</option>)}
-                </select>
-              </Field>
-            )}
-
-            {fields.has("species") && (
-              <Field label="Especie" required={section === "tala" || section === "trozado" || section === "producto_terminado"} className="col-span-3">
-                <button type="button" onClick={() => setShowPicker((v) => !v)} aria-expanded={showPicker} className={`${cls.input} flex items-center justify-between text-left`}>
-                  <span className="flex min-w-0 items-center gap-2 truncate">
-                    <span className="truncate font-medium">{speciesName || "Seleccionar especie..."}</span>
-                    {cites && <CitesPill />}
-                  </span>
-                  <Search className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" />
-                </button>
-              </Field>
-            )}
-
-            {fields.has("species") && showPicker && (
-              <div className="col-span-6 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
-                <input
-                  type="text"
-                  value={speciesQuery}
-                  onChange={(e) => setSpeciesQuery(e.target.value)}
-                  aria-label="Buscar especie"
-                  placeholder="Buscar por nombre común o científico..."
-                  className={`${cls.input} mb-2 h-9`}
-                />
-                {!speciesQuery && (
-                  <div className="mb-2 flex flex-wrap gap-1.5">
-                    {TOP_SPECIES_SLUGS.map((slug) => {
-                      const s = speciesOptions.find((x) => x.slug === slug);
-                      if (!s) return null;
-                      const active = speciesSlug === slug;
-                      return (
-                        <button
-                          key={slug}
-                          type="button"
-                          onClick={() => { setSpeciesSlug(slug); setShowPicker(false); setSpeciesQuery(""); }}
-                          className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors ${
-                            active
-                              ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-                              : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)]"
-                          }`}
-                        >
-                          {s.commonName}
-                        </button>
-                      );
-                    })}
-                    <button
-                      type="button"
-                      onClick={() => { setSpeciesSlug("otro"); setShowPicker(false); setSpeciesQuery(""); }}
-                      className="rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 py-1 text-xs font-medium text-[var(--text-secondary)] hover:border-[var(--rule-strong)]"
-                    >
-                      Otra…
-                    </button>
-                  </div>
-                )}
-                <div className="max-h-48 divide-y divide-[var(--rule-soft)] overflow-y-auto rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)]">
-                  {filteredSpecies.length === 0 && (
-                    <div className="px-3 py-3 text-center text-sm text-[var(--text-tertiary)]">Sin resultados</div>
-                  )}
-                  {filteredSpecies.map((s) => (
-                    <button
-                      key={s.slug}
-                      type="button"
-                      onClick={() => { setSpeciesSlug(s.slug); setShowPicker(false); setSpeciesQuery(""); }}
-                      className="flex w-full items-center justify-between gap-3 px-3 py-1.5 text-left transition-colors hover:bg-[var(--surface-sunken)]"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5 truncate">
-                          <span className="text-sm font-medium text-[var(--text-primary)]">{s.commonName}</span>
-                          {s.cites && <CitesPill />}
-                        </div>
-                        {s.scientificName && (
-                          <div className="truncate text-xs italic text-[var(--text-tertiary)]">{s.scientificName}</div>
-                        )}
-                      </div>
-                    </button>
-                  ))}
-                </div>
               </div>
             )}
 
-            {fields.has("species") && isCustom && (
-              <Field label="Nombre de la especie" required className="col-span-3">
-                <input type="text" value={customSpecies} onChange={(e) => setCustomSpecies(e.target.value)} placeholder="ej: Aguano masha" className={cls.input} />
+            {/* Los datos de la línea: grilla de 6, cada campo corto ocupa media fila. */}
+            <div className="grid grid-cols-6 gap-x-3 gap-y-3 [&>*]:min-w-0">
+              <Field label="Fecha" required className="col-span-3">
+                <input type="date" value={entryDate} onChange={(e) => setEntryDate(e.target.value)} required className={cls.input} />
               </Field>
+
+              {fields.has("treeCode") && (
+                <Field label="Código del árbol" required={!fields.has("trozaCode")} hint="El código del censo forestal — punto de partida de la trazabilidad" className="col-span-3">
+                  <input
+                    type="text"
+                    value={treeCode}
+                    onChange={(e) => setTreeCode(e.target.value)}
+                    onBlur={(e) => lookupCensus(e.target.value)}
+                    placeholder="1-MIS"
+                    className={cls.input}
+                  />
+                </Field>
+              )}
+
+              {fields.has("trozaCode") && (
+                <Field label="Código de troza" required hint="Código del árbol + letra/número por nivel de trozado (ej. 1-MIS-A)" className="col-span-3">
+                  <input type="text" value={trozaCode} onChange={(e) => setTrozaCode(e.target.value)} placeholder="1-MIS-A" className={cls.input} />
+                </Field>
+              )}
+
+              {fields.has("despachoCode") && (
+                <Field label="Código de despacho" hint="Solo si despachas con un código distinto al de la troza" className="col-span-3">
+                  <input type="text" value={despachoCode} onChange={(e) => setDespachoCode(e.target.value)} placeholder="Opcional" className={cls.input} />
+                </Field>
+              )}
+
+              {fields.has("gtf") && (
+                <Field label="N° de GTF" required hint="Debe coincidir con la fecha de emisión de la guía" className="col-span-3">
+                  <input type="text" value={gtfNumber} onChange={(e) => setGtfNumber(e.target.value)} placeholder="001-0000120" className={`${cls.input} font-mono`} />
+                </Field>
+              )}
+
+              {fields.has("productType") && (
+                <Field label="Tipo de producto" required className="col-span-3">
+                  <select value={productType} onChange={(e) => setProductType(e.target.value)} className={cls.input}>
+                    {PRODUCT_TYPES.map((p) => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                </Field>
+              )}
+
+              {fields.has("species") && (
+                <Field label="Especie" required={section === "tala" || section === "trozado" || section === "producto_terminado"} className="col-span-3">
+                  <button type="button" onClick={() => setShowPicker((v) => !v)} aria-expanded={showPicker} className={`${cls.input} flex items-center justify-between text-left`}>
+                    <span className="flex min-w-0 items-center gap-2 truncate">
+                      <span className="truncate font-medium">{speciesName || "Seleccionar especie..."}</span>
+                      {cites && <CitesPill />}
+                    </span>
+                    <Search className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" />
+                  </button>
+                </Field>
+              )}
+
+              {fields.has("species") && showPicker && (
+                <div className="col-span-6 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
+                  <input
+                    type="text"
+                    value={speciesQuery}
+                    onChange={(e) => setSpeciesQuery(e.target.value)}
+                    aria-label="Buscar especie"
+                    placeholder="Buscar por nombre común o científico..."
+                    className={`${cls.input} mb-2 h-9`}
+                  />
+                  {!speciesQuery && (
+                    <div className="mb-2 flex flex-wrap gap-1.5">
+                      {TOP_SPECIES_SLUGS.map((slug) => {
+                        const s = speciesOptions.find((x) => x.slug === slug);
+                        if (!s) return null;
+                        const active = speciesSlug === slug;
+                        return (
+                          <button
+                            key={slug}
+                            type="button"
+                            onClick={() => { setSpeciesSlug(slug); setShowPicker(false); setSpeciesQuery(""); }}
+                            className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors ${
+                              active
+                                ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+                                : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)]"
+                            }`}
+                          >
+                            {s.commonName}
+                          </button>
+                        );
+                      })}
+                      <button
+                        type="button"
+                        onClick={() => { setSpeciesSlug("otro"); setShowPicker(false); setSpeciesQuery(""); }}
+                        className="rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 py-1 text-xs font-medium text-[var(--text-secondary)] hover:border-[var(--rule-strong)]"
+                      >
+                        Otra…
+                      </button>
+                    </div>
+                  )}
+                  <div className="max-h-48 divide-y divide-[var(--rule-soft)] overflow-y-auto rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)]">
+                    {filteredSpecies.length === 0 && (
+                      <div className="px-3 py-3 text-center text-sm text-[var(--text-tertiary)]">Sin resultados</div>
+                    )}
+                    {filteredSpecies.map((s) => (
+                      <button
+                        key={s.slug}
+                        type="button"
+                        onClick={() => { setSpeciesSlug(s.slug); setShowPicker(false); setSpeciesQuery(""); }}
+                        className="flex w-full items-center justify-between gap-3 px-3 py-1.5 text-left transition-colors hover:bg-[var(--surface-sunken)]"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5 truncate">
+                            <span className="text-sm font-medium text-[var(--text-primary)]">{s.commonName}</span>
+                            {s.cites && <CitesPill />}
+                          </div>
+                          {s.scientificName && (
+                            <div className="truncate text-xs italic text-[var(--text-tertiary)]">{s.scientificName}</div>
+                          )}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {fields.has("species") && isCustom && (
+                <Field label="Nombre de la especie" required className="col-span-3">
+                  <input type="text" value={customSpecies} onChange={(e) => setCustomSpecies(e.target.value)} placeholder="ej: Aguano masha" className={cls.input} />
+                </Field>
+              )}
+
+              {/* Sección 6 · item 6: el nombre científico es una columna del formato.
+                  La nota al pie del Anexo 02 exceptúa a los productos formados por
+                  más de una especie (carbón, entre otros): ahí no es obligatorio ni
+                  el nombre común ni el científico. */}
+              {fields.has("scientific") && (
+                <Field
+                  label="Nombre científico"
+                  hint="Columna 6 del formato. Si el producto mezcla especies (ej. carbón), puede ir vacío"
+                  className="col-span-6"
+                >
+                  <input
+                    type="text"
+                    value={scientificManual ?? scientific ?? ""}
+                    onChange={(e) => setScientificManual(e.target.value)}
+                    placeholder="ej: Cedrelinga catenaeformis"
+                    className={`${cls.input} italic`}
+                  />
+                </Field>
+              )}
+
+              {fields.has("isRama") && (
+                <Casilla checked={isRama} onChange={setIsRama} title="Proviene de una rama aprovechable (R)">
+                  De una <span className="font-semibold">rama aprovechable</span> (R)
+                </Casilla>
+              )}
+
+              {fields.has("volumeManual") && (
+                <Field label="Volumen (m³)" required className="col-span-3">
+                  <input type="number" step="0.0001" min="0.0001" value={volumeM3} onChange={(e) => setVolumeM3(e.target.value)} placeholder="0.0000" className={`${cls.input} font-mono tabular-nums`} />
+                </Field>
+              )}
+
+              {fields.has("consumoInterno") && (
+                <Casilla checked={consumoInterno} onChange={setConsumoInterno} title="Consumo interno (campamento, puentes, etc.)">
+                  Consumo interno <span className="text-[var(--text-tertiary)]">(campamento, puentes)</span>
+                </Casilla>
+              )}
+
+              {/* En tala, «descartado» dejó de ser un checkbox suelto: es uno de los
+                  casos del item 10, y viaja junto con su motivo y el término exacto. */}
+              {fields.has("discarded") && section !== "tala" && (
+                <Casilla checked={discarded} onChange={setDiscarded} acento="error" title="Descartado: no aprovechable. Anota el motivo en Observaciones.">
+                  Descartado <span className="text-[var(--text-tertiary)]">(no aprovechable)</span>
+                </Casilla>
+              )}
+
+              {fields.has("pieces") && (
+                <Field label="N° piezas" className={spanCantidad}>
+                  <input type="number" min="0" value={pieces} onChange={(e) => setPieces(e.target.value)} placeholder="25" className={cls.input} />
+                </Field>
+              )}
+              {fields.has("quantity") && (
+                <Field label="Cantidad" required className={spanCantidad}>
+                  <input type="number" step="0.0001" min="0" value={quantity} onChange={(e) => setQuantity(e.target.value)} placeholder="3.5620" className={`${cls.input} font-mono tabular-nums`} />
+                </Field>
+              )}
+              {fields.has("unit") && (
+                <Field label="Unidad" required className={spanCantidad}>
+                  <select value={unit} onChange={(e) => setUnit(e.target.value as "m3" | "kg" | "unidad")} className={cls.input}>
+                    <option value="m3">m³</option>
+                    <option value="kg">Kg</option>
+                    <option value="unidad">Unidad</option>
+                  </select>
+                </Field>
+              )}
+            </div>
+
+            {/* Banner: datos jalados del censo (data-driven) */}
+            {fields.has("treeCode") && !conFicha && censusTree && (
+              <div className="flex items-start gap-2 rounded-lg border border-[var(--data-success-500)]/40 bg-[var(--data-success-500)]/10 px-3 py-2 text-xs text-[var(--data-success-ink)] dark:text-[var(--data-success-500)]">
+                <Check className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                <span className="min-w-0">
+                  <span className="font-bold">Jalado del censo:</span>{" "}
+                  {censusTree.speciesCommon}
+                  {censusTree.dapM ? ` · DAP ${Number(censusTree.dapM).toFixed(2)} m` : ""}
+                  {censusTree.alturaComercialM ? ` · Hc ${Number(censusTree.alturaComercialM).toFixed(2)} m` : ""}
+                  {censusTree.volumenEstimadoM3 ? ` · vol. est. ${fmtM3(Number(censusTree.volumenEstimadoM3))} m³` : ""}
+                  {censusTree.estado === "talado" && (
+                    <span className="ml-1 font-bold text-[var(--data-warning-ink)] dark:text-[var(--data-warning-500)]">· ya marcado como talado</span>
+                  )}
+                </span>
+                <InfoTip title="Datos del censo" what="Especie y medidas precargadas del censo: ajusta los Ø y el largo a lo medido en campo." />
+              </div>
+            )}
+            {fields.has("treeCode") && !conFicha && censusChecked && !censusTree && treeCode.trim() && (
+              <p className="rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-xs text-[var(--text-tertiary)]">
+                Este código no está en el censo del plan — se registra como código libre.
+              </p>
             )}
 
-            {/* Sección 6 · item 6: el nombre científico es una columna del formato.
-                La nota al pie del Anexo 02 exceptúa a los productos formados por
-                más de una especie (carbón, entre otros): ahí no es obligatorio ni
-                el nombre común ni el científico. */}
-            {fields.has("scientific") && (
-              <Field
-                label="Nombre científico"
-                hint="Columna 6 del formato. Si el producto mezcla especies (ej. carbón), puede ir vacío"
-                className="col-span-6"
+            {fields.has("species") && cites && (() => {
+              const permiso = permisoParaEspecie({ permisos: citesPermisos }, speciesName);
+              const est = permiso ? estadoVencimiento(permiso.vencimiento) : null;
+              const ok = permiso && est !== "vencido";
+              return (
+                <div className={`flex items-start gap-2 rounded-lg border px-3 py-2 text-xs ${ok ? "border-[var(--data-success-500)]/40 bg-[var(--data-success-500)]/10 text-[var(--data-success-ink)] dark:text-[var(--data-success-500)]" : "border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/10 text-[var(--data-error-ink)] dark:text-[var(--data-error-500)]"}`}>
+                  <ShieldAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  <div>
+                    <span className="font-bold">Especie CITES.</span>{" "}
+                    {permiso ? (
+                      <>
+                        Permiso <span className="font-mono font-bold">{permiso.numero || "(sin N°)"}</span>
+                        {permiso.vencimiento && (
+                          <> · vence {permiso.vencimiento}{est === "vencido" ? " — VENCIDO" : est === "por_vencer" ? " — por vencer" : ""}</>
+                        )}
+                        {est === "vencido" && ". Renueva el permiso en la carátula antes de movilizar."}
+                      </>
+                    ) : (
+                      <>Sin permiso CITES cargado para esta especie. Cárgalo en <span className="font-bold">Configurar carátula → Permisos CITES</span> para acreditar el origen.</>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Tala y Trozado: medidas crudas de campo → el libro guarda lo que
+                pide el formato. Los items 6 y 7 de las dos secciones repiten la
+                misma instrucción («2 o más medidas de forma cruzada»). */}
+            {(section === "tala" || section === "trozado") && (
+              <LothMedicionFuste medidas={medidasTala} onChange={setMedidasTala} seccion={section} />
+            )}
+
+            {section === "tala" && (
+              <LothTalaObservaciones
+                motivos={motivosTala}
+                onMotivos={setMotivosTala}
+                detalle={detalleMotivo}
+                onDetalle={setDetalleMotivo}
+                textoLibre={observations}
+                onTextoLibre={setObservations}
+                nombreCientifico={cientificoEfectivo}
+                marcas={marcasFisicas}
+                onMarcas={setMarcasFisicas}
+                tieneFoto={!!photoUrl}
+              />
+            )}
+
+            {section === "tala" && (
+              <LothTalaDatosInternos
+                motosierrista={motosierrista}
+                onMotosierrista={(nombre, id) => {
+                  setMotosierrista(nombre);
+                  setMotosierristaId(id);
+                }}
+                hora={horaTala}
+                onHora={setHoraTala}
+              />
+            )}
+
+            {/* Evidencia de campo (GPS + foto), en una fila de botones */}
+            <section aria-label="Evidencia de campo" className="space-y-2 border-t border-[var(--rule-soft)] pt-3">
+              <div className="flex items-center gap-1.5">
+                <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
+                  Evidencia de campo
+                </CardTitle>
+                {section === "tala" ? (
+                  <InfoTip
+                    title="Evidencia de campo"
+                    what="La foto del tocón con el código visible es la prueba del marcado."
+                    affects="Es lo que sostiene la línea si te supervisan."
+                  />
+                ) : (
+                  <span className="text-xs text-[var(--text-tertiary)]">opcional</span>
+                )}
+              </div>
+
+              {/* GPS — teléfono, censo o UTM tecleada; la foto va en la misma fila */}
+              <LothGpsField
+                lat={gpsLat}
+                lng={gpsLng}
+                onChange={(la, ln, origen) => {
+                  setGpsLat(la);
+                  setGpsLng(ln);
+                  setGpsOrigen(origen);
+                }}
+                origen={gpsOrigen}
+                censo={censoUtm}
               >
                 <input
-                  type="text"
-                  value={scientificManual ?? scientific ?? ""}
-                  onChange={(e) => setScientificManual(e.target.value)}
-                  placeholder="ej: Cedrelinga catenaeformis"
-                  className={`${cls.input} italic`}
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="sr-only"
+                  aria-label="Foto de evidencia"
+                  onChange={handlePhotoChange}
                 />
-              </Field>
-            )}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={photoUploading}
+                  className="inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {photoUploading
+                    ? <Loader2 className="h-4 w-4 animate-spin" />
+                    : <Camera className="h-4 w-4 text-[var(--accent-ink)] dark:text-[var(--accent)]" />
+                  }
+                  {photoUploading ? "Subiendo foto…" : photoUrl ? "Cambiar foto" : "Foto del tocón / troza"}
+                </button>
+              </LothGpsField>
+              {photoError && (
+                <p className="flex items-center gap-1.5 text-xs text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+                  <AlertTriangle className="h-3.5 w-3.5 shrink-0" />{photoError}
+                </p>
+              )}
+              {photoUrl && (
+                <a href={photoUrl} target="_blank" rel="noopener noreferrer" className="inline-block">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={photoUrl}
+                    alt="Foto de evidencia de campo"
+                    className="h-20 w-auto rounded-lg border border-[var(--rule-base)] object-cover transition-opacity hover:opacity-80"
+                  />
+                </a>
+              )}
+            </section>
 
-            {fields.has("isRama") && (
-              <Casilla checked={isRama} onChange={setIsRama} title="Proviene de una rama aprovechable (R)">
-                De una <span className="font-semibold">rama aprovechable</span> (R)
-              </Casilla>
-            )}
-
-            {fields.has("volumeManual") && (
-              <Field label="Volumen (m³)" required className="col-span-3">
-                <input type="number" step="0.0001" min="0.0001" value={volumeM3} onChange={(e) => setVolumeM3(e.target.value)} placeholder="0.0000" className={`${cls.input} font-mono tabular-nums`} />
-              </Field>
-            )}
-
-            {fields.has("consumoInterno") && (
-              <Casilla checked={consumoInterno} onChange={setConsumoInterno} title="Consumo interno (campamento, puentes, etc.)">
-                Consumo interno <span className="text-[var(--text-tertiary)]">(campamento, puentes)</span>
-              </Casilla>
-            )}
-
-            {/* En tala, «descartado» dejó de ser un checkbox suelto: es uno de los
-                casos del item 10, y viaja junto con su motivo y el término exacto. */}
-            {fields.has("discarded") && section !== "tala" && (
-              <Casilla checked={discarded} onChange={setDiscarded} acento="error" title="Descartado: no aprovechable. Anota el motivo en Observaciones.">
-                Descartado <span className="text-[var(--text-tertiary)]">(no aprovechable)</span>
-              </Casilla>
-            )}
-
-            {fields.has("pieces") && (
-              <Field label="N° piezas" className={spanCantidad}>
-                <input type="number" min="0" value={pieces} onChange={(e) => setPieces(e.target.value)} placeholder="25" className={cls.input} />
-              </Field>
-            )}
-            {fields.has("quantity") && (
-              <Field label="Cantidad" required className={spanCantidad}>
-                <input type="number" step="0.0001" min="0" value={quantity} onChange={(e) => setQuantity(e.target.value)} placeholder="3.5620" className={`${cls.input} font-mono tabular-nums`} />
-              </Field>
-            )}
-            {fields.has("unit") && (
-              <Field label="Unidad" required className={spanCantidad}>
-                <select value={unit} onChange={(e) => setUnit(e.target.value as "m3" | "kg" | "unidad")} className={cls.input}>
-                  <option value="m3">m³</option>
-                  <option value="kg">Kg</option>
-                  <option value="unidad">Unidad</option>
-                </select>
+            {/* En tala la nota libre ya está en «Observaciones (item 10)», con el
+                mismo estado: repetirla acá eran dos cajas que se pisaban. */}
+            {section !== "tala" && (
+              <Field label="Observaciones">
+                <textarea value={observations} onChange={(e) => setObservations(e.target.value)} rows={2} placeholder="Información adicional relevante..." className={`${cls.input} h-auto resize-none py-2`} />
               </Field>
             )}
           </div>
-
-          {/* Banner: datos jalados del censo (data-driven) */}
-          {fields.has("treeCode") && censusTree && (
-            <div className="flex items-start gap-2 rounded-lg border border-[var(--data-success-500)]/40 bg-[var(--data-success-500)]/10 px-3 py-2 text-xs text-[var(--data-success-ink)] dark:text-[var(--data-success-500)]">
-              <Check className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              <span className="min-w-0">
-                <span className="font-bold">Jalado del censo:</span>{" "}
-                {censusTree.speciesCommon}
-                {censusTree.dapM ? ` · DAP ${Number(censusTree.dapM).toFixed(2)} m` : ""}
-                {censusTree.alturaComercialM ? ` · Hc ${Number(censusTree.alturaComercialM).toFixed(2)} m` : ""}
-                {censusTree.volumenEstimadoM3 ? ` · vol. est. ${fmtM3(Number(censusTree.volumenEstimadoM3))} m³` : ""}
-                {censusTree.estado === "talado" && (
-                  <span className="ml-1 font-bold text-[var(--data-warning-ink)] dark:text-[var(--data-warning-500)]">· ya marcado como talado</span>
-                )}
-              </span>
-              <InfoTip title="Datos del censo" what="Especie y medidas precargadas del censo: ajusta los Ø y el largo a lo medido en campo." />
-            </div>
-          )}
-          {fields.has("treeCode") && censusChecked && !censusTree && treeCode.trim() && (
-            <p className="rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-xs text-[var(--text-tertiary)]">
-              Este código no está en el censo del plan — se registra como código libre.
-            </p>
-          )}
-
-          {fields.has("species") && cites && (() => {
-            const permiso = permisoParaEspecie({ permisos: citesPermisos }, speciesName);
-            const est = permiso ? estadoVencimiento(permiso.vencimiento) : null;
-            const ok = permiso && est !== "vencido";
-            return (
-              <div className={`flex items-start gap-2 rounded-lg border px-3 py-2 text-xs ${ok ? "border-[var(--data-success-500)]/40 bg-[var(--data-success-500)]/10 text-[var(--data-success-ink)] dark:text-[var(--data-success-500)]" : "border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/10 text-[var(--data-error-ink)] dark:text-[var(--data-error-500)]"}`}>
-                <ShieldAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                <div>
-                  <span className="font-bold">Especie CITES.</span>{" "}
-                  {permiso ? (
-                    <>
-                      Permiso <span className="font-mono font-bold">{permiso.numero || "(sin N°)"}</span>
-                      {permiso.vencimiento && (
-                        <> · vence {permiso.vencimiento}{est === "vencido" ? " — VENCIDO" : est === "por_vencer" ? " — por vencer" : ""}</>
-                      )}
-                      {est === "vencido" && ". Renueva el permiso en la carátula antes de movilizar."}
-                    </>
-                  ) : (
-                    <>Sin permiso CITES cargado para esta especie. Cárgalo en <span className="font-bold">Configurar carátula → Permisos CITES</span> para acreditar el origen.</>
-                  )}
-                </div>
-              </div>
-            );
-          })()}
-
-          {/* Tala y Trozado: medidas crudas de campo → el libro guarda lo que
-              pide el formato. Los items 6 y 7 de las dos secciones repiten la
-              misma instrucción («2 o más medidas de forma cruzada»). */}
-          {(section === "tala" || section === "trozado") && (
-            <LothMedicionFuste medidas={medidasTala} onChange={setMedidasTala} seccion={section} />
-          )}
-
-          {section === "tala" && (
-            <LothTalaObservaciones
-              motivos={motivosTala}
-              onMotivos={setMotivosTala}
-              detalle={detalleMotivo}
-              onDetalle={setDetalleMotivo}
-              textoLibre={observations}
-              onTextoLibre={setObservations}
-              nombreCientifico={scientific}
-              marcas={marcasFisicas}
-              onMarcas={setMarcasFisicas}
-              tieneFoto={!!photoUrl}
-            />
-          )}
-
-          {/* Evidencia de campo (GPS + foto), en una fila de botones */}
-          <section aria-label="Evidencia de campo" className="space-y-2 border-t border-[var(--rule-soft)] pt-3">
-            <div className="flex items-center gap-1.5">
-              <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
-                Evidencia de campo
-              </CardTitle>
-              {section === "tala" ? (
-                <InfoTip
-                  title="Evidencia de campo"
-                  what="La foto del tocón con el código visible es la prueba del marcado."
-                  affects="Es lo que sostiene la línea si te supervisan."
-                />
-              ) : (
-                <span className="text-xs text-[var(--text-tertiary)]">opcional</span>
-              )}
-            </div>
-
-            {/* GPS — teléfono, censo o UTM tecleada; la foto va en la misma fila */}
-            <LothGpsField
-              lat={gpsLat}
-              lng={gpsLng}
-              onChange={(la, ln) => {
-                setGpsLat(la);
-                setGpsLng(ln);
-              }}
-              censo={censoUtm}
-            >
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                className="sr-only"
-                aria-label="Foto de evidencia"
-                onChange={handlePhotoChange}
-              />
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={photoUploading}
-                className="inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {photoUploading
-                  ? <Loader2 className="h-4 w-4 animate-spin" />
-                  : <Camera className="h-4 w-4 text-[var(--accent-ink)] dark:text-[var(--accent)]" />
-                }
-                {photoUploading ? "Subiendo foto…" : photoUrl ? "Cambiar foto" : "Foto del tocón / troza"}
-              </button>
-            </LothGpsField>
-            {photoError && (
-              <p className="flex items-center gap-1.5 text-xs text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
-                <AlertTriangle className="h-3.5 w-3.5 shrink-0" />{photoError}
-              </p>
-            )}
-            {photoUrl && (
-              <a href={photoUrl} target="_blank" rel="noopener noreferrer" className="inline-block">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={photoUrl}
-                  alt="Foto de evidencia de campo"
-                  className="h-20 w-auto rounded-lg border border-[var(--rule-base)] object-cover transition-opacity hover:opacity-80"
-                />
-              </a>
-            )}
-          </section>
-
-          {/* En tala la nota libre ya está en «Observaciones (item 10)», con el
-              mismo estado: repetirla acá eran dos cajas que se pisaban. */}
-          {section !== "tala" && (
-            <Field label="Observaciones">
-              <textarea value={observations} onChange={(e) => setObservations(e.target.value)} rows={2} placeholder="Información adicional relevante..." className={`${cls.input} h-auto resize-none py-2`} />
-            </Field>
-          )}
         </form>
+
+        {section === "tala" && (
+          <LothCensoElegirModal
+            open={verCenso}
+            onClose={() => setVerCenso(false)}
+            censo={censoTala}
+            planLabel={planLabel}
+            elegido={treeCode}
+            posicion={gpsOrigen === "telefono" && gpsLat != null && gpsLng != null ? { lat: gpsLat, lng: gpsLng } : null}
+            onElegir={elegirArbol}
+          />
+        )}
       </div>
     </AdminModal>
   );
+}
+
+/**
+ * «Plan PO 12 — Maderera El Aguajal SAC». El número del plan muchas veces ya
+ * trae el tipo («PO 12»): pegarle el tipo adelante daba «Plan PO PO 12».
+ */
+function etiquetaPlan(p: { planType: string; planNumber: string | null; titularName: string }): string {
+  const numero = (p.planNumber ?? "").trim();
+  const tipo = numero.toLowerCase().startsWith(p.planType.toLowerCase()) ? "" : p.planType;
+  return `Plan ${[tipo, numero].filter(Boolean).join(" ")} — ${p.titularName}`;
 }
 
 // ─── Sub-components ─────────────────────────────────────────────────────────

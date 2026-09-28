@@ -218,6 +218,9 @@ export default function LothLineaDetalleModal({
                 }
               />
             )}
+            {/* Internos: no salen en el formato SERFOR. */}
+            {linea.motosierrista && <Dato label="Motosierrista · interno" valor={linea.motosierrista} />}
+            {linea.horaTala && <Dato label="Hora de tala · interno" valor={linea.horaTala} mono />}
           </dl>
 
           {linea.observations && (
@@ -242,6 +245,11 @@ export default function LothLineaDetalleModal({
                     {lat.toFixed(5)}, {lng.toFixed(5)}
                   </span>
                 </a>
+              )}
+              {lat != null && linea.gpsOrigen && (
+                <span className="text-xs text-[var(--text-secondary)]">
+                  {linea.gpsOrigen === "telefono" ? "GPS del teléfono" : linea.gpsOrigen === "censo" ? "Copiada del censo, no tomada en el tocón" : "UTM escrita a mano"}
+                </span>
               )}
               {linea.photoUrl && (
                 <a href={linea.photoUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5">

@@ -21,6 +21,7 @@ import { ForestLothCierreDB } from "@/lib/db/forest-loth-cierre.db";
 import { ForestLothPoaDB } from "@/lib/db/forest-loth-poa.db";
 import { dmcParaEspecie } from "@/lib/forestal/loth-poa";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { resumirUsoDelCenso, type UsoArbolCenso } from "@/lib/forestal/loth-censo-uso";
 
 export { LOTH_SECTIONS };
 export type { LothSection };
@@ -124,6 +125,14 @@ export interface LothEntryCreateInput {
   gpsLat?: number | string | null;
   gpsLng?: number | string | null;
   photoUrl?: string | null;
+  /** De dónde salió el GPS: el teléfono en el tocón, la coordenada del censo o una UTM tipeada. */
+  gpsOrigen?: "telefono" | "censo" | "utm" | null;
+
+  /** Datos internos de la tala (NO salen en el formato SERFOR). */
+  motosierrista?: string | null;
+  motosierristaId?: string | null;
+  /** «HH:MM» de la tumba. */
+  horaTala?: string | null;
 
   createdBy: string;
 }
@@ -294,6 +303,11 @@ export class ForestLothDB {
           gpsLat: dec(input.gpsLat),
           gpsLng: dec(input.gpsLng),
           photoUrl: input.photoUrl?.trim() || null,
+          // Sin coordenada no hay origen que declarar.
+          gpsOrigen: input.gpsLat != null && input.gpsLng != null ? (input.gpsOrigen ?? null) : null,
+          motosierrista: input.motosierrista?.trim() || null,
+          motosierristaId: input.motosierrista?.trim() ? (input.motosierristaId?.trim() || null) : null,
+          horaTala: input.horaTala?.trim() || null,
           status: "registrado",
           createdBy: input.createdBy,
         },
@@ -870,12 +884,24 @@ export class ForestLothDB {
     if (!tenantId) throw new Error("tenantId is required");
 
     if (section === "tala") {
-      const trees = await prisma.forestCensusTree.findMany({
-        where: { tenantId, deletedAt: null, estado: "en_pie", ...(planId ? { planId } : {}) },
-        orderBy: { treeCode: "asc" },
-        take: 1000,
-      });
-      return trees.map((t) => ({
+      const [trees, talados] = await Promise.all([
+        prisma.forestCensusTree.findMany({
+          where: { tenantId, deletedAt: null, estado: "en_pie", ...(planId ? { planId } : {}) },
+          orderBy: { treeCode: "asc" },
+          take: 1000,
+        }),
+        /* El censo pasa a «talado» con un fire-and-forget al asentar la tala;
+           si eso falla, el árbol sigue «en pie» y se ofrecía para talar otra
+           vez — T3 lo rechazaba recién al guardar (medido 28-09: el 85-TOR del
+           tenant de QA, con su línea N° 1, 4 trozas y 2 despachadas). */
+        prisma.forestLothEntry.findMany({
+          where: { tenantId, section: "tala", status: "registrado", deletedAt: null, treeCode: { not: null } },
+          select: { treeCode: true },
+          distinct: ["treeCode"],
+        }),
+      ]);
+      const yaTalados = new Set(talados.map((t) => t.treeCode));
+      return trees.filter((t) => !yaTalados.has(t.treeCode)).map((t) => ({
         kind: "censo" as const,
         code: t.treeCode,
         species: t.speciesCommon,
@@ -931,6 +957,41 @@ export class ForestLothDB {
       }));
     }
     return [];
+  }
+
+  /**
+   * Lo que el libro ya hizo con cada árbol: la línea de tala, cuántas trozas
+   * salieron en el trozado y cuántas se despacharon o consumieron. Lo lee el
+   * modal «Ver censo» de la tala para decir «talado el lunes 28/09 · línea
+   * N° 3 · 1 troza» en vez del `estado` del censo, que puede quedar atrás.
+   *
+   * Por código de árbol en todo el tenant: es el mismo criterio de T3 (un
+   * árbol se tala una sola vez, sin importar de qué plan venga la línea).
+   */
+  /** ¿El árbol tiene una tala vigente (registrada, no borrada) en el libro? */
+  static async tieneTalaVigente(tenantId: string, treeCode: string): Promise<boolean> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const code = treeCode.trim();
+    if (!code) return false;
+    const n = await prisma.forestLothEntry.count({
+      where: { tenantId, section: "tala", treeCode: code, status: "registrado", deletedAt: null },
+    });
+    return n > 0;
+  }
+
+  static async usoDelCenso(tenantId: string): Promise<UsoArbolCenso[]> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const rows = await prisma.forestLothEntry.findMany({
+      where: {
+        tenantId,
+        deletedAt: null,
+        status: "registrado",
+        section: { in: ["tala", "trozado", "despacho_troza", "consumo_troza"] },
+      },
+      select: { section: true, lineNo: true, entryDate: true, treeCode: true, trozaCode: true, volumeM3: true },
+      take: 50_000,
+    });
+    return resumirUsoDelCenso(rows.map((r) => ({ ...r, volumeM3: r.volumeM3 == null ? null : Number(r.volumeM3) })));
   }
 
   /**

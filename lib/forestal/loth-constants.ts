@@ -527,6 +527,12 @@ export interface LothEntryDTO {
   gpsLat: string | null;
   gpsLng: string | null;
   photoUrl: string | null;
+  /** De dónde salió el GPS: teléfono en el tocón, coordenada del censo o UTM tipeada. */
+  gpsOrigen?: "telefono" | "censo" | "utm" | null;
+  /** Datos internos de la tala (no salen en el formato SERFOR). */
+  motosierrista?: string | null;
+  motosierristaId?: string | null;
+  horaTala?: string | null;
   /**
    * Cuándo se ASENTÓ la línea en el libro (≠ `entryDate`, que es cuándo pasó la
    * actividad). La API ya lo devuelve —`ForestLothDB.list` no filtra columnas—;

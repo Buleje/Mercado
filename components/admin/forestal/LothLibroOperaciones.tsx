@@ -40,10 +40,13 @@ import { printLothInforme } from "@/lib/forestal/loth-informe-print";
 import { printTrozaLabels } from "@/lib/forestal/loth-labels";
 import {
   estaFueraDePlazo,
+  LOTH_SECTIONS,
   type LothSection,
   type LothEntryDTO,
 } from "@/lib/forestal/loth-constants";
+import { toast } from "sonner";
 import LothEntryForm, { SECTION_META } from "./LothEntryForm";
+import { olvidarCensoDeTala } from "./hooks/use-censo-de-tala";
 import LothCaratulaForm from "./LothCaratulaForm";
 import LothTraceView from "./LothTraceView";
 import LothTableroTrozas from "./LothTableroTrozas";
@@ -247,6 +250,8 @@ export default function LothLibroOperaciones() {
   /** Línea de la que parte el formulario: duplicar (sin corrigeLineNo) o corregir. */
   const [plantilla, setPlantilla] = useState<LothEntry | null>(null);
   const [corrigeLineNo, setCorrigeLineNo] = useState<number | null>(null);
+  /** Árbol con el que arranca el formulario: `?nuevaTala=` o «Trozarlo ahora». */
+  const [arbolInicial, setArbolInicial] = useState<string | null>(null);
   /** Líneas a anular: una desde su fila, o todas las seleccionadas. */
   const [anularLineas, setAnularLineas] = useState<LothEntry[]>([]);
   const [showImport, setShowImport] = useState(false);
@@ -262,6 +267,49 @@ export default function LothLibroOperaciones() {
    */
   const [gtfEmitidas, setGtfEmitidas] = useState<Set<string> | null>(null);
   const [exporting, setExporting] = useState<"pdf" | "excel" | null>(null);
+
+  /**
+   * Enlace directo desde otras pantallas (el mapa del censo, la ficha de un
+   * árbol): `?seccion=tala&nuevaTala=<código>` abre la tala con ese árbol ya
+   * elegido. Los dos parámetros se borran ANTES de abrir: si no, cerrar el
+   * modal y recargar lo volvía a abrir.
+   *
+   * También en caliente (`popstate`): el mapa del censo vive DENTRO del libro
+   * y, para no recargar el panel, escribe la URL y avisa con un `popstate`
+   * (`irARegistrarTala`); si el parámetro sigue ahí a los 400 ms, recarga.
+   */
+  useEffect(() => {
+    const leer = () => {
+      const params = new URLSearchParams(window.location.search);
+      const seccion = params.get("seccion");
+      const nueva = params.get("nuevaTala")?.trim() ?? "";
+      if (!seccion && !nueva) return;
+      params.delete("seccion");
+      params.delete("nuevaTala");
+      const qs = params.toString();
+      window.history.replaceState(null, "", `${window.location.pathname}${qs ? `?${qs}` : ""}`);
+      if (seccion && (LOTH_SECTIONS as readonly string[]).includes(seccion)) setSection(seccion as LothSection);
+      if (nueva) {
+        setSection("tala");
+        setPlantilla(null);
+        setCorrigeLineNo(null);
+        setArbolInicial(nueva);
+        setShowForm(true);
+      }
+    };
+    leer();
+    window.addEventListener("popstate", leer);
+    return () => window.removeEventListener("popstate", leer);
+  }, []);
+
+  /** «Talar y trozar»: después de la tala, el trozado de ese mismo árbol. */
+  function abrirTrozado(treeCode: string) {
+    setSection("trozado");
+    setPlantilla(null);
+    setCorrigeLineNo(null);
+    setArbolInicial(treeCode);
+    setShowForm(true);
+  }
   const [printingLabels, setPrintingLabels] = useState(false);
 
   /** Etiquetas de las líneas indicadas; sin argumento, las de la sección visible. */
@@ -469,6 +517,9 @@ export default function LothLibroOperaciones() {
 
   // Recargar manual + tras escrituras: lista + meta (+ trazabilidad).
   const refreshAll = useCallback(async () => {
+    // Tras escribir (anular una tala, importar líneas…), el censo recordado de
+    // la tala ya no dice la verdad sobre qué árbol está disponible.
+    olvidarCensoDeTala();
     setReloadSignal((s) => s + 1); // gatilla el refetch de los paneles con fetch propio
     await Promise.all([loadEntries(), loadMeta(), loadAll()]);
   }, [loadEntries, loadMeta, loadAll]);
@@ -1039,8 +1090,9 @@ export default function LothLibroOperaciones() {
         <LothEntryForm
           // `key` fuerza un formulario nuevo por plantilla: sin esto, duplicar
           // una segunda línea reusaría el estado del modal anterior.
-          key={`${plantilla?.id ?? "nuevo"}-${corrigeLineNo ?? ""}`}
+          key={`${section}-${plantilla?.id ?? "nuevo"}-${corrigeLineNo ?? ""}-${arbolInicial ?? ""}`}
           section={section}
+          arbolInicial={arbolInicial}
           caratulaId={caratula?.id ?? null}
           plantilla={plantilla}
           corrigeLineNo={corrigeLineNo}
@@ -1049,14 +1101,25 @@ export default function LothLibroOperaciones() {
             setShowForm(false);
             setPlantilla(null);
             setCorrigeLineNo(null);
+            setArbolInicial(null);
           }}
           onSaved={(opts) => {
             if (!opts?.keepOpen) {
               setShowForm(false);
               setPlantilla(null);
               setCorrigeLineNo(null);
+              setArbolInicial(null);
             }
             refreshAll();
+            // Medido 28-09 en Blas: el 111 se taló y se trozó el mismo día.
+            const talado = opts?.arbolTalado;
+            if (talado) {
+              toast.success(`Tala del árbol ${talado} registrada`, {
+                description: "¿Lo trozas ahora? Se abre el trozado con ese árbol.",
+                action: { label: "Trozarlo ahora", onClick: () => abrirTrozado(talado) },
+                duration: 12_000,
+              });
+            }
           }}
         />
       )}

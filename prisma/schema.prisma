@@ -6078,6 +6078,19 @@ model ForestLothEntry {
   gpsLat   Decimal? @db.Decimal(10, 7) // latitud captura en campo
   gpsLng   Decimal? @db.Decimal(10, 7) // longitud captura en campo
   photoUrl String? // foto-evidencia (tocón/troza) vía /api/upload
+  /// De dónde salió el GPS: telefono | censo | utm. La tala hereda sola la
+  /// coordenada del censo: sin esto no se distingue «alguien estuvo en el
+  /// tocón» de «se copió la del regente» (28-09: las 2 talas de Blas eran
+  /// copia exacta del censo, a 0,01 m).
+  gpsOrigen String?
+
+  // ── Datos internos de la tala (NO salen en el formato SERFOR) ─────────
+  /// Quién tumbó el árbol: nombre tal como se eligió o tipeó, y el
+  /// colaborador de Recursos Humanos si se eligió de la lista.
+  motosierrista   String?
+  motosierristaId String?
+  /// Hora de la tumba «HH:MM» (entryDate es sólo fecha).
+  horaTala        String?
 
   // ── Flags + observaciones ────────────────────────────
   discarded      Boolean @default(false) // "descartado"
