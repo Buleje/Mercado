@@ -36,6 +36,12 @@ import { acercarAEscala } from "./escala-de-medida";
 import { CM_POR_PULGADA, M_POR_PIE } from "./escuadria-del-paquete";
 import { clasificarTipo, ORDEN_TIPO, type TipoComercial } from "./cubicacion-tipo";
 import { tipoComercialDelProducto } from "./loctp-catalogos";
+import {
+  origenYSalidaDeCorrida,
+  type CorridaParaOrigenYSalida,
+  type CubicacionParaVincular,
+  type OrigenYSalidaDeCorrida,
+} from "./origen-y-salida-del-dia";
 import { clasificacionCorta, piezasDeLaCorrida } from "./detalle-de-jornada";
 import type { HojaExcel } from "@/lib/export-excel";
 
@@ -88,6 +94,32 @@ export interface CorridaDelDia {
   /** Por qué sus campos del registro no se corrigen (la misma regla del servidor). */
   atadaPorque: string | null;
   paquetes: PaqueteDelDia[];
+  /** Origen (cubicada / por tipo), salida (guías) y cubicaciones ligadas — ADR-445. */
+  origenYSalida?: OrigenYSalidaDeCorrida;
+}
+
+/**
+ * Cada corrida con su origen, su salida y sus cubicaciones ligadas (ADR-445).
+ *
+ * `corridas` tiene que ser el día ENTERO —antes de filtrar por dueño—: «esta
+ * cubicación es sólo de este día» se decide contra todas las corridas del día.
+ * Una corrida sin datos en `datos` queda como vino (sin veredicto inventado).
+ */
+export function conOrigenYSalida(
+  corridas: readonly CorridaDelDia[],
+  datos: ReadonlyMap<string, CorridaParaOrigenYSalida>,
+  cubicaciones: readonly CubicacionParaVincular[],
+): CorridaDelDia[] {
+  const idsPorDia = new Map<string, string[]>();
+  for (const c of corridas) idsPorDia.set(c.dia, [...(idsPorDia.get(c.dia) ?? []), c.id]);
+  return corridas.map((c) => {
+    const d = datos.get(c.id);
+    if (!d) return c;
+    return {
+      ...c,
+      origenYSalida: origenYSalidaDeCorrida(d, { idsDelDia: idsPorDia.get(c.dia) ?? [c.id], cubicaciones }),
+    };
+  });
 }
 
 /** La escuadría como se canta en la sierra: pulgadas × pulgadas × pies. */

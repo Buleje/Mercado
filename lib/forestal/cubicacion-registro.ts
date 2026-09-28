@@ -171,6 +171,19 @@ export function construirRegistro(input: {
   };
 }
 
+/**
+ * TODAS las corridas que ampara una cubicación: `ctpEntryIds` y el `ctpEntryId`
+ * viejo, sin repetir. Leer sólo `ctpEntryId` (el primero) perdía las demás de
+ * un camión cubicado entero (ADR-369) — el `?despachoId=` del Anexo 04 no
+ * sugería la cubicación si el despacho salía de la segunda corrida (ADR-445).
+ */
+export function corridasDeCubicacion(c: Pick<CubicacionRegistro, "ctpEntryId" | "ctpEntryIds">): string[] {
+  const ids = [...(c.ctpEntryIds ?? []), ...(c.ctpEntryId ? [c.ctpEntryId] : [])]
+    .map((x) => (typeof x === "string" ? x.trim() : ""))
+    .filter(Boolean);
+  return [...new Set(ids)];
+}
+
 /** Nombre sugerido cuando el usuario no escribe uno: fecha + especie + piezas. */
 export function nombreSugerido(especie: string | undefined, totales: CubicacionTotales): string {
   const fecha = new Date().toLocaleDateString("es-PE", { day: "2-digit", month: "short" });

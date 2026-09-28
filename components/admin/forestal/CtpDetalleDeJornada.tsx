@@ -38,7 +38,7 @@
 
 import { useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
 import { createPortal } from "react-dom";
-import { BarChart3, Loader2, Trash2, X } from "@buleje/design-system/icons";
+import { X } from "@buleje/design-system/icons";
 import { BlockTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import { fmtM3, fmtPiezas, fmtPt } from "@/lib/forestal/cubicacion-formato";
@@ -51,7 +51,9 @@ import {
 } from "@/lib/forestal/detalle-de-jornada";
 import type { JornadaDeProduccion } from "./hooks/use-jornadas-produccion";
 import { useUbicarFlotante } from "./hooks/use-ubicar-flotante";
-import { Bloque, FranjaDelDia, plural, Renglon } from "./CtpDetalleDeJornadaPartes";
+import { AccionesDelDetalle, Bloque, FranjaDelDia, plural, Renglon } from "./CtpDetalleDeJornadaPartes";
+import CtpOrigenYSalidaDelDia from "./CtpOrigenYSalidaDelDia";
+import { diaPideCubicacion } from "./marcas-del-dia";
 
 interface Props {
   id: string;
@@ -71,6 +73,8 @@ interface Props {
   /** Anular lo declarado ese día. En táctil es la única puerta (no hay «pasar el mouse»). */
   onAnular?: () => void;
   anulando?: boolean;
+  /** Completar con su cubicación un día por tipo (ADR-445). Sólo se ofrece si el día lo pide. */
+  onAgregarCubicacion?: () => void;
 }
 
 /* El tope es una red, no el diseño: el contenido del día real más cargado mide
@@ -96,8 +100,12 @@ export default function CtpDetalleDeJornada({
   onVerResumen,
   onAnular,
   anulando = false,
+  onAgregarCubicacion,
 }: Props) {
-  const muchos = detalle.especies.length + detalle.clasificaciones.length > 3;
+  /* Con origen y salida (ADR-445) el panel pide el ancho amplio: los dos
+     bloques van lado a lado y la guía entra en su renglón. */
+  const muchos =
+    detalle.especies.length + detalle.clasificaciones.length > 3 || !!jornada.origenYSalida;
   /* Lo que mide el contenido entero: con eso el panel sube si abajo no entra. */
   const cajaRef = useRef<HTMLDivElement>(null);
   const [altoNecesario, setAltoNecesario] = useState<number>();
@@ -214,6 +222,16 @@ export default function CtpDetalleDeJornada({
 
         <FranjaDelDia detalle={detalle} />
 
+        {/* De dónde salió y a dónde fue (ADR-445): sin el dato, nada. */}
+        {/* Con guías, uno debajo del otro: lado a lado, en 560 px el N° de la
+            GTF se cortaba en «GTF QA-LOTE-SALID…» (medido 27-09). */}
+        {jornada.origenYSalida && (
+          <CtpOrigenYSalidaDelDia
+            os={jornada.origenYSalida}
+            dosColumnas={dosColumnas && jornada.origenYSalida.salida.guias.length === 0}
+          />
+        )}
+
         {detalle.sinMateriaPrima > 0 && (
           /* Neutro y no de aviso (decidido en el navegador el 09-14): con la
              regla de `corridaSinOrigen` son 14 de 14 corridas de Blas, y un
@@ -283,32 +301,12 @@ export default function CtpDetalleDeJornada({
           )}
         </Bloque>
 
-        {/* «Ver qué salió» va ÚLTIMO: Tab en el último control del panel
-            cierra y vuelve al ícono, y es la acción de todos los días. */}
-        <div className="mt-2.5 flex flex-wrap gap-2">
-          {onAnular && (
-            <button
-              type="button"
-              onClick={onAnular}
-              disabled={anulando}
-              className="inline-flex min-h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-[var(--data-error-500)]/50 px-2.5 py-1.5 text-xs font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-500)]/10 disabled:opacity-60 dark:text-[var(--data-error-500)]"
-            >
-              {anulando ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
-              ) : (
-                <Trash2 className="h-3.5 w-3.5" aria-hidden />
-              )}
-              Anular el día
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={onVerResumen}
-            className="inline-flex min-h-9 grow items-center justify-center gap-1.5 rounded-lg border border-[var(--accent)] bg-primary/10 px-2.5 py-1.5 text-xs font-bold text-[var(--accent-ink)] hover:bg-primary/15 dark:text-[var(--accent)]"
-          >
-            <BarChart3 className="h-3.5 w-3.5" aria-hidden /> Ver qué salió ese día
-          </button>
-        </div>
+        <AccionesDelDetalle
+          onAnular={onAnular}
+          anulando={anulando}
+          onAgregarCubicacion={diaPideCubicacion(jornada.origenYSalida) ? onAgregarCubicacion : undefined}
+          onVerResumen={onVerResumen}
+        />
       </div>
     </div>,
     lugar.destino,

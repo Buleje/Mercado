@@ -27,6 +27,12 @@ import { PT_POR_M3 } from "@/lib/forestal/cubicacion";
 import { esDuenoMadera, etiquetaDeDueno } from "@/lib/forestal/dueno-de-la-madera";
 import { corridaSinOrigen } from "@/lib/forestal/loctp-consumos-analisis";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
+import {
+  origenYSalidaDelDia,
+  type CorridaParaOrigenYSalida,
+  type CubicacionParaVincular,
+  type OrigenYSalida,
+} from "@/lib/forestal/origen-y-salida-del-dia";
 
 export interface DetalleDeJornada {
   /** Por m³ descendente, juntas por `claveEspecie`. */
@@ -77,6 +83,12 @@ export interface FilaDeJornada {
   materiaPrimaRef: string | null;
   /** Sólo los vivos (`deletedAt: null`). */
   paquetes: { productType: string | null; cantidad: number | null; volumenM3: NumeroDelLibro }[];
+  /**
+   * Lo que pide el origen y la salida del día (ADR-445): escuadrías, salidas
+   * vigentes, saldo, marca «usado» y reservas. Sólo en producción; sin él el
+   * día no trae `origenYSalida` (una fila a medias no arma un veredicto).
+   */
+  corrida?: CorridaParaOrigenYSalida;
 }
 
 /** Un asiento de la semana, ya con su día (`YYYY-MM-DD`, UTC). */
@@ -95,6 +107,11 @@ export interface JornadaDelLibro {
   piezas: number;
   /** Sólo en producción. */
   detalle?: DetalleDeJornada;
+  /**
+   * Origen (cubicado / por tipo) y salida (guías) del día — ADR-445. Opcional:
+   * una respuesta vieja en caché no lo trae y la tira no debe romperse.
+   */
+  origenYSalida?: OrigenYSalida;
 }
 
 export const SIN_ESPECIE = "Sin especie declarada";
@@ -151,6 +168,8 @@ export function piezasDeLaCorrida(
 export function jornadasDesdeFilas(
   filas: readonly FilaDeLaSemana[],
   seccion: SeccionDeLaTira,
+  /** Las cubicaciones guardadas ligadas a corridas (ADR-445), leídas UNA vez. */
+  cubicaciones: readonly CubicacionParaVincular[] = [],
 ): JornadaDelLibro[] {
   const porDia = new Map<string, { corridas: number; m3: number; piezas: number; filas: FilaDeLaSemana[] }>();
   for (const f of filas) {
@@ -177,8 +196,22 @@ export function jornadasDesdeFilas(
       pt: Math.round(v.m3 * PT_POR_M3),
       piezas: v.piezas,
       ...(seccion === "produccion" ? { detalle: detalleDeJornada(v.filas) } : {}),
+      ...(seccion === "produccion" ? origenYSalidaDe(v.filas, cubicaciones) : {}),
     }))
     .sort((a, b) => a.dia.localeCompare(b.dia));
+}
+
+/**
+ * El origen y la salida del día (ADR-445), sólo si TODAS sus corridas traen lo
+ * que hace falta: con una sin datos, el veredicto del día sería inventado.
+ */
+function origenYSalidaDe(
+  filas: readonly FilaDeJornada[],
+  cubicaciones: readonly CubicacionParaVincular[],
+): { origenYSalida?: OrigenYSalida } {
+  const corridas = filas.map((f) => f.corrida).filter((c): c is CorridaParaOrigenYSalida => c != null);
+  if (corridas.length === 0 || corridas.length !== filas.length) return {};
+  return { origenYSalida: origenYSalidaDelDia(corridas, cubicaciones) };
 }
 
 /**

@@ -26,7 +26,10 @@ import {
   tituloDeLaSemana,
 } from "@/lib/forestal/semana-de-registro";
 import type { JornadaDeProduccion } from "./hooks/use-jornadas-produccion";
+import type { TotalDeLaSemana } from "./semana-de-la-tira";
 import { cuantos, type NombreDeLaTira } from "./tira-de-dias-copy";
+import { ChipsDeLaSemana } from "./ctp-casillero-marcas";
+import type { ChipDeLaSemana, FiltroDeDias } from "./marcas-del-dia";
 
 const BOTON_FLECHA =
   "grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]";
@@ -50,6 +53,9 @@ export default function CtpCabeceraDeLaTira({
   onSemana,
   onHoy,
   totalSemana = null,
+  chips = [],
+  filtro = null,
+  onFiltro,
 }: {
   nombre: NombreDeLaTira;
   /** El día elegido. */
@@ -68,7 +74,11 @@ export default function CtpCabeceraDeLaTira({
   onSemana: (iso: string) => void;
   onHoy: () => void;
   /** Lo de la semana a la vista, sumado de sus casilleros. `null` = cargando o falló. */
-  totalSemana?: { corridas: number; pt: number; m3: number; piezas: number } | null;
+  totalSemana?: TotalDeLaSemana | null;
+  /** «3 por tipo · 1 sin guía» (ADR-445): sólo si la respuesta trae las marcas. */
+  chips?: readonly ChipDeLaSemana[];
+  filtro?: FiltroDeDias | null;
+  onFiltro?: (f: FiltroDeDias | null) => void;
 }) {
   return (
     <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -134,6 +144,13 @@ export default function CtpCabeceraDeLaTira({
             </>
           )}
         </span>
+      )}
+      {/* Los días de la semana por marca, al lado del total: tocar uno resalta
+          esos casilleros. En el celular bajan con el total. */}
+      {!plegada && onFiltro && chips.length > 0 && (
+        <div className="max-sm:order-last max-sm:basis-full">
+          <ChipsDeLaSemana chips={chips} filtro={filtro} onFiltro={onFiltro} />
+        </div>
       )}
       {cargando && (
         <Loader2

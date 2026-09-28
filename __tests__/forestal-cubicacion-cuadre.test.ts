@@ -158,3 +158,68 @@ describe("cuadrarConjunto — una cubicación contra varias filas del libro", ()
     expect(r.avisos.some((a) => a.tono === "error")).toBe(true);
   });
 });
+
+describe("cuadrarConjunto — especie Y tipo, y «0 piezas» = sin dato (ADR-445)", () => {
+  const med = (especie: string, cantidad: number, m3: number, tipo?: PiezaCubicada["tipo"]): PiezaCubicada => ({
+    ...pieza({ especie, cantidad, m3, ...(tipo ? { tipo } : {}) }),
+    id: `${especie}-${cantidad}-${m3}-${tipo ?? "medida"}`,
+  });
+  const COMERCIAL = "MADERA ASERRADA (COMERCIAL)";
+
+  it("01/08 de Blas: 19 paquetes en 0 piezas no dan avisos de piezas falsos", () => {
+    const filas: FilaDeclarada[] = [
+      ...Array.from({ length: 19 }, (_, i) => ({ id: `p${i}`, etiqueta: `${55 + i}`, especie: "Tornillo", producto: COMERCIAL, piezas: 0, volumenM3: 0.5 })),
+      { id: "sl679", etiqueta: "SL-679", especie: "Tornillo", producto: COMERCIAL, piezas: 12, volumenM3: 0.5 },
+    ];
+    const r = cuadrarConjunto([med("Tornillo", 400, 10)], filas);
+    expect(r.porEspecie[0]).toMatchObject({ deltaPiezas: 0, piezasSinDato: true, tono: "ok" });
+    expect(r.total.piezasSinDato).toBe(true);
+    expect(r.avisos).toEqual([]);
+    expect(r.tono).toBe("ok");
+  });
+
+  it("con todas las piezas declaradas se siguen comparando", () => {
+    const r = cuadrarConjunto([med("Tornillo", 12, 1)], [{ id: "f", etiqueta: "PQ", especie: "Tornillo", piezas: 10, volumenM3: 1 }]);
+    expect(r.porEspecie[0]).toMatchObject({ deltaPiezas: 2, tono: "aviso" });
+    expect(r.porEspecie[0]?.piezasSinDato).toBeUndefined();
+  });
+
+  it("la especie cierra pero el tipo no: se dice, en tono aviso", () => {
+    const r = cuadrarConjunto(
+      [med("Tornillo", 5, 0.5), med("Tornillo", 5, 0.5, "Tabla")],
+      [{ id: "f", etiqueta: "N° 15", especie: "Tornillo", producto: COMERCIAL, piezas: 10, volumenM3: 1 }],
+    );
+    expect(r.porEspecie[0]?.tono).toBe("ok");
+    expect(r.porTipo.map((t) => [t.tipo, t.m3Medido, t.m3Declarado])).toEqual([
+      ["Comercial", 0.5, 1],
+      ["Tabla", 0.5, 0],
+    ]);
+    const aviso = r.avisos.find((a) => a.campo === "tipo");
+    expect(aviso?.tono).toBe("aviso");
+    expect(aviso?.texto).toContain("cuadra en total, pero no tipo por tipo");
+    expect(r.avisos.some((a) => a.texto.includes("no especie por especie"))).toBe(false);
+    expect(r.tono).toBe("aviso");
+  });
+
+  it("si alguna fila de la especie no dice su tipo, esa especie no se cuadra por tipo", () => {
+    const r = cuadrarConjunto(
+      [med("Tornillo", 5, 0.5), med("Tornillo", 5, 0.5, "Tabla")],
+      [
+        { id: "f1", etiqueta: "N° 15", especie: "Tornillo", producto: COMERCIAL, piezas: 5, volumenM3: 0.5 },
+        { id: "f2", etiqueta: "N° 16", especie: "Tornillo", producto: "MADERA ASERRADA", piezas: 5, volumenM3: 0.5 },
+      ],
+    );
+    expect(r.porTipo).toEqual([]);
+    expect(r.avisos).toEqual([]);
+  });
+
+  it("tipos que coinciden: filas por tipo en verde y sin avisos", () => {
+    const r = cuadrarConjunto(
+      [med("Tornillo", 10, 1)],
+      [{ id: "f", etiqueta: "PQ", especie: "Tornillo", producto: COMERCIAL, piezas: 10, volumenM3: 1 }],
+    );
+    expect(r.porTipo).toHaveLength(1);
+    expect(r.porTipo[0]).toMatchObject({ especie: "Tornillo", tipo: "Comercial", tono: "ok" });
+    expect(r.avisos).toEqual([]);
+  });
+});

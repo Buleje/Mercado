@@ -17,6 +17,7 @@
 import type { PiezaCubicada } from "./cubicacion";
 import { tipoDePieza } from "./cubicacion-tipo";
 import { fmtM3 } from "./cubicacion-formato";
+import { tipoComercialDelProducto } from "./loctp-catalogos";
 
 /** Lo que el Libro CTP afirma del producto que se está cubicando. */
 export interface DeclaradoEnLibro {
@@ -198,10 +199,28 @@ export interface CuadrePorEspecie {
   deltaPiezas: number;
   deltaM3: number;
   tono: TonoCuadre;
+  /**
+   * Alguna fila del grupo declara 0 piezas (o nada): el libro no dice cuántas
+   * son, así que las piezas NO se comparan — `deltaPiezas` queda en 0 y no hay
+   * aviso. Sin esto, el 01/08 de Blas (19 paquetes declarados en 0 piezas, por
+   * tipo) daba un aviso falso por cada uno (ADR-445).
+   */
+  piezasSinDato?: boolean;
+}
+
+/** El mismo cuadre, dentro de una especie, por TIPO comercial (ADR-445). */
+export interface CuadrePorTipo extends CuadrePorEspecie {
+  tipo: string;
 }
 
 export interface CuadreConjunto {
   porEspecie: CuadrePorEspecie[];
+  /**
+   * Especie Y tipo, sólo de las especies donde TODAS las filas elegidas dicen
+   * su tipo en el producto («MADERA ASERRADA (COMERCIAL)»). Con una fila que
+   * no lo dice, el tipo no se puede comparar y la especie cuadra sólo entera.
+   */
+  porTipo: CuadrePorTipo[];
   total: Omit<CuadrePorEspecie, "especie">;
   /** Qué mirar, en español. Vacío = cuadra todo. */
   avisos: AvisoCuadre[];
@@ -209,6 +228,9 @@ export interface CuadreConjunto {
 }
 
 const SIN_ESPECIE = "sin especie";
+
+/** «0 piezas declaradas» es «no se sabe»: sin dato, no «cero piezas». */
+const declaraPiezas = (d: FilaDeclarada) => Number(d.piezas) > 0;
 
 function tonoDe(deltaPiezas: number, deltaM3: number, m3Declarado: number): TonoCuadre {
   const pct = m3Declarado > 0 ? Math.abs(deltaM3 / m3Declarado) * 100 : 0;
@@ -234,58 +256,57 @@ export function cuadrarConjunto(
   filas: readonly FilaDeclarada[],
 ): CuadreConjunto {
   const clave = (v: string | null | undefined) => norm(v) || SIN_ESPECIE;
-  const acc = new Map<string, CuadrePorEspecie>();
   const nombre = new Map<string, string>();
-
-  const tomar = (k: string): CuadrePorEspecie => {
-    const previo = acc.get(k);
-    if (previo) return previo;
-    const fila: CuadrePorEspecie = {
-      especie: nombre.get(k) ?? k,
-      piezasMedidas: 0, piezasDeclaradas: 0, m3Medido: 0, m3Declarado: 0,
-      deltaPiezas: 0, deltaM3: 0, tono: "ok",
-    };
-    acc.set(k, fila);
-    return fila;
-  };
-
   for (const p of piezas) {
     const k = clave(p.especie);
     if (p.especie?.trim() && !nombre.has(k)) nombre.set(k, p.especie.trim());
-    const f = tomar(k);
-    f.piezasMedidas += Number(p.cantidad) || 0;
-    f.m3Medido = r4(f.m3Medido + (Number(p.m3) || 0));
   }
   for (const d of filas) {
     const k = clave(d.especie);
     if (d.especie?.trim() && !nombre.has(k)) nombre.set(k, d.especie.trim());
-    const f = tomar(k);
-    f.piezasDeclaradas += Number(d.piezas) || 0;
-    f.m3Declarado = r4(f.m3Declarado + (Number(d.volumenM3) || 0));
   }
 
-  const porEspecie = [...acc.entries()]
-    .map(([k, f]) => {
-      const especie = nombre.get(k) ?? f.especie;
-      const deltaPiezas = f.piezasMedidas - f.piezasDeclaradas;
-      const deltaM3 = r4(f.m3Medido - f.m3Declarado);
-      return { ...f, especie, deltaPiezas, deltaM3, tono: tonoDe(deltaPiezas, deltaM3, f.m3Declarado) };
-    })
-    .sort((a, b) => b.m3Declarado - a.m3Declarado || a.especie.localeCompare(b.especie));
-
-  const total = porEspecie.reduce(
-    (a, f) => ({
-      piezasMedidas: a.piezasMedidas + f.piezasMedidas,
-      piezasDeclaradas: a.piezasDeclaradas + f.piezasDeclaradas,
-      m3Medido: r4(a.m3Medido + f.m3Medido),
-      m3Declarado: r4(a.m3Declarado + f.m3Declarado),
-      deltaPiezas: 0, deltaM3: 0, tono: "ok" as TonoCuadre,
-    }),
-    { piezasMedidas: 0, piezasDeclaradas: 0, m3Medido: 0, m3Declarado: 0, deltaPiezas: 0, deltaM3: 0, tono: "ok" as TonoCuadre },
+  const porEspecie = cuadrarGrupos(piezas, filas, (p) => clave(p.especie), (d) => clave(d.especie)).map(
+    ({ k, fila }) => ({ ...fila, especie: nombre.get(k) ?? k }),
   );
-  total.deltaPiezas = total.piezasMedidas - total.piezasDeclaradas;
-  total.deltaM3 = r4(total.m3Medido - total.m3Declarado);
-  total.tono = tonoDe(total.deltaPiezas, total.deltaM3, total.m3Declarado);
+  porEspecie.sort((a, b) => b.m3Declarado - a.m3Declarado || a.especie.localeCompare(b.especie));
+
+  /* Especie Y tipo (ADR-445): una especie cuadra por tipo sólo si todas sus
+     filas dicen el tipo. El 01/08 de Blas declaró «(COMERCIAL)» por tipo; la
+     cubicación que lo complete puede traer Tabla y Comercial: el total de
+     Tornillo cierra y lo que no cierra es el tipo. */
+  const tipoDeFila = (d: FilaDeclarada) => tipoComercialDelProducto(d.producto);
+  const especiesConTipo = new Set(
+    [...new Set(filas.map((d) => clave(d.especie)))].filter((k) =>
+      filas.filter((d) => clave(d.especie) === k).every((d) => tipoDeFila(d) != null),
+    ),
+  );
+  const piezasConTipo = piezas.filter((p) => especiesConTipo.has(clave(p.especie)));
+  const filasConTipo = filas.filter((d) => especiesConTipo.has(clave(d.especie)));
+  const nombreTipo = new Map<string, string>();
+  const claveTipo = (especie: string, tipo: string | null) => {
+    const t = tipo ?? "";
+    if (t && !nombreTipo.has(norm(t))) nombreTipo.set(norm(t), t);
+    return `${especie}\u0000${norm(t)}`;
+  };
+  const porTipo: CuadrePorTipo[] = cuadrarGrupos(
+    piezasConTipo,
+    filasConTipo,
+    (p) => claveTipo(clave(p.especie), tipoDePieza(p)),
+    (d) => claveTipo(clave(d.especie), tipoDeFila(d)),
+  ).map(({ k, fila }) => {
+    const [kEspecie = "", kTipo = ""] = k.split("\u0000");
+    return { ...fila, especie: nombre.get(kEspecie) ?? kEspecie, tipo: nombreTipo.get(kTipo) ?? kTipo };
+  });
+  porTipo.sort(
+    (a, b) =>
+      a.especie.localeCompare(b.especie) || b.m3Declarado - a.m3Declarado || a.tipo.localeCompare(b.tipo),
+  );
+
+  const [total] = cuadrarGrupos(piezas, filas, () => "", () => "").map(({ fila }) => fila);
+  const totalSinEspecie: Omit<CuadrePorEspecie, "especie"> = total
+    ? (({ especie: _e, ...resto }) => resto)(total)
+    : { piezasMedidas: 0, piezasDeclaradas: 0, m3Medido: 0, m3Declarado: 0, deltaPiezas: 0, deltaM3: 0, tono: "ok" };
 
   const avisos: AvisoCuadre[] = [];
   for (const f of porEspecie) {
@@ -319,11 +340,39 @@ export function cuadrarConjunto(
       delta: f.deltaM3,
     });
   }
+
+  /* Por tipo: UN aviso por especie que no cierra tipo por tipo. Tono «aviso»,
+     nunca «error»: la medida puede clasificar distinto que el asiento por
+     razones legítimas (el mismo criterio que `cuadrarConLibro`). */
+  for (const f of porEspecie) {
+    const tipos = porTipo.filter((t) => t.especie === f.especie);
+    /* Por tono y no sólo por m³: un tipo que nadie declaró avisa aunque mida
+       menos de 10 litros (se compara por piezas, ver `cuadrarGrupos`). */
+    const cruzados = tipos.filter((t) => t.tono !== "ok");
+    if (cruzados.length === 0) continue;
+    avisos.push({
+      campo: "tipo",
+      tono: "aviso",
+      texto:
+        `${f.especie}${f.tono === "ok" ? " cuadra en total, pero no tipo por tipo" : " por tipo"}: ` +
+        cruzados
+          .map(
+            (t) =>
+              `${t.tipo || "sin tipo"} ${fmtM3(t.m3Medido)} m³ medidos contra ${fmtM3(t.m3Declarado)} ` +
+              `(${t.deltaM3 > 0 ? "+" : ""}${fmtM3(t.deltaM3)}` +
+              (t.deltaPiezas !== 0 ? `, ${t.deltaPiezas > 0 ? "+" : ""}${t.deltaPiezas} piezas` : "") +
+              ")",
+          )
+          .join(" · ") +
+        ".",
+    });
+  }
+
   /* La suma de m³ puede cerrar con las especies cruzadas —sobra Tornillo, falta
      Capirona— y eso es lo que NO puede pasar en una guía. Se dice primero, para
      que nadie lea el total en verde como que está todo bien. Se mira el volumen
      y no el tono del total: ése ya incluye las piezas. */
-  if (Math.abs(total.deltaM3) <= TOLERANCIA_M3 && avisos.length > 0) {
+  if (Math.abs(totalSinEspecie.deltaM3) <= TOLERANCIA_M3 && avisos.some((a) => a.campo !== "tipo")) {
     avisos.unshift({
       campo: "especie",
       tono: "aviso",
@@ -331,5 +380,65 @@ export function cuadrarConjunto(
     });
   }
 
-  return { porEspecie, total, avisos, tono: avisos.length > 0 ? tonoGeneral(avisos) : total.tono };
+  return {
+    porEspecie,
+    porTipo,
+    total: totalSinEspecie,
+    avisos,
+    tono: avisos.length > 0 ? tonoGeneral(avisos) : totalSinEspecie.tono,
+  };
+}
+
+/**
+ * Suma lo medido y lo declarado por grupo y calcula su diferencia. Las piezas
+ * se comparan sólo si TODAS las filas del grupo las declaran (`declaraPiezas`).
+ */
+function cuadrarGrupos(
+  piezas: readonly PiezaCubicada[],
+  filas: readonly FilaDeclarada[],
+  claveDePieza: (p: PiezaCubicada) => string,
+  claveDeFila: (d: FilaDeclarada) => string,
+): { k: string; fila: CuadrePorEspecie }[] {
+  const acc = new Map<string, CuadrePorEspecie & { filas: number; conPiezas: number }>();
+  const tomar = (k: string) => {
+    const previo = acc.get(k);
+    if (previo) return previo;
+    const fila = {
+      especie: k,
+      piezasMedidas: 0, piezasDeclaradas: 0, m3Medido: 0, m3Declarado: 0,
+      deltaPiezas: 0, deltaM3: 0, tono: "ok" as TonoCuadre, filas: 0, conPiezas: 0,
+    };
+    acc.set(k, fila);
+    return fila;
+  };
+  for (const p of piezas) {
+    const f = tomar(claveDePieza(p));
+    f.piezasMedidas += Number(p.cantidad) || 0;
+    f.m3Medido = r4(f.m3Medido + (Number(p.m3) || 0));
+  }
+  for (const d of filas) {
+    const f = tomar(claveDeFila(d));
+    f.filas += 1;
+    if (declaraPiezas(d)) f.conPiezas += 1;
+    f.piezasDeclaradas += Number(d.piezas) || 0;
+    f.m3Declarado = r4(f.m3Declarado + (Number(d.volumenM3) || 0));
+  }
+  return [...acc.entries()].map(([k, { filas: n, conPiezas, ...f }]) => {
+    /* Sin dato = HAY filas y alguna no dice sus piezas. Sin ninguna fila (una
+       especie o un tipo que nadie declaró) las piezas SÍ se comparan contra 0:
+       una pieza de 7 litros de Capirona que no se eligió es aviso, no «ok». */
+    const piezasSinDato = n > 0 && conPiezas < n;
+    const deltaPiezas = piezasSinDato ? 0 : f.piezasMedidas - f.piezasDeclaradas;
+    const deltaM3 = r4(f.m3Medido - f.m3Declarado);
+    return {
+      k,
+      fila: {
+        ...f,
+        deltaPiezas,
+        deltaM3,
+        tono: tonoDe(deltaPiezas, deltaM3, f.m3Declarado),
+        ...(piezasSinDato ? { piezasSinDato: true } : {}),
+      },
+    };
+  });
 }

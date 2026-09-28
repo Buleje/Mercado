@@ -26,12 +26,9 @@
  */
 
 import { useCallback, useMemo, useState } from "react";
-import { AlertTriangle, Boxes, Copy, Download, Info, Link2, Loader2 } from "@buleje/design-system/icons";
+import { AlertTriangle, Boxes, Info, Loader2 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import EncimaDeRadix from "@/components/admin/shared/encima-de-radix";
-import SegmentedControl from "@/components/ui-system/SegmentedControl";
-import { exportSheetsToExcel } from "@/lib/export-excel";
-import { hojasDelResumen } from "@/lib/forestal/resumen-de-jornadas-excel";
 import { fmtM3, fmtPiezas, fmtPt } from "@/lib/forestal/cubicacion-formato";
 import { etiquetaLarga } from "@/lib/forestal/semana-de-registro";
 import { invalidarCtp } from "@/lib/forestal/ctp-fetch";
@@ -42,28 +39,21 @@ import {
 import { puedePedir } from "@/lib/auth/roles-rutas-panel";
 import { useMiRol } from "@/hooks/use-mi-rol";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
-import {
-  avisoSinEscuadria,
-  filasPiezaPorPieza,
-  hojaPiezaPorPieza,
-  piezasDeLasCorridas,
-  totalesDeLasCorridas,
-} from "@/lib/forestal/piezas-del-dia";
+import type { OrigenYSalida } from "@/lib/forestal/origen-y-salida-del-dia";
+import { avisoSinEscuadria, filasPiezaPorPieza, totalesDeLasCorridas } from "@/lib/forestal/piezas-del-dia";
 import { Btn, MODAL_BODY, ModalFooter } from "./ctp-shared";
 import { Cifra, TablaPorDiaEspecieTipo, TablaPorEspecie } from "./ctp-resumen-jornadas-tablas";
 import CtpPiezaPorPiezaTabla from "./CtpPiezaPorPiezaTabla";
 import CtpEscuadriaPaqueteModal, { type PaqueteAMedir } from "./CtpEscuadriaPaqueteModal";
 import CtpEditarLineaModal, { type LineaEditable } from "./CtpEditarLineaModal";
 import CtpVincularMixtoModal, { puedeFirmarVinculo } from "./CtpVincularMixtoModal";
+import CtpVincularCubicacionModal from "./CtpVincularCubicacionModal";
+import CtpOrigenYSalidaDelDia from "./CtpOrigenYSalidaDelDia";
+import CtpDiaDeProduccionBarra, { type VistaDelDia } from "./CtpDiaDeProduccionBarra";
+import { corridaPideCubicacion, necesarioDelDia } from "./marcas-del-dia";
 import { useJornadasConPaquetes } from "./hooks/use-jornadas-con-paquetes";
+import { useAccionesDelDia } from "./hooks/use-acciones-del-dia";
 import { lineaEditableDe, paqueteAMedirDe } from "./dia-de-produccion-puertas";
-
-type Vista = "piezas" | "especieTipo" | "especie";
-const VISTAS: { value: Vista; label: string }[] = [
-  { value: "piezas", label: "Pieza por pieza" },
-  { value: "especieTipo", label: "Por especie y tipo" },
-  { value: "especie", label: "Por especie" },
-];
 
 const AVISO = "flex items-start gap-2 rounded-xl px-3 py-2 text-sm";
 const AVISO_INFO = `${AVISO} bg-[var(--data-info-500)]/12 text-[var(--data-info-700)] dark:text-[var(--data-info-500)]`;
@@ -74,6 +64,7 @@ export default function CtpDiaDeProduccionModal({
   onClose,
   onCopiarAlCubicado,
   onEditado,
+  origenYSalida,
 }: {
   /** El día, `YYYY-MM-DD`. */
   dia: string;
@@ -82,23 +73,27 @@ export default function CtpDiaDeProduccionModal({
   onCopiarAlCubicado?: (piezas: PiezaCubicada[]) => void;
   /** Se guardó algo en el libro: la tira y la tabla de atrás releen. */
   onEditado?: () => void;
+  /** Origen y salida del día, de la tira (ADR-445). Sin él, no se muestra. */
+  origenYSalida?: OrigenYSalida;
 }) {
   const { datos, error, releyendo, recargar } = useJornadasConPaquetes([dia]);
   const rol = useMiRol();
   const puedeEditar = puedePedir("PATCH /api/admin/forestal/ctp", rol);
   /* Vincular con un lote mixto (ADR-441): sólo dueño o administrador. */
   const [vinculando, setVinculando] = useState(false);
-  const [vista, setVista] = useState<Vista>("piezas");
+  const [vista, setVista] = useState<VistaDelDia>("piezas");
   const [midiendo, setMidiendo] = useState<PaqueteAMedir | null>(null);
   const [editando, setEditando] = useState<LineaEditable | null>(null);
-  /** Lo último que pasó (se guardó, se trajo, falló el Excel): se dice arriba de la tabla. */
-  const [nota, setNota] = useState<string | null>(null);
-  /** Traído una vez: un segundo clic duplicaría las piezas en el cubicado. */
-  const [traido, setTraido] = useState(false);
-  const [bajando, setBajando] = useState(false);
+  /* Agregar cubicación a lo declarado por tipo (ADR-445): `""` = el día entero. */
+  const [cubicando, setCubicando] = useState<string | null>(null);
 
   const filas = useMemo(() => (datos ? filasPiezaPorPieza(datos.detalle) : []), [datos]);
-  const aTraer = useMemo(() => (datos ? piezasDeLasCorridas(datos.detalle) : null), [datos]);
+  const { nota, setNota, traido, bajando, aTraer, traerTodo, bajarExcel } = useAccionesDelDia({
+    dia,
+    datos,
+    filas,
+    onCopiarAlCubicado,
+  });
   /* El PT de los paquetes es el MEDIDO al cubicar; el del día (el del
      casillero) sale del m³ × 424. Casi siempre redondean igual (22/09 de Blas:
      4 411,61 y 4 412); si no, se dice — dos cifras contiguas que no cierran
@@ -115,6 +110,12 @@ export default function CtpDiaDeProduccionModal({
     ],
     [datos],
   );
+  /* Sólo si alguna corrida está por tipo o cubicada en parte: sin el dato, no se ofrece. */
+  const pideCubicacion = (() => {
+    const detalle = datos?.detalle ?? [];
+    const necesario = necesarioDelDia(detalle);
+    return detalle.some((c) => corridaPideCubicacion(c.origenYSalida, necesario));
+  })();
 
   const despuesDeEscribir = useCallback(
     (mensaje: string) => {
@@ -122,7 +123,7 @@ export default function CtpDiaDeProduccionModal({
       void recargar();
       onEditado?.();
     },
-    [recargar, onEditado],
+    [recargar, onEditado, setNota],
   );
 
   const guardarEscuadria = useCallback(
@@ -135,34 +136,6 @@ export default function CtpDiaDeProduccionModal({
     },
     [midiendo, despuesDeEscribir],
   );
-
-  const traerTodo = () => {
-    if (!onCopiarAlCubicado || !aTraer || aTraer.piezas.length === 0 || !datos) return;
-    onCopiarAlCubicado(aTraer.piezas);
-    setTraido(true);
-    const piezas = aTraer.piezas.reduce((a, p) => a + p.cantidad, 0);
-    const corridas = datos.detalle.length;
-    setNota(
-      `${aTraer.piezas.length} fila${aTraer.piezas.length === 1 ? "" : "s"} (${fmtPiezas(piezas)} piezas) de ${
-        corridas === 1 ? "la corrida" : `las ${corridas} corridas`
-      } al lote cubicado. Es una copia: guardarla crea corridas NUEVAS — las de este día no se tocan.`,
-    );
-  };
-
-  const bajarExcel = async () => {
-    if (!datos) return;
-    setBajando(true);
-    try {
-      await exportSheetsToExcel(
-        [hojaPiezaPorPieza(filas), ...hojasDelResumen(datos, "diaEspecie")],
-        `produccion-${dia}-pieza-por-pieza`,
-      );
-    } catch (e) {
-      setNota(`No se pudo descargar el Excel: ${e instanceof Error ? e.message : String(e)}`);
-    } finally {
-      setBajando(false);
-    }
-  };
 
   const faltanMedidas =
     onCopiarAlCubicado && aTraer
@@ -238,60 +211,27 @@ export default function CtpDiaDeProduccionModal({
                 />
               </div>
 
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <SegmentedControl
-                  value={vista}
-                  onChange={setVista}
-                  size="sm"
-                  label="Qué mirar del día"
-                  options={VISTAS}
-                />
-                <div className="flex flex-wrap items-center gap-2">
-                  {releyendo && (
-                    <Loader2
-                      className="h-4 w-4 animate-spin text-[var(--text-tertiary)]"
-                      aria-label="Releyendo"
-                    />
-                  )}
-                  <button
-                    type="button"
-                    disabled={bajando}
-                    onClick={() => void bajarExcel()}
-                    title="Un archivo con la hoja pieza por pieza y el resumen del día"
-                    className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent-ink)] disabled:opacity-50 dark:hover:text-[var(--accent)]"
-                  >
-                    {bajando ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
-                    ) : (
-                      <Download className="h-3.5 w-3.5" aria-hidden />
-                    )}
-                    Excel
-                  </button>
-                  {puedeFirmarVinculo(rol) && (
-                    <button
-                      type="button"
-                      onClick={() => setVinculando(true)}
-                      title="Atar las corridas de este día a las trozas del lote mixto de donde salieron"
-                      className="inline-flex h-11 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
-                    >
-                      <Link2 className="h-4 w-4" aria-hidden />
-                      Vincular con lote mixto
-                    </button>
-                  )}
-                  {onCopiarAlCubicado && (
-                    <Btn
-                      variant="primary"
-                      size="sm"
-                      onClick={traerTodo}
-                      disabled={traido || !aTraer || aTraer.piezas.length === 0}
-                      title="Trae todas las piezas del día al lote cubicado para trabajarlas. No toca las corridas del libro."
-                    >
-                      <Copy className="h-4 w-4" aria-hidden />
-                      {traido ? "Ya está en el cubicado" : "Traer todo el día al cubicado"}
-                    </Btn>
-                  )}
+              {/* De dónde salió y a dónde fue (ADR-445), antes de la tabla. */}
+              {origenYSalida && (
+                <div className="rounded-xl border border-[var(--rule-base)] px-3 pb-2">
+                  <CtpOrigenYSalidaDelDia os={origenYSalida} dosColumnas="sm" />
                 </div>
-              </div>
+              )}
+
+              <CtpDiaDeProduccionBarra
+                vista={vista}
+                onVista={setVista}
+                releyendo={releyendo}
+                bajando={bajando}
+                onExcel={() => void bajarExcel()}
+                onVincularMixto={puedeFirmarVinculo(rol) ? () => setVinculando(true) : undefined}
+                onAgregarCubicacion={pideCubicacion ? () => setCubicando("") : undefined}
+                traer={
+                  onCopiarAlCubicado
+                    ? { onTraer: traerTodo, traido, deshabilitado: !aTraer || aTraer.piezas.length === 0 }
+                    : undefined
+                }
+              />
 
               {nota && (
                 <p className={AVISO_INFO} role="status">
@@ -316,6 +256,7 @@ export default function CtpDiaDeProduccionModal({
                     onEditarEscuadria={
                       puedeEditar ? (c, p) => setMidiendo(paqueteAMedirDe(c, p)) : undefined
                     }
+                    onAgregarCubicacion={(c) => setCubicando(c.id)}
                   />
                   {Math.round(ptDeLosPaquetes) !== datos.totales.pt && (
                     <p className="text-xs text-[var(--text-tertiary)]">
@@ -339,6 +280,15 @@ export default function CtpDiaDeProduccionModal({
               dia={dia}
               onClose={() => setVinculando(false)}
               onVinculado={despuesDeEscribir}
+            />
+          )}
+          {cubicando !== null && (
+            <CtpVincularCubicacionModal
+              aboveModals
+              dia={dia}
+              corridaInicial={cubicando || undefined}
+              onClose={() => setCubicando(null)}
+              onVinculada={despuesDeEscribir}
             />
           )}
           {midiendo && (

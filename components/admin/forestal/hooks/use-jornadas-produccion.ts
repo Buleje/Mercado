@@ -16,6 +16,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ctpGet, invalidarCtp } from "@/lib/forestal/ctp-fetch";
 import { esIsoValido, rangoDeLaSemana } from "@/lib/forestal/semana-de-registro";
 import type { DetalleDeJornada } from "@/lib/forestal/detalle-de-jornada";
+import type { OrigenYSalida } from "@/lib/forestal/origen-y-salida-del-dia";
 
 /** Lo que se produjo en UN día. Sólo viajan los días que tienen algo. */
 export interface JornadaDeProduccion {
@@ -32,6 +33,12 @@ export interface JornadaDeProduccion {
    * vieja del caché no lo trae, y sin él la tira se ve como antes.
    */
   detalle?: DetalleDeJornada;
+  /**
+   * De dónde salió (cubicado pieza por pieza o por tipo) y a dónde fue (guías)
+   * — ADR-445. Opcional como `detalle`: sin él la tira no pinta las marcas, no
+   * las inventa.
+   */
+  origenYSalida?: OrigenYSalida;
 }
 
 /** Qué hecho del libro cuenta la tira: lo que salió de la sierra, lo que entró, o lo que se fue con guía. */

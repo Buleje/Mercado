@@ -28,6 +28,7 @@ import { useCallback, useId, useMemo, useState } from "react";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import CtpResumenDeJornadasModal from "./CtpResumenDeJornadasModal";
 import CtpDiaDeProduccionModal from "./CtpDiaDeProduccionModal";
+import CtpVincularCubicacionModal from "./CtpVincularCubicacionModal";
 import CtpAnexoDeLosDias, { useAnexoDeLosDias } from "./CtpAnexoDeLosDias";
 import CtpCasilleroDelDia from "./CtpCasilleroDelDia";
 import CtpCabeceraDeLaTira from "./CtpCabeceraDeLaTira";
@@ -43,6 +44,8 @@ import {
   hoyEnLima,
 } from "@/lib/forestal/semana-de-registro";
 import type { JornadaDeProduccion, SeccionDeJornada } from "./hooks/use-jornadas-produccion";
+import { chipsDeLosDias, totalDeLaSemana } from "./semana-de-la-tira";
+import { claveDeFiltro, coincideFiltro, diaPideCubicacion, type FiltroDeDias } from "./marcas-del-dia";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
 import { NOMBRE_DE_LA_TIRA } from "./tira-de-dias-copy";
 
@@ -150,19 +153,20 @@ export default function CtpSemanaDeRegistro({
    * cifras de los siete casilleros, sumadas: la semana y sus días tienen que
    * cerrar a la vista. Mientras carga o si falló, no se afirma nada.
    */
-  const totalSemana = useMemo(() => {
-    if (cargando || error) return null;
-    const t = { corridas: 0, pt: 0, m3: 0, piezas: 0 };
-    for (const d of dias) {
-      const j = porDia.get(d);
-      if (!j) continue;
-      t.corridas += j.corridas;
-      t.pt += j.pt;
-      t.m3 += j.m3;
-      t.piezas += j.piezas;
-    }
-    return { ...t, m3: Math.round(t.m3 * 10000) / 10000 };
-  }, [dias, porDia, cargando, error]);
+  const totalSemana = useMemo(
+    () => (cargando || error ? null : totalDeLaSemana(dias, porDia)),
+    [dias, porDia, cargando, error],
+  );
+  /**
+   * Los días por marca (ADR-445: «3 por tipo · 1 sin guía»). Prender un chip
+   * resalta esos casilleros; si la semana nueva no tiene ninguno, se suelta solo.
+   */
+  const chips = useMemo(() => (esProduccion ? chipsDeLosDias(dias, porDia) : []), [esProduccion, dias, porDia]);
+  const [filtroElegido, setFiltro] = useState<FiltroDeDias | null>(null);
+  const filtro =
+    filtroElegido && chips.some((c) => claveDeFiltro(c.filtro) === claveDeFiltro(filtroElegido)) ? filtroElegido : null;
+  /** El día al que se le agrega su cubicación (ADR-445). */
+  const [cubicarDia, setCubicarDia] = useState<string | null>(null);
   const idCuerpo = useId();
 
   /**
@@ -238,6 +242,9 @@ export default function CtpSemanaDeRegistro({
         plegada={plegada}
         setPlegada={setPlegada}
         totalSemana={totalSemana}
+        chips={chips}
+        filtro={filtro}
+        onFiltro={setFiltro}
         idCuerpo={idCuerpo}
         onSemana={onSemana}
         onHoy={() => {
@@ -280,6 +287,12 @@ export default function CtpSemanaDeRegistro({
                 onVerResumen={() => setDiaAbierto(iso)}
                 onAnular={onAnularDia ? () => onAnularDia(iso) : undefined}
                 anulando={anulandoDia === iso}
+                resaltado={filtro ? coincideFiltro(porDia.get(iso)?.origenYSalida, filtro) : null}
+                onAgregarCubicacion={
+                  esProduccion && diaPideCubicacion(porDia.get(iso)?.origenYSalida)
+                    ? () => setCubicarDia(iso)
+                    : undefined
+                }
               />
             ))}
           </div>
@@ -327,6 +340,7 @@ export default function CtpSemanaDeRegistro({
       {diaAbierto && (
         <CtpDiaDeProduccionModal
           dia={diaAbierto}
+          origenYSalida={porDia.get(diaAbierto)?.origenYSalida}
           onClose={() => setDiaAbierto(null)}
           onCopiarAlCubicado={onCopiarAlCubicado}
           onEditado={onEditado}
@@ -334,6 +348,14 @@ export default function CtpSemanaDeRegistro({
       )}
       {anexo.abierto && (
         <CtpAnexoDeLosDias {...anexo.abierto} onCerrar={anexo.cerrar} />
+      )}
+      {cubicarDia && (
+        <CtpVincularCubicacionModal
+          aboveModals
+          dia={cubicarDia}
+          onClose={() => setCubicarDia(null)}
+          onVinculada={() => onEditado?.()}
+        />
       )}
     </section>
   );

@@ -16,6 +16,17 @@
  */
 
 import { AlertTriangle, Pencil, Ruler } from "@buleje/design-system/icons";
+import { MarcaConTexto } from "./ctp-casillero-marcas";
+import {
+  corridaPideCubicacion,
+  fraseDeSalida,
+  MARCA_ORIGEN,
+  MARCA_SALIDA,
+  necesarioDelDia,
+  origenVisibleDeCorrida,
+  type NecesarioDe,
+  textoDeGuia,
+} from "./marcas-del-dia";
 import { fmtM3, fmtPiezas, fmtPt } from "@/lib/forestal/cubicacion-formato";
 import { ptDesdeM3 } from "@/lib/forestal/cubicacion";
 import { nombreCortoDeDueno } from "@/lib/forestal/dueno-de-la-madera";
@@ -44,10 +55,19 @@ interface Props {
   /** Sin estos dos (un rol que no puede corregir), la tabla es de sólo lectura. */
   onEditarCorrida?: (c: CorridaDelDia) => void;
   onEditarEscuadria?: (c: CorridaDelDia, p: PaqueteDelDia) => void;
+  /** Completar una corrida por tipo con su cubicación (ADR-445); sólo en las que lo piden. */
+  onAgregarCubicacion?: (c: CorridaDelDia) => void;
 }
 
-export default function CtpPiezaPorPiezaTabla({ corridas, onEditarCorrida, onEditarEscuadria }: Props) {
+export default function CtpPiezaPorPiezaTabla({
+  corridas,
+  onEditarCorrida,
+  onEditarEscuadria,
+  onAgregarCubicacion,
+}: Props) {
   const total = totalesDeLasCorridas(corridas);
+  /* Una cubicación que ampara varias corridas del día se juzga contra todas. */
+  const necesario = necesarioDelDia(corridas);
   return (
     <Marco
       titulo="Cada paquete de cada corrida, con su escuadría"
@@ -75,6 +95,8 @@ export default function CtpPiezaPorPiezaTabla({ corridas, onEditarCorrida, onEdi
           corrida={c}
           onEditarCorrida={onEditarCorrida}
           onEditarEscuadria={onEditarEscuadria}
+          onAgregarCubicacion={onAgregarCubicacion}
+          necesario={necesario}
         />
       ))}
       <tfoot>
@@ -98,12 +120,18 @@ function GrupoDeCorrida({
   corrida: c,
   onEditarCorrida,
   onEditarEscuadria,
+  onAgregarCubicacion,
+  necesario,
 }: {
   corrida: CorridaDelDia;
+  necesario: NecesarioDe;
   onEditarCorrida?: Props["onEditarCorrida"];
   onEditarEscuadria?: Props["onEditarEscuadria"];
+  onAgregarCubicacion?: Props["onAgregarCubicacion"];
 }) {
   const x = cifrasDeLaCorrida(c);
+  /* Origen y salida de la corrida (ADR-445): sin el dato, sin marcas. */
+  const os = c.origenYSalida;
   const dueno = c.dueno !== SIN_DUENO ? nombreCortoDeDueno(c.dueno) : null;
   return (
     /* Un `<tbody>` por corrida: su cabecera y sus paquetes se leen como un grupo. */
@@ -117,6 +145,30 @@ function GrupoDeCorrida({
               N.º <span className="tabular-nums">{c.lineNo}</span> · {c.especie ?? "sin especie"}
             </b>
             {dueno && <span className="text-[var(--text-secondary)]">· {dueno}</span>}
+            {os && (
+              <>
+                <MarcaConTexto marca={MARCA_ORIGEN[origenVisibleDeCorrida(os, necesario)]} />
+                <MarcaConTexto
+                  marca={MARCA_SALIDA[os.salida.estado]}
+                  etiqueta={fraseDeSalida(os.salida.estado, os.salida.guias)}
+                />
+                {os.salida.guias.length > 0 && (
+                  <span className="font-mono text-xs text-[var(--text-secondary)]">
+                    {os.salida.guias.map(textoDeGuia).join(" · ")}
+                  </span>
+                )}
+              </>
+            )}
+            {onAgregarCubicacion && corridaPideCubicacion(os, necesario) && (
+              <button
+                type="button"
+                onClick={() => onAgregarCubicacion(c)}
+                aria-label={`Agregar la cubicación de la corrida N.º ${c.lineNo}`}
+                className={BOTON_CORRIDA}
+              >
+                <Ruler className="h-3.5 w-3.5" aria-hidden /> Agregar cubicación
+              </button>
+            )}
             {onEditarCorrida && (
               <button
                 type="button"

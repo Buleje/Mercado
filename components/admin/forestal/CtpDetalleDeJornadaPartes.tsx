@@ -8,6 +8,7 @@
  */
 
 import type { ReactNode } from "react";
+import { BarChart3, Loader2, Ruler, Trash2 } from "@buleje/design-system/icons";
 import { Kicker } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import { SIN_DUENO, type DetalleDeJornada } from "@/lib/forestal/detalle-de-jornada";
@@ -18,16 +19,28 @@ export function Bloque({
   titulo,
   children,
   listaClassName,
+  extra,
 }: {
   titulo: string;
   children: ReactNode;
   listaClassName?: string;
+  /** Al lado del título: la marca del bloque (ADR-445). */
+  extra?: ReactNode;
 }) {
   return (
     <section className="mt-2 border-t border-[var(--rule-soft)] pt-1.5">
-      <Kicker as="h5" className="block">
-        {titulo}
-      </Kicker>
+      {extra ? (
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <Kicker as="h5" className="block">
+            {titulo}
+          </Kicker>
+          {extra}
+        </div>
+      ) : (
+        <Kicker as="h5" className="block">
+          {titulo}
+        </Kicker>
+      )}
       <ul className={cn("mt-0.5 flex flex-col", listaClassName)}>{children}</ul>
     </section>
   );
@@ -124,5 +137,62 @@ export function FranjaDelDia({
         </DatoDeFranja>
       )}
     </dl>
+  );
+}
+
+const BOTON =
+  "inline-flex min-h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-bold";
+
+/**
+ * Los botones del pie del detalle. «Ver qué salió» va ÚLTIMO: Tab en el último
+ * control del panel cierra y vuelve al ícono, y es la acción de todos los días.
+ */
+export function AccionesDelDetalle({
+  onAnular,
+  anulando,
+  onAgregarCubicacion,
+  onVerResumen,
+}: {
+  onAnular?: () => void;
+  anulando: boolean;
+  /** Sólo en un día por tipo o mixto (ADR-445). */
+  onAgregarCubicacion?: () => void;
+  onVerResumen: () => void;
+}) {
+  return (
+    <div className="mt-2.5 flex flex-wrap gap-2">
+      {onAnular && (
+        <button
+          type="button"
+          onClick={onAnular}
+          disabled={anulando}
+          className={`${BOTON} border-[var(--data-error-500)]/50 text-[var(--data-error-700)] hover:bg-[var(--data-error-500)]/10 disabled:opacity-60 dark:text-[var(--data-error-500)]`}
+        >
+          {anulando ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+          ) : (
+            <Trash2 className="h-3.5 w-3.5" aria-hidden />
+          )}
+          Anular el día
+        </button>
+      )}
+      {onAgregarCubicacion && (
+        <button
+          type="button"
+          onClick={onAgregarCubicacion}
+          title="Vincular la pieza por pieza a lo declarado por tipo, sin cambiar los m³"
+          className={`${BOTON} border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]`}
+        >
+          <Ruler className="h-3.5 w-3.5" aria-hidden /> Agregar cubicación
+        </button>
+      )}
+      <button
+        type="button"
+        onClick={onVerResumen}
+        className={`${BOTON} grow border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] hover:bg-primary/15 dark:text-[var(--accent)]`}
+      >
+        <BarChart3 className="h-3.5 w-3.5" aria-hidden /> Ver qué salió ese día
+      </button>
+    </div>
   );
 }

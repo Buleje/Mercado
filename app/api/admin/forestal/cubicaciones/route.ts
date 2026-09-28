@@ -3,7 +3,12 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
-import { ForestCubicacionesDB } from "@/lib/db/forest-cubicaciones.db";
+import {
+  CubicacionDesactualizadaError,
+  CubicacionVinculoError,
+  ForestCubicacionesDB,
+} from "@/lib/db/forest-cubicaciones.db";
+import { corridasDeCubicacion } from "@/lib/forestal/cubicacion-registro";
 import { ForestCtpDespachoDB } from "@/lib/db/forest-ctp-despacho.db";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
@@ -57,6 +62,9 @@ const saveSchema = z.object({
    *  (ADR-369): un camión se cubica entero contra los N paquetes que salen. */
   ctpEntryIds: z.array(z.string().trim().min(1).max(60)).max(100).optional(),
   gtfNumber: z.string().trim().max(60).nullish(),
+  /** `updatedAt` de la versión que se leyó (ADR-445): si la guardada es otra,
+   *  409 en vez de reescribir piezas viejas. Opcional: sin él, como siempre. */
+  updatedAt: z.string().trim().max(40).optional(),
   // Una cubicación de patio no pasa de unos cientos de filas; el tope protege
   // el KV (es un JSON) sin estorbar el uso real.
   piezas: z.array(piezaSchema).min(1).max(1000),
@@ -88,7 +96,12 @@ export const GET = withApiHandler("forestal-cubicaciones-get", async (req: NextR
     if (despachoId) {
       const origenes = await ForestCtpDespachoDB.listByDespacho(auth.tenantId, despachoId);
       const producciones = new Set(origenes.map((o) => o.produccionEntryId));
-      const sugeridas = cubicaciones.filter((c) => c.ctpEntryId && producciones.has(c.ctpEntryId)).map((c) => c.id);
+      /* TODAS las corridas que ampara (ADR-445): con sólo `ctpEntryId` —la
+         primera— un camión cubicado entero no aparecía si el despacho salía
+         de la segunda corrida. */
+      const sugeridas = cubicaciones
+        .filter((c) => corridasDeCubicacion(c).some((id) => producciones.has(id)))
+        .map((c) => c.id);
       return NextResponse.json({ cubicaciones, sugeridas });
     }
     return NextResponse.json({ cubicaciones });
@@ -118,10 +131,11 @@ export const POST = withApiHandler("forestal-cubicaciones-post", async (req: Nex
     );
   }
   try {
+    const { updatedAt: updatedAtLeido, ...datos } = parsed.data;
     const cubicacion = await ForestCubicacionesDB.save(
       auth.tenantId,
       {
-        ...parsed.data,
+        ...datos,
         cliente: parsed.data.cliente ?? undefined,
         especie: parsed.data.especie ?? undefined,
         notas: parsed.data.notas ?? undefined,
@@ -130,9 +144,18 @@ export const POST = withApiHandler("forestal-cubicaciones-post", async (req: Nex
         piezas: parsed.data.piezas as unknown as Record<string, unknown>[],
       },
       auth.username ?? "unknown",
+      { updatedAtLeido },
     );
     return NextResponse.json({ cubicacion }, { status: parsed.data.id ? 200 : 201 });
   } catch (err) {
+    /* Una corrida que no existe, es de otro negocio, está anulada o no es de
+       producción no se liga (ADR-445): 422 con el motivo, no un 500. */
+    if (err instanceof CubicacionDesactualizadaError) {
+      return NextResponse.json({ error: "cubicacion_desactualizada", message: err.message, updatedAt: err.actual }, { status: 409 });
+    }
+    if (err instanceof CubicacionVinculoError) {
+      return NextResponse.json({ error: "vinculo_invalido", message: err.message, ids: err.ids }, { status: 422 });
+    }
     logger.error("[cubicaciones.POST] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }

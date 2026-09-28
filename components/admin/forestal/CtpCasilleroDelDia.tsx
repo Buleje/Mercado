@@ -26,6 +26,7 @@ import CtpDetalleDeJornada from "./CtpDetalleDeJornada";
 import type { useDetalleFlotante } from "./hooks/use-detalle-flotante";
 import type { JornadaDeProduccion } from "./hooks/use-jornadas-produccion";
 import { cuantos, type NombreDeLaTira } from "./tira-de-dias-copy";
+import { MarcasDelCasillero } from "./ctp-casillero-marcas";
 
 interface Props {
   iso: string;
@@ -50,6 +51,10 @@ interface Props {
   onAnular?: () => void;
   /** Se está anulando ESTE día: la papelera gira y no se vuelve a pedir. */
   anulando?: boolean;
+  /** Un chip de la semana está prendido (ADR-445): `true` resalta, `false` apaga, `null` nada. */
+  resaltado?: boolean | null;
+  /** Completar un día por tipo con su cubicación (ADR-445); sólo si el día lo pide. */
+  onAgregarCubicacion?: () => void;
 }
 
 export default function CtpCasilleroDelDia({
@@ -70,6 +75,8 @@ export default function CtpCasilleroDelDia({
   onVerResumen,
   onAnular,
   anulando = false,
+  resaltado = null,
+  onAgregarCubicacion,
 }: Props) {
   /* El detalle sólo si la respuesta lo trae: consumo y despacho no lo piden,
      y una respuesta vieja del caché tampoco lo tiene. */
@@ -80,6 +87,8 @@ export default function CtpCasilleroDelDia({
     .map((d) => nombreCortoDeDueno(d.etiqueta));
   const idPanel = `${idTira}-detalle-${iso}`;
   const puedeAnular = !!onAnular && !!j && esProduccion;
+  /* Origen y salida (ADR-445): sin el dato no hay marca — no se inventa. */
+  const os = esProduccion ? j?.origenYSalida : undefined;
   /* Antes de preguntar se cierra el detalle: con el panel abierto, su Escape
      (en `window`, captura) se comería el Escape del diálogo de confirmación. */
   const anular = () => {
@@ -142,6 +151,10 @@ export default function CtpCasilleroDelDia({
              dibuja apagado: la mayoría de las veces llegar ahí es haberse
              pasado de semana. */
           futuro && !elegido && "opacity-60",
+          /* Un chip de la semana prendido: los días que coinciden se marcan
+             con un anillo y los demás se apagan (siguen tocables). */
+          resaltado === true && !elegido && "ring-2 ring-[var(--accent)]",
+          resaltado === false && "opacity-40",
         )}
       >
         <span
@@ -189,6 +202,7 @@ export default function CtpCasilleroDelDia({
                 {duenosDelDia.join(" · ")}
               </span>
             )}
+            {os && <MarcasDelCasillero os={os} />}
           </>
         ) : (
           /* El hueco se reserva igual: sin esto la tira baila de altura según
@@ -276,6 +290,14 @@ export default function CtpCasilleroDelDia({
               }}
               onAnular={puedeAnular ? anular : undefined}
               anulando={anulando}
+              onAgregarCubicacion={
+                onAgregarCubicacion
+                  ? () => {
+                      flotante.cerrar();
+                      onAgregarCubicacion();
+                    }
+                  : undefined
+              }
             />
           )}
         </>

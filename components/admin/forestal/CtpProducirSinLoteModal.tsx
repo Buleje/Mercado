@@ -34,7 +34,7 @@
  * trazabilidad.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Boxes, Calculator, X } from "@buleje/design-system/icons";
+import { Boxes, Calculator, Ruler, X } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
 import { fmtPiezas } from "@/lib/forestal/cubicacion-formato";
@@ -51,6 +51,8 @@ import { gruposPorDueno } from "@/lib/forestal/declarar-por-dueno";
 import CubicadorMadera from "./CubicadorMadera";
 import CtpDeclararProduccionModal from "./CtpDeclararProduccionModal";
 import CtpVincularMixtoModal from "./CtpVincularMixtoModal";
+import CtpVincularCubicacionModal from "./CtpVincularCubicacionModal";
+import { diaPideCubicacion } from "./marcas-del-dia";
 import CtpSemanaDeProduccion from "./CtpSemanaDeProduccion";
 import { useJornadasDeProduccion } from "./hooks/use-jornadas-produccion";
 import { useTrozasParaCodigo } from "./hooks/use-trozas-para-codigo";
@@ -106,6 +108,10 @@ export default function CtpProducirSinLoteModal({
      sobre el mismo dato tienen que contarse lo que pasó. */
   const [semana, setSemana] = useState(fecha);
   const jornadas = useJornadasDeProduccion(semana);
+  /* El día elegido está declarado por tipo (ADR-445): el pie ofrece completarlo
+     con su cubicación sin abrir el detalle. */
+  const [cubicandoDia, setCubicandoDia] = useState(false);
+  const pideCubicacion = diaPideCubicacion(jornadas.porDia.get(fecha)?.origenYSalida);
 
   /* Las trozas del patio para el campo «Código» del cubicador: se leen UNA
      vez con el modal, y «Declarar» las reusa para proponer el permiso. */
@@ -277,6 +283,16 @@ export default function CtpProducirSinLoteModal({
                       especies === 1 ? "especie: 1 corrida" : `especies: ${especies} corridas`
                     }`}
           </span>
+          {pideCubicacion && (
+            <button
+              type="button"
+              onClick={() => setCubicandoDia(true)}
+              title="El día elegido está declarado por tipo: vincúlale su pieza por pieza sin cambiar los m³"
+              className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] transition hover:border-[var(--accent)] hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
+            >
+              <Ruler className="h-4 w-4" aria-hidden /> Agregar cubicación al día
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setDeclarando(true)}
@@ -328,6 +344,17 @@ export default function CtpProducirSinLoteModal({
           onCambioEnElLibro?.();
         }}
       />
+      {cubicandoDia && (
+        <CtpVincularCubicacionModal
+          aboveModals
+          dia={fecha}
+          onClose={() => setCubicandoDia(false)}
+          onVinculada={() => {
+            void jornadas.recargar();
+            onCambioEnElLibro?.();
+          }}
+        />
+      )}
       {vincular && (
         <CtpVincularMixtoModal
           aboveModals

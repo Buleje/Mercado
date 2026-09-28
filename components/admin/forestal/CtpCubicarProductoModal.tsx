@@ -19,6 +19,7 @@
 import { useMemo, useState } from "react";
 import { AlertTriangle, Check, FileText, Loader2, Plus, Save, Trash2 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import EncimaDeRadix from "@/components/admin/shared/encima-de-radix";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { cubicarPieza, type PiezaCubicada, type Unidad } from "@/lib/forestal/cubicacion";
 import { CtpEspecieSelect, CtpEspeciesBoton, useEspeciesConCatalogo } from "./ctp-especie-campo";
@@ -32,6 +33,11 @@ import {
 import { hoyISO, type CubicacionRegistro } from "@/lib/forestal/cubicacion-registro";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { useCubicacionesGuardadas } from "@/hooks/use-cubicaciones-guardadas";
+import {
+  cuerpoDelVinculo,
+  esDesactualizada,
+  MENSAJE_DESACTUALIZADA,
+} from "./hooks/use-vincular-cubicacion";
 import { CeldaNum, useTecladoGrilla } from "./celdas-excel";
 import { TipoSelect } from "./tipo-badge";
 import Anexo04Modal from "./Anexo04Modal";
@@ -99,6 +105,8 @@ export default function CtpCubicarProductoModal({
   titulo,
   onClose,
   onGuardada,
+  aboveModals = false,
+  validarAtadura,
 }: {
   /**
    * Las filas del libro contra las que se cuadra. Una sola (el paquete de esa
@@ -111,6 +119,15 @@ export default function CtpCubicarProductoModal({
   titulo: string;
   onClose: () => void;
   onGuardada: (mensaje: string, registro?: CubicacionRegistro) => void;
+  /** Se abre desde otro modal («Agregar cubicación» de un día, ADR-445). */
+  aboveModals?: boolean;
+  /**
+   * Guardar ATA la medición a `ctpEntryIds` y tiene que cuadrar: devuelve por
+   * qué no (o `null`). Con esto no hay «Guardar igual» ni «usar una guardada»
+   * — reusar una ya atada se decide en «Agregar cubicación», que cuadra contra
+   * todo lo que ampara.
+   */
+  validarAtadura?: (piezas: PiezaCubicada[]) => string | null;
 }) {
   /** Cuando se cuadra contra UNA sola fila se puede además mirar su tipo. */
   const unica = declaradas.length === 1 ? declaradas[0] : null;
@@ -140,6 +157,9 @@ export default function CtpCubicarProductoModal({
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [forzar, setForzar] = useState(false);
+  /* 409 al reusar una guardada: otra persona la cambió. La grilla tiene sus
+     piezas VIEJAS: no se guardan hasta volver a elegirla (y traer las nuevas). */
+  const [desactualizada, setDesactualizada] = useState(false);
   const [verAnexo, setVerAnexo] = useState(false);
 
   const piezas = useMemo(() => filas.map(cubicar).filter((p): p is PiezaCubicada => p !== null), [filas]);
@@ -185,24 +205,41 @@ export default function CtpCubicarProductoModal({
       }),
   });
 
+  /* Abierto para ATAR a corridas (ADR-445, «Agregar cubicación»): guardar exige
+     cuadrar con la regla de allá, y no hay «Guardar igual» — una medición que
+     no explica lo declarado dejaba el día en verde (revisión 27-09). */
+  const motivoAtadura = validarAtadura && piezas.length > 0 ? validarAtadura(piezas) : null;
+
   async function guardar() {
-    if (piezas.length === 0) return;
-    if (hayProblema && !forzar) {
+    if (piezas.length === 0 || desactualizada) return;
+    if (motivoAtadura) {
+      setError(motivoAtadura);
+      return;
+    }
+    if (hayProblema && !forzar && !validarAtadura) {
       setForzar(true);
       setError("Mira las diferencias de abajo. Si la medición es la correcta, vuelve a apretar para guardarla igual.");
       return;
     }
     setGuardando(true);
     setError(null);
-    try {
-      const r = await fetch("/api/admin/forestal/cubicaciones", {
-        method: "POST",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        credentials: "include",
-        body: JSON.stringify({
-          /* Reusar una guardada la ACTUALIZA (le agrega las corridas contra las
-             que ahora cuadra) en vez de dejar dos copias de la misma medición. */
-          ...(cargada ? { id: cargada } : {}),
+    /* Reusar una guardada la ACTUALIZA y el servidor reescribe el registro con
+       lo que llega: se parte de la guardada ENTERA (cliente, precio, GTF,
+       notas, fecha, dueño y observación de cada pieza) y se cambia sólo lo que
+       se tocó acá — el nombre, las piezas y las corridas, que se SUMAN.
+       Antes se perdían al re-guardar (revisión 27-09). */
+    const previa = cargada ? guardadas.lista.find((c) => c.id === cargada) : undefined;
+    const originales = new Map((previa?.piezas ?? []).map((p) => [p.id, p]));
+    const cuerpo = previa
+      ? cuerpoDelVinculo(
+          {
+            ...previa,
+            nombre: nombre.trim() || previa.nombre,
+            piezas: piezas.map((p) => ({ ...originales.get(p.id), ...p })),
+          },
+          ctpEntryIds,
+        )
+      : {
           nombre: nombre.trim() || "Cubicación del producto",
           fecha: hoyISO(),
           especie: especieBase || undefined,
@@ -215,10 +252,24 @@ export default function CtpCubicarProductoModal({
           piezas: piezas.map((p) => ({
             id: p.id, cantidad: p.cantidad, espesor: p.espesor, ancho: p.ancho, largo: p.largo,
             uEspesor: p.uEspesor, uAncho: p.uAncho, uLargo: p.uLargo, especie: p.especie ?? null,
+            tipo: p.tipo ?? null,
           })),
-        }),
+        };
+    try {
+      const r = await fetch("/api/admin/forestal/cubicaciones", {
+        method: "POST",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        credentials: "include",
+        body: JSON.stringify(cuerpo),
       });
       const j = (await r.json().catch(() => ({}))) as { cubicacion?: CubicacionRegistro; message?: string; error?: string };
+      if (esDesactualizada(r.status, j)) {
+        setDesactualizada(true);
+        setCargada("");
+        guardadas.recargar();
+        setError(MENSAJE_DESACTUALIZADA);
+        return;
+      }
       if (!r.ok) throw new Error(j?.message ?? j?.error ?? `El servidor respondió ${r.status}`);
       onGuardada(
         `Cubicación guardada: ${totales.piezas} piezas · ${fmtPt(totales.pieTablar)} pt · ${fmtM3(totales.m3)} m³` +
@@ -235,6 +286,7 @@ export default function CtpCubicarProductoModal({
   return (
     <AdminModal
       open
+      aboveModals={aboveModals}
       onClose={guardando ? () => {} : onClose}
       variant="info"
       icon={FileText}
@@ -246,7 +298,7 @@ export default function CtpCubicarProductoModal({
       }
       footer={
         <ModalFooter
-          error={error}
+          error={error ?? (motivoAtadura ? `Para atarla tiene que cuadrar: ${motivoAtadura}` : null)}
           nota={
             <span className="font-mono tabular-nums">
               {totales.piezas} pza · {fmtPt(totales.pieTablar)} pt · {fmtM3(totales.m3)} m³
@@ -257,7 +309,11 @@ export default function CtpCubicarProductoModal({
           <Btn variant="secondary" disabled={piezas.length === 0} onClick={() => setVerAnexo(true)}>
             <FileText className="h-4 w-4" /> ANEXO N° 04
           </Btn>
-          <Btn variant="primary" disabled={piezas.length === 0 || guardando} onClick={() => void guardar()}>
+          <Btn
+            variant="primary"
+            disabled={piezas.length === 0 || guardando || !!motivoAtadura || desactualizada}
+            onClick={() => void guardar()}
+          >
             {guardando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             {forzar && hayProblema ? "Guardar igual" : "Guardar cubicación"}
           </Btn>
@@ -355,7 +411,7 @@ export default function CtpCubicarProductoModal({
           </TablaCtp>
         )}
 
-        {guardadas.lista.length > 0 && (
+        {guardadas.lista.length > 0 && !validarAtadura && (
           <label className="block">
             <span className="mb-1 block text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
               Usar una cubicación ya guardada
@@ -368,6 +424,8 @@ export default function CtpCubicarProductoModal({
                 setCargada(id);
                 const reg = guardadas.lista.find((c) => c.id === id);
                 if (!reg) return;
+                setDesactualizada(false);
+                setError(null);
                 /* Las piezas vuelven a la grilla tal como se guardaron: se puede
                    corregir una y el cuadre se recalcula, pero no se re-mide. */
                 setFilas(
@@ -527,14 +585,28 @@ export default function CtpCubicarProductoModal({
 
       {catalogoEspecies.modal}
 
-      {verAnexo && (
-        <Anexo04Modal
-          rows={piezas}
-          especieGlobal={especieBase || undefined}
-          ctpEntryId={ctpEntryIds[0]}
-          onCerrar={() => setVerAnexo(false)}
-        />
-      )}
+      {verAnexo &&
+        (aboveModals ? (
+          /* Encima de otro modal (`z-modal-3`): el anexo, hecho a mano, nace en
+             `z-modal` y quedaba detrás. Mismo arreglo que `CtpAnexoDeLosDias`. */
+          <EncimaDeRadix titulo="ANEXO N° 04">
+            <div className="relative z-modal-3">
+              <Anexo04Modal
+                rows={piezas}
+                especieGlobal={especieBase || undefined}
+                ctpEntryId={ctpEntryIds[0]}
+                onCerrar={() => setVerAnexo(false)}
+              />
+            </div>
+          </EncimaDeRadix>
+        ) : (
+          <Anexo04Modal
+            rows={piezas}
+            especieGlobal={especieBase || undefined}
+            ctpEntryId={ctpEntryIds[0]}
+            onCerrar={() => setVerAnexo(false)}
+          />
+        ))}
     </AdminModal>
   );
 }

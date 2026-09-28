@@ -7,12 +7,18 @@
  * un lote anterior y la tendencia del mix): con el fetch adentro de uno, el otro
  * se quedaba sin datos o se pedía dos veces la misma lista.
  */
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { CubicacionRegistro } from "@/lib/forestal/cubicacion-registro";
 
-export function useCubicacionesGuardadas(): { lista: CubicacionRegistro[]; cargando: boolean } {
+export function useCubicacionesGuardadas(): {
+  lista: CubicacionRegistro[];
+  cargando: boolean;
+  /** Vuelve a leer (ADR-445: tras un 409, la guardada que se tenía ya no es la vigente). */
+  recargar: () => void;
+} {
   const [lista, setLista] = useState<CubicacionRegistro[]>([]);
   const [cargando, setCargando] = useState(true);
+  const [version, setVersion] = useState(0);
 
   useEffect(() => {
     let vivo = true;
@@ -23,7 +29,12 @@ export function useCubicacionesGuardadas(): { lista: CubicacionRegistro[]; carga
       .catch(() => { if (vivo) setLista([]); })
       .finally(() => { if (vivo) setCargando(false); });
     return () => { vivo = false; };
+  }, [version]);
+
+  const recargar = useCallback(() => {
+    setCargando(true);
+    setVersion((v) => v + 1);
   }, []);
 
-  return { lista, cargando };
+  return { lista, cargando, recargar };
 }

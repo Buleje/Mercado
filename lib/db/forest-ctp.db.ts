@@ -56,7 +56,9 @@ import {
   type DuenosPorDia,
   type ResumenDeJornadas,
 } from "@/lib/forestal/resumen-de-jornadas";
-import type { CorridaDelDia } from "@/lib/forestal/piezas-del-dia";
+import { conOrigenYSalida, type CorridaDelDia } from "@/lib/forestal/piezas-del-dia";
+import type { CorridaParaOrigenYSalida, CubicacionParaVincular } from "@/lib/forestal/origen-y-salida-del-dia";
+import { ForestCubicacionesDB } from "./forest-cubicaciones.db";
 import { agregarSinOrigen, type CorridaSinOrigen } from "@/lib/forestal/loctp-consumos-analisis";
 import { reservasVencidas, type ReservaVencida } from "@/lib/forestal/reservas-vencidas";
 import { limaDateKey } from "@/lib/utils";
@@ -616,6 +618,131 @@ export function despachoKey(
 function diasDeJornadas(dias: readonly string[]): string[] {
   const formato = /^\d{4}-\d{2}-\d{2}$/;
   return [...new Set(dias.filter((d) => formato.test(d)))].slice(0, 31).sort();
+}
+
+/**
+ * Lo que el origen y la salida de un día piden de cada corrida (ADR-445), para
+ * ir ANIDADO en la misma consulta de las corridas (nunca una por corrida):
+ * sus salidas VIGENTES con el despacho que se la lleva —y si ese despacho es
+ * una salida de trozas, cuyo código es de una pieza y no nombra paquete—, la
+ * marca «usado» y las reservas vivas.
+ */
+const SELECT_ORIGEN_Y_SALIDA = {
+  usadoAt: true,
+  salidas: {
+    where: { despacho: ORIGEN_VIGENTE.despacho },
+    select: {
+      quantity: true,
+      despacho: {
+        select: {
+          id: true,
+          lineNo: true,
+          gtfNumber: true,
+          entryDate: true,
+          codigoProducto: true,
+          _count: { select: { trozasDespachadas: true } },
+        },
+      },
+    },
+  },
+  apartados: { where: { liberadoAt: null }, select: { paqueteId: true } },
+} satisfies Prisma.ForestCtpEntrySelect;
+
+/** Los paquetes con lo que decide si se cubicaron (su escuadría explica su m³). */
+const SELECT_PAQUETE_ORIGEN = {
+  id: true,
+  codigo: true,
+  cantidad: true,
+  volumenM3: true,
+  espesorCm: true,
+  anchoCm: true,
+  largoM: true,
+} satisfies Prisma.ForestCtpPaqueteSelect;
+
+type DecimalDelLibro = Prisma.Decimal | number | null;
+
+/** Una corrida como sale de una consulta con `SELECT_ORIGEN_Y_SALIDA` + paquetes. */
+interface FilaConOrigen {
+  id: string;
+  quantity: DecimalDelLibro;
+  unit: string | null;
+  usadoAt: Date | null;
+  paquetes: {
+    id: string;
+    codigo: string;
+    cantidad: number;
+    volumenM3: DecimalDelLibro;
+    espesorCm: DecimalDelLibro;
+    anchoCm: DecimalDelLibro;
+    largoM: DecimalDelLibro;
+  }[];
+  salidas: {
+    quantity: DecimalDelLibro;
+    despacho: {
+      id: string;
+      lineNo: number;
+      gtfNumber: string | null;
+      entryDate: Date;
+      codigoProducto: string | null;
+      _count: { trozasDespachadas: number };
+    };
+  }[];
+  apartados: { paqueteId: string | null }[];
+}
+
+/**
+ * El resto de lo que pide el origen y la salida (ADR-445), en DOS lecturas para
+ * todas las corridas juntas: el saldo —`saldosDeCorridas`, la única fuente de
+ * despachado/reprocesado (ADR-316)— y el KV de cubicaciones, UNA vez.
+ */
+async function datosDeOrigenYSalida(
+  tenantId: string,
+  filas: readonly FilaConOrigen[],
+): Promise<{ porCorrida: Map<string, CorridaParaOrigenYSalida>; cubicaciones: CubicacionParaVincular[] }> {
+  if (filas.length === 0) return { porCorrida: new Map(), cubicaciones: [] };
+  const [saldos, cubicaciones] = await Promise.all([
+    saldosDeCorridas(
+      prisma,
+      tenantId,
+      filas.map((f) => f.id),
+    ),
+    ForestCubicacionesDB.paraVincular(tenantId),
+  ]);
+  const n = (v: DecimalDelLibro) => (v == null ? null : Number(v));
+  const porCorrida = new Map<string, CorridaParaOrigenYSalida>();
+  for (const f of filas) {
+    const saldo = saldos.get(f.id);
+    porCorrida.set(f.id, {
+      id: f.id,
+      cantidad: n(f.quantity),
+      /* El m³ del casillero: sólo si el asiento está en m³ (ver `m3Declarado`). */
+      m3Declarado: !f.unit || f.unit === "m3" ? Number(f.quantity ?? 0) : 0,
+      usado: f.usadoAt != null,
+      despachado: saldo?.despachado ?? 0,
+      reprocesado: saldo?.reprocesado ?? 0,
+      paquetes: f.paquetes.map((q) => ({
+        id: q.id,
+        codigo: q.codigo,
+        cantidad: q.cantidad,
+        volumenM3: Number(q.volumenM3 ?? 0),
+        espesorCm: n(q.espesorCm),
+        anchoCm: n(q.anchoCm),
+        largoM: n(q.largoM),
+      })),
+      salidas: f.salidas.map((s) => ({
+        despachoEntryId: s.despacho.id,
+        lineNo: s.despacho.lineNo,
+        gtfNumber: s.despacho.gtfNumber,
+        /* Date-only: el día UTC, como todo el módulo. */
+        fecha: s.despacho.entryDate.toISOString().slice(0, 10),
+        m3: Number(s.quantity ?? 0),
+        codigoProducto: s.despacho.codigoProducto,
+        esSalidaDeTrozas: s.despacho._count.trozasDespachadas > 0,
+      })),
+      apartados: f.apartados,
+    });
+  }
+  return { porCorrida, cubicaciones };
 }
 
 /**
@@ -1881,8 +2008,12 @@ export class ForestCtpDB {
         materiaPrimaRef: true,
         paquetes: {
           where: { deletedAt: null },
-          select: { productType: true, cantidad: true, volumenM3: true },
+          select: { productType: true, ...SELECT_PAQUETE_ORIGEN },
         },
+        /* Origen (cubicado / por tipo) y salida (guías) de cada día — ADR-445.
+           Anidado: la semana entera sigue siendo UNA consulta de corridas. */
+        id: true,
+        ...SELECT_ORIGEN_Y_SALIDA,
       },
       /* El orden del libro: dentro de un día, por N.º. El detalle suma en este
          orden y muestra el nombre de especie de la corrida más vieja. */
@@ -1890,6 +2021,13 @@ export class ForestCtpDB {
       /* Un rango de semanas, no de años: el tope es una red, no una página. */
       take: 2000,
     });
+
+    /* Saldo y cubicaciones ligadas: dos lecturas más para toda la semana, y
+       sólo en producción (consumo y despacho no tienen origen de paquetes). */
+    const { porCorrida, cubicaciones } =
+      seccion === "produccion"
+        ? await datosDeOrigenYSalida(tenantId, filas)
+        : { porCorrida: new Map<string, CorridaParaOrigenYSalida>(), cubicaciones: [] };
 
     /* La cuenta vive en `jornadasDesdeFilas` (pura y probada): acá sólo se
        traduce cada asiento a su día UTC y a los conteos de sus puentes. */
@@ -1910,8 +2048,10 @@ export class ForestCtpDB {
         lineaProduccion: f.lineaProduccion,
         materiaPrimaRef: f.materiaPrimaRef,
         paquetes: f.paquetes,
+        corrida: porCorrida.get(f.id),
       })),
       seccion,
+      cubicaciones,
     );
   }
 
@@ -2061,6 +2201,8 @@ export class ForestCtpDB {
         },
         consumos: { select: { woodEntry: { select: { gtfNumber: true, originCode: true } } } },
         _count: { select: { salidas: true, reprocesosSalida: true, loteMiembros: true } },
+        /* Origen, salida y cubicaciones ligadas de cada corrida (ADR-445). */
+        ...SELECT_ORIGEN_Y_SALIDA,
       },
       orderBy: [{ entryDate: "asc" }, { lineNo: "asc" }],
       take: 500,
@@ -2141,7 +2283,11 @@ export class ForestCtpDB {
       })),
       soloDuenos,
     );
-    return { ...resumen, detalle: detalle.filter((c) => entraConDuenos(c, soloDuenos)) };
+    /* El origen se arma sobre el día ENTERO y recién después se filtra por
+       dueño: «esta cubicación es sólo de este día» mira todas sus corridas. */
+    const { porCorrida, cubicaciones } = await datosDeOrigenYSalida(tenantId, filas);
+    const conOrigen = conOrigenYSalida(detalle, porCorrida, cubicaciones);
+    return { ...resumen, detalle: conOrigen.filter((c) => entraConDuenos(c, soloDuenos)) };
   }
 
   static async produccionSinMateriaPrima(tenantId: string, limite = 1000) {
