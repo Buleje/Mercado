@@ -43,6 +43,7 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
+import { formatNumber } from "@/lib/format";
 import { auditCtpEsperando, m3 } from "@/lib/forestal/ctp-audit";
 import { closedPeriodOf, type CtpCierrePeriodo } from "@/lib/forestal/ctp-cierre-types";
 import { agruparPorGuia, guiaRecibida } from "@/lib/forestal/consumo-trozas";
@@ -65,6 +66,19 @@ import {
 import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
 import { vivaLinea } from "./wood-entries.db";
 import { aperturaAlConsumir } from "@/lib/forestal/lote-aserrio-coherencia";
+import {
+  type ConsumoDeLaCorrida,
+  type CorridaParaSoltar,
+  type PiezaDeLaCorrida,
+  type ResultadoSoltarTrozas,
+  type VistaDeSoltar,
+  type VistaPreviaDeSoltar,
+  MENSAJE_MOTIVO_SOLTAR,
+  MOTIVO_MIN_SOLTAR,
+  vistaPreviaDeSoltar,
+} from "@/lib/forestal/soltar-trozas";
+import { limpiarMotivo, motivoLegible } from "@/lib/forestal/motivo";
+import { olvidarSimulaciones } from "@/lib/forestal/soltar-trozas-memo";
 
 /** Redondeo a 4 decimales — precisión forestal (m³). */
 const r4 = (n: number) => Math.round(n * 10_000) / 10_000 || 0;
@@ -218,6 +232,141 @@ async function permisoDeLaCorrida(
       })
     : null;
   return permisoRef(corrida.contratoId ?? null, contrato, corrida.originCode ?? null);
+}
+
+/**
+ * Las tres vistas que cambian cuando una corrida gana o pierde su madera: el
+ * libro, los lotes y el patio. Una sola lista para vincular y para soltar.
+ */
+function invalidarVistasDelVinculo(tenantId: string): void {
+  /* Y las simulaciones de «Soltar trozas» guardadas: leyeron el patio de antes. */
+  olvidarSimulaciones(tenantId);
+  for (const prefijo of ["forest-ctp", "forestal:lote-aserrio", "wood-entries"]) {
+    try {
+      invalidateByPrefix(`${prefijo}:${tenantId}`);
+    } catch {
+      /* cache best-effort */
+    }
+  }
+}
+
+type Db = typeof prisma | Prisma.TransactionClient;
+
+/** Una pieza de la corrida como la lee «Soltar trozas». */
+const SELECT_PIEZA_SOLTAR = {
+  id: true,
+  woodEntryId: true,
+  codigoPlanta: true,
+  codificacion: true,
+  especieComun: true,
+  volumenM3: true,
+  fechaConsumo: true,
+  loteAserrioId: true,
+  entry: { select: { gtfNumber: true } },
+  loteAserrio: { select: { id: true, code: true, status: true, produccionEntryId: true, deletedAt: true } },
+} satisfies Prisma.WoodEntryTrozaSelect;
+
+type PiezaLeida = Prisma.WoodEntryTrozaGetPayload<{ select: typeof SELECT_PIEZA_SOLTAR }>;
+
+const piezaDe = (t: PiezaLeida, corridaId: string): PiezaDeLaCorrida => ({
+  id: t.id,
+  woodEntryId: t.woodEntryId,
+  gtfNumber: t.entry.gtfNumber,
+  codigo: t.codigoPlanta?.trim() || t.codificacion?.trim() || null,
+  especie: t.especieComun,
+  m3: Number(t.volumenM3 ?? 0) || 0,
+  fechaConsumo: t.fechaConsumo ? diaDelLibro(t.fechaConsumo) : null,
+  lote: t.loteAserrio
+    ? {
+        id: t.loteAserrio.id,
+        code: t.loteAserrio.code,
+        status: t.loteAserrio.status,
+        deEstaCorrida: t.loteAserrio.produccionEntryId === corridaId,
+        borrado: t.loteAserrio.deletedAt != null,
+      }
+    : null,
+});
+
+/**
+ * La corrida con sus piezas y sus m³ por guía: la MISMA lectura para la vista
+ * previa (cliente global) y para la decisión (dentro de la tx, bajo lock).
+ * `null` = no existe en este negocio (o está borrada).
+ */
+async function leerParaSoltar(
+  db: Db,
+  tenantId: string,
+  corridaId: string,
+  cierres: CtpCierrePeriodo[],
+): Promise<(VistaDeSoltar & { section: string; status: string; entryDate: Date; piezasLeidas: PiezaLeida[] }) | null> {
+  const c = await db.forestCtpEntry.findFirst({
+    where: { id: corridaId, tenantId, deletedAt: null },
+    select: {
+      id: true,
+      lineNo: true,
+      section: true,
+      status: true,
+      entryDate: true,
+      speciesCommon: true,
+      quantity: true,
+      unit: true,
+      volumeInputM3: true,
+      rendimientoPct: true,
+    },
+  });
+  if (!c) return null;
+  /* En serie: dentro de una tx es UNA conexión. */
+  const filas = await db.woodEntryTroza.findMany({
+    where: { tenantId, consumidaEnId: corridaId },
+    select: SELECT_PIEZA_SOLTAR,
+    orderBy: [{ woodEntryId: "asc" }, { orden: "asc" }],
+  });
+  const consumos = await db.forestCtpConsumo.findMany({
+    where: { tenantId, ctpEntryId: corridaId },
+    select: { woodEntryId: true, volumeM3: true, congeladoAt: true, woodEntry: { select: { gtfNumber: true } } },
+  });
+  const corrida: CorridaParaSoltar = {
+    id: c.id,
+    lineNo: c.lineNo,
+    fecha: diaDelLibro(c.entryDate) ?? "",
+    especie: c.speciesCommon,
+    producido: c.quantity == null ? null : Number(c.quantity),
+    unit: c.unit,
+    volumenEntradaM3: c.volumeInputM3 == null ? null : Number(c.volumeInputM3),
+    rendimientoPct: c.rendimientoPct == null ? null : Number(c.rendimientoPct),
+    congelado: consumos.some((x) => x.congeladoAt != null),
+    mesCerrado: closedPeriodOf(cierres, c.entryDate)?.label ?? null,
+  };
+  const deConsumo: ConsumoDeLaCorrida[] = consumos.map((x) => ({
+    woodEntryId: x.woodEntryId,
+    gtfNumber: x.woodEntry.gtfNumber,
+    m3: Number(x.volumeM3),
+  }));
+  return {
+    corrida,
+    piezas: filas.map((t) => piezaDe(t, corridaId)),
+    consumos: deConsumo,
+    section: c.section,
+    status: c.status,
+    entryDate: c.entryDate,
+    piezasLeidas: filas,
+  };
+}
+
+export interface SoltarTrozasInput {
+  corridaId: string;
+  trozaIds: string[];
+  motivo: string;
+}
+
+/** Lo que `soltarTrozasEnTx` escribió: lo que `despuesDeSoltar` narra y devuelve. */
+export interface SoltadoEscrito {
+  corridaId: string;
+  corrida: { lineNo: number; speciesCommon: string | null };
+  vista: VistaPreviaDeSoltar;
+  /** Código de cada pieza suelta, para el renglón del libro. */
+  codigos: string[];
+  motivo: string;
+  escritos: ConsumosEscritos;
 }
 
 export class ForestVincularCorridaDB {
@@ -649,13 +798,7 @@ export class ForestVincularCorridaDB {
     const { corridaId, corrida, porParte, volumenTotal, rendimientoPct, lotesConsumidos, escritos } = escrito;
     /* La caché primero: mientras se escriben los renglones, otra pantalla ya
        tiene que ver la corrida vinculada. */
-    for (const prefijo of ["forest-ctp", "forestal:lote-aserrio", "wood-entries"]) {
-      try {
-        invalidateByPrefix(`${prefijo}:${tenantId}`);
-      } catch {
-        /* cache best-effort */
-      }
-    }
+    invalidarVistasDelVinculo(tenantId);
     await ForestCtpConsumoDB.despuesDeConsumos(tenantId, corridaId, escritos, usuario);
     const piezas = porParte.reduce((a, p) => a + p.piezas, 0);
     const sobreElTope = pasaElTope(rendimientoPct);
@@ -692,6 +835,378 @@ export class ForestVincularCorridaDB {
         loteConsumido: consumidos.has(p.loteId),
       })),
       lotesConsumidos,
+      consumos: escritos.consumos.map((c) => ({
+        woodEntryId: c.woodEntryId,
+        gtfNumber: c.woodEntry.gtfNumber,
+        volumenM3: Number(c.volumeM3),
+      })),
+    };
+  }
+
+  // ── Soltar trozas (ADR-447 §6): el reverso, sin anular la corrida ────────
+
+  /**
+   * La corrida con sus piezas y sus m³ por guía, para la vista previa de
+   * «Soltar trozas». `null` = no existe en este negocio. Sólo lee.
+   */
+  static async vistaDeSoltar(tenantId: string, corridaId: string): Promise<VistaDeSoltar | null> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const cierres = await ForestCtpCierreDB.list(tenantId);
+    const leida = await leerParaSoltar(prisma, tenantId, corridaId, cierres);
+    if (!leida || leida.section !== "produccion") return null;
+    return { corrida: leida.corrida, piezas: leida.piezas, consumos: leida.consumos };
+  }
+
+  /**
+   * SUELTA piezas de una corrida: vuelven al patio y la corrida conserva lo
+   * que produjo. Todo o nada, en UNA transacción; la auditoría (esperada) y la
+   * caché, después del commit.
+   */
+  static async soltarTrozas(
+    tenantId: string,
+    input: SoltarTrozasInput,
+    usuario: string,
+  ): Promise<Extract<ResultadoSoltarTrozas, { ok: true }>> {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (!usuario?.trim()) throw new Error("usuario is required");
+    /* Los cierres ANTES de abrir la tx (un KV del cliente global: adentro
+       pediría otra conexión con la de la tx tomada). */
+    const cierres = await ForestCtpCierreDB.list(tenantId);
+    const escrito = await prisma.$transaction(
+      (tx) => ForestVincularCorridaDB.soltarTrozasEnTx(tx, tenantId, input, usuario, { cierres }),
+      CTP_TX_OPTS,
+    );
+    return ForestVincularCorridaDB.despuesDeSoltar(tenantId, escrito, usuario);
+  }
+
+  /**
+   * El núcleo de `soltarTrozas` dentro de una transacción ajena.
+   *
+   * Orden de locks, el del libro (memoria `orden-de-locks-del-libro`):
+   * corrida → lotes de las piezas (`ORDER BY id`) → piezas (`ORDER BY id`) →
+   * guías (I2, dentro de `setConsumosEnTx`). Dos pestañas que sueltan la misma
+   * pieza se turnan en el lock de la corrida: la segunda ve que ya no está y se
+   * rechaza, nunca se resta dos veces.
+   *
+   * Qué rechaza, y por qué:
+   *  · La corrida no vigente, un mes cerrado (el de la corrida o el día en que
+   *    la pieza entró a la sierra) y el costo congelado: el acta no se toca.
+   *  · Una pieza que no está en ESTA corrida (otra pestaña ya la soltó): el
+   *    libro cambió entre la lista y el pedido.
+   *  · Lo que queda no alcanza para lo producido: de la sierra no sale más de
+   *    lo que entró. El 56 % sólo avisa (ver `lib/forestal/soltar-trozas.ts`).
+   *  · Las guías quedarían con más m³ que la materia prima (una atribución
+   *    puesta a mano): se corrige primero la atribución.
+   *
+   * Qué escribe: la materia prima y el rendimiento de la corrida, el m³ por
+   * guía (`setConsumosEnTx`, I1/I2 y congelado otra vez), las piezas
+   * (`consumidaEnId` y `fechaConsumo` en null) y sus lotes (`destinoDelLote`):
+   * el lote abierto las conserva, el que cerró esta corrida y se queda sin
+   * piezas de ella se reabre, y del que la corrida sigue usando salen sueltas.
+   * La producción —cantidad, paquetes, despachos— no se toca.
+   */
+  static async soltarTrozasEnTx(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+    input: SoltarTrozasInput,
+    usuario: string,
+    { cierres }: { cierres: CtpCierrePeriodo[] },
+  ): Promise<SoltadoEscrito> {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (!usuario?.trim()) throw new Error("usuario is required");
+    const { corridaId } = input;
+    /* La misma regla que el esquema de la ruta (`motivo.ts`): sin invisibles y
+       con letras. Otra puerta que llegue acá sin pasar por la ruta no la saltea. */
+    const motivo = limpiarMotivo(input.motivo ?? "");
+    if (!corridaId?.trim()) throw new CtpInvariantError("Falta la corrida.", "VALIDACION");
+    if (!motivoLegible(motivo, MOTIVO_MIN_SOLTAR)) {
+      throw new CtpInvariantError(MENSAJE_MOTIVO_SOLTAR, "MOTIVO_REQUERIDO");
+    }
+    const pedidas = [...new Set(input.trozaIds)];
+    if (pedidas.length === 0) throw new CtpInvariantError("Elige al menos una troza para soltar.", "VALIDACION");
+
+    // ── 1. La corrida, bloqueada antes de leerla ─────────────────────────
+    const bloqueada = await tx.$queryRaw<{ id: string }[]>`
+      SELECT "id" FROM "ForestCtpEntry"
+      WHERE "id" = ${corridaId} AND "tenantId" = ${tenantId} AND "deletedAt" IS NULL
+      FOR UPDATE
+    `;
+    if (bloqueada.length === 0) {
+      throw new CtpInvariantError("Esa corrida no existe en este negocio.", "TENANT_MISMATCH", { corridaId });
+    }
+
+    // ── 2. Lotes y piezas pedidas, bloqueados en orden ───────────────────
+    /* La lectura sin lock sólo dice QUÉ lotes bloquear; bajo lock se relee y
+       se compara (si una pieza cambió de lote en el medio, se rechaza). */
+    const antes = await tx.woodEntryTroza.findMany({
+      where: { tenantId, id: { in: pedidas } },
+      select: { id: true, loteAserrioId: true },
+    });
+    const halladas = new Set(antes.map((t) => t.id));
+    const faltan = pedidas.filter((id) => !halladas.has(id));
+    if (faltan.length > 0) {
+      throw new CtpInvariantError(
+        `${faltan.length === 1 ? "Una troza elegida no existe" : `${faltan.length} trozas elegidas no existen`} en este negocio.`,
+        "TENANT_MISMATCH",
+        { trozas: faltan },
+      );
+    }
+    const loteAntes = new Map(antes.map((t) => [t.id, t.loteAserrioId]));
+    const lotesIds = [...new Set(antes.map((t) => t.loteAserrioId).filter((id): id is string => Boolean(id)))];
+    if (lotesIds.length > 0) {
+      await tx.$queryRaw`
+        SELECT "id" FROM "ForestLoteAserrio"
+        WHERE "id" = ANY(${lotesIds}::text[]) AND "tenantId" = ${tenantId}
+        ORDER BY "id"
+        FOR UPDATE
+      `;
+    }
+    await tx.$queryRaw`
+      SELECT "id" FROM "WoodEntryTroza"
+      WHERE "id" = ANY(${pedidas}::text[]) AND "tenantId" = ${tenantId}
+      ORDER BY "id"
+      FOR UPDATE
+    `;
+
+    // ── 3. Lo que decide, leído bajo lock ────────────────────────────────
+    const leida = await leerParaSoltar(tx, tenantId, corridaId, cierres);
+    if (!leida) {
+      throw new CtpInvariantError("Esa corrida no existe en este negocio.", "TENANT_MISMATCH", { corridaId });
+    }
+    const { corrida, piezas, consumos } = leida;
+    const nro = `N° ${corrida.lineNo}`;
+    if (leida.section !== "produccion" || leida.status !== "registrado") {
+      throw new CtpInvariantError(
+        `La línea ${nro} no es una corrida vigente: no tiene madera que soltar.`,
+        "LINEA_NO_EDITABLE",
+        { corridaId },
+      );
+    }
+    const cerrado = closedPeriodOf(cierres, leida.entryDate);
+    if (cerrado) {
+      throw new CtpInvariantError(
+        `El período ${cerrado.label} está cerrado: la madera de la corrida ${nro} no se toca. Reabre el período para corregir.`,
+        "PERIODO_CERRADO",
+        { periodKey: cerrado.periodKey },
+      );
+    }
+    if (corrida.congelado) {
+      throw new CtpInvariantError(
+        `La corrida ${nro} tiene el costo congelado: su materia prima ya no se cambia.`,
+        "CONGELADO",
+        { corridaId },
+      );
+    }
+
+    const suyas = new Map(leida.piezasLeidas.map((t) => [t.id, t]));
+    const ajenas = pedidas.filter((id) => !suyas.has(id));
+    if (ajenas.length > 0) {
+      throw new CtpInvariantError(
+        `${ajenas.length === 1 ? "Una de las trozas ya no está" : `${ajenas.length} de las trozas ya no están`} en la corrida ${nro}: ` +
+          "otra pantalla la soltó o nunca entró. Vuelve a abrir la lista.",
+        "PROPUESTA_DESACTUALIZADA",
+        { trozas: ajenas },
+      );
+    }
+    const movidas = pedidas.filter((id) => suyas.get(id)!.loteAserrioId !== loteAntes.get(id));
+    if (movidas.length > 0) {
+      throw new CtpInvariantError(
+        "Otra operación movió estas trozas de lote mientras las soltabas: vuelve a abrir la lista.",
+        "PROPUESTA_DESACTUALIZADA",
+        { trozas: movidas },
+      );
+    }
+    /* El día en que cada pieza entró a la sierra también cuenta: si cae en un
+       mes cerrado, ese mes declaró la pieza aserrada. */
+    for (const id of pedidas) {
+      const f = suyas.get(id)!.fechaConsumo;
+      const cerradoPieza = f ? closedPeriodOf(cierres, f) : null;
+      if (cerradoPieza) {
+        throw new CtpInvariantError(
+          `Una de las trozas entró a la sierra en ${cerradoPieza.label}, que está cerrado: no se suelta. Reabre el período para corregir.`,
+          "PERIODO_CERRADO",
+          { periodKey: cerradoPieza.periodKey, trozaId: id },
+        );
+      }
+    }
+
+    // ── 4. La decisión: la misma cuenta que la vista previa ──────────────
+    const vista = vistaPreviaDeSoltar(corrida, piezas, consumos, pedidas);
+    const fm3 = (n: number | null) => (n == null ? "0" : formatNumber(n, 3));
+    if (vista.imposible) {
+      /* Con TODAS marcadas, «suéltalas todas» no es salida: lo que queda es
+         materia prima escrita que no son trozas (volumen del acta). */
+      throw new CtpInvariantError(
+        vista.despues.piezas === 0
+          ? `Ya marcaste todas las trozas de la corrida ${nro} y aun así declara ${fm3(vista.despues.m3)} m³ de materia prima que no son trozas, ` +
+              `menos que los ${fm3(corrida.producido)} m³ producidos. Corrige la materia prima en la ficha de la corrida.`
+          : `La corrida ${nro} declara ${fm3(corrida.producido)} m³ de producto y le quedarían ${fm3(vista.despues.m3)} m³ de trozas: ` +
+              "de la sierra no sale más madera de la que entró. Deja más trozas, o suéltalas todas y la corrida queda sin origen.",
+        "VOLUMEN_INSUFICIENTE",
+        { producido: corrida.producido, queda: vista.despues.m3, piezasQuedan: vista.despues.piezas },
+      );
+    }
+    if (vista.sobreAtribuido) {
+      throw new CtpInvariantError(
+        `La corrida ${nro} quedaría con ${fm3(vista.despues.m3)} m³ y más m³ atribuidos a sus guías. ` +
+          "Corrige la atribución en la ficha de la corrida antes de soltar estas trozas.",
+        "I1_SOBRE_ATRIBUCION",
+        { queda: vista.despues.m3 },
+      );
+    }
+
+    // ── 5. Escrituras: materia prima → m³ por guía → piezas → lotes ──────
+    /* La materia prima primero: I1 se evalúa contra la fila bloqueada dentro
+       de `setConsumosEnTx`. Sin rendimiento calculable en m³ se limpia (el
+       viejo ya no describe esta madera); en otra unidad no se toca. */
+    const enM3 = (corrida.unit ?? "m3") === "m3";
+    const rendimiento = vista.despues.rendimientoPct;
+    await tx.forestCtpEntry.update({
+      where: { id: corridaId, tenantId },
+      data: {
+        volumeInputM3: vista.despues.m3 == null ? null : new Prisma.Decimal(vista.despues.m3),
+        ...(rendimiento != null
+          ? { rendimientoPct: new Prisma.Decimal(rendimiento) }
+          : enM3 || vista.despues.m3 == null
+            ? { rendimientoPct: null }
+            : {}),
+      },
+      select: { id: true },
+    });
+    const escritos = await ForestCtpConsumoDB.setConsumosEnTx(tx, tenantId, corridaId, vista.consumosNuevos, usuario, {
+      cierres,
+    });
+
+    /* La condición va en el WHERE: si otra vía tocó una pieza entre el lock y
+       acá, el conteo no cierra y todo vuelve atrás. */
+    const { count } = await tx.woodEntryTroza.updateMany({
+      where: { tenantId, id: { in: pedidas }, consumidaEnId: corridaId },
+      data: { consumidaEnId: null, fechaConsumo: null },
+    });
+    if (count !== pedidas.length) {
+      throw new CtpInvariantError(
+        `Otra operación cambió trozas de la corrida ${nro} mientras las soltabas: vuelve a abrir la lista.`,
+        "PROPUESTA_DESACTUALIZADA",
+        { esperadas: pedidas.length, soltadas: count },
+      );
+    }
+    for (const l of vista.lotes) {
+      const deEste = pedidas.filter((id) => suyas.get(id)!.loteAserrioId === l.loteId);
+      if (l.destino === "suelta") {
+        const r = await tx.woodEntryTroza.updateMany({
+          where: { tenantId, id: { in: deEste }, loteAserrioId: l.loteId },
+          data: { loteAserrioId: null },
+        });
+        if (r.count !== deEste.length) {
+          throw new CtpInvariantError(
+            `Otra operación movió trozas del lote ${l.code} mientras las soltabas: vuelve a abrir la lista.`,
+            "PROPUESTA_DESACTUALIZADA",
+            { loteId: l.loteId },
+          );
+        }
+      } else if (l.destino === "reabrir") {
+        /* Con la foto en el WHERE: sólo si sigue consumido por ESTA corrida. */
+        const r = await tx.forestLoteAserrio.updateMany({
+          where: { id: l.loteId, tenantId, deletedAt: null, status: "consumido", produccionEntryId: corridaId },
+          data: { status: "abierto", fechaConsumo: null, produccionEntryId: null },
+        });
+        if (r.count !== 1) {
+          throw new CtpInvariantError(
+            `El lote ${l.code} cambió mientras soltabas sus trozas: vuelve a abrir la lista.`,
+            "PROPUESTA_DESACTUALIZADA",
+            { loteId: l.loteId },
+          );
+        }
+        /* El lote reabierto deja de ser el de esta corrida: si su referencia de
+           materia prima lo nombraba (`consumir` la escribe con el código), se
+           limpia. Sólo si dice EXACTAMENTE ese código: una escrita a mano queda. */
+        await tx.forestCtpEntry.updateMany({
+          where: { id: corridaId, tenantId, materiaPrimaRef: l.code },
+          data: { materiaPrimaRef: null },
+        });
+      }
+    }
+
+    const codigos = pedidas.map((id) => {
+      const t = suyas.get(id)!;
+      return t.codigoPlanta?.trim() || t.codificacion?.trim() || id;
+    });
+    return {
+      corridaId,
+      corrida: { lineNo: corrida.lineNo, speciesCommon: corrida.especie },
+      vista,
+      codigos,
+      motivo,
+      escritos,
+    };
+  }
+
+  /**
+   * Lo que va DESPUÉS del commit de `soltarTrozasEnTx`: la caché, los
+   * renglones del libro (consumos, la suelta y cada lote reabierto) esperados
+   * en serie, y la respuesta. Nunca tira: la suelta ya está escrita.
+   */
+  static async despuesDeSoltar(
+    tenantId: string,
+    escrito: SoltadoEscrito,
+    usuario: string,
+    /** `quitarDeCorrida` (corrida abierta) conserva su acción y su verbo en el libro. */
+    { accion = "ctp_corrida_soltar_trozas" }: { accion?: "ctp_corrida_soltar_trozas" | "ctp_corrida_quitar_piezas" } = {},
+  ): Promise<Extract<ResultadoSoltarTrozas, { ok: true }>> {
+    const { corridaId, corrida, vista, codigos, motivo, escritos } = escrito;
+    invalidarVistasDelVinculo(tenantId);
+    await ForestCtpConsumoDB.despuesDeConsumos(tenantId, corridaId, escritos, usuario);
+    const n = vista.sueltas.piezas;
+    const pct = (p: number | null) => (p == null ? "—" : `${formatNumber(p, 2)} %`);
+    /* TODOS los códigos: el renglón es lo que un fiscalizador lee para saber
+       qué piezas salieron, y «y 4 más» no se puede reconstruir. */
+    const nombradas = codigos.join(", ");
+    const verbo = accion === "ctp_corrida_quitar_piezas" ? "Sacó" : "Soltó";
+    const lotes = vista.lotes
+      .map((l) =>
+        l.destino === "reabrir"
+          ? `${l.code} volvió a quedar abierto`
+          : l.destino === "suelta"
+            ? `${l.code} sigue con ${l.quedan}; salieron sueltas ${l.piezas}`
+            : `${l.code} (abierto) las conserva`,
+      )
+      .join(" · ");
+    await auditCtpEsperando({
+      tenantId,
+      action: accion,
+      entity: "ForestCtpEntry",
+      entityId: corridaId,
+      detail:
+        `${verbo} ${n} troza${n === 1 ? "" : "s"} de la corrida N° ${corrida.lineNo} (${corrida.speciesCommon ?? "sin especie"}) al patio: ` +
+        `${nombradas} (${m3(vista.sueltas.m3)}) · materia prima ${m3(vista.antes.m3 ?? 0)} → ` +
+        (vista.quedaSinOrigen ? "sin origen" : m3(vista.despues.m3 ?? 0)) +
+        ` · rendimiento ${pct(vista.antes.rendimientoPct)} → ${pct(vista.despues.rendimientoPct)}` +
+        (vista.sobreElTope ? ` (sobre el ${TOPE_RENDIMIENTO_PCT} % de la plaza)` : "") +
+        (lotes ? ` · ${lotes}` : "") +
+        ` · producción intacta · motivo: ${motivo}`,
+      user: usuario,
+    });
+    for (const l of vista.lotes.filter((x) => x.destino === "reabrir")) {
+      await auditCtpEsperando({
+        tenantId,
+        action: "ctp_lote_aserrio_reabrir",
+        entity: "ForestLoteAserrio",
+        entityId: l.loteId,
+        detail: `Volvió a quedar abierto al ${verbo === "Sacó" ? "sacar" : "soltar"} sus ${l.piezas} troza${l.piezas === 1 ? "" : "s"} de la corrida N° ${corrida.lineNo} · motivo: ${motivo}`,
+        user: usuario,
+      });
+    }
+    return {
+      ok: true,
+      corridaId,
+      lineNo: corrida.lineNo,
+      piezas: n,
+      m3: vista.sueltas.m3,
+      antes: vista.antes,
+      despues: vista.despues,
+      sobreElTope: vista.sobreElTope,
+      quedaSinOrigen: vista.quedaSinOrigen,
+      lotes: vista.lotes,
       consumos: escritos.consumos.map((c) => ({
         woodEntryId: c.woodEntryId,
         gtfNumber: c.woodEntry.gtfNumber,

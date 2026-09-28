@@ -196,8 +196,12 @@ export default function ArreglosSinOrigen({
                   linea={l}
                   abriendo={arreglo.abriendo}
                   puedeEditar={puedeEditar}
+                  firma={firma}
                   onVerDia={(dia) => arreglo.abrirYa({ tipo: "ver_dia", dia })}
                   onEditar={(c, clave) => void arreglo.editarCorrida(clave, c, especies)}
+                  onSoltar={(t) =>
+                    arreglo.abrirYa({ tipo: "soltar_trozas", corridaId: t.corridaId, lineNo: t.lineNo, esperan: l.corridas })
+                  }
                 />
               )}
             </li>

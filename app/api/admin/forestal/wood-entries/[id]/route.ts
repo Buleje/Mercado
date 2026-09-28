@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { gtfDatosSchema } from "@/lib/forestal/ctp-gtf-datos";
 import { z } from "zod";
+import { motivoOpcionalSchema, motivoSchema } from "@/lib/forestal/motivo";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { WoodEntriesDB, TOPE_TROZAS_POR_INGRESO } from "@/lib/db/wood-entries.db";
@@ -106,7 +107,7 @@ const patchSchema = z.discriminatedUnion("action", [
       .optional(),
     /* Llegada después del vencimiento de la guía, confirmada con motivo (ADR-434 §Vencimiento). */
     aceptaVencida: z.boolean().optional(),
-    motivoVencida: z.string().trim().max(300).optional(),
+    motivoVencida: motivoOpcionalSchema(300),
   }),
   z.object({ action: z.literal("reject"), reason: z.string().trim().min(3).max(500) }),
   // Anular un ingreso YA validado (con motivo). Distinto de reject (pre-validación).
@@ -129,7 +130,7 @@ const patchSchema = z.discriminatedUnion("action", [
   z.object({
     action: z.literal("cuadrar"),
     lado: z.enum(["lista", "cabecera"]),
-    motivo: z.string().trim().min(3).max(500),
+    motivo: motivoSchema({ max: 500 }),
     trozaId: z.string().trim().min(1).max(60).optional(),
     cantidad: z.coerce.number().int().min(1).max(9999).optional(),
     volumenM3: z.coerce.number().positive().max(9999).optional(),

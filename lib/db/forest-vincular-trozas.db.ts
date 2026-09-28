@@ -14,6 +14,7 @@ import { diaDelLibro } from "@/lib/forestal/recepcion-antes-de-la-sierra";
 import { MAX_PARTES_POR_CORRIDA } from "@/lib/forestal/vincular-desde-mixto";
 import { pasaElTope } from "@/lib/forestal/vincular-produccion";
 import {
+  conLlegadasCorregidas,
   proponerTandaDeOrigen,
   simularArreglos,
   type PropuestaDeTandaOrigen,
@@ -45,6 +46,15 @@ import {
   type TrozaTomada,
   type VincularTrozasPedido,
 } from "@/lib/forestal/vincular-trozas";
+import {
+  piezasQueTomaLaTanda,
+  queDestraba,
+  sugerenciaQueCabe,
+  vistaPreviaDeSoltar,
+  type SimulacionDeSoltar,
+  type VistaDeSoltar,
+} from "@/lib/forestal/soltar-trozas";
+import { baseGuardada, guardarBase } from "@/lib/forestal/soltar-trozas-memo";
 import { CTP_TX_OPTS, CtpInvariantError } from "./forest-ctp-consumo.db";
 import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
 import { ForestLoteAserrioDB } from "./forest-lote-aserrio.db";
@@ -429,6 +439,18 @@ export interface EntradasDelDiagnostico {
   contexto: ContextoDelPatio;
 }
 
+/** Lo leído para simular «Soltar trozas» de una corrida (ver `leerBaseDeSoltar`). */
+interface BaseDeSoltar {
+  vista: VistaDeSoltar;
+  entradas: EntradasDelDiagnostico;
+  filas: FilaTroza[];
+  consumido: Map<string, number>;
+  propia: FilaCorrida | null;
+  lotesPropios: number;
+  /** Se calcula una vez por base: no depende de la selección. */
+  sugerencia?: Pick<SimulacionDeSoltar, "sugeridas" | "sugeridasConLlegada" | "guiasALlegar">;
+}
+
 export class ForestVincularTrozasDB {
   /**
    * Lo que el diagnóstico LEE, tal cual: las corridas sin origen, las trozas
@@ -485,6 +507,147 @@ export class ForestVincularTrozasDB {
       propuesta: proponerTandaDeOrigen(corridas, trozas, undefined, { contexto }),
       simulacion: simularArreglos(corridas, trozas, contexto),
     };
+  }
+
+  /**
+   * Qué pasaría si `corridaId` soltara esas trozas (ADR-447 §6). SÓLO LEE.
+   *
+   * Arma el patio del «después» con las MISMAS reglas que la escritura
+   * (`vistaPreviaDeSoltar` + `destinoDelLote`): la pieza suelta sale de su
+   * corrida, del lote que la corrida sigue usando sale suelta, el lote que se
+   * reabre la conserva; su guía libera los m³ que la corrida deja de atribuirle,
+   * y si no le queda nada la corrida entra a «sin origen». Después corre el
+   * diagnóstico y la tanda de la bandeja sobre los dos patios.
+   *
+   * `sugeridas`: con TODA la madera de la corrida en el patio, las piezas que la
+   * tanda les daría a las corridas que esperan (la más vieja primero). Es una
+   * sugerencia para marcar casillas: nunca se aplica sola.
+   *
+   * `null` = la corrida no existe en este negocio o no es de producción.
+   */
+  static async simularSoltar(
+    tenantId: string,
+    corridaId: string,
+    trozaIds: readonly string[] | null,
+  ): Promise<SimulacionDeSoltar | null> {
+    if (!tenantId) throw new Error("tenantId is required");
+    /* La del abrir (sin selección) lee fresco; las de cada selección, sobre lo
+       leído (`soltar-trozas-memo.ts`: las lecturas son el 99 % del tiempo). */
+    const conSeleccion = (trozaIds ?? []).length > 0;
+    let base = conSeleccion ? baseGuardada<BaseDeSoltar>(tenantId, corridaId) : null;
+    if (!base) {
+      base = await ForestVincularTrozasDB.leerBaseDeSoltar(tenantId, corridaId);
+      if (!base) return null;
+      guardarBase(tenantId, corridaId, base);
+    }
+    const { vista, entradas, filas, consumido, propia, lotesPropios } = base;
+    const suyas = new Set(vista.piezas.map((p) => p.id));
+
+    const escenario = (sueltas: ReadonlySet<string>): EntradasDelDiagnostico => {
+      if (sueltas.size === 0) return entradas;
+      const pv = vistaPreviaDeSoltar(vista.corrida, vista.piezas, vista.consumos, sueltas);
+      const libera = new Map(pv.porGuia.map((g) => [g.woodEntryId, r4(g.antes - g.despues)]));
+      const destino = new Map(pv.lotes.map((l) => [l.loteId, l.destino]));
+      const menos = (woodEntryId: string, m: number) => Math.max(0, r4(m - (libera.get(woodEntryId) ?? 0)));
+      const consumidoDespues = new Map([...consumido].map(([id, m]) => [id, menos(id, m)]));
+      const nuevas = filas
+        .filter((f) => sueltas.has(f.id))
+        .map((f) => {
+          const d = f.loteAserrio ? destino.get(f.loteAserrio.id) : undefined;
+          const lote =
+            !f.loteAserrio || d === "suelta"
+              ? null
+              : d === "reabrir"
+                ? { ...f.loteAserrio, status: "abierto", produccionEntryId: null }
+                : f.loteAserrio;
+          /* Sin corrida y con su lote como queda: ningún lote cerrado la retiene. */
+          return trozaParaDiagnostico(leida({ ...f, consumidaEn: null, loteAserrio: lote }, consumidoDespues, new Map()));
+        });
+      const trozas = entradas.trozas.map((t) =>
+        libera.has(t.fila.id) ? { ...t, fila: { ...t.fila, consumidoM3: menos(t.fila.id, t.fila.consumidoM3) } } : t,
+      );
+      const corridas =
+        pv.quedaSinOrigen && propia
+          ? [
+              ...entradas.corridas,
+              {
+                ...corridaParaDiagnostico(
+                  corridaLeida(
+                    { ...propia, volumeInputM3: null, _count: { trozasConsumidas: 0, consumos: 0, reprocesosEntrada: propia._count.reprocesosEntrada } },
+                    Math.max(0, lotesPropios - pv.lotes.filter((l) => l.destino === "reabrir").length),
+                  ),
+                ),
+                /* El mes cerrado ya lo leyó la vista con la misma regla (`conCierre`). */
+                mesCerrado: vista.corrida.mesCerrado,
+              },
+            ].sort((a, b) => (diaDelLibro(a.fecha) ?? "").localeCompare(diaDelLibro(b.fecha) ?? "") || (a.lineNo ?? 0) - (b.lineNo ?? 0))
+          : entradas.corridas;
+      return {
+        corridas,
+        trozas: [...trozas, ...nuevas],
+        contexto: { ...entradas.contexto, tomadas: entradas.contexto.tomadas.filter((t) => !sueltas.has(t.id)) },
+      };
+    };
+    const medir = (e: EntradasDelDiagnostico) => ({
+      diag: diagnosticarSinOrigen(e.corridas, e.trozas, undefined, { contexto: e.contexto }),
+      tanda: proponerTandaDeOrigen(e.corridas, e.trozas, undefined, { contexto: e.contexto }),
+    });
+
+    /* «Si además corriges la llegada»: el escenario de `simularArreglos`, sobre
+       el patio del después y SÓLO con las guías de esta madera (corregir otras
+       destraba corridas que no tienen que ver con esta suelta). */
+    const guiasPropias = new Set(vista.piezas.map((p) => p.gtfNumber));
+    const conLlegada = (e: EntradasDelDiagnostico, diag: DiagnosticoSinOrigen) => {
+      const c = conLlegadasCorregidas(e.trozas, diag, guiasPropias);
+      return { guias: c.guias, tanda: proponerTandaDeOrigen(e.corridas, c.trozas, undefined, { contexto: e.contexto }) };
+    };
+    /* Lo que la tanda les daría, recortado a lo que deja a esta corrida con su producción cubierta. */
+    const quecabe = (t: PropuestaDeTandaOrigen) =>
+      sugerenciaQueCabe(vista.corrida, vista.piezas, vista.consumos, piezasQueTomaLaTanda(t, corridaId, suyas));
+
+    /* La sugerencia no depende de la selección: una vez por base. */
+    if (!base.sugerencia) {
+      const eTodas = escenario(suyas);
+      const todas = medir(eTodas);
+      const todasLlegada = conLlegada(eTodas, todas.diag);
+      const sugeridas = quecabe(todas.tanda);
+      const conLaLlegada = quecabe(todasLlegada.tanda);
+      const masConLlegada = conLaLlegada.some((id) => !sugeridas.includes(id));
+      base.sugerencia = {
+        sugeridas,
+        sugeridasConLlegada: masConLlegada ? conLaLlegada : [],
+        guiasALlegar: masConLlegada ? todasLlegada.guias : [],
+      };
+    }
+
+    const pedidas = new Set((trozaIds ?? []).filter((id) => suyas.has(id)));
+    let destraba: SimulacionDeSoltar["destraba"] = null;
+    if (pedidas.size > 0) {
+      const e = escenario(pedidas);
+      const despues = medir(e);
+      destraba = queDestraba(corridaId, medir(entradas), despues, conLlegada(e, despues.diag));
+    }
+    return { ...base.sugerencia, destraba };
+  }
+
+  /**
+   * Lo que la simulación de «Soltar trozas» lee: la corrida con sus piezas, el
+   * patio del diagnóstico, las piezas como las lee el vinculador, lo consumido
+   * de sus guías y la corrida misma (por si al soltarlo todo entra a «sin
+   * origen»). En serie: lecturas cortas del mismo pool.
+   */
+  private static async leerBaseDeSoltar(tenantId: string, corridaId: string): Promise<BaseDeSoltar | null> {
+    const vista = await ForestVincularCorridaDB.vistaDeSoltar(tenantId, corridaId);
+    if (!vista) return null;
+    const entradas = await ForestVincularTrozasDB.entradasDelDiagnostico(tenantId);
+    const filas = await prisma.woodEntryTroza.findMany({
+      where: { tenantId, consumidaEnId: corridaId },
+      select: SELECT_TROZA,
+    });
+    const consumido = await WoodEntriesDB.consumidoPorIngreso(tenantId, [...new Set(filas.map((f) => f.woodEntryId))]);
+    const propia = await prisma.forestCtpEntry.findFirst({ where: { id: corridaId, tenantId }, select: SELECT_CORRIDA });
+    const lotes = await lotesPorCorrida(tenantId, [corridaId]);
+    return { vista, entradas, filas, consumido, propia, lotesPropios: lotes.get(corridaId) ?? 0 };
   }
 
   /** El diagnóstico de UNA corrida, o por qué no se diagnostica. */

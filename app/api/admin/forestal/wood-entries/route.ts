@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { motivoOpcionalSchema } from "@/lib/forestal/motivo";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import {
@@ -468,7 +469,7 @@ const recepcionGuiaSchema = z.object({
    * rechaza con 422 `GUIA_VENCIDA`; el motivo lo exige la regla pura.
    */
   aceptaVencida: z.boolean().optional(),
-  motivoVencida: z.string().trim().max(300).optional(),
+  motivoVencida: motivoOpcionalSchema(300),
 });
 
 /**

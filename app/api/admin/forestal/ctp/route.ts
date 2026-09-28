@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { motivoOpcionalSchema } from "@/lib/forestal/motivo";
 import { leerContratoId } from "@/lib/forestal/contrato-filtro";
 import { requireAdmin } from "@/lib/require-admin";
 import { RUTAS_PANEL } from "@/lib/auth/roles-rutas-panel";
@@ -312,7 +313,7 @@ const patchSchema = z.discriminatedUnion("action", [
     id: z.string().trim().min(1),
     action: z.literal("marcar_usado"),
     usado: z.boolean(),
-    motivo: z.string().trim().max(500).optional(),
+    motivo: motivoOpcionalSchema(500),
   }),
   /**
    * Rellenar los campos VACÍOS de una corrida (ADR-401 §1.2). No sobrescribe:
@@ -415,7 +416,7 @@ const patchSchema = z.discriminatedUnion("action", [
     id: z.string().trim().min(1),
     action: z.literal("declarar_apertura"),
     apertura: z.boolean(),
-    motivo: z.string().trim().max(500).optional(),
+    motivo: motivoOpcionalSchema(500),
   }),
   /**
    * APARTAR un producto del patio (ADR-418): reservarlo a nombre de alguien
@@ -436,7 +437,7 @@ const patchSchema = z.discriminatedUnion("action", [
   z.object({
     action: z.literal("liberar_apartado"),
     apartadoId: z.cuid(),
-    motivo: z.string().trim().max(200).nullable().optional(),
+    motivo: motivoOpcionalSchema(200).nullable(),
   }),
   /**
    * CAMBIAR una reserva viva: a quién, hasta cuándo o la nota (2026-09-23).

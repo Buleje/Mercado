@@ -32,6 +32,7 @@ import {
   atadoSoloPorPuntero,
 } from "@/lib/forestal/lote-aserrio-coherencia";
 import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
+import { ForestVincularCorridaDB } from "./forest-vincular-corrida.db";
 import { closedPeriodOf } from "@/lib/forestal/ctp-cierre-types";
 import { formatDateNumeric, formatDateTime } from "@/lib/format";
 import { mismoPermiso, permisoRef } from "@/lib/forestal/vincular-trozas";
@@ -2073,12 +2074,21 @@ export class ForestLoteAserrioDB {
    * la corrida entera** —y con ella su número de línea, que en un libro no se
    * recicla— por dos piezas mal tildadas.
    *
-   * El orden es el INVERSO de sumar, y por la misma razón: acá el volumen BAJA,
-   * así que primero se baja la atribución (si no, `Σ atribuido ≤ declarado`
-   * dejaría de valer un instante) y después el volumen.
+   * Delega en el núcleo de «Soltar trozas» (`soltarTrozasEnTx`, ADR-447 §6):
+   * UNA transacción con corrida → lotes → piezas → guías bloqueadas, cierre y
+   * congelado, y la pieza que ya no está en la corrida se rechaza. Antes eran
+   * tres transacciones sin cierre ni congelado, y «Sacar» y «Soltar» sobre la
+   * misma pieza podían restarla dos veces (revisión 28-09).
    *
-   * No se puede vaciar del todo: una corrida sin materia prima no es una
-   * corrida, es una línea que había que anular.
+   * Conserva sus dos reglas, evaluadas bajo el lock de la corrida:
+   *  · sólo una corrida ABIERTA (sin producción declarada): con producción el
+   *    camino es «Soltar trozas», que muestra el rendimiento de después;
+   *  · no se puede vaciar: una corrida abierta sin materia prima no es una
+   *    corrida, es una línea que había que anular.
+   *
+   * El lote sigue la regla del núcleo (`destinoDelLote`): si la corrida sigue
+   * usando el lote, la pieza sale suelta al patio y el lote conserva su corrida
+   * (casillero 10 del LO-CTP); sólo se reabre el que se queda sin piezas suyas.
    */
   static async quitarDeCorrida(
     tenantId: string,
@@ -2094,184 +2104,55 @@ export class ForestLoteAserrioDB {
     if (trozaIds.length === 0) {
       throw new CtpInvariantError("No elegiste ninguna pieza para sacar.", "LOTE_NO_EDITABLE");
     }
-
-    const r4 = (n: number) => Math.round(n * 10000) / 10000;
-
-    // Mismo blindaje que sumarACorrida (auditoría 2026-08-25): lock + lectura
-    // + escritura de volumeInputM3 en UNA transacción, antes de tocar la
-    // atribución. Si `setConsumos` falla después, el catch de abajo restaura
-    // el volumen — misma protección, orden invertido (acá se escribe primero
-    // porque el lock tiene que cubrir la lectura Y la escritura del mismo
-    // valor, no sólo una de las dos).
-    const { corrida, salen, delta, volumenPrevio, volumenTotal } = await prisma.$transaction(
-      async (tx) => {
-        const locked = await tx.$queryRaw<
-          {
-            id: string;
-            lineNo: number;
-            section: string;
-            status: string;
-            quantity: Prisma.Decimal | null;
-            volumeInputM3: Prisma.Decimal | null;
-          }[]
-        >`
-        SELECT "id", "lineNo", "section", "status", "quantity", "volumeInputM3"
+    /* Los cierres ANTES de la tx: un KV del cliente global (ver `soltarTrozas`). */
+    const cierres = await ForestCtpCierreDB.list(tenantId);
+    const escrito = await prisma.$transaction(async (tx) => {
+      /* La corrida, bloqueada ANTES que nada: es el mismo lock que toma el
+         núcleo (en la misma tx no espera) y el orden del libro no cambia. */
+      const locked = await tx.$queryRaw<{ lineNo: number; section: string; status: string; quantity: Prisma.Decimal | null }[]>`
+        SELECT "lineNo", "section", "status", "quantity"
         FROM "ForestCtpEntry"
         WHERE "id" = ${corridaId} AND "tenantId" = ${tenantId} AND "deletedAt" IS NULL
         FOR UPDATE
       `;
-        if (locked.length === 0)
-          throw new CtpInvariantError("Esa corrida no existe.", "LOTE_NO_ENCONTRADO");
-        const corrida = locked[0];
-        if (corrida.section !== "produccion" || corrida.status !== "registrado") {
-          throw new CtpInvariantError(
-            `La corrida N° ${corrida.lineNo} no está vigente: no se le tocan las piezas.`,
-            "LOTE_NO_EDITABLE",
-          );
-        }
-        if (corrida.quantity != null) {
-          throw new CtpInvariantError(
-            `La corrida N° ${corrida.lineNo} ya declaró su producción: sacarle materia prima le cambiaría el rendimiento. ` +
-              "Anulala y rehacela si la carga estaba mal.",
-            "LOTE_NO_EDITABLE",
-          );
-        }
-
-        /* Las piezas de ESTA corrida y nada más: un id de otra sería sacar madera de
-         un asiento que el operador no está mirando. */
-        const suyas = await tx.woodEntryTroza.findMany({
-          where: { tenantId, consumidaEnId: corridaId },
-          select: { id: true, woodEntryId: true, volumenM3: true, loteAserrioId: true },
-        });
-        const pedidas = new Set(trozaIds);
-        const salen = suyas.filter((t) => pedidas.has(t.id));
-        if (salen.length === 0) {
-          throw new CtpInvariantError(
-            `Ninguna de esas piezas está en la corrida N° ${corrida.lineNo}.`,
-            "LOTE_NO_EDITABLE",
-          );
-        }
-        if (salen.length >= suyas.length) {
-          throw new CtpInvariantError(
-            `Sacarlas todas dejaría la corrida N° ${corrida.lineNo} sin materia prima. Si la carga estaba mal, anulala.`,
-            "LOTE_NO_EDITABLE",
-          );
-        }
-
-        const delta = r4(salen.reduce((a, t) => a + Number(t.volumenM3 ?? 0), 0));
-        const volumenPrevio = corrida.volumeInputM3 == null ? 0 : Number(corrida.volumeInputM3);
-        const volumenTotal = r4(volumenPrevio - delta);
-
-        await tx.forestCtpEntry.update({
-          where: { id: corridaId },
-          data: { volumeInputM3: volumenTotal },
-        });
-
-        return { corrida, suyas, salen, delta, volumenPrevio, volumenTotal };
-      },
-    );
-
-    try {
-      // 1. La atribución baja (ver cabecera) — el volumen ya está escrito arriba.
-      const previos = await prisma.forestCtpConsumo.findMany({
-        where: { tenantId, ctpEntryId: corridaId },
-        select: { woodEntryId: true, volumeM3: true },
-      });
-      const porGuia = new Map(previos.map((c) => [c.woodEntryId, Number(c.volumeM3)]));
-      for (const g of agruparPorGuia(
-        salen.map((t) => ({
-          id: t.id,
-          woodEntryId: t.woodEntryId,
-          codificacion: null,
-          especieComun: null,
-          volumenM3: t.volumenM3 == null ? null : Number(t.volumenM3),
-        })),
-      )) {
-        porGuia.set(
-          g.woodEntryId,
-          r4(Math.max(0, (porGuia.get(g.woodEntryId) ?? 0) - g.volumenM3)),
-        );
-      }
-      const nuevos = [...porGuia.entries()]
-        .filter(([, v]) => v > 0)
-        .map(([woodEntryId, volumeM3]) => ({ woodEntryId, volumeM3 }));
-      /**
-       * La atribución podía estar puesta A MANO y no derivar de estas piezas
-       * (`CtpAtribucionEditor`). Si al restar sigue pasándose del volumen que va a
-       * quedar, bajar el volumen rompería I1 sin que nadie lo viera: se para acá y
-       * se manda a corregir la atribución, que es donde está el desacuerdo.
-       */
-      const sumaNueva = r4(nuevos.reduce((a, c) => a + c.volumeM3, 0));
-      if (sumaNueva > volumenTotal) {
+      const corrida = locked[0];
+      if (!corrida) throw new CtpInvariantError("Esa corrida no existe.", "LOTE_NO_ENCONTRADO");
+      if (corrida.section !== "produccion" || corrida.status !== "registrado") {
         throw new CtpInvariantError(
-          `La corrida N° ${corrida.lineNo} quedaría con ${volumenTotal} m³ y tiene ${sumaNueva} m³ atribuidos a sus guías. ` +
-            "Corrige la atribución en la ficha de la corrida antes de sacar estas piezas.",
-          "I1_SOBRE_ATRIBUCION",
+          `La corrida N° ${corrida.lineNo} no está vigente: no se le tocan las piezas.`,
+          "LOTE_NO_EDITABLE",
         );
       }
-      await ForestCtpConsumoDB.setConsumos(tenantId, corridaId, nuevos, user);
-    } catch (e) {
-      /* Nada salió de verdad: la corrida vuelve al volumen que tenía. */
-      await prisma.forestCtpEntry
-        .update({ where: { id: corridaId }, data: { volumeInputM3: volumenPrevio } })
-        .catch((err) =>
-          logger.error("[forestal.quitarDeCorrida] no se pudo restaurar volumeInputM3", {
-            corridaId,
-            volumenPrevio,
-            error: String(err),
-          }),
+      if (corrida.quantity != null) {
+        throw new CtpInvariantError(
+          `La corrida N° ${corrida.lineNo} ya declaró su producción: sacarle materia prima le cambiaría el rendimiento. ` +
+            "Usa «Soltar trozas» en su ficha: muestra cómo queda antes de confirmar.",
+          "LOTE_NO_EDITABLE",
         );
-      throw e;
-    }
-
-    // 3. Las piezas vuelven a estar libres, y su lote se reabre si se había
-    //    cerrado por esta corrida: recuperó madera, así que ya no está consumido.
-    const lotesTocados = [
-      ...new Set(salen.map((t) => t.loteAserrioId).filter((v): v is string => Boolean(v))),
-    ];
-    const reabiertos: string[] = [];
-    await prisma.$transaction(async (tx) => {
-      await tx.woodEntryTroza.updateMany({
-        where: { id: { in: salen.map((t) => t.id) }, tenantId, consumidaEnId: corridaId },
-        data: { consumidaEnId: null, fechaConsumo: null },
-      });
-      for (const loteId of lotesTocados) {
-        const l = await tx.forestLoteAserrio.findFirst({
-          where: { id: loteId, tenantId, deletedAt: null },
-          select: { id: true, code: true, status: true, produccionEntryId: true },
-        });
-        if (l && l.status === "consumido" && l.produccionEntryId === corridaId) {
-          await tx.forestLoteAserrio.update({
-            where: { id: loteId },
-            data: { status: "abierto", fechaConsumo: null, produccionEntryId: null },
-          });
-          reabiertos.push(l.code);
-        }
       }
-    });
+      const hecho = await ForestVincularCorridaDB.soltarTrozasEnTx(
+        tx,
+        tenantId,
+        { corridaId, trozaIds, motivo: "Piezas mal tildadas al cargar la corrida abierta" },
+        user,
+        { cierres },
+      );
+      /* Después del núcleo y dentro de la tx: tirar deshace todo. */
+      if (hecho.vista.despues.piezas === 0) {
+        throw new CtpInvariantError(
+          `Sacarlas todas dejaría la corrida N° ${corrida.lineNo} sin materia prima. Si la carga estaba mal, anúlala.`,
+          "LOTE_NO_EDITABLE",
+        );
+      }
+      return hecho;
+    }, CTP_TX_OPTS);
 
-    auditCtp({
-      tenantId,
-      action: "ctp_corrida_quitar_piezas",
-      entity: "ForestCtpEntry",
-      entityId: corridaId,
-      detail:
-        `Sacó ${salen.length} troza${salen.length === 1 ? "" : "s"} de la corrida N° ${corrida.lineNo}: ` +
-        `${delta} m³ menos (de ${volumenPrevio} a ${volumenTotal} m³)` +
-        (reabiertos.length > 0 ? ` · reabrió ${reabiertos.join(", ")}` : ""),
-      user,
-    });
-    try {
-      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
-    } catch {
-      /* cache best-effort */
-    }
-
+    const r = await ForestVincularCorridaDB.despuesDeSoltar(tenantId, escrito, user, { accion: "ctp_corrida_quitar_piezas" });
     return {
-      piezas: salen.length,
-      volumenM3: delta,
-      volumenTotalM3: volumenTotal,
-      lotesReabiertos: reabiertos,
+      piezas: r.piezas,
+      volumenM3: r.m3,
+      volumenTotalM3: r.despues.m3 ?? 0,
+      lotesReabiertos: r.lotes.filter((l) => l.destino === "reabrir").map((l) => l.code),
     };
   }
 

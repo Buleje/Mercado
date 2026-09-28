@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { motivoSchema } from "@/lib/forestal/motivo";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { isSpecializationEnabled } from "@/lib/specializations";
@@ -22,7 +23,7 @@ import { withApiHandler } from "@/lib/api-handler";
 
 const bodySchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("cerrar"), year: z.number().int().min(2000).max(2100), month: z.number().int().min(1).max(12) }),
-  z.object({ action: z.literal("reabrir"), periodKey: z.string().trim().regex(/^\d{4}-\d{2}$/), motivo: z.string().trim().min(3, "El motivo es obligatorio").max(500) }),
+  z.object({ action: z.literal("reabrir"), periodKey: z.string().trim().regex(/^\d{4}-\d{2}$/), motivo: motivoSchema({ max: 500, mensaje: "El motivo es obligatorio" }) }),
 ]);
 
 export const GET = withApiHandler("forestal-ctp-cierre-list", async (req: NextRequest) => {

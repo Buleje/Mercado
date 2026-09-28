@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { motivoOpcionalSchema, motivoSchema } from "@/lib/forestal/motivo";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { isSpecializationEnabled } from "@/lib/specializations";
@@ -76,14 +77,14 @@ const corregirSchema = z.object({
   gtfNumber: gtfSchema,
   fecha: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, "Usa el formato AAAA-MM-DD"),
   /** Por qué cambia una fecha del libro: va al rastro de cada asiento. */
-  motivo: z.string().trim().min(3, "Escribe el motivo (mínimo 3 letras).").max(300),
+  motivo: motivoSchema({ max: 300, mensaje: "Escribe el motivo (mínimo 3 letras)." }),
   /**
    * La nueva llegada cae después del vencimiento de la guía y quien corrige
    * confirma que fue así, con su propio motivo (ADR-434 §Vencimiento). Sin
    * esto, esa fecha se rechaza con 422 `GUIA_VENCIDA`.
    */
   aceptaVencida: z.boolean().optional(),
-  motivoVencida: z.string().trim().max(300).optional(),
+  motivoVencida: motivoOpcionalSchema(300),
 });
 
 export const PATCH = withApiHandler("forestal-recepcion-patch", async (req: NextRequest) => {

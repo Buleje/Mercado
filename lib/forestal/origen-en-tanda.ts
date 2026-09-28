@@ -353,6 +353,29 @@ function llegadasPropuestas(diag: DiagnosticoSinOrigen): Map<string, string> {
 }
 
 /**
+ * Las trozas con la llegada que proponen los arreglos «corregir la llegada» de
+ * `diag` —la fecha de su guía, sólo hacia atrás y sólo las que siguen a su guía
+ * (`sigueALaGuia`, ADR-434)— y qué guías se corrigen. Es el escenario «tras
+ * corregir las llegadas» de `simularArreglos`; también lo usa «Soltar trozas»
+ * (ADR-447 §6) para decir qué quedaría listo si además se corrigen.
+ */
+export function conLlegadasCorregidas(
+  trozas: readonly TrozaParaDiagnostico[],
+  diag: DiagnosticoSinOrigen,
+  /** Sólo estas guías (por número); sin él, todas las que proponen los arreglos. */
+  soloGuias?: ReadonlySet<string>,
+): { trozas: TrozaParaDiagnostico[]; guias: string[] } {
+  const llegadas = llegadasPropuestas(diag);
+  if (soloGuias) for (const g of [...llegadas.keys()]) if (!soloGuias.has(g)) llegadas.delete(g);
+  const corregidas = trozas.map((t) => {
+    const p = t.gtfNumber ? llegadas.get(t.gtfNumber) : undefined;
+    if (!p || !t.guiaRecibida || t.llegada?.sigueALaGuia === false) return t;
+    return t.fechaIngreso && p < t.fechaIngreso ? { ...t, fechaIngreso: p } : t;
+  });
+  return { trozas: corregidas, guias: [...llegadas.keys()].sort() };
+}
+
+/**
  * Hoy / tras corregir las llegadas / tras recibir las guías pendientes, y
  * cuánto frena el permiso. Corregir una guía mueve sólo las trozas que la
  * siguen (`sigueALaGuia`, como el escritor de ADR-434) y sólo hacia atrás: la
@@ -367,12 +390,7 @@ export function simularArreglos(
   const opciones: OpcionesDeDiagnostico = { contexto };
   const hoy = escenario(corridas, trozas, meta, opciones);
 
-  const llegadas = llegadasPropuestas(hoy.diag);
-  const corregidas = trozas.map((t) => {
-    const p = t.gtfNumber ? llegadas.get(t.gtfNumber) : undefined;
-    if (!p || !t.guiaRecibida || t.llegada?.sigueALaGuia === false) return t;
-    return t.fechaIngreso && p < t.fechaIngreso ? { ...t, fechaIngreso: p } : t;
-  });
+  const { trozas: corregidas, guias: guiasCorregidas } = conLlegadasCorregidas(trozas, hoy.diag);
   const trasLlegada = escenario(corridas, corregidas, meta, opciones);
 
   const recibidas = new Set<string>();
@@ -390,7 +408,7 @@ export function simularArreglos(
 
   return {
     hoy: hoy.e,
-    trasLlegada: { ...trasLlegada.e, guias: [...llegadas.keys()].sort() },
+    trasLlegada: { ...trasLlegada.e, guias: guiasCorregidas },
     trasRecibir: { ...trasRecibir.e, guias: [...recibidas].sort() },
     frenaElPermiso: { corridas: frenadas.length, lineNos: frenadas.map((c) => c.lineNo) },
   };

@@ -12,7 +12,7 @@ import { Loader2 } from "@buleje/design-system/icons";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { TOPE_RENDIMIENTO_PCT } from "@/lib/forestal/vincular-produccion";
 import { formatNumber } from "@/lib/format";
-import type { DiagnosticoCorrida } from "@/lib/forestal/vincular-trozas";
+import type { DiagnosticoCorrida, TomadaPor } from "@/lib/forestal/vincular-trozas";
 import { Btn } from "./ctp-shared";
 import { ddmm, de } from "./ctp-sin-origen-comun";
 import type { LineaDeArreglo } from "./ctp-sin-origen-lineas";
@@ -33,16 +33,22 @@ export default function DecisionDeLinea({
   linea,
   abriendo,
   puedeEditar,
+  firma = true,
   onVerDia,
   onEditar,
+  onSoltar,
 }: {
   linea: LineaDeArreglo;
   /** La clave del botón que está leyendo, si alguno. */
   abriendo: string | null;
   /** El rol puede corregir una corrida (`PATCH /api/admin/forestal/ctp`). */
   puedeEditar: boolean;
+  /** El rol suelta y vincula madera (dueño o administrador); el servidor lo exige igual. */
+  firma?: boolean;
   onVerDia: (dia: string, clave: string) => void;
   onEditar: (c: DiagnosticoCorrida, clave: string) => void;
+  /** «Soltar trozas» de la corrida que tiene la madera (ADR-447 §6). Sin él, sólo «Ver». */
+  onSoltar?: (t: TomadaPor) => void;
 }) {
   const a = linea.accion;
   const n = linea.corridas.length;
@@ -69,17 +75,32 @@ export default function DecisionDeLinea({
       ? `La ${nombre} del ${ddmm(t.fecha)} todavía no declara lo producido y tiene ${de(t.trozas, "troza", "trozas")} (${fmtM3(t.m3)} m³). Las ${n} de ${a.especie} rinden ${pct(a.juntasPct)} con ellas.`
       : `La ${nombre} declaró ${fmtM3(t.m3Producido ?? 0)} m³ con ${de(t.trozas, "troza", "trozas")} (${fmtM3(t.m3)} m³): rinde ${pct(suya)}. Si además salieron de ahí las ${n}, juntas rendirían ${pct(a.juntasPct)}${pasa ? `, más que el ${TOPE_RENDIMIENTO_PCT} % de la plaza` : ""}.`;
     const clave = `${linea.clave}:dia`;
+    /* Con UNA corrida esperando, «las 1» se leía mal. */
+    const lasDeAntes = n === 1 ? "la de antes" : `las ${n} de antes`;
+    const estas = n === 1 ? "esta queda" : `estas ${n} quedan`;
     caminos = (
       <>
         <Camino
-          titulo={`Salieron de esa madera las ${n} de antes`}
-          texto={`Abre la ${nombre} y corrígela; para soltar sus trozas hay que anularla con motivo desde la tabla. Después estas ${n} quedan para vincular.`}
+          titulo={`Salieron de esa madera ${lasDeAntes}`}
+          texto={
+            onSoltar
+              ? `La ${nombre} devuelve al patio las trozas que no entraron. Lo producido no cambia. Después ${estas} para vincular.`
+              : `Abre la ${nombre} y corrígela; para soltar sus trozas hay que anularla con motivo desde la tabla. Después ${estas} para vincular.`
+          }
         >
+          {onSoltar && (
+            <Btn size="sm" variant="primary" disabled={!firma || abriendo != null} onClick={() => onSoltar(t)}>
+              Soltar trozas de la {nombre}
+            </Btn>
+          )}
           <Btn size="sm" variant="secondary" disabled={abriendo != null} onClick={() => onVerDia(t.fecha, clave)}>
             Ver la {nombre}
           </Btn>
         </Camino>
-        <Camino titulo={`La ${nombre} sí salió de esa madera`} texto={`Estas ${n} quedan sin origen hasta que aparezca su madera. No hace falta hacer nada.`} />
+        <Camino
+          titulo={`La ${nombre} sí salió de esa madera`}
+          texto={`${n === 1 ? "Esta queda" : `Estas ${n} quedan`} sin origen hasta que aparezca su madera. No hace falta hacer nada.`}
+        />
       </>
     );
   } else if (a.tipo === "corregir_permiso") {
@@ -120,6 +141,9 @@ export default function DecisionDeLinea({
       <p className="text-sm tabular-nums text-[var(--text-secondary)]">{dato}</p>
       <div className="grid gap-2 sm:grid-cols-2">{caminos}</div>
       {!puedeEditar && <p className="text-xs text-[var(--text-tertiary)]">Tu usuario no corrige corridas: pídeselo al dueño o a un administrador.</p>}
+      {puedeEditar && a.tipo === "soltar_corrida" && onSoltar && !firma && (
+        <p className="text-xs text-[var(--text-tertiary)]">Sueltan trozas el dueño o un administrador.</p>
+      )}
     </div>
   );
 }

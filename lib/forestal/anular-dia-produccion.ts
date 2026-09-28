@@ -30,6 +30,7 @@
  * PURO y client-safe: la base junta los hechos, acá se decide y se redacta.
  */
 import { z } from "zod";
+import { motivoSchema } from "./motivo";
 import { formatCurrency } from "@/lib/format";
 import { fmtM3, fmtPiezas, fmtPt } from "./cubicacion-formato";
 import { diaDelCalendario } from "./precio-cliente";
@@ -52,7 +53,7 @@ export const anularDiaSchema = z.object({
    * medio (otra pestaña agregó una), no se anula lo que nadie vio.
    */
   ids: z.array(z.string().trim().min(1).max(64)).min(1).max(200),
-  motivo: z.string().trim().min(3, "Escribe el motivo (3 letras como mínimo)").max(500),
+  motivo: motivoSchema({ max: 500, mensaje: "Escribe el motivo (3 letras como mínimo)" }),
 });
 
 export type AnularDiaInput = z.infer<typeof anularDiaSchema>;

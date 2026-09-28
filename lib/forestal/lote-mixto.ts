@@ -22,6 +22,7 @@
  */
 
 import { z } from "zod";
+import { motivoSchema } from "./motivo";
 import type { TrozaConsumible } from "./consumo-trozas";
 import { pieTablarAserrableDe } from "./cubicacion";
 import { ptDeTroza } from "./cubicacion-oxapampa";
@@ -151,7 +152,7 @@ export const accionLoteMixtoSchema = z.discriminatedUnion("accion", [
   z.object({
     accion: z.literal("anular"),
     loteMixtoId: idSchema,
-    motivo: z.string().trim().min(3, "Pon el motivo (3 letras o más)").max(500),
+    motivo: motivoSchema({ max: 500, mensaje: "Pon el motivo (3 letras o más)" }),
   }),
 ]);
 export type AccionLoteMixto = z.infer<typeof accionLoteMixtoSchema>;

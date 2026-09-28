@@ -8,6 +8,7 @@ import { assertCsrf } from "@/lib/auth/csrf";
 import { logger } from "@/lib/logger";
 import { CtpInvariantError } from "@/lib/db/forest-ctp-consumo.db";
 import { ForestVincularTrozasDB, TandaEnCursoError } from "@/lib/db/forest-vincular-trozas.db";
+import { ForestVincularCorridaDB } from "@/lib/db/forest-vincular-corrida.db";
 import { esChoqueDeLocks, MENSAJE_CHOQUE_DE_LOCKS } from "@/lib/forestal/ctp-api-errors";
 import {
   vincularTandaSchema,
@@ -15,6 +16,7 @@ import {
   type ResultadoTandaVincular,
   type ResultadoVincularTrozas,
 } from "@/lib/forestal/vincular-trozas";
+import { MAX_TROZAS_SIMULAR, soltarTrozasSchema, type ResultadoSoltarTrozas } from "@/lib/forestal/soltar-trozas";
 
 /**
  * «Saber de qué trozas salió» (Libro CTP): por qué cada corrida no tiene su
@@ -42,6 +44,16 @@ import {
  *      anteriores quedan escritas) · 429 límite propio del negocio (MODERATE).
  *      `maxDuration` 300 s en `vercel.json`.
  *
+ * SOLTAR trozas de una corrida (ADR-447 §6), el reverso de vincular:
+ * GET  ?soltar=<corridaId>                     → `VistaDeSoltar` (la corrida, sus piezas y sus m³ por guía; 404 si no es de este negocio)
+ * GET  ?soltar=<corridaId>&simular=1[&trozas=a,b,…]
+ *                                              → `SimulacionDeSoltar` (qué corridas quedan listas y la sugerencia; sólo lee)
+ * POST `{ accion: "soltar", corridaId, trozaIds, motivo }` → `ResultadoSoltarTrozas`
+ *      200 soltadas · 400 pedido mal armado o sin motivo · 404 la corrida o
+ *      una troza no es de este negocio · 409 el libro no lo admite (mes
+ *      cerrado, congelado, lo que queda no alcanza para lo producido, otra
+ *      pantalla ya las soltó) o chocó con otra persona. Roles: los de vincular.
+ *
  * Roles: leer, los de Lotes de aserrío (`admin`/`almacenero`/`owner`) y también
  * `manager`, que entra por el «management tier» de `requireAdmin` — leer el
  * diagnóstico no cambia nada, así que se le deja a propósito. Vincular, sólo
@@ -56,7 +68,25 @@ const VINCULAR: AdminRole[] = ["admin", "owner"];
 
 const idCorto = z.string().trim().min(1).max(40);
 
+/** Simulaciones de «Soltar trozas» por negocio: cuatro modales usados a fondo en 5 minutos. */
+const SIMULAR_POR_NEGOCIO = { maxReqs: 60, windowSec: 5 * 60 };
+
+/** Ids separados por coma (`trozas=a,b`): la selección que se simula. */
+const listaDeIds = z
+  .string()
+  .trim()
+  .max(MAX_TROZAS_SIMULAR * 41)
+  .transform((v) =>
+    v
+      .split(",")
+      .map((x) => x.trim())
+      .filter(Boolean),
+  )
+  .pipe(z.array(idCorto).max(MAX_TROZAS_SIMULAR, `Se simulan hasta ${MAX_TROZAS_SIMULAR} trozas.`));
+
 const querySchema = z.union([
+  /* Primero: `?soltar=` no se confunde con las otras formas. */
+  z.object({ soltar: idCorto, simular: z.literal("1").optional(), trozas: listaDeIds.optional() }),
   z.object({ diagnostico: z.literal("1") }),
   z.object({ tanda: z.literal("1") }),
   z.object({ corridaId: idCorto }),
@@ -106,13 +136,29 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(
         {
           error: "invalid_query",
-          message: "Pide ?diagnostico=1, ?tanda=1, ?corridaId=<id> o ?propuesta=1 con especie, fecha y m3.",
+          message: "Pide ?diagnostico=1, ?tanda=1, ?corridaId=<id>, ?soltar=<id> o ?propuesta=1 con especie, fecha y m3.",
           issues: parsed.error.issues.map((i) => ({ path: i.path.join("."), message: i.message })),
         },
         { status: 400 },
       );
     }
     const q = parsed.data;
+    if ("soltar" in q) {
+      /* La simulación lee el patio entero: cupo por negocio además del de la IP.
+         Un modal pide una al abrirse y una por selección quieta (~15 por uso). */
+      if (q.simular) {
+        const rl = applyRateLimitWithTenant(req, "GENEROUS", tenantId, "ctp-soltar-simular", SIMULAR_POR_NEGOCIO);
+        if (rl) return rl;
+      }
+      const r = q.simular
+        ? await ForestVincularTrozasDB.simularSoltar(tenantId, q.soltar, q.trozas ?? null)
+        : await ForestVincularCorridaDB.vistaDeSoltar(tenantId, q.soltar);
+      /* Otro negocio o inexistente es «no existe», nunca un 401 que saque del panel. */
+      if (!r) {
+        return NextResponse.json({ error: "no_existe", message: "Esa corrida no existe en este negocio." }, { status: 404 });
+      }
+      return NextResponse.json(r);
+    }
     if ("diagnostico" in q) {
       return NextResponse.json(await ForestVincularTrozasDB.diagnostico(tenantId));
     }
@@ -168,6 +214,10 @@ export async function POST(req: NextRequest) {
      corrida sigue exactamente como antes. */
   if (body && typeof body === "object" && "tanda" in body) {
     return postTanda(req, body, tenantId, g.auth.username ?? "unknown");
+  }
+  /* Soltar (ADR-447 §6), también aditivo: sólo con la clave `accion`. */
+  if (body && typeof body === "object" && "accion" in body) {
+    return postSoltar(req, body, tenantId, g.auth.username ?? "unknown");
   }
   const parsed = vincularTrozasSchema.safeParse(body);
   if (!parsed.success) {
@@ -227,5 +277,46 @@ async function postTanda(req: NextRequest, body: unknown, tenantId: string, usua
     }
     logger.error("[forestal.ctp.vincular-trozas.POST tanda] failed", { error: String(e), tenantId });
     return noOk("internal_error", "No se pudo vincular la tanda. Vuelve a intentar.", 500);
+  }
+}
+
+/**
+ * `POST { accion: "soltar" }` (ADR-447 §6): las trozas vuelven al patio y la
+ * corrida conserva lo producido. Llega acá con el rol de vincular y el CSRF ya
+ * revisados: cambia la materia prima de un asiento que se presenta ante SERFOR.
+ */
+async function postSoltar(req: NextRequest, body: unknown, tenantId: string, usuario: string): Promise<Response> {
+  /* Cupo propio por negocio (auditoría 28-09): el GENEROUS de `guard` es por IP
+     y lo comparten las lecturas. Soltar es un acto raro que cambia el libro:
+     MODERATE, como la tanda; la clave sin «:» (ver `postTanda`). */
+  const rl = applyRateLimitWithTenant(req, "MODERATE", tenantId, "ctp-soltar-trozas", RateLimitPresets.MODERATE);
+  if (rl) return rl;
+  const no = (error: string, message: string, status: number) =>
+    NextResponse.json({ ok: false, error, message } satisfies ResultadoSoltarTrozas, { status });
+  const parsed = soltarTrozasSchema.safeParse(body);
+  if (!parsed.success) {
+    const i = parsed.error.issues[0];
+    return no("validation_error", i?.message ?? "Datos inválidos.", 400);
+  }
+  try {
+    const r = await ForestVincularCorridaDB.soltarTrozas(tenantId, parsed.data, usuario);
+    return NextResponse.json(r satisfies ResultadoSoltarTrozas);
+  } catch (e) {
+    if (e instanceof CtpInvariantError) {
+      /* Pedido mal armado o sin motivo: 400; lo que no es de este negocio: 404;
+         lo demás es el libro diciendo «no» con la frase de qué hacer: 409. */
+      const status =
+        e.code === "VALIDACION" || e.code === "MOTIVO_REQUERIDO" ? 400 : e.code === "TENANT_MISMATCH" ? 404 : 409;
+      return no(e.code, e.message, status);
+    }
+    if (esChoqueDeLocks(e)) {
+      logger.warn("[forestal.ctp.vincular-trozas.POST soltar] choque de locks: se pidió reintentar", {
+        error: String(e),
+        tenantId,
+      });
+      return no("CHOQUE_DE_LOCKS", MENSAJE_CHOQUE_DE_LOCKS, 409);
+    }
+    logger.error("[forestal.ctp.vincular-trozas.POST soltar] failed", { error: String(e), tenantId });
+    return no("internal_error", "No se pudieron soltar las trozas. Vuelve a intentar.", 500);
   }
 }

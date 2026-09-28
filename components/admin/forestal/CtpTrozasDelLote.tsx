@@ -86,6 +86,7 @@ export default function CtpTrozasDelLote({
    */
   etiquetaSeleccion = "Seleccionar",
   accionVacio,
+  accion,
 }: {
   trozas: TrozaConsumible[];
   /** Opcionales en `soloLectura`: ahí no hay nada que tildar. */
@@ -108,6 +109,8 @@ export default function CtpTrozasDelLote({
    * ahí lo que falta no es entender el formato, es ir a buscar la madera.
    */
   accionVacio?: ReactNode;
+  /** Un botón en la franja del título, junto al conteo (p. ej. «Soltar trozas» en la ficha de la corrida). */
+  accion?: ReactNode;
 }) {
   /** Buscador de la cabecera «Cod. Planta», igual que el formato. */
   const [busca, setBusca] = useState("");
@@ -244,6 +247,7 @@ export default function CtpTrozasDelLote({
           )}{" "}
           · {fmtM3(volumen)} m³ · {formatNumber(pieTablarDe(volumen))} pt
         </p>
+        {accion}
       </header>
 
       {/* Sin madera que mostrar y con una salida ofrecida, la tabla entera se

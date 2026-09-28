@@ -31,7 +31,9 @@ export type ArregloAbierto =
   | { tipo: "acomodar_trozas"; woodEntryIds: string[]; descripcion: string }
   | { tipo: "declarar_apertura"; corridas: DiagnosticoCorrida[] }
   | { tipo: "editar_corrida"; linea: LineaEditable }
-  | { tipo: "ver_dia"; dia: string };
+  | { tipo: "ver_dia"; dia: string }
+  /** «Soltar trozas» de la corrida que tomó la madera (ADR-447 §6), con las que la esperan. */
+  | { tipo: "soltar_trozas"; corridaId: string; lineNo: number | null; esperan: DiagnosticoCorrida[] };
 
 const mensaje = (e: unknown) => (e instanceof Error ? e.message : String(e));
 

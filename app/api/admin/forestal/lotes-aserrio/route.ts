@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { motivoSchema } from "@/lib/forestal/motivo";
 import { requireAdmin } from "@/lib/require-admin";
 import type { AdminRole } from "@/lib/session";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -193,7 +194,7 @@ const patchSchema = z.discriminatedUnion("accion", [
   z.object({
     accion: z.literal("deshacer-forzado"),
     loteId: z.string().trim().min(1).max(60),
-    motivo: z.string().trim().min(3).max(500),
+    motivo: motivoSchema({ max: 500 }),
     /** Confirma eliminar aunque la corrida ya tenga despacho/reproceso registrado. */
     forzar: z.boolean().optional(),
   }),
@@ -240,7 +241,7 @@ const patchSchema = z.discriminatedUnion("accion", [
   z.object({
     accion: z.literal("cerrar"),
     loteId: z.string().trim().min(1).max(60),
-    motivo: z.string().trim().min(3).max(300),
+    motivo: motivoSchema({ max: 300 }),
   }),
   /**
    * REABRIR un lote ya aserrado para seguirle cargando madera (2026-09-02): un

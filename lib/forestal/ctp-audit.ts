@@ -155,6 +155,10 @@ export type CtpAuditAction =
   // aparte de `annul` porque la corrida sobrevive — es una corrección, no un
   // asiento muerto.
   | "ctp_corrida_quitar_piezas"
+  // Soltar trozas de una corrida YA declarada (ADR-447 §6): las piezas vuelven
+  // al patio, el m³ por guía baja y la producción queda intacta. Va aparte de
+  // `quitar_piezas` porque ésa es sólo para corridas abiertas.
+  | "ctp_corrida_soltar_trozas"
   // Un lote parcial que no va a terminar de aserrarse: se cierra con motivo y su
   // madera libre vuelve al patio. No es `delete` — el lote y sus corridas siguen
   // siendo parte del libro.

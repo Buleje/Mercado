@@ -93,6 +93,9 @@ describe("la bandeja con Blas tras corregir las llegadas", () => {
     fireEvent.click(within(cachimbo).getByRole("button", { name: "Ver y decidir" }));
     expect(within(cachimbo).getByText("Salieron de esa madera las 5 de antes")).toBeTruthy();
     expect(within(cachimbo).getByText("La N.º 61 sí salió de esa madera")).toBeTruthy();
+    /* ADR-447 §6: la salida ya no es «anúlala», es soltar sus trozas (la escritura va por su modal). */
+    expect(within(cachimbo).getByRole("button", { name: "Soltar trozas de la N.º 61" })).toBeTruthy();
+    expect(within(cachimbo).queryByText(/hay que anularla/)).toBeNull();
     await waitFor(() => expect(vi.mocked(fetch)).toHaveBeenCalled());
     expect(posts).toHaveLength(0);
   });

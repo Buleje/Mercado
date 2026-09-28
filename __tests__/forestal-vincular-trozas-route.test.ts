@@ -16,6 +16,9 @@ const H = vi.hoisted(() => ({
   vincular: vi.fn(),
   tanda: vi.fn(),
   vincularTanda: vi.fn(),
+  simularSoltar: vi.fn(),
+  vistaDeSoltar: vi.fn(),
+  soltarTrozas: vi.fn(),
   rlTenant: vi.fn((): Response | null => null),
   /* La clase real del error: la ruta la distingue con `instanceof`. */
   TandaEnCursoError: class TandaEnCursoError extends Error {},
@@ -39,8 +42,12 @@ vi.mock("@/lib/db/forest-vincular-trozas.db", () => ({
     vincularTrozas: H.vincular,
     tanda: H.tanda,
     vincularTanda: H.vincularTanda,
+    simularSoltar: H.simularSoltar,
   },
   TandaEnCursoError: H.TandaEnCursoError,
+}));
+vi.mock("@/lib/db/forest-vincular-corrida.db", () => ({
+  ForestVincularCorridaDB: { vistaDeSoltar: H.vistaDeSoltar, soltarTrozas: H.soltarTrozas },
 }));
 
 import { GET, POST } from "@/app/api/admin/forestal/ctp/vincular-trozas/route";
@@ -299,5 +306,99 @@ describe("la tanda (ADR-447)", () => {
     expect(await ocupada.json()).toMatchObject({ ok: false, error: "TANDA_EN_CURSO" });
     H.vincularTanda.mockRejectedValueOnce(new CtpInvariantError("Una corrida de la tanda no existe en este negocio.", "TENANT_MISMATCH"));
     expect((await post(TANDA)).status).toBe(404);
+  });
+});
+
+describe("soltar trozas (ADR-447 §6)", () => {
+  const SOLTAR = { accion: "soltar", corridaId: "c61", trozaIds: ["t1", "t2"], motivo: "no entraron el 27/09" };
+  const HECHO = {
+    ok: true,
+    corridaId: "c61",
+    lineNo: 61,
+    piezas: 2,
+    m3: 4.2,
+    antes: { piezas: 12, m3: 28.947, rendimientoPct: 45.79 },
+    despues: { piezas: 10, m3: 24.747, rendimientoPct: 53.56 },
+    sobreElTope: false,
+    quedaSinOrigen: false,
+    lotes: [],
+    consumos: [],
+  };
+
+  it("soltar es de dueño o administrador: el almacenero y el manager se quedan en 403", async () => {
+    sesion("almacenero");
+    expect((await post(SOLTAR)).status).toBe(403);
+    sesion("manager");
+    expect((await post(SOLTAR)).status).toBe(403);
+    expect(H.soltarTrozas).not.toHaveBeenCalled();
+  });
+
+  it("sin motivo, con uno invisible o sin trozas → 400 antes de tocar la base", async () => {
+    expect((await post({ ...SOLTAR, motivo: "x" })).status).toBe(400);
+    expect((await post({ ...SOLTAR, motivo: "​​​​​​" })).status).toBe(400);
+    expect((await post({ ...SOLTAR, trozaIds: [] })).status).toBe(400);
+    expect(H.soltarTrozas).not.toHaveBeenCalled();
+  });
+
+  it("soltar tiene cupo propio por negocio (MODERATE); pasado el cupo, 429 sin escribir", async () => {
+    H.soltarTrozas.mockResolvedValue(HECHO);
+    await post(SOLTAR);
+    expect(H.rlTenant).toHaveBeenCalledWith(expect.anything(), "MODERATE", "tenant-qa", "ctp-soltar-trozas", { maxReqs: 20, windowSec: 300 });
+    H.rlTenant.mockImplementationOnce(() => new Response("{}", { status: 429 }));
+    H.soltarTrozas.mockClear();
+    expect((await post(SOLTAR)).status).toBe(429);
+    expect(H.soltarTrozas).not.toHaveBeenCalled();
+  });
+
+  it("la simulación también tiene cupo por negocio; la vista (liviana) no", async () => {
+    H.simularSoltar.mockResolvedValue({ sugeridas: [], sugeridasConLlegada: [], guiasALlegar: [], destraba: null });
+    H.vistaDeSoltar.mockResolvedValue({ corrida: { id: "c61" }, piezas: [], consumos: [] });
+    await get("soltar=c61");
+    expect(H.rlTenant).not.toHaveBeenCalled();
+    await get("soltar=c61&simular=1");
+    expect(H.rlTenant).toHaveBeenCalledWith(expect.anything(), "GENEROUS", "tenant-qa", "ctp-soltar-simular", { maxReqs: 60, windowSec: 300 });
+    H.rlTenant.mockImplementationOnce(() => new Response("{}", { status: 429 }));
+    expect((await get("soltar=c61&simular=1")).status).toBe(429);
+  });
+
+  it("200 con el antes y el después; el tenant sale de la sesión", async () => {
+    sesion("owner", "tenant-de-la-sesion");
+    H.soltarTrozas.mockResolvedValue(HECHO);
+    const res = await post({ ...SOLTAR, tenantId: "ajeno" }, { "x-tenant-id": "ajeno" });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ ok: true, lineNo: 61, despues: { rendimientoPct: 53.56 } });
+    expect(H.soltarTrozas).toHaveBeenCalledWith(
+      "tenant-de-la-sesion",
+      { accion: "soltar", corridaId: "c61", trozaIds: ["t1", "t2"], motivo: "no entraron el 27/09" },
+      "qa-owner",
+    );
+  });
+
+  it("corrida de otro negocio → 404; mes cerrado, imposible u otra pestaña → 409 con su frase", async () => {
+    H.soltarTrozas.mockRejectedValueOnce(new CtpInvariantError("Esa corrida no existe en este negocio.", "TENANT_MISMATCH"));
+    expect((await post(SOLTAR)).status).toBe(404);
+    for (const code of ["PERIODO_CERRADO", "VOLUMEN_INSUFICIENTE", "PROPUESTA_DESACTUALIZADA", "CONGELADO"] as const) {
+      H.soltarTrozas.mockRejectedValueOnce(new CtpInvariantError(`no: ${code}`, code));
+      const res = await post(SOLTAR);
+      expect(res.status).toBe(409);
+      expect(await res.json()).toMatchObject({ ok: false, error: code, message: `no: ${code}` });
+    }
+  });
+
+  it("GET ?soltar lee la vista; de otro negocio → 404", async () => {
+    H.vistaDeSoltar.mockResolvedValueOnce({ corrida: { id: "c61" }, piezas: [], consumos: [] });
+    expect((await get("soltar=c61")).status).toBe(200);
+    expect(H.vistaDeSoltar).toHaveBeenCalledWith("tenant-qa", "c61");
+    H.vistaDeSoltar.mockResolvedValueOnce(null);
+    expect((await get("soltar=ajena")).status).toBe(404);
+  });
+
+  it("GET ?soltar&simular pasa la selección como lista; sin trozas, null", async () => {
+    H.simularSoltar.mockResolvedValue({ sugeridas: ["t1"], destraba: null });
+    expect((await get("soltar=c61&simular=1&trozas=t1,%20t2,")).status).toBe(200);
+    expect(H.simularSoltar).toHaveBeenLastCalledWith("tenant-qa", "c61", ["t1", "t2"]);
+    await get("soltar=c61&simular=1");
+    expect(H.simularSoltar).toHaveBeenLastCalledWith("tenant-qa", "c61", null);
+    expect(H.vistaDeSoltar).not.toHaveBeenCalled();
   });
 });

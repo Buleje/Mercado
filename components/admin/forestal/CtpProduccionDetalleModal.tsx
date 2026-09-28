@@ -31,6 +31,7 @@ import CtpAtribucionEditor from "./CtpAtribucionEditor";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import CtpHistorial from "./CtpHistorial";
 import CtpTrozasDelLote from "./CtpTrozasDelLote";
+import CtpSoltarTrozasBoton from "./CtpSoltarTrozasBoton";
 import { Btn, MODAL_BODY } from "./ctp-shared";
 import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import { formatDate, formatNumber } from "@/lib/format";
@@ -108,9 +109,12 @@ export default function CtpProduccionDetalleModal({ entry, onClose }: { entry: P
   const [confirmFreeze, setConfirmFreeze] = useState(false);
   const [freezing, setFreezing] = useState(false);
   const [freezeError, setFreezeError] = useState<string | null>(null);
+  /** Tras «Soltar trozas»: la madera y el rendimiento de después (`entry` viene del padre y queda viejo). */
+  const [tras, setTras] = useState<{ m3: number | null; rendimientoPct: number | null } | null>(null);
 
   const unitLabel = entry.unit ? (UNIT_LABELS[entry.unit] ?? entry.unit) : "";
-  const declarado = entry.volumeInputM3 ? Number(entry.volumeInputM3) : 0;
+  const declarado = tras ? (tras.m3 ?? 0) : entry.volumeInputM3 ? Number(entry.volumeInputM3) : 0;
+  const rendimientoPct = tras ? tras.rendimientoPct : entry.rendimientoPct != null ? Number(entry.rendimientoPct) : null;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -222,11 +226,11 @@ export default function CtpProduccionDetalleModal({ entry, onClose }: { entry: P
             <div className="grid grid-cols-3 gap-3">
               <MiniStat label="Consumido (m³)" value={fmtM3(declarado)} />
               <MiniStat label="Atribuido (m³)" value={fmtM3(costo.atribuidoM3)} tone={costo.atribuidoM3 > 0 ? "ok" : undefined} />
-              <MiniStat label="Rendimiento" value={entry.rendimientoPct ? `${Number(entry.rendimientoPct).toFixed(1)}%` : "—"} />
+              <MiniStat label="Rendimiento" value={rendimientoPct ? `${rendimientoPct.toFixed(1)}%` : "—"} />
             </div>
 
             {(() => {
-              const { estado, ref } = evaluarRendimiento(entry.productType, entry.rendimientoPct != null ? Number(entry.rendimientoPct) : null);
+              const { estado, ref } = evaluarRendimiento(entry.productType, rendimientoPct);
               return estado === "alto" ? (
                 <WarningAlert
                   icon={AlertCircle}
@@ -398,6 +402,19 @@ export default function CtpProduccionDetalleModal({ entry, onClose }: { entry: P
                 soloLectura
                 titulo="Trozas que entraron a esta corrida"
                 fechaConsumo={entry.entryDate}
+                /* ADR-447 §6: las que no entraron vuelven al patio sin anular la corrida. */
+                accion={
+                  !costo.congelado && (
+                    <CtpSoltarTrozasBoton
+                      corridaId={entry.id}
+                      lineNo={entry.lineNo}
+                      onSoltadas={(r) => {
+                        setTras({ m3: r.despues.m3, rendimientoPct: r.despues.rendimientoPct });
+                        void load();
+                      }}
+                    />
+                  )
+                }
               />
             )}
 

@@ -5,7 +5,9 @@
  * salió?» (ADR-447). No hay un formulario nuevo: cada arreglo es el de siempre,
  * con sus reglas y su confirmación —corregir la llegada con motivo (ADR-434),
  * recibir en bloque, acomodar trozas (ADR-435), declarar apertura (ADR-394),
- * el editor de la corrida (ADR-401) y el día pieza por pieza—.
+ * el editor de la corrida (ADR-401) y el día pieza por pieza—. El único propio
+ * es «Soltar trozas» (ADR-447 §6), que antes no tenía escritura: la corrida que
+ * tomó la madera devuelve las que elige el dueño, sin anularse.
  *
  * Al terminar, `onCambio` con una frase: la bandeja y la tabla releen y la
  * lista se recalcula sola.
@@ -17,6 +19,7 @@ import { nTrozas } from "@/lib/forestal/acomodar-trozas";
 import { invalidarCtp } from "@/lib/forestal/ctp-fetch";
 import { formatNumber } from "@/lib/format";
 import { etiquetaLarga } from "@/lib/forestal/semana-de-registro";
+import { fraseDeSoltar } from "@/lib/forestal/soltar-trozas";
 import type { DiagnosticoCorrida } from "@/lib/forestal/vincular-trozas";
 import { Btn, ModalBody } from "./ctp-shared";
 import type { ArregloAbierto } from "./hooks/use-abrir-arreglo";
@@ -27,6 +30,7 @@ const CtpAcomodarTrozasModal = dynamic(() => import("./CtpAcomodarTrozasModal"),
 const DeclararAperturaModal = dynamic(() => import("./saldos/DeclararAperturaModal"), { ssr: false });
 const CtpEditarLineaModal = dynamic(() => import("./CtpEditarLineaModal"), { ssr: false });
 const CtpDiaDeProduccionModal = dynamic(() => import("./CtpDiaDeProduccionModal"), { ssr: false });
+const CtpSoltarTrozasModal = dynamic(() => import("./CtpSoltarTrozasModal"), { ssr: false });
 
 const plural = (n: number, uno: string, varios: string) => (n === 1 ? uno : varios);
 
@@ -163,5 +167,18 @@ export default function CtpSinOrigenModales({
       );
     case "ver_dia":
       return <CtpDiaDeProduccionModal dia={abierto.dia} onClose={onCerrar} onEditado={() => cambio(`Se guardó un cambio del ${etiquetaLarga(abierto.dia)}.`)} />;
+    case "soltar_trozas":
+      return (
+        <CtpSoltarTrozasModal
+          corridaId={abierto.corridaId}
+          lineNo={abierto.lineNo}
+          esperan={abierto.esperan}
+          onClose={onCerrar}
+          onListo={(r) => {
+            onCerrar();
+            cambio(fraseDeSoltar(r));
+          }}
+        />
+      );
   }
 }
