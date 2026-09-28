@@ -14,48 +14,22 @@
  *    abajo tenga otro filtro puesto.
  *
  * Vive en la vista (y no dentro del panel) porque el contador de la pestaña
- * «Patio · N trozas» sale del MISMO número que la KPI y la tabla.
+ * «Patio · N trozas» sale del MISMO número que la línea «Qué queda en el patio».
+ * El Excel por permiso y el clic por permiso se mudaron a «Trozas disponibles»
+ * (2026-09-27) con su tabla; acá quedó lo que carga la sierra.
  */
 
-import { useCallback, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useContratoActivo } from "@/contexts/contrato-activo-context";
 import { piezasLibres } from "@/lib/forestal/lotes-aserrio";
 import { trozasDelLote } from "@/lib/forestal/lote-programacion";
-import { exportSheetsToExcel } from "@/lib/export-excel";
-import { hojasDelPatioPorPermiso, nombreArchivoPatio } from "@/lib/forestal/patio-excel";
-import { ETIQUETA_TRAMO_DIAS, resumenPorPermiso } from "@/lib/forestal/patio-resumen";
+import { resumenPorPermiso } from "@/lib/forestal/patio-resumen";
 import type { ActionToast } from "../cubicador-toasts";
 import { useLotesAserrio } from "./use-lotes-aserrio";
 import { useLoteEnCarga } from "./use-lote-en-carga";
-import { useFiltroPatio, type EstadoFiltroPatio, type RangoFiltro } from "./use-filtro-patio";
+import { useFiltroPatio } from "./use-filtro-patio";
 
 type PushToast = (t: Omit<ActionToast, "id" | "exiting">) => number;
-
-const rangoEscrito = (r: RangoFiltro, unidad: string): string[] =>
-  r.min == null && r.max == null
-    ? []
-    : [r.min != null && r.max != null ? `${r.min}–${r.max} ${unidad}` : r.min != null ? `≥ ${r.min} ${unidad}` : `≤ ${r.max} ${unidad}`];
-
-/**
- * TODOS los campos que acotan la pila, escritos como se leen: los usa la nota
- * del panel de indicadores y la hoja «Qué se exportó» del Excel. Una lista para
- * las dos, para que no puedan contar distinto.
- */
-export function camposDelFiltroPatio(p: EstadoFiltroPatio): { label: string; valores: string[] }[] {
-  return [
-    { label: "Búsqueda", valores: p.texto.trim() ? [`«${p.texto.trim()}»`] : [] },
-    { label: "Especie", valores: p.especie },
-    { label: "Guía", valores: p.guia },
-    { label: "Permiso", valores: p.permiso },
-    { label: "Resolución", valores: p.resolucion },
-    { label: "Proveedor", valores: p.proveedor },
-    { label: "Días en el patio", valores: p.tramos.map((t) => ETIQUETA_TRAMO_DIAS[t]) },
-    { label: "Largo", valores: rangoEscrito(p.largo, "m") },
-    { label: "Diámetro", valores: rangoEscrito(p.diametro, "cm") },
-    { label: "Sin código", valores: p.sinCodigo ? ["sí"] : [] },
-    { label: "Guía CITES", valores: p.cites ? ["sí"] : [] },
-  ];
-}
 
 export function usePatioConsumos({
   pushToast,
@@ -96,56 +70,16 @@ export function usePatioConsumos({
     return Math.max(0, delLote - visibles);
   }, [contratoFiltro, loteElegido, lotes.trozas]);
 
-  /** Clic en una fila de «Por permiso»: lo filtra, y otro clic lo suelta. */
-  const alternarPermiso = useCallback(
-    (p: string) => patio.set.permiso(patio.permiso.includes(p) ? patio.permiso.filter((x) => x !== p) : [p]),
-    [patio.permiso, patio.set],
-  );
-
-  const [descargando, setDescargando] = useState(false);
-  /** 1 archivo, 1 llamada: «Por permiso», una hoja por permiso y «Qué se exportó». */
-  const descargarExcel = useCallback(async () => {
-    setDescargando(true);
-    try {
-      const filtros = camposDelFiltroPatio(patio)
-        .filter((c) => c.valores.length > 0)
-        .map((c) => `${c.label}: ${c.valores.join(" o ")}`);
-      if (patio.soloLibres) filtros.push("Solo libres: sí");
-      const hojas = hojasDelPatioPorPermiso({
-        porPermiso,
-        trozas: patio.visibles,
-        ahora: patio.ahora,
-        filtros,
-        alcance: contratoFiltro ? (activo?.codigo ?? null) : null,
-        truncado: lotes.patioTruncado
-          ? { total: lotes.patioTruncado.hay, devueltas: lotes.patioTruncado.leidas }
-          : null,
-      });
-      await exportSheetsToExcel(hojas, nombreArchivoPatio(patio.ahora));
-    } catch (e) {
-      pushToast({
-        tono: "error",
-        msg: "No se pudo descargar el Excel del patio",
-        detail: e instanceof Error ? e.message : String(e),
-      });
-    } finally {
-      setDescargando(false);
-    }
-  }, [patio, porPermiso, lotes.patioTruncado, contratoFiltro, activo, pushToast]);
-
   return {
     lotes,
     carga,
     patio,
     porPermiso,
-    alternarPermiso,
     piezasOcultasDelLote,
     /** Apaga «Solo este permiso» (el aviso del lote mixto ofrece hacerlo). */
     verTodosLosPermisos: () => setSoloEste(false),
     contratoFiltro,
     codigoPermisoActivo: activo?.codigo ?? null,
-    descargarExcel,
-    descargando,
   };
 }
 

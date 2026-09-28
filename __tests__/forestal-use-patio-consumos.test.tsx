@@ -6,14 +6,18 @@
  *    como lo devuelve `/lotes-aserrio` (sin filtrar), para avisar antes de
  *    consumir «el lote» dejando en silencio las del otro permiso.
  *  · El patio se pide al servidor con `?contratoId=` (no se filtra en el cliente).
- *  · El Excel del patio es UN archivo en UNA llamada, con el alcance dicho.
+ *  · «Por permiso» cuenta la respuesta ENTERA del patio (el contador de la pestaña).
+ * El Excel del patio se mudó a «Trozas disponibles» (2026-09-27): su prueba vive
+ * en `forestal-use-trozas-disponibles.test.tsx`.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { invalidarCtp } from "@/lib/forestal/ctp-fetch";
 
-const { exportar } = vi.hoisted(() => ({ exportar: vi.fn(async () => {}) }));
-vi.mock("@/lib/export-excel", () => ({ exportSheetsToExcel: exportar }));
+/* Reabrir un lote pide confirmación (27-09): el hook usa el diálogo del panel. */
+vi.mock("@/components/admin/shared/ConfirmDialog", () => ({
+  useConfirm: () => ({ confirm: async () => true, notice: async () => undefined }),
+}));
 vi.mock("@/contexts/contrato-activo-context", () => ({
   useContratoActivo: () => ({
     activo: { id: "c1", codigo: "10-HUA", titular: null },
@@ -73,7 +77,6 @@ const pedidos: string[] = [];
 beforeEach(() => {
   invalidarCtp();
   pedidos.length = 0;
-  exportar.mockClear();
   vi.stubGlobal(
     "fetch",
     vi.fn(async (url: string) => {
@@ -103,16 +106,11 @@ describe("usePatioConsumos con «Solo este permiso»", () => {
     expect(result.current.piezasOcultasDelLote).toBe(2);
   });
 
-  it("el Excel del patio sale en UNA llamada, sin «.xlsx» en el nombre y con el alcance", async () => {
+  it("«Por permiso» cuenta el patio entero: el contador de la pestaña sale de ahí", async () => {
     const { result } = renderHook(() => usePatioConsumos({ pushToast: vi.fn(() => 1) }));
     await waitFor(() => expect(result.current.porPermiso.filas).toHaveLength(1));
-    await act(async () => {
-      await result.current.descargarExcel();
-    });
-    expect(exportar).toHaveBeenCalledTimes(1);
-    const [hojas, nombre] = exportar.mock.calls[0] as unknown as [{ nombre: string; filas: Record<string, unknown>[] }[], string];
-    expect(nombre).toMatch(/^patio-por-permiso-\d{4}-\d{2}-\d{2}$/);
-    const queSeExporto = hojas.find((h) => h.nombre === "Qué se exportó");
-    expect(JSON.stringify(queSeExporto?.filas)).toContain("10-HUA");
+    expect(result.current.porPermiso.filas[0].permiso).toBe("10-HUA");
+    expect(result.current.porPermiso.totales.enPatio).toMatchObject({ trozas: 1, m3: 1 });
+    expect(result.current.porPermiso.totales.enLote.trozas).toBe(1);
   });
 });

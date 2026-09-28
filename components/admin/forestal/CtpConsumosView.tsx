@@ -99,7 +99,7 @@ export default function CtpConsumosView({
       {p.contratoFiltro && p.codigoPermisoActivo && (
         <CtpAvisoAlcancePermiso
           codigo={p.codigoPermisoActivo}
-          acotado={["el patio", "«Por permiso»", "los indicadores del patio"]}
+          acotado={["el patio", "la línea de lo que queda"]}
           sinAcotar={["el cuadro de la Sección 2", "la lista de lotes"]}
         />
       )}

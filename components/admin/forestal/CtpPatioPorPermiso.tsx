@@ -20,16 +20,15 @@
  * sin scroll horizontal en la página.
  */
 
-import { useId } from "react";
-import { FileDown, Inbox } from "@buleje/design-system/icons";
+import { Fragment, useId, useState, type ReactNode } from "react";
+import { ChevronRight, FileDown, Inbox } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import type { FilaPermisoPatio, TotalesPermisoPatio } from "@/lib/forestal/patio-resumen";
-import { SEVERIDAD_TRAMO_DIAS, TONO_TRAMO_DIAS, tramoDeDias } from "@/lib/forestal/patio-dias";
-import { diaConNombre, fechaCorta } from "@/lib/forestal/plazo-de-apartado";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { formatNumber } from "@/lib/format";
 import { TablaCtp, TbodyCtp, TheadCtp } from "./ctp-tabla";
+import { MasVieja, PorRecepcionar } from "./ctp-patio-por-permiso-partes";
 
 export interface CtpPatioPorPermisoProps {
   /** De `resumenPorPermiso(respuesta entera de /trozas/patio, ahora)`. */
@@ -58,6 +57,11 @@ export interface CtpPatioPorPermisoProps {
    * las cifras.
    */
   sinCabecera?: boolean;
+  /**
+   * «Trozas disponibles» (2026-09-27): cada fila se abre y muestra lo que
+   * devuelve esto —las especies del permiso—. Sin esto, la fila no se abre.
+   */
+  detalleDe?: (permiso: string | null) => ReactNode;
 }
 
 /** Qué miden estas cifras y qué hace el clic, dicho una sola vez. */
@@ -73,56 +77,6 @@ const nf = (n: number) => formatNumber(n);
 const SOLO_ANCHO = "max-sm:hidden!";
 const trozas = (n: number) => `${nf(n)} troza${n === 1 ? "" : "s"}`;
 
-const TONO_PASTILLA = {
-  ok: "bg-[var(--data-success-500)]/15",
-  warn: "bg-[var(--data-warning-500)]/20",
-  danger: "bg-[var(--data-error-500)]/15",
-} as const;
-
-/** Días con su severidad EN TEXTO: el tramo nunca va sólo en color (WCAG 1.4.1). */
-function Dias({ dias }: { dias: number }) {
-  const tramo = tramoDeDias(dias);
-  if (!tramo) return null;
-  const severidad = SEVERIDAD_TRAMO_DIAS[tramo];
-  return (
-    <span
-      className={`inline-flex items-center gap-1 whitespace-nowrap rounded-lg px-1.5 py-0.5 text-sm font-semibold text-[var(--text-primary)] ${TONO_PASTILLA[TONO_TRAMO_DIAS[tramo]]}`}
-    >
-      {nf(dias)} días{severidad !== "fresca" ? ` · ${severidad}` : ""}
-    </span>
-  );
-}
-
-/**
- * Fecha y días en UN renglón (2026-09-24): en dos, cada fila de la tabla medía
- * ~52 px y «Por permiso» empujaba la tabla de trozas media pantalla abajo. El
- * día de la semana va en el `title` — la pastilla ya dice la edad.
- */
-function MasVieja({ fila }: { fila: Pick<FilaPermisoPatio, "masVieja"> }) {
-  if (!fila.masVieja) return <span className="text-[var(--text-secondary)]">—</span>;
-  return (
-    <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5" title={`Recibida el ${diaConNombre(fila.masVieja.fecha)}`}>
-      <span className="whitespace-nowrap tabular-nums text-[var(--text-primary)]">{fechaCorta(fila.masVieja.fecha)}</span>
-      <Dias dias={fila.masVieja.dias} />
-    </span>
-  );
-}
-
-function PorRecepcionar({ p }: { p: FilaPermisoPatio["porRecepcionar"] }) {
-  if (p.trozas === 0) return <span className="text-[var(--text-secondary)]">—</span>;
-  return (
-    <span className="flex flex-col gap-0.5">
-      <span className="whitespace-nowrap tabular-nums text-[var(--text-primary)]">
-        {trozas(p.trozas)} · {fmtM3(p.m3)} m³
-      </span>
-      <span className="text-sm text-[var(--text-secondary)]">
-        {p.guias === 1 ? "1 guía" : `${nf(p.guias)} guías`}
-        {p.asientoMasViejo ? ` · asentada hace ${nf(p.asientoMasViejo.dias)} días (sin recepcionar)` : " sin recepcionar"}
-      </span>
-    </span>
-  );
-}
-
 export default function CtpPatioPorPermiso({
   filas,
   totales,
@@ -135,8 +89,17 @@ export default function CtpPatioPorPermiso({
   error = null,
   titulo = "Por permiso",
   sinCabecera = false,
+  detalleDe,
 }: CtpPatioPorPermisoProps) {
   const idTitulo = useId();
+  const [abiertos, setAbiertos] = useState<ReadonlySet<string>>(() => new Set());
+  const alternarDetalle = (k: string) =>
+    setAbiertos((prev) => {
+      const next = new Set(prev);
+      if (next.has(k)) next.delete(k);
+      else next.add(k);
+      return next;
+    });
   const celda = compacto ? "px-2 py-1.5" : "px-3 py-2";
   const columnas = compacto ? 5 : 8;
   const sinDatos = !cargando && !error && filas.length === 0;
@@ -218,9 +181,27 @@ export default function CtpPatioPorPermiso({
           {filas.map((f) => {
             const activo = f.permiso != null && activos.includes(f.permiso);
             const todoPorRecepcionar = f.enPatio.trozas === 0 && f.porRecepcionar.trozas > 0;
+            const k = f.permiso ?? "";
+            const abierto = detalleDe != null && abiertos.has(k);
+            const idDetalle = `${idTitulo}-det-${k || "sin-permiso"}`;
             return (
-              <tr key={f.permiso ?? "sin-permiso"} className={activo ? "bg-primary/10" : "hover:bg-[var(--surface-sunken)]"}>
+              <Fragment key={f.permiso ?? "sin-permiso"}>
+              <tr className={activo ? "bg-primary/10" : "hover:bg-[var(--surface-sunken)]"}>
                 <td className={celda}>
+                  <div className="flex items-start gap-1">
+                  {detalleDe && (
+                    <button
+                      type="button"
+                      onClick={() => alternarDetalle(k)}
+                      aria-expanded={abierto}
+                      aria-controls={abierto ? idDetalle : undefined}
+                      aria-label={`${abierto ? "Ocultar" : "Ver"} las especies de ${f.permiso ?? "lo que no declara permiso"}`}
+                      title={abierto ? "Ocultar las especies" : "Ver las especies"}
+                      className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+                    >
+                      <ChevronRight className={`h-4 w-4 transition-transform ${abierto ? "rotate-90" : ""}`} aria-hidden />
+                    </button>
+                  )}
                   {f.permiso == null ? (
                     <span className="flex flex-col">
                       <span className="font-bold text-[var(--text-primary)]">Sin permiso declarado</span>
@@ -257,6 +238,7 @@ export default function CtpPatioPorPermiso({
                       )}
                     </button>
                   )}
+                  </div>
                 </td>
                 <td className={`${celda} text-right font-bold tabular-nums text-[var(--text-primary)]`}>
                   {nf(f.enPatio.trozas)}
@@ -273,6 +255,12 @@ export default function CtpPatioPorPermiso({
                 <td className={celda}><MasVieja fila={f} /></td>
                 <td className={celda}><PorRecepcionar p={f.porRecepcionar} /></td>
               </tr>
+              {abierto && (
+                <tr id={idDetalle} className="bg-[var(--surface-sunken)]/60">
+                  <td colSpan={columnas} className="px-3 pb-3 pt-1">{detalleDe(f.permiso)}</td>
+                </tr>
+              )}
+              </Fragment>
             );
           })}
         </TbodyCtp>

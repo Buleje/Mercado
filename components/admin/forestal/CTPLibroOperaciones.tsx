@@ -50,6 +50,7 @@ import {
   Scissors,
   ShieldCheck,
   TreePine,
+  Trees,
   TrendingUp,
   Truck,
   Trash2,
@@ -106,6 +107,7 @@ import BandaPermiso from "@/components/admin/forestal/BandaPermiso";
 import CtpResumenesSerfor from "./CtpResumenesSerfor";
 import CtpConsumosView from "./CtpConsumosView";
 import CtpProductosDisponibles from "./CtpProductosDisponibles";
+import CtpTrozasDisponibles from "./CtpTrozasDisponibles";
 import CtpReprocesosDeclarados from "./CtpReprocesosDeclarados";
 import CtpLotesView, { type LoteAProducir } from "./CtpLotesView";
 import CtpTrozasView from "./CtpTrozasView";
@@ -126,6 +128,7 @@ type CtpView =
   | "lotes"
   | "consumos"
   | "produccion"
+  | "trozas-disponibles"
   | "disponibles"
   | "despacho"
   | "trozas"
@@ -179,6 +182,10 @@ const CTP_GROUPS: LibroGroup[] = [
       { key: "lotes", ...CTP_VISTAS_POR_KEY["lotes"], icon: Layers, tecla: "l" },
       { key: "consumos", ...CTP_VISTAS_POR_KEY["consumos"], icon: Flame, tecla: "n" },
       { key: "produccion", ...CTP_VISTAS_POR_KEY["produccion"], icon: Boxes, tecla: "p" },
+      /* Al lado de «Productos disponibles» (Brandon 2026-09-27): la madera en
+         troza que queda, por permiso, especie y pieza. Sin tecla: las 26
+         letras ya tienen dueño y adivinar una es peor que no tener atajo. */
+      { key: "trozas-disponibles", ...CTP_VISTAS_POR_KEY["trozas-disponibles"], icon: Trees },
       { key: "disponibles", ...CTP_VISTAS_POR_KEY["disponibles"], icon: PackageOpen, tecla: "v" },
       { key: "despacho", ...CTP_VISTAS_POR_KEY["despacho"], icon: Truck, tecla: "d" },
     ],
@@ -262,6 +269,8 @@ const SIN_PERIODO: CtpView[] = [
   "directorio",
   "lotes",
   "disponibles",
+  /* Lo que hay parado HOY no depende del mes que se mire (igual que Lotes). */
+  "trozas-disponibles",
   "contratos",
   /* Reportes trae su propio período (N semanas, mes o rango): el del libro al
      lado serían dos selectores de fecha y uno no haría nada. */
@@ -696,6 +705,7 @@ export default function CTPLibroOperaciones() {
             onVerTodoElHistorico={() => setPeriodKey("todo")}
           />
         )}
+        {view === "trozas-disponibles" && <CtpTrozasDisponibles onIr={irA} />}
         {view === "disponibles" && <CtpProductosDisponibles period={period} />}
         {view === "reprocesos" && <CtpReprocesosDeclarados period={period} />}
         {view === "despacho" && (

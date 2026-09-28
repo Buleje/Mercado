@@ -6,8 +6,9 @@
  *
  * DOS tarjetas, en el orden en que se pregunta (Brandon, 2026-09-24: «muchos
  * datos dispersos y mal estructurados» — eran seis bloques sueltos):
- *   1. «Qué queda en el patio»: titular + indicadores, por permiso (el clic
- *      filtra la tabla) y los lotes que esperan (`CtpConsumosPatioResumen`);
+ *   1. «Qué queda en el patio»: una línea con cuánto hay (el detalle por
+ *      permiso, especie y troza se mudó a «Trozas disponibles», 2026-09-27)
+ *      y los lotes que esperan (`CtpConsumosPatioResumen`);
  *   2. «Trozas en el patio»: la acción (lote y día), la búsqueda y los filtros
  *      DENTRO de la tarjeta de la tabla que acotan (o la sierra, con un lote
  *      elegido).
@@ -15,7 +16,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, BarChart3, FileDown, Layers, Ruler, X } from "@buleje/design-system/icons";
+import { AlertTriangle, BarChart3, Layers, Ruler, X } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import type { AgrupacionPatio } from "@/lib/forestal/consumo-trozas";
 import { ETIQUETA_TRAMO_DIAS, TRAMOS_DIAS, type TramoDias } from "@/lib/forestal/patio-resumen";
@@ -61,7 +62,7 @@ export default function CtpConsumosPatio({
   /** Tras consumir: refrescar el cuadro de la Sección 2 (sin desmontar nada). */
   onConsumido: () => void;
 }) {
-  const { lotes, carga, patio, porPermiso } = estado;
+  const { lotes, carga, patio } = estado;
   const { loteElegido, lotesAbiertos, seleccion, setSeleccion, fechaConsumo } = carga;
   const jornadas = useRegistrarJornadas(lotes);
   const mixto = useLoteMixtoEnConsumos({
@@ -124,17 +125,10 @@ export default function CtpConsumosPatio({
         activo: cubicarAbierto,
         onSelect: () => setCubicarAbierto((v) => !v),
       },
-      {
-        id: "descargar-patio",
-        label: "Descargar el patio (Excel)",
-        hint: "Por permiso, una hoja por permiso con sus trozas y qué se exportó",
-        icon: FileDown,
-        busy: estado.descargando,
-        disabled: porPermiso.filas.length === 0,
-        onSelect: () => void estado.descargarExcel(),
-      },
+      /* «Descargar el patio (Excel)» se mudó a «Trozas disponibles» (2026-09-27),
+         con una hoja por especie además de la de permisos. */
     ],
-    [agruparPatio, cubicarAbierto, onResumenPermiso, estado, porPermiso.filas.length],
+    [agruparPatio, cubicarAbierto, onResumenPermiso],
   );
 
   const alConsumir = (texto: string, tono: "ok" | "aviso", accion: "consumo" | "adjuntar" = "consumo") => {
@@ -263,7 +257,7 @@ export default function CtpConsumosPatio({
             menuAgrupar={
               <ActionMenu
                 label={agruparPatio === "ninguna" ? "Opciones" : `Opciones · ${ETIQUETA_AGRUPAR_PATIO[agruparPatio]}`}
-                title="Agrupar la pila, ver lo que entró por permiso, cubicar o descargar el patio"
+                title="Agrupar la pila, ver lo que entró por permiso o cubicar"
                 actions={opcionesPatio}
                 size="sm"
               />
