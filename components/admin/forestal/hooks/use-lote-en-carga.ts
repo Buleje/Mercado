@@ -14,6 +14,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Boxes, ClipboardList, Layers, RotateCcw } from "@buleje/design-system/icons";
 import type { MenuAccion } from "@/components/admin/shared/action-menu";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { ESTADO_LOTE, esLoteDeInventario, type LoteAserrio } from "@/lib/forestal/lotes-aserrio";
 import { trozasDelLote } from "@/lib/forestal/lote-programacion";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
@@ -63,6 +64,7 @@ export function useLoteEnCarga({
   const [seleccion, setSeleccion] = useState<Set<string>>(new Set());
   /** El lote que se está reabriendo, para que su fila del menú muestre el spinner. */
   const [reabriendo, setReabriendo] = useState<string | null>(null);
+  const { confirm } = useConfirm();
 
   const lotesAbiertos = useMemo(() => lotes.lotes.filter((l) => l.status === "abierto"), [lotes.lotes]);
   /**
@@ -118,8 +120,11 @@ export function useLoteEnCarga({
       const hay = disponiblePorLote.get(l.id);
       const cerrado = l.status !== "abierto";
       /* Un lote ASERRADO se puede seguir cargando: se reabre (Brandon,
-         2026-09-02). Uno CERRADO no —producido y despachado—: sólo su ficha. */
-      const reabrible = l.status === "consumido";
+         2026-09-02). Uno CERRADO no —producido y despachado—: sólo su ficha.
+         Uno de INVENTARIO tampoco: está atado a su corrida sólo por la
+         producción, y cargarlo y producirlo la dejaría suelta (el servidor
+         ya lo rechaza, 27-09). */
+      const reabrible = l.status === "consumido" && !inventario;
       return {
         id: `lote-${l.id}`,
         label: `${l.code} · ${l.speciesCommon ?? "sin especie"}`,
@@ -127,7 +132,7 @@ export function useLoteEnCarga({
         activo: loteCarga === l.id,
         busy: reabriendo === l.id,
         hint: reabrible
-          ? "Ya aserrado — se reabre para seguir cargándolo con más madera"
+          ? "Ya aserrado — se puede reabrir para cargarle más madera"
           : cerrado
             ? `${ESTADO_LOTE[l.status].label}${inventario ? " · declarado por inventario" : ""}`
             : inventario
@@ -147,9 +152,19 @@ export function useLoteEnCarga({
             return;
           }
           /* Reabrir y dejarlo elegido: el gesto es uno solo —«seguir cargando
-             este lote»— y partirlo en dos clics obligaría a buscarlo de nuevo. */
-          setReabriendo(l.id);
-          reabrirLote(l.id)
+             este lote»—, pero con confirmación: el 12/09 tres lotes de Blas se
+             reabrieron solos al recorrer este menú (3 toques en 3,5 s). */
+          void (async () => {
+            const si = await confirm({
+              title: `¿Reabrir el lote ${l.code}?`,
+              description: "Ya se aserró. Si lo reabres, puedes cargarle más madera.",
+              confirmLabel: "Sí, reabrir",
+              /* Reabrir no borra nada: el tono de peligro (rojo) asustaba sin motivo. */
+              intent: "warning",
+            });
+            if (!si) return;
+            setReabriendo(l.id);
+            reabrirLote(l.id)
             .then((r) => {
               setLoteCarga(l.id);
               pushToast({
@@ -169,6 +184,7 @@ export function useLoteEnCarga({
               });
             })
             .finally(() => setReabriendo(null));
+          })();
         },
       };
     });
@@ -186,7 +202,7 @@ export function useLoteEnCarga({
       });
     }
     return lista;
-  }, [lotesParaElegir, disponiblePorLote, loteCarga, reabrirLote, pushToast, reabriendo]);
+  }, [lotesParaElegir, disponiblePorLote, loteCarga, reabrirLote, pushToast, reabriendo, confirm]);
 
   return {
     loteCarga,

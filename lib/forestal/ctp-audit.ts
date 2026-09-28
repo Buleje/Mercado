@@ -163,6 +163,9 @@ export type CtpAuditAction =
      audita como cualquier cambio de estado: un lote que vuelve a admitir
      madera después de haber producido tiene que poder explicarse. */
   | "ctp_lote_aserrio_reabrir"
+  // Reparación de datos de un lote que se contradecía (2026-09-27): estado o
+  // apertura corregidos, con el antes → después en el detalle.
+  | "ctp_lote_aserrio_reparar"
   // Contratos/permisos (ADR-421)
   | "ctp_contrato_create"
   | "ctp_contrato_update"

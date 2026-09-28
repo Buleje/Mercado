@@ -23,11 +23,24 @@
  * El borrador (servicio, cuenta, precios, permiso…) vive en el componente de
  * afuera, que no se desmonta al cerrar: volver a cubicar para corregir una
  * especie y regresar no borra lo que ya se había puesto.
+ *
+ * «¿De qué trozas salió?» (27-09): **dos actos**. Primero se declara con el
+ * pedido de siempre; después, un pedido por corrida ata las trozas marcadas.
+ * Si el segundo falla, la corrida queda declarada sin origen y el modal lo
+ * dice en lugar del formulario: la declaración nunca se pierde.
  */
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import { Boxes, Loader2 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import { useContratoActivo } from "@/contexts/contrato-activo-context";
 import { useDirectorioForestal } from "@/hooks/use-directorio-forestal";
+import { useMiRol } from "@/hooks/use-mi-rol";
+import {
+  textoDeVinculos,
+  useTrozasDeLaDeclaracion,
+  vincularLoDeclarado,
+} from "@/hooks/use-vincular-trozas";
 import { invalidarCtp } from "@/lib/forestal/ctp-fetch";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
 import { ESPECIES_MADERA, type PiezaCubicada } from "@/lib/forestal/cubicacion";
@@ -67,7 +80,8 @@ import CtpAvisoSinEspecie, { AvisoEspeciePuesta } from "./CtpAvisoSinEspecie";
 import CtpLoQueSeDeclara from "./CtpLoQueSeDeclara";
 import CtpServicioProduccion from "./CtpServicioProduccion";
 import CtpGruposDeDueno, { AvisoDuenoRegistrado } from "./CtpGruposDeDueno";
-import CtpMixtoDelAsiento from "./CtpMixtoDelAsiento";
+import CtpDeQueTrozasSalio, { DeclaradaSinTrozasModal } from "./CtpDeQueTrozasSalio";
+import { puedeFirmarVinculo } from "./CtpVincularMixtoModal";
 
 import type { BorradorDeclaracion } from "./hooks/use-declarar-por-dueno";
 
@@ -98,7 +112,7 @@ interface Props {
       codigos: readonly string[];
       /** Las corridas que se acaban de crear (una por especie). */
       corridas: readonly string[];
-      /** «¿De qué lote mixto salió?» (ADR-441): con él, se abre la vinculación armada. */
+      /** «¿Salió de un lote mixto?» (ADR-441): con él, se abre la vinculación armada. */
       loteMixtoId: string | null;
     },
   ) => void;
@@ -234,6 +248,32 @@ function Dialogo({
   });
   const { registrar, guardando, error } = useRegistrarProduccionSinLote();
 
+  /* «¿De qué trozas salió?»: la propuesta se pide bajo el permiso de trabajo,
+     salvo que el asiento escriba OTRO código. Con un lote mixto, manda el mixto. */
+  const { activo: permisoActivo } = useContratoActivo();
+  const permisoEscrito = borrador.permiso.trim();
+  const esElDeTrabajo =
+    permisoActivo != null &&
+    (!permisoEscrito || permisoEscrito.toUpperCase() === permisoActivo.codigo.trim().toUpperCase());
+  const trozasOrigen = useTrozasDeLaDeclaracion({
+    corridas: conEspecie,
+    fecha,
+    contratoId: esElDeTrabajo ? permisoActivo.id : null,
+    permiso: esElDeTrabajo ? null : permisoEscrito || null,
+    activo: !loteMixtoId,
+  });
+  /* Sólo dueño o administrador vinculan (el servidor lo exige): a los demás no
+     se les ofrece un segundo acto que va a volver 403. */
+  const rol = useMiRol();
+  const descontar = (rol == null || puedeFirmarVinculo(rol)) && trozasOrigen.hayMarcadas && !loteMixtoId;
+  const [vinculando, setVinculando] = useState(false);
+  /* Declarado pero sin descontar: se muestra el porqué y se cierra con «Entendido». */
+  const [sinDescontar, setSinDescontar] = useState<{
+    mensaje: string;
+    fallas: string[];
+    detalle: Parameters<Props["onRegistrado"]>[1];
+  } | null>(null);
+
   const alRegistrar = async () => {
     if (falta || !servicio) return;
     const precios = preciosDelPedido(lineas);
@@ -270,16 +310,47 @@ function Dialogo({
     /* Sólo salen de la libreta las piezas DECLARADAS, por id —también en el
        último registro—: una pieza dictada mientras viajaba el pedido no se
        declaró y no se puede borrar. Si no queda ninguna, `quitar…` vacía la
-       libreta entera como siempre. */
-    const { quedan, ids, mensaje } = porDueno.registrado(mensajeDeRegistro(resp, servicio, cliente));
-    quitarDeLaLibretaProduccion(ids);
-    onRegistrado(mensaje, {
+       libreta entera como siempre. Va ANTES de descontar las trozas: la
+       declaración ya está escrita y no puede volver a ofrecerse. */
+    quitarDeLaLibretaProduccion(piezas.map((p) => p.id));
+    let v: ReturnType<typeof textoDeVinculos> | null = null;
+    if (descontar) {
+      setVinculando(true);
+      const vinculos = await vincularLoDeclarado(resp.corridas, (k) =>
+        trozasOrigen.marcadas(k).map((t) => t.trozaId),
+      );
+      setVinculando(false);
+      invalidarCtp();
+      trozasOrigen.reiniciar();
+      v = textoDeVinculos(vinculos);
+    }
+    const base = mensajeDeRegistro(resp, servicio, cliente, v?.sinTrozas);
+    const fallas = v?.fallas ?? [];
+    const { quedan, mensaje } = porDueno.registrado(v?.texto ? `${base} ${v.texto}` : base);
+    const detalle = {
       quedan,
       codigos: paquetes.map((p) => p.codigo),
       corridas: resp.corridas.map((c) => c.id),
       loteMixtoId,
-    });
+    };
+    if (fallas.length > 0) {
+      toast.error("La producción quedó declarada sin trozas", { description: fallas.join(" ") });
+      setSinDescontar({ mensaje, fallas, detalle });
+      return;
+    }
+    onRegistrado(mensaje, detalle);
   };
+
+  if (sinDescontar)
+    return (
+      <DeclaradaSinTrozasModal
+        fallas={sinDescontar.fallas}
+        onEntendido={() => {
+          setSinDescontar(null);
+          onRegistrado(sinDescontar.mensaje, sinDescontar.detalle);
+        }}
+      />
+    );
 
   const nota =
     falta ?? notaDelPie({ servicio, total, cliente, conPermiso: Boolean(borrador.permiso.trim()) });
@@ -288,7 +359,7 @@ function Dialogo({
     <AdminModal
       open
       aboveModals
-      onClose={guardando ? () => undefined : onCerrar}
+      onClose={guardando || vinculando ? () => undefined : onCerrar}
       title="Declarar producción"
       description={`${esIsoValido(fecha) ? etiquetaLarga(fecha) : "Sin fecha"} · sin lote · ${
         separados && grupo ? `${etiquetaDeGrupo(grupo)} · ` : ""
@@ -297,30 +368,36 @@ function Dialogo({
       variant="info"
       footer={
         <ModalFooter error={error} nota={nota}>
-          <Btn variant="ghost" onClick={onCerrar} disabled={guardando}>
+          <Btn variant="ghost" onClick={onCerrar} disabled={guardando || vinculando}>
             Volver a cubicar
           </Btn>
           <Btn
             variant="primary"
-            disabled={Boolean(falta) || guardando}
+            disabled={Boolean(falta) || guardando || vinculando}
             onClick={() => void alRegistrar()}
             /* Con el nombre del dueño el rótulo se alarga: a 400 px se recorta
                el nombre, no el botón. */
             className="min-w-0 max-w-full"
           >
-            {guardando ? (
+            {guardando || vinculando ? (
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
             ) : (
               <Boxes className="h-4 w-4" aria-hidden />
             )}
             {guardando ? (
               "Registrando…"
+            ) : vinculando ? (
+              "Descontando trozas…"
             ) : (
               <span className="min-w-0 truncate">
-                {conEspecie.length > 1 ? `Registrar ${conEspecie.length} corridas` : "Registrar producción"}
+                {descontar
+                  ? "Declarar y descontar trozas"
+                  : conEspecie.length > 1
+                    ? `Registrar ${conEspecie.length} corridas`
+                    : "Registrar producción"}
                 {separados && grupo
                   ? grupo.nombre || grupo.parteId
-                    ? ` de ${etiquetaDeGrupo(grupo)}`
+                    ? `${descontar ? " ·" : " de"} ${etiquetaDeGrupo(grupo)}`
                     : " sin dueño"
                   : ""}
               </span>
@@ -418,7 +495,7 @@ function Dialogo({
             onUsarEspecie={(nombre) => cambiar({ especieParaSinEspecie: nombre })}
           />
         </Seccion>
-        <CtpMixtoDelAsiento valor={loteMixtoId} onCambiar={onLoteMixto} />
+        <CtpDeQueTrozasSalio trozas={trozasOrigen} loteMixtoId={loteMixtoId} onLoteMixto={onLoteMixto} />
       </ModalBody>
     </AdminModal>
   );

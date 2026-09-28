@@ -449,6 +449,11 @@ export function mensajeDeRegistro(
   resp: ProduccionSinLoteRespuesta,
   servicio: TipoServicio,
   cliente: string | null,
+  /**
+   * «¿De qué trozas salió?» (27-09): las especies que quedaron SIN trozas tras
+   * descontar. Sin este dato (no se descontó nada) vale el aviso de siempre.
+   */
+  sinTrozas?: readonly string[],
 ): string {
   const n = resp.corridas.length;
   const cuales = resp.corridas
@@ -472,6 +477,7 @@ export function mensajeDeRegistro(
       partes.push(`${c.especie}: no se cobró${c.aserrio?.motivo ? ` — ${c.aserrio.motivo}` : ""}.`);
     }
   }
-  partes.push("Falta vincularle su materia prima.");
+  if (!sinTrozas) partes.push("Falta vincularle su materia prima.");
+  else if (sinTrozas.length > 0) partes.push(`Sin trozas: ${sinTrozas.join(", ")}.`);
   return partes.join(" ");
 }

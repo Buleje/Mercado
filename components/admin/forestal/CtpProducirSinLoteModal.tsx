@@ -23,14 +23,15 @@
  *    dos dueños o más, se declara un dueño a la vez y salen sólo sus piezas
  *    (2026-09-23): lo del otro queda para el registro siguiente.
  *
- * ## Lo que NO hace, a propósito
+ * ## De qué trozas salió (27-09)
  *
- * No inventa el origen. La corrida nace **sin consumos y sin lote**: el Libro ya
- * sabe mostrar eso (una corrida que declaró producción y todavía no dice de qué
- * madera salió). Vincularla con su lote es un acto aparte —con sus reglas de
- * especie, volumen y largo— y hasta que ocurra, la corrida se ve como lo que
- * es: producción declarada sin materia prima atribuida. Declararle un origen
- * que nadie eligió sería fabricar trazabilidad.
+ * «Declarar» propone las trozas de cada especie, ya marcadas, y la persona
+ * desmarca las que no entraron: al registrar se descuentan (un segundo pedido,
+ * después de declarar). El sistema nunca ata trozas que nadie vio: sin trozas
+ * de esa especie, o si la persona las desmarca todas, la corrida nace **sin
+ * consumos y sin lote** y se vincula después desde la bandeja «sin trozas» de
+ * Producción. Declararle un origen que nadie eligió sería fabricar
+ * trazabilidad.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Boxes, Calculator, X } from "@buleje/design-system/icons";
@@ -202,8 +203,8 @@ export default function CtpProducirSinLoteModal({
             </CardTitle>
             <InfoTip
               title="Producir sin lote"
-              what="Cubica acá y decláralo en el Libro; la materia prima se vincula después."
-              affects="No toca el lote del cubicador."
+              what="Cubica acá y decláralo en el Libro."
+              affects="Al declarar eliges de qué trozas salió. No toca el lote del cubicador."
               example="La sierra cortó el sábado, el parte llega el lunes y el lote con sus trozas se arma después."
             />
           </div>

@@ -59,6 +59,7 @@ import {
 } from "./forest-ctp-consumo.db";
 import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
 import { vivaLinea } from "./wood-entries.db";
+import { aperturaAlConsumir } from "@/lib/forestal/lote-aserrio-coherencia";
 
 /** Redondeo a 4 decimales — precisión forestal (m³). */
 const r4 = (n: number) => Math.round(n * 10_000) / 10_000 || 0;
@@ -521,9 +522,21 @@ export class ForestVincularCorridaDB {
     for (const p of porParte) {
       const quedan = restoDeLotes.filter((t) => t.loteAserrioId === p.loteId && motivoNoVinculable(t) === null);
       if (quedan.length > 0) continue;
+      /* La apertura nunca después del consumo (ADR-443): con «Producir sin
+         lote» la corrida es ANTERIOR al lote que se arma al vincular, y sin
+         esto el lote volvía a quedar abierto el 28 y aserrado el 26. */
+      const abierto = await tx.forestLoteAserrio.findFirst({
+        where: { id: p.loteId, tenantId },
+        select: { fechaApertura: true },
+      });
       await tx.forestLoteAserrio.update({
         where: { id: p.loteId, tenantId },
-        data: { status: "consumido", fechaConsumo, produccionEntryId: corridaId },
+        data: {
+          status: "consumido",
+          fechaConsumo,
+          produccionEntryId: corridaId,
+          ...aperturaAlConsumir(abierto?.fechaApertura, fechaConsumo),
+        },
         /* Sin `select`, el RETURNING pide todas las columnas: una columna
            nueva del schema todavía sin migrar tumbaría la vinculación. */
         select: { id: true },

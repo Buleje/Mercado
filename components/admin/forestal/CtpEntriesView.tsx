@@ -24,6 +24,8 @@ import {
 } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { useDiagnosticoSinOrigen } from "@/hooks/use-vincular-trozas";
+import type { DiagnosticoCorrida } from "@/lib/forestal/vincular-trozas";
 import ActionMenu from "@/components/admin/shared/action-menu";
 import { accionesDeSeccion, accionesPorDeclarar } from "./ctp-entries-acciones";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -47,7 +49,7 @@ import { podarSeleccion } from "@/lib/forestal/cobrar-en-tanda";
 import CtpSaldoPermisoModal from "./CtpSaldoPermisoModal";
 import type { CorridaSinOrigen } from "@/lib/forestal/saldo-por-permiso";
 import CtpVincularMateriaPrimaModal from "./CtpVincularMateriaPrimaModal";
-import CtpVincularEnTandaModal from "./CtpVincularEnTandaModal";
+import CtpSinOrigenBandeja from "./CtpSinOrigenBandeja";
 import CtpTrozasDelLote from "./CtpTrozasDelLote";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import CtpProduccionPendiente from "./CtpProduccionPendiente";
@@ -94,7 +96,7 @@ import {
   type CtpEntry,
   type CtpSection,
 } from "./ctp-section-shared";
-import { ColumnasMenu, TablaSkeleton, useColumnasVisibles } from "./ctp-shared";
+import { ColumnasMenu, TablaSkeleton, useColumnasVisibles, type CtpIngresosFiltroRapido } from "./ctp-shared";
 import { CtpPaginacion, usePaginacion } from "./ctp-tabla";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { formatNumber } from "@/lib/format";
@@ -103,72 +105,6 @@ import { formatNumber } from "@/lib/format";
    al lado. Los tres de `fmtM3` son para medir una troza. */
 const n2m3 = (v: number) =>
   formatNumber(v, 2);
-
-/**
- * Debajo de esto, una corrida sin materia prima es polvo de aserradero.
- *
- * 0.05 m³ son ~21 pie tablar: menos de una tabla. En el cartel viejo una
- * corrida de 0.001 m³ —un litro de madera— ocupaba el mismo chip, con el mismo
- * color y el mismo tamaño, que una de 1.326 m³. Seis rojos donde uno solo
- * importa enseñan a ignorar la lista entera.
- */
-const M3_MENOR = 0.05;
-
-/**
- * Un chip de la lista: hace las DOS cosas que se le piden.
- *
- * La casilla la marca para ir en tanda —«esas cinco salieron del mismo lote»— y
- * el cuerpo abre el modal de a una, que es donde se eligen las trozas a mano.
- * Son dos trabajos distintos y por eso son dos blancos distintos: tildar seis
- * casillas es más rápido que abrir seis modales, y elegir troza por troza no se
- * puede hacer en tanda.
- *
- * A nivel de módulo y no dentro del render del padre: definido adentro, React lo
- * trata como un componente NUEVO en cada tilde y desmonta la lista entera — el
- * foco del teclado se va al body y quien esté tabulando pierde el lugar. Medido
- * en el navegador con seis chips reales (2026-09-13).
- */
-function ChipSinOrigen({
-  e,
-  marcada,
-  onMarcar,
-  onVincular,
-}: {
-  e: CtpEntry;
-  marcada: boolean;
-  onMarcar: (ids: string[], marcar: boolean) => void;
-  onVincular: (id: string) => void;
-}) {
-  return (
-    <li
-      className={`inline-flex items-stretch overflow-hidden rounded-lg border border-[var(--accent)] transition ${
-        marcada ? "bg-[var(--accent-soft)] ring-1 ring-[var(--accent)]" : "bg-[var(--surface-canvas)]"
-      }`}
-    >
-      <label
-        className="flex cursor-pointer items-center pl-2.5 pr-1"
-        title="Marcarla para ponerle el lote junto con las otras"
-      >
-        <input
-          type="checkbox"
-          checked={marcada}
-          onChange={(ev) => onMarcar([e.id], ev.target.checked)}
-          aria-label={`Marcar la corrida N° ${e.lineNo} para ponerle el lote en tanda`}
-          className="h-4 w-4 accent-[var(--accent)]"
-        />
-      </label>
-      <button
-        type="button"
-        onClick={() => onVincular(e.id)}
-        title="Abrirla sola y elegir las trozas una por una"
-        className="px-2 py-1.5 text-left text-xs font-bold text-[var(--accent-ink)] transition hover:brightness-95 dark:text-[var(--accent)]"
-      >
-        N° {e.lineNo} · {e.speciesCommon ?? "sin especie"} ·{" "}
-        <span className="font-mono font-normal">{Number(e.quantity ?? 0).toFixed(3)} m³</span>
-      </button>
-    </li>
-  );
-}
 
 /**
  * El repaso de las corridas cuyas cifras no pueden ser (piezas contra volumen).
@@ -258,125 +194,6 @@ function ListaCifrasImposibles({
         >
           Revisar todo el histórico, no sólo este período
         </button>
-      )}
-    </>
-  );
-}
-
-/**
- * Las corridas sin materia prima, ordenadas y con las migajas plegadas.
- *
- * A nivel de módulo y no dentro del render: definido adentro se re-monta en
- * cada tecleo del padre y el desplegable se cerraría solo.
- */
-function ChipsSinOrigen({
-  corridas,
-  onVincular,
-  marcadas,
-  onMarcar,
-  onEnTanda,
-}: {
-  corridas: CtpEntry[];
-  onVincular: (id: string) => void;
-  /** Las que están marcadas para ir juntas al mismo lote. */
-  marcadas: Set<string>;
-  onMarcar: (ids: string[], marcar: boolean) => void;
-  onEnTanda: () => void;
-}) {
-  const [verMenores, setVerMenores] = useState(false);
-  const m3 = (e: CtpEntry) => Number(e.quantity ?? 0);
-  const ordenadas = [...corridas].sort((a, b) => m3(b) - m3(a));
-  const grandes = ordenadas.filter((e) => m3(e) >= M3_MENOR);
-  const menores = ordenadas.filter((e) => m3(e) < M3_MENOR);
-  const volMenores = menores.reduce((a, e) => a + m3(e), 0);
-  /* Si TODAS son migajas no se pliega nada: un desplegable que esconde la lista
-     completa deja la pantalla diciendo «6 pendientes» y mostrando cero. */
-  const visibles = grandes.length === 0 || verMenores ? ordenadas : grandes;
-
-  /* El total de lo marcado, para que el botón no pida firmar a ciegas. */
-  const visiblesIds = visibles.map((e) => e.id);
-  const nMarcadas = corridas.filter((e) => marcadas.has(e.id)).length;
-  const m3Marcadas = corridas.filter((e) => marcadas.has(e.id)).reduce((a, e) => a + m3(e), 0);
-  const todasMarcadas = visiblesIds.length > 0 && visiblesIds.every((id) => marcadas.has(id));
-
-  return (
-    <>
-      <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1">
-        <p className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">
-          De mayor a menor volumen.
-          <InfoTip icono="ayuda" title="Cómo usar la lista" what="Marca las que salieron del mismo lote y pónselo a todas de una vez, o toca una para elegir sus trozas a mano." />
-        </p>
-        {visiblesIds.length > 1 && (
-          <button
-            type="button"
-            onClick={() => onMarcar(visiblesIds, !todasMarcadas)}
-            className="text-[length:var(--ts-2xs)] font-bold text-[var(--accent-ink)] underline underline-offset-2 dark:text-[var(--accent)]"
-          >
-            {todasMarcadas ? "Desmarcar todas" : `Marcar las ${visiblesIds.length}`}
-          </button>
-        )}
-      </div>
-      <ul className="flex flex-wrap gap-2">
-        {visibles.slice(0, 12).map((e) => (
-          <ChipSinOrigen
-            key={e.id}
-            e={e}
-            marcada={marcadas.has(e.id)}
-            onMarcar={onMarcar}
-            onVincular={onVincular}
-          />
-        ))}
-        {visibles.length > 12 && (
-          <li className="self-center text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-            +{visibles.length - 12} más en la tabla
-          </li>
-        )}
-        {/* Las migajas, juntas y en gris: siguen a un clic, pero dejan de pedir
-            la misma atención que el volumen que sí mueve la aguja. */}
-        {grandes.length > 0 && menores.length > 0 && (
-          <li>
-            <button
-              type="button"
-              onClick={() => setVerMenores((v) => !v)}
-              aria-expanded={verMenores}
-              title={`Corridas de menos de ${M3_MENOR} m³ — menos de una tabla cada una`}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-[var(--rule-base)] px-2.5 py-1.5 text-xs font-semibold text-[var(--text-tertiary)] transition hover:border-[var(--accent)] hover:text-[var(--text-secondary)]"
-            >
-              {verMenores ? "Ocultar" : "Ver"} {menores.length} menor
-              {menores.length === 1 ? "" : "es"}
-              <span className="font-mono font-normal">({volMenores.toFixed(3)} m³ en total)</span>
-            </button>
-          </li>
-        )}
-      </ul>
-
-      {/* La barra aparece sólo cuando hay algo marcado: una acción que no se
-          puede ejecutar no ocupa lugar permanente. */}
-      {nMarcadas > 0 && (
-        <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-[var(--accent)] bg-[var(--accent-soft)] px-3 py-2">
-          <p className="text-xs text-[var(--text-secondary)]">
-            <b className="text-[var(--text-primary)]">
-              {nMarcadas} producci{nMarcadas === 1 ? "ón marcada" : "ones marcadas"}
-            </b>{" "}
-            · <span className="font-mono tabular-nums">{m3Marcadas.toFixed(3)} m³</span> declarados
-          </p>
-          <div className="ml-auto flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => onMarcar([...marcadas], false)}
-              className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] underline underline-offset-2 hover:text-[var(--text-secondary)]"
-            >
-              Desmarcar
-            </button>
-            <button
-              type="button"
-              onClick={onEnTanda}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-xs font-bold text-white transition hover:brightness-95"
-            >
-              <Layers className="h-3.5 w-3.5" aria-hidden /> Ponerles el lote
-            </button>
-          </div>
-        </div>
       )}
     </>
   );
@@ -546,7 +363,8 @@ export function CtpEntriesView({
   /** Aviso al shell de que ya se consumió el preset (producto o lote). */
   onPresetUsado?: () => void;
   /** Saltar a otra vista del libro (hoy: a Lotes, cuando no hay ninguno abierto). */
-  onIr?: (vista: string) => void;
+  /** El 2° argumento deja Ingresos filtrado (p. ej. las guías sin recibir). */
+  onIr?: (vista: string, filtro?: CtpIngresosFiltroRapido) => void;
   /** Cambia el período activo a "Todo el histórico" (el aviso de corridas
    *  escondidas por fecha ofrece este atajo en vez de mandar a buscarlo). */
   onVerTodoElHistorico?: () => void;
@@ -585,27 +403,18 @@ export function CtpEntriesView({
   /* El apartado de simulación por permiso (ADR-409): no toca ninguna cifra de
      esta pestaña ni de las otras, así que su lectura se paga sólo al abrirlo. */
   const [saldoPermiso, setSaldoPermiso] = useState(false);
-  /* La corrida que el apartado manda a vincular. Va aparte de `vincularA` —que
-     busca en `entries`— porque el saldo no mira el período: una producción de
-     hace tres meses no está en el listado y el click quedaría muerto. */
+  /* La corrida que el apartado manda a vincular. Trae sus datos con ella —no
+     se busca en `entries`— porque el saldo no mira el período: una producción
+     de hace tres meses no está en el listado y el click quedaría muerto. */
   const [vincularDelSaldo, setVincularDelSaldo] = useState<CorridaSinOrigen | null>(null);
-  /** La corrida a la que se le va a vincular su materia prima. */
-  const [vincularA, setVincularA] = useState<string | null>(null);
   /**
-   * Las producciones sin lote marcadas para ir JUNTAS al mismo lote.
-   *
-   * Brandon lo pidió así (2026-09-13): «marco esas 5 y les pongo el lote». Las
-   * corridas no cambian —siguen siendo las mismas, con su fecha y su volumen—:
-   * lo único que ganan es de qué madera salieron, y el lote se va consumiendo
-   * hasta dejar su saldo.
+   * «Elegir otras trozas a mano» desde «Revisar y vincular»: la corrida viene
+   * del diagnóstico (todo el libro), no del período — por eso trae sus datos.
    */
-  const [marcadasSinOrigen, setMarcadasSinOrigen] = useState<Set<string>>(new Set());
-  const [vincularEnTanda, setVincularEnTanda] = useState(false);
+  const [vincularAMano, setVincularAMano] = useState<DiagnosticoCorrida | null>(null);
   /**
-   * Selección para «Cobrar aserrío» EN TANDA (ADR-412) — un `Set` propio, sin
-   * relación con `marcadasSinOrigen` (que es de "vincular en tanda"): son dos
-   * gestos distintos sobre la misma tabla y compartirlo mezclaría una fila
-   * marcada para un lote con una marcada para cobrar.
+   * Selección para «Cobrar aserrío» EN TANDA (ADR-412) — un `Set` propio: la
+   * tabla no comparte selección con ningún otro gesto.
    */
   const [seleccionCobro, setSeleccionCobro] = useState<Set<string>>(new Set());
   const [cobrarEnTanda, setCobrarEnTanda] = useState(false);
@@ -882,13 +691,13 @@ export function CtpEntriesView({
      MISMA barra que el resto de las tablas del libro (ADR-344). */
   const { visibles: filasEnPagina, rango, porPagina, setPorPagina, ir } = usePaginacion(visible);
   /**
-   * Producción declarada SIN materia prima (ADR-408): las de «Producir sin
-   * lote» — y cualquier corrida vieja a la que nunca se le atribuyó origen.
+   * Producción declarada SIN TROZAS (ADR-408 → 27-09): las de «Producir sin
+   * lote» y cualquier corrida vieja a la que nunca se le atribuyó origen.
    *
-   * La detección de acá es de PANTALLA (declaró y no tiene volumen de entrada);
-   * el servidor mira además consumos y lote antes de dejar vincular. Ofrecer de
-   * más es un click perdido; esconder una corrida sin origen es dejar el libro
-   * afirmando que salió madera de la nada.
+   * La regla es la del servidor: ninguna troza consumida (ni por reproceso).
+   * Antes miraba el volumen de entrada, y una corrida con volumen ESCRITO pero
+   * sin una sola troza —las 5 del 01/08 en Blas— no salía: 39 donde eran 44.
+   * Si el listado no trae lo atribuido (endpoint viejo), vale la regla vieja.
    */
   const sinOrigen = useMemo(
     () =>
@@ -897,42 +706,19 @@ export function CtpEntriesView({
             (e) =>
               e.status === "registrado" &&
               e.quantity != null &&
-              (e.volumeInputM3 == null || Number(e.volumeInputM3) <= 0),
+              (e.mpAtribuidaM3 != null
+                ? Number(e.mpAtribuidaM3) + Number(e.mpReprocesoM3 ?? 0) <= 0
+                : e.volumeInputM3 == null || Number(e.volumeInputM3) <= 0),
           )
         : [],
     [section, entries],
   );
-  /* Una vinculada deja de estar sin origen: su marca se va con ella. Podar y
-     nada más — volver a marcar las que quedan resucitaría lo que el operario
-     desmarcó a propósito. */
+  /* El diagnóstico de TODO el libro, por motivo (la bandeja «sin trozas»). Se
+     relee cuando cambia el conjunto de corridas sin trozas del período: se
+     declaró, se vinculó o se anuló algo. */
   const idsSinOrigen = sinOrigen.map((e) => e.id).join("|");
-  useEffect(() => {
-    setMarcadasSinOrigen((prev) => {
-      if (prev.size === 0) return prev;
-      const vivas = new Set(idsSinOrigen ? idsSinOrigen.split("|") : []);
-      return [...prev].every((id) => vivas.has(id)) ? prev : new Set([...prev].filter((id) => vivas.has(id)));
-    });
-  }, [idsSinOrigen]);
-
-  /** Las marcadas, con lo que la pantalla sabe de cada una. */
-  const corridasEnTanda = useMemo(
-    () =>
-      sinOrigen
-        .filter((e) => marcadasSinOrigen.has(e.id))
-        .map((e) => ({
-          id: e.id,
-          lineNo: e.lineNo,
-          especie: e.speciesCommon,
-          producidoM3: Number(e.quantity ?? 0),
-          /* El listado no trae los paquetes; el modal los busca por corrida
-             para poder comprobar la regla del largo. */
-          largoMaxPiezaM: null,
-          fecha: e.entryDate,
-          /* Lo que la pantalla sabe; el servidor mira además consumos y lote. */
-          tieneMateriaPrima: e.volumeInputM3 != null && Number(e.volumeInputM3) > 0,
-        })),
-    [sinOrigen, marcadasSinOrigen],
-  );
+  const diagnostico = useDiagnosticoSinOrigen({ activo: section === "produccion", clave: idsSinOrigen });
+  const { datos: diagDatos, cargando: diagCargando, error: diagError, recargar: releerDiagnostico } = diagnostico;
 
   const enProceso = useMemo(
     () =>
@@ -1092,7 +878,7 @@ export function CtpEntriesView({
    * una marcada que ya no está en la página actual se cae de la selección
    * (MEDIO, revisión 2026-09-14: la barra decía 8 y el modal cobraba 5, o
    * peor, cobraba una corrida que el operador ya no tenía a la vista). Mismo
-   * patrón que `marcadasSinOrigen` arriba: podar y nada más, nunca resucitar
+   * patrón de siempre: podar y nada más, nunca resucitar
    * lo que el operador desmarcó a propósito.
    */
   const idsEnPagina = filasEnPagina.map((e) => e.id).join("|");
@@ -1426,27 +1212,30 @@ export function CtpEntriesView({
         onClick: () => setVerEspecies(true),
       });
     }
-    if (sinOrigen.length > 0) {
+    /* «Sin trozas» cuenta TODO el libro con la regla del servidor (44 en
+       Blas); mientras el diagnóstico llega, vale lo que ve el período. */
+    const sinTrozas = section === "produccion" ? (diagDatos?.total ?? sinOrigen.length) : 0;
+    if (sinTrozas > 0) {
       items.push({
         key: "sin-materia-prima",
-        valor: sinOrigen.length,
-        label: "sin materia prima",
+        valor: sinTrozas,
+        label: "sin trozas",
         hint: kpis.sinOrigen > 0 ? `+ ${n2m3(kpis.sinOrigen)} m³ sin guía` : undefined,
         tono: "error",
-        title: "Declararon producto y no dicen de qué madera salió",
+        title: "Producciones que no dicen de qué trozas salieron",
         contenido: (
-          <ChipsSinOrigen
-            corridas={sinOrigen}
-            onVincular={setVincularA}
-            marcadas={marcadasSinOrigen}
-            onMarcar={(ids, marcar) =>
-              setMarcadasSinOrigen((prev) => {
-                const n = new Set(prev);
-                for (const id of ids) if (marcar) n.add(id); else n.delete(id);
-                return n;
-              })
-            }
-            onEnTanda={() => setVincularEnTanda(true)}
+          <CtpSinOrigenBandeja
+            datos={diagDatos}
+            cargando={diagCargando}
+            error={diagError}
+            onReleer={() => void releerDiagnostico()}
+            onCambio={(msg) => {
+              setToProductMsg(msg);
+              void releerDiagnostico();
+              void load();
+            }}
+            onIr={onIr}
+            onElegirAMano={setVincularAMano}
           />
         ),
       });
@@ -1459,13 +1248,17 @@ export function CtpEntriesView({
     kpis.sinOrigen,
     idsAmpliables,
     sinOrigen,
-    marcadasSinOrigen,
+    diagDatos,
+    diagCargando,
+    diagError,
+    releerDiagnostico,
+    load,
+    onIr,
     referenciasPorPieza,
     sinAnexo,
     soloSinAnexo,
     setSoloSinAnexo,
     setAbrirDeclarar,
-    setVincularA,
     sinCertificar,
     irAlCertificado,
     especiesDosFormas,
@@ -1677,48 +1470,28 @@ export function CtpEntriesView({
           Ahora el cartel es el detalle que se despliega desde su pastilla. */}
       <BarraDeuda items={deudas} />
 
-      {/* Vincular: las cinco reglas se revisan ANTES de escribir. */}
-      {vincularA &&
-        (() => {
-          const e = entries.find((x) => x.id === vincularA);
-          if (!e) return null;
-          return (
-            <CtpVincularMateriaPrimaModal
-              corrida={{
-                id: e.id,
-                lineNo: e.lineNo,
-                especie: e.speciesCommon,
-                producidoM3: Number(e.quantity ?? 0),
-                /* El listado del libro no trae los paquetes: sin ellos la regla
-                 del largo AVISA («no se puede comprobar») en vez de callarse. */
-                largoMaxPiezaM: null,
-                fecha: e.entryDate,
-                /* Lo que la pantalla sabe; el servidor mira además consumos y lote. */
-                tieneMateriaPrima: e.volumeInputM3 != null && Number(e.volumeInputM3) > 0,
-              }}
-              lotes={lotes.lotes}
-              fechasIngreso={fechasIngreso}
-              onCerrar={() => setVincularA(null)}
-              onListo={(msg) => {
-                setVincularA(null);
-                setToProductMsg(msg);
-                void load();
-              }}
-            />
-          );
-        })()}
-
-      {/* Ponerle el lote a varias de una vez: el reparto se ve antes de firmar. */}
-      {vincularEnTanda && corridasEnTanda.length > 0 && (
-        <CtpVincularEnTandaModal
-          corridas={corridasEnTanda}
+      {/* «Elegir otras trozas a mano» desde la bandeja: el vinculador de
+          siempre, por lote, con las cinco reglas revisadas ANTES de escribir. */}
+      {vincularAMano && (
+        <CtpVincularMateriaPrimaModal
+          corrida={{
+            id: vincularAMano.corridaId,
+            lineNo: vincularAMano.lineNo,
+            especie: vincularAMano.especie,
+            producidoM3: vincularAMano.m3Producido,
+            /* Sin los paquetes a mano, la regla del largo AVISA en vez de callarse. */
+            largoMaxPiezaM: null,
+            fecha: vincularAMano.fecha,
+            /* Por definición del diagnóstico: ninguna troza consumida. */
+            tieneMateriaPrima: false,
+          }}
           lotes={lotes.lotes}
           fechasIngreso={fechasIngreso}
-          onCerrar={() => setVincularEnTanda(false)}
+          onCerrar={() => setVincularAMano(null)}
           onListo={(msg) => {
-            setVincularEnTanda(false);
-            setMarcadasSinOrigen(new Set());
+            setVincularAMano(null);
             setToProductMsg(msg);
+            void releerDiagnostico();
             void load();
           }}
         />

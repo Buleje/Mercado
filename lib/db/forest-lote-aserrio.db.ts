@@ -1,8 +1,14 @@
 import { prisma } from "@/lib/prisma";
 import { precioManualDelDetalle } from "@/lib/forestal/aserrio-cobro";
 import { logger } from "@/lib/logger";
-import { auditCtp } from "@/lib/forestal/ctp-audit";
-import { CtpInvariantError, ForestCtpConsumoDB, exigirIngresoAntesDeLaCorrida } from "./forest-ctp-consumo.db";
+import { auditCtp, auditCtpEsperando } from "@/lib/forestal/ctp-audit";
+import {
+  CTP_TX_OPTS,
+  CtpInvariantError,
+  ForestCtpConsumoDB,
+  exigirIngresoAntesDeLaCorrida,
+  type ConsumosEscritos,
+} from "./forest-ctp-consumo.db";
 import { ForestCtpDB } from "./forest-ctp.db";
 import { agruparPorGuia, guiaRecibida } from "@/lib/forestal/consumo-trozas";
 import { invalidateByPrefix } from "@/lib/cache";
@@ -19,6 +25,16 @@ import {
 } from "@/lib/forestal/vincular-produccion";
 import { ForestContratoDB } from "@/lib/db/forest-contrato.db";
 import { mixtoVivo } from "@/lib/forestal/lote-mixto";
+import {
+  aperturaAlConsumir,
+  aperturaHasta,
+  arregloDeLote,
+  atadoSoloPorPuntero,
+} from "@/lib/forestal/lote-aserrio-coherencia";
+import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
+import { closedPeriodOf } from "@/lib/forestal/ctp-cierre-types";
+import { formatDateNumeric, formatDateTime } from "@/lib/format";
+import { mismoPermiso } from "@/lib/forestal/vincular-trozas";
 
 /** El cliente de siempre o el de una transacción abierta (`crearEnTx`). */
 type Db = typeof prisma | Prisma.TransactionClient;
@@ -133,6 +149,24 @@ export interface LoteInventarioInput {
   createdBy: string;
 }
 
+/** Lo que devuelve `repararEstadosIncoherentes`: el antes/después de cada lote. */
+export interface ReparacionDeLotes {
+  /** Lotes vivos que podían tener algo que reparar (abiertos con corrida o con consumo). */
+  revisados: number;
+  /** `false` = sólo se contó, no se escribió nada. */
+  aplicado: boolean;
+  arreglos: {
+    id: string;
+    code: string;
+    antes: { status: string; fechaApertura: string };
+    despues: { status: string; fechaApertura: string };
+    motivos: string[];
+    escrito: boolean;
+  }[];
+  /** Los que no se tocaron y por qué (mes cerrado, o cambiaron en el medio). */
+  omitidos: { id: string; code: string; motivo: string }[];
+}
+
 /**
  * Lo que hace que una pieza NO se pueda meter en un lote (ni sumarse a una
  * corrida ya abierta desde uno). `despachadaEn`/`entry` son opcionales para
@@ -208,6 +242,15 @@ export function motivoNoElegible(t: {
 /** LM4 en palabras: dónde está y qué hacer. */
 function motivoEnMixto(code: string): string {
   return `está en el lote mixto ${code}: repártelo primero`;
+}
+
+/**
+ * «08/09/2026 → 01/08/2026» para la auditoría de una reparación. Si las dos caen
+ * el mismo día va con la hora: «25/09/2026 → 25/09/2026» no dice qué cambió.
+ */
+function fechaDeApertura(antes: Date, despues: Date): string {
+  const [a, d] = [formatDateNumeric(antes), formatDateNumeric(despues)];
+  return a === d ? `${formatDateTime(antes)} → ${formatDateTime(despues)}` : `${a} → ${d}`;
 }
 
 export class ForestLoteAserrioDB {
@@ -956,6 +999,11 @@ export class ForestLoteAserrioDB {
           notes: notas.slice(0, 500),
           status: "consumido",
           fechaConsumo: input.fecha ?? new Date(),
+          /* Sin esto la apertura quedaba en el `now()` de la base aunque el
+             consumo viniera fechado del SNIFFS: en Blas, cinco lotes «abiertos»
+             el 08/09 que entraron a la sierra el 01/08. Cuándo se cargó el
+             registro ya lo dice `createdAt`. */
+          fechaApertura: aperturaHasta(new Date(), input.fecha ?? null),
           inicioProceso: input.fecha ?? null,
           finProceso: input.finProceso ?? null,
           produccionEntryId: corrida.id,
@@ -1284,31 +1332,73 @@ export class ForestLoteAserrioDB {
       });
     }
 
-    /* Los m³ por guía, ANTES de marcar nada: si I1/I2 rechazan, el lote queda
-       abierto y no hay medio consumo escrito. Sólo se derivan si la corrida no
-       tiene ya su atribución — un operador que la declaró a mano manda. */
+    /* Los m³ por guía sólo se derivan si la corrida no tiene ya su atribución —
+       un operador que la declaró a mano manda. */
     const yaAtribuida = await prisma.forestCtpConsumo.count({
       where: { tenantId, ctpEntryId: corridaId },
     });
-    if (yaAtribuida === 0) {
-      const porGuia = agruparPorGuia(
-        libres.map((t) => ({
-          id: t.id,
-          woodEntryId: t.woodEntryId,
-          codificacion: null,
-          especieComun: lote.speciesCommon,
-          volumenM3: t.volumenM3 == null ? null : Number(t.volumenM3),
-        })),
-      );
-      await ForestCtpConsumoDB.setConsumos(
-        tenantId,
-        corridaId,
-        porGuia.map((g) => ({ woodEntryId: g.woodEntryId, volumeM3: g.volumenM3 })),
-        user,
-      );
-    }
+    /* Los cierres, ANTES de abrir la transacción (KV con el cliente global:
+       adentro pedirían otra conexión con la de la tx tomada). */
+    const cierres = yaAtribuida === 0 ? await ForestCtpCierreDB.list(tenantId) : [];
 
-    await prisma.$transaction(async (tx) => {
+    const escritos = await prisma.$transaction(async (tx): Promise<ConsumosEscritos | null> => {
+      /* ADR-435 (27-09): «Acomodar trozas» desde el acta de ESTE lote puede
+         cambiar una pieza de fila. Las piezas se leyeron arriba, fuera de esta
+         transacción: si entre la lectura y acá una cambió de fila, el m³ iría
+         a la vieja y la pieza quedaría en la nueva. Se bloquean (el acomodo
+         también, en el mismo orden) y se comparan; si cambió alguna, se tira.
+         Los m³ por guía se escriben DESPUÉS, en esta misma transacción: un
+         rechazo no deja ni un m³ escrito, y la corrida que `POST /ctp` deja
+         viva vuelve a intentar limpia (antes quedaba con la atribución en la
+         fila vieja, y al reintentar `yaAtribuida > 0` salteaba este control). */
+      let escritos: ConsumosEscritos | null = null;
+      if (yaAtribuida === 0) {
+        /* Orden de locks: corrida → lote → piezas, el de `vincularCorrida` y
+           `sumarACorrida`; el acomodo con `loteId` toma lote → piezas. */
+        await tx.$queryRaw`
+          SELECT "id" FROM "ForestCtpEntry"
+          WHERE "id" = ${corridaId} AND "tenantId" = ${tenantId}
+          FOR UPDATE
+        `;
+        await tx.$queryRaw`
+          SELECT "id" FROM "ForestLoteAserrio"
+          WHERE "id" = ${loteId} AND "tenantId" = ${tenantId}
+          FOR UPDATE
+        `;
+        const ahora = await tx.$queryRaw<{ id: string; woodEntryId: string }[]>`
+          SELECT "id", "woodEntryId" FROM "WoodEntryTroza"
+          WHERE "tenantId" = ${tenantId} AND "id" = ANY(${libres.map((t) => t.id)}::text[])
+          ORDER BY "id"
+          FOR UPDATE
+        `;
+        const filaDe = new Map(libres.map((t) => [t.id, t.woodEntryId]));
+        const cambiaron = ahora.filter((t) => filaDe.get(t.id) !== t.woodEntryId).map((t) => t.id);
+        if (cambiaron.length > 0) {
+          throw new CtpInvariantError(
+            "Mientras se consumía, alguien acomodó trozas de este lote en su fila. No se consumió nada: vuelve a intentarlo.",
+            "VALIDACION",
+            { motivo: "TROZA_CAMBIO_DE_FILA", trozas: cambiaron },
+          );
+        }
+        /* I1/I2, cierre y congelado: la regla vive una sola vez. */
+        const porGuia = agruparPorGuia(
+          libres.map((t) => ({
+            id: t.id,
+            woodEntryId: t.woodEntryId,
+            codificacion: null,
+            especieComun: lote.speciesCommon,
+            volumenM3: t.volumenM3 == null ? null : Number(t.volumenM3),
+          })),
+        );
+        escritos = await ForestCtpConsumoDB.setConsumosEnTx(
+          tx,
+          tenantId,
+          corridaId,
+          porGuia.map((g) => ({ woodEntryId: g.woodEntryId, volumeM3: g.volumenM3 })),
+          user,
+          { cierres },
+        );
+      }
       await tx.woodEntryTroza.updateMany({
         where: { id: { in: libres.map((t) => t.id) }, tenantId, consumidaEnId: null },
         data: { consumidaEnId: corridaId, fechaConsumo: fecha ?? new Date() },
@@ -1317,16 +1407,23 @@ export class ForestLoteAserrioDB {
          sigue ABIERTO: darlo por consumido escondería las piezas que todavía
          están apartadas esperando la corrida siguiente. */
       if (libres.length >= disponibles.length) {
+        const fechaConsumo = fecha ?? new Date();
         await tx.forestLoteAserrio.update({
           where: { id: loteId },
           data: {
             status: "consumido",
-            fechaConsumo: fecha ?? new Date(),
+            fechaConsumo,
             produccionEntryId: corridaId,
+            /* Una corrida fechada antes que el lote lo arrastra: la apertura
+               nunca queda después del consumo (lote-aserrio-coherencia). */
+            ...aperturaAlConsumir(lote.fechaApertura, fechaConsumo),
           },
         });
       }
-    });
+      return escritos;
+    }, CTP_TX_OPTS);
+    /* Tras el commit: la caché y el renglón de la atribución (esperado). */
+    if (escritos) await ForestCtpConsumoDB.despuesDeConsumos(tenantId, corridaId, escritos, user);
 
     const volumenM3 =
       Math.round(libres.reduce((a, t) => a + Number(t.volumenM3 ?? 0), 0) * 10000) / 10000;
@@ -1557,7 +1654,10 @@ export class ForestLoteAserrioDB {
    * El orden importa y está en el ADR: **primero el volumen, después la
    * atribución**. I1 es `Σ atribuido ≤ declarado` y se evalúa contra la fila
    * bloqueada — al revés, la atribución que estamos agregando se rechazaría a sí
-   * misma. Si `setConsumos` falla, el volumen se restaura.
+   * misma.
+   *
+   * Volumen, m³ por guía y piezas van en UNA transacción (27-09): si algo se
+   * rechaza no queda nada escrito, sin restaurar a mano.
    */
   static async sumarACorrida(
     tenantId: string,
@@ -1580,14 +1680,34 @@ export class ForestLoteAserrioDB {
 
     const r4 = (n: number) => Math.round(n * 10000) / 10000;
 
-    // Todo lo que lee y después escribe `volumeInputM3` va en UNA transacción
-    // con lock sobre la corrida ANTES de leerla (auditoría 2026-08-25): sin
-    // esto, dos operadores sumando a la MISMA corrida a la vez calculan el
-    // total sobre el mismo valor viejo y el que escribe último pisa al otro
-    // — el mismo TOCTOU que `setConsumos`/`setOrigenes` ya blindaron con
-    // `FOR UPDATE` cuando se reprodujo en una función hermana.
-    const { corrida, lote, libres, delta, volumenPrevio, volumenTotal, seVacia, rendimientoPct } =
-      await prisma.$transaction(async (tx) => {
+    /* Los cierres, ANTES de abrir la transacción: son un KV que se lee con el
+       cliente global, y adentro pedirían otra conexión del pool con la de la tx
+       tomada (el mismo criterio que `setConsumos` y `vincularCorrida`). */
+    const cierres = await ForestCtpCierreDB.list(tenantId);
+
+    // Todo lo que lee y después escribe va en UNA transacción:
+    //  · la corrida, bloqueada ANTES de leerla (auditoría 2026-08-25): sin eso,
+    //    dos operadores sumando a la MISMA corrida calculaban el total sobre el
+    //    mismo valor viejo y el que escribía último pisaba al otro;
+    //  · el lote y las piezas, bloqueados ANTES de leerlos (27-09): «Acomodar
+    //    trozas» desde el acta de ESTE lote cambia una pieza de fila. Con la
+    //    lectura en una tx y los m³ y las piezas en otras dos, el m³ quedaba en
+    //    la fila vieja y la pieza consumida en la nueva, sin aviso. Ahora el
+    //    acomodo espera a que esta suma termine, y lo que ya entró no se mueve;
+    //  · volumen, m³ por guía (`setConsumosEnTx`, I1/I2/cierre/congelado) y
+    //    piezas: si algo rechaza, la transacción entera vuelve atrás.
+    const {
+      corrida,
+      lote,
+      libres,
+      delta,
+      volumenPrevio,
+      volumenTotal,
+      seVacia,
+      rendimientoPct,
+      escritos,
+    } = await prisma.$transaction(
+      async (tx) => {
         const locked = await tx.$queryRaw<
           {
             id: string;
@@ -1602,9 +1722,13 @@ export class ForestLoteAserrioDB {
             unit: string | null;
             /* T3 (ADR-433): ninguna troza entra a una corrida anterior a su ingreso. */
             entryDate: Date;
+            /* ADR-443: el permiso de la corrida, para no sumarle un lote de otro. */
+            contratoId: string | null;
+            originCode: string | null;
           }[]
         >`
-          SELECT "id", "lineNo", "section", "status", "quantity", "volumeInputM3", "speciesCommon", "unit", "entryDate"
+          SELECT "id", "lineNo", "section", "status", "quantity", "volumeInputM3", "speciesCommon", "unit", "entryDate",
+                 "contratoId", "originCode"
           FROM "ForestCtpEntry"
           WHERE "id" = ${corridaId} AND "tenantId" = ${tenantId} AND "deletedAt" IS NULL
           FOR UPDATE
@@ -1635,12 +1759,14 @@ export class ForestLoteAserrioDB {
          * apuntándole. Las tres cosas se miran: `volumeInputM3` solo dejaría
          * pasar una corrida con consumos y volumen sin escribir.
          */
-        const [consumosPrevios, lotesPrevios] = await Promise.all([
-          tx.forestCtpConsumo.count({ where: { tenantId, ctpEntryId: corridaId } }),
-          tx.forestLoteAserrio.count({
-            where: { tenantId, produccionEntryId: corridaId, deletedAt: null },
-          }),
-        ]);
+        /* En serie, no con `Promise.all`: la transacción es UNA conexión, y pg
+           ya avisa que encolar consultas en paralelo sobre ella se deja de admitir. */
+        const consumosPrevios = await tx.forestCtpConsumo.count({
+          where: { tenantId, ctpEntryId: corridaId },
+        });
+        const lotesPrevios = await tx.forestLoteAserrio.count({
+          where: { tenantId, produccionEntryId: corridaId, deletedAt: null },
+        });
         const sinOrigen =
           (corrida.volumeInputM3 == null || Number(corrida.volumeInputM3) <= 0) &&
           consumosPrevios === 0 &&
@@ -1652,6 +1778,22 @@ export class ForestLoteAserrioDB {
             "LOTE_NO_EDITABLE",
           );
         }
+
+        /* El lote y las piezas, bloqueados ANTES de leerlos. Orden: corrida →
+           lote → piezas (`ORDER BY id`), el de `vincularCorrida`; el acomodo
+           desde el acta toma lote → piezas, así que espera su turno en vez de
+           cambiarle la fila a una pieza entre la lectura y la escritura. */
+        await tx.$queryRaw`
+          SELECT "id" FROM "ForestLoteAserrio"
+          WHERE "id" = ${loteId} AND "tenantId" = ${tenantId}
+          FOR UPDATE
+        `;
+        await tx.$queryRaw`
+          SELECT "id" FROM "WoodEntryTroza"
+          WHERE "tenantId" = ${tenantId} AND "id" = ANY(${trozaIds}::text[])
+          ORDER BY "id"
+          FOR UPDATE
+        `;
 
         const lote = await tx.forestLoteAserrio.findFirst({
           where: { id: loteId, tenantId, deletedAt: null },
@@ -1702,6 +1844,21 @@ export class ForestLoteAserrioDB {
         ) {
           throw new CtpInvariantError(
             `El lote ${lote.code} es de ${lote.speciesCommon} y la corrida N° ${corrida.lineNo} es de ${corrida.speciesCommon}.`,
+            "LOTE_NO_EDITABLE",
+          );
+        }
+        /* ADR-443: una corrida sale de UN permiso (la misma regla que «¿De qué
+           trozas salió?»). Sin esto, «Elegir a mano» sumaba un lote de otro
+           título por el camino de siempre. Sin dato en una de las dos puntas,
+           no se frena (no se inventa el permiso que falta). */
+        if (
+          !mismoPermiso(
+            { contratoId: corrida.contratoId, codigo: corrida.originCode },
+            { contratoId: lote.contratoId, codigo: lote.permiso },
+          )
+        ) {
+          throw new CtpInvariantError(
+            `El lote ${lote.code} es del permiso ${lote.permiso ?? "otro"} y la corrida N° ${corrida.lineNo} es de ${corrida.originCode ?? "otro permiso"}: una corrida sale de un solo permiso.`,
             "LOTE_NO_EDITABLE",
           );
         }
@@ -1783,81 +1940,75 @@ export class ForestLoteAserrioDB {
           },
         });
 
+        // 2. La atribución por guía: lo que YA tenía ⊕ lo que entra ahora. Las
+        //    piezas están bloqueadas desde antes de leerlas: la fila de cada
+        //    una es la que va a quedar escrita.
+        const previos = await tx.forestCtpConsumo.findMany({
+          where: { tenantId, ctpEntryId: corridaId },
+          select: { woodEntryId: true, volumeM3: true },
+        });
+        const porGuia = new Map(previos.map((c) => [c.woodEntryId, Number(c.volumeM3)]));
+        for (const g of agruparPorGuia(
+          libres.map((t) => ({
+            id: t.id,
+            woodEntryId: t.woodEntryId,
+            codificacion: null,
+            especieComun: lote.speciesCommon,
+            volumenM3: t.volumenM3 == null ? null : Number(t.volumenM3),
+          })),
+        )) {
+          porGuia.set(g.woodEntryId, r4((porGuia.get(g.woodEntryId) ?? 0) + g.volumenM3));
+        }
+        /* I1/I2 los valida `setConsumosEnTx` — la regla vive una sola vez, y
+           también el cierre de período y el guard de costo congelado. Si
+           rechaza, el volumen de arriba vuelve atrás con la transacción. */
+        const escritos = await ForestCtpConsumoDB.setConsumosEnTx(
+          tx,
+          tenantId,
+          corridaId,
+          [...porGuia.entries()].map(([woodEntryId, volumeM3]) => ({ woodEntryId, volumeM3 })),
+          user,
+          { cierres },
+        );
+
+        // 3. Las piezas, y el lote se cierra sólo si se quedó sin madera.
         const disponibles = lote.trozas.filter((t) => motivoNoElegible(t) === null);
         const seVacia = libres.length >= disponibles.length;
-
-        return { corrida, lote, libres, delta, volumenPrevio, volumenTotal, seVacia, rendimientoPct };
-      });
-
-    try {
-      // 2. La atribución por guía: lo que YA tenía ⊕ lo que entra ahora.
-      const previos = await prisma.forestCtpConsumo.findMany({
-        where: { tenantId, ctpEntryId: corridaId },
-        select: { woodEntryId: true, volumeM3: true },
-      });
-      const porGuia = new Map(previos.map((c) => [c.woodEntryId, Number(c.volumeM3)]));
-      for (const g of agruparPorGuia(
-        libres.map((t) => ({
-          id: t.id,
-          woodEntryId: t.woodEntryId,
-          codificacion: null,
-          especieComun: lote.speciesCommon,
-          volumenM3: t.volumenM3 == null ? null : Number(t.volumenM3),
-        })),
-      )) {
-        porGuia.set(g.woodEntryId, r4((porGuia.get(g.woodEntryId) ?? 0) + g.volumenM3));
-      }
-      /* I1/I2 los valida `setConsumos` — la regla vive una sola vez, y también
-         el cierre de período y el guard de costo congelado. */
-      await ForestCtpConsumoDB.setConsumos(
-        tenantId,
-        corridaId,
-        [...porGuia.entries()].map(([woodEntryId, volumeM3]) => ({ woodEntryId, volumeM3 })),
-        user,
-      );
-    } catch (e) {
-      /* Nada entró: la corrida vuelve al volumen que tenía. Dejarla inflada por
-         un intento fallido inventaría materia prima. */
-      await prisma.forestCtpEntry
-        .update({
-          where: { id: corridaId },
-          data: {
-            volumeInputM3: volumenPrevio,
-            /* Y el rendimiento que se derivó de ese volumen: dejarlo escrito
-               sobre un denominador que ya no existe es peor que el hueco. */
-            ...(rendimientoPct != null ? { rendimientoPct: null } : {}),
-          },
-        })
-        /* Si ni siquiera se pudo restaurar, la corrida queda inflada sin
-           atribución: se ve como «materia prima sin origen» en la ficha, pero
-           hay que poder rastrear por qué. Silenciarlo lo volvería un misterio. */
-        .catch((err) =>
-          logger.error("[forestal.sumarACorrida] no se pudo restaurar volumeInputM3", {
-            corridaId,
-            volumenPrevio,
-            error: String(err),
-          }),
-        );
-      throw e;
-    }
-
-    // 3. Las piezas, y el lote se cierra sólo si se quedó sin madera.
-    await prisma.$transaction(async (tx) => {
-      await tx.woodEntryTroza.updateMany({
-        where: { id: { in: libres.map((t) => t.id) }, tenantId, consumidaEnId: null },
-        data: { consumidaEnId: corridaId, fechaConsumo: fecha ?? new Date() },
-      });
-      if (seVacia) {
-        await tx.forestLoteAserrio.update({
-          where: { id: loteId },
-          data: {
-            status: "consumido",
-            fechaConsumo: fecha ?? new Date(),
-            produccionEntryId: corridaId,
-          },
+        await tx.woodEntryTroza.updateMany({
+          where: { id: { in: libres.map((t) => t.id) }, tenantId, consumidaEnId: null },
+          data: { consumidaEnId: corridaId, fechaConsumo: fecha ?? new Date() },
         });
-      }
-    });
+        if (seVacia) {
+          const fechaConsumo = fecha ?? new Date();
+          await tx.forestLoteAserrio.update({
+            where: { id: loteId },
+            data: {
+              status: "consumido",
+              fechaConsumo,
+              produccionEntryId: corridaId,
+              /* Igual que `consumir`: la apertura nunca después del consumo. */
+              ...aperturaAlConsumir(lote.fechaApertura, fechaConsumo),
+            },
+          });
+        }
+
+        return {
+          corrida,
+          lote,
+          libres,
+          delta,
+          volumenPrevio,
+          volumenTotal,
+          seVacia,
+          rendimientoPct,
+          escritos,
+        };
+      },
+      CTP_TX_OPTS,
+    );
+
+    /* Tras el commit: la caché y el renglón de la atribución (esperado). */
+    await ForestCtpConsumoDB.despuesDeConsumos(tenantId, corridaId, escritos, user);
 
     auditCtp({
       tenantId,
@@ -2208,6 +2359,12 @@ export class ForestLoteAserrioDB {
    * Un lote **cerrado** no se reabre por acá: «cerrado» significa producido y
    * despachado, y su madera libre ya volvió al patio. Para ese caso el camino
    * es armar un lote nuevo, no revivir uno que el libro dio por terminado.
+   *
+   * Un lote de **inventario** (sin trozas, atado a su corrida sólo por
+   * `produccionEntryId`) tampoco (2026-09-27): no tiene madera que seguir
+   * cargando, y si se le cargara y produjera, `consumir()` pisaría el puntero y
+   * la corrida de inventario quedaría suelta del lote. En Blas el menú de lotes
+   * de Consumos reabrió así tres de un clic cada uno (13, 15 y 16-2026).
    */
   static async reabrir(
     tenantId: string,
@@ -2235,6 +2392,19 @@ export class ForestLoteAserrioDB {
         { status: lote.status },
       );
     }
+    if (
+      atadoSoloPorPuntero({
+        trozas: lote.trozas.length,
+        produccionEntryId: lote.produccionEntryId,
+      })
+    ) {
+      throw new CtpInvariantError(
+        `El lote ${lote.code} se declaró por inventario, sin trozas: su producción ya está en su corrida y no hay madera que seguir cargando. ` +
+          "Si faltó declarar algo, usa «Agregar producción a esta corrida» en Producción; si llegó madera nueva, arma un lote nuevo.",
+        "LOTE_NO_EDITABLE",
+        { status: lote.status, motivo: "inventario_sin_trozas" },
+      );
+    }
 
     const piezasConsumidas = lote.trozas.filter((t) => t.consumidaEnId).length;
     await prisma.forestLoteAserrio.update({
@@ -2259,6 +2429,157 @@ export class ForestLoteAserrioDB {
     }
 
     return { code: lote.code, piezasConsumidas };
+  }
+
+  /**
+   * REPARA los lotes que se contradicen a sí mismos (2026-09-27, aprobado por
+   * Brandon para Blas). Dos arreglos, las reglas en `arregloDeLote`:
+   *
+   *  - `abierto` con su corrida viva y sin trozas (inventario reabierto) →
+   *    `consumido`, el estado con el que nació. No inventa trozas ni consumos
+   *    ([[materiaprimaref-no-es-origen]]): la corrida sigue sin origen, que es
+   *    lo que es.
+   *  - `fechaApertura` posterior a `fechaConsumo` → la fecha del consumo.
+   *
+   * Idempotente: una segunda corrida no encuentra nada. Cada escritura lleva la
+   * foto que se leyó en el WHERE (`status` + `fechaApertura`): si el lote cambió
+   * entre la lectura y el write, no se pisa y se reporta. Un lote cuyo consumo o
+   * apertura cae en un mes CERRADO del libro no se toca: se devuelve en
+   * `omitidos` para decidirlo a mano. Sin `aplicar` sólo cuenta.
+   */
+  static async repararEstadosIncoherentes(
+    tenantId: string,
+    user: string,
+    opts: { aplicar?: boolean } = {},
+  ): Promise<ReparacionDeLotes> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const aplicar = opts.aplicar === true;
+
+    const lotes = await prisma.forestLoteAserrio.findMany({
+      where: {
+        tenantId,
+        deletedAt: null,
+        OR: [
+          { status: "abierto", produccionEntryId: { not: null } },
+          { fechaConsumo: { not: null } },
+        ],
+      },
+      select: {
+        id: true,
+        code: true,
+        status: true,
+        fechaApertura: true,
+        fechaConsumo: true,
+        produccionEntryId: true,
+        _count: { select: { trozas: true } },
+      },
+      orderBy: { code: "asc" },
+    });
+    const idsCorrida = [
+      ...new Set(lotes.map((l) => l.produccionEntryId).filter((x): x is string => Boolean(x))),
+    ];
+    const corridas =
+      idsCorrida.length === 0
+        ? []
+        : await prisma.forestCtpEntry.findMany({
+            where: { tenantId, id: { in: idsCorrida } },
+            select: { id: true, lineNo: true, status: true, deletedAt: true },
+          });
+    const corridaPorId = new Map(corridas.map((c) => [c.id, c]));
+    const cierres = await ForestCtpCierreDB.list(tenantId);
+
+    const resultado: ReparacionDeLotes = {
+      revisados: lotes.length,
+      aplicado: aplicar,
+      arreglos: [],
+      omitidos: [],
+    };
+    for (const l of lotes) {
+      const corrida = l.produccionEntryId ? corridaPorId.get(l.produccionEntryId) : undefined;
+      const arreglo = arregloDeLote({
+        status: l.status,
+        fechaApertura: l.fechaApertura,
+        fechaConsumo: l.fechaConsumo,
+        produccionEntryId: l.produccionEntryId,
+        trozas: l._count.trozas,
+        corridaViva: Boolean(corrida && corrida.deletedAt == null && corrida.status !== "anulado"),
+      });
+      if (!arreglo) continue;
+
+      const cerrado =
+        (l.fechaConsumo ? closedPeriodOf(cierres, l.fechaConsumo) : null) ??
+        closedPeriodOf(cierres, l.fechaApertura);
+      if (cerrado) {
+        resultado.omitidos.push({
+          id: l.id,
+          code: l.code,
+          motivo: `cae en ${cerrado.label}, mes cerrado del libro: reábrelo para repararlo`,
+        });
+        continue;
+      }
+
+      const despues = {
+        status: arreglo.status ?? l.status,
+        fechaApertura: arreglo.fechaApertura ?? l.fechaApertura,
+      };
+      let escrito = false;
+      if (aplicar) {
+        const { count } = await prisma.forestLoteAserrio.updateMany({
+          where: {
+            tenantId,
+            id: l.id,
+            deletedAt: null,
+            status: l.status,
+            fechaApertura: l.fechaApertura,
+          },
+          data: despues,
+        });
+        if (count !== 1) {
+          resultado.omitidos.push({
+            id: l.id,
+            code: l.code,
+            motivo: "cambió mientras se reparaba: vuelve a correr la reparación",
+          });
+          continue;
+        }
+        escrito = true;
+        const partes = [
+          arreglo.status
+            ? `estado ${l.status} → ${arreglo.status} (su corrida N° ${corrida?.lineNo ?? "?"} ya está declarada y el lote no tiene trozas que cargar)`
+            : null,
+          arreglo.fechaApertura
+            ? `apertura ${fechaDeApertura(l.fechaApertura, arreglo.fechaApertura)} ` +
+              `(no puede ser posterior al consumo del ${formatDateNumeric(l.fechaConsumo)})`
+            : null,
+        ].filter(Boolean);
+        /* Se espera: el renglón es la única constancia de qué decía antes. */
+        await auditCtpEsperando({
+          tenantId,
+          action: "ctp_lote_aserrio_reparar",
+          entity: "ForestLoteAserrio",
+          entityId: l.id,
+          detail: `Reparó el lote ${l.code}: ${partes.join(" · ")}`,
+          user,
+        });
+      }
+      resultado.arreglos.push({
+        id: l.id,
+        code: l.code,
+        antes: { status: l.status, fechaApertura: l.fechaApertura.toISOString() },
+        despues: { status: despues.status, fechaApertura: despues.fechaApertura.toISOString() },
+        motivos: arreglo.motivos,
+        escrito,
+      });
+    }
+
+    if (resultado.arreglos.some((a) => a.escrito)) {
+      try {
+        invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+      } catch {
+        /* cache best-effort */
+      }
+    }
+    return resultado;
   }
 
   /** Saca una pieza del lote (mientras esté abierto). */

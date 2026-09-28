@@ -283,7 +283,9 @@ export const ESTADO_LOTE: Record<
 /** Colores del badge de estado — single source para toda pantalla que lea un lote
  *  (tarjeta, ficha de sólo lectura, combos): el mismo estado se ve igual en todas. */
 export const TONO_ESTADO_LOTE: Record<EstadoLoteAserrio, string> = {
-  abierto: "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
+  /* Tinte /5 y sin `dark:text-…`: en oscuro `--accent-ink` ya es el turquesa
+     claro, y con /10 la pastilla daba 4,39:1 (axe, 27-09). */
+  abierto: "border-[var(--accent)] bg-primary/5 text-[var(--accent-ink)]",
   consumido:
     "border-[var(--data-success-500)]/50 bg-[var(--data-success-50)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/12 dark:text-[var(--data-success-500)]",
   cerrado: "border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
