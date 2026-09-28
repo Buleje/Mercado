@@ -67,6 +67,14 @@ export interface LothMapaCanvasProps {
   fajaAnchoM: number;
   /** Pedido de centrado (cambia `n` en cada pedido). */
   centrarEn: { p: LatLng; n: number } | null;
+  /** Pedido de encuadre de varios puntos (tú + el árbol más cercano); cambia `n`. */
+  encuadrarEn: { pts: LatLng[]; n: number } | null;
+  /** Árbol del censo elegido (su ficha está abierta): anillo y encima de todos. */
+  arbolElegido: string | null;
+  /** El árbol en pie más cercano a tu GPS: late, y una línea te lleva hasta él. */
+  arbolCercano: string | null;
+  /** Tocar un árbol abre su ficha; tocar el mapa vacío la cierra (null). */
+  onArbolElegido: (id: string | null) => void;
   parcela: LatLng[];
   declarada: boolean;
   draft: LatLng[];
@@ -102,6 +110,8 @@ export interface LeafletCtx {
   parcelaRef: RefObject<any>;
   draftRef: RefObject<any>;
   markersRef: RefObject<any>;
+  /** Los árboles del censo: grupo propio, se re-pinta sin tocar las operaciones. */
+  arbolesRef: RefObject<any>;
   refsRef: RefObject<any>;
   viasRef: RefObject<any>;
   posRef: RefObject<any>;

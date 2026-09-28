@@ -2,8 +2,9 @@
 
 /**
  * useLothCanvasPuntos — lo que se PINTA ENCIMA de la base: capas oficiales
- * (SERNANP/SERFOR), censo y operaciones del libro, imagen histórica con su
- * cortina, posición del GPS y referencias del plano.
+ * (SERNANP/SERFOR), operaciones del libro, imagen histórica con su cortina,
+ * posición del GPS y referencias del plano. El censo tiene su capa aparte
+ * (`use-loth-canvas-arboles`): se re-pinta al elegir o filtrar sin tocar esto.
  *
  * Los efectos están copiados sin cambios desde `LothMapaCanvas` (se partió en
  * 2026-09-18 al pasar de 300 líneas): mismas dependencias, mismo orden.
@@ -14,7 +15,7 @@ import type { LatLng } from "@/lib/forestal/loth-geo";
 import { pointInPolygon } from "@/lib/forestal/loth-geo";
 import { referenciaMeta } from "@/lib/forestal/loth-cartografia";
 import { OVERLAYS, type OverlayId } from "../loth-mapa-overlays";
-import { arbolPopupHtml, censoColor, operacionPopupHtml, SECTION_COLOR } from "../loth-mapa-shared";
+import { operacionPopupHtml, SECTION_COLOR } from "../loth-mapa-shared";
 import { MAX_NATIVE, type LeafletCtx, type LothMapaCanvasProps } from "../loth-mapa-canvas-ctx";
 
 /* Las refs de Leaflet van en las dependencias aunque no cambian nunca: llegan
@@ -22,7 +23,7 @@ import { MAX_NATIVE, type LeafletCtx, type LothMapaCanvasProps } from "../loth-m
    re-dispara ningún efecto. */
 export function useLothCanvasPuntos(ctx: LeafletCtx, p: LothMapaCanvasProps): void {
   const { ready, mapRef, LRef, overlayRef, markersRef, waybackRef, posRef, refsRef } = ctx;
-  const { overlays, geo, censo, parcela, declarada, wayback, waybackSplit, posicion, referencias } = p;
+  const { overlays, geo, parcela, declarada, wayback, waybackSplit, posicion, referencias } = p;
 
   // ── Capas oficiales del Estado (SERNANP / SERFOR) ──────────────────────────
   // Son MapServer de Esri, no teselas: se pide un PNG transparente del bbox
@@ -70,24 +71,14 @@ export function useLothCanvasPuntos(ctx: LeafletCtx, p: LothMapaCanvasProps): vo
     };
   }, [ready, overlays, mapRef, LRef, overlayRef]);
 
-  // ── Censo + operaciones ────────────────────────────────────────────────────
+  // ── Operaciones del libro ──────────────────────────────────────────────────
+  // (Los árboles del censo tienen su propia capa: `use-loth-canvas-arboles`.)
   useEffect(() => {
     const L = LRef.current;
     const group = markersRef.current;
     if (!ready || !L || !group) return;
     group.clearLayers();
     const inside = (p: LatLng) => (declarada ? pointInPolygon(p, parcela) : true);
-
-    for (const t of censo) {
-      const dentro = inside([t.lat, t.lng]);
-      const color = censoColor(t);
-      if (declarada && !dentro) {
-        L.circleMarker([t.lat, t.lng], { radius: 10, color: "#e11d48", weight: 1.5, opacity: 0.8, fill: false }).addTo(group);
-      }
-      L.circleMarker([t.lat, t.lng], { radius: 4.5, color: "#fff", weight: 1.5, fillColor: color, fillOpacity: 0.95 })
-        .bindPopup(arbolPopupHtml(t, dentro, declarada))
-        .addTo(group);
-    }
 
     for (const g of geo) {
       const dentro = inside([g.lat, g.lng]);
@@ -104,7 +95,7 @@ export function useLothCanvasPuntos(ctx: LeafletCtx, p: LothMapaCanvasProps): vo
         .bindPopup(operacionPopupHtml(g, dentro, declarada))
         .addTo(group);
     }
-  }, [ready, geo, censo, parcela, declarada, LRef, markersRef]);
+  }, [ready, geo, parcela, declarada, LRef, markersRef]);
 
   // ── Imagen histórica (Wayback) + cortina ───────────────────────────────────
   useEffect(() => {

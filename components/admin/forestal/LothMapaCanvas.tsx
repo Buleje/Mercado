@@ -11,9 +11,10 @@
  *   4. censo forestal (árboles proyectados desde UTM) y operaciones del libro,
  *      con halo rojo si caen FUERA del polígono declarado.
  *
- * Las capas viven en tres hooks —trazos (líneas y polígonos), puntos (lo que
- * se pinta encima) y clics (qué hace tocar el mapa)—; acá queda crear el mapa,
- * la base, la escala, el encuadre y el centrado.
+ * Las capas viven en cuatro hooks —trazos (líneas y polígonos), puntos (lo que
+ * se pinta encima), clics (qué hace tocar el mapa) y árboles (el censo, su
+ * ficha y la línea hasta el más cercano)—; acá queda crear el mapa, la base, la
+ * escala, el encuadre y el centrado.
  *
  * GOTCHA (aprendido a los golpes): el `className` del contenedor va ESTÁTICO —
  * Leaflet agrega sus clases imperativamente y un className dinámico haría que
@@ -26,11 +27,12 @@ import { ATTR, MAX_NATIVE, TILES, type LeafletCtx, type LothMapaCanvasProps } fr
 import { useLothCanvasTrazos } from "./hooks/use-loth-canvas-trazos";
 import { useLothCanvasPuntos } from "./hooks/use-loth-canvas-puntos";
 import { useLothCanvasClics } from "./hooks/use-loth-canvas-clics";
+import { useLothCanvasArboles } from "./hooks/use-loth-canvas-arboles";
 
 export type { BasemapId } from "./loth-mapa-canvas-ctx";
 
 export default function LothMapaCanvas(p: LothMapaCanvasProps) {
-  const { geo, censo, fullscreen, centrarEn, parcela, basemap, center, fitKey, onView } = p;
+  const { geo, censo, fullscreen, centrarEn, encuadrarEn, parcela, basemap, center, fitKey, onView } = p;
   const containerRef = useRef<HTMLDivElement>(null);
   /* eslint-disable @typescript-eslint/no-explicit-any */
   const mapRef = useRef<any>(null);
@@ -41,6 +43,7 @@ export default function LothMapaCanvas(p: LothMapaCanvasProps) {
   const parcelaRef = useRef<any>(null);
   const draftRef = useRef<any>(null);
   const markersRef = useRef<any>(null);
+  const arbolesRef = useRef<any>(null);
   const refsRef = useRef<any>(null);
   const viasRef = useRef<any>(null);
   const posRef = useRef<any>(null);
@@ -66,6 +69,7 @@ export default function LothMapaCanvas(p: LothMapaCanvasProps) {
       predioRef.current = L.layerGroup().addTo(map);
       parcelaRef.current = L.layerGroup().addTo(map);
       markersRef.current = L.layerGroup().addTo(map);
+      arbolesRef.current = L.layerGroup().addTo(map);
       viasRef.current = L.layerGroup().addTo(map);
       posRef.current = L.layerGroup().addTo(map);
       fajaRef.current = L.layerGroup().addTo(map);
@@ -111,6 +115,7 @@ export default function LothMapaCanvas(p: LothMapaCanvasProps) {
     parcelaRef,
     draftRef,
     markersRef,
+    arbolesRef,
     refsRef,
     viasRef,
     posRef,
@@ -122,6 +127,7 @@ export default function LothMapaCanvas(p: LothMapaCanvasProps) {
   useLothCanvasTrazos(ctx, p);
   useLothCanvasPuntos(ctx, p);
   useLothCanvasClics(ctx, p);
+  useLothCanvasArboles(ctx, p);
 
   // ── Escala viva: metros por píxel en el paralelo del centro ────────────────
   useEffect(() => {
@@ -159,6 +165,19 @@ export default function LothMapaCanvas(p: LothMapaCanvasProps) {
     if (!ready || !map || !centrarEn) return;
     map.setView(centrarEn.p, Math.max(map.getZoom(), 16), { animate: true });
   }, [ready, centrarEn]);
+
+  // Encuadrar varios puntos a pedido: tu posición y el árbol más cercano, los
+  // dos a la vista (con un solo punto sería un centrado, y ya existe).
+  useEffect(() => {
+    const L = LRef.current;
+    const map = mapRef.current;
+    if (!ready || !L || !map || !encuadrarEn || encuadrarEn.pts.length === 0) return;
+    try {
+      map.fitBounds(L.latLngBounds(encuadrarEn.pts), { padding: [56, 56], maxZoom: 18, animate: true });
+    } catch {
+      /* puntos inválidos: el mapa se queda donde estaba */
+    }
+  }, [ready, encuadrarEn]);
 
   // ── Encuadre (cuando el orquestador lo pide) ───────────────────────────────
   useEffect(() => {

@@ -19,6 +19,12 @@ import LothMapaToolbar from "./LothMapaToolbar";
 import LothMapaHerramientas from "./LothMapaHerramientas";
 import LothCampoBar from "./LothCampoBar";
 import LothMapaDrawBar, { LothMapaMarcaBar, LothMapaViaBar } from "./LothMapaDrawBar";
+import LothMapaArbolFicha from "./LothMapaArbolFicha";
+import LothMapaCensoBarra from "./LothMapaCensoBarra";
+import LothMapaCercanos from "./LothMapaCercanos";
+import { CLASE_ARBOL_LABEL } from "@/lib/forestal/loth-mapa-arboles";
+import { pointInPolygon } from "@/lib/forestal/loth-geo";
+import type { LothMapaArboles } from "./hooks/use-loth-mapa-arboles";
 import { herramientasDelMapa, menuCapas, menuDibujar, menuExportar } from "./loth-mapa-menus";
 import type { LothMapaDatos } from "./hooks/use-loth-mapa-datos";
 import type { LothMapaDibujo } from "./hooks/use-loth-mapa-dibujo";
@@ -38,13 +44,23 @@ interface Props {
   herr: LothMapaHerramientasEstado;
   der: LothMapaDerivados;
   exp: LothMapaExportes;
+  /** El censo en el mapa: filtro, árbol elegido y «¿Qué árbol tengo cerca?». */
+  arb: LothMapaArboles;
   /** Cuántos vértices muestra el cuadro de coordenadas (borrador incluido). */
   verticesCuadro: number;
 }
 
-const LothMapaMarco = forwardRef<HTMLElement, Props>(function LothMapaMarco({ datos, dib, herr, der, exp, verticesCuadro }, ref) {
+const LothMapaMarco = forwardRef<HTMLElement, Props>(function LothMapaMarco({ datos, dib, herr, der, exp, arb, verticesCuadro }, ref) {
   const { fullscreen, setFullscreen } = herr;
   const rios = datos.carto.vias.filter((v) => v.tipo === "rio");
+  /** Una herramienta usa el clic del mapa: los árboles no lo toman y la ficha se guarda. */
+  const capturando = dib.drawMode || dib.markMode || dib.viaDraft !== null || herr.medicion !== null;
+  const elegido = arb.elegido;
+  /** Lo que el filtro deja buscar, dicho como lo lee el monteador («Catahua · Semillero»). */
+  const filtrando =
+    [arb.opciones.especies.find((o) => o.valor === arb.filtro.especie)?.label, arb.filtro.clase && CLASE_ARBOL_LABEL[arb.filtro.clase]]
+      .filter(Boolean)
+      .join(" · ") || null;
 
   // Escape saca de pantalla completa — salvo que lo haya usado otro (un menú
   // abierto lo marca con `preventDefault`, un diálogo encima lo necesita él).
@@ -120,7 +136,7 @@ const LothMapaMarco = forwardRef<HTMLElement, Props>(function LothMapaMarco({ da
       <div className={fullscreen ? "relative min-h-0 flex-1" : "relative h-[560px] max-sm:h-[420px]"}>
         <LothMapaCanvas
           geo={der.geoShown}
-          censo={der.censoShown}
+          censo={herr.showCenso ? arb.visibles : []}
           predio={datos.carto.predio.vertices}
           referencias={datos.carto.referencias}
           markMode={dib.markMode}
@@ -129,7 +145,7 @@ const LothMapaMarco = forwardRef<HTMLElement, Props>(function LothMapaMarco({ da
           viaDraft={dib.viaDraft}
           onViaPoint={dib.addViaPoint}
           overlays={herr.overlays}
-          posicion={herr.posicion}
+          posicion={herr.posicion ?? arb.posicion}
           wayback={herr.wayback}
           waybackSplit={herr.waybackSplit}
           medicion={herr.medicion}
@@ -138,6 +154,10 @@ const LothMapaMarco = forwardRef<HTMLElement, Props>(function LothMapaMarco({ da
           fullscreen={fullscreen}
           fajaAnchoM={herr.fajaAnchoM}
           centrarEn={herr.centrarEn}
+          encuadrarEn={arb.encuadrarEn}
+          arbolElegido={elegido?.id ?? null}
+          arbolCercano={arb.cercanoId}
+          onArbolElegido={arb.elegir}
           parcela={datos.parcela.vertices}
           declarada={der.declarada}
           draft={dib.draft}
@@ -155,6 +175,16 @@ const LothMapaMarco = forwardRef<HTMLElement, Props>(function LothMapaMarco({ da
           onView={herr.onView}
         />
         <LothMapaChrome items={der.legendItems} cursor={herr.cursor} metersPerPixel={herr.metersPerPixel} />
+
+        {elegido && herr.showCenso && !capturando && (
+          <LothMapaArbolFicha
+            arbol={elegido}
+            desdeTi={arb.desdeTi}
+            fuera={der.declarada && !pointInPolygon([elegido.lat, elegido.lng], datos.parcela.vertices)}
+            onCerrar={() => arb.elegir(null)}
+            onCentrar={() => herr.centrar([elegido.lat, elegido.lng])}
+          />
+        )}
 
         {dib.drawMode && (
           <LothMapaDrawBar
@@ -194,7 +224,10 @@ const LothMapaMarco = forwardRef<HTMLElement, Props>(function LothMapaMarco({ da
         )}
       </div>
 
-      {!fullscreen && (
+      {der.censoAll.length > 0 && herr.showCenso && <LothMapaCensoBarra arb={arb} total={der.censoAll.length} />}
+      {arb.cercaActivo && herr.showCenso && <LothMapaCercanos arb={arb} filtrando={filtrando} />}
+
+      {!fullscreen && der.censoAll.length === 0 && (
         <p className="flex items-center gap-1.5 border-t border-[var(--rule-soft)] px-3 py-2 text-xs text-[var(--text-tertiary)]">
           <Camera className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> Toca un punto del mapa
           <InfoTip

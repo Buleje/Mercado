@@ -15,14 +15,13 @@ import type { LothEntryDTO } from "@/lib/forestal/loth-constants";
 import { computeEudrReadiness, hasParcela, type LatLng, type LothParcela, type OpForEudr } from "@/lib/forestal/loth-geo";
 import { dominantZone, zoneLabel } from "@/lib/forestal/loth-utm";
 import { viaMeta, type LothCartografia } from "@/lib/forestal/loth-cartografia";
-import { analizarPoa, CATEGORIA_COLOR, CATEGORIA_LABEL, type PoaConfig } from "@/lib/forestal/loth-poa";
+import { analizarPoa, type PoaConfig } from "@/lib/forestal/loth-poa";
+import { CLASE_ARBOL_LABEL, CLASE_ARBOL_TOKEN, CLASES_ARBOL, claseDelArbol, ESTADO_ARBOL_LABEL } from "@/lib/forestal/loth-mapa-arboles";
 import { evaluarPlano } from "@/lib/forestal/loth-plano-checklist";
 import type { LegendItem } from "../LothMapaChrome";
 import {
   toGeo,
   toCenso,
-  CENSO_ESTADO_COLOR,
-  CENSO_ESTADO_LABEL,
   PARCELA_COLOR,
   SECTION_COLOR,
   SECTION_LABEL,
@@ -94,23 +93,28 @@ export function useLothMapaDerivados(d: Deps) {
   const readiness = useMemo(() => computeEudrReadiness(raw ? toOps(raw) : [], parcela), [raw, parcela]);
   const declarada = hasParcela(parcela);
 
-  /** Entradas de leyenda del censo: por categoría POA si la hay, si no por estado. */
-  const censoCategorias = useMemo(() => {
-    const out = new Map<string, { cat?: (typeof censoAll)[number]["categoria"]; estado: string }>();
-    for (const t of censoAll) out.set(t.categoria ?? `estado:${t.estado}`, { cat: t.categoria, estado: t.estado });
-    return [...out.values()];
+  /**
+   * Leyenda del censo: una fila por CONDICIÓN presente (forma + color, la del
+   * regente o, si no la trae, la del POA) y una por cada estado que no sea «en
+   * pie» (el mismo símbolo, hueco). Es lo que dibuja `use-loth-canvas-arboles`.
+   */
+  const censoLeyenda = useMemo<LegendItem[]>(() => {
+    const clases = new Set(censoAll.map((t) => claseDelArbol(t)));
+    const orden = CLASES_ARBOL.filter((c) => clases.has(c));
+    const base = orden[0] ?? "aprovechable";
+    const estados = new Set(censoAll.map((t) => t.estado));
+    return [
+      ...orden.map((c) => ({ label: CLASE_ARBOL_LABEL[c], color: CLASE_ARBOL_TOKEN[c], shape: "arbol" as const, clase: c, estado: "en_pie" })),
+      ...(["talado", "descartado"] as const)
+        .filter((e) => estados.has(e))
+        .map((e) => ({ label: ESTADO_ARBOL_LABEL[e], color: CLASE_ARBOL_TOKEN[base], shape: "arbol" as const, clase: base, estado: e })),
+    ];
   }, [censoAll]);
 
   const legendItems = useMemo<LegendItem[]>(
     () => [
       ...(declarada ? [{ label: "Área de aprovechamiento", color: PARCELA_COLOR, shape: "poly" as const }] : []),
-      ...(showCenso
-        ? censoCategorias.map((c) =>
-            c.cat
-              ? { label: `Censo · ${CATEGORIA_LABEL[c.cat]}`, color: CATEGORIA_COLOR[c.cat], shape: "tree" as const }
-              : { label: `Censo · ${CENSO_ESTADO_LABEL[c.estado] ?? c.estado}`, color: CENSO_ESTADO_COLOR[c.estado] ?? "#15803d", shape: "tree" as const },
-          )
-        : []),
+      ...(showCenso ? censoLeyenda : []),
       ...sectionsPresent
         .filter((s) => !hidden.has(s))
         .map((s) => ({ label: SECTION_LABEL[s] ?? s, color: SECTION_COLOR[s] ?? "#334155", shape: "dot" as const })),
@@ -121,7 +125,7 @@ export function useLothMapaDerivados(d: Deps) {
       })),
       ...(showGrid ? [{ label: "Cuadrícula UTM (WGS 84)", color: "#64748b", shape: "grid" as const }] : []),
     ],
-    [declarada, showCenso, censoCategorias, sectionsPresent, hidden, showGrid, carto.vias],
+    [declarada, showCenso, censoLeyenda, sectionsPresent, hidden, showGrid, carto.vias],
   );
 
   /** Zona UTM sugerida al importar: la del polígono o la del censo. */

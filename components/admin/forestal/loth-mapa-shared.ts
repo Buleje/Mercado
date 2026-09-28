@@ -9,7 +9,7 @@
 
 import type { LothEntryDTO } from "@/lib/forestal/loth-constants";
 import { formatUtmFull, parseUtmZone, fromUtm, toUtm } from "@/lib/forestal/loth-utm";
-import { CATEGORIA_COLOR, CATEGORIA_LABEL, type PoaCategoria } from "@/lib/forestal/loth-poa";
+import type { PoaCategoria } from "@/lib/forestal/loth-poa";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 export const SECTION_COLOR: Record<string, string> = {
@@ -28,18 +28,6 @@ export const SECTION_LABEL: Record<string, string> = {
   consumo_troza: "Consumo de troza",
   producto_terminado: "Producto terminado",
   despacho_producto: "Despacho de producto",
-};
-
-export const CENSO_ESTADO_LABEL: Record<string, string> = {
-  en_pie: "En pie",
-  talado: "Talado",
-  descartado: "Descartado",
-};
-
-export const CENSO_ESTADO_COLOR: Record<string, string> = {
-  en_pie: "#15803d",
-  talado: "#b45309",
-  descartado: "#6b7280",
 };
 
 /**
@@ -83,9 +71,16 @@ export interface CensoTree {
   lng: number;
   code: string;
   species: string;
+  /** Nombre científico y nativo («Coubé» = Copaiba), si el censo los trae. */
+  speciesScientific?: string | null;
+  speciesNative?: string | null;
   cites: boolean;
   estado: string;
+  /** Condición que declaró el regente («Aprovechable», «Semillero»…). */
+  condicion?: string | null;
   dapM: number | null;
+  /** Altura comercial (m). */
+  alturaM?: number | null;
   volumeM3: number | null;
   /** Zona tal como la registró el regente (ej. "18L") — se muestra sin reinterpretar. */
   utmZona: string;
@@ -100,9 +95,13 @@ export interface CensusTreeDTO {
   id: string;
   treeCode: string;
   speciesCommon: string;
+  speciesScientific?: string | null;
+  speciesNative?: string | null;
   cites?: boolean;
   dapM?: string | number | null;
+  alturaComercialM?: string | number | null;
   volumenEstimadoM3?: string | number | null;
+  condicion?: string | null;
   utmZona?: string | null;
   utmX?: string | number | null;
   utmY?: string | number | null;
@@ -168,9 +167,13 @@ export function toCenso(trees: CensusTreeDTO[]): CensoTree[] {
       lng,
       code: t.treeCode,
       species: t.speciesCommon,
+      speciesScientific: t.speciesScientific?.trim() || null,
+      speciesNative: t.speciesNative?.trim() || null,
       cites: t.cites === true,
       estado: t.estado ?? "en_pie",
+      condicion: t.condicion?.trim() || null,
       dapM: num(t.dapM),
+      alturaM: num(t.alturaComercialM),
       volumeM3: num(t.volumenEstimadoM3),
       utmZona: (t.utmZona ?? "").trim() || `${zone}${south ? "S" : "N"}`,
       utmX: x,
@@ -220,30 +223,5 @@ export function operacionPopupHtml(g: GeoEntry, dentro: boolean, declarada: bool
     ${g.date ? `<div style="opacity:.7">${esc(fmtDate(g.date))}</div>` : ""}
     ${flag}
     ${foto}
-  </div>`;
-}
-
-/** Color del árbol en el mapa: manda la categoría POA; si no hay, el estado. */
-export function censoColor(t: CensoTree): string {
-  return t.categoria ? CATEGORIA_COLOR[t.categoria] : (CENSO_ESTADO_COLOR[t.estado] ?? "#15803d");
-}
-
-/** Popup de un árbol censado — muestra el UTM ORIGINAL registrado por el regente. */
-export function arbolPopupHtml(t: CensoTree, dentro: boolean, declarada: boolean): string {
-  const flag = declarada
-    ? dentro
-      ? `<div style="display:flex;align-items:center;gap:4px;color:#15803d;font-weight:700">${circleCheckSvg(14, "#15803d")}dentro de la parcela</div>`
-      : `<div style="display:flex;align-items:center;gap:4px;color:#b91c1c;font-weight:700">${circleXSvg(14, "#b91c1c")}fuera del polígono declarado</div>`
-    : "";
-  return `<div style="font:600 12px/1.5 system-ui;min-width:170px">
-    <div style="font-weight:800;font-size:13px">${esc(t.code)}${t.cites ? ' <span style="color:#e11d48">CITES</span>' : ""}</div>
-    <div style="color:${censoColor(t)};font-weight:700">Censo · ${esc(CENSO_ESTADO_LABEL[t.estado] ?? t.estado)}${
-      t.categoria ? ` · ${esc(CATEGORIA_LABEL[t.categoria])}` : ""
-    }</div>
-    <div>${esc(t.species)}</div>
-    ${t.dapM != null ? `<div>DAP ${t.dapM.toFixed(2)} m</div>` : ""}
-    ${t.volumeM3 != null ? `<div style="font-weight:700">${fmtM3(t.volumeM3)} m³ estimados</div>` : ""}
-    <div style="font-family:ui-monospace,monospace;font-size:10.5px;opacity:.75">${esc(t.utmZona)} · E ${Math.round(t.utmX)} · N ${Math.round(t.utmY)}</div>
-    ${flag}
   </div>`;
 }

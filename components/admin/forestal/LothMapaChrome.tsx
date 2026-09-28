@@ -6,10 +6,15 @@
  *
  * Es lo que separa un mapa web de un PLANO: quien fiscaliza necesita leer una
  * coordenada, saber a qué escala está mirando y qué significa cada símbolo, sin
- * salir de la pantalla. Presentacional puro (sin Leaflet ni estado propio).
+ * salir de la pantalla. Sin Leaflet; el único estado propio es la leyenda
+ * plegada en el celular.
  */
 
-import { Compass } from "@buleje/design-system/icons";
+import { useState } from "react";
+import { ChevronDown, Compass } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import type { ClaseArbol } from "@/lib/forestal/loth-mapa-arboles";
+import LothMapaArbolSimbolo from "./LothMapaArbolSimbolo";
 import type { LatLng } from "@/lib/forestal/loth-geo";
 import { formatDistance, formatDms, formatMeters, niceBarLength, toUtm } from "@/lib/forestal/loth-utm";
 import { formatNumber } from "@/lib/format";
@@ -17,7 +22,10 @@ import { formatNumber } from "@/lib/format";
 export interface LegendItem {
   label: string;
   color: string;
-  shape: "dot" | "tree" | "poly" | "grid" | "line";
+  shape: "dot" | "tree" | "poly" | "grid" | "line" | "arbol";
+  /** Sólo `shape: "arbol"`: el símbolo exacto del censo (forma por condición, relleno por estado). */
+  clase?: ClaseArbol;
+  estado?: string;
 }
 
 interface Props {
@@ -30,6 +38,9 @@ interface Props {
 const SCREEN_PX_PER_M = 96 / 0.0254;
 
 function Swatch({ item }: { item: LegendItem }) {
+  if (item.shape === "arbol" && item.clase) {
+    return <LothMapaArbolSimbolo clase={item.clase} estado={item.estado ?? "en_pie"} lado={16} />;
+  }
   if (item.shape === "poly") {
     return (
       <span
@@ -62,6 +73,7 @@ function Swatch({ item }: { item: LegendItem }) {
 }
 
 export default function LothMapaChrome({ items, cursor, metersPerPixel }: Props) {
+  const [leyendaMovil, setLeyendaMovil] = useState(false);
   const barM = niceBarLength(Math.max(10, metersPerPixel * 150));
   const barPx = Math.round(barM / Math.max(metersPerPixel, 0.0001));
   const denom = Math.round(metersPerPixel * SCREEN_PX_PER_M);
@@ -114,13 +126,29 @@ export default function LothMapaChrome({ items, cursor, metersPerPixel }: Props)
         </div>
       </div>
 
-      {/* Leyenda */}
+      {/* Leyenda. En el celular arranca plegada: abierta tapaba un tercio del
+          mapa de 420 px. En la computadora se ve siempre. */}
       {items.length > 0 && (
         <div className="pointer-events-none absolute bottom-3 right-3 z-20 max-w-[230px] rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]/95 shadow-md backdrop-blur">
-          <p className="border-b border-[var(--rule-base)] px-3 py-1.5 text-xs font-black uppercase tracking-widest text-[var(--text-secondary)]">
-            Leyenda
-          </p>
-          <ul className="space-y-1 px-3 py-2">
+          <div className={`pointer-events-auto flex items-center gap-1 px-3 py-1 ${leyendaMovil ? "border-b border-[var(--rule-base)]" : "max-sm:border-b-0 border-b border-[var(--rule-base)]"}`}>
+            <p className="text-xs font-black uppercase tracking-widest text-[var(--text-secondary)] max-sm:hidden">Leyenda</p>
+            <button
+              type="button"
+              onClick={() => setLeyendaMovil((v) => !v)}
+              aria-expanded={leyendaMovil}
+              className="inline-flex h-9 items-center gap-1 text-xs font-black uppercase tracking-widest text-[var(--text-secondary)] sm:hidden"
+            >
+              Leyenda <ChevronDown className={`h-3.5 w-3.5 transition-transform ${leyendaMovil ? "rotate-180" : ""}`} aria-hidden="true" />
+            </button>
+            <InfoTip
+              title="Cómo leer los árboles"
+              what="La forma y el color dicen la condición: círculo aprovechable, rombo semillero, triángulo bajo DMC, cuadrado otra o sin condición."
+              affects="Lleno = en pie. Hueco y tachado = talado. Anillo azul = el que elegiste o el más cercano. Anillo rojo punteado = fuera del área."
+              example="Un rombo violeta lleno es un semillero en pie: se queda en el monte."
+              side="top"
+            />
+          </div>
+          <ul className={`space-y-1 px-3 py-2 ${leyendaMovil ? "" : "max-sm:hidden"}`}>
             {items.map((it) => (
               <li key={`${it.shape}-${it.label}`} className="flex items-center gap-2 text-xs font-semibold text-[var(--text-secondary)]">
                 <Swatch item={it} />

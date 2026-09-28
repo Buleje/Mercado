@@ -17,7 +17,9 @@
  * Esta vista sólo arma: los datos y el guardado viven en `use-loth-mapa-datos`,
  * el dibujo en `use-loth-mapa-dibujo`, las capas y herramientas en
  * `use-loth-mapa-herramientas`, lo calculado en `use-loth-mapa-derivados` y lo
- * que sale (planos, archivos) en `use-loth-mapa-exportes`.
+ * que sale (planos, archivos) en `use-loth-mapa-exportes`; el censo del lado
+ * de quien camina el monte (filtro, ficha del árbol, «¿Qué árbol tengo
+ * cerca?») en `use-loth-mapa-arboles`.
  */
 import "leaflet/dist/leaflet.css";
 import { useEffect, useRef } from "react";
@@ -37,6 +39,7 @@ import { useLothMapaDibujo } from "./hooks/use-loth-mapa-dibujo";
 import { useLothMapaHerramientas } from "./hooks/use-loth-mapa-herramientas";
 import { useLothMapaDerivados } from "./hooks/use-loth-mapa-derivados";
 import { useLothMapaExportes } from "./hooks/use-loth-mapa-exportes";
+import { useLothMapaArboles } from "./hooks/use-loth-mapa-arboles";
 import { formatNumber } from "@/lib/format";
 
 /** Claves de los bloques plegables. Exportadas: la prueba en navegador las lee. */
@@ -72,6 +75,7 @@ export default function LothMapaView({
   const herr = useLothMapaHerramientas({ onError: datos.setError });
   const der = useLothMapaDerivados({ ...datos, showCenso: herr.showCenso, showGrid: herr.showGrid, hidden: herr.hidden });
   const dib = useLothMapaDibujo({ ...datos, censo: der.censoAll });
+  const arb = useLothMapaArboles(der.censoAll, { centrar: herr.centrar });
   const verticesCuadro = dib.drawMode && dib.draft.length >= 3 ? dib.draft : datos.parcela.vertices;
   const exp = useLothMapaExportes({
     ...datos,
@@ -83,6 +87,7 @@ export default function LothMapaView({
     onError: datos.setError,
   });
   const { centrar } = herr;
+  const { elegir } = arb;
   const { raw, caratula, plan, parcela } = datos;
   const { geoAll, censoAll, readiness, declarada, checkPlano } = der;
 
@@ -94,9 +99,13 @@ export default function LothMapaView({
     const punto = geoAll.find((g) => g.code === focusTree || g.code.startsWith(`${focusTree}-`));
     const censado = punto ? undefined : censoAll.find((t) => t.code === focusTree);
     if (punto) centrar([punto.lat, punto.lng]);
-    else if (censado) centrar([censado.lat, censado.lng]);
+    else if (censado) {
+      centrar([censado.lat, censado.lng]);
+      // Y su ficha abierta: se llegó acá preguntando por ESE árbol.
+      elegir(censado.id);
+    }
     onFocusHandled?.();
-  }, [focusTree, raw, geoAll, censoAll, centrar, onFocusHandled]);
+  }, [focusTree, raw, geoAll, censoAll, centrar, elegir, onFocusHandled]);
 
   /** Marcar o trazar desde un bloque de abajo: el mapa sube a la vista, que es donde se toca. */
   const alMapa = (accion: () => void) => {
@@ -130,7 +139,7 @@ export default function LothMapaView({
 
       {datos.error && <ErrorAlert title="No se pudo completar" description={datos.error} />}
 
-      <LothMapaMarco ref={marcoRef} datos={datos} dib={dib} herr={herr} der={der} exp={exp} verticesCuadro={verticesCuadro.length} />
+      <LothMapaMarco ref={marcoRef} datos={datos} dib={dib} herr={herr} der={der} exp={exp} arb={arb} verticesCuadro={verticesCuadro.length} />
 
       <div className="space-y-3">
         <LothMapaBloque
