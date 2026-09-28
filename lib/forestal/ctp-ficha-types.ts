@@ -11,6 +11,7 @@ import { normalizarCodigoContrato, type Contrato, type TipoContrato } from "./co
 import { fromUtm, parseUtmZone, zoneLabel } from "./loth-utm";
 import { TIPOS_PLAN, TIPOS_PLAN_META } from "./loth-tipos-plan";
 import { tipoPermisoDesdePlan, tipoPlanDesdePermiso } from "./permisos-de-parte";
+import { digitosGtfValidos } from "./gtf-talonario";
 
 /** Título habilitante que ampara el origen de la materia prima del CTP. */
 export interface CtpTituloHabilitante {
@@ -112,6 +113,13 @@ export interface CtpFicha {
   // ── GTF de salida: serie del talonario autorizado por la ARFFS ──
   gtfSerie: string;
   /**
+   * Cuántos dígitos lleva el correlativo del talonario (ADR-446): `19-001` +
+   * 7 → `19-001-0000065`. `null`/ausente = automático: los del último número
+   * de la serie, o 7 si la serie está virgen (`proponerGtf`). Opcional para
+   * que las fichas guardadas antes sigan leyéndose igual.
+   */
+  gtfDigitos?: number | null;
+  /**
    * Logo del CTP como data URL — el membrete de la guía de salida y del resto
    * de los papeles que emite el centro. Vacío = va el monograma del libro.
    */
@@ -153,6 +161,7 @@ export function emptyCtpFicha(): CtpFicha {
     telefono: "",
     email: "",
     gtfSerie: "",
+    gtfDigitos: null,
   };
 }
 
@@ -210,6 +219,7 @@ export function normalizeCtpFicha(raw: unknown): CtpFicha {
     telefono: s(r.telefono),
     email: s(r.email),
     gtfSerie: s(r.gtfSerie),
+    gtfDigitos: digitosGtfValidos(r.gtfDigitos),
     logo: s(r.logo),
     operacion:
       r.operacion &&
@@ -459,6 +469,7 @@ export const CTP_FICHA_LABELS: Record<keyof CtpFicha, string> = {
   telefono: "Teléfono",
   email: "Email",
   gtfSerie: "Serie GTF autorizada",
+  gtfDigitos: "Dígitos del correlativo GTF",
   logo: "Logo del CTP",
 };
 

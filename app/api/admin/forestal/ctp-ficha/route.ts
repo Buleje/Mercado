@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { ForestCtpFichaDB } from "@/lib/db/forest-ctp-ficha.db";
 import { CTP_TIPOS_ESTABLECIMIENTO } from "@/lib/forestal/ctp-ficha-types";
+import { GTF_DIGITOS_MAX, GTF_DIGITOS_MIN, serieGtfValida } from "@/lib/forestal/gtf-talonario";
 import { LOGO_MAX_BYTES, motivoLogoInvalido } from "@/lib/forestal/directorio";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
@@ -65,7 +66,14 @@ const fichaSchema = z.object({
   ubigeo: z.string().trim().max(10).optional(),
   telefono: z.string().trim().max(40).optional(),
   email: z.string().trim().max(160).optional(),
-  gtfSerie: z.string().trim().max(20).optional(),
+  gtfSerie: z
+    .string()
+    .trim()
+    .max(20)
+    .refine(serieGtfValida, "La serie lleva sus tramos separados por un solo guion, sin guiones de más (ej. 19-001).")
+    .optional(),
+  /** Dígitos del correlativo de la GTF (ADR-446). `null` = automático. */
+  gtfDigitos: z.number().int().min(GTF_DIGITOS_MIN).max(GTF_DIGITOS_MAX).nullable().optional(),
   /** Logo del CTP como data URL — el membrete de sus documentos. */
   logo: z
     .string()

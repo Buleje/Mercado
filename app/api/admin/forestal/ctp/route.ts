@@ -188,7 +188,18 @@ const patchSchema = z.discriminatedUnion("action", [
     reason: z.string().trim().min(3).max(500),
   }),
   // Emitir la GTF de salida formal (serie autorizada ARFFS + correlativo auto).
-  z.object({ id: z.string().trim().min(1), action: z.literal("emitir_gtf") }),
+  // `numero` = el que el operador confirmó o cambió sobre `?proximaGtf=1`
+  // (ADR-446); sin él se emite la propuesta.
+  z.object({
+    id: z.string().trim().min(1),
+    action: z.literal("emitir_gtf"),
+    numero: z.string().trim().min(1).max(40).optional(),
+    // El operador confirmó que va en LA MISMA guía que esa línea (dos
+    // productos, un camión): destraba el 409 de número repetido sólo para ella.
+    mismaGuiaQue: z.string().trim().min(1).max(60).optional(),
+    // El operador confirmó un N° que se adelanta más de 20 sobre la propuesta.
+    confirmarSalto: z.boolean().optional(),
+  }),
   // Registrar el valor de venta del despacho para el P&L (ADR-141).
   z.object({
     id: z.string().trim().min(1),
@@ -516,6 +527,18 @@ export const GET = withApiHandler("forestal-ctp-get", async (req: NextRequest) =
   const url = new URL(req.url);
   const period = periodFromUrl(url);
   try {
+    /* El número que «Emitir GTF» propone (ADR-446): sólo lectura, el operador
+       lo confirma o lo cambia antes de emitir. */
+    if (url.searchParams.get("proximaGtf") === "1") {
+      const r = await ForestCtpDespachoDB.proximaGtf(auth.tenantId);
+      if (!r.ok) {
+        return NextResponse.json(
+          { error: r.reason, message: "No hay serie de GTF configurada. Carga la «Serie GTF autorizada» en la pestaña Ficha CTP." },
+          { status: 422 },
+        );
+      }
+      return NextResponse.json({ propuesta: r.propuesta });
+    }
     if (url.searchParams.get("saldos") === "1") {
       /* `?especie=` recorta el agregado ENTERO (ADR-400): totales, productos y
          piezas hablan de esa especie. Vacío = todas, como siempre. */
@@ -1050,7 +1073,45 @@ export const PATCH = withApiHandler("forestal-ctp-patch", async (req: NextReques
         auth.tenantId,
         parsed.data.id,
         auth.username ?? "unknown",
+        parsed.data.numero,
+        { mismaGuiaQue: parsed.data.mismaGuiaQue ?? null, confirmarSalto: parsed.data.confirmarSalto === true },
       );
+      if (!result.ok && result.reason === "gtf_en_uso") {
+        const quien = result.usadaPor.lineNo != null ? `el despacho #${result.usadaPor.lineNo}` : "otro despacho";
+        return NextResponse.json(
+          {
+            error: result.reason,
+            message: `La GTF ${result.gtf} ya la lleva ${quien}. Si esta línea va en esa misma guía, confírmalo; si no, el siguiente libre es ${result.propuesta}.`,
+            gtf: result.gtf,
+            propuesta: result.propuesta,
+            // Para poder preguntar «¿es la misma guía que el #N?» y reintentar.
+            usadaPor: { despachoId: result.usadaPor.despachoId ?? null, lineNo: result.usadaPor.lineNo ?? null },
+          },
+          { status: 409 },
+        );
+      }
+      if (!result.ok && result.reason === "salto_de_correlativo") {
+        return NextResponse.json(
+          {
+            error: result.reason,
+            message: `¿Seguro? El siguiente del talonario es ${result.propuesta} y ${result.gtf} saltea ${result.salto} números, que no se vuelven a usar.`,
+            gtf: result.gtf,
+            propuesta: result.propuesta,
+            salto: result.salto,
+          },
+          { status: 422 },
+        );
+      }
+      if (!result.ok && result.reason === "fuera_de_serie") {
+        return NextResponse.json(
+          {
+            error: result.reason,
+            message: `Ese N° no es de la serie ${result.serie} de la Ficha del CTP. Escribe el número entero (ej. ${result.propuesta}) o sólo el correlativo.`,
+            propuesta: result.propuesta,
+          },
+          { status: 422 },
+        );
+      }
       if (!result.ok) {
         const message =
           result.reason === "serie_no_configurada"
@@ -1063,6 +1124,7 @@ export const PATCH = withApiHandler("forestal-ctp-patch", async (req: NextReques
       return NextResponse.json({
         gtf: result.gtf,
         correlativo: result.correlativo,
+        digitos: result.digitos,
         yaEmitida: result.yaEmitida,
       });
     }

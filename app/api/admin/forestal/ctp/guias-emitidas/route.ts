@@ -5,6 +5,7 @@ import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
 import { ForestCtpDB } from "@/lib/db/forest-ctp.db";
+import { ForestCtpDespachoDB } from "@/lib/db/forest-ctp-despacho.db";
 import { guiasDeDespachos, type FilaDespachoGuia } from "@/lib/forestal/guias-emitidas";
 
 /**
@@ -62,9 +63,18 @@ export const GET = withApiHandler("forestal-guias-emitidas", async (req: NextReq
       const ultimoNumero = [...despachos]
         .filter((d) => (d.gtfNumber ?? "").trim().length > 0)
         .sort((a, b) => b.entryDate.getTime() - a.entryDate.getTime() || (b.lineNo ?? 0) - (a.lineNo ?? 0))[0];
+      /* El siguiente del TALONARIO (ADR-446), el mismo que propone «Emitir
+         GTF»: el último número por fecha no sirve —en Blas era una prueba
+         anulada de otra serie y el 064 vivía sólo en un Anexo 04—. Si falla,
+         el modal cae al «último + 1» de siempre. */
+      const proxima = await ForestCtpDespachoDB.proximaGtf(auth.tenantId).catch((err) => {
+        logger.error("[guias-emitidas] proximaGtf failed", { error: String(err), tenantId: auth.tenantId });
+        return null;
+      });
       return NextResponse.json({
         ultima: conDatos?.gtfDatos ?? null,
         gtfNumber: ultimoNumero?.gtfNumber ?? null,
+        siguienteGtf: proxima?.ok ? proxima.propuesta.gtf : null,
       });
     }
 

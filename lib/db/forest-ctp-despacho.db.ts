@@ -36,6 +36,11 @@ import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
 import { ForestAnexosDB } from "./forest-anexos.db";
 import { agregarPnl, decidirMargen, type FilaPnl, type MargenMotivo, type PnlAgregado } from "@/lib/forestal/ctp-pnl";
 import { guiaEditable } from "@/lib/forestal/gtf-estado";
+import {
+  correlativoEnSerie, gtfEnUso, leerGtfConfirmada, mismoNumeroGtf, proponerGtf, saltoDeCorrelativo,
+  type GtfUsada, type PropuestaGtf,
+} from "@/lib/forestal/gtf-talonario";
+import { PlatformSettingsDB } from "./platform-settings.db";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
 import { sinDato } from "@/lib/errores/sin-dato";
 
@@ -1153,6 +1158,82 @@ export class ForestCtpDespachoDB {
   }
 
   /**
+   * Los números que ya ocupan el talonario de GTF de salida (ADR-446).
+   *
+   * Despachos con número —vigentes, anulados y dados de baja: un número del
+   * talonario que se escribió en el libro no vuelve—, más los números de guía de
+   * los Anexos 04 guardados. Esos anexos son el único rastro de las guías
+   * 054…064 de Blas: sin ellos el siguiente salía del 000001.
+   *
+   * El KV de anexos se lee FRESCO (`getFresco`, sin caché por instancia) con la
+   * misma clave que `ForestAnexosDB` (`ctp-anexos:<tenantId>`). `db` es la tx
+   * cuando se lee bajo el lock de la emisión.
+   */
+  private static async gtfUsadas(
+    db: Prisma.TransactionClient | typeof prisma,
+    tenantId: string,
+    anexos: unknown,
+  ): Promise<GtfUsada[]> {
+    const despachos = await db.forestCtpEntry.findMany({
+      where: { tenantId, section: "despacho", gtfNumber: { not: null } },
+      select: { id: true, lineNo: true, status: true, deletedAt: true, gtfNumber: true, entryDate: true },
+    });
+    const usados: GtfUsada[] = [];
+    for (const d of despachos) {
+      const numero = (d.gtfNumber ?? "").trim();
+      if (!numero) continue;
+      usados.push({
+        numero,
+        fuente: d.status === "registrado" && d.deletedAt == null ? "despacho" : "despacho_anulado",
+        despachoId: d.id,
+        lineNo: d.lineNo,
+        fecha: d.entryDate.toISOString().slice(0, 10),
+      });
+    }
+    for (const a of Array.isArray(anexos) ? anexos : []) {
+      const o = (a ?? {}) as Record<string, unknown>;
+      const numero = typeof o.gtf === "string" ? o.gtf.trim() : "";
+      if (!numero) continue;
+      /* Un anexo apunta a su despacho de dos maneras: `ctpEntryId` (emitido
+         desde la línea) y `despachoIds[]` (registrado después por el puente
+         anexo → despacho, ADR-446). Se juntan las dos. */
+      const despachoIds = [
+        ...(typeof o.ctpEntryId === "string" && o.ctpEntryId ? [o.ctpEntryId] : []),
+        ...(Array.isArray(o.despachoIds) ? o.despachoIds.filter((x): x is string => typeof x === "string" && x.length > 0) : []),
+      ].filter((id, i, todos) => todos.indexOf(id) === i);
+      usados.push({
+        numero,
+        fuente: "anexo",
+        despachoId: despachoIds[0] ?? null,
+        despachoIds,
+        fecha: typeof o.fecha === "string" ? o.fecha : null,
+        anexoNumero: typeof o.numero === "string" ? o.numero : null,
+      });
+    }
+    return usados;
+  }
+
+  /** El KV de los Anexos 04 guardados, sin caché (misma clave que `ForestAnexosDB`). */
+  private static anexosFrescos(tenantId: string): Promise<unknown> {
+    return PlatformSettingsDB.getFresco<unknown>(`ctp-anexos:${tenantId}`);
+  }
+
+  /**
+   * El número que «Emitir GTF» propone, SIN escribir nada (ADR-446): la pantalla
+   * lo muestra y el operador lo confirma o lo cambia antes de emitir.
+   */
+  static async proximaGtf(
+    tenantId: string,
+  ): Promise<{ ok: true; propuesta: PropuestaGtf } | { ok: false; reason: "serie_no_configurada" }> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const ficha = await ForestCtpFichaDB.getFresco(tenantId);
+    const serie = ficha.gtfSerie.trim();
+    if (!serie) return { ok: false, reason: "serie_no_configurada" };
+    const usados = await ForestCtpDespachoDB.gtfUsadas(prisma, tenantId, await ForestCtpDespachoDB.anexosFrescos(tenantId));
+    return { ok: true, propuesta: proponerGtf(serie, ficha.gtfDigitos ?? null, usados) };
+  }
+
+  /**
    * Emite la GTF de SALIDA formal de un despacho: le asigna serie + correlativo
    * a partir de la **serie autorizada por la ARFFS** (ficha del CTP), en lugar
    * del texto libre que se tipeaba en `gtfNumber`. El CTP está habilitado a
@@ -1161,8 +1242,18 @@ export class ForestCtpDespachoDB {
    * El correlativo se saca DENTRO de la tx con LOCK sobre los despachos del
    * tenant (el recurso disputado) para que dos emisiones concurrentes no repitan
    * número — mismo patrón que `lineNo` (forest-ctp) y `loteCode` (forest-lote).
-   * Se deriva del MÁXIMO correlativo existente de esa serie (parseado del propio
-   * `gtfNumber`), así no hace falta una columna nueva ni una migración.
+   * Se deriva del MÁXIMO correlativo de todo lo usado (`gtfUsadas`: despachos
+   * vigentes y anulados + Anexos 04), comparado por tramos numéricos, y se
+   * escribe con los dígitos de la Ficha (ADR-446) — sin columna nueva.
+   *
+   * `numero` = lo que el operador confirmó (o cambió) sobre la propuesta de
+   * `proximaGtf`. Tiene que ser de la serie de la Ficha (o sólo el correlativo)
+   * y no puede llevarlo otro despacho vigente (`gtf_en_uso`, HTTP 409) salvo
+   * que el operador confirme que es LA MISMA guía (`mismaGuiaQue` = el id de
+   * esa línea: un camión con dos productos). Si se adelanta más de
+   * `GTF_SALTO_MAX` sobre la propuesta es casi seguro un tipeo y pide
+   * `confirmarSalto` (`salto_de_correlativo`, 422). Sin `numero` se emite la
+   * propuesta, como antes.
    *
    * Idempotente: si el despacho ya tiene una GTF de esta serie, la devuelve sin
    * re-numerar (`yaEmitida:true`). NO exige cadena completa: la GTF ampara el
@@ -1172,9 +1263,14 @@ export class ForestCtpDespachoDB {
     tenantId: string,
     despachoEntryId: string,
     user: string,
+    numero?: string,
+    confirmacion: { mismaGuiaQue?: string | null; confirmarSalto?: boolean } = {},
   ): Promise<
-    | { ok: true; gtf: string; serie: string; correlativo: number; yaEmitida: boolean }
+    | { ok: true; gtf: string; serie: string; correlativo: number; digitos: number; yaEmitida: boolean }
     | { ok: false; reason: "serie_no_configurada" | "no_despacho" | "anulado" }
+    | { ok: false; reason: "fuera_de_serie"; serie: string; propuesta: string }
+    | { ok: false; reason: "gtf_en_uso"; gtf: string; usadaPor: GtfUsada; propuesta: string }
+    | { ok: false; reason: "salto_de_correlativo"; gtf: string; propuesta: string; salto: number }
   > {
     if (!tenantId) throw new Error("tenantId is required");
     if (!despachoEntryId) throw new Error("despachoEntryId is required");
@@ -1192,14 +1288,23 @@ export class ForestCtpDespachoDB {
       );
     }
 
-    const ficha = await ForestCtpFichaDB.get(tenantId);
+    const ficha = await ForestCtpFichaDB.getFresco(tenantId);
     const serie = ficha.gtfSerie.trim();
     if (!serie) return { ok: false, reason: "serie_no_configurada" };
-    // Escapar la serie: va a un RegExp y podría traer metacaracteres.
-    const escaped = serie.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const re = new RegExp(`^${escaped}-(\\d{6})$`);
+    // Los anexos viven en el KV, fuera de la tx: se leen antes de tomar el lock.
+    const anexos = await ForestCtpDespachoDB.anexosFrescos(tenantId);
 
     return prisma.$transaction(async (tx) => {
+      /* Lock de los despachos del tenant = serializa la asignación del
+         correlativo. Va ANTES de leer la línea: si otra pestaña le está
+         poniendo número a esta misma, se espera a que termine y se lee lo que
+         dejó (si se leyera antes, se vería «sin número» y se la pisaría). */
+      await tx.$queryRaw`
+        SELECT "id" FROM "ForestCtpEntry"
+        WHERE "tenantId" = ${tenantId} AND "section" = 'despacho' AND "deletedAt" IS NULL
+        ORDER BY "id"
+        FOR UPDATE
+      `;
       const desp = await tx.forestCtpEntry.findFirst({
         where: { id: despachoEntryId, tenantId, deletedAt: null },
         select: { id: true, section: true, status: true, lineNo: true, gtfNumber: true, productType: true, speciesCommon: true },
@@ -1208,32 +1313,36 @@ export class ForestCtpDespachoDB {
       if (desp.status !== "registrado") return { ok: false as const, reason: "anulado" as const };
 
       // Ya tiene una GTF formal de esta serie ⇒ devolverla, no re-numerar.
-      const already = desp.gtfNumber?.match(re);
+      const already = correlativoEnSerie(desp.gtfNumber, serie);
       if (already) {
-        return { ok: true as const, gtf: desp.gtfNumber!, serie, correlativo: parseInt(already[1], 10), yaEmitida: true };
+        return {
+          ok: true as const, gtf: (desp.gtfNumber ?? "").trim(), serie, correlativo: already.correlativo,
+          digitos: already.digitos, yaEmitida: true,
+        };
       }
 
-      // Lock de los despachos del tenant = serializa la asignación del correlativo.
-      await tx.$queryRaw`
-        SELECT "id" FROM "ForestCtpEntry"
-        WHERE "tenantId" = ${tenantId} AND "section" = 'despacho' AND "deletedAt" IS NULL
-        ORDER BY "id"
-        FOR UPDATE
-      `;
-      const rows = await tx.forestCtpEntry.findMany({
-        where: { tenantId, section: "despacho", deletedAt: null, gtfNumber: { startsWith: `${serie}-` } },
-        select: { gtfNumber: true },
-      });
-      let maxN = 0;
-      for (const r of rows) {
-        const m = r.gtfNumber?.match(re);
-        if (m) {
-          const n = parseInt(m[1], 10);
-          if (n > maxN) maxN = n;
-        }
+      const usados = await ForestCtpDespachoDB.gtfUsadas(tx, tenantId, anexos);
+      const propuesta = proponerGtf(serie, ficha.gtfDigitos ?? null, usados);
+
+      let gtf = propuesta.gtf;
+      let correlativo = propuesta.correlativo;
+      if (numero?.trim()) {
+        const leido = leerGtfConfirmada(numero, serie, propuesta.digitos);
+        if (!leido.ok) return { ok: false as const, reason: "fuera_de_serie" as const, serie, propuesta: propuesta.gtf };
+        gtf = leido.gtf;
+        correlativo = leido.correlativo;
       }
-      const correlativo = maxN + 1;
-      const gtf = `${serie}-${String(correlativo).padStart(6, "0")}`;
+      const usadaPor = gtfEnUso(gtf, usados, despachoEntryId, confirmacion.mismaGuiaQue);
+      if (usadaPor) return { ok: false as const, reason: "gtf_en_uso" as const, gtf, usadaPor, propuesta: propuesta.gtf };
+      /* La misma guía que otra línea: el número ya está en el talonario, no
+         corre el máximo y no hay salto que preguntar. */
+      const mismaGuia = usados.find(
+        (u) => u.fuente === "despacho" && u.despachoId === confirmacion.mismaGuiaQue && u.despachoId !== despachoEntryId && mismoNumeroGtf(u.numero, gtf),
+      );
+      const salto = mismaGuia ? null : saltoDeCorrelativo(correlativo, propuesta);
+      if (salto != null && !confirmacion.confirmarSalto) {
+        return { ok: false as const, reason: "salto_de_correlativo" as const, gtf, propuesta: propuesta.gtf, salto };
+      }
 
       await tx.forestCtpEntry.updateMany({
         where: { id: despachoEntryId, tenantId },
@@ -1245,11 +1354,17 @@ export class ForestCtpDespachoDB {
         action: "ctp_gtf_emitir",
         entity: "ForestCtpEntry",
         entityId: despachoEntryId,
-        detail: `Emitió la GTF de salida ${gtf} para el despacho #${desp.lineNo} (${desp.speciesCommon ?? "—"} · ${desp.productType ?? "—"})`,
+        detail:
+          `Emitió la GTF de salida ${gtf} para el despacho #${desp.lineNo} (${desp.speciesCommon ?? "—"} · ${desp.productType ?? "—"})` +
+          (mismaGuia
+            ? ` · misma guía que el despacho #${mismaGuia.lineNo ?? "—"} (lo confirmó el operador)`
+            : gtf !== propuesta.gtf
+              ? ` · el sistema proponía ${propuesta.gtf}${salto != null ? ` (salto de ${salto} confirmado)` : ""}`
+              : ""),
         user,
       });
       try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
-      return { ok: true as const, gtf, serie, correlativo, yaEmitida: false };
+      return { ok: true as const, gtf, serie, correlativo, digitos: propuesta.digitos, yaEmitida: false };
     }, CTP_TX_OPTS);
   }
 }

@@ -224,6 +224,7 @@ export default function CtpFichaReadView({ ficha: f, onEditar }: { ficha: CtpFic
           <Row label="N° del establecimiento anexo" value={f.establecimientoAnexo} />
           <Row label="Tipo de establecimiento" value={f.tipoEstablecimiento} />
           <Row label="Serie GTF autorizada" value={f.gtfSerie} />
+          <Row label="Dígitos del correlativo" value={f.gtfDigitos ? `${f.gtfDigitos} dígitos` : "Automático"} />
         </Card>
         <Card titulo="Representante y ubicación" icono={MapPin}>
           <Row label="Representante legal" value={[f.representante, f.representanteDni].filter(Boolean).join(" · ")} />

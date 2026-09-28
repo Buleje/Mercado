@@ -243,6 +243,8 @@ export default function CtpDespachoGuiaModal({
   const [ultimaGuia, setUltimaGuia] = useState<Partial<GtfDatos> | null>(null);
   /** El último N° emitido: de ahí sale el siguiente correlativo propuesto. */
   const [ultimaGtfNumber, setUltimaGtfNumber] = useState<string | null>(null);
+  /** El siguiente del talonario según el servidor (ADR-446): manda sobre el de arriba. */
+  const [siguienteGtf, setSiguienteGtf] = useState<string | null>(null);
   useEffect(() => {
     let vivo = true;
     /* `ultimaCompleta=1` y no el listado: la bandeja devuelve la guía RESUMIDA
@@ -251,10 +253,11 @@ export default function CtpDespachoGuiaModal({
        cajón donde nunca estuvo: el modal quedaba sin fuente y no heredaba nada. */
     fetch("/api/admin/forestal/ctp/guias-emitidas?ultimaCompleta=1", { credentials: "include" })
       .then((r) => (r.ok ? r.json() : { ultima: null }))
-      .then((j: { ultima?: unknown; gtfNumber?: string | null }) => {
+      .then((j: { ultima?: unknown; gtfNumber?: string | null; siguienteGtf?: string | null }) => {
         if (!vivo) return;
         setUltimaGuia(j.ultima && typeof j.ultima === "object" ? (j.ultima as Partial<GtfDatos>) : null);
         setUltimaGtfNumber(j.gtfNumber ?? null);
+        setSiguienteGtf(j.siguienteGtf ?? null);
       })
       /* Sin guía anterior el relleno usa la Ficha y la libreta, que es como
          venía funcionando: es una fuente más, no un requisito. */
@@ -323,8 +326,8 @@ export default function CtpDespachoGuiaModal({
     setDatos(r.datos);
     /* El N° de guía también: sigue la serie de la última emitida. Es el mismo
        correlativo que asigna «Emitir GTF», propuesto antes de guardar. */
-    if (!gtfNumber.trim() && ultimaGtfNumber) {
-      const siguiente = siguienteNumeroGtf(ultimaGtfNumber);
+    if (!gtfNumber.trim() && (siguienteGtf || ultimaGtfNumber)) {
+      const siguiente = siguienteGtf ?? (ultimaGtfNumber ? siguienteNumeroGtf(ultimaGtfNumber) : null);
       if (siguiente) setGtfNumber(siguiente);
     }
     setAviso(

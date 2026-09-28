@@ -22,6 +22,10 @@ import { Field, I } from "./ctp-shared";
 import CtpParteLogo from "./CtpParteLogo";
 import { NotaCampo, BloqueCampos, type CamposFichaProps } from "./ctp-ficha-form";
 import { CTP_TIPOS_ESTABLECIMIENTO, rucValido } from "@/lib/forestal/ctp-ficha-types";
+import { GTF_DIGITOS_MAX, GTF_DIGITOS_MIN, armarGtf, serieGtfValida } from "@/lib/forestal/gtf-talonario";
+
+/** Las opciones del largo del correlativo, de 4 a 10 dígitos. */
+const DIGITOS_GTF = Array.from({ length: GTF_DIGITOS_MAX - GTF_DIGITOS_MIN + 1 }, (_, i) => GTF_DIGITOS_MIN + i);
 
 /** Estado de la última consulta al padrón de SUNAT (nunca bloquea el guardado). */
 export interface EstadoPadron {
@@ -207,6 +211,35 @@ export default function CtpFichaFormIdentidad({
             onChange={(e) => set("gtfSerie", e.target.value.toUpperCase().slice(0, 20))}
             placeholder="GTF-001"
           />
+          {/* El servidor la rechaza igual: acá se avisa antes de apretar Guardar. */}
+          {!serieGtfValida(draft.gtfSerie) && (
+            <NotaCampo tono="error" icono={AlertTriangle}>
+              Sobra un guion: los tramos van separados por uno solo (ej. 19-001).
+            </NotaCampo>
+          )}
+        </Field>
+        {/* ADR-446: el largo del correlativo lo dice el talonario, no el sistema.
+            Automático = los dígitos del último número de la serie (o 7). */}
+        <Field
+          label="Dígitos del correlativo"
+          hint={
+            draft.gtfDigitos
+              ? `Ej.: ${armarGtf(draft.gtfSerie || "19-001", 1, draft.gtfDigitos)}`
+              : "Sigue el largo del último número de la serie (7 si no hay)"
+          }
+        >
+          <select
+            className={I}
+            value={draft.gtfDigitos ?? ""}
+            onChange={(e) => set("gtfDigitos", e.target.value ? Number(e.target.value) : null)}
+          >
+            <option value="">Automático (como el último número)</option>
+            {DIGITOS_GTF.map((d) => (
+              <option key={d} value={d}>
+                {d} dígitos
+              </option>
+            ))}
+          </select>
         </Field>
       </BloqueCampos>
     </>

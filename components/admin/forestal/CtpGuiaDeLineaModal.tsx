@@ -18,10 +18,11 @@
  *              toca: identifica un traslado ante la autoridad y puede estar
  *              impresa viajando en la cabina del camión.
  *
- * El N° NO se tipea. Lo asigna el servidor con un lock sobre los despachos del
- * tenant (`emitirGtf`), que es lo único que garantiza una serie sin huecos ni
- * repetidos — dos personas emitiendo a la vez desde dos tablets no pueden
- * sacar el mismo número.
+ * El N° lo PROPONE el servidor (el siguiente del talonario, ADR-446) y el
+ * operador lo confirma o lo corrige contra el papel. Se graba con un lock sobre
+ * los despachos del tenant (`emitirGtf`), que rechaza un número que ya lleva
+ * otro despacho vigente — dos personas emitiendo a la vez desde dos tablets no
+ * pueden sacar el mismo número.
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -34,6 +35,8 @@ import { gtfDatosVacio, type GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 import { ESTADO_GUIA_LABEL, estadoDeGuia, guiaEditable, motivoNoEditable } from "@/lib/forestal/gtf-estado";
 import type { Parte, RolParte } from "@/lib/forestal/directorio";
 import CtpGuiaDatosTab from "./CtpGuiaDatosTab";
+import CtpGtfConfirmarNumero from "./CtpGtfConfirmarNumero";
+import { pedirEmisionGtf, type ConfirmacionEmision, type RespuestaEmision } from "@/hooks/use-proxima-gtf";
 import type { ValorParte } from "./CtpParteBarra";
 import { Btn, ModalBody, ModalFooter } from "./ctp-shared";
 
@@ -75,6 +78,8 @@ export default function CtpGuiaDeLineaModal({
   const [gtfNumber, setGtfNumber] = useState(linea.gtfNumber ?? "");
   const [guardando, setGuardando] = useState(false);
   const [emitiendo, setEmitiendo] = useState(false);
+  /** El N° propuesto a la vista, esperando que el operador lo confirme (ADR-446). */
+  const [confirmando, setConfirmando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
 
@@ -119,7 +124,7 @@ export default function CtpGuiaDeLineaModal({
    * datos que nadie revisó. Guardar primero deja el peor caso en «se guardó
    * pero no se emitió», que se reintenta sin consecuencias.
    */
-  async function emitir() {
+  async function emitir(numero: string, confirmacion?: ConfirmacionEmision): Promise<RespuestaEmision> {
     setEmitiendo(true);
     setError(null);
     try {
@@ -131,24 +136,28 @@ export default function CtpGuiaDeLineaModal({
       });
       if (!guardado.ok) {
         const j = await guardado.json().catch(() => ({}));
-        setError(j.message ?? "No se pudo guardar la guía antes de emitirla.");
-        return;
+        const mensaje = j.message ?? "No se pudo guardar la guía antes de emitirla.";
+        setError(mensaje);
+        return { ok: false, mensaje, pregunta: null };
       }
-      const r = await fetch("/api/admin/forestal/ctp", {
-        method: "PATCH",
-        credentials: "include",
-        headers: { "content-type": "application/json", ...csrfHeaders() },
-        body: JSON.stringify({ id: linea.id, action: "emitir_gtf" }),
-      });
-      const j = await r.json().catch(() => ({}));
-      if (!r.ok) { setError(j.message ?? "No se pudo emitir la GTF."); return; }
-      setGtfNumber(j.gtf);
+      /* Una `pregunta` (¿misma guía?, ¿salto grande?) la contesta el panel de
+         confirmación del pie; acá sólo va el error pelado. */
+      const r = await pedirEmisionGtf(linea.id, numero, confirmacion);
+      if (!r.ok) {
+        if (!r.pregunta) setError(r.mensaje);
+        return r;
+      }
+      setGtfNumber(r.gtf);
       setSucio(false);
+      setConfirmando(false);
       contarUsos();
-      setAviso(`GTF ${j.gtf} emitida. La guía queda cerrada: ya identifica este traslado.`);
+      setAviso(`GTF ${r.gtf} emitida. La guía queda cerrada: ya identifica este traslado.`);
       onCambio();
+      return r;
     } catch (e) {
-      setError(`No se pudo emitir: ${String(e)}`);
+      const mensaje = `No se pudo emitir: ${String(e)}`;
+      setError(mensaje);
+      return { ok: false, mensaje, pregunta: null };
     } finally {
       setEmitiendo(false);
     }
@@ -208,6 +217,14 @@ export default function CtpGuiaDeLineaModal({
             )
           }
         >
+          {editable && confirmando ? (
+            <CtpGtfConfirmarNumero
+              onConfirmar={emitir}
+              onCancelar={() => setConfirmando(false)}
+              ocupado={trabajando}
+            />
+          ) : (
+          <>
           <Btn variant="ghost" onClick={onClose} disabled={trabajando}>Cerrar</Btn>
           {editable && (
             <>
@@ -216,11 +233,13 @@ export default function CtpGuiaDeLineaModal({
                 Guardar borrador
               </Btn>
               {/* Emitir es el acto irreversible: va al final y se anuncia. */}
-              <Btn variant="primary" onClick={emitir} disabled={trabajando}>
-                {emitiendo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Truck className="h-4 w-4" />}
+              <Btn variant="primary" onClick={() => { setError(null); setConfirmando(true); }} disabled={trabajando}>
+                <Truck className="h-4 w-4" />
                 Emitir GTF
               </Btn>
             </>
+          )}
+          </>
           )}
         </ModalFooter>
       }

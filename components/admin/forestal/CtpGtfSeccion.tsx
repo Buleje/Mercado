@@ -25,6 +25,9 @@ import { hayNovedades } from "@/lib/forestal/ctp-cola-archivado";
 import { gtfCompleta, leerGtfDatos, type GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 import type { FichaCtp } from "@/hooks/use-ficha-ctp";
 import CtpGtfDatosForm from "./CtpGtfDatosForm";
+import CtpGtfConfirmarNumero from "./CtpGtfConfirmarNumero";
+import { pedirEmisionGtf, type ConfirmacionEmision, type RespuestaEmision } from "@/hooks/use-proxima-gtf";
+import { correlativoEnSerie } from "@/lib/forestal/gtf-talonario";
 import { Btn } from "./ctp-shared";
 
 export default function CtpGtfSeccion({
@@ -47,6 +50,10 @@ export default function CtpGtfSeccion({
   const [gtf, setGtf] = useState<string | null>(despacho.gtfNumber);
   const [busy, setBusy] = useState<null | "emitir" | "imprimir">(null);
   const [error, setError] = useState<string | null>(null);
+  /** El N° propuesto a la vista, esperando que el operador lo confirme (ADR-446). */
+  const [confirmando, setConfirmando] = useState(false);
+  /** Lo que pasó al emitir y no es un error (p. ej. «ya tenía número»). */
+  const [aviso, setAviso] = useState<string | null>(null);
   // Abierto de una si la guía ya tiene número: lo siguiente es completarla.
   const [abierto, setAbierto] = useState<boolean>(Boolean(despacho.gtfNumber));
   /** La guía armada, esperando que la miren antes de imprimirla o archivarla. */
@@ -62,25 +69,29 @@ export default function CtpGtfSeccion({
   const completos = leerGtfDatos(gtfDatosGuardado);
   const yaTieneDatos = Boolean(completos.propietario.nombre || completos.destinatario.nombre);
 
-  async function emitir() {
+  /** El N° de la línea ya es de la serie de la Ficha: no hay nada que re-emitir. */
+  const deLaSerie = Boolean(gtf && ficha?.gtfSerie && correlativoEnSerie(gtf, ficha.gtfSerie));
+
+  /**
+   * Emite con el N° que el operador confirmó. Una `pregunta` (misma guía, salto
+   * grande) la contesta el panel de confirmación; acá sólo va el error pelado.
+   */
+  async function emitir(numero: string, confirmacion?: ConfirmacionEmision): Promise<RespuestaEmision> {
     setBusy("emitir");
     setError(null);
-    try {
-      const r = await fetch("/api/admin/forestal/ctp", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", ...csrfHeaders() },
-        credentials: "include",
-        body: JSON.stringify({ id: despacho.id, action: "emitir_gtf" }),
-      });
-      const body = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(body.message ?? `HTTP ${r.status}`);
-      setGtf(body.gtf);
+    setAviso(null);
+    const r = await pedirEmisionGtf(despacho.id, numero, confirmacion);
+    setBusy(null);
+    if (r.ok) {
+      setGtf(r.gtf);
+      setConfirmando(false);
       setAbierto(true);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setBusy(null);
+      // El servidor no re-numera una guía de la serie: se dice, no se calla.
+      if (r.yaEmitida) setAviso(`Esta guía ya tenía la GTF ${r.gtf}: no se re-numeró.`);
+    } else if (!r.pregunta) {
+      setError(r.mensaje);
     }
+    return r;
   }
 
   /** Persiste el cuerpo de la guía. `true` = guardado (lo dice el formulario). */
@@ -184,15 +195,19 @@ export default function CtpGtfSeccion({
           {gtf || <span className="font-sans text-sm font-normal text-[var(--text-tertiary)]">sin emitir</span>}
         </p>
         <div className="ml-auto flex flex-wrap gap-2">
-          <Btn
-            variant="secondary"
-            onClick={() => void emitir()}
-            disabled={busy !== null}
-            title="Asigna serie + correlativo desde la serie autorizada en la Ficha del CTP"
-          >
-            {busy === "emitir" ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
-            {gtf ? "Re-emitir" : "Emitir GTF"}
-          </Btn>
+          {/* Con un N° de la serie no hay qué re-emitir (el servidor devolvería
+              el mismo): el botón sólo aparece sin número o con uno tipeado a mano. */}
+          {!deLaSerie && (
+            <Btn
+              variant="secondary"
+              onClick={() => { setError(null); setAviso(null); setConfirmando(true); }}
+              disabled={busy !== null || confirmando}
+              title="Propone el siguiente N° del talonario (serie de la Ficha del CTP) para que lo confirmes"
+            >
+              <FileText className="h-4 w-4" />
+              {gtf ? "Re-emitir" : "Emitir GTF"}
+            </Btn>
+          )}
           <Btn variant="secondary" onClick={() => setAbierto((v) => !v)} disabled={!gtf} aria-expanded={abierto}>
             <ChevronDown className={`h-4 w-4 transition-transform ${abierto ? "rotate-180" : ""}`} />
             {abierto ? "Ocultar datos" : yaTieneDatos ? "Ver datos de la guía" : "Completar la guía"}
@@ -200,13 +215,25 @@ export default function CtpGtfSeccion({
         </div>
       </div>
 
+      {aviso && <p className="mt-2 text-sm text-[var(--text-secondary)]">{aviso}</p>}
       {archivada && (
         <p className="mt-2 text-sm font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
           {archivada}
         </p>
       )}
 
-      {!gtf && (
+      {confirmando && (
+        <div className="mt-3">
+          <CtpGtfConfirmarNumero
+            onConfirmar={emitir}
+            onCancelar={() => setConfirmando(false)}
+            ocupado={busy === "emitir"}
+            actual={gtf}
+          />
+        </div>
+      )}
+
+      {!gtf && !confirmando && (
         <p className="mt-2 text-xs text-[var(--text-tertiary)]">
           Emite la guía para poder cargar propietario, destinatario, transportista y traslado.
         </p>

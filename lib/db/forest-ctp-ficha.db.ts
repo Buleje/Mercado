@@ -45,6 +45,17 @@ export const ForestCtpFichaDB = {
     return raw ? normalizeCtpFicha(raw) : emptyCtpFicha();
   },
 
+  /**
+   * La ficha leída de la base, SIN caché (ADR-446). La usa lo que numera la GTF
+   * de salida: el caché de `PlatformSettingsDB.get` es por instancia, y numerar
+   * con la serie de hace 5 min es justo el error que se está cerrando.
+   */
+  async getFresco(tenantId: string): Promise<CtpFicha> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const raw = await PlatformSettingsDB.getFresco<unknown>(`${KEY_PREFIX}${tenantId}`);
+    return raw ? normalizeCtpFicha(raw) : emptyCtpFicha();
+  },
+
   /** Persiste la ficha (normaliza + audita). Devuelve la forma canónica guardada. */
   async set(tenantId: string, input: Partial<CtpFicha>, user = "unknown"): Promise<CtpFicha> {
     if (!tenantId) throw new Error("tenantId is required");
