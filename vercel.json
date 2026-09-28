@@ -7,6 +7,9 @@
     "app/api/**": {
       "maxDuration": 30
     },
+    "app/api/admin/forestal/anexos/a-despacho/route.ts": {
+      "maxDuration": 300
+    },
     "app/api/cron/churn-score/route.ts": {
       "maxDuration": 300
     },

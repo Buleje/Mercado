@@ -7,8 +7,9 @@
  * PURO y client-safe: lo usan el componente y la capa de datos. Los totales se
  * RECALCULAN desde las piezas — lo que manda el cliente no se cree.
  */
-import type { PiezaCubicada } from "./cubicacion";
+import { cubicarPieza, type PiezaCubicada } from "./cubicacion";
 import { construirAnexo04, siguienteCorrelativo, type DatosAnexo04, type UnidadVolumen } from "./anexo04-serfor";
+import { mismoNumeroGtf } from "./gtf-talonario";
 
 export interface AnexoEmitido {
   id: string;
@@ -45,8 +46,115 @@ export interface AnexoEmitido {
    *  reimprimiría "SIN ESPECIE" y el papel no sería el mismo. */
   especieGlobal?: string;
   /** Despacho del Libro CTP del que salió, si se emitió desde ahí. */ ctpEntryId?: string;
+  /**
+   * Las líneas de Despacho que registraron en el libro la salida de este papel
+   * (ADR-446, «Guías sin registrar»). Vacío o ausente = el libro todavía no la
+   * tiene. Si esos despachos se anulan, el anexo vuelve a estar pendiente: se
+   * mira el estado del despacho, no esta lista sola.
+   */
+  despachoIds?: string[];
+  /** Cuándo y quién la registró desde el anexo. */
+  registradoAt?: string;
+  registradoPor?: string;
+  /**
+   * Otro anexo de la MISMA guía que vale en su lugar (ADR-446, decisión 1: la
+   * 064 viajó con el de 256 piezas). No se borra —es un papel que existió—,
+   * pero no se registra.
+   */
+  reemplazadoPor?: string | null;
   createdAt: string;
   createdBy?: string;
+}
+
+/** Los campos que atan el anexo al libro: no los escribe el cubicador, y volver a bajar el papel no los borra. */
+export type VinculosDelAnexo = Pick<AnexoEmitido, "despachoIds" | "registradoAt" | "registradoPor" | "reemplazadoPor">;
+
+/**
+ * Los vínculos de un registro, sólo los que tiene. `construirEmision` arma el
+ * registro desde las piezas y NO los conoce: re-descargar el anexo (corregir
+ * una observación) sin esto los borraba y la guía volvía a «sin registrar»
+ * con sus despachos ya en el libro.
+ */
+export function vinculosDe(a: Partial<VinculosDelAnexo> | null | undefined): VinculosDelAnexo {
+  const out: VinculosDelAnexo = {};
+  if (!a) return out;
+  if (Array.isArray(a.despachoIds) && a.despachoIds.length > 0) out.despachoIds = [...a.despachoIds];
+  if (a.registradoAt) out.registradoAt = a.registradoAt;
+  if (a.registradoPor) out.registradoPor = a.registradoPor;
+  if (a.reemplazadoPor) out.reemplazadoPor = a.reemplazadoPor;
+  return out;
+}
+
+/** ¿El libro ya registró este anexo? (tiene despachos atados; si se anularon, lo mira la capa de datos). */
+export const tieneDespachos = (a: Pick<AnexoEmitido, "despachoIds">): boolean => (a.despachoIds?.length ?? 0) > 0;
+
+/**
+ * El tope de la bandeja sin expulsar lo que respalda al libro (ADR-446): se
+ * descartan primero los anexos más viejos SIN despachos. Uno registrado nunca
+ * sale, aunque la bandeja quede por encima del tope.
+ */
+export function recortarBandeja(
+  lista: readonly AnexoEmitido[],
+  max: number,
+  /** El que se está guardando: nunca se descarta a sí mismo. */
+  protegido?: string,
+): AnexoEmitido[] {
+  if (lista.length <= max) return [...lista];
+  let sobran = lista.length - max;
+  const fuera = new Set<string>();
+  for (let i = lista.length - 1; i >= 0 && sobran > 0; i--) {
+    if (tieneDespachos(lista[i]) || lista[i].id === protegido) continue;
+    fuera.add(lista[i].id);
+    sobran--;
+  }
+  return lista.filter((a) => !fuera.has(a.id));
+}
+
+/** Una fila cuyo m³ no sale de sus medidas, por más de esto, no se guarda (m³ por fila). */
+export const TOL_FILA_M3 = 0.001;
+
+/**
+ * ¿El volumen que trae la fila cuadra con sus medidas? El m³ y el pie tablar
+ * los calcula el cubicador desde espesor × ancho × largo (`cubicarPieza`), y
+ * el libro registra la salida con ESE m³: uno inventado por el cliente
+ * terminaría declarado ante SERFOR. Se tolera el redondeo por fila (en Blas,
+ * 335 de 1244 filas difieren y ninguna pasa de 0,0007).
+ */
+export function filaNoCuadra(p: PiezaCubicada): { calculadoM3: number; declaradoM3: number } | null {
+  const { m3 } = cubicarPieza(p);
+  const declarado = Number(p.m3);
+  if (!Number.isFinite(declarado)) return { calculadoM3: m3, declaradoM3: declarado };
+  return Math.abs(declarado - m3) > TOL_FILA_M3 ? { calculadoM3: m3, declaradoM3: declarado } : null;
+}
+
+/**
+ * Ata el anexo a los despachos que lo registraron y marca «reemplazado» a los
+ * otros anexos de la MISMA guía (por tramos: `019-001-…` ≡ `19-001-…`) que
+ * todavía no están en el libro. Puro: la capa de datos lo aplica dentro de la
+ * transacción que crea los despachos.
+ */
+export function vincularDespachos(
+  lista: readonly AnexoEmitido[],
+  anexoId: string,
+  despachoIds: readonly string[],
+  user: string,
+  ahora: string,
+): { lista: AnexoEmitido[]; reemplazados: AnexoEmitido[] } {
+  const anexo = lista.find((a) => a.id === anexoId);
+  if (!anexo) return { lista: [...lista], reemplazados: [] };
+  const reemplazados: AnexoEmitido[] = [];
+  const nueva = lista.map((a) => {
+    if (a.id === anexoId) {
+      return { ...a, despachoIds: [...despachoIds], registradoAt: ahora, registradoPor: user, reemplazadoPor: null };
+    }
+    if (a.gtf && mismoNumeroGtf(a.gtf, anexo.gtf) && !a.despachoIds?.length && !a.reemplazadoPor) {
+      const marcado = { ...a, reemplazadoPor: anexoId };
+      reemplazados.push(marcado);
+      return marcado;
+    }
+    return a;
+  });
+  return { lista: nueva, reemplazados };
 }
 
 /** Fecha de hoy date-only (misma convención que el resto del módulo). */

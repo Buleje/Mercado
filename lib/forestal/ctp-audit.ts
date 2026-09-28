@@ -393,7 +393,13 @@ export type CtpAuditAction =
   // Guía guardada antes del ingreso (ADR-442).
   | "ctp_guia_guardada_crear"
   | "ctp_guia_guardada_editar"
-  | "ctp_guia_guardada_eliminar";
+  | "ctp_guia_guardada_eliminar"
+  // Guías sin registrar (ADR-446): la salida que sólo vivía como Anexo 04 entra
+  // al libro. Se narran la guía, cada montón que se parte y el anexo que queda
+  // reemplazado por otro de la misma guía.
+  | "ctp_guia_desde_anexo"
+  | "ctp_paquete_partido"
+  | "ctp_anexo04_reemplazado";
 
 /** Lo que describe un evento del libro. */
 export interface CtpAuditParams {

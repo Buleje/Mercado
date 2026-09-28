@@ -4,7 +4,7 @@
  * Patrón Buleje: tenantId 1er param · cache invalidate · lineNo correlativo.
  */
 import { prisma } from "@/lib/prisma";
-import { Prisma } from "@/lib/generated/prisma/client";
+import { Prisma, type ForestCtpEntry } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
 import { logger } from "@/lib/logger";
 import {
@@ -29,7 +29,8 @@ import {
   CONSUMO_VIGENTE,
   CTP_TX_OPTS,
 } from "./forest-ctp-consumo.db";
-import { ORIGEN_VIGENTE, ForestCtpDespachoDB } from "./forest-ctp-despacho.db";
+import { ORIGEN_VIGENTE, ForestCtpDespachoDB, type OrigenesEscritos } from "./forest-ctp-despacho.db";
+import type { CtpCierrePeriodo } from "@/lib/forestal/ctp-cierre-types";
 import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
 import { ForestEspeciesDB } from "./forest-especies.db";
 /* El cobro del aserrío (ADR-412) no importa este archivo: la dependencia va en
@@ -507,6 +508,20 @@ export interface CtpEntryInput {
   createdBy: string;
 }
 
+/** Lo que `prepararCreate` deja listo para `crearEnTx` (ADR-446). */
+export interface CreatePreparado {
+  rendimiento: number | string | null | undefined;
+  especie: { nombre: string; cientifico: string | null };
+  cientifico: string | null;
+  cierresOrigenes: CtpCierrePeriodo[];
+}
+
+/** Lo que `crearEnTx` escribió: la línea y, si llevaba orígenes, lo que narra `despuesDeOrigenes`. */
+export interface CreadoEnTx {
+  entry: ForestCtpEntry;
+  origenesEscritos: OrigenesEscritos | null;
+}
+
 /**
  * Clave estable de una corrida para el dedup de importación (ADR-138 etapa 2):
  * fecha date-only + producto + especie + cantidad(4 dec). La usan la DB class y
@@ -896,7 +911,7 @@ export class ForestCtpDB {
    * stock tape al del paquete: sacar dos veces el último bulto de un producto
    * decía «sólo quedan 0,5» cuando la causa era «ya va en otra guía».
    */
-  private static async bloquearProduccion(tx: Prisma.TransactionClient, tenantId: string): Promise<void> {
+  static async bloquearProduccion(tx: Prisma.TransactionClient, tenantId: string): Promise<void> {
     await tx.$queryRaw`
       SELECT "id" FROM "ForestCtpEntry"
       WHERE "tenantId" = ${tenantId} AND "deletedAt" IS NULL
@@ -906,7 +921,62 @@ export class ForestCtpDB {
     `;
   }
 
-  static async create(tenantId: string, input: CtpEntryInput) {
+  /**
+   * I3 sin lock ni juicio (ADR-446): lo que queda sin despachar de cada
+   * producto + especie, con la MISMA clave y las MISMAS restas que
+   * `assertStockDisponible` (producción − despachos − reprocesos, todo vivo).
+   * Sólo lee: la propuesta de una guía lo usa para decir ANTES de registrar qué
+   * especie la haría rechazar (la 064 de Blas sin su Azúcar huayo).
+   */
+  static async stockPorProducto(
+    client: Pick<Prisma.TransactionClient, "forestCtpEntry" | "forestCtpReproceso">,
+    tenantId: string,
+  ): Promise<Map<string, number>> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const lineas = await client.forestCtpEntry.findMany({
+      where: { tenantId, deletedAt: null, status: "registrado" },
+      select: { id: true, section: true, productType: true, speciesCommon: true, quantity: true },
+    });
+    const stock = new Map<string, number>();
+    const claveDeCorrida = new Map<string, string>();
+    for (const l of lineas) {
+      const k = productKey(l.productType, l.speciesCommon);
+      const q = Number(l.quantity ?? 0);
+      if (l.section === "produccion") {
+        stock.set(k, (stock.get(k) ?? 0) + q);
+        claveDeCorrida.set(l.id, k);
+      } else if (l.section === "despacho") {
+        stock.set(k, (stock.get(k) ?? 0) - q);
+      }
+    }
+    const reprocesos = await client.forestCtpReproceso.groupBy({
+      by: ["origenEntryId"],
+      where: { tenantId, destino: { deletedAt: null, status: "registrado" } },
+      _sum: { quantity: true },
+    });
+    for (const r of reprocesos) {
+      const k = claveDeCorrida.get(r.origenEntryId);
+      if (k) stock.set(k, (stock.get(k) ?? 0) - Number(r._sum.quantity ?? 0));
+    }
+    for (const [k, v] of stock) stock.set(k, r4(v));
+    return stock;
+  }
+
+  /** La clave de I3 (producto + especie) con la que se lee `stockPorProducto`. */
+  static claveDeStock(productType: string | null | undefined, especie: string | null | undefined): string {
+    return productKey(productType, especie);
+  }
+
+  /**
+   * Lo que `create` resuelve ANTES de abrir la transacción, separado para que
+   * otro escritor pueda crear varias líneas dentro de UNA transacción suya
+   * (ADR-446: registrar una guía desde su Anexo 04 es todo o nada).
+   *
+   * Valida la entrada y el período cerrado, calcula el rendimiento, resuelve la
+   * especie contra el catálogo y lee los cierres para la atribución: lecturas
+   * de KV que dentro de la transacción pedirían otra conexión del pool.
+   */
+  static async prepararCreate(tenantId: string, input: CtpEntryInput): Promise<CreatePreparado> {
     if (!tenantId) throw new Error("tenantId is required");
     if (!CTP_SECTIONS.includes(input.section)) throw new Error(`invalid section: ${input.section}`);
     if (!input.createdBy?.trim()) throw new Error("createdBy is required");
@@ -951,123 +1021,138 @@ export class ForestCtpDB {
        transacción (como en `setConsumos`): leerlos adentro pedía otra conexión
        del pool con la de la tx tomada. Sin orígenes no hacen falta. */
     const cierresOrigenes = input.origenes?.length ? await ForestCtpCierreDB.list(tenantId) : [];
+    return { rendimiento, especie, cientifico, cierresOrigenes };
+  }
 
-    // La validación de stock y el INSERT van en UNA transacción: si se valida
-    // fuera, entre el chequeo y el insert entra otro despacho y el guard no sirve.
-    /* Y la atribución a corridas TAMBIÉN (ADR-444): antes iba en otra
-       transacción después del INSERT, así que un I5 o un producto que no
-       cuadraba devolvía 422 con la línea ya grabada — y cada reintento del
-       modal de la guía sumaba otra igual. Ahora un rechazo no deja nada. */
-    const { entry, origenesEscritos } = await prisma.$transaction(async (tx) => {
-      /* Una salida de trozas SIN ASERRAR no se mide contra `producido −
-         despachado` (ADR-363): su stock son las PIEZAS, y T2 ya validó que cada
-         una esté libre. Medirla con I3 daría stock 0 —nadie produjo madera en
-         rollo— y rechazaría una venta legítima. */
-      if (input.section === "despacho" && !input.desdeTrozas) {
-        /* Un paquete, una guía vigente (ADR-444). Orden de locks: las corridas
-           (I3) y después el paquete; y el paquete se JUZGA antes que el stock,
-           porque cuando falla por las dos razones la de verdad es la suya. Las
-           trozas no pasan por acá: su código es el de una pieza, y T2 las cuida. */
-        /* Siempre, aunque la línea no traiga cantidad (I3 no aplica): sin él,
-           un despacho sin cantidad tomaba el paquete y DESPUÉS las corridas
-           de sus orígenes — el orden al revés del resto. */
-        await ForestCtpDB.bloquearProduccion(tx, tenantId);
-        await ForestCtpDespachoDB.exigirPaqueteLibreEnTx(tx, tenantId, input.codigoProducto);
-        await ForestCtpDB.assertStockDisponible(tx, tenantId, input, { yaBloqueado: true });
-      }
+  /**
+   * El alta DENTRO de una transacción ajena (ADR-446): stock (I3), un paquete
+   * una guía (ADR-444), el INSERT y la atribución a corridas, en ese orden y con
+   * los mismos locks que `create`. No audita ni invalida la caché: eso va
+   * DESPUÉS del commit (`despuesDeCrear`), o narraría una línea que un rollback
+   * deshizo. `pre` sale de `prepararCreate` con la MISMA entrada.
+   */
+  static async crearEnTx(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+    input: CtpEntryInput,
+    pre: CreatePreparado,
+    /** El llamador ya tomó `bloquearProduccion` en esta tx (una guía de 37 líneas no lo repite 37 veces). */
+    { produccionBloqueada = false }: { produccionBloqueada?: boolean } = {},
+  ): Promise<CreadoEnTx> {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (!CTP_SECTIONS.includes(input.section)) throw new Error(`invalid section: ${input.section}`);
+    const { rendimiento, especie, cientifico, cierresOrigenes } = pre;
+    /* Una salida de trozas SIN ASERRAR no se mide contra `producido −
+       despachado` (ADR-363): su stock son las PIEZAS, y T2 ya validó que cada
+       una esté libre. Medirla con I3 daría stock 0 —nadie produjo madera en
+       rollo— y rechazaría una venta legítima. */
+    if (input.section === "despacho" && !input.desdeTrozas) {
+      /* Un paquete, una guía vigente (ADR-444). Orden de locks: las corridas
+         (I3) y después el paquete; y el paquete se JUZGA antes que el stock,
+         porque cuando falla por las dos razones la de verdad es la suya. Las
+         trozas no pasan por acá: su código es el de una pieza, y T2 las cuida. */
+      /* Siempre, aunque la línea no traiga cantidad (I3 no aplica): sin él,
+         un despacho sin cantidad tomaba el paquete y DESPUÉS las corridas
+         de sus orígenes — el orden al revés del resto. */
+      if (!produccionBloqueada) await ForestCtpDB.bloquearProduccion(tx, tenantId);
+      await ForestCtpDespachoDB.exigirPaqueteLibreEnTx(tx, tenantId, input.codigoProducto);
+      await ForestCtpDB.assertStockDisponible(tx, tenantId, input, { yaBloqueado: true });
+    }
 
-      const max = await tx.forestCtpEntry.aggregate({
-        where: { tenantId, section: input.section },
-        _max: { lineNo: true },
-      });
-      const lineNo = (max._max.lineNo ?? 0) + 1;
+    const max = await tx.forestCtpEntry.aggregate({
+      where: { tenantId, section: input.section },
+      _max: { lineNo: true },
+    });
+    const lineNo = (max._max.lineNo ?? 0) + 1;
 
-      const creada = await tx.forestCtpEntry.create({
-        data: {
-          tenantId,
-          section: input.section,
-          lineNo,
-          entryDate: input.entryDate ?? new Date(),
-          gtfIngreso: input.gtfIngreso?.trim() || null,
-          materiaPrimaRef: input.materiaPrimaRef?.trim() || null,
-          originCode: input.originCode?.trim() || null,
-          /* Un permiso ajeno o dado de baja no se acepta: se deduce del código. */
-          contratoId:
-            (await contratoPropio(tenantId, input.contratoId)) ??
-            (await ForestContratoDB.idPorCodigo(tenantId, input.originCode)),
-          /* Lo que llegue se normaliza con las reglas del libro: «de tercero»
-             sin nombre y «propia» con titular no se guardan a medias. */
-          ...(() => {
-            const d = revisarDueno({
-              dueno: esDuenoMadera(input.duenoMadera) ? input.duenoMadera : null,
-              titularNombre: input.titularNombre ?? null,
-            }).normalizado;
-            return { duenoMadera: d.dueno, titularNombre: d.titularNombre };
-          })(),
-          speciesCommon: especie.nombre || null,
-          speciesScientific: cientifico,
-          cites: input.cites ?? false,
-          productType: input.productType?.trim() || null,
-          volumeInputM3: dec(input.volumeInputM3),
-          rendimientoPct: dec(rendimiento),
-          quantity: dec(input.quantity),
-          unit: input.unit?.trim() || null,
-          pieces: input.pieces ?? null,
-          gtfNumber: input.gtfNumber?.trim() || null,
-          docType: input.docType?.trim() || null,
-          lineaProduccion:
-            input.section === "produccion" ? input.lineaProduccion?.trim() || "LP" : null,
-          codigoProducto: input.codigoProducto?.trim() || null,
-          presentacion: input.presentacion?.trim().toUpperCase() || null,
-          destino: input.destino?.trim() || null,
-          serforNumeroRegistro: input.serforNumeroRegistro?.trim() || null,
-          serforVerificadoEn: input.serforVerificadoEn ?? null,
-          observations: input.observations?.trim() || null,
-          costoProceso: dec(input.costoProceso),
-          // Sólo la salida tiene precio de venta: en una corrida de producción
-          // no se vende nada todavía.
-          valorVenta: input.section === "despacho" ? dec(input.valorVenta) : null,
-          moneda: input.moneda?.trim() || "PEN",
-          status: "registrado",
-          createdBy: input.createdBy,
-          /* El BULTO de la corrida (ADR-349), cuando el llamador lo trae. Sin
-             esto el import escribía el volumen y descartaba en silencio el
-             código, las piezas y las medidas del paquete — el dato estaba en
-             el archivo y nunca llegaba a "Productos disponibles". */
-          ...(input.paquetes && input.paquetes.length > 0
-            ? {
-                paquetes: {
-                  create: input.paquetes.map((p) => ({
-                    tenantId,
-                    codigo: p.codigo.trim(),
-                    productType: p.productType?.trim() || input.productType?.trim() || null,
-                    presentacion: p.presentacion?.trim() || null,
-                    cantidad: Math.max(0, Math.round(p.cantidad)),
-                    unit: "m3",
-                    volumenM3: p.volumenM3,
-                    espesorCm: p.espesorCm ?? null,
-                    anchoCm: p.anchoCm ?? null,
-                    largoM: p.largoM ?? null,
-                    observations: p.observations?.trim() || null,
-                    createdBy: input.createdBy,
-                  })),
-                },
-              }
-            : {}),
-        },
-      });
+    const creada = await tx.forestCtpEntry.create({
+      data: {
+        tenantId,
+        section: input.section,
+        lineNo,
+        entryDate: input.entryDate ?? new Date(),
+        gtfIngreso: input.gtfIngreso?.trim() || null,
+        materiaPrimaRef: input.materiaPrimaRef?.trim() || null,
+        originCode: input.originCode?.trim() || null,
+        /* Un permiso ajeno o dado de baja no se acepta: se deduce del código. */
+        contratoId:
+          (await contratoPropio(tenantId, input.contratoId)) ??
+          (await ForestContratoDB.idPorCodigo(tenantId, input.originCode)),
+        /* Lo que llegue se normaliza con las reglas del libro: «de tercero»
+           sin nombre y «propia» con titular no se guardan a medias. */
+        ...(() => {
+          const d = revisarDueno({
+            dueno: esDuenoMadera(input.duenoMadera) ? input.duenoMadera : null,
+            titularNombre: input.titularNombre ?? null,
+          }).normalizado;
+          return { duenoMadera: d.dueno, titularNombre: d.titularNombre };
+        })(),
+        speciesCommon: especie.nombre || null,
+        speciesScientific: cientifico,
+        cites: input.cites ?? false,
+        productType: input.productType?.trim() || null,
+        volumeInputM3: dec(input.volumeInputM3),
+        rendimientoPct: dec(rendimiento),
+        quantity: dec(input.quantity),
+        unit: input.unit?.trim() || null,
+        pieces: input.pieces ?? null,
+        gtfNumber: input.gtfNumber?.trim() || null,
+        docType: input.docType?.trim() || null,
+        lineaProduccion:
+          input.section === "produccion" ? input.lineaProduccion?.trim() || "LP" : null,
+        codigoProducto: input.codigoProducto?.trim() || null,
+        presentacion: input.presentacion?.trim().toUpperCase() || null,
+        destino: input.destino?.trim() || null,
+        serforNumeroRegistro: input.serforNumeroRegistro?.trim() || null,
+        serforVerificadoEn: input.serforVerificadoEn ?? null,
+        observations: input.observations?.trim() || null,
+        costoProceso: dec(input.costoProceso),
+        // Sólo la salida tiene precio de venta: en una corrida de producción
+        // no se vende nada todavía.
+        valorVenta: input.section === "despacho" ? dec(input.valorVenta) : null,
+        moneda: input.moneda?.trim() || "PEN",
+        status: "registrado",
+        createdBy: input.createdBy,
+        /* El BULTO de la corrida (ADR-349), cuando el llamador lo trae. Sin
+           esto el import escribía el volumen y descartaba en silencio el
+           código, las piezas y las medidas del paquete — el dato estaba en
+           el archivo y nunca llegaba a "Productos disponibles". */
+        ...(input.paquetes && input.paquetes.length > 0
+          ? {
+              paquetes: {
+                create: input.paquetes.map((p) => ({
+                  tenantId,
+                  codigo: p.codigo.trim(),
+                  productType: p.productType?.trim() || input.productType?.trim() || null,
+                  presentacion: p.presentacion?.trim() || null,
+                  cantidad: Math.max(0, Math.round(p.cantidad)),
+                  unit: "m3",
+                  volumenM3: p.volumenM3,
+                  espesorCm: p.espesorCm ?? null,
+                  anchoCm: p.anchoCm ?? null,
+                  largoM: p.largoM ?? null,
+                  observations: p.observations?.trim() || null,
+                  createdBy: input.createdBy,
+                })),
+              },
+            }
+          : {}),
+      },
+    });
 
-      /* La salida valida I4/I5 + orientación + producto (ADR-135) con las
-         corridas bloqueadas, en ESTA transacción (ADR-444): si tira, el INSERT
-         de arriba se deshace con ella. */
-      const escritos = input.origenes?.length
-        ? await ForestCtpDespachoDB.setOrigenesEnTx(tx, tenantId, creada.id, input.origenes, input.createdBy, {
-            cierres: cierresOrigenes,
-          })
-        : null;
-      return { entry: creada, origenesEscritos: escritos };
-    }, CTP_TX_OPTS);
+    /* La salida valida I4/I5 + orientación + producto (ADR-135) con las
+       corridas bloqueadas, en ESTA transacción (ADR-444): si tira, el INSERT
+       de arriba se deshace con ella. */
+    const escritos = input.origenes?.length
+      ? await ForestCtpDespachoDB.setOrigenesEnTx(tx, tenantId, creada.id, input.origenes, input.createdBy, {
+          cierres: cierresOrigenes,
+        })
+      : null;
+    return { entry: creada, origenesEscritos: escritos };
+  }
 
+  /** Lo que va después del commit de `crearEnTx`: el renglón del libro, los orígenes, los consumos y la caché. */
+  static async despuesDeCrear(tenantId: string, input: CtpEntryInput, { entry, origenesEscritos }: CreadoEnTx): Promise<void> {
     auditCtp({
       tenantId,
       action: "ctp_linea_create",
@@ -1091,7 +1176,19 @@ export class ForestCtpDB {
     try {
       invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
     } catch {}
-    return entry;
+  }
+
+  static async create(tenantId: string, input: CtpEntryInput) {
+    const pre = await ForestCtpDB.prepararCreate(tenantId, input);
+    // La validación de stock y el INSERT van en UNA transacción: si se valida
+    // fuera, entre el chequeo y el insert entra otro despacho y el guard no sirve.
+    /* Y la atribución a corridas TAMBIÉN (ADR-444): antes iba en otra
+       transacción después del INSERT, así que un I5 o un producto que no
+       cuadraba devolvía 422 con la línea ya grabada — y cada reintento del
+       modal de la guía sumaba otra igual. Ahora un rechazo no deja nada. */
+    const creado = await prisma.$transaction((tx) => ForestCtpDB.crearEnTx(tx, tenantId, input, pre), CTP_TX_OPTS);
+    await ForestCtpDB.despuesDeCrear(tenantId, input, creado);
+    return creado.entry;
   }
 
   static async list(

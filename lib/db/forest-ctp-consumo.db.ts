@@ -209,7 +209,21 @@ export class CtpInvariantError extends Error {
       | "CUADRE_SIN_LISTA"
       // ── Tope de rendimiento (ADR-358) ──
       /** Se declaró más producto del que sale físicamente de lo que entró. */
-      | "RENDIMIENTO_SOBRE_TOPE",
+      | "RENDIMIENTO_SOBRE_TOPE"
+      // ── Guías registradas desde su Anexo 04 (ADR-446) ──
+      /** Sólo un paquete de montón (0 piezas, sin medidas) se parte; uno con
+       *  piezas o medidas es un bulto con etiqueta y sale entero (ADR-444). */
+      | "PAQUETE_NO_SE_PARTE"
+      /** El libro cambió entre la propuesta y el registro: se vuelve a proponer. */
+      | "PROPUESTA_DESACTUALIZADA"
+      /** El anexo no se puede registrar (no existe, sin guía, reemplazado). */
+      | "ANEXO_NO_REGISTRABLE"
+      /** El anexo respalda despachos vivos: no se edita ni se borra. */
+      | "ANEXO_REGISTRADO"
+      /** La bandeja de anexos la tiene otra tanda (o un guardado): reintentar en segundos. */
+      | "TANDA_EN_CURSO"
+      /** Otra operación tiene tomadas las corridas o los paquetes (lock_timeout o deadlock): reintentar. */
+      | "LIBRO_OCUPADO",
     readonly detail?: Record<string, unknown>,
   ) {
     super(message);

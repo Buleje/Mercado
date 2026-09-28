@@ -2,6 +2,7 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { getOrSet, invalidate } from "@/lib/cache";
+import { esEsperaDeLockVencida } from "@/lib/errores/codigo-pg";
 
 /**
  * lib/db/platform-settings.db.ts
@@ -36,6 +37,14 @@ const CACHE_PREFIX = "platform-settings:";
 
 function cacheKey(key: string): string {
   return `${CACHE_PREFIX}${key}`;
+}
+
+/** Otra transacción tiene tomada la clave (`actualizar` con `soloSiLibre` o `esperaMaxMs`). */
+export class ClaveOcupadaError extends Error {
+  constructor(readonly key: string) {
+    super(`La clave ${key} está tomada por otra transacción.`);
+    this.name = "ClaveOcupadaError";
+  }
 }
 
 export const PlatformSettingsDB = {
@@ -167,25 +176,69 @@ export const PlatformSettingsDB = {
       tx: Prisma.TransactionClient,
     ) => Promise<{ valor?: unknown; resultado: R }> | { valor?: unknown; resultado: R },
     updatedBy?: string,
+    /**
+     * Opciones de la transacción. Por omisión las de Prisma (5 s): alcanza
+     * para leer-modificar-escribir una lista. Quien hace trabajo del libro
+     * dentro de `cambio` —registrar una guía desde su anexo (ADR-446)— pasa
+     * las suyas.
+     */
+    opciones?: {
+      timeout?: number;
+      maxWait?: number;
+      /**
+       * No esperar: si otra transacción tiene la clave, tira `ClaveOcupadaError`
+       * en el acto (`pg_try_advisory_xact_lock`). Para el trabajo largo que no
+       * debe hacer fila detrás de otro igual.
+       */
+      soloSiLibre?: boolean;
+      /**
+       * Esperar la clave a lo sumo esto (`lock_timeout` LOCAL de la
+       * transacción, nunca de sesión: el pooler la pegaría a otras conexiones).
+       * Vencido → `ClaveOcupadaError`, en vez del 500 del timeout de Prisma.
+       */
+      esperaMaxMs?: number;
+    },
   ): Promise<R> {
-    const { escrito, resultado } = await prisma.$transaction(async (tx) => {
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`platform-setting:${key}`}))`;
-      const row = await tx.platformSetting.findUnique({ where: { key }, select: { value: true } });
-      const r = await cambio(row ? (row.value as unknown as T) : null, tx);
-      if (r.valor === undefined) return { escrito: false, resultado: r.resultado };
-      const jsonValue = r.valor as Prisma.InputJsonValue;
-      await tx.platformSetting.upsert({
-        where: { key },
-        create: { key, value: jsonValue, ...(updatedBy !== undefined && { updatedBy }) },
-        update: { value: jsonValue, ...(updatedBy !== undefined && { updatedBy }) },
-      });
-      return { escrito: true, resultado: r.resultado };
-    });
-    if (escrito) {
+    const lockKey = `platform-setting:${key}`;
+    const { soloSiLibre, esperaMaxMs, ...txOpciones } = opciones ?? {};
+    const espera = esperaMaxMs != null ? Math.max(1, Math.trunc(esperaMaxMs)) : null;
+    let tomado = false;
+    let salida: { escrito: boolean; resultado: R };
+    try {
+      salida = await prisma.$transaction(
+        async (tx) => {
+          if (soloSiLibre) {
+            const [fila] = await tx.$queryRaw<{ ok: boolean }[]>`SELECT pg_try_advisory_xact_lock(hashtext(${lockKey})) AS ok`;
+            if (!fila?.ok) throw new ClaveOcupadaError(key);
+          } else {
+            if (espera != null) await tx.$queryRaw`SELECT set_config('lock_timeout', ${`${espera}ms`}, true)`;
+            await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`;
+          }
+          tomado = true;
+          const row = await tx.platformSetting.findUnique({ where: { key }, select: { value: true } });
+          const r = await cambio(row ? (row.value as unknown as T) : null, tx);
+          if (r.valor === undefined) return { escrito: false, resultado: r.resultado };
+          const jsonValue = r.valor as Prisma.InputJsonValue;
+          await tx.platformSetting.upsert({
+            where: { key },
+            create: { key, value: jsonValue, ...(updatedBy !== undefined && { updatedBy }) },
+            update: { value: jsonValue, ...(updatedBy !== undefined && { updatedBy }) },
+          });
+          return { escrito: true, resultado: r.resultado };
+        },
+        Object.keys(txOpciones).length > 0 ? txOpciones : undefined,
+      );
+    } catch (err) {
+      /* Sólo la espera de la CLAVE se traduce: un lock que vence dentro de
+         `cambio` es de quien llama y lo decide él. */
+      if (!tomado && espera != null && esEsperaDeLockVencida(err)) throw new ClaveOcupadaError(key);
+      throw err;
+    }
+    if (salida.escrito) {
       invalidate(cacheKey(key));
       invalidate(cacheKey("__all__"));
     }
-    return resultado;
+    return salida.resultado;
   },
 
   /**

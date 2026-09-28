@@ -4,6 +4,9 @@ import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { ForestAnexosDB } from "@/lib/db/forest-anexos.db";
+import { CtpInvariantError } from "@/lib/db/forest-ctp-consumo.db";
+import { cubicarPieza, type PiezaCubicada } from "@/lib/forestal/cubicacion";
+import { filaNoCuadra } from "@/lib/forestal/anexo04-registro";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
@@ -23,7 +26,7 @@ import { withApiHandler } from "@/lib/api-handler";
 
 const piezaSchema = z.object({
   id: z.string().trim().max(60).optional(),
-  cantidad: z.coerce.number().positive().max(99999),
+  cantidad: z.coerce.number().int().positive().max(99999),
   espesor: z.coerce.number().positive().max(999),
   ancho: z.coerce.number().positive().max(999),
   largo: z.coerce.number().positive().max(999),
@@ -31,9 +34,28 @@ const piezaSchema = z.object({
   uAncho: z.enum(["pulg", "cm", "pies", "m"]).optional(),
   uLargo: z.enum(["pulg", "cm", "pies", "m"]).optional(),
   especie: z.string().trim().max(60).nullish(),
-  pieTablar: z.coerce.number().nonnegative().optional(),
-  m3: z.coerce.number().nonnegative().optional(),
+  /* El volumen y el PT los calcula el cubicador desde las medidas; se aceptan
+     para re-imprimir el mismo papel, pero con tope y sólo si cuadran (abajo). */
+  pieTablar: z.coerce.number().nonnegative().max(5_000_000).optional(),
+  m3: z.coerce.number().nonnegative().max(10_000).optional(),
 });
+
+/** La pieza como la guarda el registro: unidades por omisión y, si no trae volumen, el que dan sus medidas. */
+function piezaDelRegistro(p: z.infer<typeof piezaSchema>, i: number): PiezaCubicada {
+  const base = {
+    cantidad: p.cantidad,
+    espesor: p.espesor, ancho: p.ancho, largo: p.largo,
+    uEspesor: p.uEspesor ?? "pulg", uAncho: p.uAncho ?? "pulg", uLargo: p.uLargo ?? "pies",
+  } as const;
+  const calculado = cubicarPieza(base);
+  return {
+    id: p.id ?? `p-${i}`,
+    ...base,
+    especie: p.especie ?? undefined,
+    pieTablar: p.pieTablar ?? calculado.pieTablar,
+    m3: p.m3 ?? calculado.m3,
+  };
+}
 
 const saveSchema = z.object({
   id: z.string().trim().max(60).optional(),
@@ -56,6 +78,19 @@ const saveSchema = z.object({
   // Un anexo de varias hojas son 35 filas por bloque × 4 × N hojas; el tope
   // protege el KV sin estorbar un despacho grande de verdad.
   piezas: z.array(piezaSchema).min(1).max(1000),
+}).superRefine((v, ctx) => {
+  /* ADR-446 (seguridad S1): el libro registra la salida con el m³ de cada fila;
+     uno que no sale de sus medidas no se guarda. */
+  v.piezas.forEach((p, i) => {
+    const mala = filaNoCuadra(piezaDelRegistro(p, i));
+    if (mala) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["piezas", i, "m3"],
+        message: `La fila ${i + 1} dice ${mala.declaradoM3} m³ y sus medidas dan ${mala.calculadoM3}: vuelve a cubicarla.`,
+      });
+    }
+  });
 });
 
 async function ensureSpec(tenantId: string) {
@@ -119,20 +154,19 @@ export const POST = withApiHandler("forestal-anexos-post", async (req: NextReque
         totalManualM3: totalManualM3 ?? null,
         // Las piezas llegan ya cubicadas del cliente; los TOTALES del anexo se
         // recalculan igual en `construirEmision`, que es lo que se guarda.
-        piezas: piezas.map((p, i) => ({
-          id: p.id ?? `p-${i}`,
-          cantidad: p.cantidad,
-          espesor: p.espesor, ancho: p.ancho, largo: p.largo,
-          uEspesor: p.uEspesor ?? "pulg", uAncho: p.uAncho ?? "pulg", uLargo: p.uLargo ?? "pies",
-          especie: p.especie ?? undefined,
-          pieTablar: p.pieTablar ?? 0,
-          m3: p.m3 ?? 0,
-        })),
+        piezas: piezas.map(piezaDelRegistro),
       },
       auth.username ?? "unknown",
     );
     return NextResponse.json({ anexo }, { status: id ? 200 : 201 });
   } catch (err) {
+    /* ADR-446: registrado en el libro (no se edita), bandeja ocupada o una fila que no cuadra. */
+    if (err instanceof CtpInvariantError) {
+      return NextResponse.json(
+        { error: err.code, message: err.message, detail: err.detail },
+        { status: err.code === "VALIDACION" ? 400 : 409 },
+      );
+    }
     logger.error("[anexos.POST] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
@@ -154,6 +188,10 @@ export const DELETE = withApiHandler("forestal-anexos-delete", async (req: NextR
     const ok = await ForestAnexosDB.remove(auth.tenantId, id, auth.username ?? "unknown");
     return ok ? NextResponse.json({ ok: true }) : NextResponse.json({ error: "not_found" }, { status: 404 });
   } catch (err) {
+    /* ADR-446: un anexo cuya salida ya está en el libro no se borra (respalda esas líneas). */
+    if (err instanceof CtpInvariantError) {
+      return NextResponse.json({ error: err.code, message: err.message, detail: err.detail }, { status: 409 });
+    }
     logger.error("[anexos.DELETE] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
