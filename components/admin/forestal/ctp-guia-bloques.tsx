@@ -16,10 +16,12 @@
 import { useEffect, useRef } from "react";
 import { CardTitle } from "@buleje/design-system";
 import { AlertCircle, Check, Loader2 } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useDocumentoLookup } from "@/hooks/use-documento-lookup";
 import { avisoDeSunat, normalizarNumero, type DocumentoEncontrado } from "@/lib/documento/tipos";
-import { Field, I } from "./ctp-shared";
+import { Field, I, type CampoSpan } from "./ctp-shared";
 import CtpUbigeoSelects from "./CtpUbigeoSelects";
+import { CLASE_NO_APLICA, CLASE_SIN_CAJA, EstadoBloque } from "./ctp-guia-piezas";
 
 /** Identidad de una parte tal como la guarda `gtfDatosSchema`. */
 export interface ParteEditable {
@@ -37,17 +39,28 @@ export interface ParteEditable {
  * Un bloque con su barra de título, como el formato.
  *
  * La barra es una franja teñida y no un `<h3>` pelado porque en un formulario
- * de sesenta campos el título tiene que cortar la página en dos de un vistazo.
+ * de sesenta casilleros el título tiene que cortar la página de un vistazo.
+ *
+ * Rediseño 2026-09-27: la ayuda pasó al ⓘ (iba truncada en gris al lado del
+ * título y nadie la leía entera) y la cabecera dice el ESTADO del bloque
+ * —«Completo» o «Faltan N»— para ver qué falta sin recorrer los casilleros.
  */
 export function Bloque({
   titulo,
   hint,
+  nota,
+  faltan,
   acciones,
   children,
   className = "",
 }: {
   titulo: string;
+  /** Qué es el bloque: va en el ⓘ del título. */
   hint?: string;
+  /** Un dato de más para el ⓘ (norma, cuándo se completa). */
+  nota?: string;
+  /** Lo que le falta para imprimir la guía; sin la prop, el bloque no muestra estado. */
+  faltan?: readonly string[];
   /** Controles del bloque (buscar en la libreta, traer del padrón…). */
   acciones?: React.ReactNode;
   children: React.ReactNode;
@@ -55,15 +68,19 @@ export function Bloque({
 }) {
   return (
     <section className={`overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] ${className}`}>
-      {/* Título y ayuda en la MISMA línea: son sesenta casilleros repartidos en
-          seis bloques, y dos renglones de cabecera por bloque son media pantalla
-          de encabezados antes de llegar al primer campo. */}
-      <header className="flex flex-wrap items-baseline gap-x-2 gap-y-1 border-b-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-1.5">
-        <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">{titulo}</CardTitle>
-        {hint && <p className="min-w-0 flex-1 truncate text-xs text-[var(--text-tertiary)]">{hint}</p>}
-        {acciones && <div className="ml-auto">{acciones}</div>}
+      <header className="flex flex-wrap items-center gap-x-2 gap-y-1.5 border-b border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-1.5">
+        <div className="flex min-h-8 items-center gap-1">
+          <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">{titulo}</CardTitle>
+          {hint && <InfoTip title={titulo} what={hint} affects={nota} ariaLabel={`Qué es: ${titulo}`} />}
+        </div>
+        {faltan && <EstadoBloque faltan={faltan} />}
+        {acciones && <div className={`ml-auto flex flex-wrap items-center gap-2 ${CLASE_SIN_CAJA}`}>{acciones}</div>}
       </header>
-      <div className="grid grid-cols-1 gap-x-3 gap-y-2 p-3 sm:grid-cols-12">{children}</div>
+      {/* `sm:[&_label]:min-h-6`: el rótulo con ⓘ mide 24 px (el botón) y el que
+          no lo tiene, 20. Sin igualarlos, dos campos de la misma fila
+          arrancaban su caja a 4 px de distancia y la grilla se veía dentada. En
+          una sola columna no hay fila que alinear: ahí no suma alto. */}
+      <div className="grid grid-cols-1 gap-x-3 gap-y-2.5 p-3 sm:grid-cols-12 sm:[&_label]:min-h-6">{children}</div>
     </section>
   );
 }
@@ -134,34 +151,35 @@ export function DocsDeParte({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hallado]);
 
+  /* Una parte declara UN documento: la casilla del otro tipo no es un
+     pendiente, es la que no corresponde. Se dice DENTRO del casillero
+     («no aplica», punteado) y el porqué va al ⓘ: abajo ocupaba dos o tres
+     renglones por parte en una columna angosta. */
+  const izqNoAplica = esRuc && tieneDoc ? "esta parte declara RUC" : undefined;
+  const rucNoAplica = !esRuc && tieneDoc ? `esta parte declara ${etiquetaIzq.replace(/^Nro /, "")}` : undefined;
+
   return (
     <>
-      {/* Una parte declara UN documento: la casilla del otro tipo no es un
-          pendiente, es la que no corresponde. Se dice, y así el formulario deja
-          de leerse a medias por dos casilleros que nunca se van a llenar. */}
-      <Field
-        span={span}
-        label={etiquetaIzq}
-        noAplica={esRuc && tieneDoc ? "esta parte declara RUC" : undefined}
-      >
+      <Field span={span} label={etiquetaIzq} hint={izqNoAplica && `No aplica: ${izqNoAplica}`}>
         <input
           type="text"
           inputMode="numeric"
-          className={`${I} font-mono`}
+          className={`${I} font-mono ${izqNoAplica ? CLASE_NO_APLICA : ""}`}
+          placeholder={izqNoAplica ? "no aplica" : undefined}
           value={esRuc ? "" : parte.docNumero}
           onChange={(e) => { tocado.current = true; onChange({ docTipo: esRuc ? "DNI" : parte.docTipo, docNumero: e.target.value }); }}
         />
       </Field>
-      <Field
-        span={span}
-        label="Nro RUC"
-        noAplica={!esRuc && tieneDoc ? `esta parte declara ${etiquetaIzq.replace(/^Nro /, "")}` : undefined}
-      >
+      <Field span={span} label="Nro RUC" hint={rucNoAplica && `No aplica: ${rucNoAplica}`}>
         <div className="relative">
           <input
             type="text"
             inputMode="numeric"
-            className={`${I} font-mono ${consultando ? "pr-10" : ""}`}
+            /* Con el ícono de carga al lado el `Field` rotula el grupo, no el
+               campo: el nombre va explícito para no quedar mudo. */
+            aria-label="Nro RUC"
+            className={`${I} font-mono ${consultando ? "pr-10" : ""} ${rucNoAplica ? CLASE_NO_APLICA : ""}`}
+            placeholder={rucNoAplica ? "no aplica" : undefined}
             value={esRuc ? parte.docNumero : ""}
             onChange={(e) => { tocado.current = true; onChange({ docTipo: "RUC", docNumero: e.target.value }); }}
           />
@@ -176,12 +194,12 @@ export function DocsDeParte({
           className={`flex flex-wrap items-center gap-x-2 rounded-lg px-2.5 py-1 text-sm sm:col-span-12 ${
             hallado
               ? "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
-              : "bg-[var(--data-warning-500)]/12 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
+              : "bg-[var(--data-warning-500)]/12 text-[var(--data-warning-ink)]"
           }`}
         >
           {hallado ? (
             <>
-              <Check className="h-4 w-4 shrink-0 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" aria-hidden />
+              <Check className="h-4 w-4 shrink-0 text-[var(--data-success-ink)]" aria-hidden />
               <b className="text-[var(--text-primary)]">{hallado.nombre}</b>
               <span className="text-[var(--text-tertiary)]">
                 {hallado.fuente}
@@ -189,7 +207,7 @@ export function DocsDeParte({
                 {hallado.condicion ? ` · ${hallado.condicion}` : ""}
               </span>
               {avisoDeSunat(hallado) && (
-                <span className="font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+                <span className="font-bold text-[var(--data-warning-ink)]">
                   {avisoDeSunat(hallado)}
                 </span>
               )}
@@ -215,45 +233,40 @@ export function UbicacionDeParte({
   parte,
   onChange,
   conZona,
+  span = 4,
+  spanZona = 4,
 }: {
   parte: ParteEditable;
   onChange: (v: Partial<ParteEditable>) => void;
   /** El destinatario tiene «Zona» en el formato; el propietario no. */
   conZona?: boolean;
+  /** Ancho de cada lista. A 2 de 12 («Departame…», «Elige el») no se leían. */
+  span?: 2 | 3 | 4 | 6;
+  spanZona?: CampoSpan;
 }) {
+  const zonaNoAplica = !parte.zona?.trim();
   return (
     <>
       {conZona && (
         <Field
-          span={2}
+          span={spanZona}
           label="Zona"
-          hint="Sector o caserío"
-          noAplica={parte.zona?.trim() ? undefined : "sólo si la dirección usa sector o caserío"}
+          hint={zonaNoAplica ? "No aplica: sólo si la dirección usa sector o caserío" : "Sector o caserío"}
         >
-          <input type="text" className={I} value={parte.zona ?? ""} onChange={(e) => onChange({ zona: e.target.value })} />
+          <input
+            type="text"
+            className={`${I} ${zonaNoAplica ? CLASE_NO_APLICA : ""}`}
+            placeholder={zonaNoAplica ? "no aplica" : undefined}
+            value={parte.zona ?? ""}
+            onChange={(e) => onChange({ zona: e.target.value })}
+          />
         </Field>
       )}
-      {/* Los tres casilleros entran en la MISMA fila que el domicilio (6 + 2+2+2):
-          sueltos abajo, cada parte se llevaba un renglón entero de más. */}
       <CtpUbigeoSelects
-        span={2}
+        span={span}
         valor={{ departamento: parte.departamento, provincia: parte.provincia, distrito: parte.distrito }}
         onChange={onChange}
       />
     </>
-  );
-}
-
-/** Dato que el sistema ya sabe y la guía sólo muestra (identidad del emisor). */
-export function CampoSoloLectura({ label, valor, span = 6, falta }: { label: string; valor: string; span?: 3 | 4 | 6 | 8 | 12; falta?: string }) {
-  return (
-    <Field span={span} label={label} hint={valor ? undefined : falta}>
-      <input
-        type="text"
-        readOnly
-        value={valor || "—"}
-        className={`${I} cursor-default bg-[var(--surface-sunken)] text-[var(--text-secondary)]`}
-      />
-    </Field>
   );
 }

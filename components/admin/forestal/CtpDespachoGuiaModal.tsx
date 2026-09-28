@@ -373,7 +373,13 @@ export default function CtpDespachoGuiaModal({
   const unidadLista = UNIT_LABELS[filas[0]?.unidad ?? "m3"] ?? filas[0]?.unidad ?? "m³";
   const totalFmt = unidadLista === "m³" ? fmtM3(total) : total.toFixed(4);
   const problemas = useMemo(() => (filas.length === 0 ? [] : problemasDeLista(filas)), [filas]);
-  const faltanGuia = useMemo(() => faltantesGtf(datos), [datos]);
+  /* Mismo relleno que `registrar()`: sin fecha de inicio propia, el traslado
+     empieza el día de emisión. Contarla como faltante pedía un dato que ninguna
+     pestaña muestra (el pie decía 9 y los bloques 8). */
+  const faltanGuia = useMemo(
+    () => faltantesGtf({ ...datos, traslado: { ...datos.traslado, fechaInicio: datos.traslado.fechaInicio || emision } }),
+    [datos, emision],
+  );
   /* Registrar ya NO exige el N° de guía (ADR-374): la línea entra al libro
      como BORRADOR y el número se asigna al emitir. Pedirlo antes obligaba a
      inventar uno para poder registrar un despacho que ya había salido. */
