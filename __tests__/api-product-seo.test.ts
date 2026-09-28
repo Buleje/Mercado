@@ -16,7 +16,7 @@ vi.mock("@/lib/logger", () => ({
 
 // ── requireAdmin ──────────────────────────────────────────────────────────────
 const { mockRequireAdmin } = vi.hoisted(() => ({ mockRequireAdmin: vi.fn() }));
-vi.mock("@/lib/require-admin", () => ({ requireAdmin: mockRequireAdmin }));
+vi.mock("@/lib/require-admin", () => ({ requireAdmin: mockRequireAdmin, tryAdmin: vi.fn(() => null) }));
 
 // ── cache ─────────────────────────────────────────────────────────────────────
 const { mockInvalidateByPrefix } = vi.hoisted(() => ({ mockInvalidateByPrefix: vi.fn() }));
