@@ -7,10 +7,19 @@
  * propio (`ok` | `error`) y su motivo, y el que descarta es el usuario mirando
  * la vista previa — nunca el parser por su cuenta.
  *
+ * Dos entradas, igual que el importador del censo: `parseImportLineas(texto)`
+ * para lo pegado o un CSV, y `parseImportLineasCeldas(matriz)` para un .xlsx ya
+ * leído a celdas (`leerArchivoAFilas` de `cubicacion-import-file.ts`). Las dos
+ * terminan en `armarResultado`, así que una fila pegada y la misma fila subida
+ * en Excel dan exactamente el mismo veredicto.
+ *
  * PURO y client-safe.
  */
 
 import { smalianVolume, type LothSection } from "./loth-constants";
+
+/** Una celda tal como la devuelve `leerArchivoAFilas`: string, número o vacía. */
+export type CeldaLinea = string | number | null | undefined;
 
 export interface FilaImport {
   /** Número de fila en el archivo (1 = primera fila de datos). */
@@ -66,7 +75,7 @@ const ALIAS: Record<string, string[]> = {
 const norm = (s: string) =>
   s
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[̀-ͯ]/g, "")
     .replace(/[^a-zA-Z0-9]/g, "")
     .toLowerCase();
 
@@ -151,30 +160,25 @@ const ETIQUETA: Record<string, string> = {
 };
 
 /**
- * Lee el texto pegado o el archivo y devuelve la vista previa.
+ * Cabecera + cuerpo (ya partidos en celdas de texto) → la vista previa.
+ * Las dos entradas públicas (texto pegado y matriz de Excel) terminan acá: es
+ * el único lugar que decide si una fila se asienta o no.
  *
  * @param especiesAutorizadas si se pasa, avisa (no bloquea) cuando la especie
  *   de una fila no está en el POA: el libro admite el asiento, pero el despacho
  *   se va a rechazar después y es mejor saberlo antes de cargar 200 filas.
  */
-export function parseImportLineas(
-  texto: string,
+function armarResultado(
+  headers: string[],
+  cuerpo: string[][],
   section: LothSection,
   opts: { especiesAutorizadas?: Set<string> } = {},
 ): ResultadoImport {
-  const lineas = texto.split(/\r?\n/).filter((l) => l.trim().length > 0);
-  if (lineas.length < 2) {
-    return { filas: [], columnas: [], ignoradas: [], listas: 0, conError: 0 };
-  }
-
-  const sep = detectarSeparador(texto);
-  const headers = partir(lineas[0], sep);
   const mapa = headers.map(mapearColumna);
   const ignoradas = headers.filter((h, i) => mapa[i] == null && h.trim() !== "");
 
   const vistas = new Set<string>();
-  const filas: FilaImport[] = lineas.slice(1).map((linea, idx) => {
-    const celdas = partir(linea, sep);
+  const filas: FilaImport[] = cuerpo.map((celdas, idx) => {
     const val = (campo: string): string | null => {
       const i = mapa.indexOf(campo);
       const v = i >= 0 ? celdas[i] : null;
@@ -271,4 +275,42 @@ export function parseImportLineas(
     listas: filas.filter((f) => f.estado === "ok").length,
     conError: filas.filter((f) => f.estado === "error").length,
   };
+}
+
+/**
+ * Lee el texto pegado (o un .csv leído como texto) y devuelve la vista previa.
+ */
+export function parseImportLineas(
+  texto: string,
+  section: LothSection,
+  opts: { especiesAutorizadas?: Set<string> } = {},
+): ResultadoImport {
+  const lineas = texto.split(/\r?\n/).filter((l) => l.trim().length > 0);
+  if (lineas.length < 2) {
+    return { filas: [], columnas: [], ignoradas: [], listas: 0, conError: 0 };
+  }
+  const sep = detectarSeparador(texto);
+  const headers = partir(lineas[0], sep);
+  const cuerpo = lineas.slice(1).map((linea) => partir(linea, sep));
+  return armarResultado(headers, cuerpo, section, opts);
+}
+
+/**
+ * Celdas de un .xlsx ya leído (`leerArchivoAFilas`) → la misma vista previa
+ * que da lo pegado. Los números de Excel llegan como número (`0.65`), no como
+ * texto con coma — `String(0.65)` sigue siendo un punto decimal, que
+ * `aNumero` ya entiende sin ambigüedad.
+ */
+export function parseImportLineasCeldas(
+  matriz: ReadonlyArray<ReadonlyArray<CeldaLinea>>,
+  section: LothSection,
+  opts: { especiesAutorizadas?: Set<string> } = {},
+): ResultadoImport {
+  const texto = (v: CeldaLinea): string =>
+    v == null ? "" : typeof v === "number" ? (Number.isFinite(v) ? String(v) : "") : String(v).trim();
+  const filas = matriz.map((f) => f.map(texto)).filter((f) => f.some((c) => c.length > 0));
+  if (filas.length < 2) {
+    return { filas: [], columnas: filas[0] ?? [], ignoradas: [], listas: 0, conError: 0 };
+  }
+  return armarResultado(filas[0], filas.slice(1), section, opts);
 }

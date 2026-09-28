@@ -20,8 +20,19 @@ import {
 } from "@/components/admin/shared/modal-controles-ventana";
 import { DataTable } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
-import { AlertTriangle, CheckCircle2, FileUp, Loader2, Upload, X } from "@buleje/design-system/icons";
-import { parseImportLineas, type FilaImport } from "@/lib/forestal/loth-import-lineas";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Download,
+  FileSpreadsheet,
+  FileUp,
+  Loader2,
+  Upload,
+  X,
+} from "@buleje/design-system/icons";
+import { parseImportLineas, parseImportLineasCeldas, type CeldaLinea, type FilaImport } from "@/lib/forestal/loth-import-lineas";
+import { descargarPlantillaLineas } from "@/lib/forestal/loth-lineas-plantilla";
+import { leerArchivoAFilas } from "@/lib/forestal/cubicacion-import-file";
 import { SECTION_META } from "./LothEntryForm";
 import type { LothSection } from "@/lib/forestal/loth-constants";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
@@ -57,7 +68,11 @@ export default function LothImportLineasModal({
      con el ref vacío y no vuelve a mirar cuando el modal aparece. */
   const cajaRef = useRef<HTMLDivElement>(null);
   const [texto, setTexto] = useState("");
-  const [nombreArchivo, setNombreArchivo] = useState<string | null>(null);
+  /** El .xlsx subido, ya leído a celdas. Mientras está, manda sobre el texto. */
+  const [archivo, setArchivo] = useState<{ nombre: string; celdas: CeldaLinea[][] } | null>(null);
+  const [leyendo, setLeyendo] = useState(false);
+  const [bajando, setBajando] = useState(false);
+  const [fileError, setFileError] = useState<string | null>(null);
   const [omitidas, setOmitidas] = useState<Set<number>>(new Set());
   const [importando, setImportando] = useState(false);
   useModalAccesible(cajaRef, { onCerrar: importando ? undefined : onClose, activo: open });
@@ -77,16 +92,56 @@ export default function LothImportLineasModal({
   const [resultado, setResultado] = useState<{ creadas: number; errores: string[] } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const previa = useMemo(() => parseImportLineas(texto, section, { especiesAutorizadas }), [texto, section, especiesAutorizadas]);
+  /* El .xlsx manda mientras esté cargado — es exactamente el patrón del
+     importador del censo (28-09): un archivo y un texto pegado no compiten,
+     el archivo gana hasta que el usuario lo quita con la X. */
+  const previa = useMemo(
+    () =>
+      archivo
+        ? parseImportLineasCeldas(archivo.celdas, section, { especiesAutorizadas })
+        : parseImportLineas(texto, section, { especiesAutorizadas }),
+    [archivo, texto, section, especiesAutorizadas],
+  );
   const aImportar = previa.filas.filter((f) => f.estado === "ok" && !omitidas.has(f.fila));
 
   if (!open) return null;
 
-  const leerArchivo = async (file: File) => {
-    setNombreArchivo(file.name);
-    setTexto(await file.text());
+  const onFile = async (file: File | undefined) => {
+    if (!file) return;
+    setFileError(null);
+    const nombre = file.name.toLowerCase();
+    if (nombre.endsWith(".xls")) {
+      setFileError("Ese es el formato viejo de Excel (.xls): ábrelo y guárdalo como .xlsx.");
+      return;
+    }
+    setLeyendo(true);
+    try {
+      if (nombre.endsWith(".xlsx")) {
+        const celdas = await leerArchivoAFilas(file);
+        if (celdas.length === 0) throw new Error("La primera hoja del archivo está vacía.");
+        setArchivo({ nombre: file.name, celdas });
+      } else {
+        // CSV/TXT/texto: al cuadro, para que se vea lo que se leyó y se pueda corregir.
+        setArchivo(null);
+        setTexto(await file.text());
+      }
+    } catch (err) {
+      setFileError(err instanceof Error ? err.message : "No se pudo leer el archivo");
+    } finally {
+      setLeyendo(false);
+    }
     setOmitidas(new Set());
     setResultado(null);
+  };
+
+  const bajarPlantilla = () => {
+    setBajando(true);
+    descargarPlantillaLineas(section)
+      .catch((err) => {
+        console.warn("[LothImportLineasModal] plantilla falló", err);
+        setFileError("No se pudo generar la plantilla. Prueba de nuevo.");
+      })
+      .finally(() => setBajando(false));
   };
 
   const importar = async () => {
@@ -183,41 +238,75 @@ export default function LothImportLineasModal({
                 <button
                   type="button"
                   onClick={() => fileRef.current?.click()}
-                  className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+                  disabled={leyendo}
+                  className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
                 >
-                  <FileUp className="h-4 w-4" /> Subir CSV
+                  {leyendo ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileUp className="h-4 w-4" />} Subir Excel o CSV
                 </button>
                 <input
                   ref={fileRef}
                   type="file"
-                  accept=".csv,.txt,text/csv"
+                  accept=".xlsx,.csv,.txt,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv"
                   className="hidden"
                   onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) void leerArchivo(f);
+                    void onFile(e.target.files?.[0]);
+                    e.target.value = "";
                   }}
                 />
-                {nombreArchivo && <span className="text-sm text-[var(--text-tertiary)]">{nombreArchivo}</span>}
                 <button
                   type="button"
-                  onClick={() => setTexto(EJEMPLO[section] ?? "")}
+                  onClick={bajarPlantilla}
+                  disabled={bajando}
+                  className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
+                >
+                  {bajando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} Descargar plantilla
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setArchivo(null);
+                    setTexto(EJEMPLO[section] ?? "");
+                  }}
                   className="ml-auto text-sm font-bold text-[var(--accent)] hover:underline"
                 >
                   Ver un ejemplo
                 </button>
               </div>
 
-              <textarea
-                value={texto}
-                onChange={(e) => {
-                  setTexto(e.target.value);
-                  setOmitidas(new Set());
-                }}
-                rows={5}
-                spellCheck={false}
-                placeholder={`Pega acá el cuadro con su fila de encabezados.\n\n${EJEMPLO[section] ?? ""}`}
-                className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3 font-mono text-xs text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
-              />
+              {fileError && (
+                <p className="flex items-center gap-1.5 text-xs font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+                  <AlertTriangle className="h-3.5 w-3.5" /> {fileError}
+                </p>
+              )}
+
+              {archivo ? (
+                <div className="flex items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm">
+                  <FileSpreadsheet className="h-4 w-4 shrink-0 text-[var(--accent-ink)] dark:text-[var(--accent)]" />
+                  <span className="min-w-0 truncate font-semibold text-[var(--text-primary)]">{archivo.nombre}</span>
+                  <span className="shrink-0 text-xs text-[var(--text-tertiary)]">{previa.filas.length} fila(s) leídas</span>
+                  <button
+                    type="button"
+                    onClick={() => setArchivo(null)}
+                    aria-label="Quitar el archivo y volver a pegar"
+                    title="Quitar el archivo"
+                    className="ml-auto grid h-8 w-8 shrink-0 place-items-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <textarea
+                  value={texto}
+                  onChange={(e) => {
+                    setTexto(e.target.value);
+                    setOmitidas(new Set());
+                  }}
+                  rows={5}
+                  spellCheck={false}
+                  placeholder={`Pega acá el cuadro con su fila de encabezados.\n\n${EJEMPLO[section] ?? ""}`}
+                  className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3 font-mono text-xs text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                />
+              )}
 
               {previa.filas.length > 0 && (
                 <>

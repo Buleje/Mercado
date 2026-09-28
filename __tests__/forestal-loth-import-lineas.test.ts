@@ -5,7 +5,7 @@
  * veredicto y su motivo; el que decide es el usuario mirando la previa.
  */
 import { describe, it, expect } from "vitest";
-import { aFecha, aNumero, detectarSeparador, parseImportLineas } from "@/lib/forestal/loth-import-lineas";
+import { aFecha, aNumero, detectarSeparador, parseImportLineas, parseImportLineasCeldas } from "@/lib/forestal/loth-import-lineas";
 
 describe("lectura de celdas", () => {
   it("acepta coma o punto decimal (un Excel peruano usa coma)", () => {
@@ -136,5 +136,71 @@ describe("tala y trozado no piden lo mismo (RDE 264-2019)", () => {
     );
     expect(r.filas[0].estado).toBe("error");
     expect(r.filas[0].motivos.join(" ")).toContain("volumen");
+  });
+});
+
+describe("parseImportLineasCeldas · un .xlsx leído a celdas (28-09, plantilla descargable)", () => {
+  /**
+   * Lo que trae un .xlsx real que exceljs ya leyó: los números quedan como
+   * `number` de JS (0.65, no "0,65"), y un código de árbol tecleado sin
+   * comillas en Excel («2», «13») también llega como `number`, no como texto.
+   * La misma hoja pegada como texto trae coma decimal («14,853»): las dos
+   * entradas tienen que dar el mismo veredicto.
+   */
+  it("hoja de Tala: códigos numéricos (2, 13) y diámetros en number", () => {
+    const hoja = [
+      ["Cód. árbol", "Especie", "Fecha", "Ø mayor", "Ø menor", "Longitud"],
+      [2, "Tornillo", "21/07/2026", 0.65, 0.65, 18],
+      [13, "Capirona", "22/07/2026", 0.6, 0.55, 12],
+    ];
+    const r = parseImportLineasCeldas(hoja, "tala");
+    expect(r.filas).toHaveLength(2);
+    expect(r.listas).toBe(2);
+    expect(r.filas[0].treeCode).toBe("2");
+    expect(r.filas[1].treeCode).toBe("13");
+    expect(r.filas[0].entryDate).toBe("2026-07-21");
+    expect(r.filas[0].diamMayorM).toBeCloseTo(0.65, 4);
+  });
+
+  it("hoja de Trozado: volumen con coma decimal como texto («14,853») no se recalcula", () => {
+    const hoja = [
+      ["Cód. árbol", "Cód. troza", "Especie", "Volumen"],
+      [1, "1-A", "Tornillo", "14,853"],
+    ];
+    const r = parseImportLineasCeldas(hoja, "trozado");
+    expect(r.filas[0].estado).toBe("ok");
+    expect(r.filas[0].volumeM3).toBeCloseTo(14.853, 3);
+    expect(r.filas[0].volumenCalculado).toBe(false);
+  });
+
+  it("hoja de Despacho de trozas: fila sin GTF se marca, no se descarta sola", () => {
+    const hoja = [
+      ["Cód. troza", "N° GTF", "Fecha"],
+      ["1-A", "001-0000125", "22/07/2026"],
+      ["1-B", "", ""],
+    ];
+    const r = parseImportLineasCeldas(hoja, "despacho_troza");
+    expect(r.filas).toHaveLength(2);
+    expect(r.filas[0].estado).toBe("ok");
+    expect(r.filas[0].gtfNumber).toBe("001-0000125");
+    expect(r.filas[1].estado).toBe("error");
+    expect(r.filas[1].motivos.join(" ")).toMatch(/N° de GTF/);
+  });
+
+  it("da el mismo veredicto que el texto pegado para la misma fila", () => {
+    const texto = "Cód. árbol,Cód. troza,Especie,Ø mayor,Ø menor,Longitud\n001-TOR,001-TOR-A,Tornillo,0.65,0.60,12";
+    const celdas = [
+      ["Cód. árbol", "Cód. troza", "Especie", "Ø mayor", "Ø menor", "Longitud"],
+      ["001-TOR", "001-TOR-A", "Tornillo", 0.65, 0.6, 12],
+    ];
+    const rTexto = parseImportLineas(texto, "trozado");
+    const rCeldas = parseImportLineasCeldas(celdas, "trozado");
+    expect(rCeldas.filas[0].volumeM3).toBeCloseTo(rTexto.filas[0].volumeM3 as number, 6);
+    expect(rCeldas.filas[0].estado).toBe(rTexto.filas[0].estado);
+  });
+
+  it("una hoja vacía o de una sola fila no rompe", () => {
+    expect(parseImportLineasCeldas([], "tala").filas).toHaveLength(0);
+    expect(parseImportLineasCeldas([["Cód. árbol", "Especie"]], "tala").filas).toHaveLength(0);
   });
 });
