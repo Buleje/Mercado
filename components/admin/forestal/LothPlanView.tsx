@@ -42,6 +42,7 @@ import LothPlanCabecera from "./LothPlanCabecera";
 import LothPlanPestanas, { PESTANAS_PLAN, idPanel, idTab, type PestanaDef, type PestanaPlan } from "./LothPlanPestanas";
 import { printInforme } from "./loth-plan-informe";
 import { useLothPlan } from "./hooks/use-loth-plan";
+import { formatNumber } from "@/lib/format";
 
 /** Clave de la pestaña elegida. Exportada: la prueba en navegador la lee. */
 export const CLAVE_PESTANA_PLAN = "loth:plan:pestana";
@@ -212,7 +213,7 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
         peligro > 0 ? `${peligro} ${peligro === 1 ? "especie con problema" : "especies con problema"}`
           : atencion > 0 ? `${atencion} ${atencion === 1 ? "especie con aviso" : "especies con aviso"}` : undefined,
     },
-    { id: "censo", label: "Censo", cuenta: d.censoTotal.toLocaleString("es-PE") },
+    { id: "censo", label: "Censo", cuenta: formatNumber(d.censoTotal) },
   ];
 
   return (
@@ -369,6 +370,7 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
               dmcOverrides={d.poaConfig.dmcOverrides}
               onChange={() => d.loadDetail(plan.id)}
               importarSignal={importarSignal}
+              especies={d.species}
             />
             <LothPlanCroquis trees={trees} authorizedSpecies={d.authorizedSet} />
           </Panel>

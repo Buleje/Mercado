@@ -6242,6 +6242,8 @@ model ForestCensusTree {
   treeCode          String // código único del árbol censado
   speciesCommon     String
   speciesScientific String?
+  /// Nombre en idioma nativo, como lo trae la hoja del censo («Coubé» = Copaiba).
+  speciesNative     String?
   cites             Boolean @default(false)
 
   dapM              Decimal? @db.Decimal(8, 3) // diámetro a la altura del pecho (m)
@@ -6254,6 +6256,9 @@ model ForestCensusTree {
   utmY         Decimal? @db.Decimal(12, 2)
   parcelaCorta String?
   calidad      String?
+  /// Condición que declara el censo («Aprovechable», «Semillero»…). Es la del
+  /// regente, no la categoría POA que calcula el sistema: se guardan las dos.
+  condicion    String?
 
   estado String  @default("en_pie") // en_pie | talado | descartado
   notes  String?

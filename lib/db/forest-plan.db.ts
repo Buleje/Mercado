@@ -94,6 +94,8 @@ export interface TreeInput {
   treeCode: string;
   speciesCommon: string;
   speciesScientific?: string | null;
+  /** Nombre en idioma nativo, como lo trae la hoja del censo. */
+  speciesNative?: string | null;
   cites?: boolean;
   dapM?: number | string | null;
   alturaComercialM?: number | string | null;
@@ -104,6 +106,8 @@ export interface TreeInput {
   utmY?: number | string | null;
   parcelaCorta?: string | null;
   calidad?: string | null;
+  /** Condición que declara el censo («Aprovechable», «Semillero»…), no la categoría POA calculada. */
+  condicion?: string | null;
   estado?: string;
   notes?: string | null;
   /** Cómo se reconoce y dónde queda (ADR-426). */
@@ -119,6 +123,14 @@ export interface TreeInput {
    *  ESTE tenant: no hay FK que lo haga (ADR-426). */
   contratoId?: string | null;
   createdBy: string;
+}
+
+/** Un código de árbol que ya está en el censo del plan (409 en el endpoint). */
+export class CensoCodigoRepetidoError extends Error {
+  constructor(readonly treeCode: string) {
+    super(`El árbol ${treeCode} ya está en el censo de este plan.`);
+    this.name = "CensoCodigoRepetidoError";
+  }
 }
 
 export class ForestPlanDB {
@@ -436,6 +448,14 @@ export class ForestPlanDB {
     if (!tenantId) throw new Error("tenantId is required");
     if (!input.planId) throw new Error("planId is required");
     if (!input.treeCode?.trim()) throw new Error("treeCode is required");
+    /* El import ya descarta los repetidos; el alta de a uno no lo hacía y el
+       índice de `treeCode` no es único: dos árboles con el mismo código inflan
+       el POA con madera que no existe y la Tala no sabe cuál jalar. */
+    const repetido = await prisma.forestCensusTree.findFirst({
+      where: { tenantId, planId: input.planId, deletedAt: null, treeCode: { equals: input.treeCode.trim(), mode: "insensitive" } },
+      select: { id: true },
+    });
+    if (repetido) throw new CensoCodigoRepetidoError(input.treeCode.trim());
     const dap = input.dapM != null ? Number(input.dapM) : 0;
     const hc = input.alturaComercialM != null ? Number(input.alturaComercialM) : 0;
     const ff = input.factorForma != null ? Number(input.factorForma) : 0.65;
@@ -450,6 +470,7 @@ export class ForestPlanDB {
         treeCode: input.treeCode.trim(),
         speciesCommon: input.speciesCommon.trim(),
         speciesScientific: input.speciesScientific?.trim() || null,
+        speciesNative: input.speciesNative?.trim() || null,
         cites: input.cites ?? false,
         dapM: dec(input.dapM),
         alturaComercialM: dec(input.alturaComercialM),
@@ -460,6 +481,7 @@ export class ForestPlanDB {
         utmY: dec(input.utmY),
         parcelaCorta: input.parcelaCorta?.trim() || null,
         calidad: input.calidad?.trim() || null,
+        condicion: input.condicion?.trim() || null,
         estado: input.estado ?? "en_pie",
         notes: input.notes?.trim() || null,
         createdBy: input.createdBy,
@@ -530,6 +552,7 @@ export class ForestPlanDB {
         treeCode: code,
         speciesCommon: especie,
         speciesScientific: r.speciesScientific?.trim() || null,
+        speciesNative: r.speciesNative?.trim() || null,
         cites: r.cites ?? false,
         dapM: dec(r.dapM),
         alturaComercialM: dec(r.alturaComercialM),
@@ -540,6 +563,7 @@ export class ForestPlanDB {
         utmY: dec(r.utmY),
         parcelaCorta: r.parcelaCorta?.trim() || null,
         calidad: r.calidad?.trim() || null,
+        condicion: r.condicion?.trim() || null,
         estado: r.estado ?? "en_pie",
         notes: r.notes?.trim() || null,
       });

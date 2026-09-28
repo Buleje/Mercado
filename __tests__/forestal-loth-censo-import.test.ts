@@ -4,7 +4,7 @@
  * corrida arruinan el POA, el volumen y la trazabilidad de todo el plan.
  */
 import { describe, expect, it } from "vitest";
-import { filasImportables, parseCensoTabla, volumenCenso } from "@/lib/forestal/loth-censo-import";
+import { filasImportables, parseCensoFilas, parseCensoTabla, volumenCenso } from "@/lib/forestal/loth-censo-import";
 
 describe("lectura de la hoja del regente", () => {
   it("detecta encabezados en cualquier orden y con la jerga de campo", () => {
@@ -147,5 +147,84 @@ describe("salida", () => {
     expect(parseCensoTabla("   \n  ").filas).toHaveLength(0);
     const basura = parseCensoTabla("hola mundo");
     expect(basura.validas).toBe(0);
+  });
+});
+
+/**
+ * La hoja real de un regente (Brandon, 28-09), con su encabezado tal cual.
+ * Antes: «Nombre en idioma nativo» se quedaba con la especie (la Copaiba
+ * entraba como «Coubé»), «N. Comun» no se reconocía, y el científico, el
+ * volumen, la condición y las observaciones se perdían.
+ */
+describe("hoja del regente con nombre nativo, volumen y condición", () => {
+  const ENCABEZADO = "N°\tCod\tN. Comun\tN. Cientifico\tNombre en idioma nativo\tDAP\taltura\tvol\tEste\tNorte\tcondicion\tobservaciones";
+  const HOJA = [
+    ENCABEZADO,
+    "1\t2\tCopaiba\tCopaifera reticulata Ducke\tCoubé\t1,15\t22\t14,853\t521922\t8918151\tAprovechable\t",
+    "5\t8\tMashonaste\tClarisia racemosa Ruiz & Pav.\tTsabiri\t0,9\t18\t7,443\t521937\t8918009\tAprovechable\tCaido natural",
+  ].join("\n");
+
+  it("cada columna cae en su campo: la especie es la común, no la nativa", () => {
+    const [copaiba, mashonaste] = parseCensoTabla(HOJA).filas;
+    expect(copaiba.treeCode).toBe("2");
+    expect(copaiba.speciesCommon).toBe("Copaiba");
+    expect(copaiba.speciesScientific).toBe("Copaifera reticulata Ducke");
+    expect(copaiba.speciesNative).toBe("Coubé");
+    expect(copaiba.condicion).toBe("Aprovechable");
+    expect(mashonaste.notes).toBe("Caido natural");
+    expect(copaiba.utmX).toBe(521_922);
+    expect(copaiba.utmY).toBe(8_918_151);
+  });
+
+  it("«14,853» es 14,853 m³ y no 14 853: la coma de una medida es decimal", () => {
+    const [copaiba] = parseCensoTabla(HOJA).filas;
+    expect(copaiba.volumenEstimadoM3).toBe(14.853);
+    expect(copaiba.volumenDeLaHoja).toBe(true);
+    expect(copaiba.dapM).toBe(1.15);
+    // Cuadra con ff 0,65: no hay aviso de volumen.
+    expect(copaiba.avisos.some((a) => a.includes("no cuadra"))).toBe(false);
+  });
+
+  it("un DAP «0,870» no se lee como 870 cm", () => {
+    const r = parseCensoTabla("codigo;especie;dap\nA1;Tornillo;0,870");
+    expect(r.filas[0].dapM).toBe(0.87);
+  });
+
+  it("las coordenadas sí aceptan separador de miles", () => {
+    const r = parseCensoTabla('codigo\tespecie\teste\tnorte\nA1\tTornillo\t"521,922"\t"8,918,151"');
+    expect(r.filas[0].utmX).toBe(521_922);
+    expect(r.filas[0].utmY).toBe(8_918_151);
+  });
+
+  it("un volumen que no puede salir de un factor de forma real se avisa", () => {
+    const r = parseCensoTabla(`${ENCABEZADO}\n1\t2\tCopaiba\t\t\t1,15\t22\t148,53\t521922\t8918151\tAprovechable\t`);
+    expect(r.filas[0].avisos.some((a) => a.includes("no cuadra"))).toBe(true);
+    // Se importa igual: el volumen declarado es el de la hoja.
+    expect(r.filas[0].errores).toEqual([]);
+  });
+
+  it("sin columna de volumen, se calcula como antes", () => {
+    const r = parseCensoTabla("codigo,especie,dap,altura\nA1,Tornillo,0.80,16");
+    expect(r.filas[0].volumenDeLaHoja).toBe(false);
+    expect(r.filas[0].volumenEstimadoM3).toBeCloseTo(5.2276, 3);
+  });
+
+  it("una celda con salto de línea entre comillas no corta el encabezado", () => {
+    const r = parseCensoTabla('Cod\tN. Comun\t"Nombre en\nidioma nativo"\n2\tCopaiba\tCoubé');
+    expect(r.filas).toHaveLength(1);
+    expect(r.filas[0].speciesNative).toBe("Coubé");
+  });
+
+  it("desde un .xlsx (celdas con números) da lo mismo que pegado", () => {
+    const r = parseCensoFilas([
+      ["N°", "Cod", "N. Comun", "N. Cientifico", "Nombre en idioma nativo", "DAP", "altura", "vol", "Este", "Norte", "condicion", "observaciones"],
+      [1, 2, "Copaiba", "Copaifera reticulata Ducke", "Coubé", 1.15, 22, 14.853, 521922, 8918151, "Aprovechable", null],
+    ]);
+    expect(r.filas[0]).toMatchObject({ treeCode: "2", speciesCommon: "Copaiba", speciesNative: "Coubé", dapM: 1.15, volumenEstimadoM3: 14.853, utmX: 521922 });
+  });
+
+  it("lo que va al servidor lleva los campos nuevos", () => {
+    const [fila] = filasImportables(parseCensoTabla(HOJA));
+    expect(fila).toMatchObject({ speciesScientific: "Copaifera reticulata Ducke", speciesNative: "Coubé", condicion: "Aprovechable", volumenEstimadoM3: 14.853 });
   });
 });
