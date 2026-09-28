@@ -1,6 +1,6 @@
 # ADR-446 — Registrar en el libro la salida de un Anexo 04 guardado, y la GTF con el largo real de su talonario
 
-**Estado:** Propuesto (2026-09-28) — **pendiente de 10 decisiones de Brandon** (sección «Decisiones»). No construir antes.
+**Estado:** Propuesto (2026-09-28) — **3 de 10 decisiones tomadas** (28-09); faltan 7 (sección «Decisiones»). No construir antes.
 **Relacionados:** ADR-444 (un paquete en UNA guía vigente), ADR-445 (origen y salida del día), ADR-437 (madera de servicio WASACO).
 
 ## Contexto
@@ -64,13 +64,13 @@ El modal de despacho actual (no ofrece corridas «usado», no es atómico) · af
 
 ## Decisiones de Brandon (pendientes)
 
-1. La guía 064 tiene dos Anexos 04 (251 y 256 piezas): ¿cuál viajó?
+1. ✅ **La guía 064 viajó con el Anexo de 256 piezas (25/09, 19,720 m³).** El de 251 (24/09) queda marcado «reemplazado», no se borra.
 2. En la 064 salieron 16 piezas de Azúcar huayo sin producción anotada: anotarla antes.
-3. Los despachos del 27-28/09 salieron con 19-00000: ¿fueron reales? ¿qué número tenían?
+3. Los despachos del 27-28/09 salieron con 19-00000: ¿fueron reales? ¿qué número tenían? (preguntado el 28-09, sin respuesta todavía)
 4. ¿La serie del talonario es 19-001 con 7 dígitos?
 5. Guías 060 y 062 (09/09): ¿salieron del inventario del 1 de agosto?
 6. Sobran ~8 m³ del inventario de agosto: ¿vendido sin guía, merma o sigue en el patio?
-7. El Tornillo del inventario del 1 de agosto: ¿de Blas o de WASACO?
+7. ✅ **El Tornillo del inventario del 1 de agosto es de WASACO (servicio):** sin precio de venta ni costo (`valorVenta` null), igual que el permiso de Santos Muñoz.
 8. ~2 m³ de Tornillo corto y tablas sin producción de ese tipo: ¿anotar producción o dejar sin origen?
 9. Guías 059 y 061 sin anexo: ¿existen?
-10. Paquetes de montón que salieron en varias guías: ¿se parten en «lo que salió» y «lo que queda»?
+10. ✅ **Sí, se parten** en «lo que salió en esta guía» y «lo que queda» (decisión 3 del diseño).
