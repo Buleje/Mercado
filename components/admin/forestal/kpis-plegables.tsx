@@ -24,12 +24,20 @@
 
 import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
 import { BarChart3, ChevronDown } from "@buleje/design-system/icons";
+import { SkeletonKPICard } from "@/components/ui-system";
 
 export interface KpisPlegablesProps {
   claveMemoria: string;
   tarjetas: ReactNode[];
   /** El titular en una línea (dos o tres cifras), de las MISMAS cuentas que las tarjetas. */
   resumen?: string;
+  /**
+   * Todavía no hay una cifra real que mostrar —primera carga o el pedido
+   * falló sin traer nada— (Brandon 27-09: «Disponibles sin 0 al cargar»).
+   * Mientras es `true`, el panel pinta skeletons en vez de las tarjetas: un
+   * «0 · Nada disponible» de mentira se lee como el dato real.
+   */
+  sinDatosAun?: boolean;
   /** Lo que acompaña al titular con el panel cerrado (el mini-gauge de rendimiento). */
   resumenExtra?: ReactNode;
   /** El bloque ancho ARRIBA de las tarjetas dentro del panel (el balance del período). */
@@ -57,6 +65,7 @@ export function useKpisPlegables({
   filtrosActivos = 0,
   trabajoActivo = false,
   alto = "sm",
+  sinDatosAun = false,
 }: KpisPlegablesProps): { boton: ReactNode; panel: ReactNode; abierto: boolean } {
   /* Clave `v2`: la v1 guardaba «¿está abierta la SEGUNDA fila?», otra pregunta. */
   const [abierto, setAbierto] = useState(false);
@@ -135,13 +144,15 @@ export function useKpisPlegables({
   );
 
   const panel = abierto ? (
-    <div className="space-y-2">
+    <div className="space-y-2" aria-busy={sinDatosAun}>
       {filtros}
       {encabezado}
       {/* `auto-fit`: plegado son dos y desplegado cinco; un número fijo de
           columnas dejaba huecos del alto de una tarjeta. */}
       <div className="grid grid-cols-[repeat(auto-fit,minmax(230px,1fr))] gap-3">
-        {tarjetas.map((k, i) => <Fragment key={i}>{k}</Fragment>)}
+        {sinDatosAun
+          ? tarjetas.map((_, i) => <SkeletonKPICard key={i} />)
+          : tarjetas.map((k, i) => <Fragment key={i}>{k}</Fragment>)}
       </div>
     </div>
   ) : null;
