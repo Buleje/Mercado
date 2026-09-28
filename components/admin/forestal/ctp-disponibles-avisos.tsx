@@ -15,9 +15,10 @@
 
 import { BookmarkPlus, Clock, Layers, Ruler } from "@buleje/design-system/icons";
 import { DIAS_VIEJO } from "@/lib/forestal/edad-del-patio";
+import type { ClaveAvisoProducto } from "@/lib/forestal/productos-disponibles-resumen";
 
-/** Los cuatro avisos que la pestaña puede dar sobre su propio stock. */
-export type ClaveAviso = "sin-escuadria" | "sin-piezas" | "viejos" | "apartados";
+/** Los cuatro avisos que la pestaña puede dar sobre su propio stock (la regla vive en el lib). */
+export type ClaveAviso = ClaveAvisoProducto;
 
 export type CuentaAvisos = Record<ClaveAviso, number>;
 
