@@ -234,6 +234,26 @@ export default function AdminModal({
 }: AdminModalProps) {
   /* Portal a <body>: sin esto el modal hereda los tokens de la tienda. */
   const panelTokens = usePanelTokens(open);
+  /* AdminModal se abre por estado (`open` controlado), nunca con
+     `Dialog.Trigger` — el `triggerRef` interno de Radix queda null, así que su
+     `onCloseAutoFocus` (`triggerRef.current?.focus()`) no hace nada y el foco
+     cae a <body>: hay que recorrer la página desde arriba con Tab, y en la
+     mayoría de los navegadores enfocar <body> (o lo que sea que reciba el
+     foco después) dispara un scroll a donde ESE elemento vive en el layout —
+     medido: la página saltaba al fondo al cerrar. Se guarda a mano qué tenía
+     el foco antes de abrir y se restaura sin mover el scroll.
+     Se captura en un `useEffect([open])`, NO dentro de `onOpenAutoFocus`:
+     probado en navegador con los dos — capturar ahí devolvía el foco al
+     header/asa de la ventana en vez de al botón que abrió el modal (falso
+     intento de evitar una carrera con el FocusScope de Radix que, medido,
+     nunca existió). El efecto corre después del primer paint del modal, con
+     el trigger todavía enfocado en el commit anterior. */
+  const disparadorRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    if (!open) return;
+    const activo = document.activeElement;
+    disparadorRef.current = activo instanceof HTMLElement && activo !== document.body ? activo : null;
+  }, [open]);
   /* Para `onEscapeKeyDown`: Radix invoca ese callback con el KeyboardEvent
      NATIVO tal como llegó a su propio listener en `document` — su
      `currentTarget` ahí es `document`, no el content. Un ref propio es la
@@ -304,6 +324,14 @@ export default function AdminModal({
              diálogo entero (medido: Escape se llevaba las dos capas). */
           onEscapeKeyDown={(e) => {
             if (contentRef.current?.hasAttribute("data-menu-abierto")) e.preventDefault();
+          }}
+          /* Reemplaza el `triggerRef.current?.focus()` de Radix (null acá,
+             ver comentario de `disparadorRef` arriba): vuelve el foco al
+             control que abrió el modal, SIN desplazar la página. */
+          onCloseAutoFocus={(e) => {
+            e.preventDefault();
+            const el = disparadorRef.current;
+            if (el?.isConnected) el.focus({ preventScroll: true });
           }}
           /* Con el modal fijado el clic afuera no cierra. Escape y la X sí:
              fijar no puede dejar a nadie encerrado. */

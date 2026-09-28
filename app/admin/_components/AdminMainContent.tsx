@@ -61,9 +61,9 @@ function AdminMainContentInner({
       id="main-content"
       aria-label="Contenido del módulo activo"
       className={cn(
-        "flex-1 mx-auto w-full pb-[calc(88px+env(safe-area-inset-bottom))] sm:pb-8",
+        "flex-1 mx-auto w-full",
         presentationMode
-          ? "max-w-full px-4 py-4"
+          ? "max-w-full px-4 pt-4"
           : compactMode
             /* Compact ya pedía "casi todo el viewport": +25% sobre el ancho
                normal en cada escalón, en vez del 1920px fijo que en un 1440p
@@ -74,14 +74,28 @@ function AdminMainContentInner({
                → 2160 (≥2100px) → 2400 (≥2560px). Ver globals.css §PANEL SHELL. */
             : "max-w-[var(--panel-max,1600px)]",
         compactMode && !presentationMode
-          ? "px-[calc(var(--panel-gutter)*0.75)] py-3 sm:py-4"
+          ? "px-[calc(var(--panel-gutter)*0.75)] pt-3 sm:pt-4"
           : !presentationMode
             /* El gutter también es un token: 20px en laptop (cada píxel es
                contenido), 24 estándar, 32/40/48 en monitores grandes. El aire
                vertical va por su cuenta: se achica en pantallas BAJAS, donde
                32px arriba son 32px menos de tabla. */
-            ? "px-4 sm:px-[var(--panel-gutter)] py-4 sm:py-[var(--panel-pad-y,32px)]"
+            ? "px-4 sm:px-[var(--panel-gutter)] pt-4 sm:pt-[var(--panel-pad-y,32px)]"
             : "",
+        /* Piso al pie de la vista — ÚNICA declaración de padding-bottom del
+           <main> a propósito: mezclarla con un `py-*` de arriba hacía que
+           Tailwind decidiera el ganador por su propio orden interno de
+           generación, no por el orden de esta lista (medido: `py-4
+           sm:py-[var(--panel-pad-y)]` le ganaba a un `pb-*` anterior y lo
+           dejaba en 18px reales aunque pedía 32).
+           El "+" de Acciones rápidas es `fixed bottom-6 right-6 h-14 w-14`
+           (80px desde el borde inferior/derecho — ver QuickActionsFab). Sin
+           este piso, lo último de una vista larga queda tapado al llegar al
+           fondo del scroll: medido con Playwright, el botón "Agregar" del
+           censo (LO-TH) no recibía el clic porque el "+" quedaba encima.
+           88px en mobile es el alto real de la barra inferior + safe-area;
+           96px en desktop cubre los 80px del FAB con margen. */
+        "pb-[calc(88px+env(safe-area-inset-bottom))] sm:pb-24",
       )}
       {...swipeHandlers}
     >
