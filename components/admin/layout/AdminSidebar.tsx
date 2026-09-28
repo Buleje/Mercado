@@ -20,7 +20,7 @@ import { preloadTab } from "@/app/admin/_lib/tab-preload";
 import { SECTION_BEFORE, type TabCategory } from "@/app/admin/_lib/tab-categories";
 import { MODULE_INFO, TAB_CATEGORIES } from "@/app/admin/_lib/tab-categories";
 import { SPEC_GATED_MODULE_IDS, useEnabledSpecs } from "@/hooks/use-enabled-specs";
-import { SidebarFlyout } from "@/components/admin/shared/SidebarFlyout";
+import { PillPronto, SidebarFlyout } from "@/components/admin/shared/SidebarFlyout";
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import SidebarConfigurator from "@/components/admin/shared/SidebarConfigurator";
 import type { SidebarTheme, AccentColor, Density, IconStyle } from "@/components/admin/shared/SidebarConfigurator";
@@ -379,6 +379,31 @@ export const AdminSidebar = React.memo(function AdminSidebar({
     } catch { /* ignore */ }
     return new Set();
   });
+
+  /**
+   * Qué tabs de una categoría se ven y cuáles salen como «Pronto». UNA fuente
+   * para el menú desplegado, los íconos del compacto y los dos flyouts.
+   *
+   * Brandon 2026-09-28: «pon lo mismo en el menú que el desplegable… no me deja
+   * ir a títulos habilitantes». Cada lista filtraba distinto: los flyouts sólo
+   * miraban permisos y plantilla, así que ofrecían un libro con su
+   * especialización apagada (el acordeón ya no lo mostraba) y el clic no llevaba
+   * a ninguna parte. Tampoco respetaban los ocultos del usuario ni el tipo de
+   * negocio.
+   */
+  const tabsDeCategoria = React.useCallback(
+    (category: { tabs: readonly string[] }) =>
+      applyVerticalFilter(
+        category.tabs.filter(
+          (t) =>
+            allowedTabs.includes(t as Tab) &&
+            !hiddenTabs.has(t as Tab) &&
+            !hiddenSubTabs.has(t as Tab) &&
+            !isHiddenByTemplate(t),
+        ),
+      ),
+    [applyVerticalFilter, allowedTabs, hiddenTabs, hiddenSubTabs, isHiddenByTemplate],
+  );
 
   // ── Category order (persisted in localStorage) ──
   const [categoryOrder, setCategoryOrder] = React.useState<string[]>(() => {
@@ -909,16 +934,8 @@ export const AdminSidebar = React.memo(function AdminSidebar({
 
           {/* ── Main modules (expanded mode) ── */}
           {!effectiveCompact && navCategories.map((category, catIdx) => {
-            // 1. Filtros previos (RBAC + hidden user + template)
-            const rbacFiltered = category.tabs.filter(
-              t =>
-                allowedTabs.includes(t as Tab) &&
-                !hiddenTabs.has(t as Tab) &&
-                !hiddenSubTabs.has(t as Tab) &&
-                !isHiddenByTemplate(t),
-            );
-            // 2. Filtro vertical (industry)
-            const { visible: verticalVisible, comingSoon: catComingSoon } = applyVerticalFilter(rbacFiltered);
+            // RBAC + ocultos del usuario + plantilla + tipo de negocio + especialización.
+            const { visible: verticalVisible, comingSoon: catComingSoon } = tabsDeCategoria(category);
             const catTabs = verticalVisible;
             // comingSoon items for this category (shown disabled)
             const catComingSoonItems = catComingSoon;
@@ -1130,13 +1147,11 @@ export const AdminSidebar = React.memo(function AdminSidebar({
                                     "relative w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[length:var(--ts-sm)] opacity-50 cursor-not-allowed select-none",
                                     themeClasses.text
                                   )}
-                                  title="Modulo proximento disponible"
+                                  title="Módulo disponible pronto"
                                 >
                                   {ComingIcon && <ComingIcon className="h-4 w-4 shrink-0" />}
                                   <span className="truncate">{label}</span>
-                                  <span className="ml-auto shrink-0 text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-md bg-[var(--text-tertiary)]/15 text-[var(--text-tertiary)] leading-none">
-                                    Pronto
-                                  </span>
+                                  <PillPronto className="ml-auto" />
                                 </div>
                               );
                             })}
@@ -1157,11 +1172,7 @@ export const AdminSidebar = React.memo(function AdminSidebar({
               varios, el hover abre el flyout con la lista completa — las
               mismas opciones que al desplegar. */}
           {effectiveCompact && navCategories.map((category) => {
-            const rbacC = category.tabs.filter(
-              t => allowedTabs.includes(t as Tab) && !hiddenTabs.has(t as Tab)
-                && !hiddenSubTabs.has(t as Tab) && !isHiddenByTemplate(t),
-            );
-            const { visible: catTabs } = applyVerticalFilter(rbacC);
+            const { visible: catTabs } = tabsDeCategoria(category);
             if (catTabs.length === 0) return null;
             const single = catTabs.length === 1;
             const first = catTabs[0];
@@ -1348,7 +1359,7 @@ export const AdminSidebar = React.memo(function AdminSidebar({
       {effectiveCompact && sidebarFlyout && (() => {
         const cat = visibleCategories.find(c => c.id === sidebarFlyout.categoryId);
         if (!cat) return null;
-        const catTabs = cat.tabs.filter(t => allowedTabs.includes(t as Tab) && !isHiddenByTemplate(t));
+        const { visible: catTabs, comingSoon: catProximos } = tabsDeCategoria(cat);
         if (catTabs.length <= 1) return null;
         return (
           <m.div
@@ -1381,9 +1392,24 @@ export const AdminSidebar = React.memo(function AdminSidebar({
                 >
                   <FlyoutTabIcon className="h-4 w-4 shrink-0" />
                   <span className="truncate flex-1 text-left">{resolveLabel(tabId, tabInfo.label)}</span>
-                  <ScopeBadge tabId={tabId} variant="chip" />
-                  {tab === tabId && <div className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />}
+                  <ScopeBadge tabId={tabId} variant="dot" />
                 </button>
+              );
+            })}
+            {catProximos.map((tabId) => {
+              const tabInfo = allTabs.find(t => t.id === tabId);
+              if (!tabInfo) return null;
+              const ProximoIcon = tabInfo.icon;
+              return (
+                <div
+                  key={`pronto-${tabId}`}
+                  title="Módulo disponible pronto"
+                  className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-medium text-[var(--text-primary)] opacity-50 cursor-not-allowed select-none"
+                >
+                  <ProximoIcon className="h-4 w-4 shrink-0" />
+                  <span className="truncate flex-1 text-left">{resolveLabel(tabId, tabInfo.label)}</span>
+                  <PillPronto />
+                </div>
               );
             })}
           </m.div>
@@ -1394,19 +1420,20 @@ export const AdminSidebar = React.memo(function AdminSidebar({
       {!effectiveCompact && hoveredCategory && flyoutPosition && (() => {
         const cat = visibleCategories.find(c => c.id === hoveredCategory);
         if (!cat) return null;
-        const catTabs = cat.tabs.filter(
-          t => allowedTabs.includes(t as Tab) && !hiddenTabs.has(t as Tab) && !isHiddenByTemplate(t)
-        );
+        const { visible: catTabs, comingSoon: catProximos } = tabsDeCategoria(cat);
         if (catTabs.length <= 1) return null;
-        const flyoutTabs = catTabs
-          .map(tId => allTabs.find(t => t.id === tId))
-          .filter((t): t is typeof allTabs[number] => t != null)
-          .map(t => ({ id: t.id as string, label: resolveLabel(t.id, t.label), icon: t.icon as React.ComponentType<{ className?: string }> }));
+        const aFila = (ids: string[]) =>
+          ids
+            .map(tId => allTabs.find(t => t.id === tId))
+            .filter((t): t is typeof allTabs[number] => t != null)
+            .map(t => ({ id: t.id as string, label: resolveLabel(t.id, t.label), icon: t.icon as React.ComponentType<{ className?: string }> }));
+        const flyoutTabs = aFila(catTabs);
         return (
           <SidebarFlyout
             key={hoveredCategory}
             category={{ id: cat.id, label: cat.label, tabs: catTabs as string[] }}
             tabs={flyoutTabs}
+            proximos={aFila(catProximos)}
             activeTab={tab}
             onNavigate={(tabId) => navigateTab(tabId as Tab)}
             position={flyoutPosition}

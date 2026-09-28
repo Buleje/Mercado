@@ -8,9 +8,29 @@ import { preloadTab } from "@/app/admin/_lib/tab-preload";
 // ─── Types ───────────────────────────────────────────────────────────────────
 export type FlyoutTheme = "light" | "dark" | "cristal";
 
+/** «Pronto»: el módulo existe para este tipo de negocio pero todavía no se abre. Igual en menú y flyouts. */
+export function PillPronto({ className }: { className?: string }) {
+  return (
+    <span
+      className={cn(
+        "shrink-0 text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-md bg-[var(--text-tertiary)]/15 text-[var(--text-tertiary)] leading-none",
+        className,
+      )}
+    >
+      Pronto
+    </span>
+  );
+}
+
 interface SidebarFlyoutProps {
   category: { id: string; label: string; tabs: string[] };
   tabs: Array<{
+    id: string;
+    label: string;
+    icon: React.ElementType;
+  }>;
+  /** Los que el menú muestra como «Pronto»: se ven, pero no se abren. */
+  proximos?: Array<{
     id: string;
     label: string;
     icon: React.ElementType;
@@ -29,6 +49,7 @@ interface SidebarFlyoutProps {
 export function SidebarFlyout({
   category: _category,
   tabs,
+  proximos = [],
   activeTab,
   onNavigate,
   position,
@@ -136,10 +157,26 @@ export function SidebarFlyout({
               )}
             />
             <span className="truncate flex-1 text-left">{label}</span>
-            <ScopeBadge tabId={id} variant="chip" />
+            {/* El mismo punto que el menú: el chip «TIENDA» repetido en cada
+                fila gritaba lo mismo cuatro veces (Brandon 28-09). */}
+            <ScopeBadge tabId={id} variant="dot" />
           </button>
         );
       })}
+      {proximos.map(({ id, label, icon: Icon }) => (
+        <div
+          key={`pronto-${id}`}
+          title="Módulo disponible pronto"
+          className={cn(
+            "relative w-full flex items-center gap-2.5 px-4 py-2.5 text-[length:var(--ts-sm)] font-medium opacity-50 cursor-not-allowed select-none",
+            themeStyles.inactiveText,
+          )}
+        >
+          <Icon className={cn("h-4 w-4 shrink-0", themeStyles.inactiveIcon)} />
+          <span className="truncate flex-1 text-left">{label}</span>
+          <PillPronto />
+        </div>
+      ))}
     </div>
   );
 }
