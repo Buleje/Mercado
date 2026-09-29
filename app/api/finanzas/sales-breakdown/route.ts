@@ -3,7 +3,8 @@ import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { getOrSet } from "@/lib/cache";
 import { toNumOrZero } from "@/lib/decimal-utils";
-import { utcMonthRange, utcDayKey } from "@/lib/finance/monthly-range";
+import { utcDayKey } from "@/lib/finance/monthly-range";
+import { mesLima, rangoDelMesLima } from "@/lib/finance/ingresos-del-periodo";
 import { logger } from "@/lib/logger";
 
 /**
@@ -17,7 +18,7 @@ import { logger } from "@/lib/logger";
  *   - daily: ingresos por día (UTC) de los últimos `days` días.
  *
  * @prisma-direct ok — agregados/consultas con scope explícito por `auth.tenantId`.
- * Bucketing UTC (utcMonthRange / utcDayKey) → coincide con el cliente.
+ * Mes de Lima (rangoDelMesLima) para los medios de pago; días en UTC (utcDayKey).
  */
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req);
@@ -32,7 +33,10 @@ export async function GET(req: NextRequest) {
       120,
       async () => {
         const ref = new Date();
-        const monthStart = utcMonthRange(ref, 0).start;
+        // Mes de calendario de LIMA, el mismo corte que «Ingresos del mes»
+        // (lib/finance/ingresos-del-periodo.ts). Los días del flujo diario
+        // siguen en UTC.
+        const monthStart = rangoDelMesLima(mesLima(ref)).start;
         const windowStart = new Date(
           Date.UTC(ref.getUTCFullYear(), ref.getUTCMonth(), ref.getUTCDate() - (days - 1)),
         );

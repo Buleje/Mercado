@@ -9,7 +9,8 @@ import {
   ChevronDown, ChevronUp, Download, BarChart2,
   ArrowUpRight, ArrowDownRight, Minus,
 } from "@buleje/design-system/icons";
-import { cn, exportToCSV } from "@/lib/utils";
+import { cn, exportToCSV, limaDateKey } from "@/lib/utils";
+import { gastoDelMes, mesDeGasto, type IngresoDelMes } from "@/lib/finance/ingresos-del-periodo";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -38,6 +39,9 @@ type MaderaPL = {
 type PLSummary = {
   period: string;
   revenue: number;
+  /** De dónde salen los ingresos del mostrador (POS y pedidos). */
+  ventasPos: number;
+  pedidos: number;
   cogs: number;
   /** El corte forestal del período, para poder explicar el total. */
   madera: MaderaPL | null;
@@ -79,6 +83,11 @@ function variacionMensual(actual?: number, base?: number): number | undefined {
   return Number.isFinite(v) ? v : undefined;
 }
 
+/** «YYYY-MM-DD» de un día de calendario (Date.UTC normaliza el mes y el día fuera de rango). */
+function diaCalendario(y: number, m0: number, d: number): string {
+  return new Date(Date.UTC(y, m0, d)).toISOString().slice(0, 10);
+}
+
 function buildMonthLabel(year: number, month: number) {
   return `${SHORT_MONTHS[month]} ${year}`;
 }
@@ -97,39 +106,48 @@ function deltaIcon(val: number) {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function PLTab() {
-  const now = new Date();
-  const [year, setYear] = useState(now.getFullYear());
-  const [month, setMonth] = useState(now.getMonth());
+  // El mes «actual» es el de Lima: con la hora local del navegador, fuera de
+  // Perú (o a las 20:00 del último día en un equipo en UTC) abría el mes siguiente.
+  const hoyLima = limaDateKey();
+  const anioLima = Number(hoyLima.slice(0, 4));
+  const [year, setYear] = useState(anioLima);
+  const [month, setMonth] = useState(Number(hoyLima.slice(5, 7)) - 1);
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState<PLSummary | null>(null);
   const [months, setMonths] = useState<MonthData[]>([]);
   const [expandExpenses, setExpandExpenses] = useState(false);
   const [tick, setTick] = useState(0);
 
-  // Carga datos REALES: una ventana de 6 meses (orders + expenses) y de ahí se
+  // Carga datos REALES: una ventana de 6 meses (ingresos + expenses) y de ahí se
   // derivan tanto el resumen del mes seleccionado como el trend de 6 meses.
   // (Antes el trend usaba Math.random — ver buildMockMonths eliminado.)
+  //
+  // Los ingresos salen de /api/finanzas/monthly-summary, la MISMA fuente que el
+  // Resumen (regla en lib/finance/ingresos-del-periodo.ts). Antes se bajaba
+  // /api/orders y se contaban sólo pedidos «confirmado»/«entregado», sin las
+  // ventas del POS: en el tenant QA mayo daba 54,90 acá y 229,20 en el Resumen.
   useEffect(() => {
     let active = true;
     setLoading(true);
 
     const TREND_MONTHS = 6;
-    const rangeFrom = new Date(year, month - (TREND_MONTHS - 1), 1).toISOString().slice(0, 10);
-    const rangeTo = new Date(year, month + 1, 0).toISOString().slice(0, 10);
+    const rangeFrom = diaCalendario(year, month - (TREND_MONTHS - 1), 1);
+    // Hasta el 01 del mes siguiente: un gasto pagado el último día a las 20:00
+    // de Lima ya es del 01 en UTC. `mesDeGasto` lo devuelve a su mes de Lima.
+    const rangeTo = diaCalendario(year, month + 1, 1);
 
     const monthKey = (y: number, m: number) => `${y}-${String(m + 1).padStart(2, "0")}`;
-    const isIncome = (o: { status?: string }) => o.status === "entregado" || o.status === "confirmado";
-    const ordKey = (o: { createdAt?: string }) => (o.createdAt ?? "").slice(0, 7);
-    const expKey = (e: { date?: string; createdAt?: string }) => (e.date ?? e.createdAt ?? "").slice(0, 7);
 
     /* El mes elegido, para el corte forestal: el Libro CTP responde por rango y
        el resumen de abajo es de UN mes (la serie de seis sigue siendo del
        mostrador — pedir seis rangos más sería seis consultas para un gráfico). */
-    const mesFrom = new Date(year, month, 1).toISOString().slice(0, 10);
-    const mesTo = new Date(year, month + 1, 0).toISOString().slice(0, 10);
+    const mesFrom = diaCalendario(year, month, 1);
+    const mesTo = diaCalendario(year, month + 1, 0);
 
     Promise.all([
-      fetch(`/api/orders?from=${rangeFrom}&to=${rangeTo}`).then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch(`/api/finanzas/monthly-summary?months=${TREND_MONTHS}&hasta=${monthKey(year, month)}`)
+        .then(r => (r.ok ? r.json() : []))
+        .catch(sinDato("P&L /api/finanzas/monthly-summary")),
       fetch(`/api/expenses?from=${rangeFrom}&to=${rangeTo}`).then(r => r.ok ? r.json() : []).catch(() => []),
       /* La venta de madera vive en el Libro (ADR-141) y se pide al MISMO
          endpoint que la usa allá: duplicar la cuenta acá sería una segunda
@@ -138,9 +156,10 @@ export default function PLTab() {
       fetch(`/api/admin/forestal/ctp?pnl=1&from=${mesFrom}&to=${mesTo}`, { credentials: "include" })
         .then(r => (r.ok ? r.json() : null))
         .catch(sinDato("P&L /api/admin/forestal/ctp")),
-    ]).then(([orders, expenses, forestal]) => {
+    ]).then(([ingresosMes, expenses, forestal]) => {
       if (!active) return;
-      const ordersArr: { createdAt?: string; status?: string; total?: number }[] = Array.isArray(orders) ? orders : [];
+      const filas: IngresoDelMes[] = Array.isArray(ingresosMes) ? ingresosMes : [];
+      const ingresoDe = (key: string) => filas.find(f => f.month === key);
       const pnlF = (forestal as { pnl?: { ventasTotal?: number; cogsTotal?: number; margenTotal?: number; sinVenta?: number; sinCosto?: number } } | null)?.pnl;
       const madera: MaderaPL | null =
         pnlF && (pnlF.ventasTotal || pnlF.sinVenta)
@@ -160,10 +179,10 @@ export default function PLTab() {
         const d = new Date(year, month - i, 1);
         const y = d.getFullYear(), m = d.getMonth();
         const key = monthKey(y, m);
-        const revenue = ordersArr.filter(o => ordKey(o) === key && isIncome(o)).reduce((s, o) => s + (o.total ?? 0), 0);
+        const revenue = ingresoDe(key)?.ingresos ?? 0;
         const cogs = revenue * 0.55;
         const grossProfit = revenue - cogs;
-        const monthExp = expArr.filter(e => expKey(e) === key).reduce((s, e) => s + (e.amount ?? 0), 0);
+        const monthExp = gastoDelMes(key, expArr);
         const netProfit = grossProfit - monthExp;
         realMonths.push({
           label: buildMonthLabel(y, m),
@@ -176,7 +195,8 @@ export default function PLTab() {
 
       // ── Resumen del mes seleccionado (con desglose de gastos por categoría) ──
       const selKey = monthKey(year, month);
-      const mostrador = ordersArr.filter(o => ordKey(o) === selKey && isIncome(o)).reduce((s, o) => s + (o.total ?? 0), 0);
+      const delMes = ingresoDe(selKey);
+      const mostrador = delMes?.ingresos ?? 0;
       /* El COGS del mostrador sigue siendo una ESTIMACIÓN (55 %); el de la
          madera sale del costo real de sus guías. Se suman porque el total tiene
          que incluir las dos, y la pantalla dice cuál es cuál — un margen bruto
@@ -184,7 +204,7 @@ export default function PLTab() {
       const revenue = mostrador + (madera?.ventas ?? 0);
       const cogs = mostrador * 0.55 + (madera?.cogs ?? 0);
       const grossProfit = revenue - cogs;
-      const selExpenses = expArr.filter(e => expKey(e) === selKey);
+      const selExpenses = expArr.filter(e => mesDeGasto(e.date ?? e.createdAt) === selKey);
       const totalExpenses = selExpenses.reduce((s, e) => s + (e.amount ?? 0), 0);
       const expMap: Record<string, number> = {};
       for (const e of selExpenses) {
@@ -195,7 +215,7 @@ export default function PLTab() {
 
       setSummary({
         period: `${MONTHS[month]} ${year}`,
-        revenue, cogs, madera, grossProfit, expenses: expMap, totalExpenses, netProfit,
+        revenue, ventasPos: delMes?.ventas ?? 0, pedidos: delMes?.pedidos ?? 0, cogs, madera, grossProfit, expenses: expMap, totalExpenses, netProfit,
         grossMargin: revenue > 0 ? (grossProfit / revenue) * 100 : 0,
         netMargin: revenue > 0 ? (netProfit / revenue) * 100 : 0,
       });
@@ -251,7 +271,7 @@ export default function PLTab() {
             aria-label="Año"
             className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
           >
-            {[now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1].map(y => <option key={y} value={y}>{y}</option>)}
+            {[anioLima - 1, anioLima, anioLima + 1].map(y => <option key={y} value={y}>{y}</option>)}
           </select>
           <button aria-label="Actualizar" onClick={() => setTick(t => t + 1)} className="p-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)] transition-colors">
             <RefreshCw className="h-4 w-4 text-[var(--text-secondary)] dark:text-muted" />
@@ -301,7 +321,13 @@ export default function PLTab() {
             </div>
             <div className="divide-y divide-[var(--rule-soft)] dark:divide-card-border">
               {/* Revenue */}
-              <PLRow label="(+) Ingresos por ventas" value={summary.revenue} bold highlight="blue" />
+              <PLRow
+                label="(+) Ingresos por ventas"
+                value={summary.revenue}
+                bold
+                highlight="blue"
+                sub={summary.ventasPos > 0 && summary.pedidos > 0 ? `mostrador ${fmt(summary.ventasPos)} · pedidos ${fmt(summary.pedidos)}` : undefined}
+              />
               {/* El desglose va pegado al total: si el número de arriba incluye
                   madera y la pantalla no lo dice, no se puede explicar de dónde
                   salió — y el que lo mira busca el error en el mostrador. */}
@@ -439,7 +465,7 @@ function PLRow({
     value < 0 ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]";
 
   return (
-    <div className={cn("flex items-center justify-between px-3 sm:px-6 py-3.5", bold && "bg-gray-50/70 dark:bg-surface/30")}>
+    <div className={cn("flex items-center justify-between px-3 sm:px-6 py-3.5", bold && "bg-[var(--surface-sunken)]")}>
       <div>
         <p className={cn("text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]", bold && "font-bold", large && "text-base")}>{label}</p>
         {sub && <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-0.5">{sub}</p>}

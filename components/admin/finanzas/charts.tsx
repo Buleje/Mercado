@@ -8,6 +8,7 @@ import { formatCurrency } from "@/lib/currency";
 import { logger } from "@/lib/logger";
 import { fetchFinanzas, n, calcHealthScore, MESES, type HealthData } from "@/components/admin/finanzas/shared";
 import { formatMonthYear } from "@/lib/format";
+import { gastoDelMes, type FilaGasto } from "@/lib/finance/ingresos-del-periodo";
 
 export function HealthSemaphore() {
   const [data, setData] = useState<HealthData | null>(null);
@@ -93,22 +94,22 @@ export function ComparativoMensual() {
     // Ingresos mensuales agregados SERVER-SIDE (Sale + Order, INGRESO_ORDER_STATUSES).
     // Antes: /api/sales?limit=5000 crudo bucketeado acá (y sumaba SOLO Sale →
     // inconsistente con el trend de P&L). Reusa /api/finanzas/monthly-summary.
+    //
+    // Gastos: de la lista de gastos reales (sin plantillas de gasto fijo) con
+    // la misma partición de meses que los ingresos. Se leían de
+    // `/api/expenses/summary`.monthly, un campo que ese endpoint no manda: cada
+    // barra de gasto salía en 0 (medido 2026-09-28 en QA: agosto S/ 930).
     Promise.all([
-      fetchFinanzas<{ totalMonth?: number; monthly?: Array<{ month: string; total: number }> } | null>("/api/expenses/summary", null),
+      fetchFinanzas<FilaGasto[]>("/api/expenses?limit=2000&recurring=false", []),
       fetchFinanzas<Array<{ month: string; ingresos: number }>>("/api/finanzas/monthly-summary?months=6", []),
     ])
       .then(([expenses, monthly]) => {
         const series = Array.isArray(monthly) ? monthly : [];
+        const gastosReales = Array.isArray(expenses) ? expenses : [];
         const months = series.map(({ month: monthKey, ingresos }) => {
           const mm = Number(monthKey.split("-")[1]);
           const label = MESES[(mm || 1) - 1];
-          let gastos = 0;
-          if (expenses?.monthly && Array.isArray(expenses.monthly)) {
-            const m = expenses.monthly.find((e: { month: string; total: number }) => e.month === monthKey);
-            gastos = m?.total ?? 0;
-          } else if (expenses?.totalMonth && monthKey === series[series.length - 1]?.month) {
-            gastos = expenses.totalMonth;
-          }
+          const gastos = gastoDelMes(monthKey, gastosReales);
           return { mes: label, ingresos: Math.round(ingresos), gastos: Math.round(gastos), utilidad: Math.round(ingresos - gastos) };
         });
         setChartData(months);

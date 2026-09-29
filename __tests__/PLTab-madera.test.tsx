@@ -11,18 +11,25 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import PLTab from "@/components/admin/PLTab";
+import { limaDateKey } from "@/lib/utils";
 
 const mockFetch = vi.fn();
 
-/** Un pedido entregado del mes en curso, para que el mostrador no sea cero. */
-function pedidoDeHoy(total: number) {
-  return { createdAt: new Date().toISOString(), status: "entregado", total };
+/**
+ * El mes en curso con S/ 1.000 de mostrador, para que no sea cero. Los
+ * ingresos llegan de /api/finanzas/monthly-summary: la misma fuente que el
+ * Resumen (antes PLTab bajaba /api/orders y contaba otra cosa).
+ */
+function mesDeHoy(ingresos: number) {
+  // El mes en curso de LIMA: el que PLTab abre por defecto.
+  const month = limaDateKey().slice(0, 7);
+  return { month, ventas: 0, pedidos: ingresos, ingresos };
 }
 
 function responder(pnl: Record<string, number> | null) {
   mockFetch.mockImplementation((url: string) => {
     const u = String(url);
-    if (u.includes("/api/orders")) return Promise.resolve({ ok: true, json: async () => [pedidoDeHoy(1000)] });
+    if (u.includes("/api/finanzas/monthly-summary")) return Promise.resolve({ ok: true, json: async () => [mesDeHoy(1000)] });
     if (u.includes("/api/expenses")) return Promise.resolve({ ok: true, json: async () => [] });
     if (u.includes("pnl=1")) {
       /* Sin el Libro habilitado el endpoint contesta 403: el P&L no se rompe. */

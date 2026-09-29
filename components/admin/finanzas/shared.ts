@@ -11,7 +11,7 @@
  *  - TTL 30s mantiene la respuesta caliente al cambiar de tab dentro de Finanzas.
  *  - invalidateFinanzasCache() expone limpieza manual ("Actualizar").
  */
-import { INGRESO_ORDER_STATUSES } from "@/lib/finance/finance-kpis";
+import { gastoDelMes, ingresosPorMes, mesLima } from "@/lib/finance/ingresos-del-periodo";
 
 type CacheEntry<T> = { value: T; expiresAt: number };
 const finanzasCache = new Map<string, CacheEntry<unknown>>();
@@ -63,6 +63,10 @@ export type ExpenseRaw = {
 export type PayableRaw = {
   amount?: number;
   total?: number;
+  /** Lo ya pagado: lo que se debe es amount − paidAmount (`netoPorPagar`). */
+  paidAmount?: number;
+  status?: string;
+  dueDate?: string;
   supplierName?: string;
   supplier?: { name?: string };
   description?: string;
@@ -90,20 +94,26 @@ export const n = (v: unknown): number => {
  * admin. Antes Finanzas sumaba SOLO Sale (desigual con Inicio = Order+Sale).
  */
 export function monthIngresos(monthKey: string, sales: SaleRaw[], orders: OrderRaw[]): number {
-  const fromSales = sales
-    .filter((s) => (s.createdAt ?? "").startsWith(monthKey))
-    .reduce((sum, s) => sum + n(s.total), 0);
-  const fromOrders = orders
-    .filter((o) => (o.createdAt ?? "").startsWith(monthKey) && (INGRESO_ORDER_STATUSES as readonly string[]).includes(o.status ?? ""))
-    .reduce((sum, o) => sum + n(o.total), 0);
-  return fromSales + fromOrders;
+  // La regla vive en lib/finance/ingresos-del-periodo.ts (la misma que aplica
+  // /api/finanzas/monthly-summary para Resumen y Ganancias).
+  const [mes] = ingresosPorMes(
+    [monthKey],
+    sales.map((s) => ({ createdAt: s.createdAt ?? "", total: n(s.total) })),
+    orders.map((o) => ({ createdAt: o.createdAt ?? "", total: n(o.total), status: o.status ?? "" })),
+  );
+  return mes?.ingresos ?? 0;
 }
 
 // ── Salud financiera (semáforo) ──────────────────────────────────────────────
 export type HealthData = {
   ingresos: number;
   gastos: number;
-  efectivo: number;
+  /**
+   * El efectivo de la caja abierta, o `null` si no se sabe (no hay caja
+   * abierta o espera un saldo imposible). Antes se inventaba como
+   * `ingresos * 0.3` y la liquidez salía de ese invento.
+   */
+  efectivo: number | null;
   gastosMensuales: number;
   fiadosVencidos: number;
   payablesVencidos: number;
@@ -113,14 +123,19 @@ export function calcHealthScore(d: HealthData) {
   // Factor 1: Margen
   const margen = d.ingresos > 0 ? ((d.ingresos - d.gastos) / d.ingresos) * 100 : 0;
   const margenPts = margen > 25 ? 33 : margen >= 15 ? 20 : 5;
-  // Factor 2: Liquidez
-  const liquidez = d.gastosMensuales > 0 ? d.efectivo / d.gastosMensuales : 0;
-  const liquidezPts = liquidez > 2 ? 33 : liquidez >= 1 ? 20 : 5;
+  // Factor 2: Liquidez — sólo si se sabe cuánto efectivo hay.
+  const liquidezConocida = d.efectivo != null;
+  const liquidez = d.efectivo == null ? null : d.gastosMensuales > 0 ? d.efectivo / d.gastosMensuales : 0;
+  const liquidezPts = liquidez == null ? 0 : liquidez > 2 ? 33 : liquidez >= 1 ? 20 : 5;
   // Factor 3: Deudas
   const deudaRatio = d.ingresos > 0 ? ((d.fiadosVencidos + d.payablesVencidos) / d.ingresos) * 100 : 100;
   const deudaPts = deudaRatio < 10 ? 34 : deudaRatio <= 30 ? 20 : 5;
-  const total = margenPts + liquidezPts + deudaPts;
-  return { total, margenPts, liquidezPts, deudaPts, margen, liquidez, deudaRatio };
+  // Sin liquidez el puntaje se lleva a 100 con los dos factores que sí se
+  // midieron (67 puntos posibles), en vez de rellenar el hueco con un número.
+  const total = liquidezConocida
+    ? margenPts + liquidezPts + deudaPts
+    : Math.round(((margenPts + deudaPts) / 67) * 100);
+  return { total, margenPts, liquidezPts, deudaPts, margen, liquidez, liquidezConocida, deudaRatio };
 }
 
 // ── KPIs del mes: por qué existen estas dos funciones ────────────────────────
@@ -141,9 +156,12 @@ export function calcHealthScore(d: HealthData) {
  * cambie de forma otra vez.
  */
 
-/** `YYYY-MM` del mes de `fecha`, la clave que usa monthly-summary. */
-export const claveDeMes = (fecha: Date): string =>
-  `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, "0")}`;
+/**
+ * `YYYY-MM` del mes de LIMA de `fecha`, la clave que usa monthly-summary. Era
+ * el mes de la hora local del navegador: fuera de Perú (o en un servidor en
+ * UTC) el 30/09 a las 20:00 ya era octubre.
+ */
+export const claveDeMes = (fecha: Date): string => mesLima(fecha);
 
 /**
  * Ingresos del mes en curso. Prefiere el KPI del endpoint; si no vino (hoy es
@@ -172,9 +190,8 @@ export function gastosDelMes(
 ): number {
   const delKpi = n(expSummary?.totalMonth ?? expSummary?.total);
   if (delKpi) return delKpi;
-  const inicio = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
-  return gastos.reduce((acc, e) => {
-    const f = new Date(e.date ?? e.createdAt ?? "");
-    return Number.isNaN(f.getTime()) || f < inicio ? acc : acc + n(e.amount);
-  }, 0);
+  // El mes de Lima, con la misma regla que las barras del gráfico (una fecha
+  // sola del formulario es un día de calendario). Antes: todo lo posterior al
+  // 01 en hora local, sin tope — un gasto con fecha futura se sumaba al mes.
+  return gastoDelMes(claveDeMes(ahora), gastos);
 }

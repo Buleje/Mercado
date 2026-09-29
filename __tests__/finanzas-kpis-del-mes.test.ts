@@ -113,8 +113,12 @@ describe("utilidad y margen que se derivan", () => {
 
 describe("claveDeMes", () => {
   it("arma YYYY-MM con el mes en dos dígitos", () => {
-    expect(claveDeMes(new Date(2026, 8, 6))).toBe("2026-09");
-    expect(claveDeMes(new Date(2026, 11, 31))).toBe("2026-12");
-    expect(claveDeMes(new Date(2026, 0, 1))).toBe("2026-01");
+    expect(claveDeMes(new Date("2026-09-06T15:00:00Z"))).toBe("2026-09");
+    expect(claveDeMes(new Date("2026-12-31T15:00:00Z"))).toBe("2026-12");
+    expect(claveDeMes(new Date("2026-01-01T05:00:00Z"))).toBe("2026-01");
+  });
+
+  it("es el mes de LIMA, no el de la hora local: el 30/09 a las 20:00 de Pucallpa sigue siendo setiembre", () => {
+    expect(claveDeMes(new Date("2026-10-01T01:00:00Z"))).toBe("2026-09");
   });
 });

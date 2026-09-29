@@ -3,37 +3,54 @@ import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { getOrSet } from "@/lib/cache";
 import { toNumOrZero } from "@/lib/decimal-utils";
-import { INGRESO_ORDER_STATUSES } from "@/lib/finance/finance-kpis";
-import { utcMonthRange } from "@/lib/finance/monthly-range";
+import {
+  ESTADOS_PEDIDO_QUE_ENTRAN, combinarIngresos, mesLima, mesesHasta, parsearMes, rangoDelMesLima,
+  type IngresoDelMes,
+} from "@/lib/finance/ingresos-del-periodo";
 import { logger } from "@/lib/logger";
 
 /**
- * GET /api/finanzas/monthly-summary?months=6
+ * GET /api/finanzas/monthly-summary?months=6[&hasta=YYYY-MM]
  *
- * Ingresos mensuales agregados server-side: Σ Sale.total + Σ Order.total (con
- * INGRESO_ORDER_STATUSES), por mes. Reemplaza el fetch de /api/orders?limit=5000
- * que traía las filas crudas al cliente para que FinanzasModule las bucketeara.
+ * Ingresos por mes: Σ Sale.total + Σ Order.total de los pedidos concretados.
+ * La regla (qué entra y cómo se parten los meses) vive en
+ * `lib/finance/ingresos-del-periodo.ts`; este endpoint la aplica con agregados
+ * y es la ÚNICA fuente de ingresos de Mi Plata — la leen el Resumen y
+ * Ganancias. Antes Ganancias bajaba `/api/orders` y filtraba en el navegador
+ * con otros estados y sin las ventas del POS: mayo daba 229,20 en una pestaña
+ * y 54,90 en la otra.
+ *
+ * Los meses son de calendario de LIMA (01 a las 05:00 UTC → 01 siguiente a las
+ * 05:00 UTC): una venta del 30/09 a las 20:00 de Pucallpa es de setiembre.
+ *
+ * `hasta` (opcional, `YYYY-MM`) fija el último mes de la serie: Ganancias deja
+ * elegir el mes. Sin él, el mes en curso en Lima. Cada fila trae además el
+ * desglose `ventas`/`pedidos` para que una pantalla pueda decir de dónde sale.
  *
  * @prisma-direct ok — agregados con scope explícito por `auth.tenantId`.
- * Bucketing UTC (utcMonthRange) → coincide EXACTO con el cliente (createdAt
- * .slice(0,7)). Verificado en __tests__/lib/monthly-range.test.ts.
  */
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 
-  const monthsParam = Number(new URL(req.url).searchParams.get("months"));
+  const params = new URL(req.url).searchParams;
+  const monthsParam = Number(params.get("months"));
   const months = Math.min(24, Math.max(1, Number.isFinite(monthsParam) && monthsParam > 0 ? monthsParam : 6));
+  const hastaParam = params.get("hasta");
+  const hasta = parsearMes(hastaParam);
+  if (hastaParam && !hasta) {
+    return NextResponse.json({ error: "hasta debe ser YYYY-MM" }, { status: 400 });
+  }
+  const ultimo = hasta ?? mesLima(new Date());
 
   try {
     const payload = await getOrSet(
-      `finanzas:monthly-summary:${auth.tenantId}:${months}`,
+      `finanzas:monthly-summary:${auth.tenantId}:${months}:${ultimo}`,
       120,
       async () => {
-        const ref = new Date();
-        const result: { month: string; ingresos: number }[] = [];
-        for (let i = months - 1; i >= 0; i--) {
-          const { monthKey, start, end } = utcMonthRange(ref, i);
+        const result: IngresoDelMes[] = [];
+        for (const month of mesesHasta(ultimo, months)) {
+          const { start, end } = rangoDelMesLima(month);
           const [saleAgg, orderAgg] = await Promise.all([
             prisma.sale.aggregate({
               _sum: { total: true },
@@ -44,14 +61,12 @@ export async function GET(req: NextRequest) {
               where: {
                 tenantId: auth.tenantId,
                 createdAt: { gte: start, lt: end },
-                status: { in: [...INGRESO_ORDER_STATUSES] },
+                status: { in: [...ESTADOS_PEDIDO_QUE_ENTRAN] },
+                deletedAt: null,
               },
             }),
           ]);
-          result.push({
-            month: monthKey,
-            ingresos: toNumOrZero(saleAgg._sum.total) + toNumOrZero(orderAgg._sum.total),
-          });
+          result.push(combinarIngresos(month, toNumOrZero(saleAgg._sum.total), toNumOrZero(orderAgg._sum.total)));
         }
         return result;
       },
