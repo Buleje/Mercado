@@ -7,6 +7,7 @@ import {
   ComprobanteNoValidoError,
   CuentaForestalDeshabilitadaError,
   LiquidacionCuentaDB,
+  LiquidacionIdempotenciaDistintaError,
   PersonaNoEncontradaError,
   PlanCambioError,
   PlanInvalidoError,
@@ -21,6 +22,8 @@ import { liquidacionInputSchema } from "@/lib/cuentas/liquidacion";
  *   ADR-437 §6: `imputacion.guias[{ gtfNumber, monto, paso }]` (≤ lo pendiente de
  *   cada guía, validado dentro del lock → 422 `plan_invalido`) y `comprobantes`
  *   (fotos firmadas al subirlas → 422 `comprobante_no_valido`).
+ *   ADR-449: `cruzarRecibido` + `imputacion.cruceRecibido[]`. La misma clave con
+ *   otro cuerpo → 422 `idempotencia_distinta`.
  * Sólo admin y dueño (decisión por defecto de Brandon).
  */
 
@@ -91,6 +94,9 @@ export async function POST(req: NextRequest) {
     }
     if (e instanceof PlanInvalidoError) {
       return NextResponse.json({ error: "plan_invalido", message: e.message, errores: e.errores }, { status: 422, headers: noStore });
+    }
+    if (e instanceof LiquidacionIdempotenciaDistintaError) {
+      return NextResponse.json({ error: "idempotencia_distinta", message: e.message, codigo: e.codigo }, { status: 422, headers: noStore });
     }
     if (e instanceof SinVinculoError) {
       return NextResponse.json({ error: "sin_vinculo", message: e.message }, { status: 409, headers: noStore });

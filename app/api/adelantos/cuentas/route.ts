@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { AdelantosDB } from "@/lib/db/adelantos.db";
 import { ForestCuentaDB } from "@/lib/db/forest-cuenta.db";
 import { ForestDirectorioDB } from "@/lib/db/forest-directorio.db";
+import { LiquidacionCuentaDB } from "@/lib/db/liquidacion-cuenta.db";
 import { unificarCuentas, type ParteParaUnificar } from "@/lib/adelantos/cuenta-unificada";
 import type { MovimientoCuenta } from "@/lib/forestal/cuenta-corriente";
 import { requireAdmin } from "@/lib/require-admin";
@@ -29,7 +30,7 @@ export async function GET(req: NextRequest) {
   const sinPermiso = permisoAdelantos(auth.role, "read");
   if (sinPermiso) return sinPermiso;
   try {
-    const [beneficiarios, saldosAdelantos, forestal] = await Promise.all([
+    const [beneficiarios, saldosAdelantos, forestal, vivas] = await Promise.all([
       AdelantosDB.listBeneficiarios(auth.tenantId),
       // `saldosPorPersona` agrega EN LA BASE (groupBy): a diferencia de
       // `list()` no tiene tope de 500 filas — una cuenta no puede quedar
@@ -37,6 +38,7 @@ export async function GET(req: NextRequest) {
       // ADR-448: con las dos direcciones — lo recibido resta del neto.
       AdelantosDB.saldosPorPersona(auth.tenantId, { direccion: "todas" }),
       isSpecializationEnabled(auth.tenantId, "spec:forestal:ctp-libro"),
+      LiquidacionCuentaDB.vivasPorPersona(auth.tenantId),
     ]);
 
     let partes: ParteParaUnificar[] = [];
@@ -54,7 +56,7 @@ export async function GET(req: NextRequest) {
       truncado = listaMovs.length >= LIMITE_MOVIMIENTOS_FORESTAL;
     }
 
-    const personas = unificarCuentas({
+    const unificadas = unificarCuentas({
       beneficiarios: beneficiarios.map((b) => ({
         id: b.id,
         nombre: b.nombre,
@@ -73,6 +75,13 @@ export async function GET(req: NextRequest) {
       partes,
       movimientos,
     });
+    /* Revisión ADR-449: cuántas liquidaciones vivas tiene cada fila. Con el neto
+       en 0 la fila escondía «Liquidar», y el único «Anular» vive en ese modal. */
+    const personas = unificadas.map((p) => ({
+      ...p,
+      liquidacionesVivas:
+        (p.beneficiarioId ? (vivas.porBeneficiario[p.beneficiarioId] ?? 0) : 0) + (p.parteId ? (vivas.porParte[p.parteId] ?? 0) : 0),
+    }));
 
     // Sin caché: justo después de `vincular_parte` esta misma ruta tiene que
     // reflejar el vínculo nuevo — un `max-age` la dejaba mostrando la fila

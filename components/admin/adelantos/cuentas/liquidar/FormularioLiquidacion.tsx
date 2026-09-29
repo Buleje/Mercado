@@ -6,6 +6,10 @@
  * Arma la `IntencionLiquidacion` y se la pasa al padre por `onCambiar` — la
  * vista previa la recalcula un nivel arriba con la MISMA función pura que usa
  * el servidor (`planLiquidacion`), acá sólo se junta la intención.
+ *
+ * «Solo cruzar» sirve a los dos lados (ADR-449): tus adelantos contra lo que le
+ * debes en la cuenta forestal, o lo que te adelantó contra lo que te debe (sus
+ * aserríos). Nunca los dos a la vez: la cuenta forestal está de un solo lado.
  */
 
 import { useEffect, useMemo, useState } from "react";
@@ -14,6 +18,7 @@ import {
   imputarFifo,
   intencionDejarEnCero,
   maximoCompensable,
+  maximoCruceRecibido,
   saldosDe,
   type IntencionLiquidacion,
   type MetodoPago,
@@ -21,6 +26,7 @@ import {
 } from "@/lib/cuentas/liquidacion";
 import { HOY, ORIGENES_CAJA } from "../../crear-adelanto/campos";
 import { fmtMon, inputCls } from "../../shared";
+import AvisoRecibidos from "./AvisoRecibidos";
 
 type Accion = "cero" | "cruzar" | "recibido" | "hecho";
 const METODOS = ORIGENES_CAJA.filter((o) => o.id) as { id: MetodoPago; label: string; Icon: typeof Banknote }[];
@@ -45,13 +51,21 @@ export default function FormularioLiquidacion({
   vinculoFaltante: boolean;
 }) {
   const maxCompensable = useMemo(() => maximoCompensable(partidas), [partidas]);
+  const maxCruceRecibido = useMemo(() => maximoCruceRecibido(partidas), [partidas]);
+  /* Un solo lado a la vez: el de siempre si la cuenta forestal está a favor
+     suyo; el de lo recibido (ADR-449) si está a tu favor. */
+  const ladoCruce: "dado" | "recibido" = maxCompensable > 0.005 || maxCruceRecibido <= 0.005 ? "dado" : "recibido";
+  const maxCruce = ladoCruce === "recibido" ? maxCruceRecibido : maxCompensable;
+  const listaCruce = useMemo(
+    () => (ladoCruce === "recibido" ? (partidas.recibidos ?? []) : partidas.adelantos),
+    [ladoCruce, partidas],
+  );
   const saldos = useMemo(() => saldosDe(partidas), [partidas]);
-  /* ADR-448: con plata que la persona te dio (en soles) «Dejar en cero» se
-     apaga — le cobraría lo que el negocio le tiene que devolver. */
-  const tieneRecibidos = useMemo(() => partidas.fuera.some((f) => f.direccion === "RECIBIDO" && (f.moneda || "PEN") === "PEN"), [partidas]);
+  /* «Dejar en cero» decide solo con lo recibido (ADR-448/449): cruza lo que
+     cabe y cobra el resto, o no propone nada si algo quedaría sin saldar. */
   const puedeCero = useMemo(
-    () => !vinculoFaltante && !tieneRecibidos && intencionDejarEnCero(partidas, HOY(), "efectivo", true) != null,
-    [partidas, vinculoFaltante, tieneRecibidos],
+    () => !vinculoFaltante && intencionDejarEnCero(partidas, HOY(), "efectivo", true) != null,
+    [partidas, vinculoFaltante],
   );
   // "Me pagó" cobra el adelanto Y, si la corre la misma persona con vínculo
   // explícito, lo que debe por aserrío (ADR-412/413: el caso central de
@@ -59,6 +73,10 @@ export default function FormularioLiquidacion({
   // `saldos.maderaSaldo` ya sale en 0 (la cuenta forestal no llega a
   // `partidas`), así que la fórmula se achica sola a sólo adelantos.
   const maximoRecibido = useMemo(() => r2(saldos.adelantosTeDebe + Math.max(0, saldos.maderaSaldo)), [saldos]);
+  /* Revisión ADR-449: con algo que te adelantó para cruzar, «Me pagó» se
+     prellena con lo que queda DESPUÉS de cruzar — si no, le cobraba el aserrío
+     entero y lo que te adelantó quedaba debiéndose. */
+  const sugeridoRecibido = r2(Math.max(0, maximoRecibido - maxCruceRecibido));
 
   const [accion, setAccion] = useState<Accion | null>(null);
   const [monto, setMonto] = useState("");
@@ -72,11 +90,11 @@ export default function FormularioLiquidacion({
   // Al elegir una acción, se prellena el monto con el máximo que corresponde —
   // el operador corrige si va a cruzar/cobrar/pagar menos.
   useEffect(() => {
-    if (accion === "cruzar") setMonto(String(maxCompensable));
-    else if (accion === "recibido") setMonto(String(maximoRecibido));
+    if (accion === "cruzar") setMonto(String(maxCruce));
+    else if (accion === "recibido") setMonto(String(sugeridoRecibido));
     else if (accion === "hecho") setMonto(String(Math.max(0, r2(-saldos.maderaSaldo))));
     // "cero": no se edita, sale entero de `intencionDejarEnCero`.
-  }, [accion, maxCompensable, maximoRecibido, saldos.maderaSaldo]);
+  }, [accion, maxCruce, sugeridoRecibido, saldos.maderaSaldo]);
 
   // "Anotar en la caja" arranca marcado sólo con efectivo (mismo criterio que el alta de adelanto).
   useEffect(() => {
@@ -84,9 +102,9 @@ export default function FormularioLiquidacion({
   }, [metodo]);
 
   const fifoDelMonto = useMemo(() => {
-    const m = accion === "cruzar" ? clamp(Number(monto) || 0, maxCompensable) : 0;
-    return imputarFifo(partidas.adelantos, m);
-  }, [accion, monto, maxCompensable, partidas.adelantos]);
+    const m = accion === "cruzar" ? clamp(Number(monto) || 0, maxCruce) : 0;
+    return imputarFifo(listaCruce, m);
+  }, [accion, monto, maxCruce, listaCruce]);
 
   useEffect(() => {
     if (!repartoManual) return;
@@ -99,17 +117,27 @@ export default function FormularioLiquidacion({
     if (accion === "cero") {
       intencion = intencionDejarEnCero(partidas, fecha, metodo, moverCaja);
     } else if (accion === "cruzar") {
-      const compensar = clamp(Number(monto) || 0, maxCompensable);
-      if (compensar > 0) {
-        intencion = {
-          fecha,
-          compensar,
-          pago: null,
-          ...(repartoManual && partidas.adelantos.length > 1
-            ? { imputacion: { compensacion: Object.entries(repartoPorAdelanto).map(([adelantoId, v]) => ({ adelantoId, monto: Number(v) || 0 })) } }
-            : {}),
-          notas: notas.trim() || undefined,
-        };
+      const cruce = clamp(Number(monto) || 0, maxCruce);
+      if (cruce > 0) {
+        const aMano = Object.entries(repartoPorAdelanto).map(([adelantoId, v]) => ({ adelantoId, monto: Number(v) || 0 }));
+        const conReparto = repartoManual && listaCruce.length > 1;
+        intencion =
+          ladoCruce === "recibido"
+            ? {
+                fecha,
+                compensar: 0,
+                cruzarRecibido: cruce,
+                pago: null,
+                ...(conReparto ? { imputacion: { cruceRecibido: aMano } } : {}),
+                notas: notas.trim() || undefined,
+              }
+            : {
+                fecha,
+                compensar: cruce,
+                pago: null,
+                ...(conReparto ? { imputacion: { compensacion: aMano } } : {}),
+                notas: notas.trim() || undefined,
+              };
       }
     } else if (accion === "recibido" || accion === "hecho") {
       const m = Number(monto) || 0;
@@ -125,7 +153,7 @@ export default function FormularioLiquidacion({
 
     onCambiar(intencion);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accion, monto, metodo, moverCaja, fecha, notas, repartoManual, repartoPorAdelanto, partidas, maxCompensable]);
+  }, [accion, monto, metodo, moverCaja, fecha, notas, repartoManual, repartoPorAdelanto, partidas, maxCruce, ladoCruce, listaCruce]);
 
   const cardCls = (activa: boolean, disponible: boolean) =>
     `flex flex-col items-start gap-1 rounded-2xl border-2 p-3 text-left transition-colors ${
@@ -147,13 +175,15 @@ export default function FormularioLiquidacion({
         </button>
         <button
           type="button"
-          disabled={maxCompensable <= 0.005}
+          disabled={maxCruce <= 0.005}
           onClick={() => setAccion("cruzar")}
-          className={cardCls(accion === "cruzar", maxCompensable > 0.005)}
+          className={cardCls(accion === "cruzar", maxCruce > 0.005)}
         >
           <Scale className="h-4 w-4 shrink-0 text-primary" aria-hidden />
           <span className="text-sm font-bold text-[var(--text-primary)]">Solo cruzar</span>
-          <span className="text-xs text-[var(--text-tertiary)]">Máx. {fmtMon(maxCompensable)}</span>
+          <span className="text-xs text-[var(--text-tertiary)]">
+            {ladoCruce === "recibido" ? "Su adelanto contra sus aserríos · " : ""}Máx. {fmtMon(maxCruce)}
+          </span>
         </button>
         <button
           type="button"
@@ -176,15 +206,15 @@ export default function FormularioLiquidacion({
           <span className="text-xs text-[var(--text-tertiary)]">Le debías por madera</span>
         </button>
       </div>
-      {tieneRecibidos && (
-        <p className="text-sm font-semibold text-[var(--data-info-ink)]">Tiene plata que te dio: liquídalo eligiendo qué cruzas.</p>
-      )}
+      <AvisoRecibidos partidas={partidas} maxCruceRecibido={maxCruceRecibido} />
 
       {accion && (
         <div className="space-y-3 rounded-2xl bg-[var(--surface-sunken)] p-4">
           {accion !== "cero" && (
             <label className="block space-y-1">
-              <span className="text-sm font-semibold text-[var(--text-secondary)]">{accion === "cruzar" ? "Monto a cruzar" : "Monto"}</span>
+              <span className="text-sm font-semibold text-[var(--text-secondary)]">
+                {accion !== "cruzar" ? "Monto" : ladoCruce === "recibido" ? "Cuánto de su adelanto cruzas" : "Monto a cruzar"}
+              </span>
               <input
                 type="number"
                 inputMode="decimal"
@@ -194,6 +224,12 @@ export default function FormularioLiquidacion({
                 className={`${inputCls} h-11`}
               />
             </label>
+          )}
+
+          {accion === "recibido" && maxCruceRecibido > 0.005 && (
+            <p className="text-sm font-semibold text-[var(--data-info-ink)]">
+              Primero cruza lo que te adelantó ({fmtMon(maxCruceRecibido)}): «Dejar en cero» lo hace en un paso.
+            </p>
           )}
 
           {accion !== "cruzar" && (
@@ -233,7 +269,7 @@ export default function FormularioLiquidacion({
             </label>
           </div>
 
-          {accion === "cruzar" && partidas.adelantos.length > 1 && (
+          {accion === "cruzar" && listaCruce.length > 1 && (
             <div>
               <button
                 type="button"
@@ -246,7 +282,7 @@ export default function FormularioLiquidacion({
               </button>
               {repartoManual && (
                 <div className="mt-2 space-y-1.5">
-                  {partidas.adelantos.map((a) => (
+                  {listaCruce.map((a) => (
                     <div key={a.adelantoId} className="flex items-center justify-between gap-2 text-sm">
                       <span className="min-w-0 truncate text-[var(--text-secondary)]">{a.codigo ?? a.adelantoId} · {fmtMon(a.saldo)}</span>
                       <input

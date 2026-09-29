@@ -37,7 +37,7 @@ export default function CuentasPorPersona({ onGoTab }: { onGoTab: (tab: string) 
     <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
       <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
         <CardTitle className="text-base font-extrabold text-[var(--text-primary)]">Cuenta por persona</CardTitle>
-        {!loading && personas.length > 0 && (
+        {personas.length > 0 && (
           <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm font-bold">
             {/* El token base no pasa AA en 14px 700 (medido: contraste 2.03 y
                 2.61) — el `-700`/`-500` es el mismo patrón que ya usa
@@ -66,7 +66,12 @@ export default function CuentasPorPersona({ onGoTab }: { onGoTab: (tab: string) 
         </div>
       )}
 
-      {loading ? (
+      {/* El esqueleto sólo en la PRIMERA carga. Al recargar (tras liquidar,
+          anular o vincular) la lista sigue montada: con el esqueleto, la fila
+          —y el modal de Liquidar que vive adentro— se desmontaba y la pantalla
+          «Liquidación confirmada» nunca llegaba a verse (medido 28-09 en el
+          navegador: POST 201 y el modal desaparecía). */}
+      {loading && personas.length === 0 ? (
         <div className="space-y-2" aria-hidden>
           {[0, 1, 2].map((i) => (
             <div key={i} className="h-20 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] animate-pulse" />

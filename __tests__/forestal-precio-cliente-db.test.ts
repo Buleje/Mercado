@@ -113,6 +113,8 @@ const H = vi.hoisted(() => {
     forestCuentaMov: modelo("forestCuentaMov"),
     forestCtpEntry: modelo("forestCtpEntry"),
     $queryRaw: vi.fn(async () => [{ id: "corrida-1" }]),
+    /* Revisión ADR-449: el cobro toma el lock de la persona (`bloquearPartesEnTx`). */
+    $executeRaw: vi.fn(async () => 0),
   };
   prisma.$transaction = vi.fn(async (fn: (tx: unknown) => Promise<unknown>) => fn(prisma));
 
@@ -460,5 +462,14 @@ describe("cobrarCorrida — el cobro usa el trato del cliente (ADR-430)", () => 
     const upd = H.escrituras.find((e) => e.modelo === "forestCuentaMov" && e.op === "update");
     expect(upd?.data).toMatchObject({ contratoId: "k-1" });
     expect(Number(upd?.data.monto)).toBe(136.5);
+  });
+
+  it("toma el lock de la persona, el MISMO que la liquidación (revisión ADR-449)", async () => {
+    await ForestParteTarifaDB.guardar(T, trato(), "qa");
+    const execRaw = H.prisma.$executeRaw as ReturnType<typeof vi.fn>;
+    execRaw.mockClear();
+    await ForestAserrioDB.cobrarCorrida(T, "corrida-1", { duenoParteId: "p-cli" }, "qa");
+    const claves = execRaw.mock.calls.map((c) => (c as unknown[]).slice(1).join(","));
+    expect(claves).toContain(`liq:${T}:parte:p-cli`);
   });
 });

@@ -119,6 +119,8 @@ const H = vi.hoisted(() => {
     forestCtpEntry: modelo("forestCtpEntry"),
     forestCtpPaquete: modelo("forestCtpPaquete"),
     $queryRaw: vi.fn(async () => [{ id: "corrida-1" }]),
+    /* Revisión ADR-449: el cobro toma el lock de la persona (`bloquearPartesEnTx`). */
+    $executeRaw: vi.fn(async () => 0),
   };
   prisma.$transaction = vi.fn(async (fn: (tx: unknown) => Promise<unknown>) => fn(prisma));
 

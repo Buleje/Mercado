@@ -25,6 +25,7 @@ import {
   fechaDeudaViva,
   guiasPendientesDe,
   huellaDe,
+  huellaDelCuerpo,
   motivoNoSePuedeAnular,
   notasMovimiento,
   planLiquidacion,
@@ -101,6 +102,23 @@ export class ComprobanteNoValidoError extends Error {
     super(message);
     this.name = "ComprobanteNoValidoError";
   }
+}
+
+/**
+ * La misma clave de idempotencia llegó con OTRO cuerpo (ADR-449, revisión): no
+ * es un reintento. La ruta la vuelve 422 `idempotencia_distinta`.
+ */
+export class LiquidacionIdempotenciaDistintaError extends Error {
+  constructor(readonly codigo: string) {
+    super(`Esa clave ya se usó para ${codigo} con otros montos: vuelve a abrir la liquidación.`);
+    this.name = "LiquidacionIdempotenciaDistintaError";
+  }
+}
+
+/** Una liquidación ya guardada con esta clave: con la misma huella (o sin huella, las de antes) es un reintento. */
+function esElMismoActo(ya: Row, input: LiquidacionInput): boolean {
+  const guardada = (ya.detalle as { huellaCuerpo?: unknown } | null)?.huellaCuerpo;
+  return typeof guardada !== "string" || guardada === huellaDelCuerpo(input);
 }
 
 export class LiquidacionYaAnuladaError extends Error {
@@ -240,7 +258,7 @@ async function leerPartidas(
         },
       })
     : [];
-  const { adelantos, fuera } = clasificarAdelantos(
+  const { adelantos, recibidos, fuera } = clasificarAdelantos(
     filas.map((a) => ({
       id: a.id,
       codigo: a.codigoOperacion,
@@ -275,9 +293,15 @@ async function leerPartidas(
         parteId: forestal ? parteId : null,
         nombre: benef?.nombre ?? parte?.nombre ?? "—",
         documento: benef?.documento ?? parte?.docNumero ?? null,
+        /* Contra qué parte se cruza (revisión ADR-449): la ficha puede
+           llamarse distinto que la parte, y el modal la nombra. */
+        ...(forestal && parte ? { parteNombre: parte.nombre } : {}),
       },
       cruzable: Boolean(benef && forestal && benef.forestPartyId === parteId),
       adelantos,
+      /* ADR-449: lo recibido cruzable contra la cuenta forestal. Sólo si hay:
+         sin recibidos la forma (y la huella) es la de siempre. */
+      ...(recibidos.length > 0 ? { recibidos } : {}),
       forestal,
       fuera,
     },
@@ -327,7 +351,10 @@ export const LiquidacionCuentaDB = {
            Una fila unida sólo por documento manda los dos ids; cobrar o pagar
            dentro de Adelantos se puede igual, cruzar libretas no. */
         const tocaForestal =
-          input.compensar > 0 || input.pago?.direccion === "hecho" || Boolean(input.imputacion?.pago?.some((x) => x.partida === "forestal"));
+          input.compensar > 0 ||
+          (input.cruzarRecibido ?? 0) > 0 ||
+          input.pago?.direccion === "hecho" ||
+          Boolean(input.imputacion?.pago?.some((x) => x.partida === "forestal"));
         const parteAjena = Boolean(
           input.persona.beneficiarioId && input.persona.parteId && input.persona.parteId !== previa.vinculoParteId,
         );
@@ -346,7 +373,10 @@ export const LiquidacionCuentaDB = {
         await bloquearPersona(tx, tenantId, previa.partidas.persona);
 
         const ya = await tx.liquidacionCuenta.findFirst({ where: { tenantId, idempotencyKey: input.idempotencyKey } });
-        if (ya) return { repetida: true as const, row: ya };
+        if (ya) {
+          if (!esElMismoActo(ya, input)) throw new LiquidacionIdempotenciaDistintaError(ya.codigo);
+          return { repetida: true as const, row: ya };
+        }
         /* Después de la idempotencia: el reintento del mismo acto trae las mismas fotos. */
         const comprobantes = await comprobantesValidos(tx, tenantId, input.comprobantes ?? []);
 
@@ -368,6 +398,7 @@ export const LiquidacionCuentaDB = {
         const r = planLiquidacion(partidas, {
           fecha: input.fecha,
           compensar: input.compensar,
+          cruzarRecibido: input.cruzarRecibido,
           pago: input.pago,
           imputacion: input.imputacion,
           notas: input.notas,
@@ -398,7 +429,9 @@ export const LiquidacionCuentaDB = {
             personaNombre: partidas.persona.nombre,
             personaDocumento: partidas.persona.documento,
             fecha: new Date(`${input.fecha}T00:00:00.000Z`),
-            montoCompensado: new Prisma.Decimal(plan.compensado),
+            /* Todo lo cruzado, en las dos direcciones (ADR-449): el acta dice
+               cuánto fue de lo recibido (`detalle.cruceRecibido`). */
+            montoCompensado: new Prisma.Decimal(Math.round((plan.compensado + (plan.cruceRecibido ?? 0)) * 100) / 100),
             pagoDireccion: pago?.direccion ?? null,
             pagoMonto: pago ? new Prisma.Decimal(pago.monto) : null,
             metodoPago: pago?.metodo ?? null,
@@ -444,13 +477,15 @@ export const LiquidacionCuentaDB = {
               /* La pata imputada a una guía lleva su número (ADR-437 §6): así
                  la guía sabe qué la pagó. Se escribe en el mismo `create`. */
               gtfNumber: m.gtfNumber ?? null,
+              /* El permiso de los cargos que baja (ADR-449, revisión). */
+              contratoId: m.contratoId ?? null,
             },
             usuario,
           );
           movimientoIds.push(mov.id);
         }
 
-        const detalle = detalleDeLiquidacion(plan, { codigo, entregaIds, movimientoIds });
+        const detalle = detalleDeLiquidacion(plan, { codigo, entregaIds, movimientoIds, huellaCuerpo: huellaDelCuerpo(input) });
         const row = await tx.liquidacionCuenta.update({
           where: { id: cab.id },
           data: { detalle: detalle as unknown as Prisma.InputJsonValue },
@@ -465,7 +500,10 @@ export const LiquidacionCuentaDB = {
       if (!esChoqueUnico(err)) throw err;
       /* El doble clic que llegó a la vez: la otra transacción ya la guardó. */
       const ya = await prisma.liquidacionCuenta.findFirst({ where: { tenantId, idempotencyKey: input.idempotencyKey } });
-      if (ya) return { liquidacion: aDTO(ya), repetida: true, caja: null };
+      if (ya) {
+        if (!esElMismoActo(ya, input)) throw new LiquidacionIdempotenciaDistintaError(ya.codigo);
+        return { liquidacion: aDTO(ya), repetida: true, caja: null };
+      }
       /* Si no, chocó el código con otra persona liquidando a la vez: una vez más. */
       hecho = await escribir();
     }
@@ -490,6 +528,7 @@ export const LiquidacionCuentaDB = {
 
     const partes = [
       plan.compensado > 0 ? `cruce S/ ${plan.compensado.toFixed(2)}` : null,
+      (plan.cruceRecibido ?? 0) > 0 ? `cruce de lo recibido contra sus aserríos S/ ${(plan.cruceRecibido ?? 0).toFixed(2)}` : null,
       plan.pago ? `pago ${plan.pago.direccion} S/ ${plan.pago.monto.toFixed(2)} (${plan.pago.metodo})` : null,
       plan.movimientos.some((m) => m.gtfNumber)
         ? `guías: ${plan.movimientos
@@ -531,6 +570,28 @@ export const LiquidacionCuentaDB = {
       take: Math.min(Math.max(opts.limite ?? 50, 1), 200),
     });
     return rows.map(aDTO);
+  },
+
+  /**
+   * Cuántas liquidaciones VIVAS tiene cada persona, por ficha y por parte
+   * (revisión ADR-449). La fila de «Cuenta por persona» muestra «Liquidaciones»
+   * aunque el neto sea 0: después de «Dejar en cero» era el único camino a
+   * «Anular», y el botón desaparecía.
+   */
+  async vivasPorPersona(tenantId: string): Promise<{ porBeneficiario: Record<string, number>; porParte: Record<string, number> }> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const rows = await prisma.liquidacionCuenta.findMany({
+      where: { tenantId, anuladaAt: null },
+      select: { beneficiarioId: true, parteId: true },
+      take: 5000,
+    });
+    const porBeneficiario: Record<string, number> = {};
+    const porParte: Record<string, number> = {};
+    for (const r of rows) {
+      if (r.beneficiarioId) porBeneficiario[r.beneficiarioId] = (porBeneficiario[r.beneficiarioId] ?? 0) + 1;
+      else if (r.parteId) porParte[r.parteId] = (porParte[r.parteId] ?? 0) + 1;
+    }
+    return { porBeneficiario, porParte };
   },
 
   async obtener(tenantId: string, id: string): Promise<LiquidacionDTO | null> {

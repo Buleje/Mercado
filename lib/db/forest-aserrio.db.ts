@@ -93,6 +93,42 @@ function invalidarLibroYCuenta(tenantId: string): void {
 }
 
 /**
+ * Los locks del cargo de aserrío de una corrida, SIEMPRE en este orden
+ * (revisión ADR-449, seguridad 28-09):
+ *
+ *   1. la corrida (`FOR UPDATE` de `ForestCtpEntry`);
+ *   2. el cargo vivo, RELEÍDO bajo ese lock (leído antes, la parte podía
+ *      cambiar en el medio y se bloqueaba la vieja);
+ *   3. la(s) persona(s): `ForestCuentaDB.bloquearPartesEnTx`, la misma clave
+ *      `liq:<tenant>:parte:<id>` que toma la liquidación.
+ *
+ * `cobrarCorrida` va en el mismo orden (corrida → cargo → parte). Con
+ * `dejarDeCobrar` bloqueando parte → corrida, dos pedidos cruzados se
+ * esperaban uno al otro. La liquidación toma sólo la parte, nunca la corrida.
+ */
+export async function bloquearCorridaYPartesEnTx(
+  tx: Prisma.TransactionClient,
+  tenantId: string,
+  entryId: string,
+  partesExtra: ReadonlyArray<string | null | undefined> = [],
+): Promise<{
+  duenoParteId: string | null;
+  vivo: { id: string; monto: Prisma.Decimal; parteNombre: string; parteId: string; referencia: string | null } | null;
+}> {
+  /* 1. La corrida. Sin filtrar `deletedAt`: al borrarla también se da de baja su cargo. */
+  await tx.$queryRaw`SELECT "id" FROM "ForestCtpEntry" WHERE "id" = ${entryId} AND "tenantId" = ${tenantId} FOR UPDATE`;
+  const corrida = await tx.forestCtpEntry.findFirst({ where: { id: entryId, tenantId }, select: { duenoParteId: true } });
+  /* 2. El cargo, bajo el lock de la corrida. */
+  const vivo = await tx.forestCuentaMov.findFirst({
+    where: { tenantId, ctpEntryId: entryId, deletedAt: null },
+    select: { id: true, monto: true, parteNombre: true, parteId: true, referencia: true },
+  });
+  /* 3. Las personas, al final. */
+  await ForestCuentaDB.bloquearPartesEnTx(tx, tenantId, [vivo?.parteId, corrida?.duenoParteId, ...partesExtra]);
+  return { duenoParteId: corrida?.duenoParteId ?? null, vivo };
+}
+
+/**
  * Sacar a la madera de la cuenta de alguien: la corrida deja de tener a quién
  * cobrarle y el cargo vivo se da de baja (baja lógica, ADR-322 — un movimiento
  * de plata que se borra deja el saldo sin explicar).
@@ -105,23 +141,25 @@ async function dejarDeCobrar(
   corrida: { id: string; lineNo: number | null; duenoParteId: string | null },
   user: string,
 ): Promise<ResultadoCobro> {
-  const vivo = await prisma.forestCuentaMov.findFirst({
-    where: { tenantId, ctpEntryId: corrida.id, deletedAt: null },
-    select: { id: true, monto: true, parteNombre: true },
-  });
-  /* Nada que deshacer: la madera del centro que se declara como tal. */
-  if (!corrida.duenoParteId && !vivo) return sinCobro(MOTIVO_SIN_DUENO);
-
-  await prisma.$transaction([
-    prisma.forestCtpEntry.update({
+  /* Corrida → cargo releído → persona (`bloquearCorridaYPartesEnTx`): el mismo
+     orden que `cobrarCorrida`, y el lock de la persona que toma una
+     liquidación (revisión ADR-449). */
+  const hecho = await prisma.$transaction(async (tx) => {
+    const { duenoParteId, vivo } = await bloquearCorridaYPartesEnTx(tx, tenantId, corrida.id, [corrida.duenoParteId]);
+    /* Nada que deshacer: la madera del centro que se declara como tal. */
+    if (!duenoParteId && !vivo) return null;
+    await tx.forestCtpEntry.update({
       where: { id: corrida.id, tenantId } satisfies Prisma.ForestCtpEntryWhereUniqueInput,
       data: { duenoParteId: null, aserrioImporte: null, aserrioDetalle: Prisma.DbNull },
-    }),
-    prisma.forestCuentaMov.updateMany({
+    });
+    await tx.forestCuentaMov.updateMany({
       where: { tenantId, ctpEntryId: corrida.id, deletedAt: null },
       data: { deletedAt: new Date() },
-    }),
-  ]);
+    });
+    return { vivo };
+  });
+  if (!hecho) return sinCobro(MOTIVO_SIN_DUENO);
+  const { vivo } = hecho;
   invalidarLibroYCuenta(tenantId);
 
   auditCtp({
@@ -286,6 +324,12 @@ export const ForestAserrioDB = {
           where: { tenantId, ctpEntryId: entryId, deletedAt: null },
           select: { id: true, monto: true, parteNombre: true, parteId: true, contratoId: true, fecha: true, tipo: true, concepto: true },
         });
+        /* El lock de la persona (revisión ADR-449), el MISMO que toma una
+           liquidación (`liq:<tenant>:parte:<id>`), después del de la corrida:
+           la liquidación nunca toma el de la corrida, así que no se cruzan.
+           Sin él, recotizar un cargo mientras se liquida validaba el cruce
+           contra un saldo que estaba cambiando. */
+        await ForestCuentaDB.bloquearPartesEnTx(tx, tenantId, [parte.id, vivo?.parteId]);
 
         const plan = planDeCobro({
           corrida: {
@@ -539,16 +583,25 @@ export const ForestAserrioDB = {
    */
   async alAnular(tenantId: string, entryId: string, user = "unknown"): Promise<boolean> {
     if (!tenantId) throw new Error("tenantId is required");
-    const vivo = await prisma.forestCuentaMov.findFirst({
+    /* Atajo sin locks: casi toda línea anulada no tiene cargo de aserrío. La
+       lectura que decide va DENTRO de la transacción. */
+    const hay = await prisma.forestCuentaMov.findFirst({
       where: { tenantId, ctpEntryId: entryId, deletedAt: null },
-      select: { id: true, monto: true, parteNombre: true, referencia: true },
+      select: { id: true },
+    });
+    if (!hay) return false;
+    /* Corrida → cargo releído → persona (revisión ADR-449): leído antes del
+       lock, un cargo que cambiaba de parte en el medio bloqueaba la vieja. */
+    const vivo = await prisma.$transaction(async (tx) => {
+      const { vivo: actual } = await bloquearCorridaYPartesEnTx(tx, tenantId, entryId);
+      if (!actual) return null;
+      const { count } = await tx.forestCuentaMov.updateMany({
+        where: { id: actual.id, tenantId, deletedAt: null },
+        data: { deletedAt: new Date() },
+      });
+      return count > 0 ? actual : null;
     });
     if (!vivo) return false;
-    const { count } = await prisma.forestCuentaMov.updateMany({
-      where: { id: vivo.id, tenantId, deletedAt: null },
-      data: { deletedAt: new Date() },
-    });
-    if (count === 0) return false;
     ForestCuentaDB.invalidar(tenantId);
     auditCtp({
       tenantId,

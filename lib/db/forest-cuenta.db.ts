@@ -139,6 +139,7 @@ function aMov(r: Row): MovimientoCuenta {
     ctpEntryId: r.ctpEntryId ?? null,
     liquidacionId: r.liquidacionId ?? null,
     gtfNumber: r.gtfNumber ?? null,
+    contratoId: r.contratoId ?? null,
   };
 }
 
@@ -484,7 +485,10 @@ export const ForestCuentaDB = {
     tenantId: string,
     /* `gtfNumber` (ADR-437 §6): la pata imputada a una guía la nombra, así el
        estado de pago la aplica a ESA guía y no por antigüedad. */
-    input: MovimientoInput & { liquidacionId: string; gtfNumber?: string | null },
+    /* `contratoId` (ADR-449): la pata que baja cargos de un permiso lo lleva,
+       así el balance del permiso ve lo cobrado. Sale de los movimientos de la
+       misma parte leídos con `tenantId`. */
+    input: MovimientoInput & { liquidacionId: string; gtfNumber?: string | null; contratoId?: string | null },
     usuario: string,
   ): Promise<MovimientoCuenta> {
     if (!tenantId) throw new Error("tenantId is required");
@@ -504,6 +508,7 @@ export const ForestCuentaDB = {
         notas: input.notas?.trim() || null,
         liquidacionId: input.liquidacionId,
         gtfNumber: input.gtfNumber?.trim() || null,
+        contratoId: input.contratoId?.trim() || null,
         createdBy: usuario || "unknown",
       },
     });

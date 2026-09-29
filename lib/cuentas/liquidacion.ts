@@ -10,6 +10,14 @@
  *
  * «Dejar en cero» es cruzar lo máximo y pagar el neto.
  *
+ * ## Cruzar lo RECIBIDO (ADR-449)
+ *
+ * El cruce al revés: lo que la persona te adelantó (un adelanto RECIBIDO en
+ * soles, sin cuotas) contra lo que te debe en la cuenta forestal —sus aserríos—.
+ * Una entrega `LIBRE` en cada recibido y un `abono` `compensacion` en la cuenta.
+ * Tampoco toca la caja. Nunca en la misma liquidación que el cruce de siempre:
+ * uno pide la cuenta forestal a favor suyo y el otro en contra.
+ *
  * ## Siempre `≤`
  *
  * Ninguna partida recibe más que su saldo: nunca nace un adelanto EXCEDIDO ni
@@ -64,6 +72,19 @@ export interface PartidaAdelanto {
   modalidad: "CUENTA_CORRIENTE" | "DESCUENTO_PLANILLA";
 }
 
+/**
+ * (ADR-449) Un adelanto RECIBIDO que se puede cruzar contra la cuenta forestal:
+ * ABIERTO, en soles y sin cuotas pactadas. `saldo` = lo que el negocio todavía
+ * le debe, > 0.
+ */
+export interface PartidaRecibido {
+  adelantoId: string;
+  codigo: string | null;
+  /** fechaAdelanto ISO: el orden FIFO del cruce. */
+  fecha: string;
+  saldo: number;
+}
+
 export interface PartidaFuera {
   etiqueta: string;
   monto: number;
@@ -85,11 +106,29 @@ export interface PartidaFuera {
 }
 
 export interface PartidasDePersona {
-  persona: { beneficiarioId: string | null; parteId: string | null; nombre: string; documento: string | null };
+  persona: {
+    beneficiarioId: string | null;
+    parteId: string | null;
+    nombre: string;
+    documento: string | null;
+    /**
+     * (ADR-449, revisión) El nombre de la PARTE del directorio con la que se
+     * cruza, si hay vínculo. La ficha de Adelantos puede llamarse distinto
+     * («Wasaco» / «WASACO»): el modal la nombra para que se vea contra qué
+     * cuenta se cruza. No entra en la huella.
+     */
+    parteNombre?: string | null;
+  };
   /** Hay beneficiario Y parte unidos por `forestPartyId` — la única unión que deja cruzar. */
   cruzable: boolean;
   /** Ya en orden FIFO. */
   adelantos: PartidaAdelanto[];
+  /**
+   * (ADR-449) Lo RECIBIDO que se puede cruzar con la cuenta forestal, en orden
+   * FIFO. Antes caía en `fuera`. Opcional: sin recibidos, ausente o vacío, y la
+   * huella es la de siempre.
+   */
+  recibidos?: PartidaRecibido[];
   forestal: {
     saldo: number;
     desde: string | null;
@@ -127,11 +166,11 @@ export interface SaldosPersona {
   adelantosTeDebe: number;
   maderaSaldo: number;
   /**
-   * (ADR-448) Lo RECIBIDO en soles que queda en `fuera`: lo que le debes
-   * (abiertos) y lo que te debe porque le diste de más (excedidos). No se salda
-   * acá, pero ES parte de la cuenta: sin esto el «Antes» y el recibo decían «queda
-   * en cero» con plata que el negocio todavía le debe. Opcionales: el acta de una
-   * liquidación anterior no los trae.
+   * (ADR-448) Lo RECIBIDO en soles: lo que le debes (abiertos, los cruzables de
+   * `recibidos` y los de `fuera`) y lo que te debe porque le diste de más
+   * (excedidos). ES parte de la cuenta: sin esto el «Antes» y el recibo decían
+   * «queda en cero» con plata que el negocio todavía le debe. Sólo el cruce de
+   * ADR-449 lo baja. Opcionales: el acta de una liquidación anterior no los trae.
    */
   recibidoLeDebes?: number;
   recibidoTeDebe?: number;
@@ -144,10 +183,17 @@ export interface IntencionLiquidacion {
   fecha: string;
   /** 0 = no cruzar. */
   compensar: number;
+  /**
+   * (ADR-449) Cuánto de lo que te adelantó se cruza contra lo que te debe en la
+   * cuenta forestal. Ausente o 0 = no se cruza. Nunca junto con `compensar`.
+   */
+  cruzarRecibido?: number;
   pago: { direccion: DireccionPago; monto: number; metodo: MetodoPago; moverCaja: boolean } | null;
   /** Ausente = FIFO. */
   imputacion?: {
     compensacion?: { adelantoId: string; monto: number }[];
+    /** (ADR-449) El cruce de lo recibido, adelanto por adelanto. Ausente = FIFO. */
+    cruceRecibido?: { adelantoId: string; monto: number }[];
     pago?: { partida: "forestal" | `adelanto:${string}` | string; monto: number }[];
     /** ADR-437 §6: parte del cruce o del pago hecho que va a guías con nombre. Lo demás, sin guía. */
     guias?: ImputacionGuia[];
@@ -161,6 +207,12 @@ export interface EntregaPlaneada {
   valor: number;
   paso: "cruce" | "pago";
   descripcion: string;
+  /**
+   * (ADR-449) `recibido` = la entrega baja un adelanto que la persona te dio
+   * (le debes menos), no uno que le diste. Ausente en todo lo de antes: el acta
+   * de una liquidación vieja queda igual.
+   */
+  lado?: "recibido";
 }
 
 export interface MovimientoPlaneado {
@@ -171,6 +223,13 @@ export interface MovimientoPlaneado {
   notas: string;
   /** La guía a la que se imputa (ADR-437 §6). Ausente/`null` = sin guía. */
   gtfNumber?: string | null;
+  /**
+   * (ADR-449, revisión) El permiso de los cargos que esta pata baja: el cruce de
+   * lo recibido y el pago recibido se parten por permiso (el cargo más viejo
+   * primero) para que el balance del permiso (ADR-421) vea lo cobrado. Ausente
+   * = sin permiso, como todo lo de antes.
+   */
+  contratoId?: string | null;
 }
 
 export interface CargoCubierto {
@@ -190,7 +249,14 @@ export interface PlanLiquidacion {
   entregas: EntregaPlaneada[];
   movimientos: MovimientoPlaneado[];
   caja: { tipo: "ingreso" | "egreso"; monto: number; metodo: MetodoPago } | null;
+  /** El cruce de siempre: tus adelantos contra lo que le debes en la cuenta forestal. */
   compensado: number;
+  /**
+   * (ADR-449) Lo que te adelantó, cruzado contra lo que te debe en la cuenta
+   * forestal. Sólo aparece si es > 0: el acta de una liquidación sin este
+   * cruce no cambia.
+   */
+  cruceRecibido?: number;
   pago: IntencionLiquidacion["pago"];
   antes: SaldosPersona;
   despues: SaldosPersona;
@@ -205,6 +271,12 @@ export interface DetalleLiquidacion extends Omit<PlanLiquidacion, "entregas" | "
   v: 1;
   entregas: (EntregaPlaneada & { entregaId: string })[];
   movimientos: (MovimientoPlaneado & { movimientoId: string })[];
+  /**
+   * (ADR-449, revisión) La huella del CUERPO que creó el acto (`huellaDelCuerpo`):
+   * la misma clave de idempotencia con otro cuerpo no es un reintento (422
+   * `idempotencia_distinta`). Ausente en las liquidaciones de antes.
+   */
+  huellaCuerpo?: string;
 }
 
 export interface LiquidacionDTO {
@@ -248,9 +320,11 @@ export interface AdelantoParaLiquidar {
  */
 export function clasificarAdelantos(rows: readonly AdelantoParaLiquidar[]): {
   adelantos: PartidaAdelanto[];
+  recibidos: PartidaRecibido[];
   fuera: PartidaFuera[];
 } {
   const adelantos: PartidaAdelanto[] = [];
+  const recibidos: PartidaRecibido[] = [];
   const fuera: PartidaFuera[] = [];
   const orden = [...rows].sort((a, b) => (a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : a.id < b.id ? -1 : 1));
   for (const a of orden) {
@@ -258,20 +332,20 @@ export function clasificarAdelantos(rows: readonly AdelantoParaLiquidar[]): {
     const moneda = a.moneda || "PEN";
     /* ADR-448: lo RECIBIDO es la deuda al revés — el negocio le debe a la
        persona. Nunca entra al FIFO de «te debe»: «Dejar en cero» le cobraría lo
-       que el negocio le tiene que devolver. Se muestra con su motivo. */
+       que el negocio le tiene que devolver.
+       ADR-449: el ABIERTO en soles y sin cuotas va a `recibidos`, que se cruzan
+       contra la cuenta forestal. Lo demás queda fuera con su motivo. */
     if (direccionDe(a.direccion) === "RECIBIDO") {
-      if ((a.status === "ABIERTO" || a.status === "EXCEDIDO") && Math.abs(a.saldo) > EPS) {
-        fuera.push({
-          etiqueta,
-          monto: r2(Math.abs(a.saldo)),
-          moneda,
-          motivo:
-            a.saldo > 0
-              ? "Es plata que te dieron: se la devuelves con el servicio, madera o plata, no se cobra acá."
-              : "Es plata que te dieron y ya le diste de más: acá no hay cómo saldarlo.",
-          direccion: "RECIBIDO",
-          quien: a.saldo > 0 ? "le-debes" : "te-debe",
-        });
+      if (!((a.status === "ABIERTO" || a.status === "EXCEDIDO") && Math.abs(a.saldo) > EPS)) continue;
+      const deLado = { direccion: "RECIBIDO" as const, quien: a.saldo > 0 ? ("le-debes" as const) : ("te-debe" as const) };
+      if (a.saldo < 0 || a.status === "EXCEDIDO") {
+        fuera.push({ etiqueta, monto: r2(Math.abs(a.saldo)), moneda, motivo: "Es plata que te dieron y ya le diste de más: acá no hay cómo saldarlo.", ...deLado });
+      } else if (moneda !== "PEN") {
+        fuera.push({ etiqueta, monto: r2(a.saldo), moneda, motivo: `Es en ${moneda}: la cuenta se liquida en soles.`, ...deLado });
+      } else if (a.modalidad === "ENTREGAS_PACTADAS" || a.cuotasPactadas > 0) {
+        fuera.push({ etiqueta, monto: r2(a.saldo), moneda, motivo: "Tiene cuotas pactadas: una entrega suelta no marca la cuota.", ...deLado });
+      } else {
+        recibidos.push({ adelantoId: a.id, codigo: a.codigo, fecha: a.fecha, saldo: r2(a.saldo) });
       }
       continue;
     }
@@ -296,7 +370,7 @@ export function clasificarAdelantos(rows: readonly AdelantoParaLiquidar[]): {
       modalidad: a.modalidad === "DESCUENTO_PLANILLA" ? "DESCUENTO_PLANILLA" : "CUENTA_CORRIENTE",
     });
   }
-  return { adelantos, fuera };
+  return { adelantos, recibidos, fuera };
 }
 
 export function saldosDe(p: PartidasDePersona): SaldosPersona {
@@ -312,9 +386,12 @@ export function saldosDe(p: PartidasDePersona): SaldosPersona {
   };
 }
 
-/** Lo RECIBIDO en soles de `fuera` (ADR-448): no lo toca ninguna liquidación, pero pesa en la cuenta. */
+/**
+ * Lo RECIBIDO en soles (ADR-448): lo cruzable (`recibidos`, ADR-449) y lo que
+ * queda en `fuera`. Pesa en la cuenta aunque no se liquide.
+ */
 function recibidosDe(p: PartidasDePersona): { recibidoLeDebes: number; recibidoTeDebe: number } {
-  let recibidoLeDebes = 0;
+  let recibidoLeDebes = totalRecibidos(p);
   let recibidoTeDebe = 0;
   for (const f of p.fuera) {
     if (f.direccion !== "RECIBIDO" || (f.moneda || "PEN") !== "PEN") continue;
@@ -324,10 +401,25 @@ function recibidosDe(p: PartidasDePersona): { recibidoLeDebes: number; recibidoT
   return { recibidoLeDebes, recibidoTeDebe };
 }
 
+/** Σ de lo recibido cruzable (ADR-449). */
+export function totalRecibidos(p: Pick<PartidasDePersona, "recibidos">): number {
+  return (p.recibidos ?? []).reduce((a, x) => r2(a + x.saldo), 0);
+}
+
 /** Lo máximo que se puede cruzar: lo que te debe en adelantos contra lo que le debes en la cuenta. */
 export function maximoCompensable(p: PartidasDePersona): number {
   if (!p.cruzable || !p.forestal) return 0;
   return r2(Math.min(saldosDe(p).adelantosTeDebe, Math.max(0, -p.forestal.saldo)));
+}
+
+/**
+ * (ADR-449) Lo máximo que se cruza de lo que te adelantó: contra lo que te debe
+ * en la cuenta forestal (sus aserríos), nunca más — la cuenta no cambia de
+ * signo. Sólo con el vínculo explícito.
+ */
+export function maximoCruceRecibido(p: PartidasDePersona): number {
+  if (!p.cruzable || !p.forestal) return 0;
+  return r2(Math.min(totalRecibidos(p), Math.max(0, p.forestal.saldo)));
 }
 
 /** Reparte un monto del más viejo al más nuevo, sin darle a nadie más que su saldo. */
@@ -578,6 +670,54 @@ function partirPorGuia(base: MovimientoPlaneado, guias: readonly ImputacionGuia[
 }
 
 /**
+ * (ADR-449, revisión) Parte un abono que baja lo que te debe en la cuenta
+ * forestal por el PERMISO de los cargos que cubre, del más viejo al más nuevo
+ * —la misma regla que «cubre por antigüedad»—. `yaCubierto` es lo que cubrió un
+ * paso anterior del mismo acto (el cruce antes que el pago).
+ *
+ * En Blas los aserríos de WASACO son del permiso FMP-2026-007: sin partir, el
+ * abono no llevaba permiso y el balance del 007 seguía diciendo «por
+ * recuperar 12 323,02» después de cobrarlo.
+ *
+ * Sin permisos en juego devuelve `[base]` tal cual: el plan de antes no cambia.
+ * La suma de las partes es el abono entero, al céntimo; lo que no cubra un
+ * cargo con permiso va sin permiso.
+ */
+export function partirPorPermiso(
+  base: MovimientoPlaneado,
+  movs: readonly MovimientoCuenta[],
+  yaCubierto: number,
+): MovimientoPlaneado[] {
+  if (!(base.monto > EPS) || movs.length === 0) return [base];
+  const hasta = cargosCubiertosPorAntiguedad(movs, r2(yaCubierto + base.monto));
+  const antes = new Map(cargosCubiertosPorAntiguedad(movs, yaCubierto).map((c) => [c.movimientoId, c.cubierto]));
+  const permisoDe = new Map(movs.map((m) => [m.id, m.contratoId?.trim() || null]));
+  /* En el orden en que se cubren: el permiso del cargo más viejo va primero. */
+  const porPermiso = new Map<string | null, number>();
+  for (const c of hasta) {
+    const esta = r2(c.cubierto - (antes.get(c.movimientoId) ?? 0));
+    if (esta <= EPS) continue;
+    const k = permisoDe.get(c.movimientoId) ?? null;
+    porPermiso.set(k, r2((porPermiso.get(k) ?? 0) + esta));
+  }
+  if (![...porPermiso.keys()].some((k) => k != null)) return [base];
+  const partes: MovimientoPlaneado[] = [];
+  let queda = r2(base.monto);
+  for (const [contratoId, monto] of porPermiso) {
+    const t = r2(Math.min(monto, queda));
+    if (t <= EPS) continue;
+    partes.push(contratoId ? { ...base, monto: t, contratoId } : { ...base, monto: t });
+    queda = r2(queda - t);
+  }
+  if (queda > EPS) {
+    const sinPermiso = partes.find((x) => !x.contratoId);
+    if (sinPermiso) sinPermiso.monto = r2(sinPermiso.monto + queda);
+    else partes.push({ ...base, monto: queda });
+  }
+  return partes;
+}
+
+/**
  * Arma lo que se escribe en cada libreta. Cruza primero, paga sobre lo que
  * quedó, y valida `≤` en cada partida. Con errores no devuelve plan: la
  * pantalla deshabilita «Confirmar» y el servidor responde 422.
@@ -585,8 +725,14 @@ function partirPorGuia(base: MovimientoPlaneado, guias: readonly ImputacionGuia[
 export function planLiquidacion(p: PartidasDePersona, intencion: IntencionLiquidacion): ResultadoPlan {
   const antes = saldosDe(p);
   const compensar = r2(Math.max(0, Number(intencion.compensar) || 0));
+  const cruzarRecibido = r2(Math.max(0, Number(intencion.cruzarRecibido) || 0));
   const pago = intencion.pago && intencion.pago.monto > EPS ? { ...intencion.pago, monto: r2(intencion.pago.monto) } : null;
-  if (compensar <= EPS && !pago) return { ok: false, errores: ["No hay nada que liquidar."] };
+  if (compensar <= EPS && cruzarRecibido <= EPS && !pago) return { ok: false, errores: ["No hay nada que liquidar."] };
+  /* ADR-449: los dos cruces piden la cuenta forestal de signos opuestos (a favor
+     suyo / a tu favor). Pedir los dos es un error de la pantalla, no un acto. */
+  if (compensar > EPS && cruzarRecibido > EPS) {
+    return { ok: false, errores: ["No se cruza en las dos direcciones a la vez: elige un solo cruce."] };
+  }
 
   const porId = new Map(p.adelantos.map((a) => [a.adelantoId, a]));
   const resto = new Map(p.adelantos.map((a) => [a.adelantoId, a.saldo]));
@@ -651,6 +797,72 @@ export function planLiquidacion(p: PartidasDePersona, intencion: IntencionLiquid
     );
   }
 
+  // 1b. Cruzar lo RECIBIDO contra lo que te debe en la cuenta forestal (ADR-449)
+  const recibidos = p.recibidos ?? [];
+  const restoRecibido = new Map(recibidos.map((a) => [a.adelantoId, a.saldo]));
+  let cruceRecibido = 0;
+  if (cruzarRecibido > EPS) {
+    if (!p.cruzable || forestal == null) {
+      return { ok: false, errores: ["Para cruzar lo que te adelantó con sus aserríos, primero confirma que es la misma persona."] };
+    }
+    const max = maximoCruceRecibido(p);
+    if (cruzarRecibido > max + EPS) {
+      return {
+        ok: false,
+        errores: [
+          max <= EPS
+            ? `${p.persona.nombre} no te debe nada en la cuenta forestal: no hay contra qué cruzar lo que te adelantó.`
+            : `Lo máximo que cruza es ${soles(max)}.`,
+        ],
+      };
+    }
+    const porIdR = new Map(recibidos.map((a) => [a.adelantoId, a]));
+    const manual = intencion.imputacion?.cruceRecibido;
+    const reparto: Reparto = manual?.length
+      ? agrupar(manual.map((x) => ({ clave: x.adelantoId, monto: x.monto })))
+      : imputarFifo(recibidos, cruzarRecibido).map((x) => ({ clave: x.partida.adelantoId, monto: x.monto }));
+    for (const r of reparto) {
+      if (!porIdR.has(r.clave)) return { ok: false, errores: ["Ese adelanto no es algo que te haya dado esta persona."] };
+      const leDebes = restoRecibido.get(r.clave) ?? 0;
+      if (r.monto > leDebes + EPS) {
+        return {
+          ok: false,
+          errores: [`Del adelanto ${porIdR.get(r.clave)?.codigo ?? "sin código"} le debes ${soles(leDebes)}: no se le pueden cruzar ${soles(r.monto)}.`],
+        };
+      }
+    }
+    const suma = reparto.reduce((a, r) => r2(a + r.monto), 0);
+    if (Math.abs(suma - cruzarRecibido) > EPS) {
+      return { ok: false, errores: [`El reparto suma ${soles(suma)} y el cruce es ${soles(cruzarRecibido)}.`] };
+    }
+    for (const r of reparto) {
+      restoRecibido.set(r.clave, r2((restoRecibido.get(r.clave) ?? 0) - r.monto));
+      entregas.push({
+        adelantoId: r.clave,
+        codigo: porIdR.get(r.clave)?.codigo ?? null,
+        valor: r.monto,
+        paso: "cruce",
+        descripcion: "Cruce con sus aserríos",
+        lado: "recibido",
+      });
+    }
+    cruceRecibido = cruzarRecibido;
+    forestal = r2(forestal - cruzarRecibido);
+    movimientos.push(
+      ...partirPorPermiso(
+        {
+          tipo: "abono",
+          concepto: "compensacion",
+          monto: cruzarRecibido,
+          paso: "cruce",
+          notas: `Cruce con lo que adelantó (${reparto.map((r) => porIdR.get(r.clave)?.codigo ?? "sin código").join(", ")})`,
+        },
+        p.forestal?.movimientos ?? [],
+        0,
+      ),
+    );
+  }
+
   // 2. Pagar
   if (pago) {
     if (pago.direccion === "recibido") {
@@ -696,7 +908,14 @@ export function planLiquidacion(p: PartidasDePersona, intencion: IntencionLiquid
       }
       if (aForestal > EPS && forestal != null) {
         forestal = r2(forestal - aForestal);
-        movimientos.push({ tipo: "abono", concepto: "pago", monto: aForestal, paso: "pago", notas: `Pago recibido (${pago.metodo})` });
+        /* Después del cruce de lo recibido: cubre los cargos que el cruce dejó. */
+        movimientos.push(
+          ...partirPorPermiso(
+            { tipo: "abono", concepto: "pago", monto: aForestal, paso: "pago", notas: `Pago recibido (${pago.metodo})` },
+            p.forestal?.movimientos ?? [],
+            cruceRecibido,
+          ),
+        );
       }
     } else {
       if (intencion.imputacion?.pago?.some((x) => x.partida !== "forestal")) {
@@ -717,6 +936,8 @@ export function planLiquidacion(p: PartidasDePersona, intencion: IntencionLiquid
   const adelantosTeDebe = [...resto.values()].reduce((a, v) => r2(a + v), 0);
   const maderaSaldo = r2(forestal ?? 0);
   const reduccionForestal = movimientos.reduce((a, m) => r2(a + m.monto), 0);
+  /* Lo recibido sólo lo baja el cruce de ADR-449; lo que queda sigue en el neto. */
+  const recibidoLeDebes = r2((antes.recibidoLeDebes ?? 0) - cruceRecibido);
   return {
     ok: true,
     plan: {
@@ -724,15 +945,15 @@ export function planLiquidacion(p: PartidasDePersona, intencion: IntencionLiquid
       movimientos,
       caja: pago && pago.moverCaja ? { tipo: pago.direccion === "recibido" ? "ingreso" : "egreso", monto: pago.monto, metodo: pago.metodo } : null,
       compensado: compensar,
+      ...(cruceRecibido > EPS ? { cruceRecibido } : {}),
       pago,
       antes,
-      /* Lo recibido no lo mueve la liquidación: queda igual que antes y sigue en el neto. */
       despues: {
         adelantosTeDebe,
         maderaSaldo,
-        recibidoLeDebes: antes.recibidoLeDebes,
+        recibidoLeDebes,
         recibidoTeDebe: antes.recibidoTeDebe,
-        neto: r2(adelantosTeDebe + maderaSaldo - (antes.recibidoLeDebes ?? 0) + (antes.recibidoTeDebe ?? 0)),
+        neto: r2(adelantosTeDebe + maderaSaldo - recibidoLeDebes + (antes.recibidoTeDebe ?? 0)),
       },
       cubiertos: p.forestal
         ? cargosCubiertosPorAntiguedad(p.forestal.movimientos, reduccionForestal, porGuiaSumado(pedidasGuias))
@@ -752,6 +973,12 @@ export function planLiquidacion(p: PartidasDePersona, intencion: IntencionLiquid
  * que «dejar en cero» no puede dejar nada en cero: con WASACO vinculado cobraba
  * 15 540,02 en vez de 12 509,02, y sin cuenta forestal cobraba el DADO y el
  * recibo decía «queda en cero» con 1 731 que el negocio todavía le debía.
+ *
+ * ADR-449: lo recibido cruzable (`recibidos`) se cruza contra sus aserríos y
+ * se cobra el resto — WASACO: cruce 3 031 + pago recibido 12 509,02. Si lo
+ * recibido pasa de lo que debe en la cuenta forestal (o no hay vínculo), algo
+ * quedaría sin saldar: `null`, y queda sólo «Cruzar». Lo recibido que sigue en
+ * `fuera` (dólares, cuotas, excedidos) lo apaga igual que antes.
  */
 export function intencionDejarEnCero(
   p: PartidasDePersona,
@@ -762,8 +989,10 @@ export function intencionDejarEnCero(
   if (p.fuera.some((f) => f.direccion === "RECIBIDO" && (f.moneda || "PEN") === "PEN")) return null;
   const s = saldosDe(p);
   const compensar = maximoCompensable(p);
+  const cruzarRecibido = maximoCruceRecibido(p);
+  if (r2(totalRecibidos(p) - cruzarRecibido) > EPS) return null;
   const adelantos = r2(s.adelantosTeDebe - compensar);
-  const forestal = p.forestal ? r2(p.forestal.saldo + compensar) : 0;
+  const forestal = p.forestal ? r2(p.forestal.saldo + compensar - cruzarRecibido) : 0;
   if (adelantos > EPS && forestal < -EPS) return null;
   const recibir = r2(adelantos + Math.max(0, forestal));
   const pagar = r2(Math.max(0, -forestal));
@@ -773,8 +1002,9 @@ export function intencionDejarEnCero(
       : pagar > EPS
         ? { direccion: "hecho" as const, monto: pagar, metodo, moverCaja }
         : null;
-  if (compensar <= EPS && !pago) return null;
-  return { fecha, compensar, pago };
+  if (compensar <= EPS && cruzarRecibido <= EPS && !pago) return null;
+  /* La clave sólo si hay cruce de lo recibido: lo de antes da el mismo objeto. */
+  return { fecha, compensar, ...(cruzarRecibido > EPS ? { cruzarRecibido } : {}), pago };
 }
 
 /**
@@ -793,6 +1023,9 @@ export function huellaDe(p: PartidasDePersona): string {
     /* Las fechas entran: el reparto FIFO sale de ellas, y cambiar la fecha de un
        movimiento o de un adelanto cambia a quién se imputa sin mover un saldo. */
     ...p.adelantos.map((a) => `a:${a.adelantoId}:${a.saldo.toFixed(2)}:${a.fecha}`).sort(),
+    /* ADR-449: lo recibido cruzable, con su fecha (el FIFO del cruce sale de
+       ella). Sin recibidos no suma nada: la huella de siempre queda igual. */
+    ...(p.recibidos ?? []).map((a) => `r:${a.adelantoId}:${a.saldo.toFixed(2)}:${a.fecha}`).sort(),
     /* La guía de cada movimiento entra sólo si la tiene: lo anterior a ADR-437
        da la misma huella que antes. */
     p.forestal
@@ -817,11 +1050,53 @@ export function huellaDe(p: PartidasDePersona): string {
   return h.toString(16).padStart(8, "0");
 }
 
+/** JSON con las claves ordenadas: el mismo objeto da el mismo texto, venga en el orden que venga. */
+function canonico(v: unknown): string {
+  if (Array.isArray(v)) return `[${v.map(canonico).join(",")}]`;
+  if (v && typeof v === "object") {
+    const o = v as Record<string, unknown>;
+    return `{${Object.keys(o)
+      .filter((k) => o[k] !== undefined)
+      .sort()
+      .map((k) => `${JSON.stringify(k)}:${canonico(o[k])}`)
+      .join(",")}}`;
+  }
+  return JSON.stringify(v ?? null);
+}
+
+/**
+ * (ADR-449, revisión) La huella del CUERPO de una liquidación, para la
+ * idempotencia: la misma clave con otro cruce u otro pago no es un reintento
+ * (422 `idempotencia_distinta`, como las entregas de ADR-448). Mira qué se
+ * pide —persona, fecha, montos, reparto, notas y fotos—, no la huella de las
+ * partidas: un reintento tras un corte trae la misma intención.
+ */
+export function huellaDelCuerpo(input: Pick<LiquidacionInput, "persona" | "fecha" | "compensar" | "cruzarRecibido" | "pago" | "imputacion" | "notas" | "comprobantes">): string {
+  const texto = canonico({
+    b: input.persona.beneficiarioId ?? null,
+    p: input.persona.parteId ?? null,
+    f: input.fecha,
+    c: r2(input.compensar || 0),
+    r: r2(input.cruzarRecibido ?? 0),
+    pago: input.pago ? { ...input.pago, monto: r2(input.pago.monto) } : null,
+    i: input.imputacion ?? null,
+    n: input.notas?.trim() || null,
+    fotos: (input.comprobantes ?? []).map((f) => f.url),
+  });
+  let h = 0x811c9dc5;
+  for (let i = 0; i < texto.length; i++) {
+    h ^= texto.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h.toString(16).padStart(8, "0");
+}
+
 // ── Cómo se lee ──────────────────────────────────────────────────────────────
 
 /** La descripción de la entrega que se escribe, con el código del acto. */
-export function descripcionEntrega(e: Pick<EntregaPlaneada, "paso">, codigo: string, metodo: MetodoPago | null): string {
-  return e.paso === "cruce" ? `Cruce ${codigo} con la cuenta forestal` : `Pago ${codigo}${metodo ? ` (${metodo})` : ""}`;
+export function descripcionEntrega(e: Pick<EntregaPlaneada, "paso" | "lado">, codigo: string, metodo: MetodoPago | null): string {
+  if (e.paso === "cruce") return e.lado === "recibido" ? `Cruce ${codigo} con sus aserríos` : `Cruce ${codigo} con la cuenta forestal`;
+  return `Pago ${codigo}${metodo ? ` (${metodo})` : ""}`;
 }
 
 /** Las notas del movimiento forestal que se escribe, con el código del acto. */
@@ -834,14 +1109,18 @@ export function leerPlan(plan: PlanLiquidacion, nombre: string): string[] {
   const lineas: string[] = [];
   for (const e of plan.entregas) {
     lineas.push(
-      e.paso === "cruce"
-        ? `Se descuentan ${soles(e.valor)} del adelanto ${e.codigo ?? "sin código"} por el cruce.`
-        : `Se cobran ${soles(e.valor)} del adelanto ${e.codigo ?? "sin código"}.`,
+      e.lado === "recibido"
+        ? `De lo que te adelantó (${e.codigo ?? "sin código"}) se dan por devueltos ${soles(e.valor)} con sus aserríos.`
+        : e.paso === "cruce"
+          ? `Se descuentan ${soles(e.valor)} del adelanto ${e.codigo ?? "sin código"} por el cruce.`
+          : `Se cobran ${soles(e.valor)} del adelanto ${e.codigo ?? "sin código"}.`,
     );
   }
   for (const m of plan.movimientos) {
     lineas.push(
-      m.concepto === "compensacion"
+      m.concepto === "compensacion" && m.tipo === "abono"
+        ? `Sus aserríos bajan ${soles(m.monto)} por lo que te adelantó.`
+        : m.concepto === "compensacion"
         ? `En la cuenta forestal se anota el cruce por ${soles(m.monto)}${m.gtfNumber ? ` (guía ${m.gtfNumber})` : ""}.`
         : m.concepto === "pago"
           ? `En la cuenta forestal se abonan ${soles(m.monto)} de su pago.`
@@ -854,7 +1133,7 @@ export function leerPlan(plan: PlanLiquidacion, nombre: string): string[] {
         ? `Entran ${soles(plan.caja.monto)} a la caja (${plan.caja.metodo}).`
         : `Salen ${soles(plan.caja.monto)} de la caja (${plan.caja.metodo}).`,
     );
-  } else if (plan.pago) {
+  } else if (plan.pago || (plan.cruceRecibido ?? 0) > EPS) {
     lineas.push("No mueve la caja.");
   }
   return lineas;
@@ -863,12 +1142,13 @@ export function leerPlan(plan: PlanLiquidacion, nombre: string): string[] {
 /** El acta que se congela en la cabecera: cada pata con el id de lo que se escribió. */
 export function detalleDeLiquidacion(
   plan: PlanLiquidacion,
-  ids: { codigo: string; entregaIds: readonly string[]; movimientoIds: readonly string[] },
+  ids: { codigo: string; entregaIds: readonly string[]; movimientoIds: readonly string[]; huellaCuerpo?: string },
 ): DetalleLiquidacion {
   const { entregas, movimientos, ...resto } = plan;
   return {
     v: 1,
     ...resto,
+    ...(ids.huellaCuerpo ? { huellaCuerpo: ids.huellaCuerpo } : {}),
     entregas: entregas.map((e, i) => ({
       ...e,
       descripcion: descripcionEntrega(e, ids.codigo, plan.pago?.metodo ?? null),
@@ -901,7 +1181,12 @@ export function textoLiquidacion(d: LiquidacionDTO): string {
     `Fecha: ${d.fecha}`,
     `Persona: ${d.persona.nombre}${d.persona.documento ? ` (${d.persona.documento})` : ""}`,
   ];
-  if (d.compensado > EPS) lineas.push(`Cruce entre adelantos y cuenta forestal: ${soles(d.compensado)}`);
+  /* `compensado` de la cabecera es TODO lo cruzado; el acta dice cuánto fue de
+     lo recibido (ADR-449). Sin eso, es el cruce de siempre. */
+  const cruceRecibido = r2(det?.cruceRecibido ?? 0);
+  const cruceDado = r2(d.compensado - cruceRecibido);
+  if (cruceDado > EPS) lineas.push(`Cruce entre adelantos y cuenta forestal: ${soles(cruceDado)}`);
+  if (cruceRecibido > EPS) lineas.push(`Cruce de su adelanto contra sus aserríos: ${soles(cruceRecibido)}`);
   if (d.pago) {
     lineas.push(
       `${d.pago.direccion === "recibido" ? "Pago recibido" : "Pago entregado"}: ${soles(d.pago.monto)} (${d.pago.metodo})`,
@@ -945,12 +1230,16 @@ export const liquidacionInputSchema = z
       .refine(esDiaDelCalendario, "Esa fecha no existe en el calendario.")
       .refine((f) => f <= limaDateKey(), "La fecha no puede ser futura: usa la de hoy o una pasada."),
     compensar: monto,
+    /* ADR-449: lo que te adelantó, cruzado contra sus aserríos. Opcional: el
+       cliente de antes no lo manda y es 0. */
+    cruzarRecibido: monto.optional(),
     pago: z
       .object({ direccion: z.enum(["recibido", "hecho"]), monto: monto.positive(), metodo: z.enum(METODOS), moverCaja: z.boolean() })
       .nullable(),
     imputacion: z
       .object({
         compensacion: z.array(z.object({ adelantoId: z.string().min(1).max(40), monto })).max(200).optional(),
+        cruceRecibido: z.array(z.object({ adelantoId: z.string().min(1).max(40), monto })).max(200).optional(),
         pago: z.array(z.object({ partida: z.string().regex(/^(forestal|adelanto:[\w-]{1,40})$/), monto })).max(200).optional(),
         /* ADR-437 §6: la parte del cruce o del pago hecho que va a guías con nombre. */
         guias: z
@@ -967,7 +1256,7 @@ export const liquidacionInputSchema = z
        sean de este negocio y que no sean de otro pago los valida el servidor. */
     comprobantes: z.array(comprobanteSchema).max(10).optional(),
   })
-  .refine((d) => d.compensar > 0 || d.pago != null, "No hay nada que liquidar");
+  .refine((d) => d.compensar > 0 || (d.cruzarRecibido ?? 0) > 0 || d.pago != null, "No hay nada que liquidar");
 export type LiquidacionInput = z.infer<typeof liquidacionInputSchema>;
 
 export const anularLiquidacionSchema = z.object({

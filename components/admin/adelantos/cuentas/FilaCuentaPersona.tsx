@@ -86,9 +86,19 @@ export default function FilaCuentaPersona({
    */
   const teDebeAdelantos = persona.adelantos?.teDebe ?? 0;
   const aFavorSuyoMadera = Math.max(0, -(persona.madera?.saldo ?? 0));
-  const maximoAprox = persona.parteId ? Math.min(teDebeAdelantos, aFavorSuyoMadera) : 0;
+  /* ADR-449: el cruce al revés — lo que te adelantó contra lo que te debe en
+     la cuenta forestal (sus aserríos). Te adelantó 1 000 y le cobraste 1 000
+     de aserrío: el neto da 0 y hay dos libretas que cerrar. */
+  const teDebeMadera = Math.max(0, persona.madera?.saldo ?? 0);
+  const recibidoAprox = persona.adelantos?.recibidoPendiente ?? 0;
+  const maximoAprox = persona.parteId
+    ? Math.max(Math.min(teDebeAdelantos, aFavorSuyoMadera), Math.min(recibidoAprox, teDebeMadera))
+    : 0;
   const netoDistintoDeCero = Math.abs(persona.neto) > 0.005;
   const hayAlgoQueLiquidar = netoDistintoDeCero || maximoAprox > 0.005;
+  /* Revisión ADR-449: después de «Dejar en cero» el neto es 0 y no hay nada que
+     liquidar, pero la liquidación sigue viva y su «Anular» vive en el modal. */
+  const tieneLiquidaciones = (persona.liquidacionesVivas ?? 0) > 0;
   /**
    * Si lo ÚNICO que hay para liquidar es un cruce (el neto ya da 0 — le
    * adelantaste 800 y te vendió madera por 800) y el vínculo no es explícito,
@@ -98,7 +108,7 @@ export default function FilaCuentaPersona({
    * mientras tanto se puede cobrar o pagar lo que es de una sola libreta.
    */
   const soloSeArreglaCruzando = !netoDistintoDeCero && maximoAprox > 0.005;
-  const vinculoBloqueaElBoton = soloSeArreglaCruzando && persona.vinculo !== "id";
+  const vinculoBloqueaElBoton = soloSeArreglaCruzando && persona.vinculo !== "id" && !tieneLiquidaciones;
 
   return (
     <li className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
@@ -133,17 +143,25 @@ export default function FilaCuentaPersona({
 
       {/* flex-wrap: deja lugar para sumar acciones sin romper la fila. */}
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <ControlVinculo persona={persona} candidatos={candidatos} onVincular={onVincular} />
+        {/* Vincular decide contra qué cuenta se cruza la plata: sólo admin o
+            dueño (revisión ADR-449), los mismos que liquidan. */}
+        {puedeLiquidar && <ControlVinculo persona={persona} candidatos={candidatos} onVincular={onVincular} />}
         <AccionesEstadoCuenta persona={persona} />
-        {puedeLiquidar && hayAlgoQueLiquidar && (
+        {puedeLiquidar && (hayAlgoQueLiquidar || tieneLiquidaciones) && (
           <button
             type="button"
             onClick={() => setLiquidando(true)}
             disabled={vinculoBloqueaElBoton}
-            aria-label={vinculoBloqueaElBoton ? `Para liquidar a ${persona.nombre} hace falta confirmar que es la misma persona` : `Liquidar la cuenta de ${persona.nombre}`}
+            aria-label={
+              vinculoBloqueaElBoton
+                ? `Para liquidar a ${persona.nombre} hace falta confirmar que es la misma persona`
+                : hayAlgoQueLiquidar
+                  ? `Liquidar la cuenta de ${persona.nombre}`
+                  : `Ver las liquidaciones de ${persona.nombre}`
+            }
             className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <Scale className="h-3.5 w-3.5" aria-hidden /> Liquidar
+            <Scale className="h-3.5 w-3.5" aria-hidden /> {hayAlgoQueLiquidar ? "Liquidar" : "Liquidaciones"}
           </button>
         )}
         {vinculoBloqueaElBoton && <span className="text-xs text-[var(--text-tertiary)]">Falta confirmar el vínculo</span>}

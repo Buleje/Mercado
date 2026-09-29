@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { AdelantosDB, ParteDadaDeBajaError, ParteYaVinculadaError } from "@/lib/db/adelantos.db";
+import { ForestDirectorioDB } from "@/lib/db/forest-directorio.db";
+import { soloAdminODueno } from "@/lib/forestal/plata-de-guia-rol";
 import { requireAdmin } from "@/lib/require-admin";
 import { permisoAdelantos } from "@/lib/adelantos/permisos";
 import { logActivity } from "@/lib/activity-logger";
@@ -73,13 +75,23 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     const esVincularParte = VincularParteSchema.safeParse(body);
     if (esVincularParte.success) {
+      /* Revisión ADR-449: el vínculo decide contra qué cuenta forestal se cruza
+         la plata de la persona. Un manager tiene `write` y podía unir la ficha a
+         OTRA parte con aserríos: el cruce caía en la cuenta equivocada. Sólo
+         admin o dueño, como liquidar. */
+      const prohibido = soloAdminODueno(auth.role, "vincular una persona con su parte del directorio forestal");
+      if (prohibido) return prohibido;
       try {
         const benef = await AdelantosDB.vincularParte(auth.tenantId, id, esVincularParte.data.forestPartyId);
         if (!benef) return NextResponse.json({ error: "Persona no encontrada" }, { status: 404 });
+        /* La auditoría dice de qué parte a qué parte (con nombre e id). */
+        const nombreDe = async (parteId: string | null) =>
+          parteId ? `«${(await ForestDirectorioDB.getParte(auth.tenantId, parteId))?.nombre ?? "parte borrada"}» (${parteId})` : "ninguna";
+        const [antes, despues] = await Promise.all([nombreDe(benef.forestPartyIdAnterior), nombreDe(esVincularParte.data.forestPartyId)]);
         logActivity(
           esVincularParte.data.forestPartyId ? "Vincular" : "Desvincular",
           "adelanto",
-          `${esVincularParte.data.forestPartyId ? "Vinculó" : "Desvinculó"} a ${benef.nombre} con su parte del directorio forestal`,
+          `${esVincularParte.data.forestPartyId ? "Vinculó" : "Desvinculó"} a ${benef.nombre} con su parte del directorio forestal · parte anterior: ${antes} · parte nueva: ${despues}`,
           benef.id,
           auth.username,
           undefined,

@@ -6,11 +6,17 @@
  * guardando) y tres pantallas posibles: ya vinculada explícitamente
  * (Desvincular), unida por documento (nada que hacer acá), o suelta con
  * candidatas para ofrecer.
+ *
+ * ADR-449: si una candidata se llama igual (sin tildes, mayúsculas ni «SAC»),
+ * la pregunta la nombra —«¿Es la misma persona que WASACO?»— y la deja elegida.
+ * Nunca vincula sola: hace falta «Sí, vincular».
  */
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link2, Link2Off } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import type { CuentaPersona } from "@/lib/adelantos/cuenta-unificada";
+import { sugerirVinculo } from "@/lib/adelantos/vinculo-sugerido";
 
 export default function ControlVinculo({
   persona,
@@ -25,6 +31,11 @@ export default function ControlVinculo({
   const [eligiendo, setEligiendo] = useState(false);
   const [seleccion, setSeleccion] = useState("");
   const [guardando, setGuardando] = useState(false);
+  const sugerida = useMemo(
+    () => (persona.parteId || persona.vinculo === "id" ? null : sugerirVinculo(persona, candidatos)),
+    [persona, candidatos],
+  );
+  const parteSugerida = sugerida?.candidata.parteId ?? null;
 
   // La acción vive en `AdelantoBeneficiario`: sin ficha en Adelantos no hay
   // qué actualizar desde acá (la fila de la parte suelta no tiene botón propio).
@@ -52,13 +63,30 @@ export default function ControlVinculo({
 
   if (!eligiendo) {
     return (
-      <button
-        type="button"
-        onClick={() => setEligiendo(true)}
-        className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-bold text-primary hover:underline"
-      >
-        <Link2 className="h-3.5 w-3.5" aria-hidden /> ¿Es la misma persona que…?
-      </button>
+      <span className="inline-flex items-center gap-1">
+        <button
+          type="button"
+          onClick={() => {
+            setSeleccion(parteSugerida ?? "");
+            setEligiendo(true);
+          }}
+          className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-bold text-primary hover:underline"
+        >
+          <Link2 className="h-3.5 w-3.5" aria-hidden />
+          {sugerida ? `¿Es la misma persona que ${sugerida.candidata.nombre}?` : "¿Es la misma persona que…?"}
+        </button>
+        {sugerida && (
+          <InfoTip
+            title="Por qué se sugiere"
+            what={
+              sugerida.motivo === "mismo-documento"
+                ? `${persona.nombre} y ${sugerida.candidata.nombre} tienen el mismo documento.`
+                : `«${persona.nombre}» y «${sugerida.candidata.nombre}» se escriben igual sin contar mayúsculas, tildes ni la forma de empresa (SAC, EIRL…).`
+            }
+            affects="Si confirmas, sus adelantos y su cuenta forestal (aserríos, madera, pagos) se ven y se liquidan juntos. Nada se une hasta que confirmes."
+          />
+        )}
+      </span>
     );
   }
 
@@ -90,7 +118,7 @@ export default function ControlVinculo({
         }}
         className="h-9 rounded-lg bg-primary px-3 text-sm font-bold text-white transition-colors hover:bg-primary-dark disabled:opacity-50"
       >
-        {guardando ? "Vinculando…" : "Vincular"}
+        {guardando ? "Vinculando…" : seleccion && seleccion === parteSugerida ? "Sí, vincular" : "Vincular"}
       </button>
       <button
         type="button"

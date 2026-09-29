@@ -50,18 +50,30 @@ export async function descargarComprobanteLiquidacion(d: DatosLiquidacionPdf): P
   doc.setFontSize(9);
   doc.text(`Fecha: ${fechaUtc(liq.fecha)}`, 14, y);
 
-  // 3) Lo que se cruzó.
-  if (det.compensado > 0) {
+  // 3) Lo que se cruzó. ADR-449: también lo que la persona adelantó, contra sus aserríos.
+  const cruceRecibido = det.cruceRecibido ?? 0;
+  if (det.compensado > 0 || cruceRecibido > 0) {
     y += 10;
     doc.setFontSize(11);
     doc.text("Lo que se cruzó", 14, y);
     doc.setFontSize(9);
     for (const e of det.entregas.filter((x: EntregaPlaneada) => x.paso === "cruce")) {
       y += 6;
-      doc.text(`${e.codigo ?? e.adelantoId} — ${e.descripcion}: ${formatCurrency(e.valor)}`, 16, y);
+      const deQuien = e.lado === "recibido" ? "Su adelanto " : "";
+      doc.text(`${deQuien}${e.codigo ?? e.adelantoId} — ${e.descripcion}: ${formatCurrency(e.valor)}`, 16, y);
     }
-    y += 6;
-    doc.text(`Contra la cuenta forestal: ${formatCurrency(det.compensado)}`, 16, y);
+    if (det.compensado > 0) {
+      y += 6;
+      doc.text(`Contra la cuenta forestal: ${formatCurrency(det.compensado)}`, 16, y);
+    }
+    if (cruceRecibido > 0) {
+      y += 6;
+      doc.text(`Contra sus aserríos (cuenta forestal): ${formatCurrency(cruceRecibido)}`, 16, y);
+    }
+    if (!det.pago) {
+      y += 6;
+      doc.text("No mueve la caja.", 16, y);
+    }
   }
 
   // 4) Lo que se pagó.
@@ -86,8 +98,18 @@ export async function descargarComprobanteLiquidacion(d: DatosLiquidacionPdf): P
   doc.text(`Adelantos: ${formatCurrency(det.antes.adelantosTeDebe)} → ${formatCurrency(det.despues.adelantosTeDebe)}`, 16, y);
   y += 5;
   doc.text(`Cuenta forestal: ${formatCurrency(det.antes.maderaSaldo)} → ${formatCurrency(det.despues.maderaSaldo)}`, 16, y);
+  /* ADR-448/449: lo que te adelantó es parte de la cuenta; el cruce lo baja. */
+  if ((det.antes.recibidoLeDebes ?? 0) > 0) {
+    y += 5;
+    doc.text(
+      `Lo que te adelantó: ${formatCurrency(det.antes.recibidoLeDebes ?? 0)} → ${formatCurrency(det.despues.recibidoLeDebes ?? det.antes.recibidoLeDebes ?? 0)}`,
+      16,
+      y,
+    );
+  }
   y += 5;
-  doc.text(leerNeto(det.despues.neto, liq.persona.nombre), 16, y);
+  const netoIgual = Math.abs(det.antes.neto - det.despues.neto) < 0.005;
+  doc.text(`${leerNeto(det.despues.neto, liq.persona.nombre)}${netoIgual ? " (sin cambio)" : ""}`, 16, y);
 
   // 6) Queda fuera.
   if (det.fuera.length > 0) {

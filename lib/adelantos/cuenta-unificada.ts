@@ -140,6 +140,12 @@ export interface CuentaPersona {
   neto: number;
   /** Adelantos en monedas != PEN — fuera del neto (la cuenta forestal es en soles). */
   otrasMonedas: Record<string, number>;
+  /**
+   * Liquidaciones VIVAS de la persona (revisión ADR-449). Lo agrega la ruta, no
+   * `unificarCuentas`: con el neto en 0 la fila sigue mostrando «Liquidaciones»
+   * para poder anularlas. Opcional: ausente = 0.
+   */
+  liquidacionesVivas?: number;
 }
 
 const r2 = (n: number) => Math.round(n * 100) / 100;

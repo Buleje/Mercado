@@ -23,6 +23,9 @@ const H = vi.hoisted(() => {
     }
   }
   class AdelantoNoCancelableError extends Error {}
+  /* Revisión ADR-449: la ruta la importa; sin ella en el mock, el `instanceof`
+     del catch revienta con TypeError. */
+  class AdelantoConLiquidacionError extends Error {}
   class IdempotenciaDistintaError extends Error {
     readonly status = 422;
     readonly code = "idempotencia_distinta";
@@ -47,6 +50,7 @@ const H = vi.hoisted(() => {
     corregir: vi.fn(),
     DireccionNoCorregibleError,
     AdelantoNoCancelableError,
+    AdelantoConLiquidacionError,
   };
 });
 
@@ -72,6 +76,7 @@ vi.mock("@/lib/db/adelantos.db", () => ({
   ReglaDeRecibidoError: H.ReglaDeRecibidoError,
   IdempotenciaDistintaError: H.IdempotenciaDistintaError,
   AdelantoNoCancelableError: H.AdelantoNoCancelableError,
+  AdelantoConLiquidacionError: H.AdelantoConLiquidacionError,
 }));
 
 import { GET, POST } from "@/app/api/adelantos/route";

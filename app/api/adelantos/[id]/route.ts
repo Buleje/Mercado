@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { AdelantoNoCancelableError, AdelantosDB, DireccionNoCorregibleError, ReglaDeRecibidoError } from "@/lib/db/adelantos.db";
+import { AdelantoConLiquidacionError, AdelantoNoCancelableError, AdelantosDB, DireccionNoCorregibleError, ReglaDeRecibidoError } from "@/lib/db/adelantos.db";
 import { requireAdmin } from "@/lib/require-admin";
 import { permisoAdelantos } from "@/lib/adelantos/permisos";
 import { logActivity } from "@/lib/activity-logger";
@@ -92,6 +92,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   } catch (e) {
     /* Ya anulado o ya liquidado: no hay saldo que devolver. El modal muestra `error` tal cual. */
     if (e instanceof AdelantoNoCancelableError) return NextResponse.json({ error: e.message }, { status: 409 });
+    if (e instanceof AdelantoConLiquidacionError) return NextResponse.json({ error: e.message, code: e.code, liquidacion: e.liquidacion }, { status: 409 });
     if (e instanceof ReglaDeRecibidoError) return NextResponse.json({ error: e.message, code: e.code }, { status: e.status });
     logger.error("[adelantos/id] PATCH error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
@@ -168,6 +169,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     return NextResponse.json({ ok: true });
   } catch (e) {
     if (e instanceof AdelantoNoCancelableError) return NextResponse.json({ error: e.message }, { status: 409 });
+    if (e instanceof AdelantoConLiquidacionError) return NextResponse.json({ error: e.message, code: e.code, liquidacion: e.liquidacion }, { status: 409 });
     logger.error("[adelantos/id] DELETE error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }

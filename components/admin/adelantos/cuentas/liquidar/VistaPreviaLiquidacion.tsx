@@ -21,6 +21,7 @@ export default function VistaPreviaLiquidacion({
   vinculoFaltante,
   maderaAFavorSuyo,
   aFavorSuyoAdelantos = 0,
+  etiquetaForestal = "Cuenta forestal",
 }: {
   plan: ResultadoPlan | null;
   nombre: string;
@@ -34,6 +35,8 @@ export default function VistaPreviaLiquidacion({
    * la cabecera del modal (revisión 28-09).
    */
   aFavorSuyoAdelantos?: number;
+  /** «Aserríos» si la cuenta forestal de la persona es sólo eso (ADR-449): se lee en su idioma. */
+  etiquetaForestal?: string;
 }) {
   const notaMaderaAparte =
     vinculoFaltante && maderaAFavorSuyo > 0.005 ? (
@@ -69,8 +72,15 @@ export default function VistaPreviaLiquidacion({
   }
 
   const { plan: p } = plan;
+  /* Signo = cómo cambia lo que te debe: una entrega a lo que le diste lo baja;
+     una a lo que te adelantó (ADR-449) lo sube, porque le debes menos. */
   const filas = [
-    ...p.entregas.map((e) => ({ libreta: "Adelantos" as const, concepto: e.descripcion, referencia: e.codigo, monto: -e.valor })),
+    ...p.entregas.map((e) => ({
+      libreta: "Adelantos" as const,
+      concepto: e.descripcion,
+      referencia: e.codigo,
+      monto: e.lado === "recibido" ? e.valor : -e.valor,
+    })),
     ...p.movimientos.map((m) => ({
       libreta: "Cuenta forestal" as const,
       concepto: m.notas,
@@ -79,8 +89,16 @@ export default function VistaPreviaLiquidacion({
     })),
   ];
 
+  const cruceRecibido = p.cruceRecibido ?? 0;
+  const netoIgual = Math.abs(p.antes.neto - p.despues.neto) <= 0.005;
+
   return (
     <div className="space-y-4">
+      {cruceRecibido > 0.005 && (
+        <p className="text-base font-extrabold text-[var(--text-primary)]">
+          Cruzar {fmtMon(cruceRecibido)} de su adelanto contra sus aserríos
+        </p>
+      )}
       <div className="overflow-hidden rounded-2xl border border-[var(--rule-base)] admin-mobile-cards">
         <table className="w-full text-sm">
           <thead className="bg-[var(--surface-sunken)] text-xs text-[var(--text-tertiary)]">
@@ -129,12 +147,16 @@ export default function VistaPreviaLiquidacion({
         {/* ADR-448: la plata que te dio no se salda acá, pero es parte de la cuenta: sin
             esta fila el «después» parecía cero con plata que el negocio todavía le debe. */}
         {(p.antes.recibidoLeDebes ?? 0) > 0.005 && (
-          <Antes label="Le debes (te dio)" antes={p.antes.recibidoLeDebes ?? 0} despues={p.despues.recibidoLeDebes ?? p.antes.recibidoLeDebes ?? 0} />
+          <Antes label="Lo que te adelantó" antes={p.antes.recibidoLeDebes ?? 0} despues={p.despues.recibidoLeDebes ?? p.antes.recibidoLeDebes ?? 0} />
         )}
-        <Antes label="Cuenta forestal" antes={p.antes.maderaSaldo} despues={p.despues.maderaSaldo} />
+        <Antes label={etiquetaForestal} antes={p.antes.maderaSaldo} despues={p.despues.maderaSaldo} />
         <div>
           <p className="text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Neto</p>
-          <p className="text-sm font-semibold text-[var(--text-tertiary)] line-through">{leerNeto(r2(p.antes.neto - aFavorSuyoAdelantos), nombre)}</p>
+          {netoIgual ? (
+            <p className="text-sm font-semibold text-[var(--text-tertiary)]">Sin cambio</p>
+          ) : (
+            <p className="text-sm font-semibold text-[var(--text-tertiary)] line-through">{leerNeto(r2(p.antes.neto - aFavorSuyoAdelantos), nombre)}</p>
+          )}
           <p className="text-base font-extrabold text-[var(--text-primary)]">{leerNeto(r2(p.despues.neto - aFavorSuyoAdelantos), nombre)}</p>
         </div>
       </div>

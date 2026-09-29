@@ -206,20 +206,20 @@ describe("liquidación (ADR-413) con lo recibido", () => {
     direccion,
   });
 
-  it("lo RECIBIDO cae en `fuera` con su motivo, y no en el FIFO", () => {
-    const { adelantos, fuera } = clasificarAdelantos([fila("2", "DADO", 3217), fila("3", "RECIBIDO", 1731), fila("4", "RECIBIDO", 1300)]);
+  it("lo RECIBIDO no entra al FIFO: el abierto en soles va a `recibidos` (ADR-449), no a `fuera`", () => {
+    const { adelantos, recibidos, fuera } = clasificarAdelantos([fila("2", "DADO", 3217), fila("3", "RECIBIDO", 1731), fila("4", "RECIBIDO", 1300)]);
     expect(adelantos.map((a) => a.adelantoId)).toEqual(["2"]);
-    expect(fuera).toHaveLength(2);
-    expect(fuera[0]).toMatchObject({ monto: 1731, direccion: "RECIBIDO" });
-    expect(fuera[0].motivo).toMatch(/plata que te dieron/);
+    expect(recibidos.map((r) => [r.adelantoId, r.saldo])).toEqual([["3", 1731], ["4", 1300]]);
+    expect(fuera).toHaveLength(0);
   });
 
   it("«Dejar en cero» nunca le cobra lo que el negocio le debe", () => {
-    const { adelantos, fuera } = clasificarAdelantos([fila("2", "DADO", 3217), fila("3", "RECIBIDO", 1731)]);
+    const { adelantos, recibidos, fuera } = clasificarAdelantos([fila("2", "DADO", 3217), fila("3", "RECIBIDO", 1731)]);
     const partidas: PartidasDePersona = {
       persona: { beneficiarioId: "b", parteId: null, nombre: "Wasaco", documento: null },
       cruzable: false,
       adelantos,
+      recibidos,
       forestal: null,
       fuera,
     };
@@ -242,21 +242,22 @@ describe("liquidación (ADR-413) con lo recibido", () => {
 
   it("la huella cambia si cambia la dirección aunque el monto sea el mismo", () => {
     const base = (f: ReturnType<typeof fila>): PartidasDePersona => {
-      const { adelantos, fuera } = clasificarAdelantos([f]);
-      return { persona: { beneficiarioId: "b", parteId: null, nombre: "X", documento: null }, cruzable: false, adelantos, forestal: null, fuera };
+      const { adelantos, recibidos, fuera } = clasificarAdelantos([f]);
+      return { persona: { beneficiarioId: "b", parteId: null, nombre: "X", documento: null }, cruzable: false, adelantos, recibidos, forestal: null, fuera };
     };
-    /* Un DADO excedido de 100 y un RECIBIDO abierto de 100 caen los dos en `fuera`
-       con la misma etiqueta y el mismo monto: sin la dirección, la misma huella. */
+    /* Un DADO excedido de 100 y un RECIBIDO abierto de 100 son el mismo monto con
+       el mismo código: sin la dirección, la misma huella. Desde ADR-449 el
+       recibido va a `recibidos` y el excedido a `fuera`. */
     const dadoExcedido = base(fila("7", "DADO", -100, "EXCEDIDO"));
     const recibidoAbierto = base(fila("7", "RECIBIDO", 100));
-    expect(dadoExcedido.fuera[0].monto).toBe(recibidoAbierto.fuera[0].monto);
+    expect(dadoExcedido.fuera[0].monto).toBe(recibidoAbierto.recibidos?.[0].saldo);
     expect(huellaDe(dadoExcedido)).not.toBe(huellaDe(recibidoAbierto));
   });
 
   it("la huella distingue un recibido abierto de uno excedido del mismo monto", () => {
     const de = (f: ReturnType<typeof fila>): PartidasDePersona => {
-      const { adelantos, fuera } = clasificarAdelantos([f]);
-      return { persona: { beneficiarioId: "b", parteId: null, nombre: "X", documento: null }, cruzable: false, adelantos, forestal: null, fuera };
+      const { adelantos, recibidos, fuera } = clasificarAdelantos([f]);
+      return { persona: { beneficiarioId: "b", parteId: null, nombre: "X", documento: null }, cruzable: false, adelantos, recibidos, forestal: null, fuera };
     };
     expect(huellaDe(de(fila("8", "RECIBIDO", 100)))).not.toBe(huellaDe(de(fila("8", "RECIBIDO", -100, "EXCEDIDO"))));
   });
@@ -285,20 +286,27 @@ describe("«Dejar en cero» con plata recibida", () => {
     direccion,
   });
   const partidas = (filas: ReturnType<typeof f>[], forestal: number | null): PartidasDePersona => {
-    const { adelantos, fuera } = clasificarAdelantos(filas);
+    const { adelantos, recibidos, fuera } = clasificarAdelantos(filas);
     return {
       persona: { beneficiarioId: "b-wasaco", parteId: forestal == null ? null : "p-wasaco", nombre: "WASACO", documento: null },
       cruzable: forestal != null,
       adelantos,
+      recibidos,
       forestal: forestal == null ? null : { saldo: forestal, desde: null, movimientos: [] },
       fuera,
     };
   };
 
-  it("WASACO vinculado (dado 3 217, recibido 3 031, aserríos 12 323,02): no propone nada", () => {
+  it("WASACO vinculado (dado 3 217, recibido 3 031, aserríos 12 323,02): cruza 3 031 y cobra 12 509,02 (ADR-449)", () => {
     const p = partidas([f("2", "DADO", 3217), f("3", "RECIBIDO", 1731), f("4", "RECIBIDO", 1300)], 12323.02);
-    // Antes cobraba 3 217 + 12 323,02 = 15 540,02 y dejaba los 3 031 afuera sin decirlo.
-    expect(intencionDejarEnCero(p, "2026-09-29", "efectivo", true)).toBeNull();
+    /* ADR-448 lo dejaba en null (cobraba 15 540,02 si no). ADR-449 cruza lo
+       recibido contra los aserríos y cobra el resto: nunca más de lo que debe. */
+    expect(intencionDejarEnCero(p, "2026-09-29", "efectivo", true)).toEqual({
+      fecha: "2026-09-29",
+      compensar: 0,
+      cruzarRecibido: 3031,
+      pago: { direccion: "recibido", monto: 12509.02, metodo: "efectivo", moverCaja: true },
+    });
     expect(saldosDe(p)).toEqual({
       adelantosTeDebe: 3217,
       maderaSaldo: 12323.02,

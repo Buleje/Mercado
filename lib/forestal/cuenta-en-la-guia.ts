@@ -98,7 +98,10 @@ export function armarCuentaDeGuia(input: {
   for (const l of input.lineas) {
     if (l.origen !== "forestal" || l.moneda !== "PEN") continue;
     if (l.conceptoForestal === "madera") madera -= l.monto;
-    else if (l.conceptoForestal === "pago_hecho" || l.conceptoForestal === "compensacion") pagado += l.monto;
+    /* Sólo el cruce que le paga (`cargo`, monto > 0). El `abono` de
+       compensación es el cruce al revés (ADR-449: lo que te adelantó contra sus
+       aserríos) y restaba de «pagado» algo que nunca le pagaste. */
+    else if (l.conceptoForestal === "pago_hecho" || (l.conceptoForestal === "compensacion" && l.monto > 0)) pagado += l.monto;
   }
   return {
     parteId: input.parteId,

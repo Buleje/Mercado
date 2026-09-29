@@ -241,6 +241,19 @@ export class ParteYaVinculadaError extends Error {
  * anulado, o ya se liquidó entero. Anularlo otra vez devolvería a la caja un
  * saldo que ya no existe.
  */
+/**
+ * (Revisión ADR-449) El adelanto tiene entregas VIVAS de una liquidación: un
+ * cruce o un pago. Anularlo y después anular la liquidación dejaba la cuenta
+ * mal (el adelanto seguía CANCELADO con el cruce devuelto). 409 `con_liquidacion`.
+ */
+export class AdelantoConLiquidacionError extends Error {
+  readonly code = "con_liquidacion" as const;
+  constructor(readonly liquidacion: string) {
+    super(`Tiene un cruce o pago de la liquidación ${liquidacion}: anula esa liquidación primero (Cuenta por persona › Liquidaciones).`);
+    this.name = "AdelantoConLiquidacionError";
+  }
+}
+
 export class AdelantoNoCancelableError extends Error {
   constructor(readonly status: "CANCELADO" | "LIQUIDADO") {
     super(
@@ -1314,6 +1327,17 @@ export const AdelantosDB = {
       });
       if (!actual) return null;
       if (actual.status === "CANCELADO" || actual.status === "LIQUIDADO") throw new AdelantoNoCancelableError(actual.status);
+      /* Revisión ADR-449: con un cruce o un pago de una liquidación viva, se
+         anula primero la liquidación (bajo el mismo lock de la fila que toma
+         la liquidación al escribir). */
+      const deLiquidacion = await tx.adelantoEntrega.findFirst({
+        where: { adelantoId: id, anuladaAt: null, liquidacionId: { not: null }, adelanto: { tenantId } },
+        select: { liquidacionId: true },
+      });
+      if (deLiquidacion?.liquidacionId) {
+        const liq = await tx.liquidacionCuenta.findFirst({ where: { id: deLiquidacion.liquidacionId, tenantId }, select: { codigo: true } });
+        throw new AdelantoConLiquidacionError(liq?.codigo ?? "de esta persona");
+      }
       /* ADR-448: anular un recibido devolviendo la plata la SACA de la caja: sólo admin o dueño. */
       if (devolucionCaja && direccionDe(actual.direccion) === "RECIBIDO" && !permisos.puedeSacarPlataDeRecibido) {
         throw new ReglaDeRecibidoError(SOLO_ADMIN_RECIBIDO, 403, "solo_admin_o_dueno");
@@ -1427,8 +1451,19 @@ export const AdelantosDB = {
          transacción acaba de confirmar mientras esta esperaba. */
       const vivas = await tx.adelantoEntrega.count({ where: { adelantoId: id, anuladaAt: null } });
       if (vivas > 0) {
+        /* Revisión ADR-449: si la entrega es de una liquidación (un cruce con sus
+           aserríos), se dice CUÁL y dónde se anula — «anúlalas» solo no decía dónde. */
+        const deLiq = await tx.adelantoEntrega.findFirst({
+          where: { adelantoId: id, anuladaAt: null, liquidacionId: { not: null } },
+          select: { liquidacionId: true },
+        });
+        const liq = deLiq?.liquidacionId
+          ? await tx.liquidacionCuenta.findFirst({ where: { id: deLiq.liquidacionId, tenantId }, select: { codigo: true } })
+          : null;
         throw new DireccionNoCorregibleError(
-          `Ya tiene ${vivas} ${vivas === 1 ? "entrega registrada" : "entregas registradas"}: anúlalas antes de cambiar de lado la plata.`,
+          liq
+            ? `Está cruzado en la liquidación ${liq.codigo}: anúlala en Cuenta por persona › Liquidaciones antes de cambiar de lado la plata.`
+            : `Ya tiene ${vivas} ${vivas === 1 ? "entrega registrada" : "entregas registradas"}: anúlalas antes de cambiar de lado la plata.`,
           409,
           "con_entregas",
         );
@@ -1659,7 +1694,11 @@ export const AdelantosDB = {
    *  · nadie más de este tenant puede tenerla vinculada ya: una parte es UNA
    *    cuenta, no puede blanquear la deuda de dos personas a la vez.
    */
-  async vincularParte(tenantId: string, beneficiarioId: string, forestPartyId: string | null): Promise<DbBeneficiario | null> {
+  async vincularParte(
+    tenantId: string,
+    beneficiarioId: string,
+    forestPartyId: string | null,
+  ): Promise<(DbBeneficiario & { forestPartyIdAnterior: string | null }) | null> {
     if (!tenantId) throw new Error("tenantId is required");
     const existente = await prisma.adelantoBeneficiario.findFirst({ where: { id: beneficiarioId, tenantId } });
     if (!existente) return null;
@@ -1699,7 +1738,9 @@ export const AdelantosDB = {
       throw e;
     }
     const row = await prisma.adelantoBeneficiario.findFirst({ where: { id: beneficiarioId, tenantId } });
-    return row ? mapBeneficiario(row) : null;
+    /* La parte de antes viaja para la auditoría (revisión ADR-449): un vínculo
+       cambiado a otra parte manda los cruces a OTRA cuenta forestal. */
+    return row ? { ...mapBeneficiario(row), forestPartyIdAnterior: existente.forestPartyId ?? null } : null;
   },
 
   /** Elimina una persona. Bloquea si tiene adelantos registrados (integridad). */

@@ -40,6 +40,9 @@ const fila = () => ({
 });
 const tx = {
   $queryRaw: vi.fn(),
+  /* Revisión ADR-449: `cancel` mira si hay entregas vivas de una liquidación. */
+  adelantoEntrega: { findFirst: vi.fn(async () => null) },
+  liquidacionCuenta: { findFirst: vi.fn(async () => null) },
   adelanto: {
     findFirst: vi.fn(async () => fila()),
     updateMany: vi.fn(async ({ where }: { where: { status?: { notIn?: string[] } } }) => {

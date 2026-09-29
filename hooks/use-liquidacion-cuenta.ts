@@ -50,7 +50,7 @@ export function useLiquidacionCuenta(persona: PersonaId) {
 
   // Una sola vez por apertura del modal: éste es un hook fresco por mount
   // (el modal se desmonta al cerrar), así que `useState` inicial alcanza.
-  const [idempotencyKey] = useState(() => crypto.randomUUID());
+  const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
 
   const cargarPartidas = useCallback(async () => {
     setLoading(true);
@@ -113,6 +113,9 @@ export function useLiquidacionCuenta(persona: PersonaId) {
             persona: { beneficiarioId: persona.beneficiarioId ?? undefined, parteId: persona.parteId ?? undefined },
             fecha: intencion.fecha,
             compensar: intencion.compensar,
+            /* ADR-449: sin esta línea el cruce de lo recibido se veía en la
+               vista previa y el servidor recibía «nada que liquidar». */
+            ...(intencion.cruzarRecibido ? { cruzarRecibido: intencion.cruzarRecibido } : {}),
             pago: intencion.pago,
             imputacion: intencion.imputacion,
             notas: intencion.notas,
@@ -132,6 +135,7 @@ export function useLiquidacionCuenta(persona: PersonaId) {
         }
         if (!res.ok) return { ok: false, error: body?.message ?? body?.error ?? "No se pudo liquidar la cuenta" };
         await cargarLiquidaciones();
+        setIdempotencyKey(crypto.randomUUID());
         // `caja` NO se descarta (revisión de código): la pantalla de resultado
         // y el historial la muestran vía `liquidacion.caja.resultado` (misma
         // información ya persistida por el servidor, sin duplicar su lógica).
@@ -163,6 +167,10 @@ export function useLiquidacionCuenta(persona: PersonaId) {
           return { ok: false, message: body?.message ?? MENSAJE_GENERICO };
         }
         await Promise.all([cargarLiquidaciones(), cargarPartidas()]);
+        /* Una clave nueva (revisión ADR-449): liquidar otra vez en el MISMO
+           modal con la clave de antes devolvía la anulada como «repetida», o
+           ahora un 422 `idempotencia_distinta`. */
+        setIdempotencyKey(crypto.randomUUID());
         return { ok: true };
       } catch {
         return { ok: false, message: MENSAJE_GENERICO };

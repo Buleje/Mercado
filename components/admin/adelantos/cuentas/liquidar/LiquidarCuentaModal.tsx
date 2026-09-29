@@ -76,6 +76,12 @@ export default function LiquidarCuentaModal({
    * la manda).
    */
   const saldosFrescos = useMemo(() => (partidas ? saldosDe(partidas) : null), [partidas]);
+  /* ADR-449: si la cuenta forestal de la persona son sólo aserríos (WASACO: 32
+     cargos, 0 de otra cosa), se nombra así en el «Antes → Después». */
+  const etiquetaForestal = useMemo(() => {
+    const cargos = (partidas?.forestal?.movimientos ?? []).filter((m) => m.tipo === "cargo" && m.concepto !== "compensacion" && m.concepto !== "pago_hecho");
+    return cargos.length > 0 && cargos.every((m) => m.concepto === "aserrio_prestado") ? "Aserríos" : "Cuenta forestal";
+  }, [partidas]);
   const teDebeAdelantos = saldosFrescos?.adelantosTeDebe ?? persona.adelantos?.teDebe ?? 0;
   const maderaSaldo = partidas?.forestal ? (saldosFrescos?.maderaSaldo ?? 0) : (persona.madera?.saldo ?? 0);
   /* ADR-448: lo recibido no entra a la liquidación (va en `fuera`), pero la
@@ -136,7 +142,11 @@ export default function LiquidarCuentaModal({
           <div className="flex items-center gap-2 text-sm font-semibold text-[var(--text-secondary)]">
             <Scale className="h-4 w-4 shrink-0" aria-hidden />
             Adelantos: {fmtMon(teDebeAdelantos)}
-            {leDebesAdelantos > 0.005 && ` · le debes ${fmtMon(leDebesAdelantos)}`} · Cuenta forestal: {leerMadera(maderaSaldo)}
+            {leDebesAdelantos > 0.005 && ` · le debes ${fmtMon(leDebesAdelantos)}`} · Cuenta forestal
+            {/* La PARTE contra la que se cruza (revisión ADR-449): la ficha y la
+                parte pueden llamarse distinto, y un vínculo cambiado manda el
+                cruce a otra cuenta. */}
+            {partidas?.persona.parteNombre ? ` de ${partidas.persona.parteNombre}` : ""}: {leerMadera(maderaSaldo)}
           </div>
           <p className="min-w-0 break-words text-right text-base font-extrabold text-[var(--text-primary)]">
             {leerNeto(netoCabecera, persona.nombre)}
@@ -188,6 +198,7 @@ export default function LiquidarCuentaModal({
               vinculoFaltante={necesitaConfirmarVinculo}
               maderaAFavorSuyo={Math.max(0, -(persona.madera?.saldo ?? 0))}
               aFavorSuyoAdelantos={persona.adelantos?.aFavorSuyo ?? 0}
+              etiquetaForestal={etiquetaForestal}
             />
           </div>
 
@@ -200,7 +211,12 @@ export default function LiquidarCuentaModal({
             <button
               type="button"
               onClick={onConfirmar}
-              disabled={!intencion || !plan?.ok || confirmando || (necesitaConfirmarVinculo && (intencion?.compensar ?? 0) > 0)}
+              disabled={
+                !intencion ||
+                !plan?.ok ||
+                confirmando ||
+                (necesitaConfirmarVinculo && ((intencion?.compensar ?? 0) > 0 || (intencion?.cruzarRecibido ?? 0) > 0))
+              }
               className="inline-flex h-12 items-center gap-2 rounded-2xl bg-primary px-6 text-base font-bold text-white transition-colors hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-50"
             >
               <CheckCircle2 className="h-5 w-5" aria-hidden /> {confirmando ? "Liquidando…" : "Confirmar liquidación"}

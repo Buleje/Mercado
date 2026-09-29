@@ -118,6 +118,12 @@ export interface MovimientoCuenta {
    * desde la guía. Opcional: lo anterior a ADR-437 no lo trae.
    */
   gtfNumber?: string | null;
+  /**
+   * El permiso (ADR-421) bajo el que nació: el cargo de aserrío lleva el de su
+   * corrida. La liquidación lo lee para partir lo cobrado por permiso
+   * (ADR-449). Opcional: lo que se lee sin él sigue igual.
+   */
+  contratoId?: string | null;
 }
 
 const texto = (max: number) => z.string().trim().max(max);
