@@ -2,6 +2,7 @@ import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { saldoEsperadoDeCaja } from "@/lib/caja/saldo-esperado";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -30,8 +31,11 @@ export type PaymentBuckets = {
 
 export type CashSummary = {
   abierta: boolean;
+  /** El esperado del arqueo (`saldoEsperadoDeCaja`): sólo efectivo. */
   saldoActual: number;
+  /** Ingresos de HOY en efectivo. */
   ingresos: number;
+  /** Egresos de HOY en efectivo. */
   egresos: number;
 };
 
@@ -170,14 +174,15 @@ export const VentasOverviewDB = {
           },
         }),
 
-        // Caja abierta actual con movimientos del día para ingresos/egresos
+        // Caja abierta actual con TODOS sus movimientos: el saldo es el del
+        // arqueo (una caja abierta desde ayer arrastra lo de ayer). Los
+        // ingresos/egresos del día se filtran abajo por fecha.
         prisma.cashRegister.findFirst({
           where: { tenantId, status: "abierta" },
           select: {
             openingAmount: true,
             movements: {
-              where: { createdAt: { gte: rangeStart("hoy") } },
-              select: { type: true, amount: true },
+              select: { type: true, method: true, amount: true, createdAt: true },
             },
           },
         }),
@@ -336,29 +341,20 @@ export const VentasOverviewDB = {
     };
 
     if (openCash) {
-      let saldoActual = toNumOrZero(openCash.openingAmount);
-      let ingresos = 0;
-      let egresos = 0;
-
-      for (const mv of openCash.movements) {
-        const amt = toNumOrZero(mv.amount);
-        // QA Brandon 2026-06-10 #1: el movimiento type "apertura" NO suma —
-        // el saldo ya arranca con openingAmount (línea de arriba). Antes se
-        // sumaban ambos → el Tablero mostraba S/235 en vez de S/135 (la
-        // apertura contada dos veces).
-        if (mv.type === "venta") {
-          saldoActual += amt;
-        } else if (mv.type === "ingreso") {
-          saldoActual += amt;
-          ingresos += amt;
-        } else if (mv.type === "egreso") {
-          saldoActual -= amt;
-          egresos += amt;
-        }
-        // tipo "cierre" no aparece en caja abierta; se ignora
-      }
-
-      cash = { abierta: true, saldoActual, ingresos, egresos };
+      /* LA cuenta del arqueo (`saldoEsperadoDeCaja`, la del cierre y la pantalla
+         de caja): sólo efectivo, y la apertura una vez (el movimiento
+         «apertura» no suma — QA Brandon 2026-06-10 #1). La copia de antes
+         sumaba las ventas por Yape/tarjeta/fiado y restaba los egresos por Yape,
+         y sólo miraba los movimientos de HOY. */
+      const movs = openCash.movements.map((mv) => ({ type: mv.type, method: mv.method, amount: toNumOrZero(mv.amount), createdAt: mv.createdAt }));
+      const desdeHoy = rangeStart("hoy");
+      const hoy = saldoEsperadoDeCaja(0, movs.filter((mv) => mv.createdAt >= desdeHoy));
+      cash = {
+        abierta: true,
+        saldoActual: saldoEsperadoDeCaja(toNumOrZero(openCash.openingAmount), movs).esperado,
+        ingresos: hoy.ingresos,
+        egresos: hoy.egresos,
+      };
     }
 
     // ── Top Products ──────────────────────────────────────────────────────────

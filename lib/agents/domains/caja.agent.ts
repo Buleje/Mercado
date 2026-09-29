@@ -15,6 +15,7 @@
 import type { DomainAgent, AgentTask, AgentResult, AgentContext } from "@/lib/agents/types";
 import { scopedLogger } from "@/lib/agents/context";
 import { CashRegistersDB } from "@/lib/db/sales.db";
+import { otrosMediosDeCaja, saldoEsperadoDeCaja } from "@/lib/caja/saldo-esperado";
 
 const soles = (n: number) => Math.round(n * 100) / 100;
 
@@ -61,9 +62,14 @@ async function estado(task: AgentTask, ctx: AgentContext): Promise<AgentResult> 
       /**
        * Lo que el sistema calcula. NO es lo que hay: eso sale de contar.
        * Nombrarlo "esperado" y no "saldo" es la diferencia entre un arqueo y
-       * una cifra que nadie verificó.
+       * una cifra que nadie verificó. Es LA cuenta del cierre de caja
+       * (`saldoEsperadoDeCaja`): apertura + ventas, ingresos y egresos EN
+       * EFECTIVO. La copia de antes restaba cualquier salida (también Yape) y no
+       * sumaba las ventas en efectivo.
        */
-      efectivoEsperado: soles(apertura + (porMetodo.efectivo ?? 0) - totalSalidas),
+      efectivoEsperado: saldoEsperadoDeCaja(apertura, movs).esperado,
+      /** Lo que pasó por Yape/transferencia/tarjeta: no está en el cajón. */
+      fueraDelCajon: otrosMediosDeCaja(movs),
       aclaracion:
         "«efectivoEsperado» es lo que debería haber en el cajón según el sistema. Lo que hay de verdad se sabe contando: el arqueo se hace en la pestaña Caja.",
     },

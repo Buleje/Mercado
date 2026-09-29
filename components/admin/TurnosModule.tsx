@@ -22,6 +22,7 @@ const TurnosChart = dynamic(() => import("./TurnosChart"), {
   ),
 });
 import { cn } from "@/lib/utils";
+import { cuentasDeCajaParaPantalla } from "@/lib/caja/cuentas-de-pantalla";
 import { exportToExcel } from "@/lib/export-excel";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { Field } from "@/components/admin/shared/Field";
@@ -152,6 +153,8 @@ export default function TurnosModule() {
   // están en efectivo → generaba "sobrantes/faltantes" fantasma. Se carga al
   // abrir el modal de cierre; `null` = aún cargando / sin caja (fallback).
   const [cajaEsperado, setCajaEsperado] = useState<number | null>(null);
+  /** «Por Yape: salieron S/ 80.00 — no está en el cajón» (null si no hubo). */
+  const [cajaFueraDelCajon, setCajaFueraDelCajon] = useState<string | null>(null);
   // Ventas del turno EN VIVO (todos los métodos) desde los movimientos de caja.
   // Mientras el turno está ABIERTO, `turnoActivo.ventasTotal` vale 0 (solo se
   // agrega al cerrar) → el modal mostraba "Ventas del turno S/0.00".
@@ -297,7 +300,7 @@ export default function TurnosModule() {
   // "Total esperado" y la diferencia reflejan lo que hay en el cajón, no
   // `inicio + ventasTotal` (que ignora egresos y mezcla ventas no-efectivo).
   useEffect(() => {
-    if (!showCierre || !turnoActivo) { setCajaEsperado(null); setVentasTurnoLive(null); return; }
+    if (!showCierre || !turnoActivo) { setCajaEsperado(null); setCajaFueraDelCajon(null); setVentasTurnoLive(null); return; }
     let cancelled = false;
     fetch("/api/cash-registers")
       .then((res) => (res.ok ? res.json() : null))
@@ -312,17 +315,17 @@ export default function TurnosModule() {
           ?? registers.find((r) => r.status === "abierta");
         if (!reg) return;
         const movs = reg.movements ?? [];
-        const ventasEfectivo = movs.filter((m) => m.type === "venta" && m.method === "efectivo").reduce((s, m) => s + Number(m.amount || 0), 0);
         const ventasTotales = movs.filter((m) => m.type === "venta").reduce((s, m) => s + Number(m.amount || 0), 0);
-        const ingresos = movs.filter((m) => m.type === "ingreso").reduce((s, m) => s + Number(m.amount || 0), 0);
-        const egresos = movs.filter((m) => m.type === "egreso").reduce((s, m) => s + Number(m.amount || 0), 0);
-        setCajaEsperado(Number(reg.openingAmount || 0) + ventasEfectivo + ingresos - egresos);
+        /* LA cuenta del arqueo, la misma del cierre y de la pestaña Caja (sólo efectivo). */
+        const cuentas = cuentasDeCajaParaPantalla(Number(reg.openingAmount || 0), movs, formatCurrency);
+        setCajaEsperado(cuentas.expectedCash);
+        setCajaFueraDelCajon(cuentas.fueraDelCajon);
         setVentasTurnoLive(ventasTotales);
       })
       .catch(() => {
         // Red no crítica: si la caja no carga, el modal cae al esperado legacy
         // (inicio + ventasTotal) vía el `?? fallback` de cada display.
-        if (!cancelled) { setCajaEsperado(null); setVentasTurnoLive(null); }
+        if (!cancelled) { setCajaEsperado(null); setCajaFueraDelCajon(null); setVentasTurnoLive(null); }
       });
     return () => { cancelled = true; };
   }, [showCierre, turnoActivo]);
@@ -1589,6 +1592,7 @@ export default function TurnosModule() {
                       {formatCurrency(cajaEsperado ?? (turnoActivo.inicioEfectivo + turnoActivo.ventasTotal))}
                     </span>
                   </div>
+                  {cajaFueraDelCajon && <p className="text-sm text-[var(--text-secondary)]">{cajaFueraDelCajon}</p>}
                 </div>
 
                 {/* Conteo efectivo final — denominación (default) o manual */}

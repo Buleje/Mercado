@@ -5,6 +5,7 @@ import { CashRegistersDB } from "@/lib/db/sales.db";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { logActivity } from "@/lib/activity-logger";
+import { saldoEsperadoDeCaja } from "@/lib/caja/saldo-esperado";
 
 /**
  * GET /api/cron/auto-close-register
@@ -57,14 +58,11 @@ export async function GET(req: NextRequest) {
       const closedIds: string[] = [];
 
       for (const { tenantId, tenantSlug, reg } of staleRegisters) {
-        // Calcular el monto de cierre esperado (ingresos - egresos + apertura)
-        const totalIn = reg.movements
-          .filter((m) => m.type === "venta" || m.type === "ingreso")
-          .reduce((sum, m) => sum + m.amount, 0);
-        const totalOut = reg.movements
-          .filter((m) => m.type === "egreso")
-          .reduce((sum, m) => sum + m.amount, 0);
-        const expectedClosing = reg.openingAmount + totalIn - totalOut;
+        // El cierre automático cuenta «lo esperado» como contado: con la MISMA
+        // cuenta que el cierre (`saldoEsperadoDeCaja`, sólo efectivo). La copia
+        // de antes sumaba también las ventas por Yape/tarjeta/fiado, y cada
+        // cierre automático quedaba con un «sobrante» que nadie contó.
+        const expectedClosing = saldoEsperadoDeCaja(reg.openingAmount, reg.movements).esperado;
 
         // Cada caja se cierra con SU tenantId: cerrar la de otro tenant con
         // "main" es escribir en el aislamiento de al lado.

@@ -14,6 +14,8 @@ import {
   type DbSale,
 } from "./misc.db";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { saldoEsperadoDeCaja } from "@/lib/caja/saldo-esperado";
+import { CajaNoAbiertaError, CashRegistersMovementsDB } from "@/lib/db/cash-registers-movements.db";
 
 // ── Local Types ───────────────────────────────────────────────────────────────
 
@@ -283,18 +285,29 @@ export const CashRegistersDB = {
     // quedaba cerrada sin movimiento de cierre, rompiendo el cuadre contable.
     // El optimistic lock (closedAt: null) se mantiene para detección de doble-cierre.
     const row = await prisma.$transaction(async (tx) => {
-      // Leer dentro de tx para calcular expectedAmount con datos consistentes
+      /* F4 (3ª pasada de seguridad de ADR-448): la caja, bloqueada en exclusiva
+         ANTES de leer. Sin esto, un adelanto o una liquidación que anotaba su
+         movimiento en este instante quedaba fuera del esperado (o entraba en la
+         caja ya cerrada): arqueo descuadrado por el monto exacto. Con el lock,
+         el que está anotando termina primero y se cuenta; el que llega después
+         ve la caja cerrada (`moverCajaEnTx` → `sinCaja`). Es el ÚNICO lock del
+         cierre: no bloquea nada más, así que no puede cerrar un ciclo. */
+      if (!(await CashRegistersMovementsDB.bloquearCajaParaCerrarEnTx(tx, tenantId, id))) return null;
+      // Releer BAJO el lock: en READ COMMITTED esta sentencia ya ve lo que
+      // confirmó quien tenía la caja mientras esperábamos.
       const reg = await tx.cashRegister.findFirst({
         where: { id, tenantId },
         include: { movements: true },
       });
       if (!reg || reg.closedAt) return null;
 
-      const totalSales = reg.movements.filter(m => m.type === "venta" && m.method === "efectivo").reduce((s, m) => s + toNumOrZero(m.amount), 0);
-      const totalIn = reg.movements.filter(m => m.type === "ingreso").reduce((s, m) => s + toNumOrZero(m.amount), 0);
-      const totalOut = reg.movements.filter(m => m.type === "egreso").reduce((s, m) => s + toNumOrZero(m.amount), 0);
-      const expectedAmount = toNumOrZero(reg.openingAmount) + totalSales + totalIn - totalOut;
-      const difference = closingAmount - expectedAmount;
+      /* LA misma cuenta que el Resumen de Mi Plata (`saldoEsperadoDeCaja`): el
+         arqueo cuenta sólo el efectivo; Yape/transferencia van aparte. */
+      const expectedAmount = saldoEsperadoDeCaja(
+        toNumOrZero(reg.openingAmount),
+        reg.movements.map((m) => ({ type: m.type, method: m.method, amount: toNumOrZero(m.amount) })),
+      ).esperado;
+      const difference = Math.round((closingAmount - expectedAmount) * 100) / 100;
 
       // Optimistic lock: solo actualiza si closedAt sigue siendo null
       const result = await tx.cashRegister.updateMany({
@@ -313,28 +326,31 @@ export const CashRegistersDB = {
         where: { id },
         include: { movements: { orderBy: { createdAt: "desc" } } },
       });
-    });
+      /* Puede esperar a que termine de confirmarse un adelanto o una liquidación
+         que está anotando en esta caja: margen sobre los 5 s por defecto. */
+    }, { timeout: 15_000, maxWait: 5_000 });
 
     if (row) invalidate(`admin:alerts-summary:${tenantId}`);
     return row ? mapCashRegister(row) : null;
   },
-  async addMovement(cashRegisterId: string, movement: { type: string; amount: number; method: string; description: string; saleId?: string }, tenantId?: string): Promise<DbCashMovement> {
-    // SECURITY 2026-05-06 (audit pagos H003 defense-in-depth): si llega
-    // tenantId, validar ownership de la caja antes de crear el movement.
-    // Caller actual (`app/api/cash-registers/[id]/route.ts`) ya valida
-    // ownership con `assertRegisterOwnership`; este check es redundante
-    // pero blinda contra futuros callers que olviden hacerlo.
-    if (tenantId) {
-      const reg = await prisma.cashRegister.findFirst({
-        where: { id: cashRegisterId, tenantId },
-        select: { id: true },
-      });
-      if (!reg) {
-        throw new Error("[cash-registers.addMovement] caja no pertenece al tenant");
-      }
-    }
-    const row = await prisma.cashMovement.create({
-      data: { cashRegisterId, ...movement },
+  async addMovement(cashRegisterId: string, movement: { type: string; amount: number; method: string; description: string; saleId?: string }, tenantId: string): Promise<DbCashMovement> {
+    // SECURITY 2026-05-06 (audit pagos H003 defense-in-depth): validar
+    // ownership de la caja antes de crear el movement. Desde F4 el `tenantId`
+    // es OBLIGATORIO (antes era opcional y tres de los cuatro llamadores no lo
+    // mandaban). Queda 3er parámetro para no mover a los llamadores existentes.
+    /* F4 (3ª pasada de seguridad de ADR-448): la caja, tomada en `FOR SHARE`
+       en la MISMA transacción que el INSERT, con el tenant en el WHERE cuando
+       llega. Antes una venta del POS, un arqueo o un ingreso del asistente que
+       llegaba durante el cierre esperaba la FK y entraba en la caja YA cerrada.
+       Ahora espera al cierre, relee el estado y no anota (`CajaNoAbiertaError`).
+       La caja es el último lock de esta transacción (orden global en
+       `lib/adelantos/movimiento-caja.ts`). */
+    if (!tenantId) throw new Error("tenantId is required");
+    const row = await prisma.$transaction(async (tx) => {
+      const caja = await CashRegistersMovementsDB.bloquearCajaParaAnotarEnTx(tx, tenantId, cashRegisterId);
+      if (!caja) throw new Error("[cash-registers.addMovement] caja no pertenece al tenant");
+      if (caja.status !== "abierta") throw new CajaNoAbiertaError();
+      return tx.cashMovement.create({ data: { cashRegisterId, ...movement } });
     });
     return mapCashMovement(row);
   },

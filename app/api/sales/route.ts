@@ -6,7 +6,7 @@
 // auditoría de seguridad incorporada.
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { SalesDB, InventoryMovementsDB, CashRegistersDB, LoyaltyDB } from "@/lib/jsondb";
+import { SalesDB, InventoryMovementsDB, LoyaltyDB } from "@/lib/jsondb";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { requireAdmin } from "@/lib/require-admin";
 import { RUTAS_PANEL } from "@/lib/auth/roles-rutas-panel";
@@ -23,7 +23,8 @@ import { FiadosDB } from "@/lib/db/fiados.db";
 import { CustomersDB } from "@/lib/db/customers.db";
 import { SettingsDB } from "@/lib/db/settings.db";
 import { extractIgv, igvRateFromSettings } from "@/lib/tax";
-import { desglosarPago } from "@/lib/caja/desglosar-pago";
+import { desglosarPago, type LineaDePago } from "@/lib/caja/desglosar-pago";
+import { anotarVentaEnCaja, type MotivoSinAnotar } from "@/lib/caja/anotar-venta";
 import { sinDato } from "@/lib/errores/sin-dato";
 
 const SaleItemSchema = z.object({
@@ -621,30 +622,36 @@ async function salesHandler(
       });
   }
 
-  // Register cash movement if a register is open (fire-and-forget)
-  CashRegistersDB.getOpen(auth.tenantId).then(async (reg) => {
-    if (!reg) return;
-    /**
-     * Una línea por forma de pago, no una sola por el total.
-     *
-     * Con pago mixto el POS manda `payment: "MIXTO"`, y el arqueo suma sólo
-     * los movimientos con `method === "efectivo"`: la venta entera quedaba
-     * fuera del esperado y el efectivo que sí estaba en el cajón aparecía
-     * como sobrante al cerrar. Desarmado, cada medio suma donde corresponde.
-     */
+  /**
+   * El movimiento de caja, ESPERADO antes de responder (F4, revisión de
+   * seguridad). Antes era fire-and-forget: si la caja se cerraba entre la venta y
+   * su movimiento, el 409 se tragaba en un `.catch(warn)` y la venta quedaba 201
+   * con su plata fuera del arqueo, sin aviso. Ahora se relee la caja y se
+   * reintenta una vez; lo que no entra vuelve en `cajaSinAnotar` para que el POS
+   * lo diga, y la carrera va a Sentry (`anotarVentaEnCaja`).
+   *
+   * Una línea por forma de pago, no una sola por el total: con pago mixto el POS
+   * manda `payment: "MIXTO"`, y el arqueo suma sólo los movimientos en efectivo
+   * (`desglosarPago`).
+   */
+  let cajaSinAnotar: { monto: number; metodo: string; motivo: MotivoSinAnotar | null; lineas: LineaDePago[] } | undefined;
+  try {
     const lineas = desglosarPago(data.payment, data.paymentDetails, finalTotal);
-    for (const linea of lineas) {
-      await CashRegistersDB.addMovement(reg.id, {
-        type: "venta",
-        amount: linea.amount,
-        method: linea.method,
-        description: lineas.length > 1
-          ? `Venta ${sale.id} · ${linea.method}`
-          : `Venta ${sale.id}`,
-        saleId: sale.id,
-      });
+    const anotado = await anotarVentaEnCaja(auth.tenantId, sale.id, lineas);
+    if (anotado.sinAnotar.length > 0) {
+      cajaSinAnotar = {
+        monto: Math.round(anotado.sinAnotar.reduce((acc, l) => acc + l.amount, 0) * 100) / 100,
+        metodo: anotado.sinAnotar.length === 1 ? anotado.sinAnotar[0].method : "mixto",
+        motivo: anotado.motivo,
+        lineas: anotado.sinAnotar,
+      };
     }
-  }).catch((err) => logger.warn("[sales] cash register movement failed", { saleId: sale.id, err: String(err) }));
+  } catch (err) {
+    /* La venta ya está guardada: un fallo al anotar la caja no la tumba, pero
+       se dice en la respuesta y queda en Sentry. */
+    logger.error("[sales] cash register movement failed", { saleId: sale.id, error: String(err) });
+    cajaSinAnotar = { monto: finalTotal, metodo: data.payment ?? "efectivo", motivo: "fallo", lineas: [] };
+  }
 
   // Accrue loyalty points for POS sale (fire-and-forget)
   if (data.customerPhone) {
@@ -673,6 +680,7 @@ async function salesHandler(
     ...sale,
     ...(comprobanteNumero ? { comprobanteNumero } : {}),
     ...(createdFiadoId ? { fiadoId: createdFiadoId } : {}),
+    ...(cajaSinAnotar ? { cajaSinAnotar } : {}),
   };
   return NextResponse.json(response, { status: 201 });
 }

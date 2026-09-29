@@ -21,6 +21,9 @@ import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
 import { diaLocal, ultimosDiasLocales } from "@/lib/fechas/dia-local";
+import { medioDeMovimiento, saldoEsperadoDeCaja } from "@/lib/caja/saldo-esperado";
+import { cuentasDeCajaParaPantalla } from "@/lib/caja/cuentas-de-pantalla";
+import { htmlReporteDeCaja } from "@/lib/caja/reporte-impreso";
 import { formatCurrency, formatDateLong, formatDateShort, formatDateTime, formatDateTimeShort, formatTime, formatWeekday } from "@/lib/format";
 
 const CashRegisterChart = dynamic(
@@ -350,12 +353,11 @@ export default function CashRegisterTab() {
   const stats = useMemo(() => {
     if (!currentRegister) return null;
     const mvs = currentRegister.movements;
-    const salesEfectivo = mvs.filter(m => m.type === "venta" && m.method === "efectivo").reduce((s, m) => s + m.amount, 0);
-    const salesDigital = mvs.filter(m => m.type === "venta" && m.method !== "efectivo").reduce((s, m) => s + m.amount, 0);
-    const totalIn = mvs.filter(m => m.type === "ingreso").reduce((s, m) => s + m.amount, 0);
-    const totalOut = mvs.filter(m => m.type === "egreso").reduce((s, m) => s + m.amount, 0);
-    const salesCount = mvs.filter(m => m.type === "venta").length;
-    const expectedCash = currentRegister.openingAmount + salesEfectivo + totalIn - totalOut;
+    /* LA cuenta del arqueo (`saldoEsperadoDeCaja`, la misma del cierre, del
+       correo y del Resumen de Mi Plata): sólo efectivo. Yape/transferencia van
+       aparte, en `fueraDelCajon`. */
+    const { salesEfectivo, salesDigital, totalIn, totalOut, salesCount, expectedCash, fueraDelCajon } =
+      cuentasDeCajaParaPantalla(currentRegister.openingAmount, mvs, fmt);
     // Hourly sales chart data
     const hourlyData: number[] = Array.from({ length: 24 }, () => 0);
     for (const m of mvs.filter(mv => mv.type === "venta")) {
@@ -365,7 +367,7 @@ export default function CashRegisterTab() {
       } catch { /* ignore */ }
     }
 
-    return { salesEfectivo, salesDigital, totalIn, totalOut, salesCount, expectedCash, hourlyData };
+    return { salesEfectivo, salesDigital, totalIn, totalOut, salesCount, expectedCash, fueraDelCajon, hourlyData };
   }, [currentRegister]);
 
   // Filtered movements for current register
@@ -861,6 +863,7 @@ export default function CashRegisterTab() {
                     <span className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted uppercase">Esperado caja</span>
                   </div>
                   <p className="text-lg font-extrabold text-primary">{fmt(stats?.expectedCash ?? 0)}</p>
+                  {stats?.fueraDelCajon && <p className="text-xs text-[var(--text-secondary)] mt-1">{stats.fueraDelCajon}</p>}
                 </div>
               </div>
 
@@ -894,46 +897,14 @@ export default function CashRegisterTab() {
                 {/* Mejora 8: Imprimir reporte */}
                 <button
                   onClick={() => {
-                    const salesMvs = currentRegister.movements.filter(m => m.type === "venta");
-                    const byMethod: Record<string, number> = {};
-                    for (const s of salesMvs) { byMethod[s.method] = (byMethod[s.method] ?? 0) + s.amount; }
-                    const totalVentas = salesMvs.reduce((s, m) => s + m.amount, 0);
-                    const retiros = currentRegister.movements.filter(m => m.type === "egreso").reduce((s, m) => s + m.amount, 0);
-                    const retirosCount = currentRegister.movements.filter(m => m.type === "egreso").length;
-                    const ingresosExtra = currentRegister.movements.filter(m => m.type === "ingreso").reduce((s, m) => s + m.amount, 0);
-                    const fecha = formatDateLong(new Date());
-                    const hora = formatTime(currentRegister.openedAt);
-                    const methodLines = Object.entries(byMethod).map(([m, t]) => {
-                      const pct = totalVentas > 0 ? ((t / totalVentas) * 100).toFixed(0) : "0";
-                      return `  ${m.charAt(0).toUpperCase() + m.slice(1)}: ${formatCurrency(t)} (${pct}%)`;
-                    }).join("\n");
-                    const content = `
-<html><head><title>Reporte de Caja</title>
-<style>body{font-family:monospace;font-size:12px;max-width:380px;margin:0 auto;padding:20px}h1{font-size:14px;text-align:center;margin:0}p{margin:4px 0}.sep{border-top:1px dashed #999;margin:8px 0}.center{text-align:center}.bold{font-weight:bold}.sign{margin-top:40px;border-top:1px solid #333;width:200px;display:inline-block;text-align:center;padding-top:4px;font-size:10px}</style>
-</head><body>
-<h1>REPORTE DE CAJA</h1>
-<p class="center bold">Buleje</p>
-<p class="center">Fecha: ${fecha}</p>
-<div class="sep"></div>
-<p class="bold">APERTURA</p>
-<p>Efectivo inicial: ${formatCurrency(Number(currentRegister.openingAmount))}</p>
-<p>Hora: ${hora}</p>
-<div class="sep"></div>
-<p class="bold">VENTAS DEL DIA</p>
-<p>Total ventas: ${formatCurrency(totalVentas)} (${salesMvs.length} transacciones)</p>
-<p>Por metodo:</p>
-<pre>${methodLines}</pre>
-<div class="sep"></div>
-<p class="bold">MOVIMIENTOS</p>
-<p>Retiros: ${formatCurrency(retiros)} (${retirosCount})</p>
-<p>Ingresos extra: ${formatCurrency(ingresosExtra)}</p>
-<div class="sep"></div>
-<p class="bold">CIERRE</p>
-<p>Efectivo esperado: ${formatCurrency(stats?.expectedCash ?? 0)}</p>
-<div class="sep"></div>
-<p style="margin-top:30px">Firma cajero: ___________________</p>
-<p>Firma supervisor: _______________</p>
-</body></html>`;
+                    /* El HTML sale de una función pura que escapa TODO lo que viene de
+                       la base (F4, revisión de seguridad: un medio de pago con
+                       `<img onerror>` se ejecutaba en esta ventana). */
+                    const content = htmlReporteDeCaja(
+                      currentRegister,
+                      { fecha: formatDateLong(new Date()), hora: formatTime(currentRegister.openedAt) },
+                      formatCurrency,
+                    );
                     const w = window.open("", "_blank", "width=420,height=600");
                     if (w) { w.document.write(content); w.document.close(); w.print(); }
                   }}
@@ -1052,7 +1023,9 @@ export default function CashRegisterTab() {
                             <div className="flex flex-wrap items-center gap-2">
                               <span className="text-xs text-[var(--text-tertiary)] dark:text-muted font-mono">{timeStr}</span>
                               <span className={cn("text-xs font-bold px-1.5 py-0.5 rounded-full", badgeColor)}>{item.badge}</span>
-                              {item.method && item.type === "venta" && (
+                              {/* El medio de una venta, y el de un ingreso/retiro que NO fue en
+                                  efectivo: ese no suma ni resta al «Efectivo actual» de abajo. */}
+                              {item.method && (item.type === "venta" || ((item.type === "ingreso" || item.type === "egreso") && medioDeMovimiento(item.method) !== "efectivo")) && (
                                 <span className="text-xs font-medium text-[var(--text-tertiary)] capitalize">{item.method}</span>
                               )}
                             </div>
@@ -1370,16 +1343,10 @@ export default function CashRegisterTab() {
           let income = 0;
           let expenses = 0;
           for (const reg of dayRegs) {
-            for (const m of reg.movements) {
-              if (m.type === "venta") {
-                // Sólo lo cobrado en efectivo entra al cajón.
-                if ((m.method ?? "efectivo") === "efectivo") income += m.amount;
-              } else if (m.type === "ingreso") {
-                income += m.amount;
-              } else if (m.type === "egreso") {
-                expenses += m.amount;
-              }
-            }
+            // Sólo lo que entra y sale del cajón: la misma regla del arqueo.
+            const s = saldoEsperadoDeCaja(0, reg.movements);
+            income += s.ventasEfectivo + s.ingresos;
+            expenses += s.egresos;
           }
           weekData.push({ date: dateStr, income, expenses, net: income - expenses });
         }
@@ -1626,8 +1593,9 @@ export default function CashRegisterTab() {
         const ventasCount = ventasMvs.length;
         const ventasEfectivo = ventasMvs.filter(m => m.method === "efectivo").reduce((s, m) => s + m.amount, 0);
         const ventasDigital = ventasMvs.filter(m => m.method !== "efectivo").reduce((s, m) => s + m.amount, 0);
-        const ingresosManual = currentRegister.movements.filter(m => m.type === "ingreso").reduce((s, m) => s + m.amount, 0);
-        const egresosManual = currentRegister.movements.filter(m => m.type === "egreso").reduce((s, m) => s + m.amount, 0);
+        // En efectivo, como el esperado de abajo (`saldoEsperadoDeCaja`).
+        const ingresosManual = stats?.totalIn ?? 0;
+        const egresosManual = stats?.totalOut ?? 0;
         const totalVentas = ventasEfectivo + ventasDigital;
         const promedioVenta = ventasCount > 0 ? totalVentas / ventasCount : 0;
         
@@ -1714,6 +1682,7 @@ export default function CashRegisterTab() {
               <p className="text-sm text-[var(--data-success-500)]/80">
                 Apertura ({fmt(currentRegister.openingAmount)}) + Ventas efectivo ({fmt(stats?.salesEfectivo ?? 0)}) + Ingresos ({fmt(stats?.totalIn ?? 0)}) &minus; Egresos ({fmt(stats?.totalOut ?? 0)})
               </p>
+              {stats?.fueraDelCajon && <p className="text-sm text-[var(--text-secondary)] mt-1">{stats.fueraDelCajon}</p>}
             </div>
             <div className="space-y-4">
               {/* Denomination Helper */}
@@ -2001,6 +1970,7 @@ export default function CashRegisterTab() {
                   <p className="text-sm text-[var(--text-tertiary)] pt-2 border-t border-[var(--rule-soft)]">
                     Apertura ({fmt(currentRegister.openingAmount)}) + Ventas efectivo ({fmt(stats?.salesEfectivo ?? 0)}) + Ingresos ({fmt(stats?.totalIn ?? 0)}) &minus; Egresos ({fmt(stats?.totalOut ?? 0)})
                   </p>
+                  {stats?.fueraDelCajon && <p className="text-sm text-[var(--text-secondary)]">{stats.fueraDelCajon}</p>}
                 </div>
 
                 <div className="space-y-4">

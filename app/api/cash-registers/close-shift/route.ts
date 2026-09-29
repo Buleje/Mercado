@@ -6,6 +6,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { TurnosDB } from "@/lib/db/turnos.db";
 import { AdminUsersDB } from "@/lib/db/admin-users.db";
 import { CashShiftSalesDB } from "@/lib/db/cash-shift-sales.db";
+import { saldoEsperadoDeCaja } from "@/lib/caja/saldo-esperado";
 
 /**
  * POST /api/cash-registers/close-shift
@@ -34,16 +35,9 @@ export async function POST(req: NextRequest) {
 
     // Close using whatever cash is currently counted
     // (the official closing amount is handled in the Arqueo tab — here we do a soft close)
-    const closingAmount = open.openingAmount +
-      open.movements
-        .filter((m) => m.type === "venta" && m.method === "efectivo")
-        .reduce((s, m) => s + m.amount, 0) +
-      open.movements
-        .filter((m) => m.type === "ingreso")
-        .reduce((s, m) => s + m.amount, 0) -
-      open.movements
-        .filter((m) => m.type === "egreso")
-        .reduce((s, m) => s + m.amount, 0);
+    // La MISMA cuenta que el cierre (`saldoEsperadoDeCaja`, sólo efectivo): con
+    // una copia propia, un egreso por Yape daba una diferencia falsa.
+    const closingAmount = saldoEsperadoDeCaja(open.openingAmount, open.movements).esperado;
 
     const closed = await CashRegistersDB.close(
       auth.tenantId,

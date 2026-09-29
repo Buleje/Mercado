@@ -4,7 +4,7 @@ import { logger } from "@/lib/logger";
 import type { Prisma } from "@/lib/generated/prisma/client";
 
 /**
- * El puente entre un adelanto y la caja.
+ * El puente entre un adelanto (o una liquidación) y la caja.
  *
  * EL HUECO QUE TAPA. Un adelanto es plata que SALE del cajón, y la caja no se
  * enteraba: al cerrar el día el arqueo no cuadraba y nadie sabía por qué. El
@@ -13,18 +13,33 @@ import type { Prisma } from "@/lib/generated/prisma/client";
  *
  * TRES REGLAS QUE NO SON OBVIAS
  *
- * 1. **Nunca bloquea el adelanto.** Si no hay caja abierta, el adelanto se
- *    registra igual: la plata ya salió, y perder el registro del préstamo por no
- *    poder anotar el movimiento sería el peor de los dos errores. Se devuelve
- *    `sinCaja` para que la pantalla lo diga antes de guardar.
+ * 1. **Sin caja abierta, no bloquea el adelanto.** La plata ya salió, y perder
+ *    el registro del préstamo por no poder anotar el movimiento sería el peor
+ *    de los dos errores. Se devuelve `sinCaja` para que la pantalla lo diga.
  *
- * 2. **Sólo el efectivo mueve la caja.** Un adelanto por transferencia o Yape no
- *    toca el cajón. El método viaja al movimiento y quien lo registra elige.
+ * 2. **El método viaja al movimiento.** Un adelanto por Yape o transferencia se
+ *    anota con su método y NO cuenta en el efectivo del arqueo
+ *    (`saldoEsperadoDeCaja`): se muestra aparte.
  *
  * 3. **Anular NO revierte solo.** Cancelar un adelanto puede significar dos cosas
  *    opuestas: que fue un error y la plata nunca salió, o que se está dando por
  *    perdida. Sólo la primera devuelve efectivo al cajón, y eso lo sabe la
  *    persona, no el sistema. Por eso la reversión es un parámetro explícito.
+ *
+ * ORDEN GLOBAL DE LOCKS (F4, 3ª pasada de seguridad de ADR-448). De afuera
+ * hacia adentro; ningún camino los toma al revés:
+ *
+ *   1. guías de la persona  — `guia-plata:<t>:<gtf>` (`ForestCuentaDB.bloquearGuiasEnTx`)
+ *   2. la persona           — `liq:<t>:benef:<id>`, `liq:<t>:parte:<id>`
+ *   3. comprobantes         — `liq:<t>:comprobantes`
+ *   4. filas de `Adelanto`  — `FOR UPDATE` (alta, entrega, anulación, liquidación)
+ *   5. código de la liquidación — `liq:<t>:codigo`
+ *   6. **la caja**          — `FOR SHARE` para anotar, SIEMPRE el último lock,
+ *                             pegado al commit (`moverCajaEnTx`).
+ *
+ * El cierre de caja (`CashRegistersDB.close`) toma SÓLO la caja, en `FOR UPDATE`,
+ * como primera sentencia, y no bloquea nada más: nunca retiene la caja mientras
+ * espera un adelanto, así que no puede cerrar un ciclo (caja → adelanto no existe).
  */
 
 export type MetodoPago = "efectivo" | "yape" | "plin" | "tarjeta" | "transferencia";
@@ -36,66 +51,24 @@ export interface ResultadoMovimiento {
 }
 
 /**
- * Anota un movimiento de caja ligado a un adelanto.
- *
- * @param etiqueta lo que se lee en el arqueo: lleva el código de operación para
- *   poder ir del movimiento al adelanto y al revés.
- */
-export async function moverCaja(
-  tenantId: string,
-  opciones: {
-    tipo: "ingreso" | "egreso";
-    monto: number;
-    metodo: MetodoPago;
-    etiqueta: string;
-  },
-): Promise<ResultadoMovimiento> {
-  if (!(opciones.monto > 0)) return { sinCaja: false };
-
-  try {
-    const caja = await CashRegistersMovementsDB.findCurrentOpenRegister(tenantId);
-    if (!caja) {
-      logger.warn("[adelantos] sin caja abierta: el movimiento no se anota", {
-        tenantId,
-        etiqueta: opciones.etiqueta,
-      });
-      return { sinCaja: true };
-    }
-    const mov = await CashRegistersMovementsDB.createMovement({
-      cashRegisterId: caja.id,
-      type: opciones.tipo,
-      amount: Math.round(opciones.monto * 100) / 100,
-      method: opciones.metodo,
-      description: opciones.etiqueta,
-    });
-    return { sinCaja: false, movimientoId: mov.id };
-  } catch (err) {
-    // Que falle la anotación NO puede tumbar el adelanto: se registra el error y
-    // se sigue. El adelanto es el dato importante; el movimiento se puede cargar
-    // a mano después.
-    logger.error("[adelantos] no se pudo anotar el movimiento de caja", {
-      tenantId,
-      etiqueta: opciones.etiqueta,
-      error: String(err),
-    });
-    return { sinCaja: false };
-  }
-}
-
-/**
- * `moverCaja` DENTRO de la transacción del adelanto (ADR-448, revisión de
- * seguridad): el alta, la entrega o la anulación y su movimiento se confirman
- * juntos o no se confirma ninguno.
+ * Anota un movimiento de caja DENTRO de la transacción de quien llama (ADR-448,
+ * revisión de seguridad): el alta, la entrega, la anulación o la liquidación y
+ * su movimiento se confirman juntos o no se confirma ninguno.
  *
  * Por qué ya no «después del commit»: entre el alta guardada y el egreso anotado
  * pasaban 0,8–2 s (medido en 13 filas reales), y en ese hueco `corregirDireccion`
  * no veía el movimiento: DADO X → RECIBIDO → devolver X = la persona cobraba 2X.
+ * Si la base falla al anotar, NO se guarda nada y la pantalla muestra el error
+ * para reintentar.
  *
- * Qué cambia de la regla 1 de arriba: sin caja abierta, sigue igual (el adelanto
- * se guarda y vuelve `sinCaja`). Si la base falla al anotar el movimiento, ahora
- * NO se guarda nada y la pantalla muestra el error para reintentar — antes el
- * adelanto quedaba y el movimiento se perdía en silencio, y ese desfase es el que
- * habilitaba el doble pago.
+ * El lock (F4): la caja se toma en `FOR SHARE` antes de insertar. Si alguien la
+ * está cerrando, esto espera; si el cierre confirma, la caja ya no está
+ * «abierta» y vuelve `sinCaja` — el movimiento no entra en una caja cerrada. Si
+ * esto llega primero, el cierre espera al commit y lo cuenta. Llamalo como
+ * ÚLTIMO lock de tu transacción (orden global, arriba).
+ *
+ * @param etiqueta lo que se lee en el arqueo: lleva el código de operación para
+ *   poder ir del movimiento al adelanto y al revés.
  */
 export async function moverCajaEnTx(
   tx: Prisma.TransactionClient,
@@ -103,7 +76,7 @@ export async function moverCajaEnTx(
   opciones: { tipo: "ingreso" | "egreso"; monto: number; metodo: MetodoPago; etiqueta: string },
 ): Promise<ResultadoMovimiento> {
   if (!(opciones.monto > 0)) return { sinCaja: false };
-  const caja = await CashRegistersMovementsDB.findCurrentOpenRegisterEnTx(tx, tenantId);
+  const caja = await CashRegistersMovementsDB.bloquearCajaAbiertaEnTx(tx, tenantId);
   if (!caja) {
     logger.warn("[adelantos] sin caja abierta: el movimiento no se anota", { tenantId, etiqueta: opciones.etiqueta });
     return { sinCaja: true };

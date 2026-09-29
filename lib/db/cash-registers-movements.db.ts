@@ -13,6 +13,18 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/lib/generated/prisma/client";
+import { ConflictError } from "@/lib/api-error";
+
+/**
+ * La caja se cerró mientras llegaba el movimiento (F4): no se anota en una caja
+ * cerrada. 409 por `toErrorPayload`; el POS lo registra y sigue.
+ */
+export class CajaNoAbiertaError extends ConflictError {
+  constructor() {
+    super("La caja ya está cerrada: el movimiento no se anotó. Abre una caja y vuelve a intentarlo.");
+    this.name = "CajaNoAbiertaError";
+  }
+}
 
 export type DbCashMovementRecord = {
   id: string;
@@ -84,26 +96,104 @@ export const CashRegistersMovementsDB = {
 
   /**
    * Crea un movimiento manual (ingreso o egreso) en una caja.
+   *
+   * Con la caja tomada en `FOR SHARE` (F4): la ruta ya verificó que estaba
+   * abierta, pero entre esa lectura y el INSERT un cierre podía confirmarse, y el
+   * movimiento caía en la caja cerrada. Ahora, si la cerraron, `CajaNoAbiertaError`.
    */
-  async createMovement(data: {
-    cashRegisterId: string;
-    type: "ingreso" | "egreso";
-    amount: number;
-    method: string;
-    description: string;
-  }): Promise<DbCashMovementRecord> {
-    const row = await prisma.cashMovement.create({ data });
+  async createMovement(
+    tenantId: string,
+    data: {
+      cashRegisterId: string;
+      type: "ingreso" | "egreso";
+      amount: number;
+      method: string;
+      description: string;
+    },
+  ): Promise<DbCashMovementRecord> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const row = await prisma.$transaction(async (tx) => {
+      const caja = await CashRegistersMovementsDB.bloquearCajaParaAnotarEnTx(tx, tenantId, data.cashRegisterId);
+      if (caja?.status !== "abierta") throw new CajaNoAbiertaError();
+      return tx.cashMovement.create({ data });
+    });
     return mapMovement(row);
   },
 
-  /**
-   * La caja abierta del tenant, leída DENTRO de la transacción de quien llama
-   * (ADR-448): el alta de un adelanto y su movimiento se escriben juntos, así
-   * no hay un instante con el adelanto guardado y la caja sin anotar.
+  /*
+   * ── El lock de la caja (F4, 3ª pasada de seguridad de ADR-448) ─────────────
+   *
+   * Antes nada bloqueaba la fila de la caja: el cierre leía los movimientos sin
+   * lock, y un movimiento que se confirmaba en ese instante quedaba fuera del
+   * esperado (o entraba en una caja ya cerrada). Arqueo descuadrado por el monto
+   * exacto. Medido contra la base real: esperado 0 con un ingreso de 150 en
+   * curso (`__tests__/caja-cierre-carrera-db.test.ts`).
+   *
+   * Dos fuerzas de lock, a propósito:
+   *   · quien ANOTA toma `FOR SHARE` — choca con el cierre (`FOR UPDATE`) pero no
+   *     con otro que anota: dos adelantos a la vez no se esperan entre sí, y las
+   *     ventas del POS (cuyo INSERT sólo toma `FOR KEY SHARE` por la FK) tampoco;
+   *   · el CIERRE toma `FOR UPDATE` — espera a todo el que está anotando (incluso
+   *     a un INSERT suelto, por la FK) y hace esperar a todo el que llega.
+   *
+   * ORDEN GLOBAL: la caja es SIEMPRE el último lock de una transacción, y el
+   * cierre no toma ningún otro. Ver `lib/adelantos/movimiento-caja.ts`.
    */
-  async findCurrentOpenRegisterEnTx(tx: Prisma.TransactionClient, tenantId: string): Promise<{ id: string } | null> {
+
+  /**
+   * La caja abierta del tenant, BLOQUEADA para anotar (`FOR SHARE`) dentro de la
+   * transacción de quien llama. Si un cierre la tiene tomada, espera; cuando el
+   * cierre confirma, Postgres re-evalúa el `status` sobre la fila nueva y la
+   * caja ya no califica: devuelve `null` (el movimiento no entra en una caja
+   * cerrada). El orden por apertura es para que dos abiertas (no debería haber)
+   * den siempre la misma.
+   */
+  async bloquearCajaAbiertaEnTx(tx: Prisma.TransactionClient, tenantId: string): Promise<{ id: string } | null> {
     if (!tenantId) throw new Error("tenantId is required");
-    return tx.cashRegister.findFirst({ where: { tenantId, status: "abierta" }, select: { id: true } });
+    const filas = await tx.$queryRaw<{ id: string }[]>`
+      SELECT "id" FROM "CashRegister"
+       WHERE "tenantId" = ${tenantId} AND "status" = 'abierta'
+       ORDER BY "openedAt" DESC, "id" DESC
+       LIMIT 1
+       FOR SHARE
+    `;
+    return filas[0] ?? null;
+  },
+
+  /**
+   * UNA caja por id, bloqueada para anotar (`FOR SHARE`): el mismo lock que
+   * `bloquearCajaAbiertaEnTx`, para los escritores que ya saben en qué caja
+   * anotan (venta del POS, movimiento manual, arqueo, asistente). Devuelve el
+   * `status` RELEÍDO bajo el lock: si un cierre la tenía, es el de después del
+   * cierre, y quien llama no anota en una caja cerrada.
+   *
+   * `tenantId` obligatorio y en el WHERE: una caja de otro negocio da `null`,
+   * igual que una que no existe.
+   */
+  async bloquearCajaParaAnotarEnTx(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+    cashRegisterId: string,
+  ): Promise<{ status: string } | null> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const filas = await tx.$queryRaw<{ status: string }[]>`
+      SELECT "status"::text AS status FROM "CashRegister" WHERE "id" = ${cashRegisterId} AND "tenantId" = ${tenantId} FOR SHARE
+    `;
+    return filas[0] ?? null;
+  },
+
+  /**
+   * La caja a cerrar, BLOQUEADA en exclusiva (`FOR UPDATE`). Lo primero que hace
+   * el cierre: después de esto, lo que lee de movimientos es lo que hay — nadie
+   * puede estar anotando a medias ni anotar hasta que confirme. `false` si la caja
+   * no existe en este negocio.
+   */
+  async bloquearCajaParaCerrarEnTx(tx: Prisma.TransactionClient, tenantId: string, cashRegisterId: string): Promise<boolean> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const filas = await tx.$queryRaw<{ id: string }[]>`
+      SELECT "id" FROM "CashRegister" WHERE "id" = ${cashRegisterId} AND "tenantId" = ${tenantId} FOR UPDATE
+    `;
+    return filas.length > 0;
   },
 
   /** `createMovement` dentro de la transacción de quien llama (ver arriba). */

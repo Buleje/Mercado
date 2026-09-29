@@ -13,6 +13,7 @@ import { prisma } from "@/lib/prisma";
 import { generateDailyInsights } from "@/lib/ai/daily-insights";
 import { reportAICall } from "@/lib/billing/wire-up/ai-metering-middleware";
 import { sinDato } from "@/lib/errores/sin-dato";
+import { saldoEsperadoDeCaja } from "@/lib/caja/saldo-esperado";
 
 /**
  * GET /api/cron/daily-summary
@@ -109,13 +110,12 @@ export async function GET(req: NextRequest) {
         // Diferencia de caja
         let diferenciaCaja: number | null = null;
         if (openCash) {
-          const totalIngresos = openCash.movements
-            .filter((m) => m.type === "venta" || m.type === "ingreso")
-            .reduce((sum, m) => sum + m.amount, 0);
-          const totalEgresos = openCash.movements
-            .filter((m) => m.type === "egreso")
-            .reduce((sum, m) => sum + m.amount, 0);
-          const esperado = openCash.openingAmount + totalIngresos - totalEgresos;
+          /* LA cuenta del arqueo (`saldoEsperadoDeCaja`, sólo efectivo). OJO: este
+             bloque no da nunca un número — `openCash` es la caja ABIERTA y su
+             `closingAmount` es siempre null (0 de 1 307 resúmenes con diferencia,
+             medido 2026-09-29). Anotado para borrar; se corrige la cuenta para que
+             no quede una 5ª copia de la vieja. */
+          const esperado = saldoEsperadoDeCaja(openCash.openingAmount, openCash.movements).esperado;
           diferenciaCaja = openCash.closingAmount != null
             ? openCash.closingAmount - esperado
             : null;

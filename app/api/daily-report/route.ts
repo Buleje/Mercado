@@ -6,6 +6,7 @@ import { CustomersDB } from "@/lib/db/customers.db";
 import { requireAdmin } from "@/lib/require-admin";
 import type { DailyReport } from "@/lib/daily-report";
 import { logger } from "@/lib/logger";
+import { saldoEsperadoDeCaja } from "@/lib/caja/saldo-esperado";
 
 export async function GET(request: NextRequest) {
   const auth = await requireAdmin(request, ["admin", "cajero"]);
@@ -101,15 +102,10 @@ export async function GET(request: NextRequest) {
       }).length;
     }
 
-    // Saldo en caja
-    const cashBalance = openCash
-      ? openCash.openingAmount + (openCash.movements ?? [])
-          .filter(m => m.type === "venta" || m.type === "ingreso")
-          .reduce((sum, m) => sum + m.amount, 0)
-        - (openCash.movements ?? [])
-          .filter(m => m.type === "egreso")
-          .reduce((sum, m) => sum + m.amount, 0)
-      : 0;
+    // Saldo en caja: LA cuenta del arqueo (`saldoEsperadoDeCaja`, la del cierre
+    // y la pantalla de caja) — sólo efectivo. La copia de antes sumaba también
+    // las ventas por Yape/tarjeta/fiado y restaba los egresos por Yape.
+    const cashBalance = openCash ? saldoEsperadoDeCaja(openCash.openingAmount, openCash.movements ?? []).esperado : 0;
 
     // Ventas por hora del día (0-23)
     const salesByHour: number[] = Array(24).fill(0);

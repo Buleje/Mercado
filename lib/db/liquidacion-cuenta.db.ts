@@ -12,7 +12,7 @@ import { PREFIJO_LIQUIDACION, siguienteCodigo } from "@/lib/adelantos/codigo-ope
 import {
   etiquetaAnulacionLiquidacion,
   etiquetaLiquidacion,
-  moverCaja,
+  moverCajaEnTx,
   type MetodoPago,
   type ResultadoMovimiento,
 } from "@/lib/adelantos/movimiento-caja";
@@ -45,7 +45,10 @@ export type { LiquidacionDTO } from "@/lib/cuentas/liquidacion";
  * ORQUESTA: no escribe ninguna tabla ajena por su cuenta. Las entregas las
  * escribe `AdelantosDB.registrarEntregaEnTx` y los movimientos
  * `ForestCuentaDB.crearDeLiquidacionEnTx`, todo dentro de UNA transacción con
- * la cabecera. La caja va después del commit, una vez por acto.
+ * la cabecera. La caja también (`moverCajaEnTx`, F4 de ADR-448), como ÚLTIMO
+ * lock de la transacción: antes iba después del commit, y un corte o un cierre
+ * de caja en ese hueco dejaba la liquidación con «fallo»/«sin_caja» y el arqueo
+ * sin su movimiento.
  *
  * `tenantId` 1er parámetro; cada id del cuerpo se relee con `tenantId`, y la
  * persona se resuelve en el servidor: nunca se cruza un beneficiario con una
@@ -485,12 +488,35 @@ export const LiquidacionCuentaDB = {
           movimientoIds.push(mov.id);
         }
 
+        /* La caja, LO ÚLTIMO antes del commit (orden global de locks en
+           `lib/adelantos/movimiento-caja.ts`): se confirma con la liquidación o
+           no se confirma. Un reintento con la misma clave sale arriba como
+           `repetida` y no llega acá; un choque de código revierte también el
+           movimiento, así que el segundo intento no lo duplica. */
+        let caja: ResultadoMovimiento | null = null;
+        if (plan.caja) {
+          caja = await moverCajaEnTx(tx, tenantId, {
+            tipo: plan.caja.tipo,
+            monto: plan.caja.monto,
+            metodo: plan.caja.metodo,
+            etiqueta: etiquetaLiquidacion(codigo, partidas.persona.nombre),
+          });
+        }
+
         const detalle = detalleDeLiquidacion(plan, { codigo, entregaIds, movimientoIds, huellaCuerpo: huellaDelCuerpo(input) });
         const row = await tx.liquidacionCuenta.update({
           where: { id: cab.id },
-          data: { detalle: detalle as unknown as Prisma.InputJsonValue },
+          data: {
+            detalle: detalle as unknown as Prisma.InputJsonValue,
+            ...(caja
+              ? {
+                  cajaResultado: caja.movimientoId ? "movida" : caja.sinCaja ? "sin_caja" : "fallo",
+                  cajaMovimientoId: caja.movimientoId ?? null,
+                }
+              : {}),
+          },
         });
-        return { repetida: false as const, row, plan };
+        return { repetida: false as const, row, plan, caja };
       }, CTP_TX_OPTS);
 
     let hecho: Awaited<ReturnType<typeof escribir>>;
@@ -509,22 +535,8 @@ export const LiquidacionCuentaDB = {
     }
     if (hecho.repetida) return { liquidacion: aDTO(hecho.row), repetida: true, caja: null };
 
-    let { row } = hecho;
+    const { row, caja } = hecho;
     const plan: PlanLiquidacion = hecho.plan;
-    let caja: ResultadoMovimiento | null = null;
-    if (plan.caja) {
-      caja = await moverCaja(tenantId, {
-        tipo: plan.caja.tipo,
-        monto: plan.caja.monto,
-        metodo: plan.caja.metodo,
-        etiqueta: etiquetaLiquidacion(row.codigo, row.personaNombre),
-      });
-      const resultado = caja.movimientoId ? "movida" : caja.sinCaja ? "sin_caja" : "fallo";
-      row = await prisma.liquidacionCuenta.update({
-        where: { id: row.id },
-        data: { cajaResultado: resultado, cajaMovimientoId: caja.movimientoId ?? null },
-      });
-    }
 
     const partes = [
       plan.compensado > 0 ? `cruce S/ ${plan.compensado.toFixed(2)}` : null,
@@ -628,34 +640,38 @@ export const LiquidacionCuentaDB = {
 
       const { adelantoIds } = await AdelantosDB.anularEntregasDeLiquidacionEnTx(tx, tenantId, liq.id);
       const movimientos = await ForestCuentaDB.bajaDeLiquidacionEnTx(tx, tenantId, liq.id);
-      const row = await tx.liquidacionCuenta.update({
+      let row = await tx.liquidacionCuenta.update({
         where: { id: liq.id },
         data: { anuladaAt: new Date(), anuladaPor: usuario || "unknown", motivoAnulacion: opts.motivo.trim() },
       });
-      return { row, adelantos: adelantoIds.length, movimientos };
+
+      /* La caja no se revierte sola, y sólo se revierte lo que de verdad se movió:
+         devolver un pago que nunca pasó por el cajón descuadraría el arqueo. La
+         reversión va en ESTA transacción y como último lock (F4 de ADR-448): la
+         anulación y su devolución se confirman juntas; anular dos veces choca
+         arriba con `LiquidacionYaAnuladaError`, bajo el lock de la persona. */
+      let reversion = "no se pidió";
+      if (opts.devolucionCaja && liq.pagoMonto != null && liq.pagoDireccion) {
+        if (liq.cajaResultado === "movida") {
+          const caja = await moverCajaEnTx(tx, tenantId, {
+            tipo: liq.pagoDireccion === "recibido" ? "egreso" : "ingreso",
+            monto: Number(liq.pagoMonto),
+            metodo: opts.devolucionCaja,
+            etiqueta: etiquetaAnulacionLiquidacion(liq.codigo, liq.personaNombre),
+          });
+          reversion = caja.movimientoId ? "revertida" : caja.sinCaja ? "sin caja abierta" : "falló";
+          if (caja.movimientoId) {
+            row = await tx.liquidacionCuenta.update({ where: { id: liq.id }, data: { cajaReversionId: caja.movimientoId } });
+          }
+        } else {
+          reversion = "no se revierte: el pago no se había anotado en la caja";
+        }
+      }
+      return { row, adelantos: adelantoIds.length, movimientos, reversion };
     }, CTP_TX_OPTS);
     if (!hecho) return null;
 
-    let { row } = hecho;
-    /* La caja no se revierte sola, y sólo se revierte lo que de verdad se movió:
-       devolver un pago que nunca pasó por el cajón descuadraría el arqueo. */
-    let reversion = "no se pidió";
-    if (opts.devolucionCaja && row.pagoMonto != null && row.pagoDireccion) {
-      if (row.cajaResultado === "movida") {
-        const caja = await moverCaja(tenantId, {
-          tipo: row.pagoDireccion === "recibido" ? "egreso" : "ingreso",
-          monto: Number(row.pagoMonto),
-          metodo: opts.devolucionCaja,
-          etiqueta: etiquetaAnulacionLiquidacion(row.codigo, row.personaNombre),
-        });
-        reversion = caja.movimientoId ? "revertida" : caja.sinCaja ? "sin caja abierta" : "falló";
-        if (caja.movimientoId) {
-          row = await prisma.liquidacionCuenta.update({ where: { id: row.id }, data: { cajaReversionId: caja.movimientoId } });
-        }
-      } else {
-        reversion = "no se revierte: el pago no se había anotado en la caja";
-      }
-    }
+    const { row, reversion } = hecho;
 
     logActivity(
       "liquidacion_cuenta_anular",
