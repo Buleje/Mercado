@@ -1,484 +1,169 @@
 "use client";
 
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
-import { sinDato } from "@/lib/errores/sin-dato";
-import { LoadingState, SectionTitle } from "@buleje/design-system";
-import { useState, useEffect, useMemo } from "react";
-import {
-  TrendingUp, TrendingDown, DollarSign, RefreshCw,
-  ChevronDown, ChevronUp, Download, BarChart2,
-  ArrowUpRight, ArrowDownRight, Minus,
-} from "@buleje/design-system/icons";
-import { cn, exportToCSV, limaDateKey } from "@/lib/utils";
-import { gastoDelMes, mesDeGasto, type IngresoDelMes } from "@/lib/finance/ingresos-del-periodo";
-import { formatNumber } from "@/lib/format";
-
-// ── Types ─────────────────────────────────────────────────────────────────────
-
-type MonthData = {
-  label: string;       // "Ene 2025"
-  revenue: number;     // Ingresos brutos
-  cogs: number;        // Costo de mercadería vendida
-  grossProfit: number; // revenue - cogs
-  expenses: number;    // Gastos operativos
-  netProfit: number;   // grossProfit - expenses
-  grossMargin: number; // %
-  netMargin: number;   // %
-};
-
-/** Lo que aporta el Libro CTP al período: ventas y costo REALES, no estimados. */
-type MaderaPL = {
-  ventas: number;
-  cogs: number;
-  margen: number;
-  /** Despachos del período con precio sin cargar: plata que el P&L no ve. */
-  sinVenta: number;
-  /** Despachos con precio pero sin costo atribuido: margen desconocido. */
-  sinCosto: number;
-};
-
-type PLSummary = {
-  period: string;
-  revenue: number;
-  /** De dónde salen los ingresos del mostrador (POS y pedidos). */
-  ventasPos: number;
-  pedidos: number;
-  cogs: number;
-  /** El corte forestal del período, para poder explicar el total. */
-  madera: MaderaPL | null;
-  grossProfit: number;
-  expenses: Record<string, number>;
-  totalExpenses: number;
-  netProfit: number;
-  grossMargin: number;
-  netMargin: number;
-};
-
-const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
-const SHORT_MONTHS = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
-
-function fmt(n: number) {
-  return `S/ ${formatNumber(n, 2)}`;
-}
-function pct(n: number) {
-  return `${n >= 0 ? "+" : ""}${n.toFixed(1)}%`;
-}
-
 /**
- * Cuánto cambió contra el mes pasado, o `undefined` cuando no hay con qué
- * comparar.
+ * Mi Plata › Resultado › Ganancias y pérdidas (ADR-451).
  *
- * Con el mes anterior en 0 la cuenta es una división por cero y la tarjeta
- * mostraba **«NaN% vs mes anterior»** (visto en el tenant QA, que arranca sin
- * ingresos). Un «+∞%» tampoco diría nada: sin base no hay variación, así que la
- * línea no se pinta. Mismo criterio que el resto de los KPI del panel —un
- * delta se calcula con la MISMA fórmula sobre la otra ventana, o no se muestra.
- *
- * `Math.abs` en el divisor: con una base negativa (una utilidad en rojo el mes
- * pasado) dividir por el signo invertiría la flecha.
+ * Antes el navegador armaba el resultado con tres endpoints y un 55 % fijo de
+ * costo, y el aserrío no existía: en Blas setiembre salía S/ 0 con
+ * S/ 11 054,18 de corridas cobradas afuera. Ahora lo arma el servidor
+ * (`useResultadoDelMes` → GET /api/finanzas/resultado) y esta pantalla sólo lo
+ * pinta: Ingresos − Costos = Resultado, cada renglón con su detalle y su
+ * origen, lo estimado con «≈», lo que no se sabe con «—».
  */
-function variacionMensual(actual?: number, base?: number): number | undefined {
-  if (actual == null || base == null) return undefined;
-  if (!Number.isFinite(actual) || !Number.isFinite(base) || base === 0) return undefined;
-  const v = ((actual - base) / Math.abs(base)) * 100;
-  return Number.isFinite(v) ? v : undefined;
+
+import { useState } from "react";
+import { LoadingState } from "@buleje/design-system";
+import { DollarSign, Download, Lock, RefreshCw } from "@buleje/design-system/icons";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import DetalleRenglonModal from "@/components/admin/unified/finanzas/resultado/DetalleRenglonModal";
+import ResultadoEstado from "@/components/admin/unified/finanzas/resultado/ResultadoEstado";
+import ResultadoSerie from "@/components/admin/unified/finanzas/resultado/ResultadoSerie";
+import { claveMes, etiquetaFuente, montoTexto, nombreMes } from "@/components/admin/unified/finanzas/resultado/fuentes";
+import { useResultadoDelMes, useVeLaPlataDelNegocio } from "@/hooks/use-resultado-del-mes";
+import { cn, exportToCSV, limaDateKey } from "@/lib/utils";
+import type { FuenteDetalle, ResultadoDelMes } from "@/lib/finance/resultado-del-negocio";
+
+const MESES_DEL_ANIO = Array.from({ length: 12 }, (_, i) => {
+  const n = nombreMes(claveMes(2000, i));
+  return `${n.charAt(0).toUpperCase()}${n.slice(1)}`;
+});
+
+const CONTROL =
+  "h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]";
+
+/** El CSV del mes: los mismos renglones y totales que la pantalla. `null` va vacío, no 0. */
+function descargar(r: ResultadoDelMes) {
+  const fila = (concepto: string, monto: number | null, estimado: boolean) => ({
+    concepto,
+    importe: monto,
+    estimado: estimado ? "sí" : "",
+  });
+  exportToCSV(
+    [
+      ...r.ingresos.map((x) => fila(`(+) ${etiquetaFuente(x.fuente)}`, x.monto, x.certeza !== "medido")),
+      fila("Total ingresos", r.totalIngresos, r.ingresos.some((x) => x.certeza !== "medido")),
+      ...r.costos.map((x) => fila(`(−) ${etiquetaFuente(x.fuente)}`, x.monto == null ? null : -x.monto, x.certeza !== "medido")),
+      fila("Total costos", -r.totalCostos, r.costos.some((x) => x.certeza !== "medido")),
+      fila("RESULTADO", r.resultado, r.estimado),
+    ],
+    `resultado-${r.mes}`,
+  );
 }
 
-/** «YYYY-MM-DD» de un día de calendario (Date.UTC normaliza el mes y el día fuera de rango). */
-function diaCalendario(y: number, m0: number, d: number): string {
-  return new Date(Date.UTC(y, m0, d)).toISOString().slice(0, 10);
-}
+/** Nada anotado: ni renglones, ni compras, ni avisos. Un «—» (planilla sin permiso) no es «nada». */
+const mesVacio = (r: ResultadoDelMes): boolean =>
+  [...r.ingresos, ...r.costos].every((x) => x.cuantos === 0 && x.monto === 0 && !x.faltan) &&
+  r.memo.cuantas + r.memo.sinCosto === 0 &&
+  r.avisos.length === 0;
 
-function buildMonthLabel(year: number, month: number) {
-  return `${SHORT_MONTHS[month]} ${year}`;
-}
-
-function deltaColor(val: number) {
-  if (val > 0) return "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]";
-  if (val < 0) return "text-[var(--data-error-500)] dark:text-red-400";
-  return "text-[var(--text-tertiary)] dark:text-muted";
-}
-function deltaIcon(val: number) {
-  if (val > 0) return <ArrowUpRight className="h-3.5 w-3.5" />;
-  if (val < 0) return <ArrowDownRight className="h-3.5 w-3.5" />;
-  return <Minus className="h-3.5 w-3.5" />;
-}
-
-// ── Component ─────────────────────────────────────────────────────────────────
-
-export default function PLTab() {
-  // El mes «actual» es el de Lima: con la hora local del navegador, fuera de
-  // Perú (o a las 20:00 del último día en un equipo en UTC) abría el mes siguiente.
-  const hoyLima = limaDateKey();
-  const anioLima = Number(hoyLima.slice(0, 4));
-  const [year, setYear] = useState(anioLima);
-  const [month, setMonth] = useState(Number(hoyLima.slice(5, 7)) - 1);
-  const [loading, setLoading] = useState(true);
-  const [summary, setSummary] = useState<PLSummary | null>(null);
-  const [months, setMonths] = useState<MonthData[]>([]);
-  const [expandExpenses, setExpandExpenses] = useState(false);
-  const [tick, setTick] = useState(0);
-
-  // Carga datos REALES: una ventana de 6 meses (ingresos + expenses) y de ahí se
-  // derivan tanto el resumen del mes seleccionado como el trend de 6 meses.
-  // (Antes el trend usaba Math.random — ver buildMockMonths eliminado.)
-  //
-  // Los ingresos salen de /api/finanzas/monthly-summary, la MISMA fuente que el
-  // Resumen (regla en lib/finance/ingresos-del-periodo.ts). Antes se bajaba
-  // /api/orders y se contaban sólo pedidos «confirmado»/«entregado», sin las
-  // ventas del POS: en el tenant QA mayo daba 54,90 acá y 229,20 en el Resumen.
-  useEffect(() => {
-    let active = true;
-    setLoading(true);
-
-    const TREND_MONTHS = 6;
-    const rangeFrom = diaCalendario(year, month - (TREND_MONTHS - 1), 1);
-    // Hasta el 01 del mes siguiente: un gasto pagado el último día a las 20:00
-    // de Lima ya es del 01 en UTC. `mesDeGasto` lo devuelve a su mes de Lima.
-    const rangeTo = diaCalendario(year, month + 1, 1);
-
-    const monthKey = (y: number, m: number) => `${y}-${String(m + 1).padStart(2, "0")}`;
-
-    /* El mes elegido, para el corte forestal: el Libro CTP responde por rango y
-       el resumen de abajo es de UN mes (la serie de seis sigue siendo del
-       mostrador — pedir seis rangos más sería seis consultas para un gráfico). */
-    const mesFrom = diaCalendario(year, month, 1);
-    const mesTo = diaCalendario(year, month + 1, 0);
-
-    Promise.all([
-      fetch(`/api/finanzas/monthly-summary?months=${TREND_MONTHS}&hasta=${monthKey(year, month)}`)
-        .then(r => (r.ok ? r.json() : []))
-        .catch(sinDato("P&L /api/finanzas/monthly-summary")),
-      fetch(`/api/expenses?from=${rangeFrom}&to=${rangeTo}`).then(r => r.ok ? r.json() : []).catch(() => []),
-      /* La venta de madera vive en el Libro (ADR-141) y se pide al MISMO
-         endpoint que la usa allá: duplicar la cuenta acá sería una segunda
-         verdad sobre la misma plata. Si el tenant no tiene el Libro habilitado
-         responde 403 y el P&L sigue siendo el de siempre. */
-      fetch(`/api/admin/forestal/ctp?pnl=1&from=${mesFrom}&to=${mesTo}`, { credentials: "include" })
-        .then(r => (r.ok ? r.json() : null))
-        .catch(sinDato("P&L /api/admin/forestal/ctp")),
-    ]).then(([ingresosMes, expenses, forestal]) => {
-      if (!active) return;
-      const filas: IngresoDelMes[] = Array.isArray(ingresosMes) ? ingresosMes : [];
-      const ingresoDe = (key: string) => filas.find(f => f.month === key);
-      const pnlF = (forestal as { pnl?: { ventasTotal?: number; cogsTotal?: number; margenTotal?: number; sinVenta?: number; sinCosto?: number } } | null)?.pnl;
-      const madera: MaderaPL | null =
-        pnlF && (pnlF.ventasTotal || pnlF.sinVenta)
-          ? {
-              ventas: pnlF.ventasTotal ?? 0,
-              cogs: pnlF.cogsTotal ?? 0,
-              margen: pnlF.margenTotal ?? 0,
-              sinVenta: pnlF.sinVenta ?? 0,
-              sinCosto: pnlF.sinCosto ?? 0,
-            }
-          : null;
-      const expArr: { date?: string; createdAt?: string; category?: string; amount?: number }[] = Array.isArray(expenses) ? expenses : [];
-
-      // ── Trend REAL: bucket por mes (COGS estimado 55% del ingreso) ──
-      const realMonths: MonthData[] = [];
-      for (let i = TREND_MONTHS - 1; i >= 0; i--) {
-        const d = new Date(year, month - i, 1);
-        const y = d.getFullYear(), m = d.getMonth();
-        const key = monthKey(y, m);
-        const revenue = ingresoDe(key)?.ingresos ?? 0;
-        const cogs = revenue * 0.55;
-        const grossProfit = revenue - cogs;
-        const monthExp = gastoDelMes(key, expArr);
-        const netProfit = grossProfit - monthExp;
-        realMonths.push({
-          label: buildMonthLabel(y, m),
-          revenue, cogs, grossProfit, expenses: monthExp, netProfit,
-          grossMargin: revenue > 0 ? (grossProfit / revenue) * 100 : 0,
-          netMargin: revenue > 0 ? (netProfit / revenue) * 100 : 0,
-        });
-      }
-      setMonths(realMonths);
-
-      // ── Resumen del mes seleccionado (con desglose de gastos por categoría) ──
-      const selKey = monthKey(year, month);
-      const delMes = ingresoDe(selKey);
-      const mostrador = delMes?.ingresos ?? 0;
-      /* El COGS del mostrador sigue siendo una ESTIMACIÓN (55 %); el de la
-         madera sale del costo real de sus guías. Se suman porque el total tiene
-         que incluir las dos, y la pantalla dice cuál es cuál — un margen bruto
-         que mezcla medido y estimado sin avisar se lee como medido. */
-      const revenue = mostrador + (madera?.ventas ?? 0);
-      const cogs = mostrador * 0.55 + (madera?.cogs ?? 0);
-      const grossProfit = revenue - cogs;
-      const selExpenses = expArr.filter(e => mesDeGasto(e.date ?? e.createdAt) === selKey);
-      const totalExpenses = selExpenses.reduce((s, e) => s + (e.amount ?? 0), 0);
-      const expMap: Record<string, number> = {};
-      for (const e of selExpenses) {
-        const c = e.category ?? "Otros";
-        expMap[c] = (expMap[c] ?? 0) + (e.amount ?? 0);
-      }
-      const netProfit = grossProfit - totalExpenses;
-
-      setSummary({
-        period: `${MONTHS[month]} ${year}`,
-        revenue, ventasPos: delMes?.ventas ?? 0, pedidos: delMes?.pedidos ?? 0, cogs, madera, grossProfit, expenses: expMap, totalExpenses, netProfit,
-        grossMargin: revenue > 0 ? (grossProfit / revenue) * 100 : 0,
-        netMargin: revenue > 0 ? (netProfit / revenue) * 100 : 0,
-      });
-      setLoading(false);
-    });
-
-    return () => { active = false; };
-  }, [year, month, tick]);
-
-  // Previous month delta
-  const prevMonth = months.length >= 2 ? months[months.length - 2] : null;
-  const currMonth = months.length >= 1 ? months[months.length - 1] : null;
-  const revDelta = variacionMensual(currMonth?.revenue, prevMonth?.revenue);
-  const profitDelta = variacionMensual(currMonth?.netProfit, prevMonth?.netProfit);
-
-  // Chart bar max
-  const maxRevenue = useMemo(() => Math.max(...months.map(m => m.revenue), 1), [months]);
-
-  const handleExport = () => {
-    if (!summary) return;
-    exportToCSV([
-      { concepto: "Ingresos brutos", importe: summary.revenue },
-      { concepto: "Costo de lo vendido", importe: -summary.cogs },
-      { concepto: "Utilidad bruta", importe: summary.grossProfit },
-      ...Object.entries(summary.expenses).map(([cat, val]) => ({ concepto: `Gasto: ${cat}`, importe: -val })),
-      { concepto: "Total gastos operativos", importe: -summary.totalExpenses },
-      { concepto: "UTILIDAD NETA", importe: summary.netProfit },
-    ], `ganancias-perdidas-${summary.period.replace(" ", "-")}`);
-  };
-
+function Recuadro({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className="space-y-4">
-      {/* Header estándar del panel. Antes era un div a mano con PageTitle, que
-          se saltea el `font-display` de AdminModuleHeader: al lado de sus
-          hermanos de Mi Plata se leía como otro producto. */}
-      <AdminModuleHeader
-        as="h2"
-        title="Ganancias y pérdidas del mes"
-        description="Cuánto entró, cuánto salió y cuánto quedó de ganancia"
-        icon={DollarSign}
-      >
-          <select
-            value={month}
-            onChange={e => setMonth(Number(e.target.value))}
-            aria-label="Mes"
-            className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
-          >
-            {MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}
-          </select>
-          <select
-            value={year}
-            onChange={e => setYear(Number(e.target.value))}
-            aria-label="Año"
-            className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
-          >
-            {[anioLima - 1, anioLima, anioLima + 1].map(y => <option key={y} value={y}>{y}</option>)}
-          </select>
-          <button aria-label="Actualizar" onClick={() => setTick(t => t + 1)} className="p-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)] transition-colors">
-            <RefreshCw className="h-4 w-4 text-[var(--text-secondary)] dark:text-muted" />
-          </button>
-          <button onClick={handleExport} className="flex items-center gap-1.5 px-3 min-h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors">
-            <Download className="h-4 w-4" /> Descargar
-          </button>
-      </AdminModuleHeader>
-
-      {loading ? (
-        <LoadingState />
-      ) : summary ? (
-        <>
-          {/* KPI Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
-            {[
-              { label: "Ingresos Brutos", value: summary.revenue, delta: revDelta, icon: TrendingUp, color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
-              { label: "Utilidad Bruta", value: summary.grossProfit, sub: `Margen ${Number(summary.grossMargin).toFixed(1)}%`, icon: BarChart2, color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
-              { label: "Gastos Operativos", value: summary.totalExpenses, icon: TrendingDown, color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
-              { label: "Utilidad Neta", value: summary.netProfit, delta: profitDelta, sub: `Margen ${Number(summary.netMargin).toFixed(1)}%`, icon: DollarSign, color: summary.netProfit >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]", bg: summary.netProfit >= 0 ? "bg-primary/10 dark:bg-primary/15" : "bg-[var(--data-error-50)] dark:bg-red-950/30" },
-            ].map(({ label, value, delta, sub, icon: Icon, color, bg }) => (
-              <div key={label} className={cn("rounded-xl p-4", bg, "border border-transparent")}>
-                <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center mb-3", bg)}>
-                  <Icon className={cn("h-5 w-5", color)} />
-                </div>
-                <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">{label}</p>
-                <p className={cn("text-xl font-extrabold", color)}>{fmt(value)}</p>
-                {delta !== undefined && (
-                  <span className={cn("text-xs font-bold flex items-center gap-0.5 mt-1", deltaColor(delta))}>
-                    {deltaIcon(delta)} {pct(delta)} vs mes anterior
-                  </span>
-                )}
-                {sub && <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-0.5">{sub}</p>}
-              </div>
-            ))}
-          </div>
-
-          {/* P&L Statement Table */}
-          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
-            <div className="px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex items-center justify-between">
-              <SectionTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm">
-                Ganancias y Pérdidas — {summary.period}
-              </SectionTitle>
-              <span className={cn("text-xs font-bold px-3 py-1 rounded-full", summary.netProfit >= 0 ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-error-100)] text-[var(--data-error-500)]")}>
-                {summary.netProfit >= 0 ? "GANANDO" : "PERDIENDO"}
-              </span>
-            </div>
-            <div className="divide-y divide-[var(--rule-soft)] dark:divide-card-border">
-              {/* Revenue */}
-              <PLRow
-                label="(+) Ingresos por ventas"
-                value={summary.revenue}
-                bold
-                highlight="blue"
-                sub={summary.ventasPos > 0 && summary.pedidos > 0 ? `mostrador ${fmt(summary.ventasPos)} · pedidos ${fmt(summary.pedidos)}` : undefined}
-              />
-              {/* El desglose va pegado al total: si el número de arriba incluye
-                  madera y la pantalla no lo dice, no se puede explicar de dónde
-                  salió — y el que lo mira busca el error en el mostrador. */}
-              {summary.madera && summary.madera.ventas > 0 && (
-                <PLRow
-                  label="    de los cuales, madera despachada"
-                  value={summary.madera.ventas}
-                  sub="Libro CTP · guías con precio cargado"
-                />
-              )}
-              <PLRow
-                label="(−) Costo de lo vendido"
-                value={-summary.cogs}
-                sub={
-                  summary.madera && summary.madera.cogs > 0
-                    ? "mostrador ~55% estimado · madera con su costo real"
-                    : "~55% de ventas estimado"
-                }
-              />
-              <PLRow label="= Utilidad Bruta" value={summary.grossProfit} bold highlight={summary.grossProfit >= 0 ? "green" : "red"} showPct pctOf={summary.revenue} />
-              {/* Lo que el P&L NO puede ver se dice, en vez de que el total
-                  mienta por omisión: un despacho sin precio es plata que salió
-                  de la planta y no figura en ningún lado. */}
-              {summary.madera && (summary.madera.sinVenta > 0 || summary.madera.sinCosto > 0) && (
-                <p className="px-3 py-2 text-xs leading-snug text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-                  {summary.madera.sinVenta > 0 && (
-                    <>
-                      {summary.madera.sinVenta} despacho{summary.madera.sinVenta === 1 ? "" : "s"} del mes
-                      sin precio cargado: esa madera salió y no está sumada acá.{" "}
-                    </>
-                  )}
-                  {summary.madera.sinCosto > 0 && (
-                    <>
-                      {summary.madera.sinCosto} con precio pero sin costo atribuido: su margen no se
-                      puede medir.
-                    </>
-                  )}
-                </p>
-              )}
-
-              {/* Expenses breakdown */}
-              <div>
-                <button
-                  onClick={() => setExpandExpenses(v => !v)}
-                  className="w-full flex items-center justify-between px-3 sm:px-6 py-3 text-sm text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] transition-colors"
-                >
-                  <span className="flex flex-wrap items-center gap-2">
-                    <span className="text-[var(--text-tertiary)]">−</span>
-                    <span className="font-semibold">Gastos Operativos</span>
-                    <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">({Object.keys(summary.expenses).length} categorías)</span>
-                  </span>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-bold text-[var(--data-warning-500)]">{fmt(summary.totalExpenses)}</span>
-                    {expandExpenses ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                  </div>
-                </button>
-                {expandExpenses && (
-                  <div className="bg-[var(--surface-sunken)] dark:bg-surface/50">
-                    {Object.entries(summary.expenses).length === 0 ? (
-                      <p className="px-10 py-3 text-xs text-[var(--text-tertiary)] dark:text-muted italic">Sin gastos registrados en este período</p>
-                    ) : Object.entries(summary.expenses).map(([cat, val]) => (
-                      <div key={cat} className="flex items-center justify-between px-10 py-2.5 text-sm border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] last:border-0">
-                        <span className="text-[var(--text-secondary)] dark:text-muted capitalize">{cat}</span>
-                        <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(val)}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <PLRow label="= Utilidad Neta" value={summary.netProfit} bold highlight={summary.netProfit >= 0 ? "green" : "red"} showPct pctOf={summary.revenue} large />
-            </div>
-          </div>
-
-          {/* Trend Chart (last 6 months) */}
-          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6">
-            <SectionTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm mb-4 flex flex-wrap items-center gap-2">
-              <BarChart2 className="h-4 w-4 text-primary" />
-              Tendencia últimos 6 meses
-            </SectionTitle>
-            <div className="flex flex-wrap items-end gap-3 h-40">
-              {months.map((m, i) => (
-                <div key={i} className="flex-1 flex flex-col items-center gap-1 min-w-0">
-                  <div className="w-full flex flex-col gap-0.5 justify-end" style={{ height: "120px" }}>
-                    {/* Revenue bar */}
-                    <div
-                      className="w-full rounded-t-md bg-primary/10 dark:bg-primary/10 transition-all"
-                      style={{ height: `${(m.revenue / maxRevenue) * 100}px` }}
-                      title={`Ingresos: ${fmt(m.revenue)}`}
-                    />
-                    {/* Net profit overlay */}
-                    <div
-                      className={cn("w-full rounded-t-md transition-all", m.netProfit >= 0 ? "bg-primary/10" : "bg-[var(--data-error-500)]")}
-                      style={{ height: `${(Math.abs(m.netProfit) / maxRevenue) * 100}px`, marginTop: "2px" }}
-                      title={`Utilidad neta: ${fmt(m.netProfit)}`}
-                    />
-                  </div>
-                  <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted truncate w-full text-center">{m.label}</span>
-                </div>
-              ))}
-            </div>
-            <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-3">
-              <span className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] dark:text-muted"><span className="w-3 h-3 rounded bg-primary/10" /> Ingresos</span>
-              <span className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] dark:text-muted"><span className="w-3 h-3 rounded bg-primary/10" /> Utilidad neta</span>
-            </div>
-          </div>
-        </>
-      ) : (
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-10 text-center text-[var(--text-tertiary)] dark:text-muted">
-          Sin datos para el período seleccionado.
-        </div>
-      )}
+    <div className={cn("rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 text-center", className)}>
+      {children}
     </div>
   );
 }
 
-// ── Sub-component ─────────────────────────────────────────────────────────────
+export default function PLTab() {
+  // El mes «actual» es el de Lima: con la hora del navegador, a las 20:00 del
+  // último día (o fuera de Perú) abría el mes siguiente.
+  const hoyLima = limaDateKey();
+  const anioLima = Number(hoyLima.slice(0, 4));
+  const [mes, setMes] = useState(hoyLima.slice(0, 7));
+  const [abierto, setAbierto] = useState<FuenteDetalle | null>(null);
+  const ve = useVeLaPlataDelNegocio();
+  const { datos, cargando, error, sinPermiso, recargar } = useResultadoDelMes(ve === "si" ? mes : null);
 
-function PLRow({
-  label, value, sub, bold, highlight, showPct, pctOf, large,
-}: {
-  label: string;
-  value: number;
-  sub?: string;
-  bold?: boolean;
-  highlight?: "blue" | "green" | "red";
-  showPct?: boolean;
-  pctOf?: number;
-  large?: boolean;
-}) {
-  const valueColor =
-    highlight === "blue" ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" :
-    highlight === "green" ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" :
-    highlight === "red" ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" :
-    value < 0 ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]";
+  const anio = Number(mes.slice(0, 4));
+  const mes0 = Number(mes.slice(5, 7)) - 1;
+  /* Los datos de otro mes (el pedido anterior) no se muestran como si fueran de este. */
+  const delMes = datos && datos.actual.mes === mes ? datos : null;
+  const noLoVe = ve === "no" || sinPermiso;
+  const anterior = delMes ? (delMes.serie[delMes.serie.length - 2] ?? null) : null;
 
   return (
-    <div className={cn("flex items-center justify-between px-3 sm:px-6 py-3.5", bold && "bg-[var(--surface-sunken)]")}>
-      <div>
-        <p className={cn("text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]", bold && "font-bold", large && "text-base")}>{label}</p>
-        {sub && <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-0.5">{sub}</p>}
-      </div>
-      <div className="text-right">
-        <p className={cn("font-semibold", valueColor, bold && "font-extrabold", large && "text-lg")}>
-          {fmt(Math.abs(value))}
-        </p>
-        {showPct && pctOf && pctOf > 0 && (
-          <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">{((Math.abs(value) / pctOf) * 100).toFixed(1)}% de ventas</p>
-        )}
-      </div>
+    <div className="space-y-4">
+      <AdminModuleHeader
+        as="h2"
+        title="Ganancias y pérdidas del mes"
+        description="Lo que ganaste: ingresos menos costos, con el aserrío y la madera adentro"
+        icon={DollarSign}
+      >
+        <select value={mes0} onChange={(e) => setMes(claveMes(anio, Number(e.target.value)))} aria-label="Mes" className={CONTROL}>
+          {MESES_DEL_ANIO.map((m, i) => (
+            <option key={m} value={i}>
+              {m}
+            </option>
+          ))}
+        </select>
+        <select value={anio} onChange={(e) => setMes(claveMes(Number(e.target.value), mes0))} aria-label="Año" className={CONTROL}>
+          {[anioLima - 1, anioLima, anioLima + 1].map((y) => (
+            <option key={y} value={y}>
+              {y}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          aria-label="Actualizar"
+          title="Actualizar"
+          onClick={recargar}
+          disabled={noLoVe}
+          className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] transition-colors hover:bg-[var(--surface-sunken)] disabled:opacity-50"
+        >
+          <RefreshCw className={cn("h-4 w-4 text-[var(--text-secondary)]", cargando && delMes && "animate-spin")} />
+        </button>
+        <button
+          type="button"
+          onClick={() => delMes && descargar(delMes.actual)}
+          disabled={!delMes}
+          className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:opacity-50"
+        >
+          <Download className="h-4 w-4" aria-hidden /> Descargar
+        </button>
+      </AdminModuleHeader>
+
+      {noLoVe ? (
+        <Recuadro>
+          <Lock className="mx-auto mb-2 h-6 w-6 text-[var(--text-tertiary)]" aria-hidden />
+          <p className="text-sm font-medium text-[var(--text-primary)]">Esto lo ve el dueño o un administrador.</p>
+        </Recuadro>
+      ) : error && !delMes ? (
+        <Recuadro>
+          <p className="text-sm font-medium text-[var(--data-error-ink)]" role="alert">
+            {error}
+          </p>
+          <button
+            type="button"
+            onClick={recargar}
+            className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+          >
+            <RefreshCw className="h-4 w-4" aria-hidden /> Reintentar
+          </button>
+        </Recuadro>
+      ) : !delMes ? (
+        <LoadingState message="Armando el resultado del mes…" />
+      ) : (
+        <div className={cn("space-y-4 transition-opacity", cargando && "opacity-70")} aria-busy={cargando}>
+          {mesVacio(delMes.actual) ? (
+            <Recuadro>
+              <p className="text-sm text-[var(--text-secondary)]">
+                En {nombreMes(mes)} todavía no hay ventas, aserríos ni gastos anotados.
+              </p>
+            </Recuadro>
+          ) : (
+            <ResultadoEstado actual={delMes.actual} anterior={anterior} onAbrir={setAbierto} />
+          )}
+          <ResultadoSerie serie={delMes.serie} elegido={mes} onElegir={setMes} />
+          {error && (
+            <p className="text-xs text-[var(--data-error-ink)]" role="status">
+              No se pudo actualizar: {error} Lo de arriba es de la última carga ({montoTexto(delMes.actual.resultado, { signo: true })}).
+            </p>
+          )}
+        </div>
+      )}
+
+      <DetalleRenglonModal mes={mes} fuente={abierto} onClose={() => setAbierto(null)} />
     </div>
   );
 }

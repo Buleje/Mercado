@@ -2,6 +2,7 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
+import { claveCacheResultado } from "@/lib/finance/resultado-del-negocio";
 import { logger } from "@/lib/logger";
 import { auditCtp } from "@/lib/forestal/ctp-audit";
 import type { Concepto, MovimientoCuenta, MovimientoInput, TipoMov } from "@/lib/forestal/cuenta-corriente";
@@ -683,6 +684,9 @@ export const ForestCuentaDB = {
   invalidar(tenantId: string): void {
     try {
       invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+      /* El resultado y la caja del negocio (ADR-451) leen esta cuenta: el cobro
+         de un aserrío, un pago o una liquidación los cambia. */
+      invalidateByPrefix(`${claveCacheResultado(tenantId)}:`);
     } catch (err) {
       logger.error("[forest-cuenta] no se pudo invalidar la caché", { error: String(err), tenantId });
     }

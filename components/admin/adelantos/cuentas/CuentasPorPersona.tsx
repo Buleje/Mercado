@@ -12,13 +12,14 @@
  * manejo».
  */
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CardTitle } from "@buleje/design-system";
 import { Users } from "@buleje/design-system/icons";
 import { useCuentasPersonas } from "@/hooks/use-cuentas-personas";
 import { useMiRol } from "@/hooks/use-mi-rol";
 import { EmptyState, fmtMon } from "../shared";
 import FilaCuentaPersona from "./FilaCuentaPersona";
+import { borrarPedidoLiquidar, leerPedidoLiquidar, personaDelPedido, type PedidoLiquidar } from "./liquidar-por-url";
 
 export default function CuentasPorPersona({ onGoTab }: { onGoTab: (tab: string) => void }) {
   const { forestal, personas, truncado, loading, error, vincularParte, reload } = useCuentasPersonas();
@@ -32,6 +33,24 @@ export default function CuentasPorPersona({ onGoTab }: { onGoTab: (tab: string) 
   const candidatos = useMemo(() => personas.filter((p) => p.parteId && !p.beneficiarioId), [personas]);
   const teDeben = useMemo(() => personas.filter((p) => p.neto > 0.005).reduce((s, p) => s + p.neto, 0), [personas]);
   const leDebes = useMemo(() => personas.filter((p) => p.neto < -0.005).reduce((s, p) => s + Math.abs(p.neto), 0), [personas]);
+
+  /* `?accion=liquidar&persona=<id>` (la Caja de Mi Plata lo manda): cuando llegan
+     las filas, se abre Liquidar en la de esa persona y el pedido sale de la URL.
+     Se relee con el «atrás» y con el popstate que dispara la navegación del panel. */
+  const [pedido, setPedido] = useState<PedidoLiquidar | null>(() => leerPedidoLiquidar());
+  const [abrirLiquidarDe, setAbrirLiquidarDe] = useState<string | null>(null);
+  useEffect(() => {
+    const releer = () => setPedido(leerPedidoLiquidar());
+    window.addEventListener("popstate", releer);
+    return () => window.removeEventListener("popstate", releer);
+  }, []);
+  useEffect(() => {
+    if (!pedido || loading || rol == null) return;
+    const destino = personaDelPedido(pedido, personas);
+    borrarPedidoLiquidar();
+    setPedido(null);
+    if (destino) setAbrirLiquidarDe(destino.clave);
+  }, [pedido, loading, rol, personas]);
 
   return (
     <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
@@ -94,6 +113,8 @@ export default function CuentasPorPersona({ onGoTab }: { onGoTab: (tab: string) 
               onVincular={vincularParte}
               onGoTab={onGoTab}
               puedeLiquidar={puedeLiquidar}
+              abrirLiquidar={abrirLiquidarDe === p.clave}
+              onLiquidarPedidoAtendido={() => setAbrirLiquidarDe(null)}
               onCambio={reload}
             />
           ))}

@@ -8,7 +8,10 @@ import { describe, it, expect } from "vitest";
  * por cero: en pantalla salía `NaN%`. Un `+∞%` tampoco significaría nada.
  *
  * La regla: **sin base no hay variación** y la línea no se pinta. Este test fija
- * la regla; la función vive en `components/admin/PLTab.tsx`.
+ * la regla con su propia copia de la función: la tarjeta con «% vs mes
+ * anterior» salió de Ganancias en ADR-451 (29-09) —ahora el resultado lo arma
+ * el servidor y la pantalla muestra el mes anterior en soles, sin porcentaje—.
+ * Si una pantalla vuelve a comparar contra otro mes, que use ESTA regla.
  */
 function variacionMensual(actual?: number, base?: number): number | undefined {
   if (actual == null || base == null) return undefined;

@@ -35,6 +35,7 @@ import { CtpInvariantError, ForestCtpConsumoDB, CTP_TX_OPTS } from "./forest-ctp
 import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
 import { ForestAnexosDB } from "./forest-anexos.db";
 import { agregarPnl, decidirMargen, type FilaPnl, type MargenMotivo, type PnlAgregado } from "@/lib/forestal/ctp-pnl";
+import { claveCacheResultado } from "@/lib/finance/resultado-del-negocio";
 import { guiaEditable } from "@/lib/forestal/gtf-estado";
 import {
   correlativoEnSerie, gtfEnUso, leerGtfConfirmada, mismoNumeroGtf, proponerGtf, saltoDeCorrelativo,
@@ -680,6 +681,8 @@ export class ForestCtpDespachoDB {
       user,
     });
     try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
+    // ADR-451: el precio de un despacho es la madera vendida del resultado del negocio.
+    try { invalidateByPrefix(`${claveCacheResultado(tenantId)}:`); } catch { /* cache best-effort */ }
   }
 
   /**
@@ -689,8 +692,27 @@ export class ForestCtpDespachoDB {
    * margen). Itera despacho por despacho reusando `margenDeDespacho`.
    */
   static async pnlDelPeriodo(tenantId: string, opts: { fromDate?: Date; toDate?: Date } = {}): Promise<PnlPeriodo> {
+    // La suma (completos / incompletos / de servicio / mixtos) es pura y tiene tests.
+    return agregarPnl(await ForestCtpDespachoDB.filasPnlDelPeriodo(tenantId, opts));
+  }
+
+  /**
+   * Los despachos del período ya decididos (venta, COGS, margen, motivo, moneda
+   * y fecha), SIN sumar: lo que `pnlDelPeriodo` agrega. El resultado del negocio
+   * (ADR-451) los lee así para juntar la venta por guía y decidir el mes de cada
+   * una (`agregarPnl` suma y descarta la moneda de cada fila).
+   */
+  static async filasPnlDelPeriodo(
+    tenantId: string,
+    /** `gtfs`: sólo los despachos de esas guías, sin tope de fecha (ADR-451: la venta se junta por guía entera). */
+    opts: { fromDate?: Date; toDate?: Date; gtfs?: readonly string[] } = {},
+  ): Promise<FilaPnl[]> {
     if (!tenantId) throw new Error("tenantId is required");
     const where: Prisma.ForestCtpEntryWhereInput = { tenantId, section: "despacho", deletedAt: null, status: "registrado" };
+    if (opts.gtfs) {
+      if (opts.gtfs.length === 0) return [];
+      where.gtfNumber = { in: [...opts.gtfs] };
+    }
     if (opts.fromDate || opts.toDate) {
       where.entryDate = {};
       if (opts.fromDate) where.entryDate.gte = opts.fromDate;
@@ -707,6 +729,8 @@ export class ForestCtpDespachoDB {
         id: true, lineNo: true, productType: true, speciesCommon: true, gtfNumber: true,
         // Se traen acá para no volver a pedir la línea despacho por despacho.
         quantity: true, moneda: true, valorVenta: true,
+        // ADR-451: el resultado del negocio decide el mes de la venta con esta fecha.
+        entryDate: true,
       },
     });
 
@@ -757,11 +781,12 @@ export class ForestCtpDespachoDB {
       return {
         id: d.id, lineNo: d.lineNo, producto: `${d.productType ?? "—"} · ${d.speciesCommon ?? "—"}`, gtfSalida: d.gtfNumber ?? null,
         valorVenta: venta, cogs: cogsR.cogs, margen, margenPct, moneda: cogsR.moneda ?? "PEN", motivo,
+        fecha: d.entryDate.toISOString(),
+        monedaVenta: d.moneda ?? "PEN",
       };
     });
 
-    // La suma (completos / incompletos / de servicio / mixtos) es pura y tiene tests.
-    return agregarPnl(filas);
+    return filas;
   }
 
   /**

@@ -2,6 +2,8 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { cacheLife, cacheTag, revalidateTag } from "next/cache";
 import { logger } from "@/lib/logger";
+import { invalidateByPrefix } from "@/lib/cache";
+import { claveCacheResultado } from "@/lib/finance/resultado-del-negocio";
 import { contratoPropio } from "./contrato-propio.db";
 import type {
   Payable as PPayable,
@@ -36,6 +38,12 @@ function safeRevalidate(tag: string): void {
 function revalidateExpenses(tenantId: string): void {
   safeRevalidate(`tenant:${tenantId}:expenses`);
   safeRevalidate(`tenant:${tenantId}:cash-flow`);
+  // El resultado y la caja del negocio (ADR-451) restan los gastos.
+  try {
+    invalidateByPrefix(`${claveCacheResultado(tenantId)}:`);
+  } catch (err) {
+    logger.warn("[finance.db] no se pudo invalidar el resultado del negocio", { error: String(err), tenantId });
+  }
 }
 
 // ── Local Types ───────────────────────────────────────────────────────────────

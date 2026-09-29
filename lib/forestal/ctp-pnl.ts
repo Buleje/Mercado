@@ -52,6 +52,18 @@ export interface FilaPnl {
   margenPct: number | null;
   moneda: string;
   motivo: MargenMotivo;
+  /**
+   * `entryDate` del despacho, ISO (ADR-451): con esto el resultado del negocio
+   * decide el mes de cada venta con la misma regla que el resto (fecha de
+   * calendario). Opcional: las filas armadas a mano (tests, vista previa) no lo traen.
+   */
+  fecha?: string;
+  /**
+   * La moneda del DESPACHO (la de `valorVenta`). `moneda` es la del costo que
+   * decidió `decidirCogs`: sin costo cae a PEN, y una venta en dólares se sumaba a
+   * soles (ADR-451, revisión). Opcional, como `fecha`.
+   */
+  monedaVenta?: string;
 }
 
 /** P&L agregado de un período (ADR-141). El margen cubre SOLO los completos. */

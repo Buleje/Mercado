@@ -39,6 +39,21 @@ export const RUTAS_PANEL = {
      almacenero; el PATCH no: la campana y el modal esconden Liberar/Extender
      a quien recibiría un 403 «Requires: admin, owner». */
   "PATCH /api/admin/forestal/ctp": ["admin", "owner"],
+  /* Resultado y caja del aserradero (ADR-451, 2026-09-29): lo ganado, lo que
+     entró y salió y lo que te deben. Plata del negocio entero: SÓLO admin y
+     dueño. Cajero y almacenero reciben 403 por este array; el encargado, por el
+     `soloAdminODueno` de la ruta (el management-tier de `requireAdmin` lo dejaría
+     pasar, y `puedePedir` también: la pantalla lo decide con el rol a mano).
+     Las tres rutas comparten este array; el detalle es la misma plata. */
+  "/api/finanzas/resultado": ["admin", "owner"],
+  "/api/finanzas/caja-del-negocio": ["admin", "owner"],
+  /* Proyección de 13 semanas (ADR-451, 29-09): ESPEJO de la matriz
+     (`lib/auth/role-permissions.ts`) — los roles que leen `expenses` Y
+     `payables`, porque la proyección son esos gastos y esas cuentas por pagar.
+     El cajero no tiene ninguno de los dos → 403. La ruta vuelve a mirar la
+     matriz; `__tests__/finanzas-cashflow-rolling-adr451.test.ts` fija que el
+     espejo no se despegue. */
+  "/api/finance/cashflow-rolling": ["admin", "owner", "manager", "analista"],
 } as const satisfies Record<string, readonly AdminRole[]>;
 
 export type RutaPanel = keyof typeof RUTAS_PANEL;

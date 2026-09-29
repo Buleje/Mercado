@@ -7,7 +7,7 @@
  * en palabras, grande, al final.
  */
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronDown, Scale } from "@buleje/design-system/icons";
 import { leerNeto, type CuentaPersona } from "@/lib/adelantos/cuenta-unificada";
 import { CONCEPTO_LABEL, type Concepto } from "@/lib/forestal/cuenta-corriente";
@@ -45,6 +45,8 @@ export default function FilaCuentaPersona({
   onVincular,
   onGoTab,
   puedeLiquidar,
+  abrirLiquidar = false,
+  onLiquidarPedidoAtendido,
   onCambio,
 }: {
   persona: CuentaPersona;
@@ -55,6 +57,14 @@ export default function FilaCuentaPersona({
   onGoTab: (tab: string) => void;
   /** ADR-413: sólo admin y dueño pueden liquidar/anular. */
   puedeLiquidar: boolean;
+  /**
+   * El link pidió abrir Liquidar para esta fila (`?accion=liquidar&persona=`,
+   * `liquidar-por-url.ts`). Se abre con las MISMAS reglas que el botón; si el
+   * botón no se podría apretar, la fila se trae a la vista y el motivo ya está
+   * escrito al lado.
+   */
+  abrirLiquidar?: boolean;
+  onLiquidarPedidoAtendido?: () => void;
   /**
    * Se liquidó o se anuló algo dentro del modal: la fila (esta lista entera,
    * `useCuentasPersonas().reload`) tiene que traer el saldo nuevo — sin esto
@@ -109,9 +119,18 @@ export default function FilaCuentaPersona({
    */
   const soloSeArreglaCruzando = !netoDistintoDeCero && maximoAprox > 0.005;
   const vinculoBloqueaElBoton = soloSeArreglaCruzando && persona.vinculo !== "id" && !tieneLiquidaciones;
+  const botonLiquidarVisible = puedeLiquidar && (hayAlgoQueLiquidar || tieneLiquidaciones);
+
+  const filaRef = useRef<HTMLLIElement>(null);
+  useEffect(() => {
+    if (!abrirLiquidar) return;
+    if (botonLiquidarVisible && !vinculoBloqueaElBoton) setLiquidando(true);
+    else filaRef.current?.scrollIntoView?.({ block: "center" });
+    onLiquidarPedidoAtendido?.();
+  }, [abrirLiquidar, botonLiquidarVisible, vinculoBloqueaElBoton, onLiquidarPedidoAtendido]);
 
   return (
-    <li className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+    <li ref={filaRef} className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <p className="truncate text-base font-extrabold text-[var(--text-primary)]">{persona.nombre}</p>
@@ -147,7 +166,7 @@ export default function FilaCuentaPersona({
             dueño (revisión ADR-449), los mismos que liquidan. */}
         {puedeLiquidar && <ControlVinculo persona={persona} candidatos={candidatos} onVincular={onVincular} />}
         <AccionesEstadoCuenta persona={persona} />
-        {puedeLiquidar && (hayAlgoQueLiquidar || tieneLiquidaciones) && (
+        {botonLiquidarVisible && (
           <button
             type="button"
             onClick={() => setLiquidando(true)}

@@ -4,6 +4,7 @@ import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
 import { logger } from "@/lib/logger";
 import { limaDateKey } from "@/lib/utils";
+import { PREFIJO_CACHE_RESULTADO } from "@/lib/finance/resultado-del-negocio";
 import { auditCtpEsperando } from "@/lib/forestal/ctp-audit";
 import { closedPeriodOf, type CtpCierrePeriodo } from "@/lib/forestal/ctp-cierre-types";
 import { unificarCuentas } from "@/lib/adelantos/cuenta-unificada";
@@ -64,7 +65,9 @@ import { ForestDirectorioDB } from "./forest-directorio.db";
  * `tenantId` 1er parámetro. Nunca se enlaza por `providerDocument` (RUC de la ATFFS).
  */
 
-const PREFIJOS_CACHE = ["wood-entries", "forest-contrato", "forest-cuenta"] as const;
+/* `PREFIJO_CACHE_RESULTADO`: el resultado y la caja del negocio (ADR-451) leen
+   los gastos de la guía y los pagos de la cuenta. */
+const PREFIJOS_CACHE = ["wood-entries", "forest-contrato", "forest-cuenta", PREFIJO_CACHE_RESULTADO] as const;
 const ESTADOS_MUERTOS = ["anulado", "rechazado"] as const;
 const OPCIONES_TX = { timeout: 30_000, maxWait: 10_000 } as const;
 /** Marca en `Expense.costCenter`: el gasto nació en una guía (además de `gtfNumber`). */

@@ -37,6 +37,17 @@ import {
 import { limpiarMotivo, motivoLegible } from "@/lib/forestal/motivo";
 import { formatCurrency } from "@/lib/currency";
 import { huellaDeAlta, huellaDeEntrega } from "@/lib/adelantos/idempotencia";
+import { invalidateByPrefix } from "@/lib/cache";
+import { claveCacheResultado } from "@/lib/finance/resultado-del-negocio";
+
+/** ADR-451: la caja y lo que viene del negocio leen los adelantos (alta, entrega, anulación). */
+function invalidarResultado(tenantId: string): void {
+  try {
+    invalidateByPrefix(`${claveCacheResultado(tenantId)}:`);
+  } catch (err) {
+    logger.warn("[adelantos.db] no se pudo invalidar el resultado del negocio", { error: String(err), tenantId });
+  }
+}
 // Sólo LECTURA de la parte: la clase forestal es dueña de `ForestParty`
 // (ADR-317); acá no se toca su tabla, sólo se confirma que exista en el tenant.
 import { ForestDirectorioDB } from "@/lib/db/forest-directorio.db";
@@ -1031,6 +1042,7 @@ export const AdelantosDB = {
       throw e;
     }
 
+    invalidarResultado(tenantId);
     return { ...mapAdelanto(row), caja };
   },
 
@@ -1076,6 +1088,7 @@ export const AdelantosDB = {
       return { adelanto, caja, repetido: r.repetido };
     });
     if (!hecho) return null;
+    invalidarResultado(tenantId);
     return { ...hecho.adelanto, caja: hecho.caja, ...(hecho.repetido ? { repetido: true as const } : {}) };
   },
 
@@ -1370,6 +1383,7 @@ export const AdelantosDB = {
       return { adelanto: mapAdelanto(row), caja };
     });
     if (!hecho) return null;
+    invalidarResultado(tenantId);
     return { ...hecho.adelanto, caja: hecho.caja };
   },
 

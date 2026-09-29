@@ -39,6 +39,7 @@ import CobranzaView from "./cobranza/CobranzaView";
 import ProximosVencimientos from "./cobranza/ProximosVencimientos";
 import CrearPersonaModal from "./personas/CrearPersonaModal";
 import CuentasPorPersona from "./cuentas/CuentasPorPersona";
+import { leerPedidoLiquidar } from "./cuentas/liquidar-por-url";
 import { sinTildes, fmtMon, sumByMoneda, fmtMonedas, EmptyState, SkeletonGrid, inputCls, Field, ModalShell, ModalActions, STATUS_BADGE } from "./shared";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { estadoDeCredito, requiereAtencion, saldoParaLimite } from "@/lib/adelantos/limite-credito";
@@ -128,6 +129,11 @@ export default function AdelantosModule() {
    * recorría.
    */
   const { vista: tab, irA: setTab } = useSubvistaModulo(MODULE_ID, TAB_IDS, TAB_IDS[0]);
+  /* `?accion=liquidar` (la Caja de Mi Plata): Liquidar vive en «Cuenta por
+     persona», que está en Resumen. Desde otra sub-vista, primero se va ahí. */
+  useEffect(() => {
+    if (leerPedidoLiquidar() && tab !== "resumen") setTab("resumen");
+  }, [tab, setTab]);
   const [resumen, setResumen] = useState<Resumen | null>(null);
   const [adelantos, setAdelantos] = useState<DbAdelanto[]>([]);
   const [beneficiarios, setBeneficiarios] = useState<BeneficiarioConSaldo[]>([]);
