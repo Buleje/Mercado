@@ -209,14 +209,16 @@ export function ListaDePiezas({
   return (
     <section aria-label="Trozas de la corrida" className="space-y-2">
       <div className="flex flex-wrap items-center gap-2">
-        <CardTitle as="h3" className="mr-auto flex items-center gap-1 text-sm font-bold text-[var(--text-primary)]">
-          Trozas de la corrida
+        <span className="mr-auto inline-flex items-center gap-1">
+          <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
+            Trozas de la corrida
+          </CardTitle>
           <InfoTip
             title="Qué pasa con las que marcas"
             what="Vuelven al patio: dejan de ser de esta corrida y otra puede tomarlas. Lo producido no cambia. Baja la madera que entró y se recalcula lo que rinde."
             example="La N.º 61 devuelve 5 trozas y las corridas del 7 al 21/09 quedan para vincular."
           />
-        </CardTitle>
+        </span>
         {sugeridas.length > 0 && (
           <Btn size="sm" variant="secondary" disabled={deshabilitado} onClick={() => onMarcar(sugeridas)} className="max-sm:h-11">
             <Wand2 aria-hidden className="h-4 w-4" />
