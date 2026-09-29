@@ -87,7 +87,7 @@ describe("flujo del aprovechamiento", () => {
 });
 
 describe("veredicto del libro", () => {
-  const base = { errores: 0, alertas: 0, especiesFueraDePlan: 0, saldoNegativo: false, diasParaAgotar: null, margenPctTotal: 30 };
+  const base = { errores: 0, alertas: 0, especiesFueraDePlan: 0, saldoNegativo: false, margenPctTotal: 30 };
 
   it("libro limpio: en regla", () => {
     const v = veredictoLibro(base);
@@ -112,11 +112,8 @@ describe("veredicto del libro", () => {
     expect(v.motivos[0]).toContain("2 alertas");
   });
 
-  it("saldo por agotarse y margen negativo suben a atención", () => {
-    expect(veredictoLibro({ ...base, diasParaAgotar: 30 }).nivel).toBe("atencion");
+  it("margen negativo sube a atención (los días de saldo ya no son de este veredicto)", () => {
     expect(veredictoLibro({ ...base, margenPctTotal: -5 }).nivel).toBe("atencion");
-    // Un horizonte largo no alarma.
-    expect(veredictoLibro({ ...base, diasParaAgotar: 2163 }).nivel).toBe("ok");
   });
 
   it("lo grave no queda tapado por lo leve", () => {

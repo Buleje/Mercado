@@ -12,7 +12,15 @@
  * Ahora el contenido está en tres niveles:
  *   1. VEREDICTO — ¿el libro está para mostrar o para corregir?
  *   2. FLUJO — ¿dónde terminó cada m³ y dónde se perdió?
- *   3. DETALLE — rentabilidad por especie y el cuadro por especie.
+ *   3. DETALLE — rentabilidad por especie y rendimiento/valor por especie.
+ *
+ * 2026-09-29 — UNA sola vista para el saldo: «Saldo autorizado (días)» y el
+ * cuadro con talado/trozado/movilizado/saldo por especie salieron de acá y
+ * viven en «Extracción» (por permiso). Esta vista sumaba TODAS las líneas del
+ * negocio contra el plan vigente más reciente: con dos permisos daba «se agota
+ * en 8 236 días» donde Extracción decía «sin ritmo de tala». Se quedó lo que
+ * sólo se ve acá: veredicto, anomalías, flujo bosque→producto, rendimiento,
+ * valor movilizado y margen.
  *
  * El modelo del flujo y el ranking viven en `lib/forestal/loth-analitica.ts`
  * (puro, con tests). La configuración de costos se movió a un modal: es un
@@ -20,10 +28,11 @@
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  RefreshCw, AlertTriangle, TrendingUp, Gauge, Coins, CalendarClock,
-  Calculator, Save, Download, Ban, TreePine,
+  RefreshCw, AlertTriangle, TrendingUp, Gauge, Coins,
+  Calculator, Save, Download, Ban, TreePine, Axe,
 } from "@buleje/design-system/icons";
 import { CardTitle, DataTable } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
@@ -31,7 +40,6 @@ import {
 } from "@/lib/forestal/loth-analitica";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
 import { FlujoPanel, Kpi, RankingPanel, VeredictoBanner, fm } from "./loth-analitica-piezas";
-import { formatDateLong } from "@/lib/format";
 
 interface Funnel {
   taladoM3: number; trozadoM3: number; despachoTrozaM3: number;
@@ -43,13 +51,10 @@ interface Analytics {
   aprovechamiento: { funnel: Funnel; bySpecies: { species: string; cites: boolean; taladoM3: number; trozadoM3: number; rendimientoPct: number; mermaM3: number }[]; rendimientoGlobalPct: number };
   balance: { rows: { species: string; movilizado: number; saldo: number; valorMovilizado: number }[]; pagoDerechoTotal: number; valorTotal: number } | null;
   anomalias: { level: "error" | "warn"; code: string; message: string; species?: string }[];
-  projection: { ritmoDiaM3: number; diasParaAgotar: number; fechaAgotamientoISO: string | null } | null;
   lateCount: number;
   costeo: { rows: CosteoRowRaw[]; ingresoTotal: number; costoTotal: number; margenTotal: number; margenPctTotal: number; costoOperativoM3: number } | null;
   especiesNoAutorizadas?: string[];
 }
-
-const fdate = (iso: string | null) => (iso ? formatDateLong(iso, { soloFecha: true }) : "—");
 
 // ─── Export CSV (BOM UTF-8 para Excel es-PE) ────────────────────────────────
 function buildAnalyticsCsv(d: Analytics): string {
@@ -113,7 +118,11 @@ function downloadCsv(filename: string, content: string) {
   URL.revokeObjectURL(url);
 }
 
-export default function LothAnalyticsView({ reloadSignal }: { reloadSignal?: number } = {}) {
+export default function LothAnalyticsView({ reloadSignal, onIrAExtraccion }: {
+  reloadSignal?: number;
+  /** Salta a «Extracción»: ahí viven el saldo, el ritmo y el agotamiento por permiso. */
+  onIrAExtraccion?: () => void;
+} = {}) {
   const [data, setData] = useState<Analytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -167,18 +176,17 @@ export default function LothAnalyticsView({ reloadSignal }: { reloadSignal?: num
       alertas: data.anomalias.filter((a) => a.level === "warn").length,
       especiesFueraDePlan: (data.especiesNoAutorizadas ?? []).length,
       saldoNegativo: (data.balance?.rows ?? []).some((r) => r.saldo < 0),
-      diasParaAgotar: data.projection?.diasParaAgotar ?? null,
+      // Los días para agotar el saldo viven en Extracción (aviso `agota_pronto`), por permiso.
       margenPctTotal: data.costeo?.margenPctTotal ?? null,
     });
   }, [data]);
 
   /**
-   * Cuadro por especie: rendimiento y saldo eran dos tablas con la misma clave
-   * — pero el plan escribe «Tornillo (Cedrelinga catenaeformis)» y el libro
-   * solo «Tornillo». Cruzarlas por string exacto (antes) daba DOS filas para
-   * la misma especie: la del libro con Movilizado 0, la del plan con
-   * Talado/Trozado 0. Cruzar por `claveEspecie` (mismo criterio que
-   * `computeBalance`) las funde en una fila con todos los datos.
+   * Rendimiento y valor por especie: lo que Extracción no muestra. Talado,
+   * trozado, movilizado y saldo por especie están allá, por permiso. El plan
+   * escribe «Tornillo (Cedrelinga catenaeformis)» y el libro solo «Tornillo»:
+   * se cruzan por `claveEspecie` (mismo criterio que `computeBalance`) para
+   * que sea UNA fila por especie.
    */
   const porEspecie = useMemo(() => {
     if (!data) return [];
@@ -189,19 +197,16 @@ export default function LothAnalyticsView({ reloadSignal }: { reloadSignal?: num
       const ap = aprov.get(clave);
       const ba = saldo.get(clave);
       return {
-        // Preferí el nombre del plan (trae el científico entre paréntesis, más
-        // completo); si la especie no está en el plan, el del libro alcanza.
+        // Preferí el nombre del plan (trae el científico entre paréntesis).
         species: ba?.species ?? ap?.species ?? clave,
         cites: ap?.cites ?? false,
         taladoM3: ap?.taladoM3 ?? 0,
-        trozadoM3: ap?.trozadoM3 ?? 0,
         rendimientoPct: ap?.rendimientoPct ?? null,
         mermaM3: ap?.mermaM3 ?? 0,
-        movilizado: ba?.movilizado ?? 0,
-        saldo: ba?.saldo ?? null,
         valorMovilizado: ba?.valorMovilizado ?? 0,
       };
-    }).sort((a, b) => b.movilizado - a.movilizado || b.taladoM3 - a.taladoM3);
+    }).filter((s) => s.taladoM3 > 0 || s.valorMovilizado > 0)
+      .sort((a, b) => b.valorMovilizado - a.valorMovilizado || b.taladoM3 - a.taladoM3);
   }, [data]);
 
   if (loading && !data) return <div className="p-6 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Calculando…</p></div>;
@@ -209,7 +214,6 @@ export default function LothAnalyticsView({ reloadSignal }: { reloadSignal?: num
   if (!data || !flujo || !veredicto) return null;
 
   const rendGlobal = data.aprovechamiento.rendimientoGlobalPct;
-  const dias = data.projection?.diasParaAgotar ?? null;
   const margenPct = data.costeo?.margenPctTotal ?? null;
 
   return (
@@ -221,6 +225,11 @@ export default function LothAnalyticsView({ reloadSignal }: { reloadSignal?: num
             : "Sin plan activo — la proyección y el balance requieren un Plan de Manejo configurado."}
         </p>
         <div className="flex flex-wrap items-center gap-2">
+          {onIrAExtraccion && (
+            <button type="button" onClick={onIrAExtraccion} title="Saldo, ritmo y cuándo se agota, por permiso" className="inline-flex h-10 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
+              <Axe className="h-4 w-4" /> Saldo y agotamiento
+            </button>
+          )}
           {data.hasPlan && (
             <button type="button" onClick={() => setCostosAbierto(true)} className="inline-flex h-10 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
               <Calculator className="h-4 w-4" /> Costos operativos
@@ -259,7 +268,7 @@ export default function LothAnalyticsView({ reloadSignal }: { reloadSignal?: num
       )}
 
       {/* KPIs con contexto: cada número dice contra qué se compara. */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <Kpi
           label="Rendimiento de trozado" valor={`${rendGlobal}`} sufijo="%"
           contexto={rendGlobal >= 60 ? "Por encima del 60% esperado para trozado" : "Por debajo del 60% que se espera del trozado"}
@@ -277,11 +286,6 @@ export default function LothAnalyticsView({ reloadSignal }: { reloadSignal?: num
           icon={Gauge}
           tono={margenPct == null ? "neutral" : margenPct >= 25 ? "success" : margenPct >= 0 ? "warning" : "error"}
           barra={margenPct != null ? Math.max(0, margenPct) : null}
-        />
-        <Kpi
-          label="Saldo autorizado" valor={dias != null ? `${dias}` : "—"} sufijo={dias != null ? "días" : undefined}
-          contexto={dias != null ? `Al ritmo actual se agota el ${fdate(data.projection?.fechaAgotamientoISO ?? null)}` : "Sin ritmo de extracción todavía"}
-          icon={CalendarClock} tono={dias != null && dias < 60 ? "warning" : "neutral"}
         />
       </div>
 
@@ -309,23 +313,31 @@ export default function LothAnalyticsView({ reloadSignal }: { reloadSignal?: num
         </section>
       )}
 
-      {/* Cuadro por especie: rendimiento + saldo en una sola tabla. */}
+      {/* Rendimiento y valor por especie. El saldo y lo talado/trozado/despachado
+          por especie: «Extracción» (una sola cifra por permiso). */}
       {porEspecie.length > 0 && (
         <section className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-sm)]">
           <div className="flex flex-wrap items-center gap-2 border-b-2 border-[var(--rule-base)] px-4 py-3">
             <TreePine className="h-4 w-4 text-[var(--accent)]" aria-hidden="true" />
-            <CardTitle as="h3" className="text-sm text-[var(--text-primary)]">Cuadro por especie</CardTitle>
-            <span className="text-xs text-[var(--text-tertiary)]">— lo talado, lo que rindió y cuánto queda autorizado</span>
+            <CardTitle as="h3" className="text-sm text-[var(--text-primary)]">Rendimiento y valor por especie</CardTitle>
+            <InfoTip
+              title="Rendimiento y valor por especie"
+              what="Cuánto del árbol talado llegó a troza, la merma, y lo que vale lo que ya salió con guía."
+              affects="El talado, el trozado, el despachado y el saldo por especie están en Extracción, por permiso."
+              example="Tornillo: talaste 5,0 m³ y trozaste 4,9 m³: rinde 97,7 % y la merma es 0,1 m³."
+            />
+            {onIrAExtraccion && (
+              <button type="button" onClick={onIrAExtraccion} className="ml-auto inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-xs font-bold text-[var(--accent-ink)] hover:underline dark:text-[var(--accent)]">
+                <Axe className="h-3.5 w-3.5" aria-hidden="true" /> Ver en Extracción
+              </button>
+            )}
           </div>
           <DataTable className="w-full text-sm">
             <thead className="bg-[var(--surface-sunken)] text-left">
               <tr>
                 <Th>Especie</Th>
-                <Th className="text-right">Talado (m³)</Th>
-                <Th className="text-right">Trozado (m³)</Th>
                 <Th className="text-right">Rendimiento</Th>
-                <Th className="text-right">Movilizado (m³)</Th>
-                <Th className="text-right">Saldo (m³)</Th>
+                <Th className="text-right">Merma (m³)</Th>
                 <Th className="text-right">Valor movilizado</Th>
               </tr>
             </thead>
@@ -336,19 +348,12 @@ export default function LothAnalyticsView({ reloadSignal }: { reloadSignal?: num
                     <span className="font-medium text-[var(--text-primary)]">{s.species}</span>
                     {s.cites && <span className="ml-2 rounded bg-[var(--data-error-100)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/15 dark:text-[var(--data-error-500)]">CITES</span>}
                   </Td>
-                  <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{s.taladoM3 > 0 ? fm(s.taladoM3, 4) : "—"}</Td>
-                  <Td className="text-right font-mono tabular-nums text-[var(--text-primary)]">{s.trozadoM3 > 0 ? fm(s.trozadoM3, 4) : "—"}</Td>
                   <Td className="text-right">
                     {s.rendimientoPct != null && s.taladoM3 > 0 ? (
                       <span className={`font-mono font-bold tabular-nums ${s.rendimientoPct >= 60 ? "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"}`}>{s.rendimientoPct}%</span>
                     ) : <span className="text-[var(--text-tertiary)]">—</span>}
                   </Td>
-                  <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{fm(s.movilizado, 4)}</Td>
-                  <Td className="text-right font-mono tabular-nums">
-                    {s.saldo == null ? <span className="text-[var(--text-tertiary)]">—</span> : (
-                      <span className={s.saldo < 0 ? "font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" : "text-[var(--text-primary)]"}>{fm(s.saldo, 4)}</span>
-                    )}
-                  </Td>
+                  <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{s.taladoM3 > 0 ? fm(s.mermaM3, 4) : "—"}</Td>
                   <Td className="text-right font-mono tabular-nums text-[var(--text-primary)]">S/ {fm(s.valorMovilizado)}</Td>
                 </tr>
               ))}

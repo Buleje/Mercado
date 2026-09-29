@@ -134,7 +134,7 @@ Vista nueva `extraccion` («Extracción», hint «Censo − tala, trozado y desp
 
 ## Consecuencias y riesgos
 
-1. **Semilleros del POA en una plantación:** el 10 % por defecto le quita a Blas 11 árboles y 162,882 m³ (29 %) de la base; el regente declaró 0. Lo decide Brandon: poner 0 % en Parámetros del POA (un dato) o la regla «plantación sin semilleros» (otro ADR). Aviso `semilleros_sistema_vs_regente`.
+1. **Semilleros del POA en una plantación:** el 10 % por defecto le quita a Blas 11 árboles y 162,882 m³ (29 %) de la base; el regente declaró 0. Lo decide Brandon: poner 0 % en Parámetros del POA (un dato) o la regla «plantación sin semilleros» (otro ADR). Aviso `semilleros_sistema_vs_regente`. **→ Resuelto en ADR-455 (29-09):** plantación = 0 % por defecto (D.S. 020-2015 art. 16 / 021-2015 art. 88); Blas pasa a 563,401 m³ y 5,85 %.
 2. **Dos «restantes»:** `restanteDeEspecie` (formulario de tala) usa el censo entero; esta vista, el aprovechable. En Blas difieren en 162,882 m³. Nombres distintos + ⓘ; alinear en seguimiento.
 3. **Líneas sin plan:** `ForestLothDB.estadoDeArboles` las mete en todos los planes (`OR planId null`); con 2+ planes el mapa las cuenta dos veces. Esta vista las atribuye por árbol y deja «Sin plan». Alinear el mapa en seguimiento.
 4. **`movilizado`** (`computeBalance`) suma m³ de producto aserrado con m³ de troza; el saldo autorizado lo reusa para coincidir con la vista Plan, y la cadena usa `consumo_troza` (m³ de troza).

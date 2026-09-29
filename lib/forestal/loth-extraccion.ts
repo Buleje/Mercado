@@ -20,7 +20,7 @@
  * `lib/db`. Lo llama `ForestPlanDB.extraccion` y lo prueban los tests.
  */
 
-import { analizarPoa, type PoaConfig } from "./loth-poa";
+import { analizarPoa, esPlanDePlantacion, type PoaConfig } from "./loth-poa";
 import {
   claveEspecie,
   computeBalance,
@@ -100,7 +100,10 @@ export interface PlanDeExtraccion {
   vigenciaDesde: string | null;
   vigenciaHasta: string | null;
   areaHa: number | null;
-  /** La config guardada del POA (`ForestLothPoaDB.get`); `configurado=false` = el 10 % por defecto. */
+  /**
+   * La config del POA (`ForestLothPoaDB.leer`); `configurado=false` = el
+   * defecto del plan (plantación 0 %, bosque 10 %: `defaultPoaConfig`).
+   */
   poa: { config: PoaConfig; configurado: boolean };
   especies: EspecieAutorizada[];
 }
@@ -1048,6 +1051,7 @@ function armarPermiso(
       semillerosPct: plan?.poa.config.semillerosPct ?? 0,
       configurado: plan?.poa.configurado ?? false,
       semillerosRegente,
+      plantacion: esPlanDePlantacion(plan),
     },
     total: filaDe(acumTotal),
     especies: especiesFilas,
@@ -1361,7 +1365,15 @@ export interface OpcionesAvisos {
   varios: boolean;
   limites: { arbolesLeidos: number; lineasLeidas: number; truncado: boolean };
   permisoSinPlan?: { contratoId: string; codigo: string } | null;
+  /** La proyección de los KPIs (`kpisDeExtraccion`): con ella sale `agota_pronto`. */
+  agotamiento?: KpisExtraccion["agotamiento"] | null;
+  /** m³ por talar contra el censo (`kpis.porTalar.m3`), para el texto de `agota_pronto`. */
+  porTalarM3?: number | null;
 }
+
+/** Menos de estos días de saldo al ritmo actual: aviso (warning); menos de los urgentes: error. */
+export const DIAS_AVISO_AGOTAMIENTO = 60;
+export const DIAS_URGENTE_AGOTAMIENTO = 15;
 
 /** Lo que pide atención, del más grave al más leve (y, a igual nivel, el de más m³). */
 export function avisosDeExtraccion(detalles: readonly DetalleDePermiso[], op: OpcionesAvisos): AvisoExtraccion[] {
@@ -1518,24 +1530,31 @@ export function avisosDeExtraccion(detalles: readonly DetalleDePermiso[], op: Op
       const sinSemilleros = r4(t.censo.aprovechableM3 + d.semillerosPoaM3);
       const origen = p.poa.configurado ? `el ${p.poa.semillerosPct} % de Parámetros del POA` : `el ${p.poa.semillerosPct} % por defecto`;
       const regente = d.regenteDeclaro ? "el regente no declaró ninguno" : "el censo no trae la condición del regente";
-      const plantacion = /plantaci/i.test(p.planType ?? "") ? " en una plantación" : "";
+      /* En una plantación el defecto ya es 0 % (ADR-455): si igual hay
+         semilleros del sistema, alguien los puso a mano en Parámetros. */
+      const cierre = p.poa.plantacion
+        ? "Es una plantación: la norma no los pide; si su registro tampoco, pon 0 % en Parámetros del POA."
+        : "Si el plan no los exige, pon 0 % en Parámetros del POA.";
       push({
         tipo: "semilleros_sistema_vs_regente",
         nivel: "warning",
         especie: null,
-        texto: `El sistema reserva ${plural(d.semillerosPoa, "semillero", "semilleros")} (${m3(d.semillerosPoaM3)} m³, ${origen}) y ${regente}${plantacion}: la base baja de ${m3(sinSemilleros)} a ${m3(t.censo.aprovechableM3)} m³. Si el plan no los exige, pon 0 % en Parámetros del POA.`,
+        texto: `El sistema reserva ${plural(d.semillerosPoa, "semillero", "semilleros")} (${m3(d.semillerosPoaM3)} m³, ${origen}) y ${regente}: la base baja de ${m3(sinSemilleros)} a ${m3(t.censo.aprovechableM3)} m³. ${cierre}`,
         cifraM3: d.semillerosPoaM3,
       });
     }
     if (planId && (!p.permiso || p.permiso.vinculo === "gemelo")) {
+      /* El botón de la pantalla une con el sugerido o abre la lista de permisos
+         (las mismas dos escrituras que «Unirlos» en Plan de Manejo). */
       push({
         tipo: "plan_sin_permiso",
         nivel: "info",
         especie: null,
         texto: p.permiso
-          ? `El plan no está unido a su permiso; el permiso ${p.permiso.codigo} tiene el mismo código (se sugiere, no se unió).`
+          ? `El plan no está unido a su permiso: el permiso ${p.permiso.codigo} tiene el mismo código.`
           : "El plan no está unido a ningún permiso: lo recibido en el CTP no se puede leer por permiso.",
         cifraM3: null,
+        permisoSugerido: p.permiso ? { contratoId: p.permiso.contratoId, codigo: p.permiso.codigo } : null,
       });
     }
   }
@@ -1548,6 +1567,19 @@ export function avisosDeExtraccion(detalles: readonly DetalleDePermiso[], op: Op
       especie: null,
       texto: `El permiso ${op.permisoSinPlan.codigo} no tiene plan de manejo en el Libro TH: no hay censo contra qué medir.`,
       cifraM3: null,
+    });
+  }
+  const ag = op.agotamiento;
+  if (ag && ag.dias != null && ag.fecha && ag.dias < DIAS_AVISO_AGOTAMIENTO) {
+    const [y, mo, dd] = ag.fecha.split("-");
+    const por = op.porTalarM3 != null && op.porTalarM3 > 0 ? ` (quedan ${m3(op.porTalarM3)} m³ por talar)` : "";
+    out.push({
+      tipo: "agota_pronto",
+      nivel: ag.dias < DIAS_URGENTE_AGOTAMIENTO ? "error" : "warning",
+      planId: null,
+      especie: null,
+      texto: `Al ritmo de tala actual el saldo se agota en ${plural(Math.max(0, ag.dias), "día", "días")}, el ${dd}-${mo}-${y}${por}.`,
+      cifraM3: op.porTalarM3 != null && op.porTalarM3 > 0 ? op.porTalarM3 : null,
     });
   }
   if (op.limites.truncado) {
@@ -1625,6 +1657,24 @@ export function armarExtraccion(e: EntradaExtraccion): ExtraccionResponse {
       .map((d) => ({ vigenciaDesde: d.permiso.vigenciaDesde, vigenciaHasta: d.permiso.vigenciaHasta, topeM3: d.permiso.total.tope?.m3 ?? null })),
   );
 
+  const kpis = kpisDeExtraccion({
+    total,
+    talas,
+    trozas,
+    periodo,
+    anterior,
+    planes: planesReales,
+    recibidasSinDespacho: detalles.reduce((s, d) => s + d.acumTotal.cadena.recibidasSinDespacho.n, 0),
+    hoy: e.hoy,
+  });
+  const avisos = avisosDeExtraccion(detalles, {
+    varios: detalles.length > 1,
+    limites: e.limites,
+    permisoSinPlan: e.permisoSinPlan,
+    agotamiento: kpis.agotamiento,
+    porTalarM3: kpis.porTalar.m3,
+  });
+
   return {
     generadoEn: e.hoy.toISOString(),
     alcance: e.alcance,
@@ -1634,18 +1684,9 @@ export function armarExtraccion(e: EntradaExtraccion): ExtraccionResponse {
     periodo,
     anterior,
     semanas,
-    kpis: kpisDeExtraccion({
-      total,
-      talas,
-      trozas,
-      periodo,
-      anterior,
-      planes: planesReales,
-      recibidasSinDespacho: detalles.reduce((s, d) => s + d.acumTotal.cadena.recibidasSinDespacho.n, 0),
-      hoy: e.hoy,
-    }),
+    kpis,
     embudo: embudoDe(total),
-    avisos: avisosDeExtraccion(detalles, { varios: detalles.length > 1, limites: e.limites, permisoSinPlan: e.permisoSinPlan }),
+    avisos,
     limites: e.limites,
     recibidoAlDia: true,
   };

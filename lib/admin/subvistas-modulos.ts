@@ -182,5 +182,5 @@ export const LOTH_VISTAS: readonly SubvistaModulo[] = [
   { key: "cierre", label: "Cierre", hint: "Cerrar el mes → acta inmutable (OSINFOR)" },
   { key: "extraccion", label: "Extracción", hint: "Censo − tala, trozado y despacho por permiso" },
   { key: "rentabilidad", label: "Rentabilidad", hint: "Margen por especie (ingreso − costos)" },
-  { key: "analitica", label: "Analítica", hint: "Aprovechamiento + anomalías" },
+  { key: "analitica", label: "Analítica", hint: "Veredicto, flujo bosque→producto, anomalías y margen" },
 ];

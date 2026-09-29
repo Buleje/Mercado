@@ -12,7 +12,9 @@
  *   2. **Semilleros.** De los árboles aprovechables hay que dejar en pie un
  *      porcentaje como porta-semillas (criterio estándar: los de mayor DAP, que
  *      son los mejores fenotipos). Sin eso el bosque no se regenera y la
- *      fiscalización lo observa.
+ *      fiscalización lo observa. Es regla de BOSQUE NATURAL: una plantación
+ *      registrada no lleva plan de manejo y su defecto es 0 % (ADR-455,
+ *      `defaultPoaConfig`).
  *   3. **Intensidad.** m³ y árboles por hectárea sobre el área autorizada: lo
  *      que mira OSINFOR para saber si el aprovechamiento fue razonable.
  *
@@ -21,6 +23,7 @@
  */
 
 import { claveEspecie } from "./loth-constants";
+import { tipoDesdeCodigo } from "./contratos";
 
 /** DMC general para las especies no listadas (RJ 458-2002-INRENA). */
 export const DMC_GENERAL_CM = 41;
@@ -106,10 +109,59 @@ export interface PoaConfig {
   semillerosPct: number;
 }
 
-export function defaultPoaConfig(): PoaConfig {
-  // 10% es el criterio más usado en los planes de manejo peruanos.
-  return { dmcOverrides: {}, semillerosPct: 10 };
+/** % de semilleros por defecto en bosque natural: el criterio más usado en los planes de manejo peruanos. */
+export const SEMILLEROS_PCT_BOSQUE = 10;
+
+/**
+ * Por qué una plantación NO reserva semilleros (ADR-455, verificado 29-09-2026
+ * contra el texto de los decretos):
+ *
+ *   · Los semilleros son parte del **censo comercial de un título habilitante**
+ *     «para formular los planes operativos» (D.S. 018-2015-MINAGRI, art. 38.4):
+ *     bosque natural.
+ *   · Una plantación en tierra privada «no requiere autorización […] ni la
+ *     presentación de plan de manejo»; basta el Registro Nacional de
+ *     Plantaciones (D.S. 020-2015-MINAGRI, art. 16). En tierra de comunidades,
+ *     igual (D.S. 021-2015-MINAGRI, art. 88).
+ *
+ * Sin plan de manejo no hay semilleros que el plan comprometa. Es sólo el
+ * DEFECTO: si el negocio guardó otro % en Parámetros del POA, manda lo guardado.
+ */
+export const BASE_LEGAL_PLANTACION_SIN_SEMILLEROS =
+  "Una plantación registrada no lleva plan de manejo (D.S. 020-2015-MINAGRI art. 16; en tierra comunal, D.S. 021-2015-MINAGRI art. 88), así que no reserva semilleros.";
+
+/** Lo que hace falta del plan para saber si es una plantación. */
+export interface PlanParaPoa {
+  planType?: string | null;
+  planNumber?: string | null;
+  tituloHabilitante?: string | null;
 }
+
+/**
+ * ¿El plan es el registro de una plantación?
+ *
+ * Sí si lo dice el tipo (`PLANTACION`, `loth-tipos-plan.ts`) O el código del
+ * papel: «REG-PLT» es el N° del Registro Nacional de Plantaciones
+ * (`tipoDesdeCodigo`), así que un plan con ese código es una plantación aunque
+ * se haya cargado con el tipo por defecto («PO»).
+ */
+export function esPlanDePlantacion(plan: PlanParaPoa | null | undefined): boolean {
+  if (!plan) return false;
+  if ((plan.planType ?? "").trim().toUpperCase() === "PLANTACION") return true;
+  return [plan.planNumber, plan.tituloHabilitante].some((c) => c != null && tipoDesdeCodigo(c) === "REG-PLT");
+}
+
+/**
+ * Los parámetros por defecto del POA de un plan: la ÚNICA regla del % de
+ * semilleros cuando el negocio no guardó uno. Plantación → 0 %; bosque
+ * natural (o plan desconocido) → 10 %.
+ */
+export function defaultPoaConfig(plan?: PlanParaPoa | null): PoaConfig {
+  return { dmcOverrides: {}, semillerosPct: esPlanDePlantacion(plan) ? 0 : SEMILLEROS_PCT_BOSQUE };
+}
+
+/** De dónde sale el % de semilleros: lo guardó el negocio, o el defecto (plantación / bosque). */
+export type OrigenPoa = "guardado" | "plantacion" | "defecto";
 
 /** Categoría operativa de cada árbol censado. */
 export type PoaCategoria = "aprovechable" | "semillero" | "bajo_dmc" | "sin_dap" | "talado" | "descartado";
@@ -211,8 +263,15 @@ export function analizarPoa(opts: {
    * realidad es un tocón. Manda el libro, nunca el `estado` del censo.
    */
   taladosEnLibro?: ReadonlySet<string>;
+  /**
+   * El plan del censo. Decide el % por defecto cuando `config` no lo trae y
+   * cambia el aviso del 0 %: en una plantación es lo que corresponde, no un
+   * olvido (`defaultPoaConfig`).
+   */
+  plan?: PlanParaPoa | null;
 }): PoaAnalisis {
-  const config: PoaConfig = { ...defaultPoaConfig(), ...opts.config };
+  const config: PoaConfig = { ...defaultPoaConfig(opts.plan), ...opts.config };
+  const plantacion = esPlanDePlantacion(opts.plan);
   const pct = Math.max(0, Math.min(100, Number(config.semillerosPct) || 0));
   const autorizadas = new Map(opts.species.map((s) => [normEspecie(s.speciesCommon), s]));
   const taladosEnLibro = opts.taladosEnLibro;
@@ -371,7 +430,15 @@ export function analizarPoa(opts: {
    * avisa si hay algo que reservar: sin árboles sobre el DMC, el cero es
    * simplemente cierto.
    */
-  if (pct === 0 && totales.aprovechables > 0) {
+  if (pct === 0 && totales.aprovechables > 0 && plantacion) {
+    alertas.push({
+      nivel: "info",
+      titulo: "Plantación: sin semilleros",
+      detalle:
+        `${BASE_LEGAL_PLANTACION_SIN_SEMILLEROS} Los ${totales.aprovechables} árboles sobre el DMC figuran como aprovechables. ` +
+        "Si el registro de tu plantación comprometió semilleros, carga ese porcentaje en Parámetros.",
+    });
+  } else if (pct === 0 && totales.aprovechables > 0) {
     alertas.push({
       nivel: "warning",
       titulo: "Sin semilleros reservados",

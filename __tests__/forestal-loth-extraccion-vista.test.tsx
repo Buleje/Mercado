@@ -3,7 +3,9 @@
  * Blas medida el 29-09 (plan 19-SEC/REG-PLT-2025-096, 8 especies, 65 árboles)
  * más el plan de prueba PO-2026-001 (Tornillo 6,1988 m³ con 320 autorizados).
  *
- * El fixture vive SÓLO acá: la pantalla consume la ruta.
+ * El fixture vive SÓLO acá: la pantalla consume la ruta. Son las cifras de
+ * ANTES del ADR-455 (10 % de semilleros en la plantación: base 400,519); la
+ * pantalla no calcula, así que sirven igual para probar cómo las muestra.
  */
 import { describe, expect, it } from "vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
@@ -113,7 +115,7 @@ function permiso(planId: string, planNumber: string, titular: string, total: Fil
     vigenciaDesde: null,
     vigenciaHasta: null,
     permiso: null,
-    poa: { semillerosPct: 10, configurado: false, semillerosRegente: 0 },
+    poa: { semillerosPct: 10, configurado: false, semillerosRegente: 0, plantacion: false },
     total,
     especies,
     arboles: { porEtapa: { en_pie: 61, talado: 2, trozado: 2 }, conAviso: 0, avisos: {} },

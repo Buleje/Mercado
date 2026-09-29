@@ -8,10 +8,13 @@
 import { describe, expect, it } from "vitest";
 import {
   analizarPoa,
+  defaultPoaConfig,
   DMC_GENERAL_CM,
   dmcParaEspecie,
+  esPlanDePlantacion,
   normEspecie,
   ordenarAlertas,
+  SEMILLEROS_PCT_BOSQUE,
   type PoaSpecies,
   type PoaTree,
 } from "@/lib/forestal/loth-poa";
@@ -229,5 +232,59 @@ describe("cuadro y alertas del POA", () => {
     });
     expect(r.totales.aprovechables).toBe(0);
     expect(r.alertas.some((x) => x.titulo === "Sin semilleros reservados")).toBe(false);
+  });
+});
+
+/**
+ * ADR-455: una plantación registrada no lleva plan de manejo (D.S.
+ * 020-2015-MINAGRI art. 16; en tierra comunal, D.S. 021-2015-MINAGRI art. 88)
+ * y los semilleros son del censo de un título habilitante (D.S. 018-2015 art.
+ * 38.4). Su defecto es 0 %; lo guardado en Parámetros sigue mandando.
+ */
+describe("semilleros por defecto según el tipo de plan (ADR-455)", () => {
+  const PLANTACION_BLAS = { planType: "PLANTACION", planNumber: "19-SEC/REG-PLT-2025-096", tituloHabilitante: null };
+
+  it("plantación → 0 %; bosque natural o plan desconocido → 10 %", () => {
+    expect(defaultPoaConfig(PLANTACION_BLAS).semillerosPct).toBe(0);
+    expect(defaultPoaConfig({ planType: "PO", planNumber: "PO 12" }).semillerosPct).toBe(SEMILLEROS_PCT_BOSQUE);
+    expect(defaultPoaConfig({ planType: "DEMA" }).semillerosPct).toBe(10);
+    expect(defaultPoaConfig(null).semillerosPct).toBe(10);
+    expect(defaultPoaConfig().semillerosPct).toBe(10);
+  });
+
+  it("se reconoce por el tipo o por el N° del Registro de Plantaciones (REG-PLT), aunque el tipo quedara «PO»", () => {
+    expect(esPlanDePlantacion({ planType: " plantacion " })).toBe(true);
+    expect(esPlanDePlantacion({ planType: "PO", planNumber: "19-sec/reg-plt-2025-096" })).toBe(true);
+    expect(esPlanDePlantacion({ planType: "PO", tituloHabilitante: "19-SEC/REG-PLT-2018-020" })).toBe(true);
+    expect(esPlanDePlantacion({ planType: "PO", planNumber: "PO-2026-001", tituloHabilitante: "17-CPO/C-J-045-26" })).toBe(false);
+    expect(esPlanDePlantacion({ planType: "PMFI", planNumber: "10-HUA-PUE/PER-FMP-2026-007" })).toBe(false);
+    expect(esPlanDePlantacion(undefined)).toBe(false);
+    // Preventivo: «PLT» suelto en un código NO es el registro de plantaciones; sólo «REG-PLT» (o el tipo).
+    expect(esPlanDePlantacion({ planType: "PO", planNumber: "PO-PLT-2026-001" })).toBe(false);
+    expect(esPlanDePlantacion({ planType: "PO", planNumber: "REG-PLT-2026-001" })).toBe(true);
+  });
+
+  it("⭐ Blas: 12 copaibas de la plantación sin config → 0 semilleros y los 12 aprovechables", () => {
+    const copaibas = Array.from({ length: 12 }, (_, i) => arbol(`C${i}`, "Copaiba", 60 + i, 10));
+    const r = analizarPoa({ trees: copaibas, species: [], areaHa: null, plan: PLANTACION_BLAS });
+    expect(r.config.semillerosPct).toBe(0);
+    expect([r.totales.semilleros, r.totales.aprovechables, r.totales.volumenAprovechableM3]).toEqual([0, 12, 120]);
+    // Con el defecto de bosque (sin plan) serían 2 semilleros (ceil 1,2): la regla vieja.
+    expect(analizarPoa({ trees: copaibas, species: [], areaHa: null }).totales.semilleros).toBe(2);
+  });
+
+  it("en una plantación el 0 % no es «sin semilleros reservados» (warning): es la norma, y se dice como info", () => {
+    const r = analizarPoa({ trees: [arbol("T1", "Tornillo", 80)], species: [], areaHa: 5, plan: PLANTACION_BLAS });
+    expect(r.alertas.some((x) => x.titulo === "Sin semilleros reservados")).toBe(false);
+    const a = r.alertas.find((x) => x.titulo === "Plantación: sin semilleros");
+    expect(a?.nivel).toBe("info");
+    expect(a?.detalle).toContain("D.S. 020-2015-MINAGRI art. 16");
+  });
+
+  it("lo guardado manda: una plantación con 10 % en Parámetros reserva semilleros", () => {
+    const copaibas = Array.from({ length: 12 }, (_, i) => arbol(`C${i}`, "Copaiba", 60 + i, 10));
+    const r = analizarPoa({ trees: copaibas, species: [], areaHa: null, plan: PLANTACION_BLAS, config: { dmcOverrides: {}, semillerosPct: 10 } });
+    expect(r.totales.semilleros).toBe(2);
+    expect(r.alertas.some((x) => x.titulo === "Plantación: sin semilleros")).toBe(false);
   });
 });

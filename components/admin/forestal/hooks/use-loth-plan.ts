@@ -9,7 +9,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { analizarPoa, defaultPoaConfig, type PoaAnalisis, type PoaConfig } from "@/lib/forestal/loth-poa";
+import { analizarPoa, defaultPoaConfig, type PlanParaPoa, type PoaAnalisis, type PoaConfig } from "@/lib/forestal/loth-poa";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
 import { normalizarCondicion } from "@/lib/forestal/loth-mapa-arboles";
 import { analizarZafra } from "@/lib/forestal/loth-zafra";
@@ -92,7 +92,12 @@ export function useLothPlan(reloadSignal?: number) {
         fetch(`/api/admin/forestal/loth?usoCenso=1`, { credentials: "include" }),
       ]);
       if (pedido !== ultimoPedido.current) return;
-      if (d.ok) { const j = await d.json(); setSpecies(j.species ?? []); setCensusStat(j.censusSummary ?? []); }
+      let planDelDetalle: PlanParaPoa | null = null;
+      if (d.ok) {
+        const j = await d.json();
+        planDelDetalle = (j.plan as PlanParaPoa | undefined) ?? null;
+        setSpecies(j.species ?? []); setCensusStat(j.censusSummary ?? []);
+      }
       if (c.ok) {
         /* El `total` NO se descarta: el Plan Operativo se calcula sobre estas
            filas y, si el censo viene cortado, la pantalla tiene que decirlo en
@@ -103,11 +108,13 @@ export function useLothPlan(reloadSignal?: number) {
         setCensoTruncado(Boolean(j.truncado));
       }
       if (b.ok) setBalance((await b.json()).balance ?? null);
-      if (poa.ok) {
-        const cfg: PoaConfig = (await poa.json()).config ?? defaultPoaConfig();
-        setPoaConfig(cfg);
-        setPoaGuardado(cfg);
-      }
+      /* Si el GET del POA falla, el respaldo es el defecto DEL PLAN (una
+         plantación no vuelve a 10 %), no un 10 % fijo. */
+      const cfg: PoaConfig = poa.ok
+        ? ((await poa.json()).config ?? defaultPoaConfig(planDelDetalle))
+        : defaultPoaConfig(planDelDetalle);
+      setPoaConfig(cfg);
+      setPoaGuardado(cfg);
       if (u.ok) setUsoCenso(((await u.json()).usos ?? []) as UsoDelLibro[]);
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     /* También si falló: el error ya está a la vista y la carga no queda
@@ -207,6 +214,8 @@ export function useLothPlan(reloadSignal?: number) {
         areaHa: plan?.areaHa != null ? Number(plan.areaHa) : null,
         config: poaConfig,
         taladosEnLibro,
+        // Plantación: el 0 % es lo que corresponde (ADR-455), no un olvido que avisar.
+        plan,
       }),
     [trees, species, plan, poaConfig, taladosEnLibro],
   );

@@ -91,7 +91,12 @@ export interface PermisoExtraccion {
   vigenciaDesde: string | null;
   vigenciaHasta: string | null;
   permiso: { contratoId: string; codigo: string; vinculo: VinculoPermiso } | null;
-  poa: { semillerosPct: number; configurado: boolean; semillerosRegente: number };
+  /**
+   * `configurado` = el % lo guardó el negocio en Parámetros del POA; si no,
+   * rige el defecto del plan. `plantacion` = el plan es el registro de una
+   * plantación: su defecto es 0 % (ADR-455).
+   */
+  poa: { semillerosPct: number; configurado: boolean; semillerosRegente: number; plantacion: boolean };
   total: FilaExtraccion;
   especies: FilaExtraccion[];
   arboles: {
@@ -155,7 +160,8 @@ export type TipoAvisoExtraccion =
   | "lineas_sin_plan"
   | "plan_sin_permiso"
   | "permiso_sin_plan"
-  | "libro_truncado";
+  | "libro_truncado"
+  | "agota_pronto";
 
 export interface AvisoExtraccion {
   tipo: TipoAvisoExtraccion;
@@ -164,6 +170,12 @@ export interface AvisoExtraccion {
   especie: string | null;
   texto: string;
   cifraM3: number | null;
+  /**
+   * Sólo en `plan_sin_permiso`: el permiso con el MISMO código que se puede
+   * unir en un clic (`permisoGemeloDelPlan`), o `null` si no hay uno solo y hay
+   * que elegirlo. Agregado el 29-09 (ADR-455); opcional para lo ya servido.
+   */
+  permisoSugerido?: { contratoId: string; codigo: string } | null;
 }
 
 export interface ExtraccionFiltro {

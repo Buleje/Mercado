@@ -94,8 +94,10 @@ function AdminMainContentInner({
            fondo del scroll: medido con Playwright, el botón "Agregar" del
            censo (LO-TH) no recibía el clic porque el "+" quedaba encima.
            88px en mobile es el alto real de la barra inferior + safe-area;
-           96px en desktop cubre los 80px del FAB con margen. */
-        "pb-[calc(88px+env(safe-area-inset-bottom))] sm:pb-24",
+           En desktop ya NO se reserva el hueco del FAB (2026-09-29: eran 96px
+           de blanco bajo el último bloque de cada vista): el FAB se retira
+           solo al llegar al final del scroll (QuickActionsFab, `alFondo`). */
+        "pb-[calc(88px+env(safe-area-inset-bottom))] sm:pb-6",
       )}
       {...swipeHandlers}
     >

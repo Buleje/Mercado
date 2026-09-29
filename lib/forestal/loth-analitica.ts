@@ -167,7 +167,6 @@ export interface VeredictoInput {
   alertas: number;
   especiesFueraDePlan: number;
   saldoNegativo: boolean;
-  diasParaAgotar: number | null;
   margenPctTotal: number | null;
 }
 
@@ -196,10 +195,6 @@ export function veredictoLibro(v: VeredictoInput): Veredicto {
   if (v.alertas > 0 && nivel !== "riesgo") nivel = "atencion";
   if (v.alertas > 0) motivos.push(`${v.alertas} ${v.alertas === 1 ? "alerta" : "alertas"} para revisar.`);
 
-  if (v.diasParaAgotar != null && v.diasParaAgotar < 60) {
-    if (nivel === "ok") nivel = "atencion";
-    motivos.push(`Al ritmo actual el saldo autorizado se agota en ${v.diasParaAgotar} días.`);
-  }
   if (v.margenPctTotal != null && v.margenPctTotal < 0) {
     if (nivel === "ok") nivel = "atencion";
     motivos.push(`El margen del aprovechamiento está en ${v.margenPctTotal}%: se está vendiendo por debajo del costo.`);

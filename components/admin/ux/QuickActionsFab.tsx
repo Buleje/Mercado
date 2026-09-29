@@ -94,6 +94,33 @@ export function QuickActionsFab() {
 
   const close = useCallback(() => setOpen(false), []);
 
+  // Al llegar al final de una página que sí scrollea, el botón se retira hacia
+  // abajo: el panel ya no le reserva 96 px de aire en blanco al pie (Brandon
+  // 2026-09-29, «un espacio en blanco debajo del croquis») y, aun así, lo
+  // último de la vista —el «Agregar» del censo— no queda tapado. Al subir un
+  // poco, vuelve. Con el menú abierto o el foco en el botón no se mueve.
+  const [enfocado, setEnfocado] = useState(false);
+  const [alFondo, setAlFondo] = useState(false);
+  useEffect(() => {
+    const medir = () => {
+      const el = document.documentElement;
+      const scrollea = el.scrollHeight > window.innerHeight + 16;
+      setAlFondo(scrollea && el.scrollHeight - (window.scrollY + window.innerHeight) < 8);
+    };
+    medir();
+    window.addEventListener("scroll", medir, { passive: true });
+    window.addEventListener("resize", medir);
+    // La vista crece o encoge sin scroll (carga de datos, otra pestaña): re-medir.
+    const ro = new ResizeObserver(medir);
+    ro.observe(document.body);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("scroll", medir);
+      window.removeEventListener("resize", medir);
+    };
+  }, []);
+  const retirado = alFondo && !open && !enfocado;
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -223,6 +250,8 @@ export function QuickActionsFab() {
       ) : (
         /* FAB button */
         <m.button
+          onFocus={() => setEnfocado(true)}
+          onBlur={() => setEnfocado(false)}
           type="button"
           onClick={() => setOpen((v) => !v)}
           whileTap={tapPress}
@@ -232,7 +261,11 @@ export function QuickActionsFab() {
             "bg-[var(--text-primary)] text-[var(--surface-canvas)]",
             "hover:scale-105 active:scale-95",
             open && "rotate-45",
+            retirado && "pointer-events-none translate-y-24 opacity-0",
           )}
+          tabIndex={retirado ? -1 : undefined}
+          aria-hidden={retirado || undefined}
+          inert={retirado || undefined}
           style={{ transformOrigin: "center" }}
           aria-label={open ? "Cerrar acciones rápidas" : "Abrir acciones rápidas"}
           aria-expanded={open}

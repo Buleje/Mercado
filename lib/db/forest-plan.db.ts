@@ -18,7 +18,7 @@ import {
   type BalanceMovement, type BalanceSpeciesInput, type CosteoSpeciesInput,
 } from "@/lib/forestal/loth-constants";
 import { ForestLothPoaDB } from "@/lib/db/forest-loth-poa.db";
-import { PlatformSettingsDB } from "@/lib/db/platform-settings.db";
+import { defaultPoaConfig } from "@/lib/forestal/loth-poa";
 import { ESTADOS_SIN_INGRESO } from "@/lib/db/gtf-numero.db";
 import {
   PLAN_ID_SIN_PLAN, SECCIONES_EXTRACCION, TOPE_ARBOLES, TOPE_LINEAS,
@@ -817,7 +817,7 @@ export class ForestPlanDB {
    */
   static async extraccion(tenantId: string, f: ExtraccionFiltro): Promise<ExtraccionResponse | null> {
     if (!tenantId) throw new Error("tenantId is required");
-    const [planes, especies, arbolesRaw, lineasRaw, contratos, trozasCtp, poaStore] = await Promise.all([
+    const [planes, especies, arbolesRaw, lineasRaw, contratos, trozasCtp] = await Promise.all([
       prisma.forestPlan.findMany({
         where: { tenantId, deletedAt: null },
         orderBy: { createdAt: "desc" },
@@ -873,8 +873,6 @@ export class ForestPlanDB {
         },
         take: TOPE_LINEAS + 1,
       }),
-      // El KV del POA dice qué planes tienen la config GUARDADA (sin ella rige el 10 % por defecto).
-      PlatformSettingsDB.get<Record<string, unknown>>(`loth-poa:${tenantId}`),
     ]);
 
     const truncado = arbolesRaw.length > TOPE_ARBOLES || lineasRaw.length > TOPE_LINEAS || trozasCtp.length > TOPE_LINEAS;
@@ -902,10 +900,12 @@ export class ForestPlanDB {
       if (planesEnAlcance.length === 0) permisoSinPlan = { contratoId: permiso.id, codigo: permiso.codigo };
     }
 
-    const configurados = new Set(Object.keys(poaStore ?? {}));
+    /* La config del POA de cada plan con su origen (guardada, o el defecto del
+       plan: plantación 0 %, bosque 10 % — ADR-455). Se pasa el plan ya leído:
+       el KV se lee una vez por plan, el plan no se vuelve a leer. */
     const poaDe = new Map(
       await Promise.all(
-        planes.map(async (p) => [p.id, await ForestLothPoaDB.get(tenantId, p.id)] as const),
+        planes.map(async (p) => [p.id, await ForestLothPoaDB.leer(tenantId, p.id, p)] as const),
       ),
     );
     const num = (v: Prisma.Decimal | number | null | undefined): number | null => (v == null ? null : Number(v));
@@ -923,7 +923,10 @@ export class ForestPlanDB {
       vigenciaDesde: dia(p.vigenciaDesde),
       vigenciaHasta: dia(p.vigenciaHasta),
       areaHa: num(p.areaHa),
-      poa: { config: poaDe.get(p.id) ?? { dmcOverrides: {}, semillerosPct: 10 }, configurado: configurados.has(p.id) },
+      poa: {
+        config: poaDe.get(p.id)?.config ?? defaultPoaConfig(p),
+        configurado: poaDe.get(p.id)?.origen === "guardado",
+      },
       especies: especies
         .filter((e) => e.planId === p.id)
         .map((e) => ({

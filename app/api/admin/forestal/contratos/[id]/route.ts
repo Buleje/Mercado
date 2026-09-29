@@ -5,7 +5,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
-import { ForestContratoDB, PlanAjenoError } from "@/lib/db/forest-contrato.db";
+import { ForestContratoDB, PlanAjenoError, PlanOcupadoError } from "@/lib/db/forest-contrato.db";
 import { ESTADOS_CONTRATO, TIPOS_CONTRATO } from "@/lib/forestal/contratos";
 
 /**
@@ -137,6 +137,9 @@ export const PATCH = withApiHandler("forestal-contrato-patch", async (req: NextR
     if (!contrato) return NextResponse.json({ error: "not_found" }, { status: 404 });
     return NextResponse.json({ contrato });
   } catch (err) {
+    if (err instanceof PlanOcupadoError) {
+      return NextResponse.json({ error: "plan_ocupado", message: err.message, permiso: err.codigoPermiso }, { status: 409 });
+    }
     if (err instanceof PlanAjenoError) {
       return NextResponse.json({ error: "plan_ajeno", message: err.message }, { status: 400 });
     }

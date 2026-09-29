@@ -233,10 +233,22 @@ export function opcionesDeEspecie(d: ExtraccionResponse): { value: string; count
 
 const PESO_NIVEL: Record<AvisoExtraccion["nivel"], number> = { error: 0, warning: 1, info: 2 };
 
-/** Primero lo rojo, después lo ámbar, al final lo informativo; a igual nivel, la cifra mayor. */
+/** El aviso trae su arreglo en la línea (hoy: «Unir» / «Elegir permiso», ADR-455). */
+export function avisoConBoton(a: AvisoExtraccion): boolean {
+  return a.tipo === "plan_sin_permiso" && Boolean(a.planId);
+}
+
+/**
+ * Primero lo rojo, después lo ámbar, al final lo informativo. A igual nivel, el
+ * que se arregla con un clic (se ven tres: en Blas «Todos» el «Unir» quedaba
+ * 5.º de 6, escondido en «N más») y después la cifra mayor.
+ */
 export function ordenarAvisos(avisos: readonly AvisoExtraccion[]): AvisoExtraccion[] {
   return [...avisos].sort(
-    (a, b) => PESO_NIVEL[a.nivel] - PESO_NIVEL[b.nivel] || Math.abs(b.cifraM3 ?? 0) - Math.abs(a.cifraM3 ?? 0),
+    (a, b) =>
+      PESO_NIVEL[a.nivel] - PESO_NIVEL[b.nivel] ||
+      Number(avisoConBoton(b)) - Number(avisoConBoton(a)) ||
+      Math.abs(b.cifraM3 ?? 0) - Math.abs(a.cifraM3 ?? 0),
   );
 }
 

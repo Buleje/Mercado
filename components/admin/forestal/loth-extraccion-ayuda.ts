@@ -68,6 +68,10 @@ export const AYUDA_AVISO: Record<TipoAvisoExtraccion, { what: string; affects: s
     what: "El libro es más grande que lo que se lee de una vez.",
     affects: "Las cifras pueden quedarse cortas.",
   },
+  agota_pronto: {
+    what: "Al ritmo de tala de las últimas semanas, el saldo por talar se acaba en menos de 60 días.",
+    affects: "Conviene planear el cierre o pedir ampliación antes de quedarse sin saldo.",
+  },
 };
 
 /**

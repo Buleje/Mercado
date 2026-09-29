@@ -4,6 +4,10 @@
  * Los avisos de «Extracción»: una línea cada uno, con su cifra y el detalle en
  * ⓘ (el texto entero del servidor + qué significa y qué afecta), rojo primero.
  * Se ven tres; el resto se abre con «N más» (ADR-454 §6).
+ *
+ * «Plan sin permiso» trae su arreglo en la misma línea: «Unir» con el permiso
+ * del mismo código o «Elegir su permiso» (ADR-455, `loth-extraccion-unir`). Los
+ * avisos con botón van primero dentro de su color: son de un clic.
  */
 
 import { useState } from "react";
@@ -12,6 +16,7 @@ import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import type { AvisoExtraccion } from "@/lib/forestal/loth-extraccion-tipos";
 import { AYUDA_AVISO } from "./loth-extraccion-ayuda";
 import { fm3, ordenarAvisos } from "./loth-extraccion-shared";
+import LothExtraccionUnir from "./loth-extraccion-unir";
 
 const VISIBLES = 3;
 
@@ -53,7 +58,7 @@ export default function LothExtraccionAvisos({ avisos }: { avisos: readonly Avis
           return (
             <li
               key={`${a.tipo}-${a.planId ?? "todo"}-${a.especie ?? ""}-${i}`}
-              className={`flex min-h-10 items-center gap-2 rounded-xl border px-3 py-1.5 text-sm ${e.caja}`}
+              className={`flex min-h-10 flex-wrap items-center gap-2 rounded-xl border px-3 py-1.5 text-sm ${e.caja}`}
             >
               <Icono className={`h-4 w-4 shrink-0 ${e.icon}`} aria-hidden />
               <span className="sr-only">{e.nombre}: </span>
@@ -62,6 +67,9 @@ export default function LothExtraccionAvisos({ avisos }: { avisos: readonly Avis
               </span>
               {a.cifraM3 != null && (
                 <span className="shrink-0 font-bold tabular-nums text-[var(--text-primary)]">{fm3(a.cifraM3)} m³</span>
+              )}
+              {a.tipo === "plan_sin_permiso" && a.planId && (
+                <LothExtraccionUnir planId={a.planId} sugerido={a.permisoSugerido ?? null} />
               )}
               {/* La línea se corta; el ⓘ lleva el texto entero y qué significa. */}
               <InfoTip

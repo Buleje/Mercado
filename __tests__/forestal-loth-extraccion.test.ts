@@ -6,8 +6,9 @@
  *  · main, plan «PO 12»: Tornillo censado 4,2474, talado 5,003, 4 trozas
  *    (4,887), 2 despachadas (2,761), anuladas vivas que no deben sumar;
  *  · QA-ui: 8 líneas sin plan, una troza despachada sin su trozado;
- *  · Blas, plantación 19-SEC/REG-PLT-2025-096: POA sin configurar (10 %) y
- *    el regente sin semilleros.
+ *  · Blas, plantación 19-SEC/REG-PLT-2025-096: POA sin configurar y el
+ *    regente sin semilleros. Desde el ADR-455 una plantación sin config
+ *    reserva 0 % (antes, 10 %: 11 árboles y 162,882 m³ fuera de la base).
  *
  * La parte de base real SÓLO LEE, con `hasta` fijo (lo que se asiente después
  * no la mueve):
@@ -17,6 +18,7 @@
 import { describe, expect, it } from "vitest";
 import { prisma } from "@/lib/prisma";
 import { ForestPlanDB } from "@/lib/db/forest-plan.db";
+import { ForestLothPoaDB } from "@/lib/db/forest-loth-poa.db";
 import {
   PLAN_ID_SIN_PLAN,
   armarExtraccion,
@@ -367,7 +369,7 @@ describe("censoPorEspecie — la base «aprobado según censo»", () => {
     const conTalas = (codigos: string[]) =>
       armarExtraccion(
         entrada({
-          planes: [plan({ planType: "PLANTACION", poa: poa(10, false) })],
+          planes: [plan({ planType: "PO", poa: poa(10, false) })],
           arboles: copaibas,
           lineas: codigos.map((c) => linea("tala", { treeCode: c, speciesCommon: "Copaiba", volumeM3: 5.2 })),
         }),
@@ -383,10 +385,10 @@ describe("censoPorEspecie — la base «aprobado según censo»", () => {
     expect(sin.censo.aprovechableM3).toBe(95);
   });
 
-  it("el aviso dice cuánto le quita el sistema a una plantación donde el regente declaró 0", () => {
+  it("bosque: el aviso dice cuánto le quita el 10 % por defecto cuando el regente declaró 0", () => {
     const r = armarExtraccion(
       entrada({
-        planes: [plan({ planType: "PLANTACION", poa: poa(10, false) })],
+        planes: [plan({ planType: "PO", poa: poa(10, false) })],
         arboles: copaibas,
         lineas: [linea("tala", { treeCode: "111", speciesCommon: "Copaiba", volumeM3: 10.3697 })],
       }),
@@ -394,9 +396,39 @@ describe("censoPorEspecie — la base «aprobado según censo»", () => {
     const a = r.avisos.find((x) => x.tipo === "semilleros_sistema_vs_regente");
     expect(a?.cifraM3).toBe(31);
     expect(a?.texto).toMatch(/10 % por defecto/);
-    expect(a?.texto).toMatch(/el regente no declaró ninguno en una plantación/);
-    expect(a?.texto).toMatch(/pon 0 % en Parámetros del POA/);
-    expect(r.permisos[0].poa).toEqual({ semillerosPct: 10, configurado: false, semillerosRegente: 0 });
+    expect(a?.texto).toMatch(/el regente no declaró ninguno/);
+    expect(a?.texto).toMatch(/Si el plan no los exige, pon 0 % en Parámetros del POA/);
+    expect(r.permisos[0].poa).toEqual({ semillerosPct: 10, configurado: false, semillerosRegente: 0, plantacion: false });
+  });
+
+  it("⭐ plantación sin config (ADR-455): 0 %, la base es el censo entero y el aviso de semilleros no aparece", () => {
+    // El 0 % lo resuelve ForestLothPoaDB (defecto de plantación); acá llega hecho.
+    const r = armarExtraccion(
+      entrada({
+        planes: [plan({ planType: "PLANTACION", planNumber: "19-SEC/REG-PLT-2025-096", poa: poa(0, false) })],
+        arboles: copaibas,
+        lineas: [linea("tala", { treeCode: "111", speciesCommon: "Copaiba", volumeM3: 10.3697 })],
+      }),
+    );
+    expect(r.total.censo).toMatchObject({ censadoM3: 126, semillerosPoa: 0, semillerosM3: 0, aprovechableM3: 126, aprovechables: 12 });
+    expect(r.total.saldo.tala.m3).toBe(r4(126 - 10.3697));
+    expect(r.avisos.some((x) => x.tipo === "semilleros_sistema_vs_regente")).toBe(false);
+    expect(r.permisos[0].poa).toEqual({ semillerosPct: 0, configurado: false, semillerosRegente: 0, plantacion: true });
+  });
+
+  it("plantación con 10 % guardado a mano: el aviso sigue, y dice que la norma no los pide", () => {
+    const r = armarExtraccion(
+      entrada({
+        planes: [plan({ planType: "PLANTACION", poa: poa(10, true) })],
+        arboles: copaibas,
+        lineas: [],
+      }),
+    );
+    const a = r.avisos.find((x) => x.tipo === "semilleros_sistema_vs_regente");
+    expect(a?.cifraM3).toBe(31);
+    expect(a?.texto).toMatch(/el 10 % de Parámetros del POA/);
+    expect(a?.texto).toMatch(/Es una plantación: la norma no los pide/);
+    expect(r.permisos[0].poa.plantacion).toBe(true);
   });
 
   it("semillero del regente, bajo DMC y descartado salen de la base", () => {
@@ -553,6 +585,39 @@ describe("período, semanas y KPIs", () => {
     expect(sinRitmo.kpis.agotamiento.motivoSinDato).toBe("Sin ritmo de tala todavía.");
   });
 
+  it("aviso `agota_pronto`: <60 días con ritmo = warning, <15 = error, y ninguno con horizonte largo o sin ritmo", () => {
+    const talas = (vol: number, n: number) =>
+      Array.from({ length: n }, (_, i) =>
+        linea("tala", { treeCode: String(i + 1), speciesCommon: "Copaiba", volumeM3: vol, entryDate: `2026-09-${String(i + 1).padStart(2, "0")}` }),
+      );
+    const correr = (nArboles: number, volArbol: number, volTala: number) =>
+      armarExtraccion(
+        entrada({
+          arboles: Array.from({ length: nArboles }, (_, i) => arbol(`a${i}`, String(i + 1), "Copaiba", volArbol, { dapM: 1 })),
+          lineas: talas(volTala, 14),
+          hasta: "2026-09-14",
+        }),
+      );
+    const aviso = (r: ReturnType<typeof correr>) => r.avisos.find((a) => a.tipo === "agota_pronto");
+
+    const warning = correr(30, 20, 19); // saldo 334 m³ a ~20,5 m³/día → ~17 días
+    expect(warning.kpis.agotamiento.dias).toBeLessThan(60);
+    expect(warning.kpis.agotamiento.dias).toBeGreaterThanOrEqual(15);
+    expect(aviso(warning)).toMatchObject({ nivel: "warning", planId: null });
+    expect(aviso(warning)?.texto).toContain(`${warning.kpis.agotamiento.dias} días`);
+    expect(aviso(warning)?.texto).toContain(warning.kpis.agotamiento.fecha!.split("-").reverse().join("-"));
+    expect(aviso(warning)?.cifraM3).toBe(warning.kpis.porTalar.m3);
+
+    const urgente = correr(15, 40, 38); // saldo 68 m³ a ~41 m³/día → 2 días
+    expect(urgente.kpis.agotamiento.dias).toBeLessThan(15);
+    expect(aviso(urgente)?.nivel).toBe("error");
+
+    const largo = correr(30, 20, 2); // 266 días
+    expect(largo.kpis.agotamiento.dias).toBeGreaterThan(60);
+    expect(aviso(largo)).toBeUndefined();
+    expect(aviso(armarExtraccion(main()))).toBeUndefined(); // sin ritmo: no inventa fecha
+  });
+
   it("con un `hasta` pasado, plazo, ritmo, proyección y trozas en el monte no cambian con el día de la consulta", () => {
     const arboles = Array.from({ length: 30 }, (_, i) => arbol(`a${i}`, String(i + 1), "Copaiba", 20, { dapM: 1 }));
     const lineas = [
@@ -637,6 +702,23 @@ describe("permisoDelPlan", () => {
     });
     expect(permisoDelPlan({ id: "p1", contratoId: null, planNumber: "X", tituloHabilitante: null }, permisos)).toBeNull();
   });
+
+  it("el aviso «plan sin permiso» lleva el permiso para «Unir» (gemelo) o `null` para «Elegir permiso» (ADR-455)", () => {
+    const conGemelo = armarExtraccion(
+      entrada({ planes: [plan({ id: "p1", planNumber: "19-SEC/REG-PLT-2025-096" })], permisos, conSinPlan: false }),
+    ).avisos.find((a) => a.tipo === "plan_sin_permiso");
+    expect(conGemelo).toMatchObject({ planId: "p1", nivel: "info", permisoSugerido: { contratoId: "c1", codigo: "19-SEC/REG-PLT-2025-096" } });
+    expect(conGemelo?.texto).toMatch(/el permiso 19-SEC\/REG-PLT-2025-096 tiene el mismo código/);
+
+    const sinGemelo = armarExtraccion(entrada({ planes: [plan({ id: "p1", planNumber: "X" })], permisos, conSinPlan: false })).avisos.find(
+      (a) => a.tipo === "plan_sin_permiso",
+    );
+    expect(sinGemelo).toMatchObject({ planId: "p1", permisoSugerido: null });
+
+    // Ya unido (por el plan o por el permiso): no hay aviso ni botón.
+    const unido = armarExtraccion(entrada({ planes: [plan({ id: "p1", contratoId: "c1" })], permisos, conSinPlan: false }));
+    expect(unido.avisos.some((a) => a.tipo === "plan_sin_permiso")).toBe(false);
+  });
 });
 
 describe("límites", () => {
@@ -679,9 +761,15 @@ describe("rendimiento", () => {
     const t0 = performance.now();
     const frio = armarExtraccion(e);
     const tFrio = performance.now() - t0;
-    const t1 = performance.now();
-    armarExtraccion(e);
-    const tCaliente = performance.now() - t1;
+    // El mejor de 3 corridas en caliente: el hook del commit corre ~80 archivos
+    // de tests en paralelo y una sola medición salía 160 ms con la máquina tomada
+    // (85 / 60 ms aislado). Lo que se cuida es que escale, no el ms de una corrida.
+    let tCaliente = Infinity;
+    for (let k = 0; k < 3; k++) {
+      const t1 = performance.now();
+      armarExtraccion(e);
+      tCaliente = Math.min(tCaliente, performance.now() - t1);
+    }
     console.info(`[extraccion] 2 000 árboles · 5 000 líneas: ${tFrio.toFixed(1)} ms en frío, ${tCaliente.toFixed(1)} ms en caliente`);
 
     expect(frio.total.talado.n).toBe(1_000);
@@ -718,50 +806,59 @@ describe.skipIf(!HAS_DB)("ForestPlanDB.extraccion — la tabla real del ADR-454 
   ];
   let plantacion: ExtraccionResponse;
 
-  it("Blas, plantación: la tabla sale igual que la del ADR", async () => {
+  it("Blas, plantación: la tabla del ADR-454 con 0 % de semilleros (ADR-455): la base es el censo entero", async () => {
     const r = await ForestPlanDB.extraccion(BLAS, { planId: PLAN_PLANTACION, hasta: "2026-09-28" });
     expect(r).not.toBeNull();
     plantacion = r as ExtraccionResponse;
-    for (const [nombre, censado, censados, semPoa, aprov, aprovN, talado, saldoTala, trozado, saldoTrozado] of ADR) {
+    for (const [nombre, censado, censados, , , , talado, , trozado] of ADR) {
       const e = especie(plantacion, nombre);
+      // Sin semilleros ni bajo DMC: lo aprovechable ES lo censado, y cada saldo es censado − operación.
       expect([nombre, e.censo.censadoM3, e.censo.censados, e.censo.semillerosPoa, e.censo.aprovechableM3, e.censo.aprovechables]).toEqual([
-        nombre, censado, censados, semPoa, aprov, aprovN,
+        nombre, censado, censados, 0, censado, censados,
       ]);
-      expect([nombre, e.talado.m3, e.saldo.tala.m3, e.trozado.m3, e.saldo.trozado.m3]).toEqual([nombre, talado, saldoTala, trozado, saldoTrozado]);
-      expect([nombre, e.despachado.m3, e.saldo.despacho.m3, e.enElMonte.m3]).toEqual([nombre, 0, aprov, trozado]);
+      expect([nombre, e.talado.m3, e.saldo.tala.m3, e.trozado.m3, e.saldo.trozado.m3]).toEqual([
+        nombre, talado, r4(censado - talado), trozado, r4(censado - trozado),
+      ]);
+      expect([nombre, e.despachado.m3, e.saldo.despacho.m3, e.enElMonte.m3]).toEqual([nombre, 0, censado, trozado]);
     }
     const t = plantacion.total;
-    expect(t.censo).toMatchObject({ censadoM3: 563.401, censados: 65, semillerosPoa: 11, semillerosM3: 162.882, semillerosRegente: 0, excluidos: 0, aprovechableM3: 400.519, aprovechables: 54, autorizadoM3: null });
+    // Antes (10 % por defecto): 11 semilleros, 162,882 m³ fuera, base 400,519 y 8,22 % extraído.
+    expect(t.censo).toMatchObject({ censadoM3: 563.401, censados: 65, semillerosPoa: 0, semillerosM3: 0, semillerosRegente: 0, excluidos: 0, aprovechableM3: 563.401, aprovechables: 65, autorizadoM3: null });
     expect(t.talado).toEqual({ m3: 32.9346, n: 4, sinVolumen: 0 });
-    expect(t.saldo.tala.m3).toBe(367.5844);
+    expect(t.saldo.tala.m3).toBe(530.4664);
     expect(t.trozado).toMatchObject({ m3: 6.6102, n: 2 });
-    expect(t.saldo.trozado.m3).toBe(393.9088);
+    expect(t.saldo.trozado.m3).toBe(556.7908);
     expect(t.despachado.m3).toBe(0);
-    expect(t.saldo.despacho.m3).toBe(400.519);
+    expect(t.saldo.despacho.m3).toBe(563.401);
     expect(t.enElMonte).toEqual({ m3: 6.6102, n: 2, sinVolumen: 0 });
     expect([t.recibido.n, t.aserrado.n]).toEqual([0, 0]);
     expect(t.taladosSinTrozar).toEqual({ m3: 18.4231, n: 2, sinVolumen: 0 });
-    expect(plantacion.kpis.extraido.pct).toBe(8.22);
+    expect(plantacion.kpis.extraido.pct).toBe(5.85);
+    expect(plantacion.permisos[0].poa).toEqual({ semillerosPct: 0, configurado: false, semillerosRegente: 0, plantacion: true });
     expect(plantacion.permisos[0].arboles.porEtapa).toEqual({ en_pie: 61, talado: 2, trozado: 2 });
     expect(plantacion.permisos[0].permiso).toEqual({ contratoId: "ctr_165b5048de1f37205cca0c", codigo: "19-SEC/REG-PLT-2025-096", vinculo: "gemelo" });
   });
 
-  it("Blas: el aviso de semilleros nombra los 162,882 m³ que el 10 % le quita a la plantación", () => {
-    const a = plantacion.avisos.find((x) => x.tipo === "semilleros_sistema_vs_regente");
-    expect(a?.cifraM3).toBe(162.882);
-    expect(a?.texto).toMatch(/11 semilleros/);
-    expect(a?.texto).toMatch(/en una plantación/);
+  it("Blas: el aviso de semilleros ya no aparece y el de «plan sin permiso» trae el gemelo para «Unir»", () => {
+    expect(plantacion.avisos.some((x) => x.tipo === "semilleros_sistema_vs_regente")).toBe(false);
+    const unir = plantacion.avisos.find((x) => x.tipo === "plan_sin_permiso");
+    expect(unir?.permisoSugerido).toEqual({ contratoId: "ctr_165b5048de1f37205cca0c", codigo: "19-SEC/REG-PLT-2025-096" });
   });
 
-  it("Blas «Todos»: el plan de prueba PO-2026-001 aporta 0 a la base (el ADR decía 406,7178 con la regla vieja)", async () => {
+  it("Blas: la config del POA sale de UN lugar — la plantación por defecto 0 %, PO-2026-001 lo guardado (10 %)", async () => {
+    expect(await ForestLothPoaDB.leer(BLAS, PLAN_PLANTACION)).toEqual({ config: { dmcOverrides: {}, semillerosPct: 0 }, origen: "plantacion" });
+    expect(await ForestLothPoaDB.leer(BLAS, "cmrtxh5bp000irrvzgw5y9yb0")).toEqual({ config: { dmcOverrides: {}, semillerosPct: 10 }, origen: "guardado" });
+  });
+
+  it("Blas «Todos»: el plan de prueba PO-2026-001 aporta 0 a la base; «Todos» = la plantación entera (563,401)", async () => {
     const r = await ForestPlanDB.extraccion(BLAS, { hasta: "2026-09-28" });
     // Censo ORIGINAL de PO-2026-001 (2 tornillos, el censo los dice «talados», 0 líneas vivas):
     // 002-TOR DAP 55 cm < DMC 61 → excluido (2,3164); 001-TOR 65 cm es el único sobre el DMC y
     // con el 10 % configurado es el semillero mínimo (3,8824). Antes entraban por «talado».
     const prueba = r?.permisos.find((p) => p.planNumber === "PO-2026-001");
     expect(prueba?.total.censo).toMatchObject({ censadoM3: 6.1988, semillerosPoa: 1, semillerosM3: 3.8824, excluidos: 1, excluidosM3: 2.3164, aprovechableM3: 0 });
-    expect(r?.total.censo.aprovechableM3).toBe(400.519);
-    expect(r?.kpis.extraido.pct).toBe(8.22);
+    expect(r?.total.censo.aprovechableM3).toBe(563.401);
+    expect(r?.kpis.extraido.pct).toBe(5.85);
     expect(r?.avisos.filter((a) => a.tipo === "censo_libro_distinto")).toHaveLength(1);
     expect(r?.recibidoAlDia).toBe(true);
   });

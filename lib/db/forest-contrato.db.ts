@@ -54,6 +54,31 @@ export class PlanAjenoError extends Error {
   }
 }
 
+/**
+ * El plan ya está unido a OTRO permiso vivo. Antes sólo la lista de la UI lo
+ * filtraba: un PATCH a mano dejaba dos permisos sobre el mismo plan y el saldo
+ * se contaba dos veces. La ruta lo devuelve como **409** con el permiso dueño.
+ */
+export class PlanOcupadoError extends Error {
+  readonly codigoPermiso: string;
+  constructor(codigoPermiso: string) {
+    super(`Ese plan ya está unido al permiso ${codigoPermiso}.`);
+    this.name = "PlanOcupadoError";
+    this.codigoPermiso = codigoPermiso;
+  }
+}
+
+/** Ningún OTRO permiso vivo de este negocio tiene ya ese plan (`contratoId` = el que se edita). */
+async function exigirPlanLibre(tenantId: string, planId: string | null | undefined, contratoId?: string) {
+  const id = (planId ?? "").trim();
+  if (!id) return;
+  const ocupante = await prisma.forestContrato.findFirst({
+    where: { tenantId, planId: id, deletedAt: null, ...(contratoId ? { id: { not: contratoId } } : {}) },
+    select: { id: true, codigo: true },
+  });
+  if (ocupante) throw new PlanOcupadoError(ocupante.codigo);
+}
+
 /** El plan existe, es de ESTE negocio y está vivo — o no se ata. */
 async function exigirPlanDelTenant(tenantId: string, planId: string | null | undefined) {
   const id = (planId ?? "").trim();
@@ -193,7 +218,10 @@ export class ForestContratoDB {
   }
 
   static async crear(tenantId: string, input: ContratoInput, actor: string): Promise<Contrato> {
-    if (input.planId !== undefined) await exigirPlanDelTenant(tenantId, input.planId);
+    if (input.planId !== undefined) {
+      await exigirPlanDelTenant(tenantId, input.planId);
+      await exigirPlanLibre(tenantId, input.planId);
+    }
     if (!tenantId) throw new Error("tenantId is required");
     const codigo = (input.codigo ?? "").trim();
     if (!codigo) throw new Error("codigo is required");
@@ -244,7 +272,10 @@ export class ForestContratoDB {
     if (!tenantId) throw new Error("tenantId is required");
     const existe = await prisma.forestContrato.findFirst({ where: { tenantId, id, deletedAt: null } });
     if (!existe) return null;
-    if (input.planId !== undefined) await exigirPlanDelTenant(tenantId, input.planId);
+    if (input.planId !== undefined) {
+      await exigirPlanDelTenant(tenantId, input.planId);
+      await exigirPlanLibre(tenantId, input.planId, id);
+    }
     const codigo = input.codigo?.trim();
     const row = await prisma.forestContrato.update({
       where: { id },

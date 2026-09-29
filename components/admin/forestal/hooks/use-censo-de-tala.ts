@@ -16,7 +16,7 @@ import {
   type ArbolParaElegir,
   type UsoArbolCenso,
 } from "@/lib/forestal/loth-censo-uso";
-import type { PoaConfig } from "@/lib/forestal/loth-poa";
+import { defaultPoaConfig, type PlanParaPoa, type PoaConfig } from "@/lib/forestal/loth-poa";
 import { CENSO_LIMITE } from "../loth-plan-shared";
 
 /** Un árbol tal como lo manda el GET del censo (Decimal → texto). */
@@ -118,9 +118,16 @@ async function leerCenso(planId: string): Promise<Lectura> {
   }
   const censo = (await c.json()) as { trees?: ArbolDelGet[]; truncado?: boolean };
   const usos: UsoArbolCenso[] = u.ok ? (((await u.json()) as { usos?: UsoArbolCenso[] }).usos ?? []) : [];
-  const config: Partial<PoaConfig> | undefined = p.ok
+  /* Sin config del POA (404: el plan no fijó ninguna) el respaldo es el defecto
+     DEL PLAN —una plantación no vuelve a 10 %—: se lee el plan para saberlo. */
+  let config: Partial<PoaConfig> | undefined = p.ok
     ? (((await p.json()) as { config?: PoaConfig }).config ?? undefined)
     : undefined;
+  if (!config) {
+    const d = await fetch(`/api/admin/forestal/plan?planId=${id}`, { credentials: "include" }).catch(() => null);
+    const plan = d?.ok ? (((await d.json()) as { plan?: PlanParaPoa }).plan ?? null) : null;
+    config = defaultPoaConfig(plan);
+  }
   return {
     arboles: prepararArboles((censo.trees ?? []).map(aArbolCensoTala), usos, config),
     truncado: Boolean(censo.truncado),

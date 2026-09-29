@@ -19,13 +19,13 @@
 import { useState } from "react";
 import { AlertTriangle, Ban, CalendarClock, CheckCircle2, Link2 } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
-import { csrfHeaders } from "@/lib/csrf-client";
-import { leerJson } from "@/lib/errores/sin-dato";
 import { avisoDeVigencia } from "@/lib/forestal/vigencia-avisos";
 import { permisoGemeloDelPlan } from "@/lib/forestal/loth-plan-permiso";
 import { usePermisosForestal } from "@/hooks/use-permisos-forestal";
 import { Btn } from "./ctp-shared";
+import { unirPlanConPermiso } from "./loth-plan-unir";
 import type { ControlRow } from "./loth-plan-shared";
+import { formatNumber } from "@/lib/format";
 
 /** Lo que el aviso de «unir» necesita del plan en pantalla. */
 interface PlanEnPantalla {
@@ -77,20 +77,9 @@ function UnirConPermiso({ plan, onUnido }: { plan: PlanEnPantalla & { id: string
     setUniendo(true);
     setError(null);
     try {
-      const r = await fetch("/api/admin/forestal/plan", {
-        method: "PATCH",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        credentials: "include",
-        body: JSON.stringify({ id: plan.id, contratoId: permiso.id }),
-      });
-      if (!r.ok) {
-        const j = await leerJson<{ message?: string; error?: string }>(r);
-        throw new Error(j?.message ?? j?.error ?? `No se pudo unir (HTTP ${r.status})`);
-      }
-      /* Del otro lado, el permiso guarda su plan. Si esto falla, el plan YA
-         quedó unido: se dice, no se deshace. */
-      const atado = await actualizar(permiso.id, { planId: plan.id });
-      onUnido({ planId: plan.id, contratoId: permiso.id, codigo: permiso.codigo, pendiente: atado.error });
+      // Las dos escrituras viven en `loth-plan-unir` (las usa también Extracción).
+      const { pendiente } = await unirPlanConPermiso(plan.id, permiso.id, actualizar);
+      onUnido({ planId: plan.id, contratoId: permiso.id, codigo: permiso.codigo, pendiente });
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
       setUniendo(false);
@@ -174,8 +163,8 @@ export default function LothPlanAvisos({ rows, onResolver, truncado, plan, onPla
         <p className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm font-bold text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <span>
-            El censo tiene {truncado.total.toLocaleString("es-PE")} árboles y se cargaron {truncado.cargados.toLocaleString("es-PE")}.
-            Todo el Plan Operativo está calculado sobre esos {truncado.cargados.toLocaleString("es-PE")}: no lo uses para declarar
+            El censo tiene {formatNumber(truncado.total)} árboles y se cargaron {formatNumber(truncado.cargados)}.
+            Todo el Plan Operativo está calculado sobre esos {formatNumber(truncado.cargados)}: no lo uses para declarar
             hasta filtrar por parcela o estado.
           </span>
         </p>

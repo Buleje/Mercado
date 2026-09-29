@@ -922,7 +922,7 @@ export default function LothLibroOperaciones() {
       {view === "extraccion" && <LothExtraccionView reloadSignal={reloadSignal} onIr={setView} />}
 
       {/* Vista Analítica — inteligencia de aprovechamiento + anomalías (Batch 2) */}
-      {view === "analitica" && <LothAnalyticsView reloadSignal={reloadSignal} />}
+      {view === "analitica" && <LothAnalyticsView reloadSignal={reloadSignal} onIrAExtraccion={() => setView("extraccion")} />}
 
       {/* Vista Cumplimiento — veredicto de fiscalización OSINFOR + reporte (ADR-305) */}
       {view === "cumplimiento" && (
@@ -941,7 +941,12 @@ export default function LothLibroOperaciones() {
 
       {/* Vista Mapa — dónde se taló cada árbol (GPS de campo, EUDR) */}
       {view === "mapa" && (
-        <LothMapaView focusTree={focoArbol} onFocusHandled={() => setFocoArbol(null)} onTalarVarios={(t) => setTandaTala(t)} />
+        <LothMapaView
+          focusTree={focoArbol}
+          onFocusHandled={() => setFocoArbol(null)}
+          onTalarVarios={(t) => setTandaTala(t)}
+          reloadSignal={reloadSignal}
+        />
       )}
 
       {/* Vista Rentabilidad — margen por especie (dashboard de negocio) */}

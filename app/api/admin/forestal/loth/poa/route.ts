@@ -11,8 +11,11 @@ import { withApiHandler } from "@/lib/api-handler";
  * /api/admin/forestal/loth/poa — parámetros del Plan Operativo de un plan de
  * manejo: DMC por especie (override del oficial) y % de semilleros.
  *
- * GET  ?planId=X — lee la config (defaults si nunca se guardó).
- * PUT  { planId, dmcOverrides, semillerosPct } — la reemplaza.
+ * GET  ?planId=X — lee la config (el defecto del plan si nunca se guardó:
+ *      plantación 0 %, bosque 10 %, ADR-455) y `origen` (guardado |
+ *      plantacion | defecto).
+ * PUT  { planId, dmcOverrides, semillerosPct? } — la reemplaza; sin % toma el
+ *      defecto del plan.
  *
  * Guard: requireAdmin → rate limit → spec:forestal:loth-libro.
  */
@@ -20,7 +23,8 @@ import { withApiHandler } from "@/lib/api-handler";
 const putSchema = z.object({
   planId: z.string().trim().min(1),
   dmcOverrides: z.record(z.string().trim().max(120), z.number()).default({}),
-  semillerosPct: z.number().min(0).max(100).default(10),
+  // Sin % → el defecto del plan (ForestLothPoaDB), no un 10 fijo que en una plantación está mal.
+  semillerosPct: z.number().min(0).max(100).optional(),
 });
 
 async function ensureSpec(tenantId: string) {
@@ -40,7 +44,8 @@ export const GET = withApiHandler("forestal-loth-poa-get", async (req: NextReque
 
   const planId = new URL(req.url).searchParams.get("planId") ?? "";
   try {
-    return NextResponse.json({ config: await ForestLothPoaDB.get(auth.tenantId, planId) });
+    const { config, origen } = await ForestLothPoaDB.leer(auth.tenantId, planId);
+    return NextResponse.json({ config, origen });
   } catch (err) {
     logger.error("[loth.poa.GET] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });

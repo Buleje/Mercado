@@ -17,6 +17,8 @@
  *     líneas sin árbol en ningún censo.
  *   · La especie filtra la tabla y los gráficos en pantalla (no pide de nuevo);
  *     si el alcance nuevo no la tiene, se suelta sola.
+ *   · Unir un plan con su permiso (`loth-plan-unir`) avisa por evento de
+ *     ventana y la vista vuelve a leer.
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -27,6 +29,7 @@ import { resolveCtpPeriod, type CtpPeriod, type CtpPeriodKey } from "@/lib/fores
 import type { ExtraccionResponse } from "@/lib/forestal/loth-extraccion-tipos";
 import type { CtpCustomRange } from "../CtpPeriodPicker";
 import { leerExtraccion, paramsDeExtraccion } from "../loth-extraccion-shared";
+import { alCambiarPlanPermiso } from "../loth-plan-unir";
 
 export interface OpcionPlan {
   id: string;
@@ -154,6 +157,9 @@ export function useLothExtraccion(reloadSignal = 0): EstadoExtraccion {
   }, [query, intento, reloadSignal, planId, setPlanId]);
 
   const reintentar = useCallback(() => setIntento((n) => n + 1), []);
+  /* Unir un plan con su permiso (acá o en Plan de Manejo) cambia el permiso de
+     la fila y quita su aviso: se vuelve a leer. */
+  useEffect(() => alCambiarPlanPermiso(reintentar), [reintentar]);
   const elegirPlan = useCallback(
     (id: string | null) => {
       setPlanId(id);

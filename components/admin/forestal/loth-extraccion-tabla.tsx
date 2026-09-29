@@ -132,9 +132,9 @@ export default function LothExtraccionTabla({
                 {i === 0 && (
                   <InfoTip
                     title="Aprobado según censo"
-                    what="Lo censado menos los semilleros y los árboles bajo el diámetro mínimo."
+                    what="Lo censado menos los semilleros y los árboles bajo el diámetro mínimo. Una plantación no aparta semilleros: no lleva plan de manejo."
                     affects="Es la base de los tres saldos: saldo = base − la operación."
-                    example="Censo 563.401 m³ − semilleros 162.882 = 400.519 m³."
+                    example="Bosque: censo 126.9 m³ − 2 semilleros 35.2 = 91.8 m³. Plantación: censo 563.4 m³ = 563.4 m³."
                     side="bottom"
                   />
                 )}
