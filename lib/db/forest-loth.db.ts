@@ -1187,7 +1187,9 @@ export class ForestLothDB {
    *   · Tala: la del mismo árbol y el mismo plan (o sin plan de un lado); la
    *     vigente primero, después la más nueva. Las borradas no cuentan.
    *   · Censo: la fila del mismo árbol en el plan del trozado; si el trozado no
-   *     tiene plan y hay más de una, no se adivina.
+   *     tiene plan y hay más de una, no se adivina. Sólo de planes VIVOS: dar de
+   *     baja un plan no borra su censo, y esa fila muerta volvía ambiguo el árbol
+   *     del plan vivo (dos filas → ninguna) o mostraba la de un plan de baja.
    */
   static async arbolesDeTrozados(tenantId: string, ids: readonly (string | null | undefined)[]): Promise<Map<string, ArbolDeTroza>> {
     if (!tenantId) throw new Error("tenantId is required");
@@ -1203,7 +1205,7 @@ export class ForestLothDB {
     });
     const arboles = [...new Set(trozados.map((t) => t.treeCode?.trim()).filter((c): c is string => !!c))];
     if (arboles.length === 0) return out;
-    const [talas, censo] = await Promise.all([
+    const [talas, censoTodo, planesVivos] = await Promise.all([
       prisma.forestLothEntry.findMany({
         where: { tenantId, section: "tala", treeCode: { in: arboles }, deletedAt: null },
         select: {
@@ -1218,7 +1220,10 @@ export class ForestLothDB {
           speciesCommon: true, speciesScientific: true,
         },
       }),
+      prisma.forestPlan.findMany({ where: { tenantId, deletedAt: null }, select: { id: true } }),
     ]);
+    const vivos = new Set(planesVivos.map((p) => p.id));
+    const censo = censoTodo.filter((c) => vivos.has(c.planId));
     const num = (v: Prisma.Decimal | null) => (v == null ? null : Number(v));
     const mismoPlan = (a: string | null, b: string | null) => !a || !b || a === b;
     for (const t of trozados) {
@@ -1395,9 +1400,16 @@ export class ForestLothDB {
     if (!tenantId) throw new Error("tenantId is required");
 
     if (section === "tala") {
+      // Sólo el censo de planes VIVOS: dar de baja un plan no borra su censo, y sus
+      // árboles se seguían ofreciendo para talar (con `planId` de un plan de baja, todos).
+      const vivos = await prisma.forestPlan.findMany({
+        where: { tenantId, deletedAt: null, ...(planId ? { id: planId } : {}) },
+        select: { id: true },
+      });
+      if (vivos.length === 0) return [];
       const [trees, talados] = await Promise.all([
         prisma.forestCensusTree.findMany({
-          where: { tenantId, deletedAt: null, estado: "en_pie", ...(planId ? { planId } : {}) },
+          where: { tenantId, deletedAt: null, estado: "en_pie", planId: { in: vivos.map((p) => p.id) } },
           orderBy: { treeCode: "asc" },
           take: 1000,
         }),

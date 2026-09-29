@@ -9,7 +9,9 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import {
+  Axe,
   TreePine,
   AlertCircle,
   RefreshCw,
@@ -166,7 +168,13 @@ const COLS: Record<LothSection, Col[]> = {
   ],
 };
 
-type LothView = "secciones" | "trazabilidad" | "tablero" | "plan" | "gtf" | "analitica" | "cumplimiento" | "cierre" | "mapa" | "rentabilidad";
+type LothView = "secciones" | "trazabilidad" | "tablero" | "plan" | "gtf" | "extraccion" | "analitica" | "cumplimiento" | "cierre" | "mapa" | "rentabilidad";
+
+/* «Extracción» (ADR-454) trae recharts: se baja sólo al abrir la vista. */
+const LothExtraccionView = dynamic(() => import("./LothExtraccionView"), {
+  ssr: false,
+  loading: () => <p className="p-6 text-sm text-[var(--text-tertiary)]">Abriendo la extracción…</p>,
+});
 
 // Navegación en cabina compartida con el Libro CTP (`libro-chrome`): las nueve
 // vistas agrupadas por fase, con los MISMOS nombres de grupo que el otro libro
@@ -207,6 +215,7 @@ const LOTH_GROUPS: LibroGroup[] = [
     id: "gestion",
     label: "Gestión",
     views: [
+      { key: "extraccion", ...LOTH_VISTAS_POR_KEY["extraccion"], icon: Axe },
       { key: "rentabilidad", ...LOTH_VISTAS_POR_KEY["rentabilidad"], icon: Coins },
       { key: "analitica", ...LOTH_VISTAS_POR_KEY["analitica"], icon: TrendingUp },
     ],
@@ -908,6 +917,9 @@ export default function LothLibroOperaciones() {
 
       {/* Vista GTF — guías de transporte forestal */}
       {view === "gtf" && <LothGtfView focusGtf={focoGtf} onFocusHandled={() => setFocoGtf(null)} />}
+
+      {/* Vista Extracción — el permiso de punta a punta: censo, saldos y cadena (ADR-454) */}
+      {view === "extraccion" && <LothExtraccionView reloadSignal={reloadSignal} onIr={setView} />}
 
       {/* Vista Analítica — inteligencia de aprovechamiento + anomalías (Batch 2) */}
       {view === "analitica" && <LothAnalyticsView reloadSignal={reloadSignal} />}

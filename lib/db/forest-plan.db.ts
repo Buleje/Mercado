@@ -17,6 +17,15 @@ import {
   estaFueraDePlazo,
   type BalanceMovement, type BalanceSpeciesInput, type CosteoSpeciesInput,
 } from "@/lib/forestal/loth-constants";
+import { ForestLothPoaDB } from "@/lib/db/forest-loth-poa.db";
+import { PlatformSettingsDB } from "@/lib/db/platform-settings.db";
+import { ESTADOS_SIN_INGRESO } from "@/lib/db/gtf-numero.db";
+import {
+  PLAN_ID_SIN_PLAN, SECCIONES_EXTRACCION, TOPE_ARBOLES, TOPE_LINEAS,
+  armarExtraccion, diaUtc, permisoDelPlan,
+  type PlanDeExtraccion,
+} from "@/lib/forestal/loth-extraccion";
+import type { ExtraccionFiltro, ExtraccionResponse } from "@/lib/forestal/loth-extraccion-tipos";
 
 const CACHE_PREFIX = "forest-plan";
 const dec = (v: number | string | null | undefined) =>
@@ -787,5 +796,178 @@ export class ForestPlanDB {
       count: r._count._all,
       volumenEstimadoM3: r._sum.volumenEstimadoM3?.toNumber() ?? 0,
     }));
+  }
+
+  // ─── Extracción del Libro TH (ADR-454) ─────────────────────────────────
+
+  /**
+   * La vista «Extracción»: por permiso (plan) y por especie, el censo
+   * aprovechable contra lo talado, trozado y despachado, con un saldo por
+   * operación y la cadena hasta el aserrado del CTP. Sólo lectura.
+   *
+   * Lee TODO lo del negocio en 7 consultas en paralelo (planes, especies,
+   * censo, líneas, permisos, trozas del CTP atadas a su trozado, POA) y lo
+   * arma `armarExtraccion` (puro). Los censos de TODOS los planes entran
+   * aunque se pida uno: una línea sin plan se atribuye por su árbol, y si su
+   * árbol es de otro plan no puede caer en éste.
+   *
+   * `null` = el plan o el permiso pedido no existe en este negocio (404).
+   * Topes: 20 000 árboles y 50 000 líneas; si se alcanzan, `limites.truncado`
+   * y el aviso `libro_truncado`.
+   */
+  static async extraccion(tenantId: string, f: ExtraccionFiltro): Promise<ExtraccionResponse | null> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const [planes, especies, arbolesRaw, lineasRaw, contratos, trozasCtp, poaStore] = await Promise.all([
+      prisma.forestPlan.findMany({
+        where: { tenantId, deletedAt: null },
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true, planNumber: true, planType: true, titularName: true, alias: true, estado: true,
+          tituloHabilitante: true, contratoId: true, vigenciaDesde: true, vigenciaHasta: true, areaHa: true,
+        },
+      }),
+      prisma.forestPlanSpecies.findMany({
+        where: { tenantId, deletedAt: null },
+        select: { planId: true, speciesCommon: true, cites: true, volumenAutorizadoM3: true, arbolesAutorizados: true },
+      }),
+      prisma.forestCensusTree.findMany({
+        where: { tenantId, deletedAt: null },
+        select: {
+          id: true, planId: true, treeCode: true, speciesCommon: true, cites: true,
+          dapM: true, volumenEstimadoM3: true, estado: true, condicion: true,
+        },
+        orderBy: { id: "asc" },
+        take: TOPE_ARBOLES + 1,
+      }),
+      prisma.forestLothEntry.findMany({
+        where: {
+          tenantId,
+          deletedAt: null,
+          status: { in: ["registrado", "anulado"] },
+          section: { in: [...SECCIONES_EXTRACCION] },
+        },
+        select: {
+          id: true, planId: true, section: true, status: true, lineNo: true, entryDate: true,
+          treeCode: true, trozaCode: true, speciesCommon: true, cites: true,
+          volumeM3: true, quantity: true, unit: true, gtfNumber: true,
+        },
+        orderBy: [{ entryDate: "asc" }, { lineNo: "asc" }],
+        take: TOPE_LINEAS + 1,
+      }),
+      prisma.forestContrato.findMany({
+        where: { tenantId, deletedAt: null },
+        select: { id: true, codigo: true, codigoNorm: true, planId: true },
+      }),
+      // Recibida en planta (ADR-450): la troza guarda su línea de Trozado; ingreso vivo, no anulado ni rechazado.
+      prisma.woodEntryTroza.findMany({
+        where: {
+          tenantId,
+          lothTrozadoId: { not: null },
+          noRecepcionada: false,
+          entry: { tenantId, deletedAt: null, status: { notIn: [...ESTADOS_SIN_INGRESO] } },
+        },
+        select: {
+          lothTrozadoId: true,
+          volumenM3: true,
+          consumidaEn: { select: { tenantId: true, deletedAt: true, status: true } },
+        },
+        take: TOPE_LINEAS + 1,
+      }),
+      // El KV del POA dice qué planes tienen la config GUARDADA (sin ella rige el 10 % por defecto).
+      PlatformSettingsDB.get<Record<string, unknown>>(`loth-poa:${tenantId}`),
+    ]);
+
+    const truncado = arbolesRaw.length > TOPE_ARBOLES || lineasRaw.length > TOPE_LINEAS || trozasCtp.length > TOPE_LINEAS;
+    const arbolesLeidos = arbolesRaw.slice(0, TOPE_ARBOLES);
+    const lineasLeidas = lineasRaw.slice(0, TOPE_LINEAS);
+
+    // Alcance: un plan, los planes de un permiso, «Sin plan» o todo el negocio.
+    const permisos = contratos.map((c) => ({ id: c.id, codigo: c.codigo, codigoNorm: c.codigoNorm, planId: c.planId }));
+    let planesEnAlcance: string[] | null = null;
+    let conSinPlan = true;
+    let permisoSinPlan: { contratoId: string; codigo: string } | null = null;
+    const planId = f.planId?.trim() || null;
+    const contratoId = f.contratoId?.trim() || null;
+    if (planId === PLAN_ID_SIN_PLAN) {
+      planesEnAlcance = [];
+    } else if (planId) {
+      if (!planes.some((p) => p.id === planId)) return null;
+      planesEnAlcance = [planId];
+      conSinPlan = false;
+    } else if (contratoId) {
+      const permiso = permisos.find((p) => p.id === contratoId);
+      if (!permiso) return null;
+      planesEnAlcance = planes.filter((p) => permisoDelPlan(p, permisos)?.contratoId === permiso.id).map((p) => p.id);
+      conSinPlan = false;
+      if (planesEnAlcance.length === 0) permisoSinPlan = { contratoId: permiso.id, codigo: permiso.codigo };
+    }
+
+    const configurados = new Set(Object.keys(poaStore ?? {}));
+    const poaDe = new Map(
+      await Promise.all(
+        planes.map(async (p) => [p.id, await ForestLothPoaDB.get(tenantId, p.id)] as const),
+      ),
+    );
+    const num = (v: Prisma.Decimal | number | null | undefined): number | null => (v == null ? null : Number(v));
+    const dia = (v: Date | null): string | null => (v ? diaUtc(v) || null : null);
+
+    const planesEntrada: PlanDeExtraccion[] = planes.map((p) => ({
+      id: p.id,
+      planNumber: p.planNumber,
+      planType: p.planType,
+      titular: p.titularName,
+      alias: p.alias,
+      estado: p.estado,
+      tituloHabilitante: p.tituloHabilitante,
+      contratoId: p.contratoId,
+      vigenciaDesde: dia(p.vigenciaDesde),
+      vigenciaHasta: dia(p.vigenciaHasta),
+      areaHa: num(p.areaHa),
+      poa: { config: poaDe.get(p.id) ?? { dmcOverrides: {}, semillerosPct: 10 }, configurado: configurados.has(p.id) },
+      especies: especies
+        .filter((e) => e.planId === p.id)
+        .map((e) => ({
+          speciesCommon: e.speciesCommon,
+          cites: e.cites,
+          volumenAutorizadoM3: Number(e.volumenAutorizadoM3),
+          arbolesAutorizados: e.arbolesAutorizados,
+        })),
+    }));
+
+    return armarExtraccion({
+      hoy: new Date(),
+      alcance: { planId, contratoId },
+      planesEnAlcance,
+      conSinPlan,
+      permisoSinPlan,
+      planes: planesEntrada,
+      permisos,
+      arboles: arbolesLeidos.map((a) => ({
+        id: a.id,
+        planId: a.planId,
+        treeCode: a.treeCode,
+        speciesCommon: a.speciesCommon,
+        cites: a.cites,
+        dapM: num(a.dapM),
+        volumenEstimadoM3: num(a.volumenEstimadoM3),
+        estado: a.estado,
+        condicion: a.condicion,
+      })),
+      lineas: lineasLeidas.map((l) => ({ ...l, volumeM3: num(l.volumeM3), quantity: num(l.quantity) })),
+      recepciones: trozasCtp.flatMap((t) =>
+        t.lothTrozadoId
+          ? [{
+              lothTrozadoId: t.lothTrozadoId,
+              volumenM3: num(t.volumenM3),
+              aserrada: !!t.consumidaEn && t.consumidaEn.tenantId === tenantId && t.consumidaEn.deletedAt == null && t.consumidaEn.status !== "anulado",
+            }]
+          : [],
+      ),
+      desde: f.desde ?? null,
+      hasta: f.hasta ?? null,
+      antDesde: f.antDesde ?? null,
+      antHasta: f.antHasta ?? null,
+      limites: { arbolesLeidos: arbolesLeidos.length, lineasLeidas: lineasLeidas.length, truncado },
+    });
   }
 }

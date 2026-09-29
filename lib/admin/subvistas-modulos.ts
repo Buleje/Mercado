@@ -170,7 +170,7 @@ export const ANIDADAS_POR_MODULO: Readonly<Record<string, readonly SubvistaAnida
   ],
 };
 
-/** Libro de Operaciones de Títulos Habilitantes (forestal) — 9 vistas. */
+/** Libro de Operaciones de Títulos Habilitantes (forestal) — 11 vistas. */
 export const LOTH_VISTAS: readonly SubvistaModulo[] = [
   { key: "secciones", label: "Secciones", hint: "Las 6 secciones SERFOR" },
   { key: "gtf", label: "GTF", hint: "Guías de transporte forestal" },
@@ -180,6 +180,7 @@ export const LOTH_VISTAS: readonly SubvistaModulo[] = [
   { key: "tablero", label: "Control del permiso", hint: "Cada troza y su estado: disponible, despachada o consumida" },
   { key: "cumplimiento", label: "Cumplimiento", hint: "Veredicto de fiscalización + reporte imprimible" },
   { key: "cierre", label: "Cierre", hint: "Cerrar el mes → acta inmutable (OSINFOR)" },
+  { key: "extraccion", label: "Extracción", hint: "Censo − tala, trozado y despacho por permiso" },
   { key: "rentabilidad", label: "Rentabilidad", hint: "Margen por especie (ingreso − costos)" },
   { key: "analitica", label: "Analítica", hint: "Aprovechamiento + anomalías" },
 ];
