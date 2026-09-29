@@ -247,6 +247,23 @@ export default function CtpContratoCuentas({
             : null
         }
       />
+      {/* ADR-448: la plata RECIBIDA bajo el permiso (un pago adelantado por el
+          aserrío, un préstamo) no es egreso ni «por recuperar», así que no va
+          en las tablas —sus totales son la suma de sus filas—. Va en UNA línea
+          aparte: al corregir un adelanto a recibido, sus soles no desaparecen
+          del permiso sin rastro. */}
+      {(balance.adelantosRecibidos?.documentos ?? 0) > 0 && (
+        <p className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] px-4 py-2.5 text-sm text-[var(--text-secondary)] lg:col-span-2">
+          <span className="font-bold text-[var(--text-primary)]">Adelantos recibidos</span>
+          {" · "}
+          {docs(balance.adelantosRecibidos?.documentos ?? 0)}
+          {" · "}
+          <span className="font-mono tabular-nums">{soles(resumen.recibido)}</span> que te dieron
+          {" · "}
+          <span className="font-mono font-bold tabular-nums text-[var(--text-primary)]">{soles(resumen.porDevolver)}</span> por
+          devolver. No suma en estas cuentas.
+        </p>
+      )}
     </div>
   );
 }

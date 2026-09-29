@@ -11,15 +11,17 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { leerJson } from "@/lib/errores/sin-dato";
 import { CardTitle } from "@buleje/design-system";
-import { Ban, CheckCircle, FileText, Package, Pencil } from "@buleje/design-system/icons";
-import { formatCurrency } from "@/lib/currency";
-import { csrfHeaders } from "@/lib/csrf-client";
-import { logger } from "@/lib/logger";
-import { descargarComprobante } from "@/lib/adelantos/comprobante";
-import type { DbAdelanto, DbEntregaPactada } from "@/lib/db/adelantos.db";
-import { MODALIDAD_LABEL, MiniStat, ModalShell, STATUS_BADGE, SkeletonGrid, fmtMon, inputCls } from "../shared";
+import { ArrowDownToLine, Ban, CheckCircle, FileText, Package, Pencil } from "@buleje/design-system/icons";
+import { ETIQUETA_CONCEPTO, quienDebe } from "@/lib/adelantos/direccion";
+import { leerDireccion } from "@/lib/adelantos/modos-alta";
+import type { DbAdelanto } from "@/lib/db/adelantos.db";
+import { formatDate } from "@/lib/format";
+import { MODALIDAD_LABEL, MiniStat, ModalShell, STATUS_BADGE, SkeletonGrid, fmtMon } from "../shared";
+import { imprimirComprobante } from "./comprobante-del-adelanto";
+import CorregirDireccion from "./CorregirDireccion";
+import RegistrarEntrega from "./RegistrarEntrega";
+import { useRegistrarEntrega } from "./use-registrar-entrega";
 import AnularAdelantoModal from "../lista/AnularAdelantoModal";
 import EditarNotasModal from "../lista/EditarNotasModal";
 import FichaAdelanto from "./FichaAdelanto";
@@ -29,8 +31,6 @@ import CamposPersonalizados from "@/components/admin/shared/CamposPersonalizados
 /** Id estable de este formulario para los campos personalizados (ADR-427):
  *  el mismo que el alta (`CrearAdelantoModal`). */
 const FORMULARIO = "adelantos.adelanto";
-
-const jsonHeaders = () => csrfHeaders({ "Content-Type": "application/json" });
 
 export default function DetalleAdelantoModal({
   adelantoId,
@@ -43,19 +43,6 @@ export default function DetalleAdelantoModal({
 }) {
   const [a, setA] = useState<DbAdelanto | null>(null);
   const [loading, setLoading] = useState(true);
-  // form entrega
-  const [tipo, setTipo] = useState<"LIBRE" | "PRODUCTO">("LIBRE");
-  const [descripcion, setDescripcion] = useState("");
-  const [valor, setValor] = useState("");
-  const [productId, setProductId] = useState("");
-  const [cantidad, setCantidad] = useState("");
-  const [sumarAStock, setSumarAStock] = useState(false);
-  const [entregaComp, setEntregaComp] = useState<string | null>(null);
-  /** La cuota que se está liquidando: viaja como `pactadaId` y la marca cumplida. */
-  const [pactada, setPactada] = useState<DbEntregaPactada | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-  const [productos, setProductos] = useState<{ id: number; name: string; price: number; stock?: number }[]>([]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -65,94 +52,27 @@ export default function DetalleAdelantoModal({
   }, [adelantoId]);
 
   useEffect(() => { load(); }, [load]);
-  useEffect(() => {
-    fetch("/api/products", { credentials: "include" })
-      .then((r) => (r.ok ? r.json() : []))
-      .then((d: unknown) =>
-        setProductos(
-          Array.isArray(d)
-            ? d.map((p: { id: number; name: string; price?: number; stock?: number }) => ({
-                id: p.id,
-                name: p.name,
-                price: Number(p.price ?? 0),
-                stock: p.stock,
-              }))
-            : [],
-        ),
-      )
-      .catch((e) => logger.warn("[adelantos] /api/products falló", { error: String(e) }));
-  }, []);
 
-  const prodSel = productos.find((p) => String(p.id) === productId);
-
-  /** Prellenar desde una cuota: el texto y el monto ya estaban pactados. */
-  const cumplirCuota = (p: DbEntregaPactada) => {
-    setPactada(p);
-    setTipo("LIBRE");
-    setDescripcion(p.descripcionEsperada);
-    setValor(String(p.valorEsperado));
-    setErr(null);
-  };
-
-  const limpiar = () => {
-    setDescripcion(""); setValor(""); setProductId(""); setCantidad("");
-    setSumarAStock(false); setEntregaComp(null); setPactada(null);
-  };
-
-  const registrar = async () => {
-    setErr(null);
-    const body: Record<string, unknown> = {
-      tipo,
-      notas: descripcion.trim() || undefined,
-      comprobanteUrl: entregaComp || undefined,
-      /* Cierra la cuota en la misma operación: sin esto la entrega queda suelta
-         y el plan sigue diciendo que la persona no cumplió. */
-      pactadaId: pactada?.id,
-    };
-    if (tipo === "LIBRE") {
-      const v = Number(valor);
-      if (!descripcion.trim() || !v || v <= 0) { setErr("Describe la entrega y pon un valor."); return; }
-      body.descripcion = descripcion.trim();
-      body.valorManual = v;
-    } else {
-      const pid = Number(productId);
-      if (!pid) { setErr("Elige un producto del catálogo."); return; }
-      body.productId = pid;
-      body.descripcion = descripcion.trim() || undefined;
-      if (cantidad) body.cantidad = Number(cantidad);
-      if (valor) body.valorManual = Number(valor);
-      body.sumarAStock = sumarAStock;
-    }
-    setSaving(true);
-    try {
-      const res = await fetch(`/api/adelantos/${adelantoId}/entregas`, {
-        method: "POST",
-        headers: jsonHeaders(),
-        credentials: "include",
-        body: JSON.stringify(body),
-      });
-      if (res.ok) {
-        limpiar();
-        await load();
-        onChange();
-        return;
-      }
-      const j = await leerJson<{ error?: string }>(res);
-      setErr(j?.error ?? "No se pudo registrar la entrega.");
-    } catch (e) {
-      logger.error("[adelantos] no se pudo registrar la entrega", { error: String(e) });
-      setErr("No se pudo registrar la entrega. Revisa la conexión.");
-    } finally {
-      setSaving(false);
-    }
-  };
+  const entrega = useRegistrarEntrega(adelantoId, async () => {
+    await load();
+    onChange();
+  });
 
   /** Un solo modal secundario a la vez, sobre este mismo. */
   const [anulando, setAnulando] = useState(false);
   const [editandoNotas, setEditandoNotas] = useState(false);
+  /** Lo que dejó la corrección de dirección para leer (la caja no se movió, el tope). */
+  const [avisoCorreccion, setAvisoCorreccion] = useState<string | null>(null);
 
   const badge = a ? STATUS_BADGE[a.status] : null;
   const bloqueado = !a || a.status === "CANCELADO";
+  /* ADR-448: en lo RECIBIDO el que entrega es el negocio; los textos se dan vuelta. */
+  const dir = a ? leerDireccion(a) : { direccion: "DADO" as const, concepto: null };
+  const recibido = dir.direccion === "RECIBIDO";
+  /* El signo lo dice el rótulo: «Le debes −S/ 50» en un recibido excedido era al revés. */
+  const q = a ? quienDebe({ direccion: dir.direccion, status: a.status, saldoPendiente: a.saldoPendiente }) : null;
+  /* WASACO: su aserrío ya se cobra solo en cada corrida (ADR-448 §2.7). */
+  const aserrioSeCobraSolo = recibido && dir.concepto === "SERVICIO" && !!a?.beneficiario?.forestPartyId;
 
   return (
     <ModalShell
@@ -178,18 +98,7 @@ export default function DetalleAdelantoModal({
             </div>
             <button
               type="button"
-              onClick={() => void descargarComprobante({
-                codigoOperacion: a.codigoOperacion,
-                reciboManual: a.reciboManual,
-                persona: a.beneficiario?.nombre ?? "—",
-                documento: a.beneficiario?.documento,
-                telefono: a.beneficiario?.telefono,
-                monto: a.montoAdelantado,
-                moneda: a.moneda,
-                fecha: a.fechaAdelanto,
-                modalidad: a.modalidad,
-                notas: a.notas,
-              })}
+              onClick={() => void imprimirComprobante(a)}
               className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
             >
               <FileText className="h-4 w-4" /> Comprobante para firmar
@@ -208,13 +117,22 @@ export default function DetalleAdelantoModal({
               <FichaAdelanto adelanto={a} />
 
               <div className="grid grid-cols-3 gap-3">
-                <MiniStat label="Adelantado" value={fmtMon(a.montoAdelantado, a.moneda)} />
-                <MiniStat label="Entregado" value={fmtMon(a.totalEntregado, a.moneda)} tone="success" />
-                <MiniStat label="Saldo" value={fmtMon(a.saldoPendiente, a.moneda)} tone={a.saldoPendiente > 0 ? "warning" : "neutral"} />
+                <MiniStat label={recibido ? "Te dio" : "Adelantado"} value={fmtMon(a.montoAdelantado, a.moneda)} />
+                <MiniStat label={recibido ? "Ya le diste" : "Entregado"} value={fmtMon(a.totalEntregado, a.moneda)} tone="success" />
+                <MiniStat
+                  label={q === "te-debe" ? "Te debe" : q === "le-debes" ? "Le debes" : "Saldo"}
+                  value={fmtMon(Math.abs(a.saldoPendiente), a.moneda)}
+                  tone={q ? "warning" : "neutral"}
+                />
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
                 <span className={`inline-block rounded-full px-3 py-1 text-sm font-bold ${badge?.className ?? ""}`}>{badge?.label}</span>
+                {recibido && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-info-500)]/12 px-3 py-1 text-sm font-bold text-[var(--data-info-ink)]">
+                    <ArrowDownToLine className="h-4 w-4" aria-hidden /> {dir.concepto ? ETIQUETA_CONCEPTO[dir.concepto] : "Plata que recibiste"}
+                  </span>
+                )}
                 {a.comprobanteUrl && (
                   <a href={a.comprobanteUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm font-bold text-primary hover:underline">
                     {/* eslint-disable-next-line @next/next/no-img-element -- thumbnail comprobante */}
@@ -234,93 +152,30 @@ export default function DetalleAdelantoModal({
                 </div>
               </div>
 
-              <PlanPactado pactadas={a.entregasPactadas} moneda={a.moneda} bloqueado={bloqueado} onCumplir={cumplirCuota} />
+              <PlanPactado pactadas={a.entregasPactadas} moneda={a.moneda} bloqueado={bloqueado} onCumplir={entrega.cumplirCuota} />
+
+              {/* Cargado del lado equivocado (ADL-0003/4 de Wasaco): se da vuelta
+                  sólo sin entregas, y sin tocar la caja. */}
+              {a.status !== "CANCELADO" && a.entregas.length === 0 && (
+                <CorregirDireccion
+                  adelantoId={a.id}
+                  direccion={dir.direccion}
+                  onCorregido={(aviso) => { setAvisoCorreccion(aviso); void load(); onChange(); }}
+                />
+              )}
+              {avisoCorreccion && (
+                <p role="status" className="text-sm font-semibold text-[var(--data-warning-ink)]">
+                  {avisoCorreccion}
+                </p>
+              )}
             </div>
 
             <div className="space-y-4">
-              {a.status !== "CANCELADO" && (
-                <div className="space-y-3 rounded-2xl border border-[var(--rule-base)] p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <CardTitle className="text-base font-extrabold text-[var(--text-primary)]">Registrar entrega</CardTitle>
-                    {pactada && (
-                      <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
-                        Cumple la cuota {pactada.numero}
-                        <button type="button" onClick={limpiar} aria-label="Desvincular la cuota" className="font-extrabold hover:underline">
-                          ×
-                        </button>
-                      </span>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    {(["LIBRE", "PRODUCTO"] as const).map((t) => (
-                      <button
-                        key={t}
-                        type="button"
-                        onClick={() => setTipo(t)}
-                        className={`h-12 rounded-2xl border-2 text-base font-semibold transition-colors ${
-                          tipo === t
-                            ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-                            : "border-[var(--rule-base)] text-[var(--text-secondary)]"
-                        }`}
-                      >
-                        {t === "LIBRE" ? "Servicio / libre" : "Producto"}
-                      </button>
-                    ))}
-                  </div>
-                  <input
-                    value={descripcion}
-                    onChange={(e) => setDescripcion(e.target.value)}
-                    placeholder={tipo === "LIBRE" ? "Ej: reparación del local" : "Descripción (opcional)"}
-                    aria-label="Descripción de la entrega"
-                    className={inputCls}
-                  />
-                  {tipo === "PRODUCTO" && (
-                    <div className="grid grid-cols-2 gap-2">
-                      <select value={productId} onChange={(e) => setProductId(e.target.value)} aria-label="Producto" className={inputCls}>
-                        <option value="">Elige un producto…</option>
-                        {productos.map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.name} — {formatCurrency(p.price)}{p.stock != null ? ` · stock ${p.stock}` : ""}
-                          </option>
-                        ))}
-                      </select>
-                      <input type="number" min={1} value={cantidad} onChange={(e) => setCantidad(e.target.value)} placeholder="Cantidad" aria-label="Cantidad" className={`${inputCls} tabular-nums`} />
-                    </div>
-                  )}
-                  {tipo === "PRODUCTO" && prodSel && cantidad && Number(cantidad) > 0 && !valor && (
-                    <p className="text-sm text-[var(--text-secondary)]">
-                      Valor estimado: <strong className="text-[var(--text-primary)]">{formatCurrency(prodSel.price * Number(cantidad))}</strong> ({Number(cantidad)} × {formatCurrency(prodSel.price)})
-                    </p>
-                  )}
-                  <input
-                    type="number"
-                    value={valor}
-                    onChange={(e) => setValor(e.target.value)}
-                    placeholder={tipo === "LIBRE" ? "Valor en S/" : "Valor S/ (vacío = precio × cantidad)"}
-                    aria-label="Valor de la entrega"
-                    className={`${inputCls} tabular-nums`}
-                  />
-                  {tipo === "PRODUCTO" && (
-                    <label className="flex items-center gap-2 text-base font-semibold text-[var(--text-secondary)]">
-                      <input type="checkbox" checked={sumarAStock} onChange={(e) => setSumarAStock(e.target.checked)} className="h-5 w-5" />
-                      Sumar al stock del inventario
-                    </label>
-                  )}
-                  <ComprobanteUpload url={entregaComp} onChange={setEntregaComp} />
-                  {err && <p className="text-base font-semibold text-[var(--data-error)]">{err}</p>}
-                  <button
-                    onClick={registrar}
-                    disabled={saving}
-                    className="inline-flex h-12 items-center gap-2 rounded-2xl bg-[var(--data-success)] px-5 text-base font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
-                  >
-                    <CheckCircle className="h-5 w-5" /> {saving ? "Registrando…" : "Registrar entrega"}
-                  </button>
-                </div>
-              )}
+              {a.status !== "CANCELADO" && <RegistrarEntrega entrega={entrega} recibido={recibido} aserrioSeCobraSolo={aserrioSeCobraSolo} />}
 
               <div>
                 <CardTitle className="mb-2 text-base font-extrabold text-[var(--text-primary)]">
-                  Historial de entregas ({a.entregas.length})
+                  {recibido ? "Lo que le diste" : "Historial de entregas"} ({a.entregas.length})
                 </CardTitle>
                 {a.entregas.length === 0 ? (
                   <p className="text-base text-[var(--text-tertiary)]">Todavía no hay entregas.</p>
@@ -336,7 +191,7 @@ export default function DetalleAdelantoModal({
                             {e.descripcion || (e.tipo === "PRODUCTO" ? `Producto #${e.productId}` : "Entrega")}
                           </p>
                           <p className="text-sm tabular-nums text-[var(--text-tertiary)]">
-                            {new Date(e.fecha).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" })}
+                            {formatDate(e.fecha)}
                             {e.cantidad != null && ` · ${e.cantidad} u.`}
                             {e.sumadoAStock && " · sumado al stock"}
                           </p>
@@ -373,6 +228,7 @@ export default function DetalleAdelantoModal({
           persona={a.beneficiario?.nombre ?? "—"}
           monto={a.montoAdelantado}
           moneda={a.moneda}
+          recibido={recibido}
           onClose={() => setAnulando(false)}
           onAnulado={() => { setAnulando(false); void load(); onChange(); }}
         />
@@ -386,49 +242,5 @@ export default function DetalleAdelantoModal({
         />
       )}
     </ModalShell>
-  );
-}
-
-/** Comprobante de una entrega: se adjunta desde el disco. */
-function ComprobanteUpload({ url, onChange }: { url: string | null; onChange: (u: string | null) => void }) {
-  const [up, setUp] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-  const handle = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setErr(null);
-    setUp(true);
-    const fd = new FormData();
-    fd.append("file", file);
-    fd.append("folder", "media");
-    try {
-      const res = await fetch("/api/upload", { method: "POST", headers: csrfHeaders(), credentials: "include", body: fd });
-      const j = await leerJson<{ url?: string; error?: string }>(res);
-      if (res.ok && j?.url) onChange(j.url);
-      else setErr(j?.error ?? "No se pudo subir la imagen.");
-    } catch (e2) {
-      logger.error("[adelantos] fallo la subida del comprobante", { error: String(e2) });
-      setErr("No se pudo subir la imagen.");
-    } finally {
-      setUp(false);
-    }
-  };
-  return (
-    <div>
-      {url ? (
-        <div className="flex items-center gap-2">
-          {/* eslint-disable-next-line @next/next/no-img-element -- thumbnail desde Supabase Storage */}
-          <img src={url} alt="comprobante" className="h-12 w-12 rounded-lg border border-[var(--rule-base)] object-cover" />
-          <a href={url} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-primary hover:underline">Ver</a>
-          <button type="button" onClick={() => onChange(null)} className="text-sm font-bold text-[var(--data-error)] hover:underline">Quitar</button>
-        </div>
-      ) : (
-        <label className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary">
-          <FileText className="h-4 w-4" /> {up ? "Subiendo…" : "Adjuntar comprobante"}
-          <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handle} className="hidden" disabled={up} />
-        </label>
-      )}
-      {err && <p className="mt-1 text-sm text-[var(--data-error)]">{err}</p>}
-    </div>
   );
 }

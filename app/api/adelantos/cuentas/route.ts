@@ -5,6 +5,7 @@ import { ForestDirectorioDB } from "@/lib/db/forest-directorio.db";
 import { unificarCuentas, type ParteParaUnificar } from "@/lib/adelantos/cuenta-unificada";
 import type { MovimientoCuenta } from "@/lib/forestal/cuenta-corriente";
 import { requireAdmin } from "@/lib/require-admin";
+import { permisoAdelantos } from "@/lib/adelantos/permisos";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 
@@ -25,13 +26,16 @@ const LIMITE_MOVIMIENTOS_FORESTAL = 2000;
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
+  const sinPermiso = permisoAdelantos(auth.role, "read");
+  if (sinPermiso) return sinPermiso;
   try {
     const [beneficiarios, saldosAdelantos, forestal] = await Promise.all([
       AdelantosDB.listBeneficiarios(auth.tenantId),
       // `saldosPorPersona` agrega EN LA BASE (groupBy): a diferencia de
       // `list()` no tiene tope de 500 filas — una cuenta no puede quedar
       // corta sin avisar.
-      AdelantosDB.saldosPorPersona(auth.tenantId),
+      // ADR-448: con las dos direcciones — lo recibido resta del neto.
+      AdelantosDB.saldosPorPersona(auth.tenantId, { direccion: "todas" }),
       isSpecializationEnabled(auth.tenantId, "spec:forestal:ctp-libro"),
     ]);
 
@@ -64,6 +68,7 @@ export async function GET(req: NextRequest) {
         saldoPendiente: g.saldoPendiente,
         moneda: g.moneda,
         cantidad: g.cantidad,
+        direccion: g.direccion,
       })),
       partes,
       movimientos,

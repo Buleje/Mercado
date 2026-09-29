@@ -19,8 +19,14 @@ import LiquidarCuentaModal from "./liquidar/LiquidarCuentaModal";
 
 function chipsDe(persona: CuentaPersona): { clave: string; texto: string }[] {
   const chips: { clave: string; texto: string }[] = [];
-  if (persona.adelantos?.teDebe) chips.push({ clave: "adel-debe", texto: `Adelantos: te debe ${fmtMon(persona.adelantos.teDebe)}` });
-  if (persona.adelantos?.aFavorSuyo) chips.push({ clave: "adel-favor", texto: `Adelantos: a favor suyo ${fmtMon(persona.adelantos.aFavorSuyo)}` });
+  /* ADR-448: `teDebe`/`aFavorSuyo` son sólo lo dado. En pantalla se juntan
+     las dos direcciones: «te debe» suma lo recibido que diste de más, y «le
+     debes» es lo que te entregó de más + lo que te pagó antes o te prestó. */
+  const a = persona.adelantos;
+  const teDebe = a ? Math.round((a.teDebe + (a.recibidoExcedido ?? 0)) * 100) / 100 : 0;
+  const leDebes = a ? (a.leDebes ?? a.aFavorSuyo) : 0;
+  if (teDebe) chips.push({ clave: "adel-debe", texto: `Adelantos: te debe ${fmtMon(teDebe)}` });
+  if (leDebes) chips.push({ clave: "adel-favor", texto: `Adelantos: le debes ${fmtMon(leDebes)}` });
   for (const [concepto, monto] of Object.entries(persona.madera?.porConcepto ?? {})) {
     if (!monto) continue;
     const label = CONCEPTO_LABEL[concepto as Concepto] ?? concepto;

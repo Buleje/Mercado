@@ -14,7 +14,6 @@
  */
 
 import type { ComponentType, ReactNode } from "react";
-import { BlockTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 
 /** Texto, select y fecha: 44 px de alto (toque cómodo en el celular), foco con el anillo del acento. */
@@ -59,31 +58,10 @@ export function claseChipFiltro(activo: boolean): string {
 
 /**
  * Un bloque de un formulario largo: título con su regla y la grilla de campos.
- * Separa «quién es / contacto / trabajo» en vez de 13 campos seguidos.
+ * Subió a `components/admin/shared/SeccionForm` (lo usa también el alta de
+ * adelanto, ADR-448); se re-exporta acá para que RRHH no cambie sus imports.
  */
-export function SeccionForm({
-  titulo,
-  descripcion,
-  children,
-  columnas = 2,
-  className,
-}: {
-  titulo: string;
-  descripcion?: ReactNode;
-  children: ReactNode;
-  columnas?: 1 | 2;
-  className?: string;
-}) {
-  return (
-    <section className={cn("min-w-0", className)}>
-      <div className="mb-4 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 border-b border-[var(--rule-soft)] pb-2">
-        <BlockTitle as="h3">{titulo}</BlockTitle>
-        {descripcion && <p className="text-xs text-[var(--text-tertiary)]">{descripcion}</p>}
-      </div>
-      <div className={cn("grid grid-cols-1 gap-x-4 gap-y-4", columnas === 2 && "sm:grid-cols-2")}>{children}</div>
-    </section>
-  );
-}
+export { SeccionForm } from "@/components/admin/shared/SeccionForm";
 
 const TONO_AVISO = {
   info: "border-[var(--data-info-500)]/30 bg-[var(--data-info-500)]/5 text-[var(--data-info-700)] dark:text-[var(--data-info-500)]",

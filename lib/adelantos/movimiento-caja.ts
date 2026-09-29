@@ -1,6 +1,7 @@
 import "server-only";
 import { CashRegistersMovementsDB } from "@/lib/db/cash-registers-movements.db";
 import { logger } from "@/lib/logger";
+import type { Prisma } from "@/lib/generated/prisma/client";
 
 /**
  * El puente entre un adelanto y la caja.
@@ -81,6 +82,42 @@ export async function moverCaja(
   }
 }
 
+/**
+ * `moverCaja` DENTRO de la transacción del adelanto (ADR-448, revisión de
+ * seguridad): el alta, la entrega o la anulación y su movimiento se confirman
+ * juntos o no se confirma ninguno.
+ *
+ * Por qué ya no «después del commit»: entre el alta guardada y el egreso anotado
+ * pasaban 0,8–2 s (medido en 13 filas reales), y en ese hueco `corregirDireccion`
+ * no veía el movimiento: DADO X → RECIBIDO → devolver X = la persona cobraba 2X.
+ *
+ * Qué cambia de la regla 1 de arriba: sin caja abierta, sigue igual (el adelanto
+ * se guarda y vuelve `sinCaja`). Si la base falla al anotar el movimiento, ahora
+ * NO se guarda nada y la pantalla muestra el error para reintentar — antes el
+ * adelanto quedaba y el movimiento se perdía en silencio, y ese desfase es el que
+ * habilitaba el doble pago.
+ */
+export async function moverCajaEnTx(
+  tx: Prisma.TransactionClient,
+  tenantId: string,
+  opciones: { tipo: "ingreso" | "egreso"; monto: number; metodo: MetodoPago; etiqueta: string },
+): Promise<ResultadoMovimiento> {
+  if (!(opciones.monto > 0)) return { sinCaja: false };
+  const caja = await CashRegistersMovementsDB.findCurrentOpenRegisterEnTx(tx, tenantId);
+  if (!caja) {
+    logger.warn("[adelantos] sin caja abierta: el movimiento no se anota", { tenantId, etiqueta: opciones.etiqueta });
+    return { sinCaja: true };
+  }
+  const mov = await CashRegistersMovementsDB.createMovementEnTx(tx, {
+    cashRegisterId: caja.id,
+    type: opciones.tipo,
+    amount: Math.round(opciones.monto * 100) / 100,
+    method: opciones.metodo,
+    description: opciones.etiqueta,
+  });
+  return { sinCaja: false, movimientoId: mov.id };
+}
+
 /** Cómo se lee el egreso en el arqueo. */
 export function etiquetaEgreso(codigo: string | null | undefined, persona: string): string {
   return `Adelanto ${codigo ?? ""} · ${persona}`.replace(/\s+/g, " ").trim();
@@ -94,6 +131,28 @@ export function etiquetaIngreso(codigo: string | null | undefined, persona: stri
 /** Cómo se lee la reversión cuando el adelanto se anula y la plata vuelve. */
 export function etiquetaReversion(codigo: string | null | undefined, persona: string): string {
   return `Anulación de adelanto ${codigo ?? ""} · ${persona} (devolución)`.replace(/\s+/g, " ").trim();
+}
+
+/**
+ * Cómo se lee en el arqueo la plata de un adelanto RECIBIDO (ADR-448): el alta
+ * entra, la devolución y la anulación salen. Una sola función con el momento,
+ * y no tres, para que las etiquetas de lo dado sigan siendo exactamente las de
+ * antes (el historial de finanzas reconoce el egreso de un adelanto DADO por su
+ * código; el de un recibido no es un duplicado, es plata que salió).
+ */
+export function etiquetaRecibido(
+  momento: "alta" | "devolucion" | "anulacion",
+  codigo: string | null | undefined,
+  persona: string,
+): string {
+  const cod = codigo ?? "";
+  const texto =
+    momento === "alta"
+      ? `Adelanto recibido ${cod} · ${persona}`
+      : momento === "devolucion"
+        ? `Devolución de adelanto recibido ${cod} · ${persona}`
+        : `Anulación de adelanto recibido ${cod} · ${persona} (devolución)`;
+  return texto.replace(/\s+/g, " ").trim();
 }
 
 /** Cómo se lee en el arqueo el pago de una liquidación de cuenta (ADR-413). */

@@ -12,6 +12,7 @@
  */
 
 import type { DbAdelanto } from "@/lib/db/adelantos.db";
+import { esRecibido } from "@/lib/adelantos/direccion";
 
 const DIA = 86_400_000;
 
@@ -57,6 +58,8 @@ export function proximosVencimientos(
 
   for (const a of adelantos) {
     if (a.status !== "ABIERTO" || !(a.saldoPendiente > 0)) continue;
+    /* ADR-448: lo recibido vence para el negocio, no para la persona — no es cobranza. */
+    if (esRecibido(a)) continue;
 
     const base = {
       adelantoId: a.id,

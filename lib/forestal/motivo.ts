@@ -14,8 +14,16 @@
  */
 import { z } from "zod";
 
-/** Los invisibles que `trim()` no quita: espacio de ancho cero, unión, no-unión, WORD JOINER y BOM. */
-const INVISIBLES = /[​-‍⁠﻿]/g;
+/**
+ * Los invisibles que `trim()` no quita: espacio de ancho cero, unión, no-unión,
+ * WORD JOINER y BOM; los controles de dirección del texto (U+202A–U+202E y
+ * U+2066–U+2069, que además pueden dar vuelta lo que se lee en pantalla) y el
+ * guion blando (U+00AD). Y los rellenos Hangul (U+115F, U+1160, U+3164,
+ * U+FFA0): se ven en blanco pero `\p{L}` los cuenta como LETRAS, así que tres
+ * de ellos pasaban por un motivo de tres letras. Revisión de seguridad ADR-448:
+ * con cualquiera de esos un motivo podía ser invisible o leerse al revés.
+ */
+const INVISIBLES = /[\u200B-\u200D\u2060\uFEFF\u202A-\u202E\u2066-\u2069\u00AD\u115F\u1160\u3164\uFFA0]/g;
 /** Letras de cualquier alfabeto (ñ, tildes incluidas). */
 const LETRA = /\p{L}/gu;
 

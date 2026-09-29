@@ -78,7 +78,13 @@ export default function LiquidarCuentaModal({
   const saldosFrescos = useMemo(() => (partidas ? saldosDe(partidas) : null), [partidas]);
   const teDebeAdelantos = saldosFrescos?.adelantosTeDebe ?? persona.adelantos?.teDebe ?? 0;
   const maderaSaldo = partidas?.forestal ? (saldosFrescos?.maderaSaldo ?? 0) : (persona.madera?.saldo ?? 0);
-  const netoCabecera = r2(teDebeAdelantos + maderaSaldo);
+  /* ADR-448: lo recibido no entra a la liquidación (va en `fuera`), pero la
+     cabecera lo dice y el neto lo cuenta igual que la fila de afuera:
+     te debe − le debes (entregó de más + te pagó antes o te prestó) + madera. */
+  const recibidoLeDebes = saldosFrescos?.recibidoLeDebes ?? persona.adelantos?.recibidoPendiente ?? 0;
+  const recibidoTeDebe = saldosFrescos?.recibidoTeDebe ?? persona.adelantos?.recibidoExcedido ?? 0;
+  const leDebesAdelantos = r2((persona.adelantos?.aFavorSuyo ?? 0) + recibidoLeDebes);
+  const netoCabecera = r2(teDebeAdelantos + recibidoTeDebe - leDebesAdelantos + maderaSaldo);
 
   // Cruzar exige el vínculo EXPLÍCITO (ADR-413 §4): la fila puede venir unida
   // por documento (para MOSTRAR alcanza), pero mover plata entre libretas no.
@@ -129,7 +135,8 @@ export default function LiquidarCuentaModal({
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2 text-sm font-semibold text-[var(--text-secondary)]">
             <Scale className="h-4 w-4 shrink-0" aria-hidden />
-            Adelantos: {fmtMon(teDebeAdelantos)} · Cuenta forestal: {leerMadera(maderaSaldo)}
+            Adelantos: {fmtMon(teDebeAdelantos)}
+            {leDebesAdelantos > 0.005 && ` · le debes ${fmtMon(leDebesAdelantos)}`} · Cuenta forestal: {leerMadera(maderaSaldo)}
           </div>
           <p className="min-w-0 break-words text-right text-base font-extrabold text-[var(--text-primary)]">
             {leerNeto(netoCabecera, persona.nombre)}
@@ -180,6 +187,7 @@ export default function LiquidarCuentaModal({
               nombre={persona.nombre}
               vinculoFaltante={necesitaConfirmarVinculo}
               maderaAFavorSuyo={Math.max(0, -(persona.madera?.saldo ?? 0))}
+              aFavorSuyoAdelantos={persona.adelantos?.aFavorSuyo ?? 0}
             />
           </div>
 

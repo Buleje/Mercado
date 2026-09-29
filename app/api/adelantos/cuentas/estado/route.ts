@@ -8,6 +8,7 @@ import { sonLaMismaCuenta } from "@/lib/adelantos/cuenta-unificada";
 import { datosPagoDelNegocio, estadoCuentaUnificado, totalesDeEstadoCuenta } from "@/lib/adelantos/estado-cuenta-unificado";
 import type { MovimientoCuenta } from "@/lib/forestal/cuenta-corriente";
 import { requireAdmin } from "@/lib/require-admin";
+import { permisoAdelantos } from "@/lib/adelantos/permisos";
 import { logger } from "@/lib/logger";
 
 /**
@@ -34,6 +35,8 @@ const QuerySchema = z
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
+  const sinPermiso = permisoAdelantos(auth.role, "read");
+  if (sinPermiso) return sinPermiso;
   try {
     const sp = req.nextUrl.searchParams;
     const parsed = QuerySchema.safeParse({
@@ -84,7 +87,8 @@ export async function GET(req: NextRequest) {
     }
 
     let adelantos: Awaited<ReturnType<typeof AdelantosDB.list>> = [];
-    if (persona) adelantos = await AdelantosDB.list(auth.tenantId, { beneficiarioId: persona.id });
+    // ADR-448: las dos direcciones; lo recibido va con el signo al revés.
+    if (persona) adelantos = await AdelantosDB.list(auth.tenantId, { beneficiarioId: persona.id, direccion: "todas" });
 
     const lineas = estadoCuentaUnificado(
       adelantos.map((a) => ({
@@ -93,6 +97,7 @@ export async function GET(req: NextRequest) {
         fechaAdelanto: a.fechaAdelanto,
         montoAdelantado: a.montoAdelantado,
         moneda: a.moneda,
+        direccion: a.direccion,
         entregas: a.entregas.map((e) => ({ fecha: e.fecha, descripcion: e.descripcion ?? null, valor: e.valor })),
       })),
       movimientos,

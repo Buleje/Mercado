@@ -50,8 +50,10 @@ export default function SeleccionarPersonaModal({
 
   const filtradas = useMemo(() => {
     const t = sinTildes(q);
-    if (!t) return beneficiarios;
-    return beneficiarios.filter(
+    /* Una persona dada de baja «se deja de ofrecer» (baja lógica): no se le da plata nueva. */
+    const activas = beneficiarios.filter((b) => b.activo !== false);
+    if (!t) return activas;
+    return activas.filter(
       (b) =>
         sinTildes(b.nombre).includes(t) ||
         (b.documento ?? "").includes(t) ||
@@ -91,8 +93,8 @@ export default function SeleccionarPersonaModal({
           aria-expanded={creando}
           className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-colors ${
             creando
-              ? "bg-primary/12 text-[var(--accent-ink)] ring-1 ring-primary/40 dark:text-[var(--accent)]"
-              : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-primary/10 hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
+              ? "bg-primary/12 text-[var(--accent-ink)] ring-1 ring-primary/40"
+              : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-primary/10 hover:text-[var(--accent-ink)]"
           }`}
         >
           <UserPlus className="h-5 w-5" />
@@ -166,7 +168,7 @@ function FilaPersona({
         elegida ? "bg-primary/12 ring-2 ring-primary" : "hover:bg-[var(--surface-raised)]"
       }`}
     >
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-base font-extrabold text-[var(--accent-ink)] dark:text-[var(--accent)]">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-base font-extrabold text-[var(--accent-ink)]">
         {persona.nombre.charAt(0).toUpperCase()}
       </span>
       <span className="min-w-0 flex-1">

@@ -9,6 +9,7 @@
 import { MODALIDAD_LABEL, STATUS_BADGE } from "@/components/admin/adelantos/shared";
 import { cumplimientoDe, type ResumenPersona } from "@/lib/adelantos/saldo-persona";
 import type { DbAdelanto, DbBeneficiario } from "@/lib/db/adelantos.db";
+import { direccionDe, ETIQUETA_CONCEPTO, ETIQUETA_DIRECCION } from "@/lib/adelantos/direccion";
 
 /**
  * Una celda de CSV, entrecomillada cuando hace falta.
@@ -31,8 +32,9 @@ const dia = (iso?: string | null) => (iso ? new Date(iso).toLocaleDateString("es
  * la auditoría de esta sesión. En la celda del CSV: "S/ X.XX", o "S/ X.XX ·
  * $ Y.YY" si la persona debe en las dos.
  */
-const montoCsv = (m: Record<string, number>): string => {
-  const partes = Object.entries(m).filter(([, v]) => v !== 0);
+const montoCsv = (m: Record<string, number> | undefined): string => {
+  /* `undefined`: una respuesta de antes de ADR-448 no trae `teDebe`/`leDebes`. */
+  const partes = Object.entries(m ?? {}).filter(([, v]) => v !== 0);
   if (partes.length === 0) return "0.00";
   return partes.map(([moneda, v]) => (moneda === "USD" ? `$ ${v.toFixed(2)}` : `S/ ${v.toFixed(2)}`)).join(" · ");
 };
@@ -44,6 +46,7 @@ const COLUMNAS = [
   "Documento",
   "Teléfono",
   "Fecha",
+  "Dirección",
   "Modalidad",
   "Motivo",
   "Moneda",
@@ -56,7 +59,18 @@ const COLUMNAS = [
   "Cuotas cumplidas",
 ] as const;
 
-/** El CSV completo (con BOM, o Excel se come las tildes) de los adelantos dados. */
+/**
+ * «Plata que diste» o «Plata que recibiste · Préstamo que te hicieron» (ADR-448).
+ * Sin la columna, un recibido de S/ 1 731 abierto se leía en Excel como una
+ * deuda de la persona.
+ */
+function direccionCsv(a: Pick<DbAdelanto, "direccion" | "conceptoRecibido">): string {
+  const d = direccionDe(a.direccion);
+  const concepto = d === "RECIBIDO" && a.conceptoRecibido ? ETIQUETA_CONCEPTO[a.conceptoRecibido] : null;
+  return [ETIQUETA_DIRECCION[d], concepto].filter(Boolean).join(" · ");
+}
+
+/** El CSV completo (con BOM, o Excel se come las tildes) de los adelantos, dados y recibidos. */
 export function adelantosACsv(adelantos: readonly DbAdelanto[]): string {
   const filas = adelantos.map((a) => {
     const entregado = Math.max(0, a.montoAdelantado - a.saldoPendiente);
@@ -68,6 +82,7 @@ export function adelantosACsv(adelantos: readonly DbAdelanto[]): string {
       a.beneficiario?.documento ?? "",
       a.beneficiario?.telefono ?? "",
       dia(a.fechaAdelanto),
+      direccionCsv(a),
       MODALIDAD_LABEL[a.modalidad] ?? a.modalidad,
       a.notas ?? "",
       a.moneda,
@@ -106,6 +121,8 @@ const COLUMNAS_PERSONAS = [
   "Ya devolvió",
   "Cumplimiento %",
   "A favor de ella",
+  "Te debe",
+  "Le debes",
   "Adelantos abiertos",
   "Liquidados",
   "Cancelados",
@@ -130,6 +147,10 @@ export function personasACsv(
       montoCsv(p.totalEntregado),
       cumplimiento == null ? "" : String(cumplimiento),
       montoCsv(p.saldoAFavor),
+      /* ADR-448: las dos direcciones juntas, como en la ficha. «Debe hoy» y «A
+         favor de ella» siguen siendo sólo lo dado (gobiernan el tope). */
+      montoCsv(p.teDebe ?? p.saldoPendiente),
+      montoCsv(p.leDebes ?? p.saldoAFavor),
       String(p.adelantosAbiertos),
       String(p.adelantosLiquidados),
       String(p.adelantosCancelados),

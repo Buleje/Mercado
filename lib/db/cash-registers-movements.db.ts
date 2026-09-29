@@ -12,6 +12,7 @@
  */
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@/lib/generated/prisma/client";
 
 export type DbCashMovementRecord = {
   id: string;
@@ -92,6 +93,25 @@ export const CashRegistersMovementsDB = {
     description: string;
   }): Promise<DbCashMovementRecord> {
     const row = await prisma.cashMovement.create({ data });
+    return mapMovement(row);
+  },
+
+  /**
+   * La caja abierta del tenant, leída DENTRO de la transacción de quien llama
+   * (ADR-448): el alta de un adelanto y su movimiento se escriben juntos, así
+   * no hay un instante con el adelanto guardado y la caja sin anotar.
+   */
+  async findCurrentOpenRegisterEnTx(tx: Prisma.TransactionClient, tenantId: string): Promise<{ id: string } | null> {
+    if (!tenantId) throw new Error("tenantId is required");
+    return tx.cashRegister.findFirst({ where: { tenantId, status: "abierta" }, select: { id: true } });
+  },
+
+  /** `createMovement` dentro de la transacción de quien llama (ver arriba). */
+  async createMovementEnTx(
+    tx: Prisma.TransactionClient,
+    data: { cashRegisterId: string; type: "ingreso" | "egreso"; amount: number; method: string; description: string },
+  ): Promise<DbCashMovementRecord> {
+    const row = await tx.cashMovement.create({ data });
     return mapMovement(row);
   },
 

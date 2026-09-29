@@ -22,6 +22,7 @@ import {
   Pencil,
   Plus,
   Ruler,
+  ArrowDownToLine,
 } from "@buleje/design-system/icons";
 import { DataTable } from "@buleje/design-system";
 import type { DbAdelanto } from "@/lib/db/adelantos.db";
@@ -33,6 +34,8 @@ import {
   paginar,
   siguienteOrden,
 } from "@/lib/adelantos/ordenar-lista";
+import { ETIQUETA_CONCEPTO, quienDebe } from "@/lib/adelantos/direccion";
+import { leerDireccion } from "@/lib/adelantos/modos-alta";
 import { MODALIDAD_LABEL, PT_TIPO_LABEL, STATUS_BADGE, fmtMon, fmtPt } from "../shared";
 import AnularAdelantoModal from "./AnularAdelantoModal";
 import EditarNotasModal from "./EditarNotasModal";
@@ -175,6 +178,9 @@ export default function TablaAdelantos({
                 const badge = STATUS_BADGE[a.status];
                 const pct = avanceDe(a);
                 const cumplidas = a.entregasPactadas.filter((p) => p.cumplidaEn).length;
+                /* ADR-448: lo recibido se marca; lo dado (todo lo de antes) no lleva chip. */
+                const dir = leerDireccion(a);
+                const debe = quienDebe({ direccion: dir.direccion, status: a.status, saldoPendiente: a.saldoPendiente });
                 return (
                   <tr
                     key={a.id}
@@ -212,6 +218,14 @@ export default function TablaAdelantos({
                           2026-08-28): la modalidad se lee junto al código, no en
                           una columna aparte que sólo repetía info de la fila. */}
                       <span className="mt-1 flex flex-wrap items-center gap-1">
+                        {dir.direccion === "RECIBIDO" && (
+                          <span
+                            title={dir.concepto ? ETIQUETA_CONCEPTO[dir.concepto] : "Plata que recibiste"}
+                            className="inline-flex items-center gap-0.5 whitespace-nowrap rounded-full bg-[var(--data-info-500)]/12 px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-info-ink)]"
+                          >
+                            <ArrowDownToLine className="h-3 w-3" aria-hidden /> {dir.concepto === "PRESTAMO" ? "Te prestaron" : "Te pagaron antes"}
+                          </span>
+                        )}
                         <span
                           title={MODALIDAD_LABEL[a.modalidad] ?? a.modalidad}
                           className="inline-block whitespace-nowrap rounded-full bg-[var(--surface-sunken)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]"
@@ -263,6 +277,9 @@ export default function TablaAdelantos({
                     </td>
                     <td className="whitespace-nowrap px-2.5 py-2.5 text-right font-bold tabular-nums text-[var(--text-primary)]">
                       {fmtMon(a.saldoPendiente, a.moneda)}
+                      {debe === "le-debes" && (
+                        <span className="block text-xs font-semibold text-[var(--data-info-ink)]">le debes</span>
+                      )}
                     </td>
                     <td className="px-2.5 py-2.5">
                       <span className={`inline-block whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold ${badge?.className ?? ""}`}>
@@ -333,6 +350,7 @@ export default function TablaAdelantos({
           persona={anulando.beneficiario?.nombre ?? "—"}
           monto={anulando.montoAdelantado}
           moneda={anulando.moneda}
+          recibido={leerDireccion(anulando).direccion === "RECIBIDO"}
           onClose={() => setAnulando(null)}
           onAnulado={() => { setAnulando(null); onChange(); }}
         />

@@ -71,7 +71,7 @@ describe("unificarCuentas — vínculo explícito por id", () => {
     expect(f.vinculo).toBe("id");
     expect(f.beneficiarioId).toBe("b1");
     expect(f.parteId).toBe("p1");
-    expect(f.adelantos).toEqual({ teDebe: 200, aFavorSuyo: 0, abiertos: 1 });
+    expect(f.adelantos).toEqual({ teDebe: 200, aFavorSuyo: 0, abiertos: 1, recibidoPendiente: 0, recibidoExcedido: 0, recibidosAbiertos: 0, leDebes: 0, neto: 200 });
     expect(f.madera?.saldo).toBe(500);
     expect(f.neto).toBe(700); // 200 (adelanto) + 500 (aserrío) — se ve por separado y el neto suma
   });
@@ -99,7 +99,7 @@ describe("unificarCuentas — vínculo explícito por id", () => {
     expect(b.parteId).toBeNull();
     expect(b.vinculo).toBeNull();
     expect(b.madera).toBeNull();
-    expect(b.adelantos).toEqual({ teDebe: 80, aFavorSuyo: 0, abiertos: 1 });
+    expect(b.adelantos).toEqual({ teDebe: 80, aFavorSuyo: 0, abiertos: 1, recibidoPendiente: 0, recibidoExcedido: 0, recibidosAbiertos: 0, leDebes: 0, neto: 80 });
     // El total NO es 500+500+80: el saldo de la parte se cuenta UNA sola vez.
     expect(a.neto + b.neto).toBe(580);
   });
@@ -164,7 +164,7 @@ describe("unificarCuentas — grupos ya agregados (sin tope de filas)", () => {
       partes: [],
       movimientos: [],
     });
-    expect(filas[0].adelantos).toEqual({ teDebe: 45000, aFavorSuyo: 0, abiertos: 600 });
+    expect(filas[0].adelantos).toEqual({ teDebe: 45000, aFavorSuyo: 0, abiertos: 600, recibidoPendiente: 0, recibidoExcedido: 0, recibidosAbiertos: 0, leDebes: 0, neto: 45000 });
     expect(filas[0].neto).toBe(45000);
   });
 });
@@ -194,7 +194,7 @@ describe("unificarCuentas — CANCELADO/LIQUIDADO no cuentan, EXCEDIDO va a favo
       partes: [],
       movimientos: [],
     });
-    expect(filas[0].adelantos).toEqual({ teDebe: 300, aFavorSuyo: 50, abiertos: 1 });
+    expect(filas[0].adelantos).toEqual({ teDebe: 300, aFavorSuyo: 50, abiertos: 1, recibidoPendiente: 0, recibidoExcedido: 0, recibidosAbiertos: 0, leDebes: 50, neto: 250 });
     expect(filas[0].neto).toBe(250);
   });
 });

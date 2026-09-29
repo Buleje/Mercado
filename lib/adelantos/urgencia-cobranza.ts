@@ -16,6 +16,8 @@
  * Vive fuera del componente porque decide plata: se prueba sin renderizar nada.
  */
 
+import { esRecibido } from "@/lib/adelantos/direccion";
+
 /** Una entrega que se pactó para una fecha. `cumplidaEn` la saca de la cuenta. */
 export interface PactadaParaCobranza {
   fechaEsperada?: string | Date | null;
@@ -34,6 +36,8 @@ export interface AdelantoParaCobranza {
   status?: string;
   beneficiario?: { nombre?: string | null; telefono?: string | null } | null;
   entregasPactadas?: PactadaParaCobranza[] | null;
+  /** (ADR-448) Sin dirección = DADO. Lo recibido no se cobra: lo debe el negocio. */
+  direccion?: string | null;
 }
 
 /**
@@ -112,6 +116,8 @@ export function deudoresDeCobranza(
   for (const a of adelantos) {
     if (a.status && a.status !== "ABIERTO") continue;
     if (!(a.saldoPendiente > 0)) continue;
+    /* ADR-448: un recibido abierto es «le debes», no un deudor. */
+    if (esRecibido(a)) continue;
 
     /**
      * Por persona Y por moneda: sumar S/ y US$ del mismo beneficiario en un

@@ -54,7 +54,7 @@ export default function Vencimiento({
   const chip = (activo: boolean) =>
     `inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-sm font-bold transition-colors ${
       activo
-        ? "bg-primary/12 text-[var(--accent-ink)] ring-1 ring-primary/40 dark:text-[var(--accent)]"
+        ? "bg-primary/12 text-[var(--accent-ink)] ring-1 ring-primary/40"
         : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
     }`;
 

@@ -27,6 +27,8 @@ vi.mock("@/lib/prisma", () => ({
 vi.mock("@/lib/logger", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
 vi.mock("@/lib/adelantos/movimiento-caja", () => ({
   moverCaja: (...a: unknown[]) => moverCaja(...a),
+  /* ADR-448: la caja se mueve DENTRO de la transacción; el tx no importa acá. */
+  moverCajaEnTx: (_tx: unknown, ...a: unknown[]) => moverCaja(...a),
   etiquetaEgreso: () => "egreso",
   etiquetaIngreso: () => "ingreso",
   etiquetaReversion: () => "reversion",

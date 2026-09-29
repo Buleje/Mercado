@@ -12,6 +12,8 @@
  * alguien es exactamente lo que nadie quiere firmar.
  */
 
+import { esRecibido } from "@/lib/adelantos/direccion";
+
 export interface AdelantoDePlanilla {
   id: string;
   codigoOperacion?: string | null;
@@ -20,6 +22,8 @@ export interface AdelantoDePlanilla {
   saldoPendiente: number;
   moneda?: string | null;
   beneficiario?: { nombre?: string | null } | null;
+  /** (ADR-448) La base ya prohíbe un RECIBIDO por planilla; se filtra igual. */
+  direccion?: string | null;
 }
 
 export interface LineaDescuento {
@@ -45,7 +49,9 @@ export function proponerDescuentos(
   tope?: number | null,
 ): LineaDescuento[] {
   return adelantos
-    .filter((a) => a.modalidad === "DESCUENTO_PLANILLA" && a.status === "ABIERTO" && a.saldoPendiente > 0)
+    .filter(
+      (a) => a.modalidad === "DESCUENTO_PLANILLA" && a.status === "ABIERTO" && a.saldoPendiente > 0 && !esRecibido(a),
+    )
     .map((a) => {
       // Nunca más que lo que debe: descontar de más convertiría el adelanto en
       // un saldo a favor de la persona, que es otro problema.

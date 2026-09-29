@@ -60,6 +60,7 @@ import {
   type DeudorCobranza,
 } from "@/lib/adelantos/urgencia-cobranza";
 import { TRAMOS, tramoDe } from "@/lib/adelantos/gestion-cobranza";
+import { cuentaDePersona, leerDireccion } from "@/lib/adelantos/modos-alta";
 import type { BeneficiarioConSaldo as BeneficiarioConSaldoBase } from "./crear-adelanto/tipos";
 import type {
   DbAdelanto,
@@ -79,6 +80,11 @@ type Resumen = {
   adelantosAbiertos: number;
   adelantosLiquidados: number;
   beneficiarios: number;
+  /**
+   * La plata RECIBIDA (ADR-448): los campos de arriba siguen contando sólo lo
+   * que diste. Ausente = el servidor todavía no sabe de direcciones.
+   */
+  recibido?: { abiertos: number; porMoneda: { moneda: string; total: number; porDevolver: number; excedente: number; abiertos: number }[] };
 };
 
 const MODULE_ID = "adelantos";
@@ -141,7 +147,9 @@ export default function AdelantosModule() {
     try {
       const [r, a, b] = await Promise.all([
         fetch("/api/adelantos/resumen", { credentials: "include" }).then((x) => (x.ok ? x.json() : null)),
-        fetch("/api/adelantos", { credentials: "include" }).then((x) => (x.ok ? x.json() : [])),
+        /* `todas`: la lista muestra lo dado Y lo recibido (ADR-448). Las vistas
+           que cuentan plata por cobrar reciben sólo lo dado (`dados`, abajo). */
+        fetch("/api/adelantos?direccion=todas", { credentials: "include" }).then((x) => (x.ok ? x.json() : [])),
         fetch("/api/adelantos/beneficiarios", { credentials: "include" }).then((x) => (x.ok ? x.json() : [])),
       ]);
       setResumen(r);
@@ -158,6 +166,17 @@ export default function AdelantosModule() {
   }, [reload]);
 
   const sinPersonas = beneficiarios.length === 0;
+
+  /**
+   * Lo dado y lo recibido, separados UNA vez acá (ADR-448). Resumen, Cobranza,
+   * Actividad y Análisis cuentan «lo que te deben»: con un recibido adentro,
+   * los S/ 3 031 que el negocio le debe a WASACO se sumarían como por cobrar.
+   * La lista, las personas y el alta ven todo, con su dirección.
+   */
+  const dados = useMemo(() => adelantos.filter((a) => leerDireccion(a).direccion === "DADO"), [adelantos]);
+  const recibidos = useMemo(() => adelantos.filter((a) => leerDireccion(a).direccion === "RECIBIDO"), [adelantos]);
+  /* El servidor ya guarda la dirección: sin eso, lo recibido se guardaría como dado. */
+  const admiteRecibido = resumen?.recibido != null || adelantos.some((a) => "direccion" in a);
 
   return (
     <div>
@@ -192,11 +211,14 @@ export default function AdelantosModule() {
             </div>
           )}
 
-          {tab === "resumen" && <ResumenView resumen={resumen} adelantos={adelantos} loading={loading} onGoTab={setTab} />}
+          {tab === "resumen" && (
+            <ResumenView resumen={resumen} adelantos={dados} recibidos={recibidos} loading={loading} onGoTab={setTab} />
+          )}
           {tab === "lista" && (
             <AdelantosView
               adelantos={adelantos}
               beneficiarios={beneficiarios}
+              admiteRecibido={admiteRecibido}
               loading={loading}
               onChange={reload}
               creando={creando}
@@ -204,19 +226,19 @@ export default function AdelantosModule() {
             />
           )}
           {tab === "personas" && (
-            <PersonasView beneficiarios={beneficiarios} adelantos={adelantos} loading={loading} onChange={reload} />
+            <PersonasView beneficiarios={beneficiarios} adelantos={adelantos} admiteRecibido={admiteRecibido} loading={loading} onChange={reload} />
           )}
           {tab === "cobranza" && (
             <CobranzaView
-              adelantos={adelantos}
+              adelantos={dados}
               beneficiarios={beneficiarios}
               loading={loading}
               onRecordado={() => void reload()}
             />
           )}
           {tab === "recurrentes" && <RecurrentesView beneficiarios={beneficiarios} onChange={reload} />}
-          {tab === "actividad" && <ActividadView adelantos={adelantos} loading={loading} />}
-          {tab === "analisis" && <AnalisisView adelantos={adelantos} loading={loading} />}
+          {tab === "actividad" && <ActividadView adelantos={dados} loading={loading} />}
+          {tab === "analisis" && <AnalisisView adelantos={dados} loading={loading} />}
         </div>
       </AdminTabBar>
     </div>
@@ -227,11 +249,15 @@ export default function AdelantosModule() {
 function ResumenView({
   resumen,
   adelantos,
+  recibidos,
   loading,
   onGoTab,
 }: {
   resumen: Resumen | null;
+  /** Sólo lo DADO: todo lo de esta vista es «lo que te deben». */
   adelantos: DbAdelanto[];
+  /** Lo RECIBIDO, para la tarjeta «Le debes». */
+  recibidos: DbAdelanto[];
   loading: boolean;
   onGoTab: (tab: string) => void;
 }) {
@@ -307,6 +333,15 @@ function ResumenView({
   const liquidadoMap = sumByMoneda(activos.map((a) => ({ monto: Math.max(0, a.montoAdelantado - a.saldoPendiente), moneda: a.moneda })));
   const excedenteMap = sumByMoneda(adelantos.filter((a) => a.status === "EXCEDIDO").map((a) => ({ monto: -a.saldoPendiente, moneda: a.moneda })));
   const hayExcedente = Object.values(excedenteMap).some((v) => v > 0);
+  /* «Le debes» = lo que te entregaron de más + lo que te dieron y todavía
+     devuelves (ADR-448 §2.6: la misma cuenta que la ficha de la persona). */
+  const porDevolverMap = sumByMoneda(recibidos.filter((a) => a.status === "ABIERTO").map((a) => ({ monto: a.saldoPendiente, moneda: a.moneda })));
+  const leDebesMap = sumByMoneda([
+    ...Object.entries(excedenteMap).map(([moneda, monto]) => ({ monto, moneda })),
+    ...Object.entries(porDevolverMap).map(([moneda, monto]) => ({ monto, moneda })),
+  ]);
+  const hayLeDebes = Object.values(leDebesMap).some((v) => v > 0);
+  const hayPorDevolver = Object.values(porDevolverMap).some((v) => v > 0);
 
   // Mensaje de salud: prioriza lo que te deben; si nada, todo al día; si excedente, a favor de ellos.
   const health =
@@ -464,7 +499,19 @@ function ResumenView({
       <div className="grid gap-4 sm:grid-cols-3">
         <StatCard label="Total adelantado" value={fmtMonedas(adelantadoMap)} icon={TrendingDown} subValue="Plata que diste" />
         <StatCard label="Total liquidado" value={fmtMonedas(liquidadoMap)} icon={TrendingUp} emphasis="success" subValue="Recuperado en entregas" />
-        <StatCard label="A favor de ellos" value={fmtMonedas(excedenteMap)} icon={Coins} emphasis={hayExcedente ? "error" : "neutral"} subValue="Entregaron de más" />
+        <StatCard
+          label="Le debes"
+          value={fmtMonedas(leDebesMap)}
+          icon={Coins}
+          emphasis={hayLeDebes ? "warning" : "neutral"}
+          subValue={
+            hayPorDevolver && hayExcedente
+              ? `${fmtMonedas(porDevolverMap)} te pagaron antes · ${fmtMonedas(excedenteMap)} de más`
+              : hayPorDevolver
+                ? "Te pagaron antes o te prestaron"
+                : "Entregaron de más"
+          }
+        />
       </div>
 
       {/* Contadores clickeables → llevan a la lista/personas filtrada */}
@@ -481,6 +528,7 @@ function ResumenView({
 function AdelantosView({
   adelantos,
   beneficiarios,
+  admiteRecibido,
   loading,
   onChange,
   creando,
@@ -488,6 +536,7 @@ function AdelantosView({
 }: {
   adelantos: DbAdelanto[];
   beneficiarios: BeneficiarioConSaldo[];
+  admiteRecibido: boolean;
   loading: boolean;
   onChange: () => void;
   /** El alta la controla el módulo: la abre el botón de la barra de pestañas. */
@@ -538,16 +587,27 @@ function AdelantosView({
    */
   useEffect(() => setPagina(1), [filtro, q, orden.columna, orden.direccion]);
 
-  // Totales de la vista filtrada — segmentados por moneda (ADR-118)
+  // Totales de la vista filtrada — segmentados por moneda (ADR-118). Lo
+  // RECIBIDO va aparte (ADR-448): sumado a «por recuperar» contaría como por
+  // cobrar la plata que el negocio debe.
   const tot = filtrados.reduce(
     (acc, a) => {
       const cur = a.moneda || "PEN";
+      if (leerDireccion(a).direccion === "RECIBIDO") {
+        if (a.status === "ABIERTO") acc.leDebes[cur] = (acc.leDebes[cur] ?? 0) + a.saldoPendiente;
+        return acc;
+      }
       acc.adelantado[cur] = (acc.adelantado[cur] ?? 0) + a.montoAdelantado;
       acc.liquidado[cur] = (acc.liquidado[cur] ?? 0) + Math.max(0, a.montoAdelantado - a.saldoPendiente);
       if (a.status === "ABIERTO") acc.porRecuperar[cur] = (acc.porRecuperar[cur] ?? 0) + a.saldoPendiente;
       return acc;
     },
-    { adelantado: {} as Record<string, number>, liquidado: {} as Record<string, number>, porRecuperar: {} as Record<string, number> },
+    {
+      adelantado: {} as Record<string, number>,
+      liquidado: {} as Record<string, number>,
+      porRecuperar: {} as Record<string, number>,
+      leDebes: {} as Record<string, number>,
+    },
   );
 
   const chipCls = (active: boolean) =>
@@ -624,6 +684,9 @@ function AdelantosView({
             <span>Adelantado <strong className="tabular-nums text-[var(--text-primary)]">{fmtMonedas(tot.adelantado)}</strong></span>
             <span>Liquidado <strong className="tabular-nums text-[var(--data-success)]">{fmtMonedas(tot.liquidado)}</strong></span>
             <span>Por recuperar <strong className="tabular-nums text-[var(--data-warning)]">{fmtMonedas(tot.porRecuperar)}</strong></span>
+            {Object.values(tot.leDebes).some((v) => v > 0) && (
+              <span>Le debes <strong className="tabular-nums text-[var(--data-info-ink)]">{fmtMonedas(tot.leDebes)}</strong></span>
+            )}
             <button
               onClick={() => descargarCsvAdelantos(filtrados, `adelantos-${new Date().toISOString().slice(0, 10)}.csv`)}
               disabled={filtrados.length === 0}
@@ -659,6 +722,7 @@ function AdelantosView({
         <CrearAdelantoModal
           beneficiarios={beneficiarios}
           adelantos={adelantos}
+          admiteRecibido={admiteRecibido}
           onPersonaCreada={onChange}
           onClose={() => onCreando(false)}
           onCreated={() => {
@@ -682,11 +746,13 @@ function AdelantosView({
 function PersonasView({
   beneficiarios,
   adelantos,
+  admiteRecibido,
   loading,
   onChange,
 }: {
   beneficiarios: BeneficiarioConSaldo[];
   adelantos: DbAdelanto[];
+  admiteRecibido: boolean;
   loading: boolean;
   onChange: () => void;
 }) {
@@ -740,7 +806,8 @@ function PersonasView({
       mergear(acc.adelantado, b.totalAdelantado);
       mergear(acc.entregado, b.totalEntregado);
       mergear(acc.porRecuperar, b.saldoPendiente);
-      mergear(acc.aFavor, b.saldoAFavor);
+      /* «Le debes» = entregó de más + lo que te dio y devuelves (ADR-448 §2.6). */
+      mergear(acc.aFavor, cuentaDePersona(b).leDebes);
       return acc;
     },
     { adelantado: {} as Record<string, number>, entregado: {} as Record<string, number>, porRecuperar: {} as Record<string, number>, aFavor: {} as Record<string, number> },
@@ -838,7 +905,7 @@ function PersonasView({
             <span>Devuelto <strong className="tabular-nums text-[var(--data-success)]">{fmtMonedas(tot.entregado)}</strong></span>
             <span>Por recuperar <strong className="tabular-nums text-[var(--data-warning)]">{fmtMonedas(tot.porRecuperar)}</strong></span>
             {Object.values(tot.aFavor).some((v) => v > 0) && (
-              <span>A favor de ellos <strong className="tabular-nums text-[var(--data-info)]">{fmtMonedas(tot.aFavor)}</strong></span>
+              <span>Le debes <strong className="tabular-nums text-[var(--data-info-ink)]">{fmtMonedas(tot.aFavor)}</strong></span>
             )}
             <button
               onClick={() => descargarCsvPersonas(ordenados, `personas-${new Date().toISOString().slice(0, 10)}.csv`)}
@@ -925,6 +992,7 @@ function PersonasView({
         <CrearAdelantoModal
           beneficiarios={beneficiarios}
           adelantos={adelantos}
+          admiteRecibido={admiteRecibido}
           initialBeneficiarioId={adelantoPara}
           onPersonaCreada={onChange}
           onClose={() => setAdelantoPara(null)}

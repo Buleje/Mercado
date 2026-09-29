@@ -14,7 +14,8 @@ import { formatCurrency } from "@/lib/currency";
 import { estadoDeCredito, requiereAtencion, saldoParaLimite } from "@/lib/adelantos/limite-credito";
 import { cumplimientoDe } from "@/lib/adelantos/saldo-persona";
 import { enlaceWhatsAppConTexto } from "@/lib/adelantos/contacto";
-import { fmtMonedas } from "../shared";
+import { cuentaDePersona, hayDeuda } from "@/lib/adelantos/modos-alta";
+import { MontosEnLineas, fmtMonedas } from "../shared";
 import type { BeneficiarioConSaldo } from "../crear-adelanto/tipos";
 
 /** Hace cuánto, en la unidad en que uno lo diría en voz alta. */
@@ -42,11 +43,16 @@ export default function TarjetaPersona({
   onEliminar: () => void;
   onAdelanto: () => void;
 }) {
+  /* `saldoPendiente` es lo DADO abierto: gobierna el tope, la cobranza y el
+     recordatorio. «Te debe» / «Le debes» son las dos direcciones (ADR-448). */
   const debe = Object.values(b.saldoPendiente).some((v) => v > 0);
+  const cuenta = cuentaDePersona(b);
+  const leDebes = hayDeuda(cuenta.leDebes);
   const credito = estadoDeCredito(b.limiteCredito, saldoParaLimite(b.saldoPendiente));
   const cumplimiento = cumplimientoDe(b);
   /* Mismo texto que mensajeRecordatorio (lib/adelantos/contacto.ts), pero con
-     el saldo real por moneda — esa función no sabe sumar más de una. */
+     el saldo real por moneda — esa función no sabe sumar más de una. Sólo lo
+     DADO: a quien te pagó antes no se le recuerda «tu saldo pendiente». */
   const wa = enlaceWhatsAppConTexto(
     b.telefono,
     debe
@@ -116,12 +122,14 @@ export default function TarjetaPersona({
       <div className="mt-3 grid grid-cols-2 gap-2 border-t-2 border-[var(--rule-soft)] pt-3">
         <div>
           <p className="text-sm font-semibold text-[var(--text-tertiary)]">Adelantado</p>
-          <p className="text-base font-extrabold tabular-nums text-[var(--text-primary)]">{fmtMonedas(b.totalAdelantado)}</p>
+          <p className="text-base font-extrabold tabular-nums text-[var(--text-primary)]">
+            <MontosEnLineas map={b.totalAdelantado} />
+          </p>
         </div>
         <div className="text-right">
-          <p className="text-sm font-semibold text-[var(--text-tertiary)]">Debe hoy</p>
-          <p className={`text-base font-extrabold tabular-nums ${debe ? "text-[var(--data-warning)]" : "text-[var(--data-success)]"}`}>
-            {fmtMonedas(b.saldoPendiente)}
+          <p className="text-sm font-semibold text-[var(--text-tertiary)]">Te debe</p>
+          <p className={`text-base font-extrabold tabular-nums ${hayDeuda(cuenta.teDebe) ? "text-[var(--data-warning)]" : "text-[var(--data-success)]"}`}>
+            <MontosEnLineas map={cuenta.teDebe} />
           </p>
         </div>
       </div>
@@ -153,9 +161,13 @@ export default function TarjetaPersona({
         </p>
       )}
 
-      {Object.values(b.saldoAFavor).some((v) => v > 0) && (
-        <p className="mt-1.5 text-sm font-semibold text-[var(--data-info)]">
-          Te entregó {fmtMonedas(b.saldoAFavor)} de más
+      {/* Lo que le debes: lo que te entregó de más + lo que te pagó antes o te prestó. */}
+      {leDebes && (
+        <p className="mt-1.5 flex items-baseline justify-between gap-2 text-sm font-semibold text-[var(--data-info-ink)]">
+          <span>Le debes</span>
+          <span className="text-right font-extrabold tabular-nums">
+            <MontosEnLineas map={cuenta.leDebes} />
+          </span>
         </p>
       )}
 
@@ -164,6 +176,10 @@ export default function TarjetaPersona({
           {debe ? (
             <span className="inline-flex w-fit items-center rounded-full bg-[var(--data-warning)]/15 px-3 py-1 text-sm font-bold text-[var(--data-warning)]">
               {b.adelantosAbiertos} abierto{b.adelantosAbiertos === 1 ? "" : "s"}
+            </span>
+          ) : leDebes ? (
+            <span className="inline-flex w-fit items-center rounded-full bg-[var(--data-info-500)]/12 px-3 py-1 text-sm font-bold text-[var(--data-info-ink)]">
+              Le debes
             </span>
           ) : (
             <span className="inline-flex w-fit items-center gap-1 rounded-full bg-[var(--data-success)]/15 px-3 py-1 text-sm font-bold text-[var(--data-success)]">

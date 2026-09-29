@@ -29,10 +29,13 @@ import { formatCurrency } from "@/lib/currency";
 import { estadoDeCredito, requiereAtencion, saldoParaLimite } from "@/lib/adelantos/limite-credito";
 import { cumplimientoDe } from "@/lib/adelantos/saldo-persona";
 import { enlaceWhatsAppConTexto } from "@/lib/adelantos/contacto";
+import { cuentaDePersona, hayDeuda } from "@/lib/adelantos/modos-alta";
 import { movimientosDePersona, saldoDeLaCuenta, textoEstadoDeCuenta } from "@/lib/adelantos/estado-cuenta";
 import type { DbAdelanto } from "@/lib/db/adelantos.db";
-import { MODALIDAD_LABEL, ModalShell, STATUS_BADGE, fmtMon, fmtMonedas } from "../shared";
+import { ModalShell, fmtMon, fmtMonedas } from "../shared";
 import type { BeneficiarioConSaldo } from "../crear-adelanto/tipos";
+import { Aviso, Kpi } from "./FichaPiezas";
+import SusAdelantos from "./SusAdelantos";
 import { formatDate } from "@/lib/format";
 
 const dia = (iso: string) => formatDate(iso);
@@ -68,7 +71,11 @@ export default function FichaPersonaModal({
 
   const credito = estadoDeCredito(persona.limiteCredito, saldoParaLimite(persona.saldoPendiente));
   const cumplimiento = cumplimientoDe(persona);
+  /* `saldoPendiente` = lo DADO abierto (tope, cobranza, recordatorio). Las
+     dos direcciones van aparte: «Te debe» y «Le debes» (ADR-448 §2.6). */
   const debeAlgo = Object.values(persona.saldoPendiente).some((v) => v > 0);
+  const cuenta = cuentaDePersona(persona);
+  const leDebes = hayDeuda(cuenta.leDebes);
   /* Mismo texto que mensajeRecordatorio (lib/adelantos/contacto.ts), pero con
      el saldo real por moneda — esa función no sabe sumar más de una. */
   const wa = enlaceWhatsAppConTexto(
@@ -119,6 +126,16 @@ export default function FichaPersonaModal({
                 {" en "}
                 {persona.adelantosAbiertos} adelanto{persona.adelantosAbiertos === 1 ? "" : "s"} abierto
                 {persona.adelantosAbiertos === 1 ? "" : "s"}
+                {leDebes && (
+                  <>
+                    {" · le debes "}
+                    <strong className="tabular-nums text-[var(--data-info-ink)]">{fmtMonedas(cuenta.leDebes)}</strong>
+                  </>
+                )}
+              </>
+            ) : leDebes ? (
+              <>
+                Le debes <strong className="tabular-nums text-[var(--data-info-ink)]">{fmtMonedas(cuenta.leDebes)}</strong>
               </>
             ) : (
               <span className="inline-flex items-center gap-1.5 font-semibold text-[var(--data-success)]">
@@ -155,13 +172,16 @@ export default function FichaPersonaModal({
       }
     >
       {/* ── El veredicto, arriba ─────────────────────────────────────────── */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className={`grid gap-3 sm:grid-cols-2 ${leDebes ? "lg:grid-cols-5" : "lg:grid-cols-4"}`}>
         <Kpi
-          label="Debe hoy"
-          valor={fmtMonedas(persona.saldoPendiente)}
-          tono={debeAlgo ? "warning" : "success"}
+          label="Te debe"
+          valor={fmtMonedas(cuenta.teDebe)}
+          tono={hayDeuda(cuenta.teDebe) ? "warning" : "success"}
           pie={`${persona.adelantosAbiertos} abierto${persona.adelantosAbiertos === 1 ? "" : "s"}`}
         />
+        {leDebes && (
+          <Kpi label="Le debes" valor={fmtMonedas(cuenta.leDebes)} tono="info" pie="Te pagó antes, te prestó o entregó de más" />
+        )}
         <Kpi
           label="Adelantado histórico"
           valor={fmtMonedas(persona.totalAdelantado)}
@@ -186,7 +206,7 @@ export default function FichaPersonaModal({
         {requiereAtencion(credito) && (
           <Aviso tono="error">{credito.aviso}</Aviso>
         )}
-        {Object.values(persona.saldoAFavor).some((v) => v > 0) && (
+        {Object.values(persona.saldoAFavor).some((v) => v > 0) && !hayDeuda(persona.recibidoPendiente ?? {}) && (
           <Aviso tono="info">Te entregó {fmtMonedas(persona.saldoAFavor)} de más.</Aviso>
         )}
         {persona.adelantosCancelados > 0 && (
@@ -301,7 +321,12 @@ export default function FichaPersonaModal({
                       {fmtMon(Math.abs(m.monto), m.moneda)}
                     </td>
                     <td className="whitespace-nowrap px-3 py-2 text-right font-bold tabular-nums text-[var(--text-primary)]">
-                      {fmtMon(m.saldo, m.moneda)}
+                      {/* Negativo = el negocio le debe (ADR-448): «S/ -30.00» no se lee como plata. */}
+                      {m.saldo < -0.005 ? (
+                        <span className="text-[var(--data-info-ink)]">le debes {fmtMon(-m.saldo, m.moneda)}</span>
+                      ) : (
+                        fmtMon(m.saldo, m.moneda)
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -312,86 +337,8 @@ export default function FichaPersonaModal({
       ) : suyos.length === 0 ? (
         <p className="py-6 text-center text-base text-[var(--text-tertiary)]">Nunca le adelantaste plata.</p>
       ) : (
-        <ul className="space-y-2">
-          {suyos.map((a) => {
-            const badge = STATUS_BADGE[a.status];
-            return (
-              <li key={a.id}>
-                <button
-                  type="button"
-                  onClick={() => onVerAdelanto(a)}
-                  className="flex w-full items-center gap-3 rounded-2xl border border-[var(--rule-soft)] px-4 py-3 text-left transition-colors hover:border-primary/50 hover:bg-[var(--surface-sunken)]/50"
-                >
-                  <span className="min-w-0 flex-1">
-                    <span className="block font-mono text-sm font-bold text-[var(--text-primary)]">
-                      {a.codigoOperacion ?? "— sin código —"}
-                    </span>
-                    <span className="block truncate text-sm text-[var(--text-tertiary)]">
-                      {dia(a.fechaAdelanto)} · {MODALIDAD_LABEL[a.modalidad] ?? a.modalidad}
-                      {a.notas ? ` · ${a.notas}` : ""}
-                    </span>
-                  </span>
-                  <span className="shrink-0 text-right">
-                    <span className="block font-extrabold tabular-nums text-[var(--text-primary)]">
-                      {fmtMon(a.montoAdelantado, a.moneda)}
-                    </span>
-                    <span
-                      className={`block text-sm font-semibold tabular-nums ${
-                        a.saldoPendiente > 0 ? "text-[var(--data-warning)]" : "text-[var(--data-success)]"
-                      }`}
-                    >
-                      {a.saldoPendiente > 0 ? `debe ${fmtMon(a.saldoPendiente, a.moneda)}` : "sin saldo"}
-                    </span>
-                  </span>
-                  <span className={`shrink-0 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold ${badge?.className ?? ""}`}>
-                    {badge?.label ?? a.status}
-                  </span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+        <SusAdelantos suyos={suyos} onVerAdelanto={onVerAdelanto} />
       )}
     </ModalShell>
-  );
-}
-
-function Kpi({
-  label,
-  valor,
-  pie,
-  tono = "neutro",
-}: {
-  label: string;
-  valor: string;
-  pie?: string;
-  tono?: "neutro" | "success" | "warning" | "error";
-}) {
-  const color =
-    tono === "success"
-      ? "text-[var(--data-success)]"
-      : tono === "warning"
-        ? "text-[var(--data-warning)]"
-        : tono === "error"
-          ? "text-[var(--data-error)]"
-          : "text-[var(--text-primary)]";
-  return (
-    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-      <p className="text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]">{label}</p>
-      <p className={`mt-1 text-2xl font-extrabold tabular-nums ${color}`}>{valor}</p>
-      {pie && <p className="text-sm text-[var(--text-secondary)]">{pie}</p>}
-    </div>
-  );
-}
-
-function Aviso({ tono, children }: { tono: "error" | "info" | "neutro"; children: React.ReactNode }) {
-  const cls =
-    tono === "error"
-      ? "bg-[var(--data-error)]/10 text-[var(--data-error)]"
-      : tono === "info"
-        ? "bg-[var(--data-info)]/10 text-[var(--data-info)]"
-        : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]";
-  return (
-    <div className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-sm font-semibold ${cls}`}>{children}</div>
   );
 }

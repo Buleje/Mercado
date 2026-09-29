@@ -15,6 +15,7 @@ import type { DomainAgent, AgentTask, AgentResult, AgentContext } from "@/lib/ag
 import { scopedLogger } from "@/lib/agents/context";
 import { FiadosDB } from "@/lib/db/fiados.db";
 import { AdelantosDB } from "@/lib/db/adelantos.db";
+import { esRecibido } from "@/lib/adelantos/direccion";
 
 const soles = (n: number) => Math.round(n * 100) / 100;
 const num = (v: unknown) => (v == null ? 0 : Number(v) || 0);
@@ -69,10 +70,26 @@ async function adelantos(task: AgentTask, ctx: AgentContext): Promise<AgentResul
   const log = scopedLogger(ctx);
   log.info("Resumiendo adelantos vigentes");
 
-  const lista = await AdelantosDB.list(task.tenantId);
+  const lista = await AdelantosDB.list(task.tenantId, { direccion: "todas" });
   // CANCELADO no es deuda: es un adelanto que se anuló. Sumarlo infla el saldo
   // (fue un bug real del módulo, no repetirlo acá).
-  const vivos = lista.filter((a) => String(a.status ?? "").toUpperCase() !== "CANCELADO");
+  const noAnulados = lista.filter((a) => String(a.status ?? "").toUpperCase() !== "CANCELADO");
+  // ADR-448: lo RECIBIDO no se cobra — es plata que el negocio debe devolver.
+  // Va aparte, como «le debes», para que la respuesta no lo sume a la cobranza.
+  const vivos = noAnulados.filter((a) => !esRecibido(a));
+  const leDebes = noAnulados
+    .filter((a) => esRecibido(a) && String(a.status ?? "").toUpperCase() === "ABIERTO" && num(a.saldoPendiente) > 0)
+    .map((a) => ({
+      persona: a.beneficiario?.nombre ?? a.beneficiarioId,
+      codigo: a.codigoOperacion ?? null,
+      moneda: a.moneda || "PEN",
+      saldo: soles(num(a.saldoPendiente)),
+    }));
+  /* Por moneda: sumar soles y dólares sin tipo de cambio sería inventar la cifra. */
+  const leDebesPorMoneda = [...new Set(leDebes.map((d) => d.moneda))].sort().map((moneda) => ({
+    moneda,
+    total: soles(leDebes.filter((d) => d.moneda === moneda).reduce((t, d) => t + d.saldo, 0)),
+  }));
 
   const detalle = vivos
     .map((a) => ({
@@ -94,6 +111,13 @@ async function adelantos(task: AgentTask, ctx: AgentContext): Promise<AgentResul
       personas: detalle.length,
       detalle: detalle.slice(0, 12),
       nota: "Los adelantos CANCELADOS no cuentan como deuda.",
+      ...(leDebes.length > 0 && {
+        leDebes: {
+          porMoneda: leDebesPorMoneda,
+          detalle: leDebes.slice(0, 12),
+          nota: "Plata que te dieron (adelanto por un servicio o préstamo): la debes tú, no se cobra.",
+        },
+      }),
     },
   };
 }

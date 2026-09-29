@@ -8,11 +8,16 @@
  */
 
 import type { DbAdelanto } from "@/lib/db/adelantos.db";
+import { direccionDe } from "@/lib/adelantos/direccion";
 
 export type MovimientoCuenta = {
   fecha: string;
   concepto: string;
-  /** Positivo = plata que salió del negocio; negativo = lo que la persona entregó. */
+  /**
+   * Positivo = te lo deben (plata que diste, o lo que le diste para devolver lo
+   * que te dio); negativo = lo debes (lo que la persona entregó, o la plata que
+   * te dio en un adelanto RECIBIDO, ADR-448).
+   */
   monto: number;
   /** Saldo corrido DESPUÉS de este movimiento — de la MISMA moneda que `moneda`, nunca mezclado. */
   saldo: number;
@@ -32,20 +37,32 @@ export type MovimientoCuenta = {
  * Los CANCELADOS quedan afuera: no se cobran, y verlos en la cuenta que se le
  * manda a la persona la haría discutir una deuda que el negocio ya perdonó.
  */
-export function movimientosDePersona(adelantos: readonly DbAdelanto[]): MovimientoCuenta[] {
+export function movimientosDePersona(
+  adelantos: readonly (Pick<DbAdelanto, "status" | "moneda" | "fechaAdelanto" | "codigoOperacion" | "montoAdelantado" | "entregas"> & {
+    direccion?: DbAdelanto["direccion"] | null;
+  })[],
+): MovimientoCuenta[] {
   const sueltos: { fecha: string; concepto: string; monto: number; moneda: string }[] = [];
 
   for (const a of adelantos) {
     if (a.status === "CANCELADO") continue;
     const moneda = a.moneda || "PEN";
+    /* ADR-448: lo recibido al revés — la plata que te dio resta, lo que le das suma. */
+    const recibido = direccionDe(a.direccion) === "RECIBIDO";
+    const signo = recibido ? -1 : 1;
     sueltos.push({
       fecha: a.fechaAdelanto,
-      concepto: `Adelanto ${a.codigoOperacion ?? ""}`.trim(),
-      monto: a.montoAdelantado,
+      concepto: `${recibido ? "Adelanto recibido" : "Adelanto"} ${a.codigoOperacion ?? ""}`.trim(),
+      monto: signo * a.montoAdelantado,
       moneda,
     });
     for (const e of a.entregas) {
-      sueltos.push({ fecha: e.fecha, concepto: e.descripcion || "Entrega", monto: -e.valor, moneda });
+      sueltos.push({
+        fecha: e.fecha,
+        concepto: e.descripcion || (recibido ? "Le entregaste" : "Entrega"),
+        monto: -signo * e.valor,
+        moneda,
+      });
     }
   }
 

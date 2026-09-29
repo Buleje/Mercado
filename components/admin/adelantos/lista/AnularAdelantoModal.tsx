@@ -38,6 +38,7 @@ export default function AnularAdelantoModal({
   persona,
   monto,
   moneda,
+  recibido = false,
   onClose,
   onAnulado,
 }: {
@@ -45,6 +46,12 @@ export default function AnularAdelantoModal({
   persona: string;
   monto: number;
   moneda: string;
+  /**
+   * La plata la RECIBISTE (ADR-448): anular con devolución SALE de tu caja
+   * (el servidor anota un egreso). Sin esto el modal decía «se anota un
+   * ingreso» mientras el servidor hacía lo contrario.
+   */
+  recibido?: boolean;
   onClose: () => void;
   onAnulado: () => void;
 }) {
@@ -68,8 +75,12 @@ export default function AnularAdelantoModal({
         onAnulado();
         return;
       }
-      const j = await leerJson<{ error?: string }>(res);
-      setErr(j?.error ?? "No se pudo anular el adelanto.");
+      const j = await leerJson<{ error?: string; message?: string }>(res);
+      setErr(
+        res.status === 403
+          ? "Esto lo registra el dueño o un administrador."
+          : (j?.message ?? j?.error ?? "No se pudo anular el adelanto."),
+      );
     } catch (e) {
       logger.error("[adelantos] no se pudo anular", { error: String(e) });
       setErr("No se pudo anular. Revisa la conexión.");
@@ -86,7 +97,7 @@ export default function AnularAdelantoModal({
         aria-modal="true"
         aria-label="Anular adelanto"
         tabIndex={-1}
-        className="w-full max-w-md rounded-2xl bg-[var(--surface-raised)] p-5 shadow-[var(--shadow-xl)]"
+        className="w-full max-w-[34rem] rounded-2xl bg-[var(--surface-raised)] p-5 shadow-[var(--shadow-xl)]"
       >
         <div className="mb-3 flex items-start gap-3">
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--data-error)]/10 text-[var(--data-error)]">
@@ -101,18 +112,22 @@ export default function AnularAdelantoModal({
           </div>
         </div>
 
-        <div className="space-y-1.5 rounded-xl bg-[var(--surface-sunken)] p-3.5" role="group" aria-label="¿Volvió la plata a caja?">
-          <p className="text-sm font-bold text-[var(--text-secondary)]">¿La plata volvió a caja?</p>
+        <div
+          className="space-y-1.5 rounded-xl bg-[var(--surface-sunken)] p-3.5"
+          role="group"
+          aria-label={recibido ? "¿Le devolviste la plata?" : "¿Volvió la plata a caja?"}
+        >
+          <p className="text-sm font-bold text-[var(--text-secondary)]">{recibido ? "¿Le devolviste la plata?" : "¿La plata volvió a caja?"}</p>
           <div className="flex flex-wrap gap-1.5">
             <button
               type="button"
               onClick={() => setVia(null)}
               aria-pressed={via === null}
               className={`h-9 rounded-lg px-3 text-sm font-bold transition-colors ${
-                via === null ? "bg-primary/12 text-[var(--accent-ink)] ring-2 ring-primary dark:text-[var(--accent)]" : "bg-[var(--surface-raised)] text-[var(--text-secondary)]"
+                via === null ? "bg-primary/12 text-[var(--accent-ink)] ring-2 ring-primary" : "bg-[var(--surface-raised)] text-[var(--text-secondary)]"
               }`}
             >
-              No volvió nada
+              {recibido ? "No le devolví nada" : "No volvió nada"}
             </button>
             {VIAS.map((v) => (
               <button
@@ -121,15 +136,19 @@ export default function AnularAdelantoModal({
                 onClick={() => setVia(v.id)}
                 aria-pressed={via === v.id}
                 className={`h-9 rounded-lg px-3 text-sm font-bold transition-colors ${
-                  via === v.id ? "bg-primary/12 text-[var(--accent-ink)] ring-2 ring-primary dark:text-[var(--accent)]" : "bg-[var(--surface-raised)] text-[var(--text-secondary)]"
+                  via === v.id ? "bg-primary/12 text-[var(--accent-ink)] ring-2 ring-primary" : "bg-[var(--surface-raised)] text-[var(--text-secondary)]"
                 }`}
               >
                 {v.label}
               </button>
             ))}
           </div>
-          <p className="text-xs text-[var(--text-tertiary)]">
-            {via ? "Se anota un ingreso de caja por esa vía, para que el arqueo cuadre." : "Se anula sin tocar la caja — es un error de carga o una pérdida que se da por perdida."}
+          <p className={`text-sm font-semibold ${via ? (recibido ? "text-[var(--data-warning-ink)]" : "text-[var(--data-success-ink)]") : "text-[var(--text-tertiary)]"}`}>
+            {via
+              ? recibido
+                ? "Sale de tu caja por esa vía: se anota un egreso por lo que le devolviste."
+                : "Entra a tu caja por esa vía: se anota un ingreso, para que el arqueo cuadre."
+              : "Se anula sin tocar la caja — es un error de carga o una pérdida que se da por perdida."}
           </p>
         </div>
 

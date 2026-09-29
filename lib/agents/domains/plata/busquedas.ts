@@ -13,6 +13,7 @@ import type { AgentTask, AgentResult, AgentContext } from "@/lib/agents/types";
 import { scopedLogger } from "@/lib/agents/context";
 import { AssetsDB } from "@/lib/db/assets.db";
 import { AdelantosDB } from "@/lib/db/adelantos.db";
+import { esRecibido } from "@/lib/adelantos/direccion";
 import { FiadosDB } from "@/lib/db/fiados.db";
 import { SuppliersDB } from "@/lib/db/purchases.db";
 import { TreasuryDB } from "@/lib/db/treasury.db";
@@ -104,7 +105,8 @@ export async function buscarPersona(task: AgentTask, ctx: AgentContext): Promise
 
   const [personas, adelantos] = await Promise.all([
     AdelantosDB.listBeneficiarios(task.tenantId),
-    AdelantosDB.list(task.tenantId, { status: "ABIERTO" }),
+    // ADR-448: las dos direcciones — lo recibido se nombra aparte («le debes»).
+    AdelantosDB.list(task.tenantId, { status: "ABIERTO", direccion: "todas" }),
   ]);
 
   const qk = clave(q);
@@ -139,13 +141,23 @@ export async function buscarPersona(task: AgentTask, ctx: AgentContext): Promise
         telefono: p.telefono ?? null,
         limiteCredito: p.limiteCredito ?? null,
         adelantosAbiertos: adelantos
-          .filter((a) => a.beneficiarioId === p.id)
+          .filter((a) => a.beneficiarioId === p.id && !esRecibido(a))
           .map((a) => ({
             adelantoId: a.id,
             codigo: a.codigoOperacion ?? null,
             monto: soles(Number(a.montoAdelantado ?? 0)),
             saldo: soles(Number(a.saldoPendiente ?? 0)),
             fecha: a.fechaAdelanto ? String(a.fechaAdelanto).slice(0, 10) : null,
+          })),
+        /* Plata que la persona le dio al negocio y que el negocio le debe. Una
+           entrega contra uno de estos es lo que el negocio le DA para devolverla. */
+        leDebes: adelantos
+          .filter((a) => a.beneficiarioId === p.id && esRecibido(a))
+          .map((a) => ({
+            adelantoId: a.id,
+            codigo: a.codigoOperacion ?? null,
+            concepto: a.conceptoRecibido === "PRESTAMO" ? "préstamo que te hicieron" : "adelanto por un servicio que darás",
+            saldo: soles(Number(a.saldoPendiente ?? 0)),
           })),
       })),
       ...(rank.length === 0 && {

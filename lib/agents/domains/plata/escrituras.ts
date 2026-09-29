@@ -13,6 +13,7 @@ import { scopedLogger } from "@/lib/agents/context";
 import { AssetsDB } from "@/lib/db/assets.db";
 import { ExpensesDB } from "@/lib/db/finance.db";
 import { AdelantosDB } from "@/lib/db/adelantos.db";
+import { esRecibido } from "@/lib/adelantos/direccion";
 import { FiadosDB } from "@/lib/db/fiados.db";
 import { CashRegistersDB } from "@/lib/db/sales.db";
 import { SuppliersDB, PurchasesDB } from "@/lib/db/purchases.db";
@@ -583,6 +584,17 @@ export async function liquidarAdelanto(task: AgentTask, ctx: AgentContext): Prom
   const metodoCaja = metodo && METODOS_CAJA.has(metodo) ? (metodo as "efectivo" | "yape" | "plin" | "tarjeta" | "transferencia") : null;
   const saldo = soles(Number(adelanto.saldoPendiente ?? 0));
   const persona = adelanto.beneficiario?.nombre ?? "la persona";
+  /* ADR-448: en un adelanto RECIBIDO la entrega la hace el negocio — la plata
+     sale de la caja y lo que queda es lo que TÚ le debes. */
+  const recibido = esRecibido(adelanto);
+  /* Devolver en plata un recibido saca plata de la caja: sólo admin o dueño, y
+     desde la pantalla (la DB class lo rechaza igual). El chat no decide eso. */
+  if (recibido && metodoCaja) {
+    return {
+      success: false,
+      error: "Devolver en plata lo que te dieron sale de la caja: hazlo desde Mi Plata › Adelantos (sólo el administrador o el dueño).",
+    };
+  }
 
   if (esEnsayo(task)) {
     const queda = soles(saldo - valor);
@@ -592,8 +604,16 @@ export async function liquidarAdelanto(task: AgentTask, ctx: AgentContext): Prom
         resumen:
           `Entrega de ${fmt(valor)} contra el adelanto ${adelanto.codigoOperacion ?? ""} de ${persona}. ` +
           `Saldo ${fmt(saldo)} → ${fmt(queda)}` +
-          `${queda < -0.01 ? " (queda EXCEDIDO: el negocio le debería a la persona)" : queda <= 0.01 ? " (queda LIQUIDADO)" : ""}.` +
-          `${metodoCaja ? ` Entra a la caja por ${metodoCaja}.` : ""}`,
+          `${
+            queda < -0.01
+              ? recibido
+                ? " (queda EXCEDIDO: le diste de más, la persona te debería)"
+                : " (queda EXCEDIDO: el negocio le debería a la persona)"
+              : queda <= 0.01
+                ? " (queda LIQUIDADO)"
+                : ""
+          }.` +
+          `${metodoCaja ? ` ${recibido ? "Sale de" : "Entra a"} la caja por ${metodoCaja}.` : ""}`,
         destino: "adelantos",
         persona,
         codigo: adelanto.codigoOperacion ?? null,
@@ -627,7 +647,11 @@ export async function liquidarAdelanto(task: AgentTask, ctx: AgentContext): Prom
       estado: row.status,
       confirmacion:
         `Anotado: ${fmt(valor)} contra el adelanto de ${persona}. ` +
-        (queda <= 0.01 ? "Queda liquidado." : `Le quedan ${fmt(queda)} por devolver.`),
+        (queda <= 0.01
+          ? "Queda liquidado."
+          : recibido
+            ? `Todavía le debes ${fmt(queda)}.`
+            : `Le quedan ${fmt(queda)} por devolver.`),
       dondeVerlo: { pantalla: "Mi Plata › Por cobrar › Adelantos", tab: "plata", vista: "adelantos" },
     },
   };

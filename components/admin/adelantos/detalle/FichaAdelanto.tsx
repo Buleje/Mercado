@@ -11,6 +11,7 @@
 
 import { CalendarDays, Hash, Phone, Repeat, Ruler, StickyNote } from "@buleje/design-system/icons";
 import type { DbAdelanto } from "@/lib/db/adelantos.db";
+import { leerDireccion } from "@/lib/adelantos/modos-alta";
 import { fmtPt, MODALIDAD_LABEL, PT_TIPO_LABEL } from "../shared";
 
 const fechaLarga = (iso: string) =>
@@ -30,7 +31,8 @@ export default function FichaAdelanto({ adelanto: a }: { adelanto: DbAdelanto })
   return (
     <div className="space-y-3 rounded-2xl border border-[var(--rule-soft)] p-4">
       <div className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
-        <Dato icon={CalendarDays} label="Se dio el">
+        {/* En lo recibido la plata la puso la persona (ADR-448). */}
+        <Dato icon={CalendarDays} label={leerDireccion(a).direccion === "RECIBIDO" ? "Te lo dieron el" : "Se dio el"}>
           {/* `capitalize` mayusculiza CADA palabra: «Martes, 04 De Agosto De
               2026». Sólo la primera letra de la frase. */}
           <span className="inline-block first-letter:uppercase">{fechaLarga(a.fechaAdelanto)}</span>

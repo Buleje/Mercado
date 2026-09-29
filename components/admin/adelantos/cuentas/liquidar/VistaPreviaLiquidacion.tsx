@@ -13,11 +13,14 @@ import { leerNeto } from "@/lib/adelantos/cuenta-unificada";
 import type { ResultadoPlan } from "@/lib/cuentas/liquidacion";
 import { fmtMon } from "../../shared";
 
+const r2 = (n: number) => Math.round(n * 100) / 100;
+
 export default function VistaPreviaLiquidacion({
   plan,
   nombre,
   vinculoFaltante,
   maderaAFavorSuyo,
+  aFavorSuyoAdelantos = 0,
 }: {
   plan: ResultadoPlan | null;
   nombre: string;
@@ -25,6 +28,12 @@ export default function VistaPreviaLiquidacion({
   vinculoFaltante: boolean;
   /** El real (de la cabecera), para avisar cuánto queda aparte. */
   maderaAFavorSuyo: number;
+  /**
+   * Lo DADO que te entregó de más (excedidos). Ninguna liquidación lo toca y
+   * `neto` del plan no lo resta: se resta acá para que el neto diga lo mismo que
+   * la cabecera del modal (revisión 28-09).
+   */
+  aFavorSuyoAdelantos?: number;
 }) {
   const notaMaderaAparte =
     vinculoFaltante && maderaAFavorSuyo > 0.005 ? (
@@ -111,13 +120,22 @@ export default function VistaPreviaLiquidacion({
         </table>
       </div>
 
-      <div className="grid gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 sm:grid-cols-3">
+      <div
+        className={`grid gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 ${
+          (p.antes.recibidoLeDebes ?? 0) > 0.005 ? "sm:grid-cols-4" : "sm:grid-cols-3"
+        }`}
+      >
         <Antes label="Adelantos" antes={p.antes.adelantosTeDebe} despues={p.despues.adelantosTeDebe} />
+        {/* ADR-448: la plata que te dio no se salda acá, pero es parte de la cuenta: sin
+            esta fila el «después» parecía cero con plata que el negocio todavía le debe. */}
+        {(p.antes.recibidoLeDebes ?? 0) > 0.005 && (
+          <Antes label="Le debes (te dio)" antes={p.antes.recibidoLeDebes ?? 0} despues={p.despues.recibidoLeDebes ?? p.antes.recibidoLeDebes ?? 0} />
+        )}
         <Antes label="Cuenta forestal" antes={p.antes.maderaSaldo} despues={p.despues.maderaSaldo} />
         <div>
           <p className="text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Neto</p>
-          <p className="text-sm font-semibold text-[var(--text-tertiary)] line-through">{leerNeto(p.antes.neto, nombre)}</p>
-          <p className="text-base font-extrabold text-[var(--text-primary)]">{leerNeto(p.despues.neto, nombre)}</p>
+          <p className="text-sm font-semibold text-[var(--text-tertiary)] line-through">{leerNeto(r2(p.antes.neto - aFavorSuyoAdelantos), nombre)}</p>
+          <p className="text-base font-extrabold text-[var(--text-primary)]">{leerNeto(r2(p.despues.neto - aFavorSuyoAdelantos), nombre)}</p>
         </div>
       </div>
 

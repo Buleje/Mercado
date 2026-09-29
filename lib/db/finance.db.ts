@@ -14,6 +14,7 @@ import {
   type PaymentMethod,
 } from "./misc.db";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { SOLO_DADOS } from "@/lib/adelantos/direccion";
 import { decodeExpenseDescription, type ExpenseMeta } from "@/lib/expense-meta";
 import { FILTRO_REQUIERE_COSTO } from "@/lib/forestal/madera-de-servicio";
 import { estadoDePagoDeGuias, type EstadoPagoGuia } from "@/lib/forestal/plata-de-guia";
@@ -576,10 +577,13 @@ export const ExpensesDB = {
           })
         : Promise.resolve([]),
       // Adelantos al personal: plata que SALE pero vuelve. Ver `ClaseMovimiento`.
+      // ADR-448: sólo lo DADO — un adelanto recibido es plata que ENTRÓ, no un
+      // gasto ni un anticipo que sale.
       needAdelantos
         ? prisma.adelanto.findMany({
             where: {
               tenantId,
+              ...SOLO_DADOS,
               status: { not: "CANCELADO" },
               ...(hayFechas ? { fechaAdelanto: dateFilter } : {}),
             },
@@ -632,9 +636,13 @@ export const ExpensesDB = {
     // lista excluye los CANCELADOS, y un retiro de caja sigue siendo el pago de
     // su adelanto aunque después se haya anulado. Saberlo es justamente lo que
     // evita contarlo como una salida suelta.
+    //
+    // ADR-448: sólo los códigos de lo DADO. El egreso que devuelve un adelanto
+    // RECIBIDO lleva su código y NO está listado en otro lado: marcarlo como
+    // duplicado lo hacía desaparecer del historial.
     const codigosDeAdelanto = needCaja && egresosCaja.length > 0
       ? (await prisma.adelanto.findMany({
-          where: { tenantId, codigoOperacion: { not: null } },
+          where: { tenantId, codigoOperacion: { not: null }, ...SOLO_DADOS },
           select: { codigoOperacion: true },
         })).map((a) => a.codigoOperacion).filter((c): c is string => Boolean(c))
       : [];

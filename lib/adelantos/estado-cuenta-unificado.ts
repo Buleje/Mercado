@@ -14,7 +14,9 @@
  * ## Mismo criterio de signo que el resto del módulo
  *
  * `+` = le sube la deuda (un adelanto entregado, un aserrío cobrado, una venta
- * de madera). `−` = la persona entregó o pagó. Es EXACTAMENTE la convención de
+ * de madera). `−` = la persona entregó o pagó. Un adelanto RECIBIDO (ADR-448) va
+ * al revés: la plata que te dio resta, y lo que tú le das para devolverla suma.
+ * Es EXACTAMENTE la convención de
  * `estado-cuenta.ts` (Adelantos) y `cuenta-corriente.ts` (forestal) — acá sólo
  * se intercalan las dos listas.
  *
@@ -45,6 +47,7 @@
 import { CONCEPTO_LABEL, type Concepto, type MovimientoCuenta } from "@/lib/forestal/cuenta-corriente";
 import { leerNeto, montoEnMoneda } from "@/lib/adelantos/cuenta-unificada";
 import { STORE_TIMEZONE } from "@/lib/utils";
+import { direccionDe } from "@/lib/adelantos/direccion";
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
 const casiCero = (n: number) => Math.abs(n) < 0.005;
@@ -93,6 +96,8 @@ export interface AdelantoParaEstadoCuenta {
   montoAdelantado: number;
   moneda: string | null;
   entregas: EntregaParaEstadoCuenta[];
+  /** (ADR-448) Sin dirección = DADO. */
+  direccion?: string | null;
 }
 
 // ── Salida ───────────────────────────────────────────────────────────────────
@@ -149,21 +154,23 @@ export function estadoCuentaUnificado(
   for (const a of adelantos) {
     if (a.status === "CANCELADO") continue;
     const moneda = a.moneda || "PEN";
+    /* ADR-448: +1 lo que diste (te lo deben), −1 lo que recibiste (lo debes tú). */
+    const signo = direccionDe(a.direccion) === "RECIBIDO" ? -1 : 1;
     sueltos.push({
       fecha: a.fechaAdelanto,
       origen: "adelanto",
-      concepto: "Adelanto",
+      concepto: signo < 0 ? "Adelanto recibido" : "Adelanto",
       referencia: a.codigoOperacion,
-      monto: a.montoAdelantado,
+      monto: signo * a.montoAdelantado,
       moneda,
     });
     for (const e of a.entregas) {
       sueltos.push({
         fecha: e.fecha,
         origen: "entrega",
-        concepto: e.descripcion?.trim() || "Entrega",
+        concepto: e.descripcion?.trim() || (signo < 0 ? "Le entregaste" : "Entrega"),
         referencia: a.codigoOperacion,
-        monto: -e.valor,
+        monto: -signo * e.valor,
         moneda,
       });
     }

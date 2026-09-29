@@ -95,9 +95,9 @@ describe("adelantosACsv", () => {
     const csv = adelantosACsv([adel({ id: "c", notas: "insumos; flete; adelanto" })]);
     const fila = csv.split("\n")[1];
     expect(fila).toContain('"insumos; flete; adelanto"');
-    // 16 columnas ⇒ 15 separadores reales fuera de las comillas.
+    // 17 columnas (ADR-448 sumó «Dirección») ⇒ 16 separadores reales fuera de las comillas.
     const fuera = fila.split('"insumos; flete; adelanto"').join("");
-    expect(fuera.split(";").length - 1).toBe(15);
+    expect(fuera.split(";").length - 1).toBe(16);
   });
 
   it("un adelanto sin código ni motivo deja celdas vacías, no «null»", () => {

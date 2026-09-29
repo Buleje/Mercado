@@ -36,6 +36,7 @@
 
 import { z } from "zod";
 import type { MetodoPago } from "@/lib/adelantos/movimiento-caja";
+import { direccionDe } from "@/lib/adelantos/direccion";
 import { leerNeto } from "@/lib/adelantos/cuenta-unificada";
 import { formatCurrency } from "@/lib/currency";
 import { limaDateKey } from "@/lib/utils";
@@ -68,6 +69,19 @@ export interface PartidaFuera {
   monto: number;
   moneda: string;
   motivo: string;
+  /**
+   * (ADR-448) Sólo en lo que el negocio RECIBIÓ. Entra en la huella: un
+   * recibido abierto de S/ 100 y un dado excedido de S/ 100 caen los dos en
+   * `fuera` con la misma etiqueta y el mismo monto, y corregir la dirección
+   * entre la vista previa y el confirmar tiene que dar 409.
+   */
+  direccion?: "RECIBIDO";
+  /**
+   * (ADR-448) Sólo en lo RECIBIDO: de qué lado queda la deuda. `le-debes` =
+   * abierto (el negocio todavía no le devolvió); `te-debe` = excedido (le diste
+   * de más). Entra en la huella y en `saldosDe`.
+   */
+  quien?: "le-debes" | "te-debe";
 }
 
 export interface PartidasDePersona {
@@ -109,8 +123,19 @@ export interface ImputacionGuia {
 }
 
 export interface SaldosPersona {
+  /** Lo que te debe en Adelantos DADOS que entran al FIFO. */
   adelantosTeDebe: number;
   maderaSaldo: number;
+  /**
+   * (ADR-448) Lo RECIBIDO en soles que queda en `fuera`: lo que le debes
+   * (abiertos) y lo que te debe porque le diste de más (excedidos). No se salda
+   * acá, pero ES parte de la cuenta: sin esto el «Antes» y el recibo decían «queda
+   * en cero» con plata que el negocio todavía le debe. Opcionales: el acta de una
+   * liquidación anterior no los trae.
+   */
+  recibidoLeDebes?: number;
+  recibidoTeDebe?: number;
+  /** adelantosTeDebe + maderaSaldo − recibidoLeDebes + recibidoTeDebe. Positivo = te debe. */
   neto: number;
 }
 
@@ -212,6 +237,8 @@ export interface AdelantoParaLiquidar {
   status: string;
   /** Cuántas cuotas pactadas tiene. */
   cuotasPactadas: number;
+  /** (ADR-448) Sin dirección = DADO. */
+  direccion?: string | null;
 }
 
 /**
@@ -229,6 +256,25 @@ export function clasificarAdelantos(rows: readonly AdelantoParaLiquidar[]): {
   for (const a of orden) {
     const etiqueta = `Adelanto ${a.codigo ?? "sin código"}`;
     const moneda = a.moneda || "PEN";
+    /* ADR-448: lo RECIBIDO es la deuda al revés — el negocio le debe a la
+       persona. Nunca entra al FIFO de «te debe»: «Dejar en cero» le cobraría lo
+       que el negocio le tiene que devolver. Se muestra con su motivo. */
+    if (direccionDe(a.direccion) === "RECIBIDO") {
+      if ((a.status === "ABIERTO" || a.status === "EXCEDIDO") && Math.abs(a.saldo) > EPS) {
+        fuera.push({
+          etiqueta,
+          monto: r2(Math.abs(a.saldo)),
+          moneda,
+          motivo:
+            a.saldo > 0
+              ? "Es plata que te dieron: se la devuelves con el servicio, madera o plata, no se cobra acá."
+              : "Es plata que te dieron y ya le diste de más: acá no hay cómo saldarlo.",
+          direccion: "RECIBIDO",
+          quien: a.saldo > 0 ? "le-debes" : "te-debe",
+        });
+      }
+      continue;
+    }
     if (a.status === "EXCEDIDO") {
       fuera.push({ etiqueta, monto: r2(Math.abs(a.saldo)), moneda, motivo: "Está a favor suyo (entregó de más): acá no hay cómo saldarlo." });
       continue;
@@ -256,7 +302,26 @@ export function clasificarAdelantos(rows: readonly AdelantoParaLiquidar[]): {
 export function saldosDe(p: PartidasDePersona): SaldosPersona {
   const adelantosTeDebe = p.adelantos.reduce((a, x) => r2(a + x.saldo), 0);
   const maderaSaldo = r2(p.forestal?.saldo ?? 0);
-  return { adelantosTeDebe, maderaSaldo, neto: r2(adelantosTeDebe + maderaSaldo) };
+  const { recibidoLeDebes, recibidoTeDebe } = recibidosDe(p);
+  return {
+    adelantosTeDebe,
+    maderaSaldo,
+    recibidoLeDebes,
+    recibidoTeDebe,
+    neto: r2(adelantosTeDebe + maderaSaldo - recibidoLeDebes + recibidoTeDebe),
+  };
+}
+
+/** Lo RECIBIDO en soles de `fuera` (ADR-448): no lo toca ninguna liquidación, pero pesa en la cuenta. */
+function recibidosDe(p: PartidasDePersona): { recibidoLeDebes: number; recibidoTeDebe: number } {
+  let recibidoLeDebes = 0;
+  let recibidoTeDebe = 0;
+  for (const f of p.fuera) {
+    if (f.direccion !== "RECIBIDO" || (f.moneda || "PEN") !== "PEN") continue;
+    if (f.quien === "te-debe") recibidoTeDebe = r2(recibidoTeDebe + f.monto);
+    else recibidoLeDebes = r2(recibidoLeDebes + f.monto);
+  }
+  return { recibidoLeDebes, recibidoTeDebe };
 }
 
 /** Lo máximo que se puede cruzar: lo que te debe en adelantos contra lo que le debes en la cuenta. */
@@ -661,7 +726,14 @@ export function planLiquidacion(p: PartidasDePersona, intencion: IntencionLiquid
       compensado: compensar,
       pago,
       antes,
-      despues: { adelantosTeDebe, maderaSaldo, neto: r2(adelantosTeDebe + maderaSaldo) },
+      /* Lo recibido no lo mueve la liquidación: queda igual que antes y sigue en el neto. */
+      despues: {
+        adelantosTeDebe,
+        maderaSaldo,
+        recibidoLeDebes: antes.recibidoLeDebes,
+        recibidoTeDebe: antes.recibidoTeDebe,
+        neto: r2(adelantosTeDebe + maderaSaldo - (antes.recibidoLeDebes ?? 0) + (antes.recibidoTeDebe ?? 0)),
+      },
       cubiertos: p.forestal
         ? cargosCubiertosPorAntiguedad(p.forestal.movimientos, reduccionForestal, porGuiaSumado(pedidasGuias))
         : [],
@@ -674,6 +746,12 @@ export function planLiquidacion(p: PartidasDePersona, intencion: IntencionLiquid
  * La intención de «dejar en cero»: cruzar lo máximo y pagar el neto. `null` si
  * no hay nada que saldar, o si sin cruzar quedan deudas en las DOS direcciones
  * (un solo pago no las salda: primero hay que confirmar que es la misma persona).
+ *
+ * ADR-448: también `null` si hay plata RECIBIDA en soles en `fuera`. Esa deuda no
+ * la salda ninguna liquidación (se devuelve con el servicio, madera o plata), así
+ * que «dejar en cero» no puede dejar nada en cero: con WASACO vinculado cobraba
+ * 15 540,02 en vez de 12 509,02, y sin cuenta forestal cobraba el DADO y el
+ * recibo decía «queda en cero» con 1 731 que el negocio todavía le debía.
  */
 export function intencionDejarEnCero(
   p: PartidasDePersona,
@@ -681,6 +759,7 @@ export function intencionDejarEnCero(
   metodo: MetodoPago,
   moverCaja: boolean,
 ): IntencionLiquidacion | null {
+  if (p.fuera.some((f) => f.direccion === "RECIBIDO" && (f.moneda || "PEN") === "PEN")) return null;
   const s = saldosDe(p);
   const compensar = maximoCompensable(p);
   const adelantos = r2(s.adelantosTeDebe - compensar);
@@ -725,7 +804,10 @@ export function huellaDe(p: PartidasDePersona): string {
     /* Lo pendiente de cada guía (ADR-437 §6): imputar a una guía que cambió
        entre la vista previa y el confirmar es imputar a otra cosa. */
     ...(p.forestal?.guias ?? []).map((g) => `g:${g.gtfNumber}:${g.pendiente.toFixed(2)}`).sort(),
-    ...p.fuera.map((f) => `x:${f.etiqueta}:${f.moneda}:${f.monto.toFixed(2)}`).sort(),
+    /* La dirección entra sólo si es RECIBIDO: lo anterior a ADR-448 da la misma huella. */
+    ...p.fuera
+      .map((f) => `x:${f.etiqueta}:${f.moneda}:${f.monto.toFixed(2)}${f.direccion ? `:${f.direccion}:${f.quien ?? ""}` : ""}`)
+      .sort(),
   ].join("|");
   let h = 0x811c9dc5;
   for (let i = 0; i < partes.length; i++) {

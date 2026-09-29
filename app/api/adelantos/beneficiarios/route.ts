@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { AdelantosDB } from "@/lib/db/adelantos.db";
 import { requireAdmin } from "@/lib/require-admin";
+import { permisoAdelantos } from "@/lib/adelantos/permisos";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -34,6 +35,8 @@ const CreateSchema = z.object({
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
+  const sinPermiso = permisoAdelantos(auth.role, "read");
+  if (sinPermiso) return sinPermiso;
   try {
     const beneficiarios = await AdelantosDB.listBeneficiarios(auth.tenantId);
     return NextResponse.json(beneficiarios, { headers: { "X-Total-Count": String(beneficiarios.length) } });
@@ -49,6 +52,8 @@ export async function POST(req: NextRequest) {
   const _rl = await applyRateLimit(req, "MODERATE", "adelantos-benef"); if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
+  const sinPermiso = permisoAdelantos(auth.role, "write");
+  if (sinPermiso) return sinPermiso;
   try {
     const parsed = CreateSchema.safeParse(await req.json());
     if (!parsed.success) {

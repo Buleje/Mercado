@@ -68,7 +68,9 @@ describe("Tala · el censo cruzado con el libro", () => {
 
   it("«Ver censo» · Talados muestra la línea y no deja elegirlo; elegir un disponible lo carga", async () => {
     render(<LothEntryForm section="tala" onClose={() => {}} onSaved={() => {}} />);
-    await waitFor(() => expect(verCenso().textContent).toMatch(/3/));
+    /* El conteo llega tras 3 fetch encadenados: con el hook de commit corriendo
+       cientos de archivos a la vez, 1 s (el default) no alcanza. */
+    await waitFor(() => expect(verCenso().textContent).toMatch(/3/), { timeout: 5000 });
     fireEvent.click(verCenso());
     const modal = await screen.findByRole("dialog", { name: "Censo del plan" });
     fireEvent.click(within(modal).getByRole("button", { name: /^Talados/ }));
@@ -93,7 +95,9 @@ describe("Tala · el censo cruzado con el libro", () => {
 
   it("un semillero del regente pide confirmar antes de cargarse", async () => {
     render(<LothEntryForm section="tala" onClose={() => {}} onSaved={() => {}} />);
-    await waitFor(() => expect(verCenso().textContent).toMatch(/3/));
+    /* El conteo llega tras 3 fetch encadenados: con el hook de commit corriendo
+       cientos de archivos a la vez, 1 s (el default) no alcanza. */
+    await waitFor(() => expect(verCenso().textContent).toMatch(/3/), { timeout: 5000 });
     fireEvent.click(verCenso());
     const modal = await screen.findByRole("dialog", { name: "Censo del plan" });
     fireEvent.click(within(modal).getByRole("button", { name: "Elegir el árbol 106" }));

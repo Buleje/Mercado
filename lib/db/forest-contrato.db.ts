@@ -5,6 +5,7 @@ import { invalidateByPrefix } from "@/lib/cache";
 import { auditCtp } from "@/lib/forestal/ctp-audit";
 import { normalizarFotos, type FotoCarga } from "@/lib/forestal/fotos-carga";
 import { FILTRO_REQUIERE_COSTO } from "@/lib/forestal/madera-de-servicio";
+import { direccionDe } from "@/lib/adelantos/direccion";
 import {
   codigoSospechoso,
   normalizarCodigoContrato,
@@ -497,8 +498,11 @@ export class ForestContratoDB {
         _count: { _all: true },
         _sum: { monto: true },
       }),
+      /* ADR-448: por dirección y estado — lo recibido entra y queda «por
+         devolver»; sumarlo a lo dado lo contaba como egreso y como «por
+         recuperar». El estado separa lo anulado y lo excedido (`sumarAdelantos`). */
       prisma.adelanto.groupBy({
-        by: ["contratoId"],
+        by: ["contratoId", "direccion", "status"],
         where: vivos,
         _count: { _all: true },
         _sum: { montoAdelantado: true, saldoPendiente: true },
@@ -545,6 +549,8 @@ export class ForestContratoDB {
           fletes: { documentos: 0, monto: 0 },
           adelantos: { documentos: 0, monto: 0 },
           adelantosSaldo: 0,
+          adelantosRecibidos: { documentos: 0, monto: 0 },
+          adelantosRecibidosSaldo: 0,
           cuentaCargos: { documentos: 0, monto: 0 },
           cuentaAbonos: { documentos: 0, monto: 0 },
         })
@@ -570,12 +576,12 @@ export class ForestContratoDB {
       if (g.contratoId) de(g.contratoId).gastos = { documentos: g._count._all, monto: n(g._sum.amount) };
     for (const g of fletes)
       if (g.contratoId) de(g.contratoId).fletes = { documentos: g._count._all, monto: n(g._sum.monto) };
+    const adelantosPorContrato = new Map<string, typeof adelantos>();
     for (const g of adelantos) {
       if (!g.contratoId) continue;
-      const b = de(g.contratoId);
-      b.adelantos = { documentos: g._count._all, monto: n(g._sum.montoAdelantado) };
-      b.adelantosSaldo = n(g._sum.saldoPendiente);
+      adelantosPorContrato.set(g.contratoId, [...(adelantosPorContrato.get(g.contratoId) ?? []), g]);
     }
+    for (const [id, grupos] of adelantosPorContrato) Object.assign(de(id), sumarAdelantos(grupos));
     for (const g of cuenta) {
       if (!g.contratoId) continue;
       const b = de(g.contratoId);
@@ -710,7 +716,9 @@ export class ForestContratoDB {
         _count: { _all: true },
         _sum: { monto: true },
       }),
-      prisma.adelanto.aggregate({
+      /* ADR-448: una fila por dirección y estado, como en `balances()`. */
+      prisma.adelanto.groupBy({
+        by: ["direccion", "status"],
         where: { tenantId, contratoId, ...enRango("fechaAdelanto") },
         _count: { _all: true },
         _sum: { montoAdelantado: true, saldoPendiente: true },
@@ -729,6 +737,7 @@ export class ForestContratoDB {
 
     const n = (v: Prisma.Decimal | null | undefined) => Number(v ?? 0);
     const ventas = await ForestContratoDB.ventasAtribuidas(tenantId, contratoId, rango);
+    const bloqueAdelantos = sumarAdelantos(adelantos);
     return {
       contratoId,
       madera: {
@@ -742,8 +751,7 @@ export class ForestContratoDB {
       ventas,
       gastos: { documentos: gastos._count._all, monto: n(gastos._sum.amount) },
       fletes: { documentos: fletes._count._all, monto: n(fletes._sum.monto) },
-      adelantos: { documentos: adelantos._count._all, monto: n(adelantos._sum.montoAdelantado) },
-      adelantosSaldo: n(adelantos._sum.saldoPendiente),
+      ...bloqueAdelantos,
       cuentaCargos: { documentos: cargos._count._all, monto: n(cargos._sum.monto) },
       cuentaAbonos: { documentos: abonos._count._all, monto: n(abonos._sum.monto) },
     };
@@ -952,4 +960,45 @@ export class ForestContratoDB {
       despachos: [...despachos.values()],
     });
   }
+}
+
+/**
+ * Los bloques de adelantos del balance, de los grupos (dirección, estado) del
+ * `groupBy` (ADR-448).
+ *
+ * - DADO: igual que siempre — todos los estados, el saldo con su signo. (Ya
+ *   existía: cuenta también los anulados; 0 casos en Blas al 28-09.)
+ * - RECIBIDO: sin los anulados (ya no se deben), y «por devolver» suma sólo los
+ *   saldos POSITIVOS — un recibido excedido (le diste de más) no le descuenta
+ *   deuda a los demás.
+ */
+function sumarAdelantos(
+  grupos: readonly {
+    direccion: string;
+    status: string;
+    _count: { _all: number };
+    _sum: { montoAdelantado: Prisma.Decimal | null; saldoPendiente: Prisma.Decimal | null };
+  }[],
+): Pick<BalanceContrato, "adelantos" | "adelantosSaldo" | "adelantosRecibidos" | "adelantosRecibidosSaldo"> {
+  const n = (v: Prisma.Decimal | null | undefined) => Number(v ?? 0);
+  const r2 = (v: number) => Math.round(v * 100) / 100;
+  const out = {
+    adelantos: { documentos: 0, monto: 0 },
+    adelantosSaldo: 0,
+    adelantosRecibidos: { documentos: 0, monto: 0 },
+    adelantosRecibidosSaldo: 0,
+  };
+  for (const g of grupos) {
+    if (direccionDe(g.direccion) === "RECIBIDO") {
+      if (g.status === "CANCELADO") continue;
+      out.adelantosRecibidos.documentos += g._count._all;
+      out.adelantosRecibidos.monto = r2(out.adelantosRecibidos.monto + n(g._sum.montoAdelantado));
+      out.adelantosRecibidosSaldo = r2(out.adelantosRecibidosSaldo + Math.max(0, n(g._sum.saldoPendiente)));
+    } else {
+      out.adelantos.documentos += g._count._all;
+      out.adelantos.monto = r2(out.adelantos.monto + n(g._sum.montoAdelantado));
+      out.adelantosSaldo = r2(out.adelantosSaldo + n(g._sum.saldoPendiente));
+    }
+  }
+  return out;
 }

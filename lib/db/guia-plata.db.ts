@@ -501,7 +501,8 @@ export const GuiaPlataDB = {
     if (!tenantId) throw new Error("tenantId is required");
     const [beneficiarios, saldos, partes, movimientos] = await Promise.all([
       AdelantosDB.listBeneficiarios(tenantId),
-      AdelantosDB.saldosPorPersona(tenantId),
+      /* ADR-448: con lo recibido, que resta (es plata que el negocio le debe). */
+      AdelantosDB.saldosPorPersona(tenantId, { direccion: "todas" }),
       prisma.forestParty.findMany({
         where: { tenantId },
         select: { id: true, nombre: true, docNumero: true, telefono: true },
@@ -524,6 +525,7 @@ export const GuiaPlataDB = {
         saldoPendiente: g.saldoPendiente,
         moneda: g.moneda,
         cantidad: g.cantidad,
+        direccion: g.direccion,
       })),
       partes,
       movimientos,
@@ -531,7 +533,8 @@ export const GuiaPlataDB = {
     const fila = filas.find((f) => f.parteId === parteId);
     const nombre = fila?.nombre ?? partes.find((p) => p.id === parteId)?.nombre ?? "—";
     const madera = fila?.madera?.saldo ?? 0;
-    const adel = fila?.adelantos ? r2(fila.adelantos.teDebe - fila.adelantos.aFavorSuyo) : null;
+    /* ADR-448: el neto de Adelantos ya resta lo recibido (antes: teDebe − aFavorSuyo). */
+    const adel = fila?.adelantos ? fila.adelantos.neto : null;
     return {
       parteId,
       nombre,
@@ -961,7 +964,8 @@ export const GuiaPlataDB = {
     if (!tenantId) throw new Error("tenantId is required");
     const [beneficiarios, saldos, partes, movimientos] = await Promise.all([
       AdelantosDB.listBeneficiarios(tenantId),
-      AdelantosDB.saldosPorPersona(tenantId),
+      /* ADR-448: con lo recibido, que resta (es plata que el negocio le debe). */
+      AdelantosDB.saldosPorPersona(tenantId, { direccion: "todas" }),
       /* La MISMA lista que «Cuenta por persona» (`/api/adelantos/cuentas`):
          con inactivos y sin las borradas. Con otra lista la unión podía juntar
          distinto y el neto del modal no ser el de esa fila. */
@@ -984,12 +988,14 @@ export const GuiaPlataDB = {
         saldoPendiente: g.saldoPendiente,
         moneda: g.moneda,
         cantidad: g.cantidad,
+        direccion: g.direccion,
       })),
       partes: partes.map((p) => ({ id: p.id, nombre: p.nombre, docNumero: p.docNumero, telefono: p.telefono })),
       movimientos,
     }).find((f) => f.parteId === parteId);
     const beneficiarioId = fila?.beneficiarioId ?? null;
-    const adelantos = beneficiarioId ? await AdelantosDB.list(tenantId, { beneficiarioId }) : [];
+    /* Las dos direcciones: el estado de cuenta muestra lo recibido con el signo al revés. */
+    const adelantos = beneficiarioId ? await AdelantosDB.list(tenantId, { beneficiarioId, direccion: "todas" }) : [];
     const lineas = estadoCuentaUnificado(
       adelantos.map((a) => ({
         status: a.status,
@@ -997,6 +1003,7 @@ export const GuiaPlataDB = {
         fechaAdelanto: a.fechaAdelanto,
         montoAdelantado: a.montoAdelantado,
         moneda: a.moneda,
+        direccion: a.direccion,
         entregas: a.entregas.map((e) => ({ fecha: e.fecha, descripcion: e.descripcion ?? null, valor: e.valor })),
       })),
       movimientos,
@@ -1007,7 +1014,7 @@ export const GuiaPlataDB = {
       nombre: fila?.nombre ?? ficha?.nombre ?? movimientos.at(-1)?.parteNombre ?? "—",
       beneficiarioId,
       neto: fila?.neto ?? maderaSaldo,
-      adelantado: fila?.adelantos ? r2(fila.adelantos.teDebe - fila.adelantos.aFavorSuyo) : null,
+      adelantado: fila?.adelantos ? fila.adelantos.neto : null,
       otrasMonedas: fila?.otrasMonedas ?? {},
       lineas,
       dia: claveDia,

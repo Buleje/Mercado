@@ -13,9 +13,11 @@
  * pantalla y la regla decían cosas distintas sobre la misma plata.
  *
  * Por eso `saldoPendiente` se define acá EXACTAMENTE como lo mide el guard de
- * `AdelantosDB.create`: la suma de los adelantos ABIERTOS. Una sola definición
+ * `AdelantosDB.create`: la suma de los adelantos DADOS y ABIERTOS (ADR-448: lo recibido va aparte). Una sola definición
  * para las dos puntas.
  */
+
+import { direccionDe } from "@/lib/adelantos/direccion";
 
 /** Lo mínimo de un adelanto para sacar cuentas de su dueño. */
 export type AdelantoDeLaPersona = {
@@ -25,6 +27,8 @@ export type AdelantoDeLaPersona = {
   moneda?: string | null;
   status: string;
   fechaAdelanto?: string | Date | null;
+  /** (ADR-448) Sin dirección = DADO: todo lo anterior al 29-09-2026. */
+  direccion?: string | null;
 };
 
 export type ResumenPersona = {
@@ -52,6 +56,31 @@ export type ResumenPersona = {
   adelantosCancelados: number;
   /** Fecha del último adelanto vivo, o null si nunca sacó (o todo se canceló). */
   ultimoAdelanto: string | null;
+
+  /*
+   * ── Lo RECIBIDO (ADR-448) ──
+   * Todo lo de arriba sigue siendo SÓLO lo que el negocio dio: el tope, el
+   * cumplimiento y «debe hoy» no cambian de significado. Lo que el negocio
+   * recibió va en campos propios, y las dos cifras que se muestran salen de
+   * juntar las dos direcciones sin restarlas.
+   */
+  /** Plata que la persona te dio alguna vez (recibidos vivos). */
+  totalRecibido: Record<string, number>;
+  /** Recibidos ABIERTOS: lo que todavía le debes devolver (servicio, madera o plata). */
+  recibidoPendiente: Record<string, number>;
+  /** Recibidos EXCEDIDOS: le diste de más de lo que te dio — te debe. */
+  recibidoExcedido: Record<string, number>;
+  recibidosAbiertos: number;
+  /** Lo que te debe, en las dos direcciones: `saldoPendiente + recibidoExcedido`. */
+  teDebe: Record<string, number>;
+  /** Lo que le debes, en las dos direcciones: `saldoAFavor + recibidoPendiente`. */
+  leDebes: Record<string, number>;
+  /**
+   * `teDebe − leDebes` por moneda: + te debe, − le debes. La pantalla lo
+   * muestra sólo cuando hay deuda en las dos direcciones (mismo criterio que
+   * la cuenta unificada); si no, las dos cifras bastan.
+   */
+  neto: Record<string, number>;
 };
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
@@ -67,6 +96,10 @@ export function resumirPersona(adelantos: readonly AdelantoDeLaPersona[]): Resum
   const saldoPendiente: Record<string, number> = {};
   const totalEntregado: Record<string, number> = {};
   const saldoAFavor: Record<string, number> = {};
+  const totalRecibido: Record<string, number> = {};
+  const recibidoPendiente: Record<string, number> = {};
+  const recibidoExcedido: Record<string, number> = {};
+  let recibidosAbiertos = 0;
   let adelantosAbiertos = 0;
   let adelantosLiquidados = 0;
   let adelantosCancelados = 0;
@@ -77,6 +110,20 @@ export function resumirPersona(adelantos: readonly AdelantoDeLaPersona[]): Resum
   };
 
   for (const a of adelantos) {
+    if (direccionDe(a.direccion) === "RECIBIDO") {
+      /* Lo recibido no entra en el tope, ni en el cumplimiento, ni en «debe
+         hoy»: es la deuda al revés. Un cancelado no pesa en ningún lado. */
+      if (a.status === "CANCELADO") continue;
+      const moneda = a.moneda || "PEN";
+      sumar(totalRecibido, moneda, a.montoAdelantado);
+      if (a.status === "ABIERTO") {
+        recibidosAbiertos += 1;
+        sumar(recibidoPendiente, moneda, Math.max(0, a.saldoPendiente));
+      } else if (a.status === "EXCEDIDO") {
+        sumar(recibidoExcedido, moneda, Math.max(0, -a.saldoPendiente));
+      }
+      continue;
+    }
     if (a.status === "CANCELADO") {
       adelantosCancelados += 1;
       /* Un adelanto cancelado no se cobra ni cuenta como plata entregada: se
@@ -104,6 +151,8 @@ export function resumirPersona(adelantos: readonly AdelantoDeLaPersona[]): Resum
   const redondear = (m: Record<string, number>): Record<string, number> =>
     Object.fromEntries(Object.entries(m).map(([k, v]) => [k, r2(v)]));
 
+  const teDebe = redondear(juntar(saldoPendiente, recibidoExcedido, 1));
+  const leDebes = redondear(juntar(saldoAFavor, recibidoPendiente, 1));
   return {
     totalAdelantado: redondear(totalAdelantado),
     saldoPendiente: redondear(saldoPendiente),
@@ -113,7 +162,21 @@ export function resumirPersona(adelantos: readonly AdelantoDeLaPersona[]): Resum
     adelantosLiquidados,
     adelantosCancelados,
     ultimoAdelanto,
+    totalRecibido: redondear(totalRecibido),
+    recibidoPendiente: redondear(recibidoPendiente),
+    recibidoExcedido: redondear(recibidoExcedido),
+    recibidosAbiertos,
+    teDebe,
+    leDebes,
+    neto: redondear(juntar(teDebe, leDebes, -1)),
   };
+}
+
+/** `a + signo·b` moneda por moneda, con las claves de los dos. */
+function juntar(a: Record<string, number>, b: Record<string, number>, signo: 1 | -1): Record<string, number> {
+  const out: Record<string, number> = { ...a };
+  for (const [k, v] of Object.entries(b)) out[k] = r2((out[k] ?? 0) + signo * v);
+  return out;
 }
 
 /**

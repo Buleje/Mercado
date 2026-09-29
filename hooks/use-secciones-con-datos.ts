@@ -32,7 +32,7 @@ const SONDAS: Record<ClaveDeDato, { url: string; hay: (json: unknown) => boolean
   assets:      { url: "/api/admin/assets",   hay: (j) => cuantos((j as { data?: unknown })?.data) > 0 },
   fiados:      { url: "/api/fiados",         hay: (j) => Array.isArray(j) && j.length > 0 },
   prestamos:   { url: "/api/prestamos",      hay: (j) => Array.isArray(j) && j.length > 0 },
-  adelantos:   { url: "/api/adelantos",      hay: (j) => Array.isArray(j) && j.length > 0 },
+  adelantos:   { url: "/api/adelantos?direccion=todas", hay: (j) => Array.isArray(j) && j.length > 0 },
   presupuesto: { url: "/api/presupuesto",    hay: (j) => cuantos((j as { categorias?: unknown })?.categorias) > 0 },
 };
 

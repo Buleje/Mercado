@@ -10,6 +10,7 @@ import { useEffect, type ComponentType, type ReactNode, useRef } from "react";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
 import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
+import { InfoTip, type InfoTipProps } from "@/components/superadmin/_shared/InfoTip";
 import { CardTitle } from "@buleje/design-system";
 import { X } from "@buleje/design-system/icons";
 import { formatCurrency } from "@/lib/currency";
@@ -46,6 +47,8 @@ export function fmtMon(n: number, moneda?: string | null): string {
 export const PT_TIPO_LABEL: Record<string, string> = {
   COMPRADO: "Comprado",
   VENDIDO: "Vendido",
+  /** ADR-448: los pt del trabajo que se va a dar en un adelanto por servicio. */
+  SERVICIO: "Por el servicio",
 };
 
 /** Pies tablares — dato de referencia, nunca plata: sin símbolo monetario. */
@@ -75,6 +78,22 @@ export function fmtMonedas(map: Record<string, number>): string {
   const keys = Object.keys(map).filter((k) => map[k] !== 0);
   if (keys.length === 0) return formatCurrency(0);
   return keys.map((k) => fmtMon(map[k], k)).join(" · ");
+}
+
+/**
+ * Un total por moneda con cada moneda en su renglón y sin partirse: «S/ 573.00»
+ * cortado en «S/» y «573.00» no se lee como plata (visto a 400 px, 28-09).
+ */
+export function MontosEnLineas({ map }: { map: Record<string, number> }) {
+  return (
+    <>
+      {fmtMonedas(map).split(" · ").map((v) => (
+        <span key={v} className="block whitespace-nowrap">
+          {v}
+        </span>
+      ))}
+    </>
+  );
 }
 
 export function EmptyState({ icon: Icon, title, hint }: { icon: ComponentType<{ className?: string }>; title: string; hint: string }) {
@@ -118,10 +137,17 @@ export function Field({
   children,
   hint,
   grupo,
+  info,
 }: {
   label: string;
   children: ReactNode;
   hint?: string;
+  /**
+   * La ayuda del campo en un ⓘ al lado del rótulo, en vez de un pie de texto
+   * (Brandon 24-09: «mucho texto por todos lados»). Sólo con `grupo`: un botón
+   * dentro de un `<label>` le roba el clic al control.
+   */
+  info?: Pick<InfoTipProps, "what" | "affects" | "example">;
   /**
    * El contenido son VARIOS controles (chips, botones), no uno solo.
    *
@@ -139,7 +165,14 @@ export function Field({
   if (grupo) {
     return (
       <div role="group" aria-label={label} className="space-y-1.5">
-        {titulo}
+        {info ? (
+          <span className="flex items-center gap-1.5">
+            {titulo}
+            <InfoTip title={label} {...info} />
+          </span>
+        ) : (
+          titulo
+        )}
         {children}
         {pie}
       </div>
@@ -154,8 +187,12 @@ export function Field({
   );
 }
 
-/** Anchos del shell. `lg` = detalle en 2 columnas; `xl` = formularios en 3 (alta). */
-const ANCHOS = { sm: "max-w-md", md: "max-w-2xl", lg: "max-w-[900px]", xl: "max-w-[1180px]" } as const;
+/**
+ * Anchos del shell. `lg` = detalle en 2 columnas; `xl` = ficha de persona;
+ * `2xl` = el alta de adelanto: bloques a la izquierda + «La cuenta» fija a la
+ * derecha (ADR-448). En rem explícito: `max-w-{sm..xl}` valen el doble acá.
+ */
+const ANCHOS = { sm: "max-w-md", md: "max-w-2xl", lg: "max-w-[900px]", xl: "max-w-[1180px]", "2xl": "max-w-[82.5rem]" } as const;
 
 export function ModalShell({
   title,
@@ -165,6 +202,7 @@ export function ModalShell({
   wide,
   size,
   footer,
+  cuerpo = "normal",
 }: {
   title: string;
   subtitle?: ReactNode;
@@ -178,6 +216,12 @@ export function ModalShell({
    * el scroll: en el alta de adelanto había que bajar para encontrar «Crear».
    */
   footer?: ReactNode;
+  /**
+   * `hundido`: el cuerpo va sobre el fondo hundido y cada bloque es una tarjeta
+   * blanca. Con todo sobre blanco, un formulario de cinco bloques se leía como
+   * un solo muro gris (alta de adelanto, Brandon 28-09: «lo veo feo»).
+   */
+  cuerpo?: "normal" | "hundido";
 }) {
   /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
   const cajaRef = useRef<HTMLDivElement>(null);
@@ -228,11 +272,21 @@ export function ModalShell({
             </button>
           </span>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto pb-5 pt-2 px-5 sm:px-6">
+        <div
+          className={`min-h-0 flex-1 overflow-y-auto px-5 sm:px-6 ${
+            cuerpo === "hundido" ? "bg-[var(--surface-sunken)] py-5 shadow-[inset_0_1px_0_0_var(--rule-soft)]" : "pb-5 pt-2"
+          }`}
+        >
           <div className="space-y-4">{children}</div>
         </div>
         {footer && (
-          <div className="shrink-0 bg-[var(--surface-sunken)] px-6 py-4 shadow-[0_-1px_0_0_var(--rule-soft)]">{footer}</div>
+          <div
+            className={`shrink-0 px-6 py-4 shadow-[0_-1px_0_0_var(--rule-soft)] ${
+              cuerpo === "hundido" ? "bg-[var(--surface-raised)]" : "bg-[var(--surface-sunken)]"
+            }`}
+          >
+            {footer}
+          </div>
         )}
         <TiradorDeVentana ventana={ventana} />
       </div>

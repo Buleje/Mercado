@@ -20,7 +20,9 @@
  *
  * ## Las dos patas se muestran separadas, el neto es la síntesis
  *
- * `neto = teDebe − aFavorSuyo (Adelantos) + saldo (madera)`. Sumar sin mostrar
+ * `neto = teDebe − aFavorSuyo − recibidoPendiente + recibidoExcedido (Adelantos)
+ * + saldo (madera)`. Lo recibido (ADR-448) es la deuda al revés: un adelanto que
+ * la persona le dio al negocio y todavía no se le devolvió. Sumar sin mostrar
  * las partes esconde, por ejemplo, que le adelantaste S/ 500 Y le debés
  * S/ 200 por una guía que te vendió — dos deudas en direcciones opuestas
  * (mismo error que ya se corrigió una vez en `saldo-persona.ts`).
@@ -48,6 +50,7 @@ import { calcularSaldo, type Concepto, type MovimientoCuenta } from "@/lib/fores
 // formatos de la misma cifra (revisión en el navegador: "S/ 17000.00" vs
 // "S/ 17,000.00").
 import { formatCurrency } from "@/lib/currency";
+import { direccionDe } from "@/lib/adelantos/direccion";
 
 // ── Entradas ─────────────────────────────────────────────────────────────────
 
@@ -73,6 +76,11 @@ export interface AdelantoParaUnificar {
   moneda: string | null;
   /** Cuántos adelantos individuales hay en este grupo. */
   cantidad: number;
+  /**
+   * (ADR-448) Sin dirección = DADO. Pedir los grupos con
+   * `saldosPorPersona(t, { direccion: "todas" })` para que lo recibido reste.
+   */
+  direccion?: string | null;
 }
 
 export interface ParteParaUnificar {
@@ -95,8 +103,29 @@ export interface CuentaPersona {
   parteId: string | null;
   /** Cómo se unieron las dos libretas — `null` si no hay parte vinculada. */
   vinculo: "id" | "documento" | null;
-  /** `null` = esta fila no tiene ficha en Adelantos (vino sólo del directorio forestal). */
-  adelantos: { teDebe: number; aFavorSuyo: number; abiertos: number } | null;
+  /**
+   * `null` = esta fila no tiene ficha en Adelantos (vino sólo del directorio forestal).
+   *
+   * `teDebe`, `aFavorSuyo` y `abiertos` siguen siendo SÓLO lo dado (ADR-448).
+   * Lo recibido llega aparte y se junta así en pantalla:
+   *   «Te debe»  = teDebe + recibidoExcedido
+   *   «Le debes» = leDebes (= aFavorSuyo + recibidoPendiente)
+   *   neto de Adelantos = `neto`
+   */
+  adelantos: {
+    teDebe: number;
+    aFavorSuyo: number;
+    abiertos: number;
+    /** Recibidos ABIERTOS: lo que el negocio todavía le debe devolver. */
+    recibidoPendiente: number;
+    /** Recibidos EXCEDIDOS: el negocio le dio de más de lo que recibió. */
+    recibidoExcedido: number;
+    recibidosAbiertos: number;
+    /** aFavorSuyo + recibidoPendiente: todo lo que el negocio le debe en Adelantos. */
+    leDebes: number;
+    /** teDebe + recibidoExcedido − leDebes. Positivo = te debe. */
+    neto: number;
+  } | null;
   /** `null` = esta fila no tiene parte forestal vinculada. */
   madera: {
     cargos: number;
@@ -107,7 +136,7 @@ export interface CuentaPersona {
     movimientos: MovimientoCuenta[];
     ultimo: string | null;
   } | null;
-  /** teDebe − aFavorSuyo + madera.saldo. Positivo = te debe. */
+  /** adelantos.neto + madera.saldo. Positivo = te debe. */
   neto: number;
   /** Adelantos en monedas != PEN — fuera del neto (la cuenta forestal es en soles). */
   otrasMonedas: Record<string, number>;
@@ -121,18 +150,35 @@ function normalizarDocumento(v: string | null | undefined): string | null {
   return t || null;
 }
 
-function agregarAdelantos(rows: AdelantoParaUnificar[]): {
-  teDebe: number;
-  aFavorSuyo: number;
-  abiertos: number;
+function agregarAdelantos(rows: AdelantoParaUnificar[]): NonNullable<CuentaPersona["adelantos"]> & {
   otrasMonedas: Record<string, number>;
 } {
   let teDebe = 0;
   let aFavorSuyo = 0;
   let abiertos = 0;
+  let recibidoPendiente = 0;
+  let recibidoExcedido = 0;
+  let recibidosAbiertos = 0;
   const otras: Record<string, number> = {};
   for (const a of rows) {
     const moneda = a.moneda || "PEN";
+    if (direccionDe(a.direccion) === "RECIBIDO") {
+      /* La deuda al revés (ADR-448): un recibido abierto lo debe el NEGOCIO;
+         uno excedido (le diste de más), la persona. En otras monedas, con el
+         signo del negocio: + te debe, − le debes. */
+      if (a.status === "ABIERTO") {
+        recibidosAbiertos += a.cantidad;
+        if (a.saldoPendiente > 0) {
+          if (moneda === "PEN") recibidoPendiente += a.saldoPendiente;
+          else otras[moneda] = (otras[moneda] ?? 0) - a.saldoPendiente;
+        }
+      } else if (a.status === "EXCEDIDO") {
+        const excedido = Math.max(0, -a.saldoPendiente);
+        if (moneda === "PEN") recibidoExcedido += excedido;
+        else otras[moneda] = (otras[moneda] ?? 0) + excedido;
+      }
+      continue;
+    }
     if (a.status === "ABIERTO") {
       // `cantidad` es el `_count` del grupo — se cuenta en TODAS las monedas
       // porque es un contador de operaciones, no plata.
@@ -150,10 +196,16 @@ function agregarAdelantos(rows: AdelantoParaUnificar[]): {
     }
     // LIQUIDADO / CANCELADO no suman: ya no se cobran (mismo bug que tapó saldo-persona.ts).
   }
+  const leDebes = r2(aFavorSuyo + recibidoPendiente);
   return {
     teDebe: r2(teDebe),
     aFavorSuyo: r2(aFavorSuyo),
     abiertos,
+    recibidoPendiente: r2(recibidoPendiente),
+    recibidoExcedido: r2(recibidoExcedido),
+    recibidosAbiertos,
+    leDebes,
+    neto: r2(r2(teDebe + recibidoExcedido) - leDebes),
     otrasMonedas: Object.fromEntries(Object.entries(otras).map(([k, v]) => [k, r2(v)])),
   };
 }
@@ -259,7 +311,7 @@ export function unificarCuentas(input: {
     const parteId = parteDeBenef.get(b.id) ?? null;
     const resAdel = agregarAdelantos(adelantosPorBenef.get(b.id) ?? []);
     const madera = parteId ? agregarMadera(movsPorParte.get(parteId) ?? []) : null;
-    const neto = r2(r2(resAdel.teDebe - resAdel.aFavorSuyo) + (madera?.saldo ?? 0));
+    const neto = r2(resAdel.neto + (madera?.saldo ?? 0));
     // El de la persona manda; si no tiene, el de la parte forestal vinculada
     // (a veces sólo el directorio tiene el celular cargado).
     const telefono = b.telefono?.trim() || (parteId ? infoDeParte(parteId).telefono : null) || null;
@@ -271,7 +323,16 @@ export function unificarCuentas(input: {
       beneficiarioId: b.id,
       parteId,
       vinculo: vinculoDeBenef.get(b.id) ?? null,
-      adelantos: { teDebe: resAdel.teDebe, aFavorSuyo: resAdel.aFavorSuyo, abiertos: resAdel.abiertos },
+      adelantos: {
+        teDebe: resAdel.teDebe,
+        aFavorSuyo: resAdel.aFavorSuyo,
+        abiertos: resAdel.abiertos,
+        recibidoPendiente: resAdel.recibidoPendiente,
+        recibidoExcedido: resAdel.recibidoExcedido,
+        recibidosAbiertos: resAdel.recibidosAbiertos,
+        leDebes: resAdel.leDebes,
+        neto: resAdel.neto,
+      },
       madera,
       neto,
       otrasMonedas: resAdel.otrasMonedas,
@@ -302,7 +363,13 @@ export function unificarCuentas(input: {
   }
 
   return filas
-    .filter((f) => Math.abs(f.neto) > 0.005 || (f.madera?.movimientos.length ?? 0) > 0 || (f.adelantos?.abiertos ?? 0) > 0)
+    .filter(
+      (f) =>
+        Math.abs(f.neto) > 0.005 ||
+        (f.madera?.movimientos.length ?? 0) > 0 ||
+        (f.adelantos?.abiertos ?? 0) > 0 ||
+        (f.adelantos?.recibidosAbiertos ?? 0) > 0,
+    )
     .sort((a, b) => Math.abs(b.neto) - Math.abs(a.neto) || a.nombre.localeCompare(b.nombre, "es"));
 }
 

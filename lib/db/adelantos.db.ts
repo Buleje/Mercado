@@ -15,10 +15,28 @@ import { resumirPersona, type ResumenPersona } from "@/lib/adelantos/saldo-perso
 import {
   etiquetaEgreso,
   etiquetaIngreso,
+  etiquetaRecibido,
   etiquetaReversion,
-  moverCaja,
+  moverCajaEnTx,
   type MetodoPago,
+  type ResultadoMovimiento,
 } from "@/lib/adelantos/movimiento-caja";
+import {
+  SOLO_DADOS,
+  cajaAlCrear,
+  cajaAlDevolver,
+  direccionDe,
+  mensajeMovioCaja,
+  movimientoDelAlta,
+  problemaDeDireccion,
+  whereDireccion,
+  type AdelantoConceptoRecibido,
+  type AdelantoDireccion,
+  type FiltroDireccion,
+} from "@/lib/adelantos/direccion";
+import { limpiarMotivo, motivoLegible } from "@/lib/forestal/motivo";
+import { formatCurrency } from "@/lib/currency";
+import { huellaDeAlta, huellaDeEntrega } from "@/lib/adelantos/idempotencia";
 // Sólo LECTURA de la parte: la clase forestal es dueña de `ForestParty`
 // (ADR-317); acá no se toca su tabla, sólo se confirma que exista en el tenant.
 import { ForestDirectorioDB } from "@/lib/db/forest-directorio.db";
@@ -35,6 +53,9 @@ import { ForestDirectorioDB } from "@/lib/db/forest-directorio.db";
  */
 
 // ── Types ───────────────────────────────────────────────────────────────────
+/** (ADR-448) Para los 5 lectores que consultan `prisma.adelanto` por fuera de esta clase. */
+export { SOLO_DADOS };
+export type { AdelantoDireccion, AdelantoConceptoRecibido, FiltroDireccion };
 export type AdelantoModalidad = "CUENTA_CORRIENTE" | "ENTREGAS_PACTADAS" | "DESCUENTO_PLANILLA";
 export type AdelantoStatus = "ABIERTO" | "LIQUIDADO" | "EXCEDIDO" | "CANCELADO";
 export type AdelantoEntregaTipo = "LIBRE" | "PRODUCTO";
@@ -183,7 +204,15 @@ export type DbAdelanto = {
   /** Volumen de madera de referencia (pies tablares) — NO participa en
    *  saldoPendiente ni en el tope de crédito. Ver comentario en schema.prisma. */
   piesTablares?: number | null;
-  piesTablaresTipo?: "COMPRADO" | "VENDIDO" | null;
+  piesTablaresTipo?: PiesTablaresTipo | null;
+  /**
+   * (ADR-448) De qué lado está la plata. DADO = el negocio la dio (te debe si
+   * el saldo es positivo); RECIBIDO = el negocio la recibió (le debes si el
+   * saldo es positivo). Ver `lib/adelantos/direccion.ts`.
+   */
+  direccion: AdelantoDireccion;
+  /** Sólo en RECIBIDO: un adelanto por un servicio que darás, o un préstamo. */
+  conceptoRecibido: AdelantoConceptoRecibido | null;
   entregas: DbAdelantoEntrega[];
   entregasPactadas: DbEntregaPactada[];
   createdAt: string;
@@ -229,6 +258,78 @@ export class ParteDadaDeBajaError extends Error {
     this.name = "ParteDadaDeBajaError";
   }
 }
+
+/** De qué lado está la madera de referencia; SERVICIO = la que el negocio asierra por el adelanto recibido. */
+export type PiesTablaresTipo = "COMPRADO" | "VENDIDO" | "SERVICIO";
+
+/**
+ * No se puede corregir la dirección de este adelanto (ADR-448): ya tiene
+ * entregas vivas, está anulado, o la combinación pedida no vale. La ruta lo
+ * devuelve con `status` tal cual (409 o 400) y el mensaje en español.
+ */
+export class DireccionNoCorregibleError extends Error {
+  constructor(
+    message: string,
+    readonly status: 400 | 409,
+    readonly code: "con_entregas" | "anulado" | "sin_cambio" | "combinacion" | "motivo" | "movio_caja",
+    /** En `movio_caja`: el movimiento del alta que lo impide, para mostrarlo. */
+    readonly movimiento?: { tipo: string; monto: number; fecha: string },
+  ) {
+    super(message);
+    this.name = "DireccionNoCorregibleError";
+  }
+}
+
+/**
+ * Una regla de la plata RECIBIDA que frena una entrega o una anulación
+ * (ADR-448, revisión de seguridad). La ruta la devuelve con `status` y `code`.
+ *
+ * - `solo_admin_o_dueno` (403): sacar plata de la caja por un recibido.
+ * - `excede_saldo` (400): devolver en plata más de lo que se debe.
+ * - `producto_en_recibido` (400): entregar producto no baja el stock todavía.
+ */
+export class ReglaDeRecibidoError extends Error {
+  constructor(
+    message: string,
+    readonly status: 400 | 403,
+    readonly code: "solo_admin_o_dueno" | "excede_saldo" | "producto_en_recibido",
+  ) {
+    super(message);
+    this.name = "ReglaDeRecibidoError";
+  }
+}
+
+/**
+ * La misma `idempotencyKey` llegó con OTRO cuerpo (ADR-448): no es un reintento,
+ * es otro acto con la clave repetida. Devolver el primero con 200 hacía creer
+ * que se guardó lo que se mandó. La ruta responde 422 `idempotencia_distinta`.
+ */
+export class IdempotenciaDistintaError extends Error {
+  readonly status = 422 as const;
+  readonly code = "idempotencia_distinta" as const;
+  constructor(que: "adelanto" | "entrega") {
+    super(
+      que === "adelanto"
+        ? "Ya guardaste un adelanto con otros datos en este intento; revísalo en la lista."
+        : "Ya guardaste una entrega con otros datos en este intento; revísala en el detalle del adelanto.",
+    );
+    this.name = "IdempotenciaDistintaError";
+  }
+}
+
+type Db = typeof prisma | Prisma.TransactionClient;
+
+/** Quién pide la escritura, en lo que importa a la plata recibida. */
+export type PermisosDeRecibido = {
+  /**
+   * Admin o dueño (`soloAdminODueno` de la ruta). Sin esto, devolver en plata un
+   * recibido o anularlo devolviendo la plata se rechaza: un almacenero podía
+   * anotar un recibido de S/ 1 y devolverle S/ 5 000 de la caja.
+   */
+  puedeSacarPlataDeRecibido?: boolean;
+};
+
+const SOLO_ADMIN_RECIBIDO = "Solo el administrador o el dueño pueden sacar plata de la caja por una plata recibida.";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 /** Violación de unique constraint de Prisma (P2002) — mismo detector que juntas.db.ts. */
@@ -333,7 +434,10 @@ function mapAdelanto(row: AdelantoRow): DbAdelanto {
     notas: row.notas,
     comprobanteUrl: row.comprobanteUrl,
     piesTablares: row.piesTablares == null ? null : toNum(row.piesTablares),
-    piesTablaresTipo: row.piesTablaresTipo as "COMPRADO" | "VENDIDO" | null,
+    piesTablaresTipo: row.piesTablaresTipo as PiesTablaresTipo | null,
+    /* ADR-448: una fila (o un mock) sin la columna se lee DADO, que es lo que era. */
+    direccion: direccionDe(row.direccion),
+    conceptoRecibido: row.conceptoRecibido ?? null,
     entregas: row.entregas.map((e) => ({
       id: e.id, adelantoId: e.adelantoId, fecha: e.fecha.toISOString(),
       tipo: e.tipo as AdelantoEntregaTipo, descripcion: e.descripcion,
@@ -396,7 +500,19 @@ export type AdelantoCreateInput = {
   reciboManual?: string;
   /** Volumen de madera de referencia — sólo se guarda si vienen los DOS juntos. */
   piesTablares?: number;
-  piesTablaresTipo?: "COMPRADO" | "VENDIDO";
+  piesTablaresTipo?: PiesTablaresTipo;
+  /**
+   * (ADR-448) De qué lado está la plata. Ausente = DADO: el asistente IA y
+   * todo lo que ya llamaba a `create` siguen dando plata, como siempre.
+   */
+  direccion?: AdelantoDireccion;
+  /** Obligatorio con RECIBIDO, prohibido con DADO (mismo CHECK que la base). */
+  conceptoRecibido?: AdelantoConceptoRecibido | null;
+  /**
+   * (ADR-448) La clave del intento de alta: repetirla devuelve el MISMO adelanto
+   * (`repetido: true`, sin volver a mover la caja). Un doble clic creaba dos.
+   */
+  idempotencyKey?: string | null;
   entregasPactadas?: EntregaPactadaInput[]; // solo modalidad ENTREGAS_PACTADAS
   /**
    * Pasar por encima del límite de crédito, a sabiendas.
@@ -438,6 +554,12 @@ export type EntregaInput = {
    * Ausente = no tocar la caja.
    */
   metodoCaja?: MetodoPago | null;
+  /**
+   * (ADR-448) La clave del intento: un reintento (corte de red) con el mismo
+   * cuerpo devuelve la misma entrega (`repetido`), sin anotar otra ni mover la
+   * caja otra vez; con otro cuerpo, `IdempotenciaDistintaError` (422).
+   */
+  idempotencyKey?: string | null;
 };
 
 export type AdelantoListFilters = {
@@ -445,13 +567,45 @@ export type AdelantoListFilters = {
   beneficiarioId?: string;
   modalidad?: AdelantoModalidad;
   search?: string;
+  /**
+   * (ADR-448) Por defecto SÓLO lo dado: un lector que no pide lo recibido por
+   * nombre deja de verlo, en vez de contarlo como «te debe». `"todas"` explícito
+   * para la lista del módulo y el estado de cuenta.
+   */
+  direccion?: FiltroDireccion;
 };
+
+/**
+ * (ADR-448) Lo que el negocio recibió, en `AdelantosDB.resumen().recibido`.
+ *
+ * La plata va SÓLO por moneda: un total que suma soles y dólares sin tipo de
+ * cambio es una cifra inventada (revisión 28-09). Arriba queda sólo el conteo.
+ */
+export type ResumenRecibido = {
+  /** Cuántos recibidos siguen abiertos, en todas las monedas (es un conteo). */
+  abiertos: number;
+  porMoneda: {
+    moneda: string;
+    /** Lo recibido, no anulado. */
+    total: number;
+    /** Saldo positivo: lo que le debes a la gente. */
+    porDevolver: number;
+    /** Saldo negativo: le diste de más de lo que te dio (te debe). */
+    excedente: number;
+    abiertos: number;
+  }[];
+};
+
+/** El resultado de una escritura que puede mover la caja. `null` = no se pidió moverla. */
+export type ConCaja<T> = T & { caja: ResultadoMovimiento | null };
 
 /** Una fila de `saldosPorPersona` — ya agregada, no un adelanto individual. */
 export type SaldoAdelantoGrupo = {
   beneficiarioId: string;
   status: AdelantoStatus;
   moneda: string;
+  /** (ADR-448) Un grupo RECIBIDO ABIERTO es «le debes», no «te debe». */
+  direccion: AdelantoDireccion;
   /** SUMA de saldoPendiente del grupo (beneficiario, status, moneda). */
   saldoPendiente: number;
   /** Cuántos adelantos individuales componen este grupo (`_count` del `groupBy`). */
@@ -496,7 +650,11 @@ export const AdelantosDB = {
       where: { tenantId },
       orderBy: { nombre: "asc" },
       include: {
-        adelantos: { select: { montoAdelantado: true, saldoPendiente: true, moneda: true, status: true, fechaAdelanto: true } },
+        /* Con la dirección (ADR-448): `resumirPersona` separa lo recibido y deja
+           los campos de siempre en lo dado. */
+        adelantos: {
+          select: { montoAdelantado: true, saldoPendiente: true, moneda: true, status: true, fechaAdelanto: true, direccion: true },
+        },
       },
     });
     /**
@@ -515,6 +673,7 @@ export const AdelantosDB = {
           moneda: a.moneda,
           status: a.status,
           fechaAdelanto: a.fechaAdelanto,
+          direccion: a.direccion,
         })),
       ),
     }));
@@ -650,7 +809,7 @@ export const AdelantosDB = {
 
   // ── Adelantos ──
   async list(tenantId: string, filters?: AdelantoListFilters): Promise<DbAdelanto[]> {
-    const where: Prisma.AdelantoWhereInput = { tenantId };
+    const where: Prisma.AdelantoWhereInput = { tenantId, ...whereDireccion(filters?.direccion) };
     if (filters?.status) where.status = filters.status;
     if (filters?.beneficiarioId) where.beneficiarioId = filters.beneficiarioId;
     if (filters?.modalidad) where.modalidad = filters.modalidad;
@@ -679,12 +838,51 @@ export const AdelantosDB = {
     return row ? mapAdelanto(row) : null;
   },
 
-  async create(tenantId: string, data: AdelantoCreateInput): Promise<DbAdelanto> {
+  async create(tenantId: string, data: AdelantoCreateInput): Promise<ConCaja<DbAdelanto> & { repetido?: true }> {
+    if (!tenantId) throw new Error("tenantId is required");
+    /* Idempotencia: el mismo intento (doble clic, reintento de la red) devuelve
+       el adelanto que ya se creó, sin volver a mover la caja. */
+    const clave = data.idempotencyKey?.trim() || null;
+    const huella = huellaDeAlta({
+      beneficiarioId: data.beneficiarioId,
+      montoAdelantado: data.montoAdelantado,
+      moneda: data.moneda || "PEN",
+      direccion: direccionDe(data.direccion),
+      conceptoRecibido: direccionDe(data.direccion) === "RECIBIDO" ? (data.conceptoRecibido ?? null) : null,
+      metodoCaja: data.metodoCaja ?? null,
+    });
+    const yaCreado = async () => {
+      if (!clave) return null;
+      const ya = await prisma.adelanto.findFirst({ where: { tenantId, idempotencyKey: clave }, include: INCLUDE_FULL });
+      if (!ya) return null;
+      /* Otro cuerpo con la misma clave no es un reintento. Una fila sin huella
+         (de antes de la columna) se compara por lo que la fila guarda. */
+      const igual = ya.idempotencyHuella
+        ? ya.idempotencyHuella === huella
+        : huellaDeAlta({
+            beneficiarioId: ya.beneficiarioId,
+            montoAdelantado: toNum(ya.montoAdelantado),
+            moneda: ya.moneda,
+            direccion: direccionDe(ya.direccion),
+            conceptoRecibido: ya.conceptoRecibido ?? null,
+            metodoCaja: data.metodoCaja ?? null,
+          }) === huella;
+      if (!igual) throw new IdempotenciaDistintaError("adelanto");
+      return { ...mapAdelanto(ya), caja: null, repetido: true as const };
+    };
+    const repetido = await yaCreado();
+    if (repetido) return repetido;
     const monto = Math.round(data.montoAdelantado * 100) / 100;
     /** Se llena sólo si se pasó el tope a propósito; va a las notas. */
     let excedioLimite = "";
     const modalidad = data.modalidad ?? "CUENTA_CORRIENTE";
     const pactadas = modalidad === "ENTREGAS_PACTADAS" ? (data.entregasPactadas ?? []) : [];
+    /* ADR-448: la dirección y su concepto, con la MISMA regla que el CHECK de la
+       base — mejor el mensaje en español acá que un error de constraint. */
+    const direccion = direccionDe(data.direccion);
+    const conceptoRecibido = direccion === "RECIBIDO" ? (data.conceptoRecibido ?? null) : null;
+    const problema = problemaDeDireccion({ direccion, conceptoRecibido: data.conceptoRecibido ?? null, modalidad });
+    if (problema) throw new Error(problema);
 
     // ADR-118: límite de crédito por persona (saldo abierto + nuevo monto ≤ límite)
     const benef = await prisma.adelantoBeneficiario.findFirst({
@@ -721,10 +919,12 @@ export const AdelantosDB = {
      * soles: compararle dólares a un tope en soles no significa nada.
      */
     const monedaNueva = data.moneda || "PEN";
-    if (benef.limiteCredito != null && monedaNueva === "PEN") {
+    /* ADR-448: el tope es de lo que el negocio DA. Recibir un préstamo no se
+       valida contra él, y lo recibido abierto tampoco le quita margen a nadie. */
+    if (benef.limiteCredito != null && monedaNueva === "PEN" && direccion === "DADO") {
       const limite = Number(benef.limiteCredito);
       const abiertos = await prisma.adelanto.aggregate({
-        where: { tenantId, beneficiarioId: data.beneficiarioId, status: "ABIERTO", moneda: "PEN" },
+        where: { tenantId, beneficiarioId: data.beneficiarioId, status: "ABIERTO", moneda: "PEN", ...SOLO_DADOS },
         _sum: { saldoPendiente: true },
       });
       const actual = Number(abiertos._sum.saldoPendiente ?? 0);
@@ -738,9 +938,13 @@ export const AdelantosDB = {
       }
     }
 
-    const row = await prisma.adelanto.create({
+    const codigoOperacion = await siguienteCodigoDeTenant(tenantId);
+    const contratoId = await contratoPropio(tenantId, data.contratoId);
+    const crear = async (db: Db) => db.adelanto.create({
       data: {
         tenantId,
+        idempotencyKey: clave,
+        idempotencyHuella: clave ? huella : null,
         beneficiarioId: data.beneficiarioId,
         modalidad,
         montoAdelantado: monto,
@@ -748,10 +952,13 @@ export const AdelantosDB = {
         fechaAdelanto: data.fechaAdelanto ? new Date(data.fechaAdelanto) : new Date(),
         fechaVencimiento: data.fechaVencimiento ? new Date(data.fechaVencimiento) : null,
         status: "ABIERTO",
-        saldoPendiente: monto, // arranca con saldo completo a favor del negocio
-        codigoOperacion: await siguienteCodigoDeTenant(tenantId),
+        // Arranca con el saldo completo: en DADO te lo deben, en RECIBIDO lo debes tú.
+        saldoPendiente: monto,
+        direccion,
+        conceptoRecibido,
+        codigoOperacion,
         reciboManual: data.reciboManual?.trim() || null,
-        contratoId: await contratoPropio(tenantId, data.contratoId),
+        contratoId,
         notas: [data.notas?.trim(), excedioLimite].filter(Boolean).join(" · ") || null,
         comprobanteUrl: data.comprobanteUrl?.trim() || null,
         // Dato de referencia: uno sin el otro no dice nada, así que se guardan
@@ -771,20 +978,47 @@ export const AdelantosDB = {
       },
       include: INCLUDE_FULL,
     });
-
-    // La caja se mueve DESPUÉS de crear el adelanto y sin poder tumbarlo: la
-    // plata ya salió, y perder el registro del préstamo por no poder anotar el
-    // movimiento sería el peor de los dos errores.
-    if (data.metodoCaja) {
-      await moverCaja(tenantId, {
-        tipo: "egreso",
-        monto,
-        metodo: data.metodoCaja,
-        etiqueta: etiquetaEgreso(row.codigoOperacion, row.beneficiario?.nombre ?? "—"),
-      });
+    /*
+     * Con caja, el alta y su movimiento van en UNA transacción (ADR-448, revisión
+     * de seguridad): antes el movimiento se anotaba 0,8–2 s después del commit, y
+     * en ese hueco `corregirDireccion` no lo veía — DADO X corregido a RECIBIDO y
+     * devuelto en plata = la persona cobraba 2X. Sin caja abierta sigue guardándose
+     * (`sinCaja`); si la base no puede anotar el movimiento, no se guarda nada y la
+     * pantalla lo dice (antes quedaba el adelanto sin su movimiento, en silencio).
+     */
+    let row: Awaited<ReturnType<typeof crear>>;
+    let caja: ResultadoMovimiento | null = null;
+    try {
+      const metodoCaja = data.metodoCaja;
+      if (metodoCaja) {
+        ({ row, caja } = await prisma.$transaction(async (tx) => {
+          const creado = await crear(tx);
+          const nombre = creado.beneficiario?.nombre ?? "—";
+          const mov = await moverCajaEnTx(tx, tenantId, {
+            tipo: cajaAlCrear(direccion),
+            monto,
+            metodo: metodoCaja,
+            etiqueta:
+              direccion === "RECIBIDO"
+                ? etiquetaRecibido("alta", creado.codigoOperacion, nombre)
+                : etiquetaEgreso(creado.codigoOperacion, nombre),
+          });
+          return { row: creado, caja: mov };
+        }));
+      } else {
+        row = await crear(prisma);
+      }
+    } catch (e) {
+      /* Dos pedidos con la misma clave a la vez: el índice único deja pasar uno.
+         El otro devuelve el que quedó — y no mueve la caja. */
+      if (clave && isUniqueViolation(e)) {
+        const otro = await yaCreado();
+        if (otro) return otro;
+      }
+      throw e;
     }
 
-    return mapAdelanto(row);
+    return { ...mapAdelanto(row), caja };
   },
 
   /**
@@ -793,30 +1027,43 @@ export const AdelantosDB = {
    * ajusta status (LIQUIDADO si 0, EXCEDIDO si <0), marca cuota pactada si aplica,
    * e incrementa stock si tipo=PRODUCTO && sumarAStock.
    */
-  async registrarEntrega(tenantId: string, adelantoId: string, input: EntregaInput): Promise<DbAdelanto | null> {
+  async registrarEntrega(
+    tenantId: string,
+    adelantoId: string,
+    input: EntregaInput,
+    permisos: PermisosDeRecibido = {},
+  ): Promise<(ConCaja<DbAdelanto> & { repetido?: true }) | null> {
+    /* La entrega, el saldo y el movimiento de caja en UNA transacción (ADR-448):
+       un corte entre el commit y la caja dejaba la entrega sin su movimiento, y
+       el reintento (idempotente) ya no la volvía a anotar.
+       El monto es el `valor` de ESTA entrega, calculado en la transacción. Antes
+       se leía `entregas[0].valor`, y `INCLUDE_FULL` ordena por `fecha desc`: una
+       entrega con fecha PASADA no es la primera, y la caja anotaba otra.
+       En un DADO la persona te devuelve plata (entra); en un RECIBIDO se la
+       devuelves tú (sale). */
     const hecho = await prisma.$transaction(async (tx) => {
-      const r = await AdelantosDB.registrarEntregaEnTx(tx, tenantId, adelantoId, input);
+      const r = await AdelantosDB.registrarEntregaEnTx(tx, tenantId, adelantoId, input, permisos);
       if (!r) return null;
       const full = await tx.adelanto.findFirst({ where: { id: adelantoId, tenantId }, include: INCLUDE_FULL });
-      return full ? { adelanto: mapAdelanto(full), valor: r.valor } : null;
+      if (!full) return null;
+      const adelanto = mapAdelanto(full);
+      let caja: ResultadoMovimiento | null = null;
+      if (!r.repetido && input.metodoCaja && input.tipo === "LIBRE") {
+        const nombre = adelanto.beneficiario?.nombre ?? "—";
+        caja = await moverCajaEnTx(tx, tenantId, {
+          tipo: cajaAlDevolver(adelanto.direccion),
+          monto: r.valor,
+          metodo: input.metodoCaja,
+          etiqueta:
+            adelanto.direccion === "RECIBIDO"
+              ? etiquetaRecibido("devolucion", adelanto.codigoOperacion, nombre)
+              : etiquetaIngreso(adelanto.codigoOperacion, nombre),
+        });
+      }
+      return { adelanto, caja, repetido: r.repetido };
     });
-
-    // Fuera de la transacción: anotar el efectivo que entró no puede hacer
-    // rollback de una liquidación ya asentada.
-    //
-    // El monto es el `valor` de ESTA entrega, calculado en la transacción. Antes
-    // se leía `entregas[0].valor`, y `INCLUDE_FULL` ordena por `fecha desc`: una
-    // entrega registrada con fecha PASADA no es la primera, y la caja anotaba el
-    // importe de otra entrega.
-    if (hecho && input.metodoCaja && input.tipo === "LIBRE") {
-      await moverCaja(tenantId, {
-        tipo: "ingreso",
-        monto: hecho.valor,
-        metodo: input.metodoCaja,
-        etiqueta: etiquetaIngreso(hecho.adelanto.codigoOperacion, hecho.adelanto.beneficiario?.nombre ?? "—"),
-      });
-    }
-    return hecho?.adelanto ?? null;
+    if (!hecho) return null;
+    return { ...hecho.adelanto, caja: hecho.caja, ...(hecho.repetido ? { repetido: true as const } : {}) };
   },
 
   /**
@@ -837,7 +1084,8 @@ export const AdelantosDB = {
     tenantId: string,
     adelantoId: string,
     input: EntregaInput & { liquidacionId?: string },
-  ): Promise<{ entregaId: string; valor: number; saldo: number; status: AdelantoStatus } | null> {
+    permisos: PermisosDeRecibido = {},
+  ): Promise<{ entregaId: string; valor: number; saldo: number; status: AdelantoStatus; repetido?: true } | null> {
     if (!tenantId) throw new Error("tenantId is required");
     const bloqueado = await tx.$queryRaw<{ id: string }[]>`
       SELECT "id" FROM "Adelanto" WHERE "id" = ${adelantoId} AND "tenantId" = ${tenantId} FOR UPDATE
@@ -845,8 +1093,49 @@ export const AdelantosDB = {
     if (bloqueado.length === 0) return null;
     const adelanto = await tx.adelanto.findFirst({ where: { id: adelantoId, tenantId } });
     if (!adelanto) return null;
+    /* Idempotencia (ADR-448), bajo el lock de la fila: dos reintentos del mismo
+       intento se turnan y el segundo ve la entrega del primero. Va ANTES de las
+       reglas: el reintento de una entrega que ya dejó el saldo en cero no puede
+       rebotar por «ya no le debes nada». */
+    const clave = input.idempotencyKey?.trim() || null;
+    const huella = huellaDeEntrega(input);
+    if (clave) {
+      /* Con las anuladas A PROPÓSITO (no filtra `anuladaAt`): la clave ya se usó
+         y el índice único (adelantoId, idempotencyKey) no dejaría anotar otra. */
+      const ya = await tx.adelantoEntrega.findFirst({
+        where: { adelantoId, idempotencyKey: clave },
+        select: { id: true, valor: true, idempotencyHuella: true, anuladaAt: true },
+      });
+      if (ya) {
+        if (ya.idempotencyHuella && ya.idempotencyHuella !== huella) throw new IdempotenciaDistintaError("entrega");
+        return {
+          entregaId: ya.id,
+          valor: toNum(ya.valor),
+          saldo: toNum(adelanto.saldoPendiente),
+          status: adelanto.status as AdelantoStatus,
+          repetido: true,
+        };
+      }
+    }
     if (adelanto.status === "CANCELADO") {
       throw new Error("No se pueden registrar entregas en un adelanto cancelado");
+    }
+    /* ADR-448: en un RECIBIDO la entrega es lo que el NEGOCIO da para
+       cancelarlo. Tres reglas, las tres bajo el lock de la fila:
+       · producto todavía NO: saldría del inventario y el stock no baja (fase 2);
+       · sacar plata de la caja, sólo admin o dueño;
+       · y nunca más plata que lo que se debe (abajo, con el valor ya calculado). */
+    const recibido = direccionDe(adelanto.direccion) === "RECIBIDO";
+    const saleDeCaja = recibido && input.tipo === "LIBRE" && Boolean(input.metodoCaja);
+    if (recibido && input.tipo === "PRODUCTO") {
+      throw new ReglaDeRecibidoError(
+        "Por ahora, lo que le das para cancelar un recibido se anota como entrega libre.",
+        400,
+        "producto_en_recibido",
+      );
+    }
+    if (saleDeCaja && !permisos.puedeSacarPlataDeRecibido) {
+      throw new ReglaDeRecibidoError(SOLO_ADMIN_RECIBIDO, 403, "solo_admin_o_dueno");
     }
 
     // Valor SIEMPRE calculado en backend (anti-fraude).
@@ -880,6 +1169,18 @@ export const AdelantosDB = {
     }
     valor = Math.round(valor * 100) / 100;
     if (valor <= 0) throw new Error("El valor de la entrega debe ser mayor a 0");
+    /* Devolver en plata un recibido: nunca más de lo que todavía se debe (el
+       saldo se leyó bajo el lock). Con más, la caja pagaba plata que nadie dio. */
+    const debe = toNum(adelanto.saldoPendiente);
+    if (saleDeCaja && valor > debe + 0.005) {
+      throw new ReglaDeRecibidoError(
+        debe > 0.005
+          ? `Le debes ${formatCurrency(debe)}: no puedes devolverle más que eso de la caja.`
+          : "Ya no le debes nada por esta plata recibida.",
+        400,
+        "excede_saldo",
+      );
+    }
 
     const entrega = await tx.adelantoEntrega.create({
       data: {
@@ -894,6 +1195,8 @@ export const AdelantosDB = {
         notas: input.notas?.trim() || null,
         comprobanteUrl: input.comprobanteUrl?.trim() || null,
         liquidacionId: input.liquidacionId ?? null,
+        idempotencyKey: clave,
+        idempotencyHuella: clave ? huella : null,
       },
     });
 
@@ -987,7 +1290,8 @@ export const AdelantosDB = {
     tenantId: string,
     id: string,
     devolucionCaja?: MetodoPago | null,
-  ): Promise<DbAdelanto | null> {
+    permisos: PermisosDeRecibido = {},
+  ): Promise<ConCaja<DbAdelanto> | null> {
     if (!tenantId) throw new Error("tenantId is required");
     /* Lock, relectura y update condicionado en UNA transacción. Antes el saldo
        se leía sin lock y ESE número iba a la caja: si una liquidación de cuenta
@@ -1000,10 +1304,20 @@ export const AdelantosDB = {
       if (bloqueado.length === 0) return null;
       const actual = await tx.adelanto.findFirst({
         where: { id, tenantId },
-        select: { status: true, saldoPendiente: true, codigoOperacion: true, beneficiario: { select: { nombre: true } } },
+        select: {
+          status: true,
+          saldoPendiente: true,
+          codigoOperacion: true,
+          direccion: true,
+          beneficiario: { select: { nombre: true } },
+        },
       });
       if (!actual) return null;
       if (actual.status === "CANCELADO" || actual.status === "LIQUIDADO") throw new AdelantoNoCancelableError(actual.status);
+      /* ADR-448: anular un recibido devolviendo la plata la SACA de la caja: sólo admin o dueño. */
+      if (devolucionCaja && direccionDe(actual.direccion) === "RECIBIDO" && !permisos.puedeSacarPlataDeRecibido) {
+        throw new ReglaDeRecibidoError(SOLO_ADMIN_RECIBIDO, 403, "solo_admin_o_dueno");
+      }
       const { count } = await tx.adelanto.updateMany({
         where: { id, tenantId, status: { notIn: ["CANCELADO", "LIQUIDADO"] } },
         data: { status: "CANCELADO" },
@@ -1011,28 +1325,28 @@ export const AdelantosDB = {
       if (count === 0) throw new AdelantoNoCancelableError("CANCELADO");
       const row = await tx.adelanto.findFirst({ where: { id, tenantId }, include: INCLUDE_FULL });
       if (!row) return null;
-      return {
-        adelanto: mapAdelanto(row),
-        saldo: toNum(actual.saldoPendiente),
-        codigo: actual.codigoOperacion,
-        nombre: actual.beneficiario?.nombre ?? "—",
-      };
+      /* La devolución va en la MISMA transacción (ADR-448) y con el saldo
+         releído bajo el lock: se devuelve lo que todavía debía, no el monto
+         original — si ya había liquidado la mitad, esa mitad nunca volvió como
+         efectivo. Un RECIBIDO anulado devolviendo es plata que SALE. */
+      let caja: ResultadoMovimiento | null = null;
+      if (devolucionCaja) {
+        const direccion = direccionDe(actual.direccion);
+        const nombre = actual.beneficiario?.nombre ?? "—";
+        caja = await moverCajaEnTx(tx, tenantId, {
+          tipo: cajaAlDevolver(direccion),
+          monto: toNum(actual.saldoPendiente),
+          metodo: devolucionCaja,
+          etiqueta:
+            direccion === "RECIBIDO"
+              ? etiquetaRecibido("anulacion", actual.codigoOperacion, nombre)
+              : etiquetaReversion(actual.codigoOperacion, nombre),
+        });
+      }
+      return { adelanto: mapAdelanto(row), caja };
     });
     if (!hecho) return null;
-
-    // La caja va DESPUÉS del commit, como en `registrarEntrega`, y con el saldo
-    // releído bajo el lock: se devuelve lo que todavía debía, no el monto
-    // original — si ya había liquidado la mitad, esa mitad nunca volvió como
-    // efectivo.
-    if (devolucionCaja) {
-      await moverCaja(tenantId, {
-        tipo: "ingreso",
-        monto: hecho.saldo,
-        metodo: devolucionCaja,
-        etiqueta: etiquetaReversion(hecho.codigo, hecho.nombre),
-      });
-    }
-    return hecho.adelanto;
+    return { ...hecho.adelanto, caja: hecho.caja };
   },
 
   async updateNotas(tenantId: string, id: string, notas: string | null): Promise<DbAdelanto | null> {
@@ -1041,6 +1355,172 @@ export const AdelantosDB = {
     await prisma.adelanto.updateMany({ where: { id, tenantId }, data: { notas: notas?.trim() || null } });
     const row = await prisma.adelanto.findFirst({ where: { id, tenantId }, include: INCLUDE_FULL });
     return row ? mapAdelanto(row) : null;
+  },
+
+  /**
+   * Re-marca la dirección de un adelanto cargado del lado equivocado (ADR-448):
+   * en Blas, ADL-0003/4 de WASACO son pagos por aserrío que se guardaron como
+   * plata dada porque no había otra opción.
+   *
+   * Cuatro guardas, todas DENTRO del lock de la fila (una entrega simultánea
+   * espera): sin entregas vivas (con entregas, el sentido de cada una ya se leyó
+   * de un lado), no anulado, la combinación que acepta el CHECK, y **que el alta
+   * no haya movido la caja** (`movio_caja`). Sin la última, un DADO de S/ X que
+   * sacó X del cajón, corregido a RECIBIDO, se «devolvía» con otros X: la persona
+   * cobraba 2X. Con caja movida, el camino es anular devolviendo y cargarlo de
+   * nuevo del lado correcto (`mensajeMovioCaja`).
+   *
+   * NO MUEVE LA CAJA. El antes → después con el motivo va a la auditoría en la
+   * MISMA transacción: si no se puede escribir el rastro, no hay corrección.
+   * Pasar a DADO corre el control del tope y lo informa (`excedeLimite`) sin
+   * bloquear: la decide un admin o el dueño, con motivo.
+   */
+  async corregirDireccion(
+    tenantId: string,
+    id: string,
+    input: {
+      direccion: AdelantoDireccion;
+      conceptoRecibido?: AdelantoConceptoRecibido | null;
+      motivo: string;
+      usuario: string;
+    },
+  ): Promise<{
+    adelanto: DbAdelanto;
+    antes: { direccion: AdelantoDireccion; conceptoRecibido: AdelantoConceptoRecibido | null };
+    despues: { direccion: AdelantoDireccion; conceptoRecibido: AdelantoConceptoRecibido | null };
+    /** Pasó a DADO y con eso la persona supera su tope de crédito (no bloquea). */
+    excedeLimite: { limite: number; saldo: number } | null;
+  } | null> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const motivo = limpiarMotivo(input.motivo);
+    if (!motivoLegible(motivo)) {
+      throw new DireccionNoCorregibleError("Escribe por qué cambias la dirección (al menos 3 letras).", 400, "motivo");
+    }
+    const direccion = direccionDe(input.direccion);
+    const conceptoRecibido = direccion === "RECIBIDO" ? (input.conceptoRecibido ?? null) : null;
+
+    return prisma.$transaction(async (tx) => {
+      const bloqueado = await tx.$queryRaw<{ id: string }[]>`
+        SELECT "id" FROM "Adelanto" WHERE "id" = ${id} AND "tenantId" = ${tenantId} FOR UPDATE
+      `;
+      if (bloqueado.length === 0) return null;
+      const actual = await tx.adelanto.findFirst({
+        where: { id, tenantId },
+        select: {
+          status: true,
+          modalidad: true,
+          direccion: true,
+          conceptoRecibido: true,
+          codigoOperacion: true,
+          montoAdelantado: true,
+          moneda: true,
+          createdAt: true,
+          beneficiarioId: true,
+          beneficiario: { select: { nombre: true, limiteCredito: true } },
+        },
+      });
+      if (!actual) return null;
+      if (actual.status === "CANCELADO") {
+        throw new DireccionNoCorregibleError("Este adelanto está anulado: no hay dirección que corregir.", 409, "anulado");
+      }
+      /* Contado DESPUÉS del lock, en su propia sentencia: ve la entrega que otra
+         transacción acaba de confirmar mientras esta esperaba. */
+      const vivas = await tx.adelantoEntrega.count({ where: { adelantoId: id, anuladaAt: null } });
+      if (vivas > 0) {
+        throw new DireccionNoCorregibleError(
+          `Ya tiene ${vivas} ${vivas === 1 ? "entrega registrada" : "entregas registradas"}: anúlalas antes de cambiar de lado la plata.`,
+          409,
+          "con_entregas",
+        );
+      }
+      const problema = problemaDeDireccion({ direccion, conceptoRecibido: input.conceptoRecibido ?? null, modalidad: actual.modalidad });
+      if (problema) throw new DireccionNoCorregibleError(problema, 400, "combinacion");
+
+      const antes = { direccion: direccionDe(actual.direccion), conceptoRecibido: actual.conceptoRecibido ?? null };
+      const despues = { direccion, conceptoRecibido };
+      if (antes.direccion === despues.direccion && antes.conceptoRecibido === despues.conceptoRecibido) {
+        throw new DireccionNoCorregibleError("Ya está registrado así: no hay nada que cambiar.", 409, "sin_cambio");
+      }
+
+      /* ¿El alta movió la caja? Sólo importa si cambia el LADO (servicio ↔
+         préstamo no toca plata). Por código o por monto y día
+         (`movimientoDelAlta`). Desde la revisión 28-09 el alta y su movimiento
+         se confirman en la misma transacción: no hay un instante en que el
+         adelanto exista y su movimiento todavía no. */
+      if (antes.direccion !== despues.direccion) {
+        const monto = toNum(actual.montoAdelantado);
+        const codigo = actual.codigoOperacion?.trim() || null;
+        const dia = limaDateKey(actual.createdAt);
+        const desde = new Date(`${dia}T00:00:00-05:00`);
+        const movimientos = await tx.cashMovement.findMany({
+          where: {
+            cashRegister: { tenantId },
+            OR: [
+              ...(codigo ? [{ description: { contains: codigo } }] : []),
+              /* El egreso (o ingreso) del mismo monto ese día, aunque no lleve el
+                 código: el que se anotó a mano en la caja. */
+              {
+                type: cajaAlCrear(antes.direccion),
+                amount: monto,
+                createdAt: { gte: desde, lt: new Date(desde.getTime() + 86_400_000) },
+              },
+            ],
+          },
+          select: { type: true, amount: true, description: true, createdAt: true },
+          orderBy: { createdAt: "asc" },
+          take: 50,
+        });
+        const mov = movimientoDelAlta(
+          { codigoOperacion: codigo, montoAdelantado: monto, createdAt: actual.createdAt, direccion: antes.direccion },
+          movimientos.map((m) => ({ ...m, amount: toNum(m.amount) })),
+        );
+        if (mov) {
+          throw new DireccionNoCorregibleError(mensajeMovioCaja(antes.direccion, mov), 409, "movio_caja", {
+            tipo: mov.type,
+            monto: Number(mov.amount),
+            fecha: new Date(mov.createdAt).toISOString(),
+          });
+        }
+      }
+
+      await tx.adelanto.update({ where: { id }, data: { direccion, conceptoRecibido } });
+
+      /* Pasar a DADO: el tope de la persona, ahora con este adelanto adentro. */
+      let excedeLimite: { limite: number; saldo: number } | null = null;
+      const limite = actual.beneficiario?.limiteCredito;
+      if (direccion === "DADO" && limite != null && (actual.moneda || "PEN") === "PEN") {
+        const abiertos = await tx.adelanto.aggregate({
+          where: { tenantId, beneficiarioId: actual.beneficiarioId, status: "ABIERTO", moneda: "PEN", ...SOLO_DADOS },
+          _sum: { saldoPendiente: true },
+        });
+        const saldo = Math.round(toNum(abiertos._sum.saldoPendiente) * 100) / 100;
+        if (saldo > toNum(limite) + 0.005) excedeLimite = { limite: toNum(limite), saldo };
+      }
+
+      const lado = (d: typeof antes) =>
+        d.direccion === "RECIBIDO" ? `recibido (${d.conceptoRecibido === "PRESTAMO" ? "préstamo" : "servicio"})` : "dado";
+      await tx.activityLog.create({
+        data: {
+          tenantId,
+          action: "Corregir dirección",
+          entity: "adelanto",
+          entityId: id,
+          user: input.usuario || "—",
+          detail: [
+            `${actual.codigoOperacion ?? id}: ${lado(antes)} → ${lado(despues)}.`,
+            `Motivo: ${motivo}.`,
+            "La caja no se movió.",
+            excedeLimite ? `Supera el tope de crédito (S/${excedeLimite.limite.toFixed(2)}; queda S/${excedeLimite.saldo.toFixed(2)} abierto).` : "",
+          ]
+            .filter(Boolean)
+            .join(" "),
+        },
+      });
+
+      const row = await tx.adelanto.findFirst({ where: { id, tenantId }, include: INCLUDE_FULL });
+      if (!row) return null;
+      return { adelanto: mapAdelanto(row), antes, despues, excedeLimite };
+    });
   },
 
   // ── Resumen (KPIs del módulo) ──
@@ -1058,14 +1538,23 @@ export const AdelantosDB = {
      * pero una cifra de plata que sale del panel va separada.
      */
     porMoneda: { moneda: string; saldoPendiente: number; adelantosAbiertos: number }[];
+    /**
+     * (ADR-448) Lo que el negocio RECIBIÓ, aparte: todo lo de arriba sigue
+     * siendo lo dado (el reporte diario lo lee como «por cobrar»). `porDevolver`
+     * = lo que le debes a la gente; `excedente` = le diste de más (te deben).
+     */
+    recibido: ResumenRecibido;
   }> {
-    const [adelantos, totalBenef] = await Promise.all([
+    if (!tenantId) throw new Error("tenantId is required");
+    const [todos, totalBenef] = await Promise.all([
       prisma.adelanto.findMany({
         where: { tenantId, status: { not: "CANCELADO" } },
-        select: { montoAdelantado: true, saldoPendiente: true, status: true, moneda: true },
+        select: { montoAdelantado: true, saldoPendiente: true, status: true, moneda: true, direccion: true },
       }),
       prisma.adelantoBeneficiario.count({ where: { tenantId } }),
     ]);
+    const adelantos = todos.filter((a) => direccionDe(a.direccion) === "DADO");
+    const recibidos = todos.filter((a) => direccionDe(a.direccion) === "RECIBIDO");
     let totalAdelantado = 0, saldoPos = 0, excedente = 0, abiertos = 0, liquidados = 0;
     const porMoneda = new Map<string, { saldo: number; abiertos: number }>();
     for (const a of adelantos) {
@@ -1101,7 +1590,8 @@ export const AdelantosDB = {
       /* Soles primero; después las demás por código. */
       porMoneda: [...porMoneda.entries()]
         .map(([moneda, v]) => ({ moneda, saldoPendiente: r(v.saldo), adelantosAbiertos: v.abiertos }))
-        .sort((a, b) => (a.moneda === "PEN" ? -1 : b.moneda === "PEN" ? 1 : a.moneda.localeCompare(b.moneda))),
+        .sort(solesPrimero),
+      recibido: resumirRecibidos(recibidos),
     };
   },
 
@@ -1118,11 +1608,14 @@ export const AdelantosDB = {
    * `unificarCuentas` — traer también LIQUIDADO/CANCELADO sería agregar en la
    * base filas que la cuenta después descarta igual.
    */
-  async saldosPorPersona(tenantId: string): Promise<SaldoAdelantoGrupo[]> {
+  async saldosPorPersona(tenantId: string, opts?: { direccion?: FiltroDireccion }): Promise<SaldoAdelantoGrupo[]> {
     if (!tenantId) throw new Error("tenantId is required");
+    /* ADR-448: por defecto sólo lo dado (la ficha de RRHH, el ganado). Con
+       `"todas"` se agrupa también por dirección: sin eso, un grupo RECIBIDO
+       ABIERTO se sumaba como «te debe». */
     const grupos = await prisma.adelanto.groupBy({
-      by: ["beneficiarioId", "status", "moneda"],
-      where: { tenantId, status: { in: ["ABIERTO", "EXCEDIDO"] } },
+      by: ["beneficiarioId", "status", "moneda", "direccion"],
+      where: { tenantId, status: { in: ["ABIERTO", "EXCEDIDO"] }, ...whereDireccion(opts?.direccion) },
       _sum: { saldoPendiente: true },
       _count: true,
     });
@@ -1130,6 +1623,7 @@ export const AdelantosDB = {
       beneficiarioId: g.beneficiarioId,
       status: g.status as AdelantoStatus,
       moneda: g.moneda,
+      direccion: direccionDe(g.direccion),
       saldoPendiente: Math.round(toNum(g._sum.saldoPendiente) * 100) / 100,
       cantidad: g._count,
     }));
@@ -1312,7 +1806,68 @@ export const AdelantosDB = {
     await prisma.$transaction(ops);
     return { creados: pendientes.length };
   },
+
+  /**
+   * Cron de recordatorios (ADR-118): los adelantos DADOS, abiertos, con saldo y
+   * más viejos que `umbral`, de TODOS los negocios — como
+   * `materializeRecurrentes`, esto es trabajo del sistema, no de un tenant.
+   *
+   * ADR-448: sólo lo dado. Sin el filtro, el aviso le recordaba a WASACO que
+   * «pague» el aserrío que el negocio le debe.
+   */
+  async vencidosParaRecordatorio(umbral: Date): Promise<
+    { tenantId: string; beneficiarioId: string; saldoPendiente: number; moneda: string }[]
+  > {
+    const rows = await prisma.adelanto.findMany({
+      where: { status: "ABIERTO", saldoPendiente: { gt: 0 }, fechaAdelanto: { lt: umbral }, ...SOLO_DADOS },
+      select: { tenantId: true, beneficiarioId: true, saldoPendiente: true, moneda: true },
+    });
+    return rows.map((a) => ({ ...a, saldoPendiente: toNum(a.saldoPendiente) }));
+  },
+
+  /** Sella `ultimoRecordatorio` en las personas avisadas por el cron, dentro de SU negocio. */
+  async sellarRecordatorios(tenantId: string, beneficiarioIds: string[]): Promise<number> {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (beneficiarioIds.length === 0) return 0;
+    const r = await prisma.adelantoBeneficiario.updateMany({
+      where: { tenantId, id: { in: beneficiarioIds } },
+      data: { ultimoRecordatorio: new Date() },
+    });
+    return r.count;
+  },
 };
+
+/** Soles primero; después las demás monedas por código. */
+const solesPrimero = (a: { moneda: string }, b: { moneda: string }) =>
+  a.moneda === "PEN" ? -1 : b.moneda === "PEN" ? 1 : a.moneda.localeCompare(b.moneda);
+
+/** El bloque `recibido` del resumen (ADR-448), sobre los RECIBIDOS no anulados, por moneda. */
+function resumirRecibidos(
+  rows: { montoAdelantado: Prisma.Decimal | number; saldoPendiente: Prisma.Decimal | number; status: string; moneda: string }[],
+): ResumenRecibido {
+  const r = (n: number) => Math.round(n * 100) / 100;
+  let abiertos = 0;
+  const porMoneda = new Map<string, { total: number; porDevolver: number; excedente: number; abiertos: number }>();
+  for (const a of rows) {
+    const saldo = toNum(a.saldoPendiente);
+    const moneda = a.moneda || "PEN";
+    const m = porMoneda.get(moneda) ?? { total: 0, porDevolver: 0, excedente: 0, abiertos: 0 };
+    m.total += toNum(a.montoAdelantado);
+    if (saldo > 0) m.porDevolver += saldo;
+    if (saldo < 0) m.excedente += -saldo;
+    if (a.status === "ABIERTO") {
+      abiertos++;
+      m.abiertos++;
+    }
+    porMoneda.set(moneda, m);
+  }
+  return {
+    abiertos,
+    porMoneda: [...porMoneda.entries()]
+      .map(([moneda, v]) => ({ moneda, total: r(v.total), porDevolver: r(v.porDevolver), excedente: r(v.excedente), abiertos: v.abiertos }))
+      .sort(solesPrimero),
+  };
+}
 
 function mapRecurrente(r: {
   id: string; beneficiarioId: string; modalidad: string; monto: Prisma.Decimal | number;

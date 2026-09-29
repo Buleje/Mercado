@@ -17,6 +17,14 @@ const p = (x: Partial<PersonaOrdenable> & { nombre: string }): PersonaOrdenable 
   adelantosLiquidados: 0,
   adelantosCancelados: 0,
   ultimoAdelanto: null,
+  // ADR-448: lo recibido, vacío — estas personas sólo tienen plata dada.
+  totalRecibido: {},
+  recibidoPendiente: {},
+  recibidoExcedido: {},
+  recibidosAbiertos: 0,
+  teDebe: {},
+  leDebes: {},
+  neto: {},
   ...x,
 });
 /** Atajo para los tests: un saldo/monto que siempre es en soles. */

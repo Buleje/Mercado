@@ -8,13 +8,25 @@
  */
 
 import type { DbAdelanto } from "@/lib/db/adelantos.db";
+import { direccionDe, type AdelantoDireccion } from "@/lib/adelantos/direccion";
 
 const DIA = 86_400_000;
 
-/** Los adelantos vivos de una persona, del más nuevo al más viejo. */
-export function adelantosDe(adelantos: readonly DbAdelanto[], beneficiarioId: string): DbAdelanto[] {
+/**
+ * Los adelantos vivos de una persona, del más nuevo al más viejo, de UNA
+ * dirección (ADR-448). Por defecto lo dado: «repetir el último» o «ya se le dio
+ * hoy» sobre un préstamo que te hicieron propondría dar lo que te prestaron.
+ * La pantalla en modo «me adelantan / me prestan» pasa `"RECIBIDO"`.
+ */
+export function adelantosDe(
+  adelantos: readonly DbAdelanto[],
+  beneficiarioId: string,
+  direccion: AdelantoDireccion = "DADO",
+): DbAdelanto[] {
   return adelantos
-    .filter((a) => a.beneficiarioId === beneficiarioId && a.status !== "CANCELADO")
+    .filter(
+      (a) => a.beneficiarioId === beneficiarioId && a.status !== "CANCELADO" && direccionDe(a.direccion) === direccion,
+    )
     .sort((x, y) => new Date(y.fechaAdelanto).getTime() - new Date(x.fechaAdelanto).getTime());
 }
 
@@ -29,6 +41,7 @@ export function yaTuvoAdelantoHoy(
   adelantos: readonly DbAdelanto[],
   beneficiarioId: string,
   ahora: number = Date.now(),
+  direccion: AdelantoDireccion = "DADO",
 ): DbAdelanto | null {
   const hoy = new Date(ahora);
   const mismoDia = (iso: string) => {
@@ -37,7 +50,7 @@ export function yaTuvoAdelantoHoy(
       d.getFullYear() === hoy.getFullYear() && d.getMonth() === hoy.getMonth() && d.getDate() === hoy.getDate()
     );
   };
-  return adelantosDe(adelantos, beneficiarioId).find((a) => mismoDia(a.fechaAdelanto)) ?? null;
+  return adelantosDe(adelantos, beneficiarioId, direccion).find((a) => mismoDia(a.fechaAdelanto)) ?? null;
 }
 
 export type SugerenciaRepetir = {
@@ -47,6 +60,8 @@ export type SugerenciaRepetir = {
   notas: string | null;
   /** Hace cuántos días fue, para poder decirlo. */
   hace: number;
+  /** (ADR-448) El concepto del último recibido, para repetirlo igual; `null` en lo dado. */
+  conceptoRecibido: DbAdelanto["conceptoRecibido"];
 };
 
 /**
@@ -60,8 +75,9 @@ export function sugerirRepetir(
   adelantos: readonly DbAdelanto[],
   beneficiarioId: string,
   ahora: number = Date.now(),
+  direccion: AdelantoDireccion = "DADO",
 ): SugerenciaRepetir | null {
-  const ultimo = adelantosDe(adelantos, beneficiarioId)[0];
+  const ultimo = adelantosDe(adelantos, beneficiarioId, direccion)[0];
   if (!ultimo || !(ultimo.montoAdelantado > 0)) return null;
   return {
     monto: ultimo.montoAdelantado,
@@ -69,6 +85,7 @@ export function sugerirRepetir(
     modalidad: ultimo.modalidad,
     notas: ultimo.notas ?? null,
     hace: Math.max(0, Math.floor((ahora - new Date(ultimo.fechaAdelanto).getTime()) / DIA)),
+    conceptoRecibido: ultimo.conceptoRecibido ?? null,
   };
 }
 
@@ -79,8 +96,12 @@ export function sugerirRepetir(
  * promesa. Con menos de dos casos no hay ritmo que estimar — un solo dato es
  * una anécdota, y sugerir una fecha en base a eso es inventar.
  */
-export function plazoHabitualDe(adelantos: readonly DbAdelanto[], beneficiarioId: string): number | null {
-  const plazos = adelantosDe(adelantos, beneficiarioId)
+export function plazoHabitualDe(
+  adelantos: readonly DbAdelanto[],
+  beneficiarioId: string,
+  direccion: AdelantoDireccion = "DADO",
+): number | null {
+  const plazos = adelantosDe(adelantos, beneficiarioId, direccion)
     .filter((a) => a.status === "LIQUIDADO" && a.entregas.length > 0)
     .map((a) => {
       const dado = new Date(a.fechaAdelanto).getTime();

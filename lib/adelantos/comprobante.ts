@@ -16,6 +16,7 @@
  */
 
 import { formatCurrency } from "@/lib/currency";
+import { direccionDe, ETIQUETA_CONCEPTO, type AdelantoConceptoRecibido } from "@/lib/adelantos/direccion";
 
 export interface DatosComprobante {
   codigoOperacion?: string | null;
@@ -30,6 +31,54 @@ export interface DatosComprobante {
   notas?: string | null;
   /** Nombre del negocio, para encabezar el papel. */
   negocio?: string;
+  /**
+   * (ADR-448) De qué lado está la plata. Sin dirección = DADO: el papel de
+   * siempre, que firma la persona. En RECIBIDO se invierte: la persona entrega,
+   * el negocio recibe y firma el compromiso.
+   */
+  direccion?: string | null;
+  conceptoRecibido?: AdelantoConceptoRecibido | null;
+}
+
+/** Los textos del papel, sin jsPDF: lo que cambia según quién pone la plata. */
+export interface TextosComprobante {
+  titulo: string;
+  /** «Recibí de» — quién puso la plata. */
+  recibiDe: string;
+  /** Quién la recibió: la persona en DADO, el negocio en RECIBIDO. */
+  nombre: string;
+  /** Por qué te dieron la plata (sólo en RECIBIDO): «Adelanto por un servicio que darás». */
+  concepto: string | null;
+  declaracion: string;
+  firmaIzquierda: string;
+  firmaDerecha: string;
+}
+
+export function textosDelComprobante(d: DatosComprobante): TextosComprobante {
+  const negocio = d.negocio?.trim() || "—";
+  if (direccionDe(d.direccion) === "RECIBIDO") {
+    const servicio = d.conceptoRecibido !== "PRESTAMO";
+    return {
+      titulo: "COMPROBANTE DE ADELANTO RECIBIDO",
+      recibiDe: d.persona,
+      nombre: negocio,
+      concepto: d.conceptoRecibido ? ETIQUETA_CONCEPTO[d.conceptoRecibido] : null,
+      declaracion: servicio
+        ? `${negocio} declara haber recibido el monto indicado como adelanto y se compromete a devolverlo con el servicio acordado.`
+        : `${negocio} declara haber recibido el monto indicado en préstamo y se compromete a devolverlo según lo acordado.`,
+      firmaIzquierda: `Entregó · ${d.persona}`,
+      firmaDerecha: `Recibí conforme · ${negocio}`,
+    };
+  }
+  return {
+    titulo: "COMPROBANTE DE ADELANTO",
+    recibiDe: negocio,
+    nombre: d.persona,
+    concepto: null,
+    declaracion: "Declaro haber recibido el monto indicado y me comprometo a liquidarlo según la modalidad acordada.",
+    firmaIzquierda: "Entregó",
+    firmaDerecha: "Recibí conforme",
+  };
 }
 
 const MODALIDAD_LABEL: Record<string, string> = {
@@ -93,12 +142,13 @@ export async function descargarComprobante(d: DatosComprobante): Promise<void> {
   // A5 apaisado: entra en media hoja A4, que es como se imprime en el mostrador.
   const doc = new jsPDF({ format: "a5", orientation: "landscape" });
   const W = doc.internal.pageSize.getWidth();
+  const t = textosDelComprobante(d);
   let y = 14;
 
   doc.setFontSize(9);
   doc.text((d.negocio ?? "").toUpperCase(), 12, y);
   doc.setFontSize(15);
-  doc.text("COMPROBANTE DE ADELANTO", 12, (y += 8));
+  doc.text(t.titulo, 12, (y += 8));
 
   // El código, grande y a la derecha: es lo que se busca cuando aparece el papel.
   doc.setFontSize(13);
@@ -118,9 +168,11 @@ export async function descargarComprobante(d: DatosComprobante): Promise<void> {
     doc.text(valor, 45, y);
   };
   linea("Fecha", fecha(d.fecha));
-  linea("Recibí de", d.negocio ?? "—");
-  linea("Nombre", d.persona);
-  if (d.documento) linea("Documento", d.documento);
+  linea("Recibí de", t.recibiDe);
+  if (d.documento && t.recibiDe === d.persona) linea("Documento", d.documento);
+  linea(t.recibiDe === d.persona ? "Recibe" : "Nombre", t.nombre);
+  if (d.documento && t.nombre === d.persona) linea("Documento", d.documento);
+  if (t.concepto) linea("Por", t.concepto);
   linea("Modalidad", MODALIDAD_LABEL[d.modalidad] ?? d.modalidad);
 
   y += 9;
@@ -138,10 +190,7 @@ export async function descargarComprobante(d: DatosComprobante): Promise<void> {
   y += 8;
   doc.setFontSize(8);
   doc.text(
-    doc.splitTextToSize(
-      "Declaro haber recibido el monto indicado y me comprometo a liquidarlo según la modalidad acordada.",
-      W - 24,
-    ) as string[],
+    doc.splitTextToSize(t.declaracion, W - 24) as string[],
     12,
     y,
   );
@@ -151,8 +200,8 @@ export async function descargarComprobante(d: DatosComprobante): Promise<void> {
   doc.line(16, yFirma, 76, yFirma);
   doc.line(W - 76, yFirma, W - 16, yFirma);
   doc.setFontSize(8);
-  doc.text("Entregó", 46, yFirma + 5, { align: "center" });
-  doc.text("Recibí conforme", W - 46, yFirma + 5, { align: "center" });
+  doc.text(t.firmaIzquierda, 46, yFirma + 5, { align: "center" });
+  doc.text(t.firmaDerecha, W - 46, yFirma + 5, { align: "center" });
 
   doc.save(`adelanto-${(d.codigoOperacion ?? "sin-codigo").toLowerCase()}.pdf`);
 }

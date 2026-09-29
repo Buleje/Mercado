@@ -234,6 +234,8 @@ async function leerPartidas(
           moneda: true,
           modalidad: true,
           status: true,
+          /* ADR-448: lo recibido cae en `fuera` («es plata que te dieron»). */
+          direccion: true,
           _count: { select: { entregasPactadas: true } },
         },
       })
@@ -248,6 +250,7 @@ async function leerPartidas(
       modalidad: a.modalidad,
       status: a.status,
       cuotasPactadas: a._count.entregasPactadas,
+      direccion: a.direccion,
     })),
   );
 

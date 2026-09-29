@@ -87,8 +87,8 @@ describe("cruzar", () => {
     const p = plan(partidas(), intencion({ compensar: 800 }));
     expect(p.entregas.map((e) => [e.adelantoId, e.valor, e.paso])).toEqual([["a1", 600, "cruce"], ["a2", 200, "cruce"]]);
     expect(p.movimientos).toEqual([expect.objectContaining({ tipo: "cargo", concepto: "compensacion", monto: 800 })]);
-    expect(p.antes).toEqual({ adelantosTeDebe: 1000, maderaSaldo: -800, neto: 200 });
-    expect(p.despues).toEqual({ adelantosTeDebe: 200, maderaSaldo: 0, neto: 200 });
+    expect(p.antes).toEqual({ adelantosTeDebe: 1000, maderaSaldo: -800, recibidoLeDebes: 0, recibidoTeDebe: 0, neto: 200 });
+    expect(p.despues).toEqual({ adelantosTeDebe: 200, maderaSaldo: 0, recibidoLeDebes: 0, recibidoTeDebe: 0, neto: 200 });
     expect(p.caja).toBeNull();
   });
 
@@ -140,7 +140,7 @@ describe("dejar en cero", () => {
     const i = intencionDejarEnCero(partidas(), "2026-09-14", "efectivo", true);
     expect(i).toMatchObject({ compensar: 800, pago: { direccion: "recibido", monto: 200 } });
     const p = plan(partidas(), i as IntencionLiquidacion);
-    expect(p.despues).toEqual({ adelantosTeDebe: 0, maderaSaldo: 0, neto: 0 });
+    expect(p.despues).toEqual({ adelantosTeDebe: 0, maderaSaldo: 0, recibidoLeDebes: 0, recibidoTeDebe: 0, neto: 0 });
     expect(p.caja).toEqual({ tipo: "ingreso", monto: 200, metodo: "efectivo" });
     expect(leerPlan(p, "Juana").at(-1)).toContain("Entran");
   });
@@ -221,7 +221,7 @@ describe("céntimos", () => {
     });
     expect(saldosDe(p).adelantosTeDebe).toBe(0.3);
     const r = plan(p, intencion({ pago: { direccion: "recibido", monto: 0.3, metodo: "efectivo", moverCaja: false } }));
-    expect(r.despues).toEqual({ adelantosTeDebe: 0, maderaSaldo: 0, neto: 0 });
+    expect(r.despues).toEqual({ adelantosTeDebe: 0, maderaSaldo: 0, recibidoLeDebes: 0, recibidoTeDebe: 0, neto: 0 });
   });
 });
 

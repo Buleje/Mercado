@@ -46,7 +46,13 @@ export default function FormularioLiquidacion({
 }) {
   const maxCompensable = useMemo(() => maximoCompensable(partidas), [partidas]);
   const saldos = useMemo(() => saldosDe(partidas), [partidas]);
-  const puedeCero = useMemo(() => !vinculoFaltante && intencionDejarEnCero(partidas, HOY(), "efectivo", true) != null, [partidas, vinculoFaltante]);
+  /* ADR-448: con plata que la persona te dio (en soles) «Dejar en cero» se
+     apaga — le cobraría lo que el negocio le tiene que devolver. */
+  const tieneRecibidos = useMemo(() => partidas.fuera.some((f) => f.direccion === "RECIBIDO" && (f.moneda || "PEN") === "PEN"), [partidas]);
+  const puedeCero = useMemo(
+    () => !vinculoFaltante && !tieneRecibidos && intencionDejarEnCero(partidas, HOY(), "efectivo", true) != null,
+    [partidas, vinculoFaltante, tieneRecibidos],
+  );
   // "Me pagó" cobra el adelanto Y, si la corre la misma persona con vínculo
   // explícito, lo que debe por aserrío (ADR-412/413: el caso central de
   // Brandon — le cobrás el aserrío y te paga una parte). Sin vínculo,
@@ -170,6 +176,9 @@ export default function FormularioLiquidacion({
           <span className="text-xs text-[var(--text-tertiary)]">Le debías por madera</span>
         </button>
       </div>
+      {tieneRecibidos && (
+        <p className="text-sm font-semibold text-[var(--data-info-ink)]">Tiene plata que te dio: liquídalo eligiendo qué cruzas.</p>
+      )}
 
       {accion && (
         <div className="space-y-3 rounded-2xl bg-[var(--surface-sunken)] p-4">

@@ -40,6 +40,7 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { limaDateKey } from "@/lib/utils";
+import { SOLO_DADOS } from "@/lib/adelantos/direccion";
 
 export interface PorCobrarBucket {
   total: number;
@@ -102,10 +103,15 @@ const WHERE_PRESTAMO = (tenantId: string) => ({
   cuotas: { some: { pagadoEn: null } },
 });
 
+/**
+ * ADR-448: sólo lo DADO. Un adelanto recibido abierto es plata que el negocio
+ * debe devolver — «por pagar», no «por cobrar».
+ */
 const WHERE_ADELANTO = (tenantId: string) => ({
   tenantId,
   status: "ABIERTO" as const,
   saldoPendiente: { gt: 0 },
+  ...SOLO_DADOS,
 });
 
 // ── Helpers puros (testeables sin base) ──────────────────────────────────────

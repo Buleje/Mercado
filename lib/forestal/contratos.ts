@@ -190,9 +190,18 @@ export interface BalanceContrato {
   /** Lo que SALIÓ. */
   gastos: BloqueBalance;
   fletes: BloqueBalance;
+  /** Lo que el negocio DIO (ADR-448: sólo DADO). */
   adelantos: BloqueBalance;
   /** Del adelanto entregado, cuánto todavía no se devolvió en madera. */
   adelantosSaldo: number;
+  /**
+   * (ADR-448) Lo que el negocio RECIBIÓ bajo este permiso (un pago adelantado
+   * por el aserrío, un préstamo): entra, no sale. Opcional: una respuesta en
+   * caché de antes no lo trae.
+   */
+  adelantosRecibidos?: BloqueBalance;
+  /** De lo recibido, cuánto el negocio todavía no devolvió (servicio, madera o plata). */
+  adelantosRecibidosSaldo?: number;
   /** La cuenta corriente con las partes, si nació bajo este contrato. */
   cuentaCargos: BloqueBalance;
   cuentaAbonos: BloqueBalance;
@@ -207,6 +216,11 @@ export interface BalanceContrato {
  *
  * `porRecuperar` = lo que todavía debería volver: el saldo de adelantos (madera
  * que el habilitado aún no entregó) más lo que las partes deben en la cuenta.
+ *
+ * ADR-448: lo RECIBIDO no es egreso ni «por recuperar». Va en `recibido` (lo
+ * que entró) y `porDevolver` (lo que el negocio todavía debe). No toca la
+ * ganancia: un adelanto por un servicio es plata por un trabajo que todavía no
+ * se hizo, no una venta.
  */
 export function resumirBalance(b: BalanceContrato) {
   const egresos = b.madera.monto + b.gastos.monto + b.fletes.monto + b.adelantos.monto;
@@ -224,9 +238,13 @@ export function resumirBalance(b: BalanceContrato) {
      ganancia es null — que es lo mismo que dice el caso «todavía no vendió». */
   const ventas = b.ventas?.monto ?? 0;
   const ganancia = (b.ventas?.documentos ?? 0) > 0 && ventas > 0 ? ventas - egresos : null;
+  const recibido = b.adelantosRecibidos?.monto ?? 0;
+  const porDevolver = Math.max(0, b.adelantosRecibidosSaldo ?? 0);
   return {
     egresos,
     porRecuperar,
+    recibido,
+    porDevolver,
     ventas,
     ganancia,
     /** Cuánto queda de cada sol vendido, después de lo puesto. `null` sin ventas. */

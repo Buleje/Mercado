@@ -5459,8 +5459,26 @@ model Adelanto {
   /// tiene sentido junto a `piesTablaresTipo`; uno sin el otro no se guarda
   /// (ver Zod de POST /api/adelantos).
   piesTablares     Decimal?                 @db.Decimal(12, 2)
-  /// "COMPRADO" | "VENDIDO" — de qué lado del adelanto está la madera.
+  /// "COMPRADO" | "VENDIDO" | "SERVICIO" — de qué lado del adelanto está la madera.
   piesTablaresTipo String?
+  /// (ADR-448) De qué lado está la plata: DADO = el negocio la dio (todo lo
+  /// anterior al 29-09-2026); RECIBIDO = el negocio la recibió y la devuelve
+  /// con un servicio, madera o plata. `saldoPendiente` sigue siendo monto −
+  /// entregas vivas; lo que cambia es quién le debe a quién
+  /// (`lib/adelantos/direccion.ts`). La lectura por defecto es DADO.
+  /// ⚠️ La base tiene un CHECK que Prisma no muestra (`Adelanto_direccion_chk`):
+  /// DADO ⇒ `conceptoRecibido` null; RECIBIDO ⇒ concepto no null y modalidad
+  /// distinta de DESCUENTO_PLANILLA.
+  direccion        AdelantoDireccion        @default(DADO)
+  /// (ADR-448) Sólo en RECIBIDO: por qué te dieron la plata.
+  conceptoRecibido AdelantoConceptoRecibido?
+  /// (ADR-448) La clave del intento de alta que mandó la pantalla: un doble
+  /// clic devuelve el mismo adelanto en vez de crear dos y mover la caja dos
+  /// veces. Null = alta sin clave (asistente, recurrentes).
+  idempotencyKey   String?
+  /// (ADR-448) El cuerpo del intento (persona, monto, moneda, dirección,
+  /// concepto, caja): la misma clave con otro cuerpo da 422, no el primero.
+  idempotencyHuella String?
   createdAt        DateTime                 @default(now())
   updatedAt        DateTime                 @updatedAt
   tenant           Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -5476,12 +5494,28 @@ model Adelanto {
   contrato   ForestContrato? @relation(fields: [contratoId], references: [id], onDelete: SetNull)
 
   @@unique([tenantId, codigoOperacion])
+  @@unique([tenantId, idempotencyKey])
   @@index([tenantId, status])
   @@index([tenantId, fechaAdelanto])
   @@index([tenantId, reciboManual])
   @@index([tenantId, fechaVencimiento])
   @@index([beneficiarioId])
   @@index([tenantId, contratoId])
+  @@index([tenantId, direccion, status])
+}
+
+/// (ADR-448) De qué lado está la plata de un adelanto. Mismos valores que
+/// `PrestamoDireccion`, pero un tipo propio: el préstamo va con cuotas e interés.
+enum AdelantoDireccion {
+  DADO
+  RECIBIDO
+}
+
+/// (ADR-448) Por qué te dieron la plata. OTRO se agrega con `ALTER TYPE … ADD
+/// VALUE` cuando aparezca un caso real.
+enum AdelantoConceptoRecibido {
+  SERVICIO
+  PRESTAMO
 }
 
 model AdelantoEntrega {
@@ -5503,10 +5537,18 @@ model AdelantoEntrega {
   /// Baja lógica al anular su liquidación: NULL en toda fila vieja, así que
   /// ninguna lectura actual cambia hasta que se filtre (ADR-413 §7).
   anuladaAt      DateTime?
+  /// (ADR-448) La clave del intento de la entrega que mandó la pantalla: un
+  /// reintento (corte de red) devuelve la misma entrega en vez de anotar dos y
+  /// mover la caja dos veces. Única por adelanto (y el adelanto, por negocio).
+  idempotencyKey    String?
+  /// El cuerpo del intento (tipo, valor, producto, cantidad, caja): otra
+  /// entrega con la misma clave da 422.
+  idempotencyHuella String?
   createdAt      DateTime                @default(now())
   adelanto       Adelanto                @relation(fields: [adelantoId], references: [id], onDelete: Cascade)
   pactada        AdelantoEntregaPactada?
 
+  @@unique([adelantoId, idempotencyKey])
   @@index([adelantoId])
   @@index([adelantoId, fecha])
   @@index([liquidacionId])
