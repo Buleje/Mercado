@@ -12,7 +12,8 @@
  *
  * Elegir un árbol NO re-pinta el censo: sólo cambia el ícono de los dos o tres
  * árboles que ganan o pierden el anillo (`setIcon` reusa el mismo `<div>`, así
- * que el foco del teclado se queda donde estaba).
+ * que el foco del teclado se queda donde estaba). Marcar en «Elegir varios»
+ * es el mismo truco: sólo se toca el ícono de los árboles marcados/desmarcados.
  */
 
 import { useEffect, useRef } from "react";
@@ -37,7 +38,7 @@ interface Marca {
    por parámetro y el linter no puede saber que son estables. */
 export function useLothCanvasArboles(ctx: LeafletCtx, p: LothMapaCanvasProps): void {
   const { ready, mapRef, LRef, arbolesRef } = ctx;
-  const { censo, parcela, declarada, arbolElegido, arbolCercano, onArbolElegido, posicion, drawMode, markMode, viaDraft, medicion } = p;
+  const { censo, parcela, declarada, arbolElegido, arbolCercano, onArbolElegido, posicion, drawMode, markMode, viaDraft, medicion, marcados } = p;
   // Con una herramienta que usa el clic del mapa prendida (dibujar, marcar,
   // trazar, medir), los árboles no se quedan con ese clic: si no, poner un
   // vértice encima de un árbol abría su ficha en vez de marcar el punto.
@@ -46,6 +47,8 @@ export function useLothCanvasArboles(ctx: LeafletCtx, p: LothMapaCanvasProps): v
   const marcas = useRef(new Map<string, Marca>());
   /** Quiénes llevan el anillo AHORA: el efecto que construye los lee sin depender de ellos. */
   const resaltes = useRef({ elegido: arbolElegido, cercano: arbolCercano });
+  /** Quiénes están marcados AHORA (mismo truco: sin ir en las dependencias). */
+  const marcadosRef = useRef(marcados);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const iconoDe = (L: any, m: Marca, id: string) => {
@@ -59,6 +62,7 @@ export function useLothCanvasArboles(ctx: LeafletCtx, p: LothMapaCanvasProps): v
         fuera: m.fuera,
         resaltado: elegido || cercano,
         latido: cercano && !elegido,
+        marcado: marcadosRef.current.has(id),
         etiqueta: m.etiqueta,
         lado: LADO,
       }),
@@ -126,6 +130,19 @@ export function useLothCanvasArboles(ctx: LeafletCtx, p: LothMapaCanvasProps): v
       m.marker.setZIndexOffset(zDe(id, m.estado));
     }
   }, [ready, arbolElegido, arbolCercano, LRef]);
+
+  // ── Marcar o desmarcar: sólo los árboles que lo ganan o lo pierden ─────────
+  useEffect(() => {
+    const L = LRef.current;
+    const antes = marcadosRef.current;
+    marcadosRef.current = marcados;
+    if (!ready || !L) return;
+    const tocados = new Set([...antes, ...marcados].filter((id) => antes.has(id) !== marcados.has(id)));
+    for (const id of tocados) {
+      const m = marcas.current.get(id);
+      if (m) m.marker.setIcon(iconoDe(L, m, id));
+    }
+  }, [ready, marcados, LRef]);
 
   // Tocar el mapa vacío cierra la ficha (un marcador no burbujea su clic).
   useEffect(() => {

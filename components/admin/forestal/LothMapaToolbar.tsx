@@ -20,7 +20,7 @@
  * dice cuál está prendida sin abrir nada.
  */
 
-import { Download, Layers, Loader2, Maximize2, Minimize2, PenTool, Save, Wrench, type LucideIcon } from "@buleje/design-system/icons";
+import { Axe, Download, Layers, Loader2, Maximize2, Minimize2, PenTool, Save, Wrench, type LucideIcon } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 
 export interface HerramientaIcono {
@@ -50,6 +50,8 @@ interface Props {
   sinGuardar: boolean;
   guardando: boolean;
   onGuardar: () => void;
+  /** «Elegir varios»: marcar árboles en pie para talarlos en una sola planilla. */
+  variosTala: { disponible: boolean; activo: boolean; n: number; onToggle: () => void };
 }
 
 const ICONO =
@@ -69,6 +71,7 @@ export default function LothMapaToolbar({
   sinGuardar,
   guardando,
   onGuardar,
+  variosTala,
 }: Props) {
   return (
     <div className="flex flex-wrap items-center gap-2 border-b border-[var(--rule-soft)] bg-[var(--surface-sunken)] px-3 py-2">
@@ -125,6 +128,26 @@ export default function LothMapaToolbar({
       </div>
 
       <div className="ml-auto flex flex-wrap items-center gap-2">
+        {variosTala.disponible && (
+          <button
+            type="button"
+            onClick={variosTala.onToggle}
+            aria-pressed={variosTala.activo}
+            title={
+              variosTala.activo
+                ? "Salir de elegir varios (Escape)"
+                : "Marca varios árboles en pie y tálalos juntos en una sola planilla"
+            }
+            className={`inline-flex h-11 items-center gap-1.5 whitespace-nowrap rounded-xl border px-3 text-sm font-bold transition-colors ${
+              variosTala.activo
+                ? "border-transparent bg-[var(--brand-ink)] text-white"
+                : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+            }`}
+          >
+            <Axe className="h-4 w-4" aria-hidden="true" />
+            {variosTala.activo && variosTala.n > 0 ? `Elegir varios · ${variosTala.n}` : "Elegir varios"}
+          </button>
+        )}
         {sinGuardar && (
           <button
             type="button"

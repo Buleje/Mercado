@@ -20,6 +20,8 @@ export const HALO_ARBOL = "var(--surface-raised)";
 export const RESALTE_ARBOL = "var(--data-info-500)";
 const FUERA = "var(--data-error-500)";
 const DESCARTADO = "var(--data-3)";
+/** Insignia de «Elegir varios»: el mismo turquesa del CTA del mapa. */
+const MARCADO = "var(--accent)";
 
 /** Trazo de cada forma en un lienzo de 24 × 24 con centro en (12, 12). */
 export function pathForma(forma: FormaArbol): string {
@@ -60,6 +62,9 @@ export function estiloSimbolo(clase: ClaseArbol, estado: string): EstiloSimbolo 
 const escapar = (s: string): string =>
   s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c] as string);
 
+/** La insignia de «marcado»: un círculo con un check, arriba a la derecha del símbolo. */
+export const BADGE_MARCADO_PATH = "M16.6 6 L18.2 7.6 L21.4 4.4";
+
 export interface OpcionesSimbolo {
   clase: ClaseArbol;
   estado: string;
@@ -69,6 +74,8 @@ export interface OpcionesSimbolo {
   resaltado?: boolean;
   /** El más cercano mientras se busca con el GPS: además late (salvo movimiento reducido). */
   latido?: boolean;
+  /** Marcado en «Elegir varios»: insignia turquesa con un check. */
+  marcado?: boolean;
   /** Nombre accesible del marcador (Leaflet lo vuelve `role="button"`). */
   etiqueta: string;
   /** Lado en px del marcador (el área que se toca, no sólo lo que se ve). */
@@ -83,6 +90,9 @@ export function simboloArbolHtml(o: OpcionesSimbolo): string {
     o.fuera ? `<circle cx="12" cy="12" r="11" fill="none" style="stroke:${FUERA}" stroke-width="1.5" stroke-dasharray="3 2"/>` : "",
     o.resaltado ? `<circle cx="12" cy="12" r="11" fill="none" style="stroke:${HALO_ARBOL}" stroke-width="4"/><circle cx="12" cy="12" r="11" fill="none" style="stroke:${RESALTE_ARBOL}" stroke-width="2.5"/>` : "",
   ].join("");
+  const badge = o.marcado
+    ? `<circle cx="19" cy="6" r="5.5" style="fill:${MARCADO}" stroke="${HALO_ARBOL}" stroke-width="1.5"/><path d="${BADGE_MARCADO_PATH}" fill="none" style="stroke:${HALO_ARBOL}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>`
+    : "";
   const forma = `<path d="${e.d}" style="fill:${e.fill};stroke:${e.stroke}" stroke-width="${e.strokeWidth}" stroke-linejoin="round"${
     e.dash ? ` stroke-dasharray="${e.dash}"` : ""
   } opacity="${e.opacidad}"/>`;
@@ -90,7 +100,8 @@ export function simboloArbolHtml(o: OpcionesSimbolo): string {
   const latido = o.latido
     ? `<span aria-hidden="true" class="pointer-events-none absolute inset-0 rounded-full border-2 animate-ping motion-reduce:animate-none" style="border-color:${RESALTE_ARBOL}"></span>`
     : "";
-  return `<span class="relative block" style="width:${lado}px;height:${lado}px">${latido}<svg aria-hidden="true" width="${lado}" height="${lado}" viewBox="0 0 24 24" style="overflow:visible;display:block">${anillos}${forma}${tachado}</svg><span class="sr-only">${escapar(
-    o.etiqueta,
+  const etiqueta = o.marcado ? `${o.etiqueta}, marcado` : o.etiqueta;
+  return `<span class="relative block" style="width:${lado}px;height:${lado}px">${latido}<svg aria-hidden="true" width="${lado}" height="${lado}" viewBox="0 0 24 24" style="overflow:visible;display:block">${anillos}${forma}${tachado}${badge}</svg><span class="sr-only">${escapar(
+    etiqueta,
   )}</span></span>`;
 }

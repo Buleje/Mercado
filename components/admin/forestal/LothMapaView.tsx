@@ -40,6 +40,8 @@ import { useLothMapaHerramientas } from "./hooks/use-loth-mapa-herramientas";
 import { useLothMapaDerivados } from "./hooks/use-loth-mapa-derivados";
 import { useLothMapaExportes } from "./hooks/use-loth-mapa-exportes";
 import { useLothMapaArboles } from "./hooks/use-loth-mapa-arboles";
+import { useLothMapaTalaVarios } from "./hooks/use-loth-mapa-tala-varios";
+import type { TandaTalaInicial } from "./hooks/use-tala-en-tanda";
 import { formatNumber } from "@/lib/format";
 
 /** Claves de los bloques plegables. Exportadas: la prueba en navegador las lee. */
@@ -65,10 +67,13 @@ const plural = (n: number, uno: string, varios: string) => `${formatNumber(n)} $
 export default function LothMapaView({
   focusTree,
   onFocusHandled,
+  onTalarVarios,
 }: {
   /** Árbol a centrar al entrar (se llega acá desde la trazabilidad por árbol). */
   focusTree?: string | null;
   onFocusHandled?: () => void;
+  /** «Elegir varios»: abre la MISMA planilla de tala en tanda que «Ver censo». */
+  onTalarVarios?: (t: TandaTalaInicial) => void;
 } = {}) {
   const marcoRef = useRef<HTMLElement>(null);
   const datos = useLothMapaDatos();
@@ -76,6 +81,18 @@ export default function LothMapaView({
   const der = useLothMapaDerivados({ ...datos, showCenso: herr.showCenso, showGrid: herr.showGrid, hidden: herr.hidden });
   const dib = useLothMapaDibujo({ ...datos, censo: der.censoAll });
   const arb = useLothMapaArboles(der.censoAll, { centrar: herr.centrar });
+  const variosTala = useLothMapaTalaVarios({
+    censoAll: der.censoAll,
+    trees: datos.trees,
+    raw: datos.raw,
+    poaConfig: datos.poaConfig,
+    plan: datos.plan,
+  });
+  const talarVarios = () => {
+    const tanda = variosTala.armarTanda();
+    if (tanda) onTalarVarios?.(tanda);
+    variosTala.desactivar();
+  };
   const verticesCuadro = dib.drawMode && dib.draft.length >= 3 ? dib.draft : datos.parcela.vertices;
   const exp = useLothMapaExportes({
     ...datos,
@@ -151,7 +168,18 @@ export default function LothMapaView({
 
       {datos.error && <ErrorAlert title="No se pudo completar" description={datos.error} />}
 
-      <LothMapaMarco ref={marcoRef} datos={datos} dib={dib} herr={herr} der={der} exp={exp} arb={arb} verticesCuadro={verticesCuadro.length} />
+      <LothMapaMarco
+        ref={marcoRef}
+        datos={datos}
+        dib={dib}
+        herr={herr}
+        der={der}
+        exp={exp}
+        arb={arb}
+        variosTala={variosTala}
+        onTalarVarios={talarVarios}
+        verticesCuadro={verticesCuadro.length}
+      />
 
       <div className="space-y-3">
         <LothMapaBloque

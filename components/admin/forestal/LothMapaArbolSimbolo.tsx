@@ -6,9 +6,17 @@
  */
 
 import type { ClaseArbol } from "@/lib/forestal/loth-mapa-arboles";
-import { estiloSimbolo, PATH_TACHADO } from "./loth-mapa-arbol-simbolo";
+import { BADGE_MARCADO_PATH, estiloSimbolo, PATH_TACHADO } from "./loth-mapa-arbol-simbolo";
 
-export default function LothMapaArbolSimbolo({ clase, estado, lado = 18 }: { clase: ClaseArbol; estado: string; lado?: number }) {
+interface Props {
+  clase: ClaseArbol;
+  estado: string;
+  lado?: number;
+  /** Marcado en «Elegir varios»: la MISMA insignia que el marcador del mapa. */
+  marcado?: boolean;
+}
+
+export default function LothMapaArbolSimbolo({ clase, estado, lado = 18, marcado = false }: Props) {
   const e = estiloSimbolo(clase, estado);
   return (
     <svg aria-hidden="true" width={lado} height={lado} viewBox="0 0 24 24" className="flex-none overflow-visible">
@@ -21,6 +29,12 @@ export default function LothMapaArbolSimbolo({ clase, estado, lado = 18 }: { cla
         opacity={e.opacidad}
       />
       {e.tachado && <path d={PATH_TACHADO} style={{ stroke: e.stroke }} strokeWidth={2.25} strokeLinecap="round" />}
+      {marcado && (
+        <>
+          <circle cx={19} cy={6} r={5.5} style={{ fill: "var(--accent)", stroke: "var(--surface-raised)" }} strokeWidth={1.5} />
+          <path d={BADGE_MARCADO_PATH} fill="none" style={{ stroke: "var(--surface-raised)" }} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" />
+        </>
+      )}
     </svg>
   );
 }

@@ -22,9 +22,11 @@ import LothMapaDrawBar, { LothMapaMarcaBar, LothMapaViaBar } from "./LothMapaDra
 import LothMapaArbolFicha from "./LothMapaArbolFicha";
 import LothMapaCensoBarra from "./LothMapaCensoBarra";
 import LothMapaCercanos from "./LothMapaCercanos";
+import LothMapaElegirVariosBar from "./LothMapaElegirVariosBar";
 import { CLASE_ARBOL_LABEL } from "@/lib/forestal/loth-mapa-arboles";
 import { pointInPolygon } from "@/lib/forestal/loth-geo";
 import type { LothMapaArboles } from "./hooks/use-loth-mapa-arboles";
+import type { LothMapaTalaVarios } from "./hooks/use-loth-mapa-tala-varios";
 import { herramientasDelMapa, menuCapas, menuDibujar, menuExportar } from "./loth-mapa-menus";
 import type { LothMapaDatos } from "./hooks/use-loth-mapa-datos";
 import type { LothMapaDibujo } from "./hooks/use-loth-mapa-dibujo";
@@ -46,16 +48,32 @@ interface Props {
   exp: LothMapaExportes;
   /** El censo en el mapa: filtro, árbol elegido y «¿Qué árbol tengo cerca?». */
   arb: LothMapaArboles;
+  /** «Elegir varios»: marcar árboles en pie para talarlos en una sola planilla. */
+  variosTala: LothMapaTalaVarios;
+  onTalarVarios?: () => void;
   /** Cuántos vértices muestra el cuadro de coordenadas (borrador incluido). */
   verticesCuadro: number;
 }
 
-const LothMapaMarco = forwardRef<HTMLElement, Props>(function LothMapaMarco({ datos, dib, herr, der, exp, arb, verticesCuadro }, ref) {
+const LothMapaMarco = forwardRef<HTMLElement, Props>(function LothMapaMarco({ datos, dib, herr, der, exp, arb, variosTala, onTalarVarios, verticesCuadro }, ref) {
   const { fullscreen, setFullscreen } = herr;
   const rios = datos.carto.vias.filter((v) => v.tipo === "rio");
   /** Una herramienta usa el clic del mapa: los árboles no lo toman y la ficha se guarda. */
   const capturando = dib.drawMode || dib.markMode || dib.viaDraft !== null || herr.medicion !== null;
   const elegido = arb.elegido;
+  /** En «Elegir varios» tocar un árbol lo marca; no abre su ficha. */
+  const onArbolTocado = variosTala.activo ? (id: string | null) => (id ? variosTala.alternar(id) : undefined) : arb.elegir;
+
+  // Escape sale de «Elegir varios» (limpia lo marcado, como cerrar el modo desde el botón).
+  useEffect(() => {
+    if (!variosTala.activo) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || e.defaultPrevented) return;
+      variosTala.desactivar();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [variosTala]);
   /** Lo que el filtro deja buscar, dicho como lo lee el monteador («Catahua · Semillero»). */
   const filtrando =
     [arb.opciones.especies.find((o) => o.valor === arb.filtro.especie)?.label, arb.filtro.clase && CLASE_ARBOL_LABEL[arb.filtro.clase]]
@@ -100,6 +118,12 @@ const LothMapaMarco = forwardRef<HTMLElement, Props>(function LothMapaMarco({ da
         sinGuardar={datos.cartoSinGuardar}
         guardando={datos.savingCarto}
         onGuardar={() => void datos.guardarCartografia()}
+        variosTala={{
+          disponible: der.censoAll.length > 0 && !capturando,
+          activo: variosTala.activo,
+          n: variosTala.lista.length,
+          onToggle: () => (variosTala.activo ? variosTala.desactivar() : variosTala.activar()),
+        }}
       />
 
       <LothMapaHerramientas
@@ -157,7 +181,8 @@ const LothMapaMarco = forwardRef<HTMLElement, Props>(function LothMapaMarco({ da
           encuadrarEn={arb.encuadrarEn}
           arbolElegido={elegido?.id ?? null}
           arbolCercano={arb.cercanoId}
-          onArbolElegido={arb.elegir}
+          onArbolElegido={onArbolTocado}
+          marcados={variosTala.marcados}
           parcela={datos.parcela.vertices}
           declarada={der.declarada}
           draft={dib.draft}
@@ -176,13 +201,27 @@ const LothMapaMarco = forwardRef<HTMLElement, Props>(function LothMapaMarco({ da
         />
         <LothMapaChrome items={der.legendItems} cursor={herr.cursor} metersPerPixel={herr.metersPerPixel} />
 
-        {elegido && herr.showCenso && !capturando && (
+        {elegido && herr.showCenso && !capturando && !variosTala.activo && (
           <LothMapaArbolFicha
             arbol={elegido}
             desdeTi={arb.desdeTi}
             fuera={der.declarada && !pointInPolygon([elegido.lat, elegido.lng], datos.parcela.vertices)}
             onCerrar={() => arb.elegir(null)}
             onCentrar={() => herr.centrar([elegido.lat, elegido.lng])}
+          />
+        )}
+
+        {variosTala.activo && (
+          <LothMapaElegirVariosBar
+            n={variosTala.lista.length}
+            m3={variosTala.totalM3}
+            etiqueta={variosTala.etiqueta}
+            aviso={variosTala.aviso}
+            onLimpiar={variosTala.limpiar}
+            onTalar={() => {
+              onTalarVarios?.();
+            }}
+            onSalir={variosTala.desactivar}
           />
         )}
 

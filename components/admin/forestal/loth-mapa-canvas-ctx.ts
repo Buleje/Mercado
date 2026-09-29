@@ -73,8 +73,13 @@ export interface LothMapaCanvasProps {
   arbolElegido: string | null;
   /** El árbol en pie más cercano a tu GPS: late, y una línea te lleva hasta él. */
   arbolCercano: string | null;
-  /** Tocar un árbol abre su ficha; tocar el mapa vacío la cierra (null). */
+  /**
+   * Tocar un árbol: abre su ficha, o —en «Elegir varios»— lo marca/desmarca
+   * (lo decide quien pasa esta prop). Tocar el mapa vacío cierra la ficha (null).
+   */
   onArbolElegido: (id: string | null) => void;
+  /** «Elegir varios»: los árboles marcados (insignia turquesa en el símbolo). */
+  marcados: ReadonlySet<string>;
   parcela: LatLng[];
   declarada: boolean;
   draft: LatLng[];

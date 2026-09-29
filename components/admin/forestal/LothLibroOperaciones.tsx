@@ -928,7 +928,9 @@ export default function LothLibroOperaciones() {
       {view === "cierre" && <LothCierrePanel entries={allEntries} caratula={caratula} />}
 
       {/* Vista Mapa — dónde se taló cada árbol (GPS de campo, EUDR) */}
-      {view === "mapa" && <LothMapaView focusTree={focoArbol} onFocusHandled={() => setFocoArbol(null)} />}
+      {view === "mapa" && (
+        <LothMapaView focusTree={focoArbol} onFocusHandled={() => setFocoArbol(null)} onTalarVarios={(t) => setTandaTala(t)} />
+      )}
 
       {/* Vista Rentabilidad — margen por especie (dashboard de negocio) */}
       {view === "rentabilidad" && <LothRentabilidadPanel reloadSignal={reloadSignal} entries={allEntries} />}
