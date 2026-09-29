@@ -22,6 +22,7 @@ import {
 
 const fila = (p: Partial<PorCobrarFila> & { id: string; tipo: PorCobrarFila["tipo"]; monto: number }): PorCobrarFila => ({
   quien: "Alguien",
+  moneda: "PEN",
   desde: "2026-09-01",
   vence: null,
   nota: null,
@@ -121,8 +122,9 @@ describe("saldosPorParte — la cuenta corriente forestal", () => {
       mov("p1", "abono", 1500, "2026-08-02T00:00:00Z"),
       mov("p1", "cargo", 500.5, "2026-06-01T00:00:00Z"),
     ]);
+    // Sin `moneda` el movimiento es en soles (el default del schema).
     expect(saldos).toEqual([
-      { parteId: "p1", nombre: "Maderera del Ucayali", saldo: 4000.5, desde: "2026-06-01" },
+      { parteId: "p1", nombre: "Maderera del Ucayali", moneda: "PEN", saldo: 4000.5, desde: "2026-06-01" },
     ]);
   });
 

@@ -11,109 +11,45 @@
  * (`?detalle=1` deriva el resumen de las MISMAS filas que lista: la cabecera no
  * puede decir un número que la tabla no sume).
  *
+ * F12 (2026-09-29): cada monto va en su moneda (antes todo se sumaba como
+ * soles) y quien también está en «Lo que debo» muestra el cruce —te debe · le
+ * debes · neto, las cifras de esa lista— con su botón Liquidar.
+ *
  * Lo que NO cambia: el cobro se registra en cada módulo y cada fila lleva ahí.
  * La madera vive en el Libro CTP (otro módulo): ese salto lo recarga entero.
  */
 
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { DataTable, BadgeStatus, SectionTitle } from "@buleje/design-system";
-import {
-  Wallet, CreditCard, Landmark, DollarSign, ArrowRight, RefreshCw, Trees, Search, Gauge,
-} from "@buleje/design-system/icons";
+import { useMemo, useState } from "react";
+import { DataTable, SectionTitle } from "@buleje/design-system";
+import { Wallet, RefreshCw, Search } from "@buleje/design-system/icons";
 import { cn, limaDateKey } from "@/lib/utils";
-import { formatCurrency } from "@/lib/currency";
-import { tenantFetch } from "@/lib/tenant-fetch";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
-
-type Tipo = "fiado" | "prestamo" | "adelanto" | "madera";
-
-/** Espejo de `PorCobrarFila` del backend (el .db.ts es `server-only`). */
-interface Fila {
-  id: string; tipo: Tipo; quien: string; monto: number;
-  desde: string | null; vence: string | null; nota: string | null;
-}
-interface Bucket { total: number; count: number; }
-interface Detalle { fiados: Bucket; prestamos: Bucket; adelantos: Bucket; madera: Bucket; totalGeneral: number; items: Fila[]; }
-
-const CERO = { total: 0, count: 0 };
-const VACIO: Detalle = { fiados: CERO, prestamos: CERO, adelantos: CERO, madera: CERO, totalGeneral: 0, items: [] };
-
-/** Un tipo de deuda: cómo se dice, de qué color es y dónde se cobra. */
-const TIPOS: Record<Tipo, {
-  label: string; /** El plural va escrito: «maderas» no existe. */ plural: string;
-  bucket: keyof Omit<Detalle, "totalGeneral" | "items">;
-  icon: typeof CreditCard; chip: string; destino: string; externo?: boolean;
-}> = {
-  fiado:     { label: "Fiado",    plural: "Fiados",    bucket: "fiados",    icon: CreditCard, chip: "bg-[var(--accent)]/15 text-[var(--accent-ink)] dark:text-[var(--accent)]", destino: "fiados" },
-  prestamo:  { label: "Préstamo", plural: "Préstamos", bucket: "prestamos", icon: Landmark,   chip: "bg-[var(--data-info-500)]/15 text-[var(--data-info-500)]", destino: "prestamos" },
-  adelanto:  { label: "Adelanto", plural: "Adelantos", bucket: "adelantos", icon: DollarSign, chip: "bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)]", destino: "adelantos" },
-  /* La madera NO es sección hermana de Mi Plata: su detalle vive en el Libro
-     CTP y hay que recargar ese módulo entero. */
-  madera:    { label: "Madera",   plural: "Madera",    bucket: "madera",    icon: Trees,      chip: "bg-[var(--data-success-500)]/15 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]", destino: "ctp-libro-operaciones", externo: true },
-};
-const ORDEN: Tipo[] = ["fiado", "prestamo", "adelanto", "madera"];
-
-const DIAS = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"];
-
-const CHIP = "inline-flex h-11 items-center gap-2 rounded-2xl border px-4 text-sm font-bold transition-colors";
-const CHIP_ON = "border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent-ink)] dark:text-[var(--accent)]";
-const CHIP_OFF = "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)]/50";
-/* 44 px de alto en el celular (el dedo), 36 en la tabla del escritorio. */
-const BOTON_FILA = "inline-flex h-11 items-center sm:h-9 justify-center gap-1 rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)]/50 hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]";
-
-/** «jue 10/09» — a mano, sin `Intl`: el ICU cambia los nombres entre versiones. */
-function fechaCorta(iso: string | null): string {
-  if (!iso) return "—";
-  const d = new Date(`${iso}T00:00:00Z`);
-  if (!Number.isFinite(d.getTime())) return "—";
-  return `${DIAS[d.getUTCDay()]} ${String(d.getUTCDate()).padStart(2, "0")}/${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
-}
-
-/** Días entre dos `YYYY-MM-DD`, en UTC (date-only: sin husos de por medio). */
-function diasEntre(desde: string, hasta: string): number {
-  const a = Date.parse(`${desde}T00:00:00Z`);
-  const b = Date.parse(`${hasta}T00:00:00Z`);
-  if (!Number.isFinite(a) || !Number.isFinite(b)) return 0;
-  return Math.round((b - a) / 86_400_000);
-}
+import { montoEnMoneda } from "@/lib/adelantos/cuenta-unificada";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { usePorCobrar } from "@/hooks/use-por-cobrar";
+import { irAlOrigen } from "@/components/admin/unified/finanzas/resultado/ir-al-origen";
+import { ACCION_LIQUIDAR, PARAM_ACCION, PARAM_PERSONA } from "@/components/admin/adelantos/cuentas/liquidar-por-url";
+import type { PorCobrarTipo } from "@/lib/db/por-cobrar.db";
+import FilaPorCobrar from "./por-cobrar/FilaPorCobrar";
+import { CHIP, CHIP_OFF, CHIP_ON, ORDEN, TIPOS, enMonedas } from "./por-cobrar/estilo";
 
 /** Salto a otro módulo del panel: recarga el módulo destino entero. */
 function goTab(tab: string) {
   window.dispatchEvent(new CustomEvent("admin:navigate", { detail: { tab } }));
 }
 
+/**
+ * Liquidar la cuenta de una persona: el modal vive en «Cuenta por persona»
+ * (Adelantos → Resumen) y se abre con `?accion=liquidar&persona=<clave>`, la
+ * misma URL que manda la Caja de Mi Plata.
+ */
+function irALiquidar(clave: string) {
+  irAlOrigen({ tab: "plata", params: { vista: "adelantos", [PARAM_ACCION]: ACCION_LIQUIDAR, [PARAM_PERSONA]: clave } });
+}
+
 export default function PorCobrarDashboard({ onIr }: { onIr?: (seccion: string) => void } = {}) {
-  const [data, setData] = useState<Detalle>(VACIO);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [filtro, setFiltro] = useState<Tipo | "todo">("todo");
+  const { data, loading, error, recargar } = usePorCobrar();
+  const [filtro, setFiltro] = useState<PorCobrarTipo | "todo">("todo");
   const [q, setQ] = useState("");
-  /* Número de carga: dos toques al botón de actualizar y la respuesta lenta de
-     la primera pisaba a la segunda. Sólo manda la última pedida. */
-  const ultima = useRef(0);
-
-  const load = useCallback(() => {
-    const mia = ++ultima.current;
-    setLoading(true);
-    setError(null);
-    tenantFetch("/api/admin/por-cobrar?detalle=1")
-      .then(async (r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json() as Promise<Detalle>;
-      })
-      .then((d) => {
-        if (mia !== ultima.current) return;
-        if (d && Array.isArray(d.items)) setData(d);
-        else throw new Error("Respuesta inesperada");
-      })
-      .catch((err: unknown) => {
-        if (mia !== ultima.current) return;
-        setError(err instanceof Error ? err.message : "No se pudo cargar");
-      })
-      .finally(() => { if (mia === ultima.current) setLoading(false); });
-  }, []);
-
-  useEffect(() => { load(); }, [load]);
 
   const hoy = limaDateKey();
   const filas = useMemo(() => {
@@ -124,36 +60,71 @@ export default function PorCobrarDashboard({ onIr }: { onIr?: (seccion: string) 
       return `${f.quien} ${f.nota ?? ""}`.toLowerCase().includes(texto);
     });
   }, [data.items, filtro, q]);
+  const crucePorClave = useMemo(() => new Map(data.cruces.map((c) => [c.clave, c])), [data.cruces]);
 
   /* Las cifras SIEMPRE salen del backend: el chip activo manda cuál se muestra,
-     nunca se re-suma en el navegador. */
+     nunca se re-suma en el navegador. Cada moneda, aparte. */
+  const deTipo = (tipo: PorCobrarTipo) => data.porTipo.filter((x) => x.tipo === tipo);
   const cifra = filtro === "todo"
-    ? { total: data.totalGeneral, count: data.items.length, rotulo: "Te deben" }
-    : { total: data[TIPOS[filtro].bucket].total, count: data[TIPOS[filtro].bucket].count, rotulo: `Te deben en ${TIPOS[filtro].plural.toLowerCase()}` };
+    ? { montos: data.totales.map((t) => ({ moneda: t.moneda, monto: t.total })), count: data.items.length, rotulo: "Te deben" }
+    : {
+        montos: deTipo(filtro).map((x) => ({ moneda: x.moneda, monto: x.total })),
+        count: deTipo(filtro).reduce((s, x) => s + x.count, 0),
+        rotulo: `Te deben en ${TIPOS[filtro].plural.toLowerCase()}`,
+      };
 
   /** Sección hermana → salto instantáneo; otro módulo (o sin padre) → recarga. */
   const irASeccion = (destino: string, externo = false) => {
     if (onIr && !externo) onIr(destino);
     else goTab(destino);
   };
-  const irA = (tipo: Tipo) => irASeccion(TIPOS[tipo].destino, TIPOS[tipo].externo);
 
   return (
     <div className="space-y-4">
-      <AdminModuleHeader title="Por cobrar" description="Todo lo que te deben, en una sola lista" icon={Wallet}>
+      {/* Una sola fila: la cifra (o el título, si no hay nada) y «Actualizar».
+          Sin cabecera propia: dentro de Mi Plata un encabezado anidado no pinta
+          el título y el botón quedaba solo en una fila (igual que en «Lo que debo»). */}
+      <div className="flex items-start gap-3">
+        <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-3 gap-y-1">
+          {data.items.length > 0 ? (
+            <>
+              <SectionTitle as="h3">{cifra.rotulo}</SectionTitle>
+              <span className="text-2xl font-extrabold tabular-nums text-[var(--text-primary)]">{enMonedas(cifra.montos) || montoEnMoneda(0, "PEN")}</span>
+              <span className="text-sm text-[var(--text-tertiary)]">
+                en {cifra.count} cuenta{cifra.count === 1 ? "" : "s"}
+              </span>
+              {filtro === "todo" && data.cruzable.length > 0 && (
+                <span className="text-sm font-semibold text-[var(--text-secondary)]">· {enMonedas(data.cruzable)} también les debes a esas personas</span>
+              )}
+              <InfoTip
+                title="Lo que te deben"
+                what="Suma lo que te debe cada uno: fiados, préstamos que diste, adelantos que diste y madera despachada a cuenta. Cada moneda va aparte. «Cobrar» te lleva al módulo donde se registra el cobro; la madera se cobra desde la cuenta corriente del Libro CTP. El botón del medidor abre el scoring del cliente, que sale de todo su historial y no sólo de esa deuda."
+                affects="Si esa persona también está en «Lo que debo», su fila muestra cuánto te debe, cuánto le debes y el neto, con el botón Liquidar. El total no resta nada: lo que tú le debes sigue en «Lo que debo»."
+                example="Si te deben S/ 12 323 por madera y a esa misma persona le debes S/ 3 031 de un adelanto que te dio, verás «Neto: te debe S/ 9 292» y Liquidar."
+              />
+            </>
+          ) : (
+            <SectionTitle as="h3">Por cobrar</SectionTitle>
+          )}
+        </div>
         <button
-          onClick={load}
-          className="p-2 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors"
+          onClick={recargar}
+          className="shrink-0 rounded-xl p-2 text-[var(--text-tertiary)] transition-colors hover:bg-primary/10 hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
           title="Actualizar"
           aria-label="Actualizar la lista"
         >
           <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
         </button>
-      </AdminModuleHeader>
+      </div>
 
       {error && (
-        <p className="rounded-xl border border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/10 px-4 py-3 text-sm font-bold text-[var(--data-error-500)]">
+        <p className="rounded-xl border border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/10 px-4 py-3 text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
           No se pudo cargar lo que te deben ({error}). Toca actualizar para reintentar.
+        </p>
+      )}
+      {!error && !data.crucesDisponibles && data.items.length > 0 && (
+        <p className="rounded-xl border border-[var(--data-warning-500)]/40 bg-[var(--data-warning-500)]/10 px-4 py-3 text-sm font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+          No se pudo cruzar con lo que debes: la lista está completa, pero sin los netos.
         </p>
       )}
 
@@ -169,27 +140,19 @@ export default function PorCobrarDashboard({ onIr }: { onIr?: (seccion: string) 
 
       {data.items.length > 0 && (
         <>
-          {/* Cifras en UNA línea, no cinco tarjetas */}
-          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <SectionTitle as="h3">{cifra.rotulo}</SectionTitle>
-            <span className="text-2xl font-extrabold tabular-nums text-[var(--text-primary)]">{formatCurrency(cifra.total)}</span>
-            <span className="text-sm text-[var(--text-tertiary)]">
-              en {cifra.count} cuenta{cifra.count === 1 ? "" : "s"}
-            </span>
-          </div>
-
-          {/* Chips por tipo: filtran y muestran su cifra */}
+          {/* Chips por tipo: filtran y muestran su cifra, cada moneda aparte */}
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setFiltro("todo")}
               aria-pressed={filtro === "todo"}
               className={cn(CHIP, filtro === "todo" ? CHIP_ON : CHIP_OFF)}
             >
-              Todo · {formatCurrency(data.totalGeneral, { decimals: 0 })}
+              Todo · {enMonedas(data.totales.map((t) => ({ moneda: t.moneda, monto: t.total })))}
             </button>
             {ORDEN.map((tipo) => {
               const t = TIPOS[tipo];
-              const b = data[t.bucket];
+              const deEste = deTipo(tipo);
+              const cuantos = deEste.reduce((s, x) => s + x.count, 0);
               const Icon = t.icon;
               const activo = filtro === tipo;
               return (
@@ -197,12 +160,12 @@ export default function PorCobrarDashboard({ onIr }: { onIr?: (seccion: string) 
                   key={tipo}
                   onClick={() => setFiltro(activo ? "todo" : tipo)}
                   aria-pressed={activo}
-                  disabled={b.count === 0}
-                  className={cn(CHIP, activo ? CHIP_ON : CHIP_OFF, b.count === 0 && "cursor-not-allowed opacity-45")}
+                  disabled={cuantos === 0}
+                  className={cn(CHIP, activo ? CHIP_ON : CHIP_OFF, cuantos === 0 && "cursor-not-allowed opacity-45")}
                 >
                   <Icon className="h-4 w-4" aria-hidden="true" />
-                  {t.plural} · {formatCurrency(b.total, { decimals: 0 })}
-                  <span className="text-[length:var(--ts-xs)] font-black tabular-nums text-[var(--text-tertiary)]">{b.count}</span>
+                  {t.plural} · {enMonedas(deEste.map((x) => ({ moneda: x.moneda, monto: x.total }))) || montoEnMoneda(0, "PEN")}
+                  <span className="text-[length:var(--ts-xs)] font-black tabular-nums text-[var(--text-tertiary)]">{cuantos}</span>
                 </button>
               );
             })}
@@ -236,52 +199,17 @@ export default function PorCobrarDashboard({ onIr }: { onIr?: (seccion: string) 
               </tr>
             </thead>
             <tbody>
-              {filas.map((f) => {
-                const t = TIPOS[f.tipo];
-                const Icon = t.icon;
-                const atraso = f.vence ? diasEntre(f.vence, hoy) : 0;
-                return (
-                  <tr key={`${f.tipo}-${f.id}`}>
-                    <td>
-                      <span className={cn("inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-[length:var(--ts-xs)] font-bold", t.chip)}>
-                        <Icon className="h-3.5 w-3.5" aria-hidden="true" />{t.label}
-                      </span>
-                    </td>
-                    <td>
-                      <span className="font-bold text-[var(--text-primary)]">{f.quien}</span>
-                      {f.nota && <span className="block text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">{f.nota}</span>}
-                    </td>
-                    <td className="text-right font-extrabold tabular-nums">{formatCurrency(f.monto)}</td>
-                    <td className="whitespace-nowrap text-[var(--text-secondary)]">{fechaCorta(f.desde)}</td>
-                    <td className="whitespace-nowrap">
-                      {f.vence === null
-                        ? <span className="text-[var(--text-tertiary)]">Sin plazo</span>
-                        : atraso > 0
-                          ? <BadgeStatus variant="error" size="sm" label={`Vencido hace ${atraso} d`} />
-                          : <span className="text-[var(--text-secondary)]">{fechaCorta(f.vence)}</span>}
-                    </td>
-                    <td className="text-right whitespace-nowrap">
-                      {f.tipo === "fiado" && (
-                        <button
-                          onClick={() => irASeccion("scoring")}
-                          title={`Ver el scoring de ${f.quien}`}
-                          aria-label={`Ver el scoring crediticio de ${f.quien}`}
-                          className={cn(BOTON_FILA, "mr-1 w-11 sm:w-9")}
-                        >
-                          <Gauge className="h-4 w-4" />
-                        </button>
-                      )}
-                      <button
-                        onClick={() => irA(f.tipo)}
-                        aria-label={`Abrir ${t.plural.toLowerCase()} para cobrar a ${f.quien}`}
-                        className={cn(BOTON_FILA, "px-3 text-[length:var(--ts-xs)] font-bold")}
-                      >
-                        Cobrar <ArrowRight className="h-3.5 w-3.5" />
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
+              {filas.map((f) => (
+                <FilaPorCobrar
+                  key={`${f.tipo}-${f.id}-${f.moneda}`}
+                  fila={f}
+                  hoy={hoy}
+                  cruce={(f.cruce && crucePorClave.get(f.cruce)) || null}
+                  onCobrar={() => irASeccion(TIPOS[f.tipo].destino, TIPOS[f.tipo].externo)}
+                  onScoring={() => irASeccion("scoring")}
+                  onLiquidar={irALiquidar}
+                />
+              ))}
               {filas.length === 0 && (
                 <tr>
                   <td colSpan={6} className="py-6 text-center text-sm font-bold text-[var(--text-tertiary)]">
@@ -293,10 +221,7 @@ export default function PorCobrarDashboard({ onIr }: { onIr?: (seccion: string) 
           </DataTable>
 
           <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
-            Mostrando {filas.length} de {data.items.length} cuentas. «Cobrar» te deja en el módulo
-            que corresponde; la madera se cobra desde la cuenta corriente del Libro CTP. El scoring
-            sale del historial completo del cliente, no de la deuda de esta fila: por eso es un
-            botón por fila y no una columna.
+            Mostrando {filas.length} de {data.items.length} cuentas.
           </p>
         </>
       )}

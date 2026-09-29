@@ -25,6 +25,9 @@ import {
   mayoresAcreedores, totalQueDebes, type CuentaPorPagarDeLista,
 } from "@/components/admin/unified/finanzas/resumen/deudores";
 import type { IgvDelMes } from "@/components/admin/unified/finanzas/resumen/igv";
+import {
+  leerDeudasDelNegocio, SIN_DEUDAS, type DeudasDelNegocio,
+} from "@/components/admin/unified/finanzas/resumen/deudas-del-negocio";
 
 export interface ResumenPlata {
   loading: boolean;
@@ -39,6 +42,12 @@ export interface ResumenPlata {
   fiscal: Fiscal | null;
   /** Sin `efectivo`: ese sale de la caja abierta (`use-caja-abierta`). */
   healthData: Omit<HealthData, "efectivo"> | null;
+  /**
+   * «Te deben» y «Debes»: los totales de Por cobrar y de Lo que debo, pedidos
+   * a las MISMAS funciones que esas secciones (`?resumen=1`). `null` en un
+   * lado = no se pudo leer o el rol no lo puede ver.
+   */
+  deudas: DeudasDelNegocio;
   lastRefresh: Date;
   /** Vuelve a pedir todo, saltando la caché de 30 s del módulo. */
   recargar: () => void;
@@ -55,6 +64,7 @@ export function useResumenPlata(): ResumenPlata {
   const [projection, setProjection] = useState<Proyeccion | null>(null);
   const [fiscal, setFiscal] = useState<Fiscal | null>(null);
   const [healthData, setHealthData] = useState<Omit<HealthData, "efectivo"> | null>(null);
+  const [deudas, setDeudas] = useState<DeudasDelNegocio>(SIN_DEUDAS);
   const [loading, setLoading] = useState(true);
   const [lastRefresh, setLastRefresh] = useState(new Date());
   // El botón «Actualizar» sólo reiniciaba el contador de «hace N min»: no
@@ -89,7 +99,11 @@ export function useResumenPlata(): ResumenPlata {
       // IGV sólo de lo registrado (comprobantes electrónicos y gastos con su
       // IGV). `null` = no se pudo leer.
       fetchFinanzas<IgvDelMes | null>("/api/finanzas/igv-del-mes", null),
-    ]).then(([kR, eR, bR, exR, pR, fR, msR, igvR]) => {
+      // «Te deben» y «Debes»: el total de cada sección, de su misma función.
+      // Un 403 (encargado, almacenero) vuelve `null` y la cifra no se dibuja.
+      fetchFinanzas<unknown>("/api/admin/por-cobrar?resumen=1", null),
+      fetchFinanzas<unknown>("/api/finanzas/por-pagar?resumen=1", null),
+    ]).then(([kR, eR, bR, exR, pR, fR, msR, igvR, cobR, pagR]) => {
       if (!vivo) return;
       const kpisData = kR.status === "fulfilled" ? kR.value : null;
       const expSummary = eR.status === "fulfilled" ? eR.value : null;
@@ -221,6 +235,12 @@ export function useResumenPlata(): ResumenPlata {
       // ── Top fiados (deudores): por SALDO, la misma regla que la tarjeta ──
       setTopFiados(mayoresDeudores(fiadosRaw, now));
 
+      // ── Te deben / Debes: los totales de sus secciones, sin re-sumar ──
+      setDeudas(leerDeudasDelNegocio(
+        cobR.status === "fulfilled" ? cobR.value : null,
+        pagR.status === "fulfilled" ? pagR.value : null,
+      ));
+
       setLoading(false);
       setLastRefresh(new Date());
     });
@@ -229,6 +249,6 @@ export function useResumenPlata(): ResumenPlata {
 
   return {
     loading, kpis, monthlyData, expensesByCategory, paymentMethods, cashFlow,
-    topPayables, topFiados, projection, fiscal, healthData, lastRefresh, recargar,
+    topPayables, topFiados, projection, fiscal, healthData, deudas, lastRefresh, recargar,
   };
 }

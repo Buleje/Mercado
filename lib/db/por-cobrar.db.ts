@@ -35,18 +35,31 @@ import "server-only";
  * (`WHERE_*` acá abajo) y los usan tanto `getSummary` (agregados, barato — lo
  * llama el cron diario por cada tenant) como `getDetalle` (las filas). Si
  * alguien cambia un criterio, cambia en los dos caminos a la vez.
+ *
+ * ── Monedas y el cruce con «Lo que debo» (F12, 2026-09-29) ──────────────────
+ * Cada fila lleva su moneda y los totales van por moneda (`totales`,
+ * `porTipo`): antes la cuenta forestal sumaba cargos y abonos de TODAS las
+ * monedas juntas. Y quien está también en «Lo que debo» (te debe y le debes)
+ * trae su cruce con las cifras de esa lista (`cruzarConLoQueDebes`): la regla
+ * del neto vive en `lib/finance/por-pagar.ts`, no acá.
  */
 
 import { prisma } from "@/lib/prisma";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { limaDateKey } from "@/lib/utils";
 import { SOLO_DADOS } from "@/lib/adelantos/direccion";
+import type { MontoEnMoneda, PersonaPorPagar, TotalPorPagar } from "@/lib/finance/por-pagar";
 
 export interface PorCobrarBucket {
   total: number;
   count: number;
 }
 
+/**
+ * Los cuatro montos y el total general van EN SOLES: son los que el cron diario
+ * escribe con «S/». Lo que está en otra moneda no se suma acá —se cuenta aparte
+ * en `totales`/`porTipo` del detalle—, porque S/ 100 + USD 100 no es S/ 200.
+ */
 export interface PorCobrarSummary {
   fiados: PorCobrarBucket;
   prestamos: PorCobrarBucket;
@@ -66,16 +79,73 @@ export interface PorCobrarFila {
   /** Quién debe, con el nombre con el que se lo llama en el mostrador. */
   quien: string;
   monto: number;
+  /** La moneda de ESTA deuda (`PEN`, `USD`…). Nunca se suma con otra. */
+  moneda: string;
   /** `YYYY-MM-DD` — desde cuándo debe. */
   desde: string | null;
   /** `YYYY-MM-DD` — cuándo se acordó que paga. `null` = sin plazo pactado. */
   vence: string | null;
   /** Texto corto que ubica la deuda: código de operación, N° de cuotas, detalle. */
   nota: string | null;
+  /** Sólo en adelantos: la persona en Adelantos (con ella se la busca en «Lo que debo»). */
+  beneficiarioId?: string | null;
+  /**
+   * Si esta persona TAMBIÉN está en «Lo que debo»: su clave de «Cuenta por
+   * persona» (la que abre Liquidar). El detalle del cruce está en `cruces`.
+   */
+  cruce?: string | null;
+}
+
+/** Lo que te deben en UNA moneda, y en cuántas cuentas. */
+export interface TotalPorCobrar {
+  moneda: string;
+  total: number;
+  count: number;
+}
+
+/** Lo de un tipo (fiado, préstamo…) en UNA moneda: la cifra de cada chip. */
+export interface TipoPorCobrarResumen {
+  tipo: PorCobrarTipo;
+  moneda: string;
+  total: number;
+  count: number;
 }
 
 export interface PorCobrarDetalle extends PorCobrarSummary {
+  /**
+   * Por moneda, soles primero: la cifra de la cabecera de «Por cobrar» y la
+   * del Resumen de Mi Plata salen de acá (una sola regla).
+   */
+  totales: TotalPorCobrar[];
+  porTipo: TipoPorCobrarResumen[];
   items: PorCobrarFila[];
+}
+
+/**
+ * Una persona que está en las DOS listas: te debe algo y le debes algo. Las
+ * cifras son las de «Lo que debo» (`armarPorPagar`), no una cuenta nueva: el
+ * mismo neto que se liquida en «Cuenta por persona».
+ */
+export interface CrucePorCobrar {
+  /** Clave de «Cuenta por persona»: `?accion=liquidar&persona=<clave>` abre Liquidar. */
+  clave: string;
+  nombre: string;
+  teDebe: MontoEnMoneda[];
+  leDebes: MontoEnMoneda[];
+  /** teDebe − leDebes por moneda. + = te debe. */
+  neto: MontoEnMoneda[];
+}
+
+export interface PorCobrarConCruces extends PorCobrarDetalle {
+  cruces: CrucePorCobrar[];
+  /**
+   * Por moneda: cuánto de lo que te deben se compensa con lo que les debes a
+   * esas mismas personas (Σ min por persona). Es el `cruzable` de «Lo que
+   * debo» —el mismo número en las dos listas—, no se resta de nada.
+   */
+  cruzable: MontoEnMoneda[];
+  /** `false` = no se pudo leer «Lo que debo»: la lista sale igual, sin cruces. */
+  crucesDisponibles: boolean;
 }
 
 // ── Criterios (única fuente: los comparten resumen y detalle) ────────────────
@@ -121,6 +191,17 @@ function aSoles(n: number): number {
   return Math.round(n * 100) / 100;
 }
 
+const PEN = "PEN";
+/** La moneda de una fila: vacía o ausente es soles (el default del schema). */
+function monedaDe(m: string | null | undefined): string {
+  return m && m.trim() ? m.trim().toUpperCase() : PEN;
+}
+
+/** Soles primero; el resto por nombre. */
+function ordenarMonedas<T extends { moneda: string }>(xs: T[]): T[] {
+  return [...xs].sort((a, b) => (a.moneda === PEN ? -1 : b.moneda === PEN ? 1 : a.moneda.localeCompare(b.moneda)));
+}
+
 /**
  * `YYYY-MM-DD` de una fecha guardada.
  *
@@ -143,25 +224,35 @@ type MontoLike =
   | null
   | undefined;
 
-/** Saldo por parte de la cuenta corriente forestal: cargos − abonos. */
+/**
+ * Saldo por parte Y por moneda de la cuenta corriente forestal: cargos − abonos.
+ *
+ * Una fila por (parte, moneda). Antes se sumaba todo junto: una parte con una
+ * venta de S/ 1 000 y un abono de USD 200 salía «debe 800», un número que no
+ * está en ninguna moneda. Sin `moneda` (o vacía) es soles, el default del
+ * schema.
+ */
 export function saldosPorParte(
-  movs: { parteId: string; parteNombre: string; tipo: string; monto: MontoLike; fecha: Date }[],
-): { parteId: string; nombre: string; saldo: number; desde: string | null }[] {
-  const acc = new Map<string, { nombre: string; saldo: number; desde: Date }>();
+  movs: { parteId: string; parteNombre: string; tipo: string; monto: MontoLike; fecha: Date; moneda?: string | null }[],
+): { parteId: string; nombre: string; moneda: string; saldo: number; desde: string | null }[] {
+  const acc = new Map<string, { parteId: string; moneda: string; nombre: string; saldo: number; desde: Date }>();
   for (const m of movs) {
     const monto = toNumOrZero(m.monto);
-    const prev = acc.get(m.parteId);
+    const moneda = monedaDe(m.moneda);
+    const clave = `${m.parteId}|${moneda}`;
+    const prev = acc.get(clave);
     const delta = m.tipo === "cargo" ? monto : -monto;
     if (!prev) {
-      acc.set(m.parteId, { nombre: m.parteNombre, saldo: delta, desde: m.fecha });
+      acc.set(clave, { parteId: m.parteId, moneda, nombre: m.parteNombre, saldo: delta, desde: m.fecha });
     } else {
       prev.saldo += delta;
       if (m.fecha < prev.desde) prev.desde = m.fecha;
     }
   }
-  return [...acc.entries()].map(([parteId, v]) => ({
-    parteId,
+  return [...acc.values()].map((v) => ({
+    parteId: v.parteId,
     nombre: v.nombre,
+    moneda: v.moneda,
     saldo: aSoles(v.saldo),
     desde: diaUtc(v.desde),
   }));
@@ -185,12 +276,19 @@ export function ordenarPorCobrar(filas: PorCobrarFila[], hoy: string): PorCobrar
   });
 }
 
+/** El orden de los tipos en los chips y en `porTipo`. */
+const ORDEN_TIPOS: readonly PorCobrarTipo[] = ["fiado", "prestamo", "adelanto", "madera"];
+
 /**
  * El resumen que muestra la pantalla sale de las MISMAS filas que lista: si la
  * tabla y el total salieran de dos consultas distintas, la vista podría
  * contradecirse sola.
+ *
+ * Los cuatro montos y `totalGeneral` son en SOLES (lo que lee el cron). Cada
+ * moneda va entera en `totales` (la cabecera y el Resumen de Mi Plata) y en
+ * `porTipo` (los chips): nada se suma entre monedas.
  */
-export function resumirPorCobrar(filas: PorCobrarFila[]): PorCobrarSummary {
+export function resumirPorCobrar(filas: PorCobrarFila[]): PorCobrarSummary & Pick<PorCobrarDetalle, "totales" | "porTipo"> {
   const vacio = (): PorCobrarBucket => ({ total: 0, count: 0 });
   const buckets: Record<PorCobrarTipo, PorCobrarBucket> = {
     fiado: vacio(),
@@ -198,25 +296,93 @@ export function resumirPorCobrar(filas: PorCobrarFila[]): PorCobrarSummary {
     adelanto: vacio(),
     madera: vacio(),
   };
+  const totales = new Map<string, TotalPorCobrar>();
+  const porTipo = new Map<string, TipoPorCobrarResumen>();
   for (const f of filas) {
-    buckets[f.tipo].total += f.monto;
-    buckets[f.tipo].count += 1;
+    const moneda = monedaDe(f.moneda);
+    if (moneda === PEN) {
+      buckets[f.tipo].total += f.monto;
+      buckets[f.tipo].count += 1;
+    }
+    const t = totales.get(moneda) ?? { moneda, total: 0, count: 0 };
+    t.total += f.monto;
+    t.count += 1;
+    totales.set(moneda, t);
+    const k = `${f.tipo}|${moneda}`;
+    const x = porTipo.get(k) ?? { tipo: f.tipo, moneda, total: 0, count: 0 };
+    x.total += f.monto;
+    x.count += 1;
+    porTipo.set(k, x);
   }
   const fiados = { total: aSoles(buckets.fiado.total), count: buckets.fiado.count };
   const prestamos = { total: aSoles(buckets.prestamo.total), count: buckets.prestamo.count };
   const adelantos = { total: aSoles(buckets.adelanto.total), count: buckets.adelanto.count };
   const madera = { total: aSoles(buckets.madera.total), count: buckets.madera.count };
+  const orden = (t: PorCobrarTipo) => ORDEN_TIPOS.indexOf(t);
   return {
     fiados,
     prestamos,
     adelantos,
     madera,
     totalGeneral: aSoles(fiados.total + prestamos.total + adelantos.total + madera.total),
+    totales: ordenarMonedas([...totales.values()].map((t) => ({ ...t, total: aSoles(t.total) }))),
+    porTipo: [...porTipo.values()]
+      .map((x) => ({ ...x, total: aSoles(x.total) }))
+      .sort((a, b) => orden(a.tipo) - orden(b.tipo) || (a.moneda === PEN ? -1 : b.moneda === PEN ? 1 : a.moneda.localeCompare(b.moneda))),
+  };
+}
+
+/**
+ * «Por cobrar» + «Lo que debo»: marca las filas de quien está en las DOS
+ * listas y trae su cruce (te debe · le debes · neto), tal como lo arma
+ * `armarPorPagar` para esa misma persona.
+ *
+ * No hay una segunda regla: quién es la misma persona lo decidió
+ * `unificarCuentas` (vínculo explícito o documento, nunca el nombre) y las
+ * cifras son las de «Lo que debo». Acá sólo se ubica a esa persona en las filas
+ * de esta lista: un adelanto por su ficha de Adelantos, la madera por su parte
+ * forestal. Un proveedor o un préstamo recibido no tienen con quién unirse.
+ *
+ * Nada se resta del total: «Te deben» sigue siendo lo que te deben. El cruce
+ * se decide en Liquidar.
+ */
+export function cruzarConLoQueDebes(
+  detalle: PorCobrarDetalle,
+  porPagar: { personas: readonly PersonaPorPagar[]; totales: readonly TotalPorPagar[] } | null,
+): PorCobrarConCruces {
+  if (!porPagar) return { ...detalle, cruces: [], cruzable: [], crucesDisponibles: false };
+  const enLasDos = porPagar.personas.filter((p) => p.tipo === "persona" && p.teDebe.length > 0);
+  const porBenef = new Map<string, string>();
+  const porParte = new Map<string, string>();
+  for (const p of enLasDos) {
+    if (p.beneficiarioId) porBenef.set(p.beneficiarioId, p.clave);
+    if (p.parteId) porParte.set(p.parteId, p.clave);
+  }
+  const claveDe = (f: PorCobrarFila): string | null => {
+    if (f.tipo === "adelanto") return (f.beneficiarioId && porBenef.get(f.beneficiarioId)) || null;
+    if (f.tipo === "madera") return porParte.get(f.id) ?? null;
+    return null;
+  };
+  return {
+    ...detalle,
+    items: detalle.items.map((f) => ({ ...f, cruce: claveDe(f) })),
+    cruces: enLasDos.map((p) => ({ clave: p.clave, nombre: p.nombre, teDebe: p.teDebe, leDebes: p.debes, neto: p.neto })),
+    cruzable: porPagar.totales.filter((t) => t.cruzable > 0.005).map((t) => ({ moneda: t.moneda, monto: t.cruzable })),
+    crucesDisponibles: true,
   };
 }
 
 export const PorCobrarDB = {
-  /** Agrega los saldos pendientes por cobrar del tenant (tenant-scoped). */
+  /**
+   * Agrega los saldos pendientes por cobrar del tenant (tenant-scoped), en
+   * soles: es lo que escribe el cron diario con «S/».
+   *
+   * Préstamos y madera se leen sólo en soles. Los adelantos, no: su `where`
+   * es `WHERE_ADELANTO` tal cual (lo fija el barrido de ADR-448) y un
+   * `aggregate` no separa monedas — medido 29-09, en Blas y en `main` no hay
+   * ningún adelanto dado en otra moneda. El detalle (`getDetalle`) sí separa
+   * todo por moneda.
+   */
   async getSummary(tenantId: string): Promise<PorCobrarSummary> {
     const [fiadoAgg, adelantoAgg, cuotaAgg, prestamosCount, movsForestales] = await Promise.all([
       prisma.fiado.aggregate({
@@ -231,16 +397,16 @@ export const PorCobrarDB = {
       }),
       // Saldo de préstamos = cuotas aún no pagadas de préstamos vivos.
       prisma.prestamoCuota.aggregate({
-        where: { pagadoEn: null, prestamo: WHERE_PRESTAMO(tenantId) },
+        where: { pagadoEn: null, prestamo: { ...WHERE_PRESTAMO(tenantId), moneda: PEN } },
         _sum: { monto: true },
       }),
-      prisma.prestamo.count({ where: WHERE_PRESTAMO(tenantId) }),
+      prisma.prestamo.count({ where: { ...WHERE_PRESTAMO(tenantId), moneda: PEN } }),
       /* Cuenta corriente forestal: se traen los movimientos y se suman por
          parte, porque el saldo es un derivado (cargos − abonos) y no una
          columna. Son decenas por tenant, no miles. */
       prisma.forestCuentaMov.findMany({
         where: { tenantId, deletedAt: null },
-        select: { parteId: true, parteNombre: true, tipo: true, monto: true, fecha: true },
+        select: { parteId: true, parteNombre: true, tipo: true, monto: true, fecha: true, moneda: true },
       }),
     ]);
 
@@ -252,7 +418,7 @@ export const PorCobrarDB = {
        plata que le debemos nosotros, y sumarla acá restaría de lo que nos
        deben —dos deudas de signo contrario no se compensan en un tablero de
        cobranza—. */
-    const deudores = saldosPorParte(movsForestales).filter((p) => p.saldo > 0.005);
+    const deudores = saldosPorParte(movsForestales).filter((p) => p.moneda === PEN && p.saldo > 0.005);
     const madera: PorCobrarBucket = {
       total: aSoles(deudores.reduce((a, p) => a + p.saldo, 0)),
       count: deudores.length,
@@ -290,6 +456,7 @@ export const PorCobrarDB = {
         select: {
           id: true,
           entidadNombre: true,
+          moneda: true,
           fechaDesembolso: true,
           createdAt: true,
           customer: { select: { name: true } },
@@ -303,8 +470,10 @@ export const PorCobrarDB = {
         where: WHERE_ADELANTO(tenantId),
         select: {
           id: true,
+          beneficiarioId: true,
           codigoOperacion: true,
           reciboManual: true,
+          moneda: true,
           saldoPendiente: true,
           fechaAdelanto: true,
           fechaVencimiento: true,
@@ -313,7 +482,7 @@ export const PorCobrarDB = {
       }),
       prisma.forestCuentaMov.findMany({
         where: { tenantId, deletedAt: null },
-        select: { parteId: true, parteNombre: true, tipo: true, monto: true, fecha: true },
+        select: { parteId: true, parteNombre: true, tipo: true, monto: true, fecha: true, moneda: true },
       }),
     ]);
 
@@ -325,6 +494,8 @@ export const PorCobrarDB = {
         tipo: "fiado",
         quien: f.customer?.name?.trim() || "Cliente sin nombre",
         monto: toNumOrZero(f.saldo),
+        /* El fiado no tiene moneda: se fía en soles, en el mostrador. */
+        moneda: PEN,
         /* `createdAt` es un instante real (no un calendario): el día del
            negocio es el de Lima, si no una venta de las 20:00 se lee «mañana». */
         desde: limaDateKey(f.createdAt) || null,
@@ -343,6 +514,7 @@ export const PorCobrarDB = {
         tipo: "prestamo",
         quien: p.customer?.name?.trim() || p.entidadNombre?.trim() || "Sin nombre",
         monto: aSoles(p.cuotas.reduce((s, c) => s + toNumOrZero(c.monto), 0)),
+        moneda: monedaDe(p.moneda),
         desde: diaUtc(p.fechaDesembolso) ?? (limaDateKey(p.createdAt) || null),
         vence: diaUtc(proxima),
         nota: `${impagas} cuota${impagas === 1 ? "" : "s"} sin pagar`,
@@ -355,6 +527,8 @@ export const PorCobrarDB = {
         tipo: "adelanto",
         quien: a.beneficiario?.nombre?.trim() || "Sin nombre",
         monto: toNumOrZero(a.saldoPendiente),
+        moneda: monedaDe(a.moneda),
+        beneficiarioId: a.beneficiarioId,
         desde: diaUtc(a.fechaAdelanto),
         vence: diaUtc(a.fechaVencimiento),
         nota: a.codigoOperacion?.trim() || (a.reciboManual ? `Recibo ${a.reciboManual}` : null),
@@ -368,6 +542,7 @@ export const PorCobrarDB = {
         tipo: "madera",
         quien: parte.nombre?.trim() || "Parte sin nombre",
         monto: parte.saldo,
+        moneda: parte.moneda,
         desde: parte.desde,
         vence: null,
         nota: "Cuenta corriente del Libro CTP",

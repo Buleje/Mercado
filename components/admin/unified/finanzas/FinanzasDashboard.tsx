@@ -35,6 +35,7 @@ import CompararMeses from "./resumen/CompararMeses";
 import GraficosAmpliados from "./resumen/GraficosAmpliados";
 import EsqueletoResumen from "./resumen/EsqueletoResumen";
 import CajaDelResumen from "./resumen/CajaDelResumen";
+import TeDebenYDebes from "./resumen/TeDebenYDebes";
 
 /** Por qué la liquidez no se puede medir, en palabras del dueño. */
 function motivoSinLiquidez({ caja, error }: UsoCajaAbierta): string {
@@ -46,7 +47,7 @@ function motivoSinLiquidez({ caja, error }: UsoCajaAbierta): string {
 export default function FinanzasDashboard() {
   const {
     loading, kpis, monthlyData, expensesByCategory, paymentMethods, cashFlow,
-    topPayables, topFiados, projection, fiscal, healthData, lastRefresh, recargar,
+    topPayables, topFiados, projection, fiscal, healthData, deudas, lastRefresh, recargar,
   } = useResumenPlata();
   const caja = useCajaAbierta();
   // Mejora 13: Expand chart modal
@@ -94,6 +95,8 @@ export default function FinanzasDashboard() {
     return (
       <div className="space-y-4">
         {caja.caja?.abierta && <CajaDelResumen {...caja} />}
+        {/* Sin ventas ni gastos del mes puede haber deudas igual: no se esconden. */}
+        <TeDebenYDebes deudas={deudas} />
         <div className="text-center py-16">
         <div className="h-16 w-16 rounded-xl bg-[var(--surface-sunken)] flex items-center justify-center mx-auto mb-4">
           <BarChart3 className="h-8 w-8 text-[var(--text-tertiary)] dark:text-muted" />
@@ -116,6 +119,9 @@ export default function FinanzasDashboard() {
       />
 
       <CajaDelResumen {...caja} />
+
+      {/* Lo que te deben y lo que debes, arriba: es el estado de hoy, no del mes. */}
+      <TeDebenYDebes deudas={deudas} />
 
       <StaggerItem index={1}>
         <KpisDelResumen kpis={kpis} monthlyData={monthlyData} fiscal={fiscal} />

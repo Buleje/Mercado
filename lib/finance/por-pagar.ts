@@ -208,6 +208,15 @@ export interface PersonaPorPagar {
   neto: MontoEnMoneda[];
   /** Dónde cruzar las dos direcciones. `null` si no hay qué cruzar. */
   liquidar: EnlacePorPagar | null;
+  /**
+   * Los ids de cada libreta de «Cuenta por persona» (la ficha de Adelantos y la
+   * parte forestal unida). Sólo en las personas; en proveedores y préstamos no
+   * vienen. Sirven para que «Por cobrar» encuentre a la MISMA persona en sus
+   * filas (un adelanto dado, la madera de su parte) sin volver a unir las
+   * libretas por su cuenta. No cambian ninguna cifra.
+   */
+  beneficiarioId?: string | null;
+  parteId?: string | null;
 }
 
 export interface TotalPorPagar {
@@ -458,7 +467,7 @@ function netoDe(teDebe: MontoEnMoneda[], debes: MontoEnMoneda[]): MontoEnMoneda[
 }
 
 function armarPersona(
-  base: { clave: string; nombre: string; tipo: TipoAcreedor },
+  base: { clave: string; nombre: string; tipo: TipoAcreedor; beneficiarioId?: string | null; parteId?: string | null },
   partidasSueltas: PartidaPorPagar[],
   teDebeCrudo: MontoEnMoneda[],
   hoy: string,
@@ -524,7 +533,13 @@ export function armarPorPagar(e: EntradaPorPagar): PorPagarDetalle {
       partidas.push(...f.partidas);
       teDebe.push(...f.teDebe);
     }
-    const fila = armarPersona({ clave: p.clave, nombre: p.nombre?.trim() || "Sin nombre", tipo: "persona" }, partidas, teDebe, hoy, true);
+    const fila = armarPersona(
+      { clave: p.clave, nombre: p.nombre?.trim() || "Sin nombre", tipo: "persona", beneficiarioId: p.beneficiarioId, parteId: p.parteId },
+      partidas,
+      teDebe,
+      hoy,
+      true,
+    );
     if (fila) personas.push(fila);
   }
 
@@ -534,7 +549,7 @@ export function armarPorPagar(e: EntradaPorPagar): PorPagarDetalle {
     if (benefVistos.has(benefId)) continue;
     const partidas = lista.map(partidaDeAdelanto).filter((x): x is PartidaPorPagar => x != null);
     const nombre = lista.find((a) => a.beneficiarioNombre?.trim())?.beneficiarioNombre?.trim() || "Sin nombre";
-    const fila = armarPersona({ clave: `benef:${benefId}`, nombre, tipo: "persona" }, partidas, teDebePorAdelantos(gruposPorBenef.get(benefId) ?? []), hoy, true);
+    const fila = armarPersona({ clave: `benef:${benefId}`, nombre, tipo: "persona", beneficiarioId: benefId, parteId: null }, partidas, teDebePorAdelantos(gruposPorBenef.get(benefId) ?? []), hoy, true);
     if (fila) personas.push(fila);
   }
 
