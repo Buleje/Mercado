@@ -30,6 +30,7 @@ import { SECTION_COLOR, SECTION_LABEL, type CensoTree, type GeoEntry } from "../
 import { cuadroDeCoordenadas, csvDeCoordenadas, descargarTexto } from "../loth-mapa-coordenadas";
 import type { CaratulaMapa, PlanActivoMapa } from "./use-loth-mapa-datos";
 import type { VistaMapa } from "./use-loth-mapa-herramientas";
+import { formatDateLong } from "@/lib/format";
 
 /** Mapeo de la base en pantalla → base de la lámina impresa. */
 /** El plano oficial sigue con la foto de Esri aunque en pantalla esté Sentinel-2 (su lámina pide alta definición). */
@@ -220,7 +221,7 @@ export function useLothMapaExportes(d: Deps) {
           ...carto.referencias.map((r) => ({ lat: r.lat, lng: r.lng, color: referenciaMeta(r.tipo).color, label: r.nombre })),
         ],
         titulo: nombreArea,
-        fecha: new Date().toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" }),
+        fecha: formatDateLong(new Date()),
       });
     } catch (err) {
       onError(mensaje(err));
