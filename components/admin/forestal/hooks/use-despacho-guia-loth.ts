@@ -27,6 +27,7 @@ import {
   type TrozaDelLibro,
 } from "@/lib/forestal/loth-guia-despacho";
 import { hoyEnLima } from "@/lib/forestal/semana-de-registro";
+import type { PaseAlCtp, PlantaPropia } from "@/lib/forestal/guia-th-al-ctp";
 
 export interface PreparadoGuiaLoth {
   caratula: (CaratulaParaGuia & { id: string }) | null;
@@ -35,6 +36,8 @@ export interface PreparadoGuiaLoth {
   trozas: TrozaDelLibro[];
   talonario: { propuesta: string | null; ultimo: { numero: string; fecha: string | null } | null };
   ultimaGuia: GtfDatos | null;
+  /** La planta propia (Ficha del CTP) si el negocio lleva Libro CTP: una guía a ese RUC pasa allá. */
+  ctpPropio: PlantaPropia | null;
 }
 
 export interface RegistradaLoth {
@@ -45,6 +48,8 @@ export interface RegistradaLoth {
   datos: GtfDatos;
   piezas: TrozaDelLibro[];
   titular: string;
+  /** Qué pasó en el Libro CTP del negocio (la guía quedó para recibirla, o por qué no). */
+  ctp: PaseAlCtp | null;
 }
 
 export interface LibretaParaRellenar {
@@ -74,6 +79,7 @@ export function useDespachoGuiaLoth(opts: { onRegistrada?: () => void } = {}) {
         trozas: j.trozas ?? [],
         talonario: j.talonario ?? { propuesta: null, ultimo: null },
         ultimaGuia: j.ultimaGuia ?? null,
+        ctpPropio: j.ctpPropio ?? null,
       });
     } catch (e) {
       setErrorCarga(e instanceof Error ? e.message : String(e));
@@ -170,7 +176,13 @@ export function useDespachoGuiaLoth(opts: { onRegistrada?: () => void } = {}) {
             confirmarSalto,
           }),
         });
-        const j = (await r.json().catch(() => ({}))) as { error?: string; message?: string; lineas?: number; volumenM3?: number };
+        const j = (await r.json().catch(() => ({}))) as {
+          error?: string;
+          message?: string;
+          lineas?: number;
+          volumenM3?: number;
+          ctp?: PaseAlCtp;
+        };
         if (r.status === 409 && j.error === "salto") {
           setSalto(j.message ?? "El número se adelanta al talonario.");
           return;
@@ -185,6 +197,7 @@ export function useDespachoGuiaLoth(opts: { onRegistrada?: () => void } = {}) {
           datos,
           piezas,
           titular: identidad.titular,
+          ctp: j.ctp ?? null,
         });
         onRegistrada?.();
       } catch (e) {

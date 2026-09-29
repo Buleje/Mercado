@@ -15,7 +15,7 @@
  */
 
 import { Fragment, useMemo } from "react";
-import { AlertTriangle, ArrowRight, FolderOpen } from "@buleje/design-system/icons";
+import { AlertTriangle, ArrowRight, FolderOpen, TreePine } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useGuiasGuardadas } from "@/hooks/use-guias-guardadas";
@@ -82,6 +82,29 @@ function AvisoDeVencimientos({ cuenta }: { cuenta: CuentaDeVencimientos }) {
         }
         example="Vence el martes y hoy es domingo: «vence en 2 días». Llama al transportista antes de que venza."
       />
+    </span>
+  );
+}
+
+/**
+ * «Viene de tu Libro TH · 12 trozas»: la guía la emitió el bosque de este mismo
+ * negocio y «Recibir» la registra con sus trozas. Si no se puede (anulada allá,
+ * va a otra empresa), el chip lo dice en su título y el botón vuelve a «Ingresar».
+ */
+function ChipLibroTh({ g }: { g: GuiaGuardadaVista }) {
+  const th = g.libroTh;
+  if (!th) return null;
+  return (
+    <span
+      title={th.motivo ?? `Guía ${th.gtfNumber} de tu Libro TH: ${th.especies.join(", ") || "trozas"}`}
+      className={`inline-flex min-h-6 shrink-0 items-center gap-1 whitespace-nowrap rounded-md px-1.5 py-0.5 text-xs font-bold ${
+        th.recibible
+          ? "bg-[var(--data-success-500)]/15 text-[var(--data-success-ink)]"
+          : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
+      }`}
+    >
+      <TreePine className="h-3.5 w-3.5 shrink-0" aria-hidden />
+      Viene de tu Libro TH{th.trozas > 0 ? ` · ${th.trozas} ${th.trozas === 1 ? "troza" : "trozas"}` : ""}
     </span>
   );
 }
@@ -160,6 +183,7 @@ export default function CtpGuiasGuardadasBandeja({
                   .join(" · ")}
               </span>
             </button>
+            {g.libroTh && <ChipLibroTh g={g} />}
             <ChipVencimiento v={v} />
             <ChipDocsGuardada n={g.docsLlenos} />
             <div className="flex shrink-0 gap-2 max-sm:w-full">
@@ -177,9 +201,10 @@ export default function CtpGuiasGuardadasBandeja({
                 variant="primary"
                 onClick={() => onIngresar(g)}
                 className="max-sm:h-11 max-sm:flex-1"
-                aria-label={`Ingresar la guía ${g.gtfNumber}`}
+                aria-label={`${g.libroTh?.recibible ? "Recibir" : "Ingresar"} la guía ${g.gtfNumber}`}
+                title={g.libroTh?.recibible ? "Entra al libro con sus trozas: sólo pones el día en que llegó" : undefined}
               >
-                Ingresar <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+                {g.libroTh?.recibible ? "Recibir" : "Ingresar"} <ArrowRight className="h-3.5 w-3.5" aria-hidden />
               </Btn>
             </div>
           </li>

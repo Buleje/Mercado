@@ -87,7 +87,12 @@ describe("guías guardadas (ADR-442)", () => {
     const guia = { gtfNumber: "019-001-0000003", numeroRegistro: "110-19-0469779" };
     expect(ingresoEsDeGuia({ gtfNumber: " 019-001-0000003 ", serforNumeroRegistro: null }, guia)).toBe(true);
     expect(ingresoEsDeGuia({ gtfNumber: "19-1-3", serforNumeroRegistro: "110-19-0469779" }, guia)).toBe(true);
-    expect(ingresoEsDeGuia({ gtfNumber: "19-1-3", serforNumeroRegistro: "110190469779" }, guia)).toBe(false);
+    /* Desde el 28-09 la GTF se compara tramo a tramo: «19-1-3» ES «019-001-0000003»
+       (el talonario y SERFOR escriben el mismo papel distinto). Otra GTF y
+       otro registro, en cambio, no es la guía. */
+    expect(ingresoEsDeGuia({ gtfNumber: "19-1-3", serforNumeroRegistro: null }, guia)).toBe(true);
+    expect(ingresoEsDeGuia({ gtfNumber: "19-1-4", serforNumeroRegistro: "110190469779" }, guia)).toBe(false);
+    expect(ingresoEsDeGuia({ gtfNumber: "19-2-3", serforNumeroRegistro: null }, guia)).toBe(false);
     expect(
       ingresoEsDeGuia({ gtfNumber: "X", serforNumeroRegistro: null }, { gtfNumber: "Y", numeroRegistro: null }),
     ).toBe(false);

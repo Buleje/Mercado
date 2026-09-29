@@ -103,12 +103,39 @@ export function digitosGtfValidos(v: unknown): number | null {
   return typeof n === "number" && Number.isInteger(n) && n >= GTF_DIGITOS_MIN && n <= GTF_DIGITOS_MAX ? n : null;
 }
 
-/** ¿Es la misma guía? Compara tramo a tramo, los numéricos por valor. */
+/**
+ * La LLAVE de un N° de guía: sus tramos (separados por guion), los numéricos
+ * por su valor. `19-001-0000065`, `019-001-0000065` y ` 019 - 001 - 65 ` dan
+ * `19-1-65`: el mismo papel escrito por el talonario del TH, por SERFOR o a
+ * mano. Lo que NO se iguala (a propósito): otra serie (`19-002-…`), otro
+ * número de tramos (`001-0000065` sin la serie: no se adivina cuál) y los
+ * espacios sin guion (`019 001 65` es UN tramo: un N° impreso lleva guiones).
+ * `null` = no hay número.
+ *
+ * Es la única regla con la que el libro compara guías (28-09-2026): la usan el
+ * talonario, las guías guardadas, el puente del Libro TH y el control de
+ * duplicados del alta desde una guía entera.
+ */
+export function claveNumeroGtf(texto: string | null | undefined): string | null {
+  const t = tramosDe(texto);
+  return t ? t.map(canon).join("-") : null;
+}
+
+/** ¿Es la misma guía? Compara tramo a tramo, los numéricos por valor (`claveNumeroGtf`). */
 export function mismoNumeroGtf(a: string | null | undefined, b: string | null | undefined): boolean {
-  const ta = tramosDe(a);
-  const tb = tramosDe(b);
-  if (!ta || !tb || ta.length !== tb.length) return false;
-  return ta.every((t, i) => canon(t) === canon(tb[i]));
+  const ka = claveNumeroGtf(a);
+  return ka != null && ka === claveNumeroGtf(b);
+}
+
+/**
+ * El último tramo sin sus ceros (`…-0000065` → `65`): lo que se le pide a la
+ * base (`endsWith`) para traer las candidatas y compararlas después con
+ * `mismoNumeroGtf`. Es un filtro amplio a propósito: nunca deja afuera una
+ * guía que sí es la misma.
+ */
+export function colaDeGtf(texto: string | null | undefined): string | null {
+  const t = tramosDe(texto);
+  return t ? canon(t[t.length - 1]) : null;
 }
 
 /**

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { z } from "zod";
 import { LothInvariantError } from "@/lib/db/forest-loth.db";
+import { GuiaYaEnElCtpError } from "@/lib/db/gtf-numero.db";
 import { logger } from "@/lib/logger";
 
 /**
@@ -32,6 +33,14 @@ export function lothValidationResponse(error: z.ZodError): NextResponse {
  * un "error interno" que no le enseña nada. Cualquier otra excepción es 500.
  */
 export function lothErrorResponse(err: unknown, ctx: string, tenantId: string): NextResponse {
+  /* La guía (o la línea de su despacho) ya entró al Libro CTP del negocio:
+     choca con algo que existe → 409, con los ingresos a anular primero. */
+  if (err instanceof GuiaYaEnElCtpError) {
+    return NextResponse.json(
+      { error: "guia_ya_en_el_ctp", message: err.message, libroNros: err.libroNros },
+      { status: 409 },
+    );
+  }
   if (err instanceof LothInvariantError) {
     return NextResponse.json(
       { error: err.code, message: err.message, detail: err.detail },

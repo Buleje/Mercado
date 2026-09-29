@@ -9,10 +9,13 @@ import { ForestLothDB } from "@/lib/db/forest-loth.db";
 import { ForestGtfDB, GtfDuplicateError } from "@/lib/db/forest-gtf.db";
 import { ForestPlanDB } from "@/lib/db/forest-plan.db";
 import { ForestContratoDB } from "@/lib/db/forest-contrato.db";
+import { GuiaThAlCtpDB } from "@/lib/db/guia-th-al-ctp.db";
+import { GuiaYaEnElCtpError } from "@/lib/db/gtf-numero.db";
 import { gtfDatosSchema, leerGtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 import { correlativoEnSerie, mismoNumeroGtf, saltoDeCorrelativo } from "@/lib/forestal/gtf-talonario";
 import { faltantesDespachoLoth, proponerGtfLoth } from "@/lib/forestal/loth-guia-despacho";
 import { lothErrorResponse, lothValidationResponse } from "@/lib/forestal/loth-api-errors";
+import { motivoSchema } from "@/lib/forestal/motivo";
 import type { Contrato } from "@/lib/forestal/contratos";
 
 /**
@@ -25,6 +28,13 @@ import type { Contrato } from "@/lib/forestal/contratos";
  * POST  — registra la guía y una línea de Despacho por troza, atómico.
  * PATCH — `{ id, action: "anular", reason, conDespachos }`: anula la guía y,
  *         si se pide, sus líneas de despacho (las trozas vuelven a estar libres).
+ *
+ * Con el Libro CTP del mismo negocio (28-09-2026): el POST deja la guía
+ * guardada en el CTP para recibirla si su destinatario es este negocio (RUC =
+ * el de la Ficha del CTP) y responde `ctp` con lo que pasó; el PATCH da de
+ * baja esa guardada; si su madera ya entró al CTP, responde 409
+ * `guia_ya_en_el_ctp` con los ingresos a anular primero. El GET trae
+ * `ctpPropio` para que el modal diga ANTES de emitir si la guía va a pasar.
  *
  * Guard: requireAdmin → rate limit GENEROUS 'loth' → spec:forestal:loth-libro.
  */
@@ -54,7 +64,8 @@ const postSchema = z.object({
 const patchSchema = z.object({
   id: z.string().trim().min(1),
   action: z.literal("anular"),
-  reason: z.string().trim().min(3, "El motivo va con al menos 3 letras").max(500),
+  /* La regla de `motivo.ts`: sin invisibles (U+200B…) y con al menos 3 letras. */
+  reason: motivoSchema({ max: 500, mensaje: "El motivo va con al menos 3 letras." }),
   /** Anular también las líneas de despacho de la guía (default: sí). */
   conDespachos: z.boolean().optional(),
 });
@@ -68,13 +79,17 @@ export const GET = withApiHandler("forestal-loth-despacho-guia-get", async (req:
   if (guard) return guard;
 
   try {
-    const [caratula, planes, trozas, usadas, ultima] = await Promise.all([
+    const [caratula, planes, trozas, usadas, ultima, libroCtp] = await Promise.all([
       ForestLothDB.getActiveCaratula(auth.tenantId),
       ForestPlanDB.listPlans(auth.tenantId),
       ForestLothDB.trozasParaGuia(auth.tenantId),
       ForestGtfDB.numerosUsados(auth.tenantId),
       ForestGtfDB.ultimaConDatos(auth.tenantId),
+      isSpecializationEnabled(auth.tenantId, "spec:forestal:ctp-libro"),
     ]);
+    /* La planta propia: si el destinatario lleva este RUC, la guía pasa al
+       Libro CTP para recibirla. Sin Libro CTP no se ofrece nada. */
+    const ctpPropio = libroCtp ? await GuiaThAlCtpDB.rucPropio(auth.tenantId) : null;
 
     /* El permiso de cada plan: por el vínculo del plan o, si no lo tiene, por el
        código del título. Sólo de los planes que tienen trozas para despachar. */
@@ -118,6 +133,7 @@ export const GET = withApiHandler("forestal-loth-despacho-guia-get", async (req:
         ? { propuesta: propuesta.gtf, ultimo: propuesta.ultimo ? { numero: propuesta.ultimo.numero, fecha: propuesta.ultimo.fecha ?? null } : null }
         : { propuesta: null, ultimo: null },
       ultimaGuia: ultima ? leerGtfDatos(ultima) : null,
+      ctpPropio,
     });
   } catch (err) {
     logger.error("[loth-despacho-guia.GET] failed", { error: String(err), tenantId: auth.tenantId });
@@ -192,7 +208,10 @@ export const POST = withApiHandler("forestal-loth-despacho-guia-post", async (re
       titularName: parsed.data.titularName ?? null,
       createdBy: auth.username ?? "unknown",
     });
-    return NextResponse.json({ gtf: r.gtf, lineas: r.lineas.length, volumenM3: r.volumen }, { status: 201 });
+    /* La guía ya quedó emitida: pasarla al Libro CTP no la frena (no tira) y
+       lo que pasó vuelve en `ctp` para decírselo a la persona. */
+    const ctp = await GuiaThAlCtpDB.pasarAlCtp(auth.tenantId, r.gtf.id, auth.username ?? "unknown");
+    return NextResponse.json({ gtf: r.gtf, lineas: r.lineas.length, volumenM3: r.volumen, ctp }, { status: 201 });
   } catch (err) {
     if (err instanceof GtfDuplicateError) {
       return NextResponse.json({ error: "duplicate", message: err.message }, { status: 409 });
@@ -218,12 +237,22 @@ export const PATCH = withApiHandler("forestal-loth-despacho-guia-patch", async (
     const user = auth.username ?? "unknown";
     if (parsed.data.conDespachos === false) {
       const gtf = await ForestGtfDB.annul(auth.tenantId, parsed.data.id, parsed.data.reason, user);
-      return NextResponse.json({ gtf, lineasAnuladas: 0 });
+      const ctp = await GuiaThAlCtpDB.alAnular(auth.tenantId, gtf, parsed.data.reason, user);
+      return NextResponse.json({ gtf, lineasAnuladas: 0, ctp });
     }
     const r = await ForestLothDB.anularGuiaConDespachos(auth.tenantId, parsed.data.id, parsed.data.reason, user);
     if (!r) return NextResponse.json({ error: "not_found" }, { status: 404 });
-    return NextResponse.json(r);
+    const ctp = await GuiaThAlCtpDB.alAnular(auth.tenantId, r.gtf, parsed.data.reason, user);
+    return NextResponse.json({ ...r, ctp });
   } catch (err) {
+    /* La madera de esta guía ya entró al Libro CTP: anularla acá liberaría
+       trozas que allá siguen en el libro. Se dice cuáles ingresos anular. */
+    if (err instanceof GuiaYaEnElCtpError) {
+      return NextResponse.json(
+        { error: "guia_ya_en_el_ctp", message: err.message, libroNros: err.libroNros },
+        { status: 409 },
+      );
+    }
     return lothErrorResponse(err, "loth-despacho-guia.PATCH", auth.tenantId);
   }
 });

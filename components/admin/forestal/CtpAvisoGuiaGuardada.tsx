@@ -19,7 +19,7 @@
  */
 
 import { useEffect, useState } from "react";
-import { AlertTriangle, Check, FolderOpen } from "@buleje/design-system/icons";
+import { AlertTriangle, Check, FolderOpen, TreePine } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { claveGtf, claveRegistro, type GuiaGuardadaDetalle } from "@/lib/forestal/guias-guardadas";
 import { formatDateNumeric, formatWeekday, SIN_DATO } from "@/lib/format";
@@ -147,6 +147,24 @@ export default function CtpAvisoGuiaGuardada({ guia, puesta, onUsar }: Props) {
           affects={<span>Registrarla otra vez pondría la misma madera dos veces en el libro. Si el ingreso quedó mal, corrígelo en Ingresos.</span>}
           example={<span>{identidad}</span>}
         />
+      </div>
+    );
+  }
+
+  /* Viene del Libro TH de este negocio: con «Recibir» entra con sus trozas.
+     Cargarla acá a mano la registraría sin su lista (28-09-2026). */
+  if (guia.libroTh?.recibible) {
+    return (
+      <div
+        role="status"
+        data-testid="aviso-guia-libro-th"
+        className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-[var(--accent)]/50 bg-[var(--surface-sunken)] px-2.5 py-2 text-sm text-[var(--text-primary)]"
+      >
+        <TreePine className="h-4 w-4 shrink-0 text-[var(--accent-ink)]" aria-hidden="true" />
+        <span className="min-w-0 grow basis-48">
+          <strong className="font-semibold">Viene de tu Libro TH</strong> con {plural(guia.libroTh.trozas, "troza", "trozas")}:
+          cierra este ingreso y usa «Recibir» en las guías guardadas — entra con su lista, sin tipear.
+        </span>
       </div>
     );
   }

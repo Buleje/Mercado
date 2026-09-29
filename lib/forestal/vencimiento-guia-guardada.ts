@@ -49,6 +49,8 @@ const dias = (n: number) => `${n} día${n === 1 ? "" : "s"}`;
 /** Lo que hace falta de la guía guardada (la vista de la lista o el detalle con su ficha). */
 export type GuiaConFicha = Pick<GuiaGuardadaVista, "resumen" | "gtfDate" | "verificadaEnSerfor"> & {
   serforGtf?: unknown;
+  /** La guía que emitió tu Libro TH: su casillero (4) vale si no hay ficha de SERFOR. */
+  libroTh?: { vencimiento: string | null } | null;
 };
 
 export function vencimientoDeGuiaGuardada(g: GuiaConFicha, hoy: string): VencimientoGuardada {
@@ -59,8 +61,19 @@ export function vencimientoDeGuiaGuardada(g: GuiaConFicha, hoy: string): Vencimi
   const { vencimiento } = vencimientoDeGuia([
     { serforGtf: { fechaVencimiento: g.resumen?.fechaVencimiento ?? null, fechaExpedicion: expedicion } },
     { serforGtf: g.serforGtf },
+    // Sin ficha, la guía del Libro TH dice hasta cuándo vale (28-09-2026).
+    { gtfDatos: { traslado: { fechaFin: g.libroTh?.vencimiento ?? null } } },
   ]);
 
+  if (!vencimiento && g.libroTh && !g.verificadaEnSerfor) {
+    return {
+      tono: "sin_fecha",
+      vencimiento: null,
+      dias: null,
+      texto: "sin fecha de vencimiento",
+      detalle: "La guía de tu Libro TH no dice hasta cuándo vale (casillero 4): revísala en el Libro TH.",
+    };
+  }
   if (!vencimiento) {
     return g.verificadaEnSerfor
       ? {

@@ -7,7 +7,11 @@ import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
 import { auditLoth } from "@/lib/forestal/loth-audit";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
-import type { GtfUsada } from "@/lib/forestal/gtf-talonario";
+import { claveNumeroGtf, mismoNumeroGtf, type GtfUsada } from "@/lib/forestal/gtf-talonario";
+import { leerGtfDatos } from "@/lib/forestal/ctp-gtf-datos";
+import { identidadDeGuiaTh, soloDigitos } from "@/lib/forestal/guia-th-al-ctp";
+import { ForestCtpFichaDB } from "./forest-ctp-ficha.db";
+import { ESTADOS_SIN_INGRESO, GtfNumeroDB } from "./gtf-numero.db";
 
 const CACHE_PREFIX = "forest-gtf";
 
@@ -258,9 +262,48 @@ export class ForestGtfDB {
    *
    * Un ingreso rechazado o anulado NO cuenta como ingresada: esa madera sigue
    * fuera del libro, así que la guía vuelve a la bandeja hasta registrarse bien.
+   * El N° se compara tramo a tramo (`019-001-…` ≡ `19-001-…`, 28-09-2026).
+   *
+   * La usan también el cron de plazos y el reporte diario: acá NO se esconde
+   * nada más (una guía guardada sigue pendiente para ellos). Lo que esconde
+   * la bandeja de Ingresos va en `paraLaBandejaDelMonte`.
    */
   static async sinIngresarAlCtp(tenantId: string) {
     if (!tenantId) throw new Error("tenantId is required");
+    return (await ForestGtfDB.sinIngresarConDatos(tenantId)).map(({ gtfDatos: _datos, ...g }) => g);
+  }
+
+  /**
+   * La bandeja «guías del monte sin ingresar» de Ingresos: lo de
+   * `sinIngresarAlCtp` menos lo que ya tiene otro camino (28-09-2026):
+   *   · las GUARDADAS en el Libro CTP (ADR-442): se reciben desde «guías
+   *     guardadas por ingresar», con sus trozas;
+   *   · las que dicen el RUC de OTRA empresa como destinatario: esa madera no
+   *     viene a esta planta. Sin RUC del destinatario (la GTF corta de antes)
+   *     sigue saliendo: no se sabe, y no se esconde.
+   */
+  static async paraLaBandejaDelMonte(tenantId: string) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const [gtfs, guardadas, ficha] = await Promise.all([
+      ForestGtfDB.sinIngresarConDatos(tenantId),
+      prisma.forestGuiaGuardada.findMany({
+        where: { tenantId, deletedAt: null },
+        select: { gtfNumber: true },
+        take: 1000,
+      }),
+      ForestCtpFichaDB.get(tenantId),
+    ]);
+    const rucPropio = soloDigitos(ficha.ruc);
+    return gtfs
+      .filter((g) => !guardadas.some((x) => mismoNumeroGtf(x.gtfNumber, g.gtfNumber)))
+      .filter((g) => {
+        const dest = soloDigitos(leerGtfDatos(g.gtfDatos).destinatario.docNumero);
+        return !dest || !rucPropio || dest === rucPropio;
+      })
+      .map(({ gtfDatos: _datos, ...g }) => g);
+  }
+
+  private static async sinIngresarConDatos(tenantId: string) {
     const [gtfs, entries] = await Promise.all([
       prisma.forestGtf.findMany({
         where: { tenantId, deletedAt: null, status: "emitida", tipo: "trozas" },
@@ -269,15 +312,16 @@ export class ForestGtfDB {
         select: {
           id: true, gtfNumber: true, gtfDate: true, titularName: true,
           tituloHabilitante: true, volumenTotalM3: true, piezasTotal: true, origen: true,
+          gtfDatos: true,
         },
       }),
       prisma.woodEntry.findMany({
-        where: { tenantId, deletedAt: null, status: { notIn: ["rechazado", "anulado"] } },
+        where: { tenantId, deletedAt: null, status: { notIn: [...ESTADOS_SIN_INGRESO] } },
         select: { gtfNumber: true },
       }),
     ]);
-    const ingresadas = new Set(entries.map((e) => e.gtfNumber.trim()));
-    return gtfs.filter((g) => !ingresadas.has(g.gtfNumber.trim()));
+    const claves = new Set(entries.map((e) => claveNumeroGtf(e.gtfNumber)).filter(Boolean));
+    return gtfs.filter((g) => !claves.has(claveNumeroGtf(g.gtfNumber)));
   }
 
   /** Busca una guía por su número (para importar sus datos al ingreso CTP). */
@@ -294,10 +338,24 @@ export class ForestGtfDB {
   static async annul(tenantId: string, id: string, reason: string, user = "unknown") {
     if (!tenantId) throw new Error("tenantId is required");
     if (!reason?.trim()) throw new Error("reason is required");
-    const gtf = await prisma.forestGtf.update({
-      where: { id, tenantId } satisfies Prisma.ForestGtfWhereUniqueInput,
-      data: { status: "anulada", annulledReason: reason.trim() },
-    });
+    /* Con el candado del N° y frenando si la guía ya entró al Libro CTP del
+       negocio (ver `GtfNumeroDB.exigirSinIngresosEnElCtp`, 28-09-2026). */
+    const gtf = await prisma.$transaction(async (tx) => {
+      const actual = await tx.forestGtf.findFirst({
+        where: { id, tenantId },
+        select: { gtfNumber: true, tituloHabilitante: true, titularName: true, gtfDatos: true },
+      });
+      if (actual) {
+        await GtfNumeroDB.exigirSinIngresosEnElCtp(tx, tenantId, {
+          gtfNumber: actual.gtfNumber,
+          ...identidadDeGuiaTh(actual, leerGtfDatos(actual.gtfDatos)),
+        });
+      }
+      return tx.forestGtf.update({
+        where: { id, tenantId } satisfies Prisma.ForestGtfWhereUniqueInput,
+        data: { status: "anulada", annulledReason: reason.trim() },
+      });
+    }, { timeout: 20_000, maxWait: 10_000 });
     auditLoth({
       tenantId,
       action: "loth_gtf_annul",

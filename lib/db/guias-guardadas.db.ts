@@ -8,6 +8,22 @@ import type { GtfSerfor } from "@/lib/forestal/serfor-gtf";
 import { DocumentsDB } from "./documents.db";
 import { ForestContratoDB } from "./forest-contrato.db";
 import { CtpGuiaDocumentosDB } from "./ctp-guia-documentos.db";
+import { ForestCtpFichaDB } from "./forest-ctp-ficha.db";
+import { colaDeGtf, mismoNumeroGtf } from "@/lib/forestal/gtf-talonario";
+import { ESTADOS_SIN_INGRESO, GtfNumeroDB, type IngresoVivoDeGuia } from "./gtf-numero.db";
+import { leerGtfDatos } from "@/lib/forestal/ctp-gtf-datos";
+import { vencimientoDeGuia } from "@/lib/forestal/fecha-de-llegada";
+import {
+  destinoDeGuiaTh,
+  especiesDeItems,
+  identidadDeGuiaTh,
+  ingresosDesdeGuiaTh,
+  mismaGuiaTh,
+  guiaThDeNumero,
+  leerItemsGuiaTh,
+  type BajaEnCtp,
+  type VinculoLibroTh,
+} from "@/lib/forestal/guia-th-al-ctp";
 import {
   carpetaGuiaPorTitular,
   llenosPorGuia,
@@ -57,8 +73,13 @@ export type ResultadoEscritura =
 const aFecha = (iso: string | null) => (iso ? new Date(`${iso}T00:00:00.000Z`) : null);
 const deFecha = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : null);
 
-/** Ingresos vivos del libro que cuentan como «ya entró». Anulado no cuenta: no pasó. */
-const INGRESO_VIVO = { deletedAt: null, status: { not: "anulado" as const } };
+/**
+ * Ingresos vivos del libro que cuentan como «ya entró». Anulado y rechazado no
+ * cuentan: es la regla del alta de una guía entera (`ESTADOS_SIN_INGRESO`,
+ * 28-09-2026 — antes acá un rechazado dejaba la guía «ingresada» para siempre
+ * mientras el alta la dejaba volver a cargar).
+ */
+const INGRESO_VIVO = { deletedAt: null, status: { notIn: [...ESTADOS_SIN_INGRESO] } };
 
 export class GuiasGuardadasDB {
   /* ── Lecturas ─────────────────────────────────────────────────────────── */
@@ -118,18 +139,13 @@ export class GuiasGuardadasDB {
     const gtf = claveGtf(o.gtfNumber);
     const reg = claveRegistro(o.numeroRegistro);
     if (!gtf && !reg) return null;
-    const filas = await prisma.forestGuiaGuardada.findMany({
-      where: {
-        tenantId,
-        deletedAt: null,
-        OR: [
-          ...(gtf ? [{ gtfNumber: gtf }] : []),
-          ...(reg ? [{ numeroRegistro: reg }] : []),
-        ],
-      },
-      take: 2,
-    });
-    return filas.find((f) => gtf && f.gtfNumber === gtf) ?? filas[0] ?? null;
+    /* La GTF se compara tramo a tramo (`019-001-…` ≡ `19-001-…`): el alta
+       desde SERFOR escribe el N° como lo publica SERFOR y la guía guardada
+       como lo imprimió el talonario. */
+    const porGtf = gtf ? await GuiasGuardadasDB.porNumeroGtf(tenantId, gtf) : null;
+    if (porGtf) return porGtf;
+    if (!reg) return null;
+    return prisma.forestGuiaGuardada.findFirst({ where: { tenantId, deletedAt: null, numeroRegistro: reg } });
   }
 
   /* ── Escrituras ───────────────────────────────────────────────────────── */
@@ -138,6 +154,8 @@ export class GuiasGuardadasDB {
     tenantId: string,
     d: DatosNuevos,
     user: string,
+    /** De dónde viene, para el rastro (p.ej. «viene de tu Libro TH»). */
+    origen?: string,
   ): Promise<ResultadoEscritura> {
     if (!tenantId) throw new Error("tenantId is required");
     const gtf = claveGtf(d.gtfNumber);
@@ -167,7 +185,7 @@ export class GuiasGuardadasDB {
         action: "ctp_guia_guardada_crear",
         entity: "ForestGuiaGuardada",
         entityId: f.id,
-        detail: `Guardó la guía ${gtf}${f.numeroRegistro ? ` (registro ${f.numeroRegistro})` : ""} antes del ingreso${f.serforGtf ? ", con la ficha de SERFOR" : ""}`,
+        detail: `Guardó la guía ${gtf}${f.numeroRegistro ? ` (registro ${f.numeroRegistro})` : ""} antes del ingreso${f.serforGtf ? ", con la ficha de SERFOR" : ""}${origen ? ` · ${origen}` : ""}`,
         user,
       });
       /* La carpeta existe desde ya: Brandon la ve en Documentos antes de subir
@@ -211,20 +229,22 @@ export class GuiasGuardadasDB {
       if (contrato) return contrato;
     }
     const cambiaLlave = gtf !== antes.gtfNumber || reg !== (antes.numeroRegistro ?? null);
+    if (gtf !== antes.gtfNumber && !mismoNumeroGtf(gtf, antes.gtfNumber)) {
+      /* La guía que emitió tu Libro TH con este N° es la llave de «Recibir»:
+         otro N° la dejaría sin sus trozas. Si el N° está mal, se anula allá. */
+      const [vinculo] = (await GuiasGuardadasDB.vinculosLibroTh(tenantId, [antes])).values();
+      if (vinculo) {
+        return {
+          ok: false,
+          status: 409,
+          error: "viene_del_libro_th",
+          message: `Esta guía viene de tu Libro TH (GTF ${vinculo.gtfNumber}): su N° no se cambia desde acá. Si está mal, anúlala en el Libro TH y emite la correcta.`,
+        };
+      }
+    }
     if (cambiaLlave) {
       /* Con el ingreso ya en el libro, cambiar la GTF le quitaría sus papeles. */
-      const ingreso = await prisma.woodEntry.findFirst({
-        where: {
-          tenantId,
-          ...INGRESO_VIVO,
-          OR: [
-            { gtfNumber: antes.gtfNumber },
-            ...(antes.numeroRegistro ? [{ serforNumeroRegistro: antes.numeroRegistro }] : []),
-          ],
-        },
-        select: { id: true },
-      });
-      if (ingreso) {
+      if ((await GuiasGuardadasDB.ingresosVivos(tenantId, antes)) > 0) {
         return {
           ok: false,
           status: 409,
@@ -358,6 +378,180 @@ export class GuiasGuardadasDB {
     }
   }
 
+  /* ── La guía que viene del Libro TH (28-09-2026) ──────────────────────── */
+
+  /**
+   * Por cada guía guardada, la guía de trozas que emitió el Libro TH de ESTE
+   * negocio con el mismo N° (tramo a tramo). Dos consultas: los números de
+   * todas las guías del TH (livianas) y el detalle sólo de las que calzan.
+   */
+  static async vinculosLibroTh(
+    tenantId: string,
+    filas: Pick<Fila, "id" | "gtfNumber" | "permisoCodigo" | "titularNombre">[],
+  ): Promise<Map<string, VinculoLibroTh>> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const out = new Map<string, VinculoLibroTh>();
+    if (filas.length === 0) return out;
+    const numeros = await prisma.forestGtf.findMany({
+      where: { tenantId, deletedAt: null, tipo: "trozas" },
+      select: { id: true, gtfNumber: true, status: true, createdAt: true },
+      orderBy: { createdAt: "desc" },
+      take: 2000,
+    });
+    if (numeros.length === 0) return out;
+    const elegida = new Map<string, string>();
+    for (const f of filas) {
+      const g = guiaThDeNumero(f.gtfNumber, numeros);
+      if (g) elegida.set(f.id, g.id);
+    }
+    if (elegida.size === 0) return out;
+    const [detalles, ficha] = await Promise.all([
+      prisma.forestGtf.findMany({
+        where: { tenantId, id: { in: [...new Set(elegida.values())] } },
+        select: {
+          id: true, gtfNumber: true, status: true, items: true, gtfDatos: true,
+          volumenTotalM3: true, piezasTotal: true, destino: true,
+          titularName: true, tituloHabilitante: true,
+        },
+      }),
+      ForestCtpFichaDB.get(tenantId),
+    ]);
+    const porId = new Map(detalles.map((d) => [d.id, d]));
+    const guardadas = new Map(filas.map((f) => [f.id, f]));
+    for (const [guardadaId, gtfId] of elegida) {
+      const g = porId.get(gtfId);
+      const guardada = guardadas.get(guardadaId);
+      if (!g || !guardada) continue;
+      const items = leerItemsGuiaTh(g.items);
+      const datos = leerGtfDatos(g.gtfDatos);
+      const destino = destinoDeGuiaTh(datos, ficha.ruc);
+      const anulada = g.status !== "emitida";
+      /* Sólo se recibe si la lista de trozas alcanza para registrarla: la
+         lista es una FOTO de lo que viajó, completar el Trozado después no la
+         cambia. Y si la guardada dice otro permiso, no es la misma guía. */
+      const reparto = ingresosDesdeGuiaTh(items, {
+        volumenDeclaradoM3: g.volumenTotalM3 != null ? Number(g.volumenTotalM3) : null,
+      });
+      const misma = mismaGuiaTh(guardada, identidadDeGuiaTh(g, datos));
+      out.set(guardadaId, {
+        gtfId: g.id,
+        gtfNumber: g.gtfNumber,
+        estado: g.status,
+        trozas: items.length || g.piezasTotal || 0,
+        volumenM3: g.volumenTotalM3 != null ? Number(g.volumenTotalM3) : null,
+        especies: especiesDeItems(items),
+        destinatario: datos.destinatario.nombre.trim() || g.destino?.trim() || null,
+        vencimiento: vencimientoDeGuia([{ gtfDatos: g.gtfDatos }]).vencimiento,
+        destinoPropio: destino.propio,
+        recibible: !anulada && destino.propio && reparto.ok && misma.ok,
+        motivo: anulada
+          ? "La guía está anulada en tu Libro TH."
+          : !destino.propio
+            ? destino.mensaje
+            : !misma.ok
+              ? misma.motivo
+              : !reparto.ok
+                ? reparto.motivo
+                : null,
+      });
+    }
+    return out;
+  }
+
+  /**
+   * La guardada viva que corresponde a este N° de guía, comparado tramo a
+   * tramo (`019-0000001` ≡ `19-0000001`). El despacho del TH la busca así para
+   * no guardar dos veces la misma guía escrita distinto.
+   */
+  static async porNumeroGtf(tenantId: string, gtfNumber: string): Promise<Fila | null> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const cola = colaDeGtf(gtfNumber);
+    if (!cola) return null;
+    /* Candidatas por el último tramo sin ceros (`…-0000123` termina en «123»),
+       SIN `take` (una cola corta trae muchas y cortarlas podía dejar afuera la
+       buena) y sólo id + N°; la comparación de verdad, tramo a tramo, en
+       memoria; la fila entera, sólo de la que calza. */
+    const candidatas = await prisma.forestGuiaGuardada.findMany({
+      where: { tenantId, deletedAt: null, gtfNumber: { endsWith: cola, mode: "insensitive" } },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, gtfNumber: true },
+    });
+    const buena = candidatas.find((f) => mismoNumeroGtf(f.gtfNumber, gtfNumber));
+    return buena ? prisma.forestGuiaGuardada.findFirst({ where: { id: buena.id, tenantId } }) : null;
+  }
+
+  /**
+   * Los ingresos vivos del libro de esta guía: por su N° (tramo a tramo, bajo
+   * la regla de `GtfNumeroDB`) o por su N° de registro. La misma regla que la
+   * lista (`ingresoEsDeGuia`).
+   */
+  static async ingresosVivosDe(
+    tenantId: string,
+    f: { gtfNumber: string; numeroRegistro: string | null },
+  ): Promise<IngresoVivoDeGuia[]> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const porNumero = await GtfNumeroDB.ingresosVivos(prisma, tenantId, f.gtfNumber);
+    if (!f.numeroRegistro) return porNumero;
+    const porRegistro = await prisma.woodEntry.findMany({
+      where: { tenantId, ...INGRESO_VIVO, serforNumeroRegistro: f.numeroRegistro },
+      select: {
+        id: true, libroNro: true, gtfNumber: true, serforNumeroRegistro: true, speciesCommonName: true,
+        originCode: true, providerName: true,
+      },
+    });
+    const ids = new Set(porNumero.map((e) => e.id));
+    return [...porNumero, ...porRegistro.filter((e) => !ids.has(e.id))];
+  }
+
+  /** ¿Cuántos ingresos vivos del libro tiene esta guía guardada? */
+  static async ingresosVivos(tenantId: string, f: Pick<Fila, "gtfNumber" | "numeroRegistro">): Promise<number> {
+    return (await GuiasGuardadasDB.ingresosVivosDe(tenantId, f)).length;
+  }
+
+  /**
+   * Se anuló la guía en el Libro TH: la guardada del CTP con ese N° se da de
+   * baja (la guía ya no vale). Si su madera ya entró al libro, NO se toca: el
+   * ingreso sigue y se avisa, porque anularlo es una decisión del CTP.
+   */
+  static async bajaPorGuiaTh(
+    tenantId: string,
+    th: { gtfNumber: string; permiso: string | null; titular: string | null },
+    motivo: string,
+    user: string,
+  ): Promise<BajaEnCtp> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const guia = await GuiasGuardadasDB.porNumeroGtf(tenantId, th.gtfNumber);
+    if (!guia) return { estado: "sin_guardada", mensaje: "" };
+    /* Sólo el N° no alcanza: si la guardada dice otro permiso (u otro titular
+       sin permiso), es otra guía con el mismo número y no se toca. */
+    if (!mismaGuiaTh(guia, th).ok) return { estado: "sin_guardada", mensaje: "" };
+    const ingresos = await GuiasGuardadasDB.ingresosVivos(tenantId, guia);
+    if (ingresos > 0) {
+      return {
+        estado: "ya_recibida",
+        ingresos,
+        mensaje: `Esta guía ya se recibió en tu Libro CTP (${ingresos === 1 ? "1 ingreso" : `${ingresos} ingresos`}): ahí sigue. Si la madera no llegó, anula el ingreso en Ingresos.`,
+      };
+    }
+    const r = await prisma.forestGuiaGuardada.updateMany({
+      where: { id: guia.id, tenantId, deletedAt: null },
+      data: { deletedAt: new Date() },
+    });
+    if (r.count === 0) return { estado: "sin_guardada", mensaje: "" };
+    auditCtp({
+      tenantId,
+      action: "ctp_guia_guardada_eliminar",
+      entity: "ForestGuiaGuardada",
+      entityId: guia.id,
+      detail: `Se anuló la GTF ${guia.gtfNumber} en el Libro TH (${motivo.trim()}): la guía guardada ya no espera su madera. Sus documentos siguen en el Drive.`,
+      user,
+    });
+    return {
+      estado: "anulada",
+      mensaje: "También salió de las guías por recibir de tu Libro CTP.",
+    };
+  }
+
   /* ── Internos ─────────────────────────────────────────────────────────── */
 
   private static columnas(d: DatosNuevos) {
@@ -400,15 +594,21 @@ export class GuiasGuardadasDB {
     reg: string | null,
     excepto?: string,
   ): Promise<Extract<ResultadoEscritura, { ok: false }> | null> {
-    const otra = await prisma.forestGuiaGuardada.findFirst({
+    /* Tramo a tramo: `019-001-…` y `19-001-…` son la misma guía. */
+    const cola = colaDeGtf(gtf);
+    const candidatas = await prisma.forestGuiaGuardada.findMany({
       where: {
         tenantId,
         deletedAt: null,
         ...(excepto ? { id: { not: excepto } } : {}),
-        OR: [{ gtfNumber: gtf }, ...(reg ? [{ numeroRegistro: reg }] : [])],
+        OR: [
+          ...(cola ? [{ gtfNumber: { endsWith: cola, mode: "insensitive" as const } }] : []),
+          ...(reg ? [{ numeroRegistro: reg }] : []),
+        ],
       },
-      select: { id: true, gtfNumber: true },
+      select: { id: true, gtfNumber: true, numeroRegistro: true },
     });
+    const otra = candidatas.find((c) => mismoNumeroGtf(c.gtfNumber, gtf) || (reg && c.numeroRegistro === reg));
     if (otra) {
       return {
         ok: false,
@@ -418,14 +618,7 @@ export class GuiasGuardadasDB {
         id: otra.id,
       };
     }
-    const ingreso = await prisma.woodEntry.findFirst({
-      where: {
-        tenantId,
-        ...INGRESO_VIVO,
-        OR: [{ gtfNumber: gtf }, ...(reg ? [{ serforNumeroRegistro: reg }] : [])],
-      },
-      select: { gtfNumber: true },
-    });
+    const [ingreso] = await GuiasGuardadasDB.ingresosVivosDe(tenantId, { gtfNumber: gtf, numeroRegistro: reg });
     if (ingreso) {
       return {
         ok: false,
@@ -530,18 +723,25 @@ export class GuiasGuardadasDB {
     if (filas.length === 0) return [];
     const gtfs = filas.map((f) => f.gtfNumber);
     const regs = filas.map((f) => f.numeroRegistro).filter((r): r is string => Boolean(r));
+    /* Candidatas por el último tramo del N° (sin ceros) y la comparación de
+       verdad, tramo a tramo, en `ingresoEsDeGuia`. */
+    const colas = [...new Set(gtfs.map(colaDeGtf).filter((c): c is string => Boolean(c)))];
     const [docs, ingresos] = await Promise.all([
       CtpGuiaDocumentosDB.documentosDeGuias(tenantId, gtfs, viewerRole),
       prisma.woodEntry.findMany({
         where: {
           tenantId,
           ...INGRESO_VIVO,
-          OR: [{ gtfNumber: { in: gtfs } }, ...(regs.length ? [{ serforNumeroRegistro: { in: regs } }] : [])],
+          OR: [
+            ...colas.map((c) => ({ gtfNumber: { endsWith: c, mode: "insensitive" as const } })),
+            ...(regs.length ? [{ serforNumeroRegistro: { in: regs } }] : []),
+          ],
         },
         select: { gtfNumber: true, serforNumeroRegistro: true, createdAt: true },
       }),
     ]);
     const llenos = llenosPorGuia(docs, gtfs);
+    const vinculos = await GuiasGuardadasDB.vinculosLibroTh(tenantId, filas);
     return filas.map((f) => {
       const suyos = ingresos.filter((e) => ingresoEsDeGuia(e, f));
       const primero = suyos.reduce<Date | null>(
@@ -551,6 +751,7 @@ export class GuiasGuardadasDB {
       return GuiasGuardadasDB.aVista(f, {
         llenos: llenos[f.gtfNumber] ?? 0,
         ingreso: primero ? { en: primero.toISOString(), asientos: suyos.length } : null,
+        libroTh: vinculos.get(f.id) ?? null,
       });
     });
   }
@@ -566,7 +767,7 @@ export class GuiasGuardadasDB {
 
   private static aVista(
     f: Fila,
-    x: { llenos: number; ingreso: GuiaGuardadaVista["ingreso"] },
+    x: { llenos: number; ingreso: GuiaGuardadaVista["ingreso"]; libroTh: VinculoLibroTh | null },
   ): GuiaGuardadaVista {
     const ficha = (f.serforGtf ?? null) as unknown as GtfSerfor | null;
     return {
@@ -589,6 +790,7 @@ export class GuiasGuardadasDB {
       }),
       ingreso: x.ingreso,
       docsLlenos: x.llenos,
+      libroTh: x.libroTh,
       createdBy: f.createdBy,
       createdAt: f.createdAt.toISOString(),
       updatedAt: f.updatedAt.toISOString(),

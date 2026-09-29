@@ -23,7 +23,9 @@ import { dmcParaEspecie } from "@/lib/forestal/loth-poa";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { resumirUsoDelCenso, type UsoArbolCenso } from "@/lib/forestal/loth-censo-uso";
 import { GtfDuplicateError } from "@/lib/db/forest-gtf.db";
-import type { GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
+import { GtfNumeroDB } from "@/lib/db/gtf-numero.db";
+import { leerGtfDatos, type GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
+import { identidadDeGuiaTh } from "@/lib/forestal/guia-th-al-ctp";
 import { PRODUCTO_TROZA, type TrozaDelLibro } from "@/lib/forestal/loth-guia-despacho";
 
 export { LOTH_SECTIONS };
@@ -534,6 +536,13 @@ export class ForestLothDB {
       }
     }
     const [anulada, lineas] = await prisma.$transaction(async (tx) => {
+      /* Si la madera ya entró al Libro CTP del negocio, anular acá liberaría
+         trozas que allá siguen en el libro: 409 hasta que el CTP anule sus
+         ingresos. Con el MISMO candado del N° que «Recibir» (28-09-2026). */
+      await GtfNumeroDB.exigirSinIngresosEnElCtp(tx, tenantId, {
+        gtfNumber: gtf.gtfNumber,
+        ...identidadDeGuiaTh(gtf, leerGtfDatos(gtf.gtfDatos)),
+      });
       const g = await tx.forestGtf.update({
         where: { id: gtf.id, tenantId } satisfies Prisma.ForestGtfWhereUniqueInput,
         data: { status: "anulada", annulledReason: motivo },
@@ -1011,10 +1020,15 @@ export class ForestLothDB {
         );
       }
     }
-    const entry = await prisma.forestLothEntry.update({
-      where: { id, tenantId } satisfies Prisma.ForestLothEntryWhereUniqueInput,
-      data: { status: "anulado", annulledReason: reason.trim() },
-    });
+    /* Una línea de DESPACHO con guía libera su troza: si esa guía ya entró al
+       Libro CTP, 409 con el mismo candado y el mismo mensaje que anular la guía. */
+    const entry = await prisma.$transaction(async (tx) => {
+      await ForestLothDB.exigirDespachoFueraDelCtp(tx, tenantId, id);
+      return tx.forestLothEntry.update({
+        where: { id, tenantId } satisfies Prisma.ForestLothEntryWhereUniqueInput,
+        data: { status: "anulado", annulledReason: reason.trim() },
+      });
+    }, LOTH_TX_OPTS);
     auditLoth({
       tenantId,
       action: "loth_linea_annul",
@@ -1025,6 +1039,28 @@ export class ForestLothDB {
     });
     try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
     return entry;
+  }
+
+  /**
+   * Si la línea es un despacho vivo con N° de guía, esa guía no puede haber
+   * entrado al Libro CTP del negocio (candado + chequeo de
+   * `GtfNumeroDB.exigirSinIngresosEnElCtp`, con el permiso y el titular de la
+   * guía emitida si la hay). Cualquier otra línea pasa sin mirar nada.
+   */
+  private static async exigirDespachoFueraDelCtp(tx: Prisma.TransactionClient, tenantId: string, id: string): Promise<void> {
+    const linea = await tx.forestLothEntry.findFirst({
+      where: { id, tenantId, deletedAt: null },
+      select: { section: true, status: true, gtfNumber: true },
+    });
+    const gtfNumber = linea?.gtfNumber?.trim();
+    if (!linea || linea.section !== "despacho_troza" || linea.status !== "registrado" || !gtfNumber) return;
+    const guia = await tx.forestGtf.findFirst({
+      where: { tenantId, gtfNumber, deletedAt: null },
+      orderBy: { createdAt: "desc" },
+      select: { tituloHabilitante: true, titularName: true, gtfDatos: true },
+    });
+    const identidad = guia ? identidadDeGuiaTh(guia, leerGtfDatos(guia.gtfDatos)) : { permiso: null, titular: null };
+    await GtfNumeroDB.exigirSinIngresosEnElCtp(tx, tenantId, { gtfNumber, ...identidad });
   }
 
   /** Soft delete (solo errores de captura del sistema, no subsanación normativa). */
@@ -1045,10 +1081,13 @@ export class ForestLothDB {
       }
     }
 
-    const entry = await prisma.forestLothEntry.update({
-      where: { id, tenantId } satisfies Prisma.ForestLothEntryWhereUniqueInput,
-      data: { deletedAt: new Date() },
-    });
+    const entry = await prisma.$transaction(async (tx) => {
+      await ForestLothDB.exigirDespachoFueraDelCtp(tx, tenantId, id);
+      return tx.forestLothEntry.update({
+        where: { id, tenantId } satisfies Prisma.ForestLothEntryWhereUniqueInput,
+        data: { deletedAt: new Date() },
+      });
+    }, LOTH_TX_OPTS);
     auditLoth({
       tenantId,
       action: "loth_linea_delete",

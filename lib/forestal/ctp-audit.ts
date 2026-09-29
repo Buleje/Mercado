@@ -398,6 +398,9 @@ export type CtpAuditAction =
   | "ctp_guia_guardada_crear"
   | "ctp_guia_guardada_editar"
   | "ctp_guia_guardada_eliminar"
+  // «Recibir» una guía que viene del Libro TH del mismo negocio (28-09-2026):
+  // entra con sus trozas y su llegada. Propio para poder filtrarlo.
+  | "ctp_guia_th_recibir"
   // Guías sin registrar (ADR-446): la salida que sólo vivía como Anexo 04 entra
   // al libro. Se narran la guía, cada montón que se parte y el anexo que queda
   // reemplazado por otro de la misma guía.

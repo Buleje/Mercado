@@ -295,10 +295,15 @@ export default function CtpGuiaGuardadaModal({
               <PastillaIngresada ingreso={vista.ingreso} />
             ) : (
               <>
-                <span className="text-sm font-bold text-[var(--text-primary)]">Por ingresar</span>
+                <span className="text-sm font-bold text-[var(--text-primary)]">
+                  {vista.libroTh?.recibible
+                    ? `Por recibir · viene de tu Libro TH con ${vista.libroTh.trozas} ${vista.libroTh.trozas === 1 ? "troza" : "trozas"}`
+                    : "Por ingresar"}
+                </span>
                 {onIngresar && (
                   <Btn variant="primary" onClick={() => void ingresar()} disabled={ocupado} className="max-sm:w-full sm:ml-auto">
-                    Registrar el ingreso <ArrowRight className="h-4 w-4" aria-hidden />
+                    {vista.libroTh?.recibible ? "Recibir con sus trozas" : "Registrar el ingreso"}{" "}
+                    <ArrowRight className="h-4 w-4" aria-hidden />
                   </Btn>
                 )}
               </>

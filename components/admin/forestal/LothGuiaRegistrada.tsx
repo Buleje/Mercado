@@ -7,12 +7,14 @@
  */
 
 import { useMemo, useState } from "react";
-import { Check, FileText, Printer } from "@buleje/design-system/icons";
+import { ArrowRight, Check, FileText, Info, Printer, TreePine } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { carpetaGuiaPorTitular, tagCasillero, tagGtf } from "@/lib/forestal/documentos-guia";
 import { papelesGuiaLoth } from "@/lib/forestal/loth-guia-print";
+import type { PaseAlCtp } from "@/lib/forestal/guia-th-al-ctp";
 import type { RegistradaLoth } from "./hooks/use-despacho-guia-loth";
+import { verIngresosDelCtp } from "./LothGtfCtp";
 import CtpDocumentoVisor, { type DocumentoImprimible, type MetaArchivado } from "./CtpDocumentoVisor";
 import { Btn } from "./ctp-shared";
 
@@ -29,6 +31,41 @@ export function archivoDeGuiaLoth(
     descripcion: `${doc.nombre} — guía del bosque de ${r.titular || "el titular"}${r.datos.destinatario.nombre ? `, destino ${r.datos.destinatario.nombre}` : ""}.`,
     carpetaRuta: carpetaGuiaPorTitular({ titular: r.titular, permiso: r.datos.titulos[0] ?? null, gtfNumber: r.gtfNumber }),
   };
+}
+
+/**
+ * Qué pasó en el Libro CTP del negocio al emitir: la guía quedó para recibirla
+ * (con el enlace), ya estaba, o por qué no pasó (va a otra empresa, la Ficha no
+ * tiene RUC). Sin Libro CTP no dice nada.
+ */
+function AvisoLibroCtp({ ctp }: { ctp: PaseAlCtp | null }) {
+  if (!ctp?.mensaje) return null;
+  const enElCtp = ctp.estado === "creada" || ctp.estado === "ya_estaba" || ctp.estado === "ya_ingresada";
+  const tono =
+    ctp.estado === "error"
+      ? "border-[var(--data-warning-500)]/50 bg-[var(--data-warning-50)] text-[var(--data-warning-ink)] dark:bg-[var(--data-warning-500)]/10"
+      : enElCtp
+        ? "border-[var(--accent)]/40 bg-[var(--surface-raised)] text-[var(--text-primary)]"
+        : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)]";
+  return (
+    <div
+      role="status"
+      data-testid="aviso-libro-ctp"
+      className={`mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border-2 px-3 py-2.5 text-sm font-bold ${tono}`}
+    >
+      {enElCtp ? (
+        <TreePine className="h-4 w-4 shrink-0 text-[var(--accent-ink)]" aria-hidden="true" />
+      ) : (
+        <Info className="h-4 w-4 shrink-0" aria-hidden="true" />
+      )}
+      <span className="min-w-0 flex-1 basis-60">{ctp.mensaje}</span>
+      {enElCtp && (
+        <Btn variant="secondary" size="sm" onClick={verIngresosDelCtp} className="max-sm:h-11 max-sm:w-full">
+          Ver en tu Libro CTP <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+        </Btn>
+      )}
+    </div>
+  );
 }
 
 export default function LothGuiaRegistrada({
@@ -56,8 +93,8 @@ export default function LothGuiaRegistrada({
         <InfoTip
           icono="ayuda"
           title="Qué sigue"
-          what="La guía ya figura en «Guías» del libro. Cuando la madera llegue a la planta, se ingresa al Libro CTP con un clic desde ahí."
-          example="Si hay que corregir la placa, se anula la guía y se hace otra: las trozas vuelven a quedar libres."
+          what="La guía ya figura en «Guías» del libro. Si va a tu propia planta, queda en tu Libro CTP: cuando la madera llegue, la recibes con sus trozas poniendo sólo el día."
+          example="Si hay que corregir la placa antes de que llegue, se anula la guía y se hace otra: las trozas vuelven a quedar libres. Si ya la recibiste en tu Libro CTP, primero anula allá sus ingresos."
         />
       </p>
       <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -68,6 +105,7 @@ export default function LothGuiaRegistrada({
           <FileText className="h-4 w-4" aria-hidden="true" /> Ver la lista de trozas
         </Btn>
       </div>
+      <AvisoLibroCtp ctp={r.ctp} />
       {visor != null && (
         <CtpDocumentoVisor
           documentos={[papeles.gtf, papeles.lista]}

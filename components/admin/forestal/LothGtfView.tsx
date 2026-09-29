@@ -7,12 +7,14 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import { DataTable } from "@buleje/design-system";
 import { AlertTriangle, FileText, Plus, Printer, Ban, Loader2, Search, ShieldCheck, Trash2, Truck, LogIn } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { findSpeciesByCommonName } from "@/data/forestry-species";
 import AdminModal from "@/components/admin/shared/AdminModal";
-import { ingresarGtfAlCtp } from "./LothGtfCtp";
+import { ingresarGtfAlCtp, verIngresosDelCtp } from "./LothGtfCtp";
+import { motivoLegible } from "@/lib/forestal/motivo";
 import { documentoGtfLoth, type LothGtfCaratula, type LothGtfDoc } from "@/lib/forestal/loth-gtf-oficial";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { esc } from "@/lib/forestal/ctp-documento-print";
@@ -166,18 +168,29 @@ export default function LothGtfView({
    * obligatorio y se pide en un modal, no en un input de 8rem dentro de la celda
    * (donde no entraba una razón de verdad y se perdía al hacer scroll).
    */
-  async function annul(id: string, reason: string, conDespachos: boolean) {
+  /** Devuelve el «no» del Libro CTP (la guía ya entró allá) para mostrarlo en el modal, o null. */
+  async function annul(id: string, reason: string, conDespachos: boolean): Promise<string | null> {
     /* Con despachos: la guía y sus líneas juntas (las trozas vuelven a quedar
        libres para la guía corregida). Sin: sólo el papel, como siempre. */
     const r = await fetch("/api/admin/forestal/loth/despacho-guia", {
       method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), credentials: "include",
       body: JSON.stringify({ id, action: "anular", reason, conDespachos }),
     });
+    const j = (await r.json().catch(() => ({}))) as { error?: string; message?: string; ctp?: { estado?: string; mensaje?: string } };
+    /* Su madera ya entró al Libro CTP: no se anula (liberaría trozas que allá
+       siguen en el libro). El modal queda abierto con el «no» y el camino. */
+    if (r.status === 409 && j.error === "guia_ya_en_el_ctp") {
+      return j.message ?? "Esta guía ya entró a tu Libro CTP: anula allá sus ingresos primero.";
+    }
     if (!r.ok) {
-      const j = (await r.json().catch(() => ({}))) as { message?: string };
       setError(j.message ?? `No se pudo anular la guía (${r.status})`);
+    } else if (j.ctp?.mensaje) {
+      /* Lo que pasó en el Libro CTP: la guía por recibir se dio de baja. */
+      if (j.ctp.estado === "anulada") toast.success("Guía anulada", { description: j.ctp.mensaje });
+      else toast.warning("Guía anulada — revisa tu Libro CTP", { description: j.ctp.mensaje, duration: 12_000 });
     }
     setAnnulId(null); load();
+    return null;
   }
 
   /** Imprime: la guía completa va al visor con su lista; la anotada a mano, a la hoja de siempre. */
@@ -598,18 +611,46 @@ function AnularGtfForm({
   gtf: Gtf;
   /** Líneas de despacho vivas con el N° de esta guía. */
   despachos: number;
-  onConfirm: (r: string, conDespachos: boolean) => void;
+  /** Devuelve el «no» del Libro CTP para mostrarlo acá, o null si se anuló. */
+  onConfirm: (r: string, conDespachos: boolean) => Promise<string | null>;
   onCancel: () => void;
 }) {
   const [r, setR] = useState("");
   const [conDespachos, setConDespachos] = useState(true);
   const [busy, setBusy] = useState(false);
-  const valido = r.trim().length >= 3;
+  const [bloqueo, setBloqueo] = useState<string | null>(null);
+  /* La misma regla del servidor (`motivo.ts`): tres letras, sin invisibles. */
+  const valido = motivoLegible(r);
   return (
     <form
-      onSubmit={(e) => { e.preventDefault(); if (!valido || busy) return; setBusy(true); onConfirm(r.trim(), despachos > 0 && conDespachos); }}
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!valido || busy) return;
+        setBusy(true);
+        void onConfirm(r.trim(), despachos > 0 && conDespachos).then((no) => {
+          setBusy(false);
+          setBloqueo(no);
+        });
+      }}
       className="space-y-4 p-5"
     >
+      {bloqueo && (
+        <div
+          role="alert"
+          data-testid="anular-guia-bloqueo-ctp"
+          className="flex flex-wrap items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm font-semibold text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]"
+        >
+          <Ban className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+          <span className="min-w-0 flex-1 basis-60">{bloqueo}</span>
+          <button
+            type="button"
+            onClick={verIngresosDelCtp}
+            className="inline-flex h-11 shrink-0 items-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] sm:h-9"
+          >
+            Ir a Ingresos del CTP
+          </button>
+        </div>
+      )}
       <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] p-3 text-sm text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
         <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
         <p>
@@ -626,14 +667,14 @@ function AnularGtfForm({
           placeholder="Ej.: error en la placa del vehículo; se reemplaza por la GTF 001-0000126."
           className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)]"
         />
-        <span className="mt-1 block text-xs text-[var(--text-tertiary)]">Mínimo 3 caracteres. Queda registrado en el libro.</span>
+        <span className="mt-1 block text-xs text-[var(--text-tertiary)]">Al menos 3 letras. Queda registrado en el libro.</span>
       </label>
       {despachos > 0 && (
         <label className="flex cursor-pointer items-start gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3 text-sm text-[var(--text-primary)]">
           <input type="checkbox" checked={conDespachos} onChange={(e) => setConDespachos(e.target.checked)} className="mt-0.5 h-4 w-4 accent-[var(--data-error-600)]" />
           <span>
             Anular también {despachos === 1 ? "la línea" : `las ${despachos} líneas`} de despacho de esta guía.
-            <span className="block text-xs text-[var(--text-secondary)]">Las trozas vuelven a quedar libres para ir en la guía corregida.</span>
+            <span className="block text-xs text-[var(--text-secondary)]">Las trozas vuelven a quedar libres para ir en la guía corregida. Si la guía ya entró a tu Libro CTP, primero se anulan allá sus ingresos.</span>
           </span>
         </label>
       )}

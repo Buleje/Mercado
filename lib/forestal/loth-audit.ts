@@ -52,6 +52,8 @@ export type LothAuditAction =
   // Guía de Transporte Forestal (GTF)
   | "loth_gtf_create"
   | "loth_gtf_annul"
+  // La guía pasó al Libro CTP del mismo negocio (o se recibió allá)
+  | "loth_gtf_al_ctp"
   // Cierre de período del libro (acta inmutable)
   | "loth_periodo_cerrar"
   | "loth_periodo_reabrir"

@@ -25,6 +25,7 @@ import { BloqueDestinatario, BloqueTransporte } from "./ctp-guia-bloques-partes"
 import { CLASE_FALTA, ResumenDatos } from "./ctp-guia-piezas";
 import { Btn, Field, FormularioClaro, I } from "./ctp-shared";
 import { BloquePropietarioLoth, BloqueTrasladoLoth, parcheDe, type PropsGuiaLoth } from "./LothGuiaBloques";
+import LothDestinoCtp from "./LothDestinoCtp";
 
 const vacio = (v: string | null | undefined) => !v?.trim();
 const falta = (v: string | null | undefined) => (vacio(v) ? CLASE_FALTA : "");
@@ -57,6 +58,7 @@ export default function LothGuiaDatos(props: PropsGuiaLoth) {
             onGuardarEnLibreta={onGuardarEnLibreta}
             faltan={de("destinatario")}
           />
+          <LothDestinoCtp g={g} />
           <BloqueTransporte
             datos={datos}
             set={set}

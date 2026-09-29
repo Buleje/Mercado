@@ -21,6 +21,8 @@
 import { z } from "zod";
 import type { GtfSerfor } from "./serfor-gtf";
 import { normalizarNumeroRegistro } from "./serfor-gtf";
+import type { VinculoLibroTh } from "./guia-th-al-ctp";
+import { mismoNumeroGtf } from "./gtf-talonario";
 
 /* ── Lo que manda la pantalla ─────────────────────────────────────────────── */
 
@@ -117,6 +119,12 @@ export interface GuiaGuardadaVista {
   ingreso: { en: string; asientos: number } | null;
   /** Casilleros con archivo, de 6. */
   docsLlenos: number;
+  /**
+   * La guía que emitió tu Libro TH con este mismo N° (deducido tramo a tramo,
+   * 28-09-2026), o null. Con ella, «Recibir» registra el ingreso con sus
+   * trozas sin tipear.
+   */
+  libroTh: VinculoLibroTh | null;
   createdBy: string;
   createdAt: string;
   updatedAt: string;
@@ -231,8 +239,10 @@ export function ingresoEsDeGuia(
   ingreso: { gtfNumber: string | null; serforNumeroRegistro: string | null },
   guia: { gtfNumber: string; numeroRegistro: string | null },
 ): boolean {
+  /* Tramo a tramo (`019-001-…` ≡ `19-001-…`): el mismo papel escrito por
+     SERFOR y por el talonario (28-09-2026). */
   const g = claveGtf(guia.gtfNumber);
-  if (g && claveGtf(ingreso.gtfNumber) === g) return true;
+  if (g && mismoNumeroGtf(ingreso.gtfNumber, g)) return true;
   const r = claveRegistro(guia.numeroRegistro);
   return Boolean(r && claveRegistro(ingreso.serforNumeroRegistro) === r);
 }

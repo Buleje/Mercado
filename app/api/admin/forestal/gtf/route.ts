@@ -6,6 +6,9 @@ import { ForestGtfDB, GtfDuplicateError, GtfSpeciesNotAuthorizedError } from "@/
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
+import { motivoSchema } from "@/lib/forestal/motivo";
+import { GuiaThAlCtpDB } from "@/lib/db/guia-th-al-ctp.db";
+import { GuiaYaEnElCtpError } from "@/lib/db/gtf-numero.db";
 
 /**
  * /api/admin/forestal/gtf — Guía de Transporte Forestal (ADR-126 Fase 4)
@@ -46,7 +49,12 @@ const createSchema = z.object({
   items: z.array(itemSchema).min(1).max(500),
   observations: z.string().trim().max(1000).nullable().optional(),
 });
-const patchSchema = z.object({ id: z.string().trim().min(1), action: z.literal("annul"), reason: z.string().trim().min(3).max(500) });
+/* El motivo con la regla de `motivo.ts`: sin invisibles y con al menos 3 letras. */
+const patchSchema = z.object({
+  id: z.string().trim().min(1),
+  action: z.literal("annul"),
+  reason: motivoSchema({ max: 500, mensaje: "El motivo va con al menos 3 letras." }),
+});
 
 async function ensureSpec(tenantId: string) {
   const ok = await isSpecializationEnabled(tenantId, "spec:forestal:loth-libro");
@@ -83,7 +91,7 @@ export const GET = withApiHandler("forestal-gtf-get", async (req: NextRequest) =
     }
     // Bandeja monte→planta: guías de trozas emitidas sin ingreso vigente en el CTP.
     if (url.searchParams.get("sinIngresar") === "1") {
-      return NextResponse.json({ gtfs: await ForestGtfDB.sinIngresarAlCtp(auth.tenantId) });
+      return NextResponse.json({ gtfs: await ForestGtfDB.paraLaBandejaDelMonte(auth.tenantId) });
     }
     // Sugerencia de correlativo para una serie (el operador la acepta o la pisa).
     const serie = url.searchParams.get("sugerir");
@@ -136,8 +144,18 @@ export const PATCH = withApiHandler("forestal-gtf-patch", async (req: NextReques
   const parsed = patchSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "validation_error", issues: parsed.error.issues }, { status: 400 });
   try {
-    return NextResponse.json({ gtf: await ForestGtfDB.annul(auth.tenantId, parsed.data.id, parsed.data.reason, auth.username ?? "unknown") });
+    const gtf = await ForestGtfDB.annul(auth.tenantId, parsed.data.id, parsed.data.reason, auth.username ?? "unknown");
+    /* La guardada del Libro CTP con este N° (si la guía pasó allá) se da de
+       baja. Si su madera ya entró al CTP, `annul` frenó antes con 409. */
+    const ctp = await GuiaThAlCtpDB.alAnular(auth.tenantId, gtf, parsed.data.reason, auth.username ?? "unknown");
+    return NextResponse.json({ gtf, ctp });
   } catch (err) {
+    if (err instanceof GuiaYaEnElCtpError) {
+      return NextResponse.json(
+        { error: "guia_ya_en_el_ctp", message: err.message, libroNros: err.libroNros },
+        { status: 409 },
+      );
+    }
     logger.error("[gtf.PATCH] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }

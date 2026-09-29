@@ -41,7 +41,8 @@ import { guiaRecibida, type TrozaConsumible } from "@/lib/forestal/consumo-troza
 import { asignarCorrelativos, planearEtiquetado, tieneCodigoPlanta } from "@/lib/forestal/etiquetado-trozas";
 import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
 import { closedPeriodOf } from "@/lib/forestal/ctp-cierre-types";
-import { CtpInvariantError, exigirIngresoAntesDeLaCorrida } from "./forest-ctp-consumo.db";
+import { CTP_TX_OPTS, CtpInvariantError, exigirIngresoAntesDeLaCorrida } from "./forest-ctp-consumo.db";
+import { GtfNumeroDB } from "./gtf-numero.db";
 import { exigirCostoNoCongelado } from "./costo-congelado.db";
 import { ForestCuentaDB } from "./forest-cuenta.db";
 import { FILTRO_REQUIERE_COSTO, FILTRO_REQUIERE_COSTO_SQL } from "@/lib/forestal/madera-de-servicio";
@@ -93,6 +94,12 @@ export interface WoodEntryDesdeGtfInput {
   ctpProductCode?: string | null;
   humidityPct?: number | string | null;
   notes?: string | null;
+  /**
+   * De dónde viene la guía que se registra entera: la ficha de SERFOR (ADR-312)
+   * o la guía que emitió el Libro TH de este mismo negocio (28-09-2026). Sólo
+   * cambia cómo se narra en la auditoría.
+   */
+  origenAlta?: "serfor" | "libro_th";
 
   lineas: Array<{
     especieComun: string;
@@ -1692,17 +1699,29 @@ export class WoodEntriesDB {
    * que el SERVIDOR le pidió a SERFOR — nunca de la que mandó el navegador.
    */
   static async createDesdeGtfSerfor(tenantId: string, input: WoodEntryDesdeGtfInput) {
+    const contratoId = await WoodEntriesDB.prepararAltaDesdeGtf(tenantId, input);
+    const creados = await prisma.$transaction(
+      (tx) => WoodEntriesDB.crearDesdeGtfEnTx(tx, tenantId, input, contratoId),
+      CTP_TX_OPTS,
+    );
+    WoodEntriesDB.despuesDeAltaDesdeGtf(tenantId, input, creados);
+    return creados.map((c) => c.entry);
+  }
+
+  /**
+   * Lo que se revisa ANTES de abrir la transacción del alta de una guía entera
+   * (desde SERFOR o desde el Libro TH): los datos mínimos, el mes cerrado
+   * (ADR-139, las N líneas comparten fecha) y el permiso de ESTE negocio.
+   * Devuelve el permiso que llevan las líneas.
+   */
+  static async prepararAltaDesdeGtf(tenantId: string, input: WoodEntryDesdeGtfInput): Promise<string | null> {
     if (!tenantId) throw new Error("tenantId is required");
     if (!input.gtfNumber?.trim()) throw new Error("gtfNumber is required");
     if (!input.providerName?.trim()) throw new Error("providerName is required");
     if (!input.createdBy?.trim()) throw new Error("createdBy is required");
     if (input.lineas.length === 0) throw new Error("La guía no tiene líneas para registrar");
 
-    const fecha = input.entryDate ?? new Date();
-
-    // Cierre de período (ADR-139): mismo guard que el alta manual. Se chequea una
-    // sola vez, antes de abrir la tx — las N líneas comparten fecha.
-    const cerrado = await ForestCtpCierreDB.closedPeriodOf(tenantId, fecha);
+    const cerrado = await ForestCtpCierreDB.closedPeriodOf(tenantId, input.entryDate ?? new Date());
     if (cerrado) {
       throw new CtpInvariantError(
         `El período ${cerrado.label} está cerrado: no se puede ingresar madera con fecha de un mes cerrado.`,
@@ -1710,105 +1729,125 @@ export class WoodEntriesDB {
         { periodKey: cerrado.periodKey },
       );
     }
+    return input.contratoId
+      ? await contratoDelTenant(tenantId, input.contratoId)
+      : await ForestContratoDB.idPorCodigo(tenantId, input.originCode);
+  }
 
-    // Una guía no se registra dos veces. El chequeo va acá y no en un índice
-    // único porque la misma GTF SÍ puede tener varias líneas (una por especie):
-    // lo que no puede es entrar dos veces entera.
-    // ⚠️ Los ingresos ANULADOS no bloquean: anular y volver a cargar es
-    // justamente el camino que el ADR-312 prevé para corregir una guía mal
-    // registrada. Anular una línea pone `status` y NO hace soft-delete, así
-    // que filtrar sólo por `deletedAt` dejaba la guía trabada para siempre.
-    const yaEsta = await prisma.woodEntry.count({
-      where: {
-        tenantId,
-        deletedAt: null,
-        status: { notIn: ["anulado", "rechazado"] },
-        gtfNumber: input.gtfNumber.trim(),
-        ...(input.serforNumeroRegistro ? { serforNumeroRegistro: input.serforNumeroRegistro } : {}),
-      },
+  /**
+   * El alta de una guía entera DENTRO de la transacción del que llama:
+   * candado del N° de la guía, control de duplicado y las N líneas con sus
+   * trozas. «Recibir» del Libro TH la llama dentro de SU transacción, junto a
+   * sus propias relecturas.
+   *
+   * Una guía no se registra dos veces. El chequeo va acá y no en un índice
+   * único porque la misma GTF SÍ puede tener varias líneas (una por especie):
+   * lo que no puede es entrar dos veces entera. Va BAJO EL CANDADO del N°
+   * (`GtfNumeroDB.bloquear`) y compara tramo a tramo: `19-001-0000065` y
+   * `019-001-0000065` son la misma guía (28-09-2026 — antes se comparaba
+   * letra a letra y dos altas simultáneas pasaban las dos).
+   * ⚠️ Los ingresos ANULADOS (y RECHAZADOS) no bloquean: anular y volver a
+   * cargar es justamente el camino que el ADR-312 prevé para corregir una
+   * guía mal registrada. Anular una línea pone `status` y NO hace soft-delete,
+   * así que filtrar sólo por `deletedAt` dejaba la guía trabada para siempre.
+   */
+  static async crearDesdeGtfEnTx(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+    input: WoodEntryDesdeGtfInput,
+    contratoId: string | null,
+  ) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const fecha = input.entryDate ?? new Date();
+    await GtfNumeroDB.bloquear(tx, tenantId, input.gtfNumber);
+    const yaEsta = await GtfNumeroDB.ingresosVivos(tx, tenantId, input.gtfNumber, {
+      serforNumeroRegistro: input.serforNumeroRegistro,
     });
-    if (yaEsta > 0) {
+    if (yaEsta.length > 0) {
       throw new CtpInvariantError(
-        `La guía ${input.gtfNumber.trim()} ya está registrada en el libro (${yaEsta} ingreso(s)). Si hay que corregirla, anula los ingresos y vuelve a cargarla.`,
+        `La guía ${input.gtfNumber.trim()} ya está registrada en el libro (${yaEsta.length} ingreso(s)). Si hay que corregirla, anula los ingresos y vuelve a cargarla.`,
         "GTF_DUPLICADA",
-        { gtfNumber: input.gtfNumber.trim() },
+        { gtfNumber: input.gtfNumber.trim(), libroNros: yaEsta.map((e) => e.libroNro) },
       );
     }
 
-    const contratoDeLasLineas = input.contratoId
-      ? await contratoDelTenant(tenantId, input.contratoId)
-      : await ForestContratoDB.idPorCodigo(tenantId, input.originCode);
+    // El folio se lee UNA vez y avanza en memoria: leerlo por línea dentro de
+    // la misma tx devolvería el mismo máximo y las líneas saldrían con folios
+    // repetidos, que es lo primero que mira un fiscalizador.
+    const max = await tx.woodEntry.aggregate({ where: { tenantId }, _max: { libroNro: true } });
+    let libroNro = (max._max.libroNro ?? 0) + 1;
 
-    const creados = await prisma.$transaction(async (tx) => {
-      // El folio se lee UNA vez y avanza en memoria: leerlo por línea dentro de
-      // la misma tx devolvería el mismo máximo y las líneas saldrían con folios
-      // repetidos, que es lo primero que mira un fiscalizador.
-      const max = await tx.woodEntry.aggregate({ where: { tenantId }, _max: { libroNro: true } });
-      let libroNro = (max._max.libroNro ?? 0) + 1;
+    const salida: { entry: Awaited<ReturnType<typeof tx.woodEntry.create>>; trozas: number }[] = [];
+    for (const linea of input.lineas) {
+      const entry = await tx.woodEntry.create({
+        data: {
+          tenantId,
+          libroNro: libroNro++,
+          entryDate: fecha,
+          docType: input.docType?.trim() || "GTF",
+          serforNumeroRegistro: input.serforNumeroRegistro?.trim() || null,
+          serforGtf: input.serforGtf ? (input.serforGtf as Prisma.InputJsonValue) : Prisma.DbNull,
+          gtfDatos: input.gtfDatos ? (input.gtfDatos as Prisma.InputJsonValue) : Prisma.DbNull,
+          gtfNumber: input.gtfNumber.trim(),
+          gtfDate: input.gtfDate ?? null,
+          gtfSeries: input.gtfSeries ?? null,
+          providerName: input.providerName.trim(),
+          providerDocument: input.providerDocument ?? null,
+          providerDocumentType: input.providerDocumentType ?? null,
+          originType: input.originType ?? "otro",
+          originCode: input.originCode ?? null,
+          contratoId,
+          originSourceNumber: input.originSourceNumber ?? null,
+          ctpProductCode: input.ctpProductCode ?? null,
+          originRegion: input.originRegion ?? null,
+          originDistrict: input.originDistrict ?? null,
+          speciesCommonName: linea.especieComun,
+          speciesScientificName: linea.especieCientifica,
+          speciesCites: linea.cites ?? false,
+          productType: linea.productType ?? "rolliza",
+          unit: linea.unit ?? "m3",
+          presentacion: linea.presentacion?.trim().toUpperCase() || null,
+          volumeM3: new Prisma.Decimal(linea.volumenM3),
+          pieces: linea.piezas ?? 0,
+          humidityPct: input.humidityPct != null ? new Prisma.Decimal(input.humidityPct) : null,
+          notes: input.notes ?? null,
+          status: "pendiente",
+          createdBy: input.createdBy,
+        },
+      });
 
-      const salida = [];
-      for (const linea of input.lineas) {
-        const entry = await tx.woodEntry.create({
-          data: {
+      if (linea.trozas.length > 0) {
+        await tx.woodEntryTroza.createMany({
+          data: linea.trozas.map((t) => ({
             tenantId,
-            libroNro: libroNro++,
-            entryDate: fecha,
-            docType: input.docType?.trim() || "GTF",
-            serforNumeroRegistro: input.serforNumeroRegistro?.trim() || null,
-            serforGtf: input.serforGtf ? (input.serforGtf as Prisma.InputJsonValue) : Prisma.DbNull,
-            gtfDatos: input.gtfDatos ? (input.gtfDatos as Prisma.InputJsonValue) : Prisma.DbNull,
-            gtfNumber: input.gtfNumber.trim(),
-            gtfDate: input.gtfDate ?? null,
-            gtfSeries: input.gtfSeries ?? null,
-            providerName: input.providerName.trim(),
-            providerDocument: input.providerDocument ?? null,
-            providerDocumentType: input.providerDocumentType ?? null,
-            originType: input.originType ?? "otro",
-            originCode: input.originCode ?? null,
-            contratoId: contratoDeLasLineas,
-            originSourceNumber: input.originSourceNumber ?? null,
-            ctpProductCode: input.ctpProductCode ?? null,
-            originRegion: input.originRegion ?? null,
-            originDistrict: input.originDistrict ?? null,
-            speciesCommonName: linea.especieComun,
-            speciesScientificName: linea.especieCientifica,
-            speciesCites: linea.cites ?? false,
-            productType: linea.productType ?? "rolliza",
-            unit: linea.unit ?? "m3",
-            presentacion: linea.presentacion?.trim().toUpperCase() || null,
-            volumeM3: new Prisma.Decimal(linea.volumenM3),
-            pieces: linea.piezas ?? 0,
-            humidityPct: input.humidityPct != null ? new Prisma.Decimal(input.humidityPct) : null,
-            notes: input.notes ?? null,
-            status: "pendiente",
-            createdBy: input.createdBy,
-          },
+            woodEntryId: entry.id,
+            orden: t.orden,
+            codificacion: t.codificacion,
+            especieComun: t.especieComun,
+            especieCientifica: t.especieCientifica,
+            dimensiones: t.dimensiones,
+            largoM: t.largoM != null ? new Prisma.Decimal(t.largoM) : null,
+            diametroCm: t.diametroCm != null ? new Prisma.Decimal(t.diametroCm) : null,
+            d1Cm: t.d1Cm != null ? new Prisma.Decimal(t.d1Cm) : null,
+            d2Cm: t.d2Cm != null ? new Prisma.Decimal(t.d2Cm) : null,
+            cantidad: t.cantidad,
+            volumenM3: t.volumenM3 != null ? new Prisma.Decimal(t.volumenM3) : null,
+            // La guía del Libro TH sabe la parcela de corta de su plan.
+            parcela: t.parcela ?? null,
+          })),
         });
-
-        if (linea.trozas.length > 0) {
-          await tx.woodEntryTroza.createMany({
-            data: linea.trozas.map((t) => ({
-              tenantId,
-              woodEntryId: entry.id,
-              orden: t.orden,
-              codificacion: t.codificacion,
-              especieComun: t.especieComun,
-              especieCientifica: t.especieCientifica,
-              dimensiones: t.dimensiones,
-              largoM: t.largoM != null ? new Prisma.Decimal(t.largoM) : null,
-              diametroCm: t.diametroCm != null ? new Prisma.Decimal(t.diametroCm) : null,
-              d1Cm: t.d1Cm != null ? new Prisma.Decimal(t.d1Cm) : null,
-              d2Cm: t.d2Cm != null ? new Prisma.Decimal(t.d2Cm) : null,
-              cantidad: t.cantidad,
-              volumenM3: t.volumenM3 != null ? new Prisma.Decimal(t.volumenM3) : null,
-            })),
-          });
-        }
-        salida.push({ entry, trozas: linea.trozas.length });
       }
-      return salida;
-    });
+      salida.push({ entry, trozas: linea.trozas.length });
+    }
+    return salida;
+  }
 
+  /** Después del alta de una guía entera: su renglón de auditoría y el caché. */
+  static despuesDeAltaDesdeGtf(
+    tenantId: string,
+    input: Pick<WoodEntryDesdeGtfInput, "gtfNumber" | "origenAlta" | "createdBy">,
+    creados: { entry: Awaited<ReturnType<typeof prisma.woodEntry.create>>; trozas: number }[],
+  ): void {
     const volumenTotal = creados.reduce((a, c) => a + Number(c.entry.volumeM3), 0);
     auditCtp({
       tenantId,
@@ -1816,7 +1855,7 @@ export class WoodEntriesDB {
       entity: "WoodEntry",
       entityId: creados[0]?.entry.id ?? "",
       detail:
-        `Registró la guía ${input.gtfNumber.trim()} desde SERFOR: ${creados.length} ingreso(s) ` +
+        `Registró la guía ${input.gtfNumber.trim()} ${input.origenAlta === "libro_th" ? "desde tu Libro TH" : "desde SERFOR"}: ${creados.length} ingreso(s) ` +
         `(${creados.map((c) => c.entry.speciesCommonName).join(", ")}) · ${m3(volumenTotal)} · ` +
         `${creados.reduce((a, c) => a + c.trozas, 0)} troza(s)` +
         (creados[0] && estaFueraDePlazo(creados[0].entry)
@@ -1827,7 +1866,6 @@ export class WoodEntriesDB {
     try {
       invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
     } catch {}
-    return creados.map((c) => c.entry);
   }
 
   /**

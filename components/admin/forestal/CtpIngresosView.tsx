@@ -108,7 +108,9 @@ import CtpIngresosFiltros, { type CtpFacetasActivas } from "./CtpIngresosFiltros
 import CtpGuiasBandeja from "./CtpGuiasBandeja";
 import CtpGuiasGuardadasBandeja from "./CtpGuiasGuardadasBandeja";
 import CtpGuiasGuardadasCapa, { type ModalGuardadas } from "./CtpGuiasGuardadasCapa";
-import { detalleDeGuia } from "@/hooks/use-guias-guardadas";
+import CtpRecibirGuiaThModal from "./CtpRecibirGuiaThModal";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { buscarGuiaGuardada, detalleDeGuia } from "@/hooks/use-guias-guardadas";
 import type { GuiaGuardadaDetalle, GuiaGuardadaVista } from "@/lib/forestal/guias-guardadas";
 import CtpIngresosPaginacion from "./CtpIngresosPaginacion";
 import {
@@ -287,6 +289,8 @@ export default function CtpIngresosView({
   const [guiaGuardadaForm, setGuiaGuardadaForm] = useState<GuiaGuardadaDetalle | null>(null);
   const [modalGuardadas, setModalGuardadas] = useState<ModalGuardadas>(null);
   const [guardadasKey, setGuardadasKey] = useState(0);
+  /* La guía guardada que viene del Libro TH y se está recibiendo (28-09-2026). */
+  const [recibirTh, setRecibirTh] = useState<{ id: string; gtfNumber: string } | null>(null);
   // Rechazo en lote: el motivo es obligatorio, así que se pide una vez para todos.
   const [bulkRejecting, setBulkRejecting] = useState(false);
   const [bulkReason, setBulkReason] = useState("");
@@ -382,12 +386,22 @@ export default function CtpIngresosView({
   }, [filtroRapido]);
 
   // Puente inverso desde Títulos Habilitantes: abre el form con la guía elegida.
+  /* Si esa guía ya está guardada en el CTP y viene del Libro TH, se abre
+     «Recibir» (entra con sus trozas); si no, el alta de siempre con el N°. */
   useEffect(() => {
     if (!openGtf) return;
-    setFormGtf(openGtf);
-    setFormPreset(undefined);
-    setShowForm(true);
+    const gtf = openGtf;
+    // Consumir ya: el handoff no se repite aunque la búsqueda tarde.
     onOpenConsumed?.();
+    void buscarGuiaGuardada(gtf).then((g) => {
+      if (g?.libroTh?.recibible && !g.ingreso) {
+        setRecibirTh({ id: g.id, gtfNumber: g.gtfNumber });
+        return;
+      }
+      setFormGtf(gtf);
+      setFormPreset(undefined);
+      setShowForm(true);
+    });
   }, [openGtf, onOpenConsumed]);
 
   /**
@@ -906,6 +920,12 @@ export default function CtpIngresosView({
   }, [showForm]);
   const ingresarGuardada = useCallback(
     async (g: GuiaGuardadaVista | GuiaGuardadaDetalle) => {
+      /* La guía viene del Libro TH: «Recibir» la registra con sus trozas. */
+      if (g.libroTh?.recibible && !g.ingreso) {
+        setModalGuardadas(null);
+        setRecibirTh({ id: g.id, gtfNumber: g.gtfNumber });
+        return;
+      }
       const mio = ++turnoIngresar.current;
       const det = await detalleDeGuia(g);
       if (mio !== turnoIngresar.current || showFormRef.current) return;
@@ -1347,6 +1367,35 @@ export default function CtpIngresosView({
         sustantivo={total === 1 ? "guía" : "guías"}
         detalle={lineas > total ? `${lineas} asientos del libro` : undefined}
       />
+
+      {recibirTh && (
+        <CtpRecibirGuiaThModal
+          guardadaId={recibirTh.id}
+          gtfNumber={recibirTh.gtfNumber}
+          onClose={() => setRecibirTh(null)}
+          onRecibida={(r) => {
+            setRecibirTh(null);
+            setBandejaKey((k) => k + 1);
+            setGuardadasKey((k) => k + 1); // la guardada pasa a «ya ingresada»
+            void conteoDocs.refrescar();
+            void reload();
+            const ingresos = r.ingresos.length === 1 ? "1 ingreso" : `${r.ingresos.length} ingresos`;
+            if (r.recibida) {
+              pushToast({
+                tono: "success",
+                msg: `Guía ${recibirTh.gtfNumber} recibida`,
+                detail: `${ingresos} con ${r.trozas} trozas · ${fmtM3(r.totalM3)} m³.`,
+              });
+            } else {
+              pushToast({
+                tono: "warning",
+                msg: `Guía ${recibirTh.gtfNumber} registrada, falta recibirla`,
+                detail: r.motivoSinRecibir ?? "Recíbela desde la tabla de Ingresos.",
+              });
+            }
+          }}
+        />
+      )}
 
       {showForm && (
         <WoodEntryForm

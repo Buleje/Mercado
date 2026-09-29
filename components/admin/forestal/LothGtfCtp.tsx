@@ -32,7 +32,8 @@ export function ingresarGtfAlCtp(gtfNumber: string) {
   );
 }
 
-function verIngresosDelCtp() {
+/** Abre Ingresos del Libro CTP (ahí están las guías guardadas por recibir). */
+export function verIngresosDelCtp() {
   window.dispatchEvent(
     new CustomEvent("admin:navigate", {
       detail: { moduleId: CTP_MODULE_TAB_ID, vista: "ingresos" },
