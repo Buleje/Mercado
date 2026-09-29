@@ -18,7 +18,9 @@
  * PURO y client-safe: recibe lo guardado y devuelve el parche.
  */
 
-import type { GtfDatos } from "./ctp-gtf-datos";
+import { componerPunto, llegadaDelDestinatario, type GtfDatos, type UbicacionTraslado } from "./ctp-gtf-datos";
+import { ubigeoDelPadron } from "./gtf-serie-region";
+import { resolveUbigeo } from "@/lib/peru-ubigeo";
 
 /** Una parte de la libreta, en lo que el relleno necesita de ella. */
 export interface ParteGuardada {
@@ -52,6 +54,8 @@ export interface FichaParaGuia {
   region?: string | null;
   provincia?: string | null;
   distrito?: string | null;
+  /** Código INEI de 6 dígitos: si los nombres no están, se lee del padrón. */
+  ubigeo?: string | null;
   arffs?: string | null;
   titulos?: readonly { codigo?: string | null }[] | null;
 }
@@ -118,6 +122,38 @@ const vacio = (v: unknown) => !String(v ?? "").trim();
 /** Toma el guardado sólo si el campo está en blanco. */
 const tomar = (actual: string | undefined, guardado: string | null | undefined) =>
   vacio(actual) && !vacio(guardado) ? String(guardado).trim() : (actual ?? "");
+
+/**
+ * De dónde sale el camión, desarmado: la dirección de la planta y su
+ * departamento, provincia y distrito, tal como los pasa el padrón del INEI.
+ * Lo que la Ficha no trae queda VACÍO —no se adivina—; sólo si faltan los
+ * nombres se lee el código de ubigeo de la misma Ficha.
+ */
+export function ubicacionDePlanta(f: FichaParaGuia | null | undefined): UbicacionTraslado {
+  const vacia = { direccion: "", departamento: "", provincia: "", distrito: "" };
+  if (!f) return vacia;
+  const porCodigo = f.ubigeo ? resolveUbigeo(f.ubigeo) : null;
+  const u = ubigeoDelPadron({
+    departamento: f.region?.trim() || porCodigo?.departamento,
+    provincia: f.provincia?.trim() || porCodigo?.provincia,
+    distrito: f.distrito?.trim() || porCodigo?.distrito,
+  });
+  return { direccion: (f.direccion ?? "").trim(), departamento: u.departamento, provincia: u.provincia, distrito: u.distrito };
+}
+
+/**
+ * La partida sembrada de la Ficha en una guía en blanco: los casilleros y el
+ * texto que se imprime. Devuelve `{}` si la partida ya dice algo (no se pisa) o
+ * si la Ficha no trae ni la dirección.
+ */
+export function partidaSembrada(
+  tr: GtfDatos["traslado"],
+  ficha: FichaParaGuia | null | undefined,
+): Partial<GtfDatos["traslado"]> {
+  if (tr.puntoPartida.trim() || componerPunto(tr.partida)) return {};
+  const u = ubicacionDePlanta(ficha);
+  return componerPunto(u) ? { partida: u, puntoPartida: componerPunto(u) } : {};
+}
 
 /** `AAAA-MM-DD` + n días, sin arrastrar la hora ni el huso. */
 export function sumarDias(iso: string, dias: number): string {
@@ -260,14 +296,34 @@ export function rellenarGuia(datos: GtfDatos, f: FuentesDeRelleno): ResultadoRel
   /* De dónde sale: la planta de la Ficha, la guía anterior, o el domicilio del
      propietario — que para un CTP que despacha de su propio patio es el mismo
      lugar. Es el casillero que los controles cotejan contra el permiso. */
-  traslado.puntoPartida = tomar(
-    tomar(tomar(traslado.puntoPartida, planta), trPrevio?.puntoPartida),
-    propietario.esElCtp !== false ? propietario.direccion : "",
-  );
-  traslado.puntoLlegada = tomar(
-    tomar(traslado.puntoLlegada, f.destino ?? destinatario.direccion),
-    trPrevio?.puntoLlegada,
-  );
+  const ubicPlanta = ubicacionDePlanta(ficha);
+  const partidaVacia = vacio(traslado.puntoPartida) && !componerPunto(traslado.partida);
+  if (partidaVacia) {
+    const previa = trPrevio?.partida && componerPunto(trPrevio.partida) ? trPrevio.partida : null;
+    if (componerPunto(ubicPlanta)) {
+      traslado.partida = ubicPlanta;
+      traslado.puntoPartida = componerPunto(ubicPlanta);
+    } else if (previa) {
+      traslado.partida = { direccion: previa.direccion ?? "", departamento: previa.departamento ?? "", provincia: previa.provincia ?? "", distrito: previa.distrito ?? "" };
+      traslado.puntoPartida = componerPunto(traslado.partida);
+    } else {
+      traslado.puntoPartida = tomar(
+        tomar(traslado.puntoPartida, trPrevio?.puntoPartida),
+        propietario.esElCtp !== false ? propietario.direccion : "",
+      );
+    }
+  }
+  /* La llegada sale del destinatario (dirección + ubigeo), casillero por
+     casillero; sin dirección de destinatario queda el texto de antes. */
+  if (vacio(traslado.puntoLlegada) && !componerPunto(traslado.llegada)) {
+    const dest = llegadaDelDestinatario({ ...datos, destinatario });
+    if (componerPunto(dest)) {
+      traslado.llegada = dest;
+      traslado.puntoLlegada = componerPunto(dest);
+    } else {
+      traslado.puntoLlegada = tomar(tomar(traslado.puntoLlegada, f.destino), trPrevio?.puntoLlegada);
+    }
+  }
   traslado.ruta = tomar(
     tomar(traslado.ruta, trPrevio?.ruta),
     [traslado.puntoPartida, traslado.puntoLlegada].filter(Boolean).join(" → "),

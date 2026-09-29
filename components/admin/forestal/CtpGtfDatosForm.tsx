@@ -17,6 +17,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertCircle, Check, FileDown, Loader2, Save } from "@buleje/design-system/icons";
 import { faltantesGtf, leerGtfDatos, trasladoVigente, type GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
+import { partidaSembrada } from "@/lib/forestal/gtf-autocompletar";
+import CtpTrasladoPuntos from "./CtpTrasladoPuntos";
 import type { FichaCtp } from "@/hooks/use-ficha-ctp";
 import { useDirectorioForestal } from "@/hooks/use-directorio-forestal";
 import type { Parte, RolParte } from "@/lib/forestal/directorio";
@@ -129,7 +131,7 @@ export default function CtpGtfDatosForm({
       destinatario: { ...p.destinatario, nombre: p.destinatario.nombre || auto.destino || "" },
       traslado: {
         ...p.traslado,
-        puntoPartida: p.traslado.puntoPartida || planta,
+        ...partidaSembrada(p.traslado, f),
         puntoLlegada: p.traslado.puntoLlegada || auto.destino || "",
         fechaInicio: p.traslado.fechaInicio || auto.fechaDespacho || "",
       },
@@ -452,12 +454,7 @@ export default function CtpGtfDatosForm({
         {seccion === "traslado" && (
           <div className="space-y-3">
             <div><div className="grid grid-cols-1 gap-x-3 gap-y-2.5 sm:grid-cols-6 2xl:grid-cols-12">
-              <Field span={4} label="Punto de partida" required>
-                <input type="text" className={I} value={datos.traslado.puntoPartida} onChange={(e) => set("traslado", { puntoPartida: e.target.value })} />
-              </Field>
-              <Field span={4} label="Punto de llegada" required>
-                <input type="text" className={I} value={datos.traslado.puntoLlegada} onChange={(e) => set("traslado", { puntoLlegada: e.target.value })} />
-              </Field>
+              <CtpTrasladoPuntos datos={datos} setDatos={setDatos} ficha={auto.ficha} className="sm:col-span-6 2xl:col-span-12" />
               {/* La ruta a lo ancho: así las dos fechas quedan lado a lado abajo. */}
               <div className="sm:col-span-4">
                 <Field label="Ruta declarada" hint="Los puestos de control la cotejan">

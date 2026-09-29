@@ -26,6 +26,7 @@ import {
   listDistritos,
   listProvincias,
 } from "@/lib/peru-ubigeo";
+import { CLASE_FALTA } from "./ctp-guia-piezas";
 import { Field, I } from "./ctp-shared";
 
 /** Lo que el bloque necesita leer y escribir. */
@@ -71,11 +72,15 @@ export default function CtpUbigeoSelects({
   valor,
   onChange,
   span = 2,
+  marcarFaltas = false,
 }: {
   valor: UbigeoValor;
   onChange: (v: UbigeoValor) => void;
   span?: 2 | 3 | 4 | 6;
+  /** Los que están vacíos se pintan como «falta» (una guía que pide el ubigeo completo). */
+  marcarFaltas?: boolean;
 }) {
+  const falta = (v: string | undefined) => (marcarFaltas && !v?.trim() ? ` ${CLASE_FALTA}` : "");
   const depCode = useMemo(
     () => (valor.departamento ? findDepartamentoByName(valor.departamento)?.code ?? null : null),
     [valor.departamento],
@@ -100,7 +105,7 @@ export default function CtpUbigeoSelects({
     <>
       <Field span={span} label="Departamento">
         <select
-          className={I}
+          className={`${I}${falta(valor.departamento)}`}
           value={opcionElegida(opDep, valor.departamento)}
           /* Cambiar de departamento INVALIDA provincia y distrito: dejarlos
              sería declarar un distrito que no existe en el departamento nuevo. */
@@ -118,7 +123,7 @@ export default function CtpUbigeoSelects({
         hint={valor.departamento ? undefined : "Elige primero el departamento"}
       >
         <select
-          className={I}
+          className={`${I}${falta(valor.provincia)}`}
           value={opcionElegida(opProv, valor.provincia)}
           disabled={!valor.departamento}
           onChange={(e) => onChange({ provincia: e.target.value, distrito: "" })}
@@ -135,7 +140,7 @@ export default function CtpUbigeoSelects({
         hint={valor.provincia ? undefined : "Elige primero la provincia"}
       >
         <select
-          className={I}
+          className={`${I}${falta(valor.distrito)}`}
           value={opcionElegida(opDist, valor.distrito)}
           disabled={!valor.provincia}
           onChange={(e) => onChange({ distrito: e.target.value })}

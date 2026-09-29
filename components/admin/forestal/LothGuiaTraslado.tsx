@@ -15,15 +15,14 @@
  */
 
 import { useState } from "react";
-import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
-import { componerPunto, type GtfDatos, type UbicacionTraslado } from "@/lib/forestal/ctp-gtf-datos";
+import { componerPunto, type GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 import { mismoNumeroGtf } from "@/lib/forestal/gtf-talonario";
 import { llegadaDelDestinatario, mismaUbicacion, type GuiaParaOrigen } from "@/lib/forestal/loth-guia-despacho";
 import { FILAS_POR_LISTA } from "@/lib/forestal/loth-lista-numero";
 import type { DespachoGuiaLoth } from "./hooks/use-despacho-guia-loth";
-import CtpUbigeoSelects from "./CtpUbigeoSelects";
 import { Bloque } from "./ctp-guia-bloques";
 import { CLASE_FALTA, CLASE_NO_APLICA } from "./ctp-guia-piezas";
+import PuntoTraslado from "./PuntoTraslado";
 import { Btn, Field, I } from "./ctp-shared";
 import { parcheDe } from "./LothGuiaBloques";
 
@@ -120,57 +119,6 @@ export function BloqueTrasladoLoth({ g, faltan, className }: { g: DespachoGuiaLo
         />
       </Field>
     </Bloque>
-  );
-}
-
-/**
- * Un punto del traslado desarmado: dirección + departamento, provincia y
- * distrito del padrón. Abajo, el texto que sale impreso (`componerPunto`).
- */
-function PuntoTraslado({
-  titulo,
-  ayuda,
-  requerido,
-  valor,
-  onChange,
-  acciones,
-}: {
-  titulo: string;
-  ayuda: string;
-  requerido?: boolean;
-  valor: UbicacionTraslado;
-  onChange: (v: Partial<UbicacionTraslado>) => void;
-  acciones?: React.ReactNode;
-}) {
-  const impreso = componerPunto(valor);
-  return (
-    <fieldset className="m-0 min-w-0 rounded-xl border border-[var(--rule-soft)] p-2.5 sm:col-span-12 xl:col-span-6">
-      <legend className="sr-only">{titulo}</legend>
-      <div className="mb-2 flex min-h-8 flex-wrap items-center gap-x-2 gap-y-1">
-        <span aria-hidden="true" className="text-sm font-semibold text-[var(--text-primary)]">
-          {titulo}
-          {requerido && <span className="ml-1 text-[var(--data-error-600)]">*</span>}
-        </span>
-        <InfoTip title={titulo} what={ayuda} ariaLabel={`Ayuda: ${titulo}`} />
-        {acciones && <div className="ml-auto">{acciones}</div>}
-      </div>
-      <div className="grid grid-cols-1 gap-x-3 gap-y-2.5 sm:grid-cols-12 sm:[&_label]:min-h-6">
-        <Field span={12} label="Dirección">
-          <input
-            type="text"
-            className={`${I} ${requerido ? falta(impreso) : ""}`}
-            value={valor.direccion}
-            onChange={(e) => onChange({ direccion: e.target.value })}
-          />
-        </Field>
-        <CtpUbigeoSelects span={4} valor={valor} onChange={(v) => onChange(v)} />
-      </div>
-      {impreso && (
-        <p className="mt-2 truncate text-xs text-[var(--text-secondary)]" title={impreso}>
-          Sale impreso: <span className="text-[var(--text-primary)]">{impreso}</span>
-        </p>
-      )}
-    </fieldset>
   );
 }
 

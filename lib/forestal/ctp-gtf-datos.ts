@@ -90,6 +90,67 @@ export function componerPunto(u: Partial<UbicacionTraslado> | null | undefined):
   return [u.direccion, u.distrito, u.provincia, u.departamento].map((x) => (x ?? "").trim()).filter(Boolean).join(", ");
 }
 
+
+const recorte = (v: string | null | undefined): string => (v ?? "").trim();
+
+/** El punto de llegada que sale del destinatario: su dirección y su ubigeo. */
+export function llegadaDelDestinatario(d: GtfDatos): UbicacionTraslado {
+  const x = d.destinatario;
+  return { direccion: recorte(x.direccion), departamento: recorte(x.departamento), provincia: recorte(x.provincia), distrito: recorte(x.distrito) };
+}
+
+/** ¿Dicen el mismo lugar? (sin mirar mayúsculas ni espacios de más) */
+export function mismaUbicacion(a: Partial<UbicacionTraslado> | null | undefined, b: Partial<UbicacionTraslado> | null | undefined): boolean {
+  return componerPunto(a).toLocaleUpperCase("es") === componerPunto(b).toLocaleUpperCase("es");
+}
+
+/**
+ * Cambia la partida o la llegada y deja el texto que se imprime al día
+ * (`puntoPartida`/`puntoLlegada` = `componerPunto`): los dos dicen siempre lo
+ * mismo, porque el papel lee el texto y el formulario, los casilleros.
+ */
+export function conPunto(
+  traslado: GtfDatos["traslado"],
+  cual: "partida" | "llegada",
+  cambio: Partial<UbicacionTraslado>,
+): GtfDatos["traslado"] {
+  const u = { ...traslado[cual], ...cambio };
+  const nuevo =
+    cual === "partida"
+      ? { ...traslado, partida: u, puntoPartida: componerPunto(u) }
+      : { ...traslado, llegada: u, puntoLlegada: componerPunto(u) };
+  /* La ruta que se armó sola («partida → llegada», o sólo la partida si la
+     llegada todavía no estaba) sigue a los puntos; una escrita a mano no se
+     toca. Se compara también con los casilleros: otro bloque pudo tocar el
+     texto de un punto sin pasar por acá («Es mi planta»). */
+  const sola = (a: string, b: string) => [recorte(a), recorte(b)].filter(Boolean).join(" → ");
+  const armadas = new Set([
+    sola(traslado.puntoPartida, traslado.puntoLlegada),
+    sola(componerPunto(traslado.partida) || traslado.puntoPartida, componerPunto(traslado.llegada)),
+    sola(traslado.puntoPartida, ""),
+    sola("", traslado.puntoLlegada),
+  ]);
+  const ruta = recorte(traslado.ruta);
+  return { ...nuevo, ruta: !ruta || armadas.has(ruta) ? sola(nuevo.puntoPartida, nuevo.puntoLlegada) : traslado.ruta };
+}
+
+/**
+ * El punto tal como lo ve el formulario: sus casilleros, o —en una guía
+ * anterior a la partida desarmada— el texto que traía, puesto en la dirección
+ * para poder verlo y desarmarlo a mano. No inventa nada: es el mismo texto.
+ */
+export function ubicacionDelPunto(traslado: GtfDatos["traslado"], cual: "partida" | "llegada"): UbicacionTraslado {
+  const u = traslado[cual];
+  if (componerPunto(u)) return u;
+  const viejo = recorte(cual === "partida" ? traslado.puntoPartida : traslado.puntoLlegada);
+  return viejo ? { ...u, direccion: viejo } : u;
+}
+
+/** ¿Hay algo escrito en el punto (dirección, ubigeo o el texto viejo)? */
+export function puntoConAlgo(traslado: GtfDatos["traslado"], cual: "partida" | "llegada"): boolean {
+  return Boolean(componerPunto(ubicacionDelPunto(traslado, cual)));
+}
+
 /** Parte en blanco. Centralizado: repetir el literal en cada `.default()` hizo
  *  que agregar la ubicación rompiera el tipo en tres lugares a la vez. */
 const PARTE_VACIA = {
@@ -353,6 +414,15 @@ export function faltantesGtf(d: GtfDatos): FaltanteGtf[] {
       campo: "Punto de partida y de llegada",
       motivo: "Definen la ruta que se está autorizando",
     });
+  }
+  /* La partida desarmada va con su ubigeo completo: un control coteja el
+     distrito de salida. Sólo se pide cuando la guía usa los casilleros; una
+     guía anterior, con el punto en texto, se imprime como estaba. */
+  const p = d.traslado.partida;
+  if (componerPunto(p)) {
+    for (const [valor, nombre] of [[p.departamento, "departamento"], [p.provincia, "provincia"], [p.distrito, "distrito"]] as const) {
+      if (!recorte(valor)) faltan.push({ seccion: "traslado", campo: `Partida: ${nombre}`, motivo: "El punto de partida va con su ubigeo completo" });
+    }
   }
   if (!d.traslado.fechaInicio.trim()) {
     faltan.push({

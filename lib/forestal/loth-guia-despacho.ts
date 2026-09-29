@@ -22,7 +22,10 @@
  */
 
 import { claveEspecie } from "./loth-constants";
-import { componerPunto, faltantesGtf, gtfDatosVacio, type FaltanteGtf, type GtfDatos, type UbicacionTraslado } from "./ctp-gtf-datos";
+import { componerPunto, conPunto, faltantesGtf, gtfDatosVacio, llegadaDelDestinatario, mismaUbicacion, type FaltanteGtf, type GtfDatos, type UbicacionTraslado } from "./ctp-gtf-datos";
+
+/* Viven en `ctp-gtf-datos` (las usa también la guía del CTP); se re-exportan para no mover a nadie. */
+export { conPunto, llegadaDelDestinatario, mismaUbicacion };
 import { tituloDesdePermiso } from "./ctp-ficha-types";
 import { tipoDesdeCodigo, type TipoContrato } from "./contratos";
 import { tipoPermisoDesdePlan } from "./permisos-de-parte";
@@ -349,47 +352,6 @@ export function partidaDelBosque(id: IdentidadDelTitulo): string {
   return componerPunto(ubicacionDePartida(id));
 }
 
-/** El punto de llegada que sale del destinatario: su dirección y su ubigeo. */
-export function llegadaDelDestinatario(d: GtfDatos): UbicacionTraslado {
-  const x = d.destinatario;
-  return { direccion: txt(x.direccion), departamento: txt(x.departamento), provincia: txt(x.provincia), distrito: txt(x.distrito) };
-}
-
-/** ¿Dicen el mismo lugar? (sin mirar mayúsculas ni espacios de más) */
-export function mismaUbicacion(a: Partial<UbicacionTraslado> | null | undefined, b: Partial<UbicacionTraslado> | null | undefined): boolean {
-  return componerPunto(a).toLocaleUpperCase("es") === componerPunto(b).toLocaleUpperCase("es");
-}
-
-/**
- * Cambia la partida o la llegada y deja el texto que se imprime al día
- * (`puntoPartida`/`puntoLlegada` = `componerPunto`): los dos dicen siempre lo
- * mismo, porque el papel lee el texto y el formulario, los casilleros.
- */
-export function conPunto(
-  traslado: GtfDatos["traslado"],
-  cual: "partida" | "llegada",
-  cambio: Partial<UbicacionTraslado>,
-): GtfDatos["traslado"] {
-  const u = { ...traslado[cual], ...cambio };
-  const nuevo =
-    cual === "partida"
-      ? { ...traslado, partida: u, puntoPartida: componerPunto(u) }
-      : { ...traslado, llegada: u, puntoLlegada: componerPunto(u) };
-  /* La ruta que se armó sola («partida → llegada», o sólo la partida si la
-     llegada todavía no estaba) sigue a los puntos; una escrita a mano no se
-     toca. Se compara también con los casilleros: otro bloque pudo tocar el
-     texto de un punto sin pasar por acá («Es mi planta»). */
-  const sola = (a: string, b: string) => [txt(a), txt(b)].filter(Boolean).join(" → ");
-  const armadas = new Set([
-    sola(traslado.puntoPartida, traslado.puntoLlegada),
-    sola(componerPunto(traslado.partida) || traslado.puntoPartida, componerPunto(traslado.llegada)),
-    sola(traslado.puntoPartida, ""),
-    sola("", traslado.puntoLlegada),
-  ]);
-  const ruta = txt(traslado.ruta);
-  return { ...nuevo, ruta: !ruta || armadas.has(ruta) ? sola(nuevo.puntoPartida, nuevo.puntoLlegada) : traslado.ruta };
-}
-
 /**
  * El titular que se GUARDA con la guía: el que el servidor sacó del plan de
  * las trozas (`identidadDelTitulo`), no el que manda el navegador (29-09-2026).
@@ -493,7 +455,10 @@ export function rellenarGuiaLoth(datos: GtfDatos, f: Omit<FuentesDeRelleno, "fic
         transportista: f.ultimaGuia.transportista,
         vehiculo: f.ultimaGuia.vehiculo,
         comprobante: f.ultimaGuia.comprobante,
-        traslado: f.ultimaGuia.traslado ? { ...f.ultimaGuia.traslado, puntoPartida: "" } : undefined,
+        /* Ni el texto ni los casilleros de la partida: cada bosque sale de su parcela. */
+        traslado: f.ultimaGuia.traslado
+          ? { ...f.ultimaGuia.traslado, puntoPartida: "", partida: { direccion: "", departamento: "", provincia: "", distrito: "" } }
+          : undefined,
       }
     : null;
   const r = rellenarGuia(
@@ -600,7 +565,9 @@ export function faltantesDespachoLoth(
     if (!txt(valor)) falta.push({ seccion: "traslado", campo: `Partida: ${nombre}`, motivo: "El punto de partida va con su ubigeo completo" });
   }
   const traslado = { ...datos.traslado, fechaInicio: datos.traslado.fechaInicio || x.emision };
-  return [...falta, ...faltantesGtf({ ...datos, traslado })];
+  /* `faltantesGtf` también pide el ubigeo de la partida desarmada: no se dice dos veces. */
+  const ya = new Set(falta.map((f) => f.campo));
+  return [...falta, ...faltantesGtf({ ...datos, traslado }).filter((f) => !ya.has(f.campo))];
 }
 
 /**

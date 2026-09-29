@@ -32,6 +32,7 @@ import CtpFichaParaEmitir from "./CtpFichaParaEmitir";
 import { useDirectorioForestal } from "@/hooks/use-directorio-forestal";
 import type { Parte, RolParte } from "@/lib/forestal/directorio";
 import { faltantesGtf, gtfDatosVacio, type GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
+import { partidaSembrada } from "@/lib/forestal/gtf-autocompletar";
 import { rellenarGuia, siguienteNumeroGtf } from "@/lib/forestal/gtf-autocompletar";
 import { ctpGet } from "@/lib/forestal/ctp-fetch";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
@@ -221,7 +222,8 @@ export default function CtpDespachoGuiaModal({
         provincia: p.propietario.provincia || ficha.provincia || "",
         distrito: p.propietario.distrito || ficha.distrito || "",
       },
-      traslado: { ...p.traslado, puntoPartida: p.traslado.puntoPartida || planta, fechaInicio: p.traslado.fechaInicio || emision },
+      /* La partida, por partes, de la Ficha (sin ruta: esa la propone «Rellenar» con la de la guía anterior). */
+      traslado: { ...p.traslado, ...partidaSembrada(p.traslado, ficha), fechaInicio: p.traslado.fechaInicio || emision },
       guia: { ...p.guia, autoridad: p.guia.autoridad || ficha.arffs || "" },
       titulos: p.titulos.length ? p.titulos : (ficha.titulos ?? []).slice(0, 1).map((t) => t.codigo).filter(Boolean),
     }));

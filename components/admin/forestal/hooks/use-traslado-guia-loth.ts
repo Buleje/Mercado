@@ -52,16 +52,20 @@ export function useTrasladoGuiaLoth(x: {
     [setDatos],
   );
 
+  /* El estado más reciente, para decidir DENTRO del efecto y no dentro del
+     updater: el updater corre dos veces en desarrollo (StrictMode) y una
+     escritura a `llegadaSembrada` ahí adentro hacía fallar la segunda pasada. */
+  const ultimo = useRef(datos);
+  ultimo.current = datos;
+
   const claveDestino = JSON.stringify(llegadaDelDestinatario(datos));
   useEffect(() => {
     const dest = JSON.parse(claveDestino) as UbicacionTraslado;
-    setDatos((p) => {
-      const actual = p.traslado.llegada;
-      const siguiendo = !conAlgo(actual) || (llegadaSembrada.current != null && mismaUbicacion(actual, llegadaSembrada.current));
-      if (!siguiendo || !conAlgo(dest) || mismaUbicacion(actual, dest)) return p;
-      llegadaSembrada.current = dest;
-      return { ...p, traslado: conPunto(p.traslado, "llegada", dest) };
-    });
+    const actual = ultimo.current.traslado.llegada;
+    const siguiendo = !conAlgo(actual) || (llegadaSembrada.current != null && mismaUbicacion(actual, llegadaSembrada.current));
+    if (!siguiendo || !conAlgo(dest) || mismaUbicacion(actual, dest)) return;
+    llegadaSembrada.current = dest;
+    setDatos((p) => ({ ...p, traslado: conPunto(p.traslado, "llegada", dest) }));
   }, [claveDestino, setDatos]);
 
   const setPunto = useCallback(
@@ -71,11 +75,9 @@ export function useTrasladoGuiaLoth(x: {
     [setDatos],
   );
   const usarLlegadaDelDestinatario = useCallback(() => {
-    setDatos((p) => {
-      const dest = llegadaDelDestinatario(p);
-      llegadaSembrada.current = dest;
-      return { ...p, traslado: conPunto(p.traslado, "llegada", dest) };
-    });
+    const dest = llegadaDelDestinatario(ultimo.current);
+    llegadaSembrada.current = dest;
+    setDatos((p) => ({ ...p, traslado: conPunto(p.traslado, "llegada", dest) }));
   }, [setDatos]);
 
   /** Al sembrar la guía de un plan: la lista vuelve a ser automática y la llegada sembrada es la de la guía nueva. */

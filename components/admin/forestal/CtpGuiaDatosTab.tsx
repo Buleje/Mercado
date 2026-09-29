@@ -29,6 +29,7 @@ import {
   titulosElegibles,
   type TituloDeFicha,
 } from "@/lib/forestal/titulos-de-la-guia";
+import CtpTrasladoPuntos from "./CtpTrasladoPuntos";
 import CtpParteBarra, { type ValorParte } from "./CtpParteBarra";
 import { ESTADO_LABEL } from "./contratos-ui";
 import { Bloque, DocsDeParte, UbicacionDeParte } from "./ctp-guia-bloques";
@@ -516,12 +517,7 @@ export default function CtpGuiaDatosTab({
             nota="Sale en original y dos copias, como manda la RDE 122-2015 (art. 5). Lo que falte se puede completar después desde la ficha del despacho."
             faltan={faltan.traslado}
           >
-            <Field span={6} label="Punto de partida" required>
-              <input type="text" className={`${I} ${falta(datos.traslado.puntoPartida)}`} value={datos.traslado.puntoPartida} onChange={(e) => set("traslado", { puntoPartida: e.target.value })} />
-            </Field>
-            <Field span={6} label="Punto de llegada" required>
-              <input type="text" className={`${I} ${falta(datos.traslado.puntoLlegada)}`} value={datos.traslado.puntoLlegada} onChange={(e) => set("traslado", { puntoLlegada: e.target.value })} />
-            </Field>
+            <CtpTrasladoPuntos datos={datos} setDatos={setDatos} ficha={ficha} className="sm:col-span-12" />
             <Field span={12} label="Ruta declarada" hint="Los puestos de control la cotejan">
               <input type="text" className={I} value={datos.traslado.ruta} onChange={(e) => set("traslado", { ruta: e.target.value })} />
             </Field>
