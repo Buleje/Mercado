@@ -143,6 +143,8 @@ describe("Tala · el censo cruzado con el libro", () => {
       motosierristaId: "c1",
       horaTala: "09:30",
     });
-    await waitFor(() => expect(onSaved).toHaveBeenCalledWith({ arbolTalado: "111" }));
+    // `entry`: la línea que el servidor acaba de crear — la vista la usa para
+    // ofrecer «Imprimir las etiquetas» sin adivinar el código (28-09).
+    await waitFor(() => expect(onSaved).toHaveBeenCalledWith({ arbolTalado: "111", entry: { id: "nueva" } }));
   });
 });

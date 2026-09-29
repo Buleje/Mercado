@@ -85,9 +85,11 @@ interface Props {
   onClose: () => void;
   /**
    * `arbolTalado`: la tala que se acaba de asentar — la vista ofrece seguir
-   * con el trozado de ese árbol («Talar y trozar»).
+   * con el trozado de ese árbol («Talar y trozar»). `entry`: la línea que el
+   * servidor acaba de crear (con su `trozaCode` ya asignado) — sin esto, la
+   * vista no puede ofrecer «Imprimir las etiquetas» del trozado recién guardado.
    */
-  onSaved: (opts?: { keepOpen?: boolean; arbolTalado?: string | null }) => void;
+  onSaved: (opts?: { keepOpen?: boolean; arbolTalado?: string | null; entry?: LothEntryDTO | null }) => void;
   /**
    * Línea de la que se parte. Sirve para dos cosas distintas:
    *  · **duplicar** (registrar la troza siguiente del mismo árbol sin volver a
@@ -808,6 +810,11 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
         }
         throw new Error(r.message ?? (r.issues && r.issues[0]?.message) ?? r.error ?? `HTTP ${res.status}`);
       }
+      // La línea recién creada (con su `trozaCode` ya asignado por el
+      // servidor): la vista la necesita para ofrecer «Imprimir las
+      // etiquetas» sin adivinar el código a mano.
+      const creada = await res.json().catch(() => ({}));
+      const entry = creada?.entry as LothEntryDTO | undefined;
       // Lo recordado del censo y del árbol ya no vale: cambió lo que el libro dice de él.
       olvidarCensoDeTala();
       olvidarArbolEnElLibro();
@@ -825,9 +832,9 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
         setSubmitting(false);
         // Sigue abierto: la lista y el censo tienen que dejar de ofrecer el recién talado.
         if (section === "tala") censoTala.recargar();
-        onSaved({ keepOpen: true, arbolTalado });
+        onSaved({ keepOpen: true, arbolTalado, entry });
       } else {
-        onSaved({ arbolTalado });
+        onSaved({ arbolTalado, entry });
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));

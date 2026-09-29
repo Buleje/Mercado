@@ -68,6 +68,7 @@ import LothSeccionTabla, { type ColDef } from "./LothSeccionTabla";
 import LothLineaDetalleModal from "./LothLineaDetalleModal";
 import LothImportLineasModal from "./LothImportLineasModal";
 import LothTrozadoMultipleModal from "./LothTrozadoMultipleModal";
+import LothEtiquetasRecienTrozadas from "./LothEtiquetasRecienTrozadas";
 import LothTalaTandaModal from "./LothTalaTandaModal";
 import type { TandaTalaInicial } from "./hooks/use-tala-en-tanda";
 import LothDespachoGuiaModal from "./LothDespachoGuiaModal";
@@ -264,6 +265,17 @@ export default function LothLibroOperaciones() {
   const [tandaTala, setTandaTala] = useState<TandaTalaInicial | null>(null);
   /** «Trozar estos árboles» después de la tanda: el trozado ofrece sólo ésos. */
   const [trozarSolo, setTrozarSolo] = useState<readonly string[] | null>(null);
+  /**
+   * Trozas asentadas y sin imprimir todavía (28-09): al guardar un trozado —de
+   * a uno, "Guardar y otro" del mismo árbol, o el múltiple de una sola
+   * pantalla, venga de "Trozar un árbol" o de "Trozar estos árboles" después
+   * de la tala en tanda— la vista ofrece imprimir sus etiquetas sin volver a
+   * la tabla a marcarlas. `trozasEnSesionForm` acumula lo guardado mientras el
+   * formulario de a una sigue abierto ("Guardar y otro"); se vuelca acá recién
+   * cuando la sesión termina (Guardar final o Cerrar).
+   */
+  const [trozasParaImprimir, setTrozasParaImprimir] = useState<LothEntry[]>([]);
+  const [trozasEnSesionForm, setTrozasEnSesionForm] = useState<LothEntry[]>([]);
   /** «Despachar con guía»: la GTF completa y sus líneas de despacho en un registro. */
   const [showDespachoGuia, setShowDespachoGuia] = useState(false);
   /** Censo del plan activo — alimenta el cuadro "censo vs realidad". */
@@ -313,6 +325,19 @@ export default function LothLibroOperaciones() {
     window.addEventListener("popstate", leer);
     return () => window.removeEventListener("popstate", leer);
   }, []);
+
+  /**
+   * Cierra la sesión de trozado del formulario de a una: lo acumulado en
+   * `trozasEnSesionForm` (por "Guardar y otro") más, si llega, la última
+   * línea guardada, pasa al aviso persistente y la sesión se vacía. Se llama
+   * tanto al Guardar final como al Cerrar a medio llenar — lo ya asentado no
+   * deja de necesitar su etiqueta porque la persona no siguió cargando.
+   */
+  function flushSesionTrozado(ultimaEntrada?: LothEntry | null) {
+    const todas = ultimaEntrada ? [...trozasEnSesionForm, ultimaEntrada] : trozasEnSesionForm;
+    if (todas.length > 0) setTrozasParaImprimir((prev) => [...prev, ...todas]);
+    setTrozasEnSesionForm([]);
+  }
 
   /** «Talar y trozar»: después de la tala, el trozado de ese mismo árbol. */
   function abrirTrozado(treeCode: string) {
@@ -623,9 +648,15 @@ export default function LothLibroOperaciones() {
    * correlativo por libro; y devuelve cuántas entraron DE VERDAD, no cuántas se
    * mandaron — el importador anterior del CTP decía «60» y habían entrado 9.
    */
-  async function crearLineas(payloads: Record<string, unknown>[]): Promise<{ creadas: number; errores: string[] }> {
+  async function crearLineas(
+    payloads: Record<string, unknown>[],
+  ): Promise<{ creadas: number; errores: string[]; entries: LothEntry[] }> {
     let creadas = 0;
     const errores: string[] = [];
+    // La línea que el servidor acaba de crear (con su `trozaCode` ya
+    // asignado): sin esto, «Imprimir las etiquetas» del trozado múltiple no
+    // tenía qué imprimir — sólo el conteo de éxito/error.
+    const entries: LothEntry[] = [];
     for (const [i, payload] of payloads.entries()) {
       try {
         const res = await fetch("/api/admin/forestal/loth", {
@@ -639,13 +670,15 @@ export default function LothLibroOperaciones() {
           errores.push(`Fila ${i + 1}: ${d.message ?? d.error ?? `HTTP ${res.status}`}`);
           continue;
         }
+        const d = await res.json().catch(() => ({}));
+        if (d?.entry) entries.push(d.entry as LothEntry);
         creadas += 1;
       } catch (err) {
         errores.push(`Fila ${i + 1}: ${err instanceof Error ? err.message : String(err)}`);
       }
     }
     await refreshAll();
-    return { creadas, errores };
+    return { creadas, errores, entries };
   }
 
   function descargarCsv(lineas: LothEntry[], nombre: string) {
@@ -1020,6 +1053,18 @@ export default function LothLibroOperaciones() {
         </div>
       )}
 
+      {/* Aviso persistente (no un toast) de que un trozado recién guardado
+          todavía no imprimió sus etiquetas — de a uno, "Guardar y otro", el
+          múltiple de un árbol, o el que sigue a "Trozar estos árboles". */}
+      {trozasParaImprimir.length > 0 && (
+        <LothEtiquetasRecienTrozadas
+          trozas={trozasParaImprimir}
+          imprimiendo={printingLabelsCtp}
+          onImprimir={() => alImprimirEtiquetasCtp(trozasParaImprimir)}
+          onCerrar={() => setTrozasParaImprimir([])}
+        />
+      )}
+
       {/* Barra de selección — sólo cuando hay algo elegido */}
       {seleccionadas.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 rounded-2xl border-2 border-[var(--data-info-500)] bg-[var(--surface-raised)] px-4 py-2 shadow-[var(--shadow-lg)]">
@@ -1185,6 +1230,8 @@ export default function LothLibroOperaciones() {
             setPlantilla(null);
             setCorrigeLineNo(null);
             setArbolInicial(null);
+            // Cerrar a medio llenar no borra lo ya asentado con "Guardar y otro".
+            if (section === "trozado") flushSesionTrozado();
           }}
           onTalarVarios={(t) => {
             setShowForm(false);
@@ -1201,6 +1248,16 @@ export default function LothLibroOperaciones() {
               setArbolInicial(null);
             }
             refreshAll();
+            // «Imprimir las etiquetas» del trozado de a uno: con "Guardar y
+            // otro" se acumula hasta que la sesión termine; con el Guardar
+            // final, se ofrece ya.
+            if (section === "trozado") {
+              if (opts?.keepOpen) {
+                if (opts.entry) setTrozasEnSesionForm((prev) => [...prev, opts.entry as LothEntry]);
+              } else {
+                flushSesionTrozado(opts?.entry ?? null);
+              }
+            }
             // Medido 28-09 en Blas: el 111 se taló y se trozó el mismo día.
             const talado = opts?.arbolTalado;
             if (talado) {
@@ -1267,8 +1324,8 @@ export default function LothLibroOperaciones() {
           setShowTrozar(false);
           setTrozarSolo(null);
         }}
-        onGuardar={(arbol, trozas) =>
-          crearLineas(
+        onGuardar={async (arbol, trozas) => {
+          const r = await crearLineas(
             trozas.map((t) => ({
               section: "trozado",
               entryDate: new Date().toISOString(),
@@ -1286,8 +1343,13 @@ export default function LothLibroOperaciones() {
               // múltiple guardaba sólo el promedio aunque se midiera en cruz.
               medicionCruda: t.medicionCruda,
             })),
-          )
-        }
+          );
+          // «Imprimir las etiquetas» del trozado múltiple: mismas trozas que
+          // acaba de asentar, vengan de «Trozar un árbol» o de «Trozar estos
+          // árboles» después de la tala en tanda (ambas pasan por acá).
+          if (r.entries.length > 0) setTrozasParaImprimir((prev) => [...prev, ...r.entries]);
+          return { creadas: r.creadas, errores: r.errores };
+        }}
       />
 
       <LothLineaDetalleModal
