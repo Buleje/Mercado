@@ -18,6 +18,7 @@
  */
 
 import { z } from "zod";
+import { leerPlaca } from "./placa-peru";
 
 // ── Roles ───────────────────────────────────────────────────────────────────
 
@@ -174,6 +175,65 @@ export function formatearPlaca(v: string): string {
   const n = normalizarPlaca(v);
   if (n.length < 6) return n;
   return `${n.slice(0, 3)}-${n.slice(3)}`;
+}
+
+/**
+ * La placa como va en la guía (`W2D-853`), desde como la guarda el Directorio
+ * (`W2D853`, normalizada). Una matrícula de embarcación o algo que no es placa
+ * se deja como está: formatearlo lo inventaría.
+ */
+export function placaParaGuia(placa: string, tipo?: string | null): string {
+  if (esEmbarcacion(tipo)) return placa;
+  const l = leerPlaca(placa);
+  return l.estado === "valida" ? l.formateada : placa;
+}
+
+/**
+ * El «vehículo» es una embarcación: lleva MATRÍCULA, no placa (ADR-350), y la
+ * matrícula no sigue el formato de la placa. Se reconoce por el tipo que ya
+ * guarda la ficha (no hay columna de modo).
+ */
+export function esEmbarcacion(tipo: string | null | undefined): boolean {
+  // Palabras completas: «peque» a secas tomaba por bote un «Camión pequeño» y
+  // «bote» uno «botellero», y a esos la placa no se les validaba.
+  return /\b(embarcaci\w*|chatas?|botes?|deslizadore?s?|lanchas?|balsas?|remolcadore?s?|motonaves?|barcazas?|peque[ -]?peque)\b/i.test(tipo ?? "");
+}
+
+/**
+ * Por qué la placa (o la del remolque) de una ficha no se puede guardar, o
+ * `null` si se puede. UNA regla con la guía (`leerPlaca`, Brandon 29-09-2026:
+ * «para evitar inventados»); sólo al guardar: las fichas viejas se siguen
+ * leyendo tal cual.
+ *
+ * `antes` = la ficha como está guardada. Si la placa (o el remolque) NO cambió,
+ * no se juzga: una ficha vieja con una placa que ya no pasa tiene que poder
+ * editar su capacidad o sus notas sin que se le exija corregir la placa. La
+ * regla vuelve en cuanto se toca ese casillero.
+ */
+export function motivoPlacaVehiculo(
+  v: { placa: string; placaRemolque?: string | null; tipo?: string | null },
+  antes?: { placa: string; placaRemolque?: string | null } | null,
+): {
+  campo: "placa" | "placaRemolque";
+  motivo: string;
+} | null {
+  const cambio = (nuevo: string | null | undefined, viejo: string | null | undefined) =>
+    !antes || (nuevo !== undefined && normalizarPlaca(nuevo ?? "") !== normalizarPlaca(viejo ?? ""));
+  if (esEmbarcacion(v.tipo)) {
+    return !cambio(v.placa, antes?.placa) || normalizarPlaca(v.placa).length >= 3
+      ? null
+      : { campo: "placa", motivo: "Escribe la matrícula de la embarcación." };
+  }
+  if (cambio(v.placa, antes?.placa)) {
+    const p = leerPlaca(v.placa);
+    if (p.estado === "vacia") return { campo: "placa", motivo: "La placa es obligatoria" };
+    if (p.estado === "invalida") return { campo: "placa", motivo: p.motivo };
+  }
+  if (cambio(v.placaRemolque, antes?.placaRemolque)) {
+    const r = leerPlaca(v.placaRemolque);
+    if (r.estado === "invalida") return { campo: "placaRemolque", motivo: `Remolque: ${r.motivo}` };
+  }
+  return null;
 }
 
 // ── Condiciones comerciales ─────────────────────────────────────────────────
@@ -554,7 +614,9 @@ export const parteInputSchema = z.object({
 export type ParteInput = z.infer<typeof parteInputSchema>;
 
 export const vehiculoInputSchema = z.object({
-  placa: texto(15).min(5, "La placa es obligatoria"),
+  /* El formato lo mira `motivoPlacaVehiculo` en `guardarVehiculo`: un `min(5)`
+     acá cortaba antes y el motivo concreto («le falta un número») no llegaba. */
+  placa: texto(15).min(1, "La placa es obligatoria"),
   marca: texto(40).optional(),
   tipo: texto(40).optional(),
   configuracion: texto(20).optional(),
@@ -565,6 +627,8 @@ export const vehiculoInputSchema = z.object({
   notas: texto(500).optional(),
   activo: z.boolean().optional(),
 });
+/* El formato de la placa NO se mira acá: depende de cómo está guardada la ficha
+   (`motivoPlacaVehiculo(input, antes)`), y eso lo sabe `guardarVehiculo`. */
 export type VehiculoInput = z.infer<typeof vehiculoInputSchema>;
 
 // ── Formas que viajan al cliente ────────────────────────────────────────────

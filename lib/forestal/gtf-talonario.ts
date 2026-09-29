@@ -39,8 +39,12 @@ export const GTF_DIGITOS_MAX = 10;
  */
 export const GTF_SALTO_MAX = 20;
 
-/** De dónde salió un número ya usado. */
-export type FuenteGtf = "despacho" | "despacho_anulado" | "anexo";
+/**
+ * De dónde salió un número ya usado. `guardada` = una guía de SERFOR guardada
+ * en el Libro CTP (ADR-442); `ingreso` = una guía que ya entró al Libro CTP
+ * como ingreso (`WoodEntry`): el talonario del titular también las gastó.
+ */
+export type FuenteGtf = "despacho" | "despacho_anulado" | "anexo" | "guardada" | "ingreso";
 
 /** Un número que ya ocupa el talonario. */
 export interface GtfUsada {
@@ -248,6 +252,8 @@ export function saltoDeCorrelativo(correlativo: number, propuesta: Pick<Propuest
 export function fuenteGtfTexto(u: GtfUsada): string {
   const fecha = u.fecha && /^\d{4}-\d{2}-\d{2}/.test(u.fecha) ? ` del ${u.fecha.slice(8, 10)}/${u.fecha.slice(5, 7)}` : "";
   if (u.fuente === "anexo") return `Anexo 04${u.anexoNumero ? ` N° ${u.anexoNumero}` : ""}${fecha}`;
+  if (u.fuente === "guardada") return `guía de SERFOR guardada${fecha}`;
+  if (u.fuente === "ingreso") return `ingreso del Libro CTP${fecha}`;
   const linea = u.lineNo != null ? ` #${u.lineNo}` : "";
   return u.fuente === "despacho_anulado" ? `despacho${linea} (anulado)${fecha}` : `despacho${linea}${fecha}`;
 }

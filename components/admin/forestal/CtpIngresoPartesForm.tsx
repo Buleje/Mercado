@@ -15,6 +15,7 @@
  */
 
 import type { GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
+import { CampoPlaca } from "./ctp-campo-placa";
 import { Field, I } from "./ctp-shared";
 
 type Parte = GtfDatos["propietario"] | GtfDatos["destinatario"];
@@ -160,23 +161,28 @@ export default function CtpIngresoPartesForm({
           placeholder={esFluvial ? "Chata, bote…" : "Camión, tráiler…"}
         />
       </Field>
-      <Field span={3} label={esFluvial ? "Matrícula / embarcación" : "Placa"} casillero={31}>
-        <input
-          type="text"
-          className={`${I} font-mono uppercase`}
-          value={
-            esFluvial ? datos.vehiculo.embarcacion || datos.vehiculo.placa : datos.vehiculo.placa
-          }
-          onChange={(e) =>
-            set(
-              "vehiculo",
-              esFluvial
-                ? { embarcacion: e.target.value.toUpperCase() }
-                : { placa: e.target.value.toUpperCase() },
-            )
-          }
+      {esFluvial ? (
+        <Field span={3} label="Matrícula / embarcación" casillero={31}>
+          <input
+            type="text"
+            className={`${I} font-mono uppercase`}
+            value={datos.vehiculo.embarcacion || datos.vehiculo.placa}
+            onChange={(e) => set("vehiculo", { embarcacion: e.target.value.toUpperCase() })}
+          />
+        </Field>
+      ) : (
+        /* Es el papel de un tercero: se transcribe tal cual y una placa que no
+           puede existir se AVISA, no se bloquea. */
+        <CampoPlaca
+          span={3}
+          label="Placa"
+          casillero={31}
+          transcribir
+          soloAviso="papel"
+          valor={datos.vehiculo.placa}
+          onCambio={(v) => set("vehiculo", { placa: v })}
         />
-      </Field>
+      )}
       <Field span={6} label={esFluvial ? "Patrón" : "Conductor"} casillero={32}>
         <input
           type="text"

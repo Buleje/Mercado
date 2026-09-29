@@ -14,10 +14,13 @@
 import type { Dispatch, SetStateAction } from "react";
 import type { GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 import type { Parte, RolParte } from "@/lib/forestal/directorio";
+import { leerPlaca } from "@/lib/forestal/placa-peru";
 import type { useDirectorioForestal } from "@/hooks/use-directorio-forestal";
 import CtpParteBarra, { CtpVehiculoBarra, type ValorParte } from "./CtpParteBarra";
 import { Bloque, DocsDeParte, UbicacionDeParte } from "./ctp-guia-bloques";
 import { CLASE_FALTA, CLASE_NO_APLICA, SubBloque } from "./ctp-guia-piezas";
+import { CampoPlaca } from "./ctp-campo-placa";
+import { PlacaDelVehiculo } from "./ctp-guia-placa";
 import { Field, I } from "./ctp-shared";
 
 type Directorio = ReturnType<typeof useDirectorioForestal>;
@@ -86,7 +89,8 @@ export function BloqueTransporte({
 }) {
   const esFluvial = datos.vehiculo.modo === "fluvial";
   const setGuia = (v: Partial<GtfDatos["guia"]>) => setDatos((p) => ({ ...p, guia: { ...p.guia, ...v } }));
-  const remolqueNoAplica = vacio(datos.vehiculo.placaRemolque);
+  // «-» y «/ -» también son «no hay remolque» (así viene de SERFOR).
+  const remolqueNoAplica = leerPlaca(datos.vehiculo.placaRemolque).estado === "vacia";
   const remisionNoAplica = vacio(datos.guia.guiaRemisionNro);
   return (
         <Bloque titulo="Transporte" hint="Quién mueve la carga, quién maneja y en qué vehículo." faltan={faltan}>
@@ -181,18 +185,24 @@ export function BloqueTransporte({
                 <input type="text" className={I} value={datos.vehiculo.tipo} onChange={(e) => set("vehiculo", { tipo: e.target.value })} />
               </Field>
             )}
-            <Field span={4} label={esFluvial ? "Matrícula" : "Placa"} required>
-              <input type="text" className={`${I} font-mono uppercase ${falta(datos.vehiculo.placa)}`} value={datos.vehiculo.placa} onChange={(e) => set("vehiculo", { placa: e.target.value.toUpperCase() })} />
-            </Field>
-            <Field span={6} label="Placa del remolque" hint={remolqueNoAplica ? "No aplica: sólo si el camión lleva remolque" : undefined}>
-              <input
-                type="text"
-                className={`${I} font-mono uppercase ${remolqueNoAplica ? CLASE_NO_APLICA : ""}`}
-                placeholder={remolqueNoAplica ? "no aplica" : undefined}
-                value={datos.vehiculo.placaRemolque ?? ""}
-                onChange={(e) => set("vehiculo", { placaRemolque: e.target.value.toUpperCase() })}
-              />
-            </Field>
+            {/* Por río el casillero lleva la MATRÍCULA de la embarcación, que no
+                sigue el formato de la placa: ahí no se formatea ni se valida. */}
+            {esFluvial ? (
+              <Field span={4} label="Matrícula" required>
+                <input type="text" className={`${I} font-mono uppercase ${falta(datos.vehiculo.placa)}`} value={datos.vehiculo.placa} onChange={(e) => set("vehiculo", { placa: e.target.value.toUpperCase() })} />
+              </Field>
+            ) : (
+              <PlacaDelVehiculo datos={datos} set={set} span={4} />
+            )}
+            <CampoPlaca
+              label="Placa del remolque"
+              span={6}
+              opcional
+              validar={!esFluvial}
+              hint={remolqueNoAplica ? "No aplica: sólo si el camión lleva remolque" : undefined}
+              valor={datos.vehiculo.placaRemolque ?? ""}
+              onCambio={(v) => set("vehiculo", { placaRemolque: v })}
+            />
             <Field
               span={6}
               label="Guía de remisión"

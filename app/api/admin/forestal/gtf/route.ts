@@ -7,6 +7,7 @@ import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
 import { motivoSchema } from "@/lib/forestal/motivo";
+import { leerPlaca } from "@/lib/forestal/placa-peru";
 import { GuiaThAlCtpDB } from "@/lib/db/guia-th-al-ctp.db";
 import { GuiaYaEnElCtpError } from "@/lib/db/gtf-numero.db";
 
@@ -43,7 +44,17 @@ const createSchema = z.object({
   transportistaDoc: z.string().trim().max(20).nullable().optional(),
   conductor: z.string().trim().min(1, "El conductor es obligatorio").max(200),
   conductorLicencia: z.string().trim().max(40).nullable().optional(),
-  placaVehiculo: z.string().trim().min(1, "La placa del vehículo es obligatoria").max(20),
+  // La guía la emite el bosque: una placa que no puede existir (`leerPlaca`,
+  // 29-09-2026) no se registra. «V2H-901 / -» (como la copia SERFOR) sí pasa.
+  placaVehiculo: z
+    .string()
+    .trim()
+    .min(1, "La placa del vehículo es obligatoria")
+    .max(20)
+    .superRefine((v, ctx) => {
+      const l = leerPlaca(v);
+      if (l.estado === "invalida") ctx.addIssue({ code: "custom", message: l.motivo });
+    }),
   origen: z.string().trim().max(200).nullable().optional(),
   destino: z.string().trim().max(200).nullable().optional(),
   items: z.array(itemSchema).min(1).max(500),
@@ -80,9 +91,25 @@ export const GET = withApiHandler("forestal-gtf-get", async (req: NextRequest) =
   try {
     if (gtfNumber) {
       // Importar al ingreso CTP: buscar la guía emitida por su número.
-      const gtf = await ForestGtfDB.findByNumber(auth.tenantId, gtfNumber);
-      if (!gtf) return NextResponse.json({ error: "not_found" }, { status: 404 });
-      return NextResponse.json({ gtf });
+      // El N° solo no identifica la guía: `titular`/`permiso` la eligen si hay
+      // dos de dueños distintos; sin ellos, 409 «ambigua» (nunca la primera).
+      const e = await ForestGtfDB.findByNumber(auth.tenantId, gtfNumber, {
+        titular: url.searchParams.get("titular"),
+        permiso: url.searchParams.get("permiso"),
+      });
+      if (e.estado === "ninguna") return NextResponse.json({ error: "not_found" }, { status: 404 });
+      if (e.estado === "ambigua") {
+        const quienes = e.candidatas.map((g) => g.titularName?.trim() || "sin titular").join(" y ");
+        return NextResponse.json(
+          {
+            error: "ambigua",
+            message: `Hay ${e.candidatas.length} guías con el N° ${gtfNumber} (${quienes}): elígela de la lista de guías emitidas.`,
+            candidatas: e.candidatas.map((g) => ({ id: g.id, gtfNumber: g.gtfNumber, titularName: g.titularName })),
+          },
+          { status: 409 },
+        );
+      }
+      return NextResponse.json({ gtf: e.guia });
     }
     if (id) {
       const gtf = await ForestGtfDB.getById(auth.tenantId, id);
@@ -115,7 +142,7 @@ export const POST = withApiHandler("forestal-gtf-post", async (req: NextRequest)
   let body: unknown;
   try { body = await req.json(); } catch { return NextResponse.json({ error: "invalid_json" }, { status: 400 }); }
   const parsed = createSchema.safeParse(body);
-  if (!parsed.success) return NextResponse.json({ error: "validation_error", issues: parsed.error.issues }, { status: 400 });
+  if (!parsed.success) return NextResponse.json({ error: "validation_error", message: parsed.error.issues[0]?.message, issues: parsed.error.issues }, { status: 400 });
   try {
     const gtf = await ForestGtfDB.create(auth.tenantId, { ...parsed.data, createdBy: auth.username ?? "unknown" });
     return NextResponse.json({ gtf }, { status: 201 });

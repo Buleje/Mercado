@@ -7,8 +7,10 @@ import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
 import { auditLoth } from "@/lib/forestal/loth-audit";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
-import { claveNumeroGtf, mismoNumeroGtf, type GtfUsada } from "@/lib/forestal/gtf-talonario";
+import { claveNumeroGtf, colaDeGtf, mismoNumeroGtf } from "@/lib/forestal/gtf-talonario";
+import { chocanEnElLibro, elegirGuiaDelDueno, puedeSerDelDueno, type IdentidadDeGuiaBuscada } from "@/lib/forestal/loth-talonario";
 import { leerGtfDatos } from "@/lib/forestal/ctp-gtf-datos";
+import type { GtfUsadaLoth } from "@/lib/forestal/loth-talonario";
 import { identidadDeGuiaTh, soloDigitos } from "@/lib/forestal/guia-th-al-ctp";
 import { ForestCtpFichaDB } from "./forest-ctp-ficha.db";
 import { ESTADOS_SIN_INGRESO, GtfNumeroDB } from "./gtf-numero.db";
@@ -20,10 +22,19 @@ const CACHE_PREFIX = "forest-gtf";
  * (una GTF no se anota dos veces), no un fallo del server → el route lo mapea a 409.
  */
 export class GtfDuplicateError extends Error {
-  constructor(readonly gtfNumber: string) {
-    super(`Ya existe una GTF registrada con el número ${gtfNumber}. Una guía no se anota dos veces.`);
+  constructor(readonly gtfNumber: string, readonly titular?: string | null) {
+    super(
+      `Ya existe una GTF registrada con el número ${gtfNumber}${titular?.trim() ? ` de ${titular.trim()}` : ""}. Una guía no se anota dos veces.`,
+    );
     this.name = "GtfDuplicateError";
   }
+}
+
+/** De quién es la guía que se quiere anotar (para saber si su N° choca). */
+export interface DuenoDeGuia {
+  titular: string | null;
+  permiso: string | null;
+  planId: string | null;
 }
 
 /**
@@ -128,15 +139,15 @@ export class ForestGtfDB {
     const piezas = items.reduce((a, it) => a + Number(it.pieces ?? 0), 0);
 
     const gtf = await prisma.$transaction(async (tx) => {
-      // Serializa por (tenant, número) — cubre el INSERT de un número que aún no
-      // existe. `$executeRaw` (no `$queryRaw`): pg_advisory_xact_lock devuelve
-      // `void` y $queryRaw no sabe deserializar esa columna.
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`gtf:${tenantId}:${num}`}))`;
-      const dup = await tx.forestGtf.findFirst({
-        where: { tenantId, gtfNumber: num, deletedAt: null },
-        select: { id: true },
+      // Serializa por (tenant, N° NORMALIZADO) — cubre el INSERT de un número
+      // que aún no existe, y «19-001-65» con «019-001-0000065» esperan el mismo
+      // turno (29-09-2026). El mismo candado que Recibir y Anular en el TH.
+      await GtfNumeroDB.bloquear(tx, tenantId, num);
+      await ForestGtfDB.exigirSinRepetir(tx, tenantId, num, {
+        titular: input.titularName?.trim() || null,
+        permiso: input.tituloHabilitante?.trim() || null,
+        planId: input.planId ?? null,
       });
-      if (dup) throw new GtfDuplicateError(num);
 
       return tx.forestGtf.create({
         data: {
@@ -177,6 +188,33 @@ export class ForestGtfDB {
   }
 
   /**
+   * Frena un N° que este libro ya usó en el MISMO talonario. Va DENTRO de la
+   * transacción, después de `GtfNumeroDB.bloquear`.
+   *
+   * Los talonarios son del titular (Blas: la Ficha del CTP va por 054…064 en
+   * 19-001 y la C.N. Santa Rosa de Chivis usó 019-001-0000003/4 el mismo mes):
+   * el mismo N° de OTRO titular es otra guía y no frena. Choca si es del mismo
+   * titular (plan, título o nombre escrito como sea) o si a una de las dos le
+   * falta el titular — por las dudas. Anuladas incluidas: un N° que se usó no
+   * vuelve. El N° se compara tramo a tramo (`019-001-0000065` ≡ `19-001-65`).
+   */
+  static async exigirSinRepetir(tx: Prisma.TransactionClient, tenantId: string, gtfNumber: string, dueno: DuenoDeGuia) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const cola = colaDeGtf(gtfNumber);
+    if (!cola) return;
+    const candidatas = await tx.forestGtf.findMany({
+      where: { tenantId, deletedAt: null, gtfNumber: { endsWith: cola } },
+      select: { gtfNumber: true, titularName: true, tituloHabilitante: true, planId: true },
+    });
+    const choque = candidatas.find(
+      (g) =>
+        mismoNumeroGtf(g.gtfNumber, gtfNumber) &&
+        chocanEnElLibro(dueno, { titular: g.titularName, permiso: g.tituloHabilitante, planId: g.planId }),
+    );
+    if (choque) throw new GtfDuplicateError(choque.gtfNumber, choque.titularName);
+  }
+
+  /**
    * Sugiere el siguiente número correlativo a partir del MÁXIMO ya registrado que
    * calce con `<serie>-<NNN...>` (parseo del máximo, sin columna/migración nueva —
    * mismo criterio que `emitirGtf` del CTP). El operador puede aceptarlo o pisarlo
@@ -207,22 +245,80 @@ export class ForestGtfDB {
   }
 
   /**
-   * Los números del talonario ya usados en este libro, del más nuevo al más
-   * viejo — anuladas incluidas: un número de talonario que se usó no vuelve.
-   * Alimenta `proponerGtfLoth` (el siguiente se propone y el operador lo confirma).
+   * Los N° usados en este libro CON de quién son —anuladas incluidas: un N° de
+   * talonario que se usó no vuelve—: titular, título, plan y los N° de lista
+   * de trozas que llevó cada guía (el (35)). El talonario por región los
+   * filtra por titular —dos titulares de Pasco comparten la serie 019-001— y
+   * la lista sigue su propio correlativo (29-09-2026).
+   *
+   * El (35) se lee del JSON en la consulta: traer `gtfDatos` entero de 2000
+   * guías para leer un campo sería pesado en cada apertura del modal.
    */
-  static async numerosUsados(tenantId: string): Promise<GtfUsada[]> {
+  static async usadasConDueno(tenantId: string): Promise<GtfUsadaLoth[]> {
     if (!tenantId) throw new Error("tenantId is required");
-    const rows = await prisma.forestGtf.findMany({
-      where: { tenantId, deletedAt: null },
-      orderBy: { createdAt: "desc" },
-      select: { gtfNumber: true, gtfDate: true, status: true },
-      take: 2000,
-    });
+    const rows = await prisma.$queryRaw<
+      {
+        gtfNumber: string;
+        gtfDate: Date | null;
+        status: string;
+        titularName: string | null;
+        tituloHabilitante: string | null;
+        planId: string | null;
+        listas: string | null;
+      }[]
+    >`
+      SELECT "gtfNumber", "gtfDate", "status", "titularName", "tituloHabilitante", "planId",
+             "gtfDatos"->'guia'->>'listaTrozasNro' AS "listas"
+      FROM "ForestGtf"
+      WHERE "tenantId" = ${tenantId} AND "deletedAt" IS NULL
+      ORDER BY "createdAt" DESC
+      LIMIT 2000`;
     return rows.map((r) => ({
       numero: r.gtfNumber,
       fuente: r.status === "anulada" ? ("despacho_anulado" as const) : ("despacho" as const),
       fecha: r.gtfDate ? r.gtfDate.toISOString().slice(0, 10) : null,
+      titular: r.titularName,
+      permiso: r.tituloHabilitante,
+      planId: r.planId,
+      listas: r.listas,
+    }));
+  }
+
+  /**
+   * Los N° de las guías que ya entraron al Libro CTP como ingresos
+   * (`WoodEntry`), con su titular, su título y su N° de lista tal como los
+   * publicó SERFOR (`serforGtf`; si el ingreso se tipeó a mano, el proveedor y
+   * el código de origen). En Blas las 12 GTF reales viven acá: el talonario
+   * del Libro TH también las cuenta (29-09-2026).
+   *
+   * Fuera los borrados y los anulados; un rechazado cuenta: la guía existió y
+   * su N° se gastó aunque la madera no se recibiera. Un ingreso por especie
+   * repite el N°: se agrupa.
+   */
+  static async numerosDeIngresos(tenantId: string): Promise<GtfUsadaLoth[]> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const rows = await prisma.$queryRaw<
+      { gtfNumber: string; gtfDate: Date | null; titular: string | null; permiso: string | null; listas: string | null }[]
+    >`
+      SELECT "gtfNumber",
+             MIN("gtfDate") AS "gtfDate",
+             COALESCE(NULLIF(TRIM("serforGtf"->>'titular'), ''), "providerName") AS "titular",
+             COALESCE(NULLIF(TRIM("serforGtf"->>'numeroTitulo'), ''), "originCode") AS "permiso",
+             MAX("serforGtf"->>'listaTrozas') AS "listas"
+      FROM "WoodEntry"
+      WHERE "tenantId" = ${tenantId} AND "deletedAt" IS NULL AND "status"::text <> 'anulado'
+        AND COALESCE(TRIM("gtfNumber"), '') <> ''
+      GROUP BY 1, 3, 4
+      ORDER BY MAX("createdAt") DESC
+      LIMIT 2000`;
+    return rows.map((r) => ({
+      numero: r.gtfNumber,
+      fuente: "ingreso" as const,
+      fecha: r.gtfDate ? r.gtfDate.toISOString().slice(0, 10) : null,
+      titular: r.titular,
+      permiso: r.permiso,
+      planId: null,
+      listas: r.listas,
     }));
   }
 
@@ -288,14 +384,22 @@ export class ForestGtfDB {
       ForestGtfDB.sinIngresarConDatos(tenantId),
       prisma.forestGuiaGuardada.findMany({
         where: { tenantId, deletedAt: null },
-        select: { gtfNumber: true },
+        select: { gtfNumber: true, titularNombre: true, permisoCodigo: true },
         take: 1000,
       }),
       ForestCtpFichaDB.get(tenantId),
     ]);
     const rucPropio = soloDigitos(ficha.ruc);
     return gtfs
-      .filter((g) => !guardadas.some((x) => mismoNumeroGtf(x.gtfNumber, g.gtfNumber)))
+      /* La guardada de ESTA guía: mismo N° y mismo titular o permiso (29-09-2026). */
+      .filter(
+        (g) =>
+          !guardadas.some(
+            (x) =>
+              mismoNumeroGtf(x.gtfNumber, g.gtfNumber) &&
+              puedeSerDelDueno({ titular: x.titularNombre, permiso: x.permisoCodigo }, { titular: g.titularName, permiso: g.tituloHabilitante }),
+          ),
+      )
       .filter((g) => {
         const dest = soloDigitos(leerGtfDatos(g.gtfDatos).destinatario.docNumero);
         return !dest || !rucPropio || dest === rucPropio;
@@ -317,22 +421,43 @@ export class ForestGtfDB {
       }),
       prisma.woodEntry.findMany({
         where: { tenantId, deletedAt: null, status: { notIn: [...ESTADOS_SIN_INGRESO] } },
-        select: { gtfNumber: true },
+        select: { gtfNumber: true, providerName: true, originCode: true },
       }),
     ]);
-    const claves = new Set(entries.map((e) => claveNumeroGtf(e.gtfNumber)).filter(Boolean));
-    return gtfs.filter((g) => !claves.has(claveNumeroGtf(g.gtfNumber)));
+    /* Ingresada = un ingreso vivo con su N° Y del mismo titular o permiso: el
+       N° solo no identifica la guía (dos titulares comparten 019-001). */
+    const porClave = new Map<string, { providerName: string; originCode: string | null }[]>();
+    for (const e of entries) {
+      const k = claveNumeroGtf(e.gtfNumber);
+      if (k) porClave.set(k, [...(porClave.get(k) ?? []), e]);
+    }
+    return gtfs.filter((g) => {
+      const mismos = porClave.get(claveNumeroGtf(g.gtfNumber) ?? "") ?? [];
+      return !mismos.some((e) =>
+        puedeSerDelDueno({ titular: e.providerName, permiso: e.originCode }, { titular: g.titularName, permiso: g.tituloHabilitante }),
+      );
+    });
   }
 
-  /** Busca una guía por su número (para importar sus datos al ingreso CTP). */
-  static async findByNumber(tenantId: string, gtfNumber: string) {
+  /**
+   * Busca una guía por su número (para importar sus datos al ingreso CTP),
+   * tramo a tramo. El N° solo no identifica la guía (29-09-2026): con
+   * `identidad`, la del mismo titular o permiso; con dos de dueños distintos y
+   * sin con qué elegir, «ambigua» — nunca la primera.
+   */
+  static async findByNumber(tenantId: string, gtfNumber: string, identidad?: IdentidadDeGuiaBuscada | null) {
     if (!tenantId) throw new Error("tenantId is required");
-    const n = gtfNumber.trim();
-    if (!n) return null;
-    return prisma.forestGtf.findFirst({
-      where: { tenantId, gtfNumber: n, deletedAt: null },
+    const cola = colaDeGtf(gtfNumber);
+    if (!cola) return { estado: "ninguna" as const };
+    const candidatas = await prisma.forestGtf.findMany({
+      where: { tenantId, deletedAt: null, gtfNumber: { endsWith: cola } },
       orderBy: { createdAt: "desc" },
     });
+    return elegirGuiaDelDueno(
+      candidatas.filter((g) => mismoNumeroGtf(g.gtfNumber, gtfNumber)),
+      identidad,
+      (g) => ({ titular: g.titularName, permiso: g.tituloHabilitante }),
+    );
   }
 
   static async annul(tenantId: string, id: string, reason: string, user = "unknown") {

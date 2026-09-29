@@ -206,9 +206,22 @@ export class GuiaThAlCtpDB {
       const destino = destinoDeGuiaTh(datos, ruc);
       if (!destino.propio) return { estado: destino.motivo, mensaje: destino.mensaje };
 
-      const ya = await GuiasGuardadasDB.porNumeroGtf(tenantId, gtf.gtfNumber);
-      if (ya) return { estado: "ya_estaba", mensaje: mensajeDelPase("ya_estaba"), guardadaId: ya.id };
-      if ((await GtfNumeroDB.ingresosVivos(prisma, tenantId, gtf.gtfNumber)).length > 0) {
+      /* El N° solo no identifica la guía (29-09-2026): «ya estaba» y «ya
+         entró» cuentan sólo lo del mismo titular o permiso. Si con ese N° hay
+         una guardada de OTRO titular, ésta no se guarda encima (la base admite
+         una guardada viva por N°) y se dice. */
+      const identidad = identidadDeGuiaTh(gtf, datos);
+      const ya = await GuiasGuardadasDB.eleccionPorNumeroGtf(tenantId, gtf.gtfNumber, identidad);
+      if (ya.estado === "una") return { estado: "ya_estaba", mensaje: mensajeDelPase("ya_estaba"), guardadaId: ya.guia.id };
+      const deOtro = ya.estado === "ambigua" ? ya : await GuiasGuardadasDB.eleccionPorNumeroGtf(tenantId, gtf.gtfNumber);
+      if (deOtro.estado !== "ninguna") {
+        const otra = deOtro.estado === "una" ? deOtro.guia : deOtro.candidatas[0];
+        return {
+          estado: "error",
+          mensaje: `En tu Libro CTP ya hay una guía guardada con el N° ${otra?.gtfNumber ?? gtf.gtfNumber}${otra?.titularNombre ? ` de ${otra.titularNombre}` : ""}: es de otro talonario, así que ésta no pasó sola. Revisa el N° o regístrala con «Ingresar».`,
+        };
+      }
+      if ((await GtfNumeroDB.ingresosVivos(prisma, tenantId, gtf.gtfNumber, { identidad })).length > 0) {
         return { estado: "ya_ingresada", mensaje: mensajeDelPase("ya_ingresada") };
       }
 
@@ -448,7 +461,10 @@ export class GuiaThAlCtpDB {
             409,
           );
         }
-        const yaEsta = await GtfNumeroDB.ingresosVivos(tx, tenantId, guardada.gtfNumber);
+        /* Sólo los ingresos de ESTA guía: mismo N° y mismo titular o permiso. */
+        const yaEsta = await GtfNumeroDB.ingresosVivos(tx, tenantId, guardada.gtfNumber, {
+          identidad: { titular: guardada.titularNombre, permiso: guardada.permisoCodigo },
+        });
         if (yaEsta.length > 0) {
           throw new GuiaThError(
             `La guía ${guardada.gtfNumber} ya entró al libro como ${yaEsta.length === 1 ? "ingreso" : "ingresos"} ${foliosEnTexto(yaEsta.map((e) => e.libroNro))}: la ves en Ingresos.`,

@@ -5,12 +5,26 @@
  *
  * La placa se guarda normalizada (sin guiones) para que el mismo camión no entre
  * dos veces, y se muestra con guión, que es como se lee en el papel.
+ *
+ * 29-09-2026: la placa sigue la MISMA regla que la guía (`motivoPlacaVehiculo`
+ * → `leerPlaca`): 3 caracteres y 3 números, con la zona registral a la vista.
+ * Una embarcación lleva matrícula, que no sigue ese formato: se elige en
+ * «Qué es» y la regla no se aplica.
  */
 
 import { useMemo, useState } from "react";
 import { Loader2, Save, Truck } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
-import { formatearPlaca, normalizarPlaca, type Parte, type Vehiculo, type VehiculoInput } from "@/lib/forestal/directorio";
+import {
+  esEmbarcacion,
+  formatearPlaca,
+  motivoPlacaVehiculo,
+  normalizarPlaca,
+  type Parte,
+  type Vehiculo,
+  type VehiculoInput,
+} from "@/lib/forestal/directorio";
+import { CampoPlaca } from "./ctp-campo-placa";
 import { Btn, Field, I, ModalBody, ModalFooter, Seccion, useAtajoGuardar, useCierreSeguro, useHayCambios } from "./ctp-shared";
 
 type Borrador = VehiculoInput & { id?: string };
@@ -34,6 +48,9 @@ export default function CtpVehiculoModal({
       ? {
           id: vehiculo.id,
           placa: vehiculo.placa,
+          /* Sin esto el remolque guardado no se veía al editar y, al guardar,
+             la edición explícita lo mandaba vacío: se BORRABA. */
+          placaRemolque: vehiculo.placaRemolque ?? "",
           marca: vehiculo.marca ?? "",
           tipo: vehiculo.tipo ?? "",
           configuracion: vehiculo.configuracion ?? "",
@@ -49,6 +66,18 @@ export default function CtpVehiculoModal({
   const set = (v: Partial<Borrador>) => setB((p) => ({ ...p, ...v }));
 
   const placaNorm = normalizarPlaca(b.placa);
+  const embarcacion = esEmbarcacion(b.tipo);
+  /* La regla del servidor, corrida acá para decirlo ANTES de guardar. Vacío no
+     se marca en rojo hasta que se intente guardar: el alta abre en blanco. Una
+     ficha vieja con una placa que ya no pasa se juzga sólo si se TOCA la placa:
+     cambiar su capacidad o sus notas no exige corregirla. */
+  const guardada = vehiculo ? { placa: vehiculo.placa, placaRemolque: vehiculo.placaRemolque } : null;
+  const motivo = motivoPlacaVehiculo(b, guardada);
+  const placaSinTocar = Boolean(guardada) && normalizarPlaca(b.placa) === normalizarPlaca(guardada?.placa ?? "");
+  const remolqueSinTocar =
+    Boolean(guardada) && normalizarPlaca(b.placaRemolque ?? "") === normalizarPlaca(guardada?.placaRemolque ?? "");
+  const [intentoGuardar, setIntentoGuardar] = useState(false);
+  const motivoVisible = motivo && (intentoGuardar || placaNorm.length > 0 || motivo.campo === "placaRemolque") ? motivo : null;
   /**
    * El mismo camión entrando dos veces rompe el conteo de viajes por placa y
    * deja dos dueños posibles para el mismo vehículo. El servidor ya normaliza
@@ -61,11 +90,11 @@ export default function CtpVehiculoModal({
         : null,
     [existentes, placaNorm, b.id],
   );
-  const placaCorta = placaNorm.length > 0 && placaNorm.length < 5;
 
   async function guardar() {
-    if (placaNorm.length < 5) {
-      setError("La placa es obligatoria (mínimo 5 caracteres).");
+    if (motivo) {
+      // El motivo sale en el pie (`nota`) y el botón se apaga hasta corregirlo.
+      setIntentoGuardar(true);
       return;
     }
     if (duplicado) {
@@ -100,14 +129,14 @@ export default function CtpVehiculoModal({
           nota={
             duplicado
               ? `Ya existe ${formatearPlaca(duplicado.placa)} en el directorio.`
-              : placaCorta
-                ? "Una placa peruana tiene 6 caracteres (ABC-123)."
+              : motivoVisible
+                ? motivoVisible.motivo
                 : undefined
           }
           atajo
         >
           <Btn variant="ghost" onClick={cerrar}>Cancelar</Btn>
-          <Btn variant="primary" disabled={guardando || !!duplicado} onClick={() => void guardar()}>
+          <Btn variant="primary" disabled={guardando || !!duplicado || !!motivoVisible} onClick={() => void guardar()}>
             {guardando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             Guardar
           </Btn>
@@ -116,31 +145,54 @@ export default function CtpVehiculoModal({
     >
       <ModalBody ref={bodyRef}>
         <Seccion numero={1} title="El vehículo">
-          <Field
-            label="Placa"
+          <Field label="Qué es" span={4} hint="Una embarcación lleva matrícula, no placa">
+            <select
+              className={I}
+              value={embarcacion ? "embarcacion" : "vehiculo"}
+              onChange={(e) =>
+                set(
+                  e.target.value === "embarcacion"
+                    ? { tipo: embarcacion ? b.tipo : "Embarcación" }
+                    : { tipo: embarcacion ? "" : b.tipo },
+                )
+              }
+            >
+              <option value="vehiculo">Vehículo (placa)</option>
+              <option value="embarcacion">Embarcación (matrícula)</option>
+            </select>
+          </Field>
+          <CampoPlaca
+            label={embarcacion ? "Matrícula" : "Placa"}
             required
             span={4}
+            autoFocus
+            validar={!embarcacion}
+            soloAviso={placaSinTocar ? "guardada" : undefined}
             hint={duplicado ? "Ya está en el directorio" : "Lo primero que compara un control"}
-          >
-            <input
-              type="text"
-              autoFocus
-              aria-invalid={duplicado ? true : undefined}
-              className={`${I} font-mono uppercase ${duplicado ? "border-[var(--data-error-500)]" : ""}`}
-              value={b.placa}
-              onChange={(e) => set({ placa: e.target.value.toUpperCase() })}
-            />
-          </Field>
+            /* El formato lo dice el propio campo; de afuera sólo el duplicado
+               y, en una embarcación, la matrícula vacía o corta. */
+            error={
+              duplicado
+                ? `Ya está en el directorio como ${formatearPlaca(duplicado.placa)}.`
+                : embarcacion && motivoVisible?.campo === "placa"
+                  ? motivoVisible.motivo
+                  : null
+            }
+            valor={b.placa}
+            onCambio={(v) => set({ placa: v })}
+          />
           {/* Son DOS unidades y la guía declara las dos: guardarla acá evita
               re-tipearla en cada guía del mismo camión. */}
-          <Field label="Placa remolque" span={4} hint="Sólo si el camión lleva acoplado">
-            <input
-              type="text"
-              className={`${I} font-mono uppercase`}
-              value={b.placaRemolque ?? ""}
-              onChange={(e) => set({ placaRemolque: e.target.value.toUpperCase() })}
-            />
-          </Field>
+          <CampoPlaca
+            label="Placa remolque"
+            span={4}
+            opcional
+            validar={!embarcacion}
+            soloAviso={remolqueSinTocar ? "guardada" : undefined}
+            hint="Sólo si el camión lleva acoplado"
+            valor={b.placaRemolque ?? ""}
+            onCambio={(v) => set({ placaRemolque: v })}
+          />
           <Field label="Marca" span={4}>
             <input type="text" className={I} value={b.marca ?? ""} onChange={(e) => set({ marca: e.target.value })} />
           </Field>

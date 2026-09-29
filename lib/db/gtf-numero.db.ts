@@ -4,6 +4,7 @@ import type { Prisma } from "@/lib/generated/prisma/client";
 import { claveNumeroGtf, colaDeGtf, mismoNumeroGtf } from "@/lib/forestal/gtf-talonario";
 import { foliosEnTexto, mensajeGuiaYaRecibida, mismaGuiaTh } from "@/lib/forestal/guia-th-al-ctp";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
+import { mismoDuenoDeGuia, puedeSerDelDueno, type IdentidadDeGuiaBuscada } from "@/lib/forestal/loth-talonario";
 
 /**
  * GtfNumeroDB — «¿esta guía ya entró al libro?» con UNA sola regla de N°
@@ -96,7 +97,15 @@ export const GtfNumeroDB = {
     db: Db,
     tenantId: string,
     gtfNumber: string,
-    opts: { serforNumeroRegistro?: string | null } = {},
+    opts: {
+      serforNumeroRegistro?: string | null;
+      /**
+       * De quién es la guía buscada (29-09-2026). Con ella, un ingreso con el
+       * mismo N° pero de OTRO titular y OTRO permiso no es esta guía: dos
+       * titulares comparten la serie 019-001. Sin ella, vienen todos.
+       */
+      identidad?: IdentidadDeGuiaBuscada | null;
+    } = {},
   ): Promise<IngresoVivoDeGuia[]> {
     if (!tenantId) throw new Error("tenantId is required");
     const cola = colaDeGtf(gtfNumber);
@@ -116,7 +125,11 @@ export const GtfNumeroDB = {
       },
       orderBy: { libroNro: "asc" },
     });
-    return candidatas.filter((c) => mismoNumeroGtf(c.gtfNumber, gtfNumber));
+    return candidatas.filter(
+      (c) =>
+        mismoNumeroGtf(c.gtfNumber, gtfNumber) &&
+        puedeSerDelDueno({ titular: c.providerName, permiso: c.originCode }, opts.identidad),
+    );
   },
 
   /**
@@ -126,12 +139,19 @@ export const GtfNumeroDB = {
    * CTP del negocio. Cuentan sólo los que son LA MISMA guía (`mismaGuiaTh`:
    * permiso, o titular si falta el permiso): otro ingreso con el mismo N° pero
    * otro permiso es otra guía y no traba el TH.
+   *
+   * Y los del MISMO dueño con la vara de «Recibir» (`mismoDuenoDeGuia`, revisión
+   * 29-09-2026): en Blas el plan dice «CCNN SAN LUIS DE CHINCHIGUANI» y SERFOR
+   * «COMUNIDAD NATIVA SAN LUIS DE CHINCHIHUANI». «Recibir» los tomaba por la
+   * misma guía («ya entró») y anular en el TH no veía ese ingreso: liberaba
+   * trozas que ya estaban en el CTP.
    */
   async exigirSinIngresosEnElCtp(tx: Prisma.TransactionClient, tenantId: string, guia: IdentidadDeGuia): Promise<void> {
     await GtfNumeroDB.bloquear(tx, tenantId, guia.gtfNumber);
-    const vivos = (await GtfNumeroDB.ingresosVivos(tx, tenantId, guia.gtfNumber)).filter(
-      (e) => mismaGuiaTh({ permisoCodigo: e.originCode, titularNombre: e.providerName }, guia).ok,
-    );
+    const vivos = (await GtfNumeroDB.ingresosVivos(tx, tenantId, guia.gtfNumber)).filter((e) => {
+      const ingreso = { permisoCodigo: e.originCode, titularNombre: e.providerName };
+      return mismaGuiaTh(ingreso, guia).ok || mismoDuenoDeGuia({ titular: e.providerName, permiso: e.originCode }, guia) === true;
+    });
     if (vivos.length > 0) {
       const nros = vivos.map((v) => v.libroNro);
       throw new GuiaYaEnElCtpError(mensajeGuiaYaRecibida(nros), nros);

@@ -155,6 +155,16 @@ const REQUIRED: EnvSpec[] = [
 //   ambos si usás apis.net.pe). Si el provider cae, soft-pass (no bloquea
 //   onboarding) y admin verifica manual desde el panel.
 //
+// Placa vehicular (lib/integrations/placa-peru.ts, «Buscar placa» de la guía):
+//   PLACA_API_PROVIDER    — "jsonpe" (default; único soportado hoy)
+//   PLACA_API_TOKEN       — Bearer de api.json.pe. OPCIONAL: sin él la búsqueda
+//                          usa sólo las guías y el Directorio del negocio y la
+//                          pantalla dice por qué no consulta SUNARP.
+//   PLACA_API_TOPE_DIA    — consultas pagas por negocio y día (default 10; 0 = ninguna)
+//   PLACA_API_TOPE_MES    — ídem por mes (default 60). La caché no cuenta.
+//   PLACA_API_TOPE_MES_GLOBAL — por mes para TODA la plataforma (default 20 =
+//                          plan gratis de json.pe: 100 créditos / 5 por placa).
+//
 // Analytics:
 //   NEXT_PUBLIC_GA_MEASUREMENT_ID — Google Analytics 4
 //

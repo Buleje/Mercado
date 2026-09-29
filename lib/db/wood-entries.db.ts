@@ -43,6 +43,7 @@ import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
 import { closedPeriodOf } from "@/lib/forestal/ctp-cierre-types";
 import { CTP_TX_OPTS, CtpInvariantError, exigirIngresoAntesDeLaCorrida } from "./forest-ctp-consumo.db";
 import { GtfNumeroDB } from "./gtf-numero.db";
+import { puedeSerDelDueno } from "@/lib/forestal/loth-talonario";
 import { exigirCostoNoCongelado } from "./costo-congelado.db";
 import { ForestCuentaDB } from "./forest-cuenta.db";
 import { FILTRO_REQUIERE_COSTO, FILTRO_REQUIERE_COSTO_SQL } from "@/lib/forestal/madera-de-servicio";
@@ -1812,9 +1813,20 @@ export class WoodEntriesDB {
     if (!tenantId) throw new Error("tenantId is required");
     const fecha = input.entryDate ?? new Date();
     await GtfNumeroDB.bloquear(tx, tenantId, input.gtfNumber);
-    const yaEsta = await GtfNumeroDB.ingresosVivos(tx, tenantId, input.gtfNumber, {
-      serforNumeroRegistro: input.serforNumeroRegistro,
-    });
+    /* La MISMA guía: mismo N° (tramo a tramo) y mismo titular o permiso
+       (29-09-2026). Dos titulares comparten la serie 019-001: sin esto, recibir
+       la guía de uno frenaba con «anula los ingresos», que eran del otro. El
+       mismo N° de registro SERFOR sí es la misma guía, se llame como se llame. */
+    const registro = input.serforNumeroRegistro?.trim() || null;
+    const yaEsta = (
+      await GtfNumeroDB.ingresosVivos(tx, tenantId, input.gtfNumber, {
+        serforNumeroRegistro: input.serforNumeroRegistro,
+      })
+    ).filter(
+      (e) =>
+        (registro && e.serforNumeroRegistro?.trim() === registro) ||
+        puedeSerDelDueno({ titular: e.providerName, permiso: e.originCode }, { titular: input.providerName, permiso: input.originCode }),
+    );
     if (yaEsta.length > 0) {
       throw new CtpInvariantError(
         `La guía ${input.gtfNumber.trim()} ya está registrada en el libro (${yaEsta.length} ingreso(s)). Si hay que corregirla, anula los ingresos y vuelve a cargarla.`,

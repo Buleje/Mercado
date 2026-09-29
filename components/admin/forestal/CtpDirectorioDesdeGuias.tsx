@@ -28,7 +28,7 @@ import {
   type CandidatoParte,
   type GuiaConPartes,
 } from "@/lib/forestal/directorio-desde-guias";
-import { ROL_LABEL, type Parte, type ParteInput, type Vehiculo } from "@/lib/forestal/directorio";
+import { ROL_LABEL, motivoPlacaVehiculo, type Parte, type ParteInput, type Vehiculo } from "@/lib/forestal/directorio";
 import { Btn } from "./ctp-shared";
 
 /** El tope del listado: una libreta se arma con las guías que hay, no con mil. */
@@ -118,11 +118,13 @@ export default function CtpDirectorioDesdeGuias({
   );
 
   const altaVehiculo = useCallback(
-    async (placa: string) => {
+    async (placa: string, fluvial: boolean) => {
       setGuardando(`veh:${placa}`);
       setError(null);
       try {
-        await onGuardarVehiculo({ placa });
+        // Por río lo que la guía trae es la matrícula (ADR-350): se guarda como
+        // embarcación, que no sigue el formato de la placa.
+        await onGuardarVehiculo(fluvial ? { placa, tipo: "Embarcación" } : { placa });
         setListos((prev) => new Set(prev).add(`veh:${placa}`));
       } catch (err) {
         setError(err instanceof Error ? err.message : String(err));
@@ -207,7 +209,12 @@ export default function CtpDirectorioDesdeGuias({
             </li>
           ))}
 
-          {placasPendientes.map((v) => (
+          {placasPendientes.map((v) => {
+            const fluvial = v.modo === "fluvial";
+            /* Una placa que no puede existir («WRFWR242») no se ofrece como
+               camión: se muestra con el motivo, para corregirla en su guía. */
+            const motivo = motivoPlacaVehiculo(fluvial ? { placa: v.placa, tipo: "Embarcación" } : { placa: v.placa });
+            return (
             <li
               key={v.placa}
               className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-base)] px-3 py-2"
@@ -217,11 +224,18 @@ export default function CtpDirectorioDesdeGuias({
                 <span className="ml-2 text-[var(--text-tertiary)]">
                   vehículo {v.modo ?? "terrestre"} · en {v.guias} guía{v.guias === 1 ? "" : "s"}
                 </span>
+                {motivo && (
+                  <span className="mt-0.5 flex items-start gap-1 text-xs text-[var(--data-warning-ink)]">
+                    <AlertTriangle className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden />
+                    No es una placa válida: {motivo.motivo}
+                  </span>
+                )}
               </span>
               <Btn
                 variant="secondary"
-                onClick={() => void altaVehiculo(v.placa)}
-                disabled={guardando === `veh:${v.placa}`}
+                onClick={() => void altaVehiculo(v.placa, fluvial)}
+                disabled={guardando === `veh:${v.placa}` || Boolean(motivo)}
+                title={motivo ? motivo.motivo : undefined}
               >
                 {guardando === `veh:${v.placa}` ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -231,7 +245,8 @@ export default function CtpDirectorioDesdeGuias({
                 Agregar
               </Btn>
             </li>
-          ))}
+            );
+          })}
         </ul>
       )}
     </section>

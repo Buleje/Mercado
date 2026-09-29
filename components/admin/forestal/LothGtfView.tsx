@@ -19,7 +19,10 @@ import { documentoGtfLoth, type LothGtfCaratula, type LothGtfDoc } from "@/lib/f
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { esc } from "@/lib/forestal/ctp-documento-print";
 import VerificarGtfSerfor from "./VerificarGtfSerfor";
+import { useLineasDeLaGuia } from "./hooks/use-lineas-de-la-guia";
 import { formatDateNumeric } from "@/lib/format";
+import { leerPlaca } from "@/lib/forestal/placa-peru";
+import { CampoPlaca } from "./ctp-campo-placa";
 import { FiltroColumnaMulti, type FacetaOpcion } from "@/components/admin/shared/filtros-columna";
 import { CampoDeFiltro } from "./ctp-filtros-panel";
 import { BotonRestablecerColumnas, EnOrden, useOrdenColumnas } from "@/components/admin/shared/columnas-ordenables";
@@ -604,7 +607,7 @@ function ResumenChip({ valor, label, sufijo, tono }: { valor: number | string; l
  */
 function AnularGtfForm({
   gtf,
-  despachos,
+  despachos: porNumero,
   onConfirm,
   onCancel,
 }: {
@@ -615,6 +618,8 @@ function AnularGtfForm({
   onConfirm: (r: string, conDespachos: boolean) => Promise<string | null>;
   onCancel: () => void;
 }) {
+  /* Sólo las líneas de ESTA guía (el servidor): otro titular puede tener el mismo N°. */
+  const despachos = useLineasDeLaGuia(gtf.id, porNumero);
   const [r, setR] = useState("");
   const [conDespachos, setConDespachos] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -786,10 +791,14 @@ function GtfForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => voi
   // Sin estos tres, un puesto de control no puede cruzar quién transporta la
   // madera contra este registro interno (mismo requisito que exige el backend).
   const hasMissingRequired = !f.transportista.trim() || !f.conductor.trim() || !f.placaVehiculo.trim();
+  /* La guía la emite el bosque: una placa que no puede existir no sale (la
+     misma regla que «Despachar con guía»; el servidor también la rechaza). */
+  const lecturaPlaca = leerPlaca(f.placaVehiculo);
+  const placaInvalida = lecturaPlaca.estado === "invalida" ? lecturaPlaca.motivo : null;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (busy || !f.gtfNumber.trim() || items.length === 0 || hasInvalidItems || hasMissingRequired) return;
+    if (busy || !f.gtfNumber.trim() || items.length === 0 || hasInvalidItems || hasMissingRequired || placaInvalida) return;
     setBusy(true); setErr(null);
     try {
       const body: Record<string, unknown> = { items };
@@ -826,7 +835,7 @@ function GtfForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => voi
         <Field label="Transportista *"><input value={f.transportista} onChange={(e) => set("transportista", e.target.value)} className={I} /></Field>
         <Field label="Doc. transportista"><input value={f.transportistaDoc} onChange={(e) => set("transportistaDoc", e.target.value)} className={I} /></Field>
         <Field label="Conductor *"><input value={f.conductor} onChange={(e) => set("conductor", e.target.value)} className={I} /></Field>
-        <Field label="Placa vehículo *"><input value={f.placaVehiculo} onChange={(e) => set("placaVehiculo", e.target.value)} placeholder="ABC-123" className={I} /></Field>
+        <CampoPlaca label="Placa vehículo" required valor={f.placaVehiculo} onCambio={(v) => set("placaVehiculo", v)} />
       </div>
 
       <VerificarGtfSerfor
@@ -906,6 +915,9 @@ function GtfForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => voi
           {items.length > 0 && hasMissingRequired && (
             <span className="ml-2 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">— completa transportista, conductor y placa</span>
           )}
+          {!hasMissingRequired && placaInvalida && (
+            <span className="ml-2 text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">— la placa no es válida: {placaInvalida}</span>
+          )}
           {selloSerfor && (
             <span className="ml-2 inline-flex items-center gap-1 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
               <ShieldCheck className="h-3.5 w-3.5" /> verificada en SERFOR ({selloSerfor.numeroRegistro})
@@ -914,7 +926,7 @@ function GtfForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => voi
         </span>
         <div className="flex gap-2">
           <button type="button" onClick={onClose} className="h-11 rounded-xl px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
-          <button type="submit" disabled={busy || !f.gtfNumber.trim() || items.length === 0 || hasInvalidItems || hasMissingRequired} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent-dark)] px-4 text-sm font-semibold text-white hover:brightness-110 disabled:opacity-50">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Truck className="h-4 w-4" />} Emitir GTF</button>
+          <button type="submit" disabled={busy || !f.gtfNumber.trim() || items.length === 0 || hasInvalidItems || hasMissingRequired || Boolean(placaInvalida)} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent-dark)] px-4 text-sm font-semibold text-white hover:brightness-110 disabled:opacity-50">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Truck className="h-4 w-4" />} Emitir GTF</button>
         </div>
       </div>
     </form>

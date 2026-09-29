@@ -31,6 +31,7 @@ import type { CtpFicha } from "@/lib/forestal/ctp-ficha-types";
 import type { DocTipo } from "@/lib/forestal/directorio";
 import CtpParteBarra, { type ValorParte } from "./CtpParteBarra";
 import type { useDirectorioForestal } from "@/hooks/use-directorio-forestal";
+import { CampoPlaca } from "./ctp-campo-placa";
 import { Btn, Field, I, Seccion } from "./ctp-shared";
 
 /** Los tipos de comprobante del casillero (20) del formato. */
@@ -336,14 +337,18 @@ export default function CtpGuiaOficialForm({ datos, onChange, directorio, titula
             className={I}
           />
         </Field>
-        <Field span={4} label={fluvial ? "Matrícula de la embarcación" : "Placa"} casillero={31}>
-          <input
-            value={datos.vehiculo.placa}
-            onChange={(e) => setVehiculo({ placa: e.target.value.toUpperCase() })}
-            placeholder="W2D-853"
-            className={`${I} font-mono`}
-          />
-        </Field>
+        {/* Guía de INGRESO: es el papel de un tercero. La placa se transcribe
+            tal cual y, si no puede ser una placa, se AVISA (no se bloquea). */}
+        <CampoPlaca
+          span={4}
+          label={fluvial ? "Matrícula de la embarcación" : "Placa"}
+          casillero={31}
+          validar={!fluvial}
+          transcribir
+          soloAviso="papel"
+          valor={datos.vehiculo.placa}
+          onCambio={(v) => setVehiculo({ placa: v })}
+        />
         <Field span={4} label={fluvial ? "Patrón de la embarcación" : "Conductor"} casillero={32}>
           <input
             value={datos.vehiculo.conductor}

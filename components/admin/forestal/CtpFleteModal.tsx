@@ -17,7 +17,9 @@ import AdminModal from "@/components/admin/shared/AdminModal";
 import SelectorContrato from "./SelectorContrato";
 import { useDirectorioForestal } from "@/hooks/use-directorio-forestal";
 import { usePtDeGuia } from "@/hooks/use-pt-de-guia";
-import { claveBusqueda, formatearPlaca, normalizarPlaca } from "@/lib/forestal/directorio";
+import { claveBusqueda, formatearPlaca, normalizarPlaca, placaParaGuia } from "@/lib/forestal/directorio";
+import { leerPlaca } from "@/lib/forestal/placa-peru";
+import { CampoPlaca } from "./ctp-campo-placa";
 import {
   ESTADOS_PAGO,
   PAGADORES,
@@ -226,6 +228,15 @@ export default function CtpFleteModal({
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const set = (v: Partial<Borrador>) => setB((p) => ({ ...p, ...v }));
+  /**
+   * La placa del flete sigue la regla de la placa peruana sólo si se TIPEÓ
+   * acá: la que vino guardada, de la guía de ingreso (papel de un tercero) o
+   * del Directorio se avisa, no bloquea el viaje.
+   */
+  const [placaInicial] = useState(() => normalizarPlaca(b.placa ?? ""));
+  const placaTipeada = !b.vehiculoId && normalizarPlaca(b.placa ?? "") !== placaInicial;
+  const lecturaPlaca = leerPlaca(b.placa);
+  const placaInvalida = placaTipeada && lecturaPlaca.estado === "invalida" ? lecturaPlaca.motivo : null;
 
   const transportistas = useMemo(() => dir.porRol("transportista"), [dir]);
   const conductores = useMemo(() => dir.porRol("conductor"), [dir]);
@@ -275,7 +286,7 @@ export default function CtpFleteModal({
     }
     set({
       vehiculoId: v.id,
-      placa: v.placa,
+      placa: placaParaGuia(v.placa, v.tipo),
       ...(v.transportistaId && !b.transportistaId
         ? { transportistaId: v.transportistaId, transportistaNombre: v.transportistaNombre ?? "" }
         : {}),
@@ -285,6 +296,10 @@ export default function CtpFleteModal({
   async function guardar() {
     if (!b.fecha) {
       setError("La fecha del viaje es obligatoria.");
+      return;
+    }
+    if (placaInvalida) {
+      setError(`La placa no es válida: ${placaInvalida}`);
       return;
     }
     if (cobraPorPt) {
@@ -388,14 +403,14 @@ export default function CtpFleteModal({
               ))}
             </select>
           </Field>
-          <Field label="Placa" span={4} hint={b.vehiculoId ? "Viene del directorio" : "Si el camión no está en el directorio"}>
-            <input
-              type="text"
-              className={`${I} font-mono uppercase`}
-              value={b.placa ?? ""}
-              onChange={(e) => set({ placa: e.target.value.toUpperCase(), vehiculoId: "" })}
-            />
-          </Field>
+          <CampoPlaca
+            label="Placa"
+            span={4}
+            hint={b.vehiculoId ? "Viene del directorio" : "Si el camión no está en el directorio"}
+            soloAviso={placaTipeada ? undefined : b.vehiculoId ? "guardada" : "papel"}
+            valor={b.placa ?? ""}
+            onCambio={(v) => set({ placa: v, vehiculoId: "" })}
+          />
           <CampoPersona
             label="Conductor"
             nombreLabel="Nombre del conductor"

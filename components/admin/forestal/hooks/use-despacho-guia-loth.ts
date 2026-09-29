@@ -4,11 +4,13 @@
  * useDespachoGuiaLoth — el estado de «Despachar con guía» del Libro TH.
  *
  * Trae de una vez lo que la guía ya sabe (carátula, planes, trozas que no
- * salieron, el N° que sigue en el talonario y la última guía), arma los datos
- * iniciales con `datosInicialesLoth` y registra guía + despachos en un POST.
+ * salieron, los N° de guía ya usados con su titular y la última guía), arma los
+ * datos iniciales con `datosInicialesLoth` y registra guía + despachos en un POST.
  *
- * La identidad del título sale del PLAN de las trozas: al cambiar de plan se
- * vuelve a sembrar (una guía ampara un solo título) y la selección se limpia.
+ * La identidad sale del PLAN de las trozas: al cambiar de plan se vuelve a
+ * sembrar, la selección se limpia y el talonario se recalcula (29-09-2026:
+ * serie por región, `talonarioDelPlan`; N° de lista y llegada, en
+ * `use-traslado-guia-loth`).
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -18,9 +20,12 @@ import type { ParteGuardada, VehiculoGuardado } from "@/lib/forestal/gtf-autocom
 import {
   datosInicialesLoth,
   faltantesDespachoLoth,
+  guiasParaOrigen,
   identidadDelTitulo,
   rellenarGuiaLoth,
+  talonarioDelPlan,
   type CaratulaParaGuia,
+  type GtfUsadaLoth,
   type IdentidadDelTitulo,
   type PermisoParaGuia,
   type PlanParaGuia,
@@ -28,13 +33,16 @@ import {
 } from "@/lib/forestal/loth-guia-despacho";
 import { hoyEnLima } from "@/lib/forestal/semana-de-registro";
 import type { PaseAlCtp, PlantaPropia } from "@/lib/forestal/guia-th-al-ctp";
+import { useNumeroGuiaLoth } from "./use-numero-guia-loth";
+import { useTrasladoGuiaLoth } from "./use-traslado-guia-loth";
 
 export interface PreparadoGuiaLoth {
   caratula: (CaratulaParaGuia & { id: string }) | null;
   planes: (PlanParaGuia & { id: string; isActive: boolean })[];
   permisos: Record<string, PermisoParaGuia | null>;
   trozas: TrozaDelLibro[];
-  talonario: { propuesta: string | null; ultimo: { numero: string; fecha: string | null } | null };
+  /** Los N° que ya gastaron un talonario (este libro + guías de SERFOR guardadas), con su dueño. */
+  talonario: { usadas: GtfUsadaLoth[] };
   ultimaGuia: GtfDatos | null;
   /** La planta propia (Ficha del CTP) si el negocio lleva Libro CTP: una guía a ese RUC pasa allá. */
   ctpPropio: PlantaPropia | null;
@@ -59,6 +67,12 @@ export interface LibretaParaRellenar {
   vehiculo?: VehiculoGuardado | null;
 }
 
+/** Lo que el servidor preguntó antes de grabar el N° (409): se confirma o se corrige. */
+export interface PreguntaNumero {
+  tipo: "salto" | "serie";
+  mensaje: string;
+}
+
 export function useDespachoGuiaLoth(opts: { onRegistrada?: () => void } = {}) {
   const { onRegistrada } = opts;
   const [prep, setPrep] = useState<PreparadoGuiaLoth | null>(null);
@@ -77,7 +91,7 @@ export function useDespachoGuiaLoth(opts: { onRegistrada?: () => void } = {}) {
         planes: j.planes ?? [],
         permisos: j.permisos ?? {},
         trozas: j.trozas ?? [],
-        talonario: j.talonario ?? { propuesta: null, ultimo: null },
+        talonario: { usadas: j.talonario?.usadas ?? [] },
         ultimaGuia: j.ultimaGuia ?? null,
         ctpPropio: j.ctpPropio ?? null,
       });
@@ -87,9 +101,7 @@ export function useDespachoGuiaLoth(opts: { onRegistrada?: () => void } = {}) {
       setCargando(false);
     }
   }, []);
-  useEffect(() => {
-    void cargar();
-  }, [cargar]);
+  useEffect(() => void cargar(), [cargar]);
 
   /** Planes con trozas para despachar. */
   const planesConTrozas = useMemo(() => {
@@ -121,27 +133,50 @@ export function useDespachoGuiaLoth(opts: { onRegistrada?: () => void } = {}) {
     [prep, planId],
   );
 
+  /** De quién es el talonario: el titular del plan, su título y el plan. */
+  const dueno = useMemo(
+    () => (identidad ? { titular: identidad.titular, permiso: identidad.tituloHabilitante, planId: planId ?? null } : null),
+    [identidad, planId],
+  );
+  /** El talonario del plan: serie de su región, el que sigue de ESTE titular y sus listas. */
+  const talonario = useMemo(
+    () => (prep && dueno && identidad ? talonarioDelPlan({ ubigeo: identidad, dueno }, prep.talonario.usadas) : null),
+    [prep, dueno, identidad],
+  );
+  const numero = useNumeroGuiaLoth(talonario, dueno);
+
   const [emision, setEmision] = useState(hoyEnLima);
-  const [gtfNumber, setGtfNumber] = useState("");
   const [datos, setDatos] = useState<GtfDatos>(gtfDatosVacio);
   const [elegidas, setElegidas] = useState<Set<string>>(new Set());
+  const piezas = useMemo(() => trozasDelPlan.filter((t) => elegidas.has(t.codigo)), [trozasDelPlan, elegidas]);
+  /** El N° de lista y la llegada que se llenan solos (`use-traslado-guia-loth`). */
+  const traslado = useTrasladoGuiaLoth({ datos, setDatos, talonario, trozas: piezas.length });
 
   /* Sembrar al llegar la identidad y cada vez que cambia el plan. La herencia
      de la guía anterior sólo completa lo vacío (`rellenarGuia` no pisa). */
   const sembradoPara = useRef<string | null | undefined>(undefined);
+  const { sembrar: sembrarNumero } = numero;
+  const { alSembrar } = traslado;
   useEffect(() => {
-    if (!prep || !identidad || planId === undefined || sembradoPara.current === planId) return;
+    if (!prep || !identidad || !talonario || planId === undefined || sembradoPara.current === planId) return;
     sembradoPara.current = planId;
-    setDatos(rellenarGuiaLoth(datosInicialesLoth(identidad, emision), { ultimaGuia: prep.ultimaGuia, emision }));
+    const d = rellenarGuiaLoth(datosInicialesLoth(identidad, emision), { ultimaGuia: prep.ultimaGuia, emision });
+    alSembrar(d);
+    setDatos(d);
     setElegidas(new Set());
-    setGtfNumber((n) => n || prep.talonario.propuesta || "");
-  }, [prep, identidad, planId, emision]);
+    sembrarNumero(talonario);
+  }, [prep, identidad, talonario, planId, emision, sembrarNumero, alSembrar]);
 
-  const piezas = useMemo(() => trozasDelPlan.filter((t) => elegidas.has(t.codigo)), [trozasDelPlan, elegidas]);
+  const gtfNumber = numero.gtfNumber;
+  const repetida = numero.revision?.repetida ?? null;
   const faltan = useMemo(
-    () => faltantesDespachoLoth(datos, { gtfNumber, emision, trozas: piezas.length }),
-    [datos, gtfNumber, emision, piezas.length],
+    () => [
+      ...faltantesDespachoLoth(datos, { gtfNumber, emision, trozas: piezas.length }),
+      ...(repetida ? [{ seccion: "documento" as const, campo: "N° de GTF sin usar", motivo: `Ya va en la guía ${repetida.numero} de este titular` }] : []),
+    ],
+    [datos, gtfNumber, emision, piezas.length, repetida],
   );
+  const guiasOrigen = useMemo(() => guiasParaOrigen(prep?.talonario.usadas ?? [], gtfNumber), [prep, gtfNumber]);
 
   /** «Rellenar con la libreta»: lo más usado del Directorio, sólo en lo vacío. */
   const rellenar = useCallback(
@@ -153,15 +188,19 @@ export function useDespachoGuiaLoth(opts: { onRegistrada?: () => void } = {}) {
 
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  /** El servidor preguntó por un N° que se adelanta al talonario. */
-  const [salto, setSalto] = useState<string | null>(null);
+  /** El servidor preguntó por el N° (se adelanta al talonario, o es de otra región). */
+  const [pregunta, setPregunta] = useState<PreguntaNumero | null>(null);
+  const confirmados = useRef({ salto: false, serie: false });
   const [registrada, setRegistrada] = useState<RegistradaLoth | null>(null);
 
   const registrar = useCallback(
-    async (confirmarSalto = false) => {
+    async (confirmar?: PreguntaNumero["tipo"]) => {
       if (enviando || faltan.length > 0 || !identidad) return;
+      if (confirmar) confirmados.current[confirmar] = true;
       setEnviando(true);
       setError(null);
+      /* El (35) va como se imprime: un N° por hoja. */
+      const enviados: GtfDatos = { ...datos, guia: { ...datos.guia, listaTrozasNro: traslado.listas.texto } };
       try {
         const r = await fetch("/api/admin/forestal/loth/despacho-guia", {
           method: "POST",
@@ -172,8 +211,9 @@ export function useDespachoGuiaLoth(opts: { onRegistrada?: () => void } = {}) {
             gtfDate: emision,
             trozas: piezas.map((p) => p.codigo),
             titularName: identidad.titular || null,
-            gtfDatos: datos,
-            confirmarSalto,
+            gtfDatos: enviados,
+            confirmarSalto: confirmados.current.salto,
+            confirmarSerie: confirmados.current.serie,
           }),
         });
         const j = (await r.json().catch(() => ({}))) as {
@@ -183,18 +223,18 @@ export function useDespachoGuiaLoth(opts: { onRegistrada?: () => void } = {}) {
           volumenM3?: number;
           ctp?: PaseAlCtp;
         };
-        if (r.status === 409 && j.error === "salto") {
-          setSalto(j.message ?? "El número se adelanta al talonario.");
+        if (r.status === 409 && (j.error === "salto" || j.error === "serie_de_otra_region")) {
+          setPregunta({ tipo: j.error === "salto" ? "salto" : "serie", mensaje: j.message ?? "Revisa el N° de la guía." });
           return;
         }
         if (!r.ok) throw new Error(j.message ?? `No se pudo registrar (${r.status})`);
-        setSalto(null);
+        setPregunta(null);
         setRegistrada({
           gtfNumber: gtfNumber.trim(),
           gtfDate: emision,
           lineas: j.lineas ?? piezas.length,
           volumenM3: j.volumenM3 ?? 0,
-          datos,
+          datos: enviados,
           piezas,
           titular: identidad.titular,
           ctp: j.ctp ?? null,
@@ -206,8 +246,14 @@ export function useDespachoGuiaLoth(opts: { onRegistrada?: () => void } = {}) {
         setEnviando(false);
       }
     },
-    [enviando, faltan.length, identidad, gtfNumber, emision, piezas, datos, onRegistrada],
+    [enviando, faltan.length, identidad, gtfNumber, emision, piezas, datos, traslado.listas.texto, onRegistrada],
   );
+
+  /* Cambiar el N° invalida lo que se confirmó del anterior. */
+  useEffect(() => {
+    confirmados.current = { salto: false, serie: false };
+    setPregunta(null);
+  }, [gtfNumber]);
 
   return {
     cargando,
@@ -226,17 +272,26 @@ export function useDespachoGuiaLoth(opts: { onRegistrada?: () => void } = {}) {
     piezas,
     emision,
     setEmision,
+    talonario,
+    numero,
     gtfNumber,
-    setGtfNumber,
+    setGtfNumber: numero.usarNumero,
     datos,
     setDatos,
+    setPunto: traslado.setPunto,
+    usarLlegadaDelDestinatario: traslado.usarLlegadaDelDestinatario,
+    listas: traslado.listas,
+    hojas: traslado.hojas,
+    propuestaListas: traslado.propuestaListas,
+    setListaTexto: traslado.setListaTexto,
+    guiasOrigen,
     faltan,
     rellenar,
     registrar,
     enviando,
     error,
-    salto,
-    cancelarSalto: () => setSalto(null),
+    pregunta,
+    cancelarPregunta: () => setPregunta(null),
     registrada,
   };
 }

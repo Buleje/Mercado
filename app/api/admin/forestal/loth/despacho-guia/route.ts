@@ -11,9 +11,19 @@ import { ForestPlanDB } from "@/lib/db/forest-plan.db";
 import { ForestContratoDB } from "@/lib/db/forest-contrato.db";
 import { GuiaThAlCtpDB } from "@/lib/db/guia-th-al-ctp.db";
 import { GuiaYaEnElCtpError } from "@/lib/db/gtf-numero.db";
+import { GuiasGuardadasDB } from "@/lib/db/guias-guardadas.db";
 import { gtfDatosSchema, leerGtfDatos } from "@/lib/forestal/ctp-gtf-datos";
-import { correlativoEnSerie, mismoNumeroGtf, saltoDeCorrelativo } from "@/lib/forestal/gtf-talonario";
-import { faltantesDespachoLoth, proponerGtfLoth } from "@/lib/forestal/loth-guia-despacho";
+import {
+  faltantesDespachoLoth,
+  identidadDelTitulo,
+  mensajeOtraRegion,
+  puntosCompuestos,
+  titularParaGuardar,
+  revisarNumeroLoth,
+  talonarioDelPlan,
+  type GtfUsadaLoth,
+} from "@/lib/forestal/loth-guia-despacho";
+import { hojasDeLista, listasEfectivas } from "@/lib/forestal/loth-lista-numero";
 import { lothErrorResponse, lothValidationResponse } from "@/lib/forestal/loth-api-errors";
 import { motivoSchema } from "@/lib/forestal/motivo";
 import type { Contrato } from "@/lib/forestal/contratos";
@@ -23,9 +33,14 @@ import type { Contrato } from "@/lib/forestal/contratos";
  * completa desde la sección Despacho del Libro TH (28-09-2026).
  *
  * GET   — todo lo que la guía ya sabe: carátula, planes (con su permiso),
- *         trozas del Trozado que todavía no salieron, el N° que sigue en el
- *         talonario y el cuerpo de la última guía (para heredar el transporte).
- * POST  — registra la guía y una línea de Despacho por troza, atómico.
+ *         trozas del Trozado que todavía no salieron, los N° ya usados CON su
+ *         titular (el modal calcula el talonario del plan elegido con
+ *         `talonarioDelPlan`: la serie sale de la región del plan) y el cuerpo
+ *         de la última guía (para heredar el transporte).
+ * POST  — registra la guía y una línea de Despacho por troza, atómico. Vuelve
+ *         a calcular el talonario del plan de las trozas con la MISMA función
+ *         y pregunta (409) si el N° es de otra región (`confirmarSerie`) o se
+ *         adelanta más de 20 (`confirmarSalto`).
  * PATCH — `{ id, action: "anular", reason, conDespachos }`: anula la guía y,
  *         si se pide, sus líneas de despacho (las trozas vuelven a estar libres).
  *
@@ -59,7 +74,32 @@ const postSchema = z.object({
   gtfDatos: z.unknown(),
   /** El operador confirmó un N° que se adelanta más de 20 al que sigue. */
   confirmarSalto: z.boolean().optional(),
+  /** El operador confirmó un N° de OTRA región que la del plan (p. ej. 010 con un plan en Pasco). */
+  confirmarSerie: z.boolean().optional(),
 });
+
+/**
+ * Los N° que ya gastaron un talonario: las guías de este libro (anuladas
+ * incluidas), las de SERFOR guardadas en el Libro CTP y las que ya entraron
+ * como ingresos (`WoodEntry`), cada una con su dueño.
+ */
+async function usadasDelTalonario(tenantId: string): Promise<GtfUsadaLoth[]> {
+  const [delLibro, guardadas, ingresos] = await Promise.all([
+    ForestGtfDB.usadasConDueno(tenantId),
+    GuiasGuardadasDB.numerosParaTalonario(tenantId),
+    ForestGtfDB.numerosDeIngresos(tenantId),
+  ]);
+  return [...delLibro, ...guardadas, ...ingresos];
+}
+
+/** El permiso del plan: por su vínculo o, si no lo tiene, por el código del título. */
+async function permisoDelPlan(
+  tenantId: string,
+  p: { contratoId: string | null; tituloHabilitante: string | null },
+): Promise<Contrato | null> {
+  if (p.contratoId) return ForestContratoDB.get(tenantId, p.contratoId);
+  return p.tituloHabilitante ? ForestContratoDB.porCodigo(tenantId, p.tituloHabilitante) : null;
+}
 
 const patchSchema = z.object({
   id: z.string().trim().min(1),
@@ -78,12 +118,28 @@ export const GET = withApiHandler("forestal-loth-despacho-guia-get", async (req:
   const guard = await ensureSpec(auth.tenantId);
   if (guard) return guard;
 
+  /* `?lineasDeGuia=<id>`: cuántas líneas de despacho anula anular ESA guía —
+     la misma regla que la anulación (`ForestLothDB.lineasDeLaGuia`), para que
+     el modal no cuente las de otro titular con el mismo N° (29-09-2026). */
+  const lineasDe = new URL(req.url).searchParams.get("lineasDeGuia");
+  if (lineasDe) {
+    try {
+      const gtf = await ForestGtfDB.getById(auth.tenantId, lineasDe);
+      if (!gtf) return NextResponse.json({ error: "not_found" }, { status: 404 });
+      const lineas = await ForestLothDB.lineasDeLaGuia(auth.tenantId, gtf);
+      return NextResponse.json({ lineas: lineas.length });
+    } catch (err) {
+      logger.error("[loth-despacho-guia.GET lineas] failed", { error: String(err), tenantId: auth.tenantId });
+      return NextResponse.json({ error: "internal_error" }, { status: 500 });
+    }
+  }
+
   try {
     const [caratula, planes, trozas, usadas, ultima, libroCtp] = await Promise.all([
       ForestLothDB.getActiveCaratula(auth.tenantId),
       ForestPlanDB.listPlans(auth.tenantId),
       ForestLothDB.trozasParaGuia(auth.tenantId),
-      ForestGtfDB.numerosUsados(auth.tenantId),
+      usadasDelTalonario(auth.tenantId),
       ForestGtfDB.ultimaConDatos(auth.tenantId),
       isSpecializationEnabled(auth.tenantId, "spec:forestal:ctp-libro"),
     ]);
@@ -99,16 +155,10 @@ export const GET = withApiHandler("forestal-loth-despacho-guia-get", async (req:
       planes
         .filter((p) => conTrozas.has(p.id))
         .map(async (p) => {
-          const c = p.contratoId
-            ? await ForestContratoDB.get(auth.tenantId, p.contratoId)
-            : p.tituloHabilitante
-              ? await ForestContratoDB.porCodigo(auth.tenantId, p.tituloHabilitante)
-              : null;
-          permisos[p.id] = c;
+          permisos[p.id] = await permisoDelPlan(auth.tenantId, p);
         }),
     );
 
-    const propuesta = proponerGtfLoth(usadas);
     return NextResponse.json({
       caratula,
       planes: planes.map((p) => ({
@@ -129,9 +179,7 @@ export const GET = withApiHandler("forestal-loth-despacho-guia-get", async (req:
       })),
       permisos,
       trozas,
-      talonario: propuesta
-        ? { propuesta: propuesta.gtf, ultimo: propuesta.ultimo ? { numero: propuesta.ultimo.numero, fecha: propuesta.ultimo.fecha ?? null } : null }
-        : { propuesta: null, ultimo: null },
+      talonario: { usadas },
       ultimaGuia: ultima ? leerGtfDatos(ultima) : null,
       ctpPropio,
     });
@@ -157,10 +205,17 @@ export const POST = withApiHandler("forestal-loth-despacho-guia-post", async (re
   if (!datosParsed.success) return lothValidationResponse(datosParsed.error);
 
   const { gtfNumber, gtfDate, trozas } = parsed.data;
-  // La fecha de inicio del traslado es la de emisión si no se dijo otra (igual que el CTP).
+  /* La fecha de inicio del traslado es la de emisión si no se dijo otra (igual
+     que el CTP). El (35) se guarda como se imprime: un N° por hoja («9» con
+     dos hojas es «9, 10»), para que reimprimir diga lo mismo. */
+  const hojas = hojasDeLista(trozas.length);
+  /* La partida y la llegada impresas se rearman acá con `componerPunto` desde
+     sus casilleros: el texto que manda el cliente no se cree (29-09-2026). */
+  const traslado = puntosCompuestos(datosParsed.data.traslado);
   const datos = {
     ...datosParsed.data,
-    traslado: { ...datosParsed.data.traslado, fechaInicio: datosParsed.data.traslado.fechaInicio || gtfDate },
+    traslado: { ...traslado, fechaInicio: traslado.fechaInicio || gtfDate },
+    guia: { ...datosParsed.data.guia, listaTrozasNro: listasEfectivas(datosParsed.data.guia.listaTrozasNro, hojas).texto },
   };
 
   /* El despacho y la guía son el mismo acto y la guía no se edita después:
@@ -174,38 +229,81 @@ export const POST = withApiHandler("forestal-loth-despacho-guia-post", async (re
   }
 
   try {
-    /* El talonario: el N° no puede repetirse escrito distinto (`019-0000001` ≡
-       `19-0000001`) ni adelantarse más de 20 sin confirmar — un tipeo corre el
-       talonario para siempre. */
-    const usadas = await ForestGtfDB.numerosUsados(auth.tenantId);
-    const repetida = usadas.find((u) => mismoNumeroGtf(u.numero, gtfNumber));
-    if (repetida) {
+    /* El talonario: el N° no puede repetirse en el MISMO talonario escrito
+       distinto (`019-0000001` ≡ `19-0000001`) ni adelantarse más de 20 sin
+       confirmar — un tipeo corre el talonario para siempre. Los talonarios son
+       del titular: el mismo N° de otro titular no frena (se avisa en el modal).
+       Una guía de SERFOR guardada o ingresada con ese N° tampoco frena: puede
+       ser justo la guía hecha a mano que ahora se asienta acá. La última
+       palabra la tiene `despacharConGuia`, bajo el candado del N°. */
+    const [usadas, libres, caratula] = await Promise.all([
+      usadasDelTalonario(auth.tenantId),
+      ForestLothDB.trozasParaGuia(auth.tenantId),
+      ForestLothDB.getActiveCaratula(auth.tenantId),
+    ]);
+
+    /* El talonario del PLAN de las trozas, con la misma función del modal: la
+       región sale del plan (no de lo que diga el cliente). Trozas de dos planes
+       las rechaza `despacharConGuia` más abajo. */
+    const elegidas = new Set(trozas);
+    const planes = [...new Set(libres.filter((t) => elegidas.has(t.codigo)).map((t) => t.planId ?? null))];
+    /* Sin trozas libres, o de dos planes: no hay UN talonario que revisar;
+       `despacharConGuia` dice qué pasa con esas trozas. */
+    const unPlan = planes.length === 1;
+    const planId = unPlan ? planes[0] : null;
+    const plan = planId ? await ForestPlanDB.getPlan(auth.tenantId, planId) : null;
+    const permiso = plan ? await permisoDelPlan(auth.tenantId, plan) : null;
+    const id = identidadDelTitulo({ caratula, plan, permiso });
+    const dueno = { titular: id.titular, permiso: id.tituloHabilitante, planId };
+    const talonario = talonarioDelPlan({ ubigeo: id, dueno }, usadas);
+    const revision = unPlan ? revisarNumeroLoth(gtfNumber, talonario, dueno) : null;
+    if (revision?.repetida) {
+      const r = revision.repetida;
       return NextResponse.json(
-        { error: "duplicate", message: `Ya hay una guía con el N° ${repetida.numero}${repetida.fuente === "despacho_anulado" ? " (anulada)" : ""}. Un número del talonario se usa una sola vez.` },
+        { error: "duplicate", message: `Ya hay una guía de este titular con el N° ${r.numero}${r.fuente === "despacho_anulado" ? " (anulada)" : ""}. Un número del talonario se usa una sola vez.` },
         { status: 409 },
       );
     }
-    const propuesta = proponerGtfLoth(usadas);
-    const enSerie = propuesta ? correlativoEnSerie(gtfNumber, propuesta.serie) : null;
-    const salto = propuesta && enSerie ? saltoDeCorrelativo(enSerie.correlativo, propuesta) : null;
-    if (salto && !parsed.data.confirmarSalto) {
+    if (revision?.otraRegion && talonario.region && !parsed.data.confirmarSerie) {
+      return NextResponse.json(
+        {
+          error: "serie_de_otra_region",
+          message: mensajeOtraRegion(gtfNumber, revision.otraRegion, talonario.region),
+          region: revision.otraRegion.codigo,
+          regionPlan: talonario.region.codigo,
+        },
+        { status: 409 },
+      );
+    }
+    if (revision?.salto && !parsed.data.confirmarSalto) {
       return NextResponse.json(
         {
           error: "salto",
-          message: `El N° ${gtfNumber} se adelanta ${salto} números al que sigue en el talonario (${propuesta?.gtf}). ¿Es correcto?`,
-          propuesta: propuesta?.gtf ?? null,
-          salto,
+          message: `El N° ${gtfNumber} se adelanta ${revision.salto} números al que sigue en el talonario (${talonario.propuesta?.gtf}). ¿Es correcto?`,
+          propuesta: talonario.propuesta?.gtf ?? null,
+          salto: revision.salto,
         },
         { status: 409 },
       );
     }
 
+    /* El titular que se guarda es el del plan, calculado acá: el del
+       navegador no decide de qué talonario es el N°. */
+    const titular = titularParaGuardar(id.titular, parsed.data.titularName);
+    if (titular.ignorado) {
+      logger.warn("[loth-despacho-guia.POST] titular del navegador ignorado", {
+        tenantId: auth.tenantId,
+        navegador: titular.ignorado,
+        servidor: titular.titular,
+        gtfNumber,
+      });
+    }
     const r = await ForestLothDB.despacharConGuia(auth.tenantId, {
       gtfNumber,
       gtfDate: new Date(`${gtfDate}T00:00:00.000Z`),
       trozaCodes: trozas,
       gtfDatos: datos,
-      titularName: parsed.data.titularName ?? null,
+      titularName: titular.titular,
       createdBy: auth.username ?? "unknown",
     });
     /* La guía ya quedó emitida: pasarla al Libro CTP no la frena (no tira) y

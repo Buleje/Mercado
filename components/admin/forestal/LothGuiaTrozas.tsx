@@ -15,20 +15,13 @@ import { Fragment, useMemo, useState } from "react";
 import { DataTable } from "@buleje/design-system";
 import { Search, TreePine } from "@buleje/design-system/icons";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
-import { formatNumber } from "@/lib/format";
-import { detallePorEspecie, listaDeTrozas, ordenarPiezas, totalM3, type TrozaDelLibro } from "@/lib/forestal/loth-guia-despacho";
+import { detallePorEspecie, ordenarPiezas, totalM3, type TrozaDelLibro } from "@/lib/forestal/loth-guia-despacho";
 import { etiquetaLarga } from "@/lib/forestal/semana-de-registro";
 import type { DespachoGuiaLoth } from "./hooks/use-despacho-guia-loth";
 import { Bloque } from "./ctp-guia-bloques";
 import { I } from "./ctp-shared";
+import LothGuiaListaMovilizar, { MARCO, TD, TDR, TH, THR, dec } from "./LothGuiaListaMovilizar";
 
-const TH = "whitespace-nowrap px-2 py-2 text-left text-xs font-bold text-[var(--text-primary)]";
-const THR = `${TH} text-right`;
-const TD = "px-2 py-1.5 text-sm text-[var(--text-primary)]";
-const TDR = `${TD} text-right font-mono tabular-nums`;
-const MARCO = "overflow-x-auto rounded-xl border border-[var(--rule-soft)] sm:col-span-12";
-
-const dec = (v: number | null | undefined, n: number) => (v == null ? "—" : formatNumber(v, { min: n, max: n }));
 const cm = (m: number | null) => (m == null ? null : Math.round(m * 1000) / 10);
 
 /** Desde cuántas trozas aparece el buscador: con cuatro filas estorba. */
@@ -67,9 +60,7 @@ export default function LothGuiaTrozas({
     return agrupar(visibles);
   }, [g.trozasDelPlan, q]);
   const detalle = useMemo(() => detallePorEspecie(g.piezas, cientificoDe), [g.piezas, cientificoDe]);
-  const lista = useMemo(() => listaDeTrozas(g.piezas, cientificoDe), [g.piezas, cientificoDe]);
   const total = totalM3(g.piezas);
-  const nroLista = g.datos.guia.listaTrozasNro.trim() || g.gtfNumber.trim();
   const variosPlanes = g.planesConTrozas.length + (g.hayTrozasSinPlan ? 1 : 0) > 1;
 
   function alternar(codigos: string[], marcar: boolean) {
@@ -261,65 +252,7 @@ export default function LothGuiaTrozas({
           </div>
         </Bloque>
 
-        <Bloque
-          titulo="Lista de trozas a movilizar"
-          hint="La lista que viaja con la guía y a la que apunta el casillero (35): cada troza con su codificación, sus dos diámetros, su largo y su volumen."
-          acciones={
-            <span className="text-sm text-[var(--text-secondary)]">
-              Lista N° <b className="font-mono tabular-nums text-[var(--text-primary)]">{nroLista || "—"}</b>
-            </span>
-          }
-        >
-          <div className={MARCO}>
-            <DataTable className="w-full text-sm">
-              <thead className="bg-[var(--surface-sunken)]">
-                <tr>
-                  <th className={THR}>N°</th>
-                  <th className={TH}>N. científico</th>
-                  <th className={TH}>N. común</th>
-                  <th className={TH}>Producto</th>
-                  <th className={TH}>Codificación</th>
-                  <th className={THR}>D1 cm</th>
-                  <th className={THR}>D2 cm</th>
-                  <th className={THR}>L m</th>
-                  <th className={THR}>Cant.</th>
-                  <th className={THR}>Vol. m³</th>
-                </tr>
-              </thead>
-              <tbody>
-                {lista.length === 0 ? (
-                  <tr>
-                    <td colSpan={10} className={`${TD} py-4 text-center text-[var(--text-tertiary)]`}>Todavía no hay trozas en la lista.</td>
-                  </tr>
-                ) : (
-                  lista.map((f, i) => (
-                    <tr key={f.codificacion} className="border-t border-[var(--rule-soft)]">
-                      <td className={`${TDR} text-[var(--text-tertiary)]`}>{i + 1}</td>
-                      <td className={`${TD} italic`}>{f.especieCientifica || "—"}</td>
-                      <td className={TD}>{f.especieComun || "—"}</td>
-                      <td className={`${TD} whitespace-nowrap`}>{f.producto}</td>
-                      <td className={`${TD} font-mono font-bold`}>{f.codificacion}</td>
-                      <td className={TDR}>{dec(f.d1Cm, 1)}</td>
-                      <td className={TDR}>{dec(f.d2Cm, 1)}</td>
-                      <td className={TDR}>{dec(f.largoM, 2)}</td>
-                      <td className={TDR}>{f.cantidad}</td>
-                      <td className={`${TDR} font-bold`}>{f.volumenM3 == null ? "—" : fmtM3(f.volumenM3)}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-              {lista.length > 0 && (
-                <tfoot>
-                  <tr className="border-t-2 border-[var(--rule-base)]">
-                    <td colSpan={8} className={`${TD} text-right text-xs font-bold uppercase tracking-wide text-[var(--text-secondary)]`}>Total movilizado</td>
-                    <td className={TDR}>{lista.length}</td>
-                    <td className={`${TDR} font-bold`}>{fmtM3(total)}</td>
-                  </tr>
-                </tfoot>
-              )}
-            </DataTable>
-          </div>
-        </Bloque>
+        <LothGuiaListaMovilizar g={g} cientificoDe={cientificoDe} />
       </div>
     </div>
   );

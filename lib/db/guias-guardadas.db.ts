@@ -14,6 +14,14 @@ import { ESTADOS_SIN_INGRESO, GtfNumeroDB, type IngresoVivoDeGuia } from "./gtf-
 import { leerGtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 import { vencimientoDeGuia } from "@/lib/forestal/fecha-de-llegada";
 import {
+  elegirGuiaDelDueno,
+  mismoDuenoDeGuia,
+  puedeSerDelDueno,
+  type EleccionDeGuia,
+  type GtfUsadaLoth,
+  type IdentidadDeGuiaBuscada,
+} from "@/lib/forestal/loth-talonario";
+import {
   destinoDeGuiaTh,
   especiesDeItems,
   identidadDeGuiaTh,
@@ -116,6 +124,37 @@ export class GuiasGuardadasDB {
     return f ? GuiasGuardadasDB.detalle(tenantId, f, viewerRole) : null;
   }
 
+  /**
+   * Los N° de GTF guardados (vivos) con su titular, su permiso y los N° de
+   * lista de trozas que publicó SERFOR («5, 6»): el talonario del Libro TH los
+   * cuenta como usados — una guía hecha a mano y registrada en SERFOR también
+   * gastó ese número y esas listas (29-09-2026).
+   *
+   * El N° de lista se lee del JSON en la consulta: la ficha de SERFOR trae la
+   * lista de trozas entera y aquí sólo hace falta un campo.
+   */
+  static async numerosParaTalonario(tenantId: string): Promise<GtfUsadaLoth[]> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const rows = await prisma.$queryRaw<
+      { gtfNumber: string; gtfDate: Date | null; titularNombre: string | null; permisoCodigo: string | null; listas: string | null }[]
+    >`
+      SELECT "gtfNumber", "gtfDate", "titularNombre", "permisoCodigo",
+             "serforGtf"->>'listaTrozas' AS "listas"
+      FROM "ForestGuiaGuardada"
+      WHERE "tenantId" = ${tenantId} AND "deletedAt" IS NULL
+      ORDER BY "createdAt" DESC
+      LIMIT 1000`;
+    return rows.map((r) => ({
+      numero: r.gtfNumber,
+      fuente: "guardada" as const,
+      fecha: deFecha(r.gtfDate),
+      titular: r.titularNombre,
+      permiso: r.permisoCodigo,
+      planId: null,
+      listas: r.listas,
+    }));
+  }
+
   /** Por N° de registro o por N° de GTF (lo que la persona tenga a mano). */
   static async buscar(
     tenantId: string,
@@ -133,7 +172,7 @@ export class GuiasGuardadasDB {
    */
   static async filaPor(
     tenantId: string,
-    o: { gtfNumber?: string | null; numeroRegistro?: string | null },
+    o: { gtfNumber?: string | null; numeroRegistro?: string | null; identidad?: IdentidadDeGuiaBuscada | null },
   ): Promise<Fila | null> {
     if (!tenantId) throw new Error("tenantId is required");
     const gtf = claveGtf(o.gtfNumber);
@@ -142,7 +181,7 @@ export class GuiasGuardadasDB {
     /* La GTF se compara tramo a tramo (`019-001-…` ≡ `19-001-…`): el alta
        desde SERFOR escribe el N° como lo publica SERFOR y la guía guardada
        como lo imprimió el talonario. */
-    const porGtf = gtf ? await GuiasGuardadasDB.porNumeroGtf(tenantId, gtf) : null;
+    const porGtf = gtf ? await GuiasGuardadasDB.porNumeroGtf(tenantId, gtf, o.identidad) : null;
     if (porGtf) return porGtf;
     if (!reg) return null;
     return prisma.forestGuiaGuardada.findFirst({ where: { tenantId, deletedAt: null, numeroRegistro: reg } });
@@ -167,7 +206,7 @@ export class GuiasGuardadasDB {
         message: "Falta el N° de GTF (con sus números): escríbelo o busca la guía en SERFOR con su N° de registro.",
       };
     }
-    const choque = await GuiasGuardadasDB.choques(tenantId, gtf, claveRegistro(d.numeroRegistro));
+    const choque = await GuiasGuardadasDB.choques(tenantId, gtf, claveRegistro(d.numeroRegistro), undefined, d);
     if (choque) return choque;
     const contrato = await GuiasGuardadasDB.contratoAjeno(tenantId, d.contratoId);
     if (contrato) return contrato;
@@ -197,7 +236,7 @@ export class GuiasGuardadasDB {
       return { ok: true, id: f.id };
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
-        const otra = await GuiasGuardadasDB.choques(tenantId, gtf, claveRegistro(d.numeroRegistro));
+        const otra = await GuiasGuardadasDB.choques(tenantId, gtf, claveRegistro(d.numeroRegistro), undefined, d);
         if (otra) return otra;
       }
       throw e;
@@ -252,7 +291,7 @@ export class GuiasGuardadasDB {
           message: "Esta guía ya entró al libro: su N° de GTF y de registro no se cambian desde acá.",
         };
       }
-      const choque = await GuiasGuardadasDB.choques(tenantId, gtf, reg, id);
+      const choque = await GuiasGuardadasDB.choques(tenantId, gtf, reg, id, d);
       if (choque) return choque;
     }
     try {
@@ -276,7 +315,7 @@ export class GuiasGuardadasDB {
       return { ok: true, id };
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
-        const otra = await GuiasGuardadasDB.choques(tenantId, gtf, reg, id);
+        const otra = await GuiasGuardadasDB.choques(tenantId, gtf, reg, id, d);
         if (otra) return otra;
       }
       throw e;
@@ -322,6 +361,7 @@ export class GuiasGuardadasDB {
     let guia = await GuiasGuardadasDB.filaPor(tenantId, {
       gtfNumber: ingreso.gtfNumber,
       numeroRegistro: ingreso.serforNumeroRegistro,
+      identidad: ficha ? { titular: ficha.titular, permiso: ficha.numeroTitulo } : null,
     });
     if (!guia) return;
     /* Guardada a mano (titular tipeado) + ingreso verificado en SERFOR: la guía
@@ -394,14 +434,26 @@ export class GuiasGuardadasDB {
     if (filas.length === 0) return out;
     const numeros = await prisma.forestGtf.findMany({
       where: { tenantId, deletedAt: null, tipo: "trozas" },
-      select: { id: true, gtfNumber: true, status: true, createdAt: true },
+      select: { id: true, gtfNumber: true, status: true, createdAt: true, titularName: true, tituloHabilitante: true },
       orderBy: { createdAt: "desc" },
       take: 2000,
     });
     if (numeros.length === 0) return out;
     const elegida = new Map<string, string>();
+    const dueDe = (n: (typeof numeros)[number]) => ({ titular: n.titularName, permiso: n.tituloHabilitante });
     for (const f of filas) {
-      const g = guiaThDeNumero(f.gtfNumber, numeros);
+      /* El N° solo no identifica la guía (29-09-2026): entre las del TH con
+         ese N°, las del titular o permiso de la guardada; con dos de dueños
+         distintos y sin con qué elegir, ninguna. Entre las del MISMO dueño,
+         la de siempre (`guiaThDeNumero`: la emitida, la más nueva). */
+      const e = elegirGuiaDelDueno(
+        numeros.filter((n) => mismoNumeroGtf(n.gtfNumber, f.gtfNumber)),
+        { titular: f.titularNombre, permiso: f.permisoCodigo },
+        dueDe,
+      );
+      if (e.estado !== "una") continue;
+      const delMismo = numeros.filter((n) => n === e.guia || (mismoNumeroGtf(n.gtfNumber, f.gtfNumber) && mismoDuenoDeGuia(dueDe(n), dueDe(e.guia)) === true));
+      const g = guiaThDeNumero(f.gtfNumber, delMismo);
       if (g) elegida.set(f.id, g.id);
     }
     if (elegida.size === 0) return out;
@@ -462,22 +514,46 @@ export class GuiasGuardadasDB {
    * La guardada viva que corresponde a este N° de guía, comparado tramo a
    * tramo (`019-0000001` ≡ `19-0000001`). El despacho del TH la busca así para
    * no guardar dos veces la misma guía escrita distinto.
+   *
+   * El N° solo no identifica la guía (29-09-2026): con `identidad`, la del
+   * mismo titular o permiso; con dos candidatas de dueños distintos y sin con
+   * qué elegir, `null` — nunca la primera. `eleccionPorNumeroGtf` dice cuál
+   * de los casos fue.
    */
-  static async porNumeroGtf(tenantId: string, gtfNumber: string): Promise<Fila | null> {
+  static async porNumeroGtf(tenantId: string, gtfNumber: string, identidad?: IdentidadDeGuiaBuscada | null): Promise<Fila | null> {
+    const e = await GuiasGuardadasDB.eleccionPorNumeroGtf(tenantId, gtfNumber, identidad);
+    return e.estado === "una" ? e.guia : null;
+  }
+
+  static async eleccionPorNumeroGtf(
+    tenantId: string,
+    gtfNumber: string,
+    identidad?: IdentidadDeGuiaBuscada | null,
+  ): Promise<EleccionDeGuia<Fila>> {
     if (!tenantId) throw new Error("tenantId is required");
     const cola = colaDeGtf(gtfNumber);
-    if (!cola) return null;
+    if (!cola) return { estado: "ninguna" };
     /* Candidatas por el último tramo sin ceros (`…-0000123` termina en «123»),
        SIN `take` (una cola corta trae muchas y cortarlas podía dejar afuera la
-       buena) y sólo id + N°; la comparación de verdad, tramo a tramo, en
-       memoria; la fila entera, sólo de la que calza. */
+       buena) y sólo lo que decide; la comparación de verdad, tramo a tramo y
+       por dueño, en memoria; la fila entera, sólo de la que calza. */
     const candidatas = await prisma.forestGuiaGuardada.findMany({
       where: { tenantId, deletedAt: null, gtfNumber: { endsWith: cola, mode: "insensitive" } },
       orderBy: { createdAt: "desc" },
-      select: { id: true, gtfNumber: true },
+      select: { id: true, gtfNumber: true, titularNombre: true, permisoCodigo: true },
     });
-    const buena = candidatas.find((f) => mismoNumeroGtf(f.gtfNumber, gtfNumber));
-    return buena ? prisma.forestGuiaGuardada.findFirst({ where: { id: buena.id, tenantId } }) : null;
+    const e = elegirGuiaDelDueno(
+      candidatas.filter((f) => mismoNumeroGtf(f.gtfNumber, gtfNumber)),
+      identidad,
+      (f) => ({ titular: f.titularNombre, permiso: f.permisoCodigo }),
+    );
+    if (e.estado === "ninguna") return e;
+    if (e.estado === "ambigua") {
+      const filas = await prisma.forestGuiaGuardada.findMany({ where: { tenantId, id: { in: e.candidatas.map((c) => c.id) } } });
+      return { estado: "ambigua", candidatas: filas };
+    }
+    const fila = await prisma.forestGuiaGuardada.findFirst({ where: { id: e.guia.id, tenantId } });
+    return fila ? { estado: "una", guia: fila } : { estado: "ninguna" };
   }
 
   /**
@@ -487,10 +563,14 @@ export class GuiasGuardadasDB {
    */
   static async ingresosVivosDe(
     tenantId: string,
-    f: { gtfNumber: string; numeroRegistro: string | null },
+    f: { gtfNumber: string; numeroRegistro: string | null; titularNombre?: string | null; permisoCodigo?: string | null },
   ): Promise<IngresoVivoDeGuia[]> {
     if (!tenantId) throw new Error("tenantId is required");
-    const porNumero = await GtfNumeroDB.ingresosVivos(prisma, tenantId, f.gtfNumber);
+    /* Por N°, sólo los del mismo titular o permiso de la guardada (29-09-2026):
+       otro titular con el mismo N° es otra guía. El registro sí es único. */
+    const porNumero = await GtfNumeroDB.ingresosVivos(prisma, tenantId, f.gtfNumber, {
+      identidad: { titular: f.titularNombre, permiso: f.permisoCodigo },
+    });
     if (!f.numeroRegistro) return porNumero;
     const porRegistro = await prisma.woodEntry.findMany({
       where: { tenantId, ...INGRESO_VIVO, serforNumeroRegistro: f.numeroRegistro },
@@ -504,7 +584,10 @@ export class GuiasGuardadasDB {
   }
 
   /** ¿Cuántos ingresos vivos del libro tiene esta guía guardada? */
-  static async ingresosVivos(tenantId: string, f: Pick<Fila, "gtfNumber" | "numeroRegistro">): Promise<number> {
+  static async ingresosVivos(
+    tenantId: string,
+    f: Pick<Fila, "gtfNumber" | "numeroRegistro"> & Partial<Pick<Fila, "titularNombre" | "permisoCodigo">>,
+  ): Promise<number> {
     return (await GuiasGuardadasDB.ingresosVivosDe(tenantId, f)).length;
   }
 
@@ -520,7 +603,7 @@ export class GuiasGuardadasDB {
     user: string,
   ): Promise<BajaEnCtp> {
     if (!tenantId) throw new Error("tenantId is required");
-    const guia = await GuiasGuardadasDB.porNumeroGtf(tenantId, th.gtfNumber);
+    const guia = await GuiasGuardadasDB.porNumeroGtf(tenantId, th.gtfNumber, th);
     if (!guia) return { estado: "sin_guardada", mensaje: "" };
     /* Sólo el N° no alcanza: si la guardada dice otro permiso (u otro titular
        sin permiso), es otra guía con el mismo número y no se toca. */
@@ -593,6 +676,8 @@ export class GuiasGuardadasDB {
     gtf: string,
     reg: string | null,
     excepto?: string,
+    /** De quién es la guía que se guarda: un ingreso de OTRO titular con el mismo N° no es ella. */
+    identidad?: { titularNombre?: string | null; permisoCodigo?: string | null },
   ): Promise<Extract<ResultadoEscritura, { ok: false }> | null> {
     /* Tramo a tramo: `019-001-…` y `19-001-…` son la misma guía. */
     const cola = colaDeGtf(gtf);
@@ -606,19 +691,22 @@ export class GuiasGuardadasDB {
           ...(reg ? [{ numeroRegistro: reg }] : []),
         ],
       },
-      select: { id: true, gtfNumber: true, numeroRegistro: true },
+      select: { id: true, gtfNumber: true, numeroRegistro: true, titularNombre: true },
     });
     const otra = candidatas.find((c) => mismoNumeroGtf(c.gtfNumber, gtf) || (reg && c.numeroRegistro === reg));
     if (otra) {
+      /* De quién es la otra: dos titulares pueden tener el mismo N° (29-09-2026),
+         y «ya está guardada» sin decir de quién parecía la propia. */
+      const deQuien = otra.titularNombre?.trim() ? ` de ${otra.titularNombre.trim()}` : "";
       return {
         ok: false,
         status: 409,
         error: "ya_guardada",
-        message: `Esa guía ya está guardada (GTF ${otra.gtfNumber}).`,
+        message: `Esa guía ya está guardada (GTF ${otra.gtfNumber}${deQuien}).`,
         id: otra.id,
       };
     }
-    const [ingreso] = await GuiasGuardadasDB.ingresosVivosDe(tenantId, { gtfNumber: gtf, numeroRegistro: reg });
+    const [ingreso] = await GuiasGuardadasDB.ingresosVivosDe(tenantId, { gtfNumber: gtf, numeroRegistro: reg, ...identidad });
     if (ingreso) {
       return {
         ok: false,
@@ -737,13 +825,21 @@ export class GuiasGuardadasDB {
             ...(regs.length ? [{ serforNumeroRegistro: { in: regs } }] : []),
           ],
         },
-        select: { gtfNumber: true, serforNumeroRegistro: true, createdAt: true },
+        select: { gtfNumber: true, serforNumeroRegistro: true, createdAt: true, providerName: true, originCode: true },
       }),
     ]);
     const llenos = llenosPorGuia(docs, gtfs);
     const vinculos = await GuiasGuardadasDB.vinculosLibroTh(tenantId, filas);
     return filas.map((f) => {
-      const suyos = ingresos.filter((e) => ingresoEsDeGuia(e, f));
+      /* Por registro es ella; por N°, sólo si es del mismo titular o permiso
+         (29-09-2026: otro titular con el mismo N° es otra guía). */
+      const reg = claveRegistro(f.numeroRegistro);
+      const suyos = ingresos.filter(
+        (e) =>
+          ingresoEsDeGuia(e, f) &&
+          ((reg && claveRegistro(e.serforNumeroRegistro) === reg) ||
+            puedeSerDelDueno({ titular: e.providerName, permiso: e.originCode }, { titular: f.titularNombre, permiso: f.permisoCodigo })),
+      );
       const primero = suyos.reduce<Date | null>(
         (m, e) => (!m || e.createdAt < m ? e.createdAt : m),
         null,

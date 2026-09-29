@@ -34,6 +34,7 @@ import {
   fuenteAutocompletado,
   motivoDocInvalido,
   normalizarDocumento,
+  placaParaGuia,
   type DocTipo,
   type Parte,
   type RolParte,
@@ -377,8 +378,16 @@ export function CtpVehiculoBarra({
   onElegir,
   onCrear,
 }: {
-  vehiculos: { id: string; placa: string; marca: string | null; tipo: string | null; transportistaNombre: string | null; usos: number }[];
-  onAplicar: (v: { placa: string; marca: string; tipo: string }) => void;
+  vehiculos: {
+    id: string;
+    placa: string;
+    placaRemolque?: string | null;
+    marca: string | null;
+    tipo: string | null;
+    transportistaNombre: string | null;
+    usos: number;
+  }[];
+  onAplicar: (v: { placa: string; marca: string; tipo: string; placaRemolque?: string }) => void;
   onElegir?: (id: string) => void;
   /** Abre el alta de vehículo sin salir de la guía. */
   onCrear?: () => void;
@@ -420,7 +429,15 @@ export function CtpVehiculoBarra({
               <button
                 type="button"
                 onClick={() => {
-                  onAplicar({ placa: v.placa, marca: v.marca ?? "", tipo: v.tipo ?? "" });
+                  /* El Directorio guarda la placa sin guion (`W2D853`): a la guía
+                     va como se escribe en el papel. Y el remolque guardado viaja
+                     con el camión (antes se quedaba en la ficha). */
+                  onAplicar({
+                    placa: placaParaGuia(v.placa, v.tipo),
+                    marca: v.marca ?? "",
+                    tipo: v.tipo ?? "",
+                    ...(v.placaRemolque ? { placaRemolque: placaParaGuia(v.placaRemolque) } : {}),
+                  });
                   onElegir?.(v.id);
                   setAbierta(false);
                 }}

@@ -5,7 +5,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
-import { ForestDirectorioDB, PlacaDuplicadaError } from "@/lib/db/forest-directorio.db";
+import { ForestDirectorioDB, PlacaDuplicadaError, PlacaInvalidaError } from "@/lib/db/forest-directorio.db";
 import { vehiculoInputSchema } from "@/lib/forestal/directorio";
 
 /**
@@ -49,6 +49,9 @@ export const POST = withApiHandler("forestal-directorio-vehiculo-post", async (r
     return NextResponse.json(
       {
         error: "validation_error",
+        // El primer motivo va suelto: `useDirectorioForestal` muestra `message`
+        // («Le sobran caracteres…» en vez de «No se pudo guardar el vehículo»).
+        message: parsed.error.issues[0]?.message ?? "Datos del vehículo no válidos",
         issues: parsed.error.issues.map((i) => ({ path: i.path.join("."), message: i.message })),
       },
       { status: 422 },
@@ -62,6 +65,13 @@ export const POST = withApiHandler("forestal-directorio-vehiculo-post", async (r
     // Placa ocupada = dato del operador, no fallo del server → 409.
     if (err instanceof PlacaDuplicadaError) {
       return NextResponse.json({ error: "placa_duplicada", message: err.message }, { status: 409 });
+    }
+    // Placa que no puede existir (sólo si cambió): dato del operador → 422 con el motivo.
+    if (err instanceof PlacaInvalidaError) {
+      return NextResponse.json(
+        { error: "placa_invalida", message: err.motivo, issues: [{ path: err.campo, message: err.motivo }] },
+        { status: 422 },
+      );
     }
     logger.error("[directorio-vehiculos.POST] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });

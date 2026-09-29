@@ -34,6 +34,7 @@
  */
 
 import { z } from "zod";
+import { leerPlaca } from "./placa-peru";
 
 // ── Esquema ─────────────────────────────────────────────────────────────────
 
@@ -67,6 +68,27 @@ const parteSchema = z.object({
    */
   zona: texto(120).default(""),
 });
+
+/** Un punto del traslado desarmado en los casilleros del ubigeo. */
+const ubicacionSchema = z.object({
+  direccion: texto(200).default(""),
+  departamento: texto(80).default(""),
+  provincia: texto(80).default(""),
+  distrito: texto(80).default(""),
+});
+
+export type UbicacionTraslado = z.infer<typeof ubicacionSchema>;
+
+const UBICACION_VACIA = { direccion: "", departamento: "", provincia: "", distrito: "" };
+
+/**
+ * El punto como se imprime y como lo publica SERFOR: «JR. X MZA. 24, Constitución,
+ * OXAPAMPA, PASCO» — dirección, distrito, provincia, departamento, sin huecos.
+ */
+export function componerPunto(u: Partial<UbicacionTraslado> | null | undefined): string {
+  if (!u) return "";
+  return [u.direccion, u.distrito, u.provincia, u.departamento].map((x) => (x ?? "").trim()).filter(Boolean).join(", ");
+}
 
 /** Parte en blanco. Centralizado: repetir el literal en cada `.default()` hizo
  *  que agregar la ubicación rompiera el tipo en tres lugares a la vez. */
@@ -135,7 +157,20 @@ export const gtfDatosSchema = z.object({
     /** `YYYY-MM-DD`. Fecha de inicio del traslado y hasta cuándo vale la guía. */
     fechaInicio: texto(10).default(""),
     fechaFin: texto(10).default(""),
-  }).default({ puntoPartida: "", puntoLlegada: "", ruta: "", fechaInicio: "", fechaFin: "" }),
+    /**
+     * El punto de partida DESARMADO (Brandon 29-09-2026: «ponle para poner la
+     * dirección, departamento, provincia, distrito»). `puntoPartida` sigue
+     * siendo el texto que se imprime y lo que leen las guías viejas; cuando
+     * esto trae algo, `puntoPartida` se arma con `componerPunto` (mismo orden
+     * que publica SERFOR: «dirección, distrito, provincia, departamento»).
+     */
+    partida: ubicacionSchema.default({ ...UBICACION_VACIA }),
+    /** Ídem para el punto de llegada. */
+    llegada: ubicacionSchema.default({ ...UBICACION_VACIA }),
+  }).default({
+    puntoPartida: "", puntoLlegada: "", ruta: "", fechaInicio: "", fechaFin: "",
+    partida: { ...UBICACION_VACIA }, llegada: { ...UBICACION_VACIA },
+  }),
 
   /**
    * Títulos habilitantes que amparan el origen de ESTE despacho. Se copian de la
@@ -289,6 +324,14 @@ export function faltantesGtf(d: GtfDatos): FaltanteGtf[] {
       campo: fluvial ? "Matrícula de la embarcación" : "Placa del vehículo",
       motivo: "Es lo primero que compara un puesto de control con la carga",
     });
+  }
+  // La placa tiene que poder existir (placa-peru): «WRFWR242» o «QA-450» no
+  // son un camión. En río el casillero lleva la matrícula, que es otra cosa.
+  if (!fluvial) {
+    for (const [valor, nombre] of [[d.vehiculo.placa, "Placa del vehículo"], [d.vehiculo.placaRemolque, "Placa del remolque"]] as const) {
+      const l = leerPlaca(valor);
+      if (l.estado === "invalida") faltan.push({ seccion: "vehiculo", campo: `${nombre}: formato no válido`, motivo: l.motivo });
+    }
   }
   if (fluvial && !d.vehiculo.embarcacion.trim()) {
     faltan.push({

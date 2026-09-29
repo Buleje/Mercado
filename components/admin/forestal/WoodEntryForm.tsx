@@ -907,7 +907,11 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
     try {
       const r = await fetch(`/api/admin/forestal/gtf?gtfNumber=${encodeURIComponent(n)}`, { credentials: "include" });
       if (r.status === 404) { setGtfMsg({ ok: false, text: `No hay una guía emitida con el N° ${n}. Revisa el número.` }); return; }
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      if (!r.ok) {
+        // 409 «ambigua»: dos titulares usan ese N° (cada uno su talonario); el servidor dice cuáles.
+        const j = (await r.json().catch(() => ({}))) as { message?: string };
+        throw new Error(j.message ?? `HTTP ${r.status}`);
+      }
       aplicarGuia((await r.json()).gtf as GtfRecord);
     } catch (e) { setGtfMsg({ ok: false, text: e instanceof Error ? e.message : String(e) }); }
     finally { setLoadingGtf(false); }

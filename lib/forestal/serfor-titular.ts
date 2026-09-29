@@ -63,6 +63,16 @@ function palabras(nombre: string): Set<string> {
  * 2026-09-25): «PEREZ GARCIA JUAN» se llevaba el DNI de «PEREZ GARCIA JUAN
  * CARLOS», y en un casillero de declaración jurada eso es declarar a otro.
  */
+/**
+ * Las palabras que distinguen a un titular, sin relleno (tipo de comunidad,
+ * forma societaria) ni tildes ni puntuación. La usa el talonario del Libro TH
+ * para comparar titulares con tolerancia (29-09-2026): una sola lista de
+ * relleno para los dos lados.
+ */
+export function palabrasDelTitular(nombre: string): Set<string> {
+  return palabras(nombre);
+}
+
 export function mismaPersona(a: string, b: string): boolean {
   const pa = palabras(a);
   const pb = palabras(b);

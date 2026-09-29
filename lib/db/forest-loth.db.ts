@@ -22,11 +22,13 @@ import { ForestLothPoaDB } from "@/lib/db/forest-loth-poa.db";
 import { dmcParaEspecie } from "@/lib/forestal/loth-poa";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { resumirUsoDelCenso, type UsoArbolCenso } from "@/lib/forestal/loth-censo-uso";
-import { GtfDuplicateError } from "@/lib/db/forest-gtf.db";
-import { GtfNumeroDB } from "@/lib/db/gtf-numero.db";
+import { estadoDeArboles as estadoDeArbolesDelLibro, type EstadoDeArbolesPlan } from "@/lib/forestal/loth-etapa-arbol";
+import { ForestGtfDB } from "@/lib/db/forest-gtf.db";
+import { colaDeGtf, mismoNumeroGtf } from "@/lib/forestal/gtf-talonario";
+import { ESTADOS_SIN_INGRESO, GtfNumeroDB } from "@/lib/db/gtf-numero.db";
 import { leerGtfDatos, type GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 import { identidadDeGuiaTh } from "@/lib/forestal/guia-th-al-ctp";
-import { PRODUCTO_TROZA, type TrozaDelLibro } from "@/lib/forestal/loth-guia-despacho";
+import { PRODUCTO_TROZA, lineasDeLaGuia, piezasDeItems, type TrozaDelLibro } from "@/lib/forestal/loth-guia-despacho";
 import { armarArbolDeTroza, lineaVigente, type ArbolDeTroza } from "@/lib/forestal/arbol-de-troza";
 
 export { LOTH_SECTIONS };
@@ -379,10 +381,10 @@ export class ForestLothDB {
     const caratulaId = caratula?.id ?? null;
 
     const resultado = await prisma.$transaction(async (tx) => {
-      // 1. El número de la guía: una GTF no se anota dos veces (mismo lock que `ForestGtfDB.create`).
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`gtf:${tenantId}:${num}`}))`;
-      const dup = await tx.forestGtf.findFirst({ where: { tenantId, gtfNumber: num, deletedAt: null }, select: { id: true } });
-      if (dup) throw new GtfDuplicateError(num);
+      // 1. El candado del N° NORMALIZADO (mismo que `ForestGtfDB.create`,
+      //    Recibir y Anular en el TH): «19-001-65» y «019-001-0000065» van en
+      //    fila. El repetido se mira abajo, con el plan de las trozas ya sabido.
+      await GtfNumeroDB.bloquear(tx, tenantId, num);
 
       // 2. Las trozas, como las declaró el Trozado.
       const trozados = await tx.forestLothEntry.findMany({
@@ -403,6 +405,14 @@ export class ForestLothDB {
         );
       }
       const planId = planes[0] ?? null;
+
+      /* Una GTF no se anota dos veces en el MISMO talonario. Los talonarios son
+         del titular: el mismo N° de otro titular es otra guía (29-09-2026). */
+      await ForestGtfDB.exigirSinRepetir(tx, tenantId, num, {
+        titular: input.titularName?.trim() || null,
+        permiso: input.gtfDatos.titulos[0]?.trim() || null,
+        planId,
+      });
 
       // 3. Una línea de Despacho por troza, con las invariantes de siempre.
       //    El correlativo se toma UNA vez bajo lock y se incrementa acá.
@@ -521,16 +531,51 @@ export class ForestLothDB {
    * seguirían «despachadas» (T1) y no podrían ir en la guía corregida.
    * Nada se borra: guía y líneas quedan visibles con su motivo.
    */
+  /**
+   * Las líneas de despacho vivas de ESTA guía: las que anula
+   * `anularGuiaConDespachos` y las que cuenta el modal de anular (una sola
+   * regla, `lineasDeLaGuia`).
+   */
+  static async lineasDeLaGuia(
+    tenantId: string,
+    gtf: { id: string; gtfNumber: string; items: unknown; planId: string | null; titularName: string | null },
+  ): Promise<{ id: string; entryDate: Date }[]> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const cola = colaDeGtf(gtf.gtfNumber);
+    const [candidatas, conLaCola] = await Promise.all([
+      prisma.forestLothEntry.findMany({
+        where: { tenantId, section: "despacho_troza", gtfNumber: gtf.gtfNumber, status: "registrado", deletedAt: null },
+        select: { id: true, entryDate: true, trozaCode: true, planId: true },
+      }),
+      cola
+        ? prisma.forestGtf.findMany({
+            where: { tenantId, deletedAt: null, id: { not: gtf.id }, gtfNumber: { endsWith: cola } },
+            select: { gtfNumber: true },
+          })
+        : Promise.resolve([]),
+    ]);
+    const otras = conLaCola.filter((g) => mismoNumeroGtf(g.gtfNumber, gtf.gtfNumber)).length;
+    const planIds = [...new Set(candidatas.map((l) => l.planId).filter((p): p is string => Boolean(p)))];
+    const planes =
+      otras > 0 && !gtf.planId && planIds.length
+        ? await prisma.forestPlan.findMany({ where: { tenantId, id: { in: planIds } }, select: { id: true, titularName: true } })
+        : [];
+    const titularDe = new Map(planes.map((p) => [p.id, p.titularName]));
+    return lineasDeLaGuia(gtf, candidatas, { otrasConElNumero: otras, titularDePlan: (id) => titularDe.get(id) ?? null }).map(
+      ({ id, entryDate }) => ({ id, entryDate }),
+    );
+  }
+
   static async anularGuiaConDespachos(tenantId: string, gtfId: string, reason: string, user = "unknown") {
     if (!tenantId) throw new Error("tenantId is required");
     const motivo = reason?.trim();
     if (!motivo) throw new Error("reason is required");
     const gtf = await prisma.forestGtf.findFirst({ where: { tenantId, id: gtfId, deletedAt: null } });
     if (!gtf) return null;
-    const lineasVivas = await prisma.forestLothEntry.findMany({
-      where: { tenantId, section: "despacho_troza", gtfNumber: gtf.gtfNumber, status: "registrado", deletedAt: null },
-      select: { id: true, entryDate: true },
-    });
+    /* Las líneas de ESTA guía (`lineasDeLaGuia`): dos titulares pueden tener
+       el mismo N° (29-09-2026) y sólo por el N° se anulaban los despachos del
+       otro — también en una guía hecha a mano sin códigos de troza. */
+    const lineasVivas = await ForestLothDB.lineasDeLaGuia(tenantId, gtf);
     for (const l of lineasVivas) {
       const cerrado = await ForestLothCierreDB.closedPeriodOf(tenantId, l.entryDate);
       if (cerrado) {
@@ -1070,11 +1115,18 @@ export class ForestLothDB {
     }
     const gtfNumber = linea?.gtfNumber?.trim();
     if (!linea || linea.section !== "despacho_troza" || linea.status !== "registrado" || !gtfNumber) return;
-    const guia = await tx.forestGtf.findFirst({
+    /* La guía de ESTA línea es la que lleva su troza: dos titulares pueden
+       tener el mismo N° (29-09-2026) y «la más nueva con ese N°» podía ser la
+       del otro, con otro permiso, y el control no veía el ingreso de ésta. Si
+       no se sabe cuál es, sin identidad: cuenta todo ingreso con ese N°. */
+    const guias = await tx.forestGtf.findMany({
       where: { tenantId, gtfNumber, deletedAt: null },
       orderBy: { createdAt: "desc" },
-      select: { tituloHabilitante: true, titularName: true, gtfDatos: true },
+      select: { tituloHabilitante: true, titularName: true, gtfDatos: true, items: true },
     });
+    const troza = linea.trozaCode?.trim();
+    const conLaTroza = troza ? guias.filter((g) => piezasDeItems(g.items).some((p) => p.codigo === troza)) : [];
+    const guia = conLaTroza.length === 1 ? conLaTroza[0] : guias.length === 1 ? guias[0] : null;
     const identidad = guia ? identidadDeGuiaTh(guia, leerGtfDatos(guia.gtfDatos)) : { permiso: null, titular: null };
     await GtfNumeroDB.exigirSinIngresosEnElCtp(tx, tenantId, { gtfNumber, ...identidad });
   }
@@ -1451,6 +1503,63 @@ export class ForestLothDB {
       take: 50_000,
     });
     return resumirUsoDelCenso(rows.map((r) => ({ ...r, volumeM3: r.volumeM3 == null ? null : Number(r.volumeM3) })));
+  }
+
+  /**
+   * En qué punto de la cadena está cada árbol del censo de un plan (en pie →
+   * talado → trozado → despachado → en el CTP), leído del libro ENTERO —no
+   * del tope de 500 líneas con que el mapa carga el libro—. Lo pinta el mapa
+   * del Libro TH sobre cada punto. Sólo lectura.
+   *
+   * Líneas del plan y las sin plan (las viejas no lo guardaban), el mismo
+   * criterio de `arbolesDeTrozados`. Las anuladas vienen igual: no cuentan,
+   * pero la última tala anulada explica por qué el censo y el libro no cuadran.
+   * «En el CTP» = una troza recibida (no `noRecepcionada`) de un ingreso vivo
+   * que guarda su línea de Trozado (ADR-450).
+   */
+  static async estadoDeArboles(tenantId: string, planId: string): Promise<EstadoDeArbolesPlan> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const plan = planId.trim();
+    if (!plan) return { arboles: [], sinCenso: [] };
+    const [arboles, lineas] = await Promise.all([
+      prisma.forestCensusTree.findMany({
+        where: { tenantId, planId: plan, deletedAt: null },
+        select: { id: true, treeCode: true, estado: true, condicion: true },
+        take: 20_000,
+      }),
+      prisma.forestLothEntry.findMany({
+        where: {
+          tenantId,
+          deletedAt: null,
+          section: { in: ["tala", "trozado", "despacho_troza", "consumo_troza"] },
+          OR: [{ planId: plan }, { planId: null }],
+        },
+        select: {
+          id: true, section: true, status: true, lineNo: true, entryDate: true,
+          treeCode: true, trozaCode: true, volumeM3: true, gtfNumber: true,
+        },
+        take: 50_000,
+      }),
+    ]);
+    const trozados = lineas.filter((l) => l.section === "trozado" && l.status === "registrado").map((l) => l.id);
+    const enCtp =
+      trozados.length === 0
+        ? []
+        : await prisma.woodEntryTroza.findMany({
+            where: {
+              tenantId,
+              lothTrozadoId: { in: trozados },
+              noRecepcionada: false,
+              entry: { tenantId, deletedAt: null, status: { notIn: [...ESTADOS_SIN_INGRESO] } },
+            },
+            select: { lothTrozadoId: true },
+            distinct: ["lothTrozadoId"],
+          });
+    return estadoDeArbolesDelLibro(
+      arboles,
+      lineas.map((l) => ({ ...l, volumeM3: l.volumeM3 == null ? null : Number(l.volumeM3) })),
+      new Set(enCtp.map((t) => t.lothTrozadoId).filter((id): id is string => !!id)),
+    );
   }
 
   /**

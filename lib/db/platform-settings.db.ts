@@ -39,6 +39,21 @@ function cacheKey(key: string): string {
   return `${CACHE_PREFIX}${key}`;
 }
 
+/**
+ * Claves de TRABAJO, no de configuración (29-09-2026): la caché de placas y el
+ * contador de consultas pagas por negocio. Se escriben en cada búsqueda, así
+ * que no pueden invalidar `__all__` (lo lee el layout de toda la plataforma
+ * vía `getPlatformConfigSSR`) ni viajar dentro de `getAll()`.
+ */
+export const PREFIJO_INTERNO = "interno:";
+const esInterna = (key: string) => key.startsWith(PREFIJO_INTERNO);
+
+/** Invalida la clave y —si es de configuración— la foto de `getAll()`. */
+function invalidarClave(key: string): void {
+  invalidate(cacheKey(key));
+  if (!esInterna(key)) invalidate(cacheKey("__all__"));
+}
+
 /** Otra transacción tiene tomada la clave (`actualizar` con `soloSiLibre` o `esperaMaxMs`). */
 export class ClaveOcupadaError extends Error {
   constructor(readonly key: string) {
@@ -88,6 +103,7 @@ export const PlatformSettingsDB = {
       CACHE_TTL_SEC,
       async () => {
         const rows = await prisma.platformSetting.findMany({
+          where: { NOT: { key: { startsWith: PREFIJO_INTERNO } } },
           select: { key: true, value: true },
         });
         const out: Record<string, unknown> = {};
@@ -117,8 +133,7 @@ export const PlatformSettingsDB = {
         ...(updatedBy !== undefined && { updatedBy }),
       },
     });
-    invalidate(cacheKey(key));
-    invalidate(cacheKey("__all__"));
+    invalidarClave(key);
   },
 
   /**
@@ -150,10 +165,7 @@ export const PlatformSettingsDB = {
       }),
     );
 
-    for (const key of keys) {
-      invalidate(cacheKey(key));
-    }
-    invalidate(cacheKey("__all__"));
+    for (const key of keys) invalidarClave(key);
   },
 
   /**
@@ -234,10 +246,7 @@ export const PlatformSettingsDB = {
       if (!tomado && espera != null && esEsperaDeLockVencida(err)) throw new ClaveOcupadaError(key);
       throw err;
     }
-    if (salida.escrito) {
-      invalidate(cacheKey(key));
-      invalidate(cacheKey("__all__"));
-    }
+    if (salida.escrito) invalidarClave(key);
     return salida.resultado;
   },
 
@@ -251,7 +260,6 @@ export const PlatformSettingsDB = {
       .catch(() => {
         /* swallow — record-not-found is a no-op */
       });
-    invalidate(cacheKey(key));
-    invalidate(cacheKey("__all__"));
+    invalidarClave(key);
   },
 };

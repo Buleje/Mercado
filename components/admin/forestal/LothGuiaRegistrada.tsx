@@ -6,9 +6,10 @@
  * visor en el mismo paso, y se pueden guardar en el expediente de la guía.
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { ArrowRight, Check, FileText, Info, Printer, TreePine } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { marcarMenuAbierto } from "@/components/admin/shared/action-menu";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { carpetaGuiaPorTitular, tagCasillero, tagGtf } from "@/lib/forestal/documentos-guia";
 import { papelesGuiaLoth } from "@/lib/forestal/loth-guia-print";
@@ -17,6 +18,23 @@ import type { RegistradaLoth } from "./hooks/use-despacho-guia-loth";
 import { verIngresosDelCtp } from "./LothGtfCtp";
 import CtpDocumentoVisor, { type DocumentoImprimible, type MetaArchivado } from "./CtpDocumentoVisor";
 import { Btn } from "./ctp-shared";
+
+/**
+ * Mientras el visor de papeles está abierto ENCIMA del modal, Escape cierra
+ * sólo el visor. Sin esto se llevaba las dos capas (medido 29-09-2026: «Ver
+ * cómo sale» → Escape cerraba también «Despachar con guía» con todo lo
+ * llenado). Usa la marca que `AdminModal` ya respeta (`data-menu-abierto`,
+ * `marcarMenuAbierto`): Radix escucha Escape antes que el visor, y con la
+ * marca puesta no cierra el diálogo de abajo.
+ */
+export function useCapaEncimaDelModal(ref: RefObject<HTMLElement | null>, abierta: boolean) {
+  useEffect(() => {
+    if (!abierta) return;
+    const dialogo = ref.current?.closest('[role="dialog"]') ?? null;
+    marcarMenuAbierto(dialogo, true);
+    return () => marcarMenuAbierto(dialogo, false);
+  }, [ref, abierta]);
+}
 
 /** Con qué se guarda cada papel: las mismas etiquetas y carpeta que las guías del CTP. */
 export function archivoDeGuiaLoth(
@@ -80,10 +98,12 @@ export default function LothGuiaRegistrada({
     [r, cientificoDe],
   );
   const [visor, setVisor] = useState<number | null>(null);
+  const raiz = useRef<HTMLDivElement>(null);
+  useCapaEncimaDelModal(raiz, visor != null);
   const volumen = r.volumenM3 || r.piezas.reduce((a, p) => a + (p.volumeM3 ?? 0), 0);
 
   return (
-    <div className="rounded-2xl border-2 border-[var(--data-success-500)]/40 bg-[var(--data-success-50)] p-5 dark:bg-[var(--data-success-500)]/10">
+    <div ref={raiz} className="rounded-2xl border-2 border-[var(--data-success-500)]/40 bg-[var(--data-success-50)] p-5 dark:bg-[var(--data-success-500)]/10">
       <p className="flex items-center gap-2 text-base font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
         <Check className="h-5 w-5 shrink-0" aria-hidden="true" />
         Guía {r.gtfNumber} registrada — {r.lineas} {r.lineas === 1 ? "troza despachada" : "trozas despachadas"} en el libro

@@ -22,13 +22,14 @@
  */
 
 import { claveEspecie } from "./loth-constants";
-import { faltantesGtf, gtfDatosVacio, type FaltanteGtf, type GtfDatos } from "./ctp-gtf-datos";
+import { componerPunto, faltantesGtf, gtfDatosVacio, type FaltanteGtf, type GtfDatos, type UbicacionTraslado } from "./ctp-gtf-datos";
 import { tituloDesdePermiso } from "./ctp-ficha-types";
 import { tipoDesdeCodigo, type TipoContrato } from "./contratos";
 import { tipoPermisoDesdePlan } from "./permisos-de-parte";
 import { TIPOS_PLAN, TIPOS_PLAN_META, type TipoPlan } from "./loth-tipos-plan";
-import { correlativoEnSerie, proponerGtf, type GtfUsada, type PropuestaGtf } from "./gtf-talonario";
 import { rellenarGuia, type FuentesDeRelleno } from "./gtf-autocompletar";
+import { ubigeoDelPadron } from "./gtf-serie-region";
+import { mismoTitular } from "./loth-talonario";
 
 // ── Qué sale en el camión ────────────────────────────────────────────────────
 
@@ -253,9 +254,9 @@ export interface IdentidadDelTitulo {
 }
 
 /** Mismo titular escrito distinto («Maderera X SAC» / «MADERERA X S.A.C.»). */
-function mismoNombre(a: string | null | undefined, b: string | null | undefined): boolean {
+export function mismoNombre(a: string | null | undefined, b: string | null | undefined): boolean {
   const n = (s: string | null | undefined) =>
-    txt(s).normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]/gi, "").toLowerCase();
+    txt(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/gi, "").toLowerCase();
   return n(a) !== "" && n(a) === n(b);
 }
 
@@ -326,9 +327,96 @@ export function identidadDelTitulo(f: {
   };
 }
 
-/** De dónde sale la madera: la parcela de corta y dónde queda el bosque. */
+/**
+ * De dónde sale la madera, DESARMADO (Brandon 29-09-2026: «ponle para poner la
+ * dirección, departamento, provincia, distrito»): la dirección es la parcela
+ * de corta y el sector; el ubigeo, el del plan pasado por el padrón del INEI
+ * (el plan de Blas dice «Constitucion» donde va la región: es el distrito de
+ * Oxapampa, Pasco, y así sale).
+ */
+export function ubicacionDePartida(id: IdentidadDelTitulo): UbicacionTraslado {
+  const u = ubigeoDelPadron({ departamento: id.departamento, provincia: id.provincia, distrito: id.distrito });
+  return {
+    direccion: [id.parcelaCorta, id.sector].filter(Boolean).join(", "),
+    departamento: u.departamento,
+    provincia: u.provincia,
+    distrito: u.distrito,
+  };
+}
+
+/** De dónde sale la madera, en el texto que se imprime: «PC 12, Constitución, Oxapampa, Pasco». */
 export function partidaDelBosque(id: IdentidadDelTitulo): string {
-  return [id.parcelaCorta, id.sector, id.distrito, id.provincia, id.departamento].filter(Boolean).join(", ");
+  return componerPunto(ubicacionDePartida(id));
+}
+
+/** El punto de llegada que sale del destinatario: su dirección y su ubigeo. */
+export function llegadaDelDestinatario(d: GtfDatos): UbicacionTraslado {
+  const x = d.destinatario;
+  return { direccion: txt(x.direccion), departamento: txt(x.departamento), provincia: txt(x.provincia), distrito: txt(x.distrito) };
+}
+
+/** ¿Dicen el mismo lugar? (sin mirar mayúsculas ni espacios de más) */
+export function mismaUbicacion(a: Partial<UbicacionTraslado> | null | undefined, b: Partial<UbicacionTraslado> | null | undefined): boolean {
+  return componerPunto(a).toLocaleUpperCase("es") === componerPunto(b).toLocaleUpperCase("es");
+}
+
+/**
+ * Cambia la partida o la llegada y deja el texto que se imprime al día
+ * (`puntoPartida`/`puntoLlegada` = `componerPunto`): los dos dicen siempre lo
+ * mismo, porque el papel lee el texto y el formulario, los casilleros.
+ */
+export function conPunto(
+  traslado: GtfDatos["traslado"],
+  cual: "partida" | "llegada",
+  cambio: Partial<UbicacionTraslado>,
+): GtfDatos["traslado"] {
+  const u = { ...traslado[cual], ...cambio };
+  const nuevo =
+    cual === "partida"
+      ? { ...traslado, partida: u, puntoPartida: componerPunto(u) }
+      : { ...traslado, llegada: u, puntoLlegada: componerPunto(u) };
+  /* La ruta que se armó sola («partida → llegada», o sólo la partida si la
+     llegada todavía no estaba) sigue a los puntos; una escrita a mano no se
+     toca. Se compara también con los casilleros: otro bloque pudo tocar el
+     texto de un punto sin pasar por acá («Es mi planta»). */
+  const sola = (a: string, b: string) => [txt(a), txt(b)].filter(Boolean).join(" → ");
+  const armadas = new Set([
+    sola(traslado.puntoPartida, traslado.puntoLlegada),
+    sola(componerPunto(traslado.partida) || traslado.puntoPartida, componerPunto(traslado.llegada)),
+    sola(traslado.puntoPartida, ""),
+    sola("", traslado.puntoLlegada),
+  ]);
+  const ruta = txt(traslado.ruta);
+  return { ...nuevo, ruta: !ruta || armadas.has(ruta) ? sola(nuevo.puntoPartida, nuevo.puntoLlegada) : traslado.ruta };
+}
+
+/**
+ * El titular que se GUARDA con la guía: el que el servidor sacó del plan de
+ * las trozas (`identidadDelTitulo`), no el que manda el navegador (29-09-2026).
+ * Si el del navegador dice otra cosa, se ignora y se devuelve para dejarlo en
+ * el log: el titular decide de qué talonario es el N° y si choca con otro.
+ */
+export function titularParaGuardar(
+  delServidor: string | null | undefined,
+  delNavegador: string | null | undefined,
+): { titular: string | null; ignorado: string | null } {
+  const s = txt(delServidor);
+  const n = txt(delNavegador);
+  return { titular: s || null, ignorado: n && n !== s ? n : null };
+}
+
+/**
+ * El texto impreso de la partida y la llegada, rearmado desde sus casilleros
+ * cuando traen algo (`componerPunto`). El servidor lo usa antes de guardar:
+ * el texto que manda el navegador no se cree. Sin casilleros (una guía vieja)
+ * queda el texto que había.
+ */
+export function puntosCompuestos(tr: GtfDatos["traslado"]): GtfDatos["traslado"] {
+  return {
+    ...tr,
+    puntoPartida: componerPunto(tr.partida) || tr.puntoPartida,
+    puntoLlegada: componerPunto(tr.llegada) || tr.puntoLlegada,
+  };
 }
 
 /**
@@ -337,6 +425,12 @@ export function partidaDelBosque(id: IdentidadDelTitulo): string {
  */
 export function datosInicialesLoth(id: IdentidadDelTitulo, emision: string): GtfDatos {
   const base = gtfDatosVacio();
+  const partida = ubicacionDePartida(id);
+  /* (10)(11)(12): como los dice el plan. Sólo si el plan no puso un
+     departamento sino un lugar que el padrón ubica en uno solo, se escriben
+     los del padrón (si no, la guía decía «Constitucion» como departamento). */
+  const padron = ubigeoDelPadron({ departamento: id.departamento, provincia: id.provincia, distrito: id.distrito });
+  const ubic = padron.deducidoDe ? padron : { departamento: id.departamento, provincia: id.provincia, distrito: id.distrito };
   return {
     ...base,
     propietario: {
@@ -352,7 +446,7 @@ export function datosInicialesLoth(id: IdentidadDelTitulo, emision: string): Gtf
       provincia: id.domProvincia,
       distrito: id.domDistrito,
     },
-    traslado: { ...base.traslado, puntoPartida: partidaDelBosque(id), fechaInicio: emision },
+    traslado: { ...base.traslado, partida, puntoPartida: componerPunto(partida), fechaInicio: emision },
     titulos: id.tituloHabilitante ? [id.tituloHabilitante] : [],
     guia: {
       ...base.guia,
@@ -361,10 +455,11 @@ export function datosInicialesLoth(id: IdentidadDelTitulo, emision: string): Gtf
       origenRecurso: id.origenRecurso,
       resolucion: id.resolucion,
       representanteLegal: id.representanteLegal,
-      departamento: id.departamento,
-      provincia: id.provincia,
-      distrito: id.distrito,
-      // Madera que sale del bosque: no hay guía anterior que la ampare.
+      departamento: ubic.departamento,
+      provincia: ubic.provincia,
+      distrito: ubic.distrito,
+      // Madera que sale del bosque: no hay guía anterior que la ampare (el
+      // papel imprime «NO APLICA», `ORIGEN_NO_APLICA`; acá queda vacío).
       gtfOrigenNro: "",
     },
   };
@@ -405,7 +500,24 @@ export function rellenarGuiaLoth(datos: GtfDatos, f: Omit<FuentesDeRelleno, "fic
     { ...datos, propietario: { ...datos.propietario, esElCtp: false } },
     { ...f, ficha: null, ultimaGuia: previa },
   ).datos;
-  return { ...r, propietario: datos.propietario };
+  return { ...r, propietario: datos.propietario, traslado: sembrarLlegada(r) };
+}
+
+/**
+ * La llegada desarmada, sembrada del destinatario cuando todavía no dice nada:
+ * su dirección y su ubigeo. Si el destinatario no trae ninguno, queda el texto
+ * que ya había (la guía anterior). La ruta armada sola se rehace con el texto
+ * nuevo; una ruta escrita a mano no se toca.
+ */
+export function sembrarLlegada(d: GtfDatos): GtfDatos["traslado"] {
+  const tr = d.traslado;
+  if (componerPunto(tr.llegada)) return tr;
+  const dest = llegadaDelDestinatario(d);
+  const texto = componerPunto(dest);
+  /* Sin destinatario, el texto que ya había (la guía anterior) pasa a la
+     dirección: el formulario muestra lo mismo que se va a imprimir. */
+  if (!texto) return txt(tr.puntoLlegada) ? { ...tr, llegada: { ...tr.llegada, direccion: txt(tr.puntoLlegada) } } : tr;
+  return conPunto(tr, "llegada", dest);
 }
 
 /** Las trozas de una guía YA emitida (su foto en `ForestGtf.items`), para reimprimirla. */
@@ -426,6 +538,31 @@ export function piezasDeItems(items: unknown): PiezaGuia[] {
       lengthM: num(it.lengthM),
       volumeM3: num(it.volumeM3),
     }));
+}
+
+/**
+ * Las líneas de despacho que son de ESTA guía, entre las vivas con su N° (las
+ * que anular la guía anula, y las que cuenta el modal). Dos titulares pueden
+ * tener el mismo N° (29-09-2026), así que el N° solo no alcanza:
+ *
+ *   1. si la guía trae la lista de trozas, sus trozas;
+ *   2. si nadie más en el libro tiene ese N°, todas (una guía hecha a mano sin
+ *      códigos de troza, como antes);
+ *   3. si no, las del plan de la guía; y sin plan, las de planes del mismo
+ *      titular. Lo que no se puede atribuir no se anula: es de otra guía.
+ */
+export function lineasDeLaGuia<L extends { trozaCode: string | null; planId: string | null }>(
+  guia: { items: unknown; planId: string | null; titularName: string | null },
+  lineas: readonly L[],
+  x: { otrasConElNumero: number; titularDePlan?: (planId: string) => string | null | undefined },
+): L[] {
+  const codigos = new Set(piezasDeItems(guia.items).map((p) => p.codigo).filter(Boolean));
+  if (codigos.size > 0) return lineas.filter((l) => codigos.has(txt(l.trozaCode)));
+  if (x.otrasConElNumero === 0) return [...lineas];
+  if (guia.planId) return lineas.filter((l) => l.planId === guia.planId);
+  const titularDePlan = x.titularDePlan;
+  if (!txt(guia.titularName) || !titularDePlan) return [];
+  return lineas.filter((l) => l.planId != null && mismoTitular(titularDePlan(l.planId), guia.titularName));
 }
 
 // ── Qué le falta ────────────────────────────────────────────────────────────
@@ -451,6 +588,17 @@ export function faltantesDespachoLoth(
   if (!txt(x.gtfNumber)) falta.push({ seccion: "documento", campo: "N° de GTF", motivo: "El número del talonario identifica la guía en cada control" });
   if (!txt(x.emision)) falta.push({ seccion: "documento", campo: "Fecha de expedición", motivo: "Sin fecha no se sabe si la guía está vigente" });
   if (x.trozas <= 0) falta.push({ seccion: "trozas", campo: "Trozas que salen", motivo: "La guía ampara piezas concretas del Trozado" });
+  /* La lista tiene su propio correlativo (las guías de SERFOR: 5, 6 → 7, 8):
+     vacía, el (35) no apunta a ningún papel. */
+  if (x.trozas > 0 && !txt(datos.guia.listaTrozasNro)) {
+    falta.push({ seccion: "traslado", campo: "N° de la lista de trozas", motivo: "El casillero (35) apunta a la lista que viaja con la guía" });
+  }
+  /* La partida, casillero por casillero: un puesto de control coteja el
+     distrito de salida contra el del título. */
+  const p = datos.traslado.partida;
+  for (const [valor, nombre] of [[p.departamento, "departamento"], [p.provincia, "provincia"], [p.distrito, "distrito"]] as const) {
+    if (!txt(valor)) falta.push({ seccion: "traslado", campo: `Partida: ${nombre}`, motivo: "El punto de partida va con su ubigeo completo" });
+  }
   const traslado = { ...datos.traslado, fechaInicio: datos.traslado.fechaInicio || x.emision };
   return [...falta, ...faltantesGtf({ ...datos, traslado })];
 }
@@ -472,23 +620,5 @@ export function huecosDelTitulo(datos: GtfDatos): string[] {
   return huecos;
 }
 
-// ── El talonario del titular ─────────────────────────────────────────────────
-
-/**
- * El siguiente N° del talonario de guías del bosque.
- *
- * El talonario es del TITULAR (no del CTP): la serie sale del último número
- * que se anotó en este libro, y el correlativo es el máximo + 1 de TODO lo
- * usado en esa serie —anuladas incluidas, un número que se usó no vuelve—,
- * con la regla de tramos de `gtf-talonario` (`019-0000001` ≡ `19-0000001`).
- * Sin ninguna guía anterior no hay de dónde sacar la serie: se devuelve
- * `null` y el operador escribe el primer número de su talonario.
- */
-export function proponerGtfLoth(usadas: readonly GtfUsada[]): PropuestaGtf | null {
-  const ultima = usadas.find((u) => /\d\s*-\s*\d+\s*$/.test(u.numero.trim()));
-  if (!ultima) return null;
-  const tramos = ultima.numero.trim().split(/\s*-\s*/);
-  const serie = tramos.slice(0, -1).join("-");
-  if (!serie || !correlativoEnSerie(ultima.numero, serie)) return null;
-  return proponerGtf(serie, null, usadas);
-}
+// ── El talonario del titular: vive en `loth-talonario.ts` (29-09-2026) ───────
+export * from "./loth-talonario";

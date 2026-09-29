@@ -15,6 +15,7 @@ import {
   ordenarPorUso,
   parteInputSchema,
   vehiculoInputSchema,
+  motivoPlacaVehiculo,
   type Parte,
   type Vehiculo,
 } from "@/lib/forestal/directorio";
@@ -225,7 +226,10 @@ describe("dirección completa", () => {
 
 describe("vehículo", () => {
   it("exige placa y admite capacidad nula (no todos la conocen)", () => {
-    expect(vehiculoInputSchema.safeParse({ placa: "A2C" }).success).toBe(false);
+    expect(vehiculoInputSchema.safeParse({ placa: "" }).success).toBe(false);
+    // El FORMATO («A2C» no es una placa) se juzga al guardar, contra la ficha
+    // guardada (29-09-2026): `placa-directorio.test.ts`.
+    expect(motivoPlacaVehiculo({ placa: "A2C" })).toMatchObject({ campo: "placa" });
     const ok = vehiculoInputSchema.safeParse({ placa: "A2C123", capacidadM3: null });
     expect(ok.success).toBe(true);
   });

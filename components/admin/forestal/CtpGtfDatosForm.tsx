@@ -22,6 +22,7 @@ import { useDirectorioForestal } from "@/hooks/use-directorio-forestal";
 import type { Parte, RolParte } from "@/lib/forestal/directorio";
 import CtpParteBarra, { CtpVehiculoBarra, type ValorParte } from "./CtpParteBarra";
 import CtpParteCampos from "./CtpParteCampos";
+import { CampoPlaca } from "./ctp-campo-placa";
 import { Btn, Field, I } from "./ctp-shared";
 
 /** Lo que el sistema completa solo la primera vez que se abre la guía. */
@@ -368,19 +369,19 @@ export default function CtpGtfDatosForm({
                   <option value="multimodal">Multimodal (río + carretera)</option>
                 </select>
               </Field>
-              <Field
+              {/* Guía de SALIDA: la placa sigue la regla de la placa peruana
+                  (la misma de `faltantesGtf`, que no deja imprimir el original).
+                  Por río es la matrícula: no se valida. */}
+              <CampoPlaca
                 span={4}
                 label={esFluvial ? "Matrícula" : "Placa"}
                 required
+                validar={!esFluvial}
                 hint={esFluvial ? "La de la embarcación" : "Lo primero que compara un control"}
-              >
-                <input
-                  type="text"
-                  className={`${I} font-mono uppercase`}
-                  value={datos.vehiculo.placa}
-                  onChange={(e) => set("vehiculo", { placa: e.target.value.toUpperCase() })}
-                />
-              </Field>
+                valor={datos.vehiculo.placa}
+                onCambio={(v) => set("vehiculo", { placa: v })}
+                onRemolque={(r) => set("vehiculo", { placaRemolque: r })}
+              />
               <Field span={4} label="Marca">
                 <input type="text" className={I} value={datos.vehiculo.marca} onChange={(e) => set("vehiculo", { marca: e.target.value })} />
               </Field>

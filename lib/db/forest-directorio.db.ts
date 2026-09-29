@@ -14,6 +14,7 @@ import type {
 import {
   agregarNota,
   leerBitacora,
+  motivoPlacaVehiculo,
   nombresDelLibroQueCoinciden,
   normalizarDocumento,
   normalizarNombre,
@@ -48,6 +49,20 @@ import {
  */
 
 const CACHE_PREFIX = "forest-directorio";
+
+/**
+ * La placa (o la del remolque) no puede existir (`motivoPlacaVehiculo`). Sólo
+ * se juzga si cambió respecto de la ficha guardada.
+ */
+export class PlacaInvalidaError extends Error {
+  constructor(
+    readonly campo: "placa" | "placaRemolque",
+    readonly motivo: string,
+  ) {
+    super(motivo);
+    this.name = "PlacaInvalidaError";
+  }
+}
 
 /** Se intentó guardar una placa que ya está en el directorio (otro id). */
 export class PlacaDuplicadaError extends Error {
@@ -495,6 +510,14 @@ export const ForestDirectorioDB = {
     const objetivo = input.id
       ? await prisma.forestVehiculo.findFirst({ where: { id: input.id, tenantId, deletedAt: null } })
       : (porPlaca ?? dadoDeBaja);
+
+    // La regla de la placa, contra la ficha como está guardada: lo que no
+    // cambió no se juzga (una ficha vieja puede editar sus notas).
+    const invalida = motivoPlacaVehiculo(
+      input,
+      objetivo ? { placa: objetivo.placa, placaRemolque: objetivo.placaRemolque } : null,
+    );
+    if (invalida) throw new PlacaInvalidaError(invalida.campo, invalida.motivo);
 
     const row = objetivo
       ? await prisma.forestVehiculo.update({

@@ -28,7 +28,7 @@ import type { ValorParte } from "./CtpParteBarra";
 import CtpDocumentoVisor, { type DocumentoImprimible } from "./CtpDocumentoVisor";
 import LothGuiaDatos from "./LothGuiaDatos";
 import LothGuiaTrozas from "./LothGuiaTrozas";
-import LothGuiaRegistrada from "./LothGuiaRegistrada";
+import LothGuiaRegistrada, { useCapaEncimaDelModal } from "./LothGuiaRegistrada";
 import { Btn } from "./ctp-shared";
 
 type Pestana = "guia" | "trozas";
@@ -64,6 +64,8 @@ export default function LothDespachoGuiaModal({ onClose, onRegistrada }: { onClo
   const cientificoDe = useCallback((comun: string) => catalogo.cientificoDe(comun), [catalogo]);
   const [tab, setTab] = useState<Pestana>("trozas");
   const [borrador, setBorrador] = useState<{ docs: DocumentoImprimible[]; activo: number } | null>(null);
+  const cuerpo = useRef<HTMLDivElement>(null);
+  useCapaEncimaDelModal(cuerpo, borrador != null);
 
   const anotarParte = useCallback((p: Parte) => {
     usados.current.partes.add(p.id);
@@ -136,11 +138,11 @@ export default function LothDespachoGuiaModal({ onClose, onRegistrada }: { onClo
     <ModalFooter
       error={g.error}
       aviso={
-        g.salto ? (
+        g.pregunta ? (
           <span className="flex flex-wrap items-center gap-2 text-[var(--text-primary)]">
-            {g.salto}
-            <Btn size="sm" variant="secondary" onClick={() => void g.registrar(true)} disabled={g.enviando}>Sí, usar ese número</Btn>
-            <Btn size="sm" variant="ghost" onClick={g.cancelarSalto}>Corregirlo</Btn>
+            {g.pregunta.mensaje}
+            <Btn size="sm" variant="secondary" onClick={() => void g.registrar(g.pregunta?.tipo)} disabled={g.enviando}>Sí, usar ese número</Btn>
+            <Btn size="sm" variant="ghost" onClick={g.cancelarPregunta}>Corregirlo</Btn>
           </span>
         ) : null
       }
@@ -189,7 +191,7 @@ export default function LothDespachoGuiaModal({ onClose, onRegistrada }: { onClo
       className="sm:w-[min(96vw,100rem)] sm:max-w-none sm:max-h-[95vh]"
       footer={footer}
     >
-      <div className="space-y-3 px-5 py-4 sm:px-6">
+      <div ref={cuerpo} className="space-y-3 px-5 py-4 sm:px-6">
         {g.cargando ? (
           <div className="flex items-center justify-center gap-2 p-10 text-sm text-[var(--text-secondary)]">
             <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" /> Trayendo el plan, la carátula y las trozas del libro…
