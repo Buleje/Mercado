@@ -232,7 +232,7 @@ export default function PayablesTab() {
                       <span>Total: <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{formatCurrency(Number(p.amount))}</span></span>
                       <span>Pagado: <span className="font-bold text-[var(--data-success-500)]">{formatCurrency(Number(p.paidAmount))}</span></span>
                       <span>Restante: <span className="font-bold text-[var(--data-error-500)]">{formatCurrency(remaining)}</span></span>
-                      <span>Vence: {formatDate(p.dueDate)}</span>
+                      <span>Vence: {formatDate(p.dueDate, { soloFecha: true })}</span>
                     </div>
                     {/* Progress bar — fill sólido y diferenciado: verde cuando
                         está 100% pagado, teal cuando es pago parcial. Antes usaba

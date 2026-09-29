@@ -8,7 +8,7 @@ import type { DbSupplier } from "@/lib/jsondb";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
 import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog";
 import { Field } from "@/components/admin/shared/Field";
-import { cn } from "@/lib/utils";
+import { cn, limaDateKey } from "@/lib/utils";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import TableSkeleton from "@/components/admin/shared/TableSkeleton";
 import WhatsAppButton from "./WhatsAppButton";
@@ -30,6 +30,22 @@ type Payable = {
   createdAt: string;
   purchaseOrderId?: string;
 };
+
+/**
+ * Días de calendario entre "hoy" y el vencimiento — F11 (2026-09-29): `dueDate`
+ * es DATE-only guardado como medianoche UTC (mismo convenio que `soloFecha` en
+ * lib/format), así que su día de calendario es la fecha UTC, no la de Lima. La
+ * versión vieja hacía `new Date(dueDate).setHours(0,0,0,0)` en hora LOCAL del
+ * navegador: en Lima (UTC-5) esa medianoche UTC cae en el día anterior y la
+ * cuenta salía "vencida" un día antes de tiempo.
+ * Se compara por CLAVE de día ("YYYY-MM-DD"), no por instante — evita que la
+ * resta de timestamps arrastre el mismo corrimiento de zona.
+ */
+function diasHastaVencer(dueDate: string, hoyKey: string): number {
+  const dueKey = new Date(dueDate).toISOString().slice(0, 10);
+  const msPorDia = 24 * 60 * 60 * 1000;
+  return Math.round((Date.parse(`${dueKey}T00:00:00Z`) - Date.parse(`${hoyKey}T00:00:00Z`)) / msPorDia);
+}
 
 export default function SuppliersTab() {
   const [suppliers, setSuppliers] = useState<DbSupplier[]>([]);
@@ -135,27 +151,24 @@ export default function SuppliersTab() {
     load();
   };
 
-  // Payment alerts calculations
+  // Payment alerts calculations — "hoy" en Lima, no en UTC del servidor/navegador.
+  const hoyKey = limaDateKey();
+  // Para timestamps reales (createdAt), no fechas DATE-only: el instante de "ahora" alcanza.
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  
+
   const pendingPayables = payables.filter(p => p.status !== "pagado");
-  
+
   const overduePayables = pendingPayables.filter(p => {
     if (!p.dueDate) return false;
-    const due = new Date(p.dueDate);
-    due.setHours(0, 0, 0, 0);
-    return due < today;
+    return diasHastaVencer(p.dueDate, hoyKey) < 0;
   });
-  
+
   const approachingPayables = pendingPayables.filter(p => {
     if (!p.dueDate) return false;
-    const due = new Date(p.dueDate);
-    due.setHours(0, 0, 0, 0);
-    const diffDays = Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    const diffDays = diasHastaVencer(p.dueDate, hoyKey);
     return diffDays >= 0 && diffDays <= 7;
   });
-  
+
   const getSupplierDebt = (supplierId: string) => {
     const supplierPayables = payables.filter(
       p => p.supplierId === supplierId && p.status !== "pagado"
@@ -166,15 +179,11 @@ export default function SuppliersTab() {
     );
     const overdue = supplierPayables.some(p => {
       if (!p.dueDate) return false;
-      const due = new Date(p.dueDate);
-      due.setHours(0, 0, 0, 0);
-      return due < today;
+      return diasHastaVencer(p.dueDate, hoyKey) < 0;
     });
     const approaching = !overdue && supplierPayables.some(p => {
       if (!p.dueDate) return false;
-      const due = new Date(p.dueDate);
-      due.setHours(0, 0, 0, 0);
-      const diffDays = Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      const diffDays = diasHastaVencer(p.dueDate, hoyKey);
       return diffDays >= 0 && diffDays <= 7;
     });
     return { totalDebt, count: supplierPayables.length, overdue, approaching };
@@ -191,9 +200,7 @@ export default function SuppliersTab() {
   );
   
   const getDaysInfo = (dueDate: string) => {
-    const due = new Date(dueDate);
-    due.setHours(0, 0, 0, 0);
-    const diffDays = Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    const diffDays = diasHastaVencer(dueDate, hoyKey);
     if (diffDays < 0) return { text: `${Math.abs(diffDays)} días vencido`, overdue: true };
     if (diffDays === 0) return { text: "Vence hoy", overdue: true };
     return { text: `Vence en ${diffDays} días`, overdue: false };
@@ -336,7 +343,7 @@ export default function SuppliersTab() {
                       </div>
                       {p.dueDate && (
                         <div className="text-xs text-[var(--text-secondary)] dark:text-muted">
-                          {formatDateNumeric(p.dueDate)}
+                          {formatDateNumeric(p.dueDate, { soloFecha: true })}
                         </div>
                       )}
                     </div>
