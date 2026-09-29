@@ -388,6 +388,9 @@ export {
   ToggleLeft,
   ToggleRight,
   TreePine,
+  // Planificador de extracción del Libro TH (29-09-2026): campamento y laderas.
+  Tent,
+  Mountain,
   Trophy,
   Undo2,
   UserCircle,

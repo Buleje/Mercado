@@ -9,7 +9,7 @@
  * el mapa y las herramientas quedaban abajo, fuera de la vista.
  */
 
-import { forwardRef, memo, useEffect } from "react";
+import { forwardRef, memo } from "react";
 import { Camera, MapPin } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { arbolesEnFaja } from "@/lib/forestal/loth-faja";
@@ -21,8 +21,14 @@ import LothCampoBar from "./LothCampoBar";
 import LothMapaDrawBar, { LothMapaMarcaBar, LothMapaViaBar } from "./LothMapaDrawBar";
 import LothMapaArbolFicha from "./LothMapaArbolFicha";
 import LothMapaCensoBarra from "./LothMapaCensoBarra";
+import LothMapaEtapasBarra from "./LothMapaEtapasBarra";
 import LothMapaCercanos from "./LothMapaCercanos";
 import LothMapaElegirVariosBar from "./LothMapaElegirVariosBar";
+import LothMapaPlanPanel from "./LothMapaPlanPanel";
+import LothMapaAvisoParcela from "./LothMapaAvisoParcela";
+import { censoLejosDeLaParcela, leyendaDelPlan } from "./loth-mapa-plan";
+import { useLothMapaEscape } from "./hooks/use-loth-mapa-escape";
+import type { LothPlanificador } from "./hooks/use-loth-planificador";
 import { CLASE_ARBOL_LABEL } from "@/lib/forestal/loth-mapa-arboles";
 import { pointInPolygon } from "@/lib/forestal/loth-geo";
 import type { LothMapaArboles } from "./hooks/use-loth-mapa-arboles";
@@ -53,9 +59,11 @@ interface Props {
   onTalarVarios?: () => void;
   /** Cuántos vértices muestra el cuadro de coordenadas (borrador incluido). */
   verticesCuadro: number;
+  /** El planificador de extracción: su panel, sus capas y la de ríos y caminos. */
+  plan: LothPlanificador;
 }
 
-const LothMapaMarco = forwardRef<HTMLElement, Props>(function LothMapaMarco({ datos, dib, herr, der, exp, arb, variosTala, onTalarVarios, verticesCuadro }, ref) {
+const LothMapaMarco = forwardRef<HTMLElement, Props>(function LothMapaMarco({ datos, dib, herr, der, exp, arb, variosTala, onTalarVarios, verticesCuadro, plan }, ref) {
   const { fullscreen, setFullscreen } = herr;
   const rios = datos.carto.vias.filter((v) => v.tipo === "rio");
   /** Una herramienta usa el clic del mapa: los árboles no lo toman y la ficha se guarda. */
@@ -64,37 +72,20 @@ const LothMapaMarco = forwardRef<HTMLElement, Props>(function LothMapaMarco({ da
   /** En «Elegir varios» tocar un árbol lo marca; no abre su ficha. */
   const onArbolTocado = variosTala.activo ? (id: string | null) => (id ? variosTala.alternar(id) : undefined) : arb.elegir;
 
-  // Escape sale de «Elegir varios» (limpia lo marcado, como cerrar el modo desde el botón).
-  useEffect(() => {
-    if (!variosTala.activo) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "Escape" || e.defaultPrevented) return;
-      variosTala.desactivar();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [variosTala]);
+  useLothMapaEscape({ eligiendoVarios: variosTala.activo, salirDeVarios: variosTala.desactivar, fullscreen, setFullscreen });
+  /** La leyenda: la del mapa con las etapas del libro justo después de las condiciones del censo, y al final lo del planificador. */
+  const finCenso = der.legendItems.reduce((ult, it, i) => (it.shape === "arbol" ? i + 1 : ult), 0);
+  const leyenda = [
+    ...(herr.showCenso ? [...der.legendItems.slice(0, finCenso), ...arb.leyendaEtapas, ...der.legendItems.slice(finCenso)] : der.legendItems),
+    ...leyendaDelPlan({ osm: plan.osmVisible ? plan.geo : null, propuesta: plan.vistaPrevia }),
+  ];
+  /** La mayoría del censo fuera del área dibujada (Blas: los 65, a 31 km). */
+  const lejos = der.declarada ? censoLejosDeLaParcela(der.censoAll, datos.parcela.vertices) : null;
   /** Lo que el filtro deja buscar, dicho como lo lee el monteador («Catahua · Semillero»). */
   const filtrando =
     [arb.opciones.especies.find((o) => o.valor === arb.filtro.especie)?.label, arb.filtro.clase && CLASE_ARBOL_LABEL[arb.filtro.clase]]
       .filter(Boolean)
       .join(" · ") || null;
-
-  // Escape saca de pantalla completa — salvo que lo haya usado otro (un menú
-  // abierto lo marca con `preventDefault`, un diálogo encima lo necesita él).
-  // «Encima» = con tamaño: el menú móvil del panel es un `role="dialog"` que
-  // vive montado a 0×0 aunque esté cerrado, y contarlo dejaba Escape muerto.
-  useEffect(() => {
-    if (!fullscreen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "Escape" || e.defaultPrevented) return;
-      const dialogos = document.querySelectorAll<HTMLElement>('[role="dialog"], [role="alertdialog"]');
-      if ([...dialogos].some((d) => d.getBoundingClientRect().width > 0)) return;
-      setFullscreen(false);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [fullscreen, setFullscreen]);
 
   return (
     <section
@@ -108,7 +99,7 @@ const LothMapaMarco = forwardRef<HTMLElement, Props>(function LothMapaMarco({ da
       }
     >
       <LothMapaToolbar
-        capas={menuCapas(herr, der)}
+        capas={menuCapas(herr, der, { modo: arb.etiquetas, cambiar: arb.setEtiquetas }, { activo: plan.mostrarOsm, cargando: plan.geoCargando, alternar: () => plan.setMostrarOsm((v) => !v) })}
         dibujar={menuDibujar(dib, datos, der)}
         dibujando={dib.drawMode || dib.viaDraft !== null || dib.markMode}
         herramientas={herramientasDelMapa(herr, rios.length)}
@@ -118,6 +109,7 @@ const LothMapaMarco = forwardRef<HTMLElement, Props>(function LothMapaMarco({ da
         sinGuardar={datos.cartoSinGuardar}
         guardando={datos.savingCarto}
         onGuardar={() => void datos.guardarCartografia()}
+        planificar={{ activo: plan.abierto, onToggle: () => plan.setAbierto((v) => !v) }}
         variosTala={{
           disponible: der.censoAll.length > 0 && !capturando,
           activo: variosTala.activo,
@@ -157,6 +149,8 @@ const LothMapaMarco = forwardRef<HTMLElement, Props>(function LothMapaMarco({ da
         onCentrar={herr.centrar}
       />
 
+      {lejos && <LothMapaAvisoParcela fuera={lejos.fuera} total={lejos.total} km={lejos.km} onVer={() => arb.encuadrar(lejos.puntos)} />}
+
       <div className={fullscreen ? "relative min-h-0 flex-1" : "relative h-[560px] max-sm:h-[420px]"}>
         <LothMapaCanvas
           geo={der.geoShown}
@@ -183,6 +177,7 @@ const LothMapaMarco = forwardRef<HTMLElement, Props>(function LothMapaMarco({ da
           arbolCercano={arb.cercanoId}
           onArbolElegido={onArbolTocado}
           marcados={variosTala.marcados}
+          etiquetas={arb.etiquetas}
           parcela={datos.parcela.vertices}
           declarada={der.declarada}
           draft={dib.draft}
@@ -198,18 +193,24 @@ const LothMapaMarco = forwardRef<HTMLElement, Props>(function LothMapaMarco({ da
           onInsertVertex={dib.insertVertex}
           onCursor={herr.onCursor}
           onView={herr.onView}
+          geoOsm={plan.osmVisible ? plan.geo : null}
+          propuesta={plan.vistaPrevia}
+          onPatioMovido={plan.moverPatio}
         />
-        <LothMapaChrome items={der.legendItems} cursor={herr.cursor} metersPerPixel={herr.metersPerPixel} />
+        <LothMapaChrome items={leyenda} cursor={herr.cursor} metersPerPixel={herr.metersPerPixel} panelDerecha={plan.abierto} />
 
         {elegido && herr.showCenso && !capturando && !variosTala.activo && (
           <LothMapaArbolFicha
             arbol={elegido}
             desdeTi={arb.desdeTi}
             fuera={der.declarada && !pointInPolygon([elegido.lat, elegido.lng], datos.parcela.vertices)}
+            leyendoLibro={arb.etapas?.cargando ?? false}
             onCerrar={() => arb.elegir(null)}
             onCentrar={() => herr.centrar([elegido.lat, elegido.lng])}
           />
         )}
+
+        {plan.abierto && <LothMapaPlanPanel plan={plan} onCerrar={() => plan.setAbierto(false)} />}
 
         {variosTala.activo && (
           <LothMapaElegirVariosBar
@@ -264,6 +265,7 @@ const LothMapaMarco = forwardRef<HTMLElement, Props>(function LothMapaMarco({ da
       </div>
 
       {der.censoAll.length > 0 && herr.showCenso && <LothMapaCensoBarra arb={arb} total={der.censoAll.length} />}
+      {der.censoAll.length > 0 && herr.showCenso && <LothMapaEtapasBarra arb={arb} />}
       {arb.cercaActivo && herr.showCenso && <LothMapaCercanos arb={arb} filtrando={filtrando} />}
 
       {!fullscreen && der.censoAll.length === 0 && (

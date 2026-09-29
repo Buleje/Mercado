@@ -27,7 +27,7 @@ interface Deps {
   carto: LothCartografia;
   setCarto: Dispatch<SetStateAction<LothCartografia>>;
   persistParcela: (next: { vertices: LatLng[]; nota: string; deforestacionCero: boolean }) => Promise<void>;
-  guardarCartografia: (siguiente?: LothCartografia) => Promise<void>;
+  guardarCartografia: (siguiente?: LothCartografia) => Promise<unknown>;
   /** Árboles del censo ya proyectados: la envolvente arranca de ellos. */
   censo: { lat: number; lng: number }[];
 }

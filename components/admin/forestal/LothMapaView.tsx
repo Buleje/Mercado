@@ -40,7 +40,9 @@ import { useLothMapaHerramientas } from "./hooks/use-loth-mapa-herramientas";
 import { useLothMapaDerivados } from "./hooks/use-loth-mapa-derivados";
 import { useLothMapaExportes } from "./hooks/use-loth-mapa-exportes";
 import { useLothMapaArboles } from "./hooks/use-loth-mapa-arboles";
+import { useLothMapaEtapas } from "./hooks/use-loth-mapa-etapas";
 import { useLothMapaTalaVarios } from "./hooks/use-loth-mapa-tala-varios";
+import { useLothPlanificador } from "./hooks/use-loth-planificador";
 import type { TandaTalaInicial } from "./hooks/use-tala-en-tanda";
 import { formatNumber } from "@/lib/format";
 
@@ -80,9 +82,14 @@ export default function LothMapaView({
   const herr = useLothMapaHerramientas({ onError: datos.setError });
   const der = useLothMapaDerivados({ ...datos, showCenso: herr.showCenso, showGrid: herr.showGrid, hidden: herr.hidden });
   const dib = useLothMapaDibujo({ ...datos, censo: der.censoAll });
-  const arb = useLothMapaArboles(der.censoAll, { centrar: herr.centrar });
+  // Lo que el libro hizo con cada árbol (tala, trozas, despachos, CTP): se vuelve a leer con cada carga.
+  const etapas = useLothMapaEtapas(datos.plan?.id ?? null, datos.fitKey);
+  const arb = useLothMapaArboles(der.censoAll, { centrar: herr.centrar, etapas });
+  // Patio, campamento, trochas y camino de salida según el terreno (panel sobre el mapa).
+  const planificador = useLothPlanificador({ planId: datos.plan?.id ?? null, carto: datos.carto, guardarCartografia: datos.guardarCartografia, onEncuadrar: arb.encuadrar });
   const variosTala = useLothMapaTalaVarios({
-    censoAll: der.censoAll,
+    // El censo con la etapa del libro: un árbol ya talado en el libro no se marca aunque el censo lo diga en pie.
+    censoAll: arb.censoAll,
     trees: datos.trees,
     raw: datos.raw,
     poaConfig: datos.poaConfig,
@@ -157,7 +164,7 @@ export default function LothMapaView({
             <>
               {plural(geoAll.length, "operación geolocalizada", "operaciones geolocalizadas")}
               {censoAll.length > 0 && <> · {plural(censoAll.length, "árbol del censo", "árboles del censo")}</>}
-              {declarada && <> · parcela {readiness.areaHa.toFixed(1)} ha</>}
+              {declarada && <> · parcela {Number(readiness.areaHa).toFixed(1)} ha</>}
               {declarada && readiness.fuera > 0 && (
                 <span className="font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"> · {readiness.fuera} fuera</span>
               )}
@@ -179,6 +186,7 @@ export default function LothMapaView({
         variosTala={variosTala}
         onTalarVarios={talarVarios}
         verticesCuadro={verticesCuadro.length}
+        plan={planificador}
       />
 
       <div className="space-y-3">

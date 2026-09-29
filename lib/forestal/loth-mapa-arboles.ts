@@ -18,6 +18,7 @@ import { bearingDeg, distanceM } from "./loth-utm";
 import { claveEspecie } from "./loth-constants";
 import type { LatLng } from "./loth-geo";
 import type { PoaCategoria } from "./loth-poa";
+import type { EtapaArbol, EtapaFiltro } from "./loth-etapa-arbol";
 
 /** Cómo se pinta un árbol: la condición del regente o, si falta, la del POA. */
 export type ClaseArbol = "aprovechable" | "semillero" | "bajo_dmc" | "otra" | "sin_dato";
@@ -77,6 +78,10 @@ export interface ArbolBase {
   condicion?: string | null;
   /** Categoría que calculó el POA (DMC + % de semilleros). */
   categoria?: PoaCategoria;
+  /** En qué punto de la cadena está según el libro (`loth-etapa-arbol`). */
+  etapa?: EtapaArbol;
+  /** El censo y el libro no dicen lo mismo de este árbol. */
+  conAviso?: boolean;
 }
 
 const sinTildes = (s: string): string => s.normalize("NFD").replace(/[̀-ͯ]/g, "");
@@ -134,11 +139,19 @@ export interface FiltroArboles {
   especie: string | null;
   clase: ClaseArbol | null;
   estado: string | null;
+  /** La etapa según el libro, o «con aviso» (censo ≠ libro). Opcional: quien no la usa no la manda. */
+  etapa?: EtapaFiltro | null;
 }
 
-export const FILTRO_ARBOLES_VACIO: FiltroArboles = { especie: null, clase: null, estado: null };
+export const FILTRO_ARBOLES_VACIO: FiltroArboles = { especie: null, clase: null, estado: null, etapa: null };
 
-export const filtroActivo = (f: FiltroArboles): boolean => f.especie !== null || f.clase !== null || f.estado !== null;
+export const filtroActivo = (f: FiltroArboles): boolean =>
+  f.especie !== null || f.clase !== null || f.estado !== null || (f.etapa ?? null) !== null;
+
+function pasaEtapa(t: ArbolBase, etapa: EtapaFiltro | null | undefined): boolean {
+  if (!etapa) return true;
+  return etapa === "con_aviso" ? t.conAviso === true : t.etapa === etapa;
+}
 
 export function filtrarArboles<T extends ArbolBase>(arboles: T[], f: FiltroArboles): T[] {
   if (!filtroActivo(f)) return arboles;
@@ -146,7 +159,8 @@ export function filtrarArboles<T extends ArbolBase>(arboles: T[], f: FiltroArbol
     (t) =>
       (f.especie === null || claveEspecie(t.species) === f.especie) &&
       (f.clase === null || claseDelArbol(t) === f.clase) &&
-      (f.estado === null || t.estado === f.estado),
+      (f.estado === null || t.estado === f.estado) &&
+      pasaEtapa(t, f.etapa),
   );
 }
 

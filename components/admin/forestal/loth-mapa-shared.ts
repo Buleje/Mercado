@@ -10,6 +10,7 @@
 import type { LothEntryDTO } from "@/lib/forestal/loth-constants";
 import { formatUtmFull, parseUtmZone, fromUtm, toUtm } from "@/lib/forestal/loth-utm";
 import type { PoaCategoria } from "@/lib/forestal/loth-poa";
+import type { EstadoArbol, EtapaArbol } from "@/lib/forestal/loth-etapa-arbol";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 export const SECTION_COLOR: Record<string, string> = {
@@ -88,6 +89,17 @@ export interface CensoTree {
   utmY: number;
   /** Categoría del POA (aprovechable/semillero/bajo DMC…) si el plan la calculó. */
   categoria?: PoaCategoria;
+  /**
+   * Lo que dice el CENSO, cuando `estado` ya es el del libro (el mapa pinta y
+   * filtra con el del libro: `use-loth-mapa-arboles`).
+   */
+  estadoCenso?: string;
+  /** En qué punto de la cadena está según el libro. */
+  etapa?: EtapaArbol;
+  /** El censo y el libro no coinciden. */
+  conAviso?: boolean;
+  /** Lo que hizo el libro con el árbol (null = todavía no se leyó). */
+  cadena?: EstadoArbol | null;
 }
 
 /** Árbol del censo tal como lo devuelve `/api/admin/forestal/plan/census`. */

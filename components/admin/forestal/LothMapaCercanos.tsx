@@ -95,7 +95,7 @@ export default function LothMapaCercanos({ arb, filtrando }: { arb: LothMapaArbo
                     className={`${FILA} ${arb.elegido?.id === c.arbol.id ? "bg-[var(--surface-raised)]" : ""}`}
                   >
                     <span className="w-4 text-right text-xs font-bold tabular-nums text-[var(--text-tertiary)]">{i + 1}</span>
-                    <LothMapaArbolSimbolo clase={claseDelArbol(c.arbol)} estado={c.arbol.estado} />
+                    <LothMapaArbolSimbolo clase={claseDelArbol(c.arbol)} estado={c.arbol.estado} etapa={c.arbol.etapa} aviso={c.arbol.conAviso} />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-bold text-[var(--text-primary)]">
                         {c.arbol.code} · {c.arbol.species}

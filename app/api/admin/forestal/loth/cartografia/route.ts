@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
-import { ForestLothCartografiaDB } from "@/lib/db/forest-loth-cartografia.db";
+import { CartografiaCambioError, ForestLothCartografiaDB } from "@/lib/db/forest-loth-cartografia.db";
+import { RUTAS_PANEL } from "@/lib/auth/roles-rutas-panel";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
@@ -13,7 +14,10 @@ import { withApiHandler } from "@/lib/api-handler";
  * UMF…) y el cuadro de ACCESOS (tramo · tiempo · movilidad).
  *
  * GET — lee la cartografía del tenant.
- * PUT — la reemplaza { referencias[], vias[], accesos[], nota }.
+ * PUT — la reemplaza { referencias[], vias[], accesos[], nota, baseUpdatedAt? }.
+ *       Con `baseUpdatedAt` (el `updatedAt` que se leyó) y otro guardó en el
+ *       medio → 409 `cartografia_cambio` con la versión actual, sin escribir.
+ *       Sin él (clientes viejos) se guarda como siempre.
  *
  * Guard: requireAdmin → rate limit → spec:forestal:loth-libro.
  */
@@ -72,6 +76,8 @@ const putSchema = z.object({
     })
     .default({ nombre: "", sector: "", comunidad: "", vertices: [] }),
   nota: z.string().trim().max(300).default(""),
+  /** La versión que el cliente leyó (control optimista); null = nunca se guardó. */
+  baseUpdatedAt: z.string().trim().max(40).nullable().optional(),
 });
 
 async function ensureSpec(tenantId: string) {
@@ -98,7 +104,7 @@ export const GET = withApiHandler("forestal-loth-cartografia-get", async (req: N
 });
 
 export const PUT = withApiHandler("forestal-loth-cartografia-put", async (req: NextRequest) => {
-  const auth = await requireAdmin(req, ["admin", "owner"]);
+  const auth = await requireAdmin(req, RUTAS_PANEL["PUT /api/admin/forestal/loth/cartografia"]);
   if (auth instanceof NextResponse) return auth;
 
   const rl = await applyRateLimit(req, "GENEROUS", "loth");
@@ -122,10 +128,17 @@ export const PUT = withApiHandler("forestal-loth-cartografia-put", async (req: N
     );
   }
 
+  const { baseUpdatedAt, ...cartografiaNueva } = parsed.data;
   try {
-    const cartografia = await ForestLothCartografiaDB.set(auth.tenantId, parsed.data, auth.username ?? "unknown");
+    const cartografia = await ForestLothCartografiaDB.set(auth.tenantId, cartografiaNueva, auth.username ?? "unknown", undefined, { baseUpdatedAt });
     return NextResponse.json({ cartografia });
   } catch (err) {
+    if (err instanceof CartografiaCambioError) {
+      return NextResponse.json(
+        { error: "cartografia_cambio", message: "Alguien cambió el plano después de que lo abriste.", cartografia: err.actual },
+        { status: 409 },
+      );
+    }
     logger.error("[loth.cartografia.PUT] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }

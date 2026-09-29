@@ -59,6 +59,16 @@ export interface EspeciePlanMapa {
 
 type Json = Record<string, unknown> & { message?: string };
 
+/**
+ * Lo que devuelve guardar la cartografía. `conflicto` = otro guardó el plano
+ * desde que se leyó (409): ya se recargó lo último, que viene acá para que
+ * quien guarda decida (el planificador vuelve a mezclar sobre eso).
+ */
+export type ResultadoGuardarCarto = { ok: true; cartografia: LothCartografia } | { ok: false; conflicto: LothCartografia | null };
+
+/** Lo que ve quien tocó «Guardar» cuando otro guardó antes. */
+export const MENSAJE_PLANO_CAMBIO = "Alguien cambió el plano: recargué lo último, revisa y vuelve a guardar.";
+
 /** El mensaje del servidor si lo manda; si no, el status. */
 async function mensajeDeError(r: Response): Promise<string> {
   const cuerpo = await leerJson<Json>(r);
@@ -206,12 +216,18 @@ export function useLothMapaDatos() {
    * cuando era `{referencias, vias, accesos, nota}` el predio se perdía en cada
    * guardado —el PUT reemplaza el documento entero— y sin un solo error.
    */
+  /**
+   * Guarda contra la versión leída (`baseUpdatedAt`): si otro guardó en el
+   * medio, el servidor responde 409 con lo último, se recarga y —salvo
+   * `avisarConflicto: false`— se avisa. `base` fuerza la versión (el
+   * planificador reintenta sobre la que le devolvió el 409, antes del re-render).
+   */
   const guardarCartografia = useCallback(
-    async (siguiente?: LothCartografia) => {
+    async (siguiente?: LothCartografia, opts: { base?: string | null; avisarConflicto?: boolean } = {}): Promise<ResultadoGuardarCarto> => {
       const cuerpo = siguiente ?? carto;
       if (!leido.carto) {
         setError("La cartografía no se pudo leer del servidor: recarga la página antes de guardar referencias, vías o el predio.");
-        return;
+        return { ok: false, conflicto: null };
       }
       setSavingCarto(true);
       setError(null);
@@ -226,19 +242,30 @@ export function useLothMapaDatos() {
             accesos: cuerpo.accesos,
             predio: cuerpo.predio,
             nota: cuerpo.nota,
+            baseUpdatedAt: opts.base !== undefined ? opts.base : cartoGuardada.updatedAt,
           }),
         });
+        if (r.status === 409) {
+          const actual = await leerJson<{ cartografia?: unknown }>(r);
+          const c = normalizeCartografia(actual?.cartografia);
+          setCarto(c);
+          setCartoGuardada(c);
+          if (opts.avisarConflicto !== false) setError(MENSAJE_PLANO_CAMBIO);
+          return { ok: false, conflicto: c };
+        }
         if (!r.ok) throw new Error(await mensajeDeError(r));
         const c = normalizeCartografia((await r.json()).cartografia);
         setCarto(c);
         setCartoGuardada(c);
+        return { ok: true, cartografia: c };
       } catch (err) {
         setError(err instanceof Error ? err.message : String(err));
+        return { ok: false, conflicto: null };
       } finally {
         setSavingCarto(false);
       }
     },
-    [carto, leido.carto],
+    [carto, cartoGuardada.updatedAt, leido.carto],
   );
 
   const cartoSinGuardar = useMemo(() => JSON.stringify(carto) !== JSON.stringify(cartoGuardada), [carto, cartoGuardada]);

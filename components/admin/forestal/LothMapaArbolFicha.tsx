@@ -3,10 +3,11 @@
 /**
  * LothMapaArbolFicha — lo que aparece al tocar un árbol del censo en el mapa:
  * código, especie (común · científica · nativa), DAP, altura, volumen,
- * condición del regente, estado, dónde está (UTM, dentro o fuera del área) y,
- * si el GPS está prendido, a cuántos metros y hacia dónde queda. Si está en pie
- * y se puede talar, el botón «Registrar tala» lleva al libro con el árbol ya
- * elegido.
+ * condición del regente, la etapa según el libro y lo que el libro hizo con él
+ * (talado, trozado, despachado, en el CTP — `LothMapaArbolCadena`), dónde está
+ * (UTM, dentro o fuera del área) y, si el GPS está prendido, a cuántos metros
+ * y hacia dónde queda. Si está en pie y se puede talar, el botón «Registrar
+ * tala» lleva al libro con el árbol ya elegido.
  *
  * No es un modal: el mapa sigue vivo detrás (se puede tocar otro árbol). En el
  * celular va abajo, a lo ancho, donde llega el pulgar; en la computadora,
@@ -17,6 +18,7 @@ import { useEffect, useRef } from "react";
 import { CardTitle } from "@buleje/design-system";
 import { Locate, X } from "@buleje/design-system/icons";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { textoCortoEtapa } from "@/lib/forestal/loth-etapa-arbol";
 import {
   CLASE_ARBOL_LABEL,
   claseDelArbol,
@@ -28,6 +30,7 @@ import {
   type ArbolCercano,
 } from "@/lib/forestal/loth-mapa-arboles";
 import LothMapaArbolSimbolo from "./LothMapaArbolSimbolo";
+import LothMapaArbolCadena from "./LothMapaArbolCadena";
 import LothMapaRegistrarTala from "./LothMapaRegistrarTala";
 import type { CensoTree } from "./loth-mapa-shared";
 
@@ -37,6 +40,8 @@ interface Props {
   desdeTi: ArbolCercano | null;
   /** Hay polígono declarado y el árbol cae fuera. */
   fuera: boolean;
+  /** Todavía se está leyendo lo que hizo el libro con cada árbol. */
+  leyendoLibro?: boolean;
   onCerrar: () => void;
   onCentrar: () => void;
 }
@@ -47,14 +52,15 @@ const DATO_VALOR = "block text-sm font-bold tabular-nums text-[var(--text-primar
 const BTN_ICONO =
   "inline-flex h-11 w-11 flex-none items-center justify-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--data-info-500)]";
 
-export default function LothMapaArbolFicha({ arbol, desdeTi, fuera, onCerrar, onCentrar }: Props) {
+export default function LothMapaArbolFicha({ arbol, desdeTi, fuera, leyendoLibro = false, onCerrar, onCentrar }: Props) {
   const fichaRef = useRef<HTMLElement>(null);
   const tituloRef = useRef<HTMLHeadingElement>(null);
   const origenRef = useRef<HTMLElement | null>(null);
   const clase = claseDelArbol(arbol);
   const origen = origenDeLaClase(arbol);
   const discrepa = poaDiscrepa(arbol);
-  const estado = ESTADO_ARBOL_LABEL[arbol.estado] ?? arbol.estado;
+  // La etapa según el libro («Trozado ×3»); sin ella, lo que dice el censo.
+  const estado = arbol.etapa ? textoCortoEtapa(arbol.etapa, arbol.cadena) : (ESTADO_ARBOL_LABEL[arbol.estado] ?? arbol.estado);
 
   // Al abrir (o pasar a otro árbol) el foco va al título: con teclado o lector
   // de pantalla se lee la ficha que se acaba de abrir, no el marcador de atrás.
@@ -90,6 +96,7 @@ export default function LothMapaArbolFicha({ arbol, desdeTi, fuera, onCerrar, on
       ref={fichaRef}
       aria-labelledby="loth-ficha-arbol-titulo"
       data-ficha-arbol={arbol.code}
+      data-tapa-mapa
       onKeyDown={(e) => {
         if (e.key !== "Escape") return;
         // Que Escape no saque además de pantalla completa (ese oyente respeta defaultPrevented).
@@ -100,7 +107,7 @@ export default function LothMapaArbolFicha({ arbol, desdeTi, fuera, onCerrar, on
     >
       <div className="flex items-start gap-2">
         <span className="mt-1">
-          <LothMapaArbolSimbolo clase={clase} estado={arbol.estado} lado={22} />
+          <LothMapaArbolSimbolo clase={clase} estado={arbol.estado} etapa={arbol.etapa} aviso={arbol.conAviso} lado={22} />
         </span>
         <div className="min-w-0 flex-1">
           <CardTitle id="loth-ficha-arbol-titulo" ref={tituloRef} tabIndex={-1} className="font-black leading-tight focus:outline-none">
@@ -152,6 +159,8 @@ export default function LothMapaArbolFicha({ arbol, desdeTi, fuera, onCerrar, on
         {arbol.utmZona} · E {Math.round(arbol.utmX)} · N {Math.round(arbol.utmY)}
         {fuera && <span className="ml-1.5 font-sans font-bold text-[var(--data-error-ink)]">fuera del área</span>}
       </p>
+      <LothMapaArbolCadena arbol={arbol} leyendo={leyendoLibro} />
+
       {desdeTi && (
         <p className="mt-1 text-sm font-bold text-[var(--text-primary)]">
           A {textoDistancia(desdeTi.distanciaM)} {rumboCardinal(desdeTi.rumboDeg).largo} de ti

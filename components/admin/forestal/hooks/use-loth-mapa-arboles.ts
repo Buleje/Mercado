@@ -4,7 +4,12 @@
  * useLothMapaArboles — el censo en el mapa del Libro TH, del lado de quien lo
  * usa en el monte:
  *
- *   · qué árboles se ven (filtro por especie, condición y estado),
+ *   · en qué etapa está cada uno según el LIBRO (en pie, talado, trozado,
+ *     despachado, en el CTP — `use-loth-mapa-etapas`): el `estado` que se
+ *     pinta y se filtra es el del libro; el del censo queda en `estadoCenso`,
+ *   · qué árboles se ven (filtro por especie, condición, estado y etapa),
+ *   · qué dice la etiqueta sobre cada punto (código y etapa, sólo el código o
+ *     nada; se recuerda en este navegador),
  *   · cuál está elegido (su ficha abierta),
  *   · «¿Qué árbol tengo cerca?»: sigue el GPS del celular y ordena los árboles
  *     EN PIE por distancia (respeta la especie y la condición del filtro: con
@@ -16,8 +21,22 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { LatLng } from "@/lib/forestal/loth-geo";
+import { useLocalStorage } from "@/hooks/use-local-storage";
+import {
+  AVISO_TOKEN,
+  CON_AVISO_LABEL,
+  contarEtapas,
+  ETAPA_LABEL,
+  ETAPA_TOKEN,
+  ETAPAS,
+  etapaEnElMapa,
+  estadoVisualDeEtapa,
+  opcionesDeEtapa,
+} from "@/lib/forestal/loth-etapa-arbol";
 import {
   arbolesCercanos,
+  claseDelArbol,
+  CLASES_ARBOL,
   filtrarArboles,
   FILTRO_ARBOLES_VACIO,
   opcionesDeFiltro,
@@ -27,6 +46,9 @@ import {
 import { bearingDeg, distanceM } from "@/lib/forestal/loth-utm";
 import type { CensoTree } from "../loth-mapa-shared";
 import type { PosicionCampo } from "../LothCampoBar";
+import type { LegendItem } from "../LothMapaChrome";
+import { CLAVE_MODO_ETIQUETAS, esModoEtiquetas, type ModoEtiquetas } from "../loth-mapa-etiquetas";
+import type { EtapasDelMapa } from "./use-loth-mapa-etapas";
 
 /** Cuántos árboles lista «¿Qué árbol tengo cerca?». */
 export const CERCANOS_N = 5;
@@ -43,7 +65,30 @@ function mensajeGps(err: GeolocationPositionError): string {
   return "El GPS tardó demasiado en responder. Vuelve a intentar a cielo abierto.";
 }
 
-export function useLothMapaArboles(censoAll: CensoTree[], { centrar }: { centrar: (p: LatLng) => void }) {
+/** Las etapas que se explican en la leyenda del mapa (en pie y semillero ya los dice la forma). */
+const ETAPAS_EN_LEYENDA = ETAPAS.filter((e) => e !== "en_pie" && e !== "semillero");
+
+export function useLothMapaArboles(
+  censoBase: CensoTree[],
+  { centrar, etapas }: { centrar: (p: LatLng) => void; etapas?: EtapasDelMapa },
+) {
+  const porId = etapas?.porId ?? null;
+  /**
+   * El censo con su etapa: manda el libro. Un árbol talado en el libro se
+   * pinta hueco y tachado aunque el censo lo siga diciendo en pie (y lleva el
+   * aviso); sin lo del servidor todavía, se pinta como dice el censo.
+   */
+  const censoAll = useMemo<CensoTree[]>(
+    () =>
+      censoBase.map((t) => {
+        const cadena = porId?.get(t.id) ?? null;
+        const etapa = etapaEnElMapa(cadena, { estado: t.estado, clase: claseDelArbol(t) });
+        return { ...t, estado: estadoVisualDeEtapa(etapa), estadoCenso: t.estado, etapa, conAviso: (cadena?.avisos.length ?? 0) > 0, cadena };
+      }),
+    [censoBase, porId],
+  );
+  const [modoGuardado, setEtiquetas] = useLocalStorage<string>(CLAVE_MODO_ETIQUETAS, "etapa");
+  const etiquetas: ModoEtiquetas = esModoEtiquetas(modoGuardado) ? modoGuardado : "etapa";
   const [filtro, setFiltro] = useState<FiltroArboles>(FILTRO_ARBOLES_VACIO);
   const [elegidoId, setElegidoId] = useState<string | null>(null);
   const [cercaActivo, setCercaActivo] = useState(false);
@@ -51,11 +96,33 @@ export function useLothMapaArboles(censoAll: CensoTree[], { centrar }: { centrar
   const [errorGps, setErrorGps] = useState<string | null>(null);
   /** Cambia `intento` para volver a pedir el GPS tras un error. */
   const [intento, setIntento] = useState(0);
-  const [encuadrarEn, setEncuadrarEn] = useState<{ pts: LatLng[]; n: number } | null>(null);
+  const [encuadrarEn, setEncuadrarEn] = useState<{ pts: LatLng[]; n: number; derecha?: number } | null>(null);
   /** Ya se encuadró tu posición con el árbol más cercano: después manda el usuario. */
   const encuadrado = useRef(false);
 
-  const opciones = useMemo(() => opcionesDeFiltro(censoAll), [censoAll]);
+  const opciones = useMemo(() => ({ ...opcionesDeFiltro(censoAll), etapas: opcionesDeEtapa(censoAll) }), [censoAll]);
+  /**
+   * La leyenda de las etapas, con el MISMO símbolo que el mapa (la forma de
+   * la condición más común, hueca y tachada, con su insignia): sólo las que hay.
+   */
+  const leyendaEtapas = useMemo<LegendItem[]>(() => {
+    const n = contarEtapas(censoAll);
+    const clases = new Set(censoAll.map((t) => claseDelArbol(t)));
+    const base = CLASES_ARBOL.find((c) => clases.has(c)) ?? "aprovechable";
+    return [
+      ...ETAPAS_EN_LEYENDA.filter((e) => n[e] > 0).map((e) => ({
+        label: ETAPA_LABEL[e],
+        color: ETAPA_TOKEN[e],
+        shape: "arbol" as const,
+        clase: base,
+        estado: estadoVisualDeEtapa(e),
+        etapa: e,
+      })),
+      ...(n.con_aviso > 0
+        ? [{ label: CON_AVISO_LABEL, color: AVISO_TOKEN, shape: "arbol" as const, clase: base, estado: "en_pie", aviso: true }]
+        : []),
+    ];
+  }, [censoAll]);
   const filtrados = useMemo(() => filtrarArboles(censoAll, filtro), [censoAll, filtro]);
   /** Dónde buscar el más cercano: la especie y la condición del filtro, pero en pie siempre. */
   const { especie, clase } = filtro;
@@ -136,7 +203,20 @@ export function useLothMapaArboles(censoAll: CensoTree[], { centrar }: { centrar
     [centrar],
   );
 
+  /** Encuadrar varios puntos a pedido («Ver dónde están los árboles», la propuesta del planificador). */
+  const encuadrar = useCallback(
+    // `derecha`: px que tapa un panel sobre el borde derecho del mapa (el del planificador).
+    (pts: LatLng[], derecha = 0) => setEncuadrarEn((e) => ({ pts, n: (e?.n ?? 0) + 1, derecha })),
+    [],
+  );
+
   return {
+    /** El censo con su etapa (lo que se pinta y se filtra). */
+    censoAll,
+    etapas,
+    etiquetas,
+    setEtiquetas: setEtiquetas as (m: ModoEtiquetas) => void,
+    leyendaEtapas,
     filtro,
     setFiltro,
     opciones,
@@ -156,6 +236,7 @@ export function useLothMapaArboles(censoAll: CensoTree[], { centrar }: { centrar
     buscarCerca,
     dejarDeBuscar,
     encuadrarEn,
+    encuadrar,
   };
 }
 

@@ -11,10 +11,11 @@
  *   4. censo forestal (árboles proyectados desde UTM) y operaciones del libro,
  *      con halo rojo si caen FUERA del polígono declarado.
  *
- * Las capas viven en cuatro hooks —trazos (líneas y polígonos), puntos (lo que
- * se pinta encima), clics (qué hace tocar el mapa) y árboles (el censo, su
- * ficha y la línea hasta el más cercano)—; acá queda crear el mapa, la base, la
- * escala, el encuadre y el centrado.
+ * Las capas viven en cinco hooks —trazos (líneas y polígonos), puntos (lo que
+ * se pinta encima), clics (qué hace tocar el mapa), árboles (el censo, su
+ * ficha y la línea hasta el más cercano) y plan (ríos y caminos de OSM y la
+ * propuesta del planificador)—; acá queda crear el mapa, la base, la escala,
+ * el encuadre y el centrado.
  *
  * GOTCHA (aprendido a los golpes): el `className` del contenedor va ESTÁTICO —
  * Leaflet agrega sus clases imperativamente y un className dinámico haría que
@@ -28,6 +29,7 @@ import { useLothCanvasTrazos } from "./hooks/use-loth-canvas-trazos";
 import { useLothCanvasPuntos } from "./hooks/use-loth-canvas-puntos";
 import { useLothCanvasClics } from "./hooks/use-loth-canvas-clics";
 import { useLothCanvasArboles } from "./hooks/use-loth-canvas-arboles";
+import { useLothCanvasPlan } from "./hooks/use-loth-canvas-plan";
 
 export type { BasemapId } from "./loth-mapa-canvas-ctx";
 
@@ -128,6 +130,7 @@ export default function LothMapaCanvas(p: LothMapaCanvasProps) {
   useLothCanvasPuntos(ctx, p);
   useLothCanvasClics(ctx, p);
   useLothCanvasArboles(ctx, p);
+  useLothCanvasPlan(ctx, p);
 
   // ── Escala viva: metros por píxel en el paralelo del centro ────────────────
   useEffect(() => {
@@ -159,6 +162,26 @@ export default function LothMapaCanvas(p: LothMapaCanvasProps) {
     return () => clearTimeout(t);
   }, [ready, fullscreen]);
 
+  // El contenedor cambió de tamaño por otra cosa (girar el celular en el
+  // monte, plegar el menú lateral): Leaflet sólo escucha la ventana, y con
+  // el tamaño viejo encuadra mal y las etiquetas de los árboles se calculan
+  // para un mapa que ya no es.
+  useEffect(() => {
+    const map = mapRef.current;
+    const el = containerRef.current;
+    if (!ready || !map || !el || typeof ResizeObserver === "undefined") return;
+    let cuadro = 0;
+    const ro = new ResizeObserver(() => {
+      cancelAnimationFrame(cuadro);
+      cuadro = requestAnimationFrame(() => map.invalidateSize({ debounceMoveend: true }));
+    });
+    ro.observe(el);
+    return () => {
+      cancelAnimationFrame(cuadro);
+      ro.disconnect();
+    };
+  }, [ready]);
+
   // Centrar a pedido (botón "Centrar" del modo campo).
   useEffect(() => {
     const map = mapRef.current;
@@ -173,7 +196,8 @@ export default function LothMapaCanvas(p: LothMapaCanvasProps) {
     const map = mapRef.current;
     if (!ready || !L || !map || !encuadrarEn || encuadrarEn.pts.length === 0) return;
     try {
-      map.fitBounds(L.latLngBounds(encuadrarEn.pts), { padding: [56, 56], maxZoom: 18, animate: true });
+      // Con el planificador abierto, su panel tapa el borde derecho: lo propuesto se encuadra en lo que queda a la vista.
+      map.fitBounds(L.latLngBounds(encuadrarEn.pts), { paddingTopLeft: [56, 56], paddingBottomRight: [56 + (encuadrarEn.derecha ?? 0), 56], maxZoom: 18, animate: true });
     } catch {
       /* puntos inválidos: el mapa se queda donde estaba */
     }

@@ -10,14 +10,16 @@
  * plegada en el celular.
  */
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronDown, Compass } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import type { ClaseArbol } from "@/lib/forestal/loth-mapa-arboles";
+import type { EtapaArbol } from "@/lib/forestal/loth-etapa-arbol";
 import LothMapaArbolSimbolo from "./LothMapaArbolSimbolo";
 import type { LatLng } from "@/lib/forestal/loth-geo";
 import { formatDistance, formatDms, formatMeters, niceBarLength, toUtm } from "@/lib/forestal/loth-utm";
 import { formatNumber } from "@/lib/format";
+import { avisarTapasDelMapa } from "./loth-mapa-etiquetas";
 
 export interface LegendItem {
   label: string;
@@ -26,12 +28,18 @@ export interface LegendItem {
   /** Sólo `shape: "arbol"`: el símbolo exacto del censo (forma por condición, relleno por estado). */
   clase?: ClaseArbol;
   estado?: string;
+  /** La insignia de la etapa (trozado, despachado, en el CTP). */
+  etapa?: EtapaArbol;
+  /** El triángulo del aviso censo ≠ libro. */
+  aviso?: boolean;
 }
 
 interface Props {
   items: LegendItem[];
   cursor: LatLng | null;
   metersPerPixel: number;
+  /** Un panel ocupa la derecha del mapa (el planificador): la leyenda se muda a la izquierda, sobre la escala. */
+  panelDerecha?: boolean;
 }
 
 /** Escala de pantalla aproximada a 96 dpi (1 px CSS ≈ 0,2646 mm). */
@@ -39,7 +47,7 @@ const SCREEN_PX_PER_M = 96 / 0.0254;
 
 function Swatch({ item }: { item: LegendItem }) {
   if (item.shape === "arbol" && item.clase) {
-    return <LothMapaArbolSimbolo clase={item.clase} estado={item.estado ?? "en_pie"} lado={16} />;
+    return <LothMapaArbolSimbolo clase={item.clase} estado={item.estado ?? "en_pie"} etapa={item.etapa} aviso={item.aviso} lado={16} />;
   }
   if (item.shape === "poly") {
     return (
@@ -72,8 +80,17 @@ function Swatch({ item }: { item: LegendItem }) {
   return <span className="h-3 w-3 flex-none rounded-full border border-white" style={{ background: item.color }} aria-hidden="true" />;
 }
 
-export default function LothMapaChrome({ items, cursor, metersPerPixel }: Props) {
+export default function LothMapaChrome({ items, cursor, metersPerPixel, panelDerecha = false }: Props) {
   const [leyendaMovil, setLeyendaMovil] = useState(false);
+  // Plegar o desplegar la leyenda cambia lo que tapa: las etiquetas se re-acomodan.
+  const primera = useRef(true);
+  useEffect(() => {
+    if (primera.current) {
+      primera.current = false;
+      return;
+    }
+    avisarTapasDelMapa();
+  }, [leyendaMovil, items.length, panelDerecha]);
   const barM = niceBarLength(Math.max(10, metersPerPixel * 150));
   const barPx = Math.round(barM / Math.max(metersPerPixel, 0.0001));
   const denom = Math.round(metersPerPixel * SCREEN_PX_PER_M);
@@ -84,6 +101,7 @@ export default function LothMapaChrome({ items, cursor, metersPerPixel }: Props)
       {/* Lectura de coordenadas del cursor. En el celular no hay mouse: sin
           cursor la caja sólo tapaba un cuarto del mapa diciendo que lo movieras. */}
       <div
+        data-tapa-mapa
         className={`pointer-events-none absolute right-3 top-3 z-20 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]/95 px-3 py-2 shadow-md backdrop-blur ${
           utm ? "" : "max-sm:hidden"
         }`}
@@ -108,7 +126,7 @@ export default function LothMapaChrome({ items, cursor, metersPerPixel }: Props)
       </div>
 
       {/* Norte + escala gráfica */}
-      <div className="pointer-events-none absolute bottom-3 left-3 z-20 flex items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]/95 px-3 py-2 shadow-md backdrop-blur">
+      <div data-tapa-mapa className="pointer-events-none absolute bottom-3 left-3 z-20 flex items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]/95 px-3 py-2 shadow-md backdrop-blur">
         <div className="flex flex-col items-center text-[var(--text-primary)]">
           <Compass className="h-6 w-6" />
           <span className="text-xs font-black leading-none">N</span>
@@ -129,7 +147,12 @@ export default function LothMapaChrome({ items, cursor, metersPerPixel }: Props)
       {/* Leyenda. En el celular arranca plegada: abierta tapaba un tercio del
           mapa de 420 px. En la computadora se ve siempre. */}
       {items.length > 0 && (
-        <div className="pointer-events-none absolute bottom-3 right-3 z-20 max-w-[230px] rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]/95 shadow-md backdrop-blur">
+        <div
+          data-tapa-mapa
+          className={`pointer-events-none absolute z-20 max-w-[230px] rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]/95 shadow-md backdrop-blur ${
+            panelDerecha ? "bottom-3 right-3 sm:bottom-[4.75rem] sm:left-3 sm:right-auto" : "bottom-3 right-3"
+          }`}
+        >
           <div className={`pointer-events-auto flex items-center gap-1 px-3 py-1 ${leyendaMovil ? "border-b border-[var(--rule-base)]" : "max-sm:border-b-0 border-b border-[var(--rule-base)]"}`}>
             <p className="text-xs font-black uppercase tracking-widest text-[var(--text-secondary)] max-sm:hidden">Leyenda</p>
             <button
@@ -143,8 +166,8 @@ export default function LothMapaChrome({ items, cursor, metersPerPixel }: Props)
             <InfoTip
               title="Cómo leer los árboles"
               what="La forma y el color dicen la condición: círculo aprovechable, rombo semillero, triángulo bajo DMC, cuadrado otra o sin condición."
-              affects="Lleno = en pie. Hueco y tachado = talado. Anillo azul = el que elegiste o el más cercano. Anillo rojo punteado = fuera del área."
-              example="Un rombo violeta lleno es un semillero en pie: se queda en el monte."
+              affects="Lleno = en pie. Hueco y tachado = talado (según el libro). Abajo a la derecha, lo que vino después: tres rayas trozado, flecha hueca despacho parcial, flecha llena despachado, casita en el CTP. Triángulo rojo con «!» = el censo y el libro no dicen lo mismo. Anillo azul = el que elegiste o el más cercano. Anillo rojo punteado = fuera del área."
+              example="Un círculo hueco y tachado con tres rayas es un árbol aprovechable ya trozado: sus trozas siguen en el monte."
               side="top"
             />
           </div>

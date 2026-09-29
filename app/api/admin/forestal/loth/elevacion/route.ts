@@ -6,6 +6,7 @@ import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
 import { MAX_MUESTRAS } from "@/lib/forestal/loth-elevacion";
+import { consultarElevaciones } from "@/lib/forestal/loth-geografia-fuentes";
 
 /**
  * /api/admin/forestal/loth/elevacion — altitud de una traza para el perfil de
@@ -24,8 +25,6 @@ const bodySchema = z.object({
     .min(2)
     .max(MAX_MUESTRAS),
 });
-
-const OPEN_METEO = "https://api.open-meteo.com/v1/elevation";
 
 export const POST = withApiHandler("forestal-loth-elevacion", async (req: NextRequest) => {
   const auth = await requireAdmin(req, ["admin", "almacenero", "owner"]);
@@ -52,23 +51,14 @@ export const POST = withApiHandler("forestal-loth-elevacion", async (req: NextRe
     );
   }
 
-  const lat = parsed.data.puntos.map((p) => p[0].toFixed(6)).join(",");
-  const lng = parsed.data.puntos.map((p) => p[1].toFixed(6)).join(",");
-
-  try {
-    const res = await fetch(`${OPEN_METEO}?latitude=${lat}&longitude=${lng}`, {
-      // El relieve no cambia: se cachea una semana por traza consultada.
-      next: { revalidate: 604_800 },
-    });
-    if (!res.ok) {
-      logger.warn("[loth.elevacion] servicio no disponible", { status: res.status, tenantId: auth.tenantId });
-      return NextResponse.json({ elevaciones: [] });
-    }
-    const data = (await res.json()) as { elevation?: number[] };
-    const elevaciones = Array.isArray(data.elevation) ? data.elevation.filter((n) => Number.isFinite(n)) : [];
-    return NextResponse.json({ elevaciones, fuente: "Open-Meteo · modelo digital de terreno" });
-  } catch (err) {
-    logger.warn("[loth.elevacion] fetch falló", { error: String(err), tenantId: auth.tenantId });
+  // El relieve no cambia: se cachea una semana por traza consultada. La
+  // consulta vive en `loth-geografia-fuentes` (la comparte la grilla del
+  // planificador); si el servicio no responde, lista vacía y la herramienta lo dice.
+  const valores = await consultarElevaciones(parsed.data.puntos, { revalidateS: 604_800 });
+  if (!valores) {
+    logger.warn("[loth.elevacion] sin elevaciones", { tenantId: auth.tenantId });
     return NextResponse.json({ elevaciones: [] });
   }
+  const elevaciones = valores.filter((n): n is number => n != null);
+  return NextResponse.json({ elevaciones, fuente: "Open-Meteo · modelo digital de terreno" });
 });

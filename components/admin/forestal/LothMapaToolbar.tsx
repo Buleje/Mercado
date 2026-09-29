@@ -20,7 +20,7 @@
  * dice cuál está prendida sin abrir nada.
  */
 
-import { Axe, Download, Layers, Loader2, Maximize2, Minimize2, PenTool, Save, Wrench, type LucideIcon } from "@buleje/design-system/icons";
+import { Axe, Download, Layers, Loader2, Maximize2, Minimize2, PenTool, Save, Wand2, Wrench, type LucideIcon } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 
 export interface HerramientaIcono {
@@ -52,6 +52,8 @@ interface Props {
   onGuardar: () => void;
   /** «Elegir varios»: marcar árboles en pie para talarlos en una sola planilla. */
   variosTala: { disponible: boolean; activo: boolean; n: number; onToggle: () => void };
+  /** El planificador de extracción: abre o cierra su panel sobre el mapa. */
+  planificar: { activo: boolean; onToggle: () => void };
 }
 
 const ICONO =
@@ -72,9 +74,12 @@ export default function LothMapaToolbar({
   guardando,
   onGuardar,
   variosTala,
+  planificar,
 }: Props) {
   return (
-    <div className="flex flex-wrap items-center gap-2 border-b border-[var(--rule-soft)] bg-[var(--surface-sunken)] px-3 py-2">
+    // `@container`: el ancho de la barra decide si «Planificar» lleva su texto (medido 29-09: a 962 px
+    // —la tarjeta con el menú lateral a 1280— con texto la barra partía en dos filas).
+    <div className="@container flex flex-wrap items-center gap-2 border-b border-[var(--rule-soft)] bg-[var(--surface-sunken)] px-3 py-2">
       <ActionMenu label="Capas" icon={Layers} actions={capas} title="Base del mapa, cuadrícula, censo y capas oficiales" compactoEnMovil />
       <ActionMenu
         label="Dibujar"
@@ -94,16 +99,20 @@ export default function LothMapaToolbar({
           label="Herramientas"
           icon={Wrench}
           compactoEnMovil
-          actions={herramientas.map((h) => ({
-            id: h.id,
-            label: h.corto,
-            hint: h.label,
-            icon: h.icono,
-            activo: h.activa,
-            busy: h.cargando,
-            disabled: h.disabled,
-            onSelect: h.onClick,
-          }))}
+          actions={[
+            // En el celular «Planificar» va acá: suelto, partía la barra en otra fila más.
+            { id: "planificar", label: "Planificar la extracción", hint: "Patio, campamento, trochas y camino según el terreno", icon: Wand2, activo: planificar.activo, onSelect: planificar.onToggle },
+            ...herramientas.map((h) => ({
+              id: h.id,
+              label: h.corto,
+              hint: h.label,
+              icon: h.icono,
+              activo: h.activa,
+              busy: h.cargando,
+              disabled: h.disabled,
+              onSelect: h.onClick,
+            })),
+          ]}
         />
       </div>
       <div role="group" aria-label="Herramientas del mapa" className="flex flex-wrap items-center gap-1.5 max-sm:hidden">
@@ -128,6 +137,21 @@ export default function LothMapaToolbar({
       </div>
 
       <div className="ml-auto flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={planificar.onToggle}
+          aria-pressed={planificar.activo}
+          aria-label="Planificar la extracción"
+          title="Propone patio, campamento, trochas y camino de salida según el terreno"
+          className={`inline-flex h-10 min-w-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border px-2.5 text-sm font-bold transition-colors max-sm:hidden @5xl:px-3 ${
+            planificar.activo
+              ? "border-transparent bg-[var(--brand-ink)] text-white"
+              : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+          }`}
+        >
+          <Wand2 className={`h-4 w-4 ${planificar.activo ? "" : "text-[var(--accent)]"}`} aria-hidden="true" />
+          <span className="hidden @5xl:inline">Planificar</span>
+        </button>
         {variosTala.disponible && (
           <button
             type="button"

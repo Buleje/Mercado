@@ -2,7 +2,8 @@
 
 /**
  * LothMapaCensoBarra — la franja del censo pegada DEBAJO del mapa: filtros por
- * especie, condición y estado, y el botón «¿Qué árbol tengo cerca?».
+ * especie, condición y estado, y el botón «¿Qué árbol tengo cerca?». Las
+ * etapas van en la franja de abajo (`LothMapaEtapasBarra`).
  *
  * Abajo y no arriba: en el celular, con el mapa en la pantalla, el pulgar llega
  * abajo. Por eso en el celular el botón va primero y a lo ancho, con 48 px de

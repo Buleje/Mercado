@@ -21,20 +21,55 @@ export type { LothCartografia } from "@/lib/forestal/loth-cartografia";
 
 const KEY_PREFIX = "loth-cartografia:";
 
+/**
+ * Otro guardó el plano después de que este cliente lo leyó: su PUT pisaría
+ * lo del otro (el documento se reemplaza entero). Lleva la versión actual para
+ * que el cliente recargue o mezcle sobre ella.
+ */
+export class CartografiaCambioError extends Error {
+  constructor(readonly actual: LothCartografia) {
+    super("La cartografía cambió desde que se leyó.");
+    this.name = "CartografiaCambioError";
+  }
+}
+
 export const ForestLothCartografiaDB = {
-  /** Lee la cartografía del tenant (vacía si nunca se cargó). */
+  /**
+   * Lee la cartografía del tenant (vacía si nunca se cargó). De la BASE, sin
+   * el caché por instancia: el `updatedAt` que se lee acá es la versión contra
+   * la que el cliente guarda después, y una vieja daría un 409 falso.
+   */
   async get(tenantId: string): Promise<LothCartografia> {
     if (!tenantId) throw new Error("tenantId is required");
-    const raw = await PlatformSettingsDB.get<unknown>(`${KEY_PREFIX}${tenantId}`);
+    const raw = await PlatformSettingsDB.getFresco<unknown>(`${KEY_PREFIX}${tenantId}`);
     return raw ? normalizeCartografia(raw) : emptyCartografia();
   },
 
-  /** Reemplaza referencias + accesos (normaliza, sella updatedAt y audita). */
-  async set(tenantId: string, input: unknown, user = "unknown", nowIso?: string): Promise<LothCartografia> {
+  /**
+   * Reemplaza referencias + accesos (normaliza, sella updatedAt y audita).
+   *
+   * Control optimista: con `baseUpdatedAt` (el `updatedAt` que el cliente
+   * leyó), si lo guardado ya es otro se tira `CartografiaCambioError` y NO se
+   * escribe. Leer y escribir van bajo el lock de la clave (`actualizar`): dos
+   * PUT con la misma base no pasan los dos. Sin `baseUpdatedAt` (clientes
+   * viejos) se guarda como siempre.
+   */
+  async set(tenantId: string, input: unknown, user = "unknown", nowIso?: string, opts: { baseUpdatedAt?: string | null } = {}): Promise<LothCartografia> {
     if (!tenantId) throw new Error("tenantId is required");
     const carto = normalizeCartografia(input);
     carto.updatedAt = nowIso ?? new Date().toISOString();
-    await PlatformSettingsDB.set(`${KEY_PREFIX}${tenantId}`, carto, user);
+    const r = await PlatformSettingsDB.actualizar<unknown, LothCartografia | null>(
+      `${KEY_PREFIX}${tenantId}`,
+      (actualRaw) => {
+        if (opts.baseUpdatedAt !== undefined) {
+          const actual = actualRaw ? normalizeCartografia(actualRaw) : emptyCartografia();
+          if ((actual.updatedAt ?? null) !== (opts.baseUpdatedAt ?? null)) return { resultado: actual };
+        }
+        return { valor: carto, resultado: null };
+      },
+      user,
+    );
+    if (r) throw new CartografiaCambioError(r);
     auditLoth({
       tenantId,
       action: "loth_cartografia_update",

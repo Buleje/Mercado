@@ -54,6 +54,11 @@ export const RUTAS_PANEL = {
      matriz; `__tests__/finanzas-cashflow-rolling-adr451.test.ts` fija que el
      espejo no se despegue. */
   "/api/finance/cashflow-rolling": ["admin", "owner", "manager", "analista"],
+  /* Guardar el plano del Libro TH (referencias, vías, predio) — 29-09. El GET
+     del planificador deja pasar al almacenero (propone) y devuelve
+     `puedeGuardar` con ESTE array: «Agregar al plano» se deshabilita en vez de
+     terminar en un 403. */
+  "PUT /api/admin/forestal/loth/cartografia": ["admin", "owner"],
 } as const satisfies Record<string, readonly AdminRole[]>;
 
 export type RutaPanel = keyof typeof RUTAS_PANEL;

@@ -13,7 +13,10 @@ import type { RefObject } from "react";
 import type { LatLng } from "@/lib/forestal/loth-geo";
 import type { LothReferencia, LothVia } from "@/lib/forestal/loth-cartografia";
 import type { WaybackRelease } from "@/lib/forestal/loth-wayback";
+import type { LineaGeo } from "@/lib/forestal/loth-geografia";
+import type { PropuestaPlan } from "@/lib/forestal/loth-planificador";
 import type { OverlayId } from "./loth-mapa-overlays";
+import type { ModoEtiquetas } from "./loth-mapa-etiquetas";
 import type { CensoTree, GeoEntry } from "./loth-mapa-shared";
 
 export const TILES = {
@@ -68,7 +71,7 @@ export interface LothMapaCanvasProps {
   /** Pedido de centrado (cambia `n` en cada pedido). */
   centrarEn: { p: LatLng; n: number } | null;
   /** Pedido de encuadre de varios puntos (tú + el árbol más cercano); cambia `n`. */
-  encuadrarEn: { pts: LatLng[]; n: number } | null;
+  encuadrarEn: { pts: LatLng[]; n: number; /** px que tapa un panel a la derecha. */ derecha?: number } | null;
   /** Árbol del censo elegido (su ficha está abierta): anillo y encima de todos. */
   arbolElegido: string | null;
   /** El árbol en pie más cercano a tu GPS: late, y una línea te lleva hasta él. */
@@ -80,6 +83,8 @@ export interface LothMapaCanvasProps {
   onArbolElegido: (id: string | null) => void;
   /** «Elegir varios»: los árboles marcados (insignia turquesa en el símbolo). */
   marcados: ReadonlySet<string>;
+  /** Qué dice la etiqueta sobre cada árbol: código y etapa, sólo el código, o nada. */
+  etiquetas: ModoEtiquetas;
   parcela: LatLng[];
   declarada: boolean;
   draft: LatLng[];
@@ -101,6 +106,12 @@ export interface LothMapaCanvasProps {
   onCursor: (p: LatLng | null) => void;
   /** Escala + encuadre vivos (barra gráfica, denominador 1:X y descarga en PNG). */
   onView: (v: { zoom: number; metersPerPixel: number; bounds: { latMin: number; latMax: number; lngMin: number; lngMax: number } }) => void;
+  /** Ríos y caminos de OpenStreetMap (null = capa apagada). */
+  geoOsm: { rios: LineaGeo[]; caminos: LineaGeo[] } | null;
+  /** La propuesta del planificador en vista previa (null = nada que mostrar). */
+  propuesta: PropuestaPlan | null;
+  /** Soltaron el patio propuesto en otro lugar. */
+  onPatioMovido: (p: LatLng) => void;
 }
 
 /* Leaflet se importa dinámico y sin tipos en este módulo: los grupos de capas
