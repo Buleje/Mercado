@@ -310,7 +310,11 @@ export default function AdminModal({
           {...nombradoPor}
           style={{ ...panelTokens, ...ventana.estilo }}
           className={cn(
-            "fixed z-modal bg-[var(--surface-raised)] overflow-hidden flex flex-col shadow-[var(--shadow-xl)] outline-none",
+            /* `overflow-clip`, no `hidden`: `hidden` sigue siendo scrolleable por
+             programa (foco, scrollIntoView) y, si algo desborda la tarjeta, la
+             corre hacia arriba dejando un hueco bajo el pie (medido en «Despachar
+             trozas con guía»: scrollTop 82 = alto del header). */
+            "fixed z-modal bg-[var(--surface-raised)] overflow-clip flex flex-col shadow-[var(--shadow-xl)] outline-none",
             ventana.activa ? POSICION_VENTANA : VARIANT_POSITION[variant],
             VARIANT_CLASSES[variant],
             aboveModals && "z-modal-3",
@@ -426,7 +430,10 @@ export default function AdminModal({
               su contenido y empuja lo que venga después fuera del modal (el
               footer de los formularios de alta quedaba invisible, con el botón
               "Registrar" incluido). */}
-          <div className="min-h-0 flex-1 overflow-y-auto">
+          {/* `relative`: el cuerpo es el bloque contenedor de los `absolute` de adentro
+              (los `sr-only` de fieldset/legend). Sin él escapan del scroll del
+              cuerpo y agrandan la TARJETA, que entonces se deja correr. */}
+          <div className="relative min-h-0 flex-1 overflow-y-auto">
             <VentanaDelModal.Provider value={ventana}>{children}</VentanaDelModal.Provider>
           </div>
 
