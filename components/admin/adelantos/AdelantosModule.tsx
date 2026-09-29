@@ -20,7 +20,6 @@ import {
   BarChart3,
   Activity,
   AlertTriangle,
-  FileText,
   Repeat,
   Download,
   ChevronLeft,
@@ -29,6 +28,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import { AnalisisView } from "./AnalisisView";
+import { ActividadView } from "./ActividadView";
 import CrearAdelantoModal from "./CrearAdelantoModal";
 import DescuentoPlanillaModal from "./DescuentoPlanillaModal";
 import DetalleAdelantoModal from "./detalle/DetalleAdelantoModal";
@@ -67,7 +67,7 @@ import type {
   DbRecurrente,
   RecurrenteFrecuencia,
 } from "@/lib/db/adelantos.db";
-import { formatDateNumeric, formatDateShort } from "@/lib/format";
+import { formatDateShort } from "@/lib/format";
 
 /** Single source: la misma forma que consume el alta (ver crear-adelanto/tipos). */
 type BeneficiarioConSaldo = BeneficiarioConSaldoBase;
@@ -237,8 +237,12 @@ export default function AdelantosModule() {
             />
           )}
           {tab === "recurrentes" && <RecurrentesView beneficiarios={beneficiarios} onChange={reload} />}
-          {tab === "actividad" && <ActividadView adelantos={dados} loading={loading} />}
-          {tab === "analisis" && <AnalisisView adelantos={dados} loading={loading} />}
+          {/* Actividad es un HISTORIAL, no un saldo: a diferencia de Resumen/
+              Cobranza/Análisis (que cuentan «lo que te deben» y por eso sólo
+              ven `dados`), acá tiene que aparecer todo con su dirección — ver
+              ActividadView.tsx. */}
+          {tab === "actividad" && <ActividadView adelantos={adelantos} loading={loading} />}
+          {tab === "analisis" && <AnalisisView adelantos={dados} recibidos={recibidos} loading={loading} />}
         </div>
       </AdminTabBar>
     </div>
@@ -1046,158 +1050,6 @@ function EliminarPersonaModal({ persona, onClose, onDeleted }: { persona: Benefi
     </ModalShell>
   );
 }
-
-// ── Estado de cuenta por persona (libro mayor + WhatsApp + PDF) ────────────────
-// ── Actividad ────────────────────────────────────────────────────────────────
-type ActEvento = { fecha: string; tipo: "adelanto" | "entrega"; persona: string; monto: number; moneda?: string | null; desc?: string };
-
-function ActividadView({ adelantos, loading }: { adelantos: DbAdelanto[]; loading: boolean }) {
-  const [tipo, setTipo] = useState<"todo" | "adelanto" | "entrega">("todo");
-  const [rango, setRango] = useState<"hoy" | "semana" | "mes" | "todo">("mes");
-  const [q, setQ] = useState("");
-
-  const eventos: ActEvento[] = [];
-  for (const a of adelantos) {
-    const persona = a.beneficiario?.nombre ?? "—";
-    if (a.status !== "CANCELADO") eventos.push({ fecha: a.fechaAdelanto, tipo: "adelanto", persona, monto: a.montoAdelantado, moneda: a.moneda });
-    for (const e of a.entregas) eventos.push({ fecha: e.fecha, tipo: "entrega", persona, monto: e.valor, moneda: a.moneda, desc: e.descripcion ?? undefined });
-  }
-  eventos.sort((x, y) => new Date(y.fecha).getTime() - new Date(x.fecha).getTime());
-
-  const now = Date.now();
-  const cutoff = rango === "hoy" ? new Date(new Date().setHours(0, 0, 0, 0)).getTime()
-    : rango === "semana" ? now - 7 * 86_400_000
-    : rango === "mes" ? now - 30 * 86_400_000
-    : 0;
-  const ql = q.trim().toLowerCase();
-  const filtrados = eventos.filter((e) =>
-    new Date(e.fecha).getTime() >= cutoff &&
-    (tipo === "todo" || e.tipo === tipo) &&
-    (!ql || e.persona.toLowerCase().includes(ql)),
-  );
-
-  /* Por moneda, nunca cruzado: un adelanto en soles y una entrega en dólares
-     del mismo período no son la misma plata (auditoría de esta sesión). */
-  const sumar = (map: Record<string, number>, moneda: string | null | undefined, monto: number) => {
-    const m = moneda || "PEN";
-    map[m] = (map[m] ?? 0) + monto;
-  };
-  const tieneAlgo = (map: Record<string, number>) => Object.values(map).some((v) => v > 0);
-  const resumen = filtrados.reduce(
-    (a, e) => {
-      if (e.tipo === "adelanto") sumar(a.adel, e.moneda, e.monto); else sumar(a.liq, e.moneda, e.monto);
-      return a;
-    },
-    { adel: {} as Record<string, number>, liq: {} as Record<string, number> },
-  );
-
-  // Agrupar por día (local)
-  const localKey = (f: string) => { const d = new Date(f); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
-  const hoyK = localKey(new Date().toISOString());
-  const ayerK = localKey(new Date(Date.now() - 86_400_000).toISOString());
-  const dayLabel = (k: string) => (k === hoyK ? "Hoy" : k === ayerK ? "Ayer" : new Date(k + "T12:00:00").toLocaleDateString("es-PE", { weekday: "short", day: "2-digit", month: "long" }));
-  const grupos: { key: string; eventos: ActEvento[]; adel: Record<string, number>; liq: Record<string, number> }[] = [];
-  for (const e of filtrados) {
-    const k = localKey(e.fecha);
-    let g = grupos[grupos.length - 1];
-    if (!g || g.key !== k) { g = { key: k, eventos: [], adel: {}, liq: {} }; grupos.push(g); }
-    g.eventos.push(e);
-    if (e.tipo === "adelanto") sumar(g.adel, e.moneda, e.monto); else sumar(g.liq, e.moneda, e.monto);
-  }
-
-  const exportarPdf = async () => {
-    const { default: jsPDF } = await import("jspdf");
-    const autoTable = (await import("jspdf-autotable")).default;
-    const doc = new jsPDF();
-    doc.setFontSize(16); doc.text("Historial de actividad", 14, 18);
-    doc.setFontSize(10); doc.text(`${filtrados.length} movimientos · +${fmtMonedas(resumen.adel)} adelantado · −${fmtMonedas(resumen.liq)} liquidado`, 14, 25);
-    autoTable(doc, {
-      startY: 31,
-      head: [["Fecha", "Tipo", "Persona", "Detalle", "Monto"]],
-      body: filtrados.map((e) => [formatDateNumeric(e.fecha), e.tipo === "adelanto" ? "Adelanto" : "Entrega", e.persona, e.desc ?? "", `${e.tipo === "adelanto" ? "+" : "-"}${fmtMon(e.monto, e.moneda)}`]),
-    });
-    doc.save(`actividad-${new Date().toISOString().slice(0, 10)}.pdf`);
-  };
-
-  if (loading) return <SkeletonGrid />;
-  if (eventos.length === 0) return <EmptyState icon={Activity} title="Sin actividad" hint="Acá aparecen adelantos y entregas a medida que ocurren." />;
-
-  const chip = (active: boolean) =>
-    `h-10 px-4 rounded-full border-2 text-base font-bold transition-colors ${active ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"}`;
-  const rangoChip = (active: boolean) =>
-    `h-9 px-3 rounded-full border-2 text-sm font-bold transition-colors ${active ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"}`;
-
-  return (
-    <div className="space-y-4">
-      {/* Rango + resumen del periodo */}
-      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3">
-        <div className="flex items-center gap-1.5">
-          {([["hoy", "Hoy"], ["semana", "Semana"], ["mes", "Mes"], ["todo", "Todo"]] as const).map(([v, l]) => (
-            <button key={v} className={rangoChip(rango === v)} onClick={() => setRango(v)}>{l}</button>
-          ))}
-        </div>
-        <p className="text-base text-[var(--text-secondary)]">
-          <span className="font-bold text-[var(--data-warning)]">+{fmtMonedas(resumen.adel)}</span> adelantado ·{" "}
-          <span className="font-bold text-[var(--data-success)]">−{fmtMonedas(resumen.liq)}</span> liquidado ·{" "}
-          <span className="font-bold text-[var(--text-primary)]">{filtrados.length}</span> movs
-        </p>
-      </div>
-
-      {/* Filtros por tipo + búsqueda + PDF */}
-      <div className="flex flex-wrap items-center gap-2">
-        <button className={chip(tipo === "todo")} onClick={() => setTipo("todo")}>Todo</button>
-        <button className={chip(tipo === "adelanto")} onClick={() => setTipo("adelanto")}>Adelantos</button>
-        <button className={chip(tipo === "entrega")} onClick={() => setTipo("entrega")}>Entregas</button>
-        {/* min-w-* es clase muerta acá (memoria min-width-utilities-muertas) — inline style. */}
-        <div className="relative ml-auto flex-1 sm:flex-none" style={{ minWidth: 200 }}>
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--text-tertiary)]" />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por persona, código (ADL-2026-7) o recibo…" className="h-12 w-full rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-11 pr-4 text-base text-[var(--text-primary)] outline-none focus:border-primary" />
-        </div>
-        <button onClick={exportarPdf} disabled={filtrados.length === 0} className="inline-flex items-center gap-1 h-12 px-4 rounded-xl border border-[var(--rule-base)] text-base font-semibold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors disabled:opacity-50">
-          <FileText className="h-5 w-5" /> PDF
-        </button>
-      </div>
-
-      {/* Feed agrupado por día */}
-      {grupos.length === 0 ? (
-        <EmptyState icon={Search} title="Sin movimientos" hint="Prueba con otro filtro o rango." />
-      ) : (
-        <div className="space-y-4">
-          {grupos.map((g) => (
-            <div key={g.key} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
-              <div className="flex items-center justify-between gap-2 border-b border-[var(--rule-soft)] bg-[var(--surface-sunken)] px-4 py-2">
-                <span className="text-sm font-extrabold uppercase tracking-wide text-[var(--text-secondary)]">{dayLabel(g.key)}</span>
-                <span className="text-sm tabular-nums text-[var(--text-tertiary)]">
-                  {tieneAlgo(g.adel) && <span className="font-bold text-[var(--data-warning)]">+{fmtMonedas(g.adel)}</span>}
-                  {tieneAlgo(g.adel) && tieneAlgo(g.liq) && " · "}
-                  {tieneAlgo(g.liq) && <span className="font-bold text-[var(--data-success)]">−{fmtMonedas(g.liq)}</span>}
-                </span>
-              </div>
-              <ul>
-                {g.eventos.map((e, i) => {
-                  const esAdelanto = e.tipo === "adelanto";
-                  return (
-                    <li key={i} className="flex items-center gap-3 px-4 py-2.5 border-b border-[var(--rule-soft)] last:border-0">
-                      <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${esAdelanto ? "bg-[var(--data-warning)]/15 text-[var(--data-warning)]" : "bg-[var(--data-success)]/15 text-[var(--data-success)]"}`}>
-                        {esAdelanto ? <TrendingDown className="h-4 w-4" /> : <TrendingUp className="h-4 w-4" />}
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-base font-bold text-[var(--text-primary)] truncate">{esAdelanto ? "Adelanto" : "Entrega"} · {e.persona}</p>
-                        {e.desc && <p className="text-sm text-[var(--text-tertiary)] truncate">{e.desc}</p>}
-                      </div>
-                      <span className={`tabular-nums text-base font-extrabold ${esAdelanto ? "text-[var(--data-warning)]" : "text-[var(--data-success)]"}`}>{esAdelanto ? "+" : "−"}{fmtMon(e.monto, e.moneda)}</span>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 
 // ── Recurrentes (ADR-118): plantillas de adelantos automáticos ────────────────
 const FREC_LABEL: Record<RecurrenteFrecuencia, string> = { semanal: "Semanal", quincenal: "Quincenal", mensual: "Mensual" };
