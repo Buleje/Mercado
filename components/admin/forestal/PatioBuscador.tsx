@@ -30,6 +30,7 @@ import {
 import { CamaraEscaneo } from "./EscanerTrozas";
 import FichaTrozaResumen from "./FichaTrozaResumen";
 import CtpTrozaFichaModal from "./CtpTrozaFichaModal";
+import { ChipArbol } from "./ctp-arbol-de-la-troza";
 
 /** El tono decide el color de TODA la ficha: se lee de lejos, no en detalle. */
 const TONO: Record<TonoPatio, { caja: string; chip: string }> = {
@@ -329,7 +330,11 @@ export default function PatioBuscador() {
             return (
               <li key={t.id} className={cn("rounded-2xl border-2 p-4", tono.caja)}>
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <span className="font-mono text-2xl font-bold text-[var(--text-primary)]">{f.codigo}</span>
+                  <span className="flex flex-wrap items-center gap-2">
+                    <span className="font-mono text-2xl font-bold text-[var(--text-primary)]">{f.codigo}</span>
+                    {/* De qué árbol del bosque salió (ADR-450), si vino del Libro TH. */}
+                    <ChipArbol codigo={t.arbolCodigo} />
+                  </span>
                   <span className={cn("rounded-full px-3 py-1 text-base font-bold", tono.chip)}>{f.titulo}</span>
                 </div>
                 {f.detalle && <p className="mt-1 text-base text-[var(--text-secondary)]">{f.detalle}</p>}

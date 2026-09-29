@@ -88,6 +88,8 @@ export const GET = withApiHandler("forestal-ctp-consumos-get", async (req: NextR
         gtfNumber: t.entry.gtfNumber,
         permiso: t.entry.originCode,
         fechaConsumo: t.fechaConsumo,
+        /* La columna «Árbol» de la corrida (ADR-450). */
+        arbolCodigo: t.arbolCodigo,
       })),
     });
   } catch (err) {

@@ -294,6 +294,12 @@ function serializar(t: {
   oxMedidoEn?: Date | string | null;
   oxMedidoPor?: string | null;
   d1d2MedidoEnPlanta?: boolean;
+  lothTrozadoId?: string | null;
+  arbolCodigo?: string | null;
+  recibidaD1Cm?: unknown;
+  recibidaD2Cm?: unknown;
+  recibidaLargoM?: unknown;
+  recibidaVolumenM3?: unknown;
 }) {
   const num = (v: unknown) => (v == null ? null : Number(v));
   return {
@@ -366,5 +372,14 @@ function serializar(t: {
     oxMedidoEn: t.oxMedidoEn ? new Date(t.oxMedidoEn).toISOString() : null,
     oxMedidoPor: t.oxMedidoPor ?? null,
     d1d2MedidoEnPlanta: Boolean(t.d1d2MedidoEnPlanta),
+    /* ADR-450: su árbol del Libro TH y lo medido en planta al recibirla
+       (`null` = llegó como dice la guía). WHITELIST: sin estas líneas la
+       ficha de la guía no dice de qué árbol salió ni que llegó distinta. */
+    lothTrozadoId: t.lothTrozadoId ?? null,
+    arbolCodigo: t.arbolCodigo ?? null,
+    recibidaD1Cm: num(t.recibidaD1Cm),
+    recibidaD2Cm: num(t.recibidaD2Cm),
+    recibidaLargoM: num(t.recibidaLargoM),
+    recibidaVolumenM3: num(t.recibidaVolumenM3),
   };
 }

@@ -25,6 +25,7 @@ import { rutaFichaDeTroza } from "@/lib/forestal/ctp-troza-url";
 import { formatNumber } from "@/lib/format";
 import {
   estadoDeTroza,
+  fraseDeMedidaEnPlanta,
   fotosDeTarjeta,
   m3DeTarjeta,
   medidasDeTarjeta,
@@ -39,6 +40,7 @@ import TarjetaMedidas from "./TarjetaMedidas";
 import TarjetaDatos, { type DatoTarjeta } from "./TarjetaDatos";
 import TarjetaFoto from "./TarjetaFoto";
 import ArmarLoteDesdeTarjeta from "./ArmarLoteDesdeTarjeta";
+import { BloqueDelBosque } from "../ctp-arbol-de-la-troza";
 import {
   BOTON_PRIMARIO,
   BOTON_SECUNDARIO,
@@ -57,6 +59,8 @@ function llegada(f: FichaTrozaTarjeta): string {
 }
 
 function datosDe(f: FichaTrozaTarjeta): DatoTarjeta[] {
+  /* ADR-450: llegó con otra medida; la guía no se toca, lo de planta va aparte. */
+  const enPlanta = f.troza.noRecepcionada ? null : fraseDeMedidaEnPlanta(f.troza.recibida, f.troza.volumenM3);
   return [
     { rotulo: "N° de registro", valor: f.ingreso.libroNro != null ? String(f.ingreso.libroNro) : null, codigo: true },
     { rotulo: "GTF", valor: f.ingreso.gtfNumber, codigo: true },
@@ -65,6 +69,7 @@ function datosDe(f: FichaTrozaTarjeta): DatoTarjeta[] {
     { rotulo: "Titular", valor: f.ingreso.proveedor ?? null, ancho: true },
     { rotulo: "Permiso", valor: f.ingreso.permiso ?? null, codigo: true, ancho: true },
     { rotulo: "Resolución", valor: f.ingreso.resolucion ?? null, ancho: true },
+    ...(enPlanta ? [{ rotulo: "Llegó distinta", valor: enPlanta, ancho: true }] : []),
   ];
 }
 
@@ -121,6 +126,11 @@ function Tarjeta({
             </div>
           )}
         </div>
+        {(f.arbol || t.arbolCodigo) && (
+          <div className="border-t border-[var(--rule-soft)]">
+            <BloqueDelBosque arbol={f.arbol} arbolCodigo={t.arbolCodigo} />
+          </div>
+        )}
       </article>
 
       {/* En el celular las salidas quedan al alcance del pulgar mientras se baja. */}

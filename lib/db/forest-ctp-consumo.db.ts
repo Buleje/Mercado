@@ -166,6 +166,9 @@ export class CtpInvariantError extends Error {
       /** De una troza no salen pedazos más grandes que ella, ni más volumen del
        *  que tiene. Es física, no una preferencia de negocio. */
       | "R1_SOBRE_RETROZADO"
+      /** Revisión ADR-450: la madre no llegó, ya se aserró o despachó, o es
+       *  descarte — sus pedazos serían madera que no está en el patio. 409. */
+      | "TROZA_NO_RETROZABLE"
       // ── Reproceso (ADR-316) ──
       /** No se reprocesa más de lo que la corrida tiene disponible, contando
        *  lo ya despachado Y lo ya reprocesado. */

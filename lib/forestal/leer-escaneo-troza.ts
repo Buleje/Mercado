@@ -5,8 +5,11 @@
  * pistola lectora —que para la computadora es un teclado: tipea el código y
  * da Enter— la troza queda marcada sin buscarla en la tabla.
  *
- * Un escaneo puede traer cuatro cosas:
+ * Un escaneo puede traer cinco cosas:
  *   · el QR chico de la etiqueta: `https://<host>/admin/q/<trozaId>`;
+ *   · el QR chico de la etiqueta del LIBRO TH (ADR-450 R3):
+ *     `https://<host>/verificar/<código de troza>` — el código, no un id: al
+ *     recibir la guía la troza todavía no existe en el CTP;
  *   · el QR grande, con la ficha en texto (`TROZA 118\nEspecie: …`,
  *     `ficha-texto-troza.ts`): vale su primera línea, el código;
  *   · el QR viejo: `…/admin?tab=…&vista=trozas&troza=<trozaId>`;
@@ -66,7 +69,7 @@ export function leerEscaneo(texto: string | null | undefined): LecturaEscaneo | 
      daba «ninguna troza con el código TROZA — ESPECIE: …». */
   if (esFichaDeTroza(crudo)) return null;
 
-  const esDireccion = /^[a-z][a-z0-9+.-]*:\/\//i.test(crudo) || crudo.startsWith("/admin");
+  const esDireccion = /^[a-z][a-z0-9+.-]*:\/\//i.test(crudo) || crudo.startsWith("/admin") || crudo.startsWith("/verificar/");
   if (esDireccion) {
     let url: URL;
     try {
@@ -74,8 +77,27 @@ export function leerEscaneo(texto: string | null | undefined): LecturaEscaneo | 
     } catch {
       return null;
     }
+    /* ADR-450 R3: el QR chico del Libro TH lleva el CÓDIGO de la troza.
+       `/verificar/lote/…` y `/verificar/despacho/…` son de otra cosa. */
+    const delTh = /^\/verificar\/([^/?#]+)\/?$/.exec(url.pathname);
+    if (delTh?.[1]) {
+      let codigo: string;
+      try {
+        codigo = decodeURIComponent(delTh[1]).trim();
+      } catch {
+        return null;
+      }
+      if (!codigo || /^(lote|despacho)$/i.test(codigo)) return null;
+      return { tipo: "codigo", codigo: codigo.replace(/\s+/g, " ").toUpperCase() };
+    }
     const corta = /\/admin\/q\/([^/?#]+)/.exec(url.pathname);
-    const id = corta?.[1] ? decodeURIComponent(corta[1]) : url.searchParams.get("troza");
+    let id: string | null;
+    try {
+      /* `/admin/q/%E0` tiraba URIError sin capturar (revisión 29-09). */
+      id = corta?.[1] ? decodeURIComponent(corta[1]) : url.searchParams.get("troza");
+    } catch {
+      return null;
+    }
     return id && PARECE_ID.test(id) ? { tipo: "id", id } : null;
   }
 
@@ -151,6 +173,9 @@ export interface FichaTrozaJson {
     noRecepcionada?: boolean | null;
     descarte?: boolean | null;
     fechaRecepcion?: string | null;
+    /** ADR-450: el árbol del Libro TH (copia para el acta). */
+    arbolCodigo?: string | null;
+    lothTrozadoId?: string | null;
   };
   ingreso: {
     id: string;
@@ -209,6 +234,8 @@ export function consumibleDeFicha(f: FichaTrozaJson): TrozaConsumible {
     retrozos: f.retrozos?.length ?? 0,
     consumidaEnId: f.corrida?.vigente ? f.corrida.id : null,
     despachadaEnId: f.despacho?.vigente ? f.despacho.id : null,
+    arbolCodigo: f.troza.arbolCodigo ?? null,
+    lothTrozadoId: f.troza.lothTrozadoId ?? null,
   };
 }
 

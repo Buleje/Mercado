@@ -167,6 +167,18 @@ export interface TrozaConsumible {
    * vienen de la guía (o no hay). El dato de SERFOR nunca se pisa.
    */
   d1d2MedidoEnPlanta?: boolean;
+  /** Su línea de Trozado del Libro TH (ADR-450). `null` = no se sabe o no vino del TH. */
+  lothTrozadoId?: string | null;
+  /** El árbol del que salió (copia del `treeCode` del Trozado, ADR-450). */
+  arbolCodigo?: string | null;
+  /**
+   * Lo medido en planta al recibirla cuando llegó DISTINTA a la guía (ADR-450
+   * L1). `null` = llegó como dice la guía. El consumo sigue usando `volumenM3`.
+   */
+  recibidaD1Cm?: number | null;
+  recibidaD2Cm?: number | null;
+  recibidaLargoM?: number | null;
+  recibidaVolumenM3?: number | null;
 }
 
 /** Por qué una troza no se puede elegir. `null` = está disponible. */

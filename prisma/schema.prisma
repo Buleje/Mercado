@@ -5948,6 +5948,32 @@ model WoodEntryTroza {
   /// Qué se observó al recibirla (o por qué no llegó).
   recepcionObs   String?
 
+  // ── Llegó distinta a la guía (ADR-450 L1) ────────────────────────────
+  /// Lo que se midió en planta al RECIBIRLA, cuando no coincide con la guía
+  /// más allá de la cinta (5 cm de largo, 1 cm de diámetro). Las medidas de
+  /// la guía (`d1Cm`, `d2Cm`, `largoM`, `volumenM3`) NO se pisan: el libro
+  /// sigue diciendo lo que dice la GTF y el consumo por pieza usa ese m³ (I2
+  /// intacta). Lo que no se corrigió se copia de la guía. NULL = llegó como
+  /// dice el papel. El m³ lo calcula el SERVIDOR (`smalianVolume`, la fórmula
+  /// del Libro TH) y queda congelado.
+  recibidaD1Cm      Decimal? @db.Decimal(8, 2)
+  recibidaD2Cm      Decimal? @db.Decimal(8, 2)
+  recibidaLargoM    Decimal? @db.Decimal(8, 3)
+  recibidaVolumenM3 Decimal? @db.Decimal(12, 4)
+
+  // ── Su árbol en el Libro TH (ADR-450 L4) ─────────────────────────────
+  /// La línea de Trozado (`ForestLothEntry`, section = trozado) de la que
+  /// salió. Sin FK, como `planId` en el Libro TH: la línea se ANULA, no se
+  /// borra, y la ficha la cuenta con su estado (el id pelado no alcanza).
+  /// No es único: un único obligaría a soltarlo al anular el ingreso (la
+  /// lección de `codigoPlanta`, ADR-436). La fecha de tala, el GPS y el censo
+  /// se LEEN del Libro TH cada vez (`ForestLothDB.arbolesDeTrozados`).
+  lothTrozadoId String?
+  /// COPIA del código del árbol (`treeCode` del Trozado): queda en el acta
+  /// aunque el Libro TH cambie, y es por lo que se busca «las trozas del
+  /// árbol 113» (búsqueda EXACTA: 113 no es 1130).
+  arbolCodigo   String?
+
   // ── Consumo por pieza (ADR-326) ──────────────────────────────────────
   /// El LOTE DE ASERRÍO en el que se guardó esta pieza (ADR-334).
   ///
@@ -6037,6 +6063,8 @@ model WoodEntryTroza {
   @@index([tenantId, consumidaEnId])
   @@index([tenantId, despachadaEnId])
   @@index([tenantId, trozaOrigenId])
+  @@index([tenantId, lothTrozadoId])
+  @@index([tenantId, arbolCodigo])
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

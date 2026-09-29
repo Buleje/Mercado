@@ -37,7 +37,8 @@ export function lothErrorResponse(err: unknown, ctx: string, tenantId: string): 
      choca con algo que existe → 409, con los ingresos a anular primero. */
   if (err instanceof GuiaYaEnElCtpError) {
     return NextResponse.json(
-      { error: "guia_ya_en_el_ctp", message: err.message, libroNros: err.libroNros },
+      /* `troza_ya_en_el_ctp` (ADR-450 R4): una línea de Trozado o Tala cuya troza está en el CTP. */
+      { error: err.codigo, message: err.message, libroNros: err.libroNros },
       { status: 409 },
     );
   }

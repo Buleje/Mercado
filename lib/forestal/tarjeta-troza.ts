@@ -22,6 +22,7 @@ import { guiaRecibida, type TrozaConsumible } from "./consumo-trozas";
 import { consumibleDeFicha, type FichaTrozaJson } from "./leer-escaneo-troza";
 import { motivoFueraDeLaPila } from "./lote-por-escaneo";
 import { normalizarFotos, type FotoCarga } from "./fotos-carga";
+import { diaConNombre, type ArbolDeTroza } from "./arbol-de-troza";
 
 /** La ficha como la devuelve el endpoint, con lo que la tarjeta lee de más. */
 export interface FichaTrozaTarjeta extends FichaTrozaJson {
@@ -34,6 +35,8 @@ export interface FichaTrozaTarjeta extends FichaTrozaJson {
     oxLargoPies?: number | null;
     /** D1/D2 los tomó la planta porque la guía no los traía. */
     d1d2MedidoEnPlanta?: boolean | null;
+    /** ADR-450: lo medido en planta al recibirla contando; `null` = llegó como dice la guía. */
+    recibida?: MedidaEnPlanta | null;
   };
   ingreso: FichaTrozaJson["ingreso"] & {
     status?: string | null;
@@ -49,6 +52,16 @@ export interface FichaTrozaTarjeta extends FichaTrozaJson {
     entryDate?: string | null;
     gtfNumber?: string | null;
   } | null;
+  /** ADR-450 L4: «Del bosque», leído del Libro TH con el estado de sus líneas. */
+  arbol?: ArbolDeTroza | null;
+}
+
+/** Lo que midió la planta al recibir una troza que llegó distinta (ADR-450). */
+export interface MedidaEnPlanta {
+  d1Cm: number | null;
+  d2Cm: number | null;
+  largoM: number | null;
+  volumenM3: number | null;
 }
 
 /** ¿La pieza está en el patio según el libro? El MISMO criterio del patio (ADR-339). */
@@ -175,4 +188,92 @@ export function m3DeTarjeta(t: Pick<TrozaConsumible, "volumenM3">): string {
 /** Las fotos de la carga de su guía, limpias. */
 export function fotosDeTarjeta(f: FichaTrozaTarjeta): FotoCarga[] {
   return normalizarFotos(f.ingreso.fotos);
+}
+
+// ── Del bosque (ADR-450 L4) ─────────────────────────────────────────────────
+
+/** El módulo del Libro TH y su mapa (mismo id que `loth-mapa-tala-url`). */
+const LOTH_TAB = "loth-libro-operaciones";
+/** El parámetro con que el Libro TH abre el mapa centrado en un árbol. */
+export const PARAM_ARBOL = "arbol";
+
+/** «Ver en el mapa del bosque»: el mapa del Libro TH, parado en ESE árbol. */
+export function urlDelArbolEnElMapa(codigo: string, pathname = "/admin"): string {
+  const q = new URLSearchParams({ tab: LOTH_TAB, vista: "mapa", [PARAM_ARBOL]: codigo });
+  return `${pathname}?${q.toString()}`;
+}
+
+/** Un renglón del bloque «Del bosque». `aviso` = se cuenta como historia (algo se anuló o se supuso). */
+export interface RenglonDelBosque {
+  rotulo: string;
+  valor: string;
+  aviso?: boolean;
+}
+
+/** De dónde salió el punto del mapa, en palabras del monte. */
+function ubicacion(a: ArbolDeTroza): RenglonDelBosque {
+  if (a.mapa?.fuente === "tala") {
+    const origen = a.tala?.gps?.origen;
+    const valor =
+      origen === "telefono" ? "GPS del teléfono al talar"
+      : origen === "censo" ? "GPS copiado del censo al talar"
+      : origen === "utm" ? "UTM anotada al talar"
+      : "GPS de la tala";
+    return { rotulo: "Ubicación", valor };
+  }
+  if (a.mapa?.fuente === "censo" && a.censo) {
+    return a.censo.zonaSupuesta
+      ? { rotulo: "Ubicación", valor: `UTM del censo; el censo no dice la zona y se supuso la ${a.censo.zona}`, aviso: true }
+      : { rotulo: "Ubicación", valor: `UTM del censo, zona ${a.censo.zona}` };
+  }
+  return { rotulo: "Ubicación", valor: "Sin coordenadas: no se puede ubicar en el mapa", aviso: true };
+}
+
+/**
+ * Lo que dice el bloque «Del bosque», renglón por renglón. Una línea anulada
+ * en el Libro TH se cuenta como historia («se anuló»), no se esconde: la troza
+ * existió y salió de ese árbol.
+ */
+export function renglonesDelBosque(a: ArbolDeTroza): RenglonDelBosque[] {
+  const out: RenglonDelBosque[] = [];
+  if (a.especie || a.cientifico) {
+    out.push({ rotulo: "Especie", valor: [a.especie, a.cientifico].filter(Boolean).join(" · ") });
+  }
+  if (a.tala) {
+    out.push({
+      rotulo: "Tala",
+      valor: `línea N° ${a.tala.lineNo} del ${diaConNombre(a.tala.fecha)}${a.tala.vigente ? "" : " · se anuló en el Libro TH"}`,
+      aviso: !a.tala.vigente,
+    });
+  } else {
+    out.push({ rotulo: "Tala", valor: "sin línea de tala en el Libro TH", aviso: true });
+  }
+  out.push({
+    rotulo: "Trozado",
+    valor: `línea N° ${a.trozado.lineNo} del ${diaConNombre(a.trozado.fecha)}${a.trozado.vigente ? "" : " · se anuló en el Libro TH"}`,
+    aviso: !a.trozado.vigente,
+  });
+  out.push(ubicacion(a));
+  const censo = [a.censo?.parcela ? `parcela ${a.censo.parcela}` : null, a.censo?.condicion].filter(Boolean).join(" · ");
+  if (censo) out.push({ rotulo: "Censo", valor: censo });
+  return out;
+}
+
+/** ¿Se anuló algo del árbol en el Libro TH? El bloque se pinta como historia. */
+export const arbolConHistoria = (a: ArbolDeTroza): boolean => !a.trozado.vigente || (a.tala != null && !a.tala.vigente);
+
+/**
+ * «En planta 98·96 cm · 4.20 m = 1.394 m³ (la guía dice 1.659 m³)». `null` si
+ * llegó como dice la guía. El libro sigue con la medida de la guía.
+ */
+export function fraseDeMedidaEnPlanta(
+  recibida: MedidaEnPlanta | null | undefined,
+  volumenGuiaM3: number | null | undefined,
+): string | null {
+  if (!recibida) return null;
+  const cm = (v: number | null) => (finito(v) ? formatNumber(Number(v), { max: 1 }) : "—");
+  const medidas = `${cm(recibida.d1Cm)}·${cm(recibida.d2Cm)} cm · ${finito(recibida.largoM) ? formatNumber(Number(recibida.largoM), 2) : "—"} m`;
+  const m3 = finito(recibida.volumenM3) ? ` = ${fmtM3(Number(recibida.volumenM3))} m³` : "";
+  const guia = finito(volumenGuiaM3) ? ` (la guía dice ${fmtM3(Number(volumenGuiaM3))} m³)` : "";
+  return `En planta ${medidas}${m3}${guia}`;
 }

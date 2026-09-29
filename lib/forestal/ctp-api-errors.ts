@@ -96,7 +96,11 @@ export function ctpErrorResponse(err: unknown, ctx: string, tenantId: string): N
       { error: err.code, message: err.message, detail: err.detail },
       {
         status:
-          err.code === "FOTO_NO_VALIDA" ? 400 : err.code === "PAQUETE_YA_DESPACHADO" ? 409 : 422,
+          err.code === "FOTO_NO_VALIDA"
+            ? 400
+            : err.code === "PAQUETE_YA_DESPACHADO" || err.code === "TROZA_NO_RETROZABLE"
+              ? 409
+              : 422,
       },
     );
   }

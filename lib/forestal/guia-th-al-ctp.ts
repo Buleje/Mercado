@@ -28,6 +28,7 @@ import type { GtfDatos } from "./ctp-gtf-datos";
 import { esFechaReal } from "./guias-guardadas";
 import { mismoNumeroGtf } from "./gtf-talonario";
 import { motivoOpcionalSchema } from "./motivo";
+import { ConteoSchema, HuellaSchema, SobrantesSchema, type CodigoConteo, type ResumenConteo } from "./conteo-guia-th";
 
 /** 4 decimales: la precisión del libro (m³). */
 const r4 = (n: number): number => Math.round(n * 10000) / 10000;
@@ -55,6 +56,12 @@ export interface ItemGuiaTh {
   lengthM: number | null;
   volumeM3: number | null;
   pieces: number | null;
+  /**
+   * La línea de Trozado del Libro TH de esta troza (ADR-450): la escribe
+   * «Despachar con guía» desde el 29-09-2026. Las guías emitidas antes no la
+   * traen: «Recibir» la busca por plan + código + trozado vigente.
+   */
+  trozadoId: string | null;
 }
 
 const numOpc = z.preprocess(
@@ -76,6 +83,7 @@ const itemSchema = z.object({
   lengthM: numOpc.optional(),
   volumeM3: numOpc.optional(),
   pieces: numOpc.optional(),
+  trozadoId: textoOpc.optional(),
 });
 
 /** `ForestGtf.items` → piezas. Una fila que no se entiende se descarta sola, no tumba la guía. */
@@ -97,6 +105,7 @@ export function leerItemsGuiaTh(raw: unknown): ItemGuiaTh[] {
       lengthM: d.lengthM ?? null,
       volumeM3: d.volumeM3 ?? null,
       pieces: d.pieces != null ? Math.round(d.pieces) : null,
+      trozadoId: d.trozadoId ?? null,
     });
   }
   return out;
@@ -167,6 +176,10 @@ export interface TrozaDeIngresoTh {
   volumenM3: number | null;
   /** Parcela de corta del plan de la guía. */
   parcela: string | null;
+  /** Su línea de Trozado del Libro TH (ADR-450); `null` = no se supo cuál. */
+  trozadoId: string | null;
+  /** El árbol del que salió, como lo escribió el Trozado (`treeCode`). */
+  arbolCodigo: string | null;
 }
 
 /** Un renglón del libro: una especie de la guía con sus trozas. */
@@ -274,6 +287,8 @@ export function ingresosDesdeGuiaTh(
       cantidad,
       volumenM3,
       parcela,
+      trozadoId: it.trozadoId ?? null,
+      arbolCodigo: txt(it.treeCode) || null,
     });
     g.volumenM3 = r4(g.volumenM3 + volumenM3);
     g.piezas += cantidad;
@@ -293,6 +308,103 @@ export function ingresosDesdeGuiaTh(
     );
   }
   return { ok: true, lineas, totalM3, trozas, avisos };
+}
+
+// ── Cada troza con su línea de Trozado (ADR-450 L4) ─────────────────────────
+
+/** Una línea de Trozado del Libro TH, como la trae la DB class para atar. */
+export interface TrozadoParaAtar {
+  id: string;
+  trozaCode: string | null;
+  treeCode: string | null;
+  planId: string | null;
+  status: string;
+  deletedAt: Date | string | null;
+}
+
+const clave = (v: string | null | undefined): string => (v ?? "").trim().toUpperCase();
+const listaCorta = (c: readonly string[]): string =>
+  c.length <= 5 ? c.join(", ") : `${c.slice(0, 5).join(", ")} y ${c.length - 5} más`;
+
+/**
+ * Cada troza de la guía con su línea de Trozado (PURO: la DB class sólo trae
+ * las candidatas del negocio). Una línea se ata sólo si es de ESA troza (mismo
+ * código), del plan de la guía, VIGENTE y del mismo árbol que dice la guía.
+ *
+ *   · La guía emitida desde el 29-09 trae el id: si esa línea no cumple (se
+ *     anuló, es de otra troza, de otro plan o de otro negocio —entonces no
+ *     llega entre las candidatas—), se busca la vigente por plan + código.
+ *   · Las guías de antes no lo traen: se busca por plan + código + vigente.
+ *   · Exactamente una candidata, o ninguna: dos con el mismo código no se
+ *     adivinan. Un árbol distinto al de la guía tampoco se ata.
+ *
+ * Todo lo que no se ata entra igual (el libro admite huecos), con aviso.
+ */
+export function atarTrozadosDeGuia(
+  lineas: readonly LineaDeIngresoTh[],
+  filas: readonly TrozadoParaAtar[],
+  planId: string | null,
+): { lineas: LineaDeIngresoTh[]; avisos: string[] } {
+  const plan = planId ?? null;
+  const vigente = (f: TrozadoParaAtar) => f.status === "registrado" && !f.deletedAt;
+  const nombre = (t: TrozaDeIngresoTh) => t.codificacion?.trim() || `N° ${t.orden}`;
+  const reatadas: string[] = [];
+  const ajenas: string[] = [];
+  const otroArbol: string[] = [];
+  const sinAtar: string[] = [];
+  const out = lineas.map((l) => ({
+    ...l,
+    trozas: l.trozas.map((t): TrozaDeIngresoTh => {
+      const cod = clave(t.codificacion);
+      const suya = (f: TrozadoParaAtar) => !!cod && clave(f.trozaCode) === cod && (f.planId ?? null) === plan;
+      const mismoArbol = (f: TrozadoParaAtar) => !t.arbolCodigo || !f.treeCode || clave(f.treeCode) === clave(t.arbolCodigo);
+      const atar = (f: TrozadoParaAtar): TrozaDeIngresoTh => ({ ...t, trozadoId: f.id, arbolCodigo: t.arbolCodigo ?? (f.treeCode?.trim() || null) });
+
+      if (t.trozadoId) {
+        const f = filas.find((x) => x.id === t.trozadoId);
+        if (f && suya(f) && vigente(f)) {
+          if (mismoArbol(f)) return atar(f);
+          otroArbol.push(nombre(t));
+          return { ...t, trozadoId: null };
+        }
+      }
+      const cands = filas.filter((x) => suya(x) && vigente(x));
+      if (cands.length === 1) {
+        if (!mismoArbol(cands[0])) {
+          otroArbol.push(nombre(t));
+          return { ...t, trozadoId: null };
+        }
+        if (t.trozadoId) reatadas.push(nombre(t));
+        return atar(cands[0]);
+      }
+      if (t.trozadoId) ajenas.push(nombre(t));
+      else if (cod) sinAtar.push(nombre(t));
+      return { ...t, trozadoId: null };
+    }),
+  }));
+  const avisos: string[] = [];
+  const una = (c: readonly string[]) => c.length === 1;
+  if (reatadas.length > 0) {
+    avisos.push(
+      `La guía nombraba una línea de Trozado anulada o que no es suya para ${una(reatadas) ? "la troza" : "las trozas"} ${listaCorta(reatadas)}: se ${una(reatadas) ? "ató" : "ataron"} a su línea vigente de tu Libro TH.`,
+    );
+  }
+  if (ajenas.length > 0) {
+    avisos.push(
+      `${una(ajenas) ? "La troza" : "Las trozas"} ${listaCorta(ajenas)} ${una(ajenas) ? "dice" : "dicen"} venir de una línea de Trozado anulada o que no es suya, y no hay otra vigente: ${una(ajenas) ? "entra" : "entran"} sin su árbol del Libro TH.`,
+    );
+  }
+  if (otroArbol.length > 0) {
+    avisos.push(
+      `El Trozado de ${una(otroArbol) ? "la troza" : "las trozas"} ${listaCorta(otroArbol)} dice otro árbol que la guía: ${una(otroArbol) ? "entra" : "entran"} sin su árbol del Libro TH. Revisa ese Trozado.`,
+    );
+  }
+  if (sinAtar.length > 0) {
+    avisos.push(
+      `No se encontró en tu Libro TH la línea de Trozado de ${una(sinAtar) ? "la troza" : "las trozas"} ${listaCorta(sinAtar)} (o hay más de una con ese código): ${una(sinAtar) ? "entra" : "entran"} sin su árbol.`,
+    );
+  }
+  return { lineas: out, avisos };
 }
 
 // ── El enlace entre las dos guías ───────────────────────────────────────────
@@ -434,8 +546,21 @@ export const RecibirGuiaThInput = z.object({
   /** Llegó después del vencimiento de la guía y se confirma con motivo (ADR-434, regla de `motivo.ts`). */
   aceptaVencida: z.boolean().optional(),
   motivoVencida: motivoOpcionalSchema(MAX_TEXTO_RECIBIR),
+  /**
+   * ADR-450: la huella de la lista que se contó (`PreparadoRecibirTh.huella`).
+   * Si al recibir la guía del TH ya no es la misma → 409 `GUIA_CAMBIO`.
+   */
+  huella: HuellaSchema,
+  /** ADR-450: TODAS las trozas de la guía, una vez cada una (`TrozaContada`). */
+  conteo: ConteoSchema,
+  /** Hay trozas `llego: false` y quien recibe confirma que no llegaron. */
+  confirmaFaltantes: z.boolean().optional(),
+  /** Códigos escaneados que no vienen en la guía: sólo van a la auditoría. */
+  sobrantes: SobrantesSchema.optional(),
 });
 export type RecibirGuiaThInput = z.infer<typeof RecibirGuiaThInput>;
+/** Lo que arma la pantalla (antes de limpiar los textos). */
+export type RecibirGuiaThBody = z.input<typeof RecibirGuiaThInput>;
 
 /**
  * El «no» de un cuerpo mal formado, SIEMPRE en español: los mensajes propios de
@@ -449,6 +574,16 @@ export function mensajeDeRecibirInvalido(issues: readonly { path: readonly Prope
   if (campo === "observacion") return `La observación va en hasta ${MAX_TEXTO_RECIBIR} letras.`;
   if (campo === "motivoVencida") return `El motivo de la llegada vencida va en hasta ${MAX_TEXTO_RECIBIR} letras.`;
   if (campo === "aceptaVencida") return "Confirma la llegada vencida marcando la casilla.";
+  if (campo === "huella") return "Vuelve a abrir la guía: le falta su huella para recibirla.";
+  if (campo === "conteo") {
+    if (i.path.length <= 1) return "Cuenta las trozas de la guía antes de recibirla.";
+    const sub = String(i.path[2] ?? "");
+    if (sub === "medida") return "Una medida en planta no es válida: el diámetro va en cm (hasta 400) y el largo en m (hasta 30).";
+    if (sub === "obs") return "La observación de una troza va en hasta 120 letras.";
+    return "El conteo trae una troza mal escrita: vuelve a abrir la guía y cuenta otra vez.";
+  }
+  if (campo === "confirmaFaltantes") return "Confirma las trozas que no llegaron marcando la casilla.";
+  if (campo === "sobrantes") return "Los códigos que no vienen en la guía van hasta 50, de hasta 60 letras cada uno.";
   return "Revisa los datos de la recepción.";
 }
 
@@ -506,7 +641,30 @@ export interface PreparadoRecibirTh {
   totalM3: number;
   trozas: number;
   avisos: string[];
+  /**
+   * ADR-450: huella de la lista (orden, código y m³ de cada troza). Vuelve en
+   * el POST tal cual; si la guía cambió en el Libro TH → 409 `GUIA_CAMBIO`.
+   */
+  huella: string;
 }
+
+/**
+ * Por qué no se recibe desde acá, con su status: 409 choca con algo que ya
+ * existe o cambió; 422 es un dato que no alcanza para registrarla.
+ */
+export type CodigoGuiaTh =
+  | "YA_INGRESADA"
+  | "YA_NO_ESTA"
+  | "SIN_GUIA_TH"
+  | "GUIA_ANULADA"
+  | "OTRO_DESTINATARIO"
+  | "OTRA_GUIA"
+  | "TROZA_YA_EN_EL_LIBRO"
+  | "GUIA_INCOMPLETA"
+  /** 409 · la lista de la guía no es la que se contó (ADR-450). */
+  | "GUIA_CAMBIO"
+  /** 422 · el conteo (ADR-450): falta, sobra o repite una troza · no llegó ninguna · faltantes sin confirmar. */
+  | CodigoConteo;
 
 export interface RecibidaTh {
   ingresos: { id: string; libroNro: number | null; especie: string; volumeM3: number; pieces: number }[];
@@ -517,6 +675,18 @@ export interface RecibidaTh {
   recibida: boolean;
   motivoSinRecibir: string | null;
   avisos: string[];
+  /** ADR-450: cuántas trozas llegaron (las demás entraron como «no llegó»). */
+  llegaron: number;
+  /** Códigos de las que no llegaron (`N° <orden>` si la troza no tiene código). */
+  noLlegaron: string[];
+  /** Llegaron con otra medida (guardada en `recibida*`, la guía intacta). */
+  distintas: number;
+  /** m³ de lo que llegó: la medida de planta si la hay, si no la de la guía. */
+  m3Recibido: number;
+  /** `totalM3 − m3Recibido`. Positivo = falta madera. */
+  brechaM3: number;
+  /** El resumen del conteo (por especie incluido), el mismo que ve la pantalla. */
+  resumen: ResumenConteo;
 }
 
 /** El mensaje del Libro TH después de emitir, según lo que pasó en el CTP. */

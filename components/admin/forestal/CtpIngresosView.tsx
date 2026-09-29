@@ -109,7 +109,6 @@ import CtpGuiasBandeja from "./CtpGuiasBandeja";
 import CtpGuiasGuardadasBandeja from "./CtpGuiasGuardadasBandeja";
 import CtpGuiasGuardadasCapa, { type ModalGuardadas } from "./CtpGuiasGuardadasCapa";
 import CtpRecibirGuiaThModal from "./CtpRecibirGuiaThModal";
-import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { buscarGuiaGuardada, detalleDeGuia } from "@/hooks/use-guias-guardadas";
 import type { GuiaGuardadaDetalle, GuiaGuardadaVista } from "@/lib/forestal/guias-guardadas";
 import CtpIngresosPaginacion from "./CtpIngresosPaginacion";
@@ -1373,26 +1372,13 @@ export default function CtpIngresosView({
           guardadaId={recibirTh.id}
           gtfNumber={recibirTh.gtfNumber}
           onClose={() => setRecibirTh(null)}
-          onRecibida={(r) => {
-            setRecibirTh(null);
+          /* El modal se queda abierto con lo que entró («Entraron 8: 7 llegaron,
+             1 no llegó», ADR-450); atrás, la tabla y las bandejas ya se ponen al día. */
+          onRecibida={() => {
             setBandejaKey((k) => k + 1);
             setGuardadasKey((k) => k + 1); // la guardada pasa a «ya ingresada»
             void conteoDocs.refrescar();
             void reload();
-            const ingresos = r.ingresos.length === 1 ? "1 ingreso" : `${r.ingresos.length} ingresos`;
-            if (r.recibida) {
-              pushToast({
-                tono: "success",
-                msg: `Guía ${recibirTh.gtfNumber} recibida`,
-                detail: `${ingresos} con ${r.trozas} trozas · ${fmtM3(r.totalM3)} m³.`,
-              });
-            } else {
-              pushToast({
-                tono: "warning",
-                msg: `Guía ${recibirTh.gtfNumber} registrada, falta recibirla`,
-                detail: r.motivoSinRecibir ?? "Recíbela desde la tabla de Ingresos.",
-              });
-            }
           }}
         />
       )}

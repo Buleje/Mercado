@@ -201,3 +201,28 @@ export function saldoDeTroza(madre: TrozaMadre & { retrozosPrevios: Array<{ volu
     disponible: Number((sinCortar + retrozado - descartado).toFixed(4)),
   };
 }
+
+/**
+ * Por qué una troza NO se puede cortar en pedazos (revisión ADR-450). `null` =
+ * se puede. La MISMA regla para el botón «Retrozar» y para el servidor.
+ *
+ * Los pedazos nacen llegados y T1 (ADR-326) revisa el pedazo, no la madre:
+ * cortar una troza que no llegó al patio fabricaba madera consumible que nunca
+ * bajó del camión. Lo mismo una ya aserrada o ya despachada (sus pedazos serían
+ * la misma madera dos veces) o un descarte.
+ *
+ * `consumidaEnId`/`despachadaEnId` son los VIGENTES (corrida o despacho
+ * registrado y no borrado): el llamador los filtra por estado, nunca el id pelado.
+ */
+export function motivoNoRetrozable(t: {
+  noRecepcionada?: boolean | null;
+  descarte?: boolean | null;
+  consumidaEnId?: string | null;
+  despachadaEnId?: string | null;
+}): string | null {
+  if (t.noRecepcionada) return "Esta troza no llegó al patio: recepciónala antes de retrozarla.";
+  if (t.consumidaEnId) return "Esta troza ya entró a una corrida: suéltala de la corrida (o anula la corrida) antes de retrozarla.";
+  if (t.despachadaEnId) return "Esta troza ya salió entera en un despacho: anula ese despacho antes de retrozarla.";
+  if (t.descarte) return "Esta troza es descarte: no se corta en pedazos.";
+  return null;
+}

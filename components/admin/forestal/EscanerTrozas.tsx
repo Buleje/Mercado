@@ -151,8 +151,12 @@ export default function EscanerTrozas<T extends TrozaDelEscaner>({
           r.trozas,
         );
       }
-      /* El resto de una ficha tipeada sin sus íconos: no es un código perdido. */
-      if (enFicha && lectura.tipo === "codigo") {
+      /* El resto de una ficha tipeada sin sus íconos: no es un código perdido.
+         Pero OTRA ficha (`TROZA 115-B`) o un QR con dirección (`/verificar/115-B`,
+         el chico del Libro TH) no son restos: son otra etiqueta, y callarlas
+         escondía la troza que no viene en la lista (ADR-450, contar al bajar). */
+      const esOtraEtiqueta = esFichaDeTroza(crudo) || /^([a-z][a-z0-9+.-]*:\/\/|\/)/i.test(crudo.trim());
+      if (enFicha && lectura.tipo === "codigo" && !esOtraEtiqueta) {
         fichaHastaRef.current = Date.now() + VENTANA_FICHA_MS;
         return;
       }

@@ -23,6 +23,23 @@ describe("leerEscaneo", () => {
     expect(leerEscaneo(`/admin?tab=ctp&troza=${ID}`)).toEqual({ tipo: "id", id: ID });
   });
 
+  it("ADR-450 R3: el QR chico del Libro TH (/verificar/<código>) trae el CÓDIGO de la troza", () => {
+    expect(leerEscaneo("https://blas.buleje.pe/verificar/113-A")).toEqual({ tipo: "codigo", codigo: "113-A" });
+    expect(leerEscaneo("http://localhost:3000/verificar/113-a/")).toEqual({ tipo: "codigo", codigo: "113-A" });
+    expect(leerEscaneo(`/verificar/${encodeURIComponent("13/A (0000008)")}`)).toEqual({ tipo: "codigo", codigo: "13/A (0000008)" });
+    /* Los certificados de lote y de despacho son otra cosa. */
+    expect(leerEscaneo("https://x.pe/verificar/lote/cmf1a2b3c4d5e6f7g8h9i0j1k")).toBeNull();
+    expect(leerEscaneo("https://x.pe/verificar/despacho/cmf1a2b3c4d5e6f7g8h9i0j1k")).toBeNull();
+    expect(leerEscaneo("https://x.pe/verificar/lote")).toBeNull();
+    expect(leerEscaneo("https://x.pe/verificar/%E0%A4%A")).toBeNull();
+  });
+
+  it("revisión 29-09: un QR /admin/q/ mal escapado no revienta, se ignora", () => {
+    expect(() => leerEscaneo("https://x.pe/admin/q/%E0")).not.toThrow();
+    expect(leerEscaneo("https://x.pe/admin/q/%E0")).toBeNull();
+    expect(leerEscaneo("/admin/q/%E0%A4%A")).toBeNull();
+  });
+
   it("una dirección que no es de una troza no se lee como código", () => {
     expect(leerEscaneo("https://google.com/")).toBeNull();
     expect(leerEscaneo("https://x.pe/admin?tab=ctp")).toBeNull();

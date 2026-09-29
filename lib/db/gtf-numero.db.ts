@@ -2,7 +2,7 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/lib/generated/prisma/client";
 import { claveNumeroGtf, colaDeGtf, mismoNumeroGtf } from "@/lib/forestal/gtf-talonario";
-import { mensajeGuiaYaRecibida, mismaGuiaTh } from "@/lib/forestal/guia-th-al-ctp";
+import { foliosEnTexto, mensajeGuiaYaRecibida, mismaGuiaTh } from "@/lib/forestal/guia-th-al-ctp";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
 
 /**
@@ -40,6 +40,11 @@ export class GuiaYaEnElCtpError extends Error {
   constructor(
     message: string,
     readonly libroNros: (number | null)[],
+    /**
+     * El `error` del 409: la guía entera (o una línea de su despacho) o, desde
+     * ADR-450 R4, una línea de Trozado o Tala cuya troza está viva en el CTP.
+     */
+    readonly codigo: "guia_ya_en_el_ctp" | "troza_ya_en_el_ctp" = "guia_ya_en_el_ctp",
   ) {
     super(message);
     this.name = "GuiaYaEnElCtpError";
@@ -145,33 +150,94 @@ export const GtfNumeroDB = {
   async trozasYaEnElLibro(
     db: Db,
     tenantId: string,
-    piezas: readonly { codificacion: string | null; especie: string | null }[],
+    piezas: readonly { codificacion: string | null; especie: string | null; lothTrozadoId?: string | null }[],
     permiso: string | null,
   ): Promise<{ codificacion: string | null; libroNro: number | null; gtfNumber: string }[]> {
     if (!tenantId) throw new Error("tenantId is required");
     const buscadas = piezas
       .map((p) => ({ codigo: (p.codificacion ?? "").trim(), especie: claveEspecie(p.especie) }))
       .filter((p) => p.codigo && p.codigo !== "-");
-    if (buscadas.length === 0) return [];
+    /* ADR-450: la MISMA línea de Trozado del Libro TH es la misma pieza, se
+       llame como se llame y sea del permiso que sea: comparación exacta. */
+    const trozados = new Set(piezas.map((p) => p.lothTrozadoId?.trim()).filter((x): x is string => !!x));
+    if (buscadas.length === 0 && trozados.size === 0) return [];
     const filas = await db.woodEntryTroza.findMany({
       where: {
         tenantId,
-        codificacion: { in: [...new Set(buscadas.map((b) => b.codigo))], mode: "insensitive" },
+        OR: [
+          { codificacion: { in: [...new Set(buscadas.map((b) => b.codigo))], mode: "insensitive" } },
+          { lothTrozadoId: { in: [...trozados] } },
+        ],
         entry: { tenantId, deletedAt: null, status: { notIn: [...ESTADOS_SIN_INGRESO] } },
       },
       select: {
         codificacion: true,
         especieComun: true,
+        lothTrozadoId: true,
         entry: { select: { libroNro: true, gtfNumber: true, speciesCommonName: true, originCode: true } },
       },
     });
     return filas
       .filter((f) => {
+        if (f.lothTrozadoId && trozados.has(f.lothTrozadoId)) return true;
         const codigo = (f.codificacion ?? "").trim().toUpperCase();
         const especie = claveEspecie(f.especieComun ?? f.entry.speciesCommonName);
         const misma = buscadas.some((b) => b.codigo.toUpperCase() === codigo && (!b.especie || !especie || b.especie === especie));
         return misma && mismaGuiaTh({ permisoCodigo: f.entry.originCode, titularNombre: null }, { permiso, titular: null }).ok;
       })
       .map((f) => ({ codificacion: f.codificacion, libroNro: f.entry.libroNro, gtfNumber: f.entry.gtfNumber }));
+  },
+
+  /**
+   * ADR-450 R4 · antes de anular (o borrar) en el Libro TH una línea de
+   * Trozado o de Tala, DENTRO de la transacción que anula: si una troza de
+   * esas líneas ya está viva en el Libro CTP (por `lothTrozadoId`), 409 con
+   * los ingresos a anular primero — el mismo patrón que anular la guía.
+   *
+   * Candado: el de «Recibir» (`bloquear` con el N° de cada guía que despachó
+   * esas trozas, en orden para que dos anulaciones no se abracen). Así un
+   * «Recibir» en curso termina antes, y al entrar se ve lo que dejó.
+   */
+  async exigirTrozadosFueraDelCtp(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+    trozadoIds: readonly string[],
+    numerosDeGuia: readonly string[],
+    /** Cómo se nombra la línea: `{ de: "del trozado #17", la: "el trozado #17" }`. */
+    queSeAnula: { de: string; la: string },
+  ): Promise<void> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const ids = [...new Set(trozadoIds.filter(Boolean))];
+    if (ids.length === 0) return;
+    /* En el orden de la LLAVE del N° (la que usa `bloquear`), no del texto:
+       `019-…` y `19-…` son el mismo candado y dos anulaciones tienen que
+       pedirlos en el mismo orden para no abrazarse. */
+    const porLlave = new Map<string, string>();
+    for (const n of numerosDeGuia.map((x) => x.trim()).filter(Boolean)) {
+      const k = claveNumeroGtf(n) ?? n;
+      if (!porLlave.has(k)) porLlave.set(k, n);
+    }
+    for (const k of [...porLlave.keys()].sort()) {
+      await GtfNumeroDB.bloquear(tx, tenantId, porLlave.get(k) as string);
+    }
+    const vivas = await tx.woodEntryTroza.findMany({
+      where: {
+        tenantId,
+        lothTrozadoId: { in: ids },
+        entry: { tenantId, deletedAt: null, status: { notIn: [...ESTADOS_SIN_INGRESO] } },
+      },
+      select: { codificacion: true, entry: { select: { libroNro: true, gtfNumber: true } } },
+      orderBy: { codificacion: "asc" },
+    });
+    if (vivas.length === 0) return;
+    const nros = [...new Set(vivas.map((v) => v.entry.libroNro))];
+    const cods = [...new Set(vivas.map((v) => v.codificacion?.trim()).filter((c): c is string => !!c))];
+    const guias = [...new Set(vivas.map((v) => v.entry.gtfNumber))];
+    const piezas = cods.length === 1 ? `La troza ${cods[0]}` : cods.length > 1 ? `Las trozas ${cods.slice(0, 5).join(", ")}${cods.length > 5 ? ` (y ${cods.length - 5} más)` : ""}` : "Una troza";
+    throw new GuiaYaEnElCtpError(
+      `${piezas} ${queSeAnula.de} ya ${cods.length > 1 ? "están" : "está"} en tu Libro CTP (${foliosEnTexto(nros)}, guía ${guias.join(", ")}). ${nros.length === 1 ? "Anula ese ingreso" : "Anula esos ingresos"} allá primero y después anula ${queSeAnula.la}.`,
+      nros,
+      "troza_ya_en_el_ctp",
+    );
   },
 };

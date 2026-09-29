@@ -19,7 +19,9 @@ import {
   leerItemsGuiaTh,
   mensajeDelPase,
   RecibirGuiaThInput,
+  atarTrozadosDeGuia,
   type ItemGuiaTh,
+  type TrozadoParaAtar,
 } from "@/lib/forestal/guia-th-al-ctp";
 import { medidasDeTroza } from "@/lib/forestal/serfor-gtf-a-ingresos";
 import { vencimientoDeGuiaGuardada } from "@/lib/forestal/vencimiento-guia-guardada";
@@ -49,8 +51,12 @@ const troza = (o: Partial<ItemGuiaTh>): ItemGuiaTh => ({
   lengthM: null,
   volumeM3: null,
   pieces: null,
+  trozadoId: null,
   ...o,
 });
+
+/** ADR-450: el POST de «Recibir» trae la huella de la lista y el conteo. */
+const CONTADA = { huella: "v1-0123456789abcd-1", conteo: [{ orden: 1, llego: true }] };
 
 describe("destinoDeGuiaTh — sólo pasa al CTP propio si el destinatario es este negocio", () => {
   it("mismo RUC (con espacios o guiones) → propio", () => {
@@ -157,6 +163,19 @@ describe("leerItemsGuiaTh — la columna JSON se lee con desconfianza", () => {
     expect(r).toHaveLength(2);
     expect(leerItemsGuiaTh(null)).toEqual([]);
   });
+  it("ADR-450: la línea de Trozado viaja en la guía y llega a la troza del ingreso, con su árbol", () => {
+    const leidos = leerItemsGuiaTh([
+      { code: "113-A", treeCode: " 113 ", species: "Sapotillo", volumeM3: 1.6592, trozadoId: "cmtrozado113a" },
+      { code: "113-B", treeCode: "113", species: "Sapotillo", volumeM3: 1.2 },
+    ]);
+    expect(leidos.map((i) => i.trozadoId)).toEqual(["cmtrozado113a", null]);
+    const r = ingresosDesdeGuiaTh(leidos);
+    if (!r.ok) throw new Error(r.motivo);
+    expect(r.lineas[0].trozas.map((t) => [t.codificacion, t.trozadoId, t.arbolCodigo])).toEqual([
+      ["113-A", "cmtrozado113a", "113"],
+      ["113-B", null, "113"],
+    ]);
+  });
 });
 
 describe("el enlace por N° de guía", () => {
@@ -178,9 +197,28 @@ describe("el enlace por N° de guía", () => {
 
 describe("contrato de «Recibir»", () => {
   it("la fecha de llegada tiene que existir", () => {
-    expect(RecibirGuiaThInput.safeParse({ fechaLlegada: "2026-09-28" }).success).toBe(true);
-    expect(RecibirGuiaThInput.safeParse({ fechaLlegada: "2026-02-31" }).success).toBe(false);
+    expect(RecibirGuiaThInput.safeParse({ fechaLlegada: "2026-09-28", ...CONTADA }).success).toBe(true);
+    expect(RecibirGuiaThInput.safeParse({ fechaLlegada: "2026-02-31", ...CONTADA }).success).toBe(false);
     expect(RecibirGuiaThInput.safeParse({}).success).toBe(false);
+  });
+  it("ADR-450: sin huella o sin conteo no se recibe, y se dice en español", () => {
+    const sinConteo = RecibirGuiaThInput.safeParse({ fechaLlegada: "2026-09-28", huella: CONTADA.huella });
+    expect(sinConteo.success).toBe(false);
+    if (!sinConteo.success) expect(mensajeDeRecibirInvalido(sinConteo.error.issues)).toBe("Cuenta las trozas de la guía antes de recibirla.");
+    const sinHuella = RecibirGuiaThInput.safeParse({ fechaLlegada: "2026-09-28", conteo: CONTADA.conteo });
+    expect(sinHuella.success).toBe(false);
+    if (!sinHuella.success) expect(mensajeDeRecibirInvalido(sinHuella.error.issues)).toContain("huella");
+    const vacio = RecibirGuiaThInput.safeParse({ fechaLlegada: "2026-09-28", huella: CONTADA.huella, conteo: [] });
+    expect(vacio.success).toBe(false);
+    const medidaMala = RecibirGuiaThInput.safeParse({
+      fechaLlegada: "2026-09-28",
+      huella: CONTADA.huella,
+      conteo: [{ orden: 1, llego: true, medida: { largoM: 45 } }],
+    });
+    expect(medidaMala.success).toBe(false);
+    if (!medidaMala.success) expect(mensajeDeRecibirInvalido(medidaMala.error.issues)).toContain("hasta 30");
+    const sobrantes = RecibirGuiaThInput.safeParse({ fechaLlegada: "2026-09-28", ...CONTADA, sobrantes: Array(51).fill("115-B") });
+    expect(sobrantes.success).toBe(false);
   });
   it("el Libro TH sólo dice algo cuando hay algo que decir", () => {
     expect(mensajeDelPase("creada")).toContain("Libro CTP");
@@ -250,19 +288,76 @@ describe("el «no» de anular una guía que ya entró al CTP", () => {
 
 describe("el motivo de una llegada vencida no acepta invisibles", () => {
   it("un motivo hecho de espacios de ancho cero queda vacío y se rechaza al recibir", () => {
-    const r = RecibirGuiaThInput.safeParse({ fechaLlegada: "2026-09-28", aceptaVencida: true, motivoVencida: "\u200B\u200B\u200B" });
+    const r = RecibirGuiaThInput.safeParse({ fechaLlegada: "2026-09-28", ...CONTADA, aceptaVencida: true, motivoVencida: "\u200B\u200B\u200B" });
     expect(r.success && r.data.motivoVencida).toBe("");
-    expect(RecibirGuiaThInput.safeParse({ fechaLlegada: "2026-09-28", observacion: "x".repeat(301) }).success).toBe(false);
+    expect(RecibirGuiaThInput.safeParse({ fechaLlegada: "2026-09-28", ...CONTADA, observacion: "x".repeat(301) }).success).toBe(false);
   });
 });
 
 describe("un cuerpo mal formado se explica en español", () => {
   it("el «Too big» de Zod no llega a la pantalla", () => {
-    const r = RecibirGuiaThInput.safeParse({ fechaLlegada: "2026-09-28", observacion: "x".repeat(301) });
+    const r = RecibirGuiaThInput.safeParse({ fechaLlegada: "2026-09-28", ...CONTADA, observacion: "x".repeat(301) });
     expect(r.success).toBe(false);
     if (r.success) return;
     expect(mensajeDeRecibirInvalido(r.error.issues)).toBe("La observación va en hasta 300 letras.");
     expect(mensajeDeRecibirInvalido([{ path: ["fechaLlegada"], message: "Invalid input" }])).toContain("fecha de llegada");
     expect(mensajeDeRecibirInvalido([])).toBe("Revisa los datos de la recepción.");
+  });
+});
+
+describe("atarTrozadosDeGuia — revisión 29-09: sólo se ata la línea vigente, de esa troza, de ese plan y de ese árbol", () => {
+  const PLAN = "plan-1";
+  const guia = (trozadoId: string | null, arbol = "113") => {
+    const r = ingresosDesdeGuiaTh([troza({ code: "113-A", treeCode: arbol, species: "Sapotillo", volumeM3: 1.6592, trozadoId })]);
+    if (!r.ok) throw new Error(r.motivo);
+    return r.lineas;
+  };
+  const fila = (o: Partial<TrozadoParaAtar>): TrozadoParaAtar => ({
+    id: "tz-vivo",
+    trozaCode: "113-A",
+    treeCode: "113",
+    planId: PLAN,
+    status: "registrado",
+    deletedAt: null,
+    ...o,
+  });
+  const atada = (r: ReturnType<typeof atarTrozadosDeGuia>) => r.lineas[0].trozas[0];
+
+  it("el id de la guía vigente, de esa troza y de ese plan se ata sin avisos", () => {
+    const r = atarTrozadosDeGuia(guia("tz-vivo"), [fila({})], PLAN);
+    expect(atada(r)).toMatchObject({ trozadoId: "tz-vivo", arbolCodigo: "113" });
+    expect(r.avisos).toEqual([]);
+  });
+  it("un id ANULADO o BORRADO no se ata: se busca la vigente por plan + código y se avisa", () => {
+    const filas = [fila({ id: "tz-anulado", status: "anulado" }), fila({ id: "tz-nuevo" })];
+    const r = atarTrozadosDeGuia(guia("tz-anulado"), filas, PLAN);
+    expect(atada(r).trozadoId).toBe("tz-nuevo");
+    expect(r.avisos[0]).toContain("se ató a su línea vigente");
+    const borrado = atarTrozadosDeGuia(guia("tz-borrado"), [fila({ id: "tz-borrado", deletedAt: new Date() })], PLAN);
+    expect(atada(borrado).trozadoId).toBeNull();
+    expect(borrado.avisos[0]).toContain("entra sin su árbol");
+  });
+  it("un id de OTRO PLAN o de OTRO NEGOCIO (no llega entre las candidatas) no se ata", () => {
+    const otroPlan = atarTrozadosDeGuia(guia("tz-otro-plan"), [fila({ id: "tz-otro-plan", planId: "plan-2" })], PLAN);
+    expect(atada(otroPlan).trozadoId).toBeNull();
+    expect(otroPlan.avisos[0]).toContain("no es suya");
+    const otroNegocio = atarTrozadosDeGuia(guia("tz-de-blas"), [], PLAN);
+    expect(atada(otroNegocio).trozadoId).toBeNull();
+    /* De otra troza del mismo plan, tampoco. */
+    const otraTroza = atarTrozadosDeGuia(guia("tz-b"), [fila({ id: "tz-b", trozaCode: "113-B" })], PLAN);
+    expect(atada(otraTroza).trozadoId).toBeNull();
+  });
+  it("si el Trozado dice OTRO árbol que la guía, no se ata y se avisa", () => {
+    const r = atarTrozadosDeGuia(guia("tz-vivo", "114"), [fila({})], PLAN);
+    expect(atada(r).trozadoId).toBeNull();
+    expect(r.avisos[0]).toContain("dice otro árbol que la guía");
+    const sinId = atarTrozadosDeGuia(guia(null, "114"), [fila({})], PLAN);
+    expect(atada(sinId).trozadoId).toBeNull();
+  });
+  it("sin id (guía vieja): exactamente una vigente se ata; dos con el mismo código no se adivinan", () => {
+    expect(atada(atarTrozadosDeGuia(guia(null), [fila({})], PLAN)).trozadoId).toBe("tz-vivo");
+    const dos = atarTrozadosDeGuia(guia(null), [fila({ id: "a" }), fila({ id: "b" })], PLAN);
+    expect(atada(dos).trozadoId).toBeNull();
+    expect(dos.avisos[0]).toContain("o hay más de una con ese código");
   });
 });

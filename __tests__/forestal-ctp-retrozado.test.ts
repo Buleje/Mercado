@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { calcularRetrozado, saldoDeTroza, volumenHuber, type TrozaMadre } from "@/lib/forestal/ctp-retrozado";
+import { calcularRetrozado, motivoNoRetrozable, saldoDeTroza, volumenHuber, type TrozaMadre } from "@/lib/forestal/ctp-retrozado";
 
 /**
  * ADR-313 — el Apartado 2 del LO-CTP.
@@ -175,5 +175,16 @@ describe("Saldo de la troza", () => {
     const s = saldoDeTroza(troza52A);
     expect(s.disponible).toBe(3.268);
     expect(s.retrozado).toBe(0);
+  });
+});
+
+describe("motivoNoRetrozable — revisión ADR-450: sólo se corta lo que está en el patio", () => {
+  it("la que no llegó, la ya aserrada, la ya despachada y el descarte no se cortan (y dice el camino)", () => {
+    expect(motivoNoRetrozable({ noRecepcionada: true })).toBe("Esta troza no llegó al patio: recepciónala antes de retrozarla.");
+    expect(motivoNoRetrozable({ consumidaEnId: "c1" })).toContain("suéltala de la corrida");
+    expect(motivoNoRetrozable({ despachadaEnId: "d1" })).toContain("anula ese despacho");
+    expect(motivoNoRetrozable({ descarte: true })).toContain("descarte");
+    expect(motivoNoRetrozable({})).toBeNull();
+    expect(motivoNoRetrozable({ noRecepcionada: false, descarte: false, consumidaEnId: null, despachadaEnId: null })).toBeNull();
   });
 });

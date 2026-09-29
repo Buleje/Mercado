@@ -6,6 +6,7 @@ import { WoodEntriesDB } from "@/lib/db/wood-entries.db";
 import { ctpErrorResponse } from "@/lib/forestal/ctp-api-errors";
 import { normalizarFotos } from "@/lib/forestal/fotos-carga";
 import { mixtoVivo } from "@/lib/forestal/lote-mixto";
+import { ForestLothDB } from "@/lib/db/forest-loth.db";
 
 /**
  * GET /api/admin/forestal/trozas/ficha?id=<trozaId> — la historia de una pieza.
@@ -44,6 +45,21 @@ export async function GET(req: NextRequest) {
   try {
     const t = await WoodEntriesDB.fichaDeTroza(auth.tenantId, id);
     if (!t) return NextResponse.json({ error: "not_found" }, { status: 404 });
+    /* ADR-450 L4: el árbol se LEE del Libro TH con el estado de sus líneas
+       (una tala anulada es historia). Sólo del MISMO negocio: el id de
+       Trozado se busca con `tenantId` en el WHERE. */
+    const arbol = t.lothTrozadoId
+      ? ((await ForestLothDB.arbolesDeTrozados(auth.tenantId, [t.lothTrozadoId])).get(t.lothTrozadoId) ?? null)
+      : null;
+    const recibida =
+      t.recibidaD1Cm != null || t.recibidaD2Cm != null || t.recibidaLargoM != null || t.recibidaVolumenM3 != null
+        ? {
+            d1Cm: num(t.recibidaD1Cm),
+            d2Cm: num(t.recibidaD2Cm),
+            largoM: num(t.recibidaLargoM),
+            volumenM3: num(t.recibidaVolumenM3),
+          }
+        : null;
 
     return NextResponse.json({
       troza: {
@@ -76,7 +92,15 @@ export async function GET(req: NextRequest) {
         oxMedidoEn: t.oxMedidoEn,
         oxMedidoPor: t.oxMedidoPor,
         d1d2MedidoEnPlanta: t.d1d2MedidoEnPlanta,
+        /* ADR-450: el árbol (copia para el acta) y lo medido en planta al
+           recibirla; `recibida: null` = llegó como dice la guía. */
+        lothTrozadoId: t.lothTrozadoId,
+        arbolCodigo: t.arbolCodigo,
+        recibida,
       },
+      /* ADR-450 L4: «Del bosque». `null` = la troza no vino del Libro TH (o
+         no se supo su línea de Trozado); con `arbolCodigo` igual se nombra. */
+      arbol,
       ingreso: {
         id: t.entry.id,
         libroNro: t.entry.libroNro,

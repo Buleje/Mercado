@@ -95,6 +95,9 @@ import { formatNumber } from "@/lib/format";
 
 type LothEntry = LothEntryDTO;
 
+/** `?arbol=113`: el mapa llega parado en ese árbol. Lo escribe `urlDelArbolEnElMapa` (tarjeta-troza). */
+const PARAM_ARBOL = "arbol";
+
 interface Caratula {
   id: string;
   registroNumber: string | null;
@@ -307,12 +310,18 @@ export default function LothLibroOperaciones() {
       const params = new URLSearchParams(window.location.search);
       const seccion = params.get("seccion");
       const nueva = params.get("nuevaTala")?.trim() ?? "";
-      if (!seccion && !nueva) return;
+      /* ADR-450: «Ver en el mapa del bosque» desde la ficha de una troza del CTP
+         (`?vista=mapa&arbol=113`): el mapa llega parado en ese árbol. La vista
+         la lee `useVistaModulo`; acá sólo el foco, que antes era estado interno. */
+      const arbol = params.get(PARAM_ARBOL)?.trim() ?? "";
+      if (!seccion && !nueva && !arbol) return;
       params.delete("seccion");
       params.delete("nuevaTala");
+      params.delete(PARAM_ARBOL);
       const qs = params.toString();
       window.history.replaceState(null, "", `${window.location.pathname}${qs ? `?${qs}` : ""}`);
       if (seccion && (LOTH_SECTIONS as readonly string[]).includes(seccion)) setSection(seccion as LothSection);
+      if (arbol) setFocoArbol(arbol);
       if (nueva) {
         setSection("tala");
         setPlantilla(null);

@@ -27,6 +27,7 @@ import { GtfNumeroDB } from "@/lib/db/gtf-numero.db";
 import { leerGtfDatos, type GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 import { identidadDeGuiaTh } from "@/lib/forestal/guia-th-al-ctp";
 import { PRODUCTO_TROZA, type TrozaDelLibro } from "@/lib/forestal/loth-guia-despacho";
+import { armarArbolDeTroza, lineaVigente, type ArbolDeTroza } from "@/lib/forestal/arbol-de-troza";
 
 export { LOTH_SECTIONS };
 export type { LothSection };
@@ -387,6 +388,7 @@ export class ForestLothDB {
       const trozados = await tx.forestLothEntry.findMany({
         where: { tenantId, section: "trozado", status: "registrado", deletedAt: null, trozaCode: { in: codes } },
         select: {
+          id: true,
           trozaCode: true, treeCode: true, planId: true, speciesCommon: true, speciesScientific: true, cites: true,
           diamMayorM: true, diamMenorM: true, lengthM: true, volumeM3: true,
         },
@@ -449,6 +451,10 @@ export class ForestLothDB {
           volumeM3: n(t?.volumeM3 ?? null),
           productType: PRODUCTO_TROZA,
           pieces: 1,
+          /* ADR-450 L4: la línea de Trozado de la troza. «Recibir» en el CTP
+             la guarda en la troza: así recuerda su árbol sin adivinar por el
+             texto del código. */
+          trozadoId: t?.id ?? null,
         };
       });
       const volumen = r4(items.reduce((a, it) => a + (it.volumeM3 ?? 0), 0));
@@ -1050,8 +1056,14 @@ export class ForestLothDB {
   private static async exigirDespachoFueraDelCtp(tx: Prisma.TransactionClient, tenantId: string, id: string): Promise<void> {
     const linea = await tx.forestLothEntry.findFirst({
       where: { id, tenantId, deletedAt: null },
-      select: { section: true, status: true, gtfNumber: true },
+      select: { section: true, status: true, gtfNumber: true, treeCode: true, trozaCode: true, planId: true, lineNo: true },
     });
+    /* ADR-450 R4: el Trozado (o la Tala) de una troza que ya está viva en el
+       Libro CTP tampoco se anula: la troza del CTP perdería su árbol. */
+    if (linea && (linea.section === "trozado" || linea.section === "tala")) {
+      await ForestLothDB.exigirTrozadosFueraDelCtp(tx, tenantId, { id, ...linea });
+      return;
+    }
     const gtfNumber = linea?.gtfNumber?.trim();
     if (!linea || linea.section !== "despacho_troza" || linea.status !== "registrado" || !gtfNumber) return;
     const guia = await tx.forestGtf.findFirst({
@@ -1061,6 +1073,118 @@ export class ForestLothDB {
     });
     const identidad = guia ? identidadDeGuiaTh(guia, leerGtfDatos(guia.gtfDatos)) : { permiso: null, titular: null };
     await GtfNumeroDB.exigirSinIngresosEnElCtp(tx, tenantId, { gtfNumber, ...identidad });
+  }
+
+  /**
+   * ADR-450 R4: las líneas de Trozado que cuelgan de esta línea (ella misma,
+   * o las del árbol de una Tala) y los N° de las guías que las despacharon
+   * (el candado de «Recibir»). Sin trozados, no hay nada que mirar.
+   */
+  private static async exigirTrozadosFueraDelCtp(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+    linea: { id: string; section: string; lineNo: number; treeCode: string | null; trozaCode: string | null; planId: string | null },
+  ): Promise<void> {
+    const arbol = linea.treeCode?.trim();
+    const trozados =
+      linea.section === "trozado"
+        ? [{ id: linea.id, trozaCode: linea.trozaCode }]
+        : arbol
+          ? await tx.forestLothEntry.findMany({
+              where: {
+                tenantId,
+                section: "trozado",
+                treeCode: arbol,
+                ...(linea.planId ? { OR: [{ planId: linea.planId }, { planId: null }] } : {}),
+              },
+              select: { id: true, trozaCode: true },
+            })
+          : [];
+    if (trozados.length === 0) return;
+    const codigos = [...new Set(trozados.map((t) => t.trozaCode?.trim()).filter((c): c is string => !!c))];
+    const despachos = codigos.length
+      ? await tx.forestLothEntry.findMany({
+          where: { tenantId, section: "despacho_troza", trozaCode: { in: codigos }, gtfNumber: { not: null } },
+          select: { gtfNumber: true },
+        })
+      : [];
+    const queSeAnula =
+      linea.section === "trozado"
+        ? { de: `del trozado #${linea.lineNo}`, la: `el trozado #${linea.lineNo}` }
+        : { de: `de la tala #${linea.lineNo} (árbol ${arbol})`, la: `la tala #${linea.lineNo}` };
+    await GtfNumeroDB.exigirTrozadosFueraDelCtp(
+      tx,
+      tenantId,
+      trozados.map((t) => t.id),
+      despachos.map((d) => d.gtfNumber ?? ""),
+      queSeAnula,
+    );
+  }
+
+  /**
+   * El árbol de cada línea de Trozado (ADR-450 L4), para la ficha de la troza
+   * del Libro CTP. Tres consultas: los trozados, las talas de sus árboles y su
+   * censo. Se LEE con su estado —una tala anulada es historia, no un hecho
+   * vigente— y nada se copia: si el Libro TH corrige la tala, la ficha lo ve.
+   *
+   *   · Trozado: por id, en cualquier estado (la troza del CTP lo nombra).
+   *   · Tala: la del mismo árbol y el mismo plan (o sin plan de un lado); la
+   *     vigente primero, después la más nueva. Las borradas no cuentan.
+   *   · Censo: la fila del mismo árbol en el plan del trozado; si el trozado no
+   *     tiene plan y hay más de una, no se adivina.
+   */
+  static async arbolesDeTrozados(tenantId: string, ids: readonly (string | null | undefined)[]): Promise<Map<string, ArbolDeTroza>> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const out = new Map<string, ArbolDeTroza>();
+    const unicos = [...new Set(ids.map((i) => i?.trim()).filter((i): i is string => !!i))].slice(0, 5000);
+    if (unicos.length === 0) return out;
+    const trozados = await prisma.forestLothEntry.findMany({
+      where: { tenantId, id: { in: unicos }, section: "trozado" },
+      select: {
+        id: true, lineNo: true, entryDate: true, status: true, deletedAt: true, planId: true,
+        treeCode: true, trozaCode: true, speciesCommon: true, speciesScientific: true,
+      },
+    });
+    const arboles = [...new Set(trozados.map((t) => t.treeCode?.trim()).filter((c): c is string => !!c))];
+    if (arboles.length === 0) return out;
+    const [talas, censo] = await Promise.all([
+      prisma.forestLothEntry.findMany({
+        where: { tenantId, section: "tala", treeCode: { in: arboles }, deletedAt: null },
+        select: {
+          id: true, lineNo: true, entryDate: true, status: true, deletedAt: true, planId: true, treeCode: true,
+          gpsLat: true, gpsLng: true, gpsOrigen: true, createdAt: true,
+        },
+      }),
+      prisma.forestCensusTree.findMany({
+        where: { tenantId, treeCode: { in: arboles }, deletedAt: null },
+        select: {
+          planId: true, treeCode: true, utmX: true, utmY: true, utmZona: true, parcelaCorta: true, condicion: true,
+          speciesCommon: true, speciesScientific: true,
+        },
+      }),
+    ]);
+    const num = (v: Prisma.Decimal | null) => (v == null ? null : Number(v));
+    const mismoPlan = (a: string | null, b: string | null) => !a || !b || a === b;
+    for (const t of trozados) {
+      const arbol = t.treeCode?.trim();
+      if (!arbol) continue;
+      const tala =
+        talas
+          .filter((x) => x.treeCode?.trim() === arbol && mismoPlan(x.planId, t.planId))
+          .sort(
+            (a, b) =>
+              Number(lineaVigente(b)) - Number(lineaVigente(a)) || b.createdAt.getTime() - a.createdAt.getTime(),
+          )[0] ?? null;
+      const delCenso = censo.filter((c) => c.treeCode.trim() === arbol && (!t.planId || c.planId === t.planId));
+      const fila = delCenso.length === 1 ? delCenso[0] : null;
+      const a = armarArbolDeTroza(
+        t,
+        tala ? { ...tala, gpsLat: num(tala.gpsLat), gpsLng: num(tala.gpsLng) } : null,
+        fila ? { ...fila, utmX: num(fila.utmX), utmY: num(fila.utmY) } : null,
+      );
+      if (a) out.set(t.id, a);
+    }
+    return out;
   }
 
   /** Soft delete (solo errores de captura del sistema, no subsanación normativa). */

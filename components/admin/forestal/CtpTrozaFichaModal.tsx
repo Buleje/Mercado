@@ -16,14 +16,17 @@
 import { useEffect, useState } from "react";
 import {
   FileText, Flame, Layers, Loader2, PackageCheck, PackageOpen, Scissors, Truck,
-  type LucideIcon,
 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { usePlantaUbicacion } from "./hooks/use-planta-ubicacion";
 import { formatDate } from "@/lib/format";
 import { consumibleDeFicha } from "@/lib/forestal/leer-escaneo-troza";
 import { motivoFueraDeLaPila } from "@/lib/forestal/lote-por-escaneo";
+import type { ArbolDeTroza } from "@/lib/forestal/arbol-de-troza";
+import { fraseDeMedidaEnPlanta, type MedidaEnPlanta } from "@/lib/forestal/tarjeta-troza";
 import { Btn, ModalBody, ModalFooter } from "./ctp-shared";
+import { Dato, Hito, Linea } from "./ctp-troza-ficha-partes";
+import { HitoDelBosque } from "./ctp-arbol-de-la-troza";
 
 const fecha = (iso: string | null | undefined) =>
   iso ? formatDate(iso, { soloFecha: true }) : null;
@@ -37,6 +40,8 @@ interface Ficha {
     volumenM3: number | null; noRecepcionada: boolean; fechaRecepcion: string | null;
     recepcionObs: string | null; descarte: boolean; observaciones: string | null;
     fechaRetrozo: string | null; fechaConsumo: string | null; fechaDespacho: string | null;
+    /** ADR-450: el árbol del Libro TH (copia) y lo medido en planta al recibirla. */
+    arbolCodigo?: string | null; recibida?: MedidaEnPlanta | null;
   };
   ingreso: {
     id: string; libroNro: number | null; gtfNumber: string; proveedor: string; entryDate: string;
@@ -48,6 +53,8 @@ interface Ficha {
   lote: { id: string; code: string; status: string; speciesCommon: string | null } | null;
   corrida: { id: string; lineNo: number; entryDate: string; vigente: boolean; producto: string | null; presentacion: string | null; cantidad: number | null; unidad: string | null; rendimientoPct: number | null; linea: string | null; volumenEntradaM3: number | null } | null;
   despacho: { id: string; lineNo: number; entryDate: string; vigente: boolean; docType: string | null; gtfNumber: string | null; cantidad: number | null; unidad: string | null } | null;
+  /** ADR-450 L4: «Del bosque», leído del Libro TH con el estado de sus líneas. */
+  arbol?: ArbolDeTroza | null;
 }
 
 export interface CtpTrozaFichaModalProps {
@@ -138,6 +145,9 @@ export default function CtpTrozaFichaModal({ trozaId, onClose, onVerOtra, onArma
           </div>
 
           <ol className="space-y-2">
+            {/* 0 · Del bosque (ADR-450): el árbol es lo que pasó antes de la guía. */}
+            <HitoDelBosque arbol={f.arbol} arbolCodigo={t.arbolCodigo} />
+
             {/* 1 · De dónde salió */}
             <Hito icono={FileText} ocurrio titulo={`Entró con la GTF ${f.ingreso.gtfNumber}`} cuando={fecha(f.ingreso.entryDate)}>
               <Linea k="Proveedor" v={f.ingreso.proveedor} />
@@ -165,6 +175,8 @@ export default function CtpTrozaFichaModal({ trozaId, onClose, onVerOtra, onArma
                 : !recibida
                   ? <p>Nadie registró la descarga de esta carga: no hay fecha de recepción ni está validada en el libro.</p>
                   : <Linea k="Código de planta" v={t.codigoPlanta ?? "sin marcar"} mono />}
+              {/* Llegó distinta (ADR-450): lo medido en planta, aparte; la guía no se toca. */}
+              <Linea k="Llegó distinta" v={t.noRecepcionada ? null : fraseDeMedidaEnPlanta(t.recibida, t.volumenM3)} />
               <Linea k="Observación" v={t.recepcionObs} />
               {/* El mapa de planta ubica GUÍAS, no piezas: se dice «su carga»
                   para no prometer una precisión que el dato no tiene. */}
@@ -275,44 +287,3 @@ export default function CtpTrozaFichaModal({ trozaId, onClose, onVerOtra, onArma
   );
 }
 
-function Dato({ label, valor, fuerte }: { label: string; valor: string; fuerte?: boolean }) {
-  return (
-    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-2.5 py-1.5">
-      <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)]">{label}</p>
-      <p className={`font-mono tabular-nums text-[var(--text-primary)] ${fuerte ? "text-base font-bold" : "text-sm"}`}>{valor}</p>
-    </div>
-  );
-}
-
-/** Un hito de la historia. Los que no ocurrieron se muestran apagados, no se esconden. */
-function Hito({ icono: Icono, ocurrio, tono = "ok", titulo, cuando, children }: {
-  icono: LucideIcon; ocurrio: boolean; tono?: "ok" | "warn"; titulo: string;
-  cuando?: string | null; children?: React.ReactNode;
-}) {
-  const color = !ocurrio ? "var(--rule-strong)" : tono === "warn" ? "var(--data-warning-500)" : "var(--data-success-500)";
-  return (
-    <li className={`flex gap-2.5 rounded-xl border p-3 ${ocurrio ? "border-[var(--rule-base)] bg-[var(--surface-raised)]" : "border-dashed border-[var(--rule-base)]"}`}>
-      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg" style={{ background: `color-mix(in oklab, ${color} 16%, transparent)` }}>
-        <Icono className="h-4 w-4" style={{ color }} aria-hidden="true" />
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="flex flex-wrap items-baseline gap-x-2">
-          <span className="text-sm font-bold text-[var(--text-primary)]">{titulo}</span>
-          {cuando && <span className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">{cuando}</span>}
-        </p>
-        <div className="mt-0.5 space-y-0.5 text-xs text-[var(--text-secondary)]">{children}</div>
-      </div>
-    </li>
-  );
-}
-
-/** Una línea «campo: valor» que desaparece si no hay valor: un «—» por fila es ruido. */
-function Linea({ k, v, mono }: { k: string; v: string | null | undefined; mono?: boolean }) {
-  if (!v) return null;
-  return (
-    <p>
-      <span className="text-[var(--text-secondary)]">{k}: </span>
-      <span className={`font-medium text-[var(--text-primary)] ${mono ? "font-mono" : ""}`}>{v}</span>
-    </p>
-  );
-}

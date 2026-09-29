@@ -24,14 +24,18 @@ import {
   leerItemsGuiaTh,
   mensajeDelPase,
   soloDigitos,
+  atarTrozadosDeGuia,
+  type CodigoGuiaTh,
+  type LineaDeIngresoTh,
   type PaseAlCtp,
   type PlantaPropia,
   type PreparadoRecibirTh,
   type RecibidaTh,
   type RecibirGuiaThInput,
 } from "@/lib/forestal/guia-th-al-ctp";
+import { huellaDeReparto, planearConteo, type PiezaContada } from "@/lib/forestal/conteo-guia-th";
 import { findSpeciesByCommonName } from "@/data/forestry-species";
-import type { WoodOriginType } from "@/lib/generated/prisma/client";
+import type { Prisma, WoodOriginType } from "@/lib/generated/prisma/client";
 import { GuiasGuardadasDB } from "./guias-guardadas.db";
 import { WoodEntriesDB, type WoodEntryDesdeGtfInput } from "./wood-entries.db";
 import { GtfNumeroDB } from "./gtf-numero.db";
@@ -77,15 +81,8 @@ type Guia = NonNullable<Awaited<ReturnType<typeof leerGuiaTh>>>;
 export class GuiaThError extends Error {
   constructor(
     message: string,
-    readonly code:
-      | "YA_INGRESADA"
-      | "YA_NO_ESTA"
-      | "SIN_GUIA_TH"
-      | "GUIA_ANULADA"
-      | "OTRO_DESTINATARIO"
-      | "OTRA_GUIA"
-      | "TROZA_YA_EN_EL_LIBRO"
-      | "GUIA_INCOMPLETA",
+    /** La lista vive en `CodigoGuiaTh` (puro): la pantalla la lee sin importar la DB class. */
+    readonly code: CodigoGuiaTh,
     readonly status: 409 | 422,
   ) {
     super(message);
@@ -103,6 +100,48 @@ async function leerGuiaTh(tenantId: string, gtfId: string) {
       items: true, volumenTotalM3: true, gtfDatos: true,
     },
   });
+}
+
+type Db = Prisma.TransactionClient | typeof prisma;
+
+/** El 409 de una guía que ya no es la que se contó (ADR-450). */
+const guiaCambio = (gtfNumber: string) =>
+  new GuiaThError(
+    `La lista de la GTF ${gtfNumber} cambió en tu Libro TH desde que la abriste: vuelve a abrirla y cuenta otra vez.`,
+    "GUIA_CAMBIO",
+    409,
+  );
+
+const codigoDe = (t: { codificacion: string | null; orden: number }) => t.codificacion?.trim() || `N° ${t.orden}`;
+
+/**
+ * Cada troza de la guía con su línea de Trozado del Libro TH (ADR-450 L4). La
+ * base trae SÓLO candidatas de este negocio (`tenantId` en el WHERE): las que
+ * nombra la guía por id y las vigentes con esos códigos. Qué se ata lo decide
+ * `atarTrozadosDeGuia` (puro, probado sin base).
+ */
+async function atarTrozados(
+  db: Db,
+  tenantId: string,
+  planId: string | null,
+  lineas: readonly LineaDeIngresoTh[],
+): Promise<{ lineas: LineaDeIngresoTh[]; avisos: string[] }> {
+  const trozas = lineas.flatMap((l) => l.trozas);
+  const ids = [...new Set(trozas.map((t) => t.trozadoId).filter((x): x is string => !!x))];
+  const codigos = [...new Set(trozas.map((t) => t.codificacion?.trim()).filter((x): x is string => !!x))];
+  if (ids.length === 0 && codigos.length === 0) return { lineas: [...lineas], avisos: [] };
+  const filas = await db.forestLothEntry.findMany({
+    where: {
+      tenantId,
+      section: "trozado",
+      OR: [
+        { id: { in: ids } },
+        { trozaCode: { in: codigos, mode: "insensitive" }, status: "registrado", deletedAt: null },
+      ],
+    },
+    select: { id: true, trozaCode: true, treeCode: true, planId: true, status: true, deletedAt: true },
+  });
+  return atarTrozadosDeGuia(lineas, filas, planId);
 }
 
 /** Un día `AAAA-MM-DD` como se escribe en el libro: mediodía UTC (cae en el mismo mes de Lima). */
@@ -250,6 +289,8 @@ export class GuiaThAlCtpDB {
     const x = await GuiaThAlCtpDB.contexto(tenantId, guardadaId);
     if (!x) return null;
     const { guardada, gtf, datos, reparto } = x;
+    /* ADR-450: el árbol de cada troza y la huella de la lista que se va a contar. */
+    const atadas = await atarTrozados(prisma, tenantId, gtf.planId, reparto.lineas);
     return {
       guardadaId: guardada.id,
       gtfNumber: guardada.gtfNumber,
@@ -258,18 +299,24 @@ export class GuiaThAlCtpDB {
       permiso: guardada.permisoCodigo,
       destinatario: datos.destinatario.nombre.trim() || null,
       vencimiento: vencimientoDeGuia([{ gtfDatos: gtf.gtfDatos }]).vencimiento,
-      lineas: reparto.lineas,
+      lineas: atadas.lineas,
       totalM3: reparto.totalM3,
       trozas: reparto.trozas,
-      avisos: reparto.avisos,
+      avisos: [...reparto.avisos, ...atadas.avisos],
+      huella: huellaDeReparto(reparto.lineas),
     };
   }
 
   /**
-   * Recibe la guía: registra un ingreso por especie con sus trozas y la
-   * recepciona con la fecha de llegada. Si el ingreso entra pero la recepción
-   * falla (p.ej. una troza ya aserrada), el ingreso queda y se dice por qué:
-   * es el mismo estado que «por recibir» de Ingresos, no media guía perdida.
+   * Recibe la guía CONTANDO sus trozas (ADR-450 L1): registra un ingreso por
+   * especie con TODAS las trozas de la guía —la que no llegó entra marcada
+   * «no llegó», la que llegó distinta guarda lo medido en planta sin tocar la
+   * guía— y la recepciona con la fecha de llegada. El m³ de cada ingreso es
+   * el de la guía (I2); la faltante se informa.
+   *
+   * Si el ingreso entra pero la recepción falla (p.ej. una troza ya aserrada),
+   * el ingreso queda y se dice por qué: es el mismo estado que «por recibir»
+   * de Ingresos, no media guía perdida.
    */
   static async recibir(
     tenantId: string,
@@ -299,11 +346,16 @@ export class GuiaThAlCtpDB {
         vencimiento: vencida?.vencimiento,
       });
     }
+    /* ADR-450: la lista que se contó es ésta y el conteo cierra. Se revisa acá
+       para fallar rápido y OTRA VEZ bajo el candado, sobre la lista releída. */
+    if (input.huella !== huellaDeReparto(reparto.lineas)) throw guiaCambio(guardada.gtfNumber);
+    const previo = planearConteo(reparto.lineas, input.conteo, input.confirmaFaltantes);
+    if (!previo.ok) throw new GuiaThError(previo.motivo, previo.code, 422);
 
     const titular = guardada.titularNombre?.trim() || gtf.titularName?.trim() || datos.propietario.nombre.trim() || "Sin titular declarado";
     const origenRecurso = sinTildesUp(datos.guia.origenRecurso);
     const region = regionDeSerfor(datos.guia.departamento);
-    const alta: WoodEntryDesdeGtfInput = {
+    const base: Omit<WoodEntryDesdeGtfInput, "lineas"> = {
       entryDate: aMediodia(dia),
       docType: "GTF",
       serforNumeroRegistro: guardada.numeroRegistro ?? null,
@@ -321,7 +373,12 @@ export class GuiaThAlCtpDB {
       originRegion: region && region !== "Otra" ? region : null,
       originDistrict: datos.guia.distrito.trim() || null,
       origenAlta: "libro_th",
-      lineas: reparto.lineas.map((l) => {
+      createdBy: user,
+    };
+    /** Las líneas del alta: la guía, con lo que dijo el conteo pieza por pieza. */
+    const lineasDelAlta = (lineas: readonly LineaDeIngresoTh[], piezas: readonly PiezaContada[]): WoodEntryDesdeGtfInput["lineas"] => {
+      const porOrden = new Map(piezas.map((p) => [p.orden, p]));
+      return lineas.map((l) => {
         const cat = findSpeciesByCommonName(l.especieComun);
         return {
           especieComun: l.especieComun,
@@ -329,23 +386,44 @@ export class GuiaThAlCtpDB {
           cites: l.cites || (cat?.cites ?? false),
           unit: "m3",
           presentacion: l.presentacion,
+          // El m³ de la GUÍA (I2 con ≤): lo que no llegó se informa, no se descuenta.
           volumenM3: l.volumenM3,
           piezas: l.piezas,
-          trozas: l.trozas,
+          trozas: l.trozas.map((t) => {
+            const p = porOrden.get(t.orden);
+            return {
+              orden: t.orden,
+              codificacion: t.codificacion,
+              especieComun: t.especieComun,
+              especieCientifica: t.especieCientifica,
+              dimensiones: t.dimensiones,
+              largoM: t.largoM,
+              diametroCm: t.diametroCm,
+              d1Cm: t.d1Cm,
+              d2Cm: t.d2Cm,
+              cantidad: t.cantidad,
+              volumenM3: t.volumenM3,
+              parcela: t.parcela,
+              lothTrozadoId: t.trozadoId,
+              arbolCodigo: t.arbolCodigo,
+              noRecepcionada: p ? !p.llego : false,
+              recepcionObs: p?.recepcionObs ?? null,
+              recibida: p?.recibida ?? null,
+            };
+          }),
         };
-      }),
-      createdBy: user,
+      });
     };
     /* Mes cerrado y permiso del negocio: antes de abrir la transacción. */
-    const contratoId = await WoodEntriesDB.prepararAltaDesdeGtf(tenantId, alta);
-    const piezas = reparto.lineas.flatMap((l) =>
-      l.trozas.map((t) => ({ codificacion: t.codificacion, especie: t.especieComun ?? l.especieComun })),
-    );
+    const contratoId = await WoodEntriesDB.prepararAltaDesdeGtf(tenantId, {
+      ...base,
+      lineas: lineasDelAlta(reparto.lineas, previo.piezas),
+    });
 
     /* TODO en una transacción, bajo el candado del N°: dos «Recibir» a la vez,
        un alta desde SERFOR de la misma guía o un «Anular» en el TH esperan
        su turno y, al entrar, releen lo que el otro dejó. */
-    const creadosEnTx = await prisma.$transaction(
+    const hecho = await prisma.$transaction(
       async (tx) => {
         await GtfNumeroDB.bloquear(tx, tenantId, guardada.gtfNumber);
         const viva = await tx.forestGuiaGuardada.findFirst({
@@ -361,7 +439,7 @@ export class GuiaThAlCtpDB {
         }
         const th = await tx.forestGtf.findFirst({
           where: { id: gtf.id, tenantId, deletedAt: null },
-          select: { status: true },
+          select: { status: true, items: true, planId: true, parcelaCorta: true, volumenTotalM3: true },
         });
         if (th?.status !== "emitida") {
           throw new GuiaThError(
@@ -378,6 +456,21 @@ export class GuiaThAlCtpDB {
             409,
           );
         }
+        /* ADR-450: la lista RELEÍDA bajo el candado, no la de antes. */
+        const fresco = ingresosDesdeGuiaTh(leerItemsGuiaTh(th.items), {
+          parcela: th.parcelaCorta,
+          volumenDeclaradoM3: th.volumenTotalM3 != null ? Number(th.volumenTotalM3) : null,
+          gtfNumber: gtf.gtfNumber,
+        });
+        if (!fresco.ok || huellaDeReparto(fresco.lineas) !== input.huella) throw guiaCambio(guardada.gtfNumber);
+        const plan = planearConteo(fresco.lineas, input.conteo, input.confirmaFaltantes);
+        if (!plan.ok) throw new GuiaThError(plan.motivo, plan.code, 422);
+        const atadas = await atarTrozados(tx, tenantId, th.planId, fresco.lineas);
+        const alta: WoodEntryDesdeGtfInput = { ...base, lineas: lineasDelAlta(atadas.lineas, plan.piezas) };
+
+        const piezas = atadas.lineas.flatMap((l) =>
+          l.trozas.map((t) => ({ codificacion: t.codificacion, especie: t.especieComun ?? l.especieComun, lothTrozadoId: t.trozadoId })),
+        );
         const repetidas = await GtfNumeroDB.trozasYaEnElLibro(tx, tenantId, piezas, alta.originCode ?? null);
         if (repetidas.length > 0) {
           const r = repetidas[0];
@@ -388,12 +481,14 @@ export class GuiaThAlCtpDB {
             409,
           );
         }
-        return WoodEntriesDB.crearDesdeGtfEnTx(tx, tenantId, alta, contratoId);
+        const creados = await WoodEntriesDB.crearDesdeGtfEnTx(tx, tenantId, alta, contratoId);
+        return { creados, alta, plan, fresco, avisos: [...fresco.avisos, ...atadas.avisos, ...plan.avisos] };
       },
       { timeout: 60_000, maxWait: 15_000 },
     );
-    WoodEntriesDB.despuesDeAltaDesdeGtf(tenantId, alta, creadosEnTx);
-    const creados = creadosEnTx.map((c) => c.entry);
+    WoodEntriesDB.despuesDeAltaDesdeGtf(tenantId, hecho.alta, hecho.creados);
+    const creados = hecho.creados.map((c) => c.entry);
+    const { resumen, piezas } = hecho.plan;
 
     const recepcion = await WoodEntriesDB.recepcionarGuia(
       tenantId,
@@ -404,13 +499,21 @@ export class GuiaThAlCtpDB {
       confirmacion,
     );
 
+    const noLlegaron = piezas.filter((p) => !p.llego).map((p) => codigoDe(p));
+    const escaneadas = piezas.filter((p) => p.llego && p.como === "escaneada").length;
+    const aMano = piezas.filter((p) => p.llego && p.como === "a_mano").length;
+    const sobrantes = [...new Set((input.sobrantes ?? []).map((c) => c.trim()).filter(Boolean))];
     auditCtp({
       tenantId,
       action: "ctp_guia_th_recibir",
       entity: "ForestGuiaGuardada",
       entityId: guardada.id,
       detail:
-        `La guía ${guardada.gtfNumber} de tu Libro TH entró al libro con sus ${reparto.trozas} troza(s) (${fmtM3(reparto.totalM3)} m³)` +
+        `La guía ${guardada.gtfNumber} de tu Libro TH entró al libro con sus ${hecho.fresco.trozas} troza(s) (${fmtM3(hecho.fresco.totalM3)} m³ de la guía)` +
+        ` · contadas: ${resumen.llegaron} llegaron (${escaneadas} escaneada(s), ${aMano} a mano)` +
+        (noLlegaron.length ? `, ${noLlegaron.length} no llegaron (${noLlegaron.join(", ")}) — faltan ${fmtM3(resumen.m3NoLlego)} m³` : "") +
+        (resumen.distintas ? ` · ${resumen.distintas} con otra medida (${fmtM3(resumen.m3Recibido)} m³ recibidos)` : "") +
+        (sobrantes.length ? ` · escaneadas y no están en la guía: ${sobrantes.join(", ")}` : "") +
         (recepcion.fallo ? ` · la recepción del ${ddmm(dia)} quedó pendiente: ${recepcion.fallo.motivo}` : ` · recibida el ${ddmm(dia)}`),
       user,
     });
@@ -419,7 +522,7 @@ export class GuiaThAlCtpDB {
       action: "loth_gtf_al_ctp",
       entity: "ForestGtf",
       entityId: gtf.id,
-      detail: `La GTF ${gtf.gtfNumber} se ${recepcion.fallo ? "registró" : "recibió"} en tu Libro CTP el ${ddmm(dia)}: ${creados.length} ingreso(s), ${reparto.trozas} troza(s)`,
+      detail: `La GTF ${gtf.gtfNumber} se ${recepcion.fallo ? "registró" : "recibió"} en tu Libro CTP el ${ddmm(dia)}: ${creados.length} ingreso(s), ${resumen.llegaron} de ${resumen.total} troza(s) llegaron`,
       user,
     });
     try {
@@ -429,6 +532,12 @@ export class GuiaThAlCtpDB {
       /* cache best-effort */
     }
 
+    const avisos = [...hecho.avisos];
+    if (sobrantes.length > 0) {
+      avisos.push(
+        `${sobrantes.length === 1 ? "Escaneaste un código que no viene" : `Escaneaste ${sobrantes.length} códigos que no vienen`} en esta guía (${sobrantes.slice(0, 5).join(", ")}${sobrantes.length > 5 ? "…" : ""}): quedó anotado en la auditoría.`,
+      );
+    }
     return {
       ingresos: creados.map((e) => ({
         id: e.id,
@@ -437,12 +546,18 @@ export class GuiaThAlCtpDB {
         volumeM3: Number(e.volumeM3),
         pieces: e.pieces,
       })),
-      trozas: reparto.trozas,
-      totalM3: reparto.totalM3,
+      trozas: hecho.fresco.trozas,
+      totalM3: hecho.fresco.totalM3,
       fecha: dia,
       recibida: !recepcion.fallo,
       motivoSinRecibir: recepcion.fallo?.motivo ?? null,
-      avisos: reparto.avisos,
+      avisos,
+      llegaron: resumen.llegaron,
+      noLlegaron,
+      distintas: resumen.distintas,
+      m3Recibido: resumen.m3Recibido,
+      brechaM3: resumen.brechaM3,
+      resumen,
     };
   }
 

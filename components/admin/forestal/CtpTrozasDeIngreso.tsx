@@ -16,6 +16,7 @@ import { documentoHtml } from "@/lib/forestal/ctp-documento-print";
 import { balanceRecepcion } from "@/lib/forestal/recepcion-trozas";
 import { cuadreDeIngreso, descuadra } from "@/lib/forestal/cuadre-trozas";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { motivoNoRetrozable } from "@/lib/forestal/ctp-retrozado";
 import type { FotoCarga } from "@/lib/forestal/fotos-carga";
 
 /**
@@ -55,6 +56,9 @@ type Troza = {
   noRecepcionada?: boolean;
   recepcionObs?: string | null;
   trozaOrigenId?: string | null;
+  /** La corrida / el despacho VIGENTES que se la llevaron (el endpoint ya filtra por estado). */
+  consumidaEnId?: string | null;
+  despachadaEnId?: string | null;
   /** Los pedazos en que se cortó (ADR-313). Cuelgan de su madre, no van sueltos. */
   retrozos?: Troza[];
 };
@@ -477,9 +481,12 @@ export default function CtpTrozasDeIngreso({
                       {t.volumenM3 != null ? `${fmtM3(t.volumenM3)} m³` : "—"}
                     </td>
                     <td className="px-2 py-2.5 text-right">
-                      {/* Sólo se ofrece cortar si queda madera: con la troza ya
-                          repartida el botón abriría un modal que sólo puede fallar. */}
-                      {libre > 0.001 && (
+                      {/* Sólo se ofrece cortar si queda madera y la troza está en el
+                          patio: con la troza ya repartida, sin llegar, aserrada,
+                          despachada o de descarte el botón abriría un modal que
+                          sólo puede fallar (`motivoNoRetrozable`, la misma regla
+                          del servidor). */}
+                      {libre > 0.001 && !motivoNoRetrozable(t) && (
                         <button
                           type="button"
                           onClick={() => setCortando({

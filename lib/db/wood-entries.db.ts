@@ -35,7 +35,7 @@ import {
 } from "@/lib/forestal/acomodar-trozas";
 import { PLAZO_REGISTRO_DIAS, estaFueraDePlazo } from "@/lib/forestal/ctp-compliance";
 import { auditCtp, m3 } from "@/lib/forestal/ctp-audit";
-import { calcularRetrozado, type RetrozoNuevo } from "@/lib/forestal/ctp-retrozado";
+import { calcularRetrozado, motivoNoRetrozable, type RetrozoNuevo } from "@/lib/forestal/ctp-retrozado";
 import type { CambioRecepcion } from "@/lib/forestal/recepcion-trozas";
 import { guiaRecibida, type TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import { asignarCorrelativos, planearEtiquetado, tieneCodigoPlanta } from "@/lib/forestal/etiquetado-trozas";
@@ -148,6 +148,58 @@ export interface WoodEntryTrozaInput {
   fechaRecepcion?: Date | null;
   /** La guía la declara pero no llegó al patio (ADR-325). */
   noRecepcionada?: boolean;
+  /** Qué se observó al recibirla, o por qué no llegó (ADR-325). */
+  recepcionObs?: string | null;
+  /** Su línea de Trozado del Libro TH (ADR-450 L4). Sin FK: se lee con su estado. */
+  lothTrozadoId?: string | null;
+  /** Copia del código del árbol (`treeCode` del Trozado) para el acta y para buscar (ADR-450). */
+  arbolCodigo?: string | null;
+  /**
+   * Lo medido en planta al recibirla, cuando llegó DISTINTA a la guía
+   * (ADR-450 L1). Las medidas de arriba (las de la guía) no se tocan.
+   */
+  recibida?: { d1Cm: number | null; d2Cm: number | null; largoM: number | null; volumenM3: number | null } | null;
+}
+
+const decimalONull = (v: number | null | undefined) => (v != null && Number.isFinite(v) ? new Prisma.Decimal(v) : null);
+
+/**
+ * La fila de `WoodEntryTroza` de una pieza de guía, con TODO lo que el input
+ * trae (ADR-450 R2). Antes el alta de una guía entera guardaba sólo `parcela`:
+ * «no llegó», su fecha y el código de planta se perdían sin error. Un test
+ * recorre cada clave de `WoodEntryTrozaInput` contra esta fila.
+ */
+export function filaDeTrozaDeGuia(tenantId: string, woodEntryId: string, t: WoodEntryTrozaInput) {
+  const noLlego = t.noRecepcionada === true;
+  return {
+    tenantId,
+    woodEntryId,
+    orden: t.orden,
+    codificacion: t.codificacion,
+    especieComun: t.especieComun,
+    especieCientifica: t.especieCientifica,
+    dimensiones: t.dimensiones,
+    largoM: decimalONull(t.largoM),
+    diametroCm: decimalONull(t.diametroCm),
+    d1Cm: decimalONull(t.d1Cm),
+    d2Cm: decimalONull(t.d2Cm),
+    cantidad: t.cantidad,
+    volumenM3: decimalONull(t.volumenM3),
+    codigoPlanta: t.codigoPlanta?.trim() || null,
+    // La guía del Libro TH sabe la parcela de corta de su plan.
+    parcela: t.parcela ?? null,
+    noRecepcionada: noLlego,
+    // Una pieza que no llegó no puede tener el día en que llegó.
+    fechaRecepcion: noLlego ? null : (t.fechaRecepcion ?? null),
+    recepcionObs: t.recepcionObs?.trim() || null,
+    lothTrozadoId: t.lothTrozadoId?.trim() || null,
+    arbolCodigo: t.arbolCodigo?.trim() || null,
+    // Lo medido en planta sólo existe si llegó.
+    recibidaD1Cm: noLlego ? null : decimalONull(t.recibida?.d1Cm),
+    recibidaD2Cm: noLlego ? null : decimalONull(t.recibida?.d2Cm),
+    recibidaLargoM: noLlego ? null : decimalONull(t.recibida?.largoM),
+    recibidaVolumenM3: noLlego ? null : decimalONull(t.recibida?.volumenM3),
+  };
 }
 
 /**
@@ -1771,6 +1823,10 @@ export class WoodEntriesDB {
       );
     }
 
+    /* Ahora que la fila guarda el código de planta (ADR-450 R2), pasa por el
+       mismo guard que las otras altas (ADR-436). Sin códigos, no toma candado. */
+    await guardCodigoPlantaUnico(tx, tenantId, input.lineas.flatMap((l) => l.trozas.map((t) => t.codigoPlanta)));
+
     // El folio se lee UNA vez y avanza en memoria: leerlo por línea dentro de
     // la misma tx devolvería el mismo máximo y las líneas saldrían con folios
     // repetidos, que es lo primero que mira un fiscalizador.
@@ -1817,24 +1873,10 @@ export class WoodEntriesDB {
       });
 
       if (linea.trozas.length > 0) {
+        /* ADR-450 R2: TODO lo del input (no llegó, su fecha, código de planta,
+           su árbol, lo medido en planta), no sólo la parcela. */
         await tx.woodEntryTroza.createMany({
-          data: linea.trozas.map((t) => ({
-            tenantId,
-            woodEntryId: entry.id,
-            orden: t.orden,
-            codificacion: t.codificacion,
-            especieComun: t.especieComun,
-            especieCientifica: t.especieCientifica,
-            dimensiones: t.dimensiones,
-            largoM: t.largoM != null ? new Prisma.Decimal(t.largoM) : null,
-            diametroCm: t.diametroCm != null ? new Prisma.Decimal(t.diametroCm) : null,
-            d1Cm: t.d1Cm != null ? new Prisma.Decimal(t.d1Cm) : null,
-            d2Cm: t.d2Cm != null ? new Prisma.Decimal(t.d2Cm) : null,
-            cantidad: t.cantidad,
-            volumenM3: t.volumenM3 != null ? new Prisma.Decimal(t.volumenM3) : null,
-            // La guía del Libro TH sabe la parcela de corta de su plan.
-            parcela: t.parcela ?? null,
-          })),
+          data: linea.trozas.map((t) => filaDeTrozaDeGuia(tenantId, entry.id, t)),
         });
       }
       salida.push({ entry, trozas: linea.trozas.length });
@@ -1886,6 +1928,9 @@ export class WoodEntriesDB {
         OR: [
           { codificacion: { contains: q, mode: "insensitive" } },
           { codigoPlanta: { contains: q, mode: "insensitive" } },
+          /* «Las trozas del árbol 113» (ADR-450): EXACTO, no «contiene» — 113
+             no es 1130. */
+          { arbolCodigo: { equals: q, mode: "insensitive" } },
         ],
         // Una troza de un ingreso anulado no cuenta como trazabilidad: se filtra
         // acá y no en el cliente, para que ninguna vista la muestre por olvido.
@@ -2398,6 +2443,14 @@ export class WoodEntriesDB {
       oxMedidoEn: t.oxMedidoEn ? t.oxMedidoEn.toISOString() : null,
       oxMedidoPor: t.oxMedidoPor,
       d1d2MedidoEnPlanta: t.d1d2MedidoEnPlanta,
+      /* ADR-450: su árbol del Libro TH y lo medido en planta al recibirla.
+         WHITELIST: sin estas líneas el patio no dice «Árbol 113». */
+      lothTrozadoId: t.lothTrozadoId,
+      arbolCodigo: t.arbolCodigo,
+      recibidaD1Cm: num(t.recibidaD1Cm),
+      recibidaD2Cm: num(t.recibidaD2Cm),
+      recibidaLargoM: num(t.recibidaLargoM),
+      recibidaVolumenM3: num(t.recibidaVolumenM3),
     }));
   }
 
@@ -3660,18 +3713,38 @@ export class WoodEntriesDB {
           /* LM4 (ADR-441): una madre apartada en un mixto abierto va entera a
              la sierra con su pila; cortarla la sacaría de la pila en silencio. */
           loteMixto: { select: SELECT_LOTE_MIXTO },
+          /* Revisión ADR-450: con su ESTADO, no el id pelado (una corrida o un
+             despacho anulado ya devolvió la madera al patio). */
+          consumidaEn: { select: { status: true, deletedAt: true } },
+          despachadaEn: { select: { status: true, deletedAt: true } },
         },
       });
       if (!madre)
         throw new CtpInvariantError("Esa troza no existe en este tenant.", "TENANT_MISMATCH", {
           trozaId,
         });
-      if (madre.entry.deletedAt) {
+      if (madre.entry.deletedAt || madre.entry.status === "anulado" || madre.entry.status === "rechazado") {
         throw new CtpInvariantError(
           "El ingreso de esa troza está anulado: no se puede retrozar.",
           "ESTADO_NO_EDITABLE",
           { trozaId },
         );
+      }
+      /* Revisión ADR-450: los pedazos nacen llegados y T1 mira el pedazo, no
+         la madre — cortar una que no llegó (o ya aserrada/despachada, o
+         descarte) fabricaba madera consumible que no está en el patio. */
+      const vigente = (x: { status: string; deletedAt: Date | null } | null) =>
+        !!x && x.status === "registrado" && !x.deletedAt;
+      const noSe = motivoNoRetrozable({
+        noRecepcionada: madre.noRecepcionada,
+        descarte: madre.descarte,
+        consumidaEnId: vigente(madre.consumidaEn) ? madre.consumidaEnId : null,
+        despachadaEnId: vigente(madre.despachadaEn) ? madre.despachadaEnId : null,
+      });
+      if (noSe) {
+        throw new CtpInvariantError(`${madre.codificacion ? `${madre.codificacion}: ` : ""}${noSe}`, "TROZA_NO_RETROZABLE", {
+          trozaId,
+        });
       }
       // Una troza que ya es pedazo de otra no se vuelve a cortar acá: el árbol
       // de dos niveles alcanza para el libro y uno más profundo haría que el
@@ -3751,6 +3824,10 @@ export class WoodEntriesDB {
           fechaRetrozo: fecha,
           descarte: r.descarte ?? false,
           observaciones: r.observaciones ?? null,
+          /* ADR-450: un pedazo sale del MISMO árbol que su madre. Sin esto, la
+             ficha del pedazo no sabía decir de qué árbol salió. */
+          lothTrozadoId: madre.lothTrozadoId,
+          arbolCodigo: madre.arbolCodigo,
         })),
       });
 
@@ -4025,6 +4102,8 @@ export class WoodEntriesDB {
         largoM: true,
         volumenM3: true,
         fechaConsumo: true,
+        /* La columna «Árbol» de la corrida (ADR-450). */
+        arbolCodigo: true,
         entry: { select: { gtfNumber: true, originCode: true } },
       },
     });

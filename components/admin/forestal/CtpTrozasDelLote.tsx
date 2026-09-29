@@ -129,6 +129,9 @@ export default function CtpTrozasDelLote({
   const vacioRico = trozas.length === 0 && !cargando && Boolean(accionVacio);
 
   const opcionesGtf = useMemo(() => opcionesDeColumna(trozas, (t) => t.gtfNumber), [trozas]);
+  /* «Árbol» (ADR-450): sólo si alguna troza vino del Libro TH con su árbol. Fuera
+     del formato del SNIFFS, así que no se agrega una columna vacía. */
+  const conArbol = useMemo(() => trozas.some((t) => Boolean(t.arbolCodigo?.trim())), [trozas]);
   const opcionesEspecie = useMemo(() => opcionesDeColumna(trozas, (t) => t.especieComun), [trozas]);
 
   const filas = useMemo(() => {
@@ -350,6 +353,7 @@ export default function CtpTrozasDelLote({
                 />
               </span>
             </th>
+            {conArbol && <th className="px-3 py-2 font-bold">Árbol</th>}
             <th className="px-3 py-2 text-right font-bold">D1 (cm)</th>
             <th className="px-3 py-2 text-right font-bold">D2 (cm)</th>
             <th className="px-3 py-2 text-right font-bold">Long. (m)</th>
@@ -385,7 +389,7 @@ export default function CtpTrozasDelLote({
         </TheadCtp>
         <TbodyCtp>
           {filas.length === 0 && (
-            <FilaVacia cols={9}>
+            <FilaVacia cols={conArbol ? 10 : 9}>
               {cargando
                 ? "Leyendo las trozas del lote…"
                 : trozas.length === 0
@@ -414,6 +418,9 @@ export default function CtpTrozasDelLote({
                 <td className="px-3 py-2 font-mono text-sm font-bold text-[var(--text-primary)]">
                   {t.codigoPlanta || t.codificacion || "—"}
                 </td>
+                {conArbol && (
+                  <td className="whitespace-nowrap px-3 py-2 font-mono text-sm text-[var(--text-secondary)]">{t.arbolCodigo?.trim() || "—"}</td>
+                )}
                 <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">{num(t.d1Cm, 2)}</td>
                 <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">{num(t.d2Cm, 2)}</td>
                 <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">{num(t.largoM, 2)}</td>

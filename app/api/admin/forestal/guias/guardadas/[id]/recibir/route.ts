@@ -11,9 +11,14 @@ import { guardGuias } from "../../guard";
  * Recibir una guía que viene del Libro TH del mismo negocio (28-09-2026).
  *
  *   GET  → lo que se va a registrar: un renglón por especie con sus trozas
- *          (código, D1, D2, largo, m³), el total y el vencimiento de la guía.
+ *          (código, D1, D2, largo, m³, `trozadoId` y `arbolCodigo`), el total,
+ *          el vencimiento de la guía y la `huella` de la lista (ADR-450).
  *   POST RecibirGuiaThInput → registra el ingreso con sus trozas SIN tipear y
  *          lo recepciona con la fecha de llegada que pone quien recibe.
+ *          ADR-450: con el `conteo` de TODAS las trozas (la que no llegó entra
+ *          «no llegó»; la distinta guarda lo medido en planta) y la `huella`
+ *          del GET. 409 `GUIA_CAMBIO` si la lista cambió; 422
+ *          `CONTEO_INCOMPLETO` · `NADA_LLEGO` · `FALTANTES_SIN_CONFIRMAR`.
  *
  * Guard: el de las guías guardadas (admin/almacenero/dueño → CSRF en POST →
  * rate limit → Libro CTP habilitado) + en el POST un límite por negocio. El tenant sale de la sesión: la guía del

@@ -35,6 +35,11 @@ export interface TrozaRecepcion {
   fechaRecepcion?: string | null;
   /** Los pedazos, si ya se retrozó: cuentan como la misma madera de la madre. */
   trozaOrigenId?: string | null;
+  /**
+   * m³ medido en planta cuando llegó DISTINTA a la guía (ADR-450 L1). `null` =
+   * llegó como dice la guía. No cambia `volumenM3` ni el saldo (I2).
+   */
+  recibidaVolumenM3?: number | null;
 }
 
 /** El estado de recepción de una guía, para mostrarlo arriba de la lista. */
@@ -55,6 +60,13 @@ export interface BalanceRecepcion {
   conParcela: number;
   /** `true` cuando todas llegaron: la recepción no tiene nada pendiente. */
   completa: boolean;
+  /** Llegaron con otra medida que la guía (ADR-450): lo medido está aparte. */
+  distintas: number;
+  /**
+   * m³ de lo que llegó según la MEDIDA DE PLANTA (la de la guía donde no se
+   * midió distinto). Es informativo: el libro y el saldo siguen con la guía.
+   */
+  volumenMedido: number;
 }
 
 const r4 = (n: number) => Math.round(n * 10_000) / 10_000;
@@ -81,6 +93,8 @@ export function balanceRecepcion(trozas: readonly TrozaRecepcion[]): BalanceRece
     conCodigoPlanta: recibidas.filter((t) => (t.codigoPlanta ?? "").trim()).length,
     conParcela: recibidas.filter((t) => (t.parcela ?? "").trim()).length,
     completa: madres.length > 0 && madres.every((t) => !t.noRecepcionada),
+    distintas: recibidas.filter((t) => t.recibidaVolumenM3 != null).length,
+    volumenMedido: r4(recibidas.reduce((a, t) => a + Number(t.recibidaVolumenM3 ?? t.volumenM3 ?? 0), 0)),
   };
 }
 
@@ -123,6 +137,12 @@ export function avisosRecepcion(b: BalanceRecepcion, volumenDelIngreso: number |
           `${fmtM3(b.volumenRecibido)} m³. Corrige el volumen del ingreso o explica la diferencia.`,
       );
     }
+  }
+  /* ADR-450: lo que llegó con otra medida se dice; el libro sigue con la guía. */
+  if (b.distintas > 0 && Math.abs(b.volumenMedido - b.volumenRecibido) > 0.001) {
+    avisos.push(
+      `${b.distintas} troza${b.distintas === 1 ? "" : "s"} ${b.distintas === 1 ? "llegó" : "llegaron"} con otra medida: lo recibido mide ${fmtM3(b.volumenMedido)} m³ en planta contra ${fmtM3(b.volumenRecibido)} m³ de la guía.`,
+    );
   }
   const sinCodigo = b.recibidas - b.conCodigoPlanta;
   if (sinCodigo > 0) {
