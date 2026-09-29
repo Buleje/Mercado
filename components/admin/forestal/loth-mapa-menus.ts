@@ -39,7 +39,6 @@ import type { LothMapaDibujo } from "./hooks/use-loth-mapa-dibujo";
 import type { LothMapaHerramientasEstado } from "./hooks/use-loth-mapa-herramientas";
 import type { LothMapaDerivados } from "./hooks/use-loth-mapa-derivados";
 import type { LothMapaExportes } from "./hooks/use-loth-mapa-exportes";
-import type { LothMapaImagenes } from "./hooks/use-loth-mapa-imagenes";
 
 export { menuCapas, type EtiquetasDelMenu, type ImagenesDelMenu, type OsmDelMenu } from "./loth-mapa-menu-capas";
 
@@ -113,9 +112,7 @@ export function menuDibujar(dib: LothMapaDibujo, datos: LothMapaDatos, der: Loth
   ];
 }
 
-export function menuExportar(exp: LothMapaExportes, der: LothMapaDerivados, h: LothMapaHerramientasEstado, verticesCuadro: number, fondoPng?: LothMapaImagenes["fondoPng"]): MenuAccion[] {
-  /** Con Sentinel-2 en pantalla, el PNG baja ESA imagen (no la foto de Esri de otro año). */
-  const fondo = h.basemap === "s2" ? fondoPng : undefined;
+export function menuExportar(exp: LothMapaExportes, der: LothMapaDerivados, h: LothMapaHerramientasEstado, verticesCuadro: number): MenuAccion[] {
   const faltan = der.checkPlano.pendientes.length;
   const sinPoligono = verticesCuadro === 0;
   const canGeo = der.readiness.parcelaDeclarada && der.readiness.geoTotal > 0;
@@ -123,7 +120,8 @@ export function menuExportar(exp: LothMapaExportes, der: LothMapaDerivados, h: L
     {
       id: "plano",
       label: "Plano oficial · Mapa 1",
-      hint: faltan > 0 ? `Lámina con cajetín y cuadro de coordenadas — le faltan ${faltan} requisito(s)` : "Lámina con cajetín, cuadrícula y cuadro de coordenadas",
+      // Sobre qué imagen sale y de cuándo: el plano la imprime en el cajetín.
+      hint: faltan > 0 ? `Sobre ${exp.planoSobre} — le faltan ${faltan} requisito(s)` : `Lámina con cajetín y coordenadas, sobre ${exp.planoSobre}`,
       icon: Printer,
       tone: "dark",
       onSelect: () => void exp.imprimirPlano(),
@@ -131,7 +129,7 @@ export function menuExportar(exp: LothMapaExportes, der: LothMapaDerivados, h: L
     {
       id: "mapa2",
       label: "Mapa 2 · dispersión y accesos",
-      hint: "Censo, referencias y el cuadro de acceso a la UMF",
+      hint: `Censo, referencias y acceso a la UMF, sobre ${exp.planoSobre}`,
       icon: Printer,
       tone: "dark",
       onSelect: exp.imprimirDispersion,
@@ -179,11 +177,11 @@ export function menuExportar(exp: LothMapaExportes, der: LothMapaDerivados, h: L
     {
       id: "png",
       label: "Imagen PNG de lo que ves",
-      hint: fondo ? "La vista actual sobre la imagen de Sentinel-2 que estás mirando" : "La vista actual con el polígono, el censo y las referencias",
+      hint: `La vista actual sobre ${exp.pngSobre}, con la fecha en el pie`,
       icon: Image,
       busy: exp.descargando,
       disabled: !h.vista,
-      onSelect: () => void exp.descargarPng(fondo),
+      onSelect: () => void exp.descargarPng(),
     },
   ];
 }

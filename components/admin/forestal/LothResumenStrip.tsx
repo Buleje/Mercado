@@ -32,6 +32,7 @@ import {
   BarChart3,
 } from "@buleje/design-system/icons";
 import { useLocalStorage } from "@/hooks/use-local-storage";
+import { formatNumber } from "@/lib/format";
 
 /** Clave de la preferencia. Exportada: la prueba en navegador la lee. */
 export const CLAVE_RESUMEN_ABIERTO = "loth:secciones:resumen-abierto";
@@ -47,7 +48,7 @@ interface Analytics {
   anomalias: { level: "error" | "warn" }[];
 }
 
-const fm = (n: number, dp = 2) => n.toLocaleString("es-PE", { minimumFractionDigits: dp, maximumFractionDigits: dp });
+const fm = (n: number, dp: 0 | 1 | 2 = 2) => formatNumber(n, dp);
 
 export default function LothResumenStrip({ onNavigate, reloadSignal }: { onNavigate: (view: "rentabilidad" | "cumplimiento") => void; reloadSignal?: number }) {
   const [data, setData] = useState<Analytics | null>(null);

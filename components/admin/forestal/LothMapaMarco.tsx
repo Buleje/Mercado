@@ -9,7 +9,7 @@
  * el mapa y las herramientas quedaban abajo, fuera de la vista.
  */
 
-import { forwardRef, memo, useCallback } from "react";
+import { forwardRef, memo } from "react";
 import LothMapaCanvasRaw from "./LothMapaCanvas";
 import LothMapaChrome from "./LothMapaChrome";
 import LothMapaToolbar from "./LothMapaToolbar";
@@ -17,7 +17,7 @@ import LothMapaHerramientas from "./LothMapaHerramientas";
 import LothMapaCompararS2 from "./LothMapaCompararS2";
 import LothMapaFechaImagen from "./LothMapaFechaImagen";
 import { propsHerramientas } from "./loth-mapa-herramientas-props";
-import { useLothMapaImagenes } from "./hooks/use-loth-mapa-imagenes";
+import type { LothMapaImagenes } from "./hooks/use-loth-mapa-imagenes";
 import LothCampoBar from "./LothCampoBar";
 import LothMapaDrawBar, { LothMapaMarcaBar, LothMapaViaBar } from "./LothMapaDrawBar";
 import LothMapaArbolFicha from "./LothMapaArbolFicha";
@@ -69,19 +69,17 @@ interface Props {
   plan: LothPlanificador;
   /** Las rutas y los puntos del plano: la resaltada, su ficha y la vista previa sin rutas. */
   rutas: LothMapaRutas;
+  /** Sentinel-2, la fecha de la foto de Esri y lo de hoy (NASA). Vive en la vista: el plano impreso sale con la misma imagen. */
+  img: LothMapaImagenes;
 }
 
-const LothMapaMarco = forwardRef<HTMLElement, Props>(function LothMapaMarco({ datos, dib, herr, der, exp, arb, variosTala, onTalarVarios, verticesCuadro, plan, rutas }, ref) {
+const LothMapaMarco = forwardRef<HTMLElement, Props>(function LothMapaMarco({ datos, dib, herr, der, exp, arb, variosTala, onTalarVarios, verticesCuadro, plan, rutas, img }, ref) {
   const { fullscreen, setFullscreen } = herr;
   const rios = datos.carto.vias.filter((v) => v.tipo === "rio");
   /** Una herramienta usa el clic del mapa: los árboles no lo toman y la ficha se guarda. */
   const capturando = dib.drawMode || dib.markMode || dib.viaDraft !== null || herr.medicion !== null;
   const elegido = arb.elegido;
   const { onArbolTocado, onRutaTocada, onPatioMovido, propuesta, ficha, centrarFicha } = useLothMapaToques({ arb, variosTala, rutas, plan, centrar: herr.centrar });
-  const { setWayback } = herr;
-  const apagarWayback = useCallback(() => setWayback(null), [setWayback]);
-  /** Sentinel-2, la fecha de la foto de Esri y lo de hoy (NASA): se pide al terminar de cargar el mapa. */
-  const img = useLothMapaImagenes({ planId: datos.plan?.id ?? null, listo: datos.fitKey > 0, waybackActivo: !!herr.wayback, apagarWayback });
 
   useLothMapaEscape({ eligiendoVarios: variosTala.activo, salirDeVarios: variosTala.desactivar, fullscreen, setFullscreen });
   /** La leyenda: la del mapa con las etapas del libro justo después de las condiciones del censo, y al final lo del planificador. */
@@ -114,7 +112,7 @@ const LothMapaMarco = forwardRef<HTMLElement, Props>(function LothMapaMarco({ da
         dibujar={menuDibujar(dib, datos, der)}
         dibujando={dib.drawMode || dib.viaDraft !== null || dib.markMode}
         herramientas={herramientasDelMapa(herr, rios.length)}
-        exportar={menuExportar(exp, der, herr, verticesCuadro, img.fondoPng)}
+        exportar={menuExportar(exp, der, herr, verticesCuadro)}
         fullscreen={fullscreen}
         onFullscreen={() => setFullscreen((v) => !v)}
         sinGuardar={datos.cartoSinGuardar}

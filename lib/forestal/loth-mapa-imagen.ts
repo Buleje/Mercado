@@ -12,19 +12,20 @@
  * `toDataURL` tiraría SecurityError). En cambio el **export estático de Esri**
  * responde con `Access-Control-Allow-Origin: *` (verificado 2026-07-22), así que
  * se pide la imagen del bbox visible, se carga con `crossOrigin="anonymous"` y
- * los vectores se pintan con la API 2D del canvas.
+ * los vectores se pintan con la API 2D del canvas. El recorte de Sentinel-2
+ * de Planetary Computer (`/item/bbox`) también trae CORS `*`.
+ *
+ * El pie dice SIEMPRE de qué imagen se trata y de cuándo (`textoDelFondo`):
+ * sobre Blas, la foto de Esri es del 18-jun-2022.
  */
 
 import type { LatLng } from "./loth-geo";
 
-const ESRI = "https://server.arcgisonline.com/ArcGIS/rest/services";
-const BASES = {
-  topo: `${ESRI}/World_Topo_Map/MapServer/export`,
-  sat: `${ESRI}/World_Imagery/MapServer/export`,
-  street: `${ESRI}/World_Street_Map/MapServer/export`,
-} as const;
-
-export type ImagenBase = keyof typeof BASES;
+/** Una imagen de fondo (EPSG:4326, el recuadro exacto, con CORS) y cómo se nombra en el pie. */
+export interface ImagenFondo {
+  url: string;
+  fuente: string;
+}
 
 export interface ImagenPunto {
   lat: number;
@@ -39,18 +40,18 @@ export interface ImagenOptions {
   bounds: { latMin: number; latMax: number; lngMin: number; lngMax: number };
   ancho: number;
   alto: number;
-  base: ImagenBase;
   parcela?: LatLng[];
   puntos?: ImagenPunto[];
   lineas?: { puntos: LatLng[]; color: string; dash?: boolean }[];
   /** Pie de imagen (título + fuente). */
   titulo?: string;
+  /** Cuándo se generó («29 de setiembre de 2026»). */
   fecha?: string;
   /**
-   * Otra imagen de fondo del mismo recuadro (EPSG:4326, `ancho`×`alto`, con
-   * CORS): la escena de Sentinel-2 que está en pantalla. Sin esto, Esri.
+   * La imagen de fondo del mismo recuadro (se dibuja estirada a `ancho`×`alto`)
+   * y, si no carga, la que va en su lugar —la foto de Esri con su fecha—.
    */
-  fondo?: { url: string; fuente: string };
+  fondo: ImagenFondo & { respaldo?: ImagenFondo };
 }
 
 /** Carga una imagen con CORS habilitado (si falla, rechaza y el caller avisa). */
@@ -75,9 +76,16 @@ export async function componerImagenMapa(opts: ImagenOptions): Promise<Blob> {
   const lngRange = bounds.lngMax - bounds.lngMin || 1e-6;
   const PIE = opts.titulo ? 34 : 0;
 
-  const bbox = `${bounds.lngMin},${bounds.latMin},${bounds.lngMax},${bounds.latMax}`;
-  const url = opts.fondo?.url ?? `${BASES[opts.base]}?bbox=${bbox}&bboxSR=4326&imageSR=4326&size=${Math.round(ancho)},${Math.round(alto)}&format=png&f=image`;
-  const img = await cargarImagen(url);
+  let fuente = opts.fondo.fuente;
+  let img: HTMLImageElement;
+  try {
+    img = await cargarImagen(opts.fondo.url);
+  } catch (err) {
+    const r = opts.fondo.respaldo;
+    if (!r) throw err;
+    img = await cargarImagen(r.url);
+    fuente = r.fuente;
+  }
 
   const canvas = document.createElement("canvas");
   canvas.width = Math.round(ancho);
@@ -161,11 +169,7 @@ export async function componerImagenMapa(opts: ImagenOptions): Promise<Blob> {
     ctx.fillText(opts.titulo, 10, alto + 16);
     ctx.font = "400 11px system-ui, sans-serif";
     ctx.fillStyle = "#64748b";
-    ctx.fillText(
-      `${opts.fecha ? `${opts.fecha} · ` : ""}${opts.fondo?.fuente ?? "Imagen © Esri"} · geometría declarada en el Libro de Operaciones`,
-      10,
-      alto + 30,
-    );
+    ctx.fillText(`${opts.fecha ? `Generado el ${opts.fecha} · ` : ""}${fuente} · geometría declarada en el Libro de Operaciones`, 10, alto + 30);
   }
 
   return await new Promise<Blob>((resolve, reject) =>

@@ -88,6 +88,8 @@ export function useLothMapaHerramientas({ onError }: { onError: (msg: string | n
   const [releases, setReleases] = useState<WaybackRelease[]>([]);
   const [cargandoReleases, setCargandoReleases] = useState(true);
   const [wayback, setWayback] = useState<WaybackRelease | null>(null);
+  /** Suelta el comparador EUDR (lo pide «Comparar dos fechas» de Sentinel-2: la cortina es una). */
+  const apagarWayback = useCallback(() => setWayback(null), []);
   const [waybackSplit, setWaybackSplit] = useState(50);
   const [fajaAnchoM, setFajaAnchoM] = useState(0);
   const [perfil, setPerfil] = useState<PerfilElevacion | null>(null);
@@ -163,6 +165,7 @@ export function useLothMapaHerramientas({ onError }: { onError: (msg: string | n
     cargandoReleases,
     wayback,
     setWayback,
+    apagarWayback,
     waybackSplit,
     setWaybackSplit,
     verCorteEudr,

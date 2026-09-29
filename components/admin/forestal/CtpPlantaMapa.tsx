@@ -24,6 +24,7 @@ import { etiquetaCorta, MARCA_CSS, marcaHtml, marcaSobranteHtml } from "@/lib/fo
 
 import { Btn, CampoGrid, Field, I, MODAL_BODY, ModalBody, ModalFooter } from "./ctp-shared";
 import { formatNumber } from "@/lib/format";
+import { ATRIBUCION_ESRI_IMAGERY } from "@/lib/esri-imagery";
 
 export type { ZonaInv };
 
@@ -393,7 +394,7 @@ export default function CtpPlantaMapa({
       // el z17 real (última resolución disponible) y lo UPSCALEA para z18-22 →
       // se ve borroso al acercar mucho, pero nunca el placeholder. Las zonas
       // dibujadas son vectores (nítidas igual). Verificado en navegador 2026-07-19.
-      satRef.current = L.tileLayer(SAT, { maxZoom: 22, maxNativeZoom: SAT_MAX_NATIVE, attribution: "Tiles © Esri, Maxar, Earthstar Geographics" }).addTo(map);
+      satRef.current = L.tileLayer(SAT, { maxZoom: 22, maxNativeZoom: SAT_MAX_NATIVE, attribution: ATRIBUCION_ESRI_IMAGERY }).addTo(map);
       streetRef.current = L.tileLayer(STREET, { maxZoom: 22, maxNativeZoom: 19, attribution: "© OpenStreetMap" });
       map.on("click", (e: { latlng: { lat: number; lng: number } }) => {
         const ll: [number, number] = [e.latlng.lat, e.latlng.lng];

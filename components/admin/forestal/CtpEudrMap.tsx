@@ -17,6 +17,7 @@ import { Layers, Warehouse, Camera, CheckCircle2, AlertTriangle } from "@buleje/
 import { leafletIconSvg } from "@/lib/leaflet-icon-html";
 import { BRAND_GEO } from "@/lib/geo";
 import { origenGeolocalizado, type OrigenGeo, type OrigenRow } from "@/lib/forestal/eudr-types";
+import { ATRIBUCION_ESRI_IMAGERY } from "@/lib/esri-imagery";
 
 const SAT = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
 const STREET = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
@@ -67,7 +68,7 @@ export default function CtpEudrMap({ origins, geoByCode }: { origins: OrigenRow[
       LRef.current = L;
       const map = L.map(containerRef.current, { center: [BRAND_GEO.lat, BRAND_GEO.lng], zoom: 11, maxZoom: 22 });
       mapRef.current = map;
-      satRef.current = L.tileLayer(SAT, { maxZoom: 22, maxNativeZoom: SAT_MAX_NATIVE, attribution: "Tiles © Esri, Maxar" }).addTo(map);
+      satRef.current = L.tileLayer(SAT, { maxZoom: 22, maxNativeZoom: SAT_MAX_NATIVE, attribution: ATRIBUCION_ESRI_IMAGERY }).addTo(map);
       streetRef.current = L.tileLayer(STREET, { maxZoom: 22, maxNativeZoom: 19, attribution: "© OpenStreetMap" });
       groupRef.current = L.layerGroup().addTo(map);
       setReady(true);

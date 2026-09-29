@@ -28,6 +28,7 @@ import { vertexCode } from "@/lib/forestal/loth-utm";
 import { centroideConjunto, geometriaBloque, puntoAVertice, type BloqueGeometria } from "@/lib/forestal/plantacion-cartografia";
 import type { BloqueInput } from "@/lib/forestal/plantacion-tramite";
 import { formatNumber } from "@/lib/format";
+import { ATRIBUCION_ESRI_IMAGERY } from "@/lib/esri-imagery";
 
 const SAT = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
 const STREET = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
@@ -99,7 +100,7 @@ export default function PlantacionPasoMapa({
       LRef.current = L;
       const map = L.map(containerRef.current, { center: centroInicial, zoom: 14, maxZoom: 22 });
       mapRef.current = map;
-      satRef.current = L.tileLayer(SAT, { maxZoom: 22, maxNativeZoom: SAT_MAX_NATIVE, attribution: "Tiles © Esri, Maxar" }).addTo(map);
+      satRef.current = L.tileLayer(SAT, { maxZoom: 22, maxNativeZoom: SAT_MAX_NATIVE, attribution: ATRIBUCION_ESRI_IMAGERY }).addTo(map);
       streetRef.current = L.tileLayer(STREET, { maxZoom: 22, maxNativeZoom: 19, attribution: "© OpenStreetMap" });
       groupRef.current = L.layerGroup().addTo(map);
       setReady(true);
@@ -143,7 +144,7 @@ export default function PlantacionPasoMapa({
 
       if (g.centroide && g.ring.length >= 3) {
         L.circleMarker(g.centroide, { radius: 4, color: "#0f172a", weight: 2, fillColor: "#fff", fillOpacity: 1 })
-          .bindTooltip(`${nombre}${g.areaCalculadaHa != null ? ` · ${g.areaCalculadaHa.toFixed(2)} ha` : ""}`, { direction: "top", offset: [0, -8] })
+          .bindTooltip(`${nombre}${g.areaCalculadaHa != null ? ` · ${Number(g.areaCalculadaHa).toFixed(2)} ha` : ""}`, { direction: "top", offset: [0, -8] })
           .addTo(group);
       }
     });

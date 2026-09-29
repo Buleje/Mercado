@@ -6,21 +6,29 @@
  * ARFFS/SERFOR y el verificador EUDR:
  *
  *   · marco con cuadrícula UTM rotulada en los 4 bordes (Datum WGS 84),
- *   · base cartográfica (topográfica o satelital) del área,
+ *   · base cartográfica del área: mapa topográfico o de calles, o la imagen
+ *     satelital RECIENTE (Sentinel-2 de la fecha elegida en el mapa) con su
+ *     fecha y su fuente impresas en el cajetín, la escala y el pie
+ *     (`loth-plano-fondo.ts`; si no carga, la foto de Esri con SU fecha),
  *   · polígono de la UMF + vértices numerados C.001…, censo forestal y
  *     operaciones geolocalizadas del libro,
  *   · recuadro de LEYENDA, mapa de UBICACIÓN DISTRITAL, norte y escala gráfica,
  *   · CUADRO DE COORDENADAS UTM de los vértices,
  *   · CAJETÍN (membrete) con ubicación política, área, datum, proyección y escala.
  *
- * Todo se compone como HTML/SVG en una ventana nueva: la imagen base viene del
- * export estático de Esri (`imageSR=4326` → proyección lineal exacta sobre el
- * bbox pedido), así que los vectores se proyectan encima con una regla de tres.
+ * Todo se compone como HTML/SVG en una ventana nueva: la imagen base se pide
+ * en EPSG:4326 sobre el recuadro exacto (Planetary Computer `/item/bbox` o el
+ * export estático de Esri con `imageSR=4326` → proyección lineal), a
+ * resolución de impresión (300 ppp sobre los 36,8 cm del mapa en A3, sin pasar el
+ * tope de quien la sirve), así que los vectores se proyectan con una regla de
+ * tres. La ventana no ejecuta scripts (CSP propia): la cadena de respaldo y el
+ * botón de imprimir se atan desde afuera (`loth-plano-ventana.ts`).
  *
  * Documento de referencia: NO reemplaza el plano visado por el regente.
  */
 
 import { BRAND_GEO } from "@/lib/geo";
+import { formatDateLong } from "@/lib/format";
 import type { LatLng } from "./loth-geo";
 import { centroid, polygonAreaHa } from "./loth-geo";
 import {
@@ -36,17 +44,11 @@ import {
   vertexCode,
   zoneLabel,
 } from "./loth-utm";
-
-const ESRI = "https://server.arcgisonline.com/ArcGIS/rest/services";
-const BASEMAPS = {
-  topo: `${ESRI}/World_Topo_Map/MapServer/export`,
-  satelite: `${ESRI}/World_Imagery/MapServer/export`,
-  calles: `${ESRI}/World_Street_Map/MapServer/export`,
-} as const;
-export type PlanoBasemap = keyof typeof BASEMAPS;
+import { armarFondoPlano, PLANO_ANCHO_CM, urlExportEsri, type FondoImagen } from "./loth-plano-fondo";
+import { vigilarLamina } from "./loth-plano-ventana";
 
 /** Ancho útil del mapa en el papel (A3 apaisado, márgenes 10 mm) — para la escala. */
-const PRINT_MAP_WIDTH_CM = 25.5;
+const PRINT_MAP_WIDTH_CM = PLANO_ANCHO_CM;
 const MIN_RANGE_DEG = 0.012; // ~1.3 km: bbox mínimo dentro del cache de Esri
 const FRAME_W = 1180;
 const FRAME_H = 780;
@@ -138,7 +140,8 @@ export interface PlanoOptions {
   puntos: PlanoPunto[];
   censo: PlanoArbol[];
   meta: PlanoMeta;
-  basemap?: PlanoBasemap;
+  /** La imagen de fondo (`elegirFondoPlano`): sin esto, el mapa topográfico. */
+  fondo?: FondoImagen;
   variante?: PlanoVariante;
   referencias?: PlanoReferencia[];
   vias?: PlanoVia[];
@@ -186,9 +189,6 @@ function frameBounds(points: LatLng[]) {
   return { latMin, latMax, lngMin, lngMax, cosLat };
 }
 
-const exportUrl = (base: string, bbox: string, w: number, h: number) =>
-  `${base}?bbox=${bbox}&bboxSR=4326&imageSR=4326&size=${w},${h}&format=png&f=image`;
-
 /** Rosa de los vientos (norte cartográfico). */
 const northArrowSvg = `<svg viewBox="0 0 60 76" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
   <polygon points="30,4 42,52 30,44 18,52" fill="#111827" />
@@ -199,7 +199,7 @@ const northArrowSvg = `<svg viewBox="0 0 60 76" xmlns="http://www.w3.org/2000/sv
 
 export function printLothPlano(opts: PlanoOptions): void {
   const { parcela, puntos, censo, meta } = opts;
-  const basemap: PlanoBasemap = opts.basemap ?? "topo";
+  const fondo: FondoImagen = opts.fondo ?? { tipo: "mapa", base: "topo", respaldo: { tipo: "esri", fecha: null } };
   const variante: PlanoVariante = opts.variante ?? "ubicacion";
   const referencias = opts.referencias ?? [];
   const vias = opts.vias ?? [];
@@ -228,13 +228,17 @@ export function printLothPlano(opts: PlanoOptions): void {
   const zone = dominantZone(all);
   const south = latMax < 0 || (latMin + latMax) / 2 < 0;
   const bbox = `${lngMin},${latMin},${lngMax},${latMax}`;
-  const imgUrl = exportUrl(BASEMAPS[basemap], bbox, FRAME_W, FRAME_H);
-  const fallbackUrl = exportUrl(BASEMAPS.satelite, bbox, FRAME_W, FRAME_H);
-  // Capas oficiales: PNG transparente del mismo bbox, apilado sobre la base.
+  // La imagen de fondo a resolución de impresión, los cuadros vecinos de la misma pasada y la cadena de respaldo.
+  const armado = armarFondoPlano(fondo, { latMin, latMax, lngMin, lngMax }, FRAME_H / FRAME_W);
+  const fuente = armado.principal;
+  const fondoImgs =
+    armado.extras.map((src) => `<img class="s2x" src="${esc(src)}" alt="" />`).join("") +
+    `<img id="fondo" src="${esc(fuente.src)}" alt="Imagen de fondo del área de aprovechamiento" />`;
+  // Capas oficiales: PNG transparente del mismo bbox, apilado sobre la base (si no carga, se oculta desde afuera).
   const overlayImgs = overlays
     .map(
       (o) =>
-        `<img class="ovl" style="opacity:${o.opacity}" src="${o.url}/export?bbox=${bbox}&bboxSR=4326&imageSR=4326&size=${FRAME_W},${FRAME_H}&format=png32&transparent=true&f=image" alt="${esc(o.label)}" onerror="this.style.display='none'" />`,
+        `<img class="ovl" style="opacity:${o.opacity}" src="${esc(`${o.url}/export?bbox=${bbox}&bboxSR=4326&imageSR=4326&size=${FRAME_W},${FRAME_H}&format=png32&transparent=true&f=image`)}" alt="" />`,
     )
     .join("");
 
@@ -378,9 +382,9 @@ export function printLothPlano(opts: PlanoOptions): void {
   const cLat = (latMin + latMax) / 2;
   const cLng = (lngMin + lngMax) / 2;
   const INSET_DEG = 1.6;
-  const insetUrl = exportUrl(
-    BASEMAPS.topo,
-    `${cLng - INSET_DEG},${cLat - INSET_DEG * 0.75},${cLng + INSET_DEG},${cLat + INSET_DEG * 0.75}`,
+  const insetUrl = urlExportEsri(
+    "topo",
+    { lngMin: cLng - INSET_DEG, latMin: cLat - INSET_DEG * 0.75, lngMax: cLng + INSET_DEG, latMax: cLat + INSET_DEG * 0.75 },
     420,
     315,
   );
@@ -458,7 +462,7 @@ export function printLothPlano(opts: PlanoOptions): void {
     .join("");
 
   // ── 7. Cajetín ─────────────────────────────────────────────────────────────
-  const fecha = new Date().toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" });
+  const fecha = formatDateLong(new Date());
   const ubicacion: [string, string][] = [
     ["PREDIO", dash(predioMeta.nombre)],
     ["SECTOR", dash(predioMeta.sector ?? meta.sector ?? meta.parcelaCorta)],
@@ -482,6 +486,8 @@ export function printLothPlano(opts: PlanoOptions): void {
     ["DATUM", `WGS 84 · ZONA ${zoneLabel(zone, south)}`],
     ["PROYECCIÓN", "UTM"],
     ["ESCALA", `1:${denominator.toLocaleString("es-PE")}`],
+    // De cuándo es la imagen: una foto sin fecha se lee como «así está hoy».
+    ["IMAGEN DE FONDO", `<span data-fuente-celda>${esc(fuente.celda)}</span>`],
   ];
   const legales: [string, string][] = [
     ["TITULAR", dash(meta.titular)],
@@ -495,7 +501,9 @@ export function printLothPlano(opts: PlanoOptions): void {
     rows.map(([k, v]) => `<tr><th>${esc(k)}</th><td>${v}</td></tr>`).join("");
 
   // ── 8. Documento ───────────────────────────────────────────────────────────
-  const html = `<!doctype html><html lang="es"><head><meta charset="utf-8">
+  // Sin scripts (como los reportes del CTP): la cadena de respaldo y «Imprimir» se atan desde afuera.
+  const csp = `default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data: https:; font-src data:`;
+  const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${csp}">
 <title>${esc(meta.titulo)} — Mapa ${esc(meta.mapaNumero)}</title>
 <style>
   @page { size: A3 landscape; margin: 10mm; }
@@ -560,8 +568,13 @@ export function printLothPlano(opts: PlanoOptions): void {
   .below { margin-top: 10px; }
   .below h2 { font-size: 11px; margin: 0 0 5px; letter-spacing: .5px; }
   .coordcols { column-count: 4; column-gap: 10px; }
-  @media print { body { padding: 0; } .box { box-shadow: none; } }
+  .scale .fondo { max-width: 190px; font-weight: 600; }
+  .print-bar { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 10px; margin: -14px -14px 10px; background: #f3f4f6; border-bottom: 1px solid #d1d5db; font-size: 13px; }
+  .print-bar span { color: #374151; font-weight: 600; }
+  .print-bar button { cursor: pointer; border: 0; border-radius: 8px; padding: 9px 16px; font: 700 13px system-ui, sans-serif; background: #12181e; color: #fff; }
+  @media print { body { padding: 0; } .box { box-shadow: none; } .print-bar { display: none; } }
 </style></head><body>
+<div class="print-bar"><span id="estado-fondo" role="status">Cargando la imagen de fondo (${esc(fuente.corto)})…</span><button type="button" id="imprimir">Imprimir o guardar como PDF</button></div>
 <div class="sheet">
   <div class="head">
     <div>
@@ -578,7 +591,7 @@ export function printLothPlano(opts: PlanoOptions): void {
     <div class="ruler right">${rulerY()}</div>
 
     <div class="frame">
-      <img src="${imgUrl}" alt="Base cartográfica del área de aprovechamiento" onerror="this.onerror=null;this.src='${fallbackUrl}'" />
+      ${fondoImgs}
       ${overlayImgs}
       <svg viewBox="0 0 ${FRAME_W} ${FRAME_H}" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
         ${gridPaths}${svgVias}${svgPredio}${svgParcela}${svgCenso}${svgPuntos}${svgVertices}${svgRefs}${svgScaleBar}
@@ -601,6 +614,7 @@ export function printLothPlano(opts: PlanoOptions): void {
         <div class="scale">
           <div class="den">1:${denominator.toLocaleString("es-PE")}</div>
           <div class="lbl">Escala gráfica<br />0 — ${esc(formatDistance(barM))}</div>
+          <div class="lbl fondo">Base: <span data-fuente-corto>${esc(fuente.corto)}</span></div>
         </div>
       </div>
     </div>
@@ -621,32 +635,19 @@ export function printLothPlano(opts: PlanoOptions): void {
   </div>
 
   <p class="note">
-    Fuente: ${esc(meta.fuente)}${overlays.length ? ` · capas oficiales: ${overlays.map((o) => `${esc(o.label)} (${esc(o.fuente)})`).join(", ")}` : ""}. Elaborado por ${dash(meta.elaboradoPor)} desde el Libro de Operaciones del Titular (LO-TH) —
+    <span data-fuente-nota>${esc(fuente.nota)}</span>. Fuente: ${esc(meta.fuente)}${overlays.length ? ` · capas oficiales: ${overlays.map((o) => `${esc(o.label)} (${esc(o.fuente)})`).join(", ")}` : ""}. Elaborado por ${dash(meta.elaboradoPor)} desde el Libro de Operaciones del Titular (LO-TH) —
     geometría declarada por el titular y censo forestal registrado en el plan de manejo. Coordenadas proyectadas UTM sobre
     Datum WGS 84, zona ${esc(zoneLabel(zone, south))}; la conversión es analítica (serie de Snyder, error &lt; 1 m) y no sustituye un
     levantamiento geodésico. Documento de referencia para fiscalización y para la Declaración de Diligencia Debida (EUDR ·
     Reglamento UE 2023/1115); no reemplaza el plano visado ni el registro oficial en el MC-SNIFFS de SERFOR.
   </p>
 </div>
-<script>
-  (function () {
-    var done = false;
-    function go() { if (done) return; done = true; setTimeout(function () { window.print(); }, 250); }
-    var imgs = Array.prototype.slice.call(document.images);
-    var pending = imgs.filter(function (i) { return !i.complete; }).length;
-    if (pending === 0) return go();
-    imgs.forEach(function (i) {
-      i.addEventListener('load', function () { if (--pending <= 0) go(); });
-      i.addEventListener('error', function () { if (--pending <= 0) go(); });
-    });
-    setTimeout(go, 9000);
-  })();
-</script>
 </body></html>`;
 
   const w = window.open("", "_blank", "width=1280,height=900");
   if (!w) throw new Error("El navegador bloqueó la ventana. Permite pop-ups para imprimir el plano.");
   w.document.write(html);
   w.document.close();
+  vigilarLamina(w, fuente, armado.respaldos);
   w.focus();
 }

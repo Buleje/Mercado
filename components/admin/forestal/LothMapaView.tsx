@@ -48,6 +48,7 @@ import { useLothMapaTalaVarios } from "./hooks/use-loth-mapa-tala-varios";
 import { useLothPlanificador } from "./hooks/use-loth-planificador";
 import { useLothMapaRutas } from "./hooks/use-loth-mapa-rutas";
 import { useLothMapaFoco } from "./hooks/use-loth-mapa-foco";
+import { useLothMapaImagenes } from "./hooks/use-loth-mapa-imagenes";
 import type { TandaTalaInicial } from "./hooks/use-tala-en-tanda";
 
 /** Claves de los bloques plegables. Exportadas: la prueba en navegador las lee. */
@@ -117,15 +118,9 @@ export default function LothMapaView({
     variosTala.desactivar();
   };
   const verticesCuadro = dib.drawMode && dib.draft.length >= 3 ? dib.draft : datos.parcela.vertices;
-  const exp = useLothMapaExportes({
-    ...datos,
-    ...der,
-    verticesCuadro,
-    basemap: herr.basemap,
-    overlays: herr.overlays,
-    vista: herr.vista,
-    onError: datos.setError,
-  });
+  // Sentinel-2 y la fecha de la foto de Esri (se pide al terminar de cargar el mapa): el mapa la pinta y el plano sale con ella.
+  const img = useLothMapaImagenes({ planId: datos.plan?.id ?? null, listo: datos.fitKey > 0, waybackActivo: !!herr.wayback, apagarWayback: herr.apagarWayback });
+  const exp = useLothMapaExportes({ ...datos, ...der, verticesCuadro, basemap: herr.basemap, overlays: herr.overlays, vista: herr.vista, imagen: img, onError: datos.setError });
   const { centrar } = herr;
   const { elegir } = arb;
   const { raw, caratula, plan, parcela } = datos;
@@ -168,6 +163,7 @@ export default function LothMapaView({
         verticesCuadro={verticesCuadro.length}
         plan={planificador}
         rutas={rutas}
+        img={img}
       />
 
       <div className="space-y-3">
@@ -203,7 +199,7 @@ export default function LothMapaView({
             </span>
           }
           acciones={
-            <button type="button" onClick={() => void exp.imprimirPlano()} className={BTN_BLOQUE}>
+            <button type="button" onClick={() => void exp.imprimirPlano()} title={`Sale sobre ${exp.planoSobre}`} className={BTN_BLOQUE}>
               <Printer className="h-3.5 w-3.5" aria-hidden="true" /> Imprimir plano oficial
             </button>
           }

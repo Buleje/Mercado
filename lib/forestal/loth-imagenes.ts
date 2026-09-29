@@ -217,11 +217,33 @@ export function itemQueMasCubre<T extends { bbox: BboxLngLat }>(items: readonly 
   return items.reduce((mejor, it) => (solape(it) > solape(mejor) ? it : mejor), items[0]);
 }
 
-/** Un recorte PNG del recuadro (para descargar la vista): la misma imagen que las teselas. */
-export function urlRecorteS2(itemId: string, b: { latMin: number; latMax: number; lngMin: number; lngMax: number }, ancho: number, alto: number): string {
-  const w = Math.max(64, Math.min(2048, Math.round(ancho)));
-  const h = Math.max(64, Math.min(2048, Math.round(alto)));
-  return `${PC_DATA_URL}/item/bbox/${b.lngMin},${b.latMin},${b.lngMax},${b.latMax}/${w}x${h}.png?collection=${COLECCION_S2}&item=${q(itemId)}&assets=visual&asset_bidx=visual%7C1%2C2%2C3&nodata=0&coord_crs=epsg:4326`;
+/**
+ * Lado máximo de un recorte de Sentinel-2 para el plano impreso. Medido el
+ * 29-09-2026 en `/item/bbox` sobre Blas: 4 096 px en 4 s, 8 192 px en 9,8 s,
+ * 12 000 px → 504 (el servidor corta a los ~15 s). No hay tope escrito: el
+ * tope es el tiempo.
+ */
+export const S2_RECORTE_MAX_PX = 4096;
+
+export interface OpcionesRecorte {
+  /** Lado máximo en px (por defecto 2 048: la descarga de la vista). */
+  tope?: number;
+  /** `jpg` pesa 15 veces menos, pero pinta de negro lo que queda fuera de la pasada: sólo si el cuadro cubre todo. */
+  formato?: "png" | "jpg";
+  /**
+   * Interpolar al agrandar (`reproject=bilinear`). Sin esto, un píxel de 10 m
+   * agrandado sale como un cuadradito: 4 096 px sobre un área de 2 km son 20
+   * px de papel por píxel del satélite. Medido: 4 096 px en jpg, 5-8 s.
+   */
+  suavizar?: boolean;
+}
+
+/** Un recorte del recuadro (para descargar la vista o el fondo del plano): la misma imagen que las teselas. */
+export function urlRecorteS2(itemId: string, b: { latMin: number; latMax: number; lngMin: number; lngMax: number }, ancho: number, alto: number, o: OpcionesRecorte = {}): string {
+  const tope = o.tope ?? 2048;
+  const w = Math.max(64, Math.min(tope, Math.round(ancho)));
+  const h = Math.max(64, Math.min(tope, Math.round(alto)));
+  return `${PC_DATA_URL}/item/bbox/${b.lngMin},${b.latMin},${b.lngMax},${b.latMax}/${w}x${h}.${o.formato ?? "png"}?collection=${COLECCION_S2}&item=${q(itemId)}&assets=visual&asset_bidx=visual%7C1%2C2%2C3&nodata=0&coord_crs=epsg:4326${o.suavizar ? "&reproject=bilinear" : ""}`;
 }
 
 /** El POST de estadísticas de la capa SCL sobre el recuadro (512 px de lado alcanzan para un %). */

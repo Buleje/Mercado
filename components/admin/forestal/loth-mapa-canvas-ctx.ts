@@ -10,6 +10,7 @@
  */
 
 import type { RefObject } from "react";
+import { ATRIBUCION_ESRI_IMAGERY } from "@/lib/esri-imagery";
 import type { LatLng } from "@/lib/forestal/loth-geo";
 import type { LothReferencia, LothVia } from "@/lib/forestal/loth-cartografia";
 import type { WaybackRelease } from "@/lib/forestal/loth-wayback";
@@ -36,7 +37,7 @@ export const BASEMAPS: readonly BasemapId[] = ["topo", "sat", "s2", "street"];
 
 export const ATTR: Record<BaseFija, string> = {
   topo: "Tiles © Esri — Fuentes: Esri, USGS, NOAA",
-  sat: "Tiles © Esri, Vantor",
+  sat: ATRIBUCION_ESRI_IMAGERY,
   street: "© OpenStreetMap",
 };
 export const MAX_NATIVE: Record<BaseFija, number> = { topo: 17, sat: 17, street: 19 };

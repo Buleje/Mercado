@@ -13,6 +13,7 @@ import { StatCard } from "@buleje/design-system";
 import { BRAND_GEO } from "@/lib/geo";
 import { PARCELA_STATUS, type CacaoParcelaStatus } from "@/lib/cacao/cacao-labores";
 import { formatNumber } from "@/lib/format";
+import { ATRIBUCION_ESRI_IMAGERY } from "@/lib/esri-imagery";
 import "leaflet/dist/leaflet.css";
 
 interface PStats { kg: number; pagado: number; lotes: number }
@@ -115,7 +116,7 @@ export default function CacaoMapa() {
       const map = L.map(containerRef.current, { center: [BRAND_GEO.lat, BRAND_GEO.lng], zoom: 8, maxZoom: 21 });
       mapRef.current = map;
       streetRef.current = L.tileLayer(STREET, { maxZoom: 21, maxNativeZoom: 19, attribution: "© OpenStreetMap" }).addTo(map);
-      satRef.current = L.tileLayer(SAT, { maxZoom: 21, maxNativeZoom: 17, attribution: "Tiles © Esri" });
+      satRef.current = L.tileLayer(SAT, { maxZoom: 21, maxNativeZoom: 17, attribution: ATRIBUCION_ESRI_IMAGERY });
       L.control.scale({ metric: true, imperial: false }).addTo(map);
       setTimeout(() => { if (!destroyed) map.invalidateSize(); }, 200);
       setReady(true); renderLayers();

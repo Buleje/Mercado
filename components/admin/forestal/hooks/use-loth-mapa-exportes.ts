@@ -19,9 +19,11 @@ import { buildEudrGeoJson, type EudrPoint, type LatLng, type LothParcela } from 
 import { buildKml } from "@/lib/forestal/loth-coords-io";
 import { referenciaMeta, viaMeta, type LothCartografia } from "@/lib/forestal/loth-cartografia";
 import { CATEGORIA_COLOR } from "@/lib/forestal/loth-poa";
-import { descargarImagenMapa, type ImagenBase } from "@/lib/forestal/loth-mapa-imagen";
+import { descargarImagenMapa } from "@/lib/forestal/loth-mapa-imagen";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
-import { printLothPlano, type PlanoBasemap } from "@/lib/forestal/loth-plano-print";
+import { printLothPlano } from "@/lib/forestal/loth-plano-print";
+import { elegirFondoPlano, elegirFondoVista, fondoDeLaImagen, textoDelFondo } from "@/lib/forestal/loth-plano-fondo";
+import type { EscenaS2, FechaEsri } from "@/lib/forestal/loth-imagenes";
 import { printLothEudrDds } from "@/lib/forestal/loth-eudr-print";
 import type { ChecklistPlano } from "@/lib/forestal/loth-plano-checklist";
 import type { BasemapId } from "../LothMapaCanvas";
@@ -31,11 +33,6 @@ import { cuadroDeCoordenadas, csvDeCoordenadas, descargarTexto } from "../loth-m
 import type { CaratulaMapa, PlanActivoMapa } from "./use-loth-mapa-datos";
 import type { VistaMapa } from "./use-loth-mapa-herramientas";
 import { formatDateLong } from "@/lib/format";
-
-/** Mapeo de la base en pantalla → base de la lámina impresa. */
-/** El plano oficial sigue con la foto de Esri aunque en pantalla esté Sentinel-2 (su lámina pide alta definición). */
-const PRINT_BASEMAP: Record<BasemapId, PlanoBasemap> = { topo: "topo", sat: "satelite", s2: "satelite", street: "calles" };
-const BASE_PNG: Record<BasemapId, ImagenBase> = { topo: "topo", sat: "sat", s2: "sat", street: "street" };
 
 interface Deps {
   parcela: LothParcela;
@@ -52,16 +49,25 @@ interface Deps {
   overlays: OverlayId[];
   vista: VistaMapa | null;
   checkPlano: ChecklistPlano;
+  /**
+   * La imagen reciente del mapa: la escena de Sentinel-2 elegida (o la
+   * sugerida) y de cuándo es la foto de Esri. El plano y el PNG salen con ella
+   * y con su fecha impresa (`loth-plano-fondo`).
+   */
+  imagen: { escena: EscenaS2 | null; esri: FechaEsri | null };
   onError: (msg: string | null) => void;
 }
 
 const mensaje = (err: unknown) => (err instanceof Error ? err.message : String(err));
 
 export function useLothMapaExportes(d: Deps) {
-  const { parcela, verticesCuadro, carto, plan, caratula, geoAll, geoShown, censoAll, censoShown, basemap, overlays, vista, checkPlano, onError } = d;
+  const { parcela, verticesCuadro, carto, plan, caratula, geoAll, geoShown, censoAll, censoShown, basemap, overlays, vista, checkPlano, imagen, onError } = d;
   const { confirm } = useConfirm();
   const [descargando, setDescargando] = useState(false);
   const nombreArea = `Área de aprovechamiento${plan?.parcelaCorta ? ` · ${plan.parcelaCorta}` : ""}`;
+  /** Plano: Sentinel-2 de la fecha del mapa (o la sugerida); PNG: lo que está en pantalla. Los dos, con fecha. */
+  const fondoPlano = elegirFondoPlano({ base: basemap, escena: imagen.escena, esri: imagen.esri });
+  const fondoVista = elegirFondoVista({ base: basemap, escena: imagen.escena, esri: imagen.esri });
 
   const planoBase = () => ({
     parcela: parcela.vertices,
@@ -75,7 +81,7 @@ export function useLothMapaExportes(d: Deps) {
       color: SECTION_COLOR[g.section] ?? "#334155",
     })),
     censo: censoShown.map((t) => ({ lat: t.lat, lng: t.lng, code: t.code, species: t.species, estado: t.estado })),
-    basemap: PRINT_BASEMAP[basemap],
+    fondo: fondoPlano,
     referencias: carto.referencias.map((r) => {
       const m = referenciaMeta(r.tipo);
       return { lat: r.lat, lng: r.lng, nombre: r.nombre, tipoLabel: m.label, color: m.color };
@@ -107,7 +113,7 @@ export function useLothMapaExportes(d: Deps) {
       parcelaCorta: plan?.parcelaCorta ?? null,
       areaAutorizadaHa: plan?.areaHa ?? null,
       elaboradoPor: plan?.titularName ?? null,
-      fuente: "Esri World Topo/Imagery · censo forestal y GPS de campo del Libro de Operaciones",
+      fuente: "censo forestal y GPS de campo del Libro de Operaciones",
     },
   });
 
@@ -190,11 +196,11 @@ export function useLothMapaExportes(d: Deps) {
   };
 
   /**
-   * PNG de la vista actual con el polígono, el censo y las referencias. Con
-   * Sentinel-2 en pantalla, `fondo` trae su recorte: la imagen descargada es
-   * la misma que se estaba mirando, no la foto de Esri de otro año.
+   * PNG de la vista actual con el polígono, el censo y las referencias. El
+   * fondo es el que está en pantalla (con Sentinel-2, su recorte; con la foto
+   * de Esri, la foto) y el pie dice de cuándo es.
    */
-  const descargarPng = async (fondo?: { url: (b: VistaMapa, ancho: number, alto: number) => string; fuente: string }) => {
+  const descargarPng = async () => {
     if (!vista) return;
     setDescargando(true);
     onError(null);
@@ -205,8 +211,7 @@ export function useLothMapaExportes(d: Deps) {
         bounds: vista,
         ancho,
         alto,
-        base: BASE_PNG[basemap],
-        fondo: fondo ? { url: fondo.url(vista, ancho, alto), fuente: fondo.fuente } : undefined,
+        fondo: fondoDeLaImagen(fondoVista, vista, ancho, alto),
         parcela: parcela.vertices,
         lineas: carto.vias.map((v) => ({ puntos: v.puntos, color: viaMeta(v.tipo).color, dash: !!viaMeta(v.tipo).dash })),
         puntos: [
@@ -244,6 +249,9 @@ export function useLothMapaExportes(d: Deps) {
   };
 
   return {
+    /** «Sentinel-2 del 23 set 2026»: sobre qué sale el plano y sobre qué la imagen PNG. */
+    planoSobre: textoDelFondo(fondoPlano).corto,
+    pngSobre: textoDelFondo(fondoVista).corto,
     descargando,
     imprimirPlano,
     imprimirDispersion,

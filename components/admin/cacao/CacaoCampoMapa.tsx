@@ -58,6 +58,7 @@ function labelHtml(p: Parcela, colorBy: ColorBy): string {
 }
 import type { Parcela } from "./CacaoCampo";
 import { formatNumber } from "@/lib/format";
+import { ATRIBUCION_ESRI_IMAGERY } from "@/lib/esri-imagery";
 
 const SAT = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
 const STREET = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
@@ -212,7 +213,7 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
       // maxNativeZoom: Esri/OSM no tienen tiles nativos a zoom muy alto en zonas
       // rurales → mostraban "Map data not yet available". Con maxNativeZoom, Leaflet
       // reescala el último tile disponible en vez de pedir tiles inexistentes.
-      satRef.current = L.tileLayer(SAT, { maxZoom: 21, maxNativeZoom: 17, attribution: "Tiles © Esri, Maxar, Earthstar Geographics" }).addTo(map);
+      satRef.current = L.tileLayer(SAT, { maxZoom: 21, maxNativeZoom: 17, attribution: ATRIBUCION_ESRI_IMAGERY }).addTo(map);
       streetRef.current = L.tileLayer(STREET, { maxZoom: 21, maxNativeZoom: 19, attribution: '© OpenStreetMap' });
       map.on("click", (e: { latlng: { lat: number; lng: number } }) => {
         const ll: [number, number] = [e.latlng.lat, e.latlng.lng];

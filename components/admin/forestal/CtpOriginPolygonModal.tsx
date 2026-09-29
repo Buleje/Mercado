@@ -21,6 +21,7 @@ import {
 } from "@/components/admin/shared/modal-controles-ventana";
 import { BRAND_GEO } from "@/lib/geo";
 import { polygonAreaHa, ringToGeoJsonPolygon, geoJsonPolygonToRing, type LatLng } from "@/lib/forestal/loth-geo";
+import { ATRIBUCION_ESRI_IMAGERY } from "@/lib/esri-imagery";
 
 const SAT = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
 const STREET = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
@@ -70,7 +71,7 @@ export default function CtpOriginPolygonModal({ originCode, initialPolygonJson, 
       const start = geoJsonPolygonToRing(initialPolygonJson);
       const map = L.map(containerRef.current, { center: [c.lat, c.lng], zoom: start.length ? 14 : 13, maxZoom: 22 });
       mapRef.current = map;
-      satRef.current = L.tileLayer(SAT, { maxZoom: 22, maxNativeZoom: SAT_MAX_NATIVE, attribution: "Tiles © Esri, Maxar" }).addTo(map);
+      satRef.current = L.tileLayer(SAT, { maxZoom: 22, maxNativeZoom: SAT_MAX_NATIVE, attribution: ATRIBUCION_ESRI_IMAGERY }).addTo(map);
       streetRef.current = L.tileLayer(STREET, { maxZoom: 22, maxNativeZoom: 19, attribution: "© OpenStreetMap" });
       groupRef.current = L.layerGroup().addTo(map);
       map.on("click", (e: { latlng: { lat: number; lng: number } }) => setDraft((d) => [...d, [e.latlng.lat, e.latlng.lng]]));
@@ -93,6 +94,8 @@ export default function CtpOriginPolygonModal({ originCode, initialPolygonJson, 
         mapRef.current = null;
       }
     };
+    // El mapa se crea UNA vez al abrir: el centro y el polígono inicial sólo lo siembran.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Redibujar el borrador.
@@ -150,7 +153,7 @@ export default function CtpOriginPolygonModal({ originCode, initialPolygonJson, 
   }, [ventana.estilo.width, ventana.estilo.height]);
 
   return (
-    <div className="fixed inset-0 z-system flex items-center justify-center bg-black/50 p-4" onClick={(e) => e.target === e.currentTarget && !ventana.fijado && onClose()}>
+    <div role="presentation" className="fixed inset-0 z-system flex items-center justify-center bg-black/50 p-4" onClick={(e) => e.target === e.currentTarget && !ventana.fijado && onClose()}>
       <div ref={modalRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="relative flex max-h-[92vh] w-[min(94vw,900px)] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-xl">
         <div {...ventana.asaProps} className="flex items-center justify-between border-b-2 border-[var(--rule-base)] px-5 py-3">
           <div className="flex items-center gap-2">

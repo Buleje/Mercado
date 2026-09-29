@@ -17,19 +17,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { leerJson } from "@/lib/errores/sin-dato";
 import {
-  ATRIBUCION_S2,
   etiquetaEscena,
-  fechaCorta,
-  itemQueMasCubre,
   urlColorReal,
-  urlRecorteS2,
   ZONA_AMPLIA_GRADOS,
   type EscenaS2,
   type ImagenesDelArea,
 } from "@/lib/forestal/loth-imagenes";
 import type { LatLng } from "@/lib/forestal/loth-geo";
 import type { EscenaEnMapa, VivasEnMapa } from "../loth-mapa-canvas-ctx";
-import type { VistaMapa } from "./use-loth-mapa-herramientas";
 
 type Respuesta = Partial<ImagenesDelArea> & { avisos?: string[]; message?: string };
 export type EstadoImagenes = "nada" | "cargando" | "listo" | "error";
@@ -143,12 +138,6 @@ export function useLothMapaImagenes({ planId, listo, waybackActivo, apagarWaybac
     ];
   }, [datos?.bbox]);
 
-  /** Para «Imagen PNG de lo que ves» con Sentinel-2 en pantalla. */
-  const fondoPng = useMemo(() => {
-    if (!escena) return undefined;
-    return { url: (b: VistaMapa, ancho: number, alto: number) => urlRecorteS2(itemQueMasCubre(escena.items, b).id, b, ancho, alto), fuente: `Sentinel-2 del ${fechaCorta(escena.fecha)} · ${ATRIBUCION_S2}` };
-  }, [escena]);
-
   return {
     estado,
     avisos,
@@ -169,7 +158,6 @@ export function useLothMapaImagenes({ planId, listo, waybackActivo, apagarWaybac
     s2,
     s2Comparar,
     vivas,
-    fondoPng,
     zonaAmplia,
     /** «Buscar imágenes nuevas»: vuelve a preguntar a los catálogos (6 por hora). */
     refrescar: () => {
