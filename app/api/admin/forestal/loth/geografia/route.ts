@@ -13,6 +13,8 @@ import { contextoDelPlan, obtenerGeografia } from "@/lib/forestal/loth-geografia
  *
  * GET ?planId=X            → de la caché (o de internet la primera vez)
  * GET ?planId=X&refrescar=1 → la vuelve a pedir a internet
+ * GET ?planId=X&soloCache=1 → sólo lo guardado, NUNCA sale a internet (la
+ *   pendiente de las rutas del mapa: si no hay relieve guardado, no se trae)
  *   (sin planId = el plan activo)
  *
  * → { bbox, base, rios[], caminos[], elevacion{nx,ny,bbox,valores}|null,
@@ -35,6 +37,7 @@ import { contextoDelPlan, obtenerGeografia } from "@/lib/forestal/loth-geografia
 const querySchema = z.object({
   planId: z.string().trim().max(64).optional(),
   refrescar: z.enum(["0", "1", "true", "false"]).optional(),
+  soloCache: z.enum(["0", "1", "true", "false"]).optional(),
 });
 
 export const GET = withApiHandler("forestal-loth-geografia", async (req: NextRequest) => {
@@ -42,11 +45,16 @@ export const GET = withApiHandler("forestal-loth-geografia", async (req: NextReq
   if (auth instanceof NextResponse) return auth;
 
   const sp = new URL(req.url).searchParams;
-  const parsed = querySchema.safeParse({ planId: sp.get("planId") ?? undefined, refrescar: sp.get("refrescar") ?? undefined });
+  const parsed = querySchema.safeParse({
+    planId: sp.get("planId") ?? undefined,
+    refrescar: sp.get("refrescar") ?? undefined,
+    soloCache: sp.get("soloCache") ?? undefined,
+  });
   if (!parsed.success) {
     return NextResponse.json({ error: "validation_error", message: parsed.error.issues[0]?.message }, { status: 400 });
   }
   const refrescar = parsed.data.refrescar === "1" || parsed.data.refrescar === "true";
+  const soloCache = parsed.data.soloCache === "1" || parsed.data.soloCache === "true";
 
   // Refrescar sale a servicios públicos gratuitos: tope propio por NEGOCIO (6 por hora), además del de la IP.
   const rl = refrescar
@@ -60,7 +68,7 @@ export const GET = withApiHandler("forestal-loth-geografia", async (req: NextReq
 
   try {
     const ctx = await contextoDelPlan(auth.tenantId, parsed.data.planId || null);
-    const r = await obtenerGeografia(auth.tenantId, ctx, { refrescar, user: auth.username ?? "unknown" });
+    const r = await obtenerGeografia(auth.tenantId, ctx, { refrescar, soloCache, user: auth.username ?? "unknown" });
     if (!r.ok) return NextResponse.json({ error: "zona_invalida", message: r.motivo }, { status: 422 });
     return NextResponse.json({ planId: ctx.planId, ...r.geografia });
   } catch (err) {

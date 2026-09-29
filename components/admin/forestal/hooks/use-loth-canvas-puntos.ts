@@ -14,16 +14,19 @@ import { useEffect } from "react";
 import type { LatLng } from "@/lib/forestal/loth-geo";
 import { pointInPolygon } from "@/lib/forestal/loth-geo";
 import { referenciaMeta } from "@/lib/forestal/loth-cartografia";
+import { claveDePunto } from "@/lib/forestal/loth-rutas-coordenadas";
 import { OVERLAYS, type OverlayId } from "../loth-mapa-overlays";
 import { operacionPopupHtml, SECTION_COLOR } from "../loth-mapa-shared";
 import { MAX_NATIVE, type LeafletCtx, type LothMapaCanvasProps } from "../loth-mapa-canvas-ctx";
+
+const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 /* Las refs de Leaflet van en las dependencias aunque no cambian nunca: llegan
    por parámetro y el linter no puede saber que son estables. Agregarlas no
    re-dispara ningún efecto. */
 export function useLothCanvasPuntos(ctx: LeafletCtx, p: LothMapaCanvasProps): void {
   const { ready, mapRef, LRef, overlayRef, markersRef, waybackRef, posRef, refsRef } = ctx;
-  const { overlays, geo, parcela, declarada, wayback, waybackSplit, posicion, referencias } = p;
+  const { overlays, geo, parcela, declarada, wayback, waybackSplit, posicion, referencias, rutaElegida, onRutaElegida } = p;
 
   // ── Capas oficiales del Estado (SERNANP / SERFOR) ──────────────────────────
   // Son MapServer de Esri, no teselas: se pide un PNG transparente del bbox
@@ -142,6 +145,8 @@ export function useLothCanvasPuntos(ctx: LeafletCtx, p: LothMapaCanvasProps): vo
   }, [ready, posicion, LRef, posRef]);
 
   // ── Referencias del plano ──────────────────────────────────────────────────
+  // Tocar el pin abre su ficha (la misma que la de una ruta: nombre, tipo, UTM
+  // y lat/lng); la elegida lleva un aro turquesa. Antes era un popup sin coordenadas.
   useEffect(() => {
     const L = LRef.current;
     const group = refsRef.current;
@@ -149,8 +154,15 @@ export function useLothCanvasPuntos(ctx: LeafletCtx, p: LothMapaCanvasProps): vo
     group.clearLayers();
     for (const r of referencias) {
       const meta = referenciaMeta(r.tipo);
+      const clave = claveDePunto(r.id);
+      const elegida = rutaElegida === clave;
+      if (elegida) {
+        L.circleMarker([r.lat, r.lng], { radius: 15, className: "stroke-[var(--accent)]", weight: 3, fill: false, interactive: false }).addTo(group);
+      }
       L.marker([r.lat, r.lng], {
         keyboard: false,
+        // Encima de los árboles y sus rótulos: el patio cae justo donde se juntan (medido en Blas: lo tapaba el rótulo de un árbol).
+        zIndexOffset: elegida ? 3_000 : 2_000,
         icon: L.divIcon({
           className: "loth-ref-pin",
           html: `<span style="background:${meta.color}"></span>`,
@@ -158,13 +170,9 @@ export function useLothCanvasPuntos(ctx: LeafletCtx, p: LothMapaCanvasProps): vo
           iconAnchor: [8, 8],
         }),
       })
-        .bindTooltip(r.nombre, { permanent: true, direction: "right", className: "loth-ref-label", offset: [8, 0] })
-        .bindPopup(
-          `<div style="font:600 12px/1.5 system-ui"><b>${r.nombre.replace(/</g, "&lt;")}</b><br/>${meta.label}${
-            r.nota ? `<br/><span style="opacity:.75">${r.nota.replace(/</g, "&lt;")}</span>` : ""
-          }</div>`,
-        )
+        .bindTooltip(esc(r.nombre), { permanent: true, direction: "right", className: "loth-ref-label", offset: [8, 0] })
+        .on("click", () => onRutaElegida(clave))
         .addTo(group);
     }
-  }, [ready, referencias, LRef, refsRef]);
+  }, [ready, referencias, rutaElegida, onRutaElegida, LRef, refsRef]);
 }

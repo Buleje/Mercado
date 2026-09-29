@@ -167,7 +167,12 @@ export function useLothMapaDatos() {
           ]);
           if (tRes.ok) setTrees((await tRes.json()).trees ?? []);
           if (sRes.ok) setPlanSpecies((await sRes.json()).species ?? []);
-          if (poaRes.ok) setPoaConfig((await poaRes.json()).config ?? defaultPoaConfig());
+          // Sin POA guardado —o si su lectura falla— el defecto es el del PLAN (ADR-455):
+          // una plantación no reserva semilleros (0 %), el bosque natural el 10 %. Antes
+          // un GET fallido dejaba el 10 % aunque el plan fuera una plantación.
+          const porDefecto = defaultPoaConfig({ planType: txt(a.planType), planNumber: txt(a.planNumber), tituloHabilitante: txt(a.tituloHabilitante) });
+          const poa = poaRes.ok ? await leerJson<{ config?: PoaConfig | null }>(poaRes) : null;
+          setPoaConfig(poa?.config ?? porDefecto);
         }
       }
       setFitKey((k) => k + 1);

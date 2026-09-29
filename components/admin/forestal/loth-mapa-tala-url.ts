@@ -14,6 +14,13 @@
  * el que ya se está reemplaza la entrada del historial y el «atrás» ya no
  * volvería al mapa. Con el `popstate`, `useVistaModulo` relee la URL y pasa a
  * «secciones» sin remontar nada.
+ *
+ * Desde el MAPA (29-09) el alta se abre ENCIMA del mapa (`vista=mapa`): el
+ * formulario es un modal del libro, no de la sección. Al guardar, el libro
+ * avisa (`reloadSignal`) y la etiqueta del árbol pasa a «Talado» ahí mismo,
+ * sin volver al mapa ni recargar — antes el mapa se desmontaba y la etiqueta
+ * nueva recién se veía al volver. Sin entrada nueva en el historial: el
+ * parámetro se borra al abrir y el «atrás» sería la misma pantalla.
  */
 
 export const LOTH_TAB_ID = "loth-libro-operaciones";
@@ -21,9 +28,9 @@ export const PARAM_NUEVA_TALA = "nuevaTala";
 /** Cuánto se espera a que el libro montado recoja el parámetro antes de entrar por la URL. */
 const ESPERA_LECTURA_MS = 400;
 
-/** La dirección del alta de tala de ese árbol. */
-export function urlRegistrarTala(codigo: string, pathname = "/admin"): string {
-  const q = new URLSearchParams({ tab: LOTH_TAB_ID, vista: "secciones", seccion: "tala", [PARAM_NUEVA_TALA]: codigo });
+/** La dirección del alta de tala de ese árbol (sobre la vista que se pida: la sección Tala o el mapa). */
+export function urlRegistrarTala(codigo: string, pathname = "/admin", vista: "secciones" | "mapa" = "secciones"): string {
+  const q = new URLSearchParams({ tab: LOTH_TAB_ID, vista, seccion: "tala", [PARAM_NUEVA_TALA]: codigo });
   return `${pathname}?${q.toString()}`;
 }
 
@@ -33,9 +40,13 @@ export function urlRegistrarTala(codigo: string, pathname = "/admin"): string {
  * la prueba: jsdom no navega).
  */
 export function irARegistrarTala(codigo: string, entrar: (url: string) => void = (url) => window.location.replace(url)): void {
-  const destino = urlRegistrarTala(codigo, window.location.pathname);
-  const yaEnElLibro = new URLSearchParams(window.location.search).get("tab") === LOTH_TAB_ID;
-  if (yaEnElLibro) {
+  const actual = new URLSearchParams(window.location.search);
+  const yaEnElLibro = actual.get("tab") === LOTH_TAB_ID;
+  const enElMapa = yaEnElLibro && actual.get("vista") === "mapa";
+  const destino = urlRegistrarTala(codigo, window.location.pathname, enElMapa ? "mapa" : "secciones");
+  if (enElMapa) {
+    window.history.replaceState(null, "", destino);
+  } else if (yaEnElLibro) {
     window.history.pushState(null, "", destino);
   } else {
     // Desde otro módulo: el panel navega (historial, recientes) y después se

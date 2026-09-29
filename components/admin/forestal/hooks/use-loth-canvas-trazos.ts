@@ -1,9 +1,10 @@
 "use client";
 
 /**
- * useLothCanvasTrazos — las LÍNEAS y POLÍGONOS del mapa: cuadrícula UTM, vías,
+ * useLothCanvasTrazos — las LÍNEAS y POLÍGONOS del mapa: cuadrícula UTM,
  * polígono del área, contorno del predio y centroide, borrador en vivo, faja
- * de protección y cinta métrica.
+ * de protección y cinta métrica. Las vías tienen su hook desde el 29-09
+ * (`use-loth-canvas-vias`: se muestran solas y abren su ficha).
  *
  * Los efectos están copiados sin cambios desde `LothMapaCanvas` (se partió en
  * 2026-09-18 al pasar de 300 líneas): mismas dependencias, mismo orden.
@@ -13,7 +14,6 @@ import { useEffect } from "react";
 import type { LatLng } from "@/lib/forestal/loth-geo";
 import { centroid } from "@/lib/forestal/loth-geo";
 import { dominantZone, gridLabel, utmGrid, vertexCode } from "@/lib/forestal/loth-utm";
-import { viaMeta } from "@/lib/forestal/loth-cartografia";
 import { construirFaja } from "@/lib/forestal/loth-faja";
 import { COLOR_HERRAMIENTA, PARCELA_COLOR } from "../loth-mapa-shared";
 import { MAX_PERMANENT_LABELS, PREDIO_COLOR, type LeafletCtx, type LothMapaCanvasProps } from "../loth-mapa-canvas-ctx";
@@ -22,8 +22,8 @@ import { MAX_PERMANENT_LABELS, PREDIO_COLOR, type LeafletCtx, type LothMapaCanva
    por parámetro y el linter no puede saber que son estables. Agregarlas no
    re-dispara ningún efecto. */
 export function useLothCanvasTrazos(ctx: LeafletCtx, p: LothMapaCanvasProps): void {
-  const { ready, mapRef, LRef, gridRef, viasRef, parcelaRef, predioRef, draftRef, fajaRef, medicionRef } = ctx;
-  const { showGrid, vias, viaDraft, parcela, declarada, drawMode, drawTarget, predio, draft, onInsertVertex, onMoveVertex, onDeleteVertex, fajaAnchoM, medicion, medicionModo } = p;
+  const { ready, mapRef, LRef, gridRef, parcelaRef, predioRef, draftRef, fajaRef, medicionRef } = ctx;
+  const { showGrid, vias, parcela, declarada, drawMode, drawTarget, predio, draft, onInsertVertex, onMoveVertex, onDeleteVertex, fajaAnchoM, medicion, medicionModo } = p;
 
   // ── Cuadrícula UTM (se recalcula al mover/zoomear) ─────────────────────────
   useEffect(() => {
@@ -74,44 +74,6 @@ export function useLothCanvasTrazos(ctx: LeafletCtx, p: LothMapaCanvasProps): vo
       map.off("moveend zoomend", draw);
     };
   }, [ready, showGrid, mapRef, LRef, gridRef]);
-
-  // ── Vías del plano + traza en curso ────────────────────────────────────────
-  useEffect(() => {
-    const L = LRef.current;
-    const group = viasRef.current;
-    if (!ready || !L || !group) return;
-    group.clearLayers();
-    for (const v of vias) {
-      const meta = viaMeta(v.tipo);
-      // Casing blanco debajo: una línea fina sobre el satélite no se lee.
-      L.polyline(v.puntos, { color: "#fff", weight: 6, opacity: 0.55, interactive: false }).addTo(group);
-      L.polyline(v.puntos, {
-        color: meta.color,
-        weight: 3,
-        opacity: 0.95,
-        dashArray: meta.dash || undefined,
-      })
-        .bindTooltip(`${v.nombre} · ${meta.label}`, { sticky: true })
-        .addTo(group);
-    }
-    if (viaDraft && viaDraft.length > 0) {
-      if (viaDraft.length >= 2) {
-        L.polyline(viaDraft, { color: "#0f172a", weight: 3, dashArray: "6 5" }).addTo(group);
-      }
-      viaDraft.forEach((p, i) =>
-        L.circleMarker(p, {
-          radius: 4,
-          color: "#fff",
-          weight: 2,
-          fillColor: "#0f172a",
-          fillOpacity: 1,
-          bubblingMouseEvents: false,
-        })
-          .bindTooltip(String(i + 1), { permanent: true, direction: "top", className: "loth-vertex-label", offset: [0, -6] })
-          .addTo(group),
-      );
-    }
-  }, [ready, vias, viaDraft, LRef, viasRef]);
 
   // ── Polígono guardado + vértices rotulados ─────────────────────────────────
   useEffect(() => {

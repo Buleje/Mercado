@@ -25,7 +25,8 @@ import {
   type LothReferencia,
   type LothVia,
 } from "@/lib/forestal/loth-cartografia";
-import { formatDistance, formatMeters, lineLengthM, toUtm } from "@/lib/forestal/loth-utm";
+import { formatDistance, lineLengthM } from "@/lib/forestal/loth-utm";
+import { coordDe, textoUtm } from "@/lib/forestal/loth-rutas-coordenadas";
 
 /** Cuántas referencias, vías y tramos hay, para la cabecera del bloque plegado. */
 export function resumenContexto(c: LothCartografia): string {
@@ -113,7 +114,7 @@ export default function LothContextoPanel({
           ) : (
             <ul className="space-y-2">
               {referencias.map((r) => {
-                const u = toUtm(r.lat, r.lng);
+                const u = coordDe([r.lat, r.lng]);
                 return (
                   <li key={r.id} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
                     {/* Grilla y no flex-wrap: `min-w-*` no hace nada en este panel
@@ -147,10 +148,8 @@ export default function LothContextoPanel({
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </div>
-                    <p className="mt-1 font-mono text-xs tabular-nums text-[var(--text-tertiary)]">
-                      {u.zone}
-                      {u.band} · E {formatMeters(u.easting, 0)} · N {formatMeters(u.northing, 0)}
-                    </p>
+                    {/* Mismo texto que «Rutas y puntos»: zona por hemisferio (18S), como el plano. */}
+                    <p className="mt-1 font-mono text-xs tabular-nums text-[var(--text-tertiary)]">{textoUtm(u)}</p>
                   </li>
                 );
               })}
@@ -162,8 +161,18 @@ export default function LothContextoPanel({
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-2">
             <p className="text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Vías y ríos ({cartografia.vias.length})</p>
-            <button type="button" onClick={onTrazarVia} disabled={trazando} className={BTN}>
-              <Route className="h-3.5 w-3.5" aria-hidden="true" /> {trazando ? "Trazando…" : "Trazar en el mapa"}
+            {/* Sin `disabled` mientras se traza: al deshabilitarse con el foco adentro,
+                Chrome corta el scroll suave hacia el mapa y el mapa no subía a la vista
+                (medido 29-09: se quedaba 837 px arriba). Mismo patrón que «Marcar». */}
+            <button
+              type="button"
+              onClick={() => {
+                if (!trazando) onTrazarVia();
+              }}
+              aria-pressed={trazando}
+              className={trazando ? `${BTN} border-transparent bg-[var(--brand-ink)] text-white hover:bg-[var(--brand-ink)]` : BTN}
+            >
+              <Route className="h-3.5 w-3.5" aria-hidden="true" /> {trazando ? "Toca el mapa…" : "Trazar en el mapa"}
             </button>
           </div>
           {cartografia.vias.length === 0 ? (

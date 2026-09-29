@@ -11,11 +11,12 @@
  *   4. censo forestal (árboles proyectados desde UTM) y operaciones del libro,
  *      con halo rojo si caen FUERA del polígono declarado.
  *
- * Las capas viven en cinco hooks —trazos (líneas y polígonos), puntos (lo que
- * se pinta encima), clics (qué hace tocar el mapa), árboles (el censo, su
- * ficha y la línea hasta el más cercano) y plan (ríos y caminos de OSM y la
- * propuesta del planificador)—; acá queda crear el mapa, la base, la escala,
- * el encuadre y el centrado.
+ * Las capas viven en seis hooks —trazos (líneas y polígonos), vías (trochas,
+ * caminos y ríos del plano, con su ficha), puntos (lo que se pinta encima),
+ * clics (qué hace tocar el mapa), árboles (el censo, su ficha y la línea hasta
+ * el más cercano) y plan (ríos y caminos de OSM y la propuesta del
+ * planificador)—; acá queda crear el mapa, la base, la escala, el encuadre y
+ * el centrado.
  *
  * GOTCHA (aprendido a los golpes): el `className` del contenedor va ESTÁTICO —
  * Leaflet agrega sus clases imperativamente y un className dinámico haría que
@@ -26,6 +27,7 @@ import { useEffect, useRef, useState } from "react";
 import type { LatLng } from "@/lib/forestal/loth-geo";
 import { ATTR, MAX_NATIVE, TILES, type LeafletCtx, type LothMapaCanvasProps } from "./loth-mapa-canvas-ctx";
 import { useLothCanvasTrazos } from "./hooks/use-loth-canvas-trazos";
+import { useLothCanvasVias } from "./hooks/use-loth-canvas-vias";
 import { useLothCanvasPuntos } from "./hooks/use-loth-canvas-puntos";
 import { useLothCanvasClics } from "./hooks/use-loth-canvas-clics";
 import { useLothCanvasArboles } from "./hooks/use-loth-canvas-arboles";
@@ -34,7 +36,7 @@ import { useLothCanvasPlan } from "./hooks/use-loth-canvas-plan";
 export type { BasemapId } from "./loth-mapa-canvas-ctx";
 
 export default function LothMapaCanvas(p: LothMapaCanvasProps) {
-  const { geo, censo, fullscreen, centrarEn, encuadrarEn, parcela, basemap, center, fitKey, onView } = p;
+  const { geo, censo, fullscreen, centrarEn, encuadrarEn, parcela, basemap, center, fitKey, onView, vias, referencias } = p;
   const containerRef = useRef<HTMLDivElement>(null);
   /* eslint-disable @typescript-eslint/no-explicit-any */
   const mapRef = useRef<any>(null);
@@ -127,6 +129,7 @@ export default function LothMapaCanvas(p: LothMapaCanvasProps) {
     overlayRef,
   };
   useLothCanvasTrazos(ctx, p);
+  useLothCanvasVias(ctx, p);
   useLothCanvasPuntos(ctx, p);
   useLothCanvasClics(ctx, p);
   useLothCanvasArboles(ctx, p);
@@ -204,11 +207,19 @@ export default function LothMapaCanvas(p: LothMapaCanvasProps) {
   }, [ready, encuadrarEn]);
 
   // ── Encuadre (cuando el orquestador lo pide) ───────────────────────────────
+  // Las rutas y los puntos del plano entran en el encuadre: un camino de salida
+  // que llega a la carretera quedaba afuera, y el patio también (29-09).
   useEffect(() => {
     const L = LRef.current;
     const map = mapRef.current;
     if (!ready || !L || !map || fitKey === 0 || fittedRef.current === fitKey) return;
-    const pts: LatLng[] = [...geo.map((g): LatLng => [g.lat, g.lng]), ...censo.map((t): LatLng => [t.lat, t.lng]), ...parcela];
+    const pts: LatLng[] = [
+      ...geo.map((g): LatLng => [g.lat, g.lng]),
+      ...censo.map((t): LatLng => [t.lat, t.lng]),
+      ...parcela,
+      ...vias.flatMap((v) => v.puntos),
+      ...referencias.map((r): LatLng => [r.lat, r.lng]),
+    ];
     if (pts.length === 0) return;
     try {
       map.fitBounds(L.latLngBounds(pts), { padding: [48, 48], maxZoom: 16 });
@@ -216,7 +227,7 @@ export default function LothMapaCanvas(p: LothMapaCanvasProps) {
     } catch {
       /* bounds inválidos: se queda en el centro por defecto */
     }
-  }, [ready, fitKey, geo, censo, parcela]);
+  }, [ready, fitKey, geo, censo, parcela, vias, referencias]);
 
   // className ESTÁTICO (Leaflet agrega las suyas): la ALTURA la define el
   // contenedor de `LothMapaView`, que cambia en pantalla completa.

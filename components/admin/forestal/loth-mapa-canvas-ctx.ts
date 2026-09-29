@@ -112,6 +112,13 @@ export interface LothMapaCanvasProps {
   propuesta: PropuestaPlan | null;
   /** Soltaron el patio propuesto en otro lugar. */
   onPatioMovido: (p: LatLng) => void;
+  /**
+   * La ruta o el punto resaltado (`via:<id>` o `ref:<id>`, de
+   * `loth-rutas-coordenadas`): tocado en el mapa o elegido en «Rutas y puntos».
+   */
+  rutaElegida: string | null;
+  /** Tocar una ruta o un punto del plano (null = tocar el mapa vacío). */
+  onRutaElegida: (clave: string | null) => void;
 }
 
 /* Leaflet se importa dinámico y sin tipos en este módulo: los grupos de capas

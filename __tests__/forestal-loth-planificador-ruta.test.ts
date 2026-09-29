@@ -90,6 +90,15 @@ describe("GET /loth/geografia", () => {
     expect(H.geografia.mock.calls[0][2]).toMatchObject({ refrescar: true });
   });
 
+  it("?soloCache=1 (la pendiente de las rutas del mapa) no sale a internet; sin él, sí puede", async () => {
+    como("admin");
+    await geografiaGET(pedir("geografia?planId=plan-1&soloCache=1"));
+    expect(H.geografia.mock.calls[0][2]).toMatchObject({ soloCache: true, refrescar: false });
+    await geografiaGET(pedir("geografia?planId=plan-1"));
+    expect(H.geografia.mock.calls[1][2]).toMatchObject({ soloCache: false });
+    expect((await geografiaGET(pedir("geografia?soloCache=quizas"))).status).toBe(400);
+  });
+
   it("zona imposible → 422 con el motivo, no 500", async () => {
     como("owner");
     H.geografia.mockResolvedValue({ ok: false, motivo: "El área es demasiado grande (30.0 × 28.0 km)" });

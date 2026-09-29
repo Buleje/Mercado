@@ -10,8 +10,6 @@
  */
 
 import { forwardRef, memo } from "react";
-import { Camera, MapPin } from "@buleje/design-system/icons";
-import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { arbolesEnFaja } from "@/lib/forestal/loth-faja";
 import LothMapaCanvasRaw from "./LothMapaCanvas";
 import LothMapaChrome from "./LothMapaChrome";
@@ -26,6 +24,11 @@ import LothMapaCercanos from "./LothMapaCercanos";
 import LothMapaElegirVariosBar from "./LothMapaElegirVariosBar";
 import LothMapaPlanPanel from "./LothMapaPlanPanel";
 import LothMapaAvisoParcela from "./LothMapaAvisoParcela";
+import LothMapaRutasAviso from "./LothMapaRutasAviso";
+import LothMapaRutaFicha from "./LothMapaRutaFicha";
+import { LothMapaSinGeo, LothMapaTocaUnPunto } from "./LothMapaVacio";
+import type { LothMapaRutas } from "./hooks/use-loth-mapa-rutas";
+import { useLothMapaToques } from "./hooks/use-loth-mapa-toques";
 import { censoLejosDeLaParcela, leyendaDelPlan } from "./loth-mapa-plan";
 import { useLothMapaEscape } from "./hooks/use-loth-mapa-escape";
 import type { LothPlanificador } from "./hooks/use-loth-planificador";
@@ -61,23 +64,24 @@ interface Props {
   verticesCuadro: number;
   /** El planificador de extracción: su panel, sus capas y la de ríos y caminos. */
   plan: LothPlanificador;
+  /** Las rutas y los puntos del plano: la resaltada, su ficha y la vista previa sin rutas. */
+  rutas: LothMapaRutas;
 }
 
-const LothMapaMarco = forwardRef<HTMLElement, Props>(function LothMapaMarco({ datos, dib, herr, der, exp, arb, variosTala, onTalarVarios, verticesCuadro, plan }, ref) {
+const LothMapaMarco = forwardRef<HTMLElement, Props>(function LothMapaMarco({ datos, dib, herr, der, exp, arb, variosTala, onTalarVarios, verticesCuadro, plan, rutas }, ref) {
   const { fullscreen, setFullscreen } = herr;
   const rios = datos.carto.vias.filter((v) => v.tipo === "rio");
   /** Una herramienta usa el clic del mapa: los árboles no lo toman y la ficha se guarda. */
   const capturando = dib.drawMode || dib.markMode || dib.viaDraft !== null || herr.medicion !== null;
   const elegido = arb.elegido;
-  /** En «Elegir varios» tocar un árbol lo marca; no abre su ficha. */
-  const onArbolTocado = variosTala.activo ? (id: string | null) => (id ? variosTala.alternar(id) : undefined) : arb.elegir;
+  const { onArbolTocado, onRutaTocada, onPatioMovido, propuesta, ficha, centrarFicha } = useLothMapaToques({ arb, variosTala, rutas, plan, centrar: herr.centrar });
 
   useLothMapaEscape({ eligiendoVarios: variosTala.activo, salirDeVarios: variosTala.desactivar, fullscreen, setFullscreen });
   /** La leyenda: la del mapa con las etapas del libro justo después de las condiciones del censo, y al final lo del planificador. */
   const finCenso = der.legendItems.reduce((ult, it, i) => (it.shape === "arbol" ? i + 1 : ult), 0);
   const leyenda = [
     ...(herr.showCenso ? [...der.legendItems.slice(0, finCenso), ...arb.leyendaEtapas, ...der.legendItems.slice(finCenso)] : der.legendItems),
-    ...leyendaDelPlan({ osm: plan.osmVisible ? plan.geo : null, propuesta: plan.vistaPrevia }),
+    ...leyendaDelPlan({ osm: plan.osmVisible ? plan.geo : null, propuesta }),
   ];
   /** La mayoría del censo fuera del área dibujada (Blas: los 65, a 31 km). */
   const lejos = der.declarada ? censoLejosDeLaParcela(der.censoAll, datos.parcela.vertices) : null;
@@ -150,6 +154,17 @@ const LothMapaMarco = forwardRef<HTMLElement, Props>(function LothMapaMarco({ da
       />
 
       {lejos && <LothMapaAvisoParcela fuera={lejos.fuera} total={lejos.total} km={lejos.km} onVer={() => arb.encuadrar(lejos.puntos)} />}
+      {!plan.abierto && (
+        <LothMapaRutasAviso
+          estado={rutas.estadoPrevia}
+          error={rutas.errorPrevia}
+          onProponer={() => {
+            plan.setAbierto(true);
+            plan.proponer();
+          }}
+          onOcultar={rutas.ocultarPrevia}
+        />
+      )}
 
       <div className={fullscreen ? "relative min-h-0 flex-1" : "relative h-[560px] max-sm:h-[420px]"}>
         <LothMapaCanvas
@@ -194,8 +209,10 @@ const LothMapaMarco = forwardRef<HTMLElement, Props>(function LothMapaMarco({ da
           onCursor={herr.onCursor}
           onView={herr.onView}
           geoOsm={plan.osmVisible ? plan.geo : null}
-          propuesta={plan.vistaPrevia}
-          onPatioMovido={plan.moverPatio}
+          propuesta={propuesta}
+          onPatioMovido={onPatioMovido}
+          rutaElegida={rutas.clave}
+          onRutaElegida={onRutaTocada}
         />
         <LothMapaChrome items={leyenda} cursor={herr.cursor} metersPerPixel={herr.metersPerPixel} panelDerecha={plan.abierto} />
 
@@ -209,6 +226,8 @@ const LothMapaMarco = forwardRef<HTMLElement, Props>(function LothMapaMarco({ da
             onCentrar={() => herr.centrar([elegido.lat, elegido.lng])}
           />
         )}
+
+        {!elegido && !capturando && ficha && <LothMapaRutaFicha {...ficha} onCerrar={rutas.cerrar} onCentrar={centrarFicha} />}
 
         {plan.abierto && <LothMapaPlanPanel plan={plan} onCerrar={() => plan.setAbierto(false)} />}
 
@@ -245,39 +264,14 @@ const LothMapaMarco = forwardRef<HTMLElement, Props>(function LothMapaMarco({ da
         )}
         {dib.markMode && <LothMapaMarcaBar onCancel={() => dib.setMarkMode(false)} />}
 
-        {/* Estado vacío */}
-        {datos.raw !== null && der.totalPuntos === 0 && !der.declarada && !dib.drawMode && (
-          <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center p-6">
-            <div className="pointer-events-auto max-w-md rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]/95 p-5 text-center shadow-lg backdrop-blur">
-              <MapPin className="mx-auto mb-2 h-8 w-8 text-[var(--text-tertiary)]" aria-hidden="true" />
-              <p className="flex items-center justify-center gap-1 text-sm font-bold text-[var(--text-primary)]">
-                Todavía no hay geolocalización
-                <InfoTip
-                  title="Cómo se completa el plano"
-                  what="Dibuja la parcela de aprovechamiento (Dibujar → Área de aprovechamiento)."
-                  affects="Carga el censo con sus coordenadas UTM y captura el GPS al registrar cada tala."
-                  example="Los tres alimentan el plano y el cumplimiento EUDR."
-                />
-              </p>
-            </div>
-          </div>
-        )}
+        {datos.raw !== null && der.totalPuntos === 0 && !der.declarada && !dib.drawMode && <LothMapaSinGeo />}
       </div>
 
       {der.censoAll.length > 0 && herr.showCenso && <LothMapaCensoBarra arb={arb} total={der.censoAll.length} />}
       {der.censoAll.length > 0 && herr.showCenso && <LothMapaEtapasBarra arb={arb} />}
       {arb.cercaActivo && herr.showCenso && <LothMapaCercanos arb={arb} filtrando={filtrando} />}
 
-      {!fullscreen && der.censoAll.length === 0 && (
-        <p className="flex items-center gap-1.5 border-t border-[var(--rule-soft)] px-3 py-2 text-xs text-[var(--text-tertiary)]">
-          <Camera className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> Toca un punto del mapa
-          <InfoTip
-            icono="ayuda"
-            title="Tocar un punto del mapa"
-            what="Muestra su coordenada UTM, la especie del árbol y la foto de campo, si la tiene."
-          />
-        </p>
-      )}
+      {!fullscreen && der.censoAll.length === 0 && <LothMapaTocaUnPunto />}
     </section>
   );
 });

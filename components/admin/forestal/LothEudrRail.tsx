@@ -164,10 +164,15 @@ export default function LothEudrRail({
         {/* Acciones */}
         <div className="flex flex-wrap gap-2">
           {!parcelaDeclarada && (
+            // Sin `disabled` por el dibujo: deshabilitarse con el foco adentro corta el
+            // scroll suave hacia el mapa (medido 29-09 en «Trazar en el mapa», su hermano).
             <button
               type="button"
-              onClick={onStartDraw}
-              disabled={drawMode || saving}
+              onClick={() => {
+                if (!drawMode) onStartDraw();
+              }}
+              aria-pressed={drawMode}
+              disabled={saving}
               className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-semibold text-white shadow-sm hover:opacity-90 disabled:opacity-50"
             >
               <MapPin className="h-4 w-4" aria-hidden="true" />

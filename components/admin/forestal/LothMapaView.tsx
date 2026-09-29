@@ -22,16 +22,19 @@
  * cerca?») en `use-loth-mapa-arboles`.
  */
 import "leaflet/dist/leaflet.css";
-import { useEffect, useRef } from "react";
-import { ErrorAlert, SectionTitle } from "@buleje/design-system";
-import { ClipboardCopy, Compass, FileCheck, Loader2, Printer, ShieldCheck, Square, Table, Upload } from "@buleje/design-system/icons";
+import { useRef } from "react";
+import { ErrorAlert } from "@buleje/design-system";
+import { ClipboardCopy, Compass, FileCheck, Printer, Route, ShieldCheck, Square, Table, Upload } from "@buleje/design-system/icons";
 import LothMapaMarco from "./LothMapaMarco";
+import LothMapaCabecera from "./LothMapaCabecera";
 import LothMapaBloque from "./LothMapaBloque";
 import LothEudrRail, { resumenEudr, tonoEudr } from "./LothEudrRail";
 import LothPlanoRequisitos, { resumenPlano } from "./LothPlanoRequisitos";
 import LothVerticesPanel, { resumenVertices } from "./LothVerticesPanel";
 import LothPredioPanel, { resumenPredio } from "./LothPredioPanel";
 import LothContextoPanel, { resumenContexto } from "./LothContextoPanel";
+import LothRutasPuntosPanel, { resumenRutas } from "./LothRutasPuntosPanel";
+import LothRutasExportar from "./LothRutasExportar";
 import LothCaratulaBanner, { type CaratulaUbicacion } from "./LothCaratulaBanner";
 import LothCoordsModal from "./LothCoordsModal";
 import { useLothMapaDatos } from "./hooks/use-loth-mapa-datos";
@@ -43,8 +46,9 @@ import { useLothMapaArboles } from "./hooks/use-loth-mapa-arboles";
 import { useLothMapaEtapas } from "./hooks/use-loth-mapa-etapas";
 import { useLothMapaTalaVarios } from "./hooks/use-loth-mapa-tala-varios";
 import { useLothPlanificador } from "./hooks/use-loth-planificador";
+import { useLothMapaRutas } from "./hooks/use-loth-mapa-rutas";
+import { useLothMapaFoco } from "./hooks/use-loth-mapa-foco";
 import type { TandaTalaInicial } from "./hooks/use-tala-en-tanda";
-import { formatNumber } from "@/lib/format";
 
 /** Claves de los bloques plegables. Exportadas: la prueba en navegador las lee. */
 export const CLAVES_BLOQUES_MAPA = {
@@ -53,6 +57,7 @@ export const CLAVES_BLOQUES_MAPA = {
   coordenadas: "loth:mapa:coordenadas-abierto",
   predio: "loth:mapa:predio-abierto",
   contexto: "loth:mapa:contexto-abierto",
+  rutas: "loth:mapa:rutas-abierto",
 } as const;
 
 const TONO_PASTILLA = {
@@ -64,29 +69,40 @@ const PASTILLA = "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-x
 const BTN_BLOQUE =
   "inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40";
 
-const plural = (n: number, uno: string, varios: string) => `${formatNumber(n)} ${n === 1 ? uno : varios}`;
-
 export default function LothMapaView({
   focusTree,
   onFocusHandled,
   onTalarVarios,
+  reloadSignal = 0,
 }: {
   /** Árbol a centrar al entrar (se llega acá desde la trazabilidad por árbol). */
   focusTree?: string | null;
   onFocusHandled?: () => void;
   /** «Elegir varios»: abre la MISMA planilla de tala en tanda que «Ver censo». */
   onTalarVarios?: (t: TandaTalaInicial) => void;
+  /** Sube cada vez que el libro escribe (tala, tala en tanda, anulación): las etiquetas se releen sin recargar. */
+  reloadSignal?: number;
 } = {}) {
   const marcoRef = useRef<HTMLElement>(null);
   const datos = useLothMapaDatos();
   const herr = useLothMapaHerramientas({ onError: datos.setError });
   const der = useLothMapaDerivados({ ...datos, showCenso: herr.showCenso, showGrid: herr.showGrid, hidden: herr.hidden });
   const dib = useLothMapaDibujo({ ...datos, censo: der.censoAll });
-  // Lo que el libro hizo con cada árbol (tala, trozas, despachos, CTP): se vuelve a leer con cada carga.
-  const etapas = useLothMapaEtapas(datos.plan?.id ?? null, datos.fitKey);
+  // Lo que el libro hizo con cada árbol (tala, trozas, despachos, CTP): se vuelve a leer con cada carga
+  // y cada vez que el libro escribe — la tala registrada desde el mapa cambia la etiqueta ahí mismo.
+  const etapas = useLothMapaEtapas(datos.plan?.id ?? null, datos.fitKey, reloadSignal);
   const arb = useLothMapaArboles(der.censoAll, { centrar: herr.centrar, etapas });
   // Patio, campamento, trochas y camino de salida según el terreno (panel sobre el mapa).
   const planificador = useLothPlanificador({ planId: datos.plan?.id ?? null, carto: datos.carto, guardarCartografia: datos.guardarCartografia, onEncuadrar: arb.encuadrar });
+  // Las rutas y los puntos con sus coordenadas; sin rutas guardadas, la propuesta punteada.
+  const rutas = useLothMapaRutas({
+    planId: datos.plan?.id ?? null,
+    carto: datos.carto,
+    fitKey: datos.fitKey,
+    censoCount: der.censoAll.length,
+    onEncuadrar: arb.encuadrar,
+    onCentrar: herr.centrar,
+  });
   const variosTala = useLothMapaTalaVarios({
     // El censo con la etapa del libro: un árbol ya talado en el libro no se marca aunque el censo lo diga en pie.
     censoAll: arb.censoAll,
@@ -115,63 +131,27 @@ export default function LothMapaView({
   const { raw, caratula, plan, parcela } = datos;
   const { geoAll, censoAll, readiness, declarada, checkPlano } = der;
 
-  // Llegar al árbol, no al mapa entero: desde «Por árbol» se entra acá con un
-  // código y el mapa se posiciona sobre él. Si el árbol no tiene coordenada, el
-  // foco se consume igual — si no, quedaría pegado esperando para siempre.
-  // El censo llega en cascada DESPUÉS de las operaciones (`raw`): con sólo
-  // `raw`, el foco se consumía con el censo vacío y el mapa quedaba en el
-  // encuadre general (medido 29-09 con «Ver en el mapa del bosque», ADR-450).
-  // Se espera la carga entera, y el centrado va un instante después del
-  // encuadre de la parcela, que si no lo pisaba.
-  const cargando = datos.loading;
-  /* El centrado diferido NO se cancela cuando el foco se consume (el padre lo
-     pone en null y el efecto se re-ejecuta): sólo al desmontar. */
-  const centrarLuego = useRef<number | null>(null);
-  useEffect(() => () => {
-    if (centrarLuego.current != null) window.clearTimeout(centrarLuego.current);
-  }, []);
-  useEffect(() => {
-    if (!focusTree || raw == null || cargando) return;
-    const punto = geoAll.find((g) => g.code === focusTree || g.code.startsWith(`${focusTree}-`));
-    const censado = punto ? undefined : censoAll.find((t) => t.code === focusTree);
-    const destino: [number, number] | null = punto ? [punto.lat, punto.lng] : censado ? [censado.lat, censado.lng] : null;
-    // Y su ficha abierta: se llegó acá preguntando por ESE árbol.
-    if (censado) elegir(censado.id);
-    onFocusHandled?.();
-    if (!destino) return;
-    if (centrarLuego.current != null) window.clearTimeout(centrarLuego.current);
-    centrarLuego.current = window.setTimeout(() => centrar(destino), 400);
-  }, [focusTree, raw, cargando, geoAll, censoAll, centrar, elegir, onFocusHandled]);
+  useLothMapaFoco({ focusTree, onFocusHandled, raw, cargando: datos.loading, geoAll, censoAll, centrar, elegir });
 
-  /** Marcar o trazar desde un bloque de abajo: el mapa sube a la vista, que es donde se toca. */
-  const alMapa = (accion: () => void) => {
+  /** Marcar, trazar o ver una ruta desde un bloque de abajo: el mapa sube a la vista, que es donde se toca. */
+  const alMapa = (accion: () => void, bloque: ScrollLogicalPosition = "start") => {
     accion();
-    marcoRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    marcoRef.current?.scrollIntoView({ behavior: "smooth", block: bloque });
   };
 
   const tono = tonoEudr(readiness);
 
   return (
     <div className="space-y-4" data-vista-mapa>
-      <header className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <SectionTitle>Mapa del área de aprovechamiento</SectionTitle>
-        <p className="text-sm tabular-nums text-[var(--text-secondary)]" aria-live="polite">
-          {datos.loading && raw === null ? (
-            <span className="inline-flex items-center gap-1.5">
-              <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> Cargando ubicaciones…
-            </span>
-          ) : (
-            <>
-              {plural(geoAll.length, "operación geolocalizada", "operaciones geolocalizadas")}
-              {censoAll.length > 0 && <> · {plural(censoAll.length, "árbol del censo", "árboles del censo")}</>}
-              {declarada && <> · parcela {Number(readiness.areaHa).toFixed(1)} ha</>}
-              {declarada && readiness.fuera > 0 && (
-                <span className="font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"> · {readiness.fuera} fuera</span>
-              )}
-            </>
-          )}
-        </p>
-      </header>
+      <LothMapaCabecera
+        cargando={datos.loading && raw === null}
+        operaciones={geoAll.length}
+        arboles={censoAll.length}
+        areaHa={declarada ? readiness.areaHa : null}
+        fuera={readiness.fuera}
+        rutas={rutas.rutas.length}
+        puntos={rutas.puntos.length}
+      />
 
       {datos.error && <ErrorAlert title="No se pudo completar" description={datos.error} />}
 
@@ -187,6 +167,7 @@ export default function LothMapaView({
         onTalarVarios={talarVarios}
         verticesCuadro={verticesCuadro.length}
         plan={planificador}
+        rutas={rutas}
       />
 
       <div className="space-y-3">
@@ -267,6 +248,22 @@ export default function LothMapaView({
             onDibujarPredio={() => alMapa(dib.startDrawPredio)}
             onImportPredio={() => dib.setCoordsOpen("predio")}
             onCopiarDelArea={() => datos.setCarto((c) => ({ ...c, predio: { ...c.predio, vertices: parcela.vertices } }))}
+          />
+        </LothMapaBloque>
+
+        <LothMapaBloque
+          clave={CLAVES_BLOQUES_MAPA.rutas}
+          titulo="Rutas y puntos"
+          icono={Route}
+          resumen={resumenRutas(rutas.rutas, rutas.puntos)}
+          acciones={<LothRutasExportar rutas={rutas.rutas} puntos={rutas.puntos} />}
+        >
+          <LothRutasPuntosPanel
+            rutas={rutas.rutas}
+            puntos={rutas.puntos}
+            relieve={rutas.relieve}
+            clave={rutas.clave}
+            onVer={(clave) => alMapa(() => rutas.verEnElMapa(clave), "center")}
           />
         </LothMapaBloque>
 

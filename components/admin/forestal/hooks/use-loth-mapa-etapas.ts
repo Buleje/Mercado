@@ -6,7 +6,10 @@
  * las líneas (`/api/admin/forestal/loth/estado-arboles`).
  *
  * Se pide cuando el mapa terminó de cargar y cada vez que recarga (`recarga`
- * cambia; 0 = todavía no terminó). Si
+ * cambia; 0 = todavía no terminó) o que el libro escribió algo (`escrituras`:
+ * la señal del libro tras cada tala, trozado o anulación — la tala en tanda
+ * se guarda con el mapa abierto y la etiqueta tiene que pasar a «Talado» sin
+ * recargar la página, ni volver a encuadrar el mapa). Si
  * falla, el mapa sigue con lo que dice el censo y la barra ofrece reintentar:
  * nunca se queda sin árboles por esto.
  */
@@ -24,7 +27,7 @@ export interface EtapasDelMapa {
   reintentar: () => void;
 }
 
-export function useLothMapaEtapas(planId: string | null, recarga: number): EtapasDelMapa {
+export function useLothMapaEtapas(planId: string | null, recarga: number, escrituras = 0): EtapasDelMapa {
   const [porId, setPorId] = useState<ReadonlyMap<string, EstadoArbol> | null>(null);
   const [sinCenso, setSinCenso] = useState<string[]>([]);
   const [cargando, setCargando] = useState(false);
@@ -55,7 +58,7 @@ export function useLothMapaEtapas(planId: string | null, recarga: number): Etapa
         if (!ac.signal.aborted) setCargando(false);
       });
     return () => ac.abort();
-  }, [planId, recarga, intento]);
+  }, [planId, recarga, intento, escrituras]);
 
   const reintentar = useCallback(() => setIntento((n) => n + 1), []);
   return { porId, sinCenso, cargando, error, reintentar };
