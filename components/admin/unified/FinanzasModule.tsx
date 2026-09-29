@@ -59,6 +59,7 @@ const PrestamosModule = dynamic(() => import("@/components/admin/PrestamosModule
 const AdelantosModule = dynamic(() => import("@/components/admin/adelantos/AdelantosModule"), { loading: S });
 const ActivosModule   = dynamic(() => import("@/components/admin/activos/ActivosModule"),     { loading: S });
 const PorCobrarDashboard = dynamic(() => import("@/components/admin/PorCobrarDashboard"),     { loading: S });
+const PorPagarDashboard  = dynamic(() => import("./finanzas/PorPagarDashboard"),              { loading: S });
 const ScoringCrediticioTab = dynamic(() => import("@/components/admin/ScoringCrediticioTab"), { loading: S });
 
 export default function FinanzasModule({ initialTab }: { initialTab?: string } = {}) {
@@ -226,8 +227,9 @@ export default function FinanzasModule({ initialTab }: { initialTab?: string } =
       )}
       {vista === "activos" && <ActivosModule />}
 
-      {/* ── Por cobrar: quién me debe ── */}
+      {/* ── Por cobrar: quién me debe, y a quién le debo ── */}
       {vista === "por-cobrar" && <PorCobrarDashboard onIr={irA} />}
+      {vista === "por-pagar" && <PorPagarDashboard onIr={irA} />}
       {vista === "fiados" && <FiadosModule />}
       {vista === "prestamos" && <PrestamosModule />}
       {vista === "adelantos" && <AdelantosModule />}

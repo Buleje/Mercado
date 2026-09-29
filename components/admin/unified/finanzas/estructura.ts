@@ -18,7 +18,9 @@
  *     tesorería y los activos → Movimientos. El presupuesto no es una sección
  *     aparte: es el TECHO de esos mismos gastos, y separarlos obligaba a ir y
  *     volver para saber si te pasaste. Por eso vive DENTRO de Gastos (`adentro`).
- *   · «¿quién me debe?» ya estaba junto → Por cobrar.
+ *   · «¿quién me debe?» ya estaba junto → Por cobrar. Y su otro lado, «¿a
+ *     quién le debo?», vive al lado (F10, 2026-09-29): una persona puede estar
+ *     en las dos listas y el neto sólo se entiende mirándolas juntas.
  *
  * NADA SE BORRÓ: las quince vistas siguen existiendo y siguen teniendo
  * dirección propia (`VISTAS`), y todos los nombres viejos siguen aterrizando
@@ -29,7 +31,7 @@ import {
   TrendingUp, TrendingDown, PieChart as PieChartIcon,
   FileBarChart, Waves, GitCompareArrows, ArrowRightLeft,
   BarChart3, CreditCard,
-  Landmark, HandCoins, Banknote, Coins, Construction, Gauge,
+  Landmark, HandCoins, Banknote, Coins, Construction, Gauge, ReceiptText,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 
@@ -54,7 +56,7 @@ export type TabId = (typeof TABS)[number]["id"];
  * dura de «secciones que no se usan»: quien tiene préstamos los ve, y quien no,
  * no los tiene siempre en pantalla.
  */
-export type ClaveDeDato = "payables" | "assets" | "fiados" | "prestamos" | "adelantos" | "presupuesto";
+export type ClaveDeDato = "payables" | "assets" | "fiados" | "prestamos" | "adelantos" | "presupuesto" | "porPagar";
 
 export interface Seccion {
   id: string;
@@ -88,6 +90,10 @@ export const SECCIONES: Partial<Record<TabId, Seccion[]>> = {
   ],
   "por-cobrar": [
     { id: "por-cobrar", label: "Todo lo que me deben", corto: "Todo", icon: CreditCard },
+    /* F10 (2026-09-29): el otro lado de la misma pregunta. Va pegada a «Todo»
+       porque una persona puede estar en las dos con su neto, y va plegada si
+       no le debes a nadie: se mide con el endpoint, no con una lista. */
+    { id: "por-pagar",  label: "Lo que debo",          corto: "Debo", icon: ReceiptText, dato: "porPagar" },
     { id: "fiados",     label: "Fiados",                              icon: HandCoins, dato: "fiados" },
     { id: "prestamos",  label: "Préstamos",                           icon: Banknote,  dato: "prestamos" },
     { id: "adelantos",  label: "Adelantos",                           icon: Coins,     dato: "adelantos" },

@@ -91,6 +91,7 @@ export const VISTAS_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[
     { key: "flujo-caja", label: "Proyección de caja", hint: "Flujo de caja de las próximas semanas" },
     { key: "tesoreria", label: "Tesorería", hint: "Cuentas bancarias y saldos" },
     { key: "por-cobrar", label: "Todo lo que me deben", hint: "Cobranzas pendientes" },
+    { key: "por-pagar", label: "Lo que debo", hint: "Adelantos recibidos, proveedores y cuentas a favor de otro" },
     { key: "fiados", label: "Fiados", hint: "Lo que se llevaron anotado" },
     { key: "prestamos", label: "Préstamos", hint: "Plata prestada y cuotas" },
     { key: "adelantos", label: "Adelantos", hint: "Adelantos al personal" },

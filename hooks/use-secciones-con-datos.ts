@@ -34,6 +34,8 @@ const SONDAS: Record<ClaveDeDato, { url: string; hay: (json: unknown) => boolean
   prestamos:   { url: "/api/prestamos",      hay: (j) => Array.isArray(j) && j.length > 0 },
   adelantos:   { url: "/api/adelantos?direccion=todas", hay: (j) => Array.isArray(j) && j.length > 0 },
   presupuesto: { url: "/api/presupuesto",    hay: (j) => cuantos((j as { categorias?: unknown })?.categorias) > 0 },
+  /* «Lo que debo» (F10): el resumen trae `cuentas` = cuántos acreedores hay. */
+  porPagar:    { url: "/api/finanzas/por-pagar?resumen=1", hay: (j) => Number((j as { cuentas?: unknown })?.cuentas) > 0 },
 };
 
 const cuantos = (v: unknown): number => (Array.isArray(v) ? v.length : 0);

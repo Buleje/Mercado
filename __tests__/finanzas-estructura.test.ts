@@ -19,6 +19,12 @@ const VISTAS_VIEJAS = [
   "adelantos", "scoring", "reportes",
 ] as const;
 
+/** Las que se sumaron DESPUÉS del rediseño, cada una con su motivo. */
+const VISTAS_NUEVAS = [
+  /* F10 (2026-09-29): «Lo que debo», el otro lado de Por cobrar. */
+  "por-pagar",
+] as const;
+
 /** Los nombres por los que el menú del panel entra al módulo (`?tab=…`). */
 const ATAJOS_DEL_MENU = ["plata", "fiados", "por-cobrar", "prestamos", "adelantos", "activos", "scoring"] as const;
 
@@ -30,8 +36,8 @@ describe("estructura de Mi Plata", () => {
     expect(TABS.map((t) => t.id)).toEqual(["resumen", "resultado", "movimientos", "por-cobrar", "reportes"]);
   });
 
-  it("conserva las quince vistas, con dirección propia", () => {
-    expect([...VISTAS].sort()).toEqual([...VISTAS_VIEJAS].sort());
+  it("conserva las quince vistas, con dirección propia (y sólo suma las nuevas declaradas)", () => {
+    expect([...VISTAS].sort()).toEqual([...VISTAS_VIEJAS, ...VISTAS_NUEVAS].sort());
     // `VISTAS` es lo que `useVistaModulo` valida: lo que no está acá, no se puede linkear.
     for (const vieja of VISTAS_VIEJAS) expect(VISTAS).toContain(vieja);
   });
@@ -67,13 +73,20 @@ describe("estructura de Mi Plata", () => {
     expect(donde).toMatchObject({ tab: "movimientos", vista: "presupuesto", seccion: "gastos" });
   });
 
+  it("«Lo que debo» vive en Por cobrar, pegada a «Todo lo que me deben», y se pliega sin acreedores", () => {
+    expect(ubicar("por-pagar")).toMatchObject({ tab: "por-cobrar", vista: "por-pagar", seccion: "por-pagar" });
+    const ids = (SECCIONES["por-cobrar"] ?? []).map((s) => s.id);
+    expect(ids.indexOf("por-pagar")).toBe(ids.indexOf("por-cobrar") + 1);
+    expect(SECCIONES["por-cobrar"]?.find((s) => s.id === "por-pagar")?.dato).toBe("porPagar");
+  });
+
   it("un nombre desconocido cae en Resumen y no rompe", () => {
     expect(ubicar("no-existe")).toMatchObject({ tab: "resumen", vista: "resumen" });
     expect(ubicar(undefined)).toMatchObject({ tab: "resumen", vista: "resumen" });
   });
 
   it("toda sección declara un dato medible o se muestra siempre", () => {
-    const claves = new Set(["payables", "assets", "fiados", "prestamos", "adelantos", "presupuesto"]);
+    const claves = new Set(["payables", "assets", "fiados", "prestamos", "adelantos", "presupuesto", "porPagar"]);
     for (const secciones of Object.values(SECCIONES)) {
       for (const s of secciones ?? []) {
         if (s.dato) expect(claves, `${s.id} pide un dato que nadie mide`).toContain(s.dato);
