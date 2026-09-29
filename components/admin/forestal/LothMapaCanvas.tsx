@@ -5,7 +5,8 @@
  * TH, aislado del orquestador (`LothMapaView`, que solo tiene datos y estado).
  *
  * Capas, de abajo hacia arriba:
- *   1. base cartográfica (topográfica / satelital / calles — Esri, maxNativeZoom 17),
+ *   1. base cartográfica (topográfica / satelital Esri / Sentinel-2 reciente /
+ *      calles), con las capas de hoy (nubes y humo, focos de calor) encima,
  *   2. cuadrícula UTM rotulada (`loth-utm`) que se recalcula al mover el mapa,
  *   3. polígono del área de aprovechamiento + sus vértices C.001…,
  *   4. censo forestal (árboles proyectados desde UTM) y operaciones del libro,
@@ -25,13 +26,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { LatLng } from "@/lib/forestal/loth-geo";
-import { ATTR, MAX_NATIVE, TILES, type LeafletCtx, type LothMapaCanvasProps } from "./loth-mapa-canvas-ctx";
+import { ATTR, MAX_NATIVE, TILES, type BaseFija, type LeafletCtx, type LothMapaCanvasProps } from "./loth-mapa-canvas-ctx";
 import { useLothCanvasTrazos } from "./hooks/use-loth-canvas-trazos";
 import { useLothCanvasVias } from "./hooks/use-loth-canvas-vias";
 import { useLothCanvasPuntos } from "./hooks/use-loth-canvas-puntos";
 import { useLothCanvasClics } from "./hooks/use-loth-canvas-clics";
 import { useLothCanvasArboles } from "./hooks/use-loth-canvas-arboles";
 import { useLothCanvasPlan } from "./hooks/use-loth-canvas-plan";
+import { useLothCanvasImagenes } from "./hooks/use-loth-canvas-imagenes";
 
 export type { BasemapId } from "./loth-mapa-canvas-ctx";
 
@@ -97,18 +99,23 @@ export default function LothMapaCanvas(p: LothMapaCanvasProps) {
   }, []);
 
   // ── Base cartográfica ──────────────────────────────────────────────────────
+  // Sentinel-2 la pinta `use-loth-canvas-imagenes` (una capa por cuadro de la
+  // escena); mientras la escena no llega, queda la foto de Esri: nunca un fondo vacío.
+  const fija: BaseFija | null = basemap === "s2" ? (p.s2 ? null : "sat") : basemap;
   useEffect(() => {
     const L = LRef.current;
     const map = mapRef.current;
     if (!ready || !L || !map) return;
     if (baseRef.current) map.removeLayer(baseRef.current);
-    baseRef.current = L.tileLayer(TILES[basemap], {
+    baseRef.current = null;
+    if (!fija) return;
+    baseRef.current = L.tileLayer(TILES[fija], {
       maxZoom: 22,
-      maxNativeZoom: MAX_NATIVE[basemap],
-      attribution: ATTR[basemap],
+      maxNativeZoom: MAX_NATIVE[fija],
+      attribution: ATTR[fija],
     }).addTo(map);
     baseRef.current.bringToBack();
-  }, [ready, basemap]);
+  }, [ready, fija]);
 
   const ctx: LeafletCtx = {
     ready,
@@ -134,6 +141,7 @@ export default function LothMapaCanvas(p: LothMapaCanvasProps) {
   useLothCanvasClics(ctx, p);
   useLothCanvasArboles(ctx, p);
   useLothCanvasPlan(ctx, p);
+  useLothCanvasImagenes(ctx, p);
 
   // ── Escala viva: metros por píxel en el paralelo del centro ────────────────
   useEffect(() => {

@@ -4,7 +4,8 @@
  * useLothMapaHerramientas — el estado de la barra del mapa del Libro TH: qué
  * capas se ven y qué herramienta está prendida.
  *
- *   · Capas: base (topográfica / satelital / calles), cuadrícula UTM, censo,
+ *   · Capas: base (topográfica / satelital Esri / Sentinel-2 reciente / calles,
+ *     recordada en el navegador), cuadrícula UTM, censo,
  *     capas oficiales (ANP, ordenamiento) y las secciones del libro.
  *   · Herramientas: cinta métrica, comparador EUDR (Esri Wayback), faja de
  *     protección de cauces, perfil de terreno, modo campo (GPS) e «ir a
@@ -20,7 +21,11 @@ import type { LatLng } from "@/lib/forestal/loth-geo";
 import type { ModoMedicion } from "@/lib/forestal/loth-medicion";
 import { cargarWaybackReleases, EUDR_CUTOFF, releaseParaFecha, type WaybackRelease } from "@/lib/forestal/loth-wayback";
 import { cargarElevaciones, construirPerfil, muestrearTraza, type PerfilElevacion } from "@/lib/forestal/loth-elevacion";
-import type { BasemapId } from "../LothMapaCanvas";
+import { useLocalStorage } from "@/hooks/use-local-storage";
+import { BASEMAPS, type BasemapId } from "../loth-mapa-canvas-ctx";
+
+/** Dónde se recuerda la base elegida (misma familia de claves que las etiquetas). */
+export const CLAVE_BASE = "loth:mapa:base";
 import type { OverlayId } from "../loth-mapa-overlays";
 import type { PosicionCampo } from "../LothCampoBar";
 
@@ -33,7 +38,11 @@ export interface VistaMapa {
 
 export function useLothMapaHerramientas({ onError }: { onError: (msg: string | null) => void }) {
   // ── Capas ────────────────────────────────────────────────────────────────
-  const [basemap, setBasemap] = useState<BasemapId>("topo");
+  // La base se recuerda en este navegador: quien eligió el satélite reciente no
+  // tiene que volver a elegirlo cada vez que abre el mapa.
+  const [baseGuardada, setBaseGuardada] = useLocalStorage<string>(CLAVE_BASE, "topo");
+  const basemap: BasemapId = (BASEMAPS as readonly string[]).includes(baseGuardada) ? (baseGuardada as BasemapId) : "topo";
+  const setBasemap = useCallback((b: BasemapId) => setBaseGuardada(b), [setBaseGuardada]);
   const [showGrid, setShowGrid] = useState(true);
   const [showCenso, setShowCenso] = useState(true);
   const [hidden, setHidden] = useState<Set<string>>(new Set());
@@ -57,6 +66,8 @@ export function useLothMapaHerramientas({ onError }: { onError: (msg: string | n
   // ── Vista ────────────────────────────────────────────────────────────────
   const [cursor, setCursor] = useState<LatLng | null>(null);
   const [metersPerPixel, setMetersPerPixel] = useState(30);
+  /** Zoom del mapa: las nubes de hoy (≈ 375 m) sólo se dibujan de lejos. */
+  const [zoom, setZoom] = useState(12);
   /** bbox visible del mapa — lo necesita la descarga en PNG. */
   const [vista, setVista] = useState<VistaMapa | null>(null);
   const [fullscreen, setFullscreen] = useState(false);
@@ -64,8 +75,9 @@ export function useLothMapaHerramientas({ onError }: { onError: (msg: string | n
   const [centrarEn, setCentrarEn] = useState<{ p: LatLng; n: number } | null>(null);
 
   const onCursor = useCallback((p: LatLng | null) => setCursor(p), []);
-  const onView = useCallback((v: { metersPerPixel: number; bounds?: VistaMapa }) => {
+  const onView = useCallback((v: { zoom?: number; metersPerPixel: number; bounds?: VistaMapa }) => {
     setMetersPerPixel(v.metersPerPixel);
+    if (v.zoom != null) setZoom(v.zoom);
     if (v.bounds) setVista(v.bounds);
   }, []);
   const centrar = useCallback((p: LatLng) => setCentrarEn((c) => ({ p, n: (c?.n ?? 0) + 1 })), []);
@@ -135,6 +147,7 @@ export function useLothMapaHerramientas({ onError }: { onError: (msg: string | n
     cursor,
     onCursor,
     metersPerPixel,
+    zoom,
     vista,
     onView,
     fullscreen,

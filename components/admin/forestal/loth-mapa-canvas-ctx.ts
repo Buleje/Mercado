@@ -24,14 +24,35 @@ export const TILES = {
   sat: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
   street: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
 } as const;
-export type BasemapId = keyof typeof TILES;
+/** Las bases con UNA plantilla de teselas fija (Esri y OpenStreetMap). */
+export type BaseFija = keyof typeof TILES;
+/**
+ * `s2` = Sentinel-2 reciente: sus teselas dependen de la escena elegida (una
+ * plantilla por cuadro), así que no está en `TILES`; la pinta
+ * `use-loth-canvas-imagenes`.
+ */
+export type BasemapId = BaseFija | "s2";
+export const BASEMAPS: readonly BasemapId[] = ["topo", "sat", "s2", "street"];
 
-export const ATTR: Record<BasemapId, string> = {
+export const ATTR: Record<BaseFija, string> = {
   topo: "Tiles © Esri — Fuentes: Esri, USGS, NOAA",
-  sat: "Tiles © Esri, Maxar",
+  sat: "Tiles © Esri, Vantor",
   street: "© OpenStreetMap",
 };
-export const MAX_NATIVE: Record<BasemapId, number> = { topo: 17, sat: 17, street: 19 };
+export const MAX_NATIVE: Record<BaseFija, number> = { topo: 17, sat: 17, street: 19 };
+
+/** La escena de Sentinel-2 que se pinta: uno o dos cuadros del mismo día, con su recuadro [O, S, E, N]. */
+export interface EscenaEnMapa {
+  items: { id: string; bbox: [number, number, number, number] }[];
+}
+
+/** Lo de hoy encima del mapa (NASA GIBS). */
+export interface VivasEnMapa {
+  /** Color real VIIRS del día (plantilla de teselas); null = apagado o sin imagen. */
+  colorReal: string | null;
+  /** Días de focos de calor a pintar (vacío = apagado). */
+  focos: readonly string[];
+}
 /** Hasta acá los códigos C.00N caben sin pisarse; arriba, van al hover. */
 export const MAX_PERMANENT_LABELS = 12;
 /** El predio es el marco: gris pizarra, para que el área siga siendo lo que resalta. */
@@ -92,6 +113,12 @@ export interface LothMapaCanvasProps {
   /** Cuál de los dos polígonos está en el borrador. */
   drawTarget: "area" | "predio";
   basemap: BasemapId;
+  /** La escena de Sentinel-2 elegida (sólo se pinta con `basemap === "s2"`; null = todavía no llegó). */
+  s2: EscenaEnMapa | null;
+  /** Otra escena de Sentinel-2 bajo la cortina (comparar dos fechas); null = apagado. */
+  s2Comparar: EscenaEnMapa | null;
+  /** Nubes y humo de hoy + focos de calor. */
+  vivas: VivasEnMapa;
   showGrid: boolean;
   center: LatLng;
   /** Cambia cuando el orquestador quiere re-encuadrar (ej. al terminar de cargar). */

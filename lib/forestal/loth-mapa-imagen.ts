@@ -46,6 +46,11 @@ export interface ImagenOptions {
   /** Pie de imagen (título + fuente). */
   titulo?: string;
   fecha?: string;
+  /**
+   * Otra imagen de fondo del mismo recuadro (EPSG:4326, `ancho`×`alto`, con
+   * CORS): la escena de Sentinel-2 que está en pantalla. Sin esto, Esri.
+   */
+  fondo?: { url: string; fuente: string };
 }
 
 /** Carga una imagen con CORS habilitado (si falla, rechaza y el caller avisa). */
@@ -71,7 +76,7 @@ export async function componerImagenMapa(opts: ImagenOptions): Promise<Blob> {
   const PIE = opts.titulo ? 34 : 0;
 
   const bbox = `${bounds.lngMin},${bounds.latMin},${bounds.lngMax},${bounds.latMax}`;
-  const url = `${BASES[opts.base]}?bbox=${bbox}&bboxSR=4326&imageSR=4326&size=${Math.round(ancho)},${Math.round(alto)}&format=png&f=image`;
+  const url = opts.fondo?.url ?? `${BASES[opts.base]}?bbox=${bbox}&bboxSR=4326&imageSR=4326&size=${Math.round(ancho)},${Math.round(alto)}&format=png&f=image`;
   const img = await cargarImagen(url);
 
   const canvas = document.createElement("canvas");
@@ -157,7 +162,7 @@ export async function componerImagenMapa(opts: ImagenOptions): Promise<Blob> {
     ctx.font = "400 11px system-ui, sans-serif";
     ctx.fillStyle = "#64748b";
     ctx.fillText(
-      `${opts.fecha ? `${opts.fecha} · ` : ""}Imagen © Esri · geometría declarada en el Libro de Operaciones`,
+      `${opts.fecha ? `${opts.fecha} · ` : ""}${opts.fondo?.fuente ?? "Imagen © Esri"} · geometría declarada en el Libro de Operaciones`,
       10,
       alto + 30,
     );

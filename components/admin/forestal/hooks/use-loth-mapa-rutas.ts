@@ -63,11 +63,13 @@ export function useLothMapaRutas({ planId, carto, fitKey, censoCount, onEncuadra
   const hayCenso = censoCount > 0;
 
   // ── El relieve guardado, para la pendiente de cada ruta ────────────────────
-  // Otro plan = otra zona: el relieve leído no sirve.
+  // Otro plan = otra zona: el relieve leído no sirve, y la propuesta que se
+  // ocultó en el plan anterior no queda oculta en éste.
   useEffect(() => {
     relieveDe.current = null;
     setGrilla(null);
     setRelieve("nada");
+    setPreviaOculta(false);
   }, [planId]);
   // Una vez por plan; si no había relieve, se vuelve a mirar cuando cambia el
   // plano (el planificador lo trae y guarda al proponer, y después se agregan las rutas).
@@ -77,12 +79,14 @@ export function useLothMapaRutas({ planId, carto, fitKey, censoCount, onEncuadra
     const k = `${planId}|${versionPlano}`;
     if (relieveDe.current === k) return;
     relieveDe.current = k;
-    let vivo = true;
+    const ac = new AbortController();
+    let terminado = false;
     setRelieve("cargando");
-    fetch(`/api/admin/forestal/loth/geografia?planId=${encodeURIComponent(planId)}&soloCache=1`, { credentials: "include" })
+    fetch(`/api/admin/forestal/loth/geografia?planId=${encodeURIComponent(planId)}&soloCache=1`, { credentials: "include", signal: ac.signal })
       .then(async (r) => {
         const c = await leerJson<{ elevacion?: GrillaElevacion | null; message?: string }>(r);
-        if (!vivo) return;
+        if (ac.signal.aborted) return;
+        terminado = true;
         if (!r.ok) throw new Error(mensaje(r.status, c));
         const g = c?.elevacion;
         if (g && Array.isArray(g.valores) && g.nx > 1 && g.ny > 1) {
@@ -93,13 +97,17 @@ export function useLothMapaRutas({ planId, carto, fitKey, censoCount, onEncuadra
         }
       })
       .catch(() => {
-        if (!vivo) return;
+        if (ac.signal.aborted) return;
         // Que la próxima carga lo intente de nuevo; mientras, la pendiente dice «sin dato».
         relieveDe.current = null;
         setRelieve("error");
       });
     return () => {
-      vivo = false;
+      // Cortado a mitad de vuelo (StrictMode monta dos veces, o cambió una
+      // dependencia): la marca se suelta para que la próxima pasada lo pida.
+      // Antes quedaba puesta y la pendiente se quedaba en «Leyendo el relieve…».
+      ac.abort();
+      if (!terminado && relieveDe.current === k) relieveDe.current = null;
     };
   }, [planId, fitKey, hayVias, grilla, versionPlano]);
 

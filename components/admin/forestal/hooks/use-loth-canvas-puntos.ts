@@ -26,7 +26,7 @@ const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replac
    re-dispara ningún efecto. */
 export function useLothCanvasPuntos(ctx: LeafletCtx, p: LothMapaCanvasProps): void {
   const { ready, mapRef, LRef, overlayRef, markersRef, waybackRef, posRef, refsRef } = ctx;
-  const { overlays, geo, parcela, declarada, wayback, waybackSplit, posicion, referencias, rutaElegida, onRutaElegida } = p;
+  const { overlays, geo, parcela, declarada, wayback, waybackSplit, s2Comparar, posicion, referencias, rutaElegida, onRutaElegida } = p;
 
   // ── Capas oficiales del Estado (SERNANP / SERFOR) ──────────────────────────
   // Son MapServer de Esri, no teselas: se pide un PNG transparente del bbox
@@ -118,14 +118,16 @@ export function useLothCanvasPuntos(ctx: LeafletCtx, p: LothMapaCanvasProps): vo
     }).addTo(map);
   }, [ready, wayback, mapRef, LRef, waybackRef]);
 
-  // La cortina se aplica al PANE (no a cada tesela): un solo clip-path.
+  // La cortina se aplica al PANE (no a cada tesela): un solo clip-path. En
+  // ese pane va la imagen histórica o la otra fecha de Sentinel-2.
+  const comparando = !!wayback || !!s2Comparar;
   useEffect(() => {
     const map = mapRef.current;
     if (!ready || !map) return;
     const pane = map.getPane("wayback") as HTMLElement | undefined;
     if (!pane) return;
-    pane.style.clipPath = wayback ? `inset(0 ${100 - waybackSplit}% 0 0)` : "";
-  }, [ready, wayback, waybackSplit, mapRef]);
+    pane.style.clipPath = comparando ? `inset(0 ${100 - waybackSplit}% 0 0)` : "";
+  }, [ready, comparando, waybackSplit, mapRef]);
 
   // ── Mi posición en campo (GPS del dispositivo) ─────────────────────────────
   useEffect(() => {

@@ -9,12 +9,15 @@
  * el mapa y las herramientas quedaban abajo, fuera de la vista.
  */
 
-import { forwardRef, memo } from "react";
-import { arbolesEnFaja } from "@/lib/forestal/loth-faja";
+import { forwardRef, memo, useCallback } from "react";
 import LothMapaCanvasRaw from "./LothMapaCanvas";
 import LothMapaChrome from "./LothMapaChrome";
 import LothMapaToolbar from "./LothMapaToolbar";
 import LothMapaHerramientas from "./LothMapaHerramientas";
+import LothMapaCompararS2 from "./LothMapaCompararS2";
+import LothMapaFechaImagen from "./LothMapaFechaImagen";
+import { propsHerramientas } from "./loth-mapa-herramientas-props";
+import { useLothMapaImagenes } from "./hooks/use-loth-mapa-imagenes";
 import LothCampoBar from "./LothCampoBar";
 import LothMapaDrawBar, { LothMapaMarcaBar, LothMapaViaBar } from "./LothMapaDrawBar";
 import LothMapaArbolFicha from "./LothMapaArbolFicha";
@@ -75,6 +78,10 @@ const LothMapaMarco = forwardRef<HTMLElement, Props>(function LothMapaMarco({ da
   const capturando = dib.drawMode || dib.markMode || dib.viaDraft !== null || herr.medicion !== null;
   const elegido = arb.elegido;
   const { onArbolTocado, onRutaTocada, onPatioMovido, propuesta, ficha, centrarFicha } = useLothMapaToques({ arb, variosTala, rutas, plan, centrar: herr.centrar });
+  const { setWayback } = herr;
+  const apagarWayback = useCallback(() => setWayback(null), [setWayback]);
+  /** Sentinel-2, la fecha de la foto de Esri y lo de hoy (NASA): se pide al terminar de cargar el mapa. */
+  const img = useLothMapaImagenes({ planId: datos.plan?.id ?? null, listo: datos.fitKey > 0, waybackActivo: !!herr.wayback, apagarWayback });
 
   useLothMapaEscape({ eligiendoVarios: variosTala.activo, salirDeVarios: variosTala.desactivar, fullscreen, setFullscreen });
   /** La leyenda: la del mapa con las etapas del libro justo después de las condiciones del censo, y al final lo del planificador. */
@@ -103,11 +110,11 @@ const LothMapaMarco = forwardRef<HTMLElement, Props>(function LothMapaMarco({ da
       }
     >
       <LothMapaToolbar
-        capas={menuCapas(herr, der, { modo: arb.etiquetas, cambiar: arb.setEtiquetas }, { activo: plan.mostrarOsm, cargando: plan.geoCargando, alternar: () => plan.setMostrarOsm((v) => !v) })}
+        capas={menuCapas(herr, der, { modo: arb.etiquetas, cambiar: arb.setEtiquetas }, { activo: plan.mostrarOsm, cargando: plan.geoCargando, alternar: () => plan.setMostrarOsm((v) => !v) }, img)}
         dibujar={menuDibujar(dib, datos, der)}
         dibujando={dib.drawMode || dib.viaDraft !== null || dib.markMode}
         herramientas={herramientasDelMapa(herr, rios.length)}
-        exportar={menuExportar(exp, der, herr, verticesCuadro)}
+        exportar={menuExportar(exp, der, herr, verticesCuadro, img.fondoPng)}
         fullscreen={fullscreen}
         onFullscreen={() => setFullscreen((v) => !v)}
         sinGuardar={datos.cartoSinGuardar}
@@ -122,26 +129,8 @@ const LothMapaMarco = forwardRef<HTMLElement, Props>(function LothMapaMarco({ da
         }}
       />
 
-      <LothMapaHerramientas
-        medicion={herr.medicion}
-        medicionModo={herr.medicionModo}
-        onMedicion={herr.setMedicion}
-        onMedicionModo={herr.setMedicionModo}
-        releases={herr.releases}
-        wayback={herr.wayback}
-        onWayback={herr.setWayback}
-        waybackSplit={herr.waybackSplit}
-        onWaybackSplit={herr.setWaybackSplit}
-        irOpen={herr.irOpen}
-        onIrA={herr.centrar}
-        onCerrarIr={() => herr.setIrOpen(false)}
-        zonaDefault={der.zonaSugerida}
-        fajaAnchoM={herr.fajaAnchoM}
-        onFajaAncho={herr.setFajaAnchoM}
-        arbolesEnFaja={herr.fajaAnchoM > 0 ? rios.reduce((total, v) => total + arbolesEnFaja(der.censoAll, v.puntos, herr.fajaAnchoM).length, 0) : 0}
-        perfil={herr.perfil}
-        onCerrarPerfil={herr.cerrarPerfil}
-      />
+      <LothMapaHerramientas {...propsHerramientas(herr, der, rios, img)} />
+      <LothMapaCompararS2 img={img} split={herr.waybackSplit} onSplit={herr.setWaybackSplit} />
 
       <LothCampoBar
         activo={herr.campoActivo}
@@ -199,6 +188,9 @@ const LothMapaMarco = forwardRef<HTMLElement, Props>(function LothMapaMarco({ da
           drawMode={dib.drawMode}
           drawTarget={dib.drawTarget}
           basemap={herr.basemap}
+          s2={img.s2}
+          s2Comparar={img.s2Comparar}
+          vivas={img.vivas}
           showGrid={herr.showGrid}
           center={CENTRO}
           fitKey={datos.fitKey}
@@ -215,6 +207,7 @@ const LothMapaMarco = forwardRef<HTMLElement, Props>(function LothMapaMarco({ da
           onRutaElegida={onRutaTocada}
         />
         <LothMapaChrome items={leyenda} cursor={herr.cursor} metersPerPixel={herr.metersPerPixel} panelDerecha={plan.abierto} />
+        <LothMapaFechaImagen basemap={herr.basemap} onBase={herr.setBasemap} img={img} zoom={herr.zoom} onVerZona={() => arb.encuadrar(img.zonaAmplia)} />
 
         {elegido && herr.showCenso && !capturando && !variosTala.activo && (
           <LothMapaArbolFicha

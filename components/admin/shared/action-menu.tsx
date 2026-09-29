@@ -22,6 +22,7 @@
  */
 
 import {
+  Fragment,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -56,6 +57,12 @@ export interface MenuAccion {
   activo?: boolean;
   /** Cifra a la derecha (m³, piezas). Va en mono para que la columna alinee. */
   meta?: string;
+  /**
+   * Título del grupo al que pertenece (p. ej. «Base» / «Encima» en las capas
+   * del mapa). Se dibuja una vez, arriba de la primera opción del grupo; un
+   * menú sin `seccion` se ve igual que siempre.
+   */
+  seccion?: string;
 }
 
 export interface ActionMenuProps {
@@ -360,51 +367,64 @@ export default function ActionMenu({
           )}
           {actions.map((a, i) => {
             const AIcon = a.icon;
+            const abreSeccion = !!a.seccion && a.seccion !== actions[i - 1]?.seccion;
             return (
-              <button
-                key={a.id}
-                type="button"
-                role="menuitem"
-                disabled={a.disabled || a.busy}
-                onClick={() => {
-                  setOpen(false);
-                  a.onSelect();
-                }}
-                className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-[var(--surface-canvas)] disabled:opacity-50 ${
-                  i > 0 ? "border-t border-[var(--rule-soft)]" : ""
-                } ${a.tone === "dark" ? "bg-primary/5" : ""} ${a.activo ? "bg-primary/10" : ""}`}
-              >
-                {a.busy ? (
-                  <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-primary" />
-                ) : a.activo ? (
-                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                ) : (
-                  <AIcon
-                    className={`mt-0.5 h-4 w-4 shrink-0 ${
-                      a.tone === "dark"
-                        ? "text-primary"
-                        : a.tone === "danger"
-                          ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
-                          : "text-[var(--text-tertiary)]"
-                    }`}
-                  />
-                )}
-                <span className="min-w-0 flex-1">
-                  <b
-                    className={`block text-sm font-bold ${
-                      a.tone === "danger"
-                        ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
-                        : "text-[var(--text-primary)]"
+              <Fragment key={a.id}>
+                {abreSeccion && (
+                  <div
+                    role="separator"
+                    aria-label={a.seccion}
+                    className={`bg-[var(--surface-sunken)] px-4 pb-1.5 pt-2.5 text-xs font-black uppercase tracking-widest text-[var(--text-tertiary)] ${
+                      i > 0 ? "border-t border-[var(--rule-base)]" : ""
                     }`}
                   >
-                    {a.label}
-                  </b>
-                  {a.hint && <span className="mt-0.5 block text-xs text-[var(--text-tertiary)]">{a.hint}</span>}
-                </span>
-                {a.meta && (
-                  <span className="shrink-0 font-mono text-xs tabular-nums text-[var(--text-secondary)]">{a.meta}</span>
+                    {a.seccion}
+                  </div>
                 )}
-              </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  disabled={a.disabled || a.busy}
+                  onClick={() => {
+                    setOpen(false);
+                    a.onSelect();
+                  }}
+                  className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-[var(--surface-canvas)] disabled:opacity-50 ${
+                    i > 0 && !abreSeccion ? "border-t border-[var(--rule-soft)]" : ""
+                  } ${a.tone === "dark" ? "bg-primary/5" : ""} ${a.activo ? "bg-primary/10" : ""}`}
+                >
+                  {a.busy ? (
+                    <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-primary" />
+                  ) : a.activo ? (
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                  ) : (
+                    <AIcon
+                      className={`mt-0.5 h-4 w-4 shrink-0 ${
+                        a.tone === "dark"
+                          ? "text-primary"
+                          : a.tone === "danger"
+                            ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
+                            : "text-[var(--text-tertiary)]"
+                      }`}
+                    />
+                  )}
+                  <span className="min-w-0 flex-1">
+                    <b
+                      className={`block text-sm font-bold ${
+                        a.tone === "danger"
+                          ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
+                          : "text-[var(--text-primary)]"
+                      }`}
+                    >
+                      {a.label}
+                    </b>
+                    {a.hint && <span className="mt-0.5 block text-xs text-[var(--text-tertiary)]">{a.hint}</span>}
+                  </span>
+                  {a.meta && (
+                    <span className="shrink-0 font-mono text-xs tabular-nums text-[var(--text-secondary)]">{a.meta}</span>
+                  )}
+                </button>
+              </Fragment>
             );
           })}
         </div>

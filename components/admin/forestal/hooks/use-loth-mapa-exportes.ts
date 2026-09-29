@@ -32,8 +32,9 @@ import type { CaratulaMapa, PlanActivoMapa } from "./use-loth-mapa-datos";
 import type { VistaMapa } from "./use-loth-mapa-herramientas";
 
 /** Mapeo de la base en pantalla → base de la lámina impresa. */
-const PRINT_BASEMAP: Record<BasemapId, PlanoBasemap> = { topo: "topo", sat: "satelite", street: "calles" };
-const BASE_PNG: Record<BasemapId, ImagenBase> = { topo: "topo", sat: "sat", street: "street" };
+/** El plano oficial sigue con la foto de Esri aunque en pantalla esté Sentinel-2 (su lámina pide alta definición). */
+const PRINT_BASEMAP: Record<BasemapId, PlanoBasemap> = { topo: "topo", sat: "satelite", s2: "satelite", street: "calles" };
+const BASE_PNG: Record<BasemapId, ImagenBase> = { topo: "topo", sat: "sat", s2: "sat", street: "street" };
 
 interface Deps {
   parcela: LothParcela;
@@ -187,17 +188,24 @@ export function useLothMapaExportes(d: Deps) {
     descargarTexto(kml, "area-aprovechamiento.kml", "application/vnd.google-earth.kml+xml");
   };
 
-  /** PNG de la vista actual con el polígono, el censo y las referencias. */
-  const descargarPng = async () => {
+  /**
+   * PNG de la vista actual con el polígono, el censo y las referencias. Con
+   * Sentinel-2 en pantalla, `fondo` trae su recorte: la imagen descargada es
+   * la misma que se estaba mirando, no la foto de Esri de otro año.
+   */
+  const descargarPng = async (fondo?: { url: (b: VistaMapa, ancho: number, alto: number) => string; fuente: string }) => {
     if (!vista) return;
     setDescargando(true);
     onError(null);
+    const ancho = 1400;
+    const alto = Math.round((1400 * 560) / 912);
     try {
       await descargarImagenMapa({
         bounds: vista,
-        ancho: 1400,
-        alto: Math.round((1400 * 560) / 912),
+        ancho,
+        alto,
         base: BASE_PNG[basemap],
+        fondo: fondo ? { url: fondo.url(vista, ancho, alto), fuente: fondo.fuente } : undefined,
         parcela: parcela.vertices,
         lineas: carto.vias.map((v) => ({ puntos: v.puntos, color: viaMeta(v.tipo).color, dash: !!viaMeta(v.tipo).dash })),
         puntos: [

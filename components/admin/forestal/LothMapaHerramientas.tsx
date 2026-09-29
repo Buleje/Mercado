@@ -57,6 +57,8 @@ interface Props {
 
   perfil: PerfilElevacion | null;
   onCerrarPerfil: () => void;
+  /** Qué hay a la derecha de la cortina: la base que está en pantalla, con su fecha. */
+  derecha?: string;
 }
 
 export default function LothMapaHerramientas({
@@ -78,6 +80,7 @@ export default function LothMapaHerramientas({
   arbolesEnFaja,
   perfil,
   onCerrarPerfil,
+  derecha = "imagen actual",
 }: Props) {
   const [este, setEste] = useState("");
   const [norte, setNorte] = useState("");
@@ -240,7 +243,7 @@ export default function LothMapaHerramientas({
           <div className="flex flex-wrap items-center gap-2">
             <History className="h-4 w-4" style={{ color: C.comparar }} aria-hidden="true" />
             <span className="text-sm font-bold text-[var(--text-primary)]">
-              Izquierda: <b>{wayback.label}</b> · derecha: imagen actual
+              Izquierda: <b>{wayback.label}</b> · derecha: {derecha}
             </span>
             {esAnteriorAlCorte(wayback) ? (
               <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-success-500)]/15 px-2 py-0.5 text-xs font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">

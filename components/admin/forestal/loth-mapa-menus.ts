@@ -12,15 +12,11 @@
 import {
   Clipboard,
   ClipboardCopy,
-  Eye,
-  EyeOff,
   FileSpreadsheet,
   FileText,
   Globe,
-  Grid3x3,
   History,
   Image,
-  Map as MapaIcono,
   MapPin,
   Navigation,
   Pencil,
@@ -28,12 +24,8 @@ import {
   Route,
   Ruler,
   Search,
-  ShieldCheck,
   Square,
-  Tag,
-  Tags,
   Trash2,
-  TreePine,
   TrendingUp,
   Upload,
   Waves,
@@ -42,90 +34,14 @@ import {
 import type { MenuAccion } from "@/components/admin/shared/action-menu";
 import { FAJA_SUGERIDA } from "@/lib/forestal/loth-faja";
 import type { HerramientaIcono } from "./LothMapaToolbar";
-import { OVERLAYS } from "./loth-mapa-overlays";
-import { SECTION_LABEL } from "./loth-mapa-shared";
-import { MODO_ETIQUETAS_LABEL, MODOS_ETIQUETAS, type ModoEtiquetas } from "./loth-mapa-etiquetas";
 import type { LothMapaDatos } from "./hooks/use-loth-mapa-datos";
 import type { LothMapaDibujo } from "./hooks/use-loth-mapa-dibujo";
 import type { LothMapaHerramientasEstado } from "./hooks/use-loth-mapa-herramientas";
 import type { LothMapaDerivados } from "./hooks/use-loth-mapa-derivados";
 import type { LothMapaExportes } from "./hooks/use-loth-mapa-exportes";
+import type { LothMapaImagenes } from "./hooks/use-loth-mapa-imagenes";
 
-/** La capa de ríos y caminos de OpenStreetMap (la misma que usa el planificador). */
-export interface OsmDelMenu {
-  activo: boolean;
-  cargando: boolean;
-  alternar: () => void;
-}
-
-/** Qué dice la etiqueta sobre cada árbol del censo (se recuerda en este navegador). */
-export interface EtiquetasDelMenu {
-  modo: ModoEtiquetas;
-  cambiar: (m: ModoEtiquetas) => void;
-}
-
-const HINT_ETIQUETAS: Record<ModoEtiquetas, string> = {
-  etapa: "«114 · Trozado ×3»: el código y en qué va, según el libro",
-  codigo: "Sólo el número de cada árbol, como en la placa",
-  ninguna: "El mapa limpio: el árbol se lee al pasar el mouse o al tocarlo",
-};
-const ICONO_ETIQUETAS: Record<ModoEtiquetas, MenuAccion["icon"]> = { etapa: Tags, codigo: Tag, ninguna: EyeOff };
-
-export function menuCapas(h: LothMapaHerramientasEstado, der: LothMapaDerivados, etiquetas?: EtiquetasDelMenu, osm?: OsmDelMenu): MenuAccion[] {
-  const bases: MenuAccion[] = [
-    { id: "base-topo", label: "Mapa topográfico", hint: "Relieve, ríos y quebradas (Esri)", icon: MapaIcono, activo: h.basemap === "topo", onSelect: () => h.setBasemap("topo") },
-    { id: "base-sat", label: "Imagen satelital", hint: "El bosque y lo abierto, tal como se ve desde arriba", icon: Globe, activo: h.basemap === "sat", onSelect: () => h.setBasemap("sat") },
-    { id: "base-street", label: "Calles", hint: "Carreteras y centros poblados (OpenStreetMap)", icon: Route, activo: h.basemap === "street", onSelect: () => h.setBasemap("street") },
-  ];
-  const capas: MenuAccion[] = [
-    { id: "grid", label: "Cuadrícula UTM", hint: "Las líneas con su Este y Norte, como en el plano", icon: Grid3x3, activo: h.showGrid, onSelect: () => h.setShowGrid((v) => !v) },
-    ...(der.censoAll.length > 0
-      ? [{ id: "censo", label: "Censo forestal", hint: "Cada árbol pintado por su categoría del POA", icon: TreePine, meta: String(der.censoAll.length), activo: h.showCenso, onSelect: () => h.setShowCenso((v) => !v) }]
-      : []),
-    ...(der.censoAll.length > 0 && h.showCenso && etiquetas
-      ? MODOS_ETIQUETAS.map((m) => ({
-          id: `etq-${m}`,
-          label: MODO_ETIQUETAS_LABEL[m],
-          hint: HINT_ETIQUETAS[m],
-          icon: ICONO_ETIQUETAS[m],
-          activo: etiquetas.modo === m,
-          onSelect: () => etiquetas.cambiar(m),
-        }))
-      : []),
-    ...(osm
-      ? [
-          {
-            id: "osm",
-            label: "Ríos y caminos (OpenStreetMap)",
-            hint: "Los que ya existen en la zona de los árboles; el planificador los usa",
-            icon: Waves,
-            activo: osm.activo,
-            busy: osm.cargando,
-            onSelect: osm.alternar,
-          },
-        ]
-      : []),
-    ...OVERLAYS.map((o) => ({
-      id: `ov-${o.id}`,
-      label: o.label === "ANP" ? "Áreas Naturales Protegidas" : o.label,
-      hint: `${o.detalle} — ${o.fuente}`,
-      icon: ShieldCheck,
-      activo: h.overlays.includes(o.id),
-      onSelect: () => h.toggleOverlay(o.id),
-    })),
-    ...(der.sectionsPresent.length > 1
-      ? der.sectionsPresent.map((s) => ({
-          id: `sec-${s}`,
-          label: `Operaciones · ${SECTION_LABEL[s] ?? s}`,
-          hint: "Mostrar u ocultar los puntos de esta sección del libro",
-          icon: Eye,
-          activo: !h.hidden.has(s),
-          onSelect: () => h.toggleSection(s),
-        }))
-      : []),
-  ];
-  return [...bases, ...capas];
-}
+export { menuCapas, type EtiquetasDelMenu, type ImagenesDelMenu, type OsmDelMenu } from "./loth-mapa-menu-capas";
 
 export function menuDibujar(dib: LothMapaDibujo, datos: LothMapaDatos, der: LothMapaDerivados): MenuAccion[] {
   const ocupado = dib.drawMode || datos.saving;
@@ -197,7 +113,9 @@ export function menuDibujar(dib: LothMapaDibujo, datos: LothMapaDatos, der: Loth
   ];
 }
 
-export function menuExportar(exp: LothMapaExportes, der: LothMapaDerivados, h: LothMapaHerramientasEstado, verticesCuadro: number): MenuAccion[] {
+export function menuExportar(exp: LothMapaExportes, der: LothMapaDerivados, h: LothMapaHerramientasEstado, verticesCuadro: number, fondoPng?: LothMapaImagenes["fondoPng"]): MenuAccion[] {
+  /** Con Sentinel-2 en pantalla, el PNG baja ESA imagen (no la foto de Esri de otro año). */
+  const fondo = h.basemap === "s2" ? fondoPng : undefined;
   const faltan = der.checkPlano.pendientes.length;
   const sinPoligono = verticesCuadro === 0;
   const canGeo = der.readiness.parcelaDeclarada && der.readiness.geoTotal > 0;
@@ -261,11 +179,11 @@ export function menuExportar(exp: LothMapaExportes, der: LothMapaDerivados, h: L
     {
       id: "png",
       label: "Imagen PNG de lo que ves",
-      hint: "La vista actual con el polígono, el censo y las referencias",
+      hint: fondo ? "La vista actual sobre la imagen de Sentinel-2 que estás mirando" : "La vista actual con el polígono, el censo y las referencias",
       icon: Image,
       busy: exp.descargando,
       disabled: !h.vista,
-      onSelect: () => void exp.descargarPng(),
+      onSelect: () => void exp.descargarPng(fondo),
     },
   ];
 }

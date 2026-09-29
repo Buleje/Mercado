@@ -472,6 +472,10 @@ export {
   Palmtree,
   Dog,
 
+  // Mapa del Libro TH: imágenes recientes (Sentinel-2) y nubes de hoy.
+  Satellite,
+  CloudSun,
+
   // ── Types ────────────────────────────────────────────────────
   type LucideIcon,
   type LucideProps,
