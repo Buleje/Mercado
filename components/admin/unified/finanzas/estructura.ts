@@ -56,7 +56,7 @@ export type TabId = (typeof TABS)[number]["id"];
  * dura de «secciones que no se usan»: quien tiene préstamos los ve, y quien no,
  * no los tiene siempre en pantalla.
  */
-export type ClaveDeDato = "payables" | "assets" | "fiados" | "prestamos" | "adelantos" | "presupuesto" | "porPagar";
+export type ClaveDeDato = "tesoreria" | "assets" | "fiados" | "prestamos" | "adelantos" | "presupuesto" | "porPagar";
 
 export interface Seccion {
   id: string;
@@ -85,7 +85,11 @@ export const SECCIONES: Partial<Record<TabId, Seccion[]>> = {
     /* El presupuesto va adentro: es el techo de estos mismos gastos. */
     { id: "gastos",     label: "Gastos y presupuesto", corto: "Gastos", icon: TrendingDown, adentro: ["presupuesto"] },
     { id: "flujo-caja", label: "Proyección de caja",   corto: "Caja",   icon: Waves },
-    { id: "tesoreria",  label: "Tesorería",                             icon: Landmark,     dato: "payables" },
+    /* Se enciende con las CUENTAS de tesorería, no con las cuentas por pagar
+       (hasta 2026-09-29 miraba `/api/payables`: en `main`, con BCP y caja
+       chica cargadas y 0 por pagar, quedaba plegada en «+1 sin usar»). Va al
+       lado de Caja porque la proyección arranca con el saldo de estas cuentas. */
+    { id: "tesoreria",  label: "Tesorería",                             icon: Landmark,     dato: "tesoreria" },
     { id: "activos",    label: "Activos",                               icon: Construction, dato: "assets" },
   ],
   "por-cobrar": [

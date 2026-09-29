@@ -4,9 +4,10 @@
  * useSeccionesConDatos — qué secciones de un módulo tienen algo cargado.
  *
  * POR QUÉ. En Mi Plata, el tenant real de Brandon tiene CERO préstamos, CERO
- * cuentas por pagar y CERO categorías de presupuesto (medido 2026-09-21). Esas
- * tres secciones ocupaban lugar permanente en la navegación de alguien que no
- * las usa, y el tiempo de «ir buscando» se paga en cada visita.
+ * cuentas de tesorería y CERO categorías de presupuesto (medido 2026-09-21;
+ * tesorería re-medida el 2026-09-29). Esas secciones ocupaban lugar permanente
+ * en la navegación de alguien que no las usa, y el tiempo de «ir buscando» se
+ * paga en cada visita.
  *
  * CÓMO. El dato manda, no una lista dura: se le pregunta al MISMO endpoint que
  * alimenta la sección si tiene al menos una fila. Así, el día que se carga el
@@ -26,9 +27,11 @@ import type { ClaveDeDato } from "@/components/admin/unified/finanzas/estructura
 
 /** De dónde sale «hay al menos uno» para cada área. */
 const SONDAS: Record<ClaveDeDato, { url: string; hay: (json: unknown) => boolean }> = {
-  /* Tesorería programa PAGOS: su tabla propia son las cuentas por pagar (las
-     cobranzas ya viven en Por cobrar). Sin ninguna, no dice nada nuevo. */
-  payables:    { url: "/api/payables",       hay: (j) => Array.isArray(j) && j.length > 0 },
+  /* Tesorería = las cuentas de banco, caja y billetera (`TreasuryCuenta`).
+     Antes miraba `/api/payables`: la sección se plegaba con cuentas cargadas
+     y 0 por pagar (así estaba `main` el 2026-09-29). Sólo cuentas activas:
+     con todas dadas de baja, no hay saldo que mirar. */
+  tesoreria:   { url: "/api/treasury/cuentas", hay: (j) => Array.isArray(j) && j.length > 0 },
   assets:      { url: "/api/admin/assets",   hay: (j) => cuantos((j as { data?: unknown })?.data) > 0 },
   fiados:      { url: "/api/fiados",         hay: (j) => Array.isArray(j) && j.length > 0 },
   prestamos:   { url: "/api/prestamos",      hay: (j) => Array.isArray(j) && j.length > 0 },

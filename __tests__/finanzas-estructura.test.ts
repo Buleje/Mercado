@@ -86,7 +86,7 @@ describe("estructura de Mi Plata", () => {
   });
 
   it("toda sección declara un dato medible o se muestra siempre", () => {
-    const claves = new Set(["payables", "assets", "fiados", "prestamos", "adelantos", "presupuesto", "porPagar"]);
+    const claves = new Set(["tesoreria", "assets", "fiados", "prestamos", "adelantos", "presupuesto", "porPagar"]);
     for (const secciones of Object.values(SECCIONES)) {
       for (const s of secciones ?? []) {
         if (s.dato) expect(claves, `${s.id} pide un dato que nadie mide`).toContain(s.dato);
