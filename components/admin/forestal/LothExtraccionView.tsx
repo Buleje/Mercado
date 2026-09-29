@@ -42,7 +42,7 @@ export default function LothExtraccionView({
 }: {
   reloadSignal?: number;
   /** Salta a otra vista del libro (Plan de Manejo, Analítica). */
-  onIr?: (vista: "plan" | "analitica") => void;
+  onIr?: (vista: "plan" | "rentabilidad") => void;
 }) {
   const e = useLothExtraccion(reloadSignal);
   const d = e.datos;
@@ -81,7 +81,7 @@ export default function LothExtraccionView({
     ...(onIr
       ? [
           { id: "plan", label: "Ir al Plan de Manejo", hint: "Censo, especies autorizadas y semilleros", icon: MapIcon, onSelect: () => onIr("plan") },
-          { id: "analitica", label: "Ir a Analítica", hint: "Veredicto, anomalías y plata", icon: TrendingUp, onSelect: () => onIr("analitica") },
+          { id: "rentabilidad", label: "Ir a Rentabilidad y rendimiento", hint: "Margen, veredicto, anomalías y flujo", icon: TrendingUp, onSelect: () => onIr("rentabilidad") },
         ]
       : []),
   ];

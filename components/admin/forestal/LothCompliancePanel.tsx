@@ -4,7 +4,7 @@
  * LothCompliancePanel — pestaña "Cumplimiento" del Libro de Operaciones TH.
  *
  * Gemelo de `CtpCompliancePanel` (ADR-305). Reencuadra las anomalías que ya
- * calcula la Analítica (`/plan?analytics=1` → `detectAnomalias`) como un veredicto
+ * calcula «Rentabilidad y rendimiento» (`/plan?analytics=1` → `detectAnomalias`) como un veredicto
  * de "¿el libro resiste una fiscalización de OSINFOR ahora?": los bloqueos flotan
  * al tope, las advertencias abajo, y las verificaciones en orden se pliegan — no
  * un muro de cajas verdes que entierra el único punto a revisar.
@@ -190,7 +190,7 @@ export default function LothCompliancePanel({ totalLineas, onNavigate, reloadSig
       <VistaHeader
         titulo="Chequeo del libro"
         meta={`${formatNumber(totalLineas)} ${plural(totalLineas, "línea registrada", "líneas registradas")}`}
-        hint="Los mismos números que la Analítica."
+        hint="Cifras del libro entero (todos los planes). «Rentabilidad y rendimiento» es de un plan: con 2 o más planes puede dar otra cifra."
       >
         <Btn variant="dark" size="md" onClick={handleReport}>
           <FileDown className="h-4 w-4" /> Descargar reporte
@@ -319,8 +319,8 @@ function ReadinessBanner({
         </div>
       </div>
       {readiness === "ready" && (
-        <Btn variant="primary" size="sm" onClick={() => onNavigate("analitica")} className="shrink-0">
-          <ShieldCheck className="h-4 w-4" /> Ver analítica
+        <Btn variant="primary" size="sm" onClick={() => onNavigate("rentabilidad")} className="shrink-0">
+          <ShieldCheck className="h-4 w-4" /> Ver rentabilidad
         </Btn>
       )}
     </div>

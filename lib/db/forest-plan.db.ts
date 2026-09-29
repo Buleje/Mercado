@@ -19,6 +19,7 @@ import {
 } from "@/lib/forestal/loth-constants";
 import { ForestLothPoaDB } from "@/lib/db/forest-loth-poa.db";
 import { defaultPoaConfig } from "@/lib/forestal/loth-poa";
+import { lineasDelPlan as lineasDelPlanFn } from "@/lib/forestal/loth-analitica-plan";
 import { ESTADOS_SIN_INGRESO } from "@/lib/db/gtf-numero.db";
 import {
   PLAN_ID_SIN_PLAN, SECCIONES_EXTRACCION, TOPE_ARBOLES, TOPE_LINEAS,
@@ -690,15 +691,45 @@ export class ForestPlanDB {
       ? await prisma.forestPlan.findFirst({ where: { tenantId, id: planId, deletedAt: null } })
       : await prisma.forestPlan.findFirst({ where: { tenantId, deletedAt: null, estado: "vigente" }, orderBy: { createdAt: "desc" } });
 
-    const [entries, speciesRows] = await Promise.all([
+    const [entriesTodas, speciesRows, planesVivos] = await Promise.all([
       prisma.forestLothEntry.findMany({
         where: { tenantId, deletedAt: null, status: "registrado" },
-        select: { section: true, speciesCommon: true, trozaCode: true, volumeM3: true, quantity: true, unit: true, entryDate: true, createdAt: true, cites: true },
+        select: {
+          id: true, planId: true, status: true, lineNo: true, section: true, speciesCommon: true, trozaCode: true, treeCode: true,
+          volumeM3: true, quantity: true, unit: true, entryDate: true, createdAt: true, cites: true, gtfNumber: true,
+        },
       }),
       plan
         ? prisma.forestPlanSpecies.findMany({ where: { tenantId, planId: plan.id, deletedAt: null } })
         : Promise.resolve([]),
+      prisma.forestPlan.findMany({ where: { tenantId, deletedAt: null }, select: { id: true } }),
     ]);
+
+    // Con un plan PEDIDO y más de un plan en el negocio, sólo cuenta lo de ese plan (misma
+    // atribución que «Extracción»): sin esto el movilizado de todos se cruzaba con los precios
+    // de UNO y los despachos sin plan se valorizaban en cada plan. Sin `planId` (Cumplimiento,
+    // resumen, informe) sigue el libro entero.
+    let idsDelPlan: string[] | null = null;
+    let sinAtribuir: { lineas: number; ambiguas: number } | null = null;
+    let entries = entriesTodas;
+    if (plan && planId && planesVivos.length > 1) {
+      const arbolesRaw = await prisma.forestCensusTree.findMany({
+        where: { tenantId, deletedAt: null },
+        select: { id: true, planId: true, treeCode: true, speciesCommon: true, cites: true, dapM: true, volumenEstimadoM3: true, estado: true, condicion: true },
+        orderBy: { id: "asc" },
+        take: TOPE_ARBOLES,
+      });
+      const n = (v: Prisma.Decimal | null | undefined): number | null => (v == null ? null : Number(v));
+      const propias = lineasDelPlanFn(
+        planesVivos.map((p) => p.id),
+        plan.id,
+        arbolesRaw.map((a) => ({ ...a, dapM: n(a.dapM), volumenEstimadoM3: n(a.volumenEstimadoM3) })),
+        entriesTodas.map((e) => ({ ...e, volumeM3: n(e.volumeM3), quantity: n(e.quantity) })),
+      );
+      entries = entriesTodas.filter((e) => propias.ids.has(e.id));
+      idsDelPlan = [...propias.ids];
+      sinAtribuir = propias.sinPlan;
+    }
 
     const movements: BalanceMovement[] = entries.map((e) => ({
       section: e.section, speciesCommon: e.speciesCommon, trozaCode: e.trozaCode,
@@ -780,6 +811,8 @@ export class ForestPlanDB {
       hasPlan: !!plan,
       plan: plan ? { id: plan.id, planNumber: plan.planNumber ?? null, titularName: plan.titularName, estado: plan.estado, vigenciaHasta: plan.vigenciaHasta, costos } : null,
       aprovechamiento, balance, anomalias, projection, lateCount, costeo, citesEspecies, especiesNoAutorizadas, especiesAmbiguas,
+      /** Sólo con un plan pedido y 2+ planes: ids de las líneas de ESE plan, y lo que no se pudo atribuir a ninguno. */
+      idsDelPlan, sinAtribuir,
     };
   }
 

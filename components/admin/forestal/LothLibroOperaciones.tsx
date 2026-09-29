@@ -26,7 +26,6 @@ import {
   Layers,
   Share2,
   Truck,
-  TrendingUp,
   Lock,
   Coins,
   Scissors,
@@ -55,7 +54,6 @@ import LothTraceView from "./LothTraceView";
 import LothTableroTrozas from "./LothTableroTrozas";
 import LothPlanView from "./LothPlanView";
 import LothGtfView from "./LothGtfView";
-import LothAnalyticsView from "./LothAnalyticsView";
 import LothCompliancePanel from "./LothCompliancePanel";
 import LothResumenStrip from "./LothResumenStrip";
 import LothSeccionesRiel from "./LothSeccionesRiel";
@@ -88,7 +86,7 @@ import {
 } from "@/lib/forestal/loth-seccion";
 import LothCierrePanel from "./LothCierrePanel";
 import LothMapaView from "./LothMapaView";
-import LothRentabilidadPanel from "./LothRentabilidadPanel";
+import LothRentabilidadView from "./LothRentabilidadView";
 import type { LothNavTarget } from "@/lib/forestal/loth-compliance";
 import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import { LOTH_VISTAS } from "@/lib/admin/subvistas-modulos";
@@ -168,7 +166,11 @@ const COLS: Record<LothSection, Col[]> = {
   ],
 };
 
-type LothView = "secciones" | "trazabilidad" | "tablero" | "plan" | "gtf" | "extraccion" | "analitica" | "cumplimiento" | "cierre" | "mapa" | "rentabilidad";
+type LothView = "secciones" | "trazabilidad" | "tablero" | "plan" | "gtf" | "extraccion" | "cumplimiento" | "cierre" | "mapa" | "rentabilidad";
+
+/** «Analítica» y «Rentabilidad» se fusionaron en «Rentabilidad y rendimiento» (2026-09-29):
+ *  un `?vista=analitica` guardado, o un botón que aún la nombra, llegan a la nueva. */
+const LOTH_VISTAS_FUSIONADAS = { analitica: "rentabilidad" } as const satisfies Record<string, LothView>;
 
 /* «Extracción» (ADR-454) trae recharts: se baja sólo al abrir la vista. */
 const LothExtraccionView = dynamic(() => import("./LothExtraccionView"), {
@@ -217,7 +219,6 @@ const LOTH_GROUPS: LibroGroup[] = [
     views: [
       { key: "extraccion", ...LOTH_VISTAS_POR_KEY["extraccion"], icon: Axe },
       { key: "rentabilidad", ...LOTH_VISTAS_POR_KEY["rentabilidad"], icon: Coins },
-      { key: "analitica", ...LOTH_VISTAS_POR_KEY["analitica"], icon: TrendingUp },
     ],
   },
 ];
@@ -251,7 +252,7 @@ export default function LothLibroOperaciones() {
   const [reloadSignal, setReloadSignal] = useState(0);
   const [pending, setPending] = useState<string | null>(null);
   // Misma cabina que el CTP: la vista vive en la URL con memoria de respaldo.
-  const { vista: view, irA } = useVistaModulo<LothView>(LOTH_MODULE_ID, LOTH_VIEW_KEYS_TIPADAS, "secciones");
+  const { vista: view, irA } = useVistaModulo<LothView>(LOTH_MODULE_ID, LOTH_VIEW_KEYS_TIPADAS, "secciones", undefined, { alias: LOTH_VISTAS_FUSIONADAS });
   const setView = irA;
   const [allEntries, setAllEntries] = useState<LothEntry[]>([]);
   /** Página de la sección visible y total real que declara la API. */
@@ -921,9 +922,6 @@ export default function LothLibroOperaciones() {
       {/* Vista Extracción — el permiso de punta a punta: censo, saldos y cadena (ADR-454) */}
       {view === "extraccion" && <LothExtraccionView reloadSignal={reloadSignal} onIr={setView} />}
 
-      {/* Vista Analítica — inteligencia de aprovechamiento + anomalías (Batch 2) */}
-      {view === "analitica" && <LothAnalyticsView reloadSignal={reloadSignal} onIrAExtraccion={() => setView("extraccion")} />}
-
       {/* Vista Cumplimiento — veredicto de fiscalización OSINFOR + reporte (ADR-305) */}
       {view === "cumplimiento" && (
         <LothCompliancePanel
@@ -949,8 +947,8 @@ export default function LothLibroOperaciones() {
         />
       )}
 
-      {/* Vista Rentabilidad — margen por especie (dashboard de negocio) */}
-      {view === "rentabilidad" && <LothRentabilidadPanel reloadSignal={reloadSignal} entries={allEntries} />}
+      {/* Vista Rentabilidad y rendimiento — margen, flujo bosque→producto, anomalías y valor (antes: Rentabilidad + Analítica) */}
+      {view === "rentabilidad" && <LothRentabilidadView reloadSignal={reloadSignal} entries={allEntries} onIrAExtraccion={() => setView("extraccion")} />}
 
       {/* Vista de trazabilidad — operación completa por árbol */}
       {view === "tablero" && (

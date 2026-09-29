@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Piezas de la pestaña Analítica del LO-TH.
+ * Piezas de «Rentabilidad y rendimiento» del LO-TH (antes, la pestaña Analítica).
  *
  * El panel anterior era una pila de cinco cajas del mismo peso visual: nada
  * decía qué mirar primero, y la "cascada" dibujaba como pérdida lo que en
@@ -13,14 +13,13 @@ import {
   AlertTriangle, ArrowDown, CheckCircle2, ChevronRight, ShieldAlert, type LucideIcon,
 } from "@buleje/design-system/icons";
 import { CardTitle, BlockTitle } from "@buleje/design-system";
-import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import type {
   FlujoAprovechamiento, NodoTipo, RankingItem, Veredicto, VeredictoNivel,
 } from "@/lib/forestal/loth-analitica";
 import { tramosCosto } from "@/lib/forestal/loth-analitica";
+import { formatNumber } from "@/lib/format";
 
-export const fm = (n: number, dp = 2) =>
-  (Number.isFinite(n) ? n : 0).toLocaleString("es-PE", { minimumFractionDigits: dp, maximumFractionDigits: dp });
+export const fm = (n: number, dp = 2) => formatNumber(Number.isFinite(n) ? n : 0, dp);
 
 // ─── Veredicto ──────────────────────────────────────────────────────────────
 
@@ -74,52 +73,6 @@ export function VeredictoBanner({ v }: { v: Veredicto }) {
   );
 }
 
-// ─── KPI con contexto ───────────────────────────────────────────────────────
-
-export function Kpi({
-  label, valor, sufijo, contexto, icon: Icon, tono = "neutral", barra,
-}: {
-  label: string;
-  valor: string;
-  sufijo?: string;
-  contexto: string;
-  icon: LucideIcon;
-  tono?: "neutral" | "success" | "warning" | "error";
-  /** 0–100: dibuja una barra de referencia bajo el número. */
-  barra?: number | null;
-}) {
-  const color = {
-    neutral: "text-[var(--text-primary)]",
-    success: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
-    warning: "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]",
-    error: "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]",
-  }[tono];
-  const fill = {
-    neutral: "bg-[var(--accent)]",
-    success: "bg-[var(--data-success-500)]",
-    warning: "bg-[var(--data-warning-500)]",
-    error: "bg-[var(--data-error-500)]",
-  }[tono];
-  return (
-    <div className="flex flex-col justify-between rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 shadow-[var(--shadow-sm)]">
-      <div className="flex items-start justify-between gap-2">
-        <span className="text-[length:var(--ts-2xs)] font-bold uppercase leading-tight tracking-wide text-[var(--text-tertiary)]">{label}</span>
-        <Icon className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden="true" />
-      </div>
-      <div className="mt-2">
-        <span className={`font-mono text-3xl font-extrabold tabular-nums leading-none ${color}`}>{valor}</span>
-        {sufijo && <span className={`ml-1 text-base font-bold ${color}`}>{sufijo}</span>}
-      </div>
-      {barra != null && (
-        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface-sunken)]">
-          <div className={`h-full rounded-full ${fill}`} style={{ width: `${Math.min(100, Math.max(0, barra))}%` }} />
-        </div>
-      )}
-      <p className="mt-2 text-xs leading-snug text-[var(--text-tertiary)]">{contexto}</p>
-    </div>
-  );
-}
-
 // ─── Flujo del aprovechamiento ──────────────────────────────────────────────
 
 const NODO_COLOR: Record<NodoTipo, string> = {
@@ -133,25 +86,10 @@ const NODO_COLOR: Record<NodoTipo, string> = {
  * El recorrido de la madera, con la bifurcación dibujada como tal y las mermas
  * entre etapas. La sangría es la jerarquía: lo que sale de lo que.
  */
-export function FlujoPanel({ f }: { f: FlujoAprovechamiento }) {
+export function FlujoCuerpo({ f }: { f: FlujoAprovechamiento }) {
   const merma = (key: string) => f.mermas.find((m) => m.key === key);
   return (
-    <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 shadow-[var(--shadow-sm)]">
-      <header className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
-        <div className="flex items-center gap-1.5">
-          <CardTitle as="h3" className="text-base text-[var(--text-primary)]">¿Dónde terminó cada m³ del bosque?</CardTitle>
-          <InfoTip
-            title="Cómo se lee el flujo"
-            what="Las trozas se bifurcan: una parte se vende en rollo y otra entra a planta."
-            affects="Los porcentajes de cada rama son sobre lo trozado, no sobre el total talado."
-            example="Si 60 de 100 m³ trozados van a planta, esa rama muestra 60%, aunque sean 48% de lo talado."
-          />
-        </div>
-        <span className="font-mono text-xs font-bold tabular-nums text-[var(--text-tertiary)]">
-          {fm(f.totalM3, 4)} m³ talados
-        </span>
-      </header>
-
+    <div>
       <ol className="space-y-1">
         {f.nodos.map((n) => {
           const m = n.key === "trozado" ? merma("trozado") : n.key === "producto" ? merma("aserrio") : null;
@@ -205,7 +143,7 @@ export function FlujoPanel({ f }: { f: FlujoAprovechamiento }) {
         <Dato label="Rendimiento de aserrío" valor={f.rendimientoAserrioPct != null ? `${f.rendimientoAserrioPct}%` : "—"} hint="producto sobre lo que entró a planta" />
         <Dato label="Se vendió en rollo" valor={f.ventaEnRolloPct != null ? `${f.ventaEnRolloPct}%` : "—"} hint="de lo trozado, sin transformar" />
       </dl>
-    </section>
+    </div>
   );
 }
 

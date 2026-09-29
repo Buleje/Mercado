@@ -63,10 +63,17 @@ export const PARAMS_DE_VISTA = [
 ] as const;
 
 /** Lee la vista que pide la URL, validada contra las que el módulo declara. */
-function vistaDeUrl(validas: readonly string[], param: string): string | null {
+function vistaDeUrl(validas: readonly string[], param: string, alias?: Readonly<Record<string, string>>): string | null {
   if (typeof window === "undefined") return null;
   const v = new URLSearchParams(window.location.search).get(param);
-  return v && validas.includes(v) ? v : null;
+  return v ? aVistaValida(v, validas, alias) : null;
+}
+
+/** La vista válida que corresponde a `v`: ella misma o, si es un nombre viejo, su alias. */
+function aVistaValida(v: string, validas: readonly string[], alias?: Readonly<Record<string, string>>): string | null {
+  if (validas.includes(v)) return v;
+  const destino = alias?.[v];
+  return destino && validas.includes(destino) ? destino : null;
 }
 
 /**
@@ -82,6 +89,14 @@ function vistaDeUrl(validas: readonly string[], param: string): string | null {
  * El «atrás» no pasa por acá: cada entrada del historial trae su propia URL.
  */
 export type ParamsDeVista<T extends string> = Partial<Record<T, readonly string[]>>;
+
+/**
+ * Vistas que se fusionaron con otra: nombre viejo → vista que hoy lo cubre.
+ * Un link guardado (`?vista=analitica`), la memoria del navegador o un
+ * `irA("analitica")` de otra pantalla siguen llegando a un destino real en vez
+ * de caer en la vista por defecto sin decir nada.
+ */
+export type AliasDeVista<T extends string> = Readonly<Record<string, T>>;
 
 export interface UseVistaModuloResult<T extends string> {
   vista: T;
@@ -109,7 +124,7 @@ export function useVistaModulo<T extends string>(
    * módulo, así que sólo sobrevive el que se eligió DENTRO de este.
    */
   forzada?: string,
-  opciones?: { paramsDeVista?: ParamsDeVista<T> },
+  opciones?: { paramsDeVista?: ParamsDeVista<T>; alias?: AliasDeVista<T> },
 ): UseVistaModuloResult<T> {
   return useVistaEnParam(
     moduleId,
@@ -119,6 +134,7 @@ export function useVistaModulo<T extends string>(
     PARAM_VISTA,
     true,
     opciones?.paramsDeVista,
+    opciones?.alias,
   );
 }
 
@@ -157,12 +173,15 @@ function useVistaEnParam<T extends string>(
   param: string,
   recordar = true,
   paramsDeVista?: ParamsDeVista<T>,
+  alias?: AliasDeVista<T>,
 ): UseVistaModuloResult<T> {
   const storageKey = `admin-last-tab-${moduleId}`;
   /* En un ref: quien llama lo pasa como literal y un objeto nuevo en cada
      render no tiene que regenerar `irA`. */
   const paramsDeVistaRef = useRef(paramsDeVista);
   paramsDeVistaRef.current = paramsDeVista;
+  const aliasRef = useRef(alias);
+  aliasRef.current = alias;
 
   const [vista, setVista] = useState<T>(() => {
     if (typeof window === "undefined") {
@@ -172,7 +191,7 @@ function useVistaEnParam<T extends string>(
     }
     // 1. La URL manda: un link compartido tiene que abrir SIEMPRE lo mismo,
     //    sin importar dónde quedó esta persona la última vez.
-    const deUrl = vistaDeUrl(validas, param);
+    const deUrl = vistaDeUrl(validas, param, alias);
     if (deUrl) return deUrl as T;
     // 2. La vista que impone el tab alias.
     if (forzada && (validas as readonly string[]).includes(forzada)) return forzada as T;
@@ -180,7 +199,8 @@ function useVistaEnParam<T extends string>(
     if (!recordar) return porDefecto;
     try {
       const guardada = localStorage.getItem(storageKey);
-      if (guardada && (validas as readonly string[]).includes(guardada)) return guardada as T;
+      const valida = guardada ? aVistaValida(guardada, validas, alias) : null;
+      if (valida) return valida as T;
     } catch {
       // localStorage puede fallar (modo privado): sin memoria, sin bug.
     }
@@ -206,9 +226,10 @@ function useVistaEnParam<T extends string>(
   useEffect(() => {
     if (sincronizado.current) return;
     sincronizado.current = true;
-    // Si la URL ya trae una vista válida, no hay nada que sincronizar; si la
-    // decidió el tab alias o la memoria, se escribe para que el link sea copiable.
-    if (vistaDeUrl(validas, param)) return;
+    // Si la URL ya trae ESA vista, no hay nada que sincronizar; si la decidió el
+    // tab alias, la memoria o un nombre viejo (`?vista=analitica`), se escribe
+    // el nombre de hoy para que el link sea copiable.
+    if (new URLSearchParams(window.location.search).get(param) === vista) return;
     try {
       const url = new URL(window.location.href);
       url.searchParams.set(param, vista);
@@ -221,8 +242,9 @@ function useVistaEnParam<T extends string>(
   }, []);
 
   const irA = useCallback(
-    (v: string) => {
-      if (!(validas as readonly string[]).includes(v)) return;
+    (pedida: string) => {
+      const v = aVistaValida(pedida, validas, aliasRef.current);
+      if (!v) return;
       setVista(v as T);
       try {
         const url = new URL(window.location.href);
@@ -241,7 +263,7 @@ function useVistaEnParam<T extends string>(
   /** Atrás/adelante → seguir a la URL. Sin esto el historial mentiría. */
   useEffect(() => {
     const onPop = () => {
-      const deUrl = vistaDeUrl(validas, param);
+      const deUrl = vistaDeUrl(validas, param, aliasRef.current);
       if (deUrl) setVista(deUrl as T);
     };
     window.addEventListener("popstate", onPop);

@@ -18,7 +18,7 @@
  */
 
 export type LothComplianceTone = "success" | "warning" | "error";
-export type LothNavTarget = "analitica" | "secciones" | "plan" | "caratula" | "gtf";
+export type LothNavTarget = "rentabilidad" | "secciones" | "plan" | "caratula" | "gtf";
 export type LothSeverity = "error" | "warning";
 
 /** Una anomalía tal como la devuelve `detectAnomalias`. */
@@ -164,8 +164,8 @@ export function computeLothCompliance(input: LothComplianceInput): LothComplianc
           ? `Movilizar más de lo autorizado por el POA es la infracción que sanciona OSINFOR: ${listar(speciesOf("exceso_autorizado"))}.`
           : "Ninguna especie movilizó más de su volumen autorizado.",
       action: "Revisa el Balance por especie y frena la movilización de la especie excedida.",
-      navTarget: "analitica",
-      navigateLabel: "Ver analítica",
+      navTarget: "rentabilidad",
+      navigateLabel: "Ver rentabilidad",
     },
     {
       key: "especieNoAutorizada",
@@ -194,8 +194,8 @@ export function computeLothCompliance(input: LothComplianceInput): LothComplianc
           ? "Se despachó más producto (m³) del que entró como materia prima consumida — rendimiento >100%."
           : "El producto despachado no supera la materia prima consumida.",
       action: "Verifica cantidades de consumo vs. despacho de producto.",
-      navTarget: "analitica",
-      navigateLabel: "Ver analítica",
+      navTarget: "rentabilidad",
+      navigateLabel: "Ver rentabilidad",
     },
     {
       key: "trozadoTala",
@@ -254,8 +254,8 @@ export function computeLothCompliance(input: LothComplianceInput): LothComplianc
           ? `Queda menos del 10% del volumen autorizado: ${listar(speciesOf("saldo_bajo"))}.`
           : "Ninguna especie está por agotar su saldo autorizado.",
       action: "Planifica el cierre del aprovechamiento de esas especies.",
-      navTarget: "analitica",
-      navigateLabel: "Ver analítica",
+      navTarget: "rentabilidad",
+      navigateLabel: "Ver rentabilidad",
     },
     {
       // CITES es LEGAL con permiso archivado → recordatorio, NUNCA resta score

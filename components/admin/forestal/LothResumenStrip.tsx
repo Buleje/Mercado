@@ -3,12 +3,13 @@
 /**
  * LothResumenStrip — resumen "de un vistazo" del aprovechamiento, arriba de las
  * secciones del Libro TH. El dueño abre el libro y ve el estado de su operación
- * (bosque → producto) sin tener que leer una tabla cruda ni ir a Analítica.
+ * (bosque → producto) sin tener que leer una tabla cruda ni ir a «Rentabilidad y rendimiento».
  *
- * Teaser compacto (NO duplica Analítica): el embudo de 3 etapas de negocio
+ * Teaser compacto (NO duplica «Rentabilidad y rendimiento»): el embudo de 3 etapas de negocio
  * (Talado → Trozado → Movilizado) + rendimiento + saldo autorizado + alertas,
- * con enlaces a la Analítica y al Cumplimiento para el detalle. Misma fuente que
- * la Analítica (`/plan?analytics=1`) → nunca dicen números distintos.
+ * con enlaces a «Rentabilidad y rendimiento» y al Cumplimiento para el detalle. Misma
+ * fuente (`/plan?analytics=1`), pero SIN plan: son cifras del libro ENTERO. Con 2 o
+ * más planes, «Rentabilidad y rendimiento» pide por plan y puede dar otra cifra.
  *
  * Se pliega, y la preferencia se recuerda en el navegador (Brandon,
  * 2026-09-18). Es del libro entero, no de una sección: una sola clave. Plegado
@@ -48,7 +49,7 @@ interface Analytics {
 
 const fm = (n: number, dp = 2) => n.toLocaleString("es-PE", { minimumFractionDigits: dp, maximumFractionDigits: dp });
 
-export default function LothResumenStrip({ onNavigate, reloadSignal }: { onNavigate: (view: "analitica" | "cumplimiento") => void; reloadSignal?: number }) {
+export default function LothResumenStrip({ onNavigate, reloadSignal }: { onNavigate: (view: "rentabilidad" | "cumplimiento") => void; reloadSignal?: number }) {
   const [data, setData] = useState<Analytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [abierto, setAbierto] = useLocalStorage<boolean>(CLAVE_RESUMEN_ABIERTO, false);
@@ -174,10 +175,11 @@ export default function LothResumenStrip({ onNavigate, reloadSignal }: { onNavig
           {abierto && (
           <button
             type="button"
-            onClick={() => onNavigate("analitica")}
+            onClick={() => onNavigate("rentabilidad")}
+            title="Rentabilidad y rendimiento, de un plan. Estas cifras son del libro entero (todos los planes)."
             className="inline-flex h-8 items-center gap-1 rounded-lg px-1.5 text-xs font-bold text-[var(--accent-ink)] hover:underline dark:text-[var(--accent)]"
           >
-            Ver analítica <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
+            Ver rentabilidad <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
           </button>
           )}
           <button
