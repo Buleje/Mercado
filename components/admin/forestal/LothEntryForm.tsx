@@ -74,6 +74,7 @@ import { olvidarCensoDeTala, useCensoDeTala } from "./hooks/use-censo-de-tala";
 import type { TandaTalaInicial } from "./hooks/use-tala-en-tanda";
 import { arbolDeTroza, type ArbolParaElegir } from "@/lib/forestal/loth-censo-uso";
 import LothAvisoTransformacion from "./LothAvisoTransformacion";
+import LothAvisoPlazo from "./LothAvisoPlazo";
 import { cientificoDeEspecie } from "@/lib/forestal/especies-catalogo";
 import { useEspeciesCatalogo } from "./hooks/use-especies-catalogo";
 import { logger } from "@/lib/logger";
@@ -1182,9 +1183,14 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
 
             {/* Los datos de la línea: grilla de 6, cada campo corto ocupa media fila. */}
             <div className="grid grid-cols-6 gap-x-3 gap-y-3 [&>*]:min-w-0">
-              <Field label="Fecha" required className="col-span-3">
-                <input type="date" value={entryDate} onChange={(e) => setEntryDate(e.target.value)} required className={cls.input} />
-              </Field>
+              {/* El aviso de plazo va FUERA del <label> del campo: trae su ⓘ,
+                  y un botón adentro del rótulo le cambia el nombre al campo. */}
+              <div className="col-span-3">
+                <Field label="Fecha" required>
+                  <input type="date" value={entryDate} onChange={(e) => setEntryDate(e.target.value)} required className={cls.input} />
+                </Field>
+                <LothAvisoPlazo fecha={entryDate} />
+              </div>
 
               {fields.has("treeCode") && (
                 <Field label="Código del árbol" required={!fields.has("trozaCode")} hint="El código del censo forestal — punto de partida de la trazabilidad" className="col-span-3">

@@ -13,6 +13,7 @@ import type { FormaMedicion } from "@/lib/forestal/loth-forma-medicion";
 import { diaDelLibro } from "@/lib/forestal/loth-censo-uso";
 import { obligatoriedadTala, MODOS_UI } from "@/lib/forestal/loth-tala";
 import type { ComunesTala } from "@/lib/forestal/loth-tala-tanda";
+import LothAvisoPlazo from "./LothAvisoPlazo";
 import { colaboradorPorNombre } from "./LothTalaDatosInternos";
 import { SelectorFormaMedicion } from "./LothMedicionPartes";
 import type { Motosierrista } from "./hooks/use-tala-en-tanda";
@@ -54,19 +55,24 @@ export default function LothTalaTandaComunes({
         />
       </div>
       <div className="grid grid-cols-6 gap-3 [&>*]:min-w-0">
-        <label className="col-span-6 block sm:col-span-2">
-          <span className={ROTULO}>
-            Fecha de tala
-            {dia && <span className="font-mono text-xs font-semibold text-[var(--text-secondary)]">{dia}</span>}
-          </span>
-          <input
-            type="date"
-            value={comunes.fecha}
-            disabled={bloqueada}
-            onChange={(e) => e.target.value && onComunes({ ...comunes, fecha: e.target.value })}
-            className={`${INPUT} font-mono tabular-nums`}
-          />
-        </label>
+        {/* El aviso de plazo, FUERA del <label>: trae su ⓘ. Es la fecha de
+            la jornada; una fila con su propia fecha se asienta con la suya. */}
+        <div className="col-span-6 sm:col-span-2">
+          <label className="block">
+            <span className={ROTULO}>
+              Fecha de tala
+              {dia && <span className="font-mono text-xs font-semibold text-[var(--text-secondary)]">{dia}</span>}
+            </span>
+            <input
+              type="date"
+              value={comunes.fecha}
+              disabled={bloqueada}
+              onChange={(e) => e.target.value && onComunes({ ...comunes, fecha: e.target.value })}
+              className={`${INPUT} font-mono tabular-nums`}
+            />
+          </label>
+          <LothAvisoPlazo fecha={comunes.fecha} />
+        </div>
         <label className="col-span-6 block sm:col-span-3">
           <span className={ROTULO}>Motosierrista</span>
           <input

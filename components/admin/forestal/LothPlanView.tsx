@@ -317,7 +317,12 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
             /* La vigencia del plan también obliga a hacer algo: renovarlo ante
                la ARFFS lleva meses, y la guía que se emita con el papel vencido
                queda observada. */
-            plan={plan ? { codigo: plan.planNumber ?? plan.tituloHabilitante, vigenciaHasta: plan.vigenciaHasta, estado: plan.estado } : null}
+            plan={plan ? {
+              codigo: plan.planNumber ?? plan.tituloHabilitante, vigenciaHasta: plan.vigenciaHasta, estado: plan.estado,
+              // Para ofrecer unirlo con el permiso del mismo código (un clic).
+              id: plan.id, contratoId: plan.contratoId, planNumber: plan.planNumber, tituloHabilitante: plan.tituloHabilitante,
+            } : null}
+            onPlanUnido={d.loadPlans}
           />
 
           <LothPlanPestanas pestanas={pestanas} activa={pestana} onCambiar={setPestana} />

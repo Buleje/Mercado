@@ -14,6 +14,7 @@ import {
   estaFueraDePlazo,
   type LothSection,
 } from "@/lib/forestal/loth-constants";
+import { avisoLibroIncompleto } from "@/lib/forestal/loth-libro-entero";
 
 type AnyEntry = Record<string, unknown>;
 type AnyCaratula = Record<string, unknown> | null;
@@ -118,6 +119,11 @@ const HEADER_FONT = { bold: true, color: { argb: "FFFFFFFF" }, size: 11 };
 export async function buildLothWorkbook(opts: {
   caratula: AnyCaratula;
   entries: AnyEntry[];
+  /**
+   * Cuántas líneas tiene el libro. Si es más que `entries`, el archivo lo dice
+   * en la Carátula y en el Resumen: un libro incompleto no se entrega callado.
+   */
+  totalLibro?: number;
   generatedAtISO: string;
 }): Promise<Buffer> {
   const ExcelJS = (await import("exceljs")).default;
@@ -133,6 +139,15 @@ export async function buildLothWorkbook(opts: {
   cs.mergeCells("A2:B2");
   cs.getCell("A2").value = "Anexo 1 · RDE N° 264-2019-MINAGRI-SERFOR-DE";
   cs.getCell("A2").font = { italic: true, size: 10, color: { argb: "FF6B7280" } };
+  const incompleto = avisoLibroIncompleto({
+    mostradas: opts.entries.length,
+    total: opts.totalLibro ?? opts.entries.length,
+  });
+  if (incompleto) {
+    cs.mergeCells("A3:B3");
+    cs.getCell("A3").value = incompleto;
+    cs.getCell("A3").font = { bold: true, color: { argb: "FFB91C1C" } };
+  }
   let row = 4;
   for (const [key, label] of CARATULA_FIELDS) {
     cs.getCell(`A${row}`).value = label;
@@ -201,6 +216,10 @@ export async function buildLothWorkbook(opts: {
     r.getCell(5).numFmt = "0.0000";
   });
   rs.columns.forEach((c, i) => { c.width = i === 0 ? 34 : 14; });
+  if (incompleto) {
+    const r = rs.addRow([incompleto]);
+    r.font = { bold: true, color: { argb: "FFB91C1C" } };
+  }
 
   const buf = await wb.xlsx.writeBuffer();
   return Buffer.from(buf);

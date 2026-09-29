@@ -9,17 +9,120 @@
  *   · el censo vino cortado → todo lo que se calcula sobre él es parcial;
  *   · la VIGENCIA del plan venció o está por vencer;
  *   · una especie censada que NO figura en la resolución (tala no autorizada);
- *   · una especie con más árboles censados que los autorizados.
+ *   · una especie con más árboles censados que los autorizados;
+ *   · el plan y un permiso tienen el MISMO código y no están unidos (un clic).
  *
  * Cuando todo cuadra queda una sola línea, sin caja: «todo en regla» no es un
  * aviso y no debe pesar como uno.
  */
 
-import { AlertTriangle, Ban, CalendarClock, CheckCircle2 } from "@buleje/design-system/icons";
+import { useState } from "react";
+import { AlertTriangle, Ban, CalendarClock, CheckCircle2, Link2 } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { csrfHeaders } from "@/lib/csrf-client";
+import { leerJson } from "@/lib/errores/sin-dato";
 import { avisoDeVigencia } from "@/lib/forestal/vigencia-avisos";
+import { permisoGemeloDelPlan } from "@/lib/forestal/loth-plan-permiso";
+import { usePermisosForestal } from "@/hooks/use-permisos-forestal";
+import { Btn } from "./ctp-shared";
 import type { ControlRow } from "./loth-plan-shared";
 
-export default function LothPlanAvisos({ rows, onResolver, truncado, plan }: {
+/** Lo que el aviso de «unir» necesita del plan en pantalla. */
+interface PlanEnPantalla {
+  id?: string | null;
+  contratoId?: string | null;
+  planNumber?: string | null;
+  tituloHabilitante?: string | null;
+}
+
+/**
+ * «Este plan y el permiso X tienen el mismo código: ¿los unimos?».
+ *
+ * Hoy plan y permiso sólo se atan si el permiso se elige del Directorio al dar
+ * de alta el plan; un plan cargado a mano queda suelto aunque su código sea el
+ * del permiso (Blas: 19-SEC/REG-PLT-2025-096). Unir usa las MISMAS dos
+ * escrituras que el alta con Directorio (`LothPlanForm`): el plan guarda el
+ * permiso (`contratoId`) y el permiso guarda su plan (`planId`).
+ *
+ * Con dos o más permisos candidatos no se sugiere nada (`permisoGemeloDelPlan`).
+ */
+/** Qué quedó después de unir: con qué permiso y, si el permiso no guardó su plan, por qué. */
+interface Unido {
+  planId: string;
+  contratoId: string;
+  codigo: string;
+  pendiente: string | null;
+}
+
+/**
+ * Lo recién unido, por plan, mientras dure la sesión de la página.
+ *
+ * Unir recarga los planes, y mientras recargan la vista del plan se desmonta
+ * entera (muestra el «cargando»): un estado de React acá se perdía y el aviso
+ * desaparecía sin respuesta — medido en el navegador el 29-09: el plan quedó
+ * unido y la pantalla no lo dijo. Guardado afuera del componente, la línea
+ * «Plan unido al permiso…» sobrevive a esa recarga.
+ */
+const unidosEnLaSesion = new Map<string, Unido>();
+
+function UnirConPermiso({ plan, onUnido }: { plan: PlanEnPantalla & { id: string }; onUnido: (u: Unido) => void }) {
+  const { contratos, disponible, actualizar } = usePermisosForestal({ activo: true });
+  const [uniendo, setUniendo] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const gemelo = permisoGemeloDelPlan(plan, contratos);
+  if (!disponible || !gemelo) return null;
+  const permiso = gemelo;
+
+  async function unir() {
+    setUniendo(true);
+    setError(null);
+    try {
+      const r = await fetch("/api/admin/forestal/plan", {
+        method: "PATCH",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        credentials: "include",
+        body: JSON.stringify({ id: plan.id, contratoId: permiso.id }),
+      });
+      if (!r.ok) {
+        const j = await leerJson<{ message?: string; error?: string }>(r);
+        throw new Error(j?.message ?? j?.error ?? `No se pudo unir (HTTP ${r.status})`);
+      }
+      /* Del otro lado, el permiso guarda su plan. Si esto falla, el plan YA
+         quedó unido: se dice, no se deshace. */
+      const atado = await actualizar(permiso.id, { planId: plan.id });
+      onUnido({ planId: plan.id, contratoId: permiso.id, codigo: permiso.codigo, pendiente: atado.error });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+      setUniendo(false);
+    }
+  }
+
+  return (
+    <div
+      data-aviso-unir={permiso.codigo}
+      className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border-2 border-[var(--data-info-500)]/50 bg-[var(--data-info-500)]/10 px-4 py-2.5 text-sm text-[var(--data-info-ink)]"
+    >
+      <Link2 className="h-4 w-4 shrink-0" aria-hidden="true" />
+      <span className="flex min-w-0 grow basis-[18rem] items-center gap-1">
+        <span className="min-w-0">
+          Este plan y el permiso <span className="font-mono font-bold">{permiso.codigo}</span> tienen el mismo código: ¿los unimos?
+        </span>
+        <InfoTip
+          title="Unir el plan con su permiso"
+          what="Es el mismo papel cargado dos veces: una como plan de manejo y otra como permiso del Directorio."
+          affects="Unidos, el permiso lleva su plan (censo, especies autorizadas, POA) y el plan su permiso. No se borra ni se cambia nada más."
+          example="Si el código no es del mismo papel, no los unas: elige el permiso correcto desde el Directorio."
+        />
+      </span>
+      <Btn variant="primary" size="sm" onClick={() => void unir()} disabled={uniendo} aria-busy={uniendo}>
+        {uniendo ? "Uniendo…" : "Unirlos"}
+      </Btn>
+      {error && <p role="alert" className="basis-full text-sm font-semibold text-[var(--data-error-ink)]">{error}</p>}
+    </div>
+  );
+}
+
+export default function LothPlanAvisos({ rows, onResolver, truncado, plan, onPlanUnido }: {
   rows: ControlRow[];
   onResolver?: (especie: string) => void;
   /** El censo tiene `total` árboles y se cargaron `cargados`. */
@@ -32,8 +135,11 @@ export default function LothPlanAvisos({ rows, onResolver, truncado, plan }: {
    * Libro CTP para el permiso (`vigencia-avisos`), así que el mismo papel no
    * puede decir días distintos en dos pantallas.
    */
-  plan?: { codigo?: string | null; vigenciaHasta?: string | null; estado?: string | null } | null;
+  plan?: ({ codigo?: string | null; vigenciaHasta?: string | null; estado?: string | null } & PlanEnPantalla) | null;
+  /** Después de unir el plan con su permiso: recargar el plan. */
+  onPlanUnido?: () => void;
 }) {
+  const [, setVersion] = useState(0);
   const hasCenso = rows.some((r) => r.censadoCount > 0);
   const noAut = rows.filter((r) => r.flags.includes("no_autorizada"));
   const excArb = rows.filter((r) => r.flags.includes("exceso_arboles"));
@@ -47,7 +153,16 @@ export default function LothPlanAvisos({ rows, onResolver, truncado, plan }: {
         clase: "plan",
       })
     : null;
-  if (!truncado && !hasCenso && !vigencia) return null;
+  /* Sólo se busca un permiso gemelo para un plan con id y SIN permiso: un plan
+     ya unido no pide nada (y no se gasta una consulta). */
+  const planSinPermiso = plan?.id && !plan.contratoId ? { ...plan, id: plan.id } : null;
+  /* Lo que se unió queda dicho aunque el plan se recargue (y el aviso de unir,
+     que ya no aplica, se vaya): un aviso que desaparece sin respuesta parece
+     un clic perdido. */
+  const recien = plan?.id ? unidosEnLaSesion.get(plan.id) ?? null : null;
+  // Si después alguien lo soltó o lo cambió de permiso, la línea ya no es cierta.
+  const unidoAca = recien && (!plan?.contratoId || plan.contratoId === recien.contratoId) ? recien : null;
+  if (!truncado && !hasCenso && !vigencia && !planSinPermiso && !unidoAca) return null;
 
   return (
     <div className="space-y-2">
@@ -84,6 +199,36 @@ export default function LothPlanAvisos({ rows, onResolver, truncado, plan }: {
             <span className="font-medium">{vigencia.detalle}</span>
           </span>
         </p>
+      )}
+
+      {/* Unir va después de lo que bloquea (censo cortado, vigencia): es un
+          arreglo de un clic, no una urgencia. */}
+      {planSinPermiso && !unidoAca && (
+        <UnirConPermiso
+          key={planSinPermiso.id}
+          plan={planSinPermiso}
+          onUnido={(u) => {
+            unidosEnLaSesion.set(u.planId, u);
+            setVersion((v) => v + 1);
+            onPlanUnido?.();
+          }}
+        />
+      )}
+      {unidoAca && (
+        <div role="status" data-aviso-unir="unido" className="space-y-1">
+          <p className="flex items-center gap-2 text-sm font-medium text-[var(--data-success-ink)]">
+            <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />
+            {/* Un solo hijo de texto: en un flex con gap, el punto suelto quedaba separado. */}
+            <span>
+              Plan unido al permiso <span className="font-mono font-bold">{unidoAca.codigo}</span>.
+            </span>
+          </p>
+          {unidoAca.pendiente && (
+            <p className="text-sm font-semibold text-[var(--data-error-ink)]">
+              El permiso no guardó su plan: {unidoAca.pendiente}
+            </p>
+          )}
+        </div>
       )}
 
       {todoBien && (

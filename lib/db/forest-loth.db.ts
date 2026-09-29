@@ -995,7 +995,11 @@ export class ForestLothDB {
     const [entries, total] = await Promise.all([
       prisma.forestLothEntry.findMany({
         where,
-        orderBy: [{ section: "asc" }, { lineNo: "asc" }],
+        // `id` desempata: el N° de línea se repite entre carátulas (medido en
+        // `main`: 7 pares sección+línea). Sin desempate, dos páginas seguidas
+        // podían traer la misma línea y saltarse otra — y el impreso/Excel
+        // leen el libro entero de a páginas (`leerLibroEntero`).
+        orderBy: [{ section: "asc" }, { lineNo: "asc" }, { id: "asc" }],
         take: limit,
         skip: offset,
       }),

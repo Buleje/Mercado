@@ -3,8 +3,10 @@
 /**
  * loth-print.ts — Export cliente del Libro LO-TH:
  *  - downloadLothExcel(): descarga el .xlsx del endpoint server (exceljs).
- *  - printLothLibro(): abre una ventana con el libro en formato oficial SERFOR
- *    e invoca print() (el usuario elige "Guardar como PDF").
+ *  - printLothLibro(): abre una ventana con el libro ENTERO en formato oficial
+ *    SERFOR y un botón «Imprimir / Guardar como PDF». No se imprime sola: como
+ *    en los reportes del Libro CTP (`openCtpReport`), el libro se ve primero y
+ *    la persona decide.
  * Client-safe: sin imports de lib/db ni prisma.
  */
 import {
@@ -14,6 +16,7 @@ import {
   estaFueraDePlazo,
   type LothSection,
 } from "@/lib/forestal/loth-constants";
+import { avisoLibroIncompleto, leerLibroEntero, type LibroEntero } from "@/lib/forestal/loth-libro-entero";
 
 export async function downloadLothExcel(): Promise<void> {
   const res = await fetch("/api/admin/forestal/loth/export?format=xlsx", { credentials: "include" });
@@ -157,19 +160,58 @@ function caratulaBlock(c: AnyCaratula): string {
   </div>`;
 }
 
-/** Abre el Libro LO-TH completo en una ventana e invoca print(). */
-export async function printLothLibro(): Promise<void> {
-  const [entriesRes, caratulaRes] = await Promise.all([
-    fetch("/api/admin/forestal/loth?limit=500&includeAnnulled=1", { credentials: "include" }),
-    fetch("/api/admin/forestal/loth/caratula", { credentials: "include" }),
-  ]);
-  if (!entriesRes.ok) throw new Error(`No se pudo cargar el libro (HTTP ${entriesRes.status})`);
-  const entries: AnyEntry[] = (await entriesRes.json()).entries ?? [];
-  const caratula: AnyCaratula = caratulaRes.ok ? (await caratulaRes.json()).active ?? null : null;
+/** Una página del libro, por la misma ruta que usa la pantalla. */
+async function leerPaginaDelLibro(offset: number, limit: number): Promise<{ entries: AnyEntry[]; total: number }> {
+  const r = await fetch(`/api/admin/forestal/loth?limit=${limit}&offset=${offset}&includeAnnulled=1`, { credentials: "include" });
+  if (!r.ok) throw new Error(`No se pudo cargar el libro (HTTP ${r.status})`);
+  const j = (await r.json()) as { entries?: AnyEntry[]; total?: number };
+  const entries = j.entries ?? [];
+  return { entries, total: Number(j.total ?? entries.length) };
+}
+
+/**
+ * Abre el Libro LO-TH ENTERO en una ventana, listo para imprimir.
+ *
+ * Antes pedía `limit=500` y un libro de 650 líneas se imprimía con 500 — el
+ * papel que se declara ante SERFOR salía incompleto sin decirlo. Ahora lee
+ * todas las páginas; si alguna vez choca con el tope de seguridad, el impreso
+ * lo dice arriba («Se muestran N de M»).
+ *
+ * La ventana se abre en el MISMO clic, antes de esperar al servidor: después de
+ * un `await` el navegador la trata como pop-up y la bloquea (ADR-436). Por eso
+ * esto se llama sin `await` previo en el manejador del botón.
+ */
+export async function printLothLibro(opts: { ventana?: Window | null } = {}): Promise<void> {
+  const w = opts.ventana ?? window.open("", "_blank", "width=1100,height=800");
+  if (!w) throw new Error("El navegador bloqueó la ventana de impresión. Permite pop-ups para este sitio.");
+  w.document.write(
+    '<!doctype html><meta charset="utf-8"><title>Generando el libro…</title><p style="font:16px system-ui;padding:24px">Generando el libro…</p>',
+  );
+
+  let libro: LibroEntero<AnyEntry>;
+  let caratula: AnyCaratula;
+  try {
+    const [l, caratulaRes] = await Promise.all([
+      leerLibroEntero<AnyEntry>(leerPaginaDelLibro),
+      fetch("/api/admin/forestal/loth/caratula", { credentials: "include" }),
+    ]);
+    libro = l;
+    caratula = caratulaRes.ok ? (await caratulaRes.json()).active ?? null : null;
+  } catch (err) {
+    w.close();
+    throw err;
+  }
+  const entries = libro.entries;
+  const incompleto = avisoLibroIncompleto({ mostradas: entries.length, total: libro.total });
   const now = new Date().toLocaleString("es-PE", { dateStyle: "long", timeStyle: "short" });
 
   const sections = LOTH_SECTIONS.map((s) => sectionTable(s, entries)).join("");
+  /* Sin script en el documento (defensa en profundidad, igual que
+     `openCtpReport`): cada campo pasa por `esc()`, y con esta CSP un olvido no
+     se vuelve XSS con la sesión del admin. El botón se ata desde afuera. */
+  const csp = "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data: https:; font-src data:";
   const html = `<!doctype html><html lang="es"><head><meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="${csp}">
   <title>Libro LO-TH${caratula?.titularName ? ` — ${esc(caratula.titularName)}` : ""}</title>
   <style>
     @page { size: A4 landscape; margin: 12mm; }
@@ -198,12 +240,17 @@ export async function printLothLibro(): Promise<void> {
     .foot { margin-top: 24px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; page-break-inside: avoid; }
     .sign { border-top: 1px solid #111827; padding-top: 4px; text-align: center; font-size: 10px; }
     .legal { margin-top: 16px; font-size: 9px; color: #6b7280; border-top: 1px dashed #d1d5db; padding-top: 6px; }
-    @media print { .noprint { display: none; } }
+    .incompleto { border: 2px solid #b91c1c; background: #fef2f2; color: #991b1b; font-weight: 700; border-radius: 8px; padding: 8px 12px; margin-bottom: 12px; font-size: 12px; }
+    .print-bar { position: sticky; top: 0; z-index: 10; display: flex; justify-content: flex-end; gap: 8px; padding: 8px 0; margin: 0 0 6px; background: #fff; }
+    .print-bar button { cursor: pointer; border: 0; border-radius: 8px; padding: 9px 16px; font: 700 13px system-ui, sans-serif; background: #14532d; color: #fff; }
+    @media print { .noprint, .print-bar { display: none; } }
   </style></head><body>
+    <div class="print-bar"><button type="button" id="loth-print">Imprimir / Guardar como PDF</button></div>
     <div class="doc-head">
       <h1>Libro de Operaciones — Títulos Habilitantes</h1>
       <div class="sub">RDE N° 264-2019-MINAGRI-SERFOR-DE · Generado ${esc(now)} · Sistema Buleje</div>
     </div>
+    ${incompleto ? `<div class="incompleto" data-libro-incompleto>${esc(incompleto)}</div>` : ""}
     ${caratulaBlock(caratula)}
     ${sections}
     <div class="foot">
@@ -216,12 +263,11 @@ export async function printLothLibro(): Promise<void> {
       operaciones efectivamente realizadas. Las líneas tachadas corresponden a subsanaciones (no se eliminan registros).
       Las filas resaltadas en ámbar indican registro fuera del plazo de ${PLAZO_REGISTRO_DIAS} días.
     </div>
-    <script>setTimeout(function(){window.print();}, 350);</script>
   </body></html>`;
 
-  const w = window.open("", "_blank", "width=1100,height=800");
-  if (!w) throw new Error("El navegador bloqueó la ventana de impresión. Permite pop-ups para este sitio.");
+  w.document.open(); // reemplaza el «Generando el libro…»
   w.document.write(html);
   w.document.close();
+  w.document.getElementById("loth-print")?.addEventListener("click", () => w.print());
   w.focus();
 }
