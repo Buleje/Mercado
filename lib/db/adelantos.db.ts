@@ -12,6 +12,7 @@ import {
 } from "@/lib/adelantos/codigo-operacion";
 import { estadoDelSaldo } from "@/lib/adelantos/saldo-adelanto";
 import { resumirPersona, type ResumenPersona } from "@/lib/adelantos/saldo-persona";
+import { resumirSinControl, type ResumenSinControl } from "@/lib/adelantos/sin-control";
 import {
   etiquetaEgreso,
   etiquetaIngreso,
@@ -1642,6 +1643,57 @@ export const AdelantosDB = {
         .sort(solesPrimero),
       recibido: resumirRecibidos(recibidos),
     };
+  },
+
+  /**
+   * Los adelantos que diste y quedaron sin control: quietos ≥ 30 días, sin
+   * fecha para devolverlos o vencidos (regla en `lib/adelantos/sin-control.ts`).
+   *
+   * SIN TOPE DE FILAS, a diferencia de `list()` (500): un aviso que dice
+   * «3 sin control» cuando son 40 es peor que no avisar. Por adelanto se trae
+   * sólo lo que la regla mira: la ÚLTIMA entrega viva (no todas) y las cuotas
+   * pendientes con fecha.
+   */
+  async sinControl(tenantId: string, ahora: Date = new Date()): Promise<ResumenSinControl> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const filas = await prisma.adelanto.findMany({
+      where: { tenantId, status: "ABIERTO", saldoPendiente: { gt: 0 }, ...SOLO_DADOS },
+      select: {
+        id: true,
+        codigoOperacion: true,
+        beneficiarioId: true,
+        status: true,
+        direccion: true,
+        saldoPendiente: true,
+        moneda: true,
+        fechaAdelanto: true,
+        fechaVencimiento: true,
+        beneficiario: { select: { nombre: true } },
+        /* ADR-413 §7: una entrega anulada no existe para nadie. */
+        entregas: { where: { anuladaAt: null }, select: { fecha: true }, orderBy: { fecha: "desc" }, take: 1 },
+        entregasPactadas: {
+          where: { cumplidaEn: null, fechaEsperada: { not: null } },
+          select: { numero: true, fechaEsperada: true, cumplidaEn: true },
+        },
+      },
+    });
+    return resumirSinControl(
+      filas.map((f) => ({
+        id: f.id,
+        codigoOperacion: f.codigoOperacion,
+        beneficiarioId: f.beneficiarioId,
+        nombre: f.beneficiario?.nombre ?? null,
+        status: f.status,
+        direccion: f.direccion,
+        saldoPendiente: toNum(f.saldoPendiente),
+        moneda: f.moneda,
+        fechaAdelanto: f.fechaAdelanto,
+        fechaVencimiento: f.fechaVencimiento,
+        entregas: f.entregas,
+        entregasPactadas: f.entregasPactadas,
+      })),
+      ahora,
+    );
   },
 
   /**
