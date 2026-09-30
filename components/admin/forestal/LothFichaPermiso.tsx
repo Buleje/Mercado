@@ -23,13 +23,15 @@ import {
   type EstadoFicha,
   type PlanFicha,
 } from "@/lib/forestal/loth-ficha-permiso";
+import { primerPasoIncompleto, queFalta, type PasoCaratula } from "@/lib/forestal/loth-caratula-pasos";
 import { DIAS_AVISO_VENCIMIENTO } from "@/lib/forestal/loth-plan-vigencia";
 import { formatNumber } from "@/lib/format";
 
 export interface LothFichaPermisoProps {
   caratula: CaratulaFicha | null | undefined;
   plan: PlanFicha | null | undefined;
-  onCompletarCaratula?: () => void;
+  /** Recibe el paso de la carátula que falta (1-3): quien abre el formulario puede caer ahí directo. */
+  onCompletarCaratula?: (paso: PasoCaratula) => void;
   onCompletarPlan?: () => void;
 }
 
@@ -87,13 +89,28 @@ export default function LothFichaPermiso({ caratula, plan, onCompletarCaratula, 
 
   /* Un «Completar» por pantalla que lo arregla, no uno por dato: la vigencia y
      la parcela se cargan en el mismo formulario del plan. */
+  const faltasCaratula = useMemo(() => (caratula ? queFalta(caratula) : []), [caratula]);
   const grupos = useMemo(() => {
     const orden: DondeCompletar[] = ["caratula", "plan"];
     return orden
-      .map((donde) => ({ donde, textos: f.faltantes.filter((x) => x.completar === donde).map((x) => x.texto) }))
+      .map((donde) => {
+        const textos = f.faltantes.filter((x) => x.completar === donde).map((x) => x.texto);
+        // Carátula cargada pero incompleta (registro, tomo, RUC…): lo dice y ofrece el paso que falta.
+        if (donde === "caratula" && textos.length === 0 && faltasCaratula.length > 0) {
+          const nombres = faltasCaratula.map((x) => x.texto.replace(/^(el|la) /, ""));
+          const resto = nombres.length - 2;
+          textos.push(`Falta en la carátula: ${nombres.slice(0, 2).join(", ")}${resto > 0 ? ` y ${resto} más` : ""}`);
+        }
+        return { donde, textos };
+      })
       .filter((g) => g.textos.length > 0);
-  }, [f.faltantes]);
-  const accion: Record<DondeCompletar, (() => void) | undefined> = { caratula: onCompletarCaratula, plan: onCompletarPlan };
+  }, [f.faltantes, faltasCaratula]);
+  /* «Completar carátula» cae en el primer paso que falta (título → titular → libro). */
+  const pasoQueFalta = useMemo(() => primerPasoIncompleto(caratula), [caratula]);
+  const accion: Record<DondeCompletar, (() => void) | undefined> = {
+    caratula: onCompletarCaratula ? () => onCompletarCaratula(pasoQueFalta) : undefined,
+    plan: onCompletarPlan,
+  };
 
   const cifra = f.diasQuedan == null ? null : Math.abs(f.diasQuedan);
   const bajoCifra =
