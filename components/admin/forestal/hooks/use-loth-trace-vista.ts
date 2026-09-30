@@ -6,9 +6,13 @@
  * Todo sale de UNA lista de filas (`construirFilasTrace`) y se recorta en tres
  * pasos, cada uno con su lector:
  *
- *   filas ──facetas (especie, fechas)──▶ porFacetas  → el embudo de arriba
- *         ──+ búsqueda──────────────────▶ candidatas → las cuentas del estado
- *         ──+ estado────────────────────▶ visibles   → la lista y el CSV
+ *   filas ──facetas (especie, fechas)──▶ porFacetas  → el avance y «Qué falta hacer»
+ *         ──+ búsqueda + paso del avance─▶ candidatas → las cuentas del estado
+ *         ──+ estado────────────────────▶ visibles   → los grupos y el CSV
+ *
+ * Los visibles se parten en grupos (`loth-trace-grupos`): en movimiento y
+ * terminados se paginan juntos, en ese orden; los en pie no se paginan, se
+ * resumen por especie en un bloque plegado.
  *
  * El estado NO recorta el embudo (ADR-400: los indicadores describen lo
  * registrado; el desglose por estado es otra pregunta), y la cuenta de cada
@@ -22,6 +26,7 @@ import type { LothEntryDTO } from "@/lib/forestal/loth-constants";
 import { buildTraceOperations } from "@/lib/forestal/loth-trace";
 import { construirFichasArbol, type ArbolCensoInput } from "@/lib/forestal/loth-arbol";
 import { construirFilasTrace, filasToCsv, resumirFilas, type TraceFila } from "@/lib/forestal/loth-trace-tabla";
+import { agruparPorEtapa, enPiePorEspecie, pasaPaso, pendientesDe, RANGO_GRUPO, grupoDe, trozasQueSalieron, type PasoAvance } from "@/lib/forestal/loth-trace-grupos";
 import { guardarUmbrales, leerUmbrales, UMBRALES_DEFAULT, type UmbralesMerma } from "@/lib/forestal/loth-trace-umbrales";
 import {
   claveDeFila,
@@ -39,6 +44,7 @@ export const POR_PAGINA = 25;
 /** Claves de las preferencias. Exportadas: la prueba en navegador las lee. */
 export const CLAVE_RESUMEN_ARBOL = "loth:arbol:resumen-abierto";
 export const CLAVE_MODO_ARBOL = "loth:arbol:modo";
+export const CLAVE_EN_PIE_ARBOL = "loth:arbol:en-pie-abierto";
 
 export interface OpcionEspecie {
   clave: string;
@@ -71,6 +77,9 @@ export function useLothTraceVista({
   // Lo guardado puede venir de otra versión: un valor que no existe cae al default.
   const modo: TraceModo = modoGuardado === "tabla" ? "tabla" : "tarjetas";
   const [resumenAbierto, setResumenAbierto] = useLocalStorage<boolean>(CLAVE_RESUMEN_ARBOL, false);
+  const [enPieAbierto, setEnPieAbierto] = useLocalStorage<boolean>(CLAVE_EN_PIE_ARBOL, false);
+  /** Paso del avance elegido (Censo, Talados…): filtra la lista a esa etapa. */
+  const [paso, setPaso] = useState<PasoAvance | null>(null);
   const [especie, setEspecie] = useState("");
   const [desde, setDesde] = useState("");
   const [hasta, setHasta] = useState("");
@@ -104,13 +113,22 @@ export function useLothTraceVista({
     [filas, especie, desde, hasta],
   );
   const candidatas = useMemo(
-    () => porFacetas.map((f) => ({ f, m: filaMatches(f, search) })).filter(({ m }) => m.matched),
-    [porFacetas, search],
+    () => porFacetas.filter((f) => pasaPaso(f, paso)).map((f) => ({ f, m: filaMatches(f, search) })).filter(({ m }) => m.matched),
+    [porFacetas, search, paso],
   );
+  // Primero el grupo (lo que pide trabajo arriba), después el orden elegido:
+  // así el «siguiente» del detalle recorre los árboles en el orden en que se ven.
   const visibles = useMemo(
-    () => candidatas.filter(({ f }) => pasaFiltro(f, filtro)).sort((a, b) => ORDENADORES[orden](a.f, b.f)),
+    () =>
+      candidatas
+        .filter(({ f }) => pasaFiltro(f, filtro))
+        .sort((a, b) => RANGO_GRUPO[grupoDe(a.f)] - RANGO_GRUPO[grupoDe(b.f)] || ORDENADORES[orden](a.f, b.f)),
     [candidatas, filtro, orden],
   );
+  const grupos = useMemo(() => agruparPorEtapa(visibles.map(({ f }) => f)), [visibles]);
+  const enPie = useMemo(() => enPiePorEspecie(grupos.en_pie), [grupos]);
+  const pendientes = useMemo(() => pendientesDe(porFacetas, hoy), [porFacetas, hoy]);
+  const salieron = useMemo(() => trozasQueSalieron(porFacetas), [porFacetas]);
   const resumen = useMemo(() => resumirFilas(porFacetas), [porFacetas]);
   const conteos = useMemo(() => {
     const out = {} as Record<TraceFiltro, number>;
@@ -120,11 +138,13 @@ export function useLothTraceVista({
 
   // Cualquier cambio de filtro deja la paginación en la primera página: quedarse
   // en la página 4 de una lista que ahora tiene 3 elementos muestra el vacío.
-  useEffect(() => setPagina(0), [search, filtro, especie, desde, hasta, orden, modo]);
+  useEffect(() => setPagina(0), [search, filtro, especie, desde, hasta, orden, modo, paso]);
 
-  const totalPaginas = Math.max(1, Math.ceil(visibles.length / POR_PAGINA));
+  // Se paginan los talados (en movimiento + terminados); los en pie van resumidos.
+  const talados = visibles.filter(({ f }) => f.op != null);
+  const totalPaginas = Math.max(1, Math.ceil(talados.length / POR_PAGINA));
   const pagActual = Math.min(pagina, totalPaginas - 1);
-  const enPagina = visibles.slice(pagActual * POR_PAGINA, (pagActual + 1) * POR_PAGINA);
+  const enPagina = talados.slice(pagActual * POR_PAGINA, (pagActual + 1) * POR_PAGINA);
 
   const toggleSeleccion = (tree: string) =>
     setSeleccion((s) => {
@@ -138,8 +158,9 @@ export function useLothTraceVista({
      vista — el mismo botón, dos números distintos. */
   const seleccionadas = useMemo(() => filas.filter((f) => seleccion.has(f.tree)), [filas, seleccion]);
 
-  const hayFiltros = !!(search || especie || desde || hasta || filtro !== "todas");
+  const hayFiltros = !!(search || especie || desde || hasta || filtro !== "todas" || paso);
   const limpiarFiltros = () => {
+    setPaso(null);
     setSearch("");
     setEspecie("");
     setDesde("");
@@ -156,6 +177,17 @@ export function useLothTraceVista({
     filas,
     especies,
     resumen,
+    grupos,
+    enPie,
+    pendientes,
+    salieron,
+    paso,
+    /** Tocar el paso activo lo quita (como las pastillas de estado). */
+    elegirPaso: (p: PasoAvance) => setPaso((actual) => (actual === p ? null : p)),
+    enPieAbierto,
+    setEnPieAbierto,
+    /** Los en pie se abren solos cuando lo pedido son justamente ellos. */
+    enPieForzado: paso === "censo" || filtro === "en_pie" || search.trim() !== "",
     conteos,
     visibles,
     enPagina,

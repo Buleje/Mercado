@@ -196,6 +196,11 @@ export interface TraceNav {
   onVerGtf?: (gtf: string) => void;
   /** Lleva al mapa del libro centrado en ese árbol. */
   onVerMapa?: (tree: string) => void;
+  /**
+   * Abre el formulario de trozado del libro (sección 2) con ese árbol ya
+   * elegido. Lo usa «Qué falta hacer» para los talados sin trozar.
+   */
+  onRegistrarTrozado?: (tree: string) => void;
 }
 
 /** Etapas del recorrido con su nombre corto y las líneas que las respaldan. */

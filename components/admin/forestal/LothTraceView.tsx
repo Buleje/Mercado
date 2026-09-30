@@ -4,15 +4,22 @@
  * LothTraceView — la vista «Por árbol»: la historia de cada árbol del censo
  * hasta su despacho.
  *
- * Ordenada como las demás vistas del libro (ley de Brandon, 2026-09-19):
+ * Ordenada como las demás vistas del libro (ley de Brandon, 2026-09-19) y,
+ * desde el 30-09, por ETAPA: en Blas 61 de 67 tarjetas decían «Censado, en
+ * pie» y los dos talados sin trozar quedaban enterrados entre ellas.
  *
  *   h2  Por árbol ─────────────────────────── qué contesta la pantalla
- *   h3  Del censo al despacho  [Indicadores]  el embudo, plegable y recordado
+ *   h3  Avance del permiso  [Cuentas]         Censo → Talados → Trozados → Salieron;
+ *                                             cada paso filtra la lista
+ *   h3  Qué falta hacer                       sólo si hay algo; «Registrar trozado»
  *   h3  Árboles · orden · modo · Opciones     la lista, con sus filtros PEGADOS
  *       buscar · estado · especie · fechas
- *       pastillas de lo pendiente (sólo > 0)
- *       tarjetas o tabla
- *   ventana  el detalle de un árbol (antes: un bloque más en la lista)
+ *       h4 En movimiento  (talados con algo pendiente)  tarjetas o tabla
+ *       h4 Terminados     (todas sus trozas salieron)   tarjetas o tabla
+ *       h4 En pie  (plegado)                  tabla chica por especie, no 61 tarjetas
+ *   ventana  el detalle de un árbol
+ *
+ * Buscar y los filtros recortan todos los grupos; un grupo vacío no se dibuja.
  *
  * El resumen de arriba, la lista y el CSV salen de la MISMA fila fusionada
  * (`loth-trace-tabla`), que junta la trazabilidad del libro con el censo del
@@ -21,15 +28,19 @@
 
 import { useId } from "react";
 import { SectionTitle } from "@buleje/design-system";
+import type { ReactNode } from "react";
 import { CheckSquare, Printer, TreePine, X } from "@buleje/design-system/icons";
+import type { CupoEspecie } from "@/lib/forestal/loth-cupo-especie";
 import type { LothEntryDTO } from "@/lib/forestal/loth-constants";
 import type { ArbolCensoInput } from "@/lib/forestal/loth-arbol";
 import type { TraceFila } from "@/lib/forestal/loth-trace-tabla";
+import { grupoDe, type EnPieEspecie } from "@/lib/forestal/loth-trace-grupos";
 import { printTrozaPasaportes, type PasaporteCaratula } from "@/lib/forestal/loth-pasaporte-print";
-import LothTraceCard from "./LothTraceCard";
-import LothTraceTabla from "./LothTraceTabla";
 import LothTraceFiltros, { LothTraceListaCabecera, opcionesDeLaLista } from "./LothTraceFiltros";
-import LothTraceResumen from "./LothTraceResumen";
+import LothTraceAvance from "./LothTraceAvance";
+import LothTracePendientes from "./LothTracePendientes";
+import LothTraceGrupo from "./LothTraceGrupo";
+import LothTraceEnPie from "./LothTraceEnPie";
 import LothTraceDetalleModal from "./LothTraceDetalleModal";
 import LothTraceUmbralesModal from "./LothTraceUmbralesModal";
 import { useLothTraceVista } from "./hooks/use-loth-trace-vista";
@@ -44,6 +55,8 @@ export default function LothTraceView({
   censo = [],
   gtfEmitidas,
   nav,
+  cupoEnPie,
+  cupoEspecies,
 }: {
   entries: LothEntryDTO[];
   caratula?: PasaporteCaratula | null;
@@ -52,6 +65,10 @@ export default function LothTraceView({
   /** N° de las guías realmente emitidas. `null` = no se pudieron leer (no se acusa). */
   gtfEmitidas?: Set<string> | null;
   nav?: TraceNav;
+  /** Punto de extensión: el cupo de cada especie en la tabla «En pie». */
+  cupoEnPie?: (grupo: EnPieEspecie) => ReactNode;
+  /** Cupo por especie: alimenta la línea y el plegable del «Avance del permiso». */
+  cupoEspecies?: readonly CupoEspecie[];
 }) {
   const v = useLothTraceVista({ entries, censo, gtfEmitidas });
   const id = useId();
@@ -107,7 +124,18 @@ export default function LothTraceView({
     <section aria-labelledby={`${id}-vista`} className="space-y-4">
       {cabecera}
 
-      <LothTraceResumen r={v.resumen} abierto={v.resumenAbierto} onAbierto={v.setResumenAbierto} alcance={alcance} />
+      <LothTraceAvance
+        r={v.resumen}
+        salieron={v.salieron}
+        paso={v.paso}
+        onPaso={v.elegirPaso}
+        cuentasAbiertas={v.resumenAbierto}
+        onCuentas={v.setResumenAbierto}
+        alcance={alcance}
+        cupoFilas={cupoEspecies}
+      />
+
+      <LothTracePendientes p={v.pendientes} onRegistrarTrozado={nav?.onRegistrarTrozado} onAbrir={v.abrirDetalle} />
 
       <section aria-labelledby={`${id}-lista`} className="space-y-3">
         <LothTraceListaCabecera
@@ -160,28 +188,21 @@ export default function LothTraceView({
               Quitar filtros
             </button>
           </div>
-        ) : v.modo === "tabla" ? (
-          <LothTraceTabla
-            filas={v.enPagina.map(({ f }) => f)}
-            seleccion={v.seleccion}
-            onSeleccionar={v.toggleSeleccion}
-            onAbrir={v.abrirDetalle}
-            orden={v.orden}
-            onOrden={v.setOrden}
-          />
         ) : (
-          <div className="space-y-2.5">
-            {v.enPagina.map(({ f, m }) => (
-              <LothTraceCard
-                key={f.tree}
-                fila={f}
-                matchHint={m.hint}
-                seleccionada={v.seleccion.has(f.tree)}
-                onSeleccionar={v.toggleSeleccion}
-                onAbrir={v.abrirDetalle}
-              />
-            ))}
-          </div>
+          (["movimiento", "terminado"] as const).map((g) => (
+            <LothTraceGrupo
+              key={g}
+              grupo={g}
+              total={v.grupos[g].length}
+              items={v.enPagina.filter(({ f }) => grupoDe(f) === g)}
+              modo={v.modo}
+              seleccion={v.seleccion}
+              onSeleccionar={v.toggleSeleccion}
+              onAbrir={v.abrirDetalle}
+              orden={v.orden}
+              onOrden={v.setOrden}
+            />
+          ))
         )}
 
         {v.totalPaginas > 1 && (
@@ -202,6 +223,14 @@ export default function LothTraceView({
             </button>
           </nav>
         )}
+
+        <LothTraceEnPie
+          enPie={v.enPie}
+          abierto={v.enPieAbierto}
+          onAbierto={v.setEnPieAbierto}
+          forzado={v.enPieForzado}
+          cupo={cupoEnPie}
+        />
       </section>
 
       <LothTraceUmbralesModal
