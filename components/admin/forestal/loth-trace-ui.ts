@@ -201,6 +201,11 @@ export interface TraceNav {
    * elegido. Lo usa «Qué falta hacer» para los talados sin trozar.
    */
   onRegistrarTrozado?: (tree: string) => void;
+  /**
+   * Abre el alta de árbol del censo con código y especie ya escritos. Lo usa
+   * «Qué falta hacer» para las talas de un árbol que el censo no declara.
+   */
+  onAgregarAlCenso?: (arbol: { treeCode: string; speciesCommon: string }) => void;
 }
 
 /** Etapas del recorrido con su nombre corto y las líneas que las respaldan. */

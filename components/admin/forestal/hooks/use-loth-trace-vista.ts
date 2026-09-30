@@ -26,7 +26,7 @@ import type { LothEntryDTO } from "@/lib/forestal/loth-constants";
 import { buildTraceOperations } from "@/lib/forestal/loth-trace";
 import { construirFichasArbol, type ArbolCensoInput } from "@/lib/forestal/loth-arbol";
 import { construirFilasTrace, filasToCsv, resumirFilas, type TraceFila } from "@/lib/forestal/loth-trace-tabla";
-import { agruparPorEtapa, enPiePorEspecie, pasaPaso, pendientesDe, RANGO_GRUPO, grupoDe, trozasQueSalieron, type PasoAvance } from "@/lib/forestal/loth-trace-grupos";
+import { agruparPorEtapa, enPiePorEspecie, esCensado, pasaPaso, pendientesDe, RANGO_GRUPO, grupoDe, trozasQueSalieron, type PasoAvance } from "@/lib/forestal/loth-trace-grupos";
 import { guardarUmbrales, leerUmbrales, UMBRALES_DEFAULT, type UmbralesMerma } from "@/lib/forestal/loth-trace-umbrales";
 import {
   claveDeFila,
@@ -127,7 +127,10 @@ export function useLothTraceVista({
   );
   const grupos = useMemo(() => agruparPorEtapa(visibles.map(({ f }) => f)), [visibles]);
   const enPie = useMemo(() => enPiePorEspecie(grupos.en_pie), [grupos]);
-  const pendientes = useMemo(() => pendientesDe(porFacetas, hoy), [porFacetas, hoy]);
+  // «Hay censo» se decide sobre la lista entera: filtrando por una especie sin
+  // censar no puede aparecer todo como «fuera del censo».
+  const hayCenso = useMemo(() => filas.some(esCensado), [filas]);
+  const pendientes = useMemo(() => pendientesDe(porFacetas, hoy, hayCenso), [porFacetas, hoy, hayCenso]);
   const salieron = useMemo(() => trozasQueSalieron(porFacetas), [porFacetas]);
   const resumen = useMemo(() => resumirFilas(porFacetas), [porFacetas]);
   const conteos = useMemo(() => {

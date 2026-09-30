@@ -135,7 +135,7 @@ export default function LothTraceView({
         cupoFilas={cupoEspecies}
       />
 
-      <LothTracePendientes p={v.pendientes} onRegistrarTrozado={nav?.onRegistrarTrozado} onAbrir={v.abrirDetalle} />
+      <LothTracePendientes p={v.pendientes} onRegistrarTrozado={nav?.onRegistrarTrozado} onAgregarAlCenso={nav?.onAgregarAlCenso} onAbrir={v.abrirDetalle} />
 
       <section aria-labelledby={`${id}-lista`} className="space-y-3">
         <LothTraceListaCabecera

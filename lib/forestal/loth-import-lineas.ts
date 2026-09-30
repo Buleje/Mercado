@@ -17,6 +17,7 @@
  */
 
 import { smalianVolume, type LothSection } from "./loth-constants";
+import { MOTIVO_CUPO_MIN, motivoCupoValido } from "./loth-cupo-especie";
 
 /** Una celda tal como la devuelve `leerArchivoAFilas`: string, número o vacía. */
 export type CeldaLinea = string | number | null | undefined;
@@ -37,6 +38,11 @@ export interface FilaImport {
   unit: string | null;
   gtfNumber: string | null;
   observations: string | null;
+  /**
+   * T9: por qué la tala pasa lo autorizado (columna opcional «motivo»). Viaja
+   * tal cual al libro: lo valida el servidor, no esta vista previa.
+   */
+  motivoSobreCupo: string | null;
   /** Volumen calculado por Smalian cuando hay medidas y no vino volumen. */
   volumenCalculado: boolean;
   estado: "ok" | "error";
@@ -70,6 +76,7 @@ const ALIAS: Record<string, string[]> = {
   unit: ["unidad", "und"],
   gtfNumber: ["gtf", "ngtf", "nrogtf", "numerogtf", "guia"],
   observations: ["observaciones", "obs", "observacion", "nota"],
+  motivoSobreCupo: ["motivo", "motivosobrecupo", "motivosobreelcupo", "motivocupo", "justificacion"],
 };
 
 const norm = (s: string) =>
@@ -210,6 +217,7 @@ function armarResultado(
       unit: val("unit"),
       gtfNumber: val("gtfNumber"),
       observations: val("observations"),
+      motivoSobreCupo: val("motivoSobreCupo"),
       volumenCalculado,
       estado: "ok",
       motivos: [],
@@ -313,4 +321,36 @@ export function parseImportLineasCeldas(
     return { filas: [], columnas: filas[0] ?? [], ignoradas: [], listas: 0, conError: 0 };
   }
   return armarResultado(filas[0], filas.slice(1), section, opts);
+}
+
+const fmtCupo = (n: number): string => String(Number(n.toFixed(1))).replace(".", ",");
+
+/**
+ * El texto del error de una fila que el libro rechazó al importar. Sólo
+ * reescribe el T9 (tala sobre lo autorizado): el resto conserva el mensaje del
+ * servidor. La regla (≥ MOTIVO_CUPO_MIN letras) es la del servidor —se importa
+ * de `loth-cupo-especie`—: acá sólo se dice qué columna poner.
+ */
+export function mensajeErrorFilaImport(
+  indice: number,
+  status: number,
+  body: unknown,
+  motivoEnviado: string | null | undefined,
+): string {
+  const b = (body && typeof body === "object" ? body : {}) as { error?: unknown; message?: unknown; detail?: unknown };
+  const prefijo = `Fila ${indice}: `;
+  if (b.error === "T9_CUPO_ESPECIE") {
+    const d = (b.detail && typeof b.detail === "object" ? b.detail : {}) as { especie?: unknown; cupoM3?: unknown; taladoConEsteM3?: unknown };
+    const especie = typeof d.especie === "string" && d.especie ? d.especie : "La especie";
+    const cifras =
+      typeof d.taladoConEsteM3 === "number" && typeof d.cupoM3 === "number"
+        ? ` (${fmtCupo(d.taladoConEsteM3)} de ${fmtCupo(d.cupoM3)} m³)`
+        : "";
+    const tiene = (motivoEnviado ?? "").trim().length > 0 && !motivoCupoValido(motivoEnviado);
+    return tiene
+      ? `${prefijo}${especie} pasa lo autorizado${cifras}. El motivo es muy corto: escribe al menos ${MOTIVO_CUPO_MIN} letras`
+      : `${prefijo}${especie} pasa lo autorizado${cifras}. Agrega una columna "motivo" con al menos ${MOTIVO_CUPO_MIN} letras`;
+  }
+  const texto = typeof b.message === "string" && b.message ? b.message : typeof b.error === "string" ? b.error : `HTTP ${status}`;
+  return `${prefijo}${texto}`;
 }

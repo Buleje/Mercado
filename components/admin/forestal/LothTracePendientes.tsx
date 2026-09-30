@@ -10,6 +10,8 @@
  *
  *   · talados sin trozar       → «Registrar trozado» (abre la sección 2 del
  *                                 libro con ese árbol ya elegido, `nav`)
+ *   · talas fuera del censo    → «Agregar al censo» (alta del árbol con código y
+ *                                 especie escritos, `nav.onAgregarAlCenso`)
  *   · trozas en patio > 30 días → el detalle del árbol (a dónde fue cada troza)
  *   · mermas graves             → el detalle del árbol
  *
@@ -18,7 +20,7 @@
 
 import { useId, type ReactNode } from "react";
 import { BlockTitle, CardTitle } from "@buleje/design-system";
-import { ChevronRight, Scissors, TrendingDown, TreePine, Warehouse } from "@buleje/design-system/icons";
+import { ChevronRight, Plus, Scissors, TrendingDown, TreePine, Warehouse } from "@buleje/design-system/icons";
 import { DIAS_EN_PATIO_AVISO, type Pendientes } from "@/lib/forestal/loth-trace-grupos";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { formatNumber } from "@/lib/format";
@@ -32,16 +34,20 @@ const SECUNDARIA = `${ACCION} border border-[var(--rule-base)] text-[var(--text-
 export default function LothTracePendientes({
   p,
   onRegistrarTrozado,
+  onAgregarAlCenso,
   onAbrir,
 }: {
   p: Pendientes;
   /** Sin él (vista suelta, sin libro) el talado sin trozar ofrece su detalle. */
   onRegistrarTrozado?: (tree: string) => void;
+  /** Sin él, la tala fuera del censo ofrece su detalle (no hay dónde dar el alta). */
+  onAgregarAlCenso?: (arbol: { treeCode: string; speciesCommon: string }) => void;
   onAbrir: (tree: string) => void;
 }) {
   const id = useId();
   if (p.total === 0) return null;
   const m3SinTrozar = p.sinTrozar.reduce((a, x) => a + (x.taladoM3 ?? 0), 0);
+  const m3FueraCenso = p.fueraCenso.reduce((a, x) => a + (x.taladoM3 ?? 0), 0);
 
   return (
     <section
@@ -82,6 +88,38 @@ export default function LothTracePendientes({
                     className={PRIMARIA}
                   >
                     <Scissors className="h-4 w-4" aria-hidden="true" /> Registrar trozado
+                  </button>
+                ) : (
+                  <VerDetalle tree={x.tree} onAbrir={onAbrir} />
+                )}
+              </Item>
+            ))}
+          </Bloque>
+        )}
+
+        {p.fueraCenso.length > 0 && (
+          <Bloque
+            icono={<Plus className="h-4 w-4" aria-hidden="true" />}
+            titulo={`${formatNumber(p.fueraCenso.length)} ${p.fueraCenso.length === 1 ? "tala fuera del censo" : "talas fuera del censo"}`}
+            extra={m3FueraCenso > 0 ? `${fmtM3(m3FueraCenso)} m³` : null}
+            dato="fuera-censo"
+          >
+            {p.fueraCenso.map((x) => (
+              <Item
+                key={x.tree}
+                tree={x.tree}
+                especie={x.especie}
+                dato={x.taladoM3 != null ? `${fmtM3(x.taladoM3)} m³` : "sin volumen"}
+                detalle={x.fechaTala ? `talado ${fmtFecha(x.fechaTala)} · el censo del plan no lo declara` : "el censo del plan no lo declara"}
+              >
+                {onAgregarAlCenso ? (
+                  <button
+                    type="button"
+                    onClick={() => onAgregarAlCenso({ treeCode: x.tree, speciesCommon: x.especie ?? "" })}
+                    aria-label={`Agregar el árbol ${x.tree} al censo`}
+                    className={PRIMARIA}
+                  >
+                    <Plus className="h-4 w-4" aria-hidden="true" /> Agregar al censo
                   </button>
                 ) : (
                   <VerDetalle tree={x.tree} onAbrir={onAbrir} />

@@ -157,25 +157,45 @@ export interface PendienteMerma {
   mermaM3: number;
 }
 
+/** Una tala cuyo árbol el censo del plan no declara: pide darlo de alta. */
+export interface PendienteFueraCenso {
+  tree: string;
+  especie: string | null;
+  fechaTala: string | null;
+  /** null = la tala se asentó sin volumen. */
+  taladoM3: number | null;
+}
+
 export interface Pendientes {
   sinTrozar: PendienteSinTrozar[];
   patio: PendientePatio[];
   mermaGrave: PendienteMerma[];
+  /** Talas de un árbol que no está en el censo (sólo si el censo cargó). */
+  fueraCenso: PendienteFueraCenso[];
   total: number;
 }
 
 /**
  * Lo que pide una acción, con su número. Lo más viejo primero: el árbol que
  * lleva más días tumbado es el que se está rajando al sol.
+ *
+ * `hayCenso`: sin censo cargado TODA tala «no está en el censo»; eso no es un
+ * pendiente, es que no se leyó (mismo criterio que `avisosDelAvance`). Por
+ * omisión se deduce de las filas; quien recorta las filas por especie o fecha
+ * lo pasa calculado sobre la lista entera.
  */
-export function pendientesDe(filas: TraceFila[], hoy: Date): Pendientes {
+export function pendientesDe(filas: TraceFila[], hoy: Date, hayCenso: boolean = filas.some(esCensado)): Pendientes {
   const sinTrozar: PendienteSinTrozar[] = [];
   const patio: PendientePatio[] = [];
   const mermaGrave: PendienteMerma[] = [];
+  const fueraCenso: PendienteFueraCenso[] = [];
 
   for (const f of filas) {
     const op = f.op;
     if (!op) continue;
+    if (hayCenso && !esCensado(f)) {
+      fueraCenso.push({ tree: f.tree, especie: f.especie, fechaTala: op.etapaFechas[0]?.slice(0, 10) ?? null, taladoM3: f.taladoM3 });
+    }
     if (!(f.trozadoM3 > 0)) {
       const fechaTala = op.etapaFechas[0]?.slice(0, 10) ?? null;
       sinTrozar.push({ tree: f.tree, especie: f.especie, taladoM3: f.taladoM3, fechaTala, dias: diasDesde(fechaTala, hoy) });
@@ -204,7 +224,8 @@ export function pendientesDe(filas: TraceFila[], hoy: Date): Pendientes {
   sinTrozar.sort((a, b) => (a.fechaTala ?? "9999").localeCompare(b.fechaTala ?? "9999") || porCodigo(a, b));
   patio.sort((a, b) => b.dias - a.dias || porCodigo(a, b));
   mermaGrave.sort((a, b) => b.mermaPct - a.mermaPct || porCodigo(a, b));
-  return { sinTrozar, patio, mermaGrave, total: sinTrozar.length + patio.length + mermaGrave.length };
+  fueraCenso.sort((a, b) => (a.fechaTala ?? "9999").localeCompare(b.fechaTala ?? "9999") || porCodigo(a, b));
+  return { sinTrozar, patio, mermaGrave, fueraCenso, total: sinTrozar.length + patio.length + mermaGrave.length + fueraCenso.length };
 }
 
 // ─── en pie, por especie ─────────────────────────────────────────────────────

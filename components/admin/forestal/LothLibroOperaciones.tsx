@@ -50,6 +50,7 @@ import LothEntryForm, { SECTION_META } from "./LothEntryForm";
 import { olvidarCensoDeTala } from "./hooks/use-censo-de-tala";
 import LothCaratulaForm from "./LothCaratulaForm";
 import LothTraceView from "./LothTraceView";
+import LothCensoAltaDesdeTrace from "./LothCensoAltaDesdeTrace";
 import LothCupoEnPie from "./LothCupoEnPie";
 import { talasDelPlan } from "@/lib/forestal/loth-cupo-vista";
 import { cupoPorEspecie, type EspecieAutorizadaCupo } from "@/lib/forestal/loth-cupo-especie";
@@ -75,7 +76,7 @@ import LothEtiquetasRecienTrozadas from "./LothEtiquetasRecienTrozadas";
 import LothTalaTandaModal from "./LothTalaTandaModal";
 import type { TandaTalaInicial } from "./hooks/use-tala-en-tanda";
 import LothDespachoGuiaModal from "./LothDespachoGuiaModal";
-import type { FilaImport } from "@/lib/forestal/loth-import-lineas";
+import { mensajeErrorFilaImport, type FilaImport } from "@/lib/forestal/loth-import-lineas";
 import {
   FILTRO_VACIO,
   filtrarLineas,
@@ -293,6 +294,8 @@ export default function LothLibroOperaciones() {
   const [especiesAutorizadas, setEspeciesAutorizadas] = useState<EspecieAutorizadaCupo[]>([]);
   const [planIdActivo, setPlanIdActivo] = useState<string | null>(null);
   const [planNumeroActivo, setPlanNumeroActivo] = useState<string | null>(null);
+  /** «Agregar al censo» desde «Qué falta hacer»: la tala cuyo árbol el censo no declara. */
+  const [altaCenso, setAltaCenso] = useState<{ treeCode: string; speciesCommon: string } | null>(null);
   /**
    * N° de las guías realmente emitidas. Cruzarlas contra las que el libro
    * declara destapa la GTF fantasma: un despacho que nombra una guía que nadie
@@ -693,7 +696,7 @@ export default function LothLibroOperaciones() {
         });
         if (!res.ok) {
           const d = await res.json().catch(() => ({}));
-          errores.push(`Fila ${i + 1}: ${d.message ?? d.error ?? `HTTP ${res.status}`}`);
+          errores.push(mensajeErrorFilaImport(i + 1, res.status, d, typeof payload.motivoSobreCupo === "string" ? payload.motivoSobreCupo : null));
           continue;
         }
         const d = await res.json().catch(() => ({}));
@@ -1030,9 +1033,12 @@ export default function LothLibroOperaciones() {
                 },
                 // «Qué falta hacer» → el mismo trozado que abre «Trozarlo ahora».
                 onRegistrarTrozado: abrirTrozado,
+                // «Qué falta hacer» → el alta del censo, con código y especie escritos.
+                onAgregarAlCenso: setAltaCenso,
               }}
             />
           )}
+          <LothCensoAltaDesdeTrace planId={planIdActivo} arbol={altaCenso} onClose={() => setAltaCenso(null)} onAgregado={refreshAll} />
         </>
       )}
 
@@ -1346,6 +1352,8 @@ export default function LothLibroOperaciones() {
               unit: f.unit === "m3" || f.unit === "kg" || f.unit === "unidad" ? f.unit : f.quantity != null ? "m3" : null,
               gtfNumber: f.gtfNumber,
               observations: f.observations,
+              // T9: la misma regla del servidor; sin columna, no se manda.
+              ...(section === "tala" && f.motivoSobreCupo ? { motivoSobreCupo: f.motivoSobreCupo } : {}),
             })),
           )
         }

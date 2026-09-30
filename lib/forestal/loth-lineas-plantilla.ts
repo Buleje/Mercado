@@ -33,7 +33,8 @@ type CampoLinea =
   | "quantity"
   | "unit"
   | "gtfNumber"
-  | "observations";
+  | "observations"
+  | "motivoSobreCupo";
 
 /** Encabezado que reconoce el lector — el mismo texto que «Ver un ejemplo» del modal. */
 const LABEL: Record<CampoLinea, string> = {
@@ -50,6 +51,7 @@ const LABEL: Record<CampoLinea, string> = {
   unit: "Unidad",
   gtfNumber: "N° GTF",
   observations: "Observaciones",
+  motivoSobreCupo: "Motivo sobre cupo",
 };
 
 const AYUDA: Record<CampoLinea, string> = {
@@ -66,6 +68,8 @@ const AYUDA: Record<CampoLinea, string> = {
   unit: "Unidad de la cantidad: m3, pt, pza…",
   gtfNumber: "N° de la guía de transporte forestal (GTF) de esta salida.",
   observations: "Libre.",
+  motivoSobreCupo:
+    "Opcional. Sólo si la tala deja a la especie por encima de su volumen autorizado: por qué se registra igual (al menos 5 letras). Queda en la línea y en la auditoría.",
 };
 
 const ANCHO: Record<CampoLinea, number> = {
@@ -82,6 +86,7 @@ const ANCHO: Record<CampoLinea, number> = {
   unit: 8,
   gtfNumber: 14,
   observations: 30,
+  motivoSobreCupo: 28,
 };
 
 /** Nombre de la sección, para el título de la hoja y el nombre del archivo. */
@@ -96,7 +101,7 @@ const NOMBRE_SECCION: Record<LothSection, string> = {
 
 /** Columnas que pide cada sección, en el orden en que se ven mejor en la hoja. */
 export const CAMPOS_POR_SECCION: Record<LothSection, CampoLinea[]> = {
-  tala: ["treeCode", "speciesCommon", "entryDate", "diamMayorM", "diamMenorM", "lengthM", "volumeM3", "observations"],
+  tala: ["treeCode", "speciesCommon", "entryDate", "diamMayorM", "diamMenorM", "lengthM", "volumeM3", "observations", "motivoSobreCupo"],
   trozado: ["treeCode", "trozaCode", "speciesCommon", "diamMayorM", "diamMenorM", "lengthM", "volumeM3", "observations"],
   despacho_troza: ["trozaCode", "gtfNumber", "entryDate", "observations"],
   consumo_troza: ["trozaCode", "speciesCommon", "volumeM3", "observations"],

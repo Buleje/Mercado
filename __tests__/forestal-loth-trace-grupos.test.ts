@@ -206,6 +206,30 @@ describe("pendientesDe", () => {
     expect(p.total).toBe(4);
   });
 
+  it("Blas (todas las talas están en el censo): no hay «talas fuera del censo»", () => {
+    expect(p.fueraCenso).toEqual([]);
+  });
+
+  it("una tala cuyo árbol el censo no declara aparece, con código, especie, fecha y m³", () => {
+    const q = pendientesDe(
+      filas([...libro, entry({ section: "tala", treeCode: "999-X", speciesCommon: "Cumala", volumeM3: "3.2", entryDate: "2026-09-27" })]),
+      HOY,
+    );
+    expect(q.fueraCenso).toEqual([{ tree: "999-X", especie: "Cumala", fechaTala: "2026-09-27", taladoM3: 3.2 }]);
+    // +2: la misma tala también está sin trozar, y cada pendiente cuenta.
+    expect(q.total).toBe(p.total + 2);
+  });
+
+  it("sin censo cargado NO se acusa: sin contra qué comparar todo saldría «fuera»", () => {
+    expect(pendientesDe(filas(libro, []), HOY).fueraCenso).toEqual([]);
+  });
+
+  it("filtrar por una especie sin censar no vuelve «fuera del censo» a todo (hayCenso explícito)", () => {
+    const soloSinCenso = filas([...libro, entry({ section: "tala", treeCode: "999-X", speciesCommon: "Cumala", volumeM3: "3" })]).filter((f) => f.tree === "999-X");
+    expect(pendientesDe(soloSinCenso, HOY).fueraCenso).toEqual([]);
+    expect(pendientesDe(soloSinCenso, HOY, true).fueraCenso.map((x) => x.tree)).toEqual(["999-X"]);
+  });
+
   it("sin nada pendiente, total 0 (el bloque no se dibuja)", () => {
     const soloTerminados = filas().filter((f) => grupoDe(f) === "terminado" && f.mermaVeredicto !== "grave");
     expect(pendientesDe(soloTerminados, HOY).total).toBe(0);

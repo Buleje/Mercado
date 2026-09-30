@@ -24,6 +24,7 @@ const pendientes: Pendientes = {
   ],
   patio: [],
   mermaGrave: [],
+  fueraCenso: [],
   total: 2,
 };
 
@@ -53,8 +54,29 @@ describe("LothTracePendientes", () => {
     expect(onAbrir).toHaveBeenCalledWith("100");
   });
 
+  it("«N talas fuera del censo» aparece con cada árbol y «Agregar al censo» lo da de alta con código y especie", () => {
+    const onAgregarAlCenso = vi.fn();
+    const p: Pendientes = {
+      ...pendientes,
+      sinTrozar: [],
+      fueraCenso: [{ tree: "999-X", especie: "Cumala", fechaTala: "2026-09-27", taladoM3: 3.2 }],
+      total: 1,
+    };
+    render(<LothTracePendientes p={p} onAgregarAlCenso={onAgregarAlCenso} onAbrir={vi.fn()} />);
+    expect(screen.getByText("1 tala fuera del censo")).toBeTruthy();
+    expect(screen.getByText(/999-X · Cumala/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Agregar el árbol 999-X al censo" }));
+    expect(onAgregarAlCenso).toHaveBeenCalledWith({ treeCode: "999-X", speciesCommon: "Cumala" });
+  });
+
+  it("sin talas fuera del censo, el ítem no existe", () => {
+    render(<LothTracePendientes p={pendientes} onAgregarAlCenso={vi.fn()} onAbrir={vi.fn()} />);
+    expect(screen.queryByText(/fuera del censo/)).toBeNull();
+    expect(screen.queryByRole("button", { name: /al censo/ })).toBeNull();
+  });
+
   it("nada pendiente → no se dibuja", () => {
-    const { container } = render(<LothTracePendientes p={{ sinTrozar: [], patio: [], mermaGrave: [], total: 0 }} onAbrir={vi.fn()} />);
+    const { container } = render(<LothTracePendientes p={{ sinTrozar: [], patio: [], mermaGrave: [], fueraCenso: [], total: 0 }} onAbrir={vi.fn()} />);
     expect(container.innerHTML).toBe("");
   });
 });
