@@ -6,11 +6,13 @@
  * y la cuenta la hace el servidor (`/api/adelantos/resumen` → `sinControl`),
  * sin el tope de 500 filas de la lista.
  *
- * Hoy no hay cómo ponerle vencimiento ni atar a un permiso un adelanto ya
- * cargado (sólo en el alta): por eso la única acción es abrir su ficha.
+ * Cada fila abre su ficha y, debajo, ofrece «Poner vencimiento» y «Atar a
+ * contrato» ahí mismo (`ControlarAdelanto`, el mismo de la ficha). Al guardar
+ * se recarga el resumen: si ya no aplica ningún motivo, la fila sale.
  */
 
 import { useState } from "react";
+import ControlarAdelanto from "../detalle/ControlarAdelanto";
 import { AlertTriangle, ChevronRight } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -27,7 +29,7 @@ export default function SinControl({
 }: {
   /** `null`/ausente = el servidor no lo pudo calcular: no se afirma nada. */
   datos: ResumenSinControl | null | undefined;
-  /** Recargar el módulo después de tocar algo en la ficha. */
+  /** Recargar el módulo después de tocar algo en la ficha o en la fila. */
   onChange: () => void;
 }) {
   const [fichaId, setFichaId] = useState<string | null>(null);
@@ -57,7 +59,7 @@ export default function SinControl({
 
       <ul className="divide-y divide-[var(--rule-soft)]">
         {datos.adelantos.slice(0, A_LA_VISTA).map((a) => (
-          <li key={a.id}>
+          <li key={a.id} className="py-1">
             <button
               type="button"
               onClick={() => setFichaId(a.id)}
@@ -79,6 +81,14 @@ export default function SinControl({
                 Ver ficha <ChevronRight className="h-4 w-4" aria-hidden />
               </span>
             </button>
+            {/* Fuera del botón de la fila: un botón no va dentro de otro. Al
+                guardar se recarga el aviso y la fila sale si ya no aplica. */}
+            <ControlarAdelanto
+              adelantoId={a.id}
+              fechaVencimiento={a.fechaVencimiento}
+              contratoId={a.contratoId}
+              onGuardado={onChange}
+            />
           </li>
         ))}
       </ul>

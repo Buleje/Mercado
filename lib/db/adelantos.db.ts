@@ -1668,6 +1668,7 @@ export const AdelantosDB = {
         moneda: true,
         fechaAdelanto: true,
         fechaVencimiento: true,
+        contratoId: true,
         beneficiario: { select: { nombre: true } },
         /* ADR-413 §7: una entrega anulada no existe para nadie. */
         entregas: { where: { anuladaAt: null }, select: { fecha: true }, orderBy: { fecha: "desc" }, take: 1 },
@@ -1689,6 +1690,7 @@ export const AdelantosDB = {
         moneda: f.moneda,
         fechaAdelanto: f.fechaAdelanto,
         fechaVencimiento: f.fechaVencimiento,
+        contratoId: f.contratoId,
         entregas: f.entregas,
         entregasPactadas: f.entregasPactadas,
       })),

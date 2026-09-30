@@ -19,6 +19,7 @@ import type { DbAdelanto } from "@/lib/db/adelantos.db";
 import { formatDate } from "@/lib/format";
 import { MODALIDAD_LABEL, MiniStat, ModalShell, STATUS_BADGE, SkeletonGrid, fmtMon } from "../shared";
 import { imprimirComprobante } from "./comprobante-del-adelanto";
+import ControlarAdelanto from "./ControlarAdelanto";
 import CorregirDireccion from "./CorregirDireccion";
 import RegistrarEntrega from "./RegistrarEntrega";
 import { useRegistrarEntrega } from "./use-registrar-entrega";
@@ -151,6 +152,17 @@ export default function DetalleAdelantoModal({
                   )}
                 </div>
               </div>
+
+              {/* La fecha para devolverlo y el permiso, también después del alta.
+                  Sólo abierto: el servidor rechaza el resto. */}
+              {a.status === "ABIERTO" && (
+                <ControlarAdelanto
+                  adelantoId={a.id}
+                  fechaVencimiento={a.fechaVencimiento}
+                  contratoId={a.contratoId}
+                  onGuardado={() => { void load(); onChange(); }}
+                />
+              )}
 
               <PlanPactado pactadas={a.entregasPactadas} moneda={a.moneda} bloqueado={bloqueado} onCumplir={entrega.cumplirCuota} />
 

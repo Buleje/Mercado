@@ -55,6 +55,8 @@ export interface AdelantoParaControl {
   moneda?: string | null;
   fechaAdelanto: Fecha;
   fechaVencimiento?: Fecha | null;
+  /** El permiso al que está atado (no decide la regla: la pantalla lo ofrece atar). */
+  contratoId?: string | null;
   /** Las entregas; las que traen `anuladaAt` no cuentan (ADR-413 §7). */
   entregas?: readonly { fecha: Fecha; anuladaAt?: Fecha | null }[] | null;
   entregasPactadas?: readonly { numero?: number | null; fechaEsperada?: Fecha | null; cumplidaEn?: Fecha | null }[] | null;
@@ -69,6 +71,10 @@ export interface AdelantoSinControl {
   moneda: string;
   /** ISO de cuando se dio. */
   fechaAdelanto: string;
+  /** ISO de la fecha de devolución, si tiene: la fila la ofrece cambiar. */
+  fechaVencimiento?: string | null;
+  /** El permiso al que está atado, si tiene. */
+  contratoId?: string | null;
   motivos: MotivoConTexto[];
 }
 
@@ -192,6 +198,8 @@ export function resumirSinControl(adelantos: readonly AdelantoParaControl[], aho
       saldoPendiente: Math.round(a.saldoPendiente * 100) / 100,
       moneda,
       fechaAdelanto: a.fechaAdelanto instanceof Date ? a.fechaAdelanto.toISOString() : a.fechaAdelanto,
+      fechaVencimiento: a.fechaVencimiento instanceof Date ? a.fechaVencimiento.toISOString() : (a.fechaVencimiento ?? null),
+      contratoId: a.contratoId ?? null,
       motivos,
     });
   }

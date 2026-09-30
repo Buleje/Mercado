@@ -1,10 +1,11 @@
 /**
  * El aviso «N adelantos sin control · S/ X» del Resumen de Adelantos.
  *
- * Con HEAD falla: el componente no existía.
+ * Con HEAD falla: el componente no existía; después, las filas sólo abrían la
+ * ficha (no había cómo ponerle vencimiento ni permiso desde el aviso).
  */
 import { describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ResumenSinControl } from "@/lib/adelantos/sin-control";
 
 vi.mock("@/components/admin/adelantos/detalle/DetalleAdelantoModal", () => ({
@@ -51,6 +52,41 @@ describe("SinControl", () => {
     /* El nombre accesible es la fila entera: persona, motivos, saldo y «Ver ficha». */
     fireEvent.click(screen.getByRole("button", { name: /Persona a17.*Sin fecha de vencimiento.*Ver ficha/ }));
     expect(screen.getByTestId("ficha")).toHaveTextContent("a17");
+  });
+
+  it("cada fila ofrece «Poner vencimiento» y «Atar a contrato», fuera del botón de la ficha", () => {
+    render(<SinControl datos={{ cantidad: 1, porMoneda: { PEN: 17000 }, adelantos: [fila("a17", 17000)] }} onChange={() => {}} />);
+    const venc = screen.getByRole("button", { name: "Poner vencimiento" });
+    expect(screen.getByRole("button", { name: "Atar a contrato" })).toBeInTheDocument();
+    expect(venc.closest("button[type=button]")?.textContent).not.toMatch(/Ver ficha/);
+  });
+
+  it("poner vencimiento desde la fila: PATCH con el día y el aviso se recarga", async () => {
+    const onChange = vi.fn();
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ id: "a17", cambio: true }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    render(<SinControl datos={{ cantidad: 1, porMoneda: { PEN: 17000 }, adelantos: [fila("a17", 17000)] }} onChange={onChange} />);
+    fireEvent.click(screen.getByRole("button", { name: "Poner vencimiento" }));
+    fireEvent.change(screen.getByLabelText("Fecha de devolución acordada"), { target: { value: "2099-10-15" } });
+    fireEvent.click(screen.getByRole("button", { name: "Guardar" }));
+    await waitFor(() => expect(onChange).toHaveBeenCalledTimes(1));
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe("/api/adelantos/a17");
+    expect(init.method).toBe("PATCH");
+    expect(JSON.parse(String(init.body))).toEqual({ fechaVencimiento: "2099-10-15" });
+    vi.unstubAllGlobals();
+  });
+
+  it("si el servidor lo rechaza, el motivo queda a la vista y no recarga", async () => {
+    const onChange = vi.fn();
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ error: "x", code: "no_abierto" }), { status: 409 })));
+    render(<SinControl datos={{ cantidad: 1, porMoneda: { PEN: 17000 }, adelantos: [fila("a17", 17000)] }} onChange={onChange} />);
+    fireEvent.click(screen.getByRole("button", { name: "Poner vencimiento" }));
+    fireEvent.change(screen.getByLabelText("Fecha de devolución acordada"), { target: { value: "2099-10-15" } });
+    fireEvent.click(screen.getByRole("button", { name: "Guardar" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(/ya no está abierto/);
+    expect(onChange).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
   });
 
   it("sin ninguno, o sin dato del servidor, no dibuja nada", () => {
