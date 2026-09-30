@@ -16,7 +16,15 @@ import type { Prisma } from "@/lib/generated/prisma/client";
 import { ConflictError } from "@/lib/api-error";
 import { invalidate } from "@/lib/cache";
 import { saldoEsperadoDeCaja } from "@/lib/caja/saldo-esperado";
-import { efectoEnElEsperado, medioCorregible, nombreDelMedio, type MedioDeCaja } from "@/lib/caja/cambiar-medio";
+import {
+  efectoEnElEsperado,
+  medioCorregible,
+  nombreDelMedio,
+  whereDePagoDeLiquidacion,
+  type MedioDeCaja,
+  type PagoDeLiquidacion,
+} from "@/lib/caja/cambiar-medio";
+import { invalidarVentasOverview } from "@/lib/caja/invalidar-ventas-overview";
 
 /**
  * La caja se cerró mientras llegaba el movimiento (F4): no se anota en una caja
@@ -145,6 +153,7 @@ export const CashRegistersMovementsDB = {
       if (caja?.status !== "abierta") throw new CajaNoAbiertaError();
       return tx.cashMovement.create({ data });
     });
+    invalidarVentasOverview(tenantId);
     return mapMovement(row);
   },
 
@@ -224,13 +233,39 @@ export const CashRegistersMovementsDB = {
     return filas.length > 0;
   },
 
-  /** `createMovement` dentro de la transacción de quien llama (ver arriba). */
+  /**
+   * `createMovement` dentro de la transacción de quien llama (ver arriba).
+   *
+   * `tenantId` (1er parámetro, como todo método) sólo sirve para invalidar el
+   * Tablero de Ventas. Se invalida acá, dentro de la tx, porque es el único
+   * punto común de adelantos y liquidaciones (`moverCajaEnTx`); el commit llega
+   * unos ms después, así que un GET del tablero justo en medio podría re-cachear
+   * el saldo viejo hasta 2 min (ventana chica, acotada por el TTL).
+   */
   async createMovementEnTx(
     tx: Prisma.TransactionClient,
+    tenantId: string,
     data: { cashRegisterId: string; type: "ingreso" | "egreso"; amount: number; method: string; description: string },
   ): Promise<DbCashMovementRecord> {
+    if (!tenantId) throw new Error("tenantId is required");
     const row = await tx.cashMovement.create({ data });
+    invalidarVentasOverview(tenantId);
     return mapMovement(row);
+  },
+
+  /**
+   * Qué movimientos de estos son el PAGO de una liquidación (mismo criterio que
+   * el 409 `liquidacion` de `cambiarMedio`: `whereDePagoDeLiquidacion`). La
+   * pantalla de caja lo usa para no ofrecer «Cambiar medio» donde el servidor lo
+   * va a rechazar.
+   */
+  async liquidacionesDeMovimientos(tenantId: string, movimientoIds: readonly string[]): Promise<PagoDeLiquidacion[]> {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (movimientoIds.length === 0) return [];
+    return prisma.liquidacionCuenta.findMany({
+      where: whereDePagoDeLiquidacion(tenantId, movimientoIds),
+      select: { codigo: true, cajaMovimientoId: true },
+    });
   },
 
   /**
@@ -287,7 +322,7 @@ export const CashRegistersMovementsDB = {
          reversión de una anulación (`cajaReversionId`) no guarda el medio en otro
          lado: ésa sí se puede corregir. Un adelanto tampoco lo guarda aparte. */
       const liq = await tx.liquidacionCuenta.findFirst({
-        where: { tenantId, cajaMovimientoId: movementId },
+        where: whereDePagoDeLiquidacion(tenantId, movementId),
         select: { codigo: true },
       });
       if (liq) {
@@ -329,7 +364,10 @@ export const CashRegistersMovementsDB = {
       } satisfies CambioDeMedio;
     });
     /* El banner del panel cachea 60 s la cuenta de la caja abierta (AlertsDB). */
-    if (resultado) invalidate(`admin:alerts-summary:${tenantId}`);
+    if (resultado) {
+      invalidate(`admin:alerts-summary:${tenantId}`);
+      invalidarVentasOverview(tenantId);
+    }
     return resultado;
   },
 

@@ -29,6 +29,37 @@ export function medioCorregible(type: string): boolean {
   return (TIPOS_CON_MEDIO_CORREGIBLE as readonly string[]).includes(type);
 }
 
+/**
+ * El PAGO de una liquidación de cuenta: su medio también vive en
+ * `LiquidacionCuenta.metodoPago` y en el acta congelada, así que no se corrige
+ * en la caja (se anula y se rehace la liquidación). EL criterio es uno solo y lo
+ * usan el servidor (409 `liquidacion`) y la pantalla (no ofrece el selector):
+ * hay una liquidación del negocio con `cajaMovimientoId` = este movimiento.
+ * La reversión de una anulación (`cajaReversionId`) NO cuenta: sí se corrige.
+ */
+export interface PagoDeLiquidacion {
+  codigo: string;
+  cajaMovimientoId: string | null;
+}
+
+/** El WHERE de Prisma de ese criterio, para un movimiento o para varios a la vez. */
+export function whereDePagoDeLiquidacion(tenantId: string, movimientoIds: string | readonly string[]) {
+  return {
+    tenantId,
+    cajaMovimientoId: typeof movimientoIds === "string" ? movimientoIds : { in: [...movimientoIds] },
+  };
+}
+
+/** El código de la liquidación que pagó este movimiento, o `null` si no es de una. */
+export function liquidacionDelMovimiento(movimientoId: string, liquidaciones: readonly PagoDeLiquidacion[]): string | null {
+  return liquidaciones.find((l) => l.cajaMovimientoId === movimientoId)?.codigo ?? null;
+}
+
+/** La frase que reemplaza al selector en un movimiento que es pago de una liquidación. */
+export function textoMedioFijadoPorLiquidacion(codigo: string): string {
+  return `Medio fijado por la liquidación ${codigo}: se corrige anulándola`;
+}
+
 /** Cómo se nombra cada medio en la pantalla y en el registro de auditoría. */
 export const NOMBRE_DEL_MEDIO_DE_CAJA: Readonly<Record<MedioDeCaja, string>> = {
   efectivo: "Efectivo",

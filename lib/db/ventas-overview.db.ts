@@ -3,6 +3,7 @@ import { cacheLife, cacheTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { saldoEsperadoDeCaja } from "@/lib/caja/saldo-esperado";
+import { tagVentasOverview } from "@/lib/caja/invalidar-ventas-overview";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -136,7 +137,7 @@ export const VentasOverviewDB = {
   async get(tenantId: string, range: VentasRange): Promise<VentasOverviewData> {
     "use cache";
     cacheLife({ revalidate: 120, stale: 300 });
-    cacheTag(`ventas-overview-${tenantId}`);
+    cacheTag(tagVentasOverview(tenantId));
 
     const since = rangeStart(range);
     const prevSince = prevRangeStart(range, since); // inicio del período anterior

@@ -23,12 +23,13 @@ import {
   esperadoTrasCambiarMedio,
   nombreDelMedio,
   textoCambioDelEsperado,
+  textoMedioFijadoPorLiquidacion,
   type MedioDeCaja,
 } from "@/lib/caja/cambiar-medio";
 
 interface Props {
   cashRegisterId: string;
-  movimiento: { id: string; type: string; amount: number; method: string; description: string };
+  movimiento: { id: string; type: string; amount: number; method: string; description: string; liquidacionCodigo?: string };
   /** El «Efectivo actual» que ve la pantalla ahora: base de la previsualización. */
   esperadoActual: number;
   formato: (n: number) => string;
@@ -84,6 +85,16 @@ export function CambiarMedioMovimiento({ cashRegisterId, movimiento, esperadoAct
     } finally {
       setGuardando(false);
     }
+  }
+
+  /* El pago de una liquidación lleva su medio también en el acta: el servidor
+     lo rechaza (409), así que no se ofrece. Mismo criterio: lib/caja/cambiar-medio. */
+  if (movimiento.liquidacionCodigo) {
+    return (
+      <span className="block max-w-[14rem] text-xs text-[var(--text-tertiary)]">
+        {textoMedioFijadoPorLiquidacion(movimiento.liquidacionCodigo)}
+      </span>
+    );
   }
 
   return (

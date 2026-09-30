@@ -81,7 +81,7 @@ export async function moverCajaEnTx(
     logger.warn("[adelantos] sin caja abierta: el movimiento no se anota", { tenantId, etiqueta: opciones.etiqueta });
     return { sinCaja: true };
   }
-  const mov = await CashRegistersMovementsDB.createMovementEnTx(tx, {
+  const mov = await CashRegistersMovementsDB.createMovementEnTx(tx, tenantId, {
     cashRegisterId: caja.id,
     type: opciones.tipo,
     amount: Math.round(opciones.monto * 100) / 100,

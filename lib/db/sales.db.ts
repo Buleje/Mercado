@@ -17,6 +17,8 @@ import { toNumOrZero } from "@/lib/decimal-utils";
 import { saldoEsperadoDeCaja } from "@/lib/caja/saldo-esperado";
 import { contarVentas, cuentaEfectivoCaja, type CuentaCaja } from "@/lib/caja/efectivo-esperado";
 import { CajaNoAbiertaError, CashRegistersMovementsDB } from "@/lib/db/cash-registers-movements.db";
+import { liquidacionDelMovimiento, medioCorregible, type PagoDeLiquidacion } from "@/lib/caja/cambiar-medio";
+import { invalidarVentasOverview } from "@/lib/caja/invalidar-ventas-overview";
 
 // ── Local Types ───────────────────────────────────────────────────────────────
 
@@ -31,6 +33,12 @@ export type DbCashMovement = {
   description: string;
   saleId?: string;
   createdAt: string;
+  /**
+   * Sólo en los ingresos/egresos de una caja ABIERTA que son el pago de una
+   * liquidación: su código. La pantalla no ofrece «Cambiar medio» ahí (criterio
+   * de `lib/caja/cambiar-medio`, el mismo del 409 del servidor).
+   */
+  liquidacionCodigo?: string;
 };
 
 export type DbCashRegister = {
@@ -287,7 +295,33 @@ async function conEfectivoEsperado(tenantId: string, cajas: DbCashRegister[]): P
       abiertas.map(async (c) => [c.id, (await sumarCaja(tenantId, c.id, c.openingAmount)).esperado] as const),
     ),
   );
-  return cajas.map((c) => (esperados.has(c.id) ? { ...c, efectivoEsperado: esperados.get(c.id) } : c));
+  const liquidaciones = await liquidacionesDeLasAbiertas(tenantId, abiertas);
+  return cajas.map((c) => {
+    if (!esperados.has(c.id)) return c;
+    return {
+      ...c,
+      efectivoEsperado: esperados.get(c.id),
+      movements: c.movements.map((m) => {
+        const codigo = medioCorregible(m.type) ? liquidacionDelMovimiento(m.id, liquidaciones) : null;
+        return codigo ? { ...m, liquidacionCodigo: codigo } : m;
+      }),
+    };
+  });
+}
+
+/**
+ * Las liquidaciones cuyo pago está entre los ingresos/egresos de las cajas
+ * abiertas. Si la lectura falla, la pantalla sigue (ofrece el selector y el
+ * servidor rechaza con su 409): perder este dato no debe tumbar la caja.
+ */
+async function liquidacionesDeLasAbiertas(tenantId: string, abiertas: DbCashRegister[]): Promise<PagoDeLiquidacion[]> {
+  const ids = abiertas.flatMap((c) => c.movements.filter((m) => medioCorregible(m.type)).map((m) => m.id));
+  try {
+    return await CashRegistersMovementsDB.liquidacionesDeMovimientos(tenantId, ids);
+  } catch (err) {
+    logger.warn("[sales.db] no se pudo leer qué movimientos son de una liquidación", { error: String(err), tenantId });
+    return [];
+  }
 }
 
 export const CashRegistersDB = {
@@ -354,6 +388,7 @@ export const CashRegistersDB = {
     });
     // El banner avisa de cajas abiertas desde un día anterior (AlertsDB, cache 60 s).
     invalidate(`admin:alerts-summary:${tenantId}`);
+    invalidarVentasOverview(tenantId);
     return mapCashRegister(row);
   },
   async close(tenantId: string, id: string, closingAmount: number, notes?: string): Promise<DbCashRegister | null> {
@@ -407,7 +442,10 @@ export const CashRegistersDB = {
          que está anotando en esta caja: margen sobre los 5 s por defecto. */
     }, { timeout: 15_000, maxWait: 5_000 });
 
-    if (row) invalidate(`admin:alerts-summary:${tenantId}`);
+    if (row) {
+      invalidate(`admin:alerts-summary:${tenantId}`);
+      invalidarVentasOverview(tenantId);
+    }
     return row ? mapCashRegister(row) : null;
   },
   async addMovement(cashRegisterId: string, movement: { type: string; amount: number; method: string; description: string; saleId?: string }, tenantId: string): Promise<DbCashMovement> {
@@ -429,6 +467,7 @@ export const CashRegistersDB = {
       if (caja.status !== "abierta") throw new CajaNoAbiertaError();
       return tx.cashMovement.create({ data: { cashRegisterId, ...movement } });
     });
+    invalidarVentasOverview(tenantId);
     return mapCashMovement(row);
   },
 };

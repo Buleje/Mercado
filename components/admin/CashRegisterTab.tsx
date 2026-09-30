@@ -45,6 +45,8 @@ interface CashMovement {
   id: string; cashRegisterId: string; type: string;
   amount: number; method: string; description: string;
   saleId?: string; createdAt: string;
+  /** Pago de una liquidación: su medio se corrige anulándola, no desde la caja. */
+  liquidacionCodigo?: string;
 }
 
 interface CashRegister {
