@@ -14,8 +14,16 @@ import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import type { CupoEspecie } from "@/lib/forestal/loth-cupo-especie";
 import { alertasDeCupo } from "@/lib/forestal/loth-cupo-vista";
 import LothCupoEspecies, { TONO_CUPO } from "./LothCupoEspecies";
+import { irACargarAutorizado } from "./loth-autorizar-url";
 
-export default function LothTraceCupo({ filas }: { filas: readonly CupoEspecie[] }) {
+export default function LothTraceCupo({
+  filas,
+  onCargarAutorizado = irACargarAutorizado,
+}: {
+  filas: readonly CupoEspecie[];
+  /** Por defecto navega al Plan de manejo (`?vista=plan&autorizar=`). Inyectable para la prueba. */
+  onCargarAutorizado?: (especie: string) => void;
+}) {
   const id = useId();
   const [abierto, setAbierto] = useState(false);
   if (filas.length === 0) return null;
@@ -55,7 +63,7 @@ export default function LothTraceCupo({ filas }: { filas: readonly CupoEspecie[]
         </button>
       </div>
       <div id={`${id}-cupo`} hidden={!abierto} className="mt-2">
-        {abierto && <LothCupoEspecies filas={filas} titulo="Cupo por especie" />}
+        {abierto && <LothCupoEspecies filas={filas} titulo="Cupo por especie" onCargarAutorizado={onCargarAutorizado} />}
       </div>
     </div>
   );

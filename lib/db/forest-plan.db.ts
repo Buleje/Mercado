@@ -17,6 +17,8 @@ import {
   estaFueraDePlazo,
   type BalanceMovement, type BalanceSpeciesInput, type CosteoSpeciesInput,
 } from "@/lib/forestal/loth-constants";
+import { planDeUpsert, type ItemAutorizar } from "@/lib/forestal/loth-autorizar-lote";
+import { findSpeciesByCommonName } from "@/data/forestry-species";
 
 const CACHE_PREFIX = "forest-plan";
 const dec = (v: number | string | null | undefined) =>
@@ -123,6 +125,30 @@ export interface TreeInput {
    *  ESTE tenant: no hay FK que lo haga (ADR-426). */
   contratoId?: string | null;
   createdBy: string;
+}
+
+/** El plan no existe en este negocio (o está de baja): 404, nunca un write a ciegas. */
+export class PlanNoEncontradoError extends Error {
+  constructor() {
+    super("Ese plan no existe en este negocio.");
+    this.name = "PlanNoEncontradoError";
+  }
+}
+
+/** La misma especie dos veces en un pedido (400): no se adivina cuál vale. */
+export class EspecieRepetidaError extends Error {
+  constructor(readonly especies: string[]) {
+    super(`La especie ${especies.join(", ")} viene dos veces.`);
+    this.name = "EspecieRepetidaError";
+  }
+}
+
+/** La especie ya está DOS veces en el plan (409): se limpia antes en el editor de a una. */
+export class EspecieDuplicadaEnPlanError extends Error {
+  constructor(readonly especies: string[]) {
+    super(`${especies.join(", ")} ya figura dos veces en el plan: borra la repetida antes de cargar.`);
+    this.name = "EspecieDuplicadaEnPlanError";
+  }
 }
 
 /** Un código de árbol que ya está en el censo del plan (409 en el endpoint). */
@@ -395,6 +421,101 @@ export class ForestPlanDB {
     });
     try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
     return row;
+  }
+
+  /**
+   * Lo autorizado por la resolución, varias especies en UNA llamada.
+   *
+   * Upsert por especie **normalizada** (`claveEspecie`): si el plan ya tiene la
+   * especie —aunque la escriba «Tornillo (Cedrelinga…)» y el pedido «tornillo»—
+   * se corrigen sus números; si no, se crea. El nombre de una fila existente no
+   * se toca (lo cruzan el balance y el control).
+   *
+   * - El plan tiene que ser de ESTE tenant y estar vivo: se bloquea su fila
+   *   (`FOR UPDATE`, con `tenantId` en el WHERE) y, si no aparece, es
+   *   `PlanNoEncontradoError` → 404. El lock además serializa dos guardados
+   *   simultáneos: sin él, los dos verían la especie ausente y la crearían dos
+   *   veces (no hay índice único que lo impida), duplicando el cupo.
+   * - Todo o nada, en una transacción: una resolución a medio cargar declara
+   *   un cupo que nadie firmó.
+   */
+  static async guardarAutorizadasLote(
+    tenantId: string,
+    planId: string,
+    items: readonly ItemAutorizar[],
+    actor: string,
+  ): Promise<{ creadas: number; actualizadas: number }> {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (!planId) throw new Error("planId is required");
+    if (items.length === 0) return { creadas: 0, actualizadas: 0 };
+
+    const r = await prisma.$transaction(async (tx) => {
+      const plan = await tx.$queryRaw<{ id: string }[]>`
+        SELECT "id" FROM "ForestPlan"
+        WHERE "id" = ${planId} AND "tenantId" = ${tenantId} AND "deletedAt" IS NULL
+        FOR UPDATE`;
+      if (plan.length === 0) throw new PlanNoEncontradoError();
+
+      const existentes = await tx.forestPlanSpecies.findMany({
+        where: { tenantId, planId, deletedAt: null },
+        select: { id: true, speciesCommon: true },
+      });
+      const decision = planDeUpsert(existentes, items);
+      if (decision.repetidas.length > 0) throw new EspecieRepetidaError(decision.repetidas);
+      if (decision.duplicadasEnPlan.length > 0) throw new EspecieDuplicadaEnPlanError(decision.duplicadasEnPlan);
+
+      for (const it of decision.actualizar) {
+        await tx.forestPlanSpecies.update({
+          where: { id: it.id, tenantId } satisfies Prisma.ForestPlanSpeciesWhereUniqueInput,
+          data: {
+            volumenAutorizadoM3: new Prisma.Decimal(it.volumenAutorizadoM3),
+            arbolesAutorizados: it.arbolesAutorizados,
+          },
+        });
+      }
+      if (decision.crear.length > 0) {
+        await tx.forestPlanSpecies.createMany({
+          data: decision.crear.map((it) => {
+            /* Lo mismo que hace el alta de a una: el científico y CITES salen
+               del catálogo, no de lo que se tipee. */
+            const cat = findSpeciesByCommonName(it.speciesCommon);
+            return {
+              tenantId,
+              planId,
+              speciesCommon: it.speciesCommon,
+              speciesScientific: cat?.scientificName ?? null,
+              cites: cat?.cites ?? false,
+              volumenAutorizadoM3: new Prisma.Decimal(it.volumenAutorizadoM3),
+              arbolesAutorizados: it.arbolesAutorizados,
+            };
+          }),
+        });
+      }
+      return decision;
+    });
+
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    } catch (err) {
+      logger.error("[forest-plan] no se pudo invalidar la caché tras cargar lo autorizado", {
+        error: String(err),
+        tenantId,
+        planId,
+      });
+    }
+    const linea = (it: ItemAutorizar) =>
+      `${it.speciesCommon} ${it.volumenAutorizadoM3} m³${it.arbolesAutorizados != null ? ` / ${it.arbolesAutorizados} árb.` : ""}`;
+    auditCtp({
+      tenantId,
+      action: "ctp_plan_especies_lote",
+      entity: "ForestPlan",
+      entityId: planId,
+      detail:
+        `Autorizado por especie: ${r.crear.length} nuevas, ${r.actualizar.length} corregidas. ` +
+        [...r.crear, ...r.actualizar].map(linea).join("; "),
+      user: actor,
+    });
+    return { creadas: r.crear.length, actualizadas: r.actualizar.length };
   }
 
   // ─── Censo (árboles) ───────────────────────────────────────────────────

@@ -34,7 +34,8 @@ import LothPlanTalaPanel from "./LothPlanTalaPanel";
 import LothEspecieFichas from "./LothEspecieFichas";
 import LothEspecieFueraModal from "./LothEspecieFueraModal";
 import LothPlanForm from "./LothPlanForm";
-import LothPlanEspecies, { type PedidoEspecie } from "./LothPlanEspecies";
+import LothPlanEspecies, { type PedidoEspecie, type PedidoLote } from "./LothPlanEspecies";
+import { useAutorizarDesdeUrl } from "./hooks/use-autorizar-desde-url";
 import LothPlanCenso from "./LothPlanCenso";
 import LothPlanAvisos from "./LothPlanAvisos";
 import LothPlanCroquis from "./LothPlanCroquis";
@@ -67,6 +68,18 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
 
   const pedirEspecie = (id: string, accion: PedidoEspecie["accion"]) =>
     setPedidoEspecie((p) => ({ id, accion, n: (p?.n ?? 0) + 1 }));
+
+  /* «Cargar lo autorizado» desde «Cupo por especie» (`?autorizar=`). */
+  const [pedidoLote, setPedidoLote] = useState<PedidoLote | null>(null);
+  useAutorizarDesdeUrl({
+    plans: d.plans,
+    planId: d.planId,
+    setPlanId: d.setPlanId,
+    onAbrir: (especie) => {
+      setPestana("especies");
+      setPedidoLote((p) => ({ especie, n: (p?.n ?? 0) + 1 }));
+    },
+  });
 
   /**
    * Eliminar un plan cargado por error — diciendo ANTES qué se lleva puesto.
@@ -362,7 +375,14 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
               onConfig={d.setPoaConfig}
               onSave={d.savePoaConfig}
             />
-            <LothPlanEspecies planId={plan.id} species={d.species} onChange={() => d.loadDetail(plan.id)} pedido={pedidoEspecie} />
+            <LothPlanEspecies
+              planId={plan.id}
+              species={d.species}
+              onChange={() => d.loadDetail(plan.id)}
+              pedido={pedidoEspecie}
+              censo={trees}
+              pedidoLote={pedidoLote}
+            />
           </Panel>
 
           <Panel id="censo" activa={pestana}>

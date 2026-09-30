@@ -31,6 +31,12 @@ export type LothCupoEspeciesProps = (
   /** Por defecto «Cupo por especie». */
   titulo?: string;
   className?: string;
+  /**
+   * «Cargar lo autorizado» en cada especie que se mide contra el censo (o que
+   * no tiene contra qué medirse): el cupo real es el de la resolución. Sin
+   * esta prop el botón no aparece (la tabla también se usa donde no se edita).
+   */
+  onCargarAutorizado?: (especie: string) => void;
 };
 
 export const TONO_CUPO: Record<VeredictoCupo, { texto: string; barra: string }> = {
@@ -66,7 +72,7 @@ function Barra({ f }: { f: CupoEspecie }) {
 }
 
 export default function LothCupoEspecies(props: LothCupoEspeciesProps) {
-  const { entrada, filas: dadas, titulo = "Cupo por especie", className = "" } = props;
+  const { entrada, filas: dadas, titulo = "Cupo por especie", className = "", onCargarAutorizado } = props;
   const filas = useMemo(() => ordenarCupos(dadas ?? (entrada ? cupoPorEspecie(entrada) : [])), [dadas, entrada]);
   const tot = useMemo(() => totalesCupo(filas), [filas]);
 
@@ -128,6 +134,18 @@ export default function LothCupoEspecies(props: LothCupoEspeciesProps) {
                       <span className="block text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                         {f.fuente === "autorizado" ? "autorizado" : "censado"}
                       </span>
+                    )}
+                    {onCargarAutorizado && f.fuente !== "autorizado" && (
+                      <button
+                        type="button"
+                        onClick={() => onCargarAutorizado(f.especie)}
+                        aria-label={`Cargar lo autorizado de ${f.especie}`}
+                        title="El cupo se está midiendo contra el censo. Carga los m³ que autoriza la resolución."
+                        className="mt-0.5 inline-flex min-h-8 items-center rounded-md px-1 font-sans text-xs font-semibold text-[var(--accent-ink)] underline decoration-dotted underline-offset-2 hover:decoration-solid focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 dark:text-[var(--accent)]"
+                        data-cargar-autorizado={f.clave}
+                      >
+                        Cargar lo autorizado
+                      </button>
                     )}
                   </td>
                   <td className="px-2 py-1.5"><Barra f={f} /></td>
