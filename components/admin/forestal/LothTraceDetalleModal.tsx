@@ -15,9 +15,10 @@
  */
 
 import AdminModal from "@/components/admin/shared/AdminModal";
-import { ChevronLeft, ChevronRight, Link2, Map as MapIcon, Printer, TreePine } from "@buleje/design-system/icons";
+import { ChevronLeft, ChevronRight, FileText, Link2, Map as MapIcon, Printer, TreePine } from "@buleje/design-system/icons";
 import type { TraceFila } from "@/lib/forestal/loth-trace-tabla";
 import { printTrozaPasaporte, type PasaporteCaratula } from "@/lib/forestal/loth-pasaporte-print";
+import { printHojaArbol } from "@/lib/forestal/loth-hoja-arbol-print";
 import LothTraceDetalle from "./LothTraceDetalle";
 import { CHAIN_META } from "./LothTraceCard";
 import { fmtPct, fmtRecorrido, type TraceNav } from "./loth-trace-ui";
@@ -88,6 +89,15 @@ export default function LothTraceDetalleModal({
               className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-semibold text-white hover:opacity-90"
             >
               <Printer className="h-4 w-4" aria-hidden="true" /> Pasaporte
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (fila) printHojaArbol(fila, caratula).catch((err) => console.error("[hoja-arbol] no se pudo abrir", err));
+              }}
+              className={BOTON}
+            >
+              <FileText className="h-4 w-4" aria-hidden="true" /> Hoja del árbol
             </button>
             {navCerrando?.onVerCadena && (
               <button type="button" onClick={() => navCerrando.onVerCadena?.(op.tree)} className={BOTON}>
