@@ -2,6 +2,7 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { invalidateByPrefix } from "@/lib/cache";
+import { contratoVigente } from "@/lib/db/contrato-propio.db";
 import { claveCacheResultado } from "@/lib/finance/resultado-del-negocio";
 import { detalleDelControl, instanteDeVencimiento, problemaDeVencimiento } from "@/lib/adelantos/control-edicion";
 
@@ -108,10 +109,7 @@ export const AdelantosControlDB = {
         if (!pedido) {
           contrato = null;
         } else if (pedido !== actual.contratoId) {
-          const c = await tx.forestContrato.findFirst({
-            where: { id: pedido, tenantId, deletedAt: null },
-            select: { id: true, codigo: true },
-          });
+          const c = await contratoVigente(tx, tenantId, pedido);
           if (!c) {
             throw new AdelantoNoControlableError(
               "Ese permiso no existe en este negocio o se dio de baja. Elígelo de la lista.",

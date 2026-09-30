@@ -17,7 +17,7 @@ const H = vi.hoisted(() => ({
 
 vi.mock("@/lib/prisma", () => ({ prisma: H.prisma }));
 vi.mock("@/lib/logger", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() } }));
-vi.mock("@/lib/db/contrato-propio.db", () => ({ contratoPropio: async () => null }));
+vi.mock("@/lib/db/contrato-propio.db", () => ({ contratoPropio: async () => null, contratoVigente: async () => null }));
 vi.mock("@/lib/db/forest-directorio.db", () => ({ ForestDirectorioDB: { getParte: vi.fn() } }));
 
 import {

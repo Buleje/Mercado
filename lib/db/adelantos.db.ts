@@ -2,7 +2,7 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { limaDateKey } from "@/lib/utils";
 import { logger } from "@/lib/logger";
-import { contratoPropio } from "./contrato-propio.db";
+import { contratoVigente } from "./contrato-propio.db";
 import type { Prisma } from "@/lib/generated/prisma/client";
 import {
   PREFIJO_ADELANTO,
@@ -339,6 +339,21 @@ export class IdempotenciaDistintaError extends Error {
         : "Ya guardaste una entrega con otros datos en este intento; revísala en el detalle del adelanto.",
     );
     this.name = "IdempotenciaDistintaError";
+  }
+}
+
+/**
+ * El alta trajo un `contratoId` que no es de este negocio o está dado de baja.
+ * Antes se guardaba el adelanto SIN contrato y se respondía 201: quien lo cargó
+ * creía que quedaba imputado. La ruta responde 422 `contrato_invalido`; no se
+ * creó nada ni se tocó la caja (se valida antes de ambos).
+ */
+export class ContratoInvalidoError extends Error {
+  readonly status = 422 as const;
+  readonly code = "contrato_invalido" as const;
+  constructor() {
+    super("Ese contrato no existe o está dado de baja: elige otro o crea el adelanto sin contrato");
+    this.name = "ContratoInvalidoError";
   }
 }
 
@@ -909,6 +924,20 @@ export const AdelantosDB = {
     const problema = problemaDeDireccion({ direccion, conceptoRecibido: data.conceptoRecibido ?? null, modalidad });
     if (problema) throw new Error(problema);
 
+    /* El permiso: ausente / null / "" = sin permiso. Uno pedido que no es de este
+       negocio o está dado de baja se RECHAZA (422) — antes de la caja y del INSERT.
+       Va DESPUÉS de `yaCreado()` a propósito: la clave de idempotencia sólo queda
+       reservada cuando la fila se inserta, así que un rechazo acá no la quema (el
+       reintento con el permiso corregido entra), y un reintento de un alta que ya
+       se hizo devuelve el adelanto aunque el permiso se haya dado de baja después. */
+    const contratoPedido = data.contratoId?.trim() || null;
+    let contratoValidado: string | null = null;
+    if (contratoPedido) {
+      const c = await contratoVigente(prisma, tenantId, contratoPedido);
+      if (!c) throw new ContratoInvalidoError();
+      contratoValidado = c.id;
+    }
+
     // ADR-118: límite de crédito por persona (saldo abierto + nuevo monto ≤ límite)
     const benef = await prisma.adelantoBeneficiario.findFirst({
       where: { id: data.beneficiarioId, tenantId },
@@ -964,7 +993,7 @@ export const AdelantosDB = {
     }
 
     const codigoOperacion = await siguienteCodigoDeTenant(tenantId);
-    const contratoId = await contratoPropio(tenantId, data.contratoId);
+    const contratoId = contratoValidado;
     const crear = async (db: Db) => db.adelanto.create({
       data: {
         tenantId,
