@@ -249,10 +249,12 @@ export const SalesDB = {
       include: { items: true },
     });
     });
+    invalidarVentasOverview(tenantId);
     return mapSale(row);
   },
   async delete(tenantId: string, id: string): Promise<void> {
     await withRlsTx(tenantId, (tx) => tx.sale.deleteMany({ where: { id, tenantId } })).catch((err) => logger.error("[sales.db] sale delete failed", { error: String(err), id, tenantId }));
+    invalidarVentasOverview(tenantId);
   },
 };
 

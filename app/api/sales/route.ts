@@ -14,6 +14,7 @@ import { logger } from "@/lib/logger";
 import { withDbRetry } from "@/lib/db-retry";
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit-logger";
+import { invalidarVentasOverview } from "@/lib/caja/invalidar-ventas-overview";
 import { runWithAuditContext } from "@/lib/audit/audit-context";
 import { deductStockFEFO, hasBatchesWithStock } from "@/lib/inventory/fefo-deduct";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -652,6 +653,11 @@ async function salesHandler(
     logger.error("[sales] cash register movement failed", { saleId: sale.id, error: String(err) });
     cajaSinAnotar = { monto: finalTotal, metodo: data.payment ?? "efectivo", motivo: "fallo", lineas: [] };
   }
+
+  // Tablero de Ventas: la venta y su movimiento de caja ya están escritos. Va
+  // DESPUÉS de anotar la caja para que un GET concurrente no re-cachee el saldo
+  // viejo; y fuera del movimiento porque una venta fiada/sin caja no escribe ninguno.
+  invalidarVentasOverview(auth.tenantId);
 
   // Accrue loyalty points for POS sale (fire-and-forget)
   if (data.customerPhone) {

@@ -131,8 +131,15 @@ export const VentasOverviewDB = {
   /**
    * Agrega todos los datos del Tablero de Ventas en una sola llamada.
    * tenantId SIEMPRE 1er parámetro (multi-tenant guard).
-   * Cacheado 2 min por tenant + range; invalidado externamente con
-   * revalidateTag(`ventas-overview-${tenantId}`) tras writes de Sale/Order.
+   * Cacheado 2 min por tenant + range. Lee Order (marketplace + tienda),
+   * Sale (POS), la caja abierta y sus movimientos. Se invalida con
+   * `invalidarVentasOverview(tenantId)` (`lib/caja/invalidar-ventas-overview`)
+   * desde: movimientos/apertura/cierre de caja, `POST /api/sales`,
+   * `SalesDB.add/delete`, `invalidateAdminCache.afterOrder` (POST/PATCH/DELETE
+   * de `/api/orders`), pedidos de marketplace y conversión de cotización.
+   * Los cambios de ESTADO de un pedido no alteran este tablero (no filtra por
+   * estado), así que los flujos que sólo cambian estado (delivery, bulk-status,
+   * MercadoPago webhook) no lo purgan: caduca a los 2 min.
    */
   async get(tenantId: string, range: VentasRange): Promise<VentasOverviewData> {
     "use cache";
