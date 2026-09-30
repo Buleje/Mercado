@@ -43,9 +43,9 @@ const SP6 = `EspecieT6-${runId}`;
 const SP7ok = `EspecieT7ok-${runId}`;
 const SP7bad = `EspecieT7bad-${runId}`;
 
-/** Alta de una línea del libro con `createdBy` de prueba. */
+/** Alta de una línea del libro con `createdBy` de prueba, como la haría un admin. */
 function crear(input: Omit<LothEntryCreateInput, "createdBy">) {
-  return ForestLothDB.create(TENANT, { ...input, createdBy: P });
+  return ForestLothDB.create(TENANT, { puedeExcederCupo: true, ...input, createdBy: P });
 }
 
 /** Limpieza por PATRÓN (barre basura de corridas muertas anteriores también). */
@@ -297,6 +297,10 @@ describe.skipIf(!HAS_DB)("LO-TH · invariantes de cadena de custodia (ADR-305)",
     await expect(
       crear({ section: "tala", treeCode: `${P}-T9G`, speciesCommon: SP9a, volumeM3: 5.973, planId: plan.id, motivoSobreCupo: "ok" }),
     ).rejects.toMatchObject({ code: "T9_CUPO_ESPECIE" });
+    // Un almacenero no la asienta ni con motivo: la firma el dueño o el admin.
+    await expect(
+      crear({ section: "tala", treeCode: `${P}-T9G`, volumeM3: 5.973, planId: plan.id, motivoSobreCupo: "Ampliación en trámite", puedeExcederCupo: false }),
+    ).rejects.toMatchObject({ code: "T9_SOLO_DUENO" });
     const ok = await crear({
       section: "tala",
       treeCode: `${P}-T9G`,

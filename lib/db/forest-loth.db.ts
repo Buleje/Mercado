@@ -16,7 +16,7 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
 import { LOTH_SECTIONS, claveEspecie, type LothSection } from "@/lib/forestal/loth-constants";
-import { auditLoth } from "@/lib/forestal/loth-audit";
+import { auditLoth, type LothAuditAction, type LothAuditEntity } from "@/lib/forestal/loth-audit";
 import { ForestLothCierreDB } from "@/lib/db/forest-loth-cierre.db";
 import { ForestLothPoaDB } from "@/lib/db/forest-loth-poa.db";
 import { dmcParaEspecie } from "@/lib/forestal/loth-poa";
@@ -29,6 +29,8 @@ import { identidadDeGuiaTh } from "@/lib/forestal/guia-th-al-ctp";
 import { PRODUCTO_TROZA, type TrozaDelLibro } from "@/lib/forestal/loth-guia-despacho";
 import { armarArbolDeTroza, lineaVigente, type ArbolDeTroza } from "@/lib/forestal/arbol-de-troza";
 import { avisoCupoAlTalar, entradaDelPlan, motivoCupoValido, notaSobreCupo, MOTIVO_CUPO_MIN, type AvisoCupo } from "@/lib/forestal/loth-cupo-especie";
+import { resolverTalaContraCenso } from "@/lib/forestal/loth-tala-del-censo";
+import { ForestPlanDB } from "@/lib/db/forest-plan.db";
 
 export { LOTH_SECTIONS };
 export type { LothSection };
@@ -82,11 +84,34 @@ export class LothInvariantError extends Error {
       // Una carátula con líneas vivas es un libro que existe: no se borra.
       | "CARATULA_CON_LINEAS"
       // Una guía ampara UN título: trozas de dos planes son dos guías.
-      | "GUIA_VARIOS_PLANES",
+      | "GUIA_VARIOS_PLANES"
+      // El planId de la línea no es un plan vivo de ESTE negocio (sin FK: se valida acá).
+      | "PLAN_INEXISTENTE"
+      // La tala de un árbol del censo va con el plan y la especie del censo.
+      | "TALA_PLAN_DISTINTO_AL_CENSO"
+      | "TALA_ARBOL_EN_VARIOS_PLANES"
+      | "TALA_ESPECIE_DISTINTA_AL_CENSO",
     readonly detail?: Record<string, unknown>,
   ) {
     super(message);
     this.name = "LothInvariantError";
+  }
+}
+
+/**
+ * El dato cuadra pero QUIEN lo asienta no puede (→ 403, no 422). Hoy: una tala
+ * por encima de lo AUTORIZADO para su especie la registra sólo el dueño o el
+ * administrador — es la excepción que el titular firma ante OSINFOR, no la
+ * decide el almacenero con su propio motivo (auditoría T9, 30-09).
+ */
+export class LothPermisoError extends Error {
+  readonly code = "T9_SOLO_DUENO" as const;
+  constructor(
+    message: string,
+    readonly detail?: Record<string, unknown>,
+  ) {
+    super(message);
+    this.name = "LothPermisoError";
   }
 }
 
@@ -137,6 +162,12 @@ export interface LothEntryCreateInput {
    * el motivo queda en la línea y en la auditoría.
    */
   motivoSobreCupo?: string | null;
+  /**
+   * ¿Quién asienta puede registrar una tala por encima de lo AUTORIZADO? Lo
+   * decide la RUTA por el rol del JWT (admin/owner), nunca el body. Sin esto
+   * (undefined) se niega: el default seguro.
+   */
+  puedeExcederCupo?: boolean;
 
   correctsLineNo?: number | null;
   correctionNote?: string | null;
@@ -240,12 +271,18 @@ export class ForestLothDB {
    *
    * Lanza `LothInvariantError` (→ 422) si el dato rompe la cadena.
    */
-  static async create(tenantId: string, input: LothEntryCreateInput) {
+  static async create(tenantId: string, pedido: LothEntryCreateInput) {
     if (!tenantId) throw new Error("tenantId is required");
-    if (!LOTH_SECTIONS.includes(input.section)) {
-      throw new Error(`invalid section: ${input.section}`);
+    if (!LOTH_SECTIONS.includes(pedido.section)) {
+      throw new Error(`invalid section: ${pedido.section}`);
     }
-    if (!input.createdBy?.trim()) throw new Error("createdBy is required");
+    if (!pedido.createdBy?.trim()) throw new Error("createdBy is required");
+
+    // El plan y la especie los pone la BASE, no el navegador: planId del
+    // tenant y, en la tala de un árbol censado, el plan y la especie del censo
+    // (auditoría T9, 30-09). Antes de todo lo demás: el DMC, T3 y el cupo miden
+    // con esto, y es lo que se guarda.
+    const input = await ForestLothDB.resolverPlanYArbol(tenantId, pedido);
 
     // P1 (cierre de período): no se puede registrar una línea fechada en un mes
     // cerrado — el acta es inmutable hasta reabrir. Se chequea antes de la tx.
@@ -264,7 +301,7 @@ export class ForestLothDB {
     // (es el dato contra el censo, no una carrera entre dos altas).
     await ForestLothDB.enforceDmc(tenantId, input);
 
-    const { entry, sobreCupo } = await prisma.$transaction(async (tx) => {
+    const { entry } = await prisma.$transaction(async (tx) => {
       // 1. Invariantes de cadena de custodia (lockean el recurso disputado).
       await ForestLothDB.enforceInvariants(tx, tenantId, input);
 
@@ -302,6 +339,33 @@ export class ForestLothDB {
         : input;
 
       const creada = await tx.forestLothEntry.create({ data: ForestLothDB.datosDeLinea(tenantId, inputFinal, entryDate, caratulaId, lineNo) });
+
+      // 4. El evento sobre-cupo, en la MISMA tx: la excepción que el titular
+      //    tiene que poder explicar no puede quedar asentada sin su rastro (con
+      //    `auditLoth`, fire-and-forget, un fallo del log la perdía). Se busca
+      //    por su nombre: contra el censo es un aviso (`loth_tala_sobre_censo`),
+      //    contra lo autorizado, la excepción con motivo (`loth_tala_sobre_cupo`).
+      //    Si el log no se escribe, no se escribe la tala.
+      if (cupo) {
+        const motivo = input.motivoSobreCupo ?? "";
+        const action: LothAuditAction = cupo.exigeMotivo ? "loth_tala_sobre_cupo" : "loth_tala_sobre_censo";
+        // ActivityLog tiene RLS por `app.tenant_id` (ADR-114): sin fijarlo, con
+        // el rol sin BYPASSRLS el INSERT fallaría y tumbaría la tala. `true` =
+        // sólo para esta tx (lo mismo que hace `withRlsTx`).
+        await tx.$executeRaw`SELECT set_config('app.tenant_id', ${tenantId}, true)`;
+        await tx.activityLog.create({
+          data: {
+            tenantId,
+            action,
+            entity: "ForestLothEntry" satisfies LothAuditEntity,
+            entityId: creada.id,
+            user: input.createdBy || "unknown",
+            detail: `Tala #${creada.lineNo} ${creada.treeCode ?? "—"}: ${
+              motivoCupoValido(motivo) ? notaSobreCupo(cupo, motivo) : `[Aviso sin motivo] ${cupo.mensaje}`
+            }`,
+          },
+        });
+      }
       return { entry: creada, sobreCupo: cupo };
     }, LOTH_TX_OPTS);
 
@@ -313,23 +377,6 @@ export class ForestLothDB {
       detail: describeEntry(entry),
       user: input.createdBy,
     });
-    if (sobreCupo) {
-      // Evento aparte (no sólo el detalle del alta): es la excepción que el
-      // titular tiene que poder explicar, y se busca por su nombre. Contra el
-      // censo es un aviso (`loth_tala_sobre_censo`), contra lo autorizado, la
-      // excepción con motivo (`loth_tala_sobre_cupo`).
-      const motivo = input.motivoSobreCupo?.trim() ?? "";
-      auditLoth({
-        tenantId,
-        action: sobreCupo.exigeMotivo ? "loth_tala_sobre_cupo" : "loth_tala_sobre_censo",
-        entity: "ForestLothEntry",
-        entityId: entry.id,
-        detail: `Tala #${entry.lineNo} ${entry.treeCode ?? "—"}: ${
-          motivoCupoValido(motivo) ? notaSobreCupo(sobreCupo, motivo) : `[Aviso sin motivo] ${sobreCupo.mensaje}`
-        }`,
-        user: input.createdBy,
-      });
-    }
     try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
     return entry;
   }
@@ -679,6 +726,46 @@ export class ForestLothDB {
   }
 
   /**
+   * El plan y la especie de la línea, validados contra la BASE (auditoría T9,
+   * 30-09). `ForestLothEntry.planId` no tiene FK: sin esto, un planId inventado
+   * o de otro negocio dejaba el censo vacío y el cupo (T9) y lo autorizado
+   * (T6/T7) no medían nada.
+   *
+   *  - Si viene `planId`, tiene que ser un plan vivo de ESTE tenant → si no, 422.
+   *  - Tala de un árbol del censo: el plan y la especie son los del árbol
+   *    (`resolverTalaContraCenso`); otra especie u otro plan → 422. Sin planId,
+   *    se toma el del árbol. Un código fuera del censo queda como vino.
+   *
+   * Va antes de la tx: son lecturas de catálogo (plan y censo), no el recurso
+   * disputado; el lock del cupo sigue siendo el último de la tx.
+   */
+  private static async resolverPlanYArbol(tenantId: string, input: LothEntryCreateInput): Promise<LothEntryCreateInput> {
+    const planPedido = input.planId?.trim() || null;
+    if (planPedido && !(await ForestPlanDB.getPlan(tenantId, planPedido))) {
+      throw new LothInvariantError(
+        "El plan de manejo de esta línea no existe en tu negocio (o fue dado de baja). Elige el plan otra vez.",
+        "PLAN_INEXISTENTE",
+        { planId: planPedido },
+      );
+    }
+    const treeCode = input.treeCode?.trim() || null;
+    if (input.section !== "tala" || !treeCode) return { ...input, planId: planPedido };
+
+    const arboles = await prisma.forestCensusTree.findMany({
+      where: { tenantId, treeCode, deletedAt: null },
+      select: { planId: true, speciesCommon: true, speciesScientific: true },
+      orderBy: { id: "asc" },
+      take: 50,
+    });
+    const r = resolverTalaContraCenso(
+      { treeCode, planId: planPedido, speciesCommon: input.speciesCommon ?? null, speciesScientific: input.speciesScientific ?? null },
+      arboles,
+    );
+    if (!r.ok) throw new LothInvariantError(r.mensaje, r.code, r.detail);
+    return { ...input, planId: r.planId, speciesCommon: r.speciesCommon, speciesScientific: r.speciesScientific };
+  }
+
+  /**
    * T8 — DMC. Si el árbol figura en el censo con su DAP y ese DAP no llega al
    * diámetro mínimo de corta de la especie, la tala se rechaza (422) salvo que
    * el operador escriba una justificación, que queda en el libro.
@@ -692,9 +779,12 @@ export class ForestLothDB {
     const treeCode = input.treeCode?.trim();
     if (!treeCode) return;
 
+    // El árbol del plan ya resuelto (`resolverPlanYArbol`): con el mismo
+    // código en dos censos, el DAP que cuenta es el del plan de esta tala.
     const arbol = await prisma.forestCensusTree.findFirst({
-      where: { tenantId, treeCode, deletedAt: null },
+      where: { tenantId, treeCode, deletedAt: null, ...(input.planId ? { planId: input.planId } : {}) },
       select: { speciesCommon: true, dapM: true, planId: true },
+      orderBy: { id: "asc" },
     });
     if (!arbol?.dapM) return;
 
@@ -743,20 +833,17 @@ export class ForestLothDB {
     if (vol == null || !Number.isFinite(vol) || vol <= 0) return null;
     const treeCode = input.treeCode?.trim() || null;
 
-    let planId = input.planId ?? null;
-    let especie = input.speciesCommon?.trim() || null;
-    if (treeCode && (!planId || !especie)) {
-      const arbol = await tx.forestCensusTree.findFirst({
-        where: { tenantId, treeCode, deletedAt: null, ...(planId ? { planId } : {}) },
-        select: { planId: true, speciesCommon: true },
-      });
-      planId = planId ?? arbol?.planId ?? null;
-      especie = especie ?? arbol?.speciesCommon ?? null;
-    }
+    // Plan y especie ya resueltos contra la base (`resolverPlanYArbol`): en la
+    // tala de un árbol censado son los del censo, nunca los del navegador.
+    const planId = input.planId ?? null;
+    const especie = input.speciesCommon?.trim() || null;
     const clave = claveEspecie(especie);
     if (!planId || !clave) return null;
 
-    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`loth-cupo:${tenantId}:${planId}:${clave}`}))`;
+    // Dos claves int4 (tenant; plan+especie) en vez de un hashtext de 32 bits
+    // sobre todo junto: 64 bits de espacio y otro keyspace que el de los locks
+    // de una clave (`gtf:…`). Parametrizado: el texto nunca se interpola.
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${tenantId}), hashtext(${`${planId}:${clave}`}))`;
 
     const [censo, autorizadas] = await Promise.all([
       tx.forestCensusTree.findMany({
@@ -792,7 +879,20 @@ export class ForestLothDB {
     );
     if (!aviso) return null;
     // Contra el censo: aviso, no freno (el censo puede estar incompleto).
-    if (!aviso.exigeMotivo || motivoCupoValido(input.motivoSobreCupo)) return aviso;
+    if (!aviso.exigeMotivo) return aviso;
+    // Sobre lo AUTORIZADO la excepción la firma el dueño o el administrador:
+    // el almacenero no la asienta con su propio motivo (→ 403, no 422).
+    if (!input.puedeExcederCupo) {
+      throw new LothPermisoError(`${aviso.mensaje} Pídele al dueño o al administrador que registre esta tala.`, {
+        especie: aviso.especie,
+        fuente: aviso.fuente,
+        cupoM3: aviso.cupoM3,
+        taladoConEsteM3: aviso.taladoConEsteM3,
+        pctConEste: aviso.pctConEste,
+        avisoCupo: aviso.mensaje,
+      });
+    }
+    if (motivoCupoValido(input.motivoSobreCupo)) return aviso;
 
     throw new LothInvariantError(
       `${aviso.mensaje} Si igual corresponde registrarla —el libro tiene que reflejar lo que pasó en el monte—, confirma y escribe el motivo (${MOTIVO_CUPO_MIN} letras o más): queda en la línea y en la auditoría.`,

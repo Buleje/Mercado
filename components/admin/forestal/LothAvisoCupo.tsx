@@ -13,7 +13,7 @@
 
 import { AlertTriangle } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
-import { MOTIVO_CUPO_MIN } from "@/lib/forestal/loth-cupo-especie";
+import { MOTIVO_CUPO_MIN, limpiarMotivo, motivoCupoValido } from "@/lib/forestal/loth-cupo-especie";
 
 interface Props {
   /** «Con este árbol, Tornillo llega a 154 % de lo censado (9.537 de 6.200 m³).» */
@@ -32,7 +32,8 @@ const CAJA_AMBAR =
   "border-[var(--data-warning-500)]/60 bg-[var(--data-warning-500)]/10 text-[var(--data-warning-ink)] dark:text-[var(--data-warning-500)]";
 
 export default function LothAvisoCupo({ mensaje, obligatorio, confirmado, onConfirmado, motivo, onMotivo }: Props) {
-  const corto = motivo.trim().length > 0 && motivo.trim().length < MOTIVO_CUPO_MIN;
+  // El mismo criterio que la ruta: letras de verdad, no «.....» ni invisibles.
+  const corto = limpiarMotivo(motivo).length > 0 && !motivoCupoValido(motivo);
   return (
     <div
       role={obligatorio ? "alert" : "status"}

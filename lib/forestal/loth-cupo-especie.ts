@@ -366,13 +366,24 @@ export function avisoCupoAlTalar(entrada: EntradaCupo, nueva: TalaNueva): AvisoC
   };
 }
 
-/** ¿Alcanza el motivo? Mismo criterio en el formulario y en la ruta. */
-export const motivoCupoValido = (motivo: string | null | undefined): boolean => (motivo ?? "").trim().length >= MOTIVO_CUPO_MIN;
+/**
+ * El motivo sin lo que no se lee: caracteres de formato invisibles (`\p{Cf}`:
+ * espacio de ancho cero, marcas de dirección…) y los espacios de los extremos.
+ */
+export const limpiarMotivo = (motivo: string | null | undefined): string => (motivo ?? "").replace(/\p{Cf}/gu, "").trim();
+
+/**
+ * ¿Alcanza el motivo? Cinco LETRAS o más (`\p{L}`: «ñ» y «á» cuentan). Antes
+ * medía el largo, y «.....» o cinco espacios de ancho cero pasaban (auditoría
+ * 30-09). Mismo criterio en el formulario, el importador y la ruta.
+ */
+export const motivoCupoValido = (motivo: string | null | undefined): boolean =>
+  (limpiarMotivo(motivo).match(/\p{L}/gu)?.length ?? 0) >= MOTIVO_CUPO_MIN;
 
 /**
  * Lo que queda escrito en las observaciones de la línea: la excepción se lee de
  * una en el libro (y en el export a la ARFFS), igual que la del DMC.
  */
 export function notaSobreCupo(aviso: AvisoCupo, motivo: string): string {
-  return `[Tala sobre el cupo: ${aviso.especie} ${pctEntero(aviso.pctConEste)} ${deLoQue(aviso.fuente)} (${fmtM3(aviso.taladoConEsteM3)} de ${fmtM3(aviso.cupoM3)} m³). Motivo: ${motivo.trim()}]`;
+  return `[Tala sobre el cupo: ${aviso.especie} ${pctEntero(aviso.pctConEste)} ${deLoQue(aviso.fuente)} (${fmtM3(aviso.taladoConEsteM3)} de ${fmtM3(aviso.cupoM3)} m³). Motivo: ${limpiarMotivo(motivo)}]`;
 }

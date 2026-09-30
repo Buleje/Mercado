@@ -23,6 +23,9 @@ import { lothErrorResponse, lothValidationResponse } from "@/lib/forestal/loth-a
 
 const sectionEnum = z.enum(LOTH_SECTIONS);
 
+/** Quién registra una tala por encima de lo AUTORIZADO para su especie (T9). */
+const PUEDEN_EXCEDER_CUPO: readonly string[] = ["admin", "owner"];
+
 const createSchema = z.object({
   caratulaId: z.string().trim().min(1).nullable().optional(),
   planId: z.string().trim().min(1).nullable().optional(),
@@ -211,6 +214,10 @@ export const POST = withApiHandler("forestal-loth-post", async (req: NextRequest
     const entry = await ForestLothDB.create(auth.tenantId, {
       ...parsed.data,
       motosierristaId,
+      // T9: pasar lo AUTORIZADO de una especie es la excepción que firma el
+      // titular — sólo admin/owner (por el rol del JWT; el body no lo decide,
+      // y el schema ni siquiera acepta el campo). Otro rol → 403 desde la DB class.
+      puedeExcederCupo: PUEDEN_EXCEDER_CUPO.includes(auth.role),
       createdBy: auth.username ?? "unknown",
     });
     // ADR-126: al talar, el árbol del censo pasa a "talado" (consume saldo).
