@@ -24,7 +24,14 @@ import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { formatNumber } from "@/lib/format";
 import { TONO, fechaCelda } from "./loth-tablero-partes";
 
-export type NavTablero = { onVerCadena?: (code: string) => void; onVerGtf?: (gtf: string) => void };
+export type NavTablero = {
+  onVerCadena?: (code: string) => void;
+  onVerGtf?: (gtf: string) => void;
+  /** «Árbol en el mapa» del escáner. Sin esto, navega por la URL (`?vista=mapa&arbol=`). */
+  onVerArbol?: (treeCode: string) => void;
+  /** «Registrar su despacho» del escáner. Sin esto, va a la sección Despacho por la URL. */
+  onRegistrarDespacho?: (code: string) => void;
+};
 
 const TH = "px-3 py-2.5 text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]";
 const TD = "px-3 py-2.5 align-middle";

@@ -21,9 +21,8 @@
  */
 
 import { useId, useMemo, useState, type ReactNode } from "react";
-import { SectionTitle, CardTitle } from "@buleje/design-system";
-import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
-import { Search, AlertTriangle, FileSpreadsheet, Loader2 } from "@buleje/design-system/icons";
+import { CardTitle } from "@buleje/design-system";
+import { Search, AlertTriangle } from "@buleje/design-system/icons";
 import type { LothEntryDTO } from "@/lib/forestal/loth-constants";
 import {
   ESTADOS_META,
@@ -42,6 +41,8 @@ import { useTableroContexto } from "./hooks/use-tablero-contexto";
 import { useTableroColumnas } from "./hooks/use-tablero-columnas";
 import { BotonColumnas, DatoPermiso, PanelColumnas, TONO } from "./loth-tablero-partes";
 import LothTableroTrozasTabla, { type NavTablero } from "./LothTableroTrozasTabla";
+import LothEscanerTroza from "./LothEscanerTroza";
+import LothTableroCabecera from "./LothTableroCabecera";
 
 export interface CaratulaTablero {
   tituloHabilitante?: string | null;
@@ -91,8 +92,8 @@ export default function LothTableroTrozas({
   const [estados, setEstados] = useState<EstadoTroza[]>([]);
   const [especie, setEspecie] = useState<string | null>(null);
   const [verColumnas, setVerColumnas] = useState(false);
-  const [exportando, setExportando] = useState(false);
-  const [errorExport, setErrorExport] = useState<string | null>(null);
+  /** 0 = escáner cerrado; cada «Escanear troza» lo sube y vuelve a abrir la cámara. */
+  const [escaner, setEscaner] = useState(0);
   const panelId = useId();
 
   const { contexto, gtfs, planes, cargando, faltante } = useTableroContexto();
@@ -111,55 +112,28 @@ export default function LothTableroTrozas({
 
   const m3Visibles = visiblesFilas.reduce((a, f) => a + (f.volumenM3 ?? 0), 0);
 
-  const exportar = async () => {
-    setExportando(true);
-    setErrorExport(null);
-    try {
-      const { exportarTableroExcel } = await import("@/lib/forestal/loth-tablero-export");
-      await exportarTableroExcel(filas, caratula);
-    } catch (err) {
-      console.error("[loth-tablero] export Excel falló", err);
-      setErrorExport("No se pudo armar el Excel. Vuelve a intentarlo.");
-    } finally {
-      setExportando(false);
-    }
-  };
-
   return (
     <div className="space-y-4">
-      {/* El riel de arriba ya dice cómo se llama la vista; el título de la
-          pantalla suma lo que contesta, en vez de repetir el nombre. */}
-      <header className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5">
-          <SectionTitle className="text-[var(--text-primary)]">Control del permiso</SectionTitle>
-          <InfoTip
-            title="Control del permiso"
-            what="Qué pasó con cada troza amparada por este título habilitante."
-            affects="La que sigue en el patio, la que ya salió con GTF y la que se consumió adentro."
-          />
-        </div>
-        <button
-          type="button"
-          onClick={exportar}
-          disabled={exportando || filas.length === 0 || cargando}
-          title="Todas las trozas del permiso con todas las columnas, más una hoja resumen por estado"
-          className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {exportando ? (
-            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-          ) : (
-            <FileSpreadsheet
-              className="h-4 w-4 text-[var(--data-success-700)]"
-              aria-hidden="true"
-            />
-          )}
-          Exportar Excel
-        </button>
-      </header>
-      {errorExport && (
-        <p role="alert" className="text-sm font-semibold text-[var(--data-error-700)]">
-          {errorExport}
-        </p>
+      <LothTableroCabecera
+        filas={filas}
+        caratula={caratula}
+        cargando={cargando}
+        onEscanear={() => setEscaner((n) => n + 1)}
+      />
+      {escaner > 0 && (
+        <LothEscanerTroza
+          filas={filas}
+          entries={entries}
+          tituloHabilitante={caratula?.tituloHabilitante}
+          nav={nav}
+          pedidoCamara={escaner}
+          onVerEnTabla={(code) => {
+            setTexto(code);
+            setEstados([]);
+            setEspecie(null);
+          }}
+          onCerrar={() => setEscaner(0)}
+        />
       )}
 
       {/* Los códigos que amparan todo lo de abajo — sólo si nadie monta la ficha */}
