@@ -20,7 +20,7 @@ const BTN =
 const ROTULO = "mb-1 block text-xs font-semibold text-[var(--text-secondary)]";
 const ROJO = "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]";
 
-type Cambio = Partial<Pick<FilaTala, "motosierrista" | "motosierristaId" | "hora" | "gps" | "fotoUrl" | "nota" | "justificacionDmc">>;
+type Cambio = Partial<Pick<FilaTala, "motosierrista" | "motosierristaId" | "hora" | "gps" | "fotoUrl" | "nota" | "justificacionDmc" | "motivoCupo">>;
 
 export default function LothTalaTandaDetalle({
   fila: f,
@@ -105,6 +105,22 @@ export default function LothTalaTandaDetalle({
             className={INPUT}
           />
           <span className={`mt-1 block text-xs font-semibold ${ROJO}`}>Sin el motivo el libro no la acepta. Queda escrito en la línea y en la auditoría.</span>
+        </label>
+      )}
+
+      {queCorregir(fallida) === "cupo" && (
+        <label className="block rounded-lg border-2 border-[var(--data-error-500)]/50 bg-[var(--data-error-50)] p-2.5 dark:bg-[var(--data-error-500)]/12">
+          <span className={`mb-1 block text-sm font-bold ${ROJO}`}>Pasa el cupo de la especie: ¿por qué se registra igual?</span>
+          <input
+            value={f.motivoCupo}
+            onChange={(e) => onEditar({ motivoCupo: e.target.value })}
+            disabled={quieta}
+            maxLength={500}
+            placeholder="Motivo (ej. el censo subestimó la altura, ampliación en trámite N°…)"
+            aria-label={`${code} · motivo de la tala por encima del cupo`}
+            className={INPUT}
+          />
+          <span className={`mt-1 block text-xs font-semibold ${ROJO}`}>Con el motivo se registra: queda escrito en la línea y en la auditoría.</span>
         </label>
       )}
 

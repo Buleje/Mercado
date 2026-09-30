@@ -75,6 +75,8 @@ import type { TandaTalaInicial } from "./hooks/use-tala-en-tanda";
 import { arbolDeTroza, type ArbolParaElegir } from "@/lib/forestal/loth-censo-uso";
 import LothAvisoTransformacion from "./LothAvisoTransformacion";
 import LothAvisoPlazo from "./LothAvisoPlazo";
+import LothAvisoCupo from "./LothAvisoCupo";
+import { useCupoAlTalar } from "./hooks/use-cupo-al-talar";
 import { cientificoDeEspecie } from "@/lib/forestal/especies-catalogo";
 import { useEspeciesCatalogo } from "./hooks/use-especies-catalogo";
 import { logger } from "@/lib/logger";
@@ -186,7 +188,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
    * tipearla cada vez — con su nombre científico de memoria.
    */
   const [especiesDelPlanState, setEspeciesDelPlanState] = useState<
-    { speciesCommon: string; speciesScientific?: string | null }[]
+    { speciesCommon: string; speciesScientific?: string | null; volumenAutorizadoM3?: string | number | null; arbolesAutorizados?: number | null }[]
   >([]);
   const speciesOptions = useMemo(() => {
     const base = listSpecies({ includeOther: false });
@@ -389,7 +391,9 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => {
         if (cancel) return;
-        const rows = (j?.species ?? []) as Array<{ speciesCommon: string; speciesScientific?: string | null }>;
+        const rows = (j?.species ?? []) as Array<{
+          speciesCommon: string; speciesScientific?: string | null; volumenAutorizadoM3?: string | number | null; arbolesAutorizados?: number | null;
+        }>;
         setEspeciesDelPlanState(rows.filter((r) => (r.speciesCommon ?? "").trim()));
         // Misma clave canónica que usa el motor: el plan escribe «Tornillo
         // (Cedrelinga catenaeformis)» y acá se elige «Tornillo». Comparar los
@@ -632,8 +636,22 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
     section === "trozado" && libroArbol.datos ? restanteTrozado(libroArbol.datos, { trozaCode, volumeM3: derivados.volumenM3 }) : null;
   /** El código de troza ya está asentado — T3 lo rechazaría al guardar. */
   const trozaRepetida = corrigeLineNo == null ? (restoTrozado?.repetida ?? null) : null;
+  /**
+   * T9 — la tala deja a su especie por encima del cupo (autorizado o censado):
+   * se registra igual, con la casilla y el motivo. La ruta es la que decide.
+   */
+  const cupo = useCupoAlTalar({
+    // También en una subsanación: la cuenta reemplaza la tala del mismo árbol,
+    // y si la ruta responde T9 el aviso tiene que verse igual.
+    activo: section === "tala",
+    arboles: censoTala.arboles,
+    autorizadas: especiesDelPlanState,
+    treeCode,
+    especie: speciesName,
+    volumenM3: Number(volumeM3) > 0 ? Number(volumeM3) : autoVolume || null,
+  });
   /** Guardar pide los obligatorios Y, en 4-6, haber contestado en qué libro va. */
-  const puedeGuardar = isValid && !faltaConfirmarTh && !yaTaladoEnLibro && !trozaRepetida;
+  const puedeGuardar = isValid && !faltaConfirmarTh && !yaTaladoEnLibro && !trozaRepetida && !cupo.falta;
   /** Enter en la última medida: al botón de guardar si ya se puede; si no, sigue el bloque de abajo. */
   const irARegistrar = () => {
     const boton = registrarRef.current;
@@ -649,7 +667,9 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
         ? "Marca «La transformé dentro del título habilitante» para guardar"
         : !isValid
           ? `Falta: ${missing.join(", ")}`
-          : undefined;
+          : cupo.falta
+            ? "Pasa el cupo de la especie: marca la casilla y escribe el motivo"
+            : undefined;
 
   async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -687,7 +707,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
     setGpsLat(null); setGpsLng(null); setGpsOrigen(null); setCensoUtm(null);
     // El motosierrista sigue (tumba el árbol siguiente); la hora y el científico no.
     setHoraTala(""); setCientificoCenso(null);
-    setDmcBloqueo(null); setJustificacionDmc("");
+    setDmcBloqueo(null); setJustificacionDmc(""); cupo.limpiar();
     setPhotoUrl(null); setPhotoError(null); setPlacaVez((v) => v + 1);
     if (fileInputRef.current) fileInputRef.current.value = "";
     // Sin esto la medición seguía a la vista con el volumen ya borrado: «falta el volumen» con los números puestos.
@@ -784,6 +804,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
       if (fields.has("consumoInterno") && section !== "tala") payload.consumoInterno = consumoInterno;
 
       if (justificacionDmc.trim()) payload.justificacionDmc = justificacionDmc.trim();
+      if (cupo.motivoParaEnviar) payload.motivoSobreCupo = cupo.motivoParaEnviar;
       payload.gpsLat = gpsLat ?? null;
       payload.gpsLng = gpsLng ?? null;
       payload.gpsOrigen = gpsLat != null && gpsLng != null ? gpsOrigen : null;
@@ -806,6 +827,13 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
         // justificación, que queda escrita en el libro.
         if (r.error === "T8_BAJO_DMC") {
           setDmcBloqueo(r.message ?? "El árbol está por debajo del diámetro mínimo de corta.");
+          setSubmitting(false);
+          return;
+        }
+        // T9 (cupo de la especie): tampoco es un error a secas — se registra
+        // igual con la casilla y el motivo. La ruta ve talas que la pantalla no.
+        if (r.error === "T9_CUPO_ESPECIE") {
+          cupo.recibirDelServidor(r.detail?.avisoCupo ?? r.message ?? "Esta tala pasa el cupo de la especie.");
           setSubmitting(false);
           return;
         }
@@ -959,6 +987,8 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
               <span className="truncate">Troza ya asentada en la línea N° {trozaRepetida.lineNo}</span>
             ) : !isValid ? (
               <span>Faltan <span className="font-semibold text-[var(--text-secondary)]">{missing.length}</span> {missing.length === 1 ? "campo" : "campos"}</span>
+            ) : cupo.falta ? (
+              <span className="truncate font-semibold text-[var(--data-error-ink)]">Pasa el cupo: confirma y escribe el motivo</span>
             ) : (
               <span className="truncate">Falta marcar la casilla de arriba</span>
             )}
@@ -1067,6 +1097,17 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
                   Con el motivo escrito la línea se registra y queda anotada en el libro y en la auditoría.
                 </p>
               </div>
+            )}
+
+            {cupo.mensaje && (
+              <LothAvisoCupo
+                mensaje={cupo.mensaje}
+                obligatorio={cupo.obligatorio}
+                confirmado={cupo.confirmado}
+                onConfirmado={cupo.setConfirmado}
+                motivo={cupo.motivo}
+                onMotivo={cupo.setMotivo}
+              />
             )}
 
             {speciesFueraDelPlan && (

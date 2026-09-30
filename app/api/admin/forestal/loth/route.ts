@@ -71,6 +71,10 @@ const createSchema = z.object({
   observations: z.string().trim().max(1000).nullable().optional(),
   // T8: motivo para talar un árbol bajo el DMC de su especie (queda en el libro).
   justificacionDmc: z.string().trim().max(500).nullable().optional(),
+  // T9: motivo para registrar una tala que deja a su especie por encima del
+  // cupo (autorizado o censado). El servidor recalcula el cupo: esto no decide
+  // si hace falta, sólo explica por qué se asienta igual.
+  motivoSobreCupo: z.string().trim().max(500).nullable().optional(),
 
   correctsLineNo: z.coerce.number().int().positive().nullable().optional(),
   correctionNote: z.string().trim().max(500).nullable().optional(),

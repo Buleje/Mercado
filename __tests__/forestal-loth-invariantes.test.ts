@@ -260,6 +260,137 @@ describe.skipIf(!HAS_DB)("LO-TH · invariantes de cadena de custodia (ADR-305)",
     await expect(crear({ section: "tala", treeCode: `${P}-SIN-CENSO`, speciesCommon: "Tornillo", volumeM3: 4 })).resolves.toBeTruthy();
   }, 30_000);
 
+  it("T9 — pasar lo CENSADO (sin autorizado) no frena: se registra y se audita como aviso", async () => {
+    // Los números del Tornillo de Blas (30-09): 2 árboles, 6,2 m³ censados; talados 3,564 + 5,973.
+    const SP9 = `EspecieT9-${runId}`;
+    const plan = await prisma.forestPlan.create({
+      data: { tenantId: TENANT, titularName: `${P} titular T9`, createdBy: P, estado: "vigente" },
+    });
+    for (const [code, v] of [[`${P}-T9A`, 2.9], [`${P}-T9B`, 3.3]] as const) {
+      await prisma.forestCensusTree.create({
+        data: { tenantId: TENANT, planId: plan.id, treeCode: code, speciesCommon: SP9, volumenEstimadoM3: v, estado: "en_pie", createdBy: P },
+      });
+    }
+    await crear({ section: "tala", treeCode: `${P}-T9A`, speciesCommon: SP9, volumeM3: 3.564, planId: plan.id });
+    const ok = await crear({ section: "tala", treeCode: `${P}-T9B`, speciesCommon: SP9, volumeM3: 5.973, planId: plan.id });
+    expect(ok.status).toBe("registrado");
+    expect(ok.observations ?? "").not.toContain("[Tala sobre el cupo:");
+  }, 30_000);
+
+  it("T9 — pasar lo AUTORIZADO pide motivo; con motivo se registra y queda escrito", async () => {
+    const SP9a = `EspecieT9a-${runId}`;
+    const plan = await prisma.forestPlan.create({
+      data: { tenantId: TENANT, titularName: `${P} titular T9a`, createdBy: P, estado: "vigente" },
+    });
+    await prisma.forestPlanSpecies.create({ data: { tenantId: TENANT, planId: plan.id, speciesCommon: SP9a, volumenAutorizadoM3: 8 } });
+    for (const [code, v] of [[`${P}-T9F`, 2.9], [`${P}-T9G`, 3.3]] as const) {
+      await prisma.forestCensusTree.create({
+        data: { tenantId: TENANT, planId: plan.id, treeCode: code, speciesCommon: SP9a, volumenEstimadoM3: v, estado: "en_pie", createdBy: P },
+      });
+    }
+    await crear({ section: "tala", treeCode: `${P}-T9F`, speciesCommon: SP9a, volumeM3: 3.564, planId: plan.id });
+    await expect(crear({ section: "tala", treeCode: `${P}-T9G`, speciesCommon: SP9a, volumeM3: 5.973, planId: plan.id })).rejects.toMatchObject({
+      code: "T9_CUPO_ESPECIE",
+      detail: { fuente: "autorizado", cupoM3: 8, taladoConEsteM3: 9.537, pctConEste: 119.2 },
+    });
+    // Motivo corto: sigue sin pasar (el servidor decide, no la casilla del cliente).
+    await expect(
+      crear({ section: "tala", treeCode: `${P}-T9G`, speciesCommon: SP9a, volumeM3: 5.973, planId: plan.id, motivoSobreCupo: "ok" }),
+    ).rejects.toMatchObject({ code: "T9_CUPO_ESPECIE" });
+    const ok = await crear({
+      section: "tala",
+      treeCode: `${P}-T9G`,
+      speciesCommon: SP9a,
+      volumeM3: 5.973,
+      planId: plan.id,
+      motivoSobreCupo: "Ampliación de volumen en trámite",
+    });
+    expect(ok.observations).toContain("[Tala sobre el cupo:");
+    expect(ok.observations).toContain("Motivo: Ampliación de volumen en trámite");
+  }, 30_000);
+
+  it("T9 — una tala FUERA del censo no suma contra lo autorizado", async () => {
+    const SP9o = `EspecieT9o-${runId}`;
+    const plan = await prisma.forestPlan.create({
+      data: { tenantId: TENANT, titularName: `${P} titular T9o`, createdBy: P, estado: "vigente" },
+    });
+    await prisma.forestPlanSpecies.create({ data: { tenantId: TENANT, planId: plan.id, speciesCommon: SP9o, volumenAutorizadoM3: 8 } });
+    await prisma.forestCensusTree.create({
+      data: { tenantId: TENANT, planId: plan.id, treeCode: `${P}-T9H`, speciesCommon: SP9o, volumenEstimadoM3: 5, estado: "en_pie", createdBy: P },
+    });
+    // 50 m³ asentados al plan con un código que el censo no tiene: no cuentan.
+    await crear({ section: "tala", treeCode: `${P}-T9-FUERA`, speciesCommon: SP9o, volumeM3: 50, planId: plan.id });
+    await expect(crear({ section: "tala", treeCode: `${P}-T9H`, speciesCommon: SP9o, volumeM3: 6, planId: plan.id })).resolves.toBeTruthy();
+  }, 30_000);
+
+  it("T9 — el volumen AUTORIZADO del plan manda sobre el censo", async () => {
+    const SP9b = `EspecieT9b-${runId}`;
+    const plan = await prisma.forestPlan.create({
+      data: { tenantId: TENANT, titularName: `${P} titular T9b`, createdBy: P, estado: "vigente" },
+    });
+    await prisma.forestPlanSpecies.create({ data: { tenantId: TENANT, planId: plan.id, speciesCommon: SP9b, volumenAutorizadoM3: 12 } });
+    await prisma.forestCensusTree.create({
+      data: { tenantId: TENANT, planId: plan.id, treeCode: `${P}-T9C`, speciesCommon: SP9b, volumenEstimadoM3: 6.2, estado: "en_pie", createdBy: P },
+    });
+    // 9,537 > 6,2 censado, pero ≤ 12 autorizado → pasa sin motivo.
+    await expect(crear({ section: "tala", treeCode: `${P}-T9C`, speciesCommon: SP9b, volumeM3: 9.537, planId: plan.id })).resolves.toBeTruthy();
+  }, 30_000);
+
+  it("T9 TOCTOU — dos talas paralelas que juntas pasan el cupo: exactamente una entra sin motivo", async () => {
+    const SP9c = `EspecieT9c-${runId}`;
+    const plan = await prisma.forestPlan.create({
+      data: { tenantId: TENANT, titularName: `${P} titular T9c`, createdBy: P, estado: "vigente" },
+    });
+    // Contra lo AUTORIZADO (el único que frena).
+    await prisma.forestPlanSpecies.create({ data: { tenantId: TENANT, planId: plan.id, speciesCommon: SP9c, volumenAutorizadoM3: 10 } });
+    for (const code of [`${P}-T9D`, `${P}-T9E`]) {
+      await prisma.forestCensusTree.create({
+        data: { tenantId: TENANT, planId: plan.id, treeCode: code, speciesCommon: SP9c, volumenEstimadoM3: 5, estado: "en_pie", createdBy: P },
+      });
+    }
+    // Autorizado 10; cada una 6 → sola entra (60 %), las dos suman 12.
+    const r = await Promise.allSettled([
+      crear({ section: "tala", treeCode: `${P}-T9D`, speciesCommon: SP9c, volumeM3: 6, planId: plan.id }),
+      crear({ section: "tala", treeCode: `${P}-T9E`, speciesCommon: SP9c, volumeM3: 6, planId: plan.id }),
+    ]);
+    expect(r.filter((x) => x.status === "fulfilled")).toHaveLength(1);
+    const rechazo = r.find((x) => x.status === "rejected") as PromiseRejectedResult;
+    expect(rechazo.reason).toMatchObject({ code: "T9_CUPO_ESPECIE" });
+  }, 30_000);
+
+  it("T9 — dos planes vivos (Blas 30-09): cupo y talas son los del plan de la tala, nunca del tenant", async () => {
+    // Plan A = el de 65 árboles: la especie censada (6,2 m³) y SIN volumen autorizado.
+    // Plan B = el del «Tornillo (Cedrelinga…)» 320 m³ autorizado, con sus propios árboles.
+    const SP9p = `EspecieT9p-${runId}`;
+    const [planA, planB] = await Promise.all(
+      ["A", "B"].map((x) =>
+        prisma.forestPlan.create({ data: { tenantId: TENANT, titularName: `${P} titular T9 plan ${x}`, createdBy: P, estado: "vigente" } }),
+      ),
+    );
+    await prisma.forestPlanSpecies.create({
+      data: { tenantId: TENANT, planId: planB.id, speciesCommon: `${SP9p} (Cientifica prueba)`, volumenAutorizadoM3: 320 },
+    });
+    for (const [planId, code, v] of [
+      [planA.id, `${P}-9pA1`, 2.9],
+      [planA.id, `${P}-9pA2`, 3.3],
+      [planB.id, `${P}-9pB1`, 3],
+    ] as const) {
+      await prisma.forestCensusTree.create({
+        data: { tenantId: TENANT, planId, treeCode: code, speciesCommon: SP9p, volumenEstimadoM3: v, estado: "en_pie", createdBy: P },
+      });
+    }
+    // B: 9,537 contra 320 autorizados (el nombre con científico empareja en el SERVIDOR) → sin motivo.
+    await expect(crear({ section: "tala", treeCode: `${P}-9pB1`, speciesCommon: SP9p, volumeM3: 9.537, planId: planB.id })).resolves.toBeTruthy();
+    // A: el autorizado de B no le presta cupo, y la tala de B no le gasta: 3,564 de 6,2 → pasa.
+    await expect(crear({ section: "tala", treeCode: `${P}-9pA1`, speciesCommon: SP9p, volumeM3: 3.564, planId: planA.id })).resolves.toBeTruthy();
+    // Sin planId en la línea (importador): el plan sale del árbol del censo → A, contra lo censado.
+    await expect(crear({ section: "tala", treeCode: `${P}-9pA2`, speciesCommon: SP9p, volumeM3: 5.973 })).rejects.toMatchObject({
+      code: "T9_CUPO_ESPECIE",
+      // 9,537 = sólo las de A. Si mezclara planes serían 19,074 o el cupo 320.
+      detail: { fuente: "censo", cupoM3: 6.2, taladoConEsteM3: 9.537 },
+    });
+  }, 30_000);
+
   it("P1 — no se registra en un mes cerrado; reabrir lo desbloquea", async () => {
     const { monthRange } = await import("@/lib/forestal/loth-cierre-types");
     const { ForestLothCierreDB } = await import("@/lib/db/forest-loth-cierre.db");

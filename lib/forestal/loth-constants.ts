@@ -545,6 +545,8 @@ export interface LothEntryDTO {
   createdAt?: string | null;
   /** Quién asentó la línea. Viaja en el JSON; hace falta para auditar el libro. */
   createdBy?: string | null;
+  /** Plan de manejo al que se asentó la línea (puede faltar en líneas viejas). */
+  planId?: string | null;
   /** Subsanación SERFOR: esta línea corrige a la N° tal (la vieja NO se borra). */
   correctsLineNo?: number | null;
   correctionNote?: string | null;

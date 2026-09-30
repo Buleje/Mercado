@@ -43,6 +43,10 @@ export type LothAuditAction =
   | "loth_linea_create"
   | "loth_linea_annul"
   | "loth_linea_delete"
+  // Tala registrada por encima del cupo de su especie, con su motivo (T9)
+  | "loth_tala_sobre_cupo"
+  // Tala que pasa lo CENSADO de su especie (sin autorizado en el plan): aviso, sin freno
+  | "loth_tala_sobre_censo"
   // Carátula (identidad del título habilitante que encabeza el libro)
   | "loth_caratula_create"
   | "loth_caratula_update"
