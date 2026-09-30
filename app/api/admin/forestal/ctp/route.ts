@@ -664,9 +664,13 @@ export const GET = withApiHandler("forestal-ctp-get", async (req: NextRequest) =
        en la base, no los 800 paquetes al cliente. Sin período: siguen sin
        lista de empaque hoy. */
     if (url.searchParams.get("paquetesSinMedidas") === "1") {
-      return NextResponse.json({
-        paquetesSinMedidas: await ForestCtpDB.paquetesSinMedidas(auth.tenantId),
-      });
+      const [lista, enElPatio] = await Promise.all([
+        ForestCtpDB.paquetesSinMedidas(auth.tenantId),
+        ForestCtpDB.paquetesSinMedidasEnElPatio(auth.tenantId),
+      ]);
+      /* `total` = histórico del libro (la campana); `enElPatio` = los que siguen
+         en la pila, la cifra del badge de Productos disponibles. */
+      return NextResponse.json({ paquetesSinMedidas: { ...lista, enElPatio } });
     }
     if (url.searchParams.get("avisosEstado") === "1") {
       return NextResponse.json({

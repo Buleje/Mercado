@@ -64,7 +64,9 @@ import { agregarSinOrigen, type CorridaSinOrigen } from "@/lib/forestal/loctp-co
 import { reservasVencidas, type ReservaVencida } from "@/lib/forestal/reservas-vencidas";
 import {
   LIMITE_PAQUETES_SIN_MEDIDAS,
+  contarSinMedidasEnElPatio,
   paquetesSinMedidas,
+  tieneDisponible,
   type PaqueteSinMedidas,
 } from "@/lib/forestal/paquetes-sin-medidas";
 import { isDateClosed } from "@/lib/forestal/ctp-cierre-types";
@@ -191,8 +193,14 @@ export function whereCtpDelContrato(
   };
 }
 
-/** Un producto agotado no es un producto disponible con cero: es uno que ya no está. */
-const tieneDisponible = (s: { disponible: number } | undefined): boolean => (s?.disponible ?? 0) > 0;
+/** «Falta» una medida: null, cero o negativa (la vara de `medidasQueFaltan`), en cualquiera de las tres. */
+function orSinMedidas(): Prisma.ForestCtpPaqueteWhereInput[] {
+  const sinMedida = (campo: "espesorCm" | "anchoCm" | "largoM"): Prisma.ForestCtpPaqueteWhereInput[] => [
+    { [campo]: null },
+    { [campo]: { lte: 0 } },
+  ];
+  return [...sinMedida("espesorCm"), ...sinMedida("anchoCm"), ...sinMedida("largoM")];
+}
 
 /** Filtro de rango de fechas compartido por `list` y `saldos` (undefined = sin límite). */
 function dateRange(opts: { fromDate?: Date; toDate?: Date }): Prisma.DateTimeFilter | undefined {
@@ -3174,14 +3182,10 @@ export class ForestCtpDB {
     limite: number = LIMITE_PAQUETES_SIN_MEDIDAS,
   ): Promise<{ paquetes: PaqueteSinMedidas[]; total: number }> {
     if (!tenantId) throw new Error("tenantId is required");
-    const sinMedida = (campo: "espesorCm" | "anchoCm" | "largoM"): Prisma.ForestCtpPaqueteWhereInput[] => [
-      { [campo]: null },
-      { [campo]: { lte: 0 } },
-    ];
     const where: Prisma.ForestCtpPaqueteWhereInput = {
       tenantId,
       deletedAt: null,
-      OR: [...sinMedida("espesorCm"), ...sinMedida("anchoCm"), ...sinMedida("largoM")],
+      OR: orSinMedidas(),
       entry: { tenantId, section: "produccion", deletedAt: null, status: "registrado" },
     };
     const [total, filas, cierres] = await Promise.all([
@@ -3217,6 +3221,47 @@ export class ForestCtpDB {
         })),
       ),
     };
+  }
+
+  /**
+   * Cuántos paquetes sin medidas SIGUEN EN EL PATIO: el número del badge de la
+   * pestaña «Productos disponibles» (2026-09-30), que tiene que ser el de su chip
+   * «sin escuadría». Mismo criterio que `productosDisponibles`: corrida en el
+   * patio (`whereCorridaEnElPatio`), con saldo (`tieneDisponible`) y paquete que
+   * no va en una guía viva (`codigosDespachados`). Se cuenta aquí, sobre tres
+   * columnas por paquete sin medidas (un puñado), no con los 800 al cliente.
+   * `paquetesSinMedidas().total` es el histórico: incluye lo ya despachado.
+   */
+  static async paquetesSinMedidasEnElPatio(tenantId: string): Promise<number> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const dec = (v: Prisma.Decimal | null): number | null => (v == null ? null : Number(v));
+    const filas = await prisma.forestCtpPaquete.findMany({
+      where: { tenantId, deletedAt: null, OR: orSinMedidas(), entry: whereCorridaEnElPatio(tenantId) },
+      select: { codigo: true, ctpEntryId: true, espesorCm: true, anchoCm: true, largoM: true },
+    });
+    if (filas.length === 0) return 0;
+    const [saldos, despachados] = await Promise.all([
+      saldosDeCorridas(
+        prisma,
+        tenantId,
+        filas.map((p) => p.ctpEntryId),
+      ),
+      ForestCtpDespachoDB.codigosDespachados(
+        tenantId,
+        filas.map((p) => p.codigo),
+      ),
+    ]);
+    return contarSinMedidasEnElPatio(
+      filas.map((p) => ({
+        codigo: p.codigo,
+        ctpEntryId: p.ctpEntryId,
+        espesorCm: dec(p.espesorCm),
+        anchoCm: dec(p.anchoCm),
+        largoM: dec(p.largoM),
+      })),
+      saldos,
+      despachados,
+    );
   }
 
   /**

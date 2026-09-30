@@ -63,12 +63,15 @@ function paqueteAMedirDe(p: PaqueteSinMedidas): PaqueteAMedir {
 export default function CtpPaquetesSinMedidas({
   paquetes,
   total,
+  enElPatio,
   ahora,
   className = "",
 }: {
   paquetes: readonly PaqueteSinMedidas[];
   /** Cuántos hay EN TOTAL: `paquetes` puede venir recortada por el servidor. */
   total: number;
+  /** De ésos, cuántos siguen en el patio (la cifra de la pestaña Productos disponibles). */
+  enElPatio?: number;
   /** El «hoy» del año del rótulo. Por defecto el reloj; se pasa para probarlo. */
   ahora?: Date;
   /** El margen lo decide quien la ubica: no se dibuja nada cuando no hay paquetes. */
@@ -99,7 +102,7 @@ export default function CtpPaquetesSinMedidas({
       {paquetes.length > 0 && (
         <>
           <p className={ROTULO}>
-            <Ruler className="h-3.5 w-3.5" aria-hidden /> {resumenPaquetesSinMedidas(total)}
+            <Ruler className="h-3.5 w-3.5" aria-hidden /> {resumenPaquetesSinMedidas(total, enElPatio)}
           </p>
           <p className="mb-2 text-sm text-[var(--text-secondary)]">
             Sin las tres medidas no se recalcula el volumen ni se imprime la lista de empaque.

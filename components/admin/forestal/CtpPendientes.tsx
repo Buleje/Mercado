@@ -71,7 +71,7 @@ export default function CtpPendientes({
   onIr: (vista: string, filtro?: Pendiente["filtro"]) => void;
 }) {
   const {
-    lista, seViene, reservasVencidas, reservaResuelta, paquetesSinMedidas, paquetesSinMedidasTotal,
+    lista, seViene, reservasVencidas, reservaResuelta, paquetesSinMedidas, paquetesSinMedidasTotal, paquetesSinMedidasEnElPatio,
     cargando, falló, recargar,
   } = estado;
   const [abierto, setAbierto] = useState(false);
@@ -98,7 +98,7 @@ export default function CtpPendientes({
           ? `${seViene.length} ${seViene.length === 1 ? "aviso" : "avisos"} de lo que se viene`
           : null,
         reservasVencidas.length > 0 ? resumenReservasVencidas(reservasVencidas.length) : null,
-        paquetesSinMedidas.length > 0 ? resumenPaquetesSinMedidas(paquetesSinMedidasTotal) : null,
+        paquetesSinMedidas.length > 0 ? resumenPaquetesSinMedidas(paquetesSinMedidasTotal, paquetesSinMedidasEnElPatio) : null,
       ]
         .filter(Boolean)
         .join(" · ");
@@ -235,6 +235,7 @@ export default function CtpPendientes({
           <CtpPaquetesSinMedidas
             paquetes={paquetesSinMedidas}
             total={paquetesSinMedidasTotal}
+            enElPatio={paquetesSinMedidasEnElPatio}
             className={
               lista.length > 0 || seViene.length > 0 || reservasVencidas.length > 0 || cargando || falló || !hayAlgo
                 ? "mt-4"

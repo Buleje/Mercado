@@ -21,6 +21,7 @@
 import { formatNumber } from "@/lib/format";
 import { limaDateKey } from "@/lib/utils";
 import { diaConNombre } from "./plazo-de-apartado";
+import { escuadriaCompleta } from "./escuadria-del-paquete";
 
 /** Las tres medidas de la escuadría, como las nombra la plaza. */
 export type MedidaQueFalta = "espesor" | "ancho" | "largo";
@@ -124,9 +125,46 @@ export function textoMedidaQueFalta(faltan: readonly MedidaQueFalta[]): string {
   return faltan.length === 1 ? `Falta ${con[0]}` : `Faltan ${con.join(" y ")}`;
 }
 
-/** «1 paquete sin medidas» · «34 paquetes sin medidas». */
-export function resumenPaquetesSinMedidas(n: number): string {
-  return `${formatNumber(n, 0)} ${n === 1 ? "paquete sin medidas" : "paquetes sin medidas"}`;
+/**
+ * «1 paquete sin medidas» · «34 paquetes sin medidas».
+ *
+ * `enElPatio` (opcional) separa los que SIGUEN en la pila de los que ya salieron
+ * o se usaron: «34 paquetes sin medidas · 11 en el patio». Es la cifra que lleva
+ * la pestaña Productos disponibles; el total es el histórico del libro.
+ */
+export function resumenPaquetesSinMedidas(n: number, enElPatio?: number): string {
+  const base = `${formatNumber(n, 0)} ${n === 1 ? "paquete sin medidas" : "paquetes sin medidas"}`;
+  return enElPatio == null ? base : `${base} · ${formatNumber(Math.min(enElPatio, n), 0)} en el patio`;
+}
+
+/** Un producto agotado no es un producto disponible con cero: es uno que ya no está. */
+export const tieneDisponible = (s: { disponible: number } | undefined): boolean => (s?.disponible ?? 0) > 0;
+
+/** Un paquete vivo, candidato a estar sin medidas, con lo que hace falta para saber si sigue en el patio. */
+export interface CandidatoEnElPatio {
+  codigo: string;
+  ctpEntryId: string;
+  espesorCm: number | null;
+  anchoCm: number | null;
+  largoM: number | null;
+}
+
+/**
+ * Cuántos de esos paquetes SIGUEN EN EL PATIO y no tienen escuadría: el número
+ * del badge de «Productos disponibles», con la MISMA vara que su chip «sin
+ * escuadría» (`resumenProductos`): la escuadría es `escuadriaCompleta`, la
+ * corrida tiene saldo (`tieneDisponible`) y el paquete no va en una guía viva.
+ * (La otra mitad del criterio —corrida registrada, con cantidad y origen, sin
+ * «ya usado»— la pone el WHERE: `whereCorridaEnElPatio`.) PURO.
+ */
+export function contarSinMedidasEnElPatio(
+  candidatos: readonly CandidatoEnElPatio[],
+  saldos: ReadonlyMap<string, { disponible: number }>,
+  despachados: ReadonlySet<string>,
+): number {
+  return candidatos.filter(
+    (p) => !escuadriaCompleta(p) && tieneDisponible(saldos.get(p.ctpEntryId)) && !despachados.has(p.codigo),
+  ).length;
 }
 
 /**

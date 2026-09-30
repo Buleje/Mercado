@@ -161,9 +161,12 @@ export function aEscuadriaEnPulgadas(m: EscuadriaDelLibro): EscuadriaTipeada {
   };
 }
 
-/** ¿Están las TRES? Con dos no hay volumen que calcular. */
+/** ¿Están las TRES, y son medidas de verdad (> 0)? Con dos no hay volumen que
+ *  calcular, y una negativa no es una medida: el chip y la campana la cuentan
+ *  como faltante. */
 export function escuadriaCompleta(m: EscuadriaDelLibro): boolean {
-  return Boolean(m.espesorCm && m.anchoCm && m.largoM);
+  const ok = (v: number | null) => v != null && Number.isFinite(v) && v > 0;
+  return ok(m.espesorCm) && ok(m.anchoCm) && ok(m.largoM);
 }
 
 /** «5.08 × 20.32 cm · 1.52 m» — cómo se escribe una escuadría en una celda. */

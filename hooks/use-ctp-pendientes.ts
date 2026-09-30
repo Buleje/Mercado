@@ -77,7 +77,7 @@ type Respuesta = {
   /** `guias/plata?sinPagar=1` (ADR-437): compras con algo por pagar, por proveedor. */
   porParte?: unknown;
   /** `ctp?paquetesSinMedidas=1`: los paquetes sin alguna medida, recortados, y cuántos son en total. */
-  paquetesSinMedidas?: { paquetes?: unknown; total?: unknown };
+  paquetesSinMedidas?: { paquetes?: unknown; total?: unknown; enElPatio?: unknown };
 };
 
 /** Lo que devuelve el hook. Exportado: el shell lo carga una vez y lo reparte
@@ -103,6 +103,8 @@ export interface CtpPendientesState {
    */
   paquetesSinMedidas: PaqueteSinMedidas[];
   paquetesSinMedidasTotal: number;
+  /** De ésos, los que SIGUEN en el patio: lo que cuenta el badge de Productos disponibles. */
+  paquetesSinMedidasEnElPatio: number;
   cargando: boolean;
   falló: boolean;
   recargar: () => void;
@@ -161,9 +163,10 @@ export function useCtpPendientes(period: CtpPeriod): CtpPendientesState {
   /* Lo mismo para los paquetes sin medidas: se vuelve a leer sólo esto al guardar
      una escuadría —desde la campana o desde cualquier otra pantalla—, y una
      lectura vieja que vuelve tarde no resucita un paquete ya medido. */
-  const [sinMedidas, setSinMedidas] = useState<{ paquetes: PaqueteSinMedidas[]; total: number }>({
+  const [sinMedidas, setSinMedidas] = useState<{ paquetes: PaqueteSinMedidas[]; total: number; enElPatio: number }>({
     paquetes: [],
     total: 0,
+    enElPatio: 0,
   });
   const sinMedidasRef = useRef(0);
   const recargarSinMedidas = useCallback(() => {
@@ -174,7 +177,13 @@ export function useCtpPendientes(period: CtpPeriod): CtpPendientesState {
         ? (r.paquetesSinMedidas.paquetes as PaqueteSinMedidas[])
         : [];
       const total = Number(r?.paquetesSinMedidas?.total);
-      setSinMedidas({ paquetes, total: Number.isFinite(total) ? Math.max(total, paquetes.length) : paquetes.length });
+      const cuenta = Number.isFinite(total) ? Math.max(total, paquetes.length) : paquetes.length;
+      const enElPatio = Number(r?.paquetesSinMedidas?.enElPatio);
+      setSinMedidas({
+        paquetes,
+        total: cuenta,
+        enElPatio: Number.isFinite(enElPatio) ? Math.min(Math.max(enElPatio, 0), cuenta) : 0,
+      });
     });
   }, []);
 
@@ -325,6 +334,7 @@ export function useCtpPendientes(period: CtpPeriod): CtpPendientesState {
     reservaResuelta,
     paquetesSinMedidas: sinMedidas.paquetes,
     paquetesSinMedidasTotal: sinMedidas.total,
+    paquetesSinMedidasEnElPatio: sinMedidas.enElPatio,
     cargando,
     falló,
     recargar,
