@@ -30,3 +30,18 @@ consola del navegador sin errores rojos.
   compensan con un egreso manual de S/ 15 con la nota «anula pruebas QA».
 - **Reserva de Juancho** (SL-7, Cachimbo, vencida el 22/09): queda como está,
   por decisión del 30/09.
+
+## Libro TH → «Por árbol» (`?tab=loth-libro-operaciones&vista=trazabilidad`)
+
+| # | Qué hacer | Qué tiene que pasar (dato real de Blas) |
+|---|---|---|
+| 13 | Entrar a la vista | Arriba «Avance del permiso»: Censo 67 → Talados 6 → Trozados 4 → Salieron 4 trozas (3 despachadas · 1 al aserrío), barra ~7,5 % talado |
+| 14 | Tocar el paso «Talados» | La lista se filtra a los 6 talados; volver a tocarlo quita el filtro |
+| 15 | Mirar «Qué falta hacer» | «Talados sin trozar»: **114** (Lupuna, 15,6 m³) y **100** (Mashonaste, 2,8 m³) |
+| 16 | «Registrar trozado» en el 114 | Abre la sección 2 con el árbol 114 ya elegido (cancelar sin guardar) |
+| 17 | «En pie» | Plegado: «61 árboles…». Al abrirlo, tabla por especie; Tornillo dice «9,537 de 320 m³ · 3 %» y «2 de 45 árboles en el censo» |
+| 18 | «Cupo por especie» en el avance | Tabla completa; las especies sin autorizado dicen «del censo» y ofrecen «Cargar lo autorizado» |
+| 19 | «Cargar lo autorizado» en Copaiba | Va al Plan de manejo con la tabla de las 8 especies escritas y Copaiba resaltada (cerrar sin guardar, salvo que tengas el POA) |
+| 20 | Abrir el detalle del árbol 111 → «Hoja del árbol» | Hoja imprimible: troza 111-A 4,951 m³ despachada 29/09 en GTF 019-0000002, rendimiento 47,7 % |
+| 21 | Nueva tala de Tornillo como **almacenero** que pase lo autorizado (solo en `main`, no en Blas) | Aviso rojo; al guardar, «Pídele al dueño o al administrador…» (403) |
+| 22 | Importar un Excel de talas con una fila sobre lo autorizado sin columna «motivo» (en `main`) | Error de la fila: «…Agrega una columna "motivo" con al menos 5 letras» |
