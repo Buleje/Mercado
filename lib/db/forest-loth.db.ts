@@ -23,6 +23,10 @@ import { dmcParaEspecie } from "@/lib/forestal/loth-poa";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { resumirUsoDelCenso, type UsoArbolCenso } from "@/lib/forestal/loth-censo-uso";
 import { GtfDuplicateError } from "@/lib/db/forest-gtf.db";
+import type { LothEntryDTO } from "@/lib/forestal/loth-constants";
+import { gtfRegistradaDesdeApi } from "@/lib/forestal/loth-cuadre-guias";
+import { planFichaDesdeApi } from "@/lib/forestal/loth-ficha-permiso";
+import type { DatosAvisoTh } from "@/lib/forestal/loth-aviso-plazos";
 import { GtfNumeroDB } from "@/lib/db/gtf-numero.db";
 import { leerGtfDatos, type GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 import { identidadDeGuiaTh } from "@/lib/forestal/guia-th-al-ctp";
@@ -1872,4 +1876,65 @@ export class ForestLothDB {
     try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
     return caratula;
   }
+
+  /**
+   * Lo que lee el aviso de plazos del Libro TH (`loth-aviso-plazos`, cron
+   * `forestal-plazos`), con la MISMA forma que ve la pantalla: las líneas
+   * serializadas como las devuelve la API (Decimals → string), las guías por
+   * el mismo normalizador del cuadre (`gtfRegistradaDesdeApi`) y los planes de
+   * `ForestPlanDB.listPlans` + `planFichaDesdeApi`, como la ficha del permiso.
+   */
+  static async datosAvisoPlazos(tenantId: string): Promise<DatosAvisoTh> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const [lineas, gtfs, planes] = await Promise.all([
+      prisma.forestLothEntry.findMany({
+        where: { tenantId, deletedAt: null, status: "registrado" },
+        orderBy: [{ section: "asc" }, { lineNo: "asc" }, { id: "asc" }],
+        take: LIMITE_LINEAS_AVISO,
+      }),
+      /* TODAS las guías, no `ForestGtfDB.list` (corta en 200): con el tope, una
+         guía vieja que el libro cita saldría «citada sin registrar» por WhatsApp
+         — un rojo falso que enseña a ignorar el aviso. */
+      prisma.forestGtf.findMany({
+        where: { tenantId, deletedAt: null },
+        orderBy: { createdAt: "desc" },
+        select: {
+          gtfNumber: true, gtfDate: true, tipo: true, status: true, volumenTotalM3: true,
+          piezasTotal: true, placaVehiculo: true, gtfDatos: true,
+        },
+        take: LIMITE_LINEAS_AVISO,
+      }),
+      ForestPlanDB.listPlans(tenantId),
+    ]);
+    // JSON ida y vuelta = exactamente lo que serializa la API (Decimal.toJSON, Date ISO).
+    const comoApi = <T>(v: unknown): T => JSON.parse(JSON.stringify(v)) as T;
+    return {
+      lineas: comoApi<LothEntryDTO[]>(lineas),
+      gtfs: comoApi<unknown[]>(gtfs).flatMap((raw) => {
+        const g = gtfRegistradaDesdeApi(raw);
+        const tipo = (raw as { tipo?: unknown }).tipo;
+        return g ? [{ ...g, tipo: typeof tipo === "string" && tipo ? tipo : "trozas" }] : [];
+      }),
+      planes: comoApi<unknown[]>(planes).flatMap((raw) => {
+        const p = planFichaDesdeApi(raw);
+        return p ? [p] : [];
+      }),
+    };
+  }
+
+  /**
+   * Tenants con Libro TH (líneas o un plan vivo), para el cron de plazos.
+   * Excepción documentada a «tenantId primer parámetro»: es la enumeración que
+   * el cron recorre de a un tenant, igual que `DocumentsDB.tenantsCon…`.
+   */
+  static async tenantsConLibroTh(): Promise<string[]> {
+    const [conLineas, conPlan] = await Promise.all([
+      prisma.forestLothEntry.findMany({ where: { deletedAt: null }, select: { tenantId: true }, distinct: ["tenantId"] }),
+      prisma.forestPlan.findMany({ where: { deletedAt: null, isActive: true }, select: { tenantId: true }, distinct: ["tenantId"] }),
+    ]);
+    return [...new Set([...conLineas, ...conPlan].map((r) => r.tenantId))];
+  }
 }
+
+/** Tope de líneas que lee el aviso (un libro real anda en cientos; esto es sólo un techo). */
+const LIMITE_LINEAS_AVISO = 20_000;
