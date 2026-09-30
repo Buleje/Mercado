@@ -15,7 +15,8 @@
  * Acá sólo se calcula con las funciones puras y se pinta.
  */
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { Printer } from "@buleje/design-system/icons";
 import type { CaratulaFicha, PlanFicha } from "@/lib/forestal/loth-ficha-permiso";
 import { planesVivos } from "@/lib/forestal/loth-ficha-permiso";
 import {
@@ -26,6 +27,7 @@ import {
   type VeredictoGuia,
 } from "@/lib/forestal/loth-cuadre-guias";
 import { saldoPorEspecie, type EntradaSaldo } from "@/lib/forestal/loth-saldo-especie";
+import { imprimirInformePermiso } from "@/lib/forestal/loth-informe-permiso-print";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import type { DatosEncabezadoTablero } from "./LothTableroTrozas";
 import LothFichaPermiso from "./LothFichaPermiso";
@@ -91,8 +93,42 @@ export default function LothControlPermisoEncabezado({
   const conteo = useMemo(() => (cuadre ? contarVeredictos(cuadre) : null), [cuadre]);
   const cuadreRojo = conteo != null && VEREDICTOS_ROJOS.some((v) => conteo[v] > 0);
 
+  // Síncrono y dentro del clic: la ventana de impresión no cae en el bloqueador de pop-ups.
+  const [errorInforme, setErrorInforme] = useState<string | null>(null);
+  const imprimirInforme = () => {
+    try {
+      imprimirInformePermiso({
+        caratula,
+        plan: planFicha,
+        planes: vivos,
+        saldo: saldoPlan,
+        cuadre,
+        trozas: datos.filas,
+      });
+      setErrorInforme(null);
+    } catch (err) {
+      setErrorInforme(err instanceof Error ? err.message : "No se pudo abrir el informe.");
+    }
+  };
+
   return (
     <div className="space-y-3">
+      <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
+        {errorInforme && (
+          <p role="alert" className="min-w-0 flex-1 text-xs font-semibold text-[var(--data-error-ink)]">
+            {errorInforme}
+          </p>
+        )}
+        <button
+          type="button"
+          onClick={imprimirInforme}
+          disabled={datos.cargando}
+          className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 disabled:opacity-50 sm:h-9"
+        >
+          <Printer className="h-4 w-4" aria-hidden="true" />
+          Informe PDF
+        </button>
+      </div>
       <LothFichaPermiso
         caratula={caratula}
         plan={planFicha}
