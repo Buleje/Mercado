@@ -660,6 +660,14 @@ export const GET = withApiHandler("forestal-ctp-get", async (req: NextRequest) =
         reservasVencidas: await ForestCtpDB.reservasVencidas(auth.tenantId, new Date()),
       });
     }
+    /* Los paquetes sin alguna medida (avisos del libro): contados y recortados
+       en la base, no los 800 paquetes al cliente. Sin período: siguen sin
+       lista de empaque hoy. */
+    if (url.searchParams.get("paquetesSinMedidas") === "1") {
+      return NextResponse.json({
+        paquetesSinMedidas: await ForestCtpDB.paquetesSinMedidas(auth.tenantId),
+      });
+    }
     if (url.searchParams.get("avisosEstado") === "1") {
       return NextResponse.json({
         envios: await NotificationLogsDB.ultimosPorTipo(auth.tenantId, "ctp_plazos_"),

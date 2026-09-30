@@ -62,6 +62,12 @@ import type { CorridaParaOrigenYSalida, CubicacionParaVincular } from "@/lib/for
 import { ForestCubicacionesDB } from "./forest-cubicaciones.db";
 import { agregarSinOrigen, type CorridaSinOrigen } from "@/lib/forestal/loctp-consumos-analisis";
 import { reservasVencidas, type ReservaVencida } from "@/lib/forestal/reservas-vencidas";
+import {
+  LIMITE_PAQUETES_SIN_MEDIDAS,
+  paquetesSinMedidas,
+  type PaqueteSinMedidas,
+} from "@/lib/forestal/paquetes-sin-medidas";
+import { isDateClosed } from "@/lib/forestal/ctp-cierre-types";
 import { limaDateKey } from "@/lib/utils";
 import { ForestContratoDB } from "@/lib/db/forest-contrato.db";
 import { contratoPropio } from "./contrato-propio.db";
@@ -3145,6 +3151,72 @@ export class ForestCtpDB {
       })),
       ahora,
     );
+  }
+
+  /**
+   * Los paquetes a los que les falta alguna de las tres medidas, para los avisos
+   * del libro (2026-09-30). Se cuenta y se recorta en la base: Blas tiene 835
+   * paquetes y 34 sin medidas — el cliente no se baja los 835 para saberlo.
+   *
+   * Sólo los que el editor de escuadría PUEDE corregir: paquete vivo de una
+   * corrida de producción registrada y no borrada (`corregirMedidasDePaquete`
+   * rechaza una corrida anulada). Uno de un mes cerrado sí sale, marcado
+   * `periodoCerrado`: se sigue viendo que falta, pero la pantalla no ofrece un
+   * botón que el servidor rechazaría. Sin período a propósito: las medidas que
+   * faltan en octubre de 2025 siguen sin lista de empaque hoy.
+   *
+   * «Falta» es la de `medidasQueFaltan` (null, cero o negativa): se repite en el
+   * WHERE y se vuelve a aplicar en la función pura, que descarta cualquier fila
+   * completa que se cuele.
+   */
+  static async paquetesSinMedidas(
+    tenantId: string,
+    limite: number = LIMITE_PAQUETES_SIN_MEDIDAS,
+  ): Promise<{ paquetes: PaqueteSinMedidas[]; total: number }> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const sinMedida = (campo: "espesorCm" | "anchoCm" | "largoM"): Prisma.ForestCtpPaqueteWhereInput[] => [
+      { [campo]: null },
+      { [campo]: { lte: 0 } },
+    ];
+    const where: Prisma.ForestCtpPaqueteWhereInput = {
+      tenantId,
+      deletedAt: null,
+      OR: [...sinMedida("espesorCm"), ...sinMedida("anchoCm"), ...sinMedida("largoM")],
+      entry: { tenantId, section: "produccion", deletedAt: null, status: "registrado" },
+    };
+    const [total, filas, cierres] = await Promise.all([
+      prisma.forestCtpPaquete.count({ where }),
+      prisma.forestCtpPaquete.findMany({
+        where,
+        orderBy: [{ entry: { entryDate: "desc" } }, { entry: { lineNo: "desc" } }, { codigo: "asc" }],
+        take: Math.min(Math.max(limite, 1), 500),
+        include: {
+          entry: { select: { lineNo: true, entryDate: true, speciesCommon: true, productType: true } },
+        },
+      }),
+      ForestCtpCierreDB.list(tenantId),
+    ]);
+    const dec = (v: Prisma.Decimal | null): number | null => (v == null ? null : Number(v));
+    return {
+      total,
+      paquetes: paquetesSinMedidas(
+        filas.map((p) => ({
+          id: p.id,
+          codigo: p.codigo,
+          ctpEntryId: p.ctpEntryId,
+          lineNo: p.entry.lineNo,
+          fecha: p.entry.entryDate.toISOString().slice(0, 10),
+          especie: p.entry.speciesCommon,
+          producto: p.productType ?? p.entry.productType,
+          cantidad: p.cantidad,
+          volumenM3: Number(p.volumenM3),
+          espesorCm: dec(p.espesorCm),
+          anchoCm: dec(p.anchoCm),
+          largoM: dec(p.largoM),
+          periodoCerrado: isDateClosed(cierres, p.entry.entryDate),
+        })),
+      ),
+    };
   }
 
   /**

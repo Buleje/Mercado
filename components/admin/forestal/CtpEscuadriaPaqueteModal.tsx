@@ -48,7 +48,6 @@ import AdminModal from "@/components/admin/shared/AdminModal";
 import { Btn, I, ModalBody, ModalFooter } from "./ctp-shared";
 import { PanelDeCuadre } from "./ctp-celda-escuadria";
 import {
-  ESCUADRIA_EN_BLANCO,
   aEscuadriaDelLibro,
   aEscuadriaEnPulgadas,
   cuadreDeEscuadria,
@@ -108,10 +107,10 @@ export default function CtpEscuadriaPaqueteModal({
    */
   onGuardar: (medidas: EscuadriaAGuardar) => Promise<void>;
 }) {
-  const yaTiene = escuadriaCompleta(paquete);
-  const [tipeada, setTipeada] = useState<EscuadriaTipeada>(() =>
-    yaTiene ? aEscuadriaEnPulgadas(paquete) : ESCUADRIA_EN_BLANCO,
-  );
+  /* Siempre desde lo guardado: un paquete con una o dos medidas (el aviso «sin
+     medidas» los trae) abre con las que ya tiene y sólo pide las que faltan.
+     Sin ninguna, `aEscuadriaEnPulgadas` sale en blanco y en las unidades de la plaza. */
+  const [tipeada, setTipeada] = useState<EscuadriaTipeada>(() => aEscuadriaEnPulgadas(paquete));
   /* Por dimensión: ¿el usuario la escribió en esta sesión? Si no, y el paquete
      ya la tenía, se guarda el cm/m ORIGINAL — nunca el de ida y vuelta por
      pulgadas, que mete hasta 1.6 mm de redondeo. Un flag propio, no comparar
@@ -133,11 +132,11 @@ export default function CtpEscuadriaPaqueteModal({
   const convertido = useMemo(() => aEscuadriaDelLibro(tipeada), [tipeada]);
   const delLibro: EscuadriaDelLibro = useMemo(
     () => ({
-      espesorCm: !tocado.espesor && yaTiene ? paquete.espesorCm : convertido.espesorCm,
-      anchoCm: !tocado.ancho && yaTiene ? paquete.anchoCm : convertido.anchoCm,
-      largoM: !tocado.largo && yaTiene ? paquete.largoM : convertido.largoM,
+      espesorCm: !tocado.espesor ? paquete.espesorCm : convertido.espesorCm,
+      anchoCm: !tocado.ancho ? paquete.anchoCm : convertido.anchoCm,
+      largoM: !tocado.largo ? paquete.largoM : convertido.largoM,
     }),
-    [convertido, tocado, yaTiene, paquete.espesorCm, paquete.anchoCm, paquete.largoM],
+    [convertido, tocado, paquete.espesorCm, paquete.anchoCm, paquete.largoM],
   );
   const piezasNum = Math.trunc(Number(piezas.replace(",", ".")) || 0);
   const cuadre = useMemo(
