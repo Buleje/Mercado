@@ -14,7 +14,7 @@
  * (origen legal = GTF) y `loth-tablero-trozas.ts` (de dónde salen las trozas).
  */
 
-import type { TrozaTablero } from "./loth-tablero-trozas";
+import { guiaDesdeApi, type TrozaTablero } from "./loth-tablero-trozas";
 
 /**
  * Tolerancia en m³. Se mide con cinta y el libro lleva 3 decimales: una
@@ -203,3 +203,26 @@ export function contarVeredictos(filas: readonly CuadreGuia[]): Record<Veredicto
   for (const f of filas) out[f.veredicto]++;
   return out;
 }
+
+/**
+ * Una fila de `GET /api/admin/forestal/gtf` → `GtfRegistrada`, ANULADAS
+ * incluidas (el cruce tiene que ver la guía anulada que el libro sigue citando).
+ * La placa sale igual que en el tablero: columna o casillero del formato SERFOR.
+ */
+export function gtfRegistradaDesdeApi(raw: unknown): GtfRegistrada | null {
+  const guia = guiaDesdeApi(raw);
+  if (!guia) return null;
+  const g = raw as Record<string, unknown>;
+  const vol = g.volumenTotalM3;
+  return {
+    gtfNumber: guia.gtfNumber,
+    gtfDate: guia.gtfDate,
+    volumenTotalM3: typeof vol === "string" || typeof vol === "number" ? vol : null,
+    piezasTotal: typeof g.piezasTotal === "number" ? g.piezasTotal : null,
+    placaVehiculo: guia.placa,
+    status: typeof g.status === "string" && g.status ? g.status : "emitida",
+  };
+}
+
+/** Los veredictos que se pintan en rojo: la plegable del cuadre se abre sola si hay alguno. */
+export const VEREDICTOS_ROJOS: readonly VeredictoGuia[] = ["no_cuadra", "citada_sin_registrar", "anulada_citada"];

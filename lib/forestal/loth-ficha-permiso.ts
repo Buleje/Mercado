@@ -198,3 +198,54 @@ export function construirFichaPermiso(
     faltantes,
   };
 }
+
+/* ── Los planes tal como llegan de `/api/admin/forestal/plan` ─────────────── */
+
+/** Un plan de la lista, con lo que hace falta para su ficha y para saber si está vivo. */
+export interface PlanFichaApi extends PlanFicha {
+  id: string;
+  /** El flag que lee `getActivePlan`: un plan dado de baja o reemplazado lo tiene en `false`. */
+  isActive: boolean;
+  alias: string | null;
+}
+
+const txtApi = (v: unknown): string | null => (typeof v === "string" && v.trim() ? v.trim() : null);
+
+/** Una fila de `/api/admin/forestal/plan` → `PlanFichaApi`. Sin `id`, `null`. */
+export function planFichaDesdeApi(raw: unknown): PlanFichaApi | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const p = raw as Record<string, unknown>;
+  const id = txtApi(p.id);
+  if (!id) return null;
+  return {
+    id,
+    isActive: p.isActive !== false,
+    alias: txtApi(p.alias),
+    planType: txtApi(p.planType),
+    planNumber: txtApi(p.planNumber),
+    tituloHabilitante: txtApi(p.tituloHabilitante),
+    resolucionNumber: txtApi(p.resolucionNumber),
+    resolucionDate: txtApi(p.resolucionDate),
+    titularName: txtApi(p.titularName),
+    parcelaCorta: txtApi(p.parcelaCorta),
+    vigenciaDesde: txtApi(p.vigenciaDesde),
+    vigenciaHasta: txtApi(p.vigenciaHasta),
+    estado: txtApi(p.estado),
+  };
+}
+
+/**
+ * Los planes vivos, con el del libro primero. «Vivo» = `isActive`, el mismo
+ * criterio que `getActivePlan`; la lista ya viene del más nuevo al más viejo,
+ * así que sin `activoId` el primero es el que devuelve `?active=1`.
+ */
+export function planesVivos(planes: readonly PlanFichaApi[], activoId?: string | null): PlanFichaApi[] {
+  const vivos = planes.filter((p) => p.isActive);
+  const i = activoId ? vivos.findIndex((p) => p.id === activoId) : -1;
+  return i > 0 ? [vivos[i], ...vivos.slice(0, i), ...vivos.slice(i + 1)] : vivos;
+}
+
+/** «PO 2026-01», o el alias, o el tipo solo: cómo se nombra un plan en una fila. */
+export function nombreDelPlan(p: Pick<PlanFichaApi, "planType" | "planNumber" | "alias">): string {
+  return juntar(p.planType, p.planNumber) ?? p.alias ?? "Plan sin número";
+}

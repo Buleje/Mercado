@@ -53,12 +53,19 @@ describe("LothTableroTrozas", () => {
     await waitFor(() => expect(screen.getByText("W2D-835")).toBeTruthy());
   });
 
-  it("el encabezado va entre la banda del permiso y «Estado de las trozas»", () => {
+  it("el encabezado va antes de «Estado de las trozas» y reemplaza a la banda de códigos", () => {
     vi.stubGlobal("fetch", mockApi());
     const { container } = render(<LothTableroTrozas entries={ENTRIES} encabezado={<div data-testid="slot">ficha</div>} />);
     const html = container.innerHTML;
-    expect(html.indexOf("Titular")).toBeLessThan(html.indexOf('data-testid="slot"'));
+    expect(html.indexOf('data-testid="slot"')).toBeGreaterThan(-1);
     expect(html.indexOf('data-testid="slot"')).toBeLessThan(html.indexOf("Estado de las trozas"));
+    expect(screen.queryByText("N° registro del libro")).toBeNull();
+  });
+
+  it("sin encabezado sigue la banda de códigos (el tablero suelto no se queda sin permiso)", () => {
+    vi.stubGlobal("fetch", mockApi());
+    render(<LothTableroTrozas entries={ENTRIES} />);
+    expect(screen.getByText("N° registro del libro")).toBeTruthy();
   });
 
   it("prender una columna la muestra y queda recordada", () => {

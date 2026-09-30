@@ -76,6 +76,9 @@ const ETIQUETA: Record<EstadoFicha, string> = {
   cerrado: "Cerrado",
 };
 
+/** Para la lista compacta de planes vivos: mismo color y misma palabra por estado. */
+export { TONO as TONO_FICHA, ETIQUETA as ETIQUETA_FICHA };
+
 const KICKER = "block text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]";
 
 export default function LothFichaPermiso({ caratula, plan, onCompletarCaratula, onCompletarPlan }: LothFichaPermisoProps) {

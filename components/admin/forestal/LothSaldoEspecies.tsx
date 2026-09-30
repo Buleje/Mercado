@@ -15,7 +15,7 @@
  */
 
 import { useMemo, useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { fmtM3, fmtPct } from "@/lib/forestal/cubicacion-formato";
@@ -35,8 +35,22 @@ export type LothSaldoEspeciesProps = (
 ) & {
   /** Por defecto «Saldo por especie». */
   titulo?: string;
+  /**
+   * Sin título ni caja propia: quien la monta (la plegable de «Control del
+   * permiso») ya pone el título, la ⓘ y la línea de totales.
+   */
+  sinCabecera?: boolean;
   className?: string;
 };
+
+/** La ⓘ del saldo — una sola redacción para la tarjeta suelta y la plegable. */
+export const AYUDA_SALDO = {
+  what: "Por especie: el cupo (lo autorizado en el plan o, si no lo trae, lo censado), lo talado, lo trozado y a dónde fue: despachado con GTF, consumido o todavía en el patio. Saldo por talar = cupo − talado.",
+  affects:
+    "«Saldo por talar» es lo que el permiso todavía deja sacar del monte; «En patio» es lo que todavía se puede mover. Son dos saldos distintos. Una especie pasada del cupo sale en rojo y no le presta saldo a las demás.",
+  example:
+    "Tornillo: 320,000 autorizado − 9,537 talado = 310,463 por talar. Trozado 4,365: 2,850 despachado con la GTF 001-0045678 y 1,515 consumido.",
+} as const;
 
 const NUM = "whitespace-nowrap px-2 py-1.5 text-right font-mono text-xs tabular-nums";
 const TH = "px-2 py-1.5 font-bold";
@@ -106,7 +120,7 @@ function Fila({ f }: { f: SaldoEspecie }) {
 }
 
 export default function LothSaldoEspecies(props: LothSaldoEspeciesProps) {
-  const { saldo: dado, entrada, titulo = "Saldo por especie", className = "" } = props;
+  const { saldo: dado, entrada, titulo = "Saldo por especie", className = "", sinCabecera = false } = props;
   const [abierto, setAbierto] = useState(false);
   const saldo = useMemo(() => dado ?? (entrada ? saldoPorEspecie(entrada) : null), [dado, entrada]);
   const filas = useMemo(() => ordenarSaldo(saldo?.filas ?? []), [saldo]);
@@ -115,16 +129,15 @@ export default function LothSaldoEspecies(props: LothSaldoEspeciesProps) {
   const tot = saldo?.totales;
 
   return (
-    <section className={`rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 ${className}`} data-saldo-especies>
+    <section
+      className={`${sinCabecera ? "" : "rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3"} ${className}`}
+      data-saldo-especies
+    >
+      {!sinCabecera && (
       <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1">
         <div className="flex items-center gap-1">
           <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">{titulo}</CardTitle>
-          <InfoTip
-            title={titulo}
-            what="Por especie: el cupo (lo autorizado en el plan o, si no lo trae, lo censado), lo talado, lo trozado y a dónde fue: despachado con GTF, consumido o todavía en el patio. Saldo por talar = cupo − talado."
-            affects="«Saldo por talar» es lo que el permiso todavía deja sacar del monte; «En patio» es lo que todavía se puede mover. Son dos saldos distintos. Una especie pasada del cupo sale en rojo y no le presta saldo a las demás."
-            example="Tornillo: 320,000 autorizado − 9,537 talado = 310,463 por talar. Trozado 4,365: 2,850 despachado con la GTF 001-0045678 y 1,515 consumido."
-          />
+          <InfoTip title={titulo} {...AYUDA_SALDO} />
         </div>
         {tot && filas.length > 0 && (
           <p className="text-xs text-[var(--text-tertiary)]" aria-live="polite">
@@ -135,6 +148,7 @@ export default function LothSaldoEspecies(props: LothSaldoEspeciesProps) {
           </p>
         )}
       </div>
+      )}
 
       {!saldo || filas.length === 0 ? (
         <p className="py-3 text-sm text-[var(--text-secondary)]">Sin censo ni especies autorizadas en este plan.</p>

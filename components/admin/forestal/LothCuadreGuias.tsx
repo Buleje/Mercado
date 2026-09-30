@@ -6,6 +6,7 @@ import {
   type CuadreGuia,
   type VeredictoGuia,
 } from "@/lib/forestal/loth-cuadre-guias";
+import { formatNumber } from "@/lib/format";
 
 /**
  * Cuadre de guías: una fila por GTF, con lo que declara contra lo que el libro
@@ -23,8 +24,7 @@ function fechaCorta(iso: string | null): string {
   return `${d.getUTCDate()} ${MESES[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
 }
 
-const m3 = (n: number | null) =>
-  n == null ? "—" : n.toLocaleString("es-PE", { minimumFractionDigits: 3, maximumFractionDigits: 4 });
+const m3 = (n: number | null) => (n == null ? "—" : formatNumber(n, { min: 3, max: 4 }));
 
 const TONO: Record<VeredictoGuia, string> = {
   cuadra: "text-[var(--data-success-ink)]",
@@ -38,7 +38,7 @@ const TONO: Record<VeredictoGuia, string> = {
 function diferencia(f: CuadreGuia): string {
   if (f.diferenciaM3 == null) return "—";
   const signo = f.diferenciaM3 > 0 ? "+" : "";
-  return `${signo}${f.diferenciaM3.toLocaleString("es-PE", { minimumFractionDigits: 3, maximumFractionDigits: 4 })}`;
+  return `${signo}${formatNumber(f.diferenciaM3, { min: 3, max: 4 })}`;
 }
 
 export interface LothCuadreGuiasProps {
