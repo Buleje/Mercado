@@ -15,6 +15,7 @@ import {
 } from "./misc.db";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { saldoEsperadoDeCaja } from "@/lib/caja/saldo-esperado";
+import { contarVentas, cuentaEfectivoCaja, type CuentaCaja } from "@/lib/caja/efectivo-esperado";
 import { CajaNoAbiertaError, CashRegistersMovementsDB } from "@/lib/db/cash-registers-movements.db";
 
 // ── Local Types ───────────────────────────────────────────────────────────────
@@ -43,7 +44,21 @@ export type DbCashRegister = {
   status: CashRegisterStatus;
   notes?: string;
   movements: DbCashMovement[];
+  /**
+   * Sólo en cajas ABIERTAS: el efectivo que debería haber ahora, con la fórmula
+   * del cierre sobre TODOS sus movimientos (no sobre los 100 que trae el
+   * include). `expectedAmount` sigue siendo el que se congeló al cerrar.
+   */
+  efectivoEsperado?: number;
 };
+
+/** Lo que el aviso del panel necesita de la caja abierta más vieja. */
+export interface CajaAbiertaResumen {
+  id: string;
+  openedAt: string;
+  ventas: number;
+  cuenta: CuentaCaja;
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -235,6 +250,46 @@ export const SalesDB = {
 
 // ── Cash Registers DB ─────────────────────────────────────────────────────────
 
+/**
+ * La cuenta de efectivo de UNA caja, sumada en la base (groupBy por tipo y
+ * método) en vez de traer sus movimientos: una caja abierta meses puede tener
+ * miles, y el include de getAll corta en 100. CashMovement no tiene tenantId
+ * propio: el aislamiento va por la relación, en el WHERE.
+ */
+async function sumarCaja(tenantId: string, cashRegisterId: string, apertura: number): Promise<CuentaCaja> {
+  const grupos = await prisma.cashMovement.groupBy({
+    by: ["type", "method"],
+    where: { cashRegisterId, cashRegister: { tenantId } },
+    _sum: { amount: true },
+  });
+  return cuentaEfectivoCaja(
+    apertura,
+    grupos.map((g) => ({ type: g.type, method: g.method, amount: toNumOrZero(g._sum.amount) })),
+  );
+}
+
+/** Ventas distintas de una caja (un pago mixto son varias líneas con el mismo saleId). */
+async function contarVentasDeCaja(tenantId: string, cashRegisterId: string): Promise<number> {
+  const grupos = await prisma.cashMovement.groupBy({
+    by: ["saleId"],
+    where: { cashRegisterId, cashRegister: { tenantId }, type: "venta" },
+    _count: { _all: true },
+  });
+  return contarVentas(grupos.map((g) => ({ saleId: g.saleId, movimientos: g._count._all })));
+}
+
+/** Le pone a cada caja ABIERTA el efectivo que debería tener ahora. */
+async function conEfectivoEsperado(tenantId: string, cajas: DbCashRegister[]): Promise<DbCashRegister[]> {
+  const abiertas = cajas.filter((c) => c.status === "abierta" && !c.closedAt);
+  if (abiertas.length === 0) return cajas;
+  const esperados = new Map(
+    await Promise.all(
+      abiertas.map(async (c) => [c.id, (await sumarCaja(tenantId, c.id, c.openingAmount)).esperado] as const),
+    ),
+  );
+  return cajas.map((c) => (esperados.has(c.id) ? { ...c, efectivoEsperado: esperados.get(c.id) } : c));
+}
+
 export const CashRegistersDB = {
   async getAll(tenantId: string): Promise<DbCashRegister[]> {
     const where: Record<string, unknown> = { tenantId };
@@ -243,7 +298,8 @@ export const CashRegistersDB = {
     // por tenant activo, OOM potencial en Vercel Fluid Compute (512 MB).
     // Frontend usa los movimientos recientes para mostrar últimas operaciones;
     // historial completo debe ir por endpoint paginado dedicado.
-    return (await prisma.cashRegister.findMany({ where, include: { movements: { orderBy: { createdAt: "desc" }, take: 100 } }, orderBy: { openedAt: "desc" } })).map(mapCashRegister);
+    const cajas = (await prisma.cashRegister.findMany({ where, include: { movements: { orderBy: { createdAt: "desc" }, take: 100 } }, orderBy: { openedAt: "desc" } })).map(mapCashRegister);
+    return conEfectivoEsperado(tenantId, cajas);
   },
   async getAllPaginated(tenantId: string, limit = 25, cursor?: string): Promise<{ items: DbCashRegister[]; nextCursor: string | null }> {
     const rows = await prisma.cashRegister.findMany({
@@ -256,7 +312,28 @@ export const CashRegistersDB = {
     });
     const hasMore = rows.length > limit;
     const items = hasMore ? rows.slice(0, limit) : rows;
-    return { items: items.map(mapCashRegister), nextCursor: hasMore ? items[items.length - 1].id : null };
+    return {
+      items: await conEfectivoEsperado(tenantId, items.map(mapCashRegister)),
+      nextCursor: hasMore ? items[items.length - 1].id : null,
+    };
+  },
+  /**
+   * La caja abierta MÁS VIEJA con su cuenta (ventas + efectivo esperado), para
+   * el aviso del panel: «abierta hace 111 días · 3 ventas · S/ 245.00». `null`
+   * si no hay caja abierta.
+   */
+  async cuentaCajaAbierta(tenantId: string): Promise<CajaAbiertaResumen | null> {
+    const caja = await prisma.cashRegister.findFirst({
+      where: { tenantId, status: "abierta", closedAt: null },
+      orderBy: { openedAt: "asc" },
+      select: { id: true, openedAt: true, openingAmount: true },
+    });
+    if (!caja) return null;
+    const [cuenta, ventas] = await Promise.all([
+      sumarCaja(tenantId, caja.id, toNumOrZero(caja.openingAmount)),
+      contarVentasDeCaja(tenantId, caja.id),
+    ]);
+    return { id: caja.id, openedAt: toISO(caja.openedAt), ventas, cuenta };
   },
   async getOpen(tenantId: string): Promise<DbCashRegister | null> {
     const row = await prisma.cashRegister.findFirst({ where: { tenantId, status: "abierta" }, include: { movements: { orderBy: { createdAt: "desc" } } } });

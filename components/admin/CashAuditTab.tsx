@@ -66,6 +66,8 @@ type CashRegisterRaw = {
   difference?: number | null;
   status: string;
   notes?: string | null;
+  /** Sólo cajas abiertas: el efectivo que debería haber AHORA (backend, misma fórmula del cierre). */
+  efectivoEsperado?: number | null;
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -80,8 +82,10 @@ function shiftLabel(iso: string): string {
 function mapRegisterToAudit(r: CashRegisterRaw): CashAudit {
   const [cashierName] = (r.notes ?? "").split(" (");
   const diff = r.difference ?? (r.closingAmount != null && r.expectedAmount != null ? r.closingAmount - r.expectedAmount : null);
+  // Caja abierta: su esperado vivo; cerrada: el que se congeló al cerrar.
+  const esperado = r.expectedAmount ?? r.efectivoEsperado ?? r.openingAmount;
   const status = veredictoArqueo({
-    expectedAmount: r.expectedAmount ?? r.openingAmount,
+    expectedAmount: esperado,
     countedAmount: r.closingAmount,
     difference: diff,
     notes: r.notes,
@@ -90,7 +94,7 @@ function mapRegisterToAudit(r: CashRegisterRaw): CashAudit {
   return {
     id: r.id, date: fmtDate(r.openedAt), shift: shiftLabel(r.openedAt),
     cashier: cashierName?.trim() || "Cajero",
-    expectedAmount: r.expectedAmount ?? r.openingAmount,
+    expectedAmount: esperado,
     countedAmount: r.closingAmount ?? 0,
     difference: diff ?? 0, status, denominations: [], salesCount: 0,
     closedBy: r.closedAt ? (cashierName?.trim() || "Admin") : "",
@@ -227,7 +231,27 @@ function CashCounter({
           </div>
           <div className="text-left">
             <span className="block font-bold text-sm">Conteo de efectivo manual</span>
-            <span className="block text-xs text-[var(--text-tertiary)] mt-0.5">Contador por denominación para validar caja en vivo</span>
+            {/* El esperado a la vista sin abrir el contador: se llega acá desde el
+                aviso «caja abierta hace N días» para saber cuánto contar. */}
+            <span className="block text-xs text-[var(--text-tertiary)] mt-0.5">
+              {registerId && expectedAmount < 0 ? (
+                /* Un esperado negativo no existe en un cajón (lib/caja/arqueo-veredicto):
+                   «deberías tener S/ −6,424» no es algo que se pueda contar. */
+                <span className="text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+                  El efectivo esperado da{" "}
+                  <strong className="font-bold tabular-nums">{fmt(expectedAmount)}</strong>: hay más egresos que
+                  apertura + ventas en efectivo + ingresos. Revisa los egresos antes de contar.
+                </span>
+              ) : registerId ? (
+                <>
+                  Deberías tener{" "}
+                  <strong className="font-bold text-[var(--text-primary)] tabular-nums">{fmt(expectedAmount)}</strong>{" "}
+                  en efectivo · apertura + ventas en efectivo + ingresos − egresos
+                </>
+              ) : (
+                "Contador por denominación para validar caja en vivo"
+              )}
+            </span>
           </div>
         </span>
         <PlusCircle className={cn("h-4 w-4 text-primary transition-transform shrink-0", open && "rotate-45")} strokeWidth={1.75} aria-hidden />
@@ -475,14 +499,16 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
   // denominador convertía «nadie contó» en «todo perfecto».
   const pctConformes = resumen.conformesPct;
 
-  // Caja ABIERTA para el conteo manual. El "Esperado" sale de su expectedAmount
-  // (fallback a openingAmount si aún no se computó). Si no hay caja abierta, el
-  // CashCounter se deshabilita con un mensaje claro.
+  // Caja ABIERTA para el conteo manual. El "Esperado" es `efectivoEsperado`, que
+  // el backend calcula con la fórmula del cierre: antes caía a openingAmount
+  // (expectedAmount recién existe al cerrar) y una caja con 3 ventas decía S/ 100.
+  // Si no hay caja abierta, el CashCounter se deshabilita con un mensaje claro.
   const openRegister = useMemo(
     () => rawRegisters.find(r => r.status === "abierta") ?? null,
     [rawRegisters],
   );
-  const openExpectedAmount = openRegister?.expectedAmount ?? openRegister?.openingAmount ?? 0;
+  const openExpectedAmount =
+    openRegister?.efectivoEsperado ?? openRegister?.expectedAmount ?? openRegister?.openingAmount ?? 0;
 
   return (
     <div className="space-y-4">

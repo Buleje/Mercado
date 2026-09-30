@@ -1,6 +1,8 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { getOrSet } from "@/lib/cache";
+import { CashRegistersDB } from "./sales.db";
+import type { CuentaCaja } from "@/lib/caja/efectivo-esperado";
 
 /**
  * lib/db/alerts.db.ts — Alertas agregadas del tenant para banners admin.
@@ -13,6 +15,9 @@ import { getOrSet } from "@/lib/cache";
  *   - trialDaysLeft: días al fin del trial (si plan=free)
  *   - cajaAbiertaDesde: apertura de la caja abierta más vieja (ISO) — el banner
  *     avisa si sigue abierta desde un día anterior (lib/caja/caja-abierta.ts)
+ *   - cajaAbiertaCuenta: sus ventas y el efectivo que debería tener (la misma
+ *     fórmula del cierre, lib/caja/efectivo-esperado.ts) — cerrar una caja de
+ *     meses da miedo si no se sabe qué hay adentro
  *
  * Convenciones del proyecto respetadas:
  *   - tenantId 1er parámetro (CLAUDE.md regla #3)
@@ -30,6 +35,8 @@ export interface AlertsSummary {
   recentExpiredOffers: number;
   trialDaysLeft: number | null;
   cajaAbiertaDesde: string | null;
+  /** Ventas distintas + cuenta de efectivo de esa caja; `null` si no hay caja abierta. */
+  cajaAbiertaCuenta: ({ ventas: number } & CuentaCaja) | null;
 }
 
 export const AlertsDB = {
@@ -64,12 +71,9 @@ export const AlertsDB = {
             createdAt: { gt: new Date(Date.now() - 60 * 60_000) },
           },
         }),
-        // La caja abierta más vieja del tenant (lo que el cierre del día no cerró).
-        prisma.cashRegister.findFirst({
-          where: { tenantId, status: "abierta", closedAt: null },
-          orderBy: { openedAt: "asc" },
-          select: { openedAt: true },
-        }),
+        // La caja abierta más vieja del tenant (lo que el cierre del día no cerró),
+        // con cuántas ventas y cuánto efectivo debería tener adentro.
+        CashRegistersDB.cuentaCajaAbierta(tenantId),
       ]);
 
       const trialDaysLeft = (() => {
@@ -84,7 +88,8 @@ export const AlertsDB = {
         partnersOnline,
         recentExpiredOffers: recentExpired,
         trialDaysLeft,
-        cajaAbiertaDesde: cajaAbierta?.openedAt.toISOString() ?? null,
+        cajaAbiertaDesde: cajaAbierta?.openedAt ?? null,
+        cajaAbiertaCuenta: cajaAbierta ? { ventas: cajaAbierta.ventas, ...cajaAbierta.cuenta } : null,
       };
     });
   },

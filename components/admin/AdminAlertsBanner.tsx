@@ -41,7 +41,7 @@ import {
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { puedePedir, type RutaPanel } from "@/lib/auth/roles-rutas-panel";
-import { avisoCajaAbierta } from "@/lib/caja/caja-abierta";
+import { avisoCajaAbierta, type CuentaCajaAbierta } from "@/lib/caja/caja-abierta";
 import type { AdminRole } from "@/lib/session";
 
 const RUTA: RutaPanel = "/api/admin/alerts-summary";
@@ -53,6 +53,8 @@ interface Summary {
   recentExpiredOffers: number;
   trialDaysLeft: number | null;
   cajaAbiertaDesde?: string | null;
+  /** Ventas y efectivo esperado de esa caja, calculados en el backend (AlertsDB). */
+  cajaAbiertaCuenta?: CuentaCajaAbierta | null;
 }
 
 type Severity = "urgent" | "warning" | "info";
@@ -185,7 +187,7 @@ export default function AdminAlertsBanner({ userRole = null, authReady = false }
     }
 
     // Caja abierta desde un día anterior: un arqueo que no se hizo (2026-09-14).
-    const caja = avisoCajaAbierta(summary.cajaAbiertaDesde);
+    const caja = avisoCajaAbierta(summary.cajaAbiertaDesde, new Date(), summary.cajaAbiertaCuenta ?? null);
     if (caja) {
       list.push({
         id: caja.id,
@@ -193,7 +195,7 @@ export default function AdminAlertsBanner({ userRole = null, authReady = false }
         icon: Wallet,
         count: caja.dias,
         label: caja.titulo,
-        resumen: caja.desde,
+        resumen: caja.resumen,
         description: caja.detalle,
         cta: "Cuadrar caja",
         href: "/admin?tab=ventas-caja&vista=arqueo",
