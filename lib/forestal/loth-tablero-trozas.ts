@@ -34,6 +34,123 @@ export interface TrozaTablero {
   /** Línea del libro que la creó, para poder ir hasta ella. */
   lineNo: number | null;
   cites: boolean;
+
+  /* ── Lo que el libro ya sabe de la troza (2026-09-30) ──────────────────
+     Todo es `null` cuando falta: una troza sin largo NO mide 0 m, y un
+     Excel para OSINFOR con ceros inventados dice algo que nadie midió. */
+  especieCientifica: string | null;
+  /** Ø de la sección mayor y menor, y el largo aprovechable, en metros (línea de Trozado). */
+  diamMayorM: number | null;
+  diamMenorM: number | null;
+  largoM: number | null;
+  /** Código de despacho, si el libro lo anotó distinto del de la troza. */
+  codigoDespacho: string | null;
+  /** Plan de manejo de la línea (su N°) y la parcela de corta. */
+  planId: string | null;
+  plan: string | null;
+  parcela: string | null;
+  /** Fecha de la tala del árbol del que sale la troza (sección Tala). */
+  fechaTala: string | null;
+  /** Días del trozado a la salida — cuánto estuvo en el patio la que ya salió. */
+  diasTrozadoASalida: number | null;
+  /** Días de la tala a la salida: lo que tarda la madera en salir del monte. */
+  diasTalaASalida: number | null;
+  /** Fecha de la GTF (puede no coincidir con la línea de despacho). */
+  fechaGuia: string | null;
+  /** Del despacho: sólo la GTF los tiene; la línea del libro no los guarda. */
+  placa: string | null;
+  transportista: string | null;
+  conductor: string | null;
+  destino: string | null;
+  /** ¿La línea de Trozado tiene foto de evidencia? */
+  conFoto: boolean;
+}
+
+/**
+ * Lo que el tablero usa de una GTF. La línea de despacho del libro sólo tiene
+ * el N° de guía: placa, transportista y destino viven en `ForestGtf`.
+ */
+export interface GuiaTablero {
+  gtfNumber: string;
+  gtfDate: string | null;
+  placa: string | null;
+  transportista: string | null;
+  conductor: string | null;
+  destino: string | null;
+  parcela: string | null;
+  anulada: boolean;
+}
+
+/** Lo que el tablero usa de un plan de manejo. */
+export interface PlanTablero {
+  id: string;
+  planNumber: string | null;
+  parcelaCorta: string | null;
+}
+
+export interface ContextoTablero {
+  guias?: readonly GuiaTablero[] | null;
+  planes?: readonly PlanTablero[] | null;
+}
+
+/* ── Normalizar lo que llega de la API ──────────────────────────────────── */
+
+const txt = (v: unknown): string | null => (typeof v === "string" && v.trim() ? v.trim() : null);
+const obj = (v: unknown): Record<string, unknown> | null =>
+  v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : null;
+
+/**
+ * Una fila de `/api/admin/forestal/gtf` → `GuiaTablero`.
+ *
+ * La guía se anota de dos formas: el formulario corto llena las columnas
+ * (`placaVehiculo`, `transportista`, `destino`) y el formato SERFOR completo
+ * las llena dentro de `gtfDatos`. Se lee primero la columna y, si viene
+ * vacía, el casillero del formato — así una guía de cualquiera de las dos
+ * formas trae su placa.
+ */
+export function guiaDesdeApi(raw: unknown): GuiaTablero | null {
+  const g = obj(raw);
+  const numero = txt(g?.gtfNumber);
+  if (!g || !numero) return null;
+  const datos = obj(g.gtfDatos);
+  const vehiculo = obj(datos?.vehiculo);
+  const transp = obj(datos?.transportista);
+  const destinatario = obj(datos?.destinatario);
+  const traslado = obj(datos?.traslado);
+  return {
+    gtfNumber: numero,
+    gtfDate: txt(g.gtfDate),
+    placa: txt(g.placaVehiculo) ?? txt(vehiculo?.placa),
+    transportista: txt(g.transportista) ?? txt(transp?.nombre),
+    conductor: txt(g.conductor) ?? txt(vehiculo?.conductor),
+    destino: txt(g.destino) ?? txt(traslado?.puntoLlegada) ?? txt(destinatario?.nombre),
+    parcela: txt(g.parcelaCorta),
+    anulada: g.status === "anulada",
+  };
+}
+
+/** Una fila de `/api/admin/forestal/plan` → `PlanTablero`. */
+export function planDesdeApi(raw: unknown): PlanTablero | null {
+  const p = obj(raw);
+  const id = txt(p?.id);
+  if (!p || !id) return null;
+  return { id, planNumber: txt(p.planNumber), parcelaCorta: txt(p.parcelaCorta) };
+}
+
+/** Decimal serializado → número; vacío, basura o ≤ 0 → null (no se midió). */
+function medida(v: string | number | null | undefined): number | null {
+  if (v == null || v === "") return null;
+  const n = Number(v);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+/** Días entre dos fechas del libro, contados por FECHA (date-only, UTC). */
+export function diasEntre(desde: string | null | undefined, hasta: string | null | undefined): number | null {
+  if (!desde || !hasta) return null;
+  const a = Date.parse(`${desde.slice(0, 10)}T00:00:00Z`);
+  const b = Date.parse(`${hasta.slice(0, 10)}T00:00:00Z`);
+  if (!Number.isFinite(a) || !Number.isFinite(b)) return null;
+  return Math.round((b - a) / 86_400_000);
 }
 
 export interface ResumenEstado {
@@ -93,13 +210,32 @@ function diasDesde(iso: string | null, hoy: Date): number | null {
  * un documento (la GTF) del otro lado, y el descuadre se ve igual porque la
  * línea de consumo sigue estando en su sección.
  */
-export function construirTablero(entries: readonly LothEntryDTO[], hoy: Date = new Date()): TrozaTablero[] {
+export function construirTablero(
+  entries: readonly LothEntryDTO[],
+  hoy: Date = new Date(),
+  contexto: ContextoTablero = {},
+): TrozaTablero[] {
   const trozadas = new Map<string, LothEntryDTO>();
   const despachos = new Map<string, LothEntryDTO>();
   const consumos = new Map<string, LothEntryDTO>();
+  /* Las talas por código de árbol. Un mismo código puede repetirse en otro
+     plan (cada POA numera desde 001): por eso se guardan todas y se elige la
+     del mismo plan que la troza. */
+  const talas = new Map<string, LothEntryDTO[]>();
+
+  // Una guía anulada no ampara nada: su placa no es la del viaje.
+  const guias = new Map<string, GuiaTablero>();
+  for (const g of contexto.guias ?? []) if (!g.anulada) guias.set(g.gtfNumber.trim(), g);
+  const planes = new Map<string, PlanTablero>();
+  for (const p of contexto.planes ?? []) planes.set(p.id, p);
 
   for (const e of entries) {
     if (!viva(e)) continue;
+    if (e.section === "tala" && e.treeCode?.trim()) {
+      const k = e.treeCode.trim();
+      talas.set(k, [...(talas.get(k) ?? []), e]);
+      continue;
+    }
     const code = e.trozaCode?.trim();
     if (!code) continue;
     if (e.section === "trozado" && !trozadas.has(code)) trozadas.set(code, e);
@@ -124,6 +260,13 @@ export function construirTablero(entries: readonly LothEntryDTO[], hoy: Date = n
 
     const origen = tro ?? des ?? con;
     const fechaSalida = des?.entryDate ?? con?.entryDate ?? null;
+    const planId = origen?.planId ?? null;
+    const treeCode = origen?.treeCode?.trim() || null;
+    const candidatas = treeCode ? (talas.get(treeCode) ?? []) : [];
+    const tala = candidatas.find((t) => planId != null && t.planId === planId) ?? candidatas[0] ?? null;
+    const gtf = des?.gtfNumber?.trim() || null;
+    const guia = gtf ? (guias.get(gtf) ?? null) : null;
+    const plan = planId ? (planes.get(planId) ?? null) : null;
 
     filas.push({
       code,
@@ -137,6 +280,23 @@ export function construirTablero(entries: readonly LothEntryDTO[], hoy: Date = n
       diasEnPatio: estado === "disponible" ? diasDesde(tro?.entryDate ?? null, hoy) : null,
       lineNo: origen?.lineNo ?? null,
       cites: origen?.cites === true,
+      especieCientifica: origen?.speciesScientific?.trim() || null,
+      diamMayorM: medida(tro?.diamMayorM),
+      diamMenorM: medida(tro?.diamMenorM),
+      largoM: medida(tro?.lengthM),
+      codigoDespacho: des?.despachoCode?.trim() || null,
+      planId,
+      plan: plan?.planNumber ?? null,
+      parcela: plan?.parcelaCorta ?? guia?.parcela ?? null,
+      fechaTala: tala?.entryDate ?? null,
+      diasTrozadoASalida: tro && fechaSalida ? diasEntre(tro.entryDate, fechaSalida) : null,
+      diasTalaASalida: tala && fechaSalida ? diasEntre(tala.entryDate, fechaSalida) : null,
+      fechaGuia: guia?.gtfDate ?? null,
+      placa: guia?.placa ?? null,
+      transportista: guia?.transportista ?? null,
+      conductor: guia?.conductor ?? null,
+      destino: guia?.destino ?? null,
+      conFoto: Boolean(tro?.photoUrl?.trim()),
     });
   }
 
@@ -177,18 +337,18 @@ export interface FiltroTablero {
   especie?: string | null;
 }
 
-/** Filtra el tablero. El texto busca por código de troza, de árbol y por GTF. */
+/**
+ * Filtra el tablero. El texto busca por código de troza, de árbol, especie,
+ * GTF, placa y destino (en un control de carretera se pregunta por la placa).
+ */
 export function filtrarTablero(filas: readonly TrozaTablero[], f: FiltroTablero): TrozaTablero[] {
   const q = (f.texto ?? "").trim().toLowerCase();
   return filas.filter((fila) => {
     if (f.estados && f.estados.length > 0 && !f.estados.includes(fila.estado)) return false;
     if (f.especie && fila.especie !== f.especie) return false;
     if (!q) return true;
-    return (
-      fila.code.toLowerCase().includes(q) ||
-      (fila.treeCode ?? "").toLowerCase().includes(q) ||
-      (fila.gtf ?? "").toLowerCase().includes(q) ||
-      (fila.especie ?? "").toLowerCase().includes(q)
+    return [fila.code, fila.treeCode, fila.gtf, fila.especie, fila.placa, fila.destino].some((v) =>
+      (v ?? "").toLowerCase().includes(q),
     );
   });
 }
