@@ -39,6 +39,10 @@ export const RUTAS_PANEL = {
      almacenero; el PATCH no: la campana y el modal esconden Liberar/Extender
      a quien recibiría un 403 «Requires: admin, owner». */
   "PATCH /api/admin/forestal/ctp": ["admin", "owner"],
+  /* Corregir un árbol del censo del Libro TH (2026-09-30): «Cargar coordenadas»
+     en la franja del mapa. El GET de la misma ruta deja pasar al almacenero; el
+     PATCH no, así que el botón sólo se ofrece a quien no recibiría un 403. */
+  "PATCH /api/admin/forestal/plan/census": ["admin", "owner"],
   /* Resultado y caja del aserradero (ADR-451, 2026-09-29): lo ganado, lo que
      entró y salió y lo que te deben. Plata del negocio entero: SÓLO admin y
      dueño. Cajero y almacenero reciben 403 por este array; el encargado, por el

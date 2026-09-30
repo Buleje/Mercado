@@ -241,6 +241,14 @@ export function useLothMapaDatos() {
     [carto, leido.carto],
   );
 
+  /**
+   * Un árbol del censo que se acaba de corregir en el servidor (p. ej. se le
+   * cargaron las coordenadas): entra al mapa sin recargar todo ni re-encuadrar.
+   */
+  const reemplazarArbol = useCallback((arbol: CensusTreeDTO) => {
+    setTrees((prev) => prev.map((t) => (t.id === arbol.id ? { ...t, ...arbol } : t)));
+  }, []);
+
   const cartoSinGuardar = useMemo(() => JSON.stringify(carto) !== JSON.stringify(cartoGuardada), [carto, cartoGuardada]);
 
   return {
@@ -263,6 +271,7 @@ export function useLothMapaDatos() {
     fitKey,
     persistParcela,
     guardarCartografia,
+    reemplazarArbol,
   };
 }
 

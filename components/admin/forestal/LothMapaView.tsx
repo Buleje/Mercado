@@ -26,6 +26,7 @@ import { useEffect, useRef } from "react";
 import { ErrorAlert, SectionTitle } from "@buleje/design-system";
 import { ClipboardCopy, Compass, FileCheck, Loader2, Printer, ShieldCheck, Square, Table, Upload } from "@buleje/design-system/icons";
 import LothMapaMarco from "./LothMapaMarco";
+import LothMapaSinCoordenadasPanel from "./LothMapaSinCoordenadasPanel";
 import LothMapaBloque from "./LothMapaBloque";
 import LothEudrRail, { resumenEudr, tonoEudr } from "./LothEudrRail";
 import LothPlanoRequisitos, { resumenPlano } from "./LothPlanoRequisitos";
@@ -167,6 +168,8 @@ export default function LothMapaView({
       </header>
 
       {datos.error && <ErrorAlert title="No se pudo completar" description={datos.error} />}
+
+      <LothMapaSinCoordenadasPanel trees={datos.trees} onGuardado={datos.reemplazarArbol} onCentrar={centrar} />
 
       <LothMapaMarco
         ref={marcoRef}
