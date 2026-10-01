@@ -1,5 +1,6 @@
 "use client";
 
+import { safeJsonLdStringify } from "@/lib/seo/json-ld";
 import { useState } from "react";
 import { Clock, Users, ArrowUpRight } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -160,7 +161,7 @@ export default function MarketplaceRecipesWidget() {
       <script
         type="application/ld+json"
          
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(RECIPE_JSONLD) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(RECIPE_JSONLD) }}
       />
 
       <div className={MARKETPLACE_CAROUSEL}>

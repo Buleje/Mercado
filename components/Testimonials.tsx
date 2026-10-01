@@ -1,5 +1,6 @@
 "use client";
 
+import { safeJsonLdStringify } from "@/lib/seo/json-ld";
 import { useState, useEffect, useCallback, startTransition, useRef } from "react";
 import { m, AnimatePresence } from "framer-motion";
 import { Star, Quote, ChevronLeft, ChevronRight } from "@buleje/design-system/icons";
@@ -226,7 +227,7 @@ export default function Testimonials() {
     <section ref={sectionRef} id="nuestros-clientes" className="py-20 sm:py-28 bg-primary/5">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(reviewSchema) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(reviewSchema) }}
       />
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Title */}

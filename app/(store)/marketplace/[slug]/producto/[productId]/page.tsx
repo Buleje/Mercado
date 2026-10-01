@@ -1,3 +1,4 @@
+import { safeJsonLdStringify } from "@/lib/seo/json-ld";
 /**
  * PDP — Product Detail Page (Server Component).
  *
@@ -336,7 +337,7 @@ function ProductJsonLd({ product, slug, productId, priceValidUntil, storeRealAgg
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(jsonLd) }}
     />
   );
 }

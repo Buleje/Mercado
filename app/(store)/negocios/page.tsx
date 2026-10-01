@@ -1,3 +1,4 @@
+import { safeJsonLdStringify } from "@/lib/seo/json-ld";
 import type { Metadata } from "next";
 import dynamic from "next/dynamic";
 import Link from "next/link";
@@ -217,15 +218,15 @@ async function BulejeJsonLd() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(softwareLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(breadcrumbLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(howToLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(howToLd) }}
       />
     </>
   );

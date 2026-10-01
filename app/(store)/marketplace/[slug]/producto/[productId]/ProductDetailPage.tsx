@@ -1,5 +1,6 @@
 "use client";
 
+import { safeJsonLdStringify } from "@/lib/seo/json-ld";
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -254,7 +255,7 @@ export default function ProductDetailPage() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(jsonLd)
+          __html: safeJsonLdStringify(jsonLd)
             .replace(/</g, "\\u003c")
             .replace(new RegExp("\\u2028", "g"), "\\u2028")
             .replace(new RegExp("\\u2029", "g"), "\\u2029"),

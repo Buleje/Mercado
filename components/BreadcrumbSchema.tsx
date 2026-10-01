@@ -1,3 +1,4 @@
+import { safeJsonLdStringify } from "@/lib/seo/json-ld";
 import BreadcrumbTrail from "@/components/BreadcrumbTrail";
 
 interface BreadcrumbItem {
@@ -48,7 +49,7 @@ export default function BreadcrumbSchema({ items, visible = true }: BreadcrumbSc
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(breadcrumbSchema) }}
       />
       {visible && (
         <BreadcrumbTrail items={items.map((item) => ({ name: item.name, href: toPath(item.url) }))} />

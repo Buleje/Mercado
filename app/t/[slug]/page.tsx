@@ -1,3 +1,4 @@
+import { safeJsonLdStringify } from "@/lib/seo/json-ld";
 import type { Metadata } from "next";
 import { Suspense, Fragment, type ReactNode } from "react";
 import { connection } from "next/server";
@@ -632,7 +633,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
       {editorTheme.schemaLocalBusiness && (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          dangerouslySetInnerHTML={{ __html: safeJsonLdStringify({
             "@context": "https://schema.org",
             "@type": "LocalBusiness",
             name: displayName,

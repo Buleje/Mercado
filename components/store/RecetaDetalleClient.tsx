@@ -1,5 +1,6 @@
 'use client';
 
+import { safeJsonLdStringify } from "@/lib/seo/json-ld";
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -244,7 +245,7 @@ export default function RecetaDetalleClient({ recetaId }: { recetaId: string }) 
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+          __html: safeJsonLdStringify({
             "@context": "https://schema.org",
             "@type": "Recipe",
             name: receta.nombre,

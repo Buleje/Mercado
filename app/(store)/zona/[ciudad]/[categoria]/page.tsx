@@ -24,8 +24,7 @@ import {
   generateItemListLD,
   generateFAQPageLD,
   generateSoftwareApplicationLD,
-  zoneBreadcrumbs,
-} from "@/lib/seo/json-ld";
+  zoneBreadcrumbs, safeJsonLdStringify } from "@/lib/seo/json-ld";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 
 const BASE_URL =
@@ -185,7 +184,7 @@ async function CategoryZoneContent({
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(
+          __html: safeJsonLdStringify(
             generateSoftwareApplicationLD(zone),
           ),
         }}
@@ -194,7 +193,7 @@ async function CategoryZoneContent({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(
+            __html: safeJsonLdStringify(
               generateItemListLD(
                 `${cat.label} en ${zone.name} — Buleje`,
                 productItems,
@@ -206,7 +205,7 @@ async function CategoryZoneContent({
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(generateFAQPageLD(faqs)),
+          __html: safeJsonLdStringify(generateFAQPageLD(faqs)),
         }}
       />
 

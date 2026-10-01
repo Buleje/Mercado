@@ -1,3 +1,4 @@
+import { safeJsonLdStringify } from "@/lib/seo/json-ld";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { connection } from "next/server";
@@ -141,7 +142,7 @@ async function CategoryPageContent({ params }: Props) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+          __html: safeJsonLdStringify({
             "@context": "https://schema.org",
             "@type": "CollectionPage",
             name: `${cat.label} — Buleje`,
@@ -161,7 +162,7 @@ async function CategoryPageContent({ params }: Props) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+          __html: safeJsonLdStringify({
             "@context": "https://schema.org",
             "@type": "ItemList",
             name: cat.label,

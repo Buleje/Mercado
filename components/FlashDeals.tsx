@@ -1,5 +1,6 @@
 "use client";
 
+import { safeJsonLdStringify } from "@/lib/seo/json-ld";
 import { useState, useEffect, startTransition } from "react";
 import { Clock, ShoppingCart, Minus, Plus } from "@buleje/design-system/icons";
 import { useCart } from "@/contexts/cart-context";
@@ -142,7 +143,7 @@ export default function FlashDeals({ serverProducts, showEmpty = false, emptyVar
     <section className="py-10 sm:py-14 bg-[var(--surface-sunken)]">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(flashOffersSchema) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(flashOffersSchema) }}
       />
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Header */}

@@ -35,8 +35,7 @@ import {
   generateSoftwareApplicationLD,
   generateFAQPageLD,
   generateDistrictLandingLD,
-  districtBreadcrumbs,
-} from "@/lib/seo/json-ld";
+  districtBreadcrumbs, safeJsonLdStringify } from "@/lib/seo/json-ld";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 
 const BASE_URL =
@@ -193,19 +192,19 @@ async function DistrictContent({
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(generateSoftwareApplicationLD(zone)),
+          __html: safeJsonLdStringify(generateSoftwareApplicationLD(zone)),
         }}
       />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(generateDistrictLandingLD(district, zone)),
+          __html: safeJsonLdStringify(generateDistrictLandingLD(district, zone)),
         }}
       />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(generateFAQPageLD(faqs)),
+          __html: safeJsonLdStringify(generateFAQPageLD(faqs)),
         }}
       />
 

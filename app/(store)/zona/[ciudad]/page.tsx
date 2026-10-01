@@ -24,8 +24,7 @@ import { Package, ShoppingCart, Bike, CreditCard, FileText, BarChart3 } from "@b
 import {
   generateSoftwareApplicationLD,
   generateZoneLandingLD,
-  generateFAQPageLD,
-} from "@/lib/seo/json-ld";
+  generateFAQPageLD, safeJsonLdStringify } from "@/lib/seo/json-ld";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 
 const BASE_URL =
@@ -231,7 +230,7 @@ async function ZoneContent({ ciudad }: { ciudad: string }) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(
+          __html: safeJsonLdStringify(
             generateSoftwareApplicationLD(zone),
           ),
         }}
@@ -239,7 +238,7 @@ async function ZoneContent({ ciudad }: { ciudad: string }) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(
+          __html: safeJsonLdStringify(
             generateZoneLandingLD(zone, realCategories),
           ),
         }}
@@ -247,7 +246,7 @@ async function ZoneContent({ ciudad }: { ciudad: string }) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(generateFAQPageLD(faqs)),
+          __html: safeJsonLdStringify(generateFAQPageLD(faqs)),
         }}
       />
 

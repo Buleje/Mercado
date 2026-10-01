@@ -1,5 +1,6 @@
 "use client";
 
+import { safeJsonLdStringify } from "@/lib/seo/json-ld";
 import Link from "next/link";
 import { useState } from "react";
 import { m as motion, AnimatePresence } from "framer-motion";
@@ -70,7 +71,7 @@ function JsonLd() {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(schema) }}
     />
   );
 }

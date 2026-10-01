@@ -44,8 +44,7 @@ import {
   generateSoftwareApplicationLD,
   generateFAQPageLD,
   generateDistrictCategoryLD,
-  districtBreadcrumbs,
-} from "@/lib/seo/json-ld";
+  districtBreadcrumbs, safeJsonLdStringify } from "@/lib/seo/json-ld";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 
 const BASE_URL =
@@ -217,14 +216,14 @@ async function DistrictCategoryContent({
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(generateSoftwareApplicationLD(zone)),
+          __html: safeJsonLdStringify(generateSoftwareApplicationLD(zone)),
         }}
       />
       {products.length > 0 && (
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(
+            __html: safeJsonLdStringify(
               generateDistrictCategoryLD(
                 district,
                 zone,
@@ -238,7 +237,7 @@ async function DistrictCategoryContent({
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(generateFAQPageLD(faqs)),
+          __html: safeJsonLdStringify(generateFAQPageLD(faqs)),
         }}
       />
 

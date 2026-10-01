@@ -1,3 +1,4 @@
+import { safeJsonLdStringify } from "@/lib/seo/json-ld";
 import type { Metadata } from "next";
 import { cacheLife } from "next/cache";
 import { getCacaoMarket } from "@/lib/cacao/cacao-market";
@@ -57,7 +58,7 @@ export default async function PrecioCacaoPage() {
 
   return (
     <main id="main-content" className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-10">
-      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(jsonLd) }} />
 
       <header className="mb-6">
         <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-widest text-[var(--accent)]">Cacao · Perú</p>

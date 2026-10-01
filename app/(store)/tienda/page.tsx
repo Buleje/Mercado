@@ -1,3 +1,4 @@
+import { safeJsonLdStringify } from "@/lib/seo/json-ld";
 import { Suspense } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
@@ -197,7 +198,7 @@ export default async function TiendaPage() {
           <script
             type="application/ld+json"
             dangerouslySetInnerHTML={{
-              __html: JSON.stringify({
+              __html: safeJsonLdStringify({
                 "@context": "https://schema.org",
                 "@type": "ItemList",
                 name: "Categorías de productos — Buleje",
