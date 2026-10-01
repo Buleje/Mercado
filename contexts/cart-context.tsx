@@ -12,6 +12,7 @@ import {
 } from "react";
 import type { Product } from "@/data/products";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { esMarketplace } from "@/lib/tenancy/negocio-por-defecto";
 
 // Unique identifier for this browser tab — prevents BroadcastChannel self-echo loop
 const TAB_ID = typeof crypto !== "undefined" ? crypto.randomUUID() : Math.random().toString(36).slice(2);
@@ -251,7 +252,7 @@ export function CartProvider({ children, tenantSlug = "main" }: { children: Reac
   // tenant isolation — es trade-off de UX explícito documentado.
   useEffect(() => {
     const s = tenantSlug;
-    if (!s || s === "main") {
+    if (!s || esMarketplace(s)) {
       validProductIdsRef.current = null; // marketplace cross-store: backend valida
       return;
     }
@@ -318,7 +319,7 @@ export function CartProvider({ children, tenantSlug = "main" }: { children: Reac
         // tenants en el carrito y el checkout fallaba con invalid_product.
         const isMarketplaceContext = typeof window !== "undefined"
           && window.location.pathname.startsWith("/marketplace");
-        const tenantParam = !isMarketplaceContext && s !== "main"
+        const tenantParam = !isMarketplaceContext && !esMarketplace(s)
           ? `&tenantSlug=${encodeURIComponent(s)}`
           : "";
         fetch(`/api/marketplace/products/check-exists?ids=${idsQuery}${tenantParam}`, { signal: controller.signal })

@@ -24,6 +24,7 @@ import {
   SESSION_TENANT_PATH_PREFIXES,
 } from "./constants";
 import { getSessionPayload } from "@/lib/session";
+import { esTenantPorDefecto } from "@/lib/tenancy/negocio-por-defecto";
 
 /**
  * Resolve a tenant slug from the incoming Host header.
@@ -88,7 +89,7 @@ export function resolveTenantFromHost(req: NextRequest): string {
  * produced a value.
  */
 export async function resolveTenantMultiSource(req: NextRequest, baseTenant: string): Promise<string> {
-  if (baseTenant !== DEFAULT_TENANT_ID) return baseTenant;
+  if (!esTenantPorDefecto(baseTenant)) return baseTenant;
 
   // ── Source 0 (TOP PRIORITY 2026-05-06): URL path `/t/[slug]/...` ─────
   // Si el usuario está navegando explícitamente a un tenant via path, ese
@@ -148,7 +149,7 @@ export async function resolveTenantMultiSource(req: NextRequest, baseTenant: str
   let sessionPayload: Awaited<ReturnType<typeof getSessionPayload>> | null = null;
   if (sessionCookie) {
     sessionPayload = await getSessionPayload(sessionCookie);
-    if (sessionPayload?.tenantId && sessionPayload.tenantId !== DEFAULT_TENANT_ID) {
+    if (sessionPayload?.tenantId && !esTenantPorDefecto(sessionPayload.tenantId)) {
       return sessionPayload.tenantId;
     }
   }
@@ -162,7 +163,7 @@ export async function resolveTenantMultiSource(req: NextRequest, baseTenant: str
   // bootstrap), la cookie se ignora — la API igual requiere auth y
   // retornará 401 si no corresponde.
   const activeTenantCookie = req.cookies.get("active-tenant")?.value;
-  if (activeTenantCookie && activeTenantCookie !== DEFAULT_TENANT_ID) {
+  if (activeTenantCookie && !esTenantPorDefecto(activeTenantCookie)) {
     const role = sessionPayload?.role;
     const canImpersonate = role === "owner" || role === "superadmin";
     if (sessionPayload && canImpersonate) {
