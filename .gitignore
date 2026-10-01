@@ -271,3 +271,6 @@ reports/visual-verify/
 
 # OCR en el navegador (ADR-396): assets de tesseract.js copiados por scripts/copy-tesseract-assets.mjs
 public/tesseract/
+
+# Túnel de la cámara (npm run camaras:tunel): dirección pública que cambia en cada reinicio
+.camaras-tunel.json

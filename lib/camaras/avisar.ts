@@ -17,6 +17,39 @@ import { resumenEnvioWhatsApp } from "@/lib/whatsapp/aviso-plantilla";
 import { CamarasDB } from "@/lib/db/camaras.db";
 import { debeAvisar, textoDelAviso, type Camara, type Captura } from "./camaras";
 
+/** A dónde lleva el enlace del WhatsApp: la pestaña de cámaras del panel. */
+export function enlaceAlPanelDeCamaras(): string {
+  const base = process.env.NEXT_PUBLIC_BASE_URL ?? "https://www.buleje.pe";
+  return `${base}/admin?tab=camaras`;
+}
+
+/**
+ * Manda UN WhatsApp de la cámara por el canal del negocio y dice si salió.
+ *
+ * Es el único camino de salida de los avisos de cámaras —persona/vehículo y
+ * pila de trozas—: con el número del negocio (el del bot) si tiene uno activo;
+ * si no, con la cuenta del servidor. Dos reintentos sólo ante fallas pasajeras
+ * (red, 5xx). Nunca tira.
+ */
+export async function mandarWhatsAppDeCamara(
+  tenantId: string,
+  telefono: string,
+  texto: string,
+  log: Record<string, unknown>,
+): Promise<boolean> {
+  const wa = await enviarWhatsAppDelNegocio(tenantId, telefono, texto, {
+    contexto: "camaras",
+    reintentos: 2,
+  });
+  const constancia = resumenEnvioWhatsApp(wa);
+  if (!wa.ok) {
+    logger.warn("[camaras.avisar] no se pudo mandar el WhatsApp", { tenantId, ...log, constancia });
+    return false;
+  }
+  logger.info("[camaras.avisar] aviso mandado", { tenantId, ...log, constancia });
+  return true;
+}
+
 export async function avisarSiCorresponde(
   tenantId: string,
   camara: Camara,
@@ -28,25 +61,10 @@ export async function avisarSiCorresponde(
   const actual = (await CamarasDB.list(tenantId)).find((c) => c.id === camara.id) ?? camara;
   if (!debeAvisar(actual, captura.lectura, ahora) || !captura.lectura || !actual.avisos?.whatsapp) return;
 
-  const base = process.env.NEXT_PUBLIC_BASE_URL ?? "https://www.buleje.pe";
-  const texto = textoDelAviso(actual, captura.lectura, ahora, `${base}/admin?tab=camaras`);
-  /* Con el número del negocio (el del bot) si tiene uno activo; si no, con la
-     cuenta del servidor. Dos reintentos sólo ante fallas pasajeras (red, 5xx),
-     como hacía `sendWhatsAppTextWithRetry`. Nunca tira. */
-  const wa = await enviarWhatsAppDelNegocio(tenantId, actual.avisos.whatsapp, texto, {
-    contexto: "camaras",
-    reintentos: 2,
+  const texto = textoDelAviso(actual, captura.lectura, ahora, enlaceAlPanelDeCamaras());
+  const salio = await mandarWhatsAppDeCamara(tenantId, actual.avisos.whatsapp, texto, {
+    camaraId: actual.id,
+    capturaId: captura.id,
   });
-  const constancia = resumenEnvioWhatsApp(wa);
-  if (!wa.ok) {
-    logger.warn("[camaras.avisar] no se pudo mandar el WhatsApp", {
-      tenantId,
-      camaraId: actual.id,
-      capturaId: captura.id,
-      constancia,
-    });
-    return;
-  }
-  await CamarasDB.marcarAvisada(tenantId, actual.id, ahora);
-  logger.info("[camaras.avisar] aviso mandado", { tenantId, camaraId: actual.id, capturaId: captura.id, constancia });
+  if (salio) await CamarasDB.marcarAvisada(tenantId, actual.id, ahora);
 }

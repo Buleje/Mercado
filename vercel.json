@@ -402,6 +402,10 @@
       "schedule": "20 12 * * *"
     },
     {
+      "path": "/api/cron/camaras-resumen",
+      "schedule": "0 0 * * *"
+    },
+    {
       "path": "/api/cron/tramites-vencimiento",
       "schedule": "50 8 * * *"
     },

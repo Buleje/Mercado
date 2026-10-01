@@ -68,6 +68,11 @@ export interface Camara {
    * única conexión posible es la directa.
    */
   conexion?: ConexionCamara | null;
+  /**
+   * Esta cámara mira la pila de trozas: cada foto se compara con la anterior y,
+   * si la pila bajó en un día sin despacho registrado, se avisa (2026-10-01).
+   */
+  vigilaPila?: boolean;
 }
 
 /**
@@ -108,6 +113,21 @@ export interface AvisosCamara {
 /** Entre dos avisos de la misma cámara pasan al menos estos minutos. */
 export const MINUTOS_ENTRE_AVISOS = 10;
 
+const HORA_LIMA = new Intl.DateTimeFormat("en-US", { timeZone: "America/Lima", hour: "numeric", hour12: false });
+
+/**
+ * ¿Es de noche en el patio? 19:00–06:00 de Lima, cuando no trabaja nadie. Es
+ * el criterio de los avisos «de noche» y el de la pila (ADR-456): la cámara y
+ * el servidor pueden estar en cualquier zona, la noche es la de Pucallpa.
+ */
+export function esNocheEnLima(cuando: Date | string): boolean {
+  const d = cuando instanceof Date ? cuando : new Date(cuando);
+  if (!Number.isFinite(d.getTime())) return false;
+  /* `hour12: false` da «24» a medianoche en algunos ICU: el `% 24` lo vuelve 0. */
+  const hora = Number(HORA_LIMA.format(d)) % 24;
+  return hora >= 19 || hora < 6;
+}
+
 /** Un número de WhatsApp peruano: 9 dígitos, o 11 con el 51 adelante. */
 export function whatsappValido(v: string): boolean {
   const d = v.replace(/\D/g, "");
@@ -134,13 +154,7 @@ export function debeAvisar(
   const a = camara.avisos;
   if (!camara.activa || !a || !a.whatsapp || a.cuando === "nunca") return false;
   if (!lectura || (!lectura.hayPersona && !lectura.hayVehiculo)) return false;
-  if (a.cuando === "noche") {
-    const horaLima = Number(
-      new Intl.DateTimeFormat("en-US", { timeZone: "America/Lima", hour: "numeric", hour12: false }).format(ahora),
-    );
-    const esNoche = horaLima >= 19 || horaLima < 6;
-    if (!esNoche) return false;
-  }
+  if (a.cuando === "noche" && !esNocheEnLima(ahora)) return false;
   if (a.ultimoAvisoEn) {
     const hace = ahora.getTime() - new Date(a.ultimoAvisoEn).getTime();
     if (Number.isFinite(hace) && hace < MINUTOS_ENTRE_AVISOS * 60_000) return false;
@@ -149,6 +163,26 @@ export function debeAvisar(
 }
 
 /** El texto del WhatsApp: corto, con lo que hay que saber a las 3 de la mañana. */
+/**
+ * La descripción de la IA, lista para ir en un WhatsApp al dueño.
+ *
+ * Esa línea la escribe un modelo mirando una foto, y una foto puede tener un
+ * cartel puesto a propósito («urgente, llama al 9…», «entra a …»): el texto
+ * del cartel termina dentro de un mensaje que el negocio se manda a sí mismo y
+ * que el dueño lee con confianza (revisión de seguridad 2026-10-01). Se sacan
+ * direcciones web y números largos, y se acota a una línea.
+ */
+export function descripcionParaAviso(descripcion: string): string {
+  return descripcion
+    .replace(/\s+/g, " ")
+    .replace(/\b(?:https?:\/\/|www\.)\S+/gi, "[enlace]")
+    /* Cualquier «algo.dominio»: una lista de terminaciones deja pasar `bit.ly`. */
+    .replace(/\b[\w-]+(?:\.[\w-]+)*\.[a-z]{2,24}\b(?:\/\S*)?/gi, "[enlace]")
+    .replace(/\+?\d[\d\s-]{5,}\d/g, "[número]")
+    .trim()
+    .slice(0, 120);
+}
+
 export function textoDelAviso(
   camara: Pick<Camara, "nombre" | "lugar">,
   lectura: { descripcion: string | null; hayPersona: boolean; hayVehiculo: boolean; personas: number | null; placa: string | null },
@@ -169,8 +203,9 @@ export function textoDelAviso(
       : lectura.personas && lectura.personas > 1
         ? `${lectura.personas} personas`
         : "Una persona";
-  const placa = lectura.placa ? ` · placa ${lectura.placa}` : "";
-  const detalle = lectura.descripcion ? `\n${lectura.descripcion.slice(0, 160)}` : "";
+  const placa = lectura.placa ? ` · placa ${lectura.placa.replace(/[^A-Z0-9-]/gi, "").slice(0, 10)}` : "";
+  const descripcion = lectura.descripcion ? descripcionParaAviso(lectura.descripcion) : "";
+  const detalle = descripcion ? `\n${descripcion}` : "";
   return `📷 ${camara.nombre}${camara.lugar ? ` (${camara.lugar})` : ""} · ${hora}\n${que}${placa}.${detalle}\nVer la foto: ${enlace}`;
 }
 
@@ -223,8 +258,78 @@ export interface Captura {
     placa: string | null;
     confianza: "alta" | "media" | "baja";
     motivo: string | null;
+    /**
+     * Números visibles en chalecos o cascos («3», «12») — 2026-10-01. Es la
+     * forma de reconocer al personal SIN biometría: la IA lee un número, no
+     * una cara. Ausente en lecturas viejas.
+     */
+    chalecos?: string[];
+    /** Qué se está haciendo en la escena. Ausente en lecturas viejas. */
+    actividad?: ActividadPatio | null;
   } | null;
+  /**
+   * Lo que la lectura encontró en los datos del negocio: la placa contra las
+   * guías/fletes/vehículos del día y el chaleco contra el trabajador y su
+   * asistencia. Son PROPUESTAS — una placa leída no entra a ningún documento
+   * hasta que una persona la confirma (ADR-411).
+   */
+  cruces?: CrucesCaptura | null;
+  /** La pila de trozas comparada con la foto anterior de la misma cámara. */
+  pila?: LecturaPila | null;
 }
+
+/** Qué se está haciendo en el patio, según la foto. */
+export const ACTIVIDADES = ["carga", "descarga", "aserrio", "apilado", "transito", "ninguna"] as const;
+export type ActividadPatio = (typeof ACTIVIDADES)[number];
+
+export interface CrucePlaca {
+  /** La placa leída, normalizada (mayúsculas, sin guion ni espacios). */
+  placa: string;
+  tipo: "gtf" | "flete" | "vehiculo";
+  /** Id del registro con el que coincide. */
+  refId: string;
+  /** Cómo se lo muestra: «Guía 019-001-000123 · 01/10». */
+  etiqueta: string;
+  /** `parecida` = difiere en un carácter que la cámara confunde (0/O, 8/B…). */
+  coincidencia: "exacta" | "parecida";
+  confirmadoPor?: string | null;
+  confirmadoEn?: string | null;
+}
+
+export interface CruceChaleco {
+  numero: string;
+  /** `null` = ese número no está asignado a nadie todavía. */
+  colaboradorId: string | null;
+  nombre: string | null;
+  /** Lo que dice la asistencia de ESE día. `null` = no marcó. */
+  asistencia?: { estado: string; entrada: string | null; salida: string | null } | null;
+}
+
+export interface CrucesCaptura {
+  placas: CrucePlaca[];
+  chalecos: CruceChaleco[];
+  calculadoEn: string;
+}
+
+export interface LecturaPila {
+  /** Id de la captura anterior contra la que se comparó. */
+  comparadaCon: string;
+  cambio: "bajo" | "subio" | "igual" | "no-se-ve";
+  confianza: "alta" | "media" | "baja";
+  /** ¿Hay despacho registrado ese día? Sólo se consulta si la pila bajó. */
+  despachoDelDia?: boolean | null;
+  /**
+   * ¿Hay producción anotada ese día? La sierra también baja la pila: en Blas,
+   * 14 de 60 días tuvieron producción y ninguno despacho — mirando sólo el
+   * despacho, cada día de aserrío mandaría un aviso falso.
+   */
+  produccionDelDia?: boolean | null;
+  /** Si salió el WhatsApp de «bajó sin despacho». */
+  avisada?: boolean;
+}
+
+/** Número de chaleco/casco → id del colaborador. Uno por negocio. */
+export type ChalecosDelNegocio = Record<string, string>;
 
 /**
  * Tope de capturas guardadas por negocio.
@@ -256,7 +361,20 @@ export function normalizarEvento(v: unknown): EventoCamara {
 }
 
 /** Token nuevo: largo, aleatorio y sin caracteres que un FTP o un correo rompan. */
-export function nuevoToken(random: () => string = () => Math.random().toString(36).slice(2)): string {
+/**
+ * 16 bytes del generador seguro en base 36. El token es lo único que separa la
+ * puerta de la cámara —que ahora está en internet por el túnel— de cualquiera
+ * que quiera subirle fotos: `Math.random` no es un generador para secretos
+ * (revisión de seguridad 2026-10-01). `crypto.getRandomValues` existe igual en
+ * Node y en el navegador, así que este archivo sigue sirviendo a los dos.
+ */
+function azarSeguro(): string {
+  const bytes = new Uint8Array(16);
+  globalThis.crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(36).padStart(2, "0")).join("");
+}
+
+export function nuevoToken(random: () => string = azarSeguro): string {
   return `${random()}${random()}${random()}`.replace(/[^a-z0-9]/g, "").slice(0, 32).padEnd(32, "0");
 }
 

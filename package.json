@@ -12,6 +12,7 @@
   "scripts": {
     "predev": "node scripts/predev-cache-guard.mjs",
     "dev": "node scripts/dev-with-canary.mjs",
+    "camaras:tunel": "node --env-file=.env.local scripts/camaras-tunel.mjs",
     "dev:fast": "node scripts/dev-with-canary.mjs",
     "dev:postgres": "next dev --turbopack",
     "dev:webpack": "next dev --webpack",

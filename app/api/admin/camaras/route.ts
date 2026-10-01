@@ -13,11 +13,15 @@ import {
   type PruebaDeCamara,
 } from "@/lib/camaras/camaras";
 import { moverPtz, probarCamara } from "@/lib/camaras/isapi";
+import { chalecosParaPantalla } from "@/lib/camaras/cruces";
+import { ColaboradoresDB } from "@/lib/db/rrhh-colaboradores.db";
 
 /**
  * /api/admin/camaras — las cámaras del negocio y su historial.
  *
- * GET    — cámaras + últimas capturas (`?camara=` acota, `?limite=`).
+ * GET    — cámaras + últimas capturas (`?camara=` acota, `?limite=`) + `chalecos`
+ *          (número → { colaboradorId, nombre }) + `colaboradores` (los que no
+ *          están cesados, para el selector del número).
  * POST   — alta; devuelve la cámara CON su token, que es lo único que hay que
  *          copiar en el aparato.
  * PATCH  — `{ id, accion: "rotar" }`: dirección nueva, la vieja deja de entrar.
@@ -27,6 +31,12 @@ import { moverPtz, probarCamara } from "@/lib/camaras/isapi";
  *          `{ id, accion: "desconectar" }`: borra la conexión y su clave.
  *          `{ id, accion: "probar" }`: vuelve a probar una conexión guardada.
  *          `{ id, accion: "ptz", x, y, zoom, ms? }`: mueve la cámara y la frena.
+ *          `{ id, accion: "vigila-pila", activa }`: compara cada foto con la
+ *            anterior y avisa si la pila bajó sin movimiento en el libro.
+ *          `{ accion: "chalecos", numero, colaboradorId | null }`: asigna (o
+ *            libera) un número de chaleco/casco. Sin `id`: es del negocio.
+ *          `{ accion: "confirmar-cruce", capturaId, refId }`: marca en la FOTO
+ *            que la placa es la de esa guía/flete/vehículo. No toca la guía.
  * DELETE — `?id=`: deja de recibir. Las fotos que mandó no se borran.
  *
  * La ingesta (donde la cámara deja la foto) es otro endpoint y a propósito:
@@ -51,6 +61,19 @@ import { moverPtz, probarCamara } from "@/lib/camaras/isapi";
 const avisosSchema = z.object({
   whatsapp: z.string().trim().max(20),
   cuando: z.enum(["siempre", "noche", "nunca"]),
+});
+
+/** Un número de chaleco/casco y su dueño. `null` = liberarlo. La forma fina la decide `normalizarChaleco`. */
+const chalecoSchema = z.object({
+  numero: z.union([z.string(), z.number()]).transform((v) => String(v).trim()).pipe(z.string().min(1).max(10)),
+  colaboradorId: z.string().trim().min(1).max(64).nullable(),
+});
+
+const vigilaPilaSchema = z.object({ activa: z.boolean() });
+
+const confirmarCruceSchema = z.object({
+  capturaId: z.string().trim().min(1).max(64),
+  refId: z.string().trim().min(1).max(64),
 });
 
 const altaSchema = z.object({
@@ -106,15 +129,31 @@ export const GET = withApiHandler("camaras-get", async (req: NextRequest) => {
   if (rl) return rl;
 
   const url = new URL(req.url);
-  const [camaras, capturas] = await Promise.all([
+  const [camaras, capturas, mapa, personal] = await Promise.all([
     /* Sin secretos: la conexión viaja con host y usuario, jamás con la clave. */
     CamarasDB.listaParaPantalla(auth.tenantId),
     CamarasDB.capturas(auth.tenantId, {
       camaraId: url.searchParams.get("camara") ?? undefined,
       limite: Math.min(Number(url.searchParams.get("limite") ?? 60) || 60, 200),
     }),
+    CamarasDB.chalecos(auth.tenantId),
+    /* Con los cesados: un chaleco asignado a alguien que ya se fue tiene que
+       seguir mostrando su nombre para que se lo pueda liberar. */
+    ColaboradoresDB.listar(auth.tenantId, { incluirCesados: true }),
   ]);
-  return NextResponse.json({ camaras, capturas });
+  const nombres = new Map(personal.map((c) => [c.id, c.nombre] as const));
+  const numeroDe = new Map(Object.entries(mapa).map(([numero, id]) => [id, numero] as const));
+  /* Sólo lo que el selector necesita: ni documento, ni celular, ni nada de la ficha. */
+  const colaboradores = personal
+    .filter((c) => c.estado !== "CESADO")
+    .map((c) => ({
+      id: c.id,
+      nombre: c.nombre,
+      apodo: c.apodo,
+      puesto: c.puesto?.nombre ?? null,
+      chaleco: numeroDe.get(c.id) ?? null,
+    }));
+  return NextResponse.json({ camaras, capturas, chalecos: chalecosParaPantalla(mapa, nombres), colaboradores });
 });
 
 /** Las escrituras comparten guardas: admin/owner, CSRF y rate limit. */
@@ -167,8 +206,57 @@ export const PATCH = withApiHandler("camaras-patch", (req: NextRequest) =>
     req,
     async (tenantId, user, body) => {
       const d = (body ?? {}) as { id?: string; accion?: string; whatsapp?: unknown; cuando?: unknown };
+
+      /* Las dos acciones que no son de UNA cámara van antes de exigir el `id`. */
+      if (d.accion === "chalecos") {
+        const p = chalecoSchema.safeParse(body);
+        if (!p.success) return { error: "validation_error", message: "Indica el número del chaleco y a quién es." };
+        /* El colaborador se busca DENTRO de este negocio: un id de otro no
+           existe acá y se rechaza antes de guardar nada. */
+        const personal = await ColaboradoresDB.listar(tenantId, { incluirCesados: true });
+        const nombres = new Map(personal.map((c) => [c.id, c.nombre] as const));
+        if (p.data.colaboradorId) {
+          const quien = personal.find((c) => c.id === p.data.colaboradorId);
+          if (!quien) {
+            return NextResponse.json(
+              { error: "no_encontrado", message: "Esa persona no está en el personal de este negocio." },
+              { status: 404 },
+            );
+          }
+          if (quien.estado === "CESADO") {
+            return { error: "rechazado", message: `${quien.nombre} ya no trabaja acá: no se le asigna un chaleco.` };
+          }
+        }
+        const r = await CamarasDB.asignarChaleco(
+          tenantId,
+          p.data.numero,
+          p.data.colaboradorId,
+          (colaboradorId) => nombres.get(colaboradorId) ?? null,
+          user,
+        );
+        if (!r.ok) return { error: "rechazado", message: r.motivo };
+        return { chalecos: chalecosParaPantalla(r.chalecos, nombres), mensaje: r.mensaje };
+      }
+
+      if (d.accion === "confirmar-cruce") {
+        const p = confirmarCruceSchema.safeParse(body);
+        if (!p.success) return { error: "validation_error", message: "No se entendió qué coincidencia confirmar." };
+        /* El historial es por negocio: una foto de otro no se encuentra acá. */
+        const r = await CamarasDB.confirmarCruce(tenantId, p.data.capturaId, p.data.refId, user);
+        if (!r.ok) return NextResponse.json({ error: "no_encontrado", message: r.motivo }, { status: 404 });
+        return { captura: r.captura, mensaje: r.mensaje };
+      }
+
       if (!d.id) return { error: "validation_error", message: "No se entendió qué cambiar de la cámara." };
       const id = d.id;
+
+      if (d.accion === "vigila-pila") {
+        const p = vigilaPilaSchema.safeParse(body);
+        if (!p.success) return { error: "validation_error", message: "Indica si la cámara vigila la pila (sí o no)." };
+        const r = await CamarasDB.configurarVigilaPila(tenantId, id, p.data.activa, user);
+        if (!r.ok) return { error: "rechazado", message: r.motivo };
+        return { camaras: camarasParaPantalla(r.camaras), mensaje: r.mensaje };
+      }
 
       if (d.accion === "avisos") {
         const p = avisosSchema.safeParse({ whatsapp: d.whatsapp ?? "", cuando: d.cuando ?? "siempre" });

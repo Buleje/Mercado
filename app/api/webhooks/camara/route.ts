@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import sharp from "sharp";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -6,8 +6,7 @@ import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
 import { CamarasDB } from "@/lib/db/camaras.db";
 import { normalizarEvento } from "@/lib/camaras/camaras";
-import { leerFotoDeCamara } from "@/lib/ai/camara-vision";
-import { avisarSiCorresponde } from "@/lib/camaras/avisar";
+import { procesarCapturaNueva } from "@/lib/camaras/cruces.server";
 import {
   alertaDelAviso,
   eventoDeAlerta,
@@ -156,23 +155,21 @@ export const POST = withApiHandler("camaras-ingesta", async (req: NextRequest) =
      *
      * La cámara está en el patio con 4G: dejarla esperando a que un modelo mire
      * la imagen es tenerla con la radio encendida y la batería corriendo por
-     * algo que a ella no le importa. Responde ya; la descripción y la placa
-     * aparecen cuando estén. Si el análisis falla, la foto ya está guardada —
-     * por eso el `catch` sólo loguea (regla 4 de code-quality: nunca vacío).
+     * algo que a ella no le importa. Responde ya; la lectura, los cruces
+     * (placa ↔ guía/flete, chaleco ↔ persona) y la pila aparecen cuando estén,
+     * guardados en UNA escritura. `after()` mantiene viva la función hasta que
+     * termine: en Vercel, lo que sigue corriendo después de la respuesta sin
+     * él se puede cortar a mitad. Si el análisis falla, la foto ya está
+     * guardada — por eso el `catch` sólo loguea (code-quality §4).
      */
-    void leerFotoDeCamara(destino.tenantId, data.publicUrl)
-      .then(async (lectura) => {
-        await CamarasDB.guardarLectura(destino.tenantId, captura.id, lectura);
-        /* Y si la foto muestra a alguien, el WhatsApp. Sale de acá y no de la
-           ingesta: la cámara ya tiene su 200 y el aviso depende de la lectura. */
-        await avisarSiCorresponde(destino.tenantId, destino.camara, { id: captura.id, lectura });
-      })
-      .catch((err) =>
-        logger.error("[camaras.ingesta] no se pudo leer la foto con IA", {
+    after(() =>
+      procesarCapturaNueva(destino.tenantId, destino.camara, captura).catch((err) =>
+        logger.error("[camaras.ingesta] el análisis de la foto falló", {
           error: String(err),
           capturaId: captura.id,
         }),
-      );
+      ),
+    );
 
     /* Respuesta mínima: la cámara sólo necesita saber que entró. */
     return NextResponse.json({ ok: true });

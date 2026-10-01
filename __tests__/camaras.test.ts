@@ -10,6 +10,7 @@
 import { describe, expect, it } from "vitest";
 import {
   agregarCamara,
+  descripcionParaAviso,
   buscarCapturas,
   agregarCaptura,
   estaCallada,
@@ -262,5 +263,25 @@ describe("configurarAvisos", () => {
     const r = configurarAvisos(base, "c1", { whatsapp: "", cuando: "siempre" });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.camaras[0]!.avisos).toMatchObject({ whatsapp: null, cuando: "nunca" });
+  });
+});
+
+describe("revisión de seguridad 2026-10-01", () => {
+  it("el token sale del generador seguro: 32 caracteres [a-z0-9] y distintos", () => {
+    const a = nuevoToken();
+    const b = nuevoToken();
+    expect(a).toMatch(/^[a-z0-9]{32}$/);
+    expect(a).not.toBe(b);
+  });
+
+  it("un cartel en la foto no mete enlaces ni números de teléfono en el WhatsApp", () => {
+    const texto = descripcionParaAviso("Cartel: URGENTE llama al +51 987 654 321 o entra a https://pagar.example.com/x y bit.ly/abc o pagos.pe");
+    expect(texto).not.toMatch(/987|https?:|example\.com|bit\.ly|pagos\.pe/);
+    expect(texto).toContain("[número]");
+    expect(texto).toContain("[enlace]");
+  });
+
+  it("una descripción normal pasa igual (placas y horas cortas no son teléfonos)", () => {
+    expect(descripcionParaAviso("Un camión ABC-123 entra al patio a las 10:15")).toBe("Un camión ABC-123 entra al patio a las 10:15");
   });
 });
