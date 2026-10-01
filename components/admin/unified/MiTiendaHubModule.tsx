@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Palette, Globe } from "@buleje/design-system/icons";
+import { Palette, Globe, FileText } from "@buleje/design-system/icons";
 import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
@@ -14,11 +14,14 @@ import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 const StoreCustomizer    = dynamic(() => import("@/components/admin/StoreCustomizer"),  { loading: S });
 const StorePageAdminPage = dynamic(() => import("@/app/admin/store-page/page"),         { loading: S });
 
+const PaginasPorBloquesTab = dynamic(() => import("@/components/admin/cms/PaginasPorBloquesTab"), { loading: S });
+
 const MODULE_ID = "mi-tienda-hub";
 
 const TABS = [
   { id: "identidad", label: "Identidad y tema",  icon: Palette },
   { id: "pagina",    label: "Mi tienda pública", icon: Globe },
+  { id: "paginas",   label: "Páginas",           icon: FileText },
 ];
 
 /** Los ids, estables: el hook los usa como dependencia. */
@@ -44,6 +47,7 @@ export default function MiTiendaHubModule({ initialTab }: { initialTab?: string 
         heading={{ title: "Mi Tienda", description: "Identidad, tema y contenido de tu tienda pública.", icon: Palette }} tabs={TABS} activeTab={sub} onTabChange={setSub} moduleId={MODULE_ID}>
         {sub === "identidad" && <StoreCustomizer />}
         {sub === "pagina" && <StorePageAdminPage />}
+        {sub === "paginas" && <PaginasPorBloquesTab />}
       </AdminTabBar>
     </div>
   );

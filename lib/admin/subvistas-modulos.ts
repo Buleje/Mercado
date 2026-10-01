@@ -123,6 +123,13 @@ export const VISTAS_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[
     { key: "mapa", label: "Mapa", hint: "Dónde viven los clientes" },
     { key: "mensajes", label: "Mensajes masivos", hint: "Conversaciones con clientes" },
   ],
+  // Mi Tienda: la puerta del hub. Las sub-vistas de «Mi tienda pública» van
+  // aparte, en ANIDADAS_POR_MODULO.
+  "pagina-inicio": [
+    { key: "identidad", label: "Identidad y tema", hint: "Logo, colores y cómo se ve tu tienda" },
+    { key: "pagina", label: "Mi tienda pública", hint: "Secciones, banners y promociones de la página de inicio" },
+    { key: "paginas", label: "Páginas", hint: "Crear, editar y publicar páginas propias (Ofertas, Nosotros…) armadas con bloques" },
+  ],
   recetas: [
     { key: "dashboard", label: "Resumen", hint: "Cómo viene la producción" },
     { key: "recetas", label: "Recetas", hint: "Insumos de cada producto elaborado" },
