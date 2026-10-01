@@ -27,7 +27,7 @@ import { CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import {
-  buscarCapturas, EVENTO_LABEL, estaCallada, horasSinVerse, type AvisosCamara, type Captura,
+  buscarCapturas, esDireccionLocal, EVENTO_LABEL, estaCallada, horasSinVerse, type AvisosCamara, type Captura,
 } from "@/lib/camaras/camaras";
 import ConectarCamaraModal, {
   estadoDeConexion, PastillaConexion, queHacer,
@@ -243,11 +243,32 @@ export default function CamarasView() {
       .catch((e: unknown) => setError(`No se pudo mover ${c.nombre}: ${e instanceof Error ? e.message : String(e)}`));
   };
 
+  /**
+   * La dirección que se pega EN la cámara, que no es la misma que usa el panel.
+   *
+   * El panel puede estar abierto en `localhost` (corre en la PC de Brandon),
+   * pero una cámara con chip sale a internet por la red del operador y nunca
+   * llega a `localhost` ni a una IP de la casa: copiar esa dirección es dejar
+   * la cámara mandando fotos a ninguna parte, sin error visible. Se prefiere el
+   * dominio público; el negocio lo resuelve el token, no el dominio.
+   */
+  const direccionParaLaCamara = (c: CamaraConConexion) => {
+    const publica = (process.env.NEXT_PUBLIC_BASE_URL ?? "").replace(/\/$/, "");
+    const origen = publica && !esDireccionLocal(publica) ? publica : window.location.origin;
+    return { url: `${origen}/api/webhooks/camara?k=${c.token}`, local: esDireccionLocal(origen) };
+  };
+
   const copiar = async (c: CamaraConConexion) => {
     try {
-      await navigator.clipboard.writeText(direccionDe(c));
+      const { url, local } = direccionParaLaCamara(c);
+      await navigator.clipboard.writeText(url);
       setCopiado(c.id);
       setTimeout(() => setCopiado((k) => (k === c.id ? null : k)), 2500);
+      if (local) {
+        setError(
+          "Ojo: copiaste una dirección de esta PC. Una cámara con chip no llega ahí. Abre el panel desde el dominio público (buleje.pe) y copia otra vez.",
+        );
+      }
     } catch {
       setError("El navegador no dejó copiar. Selecciona la dirección a mano.");
     }
