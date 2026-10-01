@@ -8,6 +8,15 @@ import { CamarasDB } from "@/lib/db/camaras.db";
 import { normalizarEvento } from "@/lib/camaras/camaras";
 import { leerFotoDeCamara } from "@/lib/ai/camara-vision";
 import { avisarSiCorresponde } from "@/lib/camaras/avisar";
+import {
+  alertaDelAviso,
+  eventoDeAlerta,
+  imagenDelAviso,
+  leerAlerta,
+  notaDeAlerta,
+  partesMultipart,
+  type AlertaHikvision,
+} from "@/lib/camaras/hikvision-push";
 
 /**
  * POST /api/webhooks/camara?k=<token>[&evento=motion][&nota=...]
@@ -38,6 +47,8 @@ import { avisarSiCorresponde } from "@/lib/camaras/avisar";
  */
 
 const MAX_SIZE = 8 * 1024 * 1024; // una foto de cámara ronda 200 KB–2 MB
+/** El aviso de Hikvision trae la foto MÁS la alerta en XML/JSON: holgura para el texto. */
+const MAX_CUERPO = MAX_SIZE + 256 * 1024;
 const ANCHO_MAX = 1600;
 const BUCKET = "media";
 const TIPOS = new Set(["image/jpeg", "image/jpg", "image/png", "image/webp"]);
@@ -54,32 +65,47 @@ export const POST = withApiHandler("camaras-ingesta", async (req: NextRequest) =
   const destino = await CamarasDB.porToken(token);
   if (!destino) return rechazo();
 
-  /* La imagen puede venir como archivo (multipart, lo normal en una cámara o un
-     formulario) o como el cuerpo crudo (algunos aparatos postean el JPEG pelado
-     con Content-Type: image/jpeg). Los dos entran. */
+  /* La imagen puede venir en un multipart (lo normal: la cámara manda la alerta
+     y la foto en partes con el nombre que elige su firmware, o un formulario),
+     como el cuerpo crudo (algunos aparatos postean el JPEG pelado) o no venir:
+     la alerta sola en XML/JSON, o el latido de «sigo viva». Las partes se leen
+     sobre los bytes — ver `lib/camaras/hikvision-push.ts` por qué. */
   let bytes: Buffer | null = null;
   let tipo = req.headers.get("content-type") ?? "";
+  let alerta: AlertaHikvision | null = null;
   try {
-    if (tipo.includes("multipart/form-data")) {
-      const form = await req.formData();
-      const file = (form.get("file") ?? form.get("image") ?? form.get("picture")) as File | null;
-      if (!file) return NextResponse.json({ ok: false, error: "sin_imagen" }, { status: 400 });
-      tipo = file.type || "image/jpeg";
-      if (file.size > MAX_SIZE) return NextResponse.json({ ok: false, error: "muy_grande" }, { status: 413 });
-      bytes = Buffer.from(await file.arrayBuffer());
+    const cuerpo = Buffer.from(await req.arrayBuffer());
+    if (cuerpo.length > MAX_CUERPO) return NextResponse.json({ ok: false, error: "muy_grande" }, { status: 413 });
+    if (tipo.includes("multipart/")) {
+      const partes = partesMultipart(cuerpo, tipo);
+      alerta = alertaDelAviso(partes);
+      const imagen = imagenDelAviso(partes);
+      if (imagen) {
+        bytes = imagen.datos;
+        tipo = imagen.tipo;
+      }
     } else if (tipo.startsWith("image/")) {
-      const raw = Buffer.from(await req.arrayBuffer());
-      if (raw.length > MAX_SIZE) return NextResponse.json({ ok: false, error: "muy_grande" }, { status: 413 });
-      bytes = raw;
+      bytes = cuerpo;
+    } else {
+      alerta = leerAlerta(cuerpo.toString("utf8"));
     }
   } catch (err) {
     logger.warn("[camaras.ingesta] cuerpo ilegible", { error: String(err) });
     return NextResponse.json({ ok: false, error: "cuerpo_invalido" }, { status: 400 });
   }
 
+  /* Una alerta sin foto —el latido de «sigo viva» (`videoloss` / `inactive`) o
+     un evento sin captura— se contesta 200 y no se escribe nada: con un error la
+     cámara reintenta, y en el patio cada reintento es batería y datos móviles
+     gastados en algo que no deja nada para ver. Con foto se guarda siempre,
+     diga lo que diga el estado: perder una imagen es peor que un duplicado. */
+  if (alerta && (!bytes || bytes.length === 0)) {
+    return NextResponse.json({ ok: true, guardada: false });
+  }
   if (!bytes || bytes.length === 0) {
     return NextResponse.json({ ok: false, error: "sin_imagen" }, { status: 400 });
   }
+  if (bytes.length > MAX_SIZE) return NextResponse.json({ ok: false, error: "muy_grande" }, { status: 413 });
   if (!TIPOS.has(tipo.split(";")[0]!.trim().toLowerCase())) {
     return NextResponse.json({ ok: false, error: "formato_no_permitido" }, { status: 415 });
   }
@@ -111,10 +137,12 @@ export const POST = withApiHandler("camaras-ingesta", async (req: NextRequest) =
     const { captura, descartadas } = await CamarasDB.registrarCaptura(destino.tenantId, {
       camaraId: destino.camara.id,
       url: data.publicUrl,
-      evento: normalizarEvento(url.searchParams.get("evento")),
+      /* La alerta de la cámara dice qué disparó la foto; sin alerta (subida a
+         mano, un FTP que reenvía) manda el `?evento=` de la dirección. */
+      evento: alerta ? eventoDeAlerta(alerta) : normalizarEvento(url.searchParams.get("evento")),
       /* Lo que el aparato diga de sí mismo se guarda tal cual y acotado: sirve
          para entender qué mandó, no para confiar en ello. */
-      nota: (url.searchParams.get("nota") ?? "").slice(0, 200) || null,
+      nota: (url.searchParams.get("nota") ?? "").slice(0, 200) || (alerta ? notaDeAlerta(alerta) : null),
     });
     if (descartadas > 0) {
       logger.info("[camaras.ingesta] historial en el tope, se descartaron las más viejas", {
