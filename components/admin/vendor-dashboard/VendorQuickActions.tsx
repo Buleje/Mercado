@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Package, PlusSquare, Store, ExternalLink } from "@buleje/design-system/icons";
 import Link from "next/link";
 import { resolveActiveTenantSlug } from "@/lib/tenant-fetch";
+import { esMarketplace } from "@/lib/tenancy/negocio-por-defecto";
 
 type QuickAction = {
   label: string;
@@ -49,7 +50,7 @@ export function VendorQuickActions() {
     let active = true;
 
     void resolveActiveTenantSlug().then((resolved) => {
-      if (active && resolved !== "main") setSlug(resolved);
+      if (active && !esMarketplace(resolved)) setSlug(resolved);
     });
 
     return () => {

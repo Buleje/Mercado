@@ -6,6 +6,7 @@ import { requireActiveSubscription } from "@/lib/billing/require-active-subscrip
 import { logger } from "@/lib/logger";
 import { withDbRetry } from "@/lib/db-retry";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { esMarketplace } from "@/lib/tenancy/negocio-por-defecto";
 
 const PromotionSchema = z.object({
   name: z.string().min(1, "name required").max(200),
@@ -29,7 +30,7 @@ export async function GET(req: NextRequest) {
     // reciban promos del tenant "main" por accidente.
     const headerTenant = req.headers.get("x-tenant-id");
     const tenantId = auth instanceof NextResponse
-      ? (headerTenant && headerTenant !== "main" ? headerTenant : null)
+      ? (headerTenant && !esMarketplace(headerTenant) ? headerTenant : null)
       : auth.tenantId;
     if (!tenantId) {
       // Storefront público sin tenant resuelto → no exponer promos.

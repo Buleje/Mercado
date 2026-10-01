@@ -64,6 +64,7 @@ import {
 } from "@/components/Analytics";
 import { parseSalesChannels } from "@/lib/types/sales-channels";
 import { SkipLink } from "@/components/ui-system/SkipLink";
+import { esMarketplace } from "@/lib/tenancy/negocio-por-defecto";
 
 // ── Metadata dinámica desde la DB ─────────────────────────────────────────────
 export async function generateMetadata(): Promise<Metadata> {
@@ -159,7 +160,7 @@ async function StoreLayoutContent({
     : null;
 
   // Validate tenant exists — return 404 for invalid slugs
-  if (tenantId !== "main") {
+  if (!esMarketplace(tenantId)) {
     const exists = await tenantExists(tenantId);
     if (!exists) notFound();
   }

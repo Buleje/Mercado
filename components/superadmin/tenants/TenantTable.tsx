@@ -10,6 +10,7 @@ import { MiniUsageBar } from "./MiniUsageBar";
 import { PlanSelect } from "./PlanSelect";
 import { RiskBadge } from "./RiskBadge";
 import type { SortField, SortDir } from "./types";
+import { esTenantProtegido } from "@/lib/tenancy/negocio-por-defecto";
 
 /** Días restantes de trial (>0 = futuro). null si no hay trial. */
 function trialDaysLeft(trialEndsAt: string | null): number | null {
@@ -311,9 +312,9 @@ export function TenantTable({
                       {/* Delete */}
                       <button
                         type="button"
-                        disabled={actionLoading === `${tenant.slug}-delete` || tenant.slug === "main"}
+                        disabled={actionLoading === `${tenant.slug}-delete` || esTenantProtegido(tenant.slug)}
                         onClick={() => onDelete(tenant.slug, tenant.name)}
-                        title={tenant.slug === "main" ? "No se puede eliminar la tienda principal" : "Eliminar tienda"}
+                        title={esTenantProtegido(tenant.slug) ? "No se puede eliminar la tienda principal" : "Eliminar tienda"}
                         className="p-1.5 rounded-xl text-gray-300 hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 transition-colors disabled:opacity-40"
                       >
                         {actionLoading === `${tenant.slug}-delete` ? (

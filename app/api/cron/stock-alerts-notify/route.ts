@@ -100,6 +100,7 @@ export const GET = withCronHealth("stock-alerts-notify", async (_req) => {
               where: { id: tenant.id },
               select: { ownerPhone: true },
             });
+            // TODO(ADR-457 §Excepciones): excepción de negocio — el teléfono de aviso de `main` sale de NOTIFY_PHONE. Debe ser una opción del dueño (campo/pantalla), no un `=== "main"`; requiere schema + pantalla, por eso queda escrita.
             const ownerPhone = tenantRecord?.ownerPhone || (tenant.slug === "main" ? process.env.NOTIFY_PHONE : null);
             if (!ownerPhone) return;
 

@@ -12,6 +12,7 @@ import {
   type NavLinkItem,
 } from "./misc.db";
 import { parseSalesChannels, type SalesChannelsConfig } from "@/lib/types/sales-channels";
+import { esTenantPorDefecto } from "@/lib/tenancy/negocio-por-defecto";
 
 // ── JSON parse helper ─────────────────────────────────────────────────────────
 function safeJson<T>(raw: string | null | undefined, fallback?: T): T | undefined {
@@ -177,7 +178,7 @@ export const SettingsDB = {
         const tid = tenantId;
         // Try by tenantId first (multi-tenant), fallback to id:1 (legacy)
         let row = await prisma.settings.findUnique({ where: { tenantId: tid } })
-          ?? (tid === "main" ? await prisma.settings.findUnique({ where: { id: 1 } }) : null);
+          ?? (esTenantPorDefecto(tid) ? await prisma.settings.findUnique({ where: { id: 1 } }) : null);
         // El middleware `slug-routes.ts` envía el SLUG en `x-tenant-id`
         // (no el cuid). Si no encontramos por id, resolvemos slug → cuid.
         if (!row) {

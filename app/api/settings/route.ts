@@ -8,6 +8,7 @@ import { logger } from "@/lib/logger";
 import { withDbRetry } from "@/lib/db-retry";
 import { invalidateByPrefix } from "@/lib/cache";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { esTenantPorDefecto } from "@/lib/tenancy/negocio-por-defecto";
 import {
   resolveTenantSlugToId,
   syncBrandingToTenant,
@@ -156,7 +157,7 @@ export async function PUT(req: NextRequest) {
     // crea filas duplicadas (una con slug, otra con cuid) y el dueño nunca
     // ve sus uploads porque GET lee de un row distinto.
     let tenantId = rawTenantId;
-    if (rawTenantId && !rawTenantId.startsWith("cm") && rawTenantId !== "main") {
+    if (rawTenantId && !rawTenantId.startsWith("cm") && !esTenantPorDefecto(rawTenantId)) {
       // [SECURITY] Validar formato slug antes de findUnique. Defensa en
       // profundidad: el header ya viene canonicalizado por proxy, pero un
       // refactor futuro podría romper la invariante.

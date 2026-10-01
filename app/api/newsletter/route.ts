@@ -8,6 +8,7 @@ import { findTenantByIdOrSlug } from "@/lib/tenant";
 import { logger } from "@/lib/logger";
 import { runWithAuditContext } from "@/lib/audit/audit-context";
 import { sinDato } from "@/lib/errores/sin-dato";
+import { esMarketplace } from "@/lib/tenancy/negocio-por-defecto";
 
 const schema = z.object({
   email: z.string().email("Email inválido").max(255),
@@ -51,7 +52,7 @@ export async function POST(req: Request) {
         // `active-tenant-slug` que el middleware setea al entrar a /t/<slug>.
         const xTenant = req.headers.get("x-tenant-id")?.trim();
         const rawTenant =
-          (xTenant && xTenant !== "main" ? xTenant : "") ||
+          (xTenant && !esMarketplace(xTenant) ? xTenant : "") ||
           readCookie(req, "active-tenant") ||
           readCookie(req, "active-tenant-slug") ||
           "main";

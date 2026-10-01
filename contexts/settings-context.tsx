@@ -11,6 +11,7 @@ import {
 import { type HomepageContent, DEFAULT_HOMEPAGE, NEW_STORE_DEFAULTS } from "@/lib/homepage-content";
 import { cachedJson } from "@/lib/client-cache-fetch";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { esMarketplace } from "@/lib/tenancy/negocio-por-defecto";
 
 export type StoreMode = "whatsapp" | "checkout";
 
@@ -171,7 +172,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
             return "main";
           })()
         : "main";
-    const isMainTenant = tenantSlug === "main";
+    const isMainTenant = esMarketplace(tenantSlug);
 
     // cachedJson con clave por tenant (`?_t=`, el server lo ignora): colapsa el
     // doble-invoke de StrictMode (dev) sin mezclar settings entre tenants en

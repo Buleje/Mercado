@@ -9,6 +9,7 @@ import { aiCostGuard } from "@/lib/ai/cost-control";
 import { makeStreamUsageHandler } from "@/lib/ai/track-usage";
 import { logger } from "@/lib/logger";
 import { groqProvider } from "@/lib/llm-providers/groq";
+import { esMarketplace } from "@/lib/tenancy/negocio-por-defecto";
 
 // El slug del modelo que realmente se está usando, para reportarlo en la
 // respuesta. Antes se re-tipeaba acá con un comentario que pedía «sincronizar
@@ -59,7 +60,7 @@ export async function POST(req: NextRequest) {
     if (!resolvedTenantId) {
       // Fallback: storefront público vía header del proxy (ya validado por middleware).
       const headerTenant = req.headers.get("x-tenant-id");
-      if (headerTenant && headerTenant !== "main") resolvedTenantId = headerTenant;
+      if (headerTenant && !esMarketplace(headerTenant)) resolvedTenantId = headerTenant;
     }
     if (!resolvedTenantId) {
       return Response.json({ error: "unauthorized" }, { status: 401 });

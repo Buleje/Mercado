@@ -25,6 +25,7 @@ import {
 import type { TenantRow } from "@/lib/superadmin-types";
 import { ProductBadge, StatCard, WarningAlert, SuccessAlert } from "@buleje/design-system";
 import { PendingOrdersModal } from "./PendingOrdersModal";
+import { esTenantProtegido } from "@/lib/tenancy/negocio-por-defecto";
 
 interface TenantCardProps {
   tenant: TenantRow;
@@ -616,10 +617,10 @@ export function TenantCard({
             <button
               type="button"
               onClick={() => onDelete(t.slug, t.name)}
-              disabled={actionLoading === `${t.slug}-delete` || t.slug === "main"}
+              disabled={actionLoading === `${t.slug}-delete` || esTenantProtegido(t.slug)}
               className="inline-flex items-center justify-center h-10 w-full sm:w-10 sm:h-9 rounded-xl text-xs border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--data-error-500)] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
               title={
-                t.slug === "main" ? "No se puede eliminar la tienda principal" : "Eliminar tienda"
+                esTenantProtegido(t.slug) ? "No se puede eliminar la tienda principal" : "Eliminar tienda"
               }
               aria-label="Eliminar tienda"
             >

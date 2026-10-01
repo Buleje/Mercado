@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { esMarketplace } from "@/lib/tenancy/negocio-por-defecto";
 
 export async function GET(req: NextRequest) {
   try {
@@ -8,7 +9,7 @@ export async function GET(req: NextRequest) {
     // endpoint público devolvía TODAS las recetas activas de TODOS los
     // tenants con costos+ingredientes+proveedores → fuga competitiva.
     const tenantIdHeader = req.headers.get("x-tenant-id");
-    if (!tenantIdHeader || tenantIdHeader === "main") {
+    if (!tenantIdHeader || esMarketplace(tenantIdHeader)) {
       return NextResponse.json({ recetas: [] });
     }
     const tenantId = tenantIdHeader;

@@ -279,6 +279,7 @@ export async function GET(req: NextRequest) {
               where: { id: tenant.id },
               select: { ownerPhone: true },
             });
+            // TODO(ADR-457 §Excepciones): excepción de negocio — el teléfono de aviso de `main` sale de NOTIFY_PHONE. Debe ser una opción del dueño (campo/pantalla), no un `=== "main"`; requiere schema + pantalla, por eso queda escrita.
             const ownerPhone = tenantWithPhone?.ownerPhone || (tenant.slug === "main" ? process.env.NOTIFY_PHONE : null);
             if (ownerPhone) {
               enqueueNotification({ type: "whatsapp", recipient: ownerPhone, message: whatsappText, tenantId: tenant.id, metadata: { purpose: "daily-summary" } }).catch((err) => logger.error("[cron/daily-summary] WhatsApp enqueue failed", { error: String(err), tenantId: tenant.id }));

@@ -16,6 +16,7 @@ import { connection } from "next/server";
 import type { Metadata } from "next";
 import { SettingsDB } from "@/lib/db/settings.db";
 import { sinDato } from "@/lib/errores/sin-dato";
+import { esMarketplace } from "@/lib/tenancy/negocio-por-defecto";
 
 /**
  * Dedupe per-request: layout.generateMetadata + page.generateMetadata + el
@@ -48,7 +49,7 @@ export const resolveStoreContext = cache(async (): Promise<{ name: string; tenan
     // Brandon 2026-06-07: el subdominio NO setea x-tenant-store-route, así que
     // antes la tienda por subdominio caía en el chrome del marketplace.
     const isTenant =
-      hdrs.get("x-tenant-store-route") === "1" || tenantId !== "main";
+      hdrs.get("x-tenant-store-route") === "1" || !esMarketplace(tenantId);
     const settings = await getCachedSettings(tenantId);
     const themeName = (settings?.storeTheme as Record<string, unknown> | undefined)?.["storeName"];
     const name =
