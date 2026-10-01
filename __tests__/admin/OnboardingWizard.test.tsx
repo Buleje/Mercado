@@ -18,9 +18,25 @@ import { render, screen, waitFor, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import OnboardingWizard from "@/components/admin/OnboardingWizard";
 
-// Mock SectionTitle del DS — pasamos id para validar aria-labelledby
+// Mock de los títulos del DS (SectionTitle, y CardTitle/PageTitle/Kicker que el
+// componente usa desde el barrido de títulos 2026-09-08) — pasamos id para validar aria-labelledby
 vi.mock("@buleje/design-system", () => ({
   SectionTitle: ({ children, id, className }: { children: React.ReactNode; id?: string; className?: string }) => (
+    <h2 id={id} className={className} data-testid="section-title">
+      {children}
+    </h2>
+  ),
+  CardTitle: ({ children, id, className }: { children: React.ReactNode; id?: string; className?: string }) => (
+    <h2 id={id} className={className} data-testid="section-title">
+      {children}
+    </h2>
+  ),
+  PageTitle: ({ children, id, className }: { children: React.ReactNode; id?: string; className?: string }) => (
+    <h2 id={id} className={className} data-testid="section-title">
+      {children}
+    </h2>
+  ),
+  Kicker: ({ children, id, className }: { children: React.ReactNode; id?: string; className?: string }) => (
     <h2 id={id} className={className} data-testid="section-title">
       {children}
     </h2>

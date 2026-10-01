@@ -11,6 +11,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Kicker, Caption } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
+import { useTenantPath } from "@/hooks/use-tenant-path";
 import {
   CUENTA_NAV_ITEMS,
   findActiveNavItem,
@@ -23,6 +24,9 @@ export interface CuentaSidebarProps {
 export function CuentaSidebar({ className }: CuentaSidebarProps) {
   const pathname = usePathname() ?? "/cuenta";
   const active = findActiveNavItem(pathname);
+  // Prefija las rutas con /t/<slug> en la tienda individual → la navegación
+  // no se sale del contexto del tenant (aislamiento de navegación).
+  const tenantPath = useTenantPath();
 
   return (
     <aside
@@ -42,7 +46,7 @@ export function CuentaSidebar({ className }: CuentaSidebarProps) {
               return (
                 <Link
                   key={item.id}
-                  href={item.href}
+                  href={tenantPath(item.href)}
                   aria-current={isActive ? "page" : undefined}
                   className={cn(
                     "group flex items-center gap-2.5 rounded-lg px-2.5 py-2 transition-colors",
@@ -75,7 +79,7 @@ export function CuentaSidebar({ className }: CuentaSidebarProps) {
             por WhatsApp en minutos.
           </Caption>
           <Link
-            href="/ayuda"
+            href={tenantPath("/ayuda")}
             className="mt-3 inline-block text-[length:var(--ts-xs)] font-semibold text-[var(--accent)] hover:opacity-80"
           >
             Ver centro de ayuda

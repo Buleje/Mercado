@@ -72,144 +72,98 @@ export default function FirstVisitCouponModal() {
   if (!show) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-[8000] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[var(--text-primary)]/55 backdrop-blur-md motion-safe:animate-[fadeIn_0.22s_ease-out]"
-      onClick={handleClose}
-      role="presentation"
+    // Brandon 2026-07-06 — NO bloqueante: antes era un modal full-screen con
+    // backdrop que tapaba la home al entrar (contra la regla "sin modales en
+    // pantalla de entrada"). Ahora es un card slide-in en la esquina: el cliente
+    // sigue navegando y la oferta queda a mano. Mobile: sobre el BottomNav.
+    <aside
+      role="region"
+      aria-label="Cupón de bienvenida"
+      className="fixed z-[7000] inset-x-3 bottom-[calc(env(safe-area-inset-bottom,0px)+4.75rem)] sm:inset-x-auto sm:right-5 sm:bottom-5 sm:w-[22rem] motion-safe:animate-[slideUp_0.4s_cubic-bezier(0.34,1.3,0.64,1)]"
     >
-      {/* Brandon 2026-05-18 — rediseño mobile:
-          · bottom-sheet en xs (items-end + rounded-t-[28px]) → más natural
-            con el pulgar, no obliga a estirar para el cierre superior.
-          · max-h-[92vh] + overflow-y-auto → en pantallas bajas (iPhone SE)
-            o con teclado abierto, el modal scrollea internamente.
-          · pb safe-area → el "Tal vez después" no queda debajo del home
-            indicator del iPhone.
-          · Hero text 4xl→5xl responsive; antes 5xl fijo se veía achaparrado
-            en pantallas <360px.
-          · Botón X 10x10 (40px) — meta WCAG 2.1 AA tap target (≥40x40). */}
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="welcome-coupon-title"
-        onClick={(e) => e.stopPropagation()}
-        className="relative w-full sm:max-w-sm bg-[var(--surface-raised)] rounded-t-[28px] sm:rounded-[28px] shadow-[var(--shadow-xl)] overflow-hidden max-h-[92vh] sm:max-h-[88vh] overflow-y-auto motion-safe:animate-[slideUp_0.36s_cubic-bezier(0.34,1.3,0.64,1)] sm:motion-safe:animate-[scaleInModal_0.32s_cubic-bezier(0.34,1.4,0.64,1)] border border-[var(--rule-soft)]"
-      >
-        {/* Drag handle mobile — afirma "esto es bottom sheet, podés cerrarlo" */}
+      <div className="relative overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]">
+        {/* Glow de acento arriba */}
         <div
           aria-hidden
-          className="sm:hidden absolute top-2 left-1/2 -translate-x-1/2 h-1 w-10 rounded-full bg-[var(--text-tertiary)]/30"
+          className="absolute inset-x-0 top-0 h-16 bg-linear-to-b from-[var(--accent)]/12 to-transparent pointer-events-none"
         />
 
-        {/* Close — alto contraste, área de toque ≥40x40 (WCAG AA) */}
+        {/* Cerrar — área de toque ≥36px */}
         <button
           type="button"
           onClick={handleClose}
-          aria-label="Cerrar bienvenida"
-          className="absolute top-3 right-3 z-20 h-10 w-10 inline-flex items-center justify-center rounded-full bg-[var(--surface-canvas)]/85 hover:bg-[var(--surface-canvas)] backdrop-blur text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors border border-[var(--rule-soft)] active:scale-95"
+          aria-label="Cerrar cupón de bienvenida"
+          className="absolute top-2 right-2 z-20 h-9 w-9 inline-flex items-center justify-center rounded-full text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors active:scale-95"
         >
           <X className="h-4 w-4" strokeWidth={2.5} />
         </button>
 
-        {/* Hero compacto — un solo bloque, no dos secciones partidas */}
-        <div className="relative px-6 sm:px-7 pt-9 sm:pt-9 pb-5 sm:pb-6 text-center">
-          {/* Sutil radial glow del accent atrás del icono */}
-          <div
-            aria-hidden
-            className="absolute inset-x-0 top-0 h-32 bg-linear-to-b from-[var(--accent)]/12 via-[var(--accent)]/4 to-transparent pointer-events-none"
-          />
-
-          <div className="relative inline-flex items-center justify-center h-14 w-14 rounded-full bg-[var(--accent)]/12 text-[var(--accent)] mb-4">
-            <Gift className="h-7 w-7" strokeWidth={2} />
+        <div className="relative p-4 sm:p-5">
+          {/* Encabezado: icono + oferta en una fila compacta */}
+          <div className="flex items-center gap-3 pr-8">
+            <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--accent)]/12 text-[var(--accent)]">
+              <Gift className="h-6 w-6" strokeWidth={2} />
+            </span>
+            <div className="min-w-0">
+              <p className="inline-flex items-center gap-1 text-[length:var(--ts-2xs,0.6875rem)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
+                <Sparkles className="h-3 w-3" strokeWidth={2.25} />
+                Cupón de bienvenida
+              </p>
+              <p className="mt-0.5 text-xl font-extrabold leading-none tracking-tight text-[var(--text-primary)]">
+                10<span className="text-[var(--accent)]">%</span> OFF{" "}
+                <span className="text-sm font-semibold text-[var(--text-secondary)]">
+                  en tu 1er pedido
+                </span>
+              </p>
+            </div>
           </div>
 
-          <p className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs,0.6875rem)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
-            <Sparkles className="h-3 w-3" strokeWidth={2.25} />
-            Cupón de bienvenida
-          </p>
-
-          {/* HERO discount — el dato más importante. 4xl en xs (cabe en 320px),
-              5xl desde sm+ donde hay espacio. */}
-          <h2
-            id="welcome-coupon-title"
-            className="mt-3 text-4xl sm:text-5xl font-extrabold tracking-tight text-[var(--text-primary)] leading-none"
-          >
-            10<span className="text-[var(--accent)]">%</span>
-            <span className="ml-1 text-2xl sm:text-3xl tracking-tight">OFF</span>
-          </h2>
-
-          <p className="mt-3 text-sm text-[var(--text-secondary)] font-medium px-2">
-            En tu primer pedido en{" "}
-            <span className="font-bold text-[var(--text-primary)]">{storeName}</span>
-          </p>
-        </div>
-
-        {/* Card del cupón — toda la zona clickable para copiar */}
-        <div className="px-6 sm:px-7 pb-2">
+          {/* Código copiable — toda la zona clickable */}
           <button
             type="button"
             onClick={handleCopy}
             aria-label={copied ? "Código copiado" : "Copiar código BIENVENIDO"}
-            className="group w-full relative overflow-hidden rounded-2xl border-2 border-dashed border-[var(--accent)]/35 bg-[var(--surface-sunken)] hover:border-[var(--accent)] hover:bg-[var(--accent)]/5 transition-all px-4 sm:px-5 py-4 text-left active:scale-[0.985]"
+            className="group mt-3.5 flex w-full items-center justify-between gap-3 rounded-xl border-2 border-dashed border-[var(--accent)]/35 bg-[var(--surface-sunken)] px-3.5 py-2.5 text-left transition-all hover:border-[var(--accent)] hover:bg-[var(--accent)]/5 active:scale-[0.985]"
           >
-            <p className="text-[length:var(--ts-2xs,0.6875rem)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">
-              Código
-            </p>
-            <div className="flex items-center justify-between gap-3">
-              <span className="font-mono text-xl sm:text-2xl font-extrabold tracking-[var(--ls-wider)] text-[var(--text-primary)] select-all truncate">
-                {COUPON_CODE}
-              </span>
-              <span
-                className={[
-                  "inline-flex items-center gap-1.5 h-10 sm:h-9 px-3 rounded-lg text-xs font-extrabold uppercase tracking-wide transition-colors shrink-0",
-                  copied
-                    ? "bg-[var(--data-success-500)]/15 text-[var(--data-success-500)]"
-                    : "bg-[var(--accent)]/12 text-[var(--accent)] group-hover:bg-[var(--accent)]/18",
-                ].join(" ")}
-              >
-                {copied ? (
-                  <>
-                    <Check className="h-3.5 w-3.5" strokeWidth={2.5} />
-                    Copiado
-                  </>
-                ) : (
-                  <>
-                    <Copy className="h-3.5 w-3.5" strokeWidth={2} />
-                    Copiar
-                  </>
-                )}
-              </span>
-            </div>
+            <span className="font-mono text-base font-extrabold tracking-[var(--ls-wider)] text-[var(--text-primary)] select-all truncate">
+              {COUPON_CODE}
+            </span>
+            <span
+              className={[
+                "inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg text-xs font-extrabold uppercase tracking-wide transition-colors shrink-0",
+                copied
+                  ? "bg-[var(--data-success-500)]/15 text-[var(--data-success-500)]"
+                  : "bg-[var(--accent)]/12 text-[var(--accent)] group-hover:bg-[var(--accent)]/18",
+              ].join(" ")}
+            >
+              {copied ? (
+                <>
+                  <Check className="h-3.5 w-3.5" strokeWidth={2.5} />
+                  Copiado
+                </>
+              ) : (
+                <>
+                  <Copy className="h-3.5 w-3.5" strokeWidth={2} />
+                  Copiar
+                </>
+              )}
+            </span>
           </button>
 
-          <p className="mt-2.5 text-center text-[length:var(--ts-2xs,0.6875rem)] text-[var(--text-tertiary)]">
-            Válido sólo en tu primer pedido · Sin monto mínimo
-          </p>
-        </div>
-
-        {/* CTA — pb respeta safe-area-inset-bottom para no quedar tras el
-            home indicator del iPhone (notch family). */}
-        <div
-          className="px-6 sm:px-7 pt-3 space-y-2"
-          style={{
-            paddingBottom: "max(1.75rem, env(safe-area-inset-bottom))",
-          }}
-        >
+          {/* CTA */}
           <Link
             href="/tiendas"
             onClick={handleClose}
-            className="w-full inline-flex items-center justify-center h-12 rounded-2xl bg-[var(--text-primary)] text-[var(--surface-raised)] font-extrabold text-sm uppercase tracking-wide hover:opacity-90 transition-opacity active:scale-[0.985]"
+            className="mt-3 inline-flex w-full h-11 items-center justify-center rounded-xl bg-[var(--text-primary)] text-[var(--surface-raised)] text-sm font-extrabold uppercase tracking-wide hover:opacity-90 transition-opacity active:scale-[0.985]"
           >
             Ir a comprar
           </Link>
-          <button
-            type="button"
-            onClick={handleClose}
-            className="w-full h-11 rounded-xl text-sm font-semibold text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors"
-          >
-            Tal vez después
-          </button>
+          <p className="mt-2 text-center text-[length:var(--ts-2xs,0.6875rem)] text-[var(--text-tertiary)]">
+            Válido en tu primer pedido en{" "}
+            <span className="font-semibold text-[var(--text-secondary)]">{storeName}</span> · Sin monto mínimo
+          </p>
         </div>
       </div>
-    </div>
+    </aside>
   );
 }

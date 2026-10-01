@@ -32,12 +32,15 @@ export async function GET(req: NextRequest) {
     const PAGE = Math.min(parseInt(req.nextUrl.searchParams.get("limit") ?? "50", 10), 100);
     const cursor = req.nextUrl.searchParams.get("cursor") ?? undefined;
     const entity = req.nextUrl.searchParams.get("entity") ?? undefined;
+    // Para la ficha de un registro: su propia historia, no la del módulo entero.
+    const entityId = req.nextUrl.searchParams.get("entityId") ?? undefined;
     const user = req.nextUrl.searchParams.get("user") ?? undefined;
     const action = req.nextUrl.searchParams.get("action") ?? undefined;
 
     // Audit project-wide 2026-05-19: migrado a ActivityLogDB.listWithCursor.
     const { items, nextCursor } = await ActivityLogDB.listWithCursor(auth.tenantId, {
       entity,
+      entityId,
       user,
       action,
       limit: PAGE,

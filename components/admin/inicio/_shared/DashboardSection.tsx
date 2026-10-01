@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { CardTitle } from "@buleje/design-system";
+import type { LucideIcon } from "@buleje/design-system/icons";
 import { useChartRegistration } from "@/lib/admin/charts-visibility";
 
 export interface SectionKPI {
@@ -12,6 +13,8 @@ export interface SectionKPI {
   // explicando por qué un KPI muestra "—" o un asterisco (ej. faltan
   // datos de costo). Se muestra como title="..." en el wrapper.
   hint?: string;
+  /** Barrido emojis→íconos 2026-09-22: reemplaza un ★/🏆/⚠️ pegado al label. */
+  icon?: LucideIcon;
 }
 
 interface Props {
@@ -130,7 +133,8 @@ export function DashboardSection({ kicker, title, description, kpis, rightSlot, 
               className="border border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3.5"
               title={k.hint}
             >
-              <p className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1.5">
+              <p className="flex items-center gap-1 text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1.5">
+                {k.icon && <k.icon className="h-3.5 w-3.5 shrink-0" aria-hidden />}
                 {k.label}
               </p>
               <p

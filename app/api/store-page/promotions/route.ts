@@ -5,6 +5,7 @@ import { StorePageDB } from "@/lib/db/store-page.db";
 import { logger } from "@/lib/logger";
 import { withDbRetry } from "@/lib/db-retry";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 const CreateSchema = z.object({
   title: z.string().min(1).max(200),
@@ -44,7 +45,7 @@ export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
-  const raw = await req.json().catch(() => null);
+  const raw = await leerJson(req);
   const parsed = CreateSchema.safeParse(raw);
   if (!parsed.success) {
     return NextResponse.json(

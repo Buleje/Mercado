@@ -1,13 +1,13 @@
 "use client";
 import { CardTitle } from "@buleje/design-system";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import dynamic from "next/dynamic";
 import {
   Users, Star, Layers, MapPin, MessageSquare,
-  Maximize2, Minimize2,
+  Maximize2, Minimize2, UserPlus,
 } from "@buleje/design-system/icons";
+import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { cn } from "@/lib/utils";
 
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
@@ -17,35 +17,36 @@ const NPSTab = dynamic(() => import("@/components/admin/NPSTab"), { loading: S }
 const AutoSegments = dynamic(() => import("@/components/admin/AutoSegments"), { loading: S });
 const CustomerGeoMap = dynamic(() => import("@/components/admin/CustomerGeoMap"), { ssr: false, loading: () => <div className="flex items-center justify-center h-96"><div className="h-6 w-6 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div> });
 const MassMessageSender = dynamic(() => import("@/components/admin/MassMessageSender"), { loading: S });
+// Funnel de leads consolidado como sub-tab (era entrada top-level "leads-funnel")
+const LeadsFunnelModule = dynamic(() => import("@/components/admin/unified/LeadsFunnelModule"), { loading: S });
 
 const MODULE_ID = "clientes";
 
 const TABS = [
   { id: "crm" as const, label: "Mis clientes", icon: Users },
+  { id: "leads" as const, label: "Leads", icon: UserPlus },
   { id: "resenas" as const, label: "Opiniones", icon: Star },
   { id: "segmentos" as const, label: "Segmentos", icon: Layers },
   { id: "mapa" as const, label: "Mapa", icon: MapPin },
   { id: "mensajes" as const, label: "Mensajes masivos", icon: MessageSquare },
 ];
 
-function normalizeClientesTab(savedTab: string | null): typeof TABS[number]["id"] {
-  if (savedTab === "dashboard" || savedTab === "rfm") return TABS[0].id;
-  return TABS.some((tab) => tab.id === savedTab) ? savedTab as typeof TABS[number]["id"] : TABS[0].id;
-}
+/** Los ids, estables: el hook los usa como dependencia. */
+const TAB_IDS = TABS.map((t) => t.id);
 
 /* ─── Mapa expandible con GeoMap ─── */
 function ExpandableMapSection() {
   const [maximized, setMaximized] = useState(false);
 
   return (
-    <div className={cn("space-y-4", maximized && "fixed inset-0 z-50 bg-[var(--surface-raised)] p-4 overflow-auto")}>
+    <div className={cn("space-y-4", maximized && "fixed inset-0 z-modal bg-[var(--surface-raised)] p-4 overflow-auto")}>
       <div className="flex items-center justify-between">
         <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-1.5">
           <MapPin className="h-4 w-4 text-primary" /> Ubicación de clientes
         </CardTitle>
         <button
           onClick={() => setMaximized(v => !v)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-primary/10 hover:text-primary transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[var(--rule-soft)] text-[var(--text-secondary)] dark:text-muted hover:bg-primary/10 hover:text-primary transition-colors"
         >
           {maximized ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
           {maximized ? "Minimizar" : "Maximizar mapa"}
@@ -58,29 +59,31 @@ function ExpandableMapSection() {
   );
 }
 
-export default function CRMClientesModule() {
-  const [sub, setSub] = useState(() => {
-    if (typeof window === "undefined") return TABS[0].id;
-    return normalizeClientesTab(localStorage.getItem(`admin-last-tab-${MODULE_ID}`));
-  });
-  useEffect(() => { localStorage.setItem(`admin-last-tab-${MODULE_ID}`, sub); }, [sub]);
+export default function CRMClientesModule({ initialTab }: { initialTab?: string } = {}) {
+  // La sub-vista vive en `?vista=`: link compartible, atrás del navegador y
+  // destino del buscador global. `initialTab` gana cuando el módulo se abre
+  // desde un tab alias (ver useVistaModulo).
+  const { vista: sub, irA: setSub } = useVistaModulo(MODULE_ID, TAB_IDS, TAB_IDS[0], initialTab);
 
   return (
-    <div className="space-y-6">
-      <AdminModuleHeader
-        eyebrow="Relaciones · CRM"
-        title="Mis Clientes"
-        description="Gestiona tu base de clientes, segmentación, fidelización y opiniones."
-        icon={Users}
-      />
-
+    <div className="space-y-4">
+      {/* El título va DENTRO de la barra de pestañas (patrón acordado con
+          Brandon 2026-09-07, piloto en Análisis): identidad a la izquierda,
+          pestañas a la derecha, una sola regla. Recupera ~90px verticales,
+          que en una laptop de 677px útiles es la diferencia entre ver los
+          datos o sólo los encabezados.
+          El `eyebrow` se fue con el header: decía la categoría del sidebar
+          («Abastecimiento · Compras» sobre un título «Compras») — el mismo
+          dato tres veces contando el ítem marcado en el sidebar. */}
       <AdminTabBar
+        heading={{ title: "Mis Clientes", description: "Gestiona tu base de clientes, segmentación, fidelización y opiniones.", icon: Users }}
         tabs={TABS}
         activeTab={sub}
         onTabChange={(id) => setSub(id as typeof sub)}
         moduleId="crm"
       >
         {sub === "crm" && <CRMTab />}
+        {sub === "leads" && <LeadsFunnelModule />}
         {sub === "resenas" && <NPSTab />}
         {sub === "segmentos" && <AutoSegments />}
         {sub === "mapa" && <ExpandableMapSection />}

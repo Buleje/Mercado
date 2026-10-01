@@ -17,6 +17,7 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import {
   Shield,
   Download,
@@ -141,7 +142,7 @@ function ConsentsCard() {
       const res = await fetch("/api/customer/consent", {
         method: "POST",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ consentType: type, granted: nextGranted }),
       });
       if (!res.ok) {
@@ -345,7 +346,7 @@ export default function PrivacidadPage() {
       const res = await fetch("/api/customer/me/delete", {
         method: "POST",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           confirmation: "BORRAR_MIS_DATOS",
           reason: "Solicitud desde panel de privacidad",

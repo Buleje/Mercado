@@ -1,0 +1,356 @@
+/**
+ * loth-import-lineas — leer un cuadro de Excel/CSV y decir, ANTES de escribir,
+ * exactamente qué va a entrar al libro y qué no.
+ *
+ * La lección viene del importador del Libro CTP: de 60 trozas entraron 9 y las
+ * 51 restantes se descartaron en silencio. Acá cada fila sale con veredicto
+ * propio (`ok` | `error`) y su motivo, y el que descarta es el usuario mirando
+ * la vista previa — nunca el parser por su cuenta.
+ *
+ * Dos entradas, igual que el importador del censo: `parseImportLineas(texto)`
+ * para lo pegado o un CSV, y `parseImportLineasCeldas(matriz)` para un .xlsx ya
+ * leído a celdas (`leerArchivoAFilas` de `cubicacion-import-file.ts`). Las dos
+ * terminan en `armarResultado`, así que una fila pegada y la misma fila subida
+ * en Excel dan exactamente el mismo veredicto.
+ *
+ * PURO y client-safe.
+ */
+
+import { smalianVolume, type LothSection } from "./loth-constants";
+import { MOTIVO_CUPO_MIN, motivoCupoValido } from "./loth-cupo-especie";
+
+/** Una celda tal como la devuelve `leerArchivoAFilas`: string, número o vacía. */
+export type CeldaLinea = string | number | null | undefined;
+
+export interface FilaImport {
+  /** Número de fila en el archivo (1 = primera fila de datos). */
+  fila: number;
+  treeCode: string | null;
+  trozaCode: string | null;
+  speciesCommon: string | null;
+  entryDate: string | null;
+  diamMayorM: number | null;
+  diamMenorM: number | null;
+  lengthM: number | null;
+  volumeM3: number | null;
+  productType: string | null;
+  quantity: number | null;
+  unit: string | null;
+  gtfNumber: string | null;
+  observations: string | null;
+  /**
+   * T9: por qué la tala pasa lo autorizado (columna opcional «motivo»). Viaja
+   * tal cual al libro: lo valida el servidor, no esta vista previa.
+   */
+  motivoSobreCupo: string | null;
+  /** Volumen calculado por Smalian cuando hay medidas y no vino volumen. */
+  volumenCalculado: boolean;
+  estado: "ok" | "error";
+  motivos: string[];
+}
+
+export interface ResultadoImport {
+  filas: FilaImport[];
+  /** Cabecera detectada, en el orden del archivo. */
+  columnas: string[];
+  /** Columnas del archivo que no se supieron mapear (se ignoran, pero se avisan). */
+  ignoradas: string[];
+  listas: number;
+  conError: number;
+}
+
+/** Alias aceptados por columna. Se comparan sin tildes, sin espacios y en minúscula. */
+const ALIAS: Record<string, string[]> = {
+  treeCode: ["codarbol", "codigoarbol", "arbol", "codigodelarbol", "nrodearbol"],
+  trozaCode: ["codtroza", "codigotroza", "troza", "codigodetroza"],
+  speciesCommon: ["especie", "nombrecomun", "especiecomun"],
+  entryDate: ["fecha", "fechaactividad", "fecharegistro"],
+  // «Ø mayor» normaliza a «mayor»: el símbolo Ø no sobrevive al filtro de
+  // caracteres, así que el alias tiene que existir sin él.
+  diamMayorM: ["omayor", "mayor", "diametromayor", "dmayor", "omay", "may", "diammayor"],
+  diamMenorM: ["omenor", "menor", "diametromenor", "dmenor", "omen", "men", "diammenor"],
+  lengthM: ["longitud", "largo", "long", "longitudm"],
+  volumeM3: ["volumen", "volumenm3", "volm3", "vol"],
+  productType: ["producto", "tipoproducto", "tipodeproducto"],
+  quantity: ["cantidad", "qty"],
+  unit: ["unidad", "und"],
+  gtfNumber: ["gtf", "ngtf", "nrogtf", "numerogtf", "guia"],
+  observations: ["observaciones", "obs", "observacion", "nota"],
+  motivoSobreCupo: ["motivo", "motivosobrecupo", "motivosobreelcupo", "motivocupo", "justificacion"],
+};
+
+const norm = (s: string) =>
+  s
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-zA-Z0-9]/g, "")
+    .toLowerCase();
+
+function mapearColumna(header: string): string | null {
+  const h = norm(header);
+  for (const [campo, alias] of Object.entries(ALIAS)) {
+    if (alias.includes(h)) return campo;
+  }
+  return null;
+}
+
+/** Separador del archivo: coma, punto y coma o tabulación (lo que más se repita). */
+export function detectarSeparador(texto: string): string {
+  const primera = texto.split(/\r?\n/).find((l) => l.trim().length > 0) ?? "";
+  const conteos = [
+    { sep: "\t", n: (primera.match(/\t/g) ?? []).length },
+    { sep: ";", n: (primera.match(/;/g) ?? []).length },
+    { sep: ",", n: (primera.match(/,/g) ?? []).length },
+  ];
+  return conteos.sort((a, b) => b.n - a.n)[0].n > 0 ? conteos.sort((a, b) => b.n - a.n)[0].sep : ",";
+}
+
+/** Parte una línea respetando comillas dobles. */
+function partir(linea: string, sep: string): string[] {
+  const out: string[] = [];
+  let actual = "";
+  let enComillas = false;
+  for (let i = 0; i < linea.length; i++) {
+    const c = linea[i];
+    if (c === '"') {
+      if (enComillas && linea[i + 1] === '"') {
+        actual += '"';
+        i++;
+      } else enComillas = !enComillas;
+    } else if (c === sep && !enComillas) {
+      out.push(actual);
+      actual = "";
+    } else actual += c;
+  }
+  out.push(actual);
+  return out.map((v) => v.trim());
+}
+
+/** Número con coma o punto decimal («1,25» y «1.25» son lo mismo en un Excel peruano). */
+export function aNumero(v: string | null | undefined): number | null {
+  if (v == null) return null;
+  const limpio = v.replace(/\s/g, "").replace(/\./g, (m, i, s: string) => (s.lastIndexOf(".") === i && s.includes(",") ? "" : m));
+  const conPunto = limpio.includes(",") ? limpio.replace(/\./g, "").replace(",", ".") : limpio;
+  if (conPunto === "") return null;
+  const n = Number(conPunto);
+  return Number.isFinite(n) ? n : null;
+}
+
+/** Fecha en `YYYY-MM-DD`, `DD/MM/YYYY` o `DD-MM-YYYY` → ISO date-only. */
+export function aFecha(v: string | null | undefined): string | null {
+  if (!v) return null;
+  const t = v.trim();
+  const iso = /^(\d{4})-(\d{2})-(\d{2})/.exec(t);
+  if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+  const dmy = /^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/.exec(t);
+  if (dmy) return `${dmy[3]}-${dmy[2].padStart(2, "0")}-${dmy[1].padStart(2, "0")}`;
+  return null;
+}
+
+/** Campos que cada sección necesita sí o sí para que la línea tenga sentido. */
+const REQUERIDOS: Record<LothSection, string[]> = {
+  tala: ["treeCode", "speciesCommon"],
+  trozado: ["treeCode", "trozaCode", "speciesCommon"],
+  despacho_troza: ["trozaCode", "gtfNumber"],
+  consumo_troza: ["trozaCode"],
+  producto_terminado: ["productType", "quantity"],
+  despacho_producto: ["gtfNumber", "productType", "quantity"],
+};
+
+const ETIQUETA: Record<string, string> = {
+  treeCode: "código de árbol",
+  trozaCode: "código de troza",
+  speciesCommon: "especie",
+  gtfNumber: "N° de GTF",
+  productType: "tipo de producto",
+  quantity: "cantidad",
+};
+
+/**
+ * Cabecera + cuerpo (ya partidos en celdas de texto) → la vista previa.
+ * Las dos entradas públicas (texto pegado y matriz de Excel) terminan acá: es
+ * el único lugar que decide si una fila se asienta o no.
+ *
+ * @param especiesAutorizadas si se pasa, avisa (no bloquea) cuando la especie
+ *   de una fila no está en el POA: el libro admite el asiento, pero el despacho
+ *   se va a rechazar después y es mejor saberlo antes de cargar 200 filas.
+ */
+function armarResultado(
+  headers: string[],
+  cuerpo: string[][],
+  section: LothSection,
+  opts: { especiesAutorizadas?: Set<string> } = {},
+): ResultadoImport {
+  const mapa = headers.map(mapearColumna);
+  const ignoradas = headers.filter((h, i) => mapa[i] == null && h.trim() !== "");
+
+  const vistas = new Set<string>();
+  const filas: FilaImport[] = cuerpo.map((celdas, idx) => {
+    const val = (campo: string): string | null => {
+      const i = mapa.indexOf(campo);
+      const v = i >= 0 ? celdas[i] : null;
+      return v && v.trim() !== "" ? v.trim() : null;
+    };
+
+    const diamMayorM = aNumero(val("diamMayorM"));
+    const diamMenorM = aNumero(val("diamMenorM"));
+    const lengthM = aNumero(val("lengthM"));
+    let volumeM3 = aNumero(val("volumeM3"));
+    let volumenCalculado = false;
+    if (volumeM3 == null && diamMayorM && diamMenorM && lengthM) {
+      volumeM3 = smalianVolume(diamMayorM, diamMenorM, lengthM);
+      volumenCalculado = true;
+    }
+
+    const fila: FilaImport = {
+      fila: idx + 1,
+      treeCode: val("treeCode"),
+      trozaCode: val("trozaCode"),
+      speciesCommon: val("speciesCommon"),
+      entryDate: aFecha(val("entryDate")),
+      diamMayorM,
+      diamMenorM,
+      lengthM,
+      volumeM3,
+      productType: val("productType"),
+      quantity: aNumero(val("quantity")),
+      unit: val("unit"),
+      gtfNumber: val("gtfNumber"),
+      observations: val("observations"),
+      motivoSobreCupo: val("motivoSobreCupo"),
+      volumenCalculado,
+      estado: "ok",
+      motivos: [],
+    };
+
+    for (const req of REQUERIDOS[section]) {
+      if (fila[req as keyof FilaImport] == null) fila.motivos.push(`Falta ${ETIQUETA[req] ?? req}`);
+    }
+    if (val("entryDate") && !fila.entryDate) fila.motivos.push("Fecha ilegible (usa DD/MM/AAAA o AAAA-MM-DD)");
+    // Tala y Trozado NO piden lo mismo, aunque se parezcan (RDE 264-2019):
+    //
+    //  · En TROZADO el volumen es obligatorio siempre — su item 9 no trae la
+    //    nota condicional.
+    //  · En TALA lo único que se exige en todos los casos es la **longitud
+    //    aprovechable** (item 8); los diámetros y el volumen sólo cuando el
+    //    aserrío se hace dentro del área (notas de los items 6, 7 y 9).
+    //
+    // Antes esta validación exigía volumen en las dos y rechazaba la fila. El
+    // formulario ya respetaba la norma, así que importar por Excel y cargar a
+    // mano aceptaban cosas distintas: dos caminos al mismo libro con dos
+    // reglas. Si vienen los diámetros, el volumen se calcula solo más arriba.
+    if (section === "trozado" && !(fila.volumeM3 && fila.volumeM3 > 0)) {
+      fila.motivos.push("Sin volumen: carga Ø mayor, Ø menor y longitud, o el volumen directo");
+    }
+    if (section === "tala") {
+      const tieneLongitud = fila.lengthM != null && fila.lengthM > 0;
+      const tieneVolumen = fila.volumeM3 != null && fila.volumeM3 > 0;
+      if (!tieneLongitud && !tieneVolumen) {
+        fila.motivos.push("Sin longitud aprovechable: es el dato que la norma exige en toda línea de tala");
+      }
+      const tieneDiametros =
+        fila.diamMayorM != null && fila.diamMayorM > 0 && fila.diamMenorM != null && fila.diamMenorM > 0;
+      if (tieneDiametros && !tieneVolumen && !tieneLongitud) {
+        fila.motivos.push("Trae diámetros pero no longitud: no se puede cubicar");
+      }
+    }
+    // Duplicado DENTRO del archivo: se marca, no se descarta solo.
+    const clave = fila.trozaCode ?? fila.treeCode;
+    if (clave) {
+      if (vistas.has(clave)) fila.motivos.push(`El código ${clave} se repite en el archivo`);
+      vistas.add(clave);
+    }
+    if (opts.especiesAutorizadas && fila.speciesCommon && !opts.especiesAutorizadas.has(fila.speciesCommon)) {
+      fila.motivos.push(`«${fila.speciesCommon}» no figura en el plan de manejo`);
+    }
+
+    // Sólo los faltantes duros invalidan: lo demás son avisos que el usuario lee.
+    //
+    // «Sin longitud» entra acá porque en Tala es el único dato que la norma
+    // exige en toda línea (item 8). Sin este prefijo el motivo se escribía pero
+    // la fila seguía en «ok»: una validación decorativa, que es peor que
+    // ninguna porque parece que valida.
+    const DUROS = ["Falta", "Sin volumen", "Sin longitud", "Fecha ilegible", "Trae diámetros"];
+    const duro = fila.motivos.some((m) => DUROS.some((p) => m.startsWith(p)));
+    fila.estado = duro ? "error" : "ok";
+    return fila;
+  });
+
+  return {
+    filas,
+    columnas: headers,
+    ignoradas,
+    listas: filas.filter((f) => f.estado === "ok").length,
+    conError: filas.filter((f) => f.estado === "error").length,
+  };
+}
+
+/**
+ * Lee el texto pegado (o un .csv leído como texto) y devuelve la vista previa.
+ */
+export function parseImportLineas(
+  texto: string,
+  section: LothSection,
+  opts: { especiesAutorizadas?: Set<string> } = {},
+): ResultadoImport {
+  const lineas = texto.split(/\r?\n/).filter((l) => l.trim().length > 0);
+  if (lineas.length < 2) {
+    return { filas: [], columnas: [], ignoradas: [], listas: 0, conError: 0 };
+  }
+  const sep = detectarSeparador(texto);
+  const headers = partir(lineas[0], sep);
+  const cuerpo = lineas.slice(1).map((linea) => partir(linea, sep));
+  return armarResultado(headers, cuerpo, section, opts);
+}
+
+/**
+ * Celdas de un .xlsx ya leído (`leerArchivoAFilas`) → la misma vista previa
+ * que da lo pegado. Los números de Excel llegan como número (`0.65`), no como
+ * texto con coma — `String(0.65)` sigue siendo un punto decimal, que
+ * `aNumero` ya entiende sin ambigüedad.
+ */
+export function parseImportLineasCeldas(
+  matriz: ReadonlyArray<ReadonlyArray<CeldaLinea>>,
+  section: LothSection,
+  opts: { especiesAutorizadas?: Set<string> } = {},
+): ResultadoImport {
+  const texto = (v: CeldaLinea): string =>
+    v == null ? "" : typeof v === "number" ? (Number.isFinite(v) ? String(v) : "") : String(v).trim();
+  const filas = matriz.map((f) => f.map(texto)).filter((f) => f.some((c) => c.length > 0));
+  if (filas.length < 2) {
+    return { filas: [], columnas: filas[0] ?? [], ignoradas: [], listas: 0, conError: 0 };
+  }
+  return armarResultado(filas[0], filas.slice(1), section, opts);
+}
+
+const fmtCupo = (n: number): string => String(Number(n.toFixed(1))).replace(".", ",");
+
+/**
+ * El texto del error de una fila que el libro rechazó al importar. Sólo
+ * reescribe el T9 (tala sobre lo autorizado): el resto conserva el mensaje del
+ * servidor. La regla (≥ MOTIVO_CUPO_MIN letras) es la del servidor —se importa
+ * de `loth-cupo-especie`—: acá sólo se dice qué columna poner.
+ */
+export function mensajeErrorFilaImport(
+  indice: number,
+  status: number,
+  body: unknown,
+  motivoEnviado: string | null | undefined,
+): string {
+  const b = (body && typeof body === "object" ? body : {}) as { error?: unknown; message?: unknown; detail?: unknown };
+  const prefijo = `Fila ${indice}: `;
+  if (b.error === "T9_CUPO_ESPECIE") {
+    const d = (b.detail && typeof b.detail === "object" ? b.detail : {}) as { especie?: unknown; cupoM3?: unknown; taladoConEsteM3?: unknown };
+    const especie = typeof d.especie === "string" && d.especie ? d.especie : "La especie";
+    const cifras =
+      typeof d.taladoConEsteM3 === "number" && typeof d.cupoM3 === "number"
+        ? ` (${fmtCupo(d.taladoConEsteM3)} de ${fmtCupo(d.cupoM3)} m³)`
+        : "";
+    const tiene = (motivoEnviado ?? "").trim().length > 0 && !motivoCupoValido(motivoEnviado);
+    return tiene
+      ? `${prefijo}${especie} pasa lo autorizado${cifras}. El motivo es muy corto: escribe al menos ${MOTIVO_CUPO_MIN} letras`
+      : `${prefijo}${especie} pasa lo autorizado${cifras}. Agrega una columna "motivo" con al menos ${MOTIVO_CUPO_MIN} letras`;
+  }
+  const texto = typeof b.message === "string" && b.message ? b.message : typeof b.error === "string" ? b.error : `HTTP ${status}`;
+  return `${prefijo}${texto}`;
+}

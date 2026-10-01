@@ -2,6 +2,7 @@ import "server-only";
 import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { tryAdmin } from "@/lib/require-admin";
+import { sinDato } from "@/lib/errores/sin-dato";
 
 /** Custom-domain prefix injected by edge middleware */
 const CUSTOM_PREFIX = "custom--";
@@ -84,7 +85,7 @@ export async function resolveTenantSlugToId(slugOrId: string): Promise<string> {
 
   const promise = prisma.tenant
     .findUnique({ where: { slug: slugOrId }, select: { id: true } })
-    .catch(() => null)
+    .catch(sinDato("resolve-tenant id del tenant por slug"))
     .then((tenant) => {
       const id = tenant?.id ?? slugOrId;
       slugToIdCache.set(slugOrId, { id, expiresAt: Date.now() + CACHE_TTL_MS });

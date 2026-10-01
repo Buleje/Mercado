@@ -20,6 +20,7 @@
 
 import { cache } from "react";
 import { prisma } from "./prisma";
+import { sinDato } from "@/lib/errores/sin-dato";
 
 /**
  * Resuelve el `storeSlug` para el tenant dado.
@@ -39,7 +40,7 @@ export const resolveStoreSlugForTenant = cache(async (tenantId: string): Promise
       where: { OR: [{ id: tenantId }, { slug: tenantId }] },
       select: { id: true, slug: true },
     })
-    .catch(() => null);
+    .catch(sinDato("store-tenant-bridge tenant por id o slug"));
   if (!tenant) return null;
 
   const store = await prisma.store
@@ -47,7 +48,7 @@ export const resolveStoreSlugForTenant = cache(async (tenantId: string): Promise
       where: { tenantId: { in: [tenant.id, tenant.slug] } },
       select: { slug: true },
     })
-    .catch(() => null);
+    .catch(sinDato("store-tenant-bridge tienda del tenant"));
 
   return store?.slug ?? null;
 });

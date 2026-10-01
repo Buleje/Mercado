@@ -25,12 +25,13 @@ import {
 } from "@/components/ui-system/charts";
 import { DashboardSection, MicroList } from "./_shared";
 import { DraggableSections, type DraggableItem } from "./DraggableSections";
+import { formatNumber } from "@/lib/format";
 
 function fmtS(v: number) {
-  return `S/ ${v.toLocaleString("es-PE", { maximumFractionDigits: 0 })}`;
+  return `S/ ${formatNumber(v, { max: 0 })}`;
 }
 function fmtS2(v: number) {
-  return `S/ ${v.toLocaleString("es-PE", { maximumFractionDigits: 2 })}`;
+  return `S/ ${formatNumber(v, { max: 2 })}`;
 }
 
 export default function CajaCharts({ data }: { data: CajaData }) {

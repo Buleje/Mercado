@@ -3,9 +3,11 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { ForestLothDB } from "@/lib/db/forest-loth.db";
-import { isSpecializationEnabled } from "@/lib/specializations";
+import { ForestPlanDB } from "@/lib/db/forest-plan.db";
 import { logger } from "@/lib/logger";
+import { isSpecializationEnabled } from "@/lib/specializations";
 import { withApiHandler } from "@/lib/api-handler";
+import { lothErrorResponse } from "@/lib/forestal/loth-api-errors";
 
 /**
  * /api/admin/forestal/loth/[id]
@@ -18,6 +20,24 @@ const patchSchema = z.object({
   action: z.literal("annul"),
   reason: z.string().trim().min(3).max(500),
 });
+
+/**
+ * Anular o borrar la tala de un árbol lo devuelve «en pie» en el censo —el
+ * espejo de lo que hace el alta, que lo marca «talado»—. Sin esto el árbol
+ * quedaba talado para siempre sin una sola línea que lo respalde (medido
+ * 28-09 en QA: QA-MAPA-3 «talado» en el censo, 0 talas vigentes). Sólo si
+ * no queda otra tala vigente del mismo código y el censo lo tiene talado.
+ * Fire-and-forget: el libro ya quedó bien; esto sólo alinea el censo.
+ */
+function liberarArbolSiCorresponde(tenantId: string, linea: { section: string; treeCode: string | null }) {
+  const code = linea.treeCode?.trim();
+  if (linea.section !== "tala" || !code) return;
+  (async () => {
+    if (await ForestLothDB.tieneTalaVigente(tenantId, code)) return;
+    const arbol = await ForestPlanDB.getTreeByCode(tenantId, code);
+    if (arbol?.estado === "talado") await ForestPlanDB.markTreeStatusByCode(tenantId, code, "en_pie");
+  })().catch((err) => logger.error("[loth.liberarArbol] failed", { error: String(err), tenantId }));
+}
 
 async function ensureSpec(tenantId: string) {
   const enabled = await isSpecializationEnabled(tenantId, "spec:forestal:loth-libro");
@@ -59,11 +79,12 @@ export const PATCH = withApiHandler("forestal-loth-id-patch", async (
   try {
     const existing = await ForestLothDB.getById(auth.tenantId, id);
     if (!existing) return NextResponse.json({ error: "not_found" }, { status: 404 });
-    const entry = await ForestLothDB.annul(auth.tenantId, id, parsed.data.reason);
+    const entry = await ForestLothDB.annul(auth.tenantId, id, parsed.data.reason, auth.username ?? "unknown");
+    liberarArbolSiCorresponde(auth.tenantId, entry);
     return NextResponse.json({ entry });
   } catch (err) {
-    logger.error("[loth.PATCH] failed", { error: String(err), tenantId: auth.tenantId });
-    return NextResponse.json({ error: "internal_error" }, { status: 500 });
+    // P1: anular una línea de un mes cerrado → 422 (dato del operador), no 500.
+    return lothErrorResponse(err, "loth.PATCH", auth.tenantId);
   }
 });
 
@@ -85,10 +106,12 @@ export const DELETE = withApiHandler("forestal-loth-id-delete", async (
   try {
     const existing = await ForestLothDB.getById(auth.tenantId, id);
     if (!existing) return NextResponse.json({ error: "not_found" }, { status: 404 });
-    await ForestLothDB.softDelete(auth.tenantId, id);
+    await ForestLothDB.softDelete(auth.tenantId, id, auth.username ?? "unknown");
+    liberarArbolSiCorresponde(auth.tenantId, existing);
     return NextResponse.json({ ok: true });
   } catch (err) {
-    logger.error("[loth.DELETE] failed", { error: String(err), tenantId: auth.tenantId });
-    return NextResponse.json({ error: "internal_error" }, { status: 500 });
+    // Igual que el PATCH: los invariantes del libro (período cerrado, cadena
+    // rota) tienen que llegar con su motivo, no como "error interno".
+    return lothErrorResponse(err, "loth.DELETE", auth.tenantId);
   }
 });

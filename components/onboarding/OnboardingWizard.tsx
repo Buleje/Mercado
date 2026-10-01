@@ -14,7 +14,7 @@ import OnboardingStep3Client from './OnboardingStep3Client';
 import OnboardingStep4POSDemo from './OnboardingStep4POSDemo';
 import OnboardingStep5Finish from './OnboardingStep5Finish';
 
-const CONFETTI_COLORS = ['var(--accent)', '#f97316', '#e76f51', '#264653', '#00BDBD', '#e9c46a', '#f72585', '#4361ee'];
+const CONFETTI_COLORS = ['var(--accent)', '#ff6b5b', '#e76f51', '#264653', '#00BDBD', '#e9c46a', '#f72585', '#4361ee'];
 
 function generatePieces() {
   return Array.from({ length: 30 }, (_, i) => ({
@@ -128,7 +128,7 @@ export default function OnboardingWizard() {
               <button
                 onClick={goPrev}
                 aria-label="Volver al paso anterior"
-                className="mb-3 -ml-1 inline-flex items-center gap-1.5 rounded-lg px-1.5 py-1 text-xs font-semibold text-[var(--text-tertiary)] transition-colors hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+                className="mb-3 -ml-1 inline-flex items-center gap-1.5 rounded-lg px-1.5 py-1 text-xs font-semibold text-[var(--text-tertiary)] transition-colors hover:bg-primary/10 hover:text-[var(--accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
               >
                 <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />

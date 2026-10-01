@@ -8,7 +8,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Suspense } from "react";
 import dynamic from "next/dynamic";
 import { ArrowLeft, ArrowRight, Clock, User, Share2 } from "@buleje/design-system/icons";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";

@@ -4,7 +4,7 @@ description: Planea migraciones de Prisma schema con patrón expand→migrate→
 user-invocable: true
 model: opus
 context: fork
-allowed-tools: Read, Write, Bash, Grep, Glob, TaskCreate, TaskUpdate
+allowed-tools: Read, Write, Bash, Grep, Glob
 ---
 
 # /migration-planner — Migraciones Prisma zero-downtime

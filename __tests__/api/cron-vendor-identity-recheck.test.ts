@@ -23,6 +23,7 @@ const { snapshotStore } = vi.hoisted(() => ({
   snapshotStore: new Map<string, unknown>(),
 }));
 vi.mock("@/lib/cache", () => ({
+  revalidateTenantTag: vi.fn(),
   cacheStore: {
     get: vi.fn((key: string) => snapshotStore.get(key) ?? null),
     set: vi.fn((key: string, value: unknown) => {

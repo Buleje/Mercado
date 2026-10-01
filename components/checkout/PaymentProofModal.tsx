@@ -475,8 +475,8 @@ export function PaymentProofModal({
                 className={cn(
                   "w-full rounded-2xl border-2 border-dashed p-8 text-center transition-all",
                   dragOver
-                    ? "border-[var(--accent)] bg-[var(--accent-soft)]"
-                    : "border-[var(--rule-base)] bg-[var(--surface-sunken)] hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]",
+                    ? "border-[var(--accent)] bg-primary/10"
+                    : "border-[var(--rule-base)] bg-[var(--surface-sunken)] hover:border-[var(--accent)] hover:bg-primary/10",
                 )}
               >
                 <Upload

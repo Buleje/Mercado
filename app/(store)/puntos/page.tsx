@@ -14,7 +14,6 @@ import {
   Award,
   Trophy,
   Loader2,
-  ChevronRight,
   TrendingUp,
   TrendingDown,
   Clock,
@@ -26,8 +25,6 @@ import {
 } from "@buleje/design-system/icons";
 import { useCustomer } from "@/contexts/customer-context";
 import { cn } from "@/lib/utils";
-import Header from "@/components/Header";
-import AnnouncementBar from "@/components/AnnouncementBar";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 
 /* ── Types ──────────────────────────────────────────────────────── */
@@ -1106,7 +1103,7 @@ export default function PuntosPage() {
                       />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold uppercase tracking-wider text-[var(--accent-dark)]">
+                      <p className="text-xs font-bold uppercase tracking-wider text-[var(--accent-dark)] dark:text-[var(--accent)]">
                         Cerca de desbloquearse
                       </p>
                       <p className="text-base font-extrabold text-[var(--text-primary)] truncate">

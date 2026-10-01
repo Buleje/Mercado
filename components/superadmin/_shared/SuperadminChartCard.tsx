@@ -17,6 +17,10 @@
 
 import type { ReactNode } from "react";
 
+// Superficie canónica = ADMIN_TOKENS.card (rounded-xl · rule-soft · surface-raised).
+// Inline para no acoplar el componente al re-export del admin layer.
+const SA_CARD = "rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)]";
+
 interface Props {
   title: string;
   description?: string;
@@ -48,7 +52,7 @@ export default function SuperadminChartCard({
   return (
     <section
       className={[
-        "rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)]",
+        SA_CARD,
         padding,
         className ?? "",
       ].join(" ")}

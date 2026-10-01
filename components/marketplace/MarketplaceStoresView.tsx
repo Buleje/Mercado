@@ -17,6 +17,9 @@ import {
   ArrowRight,
   Tag,
   Check,
+  Wallet,
+  Clock,
+  Truck,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -26,6 +29,22 @@ import {
   haversineKm,
   ZONE_COORDS,
 } from "@/components/marketplace/useMarketplaceGeo";
+import { todayHoursLabel, type StoreHours } from "@/lib/marketplace-store-hours";
+// Agrupación por "mundo" (Comida/Bodega/Ferretería/Electro/Farmacia) en el
+// estado de navegación por defecto — mismo taxonomía que la home y los chips.
+import {
+  MARKETPLACE_VERTICALS,
+  verticalForStoreCategory,
+} from "@/lib/marketplace/verticals";
+import {
+  UtensilsCrossed,
+  ShoppingBasket,
+  Wrench,
+  Smartphone,
+  Pill,
+  Store as StoreIcon,
+  type LucideIcon,
+} from "@buleje/design-system/icons";
 
 // Drawer "Vista rápida" (peek + add sin salir de /tiendas). Lazy — usa
 // framer-motion; solo se carga al primer click en una card premium.
@@ -39,40 +58,17 @@ const StoreDistanceMapModal = dynamic(
   { ssr: false },
 );
 
-// Mapea una MarketplaceStore + sus productos premium al shape que espera el
-// drawer (FeaturedNearbyStore con productosDestacados embebidos). Sin fetch.
-function toFeaturedStore(
-  store: MarketplaceStore,
-  products: import("./PremiumStoreCard").PremiumProduct[],
-): FeaturedNearbyStore {
-  return {
-    id: store.id,
-    slug: store.slug,
-    name: store.name,
-    logo: store.logo ?? null,
-    banner: store.cover ?? null,
-    category: store.category ?? "",
-    zone: store.zone ?? null,
-    rating: store.rating ?? 0,
-    reviewCount: store.reviewCount ?? 0,
-    description: null,
-    distanceKm: 0,
-    productosDestacados: products.map((p) => ({
-      id: String(p.productId),
-      productId: p.productId,
-      name: p.name,
-      image: p.image,
-      retailPrice: p.retailPrice,
-      discountPrice: p.discountPrice ?? null,
-      discountLabel: null,
-    })),
-  };
-}
+// Audit #5: toFeaturedStore removido — era el adapter para la card premium
+// ancha (PremiumStoreCard), que ya no se usa (todas las tiendas usan la card
+// estándar).
 import type { QuickChipId } from "@/components/marketplace/QuickFilterChips";
 import { StoreCardCanonical } from "@buleje/design-system";
-import PremiumStoreCard from "./PremiumStoreCard";
 import StorePromoBanner from "./StorePromoBanner";
-import MiniBulejeBanner from "@/components/marketplace/MiniBulejeBanner";
+import { PaymentMethodIcon } from "./PaymentIcons";
+// Nivel "Premium" (beneficio superadmin): card de fila completa con preview de
+// productos. Se re-habilita para que /tiendas honre los niveles que promete la
+// previsualizacion de /superadmin/stores (Brandon 2026-07-05).
+import PremiumStoreCard, { type PremiumProduct } from "./PremiumStoreCard";
 import FollowStoreButton from "@/components/marketplace/FollowStoreButton";
 import ShareStoreButton from "@/components/marketplace/ShareStoreButton";
 import {
@@ -154,22 +150,23 @@ function formatNextOpening(iso?: string | null): string | null {
 }
 
 function ClosedNowOverlay({ nextOpeningLabel }: { nextOpeningLabel?: string | null }) {
+  // Brandon 2026-07-06: rediseño minimalista — fuera el gris pesado que tapaba la
+  // foto. Ahora: velo blanco MUY sutil (se lee "en pausa" sin ocultar la tienda)
+  // + pill limpio arriba-izquierda con el estado. La foto de la tienda se sigue
+  // viendo (más apetecible que un rectángulo gris).
+  const opensAt = nextOpeningLabel?.replace(/^Abre\s+/i, "") ?? null;
   return (
-    <div
-      aria-hidden
-      className="absolute inset-0 z-10 bg-linear-to-br from-slate-900/55 via-slate-800/55 to-slate-900/55 flex flex-col items-center justify-center text-center pointer-events-none backdrop-blur-[1px]"
-    >
-      <div className="inline-flex items-center justify-center h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-slate-100 text-slate-700 shadow-lg">
-        <Moon className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2} />
-      </div>
-      <p className="mt-2 px-3 text-sm sm:text-base font-extrabold uppercase tracking-widest text-white drop-shadow-md">
-        Cerrada ahora
-      </p>
-      {nextOpeningLabel && (
-        <p className="mt-1 px-3 text-xs sm:text-sm font-medium text-white/90 drop-shadow">
-          {nextOpeningLabel}
-        </p>
-      )}
+    <div aria-hidden className="absolute inset-0 z-10 pointer-events-none">
+      {/* Atenuado sutil — la foto se sigue viendo, apenas "en pausa" (sin gris). */}
+      <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-black/10" />
+      {/* Una sola pill limpia (minimalista). Arriba-izquierda, sin encimarse con
+          nada (el cluster Destacada/promos se oculta cuando está cerrada). */}
+      <span className="absolute left-2.5 top-2.5 inline-flex max-w-[calc(100%-1.25rem)] items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 shadow-sm backdrop-blur-sm dark:bg-gray-950/90">
+        <Moon className="h-3 w-3 shrink-0 text-[var(--text-secondary)]" strokeWidth={2.5} aria-hidden />
+        <span className="truncate text-[length:var(--ts-2xs)] font-extrabold text-[var(--text-primary)]">
+          Cerrada{opensAt ? <span className="font-semibold text-[var(--text-secondary)]"> · abre {opensAt}</span> : ""}
+        </span>
+      </span>
     </div>
   );
 }
@@ -249,8 +246,25 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
   const ariaLabel = `${store.name}${zoneTextAria}${ratingTextAria}${store.vacationMode ? " — de vacaciones" : ""}`;
 
   // ── Overlay sobre el cover: rating pill + promo + vacaciones ──
-  const coverOverlay = (
+  // Brandon 2026-07-06: cuando la tienda está CERRADA, el cover solo muestra el
+  // badge de cerrada (ClosedNowOverlay). Ocultamos el cluster Destacada/promos/
+  // vacaciones para que NADA se encime (antes chocaban top-left). El nivel
+  // featured igual se distingue por el anillo teal.
+  const isClosed = store.isOpenNow === false;
+  const coverOverlay = isClosed ? undefined : (
     <>
+      {/* Nivel "Destacada" (superadmin) — badge visible, como promete la
+          previsualización de /superadmin/stores. Premium usa su propia card
+          (PremiumStoreCard), así que acá solo aparece featured. */}
+      {store.displayTier === "featured" && (
+        <span
+          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--accent)] text-white text-[length:var(--ts-2xs)] font-black uppercase tracking-[var(--ls-wider)] shadow-sm"
+          title="Tienda destacada"
+        >
+          <Star className="h-2.5 w-2.5 fill-current" strokeWidth={2.5} aria-hidden="true" />
+          Destacada
+        </span>
+      )}
       {/* Brandon 2026-06-08: rating movido a la DESCRIPCIÓN (body) → el cover
           queda limpio. Acá solo ofertas / último pedido / vacaciones. */}
       {store.activePromos != null && store.activePromos > 0 && (
@@ -303,6 +317,18 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
     deliveryLabel,
   ].filter(Boolean) as string[];
 
+  // Horario de HOY (config del admin) — solo si la tienda está abierta y no en
+  // construcción. Las cerradas ya muestran su overlay "Abre …". Degrada a null
+  // si el horario no viene con el shape esperado (no ensucia la card).
+  const hoursToday =
+    store.isOpenNow !== false && !store.underConstruction
+      ? todayHoursLabel(store.openHours as unknown as StoreHours | null | undefined, new Date())
+      : null;
+
+  // Multi-zona de cobertura (config del admin en "Mi Tienda"). La zona principal
+  // ya va en la meta; acá señalamos si reparte a más zonas.
+  const coverageCount = Array.isArray(store.coverageZones) ? store.coverageZones.length : 0;
+
   // Rediseño card 2026-06-08 (Brandon): jerarquía limpia → rating · meta · trust
   // · divisor · "Ver tienda". Verificada va inline con el NOMBRE (nameSuffix del
   // DS); el nivel "Destacada" lo señala el anillo teal (isFeatured), sin chip.
@@ -311,8 +337,9 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
       {/* sr-only enriched aria description (rating, zone, vacación). */}
       <span className="sr-only">{ariaLabel}</span>
 
-      {/* Rating + reseñas — inline, prominente */}
-      {store.rating > 0 && (
+      {/* Rating + reseñas — o badge "Nueva" si aún no tiene reseñas (recién
+          abierta). Brandon 2026-07-06 (descubrimiento). */}
+      {store.rating > 0 ? (
         <div className="flex items-center gap-1 text-[length:var(--ts-xs)]">
           <Star className="h-3.5 w-3.5 shrink-0 fill-current text-[var(--accent)]" aria-hidden="true" />
           <span className="font-extrabold tabular-nums text-[var(--text-primary)]">
@@ -324,6 +351,11 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
             </span>
           )}
         </div>
+      ) : (
+        <span className="inline-flex w-fit items-center gap-1 rounded-full bg-[var(--data-success-500)]/12 px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wide text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
+          <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[var(--data-success-500)]" />
+          Nueva
+        </span>
       )}
 
       {/* Meta: categoría · zona · delivery time (1 línea, truncate). En celular
@@ -347,12 +379,41 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
         </span>
       </div>
 
-      {/* Trust chips: envío gratis y/o mín pedido (condicional) */}
+      {/* Horario de hoy (config del admin) — línea sutil, solo abiertas. */}
+      {hoursToday && (
+        <div className="flex items-center gap-1.5 text-[length:var(--ts-xs)] text-[var(--text-tertiary)] min-w-0">
+          <Clock className="h-3 w-3 shrink-0" strokeWidth={2} aria-hidden="true" />
+          <span className="truncate font-semibold text-[var(--text-secondary)]">
+            Hoy {hoursToday}
+          </span>
+        </div>
+      )}
+
+      {/* Multi-zona de cobertura (config del admin) — solo si reparte a 2+ zonas. */}
+      {coverageCount >= 2 && (
+        <div className="flex items-center gap-1.5 text-[length:var(--ts-xs)] text-[var(--text-tertiary)] min-w-0">
+          <Truck className="h-3 w-3 shrink-0" strokeWidth={2} aria-hidden="true" />
+          <span className="truncate font-semibold text-[var(--text-secondary)]">
+            Llega a {coverageCount} zonas
+          </span>
+        </div>
+      )}
+
+      {/* Trust chips: envío gratis, mín pedido y/o acepta fiado (condicional) */}
       {(store.freeDelivery ||
+        store.acceptsFiado ||
         (store.minOrderAmount != null && store.minOrderAmount > 0)) && (
         <div className="flex flex-wrap items-center gap-1.5">
+          {/* Fiado Digital — diferenciador #1 de Buleje. Chip destacado en teal
+              para que "compra ahora, paga después" salte a la vista. */}
+          {store.acceptsFiado && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 max-md:bg-[var(--surface-sunken)] text-[length:var(--ts-2xs)] font-bold text-[var(--accent)] max-md:text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])]">
+              <Wallet className="h-3 w-3" strokeWidth={2.5} aria-hidden="true" />
+              Acepta fiado
+            </span>
+          )}
           {store.freeDelivery && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--accent-soft)] max-md:bg-[var(--surface-sunken)] text-[length:var(--ts-2xs)] font-bold text-[var(--accent)] max-md:text-[var(--text-primary)]">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 max-md:bg-[var(--surface-sunken)] text-[length:var(--ts-2xs)] font-bold text-[var(--accent)] max-md:text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])]">
               <Bike className="h-3 w-3" strokeWidth={2.5} aria-hidden="true" />
               Envío gratis
             </span>
@@ -365,6 +426,19 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
         </div>
       )}
 
+      {/* Pagos aceptados — estándar Buleje (Yape/Plin/Efectivo). Trust de un
+          vistazo (Brandon 2026-07-06). Fila sutil bajo los chips. */}
+      <div className="flex items-center gap-1.5">
+        <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)]">
+          Pagás:
+        </span>
+        <span className="flex items-center gap-1">
+          {(["yape", "plin", "efectivo"] as const).map((m) => (
+            <PaymentMethodIcon key={m} method={m} size="sm" />
+          ))}
+        </span>
+      </div>
+
       {/* Divisor + acción "Ver tienda" — el corazón/compartir (overlay absoluto
           bottom-right) alinean a la derecha de esta fila. pr-16 reserva su lugar. */}
       <div className="mt-0.5 flex items-center border-t border-[var(--rule-soft)] pt-2 pr-16">
@@ -376,9 +450,11 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
     </div>
   );
 
-  // Destacada: anillo teal + leve realce para distinguirla de las estándar
-  // sin ocupar fila completa (premium usa su propia card).
-  const isFeatured = store.displayTier === "featured";
+  // Destacada: anillo teal + leve realce para distinguirla de las estándar.
+  // Audit #5 (Brandon 2026-07-05): premium ya NO usa card ancha propia — todas
+  // las tiendas usan esta card estándar (grid parejo para comparar); premium y
+  // featured comparten el realce "Destacada" + van primero (orderedStores).
+  const isFeatured = store.displayTier === "featured" || store.displayTier === "premium";
   // Brandon 2026-05-30 (audit #5): era <m.div> con initial={false} + animate
   // estático = animación NO-OP que arrastraba framer-motion (~30KB) al bundle
   // inicial de /tiendas. <div> plano = comportamiento idéntico (el card ya
@@ -437,12 +513,23 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
         className="max-md:rounded-none"
         footer={footer}
         coverOverlay={coverOverlay}
+        /**
+         * El avatar sólo cuando hay LOGO.
+         *
+         * Sin logo caía a un círculo con la inicial, y como esas tiendas
+         * tampoco tienen cover, la card terminaba diciendo dos veces lo mismo:
+         * la ilustración «Sin foto» de fondo y encima una «B» gris. Dos marcas
+         * de ausencia no identifican mejor que una — sólo ensucian la esquina.
+         *
+         * Con logo el avatar sigue haciendo su trabajo (identidad sobre un
+         * cover genérico, estilo Rappi).
+         */
         coverBottomLeft={
-          <div
-            className="h-9 w-9 sm:h-11 sm:w-11 rounded-full overflow-hidden bg-[var(--surface-raised)] border-2 border-white dark:border-gray-900 shadow-md hidden md:flex items-center justify-center"
-            aria-hidden="true"
-          >
-            {store.logo ? (
+          store.logo ? (
+            <div
+              className="h-9 w-9 sm:h-11 sm:w-11 rounded-full overflow-hidden bg-[var(--surface-raised)] border-2 border-white dark:border-gray-900 shadow-md hidden md:flex items-center justify-center"
+              aria-hidden="true"
+            >
               <Image
                 src={store.logo}
                 alt=""
@@ -453,12 +540,8 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
                 loading="lazy"
                 className="object-cover w-full h-full"
               />
-            ) : (
-              <span className="text-sm sm:text-base font-black text-[var(--text-secondary)] bg-[var(--surface-sunken)] h-full w-full flex items-center justify-center">
-                {store.name.trim().charAt(0).toUpperCase()}
-              </span>
-            )}
-          </div>
+            </div>
+          ) : undefined
         }
         // Brandon 2026-05-21: mobile cards menos altas estilo Rappi.
         // 16/9 mobile (360x202) vs 4/3 desktop (360x270). Reduce el alto
@@ -484,9 +567,16 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
             fetchPriority={index < 3 ? "high" : "low"}
           />
         )}
-        renderImageFallback={() => (
-          <MiniBulejeBanner storeName={store.name} category={store.category} />
-        )}
+        /**
+         * SIN `renderImageFallback`: se usa el placeholder canónico del DS
+         * (`StoreImagePlaceholder`, ADR-075), que dibuja una ilustración Buleje
+         * distinta por tienda.
+         *
+         * Antes iba `MiniBulejeBanner`: la inicial del nombre en 7xl al 20% de
+         * opacidad sobre gris. Al lado de las cards de comida —con su tira de
+         * productos— las tiendas sin foto se leían como rotas, no como «sin
+         * foto todavía». Y era clonar algo que el DS ya resuelve.
+         */
         // Brandon 2026-05-21 perf v4: SPA navigation con Next Link en lugar de
         // <a> nativo. El DS expone el slot `renderLink` precisamente para que
         // los consumers Next obtengan prefetch automático + client-side routing.
@@ -663,6 +753,13 @@ export function passesChips(
         if ((store.minOrderAmount ?? 0) > 0) return false;
         break;
       }
+      case "accepts_fiado": {
+        // El campo viaja en MarketplaceStore (benefits.acceptsFiado). Si no
+        // está presente (consumer legacy), no filtramos — mejor mostrar.
+        if (!("acceptsFiado" in store)) break;
+        if (store.acceptsFiado !== true) return false;
+        break;
+      }
       case "open_24h": {
         if (!("openHours" in store) || store.openHours == null) break;
         // Una tienda es 24h si todos los días tiene open=0 close=24 (o equivalente).
@@ -699,10 +796,116 @@ export interface StoreChipFields {
   createdAt: string | Date;
   paymentMethods: string[];
   minOrderAmount: number;
+  acceptsFiado: boolean;
 }
+
+// Icono por vertical — mismo mapping que MarketplaceVerticalChips (single-source
+// de la taxonomía en lib/marketplace/verticals). "Otras" cae al icono Store.
+const VERTICAL_ICONS: Record<string, LucideIcon> = {
+  comida: UtensilsCrossed,
+  bodega: ShoppingBasket,
+  ferreteria: Wrench,
+  electro: Smartphone,
+  farmacia: Pill,
+};
+
+/**
+ * StoreGrid — grilla responsiva de cards. Extraída para reusarla tanto en el
+ * listado plano (con filtros activos) como en cada sección por categoría.
+ */
+const StoreGrid = memo(function StoreGrid({
+  stores,
+  lastOrdersByStore,
+  userCoords,
+  ariaLabel,
+}: {
+  stores: MarketplaceStore[];
+  lastOrdersByStore: Record<string, LastOrderInfo>;
+  userCoords?: { lat: number; lng: number } | null;
+  ariaLabel: string;
+}) {
+  return (
+    <div
+      role="list"
+      aria-label={ariaLabel}
+      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4"
+    >
+      {stores.map((store, i) => (
+        <div key={store.id} role="listitem">
+          <StoreCardWrapper
+            store={store}
+            index={i}
+            lastOrder={lastOrdersByStore[store.slug]}
+            userCoords={userCoords}
+          />
+        </div>
+      ))}
+    </div>
+  );
+});
+
+/**
+ * TieredStores — renderiza una lista respetando el NIVEL de cada tienda
+ * (superadmin): las Premium como card de fila completa con preview de productos
+ * (arriba), y el resto (Destacada + Estándar) en la grilla. Así /tiendas honra
+ * lo que promete la previsualización de /superadmin/stores. Reusado en el
+ * listado plano y en cada sección por categoría.
+ */
+const TieredStores = memo(function TieredStores({
+  stores,
+  premiumProducts,
+  lastOrdersByStore,
+  userCoords,
+  ariaLabel,
+}: {
+  stores: MarketplaceStore[];
+  premiumProducts: Record<string, PremiumProduct[]>;
+  lastOrdersByStore: Record<string, LastOrderInfo>;
+  userCoords?: { lat: number; lng: number } | null;
+  ariaLabel: string;
+}) {
+  const premiums = stores.filter((s) => s.displayTier === "premium");
+  const rest = stores.filter((s) => s.displayTier !== "premium");
+  return (
+    <div className="space-y-4">
+      {premiums.map((s) => (
+        <PremiumStoreCard
+          key={s.id}
+          slug={s.slug}
+          name={s.name}
+          logo={s.logo}
+          cover={s.cover}
+          category={s.category}
+          zone={s.zone}
+          rating={s.rating}
+          reviewCount={s.reviewCount}
+          verified={s.verified}
+          acceptsFiado={s.acceptsFiado}
+          isOpenNow={s.isOpenNow}
+          nextOpeningLabel={formatNextOpening(s.nextOpeningAt)}
+          products={premiumProducts[s.slug] ?? []}
+          lat={s.lat}
+          lng={s.lng}
+          userCoords={userCoords}
+        />
+      ))}
+      {rest.length > 0 && (
+        <StoreGrid
+          stores={rest}
+          lastOrdersByStore={lastOrdersByStore}
+          userCoords={userCoords}
+          ariaLabel={ariaLabel}
+        />
+      )}
+    </div>
+  );
+});
 
 export default function MarketplaceStoresView({
   stores: _stores,
+  // premiumProducts (Brandon 2026-07-05): RE-HABILITADO. Alimenta el preview de
+  // productos de las cards de nivel Premium (beneficio superadmin), para que
+  // /tiendas honre lo que promete la previsualizacion de /superadmin/stores.
   premiumProducts = {},
   loading,
   error,
@@ -736,13 +939,23 @@ export default function MarketplaceStoresView({
         );
 
   // Orden por beneficio (superadmin):
-  //  - Destacada (featured) primero, ancho normal → la acompañan estándar.
-  //  - searchBoost sube dentro de su grupo.
-  //  - Premium full-width intercalado (1 arriba, luego cada ~6 cards) para que
-  //    no se amontonen y dejen respirar la grilla.
+  //  - Premium primero (se renderiza como card de fila completa via TieredStores).
+  //  - Destacada (featured) después, con badge + realce; luego estándar.
+  //  - searchBoost sube dentro de su grupo. Cerradas al final de cada grupo.
   const orderedStores = useMemo(() => {
-    const premiums = filteredStores.filter((s) => s.displayTier === "premium");
-    const rest = [...filteredStores.filter((s) => s.displayTier !== "premium")].sort((a, b) => {
+    // Brandon 2026-07-05 (audit comprador): las tiendas CERRADAS ahora van
+    // SIEMPRE al final (dentro de su grupo), abiertas primero. Antes se
+    // mezclaban con las abiertas y el comprador no sabía cuáles podía usar ya.
+    // `isOpenNow === false` = cerrada; undefined/true = tratamos como abierta
+    // (no penalizar tiendas sin horario cargado).
+    const closedLast = (s: MarketplaceStore) => (s.isOpenNow === false ? 1 : 0);
+    const premiums = filteredStores.filter((s) => s.displayTier === "premium").sort(
+      (a, b) => closedLast(a) - closedLast(b),
+    );
+    const rest = filteredStores.filter((s) => s.displayTier !== "premium").sort((a, b) => {
+      const ca = closedLast(a);
+      const cb = closedLast(b);
+      if (ca !== cb) return ca - cb; // abiertas primero
       const ta = a.displayTier === "featured" ? 0 : 1;
       const tb = b.displayTier === "featured" ? 0 : 1;
       if (ta !== tb) return ta - tb;
@@ -750,16 +963,48 @@ export default function MarketplaceStoresView({
       const bb = b.searchBoost ? 0 : 1;
       return ba - bb;
     });
-    const out: MarketplaceStore[] = [];
-    let pi = 0;
-    if (premiums[pi]) out.push(premiums[pi++]); // primer premium arriba
-    rest.forEach((s, i) => {
-      out.push(s);
-      if ((i + 1) % 6 === 0 && premiums[pi]) out.push(premiums[pi++]);
-    });
-    while (premiums[pi]) out.push(premiums[pi++]);
-    return out;
+    // Premium primero, luego el resto. TieredStores separa premium (full-width)
+    // del grid; acá solo garantizamos el orden premium → featured → standard.
+    return [...premiums, ...rest];
   }, [filteredStores]);
+
+  // ── Agrupación por categoría (Brandon 2026-07-05) ──────────────────────────
+  // En el estado de navegación por defecto (sin búsqueda / filtro / zona / geo /
+  // chips) el directorio se organiza en secciones por "mundo" — Comida, Bodega,
+  // Ferretería, Electro, Farmacia — cada una con su encabezado + icono. Así el
+  // vecino escanea por tipo de tienda en vez de una grilla plana. Con CUALQUIER
+  // filtro activo volvemos al grid plano (el resultado ya está acotado).
+  const isDefaultBrowse =
+    !search && (!category || category === "todos") && !zone && !geoActive && chips.size === 0;
+
+  const verticalGroups = useMemo(() => {
+    if (!isDefaultBrowse) return null;
+    const buckets = new Map<string, MarketplaceStore[]>();
+    for (const s of orderedStores) {
+      const vId = verticalForStoreCategory(s.category) ?? "otros";
+      const arr = buckets.get(vId);
+      if (arr) arr.push(s);
+      else buckets.set(vId, [s]);
+    }
+    const groups: { id: string; label: string; Icon: LucideIcon; stores: MarketplaceStore[] }[] =
+      [];
+    // Orden de secciones = MARKETPLACE_VERTICALS; "Otras tiendas" al final.
+    for (const v of MARKETPLACE_VERTICALS) {
+      const arr = buckets.get(v.id);
+      if (arr && arr.length) {
+        groups.push({ id: v.id, label: v.label, Icon: VERTICAL_ICONS[v.id] ?? StoreIcon, stores: arr });
+      }
+    }
+    const otras = buckets.get("otros");
+    if (otras && otras.length) {
+      groups.push({ id: "otros", label: "Otras tiendas", Icon: StoreIcon, stores: otras });
+    }
+    return groups;
+  }, [isDefaultBrowse, orderedStores]);
+
+  // Solo agrupamos si hay ≥2 mundos distintos — con uno solo, un encabezado
+  // gigante para toda la página es ruido. En ese caso: grid plano.
+  const showGroups = verticalGroups !== null && verticalGroups.length >= 2;
 
   return (
     <>
@@ -890,67 +1135,96 @@ export default function MarketplaceStoresView({
         </div>
       )}
 
-      {/* Store grid */}
-      {!loading && !error && filteredStores.length > 0 && (
-        <div
-          role="list"
-          aria-label={`${filteredStores.length} tienda${filteredStores.length !== 1 ? "s" : ""} encontrada${filteredStores.length !== 1 ? "s" : ""}`}
-          // Brandon 2026-05-21 rediseño UX: 1 col mobile (modelo Doordash/
-          // Airbnb/Yelp/Uber Eats) en lugar de 2 cols compactas.
-          // Razón: Buleje tiene 3-6 tiendas hoy, density NO es prioridad.
-          // Cards full-width mobile dan:
-          // - imagen hero 360×180 (en vez de 150×100 squeezed)
-          // - nombre tienda completo sin truncate
-          // - rating + zona + tiempo de entrega legibles
-          // - mejor tap target para conversión
-          // Desktop v2 (2026-05-26): sidebar ocupa 280px → el grid principal
-          // usa 2 cols en lg (~720px disponibles) y 3 cols en xl (~960px+).
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 mt-6"
-        >
-          {orderedStores.map((store, i) => {
-            // Premium: card de fila completa con preview de productos (no la
-            // card estándar agrandada). Si no hay productos igual se muestra.
-            if (store.displayTier === "premium") {
-              return (
-                <div key={store.id} role="listitem" className="sm:col-span-2 xl:col-span-3 2xl:col-span-4">
-                  <PremiumStoreCard
-                    slug={store.slug}
-                    name={store.name}
-                    logo={store.logo}
-                    cover={store.cover}
-                    category={store.category}
-                    zone={store.zone}
-                    rating={store.rating}
-                    reviewCount={store.reviewCount}
-                    verified={store.verified}
-                    isOpenNow={store.isOpenNow}
-                    nextOpeningLabel={formatNextOpening(store.nextOpeningAt)}
-                    lat={store.lat}
-                    lng={store.lng}
-                    userCoords={userCoords}
-                    products={premiumProducts[store.slug] ?? []}
-                    onQuickView={
-                      (premiumProducts[store.slug]?.length ?? 0) > 0
-                        ? () => setQuickViewStore(toFeaturedStore(store, premiumProducts[store.slug] ?? []))
-                        : undefined
-                    }
-                  />
+      {/* Store grid — agrupado por categoría en navegación por defecto (Brandon
+          2026-07-05); grid plano cuando hay búsqueda/filtro/zona/geo/chip activo
+          (el resultado ya viene acotado, no hace falta seccionar).
+          Grid: 1 col mobile (Doordash/Uber Eats) · 2 en lg (sidebar 280px) ·
+          3 en xl · 4 en 2xl. */}
+      {!loading &&
+        !error &&
+        filteredStores.length > 0 &&
+        (showGroups && verticalGroups ? (
+          <div className="mt-6 space-y-10">
+            {/* Saltos por categoría — tabla de contenidos.
+                
+                Sólo con 4+ secciones. Con tres, la página entera se recorre de
+                un vistazo y estos chips quedaban 250px debajo de los TILES de
+                categoría, con las mismas etiquetas y los mismos conteos pero
+                haciendo otra cosa: los de arriba FILTRAN, éstos SALTAN. Dos
+                controles idénticos con comportamiento distinto es peor que no
+                tener el atajo.
+                
+                Cuando aparecen, van rotulados «Ir a» para que se lean como
+                navegación y no como un segundo filtro. */}
+            {verticalGroups.length > 3 && (
+            <nav
+              aria-label="Ir a una categoría"
+              className="-mx-4 flex items-center gap-1.5 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            >
+              <span className="shrink-0 pr-1 text-[length:var(--ts-xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
+                Ir a
+              </span>
+              {verticalGroups.map((g) => (
+                <button
+                  key={g.id}
+                  type="button"
+                  onClick={() => {
+                    document
+                      .getElementById(`cat-${g.id}`)
+                      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }}
+                  className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                >
+                  <g.Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden="true" />
+                  {g.label}
+                  <span className="tabular-nums text-[var(--text-tertiary)]">{g.stores.length}</span>
+                </button>
+              ))}
+            </nav>
+            )}
+            {verticalGroups.map((g) => (
+              <section
+                key={g.id}
+                id={`cat-${g.id}`}
+                aria-labelledby={`vsec-${g.id}`}
+                className="scroll-mt-28"
+              >
+                {/* Encabezado del mundo: icono en chip + nombre + conteo. */}
+                <div className="mb-4 flex items-center gap-2.5">
+                  <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
+                    <g.Icon className="h-5 w-5" strokeWidth={2} aria-hidden="true" />
+                  </span>
+                  <h3
+                    id={`vsec-${g.id}`}
+                    className="text-lg font-extrabold tracking-[-0.01em] text-[var(--text-primary)] sm:text-xl"
+                  >
+                    {g.label}
+                  </h3>
+                  <span className="text-[length:var(--ts-xs)] font-bold tabular-nums text-[var(--text-tertiary)]">
+                    {g.stores.length}
+                  </span>
                 </div>
-              );
-            }
-            return (
-              <div key={store.id} role="listitem">
-                <StoreCardWrapper
-                  store={store}
-                  index={i}
-                  lastOrder={lastOrdersByStore[store.slug]}
+                <TieredStores
+                  stores={g.stores}
+                  premiumProducts={premiumProducts}
+                  lastOrdersByStore={lastOrdersByStore}
                   userCoords={userCoords}
+                  ariaLabel={`${g.stores.length} tienda${g.stores.length !== 1 ? "s" : ""} de ${g.label}`}
                 />
-              </div>
-            );
-          })}
-        </div>
-      )}
+              </section>
+            ))}
+          </div>
+        ) : (
+          <div className="mt-6">
+            <TieredStores
+              stores={orderedStores}
+              premiumProducts={premiumProducts}
+              lastOrdersByStore={lastOrdersByStore}
+              userCoords={userCoords}
+              ariaLabel={`${filteredStores.length} tienda${filteredStores.length !== 1 ? "s" : ""} encontrada${filteredStores.length !== 1 ? "s" : ""}`}
+            />
+          </div>
+        ))}
 
       {/* Geo active indicator (sr-only) */}
       {geoActive && (

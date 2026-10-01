@@ -1,57 +1,72 @@
-# SESSION HANDOFF — 2026-05-29 (Cacao · modo autónomo)
+# SESSION HANDOFF — 2026-09-27 (noche): PC + monitor, despacho ADR-444, guía rediseñada, días de producción ADR-445
 
-**Branch:** `chore/p0-audit-2026-05-28` · **Working tree:** todo commiteado.
-**Commits de la sesión:** 19 (`ff8e60f1` → `17ae7fdf`). Ronda 2 (continuación): handoff + empty states (e851413e) + **fix global tokens danger en 15 archivos** (7abec9a1) + sub-tabs mobile scroll (17ae7fdf).
-**Gates:** `tsc --noEmit` 0 en cada paso · 30 tests cacao verdes · verificación e2e en navegador (tenant `main`) por feature. NO se corrió `npm run build` completo (recomendado antes de deploy). NO se pusheó.
+**Estado:** ⚠️ **SIN COMMIT** — ~204 archivos (esta sesión + las 5 rondas de la anterior). Gates verdes al cierre: typecheck ✅ · eslint (168 archivos tocados) exit 0 · 13 archivos de test del área 149/149 · base real ADR-444 13/13. Brandon NO pidió commitear: **primera decisión de mañana** (sugerido: commits por ronda con el método de `commit-aislado-exportar-el-indice`).
 
-## Qué se hizo (arsenal de mejoras de Cacao, ADR-128)
+**Hecho (sin commit):**
+1. **ADR-444 — un paquete en UNA guía vigente + despacho atómico** (`docs/adr/ADR-444-…`). Registrar la guía (borrador o emitida) saca el paquete de Productos disponibles y del selector; una 2.ª guía con el mismo paquete da 409 sin grabar; anular lo devuelve; un 422 ya no deja la línea grabada. Revisado (2 defectos corregidos: código de troza = código de paquete; producto «de cualquier paquete»). Verificado en el navegador con PQ-001 en `main`. Memoria `despacho-paquete-una-guia-adr444`.
+2. **Blas SL-681:** anuladas las líneas de despacho #2 y #3 (duplicadas por el bug), con motivo en la auditoría. #1 (SL-680, GTF 19-00000-000001) intacta. SL-681 libre para registrarse UNA vez.
+3. **Rediseño de «Datos de la guía de transporte forestal»** (`CtpGuiaDatosTab.tsx`, `ctp-guia-bloques.tsx`, `ctp-guia-piezas.tsx`): dos columnas en el orden del papel, Ficha como resumen, «Faltan N» por bloque, ⓘ en vez de párrafos; 1390 → 1000 px. El pie del modal ya no cuenta «Fecha de inicio del traslado».
+4. **Disponibles sin «0» al cargar** (y Trozas disponibles + gráficos): esqueleto mientras carga.
+5. **ADR-445 — días de «Producir sin lote» con origen y salida** (`docs/adr/ADR-445-…`, `lib/forestal/origen-y-salida-del-dia.ts`): marca cubicado/por tipo/mixto/por declarar y salida (guías, borrador, sin guía, en patio); chips de la semana; «Agregar cubicación» con cuadre por especie+tipo contra TODAS las corridas atadas; cubicaciones leídas de la base (el caché de PlatformSettings es por instancia) con bloqueo y 409 por versión. Revisado (5 defectos corregidos). Blas: 63,5 % del m³ por tipo, 4 días (76,66 m³) salieron sin guía. Memoria `ctp-dias-origen-salida-adr445`. Datos QA en `main`: cubicaciones «QA ADR-445 …» (el 14/08 sigue por tipo para probar).
+6. **PC de Brandon** (memoria `pc-ronda-2026-09-27-monitor-apps`): 13 apps fuera, +38 GB, monitor ASUS VG249QM5F verificado (RGB 8 bits 240 Hz por HDMI), batería tope 80 %, «modo trabajo» del panel (`~/.local/bin/panel-trabajo` / `panel-desarrollo` + íconos en el Escritorio: 0,64 GB y 0,12 s por consulta), tareas «Cazar congelamiento» y «Compactar Ubuntu de madrugada» (03:00, **se salta si Claude está abierto**). Congelamientos: 70 % en partidas de LoL; la opción UMA (2 GB) existe en la BIOS pero está oculta — escribirla es firmware, **sin OK de Brandon no se toca**.
 
-| # | Commit | Mejora |
-|---|---|---|
-| 1 | ff8e60f1 | Fix: tab Cacao no aparecía en sidebar (faltaba en `SPEC_GATED_MODULE_IDS`) |
-| 2 | 60a61b81 | Sidebar: split Especializaciones → **Forestal** + **Agricultura** (flag `alwaysGroup`) + acordeón estricto + arranque colapsado |
-| 3 | 8e1a99ee | Backend: `cacao.db` (producerDetail/loteDetail/inventory/trends + filtros) + views API |
-| 4 | 4b92448d | **Fichas drawer** lote + productor (perfil/historial/editar) + **recibo imprimible** |
-| 5 | 802b8065 | **Inventario** seco + valorización + **dashboard** (tendencias/top/calidad/alertas) + filtros + export CSV |
-| 6 | 3a702000 | **Mercado**: precio ICE en vivo (Yahoo CC=F) + FX→S//kg + noticias (Google News) |
-| 7 | d8cedef9 | **Gráfico de flujo** (recharts, rangos 1S–1A, volatilidad) + **FIX tokens `--data-danger-*`→`--data-error-*`** |
-| 8 | 1d5d0097 | **Asesor híbrido**: señal vender/aguantar (determinística) + narrativa IA grounded + checklist |
-| 9 | 3504a9da | Rediseño modal **Anular** → AdminModal (a11y) |
-| 10 | 7c25d483 | **Tests**: cacao-quality (proyección/rendimiento) + cacao-advisor (30 verdes) |
-| 11 | e90a9870 | Asesor: **tu precio de compra vs. internacional** (`avgBuyPrice`) |
-| 12 | 811af648 | **ADR-128** (faltaba el archivo) |
-| 13 | 279c70d7 | **Reporte de campaña imprimible** (Resumen) |
+**PENDIENTE (decisiones de Brandon):**
+- Commitear (ver arriba).
+- Registrar las salidas «sin guía» de Blas desde su Anexo 04 (puente anexo→despacho, ver `flujo-ingreso-despacho-blas-27-09`) — la recomendada.
+- Marcas del día con texto; Consumos sin «0» al cargar (mismo patrón que Disponibles, `CtpConsumosSeccion2Kpis.tsx`).
+- ADR-444 §Pendientes: apartar no rechaza en servidor un paquete ya en guía; `buscarPaquetes` no dice en qué guía va; consumos de `create` en tx aparte.
+- CLAUDE.md desactualizado: 1.262 endpoints (dice 1.230) y 260 modelos (dice 254); tamaño total medido 1,27 M líneas de código.
 
-El módulo de Cacao pasó de 4 sub-vistas a **7**: Acopio · Beneficio · Inventario · Productores · Resumen · Mercado · Asesor.
+---
 
-## Verificación rápida (Brandon)
-Ctrl+Shift+R en `/t/pizza-pucallpa/admin?tab=cacao-acopio` (o `main`). Recorré: **Mercado** (gráfico+rangos), **Asesor** (señal+IA+tu precio vs mercado), **Inventario**, click en una fila de Acopio (ficha+recibo), **Resumen** (imprimir reporte).
+# SESSION HANDOFF — 2026-09-27: guías guardadas (ADR-442), lotes (ADR-443), Trozas y Productos disponibles, mapa del flujo
 
-## Hallazgo importante
-🐛 `--data-danger-*` **no existe** en el design system (toda la familia indefinida). El token de rojo es `--data-error-*` (50/100/500/600/700). Arreglé los 9 componentes de cacao. **Quedan ~15 archivos del repo con el token roto** (rojos sin estilo) — fix global pendiente (1 sed). Ver memoria `reference_ds_token_danger_gotcha`.
+**Estado:** ⚠️ **SIN COMMIT** — ~131 archivos de cinco rondas (Brandon no pidió commitear todavía; no mezclar con otra tarea). Gates verdes al cierre de cada ronda: typecheck, eslint 0, tokens 0, tests propios + `vitest related`. Migración aplicada a mano y marcada: `20260927_guias_guardadas_adr442` (tabla nueva `ForestGuiaGuardada`, EXPAND). Dev server reiniciado tras `prisma generate`.
 
-## Backlog v4 (estado)
-1. ✅ Empty states con CTA · 5. ✅ Fix global tokens danger · 7. ✅ Mobile sub-tabs.
-2. ✅ **Trazabilidad QR pública** `/verificar-cacao/[code]` + QR en la ficha + WhatsApp al productor (wa.me) — hechos.
-6. ⚠️ **Schema drift** (sin resolver): `CacaoProducer/Lote/Beneficio` vía Supabase MCP, NO en `prisma/migrations` → correr en prod antes de deploy.
+**Hecho (sin commit):**
+1. **ADR-442 Guías guardadas antes del ingreso**: guardar la guía (N° registro + GTF + 6 casilleros) antes del camión; el ingreso ve los papeles solo (etiqueta `gtf:`); «ingresada» se deduce; carpeta Drive `Guías forestales (GTF)/titular/permiso/GTF N°`; ronda 2: vencimiento a la vista, leer de una foto (`gtf-ocr` + `numeroRegistro`; **en local no hay clave de visión: lectura real NO medida**), ordenar papeles viejos (Blas: 3, botón lo aprieta Brandon), `contratoDelTenant`/`contratoPropio` (permiso de otro negocio rechazado en ingresos, gastos, adelantos, fletes, corridas).
+2. **ADR-443 Lotes**: propuesta de lotes por especie+permiso (Blas 11 lotes/46 trozas), tarjetas simples, 3 lotes de Blas reparados (auditados; SQL de reversión en el ADR/transcript), reabrir pide confirmación, «¿De qué trozas salió?» (dos actos, bandeja por motivo; Blas 44/44 sin origen, 0 vinculables hasta arreglar Ingresos).
+3. **Pestaña «Trozas disponibles»** (`?vista=trozas-disponibles`): por permiso con sus especies, por especie, por troza, KPIs, 3 gráficos, Excel; salió de Consumos (queda una línea con enlace). Un criterio: en el patio; sin recepcionar aparte. Revisada y corregida.
 
-## Backlog v5 — elegido por Brandon, PENDIENTE (features pesados)
-- **Registrar ventas (stock real)** — necesita modelo `CacaoVenta` (schema nuevo → drift) + DB + API + UI. Descuenta del inventario, ingresos/margen real.
-- **Venta FOB / USD** — parte de ventas, con tipo de cambio (FX ya disponible en cacao-market).
-- **Recordatorios de beneficio** — cron (`lib/cron/`) que avisa lotes con N días en proceso. Hoy el inventario ya marca 12+ días (parcial).
-- **Documentos del lote** — upload + storage (Supabase Storage). Adjuntar certificados/fotos.
-- **Beneficio: avanzar etapa** (fermentando→secando→terminado desde tabla) — chico; avanzar a terminado necesita capturar peso seco (mini-form).
-- **Mi precio en el tiempo** — chart mensual de mi precio de compra vs intl (mejor con datos multi-mes; hoy `main` solo tiene mayo).
+4. **Productos disponibles** rehecha con el formato de Trozas disponibles (revisada y corregida: cifras con el saldo del libro).
+5. **Mapa del flujo ingreso→despacho** (memoria `flujo-ingreso-despacho-blas-27-09`): Blas despacha con 10 Anexos 04 (99 m³) fuera del libro, 0 despachos; lo único que falta construir es el puente Anexo 04 → despacho (+ registrar las 9 salidas pasadas + salida de madera de servicio). NO cerrar agosto antes del puente.
 
-## Notas operativas
-- Mercado: Yahoo Finance (`CC=F`, `PEN=X`, no-oficial) + Google News RSS — gratis, sin key, degradan con gracia. Cache 20min (precio/news) / 2h (narrativa IA).
-- Narrativa IA: `callLLM("cheap")` (Anthropic→Groq→OpenAI). En dev configurada y responde.
+**PENDIENTE (decisiones de Brandon):** commitear (sugerido: 3 commits, uno por ronda); cerrar agosto en Blas antes de vincular en masa; corregir llegada de 7 guías y acomodar trozas en Ingresos para destrabar ~21 producciones; probar la lectura de GTF por foto donde haya clave de visión.
 
-## Credenciales (verificadas, carryover)
-- Pizzería: `pizza-pucallpa.localhost:3000/admin` → `pizzaadmin` / `Pizza-2026-Buleje`
-- Bodega main: `localhost:3000/admin` → `qaadmin` / `Qa-admin-1234`
-- Superadmin: `localhost:3000/superadmin/login` → `superadmin` / `Super-2026-Buleje`
+---
 
-## Notas técnicas (carryover)
-- Migraciones Prisma: `migrate dev` NO va (pgBouncer). Editar schema → `prisma generate` → DDL via `migrate diff` → aplicar additivo con Supabase MCP. **Reiniciar dev server tras `prisma generate`** (client viejo → 503).
-- Iconos: solo los exportados por `@buleje/design-system/icons` (barrel runtime); tsc NO detecta faltantes (d.ts más amplio). `Newspaper` se agregó esta sesión.
+# SESSION HANDOFF — 2026-09-26 (noche): QR de ficha, lotes por especie, cubicación Oxapampa, pago por PT, WhatsApp del negocio
+
+**Estado:** push al día (`f914f7278`). Árbol limpio. Commits de la sesión: `2800f6bd8` (QR ficha + lotes por especie), `9bb4cc551` (Oxapampa, medir escaneando, acta del conteo, tarjeta de troza), `849854759` (WhatsApp del negocio), `f914f7278` (pago madera/flete por PT Oxapampa).
+
+**PENDIENTE — decisiones de Brandon antes de pasar a producción** (runbook `docs/runbooks/deploy-rama-a-produccion.md`):
+1. Producción = deploy por CLI del 16-07 (rama `prod`, commit `7774f5ca`), no `master`. Los previews fallan por `DATABASE_URL` de **Preview** en Vercel: host `aws-0` y usuario `app_user` → debe ser `postgres.<ref>@aws-1-us-east-2.pooler.supabase.com:6543`. Revisar también `DIRECT_URL`/`AUTH_SECRET` en Preview y Production.
+2. Riesgos al desplegar: caja de Blas abierta desde el 11-06 (el cierre automático la cerraría sin conteo a las 18:00); 13 crons nuevos (3 mandan WhatsApp de madrugada); 10 migraciones aplicadas a mano sin marcar (NUNCA `prisma migrate deploy` sin `migrate resolve --applied`); backup off-site 0/167; simulacro DR hace 130 días; Rolling Releases no disponible. Rollback: Instant Rollback a `dpl_EWnizDb4JVE2JPkqG7FYnmQ6VmM2`.
+3. Un `vercel login` de un agente entró a otra cuenta (`bulejelauea-9406`): revisar.
+
+**PENDIENTE — canales** (Brandon, en Meta): agregar su número a la lista permitida del número de prueba; crear plantilla `aviso_libro_ctp` (Utilidad, español, con texto fijo alrededor de {{1}}: «Aviso del Libro CTP: {{1}}. Detalle en el panel.»). Correo: `RESEND_FROM_EMAIL` con `onboarding@resend.dev` sólo entrega al dueño; en Vercel Production hay que ponerla también. `buleje.pe` no existe en DNS. Reportes a la hora exacta: runbook `docs/runbooks/reportes-hora-exacta.md` (pg_cron + pg_net + Vault), no aplicado.
+
+**Otros:** «hoy» en UTC en 21 archivos de `components/admin/forestal` (a las 19:00 Lima proponen mañana; sólo se arregló el alta de flete). `CtpPatioBandeja.tsx` usa `text-xs`/`ts-2xs`.
+
+---
+
+# SESSION HANDOFF — 2026-09-24 (cierre): colores del logo, indicadores en la barra y filtros en el encabezado
+
+**Estado:** push al día. Árbol limpio salvo `.claude/improvement-radar.md` (ruido del hook de co-edición; no se commitea).
+
+**Hecho en esta ronda (commits `74bb8a06f`, `68703a7a1`, `7ddf9d01f`; gates verdes: typecheck, eslint 0 avisos, anidado, vitest 969 relacionados):**
+- **Colores del logo** (turquesa #00A29C + tinta #12181E, medidos en `public/brand/buleje-logo.png`). El verde salía del preset «emerald» (hue 175), del `Btn primary` = verde de éxito y del estilo «ejecutivo» con coral. ~80 botones de acción a la marca; estados siguen verdes. Oscuro: fondos con texto blanco 4,86:1. Memoria `colores-del-logo-no-verde`.
+- **Indicadores en la barra** (`components/admin/forestal/kpis-plegables.tsx`): Ingresos, GTF, Producción, Despacho, Lotes, Disponibles, Consumos (Patio y S2) sin fila propia.
+- **Filtros en el `<th>`** en 17 pantallas (forestal + admin), con copia `sm:hidden` para el celular y «Quitar filtros» cuando el filtro deja 0.
+
+**PENDIENTE para la próxima sesión (en orden):**
+1. **Decisión de Brandon — producción:** `PlatformSetting brand.primaryColor = #00B4A6` pinta tiendas y la raíz del admin (sidebar, portales). Pasarlo a `#00A29C` (1 valor en /superadmin o SQL). Hoy el panel ya es #00A29C porque el preset define toda la escala.
+2. Tienda / marketplace: 159 botones con verde de éxito como CTA (fuera del admin, no se tocaron).
+3. `AdminModal` no acepta ⓘ junto al título (prop `ayuda`).
+4. Resto del admin fuera del forestal con texto de ayuda a la vista: 1 399 palabras en 62 pestañas (peores: Compras 104, Canales 89, Rendimiento 89) — `node scripts/medir-orden-admin.mjs`.
+5. Navegador de toda la ronda en 1280 px (se verificó 1600 y 400).
+6. Siguen del 23-09: avisos de plazos caídos (WhatsApp 401 + Resend) · reserva de Juancho vencida · audio real del cubicador.
+
+---
+
+> Entradas anteriores: `docs/handoff-archivo.md`.

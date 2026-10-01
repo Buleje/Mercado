@@ -10,6 +10,9 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import {
   X,
   Search,
@@ -66,6 +69,20 @@ export default function StoreLinkerModal({
   onZoneDraftChange,
   onClose,
 }: StoreLinkerModalProps) {
+  /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
+  /* `activo: open` no es decorativo: el componente NO se desmonta al
+     cerrarse —sólo su contenido— así que sin esto el efecto corre una vez
+     con el ref vacío y no vuelve a mirar cuando el modal aparece. */
+  const cajaRef = useRef<HTMLDivElement>(null);
+  /* Escape ya lo maneja el atajo propio de esta pantalla: el hook pone
+       el foco, la trampa de Tab y el scroll, no una segunda salida. */
+  useModalAccesible(cajaRef, { onCerrar: onClose, cerrarConEscape: false, activo: open });
+  /** Ventana: se mueve, se achica y se fija (ADR-420). */
+  const ventana = useVentanaDeModal(open, {
+    ref: cajaRef,
+    aplicarTranslate: true,
+    claveMemoria: "store-linker",
+  });
   const [search, setSearch] = useState("");
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const [products, setProducts] = useState<CatalogProduct[] | null>(null);
@@ -168,19 +185,21 @@ export default function StoreLinkerModal({
   return (
     <div
       className="fixed inset-0 z-[90] flex items-stretch justify-center bg-black/70 backdrop-blur-sm p-2 sm:p-6"
-      role="dialog"
-      aria-modal="true"
-      aria-label={title}
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget && !ventana.fijado) onClose();
       }}
       onKeyDown={(e) => {
         if (e.key === "Escape") onClose();
       }}
     >
-      <div className="relative flex w-full max-w-6xl flex-col rounded-3xl bg-[var(--surface-raised)] shadow-2xl overflow-hidden border-2 border-[var(--rule-soft)]">
+      <div ref={cajaRef} tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        className="relative flex w-full max-w-6xl flex-col rounded-3xl bg-[var(--surface-raised)] shadow-2xl overflow-hidden border border-[var(--rule-soft)]"
+      >
         {/* Header */}
-        <header className="flex flex-wrap items-center gap-3 border-b-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-5 py-3">
+        <header {...ventana.asaProps} className="flex flex-wrap items-center gap-3 border-b-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-5 py-3">
           <div className="flex-1 min-w-0">
             <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]">
               Marketplace · Vincular tiendas
@@ -192,18 +211,21 @@ export default function StoreLinkerModal({
               <p className="text-xs text-[var(--text-tertiary)] truncate">{subtitle}</p>
             )}
           </div>
-          <div className="inline-flex items-center gap-1 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] h-11 px-3">
+          <div className="inline-flex items-center gap-1 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] h-11 px-3">
             <CheckCircle2 className="h-4 w-4 text-[var(--accent)]" strokeWidth={2.25} />
             <span className="text-sm font-extrabold tabular-nums text-[var(--text-primary)]">
               {linkedSet.size}
             </span>
             <span className="text-xs text-[var(--text-tertiary)]">/ {stores.length}</span>
           </div>
+          <span className="ml-auto flex items-center gap-1 shrink-0">
+            <ControlesDeVentana ventana={ventana} />
+          </span>
           <button
             type="button"
             onClick={onClose}
             aria-label="Cerrar"
-            className="inline-flex h-11 w-11 items-center justify-center rounded-xl border-2 border-[var(--rule-soft)] text-[var(--text-tertiary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--text-primary)]"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-[var(--rule-soft)] text-[var(--text-tertiary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--text-primary)]"
           >
             <X className="h-4 w-4" strokeWidth={2.25} />
           </button>
@@ -224,7 +246,7 @@ export default function StoreLinkerModal({
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Buscar tienda…"
-                  className="w-full rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] h-12 pl-10 pr-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
+                  className="w-full rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] h-12 pl-10 pr-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
                 />
               </div>
               <div className="flex items-center gap-1.5">
@@ -232,7 +254,7 @@ export default function StoreLinkerModal({
                   type="button"
                   onClick={selectAll}
                   disabled={filteredStores.length === 0}
-                  className="flex-1 inline-flex h-9 items-center justify-center gap-1 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] px-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 disabled:opacity-50"
+                  className="flex-1 inline-flex h-9 items-center justify-center gap-1 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 disabled:opacity-50"
                 >
                   Marcar todas
                 </button>
@@ -240,7 +262,7 @@ export default function StoreLinkerModal({
                   type="button"
                   onClick={clearAll}
                   disabled={linkedSet.size === 0}
-                  className="flex-1 inline-flex h-9 items-center justify-center gap-1 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] px-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] transition hover:border-rose-300 hover:text-rose-600 disabled:opacity-50"
+                  className="flex-1 inline-flex h-9 items-center justify-center gap-1 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] transition hover:border-rose-300 hover:text-[var(--data-error-700)] disabled:opacity-50"
                 >
                   Limpiar
                 </button>
@@ -335,7 +357,7 @@ export default function StoreLinkerModal({
                                 }
                                 placeholder="Zona…"
                                 aria-label={`Zona para ${s.name}`}
-                                className="rounded-md border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-semibold outline-none focus:border-[var(--accent)] w-[80px]"
+                                className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-semibold outline-none focus:border-[var(--accent)] w-[80px]"
                               />
                             ) : null}
                             {typeof count === "number" && (
@@ -405,18 +427,18 @@ export default function StoreLinkerModal({
                       {Array.from({ length: 8 }).map((_, i) => (
                         <div
                           key={i}
-                          className="rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-sunken)] animate-pulse aspect-square"
+                          className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] animate-pulse aspect-square"
                         />
                       ))}
                     </div>
                   )}
                   {!loadingProducts && productsError && (
-                    <div className="rounded-xl border-2 border-rose-300/60 bg-rose-50/50 p-4 text-sm font-bold text-rose-700 dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-rose-300">
+                    <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-rose-50/50 p-4 text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)] dark:border-[var(--data-error-500)] dark:bg-rose-950/30 dark:text-[var(--data-error-500)]">
                       {productsError}
                     </div>
                   )}
                   {!loadingProducts && !productsError && products && products.length === 0 && (
-                    <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)]/40 px-6 py-12 text-center">
+                    <div className="rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)]/40 px-6 py-12 text-center">
                       <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--surface-sunken)] mb-3">
                         <Package
                           className="h-6 w-6 text-[var(--text-tertiary)]"
@@ -487,6 +509,8 @@ export default function StoreLinkerModal({
             Listo
           </button>
         </footer>
+
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );
@@ -494,7 +518,7 @@ export default function StoreLinkerModal({
 
 function ProductCard({ p }: { p: CatalogProduct }) {
   return (
-    <div className="rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] overflow-hidden transition hover:border-[var(--accent)]/40">
+    <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] overflow-hidden transition hover:border-[var(--accent)]/40">
       <div className="relative aspect-square bg-[var(--surface-sunken)]">
         {p.image ? (
           // eslint-disable-next-line @next/next/no-img-element

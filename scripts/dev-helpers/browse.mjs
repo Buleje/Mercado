@@ -24,20 +24,25 @@
  */
 import { chromium } from "playwright";
 import { existsSync, writeFileSync, readFileSync, unlinkSync } from "node:fs";
-import path from "node:path";
+import { resolverChromium } from "./chromium-path.mjs";
 import { spawn } from "node:child_process";
 
 const BASE = "http://localhost:3000";
 const TENANT = "main";
 const USER = "qaadmin";
 const PASS = "Qa-admin-1234";
-const CHROMIUM = path.join(process.env.HOME ?? "", ".cache/ms-playwright/chromium-1208/chrome-linux64/chrome");
+const CHROMIUM = resolverChromium();
 const STATE_FILE = "/tmp/bsm-browser-state.json";
 const WS_LOG = "/tmp/bsm-browser-ws.txt";
 
 async function startServer() {
   // Lanzar browser en server mode (chromium con --remote-debugging-port o usando server pattern)
   // Para simplificar: cada invocación abre+cierra. Si hay state cookies/auth/url los persiste.
+  if (!CHROMIUM) {
+    throw new Error(
+      "No hay chromium de Playwright en ~/.cache/ms-playwright. Instalalo con: npx playwright install chromium",
+    );
+  }
   const browser = await chromium.launch({ headless: true, executablePath: CHROMIUM });
   return browser;
 }
@@ -76,7 +81,9 @@ async function withSession(fn) {
 async function authIfNeeded(page) {
   const res = await page.request.post(`${BASE}/api/auth/login`, {
     headers: { "content-type": "application/json", "x-tenant-id": TENANT },
-    data: { username: USER, password: PASS },
+    // qaadmin existe en 2 tenants → SIN tenantSlug el lookup global es ambiguo
+    // y el guard de /admin (tenant "main") rechaza la sesión. Scope explícito.
+    data: { username: USER, password: PASS, tenantSlug: TENANT },
   });
   if (res.status() !== 200) throw new Error(`auth failed: ${res.status()}`);
   return true;

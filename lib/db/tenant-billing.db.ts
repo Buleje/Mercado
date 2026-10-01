@@ -1,6 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import { invalidateByPrefix } from "@/lib/cache";
+import { getOrSet, invalidateByPrefix } from "@/lib/cache";
 
 /**
  * TenantBillingDB — operaciones de billing sobre el modelo Tenant.
@@ -22,6 +22,22 @@ export const TenantBillingDB = {
         mpSubscriptionId: true,
         cancelAtPeriodEnd: true,
       },
+    });
+  },
+
+  /**
+   * Plan del tenant (cacheado 60s). Lo consume el cost-guard de IA en cada
+   * request, así que evitamos un SELECT por llamada. Acepta id o slug.
+   * Devuelve "free" si el tenant no se resuelve. La key `tenant:${id}:plan` se
+   * invalida con los writes de billing (invalidateByPrefix(`tenant:${id}`)).
+   */
+  async getPlan(tenantId: string): Promise<string> {
+    return getOrSet(`tenant:${tenantId}:plan`, 60, async () => {
+      const t = await prisma.tenant.findFirst({
+        where: { OR: [{ id: tenantId }, { slug: tenantId }] },
+        select: { plan: true },
+      });
+      return t?.plan ?? "free";
     });
   },
 

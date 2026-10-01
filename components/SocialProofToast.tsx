@@ -196,7 +196,7 @@ export default function SocialProofToast() {
         </div>
 
         {/* Bottom accent bar */}
-        <div className="h-1" style={{ background: "linear-gradient(90deg, var(--accent), #f59e0b)" }} />
+        <div className="h-1" style={{ background: "linear-gradient(90deg, var(--accent), #ff6b5b)" }} />
       </div>
     </div>
   );

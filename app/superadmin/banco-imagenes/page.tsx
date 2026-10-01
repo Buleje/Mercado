@@ -1,5 +1,8 @@
 import { Images } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import ImageBankClient from "./ImageBankClient";
+import { SUPERADMIN_PAGE, SUPERADMIN_HERO } from "@/lib/superadmin-layout";
+import { SuperAdminModuleTabs, MARCA_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 
 /**
  * /superadmin/banco-imagenes
@@ -11,8 +14,9 @@ import ImageBankClient from "./ImageBankClient";
  */
 export default function SuperadminImageBankPage() {
   return (
-    <div className="min-h-screen bg-[var(--surface-canvas)]">
-      <header className="border-b border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+    <div className={SUPERADMIN_PAGE}>
+      <SuperAdminModuleTabs tabs={MARCA_TABS} />
+      <header className={SUPERADMIN_HERO}>
         <div className="w-full">
           <div className="flex items-start gap-3.5">
             <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-600,var(--accent))] text-white shrink-0">
@@ -22,13 +26,20 @@ export default function SuperadminImageBankPage() {
               <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
                 Marketplace · Recursos
               </p>
-              <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">
+              <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] inline-flex items-center gap-2 flex-wrap">
                 Banco de imágenes
+                <InfoTip
+                  side="bottom"
+                  title="Banco de imágenes"
+                  what="Biblioteca central de imágenes que las tiendas y el marketplace pueden reutilizar."
+                  affects="Las imágenes quedan disponibles para banners, productos y portadas del marketplace."
+                  example="Subís una foto de frutas → cualquier tienda la usa en su banner sin volver a subirla."
+                />
               </h1>
               <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">
-                Imágenes globales por rubro. Subí una foto de &quot;Inca Kola 500ml&quot; una sola vez y
-                todos los tenants pueden usarla en sus productos. Agregá categorías e ítems según
-                las necesidades de los negocios.
+                Imágenes globales por rubro. Subí una foto de &quot;Inca Kola 500ml&quot; una sola
+                vez y todos los tenants pueden usarla en sus productos. Agregá categorías e ítems
+                según las necesidades de los negocios.
               </p>
             </div>
           </div>

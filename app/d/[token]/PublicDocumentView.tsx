@@ -118,13 +118,13 @@ export function PublicDocumentView({ token, doc, share, initialSignedUrl }: Prop
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             {isPdf ? (
               <iframe
-                src={signedUrl}
+                src={`/api/public/documents/${encodeURIComponent(token)}/raw${share.hasPassword && password ? `?password=${encodeURIComponent(password)}` : ""}`}
                 title={doc.name}
                 className="w-full h-[80vh] border-0"
               />
             ) : isImage ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={signedUrl} alt={doc.name} className="w-full h-auto" />
+              <img src={`/api/public/documents/${encodeURIComponent(token)}/raw${share.hasPassword && password ? `?password=${encodeURIComponent(password)}` : ""}`} alt={doc.name} className="w-full h-auto" />
             ) : (
               <div className="p-12 text-center">
                 <FileText className="h-16 w-16 mx-auto text-slate-300 mb-4" />

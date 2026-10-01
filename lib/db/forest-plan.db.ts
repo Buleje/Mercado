@@ -10,10 +10,15 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
+import { auditCtp } from "@/lib/forestal/ctp-audit";
+import { logger } from "@/lib/logger";
 import {
-  censusVolume, computeBalance, computeAprovechamiento, detectAnomalias, projectSaldo, computeCosteo,
+  censusVolume, computeBalance, computeAprovechamiento, cruzarEspecies, detectAnomalias, projectSaldo, computeCosteo,
+  estaFueraDePlazo,
   type BalanceMovement, type BalanceSpeciesInput, type CosteoSpeciesInput,
 } from "@/lib/forestal/loth-constants";
+import { planDeUpsert, type ItemAutorizar } from "@/lib/forestal/loth-autorizar-lote";
+import { findSpeciesByCommonName } from "@/data/forestry-species";
 
 const CACHE_PREFIX = "forest-plan";
 const dec = (v: number | string | null | undefined) =>
@@ -21,6 +26,18 @@ const dec = (v: number | string | null | undefined) =>
 
 /** Volumen comercial del árbol en pie (re-export de la fórmula pura). */
 export { censusVolume };
+
+/**
+ * El plan se quiso atar a un permiso que no es de este negocio (o ya no existe).
+ * Clase propia para que la ruta lo devuelva como **400 con el motivo** y no
+ * como un 500 mudo: es un dato mal mandado, no una falla del servidor.
+ */
+export class ContratoAjenoError extends Error {
+  constructor() {
+    super("Ese permiso no existe en este negocio.");
+    this.name = "ContratoAjenoError";
+  }
+}
 
 export interface PlanInput {
   caratulaId?: string | null;
@@ -30,6 +47,11 @@ export interface PlanInput {
   resolucionNumber?: string | null;
   resolucionDate?: Date | null;
   titularName: string;
+  /** Regente forestal a cargo (ADR-423) y su N° del Registro Nacional de SERFOR. */
+  regenteName?: string | null;
+  regenteRegistro?: string | null;
+  regenteEspecialidad?: string | null;
+  representanteLegal?: string | null;
   arffs?: string | null;
   region?: string | null;
   parcelaCorta?: string | null;
@@ -42,6 +64,18 @@ export interface PlanInput {
   vigenciaHasta?: Date | null;
   estado?: string;
   notes?: string | null;
+  /** Cómo se reconoce y dónde queda (ADR-426). */
+  alias?: string | null;
+  propietarioNombre?: string | null;
+  propietarioDocTipo?: string | null;
+  propietarioDoc?: string | null;
+  provincia?: string | null;
+  distrito?: string | null;
+  sector?: string | null;
+  cuenca?: string | null;
+  /** El permiso (`ForestContrato`) bajo el que se aprobó. Se valida que sea de
+   *  ESTE tenant: no hay FK que lo haga (ADR-426). */
+  contratoId?: string | null;
   createdBy: string;
 }
 
@@ -62,6 +96,8 @@ export interface TreeInput {
   treeCode: string;
   speciesCommon: string;
   speciesScientific?: string | null;
+  /** Nombre en idioma nativo, como lo trae la hoja del censo. */
+  speciesNative?: string | null;
   cites?: boolean;
   dapM?: number | string | null;
   alturaComercialM?: number | string | null;
@@ -72,16 +108,84 @@ export interface TreeInput {
   utmY?: number | string | null;
   parcelaCorta?: string | null;
   calidad?: string | null;
+  /** Condición que declara el censo («Aprovechable», «Semillero»…), no la categoría POA calculada. */
+  condicion?: string | null;
   estado?: string;
   notes?: string | null;
+  /** Cómo se reconoce y dónde queda (ADR-426). */
+  alias?: string | null;
+  propietarioNombre?: string | null;
+  propietarioDocTipo?: string | null;
+  propietarioDoc?: string | null;
+  provincia?: string | null;
+  distrito?: string | null;
+  sector?: string | null;
+  cuenca?: string | null;
+  /** El permiso (`ForestContrato`) bajo el que se aprobó. Se valida que sea de
+   *  ESTE tenant: no hay FK que lo haga (ADR-426). */
+  contratoId?: string | null;
   createdBy: string;
+}
+
+/** El plan no existe en este negocio (o está de baja): 404, nunca un write a ciegas. */
+export class PlanNoEncontradoError extends Error {
+  constructor() {
+    super("Ese plan no existe en este negocio.");
+    this.name = "PlanNoEncontradoError";
+  }
+}
+
+/** La misma especie dos veces en un pedido (400): no se adivina cuál vale. */
+export class EspecieRepetidaError extends Error {
+  constructor(readonly especies: string[]) {
+    super(`La especie ${especies.join(", ")} viene dos veces.`);
+    this.name = "EspecieRepetidaError";
+  }
+}
+
+/** La especie ya está DOS veces en el plan (409): se limpia antes en el editor de a una. */
+export class EspecieDuplicadaEnPlanError extends Error {
+  constructor(readonly especies: string[]) {
+    super(`${especies.join(", ")} ya figura dos veces en el plan: borra la repetida antes de cargar.`);
+    this.name = "EspecieDuplicadaEnPlanError";
+  }
+}
+
+/** Un código de árbol que ya está en el censo del plan (409 en el endpoint). */
+export class CensoCodigoRepetidoError extends Error {
+  constructor(readonly treeCode: string) {
+    super(`El árbol ${treeCode} ya está en el censo de este plan.`);
+    this.name = "CensoCodigoRepetidoError";
+  }
 }
 
 export class ForestPlanDB {
   // ─── Plan ─────────────────────────────────────────────────────────────
+  /**
+   * El permiso existe, es de ESTE negocio y está vivo — o no se ata.
+   *
+   * `ForestPlan.contratoId` va **sin FK** a propósito (ADR-426): el ensayo de la
+   * migración mostró que una clave foránea habría aceptado un contrato de otro
+   * tenant, porque compara ids y no tenants. El aislamiento de este repo es
+   * app-level, así que el guard vive acá. Un id ajeno **rompe** la operación en
+   * vez de guardarse en silencio: es un bug del cliente o un intento cruzado, y
+   * las dos cosas se avisan.
+   */
+  private static async exigirContratoDelTenant(tenantId: string, contratoId: string | null | undefined) {
+    const id = (contratoId ?? "").trim();
+    if (!id) return null;
+    const existe = await prisma.forestContrato.findFirst({
+      where: { tenantId, id, deletedAt: null },
+      select: { id: true },
+    });
+    if (!existe) throw new ContratoAjenoError();
+    return existe.id;
+  }
+
   static async createPlan(tenantId: string, input: PlanInput) {
     if (!tenantId) throw new Error("tenantId is required");
     if (!input.titularName?.trim()) throw new Error("titularName is required");
+    const contratoId = await this.exigirContratoDelTenant(tenantId, input.contratoId);
     const plan = await prisma.forestPlan.create({
       data: {
         tenantId,
@@ -92,6 +196,10 @@ export class ForestPlanDB {
         resolucionNumber: input.resolucionNumber?.trim() || null,
         resolucionDate: input.resolucionDate ?? null,
         titularName: input.titularName.trim(),
+        regenteName: input.regenteName?.trim() || null,
+        regenteRegistro: input.regenteRegistro?.trim() || null,
+        regenteEspecialidad: input.regenteEspecialidad?.trim() || null,
+        representanteLegal: input.representanteLegal?.trim() || null,
         arffs: input.arffs?.trim() || null,
         region: input.region?.trim() || null,
         parcelaCorta: input.parcelaCorta?.trim() || null,
@@ -104,6 +212,15 @@ export class ForestPlanDB {
         vigenciaHasta: input.vigenciaHasta ?? null,
         estado: input.estado ?? "vigente",
         notes: input.notes?.trim() || null,
+        alias: input.alias?.trim() || null,
+        propietarioNombre: input.propietarioNombre?.trim() || null,
+        propietarioDocTipo: input.propietarioDocTipo?.trim() || null,
+        propietarioDoc: input.propietarioDoc?.trim() || null,
+        provincia: input.provincia?.trim() || null,
+        distrito: input.distrito?.trim() || null,
+        sector: input.sector?.trim() || null,
+        cuenca: input.cuenca?.trim() || null,
+        contratoId,
         createdBy: input.createdBy,
       },
     });
@@ -138,6 +255,7 @@ export class ForestPlanDB {
     patch: Partial<Omit<PlanInput, "createdBy">>,
   ) {
     if (!tenantId) throw new Error("tenantId is required");
+    if (patch.contratoId !== undefined) await this.exigirContratoDelTenant(tenantId, patch.contratoId);
     const data: Prisma.ForestPlanUpdateInput = {};
     const decKeys = new Set(["areaHa", "uitRef", "costoExtraccionM3", "costoTransformacionM3", "costoFleteM3"]);
     for (const [k, v] of Object.entries(patch)) {
@@ -154,13 +272,94 @@ export class ForestPlanDB {
     return plan;
   }
 
-  static async softDeletePlan(tenantId: string, id: string) {
+  /**
+   * Qué cuelga de este plan hoy — para poder decirlo ANTES de confirmar la baja.
+   *
+   * Cinco tablas lo citan por `planId` y en una baja no significan lo mismo:
+   * las especies autorizadas y el censo SON el plan (se van con él de la
+   * vista), mientras que los asientos del LO-TH, las guías y los permisos son
+   * papel ya emitido que sigue existiendo y que se declara ante la ARFFS.
+   *
+   * ⚠️ No se suma el volumen de los asientos, a propósito. `ForestLothEntry`
+   * tiene `volumeM3`, pero la MISMA madera se asienta en tala, en trozado y
+   * otra vez en despacho: sumar las filas del plan daría cerca del triple del
+   * volumen real y sería un número inventado con cara de oficial (regla 2 de
+   * `verificacion-de-verdad`). El único volumen que el modelo publica sin
+   * derivar es el autorizado del plan, y ése es el que se devuelve.
+   */
+  static async usosDelPlan(tenantId: string, planId: string) {
     if (!tenantId) throw new Error("tenantId is required");
+    if (!planId) throw new Error("planId is required");
+    const [especies, censo, asientos, guias, contratos, autorizado] = await Promise.all([
+      prisma.forestPlanSpecies.count({ where: { tenantId, planId, deletedAt: null } }),
+      prisma.forestCensusTree.count({ where: { tenantId, planId, deletedAt: null } }),
+      prisma.forestLothEntry.count({ where: { tenantId, planId, deletedAt: null } }),
+      prisma.forestGtf.count({ where: { tenantId, planId, deletedAt: null } }),
+      prisma.forestContrato.count({ where: { tenantId, planId, deletedAt: null } }),
+      prisma.forestPlanSpecies.aggregate({
+        where: { tenantId, planId, deletedAt: null },
+        _sum: { volumenAutorizadoM3: true },
+      }),
+    ]);
+    // Sin especies cargadas el volumen autorizado es DESCONOCIDO, no cero: un
+    // 0,000 m³ en el "¿estás seguro?" diría que el plan no autoriza nada.
+    const suma = autorizado._sum.volumenAutorizadoM3;
+    return {
+      especies,
+      censo,
+      asientos,
+      guias,
+      contratos,
+      volumenAutorizadoM3: suma == null ? null : Number(suma),
+    };
+  }
+
+  /**
+   * Da de baja un plan cargado por error.
+   *
+   * **Baja lógica** (`deletedAt`), nunca borrado físico: los asientos del
+   * LO-TH y las guías que lo citan siguen existiendo —son lo que se declara
+   * ante la ARFFS— y su `planId` apunta acá. El plan desaparece del selector y
+   * deja de ser el activo; la historia que se firmó bajo él, no.
+   *
+   * Devuelve `null` si no existe (o ya estaba de baja) para que la ruta
+   * responda 404 en vez de fabricar un update sobre nada. Lo que colgaba se
+   * mide ANTES del update y queda escrito en el rastro: un fiscalizador que ve
+   * un plan de baja necesita saber cuánto papel quedó huérfano.
+   */
+  static async eliminarPlan(tenantId: string, planId: string, actor: string) {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (!planId) throw new Error("planId is required");
+    const existe = await prisma.forestPlan.findFirst({
+      where: { tenantId, id: planId, deletedAt: null },
+    });
+    if (!existe) return null;
+
+    const usos = await ForestPlanDB.usosDelPlan(tenantId, planId);
     const plan = await prisma.forestPlan.update({
-      where: { id, tenantId } satisfies Prisma.ForestPlanWhereUniqueInput,
+      where: { id: planId, tenantId } satisfies Prisma.ForestPlanWhereUniqueInput,
       data: { deletedAt: new Date(), isActive: false },
     });
-    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    } catch (err) {
+      logger.error("[forest-plan] no se pudo invalidar la caché tras la baja", {
+        error: String(err),
+        tenantId,
+        planId,
+      });
+    }
+    auditCtp({
+      tenantId,
+      action: "ctp_plan_baja",
+      entity: "ForestPlan",
+      entityId: plan.id,
+      detail:
+        `Baja del plan ${plan.planType} ${plan.planNumber ?? "(sin N°)"} — ${plan.titularName}. ` +
+        `Colgaban: ${usos.especies} especies, ${usos.censo} árboles del censo, ` +
+        `${usos.asientos} asientos del LO-TH, ${usos.guias} guías, ${usos.contratos} permisos`,
+      user: actor,
+    });
     return plan;
   }
 
@@ -224,7 +423,116 @@ export class ForestPlanDB {
     return row;
   }
 
+  /**
+   * Lo autorizado por la resolución, varias especies en UNA llamada.
+   *
+   * Upsert por especie **normalizada** (`claveEspecie`): si el plan ya tiene la
+   * especie —aunque la escriba «Tornillo (Cedrelinga…)» y el pedido «tornillo»—
+   * se corrigen sus números; si no, se crea. El nombre de una fila existente no
+   * se toca (lo cruzan el balance y el control).
+   *
+   * - El plan tiene que ser de ESTE tenant y estar vivo: se bloquea su fila
+   *   (`FOR UPDATE`, con `tenantId` en el WHERE) y, si no aparece, es
+   *   `PlanNoEncontradoError` → 404. El lock además serializa dos guardados
+   *   simultáneos: sin él, los dos verían la especie ausente y la crearían dos
+   *   veces (no hay índice único que lo impida), duplicando el cupo.
+   * - Todo o nada, en una transacción: una resolución a medio cargar declara
+   *   un cupo que nadie firmó.
+   */
+  static async guardarAutorizadasLote(
+    tenantId: string,
+    planId: string,
+    items: readonly ItemAutorizar[],
+    actor: string,
+  ): Promise<{ creadas: number; actualizadas: number }> {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (!planId) throw new Error("planId is required");
+    if (items.length === 0) return { creadas: 0, actualizadas: 0 };
+
+    const r = await prisma.$transaction(async (tx) => {
+      const plan = await tx.$queryRaw<{ id: string }[]>`
+        SELECT "id" FROM "ForestPlan"
+        WHERE "id" = ${planId} AND "tenantId" = ${tenantId} AND "deletedAt" IS NULL
+        FOR UPDATE`;
+      if (plan.length === 0) throw new PlanNoEncontradoError();
+
+      const existentes = await tx.forestPlanSpecies.findMany({
+        where: { tenantId, planId, deletedAt: null },
+        select: { id: true, speciesCommon: true },
+      });
+      const decision = planDeUpsert(existentes, items);
+      if (decision.repetidas.length > 0) throw new EspecieRepetidaError(decision.repetidas);
+      if (decision.duplicadasEnPlan.length > 0) throw new EspecieDuplicadaEnPlanError(decision.duplicadasEnPlan);
+
+      for (const it of decision.actualizar) {
+        await tx.forestPlanSpecies.update({
+          where: { id: it.id, tenantId } satisfies Prisma.ForestPlanSpeciesWhereUniqueInput,
+          data: {
+            volumenAutorizadoM3: new Prisma.Decimal(it.volumenAutorizadoM3),
+            arbolesAutorizados: it.arbolesAutorizados,
+          },
+        });
+      }
+      if (decision.crear.length > 0) {
+        await tx.forestPlanSpecies.createMany({
+          data: decision.crear.map((it) => {
+            /* Lo mismo que hace el alta de a una: el científico y CITES salen
+               del catálogo, no de lo que se tipee. */
+            const cat = findSpeciesByCommonName(it.speciesCommon);
+            return {
+              tenantId,
+              planId,
+              speciesCommon: it.speciesCommon,
+              speciesScientific: cat?.scientificName ?? null,
+              cites: cat?.cites ?? false,
+              volumenAutorizadoM3: new Prisma.Decimal(it.volumenAutorizadoM3),
+              arbolesAutorizados: it.arbolesAutorizados,
+            };
+          }),
+        });
+      }
+      return decision;
+    });
+
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    } catch (err) {
+      logger.error("[forest-plan] no se pudo invalidar la caché tras cargar lo autorizado", {
+        error: String(err),
+        tenantId,
+        planId,
+      });
+    }
+    const linea = (it: ItemAutorizar) =>
+      `${it.speciesCommon} ${it.volumenAutorizadoM3} m³${it.arbolesAutorizados != null ? ` / ${it.arbolesAutorizados} árb.` : ""}`;
+    auditCtp({
+      tenantId,
+      action: "ctp_plan_especies_lote",
+      entity: "ForestPlan",
+      entityId: planId,
+      detail:
+        `Autorizado por especie: ${r.crear.length} nuevas, ${r.actualizar.length} corregidas. ` +
+        [...r.crear, ...r.actualizar].map(linea).join("; "),
+      user: actor,
+    });
+    return { creadas: r.crear.length, actualizadas: r.actualizar.length };
+  }
+
   // ─── Censo (árboles) ───────────────────────────────────────────────────
+  /**
+   * El censo del plan.
+   *
+   * ⚠️ Viene ACOTADO y eso importa más acá que en otras listas: el Plan
+   * Operativo (aprovechables, semilleros, volumen sobre DMC, intensidad por
+   * hectárea) se calcula sobre estas filas. Con un censo de 3.000 árboles y un
+   * tope de 500, la pantalla no mostraba «faltan 2.500»: mostraba un POA
+   * completo y equivocado, que es peor. Por eso `total` es el conteo REAL y
+   * quien llame tiene que poder decir «hay N y estás calculando sobre M».
+   *
+   * El techo por defecto es alto a propósito —un POA de mil hectáreas censa
+   * miles de árboles y son filas angostas— y el tope duro existe sólo para que
+   * un tenant con un censo absurdo no tumbe el navegador.
+   */
   static async listTrees(
     tenantId: string,
     planId: string,
@@ -242,11 +550,11 @@ export class ForestPlanDB {
       prisma.forestCensusTree.findMany({
         where,
         orderBy: { treeCode: "asc" },
-        take: Math.min(Math.max(filters.limit ?? 500, 1), 2000),
+        take: Math.min(Math.max(filters.limit ?? 10_000, 1), 20_000),
       }),
       prisma.forestCensusTree.count({ where }),
     ]);
-    return { trees, total };
+    return { trees, total, truncado: trees.length < total };
   }
 
   /** Lookup por código — alimenta el autocompletado de Tala (data-driven). */
@@ -261,6 +569,14 @@ export class ForestPlanDB {
     if (!tenantId) throw new Error("tenantId is required");
     if (!input.planId) throw new Error("planId is required");
     if (!input.treeCode?.trim()) throw new Error("treeCode is required");
+    /* El import ya descarta los repetidos; el alta de a uno no lo hacía y el
+       índice de `treeCode` no es único: dos árboles con el mismo código inflan
+       el POA con madera que no existe y la Tala no sabe cuál jalar. */
+    const repetido = await prisma.forestCensusTree.findFirst({
+      where: { tenantId, planId: input.planId, deletedAt: null, treeCode: { equals: input.treeCode.trim(), mode: "insensitive" } },
+      select: { id: true },
+    });
+    if (repetido) throw new CensoCodigoRepetidoError(input.treeCode.trim());
     const dap = input.dapM != null ? Number(input.dapM) : 0;
     const hc = input.alturaComercialM != null ? Number(input.alturaComercialM) : 0;
     const ff = input.factorForma != null ? Number(input.factorForma) : 0.65;
@@ -275,6 +591,7 @@ export class ForestPlanDB {
         treeCode: input.treeCode.trim(),
         speciesCommon: input.speciesCommon.trim(),
         speciesScientific: input.speciesScientific?.trim() || null,
+        speciesNative: input.speciesNative?.trim() || null,
         cites: input.cites ?? false,
         dapM: dec(input.dapM),
         alturaComercialM: dec(input.alturaComercialM),
@@ -285,6 +602,7 @@ export class ForestPlanDB {
         utmY: dec(input.utmY),
         parcelaCorta: input.parcelaCorta?.trim() || null,
         calidad: input.calidad?.trim() || null,
+        condicion: input.condicion?.trim() || null,
         estado: input.estado ?? "en_pie",
         notes: input.notes?.trim() || null,
         createdBy: input.createdBy,
@@ -295,25 +613,93 @@ export class ForestPlanDB {
   }
 
   /** Import masivo del censo (cientos de árboles). Devuelve {creados, errores}. */
+  /**
+   * Importa el censo entero de un plan.
+   *
+   * ⚠️ Va en LOTES y no fila por fila. Antes hacía un `INSERT` por árbol: 600
+   * árboles tardaban 75 segundos medidos —600 viajes al pooler— y un censo real
+   * de tres mil habría pasado el timeout del endpoint y dejado el censo a
+   * medias, que es la peor forma de fallar en un libro legal.
+   *
+   * Lo que se valida por fila (código, especie, volumen) es puro y se hace en
+   * memoria, así que no cuesta viajes: al servidor sólo van los que ya pasaron.
+   * Los códigos repetidos DENTRO del archivo se descartan acá —el índice de
+   * `treeCode` no es único en la base, así que nadie más lo haría— y se informan
+   * uno por uno: importar dos veces el mismo árbol infla el POA con madera que
+   * no existe.
+   */
   static async bulkImportTrees(
     tenantId: string,
     planId: string,
     rows: Array<Omit<TreeInput, "planId" | "createdBy">>,
     createdBy: string,
   ) {
-    let creados = 0;
+    if (!tenantId) throw new Error("tenantId is required");
+    if (!planId) throw new Error("planId is required");
     const errores: string[] = [];
+
+    /* Los códigos que YA están en el censo: reimportar el mismo archivo no
+       puede duplicar árboles. Una sola consulta, no una por fila. */
+    const existentes = new Set(
+      (
+        await prisma.forestCensusTree.findMany({
+          where: { tenantId, planId, deletedAt: null },
+          select: { treeCode: true },
+        })
+      ).map((t) => t.treeCode.trim().toLowerCase()),
+    );
+
+    const vistos = new Set<string>();
+    const data: Prisma.ForestCensusTreeCreateManyInput[] = [];
     for (const r of rows) {
-      try {
-        if (!r.treeCode?.toString().trim() || !r.speciesCommon?.toString().trim()) {
-          errores.push(`Fila sin código o especie`);
-          continue;
-        }
-        await ForestPlanDB.addTree(tenantId, { ...r, planId, createdBy });
-        creados++;
-      } catch (e) {
-        errores.push(`${r.treeCode}: ${e instanceof Error ? e.message : String(e)}`);
-      }
+      const code = r.treeCode?.toString().trim();
+      const especie = r.speciesCommon?.toString().trim();
+      if (!code || !especie) { errores.push("Fila sin código o especie"); continue; }
+      const key = code.toLowerCase();
+      if (existentes.has(key)) { errores.push(`${code}: ya está en el censo`); continue; }
+      if (vistos.has(key)) { errores.push(`${code}: repetido en el archivo`); continue; }
+      vistos.add(key);
+
+      const dap = r.dapM != null ? Number(r.dapM) : 0;
+      const hc = r.alturaComercialM != null ? Number(r.alturaComercialM) : 0;
+      const ff = r.factorForma != null ? Number(r.factorForma) : 0.65;
+      const vol =
+        r.volumenEstimadoM3 != null && r.volumenEstimadoM3 !== ""
+          ? Number(r.volumenEstimadoM3)
+          : censusVolume(dap, hc, ff);
+
+      data.push({
+        tenantId, planId, createdBy,
+        treeCode: code,
+        speciesCommon: especie,
+        speciesScientific: r.speciesScientific?.trim() || null,
+        speciesNative: r.speciesNative?.trim() || null,
+        cites: r.cites ?? false,
+        dapM: dec(r.dapM),
+        alturaComercialM: dec(r.alturaComercialM),
+        factorForma: dec(r.factorForma ?? 0.65),
+        volumenEstimadoM3: vol > 0 ? new Prisma.Decimal(vol) : null,
+        utmZona: r.utmZona?.trim() || null,
+        utmX: dec(r.utmX),
+        utmY: dec(r.utmY),
+        parcelaCorta: r.parcelaCorta?.trim() || null,
+        calidad: r.calidad?.trim() || null,
+        condicion: r.condicion?.trim() || null,
+        estado: r.estado ?? "en_pie",
+        notes: r.notes?.trim() || null,
+      });
+    }
+
+    /* En tandas: un `createMany` de diez mil filas arma una sentencia que el
+       pooler rechaza por tamaño. 500 es holgado y son 6 viajes para un censo
+       de tres mil, no tres mil. */
+    let creados = 0;
+    for (let i = 0; i < data.length; i += 500) {
+      const r = await prisma.forestCensusTree.createMany({ data: data.slice(i, i + 500) });
+      creados += r.count;
+    }
+    if (creados > 0) {
+      try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* la caché se repuebla sola en la próxima lectura */ }
     }
     return { creados, errores };
   }
@@ -419,7 +805,7 @@ export class ForestPlanDB {
     const [entries, speciesRows] = await Promise.all([
       prisma.forestLothEntry.findMany({
         where: { tenantId, deletedAt: null, status: "registrado" },
-        select: { section: true, speciesCommon: true, trozaCode: true, volumeM3: true, quantity: true, unit: true, entryDate: true, createdAt: true },
+        select: { section: true, speciesCommon: true, trozaCode: true, volumeM3: true, quantity: true, unit: true, entryDate: true, createdAt: true, cites: true },
       }),
       plan
         ? prisma.forestPlanSpecies.findMany({ where: { tenantId, planId: plan.id, deletedAt: null } })
@@ -443,11 +829,8 @@ export class ForestPlanDB {
       balance = computeBalance(species, movements, { uitRef: Number(plan.uitRef ?? 0), areaHa: Number(plan.areaHa ?? 0) });
     }
 
-    // Fuera de plazo: createdAt − entryDate > 15 días
-    const lateCount = entries.filter((e) => {
-      if (!e.entryDate || !e.createdAt) return false;
-      return (e.createdAt.getTime() - e.entryDate.getTime()) / 86_400_000 > 15;
-    }).length;
+    // Fuera de plazo — predicado ÚNICO (loth-constants), no re-implementado acá.
+    const lateCount = entries.filter((e) => estaFueraDePlazo(e.entryDate, e.createdAt)).length;
 
     const anomalias = detectAnomalias(movements, balance?.rows ?? [], lateCount);
 
@@ -478,10 +861,37 @@ export class ForestPlanDB {
       costeo = computeCosteo(costeoInputs, costos);
     }
 
+    // Especies CITES presentes en el libro (para el cruce con el catálogo de
+    // permisos en el panel Cumplimiento — informativo, no resta score).
+    const citesEspecies = [
+      ...new Set(entries.filter((e) => e.cites && e.speciesCommon).map((e) => e.speciesCommon as string)),
+    ];
+
+    // Especies con operaciones en el libro que NO figuran entre las autorizadas
+    // del plan (tala/movilización fuera del POA — infracción que cruza OSINFOR).
+    // Sólo si el plan declara especies; match case-insensitive. Sin query extra:
+    // reusa `entries` + `speciesRows` ya cargados. T7 ya frena el despacho; esto
+    // surfacea además la tala/trozado de una especie fuera del plan en el informe.
+    // El cruce va por CLAVE canónica, no por string: el plan copia el nombre de
+    // la resolución («Tornillo (Cedrelinga catenaeformis)») y el libro asienta
+    // el común («Tornillo»). Compararlos literalmente acusaba de infracción a
+    // un titular que estaba en regla, le dejaba el saldo POA intacto habiendo
+    // talado y le mostraba la rentabilidad en cero.
+    const cruce =
+      speciesRows.length > 0
+        ? cruzarEspecies(
+            entries.map((e) => e.speciesCommon?.trim()).filter((s): s is string => !!s),
+            speciesRows.map((s) => s.speciesCommon),
+          )
+        : { autorizadas: new Map<string, string>(), sinAutorizar: [], ambiguas: [] };
+    const especiesNoAutorizadas = cruce.sinAutorizar;
+    /** Parecidas pero escritas distinto: es nomenclatura, no infracción. */
+    const especiesAmbiguas = cruce.ambiguas;
+
     return {
       hasPlan: !!plan,
       plan: plan ? { id: plan.id, planNumber: plan.planNumber ?? null, titularName: plan.titularName, estado: plan.estado, vigenciaHasta: plan.vigenciaHasta, costos } : null,
-      aprovechamiento, balance, anomalias, projection, lateCount, costeo,
+      aprovechamiento, balance, anomalias, projection, lateCount, costeo, citesEspecies, especiesNoAutorizadas, especiesAmbiguas,
     };
   }
 

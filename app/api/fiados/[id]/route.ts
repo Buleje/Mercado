@@ -7,9 +7,17 @@ import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
 
-const PatchFiadoSchema = z.object({
-  status: z.enum(["ACTIVO", "PAGADO", "VENCIDO", "CANCELADO"]),
-});
+const PatchFiadoSchema = z
+  .object({
+    status: z.enum(["ACTIVO", "PAGADO", "VENCIDO", "CANCELADO"]).optional(),
+    // Habilita el compromiso de pago (firma digital) de FiadoModals.tsx, que
+    // manda sólo `descripcion` — el schema viejo lo rechazaba siempre porque
+    // exigía `status` (audit-verificado 2026-08-26).
+    descripcion: z.string().max(1000).optional(),
+  })
+  .refine((d) => d.status !== undefined || d.descripcion !== undefined, {
+    message: "Se requiere status o descripcion",
+  });
 
 // GET /api/fiados/[id] — fiado detail with cuotas
 export async function GET(
@@ -59,14 +67,27 @@ export async function PATCH(
       return NextResponse.json({ error: "Fiado no encontrado" }, { status: 404 });
     }
 
-    const updated = await FiadosDB.updateStatus(auth.tenantId, id, parsed.data.status);
-    if (!updated) return NextResponse.json({ error: "Error al actualizar" }, { status: 500 });
-
-    logActivity(
-      "Actualizar", "fiado",
-      `Fiado ${id.slice(-6)} status -> ${parsed.data.status}`,
-      id, auth.username,
-    ).catch((err) => logger.error("[fiados] logActivity failed", { error: String(err) }));
+    let updated = existing;
+    if (parsed.data.status !== undefined) {
+      const r = await FiadosDB.updateStatus(auth.tenantId, id, parsed.data.status);
+      if (!r) return NextResponse.json({ error: "Error al actualizar" }, { status: 500 });
+      updated = r;
+      logActivity(
+        "Actualizar", "fiado",
+        `Fiado ${id.slice(-6)} status -> ${parsed.data.status}`,
+        id, auth.username, undefined, auth.tenantId,
+      ).catch((err) => logger.error("[fiados] logActivity failed", { error: String(err) }));
+    }
+    if (parsed.data.descripcion !== undefined) {
+      const r = await FiadosDB.updateDescripcion(auth.tenantId, id, parsed.data.descripcion);
+      if (!r) return NextResponse.json({ error: "Error al actualizar" }, { status: 500 });
+      updated = r;
+      logActivity(
+        "Actualizar", "fiado",
+        `Fiado ${id.slice(-6)} descripcion actualizada`,
+        id, auth.username, undefined, auth.tenantId,
+      ).catch((err) => logger.error("[fiados] logActivity failed", { error: String(err) }));
+    }
 
     return NextResponse.json(updated);
   } catch (e) {

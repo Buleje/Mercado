@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 // TD-116 (2026-06-10): lecturas de Sale envueltas en withRlsTx (ver orders.db).
 import { withRlsTx } from "@/lib/prisma-rls";
 import { logger } from "@/lib/logger";
+import { invalidate } from "@/lib/cache";
 import type {
   Sale as PSale,
   SaleItem as PSaleItem,
@@ -13,6 +14,11 @@ import {
   type DbSale,
 } from "./misc.db";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { saldoEsperadoDeCaja } from "@/lib/caja/saldo-esperado";
+import { contarVentas, cuentaEfectivoCaja, type CuentaCaja } from "@/lib/caja/efectivo-esperado";
+import { CajaNoAbiertaError, CashRegistersMovementsDB } from "@/lib/db/cash-registers-movements.db";
+import { liquidacionDelMovimiento, medioCorregible, type PagoDeLiquidacion } from "@/lib/caja/cambiar-medio";
+import { invalidarVentasOverview } from "@/lib/caja/invalidar-ventas-overview";
 
 // ── Local Types ───────────────────────────────────────────────────────────────
 
@@ -27,6 +33,12 @@ export type DbCashMovement = {
   description: string;
   saleId?: string;
   createdAt: string;
+  /**
+   * Sólo en los ingresos/egresos de una caja ABIERTA que son el pago de una
+   * liquidación: su código. La pantalla no ofrece «Cambiar medio» ahí (criterio
+   * de `lib/caja/cambiar-medio`, el mismo del 409 del servidor).
+   */
+  liquidacionCodigo?: string;
 };
 
 export type DbCashRegister = {
@@ -40,7 +52,21 @@ export type DbCashRegister = {
   status: CashRegisterStatus;
   notes?: string;
   movements: DbCashMovement[];
+  /**
+   * Sólo en cajas ABIERTAS: el efectivo que debería haber ahora, con la fórmula
+   * del cierre sobre TODOS sus movimientos (no sobre los 100 que trae el
+   * include). `expectedAmount` sigue siendo el que se congeló al cerrar.
+   */
+  efectivoEsperado?: number;
 };
+
+/** Lo que el aviso del panel necesita de la caja abierta más vieja. */
+export interface CajaAbiertaResumen {
+  id: string;
+  openedAt: string;
+  ventas: number;
+  cuenta: CuentaCaja;
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -223,14 +249,82 @@ export const SalesDB = {
       include: { items: true },
     });
     });
+    invalidarVentasOverview(tenantId);
     return mapSale(row);
   },
   async delete(tenantId: string, id: string): Promise<void> {
     await withRlsTx(tenantId, (tx) => tx.sale.deleteMany({ where: { id, tenantId } })).catch((err) => logger.error("[sales.db] sale delete failed", { error: String(err), id, tenantId }));
+    invalidarVentasOverview(tenantId);
   },
 };
 
 // ── Cash Registers DB ─────────────────────────────────────────────────────────
+
+/**
+ * La cuenta de efectivo de UNA caja, sumada en la base (groupBy por tipo y
+ * método) en vez de traer sus movimientos: una caja abierta meses puede tener
+ * miles, y el include de getAll corta en 100. CashMovement no tiene tenantId
+ * propio: el aislamiento va por la relación, en el WHERE.
+ */
+async function sumarCaja(tenantId: string, cashRegisterId: string, apertura: number): Promise<CuentaCaja> {
+  const grupos = await prisma.cashMovement.groupBy({
+    by: ["type", "method"],
+    where: { cashRegisterId, cashRegister: { tenantId } },
+    _sum: { amount: true },
+  });
+  return cuentaEfectivoCaja(
+    apertura,
+    grupos.map((g) => ({ type: g.type, method: g.method, amount: toNumOrZero(g._sum.amount) })),
+  );
+}
+
+/** Ventas distintas de una caja (un pago mixto son varias líneas con el mismo saleId). */
+async function contarVentasDeCaja(tenantId: string, cashRegisterId: string): Promise<number> {
+  const grupos = await prisma.cashMovement.groupBy({
+    by: ["saleId"],
+    where: { cashRegisterId, cashRegister: { tenantId }, type: "venta" },
+    _count: { _all: true },
+  });
+  return contarVentas(grupos.map((g) => ({ saleId: g.saleId, movimientos: g._count._all })));
+}
+
+/** Le pone a cada caja ABIERTA el efectivo que debería tener ahora. */
+async function conEfectivoEsperado(tenantId: string, cajas: DbCashRegister[]): Promise<DbCashRegister[]> {
+  const abiertas = cajas.filter((c) => c.status === "abierta" && !c.closedAt);
+  if (abiertas.length === 0) return cajas;
+  const esperados = new Map(
+    await Promise.all(
+      abiertas.map(async (c) => [c.id, (await sumarCaja(tenantId, c.id, c.openingAmount)).esperado] as const),
+    ),
+  );
+  const liquidaciones = await liquidacionesDeLasAbiertas(tenantId, abiertas);
+  return cajas.map((c) => {
+    if (!esperados.has(c.id)) return c;
+    return {
+      ...c,
+      efectivoEsperado: esperados.get(c.id),
+      movements: c.movements.map((m) => {
+        const codigo = medioCorregible(m.type) ? liquidacionDelMovimiento(m.id, liquidaciones) : null;
+        return codigo ? { ...m, liquidacionCodigo: codigo } : m;
+      }),
+    };
+  });
+}
+
+/**
+ * Las liquidaciones cuyo pago está entre los ingresos/egresos de las cajas
+ * abiertas. Si la lectura falla, la pantalla sigue (ofrece el selector y el
+ * servidor rechaza con su 409): perder este dato no debe tumbar la caja.
+ */
+async function liquidacionesDeLasAbiertas(tenantId: string, abiertas: DbCashRegister[]): Promise<PagoDeLiquidacion[]> {
+  const ids = abiertas.flatMap((c) => c.movements.filter((m) => medioCorregible(m.type)).map((m) => m.id));
+  try {
+    return await CashRegistersMovementsDB.liquidacionesDeMovimientos(tenantId, ids);
+  } catch (err) {
+    logger.warn("[sales.db] no se pudo leer qué movimientos son de una liquidación", { error: String(err), tenantId });
+    return [];
+  }
+}
 
 export const CashRegistersDB = {
   async getAll(tenantId: string): Promise<DbCashRegister[]> {
@@ -240,7 +334,8 @@ export const CashRegistersDB = {
     // por tenant activo, OOM potencial en Vercel Fluid Compute (512 MB).
     // Frontend usa los movimientos recientes para mostrar últimas operaciones;
     // historial completo debe ir por endpoint paginado dedicado.
-    return (await prisma.cashRegister.findMany({ where, include: { movements: { orderBy: { createdAt: "desc" }, take: 100 } }, orderBy: { openedAt: "desc" } })).map(mapCashRegister);
+    const cajas = (await prisma.cashRegister.findMany({ where, include: { movements: { orderBy: { createdAt: "desc" }, take: 100 } }, orderBy: { openedAt: "desc" } })).map(mapCashRegister);
+    return conEfectivoEsperado(tenantId, cajas);
   },
   async getAllPaginated(tenantId: string, limit = 25, cursor?: string): Promise<{ items: DbCashRegister[]; nextCursor: string | null }> {
     const rows = await prisma.cashRegister.findMany({
@@ -253,7 +348,28 @@ export const CashRegistersDB = {
     });
     const hasMore = rows.length > limit;
     const items = hasMore ? rows.slice(0, limit) : rows;
-    return { items: items.map(mapCashRegister), nextCursor: hasMore ? items[items.length - 1].id : null };
+    return {
+      items: await conEfectivoEsperado(tenantId, items.map(mapCashRegister)),
+      nextCursor: hasMore ? items[items.length - 1].id : null,
+    };
+  },
+  /**
+   * La caja abierta MÁS VIEJA con su cuenta (ventas + efectivo esperado), para
+   * el aviso del panel: «abierta hace 111 días · 3 ventas · S/ 245.00». `null`
+   * si no hay caja abierta.
+   */
+  async cuentaCajaAbierta(tenantId: string): Promise<CajaAbiertaResumen | null> {
+    const caja = await prisma.cashRegister.findFirst({
+      where: { tenantId, status: "abierta", closedAt: null },
+      orderBy: { openedAt: "asc" },
+      select: { id: true, openedAt: true, openingAmount: true },
+    });
+    if (!caja) return null;
+    const [cuenta, ventas] = await Promise.all([
+      sumarCaja(tenantId, caja.id, toNumOrZero(caja.openingAmount)),
+      contarVentasDeCaja(tenantId, caja.id),
+    ]);
+    return { id: caja.id, openedAt: toISO(caja.openedAt), ventas, cuenta };
   },
   async getOpen(tenantId: string): Promise<DbCashRegister | null> {
     const row = await prisma.cashRegister.findFirst({ where: { tenantId, status: "abierta" }, include: { movements: { orderBy: { createdAt: "desc" } } } });
@@ -272,6 +388,9 @@ export const CashRegistersDB = {
       },
       include: { movements: { orderBy: { createdAt: "desc" } } },
     });
+    // El banner avisa de cajas abiertas desde un día anterior (AlertsDB, cache 60 s).
+    invalidate(`admin:alerts-summary:${tenantId}`);
+    invalidarVentasOverview(tenantId);
     return mapCashRegister(row);
   },
   async close(tenantId: string, id: string, closingAmount: number, notes?: string): Promise<DbCashRegister | null> {
@@ -280,18 +399,29 @@ export const CashRegistersDB = {
     // quedaba cerrada sin movimiento de cierre, rompiendo el cuadre contable.
     // El optimistic lock (closedAt: null) se mantiene para detección de doble-cierre.
     const row = await prisma.$transaction(async (tx) => {
-      // Leer dentro de tx para calcular expectedAmount con datos consistentes
+      /* F4 (3ª pasada de seguridad de ADR-448): la caja, bloqueada en exclusiva
+         ANTES de leer. Sin esto, un adelanto o una liquidación que anotaba su
+         movimiento en este instante quedaba fuera del esperado (o entraba en la
+         caja ya cerrada): arqueo descuadrado por el monto exacto. Con el lock,
+         el que está anotando termina primero y se cuenta; el que llega después
+         ve la caja cerrada (`moverCajaEnTx` → `sinCaja`). Es el ÚNICO lock del
+         cierre: no bloquea nada más, así que no puede cerrar un ciclo. */
+      if (!(await CashRegistersMovementsDB.bloquearCajaParaCerrarEnTx(tx, tenantId, id))) return null;
+      // Releer BAJO el lock: en READ COMMITTED esta sentencia ya ve lo que
+      // confirmó quien tenía la caja mientras esperábamos.
       const reg = await tx.cashRegister.findFirst({
         where: { id, tenantId },
         include: { movements: true },
       });
       if (!reg || reg.closedAt) return null;
 
-      const totalSales = reg.movements.filter(m => m.type === "venta" && m.method === "efectivo").reduce((s, m) => s + toNumOrZero(m.amount), 0);
-      const totalIn = reg.movements.filter(m => m.type === "ingreso").reduce((s, m) => s + toNumOrZero(m.amount), 0);
-      const totalOut = reg.movements.filter(m => m.type === "egreso").reduce((s, m) => s + toNumOrZero(m.amount), 0);
-      const expectedAmount = toNumOrZero(reg.openingAmount) + totalSales + totalIn - totalOut;
-      const difference = closingAmount - expectedAmount;
+      /* LA misma cuenta que el Resumen de Mi Plata (`saldoEsperadoDeCaja`): el
+         arqueo cuenta sólo el efectivo; Yape/transferencia van aparte. */
+      const expectedAmount = saldoEsperadoDeCaja(
+        toNumOrZero(reg.openingAmount),
+        reg.movements.map((m) => ({ type: m.type, method: m.method, amount: toNumOrZero(m.amount) })),
+      ).esperado;
+      const difference = Math.round((closingAmount - expectedAmount) * 100) / 100;
 
       // Optimistic lock: solo actualiza si closedAt sigue siendo null
       const result = await tx.cashRegister.updateMany({
@@ -310,28 +440,36 @@ export const CashRegistersDB = {
         where: { id },
         include: { movements: { orderBy: { createdAt: "desc" } } },
       });
-    });
+      /* Puede esperar a que termine de confirmarse un adelanto o una liquidación
+         que está anotando en esta caja: margen sobre los 5 s por defecto. */
+    }, { timeout: 15_000, maxWait: 5_000 });
 
+    if (row) {
+      invalidate(`admin:alerts-summary:${tenantId}`);
+      invalidarVentasOverview(tenantId);
+    }
     return row ? mapCashRegister(row) : null;
   },
-  async addMovement(cashRegisterId: string, movement: { type: string; amount: number; method: string; description: string; saleId?: string }, tenantId?: string): Promise<DbCashMovement> {
-    // SECURITY 2026-05-06 (audit pagos H003 defense-in-depth): si llega
-    // tenantId, validar ownership de la caja antes de crear el movement.
-    // Caller actual (`app/api/cash-registers/[id]/route.ts`) ya valida
-    // ownership con `assertRegisterOwnership`; este check es redundante
-    // pero blinda contra futuros callers que olviden hacerlo.
-    if (tenantId) {
-      const reg = await prisma.cashRegister.findFirst({
-        where: { id: cashRegisterId, tenantId },
-        select: { id: true },
-      });
-      if (!reg) {
-        throw new Error("[cash-registers.addMovement] caja no pertenece al tenant");
-      }
-    }
-    const row = await prisma.cashMovement.create({
-      data: { cashRegisterId, ...movement },
+  async addMovement(cashRegisterId: string, movement: { type: string; amount: number; method: string; description: string; saleId?: string }, tenantId: string): Promise<DbCashMovement> {
+    // SECURITY 2026-05-06 (audit pagos H003 defense-in-depth): validar
+    // ownership de la caja antes de crear el movement. Desde F4 el `tenantId`
+    // es OBLIGATORIO (antes era opcional y tres de los cuatro llamadores no lo
+    // mandaban). Queda 3er parámetro para no mover a los llamadores existentes.
+    /* F4 (3ª pasada de seguridad de ADR-448): la caja, tomada en `FOR SHARE`
+       en la MISMA transacción que el INSERT, con el tenant en el WHERE cuando
+       llega. Antes una venta del POS, un arqueo o un ingreso del asistente que
+       llegaba durante el cierre esperaba la FK y entraba en la caja YA cerrada.
+       Ahora espera al cierre, relee el estado y no anota (`CajaNoAbiertaError`).
+       La caja es el último lock de esta transacción (orden global en
+       `lib/adelantos/movimiento-caja.ts`). */
+    if (!tenantId) throw new Error("tenantId is required");
+    const row = await prisma.$transaction(async (tx) => {
+      const caja = await CashRegistersMovementsDB.bloquearCajaParaAnotarEnTx(tx, tenantId, cashRegisterId);
+      if (!caja) throw new Error("[cash-registers.addMovement] caja no pertenece al tenant");
+      if (caja.status !== "abierta") throw new CajaNoAbiertaError();
+      return tx.cashMovement.create({ data: { cashRegisterId, ...movement } });
     });
+    invalidarVentasOverview(tenantId);
     return mapCashMovement(row);
   },
 };

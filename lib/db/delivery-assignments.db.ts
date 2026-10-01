@@ -74,6 +74,46 @@ export const DeliveryAssignmentsDB = {
     });
   },
 
+  /**
+   * Todos los assignments ACTIVOS de un partner (pedidos apilados).
+   * Devuelve las coords del Order para que el caller arme la ruta óptima.
+   *
+   * Scope = partnerId (NO tenantId): la sesión HMAC del repartidor prueba su
+   * identidad y es la frontera de seguridad. Un repartidor puede tener pedidos
+   * de varias tiendas, así que `assignment.tenantId` = tenant del pedido, no del
+   * repartidor — filtrar por el tenant del repartidor devolvería vacío. Mismo
+   * criterio que el endpoint auditado /api/delivery/me/current (audit #19).
+   */
+  async listActiveForPartner(partnerId: string) {
+    return prisma.deliveryAssignment.findMany({
+      where: {
+        partnerId,
+        status: { in: ["assigned", "picked_up", "in_transit"] },
+      },
+      orderBy: { createdAt: "asc" },
+      select: {
+        id: true,
+        status: true,
+        fee: true,
+        tipAmount: true,
+        createdAt: true,
+        order: {
+          select: {
+            id: true,
+            customerName: true,
+            customerPhone: true,
+            customerLocation: true,
+            customerReference: true,
+            total: true,
+            dropoffLat: true,
+            dropoffLng: true,
+            items: { select: { name: true, quantity: true, unit: true } },
+          },
+        },
+      },
+    });
+  },
+
   async updateAssignmentStatus(
     id: string,
     status: string,

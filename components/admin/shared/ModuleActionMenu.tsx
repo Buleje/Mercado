@@ -70,7 +70,7 @@ export function ModuleActionMenu({
           type="button"
           aria-label={iconOnly ? label : undefined}
           className={cn(
-            "inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] transition-colors",
+            "inline-flex items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] transition-colors",
             "text-sm font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]",
             "data-[state=open]:bg-[var(--surface-sunken)] data-[state=open]:text-[var(--text-primary)]",
             "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",

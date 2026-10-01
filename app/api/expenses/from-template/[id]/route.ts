@@ -44,7 +44,11 @@ export async function POST(
       );
     }
 
-    const expense = await ExpensesDB.addFromTemplate(auth.tenantId, id, parsed.data);
+    // Quién registró el pago sale de la sesión, nunca del body (ADR-374).
+    const expense = await ExpensesDB.addFromTemplate(auth.tenantId, id, {
+      ...parsed.data,
+      ...(auth.username ? { createdBy: auth.username } : {}),
+    });
     if (!expense) {
       return NextResponse.json(
         { error: "Template no encontrado o no es recurring en este tenant" },

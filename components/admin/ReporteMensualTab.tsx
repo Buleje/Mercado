@@ -1,6 +1,7 @@
 "use client";
 
-import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { CardTitle, SectionTitle, StatCard } from "@buleje/design-system";
+import { Field } from "@/components/admin/shared/Field";
 import { useState } from "react";
 import {
   FileText,
@@ -15,6 +16,7 @@ import {
   Users,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { formatCurrency, formatDateTime } from "@/lib/format";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
@@ -45,39 +47,16 @@ const MONTH_NAMES = [
 ];
 
 function fmt(n: number): string {
-  return `S/ ${n.toFixed(2)}`;
-}
-
-// ── Subcomponente: tarjeta KPI ────────────────────────────────────────────────
-
-function KpiCard({
-  label,
-  value,
-  icon: Icon,
-  color,
-}: {
-  label: string;
-  value: string;
-  icon:  React.ElementType;
-  color: "green" | "red" | "blue";
-}) {
-  const colors = {
-    green: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",
-    red:   "bg-[var(--data-error-50)]   dark:bg-[var(--data-error-500)]/20   text-[var(--data-error-500)]   dark:text-[var(--data-error-500)]   border-[var(--data-error-500)]   dark:border-[var(--data-error-500)]",
-    blue:  "bg-[var(--accent-soft)]  dark:bg-[var(--accent-muted)]  text-[var(--data-success-500)]  dark:text-[var(--data-success-500)]  border-[var(--data-success-500)]/30  dark:border-[var(--data-success-500)]/30",
-  };
-  return (
-    <div className={cn("rounded-xl border p-4 flex items-center gap-3", colors[color])}>
-      <Icon className="h-6 w-6 shrink-0" />
-      <div>
-        <p className="text-xs opacity-70">{label}</p>
-        <p className="text-lg font-bold">{value}</p>
-      </div>
-    </div>
-  );
+  return `${formatCurrency(n)}`;
 }
 
 // ── Componente principal ──────────────────────────────────────────────────────
+// Nota de migración (canon KPI 2026-09-22): la tarjeta local `KpiCard` pintaba
+// TODO el cuerpo del color (fondo+borde+texto) — decorativo, y usado en un solo
+// archivo, así que no se absorbió a `StatCard` (que es monocromo por diseño,
+// sólo colorea con `emphasis`). Se pierde a propósito el fondo de color; se
+// preserva el significado (verde/rojo/azul → success/error/success) vía
+// `emphasis` + `iconEmphasis`.
 
 export default function ReporteMensualTab() {
   const now          = new Date();
@@ -170,14 +149,11 @@ export default function ReporteMensualTab() {
 
       {/* Selector de período + botón */}
       <div className="flex flex-wrap items-end gap-4 p-4 rounded-xl bg-[var(--surface-sunken)]/50 border border-[var(--rule-base)]">
-        <div>
-          <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
-            Mes
-          </label>
+        <Field label="Mes" labelClassName="block text-xs font-medium text-[var(--text-secondary)] mb-1">
           <select
             value={month}
             onChange={(e) => setMonth(Number(e.target.value))}
-            className="px-3 py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-gray-600 bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary"
+            className="px-3 h-10 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary"
           >
             {MONTH_NAMES.map((name, i) => (
               <option key={i + 1} value={i + 1}>
@@ -185,30 +161,27 @@ export default function ReporteMensualTab() {
               </option>
             ))}
           </select>
-        </div>
+        </Field>
 
-        <div>
-          <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
-            Año
-          </label>
+        <Field label="Año" labelClassName="block text-xs font-medium text-[var(--text-secondary)] mb-1">
           <input
             type="number"
             min={2023}
             max={2030}
             value={year}
             onChange={(e) => setYear(Number(e.target.value))}
-            className="w-24 px-3 py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-gray-600 bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-24 px-3 h-10 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary"
           />
-        </div>
+        </Field>
 
         <button
           onClick={handleGenerate}
           disabled={loading}
           className={cn(
-            "flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold text-white transition-colors",
+            "flex items-center gap-2 px-5 min-h-10 rounded-xl text-sm font-semibold text-white transition-colors",
             loading
               ? "bg-gray-400 cursor-not-allowed"
-              : "bg-primary hover:bg-[#1e4d38]",
+              : "bg-primary hover:bg-primary/90",
           )}
         >
           {loading ? (
@@ -237,7 +210,7 @@ export default function ReporteMensualTab() {
               Reporte {result.period} generado
             </span>
             {result.emailSent && (
-              <span className="text-xs text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-2 py-0.5 rounded-full border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
+              <span className="text-xs text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15 px-2 py-0.5 rounded-full border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
                 Email enviado
               </span>
             )}
@@ -245,28 +218,31 @@ export default function ReporteMensualTab() {
 
           {/* KPIs del reporte */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <KpiCard
+            <StatCard
               label="Ingresos"
               value={fmt(result.ingresos)}
               icon={TrendingUp}
-              color="green"
+              emphasis="success"
+              iconEmphasis
             />
-            <KpiCard
+            <StatCard
               label="Gastos"
               value={fmt(result.gastos)}
               icon={TrendingDown}
-              color="red"
+              emphasis="error"
+              iconEmphasis
             />
-            <KpiCard
+            <StatCard
               label="Utilidad"
               value={fmt(result.utilidad)}
               icon={BarChart3}
-              color={result.utilidad >= 0 ? "blue" : "red"}
+              emphasis={result.utilidad >= 0 ? "success" : "error"}
+              iconEmphasis
             />
           </div>
 
           {/* Info PDF */}
-          <div className="flex items-center gap-3 p-3 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
+          <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
             <FileText className="h-4 w-4 shrink-0" />
             <span>
               PDF generado ({(result.pdfSize / 1024).toFixed(1)} KB) con top 10 productos,
@@ -297,13 +273,13 @@ export default function ReporteMensualTab() {
                     Ingresos: {fmt(entry.ingresos)} · Utilidad: {fmt(entry.utilidad)}
                   </p>
                   <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-                    Generado: {new Date(entry.generatedAt).toLocaleString("es-PE")}
+                    Generado: {formatDateTime(entry.generatedAt)}
                   </p>
                 </div>
                 <button
                   onClick={() => handleDownload(entry.year, entry.month)}
                   disabled={loadingHist}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-primary border border-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-[var(--accent-ink)] dark:text-[var(--accent)] border border-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
                   title="Descargar PDF"
                 >
                   <Download className="h-3.5 w-3.5" />

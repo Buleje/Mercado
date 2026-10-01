@@ -111,6 +111,29 @@ export function nextOpeningLabel(hours: StoreHours | null | undefined, now: Date
   return `Abre el ${DAY_FULL[dayKey].toLowerCase()} a las ${time}`;
 }
 
+/** Minutos desde medianoche → "8:00 a. m." (formato PE 12h). */
+function minutesToLabel(mins: number): string {
+  const base = new Date(2000, 0, 1, 0, 0, 0, 0);
+  base.setMinutes(mins);
+  return base.toLocaleTimeString("es-PE", { hour: "numeric", minute: "2-digit", hour12: true });
+}
+
+/**
+ * Rango de atención de HOY, p.ej. "8:00 a. m.–10:00 p. m.". Devuelve `null` si el
+ * día está cerrado, faltan datos, o `hours` no viene con el shape por-día
+ * esperado (degradación limpia — la card simplemente no muestra el horario).
+ */
+export function todayHoursLabel(hours: StoreHours | null | undefined, now: Date): string | null {
+  if (!hours || typeof hours !== "object" || Array.isArray(hours)) return null;
+  const key = JS_DAY_TO_KEY[now.getDay()];
+  const day = (hours as StoreHours)[key];
+  if (!day || day.closed) return null;
+  const o = toMinutes(day.open);
+  const c = toMinutes(day.close);
+  if (o == null || c == null) return null;
+  return `${minutesToLabel(o)}–${minutesToLabel(c)}`;
+}
+
 /** Estado derivado de una tienda. Prioridad construction > vacation > closed > open. */
 export type StoreStatus = "open" | "vacation" | "closed" | "construction";
 

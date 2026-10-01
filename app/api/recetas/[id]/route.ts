@@ -6,6 +6,7 @@ import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { RecetasDetailDB } from "@/lib/db/recetas-detail.db";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { invalidateByPrefix } from "@/lib/cache";
 
 const IngredienteSchema = z.object({
   productoId: z.number().int().positive(),
@@ -107,6 +108,11 @@ export async function PATCH(
 
     // Recalculate cost
     await RecetasDB.calcularCosto(id);
+
+    // Editar ingredientes/nombre cambia el costo → invalidar el cache de
+    // getCostBreakdown (recipe-cost:${tenantId}:${id}, TTL 60s). Sin esto, el
+    // desglose de costo servía el valor viejo hasta 60s tras editar la receta.
+    invalidateByPrefix(`recipe-cost:${auth.tenantId}:${id}`);
 
     const result = await RecetasDB.getById(auth.tenantId, id);
 

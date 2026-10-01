@@ -4,7 +4,6 @@ import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
   MapPin,
-  Loader2,
   AlertCircle,
   Flame,
   Users,
@@ -14,6 +13,7 @@ import {
   EyeOff,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/format";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -50,7 +50,7 @@ function getTierColor(tier: "high" | "medium" | "low"): string {
     case "high":
       return "var(--accent)";
     case "medium":
-      return "#f97316";
+      return "#ff6b5b";
     case "low":
       return "#6b7280";
   }
@@ -68,7 +68,7 @@ function getTierLabel(tier: "high" | "medium" | "low"): string {
 }
 
 function formatSoles(n: number): string {
-  return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `${formatCurrency(n)}`;
 }
 
 // ── Component ────────────────────────────────────────────────────────────────
@@ -265,7 +265,7 @@ export default function CustomerGeoMap({ className }: Props) {
             0.2: "var(--accent)",
             0.4: "color-mix(in oklab, var(--accent) 70%, white)",
             0.6: "#14C2C2",
-            0.8: "#f97316",
+            0.8: "#ff6b5b",
             1.0: "#e63946",
           },
         }).addTo(map);
@@ -341,7 +341,7 @@ export default function CustomerGeoMap({ className }: Props) {
                 "flex items-center gap-1.5 rounded-l-lg px-3 py-1.5 text-xs font-medium transition-colors",
                 viewMode === "markers"
                   ? "bg-primary text-white"
-                  : "bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] hover:bg-[var(--surface-alt)]"
+                  : "bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-alt)]"
               )}
             >
               <MapPin className="h-3.5 w-3.5" />
@@ -353,7 +353,7 @@ export default function CustomerGeoMap({ className }: Props) {
                 "flex items-center gap-1.5 rounded-r-lg px-3 py-1.5 text-xs font-medium transition-colors",
                 viewMode === "heat"
                   ? "bg-primary text-white"
-                  : "bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] hover:bg-[var(--surface-alt)]"
+                  : "bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-alt)]"
               )}
             >
               <Flame className="h-3.5 w-3.5" />
@@ -366,7 +366,7 @@ export default function CustomerGeoMap({ className }: Props) {
       {/* Stats panel */}
       {showStats && !loading && totalCustomers > 0 && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-3">
+          <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-primary" />
               <span className="text-xs text-[var(--text-secondary)]">Con GPS</span>
@@ -375,7 +375,7 @@ export default function CustomerGeoMap({ className }: Props) {
               {totalCustomers}
             </p>
           </div>
-          <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-3">
+          <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
             <div className="flex items-center gap-2">
               <DollarSign className="h-4 w-4 text-secondary" />
               <span className="text-xs text-[var(--text-secondary)]">Total gastado</span>
@@ -384,7 +384,7 @@ export default function CustomerGeoMap({ className }: Props) {
               {formatSoles(totalSpent)}
             </p>
           </div>
-          <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-3">
+          <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
             <div className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-primary" />
               <span className="text-xs text-[var(--text-secondary)]">Top zona</span>
@@ -394,7 +394,7 @@ export default function CustomerGeoMap({ className }: Props) {
             </p>
             <p className="text-xs text-[var(--text-secondary)]">{topZones[0]?.[1]?.count ?? 0} clientes</p>
           </div>
-          <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-3">
+          <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
             <div className="flex items-center gap-2">
               <MapPin className="h-4 w-4 text-[var(--text-secondary)]" />
               <span className="text-xs text-[var(--text-secondary)]">Por nivel</span>
@@ -419,7 +419,7 @@ export default function CustomerGeoMap({ className }: Props) {
 
       {/* Top zones breakdown */}
       {showStats && !loading && topZones.length > 1 && (
-        <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-4">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
           <CardTitle className="mb-3 text-sm font-semibold text-[var(--text-primary)]">
             Top 5 zonas
           </CardTitle>
@@ -458,7 +458,7 @@ export default function CustomerGeoMap({ className }: Props) {
           <p className="text-sm text-[var(--data-error-500)]">{error}</p>
         </div>
       ) : totalCustomers === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-4 py-16">
+        <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-16">
           <MapPin className="h-10 w-10 text-[var(--text-tertiary)]" />
           <p className="text-sm text-[var(--text-secondary)]">
             No hay clientes con coordenadas GPS registradas.
@@ -477,7 +477,7 @@ export default function CustomerGeoMap({ className }: Props) {
 
       {/* Legend */}
       {!loading && !error && totalCustomers > 0 && viewMode === "markers" && (
-        <div className="flex flex-wrap items-center gap-4 rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-4 py-2.5 text-xs">
+        <div className="flex flex-wrap items-center gap-4 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-2.5 text-xs">
           <span className="font-medium text-[var(--text-secondary)]">Leyenda:</span>
           <span className="flex items-center gap-1.5">
             <span className="inline-block h-3 w-3 rounded-full bg-primary" />
@@ -495,7 +495,7 @@ export default function CustomerGeoMap({ className }: Props) {
       )}
 
       {!loading && !error && totalCustomers > 0 && viewMode === "heat" && (
-        <div className="flex flex-wrap items-center gap-4 rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-4 py-2.5 text-xs">
+        <div className="flex flex-wrap items-center gap-4 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-2.5 text-xs">
           <span className="font-medium text-[var(--text-secondary)]">Intensidad:</span>
           <div className="flex items-center gap-1">
             <span className="text-[var(--text-tertiary)]">Bajo</span>

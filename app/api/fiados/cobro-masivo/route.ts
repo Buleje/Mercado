@@ -13,7 +13,18 @@ const PaymentItemSchema = z.object({
 });
 
 const CobroMasivoSchema = z.object({
-  payments: z.array(PaymentItemSchema).min(1).max(50),
+  payments: z
+    .array(PaymentItemSchema)
+    .min(1)
+    .max(50)
+    // Audit 2026-08-26: un fiadoId repetido en el mismo lote hacía que ambas
+    // entradas decrementaran contra el mismo saldo prefetcheado (TOCTOU) —
+    // rechazarlo acá es la señal más clara para el cajero, en vez de dejar
+    // que la segunda ocurrencia falle silenciosa contra el guard de la DB.
+    .refine(
+      (payments) => new Set(payments.map((p) => p.fiadoId)).size === payments.length,
+      { message: "Un mismo fiado no puede repetirse en el mismo cobro masivo" },
+    ),
   notas: z.string().max(500).optional(),
 });
 
@@ -60,7 +71,7 @@ export async function POST(req: NextRequest) {
     logActivity(
       "Cobro masivo", "fiado",
       `Cobro masivo de ${results.length} fiados por S/${totalCobrado.toFixed(2)}`,
-      undefined, auth.username,
+      undefined, auth.username, undefined, tenantId,
     ).catch((err) => logger.warn("[fiados/cobro-masivo] activity log failed", { err: String(err) }));
 
     return NextResponse.json({

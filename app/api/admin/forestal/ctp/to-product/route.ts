@@ -107,14 +107,14 @@ export const POST = withApiHandler("forestal-ctp-to-product", async (req: NextRe
     const product = await ProductsDB.create(productPayload);
     return NextResponse.json({
       ok: true,
-      message: `Producto "${productName}" creado como borrador en inventario. Activalo desde el catálogo para publicarlo.`,
+      message: `Producto "${productName}" creado como borrador en inventario. Actívalo desde el catálogo para publicarlo.`,
       productId: product.id,
       productName: product.name,
     });
   } catch (err) {
     logger.error("[ctp/to-product] ProductsDB.upsert failed", { tenantId, entryId, error: String(err) });
     return NextResponse.json(
-      { error: "server_error", message: "No se pudo crear el producto. Intentá de nuevo." },
+      { error: "server_error", message: "No se pudo crear el producto. Intenta de nuevo." },
       { status: 500 },
     );
   }

@@ -279,6 +279,9 @@ const TENANT_MODELS = new Set([
   "supplierPortal",
   "mpPendingPlan",
   "documentVersion",
+  // Metas y tareas del panel (ADR-415): antes vivían en local-data/*.json, sin tenant.
+  "adminGoal",
+  "adminTask",
 ]);
 
 /**

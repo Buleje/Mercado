@@ -30,6 +30,7 @@ import {
   getPendingApproval,
   removePendingApproval,
 } from "@/lib/agents/pending-approvals";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 // ── GET: list pending approvals ──────────────────────────────────────────────
 
@@ -71,7 +72,7 @@ export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
-  const body = await req.json().catch(() => null);
+  const body = await leerJson(req);
   const parsed = ResolveSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(

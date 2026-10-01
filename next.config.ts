@@ -57,6 +57,15 @@ const nextConfig: NextConfig = {
   // `@prisma/client/runtime/client` que Turbopack intenta bundlear como un
   // alias hasheado y falla ("Cannot find module @prisma/client-<hash>/runtime/client").
   // Marcar estos como externals fuerza que se resuelvan vía Node module system.
+  // La miniatura de Excel/Word dibuja con @napi-rs/canvas, que NO trae fuentes:
+  // sin un .ttf de verdad cada letra sale como un cuadradito. Se usa el Geist
+  // que ya viaja dentro de `next`, pero hay que pedir explícitamente que el
+  // archivo viaje al bundle de la función serverless.
+  outputFileTracingIncludes: {
+    "/api/admin/documents/[id]/thumbnail": [
+      "./node_modules/next/dist/compiled/@vercel/og/*.ttf",
+    ],
+  },
   serverExternalPackages: [
     "@prisma/client",
     "@prisma/adapter-pg",
@@ -73,6 +82,10 @@ const nextConfig: NextConfig = {
     // los incluyan accidentalmente vía dynamic imports mal resueltos.
     "jspdf",
     "exceljs",
+    // Miniaturas de PDF: canvas nativo (Skia). Turbopack no puede empaquetar el
+    // binding `.node` → hay que resolverlo desde node_modules en runtime.
+    "@napi-rs/canvas",
+    "unpdf",
   ],
 
   // No source maps in production browser bundle (saves ~30–50% of chunk sizes)
@@ -111,11 +124,27 @@ const nextConfig: NextConfig = {
     ],
   },
 
-  // ── React Compiler (pilot, opt-in por archivo) ───────────────────────
-  // Mode: annotation → solo compila componentes con la directiva `'use memo'`
-  // al inicio del archivo. Cero impacto sobre componentes que NO la usen.
-  // Plugin: babel-plugin-react-compiler@1.0.0 (instalado 2026-04-28).
-  // Next 16: reactCompiler salió de `experimental` y es top-level.
+  // ── React Compiler (piloto acotado por carpeta) ──────────────────────
+  // Plugin: babel-plugin-react-compiler@1.0.0. Next 16: `reactCompiler` es top-level.
+  //
+  // 2026-09-22: `annotation` estuvo activo 5 meses y lo usaba UN archivo
+  // (components/marketplace/UnifiedProductCard.tsx) — o sea, pagábamos el plugin sin
+  // cobrarlo, con 1.676 useMemo + 2.151 useCallback + 63 memo() escritos a mano.
+  //
+  // Censo previo (`npm run compiler:census`, reglas duras de react-hooks v7):
+  //   components/marketplace .... 404 archivos, 11 con violación dura → 97,3 % limpio
+  //   components/admin + app .... 2.901 archivos, 171 violaciones duras
+  // El compiler NO rompe: ante un patrón que no puede probar seguro, salta el componente.
+  //
+  // Por eso el opt-in arranca donde el residuo es 2,7 %: la tienda pública, que además
+  // es la superficie donde el render importa (cliente en 4G). Ampliar carpeta por carpeta
+  // midiendo antes con `npm run compiler:census <carpeta>`.
+  // IMPORTANTE (verificado 2026-09-22 contra node_modules/next/dist/server/config-schema.js:673):
+  // Next 16.2.10 sólo acepta `compilationMode` y `panicThreshold`. NO existe `sources`,
+  // así que no se puede acotar el compiler por carpeta desde acá — un `sources` se ignora
+  // en silencio. El acotado se hace por archivo con la directiva `"use memo"`:
+  //     npm run compiler:optin components/marketplace     (agrega la directiva a los limpios)
+  //     npm run compiler:optin -- --off components/marketplace   (la quita)
   reactCompiler: { compilationMode: "annotation" },
 
   experimental: {
@@ -361,6 +390,9 @@ const nextConfig: NextConfig = {
               "img-src 'self' data: blob: https:",
               "font-src 'self' https://fonts.gstatic.com",
               "connect-src 'self' https://*.vercel-insights.com https://*.posthog.com",
+              // Igual que en lib/middleware-utils.ts: el OCR del navegador
+              // levanta un worker propio desde /public/tesseract.
+              "worker-src 'self'",
               "frame-ancestors 'self'",
               "base-uri 'self'",
               "form-action 'self'",

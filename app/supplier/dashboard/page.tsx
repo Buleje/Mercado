@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { StatCard } from "@buleje/design-system";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -58,32 +59,6 @@ function StatusBadge({ status }: { status: OrderStatus }) {
 }
 
 // ─── KPI Card ─────────────────────────────────────────────────────────────────
-
-function KpiCard({
-  label,
-  value,
-  sub,
-  accent,
-}: {
-  label: string;
-  value: string;
-  sub?: string;
-  accent?: boolean;
-}) {
-  return (
-    <div className="rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-5 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-        {label}
-      </p>
-      <p
-        className={`mt-1 text-2xl font-bold ${accent ? "text-[var(--accent)]" : "text-gray-900 dark:text-white"}`}
-      >
-        {value}
-      </p>
-      {sub && <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">{sub}</p>}
-    </div>
-  );
-}
 
 // ─── Mini bar chart ───────────────────────────────────────────────────────────
 
@@ -205,30 +180,30 @@ export default function SupplierDashboardPage() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <KpiCard
+        <StatCard
           label="Pedidos este mes"
           value={String(stats.ordersThisMonth)}
-          accent
+          highlight
         />
-        <KpiCard
+        <StatCard
           label="Monto total"
           value={`S/ ${stats.totalAmountThisMonth.toLocaleString("es-PE", { minimumFractionDigits: 2 })}`}
-          sub="este mes"
+          subValue="este mes"
         />
-        <KpiCard
+        <StatCard
           label="Fill rate"
           value={stats.fillRate != null ? `${Number(stats.fillRate).toFixed(1)}%` : "—"}
-          sub="items entregados vs pedidos"
+          subValue="items entregados vs pedidos"
         />
-        <KpiCard
+        <StatCard
           label="Ranking"
           value={
             stats.ranking.total > 0
               ? `#${stats.ranking.position} / ${stats.ranking.total}`
               : "—"
           }
-          sub="entre proveedores del mes"
-          accent={stats.ranking.position === 1}
+          subValue="entre proveedores del mes"
+          highlight={stats.ranking.position === 1}
         />
       </div>
 

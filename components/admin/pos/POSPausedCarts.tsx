@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import { Pause, Play, Trash2, ClipboardList, X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/format";
 
 interface PausedCartItem {
   productId: number;
@@ -39,7 +40,7 @@ const STORAGE_KEY = "pos-paused-carts";
 const MAX_PAUSED = 5;
 
 function fmt(n: number) {
-  return `S/${n.toFixed(2)}`;
+  return `${formatCurrency(n)}`;
 }
 
 function timeAgo(ts: number) {
@@ -139,7 +140,7 @@ export default function POSPausedCarts({
                     if (e.key === "Escape") setShowNameInput(false);
                   }}
                   placeholder="Nombre (opc.)"
-                  className="w-24 px-2 py-1 text-xs border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg outline-none focus:border-primary text-[var(--text-primary)] dark:text-[var(--text-primary)]"
+                  className="w-24 px-2 py-1 text-xs border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl outline-none focus:border-primary text-[var(--text-primary)] dark:text-[var(--text-primary)]"
                   autoFocus
                 />
                 <button
@@ -148,7 +149,7 @@ export default function POSPausedCarts({
                 >
                   OK
                 </button>
-                <button
+                <button aria-label="Cerrar"
                   onClick={() => setShowNameInput(false)}
                   className="text-xs text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
                 >
@@ -193,11 +194,11 @@ export default function POSPausedCarts({
 
       {/* Paused carts list */}
       {showList && paused.length > 0 && (
-        <div className="mt-2 space-y-1.5 bg-gray-50 dark:bg-surface rounded-xl p-2 border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+        <div className="mt-2 space-y-1.5 bg-[var(--surface-sunken)] rounded-xl p-3 border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
           {paused.map((cart) => (
             <div
               key={cart.id}
-              className="flex items-center gap-2 p-2 bg-[var(--surface-raised)] rounded-lg border border-[var(--rule-soft)] dark:border-[var(--rule-base)] hover:border-primary/30 transition-colors"
+              className="flex items-center gap-2 p-3 bg-[var(--surface-raised)] rounded-lg border border-[var(--rule-soft)] dark:border-[var(--rule-base)] hover:border-primary/30 transition-colors"
             >
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">
@@ -215,7 +216,7 @@ export default function POSPausedCarts({
               >
                 <Play className="h-3 w-3" /> Retomar
               </button>
-              <button
+              <button aria-label="Eliminar"
                 onClick={() => handleDelete(cart.id)}
                 className="p-1 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors shrink-0"
               >

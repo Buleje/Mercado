@@ -1,73 +1,55 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { readData, writeData } from "@/lib/file-store";
-import { randomUUID } from "crypto";
-import { toErrorPayload } from "@/lib/api-error";
+import { assertCsrf } from "@/lib/auth/csrf";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
+import { leerJson } from "@/lib/errores/sin-dato";
+import { AdminGoalsDB } from "@/lib/db/admin-goals.db";
+import { metaCrearSchema } from "@/lib/admin/metas-tareas";
 
-const GOALS_KEY = "goals";
+/**
+ * /api/goals — metas del panel del negocio de la sesión (ADR-415).
+ *
+ * Antes era `local-data/goals.json`: una sola lista para todos los negocios, y
+ * en Vercel (disco de sólo lectura) no se guardaba ninguna.
+ */
 
-interface Goal {
-  id: string;
-  name: string;
-  category: string;
-  period: string;
-  target: number;
-  current: number;
-  unit: string;
-  createdAt: string;
-  dueDate?: string;
-}
-
-async function getGoals(): Promise<Goal[]> {
-  const data = await readData<{ goals?: Goal[] }>(GOALS_KEY).catch(() => null);
-  return data?.goals ?? [];
-}
-
-async function saveGoals(goals: Goal[]): Promise<void> {
-  await writeData(GOALS_KEY, { goals });
-}
-
+/** GET — array de metas, en el orden en que se crearon. */
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 
   try {
-    const goals = await getGoals();
-    return NextResponse.json(goals);
-  } catch (err) {
-    const { payload, status } = toErrorPayload(err);
-    return NextResponse.json(payload, { status });
+    const metas = await AdminGoalsDB.listar(auth.tenantId);
+    return NextResponse.json(metas, { headers: { "Cache-Control": "private, no-store" } });
+  } catch (e) {
+    logger.error("[goals] GET error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "No se pudieron cargar las metas" }, { status: 503 });
   }
 }
 
+/** POST — crear una meta. */
 export async function POST(req: NextRequest) {
-  const _rl = await applyRateLimit(req, "MODERATE", "goals"); if (_rl) return _rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
+  const _rl = applyRateLimit(req, "MODERATE", "goals");
+  if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 
+  const parsed = metaCrearSchema.safeParse(await leerJson(req));
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "Revisa los datos de la meta", code: "validation_error", issues: parsed.error.issues },
+      { status: 422 },
+    );
+  }
+
   try {
-    const body = await req.json();
-    if (!body.name || !body.target) {
-      return NextResponse.json({ error: "name and target required" }, { status: 400 });
-    }
-    const goals = await getGoals();
-    const goal: Goal = {
-      id: randomUUID(),
-      name: body.name,
-      category: body.category ?? "ventas",
-      period: body.period ?? "mensual",
-      target: Number(body.target),
-      current: Number(body.current ?? 0),
-      unit: body.unit ?? "S/",
-      createdAt: new Date().toISOString(),
-      dueDate: body.dueDate,
-    };
-    goals.push(goal);
-    await saveGoals(goals);
-    return NextResponse.json(goal, { status: 201 });
-  } catch (err) {
-    const { payload, status } = toErrorPayload(err);
-    return NextResponse.json(payload, { status });
+    const meta = await AdminGoalsDB.crear(auth.tenantId, parsed.data, auth.username);
+    return NextResponse.json(meta, { status: 201 });
+  } catch (e) {
+    logger.error("[goals] POST error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "No se pudo guardar la meta. Reintenta." }, { status: 503 });
   }
 }

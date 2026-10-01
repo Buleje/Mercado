@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { m as motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -13,7 +13,6 @@ import {
   Store,
   Share2,
   Package,
-  Star,
   ChevronRight,
   Truck,
   Scale,
@@ -76,7 +75,6 @@ const fmt = (n: number) =>
 
 export default function ProductDetailPage() {
   const params = useParams<{ slug: string; productId: string }>();
-  const router = useRouter();
   const { addItem } = useMarketplaceCart();
   const { add: addToCompare, remove: removeCompare, isIn: isInCompare, max: compareMax, items: compareItems } = useCompare();
 
@@ -194,7 +192,7 @@ export default function ProductDetailPage() {
     return (
       <div className="min-h-screen bg-[var(--surface-sunken)] dark:bg-[var(--surface-canvas)] flex items-center justify-center">
         <div className="text-center">
-          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/5 dark:bg-primary/10 text-primary">
+          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/5 dark:bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
             <Package className="h-8 w-8" />
           </div>
           <h2 className="text-2xl font-bold text-[var(--text-primary)] dark:text-[var(--text-secondary)] mb-2">
@@ -307,7 +305,7 @@ export default function ProductDetailPage() {
             {/* Store badge */}
             <Link
               href={`/marketplace/${product.store.slug}`}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/5 dark:bg-primary/10 text-primary text-sm font-medium hover:bg-primary/10 transition-colors"
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/5 dark:bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-sm font-medium hover:bg-primary/10 transition-colors"
             >
               {product.store.logo ? (
                 <Image
@@ -483,7 +481,7 @@ export default function ProductDetailPage() {
                   className={cn(
                     "py-3 rounded-xl border font-semibold text-sm flex items-center justify-center gap-2 transition-colors",
                     inCompare
-                      ? "border-primary bg-primary/5 dark:bg-primary/10 text-primary hover:bg-primary/10"
+                      ? "border-primary bg-primary/5 dark:bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10"
                       : compareFull
                         ? "border-gray-200 dark:border-[var(--rule-soft)] bg-[var(--surface-sunken)] dark:bg-[var(--surface-canvas)] text-[var(--text-tertiary)] cursor-not-allowed"
                         : "border-gray-200 dark:border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-gray-800",

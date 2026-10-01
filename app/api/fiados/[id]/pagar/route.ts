@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { FiadosDB, FiadoConflictError } from "@/lib/db/fiados.db";
+import { FiadosDB, FiadoConflictError, FiadoOverpaymentError } from "@/lib/db/fiados.db";
 import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
@@ -51,7 +51,7 @@ export async function POST(
     logActivity(
       "Pago", "fiado",
       `Pago de S/${parsed.data.monto.toFixed(2)} en fiado ${id.slice(-6)} — saldo: S/${updated.saldo.toFixed(2)}`,
-      id, auth.username,
+      id, auth.username, undefined, auth.tenantId,
     ).catch((err) => logger.error("[fiados/pagar] logActivity failed", { error: String(err) }));
 
     return NextResponse.json(updated);
@@ -64,6 +64,13 @@ export async function POST(
         { error: e.message, code: "FIADO_CONFLICT", retryable: true },
         { status: 409 },
       );
+    }
+    // Audit 2026-08-26: overpayment es un error de VALIDACIÓN (el cajero se
+    // equivocó de monto), no de infraestructura — antes caía al catch
+    // genérico de abajo y el cajero veía "Database error" 503 en vez de
+    // "el pago excede el saldo en X.XX".
+    if (e instanceof FiadoOverpaymentError) {
+      return NextResponse.json({ error: e.message, code: "FIADO_OVERPAYMENT" }, { status: 400 });
     }
     logger.error("[fiados/id/pagar] POST error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });

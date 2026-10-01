@@ -55,7 +55,7 @@ export function InventoryContextMenu({ product, x, y, onClose, onEdit, onView, o
   return (
     <div
       ref={menuRef}
-      className="fixed z-[9999] bg-white dark:bg-zinc-900 rounded-xl border border-[var(--rule-soft)] dark:border-zinc-800 min-w-[180px] py-1 animate-in fade-in zoom-in-95 duration-[var(--dur-fast)]"
+      className="fixed z-[9999] bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-soft)] min-w-[180px] py-1 animate-in fade-in zoom-in-95 duration-[var(--dur-fast)]"
       style={{ left: x, top: y }}
     >
       {items.map((item, i) => {
@@ -63,15 +63,15 @@ export function InventoryContextMenu({ product, x, y, onClose, onEdit, onView, o
         return (
           <div key={i}>
             {item.divider && (
-              <div className="my-1 border-t border-[var(--rule-soft)] dark:border-zinc-800" />
+              <div className="my-1 border-t border-[var(--rule-soft)] " />
             )}
             <button
               onClick={item.onClick}
               className={cn(
-                "w-full px-3 py-2 text-sm flex items-center gap-2 cursor-pointer transition-colors",
+                "w-full px-3 min-h-10 text-sm flex items-center gap-2 cursor-pointer transition-colors",
                 item.variant === "danger"
                   ? "text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20"
-                  : "text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] dark:hover:bg-zinc-800",
+                  : "text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] ",
               )}
             >
               <Icon className="h-4 w-4 shrink-0" />

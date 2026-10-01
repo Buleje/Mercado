@@ -18,11 +18,15 @@
  *  - Ctrl + Shift + P → toggle modo presentación
  *
  * Convenciones:
- *  - Ignora el evento si el target es INPUT o TEXTAREA (para no romper escritura).
+ *  - Ignora el evento si el foco está en un campo editable (input/textarea/
+ *    select/contenteditable) o hay un modal abierto — vía `shouldIgnoreShortcut`
+ *    helpers en lib/keyboard-guards (para no romper escritura ni sacar al
+ *    usuario de un diálogo). Ver reporte QA Compras 2026-07-08.
  *  - Usa latest-ref pattern para evitar re-attach del listener en cada render.
  */
 
 import { useEffect, useRef } from "react";
+import { isEditableTarget, isModalOpen } from "@/lib/keyboard-guards";
 import type { Tab } from "../_lib/tabs.types";
 
 const SHORTCUT_MAP: Record<string, Tab> = {
@@ -63,8 +67,10 @@ export function useKeyboardShortcuts(config: KeyboardShortcutsConfig): void {
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement | null;
-      if (target?.tagName === "INPUT" || target?.tagName === "TEXTAREA") return;
+      // FIX 2026-07-08 (reporte QA): guard ampliado — antes solo INPUT/TEXTAREA;
+      // ahora también SELECT/contenteditable y CUALQUIER modal abierto, para que
+      // Alt+1..9 no saque al usuario de su sección mientras opera en un diálogo.
+      if (isEditableTarget(e.target) || isModalOpen()) return;
 
       const c = configRef.current;
 

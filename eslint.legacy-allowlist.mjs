@@ -12,6 +12,22 @@
 //   - app/api/admin/plan/mock-activate/route.ts (prisma.tenant + creditScoreHistory)
 //   - app/(store)/mi-credito/page.tsx (prisma.creditScoreHistory.findMany)
 export const PRISMA_DIRECT_LEGACY = [
+  // Deuda surfaceada 2026-06-26 al re-subir la rule a "error" (auditoría de
+  // aislamiento multi-tenant). Estaban como WARNING invisible mientras la rule
+  // estuvo en "warn". TODOS son tenant-safe (scopean tenantId o guard de ownership:
+  // finanzas usa auth.tenantId; chat verifica customerPhone===phone; tracking/share
+  // tiene el fix pentest H002 session.tenantId===order.tenantId). Migrar a lib/db/*
+  // cuando se toquen; no son leak, solo evaden cache+audit centralizado.
+  "app/api/chat/marketplace/conversations/route.ts",
+  "app/api/finanzas/monthly-summary/route.ts",
+  "app/api/finanzas/sales-breakdown/route.ts",
+  "app/api/orders/[id]/tracking/share/route.ts",
+  // prisma.$queryRaw/$transaction (mismo barrido 2026-06-26): totp scopea auth.tenantId;
+  // design-system/active es $queryRaw parametrizado (read público de tokens); tienda-semana
+  // es marketplace global con placeholder $1. Tenant-safe, no leak.
+  "app/api/auth/totp/verify/route.ts",
+  "app/api/design-system/active/route.ts",
+  "app/api/marketplace/tienda-semana/route.ts",
   "app/(store)/mi-credito/page.tsx",
   "app/api/ab-tests/route.ts",
   "app/api/admin/plan/mock-activate/route.ts",
@@ -127,7 +143,6 @@ export const PRISMA_DIRECT_LEGACY = [
   "app/api/compras/sugerencias/route.ts",
   "app/api/contact/route.ts",
   "app/api/contratos/[id]/route.ts",
-  "app/api/contratos/export/route.ts",
   "app/api/contratos/route.ts",
   "app/api/cotizaciones/[id]/convertir/route.ts",
   "app/api/coupons/active/route.ts",

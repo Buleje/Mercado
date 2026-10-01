@@ -4,6 +4,11 @@ import NotificationHub from "@/components/notifications/NotificationHub";
 import type { NotificationItem } from "@/components/notifications/useNotificationCenter";
 
 // Mock framer-motion to avoid animation issues in tests
+// El hub pide /api/admin/stats sólo si el rol puede (roles-rutas-panel). Los
+// tests de siempre corren como admin; los de abajo cambian el rol.
+const rolMock = vi.hoisted(() => ({ valor: "admin" as string | null }));
+vi.mock("@/hooks/use-mi-rol", () => ({ useMiRol: () => rolMock.valor }));
+
 vi.mock("framer-motion", () => {
   const MotionDiv = ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => {
     const { initial: _i, animate: _a, exit: _e, transition: _t, ...rest } = props;
@@ -218,5 +223,28 @@ describe("NotificationHub", () => {
     await waitFor(() => {
       expect(screen.getByText("Sin recordatorios")).toBeInTheDocument();
     });
+  });
+});
+
+describe("NotificationHub — gate de rol de /api/admin/stats (2026-09-14)", () => {
+  const pidioStats = (fetchMock: ReturnType<typeof vi.fn>) =>
+    fetchMock.mock.calls.some(([url]) => String(url).includes("/api/admin/stats"));
+
+  it("el almacenero abre el panel sin pedir /api/admin/stats (le daba 403)", async () => {
+    rolMock.valor = "almacenero";
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
+    global.fetch = fetchMock as unknown as typeof fetch;
+    render(<NotificationHub {...defaultProps} />);
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    expect(pidioStats(fetchMock)).toBe(false);
+    rolMock.valor = "admin";
+  });
+
+  it("el admin sí pide /api/admin/stats", async () => {
+    rolMock.valor = "admin";
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
+    global.fetch = fetchMock as unknown as typeof fetch;
+    render(<NotificationHub {...defaultProps} />);
+    await waitFor(() => expect(pidioStats(fetchMock)).toBe(true));
   });
 });

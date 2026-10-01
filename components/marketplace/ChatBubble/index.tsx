@@ -234,7 +234,7 @@ export default function ChatBubble({
                   >
                     {messages.length === 0 && !loading && (
                       <div className="flex flex-col items-center justify-center py-12 gap-3 text-center px-4">
-                        <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
+                        <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                           <Send className="h-5 w-5" strokeWidth={2.25} />
                         </span>
                         <p className="text-sm font-medium text-[var(--text-secondary)] max-w-[16rem]">
@@ -305,7 +305,7 @@ function StartForm({
       {hideIdentityFields ? (
         // Cliente logueado: arranque rapido. Mensaje grande + bienvenida con su nombre.
         <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-3">
-          <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
+          <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
             <User className="h-4 w-4" strokeWidth={2.25} />
           </span>
           <div className="min-w-0">

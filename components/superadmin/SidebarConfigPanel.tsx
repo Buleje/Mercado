@@ -80,13 +80,13 @@ const KEYS = {
   iconStyle: "superadmin-nav-icon-style",
 } as const;
 
-// Brandon mayo 2026: default cambiado a preset "Ejecutivo" — dark + amber +
+// Brandon 2026-06-17: default dark + TEAL de marca (sin ámbar/naranja) +
 // density compact. El preset "Buleje" sigue disponible pero ya no es default.
 const DEFAULTS: SidebarPrefs = {
   hidden: [],
   order: [],
   theme: "dark",
-  accent: "amber",
+  accent: "teal",
   density: "compact",
   iconStyle: "monochrome",
 };
@@ -124,16 +124,16 @@ const ACCENT_COLORS: Array<{ id: AccentColor; label: string; hex: string }> = [
   { id: "emerald", label: "Verde",   hex: "#10B981" },
   { id: "sky",     label: "Cielo",   hex: "#0EA5E9" },
   { id: "violet",  label: "Violeta", hex: "#8B5CF6" },
-  { id: "amber",   label: "Ámbar",   hex: "#F59E0B" },
+  { id: "amber",   label: "Ámbar",   hex: "#0d9488" },
   { id: "rose",    label: "Rosa",    hex: "#F43F5E" },
 ];
 
 const THEMES: Array<{ id: SidebarTheme; label: string; preview: string }> = [
-  { id: "buleje",  label: "Buleje",  preview: "bg-[linear-gradient(135deg,#0b1f2b_0%,#00A0A0_100%)] border border-[#00A0A0]/40" },
-  { id: "light",   label: "Claro",   preview: "bg-white border border-gray-200" },
-  { id: "dark",    label: "Oscuro",  preview: "bg-zinc-900 border border-zinc-700" },
+  { id: "buleje",  label: "Buleje",  preview: "bg-[linear-gradient(135deg,#0b1f2b_0%,#00A0A0_100%)] border border-[var(--accent)]/40" },
+  { id: "light",   label: "Claro",   preview: "bg-[var(--surface-raised)] border border-[var(--rule-base)]" },
+  { id: "dark",    label: "Oscuro",  preview: "bg-gray-900 border border-gray-700" },
   { id: "cristal", label: "Cristal", preview: "bg-linear-to-br from-white/80 to-white/40 border border-white/40 backdrop-blur" },
-  { id: "shaded",  label: "Sombra",  preview: "bg-linear-to-b from-zinc-100 to-zinc-200 border border-zinc-300" },
+  { id: "shaded",  label: "Sombra",  preview: "bg-linear-to-b from-zinc-100 to-zinc-200 border border-[var(--rule-base)]" },
 ];
 
 const DENSITIES: Density[] = ["compact", "normal", "spacious"];
@@ -153,9 +153,9 @@ const PRESETS: Array<{ id: string; label: string; description: string; swatch: s
   {
     id: "ejecutivo",
     label: "Ejecutivo",
-    description: "Oscuro · ámbar · compacto",
+    description: "Oscuro · teal · compacto",
     swatch: "linear-gradient(135deg, #18181b 0%, #27272a 100%)",
-    prefs: { theme: "dark", accent: "amber", density: "compact", iconStyle: "monochrome" },
+    prefs: { theme: "dark", accent: "teal", density: "compact", iconStyle: "monochrome" },
   },
   {
     id: "sereno",
@@ -196,7 +196,7 @@ function SortableNavItem({
       className={[
         "flex items-center gap-3 px-3 py-2 rounded-lg border transition-colors",
         isDragging
-          ? "border-[var(--accent)] bg-[var(--accent-soft)] shadow-lg"
+          ? "border-[var(--accent)] bg-primary/10 shadow-lg"
           : "border-[var(--rule-soft)] bg-[var(--surface-canvas)] hover:bg-[var(--surface-sunken)]",
         hidden ? "opacity-60" : "",
       ].join(" ")}
@@ -205,10 +205,10 @@ function SortableNavItem({
         type="button"
         onClick={onToggle}
         className={[
-          "h-8 w-8 rounded-md flex items-center justify-center shrink-0 transition-colors",
+          "h-8 w-8 rounded-lg flex items-center justify-center shrink-0 transition-colors",
           hidden
             ? "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] hover:text-[var(--accent)]"
-            : "bg-[var(--accent-soft)] text-[var(--accent)] hover:bg-[var(--accent)]/15",
+            : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-[var(--accent)]/15",
         ].join(" ")}
         title={hidden ? "Mostrar" : "Ocultar"}
         aria-pressed={!hidden}
@@ -228,7 +228,7 @@ function SortableNavItem({
       <button
         {...attributes}
         {...listeners}
-        className="p-2 rounded-md cursor-grab active:cursor-grabbing text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] touch-none"
+        className="p-2 rounded-xl cursor-grab active:cursor-grabbing text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] touch-none"
         aria-label="Arrastrar para reordenar"
       >
         <GripVertical className="h-4 w-4" />
@@ -343,7 +343,7 @@ export default function SidebarConfigPanel({ items }: Props) {
                 className={[
                   "group text-left rounded-xl border-2 p-3 transition-all",
                   isActive
-                    ? "border-[var(--accent)] bg-[var(--accent-soft)] shadow-sm"
+                    ? "border-[var(--accent)] bg-primary/10 shadow-sm"
                     : "border-[var(--rule-soft)] bg-[var(--surface-canvas)] hover:border-[var(--accent)]/60 hover:-translate-y-0.5",
                 ].join(" ")}
               >
@@ -385,9 +385,9 @@ export default function SidebarConfigPanel({ items }: Props) {
                   type="button"
                   onClick={() => update({ theme: t.id })}
                   className={[
-                    "rounded-lg border px-3 py-2 text-left transition-colors",
+                    "rounded-xl border px-3 py-2 text-left transition-colors",
                     active
-                      ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+                      ? "border-[var(--accent)] bg-primary/10"
                       : "border-[var(--rule-soft)] hover:border-[var(--rule-strong)]",
                   ].join(" ")}
                 >
@@ -414,7 +414,7 @@ export default function SidebarConfigPanel({ items }: Props) {
                   type="button"
                   onClick={() => update({ accent: c.id })}
                   className={[
-                    "h-12 rounded-lg flex items-center justify-center transition-all",
+                    "h-12 rounded-xl flex items-center justify-center transition-all",
                     active ? "ring-2 ring-offset-2 ring-offset-[var(--surface-canvas)]" : "hover:scale-105",
                   ].join(" ")}
                   style={{ backgroundColor: c.hex, ...(active ? { boxShadow: `0 0 0 2px ${c.hex}` } : {}) }}
@@ -445,9 +445,9 @@ export default function SidebarConfigPanel({ items }: Props) {
                   type="button"
                   onClick={() => update({ density: d })}
                   className={[
-                    "rounded-lg border px-3 py-2 text-sm font-semibold capitalize transition-colors",
+                    "rounded-xl border px-3 py-2 text-sm font-semibold capitalize transition-colors",
                     active
-                      ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                      ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                       : "border-[var(--rule-soft)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)]",
                   ].join(" ")}
                 >
@@ -471,9 +471,9 @@ export default function SidebarConfigPanel({ items }: Props) {
                   type="button"
                   onClick={() => update({ iconStyle: s })}
                   className={[
-                    "rounded-lg border px-3 py-2 text-sm font-semibold transition-colors",
+                    "rounded-xl border px-3 py-2 text-sm font-semibold transition-colors",
                     active
-                      ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                      ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                       : "border-[var(--rule-soft)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)]",
                   ].join(" ")}
                 >

@@ -68,7 +68,7 @@ export default function DemoLeadForm() {
 
   if (success) {
     return (
-      <div className="rounded-2xl bg-[var(--accent-soft)] border-2 border-[var(--accent)] p-6 text-center">
+      <div className="rounded-2xl bg-primary/10 border-2 border-[var(--accent)] p-6 text-center">
         <div className="text-4xl mb-3">🎉</div>
         <p className="text-base font-extrabold text-[var(--text-primary)] mb-2">
           ¡Listo!

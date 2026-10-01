@@ -116,7 +116,7 @@ export default function ThemeInjector() {
 
     // ── Derivados ─────────────────────────────────────────────────────
     const primary = t.primaryColor && t.primaryColor.startsWith("#") ? t.primaryColor : "#00A0A0";
-    const secondary = t.secondaryColor && t.secondaryColor.startsWith("#") ? t.secondaryColor : "#f97316";
+    const secondary = t.secondaryColor && t.secondaryColor.startsWith("#") ? t.secondaryColor : "#ff6b5b";
     const accent = t.accentColor && t.accentColor.startsWith("#") ? t.accentColor : primary;
     const primaryDark = shade(primary, -0.18);
     const primaryLight = shade(primary, 0.20);

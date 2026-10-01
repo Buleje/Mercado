@@ -24,6 +24,9 @@ export interface FeaturedNearbyProduct {
   image: string;
   retailPrice: number;
   discountPrice: number | null;
+  /** Hasta cuándo vale la oferta. `null` = sin caducidad. Sin este campo la
+   *  tarjeta no puede saber si la rebaja sigue viva (ver `precio-vigente.ts`). */
+  discountUntil: string | null;
   discountLabel: string | null;
 }
 
@@ -98,6 +101,7 @@ export async function getFeaturedNearby(
           productId: true,
           retailPrice: true,
           discountPrice: true,
+          discountUntil: true,
           discountLabel: true,
           product: {
             select: { name: true, image: true },
@@ -132,6 +136,7 @@ export async function getFeaturedNearby(
           image: p.product.image,
           retailPrice: Number(p.retailPrice),
           discountPrice: p.discountPrice != null ? Number(p.discountPrice) : null,
+          discountUntil: p.discountUntil ? p.discountUntil.toISOString() : null,
           discountLabel: p.discountLabel,
         })),
       } satisfies FeaturedNearbyStore;
@@ -174,6 +179,8 @@ export interface ShowcaseProduct {
   image: string;
   retailPrice: number;
   discountPrice: number | null;
+  /** Sin esto la card Premium no puede saber si la rebaja venció. */
+  discountUntil: string | null;
   category: string;
 }
 
@@ -203,6 +210,7 @@ export async function getStoreShowcaseByCategory(
           productId: true,
           retailPrice: true,
           discountPrice: true,
+          discountUntil: true,
           product: { select: { name: true, image: true, category: true } },
         },
       },
@@ -223,6 +231,7 @@ export async function getStoreShowcaseByCategory(
         image: p.product.image ?? "",
         retailPrice: Number(p.retailPrice),
         discountPrice: p.discountPrice != null ? Number(p.discountPrice) : null,
+        discountUntil: p.discountUntil ? p.discountUntil.toISOString() : null,
         category: cat,
       });
       if (picked.length >= maxCategories) break;
@@ -266,6 +275,7 @@ export async function getFeaturedStoresWithProducts(opts: {
           productId: true,
           retailPrice: true,
           discountPrice: true,
+          discountUntil: true,
           discountLabel: true,
           product: { select: { name: true, image: true } },
         },
@@ -291,6 +301,7 @@ export async function getFeaturedStoresWithProducts(opts: {
       image: p.product.image ?? "",
       retailPrice: Number(p.retailPrice),
       discountPrice: p.discountPrice != null ? Number(p.discountPrice) : null,
+      discountUntil: p.discountUntil ? p.discountUntil.toISOString() : null,
       discountLabel: p.discountLabel,
     })),
   }));

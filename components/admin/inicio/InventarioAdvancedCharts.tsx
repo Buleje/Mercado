@@ -26,6 +26,7 @@ import {
 } from "@/components/ui-system/charts";
 import { DashboardSection } from "./_shared";
 import { DraggableSections, type DraggableItem } from "./DraggableSections";
+import { formatDateShort, formatNumber } from "@/lib/format";
 
 type Product = {
   id: number | string;
@@ -75,7 +76,7 @@ function dayKey(iso: string) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 function dayLabel(dk: string) {
-  return new Date(dk + "T12:00:00").toLocaleDateString("es-PE", { day: "2-digit", month: "short" });
+  return formatDateShort(dk + "T12:00:00");
 }
 
 export const InventarioAdvancedCharts = memo(function InventarioAdvancedCharts() {
@@ -102,7 +103,7 @@ export const InventarioAdvancedCharts = memo(function InventarioAdvancedCharts()
         });
       } else {
         toast.success("EOQ calculado", {
-          description: `${s.total} SKUs analizados · ${s.urgent} urgentes · monto sugerido S/ ${s.totalSuggestedAmount.toLocaleString("es-PE")}`,
+          description: `${s.total} SKUs analizados · ${s.urgent} urgentes · monto sugerido S/ ${formatNumber(s.totalSuggestedAmount)}`,
           duration: 5000,
         });
       }
@@ -383,7 +384,7 @@ export const InventarioAdvancedCharts = memo(function InventarioAdvancedCharts()
     return buckets;
   }, [orders, sales]);
 
-  const fmtU = (v: number) => `${v.toLocaleString("es-PE")} u`;
+  const fmtU = (v: number) => `${formatNumber(v)} u`;
 
   const sections: DraggableItem[] = [
     {
@@ -397,7 +398,7 @@ export const InventarioAdvancedCharts = memo(function InventarioAdvancedCharts()
           kicker="ABC analysis · concentración del valor"
           title="Top 15 SKUs y curva 80/20"
           kpis={[
-            { label: "Valor total", value: `S/ ${abc.total.toLocaleString("es-PE")}`, tone: "primary" },
+            { label: "Valor total", value: `S/ ${formatNumber(abc.total)}`, tone: "primary" },
             { label: "SKUs clase A", value: String(abc.aCount), tone: "success" },
             { label: "SKUs clase B", value: String(abc.bCount), tone: "primary" },
             { label: "SKUs clase C", value: String(abc.cCount), tone: "neutral" },
@@ -415,7 +416,7 @@ export const InventarioAdvancedCharts = memo(function InventarioAdvancedCharts()
             tooltipFormat={(v, name) =>
               name?.toLowerCase().includes("acumulado")
                 ? `${Number(v).toFixed(1)}%`
-                : `S/ ${Number(v).toLocaleString("es-PE")}`
+                : `S/ ${formatNumber(Number(v))}`
             }
             height={320}
             minDataPoints={1}
@@ -574,7 +575,7 @@ kicker="Rotación · rango activo"
               height={300}
             />
           ) : (
-            <div className="rounded-lg border border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">
+            <div className="rounded-lg border border-dashed border-[var(--rule-base)] p-6 text-center text-sm text-[var(--text-tertiary)]">
               Sin datos en los rango activo.
             </div>
           )}
@@ -684,7 +685,7 @@ kicker="Δ Inventario · rango activo"
                 </div>
               </div>
             ) : (
-              <div className="rounded-lg border border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">
+              <div className="rounded-lg border border-dashed border-[var(--rule-base)] p-6 text-center text-sm text-[var(--text-tertiary)]">
                 Sin datos en los rango activo.
               </div>
             )}

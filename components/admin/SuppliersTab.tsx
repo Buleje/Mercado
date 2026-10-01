@@ -1,19 +1,22 @@
-﻿﻿"use client";
+"use client";
 
 import { CardTitle, SectionTitle } from "@buleje/design-system";
 
 import { useState, useEffect, useCallback, type FormEvent } from "react";
-import { Trash2, Pencil, Check, X, Plus, Phone, Mail, MapPin, AlertTriangle, Clock, DollarSign, ChevronDown, ChevronUp, Award, Users, Building2, CreditCard } from "@buleje/design-system/icons";
+import { Trash2, Pencil, Check, X, Plus, Phone, Mail, MapPin, AlertTriangle, Clock, DollarSign, ChevronDown, ChevronUp, Award, Users, Building2, CreditCard, History } from "@buleje/design-system/icons";
 import type { DbSupplier } from "@/lib/jsondb";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
 import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog";
-import { cn } from "@/lib/utils";
+import { Field } from "@/components/admin/shared/Field";
+import { cn, limaDateKey } from "@/lib/utils";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import TableSkeleton from "@/components/admin/shared/TableSkeleton";
 import WhatsAppButton from "./WhatsAppButton";
 import SupplierScorecard from "./compras/SupplierScorecard";
+import SupplierTimeline from "./compras/SupplierTimeline";
 import ProveedorFormModal from "./proveedores/ProveedorFormModal";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { formatCurrency, formatDateNumeric, formatMonth, formatNumber } from "@/lib/format";
 
 type Payable = {
   id: string;
@@ -28,6 +31,22 @@ type Payable = {
   purchaseOrderId?: string;
 };
 
+/**
+ * Días de calendario entre "hoy" y el vencimiento — F11 (2026-09-29): `dueDate`
+ * es DATE-only guardado como medianoche UTC (mismo convenio que `soloFecha` en
+ * lib/format), así que su día de calendario es la fecha UTC, no la de Lima. La
+ * versión vieja hacía `new Date(dueDate).setHours(0,0,0,0)` en hora LOCAL del
+ * navegador: en Lima (UTC-5) esa medianoche UTC cae en el día anterior y la
+ * cuenta salía "vencida" un día antes de tiempo.
+ * Se compara por CLAVE de día ("YYYY-MM-DD"), no por instante — evita que la
+ * resta de timestamps arrastre el mismo corrimiento de zona.
+ */
+function diasHastaVencer(dueDate: string, hoyKey: string): number {
+  const dueKey = new Date(dueDate).toISOString().slice(0, 10);
+  const msPorDia = 24 * 60 * 60 * 1000;
+  return Math.round((Date.parse(`${dueKey}T00:00:00Z`) - Date.parse(`${hoyKey}T00:00:00Z`)) / msPorDia);
+}
+
 export default function SuppliersTab() {
   const [suppliers, setSuppliers] = useState<DbSupplier[]>([]);
   const [payables, setPayables] = useState<Payable[]>([]);
@@ -40,7 +59,10 @@ export default function SuppliersTab() {
   const [addForm, setAddForm] = useState({ name: "", ruc: "", phone: "", email: "", address: "", notes: "" });
   const [deleteTarget, setDeleteTarget] = useState<DbSupplier | null>(null);
   const [deleting, setDeleting] = useState(false);
+  /** Lo que dijo el servidor cuando no se pudo borrar. Antes se perdía. */
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [expandedScorecard, setExpandedScorecard] = useState<string | null>(null);
+  const [expandedTimeline, setExpandedTimeline] = useState<string | null>(null);
   const [showProveedorModal, setShowProveedorModal] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<DbSupplier | null>(null);
   const [search, setSearch] = useState("");
@@ -86,10 +108,32 @@ export default function SuppliersTab() {
   const deleteSupplier = async () => {
     if (!deleteTarget) return;
     setDeleting(true);
-    await fetch(`/api/suppliers/${deleteTarget.id}`, { method: "DELETE" });
-    setDeleting(false);
-    setDeleteTarget(null);
-    load();
+    setDeleteError(null);
+    try {
+      // Sin `csrfHeaders` esto devolvía 403 SIEMPRE, y como nadie miraba la
+      // respuesta el modal se cerraba igual: parecía borrado hasta que la lista
+      // se recargaba con el proveedor todavía ahí.
+      const res = await fetch(`/api/suppliers/${deleteTarget.id}`, {
+        method: "DELETE",
+        headers: csrfHeaders(),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setDeleteError(
+          typeof body?.error === "string"
+            ? body.error
+            : "No se pudo eliminar el proveedor. Intenta de nuevo.",
+        );
+        return;
+      }
+      setDeleteTarget(null);
+      load();
+    } catch (err) {
+      console.warn("[SuppliersTab] eliminar proveedor falló", err);
+      setDeleteError("No se pudo eliminar el proveedor. Revisa la conexión.");
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const addSupplier = async (e: FormEvent) => {
@@ -107,27 +151,24 @@ export default function SuppliersTab() {
     load();
   };
 
-  // Payment alerts calculations
+  // Payment alerts calculations — "hoy" en Lima, no en UTC del servidor/navegador.
+  const hoyKey = limaDateKey();
+  // Para timestamps reales (createdAt), no fechas DATE-only: el instante de "ahora" alcanza.
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  
+
   const pendingPayables = payables.filter(p => p.status !== "pagado");
-  
+
   const overduePayables = pendingPayables.filter(p => {
     if (!p.dueDate) return false;
-    const due = new Date(p.dueDate);
-    due.setHours(0, 0, 0, 0);
-    return due < today;
+    return diasHastaVencer(p.dueDate, hoyKey) < 0;
   });
-  
+
   const approachingPayables = pendingPayables.filter(p => {
     if (!p.dueDate) return false;
-    const due = new Date(p.dueDate);
-    due.setHours(0, 0, 0, 0);
-    const diffDays = Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    const diffDays = diasHastaVencer(p.dueDate, hoyKey);
     return diffDays >= 0 && diffDays <= 7;
   });
-  
+
   const getSupplierDebt = (supplierId: string) => {
     const supplierPayables = payables.filter(
       p => p.supplierId === supplierId && p.status !== "pagado"
@@ -138,15 +179,11 @@ export default function SuppliersTab() {
     );
     const overdue = supplierPayables.some(p => {
       if (!p.dueDate) return false;
-      const due = new Date(p.dueDate);
-      due.setHours(0, 0, 0, 0);
-      return due < today;
+      return diasHastaVencer(p.dueDate, hoyKey) < 0;
     });
     const approaching = !overdue && supplierPayables.some(p => {
       if (!p.dueDate) return false;
-      const due = new Date(p.dueDate);
-      due.setHours(0, 0, 0, 0);
-      const diffDays = Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      const diffDays = diasHastaVencer(p.dueDate, hoyKey);
       return diffDays >= 0 && diffDays <= 7;
     });
     return { totalDebt, count: supplierPayables.length, overdue, approaching };
@@ -163,9 +200,7 @@ export default function SuppliersTab() {
   );
   
   const getDaysInfo = (dueDate: string) => {
-    const due = new Date(dueDate);
-    due.setHours(0, 0, 0, 0);
-    const diffDays = Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    const diffDays = diasHastaVencer(dueDate, hoyKey);
     if (diffDays < 0) return { text: `${Math.abs(diffDays)} días vencido`, overdue: true };
     if (diffDays === 0) return { text: "Vence hoy", overdue: true };
     return { text: `Vence en ${diffDays} días`, overdue: false };
@@ -197,7 +232,7 @@ export default function SuppliersTab() {
           );
         })
         .reduce((s, p) => s + p.amount, 0);
-      return { label: d.toLocaleDateString("es-PE", { month: "short" }), total };
+      return { label: formatMonth(d), total };
     });
   };
 
@@ -221,7 +256,7 @@ export default function SuppliersTab() {
         <div className="flex flex-wrap gap-2">
           <button
             onClick={() => { setEditingSupplier(null); setShowProveedorModal(true); }}
-            className="flex items-center gap-1.5 text-sm font-bold text-white bg-primary hover:bg-primary-dark px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-colors "
+            className="flex items-center gap-1.5 text-sm font-bold text-white bg-primary hover:bg-primary-dark px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl transition-colors "
           >
             <Plus className="h-4 w-4" /> Nuevo proveedor
           </button>
@@ -245,7 +280,7 @@ export default function SuppliersTab() {
                       {overduePayables.length} vencido{overduePayables.length > 1 ? 's' : ''}
                     </span>
                     <span className="text-[var(--text-secondary)] dark:text-muted">
-                      S/ {totalOverdueAmount.toFixed(2)}
+                      {formatCurrency(totalOverdueAmount)}
                     </span>
                   </div>
                 )}
@@ -256,7 +291,7 @@ export default function SuppliersTab() {
                       {approachingPayables.length} próximo{approachingPayables.length > 1 ? 's' : ''}
                     </span>
                     <span className="text-[var(--text-secondary)] dark:text-muted">
-                      S/ {totalApproachingAmount.toFixed(2)}
+                      {formatCurrency(totalApproachingAmount)}
                     </span>
                   </div>
                 )}
@@ -304,11 +339,11 @@ export default function SuppliersTab() {
                     </div>
                     <div className="text-right shrink-0">
                       <div className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
-                        S/ {(p.amount - p.paidAmount).toFixed(2)}
+                        {formatCurrency(p.amount - p.paidAmount)}
                       </div>
                       {p.dueDate && (
                         <div className="text-xs text-[var(--text-secondary)] dark:text-muted">
-                          {new Date(p.dueDate).toLocaleDateString('es-PE')}
+                          {formatDateNumeric(p.dueDate, { soloFecha: true })}
                         </div>
                       )}
                     </div>
@@ -327,7 +362,7 @@ export default function SuppliersTab() {
         const conRuc = suppliers.filter(s => (s.ruc ?? "").length === 11).length;
         return (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
               <div className="min-w-0">
                 <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Total</p>
                 <p className="text-2xl font-extrabold tabular-nums leading-none mt-1.5 text-[var(--text-primary)]">{suppliers.length}</p>
@@ -335,7 +370,7 @@ export default function SuppliersTab() {
               </div>
               <Users className="h-5 w-5 text-[var(--text-tertiary)] shrink-0" />
             </div>
-            <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
               <div className="min-w-0">
                 <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Con RUC</p>
                 <p className="text-2xl font-extrabold tabular-nums leading-none mt-1.5 text-[var(--text-primary)]">{conRuc}</p>
@@ -343,7 +378,7 @@ export default function SuppliersTab() {
               </div>
               <Building2 className="h-5 w-5 text-[var(--text-tertiary)] shrink-0" />
             </div>
-            <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
               <div className="min-w-0">
                 <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Con deuda</p>
                 <p className={cn("text-2xl font-extrabold tabular-nums leading-none mt-1.5", supplierIdsWithDebt.size > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--text-primary)]")}>{supplierIdsWithDebt.size}</p>
@@ -351,10 +386,10 @@ export default function SuppliersTab() {
               </div>
               <CreditCard className={cn("h-5 w-5 shrink-0", supplierIdsWithDebt.size > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--text-tertiary)]")} />
             </div>
-            <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
               <div className="min-w-0">
                 <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Deuda total</p>
-                <p className={cn("text-xl font-extrabold tabular-nums leading-none mt-1.5", totalDebt > 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-primary)]")}>S/{totalDebt.toLocaleString("es-PE", { maximumFractionDigits: 0 })}</p>
+                <p className={cn("text-xl font-extrabold tabular-nums leading-none mt-1.5", totalDebt > 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-primary)]")}>S/{formatNumber(totalDebt, { max: 0 })}</p>
                 <p className="text-xs text-[var(--text-tertiary)] mt-1">{overduePayables.length > 0 ? `${overduePayables.length} vencida${overduePayables.length === 1 ? "" : "s"}` : "al día"}</p>
               </div>
               <DollarSign className={cn("h-5 w-5 shrink-0", totalDebt > 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]")} />
@@ -387,7 +422,7 @@ export default function SuppliersTab() {
                   "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors border",
                   filter === p.id
                     ? "bg-[var(--text-primary)] text-white border-[var(--text-primary)]"
-                    : "bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]"
+                    : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]"
                 )}
               >
                 {p.label}
@@ -404,7 +439,7 @@ export default function SuppliersTab() {
               placeholder="Buscar por nombre, RUC o teléfono..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="ml-auto px-3 py-1.5 border border-[var(--rule-base)] rounded-lg text-sm bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] outline-none focus:border-primary w-64"
+              className="ml-auto px-3 py-1.5 border border-[var(--rule-base)] rounded-xl text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] outline-none focus:border-primary w-64"
             />
           </div>
         );
@@ -437,7 +472,7 @@ export default function SuppliersTab() {
         });
         if (visible.length === 0) {
           return (
-            <div className="text-center py-10 border-2 border-dashed border-[var(--rule-base)] rounded-xl">
+            <div className="text-center py-10 border border-dashed border-[var(--rule-base)] rounded-xl">
               <p className="text-sm font-semibold text-[var(--text-secondary)]">No hay proveedores en este filtro</p>
               <button onClick={() => { setFilter("todos"); setSearch(""); }} className="mt-2 text-xs text-primary font-semibold hover:underline">Ver todos</button>
             </div>
@@ -450,17 +485,17 @@ export default function SuppliersTab() {
               {editingId === s.id ? (
                 <div className="space-y-3">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <input value={editForm.name ?? ""} onChange={(e) => setEditForm(f => ({ ...f, name: e.target.value }))} placeholder="Nombre" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
-                    <input value={editForm.ruc ?? ""} onChange={(e) => setEditForm(f => ({ ...f, ruc: e.target.value }))} placeholder="RUC" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm font-mono" />
-                    <input value={editForm.phone ?? ""} onChange={(e) => setEditForm(f => ({ ...f, phone: e.target.value }))} placeholder="Teléfono" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
-                    <input value={editForm.email ?? ""} onChange={(e) => setEditForm(f => ({ ...f, email: e.target.value }))} placeholder="Email" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
-                    <input value={editForm.address ?? ""} onChange={(e) => setEditForm(f => ({ ...f, address: e.target.value }))} placeholder="Dirección" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm sm:col-span-2" />
+                    <input value={editForm.name ?? ""} onChange={(e) => setEditForm(f => ({ ...f, name: e.target.value }))} placeholder="Nombre" className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
+                    <input value={editForm.ruc ?? ""} onChange={(e) => setEditForm(f => ({ ...f, ruc: e.target.value }))} placeholder="RUC" className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm font-mono" />
+                    <input value={editForm.phone ?? ""} onChange={(e) => setEditForm(f => ({ ...f, phone: e.target.value }))} placeholder="Teléfono" className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
+                    <input value={editForm.email ?? ""} onChange={(e) => setEditForm(f => ({ ...f, email: e.target.value }))} placeholder="Email" className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
+                    <input value={editForm.address ?? ""} onChange={(e) => setEditForm(f => ({ ...f, address: e.target.value }))} placeholder="Dirección" className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm sm:col-span-2" />
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <button onClick={saveEdit} disabled={saving} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-[var(--accent-soft)] text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] text-sm font-bold transition-colors">
+                    <button onClick={saveEdit} disabled={saving} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] hover:bg-primary/10 text-sm font-bold transition-colors">
                       <Check className="h-4 w-4 inline mr-1" /> Guardar
                     </button>
-                    <button onClick={cancelEdit} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-gray-50 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent text-sm font-semibold transition-colors">
+                    <button onClick={cancelEdit} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)] text-sm font-semibold transition-colors">
                       <X className="h-4 w-4 inline mr-1" /> Cancelar
                     </button>
                   </div>
@@ -470,7 +505,7 @@ export default function SuppliersTab() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{s.name}</span>
-                      {s.ruc && <span className="text-xs font-mono text-[var(--text-tertiary)] dark:text-muted bg-gray-100 dark:bg-accent px-2 py-0.5 rounded">RUC: {s.ruc}</span>}
+                      {s.ruc && <span className="text-xs font-mono text-[var(--text-tertiary)] dark:text-muted bg-[var(--rule-soft)] dark:bg-accent px-2 py-0.5 rounded">RUC: {s.ruc}</span>}
 
                       {/* Mejora 15: Proveedor mas confiable badge */}
                       {topSupplierId === s.id && (
@@ -525,12 +560,25 @@ export default function SuppliersTab() {
                         return (
                           <span className="flex items-center gap-1 font-semibold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
                             <DollarSign className="h-3.5 w-3.5" />
-                            Deuda: S/ {Number(debt.totalDebt).toFixed(2)} ({debt.count} {debt.count === 1 ? 'factura' : 'facturas'})
+                            Deuda: {formatCurrency(Number(debt.totalDebt))} ({debt.count} {debt.count === 1 ? 'factura' : 'facturas'})
                           </span>
                         );
                       })()}
                     </div>
                     {s.notes && <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-1 italic">{s.notes}</p>}
+                    {/* Nudge de perfil incompleto (reporte QA): un proveedor
+                        creado rápido desde Punto de Compra queda solo con nombre
+                        (+RUC) y sin contacto/dirección. Aviso suave + acceso a
+                        completar la ficha. */}
+                    {!s.phone && !s.email && !s.address && (
+                      <div className="mt-2 flex items-center gap-2 rounded-lg border border-[var(--data-warning-500)]/30 bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/15 px-3 py-1.5">
+                        <AlertTriangle className="h-3.5 w-3.5 text-[var(--data-warning-500)] shrink-0" aria-hidden />
+                        <span className="text-xs text-[var(--text-secondary)] dark:text-muted flex-1">Perfil incompleto — falta contacto y dirección.</span>
+                        <button type="button" onClick={() => { setEditingSupplier(s); setShowProveedorModal(true); }} className="text-xs font-bold text-primary hover:underline shrink-0">
+                          Completar
+                        </button>
+                      </div>
+                    )}
                     {/* Purchase history mini chart */}
                     {(() => {
                       const history = getMonthlyHistory(s.id);
@@ -572,6 +620,25 @@ export default function SuppliersTab() {
                         </div>
                       )}
                     </div>
+
+                    {/* Timeline toggle: historial combinado OC + devoluciones
+                        (reporte QA Compras: no saltar entre pestañas). */}
+                    <div className="mt-3 pt-3 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+                      <button
+                        onClick={() => setExpandedTimeline(expandedTimeline === s.id ? null : s.id)}
+                        className="flex items-center gap-1.5 text-xs font-bold text-primary hover:text-primary/80 transition-colors"
+                        title="Historial combinado de órdenes de compra y devoluciones"
+                      >
+                        <History className="h-3.5 w-3.5" />
+                        {expandedTimeline === s.id ? "Ocultar historial" : "Ver historial"}
+                        {expandedTimeline === s.id ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                      </button>
+                      {expandedTimeline === s.id && (
+                        <div className="mt-3">
+                          <SupplierTimeline supplierId={s.id} supplierName={s.name} />
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
                     {s.phone && (() => {
@@ -594,10 +661,10 @@ export default function SuppliersTab() {
                         />
                       );
                     })()}
-                    <button onClick={() => { setEditingSupplier(s); setShowProveedorModal(true); }} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-primary hover:bg-primary/8 transition-colors" title="Editar ficha completa">
+                    <button onClick={() => { setEditingSupplier(s); setShowProveedorModal(true); }} className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-primary hover:bg-primary/8 transition-colors" title="Editar ficha completa">
                       <Pencil className="h-4 w-4" />
                     </button>
-                    <button onClick={() => setDeleteTarget(s)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors" title="Eliminar">
+                    <button onClick={() => setDeleteTarget(s)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors" title="Eliminar">
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
@@ -612,51 +679,51 @@ export default function SuppliersTab() {
       {/* ── Add supplier modal ── */}
       <ConfirmDeleteDialog
         open={!!deleteTarget}
-        onClose={() => setDeleteTarget(null)}
+        onClose={() => { setDeleteTarget(null); setDeleteError(null); }}
         onConfirm={deleteSupplier}
         title="¿Eliminar proveedor?"
-        description={deleteTarget ? `"${deleteTarget.name}" será eliminado permanentemente. Esta acción no se puede deshacer.` : "Esta acción no se puede deshacer"}
+        description={
+          deleteError
+            ? `No se eliminó: ${deleteError}`
+            : deleteTarget
+              ? `"${deleteTarget.name}" será eliminado permanentemente. Esta acción no se puede deshacer.`
+              : "Esta acción no se puede deshacer"
+        }
         confirmText="Sí, eliminar"
         loading={deleting}
       />
 
       {showAdd && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={(e) => e.target === e.currentTarget && setShowAdd(false)}>
+        <div className="fixed inset-0 z-modal flex items-end sm:items-center justify-center bg-black/50" onClick={(e) => e.target === e.currentTarget && setShowAdd(false)}>
           <div className="bg-[var(--surface-raised)] w-full sm:max-w-lg sm:rounded-xl rounded-t-2xl overflow-y-auto max-h-[90dvh]">
             <div className="flex items-center justify-between px-5 py-4 border-b sticky top-0 bg-[var(--surface-raised)] z-10">
               <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Nuevo proveedor</CardTitle>
-              <button onClick={() => setShowAdd(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors"><X className="h-5 w-5 text-[var(--text-secondary)] dark:text-muted" /></button>
+              <button aria-label="Cerrar" onClick={() => setShowAdd(false)} className="p-1.5 rounded-xl hover:bg-[var(--rule-soft)] transition-colors"><X className="h-5 w-5 text-[var(--text-secondary)] dark:text-muted" /></button>
             </div>
             <form onSubmit={addSupplier} className="p-5 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Nombre / Razon social *</label>
-                  <input required value={addForm.name} onChange={(e) => setAddForm(f => ({ ...f, name: e.target.value }))} placeholder="Distribuidora Lima S.A.C." className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">RUC</label>
-                  <input value={addForm.ruc} onChange={(e) => setAddForm(f => ({ ...f, ruc: e.target.value }))} placeholder="20xxxxxxxxx" maxLength={11} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm font-mono" />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Teléfono</label>
-                  <input value={addForm.phone} onChange={(e) => setAddForm(f => ({ ...f, phone: e.target.value }))} placeholder="999 999 999" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Email</label>
-                  <input type="email" value={addForm.email} onChange={(e) => setAddForm(f => ({ ...f, email: e.target.value }))} placeholder="ventas@empresa.com" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
-                </div>
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Direccion</label>
-                  <input value={addForm.address} onChange={(e) => setAddForm(f => ({ ...f, address: e.target.value }))} placeholder="Av. Colonial 1234, Lima" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
-                </div>
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Notas</label>
-                  <textarea value={addForm.notes} onChange={(e) => setAddForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder="Informacion adicional..." className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm resize-none" />
-                </div>
+                <Field label="Nombre / Razon social *" labelClassName="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">
+                  <input required value={addForm.name} onChange={(e) => setAddForm(f => ({ ...f, name: e.target.value }))} placeholder="Distribuidora Lima S.A.C." className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
+                </Field>
+                <Field label="RUC" labelClassName="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">
+                  <input value={addForm.ruc} onChange={(e) => setAddForm(f => ({ ...f, ruc: e.target.value }))} placeholder="20xxxxxxxxx" maxLength={11} className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm font-mono" />
+                </Field>
+                <Field label="Teléfono" labelClassName="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">
+                  <input value={addForm.phone} onChange={(e) => setAddForm(f => ({ ...f, phone: e.target.value }))} placeholder="999 999 999" className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
+                </Field>
+                <Field label="Email" labelClassName="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">
+                  <input type="email" value={addForm.email} onChange={(e) => setAddForm(f => ({ ...f, email: e.target.value }))} placeholder="ventas@empresa.com" className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
+                </Field>
+                <Field label="Direccion" labelClassName="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1" className="sm:col-span-2">
+                  <input value={addForm.address} onChange={(e) => setAddForm(f => ({ ...f, address: e.target.value }))} placeholder="Av. Colonial 1234, Lima" className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
+                </Field>
+                <Field label="Notas" labelClassName="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1" className="sm:col-span-2">
+                  <textarea value={addForm.notes} onChange={(e) => setAddForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder="Informacion adicional..." className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm resize-none" />
+                </Field>
               </div>
               <div className="flex flex-wrap gap-3">
-                <button type="button" onClick={() => setShowAdd(false)} className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">Cancelar</button>
-                <button type="submit" disabled={saving} className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60">
+                <button type="button" onClick={() => setShowAdd(false)} className="flex-1 min-h-11 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] transition-colors">Cancelar</button>
+                <button type="submit" disabled={saving} className="flex-1 min-h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-60">
                   {saving ? "Guardando..." : "Agregar proveedor"}
                 </button>
               </div>

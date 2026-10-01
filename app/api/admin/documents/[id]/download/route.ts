@@ -10,13 +10,13 @@ type Ctx = { params: Promise<{ id: string }> };
 
 export async function GET(req: NextRequest, ctx: Ctx) {
   try {
-    const rl = await applyRateLimit(req, "MODERATE", "documents:download");
+    const rl = await applyRateLimit(req, "DRIVE_READ", "documents:download");
     if (rl) return rl;
     const auth = await requireAdmin(req);
     if (auth instanceof NextResponse) return auth;
 
     const { id } = await ctx.params;
-    const doc = await DocumentsDB.getById(auth.tenantId, id);
+    const doc = await DocumentsDB.getById(auth.tenantId, id, auth.role);
     if (!doc) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
     const url = await getSignedUrl(doc.storagePath, 60 * 60);

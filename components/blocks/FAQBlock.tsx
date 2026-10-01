@@ -61,7 +61,7 @@ export default function FAQBlock(props: Partial<FAQBlockProps>) {
     <section id="preguntas" className="py-20 sm:py-28 bg-surface">
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <span className="inline-flex items-center gap-1.5 bg-primary/8 text-primary text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full mb-4">
+          <span className="inline-flex items-center gap-1.5 bg-primary/8 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full mb-4">
             <HelpCircle className="w-3.5 h-3.5" />
             {badge}
           </span>

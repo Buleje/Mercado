@@ -125,6 +125,12 @@ export async function GET(req: NextRequest) {
         isActive: sp.isActive,
         retailPrice: Number(sp.retailPrice),
         wholesalePrice: Number(sp.wholesalePrice ?? 0),
+        /* La oferta. El `include` ya la traía de la base, pero este mapeo no la
+           devolvía: el panel del vendor no podía mostrar ni editar la rebaja de
+           sus propios productos. */
+        discountPrice: sp.discountPrice != null ? Number(sp.discountPrice) : null,
+        discountUntil: sp.discountUntil ? sp.discountUntil.toISOString() : null,
+        discountLabel: sp.discountLabel,
         stock: sp.product.stock ?? 0,
         sku: sp.product.barcode ?? "",
         image: sp.product.image ?? null,

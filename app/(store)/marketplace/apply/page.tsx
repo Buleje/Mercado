@@ -121,7 +121,7 @@ export default function MarketplaceApplyPage() {
   const fireConfetti = async () => {
     const confetti = (await import("canvas-confetti")).default;
     const end = Date.now() + 1500;
-    const colors = ["var(--accent)", "#F59E0B", "#EC4899", "#8B5CF6"];
+    const colors = ["var(--accent)", "#ff6b5b", "#EC4899", "#8B5CF6"];
     (function frame() {
       confetti({
         particleCount: 3,
@@ -244,7 +244,7 @@ export default function MarketplaceApplyPage() {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header + progress */}
         <div className="mb-8 text-center">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide">
             <Sparkles className="h-3 w-3" />
             Registro gratuito · 3 minutos
           </span>
@@ -627,7 +627,7 @@ export default function MarketplaceApplyPage() {
                     {form.zone || "Zona"}
                   </p>
                   {form.category && (
-                    <span className="inline-flex mt-2 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[length:var(--ts-2xs)] font-bold">
+                    <span className="inline-flex mt-2 px-2 py-0.5 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-[length:var(--ts-2xs)] font-bold">
                       {form.category}
                     </span>
                   )}

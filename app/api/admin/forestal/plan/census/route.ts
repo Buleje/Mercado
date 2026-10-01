@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
+import { RUTAS_PANEL } from "@/lib/auth/roles-rutas-panel";
 import { applyRateLimit } from "@/lib/rate-limit";
-import { ForestPlanDB } from "@/lib/db/forest-plan.db";
+import { CensoCodigoRepetidoError, ForestPlanDB } from "@/lib/db/forest-plan.db";
+import { DAP_MAX_M, mensajeDapFueraDeRango } from "@/lib/forestal/loth-constants";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
@@ -22,8 +24,16 @@ const treeSchema = z.object({
   treeCode: z.string().trim().min(1).max(60),
   speciesCommon: z.string().trim().min(1).max(120),
   speciesScientific: z.string().trim().max(150).nullable().optional(),
+  speciesNative: z.string().trim().max(120).nullable().optional(),
   cites: z.boolean().optional(),
-  dapM: z.coerce.number().positive().max(99).nullable().optional(),
+  dapM: z.coerce
+    .number()
+    .positive()
+    .superRefine((v, ctx) => {
+      if (v > DAP_MAX_M) ctx.addIssue({ code: "custom", message: mensajeDapFueraDeRango(v) });
+    })
+    .nullable()
+    .optional(),
   alturaComercialM: z.coerce.number().positive().max(999).nullable().optional(),
   factorForma: z.coerce.number().positive().max(1).nullable().optional(),
   volumenEstimadoM3: z.coerce.number().nonnegative().max(99999).nullable().optional(),
@@ -32,6 +42,7 @@ const treeSchema = z.object({
   utmY: z.coerce.number().nullable().optional(),
   parcelaCorta: z.string().trim().max(120).nullable().optional(),
   calidad: z.string().trim().max(60).nullable().optional(),
+  condicion: z.string().trim().max(60).nullable().optional(),
   estado: z.enum(["en_pie", "talado", "descartado"]).optional(),
   notes: z.string().trim().max(500).nullable().optional(),
 });
@@ -62,11 +73,16 @@ export const GET = withApiHandler("forestal-plan-census-get", async (req: NextRe
     }
     const planId = url.searchParams.get("planId");
     if (!planId) return NextResponse.json({ error: "planId_required" }, { status: 400 });
-    const { trees, total } = await ForestPlanDB.listTrees(auth.tenantId, planId, {
+    const limitRaw = Number.parseInt(url.searchParams.get("limit") ?? "", 10);
+    const { trees, total, truncado } = await ForestPlanDB.listTrees(auth.tenantId, planId, {
       estado: url.searchParams.get("estado") ?? undefined,
       search: url.searchParams.get("search") ?? undefined,
+      limit: Number.isFinite(limitRaw) ? limitRaw : undefined,
     });
-    return NextResponse.json({ trees, total });
+    /* `total` y `truncado` viajan SIEMPRE: el Plan Operativo se calcula sobre
+       las filas devueltas, así que la pantalla tiene que poder decir si está
+       calculando sobre el censo entero o sobre una parte. */
+    return NextResponse.json({ trees, total, truncado, devueltos: trees.length });
   } catch (err) {
     logger.error("[plan.census.GET] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
@@ -101,13 +117,16 @@ export const POST = withApiHandler("forestal-plan-census-post", async (req: Next
   try {
     return NextResponse.json({ tree: await ForestPlanDB.addTree(auth.tenantId, { ...parsed.data, createdBy: auth.username ?? "unknown" }) }, { status: 201 });
   } catch (err) {
+    if (err instanceof CensoCodigoRepetidoError) {
+      return NextResponse.json({ error: "codigo_repetido", message: err.message }, { status: 409 });
+    }
     logger.error("[plan.census.POST] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
 });
 
 export const PATCH = withApiHandler("forestal-plan-census-patch", async (req: NextRequest) => {
-  const auth = await requireAdmin(req, ["admin", "owner"]);
+  const auth = await requireAdmin(req, RUTAS_PANEL["PATCH /api/admin/forestal/plan/census"]);
   if (auth instanceof NextResponse) return auth;
   const rl = await applyRateLimit(req, "GENEROUS", "loth");
   if (rl) return rl;

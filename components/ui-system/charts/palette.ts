@@ -28,11 +28,11 @@ export const CHART_PALETTE = {
   accent: "var(--section-accent, var(--data-5, var(--accent)))",
   /** v4 — para dashboards con 8 categorias */
   info: "var(--section-info, var(--data-6, #0ea5e9))",
-  amber: "var(--section-amber, var(--data-7, #d97706))",
+  amber: "var(--section-amber, var(--data-7, #f0503f))",
   purple: "var(--section-purple, var(--data-8, #8b5cf6))",
 
   success: "var(--data-success, #047857)",
-  warning: "var(--data-warning, #b45309)",
+  warning: "var(--data-warning, #c93b2c)",
   error: "var(--data-error, #b91c1c)",
 } as const;
 
@@ -96,7 +96,7 @@ export const SECTION_PALETTE: ReadonlyArray<Record<string, string>> = [
   {
     "--section-primary": "#c2410c",   // orange-700
     "--section-accent":  "#0f172a",
-    "--section-secondary": "#fdba74", // orange-300
+    "--section-secondary": "#ffa89d", // orange-300
     "--section-tertiary":  "#94a3b8",
   },
   // 3 · Forest

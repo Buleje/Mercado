@@ -65,6 +65,7 @@ vi.mock("@/lib/plans", () => ({
 
 // ── Mock: cache — pass-through (execute the fn immediately) ──────────────────
 vi.mock("@/lib/cache", () => ({
+  revalidateTenantTag: vi.fn(),
   getOrSet: vi.fn(async (_key: string, _ttl: number, fn: () => Promise<unknown>) => fn()),
 }));
 
@@ -90,6 +91,13 @@ vi.mock("@/lib/pricing/discount-strategies", () => ({
   createDefaultDiscountEngine: vi.fn(() => ({
     apply: vi.fn(() => ({ bestDiscount: null, allResults: [] })),
   })),
+}));
+
+// ── Mock: invalidación del Tablero de Ventas (tag de "use cache") ─────────────
+const { mockInvalidarVentas } = vi.hoisted(() => ({ mockInvalidarVentas: vi.fn() }));
+vi.mock("@/lib/caja/invalidar-ventas-overview", () => ({
+  invalidarVentasOverview: mockInvalidarVentas,
+  tagVentasOverview: (t: string) => `ventas-overview-${t}`,
 }));
 
 // ── Mock: require-admin — default: authenticated ─────────────────────────────
@@ -417,6 +425,18 @@ describe("POST /api/orders", () => {
       expect(body.status).toBe("pendiente");
       expect(body.customer.name).toBe("Juan Pérez");
       expect(mockRequireAdmin).not.toHaveBeenCalled();
+    });
+
+    it("purga el Tablero de Ventas del tenant tras crear el pedido", async () => {
+      const res = await POST(makePostReq(VALID_BODY), defaultCtx);
+      expect(res.status).toBe(201);
+      expect(mockInvalidarVentas).toHaveBeenCalledWith("main");
+    });
+
+    it("un pedido rechazado (400) NO purga el Tablero de Ventas", async () => {
+      const res = await POST(makePostReq({}), defaultCtx);
+      expect(res.status).toBe(400);
+      expect(mockInvalidarVentas).not.toHaveBeenCalled();
     });
 
     it("returns 422 TOTAL_MISMATCH when client-provided total diverges from server total", async () => {

@@ -23,8 +23,10 @@
  * TiendasHeroAds (banners v2 F3).
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight } from "@buleje/design-system/icons";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { ChevronLeft, ChevronRight, ArrowRight } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { BRAND_GEO } from "@/lib/geo";
 import PromoBannerRenderer, { type PromoBanner } from "../PromoBannerRenderer";
@@ -51,35 +53,219 @@ function trackBanner(event: "impression" | "click", ids: string[]) {
   }
 }
 
-// Slide de marca por si el slot está vacío — la home nunca queda sin portada.
+// Slides de marca curados (Brandon 2026-07-06 audit inicio) — la home nunca
+// queda sin portada y, aunque el superadmin cargue 1 solo banner, el hero
+// ROTA con propuestas de valor de marca (antes se veía un banner estático).
+// Se usan como fallback (slot vacío) y como relleno cuando hay <2 banners.
 const FALLBACK_BANNERS: PromoBanner[] = [
   {
-    id: "home-hero-fallback",
+    id: "home-hero-brand-mercado",
     type: "classic",
     title: `Tu mercado de ${BRAND_GEO.city}, a domicilio`,
-    subtitle: "Bodegas, restaurantes y farmacias de tu zona. Paga con Yape, Plin o efectivo.",
+    subtitle: "Bodegas, restaurantes y farmacias de tu zona en un solo lugar.",
     imageUrl: null,
     ctaHref: "/tiendas",
     ctaLabel: "Ver tiendas",
     bgFrom: "#00A0A0",
     bgTo: "#0d3b3b",
     active: true,
-    order: 0,
+    order: 90,
+  },
+  {
+    id: "home-hero-brand-pagos",
+    type: "classic",
+    title: "Paga como quieras: Yape, Plin o efectivo",
+    subtitle: "Sin complicaciones. Elegí, pedí y paga contra entrega o al toque.",
+    imageUrl: null,
+    ctaHref: "/tiendas",
+    ctaLabel: "Pedir ahora",
+    bgFrom: "#007575",
+    bgTo: "#0d3b3b",
+    active: true,
+    order: 91,
+  },
+  {
+    id: "home-hero-brand-vender",
+    type: "classic",
+    title: "¿Tenés una tienda? Vendé en Buleje",
+    subtitle: "Sumá tu negocio y llegá a más vecinos con delivery propio.",
+    imageUrl: null,
+    ctaHref: "/negocios",
+    ctaLabel: "Abrir mi tienda",
+    bgFrom: "#ff6b5b",
+    bgTo: "#c93b2c",
+    active: true,
+    order: 92,
   },
 ];
+
+/**
+ * CompactPromoCard — versión chica de un banner para el layout "row" de /tiendas
+ * (Brandon 2026-07-06). En vez de un carrusel de 1 banner grande, se muestran
+ * varias promos a la vez en una fila/grilla. Sobre gradiente (classic) o imagen.
+ */
+function CompactPromoCard({ banner }: { banner: PromoBanner }) {
+  const hasImage = !!banner.imageUrl;
+  const bg = hasImage
+    ? undefined
+    : `linear-gradient(135deg, ${banner.bgFrom ?? "#00A0A0"}, ${banner.bgTo ?? "#0d3b3b"})`;
+  return (
+    <Link
+      href={banner.ctaHref || "/tiendas"}
+      onClick={() => trackBanner("click", [banner.id])}
+      aria-label={banner.title || banner.ctaLabel || "Promoción"}
+      className="group relative flex h-[210px] flex-col justify-between overflow-hidden rounded-2xl border border-[var(--rule-soft)] p-4 text-white shadow-sm transition-transform hover:-translate-y-0.5 sm:h-[280px] sm:p-5"
+      style={bg ? { background: bg } : undefined}
+    >
+      {hasImage && (
+        <>
+          <Image
+            src={banner.imageUrl!}
+            alt={banner.title || ""}
+            fill
+            sizes="(max-width: 640px) 80vw, 360px"
+            className="object-cover"
+          />
+          <span
+            aria-hidden
+            className="absolute inset-0 bg-linear-to-t from-black/60 via-black/10 to-transparent"
+          />
+        </>
+      )}
+      <div className="relative z-10">
+        {banner.title && (
+          <p className="text-base font-extrabold leading-tight line-clamp-2 drop-shadow sm:text-lg">
+            {banner.title}
+          </p>
+        )}
+        {banner.subtitle && (
+          <p className="mt-1 text-[length:var(--ts-xs)] font-medium opacity-90 line-clamp-2 drop-shadow sm:text-sm">
+            {banner.subtitle}
+          </p>
+        )}
+      </div>
+      <span className="relative z-10 inline-flex items-center gap-1 self-start rounded-full bg-white/95 px-2.5 py-1 text-[length:var(--ts-2xs)] font-extrabold text-[var(--text-primary)] shadow-sm">
+        {banner.ctaLabel || "Ver más"}
+        <ArrowRight className="h-3 w-3" strokeWidth={2.75} aria-hidden />
+      </span>
+    </Link>
+  );
+}
+
+/**
+ * PromoRow — carrusel en FILA de promos (Brandon 2026-07-06, ref Betano): varias
+ * cards anchas en una sola fila, la siguiente asomando, con auto-scroll suave
+ * (pausa al hover) + flechas en desktop. Reemplaza la grilla 2x2 del layout row.
+ */
+function PromoRow({ slides, extraCard }: { slides: PromoBanner[]; extraCard?: ReactNode }) {
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const [paused, setPaused] = useState(false);
+
+  const stepPx = useCallback(() => {
+    const el = scrollerRef.current;
+    if (!el) return 0;
+    const card = el.querySelector<HTMLElement>("[data-promo-card]");
+    return card ? card.offsetWidth + 12 : el.clientWidth * 0.85; // +gap-3 (12px)
+  }, []);
+
+  // Auto-scroll: avanza una card cada ~4.5s; al llegar al final, vuelve al inicio.
+  useEffect(() => {
+    if (paused || slides.length <= 1) return;
+    const id = setInterval(() => {
+      const el = scrollerRef.current;
+      if (!el) return;
+      const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 8;
+      el.scrollTo({ left: atEnd ? 0 : el.scrollLeft + stepPx(), behavior: "smooth" });
+    }, 4500);
+    return () => clearInterval(id);
+  }, [paused, slides.length, stepPx]);
+
+  const nudge = (dir: -1 | 1) => {
+    scrollerRef.current?.scrollBy({ left: dir * stepPx(), behavior: "smooth" });
+  };
+
+  return (
+    <div
+      className="group relative w-full"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
+      <div
+        ref={scrollerRef}
+        role="list"
+        aria-label="Promociones"
+        className="flex gap-3 overflow-x-auto scroll-smooth [scrollbar-width:none] [scroll-snap-type:x_mandatory] [&::-webkit-scrollbar]:hidden"
+      >
+        {/* Card extra (ej. "Invita a un vecino") — va PRIMERA para máxima
+            visibilidad, con la misma silueta que las promos (Brandon 2026-07-06). */}
+        {extraCard && (
+          <div
+            data-promo-card
+            role="listitem"
+            className="w-[70vw] shrink-0 [scroll-snap-align:start] sm:w-[52%] md:w-[38%] lg:w-[29%] xl:w-[23%]"
+          >
+            {extraCard}
+          </div>
+        )}
+        {slides.map((b) => (
+          <div
+            key={b.id}
+            data-promo-card
+            role="listitem"
+            className="w-[70vw] shrink-0 [scroll-snap-align:start] sm:w-[52%] md:w-[38%] lg:w-[29%] xl:w-[23%]"
+          >
+            <CompactPromoCard banner={b} />
+          </div>
+        ))}
+      </div>
+      {slides.length > 1 && (
+        <>
+          <button
+            type="button"
+            onClick={() => nudge(-1)}
+            aria-label="Promoción anterior"
+            className="absolute left-2 top-1/2 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-[var(--text-primary)] opacity-0 shadow-md backdrop-blur transition-all hover:bg-white group-hover:opacity-100 md:inline-flex"
+          >
+            <ChevronLeft className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+          </button>
+          <button
+            type="button"
+            onClick={() => nudge(1)}
+            aria-label="Promoción siguiente"
+            className="absolute right-2 top-1/2 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-[var(--text-primary)] opacity-0 shadow-md backdrop-blur transition-all hover:bg-white group-hover:opacity-100 md:inline-flex"
+          >
+            <ChevronRight className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
 
 interface Props {
   /** Slot de banners. Default "tiendas-hero" (el poblado). */
   slot?: string;
+  /** Layout: "carousel" (Inicio, 1 banner grande rotativo) o "row" (/tiendas,
+   *  fila/grilla de promos compactas — ver varias a la vez). Brandon 2026-07-06. */
+  layout?: "carousel" | "row";
   /** Zona del cliente para segmentación (banners v2 F4). */
   zone?: string | null;
   /** perf audit P1: banners ya resueltos en el SERVER (RSC) — si llegan, se
    *  pintan en el primer byte (sin cascada hidratar→fetch→pintar) y se omite el
    *  fetch client. Si no, cae al fetch client (modo legacy). */
   initialBanners?: PromoBanner[];
+  /** Card extra a inyectar como PRIMER cuadro de la fila (solo layout "row").
+   *  Ej. "Invita a un vecino" en /tiendas. Brandon 2026-07-06. */
+  extraCard?: ReactNode;
 }
 
-export default function HomeHeroBanner({ slot = "tiendas-hero", zone = null, initialBanners }: Props) {
+export default function HomeHeroBanner({
+  slot = "tiendas-hero",
+  zone = null,
+  initialBanners,
+  layout = "carousel",
+  extraCard,
+}: Props) {
   const hasInitial = !!initialBanners && initialBanners.length > 0;
   const [banners, setBanners] = useState<PromoBanner[] | null>(
     hasInitial ? initialBanners! : null,
@@ -123,7 +309,17 @@ export default function HomeHeroBanner({ slot = "tiendas-hero", zone = null, ini
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slot, zone]);
 
-  const slides = banners ?? [];
+  // Brandon 2026-07-06 (audit inicio): en el Inicio (carousel), si el slot trae
+  // <2 banners, completamos con slides de marca para que el hero SIEMPRE rote y
+  // se sienta vivo (antes: 1 banner estático). En /tiendas (row) no se toca.
+  const configured = banners ?? [];
+  const slides =
+    layout === "carousel" && configured.length < 2
+      ? [
+          ...configured,
+          ...FALLBACK_BANNERS.filter((b) => !configured.some((s) => s.id === b.id)),
+        ]
+      : configured;
   const count = slides.length;
 
   const go = useCallback(
@@ -136,10 +332,10 @@ export default function HomeHeroBanner({ slot = "tiendas-hero", zone = null, ini
 
   // ── Autoplay (pausa en hover/arrastre, loop) ───────────────────────────────
   useEffect(() => {
-    if (paused || dragging || count <= 1) return;
+    if (layout === "row" || paused || dragging || count <= 1) return;
     const id = setInterval(() => setIdx((i) => (i + 1) % count), ROTATE_MS);
     return () => clearInterval(id);
-  }, [paused, dragging, count]);
+  }, [layout, paused, dragging, count]);
 
   // ── Gestos de arrastre (swipe) ─────────────────────────────────────────────
   const onPointerDown = (e: React.PointerEvent) => {
@@ -177,6 +373,12 @@ export default function HomeHeroBanner({ slot = "tiendas-hero", zone = null, ini
         </div>
       </div>
     );
+  }
+
+  // Layout "row" (/tiendas): carrusel en una sola fila de promos anchas (ref
+  // Betano) — auto-scroll suave + flechas, la siguiente asoma. Sin dots.
+  if (layout === "row") {
+    return <PromoRow slides={slides} extraCard={extraCard} />;
   }
 
   return (

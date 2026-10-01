@@ -19,6 +19,7 @@ import { useRouter } from "next/navigation";
 import { ShieldCheck, Loader2, AlertTriangle, KeyRound } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 
+import { PageTitle } from "@buleje/design-system";
 export default function TwoFactorPage() {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -27,6 +28,8 @@ export default function TwoFactorPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [shaking, setShaking] = useState(false);
+  // ADR-304: confiar en este dispositivo → salta el 2FA los próximos 30 días.
+  const [trustDevice, setTrustDevice] = useState(false);
 
   // Auto-focus al montar
   useEffect(() => {
@@ -64,7 +67,8 @@ export default function TwoFactorPage() {
           "Content-Type": "application/json",
           ...(csrfHeaders() as Record<string, string>),
         },
-        body: JSON.stringify({ code }),
+        // El backend valida `token` (6 dígitos). `trustDevice` = ADR-304.
+        body: JSON.stringify({ token: code, trustDevice }),
       });
 
       if (!res.ok) {
@@ -100,9 +104,9 @@ export default function TwoFactorPage() {
     <div className="min-h-screen bg-[var(--surface-canvas)] flex items-center justify-center px-4">
       <div
         className={[
-          "w-full max-w-sm bg-[var(--surface-base)] dark:bg-[var(--color-card)]",
+          "w-full max-w-sm bg-[var(--surface-base)] ",
           "rounded-2xl shadow-lg border border-[var(--rule-soft)]",
-          "p-7 space-y-5",
+          "p-7 space-y-4",
           shaking ? "animate-[shake_0.45s_ease-out]" : "",
         ]
           .filter(Boolean)
@@ -122,17 +126,33 @@ export default function TwoFactorPage() {
             <ShieldCheck className="h-7 w-7 text-white" strokeWidth={2.25} />
           </span>
           <div>
-            <h1 className="text-xl font-extrabold text-[var(--text-primary)] tracking-tight">
+            <PageTitle className="text-[var(--text-primary)]">
               Verificación en dos pasos
-            </h1>
+            </PageTitle>
             <p className="text-sm text-[var(--text-secondary)] mt-1 leading-relaxed">
-              Ingresá el código de 6 dígitos de tu app autenticadora.
+              Ingresa el código de 6 dígitos de tu app autenticadora.
             </p>
           </div>
         </div>
 
         {/* Form */}
         <form onSubmit={submit} className="space-y-4" noValidate>
+          {/* ADR-304: confiar en este dispositivo. Va ARRIBA del input porque el
+              form auto-submitea al 6º dígito — así se puede marcar antes. */}
+          <label className="flex items-start gap-2.5 cursor-pointer select-none rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-3">
+            <input
+              type="checkbox"
+              checked={trustDevice}
+              onChange={(e) => setTrustDevice(e.target.checked)}
+              disabled={loading}
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-[var(--rule-base)] text-[var(--accent)] focus:ring-[var(--accent)]/30 cursor-pointer"
+            />
+            <span className="text-xs text-[var(--text-secondary)] leading-relaxed">
+              <span className="font-bold text-[var(--text-primary)]">Confiar en este dispositivo 30 días</span>
+              {" "}— no me pidas el código en este navegador. La contraseña se sigue pidiendo siempre.
+            </span>
+          </label>
+
           {/* Input OTP */}
           <div className="relative">
             <KeyRound

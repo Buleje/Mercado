@@ -17,6 +17,7 @@ import { z } from "zod";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { LeadsDB } from "@/lib/db/leads.db";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 const LeadSchema = z.object({
   name: z.string().min(2).max(80),
@@ -40,7 +41,7 @@ export async function POST(req: NextRequest) {
   if (_rl) return _rl;
 
   try {
-    const body = await req.json().catch(() => null);
+    const body = await leerJson(req);
     const parsed = LeadSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(

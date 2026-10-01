@@ -69,6 +69,29 @@ export function brandColorOverridesCss(cfg: PlatformConfig): string | null {
   if (primary && primary !== PLATFORM_CONFIG_DEFAULTS.brand.primaryColor) {
     overrides.push(`--brand-primary: ${primary};`);
     overrides.push(`--accent: ${primary};`);
+    /*
+     * La marca elegida tiene que arrastrar TODA su escala, no sólo el tono base.
+     *
+     * El acento del DS no es un color: son seis tokens —`--accent` y sus
+     * derivados— y media UI usa los derivados, no la base. El CTA del login,
+     * por ejemplo, es `bg-[var(--accent-600)]`. Pisando sólo `--accent`, un
+     * negocio que elige su color quedaba con la página partida: el tono nuevo
+     * en los textos y los KPIs, y el turquesa del DS en los botones, los hovers
+     * y los tintes. Dos identidades en la misma pantalla.
+     *
+     * Los porcentajes se calibraron contra la escala real de `globals.css`:
+     * partiendo del turquesa #00A0A0, 88 % reproduce #008787, 79 % da #007575
+     * y 75 % da #006B6B — Δ de 0 a 2 por canal. Misma técnica que
+     * `design-presets` usa para
+     * derivar los colores semánticos: `color-mix` en oklab, que mantiene la
+     * luminosidad percibida en cualquier hue — un derivado calculado en RGB se
+     * ensucia con los colores cálidos.
+     */
+    overrides.push(`--accent-600: color-mix(in oklab, ${primary} 88%, black);`);
+    overrides.push(`--accent-dark: color-mix(in oklab, ${primary} 79%, black);`);
+    overrides.push(`--accent-ink: color-mix(in oklab, ${primary} 75%, black);`);
+    overrides.push(`--accent-soft: color-mix(in oklab, ${primary} 6%, transparent);`);
+    overrides.push(`--accent-muted: color-mix(in oklab, ${primary} 13%, transparent);`);
   }
   const secondary = safeColor(cfg.brand.secondaryColor);
   if (secondary && secondary !== PLATFORM_CONFIG_DEFAULTS.brand.secondaryColor) {

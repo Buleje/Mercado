@@ -11,6 +11,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { cn } from "@/lib/utils";
+import { formatNumber } from "@/lib/format";
 
 interface RevenueChartProps {
   title: string;
@@ -34,7 +35,7 @@ function RevenueChart({
   prefix = "S/",
 }: RevenueChartProps) {
   return (
-    <div className="col-span-full bg-white dark:bg-zinc-900 border border-[var(--rule-base)] dark:border-zinc-800 rounded-xl p-6">
+    <div className="col-span-full bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
         <div>
@@ -44,9 +45,7 @@ function RevenueChart({
           <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{period}</p>
           <p className="text-4xl font-bold text-[var(--text-primary)] mt-3">
             {prefix}
-            {currentValue.toLocaleString("es-PE", {
-              minimumFractionDigits: 2,
-            })}
+            {formatNumber(currentValue, { min: 2 })}
           </p>
           <p className="text-xs text-[var(--text-tertiary)] mt-1">{currentLabel}</p>
         </div>
@@ -56,7 +55,7 @@ function RevenueChart({
               <p className="text-xs text-[var(--text-tertiary)]">Objetivo</p>
               <p className="text-sm font-medium text-[var(--text-secondary)]">
                 {prefix}
-                {objective.toLocaleString("es-PE")}
+                {formatNumber(objective)}
               </p>
             </div>
           )}
@@ -103,7 +102,7 @@ function RevenueChart({
             }}
             formatter={(val: unknown) => {
               const n = typeof val === "number" ? val : 0;
-              return `${prefix}${n.toLocaleString("es-PE", { minimumFractionDigits: 2 })}`;
+              return `${prefix}${formatNumber(n, { min: 2 })}`;
             }}
           />
           <Area

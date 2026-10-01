@@ -2,6 +2,7 @@
 
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminCard from "@/components/admin/shared/AdminCard";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 /**
  * ForecastingDashboard.tsx
@@ -187,8 +188,8 @@ function buildDailyBreakdown(forecast: InventoryForecast): Array<{ dia: string; 
 function getWeekdayWeight(weekday: number, history: Array<{ date: string; qty: number }>): number {
   if (history.length === 0) return 1;
 
-  const sumByWeekday = new Array(7).fill(0);
-  const cntByWeekday = new Array(7).fill(0);
+  const sumByWeekday = Array.from({ length: 7 }, () => 0);
+  const cntByWeekday = Array.from({ length: 7 }, () => 0);
 
   for (const h of history) {
     const d = new Date(h.date + "T12:00:00");
@@ -452,7 +453,7 @@ export default function ForecastingDashboard() {
                   <p className="text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                     {formatCurrency(state.forecast.weeklyAvg)}
                   </p>
-                  <p className="text-xs text-[var(--text-secondary)] dark:text-zinc-400 mt-0.5">
+                  <p className="text-xs text-[var(--text-secondary)] mt-0.5">
                     proyectados en los proximos 7 dias
                   </p>
                 </div>
@@ -493,12 +494,12 @@ export default function ForecastingDashboard() {
                         {/* Barra */}
                         <div className="w-full relative" style={{ height: "44px" }}>
                           <div
-                            className="absolute bottom-0 left-0 right-0 rounded-t-md bg-[var(--accent-soft)] dark:bg-[var(--accent-soft)] transition-all duration-[var(--dur-slow)]"
+                            className="absolute bottom-0 left-0 right-0 rounded-t-md bg-primary/10 dark:bg-primary/10 transition-all duration-[var(--dur-slow)]"
                             style={{ height: `${Math.max(pct, 6)}%` }}
                           />
                         </div>
                         {/* Nombre del día */}
-                        <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-zinc-400">
+                        <span className="text-xs font-bold text-[var(--text-secondary)] ">
                           {d.dia}
                         </span>
                       </div>
@@ -531,7 +532,7 @@ export default function ForecastingDashboard() {
                 return (
                   <li key={item.productId} className="flex items-center gap-3">
                     {/* Posición */}
-                    <span className="w-7 text-center text-sm font-bold text-[var(--text-secondary)] dark:text-zinc-400 shrink-0">
+                    <span className="w-7 text-center text-sm font-bold text-[var(--text-secondary)] shrink-0">
                       {medal}
                     </span>
                     {/* Nombre + barra */}
@@ -574,7 +575,7 @@ export default function ForecastingDashboard() {
                   onClick={ejecutarAutoReorder}
                   disabled={autoReordering}
                   className={cn(
-                    "flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold",
+                    "flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold",
                     "bg-[var(--text-primary)] hover:opacity-90 dark:bg-zinc-700 dark:hover:bg-zinc-600",
                     "text-white transition-colors",
                     "disabled:opacity-60 disabled:cursor-not-allowed",
@@ -597,7 +598,7 @@ export default function ForecastingDashboard() {
                 "flex items-start gap-2 rounded-xl p-3 mb-3 text-xs font-medium",
                 autoReorderMsg.startsWith("Error")
                   ? "bg-[var(--data-error-50)] dark:bg-red-950/30 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/50 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
-                  : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
+                  : "bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
               )}>
                 <CheckCircle className="w-4 h-4 shrink-0 mt-0.5" />
                 {autoReorderMsg}
@@ -607,14 +608,14 @@ export default function ForecastingDashboard() {
             {state.reorder.length > 0 && (
               /* Tabla responsive — scroll horizontal en mobile */
               <div className="overflow-x-auto -mx-1">
-                <table className="w-full min-w-[540px] text-xs">
+                <DataTable className="w-full min-w-[540px] text-xs">
                   <thead>
                     <tr className="border-b border-[var(--rule-soft)]">
-                      <th className="text-left py-2 px-2 font-semibold text-[var(--text-secondary)] dark:text-zinc-400">Producto</th>
-                      <th className="text-right py-2 px-2 font-semibold text-[var(--text-secondary)] dark:text-zinc-400">Stock actual</th>
-                      <th className="text-right py-2 px-2 font-semibold text-[var(--text-secondary)] dark:text-zinc-400">Demanda LT</th>
-                      <th className="text-right py-2 px-2 font-semibold text-[var(--text-secondary)] dark:text-zinc-400">Pedir</th>
-                      <th className="text-right py-2 px-2 font-semibold text-[var(--text-secondary)] dark:text-zinc-400">Total est.</th>
+                      <th className="text-left py-2 px-2 font-semibold text-[var(--text-secondary)] ">Producto</th>
+                      <th className="text-right py-2 px-2 font-semibold text-[var(--text-secondary)] ">Stock actual</th>
+                      <th className="text-right py-2 px-2 font-semibold text-[var(--text-secondary)] ">Demanda LT</th>
+                      <th className="text-right py-2 px-2 font-semibold text-[var(--text-secondary)] ">Pedir</th>
+                      <th className="text-right py-2 px-2 font-semibold text-[var(--text-secondary)] ">Total est.</th>
                       <th className="py-2 px-2"></th>
                     </tr>
                   </thead>
@@ -691,7 +692,7 @@ export default function ForecastingDashboard() {
                       );
                     })}
                   </tbody>
-                </table>
+                </DataTable>
               </div>
             )}
           </PanelCard>
@@ -771,9 +772,9 @@ function PanelCard({
       <div className="flex flex-wrap items-center justify-between gap-2 mb-4 pb-3 border-b border-[var(--rule-soft)]">
         <div className="flex items-center gap-2">
           <span className="text-primary">{icon}</span>
-          <h3 className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
+          <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
             {title}
-          </h3>
+          </CardTitle>
         </div>
         {headerExtra}
       </div>
@@ -816,7 +817,7 @@ function TrendBadge({ trend }: { trend: "SUBIENDO" | "ESTABLE" | "BAJANDO" }) {
     SUBIENDO: {
       icon: <TrendingUp className="w-3.5 h-3.5" />,
       label: "Subiendo",
-      cls: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+      cls: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",
     },
     BAJANDO: {
       icon: <TrendingDown className="w-3.5 h-3.5" />,
@@ -854,7 +855,7 @@ function MetricChip({
 }) {
   return (
     <div className="rounded-xl bg-[var(--surface-sunken)] p-2.5 text-center">
-      <p className="text-xs text-[var(--text-secondary)] dark:text-zinc-400 font-medium mb-0.5">{label}</p>
+      <p className="text-xs text-[var(--text-secondary)] font-medium mb-0.5">{label}</p>
       <p className={cn(
         "text-sm font-extrabold",
         danger
@@ -886,7 +887,7 @@ function PriceCard({ suggestion: s, isApplied, isApplying, onAplicar, esBaja }: 
     },
     slow_mover: {
       label: "Stock excesivo",
-      cls: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+      cls: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",
     },
     fefo_urgent: {
       label: "Vence pronto",
@@ -901,7 +902,7 @@ function PriceCard({ suggestion: s, isApplied, isApplying, onAplicar, esBaja }: 
     <div className={cn(
       "rounded-xl border p-3.5 flex flex-col gap-3 transition-colors",
       isApplied
-        ? "border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:border-[var(--data-success-500)]/30 dark:bg-[var(--accent-muted)]"
+        ? "border-[var(--data-success-500)]/30 bg-primary/10 dark:border-[var(--data-success-500)]/30 dark:bg-primary/15"
         : "border-[var(--rule-soft)] bg-[var(--surface-sunken)]/40",
       s.reason === "fefo_urgent" && !isApplied
         ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/50"
@@ -938,14 +939,14 @@ function PriceCard({ suggestion: s, isApplied, isApplying, onAplicar, esBaja }: 
           "text-xs font-bold px-1.5 py-0.5 rounded-full",
           esBaja
             ? "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-red-950/40 dark:text-[var(--data-error-500)]"
-            : "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+            : "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",
         )}>
           {esBaja ? "-" : "+"}{adjAbs}%
         </span>
       </div>
 
       {/* Detalle */}
-      <p className="text-sm text-[var(--text-secondary)] dark:text-zinc-400 leading-relaxed">
+      <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
         {s.detail}
       </p>
 
@@ -959,11 +960,11 @@ function PriceCard({ suggestion: s, isApplied, isApplying, onAplicar, esBaja }: 
         onClick={onAplicar}
         disabled={isApplied || isApplying}
         className={cn(
-          "w-full flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-bold",
+          "w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold",
           "transition-colors min-h-[44px]", // touch target
           isApplied
-            ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)] cursor-default"
-            : "bg-[#2d6a4f] hover:bg-primary-dark active:bg-[#1d4a36] text-white",
+            ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)] cursor-default"
+            : "bg-primary hover:bg-primary-dark active:bg-primary-dark text-white",
           "disabled:opacity-60 disabled:cursor-not-allowed",
         )}
         aria-label={isApplied ? "Precio aplicado" : `Aplicar precio sugerido para ${s.productName}`}

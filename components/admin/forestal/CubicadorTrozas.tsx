@@ -1,0 +1,916 @@
+"use client";
+
+/**
+ * CubicadorTrozas — cubica madera ROLLIZA en patio, por voz o a mano, y
+ * compara contra lo que declara la GTF antes de firmar el ingreso.
+ *
+ * Dictado continuo en tríos «D1 · D2 · largo» (40 45 3.5 = diámetros en cm,
+ * largo en m); Smalian por troza (lib/forestal/cubicacion-trozas). Una troza
+ * con medidas raras (largo >15 m, diámetro <10 cm) entra RESALTADA, nunca se
+ * corrige sola. Persiste por tenant en localStorage; sin DB — el ingreso
+ * legal se registra en el Libro CTP con su GTF.
+ */
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Boxes, Check, Columns3, Layers, Mic, MicOff, Plus, RotateCcw, Ruler, Scale, Settings2, Sigma, Square, Table, Trash2, AlertTriangle, Upload, Volume2,
+} from "@buleje/design-system/icons";
+import { CardTitle, DataTable } from "@buleje/design-system";
+import { detectarComando, numerosDeTroza, PT_POR_M3 } from "@/lib/forestal/cubicacion";
+import {
+  compararConGtf, cubicarTroza, partirEnTrozas, totalesTrozas, type TrozaCubicada,
+} from "@/lib/forestal/cubicacion-trozas";
+import type { TrozaImportada } from "@/lib/forestal/cubicacion-trozas-import";
+import { aplicarAjustesDeVoz, loadConfig } from "@/lib/forestal/cubicador-config";
+import { pitido, prepararPitido } from "@/lib/forestal/pitido";
+import { useVozContinua } from "@/hooks/use-voz-continua";
+import { useLecturaEnVoz, type ContextoLectura } from "@/hooks/use-lectura-en-voz";
+import {
+  acomodarAlOrden, empiezaBloque, enOrdenDelPapel, esOrdenFilas, especieAlInicio, numeroDeFila, ordenarFilas, textoPorTramos, ultimaAnotada,
+  unidadDeLargoEnVoz,
+  type LargoEnLectura, type OrdenFilas,
+} from "@/lib/forestal/cubicador-bloques-especie";
+import { claveEspecie } from "@/lib/forestal/loth-constants";
+import { useTablaVentaneada } from "@/hooks/use-tabla-ventaneada";
+import ControlLecturaFlotante from "./cubicador-lectura-flotante";
+import { Kpi } from "./cubicador-kpis";
+import ImportarTrozasModal from "./ImportarTrozasModal";
+import { CtpEspeciesBoton, useEspeciesConCatalogo } from "./ctp-especie-campo";
+import { formatNumber } from "@/lib/format";
+
+interface Fila extends TrozaCubicada {
+  sospechosa?: boolean;
+}
+
+/** Lo que hace falta de un asiento del libro para cotejar contra su guía. */
+interface GuiaLibro {
+  id: string;
+  gtfNumber: string;
+  volumeM3: number | string;
+  providerName?: string | null;
+  speciesCommonName?: string | null;
+  /** Cuántas trozas tiene ya cargadas — para no volver a medir lo medido. */
+  trozasCount?: number | null;
+}
+
+const fmtM3 = (v: number) => formatNumber(v, 3);
+const sinAcentos = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+const storageKey = () => {
+  let slug = "main";
+  try { slug = localStorage.getItem("active-tenant-slug") ?? "main"; } catch { /* ignore */ }
+  return `buleje-cubicacion-trozas-${slug}`;
+};
+const saveLocal = (rows: Fila[]) => { try { localStorage.setItem(storageKey(), JSON.stringify(rows)); } catch { /* quota */ } };
+
+/** Columnas opcionales de la tabla del patio — # /Ø menor/Ø mayor/Largo quedan
+ *  siempre fijas (la medida primaria); Especie y m³ se pueden ocultar y la
+ *  elección queda guardada por tenant hasta que se cambie de nuevo. */
+type ColOpcionalTroza = "especie" | "m3";
+const COLS_OPCIONALES_TROZA: { key: ColOpcionalTroza; label: string }[] = [
+  { key: "especie", label: "Especie" },
+  { key: "m3", label: "m³" },
+];
+const COLS_DEFAULT_TROZA: Record<ColOpcionalTroza, boolean> = { especie: true, m3: true };
+/** Por especie o más nuevas primero, cada cambio vuelve a acomodar el patio (`acomodarAlOrden`). */
+const acomodarTrozas = (filas: Fila[], orden: OrdenFilas): Fila[] => acomodarAlOrden(filas, orden);
+/** Alto del visor de la tabla del patio, en px. Constante mientras se scrollea. */
+const ALTO_VISOR_PATIO = 600;
+
+/** Repite en voz lo dictado, con la MISMA config del cubicador de aserrada. */
+function hablar(texto: string) {
+  try {
+    const cfg = loadConfig();
+    if (!cfg.speak) return;
+    const synth = window.speechSynthesis;
+    if (!synth) return;
+    synth.cancel();
+    const u = new SpeechSynthesisUtterance(texto);
+    aplicarAjustesDeVoz(u, cfg, synth.getVoices());
+    synth.speak(u);
+  } catch { /* TTS no disponible */ }
+}
+
+/**
+ * El tip de «guardada» con «Repite: no» — el mismo del cubicador de aserrada
+ * (Brandon, 2026-09-23). Sólo para lo dictado: la carga a mano no suena.
+ * Grave si la troza entró marcada con medidas raras.
+ */
+function tipSiNoRepite(veces: number, rara: boolean) {
+  const cfg = loadConfig();
+  if (cfg.speak || !cfg.pitidoAlGuardar) return;
+  pitido({ veces, tono: rara ? "revisa" : "guardado", volumen: cfg.voiceVolume });
+}
+
+/** El largo de una troza al leer con «Largo fijo al leer»: en metros. */
+const LARGO_TROZA_EN_VOZ: LargoEnLectura<Fila> = {
+  largo: (t) => t.largo,
+  unidad: (_t, valor) => unidadDeLargoEnVoz("m", valor),
+  sinLargo: (t) => `${t.d1}, ${t.d2}`,
+};
+
+export default function CubicadorTrozas() {
+  const [rows, setRows] = useState<Fila[]>([]);
+  const [especie, setEspecie] = useState("");
+  const [lastAdded, setLastAdded] = useState<Fila | null>(null);
+  const [manual, setManual] = useState({ d1: "", d2: "", largo: "" });
+  const [gtfM3, setGtfM3] = useState("");
+  const [paused, setPaused] = useState(false);
+  const [importando, setImportando] = useState(false);
+  /** Columnas opcionales ocultas/mostradas — por tenant, hasta que se cambie. */
+  const [colsVisibles, setColsVisibles] = useState<Record<ColOpcionalTroza, boolean>>(COLS_DEFAULT_TROZA);
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(`${storageKey()}-cols`);
+      if (raw) setColsVisibles({ ...COLS_DEFAULT_TROZA, ...(JSON.parse(raw) as Partial<Record<ColOpcionalTroza, boolean>>) });
+    } catch { /* ignore */ }
+  }, []);
+  useEffect(() => { try { localStorage.setItem(`${storageKey()}-cols`, JSON.stringify(colsVisibles)); } catch { /* quota */ } }, [colsVisibles]);
+  const [colsMenuOpen, setColsMenuOpen] = useState(false);
+  /**
+   * Orden del patio: como se dictó, o en bloques de especie — la misma regla
+   * que el cubicador de aserrada (Brandon, 2026-09-22). REORDENA las filas: el
+   * «#», la lectura y el CSV siguen lo que se ve. Se recuerda por tenant.
+   */
+  const [ordenFilas, setOrdenFilas] = useState<OrdenFilas>("dictado");
+  const ordenRef = useRef<OrdenFilas>("dictado");
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(`${storageKey()}-orden`);
+      if (esOrdenFilas(raw)) { ordenRef.current = raw; setOrdenFilas(raw); }
+    } catch { /* ignore */ }
+  }, []);
+  useEffect(() => {
+    if (!colsMenuOpen) return;
+    const cerrar = () => setColsMenuOpen(false);
+    window.addEventListener("click", cerrar);
+    return () => window.removeEventListener("click", cerrar);
+  }, [colsMenuOpen]);
+  /** Columnas antes del total de m³ ahora mismo — el pie de tabla las abarca
+   *  todas; con Especie oculta, un colSpan fijo se quedaba corto o largo. */
+  const colSpanTotales = 4 /* # + Ø menor + Ø mayor + Largo */ + (colsVisibles.especie ? 1 : 0);
+  const idRef = useRef(0);
+  const carryRef = useRef<number[]>([]);
+  const pausedRef = useRef(false);
+  const especieRef = useRef(especie);
+  useEffect(() => { especieRef.current = especie; }, [especie]);
+  /* El catálogo de la planta (ADR-410), el mismo que el cubicador de aserrada.
+     Por REF porque el reconocedor de voz se arma una vez: con la lista capturada
+     en el closure, una especie recién creada no se reconocería al dictarla. */
+  const catalogoEspecies = useEspeciesConCatalogo();
+  const especiesRef = useRef<readonly string[]>(catalogoEspecies.nombres);
+  useEffect(() => { especiesRef.current = catalogoEspecies.nombres; }, [catalogoEspecies.nombres]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(storageKey());
+      if (raw) setRows(JSON.parse(raw) as Fila[]);
+      const g = localStorage.getItem(`${storageKey()}-gtf`);
+      if (g) setGtfM3(g);
+    } catch { /* ignore */ }
+  }, []);
+  useEffect(() => { try { localStorage.setItem(`${storageKey()}-gtf`, gtfM3); } catch { /* ignore */ } }, [gtfM3]);
+
+  const addTroza = (d1: number, d2: number, largo: number, sospechosa?: boolean) => {
+    const fila: Fila = {
+      id: `t-${Date.now()}-${idRef.current++}`,
+      d1, d2, largo,
+      especie: especieRef.current || undefined,
+      m3: cubicarTroza(d1, largo, d2),
+      sospechosa,
+    };
+    /* Con el orden por especie, la troza nueva cae al final de SU bloque. */
+    setRows((prev) => { const next = acomodarTrozas([...prev, fila], ordenRef.current); saveLocal(next); return next; });
+    setLastAdded(fila);
+    return fila;
+  };
+
+  const voz = useVozContinua((texto) => {
+    // Comandos compartidos con el cubicador de aserrada (misma config).
+    const cmd = detectarComando(texto, loadConfig().comandos);
+    if (cmd) {
+      if (cmd.tipo === "pausar") { pausedRef.current = true; setPaused(true); carryRef.current = []; hablar("en pausa"); }
+      else if (cmd.tipo === "continuar") { pausedRef.current = false; setPaused(false); carryRef.current = []; hablar("sigo"); }
+      else if (cmd.tipo === "borrar-ultimo") {
+        /* Agrupado por especie, la última fila no es la última dictada. */
+        setRows((prev) => {
+          if (!prev.length) return prev;
+          const victima = ultimaAnotada(prev, ordenRef.current);
+          const next = prev.filter((r) => r.id !== victima?.id);
+          saveLocal(next);
+          return next;
+        });
+        setLastAdded(null); carryRef.current = []; hablar("borrado");
+      } else if (cmd.tipo === "especie") {
+        const found = especiesRef.current.find((s) => sinAcentos(s).startsWith(cmd.palabra));
+        if (found) { especieRef.current = found; setEspecie(found); hablar(found); }
+      }
+      return;
+    }
+    /* La especie sola cambia la de lo que sigue, como en el cubicador de
+       aserrada: «panguana» o «panguana treinta cuarenta ocho». */
+    if (pausedRef.current) return; // en pausa, ni números ni especie sola: es charla
+    let dictado = texto;
+    let anuncio = "";
+    const conocidas = [...especiesRef.current, ...rowsRef.current.map((r) => r.especie?.trim() ?? "").filter(Boolean)];
+    const detectada = especieAlInicio(texto, conocidas);
+    if (detectada) {
+      dictado = detectada.resto;
+      /* Ya era la especie en curso: no se anuncia, y sin medidas es el eco
+         del parlante (acá no hay filtro de eco) — repetirla armaba un lazo. */
+      if (claveEspecie(detectada.especie) === claveEspecie(especieRef.current)) {
+        if (!dictado.trim()) return;
+      } else {
+        especieRef.current = detectada.especie; // la troza de esta misma frase ya entra con ella
+        setEspecie(detectada.especie);
+        anuncio = detectada.especie;
+        if (!dictado.trim()) { hablar(detectada.especie); return; }
+      }
+    }
+    const nums = numerosDeTroza(dictado);
+    const { trozas, resto } = partirEnTrozas([...carryRef.current, ...nums]);
+    carryRef.current = resto;
+    let ultima: Fila | null = null;
+    for (const t of trozas) ultima = addTroza(t.d1, t.d2, t.largo, t.sospechosa);
+    if (ultima) {
+      const confirmacion = trozas.length === 1 ? `${ultima.d1}, ${ultima.d2}, ${ultima.largo}` : `${trozas.length} trozas`;
+      hablar(anuncio ? `${anuncio}. ${confirmacion}` : confirmacion);
+      tipSiNoRepite(trozas.length, trozas.some((t) => t.sospechosa));
+    } else if (anuncio) {
+      hablar(anuncio);
+    }
+  });
+
+  const persist = (next: Fila[]) => { const acomodadas = acomodarTrozas(next, ordenRef.current); setRows(acomodadas); saveLocal(acomodadas); };
+  const borrar = (id: string) => { persist(rows.filter((r) => r.id !== id)); if (lastAdded?.id === id) setLastAdded(null); };
+  const deshacer = () => { if (lastAdded) borrar(lastAdded.id); };
+  const limpiar = () => { persist([]); setLastAdded(null); carryRef.current = []; };
+  /** El import SUMA al patio, nunca reemplaza (mismo criterio que la aserrada). */
+  const agregarImportadas = (nuevas: TrozaImportada[]) => {
+    persist([...rows, ...nuevas.map(({ filaOrigen: _filaOrigen, ...t }) => t)]);
+  };
+
+  const editar = (id: string, campo: "d1" | "d2" | "largo", valor: number) => {
+    persist(rows.map((r) => {
+      if (r.id !== id) return r;
+      const upd = { ...r, [campo]: valor };
+      return { ...upd, m3: cubicarTroza(upd.d1, upd.largo, upd.d2), sospechosa: undefined };
+    }));
+  };
+
+  const addManual = () => {
+    const d1 = Number(manual.d1), l = Number(manual.largo);
+    const d2 = Number(manual.d2) || d1;
+    if (!(d1 > 0 && l > 0)) return;
+    addTroza(d1, d2, l);
+    setManual({ d1: "", d2: "", largo: "" });
+  };
+
+  const totales = useMemo(() => totalesTrozas(rows), [rows]);
+
+  /**
+   * Leer el patio en voz alta, troza por troza — la misma mecánica que el
+   * cubicador de madera (`use-lectura-en-voz`), no una segunda con otras
+   * reglas. Sirve para cotejar contra la guía sin despegar los ojos del papel.
+   */
+  const rowsRef = useRef<Fila[]>(rows);
+  rowsRef.current = rows;
+  const lectura = useLecturaEnVoz<Fila>({
+    rate: () => loadConfig().voiceRate,
+    voiceURI: () => loadConfig().voiceURI,
+    pitch: () => loadConfig().voicePitch,
+    volume: () => loadConfig().voiceVolume,
+    /* El micrófono y el parlante no pueden estar prendidos a la vez: lo que
+       dicta la tabla entraría como si fuera una troza nueva. */
+    onAntesDeArrancar: () => { if (voz.listening) voz.toggle(); },
+    idDeFila: (id) => `troza-row-${id}`,
+  });
+  /* Por tramos de especie, igual que la aserrada: «Continúa con tornillo» al
+     entrar a 2+ trozas seguidas de la misma especie, después sólo medidas. Y
+     con «Largo fijo al leer» (Ajustes del cubicador de aserrada, la misma
+     config), 5+ trozas del mismo largo se leen «largo fijo 4 metros» y después
+     sólo los dos diámetros. */
+  const textoTroza = useCallback(
+    (t: Fila, ctx: ContextoLectura<Fila>) =>
+      textoPorTramos(t, ctx, (x) => `${x.d1}, ${x.d2}, ${x.largo}`, loadConfig().largoFijoAlLeer ? LARGO_TROZA_EN_VOZ : undefined),
+    [],
+  );
+  const leerPatio = useCallback(
+    () => lectura.leer(() => rowsRef.current, textoTroza),
+    [lectura, textoTroza],
+  );
+  const cmpGtf = useMemo(() => compararConGtf(totales.m3, Number(gtfM3) || 0), [totales.m3, gtfM3]);
+  const sospechosas = rows.filter((r) => r.sospechosa).length;
+  const especiesActuales = useMemo(
+    () => [...new Set(rows.map((r) => r.especie?.trim()).filter((e): e is string => !!e))],
+    [rows],
+  );
+  /** Con una sola especie no hay nada que agrupar, salvo para volver a como se dictó. */
+  const hayQueAgrupar = especiesActuales.length + (rows.some((r) => !r.especie?.trim()) ? 1 : 0) > 1 || ordenFilas === "especie";
+  /* «Más nuevas primero» (2026-09-23) sirve con una sola especie también. */
+  const hayQueOrdenar = rows.length > 1 || ordenFilas !== "dictado";
+  /** Cambia el orden y REORDENA el patio. Corta la lectura: seguir por el mismo
+   *  índice en otro orden nombraría otra troza que la que se ve. */
+  const cambiarOrden = (orden: OrdenFilas) => {
+    ordenRef.current = orden;
+    setOrdenFilas(orden);
+    try { localStorage.setItem(`${storageKey()}-orden`, orden); } catch { /* ignore */ }
+    if (lectura.activa()) lectura.detener();
+    persist(ordenarFilas(rowsRef.current, orden));
+  };
+
+  /**
+   * El resumen del patio. Todo esto ya se calculaba o estaba a un `reduce` de
+   * distancia; lo que faltaba era tenerlo ARRIBA, que es donde se mira mientras
+   * se cubica un camión, y no repartido entre el pie de la tabla y tres
+   * tarjetas al final de la pantalla.
+   */
+  const resumenPatio = useMemo(() => {
+    const porEspecie = new Map<string, number>();
+    let sumaD = 0;
+    let largoTotal = 0;
+    for (const r of rows) {
+      porEspecie.set(r.especie?.trim() || "Sin especie", (porEspecie.get(r.especie?.trim() || "Sin especie") ?? 0) + r.m3);
+      /* El diámetro de una troza es el promedio de sus dos puntas: es lo que
+         usa Smalian, y promediar sólo el menor subestimaría el patio. */
+      sumaD += (r.d1 + r.d2) / 2;
+      largoTotal += r.largo;
+    }
+    const especies = [...porEspecie.entries()].sort((a, b) => b[1] - a[1]);
+    return {
+      especies,
+      dominante: especies[0] ?? null,
+      pctDominante: totales.m3 > 0 && especies[0] ? (especies[0][1] / totales.m3) * 100 : 0,
+      diametroMedio: rows.length > 0 ? sumaD / rows.length : 0,
+      largoMedio: rows.length > 0 ? largoTotal / rows.length : 0,
+    };
+  }, [rows, totales.m3]);
+
+  /**
+   * Ventaneo (`use-tabla-ventaneada`): el patio de un camión grande son
+   * cientos de trozas, y montarlas todas de una es el mismo cuelgue que sufrió
+   * el cubicador de aserrada con 683 filas. Debajo del umbral no cambia nada.
+   */
+  const ventana = useTablaVentaneada(rows, { altoVisor: ALTO_VISOR_PATIO });
+  const propsTabla = useMemo(() => {
+    const q: Record<string, unknown> = { ...ventana.propsContenedor };
+    q.className = "rounded-xl";
+    return q as React.HTMLAttributes<HTMLDivElement>;
+  }, [ventana.propsContenedor]);
+  /** Columnas vivas — para el colSpan de los `<tr>` colchón. */
+  const colsTotales = colSpanTotales + (colsVisibles.m3 ? 1 : 0) + 1;
+
+  /**
+   * Las guías del libro, para cotejar contra el volumen DECLARADO de verdad.
+   *
+   * El «según la GTF» se tipeaba a mano: el número contra el que se decide si un
+   * camión llegó corto salía de la memoria del que carga, no del libro. Acá se
+   * elige la guía y el volumen lo pone el asiento.
+   *
+   * Es sólo LECTURA. Mandar estas trozas al libro es otra cosa —toca las
+   * invariantes del ingreso— y necesita su propio ADR.
+   */
+  const [guias, setGuias] = useState<GuiaLibro[]>([]);
+  const [guiaId, setGuiaId] = useState("");
+  const [guiasError, setGuiasError] = useState<string | null>(null);
+  useEffect(() => {
+    let vivo = true;
+    fetch("/api/admin/forestal/wood-entries?limit=100", { credentials: "include", cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
+      .then((j: { entries?: GuiaLibro[] }) => { if (vivo) setGuias(j.entries ?? []); })
+      .catch((err) => {
+        /* El cubicador funciona igual sin el libro: se sigue pudiendo tipear el
+           volumen a mano. Se dice, no se traga. */
+        if (vivo) setGuiasError(String(err instanceof Error ? err.message : err));
+      });
+    return () => { vivo = false; };
+  }, []);
+  const guiaElegida = useMemo(() => guias.find((g) => g.id === guiaId) ?? null, [guias, guiaId]);
+  /* Al elegir una guía manda su volumen declarado; soltarla devuelve el campo. */
+  useEffect(() => {
+    if (guiaElegida) setGtfM3(String(Number(guiaElegida.volumeM3) || 0));
+  }, [guiaElegida]);
+
+  // Caption en vivo agrupado en tríos, como el cubicador de aserrada.
+  const liveGroups = useMemo(() => {
+    if (!voz.listening || !voz.liveText) return null;
+    const nums = numerosDeTroza(voz.liveText);
+    const triples: number[][] = [];
+    let i = 0;
+    for (; i + 3 <= nums.length; i += 3) triples.push(nums.slice(i, i + 3));
+    return { triples, resto: nums.slice(i) };
+  }, [voz.listening, voz.liveText]);
+
+  const exportarCSV = () => {
+    const head = ["D1cm", "D2cm", "LargoM", "Especie", "m3"];
+    const lines = enOrdenDelPapel(rows, ordenFilas).map((r) => [r.d1, r.d2, r.largo, r.especie ?? "", r.m3].join(","));
+    const csv = "﻿" + [head.join(","), ...lines, ["TOTAL", "", "", "", Number(totales.m3).toFixed(4)].join(",")].join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
+    const a = document.createElement("a");
+    a.href = url; a.download = `trozas-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click(); setTimeout(() => URL.revokeObjectURL(url), 2000);
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* El patio de un vistazo, antes del micrófono — el mismo lugar y el
+          mismo lenguaje que en el cubicador de aserrada. Con el patio vacío no
+          se dibuja: seis tarjetas en cero antes de la primera troza son ruido. */}
+      {rows.length > 0 && (
+        <section
+          aria-label="Resumen del patio de trozas"
+          className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4"
+        >
+          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+              Lo que llevas cubicado
+            </p>
+            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Todo el patio</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
+            <Kpi
+              Icono={Boxes}
+              rotulo="Volumen"
+              valor={fmtM3(totales.m3)}
+              unidad="m³"
+              destacado
+              sub={`${formatNumber(Math.round(totales.m3 * PT_POR_M3))} PT equivalentes`}
+            />
+            <Kpi
+              Icono={Layers}
+              rotulo="Trozas"
+              valor={formatNumber(totales.trozas)}
+              unidad={totales.trozas === 1 ? "troza" : "trozas"}
+              sub={`${fmtM3(totales.trozas > 0 ? totales.m3 / totales.trozas : 0)} m³ cada una`}
+            />
+            <Kpi
+              Icono={Sigma}
+              rotulo="Especies"
+              valor={String(resumenPatio.especies.length)}
+              unidad={resumenPatio.especies.length === 1 ? "especie" : "especies"}
+              sub={resumenPatio.dominante ? `${resumenPatio.dominante[0]} · ${resumenPatio.pctDominante.toFixed(0)} %` : undefined}
+            />
+            <Kpi
+              Icono={Ruler}
+              rotulo="Ø promedio"
+              valor={resumenPatio.diametroMedio.toFixed(1)}
+              unidad="cm"
+              sub={`largo medio ${resumenPatio.largoMedio.toFixed(2)} m`}
+            />
+            {/* El cotejo contra la guía es el dato de compliance de esta
+                pantalla: si el patio no coincide con lo declarado, eso se
+                resuelve ANTES de firmar el ingreso, no al final. Sin GTF
+                cargada se dice, no se inventa un cero. */}
+            <Kpi
+              Icono={Scale}
+              rotulo="Contra la GTF"
+              valor={cmpGtf ? `${cmpGtf.deltaM3 > 0 ? "+" : ""}${fmtM3(cmpGtf.deltaM3)}` : "—"}
+              unidad={cmpGtf ? "m³" : undefined}
+              apagado={!cmpGtf}
+              sub={cmpGtf ? `${cmpGtf.deltaPct > 0 ? "+" : ""}${cmpGtf.deltaPct} % contra la guía` : "pon los m³ de la guía"}
+            />
+          </div>
+
+          {sospechosas > 0 && (
+            <p className="mt-3 flex items-center gap-1.5 text-sm font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+              <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
+              {sospechosas === 1 ? "Una troza tiene" : `${sospechosas} trozas tienen`} medidas fuera de rango — revisalas
+              antes de cerrar el ingreso.
+            </p>
+          )}
+        </section>
+      )}
+
+      {/* Panel de voz */}
+      <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+        <CardTitle as="h3" className="mb-4 flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
+          <Ruler className="h-4 w-4 text-[var(--accent)]" /> Cubicador de trozas (rolliza · Smalian)
+        </CardTitle>
+        {voz.supported ? (
+          <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
+            <button
+              type="button"
+              onClick={() => { prepararPitido(); voz.toggle(); }}
+              aria-pressed={voz.listening}
+              aria-label={voz.listening ? "Detener el dictado" : "Empezar a dictar"}
+              className={`inline-flex h-20 w-20 shrink-0 items-center justify-center rounded-full border-2 transition ${voz.listening ? "animate-pulse border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]" : "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:brightness-95"}`}
+            >
+              {voz.listening ? <MicOff className="h-8 w-8" /> : <Mic className="h-8 w-8" />}
+            </button>
+            <div className="min-w-0 flex-1 text-center sm:text-left">
+              <p className="text-sm font-bold text-[var(--text-primary)]">
+                {paused ? "⏸ En pausa — di «continúa» para seguir" : voz.listening ? "Escuchando… dicta cada troza y una micro-pausa la guarda" : "Toca el micrófono y dicta las trozas"}
+              </p>
+              <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
+                Tres números por troza: <span className="font-semibold text-[var(--text-secondary)]">&ldquo;cuarenta cuarenta y cinco tres punto cinco&rdquo;</span> = Ø menor 40 cm · Ø mayor 45 cm · largo 3.5 m. Con una sola medida de diámetro, repítela.
+              </p>
+              <label className="mt-2 inline-flex items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-1.5">
+                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Especie</span>
+                <select value={especie} onChange={(ev) => setEspecie(ev.target.value)} className="bg-transparent text-sm font-bold text-[var(--text-primary)] outline-none">
+                  <option value="">Sin especie</option>
+                  {catalogoEspecies.nombres.map((s) => <option key={s} value={s}>{s}</option>)}
+                  {/* Lo ya elegido no se pierde si el catálogo dejó de ofrecerlo. */}
+                  {especie && !catalogoEspecies.nombres.includes(especie) && <option value={especie}>{especie}</option>}
+                </select>
+                {/* El catálogo se edita acá: la troza rara aparece en el patio,
+                    no en otra pantalla. */}
+                <button
+                  type="button"
+                  onClick={catalogoEspecies.abrir}
+                  aria-label="Especies del aserradero: crear, renombrar, quitar"
+                  title="Especies del aserradero: crear, renombrar, quitar"
+                  className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-[var(--text-tertiary)] transition hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+                >
+                  <Settings2 className="h-4 w-4" aria-hidden />
+                </button>
+              </label>
+              {voz.listening && (
+                <div className="mt-2 min-h-[2.75rem] rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2">
+                  {liveGroups && (liveGroups.triples.length > 0 || liveGroups.resto.length > 0) ? (
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {liveGroups.triples.map((t, i) => (
+                        <span key={i} className="inline-flex items-center gap-1 rounded-md bg-[var(--data-success-100)] px-2 py-0.5 font-mono text-sm font-bold text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]">
+                          {t.join(" · ")}
+                        </span>
+                      ))}
+                      {liveGroups.resto.length > 0 && (
+                        <span className="inline-flex items-center gap-1 rounded-md border border-dashed border-[var(--data-warning-500)] px-2 py-0.5 font-mono text-sm text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+                          {liveGroups.resto.join(" · ")}<span className="ml-1 opacity-60">· falta{liveGroups.resto.length === 2 ? " 1" : "n 2"}</span>
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-[var(--text-tertiary)]">escuchando…</div>
+                  )}
+                </div>
+              )}
+              {voz.errMsg && (
+                <p className="mt-2 rounded-lg border border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-2.5 py-1.5 text-xs font-semibold text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
+                  {voz.errMsg}
+                </p>
+              )}
+            </div>
+          </div>
+        ) : (
+          <p className="rounded-xl bg-[var(--data-warning-50)] px-3 py-2 text-xs text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
+            Este navegador no soporta dictado por voz (usá Chrome). Puedes cargar las trozas a mano abajo.
+          </p>
+        )}
+
+        {lastAdded && (
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border-2 border-[var(--data-success-500)] bg-[var(--data-success-100)] px-3 py-2 dark:bg-[var(--data-success-500)]/12">
+            <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
+              <Check className="h-4 w-4" />
+              Agregada: Ø{lastAdded.d1}/{lastAdded.d2} cm × {lastAdded.largo} m{lastAdded.especie ? ` · ${lastAdded.especie}` : ""}
+              <span className="font-mono">= {fmtM3(lastAdded.m3)} m³</span>
+            </span>
+            <button type="button" onClick={deshacer} className="inline-flex items-center gap-1 rounded-lg border border-[var(--data-success-500)] bg-[var(--surface-raised)] px-2.5 py-1 text-xs font-bold text-[var(--data-success-700)] hover:brightness-95 dark:text-[var(--data-success-500)]">
+              <RotateCcw className="h-3.5 w-3.5" /> Deshacer
+            </button>
+          </div>
+        )}
+
+        {/* Carga manual */}
+        <div className="mt-4 flex flex-wrap items-end gap-2 border-t border-[var(--rule-soft)] pt-3">
+          <CampoNum label="Ø menor (cm)" value={manual.d1} onChange={(v) => setManual({ ...manual, d1: v })} />
+          <CampoNum label="Ø mayor (cm)" value={manual.d2} onChange={(v) => setManual({ ...manual, d2: v })} placeholder="= menor" />
+          <CampoNum label="Largo (m)" value={manual.largo} onChange={(v) => setManual({ ...manual, largo: v })} />
+          <button type="button" onClick={addManual} className="inline-flex h-10 items-center gap-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
+            <Plus className="h-4 w-4" /> Agregar a mano
+          </button>
+        </div>
+      </div>
+
+      {/* Tabla + comparación con la GTF */}
+      <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
+            <Table className="h-4 w-4 text-[var(--accent)]" /> Trozas del patio ({rows.length})
+          </CardTitle>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={() => setImportando(true)} className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]">
+              <Upload className="h-3.5 w-3.5" /> Importar
+            </button>
+            <CtpEspeciesBoton onClick={catalogoEspecies.abrir} />
+            {hayQueOrdenar && (
+              <select
+                value={ordenFilas}
+                onChange={(e) => { if (esOrdenFilas(e.target.value)) cambiarOrden(e.target.value); }}
+                aria-label="Orden de las trozas"
+                title="Como se dictó: en el orden en que entraron. Más nuevas primero: la última que dictaste arriba, y cada troza conserva su número. Por especie: el patio en bloques, y lo que dictes después cae al final de su bloque."
+                className="rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 py-1.5 text-xs font-bold text-[var(--text-secondary)] outline-none hover:border-[var(--accent)] focus:border-[var(--accent)]"
+              >
+                <option value="dictado">Orden: como se dictó</option>
+                <option value="recientes">Orden: más nuevas primero</option>
+                {hayQueAgrupar && <option value="especie">Orden: por especie</option>}
+              </select>
+            )}
+            {/* Columnas opcionales: ocultar/mostrar Especie y m³ — queda
+                guardado por tenant hasta que se vuelva a tocar. */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setColsMenuOpen((v) => !v); }}
+                title="Elegir columnas visibles de la tabla"
+                aria-label="Elegir columnas visibles"
+                aria-expanded={colsMenuOpen}
+                className={`inline-flex items-center gap-1.5 rounded-lg border-2 px-3 py-1.5 text-xs font-bold transition ${colsMenuOpen ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]"}`}
+              >
+                <Columns3 className="h-3.5 w-3.5" /> Columnas
+              </button>
+              {colsMenuOpen && (
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  className="absolute right-0 top-full z-20 mt-1 min-w-[170px] rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-2 shadow-[var(--shadow-lg)]"
+                >
+                  <p className="px-2 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Columnas visibles</p>
+                  {COLS_OPCIONALES_TROZA.map(({ key, label }) => (
+                    <label key={key} className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">
+                      <input
+                        type="checkbox"
+                        checked={colsVisibles[key]}
+                        onChange={(e) => setColsVisibles((c) => ({ ...c, [key]: e.target.checked }))}
+                        className="h-4 w-4 rounded border border-[var(--rule-base)] accent-[var(--color-primary)]"
+                      />
+                      {label}
+                    </label>
+                  ))}
+                  <div className="mt-1 border-t border-[var(--rule-soft)] pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setColsVisibles(COLS_DEFAULT_TROZA)}
+                      className="w-full rounded-lg px-2 py-1.5 text-left text-sm font-bold text-[var(--accent)] hover:bg-primary/10"
+                    >
+                      Restablecer todas
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+            {rows.length > 0 && (
+              <>
+                <button
+                  type="button"
+                  onClick={leerPatio}
+                  title="Leer las trozas en voz alta, una por una"
+                  /* Mira `leyendoId` y no `estado`: el panel sobrevive al final
+                     de la lectura, así que con `estado` este botón seguiría
+                     diciendo «Detener» cuando ya no hay nada sonando. */
+                  className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-bold transition-colors ${lectura.leyendoId ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
+                >
+                  {lectura.leyendoId ? <><Square className="h-3.5 w-3.5" /> Detener</> : <><Volume2 className="h-3.5 w-3.5" /> Leer el patio</>}
+                </button>
+                <button type="button" onClick={exportarCSV} className="rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">CSV</button>
+                <button type="button" onClick={limpiar} className="rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-50)] dark:text-[var(--data-error-500)] dark:hover:bg-[var(--data-error-500)]/12">Vaciar</button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {sospechosas > 0 && (
+          <p className="mb-3 flex items-center gap-1.5 rounded-lg border border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-2.5 py-1.5 text-xs font-semibold text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
+          <AlertTriangle className="h-3.5 w-3.5" />
+            {sospechosas === 1 ? "Hay una troza con medidas raras" : `Hay ${sospechosas} trozas con medidas raras`} (largo &gt;15 m o Ø &lt;10 cm): revisa las filas resaltadas — corrige el valor y la marca se va.
+          </p>
+        )}
+
+        {rows.length === 0 ? (
+          <p className="py-8 text-center text-sm text-[var(--text-tertiary)]">Todavía no cubicaste trozas. Dicta o carga la primera.</p>
+        ) : (
+          <DataTable className="w-full min-w-[640px] text-sm" wrapperProps={propsTabla}>
+              <thead>
+                <tr className="bg-[var(--surface-sunken)] text-left text-[length:var(--ts-xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
+                  <th className="px-3 py-2">#</th><th className="px-3 py-2">Ø menor (cm)</th><th className="px-3 py-2">Ø mayor (cm)</th>
+                  <th className="px-3 py-2">Largo (m)</th>
+                  {colsVisibles.especie && <th className="px-3 py-2">Especie</th>}
+                  {colsVisibles.m3 && <th className="px-3 py-2 text-right">m³</th>}
+                  <th className="px-3 py-2" />
+                </tr>
+              </thead>
+              <tbody>
+                {/* Colchón: reserva el alto de lo que no está montado, para que
+                    el scrollbar mida lo mismo que con todas las filas. */}
+                {ventana.colchonSuperior > 0 && (
+                  <tr aria-hidden="true">
+                    <td colSpan={colsTotales} style={{ height: ventana.colchonSuperior, padding: 0, border: 0 }} />
+                  </tr>
+                )}
+                {ventana.filasEnVentana.map((r, iVentana) => {
+                  /* La posición REAL, no la de la ventana: el «#» de la fila y
+                     el rótulo de sus botones tienen que seguir siendo el número
+                     de la troza en el patio. */
+                  const i = ventana.inicioVentana + iVentana;
+                  /* Con «más nuevas primero» cada troza conserva el número con
+                     que se dictó: arriba va la más alta (`numeroDeFila`). */
+                  const n = numeroDeFila(i, rows.length, ordenFilas);
+                  /* Agrupado por especie, una raya más marcada separa los bloques
+                     (con `!`: `DataTable` pinta el borde de todas las filas con
+                     un selector descendiente que le gana a la clase). */
+                  const inicioBloque = ordenFilas === "especie" && empiezaBloque(r, rows[i - 1]);
+                  return (
+                  <tr
+                    key={r.id}
+                    id={`troza-row-${r.id}`}
+                    ref={iVentana === 0 ? ventana.primeraFilaRef : undefined}
+                    className={`${inicioBloque ? "border-t-2! border-t-[var(--rule-strong)]!" : "border-t border-[var(--rule-soft)]"} ${
+                      lectura.leyendoId === r.id
+                        ? "bg-primary/10 outline outline-2 -outline-offset-2 outline-[var(--accent)]"
+                        : r.sospechosa
+                          ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/12"
+                          : lastAdded?.id === r.id
+                            ? "bg-[var(--data-success-50)] dark:bg-[var(--data-success-500)]/10"
+                            : ""
+                    }`}
+                  >
+                    <td className="px-3 py-2 font-mono tabular-nums text-[var(--text-tertiary)]">{n}</td>
+                    <td className="px-3 py-2"><CeldaNum value={r.d1} onChange={(v) => editar(r.id, "d1", v)} etiqueta={`Diámetro 1 de la troza ${n}`} /></td>
+                    <td className="px-3 py-2"><CeldaNum value={r.d2} onChange={(v) => editar(r.id, "d2", v)} etiqueta={`Diámetro 2 de la troza ${n}`} /></td>
+                    <td className="px-3 py-2"><CeldaNum value={r.largo} onChange={(v) => editar(r.id, "largo", v)} etiqueta={`Largo de la troza ${n}`} /></td>
+                    {colsVisibles.especie && <td className="px-3 py-2 text-[var(--text-secondary)]">{r.especie ?? "—"}</td>}
+                    {colsVisibles.m3 && <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{fmtM3(r.m3)}</td>}
+                    <td className="px-3 py-2">
+                      <div className="flex items-center justify-end gap-1.5">
+                        {/* Leer DESDE acá: se cortó a mitad del patio y no hay
+                            por qué escuchar de nuevo lo ya cotejado. */}
+                        <button
+                          type="button"
+                          onClick={() => lectura.leerDesde(() => rowsRef.current, textoTroza, r.id)}
+                          aria-label={`Leer en voz alta desde la troza ${n}`}
+                          title="Leer en voz alta desde esta troza en adelante"
+                          className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-[var(--rule-base)] text-[var(--text-tertiary)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                        >
+                          <Volume2 className="h-3.5 w-3.5" />
+                        </button>
+                        <button type="button" onClick={() => borrar(r.id)} aria-label={`Borrar troza ${n}`} className="text-[var(--text-tertiary)] hover:text-[var(--data-error-700)] dark:hover:text-[var(--data-error-500)]">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                  );
+                })}
+                {ventana.colchonInferior > 0 && (
+                  <tr aria-hidden="true">
+                    <td colSpan={colsTotales} style={{ height: ventana.colchonInferior, padding: 0, border: 0 }} />
+                  </tr>
+                )}
+              </tbody>
+              <tfoot>
+                <tr className="border-t-2 border-[var(--rule-base)] bg-primary/10 font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
+                  <td className="px-3 py-2.5" colSpan={colSpanTotales}>Total · {totales.trozas} {totales.trozas === 1 ? "troza" : "trozas"}</td>
+                  {colsVisibles.m3 && <td className="px-3 py-2.5 text-right font-mono text-base tabular-nums text-[var(--accent)]">{fmtM3(totales.m3)} m³</td>}
+                  <td />
+                </tr>
+              </tfoot>
+            </DataTable>
+        )}
+
+        {/* Contra la guía: ¿lo que llegó coincide con lo declarado? */}
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 py-3">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
+              <Scale className="h-4 w-4 text-[var(--accent)]" /> Según la GTF
+            </span>
+            {/* Elegir la guía del libro en vez de tipear su volumen: el número
+                contra el que se decide si un camión llegó corto tiene que salir
+                del asiento, no de la memoria del que carga. */}
+            {guias.length > 0 && (
+              <select
+                value={guiaId}
+                onChange={(e) => setGuiaId(e.target.value)}
+                aria-label="Guía del libro contra la que comparar"
+                className="h-9 max-w-[18rem] rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+              >
+                <option value="">Escribir el volumen a mano</option>
+                {guias.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.gtfNumber}
+                    {g.providerName ? ` · ${g.providerName}` : ""} · {fmtM3(Number(g.volumeM3) || 0)} m³
+                    {g.trozasCount ? ` · ${g.trozasCount} trozas ya cargadas` : ""}
+                  </option>
+                ))}
+              </select>
+            )}
+            <input
+              type="number"
+              inputMode="decimal"
+              value={gtfM3}
+              onChange={(e) => setGtfM3(e.target.value)}
+              disabled={!!guiaElegida}
+              placeholder="0.000"
+              aria-label="Metros cúbicos declarados en la guía"
+              className="h-9 w-28 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] disabled:opacity-60"
+            />
+            <span className="text-sm text-[var(--text-tertiary)]">m³ declarados</span>
+          </div>
+          {cmpGtf ? (
+            <div className="text-right">
+              <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Patio vs. guía</div>
+              <div className={`font-mono text-xl font-extrabold tabular-nums ${Math.abs(cmpGtf.deltaPct) <= 2 ? "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : Math.abs(cmpGtf.deltaPct) <= 5 ? "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" : "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"}`}>
+                {cmpGtf.deltaM3 >= 0 ? "+" : ""}{fmtM3(cmpGtf.deltaM3)} m³ ({cmpGtf.deltaPct >= 0 ? "+" : ""}{cmpGtf.deltaPct}%)
+              </div>
+              <div className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{cmpGtf.deltaM3 < 0 ? "llegó menos de lo declarado" : "llegó más de lo declarado"}</div>
+            </div>
+          ) : (
+            <p className="text-xs text-[var(--text-tertiary)]">
+              {guiasError
+                ? "No se pudo leer el libro — escribe los m³ de la guía a mano para comparar."
+                : "Elige la guía del libro (o escribe los m³) para comparar con lo cubicado."}
+            </p>
+          )}
+        </div>
+
+        {guiaElegida && (guiaElegida.trozasCount ?? 0) > 0 && (
+          <p className="mt-2 flex items-center gap-1.5 rounded-lg border border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-2.5 py-1.5 text-xs font-semibold text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
+            <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+            Esa guía ya tiene {guiaElegida.trozasCount} trozas cargadas en el libro: si las estás volviendo a
+            medir, mira primero el detalle de la guía para no contar la misma madera dos veces.
+          </p>
+        )}
+
+        {/* Referencias */}
+        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+          <Ref label="Total rolliza" value={`${fmtM3(totales.m3)} m³`} />
+          <Ref label="Equivalente volumétrico" value={`${formatNumber(totales.m3 * PT_POR_M3, { max: 0 })} PT`} hint={`1 m³ = ${PT_POR_M3} PT — el factor con el que se compra y se vende`} />
+          <Ref label="Fórmula" value="Smalian" hint="promedio de áreas × largo" />
+        </div>
+      </div>
+
+      {/* Mientras lee, el control va con los ojos. */}
+      <ControlLecturaFlotante
+        estado={lectura.estado}
+        onPausar={lectura.pausar}
+        onReanudar={lectura.reanudar}
+        onReiniciar={lectura.reiniciar}
+        onIrAFila={lectura.irAFila}
+        onCerrar={lectura.detener}
+        etiqueta="Leyendo el patio"
+        /* Las dos lecturas del patio son de la tabla entera. */
+        numerarDesdeAbajo={ordenFilas === "recientes"}
+      />
+
+      {catalogoEspecies.modal}
+
+      {importando && (
+        <ImportarTrozasModal
+          filasActuales={rows.length}
+          especiesActuales={especiesActuales}
+          onAgregar={agregarImportadas}
+          onCerrar={() => setImportando(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+function CampoNum({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string }) {
+  return (
+    <label className="flex flex-col gap-0.5">
+      <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">{label}</span>
+      <input type="number" inputMode="decimal" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="h-10 w-28 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2.5 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
+    </label>
+  );
+}
+
+/**
+ * Buffer de texto LOCAL, no `type="number"`: con el valor atado directo a la
+ * medida de la troza, seleccionar todo y borrar para tipear de nuevo hacía
+ * que el campo VOLVIERA solo al valor viejo a mitad de tecleo — en cuanto el
+ * cambio no daba un número válido (`n>0`) React forzaba `value={value}` otra
+ * vez. Acá el buffer manda mientras la celda tiene el foco; recién se
+ * sincroniza con el valor de afuera al perderlo (mismo arreglo que `Num` en
+ * CubicadorMadera.tsx — cada cubicador define su propia celda, pero el bug y
+ * la solución son los mismos).
+ */
+function CeldaNum({ value, onChange, etiqueta }: { value: number; onChange: (v: number) => void; etiqueta?: string }) {
+  const [texto, setTexto] = useState(String(value));
+  const enfocado = useRef(false);
+  useEffect(() => { if (!enfocado.current) setTexto(String(value)); }, [value]);
+
+  return (
+    <input
+      type="text"
+      inputMode="decimal"
+      autoComplete="off"
+      aria-label={etiqueta}
+      value={texto}
+      onFocus={(e) => { enfocado.current = true; e.currentTarget.select(); }}
+      onBlur={() => { enfocado.current = false; setTexto(String(value)); }}
+      onChange={(e) => {
+        const limpio = e.target.value.replace(/[^\d.,]/g, "").replace(",", ".");
+        setTexto(limpio);
+        const n = Number(limpio);
+        if (limpio !== "" && Number.isFinite(n) && n > 0) onChange(n);
+      }}
+      className="h-8 w-20 rounded-xl border border-[var(--rule-base)] bg-transparent px-2 font-mono text-sm font-bold tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+    />
+  );
+}
+
+function Ref({ label, value, hint }: { label: string; value: string; hint?: string }) {
+  return (
+    <div className="rounded-xl bg-[var(--surface-sunken)] px-3 py-2 text-center">
+      <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">{label}</div>
+      <div className="mt-0.5 font-mono text-sm font-extrabold tabular-nums text-[var(--text-primary)]">{value}</div>
+      {hint && <div className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{hint}</div>}
+    </div>
+  );
+}

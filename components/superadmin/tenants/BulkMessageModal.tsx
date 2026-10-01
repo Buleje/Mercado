@@ -70,13 +70,13 @@ export function BulkMessageModal({
             onChange={(e) => setBody(e.target.value)}
             rows={4}
             placeholder="Escribí el mensaje para los negocios seleccionados…"
-            className="w-full resize-none rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+            className="w-full resize-none rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
           />
           {err && <p className="text-sm font-semibold text-[var(--data-error-600,#dc2626)]">{err}</p>}
         </div>
         <div className="flex items-center justify-end gap-2 border-t border-[var(--rule-base)] px-5 py-4">
-          <button onClick={onClose} className="rounded-xl px-4 h-10 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
-          <button onClick={send} disabled={sending || !body.trim()} className="inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-5 h-10 text-sm font-bold text-white hover:opacity-90 disabled:opacity-40">
+          <button onClick={onClose} className="rounded-xl px-4 h-10 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
+          <button onClick={send} disabled={sending || !body.trim()} className="inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-5 h-10 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-40">
             {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             Enviar a {count}
           </button>

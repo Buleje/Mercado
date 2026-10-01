@@ -6,7 +6,6 @@ import {
   Users, UserPlus, UserCheck, Star,
   AlertTriangle, TrendingUp, Heart, Crown,
 } from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
 import { useDashboardData } from "@/contexts/dashboard-data-context";
 import type { DateRange } from "./DashboardDateRange";
@@ -17,8 +16,9 @@ const ClientesAdvancedCharts = dynamic(
   { ssr: false },
 );
 // DashboardSectionHeader removido 2026-04-24 — ver decision UX en render.
-import { BulejeDashboardSkeleton } from "./_shared";
+import { BulejeDashboardSkeleton, KPI_GRID_6 } from "./_shared";
 import EmptyDateRangeState from "./EmptyDateRangeState";
+import { formatDateShort, formatMonth, formatMonthYear } from "@/lib/format";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -63,9 +63,8 @@ export interface ClientesData {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function fmt(n: number) { return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`; }
 function dateKey(d: Date) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; }
-function dayLabel(dk: string) { return new Date(dk + "T12:00:00").toLocaleDateString("es-PE", { day: "2-digit", month: "short" }); }
+function dayLabel(dk: string) { return formatDateShort(dk + "T12:00:00"); }
 
 // ── Main Component ───────────────────────────────────────────────────────────
 
@@ -154,7 +153,7 @@ export default function ClientesDashboard({ dateRange, onChangeRange }: Clientes
     for (let i = 5; i >= 0; i--) {
       const mStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const mEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59);
-      const label = mStart.toLocaleDateString("es-PE", { month: "short", year: "2-digit" });
+      const label = formatMonthYear(mStart);
       const mPhones = new Set<string>();
       orders.filter(o => o.status === "entregado" && new Date(o.createdAt) >= mStart && new Date(o.createdAt) <= mEnd).forEach(o => { if (o.customer?.phone) mPhones.add(o.customer.phone); });
       sales.filter(s => new Date(s.createdAt) >= mStart && new Date(s.createdAt) <= mEnd).forEach(s => { if (s.customerPhone) mPhones.add(s.customerPhone); });
@@ -172,7 +171,7 @@ export default function ClientesDashboard({ dateRange, onChangeRange }: Clientes
     for (let c = 3; c >= 0; c--) {
       const cStart = new Date(now.getFullYear(), now.getMonth() - c, 1);
       const cEnd = new Date(now.getFullYear(), now.getMonth() - c + 1, 0, 23, 59, 59);
-      const label = cStart.toLocaleDateString("es-PE", { month: "short" });
+      const label = formatMonth(cStart);
       // Phones that first purchased in this month
       const firstPurchase = new Set<string>();
       const allPhonesBefore = new Set<string>();
@@ -223,7 +222,7 @@ export default function ClientesDashboard({ dateRange, onChangeRange }: Clientes
     const freqRanges = [
       { label: "1 compra", min: 1, max: 1, color: "#94a3b8" },
       { label: "2-3 compras", min: 2, max: 3, color: "#3b82f6" },
-      { label: "4-7 compras", min: 4, max: 7, color: "#f59e0b" },
+      { label: "4-7 compras", min: 4, max: 7, color: "#ff6b5b" },
       { label: "8+ compras", min: 8, max: Infinity, color: "var(--accent)" },
     ];
     const frecuenciaCompra = freqRanges.map(r => ({
@@ -275,7 +274,7 @@ export default function ClientesDashboard({ dateRange, onChangeRange }: Clientes
     <div className="flex flex-col items-center justify-center gap-4 py-16">
       <AlertTriangle className="h-10 w-10 text-[var(--data-warning-500)]" />
       <p className="text-sm text-[var(--text-secondary)]">{error}</p>
-      <button onClick={() => void refresh()} className="px-4 py-2 rounded-lg bg-[var(--brand-primary)] text-white text-sm font-bold hover:opacity-90 transition-opacity">Reintentar</button>
+      <button onClick={() => void refresh()} className="px-4 min-h-10 rounded-xl bg-[var(--brand-primary)] text-white text-sm font-semibold hover:opacity-90 transition-opacity">Reintentar</button>
     </div>
   );
   if (!data) return null;
@@ -297,7 +296,7 @@ export default function ClientesDashboard({ dateRange, onChangeRange }: Clientes
       {/* Hero removido 2026-04-24: los KPI tiles ya comunican el contenido. */}
 
       {/* ── KPI Hero Row · ADR-068 armonía estricta ── */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <div className={KPI_GRID_6}>
         <StatCard label="Total Clientes" value={String(data.totalClientes)} icon={Users} />
         <StatCard label="Activos" value={String(data.clientesActivos)} icon={UserCheck} delta={data.dActivos} />
         <StatCard label="Nuevos" value={String(data.nuevos)} icon={UserPlus} delta={data.dNuevos} />
@@ -330,25 +329,6 @@ export default function ClientesDashboard({ dateRange, onChangeRange }: Clientes
 
       {/* ── Charts especializados (cohort, RFM, rating, comparativa, heatmap, churn) ── */}
       <ClientesAdvancedCharts />
-    </div>
-  );
-}
-
-function DashboardSkeleton() {
-  return (
-    <div className="space-y-5 animate-pulse">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        {Array.from({ length: 6 }).map((_, i) => <div key={i} className="bg-[var(--surface-sunken)] rounded-xl h-28" />)}
-      </div>
-      <div className="bg-[var(--surface-sunken)] rounded-xl h-12" />
-      <div className="bg-[var(--surface-sunken)] rounded-xl h-[380px]" />
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="bg-[var(--surface-sunken)] rounded-xl h-[320px]" />
-        <div className="bg-[var(--surface-sunken)] rounded-xl h-[320px]" />
-      </div>
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        {Array.from({ length: 3 }).map((_, i) => <div key={i} className="bg-[var(--surface-sunken)] rounded-xl h-[260px]" />)}
-      </div>
     </div>
   );
 }

@@ -39,33 +39,7 @@ export async function GET(req: NextRequest) {
     logger.warn("[health/deep] DB check failed", { err: dbError });
   }
 
-  // ── 2. Memory usage ─────────────────────────────────────────────────────
-  let memory: Record<string, number> | null = null;
-  try {
-    if (typeof process !== "undefined" && typeof process.memoryUsage === "function") {
-      const mem = process.memoryUsage();
-      memory = {
-        rssBytes: mem.rss,
-        heapUsedBytes: mem.heapUsed,
-        heapTotalBytes: mem.heapTotal,
-        externalBytes: mem.external,
-      };
-    }
-  } catch {
-    // Edge runtime may not support memoryUsage — skip silently
-  }
-
-  // ── 3. Uptime ───────────────────────────────────────────────────────────
-  let uptimeSeconds: number | null = null;
-  try {
-    if (typeof process !== "undefined" && typeof process.uptime === "function") {
-      uptimeSeconds = Math.floor(process.uptime());
-    }
-  } catch {
-    // Edge runtime may not support uptime — skip silently
-  }
-
-  // ── 4. Build response ───────────────────────────────────────────────────
+  // ── 2. Build response ───────────────────────────────────────────────────
   const status = dbHealthy ? "healthy" : "unhealthy";
   const responseTimeMs = Date.now() - start;
 

@@ -20,6 +20,7 @@
 
 import type { ComponentType } from "react";
 import {
+  Camera,
   Wallet,
   Heart,
   HandCoins,
@@ -44,9 +45,14 @@ import {
   Gift,
   HeartHandshake,
   Radio,
+  Share2,
   UserPlus,
   TreePine,
   Leaf,
+  Megaphone,
+  ClipboardList,
+  Truck,
+  Users,
 } from "@buleje/design-system/icons";
 import type { Tab } from "./tabs.types";
 
@@ -141,7 +147,7 @@ export const MODULE_INFO: Partial<
   },
   config: {
     icon: SlidersHorizontal,
-    iconColor: "text-slate-500 dark:text-slate-400",
+    iconColor: "text-[var(--text-secondary)]",
     priority: "core",
     desc: "Usuarios, permisos, plan y configuración de la página web.",
     tip: "Configura esto primero para que todo funcione correctamente.",
@@ -155,7 +161,7 @@ export const MODULE_INFO: Partial<
   },
   plan: {
     icon: Zap,
-    iconColor: "text-slate-500 dark:text-slate-400",
+    iconColor: "text-[var(--text-secondary)]",
     priority: "medium",
     desc: "Tu plan actual, límites y opciones de mejora.",
     tip: "Revisa tu plan para aprovechar al máximo la plataforma.",
@@ -195,16 +201,23 @@ export const MODULE_INFO: Partial<
     desc: "Proyección de demanda y apoyo para reposición inteligente.",
     tip: "Anticípate a quiebres y compras urgentes con datos históricos.",
   },
+  camaras: {
+    icon: Camera,
+    iconColor: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]",
+    priority: "medium",
+    desc: "Las fotos que manda la cámara del patio o del local, con lectura automática.",
+    tip: "Mira qué pasó anoche sin abrir la app de la cámara.",
+  },
   rendimiento: {
     icon: Gauge,
-    iconColor: "text-slate-400 dark:text-slate-300",
+    iconColor: "text-[var(--text-tertiary)]",
     priority: "medium",
     desc: "Salud técnica, velocidad web, navegador y recursos del sistema.",
     tip: "Útil cuando quieres revisar si el sistema está corriendo fino o pesado.",
   },
   auditoria: {
     icon: Gauge,
-    iconColor: "text-slate-400 dark:text-slate-300",
+    iconColor: "text-[var(--text-tertiary)]",
     priority: "medium",
     desc: "Registro de actividad y trazabilidad de cambios dentro del panel.",
     tip: "Te ayuda a saber quién hizo qué y cuándo.",
@@ -259,6 +272,67 @@ export const MODULE_INFO: Partial<
     desc: "Transmisiones en vivo para mostrar productos y vender en directo.",
     tip: "Programa lives con productos destacados y mide performance.",
   },
+  // ── Crecimiento (Marketing & Fidelización) ──
+  campanas: {
+    icon: Megaphone,
+    iconColor: "text-[var(--accent)]",
+    priority: "high",
+    desc: "Campañas segmentadas por WhatsApp/email + automatizaciones de marketing.",
+    tip: "Crea una campaña desde un segmento en un clic para que tus clientes vuelvan.",
+  },
+  puntos: {
+    icon: Heart,
+    iconColor: "text-[var(--accent)]",
+    priority: "medium",
+    desc: "Programa de puntos y fidelización: acumulación, canje y reglas.",
+    tip: "Premia a tus clientes frecuentes para que compren más seguido.",
+  },
+  canales: {
+    icon: Share2,
+    iconColor: "text-[var(--accent)]",
+    priority: "medium",
+    desc: "Canales de venta social: conecta TikTok Shop y Meta (Facebook + Instagram).",
+    tip: "Pega tus Pixel IDs y los eventos se activan en tu tienda para optimizar anuncios.",
+  },
+  // ── Equipo ──
+  tareas: {
+    icon: ClipboardList,
+    iconColor: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]",
+    priority: "medium",
+    desc: "Tareas del equipo con prioridad, estado y asignación.",
+    tip: "Coordina pendientes del día sin perderlos entre conversaciones.",
+  },
+  notas: {
+    icon: ClipboardList,
+    iconColor: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]",
+    priority: "low",
+    desc: "Notas de turno y recordatorios tipo sticky.",
+    tip: "Deja anotado lo importante para el siguiente turno.",
+  },
+  // ── Recursos Humanos (ADR-414) ──
+  rrhh: {
+    icon: Users,
+    iconColor: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
+    priority: "high",
+    desc: "Personal, asistencia del día y del mes, lo ganado de referencia y contratos vinculados.",
+    tip: "Marca la asistencia de hoy en un par de clics; el sueldo es sólo referencia, no reemplaza la boleta.",
+  },
+  // ── Dropshipping (ADR-298) ──
+  dropship: {
+    icon: Truck,
+    iconColor: "text-[var(--accent)]",
+    priority: "high",
+    desc: "Envíos al proveedor automáticos cuando se paga un pedido (el proveedor despacha al cliente).",
+    tip: "Para tiendas dropshipping: vincula productos a proveedores y trackea los envíos.",
+  },
+  // ── Recetas (vertical comida — restaurante) ──
+  recetas: {
+    icon: ChefHat,
+    iconColor: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
+    priority: "high",
+    desc: "Recetas, producción y recetario: define platos, su costo por insumos y descuenta stock al producir.",
+    tip: "Para negocios de comida: arma cada plato con sus ingredientes y controla el costo real.",
+  },
 };
 
 export type TabCategory = {
@@ -301,17 +375,22 @@ export const BASIC_MODULES: TabCategory[] = [
     id: "inicio",
     label: "Inicio",
     icon: Gauge,
+    // "asistente-ia" abre AsistenteIAHubModule, que YA contiene Chat / Comandos /
+    // Sugerencias como sub-tabs internas (consolidacion 3->1). Antes el sidebar
+    // listaba los 3 ids (asistente-ia/ai-command/sugerencias-ia) → 3 enlaces que
+    // abrian el MISMO hub. Ahora una sola entrada "Asistente IA"; las otras 2
+    // siguen accesibles desde la barra de sub-tabs del hub.
     tabs: [
       "vendor-dashboard",
       "asistente-ia",
-      "ai-command",
-      "sugerencias-ia",
       "metas-logros",
     ],
   },
 
   // ── 02 · VENTAS ──────────────────────────────────
-  // Todo lo que entra plata: POS, pedidos, facturación SUNAT, documentos.
+  // POS + pedidos + el hub de Documentos. "documentos" abre DocumentosHubModule,
+  // que ya contiene Facturación SUNAT / Cotizaciones / Guías / Notas / Contratos
+  // / Drive como sub-tabs (compresión 2026-06-16: 1 entrada en vez de 6).
   {
     id: "ventas",
     label: "Ventas",
@@ -319,23 +398,22 @@ export const BASIC_MODULES: TabCategory[] = [
     tabs: [
       "ventas-caja",
       "pedidos",
-      "facturacion",
       "documentos",
-      "cotizaciones",
-      "guias-remision",
-      "notas-credito",
     ],
   },
 
   // ── 03 · COMPRAS ─────────────────────────────────
-  // Pedidos a proveedor + contratos (lo que sale de la caja hacia arriba).
+  // Pedidos a proveedor. (contratos → hub de Documentos en Ventas.)
   {
     id: "compras",
     label: "Compras",
     icon: PackagePlus,
+    // "dropship" se auto-oculta por el filtro vertical: solo aparece en tiendas
+    // dropshipping (vertical "otro", que lo tiene en enabled). El gate semántico
+    // real es Settings.dropshipEnabled (el módulo lo respeta). ADR-298.
     tabs: [
       "compras",
-      "contratos",
+      "dropship",
     ],
   },
 
@@ -345,79 +423,164 @@ export const BASIC_MODULES: TabCategory[] = [
     id: "productos-inventario",
     label: "Productos e inventario",
     icon: Warehouse,
+    // "recetas" se auto-oculta por el filtro vertical: solo aparece en negocios
+    // de comida (vertical "restaurante", que lo tiene en modules.enabled). Para
+    // bodega/otros NO está en su enabled → oculto. Era un módulo huérfano (1446
+    // LOC, /api/recetas) que ruteaba pero no estaba en ningún menú. Brandon 2026-06-21.
     tabs: [
       "productos",
       "inventario",
+      "recetas",
     ],
   },
 
   // ── 05 · CLIENTES ────────────────────────────────
-  // CRM + comunicación + leads. (Créditos/préstamos movidos a Finanzas.)
+  // CRM (con Leads dentro) + Mensajes. "whatsapp-inbox" y "marketplace-chat"
+  // abren el MISMO MensajesHubModule (initialTab "whatsapp"/"chat") — atajo
+  // redundante (auditoría 2026-08-02). Se deja sólo "whatsapp-inbox" (canal
+  // principal del negocio, ADR-058); "Chat con clientes" sigue a 1 click desde
+  // la barra de sub-tabs del hub. leads → sub-tab de CRM. (Créditos/préstamos
+  // en Finanzas.)
   {
     id: "clientes",
     label: "Clientes",
     icon: Heart,
     tabs: [
       "clientes",
-      "marketplace-chat",
-      "support-inbox",
-      "leads-funnel",
+      "whatsapp-inbox",
+    ],
+  },
+
+  // ── 05b · CRECIMIENTO (Marketing & Fidelización) ──
+  // Hub único que reúne TODO lo que hace volver al cliente. Antes estaba
+  // disperso y/o invisible: campañas/puntos/segmentos/RFM eran huérfanos (sin
+  // entrada en el sidebar) y los 4 programas (gift cards, socio, suscripciones,
+  // lives) vivían enterrados como sub-tabs del Marketplace. Ahora UNA categoría
+  // visible cuyos accesos directos abren el CrecimientoHubModule en su sub-tab.
+  // (segmentos y RFM quedan como sub-tabs internos del hub, a 1 click.)
+  // "campanas" es el único enlace visible: los otros 5 (puntos, gift-cards,
+  // socio, subscriptions, lives) abrían el MISMO CrecimientoHubModule con un
+  // initialTab distinto — atajo redundante (auditoría 2026-08-02, 6→1). Siguen
+  // a 1 click desde la barra de sub-tabs del hub.
+  {
+    id: "crecimiento",
+    label: "Crecimiento",
+    icon: Megaphone,
+    tabs: [
+      "campanas",
     ],
   },
 
   // ── 06 · FINANZAS ────────────────────────────────
-  // Todo el dinero del negocio: caja/saldos, créditos a clientes (fiados),
-  // préstamos, y adelantos a personas por servicios. Inicia la sección "Gestión".
+  // "plata" abre FinanzasModule (P&L, gastos, flujo, tesorería + Fiados,
+  // Préstamos, Adelantos, Activos, Por cobrar, Scoring como sub-tabs).
+  // Antes el sidebar listaba 7 accesos directos (plata/por-cobrar/fiados/
+  // prestamos/adelantos/activos/scoring) que abrían el MISMO hub con un
+  // initialTab distinto — atajo redundante (auditoría 2026-08-02, 7→2). El
+  // hub tiene su propia pestaña "Por cobrar" con Fiados/Préstamos/Adelantos/
+  // Scoring como segundo nivel (`DONDE_VIVE` en FinanzasModule ya resuelve
+  // esos ids viejos), así que la sub-vista sigue a 1-2 clicks, sin perder
+  // acceso ni romper los deep-links `?tab=fiados` etc.
+  //
+  // Se dejan DOS ids, no uno: "activos" es el único de los 7 desbloqueado en
+  // el plan Free (`lib/billing/plan-tiers.ts` PLAN_BASICO) y nunca lo oculta
+  // la plantilla del superadmin (no está en `ADMIN_MODULE_CATALOG`); "plata"
+  // recién se desbloquea en Starter y SÍ puede ocultarlo la plantilla
+  // (`lib/admin-template.ts`, `defaultVisible`/override por tenant). Colapsar
+  // a solo "plata" hace que la categoría entera desaparezca del sidebar para
+  // cualquier tenant Free — verificado en vivo con Playwright contra el
+  // tenant "main" (su plantilla oculta "plata" mientras deja "activos"
+  // visible: con un solo id colapsado, "Finanzas" se esfumaba del sidebar).
   {
     id: "finanzas",
     label: "Finanzas",
     icon: Wallet,
     tabs: [
       "plata",
-      "fiados",
-      "prestamos",
-      "adelantos",
       "activos",
     ],
   },
 
   // ── 07 · GRÁFICOS ────────────────────────────────
-  // Visión estratégica: analytics, forecast, rendimiento técnico.
+  // Visión estratégica: analytics + forecast (ambos abren AnalisisHubModule).
+  // (rendimiento técnico movido a la categoría Sistema.)
   {
     id: "graficos",
     label: "Análisis",
     icon: BarChart3,
+    // "analytics-pro" abre AnalisisHubModule (Analytics Pro + Predicción + Inteligencia).
     tabs: [
       "analytics-pro",
-      "forecasting",
-      "rendimiento",
     ],
   },
 
   // ── 07 · MARKETPLACE ─────────────────────────────
-  // Toda la operación del marketplace público + delivery + lives.
+  // "marketplace" abre MarketplaceModule (tienda + comisiones + cupones +
+  // Suscripciones/Gift Cards/Socio/Lives como sub-tabs). Delivery aparte.
   {
     id: "marketplace-ops",
     label: "Marketplace",
     icon: Store,
     tabs: [
       "marketplace",
+      // Canales de venta social (TikTok Shop + Meta pixel + GA4). Vive bajo el
+      // super-grupo "Canales" del sidebar (la categoría "crecimiento" no se
+      // renderiza en el sidebar curado; acá SÍ aparece). Brandon 2026-07-03.
+      "canales",
+      // "delivery-live" abría el MISMO DeliveryPartnersModule que
+      // "delivery-partners" (initialTab="pedidos-vivo") — atajo redundante
+      // (auditoría 2026-08-02, 2→1). "Pedidos en vivo" sigue a 1 click desde
+      // la barra de sub-tabs del hub.
       "delivery-partners",
-      "delivery-live",
-      "subscriptions",
-      "gift-cards-admin",
-      "socio-members",
-      "lives-admin",
+    ],
+  },
+
+  // ── 08b · RECURSOS HUMANOS (ADR-414) ─────────────
+  // Personal, asistencia, lo ganado de referencia y contratos vinculados.
+  // Categoría propia con UNA sola pestaña (§7 del ADR: "sin atajos a
+  // sub-tabs — un renglón por hub", auditoría 2026-08-02): las sub-vistas
+  // (Asistencia/Personal/Lo ganado/Contratos/Puestos) viven adentro del hub,
+  // filtradas por el `nivel` que devuelve el servidor. Va ANTES de "Equipo"
+  // (pedido explícito de Brandon en el ADR).
+  {
+    id: "recursos-humanos",
+    label: "Recursos Humanos",
+    icon: Users,
+    tabs: [
+      "rrhh",
+    ],
+  },
+
+  // ── 09 · EQUIPO ──────────────────────────────────
+  // Herramientas operativas internas (tareas + notas de turno). Abren el
+  // MISMO EquipoHubModule con initialTab distinto — atajo redundante
+  // (auditoría 2026-08-02, 2→1). "Notas" sigue a 1 click desde la barra de
+  // sub-tabs del hub.
+  {
+    id: "equipo",
+    label: "Equipo",
+    icon: ClipboardList,
+    tabs: [
+      "tareas",
     ],
   },
 ];
 
 // ── Módulo Mi Tienda (personalización visual) ─────────────────────────────────
+// "store-customizer" abría el MISMO MiTiendaHubModule que "pagina-inicio"
+// (initialTab="identidad") — atajo redundante (auditoría 2026-08-02, 2→1).
+// Se deja "pagina-inicio", no "store-customizer": en `ADMIN_MODULE_CATALOG`
+// (`lib/admin-template.ts`) "store-customizer" tiene `defaultVisible: false`
+// mientras "pagina-inicio" tiene `defaultVisible: true` — con la plantilla
+// por default (sin overrides), colapsar al revés habría hecho desaparecer
+// "Mi Tienda" del sidebar para cualquier tenant sin personalizar su
+// plantilla. "Identidad y tema" sigue a 1 click desde la barra de sub-tabs
+// del hub.
 export const TIENDA_MODULE: TabCategory = {
   id: "mi-tienda",
   label: "Mi Tienda",
   icon: Palette,
-  tabs: ["store-customizer", "pagina-inicio"],
+  tabs: ["pagina-inicio"],
 };
 
 // ── Módulos de Especialización por vertical (ADR-124) ──────────────────────────
@@ -435,7 +598,14 @@ export const FORESTAL_MODULE: TabCategory = {
   icon: TreePine,
   alwaysGroup: true,
   // Cuando gtf-emisor entre al Tab union (ADR-124 Fase futura) se suma acá.
-  tabs: ["ctp-libro-operaciones", "loth-libro-operaciones"],
+  //
+  // «Lotes de Producción» salió del menú (Brandon, 2026-09-09: «no tiene ningún
+  // contenido»). NO se borró nada: el módulo, sus endpoints, sus lotes y su
+  // certificado QR siguen enteros y la pantalla se abre por URL
+  // (`/admin?tab=forestal-lotes`) y desde la búsqueda global. Para devolverlo al
+  // sidebar alcanza con sumarlo de nuevo a esta lista — un módulo vacío ocupa
+  // un renglón del menú todos los días; borrarlo costaría una migración.
+  tabs: ["ctp-libro-operaciones", "loth-libro-operaciones", "forestal-herramientas", "forestal-tramites"],
 };
 
 export const AGRICULTURA_MODULE: TabCategory = {
@@ -446,12 +616,45 @@ export const AGRICULTURA_MODULE: TabCategory = {
   tabs: ["cacao-acopio"],
 };
 
+/**
+ * Cámaras (ADR-411) — su propio renglón en la barra lateral.
+ *
+ * NO va dentro de Forestal aunque hoy mire el patio del aserradero: ese grupo
+ * es de especializaciones, y el sidebar sólo dibuja sus tabs cuando la spec del
+ * tenant está encendida. Cámaras no es una especialización —una bodega también
+ * quiere ver quién entró— así que ahí quedaba renderizada pero invisible.
+ * Un tab suelto se colapsa a enlace directo, que es exactamente lo que se pidió:
+ * entrar de un clic.
+ */
+export const CAMARAS_MODULE: TabCategory = {
+  id: "camaras",
+  label: "Cámaras",
+  icon: Camera,
+  tabs: ["camaras"],
+};
+
 // ── Módulo Config (siempre visible desde dropdown de usuario) ────────────────
 export const CONFIG_MODULE: TabCategory = {
   id: "config",
   label: "Configuración",
   icon: SlidersHorizontal,
+  // auditoria queda también acá (dropdown de Config, vía de acceso en Modo Fácil)
+  // además de en SISTEMA_MODULE (categoría sidebar, Modo Avanzado).
   tabs: ["config", "plan", "auditoria"],
+};
+
+// ── Módulo Sistema (técnico) — rendimiento + auditoría + colas ───────────────
+// Las 3 abren el MISMO SistemaHubModule (cada una en su sub-tab) — atajo
+// redundante en el sidebar (auditoría 2026-08-02, 3→1). Se deja sólo
+// "rendimiento"; Auditoría y Colas siguen a 1 click desde la barra de
+// sub-tabs del hub. ("auditoria" además queda accesible aparte desde el
+// dropdown de Configuración — ver CONFIG_MODULE — eso no cambia.)
+export const SISTEMA_MODULE: TabCategory = {
+  id: "sistema",
+  label: "Sistema",
+  icon: Gauge,
+  alwaysGroup: true,
+  tabs: ["rendimiento"],
 };
 
 // ── TAB_CATEGORIES: composición final del sidebar ────────────────────────────
@@ -465,11 +668,64 @@ export const CONFIG_MODULE: TabCategory = {
 //    habilitan; ponerlas arriba las hace descubribles sin scroll. Cada una
 //    auto-oculta si vacía (tenant solo-forestal no ve Agricultura y viceversa).
 // 3. TIENDA_MODULE — al final (configuración visual, menos frecuente).
+// Orden 2026-08-02 (Brandon: "categorías más ordenadas y manejables"): las
+// categorías se agrupan en SECCIONES con encabezado en el sidebar
+// (`SECTION_BEFORE` en AdminSidebar), y una sección sólo se lee como bloque si
+// sus categorías van seguidas. Antes el orden las intercalaba —"Equipo" caía
+// después de "Marketplace"— así que ningún encabezado agrupaba algo contiguo.
+//
+//   Inicio            (sin encabezado: es el punto de entrada)
+//   Operaciones       ventas · compras · productos-inventario
+//   Clientes          clientes · crecimiento
+//   Gestión           finanzas · graficos · equipo
+//   Canales           marketplace-ops · mi-tienda
+//   Especializaciones forestal · agricultura
+//   Sistema           sistema
+const byId = (id: string) => BASIC_MODULES.find((c) => c.id === id)!;
+
+/**
+ * Encabezado de sección que se dibuja ANTES de esta categoría.
+ *
+ * Single source: lo leen el sidebar de escritorio y el drawer móvil. Vivía
+ * dentro de AdminSidebar, así que el drawer agrupaba por CATEGORÍA (14
+ * encabezados) mientras el escritorio agrupaba por SECCIÓN (6) — el mismo menú
+ * con dos organizaciones distintas según el ancho de pantalla.
+ *
+ * "Inicio" no lleva encabezado a propósito: es el punto de entrada, no un grupo.
+ */
+export const SECTION_BEFORE: Record<string, string> = {
+  ventas: "Operaciones",
+  clientes: "Clientes",
+  finanzas: "Gestión",
+  "marketplace-ops": "Canales",
+  forestal: "Especializaciones",
+  sistema: "Sistema",
+};
+
 export const TAB_CATEGORIES: TabCategory[] = [
-  ...BASIC_MODULES,
+  byId("inicio"),
+  // Operaciones — lo que pasa cada día en el mostrador y el almacén
+  byId("ventas"),
+  byId("compras"),
+  byId("productos-inventario"),
+  // Clientes — quién compra y qué lo hace volver
+  byId("clientes"),
+  byId("crecimiento"),
+  // Gestión — la plata, los números y el equipo
+  byId("finanzas"),
+  byId("graficos"),
+  byId("recursos-humanos"),
+  byId("equipo"),
+  // Canales — por dónde vende
+  byId("marketplace-ops"),
+  TIENDA_MODULE,
+  // Lo que pasa en el local o el patio
+  CAMARAS_MODULE,
+  // Especializaciones por vertical
   FORESTAL_MODULE,
   AGRICULTURA_MODULE,
-  TIENDA_MODULE,
+  // Sistema
+  SISTEMA_MODULE,
 ];
 
 // ── Modo Fácil vs Avanzado ──────────────────────────────────────────────────
@@ -492,10 +748,12 @@ export const EASY_MODE_TABS: ReadonlySet<Tab> = new Set<Tab>([
   "compras",
   // Clientes y Créditos
   "clientes", "fiados", "prestamos",
+  // Recursos Humanos — marcar asistencia es del día a día
+  "rrhh",
   // Marketplace
   "marketplace", "delivery-partners", "delivery-live",
   // Comunicación
-  "marketplace-chat",
+  "marketplace-chat", "whatsapp-inbox",
   // Mi Tienda
   "store-customizer", "pagina-inicio",
   // Config (siempre visible)

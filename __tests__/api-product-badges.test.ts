@@ -33,6 +33,7 @@ vi.mock("@/lib/api-error", () => ({
 
 const { mockGetOrSet } = vi.hoisted(() => ({ mockGetOrSet: vi.fn() }));
 vi.mock("@/lib/cache", () => ({
+  revalidateTenantTag: vi.fn(),
   getOrSet: mockGetOrSet,
   invalidate: vi.fn(),
   invalidateByPrefix: vi.fn(),

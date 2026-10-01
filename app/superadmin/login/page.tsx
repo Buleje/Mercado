@@ -20,15 +20,51 @@ import { SectionTitle } from "@buleje/design-system";
 import {
   Loader2, Lock, ShieldCheck, KeyRound, ArrowLeft, Eye, EyeOff, User,
   AlertTriangle, ArrowRight, Crown, Bike, Store, ChevronDown,
-  TrendingUp, Building2, Activity, Server, DollarSign,
+  TrendingUp, Building2, Activity, Server, DollarSign, Clock,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { useLoginSecurity } from "@/hooks/useLoginSecurity";
+import { getKeepAlive } from "@/lib/session-keepalive";
+import { safeSuperadminNext } from "@/lib/superadmin/safe-next";
 
 export default function SuperAdminLoginPage() {
   const searchParams = useSearchParams();
   const usernameRef = useRef<HTMLInputElement>(null);
   const codeRef = useRef<HTMLInputElement>(null);
   const sessionExpired = searchParams.get("reason") === "expired";
+  // Destino post-login. `fetchSuperadmin` y el guard del edge mandan
+  // `?from=<ruta>` cuando rebotan al usuario; antes se ignoraba y todos
+  // caían en el dashboard, perdiendo la pantalla en la que estaban.
+  // safeSuperadminNext bloquea open-redirect (sólo rutas /superadmin).
+  const destino = safeSuperadminNext(searchParams.get("from"), "/superadmin/dashboard");
+
+  // Resumen silencioso (Brandon 2026-08-30): reusa el mismo flag "confiar en
+  // este equipo" del login admin (localStorage compartido) — si ya estaba
+  // marcado y el platform-token (12h, se renueva solo pasada la mitad de su
+  // vida) sigue vivo, entra directo sin mostrar el form. A diferencia del
+  // admin (refresh de 7 días), acá el techo real es 12h: un corte MÁS largo
+  // que eso (ej. toda una noche) sigue pidiendo 2FA de nuevo — deliberado,
+  // es la cuenta de mayor privilegio de toda la plataforma.
+  const [resuming, setResuming] = useState(!sessionExpired);
+  useEffect(() => {
+    if (sessionExpired) return; // ya se sabe inválida, no perder tiempo probando
+    let cancelado = false;
+    (async () => {
+      if (!getKeepAlive()) { setResuming(false); return; }
+      try {
+        const res = await fetch("/api/superadmin/auth", { method: "GET", credentials: "include" });
+        if (!cancelado && res.ok) {
+          window.location.assign(destino);
+          return;
+        }
+      } catch {
+        /* sin red — mostrar el form */
+      }
+      if (!cancelado) setResuming(false);
+    })();
+    return () => { cancelado = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -37,6 +73,10 @@ export default function SuperAdminLoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | false>(false);
   const [shaking, setShaking] = useState(false);
+  const {
+    capsLock, retryAfter, onPasswordKey, startRetryFromResponse,
+    messageForStatus, networkErrorMessage, mmss,
+  } = useLoginSecurity();
 
   const [challengeId, setChallengeId] = useState<string | null>(null);
   const [code, setCode] = useState("");
@@ -88,13 +128,17 @@ export default function SuperAdminLoginPage() {
         setChallengeId(data.challengeId);
         setTimeout(() => codeRef.current?.focus(), 100);
       } else if (res.ok) {
-        window.location.assign("/superadmin/dashboard");
+        window.location.assign(destino);
+      } else if (res.status === 429) {
+        // Rate limit / lockout: recargar no ayuda → countdown.
+        startRetryFromResponse(res);
+        setError(false);
       } else {
-        setError(data.error || "Credenciales inválidas");
-        setTimeout(() => setError(false), 2500);
+        setError(messageForStatus(res.status, { attemptsLeft: data?.attemptsLeft }) ?? data.error ?? "Credenciales inválidas");
+        setTimeout(() => setError(false), 3500);
       }
     } catch {
-      setError("Error de conexión");
+      setError(networkErrorMessage());
     } finally {
       setLoading(false);
     }
@@ -111,7 +155,7 @@ export default function SuperAdminLoginPage() {
         body: JSON.stringify({ challengeId, code }),
       });
       if (res.ok) {
-        window.location.assign("/superadmin/dashboard");
+        window.location.assign(destino);
       } else {
         setError("Código inválido o expirado");
         setTimeout(() => setError(false), 2500);
@@ -129,8 +173,21 @@ export default function SuperAdminLoginPage() {
     setError(false);
   };
 
+  if (resuming) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center bg-[var(--surface-canvas)]">
+        <div className="flex flex-col items-center gap-3 text-[var(--text-tertiary)]">
+          <Loader2 className="h-8 w-8 animate-spin" style={{ color: "var(--brand-purple)" }} />
+          <p className="text-sm font-medium">Entrando…</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[var(--surface-canvas)] grid lg:grid-cols-[1fr_1.15fr]">
+    /* Mismo esqueleto que /admin/login — tokens --login-* en globals.css
+       (§PANEL SHELL). Ver ahí el porqué de cada escalón. */
+    <div data-area="login" className="relative min-h-dvh overflow-hidden bg-[var(--surface-canvas)] grid lg:grid-cols-[1fr_1.15fr]">
       {/* CSS scoped que oculta widgets flotantes globales + focus violet del input */}
       <style jsx global>{`
         body[data-route="superadmin-login"] [data-floating-widget],
@@ -163,15 +220,15 @@ export default function SuperAdminLoginPage() {
       />
 
       {/* ─── COLUMNA IZQUIERDA — Form editorial centrado ─────────────── */}
-      <aside className="relative flex flex-col justify-center px-5 py-10 sm:px-10 sm:py-16 lg:px-16">
+      <aside className="relative flex flex-col justify-center px-5 sm:px-10 lg:px-16 2xl:px-20 py-[var(--login-pad-y)]">
         <div
           className={cn(
-            "relative z-10 w-full max-w-[460px] mx-auto",
+            "relative z-10 w-full max-w-[var(--login-form-max)] mx-auto",
             shaking && "animate-[shake_0.45s_ease-out]",
           )}
         >
           {/* Brand badge superior — violeta plataforma */}
-          <div className="flex items-center gap-2.5 mb-10">
+          <div className="flex items-center gap-2.5 mb-[var(--login-gap-lg)]">
             <div
               className="inline-flex h-11 w-11 items-center justify-center rounded-2xl shadow-md"
               style={{
@@ -201,7 +258,7 @@ export default function SuperAdminLoginPage() {
           >
             {challengeId ? "Verificación 2 pasos" : "Iniciar sesión"}
           </p>
-          <SectionTitle className="text-[2.25rem] sm:text-[2.75rem] font-black tracking-[-0.03em] text-[var(--text-primary)] leading-[1.02]">
+          <SectionTitle data-login-title className="text-[2.25rem] sm:text-[2.75rem] font-black tracking-tight text-[var(--text-primary)] leading-[1.02]">
             {challengeId ? (
               <>
                 Confirmá
@@ -243,7 +300,7 @@ export default function SuperAdminLoginPage() {
 
           {/* Form login */}
           {!challengeId && (
-            <form onSubmit={handleLogin} className="mt-10 space-y-4">
+            <form onSubmit={handleLogin} className="mt-[var(--login-gap-lg)] space-y-[var(--login-gap-sm)]">
               {/* Honeypot */}
               <div
                 aria-hidden="true"
@@ -286,7 +343,7 @@ export default function SuperAdminLoginPage() {
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    className="w-full h-14 pl-12 pr-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-base font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition-all su-input"
+                    className="w-full h-14 pl-12 pr-4 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-base font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition-all su-input"
                     placeholder="superadmin"
                     autoComplete="username"
                     required
@@ -311,7 +368,9 @@ export default function SuperAdminLoginPage() {
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full h-14 pl-12 pr-14 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-base font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition-all su-input"
+                    onKeyDown={onPasswordKey}
+                    onKeyUp={onPasswordKey}
+                    className="w-full h-14 pl-12 pr-14 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-base font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition-all su-input"
                     placeholder="••••••••"
                     autoComplete="current-password"
                     required
@@ -325,7 +384,20 @@ export default function SuperAdminLoginPage() {
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
+                {capsLock && (
+                  <p role="status" className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)]">
+                    <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                    Bloq Mayús está activado
+                  </p>
+                )}
               </div>
+
+              {retryAfter > 0 && (
+                <div role="alert" className="flex items-start gap-3 p-4 rounded-2xl bg-[var(--data-warning-500)]/10 border-2 border-[var(--data-warning-500)]/25 text-sm font-bold text-[var(--data-warning-700)]">
+                  <Clock className="h-5 w-5 shrink-0 mt-0.5" aria-hidden />
+                  <span>Demasiados intentos. Esperá <span className="tabular-nums">{mmss(retryAfter)}</span> — recargar no ayuda.</span>
+                </div>
+              )}
 
               {error && (
                 <div
@@ -339,8 +411,8 @@ export default function SuperAdminLoginPage() {
 
               <button
                 type="submit"
-                disabled={loading || !username || !password}
-                className="w-full inline-flex items-center justify-center gap-2 h-14 rounded-2xl text-white text-base font-extrabold tracking-tight active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={loading || !username || !password || retryAfter > 0}
+                className="w-full inline-flex items-center justify-center gap-2 h-14 rounded-2xl text-white text-base font-semibold tracking-tight active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{
                   background: "var(--brand-purple)",
                   boxShadow: "0 12px 24px -8px color-mix(in oklab, var(--brand-purple) 50%, transparent)",
@@ -350,6 +422,11 @@ export default function SuperAdminLoginPage() {
                   <>
                     <Loader2 className="h-5 w-5 animate-spin" />
                     Verificando…
+                  </>
+                ) : retryAfter > 0 ? (
+                  <>
+                    <Clock className="h-5 w-5" strokeWidth={2.25} />
+                    Esperá {mmss(retryAfter)}
                   </>
                 ) : (
                   <>
@@ -363,7 +440,7 @@ export default function SuperAdminLoginPage() {
 
           {/* Form 2FA */}
           {challengeId && (
-            <form onSubmit={handleVerify2FA} className="mt-10 space-y-4">
+            <form onSubmit={handleVerify2FA} className="mt-[var(--login-gap-lg)] space-y-[var(--login-gap-sm)]">
               <div className="space-y-2">
                 <label
                   htmlFor="su-code"
@@ -386,7 +463,7 @@ export default function SuperAdminLoginPage() {
                     maxLength={6}
                     value={code}
                     onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                    className="w-full h-16 pl-12 pr-4 rounded-2xl border-2 bg-[var(--surface-canvas)] text-center text-2xl font-mono font-bold text-[var(--text-primary)] tracking-[0.5em] placeholder:text-[var(--text-tertiary)] outline-none transition-all"
+                    className="w-full h-16 pl-12 pr-4 rounded-2xl border-2 bg-[var(--surface-canvas)] text-center text-2xl font-mono font-bold text-[var(--text-primary)] tracking-[var(--ls-widest)] placeholder:text-[var(--text-tertiary)] outline-none transition-all"
                     style={{
                       borderColor: "color-mix(in oklab, var(--brand-purple) 30%, transparent)",
                     }}
@@ -413,7 +490,7 @@ export default function SuperAdminLoginPage() {
               <button
                 type="submit"
                 disabled={loading || code.length !== 6}
-                className="w-full inline-flex items-center justify-center gap-2 h-14 rounded-2xl text-white text-base font-extrabold tracking-tight active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full inline-flex items-center justify-center gap-2 h-14 rounded-2xl text-white text-base font-semibold tracking-tight active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{
                   background: "var(--brand-purple)",
                   boxShadow: "0 12px 24px -8px color-mix(in oklab, var(--brand-purple) 50%, transparent)",
@@ -435,7 +512,7 @@ export default function SuperAdminLoginPage() {
           )}
 
           {/* Switches a otros paneles — disclosure colapsado */}
-          <details className="mt-10 group">
+          <details className="mt-[var(--login-gap-lg)] group">
             <summary className="flex items-center justify-between gap-2 cursor-pointer py-3 px-4 -mx-4 rounded-xl hover:bg-[var(--surface-sunken)]/50 transition-colors list-none">
               <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                 ¿Buscás otro panel?
@@ -462,7 +539,7 @@ export default function SuperAdminLoginPage() {
           </details>
 
           {/* Trust badge inferior */}
-          <p className="mt-12 flex items-center gap-2 text-xs text-[var(--text-tertiary)] leading-relaxed">
+          <p className="mt-[var(--login-gap-xl)] flex items-center gap-2 text-xs text-[var(--text-tertiary)] leading-relaxed">
             <ShieldCheck
               className="h-3.5 w-3.5 shrink-0"
               strokeWidth={2.25}
@@ -511,7 +588,7 @@ function PlatformConsolePreview() {
   const bars = [38, 52, 41, 65, 48, 78, 92];
 
   return (
-    <main className="relative hidden lg:flex items-center justify-center px-12 py-16 overflow-hidden">
+    <main className="relative hidden lg:flex items-center justify-center px-12 2xl:px-16 py-[var(--login-pad-y)] overflow-hidden lg:max-h-dvh">
       {/* Halos violeta atrás */}
       <div
         aria-hidden
@@ -535,7 +612,7 @@ function PlatformConsolePreview() {
       />
 
       <div
-        className="relative w-full max-w-[520px]"
+        className="relative w-full max-w-[var(--login-art,520px)]"
         style={{ transform: "rotate(1.2deg)" }}
       >
         {/* Sombra/ofset detrás */}
@@ -546,13 +623,13 @@ function PlatformConsolePreview() {
         />
 
         {/* Card principal */}
-        <div className="relative rounded-[28px] bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] shadow-2xl overflow-hidden">
+        <div className="relative rounded-[28px] bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-2xl overflow-hidden">
           {/* Header tipo macOS */}
           <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-[var(--rule-soft)]">
             <div className="flex items-center gap-2">
               <span className="flex gap-1.5">
                 <span aria-hidden className="h-2.5 w-2.5 rounded-full bg-[var(--data-error-500)]/60" />
-                <span aria-hidden className="h-2.5 w-2.5 rounded-full bg-[var(--data-warning-500)]/60" />
+                <span aria-hidden className="h-2.5 w-2.5 rounded-full bg-primary/60" />
                 <span aria-hidden className="h-2.5 w-2.5 rounded-full bg-[var(--data-success-500)]/60" />
               </span>
               <p className="ml-2 text-xs font-bold text-[var(--text-tertiary)] tabular-nums">
@@ -594,7 +671,7 @@ function PlatformConsolePreview() {
                 +24%
               </span>
             </div>
-            <p className="text-5xl font-black tracking-[-0.04em] tabular-nums leading-none text-[var(--text-primary)]">
+            <p className="text-5xl font-black tracking-tight tabular-nums leading-none text-[var(--text-primary)]">
               S/ <span style={{ color: "var(--brand-purple)" }}>14,830</span>
             </p>
             <p className="mt-2 text-sm text-[var(--text-secondary)]">
@@ -758,7 +835,7 @@ function SwitchChip({
   return (
     <a
       href={href}
-      className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-current hover:bg-[var(--surface-sunken)]/40 transition-all group"
+      className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-current hover:bg-[var(--surface-sunken)]/40 transition-all group"
       style={{ borderColor: "var(--rule-base)" }}
     >
       <div className="flex items-center gap-3 min-w-0">

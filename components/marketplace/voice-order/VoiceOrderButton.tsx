@@ -25,7 +25,6 @@ import {
   Loader2,
   ShoppingCart,
   Check,
-  X,
   AlertCircle,
   Trash2,
   Plus,

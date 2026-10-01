@@ -4,10 +4,11 @@ import { SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useMemo } from "react";
 import { AlertTriangle, TrendingUp, Search, Loader2, RefreshCw, ShieldAlert } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { formatNumber } from "@/lib/format";
 
 /* ── Helpers ── */
 const fmt = (n: number) =>
-  `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2 })}`;
+  `S/ ${formatNumber(n, { min: 2 })}`;
 
 /* ── Types ── */
 type ExpenseRecord = {
@@ -133,7 +134,7 @@ export default function MoneyLeakDetector() {
         <button
           onClick={() => load()}
           disabled={loading}
-          className="flex items-center gap-1.5 text-xs text-[var(--text-tertiary)] hover:text-primary dark:hover:text-[#14C2C2] transition-colors"
+          className="flex items-center gap-1.5 text-xs text-[var(--text-tertiary)] hover:text-primary dark:hover:text-[var(--accent)] transition-colors"
         >
           <RefreshCw className={cn("w-3.5 h-3.5", loading && "animate-spin")} />
           Actualizar
@@ -157,7 +158,7 @@ export default function MoneyLeakDetector() {
       )}
 
       {!loading && leakCount === 0 && !error && (
-        <div className="rounded-xl border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-4 py-3 text-sm text-[var(--data-success-500)] dark:text-[var(--data-success-500)] flex items-center gap-2">
+        <div className="rounded-xl border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-primary/10 dark:bg-primary/15 px-4 py-3 text-sm text-[var(--data-success-500)] dark:text-[var(--data-success-500)] flex items-center gap-2">
           <Search className="w-4 h-4" />
           Sin fugas detectadas — los gastos estan dentro del rango normal.
         </div>

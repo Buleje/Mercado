@@ -183,7 +183,7 @@ export default function SaasPlanQuiz() {
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">Tu plan ideal</p>
               <h3 className="text-3xl font-extrabold text-gray-900 dark:text-white">{result.plan}</h3>
-              <p className="text-2xl font-bold text-[var(--accent-dark)] mt-1">{result.price}</p>
+              <p className="text-2xl font-bold text-[var(--accent-dark)] dark:text-[var(--accent)] mt-1">{result.price}</p>
             </div>
 
             <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">

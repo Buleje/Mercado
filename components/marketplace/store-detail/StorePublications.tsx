@@ -122,7 +122,7 @@ export default function StorePublications({
   return (
     <section aria-label={`Novedades de ${storeName}`} className="mt-8">
       <div className="mb-4 flex items-center gap-2.5">
-        <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
+        <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
           <Megaphone className="h-5 w-5" strokeWidth={2} aria-hidden />
         </span>
         <div>
@@ -144,7 +144,7 @@ export default function StorePublications({
             <header className="mb-2 flex items-center gap-2 text-sm">
               <span className="font-extrabold text-[var(--text-primary)]">{storeName}</span>
               {post.pinned && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[length:var(--ts-2xs,0.6875rem)] font-bold text-[var(--accent)]">
+                <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[length:var(--ts-2xs,0.6875rem)] font-bold text-[var(--accent)]">
                   <Pin className="h-3 w-3" aria-hidden /> Fijado
                 </span>
               )}

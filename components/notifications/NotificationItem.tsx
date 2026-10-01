@@ -84,10 +84,21 @@ export default function NotificationItem({ notification, onMarkRead }: Props) {
 
   return (
     <div className="w-full">
-      <button
+      {/* La fila entera es clickeable pero NO puede ser un `<button>`: adentro
+          vive el botón «Cobrar», y un botón dentro de otro es anidado inválido
+          — el navegador lo desarma al parsear y React avisa. */}
+      <div
+        role="button"
+        tabIndex={0}
         onClick={handleClick}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            handleClick();
+          }
+        }}
         className={cn(
-          "w-full text-left px-4 py-3 border-l-4 transition-colors duration-[var(--dur-fast)] hover:bg-gray-50 dark:hover:bg-accent/50 flex items-start gap-3 group",
+          "w-full cursor-pointer text-left px-4 py-3 border-l-4 transition-colors duration-[var(--dur-fast)] hover:bg-gray-50 dark:hover:bg-accent/50 flex items-start gap-3 group",
           borderColor,
           isUnread ? "bg-emerald-50/50 dark:bg-emerald-950/10" : "bg-transparent"
         )}
@@ -150,7 +161,7 @@ export default function NotificationItem({ notification, onMarkRead }: Props) {
             <div className="w-2 h-2 rounded-full bg-primary" />
           </div>
         )}
-      </button>
+      </div>
 
       {/* Mejora M-8: Cobro express inline panel */}
       {showCobroExpress && isFiadoVencido && (

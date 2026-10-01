@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { SunatDB } from "@/lib/db/sunat.db";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logActivity } from "@/lib/activity-logger";
@@ -53,7 +54,10 @@ const ConfigSchema = z.object({
   razonSocial: z.string().min(3).max(200),
   direccionFiscal: z.string().max(300).optional(),
   ubigeo: z.string().regex(/^\d{6}$/).optional(),
-  nubefactToken: z.string().min(10, "Token de NubeFact requerido"),
+  /* Opcional a propósito: el GET no devuelve el token (es un secreto), así que
+     la pantalla de conexión no puede reenviarlo al editar. Si no viene, la capa
+     DB conserva el guardado; si NO hay config previa, `upsertConfig` corta. */
+  nubefactToken: z.string().min(10, "Token de NubeFact requerido").optional(),
   nubefactUrl: z.string().url().optional(),
   boletaSeries: z.string().regex(/^B\d{3}$/).optional(),
   facturaSeries: z.string().regex(/^F\d{3}$/).optional(),
@@ -80,24 +84,17 @@ export async function PUT(req: NextRequest) {
       );
     }
 
-    const data = {
-      tenantId: auth.tenantId,
-      ruc: parsed.data.ruc,
-      razonSocial: parsed.data.razonSocial,
-      direccionFiscal: parsed.data.direccionFiscal ?? null,
-      ubigeo: parsed.data.ubigeo ?? null,
-      nubefactToken: parsed.data.nubefactToken,
-      nubefactUrl: parsed.data.nubefactUrl ?? "https://api.nubefact.com/api/v1",
-      boletaSeries: parsed.data.boletaSeries ?? "B001",
-      facturaSeries: parsed.data.facturaSeries ?? "F001",
-      isProduction: parsed.data.isProduction ?? false,
-    };
-
-    const config = await prisma.tenantSunatConfig.upsert({
-      where: { tenantId: auth.tenantId },
-      create: data,
-      update: data,
-    });
+    /* Vía `SunatDB` y no `prisma.*` (regla #1 CLAUDE.md): la capa DB además
+       resuelve el token faltante contra lo ya guardado. */
+    let config;
+    try {
+      config = await SunatDB.upsertConfig(auth.tenantId, parsed.data);
+    } catch {
+      return NextResponse.json(
+        { error: "Falta el token de Nubefact: es obligatorio la primera vez que se conecta el negocio." },
+        { status: 400 },
+      );
+    }
 
     logActivity(
       "sunat_config_updated",

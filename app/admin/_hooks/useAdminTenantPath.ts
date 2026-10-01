@@ -14,6 +14,9 @@
 
 import { useCallback, useMemo } from "react";
 import type { useRouter } from "next/navigation";
+import { csrfHeaders } from "@/lib/csrf-client";
+import { logger } from "@/lib/logger";
+import { setKeepAlive } from "@/lib/session-keepalive";
 
 type AppRouter = ReturnType<typeof useRouter>;
 
@@ -37,7 +40,16 @@ export function useAdminTenantPath(router: AppRouter): UseAdminTenantPathResult 
   );
 
   const handleLogout = useCallback(async () => {
-    await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
+    // Si el logout del servidor falla igual se sale de la sesión del cliente,
+    // pero se deja rastro: un logout que no cerró la cookie es un incidente.
+    await fetch("/api/auth/logout", { method: "POST", headers: csrfHeaders() }).catch((err) =>
+      logger.error("[useAdminTenantPath] logout failed", { error: String(err) }),
+    );
+    // Un logout manual apaga "confiar en este equipo": sin esto, el próximo
+    // login mantendría tildado el checkbox aunque la persona activa haya
+    // sido otra — y el resume silencioso del login (ver app/admin/login)
+    // seguiría intentándolo hasta que alguien lo destilde a mano.
+    setKeepAlive(false);
     router.push(adminPath("/admin/login"));
   }, [router, adminPath]);
 

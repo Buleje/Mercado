@@ -16,7 +16,7 @@ const CreateBody = z.object({
 
 export async function GET(req: NextRequest) {
   try {
-    const rl = await applyRateLimit(req, "MODERATE", "documents:folders:list");
+    const rl = await applyRateLimit(req, "GENEROUS", "documents:folders:list");
     if (rl) return rl;
     const csrfFail = assertCsrf(req);
     if (csrfFail) return csrfFail;

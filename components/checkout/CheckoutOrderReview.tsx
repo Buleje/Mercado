@@ -71,7 +71,7 @@ export function CheckoutOrderReview({
               onClick={onEditAddress}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="text-xs text-primary font-bold hover:underline shrink-0 px-2 py-1 rounded-lg hover:bg-primary/10 transition-colors"
+              className="text-xs text-[var(--accent-ink)] dark:text-[var(--accent)] font-bold hover:underline shrink-0 px-2 py-1 rounded-lg hover:bg-primary/10 transition-colors"
             >
               Cambiar
             </m.button>
@@ -155,7 +155,7 @@ export function CheckoutOrderReview({
                     {item.name}
                   </p>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <span className="inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-md bg-primary/10 text-primary text-xs font-bold">
+                    <span className="inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-md bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-bold">
                       x{item.quantity}
                     </span>
                     <span className="text-xs text-gray-400">{item.unit}</span>

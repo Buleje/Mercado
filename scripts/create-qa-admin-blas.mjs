@@ -3,9 +3,17 @@
 import pg from "pg";
 import bcrypt from "bcryptjs";
 
-const SLUG = "inversiones-agroforestales-blas-sociedad-anonima";
+const SLUG = process.env.QA_TENANT_SLUG ?? "inversiones-agroforestales-blas-sociedad-op-qa-ui";
 const USER = "qaadmin";
 const PASS = "Qa-admin-1234";
+
+// Guarda (2026-09-14): los usuarios QA viven SÓLO en tenants de prueba. Este
+// script creaba `qa*` en el negocio real y un agente escribió con ellos en su
+// libro CTP (99 líneas creadas, 92 borradas, un período cerrado).
+if (!/-qa(-|$)/.test(SLUG)) {
+  console.error(`ABORTO: ${SLUG} no es un tenant de prueba (debe contener «-qa»)`);
+  process.exit(1);
+}
 
 const { Client } = pg;
 

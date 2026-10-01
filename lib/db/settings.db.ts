@@ -11,6 +11,7 @@ import {
   type StoreMode,
   type NavLinkItem,
 } from "./misc.db";
+import { parseSalesChannels, type SalesChannelsConfig } from "@/lib/types/sales-channels";
 
 // ── JSON parse helper ─────────────────────────────────────────────────────────
 function safeJson<T>(raw: string | null | undefined, fallback?: T): T | undefined {
@@ -65,6 +66,7 @@ function mapSettings(s: PSettings): DbSettings {
     ...(r.currency != null && { currency: r.currency as string }),
     ...(r.timezone != null && { timezone: r.timezone as string }),
     ...(r.businessType != null && { businessType: r.businessType as string }),
+    ...(r.regimenTributario != null && { regimenTributario: r.regimenTributario as string }),
     ...spreadJson(r.socialLinksJson as string, 'socialLinks'),
 
     // ── Apariencia ──
@@ -239,6 +241,7 @@ export const SettingsDB = {
       ...(s.currency !== undefined && { currency: s.currency }),
       ...(s.timezone !== undefined && { timezone: s.timezone }),
       ...(s.businessType !== undefined && { businessType: s.businessType }),
+      ...(s.regimenTributario !== undefined && { regimenTributario: s.regimenTributario }),
       ...(s.socialLinks !== undefined && { socialLinksJson: JSON.stringify(s.socialLinks) }),
 
       // ── Apariencia ──
@@ -460,5 +463,37 @@ export const SettingsDB = {
     } catch {
       return null;
     }
+  },
+
+  /**
+   * Merge-patch de `storeThemeJson` — preserva las demás claves.
+   * Brandon 2026-06-24: el storefront `/t/[slug]` lee `settings.storeTheme`
+   * PRIMERO (fuente de verdad). El editor "Mi tienda pública" (TenantStorePage)
+   * quedaba pisado → sus cambios no se veían. Con esto, sus saves escriben-
+   * through los campos compartidos al storeTheme, así SÍ se reflejan.
+   * No-op si no hay fila de settings (entonces storeTheme es null y el
+   * storefront ya cae al valor del editor B vía la cadena de fallback).
+   */
+  async patchStoreThemeJson(
+    tenantId: string,
+    patch: Record<string, unknown>,
+  ): Promise<void> {
+    const cur = (await this.getStoreThemeJson(tenantId)) ?? {};
+    const merged = { ...cur, ...patch };
+    await prisma.settings.updateMany({
+      where: { tenantId },
+      data: { storeThemeJson: JSON.stringify(merged) },
+    });
+    invalidateByPrefix(`settings:${tenantId}`);
+  },
+
+  /** Config de canales de venta social (TikTok + Meta), guardada en storeTheme.salesChannels. */
+  async getSalesChannels(tenantId: string): Promise<SalesChannelsConfig> {
+    const theme = await this.getStoreThemeJson(tenantId);
+    return parseSalesChannels(theme?.salesChannels);
+  },
+
+  async setSalesChannels(tenantId: string, config: SalesChannelsConfig): Promise<void> {
+    await this.patchStoreThemeJson(tenantId, { salesChannels: config });
   },
 };

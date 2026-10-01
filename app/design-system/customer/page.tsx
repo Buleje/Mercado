@@ -8,26 +8,6 @@ import {
   OrderConfirmationCard,
 } from "@/components/customer/journey";
 
-// Mock QR (placeholder transparente editorial)
-const MOCK_QR_SVG =
-  "data:image/svg+xml;utf8," +
-  encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="#0a0a0a">
-      <rect x="0" y="0" width="30" height="30"/>
-      <rect x="90" y="0" width="30" height="30"/>
-      <rect x="0" y="90" width="30" height="30"/>
-      <g>
-        ${Array.from({ length: 12 * 12 }).map((_, i) => {
-          const x = (i % 12) * 10;
-          const y = Math.floor(i / 12) * 10;
-          if ((x < 30 && y < 30) || (x >= 90 && y < 30) || (x < 30 && y >= 90)) return "";
-          const show = (i * 17 + 5) % 7 > 3;
-          return show ? `<rect x="${x}" y="${y}" width="10" height="10"/>` : "";
-        }).join("")}
-      </g>
-    </svg>`,
-  );
-
 export default function CustomerJourneyDemoPage() {
   const [quickViewOpen, setQuickViewOpen] = useState(false);
   const [favOn, setFavOn] = useState(false);

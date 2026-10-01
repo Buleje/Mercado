@@ -5,6 +5,7 @@ import { Zap, ClipboardList, ChevronDown, ChevronUp, Loader2, Check } from "@bul
 import { cn } from '@/lib/utils';
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import { Field } from '@/components/admin/shared/Field';
 import { LinkedDocumentsSection } from "@/components/admin/documentos/LinkedDocumentsSection";
 
 // ── Ubigeo data (principales departamentos de Peru) ─────────────────────────
@@ -124,7 +125,7 @@ function Section({ title, defaultOpen, children }: { title: string; defaultOpen?
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-surface text-sm font-bold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-100 dark:hover:bg-accent transition-colors"
+        className="w-full flex items-center justify-between px-4 py-3 bg-[var(--surface-sunken)] text-sm font-bold text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--rule-soft)] transition-colors"
       >
         {title}
         {open ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -302,7 +303,7 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
     }
   };
 
-  const inputCls = "w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground bg-white dark:bg-surface focus:border-primary outline-none text-sm placeholder:text-[var(--text-tertiary)]";
+  const inputCls = "w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground bg-[var(--surface-raised)] focus:border-primary outline-none text-sm placeholder:text-[var(--text-tertiary)]";
   const labelCls = "block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1";
   const selectCls = cn(inputCls, "appearance-none");
 
@@ -314,7 +315,7 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
       variant="wide"
     >
       {/* Format toggle */}
-      <div className="px-5 pt-4 pb-2 flex gap-2">
+      <div className="pt-4 pb-2 flex gap-2 px-5 py-5 sm:px-6">
         <button
           type="button"
           onClick={() => changeFormat('simple')}
@@ -322,7 +323,7 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
             "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors",
             format === 'simple'
               ? "bg-primary text-white"
-              : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-gray-200 dark:hover:bg-accent"
+              : "bg-[var(--rule-soft)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-base)] "
           )}
         >
           <Zap className="h-3.5 w-3.5" /> Simple
@@ -334,7 +335,7 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
             "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors",
             format === 'completo'
               ? "bg-primary text-white"
-              : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-gray-200 dark:hover:bg-accent"
+              : "bg-[var(--rule-soft)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-base)] "
           )}
         >
           <ClipboardList className="h-3.5 w-3.5" /> Completo
@@ -347,7 +348,7 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
           <>
             {/* Tipo persona toggle */}
             <div>
-              <label className={labelCls}>Tipo persona</label>
+              <span className={labelCls}>Tipo persona</span>
               <div className="flex gap-2">
                 {(['natural', 'juridica'] as const).map(t => (
                   <button
@@ -355,10 +356,10 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
                     type="button"
                     onClick={() => set('tipoPersona', t)}
                     className={cn(
-                      "flex-1 py-2 rounded-lg text-sm font-bold border transition-colors",
+                      "flex-1 min-h-10 rounded-xl text-sm font-semibold border transition-colors",
                       form.tipoPersona === t
                         ? "bg-primary text-white border-primary"
-                        : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+                        : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] "
                     )}
                   >
                     {t === 'natural' ? 'Natural' : 'Juridica'}
@@ -368,70 +369,73 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
             </div>
 
             {/* Nombre / Razon Social */}
-            <div>
-              <label className={labelCls}>
-                {form.tipoPersona === 'juridica' ? 'Razon Social *' : 'Nombre completo *'}
-              </label>
+            <Field
+              label={form.tipoPersona === 'juridica' ? 'Razon Social *' : 'Nombre completo *'}
+              labelClassName={labelCls}
+            >
               <input
                 value={form.tipoPersona === 'juridica' ? form.razonSocial : form.name}
                 onChange={e => form.tipoPersona === 'juridica' ? set('razonSocial', e.target.value) : set('name', e.target.value)}
                 placeholder={form.tipoPersona === 'juridica' ? 'Distribuidora Lima S.A.C.' : 'Nombre del proveedor'}
                 className={inputCls}
               />
-            </div>
+            </Field>
 
             {/* RUC + Teléfono */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className={labelCls}>
-                  RUC <span className="text-[var(--text-tertiary)] font-normal text-xs">(autocompleta SUNAT)</span>
-                </label>
-                <div className="relative">
-                  <input
-                    value={form.documento}
-                    onChange={(e) => {
-                      const next = e.target.value.replace(/\D/g, "").slice(0, 11);
-                      set('documento', next);
-                      if (next.length === 11) void handleRucLookup(next);
-                      else setRucLookup({ status: "idle" });
-                    }}
-                    placeholder="20xxxxxxxxx"
-                    maxLength={11}
-                    className={cn(inputCls, "font-mono pr-9")}
-                  />
-                  {rucLookup.status === "loading" && (
-                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-[var(--text-tertiary)]" />
-                  )}
-                  {rucLookup.status === "ok" && (
-                    <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--data-success-500)]" />
-                  )}
-                </div>
-                {rucLookup.status !== "idle" && rucLookup.msg && (
-                  <p className={cn(
-                    "text-xs mt-1 font-medium",
-                    rucLookup.status === "ok"       ? "text-[var(--data-success-500)]" :
-                    rucLookup.status === "notfound" ? "text-[var(--data-warning-500)]" :
-                    rucLookup.status === "loading"  ? "text-[var(--text-tertiary)]" :
-                    "text-[var(--data-error-500)]"
-                  )}>
-                    {rucLookup.status === "loading" ? "Consultando SUNAT..." : rucLookup.msg}
-                  </p>
+              <Field
+                label={<>RUC <span className="text-[var(--text-tertiary)] font-normal text-xs">(autocompleta SUNAT)</span></>}
+                labelClassName={labelCls}
+              >
+                {(id) => (
+                  <>
+                    <div className="relative">
+                      <input
+                        id={id}
+                        value={form.documento}
+                        onChange={(e) => {
+                          const next = e.target.value.replace(/\D/g, "").slice(0, 11);
+                          set('documento', next);
+                          if (next.length === 11) void handleRucLookup(next);
+                          else setRucLookup({ status: "idle" });
+                        }}
+                        placeholder="20xxxxxxxxx"
+                        maxLength={11}
+                        className={cn(inputCls, "font-mono pr-9")}
+                      />
+                      {rucLookup.status === "loading" && (
+                        <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-[var(--text-tertiary)]" />
+                      )}
+                      {rucLookup.status === "ok" && (
+                        <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--data-success-500)]" />
+                      )}
+                    </div>
+                    {rucLookup.status !== "idle" && rucLookup.msg && (
+                      <p className={cn(
+                        "text-xs mt-1 font-medium",
+                        rucLookup.status === "ok"       ? "text-[var(--data-success-500)]" :
+                        rucLookup.status === "notfound" ? "text-[var(--data-warning-500)]" :
+                        rucLookup.status === "loading"  ? "text-[var(--text-tertiary)]" :
+                        "text-[var(--data-error-500)]"
+                      )}>
+                        {rucLookup.status === "loading" ? "Consultando SUNAT..." : rucLookup.msg}
+                      </p>
+                    )}
+                  </>
                 )}
-              </div>
-              <div>
-                <label className={labelCls}>Teléfono</label>
+              </Field>
+              <Field label="Teléfono" labelClassName={labelCls}>
                 <input
                   value={form.phone}
                   onChange={e => set('phone', e.target.value)}
                   placeholder="987 654 321"
                   className={inputCls}
                 />
-              </div>
+              </Field>
             </div>
 
             {/* Direccion */}
-            <div>
-              <label className={labelCls}>Direccion</label>
+            <Field label="Direccion" labelClassName={labelCls}>
               <textarea
                 value={form.direccion}
                 onChange={e => set('direccion', e.target.value)}
@@ -439,7 +443,7 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
                 rows={2}
                 className={cn(inputCls, "resize-none")}
               />
-            </div>
+            </Field>
           </>
         )}
 
@@ -449,7 +453,7 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
             {/* Seccion 1: Identificacion */}
             <Section title="1. Identificacion" defaultOpen={true}>
               <div>
-                <label className={labelCls}>Tipo persona</label>
+                <span className={labelCls}>Tipo persona</span>
                 <div className="flex gap-2">
                   {(['natural', 'juridica'] as const).map(t => (
                     <button
@@ -457,10 +461,10 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
                       type="button"
                       onClick={() => set('tipoPersona', t)}
                       className={cn(
-                        "flex-1 py-2 rounded-lg text-sm font-bold border transition-colors",
+                        "flex-1 min-h-10 rounded-xl text-sm font-semibold border transition-colors",
                         form.tipoPersona === t
                           ? "bg-primary text-white border-primary"
-                          : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+                          : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] "
                       )}
                     >
                       {t === 'natural' ? 'Natural' : 'Juridica'}
@@ -469,71 +473,62 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className={labelCls}>Tipo documento</label>
+                <Field label="Tipo documento" labelClassName={labelCls}>
                   <select value={form.tipoDocumento} onChange={e => set('tipoDocumento', e.target.value)} className={selectCls}>
                     <option value="RUC">RUC</option>
                     <option value="DNI">DNI</option>
                     <option value="CE">CE</option>
                     <option value="PASAPORTE">Pasaporte</option>
                   </select>
-                </div>
-                <div>
-                  <label className={labelCls}>Número documento</label>
+                </Field>
+                <Field label="Número documento" labelClassName={labelCls}>
                   <input value={form.documento} onChange={e => set('documento', e.target.value)} placeholder="20xxxxxxxxx" className={cn(inputCls, "font-mono")} />
-                </div>
+                </Field>
               </div>
-              <div>
-                <label className={labelCls}>
-                  {form.tipoPersona === 'juridica' ? 'Razon Social *' : 'Nombre *'}
-                </label>
+              <Field
+                label={form.tipoPersona === 'juridica' ? 'Razon Social *' : 'Nombre *'}
+                labelClassName={labelCls}
+              >
                 <input
                   value={form.tipoPersona === 'juridica' ? form.razonSocial : form.name}
                   onChange={e => form.tipoPersona === 'juridica' ? set('razonSocial', e.target.value) : set('name', e.target.value)}
                   placeholder={form.tipoPersona === 'juridica' ? 'Distribuidora Lima S.A.C.' : 'Nombre del proveedor'}
                   className={inputCls}
                 />
-              </div>
+              </Field>
               {form.tipoPersona === 'juridica' && (
-                <div>
-                  <label className={labelCls}>Nombre comercial</label>
+                <Field label="Nombre comercial" labelClassName={labelCls}>
                   <input value={form.name} onChange={e => set('name', e.target.value)} placeholder="Nombre corto o comercial" className={inputCls} />
-                </div>
+                </Field>
               )}
-              <div>
-                <label className={labelCls}>Estado</label>
+              <Field label="Estado" labelClassName={labelCls}>
                 <select value={form.estado} onChange={e => set('estado', e.target.value)} className={selectCls}>
                   <option value="activo">Activo</option>
                   <option value="inactivo">Inactivo</option>
                 </select>
-              </div>
+              </Field>
             </Section>
 
             {/* Seccion 2: Contacto */}
             <Section title="2. Contacto" defaultOpen={true}>
-              <div>
-                <label className={labelCls}>Teléfono</label>
+              <Field label="Teléfono" labelClassName={labelCls}>
                 <input value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="987 654 321" className={inputCls} />
-              </div>
-              <div>
-                <label className={labelCls}>WhatsApp secundario</label>
+              </Field>
+              <Field label="WhatsApp secundario" labelClassName={labelCls}>
                 <input value={form.whatsappSecundario} onChange={e => set('whatsappSecundario', e.target.value)} placeholder="Otro número" className={inputCls} />
-              </div>
-              <div>
-                <label className={labelCls}>Email</label>
+              </Field>
+              <Field label="Email" labelClassName={labelCls}>
                 <input type="email" value={form.email} onChange={e => set('email', e.target.value)} placeholder="ventas@empresa.com" className={inputCls} />
-              </div>
-              <div>
-                <label className={labelCls}>Persona de contacto</label>
+              </Field>
+              <Field label="Persona de contacto" labelClassName={labelCls}>
                 <input value={form.personaContacto} onChange={e => set('personaContacto', e.target.value)} placeholder="Nombre del contacto directo" className={inputCls} />
-              </div>
+              </Field>
             </Section>
 
             {/* Seccion 3: Ubicacion */}
             <Section title="3. Ubicacion">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label className={labelCls}>Departamento</label>
+                <Field label="Departamento" labelClassName={labelCls}>
                   <select
                     value={form.departamento}
                     onChange={e => {
@@ -548,9 +543,8 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
                     <option value="">Seleccionar</option>
                     {DEPARTAMENTOS.map(d => <option key={d} value={d}>{d.replace('_', ' de ')}</option>)}
                   </select>
-                </div>
-                <div>
-                  <label className={labelCls}>Provincia</label>
+                </Field>
+                <Field label="Provincia" labelClassName={labelCls}>
                   <select
                     value={form.provincia}
                     onChange={e => {
@@ -563,17 +557,15 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
                     <option value="">Seleccionar</option>
                     {getProvincias(form.departamento).map(p => <option key={p} value={p}>{p}</option>)}
                   </select>
-                </div>
-                <div>
-                  <label className={labelCls}>Distrito</label>
+                </Field>
+                <Field label="Distrito" labelClassName={labelCls}>
                   <select value={form.distrito} onChange={e => set('distrito', e.target.value)} className={selectCls}>
                     <option value="">Seleccionar</option>
                     {getDistritos(form.departamento, form.provincia).map(d => <option key={d} value={d}>{d}</option>)}
                   </select>
-                </div>
+                </Field>
               </div>
-              <div>
-                <label className={labelCls}>Direccion</label>
+              <Field label="Direccion" labelClassName={labelCls}>
                 <textarea
                   value={form.direccion}
                   onChange={e => set('direccion', e.target.value)}
@@ -581,14 +573,13 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
                   rows={2}
                   className={cn(inputCls, "resize-none")}
                 />
-              </div>
+              </Field>
             </Section>
 
             {/* Seccion 4: Comercial */}
             <Section title="4. Comercial">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className={labelCls}>Categoria</label>
+                <Field label="Categoria" labelClassName={labelCls}>
                   <select value={form.categoria} onChange={e => set('categoria', e.target.value)} className={selectCls}>
                     <option value="">Sin asignar</option>
                     <option value="mayorista">Mayorista</option>
@@ -596,18 +587,16 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
                     <option value="distribuidor">Distribuidor</option>
                     <option value="importador">Importador</option>
                   </select>
-                </div>
-                <div>
-                  <label className={labelCls}>Condicion de pago</label>
+                </Field>
+                <Field label="Condicion de pago" labelClassName={labelCls}>
                   <select value={form.condicionPago} onChange={e => set('condicionPago', e.target.value)} className={selectCls}>
                     <option value="contado">Contado</option>
                     <option value="credito_7">Credito 7 dias</option>
                     <option value="credito_15">Credito 15 dias</option>
                     <option value="credito_30">Credito 30 dias</option>
                   </select>
-                </div>
-                <div>
-                  <label className={labelCls}>Dias de credito</label>
+                </Field>
+                <Field label="Dias de credito" labelClassName={labelCls}>
                   <input
                     type="number"
                     min={0}
@@ -615,15 +604,13 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
                     onChange={e => set('diasCredito', parseInt(e.target.value) || 0)}
                     className={inputCls}
                   />
-                </div>
+                </Field>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className={labelCls}>Cuenta bancaria</label>
+                <Field label="Cuenta bancaria" labelClassName={labelCls}>
                   <input value={form.cuentaBancaria} onChange={e => set('cuentaBancaria', e.target.value)} placeholder="Nro. de cuenta" className={cn(inputCls, "font-mono")} />
-                </div>
-                <div>
-                  <label className={labelCls}>Banco</label>
+                </Field>
+                <Field label="Banco" labelClassName={labelCls}>
                   <select value={form.banco} onChange={e => set('banco', e.target.value)} className={selectCls}>
                     <option value="">Seleccionar</option>
                     <option value="BCP">BCP</option>
@@ -633,14 +620,13 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
                     <option value="BanBif">BanBif</option>
                     <option value="Otro">Otro</option>
                   </select>
-                </div>
+                </Field>
               </div>
             </Section>
 
             {/* Seccion 5: Adicionales */}
             <Section title="5. Adicionales">
-              <div>
-                <label className={labelCls}>Observaciones</label>
+              <Field label="Observaciones" labelClassName={labelCls}>
                 <textarea
                   value={form.observaciones}
                   onChange={e => set('observaciones', e.target.value)}
@@ -648,7 +634,7 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
                   rows={3}
                   className={cn(inputCls, "resize-none")}
                 />
-              </div>
+              </Field>
             </Section>
           </div>
         )}
@@ -670,14 +656,14 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 h-10 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+            className="flex-1 h-10 rounded-xl border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] transition-colors"
           >
             Cancelar
           </button>
           <button
             type="submit"
             disabled={saving}
-            className="flex-1 h-10 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+            className="flex-1 h-10 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
           >
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
             {saving ? 'Guardando...' : isEdit ? 'Guardar proveedor' : format === 'simple' ? 'Crear proveedor' : 'Guardar proveedor'}

@@ -1,0 +1,2906 @@
+{
+ "tomadoEl": "2026-09-28",
+ "tenant": "inversiones-agroforestales-blas-sociedad-anonima (sólo lectura)",
+ "corridas": [
+  {
+   "id": "cmtth1a28004kqqvzec4okdjj",
+   "lineNo": 20,
+   "especie": "Tornillo",
+   "permiso": {
+    "contratoId": "ctr_165b5048de1f37205cca0c",
+    "codigo": "19-SEC/REG-PLT-2025-096"
+   },
+   "fecha": "2025-10-19",
+   "m3Producido": 3.814,
+   "materiaPrimaSinTrozas": null,
+   "materiaPrima": null,
+   "mesCerrado": null
+  },
+  {
+   "id": "cmtth1aqb004nqqvz53xgb1op",
+   "lineNo": 21,
+   "especie": "Tornillo",
+   "permiso": {
+    "contratoId": "ctr_1745c55676081b742fb8d8",
+    "codigo": "19-SEC/REG-PLT-2026-032"
+   },
+   "fecha": "2026-06-12",
+   "m3Producido": 3.078,
+   "materiaPrimaSinTrozas": null,
+   "materiaPrima": null,
+   "mesCerrado": null
+  },
+  {
+   "id": "cmtth1beh004qqqvzv9gu273c",
+   "lineNo": 22,
+   "especie": "Tornillo",
+   "permiso": {
+    "contratoId": "ctr_f5d1e94f49629bcfad2c35",
+    "codigo": "19-SEC/REG-PLT-2026-033"
+   },
+   "fecha": "2026-06-17",
+   "m3Producido": 0.434,
+   "materiaPrimaSinTrozas": null,
+   "materiaPrima": null,
+   "mesCerrado": null
+  },
+  {
+   "id": "cmtsthtqv000qaavzqxy7n4g0",
+   "lineNo": 15,
+   "especie": "Tornillo",
+   "permiso": {
+    "contratoId": null,
+    "codigo": null
+   },
+   "fecha": "2026-08-01",
+   "m3Producido": 15.211,
+   "materiaPrimaSinTrozas": "Salió de un lote de inventario (madera de antes del libro): decláralo como apertura.",
+   "materiaPrima": "lote_inventario",
+   "mesCerrado": null
+  },
+  {
+   "id": "cmtstji5g000yaavzb10j2j5p",
+   "lineNo": 16,
+   "especie": "Tornillo",
+   "permiso": {
+    "contratoId": null,
+    "codigo": null
+   },
+   "fecha": "2026-08-01",
+   "m3Producido": 2.982,
+   "materiaPrimaSinTrozas": "Salió de un lote de inventario (madera de antes del libro): decláralo como apertura.",
+   "materiaPrima": "lote_inventario",
+   "mesCerrado": null
+  },
+  {
+   "id": "cmtstlpwo0016aavzkn2lcpi3",
+   "lineNo": 17,
+   "especie": "Tornillo",
+   "permiso": {
+    "contratoId": null,
+    "codigo": null
+   },
+   "fecha": "2026-08-01",
+   "m3Producido": 3.51,
+   "materiaPrimaSinTrozas": "Salió de un lote de inventario (madera de antes del libro): decláralo como apertura.",
+   "materiaPrima": "lote_inventario",
+   "mesCerrado": null
+  },
+  {
+   "id": "cmtstoo7k001eaavznt1d4jnw",
+   "lineNo": 18,
+   "especie": "Tornillo",
+   "permiso": {
+    "contratoId": null,
+    "codigo": null
+   },
+   "fecha": "2026-08-01",
+   "m3Producido": 35.647,
+   "materiaPrimaSinTrozas": "Salió de un lote de inventario (madera de antes del libro): decláralo como apertura.",
+   "materiaPrima": "lote_inventario",
+   "mesCerrado": null
+  },
+  {
+   "id": "cmtstrkkz001oaavz0qg60rl2",
+   "lineNo": 19,
+   "especie": "Tornillo",
+   "permiso": {
+    "contratoId": null,
+    "codigo": null
+   },
+   "fecha": "2026-08-01",
+   "m3Producido": 19.214,
+   "materiaPrimaSinTrozas": "Salió de un lote de inventario (madera de antes del libro): decláralo como apertura.",
+   "materiaPrima": "lote_inventario",
+   "mesCerrado": null
+  },
+  {
+   "id": "cmtth19uu004tqqvzpp066hkv",
+   "lineNo": 23,
+   "especie": "Tornillo",
+   "permiso": {
+    "contratoId": "ctr_31ee4526a2f2cd8bdc2b27",
+    "codigo": "19-SEC/REG-PLT-2018-020"
+   },
+   "fecha": "2026-08-21",
+   "m3Producido": 1.326,
+   "materiaPrimaSinTrozas": null,
+   "materiaPrima": null,
+   "mesCerrado": null
+  },
+  {
+   "id": "cmtth1aiv004wqqvzm08zcele",
+   "lineNo": 24,
+   "especie": "Tornillo",
+   "permiso": {
+    "contratoId": "ctr_31ee4526a2f2cd8bdc2b27",
+    "codigo": "19-SEC/REG-PLT-2018-020"
+   },
+   "fecha": "2026-08-28",
+   "m3Producido": 0.009,
+   "materiaPrimaSinTrozas": null,
+   "materiaPrima": null,
+   "mesCerrado": null
+  },
+  {
+   "id": "cmtth1cht0055qqvzyk9oqh05",
+   "lineNo": 27,
+   "especie": "Tornillo",
+   "permiso": {
+    "contratoId": "ctr_1745c55676081b742fb8d8",
+    "codigo": "19-SEC/REG-PLT-2026-032"
+   },
+   "fecha": "2026-08-28",
+   "m3Producido": 0.013,
+   "materiaPrimaSinTrozas": null,
+   "materiaPrima": null,
+   "mesCerrado": null
+  },
+  {
+   "id": "cmtth1bub0052qqvzbj25qrzc",
+   "lineNo": 26,
+   "especie": "Tornillo",
+   "permiso": {
+    "contratoId": "ctr_31ee4526a2f2cd8bdc2b27",
+    "codigo": "19-SEC/REG-PLT-2018-020"
+   },
+   "fecha": "2026-08-29",
+   "m3Producido": 0.001,
+   "materiaPrimaSinTrozas": null,
+   "materiaPrima": null,
+   "mesCerrado": null
+  },
+  {
+   "id": "cmtth1b6f004zqqvze3txabul",
+   "lineNo": 25,
+   "especie": "Tornillo",
+   "permiso": {
+    "contratoId": "ctr_31ee4526a2f2cd8bdc2b27",
+    "codigo": "19-SEC/REG-PLT-2018-020"
+   },
+   "fecha": "2026-08-30",
+   "m3Producido": 0.073,
+   "materiaPrimaSinTrozas": null,
+   "materiaPrima": null,
+   "mesCerrado": null
+  },
+  {
+   "id": "cmudjtzhz001utavz6mxedwdz",
+   "lineNo": 30,
+   "especie": "Panguana",
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "fecha": "2026-09-07",
+   "m3Producido": 1.2807,
+   "materiaPrimaSinTrozas": null,
+   "materiaPrima": null,
+   "mesCerrado": null
+  },
+  {
+   "id": "cmudjtzps0025tavzi9809vdc",
+   "lineNo": 31,
+   "especie": "Mashonaste",
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "fecha": "2026-09-07",
+   "m3Producido": 0.5268,
+   "materiaPrimaSinTrozas": null,
+   "materiaPrima": null,
+   "mesCerrado": null
+  },
+  {
+   "id": "cmudjtzwj002htavzaljtaza7",
+   "lineNo": 32,
+   "especie": "Cachimbo",
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "fecha": "2026-09-07",
+   "m3Producido": 2.197,
+   "materiaPrimaSinTrozas": null,
+   "materiaPrima": null,
+   "mesCerrado": null
+  },
+  {
+   "id": "cmudju04l003ftavzo3iknb43",
+   "lineNo": 33,
+   "especie": "Tacho",
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "fecha": "2026-09-07",
+   "m3Producido": 0.5896,
+   "materiaPrimaSinTrozas": null,
+   "materiaPrima": null,
+   "mesCerrado": null
+  },
+  {
+   "id": "cmudju0bi003stavzeazw52dy",
+   "lineNo": 34,
+   "especie": "Copal",
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "fecha": "2026-09-07",
+   "m3Producido": 0.8153,
+   "materiaPrimaSinTrozas": null,
+   "materiaPrima": null,
+   "mesCerrado": null
+  },
+  {
+   "id": "cmudju0id0043tavzv6jeye9z",
+   "lineNo": 35,
+   "especie": "Cumala",
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "fecha": "2026-09-07",
+   "m3Producido": 2.2295,
+   "materiaPrimaSinTrozas": null,
+   "materiaPrima": null,
+   "mesCerrado": null
+  },
+  {
+   "id": "cmueekzpm0030fqvzwsipxzya",
+   "lineNo": 37,
+   "especie": "Copal",
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "fecha": "2026-09-08",
+   "m3Producido": 1.3838,
+   "materiaPrimaSinTrozas": null,
+   "materiaPrima": null,
+   "mesCerrado": null
+  },
+  {
+   "id": "cmueekzyb003lfqvzm2wmvh5w",
+   "lineNo": 38,
+   "especie": "Cachimbo",
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "fecha": "2026-09-08",
+   "m3Producido": 4.1425,
+   "materiaPrimaSinTrozas": null,
+   "materiaPrima": null,
+   "mesCerrado": null
+  },
+  {
+   "id": "cmuehz9sp006tfqvzawbshfpn",
+   "lineNo": 39,
+   "especie": "Cachimbo",
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "fecha": "2026-09-09",
+   "m3Producido": 1.8941,
+   "materiaPrimaSinTrozas": null,
+   "materiaPrima": null,
+   "mesCerrado": null
+  },
+  {
+   "id": "cmuehza03007kfqvzlbtv7qq6",
+   "lineNo": 40,
+   "especie": "Copal",
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "fecha": "2026-09-09",
+   "m3Producido": 1.7402,
+   "materiaPrimaSinTrozas": null,
+   "materiaPrima": null,
+   "mesCerrado": null
+  },
+  {
+   "id": "cmuehza6v0088fqvzd3lf4qf4",
+   "lineNo": 41,
+   "especie": "Shimbillo",
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "fecha": "2026-09-09",
+   "m3Producido": 1.524,
+   "materiaPrimaSinTrozas": null,
+   "materiaPrima": null,
+   "mesCerrado": null
+  },
+  {
+   "id": "cmuehzadg008rfqvzkbo0isgd",
+   "lineNo": 42,
+   "especie": "Cumala",
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "fecha": "2026-09-09",
+   "m3Producido": 0.7236,
+   "materiaPrimaSinTrozas": null,
+   "materiaPrima": null,
+   "mesCerrado": null
+  },
+  {
+   "id": "cmuehzak00094fqvz75prcpfk",
+   "lineNo": 43,
+   "especie": "Huayruro Negro",
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "fecha": "2026-09-09",
+   "m3Producido": 0.6781,
+   "materiaPrimaSinTrozas": null,
+   "materiaPrima": null,
+   "mesCerrado": null
+  },
+  {
+   "id": "cmuehzaqh009dfqvz8y3e9ifv",
+   "lineNo": 44,
+   "especie": "Panguana",
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "fecha": "2026-09-09",
+   "m3Producido": 0.3066,
+   "materiaPrimaSinTrozas": null,
+   "materiaPrima": null,
+   "mesCerrado": null
+  },
+  {
+   "id": "cmueign6500a5fqvzooxo3soe",
+   "lineNo": 45,
+   "especie": "Panguana",
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "fecha": "2026-09-10",
+   "m3Producido": 4.5187,
+   "materiaPrimaSinTrozas": null,
+   "materiaPrima": null,
+   "mesCerrado": null
+  },
+  {
+   "id": "cmueigndw00b2fqvzdsmxbg8g",
+   "lineNo": 46,
+   "especie": "Pashaco",
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "fecha": "2026-09-10",
+   "m3Producido": 2.863,
+   "materiaPrimaSinTrozas": null,
+   "materiaPrima": null,
+   "mesCerrado": null
+  },
+  {
+   "id": "cmueignkp00bvfqvzyxwmf0oh",
+   "lineNo": 47,
+   "especie": "Huayruro Negro",
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "fecha": "2026-09-10",
+   "m3Producido": 0.5567,
+   "materiaPrimaSinTrozas": null,
+   "materiaPrima": null,
+   "mesCerrado": null
+  },
+  {
+   "id": "cmueignr900c5fqvzq2dhvs26",
+   "lineNo": 48,
+   "especie": "Cachimbo",
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "fecha": "2026-09-10",
+   "m3Producido": 1.1961,
+   "materiaPrimaSinTrozas": null,
+   "materiaPrima": null,
+   "mesCerrado": null
+  },
+  {
+   "id": "cmueiu1vq00d6fqvzi5dl32r1",
+   "lineNo": 49,
+   "especie": "Pashaco",
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "fecha": "2026-09-11",
+   "m3Producido": 5.4363,
+   "materiaPrimaSinTrozas": null,
+   "materiaPrima": null,
+   "mesCerrado": null
+  },
+  {
+   "id": "cmueiu27k00eyfqvznoxwnso3",
+   "lineNo": 50,
+   "especie": "Panguana",
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "fecha": "2026-09-11",
+   "m3Producido": 1.4565,
+   "materiaPrimaSinTrozas": null,
+   "materiaPrima": null,
+   "mesCerrado": null
+  },
+  {
+   "id": "cmueiu2ef00fafqvznbw4pvkb",
+   "lineNo": 51,
+   "especie": "Machimango",
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "fecha": "2026-09-11",
+   "m3Producido": 1.0329,
+   "materiaPrimaSinTrozas": null,
+   "materiaPrima": null,
+   "mesCerrado": null
+  },
+  {
+   "id": "cmuej1oj300g4fqvzzlglt6xq",
+   "lineNo": 52,
+   "especie": "Panguana",
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "fecha": "2026-09-12",
+   "m3Producido": 2.1449,
+   "materiaPrimaSinTrozas": null,
+   "materiaPrima": null,
+   "mesCerrado": null
+  },
+  {
+   "id": "cmuej1oq300gtfqvza3arfukb",
+   "lineNo": 53,
+   "especie": "Machimango",
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "fecha": "2026-09-12",
+   "m3Producido": 0.7871,
+   "materiaPrimaSinTrozas": null,
+   "materiaPrima": null,
+   "mesCerrado": null
+  },
+  {
+   "id": "cmuej6xmr00hkfqvzgjbjs4cn",
+   "lineNo": 54,
+   "especie": "Cachimbo",
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "fecha": "2026-09-21",
+   "m3Producido": 0.6223,
+   "materiaPrimaSinTrozas": null,
+   "materiaPrima": null,
+   "mesCerrado": null
+  },
+  {
+   "id": "cmuej6xto00i1fqvzjicwehww",
+   "lineNo": 55,
+   "especie": "Mashonaste",
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "fecha": "2026-09-21",
+   "m3Producido": 1.9881,
+   "materiaPrimaSinTrozas": null,
+   "materiaPrima": null,
+   "mesCerrado": null
+  },
+  {
+   "id": "cmuej6y0m00iofqvztq1jt2q6",
+   "lineNo": 56,
+   "especie": "Copaiba",
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "fecha": "2026-09-21",
+   "m3Producido": 0.2541,
+   "materiaPrimaSinTrozas": null,
+   "materiaPrima": null,
+   "mesCerrado": null
+  },
+  {
+   "id": "cmuej6y7c00iwfqvzmqb01ylp",
+   "lineNo": 57,
+   "especie": "Huayruro Negro",
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "fecha": "2026-09-21",
+   "m3Producido": 0.2813,
+   "materiaPrimaSinTrozas": null,
+   "materiaPrima": null,
+   "mesCerrado": null
+  },
+  {
+   "id": "cmuedcp3e0008fqvzg1chx8e4",
+   "lineNo": 36,
+   "especie": "Tornillo",
+   "permiso": {
+    "contratoId": null,
+    "codigo": null
+   },
+   "fecha": "2026-09-22",
+   "m3Producido": 10.4063,
+   "materiaPrimaSinTrozas": null,
+   "materiaPrima": null,
+   "mesCerrado": null
+  },
+  {
+   "id": "cmueq51vy001ie1vzig9wkmh1",
+   "lineNo": 58,
+   "especie": "Huayruro Negro",
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "fecha": "2026-09-22",
+   "m3Producido": 1.1273,
+   "materiaPrimaSinTrozas": null,
+   "materiaPrima": null,
+   "mesCerrado": null
+  },
+  {
+   "id": "cmueq523s001ze1vz8mb2xp7p",
+   "lineNo": 59,
+   "especie": "Mashonaste",
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "fecha": "2026-09-22",
+   "m3Producido": 1.2014,
+   "materiaPrimaSinTrozas": null,
+   "materiaPrima": null,
+   "mesCerrado": null
+  },
+  {
+   "id": "cmueq52ap002ie1vznbsmsav0",
+   "lineNo": 60,
+   "especie": "Copaiba",
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "fecha": "2026-09-22",
+   "m3Producido": 0.6569,
+   "materiaPrimaSinTrozas": null,
+   "materiaPrima": null,
+   "mesCerrado": null
+  }
+ ],
+ "trozas": [
+  {
+   "id": "cmuerz3qa007ee1vz2r0fi4st",
+   "codigo": "116-B",
+   "especie": "Shimbillo",
+   "m3": 2.991,
+   "gtfNumber": "010-001-0000005",
+   "fila": {
+    "id": "cmtsu06lt005baavzndeh4f83",
+    "especie": "Shimbillo",
+    "m3": 2.991,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "guiaRecibida": true,
+   "fechaIngreso": "2026-09-11",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-08-31",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuerz3qb007ge1vz338nuw8h",
+   "codigo": "215-B",
+   "especie": "Copal",
+   "m3": 1.752,
+   "gtfNumber": "010-001-0000005",
+   "fila": {
+    "id": "cmtsu06sr005daavz4ahbktuk",
+    "especie": "Copal",
+    "m3": 1.752,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "guiaRecibida": true,
+   "fechaIngreso": "2026-09-11",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-08-31",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuerz4i5007le1vzfntx4jrg",
+   "codigo": "161-A",
+   "especie": "Cumala",
+   "m3": 3.255,
+   "gtfNumber": "010-001-0000006",
+   "fila": {
+    "id": "cmtstzup9004xaavzhntbhiig",
+    "especie": "Cumala",
+    "m3": 5.422,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "guiaRecibida": true,
+   "fechaIngreso": "2026-09-23",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-09-02",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuerz4i5007me1vzewus90o3",
+   "codigo": "161-B",
+   "especie": "Cumala",
+   "m3": 2.167,
+   "gtfNumber": "010-001-0000006",
+   "fila": {
+    "id": "cmtstzup9004xaavzhntbhiig",
+    "especie": "Cumala",
+    "m3": 5.422,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "guiaRecibida": true,
+   "fechaIngreso": "2026-09-23",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-09-02",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuerz4i5007ne1vziif1bu3q",
+   "codigo": "116-A",
+   "especie": "Shimbillo",
+   "m3": 4.102,
+   "gtfNumber": "010-001-0000006",
+   "fila": {
+    "id": "cmtstzuwa0050aavzpzgfqtvy",
+    "especie": "Shimbillo",
+    "m3": 4.102,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "guiaRecibida": true,
+   "fechaIngreso": "2026-09-23",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-09-02",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuerz4i5007oe1vzzb3s6ow6",
+   "codigo": "215-A",
+   "especie": "Copal",
+   "m3": 2.128,
+   "gtfNumber": "010-001-0000006",
+   "fila": {
+    "id": "cmtstzv390052aavzbl4m8a32",
+    "especie": "Copal",
+    "m3": 2.128,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "guiaRecibida": true,
+   "fechaIngreso": "2026-09-23",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-09-02",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuerz59f007qe1vzov9nc2rf",
+   "codigo": "173-A",
+   "especie": "Pashaco",
+   "m3": 6.668,
+   "gtfNumber": "010-001-0000007",
+   "fila": {
+    "id": "cmtstzaxp004paavz08rfgm97",
+    "especie": "Pashaco",
+    "m3": 16.404,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "guiaRecibida": true,
+   "fechaIngreso": "2026-09-23",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-09-02",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuerz59f007re1vzo66sro0d",
+   "codigo": "173-B",
+   "especie": "Pashaco",
+   "m3": 5.254,
+   "gtfNumber": "010-001-0000007",
+   "fila": {
+    "id": "cmtstzaxp004paavz08rfgm97",
+    "especie": "Pashaco",
+    "m3": 16.404,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "guiaRecibida": true,
+   "fechaIngreso": "2026-09-23",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-09-02",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuerz59f007se1vzjwaahlvl",
+   "codigo": "173-C",
+   "especie": "Pashaco",
+   "m3": 4.482,
+   "gtfNumber": "010-001-0000007",
+   "fila": {
+    "id": "cmtstzaxp004paavz08rfgm97",
+    "especie": "Pashaco",
+    "m3": 16.404,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "guiaRecibida": true,
+   "fechaIngreso": "2026-09-23",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-09-02",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuerz59f007te1vzi71j95yn",
+   "codigo": "161-C",
+   "especie": "Cumala",
+   "m3": 1.433,
+   "gtfNumber": "010-001-0000007",
+   "fila": {
+    "id": "cmtstzaqo004naavzx8x8d531",
+    "especie": "Cumala",
+    "m3": 1.433,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "guiaRecibida": true,
+   "fechaIngreso": "2026-09-23",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-09-02",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuerz60s007we1vzsrtwzhmj",
+   "codigo": "243-A",
+   "especie": "Azucar huayo",
+   "m3": 3.268,
+   "gtfNumber": "010-001-0000008",
+   "fila": {
+    "id": "cmtstz2u4004jaavzak2vrfij",
+    "especie": "Azucar huayo",
+    "m3": 6.049,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "guiaRecibida": true,
+   "fechaIngreso": "2026-09-23",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-09-02",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuerz60s007xe1vz5ikkgkix",
+   "codigo": "243-B",
+   "especie": "Azucar huayo",
+   "m3": 2.781,
+   "gtfNumber": "010-001-0000008",
+   "fila": {
+    "id": "cmtstz2u4004jaavzak2vrfij",
+    "especie": "Azucar huayo",
+    "m3": 6.049,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "guiaRecibida": true,
+   "fechaIngreso": "2026-09-23",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-09-02",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuerz60s007ye1vzaw6911wm",
+   "codigo": "173-D",
+   "especie": "Pashaco",
+   "m3": 3.139,
+   "gtfNumber": "010-001-0000008",
+   "fila": {
+    "id": "cmtstz2nc004haavzbdlc2qbc",
+    "especie": "Pashaco",
+    "m3": 3.139,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "guiaRecibida": true,
+   "fechaIngreso": "2026-09-23",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-09-02",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuerz60s007ze1vzi4w4xj0r",
+   "codigo": "189-B",
+   "especie": "Huayruro",
+   "m3": 2.508,
+   "gtfNumber": "010-001-0000008",
+   "fila": {
+    "id": "cmtstz2gl004faavzmrbijdye",
+    "especie": "Huayruro",
+    "m3": 2.508,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "guiaRecibida": true,
+   "fechaIngreso": "2026-09-23",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-09-02",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuerz6s00086e1vzrnkln268",
+   "codigo": "241A",
+   "especie": "Huayruro",
+   "m3": 4.224,
+   "gtfNumber": "010-001-0000010",
+   "fila": {
+    "id": "cmtstyrgj004aaavzfk59tjwi",
+    "especie": "Huayruro",
+    "m3": 4.224,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "guiaRecibida": true,
+   "fechaIngreso": "2026-09-23",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-09-03",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuerz7j8008ce1vzy6eufprp",
+   "codigo": "225A",
+   "especie": "Yacuchapana",
+   "m3": 3.722,
+   "gtfNumber": "010-001-0000009",
+   "fila": {
+    "id": "cmtstyfyt003zaavzxjgc73fz",
+    "especie": "Yacuchapana",
+    "m3": 8.309,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "guiaRecibida": true,
+   "fechaIngreso": "2026-09-23",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-09-03",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuerz7j8008de1vzgstxnatn",
+   "codigo": "225B",
+   "especie": "Yacuchapana",
+   "m3": 1.779,
+   "gtfNumber": "010-001-0000009",
+   "fila": {
+    "id": "cmtstyfyt003zaavzxjgc73fz",
+    "especie": "Yacuchapana",
+    "m3": 8.309,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "guiaRecibida": true,
+   "fechaIngreso": "2026-09-23",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-09-03",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuerz7j8008ee1vzz1u4fayc",
+   "codigo": "182A",
+   "especie": "Yacuchapana",
+   "m3": 2.808,
+   "gtfNumber": "010-001-0000009",
+   "fila": {
+    "id": "cmtstyfyt003zaavzxjgc73fz",
+    "especie": "Yacuchapana",
+    "m3": 8.309,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "guiaRecibida": true,
+   "fechaIngreso": "2026-09-23",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-09-03",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuerz8aj008ge1vzr968fz08",
+   "codigo": "143A",
+   "especie": "Mashonaste",
+   "m3": 4.441,
+   "gtfNumber": "010-001-0000013",
+   "fila": {
+    "id": "cmtstxxmg003laavza8kuypww",
+    "especie": "Mashonaste",
+    "m3": 9.42,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "guiaRecibida": true,
+   "fechaIngreso": "2026-09-23",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-09-07",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuerz8aj008he1vzd683078n",
+   "codigo": "143B",
+   "especie": "Mashonaste",
+   "m3": 3.058,
+   "gtfNumber": "010-001-0000013",
+   "fila": {
+    "id": "cmtstxxmg003laavza8kuypww",
+    "especie": "Mashonaste",
+    "m3": 9.42,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "guiaRecibida": true,
+   "fechaIngreso": "2026-09-23",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-09-07",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuerz8aj008ie1vz5ms7kemg",
+   "codigo": "143C",
+   "especie": "Mashonaste",
+   "m3": 1.921,
+   "gtfNumber": "010-001-0000013",
+   "fila": {
+    "id": "cmtstxxmg003laavza8kuypww",
+    "especie": "Mashonaste",
+    "m3": 9.42,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "guiaRecibida": true,
+   "fechaIngreso": "2026-09-23",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-09-07",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuerz8aj008je1vzk0f4v291",
+   "codigo": "142A",
+   "especie": "Copal",
+   "m3": 2.661,
+   "gtfNumber": "010-001-0000013",
+   "fila": {
+    "id": "cmtstxxuf003paavzrtdp5omn",
+    "especie": "Copal",
+    "m3": 9.657,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "guiaRecibida": true,
+   "fechaIngreso": "2026-09-23",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-09-07",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuerz8aj008ke1vzommrls2f",
+   "codigo": "144A",
+   "especie": "Copal",
+   "m3": 3.11,
+   "gtfNumber": "010-001-0000013",
+   "fila": {
+    "id": "cmtstxxuf003paavzrtdp5omn",
+    "especie": "Copal",
+    "m3": 9.657,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "guiaRecibida": true,
+   "fechaIngreso": "2026-09-23",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-09-07",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuerz8aj008le1vzknhdutev",
+   "codigo": "240A",
+   "especie": "Copal",
+   "m3": 3.886,
+   "gtfNumber": "010-001-0000013",
+   "fila": {
+    "id": "cmtstxxuf003paavzrtdp5omn",
+    "especie": "Copal",
+    "m3": 9.657,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "guiaRecibida": true,
+   "fechaIngreso": "2026-09-23",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-09-07",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuerz93h008ne1vza4ebswk9",
+   "codigo": "62B",
+   "especie": "Ana Caspi",
+   "m3": 3.424,
+   "gtfNumber": "010-001-0000014",
+   "fila": {
+    "id": "cmtstxmk6003daavz0or7h5ty",
+    "especie": "Ana Caspi",
+    "m3": 8.384,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "guiaRecibida": true,
+   "fechaIngreso": "2026-09-23",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-09-07",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuerz93h008oe1vzikva3mny",
+   "codigo": "62C",
+   "especie": "Ana Caspi",
+   "m3": 2.296,
+   "gtfNumber": "010-001-0000014",
+   "fila": {
+    "id": "cmtstxmk6003daavz0or7h5ty",
+    "especie": "Ana Caspi",
+    "m3": 8.384,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "guiaRecibida": true,
+   "fechaIngreso": "2026-09-23",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-09-07",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuerz93h008pe1vzgx9hyqg3",
+   "codigo": "85B",
+   "especie": "Ana Caspi",
+   "m3": 2.664,
+   "gtfNumber": "010-001-0000014",
+   "fila": {
+    "id": "cmtstxmk6003daavz0or7h5ty",
+    "especie": "Ana Caspi",
+    "m3": 8.384,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+    "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+   },
+   "guiaRecibida": true,
+   "fechaIngreso": "2026-09-23",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-09-07",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuezn89h008ye1vz0rk7ajl9",
+   "codigo": "35",
+   "especie": "TORNILLO",
+   "m3": 0.641,
+   "gtfNumber": "019-001-0000004",
+   "fila": {
+    "id": "cmtsu0j9a005gaavzjux5ske0",
+    "especie": "Tornillo",
+    "m3": 20.061,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_bb95cdc7f858660a665ae8",
+    "codigo": "19-SEC/REG-PLT-2021-017"
+   },
+   "guiaRecibida": false,
+   "fechaIngreso": "2026-09-08",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-08-15",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuezn89h008ze1vzsyjk9sss",
+   "codigo": "36",
+   "especie": "TORNILLO",
+   "m3": 1.048,
+   "gtfNumber": "019-001-0000004",
+   "fila": {
+    "id": "cmtsu0j9a005gaavzjux5ske0",
+    "especie": "Tornillo",
+    "m3": 20.061,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_bb95cdc7f858660a665ae8",
+    "codigo": "19-SEC/REG-PLT-2021-017"
+   },
+   "guiaRecibida": false,
+   "fechaIngreso": "2026-09-08",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-08-15",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuezn89h0090e1vzp6198egt",
+   "codigo": "37",
+   "especie": "TORNILLO",
+   "m3": 0.438,
+   "gtfNumber": "019-001-0000004",
+   "fila": {
+    "id": "cmtsu0j9a005gaavzjux5ske0",
+    "especie": "Tornillo",
+    "m3": 20.061,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_bb95cdc7f858660a665ae8",
+    "codigo": "19-SEC/REG-PLT-2021-017"
+   },
+   "guiaRecibida": false,
+   "fechaIngreso": "2026-09-08",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-08-15",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuezn89h0091e1vzvax4pgxr",
+   "codigo": "38",
+   "especie": "TORNILLO",
+   "m3": 1.006,
+   "gtfNumber": "019-001-0000004",
+   "fila": {
+    "id": "cmtsu0j9a005gaavzjux5ske0",
+    "especie": "Tornillo",
+    "m3": 20.061,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_bb95cdc7f858660a665ae8",
+    "codigo": "19-SEC/REG-PLT-2021-017"
+   },
+   "guiaRecibida": false,
+   "fechaIngreso": "2026-09-08",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-08-15",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuezn89h0092e1vzs7drj48s",
+   "codigo": "39",
+   "especie": "TORNILLO",
+   "m3": 0.794,
+   "gtfNumber": "019-001-0000004",
+   "fila": {
+    "id": "cmtsu0j9a005gaavzjux5ske0",
+    "especie": "Tornillo",
+    "m3": 20.061,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_bb95cdc7f858660a665ae8",
+    "codigo": "19-SEC/REG-PLT-2021-017"
+   },
+   "guiaRecibida": false,
+   "fechaIngreso": "2026-09-08",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-08-15",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuezn89h0093e1vzavvazmyt",
+   "codigo": "40",
+   "especie": "TORNILLO",
+   "m3": 0.538,
+   "gtfNumber": "019-001-0000004",
+   "fila": {
+    "id": "cmtsu0j9a005gaavzjux5ske0",
+    "especie": "Tornillo",
+    "m3": 20.061,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_bb95cdc7f858660a665ae8",
+    "codigo": "19-SEC/REG-PLT-2021-017"
+   },
+   "guiaRecibida": false,
+   "fechaIngreso": "2026-09-08",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-08-15",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuezn89h0094e1vz6rwb4bs8",
+   "codigo": "41",
+   "especie": "TORNILLO",
+   "m3": 0.6,
+   "gtfNumber": "019-001-0000004",
+   "fila": {
+    "id": "cmtsu0j9a005gaavzjux5ske0",
+    "especie": "Tornillo",
+    "m3": 20.061,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_bb95cdc7f858660a665ae8",
+    "codigo": "19-SEC/REG-PLT-2021-017"
+   },
+   "guiaRecibida": false,
+   "fechaIngreso": "2026-09-08",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-08-15",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuezn89h0095e1vzu3z8abkd",
+   "codigo": "42",
+   "especie": "TORNILLO",
+   "m3": 1.287,
+   "gtfNumber": "019-001-0000004",
+   "fila": {
+    "id": "cmtsu0j9a005gaavzjux5ske0",
+    "especie": "Tornillo",
+    "m3": 20.061,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_bb95cdc7f858660a665ae8",
+    "codigo": "19-SEC/REG-PLT-2021-017"
+   },
+   "guiaRecibida": false,
+   "fechaIngreso": "2026-09-08",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-08-15",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuezn89h0096e1vzyfugddwo",
+   "codigo": "43",
+   "especie": "TORNILLO",
+   "m3": 0.964,
+   "gtfNumber": "019-001-0000004",
+   "fila": {
+    "id": "cmtsu0j9a005gaavzjux5ske0",
+    "especie": "Tornillo",
+    "m3": 20.061,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_bb95cdc7f858660a665ae8",
+    "codigo": "19-SEC/REG-PLT-2021-017"
+   },
+   "guiaRecibida": false,
+   "fechaIngreso": "2026-09-08",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-08-15",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuezn89h0097e1vzklbolhlx",
+   "codigo": "44",
+   "especie": "TORNILLO",
+   "m3": 0.756,
+   "gtfNumber": "019-001-0000004",
+   "fila": {
+    "id": "cmtsu0j9a005gaavzjux5ske0",
+    "especie": "Tornillo",
+    "m3": 20.061,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_bb95cdc7f858660a665ae8",
+    "codigo": "19-SEC/REG-PLT-2021-017"
+   },
+   "guiaRecibida": false,
+   "fechaIngreso": "2026-09-08",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-08-15",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuezn89h0098e1vzxylwefcg",
+   "codigo": "45",
+   "especie": "TORNILLO",
+   "m3": 0.792,
+   "gtfNumber": "019-001-0000004",
+   "fila": {
+    "id": "cmtsu0j9a005gaavzjux5ske0",
+    "especie": "Tornillo",
+    "m3": 20.061,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_bb95cdc7f858660a665ae8",
+    "codigo": "19-SEC/REG-PLT-2021-017"
+   },
+   "guiaRecibida": false,
+   "fechaIngreso": "2026-09-08",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-08-15",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuezn89h0099e1vzogboh2ej",
+   "codigo": "46",
+   "especie": "TORNILLO",
+   "m3": 0.52,
+   "gtfNumber": "019-001-0000004",
+   "fila": {
+    "id": "cmtsu0j9a005gaavzjux5ske0",
+    "especie": "Tornillo",
+    "m3": 20.061,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_bb95cdc7f858660a665ae8",
+    "codigo": "19-SEC/REG-PLT-2021-017"
+   },
+   "guiaRecibida": false,
+   "fechaIngreso": "2026-09-08",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-08-15",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuezn89h009ae1vzjg52932r",
+   "codigo": "47",
+   "especie": "TORNILLO",
+   "m3": 0.813,
+   "gtfNumber": "019-001-0000004",
+   "fila": {
+    "id": "cmtsu0j9a005gaavzjux5ske0",
+    "especie": "Tornillo",
+    "m3": 20.061,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_bb95cdc7f858660a665ae8",
+    "codigo": "19-SEC/REG-PLT-2021-017"
+   },
+   "guiaRecibida": false,
+   "fechaIngreso": "2026-09-08",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-08-15",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuezn89h009be1vzdg3kipbb",
+   "codigo": "48",
+   "especie": "TORNILLO",
+   "m3": 0.831,
+   "gtfNumber": "019-001-0000004",
+   "fila": {
+    "id": "cmtsu0j9a005gaavzjux5ske0",
+    "especie": "Tornillo",
+    "m3": 20.061,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_bb95cdc7f858660a665ae8",
+    "codigo": "19-SEC/REG-PLT-2021-017"
+   },
+   "guiaRecibida": false,
+   "fechaIngreso": "2026-09-08",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-08-15",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuezn89h009ce1vz00a8ob80",
+   "codigo": "49",
+   "especie": "TORNILLO",
+   "m3": 0.491,
+   "gtfNumber": "019-001-0000004",
+   "fila": {
+    "id": "cmtsu0j9a005gaavzjux5ske0",
+    "especie": "Tornillo",
+    "m3": 20.061,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_bb95cdc7f858660a665ae8",
+    "codigo": "19-SEC/REG-PLT-2021-017"
+   },
+   "guiaRecibida": false,
+   "fechaIngreso": "2026-09-08",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-08-15",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuezn89h009de1vzndubx313",
+   "codigo": "50",
+   "especie": "TORNILLO",
+   "m3": 0.766,
+   "gtfNumber": "019-001-0000004",
+   "fila": {
+    "id": "cmtsu0j9a005gaavzjux5ske0",
+    "especie": "Tornillo",
+    "m3": 20.061,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_bb95cdc7f858660a665ae8",
+    "codigo": "19-SEC/REG-PLT-2021-017"
+   },
+   "guiaRecibida": false,
+   "fechaIngreso": "2026-09-08",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-08-15",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuezn89h009ee1vzujsnsi4j",
+   "codigo": "51",
+   "especie": "TORNILLO",
+   "m3": 0.499,
+   "gtfNumber": "019-001-0000004",
+   "fila": {
+    "id": "cmtsu0j9a005gaavzjux5ske0",
+    "especie": "Tornillo",
+    "m3": 20.061,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_bb95cdc7f858660a665ae8",
+    "codigo": "19-SEC/REG-PLT-2021-017"
+   },
+   "guiaRecibida": false,
+   "fechaIngreso": "2026-09-08",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-08-15",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuezn89h009fe1vzok5qh8xb",
+   "codigo": "52",
+   "especie": "TORNILLO",
+   "m3": 0.652,
+   "gtfNumber": "019-001-0000004",
+   "fila": {
+    "id": "cmtsu0j9a005gaavzjux5ske0",
+    "especie": "Tornillo",
+    "m3": 20.061,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_bb95cdc7f858660a665ae8",
+    "codigo": "19-SEC/REG-PLT-2021-017"
+   },
+   "guiaRecibida": false,
+   "fechaIngreso": "2026-09-08",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-08-15",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuezn89h009ge1vzi5temdnt",
+   "codigo": "53",
+   "especie": "TORNILLO",
+   "m3": 0.594,
+   "gtfNumber": "019-001-0000004",
+   "fila": {
+    "id": "cmtsu0j9a005gaavzjux5ske0",
+    "especie": "Tornillo",
+    "m3": 20.061,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_bb95cdc7f858660a665ae8",
+    "codigo": "19-SEC/REG-PLT-2021-017"
+   },
+   "guiaRecibida": false,
+   "fechaIngreso": "2026-09-08",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-08-15",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuezn89h009he1vzscrhim0h",
+   "codigo": "54",
+   "especie": "TORNILLO",
+   "m3": 0.421,
+   "gtfNumber": "019-001-0000004",
+   "fila": {
+    "id": "cmtsu0j9a005gaavzjux5ske0",
+    "especie": "Tornillo",
+    "m3": 20.061,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_bb95cdc7f858660a665ae8",
+    "codigo": "19-SEC/REG-PLT-2021-017"
+   },
+   "guiaRecibida": false,
+   "fechaIngreso": "2026-09-08",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-08-15",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuezn89h009ie1vzgqo3ldel",
+   "codigo": "55",
+   "especie": "TORNILLO",
+   "m3": 0.596,
+   "gtfNumber": "019-001-0000004",
+   "fila": {
+    "id": "cmtsu0j9a005gaavzjux5ske0",
+    "especie": "Tornillo",
+    "m3": 20.061,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_bb95cdc7f858660a665ae8",
+    "codigo": "19-SEC/REG-PLT-2021-017"
+   },
+   "guiaRecibida": false,
+   "fechaIngreso": "2026-09-08",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-08-15",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuezn89h009je1vzioc87igk",
+   "codigo": "56",
+   "especie": "TORNILLO",
+   "m3": 0.552,
+   "gtfNumber": "019-001-0000004",
+   "fila": {
+    "id": "cmtsu0j9a005gaavzjux5ske0",
+    "especie": "Tornillo",
+    "m3": 20.061,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_bb95cdc7f858660a665ae8",
+    "codigo": "19-SEC/REG-PLT-2021-017"
+   },
+   "guiaRecibida": false,
+   "fechaIngreso": "2026-09-08",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-08-15",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuezn89i009ke1vzeg1rxvg3",
+   "codigo": "57",
+   "especie": "TORNILLO",
+   "m3": 0.824,
+   "gtfNumber": "019-001-0000004",
+   "fila": {
+    "id": "cmtsu0j9a005gaavzjux5ske0",
+    "especie": "Tornillo",
+    "m3": 20.061,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_bb95cdc7f858660a665ae8",
+    "codigo": "19-SEC/REG-PLT-2021-017"
+   },
+   "guiaRecibida": false,
+   "fechaIngreso": "2026-09-08",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-08-15",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuezn89i009le1vzuc214x8i",
+   "codigo": "58",
+   "especie": "TORNILLO",
+   "m3": 0.619,
+   "gtfNumber": "019-001-0000004",
+   "fila": {
+    "id": "cmtsu0j9a005gaavzjux5ske0",
+    "especie": "Tornillo",
+    "m3": 20.061,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_bb95cdc7f858660a665ae8",
+    "codigo": "19-SEC/REG-PLT-2021-017"
+   },
+   "guiaRecibida": false,
+   "fechaIngreso": "2026-09-08",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-08-15",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuezn89i009me1vznx9i85bt",
+   "codigo": "59",
+   "especie": "TORNILLO",
+   "m3": 0.415,
+   "gtfNumber": "019-001-0000004",
+   "fila": {
+    "id": "cmtsu0j9a005gaavzjux5ske0",
+    "especie": "Tornillo",
+    "m3": 20.061,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_bb95cdc7f858660a665ae8",
+    "codigo": "19-SEC/REG-PLT-2021-017"
+   },
+   "guiaRecibida": false,
+   "fechaIngreso": "2026-09-08",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-08-15",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuezn89i009ne1vzg5y2wg6t",
+   "codigo": "60",
+   "especie": "TORNILLO",
+   "m3": 0.309,
+   "gtfNumber": "019-001-0000004",
+   "fila": {
+    "id": "cmtsu0j9a005gaavzjux5ske0",
+    "especie": "Tornillo",
+    "m3": 20.061,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_bb95cdc7f858660a665ae8",
+    "codigo": "19-SEC/REG-PLT-2021-017"
+   },
+   "guiaRecibida": false,
+   "fechaIngreso": "2026-09-08",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-08-15",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuezn89i009oe1vzf60iwopm",
+   "codigo": "61",
+   "especie": "TORNILLO",
+   "m3": 0.685,
+   "gtfNumber": "019-001-0000004",
+   "fila": {
+    "id": "cmtsu0j9a005gaavzjux5ske0",
+    "especie": "Tornillo",
+    "m3": 20.061,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_bb95cdc7f858660a665ae8",
+    "codigo": "19-SEC/REG-PLT-2021-017"
+   },
+   "guiaRecibida": false,
+   "fechaIngreso": "2026-09-08",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-08-15",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuezn89i009pe1vz62wpgjso",
+   "codigo": "62",
+   "especie": "TORNILLO",
+   "m3": 0.392,
+   "gtfNumber": "019-001-0000004",
+   "fila": {
+    "id": "cmtsu0j9a005gaavzjux5ske0",
+    "especie": "Tornillo",
+    "m3": 20.061,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_bb95cdc7f858660a665ae8",
+    "codigo": "19-SEC/REG-PLT-2021-017"
+   },
+   "guiaRecibida": false,
+   "fechaIngreso": "2026-09-08",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-08-15",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuezn89i009qe1vzlfptcn5s",
+   "codigo": "63",
+   "especie": "TORNILLO",
+   "m3": 0.377,
+   "gtfNumber": "019-001-0000004",
+   "fila": {
+    "id": "cmtsu0j9a005gaavzjux5ske0",
+    "especie": "Tornillo",
+    "m3": 20.061,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_bb95cdc7f858660a665ae8",
+    "codigo": "19-SEC/REG-PLT-2021-017"
+   },
+   "guiaRecibida": false,
+   "fechaIngreso": "2026-09-08",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-08-15",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuezn89i009re1vzk679ryi3",
+   "codigo": "64",
+   "especie": "TORNILLO",
+   "m3": 0.524,
+   "gtfNumber": "019-001-0000004",
+   "fila": {
+    "id": "cmtsu0j9a005gaavzjux5ske0",
+    "especie": "Tornillo",
+    "m3": 20.061,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_bb95cdc7f858660a665ae8",
+    "codigo": "19-SEC/REG-PLT-2021-017"
+   },
+   "guiaRecibida": false,
+   "fechaIngreso": "2026-09-08",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-08-15",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuezn89i009se1vz3l0wyixb",
+   "codigo": "65",
+   "especie": "TORNILLO",
+   "m3": 0.317,
+   "gtfNumber": "019-001-0000004",
+   "fila": {
+    "id": "cmtsu0j9a005gaavzjux5ske0",
+    "especie": "Tornillo",
+    "m3": 20.061,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": "ctr_bb95cdc7f858660a665ae8",
+    "codigo": "19-SEC/REG-PLT-2021-017"
+   },
+   "guiaRecibida": false,
+   "fechaIngreso": "2026-09-08",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2026-08-15",
+    "asiento": "2026-09-08",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuhsc6ge000kslvzre78qyb3",
+   "codigo": "70",
+   "especie": "Mashonaste",
+   "m3": 4.681,
+   "gtfNumber": "019-0000001",
+   "fila": {
+    "id": "cmuhsc6cz000jslvzlondlgk8",
+    "especie": "Mashonaste",
+    "m3": 12.374,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": null,
+    "codigo": "19-SEC/PER-FMC-2024-008"
+   },
+   "guiaRecibida": false,
+   "fechaIngreso": "2026-09-26",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2024-11-18",
+    "asiento": "2026-09-26",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuhsc6ge000lslvzgk5ina25",
+   "codigo": "71",
+   "especie": "Mashonaste",
+   "m3": 3.409,
+   "gtfNumber": "019-0000001",
+   "fila": {
+    "id": "cmuhsc6cz000jslvzlondlgk8",
+    "especie": "Mashonaste",
+    "m3": 12.374,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": null,
+    "codigo": "19-SEC/PER-FMC-2024-008"
+   },
+   "guiaRecibida": false,
+   "fechaIngreso": "2026-09-26",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2024-11-18",
+    "asiento": "2026-09-26",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuhsc6ge000mslvzhv3y1l7n",
+   "codigo": "72",
+   "especie": "Mashonaste",
+   "m3": 4.284,
+   "gtfNumber": "019-0000001",
+   "fila": {
+    "id": "cmuhsc6cz000jslvzlondlgk8",
+    "especie": "Mashonaste",
+    "m3": 12.374,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": null,
+    "codigo": "19-SEC/PER-FMC-2024-008"
+   },
+   "guiaRecibida": false,
+   "fechaIngreso": "2026-09-26",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2024-11-18",
+    "asiento": "2026-09-26",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuhsc6n2000oslvzs8xwp4xb",
+   "codigo": "66",
+   "especie": "Copaiba",
+   "m3": 1.946,
+   "gtfNumber": "019-0000001",
+   "fila": {
+    "id": "cmuhsc6jx000nslvzfsfjp9i9",
+    "especie": "Copaiba",
+    "m3": 10.797,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": null,
+    "codigo": "19-SEC/PER-FMC-2024-008"
+   },
+   "guiaRecibida": false,
+   "fechaIngreso": "2026-09-26",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2024-11-18",
+    "asiento": "2026-09-26",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuhsc6n2000pslvzwwrtqzay",
+   "codigo": "67",
+   "especie": "Copaiba",
+   "m3": 3.508,
+   "gtfNumber": "019-0000001",
+   "fila": {
+    "id": "cmuhsc6jx000nslvzfsfjp9i9",
+    "especie": "Copaiba",
+    "m3": 10.797,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": null,
+    "codigo": "19-SEC/PER-FMC-2024-008"
+   },
+   "guiaRecibida": false,
+   "fechaIngreso": "2026-09-26",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2024-11-18",
+    "asiento": "2026-09-26",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuhsc6n2000qslvzs5pzjjc2",
+   "codigo": "68",
+   "especie": "Copaiba",
+   "m3": 3.247,
+   "gtfNumber": "019-0000001",
+   "fila": {
+    "id": "cmuhsc6jx000nslvzfsfjp9i9",
+    "especie": "Copaiba",
+    "m3": 10.797,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": null,
+    "codigo": "19-SEC/PER-FMC-2024-008"
+   },
+   "guiaRecibida": false,
+   "fechaIngreso": "2026-09-26",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2024-11-18",
+    "asiento": "2026-09-26",
+    "sigueALaGuia": true
+   }
+  },
+  {
+   "id": "cmuhsc6n2000rslvzw39xo0j5",
+   "codigo": "69",
+   "especie": "Copaiba",
+   "m3": 2.096,
+   "gtfNumber": "019-0000001",
+   "fila": {
+    "id": "cmuhsc6jx000nslvzfsfjp9i9",
+    "especie": "Copaiba",
+    "m3": 10.797,
+    "consumidoM3": 0
+   },
+   "permiso": {
+    "contratoId": null,
+    "codigo": "19-SEC/PER-FMC-2024-008"
+   },
+   "guiaRecibida": false,
+   "fechaIngreso": "2026-09-26",
+   "fuera": null,
+   "lote": null,
+   "llegada": {
+    "guia": "2024-11-18",
+    "asiento": "2026-09-26",
+    "sigueALaGuia": true
+   }
+  }
+ ],
+ "contexto": {
+  "tomadas": [
+   {
+    "id": "cmuerz93h008re1vzv03s8w56",
+    "especie": "Panguana",
+    "m3": 2.197,
+    "permiso": {
+     "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+     "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+    },
+    "corrida": {
+     "id": "cmuk824z6002xzhvzq5ymg0g9",
+     "lineNo": 62,
+     "fecha": "2026-09-27",
+     "m3Producido": null
+    }
+   },
+   {
+    "id": "cmuerz93h008qe1vz4zhe5sz0",
+    "especie": "Panguana",
+    "m3": 3.225,
+    "permiso": {
+     "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+     "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+    },
+    "corrida": {
+     "id": "cmuk824z6002xzhvzq5ymg0g9",
+     "lineNo": 62,
+     "fecha": "2026-09-27",
+     "m3Producido": null
+    }
+   },
+   {
+    "id": "cmuerz7j8008ae1vzogp74kic",
+    "especie": "Cachimbo",
+    "m3": 2.14,
+    "permiso": {
+     "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+     "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+    },
+    "corrida": {
+     "id": "cmuk4liss001uzhvzfo1jczkd",
+     "lineNo": 61,
+     "fecha": "2026-09-27",
+     "m3Producido": 13.254
+    }
+   },
+   {
+    "id": "cmuerz7j8008be1vzyp6cwg0m",
+    "especie": "Cachimbo",
+    "m3": 1.268,
+    "permiso": {
+     "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+     "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+    },
+    "corrida": {
+     "id": "cmuk4liss001uzhvzfo1jczkd",
+     "lineNo": 61,
+     "fecha": "2026-09-27",
+     "m3Producido": 13.254
+    }
+   },
+   {
+    "id": "cmuerz7j80089e1vz1an7nwc7",
+    "especie": "Cachimbo",
+    "m3": 2.8,
+    "permiso": {
+     "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+     "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+    },
+    "corrida": {
+     "id": "cmuk4liss001uzhvzfo1jczkd",
+     "lineNo": 61,
+     "fecha": "2026-09-27",
+     "m3Producido": 13.254
+    }
+   },
+   {
+    "id": "cmuerz7j80088e1vzswc0jdz0",
+    "especie": "Cachimbo",
+    "m3": 4.469,
+    "permiso": {
+     "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+     "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+    },
+    "corrida": {
+     "id": "cmuk4liss001uzhvzfo1jczkd",
+     "lineNo": 61,
+     "fecha": "2026-09-27",
+     "m3Producido": 13.254
+    }
+   },
+   {
+    "id": "cmuerz6s00085e1vzwgjn48it",
+    "especie": "Panguana",
+    "m3": 2.531,
+    "permiso": {
+     "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+     "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+    },
+    "corrida": {
+     "id": "cmuk824z6002xzhvzq5ymg0g9",
+     "lineNo": 62,
+     "fecha": "2026-09-27",
+     "m3Producido": null
+    }
+   },
+   {
+    "id": "cmuerz6s00082e1vzs5l1dv29",
+    "especie": "Panguana",
+    "m3": 2.644,
+    "permiso": {
+     "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+     "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+    },
+    "corrida": {
+     "id": "cmuk824z6002xzhvzq5ymg0g9",
+     "lineNo": 62,
+     "fecha": "2026-09-27",
+     "m3Producido": null
+    }
+   },
+   {
+    "id": "cmuerz6s00081e1vzjkh2hsqw",
+    "especie": "Panguana",
+    "m3": 3.414,
+    "permiso": {
+     "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+     "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+    },
+    "corrida": {
+     "id": "cmuk824z6002xzhvzq5ymg0g9",
+     "lineNo": 62,
+     "fecha": "2026-09-27",
+     "m3Producido": null
+    }
+   },
+   {
+    "id": "cmuerz6s00084e1vz29g9ptm0",
+    "especie": "Panguana",
+    "m3": 2.056,
+    "permiso": {
+     "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+     "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+    },
+    "corrida": {
+     "id": "cmuk824z6002xzhvzq5ymg0g9",
+     "lineNo": 62,
+     "fecha": "2026-09-27",
+     "m3Producido": null
+    }
+   },
+   {
+    "id": "cmuerz6s00083e1vzcgj60von",
+    "especie": "Panguana",
+    "m3": 4.651,
+    "permiso": {
+     "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+     "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+    },
+    "corrida": {
+     "id": "cmuk824z6002xzhvzq5ymg0g9",
+     "lineNo": 62,
+     "fecha": "2026-09-27",
+     "m3Producido": null
+    }
+   },
+   {
+    "id": "cmuerz60r007ve1vzi4wsjtyj",
+    "especie": "Cachimbo",
+    "m3": 2.149,
+    "permiso": {
+     "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+     "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+    },
+    "corrida": {
+     "id": "cmuk4liss001uzhvzfo1jczkd",
+     "lineNo": 61,
+     "fecha": "2026-09-27",
+     "m3Producido": 13.254
+    }
+   },
+   {
+    "id": "cmuerz4i5007ke1vze9jzi5gu",
+    "especie": "Cachimbo",
+    "m3": 1.917,
+    "permiso": {
+     "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+     "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+    },
+    "corrida": {
+     "id": "cmuk4liss001uzhvzfo1jczkd",
+     "lineNo": 61,
+     "fecha": "2026-09-27",
+     "m3Producido": 13.254
+    }
+   },
+   {
+    "id": "cmuerz4i4007je1vzqvqk3phu",
+    "especie": "Cachimbo",
+    "m3": 2.394,
+    "permiso": {
+     "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+     "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+    },
+    "corrida": {
+     "id": "cmuk4liss001uzhvzfo1jczkd",
+     "lineNo": 61,
+     "fecha": "2026-09-27",
+     "m3Producido": 13.254
+    }
+   },
+   {
+    "id": "cmuerz3qa007fe1vzkjgn3mrh",
+    "especie": "Cachimbo",
+    "m3": 1.44,
+    "permiso": {
+     "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+     "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+    },
+    "corrida": {
+     "id": "cmuk4liss001uzhvzfo1jczkd",
+     "lineNo": 61,
+     "fecha": "2026-09-27",
+     "m3Producido": 13.254
+    }
+   },
+   {
+    "id": "cmuerz3qb007he1vz6lyogjpy",
+    "especie": "Cachimbo",
+    "m3": 3.453,
+    "permiso": {
+     "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+     "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+    },
+    "corrida": {
+     "id": "cmuk4liss001uzhvzfo1jczkd",
+     "lineNo": 61,
+     "fecha": "2026-09-27",
+     "m3Producido": 13.254
+    }
+   },
+   {
+    "id": "cmuerz3qa007de1vz5cartvfr",
+    "especie": "Cachimbo",
+    "m3": 1.956,
+    "permiso": {
+     "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+     "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+    },
+    "corrida": {
+     "id": "cmuk4liss001uzhvzfo1jczkd",
+     "lineNo": 61,
+     "fecha": "2026-09-27",
+     "m3Producido": 13.254
+    }
+   },
+   {
+    "id": "cmuerz3qa007ce1vzpizec8g9",
+    "especie": "Cachimbo",
+    "m3": 2.153,
+    "permiso": {
+     "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+     "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+    },
+    "corrida": {
+     "id": "cmuk4liss001uzhvzfo1jczkd",
+     "lineNo": 61,
+     "fecha": "2026-09-27",
+     "m3Producido": 13.254
+    }
+   },
+   {
+    "id": "cmuerz3qa007be1vz0fmihzbs",
+    "especie": "Cachimbo",
+    "m3": 2.808,
+    "permiso": {
+     "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+     "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+    },
+    "corrida": {
+     "id": "cmuk4liss001uzhvzfo1jczkd",
+     "lineNo": 61,
+     "fecha": "2026-09-27",
+     "m3Producido": 13.254
+    }
+   }
+  ],
+  "guias": [
+   {
+    "id": "cmuhsc6jx000nslvzfsfjp9i9",
+    "gtfNumber": "019-0000001",
+    "especie": "Copaiba",
+    "m3": 10.797,
+    "recibida": false,
+    "trozas": 4,
+    "permiso": {
+     "contratoId": null,
+     "codigo": "19-SEC/PER-FMC-2024-008"
+    }
+   },
+   {
+    "id": "cmuhsc6cz000jslvzlondlgk8",
+    "gtfNumber": "019-0000001",
+    "especie": "Mashonaste",
+    "m3": 12.374,
+    "recibida": false,
+    "trozas": 3,
+    "permiso": {
+     "contratoId": null,
+     "codigo": "19-SEC/PER-FMC-2024-008"
+    }
+   },
+   {
+    "id": "cmtstyfyt003zaavzxjgc73fz",
+    "gtfNumber": "010-001-0000009",
+    "especie": "Yacuchapana",
+    "m3": 8.309,
+    "recibida": true,
+    "trozas": 3,
+    "permiso": {
+     "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+     "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+    }
+   },
+   {
+    "id": "cmtstzaqo004naavzx8x8d531",
+    "gtfNumber": "010-001-0000007",
+    "especie": "Cumala",
+    "m3": 1.433,
+    "recibida": true,
+    "trozas": 1,
+    "permiso": {
+     "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+     "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+    }
+   },
+   {
+    "id": "cmtstyrgj004aaavzfk59tjwi",
+    "gtfNumber": "010-001-0000010",
+    "especie": "Huayruro",
+    "m3": 4.224,
+    "recibida": true,
+    "trozas": 1,
+    "permiso": {
+     "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+     "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+    }
+   },
+   {
+    "id": "cmtstzup9004xaavzhntbhiig",
+    "gtfNumber": "010-001-0000006",
+    "especie": "Cumala",
+    "m3": 5.422,
+    "recibida": true,
+    "trozas": 2,
+    "permiso": {
+     "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+     "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+    }
+   },
+   {
+    "id": "cmtstxmtk003haavzvcizgjuq",
+    "gtfNumber": "010-001-0000014",
+    "especie": "Panguana",
+    "m3": 5.422,
+    "recibida": true,
+    "trozas": 2,
+    "permiso": {
+     "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+     "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+    }
+   },
+   {
+    "id": "cmtstz2u4004jaavzak2vrfij",
+    "gtfNumber": "010-001-0000008",
+    "especie": "Azucar huayo",
+    "m3": 6.049,
+    "recibida": true,
+    "trozas": 2,
+    "permiso": {
+     "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+     "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+    }
+   },
+   {
+    "id": "cmtsu06eh0055aavz25bu75si",
+    "gtfNumber": "010-001-0000005",
+    "especie": "Cachimbo",
+    "m3": 11.81,
+    "recibida": true,
+    "trozas": 5,
+    "permiso": {
+     "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+     "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+    }
+   },
+   {
+    "id": "cmtstxxmg003laavza8kuypww",
+    "gtfNumber": "010-001-0000013",
+    "especie": "Mashonaste",
+    "m3": 9.42,
+    "recibida": true,
+    "trozas": 3,
+    "permiso": {
+     "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+     "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+    }
+   },
+   {
+    "id": "cmtsu06sr005daavz4ahbktuk",
+    "gtfNumber": "010-001-0000005",
+    "especie": "Copal",
+    "m3": 1.752,
+    "recibida": true,
+    "trozas": 1,
+    "permiso": {
+     "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+     "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+    }
+   },
+   {
+    "id": "cmtstzv390052aavzbl4m8a32",
+    "gtfNumber": "010-001-0000006",
+    "especie": "Copal",
+    "m3": 2.128,
+    "recibida": true,
+    "trozas": 1,
+    "permiso": {
+     "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+     "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+    }
+   },
+   {
+    "id": "cmtstzui9004uaavz15qkr380",
+    "gtfNumber": "010-001-0000006",
+    "especie": "Cachimbo",
+    "m3": 4.311,
+    "recibida": true,
+    "trozas": 2,
+    "permiso": {
+     "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+     "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+    }
+   },
+   {
+    "id": "cmtstyfq8003uaavz98q9v7dh",
+    "gtfNumber": "010-001-0000009",
+    "especie": "Cachimbo",
+    "m3": 10.677,
+    "recibida": true,
+    "trozas": 4,
+    "permiso": {
+     "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+     "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+    }
+   },
+   {
+    "id": "cmtstxmk6003daavz0or7h5ty",
+    "gtfNumber": "010-001-0000014",
+    "especie": "Ana Caspi",
+    "m3": 8.384,
+    "recibida": true,
+    "trozas": 3,
+    "permiso": {
+     "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+     "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+    }
+   },
+   {
+    "id": "cmtstz2nc004haavzbdlc2qbc",
+    "gtfNumber": "010-001-0000008",
+    "especie": "Pashaco",
+    "m3": 3.139,
+    "recibida": true,
+    "trozas": 1,
+    "permiso": {
+     "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+     "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+    }
+   },
+   {
+    "id": "cmtstzaxp004paavz08rfgm97",
+    "gtfNumber": "010-001-0000007",
+    "especie": "Pashaco",
+    "m3": 16.404,
+    "recibida": true,
+    "trozas": 3,
+    "permiso": {
+     "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+     "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+    }
+   },
+   {
+    "id": "cmtstz2gl004faavzmrbijdye",
+    "gtfNumber": "010-001-0000008",
+    "especie": "Huayruro",
+    "m3": 2.508,
+    "recibida": true,
+    "trozas": 1,
+    "permiso": {
+     "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+     "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+    }
+   },
+   {
+    "id": "cmtstz29p004daavzl45z7hbk",
+    "gtfNumber": "010-001-0000008",
+    "especie": "Cachimbo",
+    "m3": 2.149,
+    "recibida": true,
+    "trozas": 1,
+    "permiso": {
+     "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+     "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+    }
+   },
+   {
+    "id": "cmtsu06lt005baavzndeh4f83",
+    "gtfNumber": "010-001-0000005",
+    "especie": "Shimbillo",
+    "m3": 2.991,
+    "recibida": true,
+    "trozas": 1,
+    "permiso": {
+     "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+     "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+    }
+   },
+   {
+    "id": "cmtstxxuf003paavzrtdp5omn",
+    "gtfNumber": "010-001-0000013",
+    "especie": "Copal",
+    "m3": 9.657,
+    "recibida": true,
+    "trozas": 3,
+    "permiso": {
+     "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+     "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+    }
+   },
+   {
+    "id": "cmtsu0j9a005gaavzjux5ske0",
+    "gtfNumber": "019-001-0000004",
+    "especie": "Tornillo",
+    "m3": 20.061,
+    "recibida": false,
+    "trozas": 31,
+    "permiso": {
+     "contratoId": "ctr_bb95cdc7f858660a665ae8",
+     "codigo": "19-SEC/REG-PLT-2021-017"
+    }
+   },
+   {
+    "id": "cmtstyr9m0044aavzcfe7n38m",
+    "gtfNumber": "010-001-0000010",
+    "especie": "Panguana",
+    "m3": 15.296,
+    "recibida": true,
+    "trozas": 5,
+    "permiso": {
+     "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+     "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+    }
+   },
+   {
+    "id": "cmtstux6s001yaavzvlkno39k",
+    "gtfNumber": "019-001-0000013",
+    "especie": "Tornillo",
+    "m3": 21.311,
+    "recibida": false,
+    "trozas": 0,
+    "permiso": {
+     "contratoId": "ctr_31ee4526a2f2cd8bdc2b27",
+     "codigo": "19-SEC/REG-PLT-2018-020"
+    }
+   },
+   {
+    "id": "cmtstzuwa0050aavzpzgfqtvy",
+    "gtfNumber": "010-001-0000006",
+    "especie": "Shimbillo",
+    "m3": 4.102,
+    "recibida": true,
+    "trozas": 1,
+    "permiso": {
+     "contratoId": "ctr_19c2c2ce8d35e7b4e21dc4",
+     "codigo": "10-HUA-PUE/PER-FMP-2026-007"
+    }
+   }
+  ],
+  "hoy": "2026-09-28"
+ }
+}

@@ -98,12 +98,12 @@ function RowLabel({
           strokeWidth={2.25}
           style={{ color: "var(--color-primary, #00A0A0)" }}
         />
-        <p
+        <div
           className="text-xs font-extrabold uppercase tracking-wider"
           style={{ color: "var(--color-primary-dark, #009690)" }}
         >
           {children}
-        </p>
+        </div>
       </div>
       {action}
     </div>

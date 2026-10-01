@@ -12,6 +12,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // ─── Mocks comunes ────────────────────────────────────────────────────────────
 
 const mockResolveIdByUsername = vi.fn();
+const mockGetUsernameById = vi.fn();
 const mockTurnoFindUnique = vi.fn();
 const mockNoteFindMany = vi.fn();
 const mockSaleAggregate = vi.fn();
@@ -33,6 +34,19 @@ vi.mock("@/lib/prisma", () => ({
 vi.mock("@/lib/db/admin-users.db", () => ({
   AdminUsersDB: {
     resolveIdByUsername: mockResolveIdByUsername,
+    // Fix 2026-07-08: cerrar/summary ahora resuelven el username del cajero
+    // (Sale.cashierId guarda username, no adminUserId) y filtran por ambos.
+    getUsernameById: mockGetUsernameById,
+  },
+}));
+
+// El turno de los mocks no trae `cashRegisterId`, así que la rama de cierre de
+// caja (CashRegistersDB) no se ejecuta; con stubear el módulo alcanza para que
+// el import no traiga la implementación real.
+vi.mock("@/lib/jsondb", () => ({
+  CashRegistersDB: {
+    getById: vi.fn().mockResolvedValue(null),
+    close: vi.fn().mockResolvedValue(null),
   },
 }));
 
@@ -66,6 +80,10 @@ vi.mock("@/lib/decimal-utils", () => ({
 describe("B-P0-1 · cajero puede cerrar SU propio turno (no 403 falso)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Default: el username del cajero del turno. El valor exacto no afecta las
+    // aserciones (sale.aggregate/findMany están mockeados), solo evita que la
+    // resolución username→ventas rompa con un mock sin implementación.
+    mockGetUsernameById.mockResolvedValue("juan");
   });
 
   it("cajero con id resuelto que coincide con turno.adminUserId → permite cerrar", async () => {

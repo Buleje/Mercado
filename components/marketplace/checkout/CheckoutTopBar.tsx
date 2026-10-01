@@ -72,7 +72,7 @@ export default function CheckoutTopBar({ current }: { current: CheckoutStep }) {
             <CheckoutStepper current={current} />
           </div>
 
-          <div className="hidden md:inline-flex items-center gap-2 rounded-full bg-[var(--accent-soft)] px-3.5 py-1.5 text-[length:var(--ts-xs)] font-semibold text-[var(--accent)] shrink-0">
+          <div className="hidden md:inline-flex items-center gap-2 rounded-full bg-primary/10 px-3.5 py-1.5 text-[length:var(--ts-xs)] font-semibold text-[var(--accent)] shrink-0">
             <ShieldCheck className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
             Pago seguro
             <span aria-hidden className="h-3 w-px bg-[var(--accent)]/30" />

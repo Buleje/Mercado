@@ -80,7 +80,7 @@ const ACCENT_COLORS: Array<{ id: AccentColor; label: string; hex: string; ring: 
   { id: "emerald", label: "Verde",   hex: "#10B981", ring: "ring-emerald-400" },
   { id: "sky",     label: "Cielo",   hex: "#0EA5E9", ring: "ring-sky-400" },
   { id: "violet",  label: "Violeta", hex: "#8B5CF6", ring: "ring-violet-400" },
-  { id: "amber",   label: "Ámbar",   hex: "#F59E0B", ring: "ring-amber-400" },
+  { id: "amber",   label: "Ámbar",   hex: "#ff6b5b", ring: "ring-amber-400" },
   { id: "rose",    label: "Rosa",    hex: "#F43F5E", ring: "ring-rose-400" },
 ];
 
@@ -188,9 +188,9 @@ function SortableCategoryItem({
           type="button"
           onClick={onToggleVisible}
           className={cn(
-            "h-9 w-9 rounded-md flex items-center justify-center shrink-0 transition-all",
+            "h-9 w-9 rounded-lg flex items-center justify-center shrink-0 transition-all",
             isVisible
-              ? "bg-primary/20 text-primary hover:bg-primary/30"
+              ? "bg-primary/20 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/30"
               : "bg-zinc-800 text-zinc-500 hover:bg-zinc-700 hover:text-zinc-300",
           )}
           title={isVisible ? "Ocultar módulo" : "Mostrar módulo"}
@@ -215,7 +215,7 @@ function SortableCategoryItem({
         {hasMultipleTabs && (
           <button
             onClick={onToggleExpand}
-            className="p-2 rounded-md hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200 transition-colors"
+            className="p-2 rounded-xl hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200 transition-colors"
             aria-label="Expandir sub-módulos"
           >
             <ChevronDown
@@ -230,7 +230,7 @@ function SortableCategoryItem({
         <button
           {...attributes}
           {...listeners}
-          className="p-2 rounded-md cursor-grab active:cursor-grabbing hover:bg-zinc-700 text-zinc-500 hover:text-zinc-300 transition-colors touch-none"
+          className="p-2 rounded-xl cursor-grab active:cursor-grabbing hover:bg-zinc-700 text-zinc-500 hover:text-zinc-300 transition-colors touch-none"
           aria-label="Arrastrar para reordenar"
         >
           <GripVertical className="h-4 w-4" />
@@ -282,7 +282,7 @@ function ThemePreview({
       activeBg: "bg-white/10",
     },
     light: {
-      bg: "bg-white dark:bg-[var(--color-card)]",
+      bg: "bg-[var(--surface-raised)] ",
       text: "text-zinc-500",
       border: "border-zinc-200",
       activeBg: "bg-zinc-100",
@@ -327,10 +327,10 @@ function ThemePreview({
 function SectionHeader({ icon: Icon, title, hint }: { icon: React.ElementType; title: string; hint?: string }) {
   return (
     <div className="mb-2">
-      <h3 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-zinc-400">
+      <CardTitle as="h3" className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-zinc-400">
         <Icon className="h-3 w-3 text-primary" strokeWidth={2.5} />
         {title}
-      </h3>
+      </CardTitle>
       {hint && <p className="text-xs text-zinc-500 mt-0.5 leading-relaxed">{hint}</p>}
     </div>
   );
@@ -357,7 +357,7 @@ function Switch({ checked, onChange, label, description, id }: { checked: boolea
       >
         <span
           className={cn(
-            "absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white dark:bg-[var(--color-card)] transition-transform",
+            "absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-[var(--surface-raised)] transition-transform",
             checked && "translate-x-4",
           )}
         />
@@ -620,7 +620,7 @@ export default function SidebarConfigurator({
           </div>
           <button
             onClick={onCancel}
-            className="h-9 w-9 rounded-md flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors shrink-0"
+            className="h-9 w-9 rounded-lg flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors shrink-0"
             title="Cerrar"
             aria-label="Cerrar"
           >
@@ -636,7 +636,7 @@ export default function SidebarConfigurator({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Buscar módulo..."
-            className="w-full bg-zinc-800 text-zinc-100 placeholder-zinc-500 text-sm rounded-md pl-9 pr-8 py-2 border border-zinc-700 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40"
+            className="w-full bg-zinc-800 text-zinc-100 placeholder-zinc-500 text-sm rounded-xl pl-9 pr-8 h-10 border border-zinc-700 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40"
           />
           {query && (
             <button
@@ -653,14 +653,14 @@ export default function SidebarConfigurator({
         <div className="flex items-center gap-2 mt-3">
           <button
             onClick={handleShowAll}
-            className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-zinc-200 bg-zinc-800 hover:bg-zinc-700 rounded-md py-2 transition-colors"
+            className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-zinc-200 bg-zinc-800 hover:bg-zinc-700 rounded-xl py-2 transition-colors"
           >
             <Eye className="h-3.5 w-3.5" />
             Mostrar todo
           </button>
           <button
             onClick={handleReset}
-            className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-zinc-200 bg-zinc-800 hover:bg-zinc-700 rounded-md py-2 transition-colors"
+            className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-zinc-200 bg-zinc-800 hover:bg-zinc-700 rounded-xl py-2 transition-colors"
             title="Restablecer al diseño por defecto"
           >
             <RotateCcw className="h-3.5 w-3.5" />
@@ -687,7 +687,7 @@ export default function SidebarConfigurator({
                   key={p.id}
                   onClick={() => applyPreset(p)}
                   className={cn(
-                    "rounded-md border px-3 py-2.5 text-left transition-all",
+                    "rounded-xl border px-3 py-2.5 text-left transition-all",
                     selected
                       ? "border-primary/60 bg-primary/10"
                       : "border-zinc-700 hover:border-zinc-500 bg-zinc-800/40",
@@ -757,7 +757,7 @@ export default function SidebarConfigurator({
                                 key={tabId}
                                 onClick={() => toggleSubTabVisible(tabId as Tab)}
                                 className={cn(
-                                  "w-full flex items-center gap-2.5 py-1.5 px-2 rounded-md transition-all text-left",
+                                  "w-full flex items-center gap-2.5 py-1.5 px-2 rounded-lg transition-all text-left",
                                   isSubVisible
                                     ? "text-zinc-100 hover:bg-zinc-800"
                                     : "text-zinc-500 hover:bg-zinc-800/60",
@@ -767,7 +767,7 @@ export default function SidebarConfigurator({
                                   className={cn(
                                     "h-4 w-4 rounded flex items-center justify-center shrink-0 border",
                                     isSubVisible
-                                      ? "bg-primary/25 border-primary/50 text-primary"
+                                      ? "bg-primary/25 border-primary/50 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                                       : "bg-zinc-800 border-zinc-600 text-transparent",
                                   )}
                                 >
@@ -800,7 +800,7 @@ export default function SidebarConfigurator({
                   key={t}
                   onClick={() => setDraftTheme(t)}
                   className={cn(
-                    "rounded-md border p-2 text-left transition-all",
+                    "rounded-xl border p-2 text-left transition-all",
                     themeNormalized === t
                       ? "border-primary/60 bg-primary/10"
                       : "border-zinc-700 hover:border-zinc-500 bg-zinc-800/40",
@@ -856,7 +856,7 @@ export default function SidebarConfigurator({
                   key={s}
                   onClick={() => setDraftIconStyle(s)}
                   className={cn(
-                    "rounded-md border px-3 py-2.5 text-left transition-all",
+                    "rounded-xl border px-3 py-2.5 text-left transition-all",
                     draftIconStyle === s
                       ? "border-primary/60 bg-primary/10 text-zinc-100"
                       : "border-zinc-700 hover:border-zinc-500 bg-zinc-800/40 text-zinc-300",
@@ -882,7 +882,7 @@ export default function SidebarConfigurator({
                   key={d}
                   onClick={() => setDraftDensity(d)}
                   className={cn(
-                    "rounded-md border py-2 text-center text-xs font-semibold transition-all",
+                    "rounded-xl border py-2 text-center text-xs font-semibold transition-all",
                     draftDensity === d
                       ? "border-primary/60 bg-primary/10 text-zinc-100"
                       : "border-zinc-700 hover:border-zinc-500 bg-zinc-800/40 text-zinc-300",
@@ -922,7 +922,7 @@ export default function SidebarConfigurator({
           onClick={handleSave}
           disabled={!isDirty}
           className={cn(
-            "rounded-lg py-2.5 w-full font-semibold text-sm transition-all",
+            "rounded-xl min-h-11 w-full font-semibold text-sm transition-all",
             isDirty
               ? "bg-[var(--accent-600,var(--accent))] text-white hover:bg-[var(--accent-dark)] shadow-[0_4px_14px_color-mix(in_oklab,var(--accent)_50%,transparent)]"
               : "bg-zinc-800 text-zinc-500 cursor-not-allowed",
@@ -932,7 +932,7 @@ export default function SidebarConfigurator({
         </button>
         <button
           onClick={onCancel}
-          className="border border-zinc-700 text-zinc-300 hover:bg-zinc-800 rounded-lg py-2.5 w-full text-sm font-medium transition-colors"
+          className="border border-zinc-700 text-zinc-300 hover:bg-zinc-800 rounded-xl py-2.5 w-full text-sm font-medium transition-colors"
         >
           Cancelar
         </button>

@@ -26,13 +26,9 @@
  *  - GET /api/superadmin/security?days=N
  */
 
-import {
-  useEffect,
-  useState,
-  useCallback,
-  useMemo,
-  useRef,
-} from "react";
+import { SAMetricCard } from "@/components/superadmin/_shared/SAMetricCard";
+import { useVisiblePolling } from "@/components/superadmin/_shared/useVisiblePolling";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import {
   ShieldAlert,
   ShieldCheck,
@@ -100,20 +96,20 @@ const SEVERITY_META: Record<
   critical: {
     icon: ShieldAlert,
     label: "Crítica",
-    cls: "border-rose-300/60 bg-rose-50 text-rose-700 dark:border-rose-700/40 dark:bg-rose-500/15 dark:text-rose-300",
+    cls: "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)] dark:border-[var(--data-error-500)] dark:bg-rose-500/15 dark:text-[var(--data-error-500)]",
     dot: "bg-rose-500",
   },
   high: {
     icon: ShieldAlert,
     label: "Alta",
-    cls: "border-rose-300/60 bg-rose-50 text-rose-700 dark:border-rose-700/40 dark:bg-rose-500/15 dark:text-rose-300",
+    cls: "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)] dark:border-[var(--data-error-500)] dark:bg-rose-500/15 dark:text-[var(--data-error-500)]",
     dot: "bg-rose-500",
   },
   medium: {
     icon: AlertTriangle,
     label: "Media",
-    cls: "border-amber-300/60 bg-amber-50 text-amber-700 dark:border-amber-700/40 dark:bg-amber-500/15 dark:text-amber-300",
-    dot: "bg-amber-500",
+    cls: "border-teal-300/60 bg-teal-50 text-teal-700 dark:border-teal-700/40 dark:bg-teal-500/15 dark:text-teal-300",
+    dot: "bg-teal-500",
   },
   low: {
     icon: Info,
@@ -166,9 +162,7 @@ function csvCell(v: string | number | null | undefined): string {
 function exportEventsCSV(events: SecurityEvent[]) {
   const headers = ["ID", "Action", "Detail", "IP", "CreatedAt"];
   const data = events.map((e) => [e.id, e.action, e.detail, e.ipAddress ?? "", e.createdAt]);
-  const csv =
-    "﻿" +
-    [headers, ...data].map((r) => r.map(csvCell).join(",")).join("\r\n");
+  const csv = "﻿" + [headers, ...data].map((r) => r.map(csvCell).join(",")).join("\r\n");
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -185,9 +179,7 @@ function computeHealth(p: PostureResponse["data"]): number {
   if (p.loginsFailed24h > 10) score -= Math.min((p.loginsFailed24h - 10) * 2, 20);
   if (p.ipsBlocked > 0) score -= Math.min(p.ipsBlocked * 3, 15);
   const totpPct =
-    p.totpCoverage.total === 0
-      ? 100
-      : (p.totpCoverage.enrolled / p.totpCoverage.total) * 100;
+    p.totpCoverage.total === 0 ? 100 : (p.totpCoverage.enrolled / p.totpCoverage.total) * 100;
   if (totpPct < 100) score -= Math.round((100 - totpPct) * 0.35);
   return Math.max(0, Math.min(100, score));
 }
@@ -200,22 +192,36 @@ function HealthRing({ score }: { score: number }) {
   const offset = circumference - (score / 100) * circumference;
   const tone =
     score >= 90
-      ? { stroke: "stroke-emerald-500", text: "text-emerald-600 dark:text-emerald-400" }
+      ? { stroke: "stroke-[var(--data-success-500)]", text: "text-[var(--data-success-600)] dark:text-[var(--data-success-500)]" }
       : score >= 70
-        ? { stroke: "stroke-amber-500", text: "text-amber-600 dark:text-amber-400" }
-        : { stroke: "stroke-rose-500", text: "text-rose-600 dark:text-rose-400" };
+        ? { stroke: "stroke-teal-500", text: "text-teal-600 dark:text-teal-400" }
+        : { stroke: "stroke-rose-500", text: "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" };
   return (
     <div className="relative inline-flex items-center justify-center shrink-0">
       <svg width="88" height="88" viewBox="0 0 88 88" className="-rotate-90" aria-hidden>
-        <circle cx="44" cy="44" r={radius} fill="none" strokeWidth="8"
-          className="stroke-[var(--rule-soft)]" />
-        <circle cx="44" cy="44" r={radius} fill="none" strokeWidth="8"
-          strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={offset}
-          className={cn(tone.stroke, "transition-all duration-700")} />
+        <circle
+          cx="44"
+          cy="44"
+          r={radius}
+          fill="none"
+          strokeWidth="8"
+          className="stroke-[var(--rule-soft)]"
+        />
+        <circle
+          cx="44"
+          cy="44"
+          r={radius}
+          fill="none"
+          strokeWidth="8"
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          className={cn(tone.stroke, "transition-all duration-700")}
+        />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className={cn("text-xl font-extrabold tabular-nums", tone.text)}>{score}</span>
-        <span className="text-[9px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+        <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
           /100
         </span>
       </div>
@@ -243,16 +249,18 @@ function LoginSparkline({
   const stepX = w / Math.max(1, series.length - 1);
   const yFor = (v: number) => h - (v / max) * h;
   const path = (key: "failed" | "succeeded") =>
-    series.map((s, i) => `${i === 0 ? "M" : "L"} ${(i * stepX).toFixed(1)} ${yFor(s[key]).toFixed(1)}`).join(" ");
+    series
+      .map((s, i) => `${i === 0 ? "M" : "L"} ${(i * stepX).toFixed(1)} ${yFor(s[key]).toFixed(1)}`)
+      .join(" ");
   return (
     <div className="w-full">
       <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="w-full h-12">
-        <path d={path("succeeded")} fill="none" className="stroke-emerald-500" strokeWidth="1.5" />
+        <path d={path("succeeded")} fill="none" className="stroke-[var(--data-success-500)]" strokeWidth="1.5" />
         <path d={path("failed")} fill="none" className="stroke-rose-500" strokeWidth="1.5" />
       </svg>
       <div className="mt-1 flex items-center justify-between text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
         <span className="inline-flex items-center gap-1">
-          <span className="h-2 w-2 rounded-full bg-emerald-500" />
+          <span className="h-2 w-2 rounded-full bg-[var(--data-success-500)]" />
           Exitosos
         </span>
         <span className="inline-flex items-center gap-1">
@@ -297,7 +305,7 @@ function Toasts({ toasts }: { toasts: Toast[] }) {
           role="status"
           className={cn(
             "pointer-events-auto rounded-xl px-4 py-2.5 text-sm font-bold shadow-lg backdrop-blur",
-            t.tone === "success" && "bg-emerald-600 text-white",
+            t.tone === "success" && "bg-[var(--data-success-600)] text-white",
             t.tone === "error" && "bg-rose-600 text-white",
             t.tone === "info" && "bg-slate-800 text-white",
           )}
@@ -382,11 +390,7 @@ export function OverviewTab() {
   }, [reload]);
 
   // Auto-refresh 60s
-  useEffect(() => {
-    if (!autoRefresh) return;
-    const t = setInterval(() => void reload(true), 60_000);
-    return () => clearInterval(t);
-  }, [autoRefresh, reload]);
+  useVisiblePolling(() => void reload(true), 60_000, autoRefresh);
 
   // Custom event para botón "Actualizar" del Hero
   useEffect(() => {
@@ -438,18 +442,16 @@ export function OverviewTab() {
     return (
       <div
         role="alert"
-        className="rounded-2xl border-2 border-rose-300 bg-rose-50 dark:bg-rose-500/10 dark:border-rose-500/30 p-5"
+        className="rounded-2xl border border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-rose-500/10 dark:border-[var(--data-error-500)] p-5"
       >
-        <div className="flex items-start gap-3 text-rose-700 dark:text-rose-300">
+        <div className="flex items-start gap-3 text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
           <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
           <div>
-            <p className="font-display text-base font-extrabold">
-              No se pudo cargar el panel
-            </p>
+            <p className="font-display text-base font-extrabold">No se pudo cargar el panel</p>
             <p className="text-sm opacity-80 mt-0.5">{error}</p>
             <button
               onClick={() => reload()}
-              className="mt-3 inline-flex h-11 items-center gap-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white px-3.5 text-sm font-bold transition"
+              className="mt-3 inline-flex h-11 items-center gap-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white px-3.5 text-sm font-semibold transition"
             >
               <RefreshCw className="h-4 w-4" />
               Reintentar
@@ -475,14 +477,14 @@ export function OverviewTab() {
 
       {/* ─── Action bar ──────────────────────────────────────── */}
       <div className="flex flex-wrap items-center gap-2">
-        <div className="inline-flex h-11 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] overflow-hidden">
+        <div className="inline-flex h-11 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] overflow-hidden">
           {(["24h", "7d", "30d"] as const).map((r) => (
             <button
               key={r}
               onClick={() => setTimeRange(r)}
               aria-pressed={timeRange === r}
               className={cn(
-                "px-3 text-sm font-bold transition",
+                "px-3 text-sm font-semibold transition",
                 timeRange === r
                   ? "bg-[var(--accent)] text-white"
                   : "text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]",
@@ -496,12 +498,12 @@ export function OverviewTab() {
           onClick={() => reload()}
           disabled={refreshing}
           title="Recargar (R)"
-          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition disabled:opacity-50"
+          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition disabled:opacity-50"
         >
           <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} aria-hidden />
           Recargar
         </button>
-        <label className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] cursor-pointer hover:border-[var(--accent)]/40">
+        <label className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] cursor-pointer hover:border-[var(--accent)]/40">
           <input
             type="checkbox"
             checked={autoRefresh}
@@ -513,7 +515,7 @@ export function OverviewTab() {
         <button
           onClick={() => exportEventsCSV(filteredEvents)}
           disabled={filteredEvents.length === 0}
-          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition disabled:opacity-50"
+          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition disabled:opacity-50"
         >
           <Download className="h-4 w-4" aria-hidden />
           CSV ({filteredEvents.length})
@@ -546,9 +548,7 @@ export function OverviewTab() {
                   ? "Atención requerida"
                   : "Acción urgente"}
             </h3>
-            <p className="text-xs text-[var(--text-tertiary)] mt-1">
-              Vulns · logins · TOTP · IPs
-            </p>
+            <p className="text-xs text-[var(--text-tertiary)] mt-1">Vulns · logins · TOTP · IPs</p>
           </div>
         </div>
 
@@ -568,36 +568,40 @@ export function OverviewTab() {
 
       {/* ─── KPIs Hero (4 cards) ─────────────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard
+        <SAMetricCard
           icon={ShieldAlert}
           label="Vulnerabilidades"
           value={posture.vulnerabilities.connected ? String(posture.vulnerabilities.count) : "—"}
-          subtitle={
+          sub={
             posture.vulnerabilities.connected
               ? `Escáner: ${posture.vulnerabilities.scannerName}`
               : "Sin escáner conectado"
           }
+          colorValue
           tone={posture.vulnerabilities.count > 0 ? "warning" : "neutral"}
         />
-        <KpiCard
+        <SAMetricCard
           icon={Lock}
           label="Login fallidos 24h"
           value={String(posture.loginsFailed24h)}
-          subtitle="Ventana últimas 24 horas"
+          sub="Ventana últimas 24 horas"
+          colorValue
           tone={posture.loginsFailed24h > 10 ? "warning" : "neutral"}
         />
-        <KpiCard
+        <SAMetricCard
           icon={Ban}
           label="IPs bloqueadas"
           value={String(posture.ipsBlocked)}
-          subtitle="≥5 fails en 24h"
+          sub="≥5 fails en 24h"
+          colorValue
           tone={posture.ipsBlocked > 0 ? "danger" : "neutral"}
         />
-        <KpiCard
+        <SAMetricCard
           icon={Users}
           label="Sesiones activas"
           value={String(posture.activeSessions)}
-          subtitle="Estimadas vía audit log"
+          sub="Estimadas vía audit log"
+          colorValue
           tone="success"
         />
       </div>
@@ -624,7 +628,7 @@ export function OverviewTab() {
               value={severityFilter}
               onChange={(e) => setSeverityFilter(e.target.value as Severity | "all")}
               aria-label="Filtrar por severidad"
-              className="h-9 rounded-lg border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+              className="h-9 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
             >
               <option value="all">Todas las severidades</option>
               <option value="critical">Críticas</option>
@@ -648,7 +652,7 @@ export function OverviewTab() {
               onChange={(e) => setSearchRaw(e.target.value)}
               placeholder="Buscar action, detalle, IP…"
               aria-label="Buscar eventos"
-              className="w-full h-9 rounded-lg border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)]"
+              className="w-full h-9 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)]"
             />
           </div>
 
@@ -669,7 +673,7 @@ export function OverviewTab() {
                     setSearchRaw("");
                     setSeverityFilter("all");
                   }}
-                  className="mt-3 h-10 px-4 rounded-xl text-sm font-bold text-[var(--accent)] hover:bg-[var(--accent)]/10"
+                  className="mt-3 h-10 px-4 rounded-xl text-sm font-semibold text-[var(--accent)] hover:bg-[var(--accent)]/10"
                 >
                   Limpiar filtros
                 </button>
@@ -678,7 +682,10 @@ export function OverviewTab() {
           ) : (
             <ul className="divide-y divide-[var(--rule-soft)] max-h-[480px] overflow-y-auto">
               {filteredEvents.map((ev) => {
-                const meta = ACTION_META[ev.action] ?? { severity: "info" as Severity, title: ev.action };
+                const meta = ACTION_META[ev.action] ?? {
+                  severity: "info" as Severity,
+                  title: ev.action,
+                };
                 const sev = SEVERITY_META[meta.severity];
                 const Icon = sev.icon;
                 return (
@@ -686,14 +693,14 @@ export function OverviewTab() {
                     key={ev.id}
                     className="group flex items-start gap-3 px-5 py-3 transition hover:bg-[var(--surface-sunken)]/50"
                   >
-                    <span className={`inline-flex h-8 w-8 items-center justify-center rounded-lg border shrink-0 ${sev.cls}`}>
+                    <span
+                      className={`inline-flex h-8 w-8 items-center justify-center rounded-lg border shrink-0 ${sev.cls}`}
+                    >
                       <Icon className="h-4 w-4" strokeWidth={1.75} aria-hidden />
                     </span>
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-bold text-sm text-[var(--text-primary)]">
-                          {meta.title}
-                        </p>
+                        <p className="font-bold text-sm text-[var(--text-primary)]">{meta.title}</p>
                         <span
                           className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider ${sev.cls}`}
                         >
@@ -701,9 +708,7 @@ export function OverviewTab() {
                           {sev.label}
                         </span>
                       </div>
-                      <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
-                        {ev.detail}
-                      </p>
+                      <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{ev.detail}</p>
                       {ev.ipAddress && (
                         <span className="mt-1 inline-flex items-center gap-1 rounded-md border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-1.5 py-0.5 font-mono text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                           <Globe className="h-2.5 w-2.5" aria-hidden />
@@ -747,7 +752,11 @@ export function OverviewTab() {
               <div
                 className={cn(
                   "h-full rounded-full transition-all",
-                  totpPct === 100 ? "bg-emerald-500" : totpPct >= 50 ? "bg-amber-500" : "bg-rose-500",
+                  totpPct === 100
+                    ? "bg-[var(--data-success-500)]"
+                    : totpPct >= 50
+                      ? "bg-teal-500"
+                      : "bg-rose-500",
                 )}
                 style={{ width: `${totpPct}%` }}
                 aria-hidden
@@ -758,7 +767,7 @@ export function OverviewTab() {
             </p>
             {missingTotp.length > 0 && (
               <div className="mt-3 pt-3 border-t border-[var(--rule-soft)]">
-                <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-amber-700 dark:text-amber-300 mb-1.5">
+                <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-teal-700 dark:text-teal-300 mb-1.5">
                   Falta enrolar
                 </p>
                 <ul className="space-y-1">
@@ -823,16 +832,16 @@ export function OverviewTab() {
 
       {/* ─── IPs sospechosas ────────────────────────────────── */}
       {suspiciousIPs.length > 0 && (
-        <section className="rounded-2xl border-2 border-amber-300/60 bg-amber-50/30 overflow-hidden dark:border-amber-700/40 dark:bg-amber-950/20">
-          <header className="flex items-center gap-3 border-b border-amber-200/60 dark:border-amber-700/40 px-5 py-3.5">
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">
+        <section className="rounded-2xl border-2 border-teal-300/60 bg-teal-50/30 overflow-hidden dark:border-teal-700/40 dark:bg-teal-950/20">
+          <header className="flex items-center gap-3 border-b border-teal-200/60 dark:border-teal-700/40 px-5 py-3.5">
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300">
               <AlertTriangle className="h-4 w-4" strokeWidth={1.75} aria-hidden />
             </span>
             <div>
-              <h3 className="font-display text-base font-extrabold tracking-tight text-amber-800 dark:text-amber-200">
+              <h3 className="font-display text-base font-extrabold tracking-tight text-teal-800 dark:text-teal-200">
                 IPs sospechosas detectadas
               </h3>
-              <p className="text-xs text-amber-700/80 dark:text-amber-400/80">
+              <p className="text-xs text-teal-700/80 dark:text-teal-400/80">
                 {suspiciousIPs.length} IP{suspiciousIPs.length === 1 ? "" : "s"} con ≥3 intentos
                 fallidos en los últimos {timeRange}
               </p>
@@ -842,12 +851,12 @@ export function OverviewTab() {
             {suspiciousIPs.slice(0, 12).map((sip) => (
               <div
                 key={sip.ip}
-                className="flex items-center justify-between gap-3 rounded-xl border border-amber-300/40 bg-[var(--surface-raised)] px-3 py-2 dark:border-amber-700/30"
+                className="flex items-center justify-between gap-3 rounded-xl border border-teal-300/40 bg-[var(--surface-raised)] px-3 py-2 dark:border-teal-700/30"
               >
                 <span className="font-mono text-xs font-bold text-[var(--text-primary)] truncate">
                   {sip.ip}
                 </span>
-                <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold tabular-nums text-amber-800 dark:bg-amber-900/50 dark:text-amber-300">
+                <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-teal-100 px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold tabular-nums text-teal-800 dark:bg-teal-900/50 dark:text-teal-300">
                   <TrendingUp className="h-2.5 w-2.5" />
                   {sip.failedAttempts} fails
                 </span>
@@ -867,51 +876,6 @@ export function OverviewTab() {
 
 /* ───────────────────────── components ───────────────────────── */
 
-function KpiCard({
-  icon: Icon,
-  label,
-  value,
-  subtitle,
-  tone,
-}: {
-  icon: LucideIcon;
-  label: string;
-  value: string;
-  subtitle: string;
-  tone: "neutral" | "warning" | "danger" | "success";
-}) {
-  const iconBg =
-    tone === "warning"
-      ? "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300"
-      : tone === "danger"
-        ? "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300"
-        : tone === "success"
-          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300"
-          : "bg-[var(--accent)]/10 text-[var(--accent)]";
-  const valueTone =
-    tone === "warning"
-      ? "text-amber-700 dark:text-amber-300"
-      : tone === "danger"
-        ? "text-rose-700 dark:text-rose-300"
-        : "text-[var(--text-primary)]";
-  return (
-    <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5 transition hover:-translate-y-0.5 hover:shadow-md">
-      <div className="flex items-start justify-between gap-3">
-        <span className={`inline-flex h-10 w-10 items-center justify-center rounded-xl ${iconBg}`}>
-          <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
-        </span>
-      </div>
-      <p className="mt-4 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
-        {label}
-      </p>
-      <p className={`mt-1 font-display text-3xl font-extrabold tabular-nums tracking-tight ${valueTone}`}>
-        {value}
-      </p>
-      <p className="mt-1.5 text-xs text-[var(--text-tertiary)]">{subtitle}</p>
-    </div>
-  );
-}
-
 function PostureCheck({
   icon: Icon,
   label,
@@ -925,17 +889,17 @@ function PostureCheck({
 }) {
   const meta = {
     ok: {
-      cls: "text-emerald-700 dark:text-emerald-300",
-      dot: "bg-emerald-500",
+      cls: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
+      dot: "bg-[var(--data-success-500)]",
       txt: "Activo",
     },
     warning: {
-      cls: "text-amber-700 dark:text-amber-300",
-      dot: "bg-amber-500",
+      cls: "text-teal-700 dark:text-teal-300",
+      dot: "bg-teal-500",
       txt: "Revisar",
     },
     error: {
-      cls: "text-rose-700 dark:text-rose-300",
+      cls: "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]",
       dot: "bg-rose-500",
       txt: "Inactivo",
     },
@@ -953,7 +917,9 @@ function PostureCheck({
           <p className="text-xs text-[var(--text-tertiary)]">{detail}</p>
         </div>
       </div>
-      <span className={`inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider ${meta.cls}`}>
+      <span
+        className={`inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider ${meta.cls}`}
+      >
         <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} />
         {meta.txt}
       </span>

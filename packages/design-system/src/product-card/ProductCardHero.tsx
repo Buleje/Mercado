@@ -201,7 +201,7 @@ export function ProductCardHero({
                 "text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide",
                 variant === "oferta"
                   ? "bg-[var(--data-warning-50)] text-[var(--data-warning-700)]"
-                  : "bg-[var(--accent-soft)] text-[var(--accent)]",
+                  : "bg-primary/10 text-[var(--accent)]",
               )}
             >
               -{discount}%

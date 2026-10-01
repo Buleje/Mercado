@@ -74,8 +74,8 @@ export async function notifyQuotaAlert(opts: NotifyQuotaOptions): Promise<void> 
   // 2. WhatsApp fallback
   const staffPhone = process.env.WHATSAPP_STAFF_PHONE;
   if (!emailSent && staffPhone) {
-    sendWhatsAppQueued(staffPhone, buildQuotaAlertText(templateInput), { tenantId, context: "quota-alert-fallback" }).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
+    sendWhatsAppQueued(staffPhone, buildQuotaAlertText(templateInput), { tenantId, context: "quota-alert-fallback" }).catch((err) => {
+      logger.warn("[quota-notifier] WhatsApp fallback failed", { error: String(err), tenantId, event });
     });
   }
 
@@ -88,8 +88,8 @@ export async function notifyQuotaAlert(opts: NotifyQuotaOptions): Promise<void> 
     "system",
     undefined,
     tenantId,
-  ).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
+  ).catch((err) => {
+      logger.warn("[quota-notifier] logActivity failed", { error: String(err), tenantId, event });
     });
 
   // Marcar como enviado después de intentar

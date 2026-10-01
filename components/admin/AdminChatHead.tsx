@@ -26,13 +26,14 @@ import { X, Send, Loader2, ChevronRight, MessageCircle } from "@buleje/design-sy
 import { cn } from "@/lib/utils";
 import { tenantFetch } from "@/lib/tenant-fetch";
 import type { ChatThreadView, ChatMessageView } from "@/components/admin/ChatTab/types";
+import { formatTime } from "@/lib/format";
 
 const POLL_IDLE_MS = 20_000;
 const POLL_CHAT_MS = 5_000;
 const DISMISS_KEY = "bsm-admin-chat-heads-dismissed";
 
 function hhmm(iso: string): string {
-  return new Date(iso).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" });
+  return formatTime(iso);
 }
 
 function shortAgo(iso: string | null): string {
@@ -72,7 +73,7 @@ export default function AdminChatHead() {
       const j = (await res.json()) as { data: ChatThreadView[] };
       const list = j.data ?? [];
       setThreads(list);
-      // Badge para el ícono del nav (AdminChatNavButton escucha)
+      // Badge para el ícono del nav (AdminMensajesMenu escucha)
       const unread = list.reduce((n, t) => n + t.unreadForSeller, 0);
       window.dispatchEvent(new CustomEvent("buleje:admin-chat-unread", { detail: { unread } }));
     } catch { /* polling no crítico */ }
@@ -96,13 +97,19 @@ export default function AdminChatHead() {
   }, [refreshThreads]);
 
   // ── Mensajes del thread activo (el GET marca leído seller-side) ────
+  // Sólo pinta la respuesta del GET más nuevo. Un poll que salió antes de enviar
+  // volvía después del GET que trae tu respuesta y el mensaje desaparecía hasta
+  // el siguiente poll; y el poll de un chat recién minimizado pintaba sus
+  // mensajes en la ventana del cliente que abriste después.
+  const ultimoGetMensajesRef = useRef(0);
   const fetchMessages = useCallback(async () => {
     if (!active) return;
+    const esta = ++ultimoGetMensajesRef.current;
     try {
       const res = await tenantFetch(`/api/admin/chat/threads/${active.id}/messages`);
       if (!res.ok) return;
       const j = (await res.json()) as { data: ChatMessageView[] };
-      setMessages(j.data ?? []);
+      if (esta === ultimoGetMensajesRef.current) setMessages(j.data ?? []);
     } catch { /* polling no crítico */ }
   }, [active]);
 
@@ -154,7 +161,7 @@ export default function AdminChatHead() {
   };
 
   /** Cerrar la ventana = MINIMIZAR al globo (no desaparece). */
-  const minimizeActive = () => {
+  const minimizeActive = useCallback(() => {
     if (active) {
       const id = active.id;
       setMinimizedIds((prev) => (prev.includes(id) ? prev : [id, ...prev].slice(0, 4)));
@@ -170,7 +177,8 @@ export default function AdminChatHead() {
     setActive(null);
     setMessages([]);
     void refreshThreads();
-  };
+  }, [active, refreshThreads]);
+
 
   const dismissHead = (threadId: string) => {
     setDismissed((prev) => {
@@ -200,7 +208,7 @@ export default function AdminChatHead() {
     <>
       {/* ── Globos apilados — uno por cliente (avatar + badge + X hover) ── */}
       {!openList && !active && heads.length > 0 && (
-        <div className="fixed bottom-24 right-4 z-40 flex flex-col items-end gap-2.5" aria-label="Chats de clientes">
+        <div role="region" className="fixed bottom-24 right-4 z-40 flex flex-col items-end gap-2.5" aria-label="Chats de clientes">
           {heads.map((t) => (
             <div key={t.id} className="group relative motion-safe:animate-[slideUp_0.3s_ease-out]">
               <button
@@ -233,7 +241,7 @@ export default function AdminChatHead() {
 
       {/* ── Bandeja completa (la abre el ícono del nav) ── */}
       {openList && !active && (
-        <div className="fixed bottom-4 right-4 z-50 flex max-h-[70vh] w-[330px] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base,#e5e7eb)] bg-[var(--surface-canvas,#fff)] shadow-2xl shadow-black/25 motion-safe:animate-[slideUp_0.25s_ease-out]">
+        <div className="fixed bottom-4 right-4 z-50 flex max-h-[70vh] w-[330px] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base,#e5e7eb)] bg-[var(--surface-canvas,#fff)] shadow-[var(--shadow-xl)] shadow-black/25 motion-safe:animate-[slideUp_0.25s_ease-out]">
           <div className="flex shrink-0 items-center justify-between border-b border-[var(--rule-soft,#f0f0f0)] bg-[var(--surface-raised,#fafafa)] px-3.5 py-2.5">
             <p className="text-sm font-black text-[var(--text-primary,#111)]">
               Chats con clientes
@@ -319,9 +327,19 @@ export default function AdminChatHead() {
       {/* ── Mini-ventana de chat (responder sin salir del tab) ── */}
       {active && (
         <div
+          /* Diálogo NO modal a propósito: el chat se responde sin salir del
+             tab, así que no atrapa el foco ni bloquea el scroll de atrás
+             (revisión 2026-09-12). Escape lo minimiza, como el botón «—». */
           role="dialog"
           aria-label={`Chat con ${active.customerName}`}
-          className="fixed bottom-4 right-4 z-50 flex h-[440px] w-[330px] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base,#e5e7eb)] bg-[var(--surface-canvas,#fff)] shadow-2xl shadow-black/30 motion-safe:animate-[slideUp_0.25s_ease-out]"
+          tabIndex={-1}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") {
+              e.stopPropagation();
+              minimizeActive();
+            }
+          }}
+          className="fixed bottom-4 right-4 z-50 flex h-[440px] w-[330px] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base,#e5e7eb)] bg-[var(--surface-canvas,#fff)] shadow-[var(--shadow-xl)] shadow-black/30 motion-safe:animate-[slideUp_0.25s_ease-out]"
         >
           {/* Header */}
           <div className="flex shrink-0 items-center gap-2 border-b border-[var(--rule-soft,#f0f0f0)] bg-[var(--surface-raised,#fafafa)] px-3 py-2.5">

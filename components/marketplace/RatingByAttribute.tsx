@@ -193,7 +193,7 @@ export default function RatingByAttribute({ summary, reviews }: RatingByAttribut
             >
               <div className="flex items-start gap-3">
                 {/* Avatar */}
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-sm">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] font-bold text-sm">
                   {review.name.charAt(0).toUpperCase()}
                 </div>
 

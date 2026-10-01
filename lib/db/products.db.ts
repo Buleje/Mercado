@@ -52,6 +52,7 @@ const PRODUCT_SELECT = {
   stock: true, stockMin: true, stockMax: true, active: true, tenantId: true,
   type: true, isPrepared: true, brand: true, sku: true, taxType: true, weightKg: true,
   dimensions: true, durationLabel: true, pricingUnit: true, notes: true,
+  specsJson: true, richContentJson: true,
 } as const;
 
 function mapProduct(p: PProduct): DbProduct {
@@ -81,6 +82,8 @@ function mapProduct(p: PProduct): DbProduct {
     ...(p.durationLabel != null && { durationLabel: p.durationLabel }),
     ...(p.pricingUnit != null && { pricingUnit: p.pricingUnit }),
     ...(p.notes != null && { notes: p.notes }),
+    ...(p.specsJson != null && { specsJson: p.specsJson }),
+    ...(p.richContentJson != null && { richContentJson: p.richContentJson }),
   };
 }
 
@@ -193,7 +196,27 @@ export const ProductsDB = {
 
     return { products: items.map(mapProduct), nextCursor, total };
   },
+  /**
+   * Un producto vivo del tenant. `deletedAt: null` NO es opcional acá.
+   *
+   * 2026-08-11: este método era el único de lectura por identidad que no
+   * filtraba borrados (`getBySku` y `listBySkus` sí lo hacían), y el borrado
+   * de productos es SOFT. Efecto medido: `DELETE /api/products/<id>` devolvía
+   * 200, el producto desaparecía de la lista, y un `GET` por id lo seguía
+   * devolviendo con `active: true`. Lo consultan por id el recomendador, el
+   * agente de pricing, las acciones del asistente IA y el generador de QR:
+   * todos podían operar sobre mercadería que el bodeguero dio de baja.
+   */
   async getById(tenantId: string, id: number): Promise<DbProduct | null> {
+    const p = await prisma.product.findFirst({ where: { id, tenantId, deletedAt: null } });
+    return p ? mapProduct(p) : null;
+  },
+
+  /**
+   * Incluye los borrados. Sólo para mirar hacia atrás —una venta vieja que
+   * apunta a un producto dado de baja—, nunca para operar sobre él.
+   */
+  async getByIdIncluyendoBorrados(tenantId: string, id: number): Promise<DbProduct | null> {
     const p = await prisma.product.findFirst({ where: { id, tenantId } });
     return p ? mapProduct(p) : null;
   },
@@ -232,6 +255,7 @@ export const ProductsDB = {
       type: product.type, isPrepared: product.isPrepared, brand: product.brand, sku: product.sku,
       taxType: product.taxType, weightKg: product.weightKg, dimensions: product.dimensions,
       durationLabel: product.durationLabel, pricingUnit: product.pricingUnit, notes: product.notes,
+      specsJson: product.specsJson, richContentJson: product.richContentJson,
     };
     if (product.id) {
       const existing = await prisma.product.findUnique({
@@ -270,6 +294,7 @@ export const ProductsDB = {
         type: product.type, isPrepared: product.isPrepared ?? false, brand: product.brand, sku: product.sku,
         taxType: product.taxType, weightKg: product.weightKg, dimensions: product.dimensions,
         durationLabel: product.durationLabel, pricingUnit: product.pricingUnit, notes: product.notes,
+        specsJson: product.specsJson ?? null, richContentJson: product.richContentJson ?? null,
       },
     });
     revalidateTag(`tenant:${product.tenantId}:products`, "max");

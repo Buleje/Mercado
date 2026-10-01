@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
     ``,
     `Hola ${parsed.data.name}, fuiste invitado como *${parsed.data.role}* a una bodega en Buleje.`,
     ``,
-    `Aceptá la invitación acá:`,
+    `Acepta la invitación acá:`,
     inviteUrl,
     ``,
     `Vence en 7 días.`,

@@ -1,7 +1,8 @@
 'use client';
 
 import { useBarcodeScan } from './useBarcodeScan';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
+import { useModalAccesible } from '@/hooks/use-modal-accesible';
 
 interface BarcodeScannerProps {
   onScan: (barcode: string) => void;
@@ -10,6 +11,8 @@ interface BarcodeScannerProps {
 
 export default function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps) {
   const { isScanning, error, videoRef, startScan, stopScan } = useBarcodeScan();
+  const panelRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(panelRef, { onCerrar: () => { stopScan(); onClose(); }, activo: true });
 
   useEffect(() => {
     startScan(onScan);
@@ -18,11 +21,11 @@ export default function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps)
   }, []);
 
   return (
-    <div className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center">
+    <div ref={panelRef} role="dialog" aria-modal="true" aria-label="Escáner de código de barras" tabIndex={-1} className="fixed inset-0 z-modal bg-black flex flex-col items-center justify-center">
       {/* Close button */}
       <button
         onClick={() => { stopScan(); onClose(); }}
-        className="absolute top-4 right-4 z-50 w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+        className="absolute top-4 right-4 z-modal w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors"
         aria-label="Cerrar escáner"
       >
         <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -39,7 +42,7 @@ export default function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps)
           </p>
           <button
             onClick={onClose}
-            className="mt-6 px-6 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-colors"
+            className="mt-6 px-6 min-h-10 bg-white/20 text-white rounded-xl hover:bg-white/30 transition-colors"
           >
             Cerrar
           </button>

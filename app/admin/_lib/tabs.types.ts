@@ -32,16 +32,27 @@ export type Tab =
   // Módulos nuevos
   | "auditoria"
   | "devoluciones-proveedor"
+  | "dropship"
   | "tesoreria"
   | "promociones"
   | "scoring"
   | "sugerencias-ia"
   | "metas-logros"
+  // Crecimiento (Marketing & Fidelización) — Ola 1
+  | "campanas"
+  | "puntos"
+  | "canales"               // Canales de venta social (TikTok Shop + Meta)
+  // Equipo (tareas + notas) — huérfanos montados
+  | "tareas"
+  | "notas"
+  // Recursos Humanos (ADR-414): personal, asistencia, lo ganado, contratos vinculados
+  | "rrhh"
   // Módulos de operaciones de marketplace y delivery
   | "marketplace"
   | "delivery-partners"
   | "delivery-live"         // Bloque D1 marketplace: tracking vivo + rutas + mapa Leaflet
   | "marketplace-chat"      // Bloque D2 marketplace: chat buyer ↔ seller
+  | "whatsapp-inbox"        // Inbox WhatsApp del negocio (Meta Cloud API) — abre MensajesHub sub-tab whatsapp
   | "store-customizer"
   | "mi-perfil"
   // Módulo rendimiento técnico
@@ -66,7 +77,11 @@ export type Tab =
   // Estos tabs SOLO aparecen si el tenant tiene la TenantFeatureFlag
   // `spec:<vertical>:<modulo>` habilitada por superadmin.
   | "ctp-libro-operaciones"  // Forestal: LOE-CTP SERFOR
+  | "forestal-lotes"         // Forestal: Lotes de producción/comercialización (ADR-136)
   | "loth-libro-operaciones" // Forestal: LO-TH Títulos Habilitantes (ADR-125)
+  | "forestal-herramientas"  // Forestal: Herramientas (cubicador por voz, etc.)
+  | "forestal-tramites"      // Forestal: Trámites y oficios a SERFOR/ARFFS/OSINFOR (ADR-308)
+  | "camaras"                // Cámaras del patio: lo que mandan, con su hora (ADR-411)
   | "cacao-acopio"; // Agrícola: Acopio & Beneficio de Cacao (ADR-128)
 
 /**
@@ -91,10 +106,12 @@ export const VALID_TABS: readonly Tab[] = [
   "ai-command",
   "fiados",
   "turnos",
+  "recetas",
   "prestamos",
   "adelantos",
   "por-cobrar",
   "activos",
+  "scoring",
   "documentos",
   "cotizaciones",
   "guias-remision",
@@ -102,11 +119,19 @@ export const VALID_TABS: readonly Tab[] = [
   "contratos",
   "sugerencias-ia",
   "metas-logros",
+  "campanas",
+  "puntos",
+  "canales",
+  "tareas",
+  "notas",
+  "rrhh",
+  "dropship",
   "forecasting",
   "marketplace",
   "delivery-partners",
   "delivery-live",
   "marketplace-chat",
+  "whatsapp-inbox",
   "store-customizer",
   "colas",
   "support-inbox",
@@ -117,8 +142,13 @@ export const VALID_TABS: readonly Tab[] = [
   "socio-members",
   "lives-admin",
   "leads-funnel",
-  // Especializaciones (ADR-124 / ADR-125 / ADR-128)
+  // Especializaciones (ADR-124 / ADR-125 / ADR-128 / ADR-136)
   "ctp-libro-operaciones",
+  "forestal-lotes",
   "loth-libro-operaciones",
+  "forestal-herramientas",
+  "forestal-tramites",
+  "camaras",
   "cacao-acopio",
+  "mi-perfil",
 ] as const;

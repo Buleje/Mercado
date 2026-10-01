@@ -385,6 +385,56 @@ export const RateLimitPresets = {
   MODERATE: { maxReqs: 20, windowSec: 5 * 60 },
   GENEROUS: { maxReqs: 100, windowSec: 60 },
   AUTH: { maxReqs: IS_DEV ? 50 : 3, windowSec: 60 * 60 },
+  // LOGIN — más generoso que AUTH porque el login legítimo comparte IP en
+  // bodegas (dueño + cajero + repartidor en la misma red) y un login válido
+  // gasta 1-2 requests (el selector de tienda re-postea). El brute-force real
+  // lo frena el lockout PER-USERNAME (5 fallos/15min), no este límite por IP.
+  // Prod 20/h por IP corta credential-stuffing masivo sin lockear compañeros.
+  LOGIN: { maxReqs: IS_DEV ? 100 : 20, windowSec: 60 * 60 },
+  // DRIVE_READ — LECTURA del drive del panel (servir un archivo, abrir la ficha,
+  // listar versiones/auditoría). MODERATE (20 cada 5 min) convertía el uso normal
+  // en un bloqueo: la vista previa gasta 1 request por documento, así que pasar
+  // con las flechas por 20 archivos de una carpeta de 292 dejaba el drive muerto
+  // 5 minutos — y peor, el 429 se dibujaba DENTRO del visor como si fuera el
+  // contenido del archivo. Leer es barato y quien llega acá ya pasó requireAdmin
+  // + aislamiento por tenant; 600 cada 5 min (2/s sostenido) cubre revisar una
+  // carpeta entera y sigue cortando un bucle desbocado.
+  DRIVE_READ: { maxReqs: 600, windowSec: 5 * 60 },
+  // DRIVE — subida de documentos del panel admin. STRICT (10 cada 15 min) daba
+  // un drive que no podía recibir una carpeta: cada archivo es un request, así
+  // que importar 30 boletas moría al décimo. Quien llega acá ya pasó
+  // requireAdmin + CSRF; el límite es anti-abuso, no anti-uso. 400 archivos
+  // cada 15 min por IP+tenant cubre un import real y sigue cortando un bucle
+  // desbocado. El peso lo frena aparte MAX_UPLOAD_SIZE por archivo.
+  DRIVE: { maxReqs: 400, windowSec: 15 * 60 },
+  // DRIVE_IA — describir documentos con IA (1 request = 1 documento leído).
+  // Con STRICT, "describir los 40 que faltan" moría en el décimo con un 429 y
+  // el contador quedaba a medias sin explicación. Es una acción que el usuario
+  // pide explícitamente y ya pasó requireAdmin + CSRF; el techo real lo pone
+  // el proveedor de IA (tokens por día), no nosotros. 200 cada 15 min cubre un
+  // drive entero de una bodega y sigue cortando un bucle desbocado.
+  DRIVE_IA: { maxReqs: 200, windowSec: 15 * 60 },
+  // DRIVE_BULK — acciones en lote del drive (borrar/mover/etiquetar/estado de
+  // una selección). El cliente parte la selección en lotes de 500 ids, así que
+  // limpiar un drive de miles de archivos son varias requests seguidas; con
+  // STRICT (10 cada 15 min) la décima moría en 429 dejando la mitad borrada, y
+  // encima ordenar la misma carpeta (mover + etiquetar + marcar estado) ya gasta
+  // tres. Cada request se resuelve con un `updateMany`, o sea barato, y quien
+  // llega acá ya pasó requireAdmin + CSRF; 60 cada 15 min = hasta 30.000
+  // documentos por ventana y sigue cortando un bucle desbocado.
+  DRIVE_BULK: { maxReqs: 60, windowSec: 15 * 60 },
+  // SHELL_POLL — endpoints que el shell del panel sondea solo, sin que nadie
+  // haga clic: campana de notificaciones (cada 30s) y salud del asistente IA
+  // (cada 60s). Con MODERATE (20 cada 5 min) la cuenta no cerraba: 300s/30s =
+  // 10 requests por ventana los gasta el polling con el admin sentado sin tocar
+  // nada, y cada cambio de tab remonta el hook y suma uno más. Medido 2026-07-28
+  // (scripts/audit-admin-runtime.mjs): 130 respuestas 429 en 35 de 58 tabs — la
+  // campana dejaba de traer notificaciones y el banner de IA se caía a
+  // "desconectado" mintiendo sobre el estado real. Quien llega acá ya pasó
+  // requireAdmin + aislamiento por tenant y la respuesta es de solo lectura;
+  // 300 cada 5 min (1/s sostenido) cubre una jornada entera navegando el panel
+  // y sigue cortando un bucle desbocado.
+  SHELL_POLL: { maxReqs: 300, windowSec: 5 * 60 },
 } as const;
 
 /**

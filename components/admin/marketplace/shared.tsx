@@ -1,4 +1,5 @@
 import type React from "react";
+import { StatCard } from "@buleje/design-system";
 import { ChevronDown, ChevronUp, Clock, CheckCircle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
@@ -21,12 +22,12 @@ export const TableSkeleton = () => (
   <div className="space-y-3 animate-pulse">
     {[1, 2, 3, 4].map((i) => (
       <div key={i} className="flex items-center gap-4">
-        <div className="h-10 w-10 bg-gray-200 rounded-xl shrink-0" />
+        <div className="h-10 w-10 bg-[var(--rule-base)] rounded-xl shrink-0" />
         <div className="flex-1 space-y-2">
-          <div className="h-4 bg-gray-200 rounded w-1/2" />
-          <div className="h-3 bg-gray-200 rounded w-1/3" />
+          <div className="h-4 bg-[var(--rule-base)] rounded w-1/2" />
+          <div className="h-3 bg-[var(--rule-base)] rounded w-1/3" />
         </div>
-        <div className="h-8 w-20 bg-gray-200 rounded-lg" />
+        <div className="h-8 w-20 bg-[var(--rule-base)] rounded-lg" />
       </div>
     ))}
   </div>
@@ -46,13 +47,10 @@ export function SortIcon({ k, currentKey, currentDir }: { k: string; currentKey:
 }
 
 export function KpiTile({ label, value, sub }: { label: string; value: string; sub?: string }) {
-  return (
-    <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
-      <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-1">{label}</p>
-      <p className="text-lg font-extrabold tabular-nums text-[var(--text-primary)]">{value}</p>
-      {sub && <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] tabular-nums mt-0.5">{sub}</p>}
-    </div>
-  );
+  // Wrapper sobre el primitivo del DS (sweep StatCard 2026-09-07): misma API
+  // externa (label/value/sub) para no tocar a sus consumidores (ProductosTab),
+  // pero ahora hereda el estándar visual único en vez de un tile a mano.
+  return <StatCard label={label} value={value} subValue={sub} density="compact" />;
 }
 
 // ── Tipos ──
@@ -72,29 +70,33 @@ export interface StoreData {
 
 // ── Status badge configs ──
 export const ORDER_STATUS_CONFIG: Record<string, { label: string; className: string }> = {
-  pendiente:   { label: "Pendiente",  className: "bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)]" },
-  confirmado:  { label: "Confirmado", className: "bg-[var(--accent-soft)] text-[var(--accent)]" },
-  preparando:  { label: "Preparando", className: "bg-[#a78bfa]/15 text-[#7c3aed]" },
-  en_camino:   { label: "En camino",  className: "bg-[#fbbf24]/15 text-[#d97706]" },
-  entregado:   { label: "Entregado",  className: "bg-[var(--data-success-500)]/15 text-[var(--data-success-500)]" },
-  cancelado:   { label: "Cancelado",  className: "bg-[var(--data-error-500)]/15 text-[var(--data-error-500)]" },
+  /* Seis estados, seis colores: «Pendiente» y «En camino» habían quedado
+     iguales al pasar los hex a tokens (revisión 2026-09-12). «En camino» va en
+     info como en el kanban de Pedidos; «Preparando» vuelve a su violeta. El
+     texto usa los tonos -ink (el -500 como texto no llega a AA). */
+  pendiente:   { label: "Pendiente",  className: "bg-[var(--data-warning-500)]/15 text-[var(--data-warning-ink)]" },
+  confirmado:  { label: "Confirmado", className: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" },
+  preparando:  { label: "Preparando", className: "bg-[var(--brand-purple)]/15 text-[color-mix(in_oklab,var(--brand-purple)_72%,black)] dark:text-[var(--brand-purple)]" },
+  en_camino:   { label: "En camino",  className: "bg-[var(--data-info-500)]/15 text-[var(--data-info-ink)]" },
+  entregado:   { label: "Entregado",  className: "bg-[var(--data-success-500)]/15 text-[var(--data-success-ink)]" },
+  cancelado:   { label: "Cancelado",  className: "bg-[var(--data-error-500)]/15 text-[var(--data-error-ink)]" },
 };
 
 export const COMMISSION_STATUS_CONFIG: Record<string, { label: string; className: string; icon: React.ElementType }> = {
   pendiente:  { label: "Pendiente",  className: "bg-[var(--data-warning-100)] text-[var(--data-warning)]",     icon: Clock },
-  liquidado:  { label: "Liquidado",  className: "bg-[var(--accent-soft)] text-[var(--data-success)]",         icon: CheckCircle },
-  pagado:     { label: "Pagado",     className: "bg-[var(--accent-soft)] text-[var(--data-success)]", icon: CheckCircle },
+  liquidado:  { label: "Liquidado",  className: "bg-primary/10 text-[var(--data-success)]",         icon: CheckCircle },
+  pagado:     { label: "Pagado",     className: "bg-primary/10 text-[var(--data-success)]", icon: CheckCircle },
 };
 
 export const REVIEW_STATUS_CONFIG: Record<string, { label: string; className: string }> = {
   pending:  { label: "Pendiente", className: "bg-[var(--data-warning-100)] text-[var(--data-warning)]" },
-  approved: { label: "Aprobada",  className: "bg-[var(--accent-soft)] text-[var(--data-success)]" },
+  approved: { label: "Aprobada",  className: "bg-primary/10 text-[var(--data-success)]" },
   rejected: { label: "Rechazada", className: "bg-[var(--data-error-100)] text-[var(--data-error)]" },
 };
 
 export const TIER_CONFIG: Record<string, { label: string; className: string; minPoints: string }> = {
   bronce: { label: "Bronce", className: "bg-[var(--data-warning-100)] text-[var(--data-warning)]", minPoints: "0 - 499" },
-  plata:  { label: "Plata",  className: "bg-gray-100 text-[var(--text-secondary)]",   minPoints: "500 - 999" },
+  plata:  { label: "Plata",  className: "bg-[var(--rule-soft)] text-[var(--text-secondary)]",   minPoints: "500 - 999" },
   oro:    { label: "Oro",    className: "bg-[var(--data-warning-100)] text-[var(--data-warning)]", minPoints: "1000+" },
 };
 
@@ -125,7 +127,7 @@ export function CounterChip({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        "text-left rounded-xl border-2 px-3.5 py-2.5 transition-colors",
+        "text-left rounded-xl border-2 px-3.5 min-h-11 transition-colors",
         active
           ? cn(t.border, t.bg)
           : cn("border-[var(--rule-base)] bg-[var(--surface-raised)]", `hover:${t.border}`, `hover:${t.bg}`),

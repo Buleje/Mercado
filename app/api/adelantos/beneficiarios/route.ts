@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { AdelantosDB } from "@/lib/db/adelantos.db";
 import { requireAdmin } from "@/lib/require-admin";
+import { permisoAdelantos } from "@/lib/adelantos/permisos";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -13,12 +14,29 @@ const CreateSchema = z.object({
   telefono: z.string().max(20).optional(),
   notas: z.string().max(500).optional(),
   limiteCredito: z.number().positive().max(9_999_999).nullable().optional(),
+  /** (330) Lo que trae RENIEC/SUNAT, o se carga a mano. */
+  tipoDocumento: z.string().max(10).nullable().optional(),
+  razonSocial: z.string().max(300).nullable().optional(),
+  direccion: z.string().max(400).nullable().optional(),
+  departamento: z.string().max(80).nullable().optional(),
+  provincia: z.string().max(80).nullable().optional(),
+  distrito: z.string().max(80).nullable().optional(),
+  email: z.string().max(200).nullable().optional(),
+  estadoSunat: z.string().max(60).nullable().optional(),
+  condicionSunat: z.string().max(60).nullable().optional(),
+  verificadoEn: z.string().max(40).nullable().optional(),
+  banco: z.string().max(80).nullable().optional(),
+  cuentaBancaria: z.string().max(40).nullable().optional(),
+  cci: z.string().max(40).nullable().optional(),
+  activo: z.boolean().optional(),
 });
 
 // GET /api/adelantos/beneficiarios — personas + saldo consolidado
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
+  const sinPermiso = permisoAdelantos(auth.role, "read");
+  if (sinPermiso) return sinPermiso;
   try {
     const beneficiarios = await AdelantosDB.listBeneficiarios(auth.tenantId);
     return NextResponse.json(beneficiarios, { headers: { "X-Total-Count": String(beneficiarios.length) } });
@@ -34,13 +52,15 @@ export async function POST(req: NextRequest) {
   const _rl = await applyRateLimit(req, "MODERATE", "adelantos-benef"); if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
+  const sinPermiso = permisoAdelantos(auth.role, "write");
+  if (sinPermiso) return sinPermiso;
   try {
     const parsed = CreateSchema.safeParse(await req.json());
     if (!parsed.success) {
       return NextResponse.json({ error: "Datos inválidos", issues: parsed.error.issues.map((i) => i.message) }, { status: 400 });
     }
     const benef = await AdelantosDB.createBeneficiario(auth.tenantId, parsed.data);
-    logActivity("Crear", "adelanto", `Beneficiario ${benef.nombre}`, benef.id, auth.username).catch((err) => logger.error("[adelantos] logActivity failed", { error: String(err) }));
+    logActivity("Crear", "adelanto", `Beneficiario ${benef.nombre}`, benef.id, auth.username, undefined, auth.tenantId).catch((err) => logger.error("[adelantos] logActivity failed", { error: String(err) }));
     return NextResponse.json(benef, { status: 201 });
   } catch (e) {
     logger.error("[adelantos/beneficiarios] POST error", { err: e instanceof Error ? e.message : String(e) });

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { timingSafeCompare } from "@/lib/timing-safe";
 import { TurnosDB } from "@/lib/db/turnos.db";
+import { AdminUsersDB } from "@/lib/db/admin-users.db";
+import { CashRegistersDB } from "@/lib/jsondb";
 import { logger } from "@/lib/logger";
 import { trackCronExecution } from "@/lib/cron/health-tracker";
 
@@ -48,6 +50,7 @@ export async function GET(req: NextRequest) {
         id: true,
         tenantId: true,
         adminUserId: true,
+        cashRegisterId: true,
         inicioEfectivo: true,
         abrioEn: true,
       },
@@ -59,26 +62,51 @@ export async function GET(req: NextRequest) {
 
     for (const turno of zombies) {
       try {
-         
+        // FIX 2026-07-08 (reporte ventas-caja bug 3): Sale.cashierId guarda el
+        // username, no el adminUserId (CUID). Resolver username y filtrar por
+        // ambas formas para no auto-cerrar zombies con ventasTotal falso S/0.
+        const zombieUsername = await AdminUsersDB.getUsernameById(turno.tenantId, turno.adminUserId);
+        const cashierIds = [turno.adminUserId, zombieUsername].filter((v): v is string => !!v);
         const ventasAgg = await prisma.sale.aggregate({
           where: {
             tenantId: turno.tenantId,
-            cashierId: turno.adminUserId,
+            cashierId: { in: cashierIds },
             createdAt: { gte: turno.abrioEn },
           },
           _sum: { total: true },
         });
         const ventasTotal = ventasAgg._sum.total ? Number(ventasAgg._sum.total) : 0;
         const inicioNum = Number(turno.inicioEfectivo);
+        const cierreEfectivo = inicioNum + ventasTotal;
 
         const updated = await TurnosDB.cerrar(turno.id, turno.tenantId, {
-          cierreEfectivo: inicioNum + ventasTotal,
+          cierreEfectivo,
           ventasTotal,
           notas: `Cerrado automaticamente (zombie >${MAX_TURNO_HOURS}h). Revisar arqueo manual.`,
         });
 
-        if (updated) closed++;
-        else skipped++;
+        if (updated) {
+          closed++;
+          // bug 7/8: cerrar también la caja vinculada para no dejar registers
+          // huérfanos "Abiertos" por días (origen del "register del 10-jun").
+          if (turno.cashRegisterId) {
+            try {
+              const reg = await CashRegistersDB.getById(turno.tenantId, turno.cashRegisterId);
+              if (reg && reg.status === "abierta") {
+                await CashRegistersDB.close(
+                  turno.tenantId,
+                  turno.cashRegisterId,
+                  cierreEfectivo,
+                  `Cierre automático (turno zombie >${MAX_TURNO_HOURS}h). Revisar arqueo manual.`,
+                );
+              }
+            } catch (regErr) {
+              logger.warn("[cron/turnos-zombie-close] cierre de caja vinculada falló", {
+                turnoId: turno.id, err: regErr instanceof Error ? regErr.message : String(regErr),
+              });
+            }
+          }
+        } else skipped++;
       } catch (err) {
         errors.push({ id: turno.id, err: err instanceof Error ? err.message : String(err) });
       }

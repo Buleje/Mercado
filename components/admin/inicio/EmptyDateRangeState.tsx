@@ -15,6 +15,7 @@
  */
 
 import { useCallback } from "react";
+import { CardTitle } from "@buleje/design-system";
 import { Calendar, ArrowRight, type LucideIcon } from "@buleje/design-system/icons";
 import {
   type DateRange,
@@ -90,7 +91,7 @@ export default function EmptyDateRangeState({
     `Sin ${metric} ${dateRange.preset === "especifica" ? describeRange(dateRange) : rangeTxt}`;
   const desc =
     description ??
-    "Probá ampliar el rango o cambiá a otro período. Cuando empieces a registrar movimientos, los datos van a aparecer acá.";
+    "Prueba ampliar el rango o cambia a otro período. Cuando empieces a registrar movimientos, los datos van a aparecer acá.";
 
   const handleQuick = useCallback(
     (p: Exclude<DatePreset, "personalizado" | "especifica">) => {
@@ -131,9 +132,9 @@ export default function EmptyDateRangeState({
         </div>
 
         {/* Headline */}
-        <h3 className="text-[length:clamp(1.25rem,2.5vw,1.625rem)] font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
+        <CardTitle as="h3" className="text-[length:clamp(1.25rem,2.5vw,1.625rem)] font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
           {headline}
-        </h3>
+        </CardTitle>
 
         {/* Descripción */}
         <p className="mt-3 text-[length:var(--ts-base)] font-medium text-[var(--text-secondary)] leading-relaxed">
@@ -145,14 +146,14 @@ export default function EmptyDateRangeState({
           <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
             <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
               <Calendar className="h-3.5 w-3.5" />
-              Probá con
+              Prueba con
             </span>
             {chips.map((p) => (
               <button
                 key={p}
                 type="button"
                 onClick={() => handleQuick(p)}
-                className="inline-flex items-center gap-1.5 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 py-2 text-[length:var(--ts-sm)] font-bold text-[var(--text-primary)] transition-all hover:border-[var(--accent)] hover:text-[var(--accent)] hover:shadow-md"
+                className="inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 py-2 text-[length:var(--ts-sm)] font-bold text-[var(--text-primary)] transition-all hover:border-[var(--accent)] hover:text-[var(--accent)] hover:shadow-md"
               >
                 {p === "diario"
                   ? "Hoy"

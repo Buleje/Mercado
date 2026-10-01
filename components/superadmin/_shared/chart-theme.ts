@@ -5,7 +5,7 @@ export const SA_COLORS = {
   secondary: "#14C2C2",
   accent:    "#f4a261",
   danger:    "#ef4444",
-  warning:   "#f59e0b",
+  warning:   "#0d9488",
   success:   "#22c55e",
   muted:     "#6b7280",
 } as const;
@@ -14,7 +14,7 @@ export const PLAN_COLORS = {
   free:       "#6b7280",
   pro:        "#00A0A0",
   business:   "#7c3aed",
-  enterprise: "#d97706",
+  enterprise: "#0d9488",
 } as const;
 
 export const CHART_DARK = {

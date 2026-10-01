@@ -36,7 +36,7 @@ const INTENT_CLS: Record<BadgeIntent, string> = {
   shipping:
     "bg-[var(--badge-shipping-bg)] text-[var(--badge-shipping-text)] border-transparent",
   verified:
-    "bg-[var(--accent-soft)] text-[var(--accent)] border-transparent",
+    "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] border-transparent",
   neutral:
     "bg-[var(--surface-sunken)] text-[var(--text-secondary)] border-[var(--rule-soft)]",
 };

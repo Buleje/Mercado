@@ -1,5 +1,5 @@
 import "server-only";
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
@@ -38,7 +38,7 @@ function normalizePhone(phone: string): string {
 // ---------- GET: obtener mensajes de un chat marketplace ----------
 // ?storeId=xxx&customerPhone=9xxxxxxxx&limit=50
 
-export const GET = withApiHandler("chat-marketplace-get", async (req, ctx) => {
+export const GET = withApiHandler("chat-marketplace-get", async (req, _ctx) => {
   // GENEROUS: la conversación abierta POLLEA cada 5s (chat "en vivo") —
   // MODERATE (20/5min) cortaba el chat a los ~100 segundos (Brandon 2026-06-06).
   const limited = applyRateLimit(req, "GENEROUS", "chat-mkt-get");
@@ -109,7 +109,7 @@ export const GET = withApiHandler("chat-marketplace-get", async (req, ctx) => {
 // ---------- POST: enviar mensaje ----------
 // Body: { storeId, storePhone, storeName, customerPhone, customerName, message, senderType: "store"|"customer" }
 
-export const POST = withApiHandler("chat-marketplace-post", async (req, ctx) => {
+export const POST = withApiHandler("chat-marketplace-post", async (req, _ctx) => {
   const limited = applyRateLimit(req, "MODERATE", "chat-mkt-post");
   if (limited) return limited;
 

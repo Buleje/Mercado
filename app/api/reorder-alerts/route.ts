@@ -90,7 +90,7 @@ async function checkAndAlert() {
           (p) =>
             `<tr>
               <td style="padding:5px 8px;border-bottom:1px solid #eee;font-size:13px;">${p.name}</td>
-              <td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:center;font-size:13px;color:${p.stock <= 0 ? "#dc2626" : "#f59e0b"};font-weight:bold;">${p.stock}</td>
+              <td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:center;font-size:13px;color:${p.stock <= 0 ? "#dc2626" : "#ff6b5b"};font-weight:bold;">${p.stock}</td>
               <td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:center;font-size:13px;">${p.stockMin}</td>
               <td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:center;font-size:13px;color:#16a34a;font-weight:bold;">${p.suggestedQty} ${p.unit}</td>
             </tr>`

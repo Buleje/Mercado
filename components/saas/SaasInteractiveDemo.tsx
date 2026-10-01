@@ -73,7 +73,7 @@ function POSMiniApp() {
           >
             <span className="text-lg">{p.emoji}</span>
             <span className="text-[length:var(--ts-2xs)] font-medium text-gray-600 dark:text-gray-400 truncate w-full text-center">{p.name.split(" ")[0]}</span>
-            <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--accent-dark)]">S/{p.price}</span>
+            <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--accent-dark)] dark:text-[var(--accent)]">S/{p.price}</span>
           </button>
         ))}
       </div>
@@ -95,7 +95,7 @@ function POSMiniApp() {
                 <button onClick={() => updateQty(item.id, 1)} className="h-5 w-5 rounded bg-gray-100 dark:bg-gray-800 flex items-center justify-center hover:bg-gray-200 transition-colors">
                   <Plus className="h-3 w-3" />
                 </button>
-                <span className="w-14 text-right font-bold text-[var(--accent-dark)]">S/{(item.price * item.qty).toFixed(2)}</span>
+                <span className="w-14 text-right font-bold text-[var(--accent-dark)] dark:text-[var(--accent)]">S/{(item.price * item.qty).toFixed(2)}</span>
                 <button onClick={() => removeFromCart(item.id)} className="h-5 w-5 rounded flex items-center justify-center text-red-400 hover:text-[var(--data-error-600)] transition-colors">
                   <Trash2 className="h-3 w-3" />
                 </button>
@@ -104,7 +104,7 @@ function POSMiniApp() {
           ))}
           <div className="flex justify-between pt-2 border-t border-gray-100 dark:border-gray-800">
             <span className="text-sm font-extrabold text-gray-900 dark:text-white">Total</span>
-            <span className="text-sm font-extrabold text-[var(--accent-dark)]">S/ {total.toFixed(2)}</span>
+            <span className="text-sm font-extrabold text-[var(--accent-dark)] dark:text-[var(--accent)]">S/ {total.toFixed(2)}</span>
           </div>
 
           {/* Metodos de pago */}
@@ -504,7 +504,7 @@ export default function SaasInteractiveDemo() {
               {/* Status bar */}
               <div className="flex items-center justify-between px-3 py-1.5 mb-3">
                 <span className="text-[length:var(--ts-2xs)] font-semibold text-gray-500">9:41</span>
-                <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--accent-dark)]">Buleje ERP</span>
+                <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--accent-dark)] dark:text-[var(--accent)]">Buleje ERP</span>
                 <div className="flex gap-1">
                   <div className="w-3 h-1.5 rounded-sm bg-gray-300 dark:bg-gray-600" />
                   <div className="w-3 h-1.5 rounded-sm bg-gray-300 dark:bg-gray-600" />

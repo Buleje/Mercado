@@ -15,6 +15,18 @@ import { applyBoostsToProducts } from "@/lib/marketplace/sponsored-ranker";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { verticalStoreCategories } from "@/lib/marketplace/verticals";
 
+/**
+ * Guard anti-regresión (Brandon 2026-06-18): una respuesta de LISTA nunca debe
+ * cargar imágenes base64 inline — pesan cientos de KB y multiplican el payload
+ * del catálogo (3 productos con base64 inflaban esta respuesta a 909KB). Las
+ * cards deben referenciar URLs hospedadas. Descarta data-URIs pesados (>1KB),
+ * dejando intactas URLs normales y SVGs inline chicos (placeholders legítimos).
+ */
+function hostedImage(src: string | null | undefined): string | null {
+  if (!src) return null;
+  if (src.startsWith("data:") && src.length > 1024) return null;
+  return src;
+}
 
 /**
  * GET /api/marketplace/catalog
@@ -146,8 +158,16 @@ export async function GET(req: NextRequest) {
     let nextCursor: string | undefined;
     if (isMixed) {
       const mixed = roundRobinByStore(results, (r) => r.store.id);
-      items = mixed.slice(offset, offset + limit);
-      hasMore = mixed.length > offset + limit;
+      // Brandon 2026-07-06 (audit inicio): en "Destacados" (default de la home),
+      // los productos CON foto van PRIMERO → el catálogo se ve lleno arriba en vez
+      // de una pared de placeholders. Sort ESTABLE (Node) → preserva el round-robin
+      // por tienda dentro de cada grupo. Solo reordena "popular"; los demás sorts
+      // (precio/nuevos/rating) quedan intactos. No oculta nada: los sin-foto bajan.
+      const photoFirst = [...mixed].sort(
+        (a, b) => (b.product.image ? 1 : 0) - (a.product.image ? 1 : 0),
+      );
+      items = photoFirst.slice(offset, offset + limit);
+      hasMore = photoFirst.length > offset + limit;
       nextCursor = hasMore ? String(offset + limit) : undefined;
     } else {
       hasMore = results.length > limit;
@@ -173,6 +193,9 @@ export async function GET(req: NextRequest) {
       if (bestSellerIds.has(pid)) badges.push("best-seller");
       if (r.store.rating > 4.5) badges.push("verified");
 
+      // Guard: nunca embeber base64 pesado en la respuesta de lista (ver hostedImage).
+      const primaryImage = hostedImage(primaryImageMap.get(pid) ?? r.product.image);
+
       return {
         storeProductId: r.id,
         productId: pid,
@@ -181,8 +204,8 @@ export async function GET(req: NextRequest) {
         // con line-clamp). Antes el adapter del catálogo la descartaba.
         description: r.product.description ?? null,
         price: r.retailPrice,
-        image: primaryImageMap.get(pid) ?? r.product.image,
-        images: primaryImageMap.has(pid) ? [primaryImageMap.get(pid)!] : (r.product.image ? [r.product.image] : []),
+        image: primaryImage,
+        images: primaryImage ? [primaryImage] : [],
         unit: r.product.unit,
         category: r.product.category,
         stock,

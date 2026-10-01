@@ -129,6 +129,7 @@ export const MODULE_PERMISSIONS: Record<Exclude<AdminRole, "admin" | "superadmin
     "catalogo-tienda",       // View product catalog
     "agenda-utilidades",     // Inventory notes & calendar
     "reportes-documentos",   // Inventory & procurement reports
+    "rrhh",                  // Recursos Humanos (ADR-414) — nivel "marcar": asistencia del día
   ],
 
   // TODO: revisar permisos finos para estos roles cuando se active el plan multi-rol

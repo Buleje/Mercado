@@ -12,13 +12,14 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
   Search, Plus, Minus, X, ShoppingCart,
-  Package, Loader2, CheckCircle2,
+  Package, CheckCircle2,
   Banknote, Smartphone, Users,
   ScanBarcode, Clock,
 } from "@buleje/design-system/icons";
 import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { formatCurrency, formatTime } from "@/lib/format";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -45,16 +46,16 @@ type PosStep = "idle" | "paying" | "success" | "error";
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function fmt(n: number): string {
-  return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `${formatCurrency(n)}`;
 }
 
 function useClock(): string {
   const [time, setTime] = useState(() =>
-    new Date().toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })
+    formatTime(new Date())
   );
   useEffect(() => {
     const t = setInterval(() => {
-      setTime(new Date().toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" }));
+      setTime(formatTime(new Date()));
     }, 10_000);
     return () => clearInterval(t);
   }, []);
@@ -96,7 +97,7 @@ function PayBtn({ active, label, icon, color, onClick }: PayBtnProps) {
       type="button"
       onClick={onClick}
       className={cn(
-        "flex-1 flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl border-2 font-bold text-sm transition-all min-h-[56px]",
+        "flex-1 flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl border-2 font-semibold text-sm transition-all min-h-[56px]",
         active
           ? `${color} border-transparent text-white scale-105`
           : "border-gray-700 text-[var(--text-tertiary)] bg-gray-800 hover:border-gray-500 hover:text-[var(--text-tertiary)]"
@@ -346,7 +347,7 @@ export default function KioskPOS() {
                 className="w-full pl-13 pr-12 py-4 text-xl rounded-xl bg-gray-900 border-2 border-gray-700 text-white placeholder:text-[var(--text-secondary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
               />
               {search && (
-                <button
+                <button aria-label="Quitar"
                   type="button"
                   onClick={() => { setSearch(""); searchRef.current?.focus(); }}
                   className="absolute right-4 top-1/2 -translate-y-1/2 p-1 rounded-full text-[var(--text-secondary)] hover:text-[var(--text-tertiary)]"
@@ -485,7 +486,7 @@ export default function KioskPOS() {
 
                   {/* Qty controls — 56px touch targets */}
                   <div className="flex items-center gap-1 flex-shrink-0">
-                    <button
+                    <button aria-label="Disminuir cantidad"
                       type="button"
                       onClick={() => updateQty(item.product.id, -1)}
                       className="w-9 h-9 rounded-lg bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-[var(--text-tertiary)] transition-colors active:scale-90"
@@ -495,14 +496,14 @@ export default function KioskPOS() {
                     <span className="w-8 text-center text-sm font-bold text-white tabular-nums">
                       {item.quantity}
                     </span>
-                    <button
+                    <button aria-label="Aumentar cantidad"
                       type="button"
                       onClick={() => updateQty(item.product.id, 1)}
                       className="w-9 h-9 rounded-lg bg-teal-900/60 hover:bg-teal-800 flex items-center justify-center text-teal-400 transition-colors active:scale-90"
                     >
                       <Plus className="h-4 w-4" />
                     </button>
-                    <button
+                    <button aria-label="Quitar"
                       type="button"
                       onClick={() => removeFromCart(item.product.id)}
                       className="w-9 h-9 rounded-xl flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--data-error-500)] transition-colors"
@@ -532,7 +533,7 @@ export default function KioskPOS() {
                 active={paymentMethod === "efectivo"}
                 label="Efectivo"
                 icon={<Banknote className="h-5 w-5" />}
-                color="bg-[var(--accent-soft)]"
+                color="bg-primary/10"
                 onClick={() => setPaymentMethod("efectivo")}
               />
               <PayBtn
@@ -565,7 +566,7 @@ export default function KioskPOS() {
               disabled={cart.length === 0 || step === "paying" || step === "success"}
               style={{ minHeight: 80 }}
               className={cn(
-                "w-full rounded-xl font-extrabold text-xl tracking-wide transition-all flex items-center justify-center gap-3",
+                "w-full rounded-xl font-semibold text-xl tracking-wide transition-all flex items-center justify-center gap-3",
                 "disabled:opacity-40 disabled:cursor-not-allowed",
                 cart.length > 0
                   ? "bg-[var(--accent-dark)] hover:bg-[var(--accent)] active:bg-[var(--accent-dark)] text-white"

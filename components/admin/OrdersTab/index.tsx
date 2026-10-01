@@ -1,9 +1,11 @@
 "use client";
 
-import { PageTitle } from "@buleje/design-system";
+import { DataTable, PageTitle } from "@buleje/design-system";
 import { useState } from "react";
-import { AlertTriangle, FileText, SlidersHorizontal, Bike, Printer, Package, DollarSign, Search } from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
+import { AlertTriangle, FileText, SlidersHorizontal, Printer, Package, DollarSign, Search } from "@buleje/design-system/icons";
+import { cn, limaDateKey } from "@/lib/utils";
+import { FiltroColumna, FiltroColumnaRango } from "@/components/admin/shared/filtros-columna";
+import type { Rango } from "@/lib/admin/filtros-columna";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { ModuleActionMenu } from "@/components/admin/shared/ModuleActionMenu";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
@@ -21,6 +23,7 @@ import { OrdersPrintPreview } from "./OrdersPrintPreview";
 import { DeleteConfirmModal, RejectModal } from "./OrdersModals";
 import { STATUS_LABELS } from "./types";
 import type { DbOrder } from "@/lib/jsondb";
+import { formatCurrency } from "@/lib/format";
 
 export default function OrdersTab() {
   const {
@@ -63,13 +66,27 @@ export default function OrdersTab() {
     customDriver,
     setCustomDriver,
     savingDriver,
-    filterByDelivery,
-    setFilterByDelivery,
     selectedDriverFilter,
     setSelectedDriverFilter,
     saveDeliveryDriver,
     driverColor,
   } = useDeliveryDriver({ patchOrder });
+
+  /**
+   * Repartidores con pedidos hoy, con cuántos lleva cada uno — el selector de
+   * la barra y el del modal «Filtros» leen la misma lista y escriben el mismo
+   * `selectedDriverFilter` (fusión 2026-09-22: antes era un tercer lugar, un
+   * banner que aparecía desde el menú «Más»).
+   */
+  const repartidores = Array.from(
+    orders.reduce((m, o) => {
+      const d = (o as DbOrder & { deliveryDriver?: string }).deliveryDriver;
+      if (d) m.set(d, (m.get(d) ?? 0) + 1);
+      return m;
+    }, new Map<string, number>()),
+  )
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([value, count]) => ({ value, count }));
 
   const {
     selectedOrderIds,
@@ -129,7 +146,7 @@ export default function OrdersTab() {
       return src === filters.source;
     });
   }
-  if (filterByDelivery && selectedDriverFilter) {
+  if (selectedDriverFilter) {
     activeOrders = activeOrders.filter(o => {
       const driver = (o as DbOrder & { deliveryDriver?: string }).deliveryDriver;
       return driver === selectedDriverFilter;
@@ -143,8 +160,9 @@ export default function OrdersTab() {
   const inDeliveryOrders = activeOrders.filter(o => o.status === "en_camino" || o.status === "confirmado" || o.status === "preparando").length;
   const todayDelivered = orders.filter(o => {
     if (o.status !== "entregado") return false;
-    const today = new Date().toISOString().slice(0, 10);
-    return o.createdAt.slice(0, 10) === today;
+    // El día del negocio es el de Lima. Con `toISOString()` el corte caía a las
+    // 19:00 hora peruana: lo vendido de noche contaba como "mañana".
+    return limaDateKey(o.createdAt) === limaDateKey();
   }).length;
 
   return (
@@ -167,23 +185,18 @@ export default function OrdersTab() {
         <button
           type="button"
           onClick={() => setShowAdvancedFilters(true)}
-          className="relative flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+          className="relative flex items-center gap-1.5 px-3 min-h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
         >
           <SlidersHorizontal className="h-4 w-4" /> Filtros
-          {activeFiltersCount > 0 && (
+          {activeFiltersCount + (selectedDriverFilter ? 1 : 0) > 0 && (
             <span className="absolute -top-1.5 -right-1.5 inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full text-xs font-bold bg-primary text-white">
-              {activeFiltersCount}
+              {activeFiltersCount + (selectedDriverFilter ? 1 : 0)}
             </span>
           )}
         </button>
         <ModuleActionMenu
           label="Más"
           items={[
-            {
-              label: filterByDelivery ? "Quitar filtro por motorizado" : "Filtrar por motorizado",
-              icon: Bike,
-              onClick: () => setFilterByDelivery((prev) => !prev),
-            },
             {
               label: "Imprimir",
               icon: Printer,
@@ -204,42 +217,6 @@ export default function OrdersTab() {
           en los chips de filtro (interactivos) y en los headers de columna del
           kanban. Triple redundancia eliminada; "Entregados hoy" se movió al
           subtítulo del header. */}
-
-      {/* Delivery driver filter */}
-      {filterByDelivery && (
-        <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-4">
-          <div className="flex items-center gap-3 flex-wrap">
-            <p className="text-sm font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Filtrar por delivery:</p>
-            <select
-              value={selectedDriverFilter}
-              onChange={e => setSelectedDriverFilter(e.target.value)}
-              className="px-3 py-1.5 rounded-lg border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-sm font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] bg-[var(--surface-raised)] outline-none focus:border-primary"
-            >
-              <option value="">Todos los deliverys</option>
-              {Array.from(new Set(
-                orders
-                  .map(o => (o as DbOrder & { deliveryDriver?: string }).deliveryDriver)
-                  .filter(Boolean)
-              )).sort().map(driver => (
-                <option key={driver} value={driver}>{driver}</option>
-              ))}
-            </select>
-            {selectedDriverFilter && (
-              <button
-                onClick={() => setSelectedDriverFilter("")}
-                className="text-xs font-semibold text-[var(--data-success-500)] hover:text-[var(--data-success-500)] underline"
-              >
-                Limpiar
-              </button>
-            )}
-          </div>
-          {selectedDriverFilter && (
-            <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mt-2">
-              Mostrando {activeOrders.length} pedido{activeOrders.length !== 1 ? "s" : ""} de {selectedDriverFilter}
-            </p>
-          )}
-        </div>
-      )}
 
       {/* Error banner */}
       {loadError && (
@@ -297,8 +274,8 @@ export default function OrdersTab() {
               className={cn(
                 "inline-flex items-center gap-2 h-9 px-3.5 rounded-full text-sm font-bold transition-colors border",
                 active
-                  ? "bg-[var(--text-primary)] text-[var(--surface-canvas)] border-[var(--text-primary)]"
-                  : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--accent)] hover:text-[var(--accent)] hover:bg-[var(--accent-soft)]",
+                  ? "bg-primary text-white border-primary"
+                  : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--accent)] hover:text-[var(--accent)] hover:bg-primary/10",
               )}
             >
               {chip.label}
@@ -315,6 +292,65 @@ export default function OrdersTab() {
             </button>
           );
         })}
+
+        {/* Método de pago — promovido del modal "Filtros Avanzados" al
+            toolbar (fusión 2026-09-22): es de las preguntas más frecuentes
+            («¿cuánto entró por Yape hoy?») y no amerita abrir un modal para
+            cada vez. Escribe el MISMO `filters.paymentMethod` que el modal —
+            no es un segundo filtro, es un segundo lugar desde donde tocarlo
+            (igual que Estado ya convive en chips + checkboxes del modal). */}
+        {([
+          { id: "" as const, label: "Cualquier pago" },
+          { id: "yape" as const, label: "Yape" },
+          { id: "efectivo" as const, label: "Efectivo" },
+        ]).map((chip) => {
+          const active = filters.paymentMethod === chip.id;
+          return (
+            <button
+              key={chip.id || "cualquiera"}
+              type="button"
+              onClick={() => filtersDispatch({ type: "SET_PAYMENT_METHOD", value: active ? "" : chip.id })}
+              aria-pressed={active}
+              className={cn(
+                "inline-flex items-center gap-2 h-9 px-3.5 rounded-full text-sm font-bold transition-colors border",
+                active
+                  ? "bg-primary text-white border-primary"
+                  : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--accent)] hover:text-[var(--accent)] hover:bg-primary/10",
+              )}
+            >
+              {chip.label}
+            </button>
+          );
+        })}
+
+        {/* Repartidor y fecha — las otras dos «columnas» de una tarjeta del
+            kanban. En la barra sólo ≥640px; en el celular viven en el modal
+            «Filtros» (mismo estado, un solo filtro cada uno). El `[&>details]`
+            /`[&>select]` saca el margen que estos controles traen para vivir
+            debajo de un título de columna. */}
+        {repartidores.length > 0 && (
+          <span className="max-sm:hidden inline-flex items-center [&>select]:mt-0">
+            <FiltroColumna
+              label="Repartidor"
+              value={selectedDriverFilter || undefined}
+              options={repartidores}
+              onChange={(v) => setSelectedDriverFilter(v ?? "")}
+              placeholder="Repartidor"
+            />
+          </span>
+        )}
+        <span className="max-sm:hidden inline-flex items-center [&>details]:mt-0">
+          <FiltroColumnaRango
+            label="Fecha"
+            esFecha
+            placeholder="Fecha"
+            valor={{ min: filters.dateFrom || null, max: filters.dateTo || null } as Rango<string>}
+            onChange={(r) => {
+              filtersDispatch({ type: "SET_DATE_FROM", value: (r.min as string | null) ?? "" });
+              filtersDispatch({ type: "SET_DATE_TO", value: (r.max as string | null) ?? "" });
+            }}
+          />
+        </span>
 
         {/* Sub-filtros adicionales: con deuda + Yape pendiente (visible si > 0) */}
         {orders.some(o => o.deuda === true) && (
@@ -362,11 +398,13 @@ export default function OrdersTab() {
 
       {/* Print-only summary */}
       <div className="hidden print:block print-orders-summary">
-        <PageTitle className="text-lg font-bold mb-1">Resumen de pedidos activos</PageTitle>
+        {/* `as="h2"`: este título sólo existe para la impresión; como h1
+            duplicaba el encabezado de la página para los lectores de pantalla. */}
+        <PageTitle as="h2" className="text-lg font-bold mb-1">Resumen de pedidos activos</PageTitle>
         <p className="text-xs text-[var(--text-secondary)] mb-4">
-          {new Date().toLocaleString("es-PE", { timeZone: "America/Lima" })} · {activeOrders.length} pedidos · S/{total.toFixed(2)} total
+          {new Date().toLocaleString("es-PE", { timeZone: "America/Lima" })} · {activeOrders.length} pedidos · {formatCurrency(total)} total
         </p>
-        <table className="w-full text-xs border-collapse">
+        <DataTable className="w-full text-xs border-collapse">
           <thead>
             <tr className="border-b-2 border-gray-900">
               <th className="text-left py-1 pr-2">ID</th>
@@ -385,11 +423,11 @@ export default function OrdersTab() {
                 <td className="py-1.5 pr-2">{o.customer.phone || "—"}</td>
                 <td className="py-1.5 pr-2">{STATUS_LABELS[o.status]}</td>
                 <td className="py-1.5 pr-2">{o.items.map(i => `${i.quantity}× ${i.name}`).join(", ")}</td>
-                <td className="py-1.5 text-right font-semibold">S/{Number(o.total).toFixed(2)}</td>
+                <td className="py-1.5 text-right font-semibold">{formatCurrency(Number(o.total))}</td>
               </tr>
             ))}
           </tbody>
-        </table>
+        </DataTable>
       </div>
 
       {/* Modals */}
@@ -397,6 +435,9 @@ export default function OrdersTab() {
         <OrdersFilters
           filters={filters}
           dispatch={filtersDispatch}
+          repartidores={repartidores.map((r) => r.value)}
+          repartidor={selectedDriverFilter}
+          onRepartidor={setSelectedDriverFilter}
           onClose={() => setShowAdvancedFilters(false)}
         />
       )}

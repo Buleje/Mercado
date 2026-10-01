@@ -14,6 +14,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { FlaskConical, Check, ArrowRight, LogOut, Loader2 } from "@buleje/design-system/icons";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 const TEST_CUSTOMER = { phone: "999000111", name: "Cliente Prueba", tenantId: "main" };
 
@@ -43,7 +44,7 @@ const STALE_CUSTOMER_KEYS = [
 function clearAllCustomerIdentities() {
   try {
     for (const k of Object.keys(localStorage)) {
-      if (/-customer$/.test(k) || /^(marketplace-customer|marketplace-checkout-customer|buleje-checkout-data)$/.test(k)) {
+      if (k.endsWith("-customer") || /^(marketplace-customer|marketplace-checkout-customer|buleje-checkout-data)$/.test(k)) {
         localStorage.removeItem(k);
       }
     }
@@ -84,7 +85,7 @@ export default function TestCustomerPanel() {
     try {
       const res = await fetch("/api/auth/customer/test-session", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(TEST_CUSTOMER),
       });
       if (res.status === 404) {
@@ -106,7 +107,7 @@ export default function TestCustomerPanel() {
 
   const deactivate = async () => {
     setState("loading");
-    await fetch("/api/auth/logout", { method: "POST" }).catch(() => {
+    await fetch("/api/auth/logout", { method: "POST", headers: csrfHeaders() }).catch(() => {
       /* best-effort: en dev no bloqueamos la UI si el logout falla */
     });
     clearTestCustomerFromStorage();
@@ -115,7 +116,7 @@ export default function TestCustomerPanel() {
   };
 
   return (
-    <div className="mb-5 rounded-2xl border-2 border-dashed border-[var(--accent)]/40 bg-[var(--accent-soft)] p-4 sm:p-5">
+    <div className="mb-5 rounded-2xl border-2 border-dashed border-[var(--accent)]/40 bg-primary/10 p-4 sm:p-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-3">
           <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--accent)] text-white">
@@ -154,7 +155,7 @@ export default function TestCustomerPanel() {
               <button
                 type="button"
                 onClick={deactivate}
-                className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]"
+                className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 text-sm font-semibold text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]"
               >
                 <LogOut className="h-4 w-4" strokeWidth={2.25} aria-hidden />
                 Cerrar
@@ -165,7 +166,7 @@ export default function TestCustomerPanel() {
               type="button"
               onClick={activate}
               disabled={state === "loading"}
-              className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white transition hover:opacity-90 disabled:opacity-50"
+              className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
             >
               {state === "loading" ? (
                 <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2.25} aria-hidden />

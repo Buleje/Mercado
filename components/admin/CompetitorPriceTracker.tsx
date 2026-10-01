@@ -4,6 +4,7 @@ import { SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Plus, Trash2, TrendingUp, TrendingDown, Minus, Search, BarChart3 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/format";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -185,7 +186,7 @@ export default function CompetitorPriceTracker() {
       {/* Insights */}
       {insights.totalCompared > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-3">
+          <div className="bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-3">
             <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-semibold">
               <TrendingUp className="inline h-3.5 w-3.5 mr-1" />
               Eres más barato en {insights.cheaperCount} de {insights.totalCompared} comparaciones
@@ -194,7 +195,7 @@ export default function CompetitorPriceTracker() {
           {insights.bestOpportunity && (
             <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] rounded-xl p-3">
               <p className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] font-semibold">
-                Oportunidad: puedes subir &quot;{insights.bestOpportunity.name}&quot; S/{Number(insights.bestOpportunity.gap).toFixed(2)} y seguir competitivo
+                Oportunidad: puedes subir &quot;{insights.bestOpportunity.name}&quot; {formatCurrency(Number(insights.bestOpportunity.gap))} y seguir competitivo
               </p>
             </div>
           )}
@@ -242,19 +243,19 @@ export default function CompetitorPriceTracker() {
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-semibold text-[var(--text-primary)] truncate">{s.productName}</p>
                       <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">
-                        Mi precio: S/{Number(s.myPrice).toFixed(2)} · Promedio: S/{Number(s.avg).toFixed(2)}
+                        Mi precio: {formatCurrency(Number(s.myPrice))} · Promedio: {formatCurrency(Number(s.avg))}
                       </p>
                     </div>
                     {s.status === "caro" && (
                       <div className="text-right shrink-0">
-                        <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-500)]">S/{Math.abs(s.diff).toFixed(2)} mas caro</p>
-                        <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Sugerido: S/{Number(s.sugerido).toFixed(2)}</p>
+                        <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-500)]">{formatCurrency(Math.abs(s.diff))} mas caro</p>
+                        <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Sugerido: {formatCurrency(Number(s.sugerido))}</p>
                       </div>
                     )}
                     {s.status === "barato" && (
                       <div className="text-right shrink-0">
-                        <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)]">S/{Math.abs(s.diff).toFixed(2)} mas barato</p>
-                        {s.gananciaExtra > 0 && <p className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)]">Puedes subir a S/{Number(s.sugerido).toFixed(2)} (+S/{Number(s.gananciaExtra).toFixed(0)}/mes)</p>}
+                        <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)]">{formatCurrency(Math.abs(s.diff))} mas barato</p>
+                        {s.gananciaExtra > 0 && <p className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)]">Puedes subir a {formatCurrency(Number(s.sugerido))} (+S/{Number(s.gananciaExtra).toFixed(0)}/mes)</p>}
                       </div>
                     )}
                     {s.status === "alineado" && (
@@ -292,12 +293,12 @@ export default function CompetitorPriceTracker() {
             onChange={e => setNewCompetitor(e.target.value)}
             onKeyDown={e => e.key === "Enter" && addCompetitor()}
             placeholder='Ej: "Bodega Pérez", "Market Plaza"'
-            className="flex-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40"
+            className="flex-1 px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
-          <button
+          <button aria-label="Agregar"
             onClick={addCompetitor}
             disabled={!newCompetitor.trim()}
-            className="px-3 py-2 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-dark transition-colors disabled:opacity-50"
+            className="px-3 py-2 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary-dark transition-colors disabled:opacity-50"
           >
             <Plus className="h-4 w-4" />
           </button>
@@ -305,9 +306,9 @@ export default function CompetitorPriceTracker() {
         {data.competitors.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-2">
             {data.competitors.map(c => (
-              <span key={c.id} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[var(--surface-sunken)] dark:bg-surface text-xs font-medium text-[var(--text-secondary)]">
+              <span key={c.id} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[var(--surface-sunken)] text-xs font-medium text-[var(--text-secondary)]">
                 {c.name}
-                <button onClick={() => removeCompetitor(c.id)} className="text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors">
+                <button aria-label="Eliminar" onClick={() => removeCompetitor(c.id)} className="text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors">
                   <Trash2 className="h-3 w-3" />
                 </button>
               </span>
@@ -325,7 +326,7 @@ export default function CompetitorPriceTracker() {
             value={newProduct}
             onChange={e => setNewProduct(e.target.value)}
             placeholder="Nombre del producto"
-            className="flex-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40"
+            className="flex-1 px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
           <input
             type="number"
@@ -333,12 +334,12 @@ export default function CompetitorPriceTracker() {
             onChange={e => setNewMyPrice(e.target.value)}
             placeholder="Mi precio"
             step="0.10"
-            className="w-24 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40"
+            className="w-24 px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
-          <button
+          <button aria-label="Agregar"
             onClick={addProduct}
             disabled={!newProduct.trim()}
-            className="px-3 py-2 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-dark transition-colors disabled:opacity-50"
+            className="px-3 py-2 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary-dark transition-colors disabled:opacity-50"
           >
             <Plus className="h-4 w-4" />
           </button>
@@ -354,7 +355,7 @@ export default function CompetitorPriceTracker() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Buscar producto..."
-            className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40"
+            className="w-full pl-9 pr-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
         </div>
       )}
@@ -364,7 +365,7 @@ export default function CompetitorPriceTracker() {
         <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)]">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-[var(--surface-alt)] dark:bg-surface">
+              <tr className="bg-[var(--surface-alt)] ">
                 <th className="text-left px-3 py-2.5 text-xs font-bold text-[var(--text-tertiary)]">Producto</th>
                 <th className="text-right px-3 py-2.5 text-xs font-bold text-primary">Mi precio</th>
                 {data.competitors.map(c => (
@@ -373,7 +374,7 @@ export default function CompetitorPriceTracker() {
                 <th className="text-center px-3 py-2.5 text-xs font-bold text-[var(--text-tertiary)] w-10"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+            <tbody className="divide-y divide-[var(--rule-soft)] ">
               {filtered.map(product => (
                 <tr key={product.productId} className="hover:bg-[var(--surface-alt)]/50 dark:hover:bg-surface/50 transition-colors">
                   <td className="px-3 py-2.5 font-medium text-[var(--text-primary)] text-xs">{product.productName}</td>
@@ -387,14 +388,15 @@ export default function CompetitorPriceTracker() {
                         onBlur={() => { updateMyPrice(product.productId, parseFloat(editValue) || 0); }}
                         onKeyDown={e => { if (e.key === "Enter") updateMyPrice(product.productId, parseFloat(editValue) || 0); }}
                         step="0.10"
-                        className="w-20 px-2 py-1 rounded-lg border border-primary text-xs text-right bg-[var(--surface-raised)] focus:outline-none text-[var(--text-primary)]"
+                        aria-label={`Mi precio de ${product.productName}`}
+                        className="w-20 px-2 py-1 rounded-xl border border-primary text-xs text-right bg-[var(--surface-raised)] focus:outline-none text-[var(--text-primary)]"
                       />
                     ) : (
                       <button
                         onClick={() => { setEditingCell({ productId: product.productId, competitorId: "my" }); setEditValue(String(product.myPrice)); }}
                         className="text-xs font-bold text-primary hover:underline"
                       >
-                        S/{Number(product.myPrice).toFixed(2)}
+                        {formatCurrency(Number(product.myPrice))}
                       </button>
                     )}
                   </td>
@@ -414,7 +416,8 @@ export default function CompetitorPriceTracker() {
                             onBlur={() => updatePrice(product.productId, comp.id, editValue ? parseFloat(editValue) : null)}
                             onKeyDown={e => { if (e.key === "Enter") updatePrice(product.productId, comp.id, editValue ? parseFloat(editValue) : null); }}
                             step="0.10"
-                            className="w-20 px-2 py-1 rounded-lg border border-[var(--rule-base)] text-xs text-right bg-[var(--surface-raised)] focus:outline-none text-[var(--text-primary)]"
+                            aria-label={`Precio de ${comp.name} para ${product.productName}`}
+                            className="w-20 px-2 py-1 rounded-xl border border-[var(--rule-base)] text-xs text-right bg-[var(--surface-raised)] focus:outline-none text-[var(--text-primary)]"
                           />
                         ) : (
                           <button
@@ -423,7 +426,7 @@ export default function CompetitorPriceTracker() {
                           >
                             {compPrice != null ? (
                               <span className="flex items-center justify-end gap-1">
-                                S/{compPrice.toFixed(2)}
+                                {formatCurrency(compPrice)}
                                 {diff && (
                                   <span className={cn(
                                     "text-[length:var(--ts-2xs)] font-bold",
@@ -447,7 +450,7 @@ export default function CompetitorPriceTracker() {
                   <td className="px-2 py-2.5 text-center">
                     <button
                       onClick={() => removeProduct(product.productId)}
-                      className="p-1 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20 transition-colors"
+                      className="p-1 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20 transition-colors"
                       title="Eliminar"
                     >
                       <Trash2 className="h-3.5 w-3.5" />

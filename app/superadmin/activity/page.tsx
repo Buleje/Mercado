@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, useMemo, Fragment } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import {
   Search,
   ChevronDown,
@@ -44,21 +44,21 @@ interface Pagination {
 
 // ── Tonos semánticos por tipo de acción ───────────────────────────────────
 const ACTION_TONES: Record<string, { bg: string; text: string; ring: string; label: string }> = {
-  create:           { bg: "bg-emerald-500/12 dark:bg-emerald-500/20",   text: "text-emerald-700 dark:text-emerald-300",   ring: "ring-emerald-500/30",  label: "Creación" },
+  create:           { bg: "bg-[var(--data-success-500)]/12 dark:bg-[var(--data-success-500)]/20",   text: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",   ring: "ring-[var(--data-success-500)]/30",  label: "Creación" },
   update:           { bg: "bg-sky-500/12 dark:bg-sky-500/20",           text: "text-sky-700 dark:text-sky-300",           ring: "ring-sky-500/30",      label: "Actualización" },
-  delete:           { bg: "bg-rose-500/12 dark:bg-rose-500/20",         text: "text-rose-700 dark:text-rose-300",         ring: "ring-rose-500/30",     label: "Eliminación" },
-  login_success:    { bg: "bg-emerald-500/12 dark:bg-emerald-500/20",   text: "text-emerald-700 dark:text-emerald-300",   ring: "ring-emerald-500/30",  label: "Login OK" },
-  login_failed:     { bg: "bg-rose-500/12 dark:bg-rose-500/20",         text: "text-rose-700 dark:text-rose-300",         ring: "ring-rose-500/30",     label: "Login falló" },
-  impersonate:      { bg: "bg-amber-500/15 dark:bg-amber-500/25",       text: "text-amber-700 dark:text-amber-300",       ring: "ring-amber-500/40",    label: "Suplantación" },
-  plan_change:      { bg: "bg-violet-500/12 dark:bg-violet-500/20",     text: "text-violet-700 dark:text-violet-300",     ring: "ring-violet-500/30",   label: "Cambio plan" },
-  suspend:          { bg: "bg-rose-500/12 dark:bg-rose-500/20",         text: "text-rose-700 dark:text-rose-300",         ring: "ring-rose-500/30",     label: "Suspensión" },
-  activate:         { bg: "bg-emerald-500/12 dark:bg-emerald-500/20",   text: "text-emerald-700 dark:text-emerald-300",   ring: "ring-emerald-500/30",  label: "Activación" },
-  logout:           { bg: "bg-slate-500/12 dark:bg-slate-500/20",       text: "text-slate-700 dark:text-slate-300",       ring: "ring-slate-500/30",    label: "Logout" },
+  delete:           { bg: "bg-rose-500/12 dark:bg-rose-500/20",         text: "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]",         ring: "ring-rose-500/30",     label: "Eliminación" },
+  login_success:    { bg: "bg-[var(--data-success-500)]/12 dark:bg-[var(--data-success-500)]/20",   text: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",   ring: "ring-[var(--data-success-500)]/30",  label: "Login OK" },
+  login_failed:     { bg: "bg-rose-500/12 dark:bg-rose-500/20",         text: "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]",         ring: "ring-rose-500/30",     label: "Login falló" },
+  impersonate:      { bg: "bg-teal-500/15 dark:bg-teal-500/25",       text: "text-teal-700 dark:text-teal-300",       ring: "ring-teal-500/40",    label: "Suplantación" },
+  plan_change:      { bg: "bg-primary/10 bg-primary/10",     text: "text-[var(--accent-ink)] dark:text-[var(--accent)]",     ring: "ring-violet-500/30",   label: "Cambio plan" },
+  suspend:          { bg: "bg-rose-500/12 dark:bg-rose-500/20",         text: "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]",         ring: "ring-rose-500/30",     label: "Suspensión" },
+  activate:         { bg: "bg-[var(--data-success-500)]/12 dark:bg-[var(--data-success-500)]/20",   text: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",   ring: "ring-[var(--data-success-500)]/30",  label: "Activación" },
+  logout:           { bg: "bg-slate-500/12 dark:bg-slate-500/20",       text: "text-[var(--text-primary)] ",       ring: "ring-slate-500/30",    label: "Logout" },
 };
 
 const DEFAULT_TONE = {
   bg: "bg-slate-500/10 dark:bg-slate-500/15",
-  text: "text-slate-700 dark:text-slate-300",
+  text: "text-[var(--text-primary)] ",
   ring: "ring-slate-500/30",
   label: "Otro",
 };
@@ -71,14 +71,14 @@ function getActionTone(action: string) {
 function getUserMeta(user: string): { icon: typeof Bot; tone: string; bg: string; text: string } {
   const u = user.toLowerCase();
   if (u === "system")
-    return { icon: Bot, tone: "slate", bg: "bg-slate-500/15", text: "text-slate-600 dark:text-slate-300" };
+    return { icon: Bot, tone: "slate", bg: "bg-slate-500/15", text: "text-[var(--text-secondary)] " };
   if (u === "cron")
-    return { icon: Clock, tone: "violet", bg: "bg-violet-500/15", text: "text-violet-600 dark:text-violet-300" };
+    return { icon: Clock, tone: "violet", bg: "bg-primary/10", text: "text-[var(--accent-ink)] dark:text-[var(--accent)]" };
   if (u === "superadmin")
     return { icon: ShieldCheck, tone: "teal", bg: "bg-teal-500/15", text: "text-teal-600 dark:text-teal-300" };
   if (u.includes("admin"))
     return { icon: UserCog, tone: "sky", bg: "bg-sky-500/15", text: "text-sky-600 dark:text-sky-300" };
-  return { icon: User, tone: "amber", bg: "bg-amber-500/15", text: "text-amber-600 dark:text-amber-300" };
+  return { icon: User, tone: "amber", bg: "bg-teal-500/15", text: "text-teal-600 dark:text-teal-300" };
 }
 
 // ── Tiempo relativo ─────────────────────────────────────────────────────
@@ -307,11 +307,16 @@ export default function ActivityPage() {
     new Date(d).toLocaleString("es-PE", { dateStyle: "short", timeStyle: "short" });
 
   const inputCls =
-    "bg-[var(--surface-canvas)] border-2 border-[var(--rule-base)] text-[var(--text-primary)] rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20 transition-colors";
+    "bg-[var(--surface-canvas)] border border-[var(--rule-base)] text-[var(--text-primary)] rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20 transition-colors";
   const selectCls = `appearance-none ${inputCls} pr-9 text-[var(--text-secondary)] cursor-pointer`;
 
   return (
     <AdminTabShell
+      info={{
+        what: "Registra cada acción relevante de la plataforma: creaciones, ediciones, borrados, logins y cambios de plan en todos los tenants.",
+        affects: "Solo visible para ti en el superadmin. No afecta a las tiendas ni al storefront.",
+        example: "Si un dueño de tienda borra un producto o cambia su plan a Pro, el evento aparece aquí con fecha, usuario y tenant.",
+      }}
       title="Log de actividad"
       description={`${pagination.total.toLocaleString("es-PE")} registros — refresh automático cada 30s.`}
       icon={Activity}
@@ -321,7 +326,7 @@ export default function ActivityPage() {
           type="button"
           onClick={handleExportCsv}
           disabled={filteredLogs.length === 0}
-          className="inline-flex items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)] disabled:opacity-50"
+          className="inline-flex items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)] disabled:opacity-50"
         >
           <Download className="h-3.5 w-3.5" />
           Exportar CSV
@@ -362,7 +367,7 @@ export default function ActivityPage() {
 
       {/* ═══════ Date range chips ════════════════════════════════════════ */}
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mr-1">
+        <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mr-1">
           Periodo:
         </span>
         {(["1d", "7d", "30d", "90d", "1y"] as const).map((r) => (
@@ -373,7 +378,7 @@ export default function ActivityPage() {
             className={[
               "rounded-lg border-2 px-3 py-1.5 text-sm font-bold transition-colors",
               dateRange.range === r
-                ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                 : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
             ].join(" ")}
           >
@@ -390,7 +395,7 @@ export default function ActivityPage() {
 
       {/* ═══════ Quick action filter chips ═══════════════════════════════ */}
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mr-1">
+        <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mr-1">
           Acción:
         </span>
         {QUICK_FILTERS.map((qf) => {
@@ -403,7 +408,7 @@ export default function ActivityPage() {
               className={[
                 "rounded-full px-3 py-1 text-xs font-bold border-2 transition-colors",
                 isActive
-                  ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                  ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                   : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
               ].join(" ")}
             >
@@ -530,7 +535,7 @@ export default function ActivityPage() {
                                 {log.user}
                               </span>
                               <span
-                                className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ring-1 ${tone.bg} ${tone.text} ${tone.ring}`}
+                                className={`inline-flex items-center rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider ring-1 ${tone.bg} ${tone.text} ${tone.ring}`}
                               >
                                 {log.action}
                               </span>
@@ -538,7 +543,7 @@ export default function ActivityPage() {
                               <span className="text-xs font-semibold text-[var(--text-secondary)] truncate">
                                 {log.entity}
                                 {log.entityId && (
-                                  <span className="ml-1 font-mono text-[var(--text-tertiary)] text-[11px]">
+                                  <span className="ml-1 font-mono text-[var(--text-tertiary)] text-[length:var(--ts-2xs)]">
                                     {log.entityId.length > 18
                                       ? `${log.entityId.slice(0, 8)}…`
                                       : log.entityId}
@@ -546,7 +551,7 @@ export default function ActivityPage() {
                                 )}
                               </span>
                             </div>
-                            <p className="mt-0.5 text-[11px] text-[var(--text-tertiary)] flex items-center gap-2 flex-wrap">
+                            <p className="mt-0.5 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] flex items-center gap-2 flex-wrap">
                               <span title={fmtAbsolute(log.createdAt)} className="font-semibold">
                                 {timeAgo(log.createdAt)}
                               </span>
@@ -576,7 +581,7 @@ export default function ActivityPage() {
                           <div className="px-4 pb-4 pt-1 bg-[var(--surface-sunken)]/30 border-t border-[var(--rule-soft)]">
                             <div className="rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3 overflow-x-auto">
                               {parsedDetail !== null ? (
-                                <pre className="text-[11px] font-mono text-[var(--text-secondary)] leading-relaxed whitespace-pre-wrap">
+                                <pre className="text-[length:var(--ts-2xs)] font-mono text-[var(--text-secondary)] leading-relaxed whitespace-pre-wrap">
                                   {JSON.stringify(parsedDetail, null, 2)}
                                 </pre>
                               ) : (
@@ -585,7 +590,7 @@ export default function ActivityPage() {
                                 </p>
                               )}
                             </div>
-                            <div className="mt-2 flex flex-wrap items-center gap-3 text-[11px] text-[var(--text-tertiary)]">
+                            <div className="mt-2 flex flex-wrap items-center gap-3 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                               <span>
                                 <strong className="font-bold text-[var(--text-secondary)]">ID:</strong>{" "}
                                 <span className="font-mono">{log.id}</span>
@@ -626,7 +631,7 @@ export default function ActivityPage() {
               type="button"
               onClick={() => void loadActivity(pagination.page - 1)}
               disabled={pagination.page <= 1 || loading}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border-2 border-[var(--rule-base)] text-sm font-bold text-[var(--text-secondary)] disabled:opacity-40 hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-[var(--rule-base)] text-sm font-bold text-[var(--text-secondary)] disabled:opacity-40 hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
             >
               ← Anterior
             </button>
@@ -637,7 +642,7 @@ export default function ActivityPage() {
               type="button"
               onClick={() => void loadActivity(pagination.page + 1)}
               disabled={pagination.page >= pagination.pages || loading}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border-2 border-[var(--rule-base)] text-sm font-bold text-[var(--text-secondary)] disabled:opacity-40 hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-[var(--rule-base)] text-sm font-bold text-[var(--text-secondary)] disabled:opacity-40 hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
             >
               Siguiente →
             </button>

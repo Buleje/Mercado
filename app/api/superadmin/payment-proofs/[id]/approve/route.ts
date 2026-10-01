@@ -181,7 +181,7 @@ export async function POST(
         "",
         `Tu tienda *${proof.storeName}* ya está activa con el plan *${planLabel}*.`,
         "",
-        `📲 Entrá a tu panel y configurá todo:`,
+        `📲 Entra a tu panel y configura todo:`,
         credentials.loginUrl,
         `👤 Usuario: ${credentials.username}`,
         credentials.ownerChose
@@ -189,18 +189,18 @@ export async function POST(
           : `🔑 Contraseña: ${credentials.password}`,
         "",
         credentials.ownerChose
-          ? `Cualquier duda, respondé este WhatsApp y te ayudamos.`
-          : `🔒 Por seguridad, cambiá la contraseña apenas entres (en Configuración).\nCualquier duda, respondé este WhatsApp y te ayudamos.`,
+          ? `Cualquier duda, responde este WhatsApp y te ayudamos.`
+          : `🔒 Por seguridad, cambia la contraseña apenas entres (en Configuración).\nCualquier duda, responde este WhatsApp y te ayudamos.`,
       ].join("\n")
     : [
         `🎉 ¡Bienvenido a Buleje, ${proof.ownerName}!`,
         "",
         `Aprobamos tu pago y tu tienda *${proof.storeName}* ya está activa con el plan *${planLabel}*.`,
         "",
-        `📲 Ingresá acá para configurar todo:`,
+        `📲 Ingresa acá para configurar todo:`,
         `${baseUrl}/admin/login`,
         "",
-        `Cualquier duda, respondé este WhatsApp y te ayudamos.`,
+        `Cualquier duda, responde este WhatsApp y te ayudamos.`,
       ].join("\n");
 
   sendWhatsAppQueued(proof.ownerPhone, customMsg ?? defaultMsg, {

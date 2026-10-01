@@ -4,6 +4,7 @@ import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { useState, useMemo, useEffect, startTransition } from "react";
 import { Star, ThumbsUp, ThumbsDown, Minus, TrendingUp, Download, Filter, MessageSquare, Loader2, AlertTriangle } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
+import { formatDateShort, formatMonthYear } from "@/lib/format";
 
 type Survey = { id: string; customer: string; score: number; comment: string; date: string; channel: "tienda" | "delivery" | "whatsapp" };
 type NPSTrend = { month: string; promoters: number; passives: number; detractors: number; nps: number };
@@ -24,8 +25,8 @@ function locationToChannel(location: string): Survey["channel"] {
 }
 
 function classify(score: number) { return score >= 9 ? "promoter" : score >= 7 ? "passive" : "detractor"; }
-function fmtDate(iso: string) { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short" }); }
-function fmtMonth(iso: string) { return new Date(iso).toLocaleDateString("es-PE", { month: "short", year: "2-digit" }); }
+function fmtDate(iso: string) { return formatDateShort(iso); }
+function fmtMonth(iso: string) { return formatMonthYear(iso); }
 
 /** Gauge SVG semicircular para el NPS score */
 function NPSGauge({ nps }: { nps: number }) {
@@ -39,7 +40,7 @@ function NPSGauge({ nps }: { nps: number }) {
   const needleX = cx + r * Math.cos(angle);
   const needleY = cy + r * Math.sin(angle);
 
-  const color = nps >= 50 ? "var(--accent)" : nps >= 0 ? "#f59e0b" : "#ef4444";
+  const color = nps >= 50 ? "var(--accent)" : nps >= 0 ? "#ff6b5b" : "#ef4444";
   const label = nps >= 50 ? "Excelente" : nps >= 20 ? "Bueno" : nps >= 0 ? "Aceptable" : "Necesita mejora";
 
   return (
@@ -48,7 +49,7 @@ function NPSGauge({ nps }: { nps: number }) {
         {/* Arco rojo */}
         <path d="M 30 90 A 70 70 0 0 1 76 27" fill="none" stroke="#fecaca" strokeWidth="14" strokeLinecap="round" />
         {/* Arco amarillo */}
-        <path d="M 76 27 A 70 70 0 0 1 124 27" fill="none" stroke="#fde68a" strokeWidth="14" strokeLinecap="round" />
+        <path d="M 76 27 A 70 70 0 0 1 124 27" fill="none" stroke="#ffe1dd" strokeWidth="14" strokeLinecap="round" />
         {/* Arco verde */}
         <path d="M 124 27 A 70 70 0 0 1 170 90" fill="none" stroke="#a7f3d0" strokeWidth="14" strokeLinecap="round" />
         {/* Aguja */}
@@ -133,8 +134,8 @@ export default function NPSTab() {
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Net Promoter Score y análisis de satisfacción del cliente</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button onClick={() => setView("detail")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === "detail" ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>Detalle</button>
-          <button onClick={() => setView("trend")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === "trend" ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>Tendencia</button>
+          <button onClick={() => setView("detail")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === "detail" ? "bg-primary text-white" : "bg-[var(--rule-soft)] text-[var(--text-secondary)] dark:text-muted")}>Detalle</button>
+          <button onClick={() => setView("trend")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === "trend" ? "bg-primary text-white" : "bg-[var(--rule-soft)] text-[var(--text-secondary)] dark:text-muted")}>Tendencia</button>
         </div>
       </div>
 
@@ -154,7 +155,7 @@ export default function NPSTab() {
             {filtered.length > 0 ? (
               <>
                 <div className="flex h-5 rounded-full overflow-hidden mb-2">
-                  <div className="bg-[var(--accent-soft)] transition-all flex items-center justify-center" style={{ width: `${(promoters / filtered.length) * 100}%` }}>
+                  <div className="bg-primary/10 transition-all flex items-center justify-center" style={{ width: `${(promoters / filtered.length) * 100}%` }}>
                     {(promoters / filtered.length) > 0.1 && <span className="text-white text-[length:var(--ts-2xs)] font-extrabold">{((promoters / filtered.length) * 100).toFixed(0)}%</span>}
                   </div>
                   <div className="bg-[var(--data-warning-500)] transition-all flex items-center justify-center" style={{ width: `${(passives / filtered.length) * 100}%` }}>
@@ -166,7 +167,7 @@ export default function NPSTab() {
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { label: "Promotores", value: promoters, pct: filtered.length > 0 ? ((promoters / filtered.length) * 100).toFixed(0) : "0", color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: ThumbsUp, desc: "(9-10)" },
+                    { label: "Promotores", value: promoters, pct: filtered.length > 0 ? ((promoters / filtered.length) * 100).toFixed(0) : "0", color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15", icon: ThumbsUp, desc: "(9-10)" },
                     { label: "Pasivos",    value: passives,  pct: filtered.length > 0 ? ((passives / filtered.length) * 100).toFixed(0) : "0",  color: "text-[var(--data-warning-500)]",  bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/20",  icon: Minus,    desc: "(7-8)" },
                     { label: "Detract.",   value: detractors,pct: filtered.length > 0 ? ((detractors / filtered.length) * 100).toFixed(0) : "0",color: "text-[var(--data-error-500)]",   bg: "bg-[var(--data-error-50)] dark:bg-red-950/20",     icon: ThumbsDown,desc: "(0-6)" },
                   ].map(k => (
@@ -184,7 +185,7 @@ export default function NPSTab() {
           </div>
 
           {/* Score promedio */}
-          <div className="flex flex-col items-center shrink-0 bg-gray-50 dark:bg-surface rounded-xl p-4 min-w-[80px]">
+          <div className="flex flex-col items-center shrink-0 bg-[var(--surface-sunken)] rounded-xl p-4 min-w-[80px]">
             <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Promedio</p>
             <p className="text-3xl font-extrabold text-[var(--data-success-500)]">{avgScore}</p>
             <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">/10</p>
@@ -197,13 +198,13 @@ export default function NPSTab() {
         <Filter className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" />
         <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Período:</span>
         {(["7d", "30d", "90d", "all"] as const).map(p => (
-          <button key={p} onClick={() => setFilterPeriod(p)} className={cn("px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors", filterPeriod === p ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>
+          <button key={p} onClick={() => setFilterPeriod(p)} className={cn("px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors", filterPeriod === p ? "bg-primary text-white" : "bg-[var(--rule-soft)] text-[var(--text-secondary)] dark:text-muted")}>
             {p === "all" ? "Todo" : p}
           </button>
         ))}
         <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted ml-2">Canal:</span>
         {["all", "tienda", "delivery", "whatsapp"].map(c => (
-          <button key={c} onClick={() => setFilterChannel(c)} className={cn("px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors", filterChannel === c ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>
+          <button key={c} onClick={() => setFilterChannel(c)} className={cn("px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors", filterChannel === c ? "bg-primary text-white" : "bg-[var(--rule-soft)] text-[var(--text-secondary)] dark:text-muted")}>
             {c === "all" ? "Todos" : c.charAt(0).toUpperCase() + c.slice(1)}
           </button>
         ))}
@@ -229,13 +230,13 @@ export default function NPSTab() {
             const type = classify(s.score);
             return (
               <div key={s.id} className={cn("bg-[var(--surface-raised)] rounded-xl border p-4 flex items-start gap-3", type === "promoter" ? "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30" : type === "passive" ? "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30" : "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30")}>
-                <div className={cn("h-10 w-10 rounded-full flex items-center justify-center text-base font-extrabold shrink-0", type === "promoter" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : type === "passive" ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]" : "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]")}>
+                <div className={cn("h-10 w-10 rounded-full flex items-center justify-center text-base font-extrabold shrink-0", type === "promoter" ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]" : type === "passive" ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]" : "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]")}>
                   {s.score}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                     <span className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">{s.customer}</span>
-                    <span className="text-[length:var(--ts-2xs)] bg-gray-100 dark:bg-surface px-1.5 py-0.5 rounded text-[var(--text-secondary)] dark:text-muted">{s.channel}</span>
+                    <span className="text-[length:var(--ts-2xs)] bg-[var(--rule-soft)] px-1.5 py-0.5 rounded text-[var(--text-secondary)] dark:text-muted">{s.channel}</span>
                     <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{fmtDate(s.date)}</span>
                   </div>
                   {s.comment && (
@@ -277,7 +278,7 @@ export default function NPSTab() {
                   return (
                     <div key={t.month} className="flex flex-col items-center gap-1 flex-1 min-w-0" title={`${t.month}: NPS ${t.nps}`}>
                       <span className={cn("text-[length:var(--ts-2xs)] font-extrabold", isPositive ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{t.nps > 0 ? `+${t.nps}` : t.nps}</span>
-                      <div className={cn("w-full rounded-t-lg transition-all", isPositive ? "bg-[var(--accent-soft)]" : "bg-[var(--data-error-500)]")} style={{ height: `${heightPct}%` }} />
+                      <div className={cn("w-full rounded-t-lg transition-all", isPositive ? "bg-primary/10" : "bg-[var(--data-error-500)]")} style={{ height: `${heightPct}%` }} />
                       <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] truncate w-full text-center">{t.month}</span>
                     </div>
                   );
@@ -291,8 +292,8 @@ export default function NPSTab() {
                   return (
                     <div key={t.month} className="flex items-center gap-3">
                       <span className="w-14 text-xs font-bold text-[var(--text-secondary)] dark:text-muted shrink-0">{t.month}</span>
-                      <div className="flex-1 flex h-4 rounded-full overflow-hidden bg-gray-100 dark:bg-surface">
-                        <div className="bg-[var(--accent-soft)] transition-all" style={{ width: `${(t.promoters / total) * 100}%` }} />
+                      <div className="flex-1 flex h-4 rounded-full overflow-hidden bg-[var(--rule-soft)] ">
+                        <div className="bg-primary/10 transition-all" style={{ width: `${(t.promoters / total) * 100}%` }} />
                         <div className="bg-[var(--data-warning-500)] transition-all" style={{ width: `${(t.passives / total) * 100}%` }} />
                         <div className="bg-[var(--data-error-500)] transition-all" style={{ width: `${(t.detractors / total) * 100}%` }} />
                       </div>

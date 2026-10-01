@@ -6,6 +6,7 @@ import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { runWithAuditContext } from "@/lib/audit/audit-context";
+import { DropshipDB } from "@/lib/db/dropship.db";
 
 const VALID_STATUSES = ["pendiente", "confirmado", "preparando", "en_camino", "entregado", "cancelado"] as const;
 
@@ -56,6 +57,25 @@ export async function POST(req: NextRequest) {
       `Cambio masivo de estado a "${status}" — ${result.count} pedido(s)`,
       undefined, auth.username, requestId,
     ).catch((err) => logger.warn("[orders/bulk-status] activity log failed", { err: String(err) }));
+
+    // ── Dropshipping (ADR-298) ──────────────────────────────────────────
+    // El trigger de fulfillment vive en OrdersDB.update, que esta ruta NO usa
+    // (updateMany directo). Sin esto, confirmar pedidos EN LOTE — el flujo
+    // habitual del admin — nunca generaba el envío al proveedor. Replicamos el
+    // disparo acá: fire-and-forget + self-scoped por tenant (cada
+    // createFulfillmentsFromOrder valida el order por tenantId), igual que en
+    // OrdersDB.update. Idempotente (no duplica si el pedido ya tiene envíos).
+    if (status === "confirmado" && result.count > 0) {
+      void (async () => {
+        if (!(await DropshipDB.isEnabled(auth.tenantId))) return;
+        for (const id of ids) {
+          const n = await DropshipDB.createFulfillmentsFromOrder(auth.tenantId, id);
+          if (n > 0) logger.info("[dropship] fulfillments creados (bulk)", { tenantId: auth.tenantId, orderId: id, n });
+        }
+      })().catch((err) =>
+        logger.error("[dropship] fallo al crear fulfillment (bulk)", { tenantId: auth.tenantId, error: String(err) }),
+      );
+    }
 
     return NextResponse.json({ ok: true, updated: result.count });
   } catch (e) {

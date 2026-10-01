@@ -1,64 +1,57 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { readData, writeData } from "@/lib/file-store";
+import { assertCsrf } from "@/lib/auth/csrf";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
+import { leerJson } from "@/lib/errores/sin-dato";
+import { AdminTasksDB } from "@/lib/db/admin-tasks.db";
+import { tareaEditarSchema } from "@/lib/admin/metas-tareas";
 
-const KEY = "tasks";
+type Contexto = { params: Promise<{ id: string }> };
 
-interface Task {
-  id: string;
-  title: string;
-  description?: string;
-  priority: string;
-  status: string;
-  assignedTo?: string;
-  dueDate?: string;
-  module?: string;
-  createdAt: string;
-  completedAt?: string;
-}
+/** PATCH — cambia sólo los campos que llegan; `completedAt` lo decide el servidor al cambiar el estado. */
+export async function PATCH(req: NextRequest, { params }: Contexto) {
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
+  const _rl = applyRateLimit(req, "MODERATE", "tasks-X");
+  if (_rl) return _rl;
+  const auth = await requireAdmin(req);
+  if (auth instanceof NextResponse) return auth;
 
-async function getTasks(): Promise<Task[]> {
-  const data = await readData<{ tasks?: Task[] }>(KEY).catch(() => null);
-  return data?.tasks ?? [];
-}
-async function saveTasks(tasks: Task[]): Promise<void> {
-  await writeData(KEY, { tasks });
-}
+  const { id } = await params;
+  const parsed = tareaEditarSchema.safeParse(await leerJson(req));
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "Revisa los datos de la tarea", code: "validation_error", issues: parsed.error.issues },
+      { status: 422 },
+    );
+  }
 
-export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const _rl = await applyRateLimit(req, "MODERATE", "tasks-X"); if (_rl) return _rl;
-    const auth = await requireAdmin(req);
-    if (auth instanceof NextResponse) return auth;
-    const { id } = await params;
-    const body = await req.json();
-    const tasks = await getTasks();
-    const idx = tasks.findIndex(t => t.id === id);
-    if (idx === -1) return NextResponse.json({ error: "not found" }, { status: 404 });
-    tasks[idx] = { ...tasks[idx], ...body, id };
-    await saveTasks(tasks);
-    return NextResponse.json(tasks[idx]);
-
+    const tarea = await AdminTasksDB.editar(auth.tenantId, id, parsed.data);
+    if (!tarea) return NextResponse.json({ error: "La tarea ya no existe" }, { status: 404 });
+    return NextResponse.json(tarea);
   } catch (e) {
-    logger.error("[patch] error", { err: e instanceof Error ? e.message : String(e) });
-    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+    logger.error("[tasks] PATCH error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "No se pudo guardar la tarea. Reintenta." }, { status: 503 });
   }
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try {
-    const _rl = await applyRateLimit(req, "MODERATE", "tasks-X"); if (_rl) return _rl;
-    const auth = await requireAdmin(req);
-    if (auth instanceof NextResponse) return auth;
-    const { id } = await params;
-    const tasks = await getTasks();
-    await saveTasks(tasks.filter(t => t.id !== id));
-    return NextResponse.json({ ok: true });
+/** DELETE — idempotente: si la tarea ya no estaba, el resultado es el mismo. */
+export async function DELETE(req: NextRequest, { params }: Contexto) {
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
+  const _rl = applyRateLimit(req, "MODERATE", "tasks-X");
+  if (_rl) return _rl;
+  const auth = await requireAdmin(req);
+  if (auth instanceof NextResponse) return auth;
 
+  const { id } = await params;
+  try {
+    await AdminTasksDB.borrar(auth.tenantId, id);
+    return NextResponse.json({ ok: true });
   } catch (e) {
-    logger.error("[delete] error", { err: e instanceof Error ? e.message : String(e) });
-    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+    logger.error("[tasks] DELETE error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "No se pudo eliminar la tarea. Reintenta." }, { status: 503 });
   }
 }

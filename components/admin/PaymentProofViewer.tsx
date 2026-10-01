@@ -17,7 +17,8 @@
  *   - Badge de status (pending / approved / rejected)
  */
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { descartarEsperado } from "@/lib/errores/sin-dato";
 import {
   X,
   ZoomIn,
@@ -27,6 +28,7 @@ import {
   AlertCircle,
   Clock,
 } from "@buleje/design-system/icons";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { cn } from "@/lib/utils";
 
 type Method = "yape" | "plin" | "transfer" | "efectivo" | string | null;
@@ -79,7 +81,7 @@ const STATUS_BADGE: Record<
   },
   approved: {
     label: "Aprobado",
-    bg: "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border-emerald-300/40",
+    bg: "bg-[var(--data-success-100)] dark:bg-[var(--data-success-500)]/40 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] border-[var(--data-success-500)]/40",
     text: "emerald",
     Icon: CheckCircle2,
   },
@@ -133,7 +135,7 @@ export function PaymentProofViewer({ orderId, isCash, className }: Props) {
       fetch(`/api/marketplace/orders/${encodeURIComponent(orderId)}/proof-url`)
         .then((r) => (r.ok ? r.json() : null))
         .then((data: { url: string; expiresAt: string } | null) => data?.url ?? null)
-        .catch(() => null), // fallback silencioso: si falla, usa imageUrl del proof
+        .catch(descartarEsperado), // fallback silencioso: si falla, usa imageUrl del proof
     ])
       .then(([proofData, freshUrl]) => {
         if (!cancelled) {
@@ -152,6 +154,13 @@ export function PaymentProofViewer({ orderId, isCash, className }: Props) {
       cancelled = true;
     };
   }, [orderId, isCash]);
+
+  /* Los hooks van ANTES de los returns tempranos: debajo, el primer render
+     (sin comprobante) llamaba 3 hooks menos que el siguiente y React tiraba
+     «Rendered more hooks than during the previous render» (revisión 2026-09-12). */
+  const cerrarLightbox = useCallback(() => setLightbox(false), []);
+  const lightboxRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(lightboxRef, { onCerrar: cerrarLightbox, activo: lightbox });
 
   if (isCash) return null;
   if (loading) {
@@ -194,7 +203,7 @@ export function PaymentProofViewer({ orderId, isCash, className }: Props) {
     <>
       <div
         className={cn(
-          "rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden",
+          "rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden",
           className,
         )}
       >
@@ -222,7 +231,7 @@ export function PaymentProofViewer({ orderId, isCash, className }: Props) {
           <button
             type="button"
             onClick={() => setLightbox(true)}
-            className="group relative aspect-[3/4] rounded-xl overflow-hidden border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] hover:border-[var(--accent)] transition-colors"
+            className="group relative aspect-[3/4] rounded-xl overflow-hidden border border-[var(--rule-base)] bg-[var(--surface-sunken)] hover:border-[var(--accent)] transition-colors"
             aria-label="Ampliar comprobante"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -313,30 +322,38 @@ export function PaymentProofViewer({ orderId, isCash, className }: Props) {
 
       {lightbox && (
         <div
-          role="dialog"
-          aria-modal="true"
-          aria-label="Comprobante ampliado"
-          className="fixed inset-0 z-[200] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4"
-          onClick={() => setLightbox(false)}
+          role="presentation"
+          className="fixed inset-0 z-system bg-black/85 backdrop-blur-sm"
+          onClick={(e) => e.target === e.currentTarget && setLightbox(false)}
         >
-          <button
-            type="button"
-            aria-label="Cerrar"
-            className="absolute top-4 right-4 inline-flex items-center justify-center h-11 w-11 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
-            onClick={(e) => {
-              e.stopPropagation();
-              setLightbox(false);
-            }}
+          {/* El diálogo deja pasar los clics (`pointer-events-none`): tocar fuera de la
+              foto llega al fondo y cierra, como antes; la X y la foto sí los reciben. */}
+          <div
+            ref={lightboxRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Comprobante ampliado"
+            tabIndex={-1}
+            className="pointer-events-none absolute inset-0 flex items-center justify-center p-4"
           >
-            <X className="h-5 w-5" strokeWidth={2} />
-          </button>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={proof.imageUrl}
-            alt="Comprobante de pago ampliado"
-            className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          />
+            <button
+              type="button"
+              aria-label="Cerrar"
+              className="pointer-events-auto absolute top-4 right-4 inline-flex items-center justify-center h-11 w-11 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                setLightbox(false);
+              }}
+            >
+              <X className="h-5 w-5" strokeWidth={2} />
+            </button>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={proof.imageUrl}
+              alt="Comprobante de pago ampliado"
+              className="pointer-events-auto max-w-full max-h-[90vh] object-contain rounded-2xl shadow-[var(--shadow-xl)]"
+            />
+          </div>
         </div>
       )}
     </>

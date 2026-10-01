@@ -7,42 +7,55 @@
  *  • KPIs arriba (adelantado / liquidado / pendiente / % recuperado / personas).
  *  • Segmentación por MONEDA (fix bug: antes sumaba S/ y US$ juntos). Toggle si
  *    hay >1 moneda; default a la de mayor volumen.
- *  • Aging de saldos (0-30 / 31-60 / 61-90 / +90 días) — prioriza cobranza.
+ *  • Tramos de atraso (mismos 5 de Cobranza, vía `deudoresDeCobranza`/TRAMOS) —
+ *    antes bucketeaba por antigüedad del adelanto (`daysSince(fechaAdelanto)`),
+ *    el mismo error que `urgencia-cobranza.ts` documenta como el bug que
+ *    vino a corregir: un adelanto de 45 días con entrega pactada para el mes
+ *    que viene contaba como "vencido" acá aunque en Cobranza no lo fuera.
  *  • Tasa de recuperación + velocidad media de liquidación (días).
+ *  • Bloque «Lo que recibiste» (ADR-448, 2026-09-28): lo dado y lo recibido
+ *    son plata que se mueve al REVÉS (te deben vs. le debes), así que nunca se
+ *    mezclan — el resto de la vista sigue calculando SÓLO sobre `adelantos`
+ *    (lo dado); `recibidos` sólo alimenta este bloque nuevo, en la MISMA
+ *    moneda elegida arriba (nunca sumar PEN+USD).
  */
 
 import { useMemo, useState } from "react";
 import { CardTitle, StatCard } from "@buleje/design-system";
-import { BarChart3, TrendingDown, TrendingUp, Coins, Users, Clock, FileText, Gauge } from "@buleje/design-system/icons";
+import { BarChart3, TrendingDown, TrendingUp, Coins, Users, Clock, FileText, Gauge, PartyPopper, ArrowDownToLine, Wrench, Landmark } from "@buleje/design-system/icons";
 import {
   ResponsiveContainer, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip,
 } from "recharts";
 import type { DbAdelanto } from "@/lib/db/adelantos.db";
 import { fmtMon, EmptyState, SkeletonGrid } from "./shared";
+import { deudoresDeCobranza } from "@/lib/adelantos/urgencia-cobranza";
+import { TRAMOS, tramoDe, type TramoId } from "@/lib/adelantos/gestion-cobranza";
+import { formatMonth } from "@/lib/format";
+import type { AdelantoConceptoRecibido } from "@/lib/adelantos/direccion";
 
-const AGING_BUCKETS = [
-  { key: "0-30", label: "0-30 días", color: "var(--data-success)" },
-  { key: "31-60", label: "31-60 días", color: "var(--data-info)" },
-  { key: "61-90", label: "61-90 días", color: "var(--data-warning)" },
-  { key: "90+", label: "+90 días", color: "var(--data-danger)" },
-] as const;
-
-function daysSince(iso: string): number {
-  return Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
-}
-
-export function AnalisisView({ adelantos, loading }: { adelantos: DbAdelanto[]; loading: boolean }) {
-  // Monedas presentes (por volumen adelantado), para el toggle.
+export function AnalisisView({
+  adelantos,
+  recibidos,
+  loading,
+}: {
+  /** Sólo lo DADO: todo lo de esta vista (salvo el bloque «Lo que recibiste») es «lo que diste». */
+  adelantos: DbAdelanto[];
+  /** Lo RECIBIDO (ADR-448): sólo alimenta el bloque nuevo, nunca los totales de arriba. */
+  recibidos: DbAdelanto[];
+  loading: boolean;
+}) {
+  // Monedas presentes (por volumen, dado + recibido), para el toggle — un
+  // tenant que sólo RECIBE en una moneda no debía perder ese botón.
   const monedas = useMemo(() => {
     const vol: Record<string, number> = {};
-    for (const a of adelantos) {
+    for (const a of [...adelantos, ...recibidos]) {
       if (a.status === "CANCELADO") continue;
       const c = a.moneda || "PEN";
       vol[c] = (vol[c] ?? 0) + a.montoAdelantado;
     }
     return Object.keys(vol).sort((x, y) => vol[y] - vol[x]);
-  }, [adelantos]);
+  }, [adelantos, recibidos]);
 
   const [moneda, setMoneda] = useState<string>(monedas[0] ?? "PEN");
   const cur = monedas.includes(moneda) ? moneda : (monedas[0] ?? "PEN");
@@ -52,6 +65,29 @@ export function AnalisisView({ adelantos, loading }: { adelantos: DbAdelanto[]; 
     () => adelantos.filter((a) => (a.moneda || "PEN") === cur && a.status !== "CANCELADO"),
     [adelantos, cur],
   );
+
+  // ── Recibido (ADR-448), misma moneda, nunca mezclado con lo dado ───────────
+  const recibidoScoped = useMemo(
+    () => recibidos.filter((a) => (a.moneda || "PEN") === cur && a.status !== "CANCELADO"),
+    [recibidos, cur],
+  );
+  const recibidoKpi = useMemo(() => {
+    let total = 0, porDevolver = 0;
+    const porConcepto: Record<AdelantoConceptoRecibido, number> = { SERVICIO: 0, PRESTAMO: 0 };
+    const topMap: Record<string, number> = {};
+    for (const a of recibidoScoped) {
+      total += a.montoAdelantado;
+      if (a.status === "ABIERTO" && a.saldoPendiente > 0) {
+        porDevolver += a.saldoPendiente;
+        const k = (a.beneficiario?.nombre ?? "—").slice(0, 14);
+        topMap[k] = (topMap[k] ?? 0) + a.saldoPendiente;
+      }
+      if (a.conceptoRecibido) porConcepto[a.conceptoRecibido] += a.montoAdelantado;
+    }
+    const topPersonas = Object.entries(topMap).map(([name, monto]) => ({ name, monto })).sort((x, y) => y.monto - x.monto).slice(0, 5);
+    return { total, porDevolver, porConcepto, topPersonas };
+  }, [recibidoScoped]);
+  const hayRecibido = recibidoScoped.length > 0;
 
   // ── KPIs ──────────────────────────────────────────────────────────────────
   const kpi = useMemo(() => {
@@ -82,16 +118,21 @@ export function AnalisisView({ adelantos, loading }: { adelantos: DbAdelanto[]; 
     return Math.round(tiempos.reduce((s, d) => s + d, 0) / tiempos.length);
   }, [scoped]);
 
-  // ── Aging de saldos pendientes ──────────────────────────────────────────────
+  /**
+   * Atraso de saldos pendientes — por DEUDOR, no por adelanto suelto.
+   *
+   * Misma regla que Cobranza (`deudoresDeCobranza` + `tramoDe`): el atraso se
+   * mide contra la pactada/vencimiento incumplido más viejo de la persona, y
+   * sólo cae a antigüedad cuando no hay fecha comprometida. Si una persona
+   * debe por dos adelantos, el peor de los dos arrastra el saldo de ambos al
+   * mismo tramo — es la misma convención de riesgo que usa Cobranza para
+   * decidir a quién llamar primero.
+   */
   const aging = useMemo(() => {
-    const buckets: Record<string, number> = { "0-30": 0, "31-60": 0, "61-90": 0, "90+": 0 };
-    for (const a of scoped) {
-      if (a.status !== "ABIERTO" || a.saldoPendiente <= 0) continue;
-      const d = daysSince(a.fechaAdelanto);
-      const k = d <= 30 ? "0-30" : d <= 60 ? "31-60" : d <= 90 ? "61-90" : "90+";
-      buckets[k] += a.saldoPendiente;
-    }
-    return AGING_BUCKETS.map((b) => ({ ...b, monto: buckets[b.key] }));
+    const abiertos = scoped.filter((a) => a.status === "ABIERTO" && a.saldoPendiente > 0);
+    const buckets = Object.fromEntries(TRAMOS.map((t) => [t.id, 0])) as Record<TramoId, number>;
+    for (const d of deudoresDeCobranza(abiertos)) buckets[tramoDe(d.dias)] += d.saldo;
+    return TRAMOS.map((t) => ({ key: t.id, label: t.label, color: t.tono, monto: buckets[t.id] }));
   }, [scoped]);
   const hayAging = aging.some((b) => b.monto > 0);
 
@@ -101,7 +142,7 @@ export function AnalisisView({ adelantos, loading }: { adelantos: DbAdelanto[]; 
     for (let i = 5; i >= 0; i--) {
       const d = new Date(); d.setMonth(d.getMonth() - i);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-      const label = d.toLocaleDateString("es-PE", { month: "short" });
+      const label = formatMonth(d);
       let adelantado = 0, liquidado = 0;
       for (const a of scoped) {
         if (a.fechaAdelanto.startsWith(key)) adelantado += a.montoAdelantado;
@@ -146,7 +187,7 @@ export function AnalisisView({ adelantos, loading }: { adelantos: DbAdelanto[]; 
   };
 
   if (loading) return <SkeletonGrid />;
-  if (adelantos.length === 0) return <EmptyState icon={BarChart3} title="Sin datos" hint="Los gráficos aparecen cuando registres adelantos." />;
+  if (adelantos.length === 0 && recibidos.length === 0) return <EmptyState icon={BarChart3} title="Sin datos" hint="Los gráficos aparecen cuando registres adelantos." />;
 
   const monedaLabel = (c: string) => (c === "USD" ? "US$ Dólares" : c === "PEN" ? "S/ Soles" : c);
 
@@ -157,26 +198,26 @@ export function AnalisisView({ adelantos, loading }: { adelantos: DbAdelanto[]; 
         <CardTitle className="text-base font-extrabold text-[var(--text-primary)]">Análisis del módulo</CardTitle>
         <div className="flex items-center gap-2">
           {monedas.length > 1 && (
-            <div className="inline-flex rounded-xl border-2 border-[var(--rule-base)] overflow-hidden">
+            <div className="inline-flex rounded-xl border border-[var(--rule-base)] overflow-hidden">
               {monedas.map((c) => (
                 <button
                   key={c}
                   onClick={() => setMoneda(c)}
-                  className={`h-10 px-4 text-sm font-bold transition-colors ${cur === c ? "bg-primary text-white" : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"}`}
+                  className={`h-10 px-4 text-sm font-semibold transition-colors ${cur === c ? "bg-primary text-white" : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"}`}
                 >
                   {c === "USD" ? "US$" : "S/"}
                 </button>
               ))}
             </div>
           )}
-          <button onClick={exportarCsv} className="inline-flex items-center gap-1 h-10 px-4 rounded-xl border border-[var(--rule-base)] text-base font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors">
+          <button onClick={exportarCsv} className="inline-flex items-center gap-1 h-10 px-4 rounded-xl border border-[var(--rule-base)] text-base font-semibold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors">
             <FileText className="h-5 w-5" /> Exportar CSV
           </button>
         </div>
       </div>
 
       {monedas.length > 1 && (
-        <p className="text-sm text-[var(--text-tertiary)] -mt-2">Mostrando <strong className="text-[var(--text-secondary)]">{monedaLabel(cur)}</strong>. Cambiá la moneda arriba.</p>
+        <p className="text-sm text-[var(--text-tertiary)] -mt-2">Mostrando <strong className="text-[var(--text-secondary)]">{monedaLabel(cur)}</strong>. Cambia la moneda arriba.</p>
       )}
 
       {/* KPIs */}
@@ -191,9 +232,9 @@ export function AnalisisView({ adelantos, loading }: { adelantos: DbAdelanto[]; 
       {/* Aging de saldos */}
       <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
         <CardTitle className="text-base font-extrabold text-[var(--text-primary)] mb-1 inline-flex items-center gap-2">
-          <Clock className="h-5 w-5 text-[var(--data-warning)]" /> Antigüedad de lo que te deben
+          <Clock className="h-5 w-5 text-[var(--data-warning)]" /> Atraso de lo que te deben
         </CardTitle>
-        <p className="text-sm text-[var(--text-tertiary)] mb-4">Mientras más viejo el saldo, más difícil de cobrar. Priorizá los de la derecha.</p>
+        <p className="text-sm text-[var(--text-tertiary)] mb-4">A quién hay que cobrarle primero — mientras más atrasado, más prioridad.</p>
         {hayAging ? (
           <ResponsiveContainer minWidth={0} width="100%" height={220}>
             <BarChart data={aging}>
@@ -204,7 +245,7 @@ export function AnalisisView({ adelantos, loading }: { adelantos: DbAdelanto[]; 
               <Bar dataKey="monto" radius={[6, 6, 0, 0]}>{aging.map((b) => <Cell key={b.key} fill={b.color} />)}</Bar>
             </BarChart>
           </ResponsiveContainer>
-        ) : <p className="py-8 text-center text-base text-[var(--text-tertiary)]">Nadie te debe nada en {monedaLabel(cur)}. 🎉</p>}
+        ) : <p className="flex items-center justify-center gap-1.5 py-8 text-center text-base text-[var(--text-tertiary)]"><PartyPopper className="h-4 w-4 shrink-0 text-[var(--data-success-500)]" aria-hidden /> Nadie te debe nada en {monedaLabel(cur)}.</p>}
       </div>
 
       {/* Evolución mensual */}
@@ -258,6 +299,50 @@ export function AnalisisView({ adelantos, loading }: { adelantos: DbAdelanto[]; 
           ) : <p className="py-8 text-center text-base text-[var(--text-tertiary)]">Nadie debe nada.</p>}
         </div>
       </div>
+
+      {/* Lo que recibiste (ADR-448): separado de todo lo de arriba — es plata
+          que el negocio recibió y le debe a otro, lo opuesto de un adelanto. */}
+      {hayRecibido && (
+        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+          <CardTitle className="text-base font-extrabold text-[var(--text-primary)] mb-1">Lo que recibiste</CardTitle>
+          <p className="text-sm text-[var(--text-tertiary)] mb-4">
+            Plata que te prestaron o te pagaron antes de un servicio — la devuelves tú, no al revés.
+          </p>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <StatCard
+              label="Total recibido"
+              value={fmtMon(recibidoKpi.total, cur)}
+              icon={ArrowDownToLine}
+              subValue={monedaLabel(cur)}
+            />
+            <StatCard
+              label="Por devolver"
+              value={fmtMon(recibidoKpi.porDevolver, cur)}
+              icon={Coins}
+              emphasis={recibidoKpi.porDevolver > 0 ? "warning" : "neutral"}
+              subValue={recibidoKpi.porDevolver > 0 ? "Le debes" : "Al día"}
+            />
+            <div className="flex items-center gap-3 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-3">
+              <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--text-secondary)]"><Wrench className="h-4 w-4 shrink-0" /> Servicio: <strong className="text-[var(--text-primary)]">{fmtMon(recibidoKpi.porConcepto.SERVICIO, cur)}</strong></span>
+              <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--text-secondary)]"><Landmark className="h-4 w-4 shrink-0" /> Préstamo: <strong className="text-[var(--text-primary)]">{fmtMon(recibidoKpi.porConcepto.PRESTAMO, cur)}</strong></span>
+            </div>
+          </div>
+          {recibidoKpi.topPersonas.length > 0 && (
+            <div className="mt-4">
+              <p className="mb-2 text-sm font-bold text-[var(--text-secondary)]">A quién le debes más</p>
+              <ResponsiveContainer minWidth={0} width="100%" height={Math.max(80, recibidoKpi.topPersonas.length * 36)}>
+                <BarChart data={recibidoKpi.topPersonas} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(107,114,128,0.1)" horizontal={false} />
+                  <XAxis type="number" tickFormatter={(v: number) => fmtMon(v, cur)} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <Tooltip formatter={((v: number) => [fmtMon(Number(v), cur), "Le debes"]) as never} contentStyle={{ borderRadius: "12px", fontSize: "13px" }} />
+                  <Bar dataKey="monto" radius={[0, 6, 6, 0]} fill="var(--data-info-500)" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

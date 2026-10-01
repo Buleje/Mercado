@@ -7,7 +7,22 @@
     "app/api/**": {
       "maxDuration": 30
     },
+    "app/api/admin/forestal/anexos/a-despacho/route.ts": {
+      "maxDuration": 300
+    },
+    "app/api/admin/forestal/ctp/vincular-trozas/route.ts": {
+      "maxDuration": 300
+    },
     "app/api/cron/churn-score/route.ts": {
+      "maxDuration": 300
+    },
+    "app/api/cron/documentos-papelera/route.ts": {
+      "maxDuration": 300
+    },
+    "app/api/cron/documentos-indexar/route.ts": {
+      "maxDuration": 300
+    },
+    "app/api/admin/documents/indexar-pendientes/route.ts": {
       "maxDuration": 300
     },
     "app/api/cron/agent-tasks/route.ts": {
@@ -29,6 +44,9 @@
       "maxDuration": 300
     },
     "app/api/cron/vendor-reverify/route.ts": {
+      "maxDuration": 300
+    },
+    "app/api/cron/reportes-diarios/**": {
       "maxDuration": 300
     }
   },
@@ -52,6 +70,10 @@
   ],
   "crons": [
     {
+      "path": "/api/cron/campaigns-dispatch",
+      "schedule": "15 5 * * *"
+    },
+    {
       "path": "/api/cron/automations",
       "schedule": "0 8 * * *"
     },
@@ -60,12 +82,28 @@
       "schedule": "0 9 * * *"
     },
     {
+      "path": "/api/cron/contratos-vencimiento",
+      "schedule": "10 9 * * *"
+    },
+    {
+      "path": "/api/cron/documentos-papelera",
+      "schedule": "20 9 * * *"
+    },
+    {
+      "path": "/api/cron/documentos-indexar",
+      "schedule": "40 3 * * *"
+    },
+    {
       "path": "/api/cron/adelantos-recordatorios",
       "schedule": "0 8 * * *"
     },
     {
       "path": "/api/cron/cacao-beneficio-recordatorios",
       "schedule": "30 8 * * *"
+    },
+    {
+      "path": "/api/cron/cacao-precio-diario",
+      "schedule": "0 12 * * *"
     },
     {
       "path": "/api/cron/adelantos-recurrentes",
@@ -204,6 +242,10 @@
       "schedule": "0 0 * * 0"
     },
     {
+      "path": "/api/cron/expense-month-close",
+      "schedule": "20 5 1 * *"
+    },
+    {
       "path": "/api/cron/monthly-report",
       "schedule": "0 6 1 * *"
     },
@@ -321,7 +363,7 @@
     },
     {
       "path": "/api/cron/sunat-retry",
-      "schedule": "0 */4 * * *"
+      "schedule": "0 4 * * *"
     },
     {
       "path": "/api/cron/loyalty-points-reminder",
@@ -354,6 +396,42 @@
     {
       "path": "/api/cron/activity-log-purge",
       "schedule": "0 4 * * 0"
+    },
+    {
+      "path": "/api/cron/forestal-plazos",
+      "schedule": "20 12 * * *"
+    },
+    {
+      "path": "/api/cron/tramites-vencimiento",
+      "schedule": "50 8 * * *"
+    },
+    {
+      "path": "/api/cron/tramites-sin-respuesta",
+      "schedule": "5 9 * * *"
+    },
+    {
+      "path": "/api/cron/asistente-avisos",
+      "schedule": "20 12 * * *"
+    },
+    {
+      "path": "/api/cron/ia-salud",
+      "schedule": "0 11 * * *"
+    },
+    {
+      "path": "/api/cron/reportes-diarios/0700",
+      "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/reportes-diarios/1300",
+      "schedule": "0 18 * * *"
+    },
+    {
+      "path": "/api/cron/reportes-diarios/1800",
+      "schedule": "0 23 * * *"
+    },
+    {
+      "path": "/api/cron/reportes-diarios/2100",
+      "schedule": "0 2 * * *"
     }
   ]
 }

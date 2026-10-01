@@ -13,6 +13,7 @@ import {
   Loader2,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { formatCurrency, formatDate, formatTime } from "@/lib/format";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -62,7 +63,7 @@ const DEFAULT_TEMPLATES: Record<string, string> = {
 };
 
 const fmt = (n: number) =>
-  `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  `${formatCurrency(n)}`;
 
 function daysSince(dateStr: string | null | undefined): number {
   if (!dateStr) return 9999;
@@ -71,11 +72,7 @@ function daysSince(dateStr: string | null | undefined): number {
 
 function applyTemplate(template: string, customer: Customer): string {
   const lastOrder = customer.lastOrderDate
-    ? new Date(customer.lastOrderDate).toLocaleDateString("es-PE", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      })
+    ? formatDate(customer.lastOrderDate)
     : "una fecha anterior";
 
   return template
@@ -208,7 +205,7 @@ export default function MassMessageSender({
   return (
     <div className="flex flex-col gap-6">
       {/* Segment selector */}
-      <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-5">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
         <div className="mb-3 flex items-center gap-2">
           <Filter className="h-4 w-4 text-primary" />
           <CardTitle className="text-sm font-semibold text-[var(--text-primary)]">
@@ -229,9 +226,9 @@ export default function MassMessageSender({
                   key={s}
                   onClick={() => setSegment(s)}
                   className={cn(
-                    "rounded-lg border px-3 py-2 text-left text-xs font-semibold transition-colors",
+                    "rounded-xl border px-3 py-2 text-left text-xs font-semibold transition-colors",
                     segment === s
-                      ? "border-primary bg-primary/10 text-primary"
+                      ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                       : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-primary/40 hover:text-[var(--text-primary)]",
                   )}
                 >
@@ -249,8 +246,8 @@ export default function MassMessageSender({
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar en el segmento..."
             className={cn(
-              "w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 py-2 pl-9 pr-3 text-sm",
-              "text-[var(--text-primary)] placeholder-gray-400 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20",
+              "w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] h-10 pl-9 pr-3 text-sm",
+              "text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-primary focus:ring-2 focus:ring-primary/20",
             )}
           />
         </div>
@@ -270,7 +267,7 @@ export default function MassMessageSender({
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Template editor */}
-        <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-5">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
           <div className="mb-3 flex items-center gap-2">
             <MessageSquare className="h-4 w-4 text-primary" />
             <CardTitle className="text-sm font-semibold text-[var(--text-primary)]">
@@ -287,7 +284,7 @@ export default function MassMessageSender({
                 className={cn(
                   "rounded-full border px-3 py-1 text-xs font-semibold capitalize transition-colors",
                   selectedTemplateKey === key
-                    ? "border-primary bg-primary/10 text-primary"
+                    ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                     : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-primary/40 hover:text-[var(--text-primary)]",
                 )}
               >
@@ -299,10 +296,11 @@ export default function MassMessageSender({
           <textarea
             value={template}
             onChange={(e) => setTemplate(e.target.value)}
+            aria-label="Mensaje a enviar"
             rows={5}
             className={cn(
-              "w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 p-3 text-sm leading-relaxed",
-              "text-[var(--text-primary)] placeholder-gray-400 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20",
+              "w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3 text-sm leading-relaxed",
+              "text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-primary focus:ring-2 focus:ring-primary/20",
               "resize-none"
             )}
           />
@@ -314,7 +312,7 @@ export default function MassMessageSender({
               <button
                 key={v}
                 onClick={() => setTemplate((t) => `${t} ${v}`)}
-                className="rounded-md bg-gray-100 px-2 py-0.5 font-mono text-[var(--text-secondary)] hover:bg-gray-200"
+                className="rounded-lg bg-[var(--rule-soft)] px-2 py-0.5 font-mono text-[var(--text-secondary)] hover:bg-[var(--rule-base)]"
               >
                 {v}
               </button>
@@ -323,7 +321,7 @@ export default function MassMessageSender({
         </div>
 
         {/* Preview */}
-        <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-5">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
           <div className="mb-3 flex items-center justify-between">
             <CardTitle className="text-sm font-semibold text-[var(--text-primary)]">
               Vista previa
@@ -337,7 +335,8 @@ export default function MassMessageSender({
                       filtered.find((c) => c.id === Number(e.target.value)) ?? null
                     )
                   }
-                  className="appearance-none rounded-lg border border-[var(--rule-base)] bg-gray-50 py-1 pl-2 pr-6 text-xs text-[var(--text-primary)] focus:border-primary focus:outline-none"
+                  aria-label="Cliente de ejemplo para la vista previa"
+                  className="appearance-none rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] py-1 pl-2 pr-6 text-xs text-[var(--text-primary)] focus:border-primary focus:outline-none"
                 >
                   {filtered.slice(0, 10).map((c, idx) => (
                     <option key={c.id ?? idx} value={c.id}>
@@ -357,7 +356,7 @@ export default function MassMessageSender({
                 {previewCustomer ? previewText : template}
               </p>
               <p className="mt-1 text-right text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-                {new Date().toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}
+                {formatTime(new Date())}
               </p>
             </div>
           </div>
@@ -380,7 +379,7 @@ export default function MassMessageSender({
       </div>
 
       {/* Action */}
-      <div className="flex flex-col gap-3 rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-5">
+      <div className="flex flex-col gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
         <p className="text-sm text-[var(--text-secondary)]">
           Se generara una lista con <strong>{filtered.length}</strong> destinatario
           {filtered.length !== 1 ? "s" : ""} para copiar y usar en WhatsApp o SMS.
@@ -444,7 +443,7 @@ export default function MassMessageSender({
                     href={waUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg bg-white dark:bg-[var(--color-card)] border border-[var(--data-success-500)]/30 hover:border-[var(--data-success-500)]/30 transition-colors"
+                    className="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--surface-raised)] border border-[var(--data-success-500)]/30 hover:border-[var(--data-success-500)]/30 transition-colors"
                   >
                     <span className="font-bold text-[var(--text-primary)] truncate">{c.name}</span>
                     <span className="text-[var(--text-tertiary)] text-xs">{c.phone}</span>

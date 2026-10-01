@@ -10,7 +10,11 @@ import {
   uploadToStorage,
 } from "@/lib/documents/storage";
 import { aiCategorize } from "@/lib/documents/ai-categorize";
+import { analyzeDocumentContent, isAnalyzableMime } from "@/lib/documents/analyze-document";
+import { enColaDeAnalisis } from "@/lib/documents/cola-analisis";
+import { precalcularMiniatura } from "@/lib/documents/precalcular-miniatura";
 import { MAX_UPLOAD_SIZE } from "@/lib/types/documents";
+import { resolverMime } from "@/lib/documents/tipos-archivo";
 import { assertCsrf } from "@/lib/auth/csrf";
 
 
@@ -27,10 +31,12 @@ const ListQuery = z.object({
   expiring: z.coerce.number().int().min(1).max(365).optional(),
   // ADR-119 — búsqueda semántica IA (expande la query antes de buscar).
   semantic: z.enum(["1", "true"]).optional(),
+  // Vista "Papelera": sólo documentos soft-deleted.
+  deleted: z.enum(["1", "true"]).optional(),
 });
 
 export async function GET(req: NextRequest) {
-  const rl = await applyRateLimit(req, "MODERATE", "documents:list");
+  const rl = await applyRateLimit(req, "DRIVE_READ", "documents:list");
   if (rl) return rl;
   const csrfFail = assertCsrf(req);
   if (csrfFail) return csrfFail;
@@ -59,8 +65,10 @@ export async function GET(req: NextRequest) {
     semanticTerms = qAny;
   }
 
+  const deletedOnly = f.deleted === "1" || f.deleted === "true";
   const docs = await DocumentsDB.list(auth.tenantId, {
-    folderId: f.folderId === "null" ? null : f.folderId,
+    // En la papelera no aplicamos folder (mostramos TODO lo eliminado del tenant).
+    folderId: deletedOnly ? undefined : f.folderId === "null" ? null : f.folderId,
     category: f.category,
     q: qAny ? undefined : f.q,
     qAny,
@@ -69,13 +77,21 @@ export async function GET(req: NextRequest) {
     customerId: f.customerId,
     orderId: f.orderId,
     supplierId: f.supplierId,
-  });
+    deletedOnly,
+    // El texto indexado sólo se manda cuando hay una búsqueda escrita: es lo
+    // único que lo usa del lado del cliente (resaltar la coincidencia y
+    // ordenar por relevancia). Abrir el drive es el caso común y ahí no hace
+    // falta ni un byte de contenido.
+    conTextoCompleto: Boolean(f.q?.trim()) || Boolean(qAny?.length),
+  }, auth.role);
 
   return NextResponse.json({ documents: docs, ...(semanticTerms ? { semanticTerms } : {}) });
 }
 
 export async function POST(req: NextRequest) {
-  const rl = await applyRateLimit(req, "STRICT", "documents:upload");
+  // DRIVE y no STRICT: cada archivo es un request y el drive recibe carpetas
+  // enteras — con 10 cada 15 min el importador moría al décimo (ADR-306).
+  const rl = await applyRateLimit(req, "DRIVE", "documents:upload");
   if (rl) return rl;
   const csrfFail = assertCsrf(req);
   if (csrfFail) return csrfFail;
@@ -93,8 +109,13 @@ export async function POST(req: NextRequest) {
         { status: 413 }
       );
     }
-    const mime = file.type || "application/octet-stream";
-    if (!isMimeAllowed(mime)) {
+    // El navegador deja en blanco (u octet-stream) todo lo que su tabla no
+    // conoce: HEIC del iPhone, .ods de LibreOffice, un .dwg. Guardar ESO hace
+    // que después el drive no sepa ni qué ícono poner. Se resuelve por extensión.
+    const mime = resolverMime(file.name, file.type);
+    // El NOMBRE importa: la extensión es la que decide qué hace el sistema
+    // operativo al abrirlo, y es más difícil de disfrazar que el MIME.
+    if (!isMimeAllowed(mime, file.name)) {
       return NextResponse.json({ error: "mime_not_allowed", mime }, { status: 415 });
     }
 
@@ -139,14 +160,15 @@ export async function POST(req: NextRequest) {
       textSnippet: mime.startsWith("text/") ? buffer.slice(0, 4096).toString("utf8") : undefined,
     });
 
+    // Una sola escritura: la categoría y la ruta del archivo se guardan juntas.
+    // Eran dos viajes a la base por archivo, y en un import de 400 eso se nota.
     const updated = await DocumentsDB.update(auth.tenantId, draft.id, {
+      storagePath,
       category: heur.category,
       tags: heur.tags,
       aiCategory: heur.source === "ai" ? heur.category : undefined,
       aiTags: heur.source === "ai" ? heur.tags : undefined,
     });
-
-    await DocumentsDB.setStoragePath(auth.tenantId, draft.id, storagePath);
 
     DocumentsDB.log(auth.tenantId, {
       documentId: draft.id,
@@ -155,6 +177,23 @@ export async function POST(req: NextRequest) {
       metadata: { mime, size: file.size, source: heur.source },
       ipAddress: req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? undefined,
     }).catch((err) => logger.warn("documents.audit.upload_fail", { err: String(err) }));
+
+    // Auto-análisis de contenido (fire-and-forget): los PDFs/texto se indexan solos
+    // para que el asistente los pueda leer sin apretar "Analizar con IA".
+    if (isAnalyzableMime(mime)) {
+      // En cola: subir una carpeta de 30 fotos disparaba 30 análisis a la vez
+      // y con un modelo local eso tumba la máquina (ver `cola-analisis`).
+      enColaDeAnalisis(draft.id, () =>
+        analyzeDocumentContent(auth.tenantId, draft.id, auth.username, auth.role),
+      ).catch((err) => logger.warn("documents.autoanalyze_fail", { err: String(err) }));
+    }
+
+    // La carita del archivo se dibuja ahora, no cuando alguien abra la carpeta.
+    // Sin esto, quien sube los archivos es justamente quien paga el render de
+    // todos ellos al volver a la grilla.
+    precalcularMiniatura(storagePath, originalName, mime, file.size).catch((err) =>
+      logger.warn("documents.miniatura.precalculo_fail", { err: String(err) }),
+    );
 
     return NextResponse.json({
       document: {

@@ -1,7 +1,6 @@
 "use client";
 
-import { SectionTitle } from "@buleje/design-system";
-import { csrfHeaders } from "@/lib/csrf-client";
+import { DataTable, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Users, Star, DollarSign, Clock, Package,
@@ -11,6 +10,7 @@ import {
   ResponsiveContainer, Tooltip,
 } from "recharts";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/format";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -40,12 +40,21 @@ interface SupplierWithScore extends Supplier {
   scoreTiempo: number;
   scoreCondicion: number;
   scoreVariedad: number;
+  // FIX 2026-07-08 (reporte QA Compras): sin evaluaciones el score se fabricaba
+  // con defaults (50/50) → un proveedor sin historial salía ~50/100 y se
+  // coronaba "Top Proveedor", contradiciendo la pestaña Proveedores ("sin
+  // historial suficiente para evaluar"). `hasData` marca si hay datos reales.
+  hasData: boolean;
 }
 
 // ── Score ─────────────────────────────────────────────────────────────────────
 
 function calcScore(s: Supplier): SupplierWithScore {
   const ev = s.evaluations;
+  // Sin evaluaciones = sin datos reales para puntuar (calidad/precio son la base
+  // del score, 70% del peso). El score numérico se sigue calculando para no
+  // romper el radar, pero la UI muestra "Sin datos" y no lo rankea como Top.
+  const hasData = !!ev;
   // Calidad 40%
   const scoreCalidad = ev ? (ev.quality / 5) * 100 : 50;
   // Precio 30% — ev.price 5=bueno
@@ -65,13 +74,13 @@ function calcScore(s: Supplier): SupplierWithScore {
     scoreTiempo  * 0.2 +
     scoreCondicion * 0.1;
 
-  return { ...s, score, scoreCalidad, scorePrecio, scoreTiempo, scoreCondicion, scoreVariedad };
+  return { ...s, score, scoreCalidad, scorePrecio, scoreTiempo, scoreCondicion, scoreVariedad, hasData };
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function fmt(n: number) {
-  return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `${formatCurrency(n)}`;
 }
 
 function ScoreBar({ value, color }: { value: number; color: string }) {
@@ -82,11 +91,22 @@ function ScoreBar({ value, color }: { value: number; color: string }) {
   );
 }
 
-function ScoreBadge({ score }: { score: number }) {
+function ScoreBadge({ score, hasData = true }: { score: number; hasData?: boolean }) {
+  // Sin datos reales → badge neutro "—" (no una letra que implique evaluación).
+  if (!hasData) {
+    return (
+      <span
+        title="Sin historial suficiente para evaluar"
+        className="inline-flex items-center justify-center h-7 w-7 rounded-full text-xs font-extrabold bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
+      >
+        —
+      </span>
+    );
+  }
   const grade = score >= 80 ? "A" : score >= 65 ? "B" : score >= 50 ? "C" : "D";
   const colors: Record<string, string> = {
-    A: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
-    B: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+    A: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",
+    B: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",
     C: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]",
     D: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]",
   };
@@ -109,7 +129,7 @@ function SupplierRadar({ supplier }: { supplier: SupplierWithScore }) {
   ];
   return (
     <div className="h-48">
-      <ResponsiveContainer minWidth={0} width="100%" height="100%">
+      <ResponsiveContainer initialDimension={{ width: 1, height: 1 }} minWidth={0} width="100%" height="100%">
         <RadarChart data={data} outerRadius="70%">
           <PolarGrid stroke="var(--card-border, #e5e7eb)" />
           <PolarAngleAxis
@@ -139,7 +159,12 @@ function SupplierRadar({ supplier }: { supplier: SupplierWithScore }) {
 
 // ── Main Component ────────────────────────────────────────────────────────────
 
-export default function SupplierComparator() {
+interface SupplierComparatorProps {
+  /** Lleva al flujo de "Nueva orden" con el proveedor preseleccionado. */
+  onCreateOC?: (supplier: { id: string; name: string }) => void;
+}
+
+export default function SupplierComparator({ onCreateOC }: SupplierComparatorProps = {}) {
   const [suppliers, setSuppliers] = useState<SupplierWithScore[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -200,7 +225,12 @@ export default function SupplierComparator() {
       ? suppliers.filter(s => s.name.toLowerCase().includes(productFilter.toLowerCase()))
       : suppliers;
     return [...filtered].sort((a, b) => {
-      if (sortBy === "score") return b.score - a.score;
+      if (sortBy === "score") {
+        // Los proveedores sin datos van al final (su score es un default, no un
+        // ranking real) — así no aparecen arriba de proveedores ya evaluados.
+        if (a.hasData !== b.hasData) return a.hasData ? -1 : 1;
+        return b.score - a.score;
+      }
       if (sortBy === "name") return a.name.localeCompare(b.name);
       if (sortBy === "precio") return (a.averagePurchasePrice ?? 0) - (b.averagePurchasePrice ?? 0);
       return 0;
@@ -209,35 +239,33 @@ export default function SupplierComparator() {
 
   const selectedSupplier = useMemo(() => suppliers.find(s => s.id === selectedId) ?? null, [suppliers, selectedId]);
 
-  const handleCreateOC = useCallback(async (supplier: SupplierWithScore) => {
-    if (!confirm(`¿Crear orden de compra para ${supplier.name}?`)) return;
-    try {
-      const res = await fetch("/api/purchase-orders", {
-        method: "POST",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ supplierId: supplier.id, supplierName: supplier.name }),
-      });
-      if (!res.ok) throw new Error("No se pudo crear la OC");
-      const json = await res.json();
-      alert(`Orden de compra creada: ${json.id ?? json.orderNumber ?? "OK"}`);
-    } catch (e) {
-      alert(e instanceof Error ? e.message : "Error al crear OC");
-    }
-  }, []);
+  // FIX 2026-07-08 (reporte QA Comparador): antes hacía POST a
+  // `/api/purchase-orders` (endpoint INEXISTENTE → 404 silencioso) y usaba
+  // `confirm`/`alert` BLOQUEANTES que colgaban la pestaña. Una OC necesita
+  // productos, así que no tiene sentido crearla vacía por API: llevamos al
+  // usuario al flujo de "Nueva orden" con el proveedor preseleccionado.
+  const handleCreateOC = useCallback((supplier: SupplierWithScore) => {
+    onCreateOC?.({ id: supplier.id, name: supplier.name });
+  }, [onCreateOC]);
 
   // KPIs globales del scoring (antes de los early returns para no violar
   // rules-of-hooks)
   const kpis = useMemo(() => {
     if (suppliers.length === 0) return { topName: "—", topScore: 0, avgScore: 0, lowestPrice: null as number | null, lowestPriceName: "—" };
-    const sortedByScore = [...suppliers].sort((a, b) => b.score - a.score);
+    // Solo proveedores CON datos reales compiten por "Top Proveedor" y entran al
+    // promedio — no coronar a uno sin historial con su score default (reporte QA).
+    const withData = suppliers.filter(s => s.hasData);
+    const sortedByScore = [...withData].sort((a, b) => b.score - a.score);
     const top = sortedByScore[0];
-    const avgScore = Math.round(suppliers.reduce((s, x) => s + x.score, 0) / suppliers.length);
+    const avgScore = withData.length > 0
+      ? Math.round(withData.reduce((s, x) => s + x.score, 0) / withData.length)
+      : 0;
     const withPrice = suppliers.filter(s => (s.averagePurchasePrice ?? 0) > 0);
     const sortedByPrice = [...withPrice].sort((a, b) => (a.averagePurchasePrice ?? 0) - (b.averagePurchasePrice ?? 0));
     const cheapest = sortedByPrice[0];
     return {
-      topName: top.name,
-      topScore: Math.round(top.score),
+      topName: top?.name ?? "—",
+      topScore: top ? Math.round(top.score) : 0,
       avgScore,
       lowestPrice: cheapest?.averagePurchasePrice ?? null,
       lowestPriceName: cheapest?.name ?? "—",
@@ -275,7 +303,7 @@ export default function SupplierComparator() {
         </div>
         <button
           onClick={fetchData}
-          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center self-end"
+          className="p-2 rounded-xl hover:bg-[var(--rule-soft)] transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center self-end"
           title="Actualizar"
         >
           <RefreshCw className="h-4 w-4 text-[var(--text-tertiary)]" />
@@ -285,15 +313,15 @@ export default function SupplierComparator() {
       {/* KPI summary 4 cards */}
       {suppliers.length > 0 && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Top proveedor</p>
               <p className="text-lg font-extrabold leading-none mt-1.5 text-[var(--text-primary)] truncate">{kpis.topName}</p>
-              <p className="text-xs text-[var(--text-tertiary)] mt-1">Score {kpis.topScore}/100</p>
+              <p className="text-xs text-[var(--text-tertiary)] mt-1">{kpis.topName === "—" ? "Sin proveedores evaluados aún" : `Score ${kpis.topScore}/100`}</p>
             </div>
             <Star className="h-5 w-5 text-[var(--data-warning-500)] fill-[var(--data-warning-500)] shrink-0" />
           </div>
-          <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Score promedio</p>
               <p className={cn(
@@ -304,7 +332,7 @@ export default function SupplierComparator() {
             </div>
             <Users className="h-5 w-5 text-[var(--text-tertiary)] shrink-0" />
           </div>
-          <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Total</p>
               <p className="text-2xl font-extrabold tabular-nums leading-none mt-1.5 text-[var(--text-primary)]">{suppliers.length}</p>
@@ -312,10 +340,10 @@ export default function SupplierComparator() {
             </div>
             <Users className="h-5 w-5 text-[var(--text-tertiary)] shrink-0" />
           </div>
-          <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Mejor precio</p>
-              <p className="text-xl font-extrabold tabular-nums leading-none mt-1.5 text-[var(--text-primary)]">{kpis.lowestPrice != null ? `S/${Number(kpis.lowestPrice).toFixed(2)}` : "—"}</p>
+              <p className="text-xl font-extrabold tabular-nums leading-none mt-1.5 text-[var(--text-primary)]">{kpis.lowestPrice != null ? `${formatCurrency(Number(kpis.lowestPrice))}` : "—"}</p>
               <p className="text-xs text-[var(--text-tertiary)] mt-1 truncate">{kpis.lowestPriceName}</p>
             </div>
             <RefreshCw className="h-5 w-5 text-[var(--text-tertiary)] shrink-0" />
@@ -330,7 +358,7 @@ export default function SupplierComparator() {
           value={productFilter}
           onChange={e => setProductFilter(e.target.value)}
           placeholder="Buscar proveedor o producto..."
-          className="flex-1 min-w-[200px] px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary"
+          className="flex-1 min-w-[200px] px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary"
         />
         <div className="flex items-center gap-1.5">
           <span className="text-xs text-[var(--text-tertiary)] uppercase font-bold">Ordenar:</span>
@@ -342,7 +370,7 @@ export default function SupplierComparator() {
                 "px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all",
                 sortBy === s
                   ? "bg-primary text-white"
-                  : "bg-gray-100 dark:bg-white/5 text-[var(--text-secondary)] dark:text-muted hover:bg-gray-200 dark:hover:bg-white/10",
+                  : "bg-[var(--rule-soft)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-base)] ",
               )}
             >
               {s === "score" ? "Score" : s === "name" ? "Nombre" : "Precio"}
@@ -353,39 +381,41 @@ export default function SupplierComparator() {
 
       <div className="flex gap-4 flex-col lg:flex-row">
         {/* Table */}
-        <div className="flex-1 min-w-0 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
+        <div className="flex-1 min-w-0">
           {sorted.length === 0 ? (
-            <div className="py-16 text-center">
+            <div className="py-16 text-center bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl">
               <Users className="h-10 w-10 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] mx-auto mb-3" />
               <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Sin proveedores registrados</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[640px] text-sm">
+            <DataTable className="min-w-[640px]">
                 <thead>
-                  <tr className="bg-gray-50 dark:bg-white/5 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase text-[var(--text-tertiary)]">Proveedor</th>
-                    <th className="px-4 py-3 text-center text-xs font-bold uppercase text-[var(--text-tertiary)] hidden sm:table-cell">Prods.</th>
-                    <th className="px-4 py-3 text-right text-xs font-bold uppercase text-[var(--text-tertiary)] hidden md:table-cell">Precio prom.</th>
-                    <th className="px-4 py-3 text-center text-xs font-bold uppercase text-[var(--text-tertiary)] hidden sm:table-cell">Tiempo</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase text-[var(--text-tertiary)] hidden lg:table-cell">Pago</th>
-                    <th className="px-4 py-3 text-center text-xs font-bold uppercase text-[var(--text-tertiary)]">Score</th>
-                    <th className="px-4 py-3 text-center text-xs font-bold uppercase text-[var(--text-tertiary)]">OC</th>
+                  <tr>
+                    <th>Proveedor</th>
+                    <th className="text-center hidden sm:table-cell">Prods.</th>
+                    <th className="text-right hidden md:table-cell">Precio prom.</th>
+                    <th className="text-center hidden sm:table-cell">Tiempo</th>
+                    <th className="hidden lg:table-cell">Pago</th>
+                    <th className="text-center">Score</th>
+                    <th className="text-center">OC</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-card-border">
+                <tbody className="divide-y divide-[var(--rule-soft)] dark:divide-card-border">
                   {sorted.map((s, idx) => (
                     <tr
                       key={s.id}
                       onClick={() => setSelectedId(s.id)}
+                      tabIndex={0}
+                      onKeyDown={(e) => { if (e.target !== e.currentTarget) return; if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelectedId(s.id); } }}
+                      aria-label={`Ver detalle del proveedor ${s.name}`}
                       className={cn(
                         "cursor-pointer transition-colors",
                         selectedId === s.id
                           ? "bg-primary/5 dark:bg-primary/10"
-                          : "hover:bg-gray-50 dark:hover:bg-white/5",
+                          : "hover:bg-[var(--surface-sunken)] ",
                       )}
                     >
-                      <td className="px-4 py-3">
+                      <td>
                         <div className="flex items-center gap-2">
                           {idx === 0 && (
                             <Star className="h-3.5 w-3.5 text-[var(--data-warning-500)] fill-[var(--data-warning-500)] shrink-0" />
@@ -398,34 +428,34 @@ export default function SupplierComparator() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-center hidden sm:table-cell">
+                      <td className="text-center hidden sm:table-cell">
                         <span className="text-xs text-[var(--text-secondary)]">{s.productCount ?? "—"}</span>
                       </td>
-                      <td className="px-4 py-3 text-right hidden md:table-cell">
+                      <td className="text-right hidden md:table-cell">
                         <span className="text-xs font-mono text-[var(--text-secondary)]">
                           {s.averagePurchasePrice ? fmt(s.averagePurchasePrice) : "—"}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-center hidden sm:table-cell">
+                      <td className="text-center hidden sm:table-cell">
                         <span className="text-xs text-[var(--text-secondary)]">
                           {s.avgDeliveryDays != null ? `${s.avgDeliveryDays}d` : "—"}
                         </span>
                       </td>
-                      <td className="px-4 py-3 hidden lg:table-cell">
+                      <td className="hidden lg:table-cell">
                         <span className="text-xs text-[var(--text-secondary)]">
                           {s.condicionPago ?? "—"}{s.diasCredito ? ` (${s.diasCredito}d)` : ""}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-center">
+                      <td className="text-center">
                         <div className="flex flex-col items-center gap-1">
-                          <ScoreBadge score={s.score} />
-                          <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">{Number(s.score).toFixed(0)}pts</span>
+                          <ScoreBadge score={s.score} hasData={s.hasData} />
+                          <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">{s.hasData ? `${Number(s.score).toFixed(0)}pts` : "Sin datos"}</span>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-center">
+                      <td className="text-center">
                         <button
                           onClick={e => { e.stopPropagation(); handleCreateOC(s); }}
-                          className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 transition-colors min-h-[32px]"
+                          className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10 hover:bg-primary/20 transition-colors min-h-[32px]"
                           title="Crear orden de compra"
                         >
                           <ShoppingCart className="h-3 w-3" /> OC
@@ -434,8 +464,7 @@ export default function SupplierComparator() {
                     </tr>
                   ))}
                 </tbody>
-              </table>
-            </div>
+              </DataTable>
           )}
         </div>
 
@@ -445,21 +474,34 @@ export default function SupplierComparator() {
             <div className="px-4 py-3 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               <p className="text-xs font-bold text-[var(--text-primary)] truncate">{selectedSupplier.name}</p>
               <div className="flex items-center gap-2 mt-1">
-                <ScoreBadge score={selectedSupplier.score} />
-                <span className="text-xs text-[var(--text-secondary)] dark:text-muted">{Number(selectedSupplier.score).toFixed(1)} puntos</span>
+                <ScoreBadge score={selectedSupplier.score} hasData={selectedSupplier.hasData} />
+                <span className="text-xs text-[var(--text-secondary)] dark:text-muted">{selectedSupplier.hasData ? `${Number(selectedSupplier.score).toFixed(1)} puntos` : "Sin historial suficiente para evaluar"}</span>
               </div>
             </div>
 
+            {/* FIX 2026-07-08 (reporte QA): sin datos reales NO mostramos el
+                radar con porcentajes fabricados (contradecía "sin historial
+                suficiente"). Placeholder honesto en su lugar. */}
             <div className="px-3 pt-3">
-              <SupplierRadar supplier={selectedSupplier} />
+              {selectedSupplier.hasData ? (
+                <SupplierRadar supplier={selectedSupplier} />
+              ) : (
+                <div className="h-48 flex flex-col items-center justify-center gap-1 text-center rounded-xl border border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)]">
+                  <AlertTriangle className="h-6 w-6 text-[var(--text-tertiary)]" aria-hidden />
+                  <p className="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted">Sin datos para el radar</p>
+                  <p className="text-xs text-[var(--text-tertiary)]">Se necesita historial de evaluaciones para graficar el desempeño.</p>
+                </div>
+              )}
             </div>
 
-            {/* Metrics bars */}
+            {/* Metrics bars — solo con datos reales (idem radar: no mostrar
+                porcentajes fabricados cuando "sin historial suficiente"). */}
+            {selectedSupplier.hasData && (
             <div className="px-4 pb-4 space-y-2.5 mt-1">
               {[
-                { label: "Calidad", value: selectedSupplier.scoreCalidad, icon: Star, color: "bg-[var(--accent-soft)]" },
+                { label: "Calidad", value: selectedSupplier.scoreCalidad, icon: Star, color: "bg-primary/10" },
                 { label: "Precio", value: selectedSupplier.scorePrecio, icon: DollarSign, color: "bg-primary" },
-                { label: "Tiempo", value: selectedSupplier.scoreTiempo, icon: Clock, color: "bg-[var(--accent-soft)]" },
+                { label: "Tiempo", value: selectedSupplier.scoreTiempo, icon: Clock, color: "bg-primary/10" },
                 { label: "Variedad", value: selectedSupplier.scoreVariedad, icon: Package, color: "bg-[var(--text-primary)]" },
                 { label: "Cond. pago", value: selectedSupplier.scoreCondicion, icon: CreditCard, color: "bg-[var(--data-warning-500)]" },
               ].map(({ label, value, icon: Icon, color }) => (
@@ -474,11 +516,12 @@ export default function SupplierComparator() {
                 </div>
               ))}
             </div>
+            )}
 
             <div className="px-4 pb-4">
               <button
                 onClick={() => handleCreateOC(selectedSupplier)}
-                className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold text-white bg-primary hover:bg-primary-dark transition-colors min-h-[40px]"
+                className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold text-white bg-primary hover:bg-primary-dark transition-colors min-h-[40px]"
               >
                 <ShoppingCart className="h-4 w-4" /> Crear Orden de Compra
               </button>

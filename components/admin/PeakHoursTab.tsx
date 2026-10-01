@@ -2,7 +2,7 @@
 
 import { CardTitle, LoadingState } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
-import { Clock, Loader2, AlertCircle, BarChart3 } from "@buleje/design-system/icons";
+import { Clock, AlertCircle, BarChart3 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { AnalyticsPeriod } from "@/components/admin/unified/AnalyticsBIModule";
 
@@ -107,7 +107,7 @@ export default function PeakHoursTab({ period }: { period?: AnalyticsPeriod }) {
           <button
             onClick={() => setViewTab("horas")}
             className={cn(
-              "px-3 py-1.5 rounded-md text-xs font-bold transition-all",
+              "px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
               viewTab === "horas"
                 ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] "
                 : "text-[var(--text-secondary)] dark:text-muted"
@@ -118,7 +118,7 @@ export default function PeakHoursTab({ period }: { period?: AnalyticsPeriod }) {
           <button
             onClick={() => setViewTab("dias")}
             className={cn(
-              "px-3 py-1.5 rounded-md text-xs font-bold transition-all",
+              "px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
               viewTab === "dias"
                 ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] "
                 : "text-[var(--text-secondary)] dark:text-muted"
@@ -176,10 +176,10 @@ export default function PeakHoursTab({ period }: { period?: AnalyticsPeriod }) {
                         : isPeak
                           ? "bg-[var(--data-warning-500)]/80"
                           : isValley
-                            ? "bg-[var(--rule-base)] dark:bg-gray-600"
+                            ? "bg-[var(--rule-base)] "
                             : h.count > 0
                               ? "bg-primary group-hover:bg-primary/80"
-                              : "bg-[var(--surface-sunken)] dark:bg-surface",
+                              : "bg-[var(--surface-sunken)] ",
                       isCurrent && "ring-2 ring-primary ring-offset-1"
                     )}
                     style={{ height: `${Math.max(pct, 2)}%` }}
@@ -219,7 +219,7 @@ export default function PeakHoursTab({ period }: { period?: AnalyticsPeriod }) {
                   <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted w-10 text-right shrink-0">
                     {DAY_LABELS[d.day] ?? d.day}
                   </span>
-                  <div className="flex-1 bg-[var(--surface-sunken)] dark:bg-surface rounded-full h-7 overflow-hidden">
+                  <div className="flex-1 bg-[var(--surface-sunken)] rounded-full h-7 overflow-hidden">
                     <div
                       className={cn(
                         "h-full rounded-full transition-all flex items-center justify-end pr-3",

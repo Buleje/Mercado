@@ -2,7 +2,6 @@ import { Suspense } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { headers } from "next/headers";
 import { cacheLife, cacheTag } from "next/cache";
 import TiendaClientShell from "@/components/TiendaClientShell";
 import type { TiendaSectionKey } from "@/components/admin/StorefrontEditor";
@@ -11,8 +10,6 @@ import {
   SectionSkeleton,
 } from "@/components/LoadingSkeleton";
 import { zones } from "@/data/zones";
-import { categories } from "@/data/products";
-import { SettingsDB } from "@/lib/db/settings.db";
 import { getCachedSettings, resolveStoreContext } from "@/lib/store-metadata";
 
 /**
@@ -28,8 +25,19 @@ export async function generateMetadata(): Promise<Metadata> {
     const settings = await getCachedSettings(ctx.tenantId);
     const slogan = settings?.slogan ?? "Delivery rápido y seguro";
 
-    const title = `${ctx.name} — Catálogo`;
-    const description = `Explora el catálogo de ${ctx.name}. ${slogan}. Delivery con Yape y efectivo.`;
+    let title = `${ctx.name} — Catálogo`;
+    let description = `Explora el catálogo de ${ctx.name}. ${slogan}. Delivery con Yape y efectivo.`;
+    // #6.1 Meta por página: el dueño sobreescribe título/descripción del catálogo
+    // desde el editor (storeTheme.catalogMetaTitle/Description). Solo en tenant.
+    // Usamos el MISMO `settings` ya cargado (getCachedSettings con el id que sí
+    // resuelve el nombre) para evitar un id distinto (slug vs CUID).
+    if (ctx.isTenant) {
+      const stJson = (settings as { storeTheme?: Record<string, unknown> } | null)?.storeTheme;
+      const ct = typeof stJson?.["catalogMetaTitle"] === "string" ? (stJson["catalogMetaTitle"] as string).trim() : "";
+      const cd = typeof stJson?.["catalogMetaDescription"] === "string" ? (stJson["catalogMetaDescription"] as string).trim() : "";
+      if (ct) title = ct;
+      if (cd) description = cd;
+    }
 
     // SEO 2026-05-24: og:image dinámico (share visual en WhatsApp/FB) — el
     // twitter card era summary_large_image pero sin imagen. Sirve para /tienda
@@ -65,8 +73,6 @@ export async function generateMetadata(): Promise<Metadata> {
 
 // ── Main catalog (still loaded individually — always visible) ──
 const ProductCatalog    = dynamic(() => import("@/components/ProductCatalog"));
-const Footer            = dynamic(() => import("@/components/Footer"));
-const TenantFooter      = dynamic(() => import("@/components/store/TenantFooter"));
 
 // ── Tienda section defaults (same order as StorefrontEditor) ────────────────
 const TIENDA_DEFAULT_ORDER: TiendaSectionKey[] = [

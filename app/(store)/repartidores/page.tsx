@@ -91,7 +91,7 @@ export default function RepartidoresPage() {
                 key={i}
                 className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-3xl p-8"
               >
-                <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] mb-5">
+                <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] mb-5">
                   <Icon className="h-6 w-6" strokeWidth={1.75} />
                 </span>
                 <h3 className="text-xl font-black tracking-[-0.02em] text-[var(--text-primary)]">

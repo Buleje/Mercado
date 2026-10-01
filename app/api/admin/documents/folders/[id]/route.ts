@@ -5,13 +5,15 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { DocumentsDB } from "@/lib/db/documents.db";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { logger } from "@/lib/logger";
+import { buildChildrenMap, descendantIds } from "@/lib/documentos/folder-tree";
 
 
 const PatchBody = z.object({
   name: z.string().min(1).max(80).optional(),
   parentId: z.string().nullable().optional(),
-  color: z.string().max(20).optional(),
-  icon: z.string().max(40).optional(),
+  color: z.string().max(20).nullable().optional(),
+  icon: z.string().max(40).nullable().optional(),
+  allowedRoles: z.array(z.string().max(30)).max(10).optional(),
 });
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -36,6 +38,12 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     if (parsed.data.parentId === id) {
       return NextResponse.json({ error: "folder_cannot_parent_itself" }, { status: 400 });
     }
+    if (parsed.data.parentId) {
+      const all = await DocumentsDB.listFolders(auth.tenantId);
+      if (descendantIds(buildChildrenMap(all), id).has(parsed.data.parentId)) {
+        return NextResponse.json({ error: "folder_cannot_be_moved_into_descendant" }, { status: 400 });
+      }
+    }
 
     const f = await DocumentsDB.updateFolder(auth.tenantId, id, parsed.data);
     if (!f) return NextResponse.json({ error: "not_found" }, { status: 404 });
@@ -57,9 +65,12 @@ export async function DELETE(req: NextRequest, ctx: Ctx) {
     if (auth instanceof NextResponse) return auth;
 
     const { id } = await ctx.params;
-    const ok = await DocumentsDB.deleteFolder(auth.tenantId, id);
-    if (!ok) return NextResponse.json({ error: "not_found" }, { status: 404 });
-    return NextResponse.json({ ok: true });
+    // `?conDocumentos=1` manda lo que hay adentro a la papelera en vez de
+    // soltarlo a la raíz del drive (ver DocumentsDB.eliminarCarpetas).
+    const conDocumentos = req.nextUrl.searchParams.get("conDocumentos") === "1";
+    const { carpetas, documentos } = await DocumentsDB.eliminarCarpetas(auth.tenantId, [id], { conDocumentos });
+    if (carpetas === 0) return NextResponse.json({ error: "not_found" }, { status: 404 });
+    return NextResponse.json({ ok: true, documentos });
 
   } catch (e) {
     logger.error("[delete] error", { err: e instanceof Error ? e.message : String(e) });

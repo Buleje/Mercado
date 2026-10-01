@@ -1,5 +1,6 @@
  
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTenantTag } from "@/lib/cache";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
@@ -70,6 +71,11 @@ export async function POST(
         },
       });
     });
+
+    // El conteo pisa el stock con `tx.product.update` (salteando ProductsDB),
+    // así que el ajuste hay que invalidarlo a mano: si no, el Inventario sigue
+    // mostrando lo de antes de contar, que es justo lo que se acaba de corregir.
+    revalidateTenantTag(auth.tenantId, "products");
 
     // F6: Liberar lock de conteo activo
     await clearConteoLock(auth.tenantId);

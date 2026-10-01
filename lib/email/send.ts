@@ -45,7 +45,7 @@ const resend = (RESEND_KEY ? new Resend(RESEND_KEY) : noopResend) as unknown as 
   emails: { send: (args: EmailSendArgs) => Promise<EmailSendResult> };
 };
 const FROM =
-  process.env.RESEND_FROM_EMAIL ?? "Buleje <noreply@buleje.pe>";
+  process.env.RESEND_FROM_EMAIL || "Buleje <noreply@buleje.pe>";
 
 // ──────────────────────────────────────────────
 //  Helper interno: renderiza React → HTML

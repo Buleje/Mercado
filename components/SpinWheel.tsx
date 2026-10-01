@@ -9,7 +9,7 @@ import { csrfHeaders } from "@/lib/csrf-client";
 const SEGMENTS = [
   { label: "10% OFF", color: "#e11d48", value: 10, kind: "percent" as const },
   { label: "Envío GRATIS", color: "#0ea5e9", value: 0, kind: "freedelivery" as const },
-  { label: "5% OFF", color: "#f97316", value: 5, kind: "percent" as const },
+  { label: "5% OFF", color: "#ff6b5b", value: 5, kind: "percent" as const },
   { label: "Otra vez", color: "#475569", value: -1, kind: "tryagain" as const },
   { label: "15% OFF", color: "#9333ea", value: 15, kind: "percent" as const },
   { label: "S/5 OFF", color: "#0d9488", value: 5, kind: "fixed" as const },

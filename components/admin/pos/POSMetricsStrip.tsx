@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Clock, TrendingUp, Receipt, DollarSign, HandCoins } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/format";
 
 interface PaymentBreakdownEntry {
   metodo: string;
@@ -96,11 +97,11 @@ export default function POSMetricsStrip({ refreshKey }: POSMetricsStripProps = {
   // Loading skeletons
   if (loading) {
     return (
-      <div className="h-9 bg-slate-50 dark:bg-slate-800/50 border-b border-[var(--rule-soft)] dark:border-card-border flex items-center gap-4 px-4">
+      <div className="h-9 bg-[var(--surface-sunken)] border-b border-[var(--rule-soft)] dark:border-card-border flex items-center gap-4 px-4">
         {[1, 2, 3, 4].map((i) => (
           <div
             key={i}
-            className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"
+            className="h-4 w-24 bg-[var(--rule-base)] rounded animate-pulse"
           />
         ))}
       </div>
@@ -110,7 +111,7 @@ export default function POSMetricsStrip({ refreshKey }: POSMetricsStripProps = {
   // Fetch error — show "Verificando..." instead of misleading "Sin turno activo"
   if (fetchError && !data) {
     return (
-      <div className="h-9 bg-gray-50 dark:bg-slate-800/50 border-b border-[var(--rule-soft)] dark:border-card-border flex items-center justify-center gap-2 px-4">
+      <div className="h-9 bg-[var(--surface-sunken)] border-b border-[var(--rule-soft)] dark:border-card-border flex items-center justify-center gap-2 px-4">
         <Clock className="h-3.5 w-3.5 text-[var(--text-tertiary)] animate-pulse" />
         <span className="text-xs font-semibold text-[var(--text-tertiary)] dark:text-muted">
           Verificando turno...
@@ -163,7 +164,7 @@ export default function POSMetricsStrip({ refreshKey }: POSMetricsStripProps = {
     items.push({
       icon: HandCoins,
       label: "Mi comision",
-      value: `S/ ${(data.comisionEstimada ?? 0).toFixed(2)}`,
+      value: `${formatCurrency(data.comisionEstimada ?? 0)}`,
       color: "text-primary",
       title: `Estimada al ${data.comisionRate ?? 2.5}% sobre ventas`,
     });
@@ -174,7 +175,7 @@ export default function POSMetricsStrip({ refreshKey }: POSMetricsStripProps = {
   const topProd = data.topProductos?.[0];
 
   return (
-    <div className="bg-slate-50 dark:bg-slate-800/50 border-b border-[var(--rule-soft)] dark:border-card-border">
+    <div className="bg-[var(--surface-sunken)] border-b border-[var(--rule-soft)] dark:border-card-border">
       <div className="h-9 flex items-center gap-3 sm:gap-5 px-4 overflow-x-auto scrollbar-hide">
         {items.map((item) => (
           <div key={item.label} className="flex items-center gap-1.5 shrink-0" title={item.title}>

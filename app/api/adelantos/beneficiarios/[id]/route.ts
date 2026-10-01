@@ -1,11 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { AdelantosDB } from "@/lib/db/adelantos.db";
+import { AdelantosDB, ParteDadaDeBajaError, ParteYaVinculadaError } from "@/lib/db/adelantos.db";
+import { ForestDirectorioDB } from "@/lib/db/forest-directorio.db";
+import { soloAdminODueno } from "@/lib/forestal/plata-de-guia-rol";
 import { requireAdmin } from "@/lib/require-admin";
+import { permisoAdelantos } from "@/lib/adelantos/permisos";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
+
+/**
+ * Tres formas de PATCH: editar la ficha, anotar un recordatorio, o vincular la
+ * parte del directorio forestal (ADR-412 §5). Van juntas porque son la misma
+ * persona; se distinguen por `action` para que editar sin querer no pise el
+ * recordatorio ni el vínculo, ni al revés.
+ */
+const RecordatorioSchema = z.object({ action: z.literal("recordatorio") });
+
+const VincularParteSchema = z.object({
+  action: z.literal("vincular_parte"),
+  /** `null` desvincula. Vacío no es válido: se manda `null` a propósito. */
+  forestPartyId: z.string().min(1).max(60).nullable(),
+});
 
 const UpdateSchema = z.object({
   nombre: z.string().min(1).max(200),
@@ -13,6 +30,21 @@ const UpdateSchema = z.object({
   telefono: z.string().max(20).optional(),
   notas: z.string().max(500).optional(),
   limiteCredito: z.number().positive().max(9_999_999).nullable().optional(),
+  /** (330) Lo que trae RENIEC/SUNAT, o se carga a mano. */
+  tipoDocumento: z.string().max(10).nullable().optional(),
+  razonSocial: z.string().max(300).nullable().optional(),
+  direccion: z.string().max(400).nullable().optional(),
+  departamento: z.string().max(80).nullable().optional(),
+  provincia: z.string().max(80).nullable().optional(),
+  distrito: z.string().max(80).nullable().optional(),
+  email: z.string().max(200).nullable().optional(),
+  estadoSunat: z.string().max(60).nullable().optional(),
+  condicionSunat: z.string().max(60).nullable().optional(),
+  verificadoEn: z.string().max(40).nullable().optional(),
+  banco: z.string().max(80).nullable().optional(),
+  cuentaBancaria: z.string().max(40).nullable().optional(),
+  cci: z.string().max(40).nullable().optional(),
+  activo: z.boolean().optional(),
 });
 
 // PATCH /api/adelantos/beneficiarios/[id] — editar persona
@@ -21,15 +53,66 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const _rl = await applyRateLimit(req, "MODERATE", "adelantos-benef"); if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
+  const sinPermiso = permisoAdelantos(auth.role, "write");
+  if (sinPermiso) return sinPermiso;
   try {
     const { id } = await params;
-    const parsed = UpdateSchema.safeParse(await req.json());
+    const body: unknown = await req.json();
+
+    // Anotar el recordatorio: la MISMA columna que escribe el cron, así los dos
+    // se enteran y al deudor no le llega el aviso automático y el manual juntos.
+    const esRecordatorio = RecordatorioSchema.safeParse(body);
+    if (esRecordatorio.success) {
+      const r = await AdelantosDB.marcarRecordatorio(auth.tenantId, id);
+      if (!r) {
+        // Ya se le recordó hoy. No es un error de quien pide: es que no hay
+        // nada que hacer, y decirlo es más útil que fingir que se mandó.
+        return NextResponse.json({ yaRecordadoHoy: true }, { status: 200 });
+      }
+      logActivity("Recordatorio", "adelanto", `Cobranza recordada`, id, auth.username, undefined, auth.tenantId).catch((err) => logger.error("[adelantos] logActivity failed", { error: String(err) }));
+      return NextResponse.json(r);
+    }
+
+    const esVincularParte = VincularParteSchema.safeParse(body);
+    if (esVincularParte.success) {
+      /* Revisión ADR-449: el vínculo decide contra qué cuenta forestal se cruza
+         la plata de la persona. Un manager tiene `write` y podía unir la ficha a
+         OTRA parte con aserríos: el cruce caía en la cuenta equivocada. Sólo
+         admin o dueño, como liquidar. */
+      const prohibido = soloAdminODueno(auth.role, "vincular una persona con su parte del directorio forestal");
+      if (prohibido) return prohibido;
+      try {
+        const benef = await AdelantosDB.vincularParte(auth.tenantId, id, esVincularParte.data.forestPartyId);
+        if (!benef) return NextResponse.json({ error: "Persona no encontrada" }, { status: 404 });
+        /* La auditoría dice de qué parte a qué parte (con nombre e id). */
+        const nombreDe = async (parteId: string | null) =>
+          parteId ? `«${(await ForestDirectorioDB.getParte(auth.tenantId, parteId))?.nombre ?? "parte borrada"}» (${parteId})` : "ninguna";
+        const [antes, despues] = await Promise.all([nombreDe(benef.forestPartyIdAnterior), nombreDe(esVincularParte.data.forestPartyId)]);
+        logActivity(
+          esVincularParte.data.forestPartyId ? "Vincular" : "Desvincular",
+          "adelanto",
+          `${esVincularParte.data.forestPartyId ? "Vinculó" : "Desvinculó"} a ${benef.nombre} con su parte del directorio forestal · parte anterior: ${antes} · parte nueva: ${despues}`,
+          benef.id,
+          auth.username,
+          undefined,
+          auth.tenantId,
+        ).catch((err) => logger.error("[adelantos] logActivity failed", { error: String(err) }));
+        return NextResponse.json({ ok: true });
+      } catch (e) {
+        if (e instanceof ParteYaVinculadaError) return NextResponse.json({ error: e.message }, { status: 409 });
+        if (e instanceof ParteDadaDeBajaError) return NextResponse.json({ error: e.message }, { status: 409 });
+        if (e instanceof Error && /no existe/i.test(e.message)) return NextResponse.json({ error: e.message }, { status: 404 });
+        throw e;
+      }
+    }
+
+    const parsed = UpdateSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: "Datos inválidos", issues: parsed.error.issues.map((i) => i.message) }, { status: 400 });
     }
     const benef = await AdelantosDB.updateBeneficiario(auth.tenantId, id, parsed.data);
     if (!benef) return NextResponse.json({ error: "Persona no encontrada" }, { status: 404 });
-    logActivity("Actualizar", "adelanto", `Beneficiario ${benef.nombre}`, benef.id, auth.username).catch((err) => logger.error("[adelantos] logActivity failed", { error: String(err) }));
+    logActivity("Actualizar", "adelanto", `Beneficiario ${benef.nombre}`, benef.id, auth.username, undefined, auth.tenantId).catch((err) => logger.error("[adelantos] logActivity failed", { error: String(err) }));
     return NextResponse.json(benef);
   } catch (e) {
     logger.error("[adelantos/beneficiarios/id] PATCH error", { err: e instanceof Error ? e.message : String(e) });
@@ -43,6 +126,8 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   const _rl = await applyRateLimit(req, "MODERATE", "adelantos-benef"); if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
+  const sinPermiso = permisoAdelantos(auth.role, "delete");
+  if (sinPermiso) return sinPermiso;
   try {
     const { id } = await params;
     const res = await AdelantosDB.deleteBeneficiario(auth.tenantId, id);
@@ -50,7 +135,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
       if (res.reason === "not_found") return NextResponse.json({ error: "Persona no encontrada" }, { status: 404 });
       return NextResponse.json({ error: "No se puede eliminar: la persona tiene adelantos registrados." }, { status: 409 });
     }
-    logActivity("Eliminar", "adelanto", `Beneficiario ${id}`, id, auth.username).catch((err) => logger.error("[adelantos] logActivity failed", { error: String(err) }));
+    logActivity("Eliminar", "adelanto", `Beneficiario ${id}`, id, auth.username, undefined, auth.tenantId).catch((err) => logger.error("[adelantos] logActivity failed", { error: String(err) }));
     return NextResponse.json({ ok: true });
   } catch (e) {
     logger.error("[adelantos/beneficiarios/id] DELETE error", { err: e instanceof Error ? e.message : String(e) });

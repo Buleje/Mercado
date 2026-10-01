@@ -2,8 +2,22 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { timingSafeCompare } from "@/lib/timing-safe";
 import { createNotification } from "@/lib/create-notification";
+import { sendWhatsAppQueued } from "@/lib/whatsapp";
 import { logger } from "@/lib/logger";
 import { logActivity } from "@/lib/activity-logger";
+import { generateStatementToken } from "@/lib/fiado/statement-token";
+
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://buleje.pe";
+
+/**
+ * Agrega al mensaje de cobranza el link firmado al estado de cuenta público
+ * (`/estado-cuenta/{token}`), donde el cliente ve su saldo y — si la tienda
+ * tiene Yape activo — los datos para pagar. Stateless (HMAC, sin DB).
+ */
+function withPayLink(mensaje: string, tenantId: string, customerId: string): string {
+  const token = generateStatementToken(tenantId, customerId);
+  return `${mensaje}\n\n👉 Revisa y paga tu cuenta aquí: ${BASE_URL}/estado-cuenta/${token}`;
+}
 
 /**
  * GET /api/cron/fiados-reminder
@@ -62,7 +76,7 @@ export async function GET(req: NextRequest) {
         // Dia 1: Suave, amigable — como avisarle a un vecino
         return {
           mensaje: (nombre, saldo) =>
-            `Hola ${nombre}! 👋 Te paso el aviso de tu cuentita en la bodega: S/${saldo}. Cuando puedas pasate! 😊`,
+            `Hola ${nombre}! 👋 Te paso el aviso de tu cuentita en la bodega: S/${saldo}. Cuando puedas pásate! 😊`,
           title: (nombre, saldo) => `Aviso amigable: ${nombre} - S/${saldo}`,
           severity: "LOW",
           level: "SUAVE",
@@ -102,7 +116,7 @@ export async function GET(req: NextRequest) {
         // Dia 16-30: Ultimo aviso antes de cortar credito
         return {
           mensaje: (nombre, saldo, _fecha, dias) =>
-            `${nombre}, lamentablemente tu cuenta de S/${saldo} lleva ${dias} dias vencida. Si no se regulariza esta semana, no podre darte mas credito.${telefonoBodega ? ` Llamame al ${telefonoBodega} para coordinar.` : " Pasate por la bodega para coordinar."}`,
+            `${nombre}, lamentablemente tu cuenta de S/${saldo} lleva ${dias} dias vencida. Si no se regulariza esta semana, no podre darte mas credito.${telefonoBodega ? ` Llámame al ${telefonoBodega} para coordinar.` : " Pásate por la bodega para coordinar."}`,
           title: (nombre, saldo) => `ULTIMO AVISO: ${nombre} - S/${saldo}`,
           severity: "HIGH",
           level: "ULTIMO_AVISO",
@@ -159,6 +173,9 @@ export async function GET(req: NextRequest) {
         severity = "MEDIUM";
       }
 
+      // Link firmado al estado de cuenta (ver/pagar) — al final del mensaje.
+      mensaje = withPayLink(mensaje, fiado.tenantId, phone);
+
       const cleanPhone = phone.replace(/\D/g, "");
       const waLink = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(mensaje)}`;
 
@@ -172,6 +189,18 @@ export async function GET(req: NextRequest) {
         actionLabel: "Enviar WhatsApp",
         entityId: fiado.id,
       });
+
+      // Brandon 2026-06-17: auto-envío opt-in. OFF por default (Ley 29733 — el
+      // dueño decide el consentimiento activando el flag). Doble env-gate: sin
+      // FIADO_AUTO_WHATSAPP=1 queda solo la notif para revisar; sin WHATSAPP_API
+      // config sendWhatsAppQueued es no-op. Fire-and-forget con log de error.
+      if (process.env.FIADO_AUTO_WHATSAPP === "1" && cleanPhone) {
+        void sendWhatsAppQueued(phone, mensaje, {
+          tenantId: fiado.tenantId,
+          context: "fiado-reminder",
+          metadata: { fiadoId: fiado.id },
+        }).catch((err) => logger.error("[cron/fiados-reminder] auto-send failed", { error: String(err), fiadoId: fiado.id }));
+      }
 
       remindersCount++;
     }
@@ -196,13 +225,16 @@ export async function GET(req: NextRequest) {
         : 30; // Si no tiene fecha, tratar como urgente
       const level = getCobroLevel(diasVencido);
 
-      const mensaje = level
+      let mensaje = level
         ? level.mensaje(nombre, saldo.toFixed(2), fechaStr, diasVencido)
         : `Hola ${nombre}, tienes un pendiente de S/${saldo.toFixed(2)} vencido desde el ${fechaStr} en Buleje. Cuando puedas pasa a regularizarlo?`;
       const severity = level?.severity ?? "HIGH";
       const title = level
         ? level.title(nombre, saldo.toFixed(2))
         : `Fiado vencido: ${nombre} - S/${saldo.toFixed(2)}`;
+
+      // Link firmado al estado de cuenta (ver/pagar) — al final del mensaje.
+      mensaje = withPayLink(mensaje, fiado.tenantId, phone);
 
       const cleanPhone = phone.replace(/\D/g, "");
       const waLink = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(mensaje)}`;
@@ -217,6 +249,18 @@ export async function GET(req: NextRequest) {
         actionLabel: "Enviar WhatsApp",
         entityId: fiado.id,
       });
+
+      // Brandon 2026-06-17: auto-envío opt-in. OFF por default (Ley 29733 — el
+      // dueño decide el consentimiento activando el flag). Doble env-gate: sin
+      // FIADO_AUTO_WHATSAPP=1 queda solo la notif para revisar; sin WHATSAPP_API
+      // config sendWhatsAppQueued es no-op. Fire-and-forget con log de error.
+      if (process.env.FIADO_AUTO_WHATSAPP === "1" && cleanPhone) {
+        void sendWhatsAppQueued(phone, mensaje, {
+          tenantId: fiado.tenantId,
+          context: "fiado-reminder",
+          metadata: { fiadoId: fiado.id },
+        }).catch((err) => logger.error("[cron/fiados-reminder] auto-send failed", { error: String(err), fiadoId: fiado.id }));
+      }
 
       remindersCount++;
     }

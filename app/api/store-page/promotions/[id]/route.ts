@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { StorePageDB } from "@/lib/db/store-page.db";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 const UpdateSchema = z.object({
   title: z.string().min(1).max(200).optional(),
@@ -29,7 +30,7 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
   if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;
-  const raw = await req.json().catch(() => null);
+  const raw = await leerJson(req);
   const parsed = UpdateSchema.safeParse(raw);
   if (!parsed.success) {
     return NextResponse.json(

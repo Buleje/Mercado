@@ -86,7 +86,7 @@ export default function NearbyStoresFeedSection() {
     <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 py-6 text-center sm:flex-row sm:text-left">
       <span
         aria-hidden
-        className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]"
+        className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
       >
         <MapPin className="h-5 w-5" strokeWidth={2} />
       </span>

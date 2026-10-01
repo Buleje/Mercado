@@ -12,12 +12,14 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { Tag, ImageIcon, ToggleLeft, ToggleRight, ExternalLink, Sparkles, ArrowRight } from "@buleje/design-system/icons";
+import { Tag, ToggleLeft, ToggleRight, ExternalLink, Sparkles, ArrowRight } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { resolveActiveTenantSlug } from "@/lib/tenant-fetch";
 import ImageUpload from "./ImageUpload";
 import type { StoreTheme } from "./StoreCustomizer";
+import { Field } from "@/components/admin/shared/Field";
 
+import { CardTitle } from "@buleje/design-system";
 type Category = {
   id: string;
   label: string;
@@ -93,7 +95,7 @@ export default function CategoryBannersTab({
   const enabledCount = Object.values(banners).filter((b) => b?.enabled !== false && b?.image).length;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Banner explicativo */}
       <div className="bg-primary/5 dark:bg-primary/10 border-2 border-primary/15 rounded-2xl p-5 flex items-start gap-3">
         <div className="shrink-0 w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -102,9 +104,9 @@ export default function CategoryBannersTab({
         <div className="min-w-0 flex-1">
           <p className="text-base font-bold text-[var(--text-primary)]">Promociones por categoría</p>
           <p className="text-sm text-muted mt-0.5">
-            Subí una imagen promocional por cada categoría. Aparece en la sección{" "}
+            Sube una imagen promocional por cada categoría. Aparece en la sección{" "}
             <span className="font-bold">&ldquo;Oferta de Temporada&rdquo;</span> del storefront. Al click, el
-            cliente va directo a la categoría — o a un producto específico si lo vinculás.
+            cliente va directo a la categoría — o a un producto específico si lo vinculas.
           </p>
         </div>
         <div className="hidden sm:block shrink-0 text-right">
@@ -114,18 +116,18 @@ export default function CategoryBannersTab({
       </div>
 
       {loading ? (
-        <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] p-10 text-center">
+        <div className="rounded-2xl border border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] p-10 text-center">
           <div className="h-10 w-10 rounded-full border-4 border-primary/20 border-t-primary animate-spin mx-auto" />
           <p className="text-sm text-muted mt-3">Cargando categorías…</p>
         </div>
       ) : categories.length === 0 ? (
-        <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] p-8 text-center">
+        <div className="rounded-2xl border border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] p-6 text-center">
           <Tag className="h-10 w-10 text-muted mx-auto mb-2" />
           <p className="text-base font-bold text-[var(--text-primary)]">Aún no hay categorías</p>
-          <p className="text-sm text-muted mt-1">Agregá productos primero — las categorías se generan automáticamente.</p>
+          <p className="text-sm text-muted mt-1">Agrega productos primero — las categorías se generan automáticamente.</p>
         </div>
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-4">
           {categories.map((cat) => {
             const banner = banners[cat.id] ?? {};
             const isEnabled = banner.enabled !== false; // default ON cuando hay imagen
@@ -147,12 +149,12 @@ export default function CategoryBannersTab({
                   <div className="flex items-center gap-3 min-w-0">
                     <div className={cn(
                       "shrink-0 w-10 h-10 rounded-xl flex items-center justify-center font-bold",
-                      hasImage ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-primary)]"
+                      hasImage ? "bg-primary text-white" : "bg-[var(--rule-soft)] text-[var(--text-primary)]"
                     )}>
                       <Tag className="h-5 w-5" />
                     </div>
                     <div className="min-w-0">
-                      <h3 className="text-base font-bold text-[var(--text-primary)] leading-tight truncate">{cat.label}</h3>
+                      <CardTitle className="text-[var(--text-primary)] truncate">{cat.label}</CardTitle>
                       <p className="text-xs text-muted">{cat.count} producto{cat.count !== 1 ? "s" : ""}{hasImage ? " · banner configurado" : " · sin banner"}</p>
                     </div>
                   </div>
@@ -165,7 +167,7 @@ export default function CategoryBannersTab({
                         "inline-flex items-center gap-1.5 px-3 h-9 rounded-xl text-xs font-bold transition-all",
                         isEnabled
                           ? "bg-[var(--data-success-500)]/10 text-[var(--data-success-700)] hover:bg-[var(--data-success-500)]/20"
-                          : "bg-gray-100 dark:bg-surface text-muted hover:bg-gray-200"
+                          : "bg-[var(--rule-soft)] text-muted hover:bg-[var(--rule-base)]"
                       )}
                     >
                       {isEnabled ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
@@ -192,8 +194,7 @@ export default function CategoryBannersTab({
 
                   {/* TEXTOS */}
                   <div className="space-y-3">
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold uppercase tracking-wider text-muted">Título</label>
+                    <Field label="Título" labelClassName="text-xs font-bold uppercase tracking-wider text-muted" className="space-y-1.5">
                       <input
                         type="text"
                         value={banner.title ?? ""}
@@ -202,9 +203,8 @@ export default function CategoryBannersTab({
                         className={inputCls}
                         maxLength={60}
                       />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold uppercase tracking-wider text-muted">Subtítulo</label>
+                    </Field>
+                    <Field label="Subtítulo" labelClassName="text-xs font-bold uppercase tracking-wider text-muted" className="space-y-1.5">
                       <input
                         type="text"
                         value={banner.subtitle ?? ""}
@@ -213,9 +213,8 @@ export default function CategoryBannersTab({
                         className={inputCls}
                         maxLength={120}
                       />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold uppercase tracking-wider text-muted">Texto del botón</label>
+                    </Field>
+                    <Field label="Texto del botón" labelClassName="text-xs font-bold uppercase tracking-wider text-muted" className="space-y-1.5">
                       <input
                         type="text"
                         value={banner.ctaText ?? ""}
@@ -224,30 +223,36 @@ export default function CategoryBannersTab({
                         className={inputCls}
                         maxLength={30}
                       />
-                    </div>
+                    </Field>
 
                     {/* Vincular a producto específico (opcional) */}
-                    <div className="space-y-1.5 pt-1">
-                      <label className="text-xs font-bold uppercase tracking-wider text-muted flex items-center gap-1.5">
-                        Vincular a producto <span className="text-[length:var(--ts-2xs)] font-normal text-muted normal-case tracking-normal">(opcional)</span>
-                      </label>
-                      <select
-                        value={banner.productSlug ?? ""}
-                        onChange={(e) => updateBanner(cat.id, { productSlug: e.target.value || undefined })}
-                        className={cn(inputCls, "appearance-none")}
-                      >
-                        <option value="">Filtrar por categoría completa</option>
-                        {catProducts.map((p) => (
-                          <option key={p.id} value={p.slug ?? String(p.id)}>
-                            {p.name}
-                          </option>
-                        ))}
-                      </select>
-                      <p className="text-[length:var(--ts-xs)] text-muted leading-snug">
-                        Si elegís un producto, el botón lleva directo al detalle de ese producto.
-                        Sin elegir, filtra toda la categoría.
-                      </p>
-                    </div>
+                    <Field
+                      label={<>Vincular a producto <span className="text-[length:var(--ts-2xs)] font-normal text-muted normal-case tracking-normal">(opcional)</span></>}
+                      labelClassName="text-xs font-bold uppercase tracking-wider text-muted flex items-center gap-1.5"
+                      className="space-y-1.5 pt-1"
+                    >
+                      {(id) => (
+                        <>
+                          <select
+                            id={id}
+                            value={banner.productSlug ?? ""}
+                            onChange={(e) => updateBanner(cat.id, { productSlug: e.target.value || undefined })}
+                            className={cn(inputCls, "appearance-none")}
+                          >
+                            <option value="">Filtrar por categoría completa</option>
+                            {catProducts.map((p) => (
+                              <option key={p.id} value={p.slug ?? String(p.id)}>
+                                {p.name}
+                              </option>
+                            ))}
+                          </select>
+                          <p className="text-[length:var(--ts-xs)] text-muted leading-snug">
+                            Si eliges un producto, el botón lleva directo al detalle de ese producto.
+                            Sin elegir, filtra toda la categoría.
+                          </p>
+                        </>
+                      )}
+                    </Field>
 
                     {/* Acciones */}
                     {hasImage && (
@@ -271,7 +276,7 @@ export default function CategoryBannersTab({
                       <Sparkles className="h-3 w-3" />
                       Preview de cómo se verá
                     </p>
-                    <div className="relative overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] h-44">
+                    <div className="relative overflow-hidden rounded-2xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] h-44">
                       <Image
                         src={banner.image!}
                         alt={banner.title ?? cat.label}
@@ -290,7 +295,7 @@ export default function CategoryBannersTab({
                         <p className="text-sm text-white/85 mt-1 line-clamp-2">{banner.subtitle || "Hasta 20% OFF en productos seleccionados"}</p>
                         <button
                           type="button"
-                          className="mt-3 self-start inline-flex items-center gap-1.5 px-4 h-9 rounded-xl bg-white dark:bg-[var(--color-card)] text-primary text-xs font-bold shadow-[var(--shadow-lg)] pointer-events-none"
+                          className="mt-3 self-start inline-flex items-center gap-1.5 px-4 h-9 rounded-xl bg-[var(--surface-raised)] text-primary text-xs font-bold shadow-[var(--shadow-lg)] pointer-events-none"
                         >
                           {banner.ctaText || `Ver ${cat.label}`}
                           <ArrowRight className="h-3.5 w-3.5" />

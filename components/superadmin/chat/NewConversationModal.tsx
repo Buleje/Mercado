@@ -60,7 +60,8 @@ export function NewConversationModal({ onClose, onCreated }: { onClose: () => vo
       if (!r.ok) throw new Error("error");
       const data = await r.json();
       onCreated(data.conversation.id);
-    } catch {
+    } catch (err) {
+      console.error("[sa-chat] create conversation failed", err);
       setErr("No se pudo crear la conversación");
       setCreating(false);
     }
@@ -78,7 +79,7 @@ export function NewConversationModal({ onClose, onCreated }: { onClose: () => vo
         <div className="px-5 py-4 space-y-3">
           {!selected ? (
             <>
-              <div className="flex items-center gap-2 h-10 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 focus-within:border-[var(--accent)]">
+              <div className="flex items-center gap-2 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 focus-within:border-[var(--accent)]">
                 <Search className="h-4 w-4 text-[var(--text-tertiary)]" />
                 <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar tienda…" className="w-full bg-transparent text-sm text-[var(--text-primary)] outline-none" />
               </div>
@@ -100,19 +101,19 @@ export function NewConversationModal({ onClose, onCreated }: { onClose: () => vo
             </>
           ) : (
             <>
-              <div className="flex items-center justify-between rounded-xl bg-[var(--accent-soft)] px-3 py-2">
+              <div className="flex items-center justify-between rounded-xl bg-primary/10 px-3 py-2">
                 <span className="flex items-center gap-2 text-sm font-bold text-[var(--accent)]"><Building2 className="h-4 w-4" /> {selected.name}</span>
                 <button onClick={() => setSelected(null)} className="text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">Cambiar</button>
               </div>
-              <input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Asunto (opcional)" className="w-full h-10 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
-              <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={3} placeholder="Primer mensaje (opcional)…" className="w-full resize-none rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
+              <input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Asunto (opcional)" className="w-full h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
+              <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={3} placeholder="Primer mensaje (opcional)…" className="w-full resize-none rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
             </>
           )}
-          {err && <p className="text-sm font-semibold text-[var(--data-error-600,#dc2626)]">{err}</p>}
+          {err && <p className="text-sm font-semibold text-[var(--data-error-600)]">{err}</p>}
         </div>
         <div className="flex items-center justify-end gap-2 border-t border-[var(--rule-base)] px-5 py-4">
-          <button onClick={onClose} className="rounded-xl px-4 h-10 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
-          <button onClick={handleCreate} disabled={!selected || creating} className="inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-5 h-10 text-sm font-bold text-white hover:opacity-90 disabled:opacity-40">
+          <button onClick={onClose} className="rounded-xl px-4 h-10 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
+          <button onClick={handleCreate} disabled={!selected || creating} className="inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-5 h-10 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-40">
             {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Crear
           </button>
         </div>

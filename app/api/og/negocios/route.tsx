@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
             left: 0,
             right: 0,
             height: 8,
-            background: `linear-gradient(90deg, ${TEAL}, ${TEAL_BRIGHT}, #f97316)`,
+            background: `linear-gradient(90deg, ${TEAL}, ${TEAL_BRIGHT}, #ff6b5b)`,
           }}
         />
 
@@ -129,8 +129,8 @@ export async function GET(req: NextRequest) {
               maxWidth: 880,
             }}
           >
-            Tu tienda online en 5 minutos. Cobrás con Yape, vendés con delivery
-            y emitís boletas SUNAT.
+            Tu tienda online en 5 minutos. Cobrás con Yape, vendes con delivery
+            y emites boletas SUNAT.
           </span>
         </div>
 

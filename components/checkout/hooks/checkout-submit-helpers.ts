@@ -1,7 +1,7 @@
 import type { CartItem } from "@/contexts/cart-context";
 import type { Customer, SavedLocation } from "@/contexts/customer-context";
 import type { DbOrderItem } from "@/lib/jsondb";
-import type { CheckoutState } from "../types";
+import type { CheckoutState, PaymentMethod } from "../types";
 
 /**
  * Helpers puros para el flow de submit del checkout.
@@ -16,7 +16,7 @@ export type EffectiveValues = {
   phone: string;
   location: string;
   reference: string;
-  payment: "yape" | "efectivo";
+  payment: PaymentMethod;
 };
 
 /** Resuelve los valores efectivos del cliente combinando state + cliente cargado. */
@@ -75,8 +75,10 @@ export function buildOrderPayload(args: {
   finalTotal: number;
   promo: { id: string } | null;
   discount: number;
+  juntaCode?: string;
 }): string {
-  const { state, effective, orderItems, finalTotal, promo, discount } = args;
+  const { state, effective, orderItems, finalTotal, promo, discount, juntaCode } =
+    args;
   return JSON.stringify({
     customer: {
       name: effective.name,
@@ -105,6 +107,7 @@ export function buildOrderPayload(args: {
         ? state.payment.yapeOpNumber.trim()
         : undefined,
     deuda: effective.payment === "efectivo" ? true : undefined,
+    ...(juntaCode && { juntaCode }),
     ...(promo && { appliedPromoId: promo.id, discountAmount: discount }),
     ...(state.coupon.applied &&
       state.coupon.code.trim() && {

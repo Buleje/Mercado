@@ -102,11 +102,50 @@ export async function POST(req: NextRequest) {
       ]),
     );
 
-    // Calcular items con descuento por volumen aplicado — server-side
+    // CRITICAL FIX 2026-06-29 (money-integrity, paridad con guest/orders):
+    // antes la base del precio era `item.unitPrice` del CLIENTE → un comprador
+    // mayorista podía postear unitPrice=0.01 y la orden se persistía a ~0.01.
+    // Ahora la base es el precio AUTORITATIVO del vendedor (wholesalePrice si
+    // existe, si no retailPrice), leído de StoreProduct (DB).
+    const basePriceMap = new Map(
+      sellerStoreProducts.map((sp) => [
+        sp.productId,
+        Number(sp.wholesalePrice ?? sp.retailPrice),
+      ]),
+    );
+
+    // Rechazar productos que el vendedor no lista (sin precio autoritativo → no
+    // se puede mayorear ni confiar en el precio del cliente).
+    const unlisted = items
+      .filter((i) => !basePriceMap.has(i.productId))
+      .map((i) => i.productId);
+    if (unlisted.length > 0) {
+      return NextResponse.json(
+        { error: "Uno o más productos no están disponibles para venta mayorista", productIds: unlisted },
+        { status: 404 },
+      );
+    }
+
+    // #4 money-integrity (audit-verificado 2026-06-29): rechazar productos cuyo
+    // precio base autoritativo sea <= 0 (p.ej. StoreProduct.retailPrice=0 sin
+    // wholesalePrice → Number(null ?? 0)=0). Sin precio válido, la orden y su
+    // comisión se persistirían a S/0. `!(v > 0)` cubre 0, negativos y NaN.
+    const zeroPriced = items
+      .filter((i) => !((basePriceMap.get(i.productId) ?? 0) > 0))
+      .map((i) => i.productId);
+    if (zeroPriced.length > 0) {
+      return NextResponse.json(
+        { error: "Uno o más productos no tienen precio mayorista válido configurado", productIds: zeroPriced },
+        { status: 422 },
+      );
+    }
+
+    // Calcular items con descuento por volumen aplicado — server-side, base de DB.
     const resolvedItems = items.map((item) => {
       const tiers           = tiersMap.get(item.productId) ?? [];
       const discountPct     = resolveVolumeDiscount(tiers, item.quantity);
-      const discountedPrice = item.unitPrice * (1 - discountPct / 100);
+      const basePrice       = basePriceMap.get(item.productId) ?? 0; // validado arriba
+      const discountedPrice = basePrice * (1 - discountPct / 100);
       const roundedPrice    = Math.round(discountedPrice * 100) / 100;
       return {
         productId:       item.productId,

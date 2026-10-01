@@ -2,15 +2,16 @@
 
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
-import { ArrowRight, AlertTriangle, AlertCircle, Info, Sparkles, Package } from "@buleje/design-system/icons";
+import { ArrowRight, AlertTriangle, AlertCircle, Info, Sparkles } from "@buleje/design-system/icons";
 import { AdminInsightCard, type ContextualMetric, type InsightAction } from "@/components/admin/ux";
-import { BulejeHeatmap, type HeatmapCell } from "@/components/ui-system/charts";
+import { type HeatmapCell } from "@/components/ui-system/charts";
 import { SkeletonEditorial } from "@/components/ui-system";
 import { usePersonalizedGreeting } from "@/hooks/use-personalized-greeting";
 import { usePlatformBrand } from "@/lib/use-platform-brand";
 import { useTenant } from "@/contexts/tenant-context";
 import { cn } from "@/lib/utils";
 import type { DateRange } from "@/components/admin/inicio/DashboardDateRange";
+import { formatTime } from "@/lib/format";
 
 /**
  * TodayHub — pantalla unificada del admin home (ADR-064 Ola B).
@@ -172,7 +173,7 @@ export function TodayHub({ userName, greeting: greetingOverride, dateRange, hide
           No pudimos cargar tu resumen
         </p>
         <p className="text-sm text-[var(--text-secondary)] max-w-md mx-auto">
-          Nos pasó algo. Recargá la página o revisa tu conexión.
+          Nos pasó algo. Recarga la página o revisa tu conexión.
         </p>
       </div>
     );
@@ -301,7 +302,7 @@ export function TodayHub({ userName, greeting: greetingOverride, dateRange, hide
       {/* Refresh timestamp */}
       <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] text-right">
         <Sparkles className="inline h-2.5 w-2.5 -mt-0.5 mr-1" strokeWidth={2} aria-hidden />
-        Actualizado: {new Date(data.generatedAt).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}
+        Actualizado: {formatTime(data.generatedAt)}
       </p>
     </div>
   );

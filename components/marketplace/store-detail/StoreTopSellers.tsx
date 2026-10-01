@@ -130,7 +130,7 @@ function TopSellerCard({ item, onAdd, added }: TopSellerCardProps) {
           className={cn(
             "w-full h-9 rounded-xl flex items-center justify-center gap-1.5 text-sm font-black transition-all active:scale-95",
             added
-              ? "bg-[var(--accent-soft)] text-[var(--accent)] border-2 border-[var(--accent)]/40"
+              ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] border-2 border-[var(--accent)]/40"
               : outOfStock
               ? "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed border-2 border-[var(--rule-soft)]"
               : "bg-[var(--accent)] text-white hover:brightness-110 shadow-sm hover:shadow-md",
@@ -233,7 +233,7 @@ export default function StoreTopSellers({
       {/* Encabezado */}
       <div className="flex items-center gap-2 mb-4">
         <span
-          className="inline-flex items-center justify-center h-8 w-8 rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]"
+          className="inline-flex items-center justify-center h-8 w-8 rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
           aria-hidden
         >
           <Flame className="h-5 w-5" strokeWidth={2.25} />

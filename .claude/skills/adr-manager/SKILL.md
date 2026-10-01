@@ -8,7 +8,7 @@ description: |
   arquitectura, contratos públicos, schema DB, o seguridad.
 disable-model-invocation: false
 user-invocable: true
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep, TaskCreate
+allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 argument-hint: "[título corto del ADR]"
 model: opus
 ---

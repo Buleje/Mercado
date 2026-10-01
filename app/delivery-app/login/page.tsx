@@ -23,6 +23,7 @@ import {
 } from "@buleje/design-system/icons";
 import { MotoIcon } from "@/components/delivery/icons";
 import { cn } from "@/lib/utils";
+import { useLoginSecurity } from "@/hooks/useLoginSecurity";
 
 export default function DeliveryLoginPage() {
   const router = useRouter();
@@ -33,6 +34,10 @@ export default function DeliveryLoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [shaking, setShaking] = useState(false);
+  const {
+    capsLock, retryAfter, onPasswordKey, startRetryFromResponse,
+    messageForStatus, networkErrorMessage, mmss,
+  } = useLoginSecurity();
 
   useEffect(() => {
     phoneRef.current?.focus();
@@ -63,19 +68,26 @@ export default function DeliveryLoginPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "No pudimos iniciar sesión");
+        if (res.status === 429) {
+          // Rate limit / lockout: recargar no ayuda → countdown.
+          startRetryFromResponse(res);
+        } else {
+          setError(messageForStatus(res.status, { attemptsLeft: data?.attemptsLeft }) ?? data.error ?? "No pudimos iniciar sesión");
+        }
         return;
       }
       router.push("/delivery-app");
     } catch {
-      setError("Error de red. Intenta de nuevo.");
+      setError(networkErrorMessage());
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[var(--surface-canvas)] grid lg:grid-cols-[1fr_1.15fr]">
+    /* Mismo esqueleto que /admin/login y /superadmin/login — tokens --login-*
+       en globals.css (§PANEL SHELL). */
+    <div data-area="login" className="relative min-h-dvh overflow-hidden bg-[var(--surface-canvas)] grid lg:grid-cols-[1fr_1.15fr]">
       {/* CSS scoped: oculta widgets flotantes globales + focus orange del input */}
       <style jsx global>{`
         body[data-route="delivery-login"] [data-floating-widget],
@@ -108,15 +120,15 @@ export default function DeliveryLoginPage() {
       />
 
       {/* ─── COLUMNA IZQUIERDA — Form editorial centrado ─────────────── */}
-      <aside className="relative flex flex-col justify-center px-5 py-10 sm:px-10 sm:py-16 lg:px-16">
+      <aside className="relative flex flex-col justify-center px-5 sm:px-10 lg:px-16 2xl:px-20 py-[var(--login-pad-y)]">
         <div
           className={cn(
-            "relative z-10 w-full max-w-[460px] mx-auto",
+            "relative z-10 w-full max-w-[var(--login-form-max)] mx-auto",
             shaking && "animate-[shake_0.45s_ease-out]",
           )}
         >
           {/* Brand badge superior */}
-          <div className="flex items-center gap-2.5 mb-10">
+          <div className="flex items-center gap-2.5 mb-[var(--login-gap-lg)]">
             <div
               className="inline-flex h-11 w-11 items-center justify-center rounded-2xl shadow-md"
               style={{
@@ -146,7 +158,7 @@ export default function DeliveryLoginPage() {
           >
             Iniciar sesión
           </p>
-          <h1 className="text-[2.25rem] sm:text-[2.75rem] font-black tracking-[-0.03em] text-[var(--text-primary)] leading-[1.02]">
+          <h1 data-login-title className="text-[2.25rem] sm:text-[2.75rem] font-black tracking-tight text-[var(--text-primary)] leading-[1.02]">
             Maneja tu ruta,
             <br />
             <span className="italic font-serif" style={{ color: "var(--brand-secondary)" }}>
@@ -158,7 +170,7 @@ export default function DeliveryLoginPage() {
           </p>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="mt-10 space-y-4">
+          <form onSubmit={handleSubmit} className="mt-[var(--login-gap-lg)] space-y-[var(--login-gap-sm)]">
             <div className="space-y-2">
               <label
                 htmlFor="login-phone"
@@ -203,6 +215,8 @@ export default function DeliveryLoginPage() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  onKeyDown={onPasswordKey}
+                  onKeyUp={onPasswordKey}
                   placeholder="Tu contraseña"
                   autoComplete="current-password"
                   className="w-full h-14 pl-12 pr-14 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-base font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition-all dv-input"
@@ -216,10 +230,23 @@ export default function DeliveryLoginPage() {
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
+              {capsLock && (
+                <p role="status" className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)]">
+                  <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                  Bloq Mayús está activado
+                </p>
+              )}
               <p className="text-xs text-[var(--text-tertiary)]">
                 Si es tu primera vez, contactá a tu admin para obtener acceso.
               </p>
             </div>
+
+            {retryAfter > 0 && (
+              <div role="alert" className="flex items-start gap-3 p-4 rounded-2xl bg-[var(--data-warning-500)]/10 border-2 border-[var(--data-warning-500)]/25 text-sm font-bold text-[var(--data-warning-700)]">
+                <Clock className="h-5 w-5 shrink-0 mt-0.5" aria-hidden />
+                <span>Demasiados intentos. Esperá <span className="tabular-nums">{mmss(retryAfter)}</span> — recargar no ayuda.</span>
+              </div>
+            )}
 
             {error && (
               <div
@@ -233,7 +260,7 @@ export default function DeliveryLoginPage() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || retryAfter > 0}
               className="w-full inline-flex items-center justify-center gap-2 h-14 rounded-2xl text-white text-base font-extrabold tracking-tight active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               style={{
                 background: "var(--brand-secondary)",
@@ -244,6 +271,11 @@ export default function DeliveryLoginPage() {
                 <>
                   <Loader2 className="h-5 w-5 animate-spin" strokeWidth={2.5} />
                   Verificando…
+                </>
+              ) : retryAfter > 0 ? (
+                <>
+                  <Clock className="h-5 w-5" strokeWidth={2.5} />
+                  Esperá {mmss(retryAfter)}
                 </>
               ) : (
                 <>
@@ -267,7 +299,7 @@ export default function DeliveryLoginPage() {
           </p>
 
           {/* Switches a otros paneles — disclosure colapsado */}
-          <details className="mt-10 group">
+          <details className="mt-[var(--login-gap-lg)] group">
             <summary className="flex items-center justify-between gap-2 cursor-pointer py-3 px-4 -mx-4 rounded-xl hover:bg-[var(--surface-sunken)]/50 transition-colors list-none">
               <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                 ¿Buscás otro panel?
@@ -294,7 +326,7 @@ export default function DeliveryLoginPage() {
           </details>
 
           {/* Trust badge inferior */}
-          <p className="mt-12 flex items-center gap-2 text-xs text-[var(--text-tertiary)] leading-relaxed">
+          <p className="mt-[var(--login-gap-xl)] flex items-center gap-2 text-xs text-[var(--text-tertiary)] leading-relaxed">
             <ShieldCheck
               className="h-3.5 w-3.5 shrink-0"
               strokeWidth={2.25}
@@ -341,7 +373,7 @@ function RiderAppPreview() {
   const bars = [0, 1, 3, 4, 2, 6, 5, 3];
 
   return (
-    <main className="relative hidden lg:flex items-center justify-center px-12 py-16 overflow-hidden">
+    <main className="relative hidden lg:flex items-center justify-center px-12 2xl:px-16 py-[var(--login-pad-y)] overflow-hidden lg:max-h-dvh">
       {/* Halos naranja atrás */}
       <div
         aria-hidden
@@ -365,7 +397,7 @@ function RiderAppPreview() {
       />
 
       <div
-        className="relative w-full max-w-[480px]"
+        className="relative w-full max-w-[var(--login-art,520px)]"
         style={{ transform: "rotate(1.2deg)" }}
       >
         {/* Sombra/ofset detrás */}
@@ -439,7 +471,7 @@ function RiderAppPreview() {
                 +S/ 27 vs. ayer
               </span>
             </div>
-            <p className="text-5xl font-black tracking-[-0.04em] tabular-nums leading-none text-[var(--text-primary)]">
+            <p className="text-5xl font-black tracking-tight tabular-nums leading-none text-[var(--text-primary)]">
               S/ <span style={{ color: "var(--brand-secondary)" }}>87</span>
             </p>
             <p className="mt-2 text-sm text-[var(--text-secondary)]">

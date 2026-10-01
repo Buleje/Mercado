@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Search, UserPlus, X, User, ShoppingBag, RotateCcw, Loader2, Star } from "@buleje/design-system/icons";
+import { Search, UserPlus, X, User, ShoppingBag, RotateCcw, Loader2, Star, StarOff, ShoppingCart } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { formatCurrency } from "@/lib/format";
 
 const ClienteFormModal = dynamic(
   () => import("@/components/admin/clientes/ClienteFormModal"),
@@ -68,7 +69,7 @@ export default function POSCustomerSearch({
   const POINTS_RATE = 0.05; // 1 punto = S/0.05
 
   // Mejora 11: Score de confiabilidad del cliente
-  const [reliabilityScore, setReliabilityScore] = useState<{ score: number; label: string } | null>(null);
+  const [reliabilityScore, setReliabilityScore] = useState<{ score: number } | null>(null);
 
   // Mejora M-3: Abono rápido de fiado desde POS
   const [showAbonoRapido, setShowAbonoRapido] = useState(false);
@@ -181,7 +182,7 @@ export default function POSCustomerSearch({
         else if (pct > 50 && avgDias < 30) sc = 3;
         else if (pct > 25) sc = 2;
         else sc = 1;
-        setReliabilityScore({ score: sc, label: `${"★".repeat(sc)}${"☆".repeat(5 - sc)} (${sc}/5)` });
+        setReliabilityScore({ score: sc });
       })
       .catch(() => setReliabilityScore(null));
     // Mejora 10R2: Fetch customer details for observaciones + Mejora 15: loyalty points
@@ -246,7 +247,7 @@ export default function POSCustomerSearch({
   if (selectedPhone) {
     return (
       <div className="space-y-2">
-        <div className="flex items-center gap-3 p-3 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl">
+        <div className="flex items-center gap-3 p-3 bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl">
           <div className="h-10 w-10 rounded-full bg-[var(--data-success-500)]/15 flex items-center justify-center shrink-0">
             <User className="h-5 w-5 text-[var(--data-success-500)]" />
           </div>
@@ -261,7 +262,7 @@ export default function POSCustomerSearch({
           <button
             onClick={onClear}
             aria-label="Quitar cliente"
-            className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-white/50 dark:hover:bg-[var(--surface-raised)]/50 transition-colors shrink-0"
+            className="p-2 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-white/50 dark:hover:bg-[var(--surface-raised)]/50 transition-colors shrink-0"
           >
             <X className="h-5 w-5" />
           </button>
@@ -269,14 +270,21 @@ export default function POSCustomerSearch({
         {/* Mejora 11: Reliability score badge */}
         {reliabilityScore && (
           <div className="flex items-center gap-1.5 px-3 py-2 bg-[var(--data-warning-50)] dark:bg-yellow-950/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30 rounded-lg">
-            <Star className="h-3.5 w-3.5 text-[var(--data-warning-500)] shrink-0" />
             <span className={cn(
-              "text-sm font-bold",
+              "text-sm font-bold flex items-center gap-1.5",
               reliabilityScore.score >= 4 ? "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" :
               reliabilityScore.score >= 3 ? "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" :
               "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
             )}>
-              Confiabilidad: {reliabilityScore.label}
+              Confiabilidad:
+              <span className="inline-flex items-center gap-0.5" aria-hidden>
+                {Array.from({ length: 5 }, (_, i) =>
+                  i < reliabilityScore.score
+                    ? <Star key={i} className="h-3.5 w-3.5 fill-current" />
+                    : <StarOff key={i} className="h-3.5 w-3.5 opacity-40" />,
+                )}
+              </span>
+              ({reliabilityScore.score}/5)
             </span>
           </div>
         )}
@@ -285,11 +293,11 @@ export default function POSCustomerSearch({
           <div className="space-y-1">
             <div className="flex items-center gap-1.5 px-3 py-2 bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30 rounded-lg">
               <span className="text-sm font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)] flex-1">
-                Fiado pendiente: S/{fiadoSaldo.toFixed(2)}
+                Fiado pendiente: {formatCurrency(fiadoSaldo)}
               </span>
               <button
                 onClick={() => { setShowAbonoRapido(!showAbonoRapido); setAbonoMonto(fiadoSaldo.toFixed(2)); }}
-                className="text-sm font-bold text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] hover:bg-[var(--accent-soft)] px-2 py-1 rounded transition-colors"
+                className="text-sm font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15 hover:bg-primary/10 px-2 py-1 rounded transition-colors"
               >
                 Abonar
               </button>
@@ -308,7 +316,8 @@ export default function POSCustomerSearch({
                       step="0.10"
                       value={abonoMonto}
                       onChange={(e) => setAbonoMonto(e.target.value)}
-                      className="w-full pl-6 pr-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
+                      aria-label="Monto a abonar al fiado"
+                      className="w-full pl-6 pr-2 py-1.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
                     />
                   </div>
                   <button
@@ -355,10 +364,10 @@ export default function POSCustomerSearch({
             <div className="flex items-center gap-1.5 px-3 py-2 bg-[var(--data-warning-50)] dark:bg-yellow-950/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30 rounded-lg">
               <Star className="h-3.5 w-3.5 text-[var(--data-warning-500)] shrink-0" />
               <span className="text-sm text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] font-bold">
-                {loyaltyPoints} puntos (= S/{(loyaltyPoints * POINTS_RATE).toFixed(2)} en descuento)
+                {loyaltyPoints} puntos (= {formatCurrency(loyaltyPoints * POINTS_RATE)} en descuento)
               </span>
               {loyaltyPoints >= 100 && (
-                <span className="ml-auto text-sm font-bold px-1.5 py-1 rounded-full bg-[var(--accent-soft)] text-[var(--data-success-500)]">Canjeable</span>
+                <span className="ml-auto text-sm font-bold px-1.5 py-1 rounded-full bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">Canjeable</span>
               )}
             </div>
             {loyaltyPoints >= 100 && !showRedeemSlider && (
@@ -370,9 +379,9 @@ export default function POSCustomerSearch({
               </button>
             )}
             {showRedeemSlider && (
-              <div className="px-3 py-2 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-lg space-y-1">
+              <div className="px-3 py-2 bg-primary/10 dark:bg-primary/15 rounded-lg space-y-1">
                 <p className="text-sm text-[var(--text-secondary)] font-medium">
-                  Canjear {redeemAmount} pts = S/{(redeemAmount * POINTS_RATE).toFixed(2)} de descuento
+                  Canjear {redeemAmount} pts = {formatCurrency(redeemAmount * POINTS_RATE)} de descuento
                 </p>
                 <input
                   type="range"
@@ -381,18 +390,19 @@ export default function POSCustomerSearch({
                   step={10}
                   value={redeemAmount}
                   onChange={e => setRedeemAmount(Number(e.target.value))}
+                  aria-label="Puntos a canjear"
                   className="w-full h-1.5 accent-[var(--data-success)]"
                 />
                 <div className="flex gap-1">
                   <button
                     onClick={() => setShowRedeemSlider(false)}
-                    className="flex-1 text-sm py-1 rounded bg-gray-100 text-[var(--text-secondary)] font-bold"
+                    className="flex-1 text-sm py-1 rounded bg-[var(--rule-soft)] text-[var(--text-secondary)] font-bold"
                   >
                     Cancelar
                   </button>
                   <button
                     onClick={() => setShowRedeemSlider(false)}
-                    className="flex-1 text-sm py-1 rounded bg-[var(--accent-soft)] text-white font-bold"
+                    className="flex-1 text-sm py-1 rounded bg-primary/10 text-white font-bold"
                   >
                     Aplicar -{" "}S/{(redeemAmount * POINTS_RATE).toFixed(2)}
                   </button>
@@ -404,8 +414,8 @@ export default function POSCustomerSearch({
         {/* Mejora 17: Producto que suele comprar */}
         {lastPurchase && Array.isArray(lastPurchase.items) && lastPurchase.items.length > 0 && (
           <div className="flex items-center gap-1.5 px-2 py-1">
-            <span className="text-sm text-[var(--text-tertiary)] dark:text-muted">
-              🛒 Suele comprar: <span className="font-bold text-[var(--text-secondary)]">{lastPurchase.items[0]?.name ?? "—"}</span>
+            <span className="inline-flex items-center gap-1 text-sm text-[var(--text-tertiary)] dark:text-muted">
+              <ShoppingCart className="h-4 w-4 shrink-0" aria-hidden /> Suele comprar: <span className="font-bold text-[var(--text-secondary)]">{lastPurchase.items[0]?.name ?? "—"}</span>
               {lastPurchase.items.length > 1 && lastPurchase.items[1]?.name && <span>, {lastPurchase.items[1].name}</span>}
             </span>
           </div>
@@ -418,7 +428,7 @@ export default function POSCustomerSearch({
           </div>
         )}
         {lastPurchase === null && !loadingLastPurchase && paymentHistory.length === 0 && (
-          <div className="flex items-center gap-1.5 px-2 py-1 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-lg">
+          <div className="flex items-center gap-1.5 px-2 py-1 bg-primary/10 dark:bg-primary/15 rounded-lg">
             <ShoppingBag className="h-3 w-3 text-[var(--data-success-500)] shrink-0" />
             <span className="text-sm text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-medium">Primera compra de este cliente</span>
           </div>
@@ -442,10 +452,10 @@ export default function POSCustomerSearch({
           </div>
         )}
         {lastPurchase && Array.isArray(lastPurchase.items) && !loadingLastPurchase && (
-          <div className="bg-gray-50 dark:bg-surface rounded-lg px-3 py-2">
+          <div className="bg-[var(--surface-sunken)] rounded-lg px-3 py-2">
             <p className="text-sm text-[var(--text-secondary)] dark:text-muted">
               Última compra: {getRelativeTime(lastPurchase.date)} — {lastPurchase.items.map(i => i.name).slice(0, 3).join(", ")}
-              {lastPurchase.items.length > 3 && "..."} (S/{Number(lastPurchase.total).toFixed(2)})
+              {lastPurchase.items.length > 3 && "..."} ({formatCurrency(Number(lastPurchase.total))})
             </p>
             {onRepeatOrder && lastPurchase.items.some(i => i.active) && (
               <button
@@ -483,7 +493,7 @@ export default function POSCustomerSearch({
           }}
           onFocus={() => setShowResults(true)}
           placeholder="Buscar cliente por nombre o teléfono..."
-          className="w-full pl-12 pr-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-base text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+          className="w-full pl-12 pr-4 h-11 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-base text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
           autoComplete="off"
         />
       </div>
@@ -506,7 +516,7 @@ export default function POSCustomerSearch({
               <button
                 key={c.phone}
                 onClick={() => handleSelect(c)}
-                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-surface transition-colors text-left border-b border-[var(--rule-base)] last:border-0"
+                className="w-full flex items-center gap-3 px-4 min-h-11 hover:bg-[var(--surface-sunken)] transition-colors text-left border-b border-[var(--rule-base)] last:border-0"
               >
                 <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                   <User className="h-4 w-4 text-primary" />
@@ -521,10 +531,10 @@ export default function POSCustomerSearch({
                 </div>
                 {c.creditBalance != null && c.creditBalance > 0 ? (
                   <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[var(--data-error-50)] dark:bg-red-950/20 text-[var(--data-error-500)] shrink-0">
-                    Fiado S/{Number(c.creditBalance).toFixed(2)}
+                    Fiado {formatCurrency(Number(c.creditBalance))}
                   </span>
                 ) : (
-                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] shrink-0">
+                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] shrink-0">
                     Sin deuda
                   </span>
                 )}
@@ -538,7 +548,7 @@ export default function POSCustomerSearch({
               setShowResults(false);
               setShowCreateModal(true);
             }}
-            className="w-full flex items-center gap-2.5 px-4 py-3.5 hover:bg-primary/5 transition-colors text-left border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] text-primary font-semibold"
+            className="w-full flex items-center gap-2.5 px-4 py-3.5 hover:bg-primary/5 transition-colors text-left border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] text-[var(--accent-ink)] dark:text-[var(--accent)] font-semibold"
           >
             <UserPlus className="h-5 w-5" />
             <span className="text-base">Crear nuevo cliente</span>

@@ -24,8 +24,11 @@ import { csrfHeaders } from "@/lib/csrf-client";
  * autónomo — gestiona su propio polling, estado y modales.
  */
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useId, useRef } from "react";
 import { AlertTriangle, CheckCircle2, XCircle, Loader2, Clock } from "@buleje/design-system/icons";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 
 interface PendingApproval {
   id: string;
@@ -53,6 +56,21 @@ export default function HITLApprovalsBanner() {
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ type: "success" | "error"; msg: string } | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const detalleRef = useRef<HTMLDivElement>(null);
+  const detalleTituloId = useId();
+  const resolvingRef = useRef(resolving);
+  useEffect(() => { resolvingRef.current = resolving; }, [resolving]);
+  const cerrarDetalle = useCallback(() => {
+    if (resolvingRef.current) return;
+    setSelected(null);
+  }, []);
+  useModalAccesible(detalleRef, { onCerrar: cerrarDetalle, activo: !!selected });
+  /** Ventana: se mueve, se achica y se fija (ADR-420) — útil para leer el JSON de parámetros con el resto de la pantalla a la vista. */
+  const ventanaDetalle = useVentanaDeModal(!!selected, {
+    ref: detalleRef,
+    aplicarTranslate: true,
+    claveMemoria: "hitl-aprobacion",
+  });
 
   // ── Fetch pendientes ───────────────────────────────────────────────────────
   const fetchApprovals = useCallback(async () => {
@@ -159,7 +177,7 @@ export default function HITLApprovalsBanner() {
                 <button
                   key={a.id}
                   onClick={() => setSelected(a)}
-                  className="w-full text-left bg-[var(--surface-raised)] border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/40 rounded-lg px-3 py-2 hover:border-[var(--data-warning-500)] transition-colors flex items-center gap-2"
+                  className="w-full text-left bg-[var(--surface-raised)] border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/40 rounded-xl px-3 min-h-10 hover:border-[var(--data-warning-500)] transition-colors flex items-center gap-2"
                 >
                   <Clock className="w-3.5 h-3.5 text-[var(--text-tertiary)] shrink-0" />
                   <span className="text-xs font-mono text-[var(--text-secondary)] truncate flex-1">
@@ -184,23 +202,31 @@ export default function HITLApprovalsBanner() {
       {selected && (
         <div
           className="modal-backdrop flex items-center justify-center p-4"
-          onClick={(e) => e.target === e.currentTarget && !resolving && setSelected(null)}
-          role="dialog"
-          aria-modal="true"
+          onClick={(e) => e.target === e.currentTarget && !ventanaDetalle.fijado && cerrarDetalle()}
         >
-          <div className="bg-[var(--surface-canvas)] border border-[var(--rule-base)] rounded-xl max-w-lg w-full p-6">
-            <div className="flex items-start gap-3 mb-4">
+          <div
+            ref={detalleRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={detalleTituloId}
+            tabIndex={-1}
+            className="relative bg-[var(--surface-canvas)] border border-[var(--rule-base)] rounded-xl max-w-lg w-full p-6"
+          >
+            <div {...ventanaDetalle.asaProps} className="flex items-start gap-3 mb-4">
               <div className="w-10 h-10 rounded-xl bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/40 flex items-center justify-center shrink-0">
                 <AlertTriangle className="w-5 h-5 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" />
               </div>
               <div className="flex-1">
-                <SectionTitle className="text-lg font-bold text-[var(--text-primary)]">
+                <SectionTitle id={detalleTituloId} className="text-lg font-bold text-[var(--text-primary)]">
                   Aprobar acción del agente
                 </SectionTitle>
                 <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
                   Solicitada por <strong>{selected.requestedBy}</strong> · hace {formatAge(selected.ageSeconds)}
                 </p>
               </div>
+              <span className="ml-auto flex items-center gap-1 self-start">
+                <ControlesDeVentana ventana={ventanaDetalle} />
+              </span>
             </div>
 
             <div className="space-y-3 mb-5">
@@ -227,7 +253,7 @@ export default function HITLApprovalsBanner() {
               <button
                 onClick={() => resolve(selected.id, "reject")}
                 disabled={resolving}
-                className="flex-1 px-4 py-2 rounded-lg border border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50 flex items-center justify-center gap-1.5"
+                className="flex-1 px-4 min-h-10 rounded-xl border border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50 flex items-center justify-center gap-1.5"
               >
                 <XCircle className="w-4 h-4" />
                 Rechazar
@@ -235,7 +261,7 @@ export default function HITLApprovalsBanner() {
               <button
                 onClick={() => resolve(selected.id, "approve")}
                 disabled={resolving}
-                className="flex-1 px-4 py-2 rounded-lg bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] text-white text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-1.5"
+                className="flex-1 px-4 min-h-10 rounded-xl bg-primary/10 hover:bg-primary/10 text-white text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-1.5"
               >
                 {resolving ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -249,6 +275,7 @@ export default function HITLApprovalsBanner() {
             {error && (
               <p className="text-xs text-[var(--data-error-500)] mt-3 text-center">{error}</p>
             )}
+            <TiradorDeVentana ventana={ventanaDetalle} />
           </div>
         </div>
       )}
@@ -260,7 +287,7 @@ export default function HITLApprovalsBanner() {
           className={[
             "fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl flex items-center gap-2 text-sm font-semibold",
             toast.type === "success"
-              ? "bg-[var(--accent-soft)] text-white"
+              ? "bg-primary/10 text-white"
               : "bg-[var(--data-error-600)] text-white",
           ].join(" ")}
         >

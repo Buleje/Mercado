@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   PieChart,
@@ -16,6 +16,8 @@ import {
 } from "recharts";
 import { cn } from "@/lib/utils";
 import { RefreshCw, AlertTriangle, TrendingDown, TrendingUp, DollarSign } from "@buleje/design-system/icons";
+import ChartsEmptyState from "@/components/admin/shared/ChartsEmptyState";
+import { formatCurrencyCompact } from "@/lib/format";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -61,11 +63,6 @@ interface FiadoRecord {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function formatCurrency(v: number): string {
-  if (Math.abs(v) >= 1000) return `S/ ${(v / 1000).toFixed(1)}k`;
-  return `S/ ${v.toFixed(2)}`;
-}
-
 function daysBetween(from: string, to: Date): number {
   return Math.floor((to.getTime() - new Date(from).getTime()) / (1000 * 60 * 60 * 24));
 }
@@ -79,7 +76,7 @@ function DonutTooltip({ active, payload }: { active?: boolean; payload?: Array<{
       <p className="text-xs font-semibold text-[var(--text-primary)] mb-1.5">{payload[0].name}</p>
       <p className="text-xs text-[var(--text-secondary)] flex justify-between gap-4">
         <span>Monto</span>
-        <span className="font-mono font-medium text-primary">{formatCurrency(payload[0].value)}</span>
+        <span className="font-mono font-medium text-primary">{formatCurrencyCompact(payload[0].value)}</span>
       </p>
     </div>
   );
@@ -96,16 +93,16 @@ function TrendTooltip({ active, payload }: { active?: boolean; payload?: Array<{
       <p className="text-xs font-semibold text-[var(--text-primary)] mb-1.5">{d.mes}</p>
       <p className="text-xs text-[var(--text-secondary)] flex justify-between gap-4">
         <span>Cobrados</span>
-        <span className="font-mono font-medium text-primary">{formatCurrency(d.cobrados)}</span>
+        <span className="font-mono font-medium text-primary">{formatCurrencyCompact(d.cobrados)}</span>
       </p>
       <p className="text-xs text-[var(--text-secondary)] flex justify-between gap-4">
         <span>Nuevos</span>
-        <span className="font-mono font-medium text-[var(--data-error-500)]">{formatCurrency(d.nuevos)}</span>
+        <span className="font-mono font-medium text-[var(--data-error-500)]">{formatCurrencyCompact(d.nuevos)}</span>
       </p>
-      <div className="border-t border-[var(--rule-base)] dark:border-gray-600 mt-1.5 pt-1.5">
+      <div className="border-t border-[var(--rule-base)] mt-1.5 pt-1.5">
         <p className="text-xs flex justify-between gap-4">
           <span className="font-semibold text-[var(--text-secondary)]">Neto</span>
-          <span className={cn("font-mono font-bold", neto >= 0 ? "text-primary" : "text-[var(--data-error-500)]")}>{formatCurrency(neto)}</span>
+          <span className={cn("font-mono font-bold", neto >= 0 ? "text-primary" : "text-[var(--data-error-500)]")}>{formatCurrencyCompact(neto)}</span>
         </p>
       </div>
     </div>
@@ -166,7 +163,7 @@ export default function FiadoAnalyticsPanel() {
     // Donut by aging
     const buckets = [
       { rango: "0-7 dias", monto: 0, count: 0, color: "var(--accent)" },
-      { rango: "8-30 dias", monto: 0, count: 0, color: "#f97316" },
+      { rango: "8-30 dias", monto: 0, count: 0, color: "#ff6b5b" },
       { rango: "31-60 dias", monto: 0, count: 0, color: "#f77f00" },
       { rango: "+60 dias", monto: 0, count: 0, color: "#e63946" },
     ];
@@ -220,7 +217,7 @@ export default function FiadoAnalyticsPanel() {
   if (loading) {
     return (
       <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 space-y-4">
-        <div className="h-5 w-40 bg-[var(--rule-soft)] dark:bg-gray-700 rounded animate-pulse" />
+        <div className="h-5 w-40 bg-[var(--rule-soft)] rounded animate-pulse" />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="h-20 bg-[var(--surface-sunken)] rounded-lg animate-pulse" />
@@ -253,16 +250,18 @@ export default function FiadoAnalyticsPanel() {
   // ── Empty ──
   if (!totales) {
     return (
-      <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 flex items-center justify-center h-64">
-        <p className="text-sm text-[var(--text-tertiary)]">No hay datos de fiados registrados</p>
-      </div>
+      <ChartsEmptyState
+        title="Todavía no hay fiados registrados"
+        description="Cuando empieces a registrar fiados, acá vas a ver el análisis de deuda, antigüedad y tendencia de cobro."
+        className="rounded-xl"
+      />
     );
   }
 
   const kpiCards = [
-    { label: "Total pendiente", value: formatCurrency(totales.pendiente), icon: DollarSign, accent: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" },
-    { label: "Vencido hoy", value: formatCurrency(totales.vencidoHoy), icon: AlertTriangle, accent: totales.vencidoHoy > 0 ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" : "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" },
-    { label: "Cobrado este mes", value: formatCurrency(totales.cobradoEsteMes), icon: TrendingUp, accent: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" },
+    { label: "Total pendiente", value: formatCurrencyCompact(totales.pendiente), icon: DollarSign, accent: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" },
+    { label: "Vencido hoy", value: formatCurrencyCompact(totales.vencidoHoy), icon: AlertTriangle, accent: totales.vencidoHoy > 0 ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" : "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" },
+    { label: "Cobrado este mes", value: formatCurrencyCompact(totales.cobradoEsteMes), icon: TrendingUp, accent: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" },
     { label: "Tasa recuperacion", value: `${Number(totales.tasaRecuperacion).toFixed(1)}%`, icon: TrendingDown, accent: totales.tasaRecuperacion >= 50 ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" },
   ];
 
@@ -299,7 +298,8 @@ export default function FiadoAnalyticsPanel() {
 
       {/* Charts row */}
       <div className="flex flex-col lg:flex-row gap-4">
-        {/* Donut */}
+        {/* Donut — se oculta el bloque completo si no hay datos */}
+        {donutData.length > 0 && (
         <div className="flex-1">
           <h4 className="text-xs font-medium text-[var(--text-tertiary)] mb-2">
             Distribucion por antiguedad
@@ -331,17 +331,13 @@ export default function FiadoAnalyticsPanel() {
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <div className="text-center">
                   <p className="text-xl font-mono font-bold text-[var(--text-primary)]" style={{ fontVariantNumeric: "tabular-nums" }}>
-                    {formatCurrency(totales.pendiente)}
+                    {formatCurrencyCompact(totales.pendiente)}
                   </p>
                   <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Pendiente</p>
                 </div>
               </div>
             </div>
-          ) : (
-            <div className="h-48 flex items-center justify-center text-xs text-[var(--text-tertiary)]">
-              Sin datos
-            </div>
-          )}
+          ) : null}
           {/* Legend */}
           <div className="flex flex-wrap gap-3 justify-center mt-2">
             {donutData.map((seg) => (
@@ -352,8 +348,10 @@ export default function FiadoAnalyticsPanel() {
             ))}
           </div>
         </div>
+        )}
 
-        {/* Recovery trend */}
+        {/* Tendencia — se oculta el bloque completo si no hay datos */}
+        {(tendencia && tendencia.length > 0) && (
         <div className="flex-1">
           <h4 className="text-xs font-medium text-[var(--text-tertiary)] mb-2">
             Tendencia de recuperacion
@@ -407,12 +405,9 @@ export default function FiadoAnalyticsPanel() {
                 />
               </AreaChart>
             </ResponsiveContainer>
-          ) : (
-            <div className="h-48 flex items-center justify-center text-xs text-[var(--text-tertiary)]">
-              Sin datos de tendencia
-            </div>
-          )}
+          ) : null}
         </div>
+        )}
       </div>
 
       {/* Top deudores */}
@@ -421,7 +416,7 @@ export default function FiadoAnalyticsPanel() {
           Top deudores
         </h4>
         <div className="overflow-x-auto">
-          <table className="w-full text-xs">
+          <DataTable className="w-full text-xs">
             <thead>
               <tr className="border-b border-[var(--rule-base)]">
                 <th className="text-left py-2 text-[var(--text-tertiary)] font-medium">Cliente</th>
@@ -437,7 +432,7 @@ export default function FiadoAnalyticsPanel() {
                     {d.nombre}
                   </td>
                   <td className="py-1.5 text-right font-mono font-medium text-[var(--text-primary)]" style={{ fontVariantNumeric: "tabular-nums" }}>
-                    {formatCurrency(d.monto)}
+                    {formatCurrencyCompact(d.monto)}
                   </td>
                   <td className={cn(
                     "py-1.5 text-right font-mono",
@@ -450,7 +445,7 @@ export default function FiadoAnalyticsPanel() {
                       "text-[length:var(--ts-2xs)] px-1.5 py-0.5 rounded-full font-medium",
                       d.status === "vencido" ? "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]"
                         : d.status === "riesgo" ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]"
-                        : "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
+                        : "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]"
                     )}>
                       {d.status === "vencido" ? "Vencido" : d.status === "riesgo" ? "Riesgo" : "Al dia"}
                     </span>
@@ -463,7 +458,7 @@ export default function FiadoAnalyticsPanel() {
                 </tr>
               )}
             </tbody>
-          </table>
+          </DataTable>
         </div>
       </div>
     </div>

@@ -39,7 +39,7 @@ export async function PATCH(req: NextRequest) {
   try {
     await prisma.adminUser.update({
       where: { tenantId_username: { tenantId: payload.tenantId, username: payload.username } },
-      data: { ...(name !== undefined ? { name } : {}) },
+      data: name !== undefined ? { name } : {},
     });
 
     // Refresh session token with updated name

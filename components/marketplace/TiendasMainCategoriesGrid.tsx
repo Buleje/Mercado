@@ -311,7 +311,7 @@ export default function TiendasMainCategoriesGrid({
                 "w-[108px] sm:w-[160px] flex flex-col gap-1.5 sm:gap-2",
                 "rounded-2xl overflow-hidden border-2 transition-all p-1.5 sm:p-2",
                 isActive
-                  ? "border-[var(--accent)] bg-[var(--accent-soft)] shadow-md"
+                  ? "border-[var(--accent)] bg-primary/10 shadow-md"
                   : "border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-[var(--accent)]/50 hover:-translate-y-0.5 hover:shadow-md",
               ].join(" ")}
             >

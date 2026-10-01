@@ -24,7 +24,10 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const market = await getCacaoMarket();
+    // ?force=1 salta el cache de 20 min (botón "Actualizar" del Mercado). El
+    // rate-limit GENEROUS evita abusar de la fuente externa.
+    const force = new URL(req.url).searchParams.get("force") === "1";
+    const market = await getCacaoMarket(force);
     return NextResponse.json(market);
   } catch (err) {
     logger.error("[cacao.market.GET] failed", { error: String(err), tenantId: auth.tenantId });

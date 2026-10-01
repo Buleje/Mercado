@@ -23,6 +23,7 @@ import {
 } from "@/components/ui-system/charts";
 import { DashboardSection } from "./_shared";
 import { DraggableSections, type DraggableItem } from "./DraggableSections";
+import { formatDateShort, formatMonth, formatNumber } from "@/lib/format";
 
 type Purchase = {
   id: string | number;
@@ -51,7 +52,7 @@ function dayKey(iso: string) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 function dayLabel(dk: string) {
-  return new Date(dk + "T12:00:00").toLocaleDateString("es-PE", { day: "2-digit", month: "short" });
+  return formatDateShort(dk + "T12:00:00");
 }
 
 export const ComprasAdvancedCharts = memo(function ComprasAdvancedCharts() {
@@ -120,7 +121,7 @@ export const ComprasAdvancedCharts = memo(function ComprasAdvancedCharts() {
         .filter((p) => p.createdAt && new Date(p.createdAt) >= prevStart && new Date(p.createdAt) <= prevEnd)
         .reduce((s, p) => s + Number(p.total ?? 0), 0);
       rows.push({
-        mes: mStart.toLocaleDateString("es-PE", { month: "short" }),
+        mes: formatMonth(mStart),
         actual: Math.round(actual),
         anterior: Math.round(anterior),
       });
@@ -244,7 +245,7 @@ export const ComprasAdvancedCharts = memo(function ComprasAdvancedCharts() {
     return buckets;
   }, [purchases]);
 
-  const fmtS = (v: number) => `S/ ${v.toLocaleString("es-PE", { maximumFractionDigits: 0 })}`;
+  const fmtS = (v: number) => `S/ ${formatNumber(v, { max: 0 })}`;
 
   const sections: DraggableItem[] = [
     {
@@ -408,7 +409,7 @@ kicker="Mix de compras · rango activo"
               height={300}
             />
           ) : (
-            <div className="rounded-lg border border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">
+            <div className="rounded-lg border border-dashed border-[var(--rule-base)] p-6 text-center text-sm text-[var(--text-tertiary)]">
               Sin datos en los rango activo.
             </div>
           )}
@@ -455,7 +456,7 @@ kicker="Comparativa · compras semana a semana"
             previousKey="previous"
             currentLabel="Esta semana"
             previousLabel="Semana pasada"
-            yAxisFormat={(v) => `S/${v.toLocaleString("es-PE", { maximumFractionDigits: 0 })}`}
+            yAxisFormat={(v) => `S/${formatNumber(v, { max: 0 })}`}
             tooltipFormat={(v) => fmtS(Number(v))}
             height={280}
           />

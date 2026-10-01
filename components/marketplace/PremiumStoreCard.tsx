@@ -10,9 +10,22 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { formatCategoryLabel } from "@/lib/format-category";
+import { precioVigente } from "@/lib/marketplace/precio-vigente";
 import dynamic from "next/dynamic";
-import { ArrowRight, MapPin, Bike, ShieldCheck, Eye, Award, Moon, Star } from "@buleje/design-system/icons";
+import {
+  ArrowRight,
+  MapPin,
+  Bike,
+  ShieldCheck,
+  Eye,
+  Award,
+  Moon,
+  Star,
+  Wallet,
+} from "@buleje/design-system/icons";
 import ShareStoreButton from "./ShareStoreButton";
+import { ProductPhotoFallback } from "@/components/marketplace/ProductPhotoFallback";
 import {
   haversineKm,
   ZONE_COORDS,
@@ -30,6 +43,8 @@ export interface PremiumProduct {
   image: string;
   retailPrice: number;
   discountPrice?: number | null;
+  /** Hasta cuándo vale la rebaja. Sin esto la card anunciaría ofertas vencidas. */
+  discountUntil?: string | null;
   /** Categoría del producto — para mostrar la variedad de la tienda. */
   category?: string;
 }
@@ -44,6 +59,8 @@ interface Props {
   rating?: number;
   reviewCount?: number;
   verified?: boolean;
+  /** Fiado Digital — la tienda acepta "compra ahora, paga después". */
+  acceptsFiado?: boolean;
   /** Estado de apertura — server-computed desde businessHours (getStoreOpenStatus). */
   isOpenNow?: boolean;
   /** Etiqueta de próxima apertura ya formateada ("Abre mañana 8:00 AM"). */
@@ -58,8 +75,9 @@ interface Props {
 }
 
 function price(p: PremiumProduct) {
-  const v = p.discountPrice ?? p.retailPrice;
-  return `S/ ${v.toFixed(2)}`;
+  // El precio sale de la misma regla que cobra el checkout: una oferta vencida
+  // no se anuncia (antes era `discountPrice ?? retailPrice`, sin mirar fecha).
+  return `S/ ${Number(precioVigente(p).precio).toFixed(2)}`;
 }
 
 function Stars({ rating = 0, reviewCount = 0 }: { rating?: number; reviewCount?: number }) {
@@ -77,7 +95,9 @@ function Stars({ rating = 0, reviewCount = 0 }: { rating?: number; reviewCount?:
         />
       ))}
       {reviewCount > 0 && (
-        <span className="ml-0.5 text-[11px] font-bold text-[var(--text-tertiary)] tabular-nums">({reviewCount})</span>
+        <span className="ml-0.5 text-[11px] font-bold text-[var(--text-tertiary)] tabular-nums">
+          ({reviewCount})
+        </span>
       )}
     </span>
   );
@@ -92,6 +112,7 @@ export default function PremiumStoreCard({
   rating,
   reviewCount,
   verified,
+  acceptsFiado,
   isOpenNow,
   nextOpeningLabel,
   products,
@@ -185,10 +206,18 @@ export default function PremiumStoreCard({
               señala "premium" sin tapar contenido. Brandon 2026-05-31. */}
           <div className="relative shrink-0">
             <div
-              className={`h-16 w-16 overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] sm:h-20 sm:w-20 ${isClosed ? "grayscale opacity-80" : ""}`}
+              className={`h-16 w-16 overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] sm:h-20 sm:w-20 ${isClosed ? "opacity-90" : ""}`}
             >
               {logo ? (
-                <Image src={logo} alt={`Logo de ${name}`} width={80} height={80} sizes="80px" className="h-full w-full object-cover" priority />
+                <Image
+                  src={logo}
+                  alt={`Logo de ${name}`}
+                  width={80}
+                  height={80}
+                  sizes="80px"
+                  className="h-full w-full object-cover"
+                  priority
+                />
               ) : (
                 <span className="flex h-full w-full items-center justify-center bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark,var(--accent))] text-2xl font-black text-white">
                   {name.trim().charAt(0).toUpperCase()}
@@ -205,7 +234,10 @@ export default function PremiumStoreCard({
             </span>
           </div>
           <div className="min-w-0">
-            <p className="flex items-center gap-1 text-base font-extrabold leading-tight tracking-tight text-[var(--text-primary)] line-clamp-2 group-hover:text-[var(--accent)] transition-colors sm:text-lg">
+            <p
+              title={name}
+              className="flex items-center gap-1 text-base font-extrabold leading-tight tracking-tight text-[var(--text-primary)] line-clamp-2 group-hover:text-[var(--accent)] transition-colors sm:text-lg"
+            >
               {name}
               {verified && (
                 <ShieldCheck
@@ -220,8 +252,17 @@ export default function PremiumStoreCard({
             </div>
             <div className="mt-2 flex flex-wrap items-center gap-1.5">
               {category && (
-                <span className="inline-flex items-center rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[10px] font-bold text-[var(--accent)]">
-                  {category}
+                <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-[var(--accent)]">
+                  {formatCategoryLabel(category)}
+                </span>
+              )}
+              {acceptsFiado && (
+                <span
+                  className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-[var(--accent)]"
+                  title="Acepta fiado — compra ahora, paga después"
+                >
+                  <Wallet className="h-3 w-3" strokeWidth={2.5} aria-hidden />
+                  Acepta fiado
                 </span>
               )}
               {zone && (
@@ -250,7 +291,7 @@ export default function PremiumStoreCard({
                     setMapOpen(true);
                   }}
                   aria-label={`Ver ubicación de ${name} en el mapa — a ${distanceKm.toFixed(1)} km de ti`}
-                  className="relative z-20 inline-flex items-center gap-1 rounded-full border border-[var(--accent)]/40 bg-[var(--surface-canvas)] px-2 py-0.5 text-[10px] font-extrabold text-[var(--accent)] transition-colors hover:bg-[var(--accent-soft)] active:scale-95"
+                  className="relative z-20 inline-flex items-center gap-1 rounded-full border border-[var(--accent)]/40 bg-[var(--surface-canvas)] px-2 py-0.5 text-[10px] font-extrabold text-[var(--accent)] transition-colors hover:bg-primary/10 active:scale-95"
                 >
                   <MapPin className="h-3 w-3" strokeWidth={2.5} aria-hidden />
                   <span className="tabular-nums">{distanceKm.toFixed(1)} km</span>
@@ -278,16 +319,37 @@ export default function PremiumStoreCard({
                 >
                   <div className="relative aspect-square w-full bg-[var(--surface-sunken)]">
                     {p.image ? (
-                      <Image src={p.image} alt={`${p.name} — ${name}`} fill sizes="(min-width:640px) 110px, 30vw" className="object-cover" />
-                    ) : null}
+                      <Image
+                        src={p.image}
+                        alt={`${p.name} — ${name}`}
+                        fill
+                        sizes="(min-width:640px) 110px, 30vw"
+                        className="object-cover"
+                      />
+                    ) : (
+                      <ProductPhotoFallback
+                        name={p.name}
+                        category={p.category}
+                        size="sm"
+                        showName={false}
+                      />
+                    )}
+                    {/* El badge iba en 8px: ilegible en un celular real (medido
+                        por el túnel a DPR 3). Existe para leerse de reojo, y a
+                        ese tamaño es una mancha. Va al token más chico del DS
+                        (--ts-2xs = 10px), que es el piso que el sistema admite.
+                        El comentario va AFUERA del `{cond && (`: adentro es un
+                        segundo hijo del expression container y no parsea. */}
                     {p.category && (
-                      <span className="absolute left-1 top-1 rounded-md bg-black/55 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-white backdrop-blur-sm">
-                        {p.category}
+                      <span className="absolute left-1 top-1 rounded-md bg-black/55 px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-white backdrop-blur-sm">
+                        {formatCategoryLabel(p.category)}
                       </span>
                     )}
                   </div>
                   <div className="p-1.5">
-                    <p className="truncate text-[11px] font-semibold text-[var(--text-secondary)]">{p.name}</p>
+                    <p className="truncate text-[11px] font-semibold text-[var(--text-secondary)]">
+                      {p.name}
+                    </p>
                     <p className="text-xs font-extrabold text-[var(--accent)]">{price(p)}</p>
                   </div>
                 </li>

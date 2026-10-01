@@ -1,18 +1,20 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { logger } from "@/lib/logger";
+import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import dynamic from "next/dynamic";
 import {
   Target, Trophy, Flame, TrendingUp, TrendingDown, Pencil, Check, X, Calendar,
   Award, Rocket, Zap, Coins, Users, Star, Landmark, Sunrise, Smile,
-  Lock, Sparkles, ShoppingCart, BarChart3, RefreshCw, AlertTriangle,
+  Lock, Sparkles, ShoppingCart, RefreshCw, AlertTriangle,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { formatCurrency } from "@/lib/currency";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import { formatDateNumeric, formatDateShort, formatNumber, formatTime } from "@/lib/format";
 
 // ─── Dynamic imports (sin SSR) ────────────────────────────────────────────────
 
@@ -29,6 +31,7 @@ const WeeklyGoalCard = dynamic(() => import("@/components/admin/WeeklyGoalCard")
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
 type TabId = "mis-metas" | "hoy" | "semana-mes" | "logros";
+const TAB_IDS: readonly TabId[] = ["mis-metas", "hoy", "semana-mes", "logros"];
 
 interface Goal {
   id: string;
@@ -114,7 +117,7 @@ const ACHIEVEMENTS_DEF: AchievementDef[] = [
     computeProgress: (c) => ({ current: c.streak, target: 100 }) },
   { id: "500-clientes",      Icon: Users,       name: "Imperio Vecinal",   desc: "Llegar a 500 clientes registrados",     category: "clientes", threshold: 500,  unit: "clientes",
     computeProgress: (c) => ({ current: c.totalCustomers, target: 500 }) },
-  { id: "5-resenas-buenas",  Icon: Star,        name: "Reseñas Buenas",    desc: "Recibir 25 reseñas (4★ o 5★)",          category: "clientes", threshold: 25,   unit: "reseñas",
+  { id: "5-resenas-buenas",  Icon: Star,        name: "Reseñas Buenas",    desc: "Recibir 25 reseñas de 4 o 5 estrellas", category: "clientes", threshold: 25,   unit: "reseñas",
     computeProgress: (c) => ({ current: c.goodReviews, target: 25 }) },
 ];
 
@@ -162,7 +165,7 @@ function getStreakKey(): string {
 // ─── Confetti ─────────────────────────────────────────────────────────────────
 
 function Confetti() {
-  const colors = ["var(--color-primary)", "#f97316", "#14C2C2", "#f4d03f", "#e76f51"];
+  const colors = ["var(--color-primary)", "#ff6b5b", "#14C2C2", "#f4d03f", "#e76f51"];
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-xl z-10">
       {Array.from({ length: 24 }).map((_, i) => (
@@ -192,6 +195,12 @@ function SemaMesTab() {
   const [editing, setEditing]         = useState(false);
   const [tempGoal, setTempGoal]       = useState("");
   const [editError, setEditError]     = useState<string | null>(null);
+  // Foco al entrar en edición, sin `autoFocus` (jsx-a11y/no-autofocus): lo pide
+  // el toque en «Editar», no la aparición del campo. Mismo patrón que DailyGoalTracker.
+  const monthlyInputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (editing) monthlyInputRef.current?.focus();
+  }, [editing]);
   const [sales, setSales]             = useState<SaleRecord[]>([]);
   const [loading, setLoading]         = useState(true);
   const [error, setError]             = useState<string | null>(null);
@@ -223,7 +232,14 @@ function SemaMesTab() {
     const ctrl = new AbortController();
     fetchAbortRef.current = ctrl;
     try {
-      const res = await fetch("/api/sales?limit=1000", {
+      // Las stats solo usan ventas del mes actual + mes anterior. Acotamos el
+      // fetch a "desde el 1° del mes anterior" (server-side, hora Lima) en vez
+      // de limit=1000 all-time: trae solo la ventana necesaria y, en bodegas de
+      // alto volumen, NO se pierde data (limit=1000 capaba las más recientes).
+      const _now = new Date();
+      const _lm = new Date(_now.getFullYear(), _now.getMonth() - 1, 1);
+      const _from = `${_lm.getFullYear()}-${String(_lm.getMonth() + 1).padStart(2, "0")}-01`;
+      const res = await fetch(`/api/sales?from=${_from}&all=1`, {
         credentials: "include",
         cache: "no-store",
         signal: ctrl.signal,
@@ -357,11 +373,11 @@ function SemaMesTab() {
   const handleSave = () => {
     const val = Number(tempGoal);
     if (!Number.isFinite(val) || val <= 0) {
-      setEditError("Ingresá un monto mayor a 0");
+      setEditError("Ingresa un monto mayor a 0");
       return;
     }
     if (val > MAX_MONTHLY_GOAL) {
-      setEditError(`Máximo: S/${MAX_MONTHLY_GOAL.toLocaleString("es-PE")}`);
+      setEditError(`Máximo: S/${formatNumber(MAX_MONTHLY_GOAL)}`);
       return;
     }
     setEditError(null);
@@ -377,7 +393,7 @@ function SemaMesTab() {
   }, [stats.year, stats.month]);
 
   const bestDayLabel = stats.bestDayKey
-    ? new Date(stats.bestDayKey).toLocaleDateString("es-PE", { day: "numeric", month: "short" })
+    ? formatDateShort(stats.bestDayKey)
     : "—";
 
   return (
@@ -386,11 +402,11 @@ function SemaMesTab() {
       <div className="flex items-center justify-end gap-2 text-xs text-[var(--text-tertiary)]">
         {error && (
           <span className="text-[var(--data-error-500)] font-semibold flex items-center gap-1">
-            ⚠ {error}
+            <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden /> {error}
           </span>
         )}
         {lastUpdated && !error && (
-          <span>Actualizado {lastUpdated.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}</span>
+          <span>Actualizado {formatTime(lastUpdated)}</span>
         )}
         <button
           type="button"
@@ -398,7 +414,7 @@ function SemaMesTab() {
           disabled={loading}
           aria-label="Refrescar datos"
           className={cn(
-            "inline-flex items-center justify-center h-7 w-7 rounded-lg text-primary hover:bg-[var(--accent-soft)] transition-colors",
+            "inline-flex items-center justify-center h-7 w-7 rounded-lg text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors",
             loading && "opacity-50 cursor-not-allowed",
           )}
         >
@@ -424,14 +440,14 @@ function SemaMesTab() {
           <div className="flex-1 min-w-0">
             <p className="text-sm font-extrabold text-[var(--data-error-500)]">Te queda poco mes</p>
             <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-              Necesitás vender <span className="font-bold text-[var(--text-primary)]">{formatCurrency(isUrgent.ratePerDay, { decimals: 0 })}</span> por día durante los próximos {isUrgent.remainingDays} días para alcanzar la meta. Activá una promo o llamá a clientes habituales.
+              Necesitas vender <span className="font-bold text-[var(--text-primary)]">{formatCurrency(isUrgent.ratePerDay, { decimals: 0 })}</span> por día durante los próximos {isUrgent.remainingDays} días para alcanzar la meta. Activa una promo o llama a clientes habituales.
             </p>
           </div>
         </div>
       )}
 
       {/* Card mensual */}
-      <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-4 sm:p-5 space-y-4">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 sm:p-5 space-y-4">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10">
@@ -457,18 +473,19 @@ function SemaMesTab() {
                   onKeyDown={(e) => e.key === "Enter" && handleSave()}
                   min={1}
                   max={MAX_MONTHLY_GOAL}
-                  autoFocus
+                  ref={monthlyInputRef}
+                  aria-label="Meta mensual en soles"
                   aria-invalid={!!editError}
                   aria-describedby={editError ? "monthly-goal-error" : undefined}
                   className={cn(
-                    "w-28 px-2 py-1 text-xs rounded-lg border bg-white dark:bg-[var(--color-card)] outline-none",
+                    "w-28 px-2 py-1 text-xs rounded-xl border bg-[var(--surface-raised)] outline-none",
                     editError ? "border-[var(--data-error-500)] focus:border-[var(--data-error-500)]" : "border-[var(--rule-base)] focus:border-primary",
                   )}
                 />
-                <button onClick={handleSave} aria-label="Guardar" className="inline-flex items-center justify-center min-h-9 min-w-9 p-2 rounded-lg hover:bg-[var(--accent-soft)] text-[var(--data-success-500)]">
+                <button onClick={handleSave} aria-label="Guardar" className="inline-flex items-center justify-center min-h-9 min-w-9 p-2 rounded-xl hover:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
                   <Check className="w-4 h-4" />
                 </button>
-                <button onClick={() => { setEditing(false); setEditError(null); }} aria-label="Cancelar" className="inline-flex items-center justify-center min-h-9 min-w-9 p-2 rounded-lg hover:bg-[var(--data-error-500)]/10 text-[var(--data-error-500)]">
+                <button onClick={() => { setEditing(false); setEditError(null); }} aria-label="Cancelar" className="inline-flex items-center justify-center min-h-9 min-w-9 p-2 rounded-xl hover:bg-[var(--data-error-500)]/10 text-[var(--data-error-500)]">
                   <X className="w-4 h-4" />
                 </button>
               </div>
@@ -492,7 +509,7 @@ function SemaMesTab() {
             </span>
           </span>
           {pct >= 100 && (
-            <span className="flex items-center gap-1 text-xs font-bold text-[var(--data-success-500)] bg-[var(--accent-soft)] px-2 py-1 rounded-full">
+            <span className="flex items-center gap-1 text-xs font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 px-2 py-1 rounded-full">
               <Trophy className="w-3.5 h-3.5" /> Meta alcanzada!
             </span>
           )}
@@ -503,7 +520,7 @@ function SemaMesTab() {
           <div className={cn(
             "rounded-lg p-3 flex items-start gap-2 border",
             stats.forecast >= monthlyGoal
-              ? "border-[var(--data-success-500)]/30 bg-[var(--accent-soft)]"
+              ? "border-[var(--data-success-500)]/30 bg-primary/10"
               : "border-[var(--data-warning-500)]/30 bg-[var(--data-warning-50)]"
           )}>
             <Sparkles className={cn(
@@ -512,7 +529,7 @@ function SemaMesTab() {
             )} />
             <div className="text-xs">
               <p className="font-bold text-[var(--text-primary)]">
-                A este ritmo cerrás el mes con {formatCurrency(stats.forecast, { decimals: 0 })}
+                A este ritmo cierras el mes con {formatCurrency(stats.forecast, { decimals: 0 })}
               </p>
               <p className="text-[var(--text-secondary)] mt-0.5">
                 {stats.forecast >= monthlyGoal
@@ -544,7 +561,7 @@ function SemaMesTab() {
                   className={cn(
                     "aspect-square rounded flex items-center justify-center text-xs font-semibold border transition-colors",
                     isToday          ? "ring-2 ring-primary ring-offset-1 border-transparent" : "border-transparent",
-                    hit              ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] border-[var(--data-success-500)]/30" :
+                    hit              ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] border-[var(--data-success-500)]/30" :
                     isPast && day > 0 ? "bg-[var(--data-error-500)]/10 text-[var(--data-error-500)]" :
                     "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
                   )}
@@ -556,7 +573,7 @@ function SemaMesTab() {
           </div>
           <div className="flex flex-wrap gap-3 mt-3 text-xs">
             <span className="flex items-center gap-1 text-[var(--text-secondary)]">
-              <span className="inline-block w-3 h-3 rounded bg-[var(--accent-soft)] border border-[var(--data-success-500)]/30" /> Cumplió
+              <span className="inline-block w-3 h-3 rounded bg-primary/10 border border-[var(--data-success-500)]/30" /> Cumplió
             </span>
             <span className="flex items-center gap-1 text-[var(--text-secondary)]">
               <span className="inline-block w-3 h-3 rounded bg-[var(--data-error-500)]/10" /> No cumplió
@@ -583,7 +600,7 @@ interface KPISimpleProps {
 
 function KPISimple({ label, value, sub, delta, icon: Icon }: KPISimpleProps) {
   return (
-    <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex flex-col gap-2 min-w-0">
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 flex flex-col gap-2 min-w-0">
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] truncate">{label}</span>
         <Icon className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" />
@@ -670,14 +687,22 @@ function LogrosTab() {
     fetchAbortRef.current = ctrl;
     try {
       const opts: RequestInit = { credentials: "include", cache: "no-store", signal: ctrl.signal };
+      // Cada fuente puede fallar sola sin tumbar el panel (null = sin ese dato),
+      // pero la falla queda registrada; el abort de un refetch no es una falla.
+      const sinDato = (ruta: string) => (err: unknown) => {
+        if (!(err instanceof DOMException && err.name === "AbortError")) {
+          logger.warn(`[metas-logros] ${ruta} no respondió`, { error: String(err) });
+        }
+        return null;
+      };
       const [dashRes, goalsRes, salesRes, fiadosRes, cashRes, reviewsRes] = await Promise.all([
-        fetch("/api/admin/dashboard", opts).catch(() => null),
-        fetch("/api/goals", opts).catch(() => null),
-        fetch("/api/sales?limit=200", opts).catch(() => null),
+        fetch("/api/admin/dashboard", opts).catch(sinDato("dashboard")),
+        fetch("/api/goals", opts).catch(sinDato("goals")),
+        fetch("/api/sales?limit=200", opts).catch(sinDato("sales")),
         // FIX 2026-05-07: enum FiadoStatus es UPPERCASE (PAGADO no pagado).
-        fetch("/api/fiados?status=PAGADO", opts).catch(() => null),
-        fetch("/api/cash-registers", opts).catch(() => null),
-        fetch("/api/reviews?limit=100", opts).catch(() => null),
+        fetch("/api/fiados?status=PAGADO", opts).catch(sinDato("fiados")),
+        fetch("/api/cash-registers", opts).catch(sinDato("cash-registers")),
+        fetch("/api/reviews?limit=100", opts).catch(sinDato("reviews")),
       ]);
 
       if (ctrl.signal.aborted) return;
@@ -762,7 +787,7 @@ function LogrosTab() {
         try { return JSON.parse(localStorage.getItem(tenantKey) ?? "{}") as Record<string, string>; }
         catch { return {}; }
       })();
-      const now = new Date().toLocaleDateString("es-PE");
+      const now = formatDateNumeric(new Date());
       let changed = false;
       const next = { ...current };
 
@@ -788,7 +813,10 @@ function LogrosTab() {
           credentials: "include",
           headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({ achievements: next }),
-        }).catch(() => { /* silent — local persiste igual */ });
+        }).catch((err) =>
+          // No rompe nada (localStorage ya los tiene y el próximo mount reintenta), pero se registra.
+          logger.warn("[metas-logros] no se pudieron guardar los logros en el servidor", { error: String(err) }),
+        );
       }
     } catch (e) {
       if (e instanceof DOMException && e.name === "AbortError") return;
@@ -848,12 +876,12 @@ function LogrosTab() {
   }, [filter, activeCategory, unlocked]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header de estado: error + last updated + refresh manual */}
       <div className="flex items-center justify-end gap-2 text-xs text-[var(--text-tertiary)]">
-        {error && <span className="text-[var(--data-error-500)] font-semibold">⚠ {error}</span>}
+        {error && <span className="inline-flex items-center gap-1 text-[var(--data-error-500)] font-semibold"><AlertTriangle className="h-4 w-4 shrink-0" aria-hidden /> {error}</span>}
         {lastUpdated && !error && (
-          <span>Actualizado {lastUpdated.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}</span>
+          <span>Actualizado {formatTime(lastUpdated)}</span>
         )}
         <button
           type="button"
@@ -861,7 +889,7 @@ function LogrosTab() {
           disabled={loading}
           aria-label="Refrescar logros"
           className={cn(
-            "inline-flex items-center justify-center h-7 w-7 rounded-lg text-primary hover:bg-[var(--accent-soft)] transition-colors",
+            "inline-flex items-center justify-center h-7 w-7 rounded-lg text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors",
             loading && "opacity-50 cursor-not-allowed",
           )}
         >
@@ -870,7 +898,7 @@ function LogrosTab() {
       </div>
 
       {/* Resumen + barra global */}
-      <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-4 flex items-center gap-4 flex-wrap">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 flex items-center gap-4 flex-wrap">
         <div className="flex items-center gap-2">
           <Trophy className="h-5 w-5 text-[var(--data-warning-500)]" />
           <p className="text-sm text-[var(--text-secondary)]">
@@ -903,20 +931,20 @@ function LogrosTab() {
             <p className="text-xs font-bold uppercase tracking-wider text-primary">Próximo logro</p>
           </div>
           <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-xl bg-white dark:bg-[var(--color-card)] border border-primary/30 flex items-center justify-center shrink-0">
+            <div className="h-12 w-12 rounded-xl bg-[var(--surface-raised)] border border-primary/30 flex items-center justify-center shrink-0">
               <NextIcon className="h-6 w-6 text-primary" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-bold text-[var(--text-primary)] break-words">{nextAchievement.def.name}</p>
               <p className="text-xs text-[var(--text-tertiary)] mb-2">{nextAchievement.def.desc}</p>
-              <div className="h-2 rounded-full bg-white dark:bg-[var(--color-card)] overflow-hidden">
+              <div className="h-2 rounded-full bg-[var(--surface-raised)] overflow-hidden">
                 <div
                   className="h-full rounded-full bg-primary transition-all duration-[var(--dur-slow)]"
                   style={{ width: `${Math.min(100, nextAchievement.pct)}%` }}
                 />
               </div>
               <p className="text-xs text-[var(--text-secondary)] mt-1.5 font-semibold">
-                {Math.round(nextAchievement.current).toLocaleString("es-PE")} / {nextAchievement.target.toLocaleString("es-PE")} {nextAchievement.def.unit}
+                {formatNumber(Math.round(nextAchievement.current))} / {formatNumber(nextAchievement.target)} {nextAchievement.def.unit}
                 {" — "}
                 {Math.round(nextAchievement.pct)}%
               </p>
@@ -940,7 +968,7 @@ function LogrosTab() {
               "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors border min-h-[44px]",
               filter === p.id
                 ? "bg-[var(--text-primary)] text-white border-[var(--text-primary)]"
-                : "bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]"
+                : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]"
             )}
           >
             {p.label}
@@ -960,8 +988,8 @@ function LogrosTab() {
           className={cn(
             "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors border",
             activeCategory === "all"
-              ? "bg-primary/10 text-primary border-primary/30"
-              : "bg-white dark:bg-[var(--color-card)] text-[var(--text-tertiary)] border-[var(--rule-base)] hover:text-[var(--text-primary)]"
+              ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] border-primary/30"
+              : "bg-[var(--surface-raised)] text-[var(--text-tertiary)] border-[var(--rule-base)] hover:text-[var(--text-primary)]"
           )}
         >
           Todas las categorías
@@ -973,8 +1001,8 @@ function LogrosTab() {
             className={cn(
               "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors border",
               activeCategory === cat
-                ? "bg-primary/10 text-primary border-primary/30"
-                : "bg-white dark:bg-[var(--color-card)] text-[var(--text-tertiary)] border-[var(--rule-base)] hover:text-[var(--text-primary)]"
+                ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] border-primary/30"
+                : "bg-[var(--surface-raised)] text-[var(--text-tertiary)] border-[var(--rule-base)] hover:text-[var(--text-primary)]"
             )}
           >
             {CATEGORY_LABELS[cat]}
@@ -986,7 +1014,7 @@ function LogrosTab() {
       <div className="relative">
         {showConfetti && <Confetti />}
         {visible.length === 0 ? (
-          <div className="bg-white dark:bg-[var(--color-card)] border-2 border-dashed border-[var(--rule-base)] rounded-xl p-10 text-center">
+          <div className="bg-[var(--surface-raised)] border border-dashed border-[var(--rule-base)] rounded-xl p-10 text-center">
             <Trophy className="h-10 w-10 text-[var(--text-tertiary)] mx-auto mb-3" />
             <p className="text-[var(--text-secondary)] font-semibold">No hay logros en este filtro</p>
           </div>
@@ -1002,7 +1030,7 @@ function LogrosTab() {
                   className={cn(
                     "relative rounded-xl border p-3 sm:p-4 flex flex-col items-center text-center gap-2 transition-all duration-[var(--dur-base)]",
                     isUnlocked
-                      ? "border-[var(--data-warning-500)]/40 bg-white dark:bg-[var(--color-card)] elev-1"
+                      ? "border-[var(--data-warning-500)]/40 bg-[var(--surface-raised)] elev-1"
                       : "border-[var(--rule-base)] bg-[var(--surface-sunken)]"
                   )}
                 >
@@ -1015,7 +1043,7 @@ function LogrosTab() {
                     "h-10 w-10 shrink-0 rounded-lg flex items-center justify-center border relative",
                     isUnlocked
                       ? "bg-[var(--data-warning-50)] border-[var(--data-warning-500)]/30 text-[var(--data-warning-500)]"
-                      : "bg-gray-100 border-[var(--rule-base)] text-[var(--text-tertiary)]"
+                      : "bg-[var(--rule-soft)] border-[var(--rule-base)] text-[var(--text-tertiary)]"
                   )}>
                     {isUnlocked ? <a.Icon className="h-5 w-5" strokeWidth={1.5} /> : <Lock className="h-4 w-4" />}
                   </div>
@@ -1032,11 +1060,11 @@ function LogrosTab() {
                     </span>
                   ) : progress ? (
                     <div className="w-full mt-1 relative z-[1]">
-                      <div className="h-1.5 rounded-full bg-white dark:bg-[var(--color-card)] overflow-hidden">
+                      <div className="h-1.5 rounded-full bg-[var(--surface-raised)] overflow-hidden">
                         <div className="h-full bg-primary transition-all duration-[var(--dur-slow)]" style={{ width: `${pct}%` }} />
                       </div>
                       <p className="text-xs text-[var(--text-tertiary)] mt-1 tabular-nums">
-                        {Math.round(progress.current).toLocaleString("es-PE")} / {progress.target.toLocaleString("es-PE")}
+                        {formatNumber(Math.round(progress.current))} / {formatNumber(progress.target)}
                       </p>
                     </div>
                   ) : (
@@ -1068,7 +1096,10 @@ interface Props {
 }
 
 export default function MetasLogrosModule({ tenantId: _tenantId }: Props) {
-  const [tab, setTab] = useState<TabId>("mis-metas");
+  // La sub-vista vive en `?vista=` (useVistaModulo): link compartible, «atrás» del
+  // navegador y destino de avisos y del buscador. Antes era estado local y `?vista=`
+  // se ignoraba (medido 2026-09-14: `?tab=metas-logros&vista=hoy` abría «Mis Metas»).
+  const { vista: tab, irA: setTab } = useVistaModulo<TabId>(MODULE_ID, TAB_IDS, "mis-metas");
 
   const [goals, setGoals]   = useState<Goal[]>([]);
   const [streak, setStreak] = useState(0);
@@ -1096,12 +1127,16 @@ export default function MetasLogrosModule({ tenantId: _tenantId }: Props) {
 
   return (
     <div className="space-y-6">
-      <AdminModuleHeader
-        title="Metas y Logros"
-        description="Seguimiento de objetivos, racha diaria y logros desbloqueados"
-        icon={Target}
-      />
+      {/* El título va DENTRO de la barra de pestañas (patrón acordado con
+          Brandon 2026-09-07, piloto en Análisis): identidad a la izquierda,
+          pestañas a la derecha, una sola regla. Recupera ~90px verticales,
+          que en una laptop de 677px útiles es la diferencia entre ver los
+          datos o sólo los encabezados.
+          El `eyebrow` se fue con el header: decía la categoría del sidebar
+          («Abastecimiento · Compras» sobre un título «Compras») — el mismo
+          dato tres veces contando el ítem marcado en el sidebar. */}
       <AdminTabBar
+        heading={{ title: "Metas y Logros", description: "Seguimiento de objetivos, racha diaria y logros desbloqueados", icon: Target }}
         tabs={TABS}
         activeTab={tab}
         onTabChange={(id) => setTab(id as TabId)}

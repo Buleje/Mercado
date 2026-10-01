@@ -23,7 +23,7 @@ const SOURCE_LABELS: Record<string, { label: string; icon: React.ReactNode; colo
   whatsapp: {
     label: "WhatsApp",
     icon: <MessageCircle className="w-3.5 h-3.5" />,
-    color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+    color: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",
   },
   review: {
     label: "Reseña",
@@ -140,7 +140,7 @@ export function UnifiedSupportInbox() {
         ))}
         <button
           onClick={() => { void loadInbox(); }}
-          className="min-h-[44px] ml-auto p-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-gray-50 dark:hover:bg-surface transition"
+          className="min-h-[44px] ml-auto p-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] transition"
           aria-label="Actualizar bandeja"
         >
           <RefreshCw className="w-4 h-4 text-[var(--text-tertiary)]" />
@@ -163,7 +163,7 @@ export function UnifiedSupportInbox() {
       {filtered.length > 0 && (
         <div className="rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] overflow-hidden bg-[var(--surface-raised)]">
           {/* Header */}
-          <div className="hidden md:grid grid-cols-[120px_1fr_2fr_130px_110px_130px] gap-3 bg-gray-50 dark:bg-surface px-4 py-2.5 text-[length:var(--ts-xs)] font-bold text-[var(--text-tertiary)] dark:text-muted">
+          <div className="hidden md:grid grid-cols-[120px_1fr_2fr_130px_110px_130px] gap-3 bg-[var(--surface-sunken)] px-4 py-2.5 text-[length:var(--ts-xs)] font-bold text-[var(--text-tertiary)] dark:text-muted">
             <span>Fuente</span>
             <span>Cliente</span>
             <span>Mensaje</span>
@@ -172,7 +172,7 @@ export function UnifiedSupportInbox() {
             <span>Acción</span>
           </div>
 
-          <div className="divide-y divide-gray-100 dark:divide-card-border">
+          <div className="divide-y divide-[var(--rule-soft)] dark:divide-card-border">
             {filtered.map((item) => {
               const src = SOURCE_LABELS[item.source];
               const isResolving = resolving.has(item.id);
@@ -186,7 +186,7 @@ export function UnifiedSupportInbox() {
                   <span
                     className={[
                       "inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full w-fit",
-                      src?.color ?? "bg-gray-100 text-[var(--text-secondary)]",
+                      src?.color ?? "bg-[var(--rule-soft)] text-[var(--text-secondary)]",
                     ].join(" ")}
                   >
                     {src?.icon}
@@ -213,8 +213,8 @@ export function UnifiedSupportInbox() {
                     className={[
                       "inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full w-fit",
                       item.status === "resolved"
-                        ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
-                        : "bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400",
+                        ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]"
+                        : "bg-[var(--data-warning-500)]/12 text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/25 dark:text-[var(--data-warning-500)]",
                     ].join(" ")}
                   >
                     {item.status === "resolved" ? "Resuelto" : "Pendiente"}
@@ -225,7 +225,7 @@ export function UnifiedSupportInbox() {
                     <button
                       onClick={() => handleMarkResolved(item.id)}
                       disabled={isResolving}
-                      className="min-h-[44px] min-w-[44px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary/10 text-primary hover:bg-primary hover:text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="min-h-[44px] min-w-[44px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary hover:text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isResolving ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />

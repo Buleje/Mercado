@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { CUSTOMER_SESSION, getCustomerPayload } from "@/lib/auth/customer-session";
 import { tryAdmin } from "@/lib/require-admin";
+import { generateRatingToken } from "@/lib/delivery/rating-token";
 
 /**
  * GET /api/delivery/tracking/[orderId]
@@ -101,6 +102,15 @@ export async function GET(
           ? `***-***-${assignment.partner.phone.replace(/\D/g, "").slice(-3)}`
           : null);
 
+    // Token HMAC para dejar propina (SECURITY F3): solo se emite a un caller
+    // ya autorizado (admin del tenant o customer cuyo phone matchea) y solo
+    // cuando el pedido está entregado (único momento en que el widget de
+    // propina aparece). Sin este token, POST /api/delivery/tip/:orderId es
+    // rechazado cuando DELIVERY_TIP_REQUIRE_TOKEN no está en "false" — así un
+    // bot que solo enumera orderIds (sin sesión válida) no puede propinar.
+    const tipToken =
+      assignment.status === "delivered" ? generateRatingToken(orderId) : null;
+
     return NextResponse.json({
       status: assignment.status,
       partnerName: assignment.partner.name,
@@ -113,6 +123,7 @@ export async function GET(
       trackingLat,
       trackingLng,
       trackingUpdatedAt,
+      tipToken,
     });
   } catch {
     return NextResponse.json({ error: "Server error" }, { status: 500 });

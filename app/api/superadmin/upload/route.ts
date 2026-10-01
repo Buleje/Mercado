@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
 
     if (!ALLOWED.includes(file.type)) {
       return NextResponse.json(
-        { error: `Tipo no soportado: ${file.type}. Usá JPG, PNG o WebP.` },
+        { error: `Tipo no soportado: ${file.type}. Usa JPG, PNG o WebP.` },
         { status: 400 },
       );
     }
@@ -139,7 +139,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json(
           {
             error:
-              "No pudimos guardar la imagen. Si estás en local, verificá permisos. Si en prod, configurá Supabase Storage.",
+              "No pudimos guardar la imagen. Si estás en local, verifica permisos. Si en prod, configura Supabase Storage.",
           },
           { status: 500 },
         );

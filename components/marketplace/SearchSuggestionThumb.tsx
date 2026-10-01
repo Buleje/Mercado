@@ -26,7 +26,7 @@ export type ThumbVariant = "store" | "product" | "category" | "query" | "recent"
 const BOX_BY_VARIANT: Record<ThumbVariant, string> = {
   store: "bg-blue-500/10 text-blue-500",
   product: "bg-[var(--data-warning-500)]/10 text-[var(--data-warning-600)]",
-  category: "bg-[var(--accent-soft)] text-[var(--accent)]",
+  category: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
   query: "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
   recent: "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
 };

@@ -16,9 +16,7 @@ import { Truck, CreditCard } from "@buleje/design-system/icons";
 
 const CartSidebar = dynamic(() => import("@/components/CartSidebar"));
 const CustomerModal = dynamic(() => import("@/components/CustomerModal"));
-const Footer = dynamic(() => import("@/components/Footer"));
 const CookieConsent = dynamic(() => import("@/components/CookieConsent"));
-const MobileBottomNav = dynamic(() => import("@/components/MobileBottomNav"));
 const StickyCartBar = dynamic(() => import("@/components/StickyCartBar"));
 
 const realCategories = categories.filter((c) => c.id !== "todos");

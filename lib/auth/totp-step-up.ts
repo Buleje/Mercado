@@ -55,7 +55,7 @@ export async function requireTotpStepUp(
       {
         error: "totp_required",
         message:
-          "Esta operación requiere código TOTP de 6 dígitos. Enviá `totpCode` en el body.",
+          "Esta operación requiere código TOTP de 6 dígitos. Envía `totpCode` en el body.",
       },
       { status: 412 },
     );
@@ -68,7 +68,7 @@ export async function requireTotpStepUp(
       {
         error: "totp_not_enrolled",
         message:
-          "Esta operación requiere 2FA. Habilitá TOTP en /superadmin/security antes de continuar.",
+          "Esta operación requiere 2FA. Habilita TOTP en /superadmin/security antes de continuar.",
       },
       { status: 412 },
     );
@@ -81,7 +81,7 @@ export async function requireTotpStepUp(
     return NextResponse.json(
       {
         error: "totp_invalid",
-        message: "Código TOTP inválido o expirado. Generá uno nuevo en tu app.",
+        message: "Código TOTP inválido o expirado. Genera uno nuevo en tu app.",
       },
       { status: 401 },
     );

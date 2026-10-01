@@ -86,8 +86,9 @@ jobs:
         run: node scripts/find-duplicates.mjs
         continue-on-error: true
 
-      - name: Type check (tsc --noEmit)
-        run: npx tsc --noEmit
+      - name: Type check (tsc 7 nativo)
+        # 2026-09-22: 195,5s con tsc 5.9 → 49,6s en frío con el binario Go. Ver scripts/tsc7.mjs.
+        run: npm run typecheck
 
       - name: Run tests with coverage
         run: npm run test:coverage

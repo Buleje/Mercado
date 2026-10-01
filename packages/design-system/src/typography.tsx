@@ -204,4 +204,35 @@ export const Kicker = forwardRef<HTMLSpanElement, TypographyProps>(
   },
 );
 
+// ── BlockTitle (h4) ───────────────────────────────────────────────────────────
+/**
+ * Subtítulo de bloque, DENTRO de una tarjeta. Render por defecto `<h4>`.
+ *
+ * Escala: text-sm. Peso bold. Es el nivel que faltaba: había 83 `<h4>` sueltos
+ * en el panel y, sin un primitivo para ellos, el mismo rol se escribía en cinco
+ * tamaños distintos (text-sm 45 · text-xs 16 · text-base 8 · text-lg 4 · text-xl
+ * 1). Las clases salen del caso dominante, así que migrar no mueve un pixel.
+ *
+ * No confundir con los vecinos: un rótulo de grupo en mayúsculas es `Kicker`, y
+ * el título de la tarjeta entera es `CardTitle`.
+ */
+export const BlockTitle = forwardRef<HTMLHeadingElement, TypographyProps>(
+  function BlockTitle({ as, className, children, ...rest }, ref) {
+    const Comp = (as ?? "h4") as ElementType;
+    return (
+      <Comp
+        ref={ref}
+        className={cn(
+          "text-[length:var(--ts-sm)] font-bold",
+          "text-[var(--text-primary)] leading-[var(--lh-snug)]",
+          className,
+        )}
+        {...rest}
+      >
+        {children}
+      </Comp>
+    );
+  },
+);
+
 export type { TypographyProps };

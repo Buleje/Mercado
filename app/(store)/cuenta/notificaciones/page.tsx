@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import {
@@ -22,18 +22,36 @@ import {
 import { cn } from "@/lib/utils";
 import { CanastaVacia, CorazonLatiendo } from "@/components/ui-system/illustrations";
 import { EmptyState } from "@/components/ui-system/EmptyState";
-import Header from "@/components/Header";
-import AnnouncementBar from "@/components/AnnouncementBar";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 import {
-  MOCK_NOTIFICATIONS,
   formatTimeAgo,
   type Notification,
   type NotifType,
 } from "@/lib/mock-notifications";
 
+// Mapeo del shape del endpoint /api/me/notifications al tipo del cliente.
+type ApiNotification = { id: string; type: string; title: string; message?: string; link?: string | null; read: boolean; createdAt: string };
+function mapNotifType(t: string): NotifType {
+  const s = (t || "").toLowerCase();
+  if (s.includes("ped") || s.includes("order")) return "pedido";
+  if (s.includes("ofer") || s.includes("promo") || s.includes("deal")) return "oferta";
+  if (s.includes("tienda") || s.includes("store") || s.includes("vendor")) return "tienda";
+  return "sistema";
+}
+function mapApiNotification(n: ApiNotification): Notification {
+  return {
+    id: n.id,
+    type: mapNotifType(n.type),
+    title: n.title,
+    body: n.message ?? "",
+    timestamp: new Date(n.createdAt).getTime() || Date.now(),
+    read: !!n.read,
+    actionUrl: n.link ?? "",
+    actionLabel: n.link ? "Ver" : "",
+  };
+}
+
 const CartSidebar = dynamic(() => import("@/components/CartSidebar"));
-const MobileBottomNav = dynamic(() => import("@/components/MobileBottomNav"));
 
 // ── Types ──────────────────────────────────────────────────────────
 
@@ -211,7 +229,7 @@ function FilterPills({
                   active
                     ? "bg-white/25 text-white"
                     : key === "sin-leer" && count > 0
-                      ? "bg-primary/15 text-primary"
+                      ? "bg-primary/15 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                       : "bg-[var(--surface-sunken)] dark:bg-surface text-muted",
                 )}
               >
@@ -661,8 +679,29 @@ function NotifSettings({
 // ── Main Page ─────────────────────────────────────────────────────
 
 export default function NotificacionesPage() {
-  const [notifications, setNotifications] =
-    useState<Notification[]>(MOCK_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loadingNotifs, setLoadingNotifs] = useState(true);
+
+  // Datos reales del inbox (audit 2026-06-26: antes corría 100% con MOCK_NOTIFICATIONS).
+  // /api/me/notifications usa requireCustomer; sin sesión de cliente devuelve vacío
+  // (estado honesto, no datos fake).
+  useEffect(() => {
+    const ctrl = new AbortController();
+    fetch("/api/me/notifications", { credentials: "include", signal: ctrl.signal })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        const raw = Array.isArray(data?.notifications) ? (data.notifications as ApiNotification[]) : [];
+        setNotifications(raw.map(mapApiNotification));
+      })
+      .catch((err) => {
+        if ((err as { name?: string })?.name !== "AbortError") {
+          console.warn("[cuenta/notificaciones] no se pudo cargar el inbox", err);
+        }
+      })
+      .finally(() => setLoadingNotifs(false));
+    return () => ctrl.abort();
+  }, []);
+
   const [activeTab, setActiveTab] = useState<TabKey>("todas");
   const [settings, setSettings] = useState<SettingsState>({
     channels: { whatsapp: true, email: false, push: false },
@@ -760,7 +799,7 @@ export default function NotificacionesPage() {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-end gap-4 flex-wrap">
             <Link
-              href="/mi-panel"
+              href="/cuenta"
               className="h-12 w-12 inline-flex items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm hover:bg-white/25 transition-colors text-white shrink-0 border border-white/20"
               aria-label="Volver a mi cuenta"
             >
@@ -872,11 +911,17 @@ export default function NotificacionesPage() {
               </button>
             )}
 
-            {notifications.length > 0 && <HeatMap items={notifications} />}
+            {/* Mapa de calor — secundario, solo desktop (audit 2026-06-26: en móvil
+                apilaba sobre las notificaciones y obligaba a un scroll largo). */}
+            {notifications.length > 0 && (
+              <div className="hidden lg:block">
+                <HeatMap items={notifications} />
+              </div>
+            )}
 
-            {/* Help */}
+            {/* Help — secundario, solo desktop */}
             <div
-              className="rounded-2xl p-4"
+              className="hidden lg:block rounded-2xl p-4"
               style={{
                 background: "var(--color-card)",
                 border: "1px solid var(--color-card-border)",
@@ -922,7 +967,17 @@ export default function NotificacionesPage() {
                 </span>
               </div>
 
-              {tabNotifications.length === 0 ? (
+              {loadingNotifs ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map((i) => (
+                    <div
+                      key={i}
+                      className="h-20 rounded-2xl animate-pulse"
+                      style={{ background: "var(--color-card)", border: "1px solid var(--color-card-border)" }}
+                    />
+                  ))}
+                </div>
+              ) : tabNotifications.length === 0 ? (
                 <div
                   className="rounded-3xl"
                   style={{
@@ -975,7 +1030,7 @@ export default function NotificacionesPage() {
             {/* Volver */}
             <div>
               <Link
-                href="/mi-panel"
+                href="/cuenta"
                 className="inline-flex items-center gap-1.5 text-sm font-extrabold text-muted hover:text-[var(--text-primary)] transition-colors"
               >
                 <ArrowLeft className="h-4 w-4" strokeWidth={2.5} />

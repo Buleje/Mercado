@@ -1,5 +1,3 @@
-"use client";
-
 /**
  * ChartCard — wrapper unificado para todos los charts del admin Inicio.
  *
@@ -11,7 +9,7 @@
  *
  * Uso:
  *   <ChartCard title="Ventas y Utilidad" Icon={TrendingUp} height={340}>
- *     <ResponsiveContainer minWidth={0} width="100%" height="100%">
+ *     <ResponsiveContainer initialDimension={{ width: 1, height: 1 }} minWidth={0} width="100%" height="100%">
  *       <AreaChart data={data}>...</AreaChart>
  *     </ResponsiveContainer>
  *   </ChartCard>
@@ -212,10 +210,10 @@ export const CHART_TOKENS = {
   blue: "#0ea5e9",       // --data-6 (info)
   emerald: "#047857",    // --data-success
   violet: "#8b5cf6",     // --data-8
-  amber: "#d97706",      // --data-7
+  amber: "#f0503f",      // --data-7
   red: "#b91c1c",        // --data-error
   cyan: "#06b6d4",
-  orange: "#f97316",
+  orange: "#ff6b5b",
   gray: "#a3a3a3",       // --data-3
   // Aliases semánticos vs neutrales del DS.
   primary:   "#0a0a0a",  // --data-1

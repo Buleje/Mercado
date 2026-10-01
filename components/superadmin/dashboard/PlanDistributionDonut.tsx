@@ -90,7 +90,7 @@ export function PlanDistributionDonut({ distribution }: Props) {
       ) : (
         <div className="flex flex-col gap-4">
           <div className="relative" style={{ width: "100%", height: 200, minHeight: 160 }}>
-            <ResponsiveContainer width="99%" height="99%" debounce={50}>
+            <ResponsiveContainer initialDimension={{ width: 1, height: 1 }} width="99%" height="99%" debounce={50}>
               <PieChart>
                 <Pie
                   data={data}

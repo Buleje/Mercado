@@ -114,7 +114,7 @@ export async function generateWeeklyReport(tenantId: string): Promise<WeeklyRepo
 
   // ── Stock crítico (stock < stockMin) ──────────────────────────────────────
 
-  const stockCriticoCount = await prisma.product.count({
+  await prisma.product.count({
     where: {
       tenantId,
       active: true,

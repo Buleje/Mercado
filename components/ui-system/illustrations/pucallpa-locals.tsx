@@ -1,5 +1,3 @@
-"use client";
-
 /**
  * Ilustraciones Buleje — Pucallpa Locals (ADR-067 Ola O)
  *

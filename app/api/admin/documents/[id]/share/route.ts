@@ -16,7 +16,7 @@ type Ctx = { params: Promise<{ id: string }> };
 
 export async function GET(req: NextRequest, ctx: Ctx) {
   try {
-    const rl = await applyRateLimit(req, "MODERATE", "documents:share:list");
+    const rl = await applyRateLimit(req, "DRIVE_READ", "documents:share:list");
     if (rl) return rl;
     const csrfFail = assertCsrf(req);
     if (csrfFail) return csrfFail;

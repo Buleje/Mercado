@@ -110,6 +110,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly",
       priority: 0.8,
     },
+    {
+      // Precio del cacao — página de contenido/SEO, cambia con la cotización diaria.
+      url: `${baseUrl}/precio-cacao`,
+      lastModified,
+      changeFrequency: "daily",
+      priority: 0.8,
+    },
     // 2026-05-28 SEO fix: /buscar REMOVIDO del sitemap.
     // Search-result pages NUNCA deben estar en sitemap — diluyen crawl budget
     // y Google las indexa como contenido duplicado del catálogo. La pagina

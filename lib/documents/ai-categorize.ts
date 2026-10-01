@@ -93,7 +93,7 @@ export async function aiCategorize(input: AiCategorizeInput): Promise<AiCategori
       "Primeros caracteres del contenido:",
       input.textSnippet.slice(0, 1500),
       "",
-      `Devolvé SOLO JSON: {"category":"<one of: ${DOC_CATEGORIES.join("|")}>", "tags":["tag1","tag2","tag3"]}`,
+      `Devuelve SOLO JSON: {"category":"<one of: ${DOC_CATEGORIES.join("|")}>", "tags":["tag1","tag2","tag3"]}`,
       "Tags deben ser palabras sueltas en minúscula, máx 5.",
     ].join("\n");
 

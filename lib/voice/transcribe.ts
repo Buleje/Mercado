@@ -2,6 +2,53 @@ import "server-only";
 import { logger } from "@/lib/logger";
 
 /**
+ * Envía audio YA EN MEMORIA a Groq Whisper large-v3. Extraído de
+ * `transcribeAudio` (2026-08-31) para reusar el mismo proveedor con audio
+ * que no viene de WhatsApp — ej. un archivo subido desde el admin — sin
+ * duplicar la llamada a Groq en dos lugares.
+ *
+ * @param audioBuffer - contenido crudo del audio
+ * @param mimeType     - MIME type real (define la extensión que ve Groq)
+ * @returns            - Texto transcrito en español
+ */
+export async function transcribeAudioBuffer(
+  audioBuffer: ArrayBuffer,
+  mimeType: string,
+): Promise<string> {
+  const groqApiKey = process.env.GROQ_API_KEY ?? "";
+  if (!groqApiKey) {
+    throw new Error("[voice/transcribe] GROQ_API_KEY no configurado");
+  }
+
+  const ext = resolveExtension(mimeType);
+  const formData = new FormData();
+  const blob = new Blob([audioBuffer], { type: mimeType });
+  formData.append("file", blob, `audio.${ext}`);
+  formData.append("model", "whisper-large-v3");
+  formData.append("language", "es");
+  formData.append("response_format", "text");
+
+  const groqRes = await fetch(
+    "https://api.groq.com/openai/v1/audio/transcriptions",
+    {
+      method: "POST",
+      headers: { Authorization: `Bearer ${groqApiKey}` },
+      body: formData,
+    },
+  );
+
+  if (!groqRes.ok) {
+    const detail = await groqRes.text().catch(() => "");
+    throw new Error(
+      `[voice/transcribe] Error en Groq Whisper: ${groqRes.status} ${detail}`,
+    );
+  }
+
+  // response_format=text devuelve plain text, no JSON
+  return (await groqRes.text()).trim();
+}
+
+/**
  * Descarga un audio desde la Media API de WhatsApp y lo transcribe
  * usando Groq Whisper large-v3.
  *
@@ -15,13 +62,9 @@ export async function transcribeAudio(
 ): Promise<string> {
   const whatsappToken =
     process.env.WHATSAPP_ACCESS_TOKEN ?? process.env.WHATSAPP_API_TOKEN ?? "";
-  const groqApiKey = process.env.GROQ_API_KEY ?? "";
 
   if (!whatsappToken) {
     throw new Error("[voice/transcribe] WHATSAPP_ACCESS_TOKEN no configurado");
-  }
-  if (!groqApiKey) {
-    throw new Error("[voice/transcribe] GROQ_API_KEY no configurado");
   }
 
   // ── 1. Obtener URL de descarga desde la Graph API ──────────────────────────
@@ -58,35 +101,8 @@ export async function transcribeAudio(
 
   const audioBuffer = await audioRes.arrayBuffer();
 
-  // ── 3. Determinar extensión de archivo según MIME type ────────────────────
-  const ext = resolveExtension(mimeType ?? "audio/ogg");
-
-  // ── 4. Enviar a Groq Whisper large-v3 ─────────────────────────────────────
-  const formData = new FormData();
-  const blob = new Blob([audioBuffer], { type: mimeType ?? "audio/ogg" });
-  formData.append("file", blob, `audio.${ext}`);
-  formData.append("model", "whisper-large-v3");
-  formData.append("language", "es");
-  formData.append("response_format", "text");
-
-  const groqRes = await fetch(
-    "https://api.groq.com/openai/v1/audio/transcriptions",
-    {
-      method: "POST",
-      headers: { Authorization: `Bearer ${groqApiKey}` },
-      body: formData,
-    },
-  );
-
-  if (!groqRes.ok) {
-    const detail = await groqRes.text().catch(() => "");
-    throw new Error(
-      `[voice/transcribe] Error en Groq Whisper: ${groqRes.status} ${detail}`,
-    );
-  }
-
-  // response_format=text devuelve plain text, no JSON
-  const transcription = (await groqRes.text()).trim();
+  // ── 3. Transcribir con Groq Whisper (helper compartido) ────────────────────
+  const transcription = await transcribeAudioBuffer(audioBuffer, mimeType ?? "audio/ogg");
 
   logger.info("[voice/transcribe] Transcripción completada", {
     mediaId,

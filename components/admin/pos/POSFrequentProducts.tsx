@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { TrendingUp } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { estaAgotado } from "@/lib/pos/stock-vendible";
+import { formatCurrency } from "@/lib/format";
 
 interface FrequentProduct {
   id: number;
@@ -18,7 +20,7 @@ interface POSFrequentProductsProps {
 }
 
 function fmt(n: number) {
-  return `S/${n.toFixed(2)}`;
+  return `${formatCurrency(n)}`;
 }
 
 export default function POSFrequentProducts({
@@ -55,7 +57,7 @@ export default function POSFrequentProducts({
       </div>
       <div className="flex flex-wrap gap-1.5 overflow-x-auto pb-0.5 scrollbar-hide">
         {products.map((p) => {
-          const outOfStock = p.stock != null && p.stock <= 0;
+          const outOfStock = estaAgotado(p);
           return (
             <button
               key={p.id}
@@ -64,7 +66,7 @@ export default function POSFrequentProducts({
               className={cn(
                 "shrink-0 px-2 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap flex items-center gap-1.5",
                 outOfStock
-                  ? "bg-gray-100 dark:bg-surface text-[var(--text-tertiary)] dark:text-muted cursor-not-allowed"
+                  ? "bg-[var(--rule-soft)] text-[var(--text-tertiary)] dark:text-muted cursor-not-allowed"
                   : "bg-[var(--surface-raised)] border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30 text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:border-primary hover:bg-primary/5"
               )}
             >

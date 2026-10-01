@@ -18,8 +18,9 @@ const CajaAdvancedCharts = dynamic(
   { ssr: false },
 );
 // DashboardSectionHeader removido 2026-04-24 — ver decision en render body.
-import { BulejeDashboardSkeleton } from "./_shared";
+import { BulejeDashboardSkeleton, KPI_GRID_6 } from "./_shared";
 import EmptyDateRangeState from "./EmptyDateRangeState";
+import { formatCurrency, formatDateShort, formatMonthYear } from "@/lib/format";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -61,10 +62,10 @@ export interface CajaData {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function fmt(n: number) { return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`; }
+function fmt(n: number) { return `${formatCurrency(n)}`; }
 function dateKey(d: Date) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; }
-function dayLabel(dk: string) { return new Date(dk + "T12:00:00").toLocaleDateString("es-PE", { day: "2-digit", month: "short" }); }
-const PAY_COLORS: Record<string, string> = { efectivo: "#10b981", yape: "#8b5cf6", plin: "#06b6d4", tarjeta: "#3b82f6", transferencia: "#f59e0b" };
+function dayLabel(dk: string) { return formatDateShort(dk + "T12:00:00"); }
+const PAY_COLORS: Record<string, string> = { efectivo: "#10b981", yape: "#8b5cf6", plin: "#06b6d4", tarjeta: "#3b82f6", transferencia: "#ff6b5b" };
 const PAY_LABELS: Record<string, string> = { efectivo: "Efectivo", yape: "Yape", plin: "Plin", tarjeta: "Tarjeta", transferencia: "Transferencia" };
 
 // ── Main Component ───────────────────────────────────────────────────────────
@@ -158,7 +159,7 @@ export default function CajaDashboard({ dateRange, onChangeRange }: CajaDashboar
     for (let i = 5; i >= 0; i--) {
       const mStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const mEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59);
-      const label = mStart.toLocaleDateString("es-PE", { month: "short", year: "2-digit" });
+      const label = formatMonthYear(mStart);
       const mInc = orders.filter(o => o.status === "entregado" && new Date(o.createdAt) >= mStart && new Date(o.createdAt) <= mEnd).reduce((a, o) => a + o.total, 0)
         + sales.filter(s => new Date(s.createdAt) >= mStart && new Date(s.createdAt) <= mEnd).reduce((a, s) => a + s.total, 0);
       const mExp = purchases.filter(p => p.createdAt && new Date(p.createdAt) >= mStart && new Date(p.createdAt) <= mEnd).reduce((a, p) => a + p.total, 0);
@@ -169,7 +170,7 @@ export default function CajaDashboard({ dateRange, onChangeRange }: CajaDashboar
     const waterfall: CajaData["waterfall"] = [
       { concepto: "Ventas (pedidos)", monto: pOrders.reduce((a, o) => a + o.total, 0), tipo: "ingreso", color: "var(--accent)" },
       { concepto: "Ventas (POS)", monto: pSales.reduce((a, s) => a + s.total, 0), tipo: "ingreso", color: "#06b6d4" },
-      { concepto: "Costo de productos", monto: -costo, tipo: "egreso", color: "#f59e0b" },
+      { concepto: "Costo de productos", monto: -costo, tipo: "egreso", color: "#ff6b5b" },
       { concepto: "Compras", monto: -egresos, tipo: "egreso", color: "#ef4444" },
       { concepto: "Balance Neto", monto: utilidadNeta, tipo: "balance", color: utilidadNeta >= 0 ? "var(--accent)" : "#ef4444" },
     ];
@@ -211,7 +212,7 @@ export default function CajaDashboard({ dateRange, onChangeRange }: CajaDashboar
     <div className="flex flex-col items-center justify-center gap-4 py-16">
       <AlertTriangle className="h-10 w-10 text-[var(--data-warning-500)]" />
       <p className="text-sm text-[var(--text-secondary)]">{error}</p>
-      <button onClick={() => void refresh()} className="px-4 py-2 rounded-lg bg-[var(--brand-primary)] text-white text-sm font-bold hover:opacity-90 transition-opacity">Reintentar</button>
+      <button onClick={() => void refresh()} className="px-4 min-h-10 rounded-xl bg-[var(--brand-primary)] text-white text-sm font-semibold hover:opacity-90 transition-opacity">Reintentar</button>
     </div>
   );
   if (!data) return null;
@@ -234,7 +235,7 @@ export default function CajaDashboard({ dateRange, onChangeRange }: CajaDashboar
           eyebrow + titulo + subtitulo descriptivos arriba. */}
 
       {/* ── KPI Hero Row · ADR-068 armonía estricta — con sparklines ── */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <div className={KPI_GRID_6}>
         <StatCard label="Ingresos" value={fmt(data.ingresos)} icon={ArrowUpFromLine} delta={data.dIngresos} sparkline={data.flujoDiario.length >= 2 ? { data: data.flujoDiario.map(d => d.ingresos) } : undefined} />
         <StatCard label="Egresos" value={fmt(data.egresos)} icon={ArrowDownToLine} delta={data.dEgresos} sparkline={data.flujoDiario.length >= 2 ? { data: data.flujoDiario.map(d => d.egresos) } : undefined} />
         <StatCard label="Balance" value={fmt(data.balance)} icon={Wallet} delta={data.dBalance} emphasis={data.balance >= 0 ? "neutral" : "error"} sparkline={data.flujoDiario.length >= 2 ? { data: data.flujoDiario.map(d => d.balance) } : undefined} />
@@ -263,25 +264,6 @@ export default function CajaDashboard({ dateRange, onChangeRange }: CajaDashboar
 
       {/* ── Charts especializados (runway, pareto pagos, evolución métodos, comparativa, margen trend, balance acumulado) ── */}
       <CajaAdvancedCharts />
-    </div>
-  );
-}
-
-function DashboardSkeleton() {
-  return (
-    <div className="space-y-5 animate-pulse">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        {Array.from({ length: 6 }).map((_, i) => <div key={i} className="bg-[var(--surface-sunken)] rounded-xl h-28" />)}
-      </div>
-      <div className="bg-[var(--surface-sunken)] rounded-xl h-12" />
-      <div className="bg-[var(--surface-sunken)] rounded-xl h-[380px]" />
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="bg-[var(--surface-sunken)] rounded-xl h-[300px]" />
-        <div className="bg-[var(--surface-sunken)] rounded-xl h-[300px]" />
-      </div>
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        {Array.from({ length: 3 }).map((_, i) => <div key={i} className="bg-[var(--surface-sunken)] rounded-xl h-[260px]" />)}
-      </div>
     </div>
   );
 }

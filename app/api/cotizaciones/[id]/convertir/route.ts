@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { OrderStatus } from "@/lib/generated/prisma/client";
 import { logAudit } from "@/lib/audit-logger";
+import { invalidarVentasOverview } from "@/lib/caja/invalidar-ventas-overview";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 
@@ -74,6 +75,9 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
 
       return order;
     });
+
+    // El pedido nuevo cuenta en el Tablero de Ventas (canal «Tienda online»).
+    invalidarVentasOverview(auth.tenantId);
 
     logAudit({
       req,

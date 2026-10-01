@@ -2,7 +2,9 @@ export { default as AdminTabBar } from "./AdminTabBar";
 export type { AdminTab } from "./AdminTabBar";
 export { default as AdminDateFilter } from "./AdminDateFilter";
 export type { DatePreset } from "./AdminDateFilter";
-export { default as KPICard } from "./KPICard";
+// KPICard (borrado 2026-09-22): canon único es StatCard de @buleje/design-system
+// (ver __tests__/vrt/kpicard-compartida-migracion.vrt.test.tsx). Los 6
+// consumidores reales ya migraron.
 export { default as AdminModal } from "./AdminModal";
 export { default as AdminBreadcrumb } from "./AdminBreadcrumb";
 export { default as AdminModuleHeader } from "./AdminModuleHeader";

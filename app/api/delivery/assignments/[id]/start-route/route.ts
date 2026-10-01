@@ -69,7 +69,7 @@ async function startRouteHandler(
       }
       if (!ALLOWED_FROM_STATES.includes(assignment.status)) {
         return {
-          error: `No podés iniciar ruta desde estado "${assignment.status}"`,
+          error: `No puedes iniciar ruta desde estado "${assignment.status}"`,
           code: 409,
         };
       }

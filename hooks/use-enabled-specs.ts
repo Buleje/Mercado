@@ -186,7 +186,7 @@ export function broadcastSpecsChanged(payload?: {
   if (typeof BroadcastChannel === "undefined") return;
   try {
     const bc = new BroadcastChannel(BROADCAST_CHANNEL);
-    bc.postMessage({ type: "spec-toggled", ...(payload ?? {}) });
+    bc.postMessage({ type: "spec-toggled", ...payload });
     bc.close();
   } catch {
     // silent
@@ -199,8 +199,11 @@ export function broadcastSpecsChanged(payload?: {
  */
 export const SPEC_GATED_MODULE_IDS = new Set<string>([
   "ctp-libro-operaciones",
+  "forestal-lotes",
   "loth-libro-operaciones",
   "gtf-emisor",
+  "forestal-herramientas",
+  "forestal-tramites",
   "cacao-acopio",
   "recetas-medicas",
   "cuero-trazabilidad",

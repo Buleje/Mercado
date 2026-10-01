@@ -85,13 +85,13 @@ const CHECK_STATUS_META: Record<
   },
   warning: {
     label: "Con detalle",
-    cls: "border-amber-300/60 bg-amber-50/60 text-amber-700 dark:border-amber-700/40 dark:bg-amber-950/30 dark:text-amber-300",
-    dot: "bg-amber-500",
-    ring: "ring-amber-500/40",
+    cls: "border-teal-300/60 bg-teal-50/60 text-teal-700 dark:border-teal-700/40 dark:bg-teal-950/30 dark:text-teal-300",
+    dot: "bg-teal-500",
+    ring: "ring-teal-500/40",
   },
   missing: {
     label: "Falta",
-    cls: "border-rose-300/60 bg-rose-50/60 text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]",
+    cls: "border-[var(--data-error-500)] bg-rose-50/60 text-[var(--accent)] dark:border-[var(--data-error-500)] dark:bg-rose-950/30 dark:text-[var(--accent)]",
     dot: "bg-rose-500",
     ring: "ring-rose-500/40",
   },
@@ -115,16 +115,16 @@ function scoreColor(pct: number): {
   if (pct >= 50)
     return {
       stroke: "rgb(245 158 11)",
-      text: "text-amber-600 dark:text-amber-400",
+      text: "text-teal-600 dark:text-teal-400",
       label: "Atención",
-      band: "border-amber-300/60 bg-amber-50/40 dark:border-amber-700/40 dark:bg-amber-950/20",
+      band: "border-teal-300/60 bg-teal-50/40 dark:border-teal-700/40 dark:bg-teal-950/20",
       tone: "warning",
     };
   return {
     stroke: "rgb(244 63 94)",
     text: "text-[var(--accent)] dark:text-[var(--accent)]",
     label: "Crítica",
-    band: "border-rose-300/60 bg-rose-50/40 dark:border-rose-700/40 dark:bg-rose-950/20",
+    band: "border-[var(--data-error-500)] bg-rose-50/40 dark:border-[var(--data-error-500)] dark:bg-rose-950/20",
     tone: "danger",
   };
 }
@@ -283,7 +283,7 @@ export function HealthTab() {
                     title={`${stats.healthy} saludables`}
                   />
                   <div
-                    className="bg-amber-500 transition-all"
+                    className="bg-teal-500 transition-all"
                     style={{ width: `${(stats.warning / stats.total) * 100}%` }}
                     title={`${stats.warning} en atención`}
                   />
@@ -299,7 +299,7 @@ export function HealthTab() {
             )}
             <div className="flex flex-wrap items-center gap-3 text-xs">
               <LegendItem dot="bg-[var(--data-success-500)]" label="Saludables" value={stats?.healthy ?? 0} />
-              <LegendItem dot="bg-amber-500" label="Atención" value={stats?.warning ?? 0} />
+              <LegendItem dot="bg-teal-500" label="Atención" value={stats?.warning ?? 0} />
               <LegendItem dot="bg-rose-500" label="Críticas" value={stats?.critical ?? 0} />
             </div>
           </div>
@@ -310,7 +310,7 @@ export function HealthTab() {
               type="button"
               onClick={() => load(true)}
               disabled={refreshing}
-              className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)] disabled:opacity-50"
+              className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-semibold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)] disabled:opacity-50"
             >
               <RefreshCw
                 className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`}
@@ -378,7 +378,7 @@ export function HealthTab() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar por nombre o slug…"
-            className="w-full rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] py-2 pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
+            className="w-full rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] h-10 pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
           />
         </div>
         <div className="flex gap-1 rounded-xl bg-[var(--surface-sunken)] p-1">
@@ -435,7 +435,7 @@ export function HealthTab() {
       </div>
 
       {error && (
-        <div className="flex items-center gap-3 rounded-xl border border-rose-300/60 bg-rose-50/40 px-4 py-3 text-sm font-semibold text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]">
+        <div className="flex items-center gap-3 rounded-xl border border-[var(--data-error-500)] bg-rose-50/40 px-4 py-3 text-sm font-semibold text-[var(--accent)] dark:border-[var(--data-error-500)] dark:bg-rose-950/30 dark:text-[var(--accent)]">
           <AlertTriangle className="h-4 w-4 shrink-0" />
           {error}
         </div>
@@ -480,7 +480,7 @@ export function HealthTab() {
 
       {/* ── Empty filter ─────────────────────────────────────── */}
       {items && filtered.length === 0 && (
-        <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-canvas)] py-12 text-center">
+        <div className="rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-canvas)] py-12 text-center">
           <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--surface-sunken)] mb-3">
             <HeartPulse
               className="h-6 w-6 text-[var(--text-tertiary)]"
@@ -570,12 +570,12 @@ export function HealthTab() {
                           {item.plan}
                         </span>
                         {!item.active && (
-                          <span className="rounded-full border border-rose-300/60 bg-rose-50/60 px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]">
+                          <span className="rounded-full border border-[var(--data-error-500)] bg-rose-50/60 px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)] dark:border-[var(--data-error-500)] dark:bg-rose-950/30 dark:text-[var(--accent)]">
                             Inactiva
                           </span>
                         )}
                         {item.store && !item.store.isPublished && (
-                          <span className="rounded-full border border-amber-300/60 bg-amber-50/60 px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-amber-700 dark:border-amber-700/40 dark:bg-amber-950/30 dark:text-amber-300">
+                          <span className="rounded-full border border-teal-300/60 bg-teal-50/60 px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-teal-700 dark:border-teal-700/40 dark:bg-teal-950/30 dark:text-teal-300">
                             No publicada
                           </span>
                         )}
@@ -601,7 +601,7 @@ export function HealthTab() {
                         {item.warningCount > 0 && (
                           <>
                             <span>·</span>
-                            <span className="font-bold text-amber-600 dark:text-amber-400">
+                            <span className="font-bold text-teal-600 dark:text-teal-400">
                               {item.warningCount} con detalle
                             </span>
                           </>
@@ -867,8 +867,8 @@ function KpiCard({
 }) {
   const iconBg = {
     success: "bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]",
-    warning: "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300",
-    danger: "bg-rose-100 text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]",
+    warning: "bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300",
+    danger: "bg-[var(--data-error-50)] text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]",
     accent: "bg-[var(--accent)]/10 text-[var(--accent)]",
   }[tone];
   return (

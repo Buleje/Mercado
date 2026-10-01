@@ -15,7 +15,6 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Clock } from "@buleje/design-system/icons";
 import SectionHeading from "@/components/marketplace/home/SectionHeading";
-import HorizontalCarousel from "@/components/marketplace/HorizontalCarousel";
 import UnifiedProductCard from "@/components/marketplace/UnifiedProductCard";
 
 interface FeaturedProduct {
@@ -124,39 +123,46 @@ export default function OfertasDelDiaHero() {
         eyebrow="Ofertas del día"
         title="Productos destacados"
         action={
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
             {countdown && (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 h-9">
-                <Clock className="h-3.5 w-3.5 text-[var(--text-tertiary)]" strokeWidth={1.75} aria-hidden />
-                <span className="hidden sm:inline text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+              // Urgencia coral (Brandon 2026-07-06): badge con más presencia —
+              // relleno coral tenue + anillo + contador bold, no un pill gris.
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-warning-500)]/[0.14] px-3.5 h-10 ring-1 ring-inset ring-[var(--data-warning-500)]/30">
+                <Clock className="h-4 w-4 text-[var(--data-warning-600)]" strokeWidth={2.25} aria-hidden />
+                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--data-warning-600)]">
                   Cierra en
                 </span>
-                <span className="tabular-nums text-[length:var(--ts-sm)] font-bold text-[var(--text-primary)]">
+                <span className="tabular-nums text-[length:var(--ts-sm)] sm:text-base font-bold text-[var(--text-primary)]">
                   {countdown}
                 </span>
               </span>
             )}
             <Link
               href="/marketplace/ofertas"
-              className="shrink-0 inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-base)] px-4 h-9 text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+              className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-[var(--accent)] px-5 h-10 text-[length:var(--ts-sm)] font-bold text-white transition-opacity hover:opacity-90"
             >
               Ver todas
-              <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
+              <ArrowRight className="h-4 w-4" strokeWidth={2.25} aria-hidden />
             </Link>
           </div>
         }
       />
-      <HorizontalCarousel ariaLabel="Ofertas del día">
-        {cards.map((p, i) => (
-          <UnifiedProductCard
-            key={p.storeProductId}
-            product={p}
-            variant={p.discount ? "flash" : "default"}
-            layout="compact"
-            index={i}
-          />
+      {/* Una sola fila contenida (6 productos, entran en 1 fila en desktop) */}
+      <ul
+        className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-6"
+        aria-label="Ofertas del día"
+      >
+        {cards.slice(0, 6).map((p, i) => (
+          <li key={p.storeProductId}>
+            <UnifiedProductCard
+              product={p}
+              variant={p.discount ? "flash" : "default"}
+              layout="compact"
+              index={i}
+            />
+          </li>
         ))}
-      </HorizontalCarousel>
+      </ul>
     </section>
   );
 }

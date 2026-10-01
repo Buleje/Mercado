@@ -1,0 +1,249 @@
+/**
+ * loth-import-lineas — vista previa del importador. Puro, sin DB.
+ *
+ * Lo que se protege: que NADA se descarte en silencio. Cada fila sale con su
+ * veredicto y su motivo; el que decide es el usuario mirando la previa.
+ */
+import { describe, it, expect } from "vitest";
+import { aFecha, aNumero, detectarSeparador, mensajeErrorFilaImport, parseImportLineas, parseImportLineasCeldas } from "@/lib/forestal/loth-import-lineas";
+
+describe("lectura de celdas", () => {
+  it("acepta coma o punto decimal (un Excel peruano usa coma)", () => {
+    expect(aNumero("1,25")).toBe(1.25);
+    expect(aNumero("1.25")).toBe(1.25);
+    expect(aNumero("1.234,56")).toBe(1234.56); // miles con punto
+    expect(aNumero("")).toBeNull();
+    expect(aNumero("abc")).toBeNull();
+  });
+
+  it("acepta DD/MM/AAAA y AAAA-MM-DD, y rechaza el resto", () => {
+    expect(aFecha("21/07/2026")).toBe("2026-07-21");
+    expect(aFecha("2026-07-21")).toBe("2026-07-21");
+    expect(aFecha("7/21/2026")).toBe("2026-21-07"); // mes>12: queda como está y la fila lo dirá
+    expect(aFecha("julio")).toBeNull();
+  });
+
+  it("detecta el separador del archivo", () => {
+    expect(detectarSeparador("a;b;c\n1;2;3")).toBe(";");
+    expect(detectarSeparador("a\tb\tc\n1\t2\t3")).toBe("\t");
+    expect(detectarSeparador("a,b,c\n1,2,3")).toBe(",");
+  });
+});
+
+describe("parseImportLineas · trozado", () => {
+  const csv = [
+    "Cód. árbol,Cód. troza,Especie,Ø mayor,Ø menor,Longitud,Observaciones",
+    "001-TOR,001-TOR-A,Tornillo,0.65,0.60,12,primera troza",
+    "001-TOR,001-TOR-B,Tornillo,0.60,0.55,10,",
+  ].join("\n");
+
+  it("mapea los encabezados con tildes y símbolos, y calcula el volumen por Smalian", () => {
+    const r = parseImportLineas(csv, "trozado");
+    expect(r.filas).toHaveLength(2);
+    expect(r.listas).toBe(2);
+    expect(r.filas[0].trozaCode).toBe("001-TOR-A");
+    expect(r.filas[0].volumenCalculado).toBe(true);
+    // 0.7854 × ((0.65+0.60)/2)² × 12 = 3.6816
+    expect(r.filas[0].volumeM3).toBeCloseTo(3.6816, 3);
+  });
+
+  it("marca la fila incompleta en vez de tirarla", () => {
+    const r = parseImportLineas("Cód. árbol,Cód. troza,Especie\n001-TOR,,Tornillo", "trozado");
+    expect(r.conError).toBe(1);
+    expect(r.filas[0].estado).toBe("error");
+    expect(r.filas[0].motivos.join(" ")).toMatch(/Falta código de troza/);
+    expect(r.filas[0].motivos.join(" ")).toMatch(/Sin volumen/);
+  });
+
+  it("avisa del código repetido dentro del archivo sin descartarlo solo", () => {
+    const r = parseImportLineas(
+      ["Cód. árbol,Cód. troza,Especie,Volumen", "1-T,1-T-A,Tornillo,2", "1-T,1-T-A,Tornillo,3"].join("\n"),
+      "trozado",
+    );
+    expect(r.filas[1].motivos.join(" ")).toMatch(/se repite en el archivo/);
+    expect(r.filas[1].estado).toBe("ok"); // lo decide el usuario, no el parser
+  });
+
+  it("avisa cuando la especie no está en el plan, sin bloquear el asiento", () => {
+    const r = parseImportLineas("Cód. árbol,Cód. troza,Especie,Volumen\n1-C,1-C-A,Cumala,2", "trozado", {
+      especiesAutorizadas: new Set(["Tornillo"]),
+    });
+    expect(r.filas[0].estado).toBe("ok");
+    expect(r.filas[0].motivos.join(" ")).toMatch(/no figura en el plan/);
+  });
+
+  it("lista las columnas que no supo mapear en vez de ignorarlas calladas", () => {
+    const r = parseImportLineas("Cód. troza,Especie,Volumen,Color del papel\n1-A,Tornillo,2,azul", "consumo_troza");
+    expect(r.ignoradas).toEqual(["Color del papel"]);
+  });
+});
+
+describe("parseImportLineas · otras secciones", () => {
+  it("despacho de trozas exige la guía", () => {
+    const r = parseImportLineas("Cód. troza,N° GTF\n1-A,\n2-A,001-0000125", "despacho_troza");
+    expect(r.filas[0].estado).toBe("error");
+    expect(r.filas[1].estado).toBe("ok");
+    expect(r.filas[1].gtfNumber).toBe("001-0000125");
+  });
+
+  it("producto terminado exige tipo y cantidad", () => {
+    const r = parseImportLineas("Producto,Cantidad,Unidad\nMadera aserrada,12.5,m3", "producto_terminado");
+    expect(r.listas).toBe(1);
+    expect(r.filas[0].quantity).toBe(12.5);
+    expect(r.filas[0].unit).toBe("m3");
+  });
+
+  it("un archivo sin filas de datos no rompe", () => {
+    expect(parseImportLineas("Cód. árbol,Especie", "tala").filas).toHaveLength(0);
+    expect(parseImportLineas("", "tala").filas).toHaveLength(0);
+  });
+});
+
+describe("tala y trozado no piden lo mismo (RDE 264-2019)", () => {
+  /**
+   * El importador exigía volumen > 0 en las dos secciones y rechazaba la fila.
+   * Pero en TALA los diámetros y el volumen son obligatorios sólo cuando el
+   * aserrío se hace dentro del área (notas de los items 6, 7 y 9); lo que se
+   * registra siempre es la longitud aprovechable (item 8). El formulario ya lo
+   * respetaba: importar por Excel aceptaba menos que cargar a mano, que es
+   * tener dos reglas para el mismo libro.
+   */
+  const cab = "Cód. árbol,Especie,Ø mayor,Ø menor,Longitud,Volumen";
+
+  it("tala con longitud pero SIN volumen ni diámetros es válida", () => {
+    const r = parseImportLineas([cab, "001-TOR,Tornillo,,,14,"].join("\n"), "tala");
+    expect(r.filas[0].estado).toBe("ok");
+    expect(r.filas[0].motivos).toEqual([]);
+  });
+
+  it("tala sin longitud ni volumen sí se rechaza, y dice por qué", () => {
+    const r = parseImportLineas([cab, "001-TOR,Tornillo,,,,"].join("\n"), "tala");
+    expect(r.filas[0].estado).toBe("error");
+    expect(r.filas[0].motivos.join(" ")).toContain("longitud");
+  });
+
+  it("tala con diámetros y longitud cubica sola", () => {
+    const r = parseImportLineas([cab, "001-TOR,Tornillo,1.20,0.85,14,"].join("\n"), "tala");
+    expect(r.filas[0].estado).toBe("ok");
+    expect(r.filas[0].volumeM3).toBeGreaterThan(0);
+    expect(r.filas[0].volumenCalculado).toBe(true);
+  });
+
+  it("trozado SIN volumen sigue rechazándose: su item 9 no tiene excepción", () => {
+    const r = parseImportLineas(
+      ["Cód. árbol,Cód. troza,Especie,Ø mayor,Ø menor,Longitud", "001-TOR,001-TOR-A,Tornillo,,,"].join("\n"),
+      "trozado",
+    );
+    expect(r.filas[0].estado).toBe("error");
+    expect(r.filas[0].motivos.join(" ")).toContain("volumen");
+  });
+});
+
+describe("parseImportLineasCeldas · un .xlsx leído a celdas (28-09, plantilla descargable)", () => {
+  /**
+   * Lo que trae un .xlsx real que exceljs ya leyó: los números quedan como
+   * `number` de JS (0.65, no "0,65"), y un código de árbol tecleado sin
+   * comillas en Excel («2», «13») también llega como `number`, no como texto.
+   * La misma hoja pegada como texto trae coma decimal («14,853»): las dos
+   * entradas tienen que dar el mismo veredicto.
+   */
+  it("hoja de Tala: códigos numéricos (2, 13) y diámetros en number", () => {
+    const hoja = [
+      ["Cód. árbol", "Especie", "Fecha", "Ø mayor", "Ø menor", "Longitud"],
+      [2, "Tornillo", "21/07/2026", 0.65, 0.65, 18],
+      [13, "Capirona", "22/07/2026", 0.6, 0.55, 12],
+    ];
+    const r = parseImportLineasCeldas(hoja, "tala");
+    expect(r.filas).toHaveLength(2);
+    expect(r.listas).toBe(2);
+    expect(r.filas[0].treeCode).toBe("2");
+    expect(r.filas[1].treeCode).toBe("13");
+    expect(r.filas[0].entryDate).toBe("2026-07-21");
+    expect(r.filas[0].diamMayorM).toBeCloseTo(0.65, 4);
+  });
+
+  it("hoja de Trozado: volumen con coma decimal como texto («14,853») no se recalcula", () => {
+    const hoja = [
+      ["Cód. árbol", "Cód. troza", "Especie", "Volumen"],
+      [1, "1-A", "Tornillo", "14,853"],
+    ];
+    const r = parseImportLineasCeldas(hoja, "trozado");
+    expect(r.filas[0].estado).toBe("ok");
+    expect(r.filas[0].volumeM3).toBeCloseTo(14.853, 3);
+    expect(r.filas[0].volumenCalculado).toBe(false);
+  });
+
+  it("hoja de Despacho de trozas: fila sin GTF se marca, no se descarta sola", () => {
+    const hoja = [
+      ["Cód. troza", "N° GTF", "Fecha"],
+      ["1-A", "001-0000125", "22/07/2026"],
+      ["1-B", "", ""],
+    ];
+    const r = parseImportLineasCeldas(hoja, "despacho_troza");
+    expect(r.filas).toHaveLength(2);
+    expect(r.filas[0].estado).toBe("ok");
+    expect(r.filas[0].gtfNumber).toBe("001-0000125");
+    expect(r.filas[1].estado).toBe("error");
+    expect(r.filas[1].motivos.join(" ")).toMatch(/N° de GTF/);
+  });
+
+  it("da el mismo veredicto que el texto pegado para la misma fila", () => {
+    const texto = "Cód. árbol,Cód. troza,Especie,Ø mayor,Ø menor,Longitud\n001-TOR,001-TOR-A,Tornillo,0.65,0.60,12";
+    const celdas = [
+      ["Cód. árbol", "Cód. troza", "Especie", "Ø mayor", "Ø menor", "Longitud"],
+      ["001-TOR", "001-TOR-A", "Tornillo", 0.65, 0.6, 12],
+    ];
+    const rTexto = parseImportLineas(texto, "trozado");
+    const rCeldas = parseImportLineasCeldas(celdas, "trozado");
+    expect(rCeldas.filas[0].volumeM3).toBeCloseTo(rTexto.filas[0].volumeM3 as number, 6);
+    expect(rCeldas.filas[0].estado).toBe(rTexto.filas[0].estado);
+  });
+
+  it("una hoja vacía o de una sola fila no rompe", () => {
+    expect(parseImportLineasCeldas([], "tala").filas).toHaveLength(0);
+    expect(parseImportLineasCeldas([["Cód. árbol", "Especie"]], "tala").filas).toHaveLength(0);
+  });
+});
+
+describe("columna «motivo» (T9, tala sobre lo autorizado)", () => {
+  const fila = (encabezado: string, motivo: string) =>
+    parseImportLineas(`Cód. árbol,Especie,Longitud,${encabezado}\n001-TOR,Tornillo,8,${motivo}`, "tala").filas[0];
+
+  it.each(["motivo", "Motivo", "Motivo sobre cupo", "MOTIVO SOBRE CUPO", "justificación", "Justificacion"])(
+    "reconoce el encabezado «%s»",
+    (h) => {
+      const r = parseImportLineas(`Cód. árbol,Especie,Longitud,${h}\n001-TOR,Tornillo,8,Rebrote por lluvia`, "tala");
+      expect(r.ignoradas).toEqual([]);
+      expect(r.filas[0].motivoSobreCupo).toBe("Rebrote por lluvia");
+    },
+  );
+
+  it("sin la columna o con la celda vacía, el motivo es null", () => {
+    expect(fila("motivo", "").motivoSobreCupo).toBeNull();
+    expect(parseImportLineas("Cód. árbol,Especie,Longitud\n001-TOR,Tornillo,8", "tala").filas[0].motivoSobreCupo).toBeNull();
+  });
+
+  it("también llega desde un .xlsx ya leído a celdas", () => {
+    const r = parseImportLineasCeldas([["Cód. árbol", "Especie", "Longitud", "Motivo sobre cupo"], ["001-TOR", "Tornillo", 8, "Tala de seguridad"]], "tala");
+    expect(r.filas[0].motivoSobreCupo).toBe("Tala de seguridad");
+  });
+});
+
+describe("mensajeErrorFilaImport · T9", () => {
+  const t9 = { error: "T9_CUPO_ESPECIE", message: "x", detail: { especie: "Tornillo", cupoM3: 320, taladoConEsteM3: 325.1 } };
+
+  it("fila sin motivo: dice qué columna agregar y cuántas letras", () => {
+    expect(mensajeErrorFilaImport(7, 422, t9, null)).toBe(
+      'Fila 7: Tornillo pasa lo autorizado (325,1 de 320 m³). Agrega una columna "motivo" con al menos 5 letras',
+    );
+  });
+
+  it("motivo demasiado corto: pide alargarlo (misma regla del servidor)", () => {
+    expect(mensajeErrorFilaImport(7, 422, t9, "sí")).toContain("muy corto");
+  });
+
+  it("otros errores conservan el mensaje del servidor", () => {
+    expect(mensajeErrorFilaImport(2, 422, { error: "T3_TALA_DUPLICADA", message: "Ya talado" }, null)).toBe("Fila 2: Ya talado");
+    expect(mensajeErrorFilaImport(3, 500, {}, null)).toBe("Fila 3: HTTP 500");
+  });
+});

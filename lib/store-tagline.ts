@@ -14,9 +14,9 @@ const TAGLINES_BY_CATEGORY: Record<string, string[]> = {
     "Tu bodega de confianza, a la vuelta de la esquina.",
     "El básico que nunca te falta, ahora con delivery.",
     "Frescura, abarrotes y atención de barrio en una sola app.",
-    "Lo que necesitás de la bodega de siempre, sin salir de casa.",
+    "Lo que necesitas de la bodega de siempre, sin salir de casa.",
     "Tu vecino bodeguero, ahora también online.",
-    "Pedís, pagás con Yape y recibís en minutos. Como siempre, pero más fácil.",
+    "Pides, pagas con Yape y recibes en minutos. Como siempre, pero más fácil.",
   ],
   minimarket: [
     "Variedad de minimarket, comodidad de delivery.",
@@ -30,16 +30,16 @@ const TAGLINES_BY_CATEGORY: Record<string, string[]> = {
   ],
   restaurante: [
     "El sabor de siempre, ahora a un toque de tu celular.",
-    "Cocina hecha al momento, lista cuando llegás.",
+    "Cocina hecha al momento, lista cuando llegas.",
     "Menú casero del día, recién preparado por nosotros.",
   ],
   panaderia: [
     "Pan tibio, pasteles del día, café cargado.",
-    "Recién horneado, todavía caliente cuando lo recibís.",
+    "Recién horneado, todavía caliente cuando lo recibes.",
     "Tu panadería de cada mañana, sin colas.",
   ],
   farmacia: [
-    "Medicamentos, primeros auxilios, lo que necesitás cuando lo necesitás.",
+    "Medicamentos, primeros auxilios, lo que necesitas cuando lo necesitas.",
     "Tu botica de barrio con delivery rápido y reserva online.",
   ],
   ropa: [
@@ -48,12 +48,12 @@ const TAGLINES_BY_CATEGORY: Record<string, string[]> = {
   ],
   heladeria: [
     "Helados artesanales, esa cremita que solo nosotros tenemos.",
-    "Refrescá tu día con sabores recién hechos.",
+    "Refresca tu día con sabores recién hechos.",
   ],
 };
 
 const GENERIC_FALLBACKS: string[] = [
-  "Cerca tuyo, listo cuando lo necesitás.",
+  "Cerca tuyo, listo cuando lo necesitas.",
   "Atención personal, precios honestos, delivery rápido.",
   "Lo que pides, como lo pides — sin complicaciones.",
   "Tu compra del barrio, ahora también desde el celular.",

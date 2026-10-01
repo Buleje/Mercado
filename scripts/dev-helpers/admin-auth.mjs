@@ -33,7 +33,10 @@ async function main() {
   const res = await fetch(`${BASE}/api/auth/login`, {
     method: "POST",
     headers: { "content-type": "application/json", "x-tenant-id": TENANT },
-    body: JSON.stringify({ username: USER, password: PASS }),
+    // `tenantSlug` es obligatorio para usuarios que existen en varias tiendas:
+    // sin él, el login responde el selector y NO devuelve la cookie de sesión
+    // (solo el csrf), y todo curl posterior sale 401.
+    body: JSON.stringify({ username: USER, password: PASS, tenantSlug: TENANT }),
   });
   if (!res.ok) {
     const txt = await res.text();

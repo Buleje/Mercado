@@ -94,6 +94,44 @@ export function reportPerformanceAnomaly(
 
 // ---------------------------------------------------------------------------
 
+interface SecurityIncidentContext {
+  ip?: string;
+  path?: string;
+  threatTypes?: string[];
+  severity?: string;
+  /** Conteo de amenazas de la IP en la ventana (para el auto-ban). */
+  threatCount?: number;
+  extra?: Record<string, unknown>;
+}
+
+/**
+ * Report a WAF security incident to Sentry (warning-level, so alert rules can
+ * notify without paging). Se usa cuando una IP cruza el umbral y queda
+ * auto-bloqueada — el evento accionable que el dueño quiere ver, no cada probe
+ * de bot. Nunca tira (fire-and-forget desde el sink).
+ */
+export function reportSecurityIncident(summary: string, ctx: SecurityIncidentContext = {}): string {
+  return Sentry.captureMessage(`WAF: ${summary}`, {
+    level: "warning",
+    tags: {
+      category: "security_incident",
+      module: "waf",
+      ...(ctx.severity ? { threat_severity: ctx.severity } : {}),
+      ...(ctx.threatTypes && ctx.threatTypes.length ? { threat_type: ctx.threatTypes[0] } : {}),
+    },
+    extra: {
+      ip: ctx.ip,
+      path: ctx.path,
+      threatTypes: ctx.threatTypes,
+      threatCount: ctx.threatCount,
+      ...ctx.extra,
+      reportedAt: new Date().toISOString(),
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
+
 interface AlertRule {
   name: string;
   condition: string;

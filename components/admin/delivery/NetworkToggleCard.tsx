@@ -19,6 +19,7 @@ import { Truck, Loader2, AlertTriangle, CheckCircle2 } from "@buleje/design-syst
 import { csrfHeaders } from "@/lib/csrf-client";
 import { tenantFetch } from "@/lib/tenant-fetch";
 
+import { SectionTitle } from "@buleje/design-system";
 export default function NetworkToggleCard() {
   const [enabled, setEnabled] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
@@ -73,21 +74,21 @@ export default function NetworkToggleCard() {
   return (
     <section
       aria-labelledby="network-toggle-title"
-      className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6"
+      className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6"
     >
       <header className="flex items-start gap-3 mb-5">
-        <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+        <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
           <Truck className="h-6 w-6" strokeWidth={2.25} aria-hidden />
         </span>
         <div className="min-w-0">
-          <h2
+          <SectionTitle
             id="network-toggle-title"
-            className="text-lg sm:text-xl font-extrabold text-[var(--text-primary)] leading-tight"
+            className="sm:text-xl text-[var(--text-primary)]"
           >
             Red de repartidores Buleje
-          </h2>
+          </SectionTitle>
           <p className="mt-1 text-sm text-[var(--text-secondary)] leading-relaxed">
-            Si activás esta opción, los repartidores de Buleje verán tu tienda en su mapa y podrán aceptar tus pedidos. Si la desactivás, solo tus repartidores propios atienden.
+            Si activas esta opción, los repartidores de Buleje verán tu tienda en su mapa y podrán aceptar tus pedidos. Si la desactivas, solo tus repartidores propios atienden.
           </p>
         </div>
       </header>
@@ -159,7 +160,7 @@ function OptionRadio({
 }) {
   const borderClass = selected
     ? tone === "accent"
-      ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+      ? "border-[var(--accent)] bg-primary/10"
       : "border-[var(--text-secondary)] bg-[var(--surface-sunken)]"
     : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--text-tertiary)]";
   return (
@@ -181,7 +182,7 @@ function OptionRadio({
               : "border-[var(--rule-strong)] bg-transparent"
           }`}
         >
-          {selected && <span className="block h-2 w-2 rounded-full bg-white" />}
+          {selected && <span className="block h-2 w-2 rounded-full bg-[var(--surface-raised)]" />}
         </span>
         <span className="text-base font-extrabold text-[var(--text-primary)]">
           {label}

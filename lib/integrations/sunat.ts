@@ -524,7 +524,7 @@ export async function consultarEstado(
   numero: number
 ): Promise<SunatResponse> {
   // Buscar en DB local por serie+número
-  const { invoices } = await SunatDB.listInvoices(tenantId, { limit: 1 });
+  await SunatDB.listInvoices(tenantId, { limit: 1 });
   // Buscamos manualmente por serie+número (listInvoices no filtra por eso aún)
   const allForTenant = await SunatDB.listInvoices(tenantId, { limit: 200 });
   const invoice = allForTenant.invoices.find(

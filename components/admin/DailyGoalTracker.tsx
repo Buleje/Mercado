@@ -1,12 +1,15 @@
 "use client";
 
-import { SectionTitle } from "@buleje/design-system";
+import { SectionTitle, StatCard } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import {
   Target, TrendingUp, TrendingDown, RefreshCw, Pencil, Check, X,
   ShoppingCart, Activity, Clock, Sparkles,
 } from "@buleje/design-system/icons";
+import { useMiRol } from "@/hooks/use-mi-rol";
+import { puedePedir } from "@/lib/auth/roles-rutas-panel";
+import { formatCurrency, formatNumber, formatTime } from "@/lib/format";
 
 interface Sale {
   id: string;
@@ -48,11 +51,11 @@ function isValidSale(s: unknown): s is Sale {
 }
 
 function fmt(n: number): string {
-  return `S/${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `${formatCurrency(n)}`;
 }
 
 function fmtShort(n: number): string {
-  return `S/${n.toLocaleString("es-PE", { maximumFractionDigits: 0 })}`;
+  return `S/${formatNumber(n, { max: 0 })}`;
 }
 
 function getHourLabel(hour: number): string {
@@ -93,7 +96,6 @@ function findBestHour(buckets: HourlyBucket[]): HourlyBucket | null {
 function computeForecast(total: number, currentHour: number): number | null {
   if (currentHour < OPENING_HOUR) return null;
   const hoursElapsed = Math.max(1, currentHour - OPENING_HOUR + 1);
-  const totalHours = CLOSING_HOUR - OPENING_HOUR + 1;
   const remainingHours = Math.max(0, CLOSING_HOUR - currentHour);
   if (remainingHours === 0) return total;
   const ratePerHour = total / hoursElapsed;
@@ -102,21 +104,21 @@ function computeForecast(total: number, currentHour: number): number | null {
 
 function getMotivationalMessage(pct: number, currentHour: number): string {
   // FIX 2026-05-07 (B5): mensaje específico fuera de horario.
-  if (currentHour < OPENING_HOUR) return "Aún no abre — alistá el día";
+  if (currentHour < OPENING_HOUR) return "Aún no abre — alista el día";
   if (currentHour > CLOSING_HOUR) {
-    return pct >= 100 ? "Día cerrado con la meta cumplida" : "Día cerrado — descansá";
+    return pct >= 100 ? "Día cerrado con la meta cumplida" : "Día cerrado — descansa";
   }
   const hourFraction = (currentHour - OPENING_HOUR) / (CLOSING_HOUR - OPENING_HOUR);
   const pace = pct / 100;
-  if (pct >= 100) return "Meta cumplida — seguí sumando!";
+  if (pct >= 100) return "Meta cumplida — sigue sumando!";
   if (pace >= hourFraction + 0.1) return "Vas adelantado al ritmo — buen día";
   if (pace >= hourFraction - 0.05) return "Estás en ritmo para alcanzar la meta";
-  if (pace >= hourFraction - 0.2) return "Un empujón más y te alcanzás";
-  return "Activá promociones — el día está lento";
+  if (pace >= hourFraction - 0.2) return "Un empujón más y te alcanzas";
+  return "Activa promociones — el día está lento";
 }
 
 function Confetti() {
-  const colors = ["var(--accent)", "#f97316", "#14C2C2", "#f4d03f", "#e76f51"];
+  const colors = ["var(--accent)", "#ff6b5b", "#14C2C2", "#f4d03f", "#e76f51"];
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-xl">
       {Array.from({ length: 24 }).map((_, i) => (
@@ -182,45 +184,14 @@ function HourlyChart({ buckets }: { buckets: HourlyBucket[] }) {
   );
 }
 
-interface KPIProps {
-  label: string;
-  value: string;
-  sub?: string;
-  delta?: number | null;
-  icon: React.ElementType;
-  accent?: "success" | "warning" | "danger" | "neutral";
-}
-
-function KPICard({ label, value, sub, delta, icon: Icon, accent = "neutral" }: KPIProps) {
-  const accentText = {
-    success: "text-[var(--data-success-500)]",
-    warning: "text-[var(--data-warning-500)]",
-    danger:  "text-[var(--data-error-500)]",
-    neutral: "text-[var(--text-primary)]",
-  }[accent];
-
-  return (
-    <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex flex-col gap-2 min-w-0">
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] truncate">{label}</span>
-        <Icon className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" />
-      </div>
-      <p className={cn("text-2xl font-extrabold tabular-nums leading-none truncate", accentText)}>{value}</p>
-      <div className="flex items-center gap-1.5 text-xs">
-        {delta != null && (
-          <span className={cn(
-            "inline-flex items-center gap-0.5 font-bold",
-            delta >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]"
-          )}>
-            {delta >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-            {Math.abs(Math.round(delta))}%
-          </span>
-        )}
-        {sub && <span className="text-[var(--text-tertiary)] truncate">{sub}</span>}
-      </div>
-    </div>
-  );
-}
+/**
+ * Migración a StatCard (canon KPI 2026-09-22): la local `KPICard` mapea
+ * accent → emphasis 1:1 (danger → error). Cuando había `delta` numérico se usa
+ * el trend nativo de StatCard (flecha + %); cuando sólo había `sub` sin delta
+ * (Transacciones/Ticket/Mejor hora), va a `subValue` — pasarlo por
+ * `deltaLabel` habría dibujado una flecha de tendencia que el original no
+ * tenía para esos tres.
+ */
 
 interface DailyGoalTrackerProps {
   dailyGoal?: number;
@@ -229,6 +200,12 @@ interface DailyGoalTrackerProps {
 export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAILY_GOAL }: DailyGoalTrackerProps) {
   const [dailyGoal, setDailyGoal] = useState<number>(initialGoal);
   const [editing, setEditing] = useState(false);
+  // Foco al entrar en edición, sin `autoFocus` (jsx-a11y/no-autofocus): el foco
+  // lo pide la acción explícita de «Editar meta», no la aparición del campo.
+  const goalInputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (editing) goalInputRef.current?.focus();
+  }, [editing]);
   const [tempGoal, setTempGoal] = useState("");
   const [editError, setEditError] = useState<string | null>(null);
   const [allSales, setAllSales] = useState<Sale[]>([]);
@@ -241,6 +218,11 @@ export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAIL
   // (caso: dueño abre el panel a las 18h y ya superó la meta).
   const prevTotalRef = useRef<number | null>(null);
   const fetchAbortRef = useRef<AbortController | null>(null);
+  // Gate de rol (2026-09-14): /api/sales deja pasar admin/cajero/owner/manager/
+  // tienda_owner (requireAdmin) — un rol fuera de esa lista (p.ej. almacenero,
+  // si llega a montar esta tarjeta) recibía 403 en cada poll de 30s.
+  const rol = useMiRol();
+  const puedeSales = puedePedir("/api/sales", rol);
 
   // Cargar meta diaria persistida (FIX B2: key tenant-scoped)
   useEffect(() => {
@@ -255,11 +237,11 @@ export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAIL
     const v = Number(tempGoal);
     // FIX 2026-05-07 (F4): validación con feedback visible al dueño.
     if (!Number.isFinite(v) || v <= 0) {
-      setEditError("Ingresá un monto mayor a 0");
+      setEditError("Ingresa un monto mayor a 0");
       return;
     }
     if (v > MAX_DAILY_GOAL) {
-      setEditError(`Máximo permitido: S/${MAX_DAILY_GOAL.toLocaleString("es-PE")}`);
+      setEditError(`Máximo permitido: S/${formatNumber(MAX_DAILY_GOAL)}`);
       return;
     }
     setEditError(null);
@@ -269,6 +251,10 @@ export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAIL
   };
 
   const fetchSales = useCallback(async () => {
+    // Rol sin permiso (p.ej. almacenero) → ni intentarlo, requireAdmin lo
+    // rechaza siempre con 403. Sin ventas que mostrar, no un error — el rol
+    // simplemente no tiene esta métrica.
+    if (!puedeSales) { setLoading(false); return; }
     // FIX 2026-05-07 (S3 + B8): cancelar request en curso antes de iniciar uno
     // nuevo. Previene race conditions y handlers de unmount.
     fetchAbortRef.current?.abort();
@@ -297,7 +283,7 @@ export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAIL
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [puedeSales]);
 
   // FIX 2026-05-07 (B1): polling pausa con visibilitychange. Antes consumía
   // requests cada 30s aunque el dueño tuviera la pestaña minimizada.
@@ -452,7 +438,7 @@ export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAIL
           <div>
             <SectionTitle className="text-lg font-semibold text-[var(--text-primary)]">Meta del dia</SectionTitle>
             <p className="text-xs text-[var(--text-tertiary)]">
-              {lastUpdated ? `Actualizado ${lastUpdated.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}` : "Cargando..."}
+              {lastUpdated ? `Actualizado ${formatTime(lastUpdated)}` : "Cargando..."}
             </p>
           </div>
         </div>
@@ -476,18 +462,19 @@ export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAIL
                   onKeyDown={(e) => e.key === "Enter" && saveGoal()}
                   min={1}
                   max={MAX_DAILY_GOAL}
-                  autoFocus
+                  ref={goalInputRef}
+                  aria-label="Meta diaria en soles"
                   aria-invalid={!!editError}
                   aria-describedby={editError ? "daily-goal-error" : undefined}
                   className={cn(
-                    "w-24 px-2 py-1 text-xs rounded-lg border bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] outline-none",
+                    "w-24 px-2 py-1 text-xs rounded-xl border bg-[var(--surface-raised)] text-[var(--text-primary)] outline-none",
                     editError ? "border-[var(--data-error-500)] focus:border-[var(--data-error-500)]" : "border-[var(--rule-base)] focus:border-primary",
                   )}
                 />
-                <button onClick={saveGoal} aria-label="Guardar meta" className="p-1 rounded-lg hover:bg-[var(--accent-soft)] text-[var(--data-success-500)]">
+                <button onClick={saveGoal} aria-label="Guardar meta" className="p-1 rounded-xl hover:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
                   <Check className="w-3.5 h-3.5" />
                 </button>
-                <button onClick={() => { setEditing(false); setEditError(null); }} aria-label="Cancelar" className="p-1 rounded-lg hover:bg-[var(--data-error-500)]/10 text-[var(--data-error-500)]">
+                <button onClick={() => { setEditing(false); setEditError(null); }} aria-label="Cancelar" className="p-1 rounded-xl hover:bg-[var(--data-error-500)]/10 text-[var(--data-error-500)]">
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -504,7 +491,7 @@ export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAIL
             aria-label="Refrescar"
             className={cn(
               "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
-              "text-primary hover:bg-[var(--accent-soft)]",
+              "text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10",
               loading && "opacity-50 cursor-not-allowed"
             )}
           >
@@ -516,7 +503,7 @@ export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAIL
       {/* Tarjeta principal */}
       <div className={cn(
         "relative rounded-xl border-2 p-6 overflow-hidden transition-all duration-[var(--dur-slow)]",
-        isGoalMet ? "border-[var(--data-success-500)]/30 bg-[var(--accent-soft)]" : "border-[var(--rule-base)] bg-[var(--surface-raised)]"
+        isGoalMet ? "border-[var(--data-success-500)]/30 bg-primary/10" : "border-[var(--rule-base)] bg-[var(--surface-raised)]"
       )}>
         {celebrated && <Confetti />}
 
@@ -544,7 +531,7 @@ export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAIL
               <div className={cn(
                 "inline-flex items-center gap-1.5 mt-3 px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider",
                 pct >= 100 && "bg-[var(--data-success-500)]/15 text-[var(--data-success-500)]",
-                pct >= 80 && pct < 100 && "bg-primary/15 text-primary",
+                pct >= 80 && pct < 100 && "bg-primary/15 text-[var(--accent-ink)] dark:text-[var(--accent)]",
                 pct >= 50 && pct < 80 && "bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)]",
                 pct < 50 && "bg-[var(--data-error-500)]/15 text-[var(--data-error-500)]",
               )}>
@@ -575,7 +562,7 @@ export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAIL
             </div>
 
             {isGoalMet ? (
-              <div className="text-center py-2 rounded-xl bg-[var(--accent-soft)]">
+              <div className="text-center py-2 rounded-xl bg-primary/10">
                 <p className="text-[var(--data-success-500)] font-bold text-sm">Meta superada por {fmt(stats.todayTotal - dailyGoal)}</p>
               </div>
             ) : (
@@ -603,7 +590,7 @@ export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAIL
               Te queda poco tiempo
             </p>
             <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-              Necesitás vender <span className="font-bold text-[var(--text-primary)]">{fmt(isUrgent.ratePerHour)}</span> por hora durante las próximas {isUrgent.remainingHours}h para alcanzar la meta. Activá una promo o llamá a clientes habituales.
+              Necesitas vender <span className="font-bold text-[var(--text-primary)]">{fmt(isUrgent.ratePerHour)}</span> por hora durante las próximas {isUrgent.remainingHours}h para alcanzar la meta. Activa una promo o llama a clientes habituales.
             </p>
           </div>
         </div>
@@ -625,7 +612,7 @@ export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAIL
         <div className={cn(
           "rounded-xl border p-4 flex items-start gap-3",
           stats.forecast >= dailyGoal
-            ? "border-[var(--data-success-500)]/30 bg-[var(--accent-soft)]"
+            ? "border-[var(--data-success-500)]/30 bg-primary/10"
             : "border-[var(--data-warning-500)]/30 bg-[var(--data-warning-50)]"
         )}>
           <Sparkles className={cn(
@@ -634,12 +621,12 @@ export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAIL
           )} />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold text-[var(--text-primary)]">
-              A este ritmo terminás el día con {fmt(stats.forecast)}
+              A este ritmo terminas el día con {fmt(stats.forecast)}
             </p>
             <p className="text-xs text-[var(--text-secondary)] mt-0.5">
               {stats.forecast >= dailyGoal
                 ? `Vas a superar la meta por ${fmt(stats.forecast - dailyGoal)}.`
-                : `Te van a faltar ${fmt(Math.max(0, dailyGoal - stats.forecast))} para alcanzar la meta. Acelerá el ritmo.`}
+                : `Te van a faltar ${fmt(Math.max(0, dailyGoal - stats.forecast))} para alcanzar la meta. Acelera el ritmo.`}
             </p>
           </div>
         </div>
@@ -647,31 +634,30 @@ export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAIL
 
       {/* 4 KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <KPICard
+        <StatCard
           label="Ventas hoy"
           value={fmtShort(stats.todayTotal)}
           icon={Target}
-          accent={pct >= 100 ? "success" : pct >= 50 ? "neutral" : "danger"}
-          delta={stats.deltaVsYesterday}
-          sub={stats.deltaVsYesterday != null ? "vs ayer al mismo horario" : undefined}
+          emphasis={pct >= 100 ? "success" : pct >= 50 ? "neutral" : "error"}
+          delta={stats.deltaVsYesterday ?? undefined}
+          deltaLabel={stats.deltaVsYesterday != null ? "vs ayer al mismo horario" : undefined}
         />
-        <KPICard
+        <StatCard
           label="Transacciones"
           value={String(stats.todayCount)}
           icon={ShoppingCart}
-          sub={`Ayer cerró ${stats.yesterdayTotal > 0 ? Math.round((stats.yesterdayUntilNowTotal / Math.max(1, stats.yesterdayTotal)) * 100) : 0}% a esta hora`}
+          subValue={`Ayer cerró ${stats.yesterdayTotal > 0 ? Math.round((stats.yesterdayUntilNowTotal / Math.max(1, stats.yesterdayTotal)) * 100) : 0}% a esta hora`}
         />
-        <KPICard
+        <StatCard
           label="Ticket promedio"
           value={stats.todayAOV > 0 ? fmtShort(stats.todayAOV) : "Sin ventas"}
           icon={Activity}
-          accent={stats.todayAOV > 0 ? "neutral" : undefined}
         />
-        <KPICard
+        <StatCard
           label="Mejor hora"
           value={stats.bestHour ? stats.bestHour.label : "—"}
           icon={Clock}
-          sub={stats.bestHour ? `${fmtShort(stats.bestHour.revenue)} · ${stats.bestHour.count} ${stats.bestHour.count === 1 ? "venta" : "ventas"}` : "Aún sin ventas"}
+          subValue={stats.bestHour ? `${fmtShort(stats.bestHour.revenue)} · ${stats.bestHour.count} ${stats.bestHour.count === 1 ? "venta" : "ventas"}` : "Aún sin ventas"}
         />
       </div>
 

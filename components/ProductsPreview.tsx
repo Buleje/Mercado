@@ -104,7 +104,7 @@ export default function ProductsPreview() {
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className={`text-center mb-14 transition-all duration-[var(--dur-slower)] ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
-          <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary mb-3 bg-primary/8 rounded-full px-4 py-1.5">
+          <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[var(--accent-ink)] dark:text-[var(--accent)] mb-3 bg-primary/8 rounded-full px-4 py-1.5">
             <Sparkles className="h-3.5 w-3.5" />
             {hp.previewBadge}
           </span>
@@ -128,7 +128,7 @@ export default function ProductsPreview() {
             <Link
               key={cat.id}
               href="/tienda"
-              className="group inline-flex items-center gap-2 bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-full px-4 py-2 text-sm font-semibold text-[var(--text-primary)] hover:border-primary/30 hover:bg-primary/5 hover:text-primary transition-all shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)]"
+              className="group inline-flex items-center gap-2 bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-full px-4 py-2 text-sm font-semibold text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] hover:border-primary/30 hover:bg-primary/5 hover:text-[var(--accent-ink)] dark:text-[var(--accent)] transition-all shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)]"
             >
               <span className="text-base">{cat.emoji}</span>
               <span>{cat.label}</span>

@@ -4,7 +4,7 @@ import { AnalyticsAnomaliasDB } from "@/lib/db/analytics-anomalias.db";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
 
-type Anomalia = {
+export type Anomalia = {
   type: "venta_baja" | "stock_muerto" | "fiado_vencido" | "margen_critico";
   severity: "alto" | "medio" | "bajo";
   title: string;

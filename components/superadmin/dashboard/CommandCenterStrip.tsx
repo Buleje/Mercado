@@ -8,7 +8,6 @@ import {
   AlertTriangle,
   TrendingDown,
   UserPlus,
-  MessageSquare,
   Activity,
   ArrowRight,
   Megaphone,

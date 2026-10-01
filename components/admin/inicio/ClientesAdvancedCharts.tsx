@@ -12,6 +12,8 @@
  */
 
 import React, { memo, useMemo } from "react";
+import { DataTable } from "@buleje/design-system";
+import { Trophy, HeartHandshake, AlertTriangle, Leaf, CheckCircle2 } from "@buleje/design-system/icons";
 import { useDashboardData } from "@/contexts/dashboard-data-context";
 import {
   BulejeComposedChart,
@@ -19,6 +21,7 @@ import {
 } from "@/components/ui-system/charts";
 import { DashboardSection } from "./_shared";
 import { DraggableSections, type DraggableItem } from "./DraggableSections";
+import { formatMonth, formatNumber } from "@/lib/format";
 
 type Customer = {
   phone?: string;
@@ -63,7 +66,7 @@ export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
     for (let c = 3; c >= 0; c--) {
       const cStart = new Date(now.getFullYear(), now.getMonth() - c, 1);
       const cEnd = new Date(now.getFullYear(), now.getMonth() - c + 1, 0, 23, 59, 59);
-      const label = cStart.toLocaleDateString("es-PE", { month: "short" });
+      const label = formatMonth(cStart);
       const allPhonesBefore = new Set<string>();
       orders
         .filter((o) => o.status === "entregado" && new Date(o.createdAt) < cStart)
@@ -203,7 +206,7 @@ export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
   // ── 3. DISTRIBUCIÓN DE RATING ─────────────────────────────────────────────
   const ratingChart = useMemo(() => {
     const arr = [1, 2, 3, 4, 5].map((r) => ({
-      rating: `${r}★`,
+      rating: `${r}/5`,
       cantidad: reviews.filter((rv) => Math.round(rv.rating) === r).length,
     }));
     const total = arr.reduce((s, x) => s + x.cantidad, 0);
@@ -335,7 +338,7 @@ export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
     return { rows, high, med, valueAtRisk };
   }, [orders, sales]);
 
-  const fmtS = (v: number) => `S/ ${v.toLocaleString("es-PE", { maximumFractionDigits: 0 })}`;
+  const fmtS = (v: number) => `S/ ${formatNumber(v, { max: 0 })}`;
 
   const sections: DraggableItem[] = [
     {
@@ -386,7 +389,7 @@ export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
           ]}
         >
           <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
+            <DataTable className="min-w-full text-sm">
               <thead>
                 <tr>
                   <th className="text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] pb-2 pr-3">
@@ -443,7 +446,7 @@ export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </DataTable>
           </div>
         </DashboardSection>
       ),
@@ -458,10 +461,10 @@ export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
 kicker="RFM · recency × frequency · monetary = tamaño"
           title="Segmentación estratégica de clientes"
           kpis={[
-            { label: "🏆 Champions", value: String(rfm.counts.champions), tone: "success" },
-            { label: "💙 Leales", value: String(rfm.counts.loyal), tone: "primary" },
-            { label: "⚠️ En riesgo", value: String(rfm.counts.risk), tone: "warning" },
-            { label: "🌱 Nuevos", value: String(rfm.counts.new), tone: "neutral" },
+            { label: "Champions", icon: Trophy, value: String(rfm.counts.champions), tone: "success" },
+            { label: "Leales", icon: HeartHandshake, value: String(rfm.counts.loyal), tone: "primary" },
+            { label: "En riesgo", icon: AlertTriangle, value: String(rfm.counts.risk), tone: "warning" },
+            { label: "Nuevos", icon: Leaf, value: String(rfm.counts.new), tone: "neutral" },
           ]}
         >
           {rfm.rows.length === 0 ? (
@@ -478,17 +481,17 @@ kicker="RFM · recency × frequency · monetary = tamaño"
                 className="absolute left-0 right-0 border-t-2 border-dashed border-[var(--rule-base)]"
                 style={{ top: "50%" }}
               />
-              <span className="absolute top-2 left-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-primary">
-                🌱 Nuevos
+              <span className="absolute top-2 left-3 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-primary">
+                <Leaf className="h-4 w-4" aria-hidden /> Nuevos
               </span>
-              <span className="absolute top-2 right-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-success-500)]">
-                🏆 Champions
+              <span className="absolute top-2 right-3 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-success-500)]">
+                <Trophy className="h-4 w-4" aria-hidden /> Champions
               </span>
-              <span className="absolute bottom-2 left-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-warning-500)]">
-                ⚠️ En riesgo
+              <span className="absolute bottom-2 left-3 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-warning-500)]">
+                <AlertTriangle className="h-4 w-4" aria-hidden /> En riesgo
               </span>
-              <span className="absolute bottom-2 right-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)]">
-                💙 Leales
+              <span className="absolute bottom-2 right-3 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)]">
+                <HeartHandshake className="h-4 w-4" aria-hidden /> Leales
               </span>
               <span className="absolute top-1/2 left-2 -translate-y-1/2 text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] -rotate-90">
                 ← Más reciente
@@ -546,12 +549,12 @@ kicker="Satisfacción · todos los periodos"
             { label: "Total reseñas", value: String(ratingChart.total), tone: "primary" },
             { label: "Promedio", value: Number(ratingChart.promedio).toFixed(1), tone: "success" },
             {
-              label: "4★ y 5★",
+              label: "4 y 5 estrellas",
               value: String(ratingChart.buenos),
               tone: "success",
             },
             {
-              label: "1★ y 2★",
+              label: "1 y 2 estrellas",
               value: String(ratingChart.malos),
               tone: ratingChart.malos > 0 ? "warning" : "success",
             },
@@ -570,7 +573,7 @@ kicker="Satisfacción · todos los periodos"
             />
           ) : (
             <div className="rounded-lg border border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">
-              Sin reseñas aún. Invitá a tus clientes a dejar feedback.
+              Sin reseñas aún. Invita a tus clientes a dejar feedback.
             </div>
           )}
         </DashboardSection>
@@ -699,8 +702,9 @@ kicker="Comparativa · nuevos clientes semana a semana"
           ]}
         >
           {churn.rows.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">
-              Sin clientes en riesgo ✓ — todos compraron recientemente.
+            <div className="flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">
+              <CheckCircle2 className="h-4 w-4 shrink-0 text-[var(--data-success-500)]" aria-hidden />
+              Sin clientes en riesgo — todos compraron recientemente.
             </div>
           ) : (
             <ul className="space-y-2">

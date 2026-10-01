@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { CustomersDB, normalizePhone } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
+import { RUTAS_PANEL } from "@/lib/auth/roles-rutas-panel";
 import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
@@ -49,7 +50,7 @@ const CustomerPostSchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req, ["admin"]);
+  const auth = await requireAdmin(req, RUTAS_PANEL["/api/customers"]);
   if (auth instanceof NextResponse) return auth;
   const rl = applyRateLimit(req, "GENEROUS", "customers-get");
   if (rl) return rl;
@@ -132,7 +133,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const auth = await requireAdmin(req, ["admin"]);
+  const auth = await requireAdmin(req, RUTAS_PANEL["/api/customers"]);
   if (auth instanceof NextResponse) return auth;
   const blocked = await requireActiveSubscription(auth.tenantId);
   if (blocked) return blocked;

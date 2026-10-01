@@ -229,7 +229,7 @@ export default function HorariosModal({
                 className={cn(
                   "flex flex-col items-center gap-1.5 rounded-xl py-2.5 px-1 border-2 transition-colors",
                   isToday
-                    ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+                    ? "border-[var(--accent)] bg-primary/10"
                     : closed
                       ? "border-transparent bg-[var(--surface-sunken)]"
                       : "border-transparent bg-[var(--surface-raised)]",
@@ -284,7 +284,7 @@ export default function HorariosModal({
             "rounded-2xl p-5 border-2",
             todayClosed
               ? "border-[var(--data-warning-200,var(--rule-base))] bg-[var(--data-warning-50)]"
-              : "border-[var(--accent)]/30 bg-[var(--accent-soft)]",
+              : "border-[var(--accent)]/30 bg-primary/10",
           )}
         >
           <div className="flex items-start justify-between gap-3">

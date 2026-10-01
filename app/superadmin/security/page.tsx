@@ -25,22 +25,20 @@ import {
   ShieldAlert,
   ClipboardCheck,
   ScrollText,
+  Target,
 } from "@buleje/design-system/icons";
 import { SecurityHero } from "@/components/superadmin/security/SecurityHero";
 import { OverviewTab } from "@/components/superadmin/security/OverviewTab";
+import { ThreatsTab } from "@/components/superadmin/security/ThreatsTab";
 import { AuthSessionsTab } from "@/components/superadmin/security/AuthSessionsTab";
 import { PermissionsTab } from "@/components/superadmin/security/PermissionsTab";
 import { VulnerabilitiesTab } from "@/components/superadmin/security/VulnerabilitiesTab";
 import { ComplianceTab } from "@/components/superadmin/security/ComplianceTab";
 import { AuditLogTab } from "@/components/superadmin/security/AuditLogTab";
+import { SUPERADMIN_PAGE, SUPERADMIN_CONTENT } from "@/lib/superadmin-layout";
+import { SuperAdminModuleTabs, SEGURIDAD_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 
-type TabKey =
-  | "overview"
-  | "auth"
-  | "permissions"
-  | "vulnerabilities"
-  | "compliance"
-  | "audit";
+type TabKey = "overview" | "threats" | "auth" | "permissions" | "vulnerabilities" | "compliance" | "audit";
 
 interface TabDef {
   key: TabKey;
@@ -50,6 +48,7 @@ interface TabDef {
 
 const TABS: TabDef[] = [
   { key: "overview", label: "Overview", icon: LayoutDashboard },
+  { key: "threats", label: "Amenazas", icon: Target },
   { key: "auth", label: "Auth & Sesiones", icon: Lock },
   { key: "permissions", label: "Permisos", icon: Users },
   { key: "vulnerabilities", label: "Vulnerabilidades", icon: ShieldAlert },
@@ -90,7 +89,8 @@ export default function SecurityCenterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--surface-canvas)]">
+    <div className={SUPERADMIN_PAGE}>
+      <SuperAdminModuleTabs tabs={SEGURIDAD_TABS} />
       <SecurityHero
         lastScanLabel={fmtRelativeFromMs(lastRefreshMs)}
         status="healthy"
@@ -137,9 +137,10 @@ export default function SecurityCenterPage() {
         role="tabpanel"
         id={`panel-${active}`}
         aria-labelledby={`tab-${active}`}
-        className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8"
+        className={SUPERADMIN_CONTENT}
       >
         {active === "overview" && <OverviewTab />}
+        {active === "threats" && <ThreatsTab />}
         {active === "auth" && <AuthSessionsTab />}
         {active === "permissions" && <PermissionsTab />}
         {active === "vulnerabilities" && <VulnerabilitiesTab />}

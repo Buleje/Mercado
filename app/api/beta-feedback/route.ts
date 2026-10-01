@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { readData, writeData } from "@/lib/file-store";
+import { esClaveInexistente, readData, writeData } from "@/lib/file-store";
 import { z } from "zod";
 import { applyRateLimit } from "@/lib/rate-limit";
 
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     const { rating, comment } = parsed.data;
 
     let all: FeedbackEntry[] = [];
-    try { all = await readData<FeedbackEntry[]>("beta-feedback"); } catch { /* first write */ }
+    try { all = await readData<FeedbackEntry[]>("beta-feedback"); } catch (err) { if (!esClaveInexistente(err)) throw err; /* primera escritura: todavía no hay archivo */ }
     all.push({ rating, comment, createdAt: new Date().toISOString() });
     await writeData("beta-feedback", all);
 
