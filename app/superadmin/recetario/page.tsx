@@ -581,12 +581,12 @@ export default function SuperAdminRecetarioPage() {
                 <ChefHat className="w-8 h-8 text-[var(--data-success-500)]" />
               </div>
               <h3 className="font-semibold text-[var(--text-primary)] mb-1">
-                {search ? "Sin resultados" : "Sin recetas aun"}
+                {search ? "Sin resultados" : "Sin recetas aún"}
               </h3>
               <p className="text-sm text-[var(--text-tertiary)] max-w-xs">
                 {search
                   ? `No hay recetas que coincidan con "${search}".`
-                  : "El recetario esta vacio. Crea la primera receta."}
+                  : "El recetario está vacío. Crea la primera receta."}
               </p>
               {search && (
                 <button

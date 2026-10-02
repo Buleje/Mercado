@@ -39,6 +39,7 @@ import {
   Repeat,
   Zap,
 } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import SuperadminChartCard from "@/components/superadmin/_shared/SuperadminChartCard";
 
 interface ExecutiveData {
@@ -180,13 +181,11 @@ export default function ExecutiveAnalytics({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] tracking-tight">
-          Análisis ejecutivo de plataforma
+      <div className="flex items-center gap-1">
+        <h2 className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] tracking-tight">
+          Análisis ejecutivo
         </h2>
-        <p className="text-base text-[var(--text-secondary)] mt-1">
-          Insights accionables — todo en vivo desde la base de datos. Cada sección destaca una decisión.
-        </p>
+        <InfoTip title="Análisis ejecutivo" what="Datos en vivo de toda la plataforma. Cada sección destaca una decisión." />
       </div>
 
       {/* ─── ROW 1: Operations Health (status funnel + heatmap) ───────────── */}
@@ -194,7 +193,7 @@ export default function ExecutiveAnalytics({
         <SuperadminChartCard
           kicker="OPERACIÓN"
           title={`Embudo de pedidos${periodSuffix}`}
-          description="Estado actual de cada pedido. La tasa de cancelación es el indicador clave."
+          info="Estado actual de cada pedido. La tasa de cancelación es el indicador clave."
           actions={
             <InsightBadge
               tone={data.cancelRate > 15 ? "negative" : data.cancelRate > 5 ? "neutral" : "positive"}
@@ -353,7 +352,7 @@ export default function ExecutiveAnalytics({
         <SuperadminChartCard
           kicker="CLIENTES"
           title="Salud del cliente"
-          description="¿Vuelven o compran solo una vez?"
+          info="¿Vuelven o compran solo una vez?"
           actions={
             <InsightBadge
               tone={data.repeatRate >= 30 ? "positive" : data.repeatRate >= 15 ? "neutral" : "negative"}
@@ -408,7 +407,7 @@ export default function ExecutiveAnalytics({
           <SuperadminChartCard
             kicker="RETENCIÓN · COHORTES"
             title="Conversión por cohorte de alta"
-            description="De cada grupo de tiendas dadas de alta en un mes, cuántas pagan hoy."
+            info="De cada grupo de tiendas dadas de alta en un mes, cuántas pagan hoy."
             actions={(() => {
               const best = data.cohorts.reduce((a, b) => (b.conversionPct > a.conversionPct ? b : a));
               return <InsightBadge tone={best.conversionPct >= 30 ? "positive" : "neutral"} text={`Mejor ${best.conversionPct}%`} />;
@@ -472,7 +471,7 @@ export default function ExecutiveAnalytics({
         <SuperadminChartCard
           kicker="VIPs"
           title="Top 10 clientes por gasto"
-          description="Clientes finales con más gasto agregado cross-tenant"
+          info="Clientes finales con más gasto agregado cross-tenant"
         >
           {data.topCustomers.length === 0 ? (
             <p className="text-base text-[var(--text-tertiary)] py-6 text-center">
@@ -509,7 +508,7 @@ export default function ExecutiveAnalytics({
         <SuperadminChartCard
           kicker="VENDIDOS"
           title="Top 10 productos del mes"
-          description="Productos con más unidades vendidas en el mes en curso"
+          info="Productos con más unidades vendidas en el mes en curso"
         >
           {data.productVelocity.length === 0 ? (
             <p className="text-base text-[var(--text-tertiary)] py-6 text-center">
@@ -549,7 +548,7 @@ export default function ExecutiveAnalytics({
         <SuperadminChartCard
           kicker="ALERTA"
           title="Stock crítico cross-tenant"
-          description="Productos con stock ≤ 5. Avisá al merchant antes de que se agote."
+          info="Productos con stock ≤ 5. Avisa al comercio antes de que se agote."
           actions={
             data.stockAlerts.length > 0 ? (
               <InsightBadge tone="negative" text={`${data.stockAlerts.length} productos`} />
@@ -602,7 +601,7 @@ export default function ExecutiveAnalytics({
         <SuperadminChartCard
           kicker="PAGOS"
           title="Métodos de pago — mes en curso"
-          description="Distribución por revenue procesado"
+          info="Distribución por revenue procesado"
         >
           {data.paymentMethods.length === 0 ? (
             <p className="text-base text-[var(--text-tertiary)] py-6 text-center">

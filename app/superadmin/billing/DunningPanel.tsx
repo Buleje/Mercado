@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import {
   AlertTriangle, XCircle, Clock, CreditCard,
   TrendingUp, TrendingDown, MessageSquare, ArrowRight,
@@ -55,10 +56,12 @@ export function DunningPanel({ movement, dunning }: { movement: MrrMovement; dun
       {/* MRR este mes */}
       <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4 sm:p-5">
         <div className="mb-3 flex items-center justify-between gap-3">
-          <h3 className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
-            Movimiento de MRR · <span className="capitalize text-[var(--text-secondary)]">{movement.monthLabel}</span>
-          </h3>
-          <span className="text-xs font-bold text-[var(--text-tertiary)]">altas y fugas (sin cambios de plan)</span>
+          <div className="flex items-center gap-1">
+            <h3 className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
+              Movimiento de MRR · <span className="capitalize text-[var(--text-secondary)]">{movement.monthLabel}</span>
+            </h3>
+            <InfoTip title="Movimiento de MRR" what="Altas y fugas del mes. No cuenta los cambios de plan." example="Neto = nuevo − fuga." />
+          </div>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
           <MovementStat label="Nuevo" value={`+${fmtPEN(movement.newMRRPEN)}`} count={`${movement.newCount} altas pagas`} tone="pos" icon={TrendingUp} />
@@ -88,8 +91,8 @@ export function DunningPanel({ movement, dunning }: { movement: MrrMovement; dun
                     <p className={`flex items-center gap-1.5 text-sm font-extrabold ${meta.accent}`}>
                       <Icon className="h-4 w-4 shrink-0" /> {b.label}
                       <span className="rounded-full bg-[var(--surface-raised)] px-1.5 text-xs tabular-nums">{b.count}</span>
+                      <InfoTip title={b.label} what={b.hint} />
                     </p>
-                    <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">{b.hint}</p>
                   </div>
                   <span className={`shrink-0 text-sm font-extrabold tabular-nums ${b.kind === "opportunity" ? "text-[var(--accent)]" : meta.accent}`}>
                     {fmtPEN(b.amountPEN)}

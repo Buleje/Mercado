@@ -20,6 +20,7 @@
  *  - Atajos: `/` busca · `R` recarga · `Esc` cierra modal/limpia filtros
  */
 
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useVisiblePolling } from "@/components/superadmin/_shared/useVisiblePolling";
 import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
 import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
@@ -402,7 +403,7 @@ export default function PagosPendientesClient() {
 
   const reject = async (id: string) => {
     if (!rejectReason || rejectReason.length < 5) {
-      pushToast("Escribí un motivo (mínimo 5 caracteres)", "error");
+      pushToast("Escribe un motivo (mínimo 5 caracteres)", "error");
       return;
     }
     setActioning(id);
@@ -565,8 +566,8 @@ export default function PagosPendientesClient() {
               <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
                 {newCreds.ownerChose
                   ? "Ya avisamos al dueño por WhatsApp. La contraseña es la que él eligió al registrarse (no la guardamos en claro)."
-                  : "Ya se enviaron por WhatsApp al dueño. Guardalas por si acaso — la contraseña no se vuelve a mostrar."}{" "}
-                Tocá cada campo para copiar.
+                  : "Ya se enviaron por WhatsApp al dueño. Guárdalas por si acaso — la contraseña no se vuelve a mostrar."}{" "}
+                Toca cada campo para copiar.
               </p>
               {[
                 { label: "Panel", value: newCreds.loginUrl },
@@ -629,30 +630,24 @@ export default function PagosPendientesClient() {
                   aria-hidden
                 />
               </span>
-              <div className="min-w-0">
+              <div className="w-64 shrink-0">
                 <p className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
                   Tesorería · Aprobaciones
                 </p>
-                <h1 className="font-display text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">
+                <h1 className="font-display text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] inline-flex items-center gap-2 flex-wrap">
                   Pagos pendientes
+                  <InfoTip
+                    side="bottom"
+                    title="Pagos pendientes"
+                    what="Capturas de Yape, Plin o transferencia de quienes quieren abrir un negocio."
+                    affects="Al aprobar se crea el negocio solo y se envía el WhatsApp de bienvenida."
+                    example="Atajos: / buscar · R recargar."
+                  />
                 </h1>
-                <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">
-                  Revisá las capturas de Yape/Plin/transferencia. Al aprobar
-                  se crea el tenant automáticamente y se envía el WhatsApp de
-                  bienvenida. Atajos:{" "}
-                  <kbd className="px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] text-xs font-mono border border-[var(--rule-soft)]">
-                    /
-                  </kbd>{" "}
-                  buscar ·{" "}
-                  <kbd className="px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] text-xs font-mono border border-[var(--rule-soft)]">
-                    R
-                  </kbd>{" "}
-                  recargar
-                </p>
               </div>
             </div>
 
-            <div className="flex items-stretch gap-2 flex-wrap shrink-0">
+            <div className="flex items-stretch gap-2 flex-wrap">
               <StatPill
                 label="Pendientes"
                 value={stats.pending}

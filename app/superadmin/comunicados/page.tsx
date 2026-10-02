@@ -44,14 +44,11 @@ export default async function ComunicadosPage() {
                 <InfoTip
                   side="bottom"
                   title="Comunicados segmentados"
-                  what="Mandá un mensaje a un grupo inteligente de negocios de una sola vez: en riesgo, no usan Marketplace/Fiado, trial por vencer, pagados o todos."
+                  what="Manda un mensaje a un grupo inteligente de negocios de una sola vez: en riesgo, no usan Marketplace/Fiado, trial por vencer, pagados o todos."
                   affects="Envía un mensaje al chat de cada negocio del segmento (vía el broadcast existente). Reusa la inteligencia de Rescate y Adopción."
-                  example="Elegís 'No usan Marketplace' (3 negocios) y les mandás de una un mensaje ofreciéndoles activarlo."
+                  example="Eliges 'No usan Marketplace' (3 negocios) y les mandas de una un mensaje ofreciéndoles activarlo."
                 />
               </h1>
-              <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-3xl">
-                Un mensaje al segmento correcto, de una sola vez. Sin escribir uno por uno.
-              </p>
             </div>
           </div>
         </div>

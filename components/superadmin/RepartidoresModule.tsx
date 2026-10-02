@@ -43,7 +43,6 @@ import {
   CashIcon,
   ShieldBadge,
   CheckBadge,
-  ClockBadge,
   LiveSignal,
   PhoneRing,
   WhatsAppIcon,
@@ -52,6 +51,7 @@ import {
   StarBadge,
 } from "@/components/delivery/icons";
 import RepartidoresOverview from "./RepartidoresOverview";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
@@ -337,13 +337,17 @@ export default function RepartidoresModule() {
                 <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
                   Plataforma · Operaciones
                 </p>
-                <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">
-                  Repartidores
-                </h1>
-                <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">
-                  Aprobación de inscripciones · Verificación de documentos · Acceso directo a
-                  cuentas.
-                </p>
+                <div className="flex items-center gap-2">
+                  <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">
+                    Repartidores
+                  </h1>
+                  <InfoTip
+                    side="bottom"
+                    title="Repartidores"
+                    what="Aprueba inscripciones, verifica documentos y entra directo a sus cuentas."
+                    example="Un repartidor nuevo se inscribe: revisas sus documentos y lo apruebas o rechazas."
+                  />
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
@@ -376,46 +380,6 @@ export default function RepartidoresModule() {
 
       {/* ── Panorama ejecutivo de la flota (funciones de alto nivel) ── */}
       <RepartidoresOverview />
-
-      {/* ── KPIs ──────────────────────────────────── */}
-      <section className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-        <Kpi
-          label="Total inscritos"
-          value={stats.total}
-          icon={<PackageIcon className="h-4 w-4" />}
-          iconBg="rgba(14, 165, 233, 0.1)"
-          iconColor="var(--brand-info)"
-        />
-        <Kpi
-          label="Pendientes"
-          value={stats.pending}
-          icon={<ClockBadge className="h-4 w-4" />}
-          iconBg="rgba(249, 115, 22, 0.1)"
-          iconColor="var(--brand-secondary)"
-          highlight={stats.pending > 0}
-        />
-        <Kpi
-          label="Activos"
-          value={stats.active}
-          icon={<CheckBadge className="h-4 w-4" />}
-          iconBg="rgba(34, 197, 94, 0.1)"
-          iconColor="var(--data-success)"
-        />
-        <Kpi
-          label="En línea ahora"
-          value={stats.online}
-          icon={<MotoIcon className="h-4 w-4" />}
-          iconBg="rgba(0, 160, 160, 0.1)"
-          iconColor="var(--accent)"
-        />
-        <Kpi
-          label="Rechazados"
-          value={stats.rejected}
-          icon={<X className="h-4 w-4" />}
-          iconBg="rgba(239, 68, 68, 0.1)"
-          iconColor="var(--brand-danger)"
-        />
-      </section>
 
       {/* ── Filtros + búsqueda ──────────────────── */}
       <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 flex flex-wrap items-center gap-3">
@@ -535,51 +499,6 @@ export default function RepartidoresModule() {
         />
       )}
       </div>{/* /max-w-1400 */}
-    </div>
-  );
-}
-
-// ─── KPI ──────────────────────────────────────────────────────────────────
-
-function Kpi({
-  label,
-  value,
-  icon,
-  iconBg,
-  iconColor,
-  highlight = false,
-}: {
-  label: string;
-  value: number;
-  icon: ReactNode;
-  iconBg: string;
-  iconColor: string;
-  highlight?: boolean;
-}) {
-  return (
-    <div
-      className={`rounded-2xl border p-4 transition-colors ${
-        highlight
-          ? "border-[var(--brand-secondary)]/40 bg-[var(--brand-secondary)]/5"
-          : "border-[var(--rule-base)] bg-[var(--surface-raised)]"
-      }`}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <p className="text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-            {label}
-          </p>
-          <p className="mt-1 text-2xl font-extrabold text-[var(--text-primary)] tabular-nums leading-none">
-            {value}
-          </p>
-        </div>
-        <div
-          className="h-9 w-9 rounded-full flex items-center justify-center shrink-0"
-          style={{ backgroundColor: iconBg, color: iconColor }}
-        >
-          {icon}
-        </div>
-      </div>
     </div>
   );
 }

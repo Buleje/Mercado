@@ -165,7 +165,7 @@ export default function DashboardPage() {
         setWidgets(w);
       }
     } catch {
-      setError("Error de red. Verificá la conexión.");
+      setError("Error de red. Verifica la conexión.");
     } finally {
       setLoading(false);
     }

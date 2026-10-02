@@ -105,7 +105,7 @@ export function SpendHealthBanner({
         <div className="sm:w-52 sm:shrink-0">
           {usagePct === null ? (
             <p className="text-sm text-[var(--text-tertiary)]">
-              Definí un <span className="font-bold text-[var(--text-secondary)]">tope mensual</span> abajo para
+              Define un <span className="font-bold text-[var(--text-secondary)]">tope mensual</span> abajo para
               recibir alertas.
             </p>
           ) : (

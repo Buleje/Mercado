@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PageTitle } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import {
   FolderOpen,
   Upload,
@@ -243,44 +244,56 @@ export default function SuperAdminDocumentsModule() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <PageTitle className="flex items-center gap-2 text-[var(--text-primary)]">
-            <FolderOpen className="h-6 w-6 text-primary" /> Mis Documentos
-          </PageTitle>
-          <p className="text-sm text-[var(--text-secondary)] mt-1">
-            Repositorio privado del superadmin — almacená todos tus documentos de plataforma.
-          </p>
+          <div className="flex items-center gap-2">
+            <PageTitle className="flex items-center gap-2 whitespace-nowrap text-[var(--text-primary)]">
+              <FolderOpen className="h-6 w-6 text-primary" /> Mis documentos
+            </PageTitle>
+            <InfoTip
+              side="bottom"
+              title="Mis documentos"
+              what="Tu repositorio privado: guarda aquí los documentos de la plataforma."
+              affects="Solo lo ves tú. Acepta PDF, imágenes, Office y texto, hasta 50 MB por archivo."
+            />
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={() => setTemplatesOpen(true)}
+            title="Plantilla"
+            aria-label="Plantilla"
             className="flex items-center gap-2 px-4 h-12 rounded-2xl border border-[var(--rule-base)] text-base font-semibold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors"
           >
             <Sparkles className="h-5 w-5" />
-            <span className="hidden sm:inline">Plantilla</span>
+            <span className="hidden 2xl:inline">Plantilla</span>
           </button>
           <button
             type="button"
             onClick={() => scanInputRef.current?.click()}
             disabled={uploading}
+            title="Escanear"
+            aria-label="Escanear"
             className="flex items-center gap-2 px-4 h-12 rounded-2xl border border-[var(--rule-base)] text-base font-semibold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors disabled:opacity-50"
           >
             <ScanLine className="h-5 w-5" />
-            <span className="hidden sm:inline">Escanear</span>
+            <span className="hidden 2xl:inline">Escanear</span>
           </button>
           <button
             type="button"
             onClick={openTrash}
+            title="Papelera"
+            aria-label="Papelera"
             className="flex items-center gap-2 px-4 h-12 rounded-2xl border border-[var(--rule-base)] text-base font-semibold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors"
           >
             <Trash2 className="h-5 w-5" />
-            <span className="hidden sm:inline">Papelera</span>
+            <span className="hidden 2xl:inline">Papelera</span>
           </button>
           <button
             type="button"
             onClick={exportZip}
             disabled={exporting}
-            title="Descargar todo el vault en un ZIP"
+            title="Exportar: descarga todo en un ZIP"
+            aria-label="Exportar"
             className="flex items-center gap-2 px-4 h-12 rounded-2xl border border-[var(--rule-base)] text-base font-semibold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors disabled:opacity-50"
           >
             {exporting ? (
@@ -288,7 +301,7 @@ export default function SuperAdminDocumentsModule() {
             ) : (
               <Archive className="h-5 w-5" />
             )}
-            <span className="hidden sm:inline">Exportar</span>
+            <span className="hidden 2xl:inline">Exportar</span>
           </button>
           <button
             type="button"
@@ -388,7 +401,7 @@ export default function SuperAdminDocumentsModule() {
             }}
             onClick={() => inputRef.current?.click()}
             className={cn(
-              "rounded-2xl border-2 border-dashed p-8 text-center cursor-pointer transition-colors",
+              "rounded-2xl border-2 border-dashed p-5 text-center cursor-pointer transition-colors",
               dragOver
                 ? "border-primary bg-primary/10"
                 : "border-[var(--rule-base)] bg-[var(--surface-sunken)] hover:bg-[var(--surface-alt)]",
@@ -396,10 +409,7 @@ export default function SuperAdminDocumentsModule() {
           >
             <Upload className="h-8 w-8 mx-auto text-[var(--text-tertiary)] mb-2" />
             <p className="text-base font-semibold text-[var(--text-primary)]">
-              Arrastrá archivos acá o hacé clic para subir
-            </p>
-            <p className="text-sm text-[var(--text-secondary)] mt-1">
-              PDF, imágenes, Office, texto — hasta 50 MB.
+              Arrastra archivos o haz clic para subir
             </p>
           </div>
 
@@ -453,7 +463,7 @@ export default function SuperAdminDocumentsModule() {
             <div className="p-10 text-center bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl">
               <FileText className="h-10 w-10 mx-auto text-[var(--text-tertiary)] mb-2" />
               <p className="text-base font-semibold text-[var(--text-secondary)]">
-                Escribí al menos 2 caracteres para buscar dentro del contenido.
+                Escribe al menos 2 caracteres para buscar dentro del contenido.
               </p>
             </div>
           ) : filtered.length === 0 ? (

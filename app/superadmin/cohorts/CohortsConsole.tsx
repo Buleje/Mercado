@@ -8,6 +8,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Users, Layers, TrendingUp, Activity, RefreshCw } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { SAKpiCard } from "@/components/superadmin/_shared/SAKpiCard";
 import { useVisiblePolling } from "@/components/superadmin/_shared/useVisiblePolling";
 
@@ -52,9 +53,9 @@ export function CohortsConsole() {
 
       <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden">
         <header className="flex items-center justify-between gap-2 border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-4 py-3">
-          <div>
+          <div className="flex items-center gap-1">
             <h3 className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">Retención por cohorte</h3>
-            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">M0 = mes de alta. % de negocios de esa cohorte activos en cada mes.</p>
+            <InfoTip title="Retención por cohorte" what="M0 = mes de alta. Cada celda es el % de negocios de esa cohorte activos ese mes. Activo = registró actividad." example="Verde retiene, rojo se cae. Con pocos negocios cada % pesa 1 tienda." />
           </div>
           <button type="button" onClick={() => void load()} className="inline-flex h-8 items-center rounded-lg border border-[var(--rule-base)] px-2 text-[var(--text-tertiary)] hover:border-[var(--accent)]/40"><RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} /></button>
         </header>
@@ -80,7 +81,6 @@ export function CohortsConsole() {
               ))}
             </tbody>
           </table>
-          <p className="mt-3 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Activo = registró actividad ese mes. Verde retiene, rojo se cae. Con pocos negocios cada % es 1 tienda — la señal se afina al crecer.</p>
         </div>
       </section>
     </div>

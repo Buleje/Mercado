@@ -1,7 +1,6 @@
 import "server-only";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { Suspense } from "react";
-import Link from "next/link";
 import { StatCard } from "@buleje/design-system";
 import { CheckCircle2 } from "@buleje/design-system/icons";
 import { requirePlatformPage } from "@/lib/superadmin-auth";
@@ -40,29 +39,19 @@ export default async function DLQDashboardPage() {
         <div className="flex items-end justify-between gap-4 flex-wrap">
           <div>
             <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
-              Superadmin · Operations
+              Plataforma · Operaciones
             </p>
             <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[var(--text-primary)] leading-none inline-flex items-center gap-2 flex-wrap">
-              Dead Letter Queue
+              Trabajos fallidos
               <InfoTip
                 side="bottom"
-                title="Dead Letter Queue"
-                what="Lista los jobs en segundo plano que fallaron tras varios reintentos (envíos, webhooks, colas)."
-                affects="Solo monitoreo interno. Un job acá significa que algo no se completó y conviene reintentarlo."
+                title="Trabajos fallidos (Dead Letter Queue)"
+                what="Eventos, crons y webhooks que fallaron tras varios reintentos y no se reintentan solos."
+                affects="Solo monitoreo interno. Si los contadores crecen sin parar, hay un fallo de fondo."
                 example="Si falla el email de bienvenida 3 veces, cae acá para reintentarlo o investigar."
               />
             </h1>
-            <p className="mt-2 max-w-2xl text-[length:var(--ts-sm)] text-[var(--text-secondary)]">
-              Eventos, crons y webhooks que fallaron y no se autoreintentaron. Investigá si los
-              contadores crecen sostenidamente.
-            </p>
           </div>
-          <Link
-            href="/superadmin"
-            className="inline-flex items-center gap-1.5 h-10 px-4 rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)] transition-colors"
-          >
-            ← Superadmin
-          </Link>
         </div>
       </header>
 
@@ -141,11 +130,11 @@ async function DLQBody() {
 
       {/* Crons fallidos */}
       <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden">
-        <header className="px-5 py-4 border-b border-[var(--rule-soft)] bg-[var(--surface-sunken)]/50">
-          <h2 className="text-lg font-black text-[var(--text-primary)]">Crons fallidos</h2>
-          <p className="text-[length:var(--ts-xs)] text-[var(--text-secondary)] mt-0.5">
-            Jobs cron que llegaron a max-attempts y se rindieron.
-          </p>
+        <header className="flex items-center gap-1 px-5 py-4 border-b border-[var(--rule-soft)] bg-[var(--surface-sunken)]/50">
+          <h2 className="text-lg font-black text-[var(--text-primary)]">
+            Crons fallidos
+          </h2>
+          <InfoTip title="Crons fallidos" what="Tareas programadas que llegaron al máximo de intentos y se rindieron." />
         </header>
         {crons.length === 0 ? (
           <div className="px-5 py-8 flex items-center justify-center gap-2 text-[length:var(--ts-sm)] text-[var(--text-tertiary)]">
@@ -186,14 +175,11 @@ async function DLQBody() {
 
       {/* MP Webhooks pendientes */}
       <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden">
-        <header className="px-5 py-4 border-b border-[var(--rule-soft)] bg-[var(--surface-sunken)]/50">
+        <header className="flex items-center gap-1 px-5 py-4 border-b border-[var(--rule-soft)] bg-[var(--surface-sunken)]/50">
           <h2 className="text-lg font-black text-[var(--text-primary)]">
-            Mercado Pago webhooks pendientes
+            Webhooks de Mercado Pago pendientes
           </h2>
-          <p className="text-[length:var(--ts-xs)] text-[var(--text-secondary)] mt-0.5">
-            IPNs registrados pero no marcados como procesados. El cron /api/cron/mp-webhook-replay
-            los reintenta cada día a las 4:13 AM.
-          </p>
+          <InfoTip title="Webhooks de Mercado Pago" what="Avisos de pago recibidos pero aún sin procesar." affects="Se reintentan solos cada día a las 4:13 a. m." />
         </header>
         {mpWebhooks.length === 0 ? (
           <div className="px-5 py-8 flex items-center justify-center gap-2 text-[length:var(--ts-sm)] text-[var(--text-tertiary)]">

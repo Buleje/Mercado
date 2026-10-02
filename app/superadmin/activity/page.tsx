@@ -334,7 +334,7 @@ export default function ActivityPage() {
       }
     >
       {/* ═══════ Stats hero — visión rápida de la actividad ═══════════════ */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
         <SAStatChip
           icon={Activity}
           label="Total registros"

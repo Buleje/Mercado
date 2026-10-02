@@ -162,7 +162,7 @@ export default function GastosClient() {
             <SuperadminChartCard
               kicker="Tendencia"
               title="Gasto de los últimos 6 meses"
-              description="Barras = gasto real por mes; la línea punteada es tu tope."
+              info="Barras = gasto real por mes; la línea punteada es tu tope."
               density="compact"
             >
               <TrendChart trend={g.summary?.trend ?? []} budgetPen={g.budget} />
@@ -170,7 +170,7 @@ export default function GastosClient() {
             <SuperadminChartCard
               kicker="Distribución"
               title="¿Dónde se va la plata?"
-              description="Reparto del gasto de este mes por categoría."
+              info="Reparto del gasto de este mes por categoría."
               density="compact"
             >
               <CategoryDonut data={g.summary?.byCategory ?? []} />
@@ -180,7 +180,7 @@ export default function GastosClient() {
           <SuperadminChartCard
             kicker="Control"
             title="Presupuesto mensual"
-            description="Tope global y por categoría; te avisamos por email al cruzar un tope."
+            info="Tope global y por categoría; te avisamos por email al cruzar un tope."
             density="compact"
           >
             <BudgetPanel
@@ -221,7 +221,7 @@ export default function GastosClient() {
 
           <SuperadminChartCard
             title="Gastos reales"
-            description="Facturas y costos recurrentes de la plataforma (Buleje SaaS)."
+            info="Facturas y costos recurrentes de la plataforma (Buleje SaaS)."
             density="compact"
           >
             <ExpensesTable
@@ -244,7 +244,7 @@ export default function GastosClient() {
           <SuperadminChartCard
             kicker="Detalle"
             title="Historial mensual"
-            description="Cierre real congelado por mes; expandí un mes para ver el desglose por categoría."
+            info="Cierre real congelado por mes; expande un mes para ver el desglose por categoría."
             density="compact"
           >
             <HistoryTable history={g.history} />

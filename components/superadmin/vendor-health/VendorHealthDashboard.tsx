@@ -445,11 +445,10 @@ export function VendorHealthDashboard() {
             <Clock className="h-7 w-7 text-[var(--text-tertiary)]" aria-hidden />
           </div>
           <p className="text-base font-extrabold text-[var(--text-primary)]">
-            Esperando primer run del cron
+            Aún no hay revisiones
           </p>
           <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-md mx-auto">
-            {data?.message ??
-              "Próxima corrida: 02:00 UTC diario. Podés dispararlo ahora con el botón “Ejecutar ahora”."}
+            {data?.message ?? "Corre solo a las 02:00 UTC. También puedes usar «Ejecutar ahora»."}
           </p>
         </div>
         <Toasts toasts={toasts} />

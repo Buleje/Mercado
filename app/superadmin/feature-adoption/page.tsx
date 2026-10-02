@@ -43,12 +43,9 @@ export default async function FeatureAdoptionPage() {
                   title="Adopción de funciones"
                   what="Muestra qué módulos usa cada negocio (derivado de su actividad) y cuáles no. Marca las funciones de crecimiento (Fiado, Marketplace, Cupones…) sub-usadas."
                   affects="Solo lectura + acciones de coaching (ofrecer ayuda por chat, ver ficha 360). Es para retención/upsell, no cambia datos."
-                  example="Si solo 1 de 9 tiendas usa Adelantos, o una bodega no usa ninguna función de crecimiento, le ofrecés ayuda para que la use y venda más."
+                  example="Si solo 1 de 9 tiendas usa Adelantos, o una bodega no usa ninguna función de crecimiento, le ofreces ayuda para que la use y venda más."
                 />
               </h1>
-              <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-3xl">
-                Qué usan tus negocios y a quién ofrecerle qué función para que crezca.
-              </p>
             </div>
           </div>
         </div>

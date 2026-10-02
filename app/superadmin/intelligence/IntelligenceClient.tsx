@@ -145,7 +145,7 @@ export default function IntelligenceClient() {
     return (
       <AdminTabShell
         title="Inteligencia de Barrio"
-        description="Detectá qué quiere el barrio antes de que lo pidan."
+        description="Detecta qué quiere el barrio antes de que lo pidan."
         icon={Activity}
         kicker="Plataforma · Inteligencia"
       >
@@ -179,7 +179,7 @@ export default function IntelligenceClient() {
     return (
       <AdminTabShell
         title="Inteligencia de Barrio"
-        description="Detectá qué quiere el barrio antes de que lo pidan."
+        description="Detecta qué quiere el barrio antes de que lo pidan."
         icon={Activity}
         kicker="Plataforma · Inteligencia"
       >
@@ -225,7 +225,7 @@ export default function IntelligenceClient() {
         <SuperadminChartCard
           kicker="Oportunidad de negocio"
           title="Demanda insatisfecha"
-          description="Estas categorías suben en ventas pero varias bodegas están quebrando stock. Son tu próxima oportunidad de abastecimiento."
+          info="Estas categorías suben en ventas pero varias bodegas están quebrando stock. Son tu próxima oportunidad de abastecimiento."
           period={report.period.label}
           className="border-[var(--data-warning-500,#d97706)]/30 bg-[var(--data-warning-100,#fef3c7)]/10 dark:bg-[var(--surface-canvas)]"
         >
@@ -262,7 +262,7 @@ export default function IntelligenceClient() {
         <SuperadminChartCard
           kicker="Categorías"
           title="Demanda en alza"
-          description="Categorías que más crecen en unidades vendidas."
+          info="Categorías que más crecen en unidades vendidas."
           period={report.period.label}
         >
           {report.risingCategories.length === 0 ? (
@@ -303,7 +303,7 @@ export default function IntelligenceClient() {
         <SuperadminChartCard
           kicker="Categorías"
           title="Demanda a la baja"
-          description="Categorías con menos movimiento que el período anterior."
+          info="Categorías con menos movimiento que el período anterior."
           period={report.period.label}
         >
           {report.fallingCategories.length === 0 ? (
@@ -346,7 +346,7 @@ export default function IntelligenceClient() {
         <SuperadminChartCard
           kicker="Quiebres de stock"
           title="Quiebres más extendidos"
-          description="Productos que más bodegas reportan sin stock — coordinar reposición urgente."
+          info="Productos que más bodegas reportan sin stock — coordinar reposición urgente."
           period={report.period.label}
         >
           <div className="overflow-x-auto">
@@ -391,7 +391,7 @@ export default function IntelligenceClient() {
         <SuperadminChartCard
           kicker="Geografía"
           title="Demanda por zona"
-          description="Unidades vendidas, categoría más pedida y quiebres detectados por zona geográfica."
+          info="Unidades vendidas, categoría más pedida y quiebres detectados por zona geográfica."
           period={report.period.label}
         >
           <ul className="divide-y divide-[var(--rule-soft)]">

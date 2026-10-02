@@ -287,7 +287,7 @@ export default function SuperAdminMessenger() {
               className="w-full bg-transparent text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none"
             />
           </div>
-          <div className="mt-2 flex gap-1.5">
+          <div className="mt-2 flex flex-wrap gap-1.5">
             {STATUS_TABS.map((t) => (
               <button
                 key={t.id}
@@ -335,7 +335,7 @@ export default function SuperAdminMessenger() {
                 </div>
                 <div className="mt-0.5 flex items-center justify-between gap-2">
                   <span className="truncate text-xs text-[var(--text-secondary)]">
-                    {c.lastSenderType === "platform" ? "Vos: " : ""}
+                    {c.lastSenderType === "platform" ? "Tú: " : ""}
                     {c.lastMessageText ?? c.subject ?? "Sin mensajes"}
                   </span>
                   {c.unreadForPlatform > 0 && (
@@ -367,7 +367,7 @@ export default function SuperAdminMessenger() {
         {!selected ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 text-[var(--text-tertiary)]">
             <MessageSquare className="h-12 w-12" strokeWidth={1.25} />
-            <p className="text-sm font-medium">Elegí una conversación o iniciá una nueva</p>
+            <p className="text-sm font-medium">Elige una conversación o inicia una nueva</p>
           </div>
         ) : (
           <>

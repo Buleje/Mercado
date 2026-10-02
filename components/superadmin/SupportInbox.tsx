@@ -123,7 +123,7 @@ export default function SupportInbox() {
                 aria-hidden="true"
               />
               <p className="text-sm font-medium text-[var(--text-secondary)]">
-                Seleccioná un ticket
+                Selecciona un ticket
               </p>
               <p className="text-sm text-[var(--text-tertiary)] mt-1">
                 para ver los detalles y responder

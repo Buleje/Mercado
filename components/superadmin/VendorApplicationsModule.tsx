@@ -18,6 +18,7 @@
  *  - Touch targets ≥44px en mobile, focus rings visibles
  */
 
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useVisiblePolling } from "@/components/superadmin/_shared/useVisiblePolling";
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -758,28 +759,21 @@ export default function VendorApplicationsModule() {
                   aria-hidden
                 />
               </span>
-              <div className="min-w-0">
+              <div className="min-w-0 w-72">
                 <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
                   Marketplace · Onboarding
                 </p>
-                <h1 className="font-display text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">
-                  Aplicaciones de vendedores
-                </h1>
-                <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">
-                  Aprobá, rechazá o solicitá info. Atajos:{" "}
-                  <kbd className="px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] text-xs font-mono border border-[var(--rule-soft)]">
-                    /
-                  </kbd>{" "}
-                  buscar ·{" "}
-                  <kbd className="px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] text-xs font-mono border border-[var(--rule-soft)]">
-                    R
-                  </kbd>{" "}
-                  recargar ·{" "}
-                  <kbd className="px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] text-xs font-mono border border-[var(--rule-soft)]">
-                    Esc
-                  </kbd>{" "}
-                  cerrar
-                </p>
+                <div className="flex items-center gap-2">
+                  <h1 className="font-display text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">
+                    Solicitudes de vendedores
+                  </h1>
+                  <InfoTip
+                    side="bottom"
+                    title="Solicitudes de vendedores"
+                    what="Aprueba, rechaza o pide más información a quien quiere vender en el marketplace."
+                    example="Atajos: / buscar · R recargar · Esc cerrar."
+                  />
+                </div>
               </div>
             </div>
 

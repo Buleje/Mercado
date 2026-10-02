@@ -10,6 +10,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Inbox, AlertTriangle, Clock, Layers, RefreshCw, RotateCcw, Check, ChevronDown } from "@buleje/design-system/icons";
 import { SAKpiCard } from "@/components/superadmin/_shared/SAKpiCard";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useVisiblePolling } from "@/components/superadmin/_shared/useVisiblePolling";
 import { csrfHeaders } from "@/lib/csrf-client";
 
@@ -73,9 +74,9 @@ export function DLQEvents() {
         <div className="flex items-center gap-3">
           <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]"><Inbox className="h-4 w-4" strokeWidth={1.75} aria-hidden /></span>
           <div>
-            <h3 className="font-display text-base font-extrabold tracking-tight text-[var(--text-primary)]">Eventos en DLQ — accionable</h3>
-            <p className="text-xs text-[var(--text-tertiary)]">Resolver = marcar manejado · Reintentar = re-emitir el evento</p>
+            <h3 className="font-display text-base font-extrabold tracking-tight text-[var(--text-primary)]">Eventos fallidos</h3>
           </div>
+          <InfoTip title="Eventos fallidos" what="Resolver = marcar como manejado. Reintentar = volver a emitir el evento." />
         </div>
         <div className="flex items-center gap-2">
           {toast && <span className="hidden sm:inline text-xs font-bold text-[var(--accent)]">{toast}</span>}
@@ -95,7 +96,7 @@ export function DLQEvents() {
         {s.unresolved === 0 ? (
           <div className="flex items-center gap-2.5 rounded-xl border border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/5 px-3.5 py-3">
             <Check className="h-5 w-5 text-[var(--data-success-600,#059669)] shrink-0" />
-            <p className="text-sm font-bold text-[var(--text-primary)]">Sin eventos en DLQ — todo procesado.</p>
+            <p className="text-sm font-bold text-[var(--text-primary)]">Sin eventos fallidos — todo procesado.</p>
           </div>
         ) : (
           <>

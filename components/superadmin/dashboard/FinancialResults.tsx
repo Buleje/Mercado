@@ -171,7 +171,7 @@ export function FinancialResults({
             registrados todavía.
           </p>
           <Link href="/superadmin/gastos" className="text-sm font-bold text-[var(--accent)] hover:underline">
-            Registrá gastos para ver tu resultado neto →
+            Registra gastos para ver tu resultado neto →
           </Link>
         </div>
       ) : (

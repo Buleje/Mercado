@@ -944,7 +944,7 @@ export default function PagosYapeClient(_: Props) {
           <div className="hidden lg:block lg:col-span-7 xl:col-span-8">
             {!selected ? (
               <div className="flex items-center justify-center h-64 rounded-xl border border-dashed border-[var(--rule-base)] text-sm text-[var(--text-tertiary)]">
-                Seleccioná un pago para revisar (o presioná{" "}
+                Selecciona un pago para revisar (o presioná{" "}
                 <kbd className="mx-1 px-1 rounded bg-[var(--surface-sunken)] font-mono text-xs">
                   J
                 </kbd>

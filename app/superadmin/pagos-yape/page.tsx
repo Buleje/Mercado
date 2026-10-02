@@ -44,31 +44,15 @@ export default async function PagosYapePage() {
                   aria-hidden
                 />
               </span>
-              <div className="min-w-0">
+              <div className="w-64 shrink-0">
                 <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
                   Plataforma · Yape
                 </p>
                 <h1 className="font-display text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] inline-flex items-center gap-2 flex-wrap">
                   Pagos Yape pendientes
                 
-            <InfoTip side="bottom" title="Pagos Yape pendientes" what="Bandeja de comprobantes Yape que esperan tu aprobación manual." affects="Aprobar un comprobante confirma el pago del pedido o suscripción correspondiente." example="Un cliente paga por Yape y sube su captura → la revisás acá y la aprobás para liberar el pedido." />
+            <InfoTip side="bottom" title="Pagos Yape pendientes" body="La IA lee cada captura: compara monto y operación detectados con los esperados. Atajos: / buscar · J/K navegar · A aprobar." what="Bandeja de comprobantes Yape que esperan tu aprobación manual." affects="Aprobar un comprobante confirma el pago del pedido o suscripción correspondiente." example="Un cliente paga por Yape y sube su captura → la revisás acá y la aprobás para liberar el pedido." />
           </h1>
-                <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">
-                  Capturas extraídas por IA. Compará monto/operación detectados
-                  vs. esperados y aprobá o rechazá. Atajos:{" "}
-                  <kbd className="px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] text-xs font-mono border border-[var(--rule-soft)]">
-                    /
-                  </kbd>{" "}
-                  buscar ·{" "}
-                  <kbd className="px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] text-xs font-mono border border-[var(--rule-soft)]">
-                    J/K
-                  </kbd>{" "}
-                  navegar ·{" "}
-                  <kbd className="px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] text-xs font-mono border border-[var(--rule-soft)]">
-                    A
-                  </kbd>{" "}
-                  aprobar
-                </p>
               </div>
             </div>
             {initialCount > 0 && (

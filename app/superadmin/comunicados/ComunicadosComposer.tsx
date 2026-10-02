@@ -2,9 +2,9 @@
 
 /**
  * ComunicadosComposer — comunicados segmentados (Brandon 2026-06-19, idea #B).
- * Elegís un segmento inteligente (en riesgo, no usan Marketplace/Fiado, trial
+ * Eliges un segmento inteligente (en riesgo, no usan Marketplace/Fiado, trial
  * por vencer, pagados, todos), ves los destinatarios, escribís el mensaje y lo
- * mandás. Segmentos de /api/superadmin/comunicados; el envío reusa el broadcast
+ * mandas. Segmentos de /api/superadmin/comunicados; el envío reusa el broadcast
  * existente (/api/superadmin/chat/broadcast).
  */
 
@@ -60,7 +60,7 @@ export function ComunicadosComposer() {
       <div className="space-y-4">
         <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4">
           <div className="flex items-center justify-between gap-2 mb-3">
-            <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">1 · Elegí el segmento</p>
+            <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">1 · Elige el segmento</p>
             <button type="button" onClick={() => void load()} className="inline-flex h-7 items-center rounded-lg border border-[var(--rule-base)] px-2 text-[var(--text-tertiary)] hover:border-[var(--accent)]/40"><RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} /></button>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -74,7 +74,7 @@ export function ComunicadosComposer() {
         </section>
 
         <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4">
-          <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-2">2 · Escribí el mensaje</p>
+          <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-2">2 · Escribe el mensaje</p>
           <textarea value={msg} onChange={(e) => setMsg(e.target.value)} rows={5} maxLength={2000} placeholder="¡Hola! Te escribo del equipo Buleje para contarte que…" className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3 text-base sm:text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] resize-y" />
           <div className="mt-2.5 flex items-center justify-between gap-3 flex-wrap">
             <span className="text-xs text-[var(--text-tertiary)] tabular-nums">{msg.length}/2000 · llega a <strong className="text-[var(--text-primary)]">{seg?.recipients.length ?? 0}</strong> negocio(s)</span>

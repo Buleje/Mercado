@@ -42,7 +42,7 @@ export function ExpenseForm({
   const submit = async () => {
     const amount = Number(form.amountStr);
     if (!form.concept.trim() || !Number.isFinite(amount) || amount <= 0) {
-      setLocalErr("Completá concepto y un monto válido.");
+      setLocalErr("Completa concepto y un monto válido.");
       return;
     }
     setLocalErr(null);

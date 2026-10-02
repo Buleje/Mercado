@@ -44,12 +44,6 @@ export default async function VendorHealthPage() {
                   example="Si la SUNAT marca un RUC como NO HABIDO, aparece una alerta para revisar a ese vendor."
                 />
               </h1>
-              <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-3xl">
-                Re-verificación diaria de RUC/DNI contra <strong>RENIEC</strong> y{" "}
-                <strong>SUNAT</strong>. Si un vendor pasa a NO HABIDO, sus facturas dejan de ser
-                deducibles para sus clientes — revisalo desde aquí o desde el drawer de cada
-                solicitud.
-              </p>
             </div>
           </div>
         </div>

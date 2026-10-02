@@ -43,12 +43,9 @@ export default async function AuditLogPage() {
                   title="Auditoría del superadmin"
                   what="Registro de las acciones sensibles del superadmin: cada vez que alguien impersona un negocio, aprueba un pago, manda un broadcast o cambia una automatización."
                   affects="Solo lectura. Es la trazabilidad de quién entró a qué negocio y qué hizo — confianza y rendición de cuentas. Exportable a CSV."
-                  example="Si necesitás saber quién entró al panel de una tienda y cuándo, filtrás por 'impersonate' y lo ves con fecha, operador y negocio."
+                  example="Si necesitas saber quién entró al panel de una tienda y cuándo, filtras por 'impersonate' y lo ves con fecha, operador y negocio."
                 />
               </h1>
-              <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-3xl">
-                Quién impersonó qué negocio y qué acción sensible hizo, con fecha y operador.
-              </p>
             </div>
           </div>
         </div>

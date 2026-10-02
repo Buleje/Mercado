@@ -196,7 +196,7 @@ export function ExpensesTable({
             {filtered.length === 0 && !loading && (
               <tr>
                 <td colSpan={4} className="p-4 text-center text-[var(--text-tertiary)]">
-                  {expenses.length === 0 ? "No hay gastos. Agregá el primero." : "Ningún gasto coincide con el filtro."}
+                  {expenses.length === 0 ? "No hay gastos. Agrega el primero." : "Ningún gasto coincide con el filtro."}
                 </td>
               </tr>
             )}

@@ -11,6 +11,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ShieldAlert, AlertTriangle, Store, Clock, RefreshCw, LogIn, MessageSquare, Check, ChevronDown, Search } from "@buleje/design-system/icons";
 import { SAKpiCard } from "@/components/superadmin/_shared/SAKpiCard";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useVisiblePolling } from "@/components/superadmin/_shared/useVisiblePolling";
 import { csrfHeaders } from "@/lib/csrf-client";
 
@@ -114,9 +115,9 @@ export function TenantErrorsConsole() {
           <div className="flex items-center gap-3">
             <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]"><ShieldAlert className="h-4 w-4" strokeWidth={1.75} aria-hidden /></span>
             <div>
-              <h3 className="font-display text-base font-extrabold tracking-tight text-[var(--text-primary)]">Errores en vivo del panel de los negocios</h3>
-              <p className="text-xs text-[var(--text-tertiary)]">Impersonar = entrar a reproducir · Contactar = chat con el dueño · auto 15s</p>
+              <h3 className="font-display text-base font-extrabold tracking-tight text-[var(--text-primary)]">Errores por negocio</h3>
             </div>
+            <InfoTip title="Errores por negocio" what="Impersonar = entras a su panel para reproducir el error. Contactar = chat con el dueño." example="Se actualiza solo cada 15 s." />
           </div>
           <div className="flex items-center gap-2">
             {toast && <span className="hidden sm:inline text-xs font-bold text-[var(--accent)]">{toast}</span>}

@@ -62,7 +62,7 @@ interface AdminHealthMetric {
 interface AdminHealthData {
   services: Array<{ name: string; status: string; latencyMs: number; detail?: string }>;
   metrics: AdminHealthMetric[];
-  incidents: Array<{ id: string; severity: string; message: string; since: string }>;
+  incidents: Array<{ id: string; severity: string; title: string; createdAt: string }>;
 }
 
 // ── Status helpers ────────────────────────────────────────────────────────
@@ -209,7 +209,7 @@ export default function SystemHealthPage() {
     // 3. Static assets
     try {
       const start = Date.now();
-      const res = await fetch("/icon?health-check", { method: "HEAD" });
+      const res = await fetch("/icon.png?health-check", { method: "HEAD" });
       const latency = Date.now() - start;
       results.push({
         name: "Archivos estáticos",
@@ -380,36 +380,6 @@ export default function SystemHealthPage() {
         description="Estado en tiempo real de servicios, latencia y métricas operativas. Auto-refresh cada 30 segundos."
         icon={HeartPulse}
         kicker="Plataforma · Observabilidad"
-        stats={
-          <>
-            <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 py-2 min-w-[88px]">
-              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
-                Score
-              </p>
-              <p
-                className={`font-display text-xl font-extrabold tabular-nums tracking-tight mt-1 leading-none ${
-                  healthScore >= 80
-                    ? "text-[var(--data-success-500)]"
-                    : healthScore >= 50
-                      ? "text-teal-600 dark:text-teal-400"
-                      : "text-[var(--accent)] dark:text-[var(--accent)]"
-                }`}
-              >
-                {healthScore}
-              </p>
-            </div>
-            {uptime > 0 && (
-              <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 py-2 min-w-[88px]">
-                <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
-                  Uptime
-                </p>
-                <p className="font-display text-xl font-extrabold tabular-nums tracking-tight mt-1 leading-none text-[var(--text-primary)]">
-                  {formatUptime(uptime)}
-                </p>
-              </div>
-            )}
-          </>
-        }
       >
         {/* ─── Overall status banner ──────────────────────────────── */}
         <section
@@ -521,12 +491,8 @@ export default function SystemHealthPage() {
                   </span>
                   <div>
                     <h3 className="font-display text-base font-extrabold tracking-tight text-[var(--accent)] dark:text-[var(--accent)]">
-                      Incidentes activos
+                      Incidentes activos · {incidents.length}
                     </h3>
-                    <p className="text-xs text-[var(--accent)]/80 dark:text-[var(--accent)]/80">
-                      {incidents.length} incidente{incidents.length === 1 ? "" : "s"} requieren
-                      atención
-                    </p>
                   </div>
                 </header>
                 <ul className="divide-y divide-rose-200/60 dark:divide-rose-800/40">
@@ -536,14 +502,14 @@ export default function SystemHealthPage() {
                       className="flex items-center gap-3 px-5 py-3 text-sm text-[var(--accent)] dark:text-[var(--accent)]"
                     >
                       <XCircle className="h-4 w-4 shrink-0" strokeWidth={2.25} aria-hidden />
-                      <span className="font-semibold flex-1">{inc.message}</span>
+                      <span className="font-semibold flex-1">{inc.title}</span>
                       <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]/80 dark:text-[var(--accent)]/80 shrink-0">
                         {(() => {
                           // Brandon 2026-05-21 audit fix #9: guard contra
                           // "Invalid Date" cuando inc.since es null/undefined
                           // o no parseable. Antes mostraba "DESDE INVALID DATE".
-                          if (!inc.since) return "ahora";
-                          const d = new Date(inc.since);
+                          if (!inc.createdAt) return "ahora";
+                          const d = new Date(inc.createdAt);
                           if (isNaN(d.getTime())) return "ahora";
                           return `desde ${d.toLocaleTimeString("es-PE")}`;
                         })()}

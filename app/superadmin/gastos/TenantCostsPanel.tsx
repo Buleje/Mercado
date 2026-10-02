@@ -83,7 +83,7 @@ export function TenantCostsPanel({ costs, loading }: { costs: CostsData | null; 
       <SuperadminChartCard
         kicker="Infra"
         title="¿En qué se va el costo de infra?"
-        description="Reparto del costo mensual de todas las tiendas entre almacenamiento, cómputo e IA."
+        info="Reparto del costo mensual de todas las tiendas entre almacenamiento, cómputo e IA."
         density="compact"
       >
         <CompositionBar
@@ -98,7 +98,7 @@ export function TenantCostsPanel({ costs, loading }: { costs: CostsData | null; 
 
       <SuperadminChartCard
         title="Costos por tienda"
-        description="Infra estimada por tienda y margen bruto. Las filas en rojo cuestan más de lo que pagan."
+        info="Infra estimada por tienda y margen bruto. Las filas en rojo cuestan más de lo que pagan."
         density="compact"
       >
         <div className="overflow-x-auto rounded-lg border border-[var(--rule-soft)]">

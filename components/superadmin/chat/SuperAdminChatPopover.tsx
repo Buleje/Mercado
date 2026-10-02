@@ -203,7 +203,7 @@ export default function SuperAdminChatPopover() {
                     </div>
                     <div className="mt-0.5 flex items-center justify-between gap-2">
                       <span className="truncate text-xs text-[var(--text-secondary)]">
-                        {c.lastSenderType === "platform" ? "Vos: " : ""}
+                        {c.lastSenderType === "platform" ? "Tú: " : ""}
                         {c.lastMessageText ?? "—"}
                       </span>
                       {c.unreadForPlatform > 0 && (

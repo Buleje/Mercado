@@ -9,6 +9,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Database, Server, Cpu, RefreshCw, CheckCircle2, MinusCircle } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { SAKpiCard } from "@/components/superadmin/_shared/SAKpiCard";
 import { useVisiblePolling } from "@/components/superadmin/_shared/useVisiblePolling";
 
@@ -45,10 +46,8 @@ function Section({ icon: Icon, title, sub, children }: { icon: typeof Database; 
     <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden">
       <header className="flex items-center gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-5 py-3.5">
         <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]"><Icon className="h-4 w-4" strokeWidth={1.75} aria-hidden /></span>
-        <div>
-          <h3 className="font-display text-base font-extrabold tracking-tight text-[var(--text-primary)]">{title}</h3>
-          {sub && <p className="text-xs text-[var(--text-tertiary)]">{sub}</p>}
-        </div>
+        <h3 className="font-display text-base font-extrabold tracking-tight text-[var(--text-primary)]">{title}</h3>
+        {sub && <InfoTip title={title} what={sub} />}
       </header>
       <div className="p-4">{children}</div>
     </section>
@@ -106,7 +105,7 @@ export function SystemHealthMetrics() {
       </Section>
 
       {/* Servicios */}
-      <Section icon={Server} title="Servicios e integraciones" sub="configurado = el secreto está en el entorno (no implica operativo); Redis se pinea de verdad">
+      <Section icon={Server} title="Servicios e integraciones" sub="«Configurado» = el secreto está en el entorno; no garantiza que funcione. Redis sí se prueba de verdad.">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
           {m.services.map((s) => {
             const isRedis = s.key === "redis";
@@ -129,7 +128,7 @@ export function SystemHealthMetrics() {
       {/* App / runtime */}
       <Section icon={Cpu} title="Runtime de la app">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <SAKpiCard label="Entorno" value={m.app.env} />
+          <SAKpiCard label="Entorno" value={m.app.env === "development" ? "dev" : m.app.env === "production" ? "prod" : m.app.env} />
           <SAKpiCard label="Node" value={m.app.node} />
           <SAKpiCard label="Uptime" value={fmtUptime(m.app.uptimeSec)} sub="del proceso" />
           <SAKpiCard label="Versión" value={m.app.version ?? "—"} />

@@ -48,10 +48,6 @@ export default async function TenantErrorsPage() {
                   example="Una bodega tropieza con un bug al cargar un producto → lo ves acá antes de que te llame, entrás a su panel y la ayudás."
                 />
               </h1>
-              <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-3xl">
-                Errores del panel admin de los negocios, agrupados por negocio. Entrá a reproducir,
-                contactá al dueño o marcá resuelto.
-              </p>
             </div>
           </div>
         </div>

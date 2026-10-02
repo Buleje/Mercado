@@ -48,6 +48,7 @@ import {
   TrendingUp,
 } from "@buleje/design-system/icons";
 import { AdminTabShell } from "../_components/_shared";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { PaymentProofViewer } from "@/components/admin/PaymentProofViewer";
 import { buildWaLink } from "@/lib/wa-number";
 import { cn } from "@/lib/utils";
@@ -473,28 +474,8 @@ export function OrdersClient() {
     <AdminTabShell
       title="Pedidos del marketplace"
       kicker="Plataforma · Operaciones"
-      description="Vista cross-tenant de todos los pedidos. Filtros por tienda, estado o búsqueda."
+      description="Todos los pedidos de todas las tiendas. Filtra por tienda, estado o texto."
       icon={ShoppingBag}
-      stats={
-        <>
-          <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 py-2 min-w-[88px]">
-            <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
-              Pendientes
-            </p>
-            <p className="font-display text-xl font-extrabold tabular-nums tracking-tight mt-1 leading-none text-teal-600 dark:text-teal-400">
-              {kpis.grouped.pendiente}
-            </p>
-          </div>
-          <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 py-2 min-w-[88px]">
-            <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
-              GMV
-            </p>
-            <p className="font-display text-xl font-extrabold tabular-nums tracking-tight mt-1 leading-none text-[var(--accent)]">
-              S/{Number(kpis.totalRev).toFixed(0)}
-            </p>
-          </div>
-        </>
-      }
     >
       <Toasts toasts={toasts} />
 
@@ -589,13 +570,7 @@ export function OrdersClient() {
  <BarChart3 className="h-4 w-4" aria-hidden />
  Analítica
  </button>
- <span className="ml-auto text-xs text-[var(--text-tertiary)]">
- Atajos:{" "}
- <kbd className="px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] font-mono border border-[var(--rule-soft)]">/</kbd>{" "}
- buscar ·{" "}
- <kbd className="px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] font-mono border border-[var(--rule-soft)]">R</kbd>{" "}
- recargar
- </span>
+ <InfoTip icono="ayuda" className="ml-auto" title="Atajos" body={<>Pulsa <b>/</b> para buscar y <b>R</b> para recargar.</>} />
  </div>
 
  {/* Filtros search + tenant */}

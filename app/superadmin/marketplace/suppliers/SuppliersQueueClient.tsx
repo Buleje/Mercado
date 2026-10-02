@@ -289,7 +289,7 @@ export default function SuppliersQueueClient() {
       <Toasts toasts={toasts} />
 
       {/* ── Toolbar: tabs + search + acciones ──────────────────────── */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div className="flex gap-1 rounded-xl bg-[var(--surface-sunken)] p-1 w-fit">
           {TABS.map((t) => {
             const active = t.id === tab;
@@ -728,7 +728,7 @@ function EmptyState({
       </p>
       <p className="text-sm text-[var(--text-tertiary)] mt-1">
         {isFiltered
-          ? "Ajustá la búsqueda."
+          ? "Ajusta la búsqueda."
           : "Cuando lleguen solicitudes de proveedores, aparecerán aquí."}
       </p>
       {isFiltered && (

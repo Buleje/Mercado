@@ -82,7 +82,7 @@ export default function DocumentTemplatesModal({ onClose, onGenerated }: Props) 
     );
     if (missing.length > 0) {
       setFieldError(
-        `Completá los campos obligatorios: ${missing.map((f) => f.label).join(", ")}`,
+        `Completa los campos obligatorios: ${missing.map((f) => f.label).join(", ")}`,
       );
       return;
     }
@@ -248,7 +248,7 @@ export default function DocumentTemplatesModal({ onClose, onGenerated }: Props) 
             {!selected ? (
               <div className="flex flex-col items-center justify-center h-full gap-3 text-[var(--text-tertiary)]">
                 <FileText className="h-10 w-10" />
-                <p className="text-sm">Elegí una plantilla para continuar.</p>
+                <p className="text-sm">Elige una plantilla para continuar.</p>
               </div>
             ) : success ? (
               <div className="flex flex-col items-center justify-center h-full gap-3">

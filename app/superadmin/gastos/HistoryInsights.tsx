@@ -43,7 +43,7 @@ export function HistoryInsights({ history }: { history: HistoryMonth[] }) {
       <SuperadminChartCard
         kicker="Evolución"
         title="Gasto mes a mes"
-        description="Todos los meses registrados; las barras claras son meses en curso o estimados."
+        info="Todos los meses registrados; las barras claras son meses en curso o estimados."
         density="compact"
       >
         <TrendChart trend={chrono} budgetPen={null} />

@@ -46,9 +46,6 @@ export default async function CohortsPage() {
                   example="Si la cohorte de abril retiene 100% pero la de junio cae al mes 1, algo cambió en cómo entran los nuevos negocios."
                 />
               </h1>
-              <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-3xl">
-                ¿Los negocios nuevos se quedan? Retención mes a mes desde el alta.
-              </p>
             </div>
           </div>
         </div>

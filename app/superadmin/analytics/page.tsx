@@ -11,6 +11,7 @@
  *  - Tabla de comisiones con tokens DS + status pills consistentes
  */
 
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { SAMetricCard } from "@/components/superadmin/_shared/SAMetricCard";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import dynamic from "next/dynamic";
@@ -312,29 +313,6 @@ export default function AnalyticsPage() {
         description="Métricas globales de todos los tenants — ingresos, registros, conversión, churn."
         icon={BarChart3}
         kicker="Plataforma · Analytics"
-        stats={
-          <>
-            <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 py-2 min-w-[88px]">
-              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
-                Periodo
-              </p>
-              <p className="font-display text-sm font-extrabold tracking-tight mt-1 leading-none text-[var(--accent)] inline-flex items-center gap-1.5">
-                <Calendar className="h-3 w-3" aria-hidden />
-                {fmtPeriodShortLabel(period)}
-              </p>
-            </div>
-            {analytics && (
-              <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 py-2 min-w-[88px]">
-                <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
-                  MRR
-                </p>
-                <p className="font-display text-xl font-extrabold tabular-nums tracking-tight mt-1 leading-none text-[var(--text-primary)]">
-                  {fmtAmount(analytics.overview.mrr)}
-                </p>
-              </div>
-            )}
-          </>
-        }
       >
         {/* ─── Date filter toolbar (sticky) ──────────────────────── */}
         <PeriodToolbar period={period} onChange={setPeriod} />
@@ -453,12 +431,10 @@ export default function AnalyticsPage() {
             <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden">
               <header className="flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-5 py-3.5">
                 <div>
-                  <h3 className="font-display text-base font-extrabold tracking-tight text-[var(--text-primary)]">
-                    Comisiones recientes
-                  </h3>
-                  <p className="text-xs text-[var(--text-tertiary)]">
-                    Últimas 20 del periodo seleccionado
-                  </p>
+                  <div className="flex items-center gap-1">
+                    <h3 className="font-display text-base font-extrabold tracking-tight text-[var(--text-primary)]">Comisiones recientes</h3>
+                    <InfoTip title="Comisiones recientes" what="Las últimas 20 del periodo elegido." />
+                  </div>
                 </div>
                 <span className="rounded-full bg-[var(--accent)]/10 px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]">
                   {commissions.length}
@@ -477,7 +453,7 @@ export default function AnalyticsPage() {
                     Sin comisiones en el periodo
                   </p>
                   <p className="text-xs text-[var(--text-tertiary)] mt-1">
-                    Probá cambiar el filtro de fechas o ampliar el rango.
+                    Prueba cambiar el filtro de fechas o ampliar el rango.
                   </p>
                 </div>
               ) : (
@@ -534,12 +510,10 @@ export default function AnalyticsPage() {
                     <AlertTriangle className="h-4 w-4" strokeWidth={1.75} aria-hidden />
                   </span>
                   <div>
-                    <h3 className="font-display text-base font-extrabold tracking-tight text-[var(--text-primary)]">
-                      Tiendas en riesgo
-                    </h3>
-                    <p className="text-xs text-[var(--text-tertiary)]">
-                      Tiendas que cancelarán pronto, tienen trial vencido o están suspendidas
-                    </p>
+                    <div className="flex items-center gap-1">
+                      <h3 className="font-display text-base font-extrabold tracking-tight text-[var(--text-primary)]">Tiendas en riesgo</h3>
+                      <InfoTip title="Tiendas en riesgo" what="Van a cancelar pronto, tienen el trial vencido o están suspendidas." />
+                    </div>
                   </div>
                 </div>
                 <span className="rounded-full bg-teal-100 px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-teal-700 dark:bg-teal-900/50 dark:text-teal-300">
@@ -840,11 +814,11 @@ function SectionHeading({
       <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]">
         <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
       </span>
-      <div>
+      <div className="flex items-center gap-1">
         <h2 className="font-display text-lg sm:text-xl font-extrabold tracking-tight text-[var(--text-primary)]">
           {title}
         </h2>
-        <p className="mt-0.5 text-sm text-[var(--text-secondary)]">{subtitle}</p>
+        <InfoTip title={title} what={subtitle} />
       </div>
     </div>
   );

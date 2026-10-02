@@ -94,7 +94,7 @@ export function RescueQueue() {
 
   if (loading && !d) {
     return (
-      <AdminTabShell title="Cola de rescate" description="Atajá al que se va a ir antes de que pase. Priorizado por urgencia y valor." icon={HeartHandshake} kicker="Plataforma · Retención" info={RESCUE_INFO}>
+      <AdminTabShell title="Cola de rescate" description="Ataja al que se va a ir antes de que pase. Priorizado por urgencia y valor." icon={HeartHandshake} kicker="Plataforma · Retención" info={RESCUE_INFO}>
         <div className="h-64 animate-pulse rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)]" />
       </AdminTabShell>
     );
@@ -109,7 +109,7 @@ export function RescueQueue() {
   return (
     <AdminTabShell
       title="Cola de rescate"
-      description="Atajá al que se va a ir antes de que pase. Priorizado por urgencia y valor."
+      description="Ataja al que se va a ir antes de que pase. Priorizado por urgencia y valor."
       icon={HeartHandshake}
       kicker="Plataforma · Retención"
       info={RESCUE_INFO}
@@ -126,7 +126,7 @@ export function RescueQueue() {
       <SuperadminChartCard
         kicker="Prioridad"
         title="Negocios a rescatar"
-        description="Priorizada por urgencia × valor · actuá primero sobre el de arriba · auto 30s"
+        info="Priorizada por urgencia × valor · actúa primero sobre el de arriba · auto 30s"
         density="compact"
         actions={toast ? <span className="text-xs font-bold text-[var(--accent)]">{toast}</span> : undefined}
       >
