@@ -124,9 +124,12 @@ export default function ChalecosModal({
             void asignar();
           }}
         >
-          <label className="block">
-            <span className="flex items-center gap-1 whitespace-nowrap text-sm font-bold text-[var(--text-secondary)]">
-              N° del chaleco
+          {/* El ⓘ va AL LADO del <label>, no adentro: adentro, tocarlo enfocaba el campo. */}
+          <div className="block">
+            <span className="flex items-center gap-1 whitespace-nowrap">
+              <label htmlFor="chaleco-numero" className="text-sm font-bold text-[var(--text-secondary)]">
+                N° del chaleco
+              </label>
               <InfoTip
                 title="Número del chaleco"
                 what="El número impreso en el chaleco o el casco, como lo lee la IA."
@@ -135,6 +138,7 @@ export default function ChalecosModal({
               />
             </span>
             <input
+              id="chaleco-numero"
               ref={numeroRef}
               value={numero}
               onChange={(e) => setNumero(e.target.value)}
@@ -144,7 +148,7 @@ export default function ChalecosModal({
               aria-describedby="chaleco-dueno-actual"
               className={`${CAMPO} mt-1 w-full font-mono`}
             />
-          </label>
+          </div>
           <label className="block">
             <span className="text-sm font-bold text-[var(--text-secondary)]">Quién lo usa</span>
             <select

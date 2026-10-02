@@ -70,13 +70,16 @@ export default function NuevaPaginaModal({ open, onClose, onCrear }: Props) {
           />
         </div>
         <div>
-          <label htmlFor="pagina-enlace" className="flex items-center gap-1.5 text-sm font-semibold text-[var(--text-secondary)] mb-1.5">
-            Enlace
+          {/* El ⓘ va AL LADO del <label>, no adentro: adentro, tocarlo enfocaba el campo. */}
+          <div className="mb-1.5 flex items-center gap-1.5">
+            <label htmlFor="pagina-enlace" className="text-sm font-semibold text-[var(--text-secondary)]">
+              Enlace
+            </label>
             <InfoTip
               title="El enlace de la página"
               what="Lo que va después de /cms/ en la dirección. Solo minúsculas, números y guiones; lo armamos con tu título y puedes cambiarlo."
             />
-          </label>
+          </div>
           <div className="flex items-center gap-2">
             <span className="text-sm text-[var(--text-tertiary)] shrink-0">/cms/</span>
             <input

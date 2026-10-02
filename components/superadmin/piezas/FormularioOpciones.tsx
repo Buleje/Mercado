@@ -88,11 +88,14 @@ function CampoDe({ campo, valor, onCambio }: { campo: Campo; valor: unknown; onC
       );
     case "booleano":
       return (
-        <label className="flex min-h-11 cursor-pointer items-center gap-3">
-          <input type="checkbox" checked={valor === true} onChange={(e) => onCambio(e.target.checked)} className="h-5 w-5 accent-[var(--accent)]" />
-          <span className="text-sm font-bold text-[var(--text-primary)]">{campo.rotulo}</span>
+        // El ⓘ va AL LADO del <label>, no adentro: adentro, tocarlo marcaba la casilla.
+        <div className="flex min-h-11 items-center gap-3">
+          <label className="flex cursor-pointer items-center gap-3">
+            <input type="checkbox" checked={valor === true} onChange={(e) => onCambio(e.target.checked)} className="h-5 w-5 accent-[var(--accent)]" />
+            <span className="text-sm font-bold text-[var(--text-primary)]">{campo.rotulo}</span>
+          </label>
           {campo.ayuda && <InfoTip title={campo.rotulo} what={campo.ayuda} side="bottom" />}
-        </label>
+        </div>
       );
     case "elegir":
       return (
