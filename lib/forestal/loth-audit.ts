@@ -54,6 +54,14 @@ export type LothAuditAction =
   // Guía de Transporte Forestal (GTF)
   | "loth_gtf_create"
   | "loth_gtf_annul"
+  // Guía ya despachada importada al libro (ADR-461): resumen de lo asentado
+  | "loth_gtf_importar"
+  // Tala referencial que creció con las trozas de otra guía del mismo árbol (ADR-461)
+  | "loth_linea_ampliar_referencial"
+  // Se deshizo una guía importada: guía, despachos, trozados y talas que asentó (ADR-461 §12)
+  | "loth_gtf_deshacer_importar"
+  // Tala referencial que se achicó al deshacer una de las guías que la sostenían (ADR-461 §12)
+  | "loth_linea_reducir_referencial"
   // La guía pasó al Libro CTP del mismo negocio (o se recibió allá)
   | "loth_gtf_al_ctp"
   // Cierre de período del libro (acta inmutable)

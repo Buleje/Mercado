@@ -31,6 +31,7 @@ import {
   Scissors,
   Upload,
   LayoutGrid,
+  FileDown,
 } from "@buleje/design-system/icons";
 import LibroChrome, { type LibroAction, type LibroGroup } from "@/components/admin/shared/libro-chrome";
 import AdminModal from "@/components/admin/shared/AdminModal";
@@ -97,6 +98,7 @@ import { cumplePermiso } from "@/lib/forestal/loth-filtro-permiso";
 import { useLothLibroPermiso } from "./hooks/use-loth-libro-permiso";
 import LothLibroPermisoSelect from "./LothLibroPermisoSelect";
 import LothAtarSinPlan from "./LothAtarSinPlan";
+import { CLAVE_PLAN_TABLERO } from "./hooks/use-loth-tablero-permiso";
 
 type LothEntry = LothEntryDTO;
 
@@ -176,6 +178,9 @@ type LothView = "secciones" | "trazabilidad" | "tablero" | "plan" | "gtf" | "ext
 /** «Analítica» y «Rentabilidad» se fusionaron en «Rentabilidad y rendimiento» (2026-09-29):
  *  un `?vista=analitica` guardado, o un botón que aún la nombra, llegan a la nueva. */
 const LOTH_VISTAS_FUSIONADAS = { analitica: "rentabilidad" } as const satisfies Record<string, LothView>;
+
+/* «Importar guías despachadas» (ADR-461): se usa de vez en cuando, se baja al abrirlo. */
+const LothImportarGuiasModal = dynamic(() => import("./LothImportarGuiasModal"), { ssr: false });
 
 /* «Extracción» (ADR-454) trae recharts: se baja sólo al abrir la vista. */
 const LothExtraccionView = dynamic(() => import("./LothExtraccionView"), {
@@ -287,6 +292,8 @@ export default function LothLibroOperaciones() {
   /** Líneas a anular: una desde su fila, o todas las seleccionadas. */
   const [anularLineas, setAnularLineas] = useState<LothEntry[]>([]);
   const [showImport, setShowImport] = useState(false);
+  /** «Importar guías despachadas» (ADR-461): guías ya salidas → trozas, tala referencial y permiso. */
+  const [showImportarGuias, setShowImportarGuias] = useState(false);
   const [showTrozar, setShowTrozar] = useState(false);
   /** «Talar varios árboles»: lo marcado en «Ver censo», en una planilla (28-09). */
   const [tandaTala, setTandaTala] = useState<TandaTalaInicial | null>(null);
@@ -883,6 +890,13 @@ export default function LothLibroOperaciones() {
       onSelect: () => setShowImport(true),
     },
     {
+      id: "importar-guias",
+      label: "Importar guías despachadas",
+      hint: "Las guías que ya salieron, con sus trozas y su permiso: por N° de registro SERFOR, foto o las recibidas en el aserradero",
+      icon: FileDown,
+      onSelect: () => setShowImportarGuias(true),
+    },
+    {
       id: "etiquetas",
       label: "Etiquetas QR",
       hint: "Imprime el QR de origen de cada código en pantalla",
@@ -987,7 +1001,14 @@ export default function LothLibroOperaciones() {
       {view === "plan" && <LothPlanView reloadSignal={reloadSignal} />}
 
       {/* Vista GTF — guías de transporte forestal */}
-      {view === "gtf" && <LothGtfView focusGtf={focoGtf} onFocusHandled={() => setFocoGtf(null)} />}
+      {view === "gtf" && (
+        <LothGtfView
+          focusGtf={focoGtf}
+          onFocusHandled={() => setFocoGtf(null)}
+          onImportarGuias={() => setShowImportarGuias(true)}
+          reloadSignal={reloadSignal}
+        />
+      )}
 
       {/* Vista Extracción — el permiso de punta a punta: censo, saldos y cadena (ADR-454) */}
       {view === "extraccion" && <LothExtraccionView reloadSignal={reloadSignal} onIr={setView} />}
@@ -1398,6 +1419,30 @@ export default function LothLibroOperaciones() {
             setDespachoElegidas(null);
           }}
           onRegistrada={refreshAll}
+        />
+      )}
+
+      {showImportarGuias && (
+        <LothImportarGuiasModal
+          onClose={() => setShowImportarGuias(false)}
+          onImportadas={() => void refreshAll()}
+          onVerGuia={(gtf) => {
+            setShowImportarGuias(false);
+            setFocoGtf(gtf);
+            setView("gtf");
+          }}
+          onVerPermiso={(planId) => {
+            setShowImportarGuias(false);
+            /* El Control del permiso recuerda su plan con su propia clave: se deja
+               elegido el importado antes de llegar (mismo formato que useLocalStorage). */
+            try {
+              window.localStorage.setItem(CLAVE_PLAN_TABLERO, JSON.stringify(planId));
+              window.dispatchEvent(new CustomEvent("local-storage", { detail: { key: CLAVE_PLAN_TABLERO, value: planId } }));
+            } catch (err) {
+              console.warn("[loth] no se pudo dejar elegido el permiso importado", err);
+            }
+            setView("tablero");
+          }}
         />
       )}
 

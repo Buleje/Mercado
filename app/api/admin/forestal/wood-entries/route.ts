@@ -18,6 +18,9 @@ import { gtfDatosSchema } from "@/lib/forestal/ctp-gtf-datos";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { leerContratoId } from "@/lib/forestal/contrato-filtro";
 import { fotosDelTenantSchema } from "@/lib/storage-url";
+import { esNumeroRegistroValido, normalizarNumeroRegistro, type GtfSerfor } from "@/lib/forestal/serfor-gtf";
+import { consultarGtfEnSerfor } from "@/lib/forestal/serfor-gtf-fetch";
+import { mismoNumeroGtf } from "@/lib/forestal/gtf-talonario";
 import { normalizarFotos } from "@/lib/forestal/fotos-carga";
 import { FILTROS_PAGO } from "@/lib/forestal/ingresos-filtros-columna";
 
@@ -90,10 +93,12 @@ const unidadEnum = z.enum(UNIDADES_LOCTP.map((u) => u.valor) as [string, ...stri
 const buildCreateSchema = (tenantId: string) => z.object({
   entryDate: z.coerce.date().optional(),
   docType: docTypeEnum.optional(),
-  // La ficha de SERFOR viaja tal cual: es un documento de ellos, no se re-valida
-  // campo por campo (sólo su tamaño, para no aceptar cualquier cosa).
+  // Sólo el N° de registro: la FICHA de SERFOR la pone el servidor
+  // (`fichaDelServidor`). Una `serforGtf` que mande el navegador se descarta
+  // (Zod quita las claves que no declara): con ella un ingreso inventado salía
+  // como candidata de «Importar guías» con el sello «desde SERFOR» (ADR-461,
+  // revisión de seguridad 02-10-2026).
   serforNumeroRegistro: z.string().trim().max(30).nullable().optional(),
-  serforGtf: z.record(z.string(), z.unknown()).nullable().optional(),
   gtfNumber: z.string().trim().min(1).max(50),
   gtfDate: z.coerce.date().nullable().optional(),
   gtfSeries: z.string().trim().max(20).nullable().optional(),
@@ -180,6 +185,39 @@ const buildCreateSchema = (tenantId: string) => z.object({
     .max(500)
     .optional(),
 });
+
+// ─── La ficha de SERFOR la pone el servidor ───────────────────────────────
+
+/**
+ * La ficha oficial del ingreso, pedida por el SERVIDOR con el N° de registro
+ * (la misma consulta que «Consultar en SERFOR», con su caché). Sólo se guarda
+ * si SERFOR la encontró y es de ESTA GTF (tramo a tramo); si no responde, no la
+ * encuentra o es de otra guía, el ingreso se guarda SIN ficha y se dice: nunca
+ * una ficha inventada ni la del navegador.
+ */
+async function fichaDelServidor(
+  registro: string | null | undefined,
+  gtfNumber: string,
+): Promise<{ ficha: GtfSerfor | null; aviso: string | null }> {
+  const r = registro?.trim();
+  if (!r) return { ficha: null, aviso: null };
+  const numero = normalizarNumeroRegistro(r);
+  if (!esNumeroRegistroValido(numero)) {
+    return { ficha: null, aviso: `«${r}» no es un N° de registro de SERFOR: el ingreso se guardó sin su ficha.` };
+  }
+  const c = await consultarGtfEnSerfor(numero);
+  if (!c.ok || c.resultado.estado === "sin_respuesta") {
+    return { ficha: null, aviso: "SERFOR no respondió: el ingreso se guardó sin su ficha. Vuelve a consultarla más tarde." };
+  }
+  const g = c.resultado.gtf;
+  if (c.resultado.estado !== "encontrada" || !g) {
+    return { ficha: null, aviso: `SERFOR no encontró la guía con el registro ${numero}: el ingreso se guardó sin su ficha.` };
+  }
+  if (g.gtfNumber && !mismoNumeroGtf(g.gtfNumber, gtfNumber)) {
+    return { ficha: null, aviso: `El registro ${numero} es de la GTF ${g.gtfNumber}, no de la ${gtfNumber}: el ingreso se guardó sin su ficha.` };
+  }
+  return { ficha: { ...g, numeroRegistro: g.numeroRegistro || numero }, aviso: null };
+}
 
 // ─── Guard ────────────────────────────────────────────────────────────────
 
@@ -627,8 +665,10 @@ export const POST = withApiHandler("forestal-wood-entries-post", async (req: Nex
   }
 
   try {
+    const { ficha, aviso } = await fichaDelServidor(parsed.data.serforNumeroRegistro, parsed.data.gtfNumber);
     const entry = await WoodEntriesDB.create(auth.tenantId, {
       ...parsed.data,
+      serforGtf: ficha as unknown as Record<string, unknown> | null,
       createdBy: auth.username ?? "unknown",
     });
     /* ADR-442: si había una guía guardada con este N° de registro y otra
@@ -639,7 +679,7 @@ export const POST = withApiHandler("forestal-wood-entries-post", async (req: Nex
       { gtfNumber: parsed.data.gtfNumber, serforNumeroRegistro: parsed.data.serforNumeroRegistro ?? null },
       auth.username ?? "unknown",
     ).catch((err) => logger.error("[wood-entries.POST] enlazar guía guardada failed", { error: String(err) }));
-    return NextResponse.json({ entry }, { status: 201 });
+    return NextResponse.json({ entry, ...(aviso ? { avisoSerfor: aviso } : {}) }, { status: 201 });
   } catch (err) {
     // Los invariantes del libro (período cerrado, GTF duplicada) llegan como
     // CtpInvariantError: con un 500 el operario veía "error interno" al cargar

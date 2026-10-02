@@ -27,6 +27,8 @@
  */
 
 import { useCallback, useMemo } from "react";
+import SegmentedControl from "@/components/ui-system/SegmentedControl";
+import { useLocalStorage } from "@/hooks/use-local-storage";
 import type { LothEntryDTO } from "@/lib/forestal/loth-constants";
 import { cascadaDelPlan } from "@/lib/forestal/loth-saldo-cascada";
 import { bandaDelPlan, nombreDelPlan } from "@/lib/forestal/loth-tablero-permiso";
@@ -41,12 +43,14 @@ import {
 } from "@/lib/forestal/loth-tablero-trozas";
 import { limaDateKey } from "@/lib/utils";
 import { useLothTableroAcciones } from "./hooks/use-loth-tablero-acciones";
+import { useLothTableroKardex } from "./hooks/use-loth-tablero-kardex";
 import { useLothTableroPermiso } from "./hooks/use-loth-tablero-permiso";
 import { useLothTableroTabla } from "./hooks/use-loth-tablero-tabla";
 import LothTableroAvisos from "./LothTableroAvisos";
 import LothTableroBanda, { type CaratulaTablero } from "./LothTableroBanda";
 import LothTableroCabecera from "./LothTableroCabecera";
 import LothTableroEstados from "./LothTableroEstados";
+import LothTableroKardex from "./LothTableroKardex";
 import LothTableroTabla, { type NavTablero } from "./LothTableroTabla";
 import LothTableroTanda from "./LothTableroTanda";
 import LothTableroVolumen from "./LothTableroVolumen";
@@ -123,6 +127,18 @@ export default function LothTableroTrozas({
     [banda, caratula, filas, resumen, viejas, cascada, hoyKey, conColumnaPermiso, nombrePlanDe],
   );
 
+  /* «Trozas» (cada troza con su estado) o «Kárdex» (cada movimiento con su saldo). Se recuerda. */
+  const [pestana, setPestana] = useLocalStorage<"trozas" | "kardex">("loth-tablero:pestana", "trozas");
+  const kardex = useLothTableroKardex({
+    entries,
+    planId: permiso.plan?.id ?? null,
+    banda,
+    franja: cascada,
+    activo: pestana === "kardex",
+    reloadSignal,
+    hoyKey,
+  });
+
   const acc = useLothTableroAcciones({
     datos,
     nombre: banda?.nombre ?? (permiso.planSel ? "sin plan" : "todos"),
@@ -167,35 +183,51 @@ export default function LothTableroTrozas({
         />
       )}
 
-      <LothTableroEstados
-        resumen={resumen}
-        viejas={viejas}
-        estados={t.estados}
-        soloViejas={t.soloViejas}
-        onEstado={t.alternarEstado}
-        onViejas={() => t.setSoloViejas((v) => !v)}
+      <SegmentedControl
+        value={pestana}
+        onChange={setPestana}
+        label="Qué ver del permiso"
+        options={[
+          { value: "trozas", label: "Trozas", badge: filas.length },
+          { value: "kardex", label: "Kárdex" },
+        ]}
       />
 
-      <LothTableroTabla
-        t={t}
-        total={filas.length}
-        especies={especies}
-        nav={nav}
-        permisoDe={conColumnaPermiso ? nombrePlanDe : undefined}
-        vacio={permiso.planSel ? "Todavía no hay trozas registradas en este permiso." : undefined}
-        tanda={
-          <LothTableroTanda
-            seleccion={t.seleccion}
-            ocultas={t.ocultasElegidas}
-            planes={planesDe(t.seleccion).length}
-            imprimiendo={acc.imprimiendo}
-            onDespachar={onDespacharConGuia ? () => onDespacharConGuia(t.seleccion.map((f) => f.code)) : undefined}
-            onImprimir={acc.imprimirEtiquetas}
-            onExportar={() => void acc.exportarSeleccion()}
-            onQuitar={t.limpiarSeleccion}
+      {pestana === "kardex" ? (
+        <LothTableroKardex k={kardex} banda={banda} hoyKey={hoyKey} nav={nav} cargandoFranja={saldo.cargando} />
+      ) : (
+        <>
+          <LothTableroEstados
+            resumen={resumen}
+            viejas={viejas}
+            estados={t.estados}
+            soloViejas={t.soloViejas}
+            onEstado={t.alternarEstado}
+            onViejas={() => t.setSoloViejas((v) => !v)}
           />
-        }
-      />
+
+          <LothTableroTabla
+            t={t}
+            total={filas.length}
+            especies={especies}
+            nav={nav}
+            permisoDe={conColumnaPermiso ? nombrePlanDe : undefined}
+            vacio={permiso.planSel ? "Todavía no hay trozas registradas en este permiso." : undefined}
+            tanda={
+              <LothTableroTanda
+                seleccion={t.seleccion}
+                ocultas={t.ocultasElegidas}
+                planes={planesDe(t.seleccion).length}
+                imprimiendo={acc.imprimiendo}
+                onDespachar={onDespacharConGuia ? () => onDespacharConGuia(t.seleccion.map((f) => f.code)) : undefined}
+                onImprimir={acc.imprimirEtiquetas}
+                onExportar={() => void acc.exportarSeleccion()}
+                onQuitar={t.limpiarSeleccion}
+              />
+            }
+          />
+        </>
+      )}
     </div>
   );
 }

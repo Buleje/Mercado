@@ -1,0 +1,410 @@
+/**
+ * Tipos de «Importar guías ya despachadas al Libro TH» (ADR-461, 02-10-2026).
+ *
+ * El CONTRATO entre el servidor y la pantalla: la vista previa
+ * (`POST /api/admin/forestal/loth/importar-guia/vista-previa`), la importación
+ * (`POST /api/admin/forestal/loth/importar-guia`) y las candidatas
+ * (`GET /api/admin/forestal/loth/importar-guia/candidatas`) responden con estas
+ * formas. Si alguno cambia, se anota acá arriba con la fecha.
+ *
+ * PURO y client-safe: sólo tipos (y una constante).
+ *
+ * Cambios:
+ *  - 02-10 (1ª versión + 30 min): `AvisoImportacion.soloConTala`, `TalaReferencial.soloConTala`,
+ *    `GuiaVistaPrevia.estadoSinTala` y los pedidos (`PedidoVistaPrevia`,
+ *    `PedidoImportar`, `IMPORTAR_GUIAS_POR_PEDIDO`). Todo AGREGADO; nada cambió de forma.
+ *  - 02-10 (tarde): `IMPORTAR_SERFOR_POR_PEDIDO`, `RespuestaCandidatas.ilegibles` y
+ *    «Deshacer la importación» (`DeshacerImportacion`, `RespuestaDeshacer`,
+ *    `GET|POST …/importar-guia/deshacer`). Todo AGREGADO.
+ */
+
+import type { GtfSerfor } from "./serfor-gtf";
+
+// ── De dónde sale la guía ───────────────────────────────────────────────────
+
+/**
+ * Una guía para importar, por su fuente:
+ *  - `serfor`: el N° de REGISTRO de la GTF (con guiones, `1-10-0474633`); el
+ *    servidor la consulta en el SNIFFS (caché: 10 min lo encontrado, 60 s un «no encontrada»).
+ *  - `ctp`: un ingreso del Libro CTP que guardó la ficha de SERFOR
+ *    (`WoodEntry.serforGtf`). Cualquier asiento de la guía sirve (hay uno por especie).
+ *  - `ficha`: la ficha ya leída (foto o PDF con el lector IA). NO está
+ *    verificada en SERFOR: la guía queda anotada como «leída de un documento».
+ */
+export type FuenteImportarGuia =
+  | { tipo: "serfor"; numeroRegistro: string }
+  | { tipo: "ctp"; woodEntryId: string }
+  | { tipo: "ficha"; ficha: GtfSerfor };
+
+/** Cuántas guías por pedido de VISTA PREVIA. */
+export const IMPORTAR_GUIAS_MAX = 30;
+
+/**
+ * Cuántas guías por pedido de IMPORTAR. Cada guía es una transacción con
+ * decenas de consultas (una de 7 trozas ≈ 20 s desde la PC por el pooler; una
+ * de 49 ≈ 100 s): la pantalla las manda de a una o de a pocas y muestra el
+ * avance, en vez de esperar minutos un solo pedido.
+ */
+export const IMPORTAR_GUIAS_POR_PEDIDO = 10;
+
+/**
+ * Cuántas guías por N° de registro (fuente `serfor`) en UN pedido: cada una es
+ * una consulta al SNIFFS, un servicio del Estado. Se cobran además al mismo
+ * límite que la consulta suelta (`forestal:gtf-serfor`).
+ */
+export const IMPORTAR_SERFOR_POR_PEDIDO = 10;
+
+// ── El permiso ──────────────────────────────────────────────────────────────
+
+/** El `planType` que se propone para un permiso nuevo, según el origen y el código del título. */
+export type TipoPlanImportado = "PLANTACION" | "DEMA" | "PMFI" | "PO";
+
+/** Los datos del plan que se crearía. La pantalla los muestra y deja editarlos. */
+export interface PlanNuevoPropuesto {
+  planType: TipoPlanImportado;
+  /** En plantación: el código del registro. En los demás: `null` (el código va en `tituloHabilitante`). */
+  planNumber: string | null;
+  tituloHabilitante: string | null;
+  titularName: string;
+  representanteLegal: string | null;
+  resolucionNumber: string | null;
+  /** Departamento del ORIGEN (casilleros 10-12 de la guía). */
+  region: string | null;
+  provincia: string | null;
+  distrito: string | null;
+  /** La ARFFS que registró la guía (`instanciaRegistra`). */
+  arffs: string | null;
+  /** El permiso (`ForestContrato`) con el mismo código y sin plan: el plan nuevo se ata a él. */
+  contratoId: string | null;
+}
+
+/** Un plan del negocio que coincide con el código del título de la guía. */
+export interface PermisoCandidato {
+  planId: string;
+  planType: string;
+  /** `planNumber` o `tituloHabilitante`, el que coincidió (o el primero que haya). */
+  codigo: string | null;
+  titularName: string;
+  /** Por dónde coincidió: el código del plan o el permiso (`ForestContrato.planId`). */
+  via: "plan" | "contrato";
+  /** Especies del registro/autorización del plan (vacío = sin cargar: T7 no juzga). */
+  especies: string[];
+}
+
+export type PermisoDetectado =
+  /** Un solo plan con ese código: las trozas van ahí. */
+  | { estado: "existente"; plan: PermisoCandidato }
+  /** Ningún plan: se crea con `propuesta`. */
+  | { estado: "nuevo"; propuesta: PlanNuevoPropuesto }
+  /** Dos o más planes con ese código: la persona elige a cuál va. */
+  | { estado: "ambiguo"; candidatos: PermisoCandidato[]; propuesta: PlanNuevoPropuesto };
+
+/** A qué plan va la guía, como lo confirma la persona. */
+export type PlanDestino =
+  | { tipo: "existente"; planId: string }
+  | { tipo: "nuevo"; plan: PlanNuevoPropuesto };
+
+// ── Lo que se va a asentar ──────────────────────────────────────────────────
+
+/** Qué pasa con una troza de la guía al importarla. */
+export type EstadoTrozaImportada =
+  /** Se crea su línea de Trozado. */
+  | "nueva"
+  /** Ya tiene Trozado en ESTE plan (de una importación anterior de la misma guía o cargada a mano): se usa ésa. */
+  | "ya_trozada"
+  /** Choca con el libro (otro plan, otra especie o ya salió): la guía no se importa hasta resolverlo. */
+  | "conflicto";
+
+export interface TrozaImportada {
+  /** Posición en la lista de trozas de la guía (1, 2, 3…). */
+  indice: number;
+  /** La codificación tal como la publica la guía («186A», «173-D», «-»). */
+  codificacionGuia: string | null;
+  /** El código con que queda en el libro: el de la guía, o `SC-<registro>-<n>` si no tiene. */
+  trozaCode: string;
+  /** El árbol («186A» → «186»). `null` en las sin código: no se trazan a un árbol. */
+  treeCode: string | null;
+  sinCodigo: boolean;
+  speciesCommon: string | null;
+  speciesScientific: string | null;
+  /** D1 y D2 de la guía en METROS (la guía los publica en cm). */
+  diamMayorM: number | null;
+  diamMenorM: number | null;
+  lengthM: number | null;
+  /** El volumen de la GUÍA (dato oficial, no se recalcula). */
+  volumeM3: number | null;
+  estado: EstadoTrozaImportada;
+  /** Por qué choca, o qué línea se reutiliza. */
+  detalle: string | null;
+}
+
+/** Qué pasa con la tala referencial de un árbol. */
+export type EstadoTalaReferencial =
+  /** Se crea la tala referencial. */
+  | "nueva"
+  /** El árbol ya tiene una tala referencial de otra guía en este plan: se le suman estas trozas. */
+  | "ampliar"
+  /** El árbol ya tiene una tala medida en campo en este plan: se usa ésa (no se toca). */
+  | "existente"
+  /** La tala del árbol es de otro plan, o la medida no alcanza (T4): la guía no se importa. */
+  | "conflicto";
+
+/**
+ * La tala que se arma desde las trozas de un árbol: largo = Σ largos, D1 = el
+ * mayor, D2 = el menor, m³ = Σ m³ de sus trozas (así «trozado ≤ tala» cierra).
+ */
+export interface TalaReferencial {
+  treeCode: string;
+  /** Las trozas de ESTA guía que la forman («186A», «186B»). */
+  trozas: string[];
+  speciesCommon: string | null;
+  speciesScientific: string | null;
+  diamMayorM: number | null;
+  diamMenorM: number | null;
+  lengthM: number | null;
+  volumeM3: number | null;
+  estado: EstadoTalaReferencial;
+  /** La tala que ya está en el libro (si `ampliar`, `existente` o `conflicto`). */
+  talaExistente: { lineNo: number; volumeM3: number | null; planId: string | null } | null;
+  detalle: string | null;
+  /** El choque sólo existe si se crea la tala (el árbol tiene trozas en otro permiso y ninguna tala). */
+  soloConTala?: boolean;
+}
+
+// ── Avisos ──────────────────────────────────────────────────────────────────
+
+export type CodigoAvisoImportacion =
+  | "anulada"
+  | "ya_importada"
+  | "mes_cerrado"
+  | "sin_trozas"
+  | "sin_numero"
+  | "sin_fecha"
+  | "sin_codigo"
+  | "medidas_incompletas"
+  | "conflicto_troza"
+  | "conflicto_tala"
+  | "ambiguo"
+  | "plan_nuevo_sin_especies"
+  | "especie_fuera_del_plan"
+  | "no_verificada"
+  | "volumen_distinto";
+
+export interface AvisoImportacion {
+  /** `bloquea` = la guía no se importa así; `atencion` = se importa, pero conviene mirarlo; `info` = para saber. */
+  nivel: "bloquea" | "atencion" | "info";
+  codigo: CodigoAvisoImportacion;
+  mensaje: string;
+  /** Sólo cuenta si se crean las talas referenciales (con el interruptor apagado, no aplica). */
+  soloConTala?: boolean;
+}
+
+// ── Vista previa ────────────────────────────────────────────────────────────
+
+/** La identidad de la guía, como la dice el documento. */
+export interface GuiaResumen {
+  numeroRegistro: string | null;
+  gtfNumber: string | null;
+  /** `AAAA-MM-DD` (de `fechaExpedicion` dd/mm/aaaa). `null` si no se pudo leer. */
+  fecha: string | null;
+  estadoSerfor: string | null;
+  anulada: boolean;
+  titular: string | null;
+  representanteLegal: string | null;
+  numeroTitulo: string | null;
+  origenRecurso: string | null;
+  destinatario: string | null;
+  /** Lo que declara la guía (Σ del detalle si no publica el total). */
+  volumenDeclaradoM3: number | null;
+  /** Σ de la lista de trozas. */
+  volumenTrozasM3: number;
+  piezas: number;
+  especies: string[];
+  /** Vino del SNIFFS o de una ficha de SERFOR guardada en el CTP (no de una foto). */
+  verificadaEnSerfor: boolean;
+}
+
+export type EstadoVistaPrevia =
+  /** Se puede importar (con avisos de `atencion`, si los hay). */
+  | "lista"
+  /** El permiso es ambiguo: falta que la persona elija. */
+  | "elegir_permiso"
+  /** Ya está en el libro (mismo N° y mismo titular, o mismo N° de registro). */
+  | "ya_importada"
+  /** Un aviso `bloquea` (anulada, mes cerrado, conflicto…). */
+  | "bloqueada"
+  /** SERFOR no la encontró, o el ingreso no existe. */
+  | "no_encontrada"
+  /** SERFOR no respondió. */
+  | "sin_respuesta";
+
+export interface GuiaVistaPrevia {
+  /** Clave estable para la pantalla: el N° de registro, o el N° de la guía, o el id del ingreso. */
+  clave: string;
+  /** La fuente tal como vino (para devolverla en el POST de importar). */
+  fuente: FuenteImportarGuia;
+  /** El estado con las talas referenciales como vienen por defecto (`crearTalaPorDefecto`). */
+  estado: EstadoVistaPrevia;
+  /** El estado si se importa SIN crear talas (lo que cambia al apagar el interruptor). */
+  estadoSinTala: EstadoVistaPrevia;
+  /** Una línea para la persona («SERFOR no encontró la guía 1-10-…»). */
+  mensaje: string | null;
+  guia: GuiaResumen | null;
+  permiso: PermisoDetectado | null;
+  trozas: TrozaImportada[];
+  talas: TalaReferencial[];
+  /** Si la tala referencial va prendida por defecto: NO en plantación (ADR-459: allí no es obligatoria). */
+  crearTalaPorDefecto: boolean;
+  avisos: AvisoImportacion[];
+}
+
+/** Cuerpo de `POST …/importar-guia/vista-previa`. */
+export interface PedidoVistaPrevia {
+  fuentes: FuenteImportarGuia[];
+  /**
+   * Opcional, alineado con `fuentes`: el plan que la persona eligió para esa
+   * guía (p. ej. tras un `ambiguo`). Recalcula los choques contra ese plan.
+   */
+  planes?: (string | null)[];
+}
+
+/**
+ * Las guías salen en el orden pedido, pero se revisan como se importarían:
+ * por fecha. Una guía ve lo que dejan las anteriores de la MISMA tanda (el
+ * árbol 173 con 173-A en la guía 7 y 173-D en la 8 → la 8 «amplía» la tala).
+ */
+export interface RespuestaVistaPrevia {
+  guias: GuiaVistaPrevia[];
+}
+
+// ── Importar ────────────────────────────────────────────────────────────────
+
+/** Cuerpo de `POST …/importar-guia`. Se importan por fecha; cada guía en su propia transacción. */
+export interface PedidoImportar {
+  items: ItemImportarGuia[];
+}
+
+export interface ItemImportarGuia {
+  fuente: FuenteImportarGuia;
+  planDestino: PlanDestino;
+  /** Crear (o ampliar) las talas referenciales. Default: según `crearTalaPorDefecto`. */
+  crearTala: boolean;
+}
+
+export type EstadoImportacion = "importada" | "ya_estaba" | "rechazada";
+
+export interface ResultadoImportarGuia {
+  clave: string;
+  estado: EstadoImportacion;
+  mensaje: string;
+  /** El código del rechazo (`T1_TROZA_YA_MOVILIZADA`, `PERIODO_CERRADO`, `conflicto_troza`…). */
+  codigo: string | null;
+  gtfId: string | null;
+  gtfNumber: string | null;
+  planId: string | null;
+  /** Se creó el plan con esta guía (no existía). */
+  planCreado: boolean;
+  lineas: {
+    talasNuevas: number;
+    talasAmpliadas: number;
+    trozadosNuevos: number;
+    trozadosReusados: number;
+    despachos: number;
+  } | null;
+  volumenM3: number | null;
+}
+
+export interface RespuestaImportar {
+  resultados: ResultadoImportarGuia[];
+  importadas: number;
+  yaEstaban: number;
+  rechazadas: number;
+}
+
+// ── Candidatas (guías ya recibidas en el aserradero) ────────────────────────
+
+export interface GuiaCandidata {
+  /** Un ingreso de la guía (cualquiera: hay uno por especie). Va como `{ tipo: "ctp", woodEntryId }`. */
+  woodEntryId: string;
+  numeroRegistro: string | null;
+  gtfNumber: string;
+  /** `AAAA-MM-DD`. */
+  fecha: string | null;
+  titular: string | null;
+  especies: string[];
+  piezas: number;
+  volumenM3: number | null;
+  estadoSerfor: string | null;
+  anulada: boolean;
+  /** Trozas sin código en la guía («-»). */
+  sinCodigo: number;
+}
+
+export interface GrupoCandidatas {
+  /** El código del título habilitante como lo dice la guía. */
+  titulo: string;
+  origenRecurso: string | null;
+  titular: string | null;
+  permiso: PermisoDetectado;
+  guias: GuiaCandidata[];
+  piezas: number;
+  volumenM3: number;
+}
+
+export interface RespuestaCandidatas {
+  grupos: GrupoCandidatas[];
+  /** Guías distintas pendientes de importar. */
+  total: number;
+  /** Guías del CTP que ya están en el Libro TH (no se listan). */
+  yaEnElLibro: number;
+  /** Ingresos con una ficha guardada que no se puede leer (no se listan; el detalle va al log). */
+  ilegibles?: number;
+}
+
+// ── Deshacer una importación (ADR-461 §12, 02-10-2026) ──────────────────────
+
+/** Una tala referencial que toca deshacer la importación. */
+export interface TalaDeshecha {
+  id: string;
+  lineNo: number;
+  treeCode: string;
+  /**
+   * `anular`: la armó sólo esta guía. `reducir`: otra guía también la sostiene;
+   * queda con las trozas que siguen vivas del árbol (la misma regla del importador).
+   */
+  accion: "anular" | "reducir";
+  antesM3: number | null;
+  despuesM3: number | null;
+  /** En `reducir`: las otras guías que la siguen sosteniendo. */
+  otrasGuias: string[];
+}
+
+/**
+ * Qué deshace «Deshacer la importación» de una guía (y qué no). La vista previa
+ * (`GET …/deshacer?gtfId=`) y el POST corren la MISMA revisión; el POST la
+ * corre bajo los candados y la escribe en una transacción.
+ */
+export interface DeshacerImportacion {
+  gtfId: string;
+  gtfNumber: string;
+  /** El N° de registro SERFOR que cita la guía (o `null`). */
+  registro: string | null;
+  volumenM3: number | null;
+  /** Líneas de Despacho de trozas de la guía (se anulan). */
+  despachos: number;
+  /** Trozados que creó ESTA importación (se anulan). */
+  trozados: number;
+  /** Trozados que ya estaban antes de importar: quedan, sólo pierden este despacho. */
+  trozadosQueQuedan: number;
+  talas: TalaDeshecha[];
+  /** El permiso de la guía: si lo creó una importación y queda vacío, se da de baja. */
+  plan: { id: string; nombre: string; baja: boolean; motivo: string } | null;
+  /** Por qué no se puede. La vista previa lo muestra; el POST responde 409/422 con él. */
+  bloqueo: { codigo: string; mensaje: string; libroNros?: (number | null)[] } | null;
+  /** `true` en la respuesta del POST: ya se deshizo. */
+  hecho: boolean;
+}
+
+export interface RespuestaDeshacer {
+  deshacer: DeshacerImportacion;
+}

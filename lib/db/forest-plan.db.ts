@@ -259,6 +259,40 @@ export class ForestPlanDB {
     return plan;
   }
 
+  /**
+   * Alta del plan DENTRO de una transacción ajena (ADR-461: el importador de
+   * guías crea el permiso y asienta la guía en la MISMA transacción — o todo o
+   * nada). La misma fila que `createPlan`; el permiso (`contratoId`) se valida
+   * contra ESTE tenant con la `tx`. La caché y el rastro van después del commit:
+   * `despuesDelAlta`.
+   */
+  static async crearPlanEnTx(tx: Prisma.TransactionClient, tenantId: string, input: PlanInput) {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (!input.titularName?.trim()) throw new Error("titularName is required");
+    const pedido = (input.contratoId ?? "").trim();
+    let contratoId: string | null = null;
+    if (pedido) {
+      const existe = await tx.forestContrato.findFirst({ where: { tenantId, id: pedido, deletedAt: null }, select: { id: true } });
+      if (!existe) throw new ContratoAjenoError();
+      contratoId = existe.id;
+    }
+    return tx.forestPlan.create({ data: ForestPlanDB.datosDelPlan(tenantId, input, contratoId) });
+  }
+
+  /** Lo que sigue al commit de un `crearPlanEnTx`: caché del plan y el renglón del alta. */
+  static despuesDelAlta(
+    tenantId: string,
+    plan: { id: string; planType: string; planNumber: string | null; titularName: string },
+    actor: string,
+  ): void {
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    } catch (err) {
+      logger.error("[forest-plan] no se pudo invalidar la caché tras el alta", { error: String(err), tenantId, planId: plan.id });
+    }
+    ForestPlanDB.auditarAlta(tenantId, plan, [], actor);
+  }
+
   /** El renglón del alta: qué plan y, si vino con su registro, qué especies y cuántos m³. */
   private static auditarAlta(
     tenantId: string,

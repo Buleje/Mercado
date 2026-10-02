@@ -4,10 +4,11 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { requireAdmin } from "@/lib/require-admin";
 import { aiCostGuard } from "@/lib/ai/cost-control";
 import {
-  FORMATOS_IMAGEN,
+  FORMATOS_IMAGEN_Y_PDF,
   costoMaximoLecturaUsd,
   falloSinLector,
   gastoDeLectura,
+  paginasDePdf,
   proveedorVision,
   visionExtractJSON,
 } from "@/lib/ai/vision-extract";
@@ -33,16 +34,28 @@ import { esNumeroRegistroValido, normalizarNumeroRegistro } from "@/lib/forestal
  * que no es el N° de GTF impreso. Con él la guía guardada se busca en SERFOR y
  * la ficha oficial manda; por eso un número que no tiene la forma, o que es
  * la misma GTF leída dos veces, sale VACÍO: nunca un número adivinado.
+ *
+ * ADR-461 (02-10, «Foto o PDF» de Importar guías): también lee un PDF de hasta
+ * `MAX_PAGINAS_PDF` páginas (la GTF y su lista de trozas), con el lector común
+ * (`FORMATOS_IMAGEN_Y_PDF`; un PDF necesita la clave de Claude). Las páginas se
+ * cuentan ANTES de gastar y la reserva sale de cuántas trae. Lo usan el Libro
+ * CTP y el Libro TH: basta con que el negocio tenga uno de los dos.
  */
 
 const MAX_IMAGE_B64_BYTES = 10_000_000;
+/** Una GTF con su lista de trozas cabe en 2-3 hojas; más no es una guía (y cada hoja se paga). */
+const MAX_PAGINAS_PDF = 5;
 /* La respuesta son 10 campos cortos: 800 tokens, como antes. */
 const MAX_TOKENS = 800;
 /* Se reserva el TOPE de una lectura; se anota lo que costó (una GTF ≈ US$0,02). */
 const RESERVA_USD = costoMaximoLecturaUsd({ maxTokens: MAX_TOKENS });
 
 const RequestSchema = z.object({
-  image: z.string().min(100, "Imagen requerida").max(MAX_IMAGE_B64_BYTES, "Imagen muy grande (>10MB)"),
+  /* El nombre del campo es histórico: trae una foto o un PDF (data URL). */
+  image: z
+    .string()
+    .min(100, "No llegó la foto o el PDF de la guía.")
+    .max(MAX_IMAGE_B64_BYTES, "El archivo pesa demasiado (más de 7 MB): usa una foto o un PDF más liviano."),
 });
 
 const GtfSchema = z.object({
@@ -124,8 +137,12 @@ const JSON_SCHEMA_GTF = {
 };
 
 async function ensureSpec(tenantId: string) {
-  const ok = await isSpecializationEnabled(tenantId, "spec:forestal:ctp-libro");
-  return ok ? null : NextResponse.json({ error: "specialization_disabled" }, { status: 403 });
+  /* El alta del ingreso (CTP) y «Importar guías despachadas» (Libro TH) leen la misma guía. */
+  const [ctp, loth] = await Promise.all([
+    isSpecializationEnabled(tenantId, "spec:forestal:ctp-libro"),
+    isSpecializationEnabled(tenantId, "spec:forestal:loth-libro"),
+  ]);
+  return ctp || loth ? null : NextResponse.json({ error: "specialization_disabled" }, { status: 403 });
 }
 
 export async function POST(req: NextRequest) {
@@ -139,7 +156,9 @@ export async function POST(req: NextRequest) {
   let body: unknown;
   try { body = await req.json(); } catch { return NextResponse.json({ error: "No llegó la foto de la guía." }, { status: 400 }); }
   const parsed = RequestSchema.safeParse(body);
-  if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Datos inválidos" }, { status: 400 });
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Datos inválidos", codigo: "archivo_invalido" }, { status: 400 });
+  }
 
   const verDetalleDeClave = await veDetalleDeClaveIA(req);
   if (!proveedorVision()) {
@@ -149,16 +168,40 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: f.error, codigo: f.codigo }, { status: f.status });
   }
 
-  const canSpend = await aiCostGuard.canSpend(auth.tenantId, RESERVA_USD);
+  /* Un PDF se cuenta ANTES de gastar: la reserva sale de cuántas hojas trae.
+     Se reconoce por sus bytes («%PDF-» = «JVBERi0» en base64), no por lo que
+     declara el navegador: un .pdf sin tipo llega como octet-stream. */
+  const archivo = parsed.data.image;
+  const base64 = archivo.slice(archivo.indexOf(",") + 1).trimStart();
+  let paginasPdf: number | undefined;
+  if (base64.startsWith("JVBERi0")) {
+    const paginas = await paginasDePdf(base64);
+    if (paginas == null) {
+      return NextResponse.json(
+        { error: "No se pudo abrir el PDF: puede estar dañado o con clave. Sube una foto de la guía.", codigo: "formato_no_soportado" },
+        { status: 400 },
+      );
+    }
+    if (paginas > MAX_PAGINAS_PDF) {
+      return NextResponse.json(
+        { error: `El PDF tiene ${paginas} páginas: sube sólo las hojas de la guía (hasta ${MAX_PAGINAS_PDF}) o una foto.`, codigo: "demasiadas_paginas" },
+        { status: 400 },
+      );
+    }
+    paginasPdf = paginas;
+  }
+  const reserva = paginasPdf ? costoMaximoLecturaUsd({ maxTokens: MAX_TOKENS, paginasPdf }) : RESERVA_USD;
+
+  const canSpend = await aiCostGuard.canSpend(auth.tenantId, reserva);
   if (!canSpend) {
     return NextResponse.json({ error: "Se acabó el presupuesto de lectura con IA de este mes.", codigo: "limite_ia" }, { status: 429 });
   }
 
   const r = await visionExtractJSON({
-    imageBase64: parsed.data.image,
-    /* Una foto: el tipo real (por los bytes) tiene que ser JPG/PNG/WebP/GIF y
-       coincidir con el declarado; si no, 400 sin llamar a la IA. */
-    formatos: FORMATOS_IMAGEN,
+    imageBase64: archivo,
+    /* Una foto o un PDF: el tipo real (por los bytes) tiene que ser uno de
+       ésos y coincidir con el declarado; si no, 400 sin llamar a la IA. */
+    formatos: FORMATOS_IMAGEN_Y_PDF,
     prompt: PROMPT,
     schema: GtfSchema,
     jsonSchema: JSON_SCHEMA_GTF,
@@ -167,12 +210,16 @@ export async function POST(req: NextRequest) {
     verDetalleDeClave,
   });
   /* Lo cobrado se anota en los DOS caminos: una respuesta cortada o ilegible también se pagó. */
-  const gasto = gastoDeLectura(r, RESERVA_USD);
+  const gasto = gastoDeLectura(r, reserva);
   if (gasto != null) await aiCostGuard.recordSpend(auth.tenantId, gasto);
   if (!r.ok) {
     /* Lo que es de la clave o de la IA se dice tal cual; lo que es de la foto, con qué hacer. */
     const dePapel = r.codigo == null || r.codigo === "ilegible" || r.codigo === "pedido_rechazado";
-    const error = dePapel ? "No se pudo leer la guía en la foto. Prueba con una foto más nítida, de frente y con buena luz." : r.error;
+    const error = dePapel
+      ? paginasPdf
+        ? "No se pudo leer la guía en el PDF. Prueba con el PDF que bajó del SNIFFS o con una foto nítida."
+        : "No se pudo leer la guía en la foto. Prueba con una foto más nítida, de frente y con buena luz."
+      : r.error;
     return NextResponse.json({ error, codigo: r.codigo ?? "ilegible" }, { status: r.status });
   }
   const d = r.data;

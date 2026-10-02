@@ -9,7 +9,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { DataTable } from "@buleje/design-system";
-import { AlertTriangle, FileText, Plus, Printer, Ban, Loader2, Search, ShieldCheck, Trash2, Truck, LogIn } from "@buleje/design-system/icons";
+import { AlertTriangle, FileDown, FileText, Plus, Printer, Ban, Loader2, Search, ShieldCheck, Trash2, Truck, LogIn } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { findSpeciesByCommonName } from "@/data/forestry-species";
 import AdminModal from "@/components/admin/shared/AdminModal";
@@ -32,6 +32,8 @@ import { papelesGuiaLoth } from "@/lib/forestal/loth-guia-print";
 import LothDespachoGuiaModal from "./LothDespachoGuiaModal";
 import { archivoDeGuiaLoth } from "./LothGuiaRegistrada";
 import CtpDocumentoVisor, { type DocumentoImprimible } from "./CtpDocumentoVisor";
+import BotonDeshacerImportacion from "./LothImportarGuiasDeshacer";
+import { importacionDeLaGuia } from "@/lib/forestal/loth-importar-guia-deshacer";
 
 /** Las columnas movibles de la tabla de GTF, en su orden de fábrica
  *  (Brandon, 2026-09-26). «Acciones» queda fija al final. */
@@ -62,10 +64,16 @@ const ETIQUETA_ESTADO: Record<string, string> = { emitida: "Emitida", anulada: "
 export default function LothGtfView({
   focusGtf,
   onFocusHandled,
+  onImportarGuias,
+  reloadSignal,
 }: {
   /** Guía a resaltar al entrar (se llega acá desde la trazabilidad por árbol). */
   focusGtf?: string | null;
   onFocusHandled?: () => void;
+  /** «Importar guías despachadas» (ADR-461): el modal vive en el libro, que recarga todo al terminar. */
+  onImportarGuias?: () => void;
+  /** Sube tras cada escritura del libro (p. ej. guías importadas): la lista se vuelve a pedir. */
+  reloadSignal?: number;
 } = {}) {
   const [gtfs, setGtfs] = useState<Gtf[]>([]);
   const [loading, setLoading] = useState(true);
@@ -138,7 +146,7 @@ export default function LothGtfView({
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setLoading(false); }
   }, []);
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(); }, [load, reloadSignal]);
 
   // La carátula del libro es la identidad legal que va en la hoja: sin ella los
   // casilleros del titular salen vacíos y el papel no sirve en un control.
@@ -290,6 +298,18 @@ export default function LothGtfView({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-sm text-[var(--text-tertiary)]"><Truck className="h-4 w-4" /> Guías de Transporte Forestal · interno (oficial = SNIFFS)</div>
         <div className="flex flex-wrap items-center gap-2">
+          {/* ADR-461: las guías que ya salieron (SNIFFS, foto o recibidas en el
+              aserradero) entran con sus trozas, su tala y su permiso. */}
+          {onImportarGuias && (
+            <button
+              type="button"
+              onClick={onImportarGuias}
+              title="Trae guías ya despachadas con sus trozas: por N° de registro SERFOR, foto o las que ya recibió el aserradero"
+              className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--accent)]"
+            >
+              <FileDown className="h-4 w-4" aria-hidden="true" /> Importar guías despachadas
+            </button>
+          )}
           {/* La guía anotada a mano sigue: sirve para las salidas que YA están
               en el libro y no tienen su guía (el aviso rojo de abajo). */}
           <button
@@ -534,6 +554,10 @@ export default function LothGtfView({
                         <Printer className="h-3.5 w-3.5" /> Hoja SERFOR
                       </button>
                       <button type="button" onClick={() => printGtf(g)} title="Imprimir el resumen interno" className="inline-flex h-8 items-center gap-1 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Printer className="h-3.5 w-3.5" /> Resumen</button>
+                      {/* ADR-461 §12: la guía que asentó una importación se deshace entera (su madera ya estaba en el CTP). */}
+                      {g.status !== "anulada" && importacionDeLaGuia(g.observations) && (
+                        <BotonDeshacerImportacion compacto gtfId={g.id} gtfNumber={g.gtfNumber} onHecho={() => load()} />
+                      )}
                       {g.status !== "anulada" && (
                         <button type="button" onClick={() => setAnnulId(g.id)} title="Anular esta guía" aria-label={`Anular la GTF ${g.gtfNumber}`} className="inline-flex h-8 items-center gap-1 rounded-lg border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-2.5 text-xs font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]"><Ban className="h-3.5 w-3.5" /></button>
                       )}

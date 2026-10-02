@@ -13,6 +13,12 @@
     "app/api/admin/forestal/ctp/vincular-trozas/route.ts": {
       "maxDuration": 300
     },
+    "app/api/admin/forestal/loth/importar-guia/route.ts": {
+      "maxDuration": 300
+    },
+    "app/api/admin/forestal/loth/importar-guia/vista-previa/route.ts": {
+      "maxDuration": 300
+    },
     "app/api/cron/churn-score/route.ts": {
       "maxDuration": 300
     },

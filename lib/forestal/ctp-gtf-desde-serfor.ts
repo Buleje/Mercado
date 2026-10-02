@@ -31,35 +31,12 @@ import { subtotalesPorEspecie, type TrozaListada } from "./ctp-lista-trozas";
 import type { GtfSerfor } from "./serfor-gtf";
 import type { CtpFicha } from "./ctp-ficha-types";
 import type { GtfDatos } from "./ctp-gtf-datos";
+import { claveOrigen, estadoGtf, partirDimensiones, separarDocumento } from "./serfor-gtf-campos";
 
-/** Mapea el texto del origen que publica SERFOR a la clave del casillero (5). */
-export function claveOrigen(texto: string | null | undefined): string {
-  const t = (texto ?? "").toLowerCase();
-  if (!t.trim()) return "";
-  if (t.includes("concesi")) return "concesion";
-  if (t.includes("permiso")) return "permiso";
-  if (t.includes("autoriza")) return "autorizacion";
-  if (t.includes("bosque local")) return "bosque_local";
-  if (t.includes("desbosque")) return "desbosque";
-  if (t.includes("cambio")) return "cambio_uso";
-  if (t.includes("plantaci")) return "plantacion";
-  if (t.includes("consolidado")) return "plan_consolidado";
-  return "otros";
-}
-
-/**
- * La ficha publica el documento sin decir de qué tipo es, y a veces trae los DOS
- * en el mismo campo ("20605859438 / 80186494"). Se separan por longitud: 11
- * dígitos es RUC, 8 es DNI. Sin esto el casillero (23) mostraba los dos números
- * pegados y el (24) quedaba vacío teniendo el RUC ahí al lado.
- */
-export function separarDocumento(crudo: string | null | undefined): { ruc: string; dni: string } {
-  const piezas = (crudo ?? "").split(/[^0-9]+/).filter(Boolean);
-  return {
-    ruc: piezas.find((n) => n.length === 11) ?? "",
-    dni: piezas.find((n) => n.length >= 7 && n.length <= 9) ?? "",
-  };
-}
+/* Los campos de la ficha se leen en `serfor-gtf-campos` (sin "use client": el
+   importador del Libro TH los usa en el servidor). Se re-exportan para los
+   que ya los importaban de acá. */
+export { claveOrigen, estadoGtf, partirDimensiones, separarDocumento };
 
 const t = (v: string | null | undefined) => (v ?? "").trim();
 
@@ -130,23 +107,6 @@ export function lineasDesdeSerfor(g: GtfSerfor): LineaProducto[] {
   }));
 }
 
-/**
- * SERFOR publica las medidas en UN string ("105.0 x 101.0 x 6.16"), no en tres
- * columnas. Se parte en d1 × d2 × largo —el orden que usa la guía— y sólo si el
- * texto trae exactamente tres números: con dos o con cuatro no se adivina, se
- * deja vacío. Rellenar una medida mal es peor que dejar el casillero en blanco.
- */
-export function partirDimensiones(
-  texto: string | null | undefined,
-): { d1Cm: number | null; d2Cm: number | null; largoM: number | null } {
-  const nums = (texto ?? "").match(/\d+(?:[.,]\d+)?/g) ?? [];
-  if (nums.length !== 3) return { d1Cm: null, d2Cm: null, largoM: null };
-  const n = nums.map((v) => Number(v.replace(",", ".")));
-  return n.every(Number.isFinite)
-    ? { d1Cm: n[0], d2Cm: n[1], largoM: n[2] }
-    : { d1Cm: null, d2Cm: null, largoM: null };
-}
-
 /** Las trozas de la guía para su lista anexa, con las medidas que publicó SERFOR. */
 export function trozasDesdeSerfor(g: GtfSerfor): TrozaListada[] {
   return (g.trozas ?? []).map((x) => ({
@@ -158,12 +118,6 @@ export function trozasDesdeSerfor(g: GtfSerfor): TrozaListada[] {
     cantidad: Number(x.cantidad ?? 1) || 1,
     volumenM3: x.volumen ?? null,
   }));
-}
-
-/** ¿La guía sigue amparando la carga? Lo dice SERFOR, no se deduce. */
-export function estadoGtf(g: GtfSerfor): { texto: string; anulada: boolean } {
-  const texto = t(g.estado);
-  return { texto, anulada: /anulad/i.test(texto) };
 }
 
 /**

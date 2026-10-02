@@ -23,9 +23,24 @@ import {
 /** El servicio es lento y ajeno: se corta a los 20s en vez de colgar el request. */
 const TIMEOUT_MS = 20_000;
 
-/** Caché en memoria: la misma guía consultada dos veces seguidas no vuelve a salir. */
+/**
+ * Caché en memoria: la misma guía consultada dos veces seguidas no vuelve a salir.
+ *
+ * Sólo lo ENCONTRADO vale 10 min. Un «no se encontraron datos» vale 60 s: el
+ * SNIFFS a veces no encuentra una guía que existe (02-10-2026: la app dijo 10
+ * minutos que `1-10-0474633` no existía mientras un curl la traía) y guardarlo
+ * más tiempo convertía un tropiezo de ellos en «esa guía no existe».
+ */
 const CACHE = new Map<string, { at: number; resultado: ResultadoConsultaGtf }>();
 const CACHE_TTL_MS = 10 * 60 * 1000;
+const CACHE_TTL_NO_ENCONTRADA_MS = 60 * 1000;
+
+/** Cuánto vale en la caché un resultado: 10 min encontrada, 60 s no encontrada, nada «sin respuesta». */
+export function vigenciaEnCache(estado: ResultadoConsultaGtf["estado"]): number {
+  if (estado === "encontrada") return CACHE_TTL_MS;
+  if (estado === "no_encontrada") return CACHE_TTL_NO_ENCONTRADA_MS;
+  return 0;
+}
 
 export type ConsultaSerfor =
   | { ok: true; resultado: ResultadoConsultaGtf; cache: boolean }
@@ -41,7 +56,7 @@ export type ConsultaSerfor =
  */
 export async function consultarGtfEnSerfor(numero: string): Promise<ConsultaSerfor> {
   const cacheado = CACHE.get(numero);
-  if (cacheado && Date.now() - cacheado.at < CACHE_TTL_MS) {
+  if (cacheado && Date.now() - cacheado.at < vigenciaEnCache(cacheado.resultado.estado)) {
     return { ok: true, resultado: cacheado.resultado, cache: true };
   }
 
@@ -63,7 +78,7 @@ export async function consultarGtfEnSerfor(numero: string): Promise<ConsultaSerf
   }
 
   if (ultimaRespuesta) {
-    if (ultimaRespuesta.estado !== "sin_respuesta") {
+    if (vigenciaEnCache(ultimaRespuesta.estado) > 0) {
       CACHE.set(numero, { at: Date.now(), resultado: ultimaRespuesta });
     }
     return { ok: true, resultado: ultimaRespuesta, cache: false };
