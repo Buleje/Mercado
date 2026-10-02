@@ -2,17 +2,20 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
-import { ContratoAjenoError, ForestPlanDB } from "@/lib/db/forest-plan.db";
+import { ContratoAjenoError, EspecieRepetidaError, ForestPlanDB } from "@/lib/db/forest-plan.db";
+import { especiesDelAltaSchema } from "@/lib/forestal/loth-plan-especie";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
+import { soloAdminODueno } from "@/lib/forestal/plata-de-guia-rol";
 
 /**
  * /api/admin/forestal/plan — Plan de Manejo Forestal (ADR-126)
  *
  * GET    — lista planes · ?active=1 → plan activo · ?planId=X → detalle (plan + especies + censo summary)
  *          · ?planId=X&usos=1 → qué cuelga del plan (para el "¿estás seguro?" de la baja)
- * POST   — crea plan
+ * POST   — crea plan · con `species[]` (ADR-459, el registro de una plantación) crea
+ *          plan + especies en UNA transacción → `{ plan, species }`
  * PATCH  — actualiza plan { id, ...campos }
  * DELETE — ?id=X da de baja el plan (lógica: los asientos y las guías que lo
  *          citan siguen existiendo, son lo que se declara ante la ARFFS)
@@ -60,6 +63,12 @@ const planSchema = z.object({
   contratoId: z.string().trim().max(40).nullable().optional(),
 });
 const patchSchema = planSchema.partial().extend({ id: z.string().trim().min(1) });
+/**
+ * El alta acepta además las especies (máx. 60, sin repetir por clave). Va SÓLO
+ * en el POST: en el PATCH, `species` caería en el `update` del plan como una
+ * columna que no existe. Las especies se corrigen por `/plan/species`.
+ */
+const postSchema = planSchema.extend({ species: especiesDelAltaSchema.optional() });
 
 async function ensureSpec(tenantId: string) {
   const ok = await isSpecializationEnabled(tenantId, "spec:forestal:loth-libro");
@@ -78,10 +87,16 @@ export const GET = withApiHandler("forestal-plan-get", async (req: NextRequest) 
   try {
     const balanceId = url.searchParams.get("balance");
     if (balanceId) {
+      // Un plan de otro negocio (o de baja) es «no existe»: antes devolvía un balance vacío con 200.
+      if (!(await ForestPlanDB.getPlan(auth.tenantId, balanceId))) return NextResponse.json({ error: "not_found" }, { status: 404 });
       return NextResponse.json({ balance: await ForestPlanDB.balanceExtraccion(auth.tenantId, balanceId) });
     }
     if (url.searchParams.get("analytics") === "1") {
-      return NextResponse.json({ analytics: await ForestPlanDB.analytics(auth.tenantId, url.searchParams.get("planId") ?? undefined) });
+      const analyticsPlanId = url.searchParams.get("planId") ?? undefined;
+      if (analyticsPlanId && !(await ForestPlanDB.getPlan(auth.tenantId, analyticsPlanId))) {
+        return NextResponse.json({ error: "not_found" }, { status: 404 });
+      }
+      return NextResponse.json({ analytics: await ForestPlanDB.analytics(auth.tenantId, analyticsPlanId) });
     }
     const planId = url.searchParams.get("planId");
     // Antes del detalle: lo que la pantalla necesita para decir QUÉ se pierde
@@ -113,6 +128,9 @@ export const GET = withApiHandler("forestal-plan-get", async (req: NextRequest) 
 export const POST = withApiHandler("forestal-plan-post", async (req: NextRequest) => {
   const auth = await requireAdmin(req, ["admin", "owner"]);
   if (auth instanceof NextResponse) return auth;
+  // `requireAdmin` deja pasar al encargado (management tier): el plan fija el techo de T6.
+  const prohibido = soloAdminODueno(auth.role, "dar de alta un plan de manejo o su registro");
+  if (prohibido) return prohibido;
   const rl = await applyRateLimit(req, "GENEROUS", "loth");
   if (rl) return rl;
   const guard = await ensureSpec(auth.tenantId);
@@ -120,14 +138,22 @@ export const POST = withApiHandler("forestal-plan-post", async (req: NextRequest
 
   let body: unknown;
   try { body = await req.json(); } catch { return NextResponse.json({ error: "invalid_json" }, { status: 400 }); }
-  const parsed = planSchema.safeParse(body);
+  const parsed = postSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "validation_error", issues: parsed.error.issues }, { status: 400 });
   try {
-    const plan = await ForestPlanDB.createPlan(auth.tenantId, { ...parsed.data, createdBy: auth.username ?? "unknown" });
-    return NextResponse.json({ plan }, { status: 201 });
+    const { species = [], ...datos } = parsed.data;
+    const { plan, species: creadas } = await ForestPlanDB.crearPlanConEspecies(
+      auth.tenantId,
+      { ...datos, createdBy: auth.username ?? "unknown" },
+      species,
+    );
+    return NextResponse.json({ plan, species: creadas }, { status: 201 });
   } catch (err) {
     if (err instanceof ContratoAjenoError) {
       return NextResponse.json({ error: "contrato_ajeno", message: err.message }, { status: 400 });
+    }
+    if (err instanceof EspecieRepetidaError) {
+      return NextResponse.json({ error: "especie_repetida", message: err.message }, { status: 409 });
     }
     logger.error("[plan.POST] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
@@ -137,6 +163,9 @@ export const POST = withApiHandler("forestal-plan-post", async (req: NextRequest
 export const PATCH = withApiHandler("forestal-plan-patch", async (req: NextRequest) => {
   const auth = await requireAdmin(req, ["admin", "owner"]);
   if (auth instanceof NextResponse) return auth;
+  // `requireAdmin` deja pasar al encargado (management tier): el plan fija el techo de T6.
+  const prohibido = soloAdminODueno(auth.role, "corregir un plan de manejo");
+  if (prohibido) return prohibido;
   const rl = await applyRateLimit(req, "GENEROUS", "loth");
   if (rl) return rl;
   const guard = await ensureSpec(auth.tenantId);
@@ -164,6 +193,9 @@ const deleteSchema = z.object({ id: z.string().trim().min(1) });
 export const DELETE = withApiHandler("forestal-plan-delete", async (req: NextRequest) => {
   const auth = await requireAdmin(req, ["admin", "owner"]);
   if (auth instanceof NextResponse) return auth;
+  // `requireAdmin` deja pasar al encargado (management tier): el plan fija el techo de T6.
+  const prohibido = soloAdminODueno(auth.role, "dar de baja un plan de manejo");
+  if (prohibido) return prohibido;
   const rl = await applyRateLimit(req, "GENEROUS", "loth");
   if (rl) return rl;
   const guard = await ensureSpec(auth.tenantId);

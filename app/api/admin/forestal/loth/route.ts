@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
-import { ForestLothDB, LOTH_SECTIONS } from "@/lib/db/forest-loth.db";
+import { ForestLothDB, LOTH_SECTIONS, LothInvariantError } from "@/lib/db/forest-loth.db";
 import { ForestPlanDB } from "@/lib/db/forest-plan.db";
 import { ColaboradoresDB } from "@/lib/db/rrhh-colaboradores.db";
 import { isSpecializationEnabled } from "@/lib/specializations";
@@ -14,7 +14,8 @@ import { lothErrorResponse, lothValidationResponse } from "@/lib/forestal/loth-a
  * /api/admin/forestal/loth — Libro de Operaciones Títulos Habilitantes (ADR-125)
  *
  * GET  — lista entries (?section, ?caratulaId, ?search, ?includeAnnulled)
- *        ?stats=1 → resumen por sección
+ *        ?stats=1 → resumen por sección · &planId=X → sólo las líneas de ese plan y
+ *          las sin plan (el mismo alcance que el balance del plan, ADR-459)
  *        ?usoCenso=1 → por árbol: su tala, trozas, despachadas y consumidas
  * POST — crea entry (status registrado, lineNo correlativo automático)
  *
@@ -122,7 +123,11 @@ export const GET = withApiHandler("forestal-loth-get", async (req: NextRequest) 
   try {
     if (url.searchParams.get("stats") === "1") {
       const caratulaId = url.searchParams.get("caratulaId") ?? undefined;
-      const stats = await ForestLothDB.stats(auth.tenantId, caratulaId);
+      const planId = url.searchParams.get("planId")?.trim() || undefined;
+      if (planId && !(await ForestPlanDB.getPlan(auth.tenantId, planId))) {
+        return NextResponse.json({ error: "not_found" }, { status: 404 });
+      }
+      const stats = await ForestLothDB.stats(auth.tenantId, caratulaId, planId);
       return NextResponse.json({ stats });
     }
 
@@ -218,6 +223,10 @@ export const POST = withApiHandler("forestal-loth-post", async (req: NextRequest
     }
     return NextResponse.json({ entry }, { status: 201 });
   } catch (err) {
+    // Un plan que no es de este negocio (o de baja) es un pedido mal armado: 400, no 422.
+    if (err instanceof LothInvariantError && err.code === "PLAN_NO_EXISTE") {
+      return NextResponse.json({ error: err.code, message: err.message }, { status: 400 });
+    }
     // Una invariante T1–T5 violada es dato del operador (422), no fallo del server.
     return lothErrorResponse(err, "loth.POST", auth.tenantId);
   }

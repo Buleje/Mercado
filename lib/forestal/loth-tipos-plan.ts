@@ -116,6 +116,16 @@ export function especialidadSugerida(tipo: TipoPlan): EspecialidadRegente {
   return tipo === "PLANTACION" ? "plantaciones" : "maderable";
 }
 
+/**
+ * La sigla para mostrar: «Plantación» y no «PLANTACION». Un tipo que no está
+ * en el catálogo (un plan viejo cargado como «POA») se muestra tal cual — no
+ * se disfraza de PO, que es lo que haría `metaDe`.
+ */
+export function siglaDePlan(tipo: string | null | undefined): string {
+  const k = (tipo ?? "").trim().toUpperCase();
+  return (TIPOS_PLAN as readonly string[]).includes(k) ? TIPOS_PLAN_META[k as TipoPlan].sigla : (tipo ?? "").trim();
+}
+
 export function metaDe(tipo: string | null | undefined): MetaTipoPlan {
   const k = (tipo ?? "").trim().toUpperCase() as TipoPlan;
   return TIPOS_PLAN_META[k] ?? TIPOS_PLAN_META.PO;
@@ -124,6 +134,75 @@ export function metaDe(tipo: string | null | undefined): MetaTipoPlan {
 /** ¿Este tipo pide este campo? */
 export function pideCampo(tipo: string | null | undefined, campo: MetaTipoPlan["ocultar"][number]): boolean {
   return !metaDe(tipo).ocultar.includes(campo);
+}
+
+// ─── Cómo se llama cada cosa según el documento (ADR-459) ──────────────────
+
+/**
+ * Los rótulos del formulario y de la vista, por tipo de documento.
+ *
+ * Una plantación no tiene resolución ni volumen «autorizado»: tiene un
+ * **registro** (código 19-SEC/REG-PLT-2025-096), una **constancia** de
+ * inscripción y m³ **registrados** por especie. Pedirle «N° resolución» a quien
+ * tiene en la mano una constancia lo hace dudar de qué número va — y el mismo
+ * campo de la base guarda las dos cosas (`resolucionNumber`).
+ */
+export interface RotulosPlan {
+  /** Título del bloque con el número y la constancia/resolución. */
+  bloqueDocumento: string;
+  numero: string;
+  numeroEjemplo: string;
+  resolucion: string;
+  resolucionEjemplo: string;
+  fechaResolucion: string;
+  autoridad: string;
+  /** Título del bloque de ubicación (y vigencia, si la hay). */
+  bloqueArea: string;
+  area: string;
+  /** Una plantación puede no tener período: la vigencia va plegada y opcional. */
+  vigenciaOpcional: boolean;
+  /** La base del saldo, en minúscula: «autorizado» o «registrado». */
+  base: string;
+  /** La misma, para un rótulo de columna o de KPI. */
+  baseTitulo: string;
+}
+
+const ROTULOS_BOSQUE: RotulosPlan = {
+  bloqueDocumento: "Documento aprobado",
+  numero: "N° de documento",
+  numeroEjemplo: "PO 12",
+  resolucion: "N° resolución",
+  resolucionEjemplo: "RDF N° 001-2026...",
+  fechaResolucion: "Fecha resolución",
+  autoridad: "ARFFS que aprobó",
+  bloqueArea: "Área y vigencia",
+  area: "Área (ha)",
+  vigenciaOpcional: false,
+  base: "autorizado",
+  baseTitulo: "Autorizado",
+};
+
+const ROTULOS_PLANTACION: RotulosPlan = {
+  bloqueDocumento: "Registro de la plantación",
+  numero: "Código del registro de plantación",
+  numeroEjemplo: "19-SEC/REG-PLT-2025-096",
+  resolucion: "N° de constancia",
+  resolucionEjemplo: "Constancia N° 096-2025",
+  fechaResolucion: "Fecha de inscripción",
+  autoridad: "Autoridad que lo inscribió",
+  bloqueArea: "Ubicación y superficie",
+  area: "Superficie total (ha)",
+  vigenciaOpcional: true,
+  base: "registrado",
+  baseTitulo: "Registrado",
+};
+
+/** ¿Es el registro de una plantación? (por el tipo elegido en el formulario). */
+export const esTipoPlantacion = (tipo: string | null | undefined): boolean =>
+  (tipo ?? "").trim().toUpperCase() === "PLANTACION";
+
+export function rotulosDe(tipo: string | null | undefined): RotulosPlan {
+  return esTipoPlantacion(tipo) ? ROTULOS_PLANTACION : ROTULOS_BOSQUE;
 }
 
 // ─── Informe de ejecución: el plazo que nadie recuerda ─────────────────────

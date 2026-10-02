@@ -15,6 +15,11 @@
  * Tala y Trozado llevan a la derecha la ficha del árbol (28-09): en Tala lo que
  * dice el censo y lo que queda; en Trozado además la línea de tala y las
  * trozas que ya salieron, con lo que queda por trozar.
+ *
+ * Tala de una PLANTACIÓN (ADR-459): sin censo, la lista ofrece las especies
+ * del registro con lo que queda en pie y propone el código del árbol; la ficha
+ * descuenta la tala que se mide. La lógica vive en `useRegistroPlantacion` y
+ * `lib/forestal/loth-tala-plantacion.ts`.
  */
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
@@ -63,10 +68,13 @@ import { estadoVencimiento, permisoParaEspecie, type LothCitesPermiso } from "@/
 import { fromUtm, parseUtmZone } from "@/lib/forestal/loth-utm";
 import LothGpsField, { type GpsOrigen } from "./LothGpsField";
 import LothCensoElegirModal from "./LothCensoElegirModal";
-import LothFichaArbol from "./LothFichaArbol";
+import LothFichaArbol, { AvisoExcesoRegistro } from "./LothFichaArbol";
 import LothPlacaFoto from "./LothPlacaFoto";
 import LothFichaTrozado from "./LothFichaTrozado";
-import LothFuentesLista, { conTrozasDelCenso, fuentesDelCenso, type PlanOpt, type SourceItem } from "./LothFuentesLista";
+import LothFuentesLista, { conTrozasDelCenso, fuentesDelCenso, fuentesDelRegistro, type PlanOpt, type SourceItem } from "./LothFuentesLista";
+import { olvidarRegistroPlantacion, useRegistroPlantacion } from "./hooks/use-registro-plantacion";
+import { especieEnRegistro } from "@/lib/forestal/loth-plan-especie";
+import type { EspecieDelPlanFila } from "@/lib/forestal/loth-tala-plantacion";
 import { olvidarArbolEnElLibro, useArbolEnElLibro } from "./hooks/use-arbol-en-el-libro";
 import { restanteTrozado, siguienteCodigoDeTroza } from "@/lib/forestal/loth-restante";
 import LothTalaDatosInternos from "./LothTalaDatosInternos";
@@ -79,6 +87,7 @@ import { cientificoDeEspecie } from "@/lib/forestal/especies-catalogo";
 import { useEspeciesCatalogo } from "./hooks/use-especies-catalogo";
 import { logger } from "@/lib/logger";
 import { Casilla, CitesPill, cls, etiquetaPlan, Field } from "./loth-entry-form-ui";
+import { ROJO } from "./loth-ficha-ui";
 
 interface Props {
   section: LothSection;
@@ -185,9 +194,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
    * «Panguana» y el catálogo del código no la trae, había que elegir «Otro» y
    * tipearla cada vez — con su nombre científico de memoria.
    */
-  const [especiesDelPlanState, setEspeciesDelPlanState] = useState<
-    { speciesCommon: string; speciesScientific?: string | null }[]
-  >([]);
+  const [especiesDelPlanState, setEspeciesDelPlanState] = useState<EspecieDelPlanFila[]>([]);
   const speciesOptions = useMemo(() => {
     const base = listSpecies({ includeOther: false });
     const vistas = new Set(base.map((s) => claveEspecie(s.commonName)));
@@ -200,7 +207,8 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
         slug: `plan:${clave}`,
         commonName: e.speciesCommon.trim(),
         scientificName: (e.speciesScientific ?? "").trim(),
-        cites: false,
+        // Lo que el plan dice: una especie del registro marcada CITES lo es.
+        cites: Boolean(e.cites),
         protectionLevel: "controlada",
         regions: [],
       });
@@ -236,7 +244,17 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
   };
   const [despachoCode, setDespachoCode] = useState(plantilla?.despachoCode ?? "");
   const [isRama, setIsRama] = useState(plantilla?.isRama ?? false);
-  const [speciesSlug, setSpeciesSlug] = useState(slugDePlantilla ?? "tornillo");
+  const [speciesSlug, setSpeciesSlugState] = useState(slugDePlantilla ?? "tornillo");
+  /**
+   * Alguien eligió la especie (o vino con la línea). En una plantación el
+   * «Tornillo» de arranque no vale: no está en su registro y avisaba «fuera
+   * del registro» antes de tocar nada (medido 02-10 a 400 px).
+   */
+  const [especieTocada, setEspecieTocada] = useState(Boolean(plantilla));
+  const setSpeciesSlug = (slug: string) => {
+    setSpeciesSlugState(slug);
+    setEspecieTocada(true);
+  };
   const [customSpecies, setCustomSpecies] = useState(slugDePlantilla === "otro" ? (plantilla?.speciesCommon ?? "") : "");
   /** Sección 6: el científico es columna propia y se puede corregir a mano. */
   const [scientificManual, setScientificManual] = useState<string | null>(
@@ -326,6 +344,27 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
   /** El censo del plan cruzado con el libro — lista corta (tala), «Ver censo» y ficha. */
   const censoTala = useCensoDeTala(planId, conFicha);
   const [verCenso, setVerCenso] = useState(false);
+  const planElegido = useMemo(() => plans.find((p) => p.id === planId) ?? null, [plans, planId]);
+  /** Plantación (ADR-459): el registro es la base de la tala, no el censo. */
+  const registro = useRegistroPlantacion(planElegido, section === "tala", especiesDelPlanState);
+  const plantacionTala = section === "tala" && registro.esPlantacion;
+  /** «Por especie» o «Árboles marcados»: lo elegido vale para ESE plan. */
+  const [modoElegido, setModoElegido] = useState<{ planId: string | null; modo: "registro" | "censo" } | null>(null);
+  const marcadosDisponibles = useMemo(() => censoTala.arboles.filter((a) => a.disponibilidad === "disponible").length, [censoTala.arboles]);
+  /* Sin elegir: el registro si tiene especies; si no, los árboles marcados (la
+     plantación 19-SEC de Blas: 65 en el censo, 0 especies registradas). */
+  const modoLista: "registro" | "censo" | null = !plantacionTala
+    ? null
+    : modoElegido?.planId === planId
+      ? modoElegido.modo
+      : registro.especies.length > 0 || censoTala.arboles.length === 0
+        ? "registro"
+        : "censo";
+  const porRegistro = modoLista === "registro";
+  /** El código de árbol que propuso el formulario (no el operador): ése se puede reemplazar. */
+  const codigoSugerido = useRef<string | null>(null);
+  /** T7 del servidor en la tala de una plantación: va junto a la especie, no arriba. */
+  const [t7, setT7] = useState<{ planId: string | null; especie: string; mensaje: string } | null>(null);
   /** El científico que el censo trae para ESA especie (lo anotó el regente). */
   const [cientificoCenso, setCientificoCenso] = useState<{ especie: string; cientifico: string } | null>(null);
   /** Datos internos de la tala: NO salen en el formato SERFOR. */
@@ -389,7 +428,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => {
         if (cancel) return;
-        const rows = (j?.species ?? []) as Array<{ speciesCommon: string; speciesScientific?: string | null }>;
+        const rows = (j?.species ?? []) as EspecieDelPlanFila[];
         setEspeciesDelPlanState(rows.filter((r) => (r.speciesCommon ?? "").trim()));
         // Misma clave canónica que usa el motor: el plan escribe «Tornillo
         // (Cedrelinga catenaeformis)» y acá se elige «Tornillo». Comparar los
@@ -407,6 +446,10 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
     else { setSpeciesSlug("otro"); setCustomSpecies(common); }
   }
   function pickSource(it: SourceItem) {
+    if (it.kind === "registro") {
+      elegirEspecieDelRegistro(it);
+      return;
+    }
     applySpecies(it.species);
     if (section === "tala") {
       if (it.code) setTreeCode(it.code);
@@ -444,10 +487,35 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
       if (it.trozaCode) setTrozaCode(it.trozaCode);
     }
   }
-  /** Tala: el censo cruzado con el libro. Trozado: las talas, con cuántas trozas ya salieron. */
+  /**
+   * Tala de una plantación: la especie del registro llena especie, científico
+   * y CITES, y propone el código del árbol (correlativo del plan + especie).
+   * Lo que venía de un árbol del censo —medidas, GPS copiado— no es de ella.
+   */
+  function elegirEspecieDelRegistro(it: SourceItem) {
+    const especie = (it.species ?? "").trim();
+    if (!especie) return;
+    applySpecies(especie);
+    setCientificoCenso(it.scientific ? { especie, cientifico: it.scientific } : null);
+    if (medidasTala.origenCenso) setMedidasTala((m) => medidasVacias(m.modo));
+    aplicarCoordCenso(null, null, null, null);
+    const actual = treeCode.trim();
+    if (!actual || actual === codigoSugerido.current || censoTala.arboles.some((a) => a.treeCode === actual)) {
+      codigoSugerido.current = registro.codigoPara(especie);
+      setTreeCode(codigoSugerido.current);
+    }
+  }
+  /** Tala: el censo cruzado con el libro (o el registro de la plantación). Trozado: las talas, con cuántas trozas ya salieron. */
   const fuentes = useMemo(
-    () => (section === "tala" ? fuentesDelCenso(censoTala.arboles) : section === "trozado" ? conTrozasDelCenso(sources, censoTala.arboles) : sources),
-    [section, censoTala.arboles, sources],
+    () =>
+      section === "tala"
+        ? porRegistro
+          ? fuentesDelRegistro(registro.especies)
+          : fuentesDelCenso(censoTala.arboles)
+        : section === "trozado"
+          ? conTrozasDelCenso(sources, censoTala.arboles)
+          : sources,
+    [section, porRegistro, registro.especies, censoTala.arboles, sources],
   );
 
   // ── Censo: autocompletado data-driven (ADR-126) ──────────────────────
@@ -511,16 +579,11 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
     }
   }
 
-  // Especie derivada
-  const selected = speciesOptions.find((s) => s.slug === speciesSlug);
+  // Especie derivada. Plantación sin especie elegida: ninguna (no el Tornillo de arranque).
+  const especieSinElegir = plantacionTala && !especieTocada;
+  const selected = especieSinElegir ? undefined : speciesOptions.find((s) => s.slug === speciesSlug);
   const isCustom = speciesSlug === "otro";
   const speciesName = isCustom ? customSpecies.trim() : selected?.commonName ?? "";
-  // La especie elegida no figura entre las autorizadas del plan → aviso proactivo
-  // (T7 la rechazaría al despachar / al emitir la GTF).
-  const speciesFueraDelPlan =
-    speciesName.trim().length > 0 &&
-    authorizedSpecies.size > 0 &&
-    !authorizedSpecies.has(claveEspecie(speciesName));
   const matched = isCustom ? findSpeciesByCommonName(customSpecies) : null;
   /* Tipeada a mano: el binomio sale del código o, si no lo conoce, del catálogo
      de la planta (ADR-410). El catálogo NO decide qué especie se puede declarar
@@ -535,6 +598,18 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
   const cientificoDelCenso =
     cientificoCenso && claveEspecie(cientificoCenso.especie) === claveEspecie(speciesName) ? cientificoCenso.cientifico : null;
   const cientificoEfectivo = (scientificManual ?? cientificoDelCenso ?? scientific)?.trim() || null;
+  // La especie elegida no figura entre las autorizadas del plan → aviso proactivo
+  // (T7 la rechazaría al despachar / al emitir la GTF; en una plantación, ya al
+  // talar). En la plantación, la MISMA regla que el servidor: por clave o por
+  // el científico («Bolaina blanca» con Guazuma crinita es la Bolaina registrada).
+  const speciesFueraDelPlan =
+    speciesName.trim().length > 0 &&
+    authorizedSpecies.size > 0 &&
+    (registro.esPlantacion
+      ? !especieEnRegistro(especiesDelPlanState, speciesName, cientificoEfectivo)
+      : !authorizedSpecies.has(claveEspecie(speciesName)));
+  /** El rechazo T7 del servidor, mientras sigan elegidos ese plan y esa especie. */
+  const t7Visible = t7 && t7.planId === planId && claveEspecie(t7.especie) === claveEspecie(speciesName) ? t7.mensaje : null;
 
   const autoVolume = useMemo(() => {
     if (!fields.has("volume")) return 0;
@@ -547,6 +622,9 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
    * oficial y lo que se midió no puedan separarse.
    */
   const derivados = useMemo(() => derivarTala(medidasTala, formaMedicion), [medidasTala, formaMedicion]);
+  /** Plantación: la especie elegida en el registro y su saldo con lo que se mide (ADR-459). */
+  const especieRegistro = plantacionTala ? registro.especie(speciesName) : null;
+  const saldoRegistro = especieRegistro ? registro.saldo(speciesName, medidasTala.origenCenso ? null : derivados.volumenM3) : null;
   useEffect(() => {
     if (section !== "tala" && section !== "trozado") return;
     setDiamMayor(derivados.diamMayorM != null ? String(derivados.diamMayorM) : "");
@@ -809,6 +887,13 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
           setSubmitting(false);
           return;
         }
+        // T7 en la tala de una plantación: la especie no está en el registro.
+        // Va junto a la especie (es lo que hay que cambiar), no como error suelto.
+        if (r.error === "T7_ESPECIE_NO_AUTORIZADA" && section === "tala") {
+          setT7({ planId, especie: speciesName, mensaje: r.message ?? `La especie ${speciesName} no está en el registro de la plantación.` });
+          setSubmitting(false);
+          return;
+        }
         throw new Error(r.message ?? (r.issues && r.issues[0]?.message) ?? r.error ?? `HTTP ${res.status}`);
       }
       // La línea recién creada (con su `trozaCode` ya asignado por el
@@ -819,6 +904,8 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
       // Lo recordado del censo y del árbol ya no vale: cambió lo que el libro dice de él.
       olvidarCensoDeTala();
       olvidarArbolEnElLibro();
+      olvidarRegistroPlantacion();
+      setT7(null);
       // La vista ofrece «Trozarlo ahora» con el árbol recién tumbado.
       const arbolTalado = section === "tala" ? treeCode.trim() || null : null;
       if (keepOpen) {
@@ -833,6 +920,14 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
         setSubmitting(false);
         // Sigue abierto: la lista y el censo tienen que dejar de ofrecer el recién talado.
         if (section === "tala") censoTala.recargar();
+        // Plantación: el saldo bajó, y la próxima tala de la misma especie lleva el código que sigue.
+        if (plantacionTala) {
+          registro.recargar();
+          if (especieRegistro) {
+            codigoSugerido.current = registro.codigoPara(especieRegistro.especie, arbolTalado ? [arbolTalado] : []);
+            setTreeCode(codigoSugerido.current);
+          }
+        }
         onSaved({ keepOpen: true, arbolTalado, entry });
       } else {
         onSaved({ arbolTalado, entry });
@@ -916,8 +1011,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [arbolInicial, section, planesListos, planId, plans, censoTala.cargando, censoTala.listoPara, censoTala.arboles, fuentesListas, loadingSrc, sources]);
 
-  const planSel = plans.find((p) => p.id === planId) ?? null;
-  const planLabel = planSel ? etiquetaPlan(planSel) : null;
+  const planLabel = planElegido ? etiquetaPlan(planElegido) : null;
 
   /** El aviso de 4-6 manda al Libro CTP: la línea a medio cargar se descarta. */
   const irAlCtp = onIrAlCtp
@@ -946,7 +1040,17 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
       footer={
         <div className="flex items-center justify-between gap-3">
           <p id={idEstado} title={motivoBloqueo} className="hidden min-w-0 items-center gap-1.5 truncate text-xs text-[var(--text-tertiary)] sm:flex">
-            {puedeGuardar && restoTrozado?.excede ? (
+            {puedeGuardar && plantacionTala && speciesFueraDelPlan ? (
+              /* La decide el servidor (T7): acá sólo se adelanta. */
+              <span className="flex min-w-0 items-center gap-1.5 font-semibold text-[var(--data-warning-ink)] dark:text-[var(--data-warning-500)]">
+                <AlertTriangle className="h-3.5 w-3.5 shrink-0" /><span className="truncate">{speciesName} no está en el registro</span>
+              </span>
+            ) : puedeGuardar && saldoRegistro && saldoRegistro.excesoM3 > 0 ? (
+              /* Aviso, no bloqueo: la tala se guarda; lo frena T6 al despachar. */
+              <span className="flex min-w-0 items-center gap-1.5 font-semibold text-[var(--data-warning-ink)] dark:text-[var(--data-warning-500)]">
+                <AlertTriangle className="h-3.5 w-3.5 shrink-0" /><span className="truncate">Pasa lo registrado de {saldoRegistro.especie}</span>
+              </span>
+            ) : puedeGuardar && restoTrozado?.excede ? (
               /* Aviso, no bloqueo: lo decide T4 al guardar, con su mensaje. */
               <span className="flex min-w-0 items-center gap-1.5 font-semibold text-[var(--data-warning-ink)] dark:text-[var(--data-warning-500)]">
                 <AlertTriangle className="h-3.5 w-3.5 shrink-0" /><span className="truncate">Se pasa de lo talado</span>
@@ -1018,7 +1122,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
                 Nueva línea · {meta.label}
               </CardTitle>
               <p className="truncate text-xs text-[var(--text-tertiary)]">
-                Sección {meta.index} · {meta.help}
+                Sección {meta.index} · {plantacionTala ? "Tumba del árbol de la plantación" : meta.help}
               </p>
             </div>
           </div>
@@ -1069,16 +1173,30 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
               </div>
             )}
 
-            {speciesFueraDelPlan && (
+            {speciesFueraDelPlan && !t7Visible && (
               <div className="flex items-start gap-2 rounded-xl border border-[var(--data-warning-500)]/60 bg-[var(--data-warning-500)]/10 px-3 py-2 text-sm text-[var(--data-warning-ink)] dark:text-[var(--data-warning-500)]">
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                <span className="min-w-0">
-                  <b>&ldquo;{speciesName}&rdquo; no está autorizada en el plan.</b> Agrégala en Plan de Manejo · Especies autorizadas.
-                </span>
-                <InfoTip
-                  title="Especie fuera del plan"
-                  what="Sin estar en las especies autorizadas del plan no vas a poder despacharla ni emitir la GTF."
-                />
+                {registro.esPlantacion ? (
+                  <>
+                    <span className="min-w-0">
+                      <b>&ldquo;{speciesName}&rdquo; no está en el registro de la plantación.</b> Agrégala en Plan de manejo → Registro y saldo.
+                    </span>
+                    <InfoTip
+                      title="Especie fuera del registro"
+                      what={section === "tala" ? "En una plantación sólo se tala lo que está en su registro: al guardar, la línea se rechaza." : "Sin estar en el registro de la plantación no vas a poder despacharla ni emitir la GTF."}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <span className="min-w-0">
+                      <b>&ldquo;{speciesName}&rdquo; no está autorizada en el plan.</b> Agrégala en Plan de Manejo · Especies autorizadas.
+                    </span>
+                    <InfoTip
+                      title="Especie fuera del plan"
+                      what="Sin estar en las especies autorizadas del plan no vas a poder despacharla ni emitir la GTF."
+                    />
+                  </>
+                )}
               </div>
             )}
 
@@ -1127,11 +1245,26 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
               plans={plans}
               onPlan={setPlanId}
               fuentes={fuentes}
-              cargando={section === "tala" ? censoTala.cargando : loadingSrc}
-              error={section === "tala" ? censoTala.error : null}
-              onReintentar={censoTala.recargar}
+              cargando={section === "tala" ? (porRegistro ? registro.cargando : censoTala.cargando) : loadingSrc}
+              error={section === "tala" ? (porRegistro ? registro.error : censoTala.error) : null}
+              onReintentar={porRegistro ? registro.recargar : censoTala.recargar}
               onElegir={pickSource}
-              verCenso={conFicha ? { total: censoTala.arboles.length, onAbrir: () => setVerCenso(true) } : null}
+              // Una plantación sin árboles marcados no tiene censo que mostrar.
+              verCenso={
+                conFicha && !(registro.esPlantacion && censoTala.arboles.length === 0)
+                  ? { total: censoTala.arboles.length, onAbrir: () => setVerCenso(true) }
+                  : null
+              }
+              plantacion={
+                modoLista
+                  ? {
+                      modo: modoLista,
+                      onModo: (modo) => setModoElegido({ planId, modo }),
+                      especies: registro.especies.length,
+                      arbolesMarcados: marcadosDisponibles,
+                    }
+                  : null
+              }
             />
           </div>
 
@@ -1149,6 +1282,14 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
                   medidasDelCenso={Boolean(medidasTala.origenCenso)}
                   gps={gpsLat != null && gpsLng != null ? { lat: gpsLat, lng: gpsLng, origen: gpsOrigen } : null}
                   censo={censoTala.arboles}
+                  registro={especieRegistro && saldoRegistro ? { especie: especieRegistro, saldo: saldoRegistro } : null}
+                  textoVacio={
+                    !porRegistro
+                      ? undefined
+                      : speciesName && speciesFueraDelPlan
+                        ? `${speciesName} no está en el registro de la plantación: elige una especie de la lista.`
+                        : "Elige una especie del registro para ver su saldo."
+                  }
                 />
               ) : (
                 <LothFichaTrozado
@@ -1158,6 +1299,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
                   libro={libroArbol}
                   troza={{ codigo: trozaCode, volumenM3: derivados.volumenM3 }}
                   onUsarCodigo={setTrozaCode}
+                  plantacion={registro.esPlantacion}
                 />
               )}
             </aside>
@@ -1193,13 +1335,22 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
               </div>
 
               {fields.has("treeCode") && (
-                <Field label="Código del árbol" required={!fields.has("trozaCode")} hint="El código del censo forestal — punto de partida de la trazabilidad" className="col-span-3">
+                <Field
+                  label="Código del árbol"
+                  required={!fields.has("trozaCode")}
+                  hint={
+                    plantacionTala
+                      ? "En una plantación se propone el correlativo del plan + la especie (001-BOL). Puedes cambiarlo."
+                      : "El código del censo forestal — punto de partida de la trazabilidad"
+                  }
+                  className="col-span-3"
+                >
                   <input
                     type="text"
                     value={treeCode}
                     onChange={(e) => setTreeCode(e.target.value)}
                     onBlur={(e) => lookupCensus(e.target.value)}
-                    placeholder="1-MIS"
+                    placeholder={plantacionTala ? "001-BOL" : "1-MIS"}
                     className={cls.input}
                   />
                 </Field>
@@ -1272,7 +1423,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
                       {TOP_SPECIES_SLUGS.map((slug) => {
                         const s = speciesOptions.find((x) => x.slug === slug);
                         if (!s) return null;
-                        const active = speciesSlug === slug;
+                        const active = !especieSinElegir && speciesSlug === slug;
                         return (
                           <button
                             key={slug}
@@ -1327,6 +1478,13 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
                 <Field label="Nombre de la especie" required className="col-span-3">
                   <input type="text" value={customSpecies} onChange={(e) => setCustomSpecies(e.target.value)} placeholder="ej: Aguano masha" className={cls.input} />
                 </Field>
+              )}
+
+              {t7Visible && (
+                <p role="alert" className={`col-span-6 flex items-start gap-2 rounded-lg border-2 px-3 py-2 text-sm ${ROJO}`}>
+                  <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                  <span className="min-w-0">{t7Visible}</span>
+                </p>
               )}
 
               {/* Sección 6 · item 6: el nombre científico es una columna del formato.
@@ -1436,6 +1594,9 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
                 alTerminar={section === "trozado" ? irARegistrar : undefined}
               />
             )}
+
+            {/* Plantación: pasarse de lo registrado se avisa, no se frena (ADR-459). */}
+            {saldoRegistro && saldoRegistro.excesoM3 > 0 && <AvisoExcesoRegistro saldo={saldoRegistro} />}
 
             {section === "tala" && (
               <LothTalaObservaciones

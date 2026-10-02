@@ -57,13 +57,25 @@ import { copiarDePlanPrevio, etiquetaPlanPrevio, type PlanPrevio } from "@/lib/f
 import { SelectConOtra } from "./campos-elegibles";
 import { Field, cls } from "./loth-plan-ui";
 import LothPlanFormUbicacion from "./LothPlanFormUbicacion";
+import LothPlanFormPlantacion, { EspeciesSeCorrigenEnRegistro } from "./LothPlanFormPlantacion";
+import {
+  aEspecieParaGuardar,
+  agregarVarias,
+  especiesRepetidas,
+  filaEnBlanco,
+  filaVacia,
+  problemaDeFila,
+  type FilaEspecie,
+} from "./loth-plan-especies-api";
 import type { Plan } from "./loth-plan-shared";
 import {
   ESPECIALIDADES_REGENTE,
   TIPOS_PLAN_LISTA,
+  esTipoPlantacion,
   especialidadSugerida,
   metaDe,
   pideCampo,
+  rotulosDe,
   type TipoPlan,
 } from "@/lib/forestal/loth-tipos-plan";
 
@@ -147,9 +159,17 @@ export default function LothPlanForm({
   onSaved,
   planesPrevios = [],
   plan,
+  onIrARegistro,
 }: {
   onClose: () => void;
-  onSaved: () => void;
+  /** `planId` del plan recién creado o editado: la vista lo deja elegido. */
+  onSaved: (planId?: string) => void;
+  /**
+   * Al EDITAR una plantación, sus especies no se tocan acá: se corrigen en la
+   * pestaña «Registro y saldo», donde se ve cuánto ya se taló de cada una.
+   * Esto cierra el formulario y lleva ahí.
+   */
+  onIrARegistro?: () => void;
   /**
    * Los planes ya cargados. De ellos sale lo que se repite entre un documento y
    * el siguiente —ARFFS, región, regente, UIT, costos— y las autoridades que ya
@@ -181,6 +201,15 @@ export default function LothPlanForm({
      colgarlo hasta que el servidor devuelve el plan (ADR-427). */
   const [camposPendientes, setCamposPendientes] = useState<PendientesCampos>(() => pendientesVacios(FORMULARIO));
   const set = (k: keyof typeof f, v: string) => setF((p) => ({ ...p, [k]: v }));
+  /**
+   * Las especies del registro de una plantación, en el ALTA (ADR-459). Viven
+   * fuera de `f` a propósito: `desdePlan` copia el plan campo por campo y su
+   * test compara las claves con `formularioVacio` — las especies no son un
+   * campo del plan, son filas propias.
+   */
+  const [especies, setEspecies] = useState<FilaEspecie[]>(() => [filaVacia()]);
+  /** Recién después del primer «Crear» se marcan en rojo las filas a medias. */
+  const [intentoGuardar, setIntentoGuardar] = useState(false);
 
   /* Los permisos, una sola vez para el formulario y su picker: dos consultas de
      la misma lista en la misma pantalla pueden contestar distinto. */
@@ -191,8 +220,16 @@ export default function LothPlanForm({
   );
 
   const meta = metaDe(f.planType);
+  const rot = rotulosDe(f.planType);
+  const esPlantacion = esTipoPlantacion(f.planType);
+  /** Sólo un ALTA de plantación manda especies: al editar se corrigen en la pestaña Registro. */
+  const llevaEspecies = esPlantacion && !editando;
+  const especiesConDatos = llevaEspecies ? especies.filter((x) => !filaEnBlanco(x)) : [];
+  const especiesMal = especiesConDatos.some((x) => problemaDeFila(x) != null) || especiesRepetidas(especiesConDatos).length > 0;
   const faltaRegente = meta.regente === "obligatorio" && f.regenteName.trim().length < 2;
   const puedeGuardar = f.titularName.trim().length >= 2 && !busy;
+  /* La vigencia de una plantación es opcional y va plegada; abierta si ya trae fechas. */
+  const [vigenciaAbierta, setVigenciaAbierta] = useState(() => Boolean(f.vigenciaDesde || f.vigenciaHasta));
 
   /**
    * El titular del plan es, casi siempre, alguien que YA está en el Directorio
@@ -251,6 +288,11 @@ export default function LothPlanForm({
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!puedeGuardar) return;
+    setIntentoGuardar(true);
+    if (especiesMal) {
+      setErr("Hay especies a medio cargar o repetidas: complétalas o quítalas antes de guardar.");
+      return;
+    }
     setBusy(true);
     setErr(null);
     try {
@@ -263,14 +305,33 @@ export default function LothPlanForm({
       // deja datos que la pantalla nunca va a mostrar.
       if (!pideCampo(f.planType, "parcelaCorta")) body.parcelaCorta = null;
       if (!pideCampo(f.planType, "tituloHabilitante")) body.tituloHabilitante = null;
+      /* El registro y sus especies viajan JUNTOS: el servidor los crea en una
+         transacción, y una plantación nunca queda a medias sin su base. */
+      const paraGuardar = especiesConDatos.map(aEspecieParaGuardar);
+      if (paraGuardar.length > 0) body.species = paraGuardar;
       const r = await fetch("/api/admin/forestal/plan", {
         method: plan ? "PATCH" : "POST",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         credentials: "include",
         body: JSON.stringify(body),
       });
-      const creado = (await r.json().catch(() => ({}))) as { plan?: { id?: string }; message?: string };
-      if (!r.ok) throw new Error(creado.message ?? `HTTP ${r.status}`);
+      const creado = (await r.json().catch(() => ({}))) as {
+        plan?: { id?: string }; species?: unknown; message?: string; issues?: { message?: string }[];
+      };
+      /* El rechazo de una especie («Bolaina ya está en la fila 1») viene en
+         `issues`: decirlo vale más que un «HTTP 400». */
+      if (!r.ok) throw new Error(creado.message ?? creado.issues?.find((i) => i.message)?.message ?? `HTTP ${r.status}`);
+      /* Un servidor que todavía no conoce `species` las ignora y devuelve sólo
+         el plan: entonces se agregan de a una, como lo haría la pestaña
+         Registro. Si alguna no entra, el plan YA existe: se dice cuál falta. */
+      if (paraGuardar.length > 0 && creado.plan?.id && !Array.isArray(creado.species)) {
+        const { errores } = await agregarVarias(creado.plan.id, paraGuardar);
+        if (errores.length > 0) {
+          setErr(`El registro se creó, pero ${errores.length === 1 ? "una especie no entró" : `${errores.length} especies no entraron`}: ${errores.join(" · ")}. Agrégalas en la pestaña Registro y saldo.`);
+          setBusy(false);
+          return;
+        }
+      }
       /* El permiso y su documento de gestión quedan atados: `ForestContrato.planId`
          existía desde ADR-421 y ninguna pantalla lo llenaba (0 de 6 medidos).
          Si falla, el plan YA está creado: se avisa, no se pierde el alta. */
@@ -294,7 +355,7 @@ export default function LothPlanForm({
           return;
         }
       }
-      onSaved();
+      onSaved(idPlan);
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
       setBusy(false);
@@ -393,24 +454,25 @@ export default function LothPlanForm({
         )}
       </Bloque>
 
-      {/* 2 · El documento aprobado */}
-      <Bloque n={2} titulo="Documento aprobado">
+      {/* 2 · El documento aprobado (o el registro, si es plantación: mismos
+          campos de la base, otro papel en la mano — `rotulosDe`) */}
+      <Bloque n={2} titulo={rot.bloqueDocumento}>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <Field label="N° de documento">
-            <input value={f.planNumber} onChange={(e) => set("planNumber", e.target.value)} placeholder="PO 12" className={cls} />
+          <Field label={rot.numero}>
+            <input value={f.planNumber} onChange={(e) => set("planNumber", e.target.value)} placeholder={rot.numeroEjemplo} className={`${cls} ${esPlantacion ? "font-mono" : ""}`} />
           </Field>
           {pideCampo(f.planType, "tituloHabilitante") && (
             <Field label="Título habilitante">
               <input value={f.tituloHabilitante} onChange={(e) => set("tituloHabilitante", e.target.value)} placeholder="17-CPO/C-J-001-02" className={cls} />
             </Field>
           )}
-          <Field label="N° resolución">
-            <input value={f.resolucionNumber} onChange={(e) => set("resolucionNumber", e.target.value)} placeholder="RDF N° 001-2026..." className={cls} />
+          <Field label={rot.resolucion}>
+            <input value={f.resolucionNumber} onChange={(e) => set("resolucionNumber", e.target.value)} placeholder={rot.resolucionEjemplo} className={cls} />
           </Field>
-          <Field label="Fecha resolución">
+          <Field label={rot.fechaResolucion}>
             <input type="date" value={f.resolucionDate} onChange={(e) => set("resolucionDate", e.target.value)} className={cls} />
           </Field>
-          <Field label="ARFFS que aprobó">
+          <Field label={rot.autoridad}>
             <SelectConOtra
               className={cls}
               valor={f.arffs}
@@ -423,8 +485,26 @@ export default function LothPlanForm({
         </div>
       </Bloque>
 
-      {/* 3 · Quién responde: titular y regente */}
-      <Bloque n={3} titulo="Titular y regente" accion={
+      {/* 3 · Plantación: las especies y sus m³ registrados — la base del saldo (ADR-459) */}
+      {esPlantacion && (
+        <Bloque
+          n={3}
+          titulo="Especies registradas"
+          ayuda={{
+            what: "Con estas especies y sus m³ trabaja el libro: la tala, el trozado y el despacho descuentan de acá. No hace falta censo.",
+            example: "Bolaina 120 m³ y Capirona 80 m³: el saldo arranca en 200 m³.",
+          }}
+        >
+          {llevaEspecies ? (
+            <LothPlanFormPlantacion filas={especies} onFilas={setEspecies} mostrarErrores={intentoGuardar} />
+          ) : (
+            <EspeciesSeCorrigenEnRegistro onIr={onIrARegistro} />
+          )}
+        </Bloque>
+      )}
+
+      {/* 3 (4 en plantación) · Quién responde: titular y regente */}
+      <Bloque n={esPlantacion ? 4 : 3} titulo="Titular y regente" accion={
         <DirectorioPicker
           rol="proveedor"
           label="Traer del Directorio"
@@ -515,10 +595,10 @@ export default function LothPlanForm({
         )}
       </Bloque>
 
-      {/* 4 · Dónde y hasta cuándo */}
+      {/* 4 · Dónde y hasta cuándo (en una plantación: dónde, y la vigencia opcional) */}
       <Bloque
-        n={4}
-        titulo="Área y vigencia"
+        n={esPlantacion ? 5 : 4}
+        titulo={rot.bloqueArea}
         ayuda={
           meta.vigenciaTipicaAnios != null
             ? {
@@ -538,16 +618,36 @@ export default function LothPlanForm({
               <input value={f.parcelaCorta} onChange={(e) => set("parcelaCorta", e.target.value)} placeholder="PC 12" className={cls} />
             </Field>
           )}
-          <Field label="Área (ha)">
+          <Field label={rot.area}>
             <input type="number" step="0.01" value={f.areaHa} onChange={(e) => set("areaHa", e.target.value)} className={cls} />
           </Field>
-          <Field label="Vigencia desde">
-            <input type="date" value={f.vigenciaDesde} onChange={(e) => set("vigenciaDesde", e.target.value)} className={cls} />
-          </Field>
-          <Field label="Vigencia hasta">
-            <input type="date" value={f.vigenciaHasta} onChange={(e) => set("vigenciaHasta", e.target.value)} className={cls} />
-          </Field>
+          {(!rot.vigenciaOpcional || vigenciaAbierta) && (
+            <>
+              <Field label={rot.vigenciaOpcional ? "Aprovechamiento desde" : "Vigencia desde"}>
+                <input type="date" value={f.vigenciaDesde} onChange={(e) => set("vigenciaDesde", e.target.value)} className={cls} />
+              </Field>
+              <Field label={rot.vigenciaOpcional ? "Aprovechamiento hasta" : "Vigencia hasta"}>
+                <input type="date" value={f.vigenciaHasta} onChange={(e) => set("vigenciaHasta", e.target.value)} className={cls} />
+              </Field>
+            </>
+          )}
         </div>
+        {/* Un registro de plantación no vence como un PO: el período es
+            opcional y va plegado. Plegado NO borra lo que ya tenía fechas. */}
+        {rot.vigenciaOpcional && (
+          <button
+            type="button"
+            onClick={() => setVigenciaAbierta((v) => !v)}
+            aria-expanded={vigenciaAbierta}
+            className="mt-2 inline-flex h-9 items-center gap-1.5 rounded-lg px-2 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+          >
+            <ChevronDown className={`h-4 w-4 transition-transform ${vigenciaAbierta ? "rotate-180" : ""}`} aria-hidden="true" />
+            Período de aprovechamiento (opcional)
+            {!vigenciaAbierta && (f.vigenciaDesde || f.vigenciaHasta) && (
+              <span className="font-normal text-[var(--text-tertiary)]">· cargado</span>
+            )}
+          </button>
+        )}
       </Bloque>
 
       {/* 5 · Lo que el plan ya guardaba y nadie preguntaba */}

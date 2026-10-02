@@ -96,6 +96,50 @@ export function claveEspecie(nombre: string | null | undefined): string {
     .toLowerCase();
 }
 
+/** Lo que hace falta de una especie del plan (o del registro) para reconocerla. */
+export interface EspecieReconocible {
+  speciesCommon: string;
+  speciesScientific?: string | null;
+}
+
+/**
+ * La especie del plan a la que corresponde una línea del libro — UNA regla para
+ * T7, T6 y el saldo (ADR-459). Primero por el nombre común (clave); si no hay,
+ * por el científico, cuando los dos lo traen: «Cedro» (*Cedrela odorata*) es el
+ * «Cedro rojo» (*Cedrela odorata*) del registro.
+ *
+ * Si T7 aceptaba por científico y el saldo o T6 sólo miraban el común, la tala
+ * pasaba sin descontar y el despacho no encontraba su techo (reviewer, 02-10).
+ * `null` = no es ninguna especie del plan.
+ */
+export function resolverEspecie<T extends EspecieReconocible>(
+  delPlan: readonly T[],
+  comun: string | null | undefined,
+  cientifico?: string | null,
+): T | null {
+  const k = claveEspecie(comun);
+  if (k) {
+    const porComun = delPlan.find((e) => claveEspecie(e.speciesCommon) === k);
+    if (porComun) return porComun;
+  }
+  const kc = claveEspecie(cientifico);
+  if (!kc) return null;
+  return delPlan.find((e) => claveEspecie(e.speciesScientific) === kc) ?? null;
+}
+
+/**
+ * La clave con la que se acumula una línea: la de la especie del plan que le
+ * corresponde (`resolverEspecie`) o, si no es del plan, la de su propio nombre.
+ */
+export function claveEnElPlan(
+  delPlan: readonly EspecieReconocible[],
+  comun: string | null | undefined,
+  cientifico?: string | null,
+): string {
+  const delRegistro = resolverEspecie(delPlan, comun, cientifico);
+  return claveEspecie(delRegistro ? delRegistro.speciesCommon : comun);
+}
+
 /** ¿Son la misma especie, escritas distinto? */
 export const mismaEspecie = (a: string | null | undefined, b: string | null | undefined): boolean =>
   claveEspecie(a) !== "" && claveEspecie(a) === claveEspecie(b);
@@ -213,6 +257,8 @@ export function mensajeDapFueraDeRango(valorM: number): string {
 
 export interface BalanceSpeciesInput {
   speciesCommon: string;
+  /** Para reconocer la línea por el científico (`resolverEspecie`, ADR-459). */
+  speciesScientific?: string | null;
   cites: boolean;
   volumenAutorizadoM3: number;
   precioVentaSoles?: number | null;
@@ -221,6 +267,7 @@ export interface BalanceSpeciesInput {
 export interface BalanceMovement {
   section: string;
   speciesCommon: string | null;
+  speciesScientific?: string | null;
   trozaCode: string | null;
   volumeM3: number | null;
   quantity: number | null;
@@ -228,6 +275,21 @@ export interface BalanceMovement {
 }
 export interface BalanceRowOut {
   species: string; cites: boolean; autorizado: number; talado: number; movilizado: number;
+  /**
+   * Σ trozado y Σ consumido (troza usada dentro del TH) de la especie. Con
+   * talado y movilizado dicen DÓNDE está hoy el volumen del plan: en pie
+   * (autorizado − talado), talado sin trozar, en patio (trozado − movilizado
+   * por troza − consumido) o ya fuera. Sin esto, la plantación —que no tiene
+   * censo— no tenía cómo «descontar» cada proceso (ADR-459).
+   */
+  trozado: number; consumido: number;
+  /**
+   * Sólo lo movilizado como TROZA (despacho de trozas). `movilizado` suma además
+   * el producto despachado en m³ —es el saldo SERFOR—, pero ese producto salió
+   * de trozas ya contadas como consumidas: restarlo del patio lo restaba dos
+   * veces (reviewer, 02-10). El patio usa éste.
+   */
+  movilizadoTroza: number;
   saldo: number; pctMovilizado: number; precioVenta: number; valorMovilizado: number;
   pagoDerecho: number; exceso: boolean;
 }
@@ -252,6 +314,12 @@ export function computeBalance(
    * cuanto más grave la infracción, más limpio se veía el tablero.
    */
   fueraDePlan: { species: string; movilizadoM3: number }[];
+  /**
+   * Lo que el libro taló, trozó o movilizó de especies que el plan no tiene
+   * cargadas (ADR-459). Una plantación con talas y sin registro decía «Talado
+   * 0,000» en su cabecera: Blas 19-SEC tiene 4 talas (32,935 m³) y 0 especies.
+   */
+  sinRegistrar: { species: string; taladoM3: number; trozadoM3: number; movilizadoM3: number }[];
   pagoArea: number;
   pagoDerechoTotal: number;
   valorTotal: number;
@@ -259,20 +327,29 @@ export function computeBalance(
   // Todo se acumula por CLAVE de especie: el plan escribe «Tornillo (Cedrelinga
   // catenaeformis)» y el libro «Tornillo». Cruzarlos por string exacto dejaba el
   // saldo intacto habiendo talado, que es el peor error posible acá.
-  const trozaMap = new Map<string, { species: string | null; vol: number }>();
+  const trozaMap = new Map<string, { species: string | null; scientific: string | null; vol: number }>();
   const talado: Record<string, number> = {};
+  const trozado: Record<string, number> = {};
+  const consumido: Record<string, number> = {};
+  const movilizadoTroza: Record<string, number> = {};
   const nombreDe: Record<string, string> = {}; // clave → primer nombre visto
-  const recordar = (sp: string) => {
-    const k = claveEspecie(sp);
+  // La clave de la línea es la de SU especie del plan (por común o científico):
+  // la misma regla que T7 y T6 (`resolverEspecie`).
+  const recordar = (sp: string, sci?: string | null) => {
+    const k = claveEnElPlan(species, sp, sci);
     if (k && !nombreDe[k]) nombreDe[k] = sp.trim();
     return k;
   };
   for (const e of movements) {
     if (e.section === "trozado" && e.trozaCode) {
-      trozaMap.set(e.trozaCode, { species: e.speciesCommon, vol: Number(e.volumeM3 ?? 0) });
+      trozaMap.set(e.trozaCode, { species: e.speciesCommon, scientific: e.speciesScientific ?? null, vol: Number(e.volumeM3 ?? 0) });
+    }
+    if (e.section === "trozado" && e.speciesCommon) {
+      const k = recordar(e.speciesCommon, e.speciesScientific);
+      if (k) trozado[k] = (trozado[k] ?? 0) + Number(e.volumeM3 ?? 0);
     }
     if (e.section === "tala" && e.speciesCommon) {
-      const k = recordar(e.speciesCommon);
+      const k = recordar(e.speciesCommon, e.speciesScientific);
       if (k) talado[k] = (talado[k] ?? 0) + Number(e.volumeM3 ?? 0);
     }
   }
@@ -281,13 +358,24 @@ export function computeBalance(
     if (e.section === "despacho_troza" && e.trozaCode) {
       const t = trozaMap.get(e.trozaCode);
       if (t?.species) {
-        const k = recordar(t.species);
-        if (k) movilizado[k] = (movilizado[k] ?? 0) + t.vol;
+        const k = recordar(t.species, t.scientific);
+        if (k) {
+          movilizado[k] = (movilizado[k] ?? 0) + t.vol;
+          movilizadoTroza[k] = (movilizadoTroza[k] ?? 0) + t.vol;
+        }
       }
     }
     if (e.section === "despacho_producto" && e.speciesCommon && e.unit === "m3") {
-      const k = recordar(e.speciesCommon);
+      const k = recordar(e.speciesCommon, e.speciesScientific);
       if (k) movilizado[k] = (movilizado[k] ?? 0) + Number(e.quantity ?? 0);
+    }
+    // La troza consumida dentro del TH no se moviliza, pero deja el patio.
+    if (e.section === "consumo_troza" && e.trozaCode) {
+      const t = trozaMap.get(e.trozaCode);
+      if (t?.species) {
+        const k = recordar(t.species, t.scientific);
+        if (k) consumido[k] = (consumido[k] ?? 0) + t.vol;
+      }
     }
   }
   const uit = Number(opts.uitRef ?? 0);
@@ -311,6 +399,9 @@ export function computeBalance(
     return {
       species: s.speciesCommon, cites: s.cites, autorizado,
       talado: Math.round(tal * 10000) / 10000, movilizado: Math.round(mov * 10000) / 10000,
+      trozado: Math.round((trozado[clave] ?? 0) * 10000) / 10000,
+      consumido: Math.round((consumido[clave] ?? 0) * 10000) / 10000,
+      movilizadoTroza: Math.round((movilizadoTroza[clave] ?? 0) * 10000) / 10000,
       saldo, pctMovilizado: autorizado > 0 ? Math.round((mov / autorizado) * 1000) / 10 : 0,
       precioVenta: precio, valorMovilizado, pagoDerecho,
       exceso: tal > autorizado + 1e-6 || mov > autorizado + 1e-6,
@@ -322,9 +413,21 @@ export function computeBalance(
     .map(([k, vol]) => ({ species: nombreDe[k] ?? k, movilizadoM3: Math.round(vol * 10000) / 10000 }))
     .sort((a, b) => b.movilizadoM3 - a.movilizadoM3);
 
+  const r4b = (n: number) => Math.round(n * 10000) / 10000;
+  const sinRegistrar = [...new Set([...Object.keys(talado), ...Object.keys(trozado), ...Object.keys(movilizado)])]
+    .filter((k) => !autorizadas.has(k) && ((talado[k] ?? 0) + (trozado[k] ?? 0) + (movilizado[k] ?? 0)) > 1e-6)
+    .map((k) => ({
+      species: nombreDe[k] ?? k,
+      taladoM3: r4b(talado[k] ?? 0),
+      trozadoM3: r4b(trozado[k] ?? 0),
+      movilizadoM3: r4b(movilizado[k] ?? 0),
+    }))
+    .sort((a, b) => b.taladoM3 - a.taladoM3 || a.species.localeCompare(b.species, "es"));
+
   return {
     rows,
     fueraDePlan,
+    sinRegistrar,
     pagoArea,
     pagoDerechoTotal: Math.round(pagoDerechoTotal * 100) / 100,
     valorTotal: Math.round(valorTotal * 100) / 100,
@@ -490,6 +593,8 @@ export function computeCosteo(rows: CosteoSpeciesInput[], params: CosteoParams):
 /** DTO de una entrada del LO-TH tal como la devuelve la API (Decimals → string). */
 export interface LothEntryDTO {
   id: string;
+  /** Plan de manejo de origen (el GET devuelve la fila entera; antes no se tipaba). */
+  planId?: string | null;
   section: LothSection;
   lineNo: number;
   entryDate: string;

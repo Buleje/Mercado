@@ -6334,6 +6334,10 @@ model ForestPlanSpecies {
   arbolesAutorizados      Int?
   valorEstadoNaturalSoles Decimal? @db.Decimal(12, 2) // VEN S//m³ (pago derecho)
   precioVentaSoles        Decimal? @db.Decimal(12, 2) // precio de venta S//m³ (comercial)
+  /// Plantación (ADR-459): el registro de la plantación declara por especie el
+  /// año en que se instaló y cuántas hectáreas ocupa. NULL = no se sabe (nunca 0).
+  anioInstalacion         Int?
+  superficieHa            Decimal? @db.Decimal(12, 4)
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt

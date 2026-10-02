@@ -15,11 +15,12 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
-import { LOTH_SECTIONS, type LothSection } from "@/lib/forestal/loth-constants";
+import { LOTH_SECTIONS, claveEnElPlan, claveEspecie, resolverEspecie, type LothSection } from "@/lib/forestal/loth-constants";
 import { auditLoth } from "@/lib/forestal/loth-audit";
 import { ForestLothCierreDB } from "@/lib/db/forest-loth-cierre.db";
 import { ForestLothPoaDB } from "@/lib/db/forest-loth-poa.db";
-import { dmcParaEspecie } from "@/lib/forestal/loth-poa";
+import { dmcParaEspecie, esPlanDePlantacion } from "@/lib/forestal/loth-poa";
+import { especieEnRegistro, mensajeEspecieFueraDelRegistro } from "@/lib/forestal/loth-plan-especie";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { resumirUsoDelCenso, type UsoArbolCenso } from "@/lib/forestal/loth-censo-uso";
 import { estadoDeArboles as estadoDeArbolesDelLibro, type EstadoDeArbolesPlan } from "@/lib/forestal/loth-etapa-arbol";
@@ -59,6 +60,7 @@ export const LOTH_TX_OPTS = { timeout: 20_000, maxWait: 10_000 } as const;
  *   T5 · Σ despacho_producto ≤ Σ producto_terminado         → despachar más que lo producido
  *   T6 · Σ movilizado(especie) ≤ volumen autorizado (POA)   → EXCESO DE APROVECHAMIENTO (OSINFOR)
  *   T7 · la especie movilizada debe estar AUTORIZADA en el plan → tala/movilización de especie fuera del POA (infracción)
+ *        En una PLANTACIÓN con especies registradas, también la TALA (ADR-459).
  *   T8 · no se tala un árbol censado bajo el DMC de su especie → tala ilegal (RJ 458-2002-INRENA)
  */
 export class LothInvariantError extends Error {
@@ -79,7 +81,9 @@ export class LothInvariantError extends Error {
       // Una carátula con líneas vivas es un libro que existe: no se borra.
       | "CARATULA_CON_LINEAS"
       // Una guía ampara UN título: trozas de dos planes son dos guías.
-      | "GUIA_VARIOS_PLANES",
+      | "GUIA_VARIOS_PLANES"
+      // La línea cita un plan que no es de este negocio o está de baja (→ 400).
+      | "PLAN_NO_EXISTE",
     readonly detail?: Record<string, unknown>,
   ) {
     super(message);
@@ -248,6 +252,21 @@ export class ForestLothDB {
         "PERIODO_CERRADO",
         { periodKey: cerrado.periodKey },
       );
+    }
+
+    // El plan citado tiene que ser de ESTE negocio y estar vivo. `planId` no
+    // tiene FK: un id inventado (o de otro negocio) dejaba a T6 y T7 sin plan
+    // contra qué juzgar — la línea entraba sin techo ni registro (security, 02-10).
+    const planId = input.planId?.trim() || null;
+    if (planId) {
+      const plan = await prisma.forestPlan.findFirst({ where: { tenantId, id: planId, deletedAt: null }, select: { id: true } });
+      if (!plan) {
+        throw new LothInvariantError(
+          "Ese plan de manejo no existe en este negocio o está dado de baja: elige otro plan para registrar la línea.",
+          "PLAN_NO_EXISTE",
+          { planId },
+        );
+      }
     }
 
     // T8 (DMC): un árbol censado por debajo del diámetro mínimo de corta de su
@@ -730,6 +749,10 @@ export class ForestLothDB {
     const trozaCode = input.trozaCode?.trim() || null;
 
     if (section === "tala") {
+      // T7 — en una plantación, sólo se tala lo que está en su registro (ADR-459).
+      //      Va antes del T3: la plantación sin censo tala con códigos libres
+      //      (o sin código), y la especie se juzga igual.
+      await ForestLothDB.enforceT7(tx, tenantId, input.planId ?? null, input.speciesCommon ?? null, input.speciesScientific ?? null, "tala");
       // T3 — un árbol se tala una sola vez.
       if (!treeCode) return;
       await tx.$queryRaw`
@@ -809,7 +832,7 @@ export class ForestLothDB {
       // T2 — la troza debe existir en Trozado (origen legal de la salida).
       const trozada = await tx.forestLothEntry.findFirst({
         where: { tenantId, section: "trozado", trozaCode, status: "registrado", deletedAt: null },
-        select: { id: true, speciesCommon: true, volumeM3: true },
+        select: { id: true, speciesCommon: true, speciesScientific: true, volumeM3: true },
       });
       if (!trozada) {
         throw new LothInvariantError(
@@ -841,12 +864,12 @@ export class ForestLothDB {
       // T7 + T6 — sólo el despacho MOVILIZA (consumo interno no sale al exterior).
       if (section === "despacho_troza") {
         // T7 — la especie de la troza debe estar autorizada en el plan de manejo.
-        await ForestLothDB.enforceT7(tx, tenantId, input.planId ?? null, trozada.speciesCommon);
+        await ForestLothDB.enforceT7(tx, tenantId, input.planId ?? null, trozada.speciesCommon, trozada.speciesScientific, "despacho");
         // T6 — despachar la troza no puede exceder el volumen autorizado del POA
         //      para su especie. El volumen es el de la troza según su Trozado.
         await ForestLothDB.enforceT6(
           tx, tenantId, input.planId ?? null,
-          trozada.speciesCommon, trozada.volumeM3 != null ? Number(trozada.volumeM3) : 0,
+          trozada.speciesCommon, trozada.speciesScientific, trozada.volumeM3 != null ? Number(trozada.volumeM3) : 0,
         );
       }
       return;
@@ -881,12 +904,12 @@ export class ForestLothDB {
       }
       // T7 — la especie del producto despachado debe estar autorizada en el plan
       //      (movilizar una especie fuera del POA es infracción, sea cual sea la unidad).
-      await ForestLothDB.enforceT7(tx, tenantId, input.planId ?? null, speciesCommon);
+      await ForestLothDB.enforceT7(tx, tenantId, input.planId ?? null, speciesCommon, input.speciesScientific ?? null, "despacho");
       // T6 — sólo el producto despachado en m³ moviliza volumen comparable con el
       //      autorizado (kg/unidad no se cuentan contra el volumen del POA, igual
       //      que en `computeBalance`).
       if (unit === "m3") {
-        await ForestLothDB.enforceT6(tx, tenantId, input.planId ?? null, speciesCommon, qty);
+        await ForestLothDB.enforceT6(tx, tenantId, input.planId ?? null, speciesCommon, input.speciesScientific ?? null, qty);
       }
       return;
     }
@@ -895,25 +918,36 @@ export class ForestLothDB {
 
   /**
    * T6 — el volumen MOVILIZADO de una especie no puede superar el volumen
-   * AUTORIZADO por el título habilitante (POA) — el exceso de aprovechamiento es
-   * la infracción que sanciona OSINFOR. Antes sólo se DETECTABA en la Analítica
+   * AUTORIZADO por el título habilitante (POA) — o el REGISTRADO de una
+   * plantación (ADR-459) — : el exceso de aprovechamiento es la infracción que
+   * sanciona OSINFOR. Antes sólo se DETECTABA en la Analítica
    * (`computeBalance.exceso`); acá se IMPIDE al escribir el despacho.
    *
-   * Aplica sólo cuando el plan define un volumen autorizado para esa especie (si
-   * no, es código libre sin techo → se salta, mismo criterio que T4 sin tala).
-   * LOCKEA la fila de autorización de la especie (`ForestPlanSpecies`), que es el
-   * recurso disputado: dos despachos de la misma especie serializan sobre ella y
-   * ninguno pasa leyendo un movilizado desactualizado. Es otra tabla que el lock
-   * de T1 (sobre `ForestLothEntry` por trozaCode) → sin ciclo de deadlock.
+   * Aplica sólo cuando el plan define un volumen para esa especie (si no, es
+   * código libre sin techo → se salta, mismo criterio que T4 sin tala).
    *
-   * `movilizado` espeja EXACTO a `computeBalance` (loth-constants): despacho de
-   * trozas (volumen resuelto vía Trozado) + despacho de producto en m³.
+   * La especie se reconoce con `resolverEspecie` (clave común; si no, el
+   * científico), la MISMA regla que T7 y `computeBalance`: el plan anota
+   * «Tornillo (Cedrelinga catenaeformis)» y el libro «Tornillo»; o «Cedro rojo»
+   * y «Cedro», los dos *Cedrela odorata*. Si T6 mirara otra cosa que T7, la
+   * especie pasaría T7 y T6 no encontraría su techo: se saltearía en silencio.
+   *
+   * LOCKEA las filas de autorización de la especie (`ForestPlanSpecies`), que
+   * son el recurso disputado: dos despachos de la misma especie serializan sobre
+   * ellas y ninguno pasa leyendo un movilizado desactualizado. Es otra tabla que
+   * el lock de T1 (sobre `ForestLothEntry` por trozaCode) → sin ciclo de deadlock.
+   *
+   * `movilizado` espeja EXACTO a `ForestPlanDB.balanceExtraccion`: líneas de ESTE
+   * plan y las sin plan (ADR-459; antes, el libro entero — el despacho de otro
+   * plan con la misma especie se comía el techo de éste), despacho de trozas
+   * (volumen resuelto vía Trozado) + despacho de producto en m³.
    */
   private static async enforceT6(
     tx: Prisma.TransactionClient,
     tenantId: string,
     planIdInput: string | null,
     speciesCommon: string | null,
+    speciesScientific: string | null,
     nuevoVolumen: number,
   ): Promise<void> {
     const species = speciesCommon?.trim() || null;
@@ -930,44 +964,68 @@ export class ForestLothDB {
       null;
     if (!planId) return;
 
-    // Lock + lectura de la autorización de la especie (el recurso disputado).
+    // La especie del plan que le corresponde (común o científico) y, sobre sus filas, el lock.
+    const delPlan = await tx.forestPlanSpecies.findMany({
+      where: { tenantId, planId, deletedAt: null },
+      select: { id: true, speciesCommon: true, speciesScientific: true },
+    });
+    const suya = resolverEspecie(delPlan, species, speciesScientific);
+    if (!suya) return; // sin techo declarado → no se bloquea
+    const clave = claveEspecie(suya.speciesCommon);
+    const ids = delPlan.filter((f) => claveEspecie(f.speciesCommon) === clave).map((f) => f.id).sort();
     await tx.$queryRaw`
       SELECT "id" FROM "ForestPlanSpecies"
-      WHERE "tenantId" = ${tenantId} AND "planId" = ${planId} AND "speciesCommon" = ${species} AND "deletedAt" IS NULL
+      WHERE "tenantId" = ${tenantId} AND "id" IN (${Prisma.join(ids)}) AND "deletedAt" IS NULL
       ORDER BY "id" FOR UPDATE`;
-    const auth = await tx.forestPlanSpecies.findFirst({
-      where: { tenantId, planId, speciesCommon: species, deletedAt: null },
-      select: { volumenAutorizadoM3: true },
+    // Releída bajo el lock: lo que vale es lo autorizado DESPUÉS de esperar.
+    const auth = await tx.forestPlanSpecies.aggregate({
+      where: { tenantId, id: { in: ids }, deletedAt: null },
+      _sum: { volumenAutorizadoM3: true },
     });
-    if (!auth?.volumenAutorizadoM3) return; // sin techo declarado → no se bloquea
-    const autorizado = Number(auth.volumenAutorizadoM3);
+    if (auth._sum.volumenAutorizadoM3 == null) return;
+    const autorizado = Number(auth._sum.volumenAutorizadoM3);
 
-    // Movilizado hasta ahora para la especie (espejo de computeBalance):
-    //  (a) trozas ya despachadas → su volumen según Trozado, filtrado a la especie
+    const delAlcance = { tenantId, status: "registrado" as const, deletedAt: null, OR: [{ planId }, { planId: null }] };
+    //  (a) trozas ya despachadas → su volumen según Trozado, de la especie
     const despachadas = await tx.forestLothEntry.findMany({
-      where: { tenantId, section: "despacho_troza", status: "registrado", deletedAt: null },
+      where: { ...delAlcance, section: "despacho_troza" },
       select: { trozaCode: true },
     });
-    const codes = despachadas.map((d) => d.trozaCode).filter((c): c is string => !!c);
+    const codes = [...new Set(despachadas.map((d) => d.trozaCode).filter((c): c is string => !!c))];
     let movTrozas = 0;
     if (codes.length > 0) {
-      const trozados = await tx.forestLothEntry.aggregate({
-        where: { tenantId, section: "trozado", status: "registrado", deletedAt: null, speciesCommon: species, trozaCode: { in: codes } },
+      const trozados = await tx.forestLothEntry.groupBy({
+        by: ["speciesCommon", "speciesScientific"],
+        where: { ...delAlcance, section: "trozado", trozaCode: { in: codes } },
         _sum: { volumeM3: true },
       });
-      movTrozas = Number(trozados._sum.volumeM3 ?? 0);
+      movTrozas = trozados
+        .filter((t) => claveEnElPlan(delPlan, t.speciesCommon, t.speciesScientific) === clave)
+        .reduce((acc, t) => acc + Number(t._sum.volumeM3 ?? 0), 0);
     }
     //  (b) producto terminado despachado en m³ de la especie
-    const prodDesp = await tx.forestLothEntry.aggregate({
-      where: { tenantId, section: "despacho_producto", status: "registrado", deletedAt: null, speciesCommon: species, unit: "m3" },
+    const prodDesp = await tx.forestLothEntry.groupBy({
+      by: ["speciesCommon", "speciesScientific"],
+      where: { ...delAlcance, section: "despacho_producto", unit: "m3" },
       _sum: { quantity: true },
     });
-    const movilizado = movTrozas + Number(prodDesp._sum.quantity ?? 0);
+    const movProducto = prodDesp
+      .filter((p) => claveEnElPlan(delPlan, p.speciesCommon, p.speciesScientific) === clave)
+      .reduce((acc, p) => acc + Number(p._sum.quantity ?? 0), 0);
+    const movilizado = movTrozas + movProducto;
 
     if (r4(movilizado + nuevoVolumen) > r4(autorizado)) {
+      // En una plantación no hay POA que autorice: el techo es lo REGISTRADO (ADR-459).
+      const plan = await tx.forestPlan.findFirst({
+        where: { tenantId, id: planId },
+        select: { planType: true, planNumber: true, tituloHabilitante: true },
+      });
+      const [techo, exceso] = esPlanDePlantacion(plan)
+        ? [`El registro de la plantación tiene ${r4(autorizado)} m³ de ${species}`, "excede lo registrado"]
+        : [`El POA autoriza ${r4(autorizado)} m³ de ${species}`, "excede lo autorizado"];
       throw new LothInvariantError(
-        `El POA autoriza ${r4(autorizado)} m³ de ${species} y ya se movilizaron ${r4(movilizado)} m³; ` +
-          `este despacho de ${r4(nuevoVolumen)} m³ excede lo autorizado. Es la infracción que sanciona OSINFOR.`,
+        `${techo} y ya se movilizaron ${r4(movilizado)} m³; ` +
+          `este despacho de ${r4(nuevoVolumen)} m³ ${exceso}. Es la infracción que sanciona OSINFOR.`,
         "T6_EXCESO_AUTORIZADO",
         { species, autorizado: r4(autorizado), movilizado: r4(movilizado), pedido: r4(nuevoVolumen) },
       );
@@ -975,47 +1033,60 @@ export class ForestLothDB {
   }
 
   /**
-   * T7 — la especie que se MOVILIZA (despacho de troza o de producto) debe estar
-   * entre las autorizadas del plan de manejo. Talar/movilizar una especie que no
-   * figura en la resolución del título habilitante es infracción — es lo que
-   * cruza OSINFOR contra el POA. Antes sólo se DETECTABA en el cruce del Plan de
-   * Manejo (UI); acá se IMPIDE al escribir el despacho.
+   * T7 — la especie debe estar entre las del plan de manejo. Talar o movilizar
+   * una especie que no figura en la resolución del título habilitante —o en el
+   * registro de la plantación— es infracción: es lo que cruza OSINFOR.
    *
-   * Se aplica SÓLO cuando el despacho declara explícitamente su plan (`input.planId`).
-   * Sin plan atado (código libre) no fabricamos la restricción: no sabríamos contra
-   * qué POA validar. A diferencia de T6, NO cae al plan vigente por defecto — eso
-   * bloquearía movimientos legítimos de otros planes/tenants y rompería la cadena
-   * de "código libre". Match de especie case-insensitive (el nombre común entra a
-   * mano y puede diferir en mayúsculas). Sin especie o sin especies autorizadas
-   * cargadas todavía (plan a medio configurar) → no bloquea.
+   * Dos momentos, UNA regla de especie (`especieEnRegistro`: por clave, o por el
+   * científico si los dos lo traen — «Tornillo» = «Tornillo (Cedrelinga …)»,
+   * «Bolaina» = «bolaina»; antes era texto exacto sin mayúsculas y el despacho
+   * de «Tornillo» contra «Tornillo (Cedrelinga …)» se rechazaba estando en regla):
+   *  - `despacho`: en todo plan. Lo que sale del bosque.
+   *  - `tala`: SÓLO en una plantación (`esPlanDePlantacion`, ADR-459). Sin censo,
+   *    el registro es lo único que dice qué especies hay; en bosque natural la
+   *    tala la juzga el censo y el DMC (T8).
+   *
+   * Se aplica SÓLO cuando la línea declara su plan (`planId`): sin plan atado
+   * (código libre) no hay contra qué validar. A diferencia de T6, NO cae al plan
+   * vigente por defecto — eso bloquearía movimientos legítimos de otros planes.
+   * Sin especie, o sin especies cargadas todavía (plan a medio configurar, como
+   * la plantación 19-SEC de Blas: 0 especies) → no bloquea. Pasarse del volumen
+   * en la tala tampoco: eso lo frena T6 al despachar.
    */
   private static async enforceT7(
     tx: Prisma.TransactionClient,
     tenantId: string,
     planId: string | null,
     speciesCommon: string | null,
+    speciesScientific: string | null,
+    momento: "tala" | "despacho",
   ): Promise<void> {
     const species = speciesCommon?.trim() || null;
     if (!planId || !species) return;
 
-    const autorizadas = await tx.forestPlanSpecies.count({
+    // En serie: la tx es UNA conexión (un Promise.all acá es el aviso de pg@9).
+    const plan = await tx.forestPlan.findFirst({
+      where: { tenantId, id: planId, deletedAt: null },
+      select: { planType: true, planNumber: true, tituloHabilitante: true },
+    });
+    const plantacion = esPlanDePlantacion(plan);
+    if (momento === "tala" && !plantacion) return;
+    const registro = await tx.forestPlanSpecies.findMany({
       where: { tenantId, planId, deletedAt: null },
+      select: { speciesCommon: true, speciesScientific: true },
     });
-    if (autorizadas === 0) return; // plan sin especies cargadas → no se puede juzgar
+    if (registro.length === 0) return; // plan sin especies cargadas → no se puede juzgar
+    if (especieEnRegistro(registro, species, speciesScientific)) return;
 
-    const match = await tx.forestPlanSpecies.findFirst({
-      where: { tenantId, planId, deletedAt: null, speciesCommon: { equals: species, mode: "insensitive" } },
-      select: { id: true },
-    });
-    if (!match) {
-      throw new LothInvariantError(
-        `La especie "${species}" no está autorizada en el plan de manejo (POA). ` +
-          `Movilizar una especie fuera del título habilitante es infracción — agrégala a las especies ` +
-          `autorizadas del plan o corrige el registro antes de emitir la GTF.`,
-        "T7_ESPECIE_NO_AUTORIZADA",
-        { species, planId },
-      );
-    }
+    throw new LothInvariantError(
+      plantacion
+        ? mensajeEspecieFueraDelRegistro(species)
+        : `La especie "${species}" no está autorizada en el plan de manejo (POA). ` +
+            `Movilizar una especie fuera del título habilitante es infracción — agrégala a las especies ` +
+            `autorizadas del plan o corrige el registro antes de emitir la GTF.`,
+      "T7_ESPECIE_NO_AUTORIZADA",
+      { species, planId, momento },
+    );
   }
 
   static async list(tenantId: string, filters: LothListFilters = {}) {
@@ -1307,13 +1378,19 @@ export class ForestLothDB {
   }
 
   /** Resumen por sección: conteo + volumen registrado. */
-  static async stats(tenantId: string, caratulaId?: string) {
+  /**
+   * Líneas y volumen por sección. Con `planId`, las de ese plan y las sin plan:
+   * el mismo alcance que `ForestPlanDB.balanceExtraccion`, para que el informe
+   * de ejecución no mezcle el balance de UN plan con los movimientos de todos.
+   */
+  static async stats(tenantId: string, caratulaId?: string, planId?: string) {
     const where: Prisma.ForestLothEntryWhereInput = {
       tenantId,
       deletedAt: null,
       status: "registrado",
     };
     if (caratulaId) where.caratulaId = caratulaId;
+    if (planId) where.OR = [{ planId }, { planId: null }];
     const rows = await prisma.forestLothEntry.groupBy({
       by: ["section"],
       where,

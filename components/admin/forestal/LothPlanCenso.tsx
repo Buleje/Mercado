@@ -28,8 +28,10 @@ import { AddBtn, BloquePlan, cls } from "./loth-plan-ui";
 
 const SIN_ESPECIES: (EspeciePlanCenso & { cites?: boolean })[] = [];
 
-export default function LothPlanCenso({ planId, trees, total, truncado, authorizedSpecies, categorias, dmcOverrides, onChange, importarSignal = 0, especies = SIN_ESPECIES }: {
+export default function LothPlanCenso({ planId, trees, total, truncado, authorizedSpecies, categorias, dmcOverrides, onChange, importarSignal = 0, especies = SIN_ESPECIES, plantacion = false }: {
   planId: string; trees: Tree[]; total: number; truncado: boolean; authorizedSpecies: Set<string>;
+  /** Registro de plantación (ADR-459): no hay censo, hay árboles marcados (opcionales). */
+  plantacion?: boolean;
   /** Cada incremento abre el importador (lo pide «Opciones» de la vista). */
   importarSignal?: number;
   /** DMC fijado por el plan — el importador avisa si una fila cae por debajo. */
@@ -138,16 +140,16 @@ export default function LothPlanCenso({ planId, trees, total, truncado, authoriz
   return (
     <BloquePlan
       id="loth-plan-censo"
-      titulo="Censo forestal"
+      titulo={plantacion ? "Árboles marcados" : "Censo forestal"}
       sub={
         <>
-          <span className="font-mono tabular-nums">{formatNumber(total)}</span> {total === 1 ? "árbol" : "árboles"} en el censo
+          <span className="font-mono tabular-nums">{formatNumber(total)}</span> {total === 1 ? "árbol" : "árboles"} {plantacion ? "marcados" : "en el censo"}
           {truncado && <> · se cargaron <span className="font-mono tabular-nums">{formatNumber(trees.length)}</span></>}
         </>
       }
       acciones={
         <>
-          <button type="button" onClick={() => setImporting(true)} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Upload className="h-3.5 w-3.5" /> Importar censo</button>
+          <button type="button" onClick={() => setImporting(true)} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Upload className="h-3.5 w-3.5" /> {plantacion ? "Importar árboles" : "Importar censo"}</button>
           <AddBtn onClick={() => setOpen(true)} />
         </>
       }

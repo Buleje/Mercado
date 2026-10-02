@@ -2,28 +2,29 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
-import { ForestPlanDB } from "@/lib/db/forest-plan.db";
+import { EspecieNoEncontradaError, EspecieRepetidaError, ForestPlanDB, PlanNoEncontradoError } from "@/lib/db/forest-plan.db";
+import { especieDelPlanSchema } from "@/lib/forestal/loth-plan-especie";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
+import { soloAdminODueno } from "@/lib/forestal/plata-de-guia-rol";
 
 /**
  * /api/admin/forestal/plan/species — Especies autorizadas del plan (ADR-126)
  * GET ?planId · POST (add) · PATCH { id } · DELETE ?id
+ *
+ * Plantación (ADR-459): `anioInstalacion` (1900–2100) y `superficieHa` (≥ 0),
+ * los dos opcionales y `null` = no se sabe. La misma especie (por clave) dos
+ * veces en el plan → 409 `especie_repetida`.
  */
 
-const addSchema = z.object({
-  planId: z.string().trim().min(1),
-  speciesCommon: z.string().trim().min(1).max(120),
-  speciesScientific: z.string().trim().max(150).nullable().optional(),
-  cites: z.boolean().optional(),
-  categoria: z.string().trim().max(10).nullable().optional(),
-  volumenAutorizadoM3: z.coerce.number().positive().max(9999999),
-  arbolesAutorizados: z.coerce.number().int().nonnegative().max(999999).nullable().optional(),
-  valorEstadoNaturalSoles: z.coerce.number().nonnegative().max(9999999).nullable().optional(),
-  precioVentaSoles: z.coerce.number().nonnegative().max(9999999).nullable().optional(),
-});
-const patchSchema = addSchema.partial().omit({ planId: true }).extend({ id: z.string().trim().min(1) });
+/** Los campos son los del alta del plan (`especieDelPlanSchema`): una sola definición. */
+const addSchema = especieDelPlanSchema.extend({ planId: z.string().trim().min(1) });
+/**
+ * Sin `.default()` en el esquema base a propósito: en Zod 4 `.partial()` aplica
+ * los defaults y un PATCH de un solo campo pisaría los demás.
+ */
+const patchSchema = especieDelPlanSchema.partial().extend({ id: z.string().trim().min(1) });
 
 async function ensureSpec(tenantId: string) {
   const ok = await isSpecializationEnabled(tenantId, "spec:forestal:loth-libro");
@@ -50,6 +51,9 @@ export const GET = withApiHandler("forestal-plan-species-get", async (req: NextR
 export const POST = withApiHandler("forestal-plan-species-post", async (req: NextRequest) => {
   const auth = await requireAdmin(req, ["admin", "owner"]);
   if (auth instanceof NextResponse) return auth;
+  // El volumen de la especie es el techo de T6: el encargado no lo cambia (`requireAdmin` lo deja pasar).
+  const prohibido = soloAdminODueno(auth.role, "agregar una especie al plan");
+  if (prohibido) return prohibido;
   const rl = await applyRateLimit(req, "GENEROUS", "loth");
   if (rl) return rl;
   const guard = await ensureSpec(auth.tenantId);
@@ -59,8 +63,13 @@ export const POST = withApiHandler("forestal-plan-species-post", async (req: Nex
   const parsed = addSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "validation_error", issues: parsed.error.issues }, { status: 400 });
   try {
-    return NextResponse.json({ species: await ForestPlanDB.addSpecies(auth.tenantId, parsed.data) }, { status: 201 });
+    return NextResponse.json({ species: await ForestPlanDB.addSpecies(auth.tenantId, parsed.data, auth.username ?? "unknown") }, { status: 201 });
   } catch (err) {
+    // El WHERE lleva el tenantId: un plan de otro negocio es «no existe», nunca 403.
+    if (err instanceof PlanNoEncontradoError) return NextResponse.json({ error: "not_found" }, { status: 404 });
+    if (err instanceof EspecieRepetidaError) {
+      return NextResponse.json({ error: "especie_repetida", message: err.message }, { status: 409 });
+    }
     logger.error("[plan.species.POST] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
@@ -69,6 +78,9 @@ export const POST = withApiHandler("forestal-plan-species-post", async (req: Nex
 export const PATCH = withApiHandler("forestal-plan-species-patch", async (req: NextRequest) => {
   const auth = await requireAdmin(req, ["admin", "owner"]);
   if (auth instanceof NextResponse) return auth;
+  // El volumen de la especie es el techo de T6: el encargado no lo cambia (`requireAdmin` lo deja pasar).
+  const prohibido = soloAdminODueno(auth.role, "corregir una especie del plan");
+  if (prohibido) return prohibido;
   const rl = await applyRateLimit(req, "GENEROUS", "loth");
   if (rl) return rl;
   const guard = await ensureSpec(auth.tenantId);
@@ -79,8 +91,12 @@ export const PATCH = withApiHandler("forestal-plan-species-patch", async (req: N
   if (!parsed.success) return NextResponse.json({ error: "validation_error", issues: parsed.error.issues }, { status: 400 });
   try {
     const { id, ...patch } = parsed.data;
-    return NextResponse.json({ species: await ForestPlanDB.updateSpecies(auth.tenantId, id, patch) });
+    return NextResponse.json({ species: await ForestPlanDB.updateSpecies(auth.tenantId, id, patch, auth.username ?? "unknown") });
   } catch (err) {
+    if (err instanceof EspecieNoEncontradaError) return NextResponse.json({ error: "not_found" }, { status: 404 });
+    if (err instanceof EspecieRepetidaError) {
+      return NextResponse.json({ error: "especie_repetida", message: err.message }, { status: 409 });
+    }
     logger.error("[plan.species.PATCH] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
@@ -89,6 +105,9 @@ export const PATCH = withApiHandler("forestal-plan-species-patch", async (req: N
 export const DELETE = withApiHandler("forestal-plan-species-delete", async (req: NextRequest) => {
   const auth = await requireAdmin(req, ["admin", "owner"]);
   if (auth instanceof NextResponse) return auth;
+  // El volumen de la especie es el techo de T6: el encargado no lo cambia (`requireAdmin` lo deja pasar).
+  const prohibido = soloAdminODueno(auth.role, "quitar una especie del plan");
+  if (prohibido) return prohibido;
   const rl = await applyRateLimit(req, "GENEROUS", "loth");
   if (rl) return rl;
   const guard = await ensureSpec(auth.tenantId);
@@ -96,9 +115,10 @@ export const DELETE = withApiHandler("forestal-plan-species-delete", async (req:
   const id = new URL(req.url).searchParams.get("id");
   if (!id) return NextResponse.json({ error: "id_required" }, { status: 400 });
   try {
-    await ForestPlanDB.removeSpecies(auth.tenantId, id);
+    await ForestPlanDB.removeSpecies(auth.tenantId, id, auth.username ?? "unknown");
     return NextResponse.json({ ok: true });
   } catch (err) {
+    if (err instanceof EspecieNoEncontradaError) return NextResponse.json({ error: "not_found" }, { status: 404 });
     logger.error("[plan.species.DELETE] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }

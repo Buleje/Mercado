@@ -9,6 +9,11 @@
  * NO es la «vista previa del registro» que se quitó el 28-09 (repetía lo que
  * ya estaba escrito a la izquierda): acá no hay un solo dato del formulario,
  * salvo la comparación y lo que queda, que es lo que el formulario no dice.
+ *
+ * En una plantación (ADR-459) el árbol casi nunca está censado: la ficha
+ * muestra la especie del registro y su saldo —registrado − talado − esta tala—
+ * mientras se mide. Si además hay árbol marcado, el saldo del registro va como
+ * un grupo más de «Lo que queda».
  */
 
 import { useMemo } from "react";
@@ -26,9 +31,11 @@ import { restanteDeEspecie, restanteDelArbol } from "@/lib/forestal/loth-restant
 import { formatDistance } from "@/lib/forestal/loth-utm";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { formatNumber } from "@/lib/format";
+import type { EspecieDelRegistro, SaldoDeTala } from "@/lib/forestal/loth-tala-plantacion";
 import type { GpsOrigen } from "./LothGpsField";
-import LothRestante, { type GrupoRestante } from "./LothRestante";
-import { AMBAR, CabeceraArbol, CAJA, dec as m, ROJO } from "./loth-ficha-ui";
+import LothRestante, { type FilaRestante, type GrupoRestante } from "./LothRestante";
+import { AMBAR, CabeceraArbol, CAJA, Dato, dec as m, KICKER, ROJO } from "./loth-ficha-ui";
+import { CitesPill } from "./loth-plan-ui";
 
 interface Props {
   arbol: ArbolParaElegir | null;
@@ -41,6 +48,70 @@ interface Props {
   gps: { lat: number; lng: number; origen: GpsOrigen | null } | null;
   /** El censo del plan cruzado con el libro: para lo que queda de la especie. */
   censo: readonly ArbolParaElegir[];
+  /** Plantación: la especie elegida en el registro y su saldo con lo que se mide. */
+  registro?: { especie: EspecieDelRegistro; saldo: SaldoDeTala } | null;
+  /** Lo que dice la caja vacía, en vez de «no está en el censo» (la plantación sin censo). */
+  textoVacio?: string;
+}
+
+/** Registrado − talado − esta tala = queda, en filas de «Lo que queda». */
+function filasDelRegistro(s: SaldoDeTala): FilaRestante[] {
+  const pasa = s.excesoM3 > 0;
+  return [
+    { label: "Registrado", m3: s.registradoM3 },
+    { label: "Talado", m3: s.taladoM3, resta: true },
+    { label: "Esta tala", m3: s.estaTalaM3, resta: true },
+    { label: pasa ? "Se pasa" : "Queda en pie", m3: s.quedaM3, total: true, aviso: pasa },
+  ];
+}
+
+const QUE_ES_EL_SALDO =
+  "Lo registrado de la especie − lo que el libro ya taló en este plan − lo que estás midiendo = lo que queda en pie.";
+
+/**
+ * Pasarse de lo registrado en la tala: aviso, no bloqueo. Se mide con cinta y
+ * el registro es una estimación; lo que no se deja es DESPACHAR de más.
+ */
+export function AvisoExcesoRegistro({ saldo }: { saldo: SaldoDeTala }) {
+  return (
+    <div role="status" className={`flex items-start gap-2 rounded-xl border px-3 py-2 text-sm ${AMBAR}`}>
+      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+      <span className="min-w-0">
+        <b>
+          Esta tala pasa lo registrado de {saldo.especie} en {fmtM3(saldo.excesoM3)} m³
+        </b>
+        : al despachar, lo que exceda lo frena la ARFFS.
+      </span>
+      <InfoTip
+        title="Tala sobre lo registrado"
+        what="La tala igual se guarda: se mide con cinta y el registro es una estimación."
+        affects="Lo que el libro no deja es despachar más de lo registrado de la especie (control T6): la guía de lo que exceda se rechaza."
+        example={`Registrado ${fmtM3(saldo.registradoM3)} m³, talado ${fmtM3(saldo.taladoM3)}${saldo.estaTalaM3 != null ? ` + esta ${fmtM3(saldo.estaTalaM3)}` : ""}.`}
+      />
+    </div>
+  );
+}
+
+/** La plantación sin árbol censado: la especie del registro y su saldo. */
+function FichaEspecieRegistro({ especie, saldo, codigo }: { especie: EspecieDelRegistro; saldo: SaldoDeTala; codigo: string }) {
+  return (
+    <div className="space-y-3" data-ficha-registro={especie.especie}>
+      <div className={CAJA}>
+        <p className={KICKER}>Especie del registro</p>
+        <p className="text-lg font-bold text-[var(--text-primary)]">
+          {especie.especie}
+          {especie.cites && <> <CitesPill /></>}
+        </p>
+        {especie.cientifico && <p className="text-xs italic text-[var(--text-secondary)]">{especie.cientifico}</p>}
+        <dl className="mt-2.5 grid grid-cols-3 gap-2">
+          <Dato label="Árbol">{codigo.trim() || "—"}</Dato>
+          <Dato label="Instalada">{especie.anioInstalacion ?? "—"}</Dato>
+          <Dato label="Superficie">{especie.superficieHa == null ? "—" : `${m(especie.superficieHa, 0, 2)} ha`}</Dato>
+        </dl>
+      </div>
+      <LothRestante titulo={`Saldo de ${especie.especie}`} grupos={[{ filas: filasDelRegistro(saldo) }]} what={QUE_ES_EL_SALDO} />
+    </div>
+  );
 }
 
 function FilaComparacion({ label, c, unidad, formato }: { label: string; c: Comparacion; unidad: string; formato: (v: number) => string }) {
@@ -83,12 +154,13 @@ function gruposRestante(r: ReturnType<typeof restanteDelArbol>, esp: ReturnType<
   return grupos;
 }
 
-export default function LothFichaArbol({ arbol, cargando, codigo, medido, medidasDelCenso, gps, censo }: Props) {
+export default function LothFichaArbol({ arbol, cargando, codigo, medido, medidasDelCenso, gps, censo, registro, textoVacio }: Props) {
   const especie = useMemo(
     () => (arbol ? restanteDeEspecie(censo, arbol.speciesCommon, arbol.treeCode, medidasDelCenso ? null : medido.volumenM3) : null),
     [arbol, censo, medido.volumenM3, medidasDelCenso],
   );
 
+  if (!arbol && registro) return <FichaEspecieRegistro especie={registro.especie} saldo={registro.saldo} codigo={codigo} />;
   if (!arbol) {
     const tipeado = codigo.trim();
     return (
@@ -97,7 +169,9 @@ export default function LothFichaArbol({ arbol, cargando, codigo, medido, medida
         {/* Sin un segundo «Ver censo»: el botón está al lado del buscador,
             y en el celular esta caja cae justo debajo. */}
         <p className="text-sm text-[var(--text-secondary)]">
-          {cargando ? "Cargando el censo…" : tipeado ? `«${tipeado}» no está en el censo de este plan.` : "Elige un árbol de la lista o del censo para ver su ficha."}
+          {cargando
+            ? "Cargando el censo…"
+            : (textoVacio ?? (tipeado ? `«${tipeado}» no está en el censo de este plan.` : "Elige un árbol de la lista o del censo para ver su ficha."))}
         </p>
       </div>
     );
@@ -175,7 +249,10 @@ export default function LothFichaArbol({ arbol, cargando, codigo, medido, medida
 
       <LothRestante
         titulo="Lo que queda"
-        grupos={gruposRestante(restanteDelArbol(arbol.volM3, midio ? medido.volumenM3 : null), especie)}
+        grupos={[
+          ...gruposRestante(restanteDelArbol(arbol.volM3, midio ? medido.volumenM3 : null), especie),
+          ...(registro ? [{ titulo: `${registro.especie.especie} en el registro`, filas: filasDelRegistro(registro.saldo) }] : []),
+        ]}
         what={`Censo − lo medido al tumbarlo = lo que queda del árbol. En la especie: lo censado − lo que el libro ya taló${midio ? ", con este árbol" : ""}.${especie?.talasSinVolumen ? ` ${especie.talasSinVolumen} ${especie.talasSinVolumen === 1 ? "tala sin volumen no suma" : "talas sin volumen no suman"}.` : ""}`}
       />
 

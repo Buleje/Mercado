@@ -28,14 +28,57 @@ export interface LothEspecieFueraModalProps {
   arboles: { id: string; treeCode: string; volumenEstimadoM3: string | null; estado: string }[];
   /** Número de la resolución del plan, para nombrarla en el texto. */
   resolucion: string | null;
+  /**
+   * El plan es el registro de una plantación (ADR-459): ahí no hay resolución
+   * que autorice ni censo; hay un registro y árboles marcados. Mismo acto,
+   * otras palabras — las de bosque natural confunden a quien carga el registro.
+   */
+  plantacion?: boolean;
   onClose: () => void;
   /** Algo cambió: la vista tiene que releer el plan. */
   onResuelto: () => void;
 }
 
+/** Las palabras del aviso según el documento: resolución + censo, o registro + árboles marcados. */
+const VOCES = {
+  bosque: {
+    titulo: "censada fuera del plan",
+    tiene: "El censo tiene",
+    dondeNoFigura: "entre las autorizadas",
+    porDocumento: "por la resolución",
+    enElPlan: "en el plan",
+    siEsta: "Sí está en la resolución",
+    siEstaAyuda: "La resolución la autoriza y faltaba cargarla acá. Se agrega a las especies del plan con su volumen.",
+    noEsta: "No está autorizada",
+    comoPrueba: "en el censo como prueba",
+    cargarNoAutoriza: (e: string) =>
+      `Cargarla acá no la autoriza: el volumen tiene que ser el que dice el documento aprobado. Si ${e} no figura en la resolución, vuelve y descarta los árboles.`,
+    volumen: "Volumen autorizado (m³)",
+    segun: "según la resolución",
+    volumenCero: "El volumen autorizado tiene que ser mayor que cero — es el que dice la resolución.",
+  },
+  plantacion: {
+    titulo: "marcada fuera del registro",
+    tiene: "Los árboles marcados incluyen",
+    dondeNoFigura: "entre las del registro de la plantación",
+    porDocumento: "con el código",
+    enElPlan: "en el registro",
+    siEsta: "Sí está en el registro",
+    siEstaAyuda: "La constancia del registro la incluye y faltaba cargarla acá. Se agrega con sus m³ registrados.",
+    noEsta: "No está en el registro",
+    comoPrueba: "entre los árboles marcados como prueba",
+    cargarNoAutoriza: (e: string) =>
+      `Cargarla acá no la registra: los m³ tienen que ser los de la constancia de inscripción. Si ${e} no figura en el registro, vuelve y descarta los árboles.`,
+    volumen: "Volumen registrado (m³)",
+    segun: "según la constancia",
+    volumenCero: "El volumen registrado tiene que ser mayor que cero — es el que dice la constancia.",
+  },
+} as const;
+
 export default function LothEspecieFueraModal({
-  planId, especie, arboles, resolucion, onClose, onResuelto,
+  planId, especie, arboles, resolucion, plantacion = false, onClose, onResuelto,
 }: LothEspecieFueraModalProps) {
+  const v = plantacion ? VOCES.plantacion : VOCES.bosque;
   const [modo, setModo] = useState<"elegir" | "agregar" | "descartar">("elegir");
   const [vol, setVol] = useState("");
   const [narb, setNarb] = useState(String(arboles.length));
@@ -47,8 +90,8 @@ export default function LothEspecieFueraModal({
   const m3 = arboles.reduce((a, t) => a + Number(t.volumenEstimadoM3 ?? 0), 0);
 
   const agregarAlPlan = async () => {
-    const v = Number(vol);
-    if (!(v > 0)) { setError("El volumen autorizado tiene que ser mayor que cero — es el que dice la resolución."); return; }
+    const m3Pedido = Number(vol);
+    if (!(m3Pedido > 0)) { setError(v.volumenCero); return; }
     setBusy(true); setError(null);
     try {
       const r = await fetch("/api/admin/forestal/plan/species", {
@@ -56,7 +99,7 @@ export default function LothEspecieFueraModal({
         credentials: "include",
         headers: { "content-type": "application/json", ...csrfHeaders() },
         body: JSON.stringify({
-          planId, speciesCommon: especie, volumenAutorizadoM3: v,
+          planId, speciesCommon: especie, volumenAutorizadoM3: m3Pedido,
           arbolesAutorizados: Number(narb) > 0 ? Number(narb) : null,
           cites,
         }),
@@ -102,7 +145,7 @@ export default function LothEspecieFueraModal({
     <AdminModal
       open
       onClose={onClose}
-      title={`${especie}: censada fuera del plan`}
+      title={`${especie}: ${v.titulo}`}
       description={`${arboles.length} ${arboles.length === 1 ? "árbol" : "árboles"} · ${fmtM3(m3)} m³`}
       icon={ShieldAlert}
       className="max-w-2xl"
@@ -115,9 +158,9 @@ export default function LothEspecieFueraModal({
         )}
 
         <p className="rounded-xl bg-[var(--surface-sunken)] p-3 text-sm text-[var(--text-secondary)]">
-          El censo tiene {arboles.length} {arboles.length === 1 ? "árbol" : "árboles"} de <b className="text-[var(--text-primary)]">{especie}</b>,
-          y esa especie no figura entre las autorizadas
-          {resolucion ? <> por la resolución <span className="font-mono">{resolucion}</span></> : " en el plan"}.
+          {v.tiene} {arboles.length} {arboles.length === 1 ? "árbol" : "árboles"} de <b className="text-[var(--text-primary)]">{especie}</b>,
+          y esa especie no figura {v.dondeNoFigura}
+          {resolucion ? <> {v.porDocumento} <span className="font-mono">{resolucion}</span></> : ` ${v.enElPlan}`}.
           Tumbarlos o movilizarlos sería aprovechamiento no autorizado.
         </p>
 
@@ -130,10 +173,10 @@ export default function LothEspecieFueraModal({
             >
               <span className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
                 <Plus className="h-4 w-4 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" />
-                Sí está en la resolución
+                {v.siEsta}
               </span>
               <span className="mt-1 block text-xs text-[var(--text-secondary)]">
-                La resolución la autoriza y faltaba cargarla acá. Se agrega a las especies del plan con su volumen.
+                {v.siEstaAyuda}
               </span>
             </button>
             <button
@@ -143,10 +186,10 @@ export default function LothEspecieFueraModal({
             >
               <span className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
                 <Ban className="h-4 w-4 text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" />
-                No está autorizada
+                {v.noEsta}
               </span>
               <span className="mt-1 block text-xs text-[var(--text-secondary)]">
-                {enPie.length === 1 ? "El que está" : `Los ${enPie.length}`} en pie {enPie.length === 1 ? "pasa" : "pasan"} a «descartado»: {enPie.length === 1 ? "queda" : "quedan"} en el censo como prueba, pero fuera de todo cálculo.
+                {enPie.length === 1 ? "El que está" : `Los ${enPie.length}`} en pie {enPie.length === 1 ? "pasa" : "pasan"} a «descartado»: {enPie.length === 1 ? "queda" : "quedan"} {v.comoPrueba}, pero fuera de todo cálculo.
               </span>
             </button>
           </div>
@@ -156,15 +199,14 @@ export default function LothEspecieFueraModal({
           <div className="space-y-3">
             <p className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/12 p-3 text-sm font-bold text-[var(--text-primary)]">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" />
-              Cargarla acá no la autoriza: el volumen tiene que ser el que dice el documento aprobado. Si {especie} no figura
-              en la resolución, vuelve y descarta los árboles.
+              {v.cargarNoAutoriza(especie)}
             </p>
             <div className="grid gap-3 sm:grid-cols-3">
               <label className="block">
-                <span className="mb-1 block text-xs font-bold text-[var(--text-secondary)]">Volumen autorizado (m³) *</span>
+                <span className="mb-1 block text-xs font-bold text-[var(--text-secondary)]">{v.volumen} *</span>
                 <input
                   type="number" step="0.0001" value={vol} onChange={(e) => setVol(e.target.value)}
-                  placeholder="según la resolución"
+                  placeholder={v.segun}
                   // eslint-disable-next-line jsx-a11y/no-autofocus -- el modal se abre para escribir el volumen autorizado de inmediato
                   autoFocus
                   className="h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 font-mono text-sm text-[var(--text-primary)] focus:border-primary focus:outline-none"

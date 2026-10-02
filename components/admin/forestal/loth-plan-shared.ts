@@ -29,6 +29,8 @@ export interface Species {
   id: string; speciesCommon: string; speciesScientific: string | null; cites: boolean;
   categoria: string | null; volumenAutorizadoM3: string; arbolesAutorizados: number | null;
   valorEstadoNaturalSoles: string | null; precioVentaSoles: string | null;
+  /** Datos del registro de plantación por especie (ADR-459). Opcionales: un PO no los usa. */
+  anioInstalacion?: number | null; superficieHa?: string | null;
 }
 export interface Tree {
   id: string; treeCode: string; speciesCommon: string; speciesScientific: string | null;
@@ -56,11 +58,17 @@ export const censusVol = (dap: number, hc: number, ff: number) =>
 // ─── Balance de extracción / saldos ────────────────────────────────────────
 export interface BalanceRow {
   species: string; cites: boolean; autorizado: number; talado: number; movilizado: number;
+  /** Σ trozado y Σ consumido en el TH de la especie (ADR-459): con talado y movilizado dicen dónde está el volumen. */
+  trozado: number; consumido: number;
+  /** Sólo el despacho de trozas: el patio resta éste, no `movilizado` (que suma el producto). Opcional: agregado 02-10. */
+  movilizadoTroza?: number;
   saldo: number; pctMovilizado: number; precioVenta: number; valorMovilizado: number;
   pagoDerecho: number; exceso: boolean;
 }
 export interface Balance {
   rows: BalanceRow[]; pagoArea: number; pagoDerechoTotal: number; valorTotal: number;
+  /** Lo que el libro taló/trozó/movilizó de especies que el plan no tiene cargadas (ADR-459). */
+  sinRegistrar?: { species: string; taladoM3: number; trozadoM3: number; movilizadoM3: number }[];
   plan: { vigenciaHasta: string | null; estado: string; areaHa: number; uitRef: number } | null;
 }
 

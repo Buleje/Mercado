@@ -9,6 +9,10 @@
  * arranca PLEGADA (con sus cifras en la bajada) y la preferencia se recuerda:
  * se abre para corregir, no para leer. Desde la ficha de una especie, «Editar»
  * y «Quitar del plan» llegan acá por `pedido` y abren la fila que corresponde.
+ *
+ * Las escrituras son las de `loth-plan-especies-api` (las mismas que usa el
+ * registro de una plantación), y la especie lleva también su año de
+ * instalación y superficie (ADR-459): un PO con parcelas reforestadas los usa.
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -16,14 +20,25 @@ import { Check, ListChecks, Loader2, Pencil, Plus, Trash2, TreePine, X } from "@
 import { toast } from "sonner";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
-import { csrfHeaders } from "@/lib/csrf-client";
 import { findSpeciesByCommonName } from "@/data/forestry-species";
+import { agregarEspecie, corregirEspecie, numeroDe, quitarEspecie } from "./loth-plan-especies-api";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { n, soles, type Species } from "./loth-plan-shared";
 import { AddBtn, BloquePlan, BotonPlegar, Cell, CitesPill, Field, Mono, Table, cls, editCls } from "./loth-plan-ui";
 
 /** Clave de la preferencia. Exportada: la prueba en navegador la lee. */
 export const CLAVE_AUTORIZACIONES_PLAN = "loth:plan:autorizaciones-abiertas";
+
+const VACIO = {
+  speciesCommon: "", cites: false, volumenAutorizadoM3: "", arbolesAutorizados: "",
+  anioInstalacion: "", superficieHa: "", precioVentaSoles: "", valorEstadoNaturalSoles: "",
+};
+
+/** Un campo opcional: vacío viaja como `null` (borra), no como 0. */
+const opcional = (v: string): number | null => {
+  const n = numeroDe(v);
+  return n == null || Number.isNaN(n) ? null : n;
+};
 
 /** Lo que pide la ficha de una especie. `n` cambia en cada pedido: dos veces
  *  «Editar» sobre la misma especie tiene que volver a abrirla. */
@@ -37,10 +52,10 @@ export default function LothPlanEspecies({ planId, species, onChange, pedido }: 
 }) {
   const [abierto, setAbierto] = useLocalStorage<boolean>(CLAVE_AUTORIZACIONES_PLAN, false);
   const [open, setOpen] = useState(false);
-  const [f, setF] = useState({ speciesCommon: "", cites: false, volumenAutorizadoM3: "", arbolesAutorizados: "", precioVentaSoles: "", valorEstadoNaturalSoles: "" });
+  const [f, setF] = useState(VACIO);
   const [busy, setBusy] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [edit, setEdit] = useState({ volumenAutorizadoM3: "", arbolesAutorizados: "", precioVentaSoles: "", valorEstadoNaturalSoles: "" });
+  const [edit, setEdit] = useState({ volumenAutorizadoM3: "", arbolesAutorizados: "", precioVentaSoles: "", valorEstadoNaturalSoles: "", anioInstalacion: "", superficieHa: "" });
   const set = (k: keyof typeof f, v: string | boolean) => setF((p) => ({ ...p, [k]: v }));
   const setE = (k: keyof typeof edit, v: string) => setEdit((p) => ({ ...p, [k]: v }));
   const { confirm } = useConfirm();
@@ -50,28 +65,21 @@ export default function LothPlanEspecies({ planId, species, onChange, pedido }: 
     if (busy || !f.speciesCommon.trim() || !(Number(f.volumenAutorizadoM3) > 0)) return;
     setBusy(true);
     const matched = findSpeciesByCommonName(f.speciesCommon);
-    try {
-      const r = await fetch("/api/admin/forestal/plan/species", {
-        method: "POST", headers: csrfHeaders({ "Content-Type": "application/json" }), credentials: "include",
-        body: JSON.stringify({
-          planId, speciesCommon: f.speciesCommon.trim(), speciesScientific: matched?.scientificName ?? null,
-          cites: f.cites || matched?.cites || false, volumenAutorizadoM3: Number(f.volumenAutorizadoM3),
-          arbolesAutorizados: f.arbolesAutorizados ? Number(f.arbolesAutorizados) : null,
-          precioVentaSoles: f.precioVentaSoles ? Number(f.precioVentaSoles) : null,
-          valorEstadoNaturalSoles: f.valorEstadoNaturalSoles ? Number(f.valorEstadoNaturalSoles) : null,
-        }),
-      });
-      if (!r.ok) {
-        const body = await r.json().catch(() => ({}));
-        toast.error(typeof body?.error === "string" ? body.error : `No se pudo agregar la especie (error ${r.status})`);
-        return;
-      }
-      setF({ speciesCommon: "", cites: false, volumenAutorizadoM3: "", arbolesAutorizados: "", precioVentaSoles: "", valorEstadoNaturalSoles: "" });
-      onChange();
-    } catch (err) {
-      console.warn("[LothPlanView] agregar especie falló", err);
-      toast.error("No se pudo agregar la especie — revisa tu conexión.");
-    } finally { setBusy(false); }
+    const r = await agregarEspecie(planId, {
+      speciesCommon: f.speciesCommon.trim(),
+      speciesScientific: matched?.scientificName ?? null,
+      cites: f.cites || matched?.cites || false,
+      volumenAutorizadoM3: Number(f.volumenAutorizadoM3),
+      arbolesAutorizados: opcional(f.arbolesAutorizados),
+      anioInstalacion: opcional(f.anioInstalacion),
+      superficieHa: opcional(f.superficieHa),
+      precioVentaSoles: opcional(f.precioVentaSoles),
+      valorEstadoNaturalSoles: opcional(f.valorEstadoNaturalSoles),
+    });
+    setBusy(false);
+    if (!r.ok) { toast.error(r.error); return; }
+    setF(VACIO);
+    onChange();
   }
   async function del(s: Species) {
     // La especie autorizada alimenta el balance y la rentabilidad del libro: se
@@ -84,18 +92,9 @@ export default function LothPlanEspecies({ planId, species, onChange, pedido }: 
       confirmLabel: "Sí, borrar la especie",
     });
     if (!ok) return;
-    try {
-      const r = await fetch(`/api/admin/forestal/plan/species?id=${s.id}`, { method: "DELETE", headers: csrfHeaders(), credentials: "include" });
-      if (!r.ok) {
-        const body = await r.json().catch(() => ({}));
-        toast.error(typeof body?.error === "string" ? body.error : `No se pudo borrar la especie (error ${r.status})`);
-        return;
-      }
-      onChange();
-    } catch (err) {
-      console.warn("[LothPlanView] borrar especie falló", err);
-      toast.error("No se pudo borrar la especie — revisa tu conexión.");
-    }
+    const r = await quitarEspecie(s.id, s.speciesCommon);
+    if (!r.ok) { toast.error(r.error); return; }
+    onChange();
   }
 
   function startEdit(s: Species) {
@@ -105,36 +104,28 @@ export default function LothPlanEspecies({ planId, species, onChange, pedido }: 
       arbolesAutorizados: s.arbolesAutorizados != null ? String(s.arbolesAutorizados) : "",
       precioVentaSoles: s.precioVentaSoles ?? "",
       valorEstadoNaturalSoles: s.valorEstadoNaturalSoles ?? "",
+      anioInstalacion: s.anioInstalacion != null ? String(s.anioInstalacion) : "",
+      superficieHa: s.superficieHa ?? "",
     });
   }
   async function saveEdit(id: string) {
-    // PATCH: solo corrige los números de la autorización (vol/árboles/precio/VEN).
+    // PATCH: solo corrige los números de la autorización (vol/árboles/año/sup./precio/VEN).
     // El nombre de la especie no se edita acá (rompería el cruce del control) —
     // para cambiarlo, borrar y volver a agregar.
     if (busy || !(Number(edit.volumenAutorizadoM3) > 0)) return;
     setBusy(true);
-    try {
-      const r = await fetch("/api/admin/forestal/plan/species", {
-        method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), credentials: "include",
-        body: JSON.stringify({
-          id,
-          volumenAutorizadoM3: Number(edit.volumenAutorizadoM3),
-          arbolesAutorizados: edit.arbolesAutorizados ? Number(edit.arbolesAutorizados) : null,
-          precioVentaSoles: edit.precioVentaSoles ? Number(edit.precioVentaSoles) : null,
-          valorEstadoNaturalSoles: edit.valorEstadoNaturalSoles ? Number(edit.valorEstadoNaturalSoles) : null,
-        }),
-      });
-      if (!r.ok) {
-        const body = await r.json().catch(() => ({}));
-        toast.error(typeof body?.error === "string" ? body.error : `No se pudo guardar la especie (error ${r.status})`);
-        return;
-      }
-      setEditingId(null);
-      onChange();
-    } catch (err) {
-      console.warn("[LothPlanView] guardar especie falló", err);
-      toast.error("No se pudo guardar la especie — revisa tu conexión.");
-    } finally { setBusy(false); }
+    const r = await corregirEspecie(id, {
+      volumenAutorizadoM3: Number(edit.volumenAutorizadoM3),
+      arbolesAutorizados: opcional(edit.arbolesAutorizados),
+      anioInstalacion: opcional(edit.anioInstalacion),
+      superficieHa: opcional(edit.superficieHa),
+      precioVentaSoles: opcional(edit.precioVentaSoles),
+      valorEstadoNaturalSoles: opcional(edit.valorEstadoNaturalSoles),
+    });
+    setBusy(false);
+    if (!r.ok) { toast.error(r.error); return; }
+    setEditingId(null);
+    onChange();
   }
 
   /* El pedido de la ficha: abrir esa fila en edición (o confirmar la baja) y
@@ -203,6 +194,8 @@ export default function LothPlanEspecies({ planId, species, onChange, pedido }: 
             <Field label="Especie *"><input value={f.speciesCommon} onChange={(e) => set("speciesCommon", e.target.value)} placeholder="Tornillo" autoFocus /* eslint-disable-line jsx-a11y/no-autofocus -- el modal se abre para escribir la especie de inmediato */ className={cls} /></Field>
             <Field label="Volumen autorizado (m³) *"><input type="number" step="0.0001" value={f.volumenAutorizadoM3} onChange={(e) => set("volumenAutorizadoM3", e.target.value)} placeholder="120.5" className={cls} /></Field>
             <Field label="N° de árboles autorizados"><input type="number" value={f.arbolesAutorizados} onChange={(e) => set("arbolesAutorizados", e.target.value)} placeholder="45" className={cls} /></Field>
+            <Field label="Año de instalación"><input type="number" min="1900" max="2100" step="1" value={f.anioInstalacion} onChange={(e) => set("anioInstalacion", e.target.value)} placeholder="2018" className={cls} /></Field>
+            <Field label="Superficie (ha)"><input type="number" min="0" step="0.01" value={f.superficieHa} onChange={(e) => set("superficieHa", e.target.value)} placeholder="12.5" className={cls} /></Field>
             <Field label="Precio de venta (S/ por m³)"><input type="number" step="0.01" value={f.precioVentaSoles} onChange={(e) => set("precioVentaSoles", e.target.value)} placeholder="850.00" className={cls} /></Field>
             <Field label="Valor en estado natural (S/ por m³)"><input type="number" step="0.01" value={f.valorEstadoNaturalSoles} onChange={(e) => set("valorEstadoNaturalSoles", e.target.value)} placeholder="12.50" className={cls} /></Field>
           </div>
@@ -216,12 +209,14 @@ export default function LothPlanEspecies({ planId, species, onChange, pedido }: 
         </form>
       </AdminModal>
       <div id="loth-plan-autorizaciones-tabla" hidden={!mostrar || species.length === 0} className="p-3">
-      <Table head={["Especie", "Vol. autoriz.", "N° árb.", "Precio/m³", "VEN/m³", ""]}>
+      <Table head={["Especie", "Vol. autoriz.", "N° árb.", "Año", "Sup. ha", "Precio/m³", "VEN/m³", ""]}>
         {species.map((s) => editingId === s.id ? (
           <tr key={s.id} className="border-t border-[var(--rule-soft)] bg-[var(--surface-canvas)]">
             <Cell><span className="font-medium text-[var(--text-primary)]">{s.speciesCommon}</span>{s.cites && <CitesPill />}</Cell>
             <Cell right><input type="number" step="0.0001" value={edit.volumenAutorizadoM3} onChange={(e) => setE("volumenAutorizadoM3", e.target.value)} aria-label={`Volumen autorizado de ${s.speciesCommon}`} className={editCls} /></Cell>
             <Cell right><input type="number" value={edit.arbolesAutorizados} onChange={(e) => setE("arbolesAutorizados", e.target.value)} aria-label={`Número de árboles autorizados de ${s.speciesCommon}`} className={editCls} /></Cell>
+            <Cell right><input type="number" min="1900" max="2100" step="1" value={edit.anioInstalacion} onChange={(e) => setE("anioInstalacion", e.target.value)} aria-label={`Año de instalación de ${s.speciesCommon}`} className={editCls} /></Cell>
+            <Cell right><input type="number" min="0" step="0.01" value={edit.superficieHa} onChange={(e) => setE("superficieHa", e.target.value)} aria-label={`Superficie en hectáreas de ${s.speciesCommon}`} className={editCls} /></Cell>
             <Cell right><input type="number" step="0.01" value={edit.precioVentaSoles} onChange={(e) => setE("precioVentaSoles", e.target.value)} aria-label={`Precio de venta por m³ de ${s.speciesCommon}`} className={editCls} /></Cell>
             <Cell right><input type="number" step="0.01" value={edit.valorEstadoNaturalSoles} onChange={(e) => setE("valorEstadoNaturalSoles", e.target.value)} aria-label={`Valor en estado natural por m³ de ${s.speciesCommon}`} className={editCls} /></Cell>
             <Cell right>
@@ -236,6 +231,8 @@ export default function LothPlanEspecies({ planId, species, onChange, pedido }: 
             <Cell><span className="font-medium text-[var(--text-primary)]">{s.speciesCommon}</span>{s.cites && <CitesPill />}{s.speciesScientific && <div className="text-xs italic text-[var(--text-tertiary)]">{s.speciesScientific}</div>}</Cell>
             <Cell right><Mono>{n(s.volumenAutorizadoM3)}</Mono></Cell>
             <Cell right>{s.arbolesAutorizados ?? "—"}</Cell>
+            <Cell right>{s.anioInstalacion ?? "—"}</Cell>
+            <Cell right>{s.superficieHa ? Number(s.superficieHa).toFixed(2) : "—"}</Cell>
             <Cell right>{soles(s.precioVentaSoles)}</Cell>
             <Cell right>{soles(s.valorEstadoNaturalSoles)}</Cell>
             <Cell right>

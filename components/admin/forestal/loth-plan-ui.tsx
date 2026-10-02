@@ -125,6 +125,35 @@ export function Mono({ children, bold }: { children: ReactNode; bold?: boolean }
 export function AddBtn({ onClick }: { onClick: () => void }) {
   return <button type="button" onClick={onClick} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[var(--accent-dark)] px-3 text-xs font-bold text-white hover:opacity-90"><Plus className="h-3.5 w-3.5" />Agregar</button>;
 }
+/**
+ * CITES que se prende y apaga. Prendido se ve como la pastilla roja de
+ * siempre; apagado, como un contorno que invita a marcarlo si hace falta.
+ */
+export function CitesToggle({ activo, onCambiar, especie, className = "" }: {
+  activo: boolean;
+  onCambiar: (v: boolean) => void;
+  especie: string;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={activo}
+      onClick={() => onCambiar(!activo)}
+      title={activo ? "En los apéndices CITES: toca para quitarlo" : "Marcar como especie CITES"}
+      aria-label={`${especie || "Especie"}: ${activo ? "es CITES" : "no es CITES"}`}
+      className={`inline-flex h-6 items-center gap-0.5 rounded px-1.5 text-[length:var(--ts-2xs)] font-bold not-italic transition-colors ${
+        activo
+          ? "bg-[var(--data-error-100)] text-[var(--data-error-700)]"
+          : "border border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
+      } ${className}`}
+    >
+      <ShieldAlert className="h-2.5 w-2.5" aria-hidden="true" />
+      CITES
+    </button>
+  );
+}
+
 export function CitesPill() {
   return <span className="ml-1.5 inline-flex items-center gap-0.5 rounded bg-[var(--data-error-100)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)]"><ShieldAlert className="h-2.5 w-2.5" />CITES</span>;
 }

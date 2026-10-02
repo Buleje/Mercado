@@ -153,6 +153,13 @@ export interface RecepcionDeExtraccion {
   volumenM3: number | null;
   /** Consumida por una corrida viva (`ForestCtpEntry` sin borrar ni anular). */
   aserrada: boolean;
+  /**
+   * Día en que llegó a la planta (`fechaRecepcion`, o el asiento del ingreso),
+   * `YYYY-MM-DD`. Lo recibido también es acumulado HASTA `hasta`: sin esto, una
+   * vista al 28-09 contaba como recibida una troza que llegó el 29-09 —y como
+   * su despacho (29-09) quedaba afuera, la avisaba «recibida sin despacho»—.
+   */
+  dia?: string | null;
 }
 
 export interface EntradaExtraccion {
@@ -752,6 +759,13 @@ export interface Acum {
   movilizadoAutM3: number;
   topeM3: number | null;
   topeAutorizado: boolean;
+  /**
+   * Plantación sin censo con especies registradas (ADR-459): lo registrado de la
+   * especie entra a la base del saldo por operación en lugar del censo (que es
+   * 0). `baseEsRegistro` = la base de ESTA fila es el registro, no el censo.
+   */
+  baseRegistroM3: number;
+  baseEsRegistro: boolean;
 }
 
 const sumaNulos = (a: number | null, b: number | null): number | null => (a == null ? b : b == null ? a : a + b);
@@ -794,6 +808,8 @@ function juntarAcum(a: Acum, b: Acum, clave = a.clave, etiqueta = a.etiqueta): A
   const topeM3 = sumaNulos(a.topeM3, b.topeM3);
   const topeAutorizado =
     a.topeM3 == null ? b.topeAutorizado : b.topeM3 == null ? a.topeAutorizado : a.topeAutorizado && b.topeAutorizado;
+  // Una parte sin plan (sin base) no opina; si las dos tienen base, es «registro» sólo si las dos lo son.
+  const baseEsRegistro = !a.tieneCenso ? b.baseEsRegistro : !b.tieneCenso ? a.baseEsRegistro : a.baseEsRegistro && b.baseEsRegistro;
   return {
     clave,
     etiqueta,
@@ -808,6 +824,8 @@ function juntarAcum(a: Acum, b: Acum, clave = a.clave, etiqueta = a.etiqueta): A
     movilizadoAutM3: a.movilizadoAutM3 + b.movilizadoAutM3,
     topeM3,
     topeAutorizado,
+    baseRegistroM3: a.baseRegistroM3 + b.baseRegistroM3,
+    baseEsRegistro,
   };
 }
 
@@ -832,12 +850,17 @@ function acumVacio(clave: string, etiqueta: string, tieneCenso: boolean): Acum {
     movilizadoAutM3: 0,
     topeM3: null,
     topeAutorizado: false,
+    baseRegistroM3: 0,
+    baseEsRegistro: false,
   };
 }
 
 function filaDe(a: Acum): FilaExtraccion {
   const c = a.cadena;
-  const base = a.tieneCenso ? r4(a.censo.aprovechableM3) : null;
+  // La base del saldo por operación: el censo aprovechable y, en una plantación
+  // sin censo, lo registrado (ADR-459). Contra lo registrado, pasarse es `exceso`.
+  const base = a.tieneCenso ? r4(a.censo.aprovechableM3 + a.baseRegistroM3) : null;
+  const contra: BaseDelTope = a.baseEsRegistro ? "autorizado" : "censo";
   const talado = cerrar(c.talado);
   const trozado = cerrar(c.trozado);
   const despachado = cerrar(c.despachado);
@@ -870,10 +893,11 @@ function filaDe(a: Acum): FilaExtraccion {
     recibido: { ...cerrar(c.recibido), m3Guia: r4(c.m3Guia) },
     aserrado: cerrar(c.aserrado),
     saldo: {
-      tala: saldoContra(base, talado.m3, "censo"),
-      trozado: saldoContra(base, trozado.m3, "censo"),
-      despacho: saldoContra(base, despachado.m3, "censo"),
+      tala: saldoContra(base, talado.m3, contra),
+      trozado: saldoContra(base, trozado.m3, contra),
+      despacho: saldoContra(base, despachado.m3, contra),
     },
+    baseSaldo: base == null ? null : { m3: base, contra },
     movilizadoM3: r4(a.movilizadoM3),
     saldoAutorizado: a.autorizadoM3 == null ? null : saldoContra(r4(a.autorizadoM3), r4(a.movilizadoAutM3), "autorizado"),
     tope,
@@ -940,6 +964,10 @@ function armarPermiso(
     });
   }
   const conEspecies = especiesPlan.length > 0;
+  /* Plantación con registro (ADR-459): no lleva censo — el registro es la base.
+     Sin esto, una plantación sin censo daba base 0 y la primera tala ya
+     marcaba «tope» (0 − talado). */
+  const plantacionConRegistro = plan != null && conEspecies && esPlanDePlantacion(plan);
 
   // Saldo autorizado: la MISMA cuenta que la vista Plan (`computeBalance`), con lo de este plan.
   const movimientos: BalanceMovement[] = [
@@ -979,11 +1007,13 @@ function armarPermiso(
     const ce = censo.get(clave);
     const ca = cadena.get(clave);
     const au = autorizadoDe.get(clave);
-    const etiqueta = ce?.etiqueta || ca?.etiqueta || au?.nombre || "Sin especie";
+    // En una plantación el nombre oficial es el del registro («Bolaina blanca», no el «bolaina blanca» que se tipeó al talar).
+    const etiqueta = (plantacionConRegistro && au?.nombre) || ce?.etiqueta || ca?.etiqueta || au?.nombre || "Sin especie";
     const autorizadoM3 = conEspecies ? (au?.m3 ?? 0) : null;
     const aprovechable = ce?.aprovechableM3 ?? 0;
     const movilizado = r4(movilizadoDe.get(clave) ?? 0);
     const topeM3 = autorizadoM3 != null ? autorizadoM3 : plan && aprovechable > 0 ? aprovechable : null;
+    const registroComoBase = plantacionConRegistro && aprovechable <= TOLERANCIA_M3;
     acumEspecies.push({
       clave,
       etiqueta,
@@ -998,6 +1028,8 @@ function armarPermiso(
       movilizadoAutM3: autorizadoM3 != null ? movilizado : 0,
       topeM3,
       topeAutorizado: autorizadoM3 != null,
+      baseRegistroM3: registroComoBase ? (au?.m3 ?? 0) : 0,
+      baseEsRegistro: registroComoBase,
     });
   }
   const acumTotal = juntarTodos(acumEspecies, "total", "Total");
@@ -1216,7 +1248,9 @@ export interface EntradaKpis {
 
 export function kpisDeExtraccion(e: EntradaKpis): KpisExtraccion {
   const { total, periodo, anterior } = e;
-  const base = total.censo.aprovechableM3;
+  // La base del saldo: el censo aprovechable o, en una plantación sin censo, lo registrado (ADR-459).
+  const base = total.baseSaldo?.m3 ?? total.censo.aprovechableM3;
+  const contraRegistro = total.baseSaldo?.contra === "autorizado";
   const talado = total.talado.m3;
   const hoyDia = limaDateKey(e.hoy);
   const unico = e.planes.length === 1 ? e.planes[0] : null;
@@ -1256,7 +1290,8 @@ export function kpisDeExtraccion(e: EntradaKpis): KpisExtraccion {
     motivoSinDato: null,
   };
   if (!(base > 0)) agotamiento.motivoSinDato = "Sin censo aprovechable contra qué medir.";
-  else if (saldo <= TOLERANCIA_M3) agotamiento.motivoSinDato = "Ya no queda saldo contra el censo.";
+  else if (saldo <= TOLERANCIA_M3)
+    agotamiento.motivoSinDato = contraRegistro ? "Ya no queda saldo contra lo registrado." : "Ya no queda saldo contra el censo.";
   else if (ritmo.m3 == null) agotamiento.motivoSinDato = "Sin ritmo de tala todavía.";
   else {
     const primera = e.talas.reduce<string | null>((min, t) => (t.dia && (!min || t.dia < min) ? t.dia : min), null);
@@ -1414,18 +1449,20 @@ export function avisosDeExtraccion(detalles: readonly DetalleDePermiso[], op: Op
         const aut = e.censo.autorizadoM3 ?? 0;
         const talaPasa = e.talado.m3 > aut + TOLERANCIA_M3;
         const cifra = r4(Math.max(e.talado.m3, e.movilizadoM3) - aut);
+        // En una plantación nadie «autoriza»: el volumen es el que se registró (ADR-459).
+        const techo = p.poa.plantacion ? `el registro tiene ${m3(aut)} m³` : `el plan autoriza ${m3(aut)} m³`;
         push({
           tipo: "exceso_autorizado",
           nivel: "error",
           especie: e.clave,
           texto: talaPasa
-            ? `${e.etiqueta}: se talaron ${m3(e.talado.m3)} m³ y el plan autoriza ${m3(aut)} m³ (${m3(cifra)} m³ de más).`
-            : `${e.etiqueta}: se movilizaron ${m3(e.movilizadoM3)} m³ y el plan autoriza ${m3(aut)} m³ (${m3(cifra)} m³ de más).`,
+            ? `${e.etiqueta}: se talaron ${m3(e.talado.m3)} m³ y ${techo} (${m3(cifra)} m³ de más).`
+            : `${e.etiqueta}: se movilizaron ${m3(e.movilizadoM3)} m³ y ${techo} (${m3(cifra)} m³ de más).`,
           cifraM3: cifra,
         });
       } else if (e.tope && !e.fueraDelPlan) {
         const sobreCenso = !autorizado && e.talado.m3 > e.tope.m3 + TOLERANCIA_M3;
-        const contra = autorizado ? "lo autorizado" : "el censo aprovechable";
+        const contra = autorizado ? (p.poa.plantacion ? "lo registrado" : "lo autorizado") : "el censo aprovechable";
         if (e.avance.nivel === "tope" && !sobreCenso) {
           push({
             tipo: "avance_100",
@@ -1444,7 +1481,8 @@ export function avisosDeExtraccion(detalles: readonly DetalleDePermiso[], op: Op
           });
         }
       }
-      if (planId && e.talado.m3 > e.censo.aprovechableM3 + TOLERANCIA_M3) {
+      // Contra lo registrado de una plantación no hay censo que «estime en pie»: pasarse ya lo dice el saldo.
+      if (planId && e.baseSaldo?.contra !== "autorizado" && e.talado.m3 > e.censo.aprovechableM3 + TOLERANCIA_M3) {
         const dif = r4(e.talado.m3 - e.censo.aprovechableM3);
         push({
           tipo: "medido_sobre_censo",
@@ -1466,8 +1504,12 @@ export function avisosDeExtraccion(detalles: readonly DetalleDePermiso[], op: Op
       });
     }
 
+    // En una plantación sin censo el respaldo ES el registro (ADR-459): no se avisa contra un censo que no existe.
     const sinRespaldo = p.especies.filter(
-      (e) => e.censo.autorizadoM3 != null && e.censo.autorizadoM3 > e.censo.aprovechableM3 + TOLERANCIA_M3,
+      (e) =>
+        e.baseSaldo?.contra !== "autorizado" &&
+        e.censo.autorizadoM3 != null &&
+        e.censo.autorizadoM3 > e.censo.aprovechableM3 + TOLERANCIA_M3,
     );
     if (sinRespaldo.length > 0) {
       const cifra = r4(sinRespaldo.reduce((s, e) => s + ((e.censo.autorizadoM3 ?? 0) - e.censo.aprovechableM3), 0));
@@ -1604,7 +1646,10 @@ export function armarExtraccion(e: EntradaExtraccion): ExtraccionResponse {
   const atr = atribuirLineas(e.planes, e.arboles, e.lineas, hasta);
 
   const recepciones = new Map<string, RecepcionDeExtraccion>();
-  for (const r of e.recepciones) if (!recepciones.has(r.lothTrozadoId)) recepciones.set(r.lothTrozadoId, r);
+  for (const r of e.recepciones) {
+    if (r.dia && r.dia > hasta) continue; // llegó después del corte
+    if (!recepciones.has(r.lothTrozadoId)) recepciones.set(r.lothTrozadoId, r);
+  }
   const enCtp = new Set(recepciones.keys());
 
   const enAlcance = e.planesEnAlcance ? new Set(e.planesEnAlcance) : null;

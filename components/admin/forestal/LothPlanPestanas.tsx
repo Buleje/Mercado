@@ -8,6 +8,11 @@
  *                       DMC, y dónde corrijo lo que autorizó la resolución?
  *   · «Censo»         — el detalle árbol por árbol, en tabla y en el croquis.
  *
+ * Una PLANTACIÓN (ADR-459) tiene otras dos: «Registro y saldo» —sus especies y
+ * m³ registrados, y dónde está hoy ese volumen— y «Árboles marcados», que es el
+ * censo con el nombre que le corresponde: opcional, porque el saldo sale del
+ * registro y no de los árboles.
+ *
  * Antes eran nueve bloques en una sola tirada (4,8 pantallas) y tres tablas
  * seguidas hablaban de la misma especie sin estar juntas. La pestaña elegida
  * se recuerda en el navegador: quien entra siempre a mirar el censo no tiene
@@ -19,12 +24,18 @@
 
 import type { ReactNode } from "react";
 
-export type PestanaPlan = "avance" | "especies" | "censo";
+export type PestanaPlan = "avance" | "especies" | "censo" | "registro";
+/** Las de un plan de bosque natural (PO, PMFI, DEMA, PGMF). */
 export const PESTANAS_PLAN: readonly PestanaPlan[] = ["avance", "especies", "censo"];
+/** Las de una plantación: el registro manda; los árboles marcados son opcionales. */
+export const PESTANAS_PLANTACION: readonly PestanaPlan[] = ["registro", "censo"];
 
 export interface PestanaDef {
   id: PestanaPlan;
   label: string;
+  /** Lo que entra a 400 px. «Árboles marcados (opcional)» al lado de otra
+   *  pestaña se salía de la fila en el celular. */
+  labelCorto?: string;
   /** Cifra al lado del nombre (especies, árboles). */
   cuenta?: string;
   /** Punto de color cuando la pestaña esconde algo que pide atención. */
@@ -100,7 +111,14 @@ function Etiqueta({ p }: { p: PestanaDef }): ReactNode {
           {p.alertaTexto && <span className="sr-only">{p.alertaTexto}: </span>}
         </>
       )}
-      {p.label}
+      {p.labelCorto ? (
+        <>
+          <span className="sm:hidden">{p.labelCorto}</span>
+          <span className="max-sm:hidden">{p.label}</span>
+        </>
+      ) : (
+        p.label
+      )}
       {p.cuenta && (
         <span className="font-mono text-xs font-bold tabular-nums text-[var(--text-tertiary)]">{p.cuenta}</span>
       )}

@@ -6,6 +6,10 @@
  * troza a despachar…— con su buscador, el selector del plan y, en Tala y
  * Trozado, el botón «Ver censo».
  *
+ * En la tala de una PLANTACIÓN (ADR-459) la lista ofrece las especies del
+ * registro con lo que queda en pie; el censo («árboles marcados»), si lo hay,
+ * queda como la otra pestaña.
+ *
  * Presentación pura: el formulario decide qué hay en la lista y qué hace
  * elegir un ítem.
  */
@@ -16,6 +20,7 @@ import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { ordenarCenso, type ArbolParaElegir } from "@/lib/forestal/loth-censo-uso";
 import type { LothSection } from "@/lib/forestal/loth-constants";
+import type { EspecieDelRegistro } from "@/lib/forestal/loth-tala-plantacion";
 import { CitesPill, cls, etiquetaPlan } from "./loth-entry-form-ui";
 
 export interface PlanOpt {
@@ -23,6 +28,8 @@ export interface PlanOpt {
   planType: string;
   planNumber: string | null;
   titularName: string;
+  /** Con el código del papel («REG-PLT…») se reconoce una plantación cargada como PO. */
+  tituloHabilitante?: string | null;
 }
 
 export interface SourceItem {
@@ -34,6 +41,8 @@ export interface SourceItem {
   aviso?: string | null;
   /** Trozado: cuántas trozas salieron ya de esa tala. */
   trozas?: number | null;
+  /** Tala de una plantación: la especie del registro, con lo que queda en pie. */
+  registro?: { registradoM3: number; enPieM3: number } | null;
 }
 
 export const TITULO_FUENTE: Record<LothSection, string> = {
@@ -63,6 +72,19 @@ export function fuentesDelCenso(arboles: readonly ArbolParaElegir[]): SourceItem
   }));
 }
 
+/** Tala de una plantación: una fila por especie del registro (ADR-459). */
+export function fuentesDelRegistro(especies: readonly EspecieDelRegistro[]): SourceItem[] {
+  return especies.map((e) => ({
+    kind: "registro",
+    code: null,
+    species: e.especie,
+    scientific: e.cientifico,
+    cites: e.cites,
+    vol: e.enPieM3,
+    registro: { registradoM3: e.registradoM3, enPieM3: e.enPieM3 },
+  }));
+}
+
 /** Trozado: cada tala con cuántas trozas ya salieron de ella (del cruce del censo). */
 export function conTrozasDelCenso(talas: readonly SourceItem[], arboles: readonly ArbolParaElegir[]): SourceItem[] {
   const uso = new Map(arboles.map((a) => [a.treeCode, a.uso?.trozas ?? 0]));
@@ -81,18 +103,39 @@ interface Props {
   onElegir: (it: SourceItem) => void;
   /** Tala y Trozado: el censo entero en otra ventana. */
   verCenso: { total: number; onAbrir: () => void } | null;
+  /**
+   * Tala de una plantación: qué ofrece la lista —las especies del registro o
+   * los árboles marcados del censo— y cuántos hay de cada uno.
+   */
+  plantacion?: {
+    modo: "registro" | "censo";
+    onModo: (m: "registro" | "censo") => void;
+    especies: number;
+    arbolesMarcados: number;
+  } | null;
 }
 
-export default function LothFuentesLista({ section, planId, plans, onPlan, fuentes, cargando, error, onReintentar, onElegir, verCenso }: Props) {
+const VACIO_REGISTRO = "Este registro no tiene especies cargadas: agrégalas en Plan de manejo → Registro y saldo.";
+
+export default function LothFuentesLista({ section, planId, plans, onPlan, fuentes, cargando, error, onReintentar, onElegir, verCenso, plantacion }: Props) {
   const [query, setQuery] = useState("");
   const filtradas = useMemo(() => {
     const q = query.trim().toLowerCase();
     const list = q
-      ? fuentes.filter((s) => (s.code ?? "").toLowerCase().includes(q) || (s.species ?? "").toLowerCase().includes(q) || (s.productType ?? "").toLowerCase().includes(q))
+      ? fuentes.filter(
+          (s) =>
+            (s.code ?? "").toLowerCase().includes(q) ||
+            (s.species ?? "").toLowerCase().includes(q) ||
+            (s.scientific ?? "").toLowerCase().includes(q) ||
+            (s.productType ?? "").toLowerCase().includes(q),
+        )
       : fuentes;
     return list.slice(0, 60);
   }, [fuentes, query]);
-  const titulo = TITULO_FUENTE[section];
+  const porRegistro = plantacion?.modo === "registro";
+  const titulo = porRegistro ? "Elige la especie del registro" : plantacion ? "Elige el árbol marcado" : TITULO_FUENTE[section];
+  /* Las dos pestañas sólo si hay de las dos: con una sola, no hay qué elegir. */
+  const conPestanas = plantacion != null && plantacion.especies > 0 && plantacion.arbolesMarcados > 0;
 
   return (
     <section aria-label={titulo} className="space-y-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
@@ -101,12 +144,22 @@ export default function LothFuentesLista({ section, planId, plans, onPlan, fuent
           <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)]">
             {titulo}
           </span>
-          <InfoTip
-            icono="ayuda"
-            title={titulo}
-            what="Elige de la lista para autocompletar la línea, o cárgala a mano abajo."
-            affects="Sólo aparece lo que el plan elegido tiene disponible para esta etapa."
-          />
+          {porRegistro ? (
+            <InfoTip
+              icono="ayuda"
+              title={titulo}
+              what="Una plantación no necesita censo: elige la especie y la línea se llena con su nombre, el científico y un código de árbol que puedes cambiar."
+              affects="Lo que tales se descuenta de lo registrado de esa especie."
+              example="Bolaina · quedan 118.250 de 120.500 m³ → talas 3.100 → quedan 115.150."
+            />
+          ) : (
+            <InfoTip
+              icono="ayuda"
+              title={titulo}
+              what="Elige de la lista para autocompletar la línea, o cárgala a mano abajo."
+              affects="Sólo aparece lo que el plan elegido tiene disponible para esta etapa."
+            />
+          )}
         </div>
         <select
           value={planId ?? ""}
@@ -120,6 +173,31 @@ export default function LothFuentesLista({ section, planId, plans, onPlan, fuent
           ))}
         </select>
       </div>
+      {conPestanas && (
+        <div role="group" aria-label="Qué ofrece la lista" className="inline-flex rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] p-0.5">
+          {(
+            [
+              ["registro", "Por especie", plantacion.especies],
+              ["censo", "Árboles marcados", plantacion.arbolesMarcados],
+            ] as const
+          ).map(([m, label, n]) => (
+            <button
+              key={m}
+              type="button"
+              aria-pressed={plantacion.modo === m}
+              onClick={() => plantacion.onModo(m)}
+              className={`inline-flex h-9 items-center gap-1.5 rounded-md px-3 text-sm font-semibold transition-colors ${
+                plantacion.modo === m
+                  ? "bg-[var(--accent-dark)] text-white"
+                  : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+              }`}
+            >
+              {label}
+              <span className={`font-mono text-xs tabular-nums ${plantacion.modo === m ? "text-white/80" : "text-[var(--text-tertiary)]"}`}>{n}</span>
+            </button>
+          ))}
+        </div>
+      )}
       <div className="flex items-center gap-2">
         <div className="relative min-w-0 flex-1">
           <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--text-tertiary)]" />
@@ -127,8 +205,8 @@ export default function LothFuentesLista({ section, planId, plans, onPlan, fuent
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            aria-label="Buscar por código o especie"
-            placeholder="Buscar por código o especie..."
+            aria-label={porRegistro ? "Buscar especie" : "Buscar por código o especie"}
+            placeholder={porRegistro ? "Buscar especie..." : "Buscar por código o especie..."}
             className={`${cls.input} h-9 pl-8`}
           />
         </div>
@@ -159,8 +237,16 @@ export default function LothFuentesLista({ section, planId, plans, onPlan, fuent
           </div>
         ) : filtradas.length === 0 ? (
           <div className="px-3 py-3 text-center text-sm text-[var(--text-tertiary)]">
-            Nada disponible en este plan para esta etapa.{section !== "tala" && " Registra primero la etapa anterior."}
+            {porRegistro && plantacion.especies === 0 ? (
+              VACIO_REGISTRO
+            ) : porRegistro ? (
+              "Ninguna especie del registro coincide con la búsqueda."
+            ) : (
+              <>Nada disponible en este plan para esta etapa.{section !== "tala" && " Registra primero la etapa anterior."}</>
+            )}
           </div>
+        ) : porRegistro ? (
+          filtradas.map((it, i) => <FilaRegistro key={`${it.species}-${i}`} it={it} onElegir={onElegir} />)
         ) : (
           filtradas.map((it, i) => (
             <button
@@ -189,5 +275,31 @@ export default function LothFuentesLista({ section, planId, plans, onPlan, fuent
         )}
       </div>
     </section>
+  );
+}
+
+/** Una especie del registro: «Bolaina · Guazuma crinita · quedan 118.250 de 120.500 m³». */
+function FilaRegistro({ it, onElegir }: { it: SourceItem; onElegir: (it: SourceItem) => void }) {
+  const r = it.registro;
+  const pasa = r != null && r.enPieM3 < 0;
+  return (
+    <button
+      type="button"
+      onClick={() => onElegir(it)}
+      className="flex min-h-10 w-full items-center justify-between gap-3 px-3 text-left transition-colors hover:bg-[var(--surface-sunken)]"
+    >
+      <span className="flex min-w-0 items-center gap-2 truncate">
+        <span className="truncate text-sm font-bold text-[var(--text-primary)]">{it.species}</span>
+        {it.scientific && <span className="hidden truncate text-sm italic text-[var(--text-tertiary)] sm:inline">{it.scientific}</span>}
+        {it.cites && <CitesPill />}
+      </span>
+      {r && (
+        <span
+          className={`shrink-0 font-mono text-xs tabular-nums ${pasa ? "font-bold text-[var(--data-warning-ink)] dark:text-[var(--data-warning-500)]" : "text-[var(--text-secondary)]"}`}
+        >
+          {pasa ? `pasa por ${fmtM3(-r.enPieM3)} m³` : `quedan ${fmtM3(r.enPieM3)} de ${fmtM3(r.registradoM3)} m³`}
+        </span>
+      )}
+    </button>
   );
 }

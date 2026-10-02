@@ -36,6 +36,8 @@ interface Props {
   /** Varias trozas nuevas a la vez («Trozar un árbol»): reemplaza a `troza`. */
   lote?: { codigo: string; volumenM3: number | null }[];
   onUsarCodigo?: (codigo: string) => void;
+  /** Registro de plantación (ADR-459): el árbol no tiene por qué estar marcado; se traza por su tala. */
+  plantacion?: boolean;
 }
 
 const GPS_ORIGEN: Record<string, string> = {
@@ -74,7 +76,7 @@ function TalaDelArbolCaja({ tala }: { tala: TalaDelArbol }) {
 
 const SIN_TROZA = { codigo: "", volumenM3: null };
 
-export default function LothFichaTrozado({ arbol, cargandoCenso, codigo, libro, troza = SIN_TROZA, lote, onUsarCodigo }: Props) {
+export default function LothFichaTrozado({ arbol, cargandoCenso, codigo, libro, troza = SIN_TROZA, lote, onUsarCodigo, plantacion = false }: Props) {
   const code = codigo.trim();
   if (!code) {
     return (
@@ -101,7 +103,11 @@ export default function LothFichaTrozado({ arbol, cargandoCenso, codigo, libro, 
         <div className={CAJA}>
           <p className={KICKER}>Ficha del árbol</p>
           <p className="font-mono text-xl font-bold tabular-nums text-[var(--text-primary)]">{code}</p>
-          <p className="mt-1 text-xs text-[var(--text-tertiary)]">{cargandoCenso ? "Cargando el censo…" : "No está en el censo de este plan."}</p>
+          <p className="mt-1 text-xs text-[var(--text-tertiary)]">{cargandoCenso
+            ? "Cargando…"
+            : plantacion
+              ? "Árbol de la plantación sin marcar: se sigue por su línea de tala."
+              : "No está en el censo de este plan."}</p>
         </div>
       )}
 

@@ -57,6 +57,9 @@ export type CtpAuditEntity =
    *  aprobado que autoriza especies y volúmenes. De él cuelgan el censo, los
    *  asientos del LO-TH y las guías, así que darlo de baja deja rastro. */
   | "ForestPlan"
+  /** Una especie del plan (o del registro de una plantación, ADR-459): su
+   *  volumen es el techo de T6, así que subirlo deja rastro. */
+  | "ForestPlanSpecies"
   | "ForestCtpFicha"
   // KV (como ForestCtpFicha): la foto de referencia de una especie. No es una
   // prueba documental, pero orienta a quien recibe la troza — y quien la pone
@@ -384,6 +387,13 @@ export type CtpAuditAction =
   // LO-TH: sacarlo del selector no borra sus asientos ni sus guías, pero sí
   // cambia qué plan se declara — y eso no puede pasar sin nombre y fecha.
   | "ctp_plan_baja"
+  // ADR-459: el alta del plan (con su registro) y cada cambio de una especie.
+  // El volumen de la especie es el techo del despacho (T6): quién lo subió y de
+  // cuánto a cuánto es lo primero que pregunta un fiscalizador.
+  | "ctp_plan_alta"
+  | "ctp_plan_especie_alta"
+  | "ctp_plan_especie_editar"
+  | "ctp_plan_especie_baja"
   | "ctp_anexo04_emit"
   | "ctp_anexo04_update"
   | "ctp_anexo04_delete"

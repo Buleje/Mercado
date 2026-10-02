@@ -111,8 +111,10 @@ function UnirConPermiso({ plan, onUnido }: { plan: PlanEnPantalla & { id: string
   );
 }
 
-export default function LothPlanAvisos({ rows, onResolver, truncado, plan, onPlanUnido }: {
+export default function LothPlanAvisos({ rows, onResolver, truncado, plan, onPlanUnido, plantacion = false }: {
   rows: ControlRow[];
+  /** Registro de plantación (ADR-459): se habla de registro y árboles marcados, no de resolución y censo. */
+  plantacion?: boolean;
   onResolver?: (especie: string) => void;
   /** El censo tiene `total` árboles y se cargaron `cargados`. */
   truncado?: { total: number; cargados: number } | null;
@@ -223,7 +225,9 @@ export default function LothPlanAvisos({ rows, onResolver, truncado, plan, onPla
       {todoBien && (
         <p className="flex items-center gap-2 text-sm font-medium text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
           <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />
-          Todo el censo corresponde a especies autorizadas en el plan.
+          {plantacion
+            ? "Todos los árboles marcados son de especies del registro."
+            : "Todo el censo corresponde a especies autorizadas en el plan."}
         </p>
       )}
 
@@ -231,9 +235,15 @@ export default function LothPlanAvisos({ rows, onResolver, truncado, plan, onPla
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-4 py-3 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/15 dark:text-[var(--data-error-500)]">
           <Ban className="h-4 w-4 shrink-0" aria-hidden="true" />
           <p className="min-w-0 grow basis-[20rem]">
-            <span className="font-bold">Especie(s) censada(s) fuera del plan aprobado: </span>
+            <span className="font-bold">
+              {plantacion ? "Especie(s) marcada(s) fuera del registro: " : "Especie(s) censada(s) fuera del plan aprobado: "}
+            </span>
             {noAut.map((r) => r.species).join(", ")}.{" "}
-            <span className="font-medium">Talar o movilizar una especie no autorizada es infracción — corrige el plan o el censo antes de emitir GTF.</span>
+            <span className="font-medium">
+              {plantacion
+                ? "Talar o movilizar una especie que no está en el registro es infracción — corrige el registro o los árboles antes de emitir GTF."
+                : "Talar o movilizar una especie no autorizada es infracción — corrige el plan o el censo antes de emitir GTF."}
+            </span>
           </p>
           {/* El aviso trae el camino: antes decía qué estaba mal y había que
               salir a buscar dónde se arregla. */}
@@ -255,7 +265,12 @@ export default function LothPlanAvisos({ rows, onResolver, truncado, plan, onPla
       {excArb.map((r) => (
         <div key={r.species} className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-warning-500)]/60 bg-[var(--data-warning-100)] px-4 py-3 text-sm text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/15 dark:text-[var(--data-warning-500)]">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-          <div><span className="font-bold">{r.species}:</span> censados {r.censadoCount} árboles &gt; {r.autorizadoArboles} autorizados en la resolución.</div>
+          <div>
+            <span className="font-bold">{r.species}:</span>{" "}
+            {plantacion
+              ? <>marcados {r.censadoCount} árboles &gt; {r.autorizadoArboles} del registro.</>
+              : <>censados {r.censadoCount} árboles &gt; {r.autorizadoArboles} autorizados en la resolución.</>}
+          </div>
         </div>
       ))}
     </div>

@@ -79,7 +79,7 @@ export const vistaDe = (p: PrefIndicadores): VistaIndicadores => (p.oculto ? "oc
 
 const FORMAS: { id: FormaIndicadores; label: string; icon: LucideIcon; titulo: string }[] = [
   { id: "detalle", label: "Tarjetas", icon: LayoutGrid, titulo: "Una tarjeta por indicador, con contra qué se compara cada cifra" },
-  { id: "cifras", label: "Cifras", icon: Rows3, titulo: "Las mismas cinco cifras, en una sola línea" },
+  { id: "cifras", label: "Cifras", icon: Rows3, titulo: "Las mismas cifras, en una sola línea" },
 ];
 
 const BTN = "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40";

@@ -18,11 +18,20 @@
  * llamándose «Indicadores» al lado de «Opciones»: había que adivinar que ese
  * botón mandaba sobre unos números que estaban dos bloques más abajo. Ahora va
  * pegado a ellos (`LothPlanIndicadores`), que es donde se lo busca.
+ *
+ * Una PLANTACIÓN (ADR-459) mide otra cosa: no hay censo ni volumen autorizado
+ * que cruzar, hay m³ REGISTRADOS y por dónde van. Sus cuatro cifras —registrado
+ * · talado · en pie · despachado— salen de la misma cascada que la tabla de la
+ * pestaña «Registro y saldo», y la carátula la pone esa pestaña (con «Editar»),
+ * no esta cabecera: dos fichas del mismo registro a dos alturas sobran.
  */
 
-import { SectionTitle } from "@buleje/design-system";
+import { SectionTitle, StatCard } from "@buleje/design-system";
+import { Leaf, Scale, TreePine, Truck } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { useLocalStorage } from "@/hooks/use-local-storage";
+import { formatNumber } from "@/lib/format";
+import { siglaDePlan } from "@/lib/forestal/loth-tipos-plan";
 import { type Plan } from "./loth-plan-shared";
 import LothPlanIdentidad from "./LothPlanIdentidad";
 import { CifraLinea } from "./loth-plan-ui";
@@ -51,14 +60,31 @@ export const CLAVE_INDICADORES_PLAN = "loth:plan:indicadores-v2";
 
 export type { KpisPlan };
 
+/** Las cifras de una plantación: lo registrado y por dónde va (m³, de `cascadaDelPlan`). */
+export interface KpisPlantacion {
+  registrado: number;
+  talado: number;
+  /** registrado − talado; negativo = se taló de más. */
+  enPie: number;
+  despachado: number;
+  enPatio: number;
+  especies: number;
+  pctTalado: number | null;
+  excedido: boolean;
+  /** m³ que el libro taló de especies que NO están en el registro: no descuentan de nada (ADR-459). */
+  taladoSinRegistrar?: number;
+}
+
 const PANEL_ID = "loth-plan-indicadores";
 
-export default function LothPlanCabecera({ plans, planId, onPlan, plan, kpis, opciones }: {
+export default function LothPlanCabecera({ plans, planId, onPlan, plan, kpis, kpisPlantacion, opciones }: {
   plans: Plan[];
   planId: string | null;
   onPlan: (id: string | null) => void;
   plan: Plan | null;
   kpis: KpisPlan | null;
+  /** Con esto, la cabecera es la de una plantación: estas cuatro cifras y sin carátula. */
+  kpisPlantacion?: KpisPlantacion | null;
   opciones: MenuAccion[];
 }) {
   const [guardada, setPref] = useLocalStorage<PrefIndicadores>(CLAVE_INDICADORES_PLAN, PREF_INDICADORES_DEFAULT);
@@ -78,7 +104,8 @@ export default function LothPlanCabecera({ plans, planId, onPlan, plan, kpis, op
           {plans.length === 0 && <option value="">Sin planes</option>}
           {plans.map((p) => (
             <option key={p.id} value={p.id}>
-              {p.planType} {p.planNumber ?? ""} — {p.titularName}
+              {/* «Plantación 19-SEC/…» y no «PLANTACION 19-SEC/…»: la sigla como la dice la norma. */}
+              {siglaDePlan(p.planType)} {p.planNumber ?? ""} — {p.titularName}
             </option>
           ))}
         </select>
@@ -95,17 +122,19 @@ export default function LothPlanCabecera({ plans, planId, onPlan, plan, kpis, op
 
       {/* Los mismos datos, agrupados por la pregunta que contestan. Sueltos en
           una línea había que leerla entera para encontrar uno. */}
-      {plan && <LothPlanIdentidad plan={plan} />}
+      {plan && !kpisPlantacion && <LothPlanIdentidad plan={plan} />}
 
-      {kpis && (
+      {(kpis || kpisPlantacion) && (
         <div className="space-y-2">
           <ControlIndicadores pref={pref} onPref={setPref} panel={PANEL_ID} />
           {/* Oculto sigue existiendo en el DOM —`hidden`, no desmontado—: así
               el `aria-controls` de los botones apunta a algo que existe. */}
           <div id={PANEL_ID} hidden={vista === "oculto"}>
-            {vista === "detalle"
-              ? <TarjetasIndicadores k={kpis} plan={plan} />
-              : <ResumenEnLinea k={kpis} />}
+            {kpisPlantacion
+              ? <IndicadoresPlantacion k={kpisPlantacion} detalle={vista === "detalle"} />
+              : kpis && (vista === "detalle"
+                ? <TarjetasIndicadores k={kpis} plan={plan} />
+                : <ResumenEnLinea k={kpis} />)}
           </div>
         </div>
       )}
@@ -137,6 +166,41 @@ function ResumenEnLinea({ k }: { k: KpisPlan }) {
         nota={k.fueraDelPlan > 0 ? `${k.fueraDelPlan} fuera del plan` : "todo autorizado"}
         tono={k.fueraDelPlan > 0 ? "danger" : undefined}
       />
+    </div>
+  );
+}
+
+const m3 = (v: number) => `${formatNumber(v, 3)} m³`;
+
+/**
+ * Las cuatro cifras de una plantación, en tarjetas o en una línea (la misma
+ * preferencia que el resto de los planes). En pie negativo = se taló más de lo
+ * registrado: va en rojo y lo dice.
+ */
+function IndicadoresPlantacion({ k, detalle }: { k: KpisPlantacion; detalle: boolean }) {
+  const especies = `${k.especies} ${k.especies === 1 ? "especie" : "especies"}`;
+  const sinReg = k.taladoSinRegistrar ?? 0;
+  const pct = sinReg > 0.0001
+    ? `+${formatNumber(sinReg, 3)} m³ de especies sin registrar`
+    : k.pctTalado == null ? "sin m³ registrados" : `${formatNumber(k.pctTalado, 1)}% de lo registrado`;
+  const pie = k.enPie < 0 ? `se taló ${formatNumber(-k.enPie, 3)} m³ de más` : k.registrado > 0 ? "por talar" : "sin m³ registrados";
+  const patio = `${formatNumber(k.enPatio, 3)} m³ en patio`;
+  if (detalle) {
+    return (
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <StatCard density="compact" icon={Leaf} emphasis={k.especies === 0 ? "warning" : "neutral"} label="Registrado" value={m3(k.registrado)} subValue={especies} deltaLabel="la base: la tala descuenta de acá" />
+        <StatCard density="compact" icon={TreePine} emphasis={k.excedido ? "error" : sinReg > 0.0001 ? "warning" : "neutral"} label="Talado" value={m3(k.talado)} subValue={pct} />
+        <StatCard density="compact" icon={Scale} emphasis={k.enPie < 0 ? "error" : "success"} label="En pie" value={m3(k.enPie)} subValue={pie} />
+        <StatCard density="compact" icon={Truck} emphasis="neutral" label="Despachado" value={m3(k.despachado)} subValue={patio} />
+      </div>
+    );
+  }
+  return (
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <Casilla etiqueta="Registrado" valor={m3(k.registrado)} nota={especies} tono={k.especies === 0 ? "warn" : undefined} />
+      <Casilla etiqueta="Talado" valor={m3(k.talado)} nota={pct} tono={k.excedido ? "danger" : sinReg > 0.0001 ? "warn" : undefined} />
+      <Casilla etiqueta="En pie" valor={m3(k.enPie)} nota={pie} tono={k.enPie < 0 ? "danger" : undefined} />
+      <Casilla etiqueta="Despachado" valor={m3(k.despachado)} nota={patio} />
     </div>
   );
 }

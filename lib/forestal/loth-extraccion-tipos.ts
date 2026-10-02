@@ -75,6 +75,12 @@ export interface FilaExtraccion {
   aserrado: Suma;
   /** Saldo = base − operación, uno por operación. */
   saldo: { tala: SaldoContra; trozado: SaldoContra; despacho: SaldoContra };
+  /**
+   * Contra qué se midió `saldo`: el censo aprovechable (`censo`) o, en una
+   * plantación sin censo con especies registradas, lo registrado (`autorizado`,
+   * ADR-459). `null` = «Sin plan». Opcional: agregado el 02-10.
+   */
+  baseSaldo?: { m3: number; contra: BaseDelTope } | null;
   movilizadoM3: number;
   saldoAutorizado: SaldoContra | null;
   tope: { base: BaseDelTope; m3: number } | null;

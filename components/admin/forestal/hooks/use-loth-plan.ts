@@ -9,7 +9,8 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { analizarPoa, defaultPoaConfig, type PlanParaPoa, type PoaAnalisis, type PoaConfig } from "@/lib/forestal/loth-poa";
+import { analizarPoa, defaultPoaConfig, esPlanDePlantacion, type PlanParaPoa, type PoaAnalisis, type PoaConfig } from "@/lib/forestal/loth-poa";
+import { cascadaDelPlan } from "@/lib/forestal/loth-saldo-cascada";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
 import { normalizarCondicion } from "@/lib/forestal/loth-mapa-arboles";
 import { analizarZafra } from "@/lib/forestal/loth-zafra";
@@ -107,7 +108,9 @@ export function useLothPlan(reloadSignal?: number) {
         setCensoTotal(j.total ?? (j.trees ?? []).length);
         setCensoTruncado(Boolean(j.truncado));
       }
-      if (b.ok) setBalance((await b.json()).balance ?? null);
+      /* Si el balance de ESTE plan no llegó, se vacía: quedarse con el del
+         plan anterior pintaba sus m³ en los indicadores de éste. */
+      setBalance(b.ok ? ((await b.json()).balance ?? null) : null);
       /* Si el GET del POA falla, el respaldo es el defecto DEL PLAN (una
          plantación no vuelve a 10 %), no un 10 % fijo. */
       const cfg: PoaConfig = poa.ok
@@ -131,6 +134,17 @@ export function useLothPlan(reloadSignal?: number) {
 
   const plan = plans.find((p) => p.id === planId) ?? null;
   const autorizadoTotal = useMemo(() => species.reduce((a, s) => a + Number(s.volumenAutorizadoM3 ?? 0), 0), [species]);
+  /**
+   * Una plantación trabaja contra lo REGISTRADO por especie, no contra un
+   * censo (ADR-459): la vista cambia de pestañas, de rótulos y de KPIs.
+   */
+  const esPlantacion = esPlanDePlantacion(plan);
+  /**
+   * Dónde está hoy el volumen de cada especie: en pie → talado sin trozar →
+   * patio → despachado. Sale del MISMO balance que el resto de la vista
+   * (`?balance=`), así que no hay una segunda cuenta que se pelee con ésta.
+   */
+  const cascada = useMemo(() => cascadaDelPlan(balance?.rows ?? []), [balance]);
 
   // Cruce censo ↔ autorizado ↔ movilizado por especie (compliance SERFOR/OSINFOR).
   const controlRows = useMemo(() => buildControlRows(species, trees, balance), [species, trees, balance]);
@@ -182,6 +196,39 @@ export function useLothPlan(reloadSignal?: number) {
   const okCount = controlRows.filter((r) => r.tone === "ok").length;
   // Nombres autorizados (normalizados) — el censo y el croquis marcan lo que cae fuera.
   const authorizedSet = useMemo(() => new Set(species.map((s) => claveEspecie(s.speciesCommon))), [species]);
+  /**
+   * Las especies de los árboles marcados (censo) que el plan todavía no
+   * registra, con cuántos árboles: en una plantación sin especies es lo que se
+   * ofrece agregar sin tipear (Blas «19-SEC/REG-PLT-2025-096»: 65 árboles
+   * marcados y 0 especies registradas).
+   */
+  const especiesSinRegistrar = useMemo(() => {
+    const m = new Map<string, { nombre: string; cientifico: string | null; arboles: number; taladoM3: number }>();
+    for (const t of trees) {
+      const k = claveEspecie(t.speciesCommon);
+      if (!k || authorizedSet.has(k)) continue;
+      const e = m.get(k) ?? { nombre: t.speciesCommon.trim(), cientifico: t.speciesScientific ?? null, arboles: 0, taladoM3: 0 };
+      e.arboles += 1;
+      if (!e.cientifico && t.speciesScientific) e.cientifico = t.speciesScientific;
+      m.set(k, e);
+    }
+    /* Y lo que el LIBRO ya taló de especies sin registrar, aunque no haya
+       árboles marcados (ADR-459): sin esto, esa madera no descontaba de nada y
+       la cabecera decía «Talado 0». */
+    for (const x of balance?.sinRegistrar ?? []) {
+      const k = claveEspecie(x.species);
+      if (!k || authorizedSet.has(k)) continue;
+      const e = m.get(k) ?? { nombre: x.species.trim(), cientifico: null, arboles: 0, taladoM3: 0 };
+      e.taladoM3 += x.taladoM3;
+      m.set(k, e);
+    }
+    return [...m.values()].sort((a, b) => b.taladoM3 - a.taladoM3 || b.arboles - a.arboles || a.nombre.localeCompare(b.nombre, "es"));
+  }, [trees, authorizedSet, balance]);
+  /** m³ que el libro taló de especies que el plan no registra. */
+  const taladoSinRegistrarM3 = useMemo(
+    () => (balance?.sinRegistrar ?? []).reduce((a, x) => a + (authorizedSet.has(claveEspecie(x.species)) ? 0 : x.taladoM3), 0),
+    [balance, authorizedSet],
+  );
 
   /** Árboles que el libro ya taló (por id), aunque el censo diga «en pie». */
   const taladosEnLibro = useMemo(() => {
@@ -309,7 +356,7 @@ export function useLothPlan(reloadSignal?: number) {
     poaConfig, setPoaConfig, poaSaving, savePoaConfig, loadPlans, loadDetail,
     autorizadoTotal, controlRows, fichasEspecie, movilizadoTotal, aprovechamientoPct, saldoTotal,
     georrefPct, noAutorizadas, okCount, authorizedSet, poa, categoriaPorArbol, semillerosDeclarados,
-    arbolesParaTalar, saldosPorEspecie, zafra,
+    arbolesParaTalar, saldosPorEspecie, zafra, esPlantacion, cascada, especiesSinRegistrar, taladoSinRegistrarM3,
   };
 }
 
