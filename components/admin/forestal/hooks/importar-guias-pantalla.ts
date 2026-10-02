@@ -6,7 +6,13 @@
  */
 
 import { esNumeroRegistroValido, normalizarNumeroRegistro } from "@/lib/forestal/serfor-gtf";
+import { hayQueCompletar } from "@/lib/forestal/loth-importar-guia-directorio";
 import type {
+  AccionDirectorio,
+  DirectorioDeLaGuia,
+  EstadoEnDirectorio,
+  ExistenteEnDirectorio,
+  PedidoDirectorio,
   EstadoVistaPrevia,
   GuiaVistaPrevia,
   PermisoDetectado,
@@ -140,4 +146,96 @@ export function decisionInicial(grupo: GrupoVista): DecisionGrupo {
 export function planNuevoCompleto(p: PlanNuevoPropuesto): boolean {
   const codigo = p.planType === "PLANTACION" ? p.planNumber : p.tituloHabilitante;
   return Boolean(p.titularName.trim() && codigo?.trim());
+}
+
+// ── El directorio de cada guía (02-10 noche) ────────────────────────────────
+
+/** Lo que la persona decide de UNA ficha (parte, vehículo o permiso) de la guía. */
+export interface DecisionFicha {
+  /** Agregar (si es nueva) o completar (si ya está). */
+  marcada: boolean;
+  /** Lo corregido antes de agregar una parte. */
+  nombre: string;
+  docTipo: "RUC" | "DNI" | null;
+  docNumero: string;
+  /** Lo corregido antes de agregar el vehículo. */
+  placa: string;
+}
+
+/** Por ítem: la clave de la parte («titular», «destinatario»…), «vehiculo» o «permiso». */
+export type DecisionesDirectorio = Record<string, DecisionFicha>;
+
+/**
+ * Qué se puede hacer con una ficha: agregarla (nueva), completarla (ya está y
+ * la guía trae algo que le falta, reconocida por documento, placa o código) o
+ * nada (es tu negocio, ya está completa, o se reconoció sólo por el nombre).
+ */
+export function accionPosible(estado: EstadoEnDirectorio, existente: ExistenteEnDirectorio | null): AccionDirectorio | null {
+  if (estado === "nuevo") return "agregar";
+  if (estado === "existe" && existente && existente.por !== "nombre" && hayQueCompletar(existente)) return "completar";
+  return null;
+}
+
+const decision = (marcada: boolean, extra: Partial<DecisionFicha> = {}): DecisionFicha => ({
+  marcada,
+  nombre: "",
+  docTipo: null,
+  docNumero: "",
+  placa: "",
+  ...extra,
+});
+
+/**
+ * Lo que va marcado al abrir la vista previa: lo nuevo, SÍ («agregar al
+ * directorio» marcado por defecto); completar, sí si el nombre coincide (el
+ * mismo RUC con otro nombre se mira antes); un parecido con otro documento, no.
+ */
+export function decisionesDirectorioIniciales(d: DirectorioDeLaGuia | null | undefined): DecisionesDirectorio {
+  const out: DecisionesDirectorio = {};
+  if (!d) return out;
+  for (const p of d.partes) {
+    const accion = accionPosible(p.estado, p.existente);
+    if (!accion) continue;
+    out[p.clave] =
+      accion === "agregar"
+        ? decision(!p.parecida, { nombre: p.nombre, docTipo: p.docTipo, docNumero: p.docNumero ?? "" })
+        : decision(p.existente?.mismoNombre ?? false);
+  }
+  const v = d.vehiculo;
+  const av = v ? accionPosible(v.estado, v.existente) : null;
+  if (v && av) out.vehiculo = decision(true, { placa: v.placa });
+  const pe = d.permiso;
+  const ap = pe ? accionPosible(pe.estado, pe.existente) : null;
+  if (pe && ap) out.permiso = decision(ap === "agregar" || (pe.existente?.mismoNombre ?? false));
+  return out;
+}
+
+/** El pedido de directorio de UNA guía (lo marcado). `undefined` si no hay nada que guardar. */
+export function pedidoDirectorio(d: DirectorioDeLaGuia | null | undefined, dec: DecisionesDirectorio): PedidoDirectorio | undefined {
+  if (!d) return undefined;
+  const partes: PedidoDirectorio["partes"] = [];
+  for (const p of d.partes) {
+    const x = dec[p.clave];
+    const accion = accionPosible(p.estado, p.existente);
+    if (!x?.marcada || !accion) continue;
+    partes.push(
+      accion === "agregar"
+        ? { clave: p.clave, accion, nombre: x.nombre.trim() || p.nombre, docTipo: x.docTipo, docNumero: x.docNumero.trim() || null }
+        : { clave: p.clave, accion },
+    );
+  }
+  const v = d.vehiculo;
+  const av = v ? accionPosible(v.estado, v.existente) : null;
+  const vehiculo = v && av && dec.vehiculo?.marcada ? (av === "agregar" ? { accion: av, placa: dec.vehiculo.placa.trim() || v.placa } : { accion: av }) : null;
+  const pe = d.permiso;
+  const ap = pe ? accionPosible(pe.estado, pe.existente) : null;
+  const permiso = pe && ap && dec.permiso?.marcada ? { accion: ap } : null;
+  if (partes.length === 0 && !vehiculo && !permiso) return undefined;
+  return { partes, ...(vehiculo ? { vehiculo } : {}), ...(permiso ? { permiso } : {}) };
+}
+
+/** Cuántas fichas van al directorio con lo marcado (para el pie). */
+export function cuantasAlDirectorio(p: PedidoDirectorio | undefined): number {
+  if (!p) return 0;
+  return p.partes.length + (p.vehiculo ? 1 : 0) + (p.permiso ? 1 : 0);
 }

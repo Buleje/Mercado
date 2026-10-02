@@ -8,6 +8,7 @@ import { pedidoVistaPreviaSchema } from "@/lib/forestal/loth-importar-guia-esque
 import { cobrarConsultasSerfor, resolverFuentes } from "@/lib/forestal/loth-importar-guia-fuentes";
 import { consultasSerforDe } from "@/lib/forestal/loth-importar-guia-esquemas";
 import { ForestLothImportarDB } from "@/lib/db/forest-loth-importar.db";
+import { ForestLothImportarDirectorioDB } from "@/lib/db/forest-loth-importar-directorio.db";
 import type { RespuestaVistaPrevia } from "@/lib/forestal/loth-importar-guia-tipos";
 
 /**
@@ -18,7 +19,10 @@ import type { RespuestaVistaPrevia } from "@/lib/forestal/loth-importar-guia-tip
  *
  * Por guía (`GuiaVistaPrevia`): el permiso detectado (existente / nuevo /
  * ambiguo), las trozas, las talas referenciales, los avisos y el estado con y
- * sin talas. La revisión es la MISMA que corre al importar.
+ * sin talas. La revisión es la MISMA que corre al importar. Además (02-10
+ * noche): la ficha entera de la guía (`ficha`) y quién de ella ya está en el
+ * directorio (`directorio`: partes por documento, vehículo por placa, permiso
+ * por código). Si el directorio no se puede mirar, la vista previa sale igual.
  *
  * Guard: requireAdmin (admin, almacenero, dueño: mirar no escribe) → rate
  * limit MODERATE → spec:forestal:loth-libro → hasta `IMPORTAR_SERFOR_POR_PEDIDO`
@@ -54,7 +58,8 @@ export const POST = withApiHandler("forestal-loth-importar-guia-vista-previa", a
 
   try {
     const guias = await resolverFuentes(auth.tenantId, parsed.data.fuentes, parsed.data.planes ?? []);
-    const respuesta: RespuestaVistaPrevia = { guias: await ForestLothImportarDB.vistaPrevia(auth.tenantId, guias) };
+    const vista = await ForestLothImportarDB.vistaPrevia(auth.tenantId, guias);
+    const respuesta: RespuestaVistaPrevia = { guias: await ForestLothImportarDirectorioDB.anotarVistaPrevia(auth.tenantId, guias, vista) };
     return NextResponse.json(respuesta);
   } catch (err) {
     return lothErrorResponse(err, "loth-importar-guia.vista-previa", auth.tenantId);

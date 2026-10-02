@@ -33,13 +33,18 @@ import {
 } from "@/lib/forestal/loth-importar-guia-tipos";
 import {
   agruparPorPermiso,
+  cuantasAlDirectorio,
   decisionInicial,
+  decisionesDirectorioIniciales,
   enOrdenDeImportacion,
   esImportable,
+  pedidoDirectorio,
   planNuevoCompleto,
   registrosDelTexto,
   respuestaDe,
+  type DecisionFicha,
   type DecisionGrupo,
+  type DecisionesDirectorio,
   type FaseImportar,
   type GrupoVista,
   type PestanaFuente,
@@ -114,6 +119,8 @@ export function useImportarGuias({ onImportadas }: { onImportadas: () => void })
   /** Grupos que se están recalculando contra el plan elegido (ambiguo). */
   const [recalculando, setRecalculando] = useState<Set<string>>(new Set());
   const [decisiones, setDecisiones] = useState<Record<string, DecisionGrupo>>({});
+  /** Qué se agrega o completa en el directorio, por guía (clave de la guía → ficha → decisión). */
+  const [alDirectorio, setAlDirectorio] = useState<Record<string, DecisionesDirectorio>>({});
   const [excluidas, setExcluidas] = useState<Set<string>>(new Set());
   const [envio, setEnvio] = useState<Envio>(ENVIO_VACIO);
   const pedido = useRef(0);
@@ -199,6 +206,7 @@ export function useImportarGuias({ onImportadas }: { onImportadas: () => void })
         Object.fromEntries(agruparPorPermiso(j.guias).map((g) => [g.clave, decisionInicial(g)])),
       );
       setExcluidas(new Set());
+      setAlDirectorio(Object.fromEntries(j.guias.map((g) => [g.clave, decisionesDirectorioIniciales(g.directorio)])));
       setVista({ cargando: false, error: null, guias: j.guias });
     } catch (err) {
       if (mio !== pedido.current) return;
@@ -254,6 +262,15 @@ export function useImportarGuias({ onImportadas }: { onImportadas: () => void })
     [decidir],
   );
 
+  /** Marca/desmarca o corrige (nombre, documento, placa) una ficha del directorio de una guía. */
+  const decidirDirectorio = useCallback((guia: string, ficha: string, cambio: Partial<DecisionFicha>) => {
+    setAlDirectorio((d) => {
+      const actual = d[guia]?.[ficha];
+      if (!actual) return d;
+      return { ...d, [guia]: { ...d[guia], [ficha]: { ...actual, ...cambio } } };
+    });
+  }, []);
+
   const incluir = useCallback((clave: string, on: boolean) => {
     setExcluidas((prev) => {
       const s = new Set(prev);
@@ -268,6 +285,7 @@ export function useImportarGuias({ onImportadas }: { onImportadas: () => void })
     const listas: { g: GuiaVistaPrevia; item: ItemImportarGuia }[] = [];
     let trozas = 0;
     let m3 = 0;
+    let fichas = 0;
     const faltaPermiso: string[] = [];
     for (const grupo of grupos) {
       const d = decisiones[grupo.clave];
@@ -279,7 +297,9 @@ export function useImportarGuias({ onImportadas }: { onImportadas: () => void })
           faltaPermiso.push(grupo.titulo ?? g.clave);
           continue;
         }
-        listas.push({ g, item: { fuente: g.fuente, planDestino: destino, crearTala } });
+        const directorio = pedidoDirectorio(g.directorio, alDirectorio[g.clave] ?? {});
+        listas.push({ g, item: { fuente: g.fuente, planDestino: destino, crearTala, ...(directorio ? { directorio } : {}) } });
+        fichas += cuantasAlDirectorio(directorio);
         trozas += g.trozas.filter((t) => t.estado === "nueva").length;
         m3 += g.guia?.volumenTrozasM3 ?? 0;
       }
@@ -291,8 +311,8 @@ export function useImportarGuias({ onImportadas }: { onImportadas: () => void })
         gtfNumber: x.g.guia?.gtfNumber ?? null,
       })),
     );
-    return { listas: ordenadas, trozas, m3, faltaPermiso: [...new Set(faltaPermiso)] };
-  }, [grupos, decisiones, excluidas]);
+    return { listas: ordenadas, trozas, m3, fichas, faltaPermiso: [...new Set(faltaPermiso)] };
+  }, [grupos, decisiones, excluidas, alDirectorio]);
 
   /** Importa de a una, por fecha. Lo que ya entró queda aunque se detenga o falle la red. */
   const confirmar = useCallback(async () => {
@@ -363,6 +383,8 @@ export function useImportarGuias({ onImportadas }: { onImportadas: () => void })
     recalculando,
     excluidas,
     incluir,
+    alDirectorio,
+    decidirDirectorio,
     plan,
     envio,
     respuesta: respuestaDe(envio.resultados),

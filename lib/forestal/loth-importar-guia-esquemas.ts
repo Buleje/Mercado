@@ -130,9 +130,39 @@ export const pedidoVistaPreviaSchema = z
   })
   .refine((p) => consultasSerforDe(p.fuentes) <= IMPORTAR_SERFOR_POR_PEDIDO, { message: mensajeTopeSerfor, path: ["fuentes"] });
 
+/**
+ * Qué guardar en el directorio (02-10 noche). El navegador sólo dice QUÉ y,
+ * al agregar, el nombre y el documento corregidos: los datos los vuelve a
+ * sacar el servidor de la ficha, y vuelve a mirar el directorio antes de escribir.
+ */
+const accionDirectorio = z.enum(["agregar", "completar"]);
+export const pedidoDirectorioSchema = z.object({
+  partes: z
+    .array(
+      z.object({
+        clave: z.enum(["titular", "propietario", "destinatario", "transportista"]),
+        accion: accionDirectorio,
+        nombre: z.string().trim().max(200).optional(),
+        docTipo: z.enum(["RUC", "DNI"]).nullable().optional(),
+        docNumero: z.string().trim().max(20).nullable().optional(),
+      }),
+    )
+    .max(4)
+    .default([]),
+  vehiculo: z.object({ accion: accionDirectorio, placa: z.string().trim().max(15).optional() }).nullable().optional(),
+  permiso: z.object({ accion: accionDirectorio }).nullable().optional(),
+});
+
 export const pedidoImportarSchema = z.object({
   items: z
-    .array(z.object({ fuente: fuenteImportarSchema, planDestino: planDestinoSchema, crearTala: z.boolean() }))
+    .array(
+      z.object({
+        fuente: fuenteImportarSchema,
+        planDestino: planDestinoSchema,
+        crearTala: z.boolean(),
+        directorio: pedidoDirectorioSchema.optional(),
+      }),
+    )
     .min(1, "Elige al menos una guía")
     .max(IMPORTAR_GUIAS_POR_PEDIDO, `Hasta ${IMPORTAR_GUIAS_POR_PEDIDO} guías por pedido: mándalas de a pocas`),
 });

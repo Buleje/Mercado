@@ -85,6 +85,8 @@ function GrupoDeGuias({ grupo, s }: { grupo: GrupoVista; s: ImportarGuias }) {
             incluida={!s.excluidas.has(g.clave)}
             onIncluir={(on) => s.incluir(g.clave, on)}
             conTala={decision?.crearTala ?? false}
+            alDirectorio={s.alDirectorio[g.clave]}
+            onDirectorio={(ficha, cambio) => s.decidirDirectorio(g.clave, ficha, cambio)}
           />
         ))}
       </div>

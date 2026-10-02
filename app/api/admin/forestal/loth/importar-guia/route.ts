@@ -11,6 +11,7 @@ import { cobrarConsultasSerfor, resolverFuentes } from "@/lib/forestal/loth-impo
 import { consultasSerforDe } from "@/lib/forestal/loth-importar-guia-esquemas";
 import { fechaIsoDeSerfor, ordenDeImportacion } from "@/lib/forestal/loth-importar-guia";
 import { ForestLothImportarDB } from "@/lib/db/forest-loth-importar.db";
+import { ForestLothImportarDirectorioDB } from "@/lib/db/forest-loth-importar-directorio.db";
 import type { RespuestaImportar, ResultadoImportarGuia } from "@/lib/forestal/loth-importar-guia-tipos";
 
 /**
@@ -30,6 +31,12 @@ import type { RespuestaImportar, ResultadoImportarGuia } from "@/lib/forestal/lo
  * Guard: requireAdmin → sólo admin o dueño (un encargado no crea permisos ni
  * asienta guías ajenas) → rate limit por IP y por NEGOCIO → spec:forestal:loth-libro
  * → cada N° de registro cobrado al límite de la consulta suelta a SERFOR.
+ *
+ * Directorio (02-10 noche): si el ítem trae `directorio` (qué agregar o
+ * completar) y la guía ENTRÓ, después de su transacción se guardan las partes,
+ * el vehículo y el permiso marcados (`ForestLothImportarDirectorioDB.guardar`).
+ * Fuera de la transacción a propósito: una ficha que no se pudo guardar no
+ * deshace la guía; cada una vuelve con su resultado en `directorio`.
  *
  * Una importación por negocio a la vez (`tomarTurnoDeImportacion`): si otra está
  * en curso y ninguna guía de este pedido pudo entrar, 409 `importacion_en_curso`.
@@ -110,6 +117,25 @@ export const POST = withApiHandler("forestal-loth-importar-guia-post", async (re
         codigo: "error_interno",
         gtfNumber: x.ficha.gtfNumber,
       };
+    }
+    /* La guía ya quedó (o no entró): lo del directorio va aparte y nunca la deshace. */
+    const pedido = items[i].directorio;
+    const hecho = resultados[i];
+    if (hecho.estado === "importada" && pedido && (pedido.partes.length > 0 || pedido.vehiculo || pedido.permiso)) {
+      try {
+        hecho.directorio = await ForestLothImportarDirectorioDB.guardar(auth.tenantId, {
+          ficha: x.ficha,
+          pedido,
+          planId: hecho.planId,
+          planCreado: hecho.planCreado === true,
+          verificada: x.verificada === true,
+          gtfNumber: hecho.gtfNumber ?? x.ficha.gtfNumber ?? "",
+          registro: x.ficha.numeroRegistro ?? "",
+          createdBy: user,
+        });
+      } catch (err) {
+        logger.error("[loth-importar-guia.POST] directorio falló", { error: String(err), tenantId: auth.tenantId, gtfNumber: hecho.gtfNumber });
+      }
     }
   }
 

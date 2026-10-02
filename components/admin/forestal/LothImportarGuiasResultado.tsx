@@ -4,7 +4,9 @@
  * El resultado de «Importar guías despachadas» (ADR-461), guía por guía: qué
  * entró al libro (trozas, talas, despacho), qué ya estaba y qué se rechazó con
  * su motivo. Se llena mientras se importa (de a una guía), con el avance arriba. Cada importada lleva a su guía (vista GTF) y a su permiso
- * (Control del permiso, con ese permiso elegido).
+ * (Control del permiso, con ese permiso elegido). Debajo de cada una, lo que
+ * pasó con el directorio (02-10 noche): agregado, completado, ya existía o
+ * por qué no se pudo.
  */
 
 import { useState } from "react";
@@ -19,6 +21,7 @@ import {
 } from "@buleje/design-system/icons";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import type {
+  ResultadoDirectorio,
   ResultadoImportarGuia,
   RespuestaImportar,
 } from "@/lib/forestal/loth-importar-guia-tipos";
@@ -174,6 +177,7 @@ function Fila({
         {detalle && r.mensaje && r.estado !== "importada" && (
           <div className="text-[var(--text-secondary)]">{r.mensaje}</div>
         )}
+        {r.directorio && r.directorio.length > 0 && <AlDirectorio items={r.directorio} />}
       </div>
       {deshecha && (
         <span className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-[var(--surface-sunken)] px-3 text-sm font-semibold text-[var(--text-secondary)]">
@@ -198,5 +202,33 @@ function Fila({
         </div>
       )}
     </li>
+  );
+}
+
+const TONO_DIRECTORIO: Record<ResultadoDirectorio["estado"], { texto: string; clase: string }> = {
+  agregado: { texto: "Agregado", clase: "text-[var(--data-success-ink)]" },
+  completado: { texto: "Completado", clase: "text-[var(--data-success-ink)]" },
+  ya_existia: { texto: "Ya existía", clase: "text-[var(--text-secondary)]" },
+  omitido: { texto: "No se guardó", clase: "text-[var(--text-secondary)]" },
+  fallo: { texto: "No se pudo", clase: "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" },
+};
+
+/** Lo que pasó con el directorio de una guía importada. */
+function AlDirectorio({ items }: { items: ResultadoDirectorio[] }) {
+  return (
+    <ul className="mt-1.5 space-y-0.5 border-t border-[var(--rule-soft)] pt-1.5" aria-label="Directorio">
+      {items.map((x) => {
+        const t = TONO_DIRECTORIO[x.estado];
+        return (
+          <li key={`${x.clave}-${x.nombre}`} className="flex flex-wrap items-baseline gap-x-1.5">
+            <span className={`font-semibold ${t.clase}`}>{t.texto}:</span>
+            <span className={`font-semibold text-[var(--text-primary)] [overflow-wrap:anywhere] ${x.clave === "vehiculo" || x.clave === "permiso" ? "font-mono" : ""}`}>
+              {x.nombre}
+            </span>
+            <span className="text-[var(--text-secondary)]">— {x.mensaje}</span>
+          </li>
+        );
+      })}
+    </ul>
   );
 }

@@ -200,7 +200,7 @@ function Pie({ s, onClose }: { s: ImportarGuias; onClose: () => void }) {
     );
 
   if (s.fase === "vista") {
-    const { listas, trozas, m3, faltaPermiso } = s.plan;
+    const { listas, trozas, m3, fichas, faltaPermiso } = s.plan;
     const n = listas.length;
     return (
       <ModalFooter
@@ -212,6 +212,7 @@ function Pie({ s, onClose }: { s: ImportarGuias; onClose: () => void }) {
                 {plural(trozas, "troza nueva", "trozas nuevas")} ·{" "}
                 <span className="font-mono tabular-nums">{fmtM3(m3)} m³</span> · ≈
                 {fmtPt(ptAserrableDeRolliza(m3))} pt
+                {fichas > 0 && ` · ${plural(fichas, "ficha", "fichas")} al directorio`}
               </span>
               {faltaPermiso.length > 0 && (
                 <span className="font-semibold text-[var(--data-warning-ink)]">

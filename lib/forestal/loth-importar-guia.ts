@@ -35,7 +35,8 @@ import { especieEnRegistro, type EspecieRegistrada } from "./loth-plan-especie";
 import { chocanEnElLibro } from "./loth-talonario";
 import { closedPeriodOf, type LothCierrePeriodo } from "./loth-cierre-types";
 import { esPlanDePlantacion } from "./loth-poa";
-import { gtfDatosSchema, gtfDatosVacio, type GtfDatos } from "./ctp-gtf-datos";
+import { componerPunto, gtfDatosSchema, gtfDatosVacio, type GtfDatos } from "./ctp-gtf-datos";
+import { fichaParaMostrar } from "./loth-importar-guia-ficha";
 import type {
   AvisoImportacion,
   EstadoVistaPrevia,
@@ -254,10 +255,28 @@ export function detectarPermiso(
 
 const corto = (v: string | null | undefined, max: number) => txt(v).slice(0, max);
 
+/** Un casillero que SERFOR publica con rayas («-», «---------») es un casillero vacío. */
+export const sinRaya = (v: string | null | undefined): string => (/[A-Za-z0-9]/.test(v ?? "") ? txt(v) : "");
+
+/**
+ * La placa del camión y la del remolque, del casillero (31): SERFOR publica
+ * «V2H-901 / -» o «W2D-853 /» (la del remolque después de la barra, con una
+ * raya si no hay). Como se lee en el papel; el directorio la normaliza.
+ */
+export function placasDeLaGuia(crudo: string | null | undefined): { placa: string; remolque: string } {
+  const [a = "", b = ""] = txt(crudo).split("/");
+  const limpia = (v: string) => sinRaya(v).replace(/^[-\s]+|[-\s]+$/g, "");
+  return { placa: limpia(a), remolque: limpia(b) };
+}
+
 /**
  * El cuerpo de la guía para `ForestGtf.gtfDatos`, desde la ficha. Cada texto se
  * corta al largo del esquema: un nombre de 201 letras haría fallar el
  * `safeParse` entero y la guía quedaría sin cuerpo.
+ *
+ * 02-10 noche: la partida y la llegada van también desarmadas (como las pide
+ * la guía del TH desde el 29-09), la placa del remolque en su casillero y lo
+ * que SERFOR publica con rayas («-») queda vacío en vez de «guía de remisión -».
  */
 export function gtfDatosDesdeFicha(g: GtfSerfor): GtfDatos {
   const fecha = fechaIsoDeSerfor(g.fechaExpedicion) ?? "";
@@ -283,6 +302,16 @@ export function gtfDatosDesdeFicha(g: GtfSerfor): GtfDatos {
     zona: "",
   });
   const publico = /p[uú]blic/i.test(g.tipoTransporte ?? "");
+  const placas = placasDeLaGuia(g.placa);
+  const remision = sinRaya(g.guiaRemision);
+  /* La partida es el origen del recurso (casilleros 10-12); la llegada, el destinatario (25-28). */
+  const partida = { direccion: "", departamento: corto(g.departamento, 80), provincia: corto(g.provincia, 80), distrito: corto(g.distrito, 80) };
+  const llegada = {
+    direccion: corto(g.destinatarioDireccion, 200),
+    departamento: corto(g.destinatarioDepartamento, 80),
+    provincia: corto(g.destinatarioProvincia, 80),
+    distrito: corto(g.destinatarioDistrito, 80),
+  };
   const crudo = {
     propietario: {
       ...parte(g.propietario, g.propietarioDoc, g.propietarioDireccion, g.propietarioDepartamento, g.propietarioProvincia, g.propietarioDistrito),
@@ -294,35 +323,34 @@ export function gtfDatosDesdeFicha(g: GtfSerfor): GtfDatos {
     ),
     vehiculo: {
       modo: "terrestre" as const,
-      placa: corto(g.placa, 15),
-      placaRemolque: "",
+      placa: corto(placas.placa, 15),
+      placaRemolque: corto(placas.remolque, 15),
       marca: "",
-      tipo: corto(g.tipoVehiculo, 40),
+      tipo: corto(sinRaya(g.tipoVehiculo), 40),
       embarcacion: "",
       /* La ficha publica al «transportista» con su DNI y su brevete: es quien
          maneja (igual que `insumosDesdeSerfor`). */
-      conductor: corto(g.transportista, 120),
-      conductorDni: corto(g.transportistaDni, 15),
-      licencia: corto(g.licenciaConducir, 30),
+      conductor: corto(sinRaya(g.transportista), 120),
+      conductorDni: corto(sinRaya(g.transportistaDni), 15),
+      licencia: corto(sinRaya(g.licenciaConducir), 30),
       tipoTransporte: publico ? ("publico" as const) : ("privado" as const),
     },
     traslado: {
-      puntoPartida: corto([g.distrito, g.provincia, g.departamento].map(txt).filter(Boolean).join(", "), 250),
-      puntoLlegada: corto(
-        [g.destinatarioDireccion, g.destinatarioDistrito, g.destinatarioProvincia, g.destinatarioDepartamento].map(txt).filter(Boolean).join(", "),
-        250,
-      ),
+      puntoPartida: corto(componerPunto(partida), 250),
+      puntoLlegada: corto(componerPunto(llegada), 250),
       ruta: "",
       fechaInicio: fecha,
       fechaFin: vence,
+      partida,
+      llegada,
     },
     titulos: txt(g.numeroTitulo) ? [corto(g.numeroTitulo, 80)] : [],
-    comprobante: { tipo: g.guiaRemision ? ("guia_remision" as const) : ("ninguno" as const), numero: corto(g.guiaRemision, 40) },
+    comprobante: { tipo: remision ? ("guia_remision" as const) : ("ninguno" as const), numero: corto(remision, 40) },
     guia: {
       autoridad: corto(g.instanciaRegistra, 120),
       planManejoTipo: "",
-      guiaRemisionNro: corto(g.guiaRemision, 40),
-      listaTrozasNro: corto(g.listaTrozas, 40),
+      guiaRemisionNro: corto(remision, 40),
+      listaTrozasNro: corto(sinRaya(g.listaTrozas), 40),
       gtfOrigenNro: "",
       origenRecurso: corto(claveOrigen(g.origenRecurso), 40),
       resolucion: corto(g.numeroResolucion, 120),
@@ -337,6 +365,22 @@ export function gtfDatosDesdeFicha(g: GtfSerfor): GtfDatos {
   if (r.success) return r.data;
   const vacio = gtfDatosVacio();
   return { ...vacio, titulos: crudo.titulos };
+}
+
+/**
+ * Lo que se guarda en `ForestGtf.gtfDatos` de una guía importada: los
+ * casilleros (`gtfDatosDesdeFicha`) y, en su llave aparte, la ficha entera
+ * (`fichaSerfor`, ver `loth-importar-guia-ficha`). Lo arma SÓLO el servidor.
+ */
+export type GtfDatosImportados = GtfDatos & {
+  /** = `LLAVE_FICHA_SERFOR`. */
+  fichaSerfor: GtfSerfor;
+  /** = `LLAVE_FICHA_VERIFICADA`. */
+  fichaSerforVerificada: boolean;
+};
+
+export function gtfDatosConFicha(g: GtfSerfor, verificada: boolean): GtfDatosImportados {
+  return { ...gtfDatosDesdeFicha(g), fichaSerfor: fichaParaMostrar(g), fichaSerforVerificada: verificada };
 }
 
 // ── Lo que el libro ya tiene ────────────────────────────────────────────────
@@ -1099,7 +1143,7 @@ export function vistaPreviaDeTanda(guias: readonly GuiaParaRevisar[], ctx: Conte
   );
   for (const i of orden) {
     const x = guias[i];
-    const vacio = { permiso: null, trozas: [], talas: [], crearTalaPorDefecto: false, avisos: [] };
+    const vacio = { permiso: null, trozas: [], talas: [], crearTalaPorDefecto: false, avisos: [], ficha: null, directorio: null };
     if (x.falla || !x.ficha) {
       const estado = x.falla?.estado ?? "no_encontrada";
       out[i] = {
@@ -1143,6 +1187,10 @@ export function vistaPreviaDeTanda(guias: readonly GuiaParaRevisar[], ctx: Conte
       talas: rev.talas,
       crearTalaPorDefecto: crearTala,
       avisos: rev.avisos,
+      /* Todos los datos de la guía, para mirarlos antes de importar (sin la lista: va en `trozas`). */
+      ficha: fichaParaMostrar(g),
+      /* Lo llena el servidor después, con el directorio del negocio (`ForestLothImportarDirectorioDB`). */
+      directorio: null,
     };
     if (estado === "lista") libro = libroDespuesDe(libro, g, destino, rev, crearTala);
   }

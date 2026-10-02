@@ -33,6 +33,7 @@ import LothDespachoGuiaModal from "./LothDespachoGuiaModal";
 import { archivoDeGuiaLoth } from "./LothGuiaRegistrada";
 import CtpDocumentoVisor, { type DocumentoImprimible } from "./CtpDocumentoVisor";
 import BotonDeshacerImportacion from "./LothImportarGuiasDeshacer";
+import BotonFichaImportada from "./LothImportarGuiasFicha";
 import { importacionDeLaGuia } from "@/lib/forestal/loth-importar-guia-deshacer";
 
 /** Las columnas movibles de la tabla de GTF, en su orden de fábrica
@@ -545,6 +546,8 @@ export default function LothGtfView({
                           <LogIn className="h-3.5 w-3.5" /> Ingresar al CTP
                         </button>
                       )}
+                      {/* ADR-461: la guía importada guarda su ficha de SERFOR entera (titular, destinatario, transporte, productos). */}
+                      <BotonFichaImportada gtfDatos={g.gtfDatos} gtfNumber={g.gtfNumber} items={g.items} />
                       <button
                         type="button"
                         onClick={() => imprimirHoja(g)}

@@ -153,10 +153,16 @@ function rango(nums: (string | undefined)[]): string {
 export default function CtpGuiaSerforHoja({
   gtf,
   onImprimir,
+  recordarComo = "ctp:alta:ver-casilleros-guia",
+  casillerosAbiertos = false,
 }: {
   gtf: GtfSerfor;
   /** Abre el documento oficial (mismo dato, formato del papel). */
   onImprimir?: () => void;
+  /** Dónde se recuerda si los casilleros van abiertos (cada pantalla, el suyo). */
+  recordarComo?: string;
+  /** Abiertos la primera vez (el importador del Libro TH: ahí se viene a mirar la guía entera). */
+  casillerosAbiertos?: boolean;
 }) {
   const bloques = useMemo(() => bloquesDeGuia(gtf), [gtf]);
   const completitud = useMemo(() => completitudGuia(bloques), [bloques]);
@@ -166,7 +172,7 @@ export default function CtpGuiaSerforHoja({
      scroll»): son una declaración ajena que no se edita, y abiertos eran la
      mitad del alto del modal. Plegado no es esconder: queda una línea con lo
      que se coteja. Se recuerda para quien los quiere siempre abiertos. */
-  const [verCasilleros, setVerCasilleros] = useLocalStorage<boolean>("ctp:alta:ver-casilleros-guia", false);
+  const [verCasilleros, setVerCasilleros] = useLocalStorage<boolean>(recordarComo, casillerosAbiertos);
 
   const ubicacion = [gtf.distrito, gtf.provincia, gtf.departamento].filter(Boolean).join(" · ");
   const productos = gtf.productos ?? [];
@@ -180,7 +186,14 @@ export default function CtpGuiaSerforHoja({
           {gtf.direccionTitular && <p className="truncate text-sm text-[var(--text-secondary)]">{gtf.direccionTitular}</p>}
           <p className="text-sm text-[var(--text-tertiary)]">
             {ubicacion}
-            {gtf.rucInstancia && <span className="ml-2 font-mono">RUC {gtf.rucInstancia}</span>}
+            {/* Es el RUC de la instancia que REGISTRÓ la guía (la ATFFS), no el del
+                titular: debajo del nombre del titular parecía suyo (memoria
+                `providerdocument-serfor-es-ruc-de-la-instancia`). */}
+            {gtf.rucInstancia && (
+              <span className="ml-2" title="RUC de la instancia que registró la guía (no es el del titular)">
+                RUC de la instancia <span className="font-mono">{gtf.rucInstancia}</span>
+              </span>
+            )}
           </p>
         </div>
         <div className="shrink-0 text-right">

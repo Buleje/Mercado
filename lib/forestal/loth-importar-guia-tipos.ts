@@ -16,9 +16,17 @@
  *  - 02-10 (tarde): `IMPORTAR_SERFOR_POR_PEDIDO`, `RespuestaCandidatas.ilegibles` y
  *    «Deshacer la importación» (`DeshacerImportacion`, `RespuestaDeshacer`,
  *    `GET|POST …/importar-guia/deshacer`). Todo AGREGADO.
+ *  - 02-10 (noche, Brandon: «se importará también los datos […] y opción para
+ *    guardar en el directorio»): `GuiaVistaPrevia.ficha` (la ficha entera,
+ *    reparada, sin la lista de trozas que ya va en `trozas`) y
+ *    `GuiaVistaPrevia.directorio` (cada parte, el vehículo y el permiso frente
+ *    al directorio); `ItemImportarGuia.directorio` (qué guardar) y
+ *    `ResultadoImportarGuia.directorio` (qué pasó con cada uno). Todo AGREGADO
+ *    y opcional: un cliente de antes sigue funcionando igual.
  */
 
 import type { GtfSerfor } from "./serfor-gtf";
+import type { RolParte } from "./directorio";
 
 // ── De dónde sale la guía ───────────────────────────────────────────────────
 
@@ -256,6 +264,14 @@ export interface GuiaVistaPrevia {
   /** Si la tala referencial va prendida por defecto: NO en plantación (ADR-459: allí no es obligatoria). */
   crearTalaPorDefecto: boolean;
   avisos: AvisoImportacion[];
+  /**
+   * Todos los datos de la guía (titular, propietario, destinatario, transporte,
+   * cuadro de productos…), reparados («MUÃ?OZ» → «MUÑOZ»). Sin la lista de
+   * trozas: ésa ya va en `trozas`. `null` si no hay ficha.
+   */
+  ficha?: GtfSerfor | null;
+  /** Quién de la guía ya está en el directorio y quién es nuevo. `null` si no se pudo mirar. */
+  directorio?: DirectorioDeLaGuia | null;
 }
 
 /** Cuerpo de `POST …/importar-guia/vista-previa`. */
@@ -289,6 +305,8 @@ export interface ItemImportarGuia {
   planDestino: PlanDestino;
   /** Crear (o ampliar) las talas referenciales. Default: según `crearTalaPorDefecto`. */
   crearTala: boolean;
+  /** Qué guardar en el directorio DESPUÉS de anotar la guía (si entró). */
+  directorio?: PedidoDirectorio;
 }
 
 export type EstadoImportacion = "importada" | "ya_estaba" | "rechazada";
@@ -312,6 +330,8 @@ export interface ResultadoImportarGuia {
     despachos: number;
   } | null;
   volumenM3: number | null;
+  /** Lo que pasó con el directorio (sólo si la guía entró y se pidió guardar algo). */
+  directorio?: ResultadoDirectorio[];
 }
 
 export interface RespuestaImportar {
@@ -407,4 +427,136 @@ export interface DeshacerImportacion {
 
 export interface RespuestaDeshacer {
   deshacer: DeshacerImportacion;
+}
+
+// ── El directorio (02-10 noche) ─────────────────────────────────────────────
+//
+// Brandon: «opción para poder guardar en el directorio si es dato o permiso
+// nuevo: RUC nuevo, razón social nueva, permiso nuevo → agregar al directorio
+// para luego reutilizar». La guía nombra hasta cuatro partes, un vehículo y un
+// permiso; cada uno se busca en el directorio (por documento, placa o código
+// tramo a tramo) y la persona decide qué se agrega o se completa.
+
+/** Quién es cada parte en la guía. */
+export type ClaveParteGuia = "titular" | "propietario" | "destinatario" | "transportista";
+export type ClaveDirectorio = ClaveParteGuia | "vehiculo" | "permiso";
+
+/** Lo que la guía trae de una parte, en los campos de su ficha del directorio. */
+export interface DatosParteGuia {
+  direccion: string | null;
+  region: string | null;
+  provincia: string | null;
+  distrito: string | null;
+  /** Licencia de conducir (el conductor). */
+  licencia: string | null;
+  /** Del titular: el título habilitante, la resolución, el tipo de plan, la ARFFS y el representante. */
+  tituloHabilitante: string | null;
+  resolucion: string | null;
+  planManejo: string | null;
+  arffs: string | null;
+  representante: string | null;
+}
+export type CampoParteGuia = keyof DatosParteGuia;
+
+/**
+ * `nuevo`: no está → se ofrece agregar. `existe`: ya está (se puede completar
+ * lo que le falta). `propio`: es este mismo negocio → no se ofrece.
+ * `no_valido`: el dato de la guía no sirve para una ficha (una placa que no es placa).
+ */
+export type EstadoEnDirectorio = "nuevo" | "existe" | "propio" | "no_valido";
+
+export interface ExistenteEnDirectorio {
+  id: string;
+  /** Cómo figura en el directorio. */
+  nombre: string;
+  /** Por qué se reconoció. Por nombre = la guía no trae documento: sólo se avisa, no se completa. */
+  por: "documento" | "nombre" | "placa" | "codigo";
+  /** El nombre del directorio y el de la guía son la misma persona. */
+  mismoNombre: boolean;
+  /** Lo que la guía trae y la ficha no tiene: «Completar con la guía» lo agrega sin pisar nada. */
+  faltan: string[];
+  /** Papeles que la guía le da y la ficha todavía no tiene (p. ej. ya es proveedor y ahora es destinatario). */
+  rolesQueFaltan: RolParte[];
+}
+
+export interface ParteEnLaGuia {
+  clave: ClaveParteGuia;
+  /** Cómo la nombra la guía: «Titular y propietario», «Destinatario»… */
+  papel: string;
+  roles: RolParte[];
+  nombre: string;
+  docTipo: "RUC" | "DNI" | null;
+  docNumero: string | null;
+  datos: DatosParteGuia;
+  estado: EstadoEnDirectorio;
+  existente: ExistenteEnDirectorio | null;
+  /**
+   * Nueva por su documento, pero el directorio ya tiene a alguien con el MISMO
+   * nombre y OTRO documento: puede ser la misma escrita dos veces. No se
+   * fusiona sola; se avisa y no se marca para agregar.
+   */
+  parecida?: { id: string; nombre: string; docTipo: string | null; docNumero: string | null } | null;
+  /** Una línea para la persona (la guía no publica su RUC, figura con otro nombre…). */
+  aviso: string | null;
+}
+
+export interface VehiculoEnLaGuia {
+  /** Como se lee en el papel: «V2H-901». */
+  placa: string;
+  placaRemolque: string | null;
+  tipo: string | null;
+  estado: EstadoEnDirectorio;
+  existente: ExistenteEnDirectorio | null;
+  aviso: string | null;
+}
+
+export interface PermisoEnLaGuia {
+  codigo: string;
+  /** El tipo que se deduce del código (PER-FMP, PER-FMC, REG-PLT…). */
+  tipo: string;
+  titularNombre: string;
+  resolucionNumero: string | null;
+  arffs: string | null;
+  region: string | null;
+  provincia: string | null;
+  distrito: string | null;
+  estado: "nuevo" | "existe";
+  existente: (ExistenteEnDirectorio & { titularId: string | null; planId: string | null }) | null;
+  aviso: string | null;
+}
+
+export interface DirectorioDeLaGuia {
+  partes: ParteEnLaGuia[];
+  vehiculo: VehiculoEnLaGuia | null;
+  permiso: PermisoEnLaGuia | null;
+}
+
+/** `agregar` = darlo de alta (sólo si es nuevo); `completar` = sumarle lo que le falta (sólo si existe). */
+export type AccionDirectorio = "agregar" | "completar";
+
+export interface PedidoDirectorioParte {
+  clave: ClaveParteGuia;
+  accion: AccionDirectorio;
+  /** Lo corregido en la pantalla, sólo al agregar (si no viene, va lo de la guía). */
+  nombre?: string;
+  docTipo?: "RUC" | "DNI" | null;
+  docNumero?: string | null;
+}
+
+export interface PedidoDirectorio {
+  partes: PedidoDirectorioParte[];
+  vehiculo?: { accion: AccionDirectorio; placa?: string } | null;
+  permiso?: { accion: AccionDirectorio } | null;
+}
+
+export type EstadoResultadoDirectorio = "agregado" | "completado" | "ya_existia" | "omitido" | "fallo";
+
+export interface ResultadoDirectorio {
+  clave: ClaveDirectorio;
+  /** El nombre, la placa o el código. */
+  nombre: string;
+  estado: EstadoResultadoDirectorio;
+  mensaje: string;
+  /** La ficha del directorio (parte, vehículo o permiso). */
+  id: string | null;
 }

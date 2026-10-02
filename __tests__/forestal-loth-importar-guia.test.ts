@@ -457,7 +457,8 @@ describe("lo que se guarda", () => {
     expect(d.titulos).toEqual(["10-HUA-PUE/PER-FMP-2026-007"]);
     expect(d.traslado.fechaInicio).toBe("2026-09-07");
     expect(d.guia.autoridad).toBe(g.instanciaRegistra);
-    expect(d.vehiculo.placa).toBe(g.placa ?? "");
+    /* «ABC-109 /»: la placa sin la barra del remolque (02-10 noche). */
+    expect(d.vehiculo.placa).toBe("ABC-109");
     expect(d.propietario.esElCtp).toBe(false);
     // Un nombre de 300 letras no tumba el cuerpo entero.
     const largo = { ...g, destinatario: "X".repeat(300) };
