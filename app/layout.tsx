@@ -432,8 +432,15 @@ export default function RootLayout({
         <CurrencyProvider>
         <ErrorBoundary>
         {/* 5 widgets client-only deferred — SmoothScroll, ClientEffects,
-            ServiceWorker, InstallPrompt, CommandPalette. Descarga post-FCP. */}
-        <RootDeferredWidgets />
+            ServiceWorker, InstallPrompt, CommandPalette. Descarga post-FCP.
+            En Suspense por la misma razón que NavProgress: usa usePathname(), y
+            con cacheComponents eso vuelve «dato de navegación» toda ruta dinámica
+            sin generateStaticParams — Next avisaba «Uncached data / Data that
+            blocks navigation… outside <Suspense>» en /t/[slug] y /cms/[slug]
+            (medido 01-10). Antes se tapaba ruta por ruta (/admin/q/[id]). */}
+        <Suspense fallback={null}>
+          <RootDeferredWidgets />
+        </Suspense>
         {children}
         <ToastContainer position="bottom-right" />
         <NetworkErrorListener />
