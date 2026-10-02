@@ -18,7 +18,7 @@
  * PURO: sin React, sin fetch, sin Prisma.
  */
 
-import { claveEspecie } from "./loth-constants";
+import { claveEspecie, resolverEspecie } from "./loth-constants";
 import { cascadaDeFila, TOLERANCIA_CASCADA_M3 } from "./loth-saldo-cascada";
 
 /** Lo que hace falta de una fila del balance del plan (`GET /plan?balance=`). */
@@ -108,6 +108,20 @@ export function especieDelRegistro(registro: readonly EspecieDelRegistro[], espe
   return registro.find((e) => e.clave === k) ?? null;
 }
 
+/**
+ * La especie del registro que le corresponde a una línea, con la MISMA regla
+ * que T7 y T6 (`resolverEspecie`): por el común o, si los dos lo traen, por el
+ * científico. «Bolaina blanca» con *Guazuma crinita* es la Bolaina registrada.
+ */
+export function especieDeLinea(
+  registro: readonly EspecieDelRegistro[],
+  comun: string | null | undefined,
+  cientifico?: string | null,
+): EspecieDelRegistro | null {
+  const conClave = registro.map((e) => ({ speciesCommon: e.especie, speciesScientific: e.cientifico, e }));
+  return resolverEspecie(conClave, comun, cientifico)?.e ?? null;
+}
+
 // ─── Código del árbol ─────────────────────────────────────────────────────────
 
 /**
@@ -161,6 +175,29 @@ export function codigoPropuesto(
   return armar(n);
 }
 
+/** Tope de árboles por especie en un «Bolaina × N»: una jornada de tala no tumba más. */
+export const MAX_ARBOLES_POR_ESPECIE = 50;
+
+/**
+ * Los `n` códigos que siguen para `especie` (la tala en tanda: «Bolaina × 3»
+ * → 002-BOL, 003-BOL, 004-BOL). Cada uno cuenta como usado para el siguiente,
+ * y ninguno repite un código del plan, del negocio o de la planilla.
+ *
+ * @param codigosDelPlan las talas de ESTE plan + los códigos que ya tiene la planilla.
+ * @param ocupados todas las talas del negocio (T3).
+ */
+export function codigosPropuestos(
+  especie: string,
+  n: number,
+  codigosDelPlan: readonly (string | null | undefined)[],
+  ocupados: readonly (string | null | undefined)[] = [],
+): string[] {
+  const tope = Number.isFinite(n) ? Math.max(0, Math.min(Math.floor(n), MAX_ARBOLES_POR_ESPECIE)) : 0;
+  const out: string[] = [];
+  for (let i = 0; i < tope; i++) out.push(codigoPropuesto(especie, [...codigosDelPlan, ...out], ocupados));
+  return out;
+}
+
 // ─── El saldo mientras se mide ────────────────────────────────────────────────
 
 export interface SaldoDeTala {
@@ -188,4 +225,57 @@ export function saldoConEstaTala(e: EspecieDelRegistro, medidoM3: number | null 
     quedaM3: queda,
     excesoM3: queda < -TOLERANCIA_CASCADA_M3 ? r4(-queda) : 0,
   };
+}
+
+// ─── El saldo con la planilla de la tala en tanda ─────────────────────────────
+
+/** Lo que hace falta de una fila de la planilla para descontarla. */
+export interface ArbolDeLaPlanilla {
+  especie: string;
+  cientifico: string | null;
+  /** El volumen medido; `null` mientras no hay medidas. */
+  volumenM3: number | null;
+}
+
+export interface SaldoEnPlanilla extends SaldoDeTala {
+  /** Filas de la especie en la planilla. */
+  arboles: number;
+  /** De ésas, cuántas todavía no tienen volumen (no descuentan). */
+  sinVolumen: number;
+}
+
+/**
+ * registrado − talado − lo de la planilla, por especie del registro que
+ * aparece en la planilla (en el orden del registro). Las filas de una especie
+ * que no está en el registro salen aparte en `fuera`: T7 las rechaza al guardar.
+ *
+ * El «talado» es el de la lectura del registro al abrir la planilla: las filas
+ * ya guardadas siguen en la planilla y descuentan desde acá (si se releyera el
+ * registro, se restarían dos veces).
+ */
+export function saldoDeLaPlanilla(
+  registro: readonly EspecieDelRegistro[],
+  filas: readonly ArbolDeLaPlanilla[],
+): { porEspecie: SaldoEnPlanilla[]; fuera: string[] } {
+  const suma = new Map<string, { m3: number; arboles: number; sinVolumen: number }>();
+  const fuera: string[] = [];
+  for (const f of filas) {
+    const e = especieDeLinea(registro, f.especie, f.cientifico);
+    if (!e) {
+      const nombre = f.especie.trim();
+      if (nombre && !fuera.includes(nombre)) fuera.push(nombre);
+      continue;
+    }
+    const acc = suma.get(e.clave) ?? { m3: 0, arboles: 0, sinVolumen: 0 };
+    acc.arboles += 1;
+    if (f.volumenM3 != null && Number.isFinite(f.volumenM3) && f.volumenM3 > 0) acc.m3 += f.volumenM3;
+    else acc.sinVolumen += 1;
+    suma.set(e.clave, acc);
+  }
+  const porEspecie = registro.flatMap((e) => {
+    const acc = suma.get(e.clave);
+    if (!acc) return [];
+    return [{ ...saldoConEstaTala(e, acc.m3 > 0 ? acc.m3 : null), arboles: acc.arboles, sinVolumen: acc.sinVolumen }];
+  });
+  return { porEspecie, fuera };
 }

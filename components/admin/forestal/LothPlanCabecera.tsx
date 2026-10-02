@@ -31,6 +31,7 @@ import { Leaf, Scale, TreePine, Truck } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { formatNumber } from "@/lib/format";
+import { ptAserrableDeRolliza } from "@/lib/forestal/loth-restante";
 import { siglaDePlan } from "@/lib/forestal/loth-tipos-plan";
 import { type Plan } from "./loth-plan-shared";
 import LothPlanIdentidad from "./LothPlanIdentidad";
@@ -178,12 +179,14 @@ const m3 = (v: number) => `${formatNumber(v, 3)} m³`;
  * registrado: va en rojo y lo dice.
  */
 function IndicadoresPlantacion({ k, detalle }: { k: KpisPlantacion; detalle: boolean }) {
-  const especies = `${k.especies} ${k.especies === 1 ? "especie" : "especies"}`;
+  const especies = `${k.especies} ${k.especies === 1 ? "especie" : "especies"}${k.registrado > 0 ? ` · ≈ ${formatNumber(ptAserrableDeRolliza(k.registrado), 0)} pt` : ""}`;
   const sinReg = k.taladoSinRegistrar ?? 0;
   const pct = sinReg > 0.0001
     ? `+${formatNumber(sinReg, 3)} m³ de especies sin registrar`
     : k.pctTalado == null ? "sin m³ registrados" : `${formatNumber(k.pctTalado, 1)}% de lo registrado`;
-  const pie = k.enPie < 0 ? `se taló ${formatNumber(-k.enPie, 3)} m³ de más` : k.registrado > 0 ? "por talar" : "sin m³ registrados";
+  /* ≈pt aserrable (56 %): referencia de cuánto saldría de la sierra; el libro declara m³. */
+  const pt = (v: number) => `≈ ${formatNumber(ptAserrableDeRolliza(v), 0)} pt`;
+  const pie = k.enPie < 0 ? `se taló ${formatNumber(-k.enPie, 3)} m³ de más` : k.registrado > 0 ? `${pt(k.enPie)} por talar` : "sin m³ registrados";
   const patio = `${formatNumber(k.enPatio, 3)} m³ en patio`;
   if (detalle) {
     return (

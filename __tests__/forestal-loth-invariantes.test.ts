@@ -302,4 +302,21 @@ describe.skipIf(!HAS_DB)("LO-TH · invariantes de cadena de custodia (ADR-305)",
     expect(rej[0].reason).toBeInstanceOf(LothInvariantError);
     expect((rej[0].reason as LothInvariantError).code).toBe("T1_TROZA_YA_MOVILIZADA");
   });
+
+  it("ADR-459 — el trozado y el despacho llevan el plan de SU fuente, no el que manda el cliente", async () => {
+    const [planA, planB] = await Promise.all([
+      prisma.forestPlan.create({ data: { tenantId: TENANT, titularName: `${P} plan A`, createdBy: P, estado: "vigente" } }),
+      prisma.forestPlan.create({ data: { tenantId: TENANT, titularName: `${P} plan B`, createdBy: P, estado: "vigente" } }),
+    ]);
+    const tree = `${P}-PLF1`;
+    await crear({ section: "tala", planId: planA.id, treeCode: tree, speciesCommon: SP, volumeM3: 5 });
+    // El importador eligió el plan B para un archivo de trozas de la tala del plan A.
+    const trozado = await crear({ section: "trozado", planId: planB.id, treeCode: tree, trozaCode: `${tree}-A`, speciesCommon: SP, volumeM3: 3 });
+    expect(trozado.planId).toBe(planA.id);
+    const despacho = await crear({ section: "despacho_troza", planId: planB.id, trozaCode: `${tree}-A`, gtfNumber: `${P}-PLF1G` });
+    expect(despacho.planId).toBe(planA.id);
+    // Sin fuente (código libre), manda lo que vino.
+    const libre = await crear({ section: "trozado", planId: planB.id, treeCode: `${P}-PLF2`, trozaCode: `${P}-PLF2-A`, speciesCommon: SP, volumeM3: 1 });
+    expect(libre.planId).toBe(planB.id);
+  });
 });

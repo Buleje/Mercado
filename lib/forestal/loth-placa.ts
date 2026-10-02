@@ -8,6 +8,11 @@
  * otro caso lo muestra y la persona confirma o corrige. Un código dudoso que
  * elige solo termina en la línea de otro árbol, y eso se declara ante OSINFOR.
  *
+ * En una PLANTACIÓN sin árbol marcado que coincida (ADR-459) la placa no
+ * busca un árbol: propone la especie del registro por la abreviatura del
+ * código («003-BOL» → Bolaina) y deja ese código para la línea
+ * (`cruzarPlacaConRegistro`). Misma regla: sola, sólo si es inequívoca.
+ *
  * Puro: lo usan la ruta (para limpiar la lectura) y la pantalla (para cruzar).
  */
 
@@ -79,7 +84,7 @@ function partes(clave: string): Partes {
 }
 
 /** «LUP» es la abreviatura de «Lupuna»; «TOR», de «Tornillo». Mínimo 2 letras. */
-function esDeLaEspecie(letras: readonly string[], a: Pick<ArbolParaElegir, "speciesCommon" | "speciesScientific">): boolean {
+function esDeLaEspecie(letras: readonly string[], a: { speciesCommon: string; speciesScientific: string | null }): boolean {
   if (letras.length !== 1 || letras[0].length < 2) return false;
   const abrev = letras[0].toLowerCase();
   const nombres = [a.speciesCommon, a.speciesScientific ?? ""]
@@ -169,4 +174,66 @@ export function cruzarPlacaConCenso(lectura: Pick<LecturaPlaca, "codigo" | "conf
 export function porcentajeConfianza(confianza: number): string {
   const c = Number.isFinite(confianza) ? Math.min(1, Math.max(0, confianza)) : 0;
   return `${Math.round(c * 100)} %`;
+}
+
+// ─── Plantación: la especie del registro por la abreviatura ──────────────────
+
+/** Lo que hace falta de una especie del registro para reconocerla en una placa. */
+export interface EspeciePlaca {
+  especie: string;
+  cientifico: string | null;
+}
+
+export type MotivoConfirmarEspecie =
+  /** El lector no está seguro de lo que leyó. */
+  | "confianza"
+  /** Las letras sirven para más de una especie del registro («CA» → Capirona y Caoba). */
+  | "varias"
+  /** La placa no trae letras de especie («3»). */
+  | "sin_letras"
+  /** Las letras no son de ninguna especie del registro. */
+  | "letras";
+
+export type CrucePlacaRegistro<E extends EspeciePlaca = EspeciePlaca> =
+  | { tipo: "ilegible" }
+  | { tipo: "especie"; especie: E; codigo: string }
+  | { tipo: "confirmar"; motivo: MotivoConfirmarEspecie; candidatas: E[]; codigo: string };
+
+/**
+ * El código leído como queda en la línea: mayúsculas, sin rótulo, con guion
+ * entre número y letras («3 bol» → «3-BOL»). La placa manda: el número no se
+ * rellena con ceros que no tiene.
+ */
+export function codigoDePlaca(codigo: string): string {
+  return limpiarCodigoLeido(codigo)
+    .replace(/[\s_./]+/g, "-")
+    .replace(/([0-9])([A-Z])/g, "$1-$2")
+    .replace(/([A-Z])([0-9])/g, "$1-$2")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+/**
+ * Qué especie del registro de la plantación es la de la placa, cuando no hay
+ * árbol marcado que coincida.
+ *
+ * 1. Las letras de la placa son la abreviatura de UNA especie («BOL» →
+ *    Bolaina, por el común o el científico) y se leyó con confianza → ésa.
+ * 2. Varias especies, letras de ninguna o sin letras → la persona elige
+ *    (sin letras y con una sola especie registrada, se ofrece esa sola).
+ */
+export function cruzarPlacaConRegistro<E extends EspeciePlaca>(
+  lectura: Pick<LecturaPlaca, "codigo" | "confianza">,
+  especies: readonly E[],
+): CrucePlacaRegistro<E> {
+  const clave = claveDeCodigo(lectura.codigo);
+  if (!clave || !/\d/.test(clave)) return { tipo: "ilegible" };
+  const codigo = codigoDePlaca(lectura.codigo);
+  const placa = partes(clave);
+  if (placa.letras.length === 0) return { tipo: "confirmar", motivo: "sin_letras", candidatas: [...especies], codigo };
+  const candidatas = especies.filter((e) => esDeLaEspecie(placa.letras, { speciesCommon: e.especie, speciesScientific: e.cientifico }));
+  if (candidatas.length === 0) return { tipo: "confirmar", motivo: "letras", candidatas: [...especies], codigo };
+  if (candidatas.length > 1) return { tipo: "confirmar", motivo: "varias", candidatas, codigo };
+  if (!(lectura.confianza >= CONFIANZA_MINIMA)) return { tipo: "confirmar", motivo: "confianza", candidatas, codigo };
+  return { tipo: "especie", especie: candidatas[0], codigo };
 }

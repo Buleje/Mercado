@@ -61,6 +61,8 @@ interface Props {
   onElegirVarios?: ElegirVarios;
   /** Los que ya están en la planilla: se ven, pero no se ofrecen otra vez. */
   enPlanilla?: ReadonlySet<string>;
+  /** Registro de plantación (ADR-459): no hay censo, hay árboles marcados. */
+  plantacion?: boolean;
 }
 
 const INPUT =
@@ -68,7 +70,7 @@ const INPUT =
 const BTN =
   "inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-60";
 
-export default function LothCensoElegirModal({ open, onClose, censo, planLabel, elegido, posicion, onElegir, para = "tala", onElegirVarios, enPlanilla }: Props) {
+export default function LothCensoElegirModal({ open, onClose, censo, planLabel, elegido, posicion, onElegir, para = "tala", onElegirVarios, enPlanilla, plantacion = false }: Props) {
   const [filtro, setFiltro] = useState<FiltroCenso>(para === "trozado" ? "talados" : "disponibles");
   const [texto, setTexto] = useState("");
   const [orden, setOrden] = useState<OrdenCenso>({ columna: "codigo", dir: "asc" });
@@ -159,7 +161,7 @@ export default function LothCensoElegirModal({ open, onClose, censo, planLabel, 
       aboveModals
       variant="info"
       icon={Trees}
-      title="Censo del plan"
+      title={plantacion ? "Árboles marcados" : "Censo del plan"}
       description={planLabel ?? undefined}
       claveVentana="loth-censo-elegir"
       // 10 columnas con la distancia: a 64 rem «En el libro» quedaba fuera,

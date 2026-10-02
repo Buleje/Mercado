@@ -9,12 +9,16 @@
  * Desde lg es una fila de planilla con su cabecera de columnas; más angosto,
  * una tarjeta con el rótulo en cada campo. Es el MISMO DOM (grilla que se
  * reacomoda): nada se duplica para el celular.
+ *
+ * La fila de una especie del REGISTRO de una plantación (ADR-459) no tiene
+ * árbol marcado: en vez de lo que dice el censo lleva el código propuesto,
+ * que se puede cambiar.
  */
 
 import { AlertTriangle, CheckCircle2, ChevronDown, ShieldAlert, Trash2 } from "@buleje/design-system/icons";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import type { FormaMedicion } from "@/lib/forestal/loth-forma-medicion";
-import { efectivosDeFila, type ComunesTala, type FilaCalculada, type FilaTala } from "@/lib/forestal/loth-tala-tanda";
+import { efectivosDeFila, nombreDeFila, type ComunesTala, type FilaCalculada, type FilaTala } from "@/lib/forestal/loth-tala-tanda";
 import { camposDeRenglon, type CampoDeRenglon } from "@/lib/forestal/loth-trozado-multiple";
 import { formatNumber } from "@/lib/format";
 import { CampoMedida } from "./LothMedicionPartes";
@@ -57,6 +61,9 @@ export default function LothTalaTandaFila({
   bloqueada,
   onAbrir,
   onEditar,
+  onCodigo,
+  fueraDelRegistro = false,
+  numero,
   onQuitar,
   children,
 }: {
@@ -69,6 +76,12 @@ export default function LothTalaTandaFila({
   bloqueada: boolean;
   onAbrir: () => void;
   onEditar: (cambio: Partial<Pick<FilaTala, "medidas" | "fecha">>) => void;
+  /** Fila del registro: cambiar el código propuesto. */
+  onCodigo?: (codigo: string) => void;
+  /** Plantación: la especie no está en el registro (el libro la rechaza: T7). */
+  fueraDelRegistro?: boolean;
+  /** El lugar de la fila en la planilla (rótulo estable del código, que se edita). */
+  numero: number;
   onQuitar: (() => void) | null;
   /** Lo plegado (motosierrista, hora, GPS, foto, nota, el motivo T8). */
   children: React.ReactNode;
@@ -81,12 +94,16 @@ export default function LothTalaTandaFila({
   const fecha = efectivosDeFila(f, comunes).fecha;
   const extras = extrasDeFila(f);
   const infraccion = a.reparo?.nivel === "infraccion";
+  /** Cómo se nombra en los rótulos: el código (o la especie, mientras no tiene). */
+  const nombre = nombreDeFila(f);
+  const delRegistro = f.origen === "registro";
 
   return (
     <div
       role="group"
-      aria-label={`Árbol ${a.treeCode}`}
-      data-fila-tala={a.treeCode}
+      aria-label={`Árbol ${nombre}`}
+      data-fila-tala={nombre}
+      data-origen={f.origen}
       className={`${FILA_TANDA} rounded-xl border p-3 lg:rounded-none lg:border-0 lg:border-b lg:px-1 lg:py-2 ${
         guardada
           ? "border-[var(--data-success-500)]/50 bg-[var(--data-success-500)]/5 lg:border-[var(--rule-soft)]"
@@ -95,20 +112,48 @@ export default function LothTalaTandaFila({
             : "border-[var(--rule-base)] lg:border-[var(--rule-soft)]"
       }`}
     >
-      {/* El árbol, con lo que dice el censo para cotejar. */}
+      {/* El árbol, con lo que dice el censo para cotejar (o, del registro, su código propuesto). */}
       <div className="row-start-1 min-w-0 lg:row-start-auto">
-        <p className="flex items-center gap-1 font-mono text-sm font-bold tabular-nums text-[var(--text-primary)]">
-          {a.treeCode}
-          {a.cites && <CitesPill />}
-        </p>
-        <p className="truncate text-sm font-medium text-[var(--text-primary)]" title={a.speciesScientific ?? undefined}>{a.speciesCommon}</p>
-        {/* Lo que dice el censo, para cotejar: el volumen primero (contra él sale el %). */}
-        <p className="font-mono text-xs tabular-nums text-[var(--text-secondary)]" title="Volumen estimado en el censo">
-          Censo {a.volM3 == null ? "—" : fmtM3(a.volM3)} m³
-        </p>
-        <p className="font-mono text-xs tabular-nums text-[var(--text-tertiary)]" title="DAP y altura comercial del censo (árbol en pie)">
-          DAP {m(a.dapM, 2, 2)} · Hc {m(a.hcM, 0, 1)} m
-        </p>
+        {delRegistro ? (
+          <>
+            <input
+              type="text"
+              value={a.treeCode}
+              onChange={(e) => onCodigo?.(e.target.value)}
+              disabled={quieta}
+              maxLength={40}
+              autoCapitalize="characters"
+              aria-label={`Fila ${numero} · código del árbol (${a.speciesCommon})`}
+              title="Código propuesto: el correlativo del plan + la especie. Cámbialo si la placa dice otro."
+              className="h-9 w-full min-w-0 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 font-mono text-base font-bold tabular-nums text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--accent)] disabled:opacity-70 sm:text-sm"
+            />
+            <p className="mt-0.5 flex items-center gap-1 truncate text-sm font-medium text-[var(--text-primary)]" title={a.speciesScientific ?? undefined}>
+              <span className="truncate">{a.speciesCommon}</span>
+              {a.cites && <CitesPill />}
+            </p>
+            <p className="truncate text-xs italic text-[var(--text-tertiary)]">{a.speciesScientific ?? "Del registro"}</p>
+          </>
+        ) : (
+          <>
+            <p className="flex items-center gap-1 font-mono text-sm font-bold tabular-nums text-[var(--text-primary)]">
+              {a.treeCode}
+              {a.cites && <CitesPill />}
+            </p>
+            <p className="truncate text-sm font-medium text-[var(--text-primary)]" title={a.speciesScientific ?? undefined}>{a.speciesCommon}</p>
+            {/* Lo que dice el censo, para cotejar: el volumen primero (contra él sale el %). */}
+            <p className="font-mono text-xs tabular-nums text-[var(--text-secondary)]" title="Volumen estimado en el censo">
+              Censo {a.volM3 == null ? "—" : fmtM3(a.volM3)} m³
+            </p>
+            <p className="font-mono text-xs tabular-nums text-[var(--text-tertiary)]" title="DAP y altura comercial del censo (árbol en pie)">
+              DAP {m(a.dapM, 2, 2)} · Hc {m(a.hcM, 0, 1)} m
+            </p>
+          </>
+        )}
+        {fueraDelRegistro && !guardada && (
+          <p className={`mt-0.5 flex items-center gap-1 text-xs font-bold ${AMBAR}`} title="El libro no acepta talar en una plantación una especie que no está en su registro (T7)">
+            <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> Fuera del registro
+          </p>
+        )}
         {a.reparo && !guardada && (
           <p className={`mt-0.5 flex items-center gap-1 text-xs font-bold ${infraccion ? ROJO : AMBAR}`} title={a.reparo.detalle}>
             <ShieldAlert className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
@@ -135,7 +180,7 @@ export default function LothTalaTandaFila({
           value={fecha}
           disabled={quieta}
           onChange={(e) => onEditar({ fecha: !e.target.value || e.target.value === comunes.fecha ? null : e.target.value })}
-          aria-label={`${a.treeCode} · fecha de tala`}
+          aria-label={`${nombre} · fecha de tala`}
           title={f.fecha ? "Distinta a la de todos" : "La de todos"}
           className={`h-11 w-full min-w-0 rounded-lg border bg-[var(--surface-canvas)] px-2 font-mono text-base tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)] disabled:opacity-70 sm:text-sm ${
             f.fecha ? "border-[var(--accent)]" : "border-[var(--rule-base)]"
@@ -150,7 +195,7 @@ export default function LothTalaTandaFila({
             <CampoMedida
               valor={campo.leer(f.medidas)}
               onValor={(v) => onEditar({ medidas: campo.escribir(f.medidas, v) })}
-              aria-label={`${a.treeCode} · ${campo.corto}`}
+              aria-label={`${nombre} · ${campo.corto}`}
               /* Sin ejemplo en gris: en una planilla de varias filas, «14.00»
                  vacío se leía como un dato ya cargado (medido 28-09). */
               disabled={quieta}
@@ -192,7 +237,7 @@ export default function LothTalaTandaFila({
         type="button"
         onClick={onAbrir}
         aria-expanded={abierta}
-        aria-label={`Más datos del árbol ${a.treeCode}${extras > 0 ? ` (${extras} propios)` : ""}`}
+        aria-label={`Más datos del árbol ${nombre}${extras > 0 ? ` (${extras} propios)` : ""}`}
         className="relative row-start-1 grid h-11 w-11 place-items-center rounded-lg border border-[var(--rule-base)] text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] lg:row-start-auto"
       >
         <ChevronDown className={`h-4 w-4 transition-transform ${abierta ? "rotate-180" : ""}`} aria-hidden="true" />
@@ -208,7 +253,7 @@ export default function LothTalaTandaFila({
           type="button"
           onClick={onQuitar}
           disabled={bloqueada}
-          aria-label={`Quitar el árbol ${a.treeCode} de la planilla`}
+          aria-label={`Quitar el árbol ${nombre} de la planilla`}
           className="row-start-1 grid h-11 w-11 place-items-center rounded-lg text-[var(--text-tertiary)] transition-colors hover:bg-[var(--data-error-500)]/10 hover:text-[var(--data-error-700)] disabled:opacity-50 dark:hover:text-[var(--data-error-500)] lg:row-start-auto"
         >
           <Trash2 className="h-4 w-4" />

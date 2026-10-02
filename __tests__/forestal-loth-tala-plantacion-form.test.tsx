@@ -89,7 +89,7 @@ describe("Tala de una plantación sin censo", () => {
     const region = await lista();
     await within(region).findByText("quedan 118.250 de 120.500 m³");
     expect(within(region).getByText("Capirona")).toBeTruthy();
-    expect(screen.queryByRole("button", { name: /Ver censo/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Ver censo|Ver marcados/ })).toBeNull();
   });
 
   it("sin elegir nada no hay especie: el Tornillo de arranque no avisa «fuera del registro»", async () => {
@@ -169,6 +169,7 @@ describe("Tala de una plantación sin censo", () => {
     fireEvent.click(marcados);
     const region = await screen.findByRole("region", { name: "Elige el árbol marcado" });
     expect(within(region).getByText("M-1")).toBeTruthy();
-    expect(screen.getByRole("button", { name: /Ver censo/ })).toBeTruthy();
+    // En una plantación el censo son sus árboles marcados.
+    expect(screen.getByRole("button", { name: /Ver marcados/ })).toBeTruthy();
   });
 });

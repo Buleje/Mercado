@@ -12,6 +12,10 @@
  * sólo se traduce su respuesta para que la fila que falló diga qué corregir,
  * sin frenar a las demás.
  *
+ * En una PLANTACIÓN (ADR-459) la fila puede venir del registro en vez del
+ * censo: «Bolaina × 3» son tres filas de esa especie, sin árbol marcado, con
+ * el código propuesto (001-BOL…) que el operador puede cambiar.
+ *
  * Puro a propósito: la planilla lo pinta y los tests lo prueban sin montar nada.
  */
 
@@ -28,8 +32,14 @@ export type ResultadoFila =
   | { estado: "fallida"; codigo: string; mensaje: string };
 
 export interface FilaTala {
-  /** El id del árbol en el censo: clave estable (se puede quitar una del medio). */
+  /** El id del árbol en el censo (o uno propio en el registro): clave estable (se puede quitar una del medio). */
   id: string;
+  /**
+   * `censo`: un árbol marcado (su código no se toca). `registro`: una especie
+   * del registro de la plantación, sin árbol marcado — el código es propuesto
+   * y se puede cambiar; `arbol` lleva sólo la especie y el código.
+   */
+  origen: "censo" | "registro";
   arbol: ArbolParaElegir;
   medidas: MedidasTala;
   /** `null` = la de «Para todos». Una fila puede tener la suya. */
@@ -67,6 +77,7 @@ export function filaDeArbol(a: ArbolParaElegir): FilaTala {
   const p = latLngDelArbol(a);
   return {
     id: a.id,
+    origen: "censo",
     arbol: a,
     medidas: medidasVacias(),
     fecha: null,
@@ -80,6 +91,69 @@ export function filaDeArbol(a: ArbolParaElegir): FilaTala {
     resultado: null,
   };
 }
+
+/** Lo que hace falta de una especie del registro para armar su fila. */
+export interface EspecieParaFila {
+  especie: string;
+  cientifico: string | null;
+  cites: boolean;
+}
+
+/**
+ * La fila de una especie del registro (plantación sin árbol marcado): la
+ * especie, el científico y el CITES puestos, el código propuesto y nada del
+ * censo —ni DAP, ni coordenada, ni reparo—.
+ */
+export function filaDelRegistro(e: EspecieParaFila, codigo: string, id: string): FilaTala {
+  const arbol: ArbolParaElegir = {
+    id,
+    treeCode: codigo,
+    speciesCommon: e.especie,
+    speciesScientific: e.cientifico,
+    speciesNative: null,
+    cites: e.cites,
+    dapM: null,
+    hcM: null,
+    volM3: null,
+    utmZona: null,
+    utmX: null,
+    utmY: null,
+    condicion: null,
+    notes: null,
+    estadoCenso: "en_pie",
+    categoria: null,
+    dmcCm: null,
+    uso: null,
+    disponibilidad: "disponible",
+    motivoNoDisponible: null,
+    reparo: null,
+    desfase: null,
+  };
+  return { ...filaDeArbol(arbol), origen: "registro" };
+}
+
+/** Los códigos que ya tiene la planilla (para no proponer uno repetido). */
+export function codigosDeLaPlanilla(filas: readonly FilaTala[]): string[] {
+  return filas.map((f) => f.arbol.treeCode.trim()).filter(Boolean);
+}
+
+const claveDeCodigoFila = (c: string) => c.trim().toUpperCase();
+
+/** Los códigos que se repiten dentro de la planilla (T3 rechazaría el segundo). */
+export function codigosRepetidos(filas: readonly FilaTala[]): ReadonlySet<string> {
+  const vistos = new Set<string>();
+  const repetidos = new Set<string>();
+  for (const f of filas) {
+    const k = claveDeCodigoFila(f.arbol.treeCode);
+    if (!k) continue;
+    if (vistos.has(k)) repetidos.add(k);
+    vistos.add(k);
+  }
+  return repetidos;
+}
+
+/** Cómo se nombra la fila en los avisos: su código o, sin código, su especie. */
+export const nombreDeFila = (f: FilaTala): string => f.arbol.treeCode.trim() || f.arbol.speciesCommon;
 
 /** Suma árboles sin repetir (por id del censo): «Agregar del censo» con uno ya en la planilla no lo duplica. */
 export function agregarArboles(filas: readonly FilaTala[], arboles: readonly ArbolParaElegir[]): FilaTala[] {
@@ -123,13 +197,21 @@ export interface FilaCalculada {
  * mismo que la tala de a una: la longitud aprovechable siempre, y el Ø y el
  * volumen salvo que la troza se despache del área (RDE 264-2019, items 6-9).
  */
-export function calcularFila(f: FilaTala, forma: FormaMedicion, modo: ModoAprovechamiento | null): FilaCalculada {
+export function calcularFila(
+  f: FilaTala,
+  forma: FormaMedicion,
+  modo: ModoAprovechamiento | null,
+  repetidos: ReadonlySet<string> = new Set(),
+): FilaCalculada {
   const d = derivarTala(f.medidas, forma);
   const oblig = obligatoriedadTala(modo);
   const comp = compararConCenso(f.arbol, { diamMayorM: d.diamMayorM, longitudM: d.longitudM, volumenM3: d.volumenM3 });
   const m = f.medidas;
   const tipeada = [m.d1, m.d2, m.totalM, ...m.mayor, ...m.menor].some((v) => v.trim() !== "");
   const faltan: string[] = [];
+  const codigo = claveDeCodigoFila(f.arbol.treeCode);
+  if (!codigo) faltan.push("el código del árbol");
+  else if (repetidos.has(codigo)) faltan.push("un código que no se repita en la planilla");
   if (!(d.longitudM != null && d.longitudM > 0)) faltan.push("la longitud");
   if (oblig.volumen && !(d.volumenM3 != null && d.volumenM3 > 0)) faltan.push(forma === "promedio" ? "D1 y D2" : "los Ø mayor y menor");
   if (d.excedeDescuento) faltan.push("descuentos más largos que el fuste");
@@ -179,8 +261,8 @@ export function totalesTanda(filas: readonly FilaTala[], calc: readonly FilaCalc
       t.listas += 1;
       t.listasM3 += c.volumenM3 ?? 0;
       t.listasPt += c.ptAserrable ?? 0;
-    } else if (c.tipeada) t.aMedias.push(f.arbol.treeCode);
-    else t.sinMedir.push(f.arbol.treeCode);
+    } else if (c.tipeada) t.aMedias.push(nombreDeFila(f));
+    else t.sinMedir.push(nombreDeFila(f));
   });
   t.listasM3 = r4(t.listasM3);
   t.guardadasM3 = r4(t.guardadasM3);
@@ -206,7 +288,7 @@ export function payloadDeFila(
     caratulaId: ctx.caratulaId,
     planId: ctx.planId,
     entryDate: new Date(`${e.fecha}T00:00:00.000Z`).toISOString(),
-    treeCode: a.treeCode,
+    treeCode: a.treeCode.trim(),
     isRama: false,
     speciesCommon: a.speciesCommon,
     speciesScientific: a.speciesScientific,
@@ -253,10 +335,14 @@ export function resultadoDeRespuesta(status: number, body: unknown): ResultadoFi
 }
 
 /** Qué hay que tocar en la fila que falló. */
-export function queCorregir(r: ResultadoFila | null): "justificacion" | "fecha" | "otro" | null {
+export function queCorregir(r: ResultadoFila | null): "justificacion" | "fecha" | "codigo" | "especie" | "otro" | null {
   if (r?.estado !== "fallida") return null;
   if (r.codigo === "T8_BAJO_DMC") return "justificacion";
   if (r.codigo === "PERIODO_CERRADO") return "fecha";
+  // T3: ese código ya está talado en el negocio (en una plantación, se cambia el código).
+  if (r.codigo === "T3_TALA_DUPLICADA") return "codigo";
+  // T7 en una plantación: la especie no está en su registro.
+  if (r.codigo === "T7_ESPECIE_NO_AUTORIZADA") return "especie";
   return "otro";
 }
 
@@ -265,11 +351,20 @@ export function queCorregir(r: ResultadoFila | null): "justificacion" | "fecha" 
  * corrige con una subsanación). La que falló conserva su aviso hasta el
  * próximo guardado: borrarlo al tipear escondía el motivo mientras se corregía.
  */
-export type CambioFila = Partial<Omit<FilaTala, "id" | "arbol" | "resultado">>;
+export type CambioFila = Partial<Omit<FilaTala, "id" | "origen" | "arbol" | "resultado">>;
 
 export function editarFila(f: FilaTala, cambio: CambioFila): FilaTala {
   if (f.resultado?.estado === "guardada") return f;
   return { ...f, ...cambio };
+}
+
+/**
+ * El código de una fila del registro (el propuesto se puede cambiar). Uno del
+ * censo es el de su placa: no se toca. Una guardada, tampoco.
+ */
+export function cambiarCodigo(f: FilaTala, codigo: string): FilaTala {
+  if (f.origen !== "registro" || f.resultado?.estado === "guardada") return f;
+  return { ...f, arbol: { ...f.arbol, treeCode: codigo.toUpperCase().slice(0, 40) } };
 }
 
 /** Pide el motivo T8 antes de guardar: el cálculo del plan ya lo ve bajo el DMC. */

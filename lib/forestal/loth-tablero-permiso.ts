@@ -149,3 +149,17 @@ export function bandaDelPlan(p: PlanTablero, hoyKey: string = limaDateKey()): Ba
     vigencia: vigenciaDelPlan(p, hoyKey),
   };
 }
+
+/** Nadie eligió todavía el permiso del tablero: decide cuántos permisos vivos hay. */
+export const AUTO = "__auto__";
+
+/**
+ * El permiso con el que abre el Control del permiso. Sin elección guardada
+ * (`AUTO`): con UN solo permiso vivo, ése —el volumen se ve sin tocar nada—;
+ * con varios (o sin lista todavía), «Todos» (`null`). Lo elegido a mano,
+ * incluido «Todos», se respeta.
+ */
+export function permisoInicial(guardado: string | null, planes: readonly { id: string }[] | null): string | null {
+  if (guardado !== AUTO) return guardado;
+  return planes?.length === 1 ? planes[0].id : null;
+}

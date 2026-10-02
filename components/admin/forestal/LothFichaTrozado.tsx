@@ -82,7 +82,9 @@ export default function LothFichaTrozado({ arbol, cargandoCenso, codigo, libro, 
     return (
       <div className={`${CAJA} flex flex-col items-center gap-2 py-5 text-center`}>
         <TreePine className="h-7 w-7 text-[var(--text-tertiary)] opacity-60" aria-hidden="true" />
-        <p className="text-sm text-[var(--text-secondary)]">Elige la tala de la lista o del censo para ver su ficha.</p>
+        <p className="text-sm text-[var(--text-secondary)]">
+          {plantacion ? "Elige la tala de la lista para ver su ficha." : "Elige la tala de la lista o del censo para ver su ficha."}
+        </p>
       </div>
     );
   }

@@ -9,23 +9,32 @@
  * respuesta cae en SU fila apenas llega: si una falla —bajo el DMC, ya talada,
  * mes cerrado— las demás siguen y la fallida queda marcada con el motivo del
  * libro para corregirla y volver a guardar sólo esa.
+ *
+ * En una plantación (ADR-459) también entran filas del REGISTRO: «Bolaina × 3»
+ * con sus códigos propuestos (`agregarDelRegistro`), que se pueden cambiar.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
 import type { ArbolParaElegir } from "@/lib/forestal/loth-censo-uso";
 import { cambiarForma, type FormaMedicion } from "@/lib/forestal/loth-forma-medicion";
+import type { PlanParaPoa } from "@/lib/forestal/loth-poa";
+import type { EspecieDelPlanFila } from "@/lib/forestal/loth-tala-plantacion";
 import {
   agregarArboles,
   calcularFila,
+  cambiarCodigo as cambiarCodigoDe,
+  codigosRepetidos,
   editarFila,
   filaDeArbol,
+  filaDelRegistro,
   payloadDeFila,
   resultadoDeRespuesta,
   totalesTanda,
   type CambioFila,
   type ComunesTala,
+  type EspecieParaFila,
   type FilaTala,
   type ResultadoFila,
 } from "@/lib/forestal/loth-tala-tanda";
@@ -33,6 +42,7 @@ import type { ColaboradorMinDTO } from "@/lib/rrhh/tipos";
 import { olvidarArbolEnElLibro } from "./use-arbol-en-el-libro";
 import { olvidarCensoDeTala } from "./use-censo-de-tala";
 import { useFormaMedicion } from "./use-forma-medicion";
+import { olvidarRegistroPlantacion } from "./use-registro-plantacion";
 
 /** Con qué arranca la planilla: lo marcado en «Ver censo» y lo que ya tenía la tala de a una. */
 export interface TandaTalaInicial {
@@ -41,6 +51,14 @@ export interface TandaTalaInicial {
   planLabel: string | null;
   arboles: ArbolParaElegir[];
   comunes: ComunesTala;
+  /**
+   * El plan y sus especies, si quien abre la planilla ya los leyó (la tala de
+   * a una). Sin esto la planilla los pide: así sabe si es una plantación.
+   */
+  plan?: (PlanParaPoa & { id: string }) | null;
+  especiesDelPlan?: EspecieDelPlanFila[];
+  /** Plantación (ADR-459): «Bolaina × 3» — filas de esa especie del registro con las que arranca. */
+  porEspecie?: { especie: string; n: number }[];
 }
 
 export function useTalaEnTanda({
@@ -66,14 +84,27 @@ export function useTalaEnTanda({
    */
   const [recargando, setRecargando] = useState(false);
 
-  const calc = useMemo(() => filas.map((f) => calcularFila(f, forma, comunes.modo)), [filas, forma, comunes.modo]);
+  const calc = useMemo(() => {
+    const repetidos = codigosRepetidos(filas);
+    return filas.map((f) => calcularFila(f, forma, comunes.modo, repetidos));
+  }, [filas, forma, comunes.modo]);
   const totales = useMemo(() => totalesTanda(filas, calc), [filas, calc]);
+  /** Ids de las filas del registro: no hay árbol del censo que los dé. */
+  const secuencia = useRef(0);
 
   const editar = useCallback((id: string, cambio: CambioFila) => {
     setFilas((fs) => fs.map((f) => (f.id === id ? editarFila(f, cambio) : f)));
   }, []);
   const quitar = useCallback((id: string) => setFilas((fs) => fs.filter((f) => f.id !== id || f.resultado?.estado === "guardada")), []);
   const agregar = useCallback((arboles: readonly ArbolParaElegir[]) => setFilas((fs) => agregarArboles(fs, arboles)), []);
+  /** «Bolaina × N»: una fila por código propuesto (los calcula quien sabe del registro). */
+  const agregarDelRegistro = useCallback((e: EspecieParaFila, codigos: readonly string[]) => {
+    const nuevas = codigos.map((c) => filaDelRegistro(e, c, `registro-${++secuencia.current}`));
+    setFilas((fs) => [...fs, ...nuevas]);
+  }, []);
+  const cambiarCodigo = useCallback((id: string, codigo: string) => {
+    setFilas((fs) => fs.map((f) => (f.id === id ? cambiarCodigoDe(f, codigo) : f)));
+  }, []);
   /** Cambiar de forma sin perder lo tipeado, en todas las filas (`cambiarForma`). */
   const elegirForma = useCallback(
     (f: FormaMedicion) => {
@@ -106,9 +137,11 @@ export function useTalaEnTanda({
       setFilas((fs) => fs.map((x) => (x.id === f.id ? { ...x, resultado: r } : x)));
       setAvance({ hecho: i + 1, total: pendientes.length });
     }
-    // Lo recordado del censo y de cada árbol ya no dice la verdad.
+    // Lo recordado del censo, del registro y de cada árbol ya no dice la verdad.
+    // (La planilla NO relee su registro: las guardadas siguen descontando desde acá.)
     olvidarCensoDeTala();
     olvidarArbolEnElLibro();
+    olvidarRegistroPlantacion();
     setAvance(null);
     if (entraron === 0) return;
     setRecargando(true);
@@ -121,7 +154,59 @@ export function useTalaEnTanda({
     }
   }, [filas, calc, avance, comunes, forma, inicial.planId, caratulaId, onGuardadas]);
 
-  return { filas, calc, totales, comunes, setComunes, forma, elegirForma, editar, quitar, agregar, guardar, avance, recargando };
+  return {
+    filas,
+    calc,
+    totales,
+    comunes,
+    setComunes,
+    forma,
+    elegirForma,
+    editar,
+    quitar,
+    agregar,
+    agregarDelRegistro,
+    cambiarCodigo,
+    guardar,
+    avance,
+    recargando,
+  };
+}
+
+// ─── El plan de la planilla ──────────────────────────────────────────────────
+
+/**
+ * El plan de la planilla y sus especies: los que trajo quien la abrió o, si no
+ * (el mapa), los del plan pedidos acá. Con esto se sabe si es una plantación.
+ */
+export function usePlanDeLaTanda(inicial: TandaTalaInicial): {
+  plan: (PlanParaPoa & { id: string }) | null;
+  especiesDelPlan: EspecieDelPlanFila[];
+  listo: boolean;
+} {
+  const traido = inicial.plan !== undefined;
+  const [leido, setLeido] = useState<{ plan: (PlanParaPoa & { id: string }) | null; especies: EspecieDelPlanFila[] } | null>(null);
+  const planId = inicial.planId;
+  useEffect(() => {
+    if (traido || !planId) return;
+    let cancel = false;
+    fetch(`/api/admin/forestal/plan?planId=${encodeURIComponent(planId)}`, { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j: { plan?: (PlanParaPoa & { id: string }) | null; species?: EspecieDelPlanFila[] } | null) => {
+        if (!cancel) setLeido({ plan: j?.plan ?? null, especies: (j?.species ?? []).filter((e) => (e.speciesCommon ?? "").trim()) });
+      })
+      .catch((err) => {
+        logger.error("[usePlanDeLaTanda] failed", { error: String(err) });
+        if (!cancel) setLeido({ plan: null, especies: [] });
+      });
+    return () => {
+      cancel = true;
+    };
+  }, [traido, planId]);
+  const especiesTraidas = inicial.especiesDelPlan;
+  const especiesDelPlan = useMemo(() => (traido ? (especiesTraidas ?? []) : (leido?.especies ?? [])), [traido, especiesTraidas, leido]);
+  if (traido) return { plan: inicial.plan ?? null, especiesDelPlan, listo: true };
+  return { plan: leido?.plan ?? null, especiesDelPlan, listo: !planId || leido != null };
 }
 
 // ─── El motosierrista, de Recursos Humanos ───────────────────────────────────

@@ -36,6 +36,9 @@ import { leerArchivoAFilas } from "@/lib/forestal/cubicacion-import-file";
 import { SECTION_META } from "./LothEntryForm";
 import type { LothSection } from "@/lib/forestal/loth-constants";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { filasQueFrenan, revisarContraPlan, type AvisoPlan } from "@/lib/forestal/loth-import-plan";
+import { useLothImportPlan } from "@/hooks/use-loth-import-plan";
+import LothImportPlanPanel from "./LothImportPlanPanel";
 
 const EJEMPLO: Record<string, string> = {
   tala: "Cód. árbol,Especie,Fecha,Ø mayor,Ø menor,Longitud\n001-TOR,Tornillo,21/07/2026,0.65,0.65,18",
@@ -49,17 +52,17 @@ const EJEMPLO: Record<string, string> = {
 export default function LothImportLineasModal({
   open,
   section,
-  especiesAutorizadas,
   onClose,
   onImportar,
 }: {
   open: boolean;
   section: LothSection;
-  /** Para avisar (sin bloquear) cuando la especie no está en el POA. */
-  especiesAutorizadas?: Set<string>;
   onClose: () => void;
-  /** Escribe las filas elegidas. Devuelve cuántas entraron y qué falló. */
-  onImportar: (filas: FilaImport[]) => Promise<{ creadas: number; errores: string[] }>;
+  /**
+   * Escribe las filas elegidas en el permiso elegido (`planId`; `null` sólo si el
+   * negocio no tiene ninguno). Devuelve cuántas entraron y qué falló.
+   */
+  onImportar: (filas: FilaImport[], planId: string | null) => Promise<{ creadas: number; errores: string[] }>;
 }) {
   /* Sin esto el foco se queda atrás del modal: Tab se va a la pantalla
      de abajo y Escape no cierra (hook medido en el módulo, 2026-09-09). */
@@ -74,6 +77,8 @@ export default function LothImportLineasModal({
   const [bajando, setBajando] = useState(false);
   const [fileError, setFileError] = useState<string | null>(null);
   const [omitidas, setOmitidas] = useState<Set<number>>(new Set());
+  /** Filas que frenan (T7) y la persona volvió a tildar a mano. */
+  const [reincluidas, setReincluidas] = useState<Set<number>>(new Set());
   const [importando, setImportando] = useState(false);
   useModalAccesible(cajaRef, { onCerrar: importando ? undefined : onClose, activo: open });
   /**
@@ -89,20 +94,38 @@ export default function LothImportLineasModal({
     aplicarTranslate: true,
     claveMemoria: "loth-import-lineas",
   });
-  const [resultado, setResultado] = useState<{ creadas: number; errores: string[] } | null>(null);
+  const [resultado, setResultado] = useState<{ creadas: number; errores: string[]; plan: string | null } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   /* El .xlsx manda mientras esté cargado — es exactamente el patrón del
      importador del censo (28-09): un archivo y un texto pegado no compiten,
      el archivo gana hasta que el usuario lo quita con la X. */
   const previa = useMemo(
-    () =>
-      archivo
-        ? parseImportLineasCeldas(archivo.celdas, section, { especiesAutorizadas })
-        : parseImportLineas(texto, section, { especiesAutorizadas }),
-    [archivo, texto, section, especiesAutorizadas],
+    () => (archivo ? parseImportLineasCeldas(archivo.celdas, section) : parseImportLineas(texto, section)),
+    [archivo, texto, section],
   );
-  const aImportar = previa.filas.filter((f) => f.estado === "ok" && !omitidas.has(f.fila));
+  /* El permiso elegido manda: la especie se juzga contra SU registro (la misma
+     regla que T7) y el saldo que sale es el de ese plan, no el de otro. */
+  const permiso = useLothImportPlan(open);
+  /* Lo que el servidor rechazará seguro (T7) arranca SIN tildar: importarlo sólo
+     daría un error previsible. Si la persona lo vuelve a tildar, se respeta. */
+  const frenan = useMemo(() => filasQueFrenan(previa.filas, section, permiso.plan), [previa.filas, section, permiso.plan]);
+  const omitidasEf = useMemo(() => {
+    const s = new Set(omitidas);
+    for (const fila of frenan) if (!reincluidas.has(fila)) s.add(fila);
+    return s;
+  }, [omitidas, frenan, reincluidas]);
+  const frenadasSinTildar = [...frenan].filter((fila) => !reincluidas.has(fila)).length;
+  const revision = useMemo(
+    () => revisarContraPlan(previa.filas, section, permiso.plan, omitidasEf),
+    [previa.filas, section, permiso.plan, omitidasEf],
+  );
+  const aImportar = previa.filas.filter((f) => f.estado === "ok" && !omitidasEf.has(f.fila));
+  /** Hay permisos y falta elegir uno, o todavía no llegaron: no se asienta a ciegas. */
+  /* Si no se pudo leer la lista de permisos, tampoco: «sin plan» contaría en
+     el saldo de todos (revisión ADR-459). */
+  const faltaPermiso =
+    permiso.cargandoPlanes || permiso.errorPlanes != null || (permiso.hayPlanes && (permiso.planId == null || permiso.cargandoDetalle));
 
   if (!open) return null;
 
@@ -131,6 +154,7 @@ export default function LothImportLineasModal({
       setLeyendo(false);
     }
     setOmitidas(new Set());
+    setReincluidas(new Set());
     setResultado(null);
   };
 
@@ -147,7 +171,8 @@ export default function LothImportLineasModal({
   const importar = async () => {
     setImportando(true);
     try {
-      setResultado(await onImportar(aImportar));
+      const r = await onImportar(aImportar, permiso.planId);
+      setResultado({ ...r, plan: permiso.plan?.rotulo ?? null });
     } finally {
       setImportando(false);
     }
@@ -220,20 +245,38 @@ export default function LothImportLineasModal({
               >
                 <p className="flex items-center gap-2 text-base font-bold text-[var(--text-primary)]">
                   {resultado.errores.length === 0 ? <CheckCircle2 className="h-5 w-5" /> : <AlertTriangle className="h-5 w-5" />}
-                  Entraron {resultado.creadas} de {aImportar.length} líneas
+                  Entraron {resultado.creadas} de {aImportar.length} líneas{resultado.plan ? ` en ${resultado.plan}` : ""}
                 </p>
                 {resultado.errores.length > 0 && (
-                  <ul className="mt-2 space-y-1 text-sm text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-                    {resultado.errores.slice(0, 10).map((e, i) => (
-                      <li key={i}>· {e}</li>
-                    ))}
-                    {resultado.errores.length > 10 && <li>· y {resultado.errores.length - 10} más</li>}
-                  </ul>
+                  <>
+                    <p className="mt-2 text-sm font-bold text-[var(--text-primary)]">
+                      {resultado.errores.length === 1 ? "No entró 1 línea" : `No entraron ${resultado.errores.length} líneas`}
+                      : el libro las rechazó y dijo por qué.
+                    </p>
+                    <ul className="mt-1 max-h-[30vh] space-y-1 overflow-auto text-sm text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+                      {resultado.errores.map((e, i) => (
+                        <li key={i}>· {e}</li>
+                      ))}
+                    </ul>
+                  </>
                 )}
               </div>
             </div>
           ) : (
             <>
+              <LothImportPlanPanel
+                planes={permiso.planes}
+                planId={permiso.planId}
+                onElegir={permiso.setPlanId}
+                rotuloDe={permiso.rotuloDe}
+                cargando={permiso.cargandoPlanes}
+                error={permiso.errorPlanes}
+                cargandoDetalle={permiso.cargandoDetalle}
+                detalleFallo={permiso.detalleFallo}
+                esPlantacion={permiso.plan?.esPlantacion ?? false}
+                saldos={revision.saldos}
+              />
+
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
@@ -300,6 +343,7 @@ export default function LothImportLineasModal({
                   onChange={(e) => {
                     setTexto(e.target.value);
                     setOmitidas(new Set());
+    setReincluidas(new Set());
                   }}
                   rows={5}
                   spellCheck={false}
@@ -317,6 +361,16 @@ export default function LothImportLineasModal({
                     {previa.conError > 0 && (
                       <span className="font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
                         {previa.conError} con datos faltantes
+                      </span>
+                    )}
+                    {frenadasSinTildar > 0 && (
+                      <span className="font-semibold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+                        {frenadasSinTildar} sin tildar: especie fuera del registro (el servidor la{frenadasSinTildar === 1 ? "" : "s"} frenaría)
+                      </span>
+                    )}
+                    {revision.frenadas > 0 && (
+                      <span className="font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+                        {revision.frenadas} se frenará{revision.frenadas === 1 ? "" : "n"} por especie fuera del registro
                       </span>
                     )}
                     {previa.ignoradas.length > 0 && (
@@ -344,15 +398,22 @@ export default function LothImportLineasModal({
                           <FilaPrevia
                             key={f.fila}
                             f={f}
-                            omitida={omitidas.has(f.fila)}
-                            onToggle={() =>
-                              setOmitidas((prev) => {
+                            omitida={omitidasEf.has(f.fila)}
+                            avisos={revision.avisos.get(f.fila)}
+                            onToggle={() => {
+                              /* Se alterna el estado que se VE: una fila destildada a mano
+                                 que después pasa a frenar se tiene que poder volver a tildar. */
+                              const fila = f.fila;
+                              const con = (prev: Set<number>, si: boolean) => {
                                 const next = new Set(prev);
-                                if (next.has(f.fila)) next.delete(f.fila);
-                                else next.add(f.fila);
+                                if (si) next.add(fila);
+                                else next.delete(fila);
                                 return next;
-                              })
-                            }
+                              };
+                              const incluir = omitidasEf.has(fila);
+                              setOmitidas((prev) => con(prev, !incluir));
+                              if (frenan.has(fila)) setReincluidas((prev) => con(prev, incluir));
+                            }}
                           />
                         ))}
                       </tbody>
@@ -376,7 +437,7 @@ export default function LothImportLineasModal({
             <button
               type="button"
               onClick={importar}
-              disabled={aImportar.length === 0 || importando}
+              disabled={aImportar.length === 0 || importando || faltaPermiso}
               className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
             >
               {importando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
@@ -391,12 +452,25 @@ export default function LothImportLineasModal({
   );
 }
 
-function FilaPrevia({ f, omitida, onToggle }: { f: FilaImport; omitida: boolean; onToggle: () => void }) {
+function FilaPrevia({
+  f,
+  omitida,
+  avisos,
+  onToggle,
+}: {
+  f: FilaImport;
+  omitida: boolean;
+  /** Lo que dice el permiso elegido de esta fila (T7: especie fuera del registro, saldo). */
+  avisos?: AvisoPlan[];
+  onToggle: () => void;
+}) {
   const error = f.estado === "error";
+  const frena = !error && (avisos?.some((a) => a.nivel === "freno") ?? false);
+  const textos = [...f.motivos, ...(avisos?.map((a) => a.texto) ?? [])];
   return (
     <tr
       className={`border-t border-[var(--rule-soft)] ${
-        error ? "bg-[var(--data-error-500)]/10" : omitida ? "opacity-50" : f.motivos.length > 0 ? "bg-[var(--data-warning-500)]/10" : ""
+        error || frena ? "bg-[var(--data-error-500)]/10" : omitida ? "opacity-50" : textos.length > 0 ? "bg-[var(--data-warning-500)]/10" : ""
       }`}
     >
       <td className="px-2 py-1.5">
@@ -418,11 +492,11 @@ function FilaPrevia({ f, omitida, onToggle }: { f: FilaImport; omitida: boolean;
         {f.volumenCalculado && <span className="ml-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">(Smalian)</span>}
       </td>
       <td className="px-2 py-1.5">
-        {f.motivos.length === 0 ? (
+        {textos.length === 0 ? (
           <span className="text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">se asienta</span>
         ) : (
-          <span className={error ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" : "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"}>
-            {f.motivos.join(" · ")}
+          <span className={error || frena ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" : "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"}>
+            {textos.join(" · ")}
           </span>
         )}
       </td>

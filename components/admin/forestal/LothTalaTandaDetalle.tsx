@@ -10,7 +10,7 @@
 import { useRef, useState } from "react";
 import { AlertTriangle, Camera, Loader2, MapPin, X } from "@buleje/design-system/icons";
 import { colaboradorPorNombre } from "./LothTalaDatosInternos";
-import { pideJustificacion, queCorregir, type ComunesTala, type FilaTala } from "@/lib/forestal/loth-tala-tanda";
+import { nombreDeFila, pideJustificacion, queCorregir, type ComunesTala, type FilaTala } from "@/lib/forestal/loth-tala-tanda";
 import { subirFotoEvidencia, type Motosierrista } from "./hooks/use-tala-en-tanda";
 
 const INPUT =
@@ -38,7 +38,7 @@ export default function LothTalaTandaDetalle({
   bloqueada: boolean;
   onEditar: (cambio: Cambio) => void;
 }) {
-  const code = f.arbol.treeCode;
+  const code = nombreDeFila(f);
   const quieta = bloqueada || f.resultado?.estado === "guardada";
   const fallida = f.resultado?.estado === "fallida" ? f.resultado : null;
   const [ubicando, setUbicando] = useState(false);
@@ -88,6 +88,8 @@ export default function LothTalaTandaDetalle({
           <span className="min-w-0">
             {fallida.mensaje}
             {queCorregir(fallida) === "fecha" && " Cambia la fecha de esta fila y vuelve a guardar."}
+            {queCorregir(fallida) === "codigo" && f.origen === "registro" && " Cambia el código de esta fila y vuelve a guardar."}
+            {queCorregir(fallida) === "especie" && " O quita esta fila de la planilla."}
           </span>
         </p>
       )}
@@ -141,7 +143,7 @@ export default function LothTalaTandaDetalle({
       <div className="flex flex-wrap items-center gap-2">
         <span className="flex min-w-0 items-center gap-1.5 text-sm text-[var(--text-secondary)]">
           <MapPin className="h-4 w-4 shrink-0 text-[var(--data-success-600)]" aria-hidden="true" />
-          {f.gps ? (f.gps.origen === "telefono" ? "GPS del teléfono" : "Coordenada copiada del censo") : "Sin GPS"}
+          {f.gps ? (f.gps.origen === "telefono" ? "GPS del teléfono" : "Coordenada copiada del censo") : f.origen === "registro" ? "Sin GPS: tómalo en el tocón" : "Sin GPS"}
         </span>
         <button type="button" onClick={tomarGps} disabled={quieta || ubicando} className={BTN}>
           {ubicando ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin className="h-4 w-4" />}

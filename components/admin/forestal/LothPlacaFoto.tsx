@@ -10,6 +10,10 @@
  * código marcado en fuste y tocón; la foto de la placa con el GPS del tocón es
  * lo que lo prueba ante OSINFOR. El marcado en el tocón se declara sólo si la
  * persona lo confirma: leer la placa no prueba dónde estaba clavada.
+ *
+ * En una PLANTACIÓN (ADR-459) el censo son los «árboles marcados»; si ninguno
+ * coincide, la placa propone la especie del registro por la abreviatura del
+ * código («003-BOL» → Bolaina) y deja ese código en la línea.
  */
 
 import { useRef } from "react";
@@ -17,9 +21,10 @@ import { AlertTriangle, Camera, CheckCircle2, Loader2, MapPin } from "@buleje/de
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { DISTANCIA_ALERTA_M, distanciaAlArbol, type ArbolParaElegir } from "@/lib/forestal/loth-censo-uso";
 import { porcentajeConfianza } from "@/lib/forestal/loth-placa";
+import type { EspecieDelRegistro } from "@/lib/forestal/loth-tala-plantacion";
 import { formatDistance } from "@/lib/forestal/loth-utm";
 import { usePlacaFoto, type EstadoPaso, type GpsTelefono } from "./hooks/use-placa-foto";
-import LothPlacaCruce, { CorregirCodigo } from "./LothPlacaCruce";
+import LothPlacaCruce, { CorregirCodigo, type RegistroDePlaca } from "./LothPlacaCruce";
 import { AMBAR } from "./loth-ficha-ui";
 
 const OK = "text-[var(--data-success-ink)] dark:text-[var(--data-success-500)]";
@@ -35,11 +40,40 @@ interface Props {
   onGps: (lat: number, lng: number) => void;
   marcadoTocon: boolean;
   onMarcadoTocon: (v: boolean) => void;
+  /** El plan es una plantación: el censo son sus «árboles marcados». */
+  plantacion?: boolean;
+  /** Plantación con especies en el registro: si ningún árbol marcado coincide, la especie por el código. */
+  registro?: {
+    especies: readonly EspecieDelRegistro[];
+    cargando: boolean;
+    /** La especie que la línea tiene ahora. */
+    especieElegida: string;
+    onEspecie: (e: EspecieDelRegistro, codigo: string) => void;
+  } | null;
 }
 
-export default function LothPlacaFoto({ arboles, cargandoCenso, elegido, onElegir, onFoto, onGps, marcadoTocon, onMarcadoTocon }: Props) {
+export default function LothPlacaFoto({
+  arboles,
+  cargandoCenso,
+  elegido,
+  onElegir,
+  onFoto,
+  onGps,
+  marcadoTocon,
+  onMarcadoTocon,
+  plantacion = false,
+  registro = null,
+}: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const p = usePlacaFoto(arboles, cargandoCenso, { onElegir, onFoto, onGps });
+  const p = usePlacaFoto(
+    arboles,
+    cargandoCenso,
+    { onElegir, onFoto, onGps, onEspecie: registro?.onEspecie },
+    registro ? { especies: registro.especies, cargando: registro.cargando } : null,
+  );
+  const deRegistro: RegistroDePlaca | null = registro
+    ? { cruce: p.cruceRegistro, cargando: registro.cargando, especieElegida: registro.especieElegida, onEspecie: p.confirmarEspecie }
+    : null;
   const arbolActual = elegido.trim() ? arboles.find((a) => a.treeCode === elegido.trim()) ?? null : null;
 
   return (
@@ -70,13 +104,22 @@ export default function LothPlacaFoto({ arboles, cargandoCenso, elegido, onElegi
           {p.procesando ? "Leyendo la placa…" : p.activa ? "Otra foto de la placa" : "Foto de la placa"}
         </button>
         <span className="flex min-w-0 items-center gap-1 text-sm text-[var(--text-secondary)]">
-          Lee el código, elige el árbol y toma el GPS.
-          <InfoTip
-            title="Foto de la placa"
-            what="Toma la foto de la placa clavada en el tocón: se lee el código, se busca el árbol en el censo y la foto queda con el GPS del teléfono."
-            affects="Es la prueba del marcado (RDE 264-2019, ítem 3) si OSINFOR supervisa. Si lo leído es dudoso, te pide confirmar: nunca elige solo."
-            example="Foto a la placa «114» → se elige el 114 · Lupuna, con la foto y el GPS del tocón."
-          />
+          {registro ? "Lee el código, elige la especie y toma el GPS." : "Lee el código, elige el árbol y toma el GPS."}
+          {registro ? (
+            <InfoTip
+              title="Foto de la placa"
+              what="Toma la foto de la placa clavada en el tocón: se lee el código y, si no es un árbol marcado, se elige la especie del registro por sus letras. La foto queda con el GPS del teléfono."
+              affects="Es la prueba del marcado (RDE 264-2019, ítem 3) si OSINFOR supervisa. Si las letras sirven para más de una especie, te pide elegir: nunca elige solo."
+              example="Foto a la placa «003-BOL» → Bolaina del registro, código 003-BOL, con la foto y el GPS del tocón."
+            />
+          ) : (
+            <InfoTip
+              title="Foto de la placa"
+              what={`Toma la foto de la placa clavada en el tocón: se lee el código, se busca ${plantacion ? "entre los árboles marcados" : "el árbol en el censo"} y la foto queda con el GPS del teléfono.`}
+              affects="Es la prueba del marcado (RDE 264-2019, ítem 3) si OSINFOR supervisa. Si lo leído es dudoso, te pide confirmar: nunca elige solo."
+              example="Foto a la placa «114» → se elige el 114 · Lupuna, con la foto y el GPS del tocón."
+            />
+          )}
         </span>
       </div>
 
@@ -87,8 +130,8 @@ export default function LothPlacaFoto({ arboles, cargandoCenso, elegido, onElegi
             <img src={p.vista} alt="Foto de la placa" className="h-20 w-20 shrink-0 rounded-lg border border-[var(--rule-base)] object-cover" />
           )}
           <div className="min-w-0 flex-1 space-y-1.5">
-            <LineaLectura p={p} elegido={elegido} onConfirmar={p.confirmar} />
-            <LineaGps gps={p.gps} procesando={p.procesando} arbol={arbolActual} />
+            <LineaLectura p={p} elegido={elegido} onConfirmar={p.confirmar} plantacion={plantacion} registro={deRegistro} />
+            <LineaGps gps={p.gps} procesando={p.procesando} arbol={arbolActual} plantacion={plantacion} />
             <LineaFoto foto={p.foto} procesando={p.procesando} />
             {p.lectura.estado === "listo" && p.lectura.valor.codigo && (
               <label className="flex min-h-9 w-fit cursor-pointer items-center gap-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)]">
@@ -108,9 +151,21 @@ export default function LothPlacaFoto({ arboles, cargandoCenso, elegido, onElegi
   );
 }
 
-type Placa = ReturnType<typeof usePlacaFoto>;
+type Placa = ReturnType<typeof usePlacaFoto<EspecieDelRegistro>>;
 
-function LineaLectura({ p, elegido, onConfirmar }: { p: Placa; elegido: string; onConfirmar: (a: ArbolParaElegir) => void }) {
+function LineaLectura({
+  p,
+  elegido,
+  onConfirmar,
+  plantacion,
+  registro,
+}: {
+  p: Placa;
+  elegido: string;
+  onConfirmar: (a: ArbolParaElegir) => void;
+  plantacion: boolean;
+  registro: RegistroDePlaca | null;
+}) {
   const l = p.lectura;
   if (l.estado === "espera") {
     return p.procesando ? (
@@ -140,12 +195,31 @@ function LineaLectura({ p, elegido, onConfirmar }: { p: Placa; elegido: string; 
           {v.nota && <span className="block text-xs text-[var(--text-tertiary)]">{v.nota}</span>}
         </p>
       )}
-      <LothPlacaCruce lectura={v} cruce={p.cruce} elegido={elegido} onConfirmar={onConfirmar} onEscribir={p.escribirCodigo} />
+      <LothPlacaCruce
+        lectura={v}
+        cruce={p.cruce}
+        elegido={elegido}
+        onConfirmar={onConfirmar}
+        onEscribir={p.escribirCodigo}
+        plantacion={plantacion}
+        registro={registro}
+      />
     </div>
   );
 }
 
-function LineaGps({ gps, procesando, arbol }: { gps: EstadoPaso<GpsTelefono>; procesando: boolean; arbol: ArbolParaElegir | null }) {
+function LineaGps({
+  gps,
+  procesando,
+  arbol,
+  plantacion,
+}: {
+  gps: EstadoPaso<GpsTelefono>;
+  procesando: boolean;
+  arbol: ArbolParaElegir | null;
+  plantacion: boolean;
+}) {
+  const marcado = plantacion ? "marcado" : "censado";
   if (gps.estado === "espera") {
     return procesando ? (
       <p className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)]">
@@ -168,7 +242,7 @@ function LineaGps({ gps, procesando, arbol }: { gps: EstadoPaso<GpsTelefono>; pr
       <p className={`flex items-start gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-semibold ${AMBAR}`}>
         <AlertTriangle className="mt-px h-3.5 w-3.5 shrink-0" />
         <span className="min-w-0">
-          GPS del teléfono{precision}: estás a {formatDistance(d)} del árbol {arbol?.treeCode} censado. ¿Es el árbol correcto?
+          GPS del teléfono{precision}: estás a {formatDistance(d)} del árbol {arbol?.treeCode} {marcado}. ¿Es el árbol correcto?
         </span>
       </p>
     );
@@ -179,7 +253,7 @@ function LineaGps({ gps, procesando, arbol }: { gps: EstadoPaso<GpsTelefono>; pr
       <MapPin className="mt-px h-3.5 w-3.5 shrink-0" />
       <span className="min-w-0">
         GPS del teléfono{precision}
-        {d != null && <span className="font-normal"> · {d < 1 ? "a menos de 1 m" : `a ${formatDistance(d)}`} del árbol censado</span>}
+        {d != null && <span className="font-normal"> · {d < 1 ? "a menos de 1 m" : `a ${formatDistance(d)}`} del árbol {marcado}</span>}
       </span>
     </p>
   );

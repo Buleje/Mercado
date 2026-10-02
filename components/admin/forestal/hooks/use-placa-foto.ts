@@ -9,6 +9,10 @@
  * Elegir el árbol lo decide `cruzarPlacaConCenso`: sólo lo inequívoco se elige
  * solo. Lo demás espera a que la persona confirme o corrija el código.
  *
+ * En una plantación (ADR-459), si ningún árbol marcado coincide, la placa
+ * propone la especie del registro por la abreviatura del código
+ * (`cruzarPlacaConRegistro`) y deja ese código para la línea.
+ *
  * Los avisos al formulario van por una ref: la lectura vuelve segundos después
  * y el `onElegir` de ese render ya no sabe que el GPS del teléfono llegó (el
  * árbol elegido pisaba la coordenada con la del censo).
@@ -17,16 +21,31 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import type { ArbolParaElegir } from "@/lib/forestal/loth-censo-uso";
-import { cruzarPlacaConCenso, type CrucePlaca, type LecturaPlaca } from "@/lib/forestal/loth-placa";
+import {
+  cruzarPlacaConCenso,
+  cruzarPlacaConRegistro,
+  type CrucePlaca,
+  type CrucePlacaRegistro,
+  type EspeciePlaca,
+  type LecturaPlaca,
+} from "@/lib/forestal/loth-placa";
 
 /** Lado mayor de la foto: la placa se lee bien y pesa ~0,5 MB en 4G. */
 const LADO_MAX_PX = 1600;
 const CALIDAD_JPEG = 0.85;
 
-export interface AvisosPlaca {
+export interface AvisosPlaca<E extends EspeciePlaca = EspeciePlaca> {
   onElegir: (a: ArbolParaElegir) => void;
   onFoto: (url: string) => void;
   onGps: (lat: number, lng: number) => void;
+  /** Plantación: la especie del registro con el código de la placa. */
+  onEspecie?: (e: E, codigo: string) => void;
+}
+
+/** El registro de una plantación, para cuando ningún árbol marcado coincide. */
+export interface RegistroParaPlaca<E extends EspeciePlaca = EspeciePlaca> {
+  especies: readonly E[];
+  cargando: boolean;
 }
 
 export type EstadoPaso<T> = { estado: "espera" } | { estado: "listo"; valor: T } | { estado: "error"; error: string };
@@ -86,7 +105,12 @@ async function mensajeDe(res: Response, porDefecto: string): Promise<string> {
   return m ?? porDefecto;
 }
 
-export function usePlacaFoto(arboles: readonly ArbolParaElegir[], cargandoCenso: boolean, avisos: AvisosPlaca) {
+export function usePlacaFoto<E extends EspeciePlaca = EspeciePlaca>(
+  arboles: readonly ArbolParaElegir[],
+  cargandoCenso: boolean,
+  avisos: AvisosPlaca<E>,
+  registro: RegistroParaPlaca<E> | null = null,
+) {
   const avisosRef = useRef(avisos);
   useEffect(() => {
     avisosRef.current = avisos;
@@ -112,6 +136,14 @@ export function usePlacaFoto(arboles: readonly ArbolParaElegir[], cargandoCenso:
     return cruzarPlacaConCenso(lectura.valor, arboles);
   }, [lectura, arboles, cargandoCenso]);
 
+  /* Plantación: ningún árbol marcado coincide → la especie del registro. */
+  const especiesRegistro = registro?.especies;
+  const cargandoRegistro = registro?.cargando ?? false;
+  const cruceRegistro: CrucePlacaRegistro<E> | null = useMemo(() => {
+    if (cruce?.tipo !== "sin_censo" || lectura.estado !== "listo" || !especiesRegistro?.length || cargandoRegistro) return null;
+    return cruzarPlacaConRegistro(lectura.valor, especiesRegistro);
+  }, [cruce, lectura, especiesRegistro, cargandoRegistro]);
+
   /* Lo inequívoco se elige UNA vez por lectura; si el GPS del teléfono ya
      llegó, se vuelve a poner después (elegir copia la coordenada del censo). */
   useEffect(() => {
@@ -122,6 +154,16 @@ export function usePlacaFoto(arboles: readonly ArbolParaElegir[], cargandoCenso:
     const g = gpsListo.current;
     if (g) avisosRef.current.onGps(g.lat, g.lng);
   }, [cruce, lectura]);
+
+  /* Lo mismo con la especie del registro: una vez por lectura, sólo si es inequívoca. */
+  useEffect(() => {
+    if (cruceRegistro?.tipo !== "especie" || lectura.estado !== "listo") return;
+    if (aplicada.current === lectura.valor.vez) return;
+    aplicada.current = lectura.valor.vez;
+    avisosRef.current.onEspecie?.(cruceRegistro.especie, cruceRegistro.codigo);
+    const g = gpsListo.current;
+    if (g) avisosRef.current.onGps(g.lat, g.lng);
+  }, [cruceRegistro, lectura]);
 
   const procesar = useCallback(async (file: File) => {
     const id = ++corrida.current;
@@ -217,5 +259,12 @@ export function usePlacaFoto(arboles: readonly ArbolParaElegir[], cargandoCenso:
     if (g) avisosRef.current.onGps(g.lat, g.lng);
   }, []);
 
-  return { activa, procesando, vista, foto, lectura, gps, cruce, procesar, escribirCodigo, confirmar };
+  /** Plantación: la especie del registro, elegida por la persona, con el código de la placa. */
+  const confirmarEspecie = useCallback((e: E, codigo: string) => {
+    avisosRef.current.onEspecie?.(e, codigo);
+    const g = gpsListo.current;
+    if (g) avisosRef.current.onGps(g.lat, g.lng);
+  }, []);
+
+  return { activa, procesando, vista, foto, lectura, gps, cruce, cruceRegistro, procesar, escribirCodigo, confirmar, confirmarEspecie };
 }

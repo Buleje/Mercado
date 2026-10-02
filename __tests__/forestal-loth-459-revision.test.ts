@@ -75,3 +75,14 @@ describe("H3 · el patio resta sólo lo que salió como troza", () => {
     expect(c.enPatioM3).toBe(5);
   });
 });
+
+describe("Control del permiso · con qué permiso abre", () => {
+  it("sin elección: un solo permiso vivo → ése; varios → Todos; lo elegido se respeta", async () => {
+    const { AUTO, permisoInicial } = await import("@/lib/forestal/loth-tablero-permiso");
+    expect(permisoInicial(AUTO, [{ id: "a" }])).toBe("a");
+    expect(permisoInicial(AUTO, [{ id: "a" }, { id: "b" }])).toBeNull();
+    expect(permisoInicial(AUTO, null)).toBeNull();
+    expect(permisoInicial(null, [{ id: "a" }])).toBeNull();
+    expect(permisoInicial("b", [{ id: "a" }, { id: "b" }])).toBe("b");
+  });
+});

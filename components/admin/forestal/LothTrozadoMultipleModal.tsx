@@ -13,7 +13,8 @@
  * Igual que el Trozado de a una (Brandon 28-09: «Trozado múltiple igual»): la
  * misma ficha lateral (`LothFichaTrozado` con `lote`), las dos formas de
  * anotar el Ø con la elección fijada en el equipo, y las flechas/Enter para
- * moverse entre las medidas.
+ * moverse entre las medidas. En una plantación (ADR-459) la ficha habla del
+ * árbol «sin marcar», no de «no está en el censo».
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -39,6 +40,7 @@ import {
 import { useArbolDelCenso } from "./hooks/use-arbol-del-censo";
 import { olvidarArbolEnElLibro, useArbolEnElLibro } from "./hooks/use-arbol-en-el-libro";
 import { useFormaMedicion } from "./hooks/use-forma-medicion";
+import { usePlanesDePlantacion } from "./hooks/use-registro-plantacion";
 import LothFichaTrozado from "./LothFichaTrozado";
 import { SelectorFormaMedicion } from "./LothMedicionPartes";
 import LothTrozadoMultiplePie from "./LothTrozadoMultiplePie";
@@ -104,6 +106,9 @@ export default function LothTrozadoMultipleModal({
   const code = open && arbol?.treeCode ? arbol.treeCode.trim() : "";
   const libro = useArbolEnElLibro(code);
   const censo = useArbolDelCenso(code);
+  /** El plan de la tala es una plantación: el árbol no tiene por qué estar marcado. */
+  const plantaciones = usePlanesDePlantacion(open);
+  const plantacion = arbol?.planId != null && plantaciones.has(arbol.planId);
 
   const calculadas = calcularRenglones(renglones, forma, code, libro.datos?.trozas ?? []);
   const listas = trozasParaAsentar(calculadas, forma);
@@ -225,7 +230,7 @@ export default function LothTrozadoMultipleModal({
                 aria-label="Ficha del árbol"
                 className="lg:sticky lg:top-0 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:max-h-[calc(92vh-10rem)] lg:self-start lg:overflow-y-auto"
               >
-                <LothFichaTrozado arbol={censo.arbol} cargandoCenso={censo.cargando} codigo={code} libro={libro} lote={lote} />
+                <LothFichaTrozado arbol={censo.arbol} cargandoCenso={censo.cargando} codigo={code} libro={libro} lote={lote} plantacion={plantacion} />
               </aside>
 
               {arbol && (

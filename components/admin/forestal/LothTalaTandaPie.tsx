@@ -7,11 +7,16 @@
  *
  * Al lector de pantalla le llega el avance y el resultado, no el total que
  * cambia en cada tecla.
+ *
+ * En una plantación (ADR-459) también dice lo que queda del registro de cada
+ * especie con la planilla —el pie está siempre a la vista mientras se mide—,
+ * en ámbar si la planilla lo pasa (no frena: lo frena el libro al despachar).
  */
 
 import { forwardRef } from "react";
 import { AlertTriangle, Axe, CheckCircle2, Loader2, Scissors } from "@buleje/design-system/icons";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import type { SaldoEnPlanilla } from "@/lib/forestal/loth-tala-plantacion";
 import type { TotalesTanda } from "@/lib/forestal/loth-tala-tanda";
 import { formatNumber } from "@/lib/format";
 
@@ -31,8 +36,12 @@ const LothTalaTandaPie = forwardRef<
     onCerrar: () => void;
     onGuardar: () => void;
     onTrozar: (() => void) | null;
+    /** Plantación: el saldo del registro por especie con la planilla (`saldoDeLaPlanilla`). */
+    registro?: SaldoEnPlanilla[] | null;
   }
->(function LothTalaTandaPie({ totales: t, avance, recargando, onCerrar, onGuardar, onTrozar }, guardarRef) {
+>(function LothTalaTandaPie({ totales: t, avance, recargando, onCerrar, onGuardar, onTrozar, registro }, guardarRef) {
+  const pasan = (registro ?? []).filter((s) => s.excesoM3 > 0);
+  const quedan = (registro ?? []).filter((s) => s.excesoM3 <= 0);
   const yaGuardo = t.guardadas > 0 || t.fallidas > 0;
   const noEntran = [
     t.aMedias.length > 0 ? `${t.aMedias.join(", ")} a medias` : null,
@@ -76,6 +85,25 @@ const LothTalaTandaPie = forwardRef<
               </p>
             )}
             {noEntran.length > 0 && <p className={AMBAR}>{noEntran.join(" · ")}: no se asientan</p>}
+            {quedan.length > 0 && (
+              <p data-pie-registro>
+                Registro: {quedan.map((s, i) => (
+                  <span key={s.especie}>
+                    {i > 0 && " · "}
+                    {s.especie} quedan <span className={num}>{fmtM3(s.quedaM3)}</span>
+                  </span>
+                ))}{" "}
+                m³
+              </p>
+            )}
+            {pasan.length > 0 && (
+              <p className={`flex items-start gap-1.5 ${AMBAR}`}>
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                <span className="min-w-0">
+                  {pasan.map((s) => `${s.especie} pasa lo registrado por ${fmtM3(s.excesoM3)} m³`).join(" · ")}: la tala entra; al despachar, el libro no deja pasar el registro.
+                </span>
+              </p>
+            )}
           </>
         )}
       </div>

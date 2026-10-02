@@ -21,12 +21,29 @@ import { DataTable } from "@buleje/design-system";
 import { Check, Loader2, Pencil, Trash2, X } from "@buleje/design-system/icons";
 import { formatNumber } from "@/lib/format";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
+import { ptAserrableDeRolliza } from "@/lib/forestal/loth-restante";
 import type { CascadaEspecie, CascadaPlan } from "@/lib/forestal/loth-saldo-cascada";
 import { CitesPill, CitesToggle } from "./loth-plan-ui";
 import { aEspecieParaGuardar, conCites, filaDesdeEspecie, problemaDeFila, type FilaEspecie } from "./loth-plan-especies-api";
 import type { Species } from "./loth-plan-shared";
 
 const m3 = (v: number) => formatNumber(v, 3);
+
+/** El texto del ≈pt: es un DERIVADO (56 % aserrable), no lo que declara el libro. */
+const AYUDA_PT = "Pie tablar aserrable de referencia: lo que saldría de la sierra (56 % del m³ en rollizo). El libro declara m³.";
+
+/**
+ * ≈ pt aserrable debajo de la cifra en m³ (Brandon piensa en pie tablar).
+ * Sólo con volumen positivo: un ≈pt de un saldo negativo no significa nada.
+ */
+function Pt({ m3: v }: { m3: number | undefined }) {
+  if (v == null || !(v > 0)) return null;
+  return (
+    <span className="block text-xs font-normal text-[var(--text-tertiary)]" title={AYUDA_PT}>
+      ≈ {formatNumber(ptAserrableDeRolliza(v), 0)} pt
+    </span>
+  );
+}
 /* Sin ancho: lo pone cada input. Con `w-full` adentro de una celda de tabla
    el input medía lo que la celda le dejaba (el año se veía «2»). */
 const EDIT = "h-9 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20";
@@ -128,9 +145,9 @@ export default function LothPlantacionTabla({ species, cascada, acciones }: {
                   {fila ? <input type="number" min="0" step="0.01" value={fila.superficieHa} onChange={(e) => set("superficieHa", e.target.value)} aria-label={`Superficie en hectáreas de ${s.speciesCommon}`} className={`${EDIT_NUM} w-16`} /> : s.superficieHa ? formatNumber(Number(s.superficieHa), 2) : "—"}
                 </td>
                 <td className={`${NUM} font-bold text-[var(--text-primary)]`}>
-                  {fila ? <input type="number" min="0" step="0.001" value={fila.volumenM3} onChange={(e) => set("volumenM3", e.target.value)} aria-label={`m³ registrados de ${s.speciesCommon}`} className={`${EDIT_NUM} w-[4.5rem]`} /> : m3(Number(s.volumenAutorizadoM3 ?? 0))}
+                  {fila ? <input type="number" min="0" step="0.001" value={fila.volumenM3} onChange={(e) => set("volumenM3", e.target.value)} aria-label={`m³ registrados de ${s.speciesCommon}`} className={`${EDIT_NUM} w-[4.5rem]`} /> : <>{m3(Number(s.volumenAutorizadoM3 ?? 0))}<Pt m3={Number(s.volumenAutorizadoM3 ?? 0)} /></>}
                 </td>
-                <Celda v={c?.taladoM3} />
+                <Celda v={c?.taladoM3} conPt />
                 <EnPie v={c?.enPieM3} />
                 <Celda v={c?.taladoSinTrozarM3} />
                 <Celda v={c?.enPatioM3} />
@@ -185,8 +202,11 @@ export default function LothPlantacionTabla({ species, cascada, acciones }: {
               {/* Vacías: en la tarjeta del celular no se pintan (un rótulo sin dato es ruido). */}
               <td className={`${NUM} max-sm:hidden!`} />
               <td className={NUM}>{supTotal > 0 ? formatNumber(supTotal, 2) : "—"}</td>
-              <td className={NUM}>{m3(t.baseM3)}</td>
-              <Celda v={t.taladoM3} />
+              <td className={NUM}>
+                {m3(t.baseM3)}
+                <Pt m3={t.baseM3} />
+              </td>
+              <Celda v={t.taladoM3} conPt />
               <EnPie v={t.enPieM3} />
               <Celda v={t.taladoSinTrozarM3} />
               <Celda v={t.enPatioM3} />
@@ -221,9 +241,14 @@ export const cambiosDeFila = (f: FilaEspecie) => {
   };
 };
 
-function Celda({ v }: { v: number | undefined }) {
+function Celda({ v, conPt = false }: { v: number | undefined; conPt?: boolean }) {
   if (v == null) return <td className={`${NUM} text-[var(--text-tertiary)]`}>—</td>;
-  return <td className={`${NUM} ${v > 0 ? "text-[var(--text-primary)]" : "text-[var(--text-tertiary)]"}`}>{m3(v)}</td>;
+  return (
+    <td className={`${NUM} ${v > 0 ? "text-[var(--text-primary)]" : "text-[var(--text-tertiary)]"}`}>
+      {m3(v)}
+      {conPt && <Pt m3={v} />}
+    </td>
+  );
 }
 
 /** Negativo = se taló más de lo registrado: va en rojo y dice cuánto de más. */
@@ -237,7 +262,12 @@ function EnPie({ v }: { v: number | undefined }) {
       </td>
     );
   }
-  return <td className={`${NUM} font-semibold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]`}>{m3(v)}</td>;
+  return (
+    <td className={`${NUM} font-semibold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]`}>
+      {m3(v)}
+      <Pt m3={v} />
+    </td>
+  );
 }
 
 function BarraTalado({ pct, excedido }: { pct: number | null; excedido: boolean }) {

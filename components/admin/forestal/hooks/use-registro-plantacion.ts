@@ -18,10 +18,12 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { logger } from "@/lib/logger";
 import type { UsoArbolCenso } from "@/lib/forestal/loth-censo-uso";
 import { esPlanDePlantacion, type PlanParaPoa } from "@/lib/forestal/loth-poa";
 import {
   codigoPropuesto,
+  codigosPropuestos,
   especieDelRegistro,
   especiesDelRegistro,
   saldoConEstaTala,
@@ -41,18 +43,25 @@ interface Lectura {
 
 const VIGENCIA_MS = 30_000;
 const lecturas = new Map<string, { at: number; promesa: Promise<Lectura> }>();
+/** Qué planes son plantaciones (`usePlanesDePlantacion`), recordado un minuto. */
+const VIGENCIA_PLANES_MS = 60_000;
+let planesLeidos: { at: number; promesa: Promise<ReadonlySet<string>> } | null = null;
 
 /** Lo que escribe en el libro lo llama: una tala nueva cambia el saldo y los códigos. */
 export function olvidarRegistroPlantacion(): void {
   lecturas.clear();
+  planesLeidos = null;
 }
 
 async function leerRegistro(planId: string): Promise<Lectura> {
   const id = encodeURIComponent(planId);
-  const [b, t, u] = await Promise.all([
+  const [b, t, u, c] = await Promise.all([
     fetch(`/api/admin/forestal/plan?balance=${id}`, { credentials: "include" }),
     fetch(`/api/admin/forestal/loth?available=trozado&planId=${id}`, { credentials: "include" }),
     fetch("/api/admin/forestal/loth?usoCenso=1", { credentials: "include" }),
+    /* Los árboles marcados del plan también ocupan su código: proponer
+       «115-COP» con el 115 marcado y en pie pisaría su placa (revisión ADR-459). */
+    fetch(`/api/admin/forestal/plan/census?planId=${id}&limit=10000`, { credentials: "include" }),
   ]);
   if (!b.ok) {
     throw new Error(
@@ -64,11 +73,15 @@ async function leerRegistro(planId: string): Promise<Lectura> {
   const balance = (await b.json()) as { balance?: { rows?: FilaBalanceRegistro[] } };
   const talas = t.ok ? (((await t.json()) as { items?: { code: string | null }[] }).items ?? []) : [];
   const usos = u.ok ? (((await u.json()) as { usos?: UsoArbolCenso[] }).usos ?? []) : [];
+  const marcados = c.ok ? (((await c.json()) as { trees?: { treeCode: string | null }[] }).trees ?? []) : [];
   return {
     filas: balance.balance?.rows ?? [],
-    codigosPlan: talas.map((x) => x.code).filter((c): c is string => Boolean(c)),
+    codigosPlan: [
+      ...talas.map((x) => x.code),
+      ...marcados.map((x) => x.treeCode),
+    ].filter((cod): cod is string => Boolean(cod)),
     codigosNegocio: usos.filter((x) => x.tala != null).map((x) => x.treeCode),
-    codigosLeidos: t.ok && u.ok,
+    codigosLeidos: t.ok && u.ok && c.ok,
   };
 }
 
@@ -98,6 +111,8 @@ export interface RegistroPlantacion {
   especie: (especie: string | null | undefined) => EspecieDelRegistro | null;
   /** El próximo código de árbol para la especie; `ademas` = recién usados que la lectura aún no trae. */
   codigoPara: (especie: string, ademas?: readonly string[]) => string;
+  /** Los `n` códigos que siguen («Bolaina × 3» en la tala en tanda), sin repetir los de `ademas`. */
+  codigosPara: (especie: string, n: number, ademas?: readonly string[]) => string[];
   /** registrado − talado − lo que se mide, para la especie (null si no está en el registro). */
   saldo: (especie: string | null | undefined, medidoM3: number | null) => SaldoDeTala | null;
 }
@@ -164,9 +179,51 @@ export function useRegistroPlantacion(
     },
     especie: (e) => especieDelRegistro(especies, e),
     codigoPara: (e, ademas = []) => codigoPropuesto(e, [...lectura.codigosPlan, ...ademas], lectura.codigosNegocio),
+    codigosPara: (e, n, ademas = []) => codigosPropuestos(e, n, [...lectura.codigosPlan, ...ademas], lectura.codigosNegocio),
     saldo: (e, medidoM3) => {
       const reg = especieDelRegistro(especies, e);
       return reg ? saldoConEstaTala(reg, medidoM3) : null;
     },
   };
+}
+
+// ─── Qué planes son plantaciones ─────────────────────────────────────────────
+
+
+async function leerPlantaciones(): Promise<ReadonlySet<string>> {
+  const r = await fetch("/api/admin/forestal/plan", { credentials: "include" });
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  const planes = ((await r.json()) as { plans?: (PlanParaPoa & { id: string })[] }).plans ?? [];
+  return new Set(planes.filter((p) => esPlanDePlantacion(p)).map((p) => p.id));
+}
+
+/**
+ * Los ids de los planes que son plantaciones, para quien sólo tiene la línea
+ * del libro (`LothEntryDTO.planId`) — «Trozar un árbol» habla de «árbol sin
+ * marcar» en vez de «no está en el censo». Una lectura por minuto.
+ */
+export function usePlanesDePlantacion(activo: boolean): ReadonlySet<string> {
+  const [ids, setIds] = useState<ReadonlySet<string>>(() => new Set());
+  useEffect(() => {
+    if (!activo) return;
+    let cancel = false;
+    if (!planesLeidos || Date.now() - planesLeidos.at > VIGENCIA_PLANES_MS) {
+      const promesa = leerPlantaciones();
+      planesLeidos = { at: Date.now(), promesa };
+      promesa.catch(() => {
+        if (planesLeidos?.promesa === promesa) planesLeidos = null;
+      });
+    }
+    planesLeidos.promesa.then(
+      (s) => {
+        if (!cancel) setIds(s);
+      },
+      // Sin la lista se habla como en un bosque (lo de antes): no frena nada.
+      (err) => logger.error("[usePlanesDePlantacion] failed", { error: String(err) }),
+    );
+    return () => {
+      cancel = true;
+    };
+  }, [activo]);
+  return ids;
 }

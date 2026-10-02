@@ -15,6 +15,8 @@ import { AlertTriangle, ChevronDown, Map as MapIcon, RefreshCw } from "@buleje/d
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { formatNumber } from "@/lib/format";
+import { ptAserrableDeRolliza } from "@/lib/forestal/loth-restante";
 import type { CascadaEspecie, CascadaPlan } from "@/lib/forestal/loth-saldo-cascada";
 import type { BandaPermiso } from "@/lib/forestal/loth-tablero-permiso";
 import { Btn } from "./ctp-shared";
@@ -113,6 +115,11 @@ export default function LothTableroVolumen({
         {titulo}
         <span className="text-sm tabular-nums text-[var(--text-secondary)]">
           {base} <b className="font-mono text-[var(--text-primary)]">{fmtM3(t.baseM3)}</b> m³
+          {t.baseM3 > 0 && (
+            <span title="Pie tablar aserrable de referencia (56 % del m³ en rollizo). El libro declara m³.">
+              {" "}≈ {formatNumber(ptAserrableDeRolliza(t.baseM3), 0)} pt
+            </span>
+          )}
           {t.pctTalado != null && <> · talado {t.pctTalado}%</>}
         </span>
       </div>
@@ -132,6 +139,11 @@ export default function LothTableroVolumen({
               <span className="block font-mono text-sm font-bold tabular-nums text-[var(--text-primary)]">
                 {fmtM3(x.v)} <span className="font-sans text-xs font-normal text-[var(--text-tertiary)]">m³ · {pct(x.v, t.baseM3)}</span>
               </span>
+              {x.v > 0 && (
+                <span className="block text-xs tabular-nums text-[var(--text-tertiary)]" title="Pie tablar aserrable de referencia (56 %)">
+                  ≈ {formatNumber(ptAserrableDeRolliza(x.v), 0)} pt
+                </span>
+              )}
             </li>
           ))}
         </ul>

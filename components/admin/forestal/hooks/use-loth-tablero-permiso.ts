@@ -17,7 +17,7 @@ import { useLocalStorage } from "@/hooks/use-local-storage";
 import { leerJson } from "@/lib/errores/sin-dato";
 import { logger } from "@/lib/logger";
 import type { FilaBalanceCascada } from "@/lib/forestal/loth-saldo-cascada";
-import { planDesdeJson, type PlanTablero } from "@/lib/forestal/loth-tablero-permiso";
+import { AUTO, permisoInicial, planDesdeJson, type PlanTablero } from "@/lib/forestal/loth-tablero-permiso";
 import { PLAN_SIN_PLAN } from "@/lib/forestal/loth-tablero-trozas";
 
 /** Clave de la preferencia (la prueba en navegador la lee). */
@@ -44,7 +44,10 @@ const num = (v: unknown) => {
 };
 
 export function useLothTableroPermiso(reloadSignal = 0) {
-  const [guardado, setGuardado] = useLocalStorage<string | null>(CLAVE_PLAN_TABLERO, null);
+  /* Sin elección guardada (`AUTO`): con UN solo permiso vivo se abre en ése —el
+     volumen del permiso a la vista sin tocar nada—; con varios, «Todos». Elegir
+     «Todos» a mano guarda `null` y se respeta. */
+  const [guardado, setGuardado] = useLocalStorage<string | null>(CLAVE_PLAN_TABLERO, AUTO);
   const [planes, setPlanes] = useState<PlanTablero[] | null>(null);
   const [errorPlanes, setErrorPlanes] = useState<string | null>(null);
   const [saldo, setSaldo] = useState<SaldoPermiso>({ planId: null, rows: [], cargando: false, error: null });
@@ -74,11 +77,12 @@ export function useLothTableroPermiso(reloadSignal = 0) {
   }, [reloadSignal]);
 
   /* Un plan recordado que ya no está en la lista se suelta (vuelve a «Todos»). */
+  const efectivo = permisoInicial(guardado, planes);
   const planSel: string | null =
-    guardado == null || guardado === PLAN_SIN_PLAN
-      ? guardado
-      : planes == null || planes.some((p) => p.id === guardado)
-        ? guardado
+    efectivo == null || efectivo === PLAN_SIN_PLAN
+      ? efectivo
+      : planes == null || planes.some((p) => p.id === efectivo)
+        ? efectivo
         : null;
   const plan = useMemo(() => planes?.find((p) => p.id === planSel) ?? null, [planes, planSel]);
   const idSaldo = plan?.id ?? null;

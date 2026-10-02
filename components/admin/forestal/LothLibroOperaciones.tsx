@@ -67,6 +67,7 @@ import LothCadenaModal from "./LothCadenaModal";
 import LothSeccionTabla, { type ColDef } from "./LothSeccionTabla";
 import LothLineaDetalleModal from "./LothLineaDetalleModal";
 import LothImportLineasModal from "./LothImportLineasModal";
+import { reetiquetarErroresImport } from "@/lib/forestal/loth-import-plan";
 import LothTrozadoMultipleModal from "./LothTrozadoMultipleModal";
 import LothEtiquetasRecienTrozadas from "./LothEtiquetasRecienTrozadas";
 import LothTalaTandaModal from "./LothTalaTandaModal";
@@ -750,15 +751,6 @@ export default function LothLibroOperaciones() {
   // el libro entero en el cliente exigiría bajarlo entero, que es justo lo que
   // la paginación evita. El contador de abajo dice siempre cuántas hay en total.
   const correcciones = useMemo(() => mapaCorrecciones(allEntries), [allEntries]);
-  /**
-   * Especies del plan activo. Se usan para avisar en la vista previa del
-   * importador; si el censo no cargó, queda `undefined` y NO se avisa nada —
-   * acusar por falta de datos es peor que no avisar.
-   */
-  const especiesAutorizadasPlan = useMemo(
-    () => (censoArboles.length > 0 ? new Set(censoArboles.map((c) => c.speciesCommon)) : undefined),
-    [censoArboles],
-  );
   const lineasSeccion = useMemo(() => allEntries.filter((e) => e.section === section), [allEntries, section]);
   const periodos = useMemo(() => periodosDe(lineasSeccion), [lineasSeccion]);
   const especiesSeccion = useMemo(
@@ -1320,12 +1312,13 @@ export default function LothLibroOperaciones() {
       <LothImportLineasModal
         open={showImport}
         section={section}
-        especiesAutorizadas={especiesAutorizadasPlan}
         onClose={() => setShowImport(false)}
-        onImportar={(filas: FilaImport[]) =>
-          crearLineas(
+        onImportar={async (filas: FilaImport[], planId: string | null) => {
+          const r = await crearLineas(
             filas.map((f) => ({
               section,
+              // El permiso elegido en el modal: sin él T6/T7 no la revisan y la línea cuenta en todos los planes.
+              planId,
               entryDate: new Date(f.entryDate ?? new Date().toISOString().slice(0, 10)).toISOString(),
               treeCode: f.treeCode,
               trozaCode: f.trozaCode,
@@ -1340,8 +1333,9 @@ export default function LothLibroOperaciones() {
               gtfNumber: f.gtfNumber,
               observations: f.observations,
             })),
-          )
-        }
+          );
+          return { creadas: r.creadas, errores: reetiquetarErroresImport(r.errores, filas) };
+        }}
       />
 
       {tandaTala && (
@@ -1371,6 +1365,9 @@ export default function LothLibroOperaciones() {
             trozas.map((t) => ({
               section: "trozado",
               entryDate: new Date().toISOString(),
+              // La troza va al plan de SU tala: sin plan contaba en el saldo de
+              // todos los permisos y saltaba T6/T7 (ADR-459).
+              planId: arbol.planId ?? null,
               treeCode: arbol.treeCode,
               trozaCode: t.trozaCode,
               speciesCommon: arbol.speciesCommon,

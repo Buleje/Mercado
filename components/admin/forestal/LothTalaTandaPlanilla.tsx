@@ -38,6 +38,8 @@ export default function LothTalaTandaPlanilla({
   motosierristas,
   idLista,
   onEditar,
+  onCodigo,
+  fueraDelRegistro,
   onQuitar,
   alTerminar,
 }: {
@@ -51,10 +53,16 @@ export default function LothTalaTandaPlanilla({
   motosierristas: readonly Motosierrista[];
   idLista: string;
   onEditar: (id: string, cambio: CambioFila) => void;
+  /** Plantación: el código propuesto de una fila del registro se puede cambiar. */
+  onCodigo: (id: string, codigo: string) => void;
+  /** Plantación: la especie de la fila no está en el registro (T7 la rechaza al guardar). */
+  fueraDelRegistro: (f: FilaTala) => boolean;
   onQuitar: (id: string) => void;
   /** Enter en la última medida de la última fila. */
   alTerminar: () => boolean;
 }) {
+  /* Sin árboles marcados no hay censo contra qué comparar. */
+  const conCenso = filas.some((f) => f.origen === "censo");
   return (
     <div onKeyDown={(e) => moverEntreMedidas(e, alTerminar)}>
       <p className="sr-only">Flechas y Enter te llevan de medida en medida; flecha abajo baja al mismo campo del árbol siguiente.</p>
@@ -69,7 +77,7 @@ export default function LothTalaTandaPlanilla({
             </span>
           ))}
         </span>
-        <span className={`text-right ${CAB}`}>Volumen · censo · pt</span>
+        <span className={`text-right ${CAB}`}>{conCenso ? "Volumen · censo · pt" : "Volumen · pt"}</span>
         <span />
         <span />
       </div>
@@ -85,6 +93,9 @@ export default function LothTalaTandaPlanilla({
             bloqueada={bloqueada}
             onAbrir={() => onAbrir(f.id)}
             onEditar={(cambio) => onEditar(f.id, cambio)}
+            onCodigo={(codigo) => onCodigo(f.id, codigo)}
+            fueraDelRegistro={fueraDelRegistro(f)}
+            numero={i + 1}
             onQuitar={filas.length > 1 ? () => onQuitar(f.id) : null}
           >
             <LothTalaTandaDetalle

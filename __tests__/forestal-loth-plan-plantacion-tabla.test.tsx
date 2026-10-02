@@ -31,9 +31,14 @@ describe("tabla de la cascada por especie", () => {
   it("cada casillero sale de la cascada: en pie, sin trozar, patio, despachado", () => {
     render(<LothPlantacionTabla species={species} cascada={cascada} acciones={{ guardar: vi.fn(), quitar: vi.fn() }} />);
     const bolaina = screen.getByText("Bolaina").closest("tr")!;
-    const celdas = within(bolaina).getAllByRole("cell").map((c) => c.textContent);
+    const crudas = within(bolaina).getAllByRole("cell").map((c) => c.textContent ?? "");
+    // El ≈pt aserrable va debajo del m³ (registrado, talado, en pie): se compara el m³ aparte.
+    const celdas = crudas.map((t) => t.replace(/≈.*pt$/, ""));
     // Especie · árboles · año · sup · registrado · talado · en pie · sin trozar · patio · despachado
     expect(celdas.slice(1, 10)).toEqual(["450", "2018", "12.50", "120.000", "30.000", "90.000", "5.000", "15.000", "10.000"]);
+    // 120 m³ en rollizo ≈ 120 × 424 × 56 % = 28 493 pt aserrables (referencia, no lo declarado).
+    expect(crudas[4]).toMatch(/≈ 28[.,]?493 pt$/);
+    expect(crudas[8]).not.toContain("pt");
   });
 
   it("la especie talada por encima de lo registrado va en rojo y dice cuánto de más", () => {
@@ -48,7 +53,7 @@ describe("tabla de la cascada por especie", () => {
   it("la fila Total suma registrado y árboles, y el patio es la suma de las especies (no se compensan)", () => {
     render(<LothPlantacionTabla species={species} cascada={cascada} acciones={{ guardar: vi.fn(), quitar: vi.fn() }} />);
     const total = screen.getByText("Total").closest("tr")!;
-    const celdas = within(total).getAllByRole("cell").map((c) => c.textContent);
+    const celdas = within(total).getAllByRole("cell").map((c) => (c.textContent ?? "").replace(/≈.*pt$/, ""));
     expect(celdas[1]).toBe("750");
     expect(celdas[4]).toBe("200.000");
     expect(celdas[8]).toBe(Number(cascada.total.enPatioM3).toFixed(3));

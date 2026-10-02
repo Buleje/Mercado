@@ -54,6 +54,8 @@ vi.mock("@/lib/prisma", () => ({
   prisma: {
     $transaction: (fn: (tx: unknown) => unknown) => fn(H.tx),
     forestCensusTree: { findFirst: async () => null },
+    // La fuente de la línea (tala/trozado) fuera de la tx: sin plan propio, manda el de la línea.
+    forestLothEntry: { findFirst: async () => null },
     // El plan citado por la línea: existe en este negocio si la prueba puso uno.
     forestPlan: { findFirst: async () => (H.estado.plan ? { id: "p1" } : null) },
   },

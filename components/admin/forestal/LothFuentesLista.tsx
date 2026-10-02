@@ -8,7 +8,8 @@
  *
  * En la tala de una PLANTACIÓN (ADR-459) la lista ofrece las especies del
  * registro con lo que queda en pie; el censo («árboles marcados»), si lo hay,
- * queda como la otra pestaña.
+ * queda como la otra pestaña. Cada especie trae «Varios»: «Bolaina × N» abre
+ * la planilla de la tala en tanda con N filas de esa especie.
  *
  * Presentación pura: el formulario decide qué hay en la lista y qué hace
  * elegir un ítem.
@@ -22,6 +23,7 @@ import { ordenarCenso, type ArbolParaElegir } from "@/lib/forestal/loth-censo-us
 import type { LothSection } from "@/lib/forestal/loth-constants";
 import type { EspecieDelRegistro } from "@/lib/forestal/loth-tala-plantacion";
 import { CitesPill, cls, etiquetaPlan } from "./loth-entry-form-ui";
+import FilaRegistro from "./LothFuentesRegistro";
 
 export interface PlanOpt {
   id: string;
@@ -101,8 +103,8 @@ interface Props {
   error: string | null;
   onReintentar: () => void;
   onElegir: (it: SourceItem) => void;
-  /** Tala y Trozado: el censo entero en otra ventana. */
-  verCenso: { total: number; onAbrir: () => void } | null;
+  /** Tala y Trozado: el censo entero en otra ventana. En una plantación, «Ver marcados». */
+  verCenso: { total: number; onAbrir: () => void; etiqueta?: string } | null;
   /**
    * Tala de una plantación: qué ofrece la lista —las especies del registro o
    * los árboles marcados del censo— y cuántos hay de cada uno.
@@ -113,12 +115,16 @@ interface Props {
     especies: number;
     arbolesMarcados: number;
   } | null;
+  /** Plantación: «Bolaina × N» → la planilla de la tala en tanda. Sin esto (corrigiendo), no se ofrece. */
+  onTalarVarios?: ((especie: string, n: number) => void) | null;
 }
 
 const VACIO_REGISTRO = "Este registro no tiene especies cargadas: agrégalas en Plan de manejo → Registro y saldo.";
 
-export default function LothFuentesLista({ section, planId, plans, onPlan, fuentes, cargando, error, onReintentar, onElegir, verCenso, plantacion }: Props) {
+export default function LothFuentesLista({ section, planId, plans, onPlan, fuentes, cargando, error, onReintentar, onElegir, verCenso, plantacion, onTalarVarios }: Props) {
   const [query, setQuery] = useState("");
+  /** La especie con «Varios» abierto (una a la vez). */
+  const [varios, setVarios] = useState<string | null>(null);
   const filtradas = useMemo(() => {
     const q = query.trim().toLowerCase();
     const list = q
@@ -220,7 +226,7 @@ export default function LothFuentesLista({ section, planId, plans, onPlan, fuent
             className="inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border border-[var(--rule-strong)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)]"
           >
             <Table className="h-4 w-4 text-[var(--accent-ink)] dark:text-[var(--accent)]" />
-            Ver censo
+            {verCenso.etiqueta ?? "Ver censo"}
             {verCenso.total > 0 && (
               <span className="font-mono text-xs tabular-nums text-[var(--text-tertiary)]">{verCenso.total}</span>
             )}
@@ -246,7 +252,22 @@ export default function LothFuentesLista({ section, planId, plans, onPlan, fuent
             )}
           </div>
         ) : porRegistro ? (
-          filtradas.map((it, i) => <FilaRegistro key={`${it.species}-${i}`} it={it} onElegir={onElegir} />)
+          filtradas.map((it, i) => (
+            <FilaRegistro
+              key={`${it.species}-${i}`}
+              it={it}
+              onElegir={onElegir}
+              varios={
+                onTalarVarios && it.species
+                  ? {
+                      abierto: varios === it.species,
+                      onAbrir: (v) => setVarios(v ? it.species : null),
+                      onTalar: (n) => onTalarVarios(it.species ?? "", n),
+                    }
+                  : null
+              }
+            />
+          ))
         ) : (
           filtradas.map((it, i) => (
             <button
@@ -275,31 +296,5 @@ export default function LothFuentesLista({ section, planId, plans, onPlan, fuent
         )}
       </div>
     </section>
-  );
-}
-
-/** Una especie del registro: «Bolaina · Guazuma crinita · quedan 118.250 de 120.500 m³». */
-function FilaRegistro({ it, onElegir }: { it: SourceItem; onElegir: (it: SourceItem) => void }) {
-  const r = it.registro;
-  const pasa = r != null && r.enPieM3 < 0;
-  return (
-    <button
-      type="button"
-      onClick={() => onElegir(it)}
-      className="flex min-h-10 w-full items-center justify-between gap-3 px-3 text-left transition-colors hover:bg-[var(--surface-sunken)]"
-    >
-      <span className="flex min-w-0 items-center gap-2 truncate">
-        <span className="truncate text-sm font-bold text-[var(--text-primary)]">{it.species}</span>
-        {it.scientific && <span className="hidden truncate text-sm italic text-[var(--text-tertiary)] sm:inline">{it.scientific}</span>}
-        {it.cites && <CitesPill />}
-      </span>
-      {r && (
-        <span
-          className={`shrink-0 font-mono text-xs tabular-nums ${pasa ? "font-bold text-[var(--data-warning-ink)] dark:text-[var(--data-warning-500)]" : "text-[var(--text-secondary)]"}`}
-        >
-          {pasa ? `pasa por ${fmtM3(-r.enPieM3)} m³` : `quedan ${fmtM3(r.enPieM3)} de ${fmtM3(r.registradoM3)} m³`}
-        </span>
-      )}
-    </button>
   );
 }

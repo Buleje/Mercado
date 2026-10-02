@@ -235,8 +235,40 @@ export class ForestLothDB {
    *
    * Lanza `LothInvariantError` (→ 422) si el dato rompe la cadena.
    */
-  static async create(tenantId: string, input: LothEntryCreateInput) {
+  /**
+   * El plan de una línea lo decide SU FUENTE, no el selector: el trozado es del
+   * plan de su tala, el despacho y el consumo del plan de su troza (revisión
+   * ADR-459). El importador con un permiso elegido para un archivo que mezcla
+   * talas de dos planes —o cualquier cliente con el plan equivocado— dejaba la
+   * troza contando en el saldo de otro permiso y juzgada (T6/T7) contra otro
+   * registro. Sin fuente encontrada, o fuente sin plan, manda lo que vino.
+   */
+  private static async planDeLaFuente(tenantId: string, input: LothEntryCreateInput): Promise<string | null> {
+    const treeCode = input.treeCode?.trim() || null;
+    const trozaCode = input.trozaCode?.trim() || null;
+    let fuente: { planId: string | null } | null = null;
+    if (input.section === "trozado" && treeCode) {
+      fuente = await prisma.forestLothEntry.findFirst({
+        where: { tenantId, section: "tala", treeCode, status: "registrado", deletedAt: null },
+        select: { planId: true },
+      });
+    } else if ((input.section === "despacho_troza" || input.section === "consumo_troza") && trozaCode) {
+      fuente = await prisma.forestLothEntry.findFirst({
+        where: { tenantId, section: "trozado", trozaCode, status: "registrado", deletedAt: null },
+        select: { planId: true },
+      });
+    }
+    const pedido = input.planId?.trim() || null;
+    if (!fuente?.planId || fuente.planId === pedido) return pedido;
+    /* El plan de la fuente manda sólo si sigue vivo: una tala de un plan dado
+       de baja no deja la troza sin poder registrarse. */
+    const vivo = await prisma.forestPlan.findFirst({ where: { tenantId, id: fuente.planId, deletedAt: null }, select: { id: true } });
+    return vivo ? fuente.planId : pedido;
+  }
+
+  static async create(tenantId: string, entrada: LothEntryCreateInput) {
     if (!tenantId) throw new Error("tenantId is required");
+    let input = entrada;
     if (!LOTH_SECTIONS.includes(input.section)) {
       throw new Error(`invalid section: ${input.section}`);
     }
@@ -257,7 +289,7 @@ export class ForestLothDB {
     // El plan citado tiene que ser de ESTE negocio y estar vivo. `planId` no
     // tiene FK: un id inventado (o de otro negocio) dejaba a T6 y T7 sin plan
     // contra qué juzgar — la línea entraba sin techo ni registro (security, 02-10).
-    const planId = input.planId?.trim() || null;
+    const planId = await ForestLothDB.planDeLaFuente(tenantId, input);
     if (planId) {
       const plan = await prisma.forestPlan.findFirst({ where: { tenantId, id: planId, deletedAt: null }, select: { id: true } });
       if (!plan) {
@@ -268,6 +300,8 @@ export class ForestLothDB {
         );
       }
     }
+    // De acá en adelante (T6/T7, saldo, el asiento) la línea lleva el plan de su fuente.
+    input = { ...input, planId };
 
     // T8 (DMC): un árbol censado por debajo del diámetro mínimo de corta de su
     // especie no se aprovecha. Va ANTES de la tx porque no hay recurso disputado
