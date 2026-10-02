@@ -16,11 +16,12 @@ import {
 import { SAKpiCard } from "@/components/superadmin/_shared/SAKpiCard";
 import { useVisiblePolling } from "@/components/superadmin/_shared/useVisiblePolling";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { PiezasDelNegocio } from "@/components/superadmin/piezas/PiezasDelNegocio";
 
 type AiResult = { summary: string; action: string; draft: string; ai: boolean };
 type Health = { score: number; riskLevel: string; loginsLast7d: number; loginsLast30d: number; ordersLast7d: number; ordersLast30d: number; featuresUsed: number; daysSinceLastOrder: number; daysSinceLastLogin: number; trialDaysLeft: number | null; calculatedAt: string };
 type Overview = {
-  tenant: { id: string; name: string; slug: string; active: boolean; plan: string; trialEndsAt: string | null; createdAt: string; logoUrl: string | null; customDomain: string | null; address: string | null };
+  tenant: { id: string; name: string; slug: string; active: boolean; plan: string; trialEndsAt: string | null; createdAt: string; logoUrl: string | null; customDomain: string | null; industry: string | null; address: string | null };
   health: Health | null;
   counts: { products: number; customers: number; orders: number; errors: number };
   integrations: { whatsapp: boolean; yape: boolean; plin: boolean; sunat: boolean };
@@ -173,6 +174,8 @@ export function TenantDetailConsole({ slug }: { slug: string }) {
         <SAKpiCard icon={ShoppingBag} label="Pedidos" value={d.counts.orders} />
         <SAKpiCard icon={ShieldAlert} label="Errores panel" value={d.counts.errors} sub={d.counts.errors > 0 ? "sin resolver" : "ninguno"} tone={d.counts.errors > 0 ? "bad" : "good"} />
       </div>
+
+      <PiezasDelNegocio negocio={{ id: t.id, name: t.name, slug: t.slug, industry: t.industry }} />
 
       {/* Co-piloto IA */}
       <Card title="Co-piloto IA" action={ai && <button type="button" onClick={() => void askCopilot()} disabled={aiLoading} className="inline-flex items-center gap-1 text-xs font-bold text-[var(--accent)] hover:underline disabled:opacity-50">{aiLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />} Regenerar</button>}>

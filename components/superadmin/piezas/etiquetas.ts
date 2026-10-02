@@ -9,6 +9,7 @@ export const ROTULO_ENCHUFE: Readonly<Record<EnchufeId, string>> = {
   "tienda.portada": "Portada de la tienda",
   "forestal.guia-impresa": "Guía impresa",
   "panel.pestana": "Pestaña «A medida»",
+  "tienda.pagina": "Página propia",
 };
 
 export interface AvisoDeFila {
@@ -32,3 +33,6 @@ export function avisosDeFila(f: Pick<FilaDeLaMatriz, "huerfana" | "desactualizad
   }
   return avisos;
 }
+
+/** El rótulo de un enchufe que llega como texto (una fila vieja puede traer uno que ya no existe). */
+export const rotuloDeEnchufe = (e: string): string => (ROTULO_ENCHUFE as Record<string, string>)[e] ?? e;

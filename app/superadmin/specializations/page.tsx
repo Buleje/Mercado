@@ -11,7 +11,7 @@ import SpecializationsClient from "./SpecializationsClient";
 import { SuperAdminModuleTabs, TENANTS_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 
 export const metadata = {
-  title: "Especializaciones — Superadmin",
+  title: "Qué tiene cada negocio — Superadmin",
   description:
     "Habilita módulos especializados por tenant (forestal CTP, salud, textil).",
   robots: { index: false, follow: false },

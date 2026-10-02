@@ -15,14 +15,16 @@ interface Props {
   nombre: string;
   onAlternar: () => void;
   onOpciones: () => void;
+  /** En la ficha del negocio van en una línea: interruptor, opciones y avisos. */
+  enLinea?: boolean;
 }
 
-export function CeldaPieza({ fila, pendiente, nombre, onAlternar, onOpciones }: Props) {
+export function CeldaPieza({ fila, pendiente, nombre, onAlternar, onOpciones, enLinea = false }: Props) {
   const prendida = fila?.prendida === true;
   const avisos = fila ? avisosDeFila(fila) : [];
 
   return (
-    <div className="flex flex-col items-center gap-2 max-sm:flex-row max-sm:flex-wrap max-sm:justify-end">
+    <div className={enLinea ? "flex flex-wrap items-center gap-2" : "flex flex-col items-center gap-2 max-sm:flex-row max-sm:flex-wrap max-sm:justify-end"}>
       <button
         type="button"
         role="switch"

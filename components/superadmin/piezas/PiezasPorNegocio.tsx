@@ -8,16 +8,16 @@
  *
  * El rubro es sólo lectura: sale del negocio y se cambia donde siempre.
  */
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { AlertTriangle, Loader2, Ruler } from "@buleje/design-system/icons";
 import { SectionTitle } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import type { EnchufeId } from "@/extensiones/_contrato";
-import type { FilaDeLaMatriz, PiezaDelCatalogo } from "@/lib/extensiones/resolver";
-import { comoObjeto } from "./campos-de-schema";
 import { CeldaPieza } from "./CeldaPieza";
-import { OpcionesPiezaModal, type PiezaAbierta } from "./OpcionesPiezaModal";
-import { ROTULO_ENCHUFE } from "./etiquetas";
+import { OpcionesPiezaModal } from "./OpcionesPiezaModal";
+import { esDeOtroRubro, pertenencia, type PiezaDeCatalogoUI } from "./piezas-del-negocio";
+import { claveDeCelda, useAlternarPieza } from "./use-alternar-pieza";
+import { ROTULO_ENCHUFE, rotuloDeEnchufe } from "./etiquetas";
 import { usePiezasSuperadmin } from "./use-piezas-superadmin";
 
 export interface NegocioDePieza {
@@ -29,7 +29,7 @@ export interface NegocioDePieza {
 }
 
 interface Columna {
-  pieza: PiezaDelCatalogo;
+  pieza: PiezaDeCatalogoUI;
   enchufe: EnchufeId;
 }
 
@@ -37,14 +37,11 @@ interface Columna {
 const CELDA_MOVIL =
   "max-sm:flex max-sm:items-center max-sm:justify-between max-sm:gap-3 max-sm:border-t max-sm:border-[var(--rule-soft)] max-sm:px-0 max-sm:py-2 max-sm:before:max-w-[45%] max-sm:before:text-left max-sm:before:font-bold max-sm:before:text-[var(--text-primary)] max-sm:before:content-[attr(data-label)]";
 
-const clave = (t: string, p: string, e: string) => `${t}:${p}:${e}`;
+const clave = claveDeCelda;
 
 export function PiezasPorNegocio({ negocios }: { negocios: NegocioDePieza[] }) {
-  const { catalogo, matriz, cargando, error: errorDeCarga, recargar, guardar } = usePiezasSuperadmin();
-  /** Todas las celdas que están guardando AHORA: dos a la vez no se pisan el «cargando». */
-  const [pendientes, setPendientes] = useState<ReadonlySet<string>>(new Set());
-  const [aviso, setAviso] = useState<string | null>(null);
-  const [abierta, setAbierta] = useState<PiezaAbierta | null>(null);
+  const { catalogo, matriz, cargando, error: errorDeCarga, recargar, guardar, soltar: soltarFila } = usePiezasSuperadmin();
+  const { pendientes, aviso, abierta, cerrar, alternar, soltar, abrirOpciones, guardarOpciones } = useAlternarPieza(guardar, soltarFila);
 
   const columnas = useMemo<Columna[]>(
     () => catalogo.flatMap((pieza) => pieza.enchufes.map((enchufe) => ({ pieza, enchufe }))),
@@ -52,35 +49,6 @@ export function PiezasPorNegocio({ negocios }: { negocios: NegocioDePieza[] }) {
   );
   const filas = useMemo(() => new Map(matriz.map((f) => [clave(f.tenantId, f.piezaId, f.enchufe), f])), [matriz]);
   const huerfanas = matriz.filter((f) => f.huerfana);
-
-  async function alternar(n: NegocioDePieza, { pieza, enchufe }: Columna, fila?: FilaDeLaMatriz) {
-    const prender = !fila?.prendida;
-    const sirven = fila?.opcionesValidas === true;
-    // Sin opciones que sirvan ni valores por defecto (`{}` no vale), el servidor no deja guardar:
-    // se abren las opciones y se guarda desde ahí, prendiendo o apagando según lo que se pidió.
-    if (!sirven && pieza.opcionesPorDefecto === null) {
-      setAbierta({ tenantId: n.id, tenantNombre: n.name, pieza, enchufe, fila, prender });
-      return;
-    }
-    const k = clave(n.id, pieza.id, enchufe);
-    setPendientes((p) => new Set(p).add(k));
-    setAviso(null);
-    // Se conservan las opciones del negocio, salvo que ya no sirvan.
-    const opciones = sirven ? comoObjeto(fila.opciones) : (pieza.opcionesPorDefecto ?? {});
-    const r = await guardar({ tenantId: n.id, piezaId: pieza.id, enchufe, prendida: prender, opciones });
-    if (!r.ok) setAviso(r.mensaje);
-    setPendientes((p) => {
-      const queda = new Set(p);
-      queda.delete(k);
-      return queda;
-    });
-  }
-
-  const guardarOpciones = (a: PiezaAbierta, opciones: Record<string, unknown>, rotulos: Record<string, string>) =>
-    guardar(
-      { tenantId: a.tenantId, piezaId: a.pieza.id, enchufe: a.enchufe, prendida: a.prender ?? a.fila?.prendida ?? false, opciones },
-      rotulos,
-    );
 
   return (
     <section className="mt-10 space-y-4" data-seccion="piezas">
@@ -148,15 +116,34 @@ export function PiezasPorNegocio({ negocios }: { negocios: NegocioDePieza[] }) {
                   {columnas.map((c) => {
                     const fila = filas.get(clave(n.id, c.pieza.id, c.enchufe));
                     const k = clave(n.id, c.pieza.id, c.enchufe);
+                    const dueno = pertenencia(c.pieza, c.enchufe, n.id, matriz);
                     return (
                       <td key={k} data-label={`${c.pieza.nombre} · ${ROTULO_ENCHUFE[c.enchufe]}`} className={`${CELDA_MOVIL} px-4 py-3`}>
-                        <CeldaPieza
-                          fila={fila}
-                          pendiente={pendientes.has(k)}
-                          nombre={`${c.pieza.nombre} en ${n.name}`}
-                          onAlternar={() => void alternar(n, c, fila)}
-                          onOpciones={() => setAbierta({ tenantId: n.id, tenantNombre: n.name, pieza: c.pieza, enchufe: c.enchufe, fila })}
-                        />
+                        {dueno.tipo === "de-otro" ? (
+                          <span className="block w-full text-center text-sm text-[var(--text-tertiary)] max-sm:text-right">de {dueno.dueno}</span>
+                        ) : (
+                          <div className="flex flex-col items-center gap-1 max-sm:items-end">
+                            <CeldaPieza
+                              fila={fila}
+                              pendiente={pendientes.has(k)}
+                              nombre={`${c.pieza.nombre} en ${n.name}`}
+                              onAlternar={() => void alternar(n, { ...c, fila })}
+                              onOpciones={() => abrirOpciones(n, { ...c, fila })}
+                            />
+                            {dueno.tipo === "propia" && fila && !fila.prendida && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (window.confirm(`¿Soltar «${c.pieza.nombre}» de ${n.name}? Quedará libre para otro negocio.`)) void soltar(n, { ...c, fila });
+                                }}
+                                className="h-9 rounded-lg px-3 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+                              >
+                                Liberar
+                              </button>
+                            )}
+                            {esDeOtroRubro(c.pieza, n.industry) && <span className="text-xs font-medium text-[var(--text-tertiary)]">de otro rubro</span>}
+                          </div>
+                        )}
                       </td>
                     );
                   })}
@@ -176,14 +163,14 @@ export function PiezasPorNegocio({ negocios }: { negocios: NegocioDePieza[] }) {
           <ul className="mt-1 list-disc pl-5">
             {huerfanas.map((f) => (
               <li key={f.id}>
-                {f.tenantNombre} · {f.piezaId} · {f.enchufe in ROTULO_ENCHUFE ? ROTULO_ENCHUFE[f.enchufe as EnchufeId] : f.enchufe}
+                {f.tenantNombre} · {f.piezaId} · {rotuloDeEnchufe(f.enchufe)}
               </li>
             ))}
           </ul>
         </div>
       )}
 
-      <OpcionesPiezaModal abierta={abierta} onClose={() => setAbierta(null)} onGuardar={guardarOpciones} />
+      <OpcionesPiezaModal abierta={abierta} onClose={cerrar} onGuardar={guardarOpciones} />
     </section>
   );
 }

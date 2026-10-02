@@ -20,7 +20,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
   try {
     const tenant = await prisma.tenant.findFirst({
       where: { OR: [{ slug }, { id: slug }] },
-      select: { id: true, name: true, slug: true, active: true, plan: true, trialEndsAt: true, createdAt: true, logoUrl: true, customDomain: true },
+      select: { id: true, name: true, slug: true, active: true, plan: true, trialEndsAt: true, createdAt: true, logoUrl: true, customDomain: true, industry: true },
     });
     if (!tenant) return NextResponse.json({ error: "Negocio no encontrado" }, { status: 404 });
 
@@ -41,7 +41,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
       tenant: {
         id: tenant.id, name: tenant.name, slug: tenant.slug, active: tenant.active, plan: tenant.plan,
         trialEndsAt: tenant.trialEndsAt?.toISOString() ?? null, createdAt: tenant.createdAt.toISOString(),
-        logoUrl: tenant.logoUrl ?? null, customDomain: tenant.customDomain ?? null, address: settings?.businessAddress ?? null,
+        logoUrl: tenant.logoUrl ?? null, customDomain: tenant.customDomain ?? null, industry: tenant.industry ?? null, address: settings?.businessAddress ?? null,
       },
       health: health ? {
         score: health.score, riskLevel: health.riskLevel,

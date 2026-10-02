@@ -21,6 +21,7 @@ import {
   LayoutDashboard,
   Gauge,
   Building2,
+  Ruler,
   ShoppingBag,
   BarChart3,
   HeartPulse,
@@ -70,6 +71,14 @@ const NAV_COMMANDS: Command[] = [
     category: "navegación",
     href: "/superadmin/tenants",
     keywords: ["clientes", "empresas", "tenants"],
+  },
+  {
+    id: "nav-piezas",
+    label: "Piezas a medida (qué tiene cada negocio)",
+    icon: Ruler,
+    category: "navegación",
+    href: "/superadmin/specializations",
+    keywords: ["piezas", "a medida", "pagina propia", "página propia", "especializaciones", "enchufes", "portada", "forestal", "qué tiene cada negocio"],
   },
   {
     id: "nav-marketplace",

@@ -12,7 +12,8 @@ import { broadcastSpecsChanged } from "@/hooks/use-enabled-specs";
 import { logger } from "@/lib/logger";
 import { explicarIssues, type IssueDeOpciones } from "./errores-de-opciones";
 import type { EnchufeId } from "@/extensiones/_contrato";
-import type { FilaDeLaMatriz, PiezaDelCatalogo } from "@/lib/extensiones/resolver";
+import type { FilaDeLaMatriz } from "@/lib/extensiones/resolver";
+import type { PiezaDeCatalogoUI } from "./piezas-del-negocio";
 
 export interface AsignacionAGuardar {
   tenantId: string;
@@ -31,12 +32,13 @@ interface RespuestaDelServidor {
 }
 
 function mensajeDeError(status: number, cuerpo: RespuestaDelServidor, rotulos: Record<string, string>): string {
+  if (cuerpo.error === "pagina_de_otro_negocio") return cuerpo.mensaje ?? "Esa página propia ya es de otro negocio: no puede tener dos dueños.";
   if (cuerpo.issues?.length) return explicarIssues(cuerpo.issues, rotulos).join(" · ");
   return cuerpo.mensaje ?? cuerpo.error ?? `No se pudo guardar (HTTP ${status}).`;
 }
 
 export function usePiezasSuperadmin() {
-  const [catalogo, setCatalogo] = useState<PiezaDelCatalogo[]>([]);
+  const [catalogo, setCatalogo] = useState<PiezaDeCatalogoUI[]>([]);
   const [matriz, setMatriz] = useState<FilaDeLaMatriz[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -53,7 +55,7 @@ export function usePiezasSuperadmin() {
     try {
       const res = await fetchSuperadmin("/api/superadmin/piezas");
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = (await res.json()) as { catalogo: PiezaDelCatalogo[]; matriz: FilaDeLaMatriz[] };
+      const data = (await res.json()) as { catalogo: PiezaDeCatalogoUI[]; matriz: FilaDeLaMatriz[] };
       if (!vigente()) return;
       setCatalogo(data.catalogo);
       setMatriz(data.matriz);
@@ -81,7 +83,11 @@ export function usePiezasSuperadmin() {
         body: JSON.stringify(a),
       });
       const cuerpo = (await res.json().catch(() => ({}))) as RespuestaDelServidor;
-      if (!res.ok) return { ok: false, mensaje: mensajeDeError(res.status, cuerpo, rotulos) };
+      if (!res.ok) {
+        // 409: otro superadmin la tomó mientras tanto. Se recarga para que la pantalla diga de quién es.
+        if (res.status === 409) await cargar(true);
+        return { ok: false, mensaje: mensajeDeError(res.status, cuerpo, rotulos) };
+      }
       // La fila que vuelve del servidor no trae los avisos: se recarga la matriz entera
       // (son decenas de filas) en vez de adivinar `desactualizada` en el navegador.
       await cargar(true);
@@ -93,5 +99,30 @@ export function usePiezasSuperadmin() {
     }
   }, [cargar]);
 
-  return { catalogo, matriz, cargando, error, recargar: () => cargar(false), guardar };
+  /** Soltar una página propia APAGADA: borra la fila y queda libre para otro negocio. */
+  const soltar = useCallback(async (a: { tenantId: string; piezaId: string; enchufe: EnchufeId }): Promise<ResultadoGuardado> => {
+    try {
+      const res = await fetchSuperadmin("/api/superadmin/piezas/asignacion", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(a),
+      });
+      const cuerpo = (await res.json().catch(() => ({}))) as RespuestaDelServidor;
+      if (!res.ok) {
+        await cargar(true);
+        const mensaje = cuerpo.error === "pagina_prendida" ? "Está prendida: apágala primero y luego suéltala." : (cuerpo.mensaje ?? cuerpo.error ?? `No se pudo soltar (HTTP ${res.status}).`);
+        return { ok: false, mensaje };
+      }
+      await cargar(true);
+      broadcastSpecsChanged({ tenantId: a.tenantId });
+      return { ok: true };
+    } catch (err) {
+      logger.error("[superadmin/piezas] soltar falló", { error: String(err) });
+      return { ok: false, mensaje: "No pude soltarla. Revisa tu conexión." };
+    }
+  }, [cargar]);
+
+  return { catalogo, matriz, cargando, error, recargar: () => cargar(false), guardar, soltar };
 }
+
+export type PiezasSuperadmin = ReturnType<typeof usePiezasSuperadmin>;

@@ -127,7 +127,7 @@ export const TENANTS_TABS: ModuleTab[] = [
   { label: "Activación", href: "/superadmin/tenants/onboarding", icon: Rocket },
   { label: "Integraciones", href: "/superadmin/tenants/integrations", icon: Cable },
   { label: "Mapa", href: "/superadmin/tenants/map", icon: MapPin },
-  { label: "Especializaciones", href: "/superadmin/specializations", icon: Boxes },
+  { label: "Qué tiene cada negocio", href: "/superadmin/specializations", icon: Boxes },
 ];
 
 // Consolidación 2026 (Brandon): clusters de rutas hermanas unificados en módulos
