@@ -27,6 +27,7 @@ import { manifiesto as gtfHojaDeControl } from "./gtf-hoja-de-control/manifest";
 
 // ── páginas propias (imports) ──
 // La página se dibuja en el servidor: del lado del navegador sólo viaja el manifiesto (ADR-458).
+import { manifiesto as paginaBodegaBulejeTest } from "./pagina-bodega-buleje-test/manifest";
 
 export const PIEZAS_CLIENTE: Readonly<Record<string, EntradaCliente>> = {
   // ── piezas de la tienda ──
@@ -48,4 +49,5 @@ export const PIEZAS_CLIENTE: Readonly<Record<string, EntradaCliente>> = {
   }),
 
   // ── páginas propias ──
+  [paginaBodegaBulejeTest.id]: piezaCliente(paginaBodegaBulejeTest),
 };
