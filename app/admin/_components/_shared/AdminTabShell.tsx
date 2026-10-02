@@ -68,7 +68,13 @@ export default function AdminTabShell({
     <div className={ADMIN_TOKENS.sectionGap}>
       {/* ── Header hero premium ───────────────────────────────────────── */}
       <header className="flex items-start justify-between gap-4 flex-wrap">
-        <div className="flex items-start gap-3.5 min-w-0 flex-1">
+        {/* Base de 20rem, no 0: con `flex-1` (base 0) el header nunca envolvía
+            y los stats (`sm:shrink-0`) se comían el ancho — a 958 px el título
+            de «Qué tiene cada negocio» medía 0 px, una palabra por renglón
+            (Brandon 01-10). Con base real, si no entran juntos los stats bajan
+            a la línea siguiente. `min-w-*` no sirve acá: el `* { min-width: 0 }`
+            global lo anula (memoria min-w-anulado-por-global). */}
+        <div className="flex items-start gap-3.5 min-w-0 flex-[1_1_20rem]">
           {Icon && (
             <span className={ADMIN_TOKENS.iconBadge}>
               <Icon className="h-6 w-6" strokeWidth={1.75} aria-hidden />
