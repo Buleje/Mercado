@@ -63,10 +63,15 @@ export interface LecturaVista extends LecturaPlaca {
   vez: number;
 }
 
-/** La foto en JPEG, achicada: la ruta de lectura sólo acepta JPEG y `/api/upload`, ≤5 MB. */
-async function fotoEnJpeg(file: File): Promise<{ blob: Blob; dataUrl: string }> {
+/**
+ * La foto en JPEG, achicada: la ruta de lectura sólo acepta JPEG y `/api/upload`, ≤5 MB.
+ * La usa también la lectura de la constancia (`use-lector-constancia`), con
+ * un lado mayor más grande: la letra chica de un papel necesita más píxeles
+ * que una placa.
+ */
+export async function fotoEnJpeg(file: File, ladoMax = LADO_MAX_PX): Promise<{ blob: Blob; dataUrl: string }> {
   const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
-  const escala = Math.min(1, LADO_MAX_PX / Math.max(bitmap.width, bitmap.height));
+  const escala = Math.min(1, ladoMax / Math.max(bitmap.width, bitmap.height));
   const canvas = document.createElement("canvas");
   canvas.width = Math.max(1, Math.round(bitmap.width * escala));
   canvas.height = Math.max(1, Math.round(bitmap.height * escala));
@@ -99,10 +104,14 @@ function pedirGps(): Promise<GpsTelefono> {
   });
 }
 
-async function mensajeDe(res: Response, porDefecto: string): Promise<string> {
-  const j = (await res.json().catch(() => null)) as { error?: unknown; message?: unknown } | null;
+async function falloDe(res: Response, porDefecto: string): Promise<{ mensaje: string; codigo: string | null }> {
+  const j = (await res.json().catch(() => null)) as { error?: unknown; message?: unknown; codigo?: unknown } | null;
   const m = typeof j?.message === "string" && res.status === 429 ? j.message : typeof j?.error === "string" ? j.error : null;
-  return m ?? porDefecto;
+  return { mensaje: m ?? porDefecto, codigo: typeof j?.codigo === "string" ? j.codigo : null };
+}
+
+async function mensajeDe(res: Response, porDefecto: string): Promise<string> {
+  return (await falloDe(res, porDefecto)).mensaje;
 }
 
 export function usePlacaFoto<E extends EspeciePlaca = EspeciePlaca>(
@@ -120,7 +129,12 @@ export function usePlacaFoto<E extends EspeciePlaca = EspeciePlaca>(
   const [procesando, setProcesando] = useState(false);
   const [vista, setVista] = useState<string | null>(null);
   const [foto, setFoto] = useState<EstadoPaso<string>>({ estado: "espera" });
-  const [lectura, setLectura] = useState<EstadoPaso<LecturaVista> & { sinLector?: boolean }>({ estado: "espera" });
+  /* `sinLector`: la IA no está disponible (503) — el aviso va en tono neutro.
+     `sinClave`: falta la IA de la plataforma — va el aviso único (`AvisoClaveIa`);
+     `instrucciones`: quien mira administra la clave (`codigo: sin_lector`). */
+  const [lectura, setLectura] = useState<
+    EstadoPaso<LecturaVista> & { sinLector?: boolean; sinClave?: boolean; instrucciones?: boolean }
+  >({ estado: "espera" });
   const [gps, setGps] = useState<EstadoPaso<GpsTelefono>>({ estado: "espera" });
   /** Cada foto es una corrida: lo que vuelve de una foto vieja no pisa la nueva. */
   const corrida = useRef(0);
@@ -225,8 +239,16 @@ export function usePlacaFoto<E extends EspeciePlaca = EspeciePlaca>(
           body: JSON.stringify({ image: img.dataUrl }),
         });
         if (!res.ok) {
-          const error = await mensajeDe(res, "No se pudo leer la placa.");
-          if (vigente()) setLectura({ estado: "error", error, sinLector: res.status === 503 });
+          const { mensaje, codigo } = await falloDe(res, "No se pudo leer la placa.");
+          if (vigente()) {
+            setLectura({
+              estado: "error",
+              error: mensaje,
+              sinLector: res.status === 503,
+              sinClave: codigo === "sin_lector" || codigo === "ia_no_disponible",
+              instrucciones: codigo === "sin_lector",
+            });
+          }
           return;
         }
         const j = (await res.json()) as Partial<LecturaPlaca>;

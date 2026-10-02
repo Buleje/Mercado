@@ -20,7 +20,7 @@ import { ModalFooter } from "@/components/admin/shared/ModalFooter";
 import { useDirectorioForestal } from "@/hooks/use-directorio-forestal";
 import type { Parte, RolParte } from "@/lib/forestal/directorio";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
-import { detallePorEspecie, totalM3 } from "@/lib/forestal/loth-guia-despacho";
+import { detallePorEspecie, guiaEsDePlantacion, rotuloDelTitulo, totalM3 } from "@/lib/forestal/loth-guia-despacho";
 import { papelesGuiaLoth } from "@/lib/forestal/loth-guia-print";
 import { useDespachoGuiaLoth } from "./hooks/use-despacho-guia-loth";
 import { useEspeciesConCatalogo } from "./ctp-especie-campo";
@@ -120,6 +120,7 @@ export default function LothDespachoGuiaModal({ onClose, onRegistrada, trozasIni
   const especies = detallePorEspecie(g.piezas).length;
   const faltanGuia = g.faltan.filter((f) => f.seccion !== "trozas");
   const d = g.datos;
+  const esPlantacion = Boolean(g.identidad?.esPlantacion) || guiaEsDePlantacion(d);
 
   /* Cargando o sin datos: sólo se puede cerrar. Un «Faltan 10» o un «Rellenar»
      activos sobre un modal vacío dicen algo que todavía no se sabe. */
@@ -210,10 +211,10 @@ export default function LothDespachoGuiaModal({ onClose, onRegistrada, trozasIni
           <>
             {/* La franja del formato: con qué título sale la madera y cuánto se mueve. */}
             <div className="grid grid-cols-2 gap-x-4 gap-y-2 rounded-2xl border-2 border-[var(--data-warning-500)]/30 bg-[var(--data-warning-50)] px-4 py-3 lg:grid-cols-5 dark:bg-[var(--data-warning-500)]/10">
-              <DatoFranja label="Titular del título" valor={g.identidad?.titular || "—"} />
+              <DatoFranja label={esPlantacion ? "Titular de la plantación" : "Titular del título"} valor={g.identidad?.titular || "—"} />
               <DatoFranja label="Documento" valor={d.propietario.esElCtp ? d.propietario.docNumero || "—" : "—"} mono />
-              <DatoFranja label="Título habilitante" valor={d.titulos[0] || "—"} mono />
-              <DatoFranja label="Resolución" valor={d.guia.resolucion || "—"} />
+              <DatoFranja label={rotuloDelTitulo(esPlantacion)} valor={d.titulos[0] || "—"} mono />
+              <DatoFranja label={esPlantacion ? "Constancia" : "Resolución"} valor={d.guia.resolucion || "—"} />
               <DatoFranja label="Volumen a movilizar" valor={`${fmtM3(volumen)} m³`} mono />
             </div>
 
@@ -258,7 +259,8 @@ function DatoFranja({ label, valor, mono }: { label: string; valor: string; mono
   return (
     <div className="min-w-0">
       <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">{label}</div>
-      <div className={`truncate text-sm font-medium text-[var(--text-primary)] ${mono ? "font-mono tabular-nums" : ""}`} title={valor}>
+      {/* Un código (registro, título) se lee ENTERO: se parte en vez de cortarse con «…». */}
+      <div className={`text-sm font-medium text-[var(--text-primary)] ${mono ? "font-mono tabular-nums [overflow-wrap:anywhere]" : "truncate"}`} title={valor}>
         {valor}
       </div>
     </div>

@@ -14,8 +14,9 @@
  */
 
 import { CSS_GTF_OFICIAL, cuerpoGtfOficial, type LineaProducto } from "./ctp-gtf-formato";
-import { gtfDatosVacio, type GtfDatos } from "./ctp-gtf-datos";
+import { gtfDatosVacio, leerGtfDatos, type GtfDatos } from "./ctp-gtf-datos";
 import type { CtpFicha } from "./ctp-ficha-types";
+import { guiaEsDePlantacion } from "./loth-guia-despacho";
 
 /** Un ítem de la guía del LO-TH, tal como lo guarda la columna JSON. */
 export interface LothGtfItem {
@@ -49,6 +50,8 @@ export interface LothGtfDoc {
   annulledReason: string | null;
   volumenTotalM3: string | number | null;
   items: LothGtfItem[] | null;
+  /** Los datos completos que guardó la guía (`ForestGtf.gtfDatos`); una guía vieja puede no traerlos. */
+  gtfDatos?: unknown;
 }
 
 export interface LothGtfCaratula {
@@ -115,7 +118,16 @@ export function listasTrozasDe(doc: LothGtfDoc): string {
  */
 export function fichaDesdeCaratula(caratula: LothGtfCaratula | null, doc: LothGtfDoc): CtpFicha {
   const razonSocial = caratula?.titularName ?? doc.titularName ?? "";
-  const codigoTitulo = doc.tituloHabilitante ?? caratula?.tituloHabilitante ?? "";
+  const guardados = doc.gtfDatos ? leerGtfDatos(doc.gtfDatos) : null;
+  const codigoGuardado = (doc.tituloHabilitante ?? guardados?.titulos[0] ?? "").trim();
+  /* Una plantación se ampara con su registro: el código guardado manda, y
+     la carátula (de OTRO papel) no lo presta (ADR-459). */
+  const plantacion = guiaEsDePlantacion({ titulos: [codigoGuardado], guia: guardados?.guia });
+  const codigoTitulo = plantacion ? codigoGuardado : (doc.tituloHabilitante ?? caratula?.tituloHabilitante ?? "");
+  /* (5) (8) (9) tal como la guía los guardó; sin datos guardados, el tipo de
+     siempre («concesión») salvo que el código diga plantación. */
+  const guia = guardados?.guia;
+  const tipo = (guia?.origenRecurso ?? "").trim() || (plantacion ? "plantacion" : "concesion");
   return {
     razonSocial,
     ruc: caratula?.ruc ?? "",
@@ -125,7 +137,9 @@ export function fichaDesdeCaratula(caratula: LothGtfCaratula | null, doc: LothGt
     region: caratula?.departamento ?? "",
     provincia: caratula?.provincia ?? "",
     distrito: caratula?.distrito ?? "",
-    titulos: codigoTitulo ? [{ codigo: codigoTitulo, tipo: "concesion" }] : [],
+    titulos: codigoTitulo
+      ? [{ codigo: codigoTitulo, tipo, resolucion: (guia?.resolucion ?? "").trim(), planManejo: (guia?.planManejoTipo ?? "").trim(), vencimiento: "" }]
+      : [],
   } as unknown as CtpFicha;
 }
 

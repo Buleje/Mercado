@@ -14,18 +14,22 @@ import { CardTitle } from "@buleje/design-system";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { validarPlantacion, type BloqueInput, type PlantacionInput } from "@/lib/forestal/plantacion-tramite";
 import PlantacionBloqueCard from "./PlantacionBloqueCard";
+import PlantacionTraerDelLibro from "./PlantacionTraerDelLibro";
 import { formatNumber } from "@/lib/format";
 
 export default function PlantacionPasoBloques({
   bloques,
   predioAreaTotalHa,
   tipoTramite,
+  codigoPlantacion,
   soloLectura,
   onChange,
 }: {
   bloques: BloqueInput[];
   predioAreaTotalHa: number | null;
   tipoTramite: "inscripcion" | "actualizacion";
+  /** El código de plantación del trámite: elige sola la plantación del Libro TH (actualización). */
+  codigoPlantacion?: string | null;
   soloLectura?: boolean;
   onChange: (bloques: BloqueInput[]) => void;
 }) {
@@ -118,6 +122,11 @@ export default function PlantacionPasoBloques({
           </p>
         )}
       </div>
+
+      {/* La actualización declara la producción por especie: el Libro TH ya la sabe (ADR-459). */}
+      {tipoTramite === "actualizacion" && !soloLectura && (
+        <PlantacionTraerDelLibro bloques={bloques} codigo={codigoPlantacion ?? null} onChange={onChange} />
+      )}
 
       {bloques.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-[var(--rule-base)] p-6 text-center">

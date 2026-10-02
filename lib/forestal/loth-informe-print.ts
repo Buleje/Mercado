@@ -13,6 +13,7 @@
  */
 
 import { esc, idRow, openCtpReport } from "./ctp-print-shared";
+import { esPlanDePlantacion, type PlanParaPoa } from "./loth-poa";
 import { sinDato } from "@/lib/errores/sin-dato";
 
 interface BalanceRow {
@@ -26,7 +27,7 @@ interface BalanceRow {
   exceso: boolean;
 }
 interface Analytics {
-  plan: { planNumber: string | null; titularName: string; estado: string } | null;
+  plan: { planNumber: string | null; titularName: string; estado: string; planType?: string | null; tituloHabilitante?: string | null } | null;
   aprovechamiento: {
     funnel: { taladoM3: number; trozadoM3: number; despachoTrozaM3: number; consumidoM3: number; productoCantidad: number; despachoProductoM3: number };
     rendimientoGlobalPct: number;
@@ -55,14 +56,33 @@ const n2 = (n: number) => n.toLocaleString("es-PE", { minimumFractionDigits: 2, 
 const n1 = (n: number) => n.toLocaleString("es-PE", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
 export async function printLothInforme(): Promise<void> {
-  const [aRes, cRes] = await Promise.all([
+  /* La ventana se abre en el MISMO clic, antes de esperar al servidor: después
+     de un `await` el navegador la trata como pop-up y puede bloquearla (ADR-436). */
+  const ventana = window.open("", "_blank", "width=980,height=760");
+  ventana?.document.write(
+    '<!doctype html><meta charset="utf-8"><title>Generando informe…</title><p style="font:16px system-ui;padding:24px">Generando el informe…</p>',
+  );
+  const [aRes, cRes, pRes] = await Promise.all([
     fetch("/api/admin/forestal/plan?analytics=1", { credentials: "include" }).catch(sinDato("informe LOTH /api/admin/forestal/plan")),
     fetch("/api/admin/forestal/loth/caratula", { credentials: "include" }).catch(sinDato("informe LOTH /api/admin/forestal/loth/caratula")),
+    fetch("/api/admin/forestal/plan", { credentials: "include" }).catch(sinDato("informe LOTH /api/admin/forestal/plan (lista)")),
   ]);
+  const planesVivos: PlanParaPoa[] = pRes?.ok ? (((await pRes.json()) as { plans?: PlanParaPoa[] }).plans ?? []) : [];
   const analytics: Analytics | null = aRes?.ok ? (await aRes.json()).analytics ?? null : null;
   const caratula: Caratula | null = cRes?.ok ? (await cRes.json()).active ?? null : null;
 
-  if (!analytics) throw new Error("No se pudo obtener la analítica del libro para el informe.");
+  if (!analytics) {
+    ventana?.close();
+    throw new Error("No se pudo obtener la analítica del libro para el informe.");
+  }
+  /* Una plantación se mide contra lo REGISTRADO y no paga derecho por el volumen
+     de su propia plantación (ADR-459): el papel no puede decir «autorizado». */
+  /* El informe es del LIBRO entero y `analytics.plan` es sólo el vigente más
+     nuevo: si conviven una plantación y un PO, decir «Registrado» y callar el
+     pago por derecho del PO sería falso. Plantación sólo si TODOS los planes
+     vivos lo son (revisión ADR-459; Blas: «PO1» plantación + PO-2026-001). */
+  const plantacion = planesVivos.length > 0 && planesVivos.every((p) => esPlanDePlantacion(p));
+  const base = plantacion ? "Registrado" : "Autorizado";
 
   const c = caratula ?? {};
   const ubic = [c.distrito, c.provincia, c.departamento].map((x) => (x ?? "").trim()).filter(Boolean).join(", ");
@@ -94,7 +114,7 @@ export async function printLothInforme(): Promise<void> {
 
   const balanceTable = analytics.balance && analytics.balance.rows.length > 0
     ? `<table>
-        <thead><tr><th>Especie</th><th class="num">Autorizado</th><th class="num">Talado</th><th class="num">Movilizado</th><th class="num">Saldo</th><th class="num">% usado</th></tr></thead>
+        <thead><tr><th>Especie</th><th class="num">${base}</th><th class="num">Talado</th><th class="num">Movilizado</th><th class="num">Saldo</th><th class="num">% usado</th></tr></thead>
         <tbody>${analytics.balance.rows
           .map(
             (r) => `<tr>
@@ -108,17 +128,22 @@ export async function printLothInforme(): Promise<void> {
           )
           .join("")}</tbody>
       </table>
-      <p class="muted">Volúmenes en m³. Pago por derecho de aprovechamiento estimado: S/ ${n2(analytics.balance.pagoDerechoTotal)}.</p>`
-    : `<p class="muted">El plan de manejo no declara volúmenes autorizados por especie — sin balance de saldo.</p>`;
+      <p class="muted">Volúmenes en m³.${plantacion ? "" : ` Pago por derecho de aprovechamiento estimado: S/ ${n2(analytics.balance.pagoDerechoTotal)}.`}</p>`
+    : plantacion
+      ? `<p class="muted">El registro de la plantación no tiene especies con volumen — sin saldo. Agrégalas en Plan de manejo → Registro y saldo.</p>`
+      : `<p class="muted">El plan de manejo no declara volúmenes autorizados por especie — sin balance de saldo.</p>`;
 
   // Cruce de control: especies con operaciones fuera del plan autorizado (POA).
   const noAut = analytics.especiesNoAutorizadas ?? [];
   const noAutBlock =
-    noAut.length > 0
-      ? `<p class="flag"><b>⚠ Especie(s) con operaciones fuera del plan autorizado:</b> ${noAut.map(esc).join(", ")}.
-         Movilizar o aprovechar una especie no incluida en la resolución del título habilitante es infracción —
-         regulariza el plan de manejo o el registro.</p>`
-      : "";
+    noAut.length === 0
+      ? ""
+      : plantacion
+        ? `<p class="flag"><b>⚠ Especie(s) con operaciones fuera del registro de la plantación:</b> ${noAut.map(esc).join(", ")}.
+           Agrégalas al registro (Plan de manejo → Registro y saldo) o corrige la línea del libro.</p>`
+        : `<p class="flag"><b>⚠ Especie(s) con operaciones fuera del plan autorizado:</b> ${noAut.map(esc).join(", ")}.
+           Movilizar o aprovechar una especie no incluida en la resolución del título habilitante es infracción —
+           regulariza el plan de manejo o el registro.</p>`;
 
   const errores = analytics.anomalias.filter((a) => a.level === "error");
   const warns = analytics.anomalias.filter((a) => a.level === "warn");
@@ -153,7 +178,7 @@ export async function printLothInforme(): Promise<void> {
     ${idBlock}
     <h2>Aprovechamiento (bosque → producto)</h2>
     ${funnelTable}
-    <h2>Balance por especie (movilizado vs. autorizado)</h2>
+    <h2>Balance por especie (movilizado vs. ${base.toLowerCase()})</h2>
     ${balanceTable}
     <h2>Estado de cumplimiento</h2>
     ${noAutBlock}
@@ -161,5 +186,5 @@ export async function printLothInforme(): Promise<void> {
     ${footer}
   `;
 
-  openCtpReport({ title: "Informe LO-TH", css, body });
+  openCtpReport({ title: "Informe LO-TH", css, body, ventana });
 }

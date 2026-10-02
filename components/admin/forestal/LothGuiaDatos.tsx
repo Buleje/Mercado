@@ -14,7 +14,7 @@
 
 import type { GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 import { ORIGENES } from "@/lib/forestal/ctp-gtf-formato";
-import { avisoDeOtroTitular, huecosDelTitulo, type TalonarioDelPlan } from "@/lib/forestal/loth-guia-despacho";
+import { avisoDeOtroTitular, guiaEsDePlantacion, huecosDelTitulo, rotuloDelTitulo, type TalonarioDelPlan } from "@/lib/forestal/loth-guia-despacho";
 import { etiquetaLarga } from "@/lib/forestal/semana-de-registro";
 import type { DespachoGuiaLoth } from "./hooks/use-despacho-guia-loth";
 import CtpUbigeoSelects from "./CtpUbigeoSelects";
@@ -214,6 +214,10 @@ function BloqueTitulo({ g, faltaTitulo }: { g: DespachoGuiaLoth; faltaTitulo: st
   const guia = datos.guia;
   const setGuia = (v: Partial<GtfDatos["guia"]>) => setDatos((p) => ({ ...p, guia: { ...p.guia, ...v } }));
   const huecos = huecosDelTitulo(datos);
+  /* Una plantación se ampara con su REGISTRO y su constancia (ADR-459): el
+     bloque lo dice con esas palabras. Los casilleros oficiales (6) y (8) no
+     cambian de nombre en el papel; sólo se aclara qué va en cada uno. */
+  const plantacion = g.identidad?.esPlantacion || guiaEsDePlantacion(datos);
   const f = g.identidad?.fuentes;
   const procedencia = [
     g.plan ? `el plan ${[g.plan.planNumber || g.plan.planType, g.plan.parcelaCorta].filter(Boolean).join(" · ")}` : "",
@@ -222,7 +226,7 @@ function BloqueTitulo({ g, faltaTitulo }: { g: DespachoGuiaLoth; faltaTitulo: st
   ].filter(Boolean);
   return (
     <Bloque
-      titulo="Título habilitante"
+      titulo={rotuloDelTitulo(plantacion)}
       hint={`Casilleros (5) a (12). Salen de ${procedencia.length ? procedencia.join(", ") : "lo que cargues acá"}: no se tipean en cada guía.`}
       nota="Lo que el libro no sabe queda en blanco en el papel, para llenarlo a mano sobre el talonario. Se corrige en el plan de manejo y sale bien en la próxima."
       faltan={[...faltaTitulo, ...huecos]}
@@ -240,7 +244,13 @@ function BloqueTitulo({ g, faltaTitulo }: { g: DespachoGuiaLoth; faltaTitulo: st
           ))}
         </select>
       </Field>
-      <Field span={6} label="N° del título habilitante" casillero={6} required>
+      <Field
+        span={6}
+        label="N° del título habilitante"
+        casillero={6}
+        required
+        hint={plantacion ? "En una plantación va el código de su registro (RNPF)." : undefined}
+      >
         <input
           type="text"
           className={`${I} font-mono ${falta(datos.titulos[0])}`}
@@ -251,7 +261,12 @@ function BloqueTitulo({ g, faltaTitulo }: { g: DespachoGuiaLoth; faltaTitulo: st
       <Field span={6} label="Representante legal" hint="Va bajo el casillero (7) cuando el titular es una empresa o una comunidad.">
         <input type="text" className={I} value={guia.representanteLegal} onChange={(e) => setGuia({ representanteLegal: e.target.value })} />
       </Field>
-      <Field span={6} label="N° de resolución" casillero={8}>
+      <Field
+        span={6}
+        label="N° de resolución"
+        casillero={8}
+        hint={plantacion ? "En una plantación va la constancia de inscripción." : undefined}
+      >
         <input type="text" className={`${I} ${falta(guia.resolucion)}`} value={guia.resolucion} onChange={(e) => setGuia({ resolucion: e.target.value })} />
       </Field>
       <Field span={12} label="Plan de manejo (tipo)" casillero={9}>

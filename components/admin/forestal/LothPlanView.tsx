@@ -155,11 +155,15 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
   const todasLasOpciones: MenuAccion[] = [
     {
       id: "informe",
-      label: "Informe de ejecución",
-      hint: "Balance, censo y movimientos del libro, para ARFFS / SERFOR / OSINFOR",
+      label: esPlantacion ? "Informe de la plantación" : "Informe de ejecución",
+      hint: esPlantacion
+        ? "Lo registrado por especie, lo talado, lo que queda en pie y lo despachado"
+        : "Balance, censo y movimientos del libro, para ARFFS / SERFOR / OSINFOR",
       icon: Printer,
       disabled: !plan,
-      onSelect: () => { if (plan) void printInforme(plan, d.species, d.censusStat); },
+      onSelect: () => {
+        if (plan) void printInforme(plan, d.species, d.censusStat).then((e) => { if (e) setErrorPlan(e); });
+      },
     },
     {
       id: "anexo-poa",

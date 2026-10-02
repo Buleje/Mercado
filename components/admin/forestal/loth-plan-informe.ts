@@ -2,23 +2,41 @@
  * Informe de ejecución del POA — documento consolidado para ARFFS/SERFOR/OSINFOR
  * al cierre. Abre una ventana con el HTML y la manda a imprimir.
  *
+ * Una PLANTACIÓN no tiene POA, ni censo, ni pago por derecho (ADR-459): su
+ * informe es el del REGISTRO —lo registrado por especie y dónde está hoy ese
+ * volumen— y lo arma `informePlantacionHtml`. El de un PO/PMFI/DEMA sigue igual.
+ *
  * Todo texto que tipeó alguien (titular, especie, N° de resolución…) va por
  * `esc`: la ventana es del MISMO origen que el panel (`window.open` +
  * `document.write`), así que un `<script>` en el nombre de una especie corría
  * con la sesión de quien imprime.
+ *
+ * La ventana se abre en el MISMO clic, antes de esperar al servidor: después de
+ * un `await` el navegador la trata como pop-up y puede bloquearla (ADR-436).
+ * Devuelve el error para que la vista lo muestre (antes fallaba en silencio).
  */
 
-import { esc } from "@/lib/forestal/ctp-print-shared";
+import { esc, openCtpReport } from "@/lib/forestal/ctp-print-shared";
+import { informePlantacionHtml } from "@/lib/forestal/loth-informe-plantacion";
+import { esPlanDePlantacion } from "@/lib/forestal/loth-poa";
 import type { Balance, CensusStat, Plan, Species } from "./loth-plan-shared";
 
 const SECTION_LABEL: Record<string, string> = {
   tala: "Tala", trozado: "Trozado", despacho_troza: "Despacho de trozas",
   consumo_troza: "Consumo de trozas", producto_terminado: "Producto terminado", despacho_producto: "Despacho de PT",
 };
-export async function printInforme(plan: Plan, species: Species[], censusStat: CensusStat[]) {
+const GENERANDO =
+  '<!doctype html><meta charset="utf-8"><title>Generando informe…</title><p style="font:16px system-ui;padding:24px">Generando el informe…</p>';
+
+export async function printInforme(plan: Plan, species: Species[], censusStat: CensusStat[]): Promise<string | null> {
+  const plantacion = esPlanDePlantacion(plan);
+  const ventana = window.open("", "_blank", plantacion ? "width=980,height=900" : "width=860,height=950");
+  if (!ventana) return "El navegador bloqueó la ventana del informe. Permite ventanas emergentes para este sitio.";
+  ventana.document.write(GENERANDO);
+
   // Datos frescos: balance + totales por sección del libro
   let balance: Balance | null = null;
-  let lothStats: Array<{ section: string; count: number; totalVolumeM3: number; totalQuantity: number }> = [];
+  let lothStats: Array<{ section: string; count: number; totalVolumeM3: number; totalQuantity: number }> | null = null;
   try {
     const [bRes, sRes] = await Promise.all([
       fetch(`/api/admin/forestal/plan?balance=${plan.id}`, { credentials: "include" }),
@@ -29,10 +47,23 @@ export async function printInforme(plan: Plan, species: Species[], censusStat: C
     if (sRes.ok) lothStats = (await sRes.json()).stats ?? [];
   } catch { /* el informe se imprime con lo disponible */ }
 
+  if (plantacion) {
+    try {
+      openCtpReport({
+        ...informePlantacionHtml({ plan, species, balance, censo: censusStat, movimientos: lothStats, emitido: new Date() }),
+        ventana,
+      });
+      return null;
+    } catch (e) {
+      ventana.close();
+      return e instanceof Error ? e.message : String(e);
+    }
+  }
+
   const d = (x: string | null) => (x ? new Date(x).toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" }) : "—");
   const balRows = (balance?.rows ?? []).map((r) => `<tr><td>${esc(r.species)}${r.cites ? " <b>(CITES)</b>" : ""}</td><td style="text-align:right">${r.autorizado.toFixed(2)}</td><td style="text-align:right">${r.movilizado.toFixed(2)}</td><td style="text-align:right"><b>${r.saldo.toFixed(2)}</b></td><td style="text-align:right">${r.pctMovilizado.toFixed(0)}%</td></tr>`).join("");
   const censoRows = censusStat.map((c) => `<tr><td>${c.estado === "en_pie" ? "En pie" : c.estado === "talado" ? "Talado" : "Descartado"}</td><td style="text-align:right">${c.count}</td><td style="text-align:right">${c.volumenEstimadoM3.toFixed(2)}</td></tr>`).join("");
-  const secRows = lothStats.map((s) => `<tr><td>${esc(SECTION_LABEL[s.section] ?? s.section)}</td><td style="text-align:right">${s.count}</td><td style="text-align:right">${s.totalVolumeM3.toFixed(2)}</td></tr>`).join("");
+  const secRows = (lothStats ?? []).map((s) => `<tr><td>${esc(SECTION_LABEL[s.section] ?? s.section)}</td><td style="text-align:right">${s.count}</td><td style="text-align:right">${s.totalVolumeM3.toFixed(2)}</td></tr>`).join("");
   const autorizadoTotal = species.reduce((a, s) => a + Number(s.volumenAutorizadoM3 ?? 0), 0);
 
   const html = `<!doctype html><html><head><meta charset="utf-8"><title>Informe de ejecución — ${esc(plan.planNumber ?? plan.planType)}</title>
@@ -61,6 +92,8 @@ export async function printInforme(plan: Plan, species: Species[], censusStat: C
   <div class="tot">Volumen total autorizado en el plan: <b>${autorizadoTotal.toFixed(2)} m³</b></div>
   <div style="margin-top:34px;display:flex;justify-content:space-between"><div>______________________<br>Titular / Regente forestal</div><div>______________________<br>Fecha</div></div>
   </body></html>`;
-  const w = window.open("", "_blank", "width=860,height=950");
-  if (w) { w.document.write(html); w.document.close(); }
+  ventana.document.open(); // reemplaza el «Generando…»
+  ventana.document.write(html);
+  ventana.document.close();
+  return null;
 }

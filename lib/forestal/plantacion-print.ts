@@ -174,6 +174,23 @@ export function buildPlantacionHtml(o: PlantacionPrintOpts): string {
           </tbody></table>`
         : `<p style="font-size:11px;color:#8b968f">Sin especies declaradas.</p>`;
 
+      /* Actualización: cómo sigue la plantación ya inscrita. La producción se
+         llenaba en el formulario (a mano o desde el Libro TH, ADR-459) y el
+         papel no la mostraba. */
+      const actualizacionHtml =
+        d.tipoTramite === "actualizacion" && b.especies.length
+          ? `<table class="rpf-tabla"><thead><tr><th>Nombre común</th><th>Situación actual</th><th>Producción</th></tr></thead><tbody>
+            ${b.especies
+              .map(
+                (e) =>
+                  `<tr><td>${esc(e.nombreComun)}</td><td>${esc(e.situacionActual?.trim() || "—")}</td><td>${esc(
+                    e.produccionCantidad != null ? `${e.produccionCantidad.toLocaleString("es-PE", { maximumFractionDigits: 4 })} ${e.produccionUnidad ?? ""}`.trim() : "—",
+                  )}</td></tr>`,
+              )
+              .join("")}
+          </tbody></table>`
+          : "";
+
       const citesAviso = b.especies.some((e) => e.cites)
         ? `<div class="rpf-cites">Este bloque incluye especies bajo CITES: ${b.especies
             .filter((e) => e.cites && e.citesProcedencia?.trim())
@@ -185,6 +202,7 @@ export function buildPlantacionHtml(o: PlantacionPrintOpts): string {
         <div class="rpf-bloque-titulo">Bloque ${esc(b.numero || i + 1)}${b.nombre ? ` — ${esc(b.nombre)}` : ""} · ${esc(b.superficieHa ?? "—")} ha</div>
         ${verticesHtml}
         ${especiesHtml}
+        ${actualizacionHtml}
         ${citesAviso}
       </div>`;
     })

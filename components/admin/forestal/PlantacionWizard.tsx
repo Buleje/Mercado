@@ -335,6 +335,7 @@ export default function PlantacionWizard({
                   bloques={datos.bloques}
                   predioAreaTotalHa={datos.predioAreaTotalHa ?? null}
                   tipoTramite={datos.tipoTramite}
+                  codigoPlantacion={datos.codigoPlantacionSerfor ?? null}
                   soloLectura={soloLectura}
                   onChange={(bloques) => onChange({ bloques })}
                 />

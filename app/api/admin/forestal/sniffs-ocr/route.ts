@@ -3,7 +3,8 @@ import { z } from "zod";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { requireAdmin } from "@/lib/require-admin";
 import { aiCostGuard } from "@/lib/ai/cost-control";
-import { visionExtractJSON } from "@/lib/ai/vision-extract";
+import { FORMATOS_IMAGEN, gastoDeLectura, visionExtractJSON } from "@/lib/ai/vision-extract";
+import { veDetalleDeClaveIA } from "@/lib/ai/detalle-clave-ia";
 import { isSpecializationEnabled } from "@/lib/specializations";
 
 /**
@@ -126,6 +127,10 @@ export async function POST(req: NextRequest) {
 
   const result = await visionExtractJSON({
     imageBase64: parsed.data.image,
+    /* El tipo real (por los bytes) tiene que ser una foto y coincidir con el
+       declarado: se rechaza con 400 antes de llamar a la IA (auditoría 2026-10-02). */
+    formatos: FORMATOS_IMAGEN,
+    verDetalleDeClave: await veDetalleDeClaveIA(req),
     prompt: PROMPT,
     schema: ResponseSchema,
     jsonSchema: JSON_SCHEMA,
@@ -133,9 +138,12 @@ export async function POST(req: NextRequest) {
     logTag: "[sniffs-ocr]",
   });
 
+  /* Lo cobrado se anota en los DOS caminos: una respuesta cortada o ilegible
+     también se pagó (auditoría 2026-10-02). Sin `usage`, lo reservado. */
+  const gasto = gastoDeLectura(result, OCR_COST_USD);
+  if (gasto != null) await aiCostGuard.recordSpend(auth.tenantId, gasto);
   if (!result.ok) {
     return NextResponse.json({ error: result.error, raw: result.raw }, { status: result.status });
   }
-  await aiCostGuard.recordSpend(auth.tenantId, OCR_COST_USD);
   return NextResponse.json(result.data);
 }

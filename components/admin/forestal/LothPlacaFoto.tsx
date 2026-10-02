@@ -26,6 +26,7 @@ import { formatDistance } from "@/lib/forestal/loth-utm";
 import { usePlacaFoto, type EstadoPaso, type GpsTelefono } from "./hooks/use-placa-foto";
 import LothPlacaCruce, { CorregirCodigo, type RegistroDePlaca } from "./LothPlacaCruce";
 import { AMBAR } from "./loth-ficha-ui";
+import AvisoClaveIa from "@/components/admin/shared/AvisoClaveIa";
 
 const OK = "text-[var(--data-success-ink)] dark:text-[var(--data-success-500)]";
 const ERROR = "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]";
@@ -177,10 +178,16 @@ function LineaLectura({
   if (l.estado === "error") {
     return (
       <div className="space-y-1.5">
-        <p className={`flex items-start gap-1.5 text-sm font-semibold ${l.sinLector ? "text-[var(--text-secondary)]" : ERROR}`}>
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-          <span className="min-w-0">{l.error} Escribe el código de la placa:</span>
-        </p>
+        {/* Sin la IA de la plataforma no es un error de la foto: el aviso único, en tono neutro. */}
+        {l.sinClave ? (
+          <AvisoClaveIa mensaje={l.error} conInstrucciones={l.instrucciones} />
+        ) : (
+          <p className={`flex items-start gap-1.5 text-sm font-semibold ${l.sinLector ? "text-[var(--text-secondary)]" : ERROR}`}>
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span className="min-w-0">{l.error}</span>
+          </p>
+        )}
+        <p className="text-sm text-[var(--text-secondary)]">Escribe el código de la placa:</p>
         <CorregirCodigo inicial="" abierto onBuscar={p.escribirCodigo} />
       </div>
     );

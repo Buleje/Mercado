@@ -30,6 +30,7 @@ import { tituloDesdePermiso } from "./ctp-ficha-types";
 import { tipoDesdeCodigo, type TipoContrato } from "./contratos";
 import { tipoPermisoDesdePlan } from "./permisos-de-parte";
 import { TIPOS_PLAN, TIPOS_PLAN_META, type TipoPlan } from "./loth-tipos-plan";
+import { esPlanDePlantacion } from "./loth-poa";
 import { rellenarGuia, type FuentesDeRelleno } from "./gtf-autocompletar";
 import { ubigeoDelPadron } from "./gtf-serie-region";
 import { mismoTitular } from "./loth-talonario";
@@ -186,6 +187,35 @@ export function planesDeLasTrozas(trozas: readonly Pick<TrozaDelLibro, "planId">
   return [...new Set(trozas.map((t) => t.planId ?? null))];
 }
 
+// ── Cómo se llama el papel que ampara la madera ──────────────────────────────
+
+/** El rótulo del casillero-resumen: «Registro de plantación» o «Título habilitante». */
+export const rotuloDelTitulo = (plantacion: boolean): string => (plantacion ? "Registro de plantación" : "Título habilitante");
+
+/**
+ * ¿La guía ya armada ampara madera de una plantación? Se lee de lo que la
+ * guía GUARDÓ — la casilla (5) cruzada o el código del (6) —, nunca de la
+ * carátula de hoy: reimprimir una guía vieja debe decir lo mismo que decía.
+ */
+export function guiaEsDePlantacion(d: { titulos?: readonly string[] | null; guia?: { origenRecurso?: string | null } | null }): boolean {
+  if (txt(d.guia?.origenRecurso).toLowerCase() === "plantacion") return true;
+  const codigo = txt(d.titulos?.[0]);
+  return codigo !== "" && tipoDesdeCodigo(codigo) === "REG-PLT";
+}
+
+/** «Registro de plantación N° 19-SEC/REG-PLT-2025-096» / «Título habilitante N° PO 12»; vacío sin código. */
+export function leyendaDelTitulo(codigo: string | null | undefined, plantacion: boolean): string {
+  const c = txt(codigo);
+  return c ? `${rotuloDelTitulo(plantacion)} N° ${c}` : "";
+}
+
+/** «Constancia N° 096-2025»; si quien la cargó ya escribió «Constancia N° …», se respeta tal cual. */
+export function leyendaDeConstancia(resolucion: string | null | undefined): string {
+  const c = txt(resolucion);
+  if (!c) return "";
+  return /^constancia\b/i.test(c) ? c : `Constancia N° ${c}`;
+}
+
 // ── De dónde sale la identidad del título ─────────────────────────────────────
 
 export interface CaratulaParaGuia {
@@ -241,6 +271,14 @@ export interface IdentidadDelTitulo {
   domProvincia: string;
   domDistrito: string;
   tituloHabilitante: string;
+  /**
+   * ¿La madera es de una plantación registrada (ADR-459)? Entonces
+   * `tituloHabilitante` es el CÓDIGO DEL REGISTRO (19-SEC/REG-PLT-2025-096) y
+   * `resolucion` la constancia de inscripción: una plantación no tiene título
+   * habilitante ni resolución de plan de manejo, y la carátula del libro (que
+   * es de OTRO papel) no los presta.
+   */
+  esPlantacion: boolean;
   resolucion: string;
   autoridad: string;
   /** (9) escrito como se lee: «Plan Operativo (PO)». */
@@ -294,15 +332,30 @@ export function identidadDelTitulo(f: {
   const caratula = caratulaAjena ? null : (f.caratula ?? null);
 
   const titular = txt(plan?.titularName) || txt(caratula?.titularName);
-  const tituloHabilitante = txt(plan?.tituloHabilitante) || txt(caratula?.tituloHabilitante) || txt(permiso?.codigo);
+  const esPlantacion = esPlanDePlantacion(plan);
+  /* Una plantación se identifica por su REGISTRO (`planNumber`); el formulario
+     del plan le oculta el «título habilitante». Prestarle el de la carátula
+     declararía el papel de OTRA madera (medido: la guía salía con el título de
+     la carátula o en blanco). */
+  /* Si uno de los dos códigos ES el del Registro Nacional de Plantaciones
+     («REG-PLT»), ése: un plan cargado como PO con el registro en su título
+     imprimía el «PO-…» del documento (revisión ADR-459). */
+  const codigoRegistro = [plan?.planNumber, plan?.tituloHabilitante].map(txt).find((c) => c && tipoDesdeCodigo(c) === "REG-PLT");
+  const tituloHabilitante = esPlantacion
+    ? codigoRegistro || txt(plan?.planNumber) || txt(plan?.tituloHabilitante) || txt(permiso?.codigo)
+    : txt(plan?.tituloHabilitante) || txt(caratula?.tituloHabilitante) || txt(permiso?.codigo);
 
   /* El tipo de título: el permiso cargado manda; si no hay, el propio código
      lo dice (`PER-FMC` = permiso en comunidad); si tampoco, el documento de
-     gestión del plan (un PO es de una concesión). */
+     gestión del plan (un PO es de una concesión). Una plantación es siempre
+     «Plantación» aunque se haya cargado con el tipo por defecto. */
   const tipoDelCodigo = tituloHabilitante ? tipoDesdeCodigo(tituloHabilitante) : null;
-  const planTipo = (TIPOS_PLAN.find((p) => p === txt(plan?.planType ?? caratula?.docGestionType).toUpperCase()) ?? null) as TipoPlan | null;
-  const tipo: TipoContrato | null =
-    permiso?.tipo ?? (tipoDelCodigo && tipoDelCodigo !== "otro" ? tipoDelCodigo : null) ?? tipoPermisoDesdePlan(planTipo);
+  const planTipo = (esPlantacion
+    ? "PLANTACION"
+    : (TIPOS_PLAN.find((p) => p === txt(plan?.planType ?? caratula?.docGestionType).toUpperCase()) ?? null)) as TipoPlan | null;
+  const tipo: TipoContrato | null = esPlantacion
+    ? "REG-PLT"
+    : (permiso?.tipo ?? (tipoDelCodigo && tipoDelCodigo !== "otro" ? tipoDelCodigo : null) ?? tipoPermisoDesdePlan(planTipo));
   const comoTitulo = tipo
     ? tituloDesdePermiso({ codigo: tituloHabilitante, tipo, resolucionNumero: permiso?.resolucionNumero ?? null, vigenciaHasta: permiso?.vigenciaHasta ?? null })
     : null;
@@ -317,7 +370,10 @@ export function identidadDelTitulo(f: {
     domProvincia: txt(caratula?.provincia),
     domDistrito: txt(caratula?.distrito),
     tituloHabilitante,
-    resolucion: txt(plan?.resolucionNumber) || txt(caratula?.resolucionNumber) || txt(permiso?.resolucionNumero),
+    esPlantacion,
+    resolucion: esPlantacion
+      ? txt(plan?.resolucionNumber) || txt(permiso?.resolucionNumero)
+      : txt(plan?.resolucionNumber) || txt(caratula?.resolucionNumber) || txt(permiso?.resolucionNumero),
     autoridad: txt(plan?.arffs) || txt(permiso?.arffs),
     planManejoTipo: planManejoLegible(planTipo) || txt(comoTitulo?.planManejo),
     origenRecurso: txt(comoTitulo?.tipo),
@@ -579,7 +635,7 @@ export function huecosDelTitulo(datos: GtfDatos): string[] {
   const huecos: string[] = [];
   if (!txt(g.autoridad)) huecos.push("(2) Autoridad forestal");
   if (!txt(g.origenRecurso)) huecos.push("(5) Tipo de título");
-  if (!txt(g.resolucion)) huecos.push("(8) N° de resolución");
+  if (!txt(g.resolucion)) huecos.push(guiaEsDePlantacion(datos) ? "(8) N° de constancia del registro" : "(8) N° de resolución");
   if (!txt(g.planManejoTipo)) huecos.push("(9) Plan de manejo");
   if (!txt(g.departamento)) huecos.push("(10) Departamento");
   if (!txt(g.provincia)) huecos.push("(11) Provincia");

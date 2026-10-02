@@ -31,7 +31,7 @@ import { CSS_GTF_OFICIAL, cuerpoGtfOficial, fechaGtf } from "./ctp-gtf-formato";
 import { CSS_GTF_SALIDA } from "./ctp-gtf-print";
 import { CSS_LISTA_TROZAS, htmlListaTrozas } from "./ctp-lista-trozas";
 import { fmtM3 } from "./cubicacion-formato";
-import { detallePorEspecie, listaDeTrozas, totalM3, type PiezaGuia } from "./loth-guia-despacho";
+import { detallePorEspecie, guiaEsDePlantacion, leyendaDeConstancia, leyendaDelTitulo, listaDeTrozas, totalM3, type PiezaGuia } from "./loth-guia-despacho";
 import { listasEfectivas, partirEnHojas } from "./loth-lista-numero";
 
 /** Un documento listo para `CtpDocumentoVisor` (mismo shape que `DocumentoImprimible`). */
@@ -130,6 +130,12 @@ export function papelesGuiaLoth(g: GuiaLothParaImprimir): { gtf: HojaGuiaLoth; l
   const ficha = fichaDeGuiaLoth(g.titular, d);
   const ubicacion = [t(d.guia.distrito), t(d.guia.provincia), t(d.guia.departamento)].filter(Boolean).join(" · ");
   const titulo = t(d.titulos[0]);
+  /* Una plantación se ampara con su REGISTRO (y su constancia), no con un
+     título habilitante: el papel lo dice como se llama (ADR-459). */
+  const plantacion = guiaEsDePlantacion(d);
+  const leyenda = leyendaDelTitulo(titulo, plantacion);
+  const constancia = plantacion ? leyendaDeConstancia(d.guia.resolucion) : "";
+  const origenDelPapel = plantacion ? "de la plantación" : "del bosque";
 
   /* Lo que el papel NO es, arriba de todo: un borrador que se imprime antes
      de registrar no puede salir a la carretera como si fuera la guía. */
@@ -148,8 +154,11 @@ export function papelesGuiaLoth(g: GuiaLothParaImprimir): { gtf: HojaGuiaLoth; l
   ];
 
   const declaracion = notaDoc(
-    `<b>Declaración jurada.</b> El titular declara bajo juramento que las trozas descritas provienen del
-     aprovechamiento autorizado por el título habilitante consignado, registradas en su Libro de Operaciones,
+    `<b>Declaración jurada.</b> El titular declara bajo juramento que las trozas descritas provienen ${
+      plantacion
+        ? "de la plantación forestal inscrita en el registro consignado"
+        : "del aprovechamiento autorizado por el título habilitante consignado"
+    }, registradas en su Libro de Operaciones,
      y que la información de esta guía es verdadera (Ley N° 29763, art. 124; D.S. N° 018-2015-MINAGRI, art. 172).
      ${t(d.citesPermiso) ? `Especie CITES amparada con el permiso N° <b>${esc(d.citesPermiso)}</b>.` : ""}`,
   );
@@ -176,18 +185,19 @@ export function papelesGuiaLoth(g: GuiaLothParaImprimir): { gtf: HojaGuiaLoth; l
     (copia) => `
     <div class="gs-tira"><b>${esc(copia.titulo)}</b><span>${esc(copia.destino)}</span></div>
     ${cabeceraDoc({
-      emisor: t(g.titular) || "Titular del título habilitante",
+      emisor: t(g.titular) || (plantacion ? "Titular de la plantación" : "Titular del título habilitante"),
       logo: g.logo,
       meta: [
         t(d.propietario.docNumero) && d.propietario.esElCtp ? `${d.propietario.docTipo} ${t(d.propietario.docNumero)}` : "",
-        titulo ? `Título habilitante N° ${titulo}` : "",
+        leyenda,
+        constancia,
         ubicacion,
       ],
       tipo: "Guía de Transporte Forestal",
       numero,
-      numeroNota: "Libro de Operaciones del título habilitante",
+      numeroNota: plantacion ? "Libro de Operaciones · registro de plantación" : "Libro de Operaciones del título habilitante",
     })}
-    ${tituloDoc("Guía de Transporte Forestal", "Madera en rollo · Salida del bosque · Declaración jurada")}
+    ${tituloDoc("Guía de Transporte Forestal", `Madera en rollo · Salida ${origenDelPapel} · Declaración jurada`)}
     ${sello}
     ${resumenDoc(fichas)}
     ${cuerpo}
@@ -209,8 +219,8 @@ export function papelesGuiaLoth(g: GuiaLothParaImprimir): { gtf: HojaGuiaLoth; l
   const trozos = partirEnHojas(filas);
   const hojasLista = (trozos.length ? trozos : [[]]).map((trozo, i, todas) => {
     const html = htmlListaTrozas({
-      titular: t(g.titular) || "Titular del título habilitante",
-      subtitulo: titulo ? `Título habilitante N° ${titulo}` : undefined,
+      titular: t(g.titular) || (plantacion ? "Titular de la plantación" : "Titular del título habilitante"),
+      subtitulo: [leyenda, constancia].filter(Boolean).join(" · ") || undefined,
       ubicacion,
       ruc: d.propietario.esElCtp && d.propietario.docTipo === "RUC" ? t(d.propietario.docNumero) : undefined,
       numero: listas.numeros[i] ?? nroLista,

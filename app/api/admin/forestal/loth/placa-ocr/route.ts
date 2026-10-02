@@ -3,7 +3,15 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimitWithTenant } from "@/lib/rate-limit";
 import { aiCostGuard } from "@/lib/ai/cost-control";
-import { visionExtractJSON } from "@/lib/ai/vision-extract";
+import {
+  FORMATOS_IMAGEN,
+  costoMaximoLecturaUsd,
+  falloSinLector,
+  gastoDeLectura,
+  proveedorVision,
+  visionExtractJSON,
+} from "@/lib/ai/vision-extract";
+import { veDetalleDeClaveIA } from "@/lib/ai/detalle-clave-ia";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { limpiarCodigoLeido, type LecturaPlaca } from "@/lib/forestal/loth-placa";
@@ -14,8 +22,8 @@ import { limpiarCodigoLeido, type LecturaPlaca } from "@/lib/forestal/loth-placa
  * árbol ni guarda la foto. El cruce con el censo lo hace la pantalla
  * (`cruzarPlacaConCenso`) y la foto va por `/api/upload`, como la de siempre.
  *
- * Mismo camino que las otras lecturas de fotos (`visionExtractJSON`: OpenAI si
- * hay clave, si no Anthropic). La imagen nunca va al log: sólo el error y el
+ * Mismo camino que las otras lecturas de fotos (`visionExtractJSON`: Claude si
+ * está su clave, si no OpenAI). La imagen nunca va al log: sólo el error y el
  * final del tenant.
  */
 
@@ -25,7 +33,12 @@ import { limpiarCodigoLeido, type LecturaPlaca } from "@/lib/forestal/loth-placa
 const MAX_IMAGE_B64 = 4_000_000;
 /* El cuerpo entero (JSON + comillas): se mira antes de leerlo. */
 const MAX_BODY_BYTES = MAX_IMAGE_B64 + 2_000;
-const OCR_COST_USD = 0.01;
+/* Una placa son pocas letras: la respuesta cabe en 200 tokens. */
+const MAX_TOKENS = 200;
+/* Lo que se reserva ANTES de leer es el TOPE de una lectura (foto grande +
+   respuesta + margen de razonamiento); lo que se anota después es lo que costó
+   de verdad — una placa típica con Sonnet 5.5 ≈ US$0,007. */
+const RESERVA_USD = costoMaximoLecturaUsd({ maxTokens: MAX_TOKENS });
 
 const RequestSchema = z.object({
   /* Sólo JPEG: el lector se la pasa a Anthropic anunciada como JPEG (una PNG
@@ -95,34 +108,42 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Datos inválidos" }, { status: 400 });
   }
 
-  if (!process.env.OPENAI_API_KEY && !process.env.ANTHROPIC_API_KEY) {
-    logger.warn("[placa-ocr] sin OPENAI_API_KEY ni ANTHROPIC_API_KEY configuradas", { tenantId: auth.tenantId.slice(-6) });
-    return NextResponse.json(
-      { error: "La lectura automática de placas todavía no está activada.", codigo: "sin_lector" },
-      { status: 503 },
-    );
+  const verDetalleDeClave = await veDetalleDeClaveIA(req);
+  if (!proveedorVision()) {
+    logger.warn("[placa-ocr] sin ANTHROPIC_API_KEY ni OPENAI_API_KEY configuradas", { tenantId: auth.tenantId.slice(-6) });
+    const f = falloSinLector(verDetalleDeClave);
+    return NextResponse.json({ error: f.error, codigo: f.codigo }, { status: f.status });
   }
 
-  const canSpend = await aiCostGuard.canSpend(auth.tenantId, OCR_COST_USD);
+  const canSpend = await aiCostGuard.canSpend(auth.tenantId, RESERVA_USD);
   if (!canSpend) {
     return NextResponse.json({ error: "Se acabó el presupuesto de lectura con IA de este mes." }, { status: 429 });
   }
 
   const r = await visionExtractJSON({
     imageBase64: parsed.data.image,
+    /* El Zod de arriba mira lo DECLARADO; el lector mira los bytes: un PDF
+       anunciado como JPEG se rechaza ahí, antes de llamar a la IA. */
+    formatos: FORMATOS_IMAGEN,
     prompt: PROMPT,
     schema: LeidoSchema,
     jsonSchema: JSON_SCHEMA,
-    maxTokens: 200,
+    maxTokens: MAX_TOKENS,
     logTag: "[placa-ocr]",
+    verDetalleDeClave,
   });
+  /* Lo cobrado se anota en los DOS caminos (auditoría 2026-10-02): una
+     respuesta cortada o ilegible también se pagó. */
+  const gasto = gastoDeLectura(r, RESERVA_USD);
+  if (gasto != null) await aiCostGuard.recordSpend(auth.tenantId, gasto);
   if (!r.ok) {
-    /* El detalle técnico ya quedó en el log del lector; a la persona, qué hacer. */
-    const error =
-      r.status === 503 ? "La lectura automática de placas todavía no está activada." : "No se pudo leer la foto. Elige el árbol en la lista o escribe el código.";
-    return NextResponse.json({ error }, { status: r.status === 422 ? 422 : r.status === 503 ? 503 : 502 });
+    /* El detalle técnico ya quedó en el log del lector. Lo que es de la clave
+       o de la IA (sin crédito, saturada, límite) se dice tal cual; lo que es
+       de la foto, con qué hacer. */
+    const dePapel = r.codigo == null || r.codigo === "ilegible" || r.codigo === "pedido_rechazado";
+    const error = dePapel ? "No se pudo leer la foto. Elige el árbol en la lista o escribe el código." : r.error;
+    return NextResponse.json({ error, codigo: r.codigo ?? "ilegible" }, { status: r.status });
   }
-  await aiCostGuard.recordSpend(auth.tenantId, OCR_COST_USD);
 
   const codigo = limpiarCodigoLeido(r.data.codigo);
   /* Hay modelos que la dan en porcentaje (93 en vez de 0,93). */

@@ -886,7 +886,12 @@ export class ForestPlanDB {
    *  - movilizado = Σ volumen de trozas despachadas (resuelto vía Trozado) +
    *                 Σ cantidad de producto terminado despachado en m³
    */
-  static async balanceExtraccion(tenantId: string, planId: string) {
+  /**
+   * `soloDelPlan`: sin las líneas sin plan. Lo que se DECLARA como de esta
+   * plantación (actualización del registro RNPF) no puede incluir madera que el
+   * libro no ató a ningún plan (revisión ADR-459).
+   */
+  static async balanceExtraccion(tenantId: string, planId: string, opts: { soloDelPlan?: boolean } = {}) {
     if (!tenantId) throw new Error("tenantId is required");
     const [speciesRows, entries, plan] = await Promise.all([
       prisma.forestPlanSpecies.findMany({ where: { tenantId, planId, deletedAt: null } }),
@@ -895,7 +900,9 @@ export class ForestPlanDB {
       // especies salían como «fuera del plan» (Blas: la Copaiba y el Sapotillo de
       // la plantación 19-SEC aparecían movilizados en PO-2026-001).
       prisma.forestLothEntry.findMany({
-        where: { tenantId, deletedAt: null, status: "registrado", OR: [{ planId }, { planId: null }] },
+        where: opts.soloDelPlan
+          ? { tenantId, deletedAt: null, status: "registrado", planId }
+          : { tenantId, deletedAt: null, status: "registrado", OR: [{ planId }, { planId: null }] },
         select: { section: true, speciesCommon: true, speciesScientific: true, trozaCode: true, volumeM3: true, quantity: true, unit: true },
       }),
       prisma.forestPlan.findFirst({ where: { tenantId, id: planId, deletedAt: null } }),
@@ -1057,7 +1064,13 @@ export class ForestPlanDB {
 
     return {
       hasPlan: !!plan,
-      plan: plan ? { id: plan.id, planNumber: plan.planNumber ?? null, titularName: plan.titularName, estado: plan.estado, vigenciaHasta: plan.vigenciaHasta, costos } : null,
+      plan: plan
+        ? {
+            id: plan.id, planNumber: plan.planNumber ?? null, titularName: plan.titularName, estado: plan.estado, vigenciaHasta: plan.vigenciaHasta, costos,
+            /* Para que el informe del libro sepa si es una plantación (ADR-459): ahí se habla de «registrado», no de «autorizado». */
+            planType: plan.planType, tituloHabilitante: plan.tituloHabilitante ?? null,
+          }
+        : null,
       aprovechamiento, balance, anomalias, projection, lateCount, costeo, citesEspecies, especiesNoAutorizadas, especiesAmbiguas,
       /** Sólo con un plan pedido y 2+ planes: ids de las líneas de ESE plan, y lo que no se pudo atribuir a ninguno. */
       idsDelPlan, sinAtribuir,

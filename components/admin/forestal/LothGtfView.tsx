@@ -27,7 +27,7 @@ import { FiltroColumnaMulti, type FacetaOpcion } from "@/components/admin/shared
 import { CampoDeFiltro } from "./ctp-filtros-panel";
 import { BotonRestablecerColumnas, EnOrden, useOrdenColumnas } from "@/components/admin/shared/columnas-ordenables";
 import { leerGtfDatos } from "@/lib/forestal/ctp-gtf-datos";
-import { piezasDeItems } from "@/lib/forestal/loth-guia-despacho";
+import { guiaEsDePlantacion, piezasDeItems, rotuloDelTitulo } from "@/lib/forestal/loth-guia-despacho";
 import { papelesGuiaLoth } from "@/lib/forestal/loth-guia-print";
 import LothDespachoGuiaModal from "./LothDespachoGuiaModal";
 import { archivoDeGuiaLoth } from "./LothGuiaRegistrada";
@@ -1001,7 +1001,7 @@ async function printGtf(g: Gtf) {
       <div><span class="k">N° GTF:</span> <span class="v">${esc(g.gtfNumber)}</span></div>
       <div><span class="k">Fecha:</span> <span class="v">${fmtDate(g.gtfDate)}</span></div>
       <div><span class="k">Titular:</span> <span class="v">${esc(g.titularName ?? "—")}</span></div>
-      <div><span class="k">Título habilitante:</span> <span class="v">${esc(g.tituloHabilitante ?? "—")}</span></div>
+      <div><span class="k">${esc(rotuloDelTitulo(guiaEsDePlantacion({ titulos: [g.tituloHabilitante ?? ""], guia: leerGtfDatos(g.gtfDatos).guia })))}:</span> <span class="v">${esc(g.tituloHabilitante ?? "—")}</span></div>
       <div><span class="k">Parcela de corta:</span> <span class="v">${esc(g.parcelaCorta ?? "—")}</span></div>
       <div><span class="k">Tipo:</span> <span class="v">${g.tipo === "producto" ? "Producto terminado" : "Trozas"}</span></div>
     </div></div>

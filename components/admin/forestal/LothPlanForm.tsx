@@ -58,6 +58,9 @@ import { SelectConOtra } from "./campos-elegibles";
 import { Field, cls } from "./loth-plan-ui";
 import LothPlanFormUbicacion from "./LothPlanFormUbicacion";
 import LothPlanFormPlantacion, { EspeciesSeCorrigenEnRegistro } from "./LothPlanFormPlantacion";
+import LothPlanConstanciaLector, { LineaLectorConstancia } from "./LothPlanConstanciaLector";
+import { filaDesdeLeida, useLectorConstancia } from "./hooks/use-lector-constancia";
+import { completarPlanDesdeConstancia, sumarEspeciesLeidas } from "@/lib/forestal/loth-constancia-ocr";
 import {
   aEspecieParaGuardar,
   agregarVarias,
@@ -210,6 +213,8 @@ export default function LothPlanForm({
   const [especies, setEspecies] = useState<FilaEspecie[]>(() => [filaVacia()]);
   /** Recién después del primer «Crear» se marcan en rojo las filas a medias. */
   const [intentoGuardar, setIntentoGuardar] = useState(false);
+  /** Las filas que entraron leyendo la constancia: se marcan para revisarlas contra el papel. */
+  const [filasLeidas, setFilasLeidas] = useState<ReadonlySet<string>>(() => new Set());
 
   /* Los permisos, una sola vez para el formulario y su picker: dos consultas de
      la misma lista en la misma pantalla pueden contestar distinto. */
@@ -226,6 +231,25 @@ export default function LothPlanForm({
   const llevaEspecies = esPlantacion && !editando;
   const especiesConDatos = llevaEspecies ? especies.filter((x) => !filaEnBlanco(x)) : [];
   const especiesMal = especiesConDatos.some((x) => problemaDeFila(x) != null) || especiesRepetidas(especiesConDatos).length > 0;
+
+  /**
+   * «Leer la constancia» (ronda 3 de ADR-459): completa lo VACÍO —como copiar
+   * de un plan anterior—, completa las celdas vacías de las especies ya
+   * escritas y agrega como filas nuevas las que no estaban. Las reglas viven
+   * en el módulo puro, que las prueba sin navegador; acá sólo se aplican y se
+   * devuelve qué se hizo para decirlo.
+   */
+  const lector = useLectorConstancia((l) => {
+    const { campos, completados, avisos } = completarPlanDesdeConstancia(f, l, { regionPorDefecto: REGION_POR_DEFECTO });
+    const suma = sumarEspeciesLeidas(especies, l.especies, filaDesdeLeida, filaEnBlanco);
+    setF(campos);
+    if (suma.uidsLeidos.length > 0) {
+      setEspecies(suma.filas);
+      setFilasLeidas((prev) => new Set([...prev, ...suma.uidsLeidos]));
+    }
+    return { completados, especies: suma.nuevas, especiesCompletadas: suma.completadas, yaEstaban: suma.yaEstaban, avisos, nota: l.nota };
+  }, llevaEspecies);
+
   const faltaRegente = meta.regente === "obligatorio" && f.regenteName.trim().length < 2;
   const puedeGuardar = f.titularName.trim().length >= 2 && !busy;
   /* La vigencia de una plantación es opcional y va plegada; abierta si ya trae fechas. */
@@ -456,7 +480,7 @@ export default function LothPlanForm({
 
       {/* 2 · El documento aprobado (o el registro, si es plantación: mismos
           campos de la base, otro papel en la mano — `rotulosDe`) */}
-      <Bloque n={2} titulo={rot.bloqueDocumento}>
+      <Bloque n={2} titulo={rot.bloqueDocumento} accion={llevaEspecies ? <LothPlanConstanciaLector lector={lector} /> : undefined}>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <Field label={rot.numero}>
             <input value={f.planNumber} onChange={(e) => set("planNumber", e.target.value)} placeholder={rot.numeroEjemplo} className={`${cls} ${esPlantacion ? "font-mono" : ""}`} />
@@ -483,6 +507,7 @@ export default function LothPlanForm({
             />
           </Field>
         </div>
+        {llevaEspecies && <LineaLectorConstancia lector={lector} />}
       </Bloque>
 
       {/* 3 · Plantación: las especies y sus m³ registrados — la base del saldo (ADR-459) */}
@@ -496,7 +521,7 @@ export default function LothPlanForm({
           }}
         >
           {llevaEspecies ? (
-            <LothPlanFormPlantacion filas={especies} onFilas={setEspecies} mostrarErrores={intentoGuardar} />
+            <LothPlanFormPlantacion filas={especies} onFilas={setEspecies} mostrarErrores={intentoGuardar} leidas={filasLeidas} />
           ) : (
             <EspeciesSeCorrigenEnRegistro onIr={onIrARegistro} />
           )}

@@ -18,7 +18,7 @@
  */
 
 import { useId, useMemo, useState } from "react";
-import { ArrowRight, Coins, Plus, Trash2 } from "@buleje/design-system/icons";
+import { ArrowRight, Coins, Plus, ScanText, Trash2 } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { formatNumber } from "@/lib/format";
 import { especiesDisponibles } from "@/lib/forestal/especies-catalogo";
@@ -47,6 +47,7 @@ export default function LothPlanFormPlantacion({
   onFilas,
   mostrarErrores = false,
   yaRegistradas = [],
+  leidas,
 }: {
   filas: FilaEspecie[];
   onFilas: (filas: FilaEspecie[]) => void;
@@ -54,6 +55,8 @@ export default function LothPlanFormPlantacion({
   mostrarErrores?: boolean;
   /** Las especies que el plan YA tiene (al agregar desde la pestaña Registro): repetirlas partiría su saldo. */
   yaRegistradas?: readonly string[];
+  /** Filas (por `uid`) que entraron leyendo la constancia: llevan una marca para revisarlas contra el papel. */
+  leidas?: ReadonlySet<string>;
 }) {
   const lista = useId();
   const { catalogo } = useEspeciesCatalogo();
@@ -121,17 +124,29 @@ export default function LothPlanFormPlantacion({
               <div className={`grid grid-cols-2 items-start gap-2 ${columnas}`}>
                 <label className="col-span-2 block sm:col-span-1">
                   <span className={ROTULO}>Especie *</span>
-                  <input
-                    id={`${f.uid}-especie`}
-                    list={lista}
-                    value={f.speciesCommon}
-                    onChange={(e) => elegirNombre(f, e.target.value)}
-                    placeholder="Ej. Bolaina"
-                    autoComplete="off"
-                    aria-invalid={problema === "Falta la especie" || undefined}
-                    aria-describedby={problema ? errorId : undefined}
-                    className={cls}
-                  />
+                  <span className="relative block">
+                    <input
+                      id={`${f.uid}-especie`}
+                      list={lista}
+                      value={f.speciesCommon}
+                      onChange={(e) => elegirNombre(f, e.target.value)}
+                      placeholder="Ej. Bolaina"
+                      autoComplete="off"
+                      aria-invalid={problema === "Falta la especie" || undefined}
+                      aria-describedby={problema ? errorId : undefined}
+                      className={`${cls} ${leidas?.has(f.uid) ? "pr-8" : ""}`}
+                    />
+                    {/* Leída de la constancia: la cifra la puso la IA, se revisa contra el papel. */}
+                    {leidas?.has(f.uid) && (
+                      <span
+                        title="Leída de la constancia: revisa los m³ contra el papel"
+                        className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[var(--data-info-700)] dark:text-[var(--data-info-500)]"
+                      >
+                        <ScanText className="h-4 w-4" aria-hidden="true" />
+                        <span className="sr-only">Leída de la constancia</span>
+                      </span>
+                    )}
+                  </span>
                 </label>
                 <label className="col-span-2 block sm:col-span-1">
                   <span className={ROTULO}>Nombre científico</span>

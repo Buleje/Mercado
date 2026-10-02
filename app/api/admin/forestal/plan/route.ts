@@ -89,7 +89,9 @@ export const GET = withApiHandler("forestal-plan-get", async (req: NextRequest) 
     if (balanceId) {
       // Un plan de otro negocio (o de baja) es «no existe»: antes devolvía un balance vacío con 200.
       if (!(await ForestPlanDB.getPlan(auth.tenantId, balanceId))) return NextResponse.json({ error: "not_found" }, { status: 404 });
-      return NextResponse.json({ balance: await ForestPlanDB.balanceExtraccion(auth.tenantId, balanceId) });
+      // `?solo=1`: sólo las líneas atadas a ESTE plan (lo que se declara como suyo).
+      const soloDelPlan = url.searchParams.get("solo") === "1";
+      return NextResponse.json({ balance: await ForestPlanDB.balanceExtraccion(auth.tenantId, balanceId, { soloDelPlan }) });
     }
     if (url.searchParams.get("analytics") === "1") {
       const analyticsPlanId = url.searchParams.get("planId") ?? undefined;
