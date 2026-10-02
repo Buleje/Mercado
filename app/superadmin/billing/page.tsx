@@ -37,11 +37,7 @@ export default async function SuperadminBillingPage() {
               <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
                 Plataforma · Finanzas
               </p>
-              <h1 className="font-display text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] inline-flex items-center gap-2 flex-wrap">
-                Billing — plataforma
-              
-            <InfoTip side="bottom" title="Billing de la plataforma" body="Atajos: / buscar · R recargar" what="El cobro de Buleje vía Stripe: suscripciones de las tiendas, MRR y estado de pagos." affects="Refleja cuánto factura Buleje a las tiendas; no cambia los precios que las tiendas cobran a sus clientes." example="Si una tienda paga su plan Pro, su suscripción aparece activa y suma al MRR del mes." />
-          </h1>
+              <div className="inline-flex items-center gap-2 flex-wrap"><h1 className="font-display text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">Billing — plataforma</h1><InfoTip side="bottom" title="Billing de la plataforma" body="Atajos: / buscar · R recargar" what="El cobro de Buleje vía Stripe: suscripciones de las tiendas, MRR y estado de pagos." affects="Refleja cuánto factura Buleje a las tiendas; no cambia los precios que las tiendas cobran a sus clientes." example="Si una tienda paga su plan Pro, su suscripción aparece activa y suma al MRR del mes." /></div>
             </div>
           </div>
         </div>

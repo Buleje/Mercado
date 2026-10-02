@@ -634,16 +634,13 @@ export default function PagosPendientesClient() {
                 <p className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
                   Tesorería · Aprobaciones
                 </p>
-                <h1 className="font-display text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] inline-flex items-center gap-2 flex-wrap">
-                  Pagos pendientes
-                  <InfoTip
+                <div className="inline-flex items-center gap-2 flex-wrap"><h1 className="font-display text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">Pagos pendientes</h1><InfoTip
                     side="bottom"
                     title="Pagos pendientes"
                     what="Capturas de Yape, Plin o transferencia de quienes quieren abrir un negocio."
                     affects="Al aprobar se crea el negocio solo y se envía el WhatsApp de bienvenida."
                     example="Atajos: / buscar · R recargar."
-                  />
-                </h1>
+                  /></div>
               </div>
             </div>
 

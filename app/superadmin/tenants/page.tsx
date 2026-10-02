@@ -456,8 +456,13 @@ export default function TenantsPage() {
         affects: "Suspender una tienda impide que sus clientes compren. Cambiar el plan modifica los límites de uso en tiempo real.",
         example: "Una tienda con 8 pedidos pendientes en la tarjeta aparece con badge rojo. Puedes hacer clic en 'Impersonar' para entrar a su panel y ayudarle a gestionarlos.",
       }}
-      title="Tenants"
-      description={`${sortedFinal.length} tienda${sortedFinal.length !== 1 ? "s" : ""}${tenants.length !== sortedFinal.length ? ` de ${tenants.length}` : ""} — gestión de plataforma multi-tenant.`}
+      title="Tiendas"
+      /* El conteo es un DATO: va a la vista como chip, no en la descripción
+         (que ahora vive en el ⓘ y se perdía al haber `info`). */
+      chip={{
+        label: `${sortedFinal.length} tienda${sortedFinal.length !== 1 ? "s" : ""}${tenants.length !== sortedFinal.length ? ` de ${tenants.length}` : ""}`,
+        tone: "muted",
+      }}
       icon={Building2}
       kicker="Plataforma multi-tenant"
     >
@@ -469,9 +474,9 @@ export default function TenantsPage() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <SAStatChip
           icon={Building2}
-          label="Total tenants"
+          label="Negocios"
           value={loading ? "—" : String(stats.total)}
-          hint={loading ? "Cargando…" : `${stats.active} activos · ${stats.inactive} suspendidos`}
+          hint={loading ? "Cargando…" : `${stats.active} activos`}
           tone="teal"
         />
         <SAStatChip
@@ -481,21 +486,21 @@ export default function TenantsPage() {
           // que pagan los tenants a Buleje). ESTE valor es GMV: la suma del
           // revenue REAL que generaron las tiendas vendiendo en el mes.
           // Son cosas distintas — clarificado en label y hint.
-          label="GMV marketplaces"
+          label="Ventas"
           value={loading ? "—" : `S/ ${stats.mrr.toLocaleString("es-PE", { maximumFractionDigits: 0 })}`}
-          hint={loading ? "Cargando…" : "Ventas brutas de tiendas (mes)"}
+          hint={loading ? "Cargando…" : "este mes"}
           tone="emerald"
         />
         <SAStatChip
           icon={Sparkles}
-          label="En trial"
+          label="En prueba"
           value={loading ? "—" : String(stats.trial)}
-          hint={loading ? "Cargando…" : stats.trial > 0 ? "Vencen pronto" : "Sin trials activos"}
+          hint={loading ? "Cargando…" : stats.trial > 0 ? "por vencer" : "ninguna"}
           tone="violet"
         />
         <SAStatChip
           icon={Bell}
-          label="Pedidos pendientes"
+          label="Pendientes"
           value={loading ? "—" : String(stats.pendingTotal)}
           hint={loading ? "Cargando…" : `En ${stats.tenantsWithPending} tienda${stats.tenantsWithPending === 1 ? "" : "s"}`}
           tone={stats.pendingTotal > 0 ? "amber" : "sky"}
@@ -1031,7 +1036,7 @@ function QuickFilters({
   const principalChips = [
     { id: "all" as const,      label: "Todos",          count: stats.total },
     { id: "active" as const,   label: "Activas",        count: stats.active },
-    { id: "trial" as const,    label: "En trial",       count: stats.trial },
+    { id: "trial" as const,    label: "En prueba",      count: stats.trial },
     { id: "at-risk" as const,  label: "En riesgo",      count: stats.atRisk },
     { id: "pending" as const,  label: "Con pendientes", count: stats.tenantsWithPending },
   ];

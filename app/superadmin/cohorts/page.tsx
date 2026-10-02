@@ -36,16 +36,13 @@ export default async function CohortsPage() {
               <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
                 Plataforma · Crecimiento
               </p>
-              <h1 className="font-display text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] inline-flex items-center gap-2 flex-wrap">
-                Cohortes & retención
-                <InfoTip
+              <div className="inline-flex items-center gap-2 flex-wrap"><h1 className="font-display text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">Cohortes & retención</h1><InfoTip
                   side="bottom"
                   title="Cohortes & retención"
                   what="Agrupa los negocios por mes de alta (cohorte) y mide qué % sigue activo mes a mes. Verde = retiene, rojo = se cae."
                   affects="Solo lectura. Insight de crecimiento: te muestra si los negocios nuevos se quedan o se van, y en qué mes."
                   example="Si la cohorte de abril retiene 100% pero la de junio cae al mes 1, algo cambió en cómo entran los nuevos negocios."
-                />
-              </h1>
+                /></div>
             </div>
           </div>
         </div>

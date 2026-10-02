@@ -14,7 +14,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const RAICES = ["components/admin", "components/superadmin", "app/admin"];
+const RAICES = ["components/admin", "components/superadmin", "app/admin", "app/superadmin", "components/shared"];
 /* `label`: adentro, el campo se anuncia «Total pagado Información: Total pagado»
    y buscarlo por su rótulo encuentra el ⓘ (rompió un test visual, 2026-09-24). */
 const CONTENEDORES = ["button", "h1", "h2", "h3", "h4", "summary", "label", "CardTitle", "SectionTitle", "PageTitle"];

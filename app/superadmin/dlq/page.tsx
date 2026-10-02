@@ -41,16 +41,13 @@ export default async function DLQDashboardPage() {
             <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
               Plataforma · Operaciones
             </p>
-            <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[var(--text-primary)] leading-none inline-flex items-center gap-2 flex-wrap">
-              Trabajos fallidos
-              <InfoTip
+            <div className="inline-flex items-center gap-2 flex-wrap"><h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[var(--text-primary)] leading-none">Trabajos fallidos</h1><InfoTip
                 side="bottom"
                 title="Trabajos fallidos (Dead Letter Queue)"
                 what="Eventos, crons y webhooks que fallaron tras varios reintentos y no se reintentan solos."
                 affects="Solo monitoreo interno. Si los contadores crecen sin parar, hay un fallo de fondo."
                 example="Si falla el email de bienvenida 3 veces, cae acá para reintentarlo o investigar."
-              />
-            </h1>
+              /></div>
           </div>
         </div>
       </header>

@@ -36,16 +36,13 @@ export default async function AuditLogPage() {
               <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
                 Plataforma · Seguridad
               </p>
-              <h1 className="font-display text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] inline-flex items-center gap-2 flex-wrap">
-                Auditoría del superadmin
-                <InfoTip
+              <div className="inline-flex items-center gap-2 flex-wrap"><h1 className="font-display text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">Auditoría del superadmin</h1><InfoTip
                   side="bottom"
                   title="Auditoría del superadmin"
                   what="Registro de las acciones sensibles del superadmin: cada vez que alguien impersona un negocio, aprueba un pago, manda un broadcast o cambia una automatización."
                   affects="Solo lectura. Es la trazabilidad de quién entró a qué negocio y qué hizo — confianza y rendición de cuentas. Exportable a CSV."
                   example="Si necesitas saber quién entró al panel de una tienda y cuándo, filtras por 'impersonate' y lo ves con fecha, operador y negocio."
-                />
-              </h1>
+                /></div>
             </div>
           </div>
         </div>

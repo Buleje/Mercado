@@ -28,11 +28,7 @@ export default function SuperadminVariantCatalogPage() {
               <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
                 Marketplace · Personalización
               </p>
-              <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] inline-flex items-center gap-2 flex-wrap">
-                Catálogo de variaciones
-              
-            <InfoTip side="bottom" title="Catálogo de variaciones" what="Plantillas de variaciones que las tiendas importan a sus productos (talla, color, sabor), sin crearlas una por una." affects="Las tiendas eligen estas variaciones al crear productos, sin escribirlas de cero." example="Una pollería importa «Cremas» con sus imágenes; defines tallas S/M/L/XL una vez y todas las tiendas de ropa las usan." />
-          </h1>
+              <div className="inline-flex items-center gap-2 flex-wrap"><h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">Catálogo de variaciones</h1><InfoTip side="bottom" title="Catálogo de variaciones" what="Plantillas de variaciones que las tiendas importan a sus productos (talla, color, sabor), sin crearlas una por una." affects="Las tiendas eligen estas variaciones al crear productos, sin escribirlas de cero." example="Una pollería importa «Cremas» con sus imágenes; defines tallas S/M/L/XL una vez y todas las tiendas de ropa las usan." /></div>
             </div>
           </div>
         </div>

@@ -36,16 +36,13 @@ export default async function FeatureAdoptionPage() {
               <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
                 Plataforma · Crecimiento
               </p>
-              <h1 className="font-display text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] inline-flex items-center gap-2 flex-wrap">
-                Adopción de funciones
-                <InfoTip
+              <div className="inline-flex items-center gap-2 flex-wrap"><h1 className="font-display text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">Adopción de funciones</h1><InfoTip
                   side="bottom"
                   title="Adopción de funciones"
                   what="Muestra qué módulos usa cada negocio (derivado de su actividad) y cuáles no. Marca las funciones de crecimiento (Fiado, Marketplace, Cupones…) sub-usadas."
                   affects="Solo lectura + acciones de coaching (ofrecer ayuda por chat, ver ficha 360). Es para retención/upsell, no cambia datos."
                   example="Si solo 1 de 9 tiendas usa Adelantos, o una bodega no usa ninguna función de crecimiento, le ofreces ayuda para que la use y venda más."
-                />
-              </h1>
+                /></div>
             </div>
           </div>
         </div>

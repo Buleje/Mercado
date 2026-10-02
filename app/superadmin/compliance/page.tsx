@@ -36,16 +36,13 @@ export default async function CompliancePage() {
               <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
                 Plataforma · Compliance
               </p>
-              <h1 className="font-display text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] inline-flex items-center gap-2 flex-wrap">
-                Auditoría Ley 29733
-                <InfoTip
+              <div className="inline-flex items-center gap-2 flex-wrap"><h1 className="font-display text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">Auditoría Ley 29733</h1><InfoTip
                   side="bottom"
                   title="Ley 29733 — Protección de Datos Personales"
                   what="El registro de auditoría que exige la ley peruana: quién accedió o modificó datos personales (clientes, ventas, fiados), cuándo y desde qué IP. Lo marca el sistema con la etiqueta [L29733]."
                   affects="Solo lectura. Es tu evidencia de cumplimiento ante la APDP; exportable a CSV."
                   example="Si un cliente pide saber qué se hizo con sus datos (derecho de acceso), filtras por su negocio y exportás el registro."
-                />
-              </h1>
+                /></div>
             </div>
           </div>
         </div>

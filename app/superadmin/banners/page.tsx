@@ -501,16 +501,13 @@ function SuperadminBannersPageInner() {
                 <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
                   Centro de banners
                 </p>
-                <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] inline-flex items-center gap-2 flex-wrap">
-                  Banners del Marketplace
-                  <InfoTip
+                <div className="inline-flex items-center gap-2 flex-wrap"><h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">Banners del Marketplace</h1><InfoTip
                     side="bottom"
                     title="Banners del Marketplace"
                     what="Administra los banners promocionales del marketplace público. Rotan cada 8 segundos."
                     affects="Se ven en la home del marketplace que visitan los clientes."
                     example="Creas un banner «2x1 en gaseosas» y queda arriba para todos los visitantes. Usa imágenes 1600×400 (4:1), 1 línea de texto y un botón claro; más de 5 por lugar satura."
-                  />
-                </h1>
+                  /></div>
               </div>
             </div>
 

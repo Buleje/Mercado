@@ -38,16 +38,13 @@ export default async function TenantErrorsPage() {
               <p className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
                 Plataforma · Soporte
               </p>
-              <h1 className="font-display text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] inline-flex items-center gap-2 flex-wrap">
-                Errores en vivo de los negocios
-                <InfoTip
+              <div className="inline-flex items-center gap-2 flex-wrap"><h1 className="font-display text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">Errores en vivo de los negocios</h1><InfoTip
                   side="bottom"
                   title="Soporte proactivo"
                   what="Muestra en vivo los errores que sufre el panel admin de cada negocio (los reporta el error boundary de su panel)."
                   affects="Solo el superadmin. Te deja entrar a reproducir (impersonar), contactar al dueño y marcar resuelto."
                   example="Una bodega tropieza con un bug al cargar un producto → lo ves acá antes de que te llame, entrás a su panel y la ayudás."
-                />
-              </h1>
+                /></div>
             </div>
           </div>
         </div>
