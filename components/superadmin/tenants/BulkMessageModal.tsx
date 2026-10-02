@@ -69,7 +69,7 @@ export function BulkMessageModal({
             value={body}
             onChange={(e) => setBody(e.target.value)}
             rows={4}
-            placeholder="Escribí el mensaje para los negocios seleccionados…"
+            placeholder="Escribe el mensaje para los negocios seleccionados…"
             className="w-full resize-none rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
           />
           {err && <p className="text-sm font-semibold text-[var(--data-error-600,#dc2626)]">{err}</p>}

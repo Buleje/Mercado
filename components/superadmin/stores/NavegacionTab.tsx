@@ -325,7 +325,7 @@ export function NavegacionTab() {
                 Marketplace · Navegación
               </p>
               <h2 className="font-display text-lg sm:text-xl font-extrabold tracking-tight text-[var(--text-primary)]">
-                Editá tu navbar como si lo vieras
+                Edita tu navbar como si lo vieras
               </h2>
               <p className="mt-1 text-sm text-[var(--text-secondary)] max-w-2xl">
                 Click directo en cualquier enlace del preview para ocultarlo. Click en los ocultos
@@ -376,7 +376,7 @@ export function NavegacionTab() {
                 Preview en vivo
               </h3>
               <p className="text-xs text-[var(--text-tertiary)]">
-                Manipulá los enlaces directamente — click para ocultar/mostrar
+                Manipula los enlaces directamente — click para ocultar/mostrar
               </p>
             </div>
           </div>
@@ -577,7 +577,7 @@ export function NavegacionTab() {
               Plantillas rápidas
             </h3>
             <p className="text-xs text-[var(--text-tertiary)]">
-              Aplicá un patrón completo del marketplace con un click
+              Aplica un patrón completo del marketplace con un click
             </p>
           </div>
         </header>

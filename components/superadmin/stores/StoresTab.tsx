@@ -255,7 +255,7 @@ export function StoresTab({ stores, loading, error, onRefresh, refreshing }: Sto
           label="Rating promedio"
           value={
             stores && stores.length
-              ? (stores.reduce((s, r) => s + r.rating, 0) / stores.length).toFixed(1)
+              ? (stores.reduce((s, r) => s + Number(r.rating), 0) / stores.length).toFixed(1)
               : "0"
           }
         />
@@ -264,7 +264,7 @@ export function StoresTab({ stores, loading, error, onRefresh, refreshing }: Sto
           label="Comisión promedio"
           value={`${
             stores && stores.length
-              ? (stores.reduce((s, r) => s + r.commission, 0) / stores.length).toFixed(1)
+              ? (stores.reduce((s, r) => s + Number(r.commission), 0) / stores.length).toFixed(1)
               : "0"
           }%`}
         />
@@ -338,7 +338,7 @@ export function StoresTab({ stores, loading, error, onRefresh, refreshing }: Sto
             No hay tiendas que mostrar
           </p>
           <p className="text-xs text-[var(--text-tertiary)] mt-1">
-            Probá cambiar el filtro o el término de búsqueda.
+            Prueba cambiar el filtro o el término de búsqueda.
           </p>
         </div>
       )}

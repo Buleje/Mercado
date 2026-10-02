@@ -31,13 +31,8 @@ export default function SuperadminVariantCatalogPage() {
               <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] inline-flex items-center gap-2 flex-wrap">
                 Catálogo de variaciones
               
-            <InfoTip side="bottom" title="Catálogo de variaciones" what="Variaciones estándar reutilizables (talla, color, sabor) para los productos." affects="Las tiendas eligen estas variaciones al crear productos, sin escribirlas de cero." example="Definís tallas S/M/L/XL una vez → todas las tiendas de ropa las usan en sus prendas." />
+            <InfoTip side="bottom" title="Catálogo de variaciones" what="Plantillas de variaciones que las tiendas importan a sus productos (talla, color, sabor), sin crearlas una por una." affects="Las tiendas eligen estas variaciones al crear productos, sin escribirlas de cero." example="Una pollería importa «Cremas» con sus imágenes; defines tallas S/M/L/XL una vez y todas las tiendas de ropa las usan." />
           </h1>
-              <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">
-                Plantillas globales de variaciones que los tenants pueden importar a sus productos.
-                Ejemplo: una pollería importa &quot;Cremas&quot; con sus imágenes en lugar de tener que
-                crearlas una por una.
-              </p>
             </div>
           </div>
         </div>

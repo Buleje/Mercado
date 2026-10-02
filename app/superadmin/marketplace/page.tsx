@@ -219,10 +219,6 @@ export default async function SuperadminMarketplaceHubPage() {
                     example="Apruebas un vendor nuevo → su tienda empieza a aparecer en el marketplace para los compradores."
                   />
                 </h1>
-                <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--text-secondary)] sm:text-base">
-                  Centro de control cross-store. Aprueba vendors, gestiona categorías y monitorea el
-                  revenue del marketplace multi-tenant desde un solo lugar.
-                </p>
               </div>
             </div>
 
@@ -253,20 +249,20 @@ export default async function SuperadminMarketplaceHubPage() {
               tone="accent"
             />
             <KpiTile
-              label="Pedidos mes"
+              label="Pedidos del mes"
               value={NUM.format(m.monthOrders)}
               hint={m.pendingOrders > 0 ? `${m.pendingOrders} pendientes` : "Sin pendientes"}
               tone={m.pendingOrders > 0 ? "warn" : "default"}
             />
             <KpiTile
-              label="Revenue mes"
+              label="Ventas del mes"
               value={PESOS.format(m.monthRevenueSoles)}
               hint="GMV marketplace"
               tone="default"
               trending
             />
             <KpiTile
-              label="Comisión mes"
+              label="Comisión del mes"
               value={PESOS.format(m.monthCommissionSoles)}
               hint="Generado por plataforma"
               tone="success"
@@ -281,7 +277,7 @@ export default async function SuperadminMarketplaceHubPage() {
         <section className="space-y-5">
           <SectionHeading
             title="Operaciones activas"
-            subtitle="Acciones disponibles ahora en producción."
+            subtitle="Lo que ya puedes usar hoy."
             count={live.length}
             countLabel="LIVE"
             tone="live"
@@ -298,7 +294,7 @@ export default async function SuperadminMarketplaceHubPage() {
           <section className="space-y-5">
             <SectionHeading
               title="Roadmap"
-              subtitle="Próximas capacidades del marketplace."
+              subtitle="Lo que viene para el marketplace."
               count={soon.length}
               countLabel="SOON"
               tone="soon"
@@ -389,10 +385,12 @@ function SectionHeading({
   return (
     <div className="flex items-end justify-between gap-4">
       <div>
-        <h2 className="font-display text-xl font-extrabold tracking-tight text-[var(--text-primary)] sm:text-2xl">
-          {title}
-        </h2>
-        <p className="mt-1 text-sm text-[var(--text-secondary)]">{subtitle}</p>
+        <div className="flex items-center gap-2">
+          <h2 className="font-display text-xl font-extrabold tracking-tight text-[var(--text-primary)] sm:text-2xl">
+            {title}
+          </h2>
+          <InfoTip title={title} what={subtitle} />
+        </div>
       </div>
       <span
         className={`shrink-0 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider tabular-nums ${
@@ -425,11 +423,7 @@ function LiveCard({
         : "text-[var(--text-primary)]";
 
   return (
-    <Link
-      href={section.href}
-      aria-label={section.ariaLabel}
-      className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] transition-all hover:-translate-y-0.5 hover:border-[var(--accent)]/40 hover:shadow-lg hover:shadow-[var(--accent)]/[0.06]"
-    >
+    <div className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] transition-all focus-within:border-[var(--accent)] hover:-translate-y-0.5 hover:border-[var(--accent)]/40 hover:shadow-lg hover:shadow-[var(--accent)]/[0.06]">
       {/* Accent edge top */}
       <div
         aria-hidden
@@ -465,20 +459,29 @@ function LiveCard({
         <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]">
           {section.hint}
         </p>
-        <h3 className="mt-1 font-display text-lg font-extrabold tracking-tight text-[var(--text-primary)]">
-          {section.title}
-        </h3>
-        <p className="mt-2 text-sm leading-relaxed text-[var(--text-secondary)]">{section.desc}</p>
+        <div className="mt-1 flex items-center gap-1">
+          <h3 className="font-display text-lg font-extrabold tracking-tight text-[var(--text-primary)]">
+            {section.title}
+          </h3>
+          <InfoTip className="relative z-10" title={section.title} what={section.desc} />
+        </div>
       </div>
 
-      <div className="mt-4 flex items-center justify-between border-t border-[var(--rule-soft)] bg-[var(--surface-canvas)]/40 px-5 py-3 text-sm font-bold text-[var(--text-primary)] transition group-hover:bg-[var(--accent)]/5 group-hover:text-[var(--accent)]">
-        <span>{section.cta}</span>
-        <ArrowUpRight
-          className="h-4 w-4 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-          aria-hidden
-        />
+      <div className="mt-4 border-t border-[var(--rule-soft)] bg-[var(--surface-canvas)]/40 text-sm font-bold text-[var(--text-primary)] transition group-hover:bg-[var(--accent)]/5 group-hover:text-[var(--accent)]">
+        {/* Enlace extendido: toda la tarjeta es clicable sin meter el ⓘ dentro de un <a>. */}
+        <Link
+          href={section.href}
+          aria-label={section.ariaLabel}
+          className="flex items-center justify-between px-5 py-3 after:absolute after:inset-0 after:content-[''] focus-visible:outline-none"
+        >
+          <span>{section.cta}</span>
+          <ArrowUpRight
+            className="h-4 w-4 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+            aria-hidden
+          />
+        </Link>
       </div>
-    </Link>
+    </div>
   );
 }
 
@@ -516,10 +519,12 @@ function SoonCard({ section }: { section: Section }) {
         <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
           {section.hint}
         </p>
-        <h3 className="mt-1 font-display text-lg font-extrabold tracking-tight text-[var(--text-primary)]">
-          {section.title}
-        </h3>
-        <p className="mt-2 text-sm leading-relaxed text-[var(--text-secondary)]">{section.desc}</p>
+        <div className="mt-1 flex items-center gap-1">
+          <h3 className="font-display text-lg font-extrabold tracking-tight text-[var(--text-primary)]">
+            {section.title}
+          </h3>
+          <InfoTip title={section.title} what={section.desc} />
+        </div>
       </div>
 
       <div className="relative mt-4 flex items-center justify-between border-t border-[var(--rule-soft)] bg-[var(--surface-canvas)]/30 px-5 py-3 text-sm font-bold text-[var(--text-tertiary)]">

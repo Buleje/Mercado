@@ -40,14 +40,11 @@ export default async function TenantDetailPage({ params }: { params: Promise<{ s
                 <InfoTip
                   side="bottom"
                   title="Ficha 360 del negocio"
-                  what="Todo de un negocio en una pantalla: plan, salud y engagement, conteos, integraciones, pedidos, errores de su panel y actividad reciente."
+                  what="Todo de un negocio en una pantalla: plan, salud, conteos, integraciones, pedidos, errores y actividad. Entiende y ayuda a cualquier negocio desde un solo lugar."
                   affects="Solo lectura + acciones de soporte (impersonar, contactar, ver tienda). No cambia datos del negocio."
-                  example="Ves que una pollería bajó su health a 32 y no vende hace 10 días → la contactás o entrás a su panel a ayudarla antes de que se vaya."
+                  example="Ves que una pollería bajó su health a 32 y no vende hace 10 días → la contactas o entras a su panel a ayudarla antes de que se vaya."
                 />
               </h1>
-              <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-3xl">
-                Entendé y ayudá a cualquier negocio desde un solo lugar.
-              </p>
             </div>
           </div>
         </div>

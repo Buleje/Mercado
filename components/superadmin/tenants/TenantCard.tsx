@@ -23,7 +23,8 @@ import {
   Bell,
 } from "@buleje/design-system/icons";
 import type { TenantRow } from "@/lib/superadmin-types";
-import { ProductBadge, StatCard, WarningAlert, SuccessAlert } from "@buleje/design-system";
+import { ProductBadge, StatCard } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { PendingOrdersModal } from "./PendingOrdersModal";
 import { esTenantProtegido } from "@/lib/tenancy/negocio-por-defecto";
 
@@ -434,22 +435,24 @@ export function TenantCard({
         </div>
 
         {/* Panel data status — DS Alert. Admin tenants: mensaje neutral, no warning. */}
-        {hasVisibleAdminData ? (
-          <SuccessAlert
-            title="Panel con información"
-            description="Esta tienda ya muestra datos en su admin del negocio."
-          />
-        ) : health.isAdmin ? (
-          <SuccessAlert
-            title="Tenant administrativo"
-            description="Cuenta interna del owner. No requiere productos ni movimientos."
-          />
-        ) : (
-          <WarningAlert
-            title="Panel sin información útil"
-            description="Faltan productos o movimientos; revisar la carga inicial de la tienda."
-          />
-        )}
+        {(() => {
+          const ok = hasVisibleAdminData || health.isAdmin;
+          const [titulo, detalle] = hasVisibleAdminData
+            ? ["Panel con información", "Esta tienda ya muestra datos en su panel."]
+            : health.isAdmin
+              ? ["Negocio interno", "Cuenta interna del owner. No requiere productos ni movimientos."]
+              : ["Panel sin información", "Faltan productos o movimientos. Revisa la carga inicial de la tienda."];
+          return (
+            <div
+              role="status"
+              className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-bold ${ok ? "bg-[var(--data-success-50)] text-[var(--data-success-700)]" : "bg-[var(--data-warning-50)] text-[var(--data-warning-700)]"}`}
+            >
+              {ok ? <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden /> : <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />}
+              <span className="min-w-0 flex-1 truncate">{titulo}</span>
+              <InfoTip title={titulo} what={detalle} />
+            </div>
+          );
+        })()}
 
         {/* Plan usage bar */}
         {t.usage && t.limits && (

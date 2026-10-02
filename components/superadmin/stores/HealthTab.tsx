@@ -492,7 +492,7 @@ export function HealthTab() {
             Sin tiendas que coincidan
           </p>
           <p className="text-xs text-[var(--text-tertiary)] mt-1">
-            Probá con otro filtro o limpiá la búsqueda.
+            Prueba con otro filtro o limpia la búsqueda.
           </p>
         </div>
       )}

@@ -202,7 +202,7 @@ const SLOT_GROUPS: SlotGroup[] = [
         position: "Banner principal del Inicio (/) y de /tiendas",
         pageHref: "/",
         description:
-          "Banner rotativo FULL-WIDTH del Inicio (es el hero principal de la home) y también de /tiendas. Subí imágenes 1600×400 para que se vean profesionales. Rota cada 6s.",
+          "Banner rotativo FULL-WIDTH del Inicio (es el hero principal de la home) y también de /tiendas. Sube imágenes 1600×400 para que se vean profesionales. Rota cada 6s.",
         aspect: "wide",
         recommended: 4,
       },
@@ -218,7 +218,7 @@ const SLOT_GROUPS: SlotGroup[] = [
         label: "Hero de Ofertas",
         position: "Top de /marketplace/ofertas",
         pageHref: "/marketplace/ofertas",
-        description: "Comunicá descuentos y campañas activas. Color cálido recomendado.",
+        description: "Comunica descuentos y campañas activas. Color cálido recomendado.",
         aspect: "wide",
         recommended: 3,
       },
@@ -234,7 +234,7 @@ const SLOT_GROUPS: SlotGroup[] = [
         label: "Hero de Recetas",
         position: "Top de /recetas",
         pageHref: "/recetas",
-        description: "Inspirá con ideas de cocina. Imagen apetitosa = más conversión.",
+        description: "Inspira con ideas de cocina. Imagen apetitosa = más conversión.",
         aspect: "wide",
         recommended: 3,
       },
@@ -506,15 +506,11 @@ function SuperadminBannersPageInner() {
                   <InfoTip
                     side="bottom"
                     title="Banners del Marketplace"
-                    what="Administra los banners promocionales que se muestran en el marketplace público."
+                    what="Administra los banners promocionales del marketplace público. Rotan cada 8 segundos."
                     affects="Se ven en la home del marketplace que visitan los clientes."
-                    example="Creás un banner '2x1 en gaseosas' y queda arriba en el marketplace para todos los visitantes."
+                    example="Creas un banner «2x1 en gaseosas» y queda arriba para todos los visitantes. Usa imágenes 1600×400 (4:1), 1 línea de texto y un botón claro; más de 5 por lugar satura."
                   />
                 </h1>
-                <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">
-                  Editá los banners promocionales que aparecen rotativos en cada página.
-                  Recomendamos imagen + 1 línea de texto + CTA claro para máxima conversión.
-                </p>
               </div>
             </div>
 
@@ -620,17 +616,6 @@ function SuperadminBannersPageInner() {
                 ))}
               </div>
             </div>
-
-            {/* Tip */}
-            <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3.5">
-              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)] mb-1.5">
-                Consejo
-              </p>
-              <p className="text-xs text-[var(--text-secondary)] leading-snug">
-                Los banners rotan cada 8 segundos. Más de 5 por slot puede saturar al usuario. Usá{" "}
-                <strong>imágenes 1600×400 (4:1)</strong> para que se vean nítidas.
-              </p>
-            </div>
           </aside>
 
           {/* Main panel — banners del slot activo */}
@@ -643,12 +628,12 @@ function SuperadminBannersPageInner() {
                     <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
                       Slot · {meta.id}
                     </p>
-                    <h2 className="font-display text-xl sm:text-2xl font-extrabold tracking-tight text-[var(--text-primary)] mb-1">
-                      {meta.label}
-                    </h2>
-                    <p className="text-sm text-[var(--text-secondary)] max-w-2xl">
-                      {meta.description}
-                    </p>
+                    <div className="mb-1 flex items-center gap-2">
+                      <h2 className="font-display text-xl sm:text-2xl font-extrabold tracking-tight text-[var(--text-primary)]">
+                        {meta.label}
+                      </h2>
+                      <InfoTip title={meta.label} what={meta.description} />
+                    </div>
                   </div>
                   <a
                     href={meta.pageHref}
@@ -889,8 +874,8 @@ function EmptyState({
       </p>
       <p className="text-sm text-[var(--text-secondary)] mt-1.5 max-w-md mx-auto">
         {hasSearch
-          ? "Probá con otro título o limpiá la búsqueda para ver todos los banners."
-          : "Agregá tu primer banner para esta página. Recomendamos arrancar con uno y ver cómo performa."}
+          ? "Prueba con otro título o limpia la búsqueda para ver todos los banners."
+          : "Agrega tu primer banner para esta página. Recomendamos arrancar con uno y ver cómo performa."}
       </p>
       <div className="flex items-center justify-center gap-2 mt-4">
         {hasSearch && (
@@ -1164,7 +1149,7 @@ function BannerCard({
           {/* ── CTA (visible en classic + image · oculto en promo, que usa su propio buyHref) ── */}
           {banner.type !== "promo" && (
             <div className="grid grid-cols-1 sm:grid-cols-[1fr_180px] gap-3">
-              <Field label="Link al hacer click" hint="Empezá con / (interno) o https:// (externo)">
+              <Field label="Link al hacer click" hint="Empieza con / (interno) o https:// (externo)">
                 <input
                   value={banner.ctaHref}
                   onChange={(e) => onPatch({ ctaHref: e.target.value })}
@@ -1214,7 +1199,7 @@ function BannerCard({
                   <input
                     value={banner.imageUrl ?? ""}
                     onChange={(e) => onPatch({ imageUrl: e.target.value || null })}
-                    placeholder="O pegá una URL: https://…"
+                    placeholder="O pega una URL: https://…"
                     className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs font-mono focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/30 outline-none"
                   />
                   <div className="rounded-md bg-primary/10 border border-[var(--rule-soft)] px-2.5 py-1.5">
@@ -1248,7 +1233,7 @@ function BannerCard({
                   Encuadre, recorte, color y previsualización
                 </p>
                 <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] leading-snug">
-                  Abrí el Estudio para reposicionar la imagen, hacer zoom, cambiar tipo, color y
+                  Abre el Estudio para reposicionar la imagen, hacer zoom, cambiar tipo, color y
                   vista en presentación.
                 </p>
               </div>
@@ -1259,7 +1244,7 @@ function BannerCard({
           {banner.type !== "image" && !banner.imageUrl && (
             <Field
               label="Colores de fondo"
-              hint="Solo se usan cuando NO hay imagen. Elegí un preset o personalizá."
+              hint="Solo se usan cuando NO hay imagen. Elige un preset o personaliza."
             >
               <div className="space-y-2.5">
                 <div className="flex items-center gap-2 flex-wrap">

@@ -17,6 +17,7 @@ import type { Specialization, SpecializationKey } from "@/lib/specializations";
 import { fetchSuperadmin } from "@/lib/superadmin/fetch-auth";
 import { broadcastSpecsChanged } from "@/hooks/use-enabled-specs";
 import { AdminTabShell } from "@/app/admin/_components/_shared";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { SAStatChip } from "@/components/superadmin/_shared/SAStatChip";
 import { PiezasPorNegocio } from "@/components/superadmin/piezas/PiezasPorNegocio";
 
@@ -126,13 +127,12 @@ export default function SpecializationsClient({
         example: "Prendes «forestal» en una maderera y en su panel aparecen los módulos de madera; prendes una pieza y le aparece la pestaña «A medida».",
       }}
       title="Qué tiene cada negocio"
-      kicker="Plataforma · Habilitación por tenant"
-      description="Módulos por rubro y piezas a medida de cada negocio. Los cambios se ven al instante en su panel."
-      icon={TreePine}
+      kicker="Plataforma · Por negocio"
+            icon={TreePine}
       stats={
         <>
-          <SAStatChip icon={Building2} label="Tenants" value={tenants.length} tone="sky" />
-          <SAStatChip icon={Layers} label="Especializaciones" value={`${availableSpecs}/${catalog.length}`} hint="disponibles / total" tone="violet" />
+          <SAStatChip icon={Building2} label="Negocios" value={tenants.length} tone="sky" />
+          <SAStatChip icon={Layers} label="Módulos" value={`${availableSpecs}/${catalog.length}`} hint="disponibles / total" tone="violet" />
           <SAStatChip icon={Zap} label="Activaciones" value={totalEnabled} tone="emerald" />
         </>
       }
@@ -141,7 +141,7 @@ export default function SpecializationsClient({
         <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-[var(--data-error-700)]">
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
           <div className="text-sm">
-            <strong>Error al togglear:</strong> {error}
+            <strong>No se pudo cambiar:</strong> {error}
           </div>
         </div>
       )}
@@ -155,7 +155,7 @@ export default function SpecializationsClient({
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar tenant por nombre, slug o industry..."
+              placeholder="Buscar negocio…"
               className="w-full bg-transparent outline-none text-base text-[var(--text-primary)]"
             />
           </div>
@@ -166,7 +166,7 @@ export default function SpecializationsClient({
               onChange={(e) => setVerticalFilter(e.target.value)}
               className="bg-transparent text-base font-medium text-[var(--text-primary)] outline-none"
             >
-              <option value="all">Todos los verticales</option>
+              <option value="all">Todos los rubros</option>
               {verticals.map((v) => (
                 <option key={v} value={v}>
                   {v}
@@ -187,8 +187,9 @@ export default function SpecializationsClient({
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-bold text-[var(--text-primary)]">
+                    <p className="flex items-center gap-1 text-sm font-bold text-[var(--text-primary)]">
                       {spec.name}
+                      <InfoTip title={spec.name} what={spec.description} />
                     </p>
                     <p className="mt-0.5 text-xs uppercase tracking-wider text-[var(--text-tertiary)]">
                       {spec.vertical}
@@ -210,9 +211,6 @@ export default function SpecializationsClient({
                         : "Próximamente"}
                   </span>
                 </div>
-                <p className="mt-2 line-clamp-2 text-xs text-[var(--text-secondary)]">
-                  {spec.description}
-                </p>
                 <div className="mt-3 flex items-center justify-between border-t border-[var(--rule-soft)] pt-2">
                   <span className="text-xs text-[var(--text-tertiary)]">Activos</span>
                   <span className="text-sm font-bold text-[var(--text-primary)]">
@@ -230,7 +228,7 @@ export default function SpecializationsClient({
             <thead className="bg-[var(--surface-sunken)] text-left">
               <tr>
                 <th className="sticky left-0 z-10 bg-[var(--surface-sunken)] px-4 py-3 font-bold text-[var(--text-primary)]">
-                  Tenant
+                  Negocio
                 </th>
                 {visibleCatalog.map((spec) => (
                   <th
@@ -317,7 +315,7 @@ export default function SpecializationsClient({
 
         {filteredTenants.length === 0 && (
           <div className="mt-6 rounded-2xl border border-dashed border-[var(--rule-base)] p-12 text-center text-[var(--text-tertiary)]">
-            Sin tenants que coincidan con la búsqueda.
+            Ningún negocio coincide.
           </div>
         )}
 

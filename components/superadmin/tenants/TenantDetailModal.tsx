@@ -568,7 +568,7 @@ export function TenantDetailModal({ tenant, onClose, onUpdated }: TenantDetailMo
                       )}
                       {!resetResult.startsWith("Error") && !t.ownerPhone && (
                         <p className="text-xs text-[var(--text-tertiary)]">
-                          Sin teléfono registrado — copiá la clave y entregala por un canal seguro.
+                          Sin teléfono registrado — copia la clave y entrégala por un canal seguro.
                         </p>
                       )}
                     </div>

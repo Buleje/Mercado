@@ -329,7 +329,7 @@ export function PlantillaPanelTab() {
       if (catalog) catalog.scrollIntoView({ behavior: "smooth", block: "start" });
       showToast(
         `Modo "Personalizado" activado`,
-        `Editá módulo a módulo abajo. Cuando termines, pulsá “Guardar cambios”.`,
+        `Edita módulo a módulo abajo. Cuando termines, pulsa “Guardar cambios”.`,
         "info",
       );
       return;
@@ -376,7 +376,7 @@ export function PlantillaPanelTab() {
     setSaving(false);
     if (!result.ok) {
       const detail = result.issues?.length
-        ? `${result.issues.length} validaciones fallaron — revisá la consola.`
+        ? `${result.issues.length} validaciones fallaron — revisa la consola.`
         : (result.error ?? "Error desconocido");
       setSaveError(detail);
       showToast("No se pudo guardar", detail, "warning");
@@ -1052,7 +1052,7 @@ export function PlantillaPanelTab() {
               <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider border border-primary/30">
                 <AlertCircle className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
                 <span className="sm:hidden">Sin guardar</span>
-                <span className="hidden sm:inline">Tenés cambios sin guardar</span>
+                <span className="hidden sm:inline">Tienes cambios sin guardar</span>
               </span>
             ) : saving ? (
               <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider border border-[var(--accent)]/30">

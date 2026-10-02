@@ -267,7 +267,7 @@ export default function HealthFillAllModal({
     const errs = validate(form);
     if (Object.keys(errs).length > 0) {
       setValidationErrors(errs);
-      setError(`Hay ${Object.keys(errs).length} campo(s) con formato inválido. Revisá los marcados.`);
+      setError(`Hay ${Object.keys(errs).length} campo(s) con formato inválido. Revisa los marcados.`);
       return;
     }
     setValidationErrors({});
@@ -372,7 +372,7 @@ export default function HealthFillAllModal({
               {tenantName}
             </p>
             <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
-              /{tenantSlug} · Llená todo lo que falte y guardá una sola vez
+              /{tenantSlug} · Llena todo lo que falte y guarda una sola vez
             </p>
           </div>
           <span className="ml-auto flex items-center gap-1 shrink-0">

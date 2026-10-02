@@ -480,10 +480,10 @@ export default function StoreLinkerModal({
                     />
                   </div>
                   <p className="font-display text-lg font-extrabold text-[var(--text-primary)]">
-                    Elegí una tienda
+                    Elige una tienda
                   </p>
                   <p className="text-sm text-[var(--text-secondary)] mt-1">
-                    Hacé click en cualquier tienda de la izquierda para ver sus artículos
+                    Haz click en cualquier tienda de la izquierda para ver sus artículos
                     y decidir si vincularla.
                   </p>
                 </div>

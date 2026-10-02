@@ -11,6 +11,7 @@
  * tampoco se renderiza en producción.
  */
 
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useState } from "react";
 import Link from "next/link";
 import { FlaskConical, Check, ArrowRight, LogOut, Loader2 } from "@buleje/design-system/icons";
@@ -98,7 +99,7 @@ export default function TestCustomerPanel() {
       // al cliente de prueba sin race ni conflicto con identidades viejas.
       writeTestCustomerToStorage();
       setState("active");
-      setMsg("Sesión activa como «Cliente Prueba». Andá a Tiendas, agregá productos y al continuar irás directo al checkout — sin login.");
+      setMsg("Sesión activa como «Cliente Prueba». Ve a Tiendas, agrega productos y al continuar irás directo al checkout — sin login.");
     } catch (e) {
       setState("error");
       setMsg(`No se pudo activar: ${e instanceof Error ? e.message : String(e)}`);
@@ -124,15 +125,17 @@ export default function TestCustomerPanel() {
           </span>
           <div>
             <p className="flex items-center gap-2 text-sm font-extrabold text-[var(--text-primary)]">
-              Modo prueba — comprar sin registrarse
+              Modo prueba
+              <InfoTip
+                title="Modo prueba"
+                what="Activa un cliente de prueba ya logueado: en Tiendas puedes comprar y llegar al checkout sin pasar por login."
+                affects="No funciona en producción."
+              />
               <span className="rounded-full bg-[var(--accent)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-wide text-white">
                 Solo local
               </span>
             </p>
-            <p className="mt-1 max-w-2xl text-sm text-[var(--text-secondary)]">
-              Activá un cliente de prueba ya logueado. En Tiendas podrás comprar y llegar
-              al checkout sin pasar por login. {state === "active" && msg ? msg : "No funciona en producción."}
-            </p>
+            {state === "active" && msg && <p className="mt-1 text-sm text-[var(--text-secondary)]">{msg}</p>}
             {state === "error" && (
               <p className="mt-1 text-xs font-bold text-[var(--data-error-500)]">{msg}</p>
             )}

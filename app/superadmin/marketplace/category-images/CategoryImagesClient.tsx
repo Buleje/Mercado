@@ -227,17 +227,6 @@ export default function CategoryImagesClient() {
           </div>
         ))}
       </div>
-
-      {/* Info footer */}
-      <div className="rounded-xl bg-[var(--surface-sunken)] p-4 text-xs text-[var(--text-tertiary)]">
-        <p className="font-bold text-[var(--text-secondary)] mb-1">¿Cómo funciona?</p>
-        <ol className="list-decimal pl-4 space-y-1">
-          <li>Subí una imagen para cada categoría general (Pollo, Bebidas, etc).</li>
-          <li>Cuando una tienda muestra esa categoría en sus filtros, usa esta imagen.</li>
-          <li>El dueño de la tienda puede subir SU propia imagen, que tiene prioridad.</li>
-          <li>Si nadie subió nada, los filtros muestran solo texto (default original).</li>
-        </ol>
-      </div>
     </div>
   );
 }

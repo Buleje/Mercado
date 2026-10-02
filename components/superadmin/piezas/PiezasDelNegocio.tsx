@@ -48,11 +48,11 @@ export function PiezasDelNegocio({ negocio }: Props) {
       {items.map((o) => (
         <li key={`${o.pieza.id}:${o.enchufe}`} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 py-3 first:pt-0 last:pb-0">
           <div className="min-w-0 flex-1 basis-60">
-            <p className="text-base font-bold text-[var(--text-primary)]">{o.pieza.nombre}</p>
-            <p className="text-sm text-[var(--text-secondary)]">{rotuloDeEnchufe(o.enchufe)}</p>
-            <p className="line-clamp-2 text-sm text-[var(--text-tertiary)]" title={o.pieza.descripcion}>
-              {o.pieza.descripcion}
+            <p className="flex items-center gap-1 text-base font-bold text-[var(--text-primary)]">
+              {o.pieza.nombre}
+              <InfoTip title={o.pieza.nombre} what={o.pieza.descripcion} />
             </p>
+            <p className="text-sm text-[var(--text-secondary)]">{rotuloDeEnchufe(o.enchufe)}</p>
           </div>
           {fila(o)}
         </li>
@@ -113,6 +113,7 @@ export function PiezasDelNegocio({ negocio }: Props) {
                   <div className="min-w-0 flex-1 basis-60">
                     <p className="flex flex-wrap items-center gap-2 text-base font-bold text-[var(--text-primary)]">
                       {pagina.pieza.nombre}
+                      <InfoTip title={pagina.pieza.nombre} what={pagina.pieza.descripcion} />
                       <span
                         className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
                           pagina.fila?.prendida ? "bg-[var(--data-success-50)] text-[var(--data-success-700)]" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
@@ -121,7 +122,6 @@ export function PiezasDelNegocio({ negocio }: Props) {
                         {pagina.fila?.prendida ? "Prendida" : "Apagada"}
                       </span>
                     </p>
-                    <p className="text-sm text-[var(--text-secondary)]">{pagina.pieza.descripcion}</p>
                     {pagina.fila?.prendida && (
                       <a href={`/t/${encodeURIComponent(negocio.slug)}`} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1 text-sm font-bold text-[var(--accent-ink)] hover:underline">
                         Ver su página <ExternalLink className="h-3.5 w-3.5" aria-hidden />
@@ -150,13 +150,15 @@ export function PiezasDelNegocio({ negocio }: Props) {
 
               {!pagina && oferta.paginasLibres.length > 0 && (
                 <div className="mt-3 space-y-2">
-                  <p className="text-sm font-bold text-[var(--text-primary)]">Páginas propias sin negocio · elige cuál prender</p>
+                  <p className="text-sm font-bold text-[var(--text-primary)]">Páginas sin negocio: elige una</p>
                   <ul className="divide-y divide-[var(--rule-soft)]">
                     {oferta.paginasLibres.map((o) => (
                       <li key={o.pieza.id} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 py-2">
                         <div className="min-w-0 flex-1 basis-60">
-                          <p className="text-base font-bold text-[var(--text-primary)]">{o.pieza.nombre}</p>
-                          <p className="line-clamp-2 text-sm text-[var(--text-tertiary)]" title={o.pieza.descripcion}>{o.pieza.descripcion}</p>
+                          <p className="flex items-center gap-1 text-base font-bold text-[var(--text-primary)]">
+                            {o.pieza.nombre}
+                            <InfoTip title={o.pieza.nombre} what={o.pieza.descripcion} />
+                          </p>
                         </div>
                         <button type="button" onClick={() => setConfirmando({ tipo: "prender", o })} className={BOTON_SUAVE}>
                           Prender «{o.pieza.nombre}»
@@ -198,8 +200,9 @@ export function PiezasDelNegocio({ negocio }: Props) {
 
             {oferta.deOtroRubro.length > 0 && (
               <div className="space-y-2 rounded-xl border border-dashed border-[var(--rule-base)] p-3">
-                <p className="text-sm font-bold text-[var(--text-secondary)]">
-                  De otro rubro <span className="font-normal text-[var(--text-tertiary)]">· hechas para otro tipo de negocio, disponibles igual</span>
+                <p className="flex items-center gap-1 text-sm font-bold text-[var(--text-secondary)]">
+                  De otro rubro
+                  <InfoTip title="De otro rubro" what="Piezas hechas para otro tipo de negocio. Se pueden prender igual." />
                 </p>
                 {lista(oferta.deOtroRubro)}
               </div>

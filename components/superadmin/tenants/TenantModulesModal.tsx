@@ -217,7 +217,7 @@ export function TenantModulesModal({ tenant, onClose, onSaved }: TenantModulesMo
       open
       onClose={onClose}
       title={`Módulos de ${tenant.name}`}
-      description={`Plan ${TIER_LABEL[tenantTier]} · forzá módulos ON/OFF solo para esta tienda; el resto hereda la plantilla global.`}
+      description={`Plan ${TIER_LABEL[tenantTier]} · fuerza módulos ON/OFF solo para esta tienda; el resto hereda la plantilla global.`}
       variant="wide"
     >
       <div className="flex flex-col gap-4 overflow-y-auto px-5 py-4 sm:px-6">
@@ -279,7 +279,7 @@ export function TenantModulesModal({ tenant, onClose, onSaved }: TenantModulesMo
                   Sin módulos que coincidan
                 </p>
                 <p className="mt-1 text-xs text-[var(--text-tertiary)]">
-                  Probá otro término de búsqueda.
+                  Prueba otro término de búsqueda.
                 </p>
               </div>
             )}

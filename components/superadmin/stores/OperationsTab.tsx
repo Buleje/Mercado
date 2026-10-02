@@ -351,7 +351,7 @@ export function OperationsTab() {
                 Pedidos en tiempo real
               </h2>
               <p className="mt-1 text-sm text-[var(--text-secondary)] max-w-2xl">
-                Monitoreá demoras vs SLA por estado. WhatsApp directo al dueño para escalar
+                Monitorea demoras vs SLA por estado. WhatsApp directo al dueño para escalar
                 cuando una tienda no responde a tiempo.
               </p>
             </div>
@@ -638,7 +638,7 @@ export function OperationsTab() {
           <p className="text-xs text-[var(--text-tertiary)] mt-1">
             {filter === "danger" || filter === "delayed"
               ? "Las operaciones están en orden ✓"
-              : "Ampliá la ventana de tiempo arriba."}
+              : "Amplía la ventana de tiempo arriba."}
           </p>
         </div>
       )}

@@ -158,7 +158,7 @@ export default function TenantsUsagePage() {
           <StatCard icon={AlertTriangle} label="Cerca del límite" value={String(kpis.near)} subValue="candidatas a upsell" emphasis={kpis.near > 0 ? "warning" : "success"} density="compact" />
           <StatCard icon={Gauge} label="Saturadas" value={String(kpis.saturated)} subValue="≥100% del límite" emphasis={kpis.saturated > 0 ? "error" : "success"} density="compact" />
           <StatCard icon={Activity} label="Uso promedio" value={`${kpis.avgUsage}%`} subValue="planes con límite" density="compact" />
-          <StatCard icon={TrendingUp} label="MRR potencial" value={fmtPEN(kpis.upside)} subValue="/mes si convertís" emphasis={kpis.upside > 0 ? "warning" : "neutral"} density="compact" />
+          <StatCard icon={TrendingUp} label="MRR potencial" value={fmtPEN(kpis.upside)} subValue="/mes si conviertes" emphasis={kpis.upside > 0 ? "warning" : "neutral"} density="compact" />
           <StatCard icon={AlertTriangle} label="Doble riesgo" value={String(kpis.doubleRisk)} subValue="al límite + trial" emphasis={kpis.doubleRisk > 0 ? "error" : "success"} density="compact" />
         </div>
 

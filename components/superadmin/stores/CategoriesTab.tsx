@@ -491,7 +491,7 @@ export function CategoriesTab() {
                   : `${unlinkedReport.length} elementos sin tienda vinculada`}
               </p>
               <p className="text-xs text-teal-700/80 dark:text-teal-400/80 mt-0.5">
-                No aparecerán poblados en <code className="font-mono">/tiendas</code>. Asigná al
+                No aparecerán poblados en <code className="font-mono">/tiendas</code>. Asigna al
                 menos una tienda.
               </p>
             </div>
@@ -582,7 +582,7 @@ export function CategoriesTab() {
             Sin resultados para &ldquo;{search}&rdquo;
           </p>
           <p className="text-xs text-[var(--text-tertiary)] mt-1">
-            Probá con otro término o limpiá el filtro.
+            Prueba con otro término o limpia el filtro.
           </p>
         </div>
       )}
@@ -1485,7 +1485,7 @@ function PrimaryStoreLinker({
             </p>
           </div>
           <p className="text-xs text-teal-700/80 dark:text-teal-400/80 mt-1 ml-7">
-            Asigná al menos una tienda para que esta categoría aparezca poblada en /tiendas.
+            Asigna al menos una tienda para que esta categoría aparezca poblada en /tiendas.
           </p>
         </div>
       ) : (
@@ -1568,7 +1568,7 @@ function PrimaryStoreLinker({
       <StoreLinkerModal
         open={modalOpen}
         title={`Tiendas en "${categoryLabel}"`}
-        subtitle="Hacé click en una tienda para ver sus artículos"
+        subtitle="Haz click en una tienda para ver sus artículos"
         stores={stores}
         linkedSlugs={linkedSlugs}
         storeZones={storeZones}

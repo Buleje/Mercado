@@ -180,7 +180,7 @@ const BANNER_TEMPLATES: BannerTemplate[] = [
     description: "Amarillo cálido · badge 2x1",
     payload: {
       type: "promo",
-      title: "Llevá 2, pagá 1",
+      title: "Lleva 2, paga 1",
       subtitle: "Combo de la semana en bodega",
       bgFrom: "#0d9488",
       bgTo: "#0d9488",
@@ -243,7 +243,7 @@ const BANNER_TEMPLATES: BannerTemplate[] = [
     description: "Rosa cálido · estilo regalo",
     payload: {
       type: "promo",
-      title: "Regalá lo que disfruta",
+      title: "Regala lo que disfruta",
       subtitle: "Selección especial para fechas especiales",
       bgFrom: "#fce7f3",
       bgTo: "#fbcfe8",
@@ -648,7 +648,7 @@ function EditMode({
               "absolute top-0 right-0 bottom-0 w-1.5 cursor-col-resize z-20 group",
               "hover:bg-[var(--accent)]/40 active:bg-[var(--accent)]/60 transition-colors",
             )}
-            title="Arrastrá para redimensionar"
+            title="Arrastra para redimensionar"
           >
             <div className={cn("absolute inset-y-0 right-0 w-px", dark ? "bg-white/10" : "bg-black/10")} />
           </div>
@@ -839,7 +839,7 @@ function EditMode({
                   "relative h-full w-full overflow-hidden rounded-2xl shadow-2xl ring-1 ring-white/10 select-none touch-none",
                   current.imageUrl ? (dragging ? "cursor-grabbing" : "cursor-grab") : "cursor-default",
                 )}
-                aria-label="Canvas — arrastrá para mover la imagen, scroll para zoom"
+                aria-label="Canvas — arrastra para mover la imagen, scroll para zoom"
               >
                 <PromoBannerRenderer banner={current} asLink={false} className="[&>div]:rounded-none [&>div]:border-0 h-full" />
                 {/* Overlay: drag directo de Comprar / Insignia sobre el canvas (solo type=promo) */}
@@ -899,7 +899,7 @@ function EditMode({
               "absolute top-0 left-0 bottom-0 w-1.5 cursor-col-resize z-20",
               "hover:bg-[var(--accent)]/40 active:bg-[var(--accent)]/60 transition-colors",
             )}
-            title="Arrastrá para redimensionar"
+            title="Arrastra para redimensionar"
           >
             <div className={cn("absolute inset-y-0 left-0 w-px", dark ? "bg-white/10" : "bg-black/10")} />
           </div>
@@ -1144,7 +1144,7 @@ function FrameTab({ adj, hasImage, onChange }: { adj: ImageAdjust; hasImage: boo
   if (!hasImage) {
     return (
       <p className="text-xs text-[rgb(var(--st-fg)/0.5)] leading-snug">
-        Subí una imagen primero (pestaña <strong className="text-[rgb(var(--st-fg)/0.8)]">Imagen</strong>) para poder reencuadrarla acá.
+        Sube una imagen primero (pestaña <strong className="text-[rgb(var(--st-fg)/0.8)]">Imagen</strong>) para poder reencuadrarla acá.
       </p>
     );
   }
@@ -1201,7 +1201,7 @@ function ImageTab({ banner, onPatch, uploadFolder }: { banner: StudioBanner; onP
           />
         </div>
       </Section>
-      <Section title="O pegá una URL">
+      <Section title="O pega una URL">
         <input
           value={banner.imageUrl ?? ""}
           onChange={(e) => onPatch({ imageUrl: e.target.value || null })}
@@ -1287,7 +1287,7 @@ function ColorTab({
   if (banner.imageUrl) {
     return (
       <p className="text-xs text-[rgb(var(--st-fg)/0.6)] leading-snug">
-        Los colores de fondo se usan solo cuando NO hay imagen. Quitá la imagen desde la pestaña <strong className="text-[rgb(var(--st-fg)/0.8)]">Imagen</strong> para personalizar el gradiente.
+        Los colores de fondo se usan solo cuando NO hay imagen. Quita la imagen desde la pestaña <strong className="text-[rgb(var(--st-fg)/0.8)]">Imagen</strong> para personalizar el gradiente.
       </p>
     );
   }
@@ -1329,7 +1329,7 @@ function PromoTab({ banner, onPatch, uploadFolder, theme }: { banner: StudioBann
   if (banner.type !== "promo") {
     return (
       <p className="text-xs text-[rgb(var(--st-fg)/0.6)] leading-snug">
-        Cambiá el tipo a <strong className="text-[rgb(var(--st-fg)/0.8)]">Promo</strong> en la pestaña Texto para usar producto/combo embebido con compra directa.
+        Cambia el tipo a <strong className="text-[rgb(var(--st-fg)/0.8)]">Promo</strong> en la pestaña Texto para usar producto/combo embebido con compra directa.
       </p>
     );
   }
@@ -1531,7 +1531,7 @@ function PromoItemEditor({
           )}
 
           {/* Imagen del producto + drag adjust con preview real */}
-          <Section title="Imagen del producto · arrastrá para reposicionar">
+          <Section title="Imagen del producto · arrastra para reposicionar">
             <div className={cn("rounded-lg p-2", dark ? "bg-[rgb(var(--st-fg)/0.05)]" : "bg-black/5")}>
               <ImageUploader
                 value={item.productImage}
@@ -1721,7 +1721,7 @@ function AICopySuggester({
         </button>
         {!canSuggest && (
           <p className={cn("text-[length:var(--ts-2xs)] leading-snug", dark ? "text-[rgb(var(--st-fg)/0.5)]" : "text-black/50")}>
-            Cargá primero un nombre de producto para que la IA tenga contexto.
+            Carga primero un nombre de producto para que la IA tenga contexto.
           </p>
         )}
         {error && (
@@ -1851,7 +1851,7 @@ function AnchorControl({
         )}
         {!isFree && (
           <p className={cn("text-[length:var(--ts-2xs)] leading-snug", dark ? "text-[rgb(var(--st-fg)/0.5)]" : "text-black/50")}>
-            Tip: presioná uno de los presets de arriba o usá <strong>Centro</strong> para liberar el slider X/Y.
+            Tip: presiona uno de los presets de arriba o usá <strong>Centro</strong> para liberar el slider X/Y.
           </p>
         )}
       </div>
@@ -1973,7 +1973,7 @@ function ItemImageAdjustMini({
           dragging ? "cursor-grabbing ring-2 ring-[var(--accent)]/50" : "cursor-grab",
           dark ? "bg-white/95 border-[rgb(var(--st-fg)/0.1)]" : "bg-[var(--surface-raised)] border-black/10",
         )}
-        aria-label="Preview del producto — arrastrá para mover, scroll para zoom"
+        aria-label="Preview del producto — arrastra para mover, scroll para zoom"
         style={{
           backgroundImage: `url(${imageUrl})`,
           backgroundPosition: `${value.position.x}% ${value.position.y}%`,
@@ -2064,7 +2064,7 @@ function CatalogPickerLauncher({
           <div className="min-w-0 flex-1">
             <p className="text-xs font-extrabold text-[var(--accent)]">Catálogo de tiendas</p>
             <p className={cn("text-[length:var(--ts-2xs)] leading-snug", dark ? "text-[rgb(var(--st-fg)/0.6)]" : "text-black/60")}>
-              Buscá un producto real con imagen + precio actualizado.
+              Busca un producto real con imagen + precio actualizado.
             </p>
           </div>
         </div>
@@ -2261,7 +2261,7 @@ function ProductCatalogModal({
           </span>
           <div className="min-w-0 flex-1">
             <p className={cn("text-sm font-extrabold leading-none", dark ? "text-[rgb(var(--st-fg))]" : "text-[var(--text-primary)]")}>
-              {step === "stores" ? "Elegí una tienda" : "Elegí un producto"}
+              {step === "stores" ? "Elige una tienda" : "Elige un producto"}
             </p>
             <p className={cn("text-[length:var(--ts-2xs)] leading-tight mt-0.5 truncate", dark ? "text-[rgb(var(--st-fg)/0.6)]" : "text-black/60")}>
               {step === "stores"

@@ -202,7 +202,7 @@ export default function TenantsMapPage() {
                   </div>
                   {locating?.slug === r.slug && (
                     <div className="px-3 pb-3 space-y-2">
-                      <p className="text-xs text-[var(--text-tertiary)]">Hacé clic en el mapa para marcar la ubicación de <strong>{r.name}</strong>.</p>
+                      <p className="text-xs text-[var(--text-tertiary)]">Haz clic en el mapa para marcar la ubicación de <strong>{r.name}</strong>.</p>
                       <LeafletMap lat={pending?.lat ?? -8.38} lon={pending?.lng ?? -74.53} zoom={6} height={260} onPick={(lat, lng) => setPending({ lat, lng })} />
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-xs text-[var(--text-secondary)] tabular-nums">{pending ? `GPS: ${pending.lat.toFixed(5)}, ${pending.lng.toFixed(5)}` : "Sin marcar"}</span>

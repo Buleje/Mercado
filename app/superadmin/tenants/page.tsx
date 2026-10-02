@@ -655,7 +655,7 @@ export default function TenantsPage() {
               <p className="text-sm text-[var(--text-tertiary)] mt-1">
                 {tenants.length === 0
                   ? "Aún no hay ningún tenant en la plataforma."
-                  : "Probá ajustar la búsqueda, plan o estado."}
+                  : "Prueba ajustar la búsqueda, plan o estado."}
               </p>
               {tenants.length > 0 && (
                 <button

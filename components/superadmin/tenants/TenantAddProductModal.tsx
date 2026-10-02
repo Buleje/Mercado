@@ -114,7 +114,7 @@ export default function TenantAddProductModal({
 
   const handleSave = async () => {
     if (!name.trim() || !category.trim() || price <= 0) {
-      setError("Completá nombre, categoría y precio.");
+      setError("Completa nombre, categoría y precio.");
       return;
     }
     setSaving(true);
@@ -327,7 +327,7 @@ export default function TenantAddProductModal({
 
             {groups.length === 0 && (
               <p className="rounded-xl border border-dashed border-[var(--rule-base)] py-6 text-center text-sm text-[var(--text-tertiary)]">
-                Sin grupos de modificadores. Agregá uno si el producto tiene variaciones.
+                Sin grupos de modificadores. Agrega uno si el producto tiene variaciones.
               </p>
             )}
 

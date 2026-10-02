@@ -10,6 +10,7 @@ import {
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useConfirm } from "@/components/superadmin/_shared/useConfirm";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 
 // ─── Schemas ──────────────────────────────────────────────────────────────────
 
@@ -70,7 +71,7 @@ const TEMPLATE_PRESETS: TemplatePreset[] = [
     id: "polleria-presa",
     category: "Pollería",
     name: "Presa",
-    description: "Elegí la presa de tu preferencia",
+    description: "Elige la presa que prefieras",
     required: true,
     minSelect: 1,
     maxSelect: 1,
@@ -326,7 +327,7 @@ function ImageDropzone({ value, onChange, folder = "variant-catalog" }: ImageDro
             <div className="flex-1 min-w-[180px]">
               <p className="text-xs text-[var(--text-secondary)] truncate font-mono">{value}</p>
               <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-1">
-                Click o arrastrá otra imagen para reemplazar
+                Click o arrastra otra imagen para reemplazar
               </p>
             </div>
             <button
@@ -348,7 +349,7 @@ function ImageDropzone({ value, onChange, folder = "variant-catalog" }: ImageDro
               <>
                 <Upload className="h-8 w-8 text-[var(--text-tertiary)] mb-2" />
                 <p className="text-sm font-semibold text-[var(--text-primary)]">
-                  Arrastrá una imagen aquí
+                  Arrastra una imagen aquí
                 </p>
                 <p className="text-xs text-[var(--text-tertiary)] mt-1">
                   o <span className="text-primary font-bold underline">click para buscar en tu computadora</span>
@@ -472,7 +473,7 @@ function NewTemplateModal({
               </Dialog.Title>
               <Dialog.Description className="text-xs text-[var(--text-tertiary)] mt-0.5">
                 {step === "preset"
-                  ? "Empezá desde un preset común o creá una en blanco"
+                  ? "Empieza desde un preset común o crea una en blanco"
                   : `${category}${name ? ` · ${name}` : ""}`}
               </Dialog.Description>
             </div>
@@ -680,6 +681,7 @@ function TemplateCard({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="text-sm font-bold text-[var(--text-primary)]">{template.name}</h3>
+              {template.description && <InfoTip title={template.name} what={template.description} />}
               <span className="text-xs text-[var(--text-tertiary)]">
                 {template.options.length} {template.options.length === 1 ? "opción" : "opciones"}
               </span>
@@ -694,9 +696,6 @@ function TemplateCard({
                 </span>
               )}
             </div>
-            {template.description && (
-              <p className="text-xs text-[var(--text-secondary)] mt-0.5 truncate">{template.description}</p>
-            )}
           </div>
           <button
             onClick={togglePublished}
@@ -920,7 +919,7 @@ function OptionModal({
               </Field>
             </div>
 
-            <Field label="Imagen" hint="Arrastrá un archivo, hacé click para buscarlo, o pegá una URL externa">
+            <Field label="Imagen" hint="Arrastra un archivo, haz click para buscarlo, o pega una URL externa">
               <ImageDropzone value={imageUrl} onChange={setImageUrl} folder="variant-catalog" />
             </Field>
 

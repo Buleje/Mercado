@@ -13,6 +13,7 @@ import {
   ArrowLeft, LogIn, MessageSquare, ExternalLink, RefreshCw, ShoppingBag, Users,
   Package, ShieldAlert, Activity, CheckCircle2, MinusCircle, Store, Sparkles, Loader2,
 } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { SAKpiCard } from "@/components/superadmin/_shared/SAKpiCard";
 import { useVisiblePolling } from "@/components/superadmin/_shared/useVisiblePolling";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -48,8 +49,8 @@ function IntegChip({ on, label }: { on: boolean; label: string }) {
   return (
     <div className="flex items-center gap-2 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 py-2">
       {on ? <CheckCircle2 className="h-4 w-4 text-[var(--data-success-600,#059669)] shrink-0" /> : <MinusCircle className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" />}
-      <span className="text-sm font-bold text-[var(--text-primary)]">{label}</span>
-      <span className={`ml-auto text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider ${on ? "text-[var(--data-success-600,#059669)]" : "text-[var(--text-tertiary)]"}`}>{on ? "ok" : "no"}</span>
+      <span className="min-w-0 truncate text-sm font-bold text-[var(--text-primary)]">{label}</span>
+      <span className={`ml-auto shrink-0 pl-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider ${on ? "text-[var(--data-success-600,#059669)]" : "text-[var(--text-tertiary)]"}`}>{on ? "ok" : "no"}</span>
     </div>
   );
 }
@@ -118,7 +119,7 @@ export function TenantDetailConsole({ slug }: { slug: string }) {
   const t = d.tenant;
   const h = d.health;
   const risk = h ? (RISK[h.riskLevel] ?? RISK.medium) : null;
-  const msg = `Hola, te escribo del equipo Buleje para ver cómo va ${t.name} y si necesitás una mano con algo.`;
+  const msg = `Hola, te escribo del equipo Buleje para ver cómo va ${t.name} y si necesitas una mano con algo.`;
 
   return (
     <div className="space-y-4">
@@ -128,7 +129,7 @@ export function TenantDetailConsole({ slug }: { slug: string }) {
           <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] overflow-hidden shrink-0">
             {t.logoUrl ? <img src={t.logoUrl} alt="" className="h-full w-full object-cover" /> : <Store className="h-6 w-6 text-[var(--text-tertiary)]" />}
           </span>
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 flex-1 basis-64">
             <div className="flex items-center gap-2 flex-wrap">
               <h2 className="font-display text-xl sm:text-2xl font-extrabold tracking-tight text-[var(--text-primary)]">{t.name}</h2>
               <span className="rounded-full bg-[var(--accent)]/10 px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]">{t.plan}</span>
@@ -184,7 +185,7 @@ export function TenantDetailConsole({ slug }: { slug: string }) {
             <button type="button" onClick={() => void askCopilot()} disabled={aiLoading} className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white hover:brightness-110 disabled:opacity-50">
               {aiLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} {aiLoading ? "Analizando el negocio…" : "Pedir análisis IA"}
             </button>
-            <span className="text-xs text-[var(--text-tertiary)]">La IA resume la situación, sugiere una acción y redacta el mensaje para el dueño.</span>
+            <InfoTip title="Co-piloto IA" what="Resume la situación del negocio, sugiere una acción y redacta el mensaje para el dueño." />
           </div>
         ) : (
           <div className="space-y-3">

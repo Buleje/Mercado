@@ -50,7 +50,7 @@ export function PersonalizarTab({ stores, onRefresh }: PersonalizarTabProps) {
   const published = stores?.filter((s) => s.isPublished) ?? [];
   const hidden = stores?.filter((s) => !s.isPublished) ?? [];
   const avgCommission = stores?.length
-    ? (stores.reduce((s, r) => s + r.commission, 0) / stores.length).toFixed(1)
+    ? (stores.reduce((s, r) => s + Number(r.commission), 0) / stores.length).toFixed(1)
     : "0";
 
   if (!stores) return <TableSkeleton count={4} />;
