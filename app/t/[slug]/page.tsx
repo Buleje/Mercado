@@ -17,6 +17,8 @@ import { StorePageDB } from "@/lib/db/store-page.db";
 import { SettingsDB } from "@/lib/db/settings.db";
 import { OrdersDB } from "@/lib/db/orders.db";
 import { logger } from "@/lib/logger";
+import { Enchufe } from "@/lib/extensiones/Enchufe";
+import { resolverPiezas } from "@/lib/extensiones/resolver";
 import TenantPageTracker from "./_components/TenantPageTracker";
 import WebVitalsReporter from "@/components/WebVitalsReporter";
 import VendorTrustBadges from "@/components/store/VendorTrustBadges";
@@ -478,6 +480,15 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
 
   // Permitir preview del dueño/superadmin aunque esté inactiva/sin publicar.
   if (!isPreview && (!tenant.active || !customization.published)) notFound();
+
+  // ADR-457 · ¿qué piezas prendió el superadmin en la portada de este negocio?
+  // Una lectura con caché (TenantPieza, por negocio) que nunca tira: ante un
+  // error, ninguna. Sin piezas no se monta ningún enchufe y la portada sale igual.
+  const piezasDeLaPortada = await resolverPiezas(tenant.id, "tienda.portada");
+  const piezasPortada = {
+    agrega: piezasDeLaPortada.some((p) => p.entrada.portada?.modo === "agrega"),
+    reemplaza: piezasDeLaPortada.some((p) => p.entrada.portada?.modo === "reemplaza"),
+  };
 
   // Design tokens del SectionsBuilder tienen prioridad sobre customization viejo.
   // El bodeguero edita primary/accent desde el tab "Diseño" del admin.
@@ -1281,18 +1292,46 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
         __body.testimonials = (
           <TenantTestimonials testimonials={editorTheme.testimonials} primary={cssPrimary} text={editorTheme.sectionText?.testimonials} />
         );
+        // ADR-457 · enchufe `tienda.portada` (modo agrega): los bloques de las
+        // piezas que el superadmin prendió para este negocio. Sólo se monta si
+        // hay alguna: sin piezas la portada sale con el mismo DOM de siempre
+        // (medido 01-10). En su propio <Suspense>: una pieza lenta (tope 2 s)
+        // no frena la portada entera, aparece cuando está.
+        __body.pieza = piezasPortada.agrega ? (
+          <Suspense fallback={null}>
+            <Enchufe nombre="tienda.portada" modo="agrega" tenantId={tenant.id} slug={tenant.slug} />
+          </Suspense>
+        ) : null;
         // Orden final: bodyOrder válido primero, luego cualquier faltante (default).
-        const __def = ["trust", "promos", "featured", "testimonials", "info"];
+        const __def = ["trust", "promos", "featured", "testimonials", "info", "pieza"];
         const __ord = (Array.isArray(editorTheme.bodyOrder) && editorTheme.bodyOrder.length
           ? editorTheme.bodyOrder.filter((k) => __def.includes(k))
           : []) as string[];
-        for (const k of __def) if (!__ord.includes(k)) __ord.push(k);
+        for (const k of __def) if (!__ord.includes(k) && k !== "pieza") __ord.push(k);
+        // El editor no ordena «pieza» (filtra a sus 5 claves): si bodyOrder no la
+        // trae, va pegada ANTES de la vitrina, donde sea que el dueño la movió.
+        if (!__ord.includes("pieza")) __ord.splice(Math.max(0, __ord.indexOf("featured")), 0, "pieza");
         // Secciones ocultas por el dueño (Brandon 2026-06-27): no renderizar.
         // En preview SÍ se muestran (atenuadas vía data-pb-hidden) para poder reactivarlas.
         const __hidden = new Set(Array.isArray(editorTheme.bodyHidden) ? editorTheme.bodyHidden : []);
-        return __ord
+        const __cuerpo = __ord
           .filter((k) => isPreview || !__hidden.has(k))
           .map((k) => <Fragment key={k}>{__body[k]}</Fragment>);
+        // ADR-457 · modo reemplaza: una pieza (p. ej. la página por bloques del
+        // dueño) se queda con el cuerpo entero; si falla, tarda o su página no
+        // está publicada, se ve este mismo cuerpo — con los bloques que agregan
+        // EN SU LUGAR (`agregaEnElFallback`). Si reemplaza, van después.
+        return piezasPortada.reemplaza ? (
+          <Enchufe
+            nombre="tienda.portada"
+            tenantId={tenant.id}
+            slug={tenant.slug}
+            fallback={__cuerpo}
+            agregaEnElFallback={piezasPortada.agrega}
+          />
+        ) : (
+          __cuerpo
+        );
       })()}
 
       {/* ═══════════════ Secciones custom del SectionsBuilder ═══════════════
