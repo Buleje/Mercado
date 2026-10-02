@@ -8,7 +8,9 @@ import { z } from "zod";
 import { useMemo } from "react";
 import Image from "next/image";
 import { ShoppingCart, Star } from "@buleje/design-system/icons";
-import { products, categories } from "@/data/products";
+import { useStoreProducts } from "@/hooks/use-store-products";
+import { slugify } from "@/data/products";
+import { ProductPhotoFallback } from "@/components/marketplace/ProductPhotoFallback";
 import { useCart } from "@/contexts/cart-context";
 
 // ─── Schema & Types ─────────────────────────────────────
@@ -47,6 +49,19 @@ function StarRating({ rating }: { rating: number }) {
   );
 }
 
+/**
+ * El carrito existe sólo dentro de la tienda. El editor del CMS y `/cms/<slug>`
+ * no lo montan: `useCart()` lanzaba y tumbaba toda la página. `useContext` corre
+ * antes del throw, así que el orden de hooks no cambia.
+ */
+function useCartSiExiste() {
+  try {
+    return useCart();
+  } catch {
+    return null; // sin CartProvider: el bloque se ve, sin botón de agregar
+  }
+}
+
 // ─── Component ──────────────────────────────────────────
 export default function ProductsBlock(props: Partial<ProductsBlockProps>) {
   const {
@@ -65,17 +80,19 @@ export default function ProductsBlock(props: Partial<ProductsBlockProps>) {
     showCTA = true,
   } = props;
 
-  const { addItem } = useCart();
+  const carrito = useCartSiExiste();
+  // Los productos reales del negocio (data/products.ts es una lista vacía a propósito).
+  const { products, categories } = useStoreProducts();
 
   const filteredProducts = useMemo(() => {
     let filtered = products;
     
     if (categoryFilter !== "todos") {
-      filtered = products.filter((p) => p.category === categoryFilter);
+      filtered = products.filter((p) => p.category === categoryFilter || slugify(p.category ?? "") === categoryFilter);
     }
     
     return filtered.slice(0, maxProducts);
-  }, [categoryFilter, maxProducts]);
+  }, [products, categoryFilter, maxProducts]);
 
   // Don't render the block if there are no products
   if (filteredProducts.length === 0) return null;
@@ -122,14 +139,19 @@ export default function ProductsBlock(props: Partial<ProductsBlockProps>) {
               >
                 {/* Image */}
                 <div className="relative overflow-hidden aspect-4/3">
-                  <Image
-                    src={product.image}
-                    alt={product.name}
-                    fill
-                    sizes={`(max-width: 640px) 50vw, (max-width: 1024px) ${gridCols === "2" ? "50vw" : "33vw"}, ${100 / parseInt(gridCols)}vw`}
-                    className="object-cover group-hover:scale-108 transition-transform duration-[var(--dur-slow)]"
-                    loading="lazy"
-                  />
+                  {product.image ? (
+                    <Image
+                      src={product.image}
+                      alt={product.name}
+                      unoptimized
+                      fill
+                      sizes={`(max-width: 640px) 50vw, (max-width: 1024px) ${gridCols === "2" ? "50vw" : "33vw"}, ${100 / parseInt(gridCols)}vw`}
+                      className="object-cover group-hover:scale-108 transition-transform duration-[var(--dur-slow)]"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <ProductPhotoFallback name={product.name} category={product.category} />
+                  )}
                   
                   {showBadges && product.badge && (
                     <span className="absolute top-2.5 left-2.5 bg-primary text-white text-xs font-bold px-2.5 py-1 rounded-lg shadow">
@@ -137,9 +159,9 @@ export default function ProductsBlock(props: Partial<ProductsBlockProps>) {
                     </span>
                   )}
                   
-                  {showAddToCart && (
+                  {showAddToCart && carrito && (
                     <button
-                      onClick={() => addItem({
+                      onClick={() => carrito.addItem({
                         id: product.id,
                         name: product.name,
                         price: product.price,
@@ -159,7 +181,7 @@ export default function ProductsBlock(props: Partial<ProductsBlockProps>) {
                 {/* Content */}
                 <div className="p-3 sm:p-4">
                   <span className="text-xs font-semibold text-primary/60 uppercase tracking-wider">
-                    {categories.find((c) => c.id === product.category)?.label || product.category}
+                    {categories.find((c) => c.id === product.category || c.label === product.category)?.label || product.category}
                   </span>
                   <h3 className="font-bold text-[var(--text-primary)] mt-0.5 mb-2 text-sm sm:text-base leading-tight">
                     {product.name}
