@@ -29,6 +29,7 @@ import CtpDocumentoVisor, { type DocumentoImprimible } from "./CtpDocumentoVisor
 import LothGuiaDatos from "./LothGuiaDatos";
 import LothGuiaTrozas from "./LothGuiaTrozas";
 import LothGuiaRegistrada, { useCapaEncimaDelModal } from "./LothGuiaRegistrada";
+import AvisoTrozasDeAntes, { useTrozasDeAntes } from "./LothGuiaTrozasDeAntes";
 import { Btn } from "./ctp-shared";
 
 type Pestana = "guia" | "trozas";
@@ -50,7 +51,8 @@ const aGuardada = (p: Parte | undefined) =>
       }
     : null;
 
-export default function LothDespachoGuiaModal({ onClose, onRegistrada }: { onClose: () => void; onRegistrada: () => void }) {
+/** `trozasIniciales`: códigos que llegan elegidos (Control del permiso, ADR-459). */
+export default function LothDespachoGuiaModal({ onClose, onRegistrada, trozasIniciales }: { onClose: () => void; onRegistrada: () => void; trozasIniciales?: readonly string[] }) {
   const directorio = useDirectorioForestal();
   /* La libreta cuenta los usos recién al registrar: lo que se eligió y se
      cambió antes no sube en el orden. */
@@ -60,6 +62,7 @@ export default function LothDespachoGuiaModal({ onClose, onRegistrada }: { onClo
     onRegistrada();
   }, [directorio, onRegistrada]);
   const g = useDespachoGuiaLoth({ onRegistrada: alRegistrar });
+  const avisoDeAntes = useTrozasDeAntes(g, trozasIniciales); // después del hook: su siembra corre antes
   const catalogo = useEspeciesConCatalogo();
   const cientificoDe = useCallback((comun: string) => catalogo.cientificoDe(comun), [catalogo]);
   const [tab, setTab] = useState<Pestana>("trozas");
@@ -218,6 +221,7 @@ export default function LothDespachoGuiaModal({ onClose, onRegistrada }: { onClo
               <LothGuiaRegistrada r={g.registrada} cientificoDe={cientificoDe} />
             ) : (
               <>
+                <AvisoTrozasDeAntes aviso={avisoDeAntes} />
                 <div className="flex flex-wrap gap-1 border-b-2 border-[var(--rule-base)]" role="group" aria-label="Partes de la guía">
                   <PestanaGuia activa={tab === "guia"} onClick={() => setTab("guia")} label="Datos de la guía" pendiente={faltanGuia.length} />
                   <PestanaGuia activa={tab === "trozas"} onClick={() => setTab("trozas")} label="Lista de trozas" contador={g.piezas.length} />

@@ -41,7 +41,9 @@ function linea(p: Partial<Omit<LothEntryDTO, "volumeM3">> & { section: string; v
   } as unknown as LothEntryDTO;
 }
 
-const HOY = new Date("2026-09-21T00:00:00.000Z");
+/* Mediodía UTC = 07:00 en Pucallpa: el «hoy» del tablero es el día de Lima
+   (ADR-459), y a medianoche UTC Pucallpa todavía está en el día anterior. */
+const HOY = new Date("2026-09-21T12:00:00.000Z");
 
 describe("construirTablero — un estado por troza, derivado de las tres secciones", () => {
   it("trozada y nada más ⇒ disponible", () => {

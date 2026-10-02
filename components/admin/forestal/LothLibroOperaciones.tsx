@@ -291,6 +291,8 @@ export default function LothLibroOperaciones() {
   const [trozasEnSesionForm, setTrozasEnSesionForm] = useState<LothEntry[]>([]);
   /** «Despachar con guía»: la GTF completa y sus líneas de despacho en un registro. */
   const [showDespachoGuia, setShowDespachoGuia] = useState(false);
+  /** Trozas que llegan elegidas a la guía desde el Control del permiso (ADR-459). */
+  const [despachoElegidas, setDespachoElegidas] = useState<string[] | null>(null);
   /** Censo del plan activo — alimenta el cuadro "censo vs realidad". */
   const [censoArboles, setCensoArboles] = useState<
     { treeCode: string; speciesCommon: string; dapM: number | null; volumenEstimadoM3: number | null; estado: string }[]
@@ -498,7 +500,6 @@ export default function LothLibroOperaciones() {
     ],
     // doExport/doInforme se redefinen por render; lo que cambia el menú es el
     // trabajo en curso y si ya hay carátula.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [exporting, informing, caratula],
   );
 
@@ -953,7 +954,9 @@ export default function LothLibroOperaciones() {
       {/* Vista de trazabilidad — operación completa por árbol */}
       {view === "tablero" && (
         <>
-          {loading ? (
+          {/* El spinner sólo la primera vez: al recargar tras despachar, el
+              tablero se queda montado y no pierde filtros ni permiso. */}
+          {loading && allEntries.length === 0 ? (
             <div className="p-8 text-center text-[var(--text-tertiary)]">
               <RefreshCw className="mx-auto h-6 w-6 animate-spin" />
               <p className="mt-2 text-sm">Cargando el control del permiso...</p>
@@ -962,12 +965,18 @@ export default function LothLibroOperaciones() {
             <LothTableroTrozas
               entries={allEntries}
               caratula={caratula}
+              reloadSignal={reloadSignal}
+              onDespacharConGuia={(codigos) => {
+                setDespachoElegidas(codigos);
+                setShowDespachoGuia(true);
+              }}
               nav={{
                 onVerCadena: (code) => setCadenaCode(code),
                 onVerGtf: (gtf) => {
                   setFocoGtf(gtf);
                   setView("gtf");
                 },
+                onIrAlPlan: () => setView("plan"),
               }}
             />
           )}
@@ -1298,7 +1307,14 @@ export default function LothLibroOperaciones() {
       )}
 
       {showDespachoGuia && (
-        <LothDespachoGuiaModal onClose={() => setShowDespachoGuia(false)} onRegistrada={refreshAll} />
+        <LothDespachoGuiaModal
+          trozasIniciales={despachoElegidas ?? undefined}
+          onClose={() => {
+            setShowDespachoGuia(false);
+            setDespachoElegidas(null);
+          }}
+          onRegistrada={refreshAll}
+        />
       )}
 
       <LothImportLineasModal
@@ -1409,6 +1425,7 @@ export default function LothLibroOperaciones() {
             value={annulReason}
             onChange={(e) => setAnnulReason(e.target.value)}
             placeholder="Motivo de la anulación (mínimo 3 caracteres)"
+            // eslint-disable-next-line jsx-a11y/no-autofocus -- único campo del modal de anular, foco intencional
             autoFocus
             className="h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-base text-[var(--text-primary)] outline-none focus:border-[var(--data-error-500)]"
           />

@@ -184,7 +184,7 @@ export const LOTH_VISTAS: readonly SubvistaModulo[] = [
   { key: "plan", label: "Plan de Manejo", hint: "Censo + especies autorizadas" },
   { key: "mapa", label: "Mapa", hint: "Dónde se taló cada árbol (GPS de campo)" },
   { key: "trazabilidad", label: "Por árbol", hint: "Operación completa de un árbol" },
-  { key: "tablero", label: "Control del permiso", hint: "Cada troza y su estado: disponible, despachada o consumida" },
+  { key: "tablero", label: "Control del permiso", hint: "Por permiso: volumen que le queda, trozas en el patio y su antigüedad; despachar, etiquetas y Excel" },
   { key: "cumplimiento", label: "Cumplimiento", hint: "Veredicto de fiscalización + reporte imprimible" },
   { key: "cierre", label: "Cierre", hint: "Cerrar el mes → acta inmutable (OSINFOR)" },
   { key: "extraccion", label: "Extracción", hint: "Censo − tala, trozado y despacho por permiso" },

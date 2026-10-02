@@ -8,291 +8,194 @@
  * leer tres secciones y cruzar códigos a mano. Acá cada troza aparece una sola
  * vez, con su estado y su color, bajo los códigos del permiso que la ampara.
  *
- * Orden de la pantalla (ley de Brandon, 2026-09-19):
- *   h2  Control del permiso ───── qué contesta
- *       banda con los códigos del título habilitante
- *   h3  Estado de las trozas ──── las cifras, y cada una filtra
- *   h3  Trozas · filtros pegados a su tabla
+ * ADR-459 (2-10-2026, Brandon: «quiero mejoras para esa página, nuevas
+ * integraciones, funciones especializadas»): el tablero mezclaba las trozas de
+ * los tres planes vivos de Blas, no decía cuánto volumen le quedaba al permiso,
+ * no dejaba actuar sobre las trozas y no exportaba. Ahora:
+ *   · se elige el permiso (recordado) y la banda habla de ESE plan;
+ *   · el volumen del permiso, en cascada (en pie → patio → despachado);
+ *   · lo que lleva ≥ 15 / ≥ 30 días en el patio, en ámbar / rojo;
+ *   · tanda sobre las del patio: despachar con guía, etiquetas, Excel;
+ *   · Excel, reporte impreso y resumen por WhatsApp;
+ *   · el buscador lee la etiqueta con la pistola.
+ *
+ * Orden (ley de la vista, rule `ui-components`): título con cifras + permiso +
+ * Opciones en una fila → banda → avisos → volumen → estados → tabla.
  *
  * El estado se deriva del libro (`lib/forestal/loth-tablero-trozas.ts`): no hay
  * un contador aparte que se pueda desincronizar.
  */
 
-import { useMemo, useState } from "react";
-import { SectionTitle, CardTitle, DataTable } from "@buleje/design-system";
-import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
-import { Search, AlertTriangle, FileText } from "@buleje/design-system/icons";
+import { useCallback, useMemo } from "react";
 import type { LothEntryDTO } from "@/lib/forestal/loth-constants";
+import { cascadaDelPlan } from "@/lib/forestal/loth-saldo-cascada";
+import { bandaDelPlan, nombreDelPlan } from "@/lib/forestal/loth-tablero-permiso";
+import type { DatosControl } from "@/lib/forestal/loth-tablero-reporte";
 import {
-  ESTADOS_META,
   construirTablero,
   especiesDelTablero,
-  filtrarTablero,
+  filtrarPorPlan,
+  planesDe,
   resumirTablero,
-  type EstadoTroza,
-  type TrozaTablero,
+  resumirViejas,
 } from "@/lib/forestal/loth-tablero-trozas";
-import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { limaDateKey } from "@/lib/utils";
+import { useLothTableroAcciones } from "./hooks/use-loth-tablero-acciones";
+import { useLothTableroPermiso } from "./hooks/use-loth-tablero-permiso";
+import { useLothTableroTabla } from "./hooks/use-loth-tablero-tabla";
+import LothTableroAvisos from "./LothTableroAvisos";
+import LothTableroBanda, { type CaratulaTablero } from "./LothTableroBanda";
+import LothTableroCabecera from "./LothTableroCabecera";
+import LothTableroEstados from "./LothTableroEstados";
+import LothTableroTabla, { type NavTablero } from "./LothTableroTabla";
+import LothTableroTanda from "./LothTableroTanda";
+import LothTableroVolumen from "./LothTableroVolumen";
 
-export interface CaratulaTablero {
-  tituloHabilitante?: string | null;
-  registroNumber?: string | null;
-  tomo?: string | null;
-  titularName?: string | null;
-  docGestionType?: string | null;
-  docGestionName?: string | null;
-  resolucionNumber?: string | null;
-}
-
-/** Cada estado con su color. Rojo = ya no está disponible (pedido de Brandon). */
-const TONO: Record<EstadoTroza, { chip: string; punto: string }> = {
-  disponible: {
-    chip: "border-[var(--data-success-500)] bg-[var(--data-success-50)] text-[var(--data-success-700)]",
-    punto: "bg-[var(--data-success-500)]",
-  },
-  despachada: {
-    chip: "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)]",
-    punto: "bg-[var(--data-error-500)]",
-  },
-  consumida: {
-    chip: "border-[var(--data-warning-500)] bg-[var(--data-warning-100)] text-[var(--data-warning-700)]",
-    punto: "bg-[var(--data-warning-500)]",
-  },
-  descartada: {
-    chip: "border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
-    punto: "bg-[var(--text-tertiary)]",
-  },
-  fantasma: {
-    chip: "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)]",
-    punto: "bg-[var(--data-error-500)]",
-  },
-};
-
-const TH = "px-3 py-2.5 text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]";
-const TD = "px-3 py-2.5 align-middle";
+export type { CaratulaTablero } from "./LothTableroBanda";
+export type { NavTablero } from "./LothTableroTabla";
 
 export default function LothTableroTrozas({
   entries,
   caratula,
   nav,
+  reloadSignal = 0,
+  onDespacharConGuia,
 }: {
   entries: LothEntryDTO[];
   caratula?: CaratulaTablero | null;
-  nav?: { onVerCadena?: (code: string) => void; onVerGtf?: (gtf: string) => void };
+  nav?: NavTablero;
+  /** Sube tras cada escritura del libro: vuelve a leer planes y saldo. */
+  reloadSignal?: number;
+  /** Abre «Despachar con guía» con estas trozas ya elegidas. */
+  onDespacharConGuia?: (codigos: string[]) => void;
 }) {
-  const [texto, setTexto] = useState("");
-  const [estados, setEstados] = useState<EstadoTroza[]>([]);
-  const [especie, setEspecie] = useState<string | null>(null);
+  const permiso = useLothTableroPermiso(reloadSignal);
+  const hoyKey = limaDateKey();
 
-  const filas = useMemo(() => construirTablero(entries), [entries]);
+  const todas = useMemo(() => construirTablero(entries), [entries]);
+  const haySinPlan = useMemo(() => todas.some((f) => f.planId == null), [todas]);
+  const filas = useMemo(() => filtrarPorPlan(todas, permiso.planSel), [todas, permiso.planSel]);
   const resumen = useMemo(() => resumirTablero(filas), [filas]);
+  const viejas = useMemo(() => resumirViejas(filas), [filas]);
   const especies = useMemo(() => especiesDelTablero(filas), [filas]);
-  const visibles = useMemo(
-    () => filtrarTablero(filas, { texto, estados, especie }),
-    [filas, texto, estados, especie],
+
+  const banda = useMemo(() => (permiso.plan ? bandaDelPlan(permiso.plan, hoyKey) : null), [permiso.plan, hoyKey]);
+  const { saldo } = permiso;
+  const cascada = useMemo(
+    () => (permiso.plan && saldo.planId === permiso.plan.id && saldo.rows.length > 0 ? cascadaDelPlan(saldo.rows) : null),
+    [permiso.plan, saldo.planId, saldo.rows],
   );
 
-  const alternar = (e: EstadoTroza) =>
-    setEstados((prev) => (prev.includes(e) ? prev.filter((x) => x !== e) : [...prev, e]));
+  const { planes } = permiso;
+  const nombrePlanDe = useCallback(
+    (id: string | null) => {
+      if (!id) return "Sin plan";
+      const p = planes.find((x) => x.id === id);
+      return p ? nombreDelPlan(p) : "Plan dado de baja";
+    },
+    [planes],
+  );
+  /* Con «Todos» y más de un permiso, cada troza dice de cuál es. */
+  const conColumnaPermiso = permiso.planSel == null && (planes.length > 1 || haySinPlan);
 
-  const m3Visibles = visibles.reduce((a, f) => a + (f.volumenM3 ?? 0), 0);
+  const t = useLothTableroTabla(filas, permiso.planSel != null);
+  const { reiniciar } = t;
+  const { elegirPlan: guardarPlan } = permiso;
+  const elegirPlan = useCallback(
+    (id: string | null) => {
+      guardarPlan(id);
+      reiniciar();
+    },
+    [guardarPlan, reiniciar],
+  );
+
+  const datos: DatosControl = useMemo(
+    () => ({
+      permiso: banda,
+      libro: { tituloHabilitante: caratula?.tituloHabilitante ?? null, titular: caratula?.titularName ?? null },
+      filas,
+      resumen,
+      viejas,
+      cascada,
+      hoyKey,
+      nombrePlanDe: conColumnaPermiso ? nombrePlanDe : undefined,
+    }),
+    [banda, caratula, filas, resumen, viejas, cascada, hoyKey, conColumnaPermiso, nombrePlanDe],
+  );
+
+  const acc = useLothTableroAcciones({
+    datos,
+    nombre: banda?.nombre ?? (permiso.planSel ? "sin plan" : "todos"),
+    entries,
+    seleccion: t.seleccion,
+    planes,
+    tituloDelLibro: caratula?.tituloHabilitante ?? null,
+    onIrAlPlan: nav?.onIrAlPlan,
+  });
 
   return (
-    <div className="space-y-4">
-      {/* El riel de arriba ya dice cómo se llama la vista; el título de la
-          pantalla suma lo que contesta, en vez de repetir el nombre. */}
-      <header className="flex items-center gap-1.5">
-        <SectionTitle className="text-[var(--text-primary)]">Control del permiso</SectionTitle>
-        <InfoTip
-          title="Control del permiso"
-          what="Qué pasó con cada troza amparada por este título habilitante."
-          affects="La que sigue en el patio, la que ya salió con GTF y la que se consumió adentro."
+    <div className="min-w-0 space-y-4" data-vista-control-permiso>
+      <LothTableroCabecera
+        resumen={resumen}
+        viejas={viejas}
+        planes={planes}
+        planSel={permiso.planSel}
+        haySinPlan={haySinPlan}
+        onElegirPlan={elegirPlan}
+        acciones={acc.acciones}
+      />
+
+      <LothTableroBanda banda={banda} caratula={caratula} />
+
+      <LothTableroAvisos
+        banda={banda}
+        viejas={viejas}
+        soloViejas={t.soloViejas}
+        onVerViejas={() => t.setSoloViejas(true)}
+        errorPlanes={permiso.errorPlanes}
+        disponibles={resumen.find((r) => r.estado === "disponible")?.n ?? 0}
+      />
+
+      {banda && (
+        <LothTableroVolumen
+          banda={banda}
+          cascada={cascada}
+          cargando={saldo.cargando}
+          error={saldo.error}
+          onReintentar={permiso.reintentarSaldo}
+          onIrAlPlan={nav?.onIrAlPlan}
         />
-      </header>
+      )}
 
-      {/* Los códigos que amparan todo lo de abajo */}
-      <div className="flex flex-wrap gap-x-6 gap-y-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3">
-        <DatoPermiso label="Título habilitante" valor={caratula?.tituloHabilitante} mono />
-        <DatoPermiso label="N° registro del libro" valor={caratula?.registroNumber} mono />
-        <DatoPermiso label="Tomo" valor={caratula?.tomo} mono />
-        <DatoPermiso
-          label="Doc. de gestión"
-          valor={[caratula?.docGestionType, caratula?.docGestionName].filter(Boolean).join(" ") || null}
-        />
-        <DatoPermiso label="Resolución" valor={caratula?.resolucionNumber} mono />
-        <DatoPermiso label="Titular" valor={caratula?.titularName} />
-      </div>
+      <LothTableroEstados
+        resumen={resumen}
+        viejas={viejas}
+        estados={t.estados}
+        soloViejas={t.soloViejas}
+        onEstado={t.alternarEstado}
+        onViejas={() => t.setSoloViejas((v) => !v)}
+      />
 
-      {/* Cada cifra es también el filtro de su estado */}
-      <section className="space-y-2">
-        <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
-          Estado de las trozas
-        </CardTitle>
-        <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-5">
-          {resumen.map((r) => {
-            const activo = estados.includes(r.estado);
-            return (
-              <button
-                key={r.estado}
-                type="button"
-                aria-pressed={activo}
-                title={ESTADOS_META[r.estado].ayuda}
-                onClick={() => alternar(r.estado)}
-                className={`rounded-2xl border-2 px-3 py-2.5 text-left transition-colors ${
-                  activo ? TONO[r.estado].chip : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--rule-strong)]"
-                }`}
-              >
-                <span className="flex items-center gap-1.5">
-                  <span className={`h-2 w-2 shrink-0 rounded-full ${TONO[r.estado].punto}`} />
-                  <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                    {r.label}
-                  </span>
-                </span>
-                <span className="mt-0.5 block font-mono text-xl font-bold tabular-nums text-[var(--text-primary)]">
-                  {r.n}
-                </span>
-                <span className="block text-xs text-[var(--text-tertiary)]">
-                  {fmtM3(r.m3)} m³
-                  {r.sinVolumen > 0 && ` · ${r.sinVolumen} sin volumen`}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* La lista, con sus filtros pegados */}
-      <section className="space-y-2">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
-            Trozas{" "}
-            <span className="font-normal text-[var(--text-tertiary)]">
-              {visibles.length} de {filas.length} · {fmtM3(m3Visibles)} m³
-            </span>
-          </CardTitle>
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
-              <input
-                type="search"
-                value={texto}
-                onChange={(e) => setTexto(e.target.value)}
-                placeholder="Código, árbol, especie o GTF..."
-                aria-label="Buscar trozas"
-                className="h-10 w-56 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-8 pr-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--data-info-600)]"
-              />
-            </div>
-            <select
-              value={especie ?? ""}
-              onChange={(e) => setEspecie(e.target.value || null)}
-              aria-label="Filtrar por especie"
-              className="h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm font-medium text-[var(--text-primary)] outline-none"
-            >
-              <option value="">Todas las especies</option>
-              {especies.map((e) => (
-                <option key={e} value={e}>{e}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
-          <DataTable className="w-full text-sm">
-            <thead className="bg-[var(--surface-sunken)]">
-              <tr>
-                <th className={TH}>Cód. troza</th>
-                <th className={TH}>Árbol</th>
-                <th className={TH}>Especie</th>
-                <th className={`${TH} text-right`}>Vol. m³</th>
-                <th className={TH}>Estado</th>
-                <th className={TH}>GTF / salida</th>
-              </tr>
-            </thead>
-            <tbody>
-              {visibles.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-3 py-8 text-center text-sm text-[var(--text-tertiary)]">
-                    {filas.length === 0
-                      ? "Todavía no hay trozas registradas en el libro."
-                      : "Ninguna troza coincide con el filtro."}
-                  </td>
-                </tr>
-              )}
-              {visibles.map((f) => (
-                <Fila key={f.code} f={f} nav={nav} />
-              ))}
-            </tbody>
-          </DataTable>
-        </div>
-      </section>
-    </div>
-  );
-}
-
-function Fila({
-  f,
-  nav,
-}: {
-  f: TrozaTablero;
-  nav?: { onVerCadena?: (code: string) => void; onVerGtf?: (gtf: string) => void };
-}) {
-  return (
-    <tr className="border-t border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)]">
-      <td className={TD}>
-        <button
-          type="button"
-          onClick={() => nav?.onVerCadena?.(f.code)}
-          className="font-mono font-bold text-[var(--text-primary)] underline-offset-2 hover:underline"
-        >
-          {f.code}
-        </button>
-        {f.cites && (
-          <span className="ml-1.5 rounded bg-[var(--data-info-50)] px-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-info-700)]">
-            CITES
-          </span>
-        )}
-      </td>
-      <td className={`${TD} font-mono text-[var(--text-secondary)]`}>{f.treeCode ?? "—"}</td>
-      <td className={`${TD} text-[var(--text-secondary)]`}>{f.especie ?? "—"}</td>
-      <td className={`${TD} text-right font-mono tabular-nums text-[var(--text-primary)]`}>
-        {f.volumenM3 != null ? fmtM3(f.volumenM3) : <span className="text-[var(--text-tertiary)]">sin medir</span>}
-      </td>
-      <td className={TD}>
-        <span className={`inline-flex items-center gap-1.5 rounded-lg border px-2 py-0.5 text-xs font-bold ${TONO[f.estado].chip}`}>
-          {f.estado === "fantasma" && <AlertTriangle className="h-3 w-3" />}
-          {ESTADOS_META[f.estado].label}
-        </span>
-        {f.estado === "disponible" && f.diasEnPatio != null && f.diasEnPatio > 0 && (
-          <span className="ml-1.5 text-xs text-[var(--text-tertiary)]">{f.diasEnPatio} d en patio</span>
-        )}
-      </td>
-      <td className={TD}>
-        {f.gtf ? (
-          <button
-            type="button"
-            onClick={() => nav?.onVerGtf?.(f.gtf as string)}
-            className="inline-flex items-center gap-1 font-mono text-xs font-bold text-[var(--data-info-700)] underline-offset-2 hover:underline"
-          >
-            <FileText className="h-3 w-3" />
-            {f.gtf}
-          </button>
-        ) : (
-          <span className="text-xs text-[var(--text-tertiary)]">—</span>
-        )}
-      </td>
-    </tr>
-  );
-}
-
-function DatoPermiso({ label, valor, mono }: { label: string; valor?: string | null; mono?: boolean }) {
-  return (
-    <div className="min-w-0">
-      <span className="block text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-        {label}
-      </span>
-      <span className={`block truncate text-sm font-semibold text-[var(--text-primary)] ${mono ? "font-mono" : ""}`}>
-        {valor?.trim() || "—"}
-      </span>
+      <LothTableroTabla
+        t={t}
+        total={filas.length}
+        especies={especies}
+        nav={nav}
+        permisoDe={conColumnaPermiso ? nombrePlanDe : undefined}
+        vacio={permiso.planSel ? "Todavía no hay trozas registradas en este permiso." : undefined}
+        tanda={
+          <LothTableroTanda
+            seleccion={t.seleccion}
+            ocultas={t.ocultasElegidas}
+            planes={planesDe(t.seleccion).length}
+            imprimiendo={acc.imprimiendo}
+            onDespachar={onDespacharConGuia ? () => onDespacharConGuia(t.seleccion.map((f) => f.code)) : undefined}
+            onImprimir={acc.imprimirEtiquetas}
+            onExportar={() => void acc.exportarSeleccion()}
+            onQuitar={t.limpiarSeleccion}
+          />
+        }
+      />
     </div>
   );
 }
