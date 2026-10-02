@@ -36,15 +36,33 @@ import type { LineaProducto } from "@/lib/forestal/ctp-gtf-formato";
  * Los lugares del sistema donde una pieza puede entrar. Agregar uno es una
  * decisión de arquitectura (ADR), no de una pieza.
  * · `tienda.portada` — la portada pública: AGREGA un bloque o REEMPLAZA el cuerpo.
+ * · `tienda.pagina` — la página pública ENTERA de `/t/<negocio>` (ADR-458): una
+ *   «página propia». Es EXCLUSIVA: la asignación a un segundo negocio se rechaza
+ *   en el servidor (409), aunque la del primero esté apagada.
  * · `forestal.guia-impresa` — la GTF de salida: SÓLO agrega hojas, pie o CSS;
  *   las tres copias oficiales no se tocan.
  * · `panel.pestana` — una pestaña «A medida» en el panel, gateada como un módulo.
  */
-export const ENCHUFES = ["tienda.portada", "forestal.guia-impresa", "panel.pestana"] as const;
+export const ENCHUFES = ["tienda.portada", "tienda.pagina", "forestal.guia-impresa", "panel.pestana"] as const;
 export type EnchufeId = (typeof ENCHUFES)[number];
+
+/** El enchufe de la página propia (ADR-458): una pieza suya es de UN solo negocio. */
+export const ENCHUFE_PAGINA = "tienda.pagina" as const satisfies EnchufeId;
 
 export function esEnchufe(v: unknown): v is EnchufeId {
   return typeof v === "string" && (ENCHUFES as readonly string[]).includes(v);
+}
+
+/**
+ * `?sinPiezas=1` en `/t/<negocio>`: la página general PURA, sin resolver
+ * piezas (ni página propia ni portada). Es a donde recarga el navegador
+ * cuando una pieza que reemplaza falla al dibujarse (ADR-458): así el
+ * respaldo no viaja armado en cada visita.
+ */
+export const PARAMETRO_SIN_PIEZAS = "sinPiezas";
+
+export function pideSinPiezas(busqueda: Readonly<Record<string, string | string[] | undefined>>): boolean {
+  return busqueda[PARAMETRO_SIN_PIEZAS] === "1";
 }
 
 /** El módulo del panel que aparece cuando el negocio tiene ≥1 pieza en `panel.pestana`. */
@@ -101,6 +119,35 @@ export interface PiezaPortada<O = unknown, D = unknown> {
   readonly cargar?: (ctx: ContextoPieza, opciones: O) => Promise<D>;
   /** Componente de servidor o de cliente. Si tira, se ve la versión normal. */
   readonly Vista: (props: VistaPortadaProps<O, D>) => ReactNode | Promise<ReactNode>;
+}
+
+/** Los parámetros de la URL tal como los entrega Next (`?preview=true`, `?x=1&x=2`…). */
+export type ParametrosDeBusqueda = Readonly<Record<string, string | string[] | undefined>>;
+
+/**
+ * `tienda.pagina` (ADR-458): lo que recibe la página propia. Corre en el
+ * servidor DESPUÉS de los controles de la ruta (el negocio existe y está
+ * publicado, o es la vista previa de su dueño).
+ */
+export interface PropsPagina<O = unknown> {
+  ctx: ContextoPieza;
+  opciones: O;
+  /** Toda la búsqueda de la URL (incluido `preview`). */
+  searchParams: ParametrosDeBusqueda;
+}
+
+export interface PiezaPagina<O = unknown> {
+  /**
+   * La página entera. Función de SERVIDOR (puede ser `async`; sin hooks).
+   * · Tope de {@link TOPE_PIEZA_MS}: cubre cargar su código y lo que `Pagina`
+   *   espera ANTES de devolver. Si tira o se pasa → la página general.
+   * · Lo que se dibuja ADENTRO (componentes hijos y sus `await`) no tiene tope:
+   *   si falla al dibujarse, el navegador recarga la general
+   *   (`?{@link PARAMETRO_SIN_PIEZAS}=1`); si tarda, tarda la página.
+   * Para arrancar idéntica, dibuja `<PaginaGeneral slug={ctx.slug} searchParams={searchParams} />`
+   * (`components/store/pagina-publica/PaginaGeneral`).
+   */
+  readonly Pagina: (props: PropsPagina<O>) => ReactNode | Promise<ReactNode>;
 }
 
 /**
@@ -169,6 +216,14 @@ export interface PiezaPestana<O = unknown> {
 export interface EntradaServidor {
   readonly manifiesto: ManifiestoPieza;
   readonly portada?: PiezaPortada;
+  /**
+   * `tienda.pagina` (ADR-458), con carga PEREZOSA (`import()` con texto
+   * literal): una página propia trae la página general entera, así que sólo
+   * se carga para el negocio que la tiene prendida — y el registro no entra en
+   * un círculo (página → PaginaGeneral → Enchufe → resolver → registro) que
+   * dejaba `PIEZAS_SERVIDOR` sin definir según qué módulo se cargara primero.
+   */
+  readonly pagina?: () => Promise<PiezaPagina>;
 }
 
 /** Una entrada del registro del CLIENTE (`registro.cliente.ts`). */
@@ -182,9 +237,13 @@ export interface EntradaCliente {
 
 export function piezaServidor<M extends ManifiestoPieza, D = unknown>(
   manifiesto: M,
-  impl: { portada?: PiezaPortada<OpcionesDe<M>, D> } = {},
+  impl: { portada?: PiezaPortada<OpcionesDe<M>, D>; pagina?: () => Promise<PiezaPagina<OpcionesDe<M>>> } = {},
 ): EntradaServidor {
-  return { manifiesto, ...(impl.portada ? { portada: impl.portada as unknown as PiezaPortada } : {}) };
+  return {
+    manifiesto,
+    ...(impl.portada ? { portada: impl.portada as unknown as PiezaPortada } : {}),
+    ...(impl.pagina ? { pagina: impl.pagina as unknown as () => Promise<PiezaPagina> } : {}),
+  };
 }
 
 export function piezaCliente<M extends ManifiestoPieza>(

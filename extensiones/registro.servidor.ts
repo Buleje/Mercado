@@ -27,6 +27,10 @@ import { manifiesto as cierreParaContador } from "./cierre-para-contador/manifes
 // ── piezas forestales (imports) ──
 import { manifiesto as gtfHojaDeControl } from "./gtf-hoja-de-control/manifest";
 
+// ── páginas propias (imports) ──
+// Una por negocio (ADR-458). Las escribe `npm run pagina-propia -- crear <id> "<nombre>"`.
+// Acá sólo el manifiesto: la página se carga con `import()` en la lista (ver `EntradaServidor.pagina`).
+
 export const PIEZAS_SERVIDOR: readonly EntradaServidor[] = [
   // ── piezas de la tienda ──
   piezaServidor(paginaPorBloques, { portada: paginaPorBloquesPortada }),
@@ -38,4 +42,6 @@ export const PIEZAS_SERVIDOR: readonly EntradaServidor[] = [
   // ── piezas forestales ──
   // La hoja se arma en el navegador (la guía se imprime allá): acá sólo el manifiesto.
   piezaServidor(gtfHojaDeControl),
+
+  // ── páginas propias ──
 ];

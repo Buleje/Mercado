@@ -42,6 +42,7 @@
     "lint:design:warn": "tsx scripts/lint-design-tokens.ts --warn",
     "lint:design:staged": "tsx scripts/lint-design-tokens.ts --staged",
     "lint:design:fix": "tsx scripts/migrate-decorative-colors.ts",
+    "pagina-propia": "node scripts/pagina-propia.mjs",
     "lint:design:fix:apply": "tsx scripts/migrate-decorative-colors.ts --apply",
     "lint:nesting": "node scripts/check-html-nesting.mjs",
     "lint:nesting:strict": "node scripts/check-html-nesting.mjs --strict",

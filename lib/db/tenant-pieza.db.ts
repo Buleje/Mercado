@@ -2,6 +2,8 @@ import "server-only";
 import { cacheLife, cacheTag, revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/lib/generated/prisma/client";
+import { ENCHUFE_PAGINA } from "@/extensiones/_contrato";
+import { logger } from "@/lib/logger";
 
 /**
  * TenantPiezaDB — qué piezas (código a medida, `extensiones/<id>/`) tiene
@@ -10,6 +12,9 @@ import type { Prisma } from "@/lib/generated/prisma/client";
  * · Lee el negocio: `listarPrendidas` (cacheada, la usan la portada y el panel).
  * · Escribe SÓLO el superadmin: `guardar` (la ruta valida pieza, enchufe y
  *   opciones contra el manifiesto ANTES de llegar acá).
+ * · Una página propia (`tienda.pagina`, ADR-458) es de UN negocio: `guardar`
+ *   lo hace cumplir en una transacción y tira {@link PaginaDeOtroNegocioError}.
+ *   `liberar` borra una fila APAGADA (con el mismo candado) para soltarla.
  * · `matriz()` cruza negocios a propósito (pantalla del superadmin, ADR-101).
  *
  * La caché se invalida con `{ expire: 0 }` y no con `"max"`: con `"max"` la
@@ -69,6 +74,82 @@ export interface GuardarPiezaInput {
   orden?: number;
 }
 
+/**
+ * ADR-458 · la página propia ya está asignada (prendida o apagada) a OTRO
+ * negocio. La ruta del superadmin lo traduce a 409 `pagina_de_otro_negocio`.
+ */
+export class PaginaDeOtroNegocioError extends Error {
+  readonly dueno: { readonly tenantId: string; readonly nombre: string };
+
+  constructor(piezaId: string, dueno: { tenantId: string; nombre: string }) {
+    super(`La página propia «${piezaId}» ya es de «${dueno.nombre}»`);
+    this.name = "PaginaDeOtroNegocioError";
+    this.dueno = dueno;
+  }
+}
+
+/** Los argumentos del upsert de una asignación: una fila por (negocio, pieza, enchufe). */
+function datosDeGuardado(tenantId: string, input: GuardarPiezaInput, actor: string) {
+  const opciones = (input.opciones ?? {}) as Prisma.InputJsonValue;
+  return {
+    where: { tenantId_piezaId_enchufe: { tenantId, piezaId: input.piezaId, enchufe: input.enchufe } },
+    create: {
+      tenantId,
+      piezaId: input.piezaId,
+      enchufe: input.enchufe,
+      prendida: input.prendida,
+      opciones,
+      version: input.version,
+      orden: input.orden ?? 0,
+      actualizadoPor: actor,
+    },
+    update: {
+      prendida: input.prendida,
+      ...(input.opciones !== null ? { opciones } : {}),
+      version: input.version,
+      ...(input.orden !== undefined ? { orden: input.orden } : {}),
+      actualizadoPor: actor,
+    },
+    select: SELECT_FILA,
+  } satisfies Prisma.TenantPiezaUpsertArgs;
+}
+
+/**
+ * El candado por (enchufe, pieza) que comparten asignar una página propia y
+ * liberar una fila: dos escrituras de la misma pieza nunca se cruzan. Es de
+ * TRANSACCIÓN (se suelta al cerrar), nunca `SET SESSION`.
+ */
+async function candadoDePieza(tx: Prisma.TransactionClient, enchufe: string, piezaId: string): Promise<void> {
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`tenant-pieza:${enchufe}:${piezaId}`}))`;
+}
+
+/** Lo que pasó al liberar: `prendida` = no se borró (hay que apagarla antes). */
+export type ResultadoLiberar = { ok: true } | { ok: false; motivo: "no_existe" | "prendida" };
+
+/**
+ * Guardar una página propia: en UNA transacción, con candado por pieza, se
+ * mira si otro negocio ya la tiene (prendida o apagada) y recién entonces se
+ * escribe. El candado (`pg_advisory_xact_lock`, se suelta solo al cerrar la
+ * transacción) hace que dos guardados a la vez para negocios distintos se
+ * pongan en fila: el segundo ya ve la fila del primero. Sin `SET SESSION`.
+ */
+async function guardarPaginaPropia(tenantId: string, input: GuardarPiezaInput, actor: string): Promise<FilaPieza> {
+  return prisma.$transaction(async (tx) => {
+    await candadoDePieza(tx, input.enchufe, input.piezaId);
+    const deOtro = await tx.tenantPieza.findFirst({
+      where: { piezaId: input.piezaId, enchufe: input.enchufe, tenantId: { not: tenantId } },
+      select: { tenantId: true, tenant: { select: { name: true, slug: true } } },
+    });
+    if (deOtro) {
+      throw new PaginaDeOtroNegocioError(input.piezaId, {
+        tenantId: deOtro.tenantId,
+        nombre: deOtro.tenant.name || deOtro.tenant.slug,
+      });
+    }
+    return tx.tenantPieza.upsert(datosDeGuardado(tenantId, input, actor));
+  });
+}
+
 export const TenantPiezaDB = {
   /** Las prendidas de un negocio (opcionalmente de un enchufe), en orden. Cacheada 5 min por negocio. */
   async listarPrendidas(tenantId: string, enchufe?: string): Promise<FilaPieza[]> {
@@ -98,30 +179,39 @@ export const TenantPiezaDB = {
    * un `if` después.
    */
   async guardar(tenantId: string, input: GuardarPiezaInput, actor: string): Promise<FilaPieza> {
-    const opciones = (input.opciones ?? {}) as Prisma.InputJsonValue;
-    const fila = await prisma.tenantPieza.upsert({
-      where: { tenantId_piezaId_enchufe: { tenantId, piezaId: input.piezaId, enchufe: input.enchufe } },
-      create: {
-        tenantId,
-        piezaId: input.piezaId,
-        enchufe: input.enchufe,
-        prendida: input.prendida,
-        opciones,
-        version: input.version,
-        orden: input.orden ?? 0,
-        actualizadoPor: actor,
-      },
-      update: {
-        prendida: input.prendida,
-        ...(input.opciones !== null ? { opciones } : {}),
-        version: input.version,
-        ...(input.orden !== undefined ? { orden: input.orden } : {}),
-        actualizadoPor: actor,
-      },
-      select: SELECT_FILA,
-    });
+    const fila =
+      input.enchufe === ENCHUFE_PAGINA
+        ? await guardarPaginaPropia(tenantId, input, actor)
+        : await prisma.tenantPieza.upsert(datosDeGuardado(tenantId, input, actor));
     revalidateTag(tagPiezas(tenantId), { expire: 0 });
     return fila;
+  },
+
+  /**
+   * Borra la asignación de un negocio SÓLO si está apagada (ADR-458): libera
+   * una página propia para otro negocio y limpia filas apagadas de cualquier
+   * pieza (antes sólo se podía por SQL). Prendida → no borra (`prendida`):
+   * primero se apaga, que es lo que el negocio deja de ver. Con el mismo
+   * candado que la asignación, en una transacción.
+   */
+  async liberar(tenantId: string, piezaId: string, enchufe: string, actor: string): Promise<ResultadoLiberar> {
+    const r = await prisma.$transaction(async (tx): Promise<ResultadoLiberar> => {
+      await candadoDePieza(tx, enchufe, piezaId);
+      const fila = await tx.tenantPieza.findUnique({
+        where: { tenantId_piezaId_enchufe: { tenantId, piezaId, enchufe } },
+        select: { prendida: true },
+      });
+      if (!fila) return { ok: false, motivo: "no_existe" };
+      if (fila.prendida) return { ok: false, motivo: "prendida" };
+      // `prendida: false` también en el borrado: nada se cuela entre leer y borrar.
+      const { count } = await tx.tenantPieza.deleteMany({ where: { tenantId, piezaId, enchufe, prendida: false } });
+      return count === 1 ? { ok: true } : { ok: false, motivo: "prendida" };
+    });
+    if (r.ok) {
+      revalidateTag(tagPiezas(tenantId), { expire: 0 });
+      logger.info("[TenantPiezaDB.liberar] fila borrada", { tenantId, piezaId, enchufe, actor });
+    }
+    return r;
   },
 
   /**

@@ -4,11 +4,14 @@ import type { ContextoPieza, EnchufeId } from "@/extensiones/_contrato";
 import { BordeDePieza } from "./BordeDePieza";
 import { resolverPiezas, type PiezaResuelta } from "./resolver";
 import { conTope, reportarFalloPieza } from "./tope";
+import { EnchufePagina, type EnchufePaginaProps } from "./EnchufePagina";
+import { RecargarSinPiezas } from "./RecargarSinPiezas";
 import { logger } from "@/lib/logger";
 
 /**
  * <Enchufe> — el lugar con nombre donde entra una pieza en una pantalla de
- * SERVIDOR (ADR-457). Hoy: `tienda.portada`.
+ * SERVIDOR (ADR-457). Hoy: `tienda.portada` y `tienda.pagina` (ADR-458, la
+ * página entera; su lógica vive en `EnchufePagina.tsx`).
  *
  * Uso en la portada (lo cablea la tanda de la tienda):
  *   // reemplaza el cuerpo entero si el negocio tiene una pieza «reemplaza»:
@@ -25,10 +28,12 @@ import { logger } from "@/lib/logger";
  * pasan su Zod, se ve el `fallback` y se avisa a Sentry. El `tenantId` lo pone
  * quien monta el enchufe (de la sesión o del host), nunca la pieza.
  */
-export type EnchufeDeServidor = Extract<EnchufeId, "tienda.portada">;
+export type EnchufeDeServidor = Extract<EnchufeId, "tienda.portada" | "tienda.pagina">;
 
-export interface EnchufeProps {
-  nombre: EnchufeDeServidor;
+export type EnchufeProps = EnchufePortadaProps | EnchufePaginaProps;
+
+export interface EnchufePortadaProps {
+  nombre: "tienda.portada";
   tenantId: string;
   slug: string;
   /** La versión normal: se ve si no hay pieza que reemplace o si la pieza falla. */
@@ -43,6 +48,14 @@ export interface EnchufeProps {
    * bloques al fondo de la página (revisión 2026-10-01).
    */
   agregaEnElFallback?: boolean;
+  /**
+   * ADR-458 · si el reemplazo falla al DIBUJARSE (en el navegador), recargar
+   * la URL con `?sinPiezas=1` en vez de tener el `fallback` armado en cada
+   * visita (doblaba lo que viaja). Sólo donde la ruta respeta `sinPiezas`
+   * (`/t/[slug]`); la portada por subdominio no lo hace y sigue con el
+   * `fallback` de siempre. Que `cargar()` falle sigue dando el `fallback`.
+   */
+  recargaSinPiezas?: boolean;
 }
 
 type Cargada = { ok: true; datos: unknown } | { ok: false };
@@ -77,17 +90,33 @@ async function cargar(p: PiezaResuelta, ctx: ContextoPieza): Promise<Cargada> {
   }
 }
 
-function vista(p: PiezaResuelta, ctx: ContextoPieza, datos: unknown, fallback: ReactNode): ReactNode {
+function vista(p: PiezaResuelta, ctx: ContextoPieza, datos: unknown, fallback: ReactNode, liviano = false): ReactNode {
   const Vista = p.entrada.portada?.Vista;
   if (!Vista) return fallback;
+  // Liviano: el respaldo es recargar sin piezas, y nada mientras llega (con el
+  // cuerpo ahí, React lo mandaba entero en el HTML antes del reemplazo).
+  const borde = liviano ? { fallback: <RecargarSinPiezas />, mientrasCarga: null } : { fallback };
   return (
-    <BordeDePieza key={p.piezaId} piezaId={p.piezaId} fallback={fallback}>
+    <BordeDePieza key={p.piezaId} piezaId={p.piezaId} {...borde}>
       <Vista ctx={ctx} opciones={p.opciones} datos={datos} />
     </BordeDePieza>
   );
 }
 
-export async function Enchufe({ nombre, tenantId, slug, fallback = null, modo, agregaEnElFallback = false }: EnchufeProps) {
+export async function Enchufe(props: EnchufeProps): Promise<ReactNode> {
+  if (props.nombre === "tienda.pagina") return EnchufePagina(props);
+  return EnchufePortada(props);
+}
+
+async function EnchufePortada({
+  nombre,
+  tenantId,
+  slug,
+  fallback = null,
+  modo,
+  agregaEnElFallback = false,
+  recargaSinPiezas = false,
+}: EnchufePortadaProps) {
   const ctx: ContextoPieza = { tenantId, slug, enchufe: nombre };
   const piezas = (await resolverPiezas(tenantId, nombre)).filter((p) => p.entrada.portada);
 
@@ -98,7 +127,7 @@ export async function Enchufe({ nombre, tenantId, slug, fallback = null, modo, a
     for (const p of piezas.filter((x) => x.entrada.portada?.modo === "reemplaza")) {
       const r = await cargar(p, ctx);
       if (r.ok) {
-        cuerpo = vista(p, ctx, r.datos, fallback);
+        cuerpo = vista(p, ctx, r.datos, fallback, recargaSinPiezas);
         reemplazado = true;
         break;
       }

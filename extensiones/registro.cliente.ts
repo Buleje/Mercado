@@ -25,6 +25,9 @@ import { manifiesto as cierreParaContador } from "./cierre-para-contador/manifes
 // ── piezas forestales (imports) ──
 import { manifiesto as gtfHojaDeControl } from "./gtf-hoja-de-control/manifest";
 
+// ── páginas propias (imports) ──
+// La página se dibuja en el servidor: del lado del navegador sólo viaja el manifiesto (ADR-458).
+
 export const PIEZAS_CLIENTE: Readonly<Record<string, EntradaCliente>> = {
   // ── piezas de la tienda ──
   [paginaPorBloques.id]: piezaCliente(paginaPorBloques),
@@ -43,4 +46,6 @@ export const PIEZAS_CLIENTE: Readonly<Record<string, EntradaCliente>> = {
   [gtfHojaDeControl.id]: piezaCliente(gtfHojaDeControl, {
     guia: () => import("./gtf-hoja-de-control/guia").then((m) => m.pieza),
   }),
+
+  // ── páginas propias ──
 };

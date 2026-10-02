@@ -22,14 +22,21 @@ export interface BordeDePiezaProps {
   piezaId: string;
   /** La versión normal. `null` = no mostrar nada si la pieza falla. */
   fallback?: ReactNode;
+  /**
+   * Lo que va en el `Suspense` mientras la pieza llega (por defecto, el
+   * `fallback`). La página propia (ADR-458) pasa `null`: con la página general
+   * ahí, React la mandaba ENTERA en el HTML antes del reemplazo (una página
+   * grande se emite aparte y su `fallback` va primero) — el doble de HTML.
+   */
+  mientrasCarga?: ReactNode;
   children: ReactNode;
 }
 
-export function BordeDePieza({ piezaId, fallback = null, children }: BordeDePiezaProps) {
+export function BordeDePieza({ piezaId, fallback = null, mientrasCarga, children }: BordeDePiezaProps) {
   const normal = <>{fallback}</>;
   return (
     <ErrorBoundary fallback={normal} moduleName={`la pieza ${piezaId}`}>
-      <Suspense fallback={normal}>{children}</Suspense>
+      <Suspense fallback={mientrasCarga === undefined ? normal : <>{mientrasCarga}</>}>{children}</Suspense>
     </ErrorBoundary>
   );
 }

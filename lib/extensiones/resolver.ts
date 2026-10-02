@@ -4,6 +4,7 @@ import { TenantPiezaDB, type FilaMatriz, type FilaPieza } from "@/lib/db/tenant-
 import { TenantsDB } from "@/lib/db/tenants.db";
 import { PIEZAS_SERVIDOR } from "@/extensiones/registro.servidor";
 import {
+  ENCHUFE_PAGINA,
   esEnchufe,
   type EnchufeId,
   type EntradaServidor,
@@ -159,6 +160,36 @@ export function catalogoDePiezas(): PiezaDelCatalogo[] {
       opcionesSchema: aJsonSchema(m.opciones),
       opcionesPorDefecto: porDefecto.ok ? porDefecto.opciones : null,
     };
+  });
+}
+
+/** ADR-458 · de quién es una página propia (`tienda.pagina`): el negocio que tiene su fila, prendida o apagada. */
+export interface DuenoDePagina {
+  tenantId: string;
+  nombre: string;
+}
+
+export type PiezaDelCatalogoConDueno = PiezaDelCatalogo & {
+  /**
+   * Sólo en las piezas que llenan `tienda.pagina`: el negocio que ya la tiene
+   * (prendida o apagada) o `null` si está libre. Asignarla a otro da 409.
+   */
+  duenoPagina?: DuenoDePagina | null;
+};
+
+/**
+ * Suma `duenoPagina` a las páginas propias del catálogo, leyendo la MISMA
+ * matriz que viaja al superadmin (sin otra consulta). Una página propia tiene
+ * a lo sumo un dueño: lo garantiza `TenantPiezaDB.guardar`.
+ */
+export function conDuenoDePagina(
+  catalogo: readonly PiezaDelCatalogo[],
+  matriz: readonly Pick<FilaMatriz, "piezaId" | "enchufe" | "tenantId" | "tenantNombre" | "tenantSlug">[],
+): PiezaDelCatalogoConDueno[] {
+  return catalogo.map((p) => {
+    if (!p.enchufes.includes(ENCHUFE_PAGINA)) return p;
+    const fila = matriz.find((f) => f.piezaId === p.id && f.enchufe === ENCHUFE_PAGINA);
+    return { ...p, duenoPagina: fila ? { tenantId: fila.tenantId, nombre: fila.tenantNombre || fila.tenantSlug } : null };
   });
 }
 
