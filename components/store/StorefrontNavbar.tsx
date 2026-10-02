@@ -405,6 +405,18 @@ function LiveCartButton() {
   const { items, open: openCart } = useCart();
   const count = items.reduce((s, i) => s + i.quantity, 0);
 
+  // `?carrito=abrir`: llegar con la bolsa abierta (el «Finalizar compra» de una
+  // página propia, ADR-458, que comparte este carrito). El parámetro se borra
+  // ANTES de abrir: así ni el doble montaje ni una recarga lo vuelven a abrir.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("carrito") !== "abrir") return;
+    params.delete("carrito");
+    const resto = params.toString();
+    window.history.replaceState(window.history.state, "", `${window.location.pathname}${resto ? `?${resto}` : ""}${window.location.hash}`);
+    openCart();
+  }, [openCart]);
+
   return (
     <button
       type="button"

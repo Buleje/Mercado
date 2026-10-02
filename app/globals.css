@@ -27,6 +27,10 @@
 @source "../hooks/**/*.{ts,tsx,js,jsx}";
 @source "../lib/**/*.{ts,tsx,js,jsx}";
 @source "../packages/design-system/src/**/*.{ts,tsx,js,jsx}";
+/* Piezas a medida (ADR-457/458): sin esta línea, una clase que sólo usa una
+   pieza (`bg-[var(--bb-tinta)]`, `lg:grid-cols-[20rem_…]`) no se generaba y la
+   pieza salía sin fondos ni grillas (medido 01-10 en la página propia de main). */
+@source "../extensiones/**/*.{ts,tsx,js,jsx}";
 @source not "../docs/**/*";
 @source not "../reports/**/*";
 @source not "../HEALING/**/*";

@@ -29,7 +29,7 @@ import { CanastaVacia } from "@/components/ui-system/illustrations";
 // QuickViewModal loaded on-demand only when user clicks "Vista rápida"
 const QuickViewModal = dynamic(() => import("@/components/QuickViewModal"), {});
 
-type LiveProduct = Product & { stock?: number; stockMin?: number; rating?: number; reviewCount?: number };
+type LiveProduct = Product & { stock?: number; stockMin?: number; rating?: number; reviewCount?: number; brand?: string };
 
 // realCategories se deriva dinámicamente de productList en el componente
 
@@ -362,6 +362,17 @@ function fuzzyScore(text: string, query: string): number {
   return qi === q.length ? Math.max(1, score) : 0;
 }
 
+/**
+ * Rótulo de una categoría: «frutas-verduras» → «Frutas verduras»; un nombre ya
+ * escrito («Lácteos», «Frutas y Verduras») queda igual con la primera en
+ * mayúscula. Antes era `\b\w` → mayúscula: `\b` corta en cada letra con tilde
+ * y salía «LáCteos», «PanaderíA», «Frutas Y Verduras».
+ */
+function etiquetaCategoria(id: string): string {
+  const t = id.includes(" ") ? id : id.replace(/-/g, " ");
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function ProductCatalog({ initialProducts = [] }: { initialProducts?: LiveProduct[] }) {
   const settings = useContext(SettingsContext);
@@ -474,7 +485,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
     const catIds = [...new Set(productList.map(p => p.category).filter(Boolean))];
     return catIds.map(id => ({
       id,
-      label: id.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase()),
+      label: etiquetaCategoria(id),
       emoji: "📦",
     }));
   }, [productList]);
@@ -557,6 +568,32 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
     return unsub;
   }, []);
 
+  // Llegar con `?q=` (buscar), `?oferta=1` (sólo rebajados) o `?categoria=` (saltar
+  // a esa categoría): los enlaces de la portada de la tienda y de una página propia
+  // (ADR-458) traen al catálogo ya filtrado. La categoría espera a estar dibujada:
+  // los productos de la API pueden llegar después de montar.
+  const categoriaPedida = useRef<string | null>(null);
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    const q = p.get("q")?.trim();
+    const oferta = p.get("oferta") === "1";
+    categoriaPedida.current = p.get("categoria");
+    startTransition(() => {
+      if (q) setSearch(q);
+      if (oferta) setFilterOnSale(true);
+    });
+    if (q || oferta) requestAnimationFrame(() => document.getElementById("productos")?.scrollIntoView({ block: "start" }));
+  }, []);
+  useEffect(() => {
+    const cat = categoriaPedida.current;
+    if (!cat || !realCategories.some((c) => c.id === cat)) return;
+    categoriaPedida.current = null;
+    startTransition(() => setHighlighted(cat));
+    clearTimeout(highlightTimer.current);
+    highlightTimer.current = setTimeout(() => setHighlighted(null), 2500);
+    requestAnimationFrame(() => document.getElementById(`cat-${cat}`)?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  }, [realCategories]);
+
   // Reset to first page whenever search term or filters change
   useEffect(() => {
     startTransition(() => setSearchPage(1));
@@ -575,7 +612,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
     const sorted = sortProducts(
       (searchTerm
         ? productList
-            .map(p => ({ p, score: fuzzyScore(p.name, searchTerm) + fuzzyScore(p.category, searchTerm) }))
+            .map(p => ({ p, score: fuzzyScore(p.name, searchTerm) + fuzzyScore(p.category, searchTerm) + fuzzyScore(p.brand ?? "", searchTerm) }))
             .filter(({ score }) => score > 0)
             .sort((a, b) => b.score - a.score)
             .map(({ p }) => p)
@@ -1195,7 +1232,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                   <div
                     key={cat.id}
                     id={`cat-${cat.id}`}
-                    className={highlighted === cat.id ? "ring-2 ring-primary ring-offset-4 rounded-xl p-3 scroll-mt-4" : "scroll-mt-4"}
+                    className={highlighted === cat.id ? "ring-2 ring-primary ring-offset-4 rounded-xl p-3 scroll-mt-24" : "scroll-mt-24"}
                   >
                     <div className={cn("flex items-center gap-3 mb-4 pl-3", theme.sectionBorder)}>
                       <span className={cn("h-2.5 w-2.5 rounded-full shrink-0", theme.dot)} aria-hidden="true" />

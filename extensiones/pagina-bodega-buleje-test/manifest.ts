@@ -1,5 +1,5 @@
 /**
- * Página propia "Página propia de Bodega Buleje Test" — manifiesto (ADR-458, enchufe `tienda.pagina`).
+ * Página propia «Buleje Beauty» (salón y cosmética capilar) — manifiesto (ADR-458, enchufe `tienda.pagina`).
  *
  * La página pública ENTERA de `/t/<negocio>` para UN solo negocio: el
  * superadmin la prende en la ficha del negocio y nadie más puede tenerla. El
@@ -16,11 +16,12 @@ export type Opciones = z.output<typeof opciones>;
 
 export const manifiesto = {
   id: "pagina-bodega-buleje-test",
-  nombre: "Página propia de Bodega Buleje Test",
+  nombre: "Buleje Beauty — salón y cosmética capilar",
   descripcion:
-    "Página pública propia de UN negocio: reemplaza su página entera (/t/<negocio>). " +
-    "Arranca igual a la general y se cambia en el código. Si falla, se ve la general.",
-  version: "1.0.0",
+    "Página pública propia de UN negocio (/t/<negocio>): tienda de belleza con anuncios, portada en carrusel, " +
+    "ofertas con el descuento real, líneas propias, servicios del salón reservables por WhatsApp y el carrito de la tienda. " +
+    "Si falla, se ve la general.",
+  version: "2.0.0",
   enchufes: ["tienda.pagina"],
   opciones,
 } as const satisfies ManifiestoPieza<typeof opciones>;
