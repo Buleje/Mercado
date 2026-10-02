@@ -136,6 +136,34 @@ export interface PropsPagina<O = unknown> {
   searchParams: ParametrosDeBusqueda;
 }
 
+/** ADR-460 · lo que recibe el marco de la tienda: el negocio y sus opciones (no hay búsqueda: un layout no la ve). */
+export interface PropsMarco<O = unknown> {
+  ctx: ContextoPieza;
+  opciones: O;
+}
+
+/**
+ * ADR-460 · «la página propia viste toda la tienda»: el marco que el layout de
+ * la tienda (`app/(store)/layout.tsx`) pone alrededor de TODAS las páginas del
+ * negocio (catálogo, ficha, cuenta, pedidos, legales, checkout) en vez del
+ * encabezado y el pie generales. Todo es `ReactNode` ya armado: `marco()` es
+ * síncrona y los datos se leen ADENTRO de cada parte (componentes `async`).
+ * · `tema` — el `<style>` con la paleta (va primero; no puede fallar).
+ * · `encabezado` — se dibuja dentro de `<BordeDePieza>`: si falla, el
+ *   encabezado general (`StorefrontNavbar`); mientras llega, `esqueletoEncabezado`.
+ * · `pie` — igual, con el pie general (`TenantFooter`) de respaldo.
+ * · `flotantes` — lo que flota sobre la página (la bolsa); si falla, nada.
+ * El carrito es el del layout (`CartProvider` de `StoreProviders`): el marco
+ * NUNCA monta un segundo `CartProvider`.
+ */
+export interface MarcoTienda {
+  readonly tema: ReactNode;
+  readonly encabezado: ReactNode;
+  readonly esqueletoEncabezado: ReactNode;
+  readonly pie: ReactNode;
+  readonly flotantes?: ReactNode;
+}
+
 export interface PiezaPagina<O = unknown> {
   /**
    * La página entera. Función de SERVIDOR (puede ser `async`; sin hooks).
@@ -148,6 +176,19 @@ export interface PiezaPagina<O = unknown> {
    * (`components/store/pagina-publica/PaginaGeneral`).
    */
   readonly Pagina: (props: PropsPagina<O>) => ReactNode | Promise<ReactNode>;
+  /**
+   * ADR-460 · el marco del resto de la tienda (ver {@link MarcoTienda}).
+   * SÍNCRONA: si tira, se ve el encabezado y el pie generales. Sin `marco`,
+   * la tienda sigue con el diseño general.
+   */
+  readonly marco?: (props: PropsMarco<O>) => MarcoTienda;
+  /**
+   * ADR-460 · el catálogo propio (`/t/<negocio>/tienda`), con la búsqueda de
+   * la URL. Mismas garantías que `Pagina`: tope de 2 s hasta que devuelve; si
+   * falla al dibujarse, el navegador recarga con `?sinPiezas=1` y se ve el
+   * catálogo general.
+   */
+  readonly Catalogo?: (props: PropsPagina<O>) => ReactNode | Promise<ReactNode>;
 }
 
 /**

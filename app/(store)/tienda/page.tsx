@@ -1,5 +1,5 @@
 import { safeJsonLdStringify } from "@/lib/seo/json-ld";
-import { Suspense } from "react";
+import { Suspense, type ComponentProps } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import type { Metadata } from "next";
@@ -12,6 +12,8 @@ import {
 } from "@/components/LoadingSkeleton";
 import { zones } from "@/data/zones";
 import { getCachedSettings, resolveStoreContext } from "@/lib/store-metadata";
+import { catalogoPropio } from "@/lib/extensiones/CatalogoPropio";
+import type { ParametrosDeBusqueda } from "@/extensiones/_contrato";
 
 /**
  * Metadata dinámica: cuando se entra vía /t/<slug>/tienda el middleware
@@ -159,8 +161,14 @@ async function getTiendaSectionConfig(): Promise<{
   }
 }
 
-export default async function TiendaPage() {
-  const { visible } = await getTiendaSectionConfig();
+export default async function TiendaPage({ searchParams }: { searchParams: Promise<ParametrosDeBusqueda> }) {
+  // ADR-460 · un negocio con página propia puede traer su catálogo; si no (o
+  // si falla), el general de siempre. Las dos lecturas van en paralelo: al
+  // catálogo general no se le suma una espera en fila. La búsqueda sólo se
+  // espera en la rama del catálogo propio.
+  const [propio, { visible }] = await Promise.all([catalogoPropio(searchParams), getTiendaSectionConfig()]);
+  if (propio) return propio;
+
   const show = (key: TiendaSectionKey) => visible.has(key);
 
   // Server-side product prefetch — #42: uses cached function for 5min revalidation
@@ -226,7 +234,7 @@ export default async function TiendaPage() {
             comprarme?") y TiendaSections (franja "Ofertas que no te podés perder")
             → página limpia, sin marketing del marketplace. */}
         <Suspense fallback={<CatalogLoadingSkeleton />}>
-          <ProductCatalog initialProducts={initialProducts as any} />
+          <ProductCatalog initialProducts={initialProducts as unknown as ComponentProps<typeof ProductCatalog>["initialProducts"]} />
         </Suspense>
 
         {/* Below-fold sections + modals (client-only shell) */}

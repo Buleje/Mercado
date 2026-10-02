@@ -53,7 +53,7 @@ export function Pie({
   const r = rutas(slug);
   const [primera, ...resto] = nombre.trim().split(/\s+/);
   const enlace = "inline-flex min-h-11 items-center text-base text-[var(--bb-sobre-tinta-2)] transition hover:text-[var(--bb-sobre-tinta)] hover:underline";
-  const titulo = "text-sm font-semibold uppercase tracking-[0.22em] text-[var(--bb-oro)]";
+  const titulo = "text-sm font-semibold uppercase tracking-[var(--ls-wider)] text-[var(--bb-oro)]";
   const seguro = (u?: string) => (u && /^https:\/\//.test(u) ? u : null);
   const fb = seguro(redes.facebook);
   const ig = seguro(redes.instagram);
@@ -107,7 +107,7 @@ export function Pie({
           <p className={titulo}>Salón</p>
           <ul className="mt-3">
             <li>
-              <a href="#servicios" className={enlace}>
+              <a href={r.servicios} className={enlace}>
                 Servicios y precios
               </a>
             </li>

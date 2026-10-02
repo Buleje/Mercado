@@ -34,7 +34,7 @@ function Banner({ promo, productos, slug, grande }: { promo: Promo; productos: P
       )}
       <div className={`relative z-10 flex flex-col p-6 sm:p-10 ${grande ? "lg:max-w-[26rem] lg:flex-1 lg:justify-between" : "max-w-[62%] justify-center"}`}>
         <div>
-          <p className={`text-sm font-semibold uppercase tracking-[0.22em] ${t.kicker}`}>{promo.kicker}</p>
+          <p className={`text-sm font-semibold uppercase tracking-[var(--ls-wider)] ${t.kicker}`}>{promo.kicker}</p>
           <h3 className={`bb-serif mt-3 leading-[1.02] tracking-tight ${t.texto} ${grande ? "text-5xl lg:text-6xl" : "text-[1.75rem] sm:text-4xl md:text-[2rem] lg:text-4xl"}`}>
             {promo.titulo}
           </h3>

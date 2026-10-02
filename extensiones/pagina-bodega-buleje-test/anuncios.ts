@@ -11,16 +11,22 @@
  *   marcas a la vista). Fuente de cada una en LEEME.md.
  */
 
-/** Las categorías de belleza que muestra esta página (en este orden). El resto del catálogo no aparece. */
+/**
+ * Las categorías de belleza que muestra esta página (en este orden). El resto del catálogo no aparece.
+ * `texto` = la bajada del título en el catálogo (`/tienda?categoria=…`).
+ */
 export const CATEGORIAS = [
-  { nombre: "Shampoo", corto: "Shampoo" },
-  { nombre: "Acondicionador", corto: "Acondicionador" },
-  { nombre: "Tratamientos", corto: "Tratamientos" },
-  { nombre: "Coloración", corto: "Coloración" },
-  { nombre: "Styling", corto: "Styling" },
-  { nombre: "Herramientas", corto: "Herramientas" },
-  { nombre: "Kits", corto: "Kits" },
+  { nombre: "Shampoo", corto: "Shampoo", texto: "Limpieza a la medida de tu cabello: reparación, rizos, color y nutrición." },
+  { nombre: "Acondicionador", corto: "Acondicionador", texto: "Desenreda, sella la cutícula y deja el brillo de salón después de cada lavado." },
+  { nombre: "Tratamientos", corto: "Tratamientos", texto: "Mascarillas, aceites, sérums y ampollas para reparar en casa lo que el sol y el calor se llevan." },
+  { nombre: "Coloración", corto: "Coloración", texto: "Tintes, decolorantes y oxidantes de uso profesional, con la guía de nuestras coloristas." },
+  { nombre: "Styling", corto: "Styling", texto: "Define, protege del calor y fija el peinado sin dejarlo duro." },
+  { nombre: "Herramientas", corto: "Herramientas", texto: "Planchas, secadoras y rizadores con control de temperatura, como en el salón." },
+  { nombre: "Kits", corto: "Kits", texto: "Las rutinas completas en una caja: más fácil de elegir, y para regalar." },
 ] as const;
+
+/** Lo que se sugiere buscar cuando una búsqueda del catálogo no encuentra nada. */
+export const BUSQUEDAS_SUGERIDAS = ["Keratina", "Rizos", "Matizador", "Plancha", "Aceite"];
 
 export const CATEGORIA_SERVICIOS = "Servicios de salón";
 

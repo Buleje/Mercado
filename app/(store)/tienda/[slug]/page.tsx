@@ -9,7 +9,6 @@ import type { Product } from "@/data/products";
 import { ProductsDB } from "@/lib/db/products.db";
 import ProductDetailClient from "@/components/ProductDetailClient";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
-import Breadcrumbs from "@/components/store/Breadcrumbs";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -108,17 +107,13 @@ async function ProductDetailContent({ params }: Props) {
     { name: product.name, url: `https://www.buleje.pe/tienda/${slug}` },
   ];
 
-  const visualBreadcrumbs = [
-    { label: "Inicio", href: "/" },
-    { label: "Tienda", href: "/tienda" },
-    ...(category ? [{ label: category.label, href: `/tienda/categoria/${category.id}` }] : []),
-    { label: product.name },
-  ];
 
   return (
     <>
-      <BreadcrumbSchema items={breadcrumbs} />
-      <Breadcrumbs items={visualBreadcrumbs} />
+      {/* Una sola miga a la vista: la de la ficha (alineada con la foto). Se
+          dibujaban TRES —la del esquema, ésta y la de ProductDetailClient— en
+          todas las tiendas (medido 02-10-2026). El esquema queda para Google. */}
+      <BreadcrumbSchema items={breadcrumbs} visible={false} />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{

@@ -65,6 +65,10 @@ import {
 import { parseSalesChannels } from "@/lib/types/sales-channels";
 import { SkipLink } from "@/components/ui-system/SkipLink";
 import { esMarketplace } from "@/lib/tenancy/negocio-por-defecto";
+// ADR-460 · la página propia de un negocio «viste» toda su tienda (marco).
+import { marcoDeLaTienda, paginaPropiaDeLaTienda } from "@/lib/extensiones/pagina-propia-tienda";
+import { BordeDePieza } from "@/lib/extensiones/BordeDePieza";
+import { MarcoEnElDocumento } from "@/lib/extensiones/MarcoEnElDocumento";
 
 // ── Metadata dinámica desde la DB ─────────────────────────────────────────────
 export async function generateMetadata(): Promise<Metadata> {
@@ -138,6 +142,11 @@ async function StoreLayoutContent({
 }: {
   children: React.ReactNode;
 }) {
+  // ADR-460 · ¿página propia con marco? Arranca YA, en paralelo con lo de abajo
+  // (la página del catálogo la comparte: `cache`); así a la tienda general no
+  // le suma una espera en fila. Nunca tira: ante cualquier error, sin marco.
+  const propiaEnCamino = paginaPropiaDeLaTienda().catch(() => null);
+
   // Read tenantId inside Suspense to avoid Next 16 blocking route error
   const hdrs = await headers();
   const tenantId = hdrs.get("x-tenant-id") ?? "main";
@@ -177,6 +186,9 @@ async function StoreLayoutContent({
   // del marketplace. Si no, el chrome del marketplace queda intacto. Brandon 2026-06-07.
   const ctx = await resolveStoreContext();
   const isTenant = ctx.isTenant;
+  // Sin marco (o si falla al cargar/armarse) la tienda sigue EXACTA como siempre, más abajo.
+  const propia = isTenant ? await propiaEnCamino : null;
+  const marco = marcoDeLaTienda(propia);
   const storeName = ctx.name;
   const storeLogo =
     (settings as { logoUrl?: string | null } | null)?.logoUrl ?? null;
@@ -205,7 +217,7 @@ async function StoreLayoutContent({
     <>
       <MetaPixel pixelId={metaPixelId} />
       <TikTokPixel pixelId={tiktokPixelId} />
-      <StoreProviders tenantSlug={tenantId} initialCustomer={initialCustomer}>
+      <StoreProviders tenantSlug={tenantId} initialCustomer={initialCustomer} {...(marco ? { temaDelEditor: false } : {})}>
       <MotionProvider>
         {/* QuickAddProvider envuelve toda la tienda — al click en producto
             se abre el drawer en lugar de navegar a una PDP.
@@ -214,7 +226,44 @@ async function StoreLayoutContent({
             /negocios tengan la misma UX que /tiendas. */}
         <QuickAddProvider>
           <AddedToCartDrawerProvider>
-            {isTenant ? (
+            {propia && marco ? (
+              /* ── Marco de la PÁGINA PROPIA (ADR-460) ──
+                  El encabezado, el pie y la bolsa del negocio en TODAS sus
+                  páginas. Sin TenantStoreChrome (sus bordes rectos `!important`
+                  le cuadrarían el diseño) ni los flotantes generales; el
+                  carrito, el checkout y los modales de pedido, los de siempre.
+                  Si una parte del marco falla al dibujarse, se ve la general. */
+              <div data-marco={propia.piezaId} className="contents">
+                {marco.tema}
+                <MarcoEnElDocumento piezaId={propia.piezaId} />
+                <BordeDePieza
+                  piezaId={propia.piezaId}
+                  fallback={<StorefrontNavbar name={storeName} logo={storeLogo} />}
+                  mientrasCarga={marco.esqueletoEncabezado}
+                >
+                  {marco.encabezado}
+                </BordeDePieza>
+                {showFreeShipBar && <FreeShippingBar threshold={freeShipThreshold} />}
+                {children}
+                <BordeDePieza
+                  piezaId={propia.piezaId}
+                  fallback={<TenantFooter slug={tenantId} storeName={storeName} />}
+                  mientrasCarga={null}
+                >
+                  {marco.pie}
+                </BordeDePieza>
+                <StoreClientShell liveChat={false} />
+                {marco.flotantes && (
+                  <BordeDePieza piezaId={propia.piezaId} fallback={null}>
+                    {marco.flotantes}
+                  </BordeDePieza>
+                )}
+                <QuickAddModal />
+                <Suspense fallback={null}>
+                  <OrderSuccessModal />
+                </Suspense>
+              </div>
+            ) : isTenant ? (
               /* ── Chrome AISLADO de la TIENDA INDIVIDUAL (Brandon 2026-06-07) ──
                   Sin navbar/sub-nav/footer/bottom-nav del marketplace ni sus
                   floating widgets. Solo el mundo de la tienda. El carrito y los

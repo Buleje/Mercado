@@ -426,8 +426,10 @@ body {
    re-apuntamos ese set finito de utilities a `var(--color-primary)` /
    `var(--color-primary-dark)`. Gana por especificidad + capa (regla sin @layer
    > utilities). NO toca el marketplace (no lleva ese atributo). Lista derivada
-   por grep del árbol del catálogo — sincronizar si crecen las variantes. */
-[data-store-chrome="tenant"] {
+   por grep del árbol del catálogo — sincronizar si crecen las variantes.
+   ADR-460: también bajo el marco de una página propia (`[data-marco]`, que no
+   lleva los bordes rectos de arriba). */
+:is([data-store-chrome="tenant"], [data-marco]) {
   .bg-primary { background-color: var(--color-primary); }
   .bg-primary-dark { background-color: var(--color-primary-dark); }
   .text-primary { color: var(--color-primary); }
@@ -459,6 +461,15 @@ body {
      cliente final de la tienda individual NO se lo mostramos. Se conserva el
      ícono neutro de imagen. (En admin/marketplace la pista al dueño queda.) */
   [data-img-placeholder] span { display: none; }
+}
+
+/* ADR-460 · bajo el marco de una página propia, los degradados también con el
+   color de la marca: el checkout pinta su cabecera con `from-primary
+   to-primary-dark`, que Tailwind hornea en turquesa. Sólo `[data-marco]`: las
+   demás tiendas quedan exactamente como estaban. */
+[data-marco] {
+  .from-primary { --tw-gradient-from: var(--color-primary); }
+  .to-primary-dark { --tw-gradient-to: var(--color-primary-dark); }
 }
 
 /* CSS entrance animations (used for above-fold LCP elements) */

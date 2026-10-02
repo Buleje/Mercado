@@ -13,7 +13,7 @@ const POCAS = 5;
 export function TarjetaProducto({ p, prioridad = false }: { p: ProductoSalon; prioridad?: boolean }) {
   const pocas = p.stock !== null && p.stock > 0 && p.stock <= POCAS;
   return (
-    <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_40px_-24px_rgba(30,21,23,0.45)]">
+    <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] transition duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-lg)]">
       <a href={p.href} className="relative block aspect-square overflow-hidden bg-[var(--bb-rubor)]" tabIndex={-1} aria-hidden="true">
         {p.imagen && (
           <Image
@@ -37,7 +37,7 @@ export function TarjetaProducto({ p, prioridad = false }: { p: ProductoSalon; pr
         </span>
       </a>
       <div className="flex flex-1 flex-col gap-1.5 p-4">
-        {p.marca && <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--bb-vino)]">{p.marca}</p>}
+        {p.marca && <p className="text-xs font-semibold uppercase tracking-[var(--ls-wider)] text-[var(--bb-vino)]">{p.marca}</p>}
         <h3 className="line-clamp-2 min-h-[2.75rem] text-base font-semibold leading-snug text-[var(--text-primary)]">
           <a href={p.href} className="hover:underline focus-visible:underline">
             {p.nombre}

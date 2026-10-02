@@ -3,7 +3,8 @@
  *
  * El catálogo de la tienda (`/t/<negocio>/tienda`) entiende `?q=` (busca por
  * nombre, categoría y marca), `?categoria=` (salta a esa categoría) y
- * `?oferta=1` (sólo rebajados). La bolsa se abre allá con `?carrito=abrir`.
+ * `?oferta=1` (sólo rebajados), además de `orden`, `marca` y `disponibles=1`
+ * (ver `filtros.ts`). La bolsa se abre allá con `?carrito=abrir`.
  */
 import { formatCurrency } from "@/lib/currency";
 import type { Destino } from "./anuncios";
@@ -18,8 +19,14 @@ export function rutas(slug: string) {
     buscar: (q: string) => `${catalogo}?q=${encodeURIComponent(q)}`,
     ofertas: `${catalogo}?oferta=1`,
     pagar: `${catalogo}?carrito=abrir`,
+    /** Las secciones de la portada con su ruta completa: el encabezado y el pie también salen en las otras páginas (ADR-460). */
+    servicios: `${base}#servicios`,
+    promociones: `${base}#ofertas`,
   };
 }
+
+/** «1 producto», «3 productos». */
+export const unidades = (n: number) => `${n} ${n === 1 ? "producto" : "productos"}`;
 
 /** Enlace de WhatsApp con el mensaje armado. Sin número: el selector de chats de WhatsApp. */
 export function enlaceWhatsapp(numero: string | null, mensaje: string): string {

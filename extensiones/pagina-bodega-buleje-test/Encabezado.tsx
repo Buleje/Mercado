@@ -5,9 +5,16 @@
  *
  * Van como DOS hermanos (no dentro de un <header> bajito) porque `sticky`
  * sólo pega dentro de su padre: el padre es la página entera.
+ *
+ * También es el encabezado del resto de la tienda (marco, ADR-460): por eso
+ * «Reservar cita» y «Ofertas» llevan la ruta completa de la portada
+ * (`/t/<negocio>#servicios`), que en la portada misma sólo baja hasta ahí.
+ * Fuera de la portada el logo NO es el <h1> (`logoEsTitulo={false}`): el
+ * título de la página es el suyo (p. ej. la categoría del catálogo).
  */
 import { Scissors, Search, User } from "@buleje/design-system/icons";
 import { BotonBolsa } from "./Bolsa";
+import { CampoBuscar } from "./CampoBuscar";
 import { rutas } from "./destinos";
 
 function Buscador({ id, catalogo }: { id: string; catalogo: string }) {
@@ -17,12 +24,8 @@ function Buscador({ id, catalogo }: { id: string; catalogo: string }) {
         Buscar productos
       </label>
       <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden="true" />
-      <input
+      <CampoBuscar
         id={id}
-        name="q"
-        type="search"
-        enterKeyHint="search"
-        placeholder="Busca shampoo, keratina, planchas…"
         className="h-12 w-full rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] pl-12 pr-28 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--text-primary)] focus:outline-none focus:ring-4 focus:ring-[var(--bb-rubor-2)]"
       />
       <button
@@ -38,13 +41,14 @@ function Buscador({ id, catalogo }: { id: string; catalogo: string }) {
 const ICONO =
   "inline-flex h-11 w-11 items-center justify-center gap-2 rounded-full text-[var(--text-primary)] transition hover:bg-[var(--bb-rubor)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]";
 
-export function BarraSuperior({ nombre, slug }: { nombre: string; slug: string }) {
+export function BarraSuperior({ nombre, slug, logoEsTitulo = true }: { nombre: string; slug: string; logoEsTitulo?: boolean }) {
   const r = rutas(slug);
   const [primera, ...resto] = nombre.trim().split(/\s+/);
+  const Logo = logoEsTitulo ? "h1" : "p";
   return (
     <div className="sticky top-0 z-40 border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)]/95 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-[1280px] items-center gap-3 px-4 sm:h-20 sm:gap-6 sm:px-6 lg:px-8">
-        <h1 className="m-0 shrink-0">
+        <Logo className="m-0 shrink-0">
           <a href={r.base} className="flex flex-col leading-none text-[var(--text-primary)]">
             <span className="bb-serif text-[1.85rem] tracking-tight sm:text-[2.15rem]">{primera}</span>
             {/* El espacio no se ve (contenedor flex) pero separa las palabras para el lector de pantalla. */}{" "}
@@ -53,12 +57,12 @@ export function BarraSuperior({ nombre, slug }: { nombre: string; slug: string }
             )}
             <span className="sr-only"> — salón y cosmética capilar</span>
           </a>
-        </h1>
+        </Logo>
         <div className="mx-auto hidden w-full max-w-[34rem] md:block">
           <Buscador id="bb-buscar" catalogo={r.catalogo} />
         </div>
         <nav aria-label="Tu cuenta y tu bolsa" className="ml-auto flex items-center gap-0.5 md:ml-0">
-          <a href="#servicios" className={`${ICONO} lg:w-auto lg:px-3`}>
+          <a href={r.servicios} className={`${ICONO} lg:w-auto lg:px-3`}>
             <Scissors className="h-5 w-5" strokeWidth={1.7} aria-hidden="true" />
             <span className="hidden text-base font-semibold lg:inline">Reservar cita</span>
             <span className="sr-only lg:hidden">Reservar cita</span>
@@ -96,13 +100,13 @@ export function MenuCategorias({ slug, categorias, hayOfertas }: { slug: string;
               </li>
             ))}
             <li className="shrink-0">
-              <a href="#servicios" className={enlace}>
+              <a href={r.servicios} className={enlace}>
                 Servicios
               </a>
             </li>
             {hayOfertas && (
               <li className="shrink-0">
-                <a href="#ofertas" className={`${forma} text-[var(--bb-vino)]`}>
+                <a href={r.promociones} className={`${forma} text-[var(--bb-vino)]`}>
                   Ofertas
                 </a>
               </li>

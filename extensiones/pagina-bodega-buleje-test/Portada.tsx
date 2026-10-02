@@ -90,7 +90,7 @@ export function Portada({ diapositivas }: { diapositivas: DiapositivaVista[] }) 
                 />
               </div>
               <div className={`flex flex-col justify-center px-5 pb-24 pt-8 sm:px-10 md:order-1 md:pb-24 md:pt-12 lg:px-16 lg:py-16 xl:pl-[max(4rem,calc((100vw_-_1280px)/2_+_2rem))] ${FONDO[d.tono]}`}>
-                <p className={`text-sm font-semibold uppercase tracking-[0.22em] ${t ? "text-[var(--bb-oro)]" : "text-[var(--bb-vino)]"}`}>{d.kicker}</p>
+                <p className={`text-sm font-semibold uppercase tracking-[var(--ls-wider)] ${t ? "text-[var(--bb-oro)]" : "text-[var(--bb-vino)]"}`}>{d.kicker}</p>
                 <h2 className={`bb-serif mt-3 text-[2.6rem] italic leading-[1.02] tracking-tight sm:text-6xl md:text-5xl lg:text-6xl xl:text-7xl ${t ? "text-[var(--bb-sobre-tinta)]" : "text-[var(--text-primary)]"}`}>
                   {d.titulo}
                 </h2>

@@ -1,5 +1,13 @@
 /**
- * Lo que la página de «Buleje Beauty» lee de la base, una vez por pedido.
+ * Lo que «Buleje Beauty» lee de la base, una vez por pedido (`cache` de React).
+ *
+ * Dos lecturas, para que cada página pague sólo lo que dibuja (ADR-460):
+ * · `cargarMarco` — LIVIANA: el nombre, contacto, redes, pagos y qué
+ *   categorías tienen productos. La usan el encabezado y el pie en TODAS las
+ *   páginas de la tienda (cuenta, pedidos, legales…).
+ * · `cargarVitrina` — los productos y servicios con su precio y su «antes».
+ *   La usan la portada y el catálogo.
+ * `cargarSalon` = las dos juntas (la portada).
  *
  * Todo por DB classes con `ctx.tenantId` (ADR-457). Nada se inventa:
  * · Sólo productos ACTIVOS y VISIBLES en Mi Tienda, de las categorías de belleza.
@@ -37,21 +45,28 @@ export interface ProductoSalon {
   href: string;
 }
 
-export interface DatosSalon {
+export interface DatosMarco {
   nombre: string;
   descripcion: string | null;
-  productos: ProductoSalon[];
-  servicios: ProductoSalon[];
   /** Número de WhatsApp en formato internacional sin «+» (p. ej. 51987654321), o null. */
   whatsapp: string | null;
   horario: string | null;
   direccion: string | null;
   redes: { facebook?: string; instagram?: string; tiktok?: string };
-  /** El mayor % de rebaja real de la tienda (para la franja). */
-  mayorDescuento: number | null;
   /** Medios de pago prendidos en Ajustes, en una frase («Yape o efectivo contra entrega»); null si ninguno. */
   pagos: string | null;
+  /** Las categorías de belleza con algún producto activo, en el orden de `CATEGORIAS`. */
+  categorias: string[];
 }
+
+export interface DatosVitrina {
+  productos: ProductoSalon[];
+  servicios: ProductoSalon[];
+  /** El mayor % de rebaja real de la tienda (para la franja). */
+  mayorDescuento: number | null;
+}
+
+export type DatosSalon = DatosMarco & DatosVitrina;
 
 /** «a», «a o b», «a, b o c». */
 function lista(xs: string[]): string | null {
@@ -71,21 +86,43 @@ export function normalizarWhatsapp(crudo: unknown): string | null {
 
 /** Badge del dueño que NO es un descuento (esos se calculan del historial). */
 const etiquetaDe = (badge: string | undefined) => (badge && !/%|dscto|oferta/i.test(badge) ? badge : null);
+const texto = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null);
 
-export const cargarSalon = cache(async (tenantId: string, slug: string): Promise<DatosSalon> => {
-  const [productos, catalogo, ajustes, pagina] = await Promise.all([
-    ProductsDB.getAll(tenantId).catch(sinDato("página salón · productos")),
-    StorePageDB.listCatalogWithVisibility(tenantId).catch(sinDato("página salón · visibilidad")),
+/** La lista de productos del negocio (la DB class ya la guarda en caché): la comparten marco y vitrina. */
+const leerProductos = cache((tenantId: string) => ProductsDB.getAll(tenantId).catch(sinDato("página salón · productos")));
+
+export const cargarMarco = cache(async (tenantId: string): Promise<DatosMarco> => {
+  const [ajustes, pagina, productos] = await Promise.all([
     SettingsDB.get(tenantId).catch(sinDato("página salón · ajustes")),
     StorePageDB.getCustomization(tenantId).catch(sinDato("página salón · portada")),
+    leerProductos(tenantId),
+  ]);
+  const st = (ajustes?.storeTheme ?? {}) as Record<string, unknown>;
+  const conProductos = new Set((productos ?? []).filter((p) => p.active !== false).map((p) => p.category));
+  return {
+    nombre: texto(st.storeName) ?? texto(ajustes?.businessName) ?? "Buleje Beauty",
+    descripcion: texto(st.description) ?? texto(ajustes?.description),
+    whatsapp:
+      normalizarWhatsapp(st.whatsapp) ?? normalizarWhatsapp(pagina?.whatsappPhone) ?? normalizarWhatsapp(ajustes?.businessPhone),
+    horario: texto(ajustes?.hours),
+    direccion: texto(pagina?.address) ?? texto(ajustes?.businessAddress),
+    redes: ajustes?.socialLinks ?? {},
+    pagos: lista(
+      [ajustes?.yapeEnabled ? "Yape" : "", ajustes?.plinEnabled ? "Plin" : "", ajustes?.cashEnabled !== false ? "efectivo contra entrega" : ""].filter(Boolean),
+    ),
+    categorias: CATEGORIAS.map((c) => c.nombre).filter((c) => conProductos.has(c)),
+  };
+});
+
+export const cargarVitrina = cache(async (tenantId: string, slug: string): Promise<DatosVitrina> => {
+  const [productos, catalogo] = await Promise.all([
+    leerProductos(tenantId),
+    StorePageDB.listCatalogWithVisibility(tenantId).catch(sinDato("página salón · visibilidad")),
   ]);
 
   const visibles = new Set((catalogo ?? []).filter((c) => c.visible && c.active).map((c) => c.productId));
   const propios = (productos ?? []).filter(
-    (p) =>
-      p.active !== false &&
-      visibles.has(p.id) &&
-      (NOMBRES_BELLEZA.has(p.category) || p.category === CATEGORIA_SERVICIOS),
+    (p) => p.active !== false && visibles.has(p.id) && (NOMBRES_BELLEZA.has(p.category) || p.category === CATEGORIA_SERVICIOS),
   );
 
   const historial = await PriceHistoryDB.getByProducts(
@@ -117,29 +154,18 @@ export const cargarSalon = cache(async (tenantId: string, slug: string): Promise
   };
 
   const todos = propios.map(aSalon);
-  const servicios = todos.filter((p) => p.categoria === CATEGORIA_SERVICIOS);
   const enVenta = todos.filter((p) => p.categoria !== CATEGORIA_SERVICIOS);
-  const st = (ajustes?.storeTheme ?? {}) as Record<string, unknown>;
-  const texto = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null);
-  const descuentos = enVenta.map((p) => p.descuento ?? 0);
-
+  const mayor = Math.max(0, ...enVenta.map((p) => p.descuento ?? 0));
   return {
-    nombre: texto(st.storeName) ?? texto(ajustes?.businessName) ?? "Buleje Beauty",
-    descripcion: texto(st.description) ?? texto(ajustes?.description),
     productos: enVenta,
-    servicios,
-    whatsapp:
-      normalizarWhatsapp(st.whatsapp) ??
-      normalizarWhatsapp(pagina?.whatsappPhone) ??
-      normalizarWhatsapp(ajustes?.businessPhone),
-    horario: texto(ajustes?.hours),
-    direccion: texto(pagina?.address) ?? texto(ajustes?.businessAddress),
-    redes: ajustes?.socialLinks ?? {},
-    mayorDescuento: descuentos.length && Math.max(...descuentos) > 0 ? Math.max(...descuentos) : null,
-    pagos: lista(
-      [ajustes?.yapeEnabled ? "Yape" : "", ajustes?.plinEnabled ? "Plin" : "", ajustes?.cashEnabled !== false ? "efectivo contra entrega" : ""].filter(Boolean),
-    ),
+    servicios: todos.filter((p) => p.categoria === CATEGORIA_SERVICIOS),
+    mayorDescuento: mayor > 0 ? mayor : null,
   };
+});
+
+export const cargarSalon = cache(async (tenantId: string, slug: string): Promise<DatosSalon> => {
+  const [marco, vitrina] = await Promise.all([cargarMarco(tenantId), cargarVitrina(tenantId, slug)]);
+  return { ...marco, ...vitrina };
 });
 
 /** El mayor % de rebaja real dentro de un grupo (categoría o marca). */

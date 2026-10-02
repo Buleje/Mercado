@@ -27,17 +27,22 @@ export default function StoreProviders({
   // Audit #9 (SSR-auth): estado de cliente resuelto server-side (cookie) para
   // que el navbar pinte el estado real sin skeleton. Se pasa a CustomerProvider.
   initialCustomer,
+  // ADR-460 · con el marco de una página propia, la paleta y la fuente las
+  // pone la página: sin el tema del editor (no baja la fuente de Google ni
+  // pinta el color de marca encima).
+  temaDelEditor = true,
 }: {
   children: React.ReactNode;
   tenantSlug?: string;
   initialCustomer?: Customer | null;
+  temaDelEditor?: boolean;
 }) {
   return (
     <TenantSlugProvider slug={tenantSlug}>
       <ToastProvider>
         <ReviewsProvider>
           <SettingsProvider>
-            <ThemeInjector />
+            {temaDelEditor && <ThemeInjector />}
             <PromotionsProvider>
               <CartProvider tenantSlug={tenantSlug}>
                 <FavoritesProvider>

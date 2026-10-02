@@ -15,7 +15,7 @@ export const BOTON =
 export const BOTON_BORDE =
   "inline-flex h-12 items-center justify-center gap-2 rounded-full border-2 border-[var(--text-primary)] px-7 text-base font-semibold text-[var(--text-primary)] transition hover:bg-[var(--text-primary)] hover:text-[var(--surface-canvas)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]";
 
-export const KICKER = "text-sm font-semibold uppercase tracking-[0.22em] text-[var(--bb-vino)]";
+export const KICKER = "text-sm font-semibold uppercase tracking-[var(--ls-wider)] text-[var(--bb-vino)]";
 
 export function TituloSeccion({
   id,

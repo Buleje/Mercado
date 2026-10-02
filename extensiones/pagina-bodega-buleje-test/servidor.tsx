@@ -12,11 +12,16 @@
  * (`?sinPiezas=1`).
  *
  * `ctx` (el negocio) lo pone el sistema desde la URL; nunca lo elijas acá.
+ *
+ * ADR-460: la misma pieza viste el resto de la tienda (`marco`) y trae su
+ * catálogo (`Catalogo`). Ver LEEME.md.
  */
 import "server-only";
 import { Suspense } from "react";
 import type { PiezaPagina } from "../_contrato";
+import { Catalogo } from "./Catalogo";
 import type { Opciones } from "./manifest";
+import { marco } from "./Marco";
 import { EsqueletoSalon, PaginaSalon } from "./PaginaSalon";
 
 export const pagina: PiezaPagina<Opciones> = {
@@ -27,4 +32,9 @@ export const pagina: PiezaPagina<Opciones> = {
       </Suspense>
     );
   },
+  // ADR-460 · el resto de la tienda (catálogo, ficha, cuenta, pedidos, legales,
+  // checkout) con el mismo encabezado, pie, paleta y bolsa (`Marco.tsx`)…
+  marco,
+  // …y el catálogo propio, sólo con lo del salón (`Catalogo.tsx`).
+  Catalogo,
 };

@@ -26,7 +26,7 @@ export function BannerOscuro({ servicios, whatsapp }: { servicios: ProductoSalon
           <Image src={b.foto} alt={b.alt} fill sizes="(min-width: 768px) 50vw, 100vw" className="object-cover" />
         </div>
         <div className="flex flex-col justify-center px-5 py-14 sm:px-10 lg:px-16 xl:pr-[max(4rem,calc((100vw_-_1280px)/2_+_2rem))]">
-          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--bb-oro)]">{b.kicker}</p>
+          <p className="text-sm font-semibold uppercase tracking-[var(--ls-wider)] text-[var(--bb-oro)]">{b.kicker}</p>
           <h2 id="bb-ritual" className="bb-serif mt-3 text-5xl italic leading-[1.02] tracking-tight lg:text-6xl">
             {b.titulo}
           </h2>

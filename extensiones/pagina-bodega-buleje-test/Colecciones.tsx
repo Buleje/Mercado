@@ -75,9 +75,9 @@ export function Lineas({ productos, slug, nombre }: { productos: ProductoSalon[]
                 className={`group relative flex min-h-[20rem] overflow-hidden rounded-3xl bg-[var(--bb-rubor)] sm:min-h-[24rem] lg:min-h-0 ${i % 2 ? "lg:order-2" : ""} focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--accent)]`}
               >
                 <Image src={l.foto} alt={l.alt} fill sizes="(min-width: 1024px) 22rem, 100vw" className="object-cover transition duration-700 group-hover:scale-[1.04]" />
-                <span className="absolute inset-0 bg-gradient-to-t from-[var(--bb-tinta)]/95 via-[var(--bb-tinta)]/55 to-[var(--bb-tinta)]/5" aria-hidden="true" />
+                <span className="absolute inset-0 bg-linear-to-t from-[var(--bb-tinta)]/95 via-[var(--bb-tinta)]/55 to-[var(--bb-tinta)]/5" aria-hidden="true" />
                 <span className="relative mt-auto flex flex-col gap-2 p-6 text-[var(--bb-sobre-tinta)] sm:p-7">
-                  <span className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--bb-sobre-tinta-2)]">{l.kicker}</span>
+                  <span className="text-sm font-semibold uppercase tracking-[var(--ls-wider)] text-[var(--bb-sobre-tinta-2)]">{l.kicker}</span>
                   <span className="bb-serif text-4xl leading-none sm:text-5xl">{l.titulo}</span>
                   <span className="text-base leading-relaxed text-[var(--bb-sobre-tinta-2)]">{l.texto}</span>
                   <span className="mt-2 inline-flex items-center gap-2 self-start border-b-2 border-current pb-0.5 text-base font-semibold">

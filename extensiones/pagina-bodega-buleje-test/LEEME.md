@@ -10,17 +10,35 @@ portada en carrusel (3 anuncios grandes) · Novedades · Promociones (1 grande +
 «Ofertas de la semana» · Favoritos de las estilistas · Nuestras líneas (foto + productos) · banner
 oscuro de un servicio · categorías en círculos · servicios reservables por WhatsApp · beneficios · pie.
 
+## El resto de la tienda (ADR-460)
+La misma pieza **viste toda la tienda del negocio**, no sólo la portada:
+- **Marco** (`Marco.tsx`): el layout de la tienda pone la franja, la barra, el menú, el pie y la bolsa del
+  salón en el catálogo, la ficha, la cuenta, «Mis pedidos», los legales y el checkout. La paleta llega en dos
+  niveles (`tema.ts`): lo de esta carpeta, dentro de `[data-pagina]`; lo demás (cuenta, checkout…), con los
+  tokens globales y un acento vino legible con texto blanco.
+- **Catálogo propio** (`Catalogo.tsx`, `/t/<negocio>/tienda`): SÓLO las categorías del salón; título serif,
+  píldoras con cuántos hay, ordenar, sólo ofertas, línea y disponibles (en el celular, en una hoja desde
+  abajo), la grilla con las mismas tarjetas, los servicios para reservar por WhatsApp y los beneficios.
+  Todo el estado va en la URL: `?q=` `?categoria=` `?oferta=1` `?orden=` (destacados · precio-asc ·
+  precio-desc · descuento · nuevos) `?marca=` `?disponibles=1` (`filtros.ts`; lo inválido vuelve al defecto).
+- Si el marco falla, se ve el encabezado y el pie generales; si el catálogo falla, recarga con
+  `?sinPiezas=1` y se ve el catálogo general.
+
 ## Archivos
 | Archivo | Qué es |
 |---|---|
-| `servidor.tsx` | `Pagina()` devuelve al instante un `<Suspense>`; los datos se leen adentro (el tope de 2 s nunca salta por la base) |
-| `PaginaSalon.tsx` | arma las secciones + JSON-LD `HairSalon` + esqueleto de carga |
-| `anuncios.ts` | **lo que cambia el dueño sin tocar componentes**: franja, portada, promos, líneas, banner, beneficios, categorías |
-| `datos.ts` | lecturas por DB classes con `ctx.tenantId` (productos, visibilidad de Mi Tienda, historial de precios, ajustes) |
-| `tema.ts` | paleta (`--bb-*`) y tokens del DS re-teñidos, claro y oscuro; única fuente de color |
-| `destinos.ts` | a dónde lleva cada botón (catálogo `?q=` / `?categoria=` / `?oferta=1`, WhatsApp, bolsa) |
-| `Encabezado` · `FranjaAnuncio` · `Portada` · `Promos` · `Colecciones` · `Salon` · `Categorias` · `Pie` | secciones |
-| `TarjetaProducto` · `BotonAgregar` · `Carril` · `Bolsa` · `Suscripcion` · `ui` | piezas chicas |
+| `servidor.tsx` | `Pagina()` devuelve al instante un `<Suspense>`; los datos se leen adentro (el tope de 2 s nunca salta por la base). Suma `marco` y `Catalogo` |
+| `PaginaSalon.tsx` | arma las secciones de la portada + JSON-LD `HairSalon` + esqueleto de carga |
+| `Marco.tsx` | el marco del resto de la tienda: tema, encabezado (con su esqueleto), pie y bolsa |
+| `Catalogo.tsx` · `CatalogoCliente.tsx` | el catálogo propio: lectura en el servidor, filtrar/ordenar al instante en el navegador |
+| `Pildoras.tsx` · `Controles.tsx` · `FranjaServicios.tsx` | píldoras de categoría y «filtrando por», ordenar/filtrar (hoja en el celular), servicios del catálogo |
+| `filtros.ts` | los filtros de la URL: leer (Zod), escribir, buscar sin tildes («queratina» = «keratina»), ordenar y contar |
+| `anuncios.ts` | **lo que cambia el dueño sin tocar componentes**: franja, portada, promos, líneas, banner, beneficios, categorías (con su bajada del catálogo), búsquedas sugeridas |
+| `datos.ts` | lecturas por DB classes con `ctx.tenantId`: `cargarMarco` (liviana: ajustes y categorías) y `cargarVitrina` (productos, visibilidad, historial de precios) |
+| `tema.ts` | paleta (`--bb-*`) y tokens del DS re-teñidos, claro y oscuro, en dos niveles; única fuente de color |
+| `destinos.ts` | a dónde lleva cada botón (catálogo y sus filtros, secciones de la portada, WhatsApp, bolsa) |
+| `Encabezado` · `CampoBuscar` · `FranjaAnuncio` · `Portada` · `Promos` · `Colecciones` · `Salon` · `Categorias` · `Pie` | secciones |
+| `TarjetaProducto` · `BotonAgregar` · `Carril` · `Bolsa` · `Cajon` · `estado-bolsa` · `Suscripcion` · `ui` | piezas chicas |
 
 ## Reglas que esta página cumple (no romperlas al editar)
 - **Nada de precios escritos a mano.** Precio, «antes» y % salen de la base: el «antes» es el último
@@ -29,8 +47,14 @@ oscuro de un servicio · categorías en círculos · servicios reservables por W
 - `{pagos}` = los medios de pago prendidos en Ajustes (hoy en `main`: sólo efectivo contra entrega).
 - Sólo se muestran las categorías de `CATEGORIAS` (+ «Servicios de salón»): el resto del catálogo de
   `main` (la bodega de prueba) sigue en el catálogo, no acá.
-- El carrito es **el de la tienda** (`CartProvider`, mismo guardado por negocio): «Finalizar compra»
-  lleva al catálogo con la bolsa abierta (`?carrito=abrir`) y se paga por el flujo de siempre.
+- El carrito es **el de la tienda** (`CartProvider`, mismo guardado por negocio). En la portada (que vive
+  fuera del layout de la tienda) la bolsa trae su `CartProvider` y «Finalizar compra» lleva al catálogo con
+  la bolsa abierta (`?carrito=abrir`); en el resto usa el del layout (NUNCA un segundo) y «Finalizar compra»
+  abre el checkout de siempre ahí mismo. La bolsa se abre con su propio estado (`estado-bolsa.ts`), no con
+  el `isOpen` del carrito: la cuenta monta además su cajón general con ese `isOpen`.
+- Un **servicio** del salón no va al carrito: se reserva por WhatsApp con el mensaje armado.
+- Encabezado y pie salen en todas las páginas: anclas con ruta completa (`/t/<negocio>#servicios`) y, fuera
+  de la portada, el logo no es el `<h1>`.
 - WhatsApp: `Mi Tienda → Contacto` (o el teléfono del negocio). Sin número, el botón abre WhatsApp con
   el mensaje armado y la persona elige el chat. **`main` hoy no tiene número cargado.**
 - Fuente de títulos: Instrument Serif (la que el sitio ya precarga). No meter `next/font` acá: su hoja

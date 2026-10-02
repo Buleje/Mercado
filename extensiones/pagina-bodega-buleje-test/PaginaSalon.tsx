@@ -2,6 +2,8 @@
  * «Buleje Beauty» — la página entera del salón (enchufe `tienda.pagina`).
  *
  * Arma las secciones con los datos de `cargarSalon` (una lectura por pedido).
+ * La bolsa de acá trae su propio carrito (la portada vive fuera del layout de
+ * la tienda); el resto de la tienda la monta con el marco (`Marco.tsx`).
  * `servidor.tsx` la envuelve en <Suspense> con `EsqueletoSalon`: `Pagina()`
  * devuelve al instante (el tope de 2 s del enchufe nunca corre por datos) y
  * mientras llegan se ve el esqueleto con los colores de la marca.
@@ -26,7 +28,7 @@ import { CSS_TEMA, ID_PAGINA } from "./tema";
 import { ANCHO } from "./ui";
 
 /** El envoltorio con la paleta y la fuente: lo comparten la página y su esqueleto. */
-function Marco({ children }: { children: ReactNode }) {
+function Lienzo({ children }: { children: ReactNode }) {
   return (
     // `overflow-x-clip` (no `hidden`): recorta lo que asoma de los carriles sin
     // volverse contenedor de scroll, así la barra pegajosa sigue pegando.
@@ -78,7 +80,7 @@ export async function PaginaSalon({ tenantId, slug }: { tenantId: string; slug: 
   const categorias = CATEGORIAS.filter((c) => d.productos.some((p) => p.categoria === c.nombre)).map((c) => c.nombre);
 
   return (
-    <Marco>
+    <Lienzo>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(datosEstructurados(d)) }} />
       <TenantPageTracker tenantSlug={slug} />
       <ProveedorBolsa slug={slug} pagar={r.pagar}>
@@ -110,7 +112,7 @@ export async function PaginaSalon({ tenantId, slug }: { tenantId: string; slug: 
         </main>
         <Pie nombre={d.nombre} descripcion={d.descripcion} slug={slug} whatsapp={d.whatsapp} redes={d.redes} pagos={d.pagos} />
       </ProveedorBolsa>
-    </Marco>
+    </Lienzo>
   );
 }
 
@@ -118,7 +120,7 @@ export async function PaginaSalon({ tenantId, slug }: { tenantId: string; slug: 
 export function EsqueletoSalon() {
   const bloque = "animate-pulse rounded-2xl bg-[var(--bb-rubor)]";
   return (
-    <Marco>
+    <Lienzo>
       <div className="h-10 bg-[var(--bb-tinta)]" />
       <div className={`${ANCHO} flex h-16 items-center gap-6 border-b border-[var(--rule-soft)] sm:h-20`}>
         <div className={`${bloque} h-10 w-32`} />
@@ -137,6 +139,6 @@ export function EsqueletoSalon() {
           <div key={i} className={`${bloque} aspect-[3/4] ${i < 2 ? "" : i === 2 ? "hidden sm:block" : "hidden lg:block"}`} />
         ))}
       </div>
-    </Marco>
+    </Lienzo>
   );
 }
