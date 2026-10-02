@@ -9,10 +9,11 @@
 
 import { BadgeStatus } from "@buleje/design-system";
 import { ArrowRight, Gauge, Scale } from "@buleje/design-system/icons";
+import BotonIconoTip from "@/components/admin/shared/boton-icono-tip";
 import { cn } from "@/lib/utils";
 import { montoEnMoneda } from "@/lib/adelantos/cuenta-unificada";
 import type { CrucePorCobrar, PorCobrarFila } from "@/lib/db/por-cobrar.db";
-import { BOTON_FILA, TIPOS, diasEntre, fechaCorta, leerCruce } from "./estilo";
+import { BOTON_ICONO, TIPOS, diasEntre, fechaCorta, leerCruce } from "./estilo";
 
 export default function FilaPorCobrar({
   fila: f,
@@ -63,31 +64,31 @@ export default function FilaPorCobrar({
       <td className="text-right whitespace-nowrap">
         <div className="inline-flex items-center justify-end gap-1">
           {f.tipo === "fiado" && (
-            <button
+            <BotonIconoTip
+              icon={Gauge}
               onClick={onScoring}
-              title={`Ver el scoring de ${f.quien}`}
-              aria-label={`Ver el scoring crediticio de ${f.quien}`}
-              className={cn(BOTON_FILA, "w-11 sm:w-9")}
-            >
-              <Gauge className="h-4 w-4" />
-            </button>
+              label={`Ver el scoring crediticio de ${f.quien}`}
+              tip="Ver scoring"
+              className={BOTON_ICONO}
+            />
           )}
           {cruce && (
-            <button
+            <BotonIconoTip
+              icon={Scale}
               onClick={() => onLiquidar(cruce.clave)}
-              aria-label={`Liquidar la cuenta con ${f.quien}`}
-              className={cn(BOTON_FILA, "px-3 text-[length:var(--ts-xs)] font-bold")}
-            >
-              <Scale className="h-3.5 w-3.5" aria-hidden="true" /> Liquidar
-            </button>
+              label={`Liquidar la cuenta con ${f.quien}`}
+              tip="Liquidar"
+              className={BOTON_ICONO}
+            />
           )}
-          <button
+          <BotonIconoTip
+            icon={ArrowRight}
+            tono="acento"
             onClick={onCobrar}
-            aria-label={`Abrir ${t.plural.toLowerCase()} para cobrar a ${f.quien}`}
-            className={cn(BOTON_FILA, "px-3 text-[length:var(--ts-xs)] font-bold")}
-          >
-            Cobrar <ArrowRight className="h-3.5 w-3.5" />
-          </button>
+            label={`Abrir ${t.plural.toLowerCase()} para cobrar a ${f.quien}`}
+            tip="Cobrar"
+            className={BOTON_ICONO}
+          />
         </div>
       </td>
     </tr>

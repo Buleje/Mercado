@@ -1,6 +1,7 @@
 "use client";
 
-import { CardTitle, StatCard } from "@buleje/design-system";
+import { CardTitle, SectionTitle, StatCard } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 /**
  * LivesAdminModule — Gestión de transmisiones en vivo.
  *
@@ -21,7 +22,6 @@ import {
   Edit2,
   Trash2,
   Clock,
-  AlertCircle,
 } from "@buleje/design-system/icons";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { ScheduleLiveModal, type ScheduledLiveData } from "./lives-admin/ScheduleLiveModal";
@@ -159,6 +159,7 @@ export default function LivesAdminModule() {
   return (
     <div className="space-y-4">
       <AdminModuleHeader
+        as="h2"
         title="En Vivo"
         description="Transmisiones en vivo para mostrar productos y vender en directo"
         icon={Radio}
@@ -171,10 +172,14 @@ export default function LivesAdminModule() {
             <Radio className="h-7 w-7" />
           </div>
           <div className="flex-1 min-w-0">
-            <CardTitle className="font-extrabold text-[var(--text-primary)] text-lg mb-1">¿Listo para transmitir?</CardTitle>
-            <p className="text-sm text-[var(--text-secondary)]">
-              Empieza una transmisión ahora mismo o programa una para más tarde.
-            </p>
+            <div className="flex items-center gap-1.5">
+              <CardTitle className="font-extrabold text-[var(--text-primary)] text-lg">¿Listo para transmitir?</CardTitle>
+              <InfoTip
+                title="Transmitir en vivo"
+                what="Empieza una transmisión ahora mismo o programa una para más tarde."
+                example="Programa el viernes a las 7 pm y avisa a tus clientes para que lleguen a la hora."
+              />
+            </div>
           </div>
           <div className="flex flex-col sm:flex-row gap-2 shrink-0">
             <button
@@ -232,9 +237,9 @@ export default function LivesAdminModule() {
       {/* Programadas */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="font-bold text-[var(--text-primary)] text-sm uppercase tracking-wide">
+          <SectionTitle as="h2" className="font-bold text-[var(--text-primary)] text-sm uppercase tracking-wide">
             Próximas transmisiones
-          </CardTitle>
+          </SectionTitle>
           <button
             onClick={() => setShowSchedule(true)}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10 hover:bg-primary/20 transition-colors"
@@ -297,9 +302,15 @@ export default function LivesAdminModule() {
 
       {/* Pasadas */}
       <div className="space-y-3">
-        <CardTitle className="font-bold text-[var(--text-primary)] text-sm uppercase tracking-wide">
-          Transmisiones pasadas
-        </CardTitle>
+        <div className="flex items-center gap-1.5">
+          <SectionTitle as="h2" className="font-bold text-[var(--text-primary)] text-sm uppercase tracking-wide">
+            Transmisiones pasadas
+          </SectionTitle>
+          <InfoTip
+            title="Transmisiones pasadas"
+            what="Las métricas se actualizan en tiempo real durante cada transmisión y se consolidan al finalizar."
+          />
+        </div>
 
         {past.length === 0 ? (
           <div className="text-center py-8 text-[var(--text-tertiary)] bg-[var(--surface-raised)] border border-[var(--rule-soft)] rounded-2xl">
@@ -308,13 +319,6 @@ export default function LivesAdminModule() {
           </div>
         ) : (
           <>
-            <div className="flex items-start gap-2 p-3 bg-[var(--data-info-50)] border border-[var(--data-info-500)] rounded-xl text-xs text-[var(--data-info-500)]">
-              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-              <p>
-                Las métricas se actualizan en tiempo real durante cada transmisión y se consolidan
-                al finalizar.
-              </p>
-            </div>
             <div className="grid gap-3 sm:grid-cols-2">
               {past.map((l) => (
                 <LivePerformanceCard key={l.id} live={l} />

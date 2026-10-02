@@ -23,7 +23,7 @@ import { OrdersPrintPreview } from "./OrdersPrintPreview";
 import { DeleteConfirmModal, RejectModal } from "./OrdersModals";
 import { STATUS_LABELS } from "./types";
 import type { DbOrder } from "@/lib/jsondb";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, formatDateTime } from "@/lib/format";
 
 export default function OrdersTab() {
   const {
@@ -300,14 +300,13 @@ export default function OrdersTab() {
             no es un segundo filtro, es un segundo lugar desde donde tocarlo
             (igual que Estado ya convive en chips + checkboxes del modal). */}
         {([
-          { id: "" as const, label: "Cualquier pago" },
           { id: "yape" as const, label: "Yape" },
           { id: "efectivo" as const, label: "Efectivo" },
         ]).map((chip) => {
           const active = filters.paymentMethod === chip.id;
           return (
             <button
-              key={chip.id || "cualquiera"}
+              key={chip.id}
               type="button"
               onClick={() => filtersDispatch({ type: "SET_PAYMENT_METHOD", value: active ? "" : chip.id })}
               aria-pressed={active}
@@ -402,7 +401,7 @@ export default function OrdersTab() {
             duplicaba el encabezado de la página para los lectores de pantalla. */}
         <PageTitle as="h2" className="text-lg font-bold mb-1">Resumen de pedidos activos</PageTitle>
         <p className="text-xs text-[var(--text-secondary)] mb-4">
-          {new Date().toLocaleString("es-PE", { timeZone: "America/Lima" })} · {activeOrders.length} pedidos · {formatCurrency(total)} total
+          {formatDateTime(new Date())} · {activeOrders.length} pedidos · {formatCurrency(total)} total
         </p>
         <DataTable className="w-full text-xs border-collapse">
           <thead>

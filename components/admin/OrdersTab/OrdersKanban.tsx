@@ -16,9 +16,10 @@
 import { useMemo, useState, useEffect, useRef, memo } from "react";
 import { toast } from "sonner";
 import {
-  Check, X as XIcon, MapPin, Bike, Clock, AlertTriangle, ShoppingBasket, ArrowRight, Store, Boxes, ChefHat, GripHorizontal,
+  Check, X as XIcon, MapPin, Bike, Clock, AlertTriangle, ShoppingBasket, ArrowRight, Store, Boxes, ChefHat, GripHorizontal, Banknote, ChevronDown,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import BotonIconoTip from "@/components/admin/shared/boton-icono-tip";
 import { EmptyState } from "@/components/admin/EmptyState";
 import type { DbOrder, OrderStatus } from "@/lib/jsondb";
 import { formatDate, parseGps, haversineKm } from "@/lib/admin-helpers";
@@ -377,14 +378,13 @@ const OrderCard = memo(function OrderCard({
             </button>
           )}
           {order.paymentMethod === "efectivo" && order.deuda && (
-            <button
-              type="button"
+            <BotonIconoTip
+              icon={Banknote}
               onClick={onMarkDeudaPaid}
-              className="inline-flex items-center gap-1 h-10 px-3 rounded-xl text-xs font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] hover:text-[var(--text-primary)] border border-[var(--rule-base)] transition-colors"
-              title="Marcar deuda como cobrada"
-            >
-              <Check className="h-3.5 w-3.5" /> Cobrado
-            </button>
+              label="Marcar la deuda como cobrada"
+              tip="Cobrado"
+              className="h-10 w-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)]"
+            />
           )}
           {manualDeliverAction && (
             <button
@@ -496,6 +496,13 @@ const KanbanColumn = memo(function KanbanColumn({
 }) {
   const total = orders.reduce((s, o) => s + Number(o.total), 0);
   const { setNodeRef, isOver } = useDroppable({ id });
+  /* Ley de Brandon (2026-10-01): 18 pedidos = 18 tarjetas con 2-3 botones cada
+     una. Se ven los primeros; el resto, a un toque (nada se esconde: el
+     contador de la cabecera sigue diciendo cuántos hay). */
+  const [verTodos, setVerTodos] = useState(false);
+  /* Con una tarjeta de más no vale el botón: «Ver los 3» para mostrar una sola. */
+  const plegable = orders.length > PEDIDOS_POR_COLUMNA + 1;
+  const visibles = verTodos || !plegable ? orders : orders.slice(0, PEDIDOS_POR_COLUMNA);
   return (
     <div
       ref={setNodeRef}
@@ -548,7 +555,7 @@ const KanbanColumn = memo(function KanbanColumn({
             <p className="mt-2 text-xs font-bold text-[var(--text-tertiary)]">{emptyMessage}</p>
           </div>
         ) : (
-          orders.map((o) => (
+          visibles.map((o) => (
             <DraggableOrderCard
               key={o.id}
               order={o}
@@ -568,10 +575,24 @@ const KanbanColumn = memo(function KanbanColumn({
             />
           ))
         )}
+        {plegable && (
+          <button
+            type="button"
+            onClick={() => setVerTodos((v) => !v)}
+            aria-expanded={verTodos}
+            className="flex h-10 w-full items-center justify-center gap-1.5 rounded-xl text-xs font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-raised)] hover:text-[var(--text-primary)]"
+          >
+            <ChevronDown className={cn("h-4 w-4 transition-transform", verTodos && "rotate-180")} aria-hidden />
+            {verTodos ? "Ver menos" : `Ver los ${orders.length}`}
+          </button>
+        )}
       </div>
     </div>
   );
 });
+
+/** Cuántas tarjetas se ven por columna antes de «Ver los N». */
+const PEDIDOS_POR_COLUMNA = 2;
 
 export function OrdersKanban({
   activeOrders,

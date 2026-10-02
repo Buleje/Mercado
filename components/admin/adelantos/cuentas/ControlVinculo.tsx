@@ -14,6 +14,7 @@
 
 import { useMemo, useState } from "react";
 import { Link2, Link2Off } from "@buleje/design-system/icons";
+import BotonIconoTip from "@/components/admin/shared/boton-icono-tip";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import type { CuentaPersona } from "@/lib/adelantos/cuenta-unificada";
 import { sugerirVinculo } from "@/lib/adelantos/vinculo-sugerido";
@@ -43,18 +44,19 @@ export default function ControlVinculo({
 
   if (persona.vinculo === "id") {
     return (
-      <button
-        type="button"
+      <BotonIconoTip
+        icon={Link2Off}
+        tono="peligro"
+        tamano="sm"
         disabled={guardando}
+        cargando={guardando}
+        label={guardando ? "Desvinculando…" : "Desvincular de la parte forestal"}
         onClick={async () => {
           setGuardando(true);
           await onVincular(persona.beneficiarioId as string, null);
           setGuardando(false);
         }}
-        className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-bold text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--data-error-700)] disabled:opacity-50 dark:hover:text-[var(--data-error-500)]"
-      >
-        <Link2Off className="h-3.5 w-3.5" aria-hidden /> {guardando ? "Desvinculando…" : "Desvincular de la parte forestal"}
-      </button>
+      />
     );
   }
 
@@ -64,17 +66,16 @@ export default function ControlVinculo({
   if (!eligiendo) {
     return (
       <span className="inline-flex items-center gap-1">
-        <button
-          type="button"
+        <BotonIconoTip
+          icon={Link2}
+          tono="acento"
+          tamano="sm"
           onClick={() => {
             setSeleccion(parteSugerida ?? "");
             setEligiendo(true);
           }}
-          className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-bold text-primary hover:underline"
-        >
-          <Link2 className="h-3.5 w-3.5" aria-hidden />
-          {sugerida ? `¿Es la misma persona que ${sugerida.candidata.nombre}?` : "¿Es la misma persona que…?"}
-        </button>
+          label={sugerida ? `¿Es la misma persona que ${sugerida.candidata.nombre}?` : "¿Es la misma persona que…?"}
+        />
         {sugerida && (
           <InfoTip
             title="Por qué se sugiere"

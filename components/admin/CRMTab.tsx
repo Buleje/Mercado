@@ -3,11 +3,13 @@
 import { DataTable, LoadingState } from "@buleje/design-system";
 import { leerJson, sinDato } from "@/lib/errores/sin-dato";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
+import ActionMenu from "@/components/admin/shared/action-menu";
+import BotonIconoTip from "@/components/admin/shared/boton-icono-tip";
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   Users, Search, X, Download, AlertCircle,
   Phone, Crown, Star, UserPlus, Moon,
-  ShoppingCart, TrendingUp, UserCheck,
+  ShoppingCart, TrendingUp, UserCheck, Plus,
   ChevronLeft, ChevronRight, BarChart3, RefreshCw,
 } from "@buleje/design-system/icons";
 import EmptyState from "@/components/admin/shared/EmptyState";
@@ -460,45 +462,53 @@ export default function CRMTab() {
         >
           <UserPlus className="h-4 w-4" /> Nuevo cliente
         </button>
-        <button
-          onClick={() => exportToCSV(
-            customers.map(c => ({ nombre: c.name, teléfono: c.phone, ubicacion: c.location ?? "", gastado: c.totalSpent ?? 0, segmento: c._segment ?? "nuevo" })),
-            "crm-clientes"
-          )}
-          className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors min-h-[44px]"
-        >
-          <Download className="h-4 w-4" /> CSV
-        </button>
-        <button
-          onClick={() => {
-            if (filtered.length === 0) return;
-            const rows = filtered.map(c => ({
-              Nombre: c.name,
-              "Teléfono": c.phone,
-              "Categoría": c.loyaltyTier ?? "—",
-              Tags: (c._tags ?? []).join(", ") || "—",
-              "Total gastado (S/)": Number((c.totalSpent ?? 0).toFixed(2)),
-              "Última compra": c._lastOrder ? formatDateNumeric(c._lastOrder) : "Sin compras",
-              Estado: c._segment === "frecuente" ? "Frecuente" : c._segment === "ocasional" ? "Ocasional" : c._segment === "perdido" ? "Perdido" : "Nuevo",
-            }));
-            const fecha = new Date().toISOString().slice(0, 10);
-            exportToExcel(rows, `clientes-${fecha}`, "Clientes");
-          }}
-          className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors min-h-[44px]"
-        >
-          <Download className="h-4 w-4" /> Excel
-        </button>
-        <button
-          onClick={() => { setCompareMode(!compareMode); if (compareMode) { setComparePhones(new Set()); } }}
-          className={cn(
-            "inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors min-h-[44px]",
-            compareMode
-              ? "bg-primary text-white hover:bg-primary/90"
-              : "border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
-          )}
-        >
-          <BarChart3 className="h-4 w-4" /> {compareMode ? "Cancelar" : "Comparar"}
-        </button>
+        {/* CSV, Excel y Comparar se usan de vez en cuando: al menú (ley de Brandon 2026-10-01). */}
+        <ActionMenu
+          label="Más"
+          size="md"
+          soloIcono
+          actions={[
+            {
+              id: "csv",
+              label: "Descargar CSV",
+              hint: "Todos los clientes, para abrir en cualquier programa",
+              icon: Download,
+              onSelect: () =>
+                exportToCSV(
+                  customers.map(c => ({ nombre: c.name, teléfono: c.phone, ubicacion: c.location ?? "", gastado: c.totalSpent ?? 0, segmento: c._segment ?? "nuevo" })),
+                  "crm-clientes"
+                ),
+            },
+            {
+              id: "excel",
+              label: "Descargar Excel",
+              hint: "Sólo los clientes que ves con los filtros de ahora",
+              icon: Download,
+              onSelect: () => {
+                if (filtered.length === 0) return;
+                const rows = filtered.map(c => ({
+                  Nombre: c.name,
+                  "Teléfono": c.phone,
+                  "Categoría": c.loyaltyTier ?? "—",
+                  Tags: (c._tags ?? []).join(", ") || "—",
+                  "Total gastado (S/)": Number((c.totalSpent ?? 0).toFixed(2)),
+                  "Última compra": c._lastOrder ? formatDateNumeric(c._lastOrder) : "Sin compras",
+                  Estado: c._segment === "frecuente" ? "Frecuente" : c._segment === "ocasional" ? "Ocasional" : c._segment === "perdido" ? "Perdido" : "Nuevo",
+                }));
+                const fecha = new Date().toISOString().slice(0, 10);
+                exportToExcel(rows, `clientes-${fecha}`, "Clientes");
+              },
+            },
+            {
+              id: "comparar",
+              label: compareMode ? "Salir de comparar" : "Comparar clientes",
+              hint: "Elige dos o más y míralos lado a lado",
+              icon: BarChart3,
+              activo: compareMode,
+              onSelect: () => { setCompareMode(!compareMode); if (compareMode) { setComparePhones(new Set()); } },
+            },
+          ]}
+        />
         <BotonRestablecerColumnas cambiado={orden.cambiado} onRestablecer={orden.restablecer} />
       </div>
 
@@ -967,7 +977,7 @@ export default function CRMTab() {
                                 type="button"
                                 onClick={() => { setEditingCreditLimit(c.phone); setCreditLimitInput(String(c.creditLimit ?? 0)); }}
                                 className="group text-left"
-                                title="Click para editar límite de crédito"
+                                title={c.creditLimit != null && c.creditLimit > 0 ? "Click para editar límite de crédito" : "Añadir límite de crédito"}
                               >
                                 {c.creditLimit != null && c.creditLimit > 0 ? (
                                   <StatusBadge
@@ -976,7 +986,7 @@ export default function CRMTab() {
                                     size="sm"
                                   />
                                 ) : (
-                                  <span className="text-xs text-[var(--text-tertiary)] group-hover:text-primary transition-colors">+ Añadir límite</span>
+                                  <span aria-label="Añadir límite de crédito" role="img" className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[var(--text-tertiary)] transition-colors group-hover:bg-primary/10 group-hover:text-primary"><Plus className="h-4 w-4" aria-hidden /></span>
                                 )}
                               </button>
                             )}
@@ -1011,12 +1021,14 @@ export default function CRMTab() {
 
                     {/* Acciones */}
                     <td className="text-center">
-                      <button
+                      <BotonIconoTip
+                        icon={ShoppingCart}
+                        tono="acento"
+                        tamano="sm"
                         onClick={() => setDetail(c.phone)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary/10 hover:bg-primary/20 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-bold transition-colors"
-                      >
-                        <ShoppingCart className="h-3 w-3" />360°
-                      </button>
+                        label={`Ver la ficha 360° de ${c.name}`}
+                        tip="Ficha 360°"
+                      />
                     </td>
                   </m.tr>
                 );

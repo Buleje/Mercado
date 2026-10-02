@@ -410,10 +410,10 @@ function ResumenView({
             </div>
             <div className="min-w-0 flex-1 text-center sm:text-left">
               <CardTitle className="text-base font-extrabold text-[var(--text-primary)]">Recuperación de adelantos</CardTitle>
-              <p className="mt-2 text-base text-[var(--text-secondary)]">
+              <div className="mt-2 text-base text-[var(--text-secondary)]">
                 Recuperaste <span className="font-bold text-[var(--text-primary)]">{fmtMonedas(liquidadoMap)}</span> de{" "}
                 <span className="font-bold text-[var(--text-primary)]">{fmtMonedas(adelantadoMap)}</span> adelantados.
-              </p>
+              </div>
             </div>
           </div>
         </div>
@@ -462,10 +462,9 @@ function ResumenView({
               const wa = enlaceWhatsApp(d.telefono, d.nombre, d.saldo, d.moneda);
               return (
                 <li key={d.id} className="flex items-center gap-3 py-2.5">
-                  <button
-                    onClick={() => onGoTab("cobranza")}
-                    className="-mx-1 flex min-w-0 flex-1 items-center gap-3 rounded-lg px-1 py-1 text-left transition-colors hover:bg-[var(--surface-sunken)]/50"
-                  >
+                  {/* Fila informativa: las cinco llevaban a Cobranza, igual que
+                      «Ver todos» — un solo camino, no cinco botones iguales. */}
+                  <div className="-mx-1 flex min-w-0 flex-1 items-center gap-3 rounded-lg px-1 py-1 text-left">
                     <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-base font-extrabold text-[var(--accent-ink)] dark:text-[var(--accent)]">
                       {d.nombre.charAt(0).toUpperCase()}
                       <span
@@ -478,7 +477,7 @@ function ResumenView({
                       <span className="block truncate text-base font-bold text-[var(--text-primary)]">{d.nombre}</span>
                       <span className="block truncate text-sm text-[var(--text-tertiary)]">{explicarAtraso(d)}</span>
                     </span>
-                  </button>
+                  </div>
                   <span className="shrink-0 tabular-nums text-base font-extrabold text-[var(--data-warning)]">{fmtMon(d.saldo, d.moneda)}</span>
                   {wa ? (
                     <a
@@ -491,9 +490,7 @@ function ResumenView({
                     >
                       <MessageCircle className="h-4 w-4" />
                     </a>
-                  ) : (
-                    <ChevronRight className="h-5 w-5 shrink-0 text-[var(--text-tertiary)]" />
-                  )}
+                  ) : null}
                 </li>
               );
             })}

@@ -28,6 +28,8 @@ import { cn } from "@/lib/utils";
 import { exportToCSV } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import ActionMenu from "@/components/admin/shared/action-menu";
+import BotonIconoTip from "@/components/admin/shared/boton-icono-tip";
 import { CardTitle, DataTable, StatCard } from "@buleje/design-system";
 import AdminTabBar, { type AdminTab } from "@/components/admin/shared/AdminTabBar";
 import { Field } from "@/components/admin/shared/Field";
@@ -160,12 +162,15 @@ export default function ActivosModule() {
         description="Alquila tus equipos y mira la ganancia real de cada máquina."
         icon={Construction}
       >
-        <button type="button" onClick={() => setShowImport(true)} className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3.5 py-2.5 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] min-h-[44px]">
-          <Upload className="h-4 w-4" /> Importar
-        </button>
-        <button type="button" onClick={exportReport} className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3.5 py-2.5 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] min-h-[44px]">
-          <Download className="h-4 w-4" /> Exportar
-        </button>
+        {/* Importar y exportar se usan de vez en cuando: al menú (ley de Brandon 2026-10-01). */}
+        <ActionMenu
+          label="Más acciones"
+          soloIcono
+          actions={[
+            { id: "importar", label: "Importar flota", hint: "Sube un Excel/CSV y crea varias máquinas de una", icon: Upload, onSelect: () => setShowImport(true) },
+            { id: "exportar", label: "Exportar reporte", hint: "Descarga la rentabilidad de cada máquina", icon: Download, onSelect: exportReport },
+          ]}
+        />
         <button type="button" onClick={() => { setEditing(null); setShowForm(true); }} className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary/90 min-h-[44px]">
           <Plus className="h-4 w-4" strokeWidth={2.5} /> Nuevo activo
         </button>
@@ -283,15 +288,16 @@ function AssetCard({ asset, onRent, onExpense, onEdit, onDetail, onContract, onC
 
       {/* Tienda + alertas (mantenimiento / combustible / cobranza) */}
       <div className="mt-2.5 flex flex-wrap gap-1.5">
-        <button
-          type="button"
+        <BotonIconoTip
+          icon={Store}
+          tamano="sm"
+          tono={asset.publishedProductId ? "acento" : "neutro"}
           onClick={onPublish}
-          title={asset.publishedProductId ? "Publicado como servicio de alquiler — toca para quitarlo de la tienda" : "Publicar como servicio de alquiler en tu tienda/marketplace"}
-          className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold transition-colors",
-            asset.publishedProductId ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]")}
-        >
-          <Store className="h-3 w-3" /> {asset.publishedProductId ? "En tienda" : "Publicar en tienda"}
-        </button>
+          aria-pressed={Boolean(asset.publishedProductId)}
+          label={asset.publishedProductId ? "En tienda: toca para quitarlo de la tienda" : "Publicar como servicio de alquiler en tu tienda"}
+          tip={asset.publishedProductId ? "En tienda — toca para quitarlo" : "Publicar en tienda como servicio de alquiler"}
+          className={asset.publishedProductId ? "bg-primary/10" : "border border-[var(--rule-base)]"}
+        />
         {asset.maintenanceDue > 0 && <Chip icon={Wrench} tone="error">{asset.maintenanceDue} mantto. vencido</Chip>}
         {asset.maintenanceDue === 0 && asset.maintenanceSoon > 0 && <Chip icon={Wrench} tone="warning">{asset.maintenanceSoon} mantto. pronto</Chip>}
         {asset.fuelAlert && <Chip icon={Fuel} tone="warning">consume de más</Chip>}

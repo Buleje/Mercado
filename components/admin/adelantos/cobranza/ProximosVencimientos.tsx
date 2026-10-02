@@ -11,6 +11,7 @@
 
 import { CalendarClock, MessageCircle } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { enlaceWhatsApp } from "@/lib/adelantos/contacto";
 import {
   cuandoVence,
@@ -35,18 +36,20 @@ export default function ProximosVencimientos({ adelantos }: { adelantos: DbAdela
 
   return (
     <div className="rounded-xl bg-[var(--data-info)]/8 p-5 ring-1 ring-[var(--data-info)]/25">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+      <div className="mb-3 flex flex-wrap items-center gap-2">
         <CardTitle className="flex items-center gap-2 text-base font-extrabold text-[var(--text-primary)]">
           <CalendarClock className="h-5 w-5 shrink-0 text-[var(--data-info)]" aria-hidden />
           Vence esta semana ({proximos.length})
         </CardTitle>
-        <span className="text-base font-extrabold tabular-nums text-[var(--data-info)]">
+        <InfoTip
+          title="Vence esta semana"
+          what="Todavía no deben nada: un aviso ahora evita el reclamo del mes que viene."
+          example="Tocas «Avisar» y se abre WhatsApp con un recordatorio amable, sin reclamo."
+        />
+        <span className="ml-auto text-base font-extrabold tabular-nums text-[var(--data-info)]">
           {fmtMonedas(total)} por entrar
         </span>
       </div>
-      <p className="mb-3 text-sm text-[var(--text-secondary)]">
-        Todavía no deben nada. Un aviso ahora evita el reclamo del mes que viene.
-      </p>
       <ul className="divide-y divide-[var(--rule-soft)]">
         {proximos.slice(0, 8).map((c, i) => {
           const wa = enlaceWhatsApp(c.telefono, c.nombre, 0);

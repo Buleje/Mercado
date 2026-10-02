@@ -14,12 +14,16 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { CardTitle } from "@buleje/design-system";
-import { Users } from "@buleje/design-system/icons";
+import { ChevronDown, Users } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useCuentasPersonas } from "@/hooks/use-cuentas-personas";
 import { useMiRol } from "@/hooks/use-mi-rol";
 import { EmptyState, fmtMon } from "../shared";
 import FilaCuentaPersona from "./FilaCuentaPersona";
 import { borrarPedidoLiquidar, leerPedidoLiquidar, personaDelPedido, type PedidoLiquidar } from "./liquidar-por-url";
+
+/** Cuántas personas se ven antes de «Ver las N»: más largo que eso, la pantalla se vuelve una lista infinita. */
+const VISIBLES = 3;
 
 export default function CuentasPorPersona({ onGoTab }: { onGoTab: (tab: string) => void }) {
   const { forestal, personas, truncado, loading, error, vincularParte, reload } = useCuentasPersonas();
@@ -39,6 +43,7 @@ export default function CuentasPorPersona({ onGoTab }: { onGoTab: (tab: string) 
      Se relee con el «atrás» y con el popstate que dispara la navegación del panel. */
   const [pedido, setPedido] = useState<PedidoLiquidar | null>(() => leerPedidoLiquidar());
   const [abrirLiquidarDe, setAbrirLiquidarDe] = useState<string | null>(null);
+  const [verTodas, setVerTodas] = useState(false);
   useEffect(() => {
     const releer = () => setPedido(leerPedidoLiquidar());
     window.addEventListener("popstate", releer);
@@ -55,7 +60,14 @@ export default function CuentasPorPersona({ onGoTab }: { onGoTab: (tab: string) 
   return (
     <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
       <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
-        <CardTitle className="text-base font-extrabold text-[var(--text-primary)]">Cuenta por persona</CardTitle>
+        <div className="flex items-center gap-1.5">
+          <CardTitle className="text-base font-extrabold text-[var(--text-primary)]">Cuenta por persona</CardTitle>
+          <InfoTip
+            title="Cuenta por persona"
+            what="Adelantos, aserríos, ventas de madera y pagos de cada uno, en una sola cuenta."
+            example="Si le adelantaste plata y a la vez le debes por una guía, ves las dos deudas y el neto."
+          />
+        </div>
         {personas.length > 0 && (
           <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm font-bold">
             {/* El token base no pasa AA en 14px 700 (medido: contraste 2.03 y
@@ -66,9 +78,7 @@ export default function CuentasPorPersona({ onGoTab }: { onGoTab: (tab: string) 
           </div>
         )}
       </div>
-      <p className="mb-4 text-sm text-[var(--text-secondary)]">
-        Adelantos, aserríos, ventas de madera y pagos de cada uno, en una sola cuenta.
-      </p>
+      <div className="mb-3" />
 
       {error && (
         <div className="mb-3 rounded-xl border border-[var(--data-error)]/30 bg-[var(--data-error)]/10 px-4 py-3 text-sm font-semibold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
@@ -104,7 +114,9 @@ export default function CuentasPorPersona({ onGoTab }: { onGoTab: (tab: string) 
         />
       ) : (
         <ul className="space-y-3">
-          {personas.map((p) => (
+          {personas
+            .filter((p, i) => verTodas || i < VISIBLES || p.clave === abrirLiquidarDe)
+            .map((p) => (
             <FilaCuentaPersona
               key={p.clave}
               persona={p}
@@ -119,6 +131,15 @@ export default function CuentasPorPersona({ onGoTab }: { onGoTab: (tab: string) 
             />
           ))}
         </ul>
+      )}
+      {personas.length > VISIBLES && !verTodas && (
+        <button
+          type="button"
+          onClick={() => setVerTodas(true)}
+          className="mt-3 inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-xl text-sm font-bold text-primary transition-colors hover:bg-[var(--surface-sunken)]"
+        >
+          <ChevronDown className="h-4 w-4" aria-hidden /> Ver las {personas.length} personas
+        </button>
       )}
     </div>
   );

@@ -15,6 +15,7 @@
 
 import { useState } from "react";
 import { FileDown, MessageCircle } from "@buleje/design-system/icons";
+import BotonIconoTip from "@/components/admin/shared/boton-icono-tip";
 import { useSettingsSafe } from "@/contexts/settings-context";
 import { logger } from "@/lib/logger";
 import { enlaceWhatsAppConTexto } from "@/lib/adelantos/contacto";
@@ -46,9 +47,6 @@ async function pedirDetalle(persona: CuentaPersona): Promise<ResultadoDetalle> {
     return { ok: false, message: MENSAJE_GENERICO };
   }
 }
-
-const btnCls =
-  "inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-50";
 
 /** El motivo del error, en el tono de advertencia del DS (AA: -700 claro / -500 oscuro). */
 function MotivoError({ mensaje }: { mensaje: string }) {
@@ -103,32 +101,29 @@ export default function AccionesEstadoCuenta({ persona }: { persona: CuentaPerso
 
   return (
     <div className="flex flex-wrap items-center gap-1.5">
-      <button
-        type="button"
+      <BotonIconoTip
+        icon={MessageCircle}
+        label={persona.telefono ? `Mandar el estado de cuenta a ${persona.nombre} por WhatsApp` : `${persona.nombre} no tiene teléfono cargado`}
+        tip={persona.telefono ? "Mandar por WhatsApp" : "Sin teléfono cargado"}
         onClick={mandarWhatsApp}
         disabled={!persona.telefono || cargando !== null}
-        aria-label={persona.telefono ? `Mandar el estado de cuenta a ${persona.nombre} por WhatsApp` : `${persona.nombre} no tiene teléfono cargado`}
-        title={persona.telefono ? undefined : "Sin teléfono cargado"}
-        className={btnCls}
-      >
-        <MessageCircle className="h-3.5 w-3.5" aria-hidden />
-        {cargando === "whatsapp" ? "Armando…" : "WhatsApp"}
-      </button>
+        cargando={cargando === "whatsapp"}
+        tamano="sm"
+      />
       {/* El motivo tiene que VERSE, no sólo estar en el `title` (eso pide
           hover, inútil en el celular donde se manda el WhatsApp). */}
       {!persona.telefono && <span className="text-xs text-[var(--text-tertiary)]">Sin teléfono</span>}
       {errores.whatsapp && <MotivoError mensaje={errores.whatsapp} />}
 
-      <button
-        type="button"
+      <BotonIconoTip
+        icon={FileDown}
+        label={`Descargar el estado de cuenta de ${persona.nombre} en PDF`}
+        tip="Descargar PDF"
         onClick={descargarPdf}
         disabled={cargando !== null}
-        aria-label={`Descargar el estado de cuenta de ${persona.nombre} en PDF`}
-        className={btnCls}
-      >
-        <FileDown className="h-3.5 w-3.5" aria-hidden />
-        {cargando === "pdf" ? "Generando…" : "PDF"}
-      </button>
+        cargando={cargando === "pdf"}
+        tamano="sm"
+      />
       {errores.pdf && <MotivoError mensaje={errores.pdf} />}
     </div>
   );

@@ -9,6 +9,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, Scale } from "@buleje/design-system/icons";
+import BotonIconoTip from "@/components/admin/shared/boton-icono-tip";
 import { leerNeto, type CuentaPersona } from "@/lib/adelantos/cuenta-unificada";
 import { CONCEPTO_LABEL, type Concepto } from "@/lib/forestal/cuenta-corriente";
 import { fmtMon, fmtMonedas } from "../shared";
@@ -157,7 +158,7 @@ export default function FilaCuentaPersona({
             natural y `break-words` envuelve incluso si algún token no tiene
             espacio donde cortar; en desktop sigue alineado a la derecha
             porque hay lugar de sobra para una sola línea. */}
-        <p className={`min-w-0 break-words text-right text-base font-extrabold tabular-nums ${color}`}>{leerNeto(persona.neto, persona.nombre)}</p>
+        <span className={`min-w-0 break-words text-right text-base font-extrabold tabular-nums ${color}`}>{leerNeto(persona.neto, persona.nombre)}</span>
       </div>
 
       {/* flex-wrap: deja lugar para sumar acciones sin romper la fila. */}
@@ -167,33 +168,32 @@ export default function FilaCuentaPersona({
         {puedeLiquidar && <ControlVinculo persona={persona} candidatos={candidatos} onVincular={onVincular} />}
         <AccionesEstadoCuenta persona={persona} />
         {botonLiquidarVisible && (
-          <button
-            type="button"
+          <BotonIconoTip
+            icon={Scale}
             onClick={() => setLiquidando(true)}
             disabled={vinculoBloqueaElBoton}
-            aria-label={
+            tamano="sm"
+            label={
               vinculoBloqueaElBoton
                 ? `Para liquidar a ${persona.nombre} hace falta confirmar que es la misma persona`
                 : hayAlgoQueLiquidar
                   ? `Liquidar la cuenta de ${persona.nombre}`
                   : `Ver las liquidaciones de ${persona.nombre}`
             }
-            className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <Scale className="h-3.5 w-3.5" aria-hidden /> {hayAlgoQueLiquidar ? "Liquidar" : "Liquidaciones"}
-          </button>
+            tip={vinculoBloqueaElBoton ? "Falta confirmar que es la misma persona" : hayAlgoQueLiquidar ? "Liquidar" : "Ver liquidaciones"}
+          />
         )}
         {vinculoBloqueaElBoton && <span className="text-xs text-[var(--text-tertiary)]">Falta confirmar el vínculo</span>}
         {persona.parteId && (
-          <button
-            type="button"
+          <BotonIconoTip
+            icon={ChevronDown}
             aria-expanded={abierto}
             onClick={() => setAbierto((v) => !v)}
-            className="ml-auto inline-flex h-8 items-center gap-1 rounded-lg px-2 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]"
-          >
-            <ChevronDown className={`h-4 w-4 transition-transform ${abierto ? "rotate-180" : ""}`} aria-hidden />
-            {abierto ? "Ocultar movimientos" : "Ver movimientos"}
-          </button>
+            tamano="sm"
+            className="ml-auto"
+            label={`${abierto ? "Ocultar" : "Ver"} los movimientos de ${persona.nombre}`}
+            tip={abierto ? "Ocultar movimientos" : "Ver movimientos"}
+          />
         )}
       </div>
 

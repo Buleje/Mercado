@@ -19,6 +19,8 @@ import ProductSpecsEditor, { type SpecRow } from "@/components/admin/inventario/
 import ProductRichContentEditor, { type RichBlock } from "@/components/admin/inventario/ProductRichContentEditor";
 import { toast } from "sonner";
 import { ModuleActionMenu, type ModuleActionItem } from "@/components/admin/shared/ModuleActionMenu";
+import ActionMenu from "@/components/admin/shared/action-menu";
+import BotonIconoTip from "@/components/admin/shared/boton-icono-tip";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import StatusBadge from "@/components/admin/shared/StatusBadge";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
@@ -44,7 +46,7 @@ import { useScrollLock } from "@/hooks/use-scroll-lock";
 import type { DbProduct, DbInventoryMovement } from "@/lib/jsondb";
 import dynamic from "next/dynamic";
 import { usePagination, Paginator } from "@/hooks/use-pagination";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, formatDateNumeric, formatDateShort } from "@/lib/format";
 import { enRango, rangoActivo, textoDeRango, type ChipFiltro, type FacetaOpcion, type Rango } from "@/lib/admin/filtros-columna";
 import { ChipsDeFiltros, FiltroColumnaMulti, FiltroColumnaRango } from "@/components/admin/shared/filtros-columna";
 import { BotonRestablecerColumnas, EnOrden, useOrdenColumnas } from "@/components/admin/shared/columnas-ordenables";
@@ -1253,6 +1255,20 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
     ];
   }, [products, showInactive, savedCategories]);
 
+  /* Ley de Brandon (2026-10-01): 24 pastillas de categoría eran 24 botones a la
+     vista. Quedan «Todos» + las más grandes + las que están elegidas (nunca se
+     esconde un filtro activo); el resto va a «Más categorías». */
+  const CATEGORIAS_A_LA_VISTA = 8;
+  const { chipsVisibles, chipsEnMenu } = useMemo(() => {
+    const visibles: typeof dynamicCategories = [];
+    const enMenu: typeof dynamicCategories = [];
+    dynamicCategories.forEach((c, i) => {
+      if (i < CATEGORIAS_A_LA_VISTA || catFilter.includes(c.id)) visibles.push(c);
+      else enMenu.push(c);
+    });
+    return { chipsVisibles: visibles, chipsEnMenu: enMenu };
+  }, [dynamicCategories, catFilter]);
+
   // Categorías ASIGNABLES en el form de productos: las que el comerciante creó
   // (categoryOrder) + las que ya usan sus productos. NADA del catálogo demo
   // estático. Si no tiene ninguna → "General" para no bloquear el alta.
@@ -1335,7 +1351,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
    * no se lista: es lo de siempre, no un acotamiento que puso el operador.
    */
   const fechaCorta = (v: number | string) =>
-    new Date(`${v}T00:00:00Z`).toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", timeZone: "UTC" });
+    formatDateShort(`${v}T00:00:00Z`, { soloFecha: true });
   const chipsDeColumna: ChipFiltro[] = [
     ...(catFilter.length > 0
       ? [{
@@ -1490,37 +1506,23 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
           <ChevronDown className={cn("h-3 w-3 transition-transform", showFilters && "rotate-180")} />
         </button>
         {/* View mode toggle: tabla / cards (solo desktop) */}
-        <div className="hidden sm:inline-flex items-center rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] overflow-hidden ml-auto">
-          <button
-            type="button"
-            onClick={() => setViewMode("table")}
+        <div className="hidden sm:inline-flex items-center gap-0.5 rounded-lg border border-[var(--rule-base)] p-0.5 ml-auto">
+          <BotonIconoTip
+            icon={LayoutList}
+            tamano="sm"
+            label="Vista tabla"
             aria-pressed={viewMode === "table"}
-            title="Vista tabla"
-            className={cn(
-              "inline-flex items-center gap-1 px-2.5 py-2 text-xs font-bold transition-colors",
-              viewMode === "table"
-                ? "bg-primary text-white"
-                : "bg-[var(--surface-raised)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] "
-            )}
-          >
-            <LayoutList className="h-3.5 w-3.5" />
-            Tabla
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewMode("cards")}
+            onClick={() => setViewMode("table")}
+            className={viewMode === "table" ? "bg-primary text-white hover:bg-primary hover:text-white" : ""}
+          />
+          <BotonIconoTip
+            icon={LayoutGrid}
+            tamano="sm"
+            label="Vista tarjetas"
             aria-pressed={viewMode === "cards"}
-            title="Vista cards"
-            className={cn(
-              "inline-flex items-center gap-1 px-2.5 py-2 text-xs font-bold transition-colors border-l border-[var(--rule-base)] dark:border-[var(--rule-base)]",
-              viewMode === "cards"
-                ? "bg-primary text-white"
-                : "bg-[var(--surface-raised)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] "
-            )}
-          >
-            <LayoutGrid className="h-3.5 w-3.5" />
-            Cards
-          </button>
+            onClick={() => setViewMode("cards")}
+            className={viewMode === "cards" ? "bg-primary text-white hover:bg-primary hover:text-white" : ""}
+          />
         </div>
         {/* Nuevo + Más acciones */}
         <button
@@ -1562,7 +1564,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
       {dynamicCategories.length > 1 && (
         <div className="-mx-2 px-2 overflow-x-auto scrollbar-hide">
           <div className="flex items-center gap-2 min-w-fit">
-            {dynamicCategories.map(c => {
+            {chipsVisibles.map(c => {
               // "Todos" está activo con la selección vacía; cualquier otra
               // pastilla se puede combinar con otras (multi, 2026-09-22):
               // clic para sumarla, clic de nuevo para sacarla — el mismo
@@ -1594,6 +1596,20 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                 </button>
               );
             })}
+            {chipsEnMenu.length > 0 && (
+              <ActionMenu
+                label={`Más categorías (${chipsEnMenu.length})`}
+                size="sm"
+                actions={chipsEnMenu.map(c => ({
+                  id: c.id,
+                  label: c.label,
+                  icon: Layers,
+                  meta: String(c.count),
+                  activo: catFilter.includes(c.id),
+                  onSelect: () => setCatFilter(prev => prev.includes(c.id) ? prev.filter(id => id !== c.id) : [...prev, c.id]),
+                }))}
+              />
+            )}
           </div>
         </div>
       )}
@@ -2288,7 +2304,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                                   if (!v) return <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">—</span>;
                                   return (
                                     <span className={cn("text-xs tabular-nums", isExpiringSoon(p) && "font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]")}>
-                                      {new Date(`${v}T00:00:00Z`).toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" })}
+                                      {formatDateNumeric(`${v}T00:00:00Z`, { soloFecha: true })}
                                     </span>
                                   );
                                 })()}
@@ -2297,14 +2313,18 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                             estado: (
                               <td>
                                 <button
+                                  type="button"
+                                  role="switch"
+                                  aria-checked={p.active}
+                                  aria-label={`${p.name}: ${p.active ? "activo, toca para desactivar" : "inactivo, toca para activar"}`}
+                                  title={p.active ? "Activo — toca para desactivar" : "Inactivo — toca para activar"}
                                   onClick={() => toggleActive(p)}
                                   className={cn(
-                                    "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold transition-colors",
-                                    p.active ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] hover:bg-primary/10" : "bg-[var(--surface-sunken)] dark:bg-accent text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)]"
+                                    "relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
+                                    p.active ? "bg-[var(--data-success-500)]" : "bg-[var(--rule-strong)]"
                                   )}
                                 >
-                                  <span className={cn("h-1.5 w-1.5 rounded-full", p.active ? "bg-primary/10" : "bg-gray-400")} />
-                                  {p.active ? "Activo" : "Inactivo"}
+                                  <span className={cn("absolute h-4 w-4 rounded-full bg-[var(--surface-raised)] shadow-[var(--shadow-sm)] transition-all", p.active ? "left-[1.1rem]" : "left-0.5")} />
                                 </button>
                               </td>
                             ),
@@ -2464,7 +2484,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
           return true;
         });
         return (
-          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-[2px] sm:p-4" onClick={(e) => e.target === e.currentTarget && !ventanaPicker.fijado && setShowPicker(false)}>
+          <div className="fixed inset-0 z-modal flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-[2px] sm:p-4" onClick={(e) => e.target === e.currentTarget && !ventanaPicker.fijado && setShowPicker(false)}>
             <div ref={pickerModalRef} role="dialog" aria-modal="true" aria-label="Agregar al catálogo" tabIndex={-1} className="relative bg-[var(--surface-raised)] w-full sm:max-w-4xl sm:rounded-2xl rounded-t-2xl overflow-hidden max-h-[92dvh] flex flex-col border border-[var(--rule-base)] shadow-[var(--shadow-xl)]">
               <div {...ventanaPicker.asaProps} className="flex items-start gap-3 px-5 sm:px-6 py-5 border-b-2 border-[var(--rule-soft)] sticky top-0 bg-[var(--surface-raised)] z-10">
                 <span aria-hidden className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
@@ -2576,7 +2596,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
 
       {/* ── Add product modal ── */}
       {showAdd && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-[2px] sm:p-4" onClick={(e) => e.target === e.currentTarget && !ventanaAdd.fijado && setShowAdd(false)}>
+        <div className="fixed inset-0 z-modal flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-[2px] sm:p-4" onClick={(e) => e.target === e.currentTarget && !ventanaAdd.fijado && setShowAdd(false)}>
           <div ref={addModalRef} role="dialog" aria-modal="true" aria-label="Nuevo producto" tabIndex={-1} className="relative bg-[var(--surface-raised)] w-full sm:max-w-5xl sm:rounded-2xl rounded-t-2xl overflow-y-auto max-h-[92dvh] border border-[var(--rule-base)] shadow-xl">
             <div {...ventanaAdd.asaProps} className="sticky top-0 z-10 flex items-center justify-between gap-3 px-6 py-4 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)]/95 backdrop-blur">
               <div className="min-w-0">
@@ -3202,7 +3222,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
 
       {/* ── Edit product modal ── */}
       {editModalProduct && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-[2px] sm:p-4" onClick={(e) => e.target === e.currentTarget && !ventanaEdit.fijado && closeEditModal()}>
+        <div className="fixed inset-0 z-modal flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-[2px] sm:p-4" onClick={(e) => e.target === e.currentTarget && !ventanaEdit.fijado && closeEditModal()}>
           <div ref={editModalRef} role="dialog" aria-modal="true" aria-label={`Editar ${editModalProduct.name}`} tabIndex={-1} className="relative bg-[var(--surface-raised)] w-full sm:max-w-3xl sm:rounded-2xl rounded-t-2xl overflow-y-auto max-h-[92dvh] border border-[var(--rule-base)] shadow-xl">
             <div {...ventanaEdit.asaProps} className="sticky top-0 z-10 flex items-center justify-between gap-3 px-6 py-4 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)]/95 backdrop-blur">
               <div className="min-w-0">
@@ -3954,7 +3974,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
       {showQRProduct && (
         <>
           <div className="modal-backdrop" onClick={() => !ventanaQR.fijado && setShowQRProduct(null)} />
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && !ventanaQR.fijado && setShowQRProduct(null)}>
+          <div className="fixed inset-0 z-modal flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && !ventanaQR.fijado && setShowQRProduct(null)}>
             <div
               ref={qrPanelRef}
               role="dialog"
@@ -4023,7 +4043,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
       {showAutoReorder !== null && (
         <>
           <div className="modal-backdrop" onClick={() => !ventanaAutoReorder.fijado && setShowAutoReorder(null)} />
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && !ventanaAutoReorder.fijado && setShowAutoReorder(null)}>
+          <div className="fixed inset-0 z-modal flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && !ventanaAutoReorder.fijado && setShowAutoReorder(null)}>
             <div
               ref={autoReorderPanelRef}
               role="dialog"

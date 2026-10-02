@@ -36,6 +36,9 @@ export const ORDEN: readonly PorCobrarTipo[] = ["fiado", "prestamo", "adelanto",
 /* 44 px de alto en el celular (el dedo), 36 en la tabla del escritorio. */
 export const BOTON_FILA = "inline-flex h-11 items-center sm:h-9 justify-center gap-1 rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)]/50 hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]";
 
+/** El mismo botón de fila, de sólo ícono (su texto sale al pasar el mouse). */
+export const BOTON_ICONO = "h-11 w-11 border border-[var(--rule-base)] hover:border-[var(--accent)]/50 sm:h-9 sm:w-9";
+
 const DIAS = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"];
 
 /** «jue 10/09» — a mano, sin `Intl`: el ICU cambia los nombres entre versiones. */

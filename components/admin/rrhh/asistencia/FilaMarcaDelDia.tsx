@@ -95,9 +95,11 @@ export default function FilaMarcaDelDia({ colaborador, fecha, marca, pendiente, 
             type="button"
             onClick={() => setNotaAbierta((v) => !v)}
             aria-expanded={notaAbierta}
-            className={cn(BOTON.chicoFantasma, "px-2.5", marca?.nota && "text-[var(--accent-ink)] dark:text-[var(--accent)]")}
+            aria-label={`Nota del día de ${colaborador.nombre}`}
+            title="Nota del día"
+            className={cn(BOTON.icono, marca?.nota && "text-[var(--accent-ink)] dark:text-[var(--accent)]")}
           >
-            <StickyNote className="h-4 w-4" /> Nota
+            <StickyNote className="h-4 w-4" />
           </button>
         )}
         <button type="button" onClick={onVerHistorial} className={BOTON.icono} title="Historial de correcciones del día" aria-label={`Ver historial de ${colaborador.nombre} del ${fecha}`}>
@@ -117,6 +119,7 @@ export default function FilaMarcaDelDia({ colaborador, fecha, marca, pendiente, 
               disabled={soloLectura}
               aria-pressed={activo}
               title={sugerido ? `${meta.label} — sugerida por la hora de entrada` : meta.label}
+              aria-label={sugerido ? `${meta.label} (sugerida)` : meta.label}
               onClick={() => (sugerido ? aceptarTardanza() : onMarcar({ estado: activo ? null : estado }))}
               className={cn(
                 "inline-flex h-10 min-w-[2.5rem] items-center justify-center rounded-lg border-2 px-1.5 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-40 @min-[58rem]:h-9 @min-[58rem]:min-w-[2.25rem]",
@@ -128,7 +131,6 @@ export default function FilaMarcaDelDia({ colaborador, fecha, marca, pendiente, 
               )}
             >
               <span aria-hidden>{meta.letra}</span>
-              <span className="sr-only">{sugerido ? `${meta.label} (sugerida)` : meta.label}</span>
             </button>
           );
         })}
