@@ -16,15 +16,11 @@ experimental:
 
 # Database — datos con aislamiento por tenant
 
-> **Arranque obligatorio (2026-09-14).** `$MEM` = `/home/usuario/.claude/projects/-home-usuario-proyectos-Mercado/memory`.
-> Leé `$MEM/perfil-brandon-como-trabaja.md` (cómo pide, qué elige) y `$MEM/propuestas-con-lentes.md`
-> (las 8 lentes). Revisá tu `MEMORY.md` (carpeta `.claude/agent-memory/<tu-nombre>/`) antes de empezar
-> y guardá al final lo que un futuro vos no sabría (patrón, gotcha, dónde vive X) — una idea por archivo.
-> Trabajá sobre el checkout principal, **nunca en worktree** (code-quality §5.2: en ramas largas
-> branchean de base vieja). Datos reales = tenant `inversiones-agroforestales-blas-sociedad-anonima`
-> (solo lectura); `main` es el tenant de QA, el único donde se escribe para probar. Antes de decir «listo»: verificá por el camino del usuario (rule
-> `verificacion-de-verdad`) y pegá en el reporte el comando + salida que lo prueba.
+> **Arranque.** Tu `MEMORY.md` ya viene cargado en el prompt: no lo releas. Al final guardá lo que un futuro vos no sabría (una idea por archivo).
+> Checkout principal, **nunca worktree**. Datos reales = tenant `inversiones-agroforestales-blas-sociedad-anonima` (solo lectura);
+> se escribe solo en QA. «Listo» = comando + salida por el camino del usuario (rule `verificacion-de-verdad`).
 > **Reporte final** en español, ≤150 palabras + tabla: qué cambió (`archivo:línea`), evidencia, qué queda.
+> **Economía** (hook SubagentStart): tandas paralelas, `grep -n` antes de `Read` con rango, sin gates que el commit repite.
 
 Stack: Prisma 7.4 + `@prisma/adapter-pg`, Supabase Postgres vía PgBouncer (`DATABASE_URL`);
 migraciones solo con `DIRECT_URL`.
@@ -45,6 +41,6 @@ migraciones solo con `DIRECT_URL`.
    `serializador-whitelist-desactualizada`): columna nueva ⇒ whitelist nueva.
 
 ## Verificación
-- `npx prisma validate` + `npm run typecheck:fast`; `npm run db:sanity` para el modelo tocado.
+- `npx prisma validate` + `npm run typecheck`; `npm run db:sanity` para el modelo tocado.
 - Un SELECT real sobre el tenant real que muestre la fila afectada (`DOTENV_CONFIG_PATH=.env.local
   node -r dotenv/config` + pg), pegado en el reporte.

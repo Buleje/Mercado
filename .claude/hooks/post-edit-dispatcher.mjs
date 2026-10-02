@@ -40,33 +40,16 @@ if (!["Edit", "Write", "MultiEdit"].includes(tool)) process.exit(0);
 const fp = (event.tool_input?.file_path || event.tool_input?.path || "").replace(/\\/g, "/");
 if (!fp) process.exit(0);
 
+// 2026-10-02: quedan solo los hijos cuya salida alguien lee. hex-code-guard,
+// typography-lint, rubric-check y ui-screenshot escribían a stdio "ignore" (nadie
+// veía sus avisos) y el de capturas lanzaba Chromium tras CADA edit de UI (426 MB
+// en reports/visual-verify). Los tokens y el anidado los corta el pre-commit; la
+// captura la saca el agente con scripts/qa-capturas.mjs. Sus .mjs siguen en el
+// dir: para revertir, volver a listarlos acá.
 const CHILDREN = [
   {
-    // hex-code-guard: Edit|Write de .ts/.tsx en components/ o app/
-    script: "hex-code-guard.mjs",
-    gate: () => ["Edit", "Write"].includes(tool) && /\/(components|app)\/.*\.tsx?$/.test(fp),
-  },
-  {
-    // auto-learn: todo salvo infraestructura propia
-    script: "auto-learn.mjs",
+    script: "auto-learn.mjs", // lo leen stop-checkpoint, stop-skill-suggester y pre-compact-handoff
     gate: () => !fp.includes(".claude/") && !fp.includes("node_modules/"),
-  },
-  {
-    // typography-lint: UI cliente (TRIGGER_GLOBS del hook)
-    script: "post-edit-typography-lint.mjs",
-    gate: () => /(^|\/)(components\/(marketplace|store)|app\/(marketplace|\(store\)))\//.test(fp),
-  },
-  {
-    // ui-screenshot: ROUTE_RULES del hook (marketplace/admin/superadmin/globals)
-    script: "post-edit-ui-screenshot.mjs",
-    gate: () =>
-      /(^|\/)(components\/(marketplace|admin|superadmin)|app\/(marketplace|superadmin))\//.test(fp) ||
-      /app\/globals\.css$/.test(fp),
-  },
-  {
-    // rubric-check: rubrics por capa + secrets-leak (matchea casi todo)
-    script: "post-edit-rubric-check.mjs",
-    gate: () => /\.(ts|tsx|js|mjs|json|sql|env|md)$/.test(fp),
   },
 ];
 

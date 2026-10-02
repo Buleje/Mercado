@@ -143,12 +143,14 @@ if (existsSync(radarPath)) {
       .split("\n")
       .filter((l) => l.startsWith("### [pending]"))
       .slice(0, 5)
-      .map((l) => l.replace(/^### \[pending\] \d{4}-\d{2}-\d{2} — /, "  • "));
+      .map((l) => l.replace(/^### \[pending\] \d{4}-\d{2}-\d{2} — /, ""))
+      // Solo el título: el detalle vive en el archivo (antes ~2,5 K de texto por sesión).
+      .map((l) => "  • " + (l.match(/^\*\*[^*]+\*\*/)?.[0] ?? (l.length > 110 ? l.slice(0, 110) + "…" : l)));
     if (pending.length > 0) {
       lines.push("");
       lines.push(`**🎯 Improvement Radar (${pending.length} pending):**`);
       pending.forEach((p) => lines.push(p));
-      lines.push("  → leé `.claude/improvement-radar.md` y proponé las top 3 al usuario.");
+      lines.push("  → solo si la sesión arranca SIN pedido concreto: leé `.claude/improvement-radar.md` y proponé las top 3.");
     }
   } catch {}
 }

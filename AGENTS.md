@@ -24,7 +24,7 @@ AUDIT → Workflow; INITIATIVE → Workflow por fases; DANGER → + `security`).
 |---|---|---|---|---|
 | `architect` | inherit | lectura + Bash | multi-tenant-guard | contrato (tipos, Zod, Prisma + plan de migración, rutas, DB class, ADR) antes de construir |
 | `backend` | inherit | edición + Bash | multi-tenant-guard | rutas, DB classes, RBAC, integraciones, IA |
-| `frontend` | inherit | edición + Bash + **Playwright MCP** | bsm-design-system, bsm-typography-rules | UI al estándar del DS, screenshot light+dark 1280/400 |
+| `frontend` | inherit | edición + Bash + **Playwright MCP** | bsm-design-system (tipografía de tienda a demanda) | UI al estándar del DS; qa-capturas en 1 llamada, 1 imagen leída salvo color/layout (02-10) |
 | `database` | inherit | edición + Bash | multi-tenant-guard, db-sanity | schema, migraciones (`resolve --applied`), índices, drift |
 | `tester` | inherit | edición + Bash + **Playwright MCP** | — | Vitest, VRT, e2e por el camino del usuario, k6 |
 | `reviewer` | inherit | edición + Bash | multi-tenant-guard | review / diagnose / refactor con contexto fresco; refuta antes de reportar |

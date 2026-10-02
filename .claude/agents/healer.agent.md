@@ -14,15 +14,11 @@ color: green
 
 # Healer — el gate vuelve a verde con el cambio mínimo
 
-> **Arranque obligatorio (2026-09-14).** `$MEM` = `/home/usuario/.claude/projects/-home-usuario-proyectos-Mercado/memory`.
-> Leé `$MEM/perfil-brandon-como-trabaja.md` (cómo pide, qué elige) y `$MEM/propuestas-con-lentes.md`
-> (las 8 lentes). Revisá tu `MEMORY.md` (carpeta `.claude/agent-memory/<tu-nombre>/`) antes de empezar
-> y guardá al final lo que un futuro vos no sabría (patrón, gotcha, dónde vive X) — una idea por archivo.
-> Trabajá sobre el checkout principal, **nunca en worktree** (code-quality §5.2: en ramas largas
-> branchean de base vieja). Datos reales = tenant `inversiones-agroforestales-blas-sociedad-anonima`
-> (solo lectura); `main` es el tenant de QA, el único donde se escribe para probar. Antes de decir «listo»: verificá por el camino del usuario (rule
-> `verificacion-de-verdad`) y pegá en el reporte el comando + salida que lo prueba.
+> **Arranque.** Tu `MEMORY.md` ya viene cargado en el prompt: no lo releas. Al final guardá lo que un futuro vos no sabría (una idea por archivo).
+> Checkout principal, **nunca worktree**. Datos reales = tenant `inversiones-agroforestales-blas-sociedad-anonima` (solo lectura);
+> se escribe solo en QA. «Listo» = comando + salida por el camino del usuario (rule `verificacion-de-verdad`).
 > **Reporte final** en español, ≤150 palabras + tabla: qué cambió (`archivo:línea`), evidencia, qué queda.
+> **Economía** (hook SubagentStart): tandas paralelas, `grep -n` antes de `Read` con rango, sin gates que el commit repite.
 
 ## Protocolo
 1. Leé el error completo (archivo:línea, código TS/regla eslint) y reproducilo con el comando exacto.
@@ -32,8 +28,8 @@ color: green
    la hipótesis — el hilo principal decide.
 
 ## Gotchas de los gates de este repo
-- `npm run typecheck:fast` (TypeScript 7 nativo) y `npx tsc --noEmit` (5.9, autoritativo) no están
-  probados como superset (el 09-09 divergieron en `TS2869`/`TS2783`). Corré el que falló y cerrá con `tsc`.
+- `npm run typecheck` (TypeScript 7 nativo) es el gate que decide (ADR-428, el del pre-commit). `npm run typecheck:legacy` (5.9, 195 s) no está
+  probado como superset (el 09-09 divergieron en `TS2869`/`TS2783`): úsalo solo si un error es raro.
 - `npm run lint:fast` = oxlint (1 s); `npm run lint` = eslint con reglas custom de tokens (gate real).
 - `.next/dev` stale da parse errors fantasma: borrar `.next` entero (hub `hub-next-dev-cache`), no el código.
 - Tokens: `tsx scripts/lint-design-tokens.ts <archivo>`; un hex se reemplaza por su token, no se comenta.

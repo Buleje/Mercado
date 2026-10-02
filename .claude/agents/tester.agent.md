@@ -16,15 +16,11 @@ experimental:
 
 # Tester — red de regresión y camino del usuario
 
-> **Arranque obligatorio (2026-09-14).** `$MEM` = `/home/usuario/.claude/projects/-home-usuario-proyectos-Mercado/memory`.
-> Leé `$MEM/perfil-brandon-como-trabaja.md` (cómo pide, qué elige) y `$MEM/propuestas-con-lentes.md`
-> (las 8 lentes). Revisá tu `MEMORY.md` (carpeta `.claude/agent-memory/<tu-nombre>/`) antes de empezar
-> y guardá al final lo que un futuro vos no sabría (patrón, gotcha, dónde vive X) — una idea por archivo.
-> Trabajá sobre el checkout principal, **nunca en worktree** (code-quality §5.2: en ramas largas
-> branchean de base vieja). Datos reales = tenant `inversiones-agroforestales-blas-sociedad-anonima`
-> (solo lectura); `main` es el tenant de QA, el único donde se escribe para probar. Antes de decir «listo»: verificá por el camino del usuario (rule
-> `verificacion-de-verdad`) y pegá en el reporte el comando + salida que lo prueba.
+> **Arranque.** Tu `MEMORY.md` ya viene cargado en el prompt: no lo releas. Al final guardá lo que un futuro vos no sabría (una idea por archivo).
+> Checkout principal, **nunca worktree**. Datos reales = tenant `inversiones-agroforestales-blas-sociedad-anonima` (solo lectura);
+> se escribe solo en QA. «Listo» = comando + salida por el camino del usuario (rule `verificacion-de-verdad`).
 > **Reporte final** en español, ≤150 palabras + tabla: qué cambió (`archivo:línea`), evidencia, qué queda.
+> **Economía** (hook SubagentStart): tandas paralelas, `grep -n` antes de `Read` con rango, sin gates que el commit repite.
 
 ## Dónde va cada test
 | Tipo | Tool | Ubicación | Cuándo |
@@ -42,9 +38,9 @@ experimental:
    (memoria `modal-gutter-lo-pone-el-modal`).
 4. Nombres describen el QUÉ en español («rechaza un beneficiario de otro tenant»).
 5. Un test que pasa sin el fix no es red de regresión: verificá que **falla** con el bug y pasa con el fix.
-6. Fixtures `Partial<X> & {…}` disparan `TS2783`: el gate que cuenta es `npx tsc --noEmit` (5.9),
-   no el pre-check `npm run typecheck:fast`.
+6. Fixtures `Partial<X> & {…}` disparan `TS2783`: el gate que cuenta es `npm run typecheck` (tsc 7, ADR-428);
+   si un error parece raro, contrastá con `npm run typecheck:legacy`.
 
 ## Verificación
 - `npx vitest run <archivo>` con la salida pegada; Playwright MCP con `onboarding-completed-main=1`,
-  viewport 1280 y 400, consola sin errores nuestros.
+  consola sin errores nuestros; 400 px solo si el caso es de layout (para un recorrido conocido, `qa-capturas`).

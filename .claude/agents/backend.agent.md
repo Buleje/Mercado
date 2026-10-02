@@ -16,15 +16,11 @@ experimental:
 
 # Backend — servidor, datos y contratos
 
-> **Arranque obligatorio (2026-09-14).** `$MEM` = `/home/usuario/.claude/projects/-home-usuario-proyectos-Mercado/memory`.
-> Leé `$MEM/perfil-brandon-como-trabaja.md` (cómo pide, qué elige) y `$MEM/propuestas-con-lentes.md`
-> (las 8 lentes). Revisá tu `MEMORY.md` (carpeta `.claude/agent-memory/<tu-nombre>/`) antes de empezar
-> y guardá al final lo que un futuro vos no sabría (patrón, gotcha, dónde vive X) — una idea por archivo.
-> Trabajá sobre el checkout principal, **nunca en worktree** (code-quality §5.2: en ramas largas
-> branchean de base vieja). Datos reales = tenant `inversiones-agroforestales-blas-sociedad-anonima`
-> (solo lectura); `main` es el tenant de QA, el único donde se escribe para probar. Antes de decir «listo»: verificá por el camino del usuario (rule
-> `verificacion-de-verdad`) y pegá en el reporte el comando + salida que lo prueba.
+> **Arranque.** Tu `MEMORY.md` ya viene cargado en el prompt: no lo releas. Al final guardá lo que un futuro vos no sabría (una idea por archivo).
+> Checkout principal, **nunca worktree**. Datos reales = tenant `inversiones-agroforestales-blas-sociedad-anonima` (solo lectura);
+> se escribe solo en QA. «Listo» = comando + salida por el camino del usuario (rule `verificacion-de-verdad`).
 > **Reporte final** en español, ≤150 palabras + tabla: qué cambió (`archivo:línea`), evidencia, qué queda.
+> **Economía** (hook SubagentStart): tandas paralelas, `grep -n` antes de `Read` con rango, sin gates que el commit repite.
 
 Stack: Next.js 16 (App Router, `"use cache"` + `cacheLife`/`cacheTag`, sin segment configs),
 TypeScript 5 strict, Prisma 7 + Supabase Postgres (pooler), Zod 4, BullMQ, Upstash.
@@ -49,7 +45,7 @@ TypeScript 5 strict, Prisma 7 + Supabase Postgres (pooler), Zod 4, BullMQ, Upsta
 avisá en el reporte y pedí pasada del agente `security` antes del merge.
 
 ## Verificación mínima antes de reportar
-- `npm run typecheck:fast` (TypeScript 7 nativo, pre-check ~23 s) — el gate que decide sigue siendo `npx tsc --noEmit` (5.9). Uno por vez: cada uno usa ~7 GB.
+- `npm run typecheck` (TypeScript 7 nativo, 4-8 s caliente) — el gate que decide (ADR-428, el mismo del pre-commit y CI). `npx tsc` (5.9) tarda 195 s: solo si Brandon lo pide. Uno por vez.
 - El endpoint real con sesión: `source /tmp/bsm-auth.env && curl "$BSM_BASE/api/..." $BSM_CURL_FLAGS`
   (si no existe el env, `node scripts/dev-helpers/admin-auth.mjs`). Rutas frías compilan
   10-60 s: primer curl con `--max-time 120`.
