@@ -21,6 +21,7 @@
 import type { ComponentType } from "react";
 import {
   Camera,
+  Ruler,
   Wallet,
   Heart,
   HandCoins,
@@ -200,6 +201,13 @@ export const MODULE_INFO: Partial<
     priority: "medium",
     desc: "Proyección de demanda y apoyo para reposición inteligente.",
     tip: "Anticípate a quiebres y compras urgentes con datos históricos.",
+  },
+  "a-medida": {
+    icon: Ruler,
+    iconColor: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]",
+    priority: "low",
+    desc: "Herramientas hechas a la medida de tu negocio.",
+    tip: "Aquí aparece lo que pediste para tu negocio, como el Excel del mes para tu contador.",
   },
   camaras: {
     icon: Camera,
@@ -633,6 +641,18 @@ export const CAMARAS_MODULE: TabCategory = {
   tabs: ["camaras"],
 };
 
+/**
+ * A medida (ADR-457) — un solo renglón, y sólo si el negocio tiene alguna pieza
+ * en `panel.pestana`: `a-medida` está en `SPEC_GATED_MODULE_IDS`, así que el
+ * sidebar, la plantilla y el candado de `TabRouter` lo esconden solos.
+ */
+export const A_MEDIDA_MODULE: TabCategory = {
+  id: "a-medida",
+  label: "A medida",
+  icon: Ruler,
+  tabs: ["a-medida"],
+};
+
 // ── Módulo Config (siempre visible desde dropdown de usuario) ────────────────
 export const CONFIG_MODULE: TabCategory = {
   id: "config",
@@ -721,6 +741,7 @@ export const TAB_CATEGORIES: TabCategory[] = [
   TIENDA_MODULE,
   // Lo que pasa en el local o el patio
   CAMARAS_MODULE,
+  A_MEDIDA_MODULE,
   // Especializaciones por vertical
   FORESTAL_MODULE,
   AGRICULTURA_MODULE,

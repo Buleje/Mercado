@@ -18,6 +18,7 @@ import { fetchSuperadmin } from "@/lib/superadmin/fetch-auth";
 import { broadcastSpecsChanged } from "@/hooks/use-enabled-specs";
 import { AdminTabShell } from "@/app/admin/_components/_shared";
 import { SAStatChip } from "@/components/superadmin/_shared/SAStatChip";
+import { PiezasPorNegocio } from "@/components/superadmin/piezas/PiezasPorNegocio";
 
 interface TenantWithFlags {
   id: string;
@@ -120,13 +121,13 @@ export default function SpecializationsClient({
   return (
     <AdminTabShell
       info={{
-        what: "Activa módulos verticales (forestal CTP, salud, textil…) por cada negocio.",
-        affects: "Aplica en tiempo real al panel admin del tenant: le aparecen los módulos de su vertical.",
-        example: "Activás 'forestal' en una maderera → en su panel aparecen los módulos de trazabilidad de madera.",
+        what: "Qué tiene cada negocio: los módulos de su rubro (forestal, salud, textil…) y las piezas a medida que le hicimos.",
+        affects: "Aplica en tiempo real al panel del negocio: le aparecen los módulos y las piezas que prendas.",
+        example: "Prendes «forestal» en una maderera y en su panel aparecen los módulos de madera; prendes una pieza y le aparece la pestaña «A medida».",
       }}
-      title="Especializaciones"
+      title="Qué tiene cada negocio"
       kicker="Plataforma · Habilitación por tenant"
-      description="Activa módulos verticales (forestal CTP, salud, textil) en cada negocio. Cambios aplican en tiempo real al panel admin del tenant."
+      description="Módulos por rubro y piezas a medida de cada negocio. Los cambios se ven al instante en su panel."
       icon={TreePine}
       stats={
         <>
@@ -319,6 +320,9 @@ export default function SpecializationsClient({
             Sin tenants que coincidan con la búsqueda.
           </div>
         )}
+
+        {/* ADR-457 — las piezas a medida van en esta misma pantalla, con el mismo buscador. */}
+        <PiezasPorNegocio negocios={filteredTenants} />
       </div>
     </AdminTabShell>
   );

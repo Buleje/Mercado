@@ -72,6 +72,8 @@ const CamarasModule             = dynamic(() => import("@/components/admin/Camar
 const ForestalTramites          = dynamic(() => import("@/components/admin/forestal/ForestalTramites"), { loading: TabSpinner });
 // ADR-128 — Especialización agrícola: Acopio & Beneficio de Cacao
 const CacaoAcopio               = dynamic(() => import("@/components/admin/cacao/CacaoAcopio"), { loading: TabSpinner });
+// ADR-457 — piezas a medida del negocio (enchufe `panel.pestana`)
+const ALaMedidaModule           = dynamic(() => import("@/components/admin/a-medida/ALaMedidaModule"), { loading: TabSpinner });
 // scoring → sub-tab "Scoring crediticio" de FinanzasModule (ver dispatch)
 // devoluciones-proveedor → sub-tab "Devoluciones" de ComprasModule (era duplicado top-level)
 // store-customizer + pagina-inicio consolidados en MiTiendaHubModule (2→1)
@@ -236,6 +238,7 @@ export function TabRouter({
   if (tab === "forestal-tramites") return <ForestalTramites />;
   if (tab === "camaras") return <CamarasModule />;
   if (tab === "cacao-acopio") return <CacaoAcopio />;
+  if (tab === "a-medida") return <ALaMedidaModule />;
   if (tab === "scoring")   return <FinanzasModule key="scoring" initialTab="scoring" />;
   if (tab === "devoluciones-proveedor") return <ComprasModule key="devoluciones-proveedor" initialTab="devoluciones" />;
   if (tab === "dropship") return <DropshipModule />;

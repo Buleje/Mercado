@@ -70,6 +70,7 @@ const TAB_LOADERS: Record<string, Loader> = {
   "ctp-libro-operaciones": () => import("@/components/admin/forestal/CTPLibroOperaciones"),
   "loth-libro-operaciones": () => import("@/components/admin/forestal/LothLibroOperaciones"),
   "cacao-acopio": () => import("@/components/admin/cacao/CacaoAcopio"),
+  "a-medida": () => import("@/components/admin/a-medida/ALaMedidaModule"),
 };
 
 const preloaded = new Set<string>();

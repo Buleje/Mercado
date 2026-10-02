@@ -52,6 +52,7 @@ import {
   Layers,
   Wrench,
   Camera,
+  Ruler,
   Stamp,
   Leaf,
   Megaphone,
@@ -144,6 +145,8 @@ export const ALL_TABS = [
   { id: "forestal-tramites" as Tab, label: "Trámites y Oficios (Forestal)", icon: Stamp },
   { id: "camaras" as Tab, label: "Cámaras", icon: Camera },
   { id: "cacao-acopio" as Tab, label: "Acopio de Cacao (Agrícola)", icon: Leaf },
+  // ADR-457 — la pestaña de las piezas a medida (sólo si el negocio tiene alguna)
+  { id: "a-medida" as Tab, label: "A medida", icon: Ruler },
 ] as const;
 
 /** Tipo auxiliar para un elemento del array ALL_TABS */

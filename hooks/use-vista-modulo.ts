@@ -43,6 +43,8 @@ const PARAM_SUB = "sub";
 export const PARAMS_DE_VISTA = [
   PARAM_VISTA,
   PARAM_SUB,
+  /* «A medida» (ADR-457): la pieza abierta; su lista depende del negocio y no cabe en `useVistaModulo`. */
+  "pieza",
   /* Los de Saldos (`use-params-de-saldos`): la pestaña interna y el recorte
      permiso/especie/guía. Van acá y no en su hook porque quien los limpia es
      `navigateTab`, y un `?permiso=` huérfano le impondría un filtro a un
