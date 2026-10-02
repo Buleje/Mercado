@@ -64,6 +64,14 @@ export default function AdminTabShell({
   children,
 }: AdminTabShellProps) {
   const ChipIcon = chip?.icon;
+  /* ⓘ del título: el `info` de la pantalla, o la descripción si no trae uno.
+     Las 23 pantallas que pasaban los dos repetían lo mismo con otras palabras. */
+  const ayuda = info
+    ? { ...info, what: info.what || description || "" }
+    : description
+      ? { title, what: description }
+      : null;
+
   return (
     <div className={ADMIN_TOKENS.sectionGap}>
       {/* ── Header hero premium ───────────────────────────────────────── */}
@@ -86,7 +94,7 @@ export default function AdminTabShell({
             )}
             <div className="flex items-center gap-2 flex-wrap">
               <PageTitle className={ADMIN_TOKENS.headingHero}>{title}</PageTitle>
-              {info && <InfoTip side="bottom" {...info} />}
+              {ayuda && <InfoTip side="bottom" {...ayuda} />}
               {chip && (
                 <span
                   className={
@@ -100,11 +108,9 @@ export default function AdminTabShell({
                 </span>
               )}
             </div>
-            {description && (
-              <p className={`${ADMIN_TOKENS.bodyTextLg} mt-1.5 max-w-3xl`}>
-                {description}
-              </p>
-            )}
+            {/* La descripción ya no va como párrafo debajo del título: vive en
+                el ⓘ (Brandon 01-10: «no me gustan las descripciones muy
+                grandes, texto muy amplio»; regla ui-components §9). */}
           </div>
         </div>
         {(stats || actions) && (
