@@ -71,7 +71,9 @@ export default function LothTableroCabecera({
           value={planSel ?? ""}
           onChange={(e) => onElegirPlan(e.target.value || null)}
           title={elegido ? `${nombreDelPlan(elegido)} · ${elegido.titularName ?? ""}` : "Las trozas de todos los permisos del libro"}
-          className={`h-10 w-48 rounded-xl border-2 bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none ${
+          /* `dark:bg-…` saca al select del respaldo oscuro de globals.css, que le pisaba
+             el borde con --rule-base: elegido, el borde de acento no se veía en oscuro. */
+          className={`h-10 w-48 rounded-xl border-2 bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none dark:bg-[var(--surface-raised)] ${
             planSel ? "border-[var(--accent)]" : "border-[var(--rule-base)]"
           }`}
         >

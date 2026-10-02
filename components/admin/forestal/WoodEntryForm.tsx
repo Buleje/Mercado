@@ -43,6 +43,7 @@ import CtpProveedorEnDirectorio from "./CtpProveedorEnDirectorio";
 import { TEXTO_MOTIVO, type MotivoSalto } from "@/lib/forestal/precio-en-tanda";
 import { documentoDelTitular } from "@/lib/forestal/serfor-titular";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import AvisoClaveIa from "@/components/admin/shared/AvisoClaveIa";
 import { CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { ctpFichaFaltantes, type CtpFicha } from "@/lib/forestal/ctp-ficha-types";
@@ -397,7 +398,8 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
       // modo privado: sin memoria, sin bug
     }
   }, [modo]);
-  const [gtfMsg, setGtfMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  /* `sinClave`: falta la IA de la plataforma — va el aviso único (`AvisoClaveIa`), no la alerta roja. */
+  const [gtfMsg, setGtfMsg] = useState<{ ok: boolean; text: string; sinClave?: { instrucciones: boolean } } | null>(null);
   const [gtfItems, setGtfItems] = useState<GtfItem[]>([]);
   const [showGuias, setShowGuias] = useState(false);
   const [scanning, setScanning] = useState(false);
@@ -635,6 +637,10 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
         body: JSON.stringify({ image: b64 }),
       });
       const j = await r.json().catch(() => ({}));
+      if (!r.ok && (j.codigo === "sin_lector" || j.codigo === "ia_no_disponible")) {
+        setGtfMsg({ ok: false, text: j.error, sinClave: { instrucciones: j.codigo === "sin_lector" } });
+        return;
+      }
       if (!r.ok) throw new Error(j.message ?? j.error ?? `HTTP ${r.status}`);
       setData((prev) => ({
         ...prev,
@@ -1910,8 +1916,11 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                 {/* Este bloque sigue montado (oculto) en «Desde SERFOR»: el aviso, sólo en su modo. */}
                 {modo === "manual" && avisoGuiaGuardada}
               </Field>
+              {/* Los tres de abajo van a lo ancho de la sección: sin `sm:col-span-12`
+                  caían en UNA de las 12 columnas (30 px) encima de «Fecha del GTF»
+                  (medido 02-10 con el aviso de la clave de IA). */}
               {showGuias && (
-                <div className="space-y-2 rounded-xl border border-[var(--data-success-500)] bg-[var(--data-success-50)] p-2">
+                <div className="space-y-2 rounded-xl border border-[var(--data-success-500)] bg-[var(--data-success-50)] p-2 sm:col-span-12">
                   <input value={guiaQuery} onChange={(e) => setGuiaQuery(e.target.value)} placeholder="Buscar por N° o titular…" className={`${I} h-9`} />
                   <div className="max-h-56 divide-y divide-[var(--rule-soft)] overflow-y-auto rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)]">
                     {loadingGuias ? <div className="flex items-center gap-2 px-3 py-4 text-sm text-[var(--text-tertiary)]"><Loader2 className="h-4 w-4 animate-spin" /> Cargando guías…</div>
@@ -1928,14 +1937,17 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                   </div>
                 </div>
               )}
-              {gtfMsg && (
-                <div className={`flex items-start gap-2 rounded-lg px-3 py-2 text-xs ${gtfMsg.ok ? "bg-[var(--data-success-50)] text-[var(--data-success-700)]" : "bg-[var(--data-error-50)] text-[var(--data-error-700)]"}`}>
+              {gtfMsg?.sinClave && (
+                <AvisoClaveIa className="sm:col-span-12" mensaje={gtfMsg.text} conInstrucciones={gtfMsg.sinClave.instrucciones} />
+              )}
+              {gtfMsg && !gtfMsg.sinClave && (
+                <div className={`flex items-start gap-2 rounded-lg px-3 py-2 text-xs sm:col-span-12 ${gtfMsg.ok ? "bg-[var(--data-success-50)] text-[var(--data-success-700)]" : "bg-[var(--data-error-50)] text-[var(--data-error-700)]"}`}>
                   {gtfMsg.ok ? <Check className="mt-0.5 h-3.5 w-3.5 shrink-0" /> : <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />}
                   <span>{gtfMsg.text}</span>
                 </div>
               )}
               {gtfItems.length > 1 && (
-                <div className="space-y-1 rounded-xl border border-[var(--data-success-500)] bg-[var(--data-success-50)] p-2">
+                <div className="space-y-1 rounded-xl border border-[var(--data-success-500)] bg-[var(--data-success-50)] p-2 sm:col-span-12">
                   <span className="px-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--data-success-700)]">Elige el ítem de la guía</span>
                   <div className="max-h-40 divide-y divide-[var(--rule-soft)] overflow-y-auto rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)]">
                     {gtfItems.map((it, i) => (

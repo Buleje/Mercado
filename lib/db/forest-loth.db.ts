@@ -31,6 +31,9 @@ import { leerGtfDatos, type GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 import { identidadDeGuiaTh } from "@/lib/forestal/guia-th-al-ctp";
 import { PRODUCTO_TROZA, lineasDeLaGuia, piezasDeItems, type TrozaDelLibro } from "@/lib/forestal/loth-guia-despacho";
 import { armarArbolDeTroza, lineaVigente, type ArbolDeTroza } from "@/lib/forestal/arbol-de-troza";
+import type { FiltroPermiso } from "@/lib/forestal/loth-filtro-permiso";
+import { closedPeriodOf } from "@/lib/forestal/loth-cierre-types";
+import type { AtarSinPlanConteo, AtarSinPlanResultado, AtarSeccion } from "@/lib/forestal/loth-atar-sin-plan";
 
 export { LOTH_SECTIONS };
 export type { LothSection };
@@ -158,6 +161,17 @@ export interface LothListFilters {
   includeAnnulled?: boolean;
   limit?: number;
   offset?: number;
+  /** De qué permiso (02-10-2026, `lib/forestal/loth-filtro-permiso`). Sin esto, el libro entero. */
+  permiso?: FiltroPermiso | null;
+}
+
+/**
+ * El `where` del filtro por permiso. Va siempre DENTRO de un `AND` junto al
+ * `tenantId`: la búsqueda también usa `OR`, y dos `OR` en el mismo objeto se pisan.
+ */
+function wherePermiso(f: FiltroPermiso): Prisma.ForestLothEntryWhereInput {
+  if (f.tipo === "sin-plan") return { planId: null };
+  return f.conSinPlan ? { OR: [{ planId: f.planId }, { planId: null }] } : { planId: f.planId };
 }
 
 export interface LothCaratulaInput {
@@ -1130,14 +1144,19 @@ export class ForestLothDB {
     if (filters.section) where.section = filters.section;
     if (filters.caratulaId) where.caratulaId = filters.caratulaId;
     if (!filters.includeAnnulled) where.status = "registrado";
+    const condiciones: Prisma.ForestLothEntryWhereInput[] = [];
     if (filters.search) {
-      where.OR = [
-        { treeCode: { contains: filters.search, mode: "insensitive" } },
-        { trozaCode: { contains: filters.search, mode: "insensitive" } },
-        { speciesCommon: { contains: filters.search, mode: "insensitive" } },
-        { gtfNumber: { contains: filters.search, mode: "insensitive" } },
-      ];
+      condiciones.push({
+        OR: [
+          { treeCode: { contains: filters.search, mode: "insensitive" } },
+          { trozaCode: { contains: filters.search, mode: "insensitive" } },
+          { speciesCommon: { contains: filters.search, mode: "insensitive" } },
+          { gtfNumber: { contains: filters.search, mode: "insensitive" } },
+        ],
+      });
     }
+    if (filters.permiso) condiciones.push(wherePermiso(filters.permiso));
+    if (condiciones.length) where.AND = condiciones;
 
     const limit = Math.min(Math.max(filters.limit ?? 100, 1), 500);
     const offset = Math.max(filters.offset ?? 0, 0);
@@ -1411,20 +1430,22 @@ export class ForestLothDB {
     };
   }
 
-  /** Resumen por sección: conteo + volumen registrado. */
   /**
-   * Líneas y volumen por sección. Con `planId`, las de ese plan y las sin plan:
-   * el mismo alcance que `ForestPlanDB.balanceExtraccion`, para que el informe
-   * de ejecución no mezcle el balance de UN plan con los movimientos de todos.
+   * Líneas y volumen por sección (las registradas). Con `permiso`, el mismo
+   * filtro que `list`: `{ conSinPlan: true }` es el alcance de
+   * `ForestPlanDB.balanceExtraccion` (el informe de ejecución no mezcla el
+   * balance de UN plan con los movimientos de todos); la pantalla del libro
+   * pide sólo las del plan.
    */
-  static async stats(tenantId: string, caratulaId?: string, planId?: string) {
+  static async stats(tenantId: string, caratulaId?: string, permiso?: FiltroPermiso | null) {
+    if (!tenantId) throw new Error("tenantId is required");
     const where: Prisma.ForestLothEntryWhereInput = {
       tenantId,
       deletedAt: null,
       status: "registrado",
     };
     if (caratulaId) where.caratulaId = caratulaId;
-    if (planId) where.OR = [{ planId }, { planId: null }];
+    if (permiso) where.AND = [wherePermiso(permiso)];
     const rows = await prisma.forestLothEntry.groupBy({
       by: ["section"],
       where,
@@ -1437,6 +1458,225 @@ export class ForestLothDB {
       totalVolumeM3: r._sum.volumeM3?.toNumber() ?? 0,
       totalQuantity: r._sum.quantity?.toNumber() ?? 0,
     }));
+  }
+
+  /**
+   * Cuántas líneas se pueden atar a un permiso: vivas, registradas y sin plan
+   * (las anuladas son historia del libro y no cuentan en ningún saldo), y cuántas
+   * de ésas están en un mes cerrado.
+   */
+  static async conteoAtarSinPlan(tenantId: string): Promise<AtarSinPlanConteo> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const [filas, cierres] = await Promise.all([
+      prisma.forestLothEntry.findMany({
+        where: { tenantId, deletedAt: null, status: "registrado", planId: null },
+        select: { entryDate: true },
+      }),
+      ForestLothCierreDB.list(tenantId),
+    ]);
+    const cerradas = filas.filter((f) => closedPeriodOf(cierres, f.entryDate)).length;
+    return { total: filas.length, cerradas };
+  }
+
+  /**
+   * Ata a un permiso las líneas del libro que no citan plan (ADR-459: cuentan en
+   * el saldo de TODOS los planes). La TALA toma `planIdTalas`; el trozado, el plan
+   * de su tala; el despacho y el consumo, el de su troza (la misma regla que
+   * `planDeLaFuente`); sin fuente, o con la fuente en un plan dado de baja, el
+   * elegido. Sólo líneas vivas, registradas y con `planId IS NULL` (la condición
+   * va en el WHERE del UPDATE: una carrera con otro atado no pisa nada). Los
+   * meses CERRADOS no se tocan —el acta es inmutable— y se cuentan aparte.
+   *
+   * NO re-evalúa T6/T7 (lo atado ya está asentado): sólo avisa cuántas líneas
+   * quedan con una especie fuera del registro del plan. `simular` calcula la vista
+   * previa sin escribir. UNA transacción.
+   */
+  static async atarSinPlan(
+    tenantId: string,
+    planIdTalas: string,
+    actor: string,
+    opts: { simular?: boolean } = {},
+  ): Promise<AtarSinPlanResultado> {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (!planIdTalas?.trim()) throw new Error("planId is required");
+    const simular = opts.simular === true;
+    if (!simular && !actor?.trim()) throw new Error("actor is required");
+
+    const calcular = async (db: Prisma.TransactionClient | typeof prisma): Promise<{
+      resultado: AtarSinPlanResultado;
+      porPlan: Map<string, string[]>;
+    }> => {
+      // En serie: dentro de la tx es UNA conexión (un Promise.all acá es el aviso de pg@9).
+      const planes = await db.forestPlan.findMany({
+        where: { tenantId, deletedAt: null },
+        select: { id: true, planType: true, planNumber: true, tituloHabilitante: true },
+      });
+      if (!planes.some((p) => p.id === planIdTalas)) {
+        throw new LothInvariantError(
+          "Ese plan de manejo no existe en este negocio o está dado de baja: elige otro permiso.",
+          "PLAN_NO_EXISTE",
+          { planId: planIdTalas },
+        );
+      }
+      const vivos = new Set(planes.map((p) => p.id));
+      const cierres = await ForestLothCierreDB.list(tenantId);
+      const candidatas = await db.forestLothEntry.findMany({
+        where: { tenantId, deletedAt: null, status: "registrado", planId: null },
+        select: { id: true, section: true, treeCode: true, trozaCode: true, entryDate: true, speciesCommon: true, speciesScientific: true },
+        orderBy: [{ section: "asc" }, { lineNo: "asc" }],
+      });
+      const fuentes = candidatas.length === 0 ? [] : await db.forestLothEntry.findMany({
+        where: { tenantId, deletedAt: null, status: "registrado", section: { in: ["tala", "trozado"] } },
+        select: { section: true, treeCode: true, trozaCode: true, planId: true, speciesCommon: true, speciesScientific: true },
+      });
+      type Troza = { treeCode: string | null; planId: string | null; comun: string | null; cientifico: string | null };
+      const talaDe = new Map<string, string | null>();
+      const trozadoDe = new Map<string, Troza>();
+      for (const f of fuentes) {
+        const arbol = f.treeCode?.trim();
+        const troza = f.trozaCode?.trim();
+        if (f.section === "tala" && arbol && !talaDe.has(arbol)) talaDe.set(arbol, f.planId);
+        if (f.section === "trozado" && troza && !trozadoDe.has(troza)) {
+          trozadoDe.set(troza, { treeCode: arbol || null, planId: f.planId, comun: f.speciesCommon, cientifico: f.speciesScientific });
+        }
+      }
+      /** El plan de una tala: el suyo si sigue vivo; sin plan, el que se le va a dar. */
+      const planDeLaTala = (arbol: string | null | undefined): string | null => {
+        const k = arbol?.trim();
+        if (!k || !talaDe.has(k)) return null;
+        const p = talaDe.get(k) ?? null;
+        return p == null ? planIdTalas : vivos.has(p) ? p : null;
+      };
+      const decidir = (c: (typeof candidatas)[number]): { planId: string; heredado: boolean; comun: string | null; cientifico: string | null } => {
+        const comun = c.speciesCommon;
+        const cientifico = c.speciesScientific;
+        if (c.section === "trozado") {
+          const p = planDeLaTala(c.treeCode);
+          return { planId: p ?? planIdTalas, heredado: p != null && p !== planIdTalas, comun, cientifico };
+        }
+        if (c.section === "despacho_troza" || c.section === "consumo_troza") {
+          const t = c.trozaCode?.trim() ? trozadoDe.get(c.trozaCode.trim()) : undefined;
+          if (!t) return { planId: planIdTalas, heredado: false, comun, cientifico };
+          const p = t.planId == null ? planDeLaTala(t.treeCode) : vivos.has(t.planId) ? t.planId : null;
+          return {
+            planId: p ?? planIdTalas,
+            heredado: p != null && p !== planIdTalas,
+            comun: comun ?? t.comun,
+            cientifico: cientifico ?? t.cientifico,
+          };
+        }
+        return { planId: planIdTalas, heredado: false, comun, cientifico };
+      };
+
+      const porPlan = new Map<string, string[]>();
+      const secciones = new Map<string, AtarSeccion>();
+      const periodos = new Set<string>();
+      const paraRegistro: Array<{ planId: string; section: string; comun: string | null; cientifico: string | null }> = [];
+      let cerradas = 0;
+      for (const c of candidatas) {
+        const sec = secciones.get(c.section) ?? { section: c.section, total: 0, porPlan: [], cerradas: 0 };
+        secciones.set(c.section, sec);
+        sec.total += 1;
+        const cerrado = closedPeriodOf(cierres, c.entryDate);
+        if (cerrado) {
+          sec.cerradas += 1;
+          cerradas += 1;
+          periodos.add(cerrado.label);
+          continue;
+        }
+        const d = decidir(c);
+        let tanda = sec.porPlan.find((x) => x.planId === d.planId);
+        if (!tanda) {
+          tanda = { planId: d.planId, n: 0, heredado: 0 };
+          sec.porPlan.push(tanda);
+        }
+        tanda.n += 1;
+        if (d.heredado) tanda.heredado += 1;
+        const ids = porPlan.get(d.planId) ?? [];
+        ids.push(c.id);
+        porPlan.set(d.planId, ids);
+        if (c.section === "tala" || c.section === "despacho_troza" || c.section === "despacho_producto") {
+          paraRegistro.push({ planId: d.planId, section: c.section, comun: d.comun, cientifico: d.cientifico });
+        }
+      }
+
+      // Aviso T7 (no bloquea): la especie contra el registro del plan al que va.
+      const destinos = [...porPlan.keys()];
+      const registros = destinos.length === 0 ? [] : await db.forestPlanSpecies.findMany({
+        where: { tenantId, planId: { in: destinos }, deletedAt: null },
+        select: { planId: true, speciesCommon: true, speciesScientific: true },
+      });
+      let fuera = 0;
+      const especiesFuera = new Set<string>();
+      for (const r of paraRegistro) {
+        const comun = r.comun?.trim();
+        if (!comun) continue;
+        const plan = planes.find((p) => p.id === r.planId);
+        // La tala sólo se juzga en una plantación (como T7); el despacho, en todo plan.
+        if (r.section === "tala" && !esPlanDePlantacion(plan ?? null)) continue;
+        const registro = registros.filter((x) => x.planId === r.planId);
+        if (registro.length === 0 || especieEnRegistro(registro, comun, r.cientifico)) continue;
+        fuera += 1;
+        especiesFuera.add(comun);
+      }
+
+      return {
+        porPlan,
+        resultado: {
+          simulado: simular,
+          planId: planIdTalas,
+          total: candidatas.length,
+          atadas: candidatas.length - cerradas,
+          porSeccion: [...secciones.values()],
+          cerradas: { n: cerradas, periodos: [...periodos].sort() },
+          fueraDelRegistro: { n: fuera, especies: [...especiesFuera].sort() },
+        },
+      };
+    };
+
+    if (simular) return (await calcular(prisma)).resultado;
+
+    const { resultado, grupos } = await prisma.$transaction(async (tx) => {
+      const { resultado, porPlan } = await calcular(tx);
+      let atadas = 0;
+      const grupos: Array<{ planId: string; ids: string[] }> = [];
+      for (const [planId, ids] of porPlan) {
+        // La condición va en el WHERE: lo que otro atado ya tocó entre el SELECT y acá no se pisa.
+        const r = await tx.forestLothEntry.updateMany({
+          where: { tenantId, id: { in: ids }, planId: null, deletedAt: null, status: "registrado" },
+          data: { planId },
+        });
+        atadas += r.count;
+        grupos.push({ planId, ids });
+      }
+      return { resultado: { ...resultado, atadas }, grupos };
+    }, LOTH_TX_OPTS);
+
+    if (resultado.atadas > 0) {
+      const resumen = grupos
+        .map((g) => `${g.ids.length} → plan ${g.planId} [${g.ids.slice(0, 30).join(",")}${g.ids.length > 30 ? ",…" : ""}]`)
+        .join("; ");
+      auditLoth({
+        tenantId,
+        action: "loth_linea_atar_plan",
+        entity: "ForestLothEntry",
+        entityId: planIdTalas,
+        detail: `Ató ${resultado.atadas} líneas sin plan (antes: sin plan; después: ${resumen}).${resultado.cerradas.n > 0 ? ` ${resultado.cerradas.n} de meses cerrados (${resultado.cerradas.periodos.join(", ")}) quedaron sin tocar.` : ""}`,
+        user: actor,
+      });
+      try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
+    }
+    return resultado;
+  }
+
+  /**
+   * Cuántas líneas del libro (registradas o anuladas, no borradas) no citan
+   * plan. El selector de permiso ofrece «Sin plan» sólo si hay alguna: la
+   * tabla muestra también las anuladas, así que se cuentan.
+   */
+  static async lineasSinPlan(tenantId: string): Promise<number> {
+    if (!tenantId) throw new Error("tenantId is required");
+    return prisma.forestLothEntry.count({ where: { tenantId, deletedAt: null, planId: null } });
   }
 
   /**

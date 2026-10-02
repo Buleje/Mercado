@@ -17,15 +17,34 @@ import {
   type LothSection,
 } from "@/lib/forestal/loth-constants";
 import { avisoLibroIncompleto, leerLibroEntero, type LibroEntero } from "@/lib/forestal/loth-libro-entero";
+import {
+  encabezadoDelPermiso,
+  queryDelPermiso,
+  type FiltroPermiso,
+  type PlanParaEncabezado,
+} from "@/lib/forestal/loth-filtro-permiso";
 
-export async function downloadLothExcel(): Promise<void> {
-  const res = await fetch("/api/admin/forestal/loth/export?format=xlsx", { credentials: "include" });
+/** El nombre que manda el servidor (`Content-Disposition`); si no viene, el de siempre. */
+function nombreDelAdjunto(res: Response, porDefecto: string): string {
+  const cd = res.headers.get("Content-Disposition") ?? "";
+  const m = /filename="([^"]+)"/.exec(cd);
+  return m?.[1] ?? porDefecto;
+}
+
+/**
+ * Descarga el .xlsx del libro. Con `permiso`, sólo las líneas de ese permiso
+ * (el servidor filtra y lo escribe en la Carátula y en cada hoja).
+ */
+export async function downloadLothExcel(opts: { permiso?: FiltroPermiso | null } = {}): Promise<void> {
+  const q = queryDelPermiso(opts.permiso ?? null);
+  const res = await fetch(`/api/admin/forestal/loth/export?format=xlsx${q ? `&${q}` : ""}`, { credentials: "include" });
+  if (res.status === 404) throw new Error("Ese permiso ya no existe: elige otro o «Todos los permisos».");
   if (!res.ok) throw new Error(`Export falló (HTTP ${res.status})`);
   const blob = await res.blob();
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `libro-loth-${new Date().toISOString().slice(0, 10)}.xlsx`;
+  a.download = nombreDelAdjunto(res, `libro-loth-${new Date().toISOString().slice(0, 10)}.xlsx`);
   document.body.appendChild(a);
   a.click();
   a.remove();
@@ -160,13 +179,26 @@ function caratulaBlock(c: AnyCaratula): string {
   </div>`;
 }
 
-/** Una página del libro, por la misma ruta que usa la pantalla. */
-async function leerPaginaDelLibro(offset: number, limit: number): Promise<{ entries: AnyEntry[]; total: number }> {
-  const r = await fetch(`/api/admin/forestal/loth?limit=${limit}&offset=${offset}&includeAnnulled=1`, { credentials: "include" });
-  if (!r.ok) throw new Error(`No se pudo cargar el libro (HTTP ${r.status})`);
-  const j = (await r.json()) as { entries?: AnyEntry[]; total?: number };
-  const entries = j.entries ?? [];
-  return { entries, total: Number(j.total ?? entries.length) };
+/** Una página del libro, por la misma ruta que usa la pantalla (con su filtro de permiso). */
+function lectorDelLibro(permiso: FiltroPermiso | null) {
+  const q = queryDelPermiso(permiso);
+  return async (offset: number, limit: number): Promise<{ entries: AnyEntry[]; total: number }> => {
+    const r = await fetch(`/api/admin/forestal/loth?limit=${limit}&offset=${offset}&includeAnnulled=1${q ? `&${q}` : ""}`, {
+      credentials: "include",
+    });
+    if (r.status === 404 && permiso) throw new Error("Ese permiso ya no existe: elige otro o «Todos los permisos».");
+    if (!r.ok) throw new Error(`No se pudo cargar el libro (HTTP ${r.status})`);
+    const j = (await r.json()) as { entries?: AnyEntry[]; total?: number };
+    const entries = j.entries ?? [];
+    return { entries, total: Number(j.total ?? entries.length) };
+  };
+}
+
+/** «De qué permiso es este libro», arriba de la carátula. */
+function permisoBlock(filas: [string, string][]): string {
+  return `<div class="permiso" data-libro-permiso>${filas
+    .map(([k, v]) => `<div><span>${esc(k)}</span><b>${esc(v)}</b></div>`)
+    .join("")}</div>`;
 }
 
 /**
@@ -181,7 +213,17 @@ async function leerPaginaDelLibro(offset: number, limit: number): Promise<{ entr
  * un `await` el navegador la trata como pop-up y la bloquea (ADR-436). Por eso
  * esto se llama sin `await` previo en el manejador del botón.
  */
-export async function printLothLibro(opts: { ventana?: Window | null } = {}): Promise<void> {
+export async function printLothLibro(
+  opts: {
+    ventana?: Window | null;
+    /** Sólo las líneas de este permiso; `null`/ausente = el libro entero. */
+    permiso?: FiltroPermiso | null;
+    /** Los datos del plan elegido, para decir arriba de qué permiso es. */
+    plan?: PlanParaEncabezado | null;
+  } = {},
+): Promise<void> {
+  const permiso = opts.permiso ?? null;
+  const encabezado = encabezadoDelPermiso(permiso, opts.plan ?? null);
   const w = opts.ventana ?? window.open("", "_blank", "width=1100,height=800");
   if (!w) throw new Error("El navegador bloqueó la ventana de impresión. Permite pop-ups para este sitio.");
   w.document.write(
@@ -192,7 +234,7 @@ export async function printLothLibro(opts: { ventana?: Window | null } = {}): Pr
   let caratula: AnyCaratula;
   try {
     const [l, caratulaRes] = await Promise.all([
-      leerLibroEntero<AnyEntry>(leerPaginaDelLibro),
+      leerLibroEntero<AnyEntry>(lectorDelLibro(permiso)),
       fetch("/api/admin/forestal/loth/caratula", { credentials: "include" }),
     ]);
     libro = l;
@@ -212,7 +254,7 @@ export async function printLothLibro(opts: { ventana?: Window | null } = {}): Pr
   const csp = "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data: https:; font-src data:";
   const html = `<!doctype html><html lang="es"><head><meta charset="utf-8">
   <meta http-equiv="Content-Security-Policy" content="${csp}">
-  <title>Libro LO-TH${caratula?.titularName ? ` — ${esc(caratula.titularName)}` : ""}</title>
+  <title>Libro LO-TH${encabezado.delLibroEntero ? "" : ` — ${esc(encabezado.titulo)}`}${caratula?.titularName ? ` — ${esc(caratula.titularName)}` : ""}</title>
   <style>
     @page { size: A4 landscape; margin: 12mm; }
     * { box-sizing: border-box; }
@@ -240,6 +282,9 @@ export async function printLothLibro(opts: { ventana?: Window | null } = {}): Pr
     .foot { margin-top: 24px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; page-break-inside: avoid; }
     .sign { border-top: 1px solid #111827; padding-top: 4px; text-align: center; font-size: 10px; }
     .legal { margin-top: 16px; font-size: 9px; color: #6b7280; border-top: 1px dashed #d1d5db; padding-top: 6px; }
+    .permiso { display: flex; flex-wrap: wrap; gap: 4px 20px; border: 2px solid #14532d; border-radius: 8px; padding: 8px 12px; margin-bottom: 10px; font-size: 11px; }
+    .permiso span { color: #6b7280; margin-right: 6px; }
+    .permiso b { color: #111827; }
     .incompleto { border: 2px solid #b91c1c; background: #fef2f2; color: #991b1b; font-weight: 700; border-radius: 8px; padding: 8px 12px; margin-bottom: 12px; font-size: 12px; }
     .print-bar { position: sticky; top: 0; z-index: 10; display: flex; justify-content: flex-end; gap: 8px; padding: 8px 0; margin: 0 0 6px; background: #fff; }
     .print-bar button { cursor: pointer; border: 0; border-radius: 8px; padding: 9px 16px; font: 700 13px system-ui, sans-serif; background: #14532d; color: #fff; }
@@ -247,10 +292,11 @@ export async function printLothLibro(opts: { ventana?: Window | null } = {}): Pr
   </style></head><body>
     <div class="print-bar"><button type="button" id="loth-print">Imprimir / Guardar como PDF</button></div>
     <div class="doc-head">
-      <h1>Libro de Operaciones — Títulos Habilitantes</h1>
+      <h1>Libro de Operaciones — Títulos Habilitantes${encabezado.delLibroEntero ? "" : ` · ${esc(encabezado.titulo)}`}</h1>
       <div class="sub">RDE N° 264-2019-MINAGRI-SERFOR-DE · Generado ${esc(now)} · Sistema Buleje</div>
     </div>
     ${incompleto ? `<div class="incompleto" data-libro-incompleto>${esc(incompleto)}</div>` : ""}
+    ${permisoBlock(encabezado.filas)}
     ${caratulaBlock(caratula)}
     ${sections}
     <div class="foot">

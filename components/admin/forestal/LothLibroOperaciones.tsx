@@ -8,7 +8,7 @@
  * (gating sidebar via useEnabledSpecs + endpoints via 403).
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import {
   Axe,
@@ -93,6 +93,10 @@ import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import { LOTH_VISTAS } from "@/lib/admin/subvistas-modulos";
 import { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { formatNumber } from "@/lib/format";
+import { cumplePermiso } from "@/lib/forestal/loth-filtro-permiso";
+import { useLothLibroPermiso } from "./hooks/use-loth-libro-permiso";
+import LothLibroPermisoSelect from "./LothLibroPermisoSelect";
+import LothAtarSinPlan from "./LothAtarSinPlan";
 
 type LothEntry = LothEntryDTO;
 
@@ -255,6 +259,15 @@ export default function LothLibroOperaciones() {
   // Misma cabina que el CTP: la vista vive en la URL con memoria de respaldo.
   const { vista: view, irA } = useVistaModulo<LothView>(LOTH_MODULE_ID, LOTH_VIEW_KEYS_TIPADAS, "secciones", undefined, { alias: LOTH_VISTAS_FUSIONADAS });
   const setView = irA;
+  /* El permiso de la vista Secciones (02-10-2026): tabla, contadores, Excel e
+     impreso. Las otras vistas siguen mirando el libro entero. */
+  const permiso = useLothLibroPermiso(reloadSignal);
+  const qPermiso = permiso.query;
+  /** Los contadores del permiso elegido; `null` = «Todos» (se usan los del libro). */
+  const [statsPermiso, setStatsPermiso] = useState<{ q: string; stats: SectionStat[] } | null>(null);
+  const [haySinPlan, setHaySinPlan] = useState(false);
+  /** Sólo vale la ÚLTIMA lista pedida: cambiar de permiso rápido no deja la vieja pisando a la nueva. */
+  const pedidoLista = useRef(0);
   const [allEntries, setAllEntries] = useState<LothEntry[]>([]);
   /** Página de la sección visible y total real que declara la API. */
   const [page, setPage] = useState(0);
@@ -433,18 +446,32 @@ export default function LothLibroOperaciones() {
     void doPrintLabelsCtp(lineas, ventana);
   }
 
-  async function doExport(kind: "pdf" | "excel") {
-    setExporting(kind);
-    setError(null);
-    try {
-      if (kind === "excel") await downloadLothExcel();
-      else await printLothLibro();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setExporting(null);
-    }
-  }
+  /* El PDF y el Excel salen del permiso elegido sólo desde Secciones, donde se
+     ve el selector; desde otra vista, el libro entero, como siempre. */
+  const permisoExport = view === "secciones" ? permiso.filtro : null;
+  const planExport = view === "secciones" ? permiso.plan : null;
+  const rotuloPermiso = !permisoExport
+    ? ""
+    : permisoExport.tipo === "sin-plan"
+      ? "las líneas sin plan"
+      : `el permiso ${planExport?.planNumber ?? planExport?.alias ?? "elegido"}`;
+  /* Estable por permiso: el menú de abajo lo guarda en un `useMemo`, y una
+     versión vieja exportaría el permiso elegido antes. */
+  const doExport = useCallback(
+    async (kind: "pdf" | "excel") => {
+      setExporting(kind);
+      setError(null);
+      try {
+        if (kind === "excel") await downloadLothExcel({ permiso: permisoExport });
+        else await printLothLibro({ permiso: permisoExport, plan: planExport });
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err));
+      } finally {
+        setExporting(null);
+      }
+    },
+    [permisoExport, planExport],
+  );
 
   const [informing, setInforming] = useState(false);
   async function doInforme() {
@@ -466,7 +493,9 @@ export default function LothLibroOperaciones() {
       {
         id: "pdf",
         label: "PDF formato SERFOR",
-        hint: "Carátula + las 6 secciones, para imprimir y firmar",
+        hint: permisoExport
+          ? `Sólo ${rotuloPermiso}: carátula + las 6 secciones, para imprimir y firmar`
+          : "Carátula + las 6 secciones, para imprimir y firmar",
         icon: Printer,
         tone: "dark",
         busy: exporting === "pdf",
@@ -485,7 +514,7 @@ export default function LothLibroOperaciones() {
       {
         id: "excel",
         label: "Excel (.xlsx) editable",
-        hint: "1 hoja por sección + resumen",
+        hint: permisoExport ? `Sólo ${rotuloPermiso}: 1 hoja por sección + resumen` : "1 hoja por sección + resumen",
         icon: FileSpreadsheet,
         busy: exporting === "excel",
         disabled: exporting !== null,
@@ -499,13 +528,16 @@ export default function LothLibroOperaciones() {
         onSelect: () => setShowCaratula(true),
       },
     ],
-    // doExport/doInforme se redefinen por render; lo que cambia el menú es el
-    // trabajo en curso y si ya hay carátula.
-    [exporting, informing, caratula],
+    // doInforme se redefine por render; lo que cambia el menú es el trabajo en
+    // curso, si ya hay carátula y de qué permiso sale el libro (`doExport`).
+    [exporting, informing, caratula, doExport, permisoExport, rotuloPermiso],
   );
 
   // Solo la lista de la sección activa — corre en cada cambio de sección/búsqueda.
   const loadEntries = useCallback(async () => {
+    // Sin saber todavía qué permiso vale, pedir «Todos» sería mostrar otro libro un instante.
+    if (!permiso.listo) return;
+    const pedido = ++pedidoLista.current;
     setLoading(true);
     setError(null);
     try {
@@ -516,7 +548,10 @@ export default function LothLibroOperaciones() {
         includeAnnulled: "1",
       });
       if (search) params.set("search", search);
+      // El servidor filtra de verdad (antes ignoraba `planId` y devolvía todo el negocio).
+      new URLSearchParams(qPermiso).forEach((v, k) => params.set(k, v));
       const res = await fetch(`/api/admin/forestal/loth?${params.toString()}`, { credentials: "include" });
+      if (pedido !== pedidoLista.current) return;
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
         throw new Error(d.message ?? d.error ?? `HTTP ${res.status}`);
@@ -525,14 +560,15 @@ export default function LothLibroOperaciones() {
       // y no decía que hubiera más. Un libro de operaciones no puede ocultar
       // renglones en silencio.
       const json = await res.json();
+      if (pedido !== pedidoLista.current) return;
       setEntries(json.entries ?? []);
       setTotalSeccion(Number(json.total ?? 0));
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      if (pedido === pedidoLista.current) setError(err instanceof Error ? err.message : String(err));
     } finally {
-      setLoading(false);
+      if (pedido === pedidoLista.current) setLoading(false);
     }
-  }, [section, search, page]);
+  }, [section, search, page, qPermiso, permiso.listo]);
 
   // Stats + carátula NO dependen de la sección → solo al montar y tras escrituras.
   const loadMeta = useCallback(async () => {
@@ -541,7 +577,11 @@ export default function LothLibroOperaciones() {
         fetch(`/api/admin/forestal/loth?stats=1`, { credentials: "include" }),
         fetch(`/api/admin/forestal/loth/caratula`, { credentials: "include" }),
       ]);
-      if (statsRes.ok) setStats((await statsRes.json()).stats ?? []);
+      if (statsRes.ok) {
+        const j = await statsRes.json();
+        setStats(j.stats ?? []);
+        setHaySinPlan(Number(j.lineasSinPlan ?? 0) > 0);
+      }
       if (caratulaRes.ok) {
         const json = await caratulaRes.json();
         setCaratula(json.active ?? null);
@@ -628,11 +668,41 @@ export default function LothLibroOperaciones() {
     await Promise.all([loadEntries(), loadMeta(), loadAll()]);
   }, [loadEntries, loadMeta, loadAll]);
 
-  // Cambio de sección/página → solo la lista (1 request).
+  // Cambio de sección/página/permiso → solo la lista (1 request).
   useEffect(() => {
     loadEntries();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [section, page]);
+  }, [section, page, qPermiso, permiso.listo]);
+
+  // Los contadores por sección del permiso elegido (con «Todos», los del libro).
+  // También tras cada escritura (`reloadSignal`).
+  useEffect(() => {
+    if (!qPermiso) {
+      setStatsPermiso(null);
+      return;
+    }
+    const ac = new AbortController();
+    fetch(`/api/admin/forestal/loth?stats=1&${qPermiso}`, { credentials: "include", signal: ac.signal })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j: { stats?: SectionStat[] } | null) => {
+        if (j && !ac.signal.aborted) setStatsPermiso({ q: qPermiso, stats: j.stats ?? [] });
+      })
+      .catch((err) => {
+        if (!ac.signal.aborted) console.warn("[loth] no se pudieron leer los contadores del permiso", err);
+      });
+    return () => ac.abort();
+  }, [qPermiso, reloadSignal]);
+
+  /** Elegir permiso: vuelve a la primera página y suelta la selección (eran filas de otro permiso). */
+  const { elegirPlan } = permiso;
+  const elegirPermiso = useCallback(
+    (id: string | null) => {
+      elegirPlan(id);
+      setPage(0);
+      setSeleccion(new Set());
+    },
+    [elegirPlan],
+  );
 
   // Otra sección empieza en su primera página: quedarse en la 4 de una lista
   // que ahora tiene 3 renglones muestra el vacío y parece un error.
@@ -740,18 +810,25 @@ export default function LothLibroOperaciones() {
     }
   }
 
-  const statBy = useMemo(() => {
-    const map = new Map(stats.map((s) => [s.section, s]));
-    return map;
-  }, [stats]);
-
-  const cur = statBy.get(section);
+  /* Secciones cuenta lo del permiso elegido; Cumplimiento sigue con el libro
+     entero (`totalLines`). Mientras llegan los del permiso, ceros y no los de
+     otro permiso. */
+  const statsSecciones = useMemo(
+    () => (!qPermiso ? stats : statsPermiso?.q === qPermiso ? statsPermiso.stats : []),
+    [qPermiso, stats, statsPermiso],
+  );
+  const statSeccionBy = useMemo(() => new Map(statsSecciones.map((s) => [s.section, s])), [statsSecciones]);
+  const cur = statSeccionBy.get(section);
   const totalLines = stats.reduce((a, s) => a + s.count, 0);
+  const totalLineasPermiso = statsSecciones.reduce((a, s) => a + s.count, 0);
   // El orden y los filtros se aplican sobre la PÁGINA que trajo la API: filtrar
   // el libro entero en el cliente exigiría bajarlo entero, que es justo lo que
   // la paginación evita. El contador de abajo dice siempre cuántas hay en total.
   const correcciones = useMemo(() => mapaCorrecciones(allEntries), [allEntries]);
-  const lineasSeccion = useMemo(() => allEntries.filter((e) => e.section === section), [allEntries, section]);
+  const lineasSeccion = useMemo(
+    () => allEntries.filter((e) => e.section === section && cumplePermiso(e.planId, permiso.filtro)),
+    [allEntries, section, permiso.filtro],
+  );
   const periodos = useMemo(() => periodosDe(lineasSeccion), [lineasSeccion]);
   const especiesSeccion = useMemo(
     () => Array.from(new Set(lineasSeccion.map((e) => e.speciesCommon).filter((x): x is string => !!x))).sort((a, b) => a.localeCompare(b, "es")),
@@ -1029,9 +1106,24 @@ export default function LothLibroOperaciones() {
 
       {/* Las 6 secciones en un riel: bosque (RDE 264-2019 §1-3) | transformación
           en el propio TH (§4-6) — dos momentos del MISMO libro, no dos libros. */}
+      <LothLibroPermisoSelect
+        planes={permiso.planes}
+        planSel={permiso.planSel}
+        onElegir={elegirPermiso}
+        haySinPlan={haySinPlan}
+      />
+
+      {/* Líneas sin permiso: cuentan en el saldo de todos. Una línea; «Atarlas» abre el modal. */}
+      <LothAtarSinPlan
+        planes={permiso.planes}
+        planInicial={permiso.plan?.id ?? null}
+        reloadSignal={reloadSignal}
+        onAtado={() => void refreshAll()}
+      />
+
       <LothSeccionesRiel
         section={section}
-        contar={(s) => statBy.get(s)?.count ?? 0}
+        contar={(s) => statSeccionBy.get(s)?.count ?? 0}
         onSection={setSection}
         onIrAlCtp={irAlCtp}
         transformaEnElTh={transformaEnElTh}
@@ -1043,7 +1135,7 @@ export default function LothLibroOperaciones() {
       <LothSeccionKpis
         section={section}
         cur={cur}
-        totalLibro={totalLines}
+        totalLibro={totalLineasPermiso}
         lineas={allEntries.length > 0 ? lineasSeccion : entries}
         delLibroEntero={allEntries.length > 0 && !libroTruncado}
       />

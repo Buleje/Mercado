@@ -21,6 +21,15 @@ export const AVISO_IA_NO_DISPONIBLE =
   "La lectura con IA no está disponible ahora; avisa al administrador. Mientras tanto, carga los datos a mano.";
 
 /**
+ * Lo mismo para el asistente que responde preguntas sobre el libro
+ * (`/ctp/ask`): no lee un archivo, así que «carga los datos a mano» no aplica.
+ */
+export const AVISO_SIN_CLAVE_ASISTENTE =
+  "El asistente con IA se activa con tu clave de Claude (ANTHROPIC_API_KEY en el archivo .env.local) y reiniciando el servidor.";
+export const AVISO_ASISTENTE_NO_DISPONIBLE =
+  "El asistente con IA no está disponible ahora; avisa al administrador. Mientras tanto, las cifras están en las pestañas del libro.";
+
+/**
  * Por qué no se pudo leer. La pantalla elige el tono con esto y no con el
  * status HTTP: un 503 puede ser «no hay clave» (neutro, se carga a mano) o «la
  * IA está saturada» (se reintenta).

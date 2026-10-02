@@ -1325,6 +1325,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
                   gps={gpsLat != null && gpsLng != null ? { lat: gpsLat, lng: gpsLng, origen: gpsOrigen } : null}
                   censo={censoTala.arboles}
                   registro={especieRegistro && saldoRegistro ? { especie: especieRegistro, saldo: saldoRegistro } : null}
+                  plantacion={registro.esPlantacion}
                   textoVacio={
                     !porRegistro
                       ? plantacionTala

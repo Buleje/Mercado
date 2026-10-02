@@ -23,6 +23,7 @@ import {
   X,
 } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import AvisoClaveIa from "@/components/admin/shared/AvisoClaveIa";
 import { formatDateNumeric } from "@/lib/format";
 import { formConLectura, type GuiaDesdeFoto, type LecturaDeGuia } from "@/hooks/use-guia-desde-foto";
 import { Btn } from "./ctp-shared";
@@ -239,6 +240,10 @@ function EstadoDeLaFoto({ foto, gtf }: { foto: GuiaDesdeFoto; gtf: string | null
 export function LecturaDeFoto({ foto, gtf }: { foto: GuiaDesdeFoto; gtf: string | null }) {
   const l = foto.lectura;
   if (!l) {
+    /* Falta la IA de la plataforma: el aviso único, en tono neutro (no es la foto). */
+    if (foto.aviso && foto.sinClave) {
+      return <AvisoClaveIa mensaje={foto.aviso} conInstrucciones={foto.sinClave.instrucciones} />;
+    }
     return foto.aviso ? (
       <div role="status">
         <AvisoConAccion>{foto.aviso}</AvisoConAccion>

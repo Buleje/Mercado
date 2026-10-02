@@ -52,6 +52,8 @@ interface Props {
   registro?: { especie: EspecieDelRegistro; saldo: SaldoDeTala } | null;
   /** Lo que dice la caja vacía, en vez de «no está en el censo» (la plantación sin censo). */
   textoVacio?: string;
+  /** Registro de plantación (ADR-459): el árbol es un árbol MARCADO, no del censo. */
+  plantacion?: boolean;
 }
 
 /** Registrado − talado − esta tala = queda, en filas de «Lo que queda». */
@@ -154,7 +156,9 @@ function gruposRestante(r: ReturnType<typeof restanteDelArbol>, esp: ReturnType<
   return grupos;
 }
 
-export default function LothFichaArbol({ arbol, cargando, codigo, medido, medidasDelCenso, gps, censo, registro, textoVacio }: Props) {
+export default function LothFichaArbol({ arbol, cargando, codigo, medido, medidasDelCenso, gps, censo, registro, textoVacio, plantacion = false }: Props) {
+  /* En una plantación lo que estimó el volumen es el árbol MARCADO, no un censo. */
+  const fuente = plantacion ? "lo marcado" : "censo";
   const especie = useMemo(
     () => (arbol ? restanteDeEspecie(censo, arbol.speciesCommon, arbol.treeCode, medidasDelCenso ? null : medido.volumenM3) : null),
     [arbol, censo, medido.volumenM3, medidasDelCenso],
@@ -208,17 +212,19 @@ export default function LothFichaArbol({ arbol, cargando, codigo, medido, medida
 
       <div className={CAJA}>
         <div className="flex items-center gap-1">
-          <p className="text-sm font-bold text-[var(--text-primary)]">Medido vs censo</p>
+          <p className="text-sm font-bold text-[var(--text-primary)]">Medido vs {fuente}</p>
           <InfoTip
-            title="Medido vs censo"
-            what="El censo estima el volumen con el DAP, la altura comercial y un factor de forma; la tala mide el fuste tumbado."
+            title={`Medido vs ${fuente}`}
+            what={`${plantacion ? "El árbol marcado" : "El censo"} estima el volumen con el DAP, la altura comercial y un factor de forma; la tala mide el fuste tumbado.`}
             affects={`A partir de ${DIFERENCIA_ALERTA_PCT} % de diferencia en el volumen se marca: revisa las medidas o anota el motivo.`}
-            example="Censo 9.675 m³, medido 10.370 m³: +7 %, dentro de lo normal."
+            example={`${plantacion ? "Marcado" : "Censo"} 9.675 m³, medido 10.370 m³: +7 %, dentro de lo normal.`}
           />
         </div>
         {!midio ? (
           <p className="mt-1 text-xs text-[var(--text-tertiary)]">
-            {medidasDelCenso ? "Todavía son los números del censo: mide el fuste para comparar." : "Mide el fuste para compararlo con el censo."}
+            {medidasDelCenso
+              ? `Todavía son los números ${plantacion ? "del árbol marcado" : "del censo"}: mide el fuste para comparar.`
+              : `Mide el fuste para compararlo con ${plantacion ? "lo marcado" : "el censo"}.`}
           </p>
         ) : (
           <>

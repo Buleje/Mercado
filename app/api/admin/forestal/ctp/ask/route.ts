@@ -3,6 +3,9 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { aiCostGuard } from "@/lib/ai/cost-control";
+import { gastoDeLectura, proveedorVision } from "@/lib/ai/vision-extract";
+import { costoMaximoPreguntaUsd, estadoAsistenteIA, falloSinAsistente, preguntarIA } from "@/lib/ai/pregunta-ia";
+import { veDetalleDeClaveIA } from "@/lib/ai/detalle-clave-ia";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { WoodEntriesDB } from "@/lib/db/wood-entries.db";
 import { ForestCtpDB } from "@/lib/db/forest-ctp.db";
@@ -17,10 +20,17 @@ import { withApiHandler } from "@/lib/api-handler";
  * POST { question } → { answer }. La IA responde SOLO con el resumen real del
  * libro (existencias, ingresos, cumplimiento, habilitación) que se arma acá en
  * el server; nunca inventa datos. Guard: spec + auth + rate-limit STRICT +
- * aiCostGuard (una consulta ~$0.003).
+ * aiCostGuard.
+ *
+ * 2026-10-02 («Un solo lector para guías y facturas»): la pregunta va por
+ * `preguntarIA` (Claude `claude-sonnet-5-5` primero, OpenAI de respaldo). Antes
+ * tenía su propio fetch con `thinking: disabled` y cada fallo era un 502 mudo
+ * «falta API key o el modelo no respondió». Ahora el fallo dice qué pasó
+ * (clave inválida, sin crédito, saturada) con un `codigo`, y al tope mensual
+ * va lo que costó DE VERDAD (antes US$0,003 fijos, aunque la pregunta costara
+ * diez veces eso), también si la respuesta salió cortada o negada.
  */
 
-const ASK_COST_USD = 0.003;
 const Schema = z.object({ question: z.string().trim().min(3).max(500) });
 
 async function ensureSpec(tenantId: string) {
@@ -56,61 +66,22 @@ async function buildContext(tenantId: string): Promise<string> {
   ].join("\n\n");
 }
 
-async function askLLM(context: string, question: string): Promise<string | null> {
-  const system =
-    "Eres el asistente del Libro de Operaciones de un aserradero (Centro de Transformación Primaria) en Perú. " +
-    "Responde la pregunta del operador USANDO ÚNICAMENTE los datos del libro que te paso. Sé breve, concreto y en español peruano. " +
-    "Si el dato exacto no está en los datos, di que no figura en el libro — NUNCA inventes cifras. No des consejos legales.";
-  const prompt = `Datos del libro:\n${context}\n\nPregunta: ${question}`;
+/** Quién es el asistente. Sin «no pienses»: con `effort: "low"` no hace falta (skill `claude-api`). */
+const SYSTEM =
+  "Eres el asistente del Libro de Operaciones de un aserradero (Centro de Transformación Primaria) en Perú. " +
+  "Responde la pregunta del operador USANDO ÚNICAMENTE los datos del libro que te paso. Sé breve, concreto y en español peruano. " +
+  "Si el dato exacto no está en los datos, di que no figura en el libro — NUNCA inventes cifras. No des consejos legales.";
 
-  const openai = process.env.OPENAI_API_KEY;
-  const anthropic = process.env.ANTHROPIC_API_KEY;
-  if (openai) {
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${openai}` },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [{ role: "system", content: system }, { role: "user", content: prompt }],
-        max_tokens: 500,
-        temperature: 0.2,
-      }),
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data.choices?.[0]?.message?.content?.trim() ?? null;
-  }
-  if (anthropic) {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-api-key": anthropic, "anthropic-version": "2023-06-01" },
-      body: JSON.stringify({
-        // `claude-sonnet-4-20250514` se retiró el 2026-06-15 — esta rama
-        // devolvía 404 y la función caía a `null` en silencio.
-        model: "claude-sonnet-5",
-        max_tokens: 500,
-        // Migración a comportamiento IDÉNTICO: Sonnet 5 razona por defecto y
-        // `max_tokens` topea razonamiento MÁS respuesta, así que con 500 la
-        // respuesta salía cortada. Encender el razonamiento acá es una decisión
-        // de calidad aparte (pide subir `max_tokens`), no parte del arreglo.
-        thinking: { type: "disabled" },
-        system,
-        messages: [{ role: "user", content: prompt }],
-      }),
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data.content?.[0]?.text?.trim() ?? null;
-  }
-  return null;
-}
+/** La respuesta visible: dos o tres párrafos cortos. */
+const MAX_TOKENS = 500;
 
-/** GET → { available } : ¿hay API key de IA configurada? El widget lo usa para
- *  ocultarse en vez de mostrar una función rota (QA 2026-07-17). */
+/** GET → { available, aviso, codigo } : ¿hay IA configurada? El widget lo usa
+ *  para ocultarse en vez de mostrar una función rota (QA 2026-07-17); quien
+ *  administra la plataforma (`codigo: "sin_lector"`) ve dónde va la clave. */
 export const GET = withApiHandler("forestal-ctp-ask-status", async (req: NextRequest) => {
   const auth = await requireAdmin(req, ["admin", "almacenero", "owner"]);
   if (auth instanceof NextResponse) return auth;
-  return NextResponse.json({ available: Boolean(process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY) });
+  return NextResponse.json(estadoAsistenteIA(await veDetalleDeClaveIA(req)));
 });
 
 export const POST = withApiHandler("forestal-ctp-ask", async (req: NextRequest) => {
@@ -121,26 +92,39 @@ export const POST = withApiHandler("forestal-ctp-ask", async (req: NextRequest) 
   const guard = await ensureSpec(auth.tenantId);
   if (guard) return guard;
 
-  const canSpend = await aiCostGuard.canSpend(auth.tenantId, ASK_COST_USD);
-  if (!canSpend) {
-    return NextResponse.json({ error: "budget_exceeded", message: "Presupuesto de IA agotado este mes." }, { status: 429 });
-  }
-
   let body: unknown;
-  try { body = await req.json(); } catch { return NextResponse.json({ error: "invalid_json" }, { status: 400 }); }
+  try { body = await req.json(); } catch { return NextResponse.json({ error: "No llegó la pregunta." }, { status: 400 }); }
   const parsed = Schema.safeParse(body);
-  if (!parsed.success) return NextResponse.json({ error: "validation_error", message: parsed.error.issues[0]?.message }, { status: 422 });
-
-  try {
-    const context = await buildContext(auth.tenantId);
-    const answer = await askLLM(context, parsed.data.question);
-    if (!answer) {
-      return NextResponse.json({ error: "ai_unavailable", message: "El asistente no está disponible (falta API key o el modelo no respondió)." }, { status: 502 });
-    }
-    await aiCostGuard.recordSpend(auth.tenantId, ASK_COST_USD);
-    return NextResponse.json({ answer });
-  } catch (err) {
-    logger.error("[ctp.ask] failed", { error: String(err), tenantId: auth.tenantId });
-    return NextResponse.json({ error: "internal_error" }, { status: 500 });
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Escribe una pregunta de 3 a 500 letras." }, { status: 422 });
   }
+
+  const verDetalleDeClave = await veDetalleDeClaveIA(req);
+  if (!proveedorVision()) {
+    logger.warn("[ctp.ask] sin ANTHROPIC_API_KEY ni OPENAI_API_KEY configuradas", { tenantId: auth.tenantId.slice(-6) });
+    const f = falloSinAsistente(verDetalleDeClave);
+    return NextResponse.json({ error: f.error, codigo: f.codigo }, { status: f.status });
+  }
+
+  let pregunta: string;
+  try {
+    pregunta = `Datos del libro:\n${await buildContext(auth.tenantId)}\n\nPregunta: ${parsed.data.question}`;
+  } catch (err) {
+    logger.error("[ctp.ask] buildContext failed", { error: String(err), tenantId: auth.tenantId.slice(-6) });
+    return NextResponse.json({ error: "No se pudo armar el resumen del libro. Intenta de nuevo en un momento." }, { status: 500 });
+  }
+
+  /* Se reserva el TOPE (el resumen del libro crece con las especies); se anota lo que costó. */
+  const reserva = costoMaximoPreguntaUsd({ system: SYSTEM, pregunta, maxTokens: MAX_TOKENS });
+  const canSpend = await aiCostGuard.canSpend(auth.tenantId, reserva);
+  if (!canSpend) {
+    return NextResponse.json({ error: "Se acabó el presupuesto de IA de este mes.", codigo: "limite_ia" }, { status: 429 });
+  }
+
+  const r = await preguntarIA({ system: SYSTEM, pregunta, maxTokens: MAX_TOKENS, logTag: "[ctp.ask]", verDetalleDeClave });
+  /* Lo cobrado se anota en los DOS caminos: una respuesta cortada o negada también se pagó. */
+  const gasto = gastoDeLectura(r, reserva);
+  if (gasto != null) await aiCostGuard.recordSpend(auth.tenantId, gasto);
+  if (!r.ok) return NextResponse.json({ error: r.error, codigo: r.codigo }, { status: r.status });
+  return NextResponse.json({ answer: r.data });
 });

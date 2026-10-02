@@ -1,17 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { AI_TEMPERATURES } from "@/lib/ai-temperatures";
-import { safeParseJSON } from "@/lib/ai-json-parser";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { requireAdmin } from "@/lib/require-admin";
 import { aiCostGuard } from "@/lib/ai/cost-control";
+import {
+  FORMATOS_IMAGEN,
+  costoMaximoLecturaUsd,
+  falloSinLector,
+  gastoDeLectura,
+  proveedorVision,
+  visionExtractJSON,
+} from "@/lib/ai/vision-extract";
+import { veDetalleDeClaveIA } from "@/lib/ai/detalle-clave-ia";
 import { logger } from "@/lib/logger";
+
+/**
+ * /api/ocr/invoice — lee la foto de una boleta o factura peruana para cargar
+ * la compra (Punto de compra → «Escanear factura»). Sólo LEE: la persona revisa
+ * los ítems antes de confirmar.
+ *
+ * 2026-10-02 («Un solo lector para guías y facturas»): lee con el lector común
+ * (`visionExtractJSON`: Claude `claude-sonnet-5-5` primero, OpenAI de
+ * respaldo), con el MISMO schema (`InvoiceSchema`) y JSON Schema de antes. Antes
+ * tenía su propio fetch: OpenAI primero, `claude-sonnet-5` + `thinking:
+ * disabled`, la foto anunciada SIEMPRE como JPEG (una PNG daba 400), cada fallo
+ * un 502 mudo («API error: 401») y US$0,01 fijos al tope sólo si salía bien.
+ */
 
 // SECURITY 2026-05-12 (H2 audit AI): cap defensivo de imagen base64.
 // 10MB = ~7.5MB raw image, suficiente para fotos de factura.
 const MAX_IMAGE_B64_BYTES = 10_000_000;
-// Costo estimado por llamada Vision (~$0.01 por imagen mediana)
-const OCR_COST_USD = 0.01;
+/* Una boleta con muchos ítems: 1500 tokens de respuesta, como antes. */
+const MAX_TOKENS = 1500;
+/* Se reserva el TOPE de una lectura; se anota lo que costó (una boleta ≈ US$0,02). */
+const RESERVA_USD = costoMaximoLecturaUsd({ maxTokens: MAX_TOKENS });
 
 const RequestSchema = z.object({
   image: z.string().min(100, "Imagen requerida").max(MAX_IMAGE_B64_BYTES, "Imagen muy grande (>10MB)"),
@@ -31,6 +53,54 @@ const InvoiceSchema = z.object({
   total: z.number().min(0).default(0),
 });
 
+/**
+ * Lo que Claude tiene que devolver (`output_config.format`): el mismo de antes.
+ * `ruc` y `fecha` NO son requeridos: si el comprobante no los trae, se omiten
+ * en vez de inventarlos (y `InvoiceSchema` los acepta ausentes).
+ */
+const JSON_SCHEMA_FACTURA = {
+  type: "object",
+  properties: {
+    proveedor: {
+      type: "object",
+      properties: {
+        nombre: { type: "string" },
+        ruc: { type: "string" },
+      },
+      required: ["nombre"],
+      additionalProperties: false,
+    },
+    fecha: { type: "string" },
+    items: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          nombre: { type: "string" },
+          cantidad: { type: "number" },
+          precioUnitario: { type: "number" },
+        },
+        required: ["nombre", "cantidad", "precioUnitario"],
+        additionalProperties: false,
+      },
+    },
+    total: { type: "number" },
+  },
+  required: ["proveedor", "items", "total"],
+  additionalProperties: false,
+};
+
+/**
+ * Los dos prompts de antes en uno: el de Claude (qué representa cada campo, no
+ * inventar) y la forma del JSON del de OpenAI, que el respaldo necesita porque
+ * no recibe el JSON Schema.
+ */
+const PROMPT =
+  "Extrae los datos de esta boleta o factura peruana: el proveedor con su RUC, la fecha de emisión, cada ítem con su " +
+  "cantidad y precio unitario, y el total. " +
+  'Responde SOLO JSON: {"proveedor":{"nombre":"...","ruc":"..."},"fecha":"...","items":[{"nombre":"...","cantidad":1,"precioUnitario":0}],"total":0}. ' +
+  "Si un dato no figura en el comprobante, omítelo en vez de inventarlo.";
+
 export async function POST(req: NextRequest) {
   // SECURITY 2026-05-12 (H2 audit AI): auth + cost guard + rate limit STRICT.
   // Antes era abierto al mundo → atacante quemaba $30-100/dia de Vision API.
@@ -38,224 +108,52 @@ export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
 
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "No llegó la foto de la factura." }, { status: 400 });
+  }
+  const parsed = RequestSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Datos inválidos" }, { status: 400 });
+  }
+
+  const verDetalleDeClave = await veDetalleDeClaveIA(req);
+  if (!proveedorVision()) {
+    /* Lo lee el encargado con la factura en la mano, no un programador: el detalle técnico va al log. */
+    logger.warn("[ocr-invoice] sin ANTHROPIC_API_KEY ni OPENAI_API_KEY configuradas", { tenantId: auth.tenantId.slice(-6) });
+    const f = falloSinLector(verDetalleDeClave);
+    return NextResponse.json({ error: f.error, codigo: f.codigo }, { status: f.status });
+  }
+
   // Cost guard por tenant — si excede el budget mensual, rechaza con 429
-  const canSpend = await aiCostGuard.canSpend(auth.tenantId, OCR_COST_USD);
+  const canSpend = await aiCostGuard.canSpend(auth.tenantId, RESERVA_USD);
   if (!canSpend) {
     logger.warn("[ocr-invoice] presupuesto AI excedido", { tenantId: auth.tenantId.slice(-6) });
-    return NextResponse.json(
-      { error: "Presupuesto AI mensual agotado. Actualiza tu plan o espera al proximo ciclo." },
-      { status: 429 },
-    );
+    return NextResponse.json({ error: "Se acabó el presupuesto de lectura con IA de este mes.", codigo: "limite_ia" }, { status: 429 });
   }
 
-  try {
-    const body = await req.json();
-    const parsed = RequestSchema.safeParse(body);
-    if (!parsed.success) {
-      return NextResponse.json(
-        { error: parsed.error.issues[0]?.message ?? "Datos inválidos" },
-        { status: 400 },
-      );
-    }
-
-    const { image } = parsed.data;
-
-    // Try OpenAI first (most projects have OPENAI_API_KEY), fallback to Anthropic
-    const apiKey = process.env.OPENAI_API_KEY;
-    const anthropicKey = process.env.ANTHROPIC_API_KEY;
-
-    if (apiKey) {
-      // Use OpenAI GPT-4o-mini Vision
-      const res = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model: "gpt-4o-mini",
-          messages: [
-            {
-              role: "system",
-              content:
-                "Eres un extractor de datos de boletas y facturas peruanas. Extrae los datos y responde SOLO en JSON válido sin markdown. Si no puedes leer algo, usa valores por defecto razonables.",
-            },
-            {
-              role: "user",
-              content: [
-                {
-                  type: "text",
-                  text: 'Extrae de esta boleta/factura peruana: proveedor (nombre, ruc), fecha, items (nombre, cantidad, precioUnitario), total. Responde SOLO JSON: {"proveedor":{"nombre":"...","ruc":"..."},"fecha":"...","items":[{"nombre":"...","cantidad":1,"precioUnitario":0}],"total":0}',
-                },
-                {
-                  type: "image_url",
-                  image_url: {
-                    url: image.startsWith("data:")
-                      ? image
-                      : `data:image/jpeg;base64,${image}`,
-                  },
-                },
-              ],
-            },
-          ],
-          max_tokens: 1500,
-          // OCR/extracción — determinístico, variación = errores de parsing.
-          // Excel Agentes IA práctica #7.
-          temperature: AI_TEMPERATURES.extraction,
-        }),
-      });
-
-      if (!res.ok) {
-        await res.text();
-        return NextResponse.json(
-          { error: `API error: ${res.status}` },
-          { status: 502 },
-        );
-      }
-
-      const data = await res.json();
-      const content = data.choices?.[0]?.message?.content ?? "";
-      // ADR 009: parse defensivo con schema Zod unificado.
-      const parsed = safeParseJSON(content, InvoiceSchema);
-      if (!parsed.ok) {
-        return NextResponse.json(
-          { error: "No se pudo interpretar la factura", raw: content, parseError: parsed.error },
-          { status: 422 },
-        );
-      }
-      // Record spend on success (no record on parse failures = caller no paga)
-      await aiCostGuard.recordSpend(auth.tenantId, OCR_COST_USD);
-      return NextResponse.json(parsed.data);
-    } else if (anthropicKey) {
-      // Use Anthropic Claude Vision
-      const imageData = image.startsWith("data:")
-        ? image.split(",")[1]
-        : image;
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": anthropicKey,
-          "anthropic-version": "2023-06-01",
-        },
-        body: JSON.stringify({
-          // `claude-sonnet-4-20250514` estaba deprecado con retiro el
-          // 2026-06-15: la rama de Anthropic respondía 404 desde entonces, así
-          // que el fallback del escáner de facturas no existía en la práctica.
-          model: "claude-sonnet-5",
-          max_tokens: 1500,
-          // Sonnet 5 razona por defecto cuando no se manda `thinking`, y
-          // `max_tokens` es el tope de razonamiento MÁS respuesta: con 1500 el
-          // JSON se cortaría a la mitad. Leer una boleta es extracción, no un
-          // problema a pensar — se apaga y el presupuesto queda para el JSON.
-          thinking: { type: "disabled" },
-          // El JSON deja de ser un pedido por prompt ("responde SOLO JSON") y
-          // pasa a ser el formato garantizado por la API. Es el que más
-          // importa acá: el fallo típico del OCR no es leer mal la foto, es
-          // devolver el JSON envuelto en markdown y morir en el parseo.
-          output_config: {
-            format: {
-              type: "json_schema",
-              schema: {
-                type: "object",
-                properties: {
-                  proveedor: {
-                    type: "object",
-                    properties: {
-                      nombre: { type: "string" },
-                      ruc: { type: "string" },
-                    },
-                    required: ["nombre"],
-                    additionalProperties: false,
-                  },
-                  fecha: { type: "string" },
-                  items: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        nombre: { type: "string" },
-                        cantidad: { type: "number" },
-                        precioUnitario: { type: "number" },
-                      },
-                      required: ["nombre", "cantidad", "precioUnitario"],
-                      additionalProperties: false,
-                    },
-                  },
-                  total: { type: "number" },
-                },
-                required: ["proveedor", "items", "total"],
-                additionalProperties: false,
-              },
-            },
-          },
-          messages: [
-            {
-              role: "user",
-              content: [
-                {
-                  type: "image",
-                  source: {
-                    type: "base64",
-                    media_type: "image/jpeg",
-                    data: imageData,
-                  },
-                },
-                {
-                  // La forma del JSON la fija `output_config.format`, así que
-                  // el prompt sólo aporta lo que el schema no puede decir: que
-                  // es un comprobante peruano y qué representa cada campo.
-                  type: "text",
-                  text: "Extrae los datos de esta boleta o factura peruana: el proveedor con su RUC, la fecha de emisión, cada ítem con su cantidad y precio unitario, y el total. Si un dato no figura en el comprobante, omitilo en vez de inventarlo.",
-                },
-              ],
-            },
-          ],
-        }),
-      });
-
-      if (!res.ok) {
-        return NextResponse.json(
-          { error: `API error: ${res.status}` },
-          { status: 502 },
-        );
-      }
-
-      const data = await res.json();
-      const content = data.content?.[0]?.text ?? "";
-      // ADR 009: mismo pattern que la ruta de OpenAI.
-      const parsed = safeParseJSON(content, InvoiceSchema);
-      if (!parsed.ok) {
-        return NextResponse.json(
-          { error: "No se pudo interpretar la factura", raw: content, parseError: parsed.error },
-          { status: 422 },
-        );
-      }
-      // Record spend on success (Anthropic path)
-      await aiCostGuard.recordSpend(auth.tenantId, OCR_COST_USD);
-      return NextResponse.json(parsed.data);
-    } else {
-      // El mensaje lo lee el encargado en el modal, no un programador: decía
-      // "No se encontró API key para OCR (OPENAI_API_KEY o ANTHROPIC_API_KEY)",
-      // que para quien está con la factura en la mano no significa nada ni
-      // sugiere qué hacer. El detalle técnico va al log, donde sirve.
-      logger.warn("[ocr-invoice] sin OPENAI_API_KEY ni ANTHROPIC_API_KEY configuradas", {
-        tenantId: auth.tenantId.slice(-6),
-      });
-      return NextResponse.json(
-        {
-          error:
-            "La lectura automática de facturas todavía no está activada en esta tienda. Puedes cargar la compra a mano mientras tanto.",
-        },
-        { status: 503 },
-      );
-    }
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Error desconocido";
-    return NextResponse.json(
-      { error: `Error procesando factura: ${message}` },
-      { status: 500 },
-    );
+  const r = await visionExtractJSON({
+    imageBase64: parsed.data.image,
+    /* El tipo real (por los bytes) tiene que ser una foto y coincidir con el declarado. */
+    formatos: FORMATOS_IMAGEN,
+    prompt: PROMPT,
+    // ADR 009: parse defensivo con schema Zod unificado.
+    schema: InvoiceSchema,
+    jsonSchema: JSON_SCHEMA_FACTURA,
+    maxTokens: MAX_TOKENS,
+    logTag: "[ocr-invoice]",
+    verDetalleDeClave,
+  });
+  /* Lo cobrado se anota en los DOS caminos: antes un parseo fallido «no se
+     pagaba» en el tope, pero la IA sí lo cobraba. */
+  const gasto = gastoDeLectura(r, RESERVA_USD);
+  if (gasto != null) await aiCostGuard.recordSpend(auth.tenantId, gasto);
+  if (!r.ok) {
+    const dePapel = r.codigo == null || r.codigo === "ilegible" || r.codigo === "pedido_rechazado";
+    const error = dePapel ? "No se pudo leer la factura. Prueba con una foto más nítida, de frente y con buena luz." : r.error;
+    return NextResponse.json({ error, codigo: r.codigo ?? "ilegible" }, { status: r.status });
   }
+  return NextResponse.json(r.data);
 }

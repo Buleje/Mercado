@@ -43,6 +43,8 @@ export type LothAuditAction =
   | "loth_linea_create"
   | "loth_linea_annul"
   | "loth_linea_delete"
+  // Líneas sin plan atadas a un permiso (ADR-459, 02-10-2026)
+  | "loth_linea_atar_plan"
   // Carátula (identidad del título habilitante que encabeza el libro)
   | "loth_caratula_create"
   | "loth_caratula_update"

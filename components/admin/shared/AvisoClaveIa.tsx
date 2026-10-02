@@ -1,8 +1,10 @@
 "use client";
 
 /**
- * «La lectura con IA no está» — UN aviso para todo lo que lee con IA (la placa
- * del tocón, la constancia del registro, las planillas).
+ * «La lectura con IA no está» — UN aviso para todo lo que usa la IA de la
+ * plataforma: la placa del tocón, la constancia del registro, las planillas,
+ * la GTF (alta de guía e ingreso), la factura del punto de compra y el
+ * asistente del Libro CTP.
  *
  * Una línea, en tono neutro: no es un error de la persona ni de la foto. El
  * texto lo decide el SERVIDOR (auditoría de seguridad 2026-10-02): quien
@@ -32,7 +34,7 @@ export default function AvisoClaveIa({
       {conInstrucciones ? (
         <InfoTip
           title="Lectura con IA"
-          what="Lee la foto de la placa, la constancia del registro y las planillas, y completa los campos por ti. Usa tu cuenta de Claude: cada lectura cuesta centavos (una placa ≈ US$ 0,01; una constancia ≈ US$ 0,04)."
+          what="Lee la foto de la placa, la constancia, la guía (GTF), la factura y las planillas, y completa los campos por ti; también responde preguntas sobre el libro. Usa tu cuenta de Claude: cada uso cuesta centavos (una placa ≈ US$ 0,01; una guía o una factura ≈ US$ 0,02; una constancia ≈ US$ 0,04)."
           affects="Sin la clave no se bloquea nada: todo se sigue cargando a mano."
           example="En console.anthropic.com → API Keys creas la clave; en .env.local escribes ANTHROPIC_API_KEY=sk-ant-… y reinicias el servidor."
           className="shrink-0"
@@ -40,7 +42,7 @@ export default function AvisoClaveIa({
       ) : (
         <InfoTip
           title="Lectura con IA"
-          what="Lee fotos y documentos y completa los campos por ti."
+          what="Lee fotos y documentos y completa los campos por ti; también responde preguntas sobre el libro."
           affects="Sin la lectura no se bloquea nada: todo se sigue cargando a mano."
           className="shrink-0"
         />

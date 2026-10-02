@@ -19,6 +19,7 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { formatCurrency } from "@/lib/format";
+import AvisoClaveIa from "@/components/admin/shared/AvisoClaveIa";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -57,6 +58,8 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
   const [state, setState] = useState<ScanState>("idle");
   const [preview, setPreview] = useState<string | null>(null);
   const [error, setError] = useState("");
+  /* Falta la IA de la plataforma: va el aviso único de la clave, no la alerta roja. */
+  const [sinClave, setSinClave] = useState<{ instrucciones: boolean } | null>(null);
   const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null);
   const [editItems, setEditItems] = useState<InvoiceItem[]>([]);
 
@@ -120,6 +123,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
   const processImage = useCallback(async (imageDataUrl: string) => {
     setState("processing");
     setError("");
+    setSinClave(null);
 
     try {
       const res = await fetch("/api/ocr/invoice", {
@@ -131,7 +135,11 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error ?? "Error al procesar la factura");
+        /* El lector común (02-10) manda la frase para la persona y un `codigo`. */
+        setError(data.error ?? "No se pudo leer la factura. Intenta de nuevo.");
+        if (data.codigo === "sin_lector" || data.codigo === "ia_no_disponible") {
+          setSinClave({ instrucciones: data.codigo === "sin_lector" });
+        }
         setState("error");
         return;
       }
@@ -220,6 +228,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
     setInvoiceData(null);
     setEditItems([]);
     setError("");
+    setSinClave(null);
     setState("idle");
   }, [stopStream]);
 
@@ -377,12 +386,16 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
           {/* ── Error ────────────────────────────────────────────────── */}
           {state === "error" && (
             <div className="space-y-3">
-              <div className="flex items-start gap-3 p-4 rounded-xl bg-[var(--data-error-50)] dark:bg-red-950/30 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]">
-                <AlertCircle className="h-5 w-5 text-[var(--data-error-500)] shrink-0 mt-0.5" />
-                <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
-                  {error}
-                </p>
-              </div>
+              {sinClave ? (
+                <AvisoClaveIa mensaje={error} conInstrucciones={sinClave.instrucciones} />
+              ) : (
+                <div className="flex items-start gap-3 p-4 rounded-xl bg-[var(--data-error-50)] dark:bg-red-950/30 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]">
+                  <AlertCircle className="h-5 w-5 text-[var(--data-error-500)] shrink-0 mt-0.5" />
+                  <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
+                    {error}
+                  </p>
+                </div>
+              )}
               <button
                 type="button"
                 onClick={reset}

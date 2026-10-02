@@ -27,8 +27,10 @@ const LEIDO_BASE = {
   origen: "",
 };
 
-/** Lo que «leyó» el modelo (OpenAI) → lo que contesta la ruta. */
-async function leer(leido: Record<string, unknown>, image = `data:image/jpeg;base64,${"A".repeat(200)}`) {
+/** Lo que «leyó» el modelo (OpenAI) → lo que contesta la ruta. Con la firma
+ *  real de un JPEG (FF D8 FF = «/9j/»): desde el lector común (02-10) se miran
+ *  los bytes, no lo declarado. */
+async function leer(leido: Record<string, unknown>, image = `data:image/jpeg;base64,/9j/${"A".repeat(200)}`) {
   const fetchMock = vi.fn(async () =>
     new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify({ ...LEIDO_BASE, ...leido }) } }] }), {
       status: 200,
@@ -105,7 +107,11 @@ describe("gtf-ocr — N° de registro (ADR-442)", () => {
     process.env.ANTHROPIC_API_KEY = "sk-ant-test";
     const fetchMock = vi.fn(async () =>
       new Response(
-        JSON.stringify({ content: [{ text: JSON.stringify({ ...LEIDO_BASE, numeroRegistro: "1-19-0313629" }) }] }),
+        JSON.stringify({
+          content: [{ type: "text", text: JSON.stringify({ ...LEIDO_BASE, numeroRegistro: "1-19-0313629" }) }],
+          stop_reason: "end_turn",
+          usage: { input_tokens: 2000, output_tokens: 120 },
+        }),
         { status: 200 },
       ),
     );
@@ -114,7 +120,7 @@ describe("gtf-ocr — N° de registro (ADR-442)", () => {
     const res = await POST(
       new NextRequest("http://localhost/api/admin/forestal/gtf-ocr", {
         method: "POST",
-        body: JSON.stringify({ image: `data:image/png;base64,${"A".repeat(200)}` }),
+        body: JSON.stringify({ image: `data:image/png;base64,iVBORw0KGgo${"A".repeat(200)}` }),
       }),
     );
     expect(((await res.json()) as { numeroRegistro: string }).numeroRegistro).toBe("1-19-0313629");

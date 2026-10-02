@@ -1,20 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { AI_TEMPERATURES } from "@/lib/ai-temperatures";
-import { safeParseJSON } from "@/lib/ai-json-parser";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { requireAdmin } from "@/lib/require-admin";
 import { aiCostGuard } from "@/lib/ai/cost-control";
+import {
+  FORMATOS_IMAGEN,
+  costoMaximoLecturaUsd,
+  falloSinLector,
+  gastoDeLectura,
+  proveedorVision,
+  visionExtractJSON,
+} from "@/lib/ai/vision-extract";
+import { veDetalleDeClaveIA } from "@/lib/ai/detalle-clave-ia";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { esNumeroRegistroValido, normalizarNumeroRegistro } from "@/lib/forestal/serfor-gtf";
 
 /**
  * /api/admin/forestal/gtf-ocr — extrae los datos de una GTF (Guía de Transporte
- * Forestal) fotografiada para pre-llenar el ingreso de madera. Mismo patrón que
- * /api/ocr/invoice (auth + aiCostGuard + Vision OpenAI→Anthropic + Zod), acotado
- * al vocabulario de una GTF peruana. NO reemplaza la validación humana: el
- * operador revisa y corrige antes de guardar.
+ * Forestal) fotografiada para pre-llenar el ingreso de madera. NO reemplaza la
+ * validación humana: el operador revisa y corrige antes de guardar.
+ *
+ * 2026-10-02 («Un solo lector para guías y facturas»): lee con el lector común
+ * (`visionExtractJSON`: Claude `claude-sonnet-5-5` primero, OpenAI de
+ * respaldo), con el MISMO prompt, schema y JSON Schema de antes. Antes tenía su
+ * propio fetch: OpenAI primero, `claude-sonnet-5` + `thinking: disabled`, cada
+ * fallo un 502 mudo («API error: 401») y US$0,01 fijos al tope sólo si salía
+ * bien. Ahora el tipo real de la foto se mira por los bytes, el fallo dice qué
+ * pasó con un `codigo`, y se anota lo que costó de verdad en los dos caminos.
  *
  * ADR-442 (27-09): también lee el N° de REGISTRO del SNIFFS (`110-19-0469779`),
  * que no es el N° de GTF impreso. Con él la guía guardada se busca en SERFOR y
@@ -23,7 +36,10 @@ import { esNumeroRegistroValido, normalizarNumeroRegistro } from "@/lib/forestal
  */
 
 const MAX_IMAGE_B64_BYTES = 10_000_000;
-const OCR_COST_USD = 0.01;
+/* La respuesta son 10 campos cortos: 800 tokens, como antes. */
+const MAX_TOKENS = 800;
+/* Se reserva el TOPE de una lectura; se anota lo que costó (una GTF ≈ US$0,02). */
+const RESERVA_USD = costoMaximoLecturaUsd({ maxTokens: MAX_TOKENS });
 
 const RequestSchema = z.object({
   image: z.string().min(100, "Imagen requerida").max(MAX_IMAGE_B64_BYTES, "Imagen muy grande (>10MB)"),
@@ -68,12 +84,6 @@ function registroLeido(registro: string, gtf: string, serie: string): string {
   return n;
 }
 
-/** Anthropic exige el tipo real de la imagen: una PNG anunciada como JPEG se rechaza. */
-function tipoDeImagen(image: string): "image/jpeg" | "image/png" | "image/webp" | "image/gif" {
-  const m = image.match(/^data:(image\/(?:jpeg|png|webp|gif));base64,/);
-  return (m?.[1] as "image/png" | "image/webp" | "image/gif" | undefined) ?? "image/jpeg";
-}
-
 const PROMPT =
   "Extrae los datos de esta Guía de Transporte Forestal (GTF) peruana de SERFOR. " +
   "Devuelve SOLO JSON válido sin markdown con: gtfNumber (número de la guía), gtfSeries (serie si aparece), " +
@@ -85,6 +95,33 @@ const PROMPT =
   "«N° REGISTRO»; NO es el N° de GTF impreso como 019-001-0000004 — si sólo ves ese, deja numeroRegistro vacío). " +
   'Formato: {"gtfNumber":"","gtfSeries":"","especie":"","especieCientifica":"","volumenM3":0,"proveedor":"","ruc":"","fecha":"","origen":"","numeroRegistro":""}. ' +
   "Si un dato no se lee, dejalo vacío o 0.";
+
+/**
+ * Lo que Claude tiene que devolver (`output_config.format`). Los campos son
+ * EXACTAMENTE los de `GtfSchema` y del PROMPT: qué se extrae de una GTF es
+ * materia de SERFOR, no de un refactor. Todos requeridos a propósito: el
+ * contrato del PROMPT es «si un dato no se lee, dejalo vacío o 0», no omitirlo.
+ */
+const JSON_SCHEMA_GTF = {
+  type: "object",
+  properties: {
+    gtfNumber: { type: "string" },
+    gtfSeries: { type: "string" },
+    especie: { type: "string" },
+    especieCientifica: { type: "string" },
+    volumenM3: { type: "number" },
+    proveedor: { type: "string" },
+    ruc: { type: "string" },
+    fecha: { type: "string" },
+    origen: { type: "string" },
+    numeroRegistro: { type: "string" },
+  },
+  required: [
+    "gtfNumber", "gtfSeries", "especie", "especieCientifica",
+    "volumenM3", "proveedor", "ruc", "fecha", "origen", "numeroRegistro",
+  ],
+  additionalProperties: false,
+};
 
 async function ensureSpec(tenantId: string) {
   const ok = await isSpecializationEnabled(tenantId, "spec:forestal:ctp-libro");
@@ -99,106 +136,45 @@ export async function POST(req: NextRequest) {
   const guard = await ensureSpec(auth.tenantId);
   if (guard) return guard;
 
-  const canSpend = await aiCostGuard.canSpend(auth.tenantId, OCR_COST_USD);
-  if (!canSpend) {
-    return NextResponse.json({ error: "budget_exceeded", message: "Presupuesto de IA agotado este mes." }, { status: 429 });
-  }
-
   let body: unknown;
-  try { body = await req.json(); } catch { return NextResponse.json({ error: "invalid_json" }, { status: 400 }); }
+  try { body = await req.json(); } catch { return NextResponse.json({ error: "No llegó la foto de la guía." }, { status: 400 }); }
   const parsed = RequestSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Datos inválidos" }, { status: 400 });
-  const { image } = parsed.data;
 
-  try {
-    const openai = process.env.OPENAI_API_KEY;
-    const anthropic = process.env.ANTHROPIC_API_KEY;
-    let content = "";
-
-    if (openai) {
-      const res = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${openai}` },
-        body: JSON.stringify({
-          model: "gpt-4o-mini",
-          messages: [
-            { role: "system", content: "Eres un extractor de datos de Guías de Transporte Forestal peruanas. Responde SOLO JSON válido sin markdown." },
-            { role: "user", content: [{ type: "text", text: PROMPT }, { type: "image_url", image_url: { url: image.startsWith("data:") ? image : `data:image/jpeg;base64,${image}` } }] },
-          ],
-          max_tokens: 800,
-          temperature: AI_TEMPERATURES.extraction,
-        }),
-      });
-      if (!res.ok) return NextResponse.json({ error: `API error: ${res.status}` }, { status: 502 });
-      content = (await res.json()).choices?.[0]?.message?.content ?? "";
-    } else if (anthropic) {
-      const imageData = image.startsWith("data:") ? image.split(",")[1] : image;
-      const mediaType = tipoDeImagen(image);
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-api-key": anthropic, "anthropic-version": "2023-06-01" },
-        body: JSON.stringify({
-          // `claude-sonnet-4-20250514` se retiró el 2026-06-15: esta rama venía
-          // respondiendo 404, o sea que el fallback de lectura de guías no
-          // existía. Migrado a `claude-sonnet-5`.
-          model: "claude-sonnet-5",
-          max_tokens: 800,
-          // Sonnet 5 razona por defecto y `max_tokens` topea razonamiento MÁS
-          // respuesta: con 800 el JSON se cortaba. Leer una guía es extracción.
-          thinking: { type: "disabled" },
-          // El JSON pasa a estar garantizado por la API en vez de pedido por
-          // prompt. Los campos son EXACTAMENTE los de `GtfSchema` y del PROMPT
-          // de arriba: qué se extrae de una GTF es materia de SERFOR, no de un
-          // refactor. ADR-442 (27-09) suma `numeroRegistro` (la constancia del
-          // SNIFFS, para buscar la ficha oficial) en los tres lugares a la vez.
-          output_config: {
-            format: {
-              type: "json_schema",
-              schema: {
-                type: "object",
-                properties: {
-                  gtfNumber: { type: "string" },
-                  gtfSeries: { type: "string" },
-                  especie: { type: "string" },
-                  especieCientifica: { type: "string" },
-                  volumenM3: { type: "number" },
-                  proveedor: { type: "string" },
-                  ruc: { type: "string" },
-                  fecha: { type: "string" },
-                  origen: { type: "string" },
-                  numeroRegistro: { type: "string" },
-                },
-                // Todos requeridos a propósito: el contrato del PROMPT es
-                // "si un dato no se lee, dejalo vacío o 0", no omitirlo.
-                required: [
-                  "gtfNumber", "gtfSeries", "especie", "especieCientifica",
-                  "volumenM3", "proveedor", "ruc", "fecha", "origen", "numeroRegistro",
-                ],
-                additionalProperties: false,
-              },
-            },
-          },
-          messages: [{ role: "user", content: [{ type: "image", source: { type: "base64", media_type: mediaType, data: imageData } }, { type: "text", text: PROMPT }] }],
-        }),
-      });
-      if (!res.ok) return NextResponse.json({ error: `API error: ${res.status}` }, { status: 502 });
-      content = (await res.json()).content?.[0]?.text ?? "";
-    } else {
-      // Mensaje para el operador del patio, no para un programador; el detalle
-      // técnico va al log.
-      logger.warn("[gtf-ocr] sin OPENAI_API_KEY ni ANTHROPIC_API_KEY configuradas", { tenantId: auth.tenantId.slice(-6) });
-      return NextResponse.json({ error: "La lectura automática de guías todavía no está activada. Carga los datos de la GTF a mano mientras tanto." }, { status: 503 });
-    }
-
-    const result = safeParseJSON(content, GtfSchema);
-    if (!result.ok) {
-      return NextResponse.json({ error: "No se pudo interpretar la GTF", raw: content }, { status: 422 });
-    }
-    await aiCostGuard.recordSpend(auth.tenantId, OCR_COST_USD);
-    const d = result.data;
-    return NextResponse.json({ ...d, numeroRegistro: registroLeido(d.numeroRegistro, d.gtfNumber, d.gtfSeries) });
-  } catch (error) {
-    logger.error("[gtf-ocr] failed", { error: String(error), tenantId: auth.tenantId });
-    return NextResponse.json({ error: `Error procesando la GTF: ${error instanceof Error ? error.message : "desconocido"}` }, { status: 500 });
+  const verDetalleDeClave = await veDetalleDeClaveIA(req);
+  if (!proveedorVision()) {
+    /* Mensaje para el operador del patio, no para un programador; el detalle técnico va al log. */
+    logger.warn("[gtf-ocr] sin ANTHROPIC_API_KEY ni OPENAI_API_KEY configuradas", { tenantId: auth.tenantId.slice(-6) });
+    const f = falloSinLector(verDetalleDeClave);
+    return NextResponse.json({ error: f.error, codigo: f.codigo }, { status: f.status });
   }
+
+  const canSpend = await aiCostGuard.canSpend(auth.tenantId, RESERVA_USD);
+  if (!canSpend) {
+    return NextResponse.json({ error: "Se acabó el presupuesto de lectura con IA de este mes.", codigo: "limite_ia" }, { status: 429 });
+  }
+
+  const r = await visionExtractJSON({
+    imageBase64: parsed.data.image,
+    /* Una foto: el tipo real (por los bytes) tiene que ser JPG/PNG/WebP/GIF y
+       coincidir con el declarado; si no, 400 sin llamar a la IA. */
+    formatos: FORMATOS_IMAGEN,
+    prompt: PROMPT,
+    schema: GtfSchema,
+    jsonSchema: JSON_SCHEMA_GTF,
+    maxTokens: MAX_TOKENS,
+    logTag: "[gtf-ocr]",
+    verDetalleDeClave,
+  });
+  /* Lo cobrado se anota en los DOS caminos: una respuesta cortada o ilegible también se pagó. */
+  const gasto = gastoDeLectura(r, RESERVA_USD);
+  if (gasto != null) await aiCostGuard.recordSpend(auth.tenantId, gasto);
+  if (!r.ok) {
+    /* Lo que es de la clave o de la IA se dice tal cual; lo que es de la foto, con qué hacer. */
+    const dePapel = r.codigo == null || r.codigo === "ilegible" || r.codigo === "pedido_rechazado";
+    const error = dePapel ? "No se pudo leer la guía en la foto. Prueba con una foto más nítida, de frente y con buena luz." : r.error;
+    return NextResponse.json({ error, codigo: r.codigo ?? "ilegible" }, { status: r.status });
+  }
+  const d = r.data;
+  return NextResponse.json({ ...d, numeroRegistro: registroLeido(d.numeroRegistro, d.gtfNumber, d.gtfSeries) });
 }

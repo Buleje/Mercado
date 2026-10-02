@@ -126,10 +126,40 @@ const comoDataUrl = (file: File) =>
     fr.readAsDataURL(file);
   });
 
+/** Falta la IA de la plataforma: va el aviso único de la clave (`AvisoClaveIa`), no un error. */
+export interface SinClaveIa {
+  /** Quien mira administra la clave (`codigo: "sin_lector"`): el aviso trae dónde va. */
+  instrucciones: boolean;
+}
+
+type FalloDeLectura = { ok: false; mensaje: string; sinClave?: SinClaveIa };
+
+/**
+ * Lo que dijo el lector cuando no leyó. Con `codigo` (lector común, 02-10) la
+ * frase ya es para la persona —sin crédito, saturada, foto que no es foto— y
+ * se muestra tal cual; sin él, sólo 503/429 traen frase propia.
+ */
+async function falloDelLector(res: Response): Promise<FalloDeLectura> {
+  const general = "El lector de guías no respondió. Prueba de nuevo o escribe el número.";
+  const j = (await res.json().catch((err: unknown) => {
+    logger.warn("[guia-desde-foto] respuesta sin JSON", { status: res.status, error: String(err) });
+    return null;
+  })) as { message?: string; error?: string; codigo?: string } | null;
+  logger.warn("[guia-desde-foto] lector", { status: res.status, codigo: j?.codigo });
+  const frase = j?.error && /\s/.test(j.error) ? j.error : null;
+  if (j?.codigo === "sin_lector" || j?.codigo === "ia_no_disponible") {
+    return { ok: false, mensaje: frase ?? general, sinClave: { instrucciones: j.codigo === "sin_lector" } };
+  }
+  if (j?.codigo && frase) return { ok: false, mensaje: frase };
+  if (res.status === 422) return { ok: false, mensaje: "No se pudo leer la guía en la foto." };
+  /* 503 (sin lector) y 429 (sin presupuesto) traen su frase para el patio;
+     el resto («API error: 502»…) no le dice nada a quien sacó la foto. */
+  const propia = res.status === 503 || res.status === 429 ? (j?.message ?? frase) : null;
+  return { ok: false, mensaje: propia ?? general };
+}
+
 /** Manda la foto (ya achicada) al lector. Devuelve lo leído o el mensaje para la persona. */
-export async function leerGuiaDeFoto(
-  foto: File,
-): Promise<{ ok: true; lectura: LecturaDeGuia } | { ok: false; mensaje: string }> {
+export async function leerGuiaDeFoto(foto: File): Promise<{ ok: true; lectura: LecturaDeGuia } | FalloDeLectura> {
   try {
     const res = await fetch(LECTOR, {
       method: "POST",
@@ -137,15 +167,7 @@ export async function leerGuiaDeFoto(
       headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ image: await comoDataUrl(foto) }),
     });
-    if (res.status === 422) return { ok: false, mensaje: "No se pudo leer la guía en la foto." };
-    if (!res.ok) {
-      /* 503 (sin lector) y 429 (sin presupuesto) traen su frase para el patio;
-         el resto («API error: 502»…) no le dice nada a quien sacó la foto. */
-      const general = "El lector de guías no respondió. Prueba de nuevo o escribe el número.";
-      const propio = res.status === 503 || res.status === 429 ? await mensajeDe(res, general) : general;
-      logger.warn("[guia-desde-foto] lector", { status: res.status });
-      return { ok: false, mensaje: propio };
-    }
+    if (!res.ok) return await falloDelLector(res);
     return { ok: true, lectura: lecturaDe((await res.json()) as Record<string, unknown>) };
   } catch (e) {
     logger.error("[guia-desde-foto] leer failed", { error: String(e) });
@@ -182,6 +204,8 @@ export function useGuiaDesdeFoto() {
   const [estado, setEstado] = useState<EstadoFoto | null>(null);
   /** Una línea para la persona: no se leyó nada, el lector no está, falló la subida. */
   const [aviso, setAviso] = useState<string | null>(null);
+  /** El `aviso` es el de la clave de IA (va con `AvisoClaveIa`, no como alerta). */
+  const [sinClave, setSinClave] = useState<SinClaveIa | null>(null);
   /** Fotos que ya quedaron en el casillero: quien muestra la grilla la remonta con esto. */
   const [subidas, setSubidas] = useState(0);
   const foto = useRef<File | null>(null);
@@ -196,6 +220,7 @@ export function useGuiaDesdeFoto() {
     setMiniatura(null);
     setEstado(null);
     setAviso(null);
+    setSinClave(null);
   }, []);
 
   /** Lee la foto. Devuelve lo leído sólo si trae un número; si no, la foto se suelta. */
@@ -208,6 +233,7 @@ export function useGuiaDesdeFoto() {
         const r = await leerGuiaDeFoto(lista);
         if (!r.ok) {
           setAviso(r.mensaje);
+          setSinClave(r.sinClave ?? null);
           return null;
         }
         if (!leyoAlgo(r.lectura)) {
@@ -254,7 +280,7 @@ export function useGuiaDesdeFoto() {
     return true;
   }, []);
 
-  return { leyendo, lectura, miniatura, estado, aviso, subidas, leer, subirA, descartar };
+  return { leyendo, lectura, miniatura, estado, aviso, sinClave, subidas, leer, subirA, descartar };
 }
 
 export type GuiaDesdeFoto = ReturnType<typeof useGuiaDesdeFoto>;

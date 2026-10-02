@@ -9,13 +9,18 @@ import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
 import { lothErrorResponse, lothValidationResponse } from "@/lib/forestal/loth-api-errors";
+import { permisoDelPedido } from "@/lib/forestal/loth-permiso-pedido";
 
 /**
  * /api/admin/forestal/loth — Libro de Operaciones Títulos Habilitantes (ADR-125)
  *
  * GET  — lista entries (?section, ?caratulaId, ?search, ?includeAnnulled)
- *        ?stats=1 → resumen por sección · &planId=X → sólo las líneas de ese plan y
- *          las sin plan (el mismo alcance que el balance del plan, ADR-459)
+ *        ?stats=1 → resumen por sección (+ `lineasSinPlan`)
+ *        Filtro por permiso, en la lista y en ?stats=1 (`lib/forestal/loth-filtro-permiso`):
+ *          &planId=X&solo=1 → sólo las líneas de ese plan (lo que pide la pantalla)
+ *          &planId=X        → ese plan y las sin plan (alcance del balance, ADR-459)
+ *          &planId=sin-plan → sólo las líneas sin plan
+ *          Plan ajeno o de baja → 404; `planId` mal formado → 400.
  *        ?usoCenso=1 → por árbol: su tala, trozas, despachadas y consumidas
  * POST — crea entry (status registrado, lineNo correlativo automático)
  *
@@ -123,12 +128,13 @@ export const GET = withApiHandler("forestal-loth-get", async (req: NextRequest) 
   try {
     if (url.searchParams.get("stats") === "1") {
       const caratulaId = url.searchParams.get("caratulaId") ?? undefined;
-      const planId = url.searchParams.get("planId")?.trim() || undefined;
-      if (planId && !(await ForestPlanDB.getPlan(auth.tenantId, planId))) {
-        return NextResponse.json({ error: "not_found" }, { status: 404 });
-      }
-      const stats = await ForestLothDB.stats(auth.tenantId, caratulaId, planId);
-      return NextResponse.json({ stats });
+      const permiso = await permisoDelPedido(auth.tenantId, url.searchParams);
+      if (permiso instanceof NextResponse) return permiso;
+      const [stats, lineasSinPlan] = await Promise.all([
+        ForestLothDB.stats(auth.tenantId, caratulaId, permiso.filtro),
+        ForestLothDB.lineasSinPlan(auth.tenantId),
+      ]);
+      return NextResponse.json({ stats, lineasSinPlan });
     }
 
     if (url.searchParams.get("despachables") === "1") {
@@ -167,8 +173,13 @@ export const GET = withApiHandler("forestal-loth-get", async (req: NextRequest) 
         ? (sectionParam as (typeof LOTH_SECTIONS)[number])
         : undefined;
 
+    // Antes `?planId=` se ignoraba aquí y volvía el libro entero (02-10-2026).
+    const permiso = await permisoDelPedido(auth.tenantId, url.searchParams);
+    if (permiso instanceof NextResponse) return permiso;
+
     const { entries, total } = await ForestLothDB.list(auth.tenantId, {
       section,
+      permiso: permiso.filtro,
       caratulaId: url.searchParams.get("caratulaId") ?? undefined,
       search: url.searchParams.get("search") ?? undefined,
       includeAnnulled: url.searchParams.get("includeAnnulled") === "1",

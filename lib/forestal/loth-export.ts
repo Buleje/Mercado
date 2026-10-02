@@ -15,6 +15,7 @@ import {
   type LothSection,
 } from "@/lib/forestal/loth-constants";
 import { avisoLibroIncompleto } from "@/lib/forestal/loth-libro-entero";
+import type { EncabezadoPermiso } from "@/lib/forestal/loth-filtro-permiso";
 
 type AnyEntry = Record<string, unknown>;
 type AnyCaratula = Record<string, unknown> | null;
@@ -125,6 +126,12 @@ export async function buildLothWorkbook(opts: {
    */
   totalLibro?: number;
   generatedAtISO: string;
+  /**
+   * De qué permiso es el archivo (`encabezadoDelPermiso`). Va en la Carátula,
+   * en el título de cada hoja y en el Resumen: un Excel de un solo plan no
+   * puede confundirse con el libro entero.
+   */
+  permiso?: EncabezadoPermiso | null;
 }): Promise<Buffer> {
   const ExcelJS = (await import("exceljs")).default;
   const wb = new ExcelJS.Workbook();
@@ -149,6 +156,16 @@ export async function buildLothWorkbook(opts: {
     cs.getCell("A3").font = { bold: true, color: { argb: "FFB91C1C" } };
   }
   let row = 4;
+  if (opts.permiso) {
+    for (const [label, valor] of opts.permiso.filas) {
+      cs.getCell(`A${row}`).value = label;
+      cs.getCell(`A${row}`).font = { bold: true, color: { argb: "FF14532D" } };
+      cs.getCell(`B${row}`).value = valor;
+      cs.getCell(`B${row}`).font = { bold: true };
+      row++;
+    }
+    row++; // una fila en blanco entre el permiso y los datos del libro
+  }
   for (const [key, label] of CARATULA_FIELDS) {
     cs.getCell(`A${row}`).value = label;
     cs.getCell(`A${row}`).font = { bold: true };
@@ -158,12 +175,15 @@ export async function buildLothWorkbook(opts: {
   cs.getColumn(1).width = 28;
   cs.getColumn(2).width = 44;
 
+  /** El permiso en el título de cada hoja, sólo si el archivo es de uno (no del libro entero). */
+  const conPermiso = opts.permiso && !opts.permiso.delLibroEntero ? opts.permiso.titulo : null;
+
   // ── Una hoja por sección ──
   for (const section of LOTH_SECTIONS) {
     const cols = [...COMMON_HEAD, ...SECTION_COLS[section], ...COMMON_TAIL];
     const ws = wb.addWorksheet(SECTION_TITLE[section].slice(0, 28));
     ws.mergeCells(1, 1, 1, cols.length);
-    ws.getCell(1, 1).value = SECTION_TITLE[section];
+    ws.getCell(1, 1).value = conPermiso ? `${SECTION_TITLE[section]} — ${conPermiso}` : SECTION_TITLE[section];
     ws.getCell(1, 1).font = { bold: true, size: 12, color: { argb: "FF14532D" } };
 
     const headerRow = ws.getRow(2);
@@ -197,7 +217,7 @@ export async function buildLothWorkbook(opts: {
 
   // ── Resumen ──
   const rs = wb.addWorksheet("Resumen");
-  rs.getCell("A1").value = "RESUMEN POR SECCIÓN";
+  rs.getCell("A1").value = conPermiso ? `RESUMEN POR SECCIÓN — ${conPermiso}` : "RESUMEN POR SECCIÓN";
   rs.getCell("A1").font = { bold: true, size: 12, color: { argb: "FF14532D" } };
   const head = rs.getRow(2);
   ["Sección", "Líneas", "Anuladas", "Fuera de plazo", "Volumen (m³)"].forEach((h, i) => {

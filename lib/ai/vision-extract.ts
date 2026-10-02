@@ -64,7 +64,8 @@ import {
 
 /** Modelo de Claude para leer fotos y PDF (skill `claude-api`, 2026-10-02). */
 export const MODELO_CLAUDE_VISION = "claude-sonnet-5-5";
-const MODELO_OPENAI_VISION = "gpt-4o-mini";
+/** El respaldo cuando no está la clave de Claude (también lo usa el asistente de texto, `pregunta-ia.ts`). */
+export const MODELO_OPENAI_VISION = "gpt-4o-mini";
 
 /** USD por millón de tokens. Sonnet 5.5: skill `claude-api`; gpt-4o-mini: lista pública de OpenAI. */
 const PRECIO_MTOK: Record<string, { entrada: number; salida: number }> = {
@@ -255,8 +256,13 @@ export function separarArchivo(
   return { ok: true, medio: real, base64 };
 }
 
-/** Costo de una lectura con el uso que informó la API, al centavo hacia arriba (el tope mensual cuenta en centavos). */
-function costoDe(modelo: string, entrada: number, salida: number): number {
+/**
+ * Costo de una llamada con el uso que informó la API, al centavo hacia arriba
+ * (el tope mensual cuenta en centavos y `recordSpend` REDONDEA: US$0,004 sería
+ * cero). Exportado para el asistente de texto (`pregunta-ia.ts`): una sola
+ * tabla de precios.
+ */
+export function costoDe(modelo: string, entrada: number, salida: number): number {
   const p = PRECIO_MTOK[modelo];
   if (!p) return 0;
   const usd = (Math.max(0, entrada) * p.entrada + Math.max(0, salida) * p.salida) / 1_000_000;
@@ -310,8 +316,12 @@ export function falloDelProveedor(
   return fallo(502, "pedido_rechazado", "La IA no aceptó el pedido. Carga los datos a mano mientras se revisa.");
 }
 
-/** Lee el cuerpo de error sin reventar y lo registra SIN la clave ni la imagen. */
-async function falloDeRespuesta(proveedor: ProveedorVision, res: Response, logTag: string): Promise<Fallo> {
+/**
+ * Lee el cuerpo de error sin reventar y lo registra SIN la clave ni la imagen.
+ * Exportado para el asistente de texto (`pregunta-ia.ts`): los fallos del
+ * proveedor se dicen con las mismas palabras en todo el panel.
+ */
+export async function falloDeRespuesta(proveedor: ProveedorVision, res: Response, logTag: string): Promise<Fallo> {
   const cuerpo = await res.text().catch(() => "");
   let tipo = "";
   let mensaje = "";
