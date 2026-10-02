@@ -5,6 +5,7 @@ import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import Image from "next/image";
 import Link from "next/link";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import {
   Palette, Store, Layout, Phone, Settings2, Image as ImageIcon,
   Save, Loader2, Check, Eye, EyeOff,
@@ -503,7 +504,7 @@ function ColorPicker({
             )}
             style={{ backgroundColor: c.value }}
             aria-label={c.label}
-          />
+          ></button>
         ))}
         <div className="relative">
           <input
@@ -539,8 +540,10 @@ function StyleSection({
           {icon}
         </div>
         <div className="min-w-0 flex-1">
-          <CardTitle className="text-[var(--text-primary)]">{title}</CardTitle>
-          <p className="text-sm text-muted leading-snug mt-0.5">{description}</p>
+          <div className="flex items-center gap-1.5">
+            <CardTitle className="text-[var(--text-primary)]">{title}</CardTitle>
+            <InfoTip title={title} what={<span>{description}</span>} />
+          </div>
         </div>
       </header>
       <div>{children}</div>
@@ -1954,9 +1957,12 @@ export default function StoreCustomizer() {
                       </span>
                     </div>
                     <div className="flex-1 min-w-0 space-y-1.5 pt-px">
-                      <label htmlFor="sc-store-name" className="block text-sm font-semibold text-[var(--text-primary)]">
-                        Nombre de la tienda
-                      </label>
+                      <div className="flex items-center gap-1.5">
+                        <label htmlFor="sc-store-name" className="block text-sm font-semibold text-[var(--text-primary)]">
+                          Nombre de la tienda
+                        </label>
+                        <InfoTip title="Nombre de la tienda" what={<span>Sale en la cabecera, el pie y la pestaña del navegador.</span>} />
+                      </div>
                       <input
                         id="sc-store-name"
                         type="text"
@@ -1966,16 +1972,18 @@ export default function StoreCustomizer() {
                         className={inputCls}
                         maxLength={60}
                       />
-                      <p className="text-xs text-muted">Cabecera, pie y pestaña del navegador.</p>
                     </div>
                   </div>
 
                   {/* Eslogan — counter integrado en el label row */}
                   <div className="space-y-1.5">
                     <div className="flex items-baseline justify-between">
-                      <label htmlFor="sc-slogan" className="text-sm font-semibold text-[var(--text-primary)]">
-                        Eslogan
-                      </label>
+                      <span className="flex items-center gap-1.5">
+                        <label htmlFor="sc-slogan" className="text-sm font-semibold text-[var(--text-primary)]">
+                          Eslogan
+                        </label>
+                        <InfoTip title="Eslogan" what={<span>Frase corta debajo del nombre.</span>} />
+                      </span>
                       <span className={cn(
                         "text-xs font-mono tabular-nums",
                         theme.slogan.length > 90 ? "text-[var(--data-warning-500)]" : "text-muted",
@@ -1992,15 +2000,17 @@ export default function StoreCustomizer() {
                       className={inputCls}
                       maxLength={100}
                     />
-                    <p className="text-xs text-muted">Frase corta debajo del nombre.</p>
                   </div>
 
                   {/* Descripción SEO */}
                   <div className="space-y-1.5">
                     <div className="flex items-baseline justify-between">
-                      <label htmlFor="sc-description" className="text-sm font-semibold text-[var(--text-primary)]">
-                        Descripción
-                      </label>
+                      <span className="flex items-center gap-1.5">
+                        <label htmlFor="sc-description" className="text-sm font-semibold text-[var(--text-primary)]">
+                          Descripción
+                        </label>
+                        <InfoTip title="Descripción" what={<span>Es lo que Google y las redes muestran de tu tienda.</span>} />
+                      </span>
                       <span className={cn(
                         "text-xs font-mono tabular-nums",
                         theme.description.length > 180 ? "text-[var(--data-warning-500)]" : "text-muted",
@@ -2016,7 +2026,6 @@ export default function StoreCustomizer() {
                       className={cn(inputCls, "resize-none min-h-[96px] py-3 leading-relaxed")}
                       maxLength={200}
                     />
-                    <p className="text-xs text-muted">Lo que Google y las redes muestran de tu tienda.</p>
                   </div>
                 </div>
 
@@ -2024,8 +2033,9 @@ export default function StoreCustomizer() {
                 <aside className="space-y-4 lg:sticky lg:top-4">
                   {/* Mockup: cabecera de la tienda */}
                   <div>
-                    <p className="mb-2 text-xs font-bold uppercase tracking-wider text-muted">
-                      Así se ve en tu tienda
+                    <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
+                      En tu tienda
+                      <InfoTip title="Colores" what={<span>El color del nombre y del botón se configura en la pestaña Colores.</span>} />
                     </p>
                     <div className="rounded-2xl border border-[var(--rule-base)] overflow-hidden shadow-[var(--shadow-sm)]">
                       {/* Barra de navegador fake — refuerza "esto es tu web" */}
@@ -2068,7 +2078,7 @@ export default function StoreCustomizer() {
                   {/* Mockup: resultado de Google (SERP) */}
                   <div>
                     <p className="mb-2 text-xs font-bold uppercase tracking-wider text-muted">
-                      Así se ve en Google
+                      En Google
                     </p>
                     <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3.5 shadow-[var(--shadow-sm)]">
                       <div className="flex items-center gap-2">
@@ -2088,19 +2098,15 @@ export default function StoreCustomizer() {
                           </p>
                         </div>
                       </div>
-                      <p className="mt-1.5 truncate text-base leading-snug text-[#1a0dab] dark:text-sky-400">
+                      <span className="mt-1.5 block truncate text-base leading-snug text-[#1a0dab] dark:text-sky-400">
                         {theme.storeName || "Mi Bodega"}{theme.slogan ? ` — ${theme.slogan}` : ""}
-                      </p>
-                      <p className="mt-0.5 line-clamp-2 text-sm leading-snug text-[var(--text-secondary)]">
-                        {theme.description || "Tu descripción aparece acá. Escribila pensando en qué buscaría tu cliente."}
-                      </p>
+                      </span>
+                      <span className="mt-0.5 line-clamp-2 block text-sm leading-snug text-[var(--text-secondary)]">
+                        {theme.description || "Tu descripción aparece aquí."}
+                      </span>
                     </div>
                   </div>
 
-                  {/* Tip mínimo — 1 línea, sin banner gigante */}
-                  <p className="text-xs text-muted leading-relaxed px-1">
-                    El color del nombre y el botón se configuran en la pestaña <strong>Colores</strong>.
-                  </p>
                 </aside>
               </div>
 

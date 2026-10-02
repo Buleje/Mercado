@@ -27,7 +27,7 @@ import {
   FileSpreadsheet, File as FileIcon, Download, Trash2, Eye,
   Plus, Folder, Star, Clock, HardDrive, X, Sparkles, Check, CheckSquare, Monitor,
   Camera, AlarmClock, Wand2, Tag, MoreVertical, MoreHorizontal, FileArchive, Loader2,
-  ChevronRight, ChevronDown, ChevronUp, Pencil, FolderInput, MessageCircle, Palette, History, BellRing, PenLine, Share2, FolderTree,
+  ChevronRight, ChevronDown, ChevronUp, Pencil, FolderInput, MessageCircle, Palette, History, PenLine, Share2, FolderTree,
   CalendarDays, Stamp, Combine, LayoutDashboard, RotateCw, Scissors, Scan, FileStack, Link2, Copy, Columns3, ArrowUpDown,
 } from "@buleje/design-system/icons";
 import { DataTable } from "@buleje/design-system";
@@ -42,7 +42,7 @@ import { ConfirmarBorrarCarpetas, type BorradoCarpetas } from "./ConfirmarBorrar
 import SyncEscritorioView from "./SyncEscritorioView";
 import EstadoCarpetaLocalBadge from "./EstadoCarpetaLocalBadge";
 import { isAnalyzableMime } from "@/lib/documents/analyzable-mime";
-import { ordenarPorRelevancia, tieneDescripcion } from "@/lib/documentos/relevancia";
+import { descripcionDe, ordenarPorRelevancia, tieneDescripcion } from "@/lib/documentos/relevancia";
 import FiltrosDoc from "@/components/admin/documentos/FiltrosDoc";
 import {
   FILTROS_VACIOS, cumpleFiltros, familiasPresentes, tagsPresentes, cuantosFiltrosActivos,
@@ -51,6 +51,7 @@ import {
 import { palabrasUtiles } from "@/lib/documentos/terminos-busqueda";
 import { urlMiniatura } from "@/lib/documents/miniatura-version";
 import PorQueAparecio, { TerminosIA } from "./PorQueAparecio";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { precargarVisor } from "./precargar-visores";
 import {
   META_ESTADO, ORDEN_ESTADOS, estadoDe as estadoDeDoc, type EstadoDoc, type TonoEstado,
@@ -356,6 +357,9 @@ export default function DocumentosModule() {
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   /** Ver sólo lo que todavía no tiene descripción (lo que no se puede buscar). */
   const [soloSinDescribir, setSoloSinDescribir] = useState(false);
+  // Cuántas tarjetas se dibujan: una carpeta de 300 documentos no es 300
+  // tarjetas de golpe. «Ver más» suma otro tanto; cambiar de vista vuelve a 10.
+  const [tarjetasVisibles, setTarjetasVisibles] = useState(10);
   /** Tipo de archivo, peso, cuándo entró y cuándo vence. */
   const [filtros, setFiltros] = useState<FiltrosDocumento>(FILTROS_VACIOS);
   const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
@@ -591,6 +595,8 @@ export default function DocumentosModule() {
       return prev === "relevancia" ? "recent" : prev;
     });
   }, [hayBusqueda]);
+
+  useEffect(() => { setTarjetasVisibles(10); }, [filterMode, activeFolderId]);
 
   // ── Filtrado (recent) + orden client-side ──
   const displayDocs = useMemo(() => {
@@ -833,6 +839,13 @@ export default function DocumentosModule() {
     }
   }, [aplicandoTodas, sugerenciasIA, aplicarSugerencia, refresh]);
   const visibleFolderRows = useMemo(() => flattenVisible(childrenMap, expandedFolders), [childrenMap, expandedFolders]);
+  // La lista de carpetas muestra las primeras 6; el resto, tras «Ver N más».
+  // La carpeta abierta nunca se esconde.
+  const [todasLasCarpetas, setTodasLasCarpetas] = useState(false);
+  const CARPETAS_A_LA_VISTA = 6;
+  const filasDeCarpeta = todasLasCarpetas
+    ? visibleFolderRows
+    : visibleFolderRows.filter((r, i) => i < CARPETAS_A_LA_VISTA || (filterMode === "folder" && r.folder.id === activeFolderId));
 
   // ── Selección múltiple de carpetas ──────────────────────────────────────────
   const toggleFolderSelected = useCallback((id: string) => {
@@ -1315,10 +1328,11 @@ export default function DocumentosModule() {
           <button
             onClick={() => setKpisVisible((v) => !v)}
             aria-expanded={kpisVisible}
-            className="inline-flex items-center gap-1.5 h-11 shrink-0 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary"
+            aria-label={kpisVisible ? "Ocultar resumen" : "Mostrar resumen"}
+            title={kpisVisible ? "Ocultar resumen" : "Mostrar resumen"}
+            className="inline-flex items-center justify-center h-11 w-11 shrink-0 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary"
           >
             {kpisVisible ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            {kpisVisible ? "Ocultar resumen" : "Mostrar resumen"}
           </button>
         )}
 
@@ -1393,16 +1407,21 @@ export default function DocumentosModule() {
         <div className="flex items-start gap-3 rounded-2xl border-2 border-[var(--data-error-500)]/50 bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15 px-4 py-3">
           <AlarmClock className="mt-0.5 h-5 w-5 shrink-0 text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" />
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
-              {expiringDocs.length} documento{expiringDocs.length === 1 ? "" : "s"} por vencer en los próximos 30 días
-            </p>
-            <p className="mt-0.5 truncate text-xs text-[var(--text-secondary)]">
-              {expiringDocs.slice(0, 3).map(({ d, n }) => `${d.name} (${n < 0 ? "vencido" : n === 0 ? "vence hoy" : `${n}d`})`).join(" · ")}
-              {expiringDocs.length > 3 ? ` y ${expiringDocs.length - 3} más` : ""}
-            </p>
-            <p className="mt-1 inline-flex items-center gap-1 text-[length:var(--ts-2xs,11px)] font-medium text-[var(--text-tertiary)]">
-              <BellRing className="h-3 w-3 shrink-0" /> Te avisamos automáticamente por WhatsApp y en el panel ~7 días antes de cada vencimiento.
-            </p>
+            <div className="flex items-center gap-1.5">
+              <p className="text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+                {expiringDocs.length} por vencer en 30 días
+              </p>
+              <InfoTip
+                title="Documentos por vencer"
+                what={
+                  <span>
+                    {expiringDocs.slice(0, 5).map(({ d, n }) => `${d.name} (${n < 0 ? "vencido" : n === 0 ? "vence hoy" : `${n}d`})`).join(" · ")}
+                    {expiringDocs.length > 5 ? ` y ${expiringDocs.length - 5} más` : ""}
+                  </span>
+                }
+                affects={<span>Te avisamos por WhatsApp y en el panel unos 7 días antes de cada vencimiento.</span>}
+              />
+            </div>
           </div>
           <button
             onClick={() => { setFilterMode("expiring"); setActiveFolderId(null); }}
@@ -1439,12 +1458,12 @@ export default function DocumentosModule() {
             {sugerenciasIA.map(({ doc, carpeta, vence }) => (
               <div key={doc.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-[var(--surface-raised)] px-3 py-2">
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-bold text-[var(--text-primary)]">{doc.name}</p>
-                  <p className="text-xs text-[var(--text-secondary)]">
+                  <span className="block truncate text-sm font-bold text-[var(--text-primary)]" title={doc.name}>{doc.name}</span>
+                  <span className="block text-xs text-[var(--text-secondary)]">
                     {carpeta && <>mover a <b className="text-[var(--accent)]">{carpeta.folderName}</b></>}
                     {carpeta && vence && " · "}
-                    {vence && <>vence el <b className="text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">{fmtFechaCorta(vence)}</b> — lo agendo y te aviso antes</>}
-                  </p>
+                    {vence && <>vence el <b className="text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">{fmtFechaCorta(vence)}</b></>}
+                  </span>
                 </div>
                 <div className="flex shrink-0 gap-1.5">
                   <button
@@ -1453,9 +1472,11 @@ export default function DocumentosModule() {
                       ...(carpeta ? { folderId: carpeta.folderId } : {}),
                       ...(vence ? { expiresAt: vence } : {}),
                     })}
-                    className="rounded-lg bg-[var(--accent)] px-3 py-1.5 text-xs font-bold text-white hover:brightness-95"
+                    title="Aplicar la sugerencia"
+                    aria-label={`Aplicar la sugerencia para ${doc.name}`}
+                    className="rounded-lg bg-[var(--accent)] px-2.5 py-1.5 text-white hover:brightness-95"
                   >
-                    Aplicar
+                    <Check className="h-3.5 w-3.5" />
                   </button>
                   <button
                     type="button"
@@ -1707,7 +1728,7 @@ export default function DocumentosModule() {
             {folders.length === 0 && (
               <li className="px-3 py-2 text-xs text-[var(--text-tertiary)] italic">Sin carpetas. Crea la primera.</li>
             )}
-            {visibleFolderRows.map(({ folder: f, depth, hasChildren }) => {
+            {filasDeCarpeta.map(({ folder: f, depth, hasChildren }) => {
               const active = filterMode === "folder" && activeFolderId === f.id;
               const dropTarget = dragOverFolderId === f.id;
               const isOpen = expandedFolders.has(f.id);
@@ -1878,6 +1899,19 @@ export default function DocumentosModule() {
                 </li>
               );
             })}
+            {visibleFolderRows.length > CARPETAS_A_LA_VISTA && (
+              <li>
+                <button
+                  type="button"
+                  onClick={() => setTodasLasCarpetas((v) => !v)}
+                  aria-expanded={todasLasCarpetas}
+                  className="flex w-full items-center gap-1.5 rounded-lg px-3 py-1.5 text-left text-sm font-semibold text-[var(--text-tertiary)] transition-colors hover:text-primary"
+                >
+                  {todasLasCarpetas ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                  {todasLasCarpetas ? "Ver menos" : `Ver ${visibleFolderRows.length - filasDeCarpeta.length} más`}
+                </button>
+              </li>
+            )}
           </ul>
 
           {/* Carpetas inteligentes (filtros guardados) */}
@@ -2315,11 +2349,13 @@ export default function DocumentosModule() {
                 {indexableDocs.length > 0 ? (
                   <>
                     <span className="tabular-nums font-bold text-[var(--text-primary)]">{indexableDocs.length}</span>{" "}
-                    {indexableDocs.length === 1 ? "documento no tiene descripción" : "documentos no tienen descripción"}: no
-                    aparecen cuando buscas por lo que dicen adentro.{" "}
-                    <span className="font-normal text-[var(--text-tertiary)]">
-                      Se van leyendo solos cada noche; con el botón se apura la fila.
-                    </span>
+                    sin descripción
+                    <InfoTip
+                      className="ml-1.5 align-middle"
+                      title="Sin descripción"
+                      what={<span>No aparecen cuando buscas por lo que dicen adentro.</span>}
+                      affects={<span>Se leen solos cada noche; con el botón se apura la fila.</span>}
+                    />
                   </>
                 ) : (
                   "Ya está todo descrito."
@@ -2415,8 +2451,9 @@ export default function DocumentosModule() {
           ) : displayDocs.length === 0 ? (
             <EmptyState onUpload={() => fileInputRef.current?.click()} />
           ) : view === "grid" ? (
+            <div className="space-y-3">
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-              {displayDocs.map((doc) => (
+              {displayDocs.slice(0, tarjetasVisibles).map((doc) => (
                 <DocCard
                   key={doc.id}
                   doc={doc}
@@ -2425,13 +2462,8 @@ export default function DocumentosModule() {
                   renameValue={renaming?.id === doc.id ? renaming.value : doc.name}
                   terminos={terminosBusqueda}
                   folderNombre={filterMode === "folder" ? undefined : (doc.folderId ? folderById.get(doc.folderId)?.name ?? null : null)}
-                  onOpenFolder={() => { if (doc.folderId) { setFilterMode("folder"); setActiveFolderId(doc.folderId); } }}
                   onSelect={() => toggleSelect(doc.id)}
                   onPreview={() => setPreview(doc)}
-                  onTagClick={(t) => setFiltros((f) => ({
-                    ...f,
-                    tags: f.tags.includes(t) ? f.tags.filter((x) => x !== t) : [...f.tags, t],
-                  }))}
                   tagsActivos={filtros.tags}
                   onPromoteAiTag={(t) => {
                     if (doc.tags.includes(t)) return;
@@ -2463,6 +2495,18 @@ export default function DocumentosModule() {
                   dragging={draggingDocId === doc.id}
                 />
               ))}
+            </div>
+            {displayDocs.length > tarjetasVisibles && (
+              <div className="flex justify-center">
+                <button
+                  type="button"
+                  onClick={() => setTarjetasVisibles((n) => n + 20)}
+                  className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary"
+                >
+                  Ver más <span className="tabular-nums text-[var(--text-tertiary)]">({displayDocs.length - tarjetasVisibles} restantes)</span>
+                </button>
+              </div>
+            )}
             </div>
           ) : (
             <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl overflow-hidden">
@@ -3025,12 +3069,21 @@ function FolderChip({ nombre, onClick }: { nombre: string | null; onClick?: () =
       </span>
     );
   }
+  // Sin `onClick` (las tarjetas) es un rótulo; con él (la lista), un enlace a la carpeta.
+  const cls = "inline-flex max-w-[140px] items-center gap-1 rounded-lg bg-[var(--surface-sunken)] px-1.5 py-0.5 text-[length:var(--ts-2xs,11px)] font-bold text-[var(--text-secondary)]";
+  if (!onClick) {
+    return (
+      <span title={`Carpeta "${nombre}"`} className={cls}>
+        <Folder className="h-3 w-3 shrink-0" /> <span className="truncate">{nombre}</span>
+      </span>
+    );
+  }
   return (
     <button
       type="button"
-      onClick={(e) => { e.stopPropagation(); onClick?.(); }}
+      onClick={(e) => { e.stopPropagation(); onClick(); }}
       title={`Abrir la carpeta "${nombre}"`}
-      className="inline-flex max-w-[140px] items-center gap-1 rounded-lg bg-[var(--surface-sunken)] px-1.5 py-0.5 text-[length:var(--ts-2xs,11px)] font-bold text-[var(--text-secondary)] transition hover:text-primary"
+      className={cn(cls, "transition hover:text-primary")}
     >
       <Folder className="h-3 w-3 shrink-0" /> <span className="truncate">{nombre}</span>
     </button>
@@ -3131,7 +3184,8 @@ function StatusControl({ status, onChange }: { status: string; onChange: (s: str
       <button
         ref={btnRef}
         onClick={toggle}
-        title="Estado del documento"
+        title={meta ? `Estado: ${meta.label}` : "Poner un estado"}
+        aria-label={meta ? `Estado: ${meta.label}` : "Poner un estado"}
         className={cn(
           "inline-flex items-center gap-1 rounded-lg px-1.5 py-0.5 text-[length:var(--ts-2xs,11px)] font-bold transition-colors",
           meta ? cn(meta.bg, meta.text) : "border border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)] hover:border-primary hover:text-primary"
@@ -3140,7 +3194,7 @@ function StatusControl({ status, onChange }: { status: string; onChange: (s: str
         {meta ? (
           <><span className={cn("h-2 w-2 rounded-full", meta.dot)} /> {meta.label}</>
         ) : (
-          <><Plus className="h-2.5 w-2.5" /> estado</>
+          <Plus className="h-3 w-3" aria-hidden />
         )}
       </button>
       {open && pos && (
@@ -3173,10 +3227,10 @@ function StatusControl({ status, onChange }: { status: string; onChange: (s: str
 }
 
 function DocCard({
-  doc, selected, isRenaming, renameValue, terminos, folderNombre, onOpenFolder,
+  doc, selected, isRenaming, renameValue, terminos, folderNombre,
   onSelect, onPreview, onToggleFav, onRemove, onWhatsApp, onSetStatus,
   onStartRename, onCommitRename, onCancelRename, onRenameChange, onDownload,
-  onDragStart, onDragEnd, dragging, onTagClick, tagsActivos, onPromoteAiTag,
+  onDragStart, onDragEnd, dragging, tagsActivos, onPromoteAiTag,
 }: {
   doc: DbDocument;
   selected: boolean;
@@ -3186,7 +3240,6 @@ function DocCard({
   terminos: string[];
   /** Nombre de la carpeta, null = sin carpeta, undefined = no mostrar el chip. */
   folderNombre?: string | null;
-  onOpenFolder?: () => void;
   onSelect: () => void;
   onPreview: () => void;
   onToggleFav: () => void;
@@ -3201,8 +3254,6 @@ function DocCard({
   onDragStart: (e: React.DragEvent) => void;
   onDragEnd: () => void;
   dragging: boolean;
-  /** Clic en un #tag: lo suma/saca del filtro por etiqueta sin abrir el panel. */
-  onTagClick: (tag: string) => void;
   /** Etiquetas puestas en el filtro ahora mismo — para resaltarlas si el doc las tiene. */
   tagsActivos: string[];
   /** Aceptar una etiqueta sugerida por la IA como etiqueta real del documento. */
@@ -3296,14 +3347,17 @@ function DocCard({
             className="w-full px-2 py-1 rounded-xl border-2 border-primary text-sm font-bold outline-none"
           />
         ) : (
-          <button
+          // El nombre es un dato, no un botón más: la miniatura ya abre la vista
+          // previa con teclado; acá el doble clic renombra.
+          // eslint-disable-next-line jsx-a11y/click-events-have-key-events
+          <p
             onClick={onPreview}
             onDoubleClick={(e) => { e.preventDefault(); onStartRename(); }}
-            className="text-left w-full"
-            title="Doble-click para renombrar"
+            className="w-full cursor-pointer truncate text-left text-sm font-bold text-[var(--text-primary)] transition-colors hover:text-primary"
+            title={`${doc.name}${descripcionDe(doc) ? `\n${descripcionDe(doc)!.texto}` : ""}\n(doble clic para renombrar)`}
           >
-            <p className="text-sm font-bold text-[var(--text-primary)] truncate hover:text-primary transition-colors">{doc.name}</p>
-          </button>
+            {doc.name}
+          </p>
         )}
         <div className="flex items-center justify-between mt-1 text-[length:var(--ts-2xs,11px)]">
           {/* Qué ES el archivo, no su MIME: "Hoja de cálculo · ODS" se entiende,
@@ -3316,44 +3370,50 @@ function DocCard({
         {/* De qué se trata (o por qué apareció en la búsqueda). */}
         <PorQueAparecio doc={doc} terminos={terminos} />
         <div className="mt-2 flex flex-wrap items-center gap-1.5">
-          {folderNombre !== undefined && <FolderChip nombre={folderNombre} onClick={onOpenFolder} />}
+          {folderNombre !== undefined && <FolderChip nombre={folderNombre} />}
           <StatusControl status={doc.status} onChange={onSetStatus} />
           <ExpiryBadge expiresAt={doc.expiresAt} />
           <StructuredChip doc={doc} />
         </div>
-        {(doc.tags.length > 0 || doc.aiTags.length > 0) && (
-          <div className="flex flex-wrap gap-1 mt-2">
-            {doc.tags.slice(0, 2).map((t) => (
-              <button
-                key={t}
-                onClick={(e) => { e.stopPropagation(); onTagClick(t); }}
-                title={tagsActivos.includes(t) ? `Quitar "#${t}" del filtro` : `Filtrar por "#${t}"`}
-                className={cn(
-                  "text-[length:var(--ts-2xs,11px)] px-1.5 py-0.5 rounded font-bold transition-colors",
-                  tagsActivos.includes(t)
-                    ? "bg-primary text-white"
-                    : "bg-primary/10 text-[var(--accent-ink)] hover:bg-primary/20 dark:text-[var(--accent)]",
-                )}
-              >
-                #{t}
-              </button>
-            ))}
-            {/* Ya aceptada = ahora es un tag real (arriba); no mostrarla dos veces. */}
-            {doc.aiTags.filter((t) => !doc.tags.includes(t)).slice(0, 1).map((t) => (
-              <button
-                key={`ai-${t}`}
-                onClick={(e) => { e.stopPropagation(); onPromoteAiTag(t); }}
-                title={`Sugerencia de la IA — clic para aceptarla como etiqueta`}
-                className="text-[length:var(--ts-2xs,11px)] px-1.5 py-0.5 rounded bg-violet-100 text-[var(--accent)] font-bold inline-flex items-center gap-0.5 hover:bg-violet-200"
-              >
-                <Sparkles className="h-2.5 w-2.5" />{t}
-              </button>
-            ))}
-            {doc.tags.length + doc.aiTags.length > 3 && (
-              <span className="text-[length:var(--ts-2xs,11px)] text-[var(--text-tertiary)] tabular-nums font-bold">+{doc.tags.length + doc.aiTags.length - 3}</span>
-            )}
-          </div>
-        )}
+        {(doc.tags.length > 0 || doc.aiTags.length > 0) && (() => {
+          // Una sola etiqueta a la vista (la tuya; si no hay, la sugerida por la
+          // IA) y el resto en el «+N» al pasar el mouse.
+          const sugeridas = doc.aiTags.filter((t) => !doc.tags.includes(t));
+          const primera = doc.tags[0];
+          const resto = [...doc.tags.slice(primera ? 1 : 0), ...sugeridas.slice(primera ? 0 : 1)];
+          const ia = !primera ? sugeridas[0] : undefined;
+          return (
+            <div className="mt-2 flex flex-wrap items-center gap-1">
+              {primera && (
+                <span
+                  title={`#${primera} — para filtrar por esta etiqueta usa «Filtros»`}
+                  className={cn(
+                    "max-w-full truncate text-[length:var(--ts-2xs,11px)] px-1.5 py-0.5 rounded font-bold",
+                    tagsActivos.includes(primera)
+                      ? "bg-primary text-white"
+                      : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
+                  )}
+                >
+                  #{primera}
+                </span>
+              )}
+              {ia && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onPromoteAiTag(ia); }}
+                  title="Sugerencia de la IA — clic para aceptarla como etiqueta"
+                  className="inline-flex max-w-full items-center gap-0.5 truncate rounded bg-violet-100 px-1.5 py-0.5 text-[length:var(--ts-2xs,11px)] font-bold text-[var(--accent)] hover:bg-violet-200"
+                >
+                  <Sparkles className="h-2.5 w-2.5" />{ia}
+                </button>
+              )}
+              {resto.length > 0 && (
+                <span className="cursor-help text-[length:var(--ts-2xs,11px)] font-bold tabular-nums text-[var(--text-tertiary)]" title={resto.map((t) => `#${t}`).join("  ")}>
+                  +{resto.length}
+                </span>
+              )}
+            </div>
+          );
+        })()}
       </div>
     </div>
   );

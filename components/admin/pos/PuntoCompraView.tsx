@@ -64,6 +64,7 @@ import { agruparDuplicados, decodeExpenseDescription, proximoVencimiento, summar
 import { findCategory, CATEGORY_COLOR_CLASSES } from "@/lib/expense-categories";
 import { getCategoryIcon } from "@/lib/expense-icons";
 import { formatCurrency, formatDateShort } from "@/lib/format";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 
 const DRAFT_KEY = "poc-draft";
 
@@ -975,16 +976,17 @@ export default function PuntoCompraView() {
             {needsReorderCount} a reponer
           </button>
         )}
+        {/* Reporte QA Compras 2026-08-12: acá decía "2 a reponer" y Sugerencias
+            "Nada que reponer" con los mismos datos. No es una contradicción: son
+            dos preguntas distintas; la aclaración va en el ⓘ, no en una línea. */}
+        {needsReorderCount > 0 && (
+          <InfoTip
+            title="A reponer"
+            what={<span>Cuenta los productos en o bajo el stock mínimo que fijaste.</span>}
+            example={<span>Sugerencias mira lo que se vendió estos días, así que puede darte otro número.</span>}
+          />
+        )}
       </div>
-
-      {/* Reporte QA Compras 2026-08-12: acá decía "2 a reponer" y Sugerencias
-          "Nada que reponer" con los mismos datos. No es una contradicción: son
-          dos preguntas distintas y conviene decirlo donde aparece el número. */}
-      {needsReorderCount > 0 && (
-        <p className="-mt-2 mb-3 text-xs text-[var(--text-tertiary)] text-right">
-          Contados por stock mínimo. Sugerencias mira la venta de los últimos días, así que puede darte otro número.
-        </p>
-      )}
 
       {/* Aviso reposición destacado */}
       {needsReorderCount > 5 && !soloReponer && (
@@ -1128,12 +1130,16 @@ export default function PuntoCompraView() {
             {/* El rótulo decía «Artículos para Comprar» sobre un bloque de
                 gastos fijos: combustible, internet y alquiler no son artículos,
                 y el propio subtítulo lo desmentía. */}
-            <SectionTitle as="h2" className="text-base font-extrabold text-[var(--text-primary)] truncate">
-              Gastos fijos del negocio
-            </SectionTitle>
-            <p className="text-sm text-[var(--text-secondary)]">
-              Lo que se paga todos los meses: alquiler, servicios, combustible. Toca una tarjeta para registrar el pago del período.
-            </p>
+            <div className="flex items-center gap-1.5">
+              <SectionTitle as="h2" className="text-base font-extrabold text-[var(--text-primary)] truncate">
+                Gastos fijos del negocio
+              </SectionTitle>
+              <InfoTip
+                title="Gastos fijos"
+                what={<span>Lo que se paga todos los meses: alquiler, servicios, combustible.</span>}
+                example={<span>Toca una tarjeta para registrar el pago del período.</span>}
+              />
+            </div>
           </div>
           <button
             type="button"
@@ -1175,19 +1181,24 @@ export default function PuntoCompraView() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
               {expenseDuplicados.length > 0 && (
                 <div className="col-span-full rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/10 px-3 py-2.5 text-sm">
-                  <p className="font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-                    {expenseDuplicados.length === 1
-                      ? "1 gasto está cargado más de una vez"
-                      : `${expenseDuplicados.length} gastos están cargados más de una vez`}
-                  </p>
-                  <p className="mt-0.5 text-xs text-[var(--text-secondary)]">
-                    Se muestra uno de cada uno para que no se pague dos veces:{" "}
-                    {expenseDuplicados
-                      .map((g) => decodeExpenseDescription(g.items[0].description ?? "").description)
-                      .join(", ")}
-                    . Para borrar los repetidos, usá el botón de eliminar de cada tarjeta acá mismo: el Historial de Gastos sólo
-                    lista los pagos ya registrados, no estas plantillas.
-                  </p>
+                  <div className="flex items-center gap-1.5">
+                    <p className="font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+                      {expenseDuplicados.length === 1 ? "1 gasto repetido" : `${expenseDuplicados.length} gastos repetidos`}
+                    </p>
+                    <InfoTip
+                      title="Gastos repetidos"
+                      what={
+                        <span>
+                          Se muestra uno de cada uno para que no se pague dos veces:{" "}
+                          {expenseDuplicados
+                            .map((g) => decodeExpenseDescription(g.items[0].description ?? "").description)
+                            .join(", ")}
+                          .
+                        </span>
+                      }
+                      example={<span>Para borrar los repetidos usa el botón de eliminar de cada tarjeta. El Historial de Gastos sólo lista pagos ya registrados.</span>}
+                    />
+                  </div>
                 </div>
               )}
               {expenseCatalogUnico.map((tpl) => {
@@ -1335,15 +1346,20 @@ export default function PuntoCompraView() {
 
       {/* Toggle "Mostrar inventario" */}
       <div className="flex items-center justify-between mb-3 p-3 rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-soft)]">
-        <div>
+        <div className="flex items-center gap-1.5">
           <p className="text-sm font-bold text-[var(--text-primary)]">
             Usar artículos de mi inventario
           </p>
-          <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-            {showInventario
-              ? "Mostrando productos del inventario abajo. Apaga para enfocarte solo en gastos."
-              : "Productos del inventario ocultos. Enciende para hacer compra de reposición."}
-          </p>
+          <InfoTip
+            title="Artículos del inventario"
+            what={
+              <span>
+                {showInventario
+                  ? "Mostrando los productos del inventario abajo. Apaga para enfocarte sólo en gastos."
+                  : "Los productos están ocultos. Enciende para hacer compra de reposición."}
+              </span>
+            }
+          />
         </div>
         <button
           role="switch"
@@ -1521,13 +1537,8 @@ export default function PuntoCompraView() {
               <Package className="h-8 w-8 mx-auto text-[var(--text-tertiary)] mb-2" strokeWidth={1.5} />
               <p className="text-sm font-semibold text-[var(--text-primary)]">
                 {needsReorderCount > 0
-                  ? `${needsReorderCount} producto${needsReorderCount === 1 ? "" : "s"} por debajo del stock mínimo`
-                  : "Productos de inventario ocultos"}
-              </p>
-              <p className="text-xs text-[var(--text-secondary)] mt-1 max-w-sm mx-auto">
-                {needsReorderCount > 0
-                  ? "Esta pantalla abre mostrando sólo los gastos fijos. Trae el inventario para armar la reposición."
-                  : "Esta pantalla abre mostrando sólo los gastos fijos. Trae el inventario para agregar productos al carrito."}
+                  ? `${needsReorderCount} bajo el mínimo`
+                  : "Inventario oculto"}
               </p>
               {/* Antes esto mandaba a buscar un toggle que estaba en otra parte
                   de la pantalla. La acción va acá, donde se necesita. */}

@@ -24,6 +24,7 @@ import {
 import { useCustomerPerf } from "@/hooks/use-customer-perf";
 import { pickAdvice } from "./perf-advice";
 import { formatNumber } from "@/lib/format";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 
 // ── Gauge helpers (semicírculo 180° — receta SocioCalculadora) ───────────────
 const CX = 120;
@@ -200,10 +201,10 @@ export default function PerfScoreHero() {
             </span>
             <Gauge score={primaryScore} grade={primaryGrade} />
             <p className="mt-3 text-center text-sm text-[var(--text-secondary)]">
-              {primaryGrade === "bueno" && "Tu tienda vuela — así se queda la gente comprando."}
-              {primaryGrade === "regular" && "Tu tienda carga, pero se siente la espera. Hay margen."}
-              {primaryGrade === "pobre" && "Tu tienda está lenta — cada segundo de espera son ventas que se van."}
-              {primaryGrade === "sin-dato" && "Navega un poco el panel para que junte mediciones."}
+              {primaryGrade === "bueno" && "Tu tienda vuela."}
+              {primaryGrade === "regular" && "Se siente la espera."}
+              {primaryGrade === "pobre" && "Tu tienda está lenta."}
+              {primaryGrade === "sin-dato" && "Navega el panel para medir."}
             </p>
             {/* Referencia cruzada equipo ↔ clientes */}
             <div className="mt-3 flex items-center gap-2 text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
@@ -225,14 +226,21 @@ export default function PerfScoreHero() {
 
           {/* Desglose por métrica */}
           <div>
-            <CardTitle className="text-base font-bold text-[var(--text-primary)]">
-              ¿Qué tan rápida se siente tu tienda?
-            </CardTitle>
-            <p className="mt-1 text-sm text-[var(--text-secondary)]">
-              {hasCustomerData
-                ? "Promedio real de tus clientes en los últimos 7 días."
-                : "Medido en este dispositivo, ahora mismo — como un velocímetro."}
-            </p>
+            <div className="flex items-center gap-1.5">
+              <CardTitle className="text-base font-bold text-[var(--text-primary)]">
+                ¿Qué tan rápida se siente tu tienda?
+              </CardTitle>
+              <InfoTip
+                title="Cómo se mide"
+                what={
+                  <span>
+                    {hasCustomerData
+                      ? "Promedio real de tus clientes en los últimos 7 días."
+                      : "Medido en este dispositivo, ahora mismo — como un velocímetro."}
+                  </span>
+                }
+              />
+            </div>
             <div className="mt-4 space-y-2.5">
               {METRICS.map((m) => {
                 const value = primaryVitals[m.key];
@@ -243,13 +251,15 @@ export default function PerfScoreHero() {
                     className="flex items-center justify-between gap-3 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)]/40 px-4 py-3"
                   >
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-[var(--text-primary)]">
-                        {m.label}{" "}
-                        <span className="text-[length:var(--ts-xs)] font-medium uppercase tracking-wider text-[var(--text-tertiary)]">
-                          {m.tech}
-                        </span>
-                      </p>
-                      <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">{m.explain}</p>
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-sm font-semibold text-[var(--text-primary)]">
+                          {m.label}{" "}
+                          <span className="text-[length:var(--ts-xs)] font-medium uppercase tracking-wider text-[var(--text-tertiary)]">
+                            {m.tech}
+                          </span>
+                        </p>
+                        <InfoTip title={m.label} what={<span>{m.explain}.</span>} />
+                      </div>
                     </div>
                     <div className="flex shrink-0 items-center gap-2.5">
                       <span className="text-base font-extrabold tabular-nums text-[var(--text-primary)]">
@@ -273,11 +283,11 @@ export default function PerfScoreHero() {
           <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--accent)]/15 text-[var(--accent-dark)] dark:text-[var(--accent)]">
             <Lightbulb className="h-5 w-5" strokeWidth={2} aria-hidden />
           </span>
-          <div className="min-w-0">
+          <div className="flex min-w-0 items-center gap-1.5">
             <p className="text-sm font-bold text-[var(--text-primary)]">
               Para mejorar: {advice.title}
             </p>
-            <p className="mt-1 text-sm leading-relaxed text-[var(--text-secondary)]">{advice.body}</p>
+            <InfoTip title={advice.title} what={<span>{advice.body}</span>} ancho="w-96" />
           </div>
         </div>
       )}

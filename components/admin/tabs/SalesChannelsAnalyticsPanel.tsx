@@ -9,6 +9,7 @@ import {
   Loader2,
 } from "@buleje/design-system/icons";
 import { SectionTitle } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { csrfHeaders } from "@/lib/csrf-client";
 
 /**
@@ -88,6 +89,11 @@ export default function SalesChannelsAnalyticsPanel() {
       <header className="flex items-center gap-2">
         <BarChart3 className="h-5 w-5 text-[var(--accent)]" />
         <SectionTitle as="h2" className="text-base font-extrabold text-[var(--text-primary)]">Rendimiento por canal</SectionTitle>
+        <InfoTip
+          title="Rendimiento por canal"
+          what={<span>Visitas y compras de tu tienda en los últimos 30 días, según el canal de donde llegaron.</span>}
+          example={<span>Para ver soles (S/) por canal hay que capturar el <span className="font-mono">utm_source</span> en el checkout.</span>}
+        />
       </header>
 
       {loading ? (
@@ -105,10 +111,13 @@ export default function SalesChannelsAnalyticsPanel() {
 
           {/* Breakdown por canal */}
           {rows.length === 0 ? (
-            <p className="text-sm text-[var(--text-secondary)] rounded-xl border border-dashed border-[var(--rule-base)] px-3 py-4 text-center">
-              Todavía no hay visitas etiquetadas por canal. Cuando compartas tu tienda con enlaces
-              UTM (ej. <code className="font-mono">?utm_source=tiktok</code>) vas a ver acá cuánto
-              tráfico trae cada red.
+            <p className="flex items-center justify-center gap-1.5 text-sm text-[var(--text-secondary)] rounded-xl border border-dashed border-[var(--rule-base)] px-3 py-4 text-center">
+              Aún no hay visitas por canal
+              <InfoTip
+                title="Visitas por canal"
+                what={<span>Comparte tu tienda con enlaces UTM y verás cuánto tráfico trae cada red.</span>}
+                example={<span className="font-mono">?utm_source=tiktok</span>}
+              />
             </p>
           ) : (
             <div className="space-y-2.5">
@@ -150,10 +159,6 @@ export default function SalesChannelsAnalyticsPanel() {
             </div>
           )}
 
-          <p className="text-xs text-[var(--text-tertiary)]">
-            Tráfico y conversiones de visitas a tu tienda. Para atribuir soles (S/) por canal se
-            necesita capturar el <span className="font-mono">utm_source</span> en el checkout.
-          </p>
         </>
       )}
     </section>

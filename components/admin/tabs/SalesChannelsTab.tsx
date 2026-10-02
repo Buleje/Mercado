@@ -9,7 +9,6 @@ import {
   CheckCircle2,
   Loader2,
   Save,
-  Megaphone,
   BarChart3,
   Boxes,
   Radio,
@@ -17,12 +16,12 @@ import {
   Layers,
   ShieldCheck,
   TrendingUp,
-  Sparkles,
   ShoppingBag,
   Tag,
   Share2,
 } from "@buleje/design-system/icons";
 import { SectionTitle, LoadingState } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { cn } from "@/lib/utils";
@@ -130,7 +129,6 @@ export default function SalesChannelsTab() {
           borde doble, y sin la serif del resto de las cabeceras. */}
       <AdminModuleHeader
         title="Canales de venta"
-        description="Conecta TikTok Shop, Meta (Facebook + Instagram) y Google Analytics con tus IDs de píxel o medición: los eventos y la conversión de compra se activan solos en tu tienda."
         icon={Share2}
       />
 
@@ -139,6 +137,21 @@ export default function SalesChannelsTab() {
         <StatusChip label="Meta" connected={metaConnected} />
         <StatusChip label="TikTok" connected={tiktokConnected} />
         <StatusChip label="Google Analytics" connected={gaConnected} />
+        <InfoTip
+          title="Canales de venta"
+          ancho="w-96"
+          what={<span>Conecta TikTok, Meta y Google Analytics con tus IDs: los eventos de compra se activan solos en tu tienda.</span>}
+          body={
+            <span className="block space-y-2">
+              {COMBINED.map(({ title, desc }) => (
+                <span key={title} className="block">
+                  <span className="block font-bold text-[var(--text-primary)]">{title}</span>
+                  <span className="block">{desc}</span>
+                </span>
+              ))}
+            </span>
+          }
+        />
       </div>
 
       {error && (
@@ -146,24 +159,6 @@ export default function SalesChannelsTab() {
           {error}
         </p>
       )}
-
-      {/* Beneficios combinados */}
-      <section className="rounded-2xl border-2 border-[var(--accent)] bg-primary/10 p-4">
-        <p className="flex items-center gap-2 text-sm font-extrabold text-[var(--accent)] uppercase tracking-wide">
-          <Sparkles className="h-4 w-4" /> Conectando ambos ganas
-        </p>
-        <div className="grid sm:grid-cols-2 gap-3 mt-3">
-          {COMBINED.map(({ Icon, title, desc }) => (
-            <div key={title} className="flex items-start gap-2.5">
-              <Icon className="h-5 w-5 text-[var(--accent)] shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm font-bold text-[var(--text-primary)]">{title}</p>
-                <p className="text-sm text-[var(--text-secondary)]">{desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
 
       {/* Rendimiento por canal (tráfico + conversiones desde el tracking de visitas) */}
       <SalesChannelsAnalyticsPanel />
@@ -225,6 +220,7 @@ export default function SalesChannelsTab() {
         connected={gaConnected}
         accent="var(--data-warning-500)"
         features={GA_FEATURES}
+        nota="Es el mismo ID que en Configuración → tu tienda: editarlo acá o allá es lo mismo."
       >
         <Field
           label="ID de medición (GA4)"
@@ -232,9 +228,6 @@ export default function SalesChannelsTab() {
           value={analyticsId}
           onChange={setAnalyticsId}
         />
-        <p className="text-xs text-[var(--text-tertiary)]">
-          Mismo ID que en Configuración → tu tienda. Editarlo acá o allá es lo mismo.
-        </p>
       </ChannelCard>
 
       <div className="sticky bottom-0 z-10 -mx-4 sm:-mx-6 mt-2 flex items-center gap-3 border-t-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 sm:px-6 py-3">
@@ -281,6 +274,7 @@ function ChannelCard({
   connected,
   accent,
   features,
+  nota,
   children,
 }: {
   Brand: Icon;
@@ -288,9 +282,9 @@ function ChannelCard({
   connected: boolean;
   accent: string;
   features: Feature[];
+  nota?: string;
   children: React.ReactNode;
 }) {
-  const [showFeatures, setShowFeatures] = useState(false);
   return (
     <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
       <header className="flex items-center justify-between gap-3 px-4 py-3 border-b-2 border-[var(--rule-soft)]">
@@ -302,6 +296,21 @@ function ChannelCard({
             <Brand className="h-5 w-5" />
           </span>
           <SectionTitle as="h2" className="text-base font-extrabold text-[var(--text-primary)]">{name}</SectionTitle>
+          <InfoTip
+            title={`Qué desbloquea ${name}`}
+            ancho="w-96"
+            body={
+              <span className="block space-y-2">
+                {features.map(({ title, desc }) => (
+                  <span key={title} className="block">
+                    <span className="block font-bold text-[var(--text-primary)]">{title}</span>
+                    <span className="block">{desc}</span>
+                  </span>
+                ))}
+                {nota && <span className="block border-t border-[var(--rule-soft)] pt-2">{nota}</span>}
+              </span>
+            }
+          />
         </div>
         <span
           className={cn(
@@ -318,27 +327,6 @@ function ChannelCard({
 
       <div className="p-4 space-y-3">{children}</div>
 
-      <button
-        type="button"
-        onClick={() => setShowFeatures((s) => !s)}
-        className="flex items-center gap-1.5 w-full px-4 py-2.5 border-t-2 border-[var(--rule-soft)] text-sm font-bold text-[var(--text-secondary)] hover:text-primary hover:bg-[var(--surface-sunken)]"
-      >
-        <Megaphone className="h-4 w-4" /> {showFeatures ? "Ocultar" : "Ver"} qué desbloquea este
-        canal
-      </button>
-      {showFeatures && (
-        <ul className="px-4 pb-4 pt-1 grid sm:grid-cols-2 gap-3">
-          {features.map(({ Icon, title, desc }) => (
-            <li key={title} className="flex items-start gap-2.5">
-              <Icon className="h-5 w-5 text-[var(--text-tertiary)] shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm font-bold text-[var(--text-primary)]">{title}</p>
-                <p className="text-sm text-[var(--text-secondary)]">{desc}</p>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
     </section>
   );
 }

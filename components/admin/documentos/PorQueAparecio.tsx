@@ -45,7 +45,10 @@ export default function PorQueAparecio({ doc, terminos, variante = "grid" }: Pro
     );
   }
 
-  // Sin búsqueda (o coincidió en el nombre): de qué se trata.
+  // Sin búsqueda (o coincidió en el nombre): de qué se trata. En las tarjetas
+  // no se pinta (es un párrafo por tarjeta): sale al pasar el mouse sobre el
+  // nombre — Brandon 2026-10-01, «evita textos largos».
+  if (variante === "grid") return null;
   const desc = descripcionDe(doc);
   if (!desc) return null;
   const Icono = desc.fuente === "usuario" ? User : Sparkles;
