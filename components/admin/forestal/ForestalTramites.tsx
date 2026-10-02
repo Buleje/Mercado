@@ -16,6 +16,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertCircle, Building2, CalendarClock, FileText, Inbox, Stamp, TreePine } from "@buleje/design-system/icons";
 import LibroChrome, { type LibroGroup } from "@/components/admin/shared/libro-chrome";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import ContratoActivoChip from "@/components/admin/forestal/ContratoActivoChip";
 import { useForestTramites } from "@/hooks/use-forest-tramites";
 import { useForestPlantaciones } from "@/hooks/use-forest-plantaciones";
@@ -233,7 +234,6 @@ export default function ForestalTramites() {
               : t.diasRestantes === 0
                 ? "vence hoy"
                 : `vence en ${t.diasRestantes} ${t.diasRestantes === 1 ? "día" : "días"}`}
-            . Toca para abrirlo.
           </span>
         </button>
       ))}
@@ -252,7 +252,6 @@ export default function ForestalTramites() {
             {plantacionesListas.length === 1
               ? <><strong>{plantacionesListas[0].codigoInterno}</strong> está lista para presentar ante SERFOR</>
               : <><strong>{plantacionesListas.length} registros de plantación</strong> están listos para presentar ante SERFOR</>}
-            . Toca para abrir Plantaciones.
           </span>
         </button>
       )}
@@ -260,13 +259,16 @@ export default function ForestalTramites() {
       {/* Sin membrete la autoridad observa el documento: se avisa una vez, arriba
           del catálogo, y no en cada formato. */}
       {vista === "catalogo" && !formato && fichaFloja && (
-        <p className="flex items-start gap-3 rounded-2xl border-2 border-[var(--data-warning-500)]/50 bg-[var(--data-warning-50)] p-4 text-sm text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
-          <Building2 className="mt-0.5 h-5 w-5 shrink-0" />
+        <div className="flex items-center gap-3 rounded-2xl border-2 border-[var(--data-warning-500)]/50 bg-[var(--data-warning-50)] p-3 text-sm text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
+          <Building2 className="h-5 w-5 shrink-0" />
           <span>
-            La <strong>Ficha CTP</strong> está incompleta: sin razón social, RUC y Código de CTP los documentos
-            salen sin membrete y la autoridad los observa. Completala en el Libro CTP → Ficha CTP.
+            <strong>Ficha CTP incompleta</strong>: los documentos saldrán sin membrete.
           </span>
-        </p>
+          <InfoTip
+            title="Ficha CTP incompleta"
+            what="Sin razón social, RUC y Código de CTP, la autoridad observa los documentos. Complétala en Libro CTP → Ficha CTP."
+          />
+        </div>
       )}
 
       {/* Plazo vencido (ADR-364 ronda 4): el siguiente tramo de un formato con
@@ -280,8 +282,8 @@ export default function ForestalTramites() {
         >
           <CalendarClock className="mt-0.5 h-5 w-5 shrink-0" />
           <span>
-            <strong>{f.nombre}</strong>: la última {aviso.numeroDocumento ? `(N° ${aviso.numeroDocumento}) ` : ""}
-            cubrió hasta el {aviso.periodoHasta} — pasaron {aviso.dias} días sin declarar el siguiente tramo. Toca para abrirlo.
+            <strong>{f.nombre}</strong>: {aviso.dias} días sin declarar el siguiente tramo
+            <span className="font-normal"> (la última {aviso.numeroDocumento ? `N° ${aviso.numeroDocumento} ` : ""}llegó hasta el {aviso.periodoHasta})</span>
           </span>
         </button>
       ))}

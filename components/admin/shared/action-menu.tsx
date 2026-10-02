@@ -468,9 +468,13 @@ export default function ActionMenu({
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-haspopup="menu"
-        /* Sin `aria-label`: el nombre accesible sale del texto visible (que en
-           móvil queda `sr-only`, no oculto). Poner uno acá rompe el control por
-           voz cuando el label cambia con el estado. */
+        /* Con texto visible (o `sr-only` en móvil) el nombre accesible sale de
+           ese texto: poner `aria-label` rompería el control por voz cuando el
+           label cambia con el estado. Sólo en `soloIcono` NO hay texto, y el
+           nombre va en `aria-label` (el mismo, y también sigue al estado):
+           un `sr-only` ahí sumaba 14 «botones con texto» a una tabla de 14
+           filas en la medición del orden del panel (2026-10-01). */
+        aria-label={soloIcono ? (busy ? "Generando…" : label) : undefined}
         className={`inline-flex shrink-0 items-center justify-center gap-2 font-bold transition disabled:opacity-60 ${ALTO[size]} ${RADIO[size]} ${piel} ${
           size === "xs" ? "gap-1.5 px-2 text-xs" : "px-4"
         } ${variant === "primary" ? "text-base" : size === "xs" ? "" : "text-sm"} ${
@@ -479,7 +483,7 @@ export default function ActionMenu({
         } ${className}`}
       >
         {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <BotonIcono className="h-4 w-4 shrink-0" />}
-        <span className={soloIcono ? "sr-only" : compactoEnMovil ? "max-sm:sr-only" : ""}>{busy ? "Generando…" : label}</span>
+        {!soloIcono && <span className={compactoEnMovil ? "max-sm:sr-only" : ""}>{busy ? "Generando…" : label}</span>}
         {badge != null && badge > 0 && (
           <span
             className={`rounded-full px-1.5 text-xs font-bold tabular-nums ${

@@ -1073,18 +1073,16 @@ export default function CtpIngresosView({
           <ChipRecepcion activo={recepcionSel === ""} onClick={() => setRecepcionSel("")}>
             Todas las del período
           </ChipRecepcion>
-          {/* El detalle va como tooltip: explicaba en un renglón entero lo que
-              el propio chip ya dice, y ese renglón se paga en TODAS las cargas. */}
-          <span
-            className="text-sm text-[var(--text-tertiary)]"
-            title={
+          {/* El detalle va en un ⓘ: explicaba en un renglón entero lo que el
+              propio chip ya dice, y ese renglón se paga en TODAS las cargas. */}
+          <InfoTip
+            title={recepcionSel === "pendiente" ? "Por recepcionar" : "Todas las del período"}
+            what={
               recepcionSel === "pendiente"
-                ? "Al recepcionarlas pasan a «GTF ingresadas» y sus piezas quedan disponibles para la sierra."
-                : "Incluye las ya recepcionadas."
+                ? "Guías que llegaron y falta recibirlas. Al recepcionarlas pasan a «GTF ingresadas» y sus piezas quedan disponibles para la sierra."
+                : "Incluye también las ya recepcionadas."
             }
-          >
-            {recepcionSel === "pendiente" ? "Llegaron y falta recibirlas." : "También las ya recepcionadas."}
-          </span>
+          />
         </div>
       )}
 

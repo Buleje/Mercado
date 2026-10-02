@@ -107,6 +107,9 @@ const TONO_FRANJA: Record<string, string> = {
 /** El que se pide una y otra vez: se lleva la pieza héroe. */
 const DESTACADO = "visado-talonario-gtf";
 
+/** Cuatro por fila cuando hay ancho: cada card es sólo ícono + nombre. */
+const GRILLA = "grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4";
+
 /** Orden de los grupos: el que más trabajo genera primero. */
 const ORDEN_AUTORIDAD: AutoridadTramite[] = ["arffs", "serfor", "osinfor", "otra"];
 
@@ -133,7 +136,11 @@ export default function TramitesCatalogo({
   onAbrirPlantaciones: () => void;
 }) {
   const [busqueda, setBusqueda] = useState("");
-  const [autoridadFiltro, setAutoridadFiltro] = useState<AutoridadTramite | "todas">("todas");
+  /** Qué autoridades se ven: la que más trabajo genera arranca abierta y las
+   *  otras se abren con su chip (ley de la vista: lo secundario, plegado). */
+  const [abiertas, setAbiertas] = useState<AutoridadTramite[]>(["arffs"]);
+  const alternar = (aut: AutoridadTramite) =>
+    setAbiertas((a) => (a.includes(aut) ? a.filter((x) => x !== aut) : [...a, aut]));
   const usados = (id: string) => tramites.filter((t) => t.formatoId === id).length;
   const destacado = FORMATOS_TRAMITE.find((f) => f.id === DESTACADO);
   const resto = FORMATOS_TRAMITE.filter((f) => f.id !== DESTACADO);
@@ -149,10 +156,8 @@ export default function TramitesCatalogo({
    * inicio de aprovechamiento" aunque el operador tipee sin acento.
    */
   const q = sinTildes(busqueda.trim());
-  const matches = (f: FormatoTramite) =>
-    (autoridadFiltro === "todas" || f.autoridad === autoridadFiltro) &&
-    (!q || sinTildes(f.nombre).includes(q) || sinTildes(f.proposito).includes(q));
-  const activo = q !== "" || autoridadFiltro !== "todas";
+  const matches = (f: FormatoTramite) => sinTildes(f.nombre).includes(q) || sinTildes(f.proposito).includes(q);
+  const activo = q !== "";
   const resultados = activo ? FORMATOS_TRAMITE.filter(matches) : [];
 
   return (
@@ -178,14 +183,16 @@ export default function TramitesCatalogo({
           )}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <FiltroChip label="Todas" activo={autoridadFiltro === "todas"} onClick={() => setAutoridadFiltro("todas")} />
           {ORDEN_AUTORIDAD.map((aut) => (
             <FiltroChip
               key={aut}
-              label={AUTORIDADES[aut].corto}
+              label={`${AUTORIDADES[aut].corto} · ${FORMATOS_TRAMITE.filter((f) => f.autoridad === aut).length}`}
               tono={AUTORIDADES[aut].tono}
-              activo={autoridadFiltro === aut}
-              onClick={() => setAutoridadFiltro(autoridadFiltro === aut ? "todas" : aut)}
+              activo={abiertas.includes(aut) && !activo}
+              onClick={() => {
+                setBusqueda("");
+                alternar(aut);
+              }}
             />
           ))}
         </div>
@@ -196,10 +203,10 @@ export default function TramitesCatalogo({
           <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-[var(--rule-base)] py-10 text-center">
             <Search className="h-8 w-8 text-[var(--text-tertiary)]" aria-hidden="true" />
             <p className="font-bold text-[var(--text-primary)]">Ningún formato coincide</p>
-            <p className="text-sm text-[var(--text-tertiary)]">Prueba con otra palabra o quita el filtro de autoridad.</p>
+            <p className="text-sm text-[var(--text-tertiary)]">Prueba con otra palabra.</p>
           </div>
         ) : (
-          <motion.div variants={staggerContainer} initial="hidden" animate="show" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <motion.div variants={staggerContainer} initial="hidden" animate="show" className={GRILLA}>
             {resultados.map((f) => (
               <motion.div key={f.id} variants={staggerChild}>
                 <Card formato={f} usados={usados(f.id)} onElegir={onElegir} />
@@ -209,11 +216,13 @@ export default function TramitesCatalogo({
         )
       ) : (
         <>
-          <RegistroPlantacionCard onClick={onAbrirPlantaciones} />
-
-          {destacado && <Hero formato={destacado} usados={usados(destacado.id)} onElegir={onElegir} />}
+          <div className="grid gap-3 lg:grid-cols-2">
+            {destacado && <Hero formato={destacado} usados={usados(destacado.id)} onElegir={onElegir} />}
+            <RegistroPlantacionCard onClick={onAbrirPlantaciones} />
+          </div>
 
           {ORDEN_AUTORIDAD.map((aut) => {
+            if (!abiertas.includes(aut)) return null;
             const grupo = resto.filter((f) => f.autoridad === aut);
             if (grupo.length === 0) return null;
             const meta = AUTORIDADES[aut];
@@ -229,13 +238,13 @@ export default function TramitesCatalogo({
                   variants={staggerContainer}
                   initial="hidden"
                   animate="show"
-                  className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3"
+                  className={GRILLA}
                 >
                   {grupo.map((f) => (
                     // Un grupo de una sola card en una grilla de tres deja dos huecos
                     // que se leen como "falta algo": esa card se estira y pasa a
                     // horizontal. Se ve elegida, no sobrante.
-                    <motion.div key={f.id} variants={staggerChild} className={grupo.length === 1 ? "sm:col-span-2 xl:col-span-3" : ""}>
+                    <motion.div key={f.id} variants={staggerChild} className={grupo.length === 1 ? "col-span-full" : ""}>
                       <Card formato={f} usados={usados(f.id)} onElegir={onElegir} ancha={grupo.length === 1} />
                     </motion.div>
                   ))}
@@ -317,6 +326,9 @@ function FiltroChip({
   );
 }
 
+/** El ⓘ sobre fondos de color: mismo ícono, en blanco. */
+const TIP_SOBRE_COLOR = "[&>button]:text-white/90 [&>button:hover]:bg-white/15 [&>button:hover]:text-white";
+
 /** Pieza héroe: gradiente firma + greca amazónica + el ícono grande. */
 function Hero({
   formato,
@@ -329,50 +341,51 @@ function Hero({
 }) {
   const Icono = iconoDe(formato.id);
   return (
-    <button
-      type="button"
-      onClick={() => onElegir(formato.id)}
-      className="group relative w-full overflow-hidden rounded-2xl p-6 text-left text-white shadow-[var(--shadow-md)] transition-shadow hover:shadow-[var(--shadow-lg)] sm:p-7"
-      style={{
-        background:
-          "linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 55%, #0d3b3b 100%)",
-      }}
-    >
-      {/* Greca shipiba: identidad de la casa, decorativa. */}
-      <svg aria-hidden="true" className="pointer-events-none absolute inset-0 h-full w-full opacity-[0.13]">
-        <defs>
-          <pattern id="greca-tramites" width="26" height="26" patternUnits="userSpaceOnUse">
-            <path d="M0 13h6v-6h7v6h6v7h-6v6H6v-6H0z" fill="none" stroke="white" strokeWidth="1.1" />
-          </pattern>
-        </defs>
-        <rect width="100%" height="100%" fill="url(#greca-tramites)" />
-      </svg>
-      {/* Brillo diagonal que barre al hover. */}
-      <span
-        aria-hidden="true"
-        className="pointer-events-none absolute -inset-y-10 -left-1/4 w-1/3 rotate-12 bg-linear-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-[320%]"
-      />
-
-      <div className="relative flex flex-wrap items-start justify-between gap-5">
-        <div className="min-w-0 max-w-xl">
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => onElegir(formato.id)}
+        className="group relative flex h-full w-full items-center justify-between gap-4 overflow-hidden rounded-2xl p-5 pr-12 text-left text-white shadow-[var(--shadow-md)] transition-shadow hover:shadow-[var(--shadow-lg)]"
+        style={{
+          background:
+            "linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 55%, #0d3b3b 100%)",
+        }}
+      >
+        {/* Greca shipiba: identidad de la casa, decorativa. */}
+        <svg aria-hidden="true" className="pointer-events-none absolute inset-0 h-full w-full opacity-[0.13]">
+          <defs>
+            <pattern id="greca-tramites" width="26" height="26" patternUnits="userSpaceOnUse">
+              <path d="M0 13h6v-6h7v6h6v7h-6v6H6v-6H0z" fill="none" stroke="white" strokeWidth="1.1" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#greca-tramites)" />
+        </svg>
+        {/* Brillo diagonal que barre al hover. */}
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute -inset-y-10 -left-1/4 w-1/3 rotate-12 bg-linear-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-[320%]"
+        />
+        <span className="relative min-w-0">
           <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide">
             El más pedido · {AUTORIDADES[formato.autoridad].corto}
           </span>
-          <SectionTitle as="h2" className="mt-3 text-3xl font-bold leading-tight tracking-tight">{formato.nombre}</SectionTitle>
-          <p className="mt-2 text-base text-white/85">{formato.proposito}</p>
-          <p className="mt-4 inline-flex items-center gap-2 text-sm font-bold">
+          <SectionTitle as="h2" className="mt-2 text-2xl font-bold leading-tight tracking-tight text-white!">{formato.nombre}</SectionTitle>
+          <span className="mt-2 inline-flex items-center gap-2 text-sm font-bold">
             Llenar y presentar
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-          </p>
-          {usados > 0 && (
-            <p className="mt-1 text-xs text-white/70">
-              {usados} {usados === 1 ? "presentado" : "presentados"} desde este módulo
-            </p>
-          )}
-        </div>
-        <Icono className="h-20 w-20 shrink-0 text-white/95 drop-shadow transition-transform group-hover:scale-110" aria-hidden="true" />
-      </div>
-    </button>
+            {usados > 0 && (
+              <span className="text-xs font-normal text-white/75">
+                · {usados} {usados === 1 ? "presentado" : "presentados"}
+              </span>
+            )}
+          </span>
+        </span>
+        <Icono className="relative h-14 w-14 shrink-0 text-white/95 drop-shadow transition-transform group-hover:scale-110" aria-hidden="true" />
+      </button>
+      <span className={`absolute right-2 top-2 ${TIP_SOBRE_COLOR}`}>
+        <InfoTip title={formato.nombre} what={formato.proposito} />
+      </span>
+    </div>
   );
 }
 
@@ -380,33 +393,37 @@ function Hero({
  * Registro de Plantación Forestal (RNPF) — la tarjeta de entrada al módulo
  * nuevo (ADR-380). No es una card más del grid de oficios: es un trámite
  * distinto (ficha estructurada, no una carta), así que lleva su propio look
- * — mismo lenguaje visual que el Hero, tono verde vivero en vez del teal de
- * marca, para que se distinga de un vistazo de "esto es SOLICITAR algo" vs
- * "esto es REGISTRAR una plantación entera".
+ * — tono verde vivero en vez del teal de marca, para que se distinga de un
+ * vistazo de "esto es SOLICITAR algo" vs "esto es REGISTRAR una plantación".
  */
 function RegistroPlantacionCard({ onClick }: { onClick: () => void }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="group flex w-full items-center gap-4 rounded-2xl border-2 border-[var(--data-success-500)]/40 bg-[var(--data-success-50)] p-5 text-left transition-all hover:-translate-y-0.5 hover:border-[var(--data-success-500)] hover:shadow-[var(--shadow-md)] dark:bg-[var(--data-success-500)]/10"
-    >
-      <span className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[var(--data-success-500)]/15 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
-        <TreePine className="h-7 w-7" aria-hidden="true" />
+    <div className="relative">
+      <button
+        type="button"
+        onClick={onClick}
+        className="group flex h-full w-full items-center gap-4 rounded-2xl border-2 border-[var(--data-success-500)]/40 bg-[var(--data-success-50)] p-5 pr-12 text-left transition-all hover:-translate-y-0.5 hover:border-[var(--data-success-500)] hover:shadow-[var(--shadow-md)] dark:bg-[var(--data-success-500)]/10"
+      >
+        <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--data-success-500)]/15 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
+          <TreePine className="h-6 w-6" aria-hidden="true" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="inline-flex items-center gap-2 rounded-full bg-[var(--data-success-500)]/15 px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
+            Registro Nacional · SERFOR
+          </span>
+          <span className="mt-1.5 block text-xl font-bold leading-snug tracking-tight text-[var(--text-primary)]">
+            Registro de Plantación Forestal
+          </span>
+        </span>
+        <ArrowRight className="h-5 w-5 shrink-0 text-[var(--data-success-700)] transition-transform group-hover:translate-x-1 dark:text-[var(--data-success-500)]" aria-hidden="true" />
+      </button>
+      <span className="absolute right-2 top-2">
+        <InfoTip
+          title="Registro de Plantación Forestal"
+          what="Inscripción o actualización ante SERFOR: titular, predio, bloques y especies, hasta generar el Formato Nº 01 del Registro Nacional de Plantaciones Forestales."
+        />
       </span>
-      <span className="min-w-0 flex-1">
-        <span className="inline-flex items-center gap-2 rounded-full bg-[var(--data-success-500)]/15 px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
-          Registro Nacional de Plantaciones Forestales
-        </span>
-        <span className="mt-1.5 block text-2xl font-bold leading-snug tracking-tight text-[var(--text-primary)]">
-          Registro de Plantación Forestal
-        </span>
-        <span className="mt-1 block text-sm text-[var(--text-secondary)]">
-          Inscripción o actualización ante SERFOR — titular, predio, bloques y especies, hasta generar el Formato Nº 01.
-        </span>
-      </span>
-      <ArrowRight className="h-5 w-5 shrink-0 text-[var(--data-success-700)] transition-transform group-hover:translate-x-1 dark:text-[var(--data-success-500)]" aria-hidden="true" />
-    </button>
+    </div>
   );
 }
 
@@ -419,49 +436,38 @@ function Card({
   formato: FormatoTramite;
   usados: number;
   onElegir: (id: string) => void;
-  /** Única del grupo: ocupa la fila y se acomoda en horizontal. */
+  /** Única del grupo: ocupa la fila. */
   ancha?: boolean;
 }) {
   const Icono = iconoDe(formato.id);
   const tono = AUTORIDADES[formato.autoridad].tono;
-  const pie = (
-    <>
-      {formato.campos.length} campos
-      {usados > 0 ? ` · ${usados} presentado${usados === 1 ? "" : "s"}` : ""}
-    </>
-  );
   const base =
-    `group relative w-full overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 text-left transition-all before:absolute before:inset-x-0 before:top-0 before:h-1 before:content-[''] hover:-translate-y-0.5 hover:border-[var(--accent)] hover:shadow-[var(--shadow-md)] ${TONO_FRANJA[tono]}`;
-
-  if (ancha) {
-    return (
-      <button type="button" onClick={() => onElegir(formato.id)} className={`${base} flex items-center gap-4`}>
-        <span className={`inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-transform group-hover:scale-105 ${TONO_ICONO[tono]}`}>
-          <Icono className="h-6 w-6" aria-hidden="true" />
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block text-xl font-bold leading-snug tracking-tight text-[var(--text-primary)]">{formato.nombre}</span>
-          <span className="block text-sm text-[var(--text-secondary)]">{formato.proposito}</span>
-        </span>
-        <span className="hidden shrink-0 items-center gap-3 text-xs text-[var(--text-tertiary)] sm:flex">
-          <span>{pie}</span>
-          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-        </span>
-      </button>
-    );
-  }
+    `group relative w-full overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 pr-9 text-left transition-all before:absolute before:inset-x-0 before:top-0 before:h-1 before:content-[''] hover:-translate-y-0.5 hover:border-[var(--accent)] hover:shadow-[var(--shadow-md)] ${TONO_FRANJA[tono]}`;
 
   return (
-    <button type="button" onClick={() => onElegir(formato.id)} className={`${base} flex h-full flex-col items-start gap-3`}>
-      <span className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-transform group-hover:scale-105 ${TONO_ICONO[tono]}`}>
-        <Icono className="h-5 w-5" aria-hidden="true" />
+    <div className="relative h-full">
+      <button type="button" onClick={() => onElegir(formato.id)} className={`${base} flex h-full flex-col justify-between gap-2 pt-4`}>
+        <span className="flex items-start gap-3">
+          <span className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-transform group-hover:scale-105 ${TONO_ICONO[tono]}`}>
+            <Icono className="h-5 w-5" aria-hidden="true" />
+          </span>
+          <span className="text-sm font-bold leading-snug text-[var(--text-primary)]">{formato.nombre}</span>
+        </span>
+        {usados > 0 && (
+          <span className="pl-12 text-xs text-[var(--text-tertiary)]">
+            {usados} presentado{usados === 1 ? "" : "s"}
+          </span>
+        )}
+      </button>
+      {/* El «para qué sirve» y el N° de campos van al ⓘ: 22 cards con 2 líneas de texto cada una era la pantalla entera. */}
+      <span className="absolute right-1 top-3">
+        <InfoTip
+          title={formato.nombre}
+          what={formato.proposito}
+          example={`${formato.campos.length} campos por llenar.`}
+          side={ancha ? "left" : "right"}
+        />
       </span>
-      <span className="text-xl font-bold leading-snug tracking-tight text-[var(--text-primary)]">{formato.nombre}</span>
-      <span className="text-sm text-[var(--text-secondary)]">{formato.proposito}</span>
-      <span className="mt-auto flex w-full items-center justify-between pt-2 text-xs text-[var(--text-tertiary)]">
-        <span>{pie}</span>
-        <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-      </span>
-    </button>
+    </div>
   );
 }

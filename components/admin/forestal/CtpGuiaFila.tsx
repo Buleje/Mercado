@@ -478,7 +478,7 @@ export default function FilaGuia({
           ) : (
             <div className="flex items-center justify-end gap-1">
               {/* La FICHA es donde se revisa y se recibe (ADR-350): queda visible. */}
-              <BotonGuia icon={Eye} texto="Ficha" title="Ficha de la guía: casilleros, asientos, piezas y recepción" onClick={() => onVerFicha(guia)} />
+              <BotonGuia icon={Eye} texto="Ficha" soloIcono title="Ficha de la guía: casilleros, asientos, piezas y recepción" onClick={() => onVerFicha(guia)} />
               {faltaRecibir ? (
                 <BotonGuia
                   icon={PackageCheck}
@@ -686,6 +686,7 @@ function BotonGuia({
   disabled,
   tono = "neutro",
   title,
+  soloIcono = false,
 }: {
   icon: typeof PackageCheck;
   texto: string;
@@ -694,6 +695,9 @@ function BotonGuia({
   tono?: "neutro" | "accion";
   /** Qué hace de verdad, cuando el texto del botón no alcanza para decirlo. */
   title?: string;
+  /** Sólo el ícono, con su texto en el tooltip y en `aria-label`: la acción
+   *  que se repite en cada fila no suma una palabra por fila (2026-10-01). */
+  soloIcono?: boolean;
 }) {
   return (
     <button
@@ -701,14 +705,15 @@ function BotonGuia({
       onClick={onClick}
       disabled={disabled}
       title={title ?? texto}
-      className={`inline-flex h-8 shrink-0 items-center gap-1 whitespace-nowrap rounded-lg px-1.5 text-xs font-bold transition-colors disabled:opacity-40 ${
+      aria-label={soloIcono ? texto : undefined}
+      className={`inline-flex h-8 shrink-0 items-center justify-center gap-1 whitespace-nowrap rounded-lg ${soloIcono ? "w-8" : "px-1.5"} text-xs font-bold transition-colors disabled:opacity-40 ${
         tono === "accion"
           ? "border-2 border-[var(--accent-dark)] bg-[var(--accent-dark)] text-white hover:opacity-90"
           : "border border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
       }`}
     >
-      <Icon className="h-3.5 w-3.5" aria-hidden />
-      {texto}
+      <Icon className={soloIcono ? "h-4 w-4" : "h-3.5 w-3.5"} aria-hidden />
+      {!soloIcono && texto}
     </button>
   );
 }

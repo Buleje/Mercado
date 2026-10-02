@@ -235,9 +235,9 @@ export default function CtpIngresosKpis({
       key: "pendientes",
       valor: nf(stats.byStatus.pendiente),
       label: "por validar",
-      hint: statusFilter === "pendiente" ? "filtrando por estos" : "no computan como existencia",
+      hint: statusFilter === "pendiente" ? "filtrando por estos" : undefined,
       tono: "warning",
-      title: "Ingresos cargados que todavía no entraron al saldo. Toca para ver sólo estos.",
+      title: "Por validar: ingresos cargados que todavía no entraron al saldo (no computan como existencia). Toca para ver sólo estos.",
       onClick: () => onStatus(statusFilter === "pendiente" ? "" : "pendiente"),
     });
   }
@@ -246,7 +246,7 @@ export default function CtpIngresosKpis({
       key: "plazo",
       valor: nf(stats.lateCount),
       label: "fuera de plazo",
-      hint: lateOn ? "filtrando por estos" : "registro tardío",
+      hint: lateOn ? "filtrando por estos" : undefined,
       tono: "warning",
       title: `Se registraron después de los ${PLAZO_REGISTRO_DIAS} días hábiles que pide la RDE D000025-2023`,
       onClick: onLate,
@@ -257,9 +257,9 @@ export default function CtpIngresosKpis({
       key: "sin-origen",
       valor: nf(stats.sinOrigenCount),
       label: "sin código de origen",
-      hint: sinOrigenOn ? "filtrando por estos" : "sin parcela, EUDR queda inerte",
+      hint: sinOrigenOn ? "filtrando por estos" : undefined,
       tono: "error",
-      title: "Sin código de origen no se puede armar la trazabilidad EUDR",
+      title: "Sin código de origen (sin parcela) no se puede armar la trazabilidad y el EUDR queda inerte. Toca para ver sólo estos.",
       onClick: onSinOrigen,
     });
   }
@@ -273,9 +273,9 @@ export default function CtpIngresosKpis({
       label: "sin costo",
       hint: sinCostoOn
         ? "filtrando por estos"
-        : `${Number(stats.sinCostoM3 ?? 0).toFixed(2)} m³ sin valorizar`,
+        : `${Number(stats.sinCostoM3 ?? 0).toFixed(2)} m³`,
       tono: "warning",
-      title: "Sin costo cargado, el margen de lo que salga de esta madera no se puede calcular. Toca para ver sólo estos.",
+      title: "Sin costo: sin valorizar esa madera, el margen de lo que salga de esta madera no se puede calcular. Toca para ver sólo estos.",
       onClick: onSinCosto,
     });
   }
