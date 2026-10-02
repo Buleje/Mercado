@@ -37,7 +37,7 @@ export function MiniCartSummary({ items, finalTotal }: MiniCartSummaryProps) {
           />
         </svg>
       </summary>
-      <div className="mt-1.5 max-h-32 overflow-y-auto rounded-lg border border-[var(--rule-base)] divide-y divide-gray-50 dark:divide-card-border">
+      <div className="mt-1.5 max-h-32 overflow-y-auto rounded-lg border border-[var(--rule-base)] divide-y divide-gray-50 dark:divide-[var(--rule-soft)]">
         {items.map((item) => (
           <div
             key={item.id}
@@ -46,7 +46,7 @@ export function MiniCartSummary({ items, finalTotal }: MiniCartSummaryProps) {
             <span className="text-gray-700 dark:text-[var(--text-primary)] truncate flex-1 min-w-0">
               {item.quantity}× {item.name}
             </span>
-            <span className="text-gray-500 font-semibold ml-2 shrink-0">
+            <span className="text-gray-500 dark:text-[var(--text-secondary)] font-semibold ml-2 shrink-0">
               {formatCurrency(item.price * item.quantity)}
             </span>
           </div>

@@ -21,8 +21,16 @@ La misma pieza **viste toda la tienda del negocio**, no sólo la portada:
   abajo), la grilla con las mismas tarjetas, los servicios para reservar por WhatsApp y los beneficios.
   Todo el estado va en la URL: `?q=` `?categoria=` `?oferta=1` `?orden=` (destacados · precio-asc ·
   precio-desc · descuento · nuevos) `?marca=` `?disponibles=1` (`filtros.ts`; lo inválido vuelve al defecto).
-- Si el marco falla, se ve el encabezado y el pie generales; si el catálogo falla, recarga con
-  `?sinPiezas=1` y se ve el catálogo general.
+- **Ficha propia** (`Ficha.tsx`, `/t/<negocio>/tienda/<producto>`): migas del salón (Inicio / categoría /
+  producto), la foto sobre el rubor de las tarjetas, marca en versalitas, nombre en serif, precio con el
+  «antes» tachado y el % del historial («Ahorras S/ …»), existencias, cantidad + «Agregar a la bolsa» (la
+  bolsa del marco: se abre al agregar) y «Pregunta por WhatsApp», beneficios, «Cómo usarlo» (pasos por
+  categoría) y «Completa tu rutina» (misma línea, lo que completa primero). Un **servicio** no va a la
+  bolsa: «Reservar por WhatsApp», «Así reservas» y los otros servicios. Un producto que no es del salón
+  (la bodega de `main`), oculto o que no existe → «No encontramos este producto» dentro del marco, con
+  título de no encontrado y sin indexar (`metadatosFicha`). JSON-LD de producto (o servicio) y de migas.
+- Si el marco falla, se ve el encabezado y el pie generales; si el catálogo o la ficha fallan, recargan con
+  `?sinPiezas=1` y se ve el general.
 
 ## Archivos
 | Archivo | Qué es |
@@ -31,11 +39,13 @@ La misma pieza **viste toda la tienda del negocio**, no sólo la portada:
 | `PaginaSalon.tsx` | arma las secciones de la portada + JSON-LD `HairSalon` + esqueleto de carga |
 | `Marco.tsx` | el marco del resto de la tienda: tema, encabezado (con su esqueleto), pie y bolsa |
 | `Catalogo.tsx` · `CatalogoCliente.tsx` | el catálogo propio: lectura en el servidor, filtrar/ordenar al instante en el navegador |
+| `Ficha.tsx` · `FichaPartes.tsx` · `FichaExtras.tsx` · `Comprar.tsx` · `rutina.ts` | la ficha propia: lectura y JSON-LD; migas, foto, resumen y beneficios; pasos, rutina, «no lo encontramos» y esqueleto; cantidad + agregar (cliente); qué producto pide la URL y qué va al lado |
 | `Pildoras.tsx` · `Controles.tsx` · `FranjaServicios.tsx` | píldoras de categoría y «filtrando por», ordenar/filtrar (hoja en el celular), servicios del catálogo |
 | `filtros.ts` | los filtros de la URL: leer (Zod), escribir, buscar sin tildes («queratina» = «keratina»), ordenar y contar |
+| `anuncios-ficha.ts` | lo que cambia el dueño en la ficha: los pasos de «Cómo usarlo» por categoría, cómo se reserva un servicio y sus beneficios |
 | `anuncios.ts` | **lo que cambia el dueño sin tocar componentes**: franja, portada, promos, líneas, banner, beneficios, categorías (con su bajada del catálogo), búsquedas sugeridas |
 | `datos.ts` | lecturas por DB classes con `ctx.tenantId`: `cargarMarco` (liviana: ajustes y categorías) y `cargarVitrina` (productos, visibilidad, historial de precios) |
-| `tema.ts` | paleta (`--bb-*`) y tokens del DS re-teñidos, claro y oscuro, en dos niveles; única fuente de color |
+| `tema.ts` | paleta (`--bb-*`) y tokens del DS re-teñidos, claro y oscuro, en dos niveles; única fuente de color. En oscuro, el TEXTO con el acento (clases y `style` en línea de la cuenta, legales y checkout) pasa a la tinta `--accent-ink`: el acento queda para fondos con texto blanco |
 | `destinos.ts` | a dónde lleva cada botón (catálogo y sus filtros, secciones de la portada, WhatsApp, bolsa) |
 | `Encabezado` · `CampoBuscar` · `FranjaAnuncio` · `Portada` · `Promos` · `Colecciones` · `Salon` · `Categorias` · `Pie` | secciones |
 | `TarjetaProducto` · `BotonAgregar` · `Carril` · `Bolsa` · `Cajon` · `estado-bolsa` · `Suscripcion` · `ui` | piezas chicas |

@@ -8,6 +8,7 @@
  */
 import { formatCurrency } from "@/lib/currency";
 import type { Destino } from "./anuncios";
+import type { ProductoSalon } from "./datos";
 
 export function rutas(slug: string) {
   const base = `/t/${encodeURIComponent(slug)}`;
@@ -59,3 +60,7 @@ export function rellenar(texto: string, valores: Record<string, string | null>):
 
 /** «S/ 43.90» — el mismo formato de moneda del resto de la tienda. */
 export const soles = (n: number): string => formatCurrency(n);
+
+/** El mensaje de WhatsApp para reservar un servicio: qué, cuánto dura y cuánto cuesta. */
+export const mensajeReserva = (s: Pick<ProductoSalon, "nombre" | "duracion" | "precio">) =>
+  `Hola, quiero reservar: ${s.nombre}${s.duracion ? ` (${s.duracion})` : ""} — ${soles(s.precio)}. ¿Qué horarios tienen disponibles?`;

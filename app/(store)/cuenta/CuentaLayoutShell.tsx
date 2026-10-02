@@ -31,7 +31,10 @@ export function CuentaLayoutShell({ children }: CuentaLayoutShellProps) {
       }}
     >
 
-      <div className="pt-28 sm:pt-32 pb-28">
+      {/* Sin padding-top propio: el layout de la tienda ya deja el sitio del
+          encabezado fijo y de las migas. Antes había pt-28/32 (128 px) de más:
+          ~150 px vacíos entre las migas y el panel (medido 02-10). */}
+      <div className="pb-28">
         <CuentaMobileTabs className="sticky top-16 z-30" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
           <div className="flex gap-8">

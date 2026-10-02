@@ -161,7 +161,7 @@ export function CheckoutSuccessStep({
           >
             ¡Pedido confirmado!
           </h3>
-          <p className="text-sm text-muted">
+          <p className="text-sm text-muted dark:text-[var(--text-tertiary)]">
             Tu pedido se está preparando con mucho cariño
           </p>
         </m.div>
@@ -267,7 +267,7 @@ export function CheckoutSuccessStep({
                     {s.label}
                   </span>
                   {s.sub && (
-                    <span className="text-[10px] text-muted font-medium">
+                    <span className="text-[10px] text-muted dark:text-[var(--text-tertiary)] font-medium">
                       {s.sub}
                     </span>
                   )}

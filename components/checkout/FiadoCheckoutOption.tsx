@@ -78,7 +78,7 @@ export function FiadoCheckoutOption({
         >
           Paga el día de pago
         </span>
-        <span className="mt-0.5 flex items-center gap-1.5 text-sm text-muted">
+        <span className="mt-0.5 flex items-center gap-1.5 text-sm text-muted dark:text-[var(--text-tertiary)]">
           <CalendarClock className="h-4 w-4 shrink-0" strokeWidth={2} />
           Vence el {dueDateLabel} · disponible {formatCurrency(availableCredit)}
         </span>

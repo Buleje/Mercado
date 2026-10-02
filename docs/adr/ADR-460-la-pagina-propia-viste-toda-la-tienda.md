@@ -82,3 +82,24 @@ sección aplique, que el catálogo sea coherente con ese diseño, bien hecho y e
   categorías del salón».
 - **Copiar el layout de la tienda en la pieza**: duplicaría los proveedores (un segundo `CartProvider`
   agrava el ping-pong del carrito entre pestañas) y el checkout, y dejaría de recibir los arreglos del layout.
+
+## Ampliación (02-10, tarde) — la ficha propia y el texto con el acento en oscuro
+Brandon eligió «Ficha del salón» y «Detalles finos: textos legibles en oscuro». Medido antes: la ficha
+`/t/main/tienda/<producto>` llevaba el marco pero el contenido era `ProductDetailClient` (colores turquesa
+fijos, migas a `/`, sin precio de antes); `/t/main/tienda/arroz-costeno-extra-5kg` mostraba un producto
+de la bodega con título y migas del salón; en oscuro el acento como texto daba 3,8–4,1:1 en 4 pantallas.
+
+- **Contrato:** `PiezaPagina` suma `Ficha?(PropsFicha)` (= `PropsPagina` + `producto`, el slug de la URL)
+  y `metadatosFicha?(PropsFicha) → MetadatosFicha | null` (`null` = no es de esta tienda: «Producto no
+  encontrado», `noindex`). Mismas garantías que `Catalogo`: `lib/extensiones/FichaPropia.tsx` (tope 2 s,
+  `BordeDePieza` + `RecargarSinPiezas`, `?sinPiezas=1` → la general, `unstable_rethrow` para `notFound`).
+  La página `app/(store)/tienda/[slug]` espera la ficha propia ANTES del `<Suspense>` general (así el
+  esqueleto es el de la pieza) y sólo en esa rama espera la búsqueda.
+- **«No es del salón» lo resuelve la pieza** con su propio «no lo encontramos» dentro del marco, no con
+  `notFound()` adentro del borde: el `ErrorBoundary` de `BordeDePieza` atraparía el 404 y recargaría con
+  `?sinPiezas=1`, que muestra justo la ficha general del producto de la bodega. El estado HTTP es 200,
+  igual que el 404 de la ficha general en todas las tiendas (la ruta transmite por `loading.tsx`).
+- **Texto con el acento en oscuro:** ningún vino sirve de fondo con blanco (≥4,5 → luminancia ≤0,18) y de
+  texto sobre el lienzo oscuro (≥4,5 → ≥0,20). `--accent` queda de fondo (4,6:1) y el texto con el acento
+  (clases censadas + `style` en línea `color: var(--color-primary…)`) pasa a `--accent-ink` sólo en las
+  páginas de ese negocio (`CSS_GLOBAL` de la pieza). Las demás tiendas no cambian.

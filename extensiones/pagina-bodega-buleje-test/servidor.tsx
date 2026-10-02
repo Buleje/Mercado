@@ -20,6 +20,7 @@ import "server-only";
 import { Suspense } from "react";
 import type { PiezaPagina } from "../_contrato";
 import { Catalogo } from "./Catalogo";
+import { Ficha, metadatosFicha } from "./Ficha";
 import type { Opciones } from "./manifest";
 import { marco } from "./Marco";
 import { EsqueletoSalon, PaginaSalon } from "./PaginaSalon";
@@ -35,6 +36,9 @@ export const pagina: PiezaPagina<Opciones> = {
   // ADR-460 · el resto de la tienda (catálogo, ficha, cuenta, pedidos, legales,
   // checkout) con el mismo encabezado, pie, paleta y bolsa (`Marco.tsx`)…
   marco,
-  // …y el catálogo propio, sólo con lo del salón (`Catalogo.tsx`).
+  // …el catálogo propio, sólo con lo del salón (`Catalogo.tsx`)…
   Catalogo,
+  // …y la ficha de cada producto o servicio, con su título para la pestaña (`Ficha.tsx`).
+  Ficha,
+  metadatosFicha,
 };

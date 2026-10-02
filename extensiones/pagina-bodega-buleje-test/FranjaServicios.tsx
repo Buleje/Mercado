@@ -9,12 +9,9 @@ import Image from "next/image";
 import { Clock, MessageCircle } from "@buleje/design-system/icons";
 import { Carril } from "./Carril";
 import type { ProductoSalon } from "./datos";
-import { enlaceWhatsapp, rutas, soles } from "./destinos";
+import { enlaceWhatsapp, mensajeReserva, rutas, soles } from "./destinos";
 import { coincide } from "./filtros";
 import { ANCHO } from "./ui";
-
-const mensajeReserva = (s: ProductoSalon) =>
-  `Hola, quiero reservar: ${s.nombre}${s.duracion ? ` (${s.duracion})` : ""} — ${soles(s.precio)}. ¿Qué horarios tienen disponibles?`;
 
 export function FranjaServicios({ servicios, q, whatsapp, slug }: { servicios: ProductoSalon[]; q: string; whatsapp: string | null; slug: string }) {
   if (servicios.length === 0) return null;

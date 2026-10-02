@@ -60,7 +60,7 @@ export function CheckoutOrderReview({
                 {displayLocation}
               </p>
               {displayReference && (
-                <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
+                <p className="text-xs text-gray-500 dark:text-[var(--text-secondary)] mt-0.5 flex items-center gap-1">
                   <Home className="h-3 w-3 shrink-0" />
                   {displayReference}
                 </p>
@@ -99,7 +99,7 @@ export function CheckoutOrderReview({
 
       {/* Items list -- collapsible review */}
       <details open className="group">
-        <summary className="flex items-center justify-between cursor-pointer list-none text-sm font-bold text-gray-500 uppercase tracking-wider mb-3 py-2 px-3 rounded-xl bg-gray-50 dark:bg-surface hover:bg-gray-100 dark:hover:bg-surface/80 transition-colors">
+        <summary className="flex items-center justify-between cursor-pointer list-none text-sm font-bold text-gray-500 dark:text-[var(--text-secondary)] uppercase tracking-wider mb-3 py-2 px-3 rounded-xl bg-gray-50 dark:bg-[var(--surface-sunken)] hover:bg-gray-100 dark:hover:bg-[var(--surface-raised)] transition-colors">
           <span className="flex items-center gap-2">
             <ShoppingCart className="h-4 w-4" />
             Revisar pedido ({items.length}{" "}
@@ -125,13 +125,13 @@ export function CheckoutOrderReview({
           </span>
         </summary>
         <div className="rounded-2xl border border-[var(--rule-base)] overflow-hidden bg-[var(--surface-raised)] shadow-sm">
-          <div className="max-h-64 overflow-y-auto divide-y divide-gray-50 dark:divide-card-border">
+          <div className="max-h-64 overflow-y-auto divide-y divide-gray-50 dark:divide-[var(--rule-soft)]">
             {items.map((item) => (
               <div
                 key={item.id}
-                className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50/50 dark:hover:bg-surface/30 transition-colors"
+                className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50/50 dark:hover:bg-[var(--surface-sunken)] transition-colors"
               >
-                <div className="relative h-10 w-10 rounded-lg overflow-hidden bg-gray-100 dark:bg-surface shrink-0 ring-1 ring-gray-100 dark:ring-card-border">
+                <div className="relative h-10 w-10 rounded-lg overflow-hidden bg-gray-100 dark:bg-[var(--surface-sunken)] shrink-0 ring-1 ring-gray-100 dark:ring-[var(--rule-base)]">
                   {item.image ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img
@@ -158,8 +158,8 @@ export function CheckoutOrderReview({
                     <span className="inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-md bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-bold">
                       x{item.quantity}
                     </span>
-                    <span className="text-xs text-gray-400">{item.unit}</span>
-                    <span className="text-xs text-gray-400">
+                    <span className="text-xs text-gray-400 dark:text-[var(--text-tertiary)]">{item.unit}</span>
+                    <span className="text-xs text-gray-400 dark:text-[var(--text-tertiary)]">
                       {formatCurrency(Number(item.price))} c/u
                     </span>
                     {item.note && (
@@ -177,8 +177,8 @@ export function CheckoutOrderReview({
             ))}
           </div>
           {/* Summary breakdown */}
-          <div className="px-4 py-2.5 border-t border-[var(--rule-base)] bg-gray-50/50 dark:bg-surface/30 space-y-1">
-            <div className="flex justify-between text-xs text-gray-500">
+          <div className="px-4 py-2.5 border-t border-[var(--rule-base)] bg-gray-50/50 dark:bg-[var(--surface-sunken)] space-y-1">
+            <div className="flex justify-between text-xs text-gray-500 dark:text-[var(--text-secondary)]">
               <span>Subtotal</span>
               <span>
                 {formatCurrency(items.reduce((s, i) => s + i.price * i.quantity, 0))}

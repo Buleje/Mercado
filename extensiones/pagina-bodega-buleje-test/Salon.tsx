@@ -8,11 +8,8 @@ import Image from "next/image";
 import { Clock, MapPin, MessageCircle } from "@buleje/design-system/icons";
 import { BANNER_OSCURO, FOTO_SERVICIOS } from "./anuncios";
 import type { ProductoSalon } from "./datos";
-import { enlaceWhatsapp, soles } from "./destinos";
+import { enlaceWhatsapp, mensajeReserva, soles } from "./destinos";
 import { ANCHO, TituloSeccion } from "./ui";
-
-const mensajeReserva = (s: ProductoSalon) =>
-  `Hola, quiero reservar: ${s.nombre}${s.duracion ? ` (${s.duracion})` : ""} — ${soles(s.precio)}. ¿Qué horarios tienen disponibles?`;
 
 const externo = { target: "_blank", rel: "noopener noreferrer" } as const;
 

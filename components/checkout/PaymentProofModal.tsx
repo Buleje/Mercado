@@ -503,7 +503,7 @@ export function PaymentProofModal({
                     className="w-full max-h-72 object-contain"
                   />
                   {uploadedUrl && (
-                    <div className="absolute top-2 right-2 inline-flex items-center gap-1.5 bg-[var(--data-success-500)] text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-lg">
+                    <div className="absolute top-2 right-2 inline-flex items-center gap-1.5 bg-[var(--data-success-500)] text-white dark:text-[var(--text-inverse)] px-3 py-1.5 rounded-full text-xs font-bold shadow-lg">
                       <CheckCircle2
                         className="h-3.5 w-3.5"
                         strokeWidth={2.5}
@@ -584,7 +584,7 @@ export function PaymentProofModal({
                 className="h-5 w-5 text-[var(--data-error-500)] shrink-0 mt-0.5"
                 strokeWidth={2}
               />
-              <p className="text-sm font-semibold text-[var(--data-error-700)]">
+              <p className="text-sm font-semibold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
                 {error}
               </p>
             </div>

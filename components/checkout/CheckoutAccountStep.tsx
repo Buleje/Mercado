@@ -110,7 +110,7 @@ export function CheckoutAccountStep({
               {mode === "search" && "Buscar mi cuenta"}
               {mode === "signup" && "Crear cuenta nueva"}
             </h3>
-            <p className="text-sm text-muted leading-snug mt-0.5">
+            <p className="text-sm text-muted dark:text-[var(--text-tertiary)] leading-snug mt-0.5">
               {mode === "menu" && (storeName ? `Tu cuenta queda en ${storeName} — independiente de otras tiendas.` : "Tu información solo se guarda en esta tienda.")}
               {mode === "search" && "Ingresá tu celular para cargar tus datos."}
               {mode === "signup" && "Solo necesitamos tu nombre y celular."}
@@ -120,7 +120,7 @@ export function CheckoutAccountStep({
             <button
               type="button"
               onClick={() => setMode("menu")}
-              className="text-xs font-bold text-muted hover:text-[var(--text-primary)]"
+              className="text-xs font-bold text-muted dark:text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
             >
               ← Volver
             </button>
@@ -146,7 +146,7 @@ export function CheckoutAccountStep({
             {onGoogleSignIn && (
               <div className="flex items-center gap-3 py-1">
                 <div className="flex-1 h-px bg-[var(--rule-soft)]" />
-                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted">o</span>
+                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted dark:text-[var(--text-tertiary)]">o</span>
                 <div className="flex-1 h-px bg-[var(--rule-soft)]" />
               </div>
             )}
@@ -162,9 +162,9 @@ export function CheckoutAccountStep({
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-[var(--text-primary)] leading-tight">Ya tengo cuenta</p>
-                <p className="text-xs text-muted mt-0.5 leading-snug">Buscar mis datos por número de celular</p>
+                <p className="text-xs text-muted dark:text-[var(--text-tertiary)] mt-0.5 leading-snug">Buscar mis datos por número de celular</p>
               </div>
-              <ArrowRight className="h-4 w-4 text-muted group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+              <ArrowRight className="h-4 w-4 text-muted dark:text-[var(--text-tertiary)] group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
             </button>
 
             {/* Crear cuenta */}
@@ -179,9 +179,9 @@ export function CheckoutAccountStep({
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold text-[var(--text-primary)] leading-tight">Crear cuenta</p>
-                  <p className="text-xs text-muted mt-0.5 leading-snug">Solo nombre + celular · 30 segundos</p>
+                  <p className="text-xs text-muted dark:text-[var(--text-tertiary)] mt-0.5 leading-snug">Solo nombre + celular · 30 segundos</p>
                 </div>
-                <ArrowRight className="h-4 w-4 text-muted group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+                <ArrowRight className="h-4 w-4 text-muted dark:text-[var(--text-tertiary)] group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
               </button>
             )}
 
@@ -191,7 +191,7 @@ export function CheckoutAccountStep({
                 type="button"
                 onClick={onSkipAccount}
                 data-testid="checkout-skip-account"
-                className="text-sm font-semibold text-muted hover:text-[var(--text-primary)] transition-colors underline-offset-4 hover:underline"
+                className="text-sm font-semibold text-muted dark:text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors underline-offset-4 hover:underline"
               >
                 Continuar sin cuenta →
               </button>
@@ -202,12 +202,12 @@ export function CheckoutAccountStep({
         {/* ── BUSCAR ────────────────────────────────────────────── */}
         {mode === "search" && (
           <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] p-5 flex flex-col gap-3 bg-[var(--surface-raised)]">
-            <label className="text-xs font-bold text-muted uppercase tracking-wider">
+            <label className="text-xs font-bold text-muted dark:text-[var(--text-tertiary)] uppercase tracking-wider">
               Número de celular
             </label>
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="relative flex-1">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted" />
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted dark:text-[var(--text-tertiary)]" />
                 <input
                   type="tel"
                   value={phoneQuery}
@@ -217,7 +217,7 @@ export function CheckoutAccountStep({
                   onKeyDown={(e) => e.key === "Enter" && onPhoneSearch()}
                   autoFocus
                   className={cn(
-                    "w-full pl-10 pr-3 h-12 rounded-xl border-2 text-base text-[var(--text-primary)] placeholder:text-muted focus:ring-2 outline-none transition-all",
+                    "w-full pl-10 pr-3 h-12 rounded-xl border-2 text-base text-[var(--text-primary)] placeholder:text-muted dark:placeholder:text-[var(--text-tertiary)] focus:ring-2 outline-none transition-all",
                     phoneQuery.length === 0
                       ? "border-[var(--rule-base)] dark:border-[var(--rule-base)] focus:border-primary focus:ring-primary/20"
                       : phoneQueryValidation.valid
@@ -269,9 +269,9 @@ export function CheckoutAccountStep({
         {mode === "signup" && onCreateAccount && (
           <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] p-5 space-y-4 bg-[var(--surface-raised)]">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-muted uppercase tracking-wider">Tu nombre</label>
+              <label className="text-xs font-bold text-muted dark:text-[var(--text-tertiary)] uppercase tracking-wider">Tu nombre</label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted" />
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted dark:text-[var(--text-tertiary)]" />
                 <input
                   type="text"
                   value={signupName}
@@ -279,26 +279,26 @@ export function CheckoutAccountStep({
                   placeholder="María González"
                   maxLength={60}
                   autoFocus
-                  className="w-full pl-10 pr-3 h-12 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-base text-[var(--text-primary)] placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                  className="w-full pl-10 pr-3 h-12 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-[var(--surface-sunken)] text-base text-[var(--text-primary)] placeholder:text-muted dark:placeholder:text-[var(--text-tertiary)] focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                 />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-muted uppercase tracking-wider">Celular (WhatsApp)</label>
+              <label className="text-xs font-bold text-muted dark:text-[var(--text-tertiary)] uppercase tracking-wider">Celular (WhatsApp)</label>
               <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted" />
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted dark:text-[var(--text-tertiary)]" />
                 <input
                   type="tel"
                   value={signupPhone}
                   onChange={(e) => setSignupPhone(e.target.value.replace(/[^\d]/g, ""))}
                   placeholder="987 654 321"
                   maxLength={9}
-                  className="w-full pl-10 pr-3 h-12 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-base text-[var(--text-primary)] placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                  className="w-full pl-10 pr-3 h-12 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-[var(--surface-sunken)] text-base text-[var(--text-primary)] placeholder:text-muted dark:placeholder:text-[var(--text-tertiary)] focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                 />
               </div>
               {signupPhone.length > 0 && signupPhone.length < 9 && (
-                <p className="text-xs text-muted">Ingresá los 9 dígitos completos</p>
+                <p className="text-xs text-muted dark:text-[var(--text-tertiary)]">Ingresá los 9 dígitos completos</p>
               )}
               {signupPhone.length === 9 && !signupPhone.startsWith("9") && (
                 <p className="text-xs text-[var(--data-error-500)] font-semibold">El celular debe empezar con 9</p>
@@ -306,18 +306,18 @@ export function CheckoutAccountStep({
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-muted uppercase tracking-wider flex items-center gap-1.5">
+              <label className="text-xs font-bold text-muted dark:text-[var(--text-tertiary)] uppercase tracking-wider flex items-center gap-1.5">
                 Email
-                <span className="text-[length:var(--ts-2xs)] font-normal text-muted normal-case tracking-normal">(opcional)</span>
+                <span className="text-[length:var(--ts-2xs)] font-normal text-muted dark:text-[var(--text-tertiary)] normal-case tracking-normal">(opcional)</span>
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted dark:text-[var(--text-tertiary)]" />
                 <input
                   type="email"
                   value={signupEmail}
                   onChange={(e) => setSignupEmail(e.target.value)}
                   placeholder="tu@email.com"
-                  className="w-full pl-10 pr-3 h-12 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-base text-[var(--text-primary)] placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                  className="w-full pl-10 pr-3 h-12 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-[var(--surface-sunken)] text-base text-[var(--text-primary)] placeholder:text-muted dark:placeholder:text-[var(--text-tertiary)] focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                 />
               </div>
             </div>
@@ -334,7 +334,7 @@ export function CheckoutAccountStep({
               {signupLoading ? "Creando cuenta…" : "Crear cuenta y continuar"}
             </m.button>
 
-            <p className="text-xs text-muted text-center leading-relaxed">
+            <p className="text-xs text-muted dark:text-[var(--text-tertiary)] text-center leading-relaxed">
               Tu cuenta queda solo en {storeName ?? "esta tienda"} — no se comparte con otras tiendas ni con marketplace.
             </p>
           </div>
@@ -342,15 +342,15 @@ export function CheckoutAccountStep({
 
         {/* Trust signals */}
         <div className="flex items-center justify-center gap-4 pt-2 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex-wrap">
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-muted">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-muted dark:text-[var(--text-tertiary)]">
             <ShieldCheck className="h-3.5 w-3.5 text-[var(--data-success-500)]" />
             <span>Compra protegida</span>
           </div>
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-muted">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-muted dark:text-[var(--text-tertiary)]">
             <Lock className="h-3.5 w-3.5 text-[var(--data-success-500)]" />
             <span>SSL encriptado</span>
           </div>
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-muted">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-muted dark:text-[var(--text-tertiary)]">
             <User className="h-3.5 w-3.5 text-[var(--data-success-500)]" />
             <span>Solo en {storeName ?? "esta tienda"}</span>
           </div>

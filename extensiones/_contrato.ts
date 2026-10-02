@@ -164,6 +164,24 @@ export interface MarcoTienda {
   readonly flotantes?: ReactNode;
 }
 
+/** ADR-460 · lo que recibe la ficha propia: lo mismo que la página + el producto de la URL. */
+export interface PropsFicha<O = unknown> extends PropsPagina<O> {
+  /** El `<slug>` de `/tienda/<slug>`, tal como llegó (la pieza decide si es suyo). */
+  producto: string;
+}
+
+/**
+ * ADR-460 · título y descripción de la ficha propia. El sistema arma con esto
+ * el `<title>`, la descripción, la URL canónica y la tarjeta para compartir.
+ */
+export interface MetadatosFicha {
+  readonly titulo: string;
+  readonly descripcion: string;
+  /** La ruta de la ficha (`/t/<negocio>/tienda/<producto>`): la canónica. */
+  readonly ruta: string;
+  readonly imagen?: string | null;
+}
+
 export interface PiezaPagina<O = unknown> {
   /**
    * La página entera. Función de SERVIDOR (puede ser `async`; sin hooks).
@@ -189,6 +207,19 @@ export interface PiezaPagina<O = unknown> {
    * catálogo general.
    */
   readonly Catalogo?: (props: PropsPagina<O>) => ReactNode | Promise<ReactNode>;
+  /**
+   * ADR-460 · la ficha propia de un producto (`/t/<negocio>/tienda/<producto>`).
+   * Mismas garantías que `Catalogo`. Un producto que NO es de la página propia
+   * lo resuelve la pieza (p. ej. con su «no lo encontramos» dentro del marco):
+   * nunca cae a la ficha general.
+   */
+  readonly Ficha?: (props: PropsFicha<O>) => ReactNode | Promise<ReactNode>;
+  /**
+   * ADR-460 · título y descripción de esa ficha (mismo tope de 2 s). `null` =
+   * el producto no es de esta tienda: «Producto no encontrado», sin indexar.
+   * Si falta, tira o se pasa del tope, el sistema usa los de la ficha general.
+   */
+  readonly metadatosFicha?: (props: PropsFicha<O>) => Promise<MetadatosFicha | null>;
 }
 
 /**

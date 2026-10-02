@@ -105,7 +105,7 @@ function SectionHeader({
         >
           {title}
         </p>
-        {hint && <p className="text-xs text-muted mt-0.5">{hint}</p>}
+        {hint && <p className="text-xs text-muted dark:text-[var(--text-tertiary)] mt-0.5">{hint}</p>}
       </div>
     </div>
   );
@@ -200,7 +200,7 @@ export function CheckoutPaymentSection({
           <p className="text-base font-extrabold text-white leading-tight">
             {eta}
           </p>
-          <p className="text-xs text-white/85 leading-tight mt-0.5">{etaDetail}</p>
+          <p className="text-xs text-white/85 dark:text-white leading-tight mt-0.5">{etaDetail}</p>
         </div>
         <span
           className={cn(
@@ -363,7 +363,7 @@ export function CheckoutPaymentSection({
           <CashChangeCalculator finalTotal={finalTotal} />
         )}
         {showPaymentHint && (
-          <p className="flex items-center gap-1.5 text-sm text-[var(--data-error-600)] font-semibold">
+          <p className="flex items-center gap-1.5 text-sm text-[var(--data-error-600)] dark:text-[var(--data-error-500)] font-semibold">
             <X className="h-4 w-4" strokeWidth={2.5} />
             {!paymentMethod
               ? "Elegí un método para continuar"
@@ -447,7 +447,7 @@ export function CheckoutPaymentSection({
             <button
               type="button"
               onClick={onRemoveCoupon}
-              className="text-xs font-bold text-muted hover:text-[var(--data-error-500)] transition-colors px-2"
+              className="text-xs font-bold text-muted dark:text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors px-2"
             >
               Quitar
             </button>
@@ -468,7 +468,7 @@ export function CheckoutPaymentSection({
                 }
                 onKeyDown={(e) => e.key === "Enter" && onValidateCoupon()}
                 placeholder="CÓDIGO"
-                className="w-full h-12 rounded-xl border-2 pl-9 pr-3 text-sm font-mono uppercase placeholder:normal-case placeholder:font-sans placeholder:text-muted text-[var(--text-primary)] bg-[var(--surface-raised)] focus:outline-none transition-colors"
+                className="w-full h-12 rounded-xl border-2 pl-9 pr-3 text-sm font-mono uppercase placeholder:normal-case placeholder:font-sans placeholder:text-muted dark:placeholder:text-[var(--text-tertiary)] text-[var(--text-primary)] bg-[var(--surface-raised)] focus:outline-none transition-colors"
                 style={{
                   borderColor:
                     "color-mix(in oklch, var(--color-primary, #00A0A0) 22%, transparent)",
@@ -502,7 +502,7 @@ export function CheckoutPaymentSection({
           </div>
         )}
         {couponMsg && !couponApplied && (
-          <p className="text-sm text-[var(--data-error-600)] font-medium">
+          <p className="text-sm text-[var(--data-error-600)] dark:text-[var(--data-error-500)] font-medium">
             {couponMsg}
           </p>
         )}
@@ -538,7 +538,7 @@ export function CheckoutPaymentSection({
                   >
                     −{formatCurrency(redemptionSoles)}
                   </p>
-                  <p className="text-xs text-muted tabular-nums">
+                  <p className="text-xs text-muted dark:text-[var(--text-tertiary)] tabular-nums">
                     {redemptionSoles * PTS_PER_SOL} pts
                   </p>
                 </div>
@@ -566,7 +566,7 @@ export function CheckoutPaymentSection({
         </p>
         <div className="space-y-1 text-sm">
           <div className="flex items-center justify-between">
-            <span className="text-muted">Subtotal</span>
+            <span className="text-muted dark:text-[var(--text-tertiary)]">Subtotal</span>
             <span
               className="tabular-nums font-semibold"
               style={{ color: "var(--color-primary-dark, #009690)" }}
@@ -624,7 +624,7 @@ export function CheckoutPaymentSection({
           )}
           {tip > 0 && (
             <div className="flex items-center justify-between">
-              <span className="text-muted">Propina</span>
+              <span className="text-muted dark:text-[var(--text-tertiary)]">Propina</span>
               <span
                 className="tabular-nums font-semibold"
                 style={{ color: "var(--color-primary-dark, #009690)" }}
@@ -660,7 +660,7 @@ export function CheckoutPaymentSection({
         </div>
         {loyaltyPoints !== null && finalTotal >= 5 && (
           <div className="flex items-center justify-between pt-1.5 text-xs">
-            <span className="text-muted flex items-center gap-1.5">
+            <span className="text-muted dark:text-[var(--text-tertiary)] flex items-center gap-1.5">
               <Sparkles
                 className="h-3.5 w-3.5"
                 strokeWidth={2}

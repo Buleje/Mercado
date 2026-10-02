@@ -67,7 +67,39 @@ ${sel} .bb-sin-barra::-webkit-scrollbar{display:none}
  * genérica la ficha parecía de otra tienda (revisión 02-10). En oscuro,
  * globals.css fuerza `--color-primary-dark` con !important a
  * `--color-primary-light`: por eso se define ese.
+ *
+ * TEXTO con el acento, en oscuro (revisión 02-10). Ningún vino sirve a la vez
+ * de fondo con texto blanco (≥4,5 pide luminancia ≤0,18) y de texto sobre el
+ * lienzo oscuro (≥4,5 pide ≥0,20): son dos tokens. `--accent` queda de FONDO
+ * (blanco encima 4,6:1) y lo que pinta TEXTO con el acento —clases de
+ * Tailwind y `style={{ color: "var(--color-primary…)" }}` de la cuenta, los
+ * legales y el checkout, que no son de esta carpeta— pasa a la tinta
+ * `--accent-ink` (#f2bcc0). La lista sale del censo de esas pantallas (02-10);
+ * si una pantalla suma otra clase de acento como texto, va acá. `.text-muted`
+ * viene horneado en gris (#6b7280, 3,6:1 en oscuro): pasa al terciario cálido.
+ * En claro no cambia nada: la tinta y el acento son el mismo vino.
  */
+export const TEXTO_CON_ACENTO = [
+  ".text-\\[var\\(--accent\\)\\]",
+  ".dark\\:text-\\[var\\(--accent\\)\\]",
+  ".text-\\[var\\(--accent-dark\\)\\]",
+  ".text-\\[var\\(--accent-600\\)\\]",
+  ".text-\\[var\\(--color-primary\\)\\]",
+  ".text-primary",
+  ".text-primary-dark",
+  ".text-primary\\/70",
+  ".text-accent",
+  ".hover\\:text-\\[var\\(--accent\\)\\]:hover",
+  ".hover\\:text-primary:hover",
+  ":where(.group):hover .group-hover\\:text-primary",
+  ":where(.group):hover .group-hover\\:text-\\[var\\(--accent\\)\\]",
+].join(",");
+
+/** El color en línea de React llega como `color:var(…)` (servidor) o `color: var(…)` (navegador); nunca `background-color`. */
+export const TEXTO_EN_LINEA_CON_ACENTO = ["--color-primary", "--accent", "--tenant-primary"]
+  .flatMap((v) => [`[style^="color:var(${v}"]`, `[style^="color: var(${v}"]`, `[style*=";color:var(${v}"]`, `[style*="; color: var(${v}"]`])
+  .join(",");
+
 export const CSS_GLOBAL = `
 :root:root{
 --surface-canvas:#fffdfb;--surface-raised:#ffffff;--surface-sunken:#f8f1ed;
@@ -94,4 +126,7 @@ export const CSS_GLOBAL = `
 --color-ring:#c14f63;--color-accent:#c14f63;--color-muted:#b3a39f;--color-muted-foreground:#b3a39f;
 }
 [data-marco] h1{font-family:var(--font-display),Georgia,serif;font-weight:400;letter-spacing:-0.01em}
+:root:root.dark :is(${TEXTO_CON_ACENTO}){color:var(--accent-ink)}
+:root:root.dark :is(${TEXTO_EN_LINEA_CON_ACENTO}){color:var(--accent-ink)!important}
+:root:root .text-muted{color:var(--text-tertiary)}
 `;

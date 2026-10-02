@@ -20,7 +20,7 @@ export const manifiesto = {
   descripcion:
     "Página pública propia de UN negocio (/t/<negocio>): tienda de belleza con anuncios, portada en carrusel, " +
     "ofertas con el descuento real, líneas propias, servicios del salón reservables por WhatsApp y el carrito de la tienda. " +
-    "Viste también el resto de su tienda (catálogo propio, cuenta, pedidos, legales y checkout con su encabezado, pie y bolsa). " +
+    "Viste también el resto de su tienda (catálogo y ficha de producto propios; cuenta, pedidos, legales y checkout con su encabezado, pie y bolsa). " +
     "Si falla, se ve la general.",
   version: "2.1.0",
   enchufes: ["tienda.pagina"],

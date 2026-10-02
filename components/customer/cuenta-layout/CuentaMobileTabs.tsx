@@ -46,7 +46,7 @@ export function CuentaMobileTabs({ className }: CuentaMobileTabsProps) {
               href={tenantPath(item.href)}
               aria-current={isActive ? "page" : undefined}
               className={cn(
-                "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 whitespace-nowrap",
+                "inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 whitespace-nowrap",
                 "text-[length:var(--ts-xs)] font-medium transition-colors",
                 isActive
                   ? "bg-[var(--text-primary)] text-[var(--surface-canvas)]"
