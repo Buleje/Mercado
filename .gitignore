@@ -75,6 +75,7 @@ SESSION_HANDOFF*.md
 /.claude/scheduled_tasks.lock
 /.claude/.watchdog.log
 /.claude/.watchdog.pid
+/.claude/.watchdog.lock
 /.claude/.mem-guard.log
 
 # Phase 3 runtime artifacts (never commit)
