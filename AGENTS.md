@@ -22,12 +22,12 @@ AUDIT → Workflow; INITIATIVE → Workflow por fases; DANGER → + `security`).
 
 | Agente | Modelo | Herramientas | Preload (`skills:`) | Para qué |
 |---|---|---|---|---|
-| `architect` | inherit | lectura + Bash | multi-tenant-guard | contrato (tipos, Zod, Prisma + plan de migración, rutas, DB class, ADR) antes de construir |
-| `backend` | inherit | edición + Bash | multi-tenant-guard | rutas, DB classes, RBAC, integraciones, IA |
-| `frontend` | inherit | edición + Bash + **Playwright MCP** | bsm-design-system (tipografía de tienda a demanda) | UI al estándar del DS; qa-capturas en 1 llamada, 1 imagen leída salvo color/layout (02-10) |
-| `database` | inherit | edición + Bash | multi-tenant-guard, db-sanity | schema, migraciones (`resolve --applied`), índices, drift |
+| `architect` | inherit | lectura + Bash | — | contrato (tipos, Zod, Prisma + plan de migración, rutas, DB class, ADR) antes de construir |
+| `backend` | inherit | edición + Bash | — (reglas de tenant en `rules/db-classes`) | rutas, DB classes, RBAC, integraciones, IA |
+| `frontend` | inherit | edición + Bash (sin MCP desde 02-10; `qa-capturas` con `eval`) | bsm-design-system (tipografía de tienda a demanda) | UI al estándar del DS; qa-capturas en 1 llamada, 1 imagen leída salvo color/layout (02-10) |
+| `database` | inherit | edición + Bash | — | schema, migraciones (`resolve --applied`), índices, drift |
 | `tester` | inherit | edición + Bash + **Playwright MCP** | — | Vitest, VRT, e2e por el camino del usuario, k6 |
-| `reviewer` | inherit | edición + Bash | multi-tenant-guard | review / diagnose / refactor con contexto fresco; refuta antes de reportar |
+| `reviewer` | inherit | edición + Bash | — | review / diagnose / refactor con contexto fresco; refuta antes de reportar |
 | `security` | inherit | lectura + Bash | multi-tenant-guard | OWASP + pentest contra el dev server; veto en críticos |
 | `healer` | sonnet (effort medium) | edición + Bash | — | gates rojos → fix mínimo, 3 intentos |
 

@@ -10,8 +10,6 @@ tools: Read, Grep, Glob, Bash
 disallowedTools: Edit, Write
 maxTurns: 40
 memory: project
-skills:
-  - multi-tenant-guard
 color: yellow
 experimental:
   cacheTtl: 1h

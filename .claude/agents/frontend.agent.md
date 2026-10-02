@@ -5,9 +5,7 @@ description: >
   con tokens del DS, dark mode, responsive 400 px, accesibilidad y Capacitor. Usar para toda
   UI visible. Verifica en navegador real con qa-capturas (1 llamada) y lee solo la captura que importa.
 model: inherit
-tools: Read, Edit, Write, Grep, Glob, Bash, mcp__playwright
-mcpServers:
-  - playwright
+tools: Read, Edit, Write, Grep, Glob, Bash
 memory: project
 skills:
   - bsm-design-system
@@ -45,8 +43,10 @@ Stack: React 19.2, Next.js 16 (App Router, Turbopack), Tailwind 4 (`@theme` toke
 
 ## Verificación en navegador (proporcional al cambio)
 - **Una** llamada: `node scripts/qa-capturas.mjs --tenant <slug> --ruta "/admin?tab=x" --pasos '[…]'`
-  (login, onboarding, claro/oscuro × 1280/400, fondo medido, respuestas ≥400). El MCP de Playwright
-  solo para EXPLORAR una pantalla que no conocés.
+  (login, onboarding, claro/oscuro × 1280/400, fondo medido, respuestas ≥400). Pasos: `click`,
+  `llenar`, `tecla`, `elegir`, `esperar`, `eval` (su resultado sale en el reporte: ahí va el
+  `getComputedStyle`), `captura`. Sin MCP de Playwright desde el 02-10 (pesaba ~12 K por arranque):
+  si necesitás hover/drag o explorar a ciegas, decilo en el reporte y el hilo principal lanza `tester`.
 - **Leé 1 imagen** (claro 1280) por estado. Oscuro y 400 px: abrí la imagen solo si tocaste
   color/layout o si el reporte numérico de qa-capturas marca algo (fondo, desborde, ≥400). Cada
   captura leída son ~2-3 K tokens que se releen en todos los turnos siguientes.

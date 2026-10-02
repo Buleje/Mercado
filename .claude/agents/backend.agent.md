@@ -7,8 +7,6 @@ description: >
 model: inherit
 tools: Read, Edit, Write, Grep, Glob, Bash
 memory: project
-skills:
-  - multi-tenant-guard
 color: blue
 experimental:
   cacheTtl: 1h

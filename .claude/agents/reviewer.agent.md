@@ -8,8 +8,6 @@ model: inherit
 tools: Read, Edit, Write, Grep, Glob, Bash
 maxTurns: 60
 memory: project
-skills:
-  - multi-tenant-guard
 color: red
 experimental:
   cacheTtl: 1h
