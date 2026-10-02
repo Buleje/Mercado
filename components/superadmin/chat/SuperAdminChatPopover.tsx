@@ -50,7 +50,11 @@ export default function SuperAdminChatPopover() {
       setUnread(d.unread ?? 0);
       setConversations(d.conversations ?? []);
     } catch (err) {
-      console.error("[sa-chat] popover poll failed", err);
+      /* «Failed to fetch» (TypeError) es la red o salir de la página a mitad
+         del pedido: no es un error del sistema y ensuciaba la consola de cada
+         navegación (medido con scripts/medir-superadmin.mjs, 01-10). */
+      if (err instanceof TypeError) return;
+      console.warn("[sa-chat] popover poll failed", err);
     }
   }, []);
 
