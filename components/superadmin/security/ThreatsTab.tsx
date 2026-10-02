@@ -9,6 +9,7 @@
  * endpoint /api/superadmin/security/threats (ActivityLog + Redis blocklist).
  */
 
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ShieldCheck, ShieldAlert, Ban, Target, Database, Code2, FolderOpen, Command,
@@ -140,14 +141,25 @@ export function ThreatsTab() {
           <ShieldCheck className="h-6 w-6" strokeWidth={1.9} aria-hidden />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="font-display text-base font-extrabold tracking-tight text-[var(--text-primary)]">Firewall de aplicación activo</p>
-          <p className="text-sm text-[var(--text-secondary)]">
-            Inspecciona cada request en el borde · bloqueo inline de firmas críticas ·{" "}
-            {data.blocklistEnabled
-              ? "auto-bloqueo de IPs reincidentes + alerta a Sentry"
-              : <span className="text-amber-600 dark:text-amber-400">blocklist distribuida OFF (configurá Upstash Redis)</span>}
-            {data.trustedIpsConfigured && " · IPs de confianza exentas"}
-          </p>
+          <div className="flex items-center gap-1.5">
+            <p className="font-display text-base font-extrabold tracking-tight text-[var(--text-primary)]">Firewall de aplicación activo</p>
+            <InfoTip
+              title="Firewall de aplicación"
+              what="Revisa cada petición en el borde y bloquea al instante las firmas de ataque críticas."
+              affects={
+                <span>
+                  {data.blocklistEnabled
+                    ? "Bloquea solo a las IPs reincidentes y avisa a Sentry."
+                    : "La lista de bloqueo compartida está apagada: configura Upstash Redis para activarla."}
+                  {data.trustedIpsConfigured && " Las IPs de confianza no se revisan."}
+                </span>
+              }
+              side="bottom"
+            />
+          </div>
+          {!data.blocklistEnabled && (
+            <p className="text-sm text-amber-600 dark:text-amber-400">Lista de bloqueo apagada</p>
+          )}
         </div>
       </div>
 
@@ -227,8 +239,10 @@ export function ThreatsTab() {
       {/* Top IPs agresivas */}
       <section className="overflow-hidden rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)]">
         <header className="border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-5 py-3.5">
-          <h3 className="font-display text-base font-extrabold tracking-tight text-[var(--text-primary)]">IPs más agresivas</h3>
-          <p className="text-xs text-[var(--text-tertiary)]">Bloqueá una IP para rechazar todas sus requests</p>
+          <div className="flex items-center gap-1.5">
+            <h3 className="font-display text-base font-extrabold tracking-tight text-[var(--text-primary)]">IPs más agresivas</h3>
+            <InfoTip title="IPs más agresivas" what="Si bloqueas una IP, se rechazan todas sus peticiones." side="bottom" />
+          </div>
         </header>
         {data.topIps.length === 0 ? (
           <p className="p-6 text-center text-sm text-[var(--text-secondary)]">Sin actividad sospechosa. Todo tranquilo.</p>

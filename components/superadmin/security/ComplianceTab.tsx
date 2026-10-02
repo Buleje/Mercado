@@ -16,6 +16,7 @@
  *  - Keyboard / Esc (mantiene v1)
  */
 
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import * as Dialog from "@radix-ui/react-dialog";
@@ -541,14 +542,17 @@ export function ComplianceTab() {
               <FileDown className="h-5 w-5" strokeWidth={1.75} aria-hidden />
             </span>
             <div className="min-w-0">
-              <h3 className="font-display text-base font-extrabold tracking-tight text-[var(--text-primary)]">
-                Derecho de acceso (Art. 18)
-              </h3>
-              <p className="text-sm text-[var(--text-secondary)] mt-1">
-                Genera un JSON con todos los datos personales de un cliente:
-                pedidos, comentarios, direcciones, consentimientos y audit trail.
-                Cada solicitud queda en el audit log.
-              </p>
+              <div className="flex items-center gap-1.5">
+                <h3 className="font-display text-base font-extrabold tracking-tight text-[var(--text-primary)]">
+                  Derecho de acceso (Art. 18)
+                </h3>
+                <InfoTip
+                  title="Derecho de acceso"
+                  what="Genera un JSON con los datos personales de un cliente: pedidos, comentarios, direcciones, consentimientos y auditoría."
+                  affects="Cada solicitud queda registrada en el audit log."
+                  side="bottom"
+                />
+              </div>
               <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-1.5">
                 <strong className="text-[var(--text-primary)]">
                   {dsarExportsLast30d}
@@ -578,9 +582,6 @@ export function ComplianceTab() {
             <h3 className="font-display text-base font-extrabold tracking-tight text-[var(--text-primary)]">
               Política de retención
             </h3>
-            <p className="text-xs text-[var(--text-tertiary)]">
-              Tiempo de conservación por tipo de dato
-            </p>
           </div>
         </header>
         <ul className="divide-y divide-[var(--rule-soft)]">
@@ -725,6 +726,12 @@ function ChecklistSection({
                         <p className="font-bold text-sm text-[var(--text-primary)]">
                           {item.title}
                         </p>
+                        <InfoTip
+                          title={item.title}
+                          what={item.description}
+                          example={item.reference ? <span className="font-mono">{item.reference}</span> : undefined}
+                          side="bottom"
+                        />
                         <span
                           className={cn(
                             "inline-flex items-center rounded-full px-1.5 py-0 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider",
@@ -735,14 +742,6 @@ function ChecklistSection({
                           {sev.label}
                         </span>
                       </div>
-                      <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
-                        {item.description}
-                      </p>
-                      {item.reference && (
-                        <p className="mt-1 text-[length:var(--ts-2xs)] font-mono text-[var(--text-tertiary)]">
-                          {item.reference}
-                        </p>
-                      )}
                     </div>
                   </div>
                   <span

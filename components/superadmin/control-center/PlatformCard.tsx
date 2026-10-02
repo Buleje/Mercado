@@ -19,6 +19,7 @@ import type { LucideIcon } from "@buleje/design-system/icons";
 import { ArrowUpRight, Check, Copy } from "@buleje/design-system/icons";
 import { cn } from "@buleje/design-system";
 import type { PlatformHealthStatus } from "@/lib/superadmin/platform-health";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 
 export interface PlatformCardProps {
   id: string;
@@ -88,7 +89,6 @@ export function PlatformCard({
   status,
   external = true,
   tone = "teal",
-  category,
 }: PlatformCardProps) {
   const [copied, setCopied] = useState(false);
   const statusMeta = STATUS_META[status];
@@ -148,24 +148,22 @@ export function PlatformCard({
 
       {/* Nombre + categoría + descripción */}
       <div className="min-w-0">
-        {category && (
-          <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1">
-            {category}
-          </p>
-        )}
-        <h3 className="text-[length:var(--ts-sm)] font-bold text-[var(--text-primary)] leading-tight">
-          <a
-            href={href}
-            target={external ? "_blank" : undefined}
-            rel={external ? "noopener noreferrer" : undefined}
-            className="after:absolute after:inset-0 after:rounded-2xl after:content-[''] focus-visible:outline-none"
-          >
-            {name}
-          </a>
-        </h3>
-        <p className="mt-1 text-[length:var(--ts-xs)] text-[var(--text-secondary)] leading-snug line-clamp-2">
-          {description}
-        </p>
+        <div className="flex items-center gap-1">
+          <h3 className="text-[length:var(--ts-sm)] font-bold text-[var(--text-primary)] leading-tight">
+            <a
+              href={href}
+              target={external ? "_blank" : undefined}
+              rel={external ? "noopener noreferrer" : undefined}
+              className="after:absolute after:inset-0 after:rounded-2xl after:content-[''] focus-visible:outline-none"
+            >
+              {name}
+            </a>
+          </h3>
+          {/* El ⓘ va encima del enlace estirado (z-10) para que se pueda tocar. */}
+          <span className="relative z-10">
+            <InfoTip title={name} what={description} side="bottom" />
+          </span>
+        </div>
       </div>
 
       {/* URL pill + copy + arrow */}

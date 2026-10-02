@@ -360,24 +360,18 @@ export default function SuperadminMarcaPage() {
                 <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
                   Centro de marca
                 </p>
-                <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] inline-flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">
                   {brand.identity.name} · Personalización global
+                </h1>
                   <InfoTip
                     side="bottom"
                     title="Marca de la plataforma"
                     what="Personalización global de la marca del marketplace: nombre, logo, colores y textos."
-                    affects="Se ve en todo el marketplace público y en los correos de la plataforma."
-                    example="Cambiás el logo → aparece el nuevo en la cabecera del marketplace y en los emails."
+                    affects="Se ve en todo el marketplace público y en los correos. Al guardar, las pestañas abiertas se actualizan al instante; los visitantes nuevos lo ven en máximo 5 min."
+                    example="Cambias el logo → aparece el nuevo en la cabecera del marketplace y en los emails."
                   />
-                </h1>
-                <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">
-                  Hub único de la marca. Cada cambio se refleja en{" "}
-                  <strong>todas las páginas</strong> del marketplace que consumen{" "}
-                  <code className="text-xs bg-[var(--surface-sunken)] px-1.5 py-0.5 rounded">
-                    /api/platform-brand
-                  </code>
-                  .
-                </p>
+                </div>
               </div>
             </div>
 
@@ -453,8 +447,9 @@ export default function SuperadminMarcaPage() {
                         key={s.id}
                         onClick={() => setActiveSection(s.id)}
                         aria-pressed={active}
+                        title={s.description}
                         className={cn(
-                          "w-full flex items-start gap-2.5 rounded-xl px-3 py-2.5 text-left transition-all border relative",
+                          "w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-left transition-all border relative",
                           active
                             ? "bg-[var(--accent)]/10 border-[var(--accent)]/30 shadow-sm"
                             : "border-transparent hover:bg-[var(--surface-sunken)]",
@@ -483,9 +478,6 @@ export default function SuperadminMarcaPage() {
                               />
                             )}
                           </p>
-                          <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] truncate leading-tight mt-0.5">
-                            {s.description}
-                          </p>
                         </div>
                       </button>
                     );
@@ -497,19 +489,6 @@ export default function SuperadminMarcaPage() {
             {/* Live preview de cómo se ve el footer/contact en el sitio */}
             <LivePreviewCard brand={brand} />
 
-            {/* Tip */}
-            <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3.5">
-              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)] mb-1.5">
-                Cómo funciona
-              </p>
-              <p className="text-xs text-[var(--text-secondary)] leading-snug">
-                Cada cambio que guardás se propaga al instante a las pestañas abiertas vía{" "}
-                <code className="text-[length:var(--ts-2xs)] bg-[var(--surface-sunken)] px-1 rounded">
-                  BroadcastChannel
-                </code>
-                . Los visitantes nuevos ven los cambios en máx. 5 min (cache CDN).
-              </p>
-            </div>
           </aside>
 
           {/* Main panel */}
@@ -617,11 +596,11 @@ function SectionShell({
 }) {
   return (
     <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-7">
-      <div className="mb-5">
-        <h2 className="font-display text-xl sm:text-2xl font-extrabold tracking-tight text-[var(--text-primary)] mb-1">
+      <div className="mb-5 flex items-center gap-2">
+        <h2 className="font-display text-xl sm:text-2xl font-extrabold tracking-tight text-[var(--text-primary)]">
           {title}
         </h2>
-        <p className="text-sm text-[var(--text-secondary)]">{description}</p>
+        <InfoTip title={title} what={description} side="bottom" />
       </div>
       {children}
     </div>
@@ -639,14 +618,10 @@ function Field({
 }) {
   return (
     <div>
-      <label className="block mb-1.5">
-        <span className="text-xs font-extrabold text-[var(--text-primary)]">{label}</span>
-        {hint && (
-          <span className="block text-[length:var(--ts-xs)] font-medium text-[var(--text-tertiary)] mt-0.5">
-            {hint}
-          </span>
-        )}
-      </label>
+      <div className="mb-1.5 flex items-center gap-1">
+        <label className="text-xs font-extrabold text-[var(--text-primary)]">{label}</label>
+        {hint && <InfoTip title={label} what={hint} side="bottom" />}
+      </div>
       {children}
     </div>
   );
@@ -824,7 +799,7 @@ function LogosSection({
   return (
     <SectionShell
       title="Logos"
-      description="Variantes del logo para cada contexto. Usá PNG con fondo transparente para mejor calidad."
+      description="Variantes del logo para cada contexto. Usa PNG con fondo transparente para mejor calidad."
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {SLOTS.map((s) => (
@@ -833,10 +808,10 @@ function LogosSection({
             className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-3 space-y-2"
           >
             <div>
-              <p className="text-xs font-extrabold text-[var(--text-primary)]">{s.label}</p>
-              <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] mt-0.5 leading-snug">
-                {s.hint}
-              </p>
+              <div className="flex items-center gap-1">
+                <p className="text-xs font-extrabold text-[var(--text-primary)]">{s.label}</p>
+                <InfoTip title={s.label} what={s.hint} side="bottom" />
+              </div>
             </div>
             <ImageUploader
               value={brand.logos[s.key]}
@@ -882,10 +857,10 @@ function ColorsSection({
             className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-3 space-y-2.5"
           >
             <div>
-              <p className="text-xs font-extrabold text-[var(--text-primary)]">{s.label}</p>
-              <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] mt-0.5 leading-snug">
-                {s.hint}
-              </p>
+              <div className="flex items-center gap-1">
+                <p className="text-xs font-extrabold text-[var(--text-primary)]">{s.label}</p>
+                <InfoTip title={s.label} what={s.hint} side="bottom" />
+              </div>
             </div>
             <div
               className="h-16 rounded-lg border border-[var(--rule-base)]"
@@ -1047,7 +1022,7 @@ function SocialsSection({
   return (
     <SectionShell
       title="Redes sociales"
-      description="Links que aparecen en el footer. Dejá vacío los que no usás."
+      description="Links que aparecen en el footer. Deja vacío los que no uses."
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {FIELDS.map((f) => (
@@ -1215,8 +1190,8 @@ function EventSection({
         </button>
         <p className="text-xs text-[var(--text-secondary)] flex-1">
           {e.active
-            ? "Los overrides están aplicándose. Las páginas mostrarán logo + colores del evento."
-            : "Los overrides se guardan pero no se aplican. Activá para empezar."}
+            ? "Se está aplicando el logo y los colores del evento."
+            : "Guardado, pero sin aplicar."}
         </p>
       </div>
 
@@ -1322,9 +1297,7 @@ function LivePreviewCard({ brand }: { brand: PlatformBrand }) {
         <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]">
           Vista previa en vivo
         </p>
-        <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] leading-tight">
-          Cómo se ve en el footer del sitio
-        </p>
+
       </div>
       <div className="p-3.5 space-y-3">
         {/* Brand row */}

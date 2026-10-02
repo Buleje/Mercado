@@ -26,21 +26,18 @@ export default function SuperadminImageBankPage() {
               <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
                 Marketplace · Recursos
               </p>
-              <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] inline-flex items-center gap-2 flex-wrap">
-                Banco de imágenes
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">
+                  Banco de imágenes
+                </h1>
                 <InfoTip
                   side="bottom"
                   title="Banco de imágenes"
-                  what="Biblioteca central de imágenes que las tiendas y el marketplace pueden reutilizar."
-                  affects="Las imágenes quedan disponibles para banners, productos y portadas del marketplace."
-                  example="Subís una foto de frutas → cualquier tienda la usa en su banner sin volver a subirla."
+                  what="Fotos globales por rubro. Subes una vez y todos los negocios la usan en sus productos."
+                  affects="Quedan disponibles para productos, banners y portadas del marketplace."
+                  example="Subes «Inca Kola 500 ml» → cualquier tienda la elige sin subir la suya."
                 />
-              </h1>
-              <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">
-                Imágenes globales por rubro. Subí una foto de &quot;Inca Kola 500ml&quot; una sola
-                vez y todos los tenants pueden usarla en sus productos. Agregá categorías e ítems
-                según las necesidades de los negocios.
-              </p>
+              </div>
             </div>
           </div>
         </div>

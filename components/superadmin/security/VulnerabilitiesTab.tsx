@@ -17,6 +17,7 @@
  *  - Tonos amber/emerald correctos (sin var(--accent) como rojo)
  */
 
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import {
   ShieldAlert,
   ExternalLink,
@@ -163,15 +164,17 @@ export function VulnerabilitiesTab() {
         <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-teal-700 dark:text-teal-300">
           Estado · Sin escáner
         </p>
-        <h2 className="mt-1 font-display text-xl sm:text-2xl font-extrabold tracking-tight text-[var(--text-primary)]">
-          No hay escáner de CVEs conectado
-        </h2>
-        <p className="mt-2 max-w-xl mx-auto text-sm text-[var(--text-secondary)]">
-          Para detectar vulnerabilidades en las dependencias del repositorio,
-          conectá un escáner externo. Mientras tanto, este panel muestra el{" "}
-          <strong className="text-[var(--text-primary)]">estado real</strong> del
-          repo (no datos falsos).
-        </p>
+        <div className="mt-1 flex items-center justify-center gap-2">
+          <h2 className="font-display text-xl sm:text-2xl font-extrabold tracking-tight text-[var(--text-primary)]">
+            No hay escáner de CVEs conectado
+          </h2>
+          <InfoTip
+            title="Escáner de vulnerabilidades"
+            what="Conecta un escáner externo para detectar vulnerabilidades en las dependencias. Mientras tanto, abajo ves el estado real del repo, sin datos falsos."
+            affects="Con un escáner verás CVEs por severidad, paquetes afectados con su versión de arreglo, el último escaneo y un botón para abrir el PR de arreglo."
+            side="bottom"
+          />
+        </div>
         <div className="mt-5 flex items-center justify-center gap-2 flex-wrap">
           <a
             href="https://docs.github.com/en/code-security/dependabot/dependabot-security-updates"
@@ -225,9 +228,6 @@ export function VulnerabilitiesTab() {
               <h3 className="font-display text-base font-extrabold tracking-tight text-[var(--text-primary)]">
                 Estado real del repo
               </h3>
-              <p className="text-xs text-[var(--text-tertiary)]">
-                Métricas leídas del package.json + lockfile (sin escáner)
-              </p>
             </div>
           </header>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-0 divide-y lg:divide-y-0 lg:divide-x divide-[var(--rule-soft)]">
@@ -277,11 +277,8 @@ export function VulnerabilitiesTab() {
           </span>
           <div>
             <h3 className="font-display text-base font-extrabold tracking-tight text-[var(--text-primary)]">
-              Mientras tanto — mitigación manual
+              Mitigación manual
             </h3>
-            <p className="text-xs text-[var(--text-tertiary)]">
-              Acciones que reducen el riesgo sin escáner automático
-            </p>
           </div>
         </header>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-0 divide-y md:divide-y-0 md:divide-x divide-[var(--rule-soft)]">
@@ -289,7 +286,7 @@ export function VulnerabilitiesTab() {
             icon={Command}
             number="01"
             title="npm audit antes de deploy"
-            detail="Corré npm audit --omit=dev en CI. Falla el build si encuentra vulnerabilidades High/Critical."
+            detail="Corre npm audit --omit=dev en CI. Falla el build si encuentra vulnerabilidades High/Critical."
             code="npm audit --omit=dev"
             onCopy={copy}
           />
@@ -297,7 +294,7 @@ export function VulnerabilitiesTab() {
             icon={RefreshCw}
             number="02"
             title="Renovate / Dependabot PRs"
-            detail="Aceptá las PRs de seguridad que aparecen en GitHub. Las críticas no esperan al sprint planning."
+            detail="Acepta las PRs de seguridad que aparecen en GitHub. Las críticas no esperan al sprint planning."
           />
           <MitigationCard
             icon={FileCheck}
@@ -307,44 +304,6 @@ export function VulnerabilitiesTab() {
             code="git diff package-lock.json"
             onCopy={copy}
           />
-        </div>
-      </section>
-
-      {/* ─── Próximos pasos ──────────────────────────────────────── */}
-      <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5">
-        <div className="flex items-start gap-3">
-          <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]">
-            <Package className="h-5 w-5" strokeWidth={1.75} aria-hidden />
-          </span>
-          <div className="flex-1 min-w-0">
-            <h3 className="font-display text-base font-extrabold tracking-tight text-[var(--text-primary)]">
-              Cuando conectes un escáner, este panel mostrará
-            </h3>
-            <ul className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-[var(--text-secondary)]">
-              <li className="flex items-start gap-2">
-                <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-[var(--accent)] shrink-0" />
-                <span>
-                  CVEs activos agrupados por severidad (Critical / High / Medium /
-                  Low)
-                </span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-[var(--accent)] shrink-0" />
-                <span>Paquetes afectados con versión instalada vs versión fix</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-[var(--accent)] shrink-0" />
-                <span>Tiempo desde el último escaneo y próximo scheduled</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-[var(--accent)] shrink-0" />
-                <span>
-                  CTA &ldquo;Aplicar fix&rdquo; → abre PR automática con la
-                  dependencia actualizada
-                </span>
-              </li>
-            </ul>
-          </div>
         </div>
       </section>
     </div>
@@ -424,10 +383,12 @@ function MitigationCard({
           {number}
         </span>
       </div>
-      <h4 className="font-display text-sm font-extrabold tracking-tight text-[var(--text-primary)]">
-        {title}
-      </h4>
-      <p className="text-xs leading-relaxed text-[var(--text-secondary)]">{detail}</p>
+      <div className="flex items-center gap-1.5">
+        <h4 className="font-display text-sm font-extrabold tracking-tight text-[var(--text-primary)]">
+          {title}
+        </h4>
+        <InfoTip title={title} what={detail} side="bottom" />
+      </div>
       {code && (
         <div className="flex items-center gap-1 rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-canvas)] pl-2.5 pr-1 py-1">
           <code className="flex-1 font-mono text-xs text-[var(--text-primary)] truncate">

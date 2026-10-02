@@ -16,6 +16,7 @@
  * Vista read-only de la matriz definida en lib/auth/role-permissions.ts.
  */
 
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Users,
@@ -204,15 +205,16 @@ export function PermissionsTab() {
           <Shield className="h-5 w-5" strokeWidth={1.75} aria-hidden />
         </span>
         <div className="flex-1 min-w-0">
-          <p className="font-display text-sm font-extrabold text-sky-900 dark:text-sky-100">
-            Vista documental — los cambios requieren PR
-          </p>
-          <p className="text-xs text-sky-700 dark:text-sky-300 mt-0.5">
-            La matriz refleja la política vigente en{" "}
-            <code className="font-mono">lib/auth/role-permissions.ts</code>. No hay
-            UI para rotar permisos en caliente — eso reduce superficie de ataque y
-            deja todo cambio trazable en git.
-          </p>
+          <div className="flex items-center gap-1.5">
+            <p className="font-display text-sm font-extrabold text-sky-900 dark:text-sky-100">
+              Solo lectura: los cambios van por PR
+            </p>
+            <InfoTip
+              title="Matriz de permisos"
+              what={<span>Refleja la política vigente en lib/auth/role-permissions.ts. No hay pantalla para cambiar permisos en caliente: así hay menos superficie de ataque y cada cambio queda en git.</span>}
+              side="bottom"
+            />
+          </div>
         </div>
         <a
           href="https://github.com/Buleje/Mercado/blob/master/bodega-san-martin/lib/auth/role-permissions.ts"
@@ -461,18 +463,16 @@ export function PermissionsTab() {
             <FileText className="h-5 w-5" strokeWidth={1.75} aria-hidden />
           </span>
           <div className="flex-1 min-w-0">
-            <h3 className="font-display text-base font-extrabold tracking-tight text-[var(--text-primary)]">
-              La matriz vive en código, no en DB
-            </h3>
-            <p className="text-sm text-[var(--text-secondary)] mt-1">
-              Cualquier cambio de permisos se hace editando{" "}
-              <code className="rounded bg-[var(--surface-sunken)] px-1.5 py-0.5 text-xs font-mono">
-                lib/auth/role-permissions.ts
-              </code>{" "}
-              y queda en el git log. Ventaja: cada cambio es revisado por un humano
-              antes de merge y trazable indefinidamente. No hay UI para rotar
-              permisos en caliente — eso reduce superficie de ataque.
-            </p>
+            <div className="flex items-center gap-1.5">
+              <h3 className="font-display text-base font-extrabold tracking-tight text-[var(--text-primary)]">
+                Historial de cambios
+              </h3>
+              <InfoTip
+                title="Historial de cambios"
+                what={<span>Los permisos viven en el código (lib/auth/role-permissions.ts), no en la base de datos. Cada cambio lo revisa una persona antes de unirse y queda en el git log.</span>}
+                side="bottom"
+              />
+            </div>
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <a
                 href="https://github.com/Buleje/Mercado/commits/master/bodega-san-martin/lib/auth/role-permissions.ts"
@@ -504,11 +504,12 @@ export function PermissionsTab() {
         <p className="font-display text-base font-extrabold text-[var(--text-primary)]">
           Roles personalizados no disponibles
         </p>
-        <p className="text-xs text-[var(--text-tertiary)] mt-1 max-w-md mx-auto">
-          La plataforma usa los 6 roles canónicos. Roles custom por tenant
-          aumentarían la superficie de auditoría sin beneficio claro. Si necesitás
-          un permiso específico, agregalo al rol existente.
-        </p>
+        <InfoTip
+          title="Roles personalizados"
+          what="La plataforma usa 6 roles fijos. Roles propios por negocio ampliarían la superficie de auditoría sin beneficio claro."
+          affects="Si necesitas un permiso específico, agrégalo al rol existente."
+          side="top"
+        />
       </div>
     </div>
   );

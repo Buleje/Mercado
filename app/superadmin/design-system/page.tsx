@@ -273,7 +273,7 @@ export default function DesignSystemPage() {
       <header className="border-b border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <div className="w-full">
           <div className="flex items-start justify-between gap-4 flex-wrap">
-            <div className="flex items-start gap-3.5 min-w-0 flex-1">
+            <div className="flex items-start gap-3.5 min-w-0 flex-[1_1_20rem]">
               <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-600,var(--accent))] text-white shrink-0">
                 <Palette className="h-6 w-6" strokeWidth={1.75} aria-hidden />
               </span>
@@ -281,24 +281,18 @@ export default function DesignSystemPage() {
                 <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
                   Plataforma · Centro de diseño
                 </p>
-                <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] inline-flex items-center gap-2">
+                <div className="flex items-center gap-2">
+                <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">
                   Diseño heredable
+                </h1>
                   <InfoTip
                     side="bottom"
                     title="Centro de Diseño Heredable"
-                    what="Definís la identidad visual (colores, tipografía, bordes, sombras, botones, animaciones) con un editor en vivo y la guardás como preset."
+                    what="Defines la identidad visual (colores, tipografía, bordes, sombras, botones, animaciones) con un editor en vivo y la guardas como preset."
                     affects="Se hereda en VIVO al panel admin de TODOS los negocios (vía DesignTokensProvider). No toca el superadmin ni el storefront público."
-                    example="Cambiás el color primario a coral y el radio de bordes a 'redondo' → todos los botones y tarjetas del admin de los negocios se ven coral y redondeados al instante."
+                    example="Cambias el color primario a coral y el radio de bordes a 'redondo' → todos los botones y tarjetas del admin de los negocios se ven coral y redondeados al instante."
                   />
-                </h1>
-                <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">
-                  Personalizá colores, tipografía, bordes, sombras, botones y animaciones. Todo lo
-                  que cambies se hereda en vivo al{" "}
-                  <strong className="text-[var(--text-primary)]">
-                    panel admin de los negocios
-                  </strong>
-                  .
-                </p>
+                </div>
                 {activePreset && (
                   <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-1">
                     <span
@@ -308,18 +302,18 @@ export default function DesignSystemPage() {
                     <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
                       Activo
                     </span>
-                    <span className="text-xs font-extrabold text-[var(--text-primary)]">
+                    <span className="text-xs font-extrabold text-[var(--text-primary)] whitespace-nowrap">
                       {activePreset.meta.name}
                     </span>
                     {updatedAt && (
-                      <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-                        ·{" "}
-                        {new Date(updatedAt).toLocaleString("es-PE", {
+                      <InfoTip
+                        title="Último cambio"
+                        what={`${new Date(updatedAt).toLocaleString("es-PE", {
                           dateStyle: "short",
                           timeStyle: "short",
-                        })}
-                        {updatedBy ? ` · ${updatedBy}` : ""}
-                      </span>
+                        })}${updatedBy ? ` · ${updatedBy}` : ""}`}
+                        side="bottom"
+                      />
                     )}
                   </div>
                 )}
@@ -536,19 +530,20 @@ function PresetCard({
 
       {/* Cuerpo */}
       <div className="p-5 space-y-4">
-        <p className="text-sm text-[var(--text-secondary)] leading-relaxed line-clamp-2 min-h-[2.5em]">
-          {preset.meta.description || "Sin descripción"}
-        </p>
-
-        <div className="flex items-center gap-1.5">
-          {swatches.map((c, i) => (
-            <span
-              key={i}
-              className="h-6 w-6 rounded-md border border-black/10"
-              style={{ background: c }}
-              title={c}
-            />
-          ))}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5">
+            {swatches.map((c, i) => (
+              <span
+                key={i}
+                className="h-6 w-6 rounded-md border border-black/10"
+                style={{ background: c }}
+                title={c}
+              />
+            ))}
+          </div>
+          {preset.meta.description && (
+            <InfoTip title={preset.meta.name} what={preset.meta.description} side="bottom" />
+          )}
         </div>
 
         <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
@@ -673,14 +668,13 @@ function GalleryView({
           <GallerySectionHeading
             icon={Palette}
             title="Presets oficiales"
-            subtitle="Diseños curados por el equipo Buleje. Click para activar, lápiz para editar."
             count={oficial.length}
             info={{
               what: "Temas completos ya armados por Buleje (paleta + tipografía + bordes + sombras). Click en la tarjeta activa el tema; el lápiz lo abre en el editor para retocarlo.",
               affects:
                 "Activar uno cambia al instante el look del panel admin de todos los negocios.",
               example:
-                "Elegís 'Coral Editorial' → el admin de los negocios pasa a la paleta coral/teal con esa tipografía, sin tocar nada más.",
+                "Eliges 'Coral Editorial' → el admin de los negocios pasa a la paleta coral/teal con esa tipografía, sin tocar nada más.",
             }}
           />
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -703,14 +697,13 @@ function GalleryView({
           <GallerySectionHeading
             icon={Sparkles}
             title="Mis presets"
-            subtitle="Tus diseños guardados. Reactivables en cualquier momento."
             count={saved.length}
             muted
             info={{
-              what: "Tu biblioteca de temas guardados desde el editor. Los podés reactivar, duplicar o borrar cuando quieras.",
+              what: "Tu biblioteca de temas guardados desde el editor. Los puedes reactivar, duplicar o borrar cuando quieras.",
               affects: "Reactivar uno reemplaza el tema vigente del panel admin de los negocios.",
               example:
-                "Guardaste 'Navidad 2026' en diciembre → en enero reactivás 'Default' con un click y volvés al tema normal.",
+                "Guardaste 'Navidad 2026' en diciembre → en enero reactivas 'Default' con un clic y volvés al tema normal.",
             }}
           />
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -764,8 +757,8 @@ function LibraryView({
           Sin presets propios todavía
         </h3>
         <p className="mt-2 text-sm text-[var(--text-secondary)] max-w-md mx-auto leading-relaxed">
-          Creá tu propio preset desde cero o duplicá uno oficial y modifícalo. Quedan guardados acá
-          y los podés activar cuando quieras.
+          Crea tu preset desde cero o duplica uno oficial. Quedan guardados aquí
+          y los activas cuando quieras.
         </p>
         <button
           type="button"
@@ -1928,14 +1921,12 @@ function PreviewShell({ tokens, mobile }: { tokens: DesignTokens; mobile: boolea
 function GallerySectionHeading({
   icon: Icon,
   title,
-  subtitle,
   count,
   muted,
   info,
 }: {
   icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
   title: string;
-  subtitle: string;
   count: number;
   muted?: boolean;
   info?: { title?: string; what: string; affects?: string; example?: string };
@@ -1953,8 +1944,10 @@ function GallerySectionHeading({
           <Icon className="h-4 w-4" strokeWidth={1.75} />
         </span>
         <div>
-          <h2 className="font-display text-lg sm:text-xl font-extrabold tracking-tight text-[var(--text-primary)] inline-flex items-center gap-2">
-            {title}
+          <div className="flex items-center gap-2">
+            <h2 className="font-display text-lg sm:text-xl font-extrabold tracking-tight text-[var(--text-primary)]">
+              {title}
+            </h2>
             {info && (
               <InfoTip
                 side="bottom"
@@ -1964,8 +1957,7 @@ function GallerySectionHeading({
                 example={info.example}
               />
             )}
-          </h2>
-          <p className="mt-0.5 text-sm text-[var(--text-secondary)]">{subtitle}</p>
+          </div>
         </div>
       </div>
       <span

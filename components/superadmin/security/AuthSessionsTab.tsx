@@ -18,6 +18,7 @@
  * se deriva del audit log (último login_success sin logout posterior).
  */
 
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import {
   useState,
   useEffect,
@@ -420,19 +421,17 @@ export function AuthSessionsTab() {
           <Info className="h-5 w-5" strokeWidth={1.75} aria-hidden />
         </span>
         <div className="flex-1 min-w-0">
-          <p className="font-display text-sm font-extrabold text-[var(--text-primary)]">
-            Cómo se calculan estas sesiones
-          </p>
-          <p className="text-xs text-[var(--text-secondary)] mt-1">
-            Las sesiones del superadmin son JWT stateless (sin tabla persistente).
-            La lista se deriva del audit log: último login exitoso sin logout
-            posterior por usuario, ventana de 8h. Para invalidación efectiva ante
-            incidente, usá{" "}
-            <strong className="text-[var(--text-primary)]">
-              Forzar logout global
-            </strong>
-            .
-          </p>
+          <div className="flex items-center gap-1.5">
+            <p className="font-display text-sm font-extrabold text-[var(--text-primary)]">
+              Cómo se calculan estas sesiones
+            </p>
+            <InfoTip
+              title="Cómo se calculan"
+              what="Las sesiones son JWT sin tabla propia: la lista sale del audit log (último login exitoso sin logout, ventana de 8 h)."
+              affects="Ante un incidente, usa «Forzar logout global» para invalidarlas todas."
+              side="bottom"
+            />
+          </div>
         </div>
         <button
           type="button"
@@ -638,9 +637,6 @@ export function AuthSessionsTab() {
               <h3 className="font-display text-base font-extrabold tracking-tight text-[var(--text-primary)]">
                 TOTP 2FA por superadmin
               </h3>
-              <p className="text-xs text-[var(--text-tertiary)]">
-                Estado del segundo factor de autenticación
-              </p>
             </div>
           </header>
           {totpAdmins.length === 0 ? (
@@ -730,9 +726,6 @@ export function AuthSessionsTab() {
             <h3 className="font-display text-base font-extrabold tracking-tight text-[var(--text-primary)]">
               Política de contraseñas
             </h3>
-            <p className="text-xs text-[var(--text-tertiary)]">
-              Reglas vigentes aplicadas a todos los usuarios admin
-            </p>
           </div>
         </header>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-0 divide-y lg:divide-y-0 lg:divide-x divide-[var(--rule-soft)]">

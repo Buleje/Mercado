@@ -55,7 +55,7 @@ export function JobsSLO() {
           <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]"><Timer className="h-4 w-4" strokeWidth={1.75} aria-hidden /></span>
           <div>
             <h3 className="font-display text-base font-extrabold tracking-tight text-[var(--text-primary)]">Confiabilidad de jobs (SLO {d.windowDays}d)</h3>
-            <p className="text-xs text-[var(--text-tertiary)]">{o.totalRuns} corridas de {o.jobs} crons · objetivo {d.targetPct}% · medido en vivo</p>
+            <p className="text-xs text-[var(--text-tertiary)]" title="Medido en vivo">{o.totalRuns} corridas · {o.jobs} crons</p>
           </div>
         </div>
         <button type="button" onClick={() => void load()} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--text-secondary)] hover:border-[var(--accent)]/40"><RefreshCw className="h-3.5 w-3.5" /></button>
@@ -91,7 +91,7 @@ export function JobsSLO() {
                 {j.failures > 0 ? <AlertTriangle className="h-4 w-4 text-[var(--data-error-600,#dc2626)] shrink-0" /> : j.stale ? <Clock className="h-4 w-4 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0" /> : <CheckCircle2 className="h-4 w-4 text-[var(--data-success-600,#059669)] shrink-0" />}
                 <div className="min-w-0 flex-1">
                   <p className="font-mono text-xs font-bold text-[var(--text-primary)] truncate">{j.jobName}</p>
-                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{j.runs} corridas · última {ago(j.lastRun)}{j.stale && <span className="text-[var(--accent-ink)] dark:text-[var(--accent)] font-bold"> · stale</span>}</p>
+                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{j.runs}× · {ago(j.lastRun)}{j.stale && <span className="text-[var(--accent-ink)] dark:text-[var(--accent)] font-bold"> · stale</span>}</p>
                 </div>
                 <span className="hidden sm:block w-24 text-right text-xs tabular-nums text-[var(--text-secondary)]">p95 {ms(j.p95Ms)}</span>
                 <span className={`w-16 text-right text-sm font-extrabold tabular-nums shrink-0 ${j.successRate >= 99 ? "text-[var(--data-success-600,#059669)]" : j.successRate >= 90 ? "text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--data-error-600,#dc2626)]"}`}>{j.successRate}%</span>

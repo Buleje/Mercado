@@ -10,6 +10,7 @@ import {
   ZoomIn, FolderOpen,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 
 interface BankItem { id: string; name: string; imageUrl: string }
 interface BankCategory { id: string; name: string; description?: string; items: BankItem[] }
@@ -76,7 +77,7 @@ export default function ImageBankClient() {
           {loading ? "Cargando…" : (
             <>
               <strong>{categories.length}</strong> categorías ·{" "}
-              <strong>{totalItems}</strong> items · <strong className="text-[var(--data-success-500)]">{itemsWithImage}</strong> con foto
+              <strong>{totalItems}</strong> ítems · <strong className="text-[var(--data-success-500)]">{itemsWithImage}</strong> con foto
             </>
           )}
         </div>
@@ -113,7 +114,7 @@ export default function ImageBankClient() {
         <div className="rounded-xl border border-dashed border-[var(--rule-base)] p-10 text-center">
           <ImageIcon className="w-8 h-8 text-[var(--text-tertiary)] mx-auto mb-3" />
           <p className="text-sm text-[var(--text-secondary)] font-medium">
-            Aún no hay categorías. Creá la primera para empezar.
+            Aún no hay categorías. Crea la primera.
           </p>
         </div>
       )}
@@ -282,15 +283,13 @@ function CategorySummaryCard({
 
         <div className="p-3 flex items-start gap-2">
           <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-bold text-[var(--text-primary)] truncate">{category.name}</h3>
+            <div className="flex items-center gap-1">
+              <h3 className="text-sm font-bold text-[var(--text-primary)] truncate">{category.name}</h3>
+              {category.description && <InfoTip title={category.name} what={category.description} side="bottom" />}
+            </div>
             <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">
-              {category.items.length} item{category.items.length === 1 ? "" : "s"}
-              {" · "}
-              <strong className="text-[var(--data-success-500)]">{itemsWithImage} con foto</strong>
+              <strong className="text-[var(--data-success-500)]">{itemsWithImage}</strong>/{category.items.length} con foto
             </p>
-            {category.description && (
-              <p className="text-xs text-[var(--text-secondary)] mt-1 line-clamp-2">{category.description}</p>
-            )}
           </div>
           <div className="flex flex-col gap-1 shrink-0">
             <button
@@ -363,14 +362,14 @@ function CategoryDetailModal({
         >
           <div className="px-6 py-4 border-b border-[var(--rule-soft)] flex items-center justify-between gap-3 shrink-0">
             <div className="min-w-0">
-              <Dialog.Title className="text-lg font-extrabold text-[var(--text-primary)] truncate">
-                {category.name}
-              </Dialog.Title>
+              <div className="flex items-center gap-1.5">
+                <Dialog.Title className="text-lg font-extrabold text-[var(--text-primary)] truncate">
+                  {category.name}
+                </Dialog.Title>
+                {category.description && <InfoTip title={category.name} what={category.description} side="bottom" />}
+              </div>
               <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
-                {category.items.length} item{category.items.length === 1 ? "" : "s"}
-                {" · "}
-                <strong className="text-[var(--data-success-500)]">{itemsWithImage} con foto</strong>
-                {category.description ? ` · ${category.description}` : ""}
+                <strong className="text-[var(--data-success-500)]">{itemsWithImage}</strong>/{category.items.length} con foto
               </p>
             </div>
             <Dialog.Close className="p-2 rounded-lg hover:bg-[var(--surface-sunken)] shrink-0" aria-label="Cerrar">
@@ -390,7 +389,7 @@ function CategoryDetailModal({
                 <div className="rounded-xl border border-dashed border-[var(--rule-base)] p-8 text-center">
                   <Camera className="h-7 w-7 text-[var(--text-tertiary)] mx-auto mb-2" />
                   <p className="text-sm text-[var(--text-secondary)] font-medium">
-                    Esta categoría aún no tiene items.
+                    Esta categoría aún no tiene ítems.
                   </p>
                 </div>
               )
@@ -686,7 +685,7 @@ function ItemForm({
 
   const submit = async () => {
     if (!name.trim()) { setErr("Nombre obligatorio"); return; }
-    if (!imageUrl) { setErr("Subí una imagen"); return; }
+    if (!imageUrl) { setErr("Sube una imagen"); return; }
     setSaving(true);
     try {
       const url = isNew
@@ -812,7 +811,7 @@ function ImageDropzone({ value, onChange }: { value: string; onChange: (url: str
             ) : (
               <>
                 <Upload className="h-6 w-6 text-[var(--text-tertiary)] mb-1" />
-                <p className="text-xs font-bold text-[var(--text-primary)]">Arrastrá una imagen o click</p>
+                <p className="text-xs font-bold text-[var(--text-primary)]">Arrastra una imagen o haz clic</p>
                 <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">JPG · PNG · WebP — optimizada a WebP automáticamente</p>
               </>
             )}

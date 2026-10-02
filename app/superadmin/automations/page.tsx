@@ -8,7 +8,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Webhook, RefreshCw, Clock, Zap, Loader2, ArrowRight, ChevronDown, ChevronRight, Building2 } from "@buleje/design-system/icons";
+import { Webhook, RefreshCw, Clock, Zap, Loader2, ChevronDown, ChevronRight, Building2 } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { AdminTabShell } from "../_components/_shared";
 import { fetchSuperadmin } from "@/lib/superadmin/fetch-auth";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -57,13 +58,12 @@ export default function AutomationsPage() {
   return (
     <AdminTabShell
       info={{
-        what: "Reglas que detectan tiendas en cierta condición y disparan un aviso. Activás la regla, ves a cuántas afecta y la ejecutás.",
-        affects: "Manda avisos (WhatsApp/email) a los dueños de las tiendas que cumplen la condición.",
-        example: "Activás 'trial por vencer' → las tiendas con prueba a 3 días de vencer reciben un recordatorio.",
+        what: "Reglas que detectan tiendas en cierta condición y disparan un aviso. Activa la regla, ve a cuántas afecta y ejecútala.",
+        affects: "Manda avisos (WhatsApp/email) a los dueños de las tiendas que cumplen la condición. Por ahora cada regla se ejecuta a mano con «Ejecutar ahora»; la ejecución automática viene después.",
+        example: "Activas 'trial por vencer' → las tiendas con prueba a 3 días de vencer reciben un recordatorio.",
       }}
       title="Automatizaciones"
       kicker="Plataforma · Operaciones"
-      description="Reglas que detectan tiendas y disparan un aviso. Activá, mirá a cuántas afecta y ejecutá."
       icon={Webhook}
       actions={
         <button onClick={() => void load()} disabled={loading} className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--accent)]/40 disabled:opacity-50">
@@ -71,10 +71,6 @@ export default function AutomationsPage() {
         </button>
       }
     >
-      <p className="text-xs text-[var(--text-tertiary)] mb-4">
-        La ejecución automática programada (cron) es un próximo paso; por ahora cada regla se ejecuta manualmente con &quot;Ejecutar ahora&quot;.
-      </p>
-
       {loading && rules.length === 0 ? (
         <div className="space-y-3">{[0,1,2,3].map((i) => <div key={i} className="h-28 animate-pulse bg-[var(--surface-sunken)] border border-[var(--rule-soft)]" />)}</div>
       ) : (
@@ -83,12 +79,15 @@ export default function AutomationsPage() {
             <div key={r.key} className="border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <h3 className="text-sm font-bold text-[var(--text-primary)]">{r.title}</h3>
-                  <p className="text-xs text-[var(--text-secondary)] mt-1 flex items-center gap-1.5 flex-wrap">
-                    <span>{r.trigger}</span>
-                    <ArrowRight className="h-3 w-3 text-[var(--text-tertiary)]" />
-                    <span>{r.action}</span>
-                  </p>
+                  <div className="flex items-center gap-1.5">
+                    <h3 className="text-sm font-bold text-[var(--text-primary)]">{r.title}</h3>
+                    <InfoTip
+                      title={r.title}
+                      what={<span>Cuando: {r.trigger}. Entonces: {r.action}.</span>}
+                      side="bottom"
+                    />
+                  </div>
+                  <div className="text-xs text-[var(--text-secondary)] mt-1">{r.trigger}</div>
                 </div>
                 {/* Toggle */}
                 <button

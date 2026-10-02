@@ -30,6 +30,7 @@ import {
   Cable,
 } from "@buleje/design-system/icons";
 import { AdminTabShell } from "../_components/_shared";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { JobsSLO } from "@/components/superadmin/slo/JobsSLO";
 import { fmtTimeSafe, fmtDateTimeSafe } from "@/lib/superadmin/safe-helpers";
 import { SuperAdminModuleTabs, SALUD_TABS } from "@/components/superadmin/_shared/ModuleTabs";
@@ -136,10 +137,10 @@ function SourceEmptyState({ status, envHint }: { status: SloSourceStatus; envHin
         </p>
         <p className="text-[var(--text-tertiary)] mt-0.5">
           {isError
-            ? "Revisá que las credenciales sean válidas (no placeholders). "
+            ? "Revisa las credenciales: "
             : status === "empty"
-              ? "La integración conecta pero no hay datos en el período. "
-              : "Para ver datos reales, agregá en el env: "}
+              ? "Conecta, pero sin datos en el período. "
+              : "Agrega al env: "}
           {status !== "empty" && (
             <code className="font-mono text-xs bg-[var(--surface-sunken)] px-1.5 py-0.5 rounded">
               {envHint}
@@ -306,7 +307,6 @@ export default function SLODashboardPage() {
             "Si ves 'AuthError (401): subiendo', hay usuarios que no pueden iniciar sesión. Si el checkout completion baja de 30%, revisar el flujo de pago.",
         }}
         title="SLO Dashboard"
-        description="Vercel deploy status, Sentry error rate y PostHog checkout funnel."
         icon={Activity}
         kicker="Operaciones"
       >
@@ -316,16 +316,18 @@ export default function SLODashboardPage() {
           <div className="flex items-start gap-3 p-4 rounded-xl bg-[color-mix(in_oklch,#0d9488_8%,transparent)] border border-[var(--accent)]">
             <AlertTriangle className="w-5 h-5 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0 mt-0.5" />
             <div className="text-sm">
-              <p className="font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)]">
+              <p className="inline-flex items-center gap-1.5 font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)]">
                 {unconfigured.length} fuente{unconfigured.length > 1 ? "s" : ""} sin conectar
-              </p>
-              <p className="text-[var(--text-secondary)] mt-0.5">
-                Estas secciones muestran &ldquo;no configurado&rdquo; en vez de datos inventados.
-                Conectá{" "}
-                <span className="font-semibold text-[var(--text-primary)]">
-                  {unconfigured.map((k) => SOURCE_HINT[k].split(" + ")[0]).join(", ")}
-                </span>{" "}
-                para activarlas. CronHealth ya carga datos reales de la DB.
+                <InfoTip
+                  title="Fuentes sin conectar"
+                  what={
+                    <span>
+                      Esas secciones dicen «no configurado» en vez de mostrar datos inventados. Para activarlas conecta{" "}
+                      {unconfigured.map((k) => SOURCE_HINT[k].split(" + ")[0]).join(", ")}. Los crons ya usan datos reales.
+                    </span>
+                  }
+                  side="bottom"
+                />
               </p>
             </div>
           </div>

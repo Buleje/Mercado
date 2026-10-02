@@ -43,6 +43,7 @@ import {
   Layout,
   Sparkles,
 } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -143,7 +144,7 @@ const PRESETS: Array<{ id: string; label: string; description: string; swatch: s
   {
     id: "buleje",
     label: "Buleje",
-    description: "Editorial slate-deep · teal vibrante · branded total",
+    description: "Oscuro de marca",
     swatch: "linear-gradient(135deg, #0b1f2b 0%, #00A0A0 100%)",
     // Theme dedicado "buleje" — sidebar branded SIEMPRE oscuro editorial con
     // teal #00A0A0 (color de marca real), independiente del light/dark del shell.
@@ -153,21 +154,21 @@ const PRESETS: Array<{ id: string; label: string; description: string; swatch: s
   {
     id: "ejecutivo",
     label: "Ejecutivo",
-    description: "Oscuro · teal · compacto",
+    description: "Oscuro · compacto",
     swatch: "linear-gradient(135deg, #18181b 0%, #27272a 100%)",
     prefs: { theme: "dark", accent: "teal", density: "compact", iconStyle: "monochrome" },
   },
   {
     id: "sereno",
     label: "Sereno",
-    description: "Claro · cielo · amplio",
+    description: "Claro · amplio",
     swatch: "linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)",
     prefs: { theme: "light", accent: "sky", density: "spacious", iconStyle: "colored" },
   },
   {
     id: "vibrante",
     label: "Vibrante",
-    description: "Cristal · rosa · normal",
+    description: "Cristal · rosa",
     swatch: "linear-gradient(135deg, #fff1f2 0%, #fecdd3 100%)",
     prefs: { theme: "cristal", accent: "rose", density: "normal", iconStyle: "colored" },
   },
@@ -306,12 +307,15 @@ export default function SidebarConfigPanel({ items }: Props) {
     <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-5 space-y-5">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-base font-bold text-[var(--text-primary)] flex items-center gap-2">
-            <Layout className="h-4 w-4 text-[var(--accent)]" /> Personalizar barra lateral
-          </h3>
-          <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
-            Mismo configurador que el panel del negocio: ocultá módulos, reordená con drag, y elegí tema/color/densidad/estilo de íconos.
-          </p>
+          <div className="flex items-center gap-1.5">
+            <h3 className="text-base font-bold text-[var(--text-primary)] flex items-center gap-2">
+              <Layout className="h-4 w-4 text-[var(--accent)]" /> Personalizar barra lateral
+            </h3>
+            <InfoTip
+              title="Barra lateral"
+              what="Es el mismo configurador que usan los negocios: oculta módulos, reordénalos y elige tema, color, densidad e íconos."
+            />
+          </div>
         </div>
         <button
           type="button"
@@ -487,9 +491,12 @@ export default function SidebarConfigPanel({ items }: Props) {
 
       {/* Reorder + visibility list with dnd */}
       <div>
-        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-2">
-          Módulos del sidebar — arrastrá para reordenar
-        </p>
+        <div className="mb-2 flex items-center gap-1.5">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+            Módulos de la barra
+          </p>
+          <InfoTip title="Módulos de la barra" what="Arrastra para reordenar. El ojo oculta o muestra cada módulo." side="bottom" />
+        </div>
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={ordered.map((i) => i.href)} strategy={verticalListSortingStrategy}>
             <div className="space-y-1.5">

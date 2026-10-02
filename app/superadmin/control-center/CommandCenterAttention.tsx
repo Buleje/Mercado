@@ -47,7 +47,7 @@ export function CommandCenterAttention() {
           </span>
           <div>
             <h3 className="font-display text-base font-extrabold tracking-tight text-[var(--text-primary)]">Lo que necesita tu atención ahora</h3>
-            <p className="text-xs text-[var(--text-tertiary)]">{d.totalUrgent > 0 ? `${d.totalUrgent} cosas pendientes en total` : "Todo bajo control"} · en vivo · auto 20s</p>
+            <p className="text-xs text-[var(--text-tertiary)]" title="En vivo: se actualiza cada 20 s">{d.totalUrgent > 0 ? `${d.totalUrgent} pendientes` : "Todo bajo control"}</p>
           </div>
         </div>
         <button type="button" onClick={() => void load()} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--text-secondary)] hover:border-[var(--accent)]/40"><RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} /></button>

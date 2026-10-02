@@ -26,6 +26,7 @@
  *  - GET /api/superadmin/security?days=N
  */
 
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { SAMetricCard } from "@/components/superadmin/_shared/SAMetricCard";
 import { useVisiblePolling } from "@/components/superadmin/_shared/useVisiblePolling";
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
@@ -548,7 +549,10 @@ export function OverviewTab() {
                   ? "Atención requerida"
                   : "Acción urgente"}
             </h3>
-            <p className="text-xs text-[var(--text-tertiary)] mt-1">Vulns · logins · TOTP · IPs</p>
+            <p className="text-xs text-[var(--text-tertiary)] mt-1 inline-flex items-center gap-1">
+              Cómo se calcula
+              <InfoTip title="Health score" what="Mezcla vulnerabilidades, logins fallidos, cobertura de 2FA e IPs sospechosas." side="bottom" />
+            </p>
           </div>
         </div>
 
@@ -842,8 +846,7 @@ export function OverviewTab() {
                 IPs sospechosas detectadas
               </h3>
               <p className="text-xs text-teal-700/80 dark:text-teal-400/80">
-                {suspiciousIPs.length} IP{suspiciousIPs.length === 1 ? "" : "s"} con ≥3 intentos
-                fallidos en los últimos {timeRange}
+                {suspiciousIPs.length} IP{suspiciousIPs.length === 1 ? "" : "s"} · ≥3 fallos · {timeRange}
               </p>
             </div>
           </header>

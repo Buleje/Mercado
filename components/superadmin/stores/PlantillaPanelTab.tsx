@@ -31,6 +31,7 @@ import {
   type AdminModuleEntry,
   type DefaultSidebarStyle,
 } from "@/lib/admin-template";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 
 const EMPTY_TPL: AdminTemplate = { overrides: {}, order: [], defaultSidebarStyle: "buleje", version: 2 };
 
@@ -51,35 +52,35 @@ const SIDEBAR_STYLE_OPTIONS: SidebarStyleOption[] = [
   {
     id: "buleje",
     label: "Buleje",
-    description: "Editorial slate · teal de marca · íconos limpios. Default recomendado.",
+    description: "Turquesa de marca. Recomendado.",
     swatch: "linear-gradient(135deg, #0b1f2b 0%, #00A0A0 100%)",
     accentHex: "#00A0A0",
   },
   {
     id: "ejecutivo",
     label: "Ejecutivo",
-    description: "Oscuro elegante con ámbar. Compacto y profesional.",
+    description: "Oscuro y compacto.",
     swatch: "linear-gradient(135deg, #18181b 0%, #0d9488 100%)",
     accentHex: "#0d9488",
   },
   {
     id: "sereno",
     label: "Sereno",
-    description: "Claro y descansado. Ideal para sesiones largas.",
+    description: "Claro y descansado.",
     swatch: "linear-gradient(135deg, #f0f9ff 0%, #0EA5E9 100%)",
     accentHex: "#0EA5E9",
   },
   {
     id: "vibrante",
     label: "Vibrante",
-    description: "Cristal con rosa. Para tiendas de moda y belleza.",
+    description: "Cristal con rosa.",
     swatch: "linear-gradient(135deg, #fff1f2 0%, #F43F5E 100%)",
     accentHex: "#F43F5E",
   },
   {
     id: "personalizado",
     label: "Personalizado",
-    description: "El cliente lo configura desde su panel admin (Personalizar navegación).",
+    description: "Cada negocio lo elige.",
     swatch: "linear-gradient(135deg, #71717a 0%, #d4d4d8 50%, #71717a 100%)",
     accentHex: "#71717a",
     requiresCustom: true,
@@ -133,28 +134,28 @@ const PRESET_MODES: PresetMode[] = [
   {
     id: "minimo",
     label: "Mínimo (bodega vecino)",
-    description: "Solo lo esencial: Ventas, Pedidos, Inventario, Productos, Mi Plata, Clientes, Config.",
+    description: "Solo lo esencial.",
     icon: <Layers className="h-4 w-4" />,
     apply: (e) => (PRESET_MINIMO_IDS as readonly string[]).includes(e.id),
   },
   {
     id: "completo",
     label: "Completo (default)",
-    description: "Todo lo que viene por defecto en el catálogo (cada módulo decide su propio default).",
+    description: "Lo que viene por defecto.",
     icon: <Sparkles className="h-4 w-4" />,
     apply: (e) => e.defaultVisible,
   },
   {
     id: "enterprise",
     label: "Enterprise (todo)",
-    description: "Activa absolutamente todos los módulos disponibles, incluyendo análisis avanzado y sistema.",
+    description: "Todos los módulos encendidos.",
     icon: <Crown className="h-4 w-4" />,
     apply: () => true,
   },
   {
     id: "personalizado",
     label: "Personalizado",
-    description: "Vos decidís módulo por módulo en la lista de abajo. Lo que prendas o apagues se guarda al pulsar “Guardar cambios”.",
+    description: "Tú eliges módulo por módulo.",
     icon: <Pencil className="h-4 w-4" />,
     // No-op: respeta la visibility actual del template — el superadmin edita
     // manualmente abajo y luego guarda.
@@ -517,28 +518,10 @@ export function PlantillaPanelTab() {
           aria-hidden
           className="pointer-events-none absolute -bottom-16 -left-12 h-56 w-56 rounded-full bg-[var(--accent)]/[0.06] blur-3xl"
         />
-        <div className="relative flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 sm:gap-5">
-          <div className="flex items-start gap-3 sm:gap-4 flex-1 min-w-0">
-            <span className="inline-flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-600,var(--accent))] text-white shadow-lg shadow-[var(--accent)]/35 shrink-0">
-              <Layers className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2} />
-            </span>
-            <div className="min-w-0">
-              <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
-                <span aria-hidden className="inline-block h-[3px] w-8 rounded-full bg-[var(--accent)]" />
-                Configuración · Plantilla
-              </p>
-              <h2 className="text-[clamp(1.5rem,3vw,2.25rem)] font-extrabold tracking-tight text-[var(--text-primary)] leading-[1.05]">
-                Plantilla del{" "}
-                <span className="italic font-serif text-[var(--accent)]">Panel Admin.</span>
-              </h2>
-              <p className="text-sm sm:text-base text-[var(--text-secondary)] mt-2 sm:mt-3 leading-relaxed max-w-2xl">
-                Define qué módulos y qué <strong className="text-[var(--text-primary)]">estilo de sidebar</strong> heredan los dueños de tienda al abrir su negocio. Los cambios se propagan a todos los tenants abiertos.
-              </p>
-            </div>
-          </div>
+        <div className="relative">
           {/* Mobile: row full-width abajo del título (status pill + botón).
               Desktop: column right-aligned como antes. */}
-          <div className="flex flex-row sm:flex-col items-center sm:items-end gap-2 shrink-0">
+          <div className="flex flex-wrap items-center justify-between gap-2 w-full">
             {dirty ? (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] px-3 py-1.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider border border-primary/30">
                 <AlertCircle className="h-3 w-3" strokeWidth={2.5} />
@@ -611,12 +594,16 @@ export function PlantillaPanelTab() {
             <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
               Apariencia · Sidebar
             </p>
-            <h3 className="text-lg sm:text-xl font-extrabold text-[var(--text-primary)] tracking-tight">
-              Estilo por defecto del sidebar
-            </h3>
-            <p className="text-sm text-[var(--text-secondary)] mt-1.5 leading-relaxed max-w-2xl">
-              Cuando un nuevo cliente abre su tienda, su panel admin arranca con este diseño. Cada tenant puede luego personalizarlo desde <em className="not-italic font-semibold text-[var(--text-primary)]">&quot;Personaliza tu navegación&quot;</em>.
-            </p>
+            <div className="flex items-center gap-2">
+              <h3 className="text-lg sm:text-xl font-extrabold text-[var(--text-primary)] tracking-tight">
+                Estilo del menú lateral
+              </h3>
+              <InfoTip
+                title="Estilo del menú lateral"
+                what="Es el diseño con el que arranca el panel de un negocio nuevo."
+                affects="Cada negocio puede cambiarlo después desde «Personaliza tu navegación»."
+              />
+            </div>
           </div>
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
@@ -747,13 +734,17 @@ export function PlantillaPanelTab() {
             <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
               Plantillas rápidas
             </p>
-            <h3 className="text-lg sm:text-xl font-extrabold text-[var(--text-primary)] tracking-tight">
-              Elegí cómo arrancan los negocios
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-lg sm:text-xl font-extrabold text-[var(--text-primary)] tracking-tight">
+                Cómo arrancan los negocios
+              </h3>
+              <InfoTip
+                title="Plantillas rápidas"
+                what="Elige una plantilla o usa «Personalizado» para encender y apagar módulos uno por uno."
+                affects="Nada se aplica hasta que pulses «Guardar cambios»."
+              />
+            </div>
           </div>
-          <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] hidden sm:block max-w-md text-right">
-            Una plantilla rápida o el modo Personalizado para encender/apagar módulos uno por uno. Los cambios solo se aplican al pulsar “Guardar cambios”.
-          </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -906,7 +897,7 @@ export function PlantillaPanelTab() {
                       return (
                         <li
                           key={m.id}
-                          className={`flex flex-col sm:flex-row sm:items-center gap-3 px-4 sm:px-5 py-3.5 transition-colors hover:bg-[var(--surface-sunken)]/30 ${
+                          className={`flex flex-col xl:flex-row xl:items-center gap-3 px-4 sm:px-5 py-3.5 transition-colors hover:bg-[var(--surface-sunken)]/30 ${
                             !isVisible ? "opacity-65" : ""
                           }`}
                         >
@@ -989,12 +980,10 @@ export function PlantillaPanelTab() {
                                   <span className="font-mono text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                                     {m.id}
                                   </span>
+                                  <InfoTip title={label} what={m.description} />
                                 </>
                               )}
                             </div>
-                            <p className="text-xs text-[var(--text-tertiary)] mt-1 leading-relaxed">
-                              {m.description}
-                            </p>
                           </div>
 
                           {/* Plan selector — 4 tiers alineados con pricing real */}

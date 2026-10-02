@@ -71,10 +71,6 @@ export function SecurityHero({
               </h1>
               <InfoTip side="bottom" title="Security Center" what="Monitorea la seguridad del superadmin: sesiones activas, accesos, auditoría y credenciales." affects="Solo el superadmin. Acá detectas y cortas accesos sospechosos a la plataforma." example="Si hay un login raro desde otra IP, lo ves acá y cierras esa sesión." />
               </div>
-              <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">
-                Estado consolidado de seguridad de la plataforma — sesiones, permisos,
-                vulnerabilidades, compliance y registro de auditoría.
-              </p>
             </div>
           </div>
 

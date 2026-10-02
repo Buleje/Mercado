@@ -17,8 +17,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AdminPage,
-  AdminSection,
-  BodyText,
   Kicker,
   cn,
 } from "@buleje/design-system";
@@ -87,6 +85,7 @@ import {
   type LucideIcon,
 } from "@buleje/design-system/icons";
 import { PlatformCard } from "@/components/superadmin/control-center/PlatformCard";
+import { SeccionConInfo } from "@/components/superadmin/SeccionConInfo";
 import { CredentialRow } from "@/components/superadmin/control-center/CredentialRow";
 import { SystemInfoCard } from "@/components/superadmin/control-center/SystemInfoCard";
 import { SAStatChip } from "@/components/superadmin/_shared/SAStatChip";
@@ -473,10 +472,9 @@ export function ControlCenterClient({
       info={{
         what: "Acceso rápido a todas las consolas (Stripe, Vercel, Supabase…) con el estado de credenciales e info del sistema.",
         affects: "Solo el superadmin. Es un hub de accesos y diagnóstico; no cambia nada en las tiendas.",
-        example: "Querés revisar un pago en Stripe → entrás desde acá y ves si la credencial está activa.",
+        example: "¿Quieres revisar un pago en Stripe? Entras desde aquí y ves si la credencial está activa.",
       }}
         title="Centro de control"
-        description="Acceso rápido a todas las plataformas + estado de credenciales + info del sistema."
         icon={Gauge}
         kicker="Plataforma Buleje"
       >
@@ -484,7 +482,7 @@ export function ControlCenterClient({
       <CommandCenterAttention />
 
       {/* ── Quick stats — visión del estado en un golpe ─────────────── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <SAStatChip
           icon={Activity}
           label="Plataformas activas"
@@ -524,9 +522,9 @@ export function ControlCenterClient({
       </div>
 
       {/* ── A. Launchpad ────────────────────────────────────────────── */}
-      <AdminSection
+      <SeccionConInfo
         title={`Plataformas · ${PLATFORMS.length} páginas`}
-        description="Todas las rutas navegables del proyecto agrupadas. Click en una card para abrir en nueva pestaña."
+        info={{ what: "Todas las rutas del proyecto, agrupadas. Pulsa una tarjeta para abrirla en una pestaña nueva." }}
       >
         {/* Search filter — input grande para buscar entre 110+ rutas */}
         <div className="mb-5 relative">
@@ -577,7 +575,7 @@ export function ControlCenterClient({
               Sin coincidencias
             </p>
             <p className="text-xs text-[var(--text-tertiary)] mt-1">
-              No encontramos plataformas con &ldquo;{query}&rdquo;. Intentá con otra palabra.
+              No encontramos plataformas con &ldquo;{query}&rdquo;. Prueba con otra palabra.
             </p>
           </div>
         )}
@@ -618,12 +616,15 @@ export function ControlCenterClient({
             </div>
           ))}
         </div>
-      </AdminSection>
+      </SeccionConInfo>
 
       {/* ── B. Credenciales — agrupadas por dominio ──────────────────── */}
-      <AdminSection
+      <SeccionConInfo
         title="Credenciales del sistema"
-        description="Los valores nunca se muestran; sólo se reporta existencia y se ofrecen accesos a los dashboards de cada proveedor."
+        info={{
+          what: "Solo ves si cada credencial está puesta. Los valores nunca se muestran ni salen del servidor.",
+          affects: "Cada fila te lleva al panel del proveedor para rotarla.",
+        }}
       >
         <div className="space-y-5">
           {CRED_GROUP_ORDER.map((group) => {
@@ -703,20 +704,8 @@ export function ControlCenterClient({
               </div>
             );
           })}
-          <div
-            className={cn(
-              "flex items-center gap-2 rounded-xl border border-[var(--rule-base)]",
-              "bg-[var(--surface-sunken)]/50 px-4 py-2.5",
-            )}
-          >
-            <Lock className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" aria-hidden />
-            <BodyText className="text-[var(--text-tertiary)]">
-              Ningún secreto se envía al cliente. Solo se reporta si la variable
-              está presente en producción.
-            </BodyText>
-          </div>
         </div>
-      </AdminSection>
+      </SeccionConInfo>
 
       {/* ── C. Info del sistema (timestamp deploy detallado) ─────────── */}
       <SystemInfoCard

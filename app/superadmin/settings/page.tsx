@@ -25,6 +25,7 @@ import {
   AdminTabShell,
   AdminButton,
 } from "../_components/_shared";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import SidebarConfigPanel from "@/components/superadmin/SidebarConfigPanel";
 import { SuperAdminModuleTabs, SETTINGS_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 
@@ -230,7 +231,6 @@ export default function SettingsPage() {
       }}
       title="Configuración de plataforma"
       kicker="Control global"
-      description="Ajusta precios, comisiones, límites y controles de toda la plataforma. Los precios alimentan el MRR del dashboard en tiempo real."
       icon={Settings}
       stats={
         <>
@@ -264,7 +264,7 @@ export default function SettingsPage() {
       {loading && (
         <div className="flex items-center gap-2 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-4 py-3 text-sm text-[var(--text-secondary)]">
           <Loader2 className="h-4 w-4 animate-spin text-[var(--accent)]" aria-hidden />
-          Cargando configuración desde la base de datos…
+          Cargando…
         </div>
       )}
       {error && (
@@ -280,7 +280,7 @@ export default function SettingsPage() {
             <span className="font-semibold text-[var(--text-primary)]">
               Tienes cambios sin guardar
             </span>
-            <span className="text-[var(--text-secondary)]">— recordá presionar Guardar.</span>
+            <span className="text-[var(--text-secondary)]">— no olvides guardar.</span>
           </div>
         </div>
       )}
@@ -297,7 +297,7 @@ export default function SettingsPage() {
         eyebrow="Monetización"
         icon={DollarSign}
         title="Precios de planes"
-        subtitle="Precio mensual en soles (S/) que se cobra a cada tenant. Estos números alimentan directamente el MRR del dashboard."
+        subtitle="Precio mensual en soles (S/) que paga cada negocio. Alimenta el MRR del dashboard."
       />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {PLAN_TIERS.map((tier) => (
@@ -316,7 +316,7 @@ export default function SettingsPage() {
         eyebrow="Marketplace"
         icon={Percent}
         title="Comisión por defecto"
-        subtitle="Porcentaje que la plataforma retiene de cada venta cross-vendor. Puede sobreescribirse por categoría o por vendor."
+        subtitle="Lo que la plataforma retiene de cada venta del marketplace. Se puede cambiar por categoría o por vendedor."
         id="set-comision"
       />
       <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-6">
@@ -365,7 +365,7 @@ export default function SettingsPage() {
         eyebrow="Cuotas"
         icon={BarChart3}
         title="Límites por plan"
-        subtitle="Topes que dispara el upsell al siguiente plan. Cuando un tenant los supera, el banner de upgrade aparece automáticamente."
+        subtitle="Topes de cada plan. Cuando un negocio los supera, ve el aviso para subir de plan."
       />
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <PlanLimitsCard
@@ -412,13 +412,13 @@ export default function SettingsPage() {
         eyebrow="Operativa"
         icon={Settings}
         title="Controles de plataforma"
-        subtitle="Switches globales con efecto inmediato sobre todos los tenants. Usá modo mantenimiento solo durante deploys o incidencias críticas."
+        subtitle="Interruptores globales: afectan al instante a todos los negocios."
       />
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
         <ToggleCard
           icon={Store}
           title="Permitir nuevas tiendas"
-          desc="Abre o cierra el formulario público de registro de tenants."
+          desc="Abre o cierra el registro público."
           active={settings.allowNewStores}
           tone="primary"
           disabled={loading}
@@ -427,7 +427,8 @@ export default function SettingsPage() {
         <ToggleCard
           icon={AlertTriangle}
           title="Modo mantenimiento"
-          desc="Bloquea el acceso público con pantalla de mantenimiento. Usar solo durante deploys críticos."
+          desc="Bloquea el acceso público."
+          info="Muestra una pantalla de mantenimiento a todos los visitantes. Úsalo solo en deploys o incidencias críticas."
           active={settings.maintenanceMode}
           tone="warning"
           disabled={loading}
@@ -490,10 +491,12 @@ function SectionHeader({
         <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]">
           {eyebrow}
         </p>
-        <h2 className="font-display text-lg sm:text-xl font-extrabold tracking-tight text-[var(--text-primary)]">
-          {title}
-        </h2>
-        <p className="mt-1 text-sm text-[var(--text-secondary)]">{subtitle}</p>
+        <div className="flex items-center gap-1.5">
+          <h2 className="font-display text-lg sm:text-xl font-extrabold tracking-tight text-[var(--text-primary)]">
+            {title}
+          </h2>
+          <InfoTip title={title} what={subtitle} side="bottom" />
+        </div>
       </div>
     </div>
   );
@@ -697,6 +700,7 @@ function ToggleCard({
   icon: Icon,
   title,
   desc,
+  info,
   active,
   tone,
   disabled,
@@ -705,6 +709,7 @@ function ToggleCard({
   icon: LucideIcon;
   title: string;
   desc: string;
+  info?: string;
   active: boolean;
   tone: "primary" | "warning";
   disabled: boolean;
@@ -745,9 +750,12 @@ function ToggleCard({
       </span>
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-3">
-          <h3 className="font-display text-base font-bold text-[var(--text-primary)]">
-            {title}
-          </h3>
+          <div className="flex items-center gap-1.5 min-w-0">
+            <h3 className="font-display text-base font-bold text-[var(--text-primary)]">
+              {title}
+            </h3>
+            {info && <InfoTip title={title} what={info} side="bottom" />}
+          </div>
           <button
             type="button"
             onClick={onToggle}
@@ -764,7 +772,7 @@ function ToggleCard({
             />
           </button>
         </div>
-        <p className="mt-1 text-sm leading-relaxed text-[var(--text-secondary)]">{desc}</p>
+        <p className="mt-1 text-sm text-[var(--text-secondary)]">{desc}</p>
         {active && tone === "warning" && (
           <p className="mt-2 inline-flex items-center gap-1 rounded-full bg-teal-100 px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-teal-700 dark:bg-teal-950/50 dark:text-teal-400">
             <AlertTriangle className="h-3 w-3" aria-hidden />

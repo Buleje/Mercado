@@ -29,6 +29,7 @@ import {
 } from "@/lib/platform-config";
 import { AdminTabShell } from "../_components/_shared";
 import { SuperAdminModuleTabs, SETTINGS_TABS } from "@/components/superadmin/_shared/ModuleTabs";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { csrfHeaders } from "@/lib/csrf-client";
 
 type ImageKind = "logo" | "favicon" | "yapeQr" | "plinQr" | "ogImage";
@@ -146,7 +147,7 @@ export default function ConfiguracionClient() {
       info={{
         what: "Ajustes globales de la plataforma: landing pública, registro de tiendas y panel del negocio.",
         affects: "Se aplica en vivo (sin redeploy) en la landing, el registro y el panel admin de los negocios.",
-        example: "Cambiás el texto de bienvenida del registro → los nuevos dueños lo ven al instante.",
+        example: "Cambias el texto de bienvenida del registro → los nuevos dueños lo ven al instante.",
       }}
         title="Configuración general"
         description="Todo lo que cambia acá se aplica en vivo en landing, registro y panel del negocio — sin redeploy."
@@ -193,7 +194,7 @@ export default function ConfiguracionClient() {
               <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-70 animate-ping" />
               <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
             </span>
-            {savedAt ? "Guardado · aplica en vivo" : "Todo guardado · aplica en vivo"}
+            {savedAt ? "Guardado" : "Todo guardado"}
           </p>
         )}
         <button
@@ -235,7 +236,7 @@ export default function ConfiguracionClient() {
         id="cfg-sesion"
         icon={<ShieldCheck className="h-5 w-5 text-[var(--accent)]" />}
         title="Sesión y seguridad"
-        subtitle="Controlá cómo se mantiene tu sesión mientras trabajás en el panel."
+        subtitle="Cómo se mantiene tu sesión mientras trabajas en el panel."
       >
         <KeepAliveSwitch />
       </Section>
@@ -245,7 +246,7 @@ export default function ConfiguracionClient() {
         id="cfg-pagos"
         icon={<Smartphone className="h-5 w-5 text-[var(--accent)]" />}
         title="Pagos manuales"
-        subtitle="Datos que el cliente ve cuando elige pagar con Yape, Plin o transferencia."
+        subtitle="Datos que ve el cliente al pagar con Yape, Plin o transferencia."
       >
           <Subsection title="Yape">
             <Row>
@@ -528,10 +529,12 @@ function Section({
           {icon}
         </span>
         <div className="min-w-0">
-          <h2 className="text-base sm:text-lg font-extrabold text-[var(--text-primary)] leading-tight tracking-tight">
-            {title}
-          </h2>
-          <p className="mt-1 text-sm text-[var(--text-secondary)] leading-snug">{subtitle}</p>
+          <div className="flex items-center gap-1.5">
+            <h2 className="text-base sm:text-lg font-extrabold text-[var(--text-primary)] leading-tight tracking-tight">
+              {title}
+            </h2>
+            <InfoTip title={title} what={subtitle} side="bottom" />
+          </div>
         </div>
       </div>
       <div className="px-5 sm:px-7 py-6 space-y-6">{children}</div>
