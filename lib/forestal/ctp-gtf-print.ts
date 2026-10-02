@@ -46,6 +46,7 @@ import type { CtpFicha, PermisoDeGuia } from "@/lib/forestal/ctp-ficha-types";
 import { COPIAS_GTF, faltantesGtf, gtfDatosVacio, type GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 import { CSS_GTF_OFICIAL, cuerpoGtfOficial, fechaGtf, type LineaProducto } from "@/lib/forestal/ctp-gtf-formato";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { aplicarPiezasGuia } from "@/lib/extensiones/guia-impresa";
 
 /** `unitLabel` no siempre es m³ (kg/pt/unidad, según la corrida): los tres
  *  decimales de SERFOR sólo aplican cuando de verdad se está declarando m³. */
@@ -245,12 +246,31 @@ export async function documentoGtfSalida(
       <span>Despacho línea #${despacho.lineNo} · RDE N° 122-2015-SERFOR-DE, art. 5</span>
     </div>`);
 
-  return {
+  const documento: DocumentoGtfSalida = {
     cuerpos,
     css: CSS_GTF_OFICIAL + CSS_GTF_SALIDA,
     titulo: `GTF ${despacho.gtfNumber}`,
     pieCorrido: `GTF ${despacho.gtfNumber} · Emitida por el CTP desde su Libro de Operaciones · ${fecha}`,
   };
+
+  // ADR-457 · enchufe `forestal.guia-impresa`: las piezas que el negocio tenga
+  // prendidas SÓLO agregan hojas después de las tres copias, pie y CSS
+  // encerrado. Reciben una copia congelada de lo que ya se imprimió y nunca
+  // tocan `cuerpos[0..2]`; si fallan o tardan, la guía sale como siempre.
+  return aplicarPiezasGuia(documento, {
+    numeroGtf: despacho.gtfNumber ?? "",
+    emitida: { fecha, hora },
+    despacho,
+    ficha: {
+      nombreCtp: ficha.nombreCtp ?? "",
+      razonSocial: ficha.razonSocial ?? "",
+      ruc: ficha.ruc ?? "",
+      codigoCtp: ficha.codigoCtp ?? "",
+    },
+    datos,
+    lineas: lineasProducto,
+    guiasDeIngreso: [...new Set((cadena?.corridas ?? []).flatMap((c) => c.guias))],
+  });
 }
 
 /**

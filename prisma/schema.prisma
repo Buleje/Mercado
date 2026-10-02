@@ -80,6 +80,7 @@ model Tenant {
   adelantosRecurrentes   AdelantoRecurrente[]
   stores                 Store[]
   featureFlags           TenantFeatureFlag[]
+  piezas                 TenantPieza[]
   storePage              TenantStorePage?
   pageProductOverrides   TenantPageProductOverride[]
   pagePromotions         TenantPagePromotion[]
@@ -4389,6 +4390,32 @@ model TenantFeatureFlag {
 
   @@unique([tenantId, flagKey])
   @@index([tenantId])
+}
+
+/// ADR-457 · Piezas: qué código a medida (`extensiones/<piezaId>/`) tiene un
+/// negocio, en qué enchufe y con qué opciones. Una fila por asignación; apagar
+/// es `prendida = false` (la fila queda: quién y cuándo). Sólo la escribe el
+/// superadmin (`/api/superadmin/piezas/asignacion`); el negocio sólo lee la suya.
+/// La asignación NUNCA va en el manifiesto de la pieza: eso devolvería ids de
+/// negocio al código. `opciones` se valida con el Zod `.strict()` del
+/// manifiesto al guardar Y al leer; `version` = la del manifiesto al guardar.
+model TenantPieza {
+  id             String   @id @default(cuid())
+  tenantId       String
+  piezaId        String
+  enchufe        String
+  prendida       Boolean  @default(false)
+  opciones       Json     @default("{}")
+  version        String
+  orden          Int      @default(0)
+  actualizadoPor String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, piezaId, enchufe])
+  @@index([tenantId, prendida])
 }
 
 /// ─────────────────────────────────────────────────────────────────────────────
