@@ -23,13 +23,14 @@ const desde = arg("desde") ? new Date(arg("desde")).getTime() : 0;
 const hasta = arg("hasta") ? new Date(arg("hasta")).getTime() + 86_400_000 : Infinity;
 const ultimas = Number(arg("ultimas", 40));
 
-const principales = readdirSync(DIR)
+const ordenadas = readdirSync(DIR)
   .filter((f) => f.endsWith(".jsonl"))
-  .map((f) => ({ f: join(DIR, f), t: statSync(join(DIR, f)).mtimeMs }))
+  .map((f) => ({ f: join(DIR, f), t: statSync(join(DIR, f)).mtimeMs, s: statSync(join(DIR, f)).size }))
   .filter((x) => x.t >= desde && x.t < hasta)
-  .sort((a, b) => b.t - a.t)
-  .slice(0, ultimas)
-  .map((x) => x.f);
+  .sort((a, b) => b.t - a.t);
+/* --anterior (lo usa el arranque de sesión): la sesión actual es la más reciente y
+   sigue escribiéndose; interesa la ANTERIOR, ya cerrada (igual que medir-paralelismo). */
+const principales = (process.argv.includes("--anterior") ? ordenadas.filter((x) => x.s > 2000).slice(1, 2) : ordenadas.slice(0, ultimas)).map((x) => x.f);
 
 const GATE = { tsc: /npm run typecheck|tsc7|npx tsc|tsgo/, lint: /npm run lint\b|npx eslint|oxlint/, vitest: /vitest|npm (run )?test\b/ };
 const lineas = (f) =>
@@ -45,6 +46,16 @@ const lineas = (f) =>
 
 const m = { sesiones: principales.length, tsc: 0, lint: 0, vitest: 0, antesDeCommit: 0, llamadas: 0, mensajes: 0 };
 const sub = { n: 0, turnos: 0, ctxInicial: 0, imagenes: 0, llamadas: 0, mensajes: 0 };
+/** Llamadas por herramienta (hilo + subagentes): la que más come es la primera sospechosa. */
+const porHerramienta = {};
+const tipo = (b) => {
+  if (b.name !== "Bash") return b.name.startsWith("mcp__playwright") ? "playwright" : b.name;
+  const c = b.input?.command ?? "";
+  for (const [k, re] of Object.entries(GATE)) if (re.test(c)) return `gate:${k}`;
+  if (/qa-capturas/.test(c)) return "qa-capturas";
+  if (/^\s*(grep|rg|find|ls|cat|sed -n|head|tail|wc)\b/.test(c)) return "bash:leer";
+  return "bash:otro";
+};
 
 for (const f of principales) {
   const seq = [];
@@ -54,6 +65,7 @@ for (const f of principales) {
     for (const b of j.message.content) {
       if (b.type !== "tool_use") continue;
       m.llamadas++;
+      porHerramienta[tipo(b)] = (porHerramienta[tipo(b)] ?? 0) + 1;
       ids.add(j.message.id);
       if (["Edit", "Write", "MultiEdit"].includes(b.name)) seq.push("E");
       if (b.name !== "Bash") continue;
@@ -94,6 +106,7 @@ for (const f of principales) {
       for (const b of c)
         if (b.type === "tool_use") {
           sub.llamadas++;
+          porHerramienta[tipo(b)] = (porHerramienta[tipo(b)] ?? 0) + 1;
           if (b.name === "Read" && /\.(png|jpe?g|webp)$/i.test(b.input?.file_path ?? "")) sub.imagenes++;
         }
     }
@@ -116,6 +129,20 @@ const res = {
   "capturas leídas por subagente": r(sub.imagenes, sub.n),
   "llamadas por mensaje (subagentes)": r(sub.llamadas, sub.mensajes),
 };
+
+if (process.argv.includes("--json")) {
+  const baseJson = arg("comparar") && existsSync(arg("comparar")) ? JSON.parse(readFileSync(arg("comparar"), "utf8")) : null;
+  const top = Object.entries(porHerramienta).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  /* Señal = una cifra peor que la base que tiene arreglo conocido (tabla «Economía»). */
+  const senales = [];
+  const peor = (v, k, umbral = 1.15) => baseJson && v > (baseJson[k] ?? Infinity) * umbral;
+  if (m.antesDeCommit > 0) senales.push(`${m.antesDeCommit} gate(s) justo antes de un commit: el pre-commit ya los corre`);
+  if (m.lint > 0) senales.push(`${m.lint} lint a mano: lo corre lint-staged`);
+  if (peor(res["turnos por subagente"], "turnos por subagente")) senales.push(`${res["turnos por subagente"]} turnos por subagente (base ${baseJson["turnos por subagente"]}): más tandas paralelas, grep -n antes de Read`);
+  if (peor(res["capturas leídas por subagente"], "capturas leídas por subagente")) senales.push(`${res["capturas leídas por subagente"]} capturas leídas por subagente (base ${baseJson["capturas leídas por subagente"]}): leer 1 por estado`);
+  console.log(JSON.stringify({ ...res, top, senales }));
+  process.exit(0);
+}
 
 const base = arg("comparar") && existsSync(arg("comparar")) ? JSON.parse(readFileSync(arg("comparar"), "utf8")) : null;
 const plano = (o, p = "") => Object.entries(o).flatMap(([k, v]) => (typeof v === "object" ? plano(v, `${p}${k} · `) : [[p + k, v]]));

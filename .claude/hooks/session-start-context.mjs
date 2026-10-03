@@ -134,6 +134,27 @@ try {
   }
 } catch {}
 
+// ── Economía de la sesión anterior (Brandon 02-10: «que te autosustentes») ──
+// Cada sesión arranca viendo en qué se le fue el tiempo a la anterior contra la
+// base del 02-10; las señales son cifras peores con arreglo conocido (tabla
+// «Economía» de agentic-style). ~0,4 s.
+try {
+  const out = execSync(
+    `node ${join(projectRoot, "scripts/medir-economia.mjs")} --anterior --json --comparar ${join(projectRoot, ".claude/economia-baseline-2026-10-02.json")}`,
+    { encoding: "utf8", timeout: 4000 },
+  );
+  const e = JSON.parse(out);
+  if (e.sesiones > 0) {
+    const g = e["gates a mano por sesión"] ?? {};
+    lines.push("");
+    lines.push(
+      `**🏎️ Economía (sesión anterior):** ${e["turnos por subagente"]} turnos/subagente · ${e["capturas leídas por subagente"]} capturas/subagente · ` +
+      `gates a mano: ${g.typecheck ?? 0} tipos, ${g.lint ?? 0} lint, ${g.vitest ?? 0} tests · más usada: ${e.top?.[0]?.[0] ?? "—"}`,
+    );
+    for (const sn of (e.senales ?? []).slice(0, 3)) lines.push(`  → ${sn}`);
+  }
+} catch {}
+
 // ── Improvement Radar (propuestas pendientes) ──────────────────
 const radarPath = join(projectRoot, ".claude/improvement-radar.md");
 if (existsSync(radarPath)) {

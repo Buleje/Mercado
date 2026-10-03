@@ -60,7 +60,7 @@ const contexto = [
   "  · Salidas largas recortadas (`| tail -20`, `| grep -E 'error|FAIL'`); nunca volcar archivos ni logs enteros.",
   "- Leer la base: script dentro del repo (`scripts/tmp-*.mjs`) con `node -r dotenv/config <script> dotenv_config_path=.env.local` y `ssl: { rejectUnauthorized: false }`. **Nunca `SET SESSION …`**: el `DATABASE_URL` es el pooler de PRODUCCIÓN y el ajuste se pega en conexiones ajenas. Solo lectura = `BEGIN READ ONLY; …; COMMIT`.",
   "- «Listo» solo con evidencia pegada (comando + salida) por el camino del usuario (navegador/curl). Si no pudiste verificar, decilo.",
-  "- Reporte final en español, ≤150 palabras + tabla (archivo:línea · evidencia · qué queda); lo que un futuro agente no sabría → tu MEMORY.md, o «Para memoria» en el reporte. Si la tarea trae su propio formato de salida, ese manda.",
+  "- Reporte final en español, ≤150 palabras + tabla (archivo:línea · evidencia · qué queda); lo que un futuro agente no sabría → tu MEMORY.md, o «Para memoria» en el reporte. Si algo te hizo perder turnos (un gate lento, una lectura que sobró, un script que faltaba), cerrá con una línea «Para acelerar: …». Si la tarea trae su propio formato de salida, ese manda.",
 ].join("\n");
 
 process.stdout.write(

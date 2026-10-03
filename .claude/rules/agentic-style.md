@@ -22,6 +22,14 @@ Medido en 40 sesiones y 592 subagentes: un subagente promedia **136 turnos** y c
 - Gate rojo mecánico: 1 intento propio, después `healer`. 2 correcciones fallidas sobre lo mismo → parar y replantear.
 - Antes de proponer una opción, reusar lo medido en la tarea; medir de nuevo solo lo que falta.
 
+### Autoajuste (Brandon 2026-10-02: «que te autosustentes y mejores cada vez sin mi intervención»)
+
+1. **Al arrancar**: la línea «🏎️ Economía (sesión anterior)» del arranque trae señales. Cada señal se corrige en ESTA sesión (no se comenta).
+2. **Durante**: si un paso se repite 3 veces igual (el mismo recorrido de capturas, el mismo SELECT, el mismo arreglo a mano), se convierte en script o en paso de `qa-capturas` antes de la 4.ª.
+3. **Al cerrar** una FEATURE o INITIATIVE: una línea «Velocidad:» con lo que más turnos costó y su arreglo. Si el arreglo es reversible y no toca zona de peligro (regla, script, paso que sobra en un def), **se aplica en el mismo cierre sin preguntar** y se anota en la memoria `economia-de-ejecucion-2026-10-02`. Lo que toque calidad o dinero, se propone.
+4. Los subagentes devuelven «Para acelerar:» en su reporte: el hilo principal lo aplica o lo descarta, nunca lo ignora.
+5. Podar > agregar también acá: un ajuste que no movió su cifra en 2 sesiones se revierte.
+
 ## Cómo trabajar
 
 - **Máquina de mejoras** (Brandon 2026-07-17): en el área tocada buscá la siguiente mejora y proponela. Antes de reportar, releé tu diff **una vez** como refutador (¿qué rompí? ¿dark/mobile? ¿caso faltante?). Obsesión ≠ volumen: una mejora rota vale menos que ninguna. Gotcha nuevo → memoria.

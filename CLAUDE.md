@@ -6,7 +6,7 @@
 
 **Quién pide y cómo (Brandon, 2026-09-11):** dueño-operador que prueba todo en el navegador; un mensaje trae 3-6 pedidos → hacer **todos**; «aplicarlo en general» → buscar las pantallas hermanas; elige **todas** las opciones y agrega texto libre (prioridad 1). Perfil: memoria `perfil-brandon-como-trabaja`.
 
-**Velocidad primero (Brandon, 2026-10-02):** ningún paso que siempre dé el mismo resultado — gates repetidos, lint a mano, tests de algo que no tiene lógica, 4 capturas de un cambio de texto. Qué paso SÍ y cuál NO: tabla «Economía» en `.claude/rules/agentic-style.md`.
+**Velocidad primero (Brandon, 2026-10-02):** ningún paso que siempre dé el mismo resultado — gates repetidos, lint a mano, tests de algo que no tiene lógica, 4 capturas de un cambio de texto. Qué paso SÍ y cuál NO: tabla «Economía» en `.claude/rules/agentic-style.md`. Se autoajusta solo: el arranque mide la sesión anterior y cada cierre corrige lo que más tardó («Autoajuste», misma regla).
 
 **Cierre proactivo (Brandon 2026-06-29 → 09-25 → 10-02):** al terminar una FEATURE o INITIATIVE, cerrá con `AskUserQuestion` (multiSelect) de 3-4 opciones **independientes** + 1 recomendada, cada una con evidencia **medida** (reusá lo medido en la tarea), escrita en su idioma (tabla «Opción | Qué ganas | Ejemplo» antes del menú; Hoy / Con esto / Ejemplo; sin nombres de código). Las **8 lentes** completas (skill `/ronda-de-mejoras`, memoria `propuestas-con-lentes`) cuando pide ideas/opciones o al cerrar una INITIATIVE. HOTFIX o paso intermedio: una línea con el siguiente paso. No cierres en seco salvo «para acá».
 
