@@ -38,16 +38,26 @@ export default function LothImportarGuiasVista({ s }: { s: ImportarGuias }) {
   if (s.grupos.length === 0)
     return <p className="p-6 text-sm text-[var(--text-secondary)]">No llegó ninguna guía.</p>;
 
+  /* Hasta 3 guías, sus datos arrancan abiertos; con más, plegados (si no, un muro). */
+  const totalGuias = s.grupos.reduce((a, g) => a + g.guias.length, 0);
   return (
     <div className="space-y-4">
       {s.grupos.map((grupo) => (
-        <GrupoDeGuias key={grupo.clave} grupo={grupo} s={s} />
+        <GrupoDeGuias key={grupo.clave} grupo={grupo} s={s} pocas={totalGuias <= 3} />
       ))}
     </div>
   );
 }
 
-function GrupoDeGuias({ grupo, s }: { grupo: GrupoVista; s: ImportarGuias }) {
+function GrupoDeGuias({
+  grupo,
+  s,
+  pocas,
+}: {
+  grupo: GrupoVista;
+  s: ImportarGuias;
+  pocas: boolean;
+}) {
   const decision = s.decisiones[grupo.clave];
   const m3 = grupo.guias.reduce((a, g) => a + (g.guia?.volumenTrozasM3 ?? 0), 0);
   const sinPermiso = grupo.clave === "sin-permiso";
@@ -87,6 +97,7 @@ function GrupoDeGuias({ grupo, s }: { grupo: GrupoVista; s: ImportarGuias }) {
             conTala={decision?.crearTala ?? false}
             alDirectorio={s.alDirectorio[g.clave]}
             onDirectorio={(ficha, cambio) => s.decidirDirectorio(g.clave, ficha, cambio)}
+            abiertaDeEntrada={pocas}
           />
         ))}
       </div>

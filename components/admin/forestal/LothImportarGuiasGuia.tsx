@@ -51,6 +51,7 @@ export default function LothImportarGuiasGuia({
   conTala,
   alDirectorio,
   onDirectorio,
+  abiertaDeEntrada,
 }: {
   g: GuiaVistaPrevia;
   incluida: boolean;
@@ -60,6 +61,8 @@ export default function LothImportarGuiasGuia({
   /** Lo marcado para el directorio en esta guía. */
   alDirectorio: DecisionesDirectorio | undefined;
   onDirectorio: (ficha: string, cambio: Partial<DecisionFicha>) => void;
+  /** Con pocas guías en la vista previa, sus datos arrancan abiertos. */
+  abiertaDeEntrada: boolean;
 }) {
   /* Con el interruptor de la tala apagado vale el estado «sin tala» y sus avisos de tala no aplican. */
   const est = ETIQUETA_ESTADO[estadoEfectivo(g, conTala)];
@@ -121,7 +124,13 @@ export default function LothImportarGuiasGuia({
         </ul>
       )}
 
-      {g.ficha && <LothImportarGuiasDatos ficha={g.ficha} />}
+      {(g.ficha || g.trozas.length > 0) && (
+        <LothImportarGuiasDatos
+          ficha={g.ficha ?? null}
+          trozas={g.trozas}
+          abiertaDeEntrada={abiertaDeEntrada && importable}
+        />
+      )}
       {g.directorio && (
         <LothImportarGuiasDirectorio
           d={g.directorio}

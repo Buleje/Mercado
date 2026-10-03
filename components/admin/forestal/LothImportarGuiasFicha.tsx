@@ -3,9 +3,10 @@
 /**
  * «Datos» de una guía IMPORTADA en la vista GTF del Libro TH (ADR-461, 02-10
  * noche): todo lo que la guía decía al importarla —titular, propietario,
- * destinatario, transporte, cuadro de productos (37), estado en SERFOR— con la
- * MISMA hoja de casilleros que el alta de un ingreso desde SERFOR, y debajo su
- * lista de trozas tal como quedó en el libro.
+ * destinatario, transporte, cuadro de productos (37), estado en SERFOR— con los
+ * mismos bloques que la vista previa de la importación (de a dos por fila, con
+ * el resumen por especie; 02-10-2026), y debajo su lista de trozas tal como
+ * quedó en el libro.
  *
  * Sólo aparece en las guías que guardaron la ficha (`gtfDatos.fichaSerfor`,
  * desde el 02-10 noche): una anotada a mano no tiene una «ficha de SERFOR».
@@ -19,11 +20,11 @@ import { formatNumber } from "@/lib/format";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { piezasDeItems } from "@/lib/forestal/loth-guia-despacho";
 import { fichaDeGuiaImportada } from "@/lib/forestal/loth-importar-guia-ficha";
-import CtpGuiaSerforHoja from "./CtpGuiaSerforHoja";
-import { TrasladoDeLaFicha } from "./LothImportarGuiasDatos";
+import LothImportarGuiasBloques from "./LothImportarGuiasBloques";
 
 const m = (v: number | null) => (v == null ? "—" : formatNumber(v, 2));
-const TH = "whitespace-nowrap px-3 py-2 text-left text-xs font-semibold text-[var(--text-tertiary)]";
+const TH =
+  "whitespace-nowrap px-3 py-2 text-left text-xs font-semibold text-[var(--text-tertiary)]";
 const TD = "whitespace-nowrap px-3 py-1.5";
 
 export default function BotonFichaImportada({
@@ -38,6 +39,10 @@ export default function BotonFichaImportada({
 }) {
   const leida = useMemo(() => fichaDeGuiaImportada(gtfDatos), [gtfDatos]);
   const piezas = useMemo(() => piezasDeItems(items), [items]);
+  const paraResumen = useMemo(
+    () => piezas.map((p) => ({ comun: p.comun, cientifico: p.cientifico, m3: p.volumeM3 })),
+    [piezas],
+  );
   const [abierta, setAbierta] = useState(false);
   const boton = useRef<HTMLButtonElement>(null);
   /* El modal se monta sólo abierto (hay uno por fila de la lista): al cerrarse
@@ -66,17 +71,22 @@ export default function BotonFichaImportada({
           variant="info"
           icon={FileText}
           title={`Datos de la GTF ${gtfNumber}`}
-          description={leida.verificada ? "Como la publicó SERFOR al importarla" : "Leída de una foto o PDF al importarla: sin verificar en SERFOR"}
+          description={
+            leida.verificada
+              ? "Como la publicó SERFOR al importarla"
+              : "Leída de una foto o PDF al importarla: sin verificar en SERFOR"
+          }
         >
           <div className="space-y-3 px-5 py-4 sm:px-6">
-            <TrasladoDeLaFicha ficha={leida.ficha} />
-            <CtpGuiaSerforHoja gtf={leida.ficha} recordarComo="loth:gtf:ver-casilleros-guia" casillerosAbiertos />
+            <LothImportarGuiasBloques ficha={leida.ficha} piezas={paraResumen} />
             {piezas.length > 0 && (
               <div className="overflow-x-auto rounded-lg border border-[var(--rule-base)]">
                 <DataTable className="w-full text-sm">
                   <caption className="px-3 py-2 text-left text-sm font-bold text-[var(--text-primary)]">
                     Trozas de la guía ({piezas.length}) ·{" "}
-                    <span className="font-mono tabular-nums">{fmtM3(piezas.reduce((a, p) => a + (p.volumeM3 ?? 0), 0))} m³</span>
+                    <span className="font-mono tabular-nums">
+                      {fmtM3(piezas.reduce((a, p) => a + (p.volumeM3 ?? 0), 0))} m³
+                    </span>
                   </caption>
                   <thead className="bg-[var(--surface-sunken)]">
                     <tr>
@@ -91,12 +101,22 @@ export default function BotonFichaImportada({
                   <tbody className="divide-y divide-[var(--rule-soft)]">
                     {piezas.map((p, i) => (
                       <tr key={`${p.codigo}-${i}`}>
-                        <td className={`${TD} font-mono font-semibold text-[var(--text-primary)]`}>{p.codigo || "—"}</td>
+                        <td className={`${TD} font-mono font-semibold text-[var(--text-primary)]`}>
+                          {p.codigo || "—"}
+                        </td>
                         <td className={`${TD} text-[var(--text-secondary)]`}>{p.comun ?? "—"}</td>
-                        <td className={`${TD} text-right font-mono tabular-nums`}>{m(p.diamMayorM)}</td>
-                        <td className={`${TD} text-right font-mono tabular-nums`}>{m(p.diamMenorM)}</td>
-                        <td className={`${TD} text-right font-mono tabular-nums`}>{m(p.lengthM)}</td>
-                        <td className={`${TD} text-right font-mono tabular-nums`}>{p.volumeM3 == null ? "—" : fmtM3(p.volumeM3)}</td>
+                        <td className={`${TD} text-right font-mono tabular-nums`}>
+                          {m(p.diamMayorM)}
+                        </td>
+                        <td className={`${TD} text-right font-mono tabular-nums`}>
+                          {m(p.diamMenorM)}
+                        </td>
+                        <td className={`${TD} text-right font-mono tabular-nums`}>
+                          {m(p.lengthM)}
+                        </td>
+                        <td className={`${TD} text-right font-mono tabular-nums`}>
+                          {p.volumeM3 == null ? "—" : fmtM3(p.volumeM3)}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
