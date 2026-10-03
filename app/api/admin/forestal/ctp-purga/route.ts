@@ -3,52 +3,88 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { isSpecializationEnabled } from "@/lib/specializations";
-import { ForestCtpPurgaDB, type ScopeVaciado } from "@/lib/db/forest-ctp-purga.db";
+import { ForestCtpPurgaDB } from "@/lib/db/forest-ctp-purga.db";
+import { alcancesDeLaUrl, alcancesSchema, conteoEsperadoSchema } from "@/lib/forestal/ctp-purga-plan";
+import { soloAdminODueno } from "@/lib/forestal/plata-de-guia-rol";
 import { withApiHandler } from "@/lib/api-handler";
+import { logger } from "@/lib/logger";
 
 /**
- * Vaciar el Libro de Operaciones del CTP — entero o por alcance (Brandon, 2026-09-01).
+ * Vaciar el Libro de Operaciones del CTP — entero o por alcances (Brandon,
+ * 2026-09-01; varios a la vez y «Lotes», 2026-10-02).
  *
- * GET  → qué hay (en el alcance elegido) y si se puede borrar (para mostrarlo antes de preguntar).
- * POST → lo vacía. Exige la palabra de confirmación en el body.
+ * GET  `?scope=trozas_disponibles,lotes` → qué se borraría (la unión, sin
+ *      contar dos veces), alcance por alcance, los lotes que no se pueden y
+ *      si hay un mes cerrado que lo impide. Para mostrarlo antes de preguntar.
+ * POST `{ confirmacion, scopes: [...], esperado }` → lo vacía, todo en una
+ *      transacción. `esperado` son las cifras que la vista previa MOSTRÓ: si el
+ *      libro de ahora no da lo mismo, 409 `libro_cambio` y no se borra nada.
  *
- * Sólo `admin`: no es una tarea de cajero ni de almacenero. La confirmación
+ * Alcance desconocido, lista vacía o «todo» combinado con otro → 400. Antes un
+ * alcance raro caía en «todo» por defecto: sobre esta operación, el valor por
+ * defecto tiene que ser «no hacer nada».
+ *
+ * Sólo `admin` y `owner` (el dueño): no es tarea de encargado, cajero ni
+ * almacenero. `requireAdmin` deja pasar a `manager` por el management tier
+ * aunque la ruta no lo pida, así que el rol se vuelve a mirar acá. La confirmación
  * escrita va en el servidor y no sólo en la pantalla, porque un POST a mano no
  * puede saltearse el guard que protege al operador de sí mismo.
  */
 
 const PALABRA = "VACIAR LIBRO";
 
-const SCOPES = ["trozas_disponibles", "madera_disponible", "consumo", "todo"] as const;
-const scopeSchema = z.enum(SCOPES).catch("todo");
-
 const bodySchema = z.object({
   /* Literal, no un boolean: un `{confirmar:true}` se manda sin querer; esta
      frase hay que escribirla. */
   confirmacion: z.string().trim(),
-  scope: z.enum(SCOPES).optional(),
+  scopes: alcancesSchema,
+  /* Lo que la vista previa mostró. Obligatorio: el modal es el único cliente. */
+  esperado: conteoEsperadoSchema,
 });
 
+/** La sesión, si es de admin o del dueño; si no, la respuesta (401/403) tal cual. */
+async function adminODueno(req: NextRequest) {
+  const auth = await requireAdmin(req, ["admin", "owner"]);
+  if (auth instanceof NextResponse) return auth;
+  const prohibido = soloAdminODueno(auth.role, "vaciar el Libro de Operaciones");
+  if (prohibido) {
+    logger.warn("[ctp-purga] rol sin permiso para vaciar el libro", {
+      role: auth.role,
+      username: auth.username,
+      tenantId: auth.tenantId,
+      method: req.method,
+    });
+    return prohibido;
+  }
+  return auth;
+}
+
 export const GET = withApiHandler("forestal-ctp-purga-get", async (req: NextRequest) => {
-  const auth = await requireAdmin(req, ["admin"]);
+  const auth = await adminODueno(req);
   if (auth instanceof NextResponse) return auth;
   if (!(await isSpecializationEnabled(auth.tenantId, "spec:forestal:ctp-libro"))) {
     return NextResponse.json({ error: "specialization_disabled" }, { status: 403 });
   }
 
-  const scope: ScopeVaciado = scopeSchema.parse(new URL(req.url).searchParams.get("scope"));
-  const [conteo, periodos] = await Promise.all([
-    ForestCtpPurgaDB.contar(auth.tenantId, scope),
+  const alcances = alcancesDeLaUrl(new URL(req.url).searchParams);
+  if (!alcances.success) {
+    return NextResponse.json(
+      { error: "alcance_invalido", message: alcances.error.issues[0]?.message, issues: alcances.error.issues },
+      { status: 400 },
+    );
+  }
+  const [resumen, periodos] = await Promise.all([
+    ForestCtpPurgaDB.contar(auth.tenantId, alcances.data),
     ForestCtpPurgaDB.periodosQueBloquean(auth.tenantId),
   ]);
-  return NextResponse.json({ conteo, periodos, sePuede: periodos.length === 0, palabra: PALABRA });
+  return NextResponse.json({ ...resumen, periodos, sePuede: periodos.length === 0, palabra: PALABRA });
 });
 
 export const POST = withApiHandler("forestal-ctp-purga", async (req: NextRequest) => {
   const limite = applyRateLimit(req, "STRICT");
   if (limite) return limite;
 
-  const auth = await requireAdmin(req, ["admin"]);
+  const auth = await adminODueno(req);
   if (auth instanceof NextResponse) return auth;
   if (!(await isSpecializationEnabled(auth.tenantId, "spec:forestal:ctp-libro"))) {
     return NextResponse.json({ error: "specialization_disabled" }, { status: 403 });
@@ -62,7 +98,10 @@ export const POST = withApiHandler("forestal-ctp-purga", async (req: NextRequest
   }
   const parsed = bodySchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "invalid_body", issues: parsed.error.issues }, { status: 400 });
+    return NextResponse.json(
+      { error: "invalid_body", message: parsed.error.issues[0]?.message, issues: parsed.error.issues },
+      { status: 400 },
+    );
   }
   if (parsed.data.confirmacion.toUpperCase() !== PALABRA) {
     return NextResponse.json(
@@ -71,9 +110,18 @@ export const POST = withApiHandler("forestal-ctp-purga", async (req: NextRequest
     );
   }
 
-  const r = await ForestCtpPurgaDB.vaciar(auth.tenantId, auth.username ?? "admin", parsed.data.scope ?? "todo");
-  if (!r.ok) {
-    return NextResponse.json({ error: "periodo_cerrado", message: r.motivo, periodos: r.periodos }, { status: 409 });
+  /* El asiento lleva a la persona de la sesión; nunca un «admin» inventado. */
+  const usuario = auth.username?.trim() || (auth.jti ? `sesión ${auth.jti}` : "");
+  if (!usuario) {
+    return NextResponse.json(
+      { error: "unauthorized", message: "La sesión no dice quién eres: vuelve a entrar." },
+      { status: 401 },
+    );
   }
-  return NextResponse.json({ ok: true, borrado: r.borrado });
+
+  const r = await ForestCtpPurgaDB.vaciar(auth.tenantId, usuario, parsed.data.scopes, parsed.data.esperado);
+  if (!r.ok) {
+    return NextResponse.json({ error: r.codigo, message: r.motivo, periodos: r.periodos }, { status: 409 });
+  }
+  return NextResponse.json({ ok: true, ...r.resumen });
 });

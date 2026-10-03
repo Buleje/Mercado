@@ -1,4 +1,6 @@
 import "server-only";
+import type { prisma } from "@/lib/prisma";
+import type { Prisma } from "@/lib/generated/prisma/client";
 import { PlatformSettingsDB } from "@/lib/db/platform-settings.db";
 import { auditCtp } from "@/lib/forestal/ctp-audit";
 import { isDateClosed, closedPeriodOf, type CtpCierrePeriodo } from "@/lib/forestal/ctp-cierre-types";
@@ -28,12 +30,31 @@ import { isDateClosed, closedPeriodOf, type CtpCierrePeriodo } from "@/lib/fores
 
 const KEY_PREFIX = "ctp-cierre:";
 
+/** El cliente con que se lee: el global o el de una transacción abierta. */
+type Db = typeof prisma | Prisma.TransactionClient;
+
 export const ForestCtpCierreDB = {
   /** Los períodos cerrados del tenant, más reciente primero. */
   async list(tenantId: string): Promise<CtpCierrePeriodo[]> {
     if (!tenantId) throw new Error("tenantId is required");
     const raw = await PlatformSettingsDB.get<CtpCierrePeriodo[]>(`${KEY_PREFIX}${tenantId}`);
     return Array.isArray(raw) ? raw : [];
+  },
+
+  /**
+   * Igual que `list`, pero SIN caché y con el cliente que se pasa: para mirar
+   * el cierre DENTRO de la transacción que va a escribir (el vaciado del libro).
+   * `list` sale del caché de la instancia —en otra instancia, hasta 5 min
+   * viejo— y fuera de la transacción: un mes recién cerrado no frenaba nada.
+   */
+  async listEn(tenantId: string, db: Db): Promise<CtpCierrePeriodo[]> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const row = await db.platformSetting.findUnique({
+      where: { key: `${KEY_PREFIX}${tenantId}` },
+      select: { value: true },
+    });
+    const raw: unknown = row?.value;
+    return Array.isArray(raw) ? (raw as CtpCierrePeriodo[]) : [];
   },
 
   /** ¿La fecha cae en un período cerrado y no reabierto? Guard de escritura. */

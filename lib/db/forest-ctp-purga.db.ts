@@ -1,13 +1,25 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import { auditCtp } from "@/lib/forestal/ctp-audit";
+import type { Prisma } from "@/lib/generated/prisma/client";
+import { auditCtpEsperando } from "@/lib/forestal/ctp-audit";
+import { esChoqueDeLocks } from "@/lib/forestal/choque-de-locks";
 import { ForestCtpCierreDB } from "@/lib/db/forest-ctp-cierre.db";
 import { ForestCuentaDB } from "@/lib/db/forest-cuenta.db";
 import { invalidateByPrefix } from "@/lib/cache";
 import { logger } from "@/lib/logger";
+import { mismoConteo, planificarVaciado, type PlanVaciado, type SnapshotLibro } from "@/lib/forestal/ctp-purga-plan";
+import type {
+  AlcanceParcial,
+  ConteoDelLibro,
+  ConteoEsperado,
+  ResumenVaciado,
+  ScopeVaciado,
+} from "@/lib/forestal/ctp-purga-tipos";
+
+export type { ScopeVaciado, ConteoDelLibro, ResumenVaciado } from "@/lib/forestal/ctp-purga-tipos";
 
 /**
- * Vaciar el Libro de Operaciones del CTP — entero o por alcance.
+ * Vaciar el Libro de Operaciones del CTP — entero o por alcances combinados.
  *
  * Es la operación más destructiva del módulo: borra el registro que acredita el
  * origen legal de la madera. Existe porque un libro cargado mal —una importación
@@ -17,353 +29,572 @@ import { logger } from "@/lib/logger";
  * GUARDS, y ninguno es opcional:
  *
  * 1. **Los períodos cerrados no se tocan.** Un mes cerrado ya se presentó ante
- *    SERFOR; borrarlo deja al titular sin poder respaldar lo que declaró. Si hay
- *    alguno, la purga se niega ENTERA y dice cuál — reabrirlo es una decisión
- *    aparte, con su propio rastro. Aplica a los cuatro alcances por igual.
- * 2. **Un alcance parcial nunca rompe lo que deja vivo.** `corridasSinTocar()`
- *    saca de la lista cualquier corrida todavía referenciada (la lista completa,
- *    más abajo). El filtro va primero para poder decir CUÁNTAS se saltaron en
- *    vez de fallar la transacción entera (Brandon, 2026-09-01).
- *    ⚠️ El `onDelete: Restrict` es red de seguridad SÓLO para despacho,
- *    reproceso y lote comercial. El lote de aserrío y las trozas NO tienen esa
- *    red —id suelto y `SetNull` respectivamente—, así que para ellos el filtro
- *    no es la primera línea de defensa: es la única.
- * 3. **Siempre se cuenta antes de borrar**, y el conteo se le muestra al
+ *    SERFOR. Si hay alguno sin reabrir, el vaciado se niega ENTERO y dice cuál
+ *    (mirado DENTRO de la transacción y sin caché).
+ *    Además, una corrida con el consumo congelado (mes cerrado y reabierto) no
+ *    se borra por ningún alcance parcial: congelar es irreversible.
+ * 2. **Un alcance parcial nunca rompe lo que deja vivo.** Qué cae y qué se
+ *    salva lo decide `planificarVaciado()` (`lib/forestal/ctp-purga-plan.ts`,
+ *    con la tabla de dependencias de los lotes) sobre una foto leída DENTRO de
+ *    la transacción.
+ * 3. **Todo o nada.** Todos los alcances elegidos van en UNA transacción
+ *    `Serializable`, y cada escritura verifica que tocó EXACTAMENTE las filas
+ *    del plan: si el libro cambió entre la foto y el borrado (alguien consumió,
+ *    armó un lote), se deshace todo y se avisa. Antes de escribir, las cifras
+ *    de la foto se comparan con las que la vista previa MOSTRÓ (el modal las
+ *    manda): lo que la persona vio es lo que se borra.
+ * 4. **Siempre se cuenta antes de borrar**, y el conteo se le muestra al
  *    operador. Un «¿seguro?» sin números no es una confirmación informada.
- * 4. **Queda auditado** con el detalle de cuánto se borró de cada cosa. Un libro
- *    que desaparece sin rastro es exactamente lo que un fiscalizador buscaría.
+ * 5. **Queda auditado**, un asiento por alcance con sus conteos. Un libro que
+ *    desaparece sin rastro es exactamente lo que un fiscalizador buscaría.
  *
- * ## Los cuatro alcances
+ * ## Los alcances
  *
  * | Alcance | Qué borra | Qué NUNCA toca |
  * |---|---|---|
- * | `trozas_disponibles` | Trozas del patio sin consumir, sin despachar, sin hijos de retrozado | El ingreso (GTF) — queda como evidencia, aunque quede en 0 piezas |
- * | `madera_disponible` | Corridas de producción con saldo (`quantity > 0`) y CERO referencia encima | Cualquier corrida referenciada — ver la lista completa abajo |
- * | `consumo` | TODAS las corridas de producción sin referencias encima (incluye las que no llegaron a declarar `quantity`) | Idem — se salta y CUENTA las que están tocadas |
- * | `todo` | El libro entero: ingresos, trozas, producción, despachos, puentes | Nada — es el purge histórico, sin cambios de comportamiento |
+ * | `trozas_disponibles` | Trozas del patio: sin consumir, sin despachar, sin pedazos de retrozado, sin apartar en un lote de aserrío ni en un mixto | El ingreso (GTF) |
+ * | `madera_disponible` | Corridas con madera declarada (`quantity > 0`) y nada encima | Corridas con despacho, reproceso, lote, piezas consumidas o consumo congelado |
+ * | `consumo` | Todas las corridas sin nada encima (también las que no declararon madera) | Idem — se salta y CUENTA las que están tocadas |
+ * | `lotes` | Lotes de aserrío, mixtos y comerciales (ver la tabla en `ctp-purga-plan.ts`) | La madera y la producción: las piezas vuelven al patio, las corridas sólo caen si además se eligió un alcance de producción |
+ * | `todo` | El libro entero, lotes incluidos | — |
  *
- * ## Qué cuenta como «referencia» (la lista, completa)
- *
- * Una corrida se salva si algo de esto la apunta: un **despacho**, un
- * **reproceso** (como origen o como destino), un **lote comercial**
- * (`ForestProdLoteMiembro`, ADR-136), un **lote de aserrío**
- * (`ForestLoteAserrio`, ADR-334) o una **troza** que declara haberse consumido
- * en ella.
- *
- * ⛔ Los dos últimos FALTABAN hasta 2026-09-05, y ninguno de los dos falla solo:
- * `ForestLoteAserrio.produccionEntryId` es un id suelto sin `@relation`, así que
- * no hay `onDelete: Restrict` que frene nada; y la troza es `SetNull`, así que
- * el borrado pasa limpio y deja una pieza «consumida por nadie». Este docstring
- * decía «lote de producción» y con eso parecía cubrir los dos: `ForestProdLoteMiembro`
- * (comercial) y `ForestLoteAserrio` (el de la sierra) son cosas distintas con
- * nombres parecidos, y esa confusión es la que dejó el hueco.
+ * ⛔ Lote de aserrío y comercial son cosas distintas con nombres parecidos:
+ * `ForestLoteAserrio` (ADR-334) es la materia prima que entra a la sierra y
+ * apunta a su corrida con un id SUELTO (sin FK, sin `Restrict` que frene);
+ * `ForestProdLote` (ADR-136) agrupa producción terminada para venderla, y sus
+ * miembros SÍ son `Restrict`. Esa confusión dejó un hueco hasta 2026-09-05.
  */
 
-export type ScopeVaciado = "trozas_disponibles" | "madera_disponible" | "consumo" | "todo";
+type Db = typeof prisma | Prisma.TransactionClient;
 
-export type ConteoDelLibro = {
-  ingresos: number;
-  trozas: number;
-  produccion: number;
-  despachos: number;
-  consumos: number;
-  origenes: number;
-  total: number;
-  /** Sólo en `consumo`/`madera_disponible`: corridas que se salvaron por tener
-   *  algo encima (despacho, reproceso, lote comercial, lote de aserrío o trozas
-   *  consumidas) — no es un error, es el guard actuando. */
-  saltadas?: number;
+/**
+ * Más holgada que la de una corrida: la foto y el borrado van en la misma
+ * transacción. Y `Serializable`: en READ COMMITTED, sin `FOR UPDATE`, un
+ * consumo o un `cerrar()` que confirmara entre la foto y el borrado quedaba
+ * colgando de una corrida o un lote que ya no existe. Así Postgres aborta a
+ * una de las dos (40001 → P2034) y el vaciado responde «el libro cambió».
+ */
+const TX_OPTS = { timeout: 30_000, maxWait: 10_000, isolationLevel: "Serializable" } as const;
+
+/** Tope de ids por sentencia: Postgres acepta 32 767 parámetros y un libro grande los pasa. */
+const TANDA = 5_000;
+
+/** El libro cambió entre la foto y el borrado: se deshace todo. */
+class LibroCambioError extends Error {}
+
+const PARCIALES: readonly AlcanceParcial[] = ["trozas_disponibles", "madera_disponible", "consumo", "lotes"];
+const esParcial = (a: ScopeVaciado): a is AlcanceParcial => (PARCIALES as readonly string[]).includes(a);
+
+const NOMBRE_ALCANCE: Record<AlcanceParcial, string> = {
+  trozas_disponibles: "Trozas que están en el patio",
+  madera_disponible: "Madera aserrada que no salió",
+  consumo: "Consumos (troza → producción)",
+  lotes: "Lotes de aserrío y comerciales",
 };
 
-/**
- * Una troza "disponible" para el vaciado: nunca tocó ni la sierra ni un camión,
- * no es una madre con hijos de retrozado (borrarla arrastraría a hijos que bien
- * podrían estar consumidos) y **no está apartada en un lote de aserrío**.
- *
- * ⛔ `loteAserrioId: null` faltaba. Una troza ya cargada en un lote abierto
- * —armado y esperando la sierra— tiene `consumidaEnId` y `despachadaEnId` en
- * null, así que entraba como "disponible" y se borraba: el lote quedaba vacío
- * sin que nadie lo hubiera pedido, y sin fallar, porque la relación con el lote
- * es `onDelete: SetNull`. Armar un lote es trabajo de patio de una mañana;
- * "disponible" tiene que significar que nadie la apartó todavía.
- */
-const TROZA_DISPONIBLE_WHERE = (tenantId: string) => ({
-  tenantId,
-  consumidaEnId: null,
-  despachadaEnId: null,
-  loteAserrioId: null,
-  retrozos: { none: {} },
-});
+const s = (n: number, sing: string, plur = `${sing}s`) => `${n} ${n === 1 ? sing : plur}`;
 
-/**
- * Las corridas de PRODUCCIÓN que nada más referencia todavía — el candidato
- * seguro para un vaciado parcial. `soloConSaldo` filtra además a las que
- * declararon `quantity > 0` (madera aserrada disponible); sin el flag, trae
- * también las que consumieron trozas pero nunca llegaron a declarar producto
- * (una corrida a medio declarar sigue siendo "Consumo" del libro).
- */
-async function corridasSinTocar(
+/** La foto del libro que necesita el plan. Sólo trozas si es lo único que se pidió. */
+async function leerSnapshot(
+  db: Db,
   tenantId: string,
-  soloConSaldo: boolean,
-): Promise<{ id: string; quantity: unknown }[]> {
-  const vivas = await prisma.forestCtpEntry.findMany({
-    where: { tenantId, section: "produccion", deletedAt: null, status: "registrado" },
-    select: { id: true, quantity: true },
+  alcances: readonly AlcanceParcial[],
+): Promise<SnapshotLibro> {
+  const trozasQ = db.woodEntryTroza.findMany({
+    where: { tenantId },
+    select: {
+      id: true,
+      consumidaEnId: true,
+      despachadaEnId: true,
+      loteAserrioId: true,
+      loteMixtoId: true,
+      trozaOrigenId: true,
+    },
   });
-  if (vivas.length === 0) return [];
-  const ids = vivas.map((v) => v.id);
+  const vacio: Omit<SnapshotLibro, "trozas"> = {
+    corridas: [],
+    despachoOrigenes: [],
+    reprocesos: [],
+    loteMiembros: [],
+    consumos: [],
+    lotesAserrio: [],
+    lotesMixtos: [],
+    lotesComerciales: [],
+  };
+  if (alcances.every((a) => a === "trozas_disponibles")) return { ...vacio, trozas: await trozasQ };
 
-  const [despachos, reprocesosOrigen, reprocesosDestino, loteMiembros, lotesAserrio, trozasConsumidas] =
+  const conLotes = alcances.includes("lotes");
+  const [corridas, trozas, despachoOrigenes, reprocesos, loteMiembros, consumos, lotesAserrio, lotesMixtos, lotesComerciales] =
     await Promise.all([
-    prisma.forestCtpDespachoOrigen.findMany({
-      where: { tenantId, produccionEntryId: { in: ids } },
-      select: { produccionEntryId: true },
-      distinct: ["produccionEntryId"],
-    }),
-    prisma.forestCtpReproceso.findMany({
-      where: { tenantId, origenEntryId: { in: ids } },
-      select: { origenEntryId: true },
-      distinct: ["origenEntryId"],
-    }),
-    /* También como DESTINO: si esta corrida nació de reprocesar otra, borrarla
-       se llevaría en cascada el reproceso que la originó — y el saldo de la
-       corrida de ORIGEN (que ya la contaba como "reprocesada") de golpe
-       recuperaría ese volumen como disponible sin que nadie lo haya tocado. */
-    prisma.forestCtpReproceso.findMany({
-      where: { tenantId, destinoEntryId: { in: ids } },
-      select: { destinoEntryId: true },
-      distinct: ["destinoEntryId"],
-    }),
-    prisma.forestProdLoteMiembro.findMany({
-      where: { tenantId, produccionEntryId: { in: ids } },
-      select: { produccionEntryId: true },
-      distinct: ["produccionEntryId"],
-    }),
-    /* ⛔ El LOTE DE ASERRÍO (ADR-334) — el que faltaba, y el que más duele.
-       `ForestLoteAserrio.produccionEntryId` es un id SUELTO: no tiene
-       `@relation` en el schema, así que tampoco hay `onDelete: Restrict` que
-       frene el borrado. Sin esta consulta, vaciar «Consumo» o «Madera
-       disponible» borraba EN DURO la corrida que un lote todavía apunta: el
-       lote quedaba en `consumido` señalando una fila inexistente y su
-       producción y su rendimiento —lo que se mira— desaparecían del libro sin
-       que nadie lo hubiera pedido.
-       No confundir con `ForestProdLoteMiembro` de acá arriba: ése es el lote
-       COMERCIAL (ADR-136). Son dos cosas distintas con nombres parecidos, y
-       esa confusión es exactamente la que dejó el hueco. */
-    prisma.forestLoteAserrio.findMany({
-      where: { tenantId, deletedAt: null, produccionEntryId: { in: ids } },
-      select: { produccionEntryId: true },
-      distinct: ["produccionEntryId"],
-    }),
-    /* Y las TROZAS que declaran haberse consumido en esta corrida. Su relación
-       es `onDelete: SetNull`, así que el borrado no falla: deja la troza con
-       `consumidaEnId` en null pero conservando `fechaConsumo` y
-       `loteAserrioId` — una pieza "consumida por nadie", que es peor que un
-       error porque cuadra en los conteos y miente en la trazabilidad. */
-    prisma.woodEntryTroza.findMany({
-      where: { tenantId, consumidaEnId: { in: ids } },
-      select: { consumidaEnId: true },
-      distinct: ["consumidaEnId"],
-    }),
-  ]);
-  const tocadas = new Set<string>([
-    ...despachos.map((d) => d.produccionEntryId),
-    ...reprocesosOrigen.map((r) => r.origenEntryId),
-    ...reprocesosDestino.map((r) => r.destinoEntryId),
-    ...loteMiembros.map((l) => l.produccionEntryId),
-    ...lotesAserrio.map((l) => l.produccionEntryId).filter((x): x is string => Boolean(x)),
-    ...trozasConsumidas.map((t) => t.consumidaEnId).filter((x): x is string => Boolean(x)),
-  ]);
+      db.forestCtpEntry.findMany({
+        where: { tenantId },
+        select: { id: true, section: true, status: true, deletedAt: true, quantity: true, lineNo: true, gtfNumber: true },
+      }),
+      trozasQ,
+      db.forestCtpDespachoOrigen.findMany({
+        where: { tenantId },
+        select: { despachoEntryId: true, produccionEntryId: true },
+      }),
+      db.forestCtpReproceso.findMany({ where: { tenantId }, select: { origenEntryId: true, destinoEntryId: true } }),
+      db.forestProdLoteMiembro.findMany({ where: { tenantId }, select: { loteId: true, produccionEntryId: true } }),
+      db.forestCtpConsumo.findMany({ where: { tenantId }, select: { ctpEntryId: true, congeladoAt: true } }),
+      /* Sólo los vivos protegen y sólo los vivos se borran: uno dado de baja
+         ya soltó sus piezas (`softDelete`). */
+      db.forestLoteAserrio.findMany({
+        where: { tenantId, deletedAt: null },
+        select: { id: true, code: true, status: true, produccionEntryId: true, loteMixtoId: true },
+      }),
+      conLotes
+        ? db.forestLoteMixto.findMany({ where: { tenantId, deletedAt: null }, select: { id: true, code: true, status: true } })
+        : Promise.resolve([] as { id: string; code: string; status: string }[]),
+      conLotes
+        ? db.forestProdLote.findMany({
+            where: { tenantId, deletedAt: null },
+            select: { id: true, loteCode: true, status: true },
+          })
+        : Promise.resolve([] as { id: string; loteCode: string; status: string }[]),
+    ]);
 
-  return vivas.filter((v) => !tocadas.has(v.id) && (!soloConSaldo || Number(v.quantity ?? 0) > 0));
+  return {
+    corridas: corridas.map((c) => ({
+      id: c.id,
+      section: c.section,
+      status: c.status,
+      borrada: c.deletedAt != null,
+      quantity: Number(c.quantity ?? 0),
+      lineNo: c.lineNo,
+      gtfNumber: c.gtfNumber,
+    })),
+    trozas,
+    despachoOrigenes,
+    reprocesos,
+    loteMiembros,
+    consumos: consumos.map((c) => ({ ctpEntryId: c.ctpEntryId, congelado: c.congeladoAt != null })),
+    lotesAserrio,
+    lotesMixtos,
+    lotesComerciales: lotesComerciales.map((l) => ({ id: l.id, code: l.loteCode, status: l.status })),
+  };
+}
+
+/** Corre `fn` por tandas de ids y suma lo que tocó. */
+async function porTandas(ids: string[], fn: (tanda: string[]) => Promise<{ count: number }>): Promise<number> {
+  let n = 0;
+  for (let i = 0; i < ids.length; i += TANDA) n += (await fn(ids.slice(i, i + TANDA))).count;
+  return n;
+}
+
+/**
+ * Escribe el plan. Cada sentencia lleva en el WHERE la condición que la hizo
+ * candidata (condición en el WHERE, no un `if` antes) y tiene que tocar
+ * EXACTAMENTE las filas del plan; si no, `LibroCambioError` y la transacción
+ * entera se deshace.
+ */
+async function aplicarPlan(tx: Prisma.TransactionClient, tenantId: string, plan: PlanVaciado): Promise<number> {
+  const exacto = async (que: string, ids: string[], fn: (tanda: string[]) => Promise<{ count: number }>, esperado = ids.length) => {
+    if (ids.length === 0) return;
+    const n = await porTandas(ids, fn);
+    if (n !== esperado) {
+      throw new LibroCambioError(
+        `El libro cambió mientras se vaciaba (${que}: ${n} de ${esperado}). No se borró nada: vuelve a abrir el vaciado para ver los números de ahora.`,
+      );
+    }
+  };
+
+  /* 1. Las piezas que vuelven al patio, ANTES de borrar sus corridas y lotes:
+        las FK son `SetNull` y después ya no se sabría cuáles eran — quedaría
+        `fechaConsumo` puesta en una pieza «consumida por nadie». */
+  await exacto("piezas que vuelven al patio", plan.soltarConsumo, (ids) =>
+    tx.woodEntryTroza.updateMany({
+      where: { tenantId, id: { in: ids }, consumidaEnId: { not: null } },
+      data: { consumidaEnId: null, fechaConsumo: null },
+    }),
+  );
+  await exacto("piezas de los lotes", plan.soltarDeLote, (ids) =>
+    tx.woodEntryTroza.updateMany({
+      where: { tenantId, id: { in: ids }, loteAserrioId: { in: plan.lotesAserrioABorrar } },
+      data: { loteAserrioId: null },
+    }),
+  );
+  await exacto("piezas de los lotes mixtos", plan.soltarDeMixto, (ids) =>
+    tx.woodEntryTroza.updateMany({
+      where: { tenantId, id: { in: ids }, loteMixtoId: { in: plan.lotesMixtosABorrar } },
+      data: { loteMixtoId: null, reservadaMixtoEn: null },
+    }),
+  );
+
+  /* 2. Trozas del patio. */
+  await exacto("trozas del patio", plan.trozasABorrar, (ids) =>
+    tx.woodEntryTroza.deleteMany({
+      where: {
+        tenantId,
+        id: { in: ids },
+        consumidaEnId: null,
+        despachadaEnId: null,
+        loteAserrioId: null,
+        loteMixtoId: null,
+        retrozos: { none: {} },
+      },
+    }),
+  );
+
+  /* 3. Lotes comerciales: primero los miembros (`Restrict` contra la corrida). */
+  await exacto(
+    "miembros de lotes comerciales",
+    plan.lotesComercialesABorrar,
+    (ids) => tx.forestProdLoteMiembro.deleteMany({ where: { tenantId, loteId: { in: ids } } }),
+    plan.miembrosABorrar,
+  );
+  await exacto("lotes comerciales", plan.lotesComercialesABorrar, (ids) =>
+    tx.forestProdLote.deleteMany({
+      where: { tenantId, id: { in: ids }, deletedAt: null, status: { not: "despachado" } },
+    }),
+  );
+
+  /* 4. Corridas con sus consumos. Los cargos de aserrío (ADR-412) no cuelgan
+        por FK: se dan de baja DESPUÉS del borrado y en la misma transacción —
+        si un cobro tenía la corrida bloqueada, el borrado esperó a que
+        confirmara y recién ahora se ve su cargo. */
+  let cargosDeBaja = 0;
+  if (plan.corridasABorrar.length > 0) {
+    await exacto(
+      "consumos",
+      plan.corridasABorrar,
+      (ids) => tx.forestCtpConsumo.deleteMany({ where: { tenantId, ctpEntryId: { in: ids }, congeladoAt: null } }),
+      plan.consumosABorrar,
+    );
+    await exacto("corridas", plan.corridasABorrar, (ids) =>
+      tx.forestCtpEntry.deleteMany({
+        where: { tenantId, id: { in: ids }, section: "produccion", status: "registrado", deletedAt: null },
+      }),
+    );
+    cargosDeBaja = await porTandas(plan.corridasABorrar, (ids) =>
+      tx.forestCuentaMov.updateMany({
+        where: { tenantId, ctpEntryId: { in: ids }, deletedAt: null },
+        data: { deletedAt: new Date() },
+      }),
+    );
+  }
+
+  /* 5. Lotes de aserrío: sus respuestas de campos personalizados (ADR-427)
+        cuelgan por id suelto, así que se van con ellos. */
+  if (plan.lotesAserrioABorrar.length > 0) {
+    await porTandas(plan.lotesAserrioABorrar, (ids) =>
+      tx.campoPersonalizadoValor.deleteMany({ where: { tenantId, registroId: { in: ids } } }),
+    );
+  }
+  await exacto("lotes de aserrío", plan.lotesAserrioABorrar, (ids) =>
+    tx.forestLoteAserrio.deleteMany({ where: { tenantId, id: { in: ids }, deletedAt: null } }),
+  );
+
+  /* 6. Mixtos, después de sus hijos (la FK del hijo es `SetNull`). */
+  await exacto("lotes mixtos", plan.lotesMixtosABorrar, (ids) =>
+    tx.forestLoteMixto.deleteMany({ where: { tenantId, id: { in: ids }, deletedAt: null } }),
+  );
+
+  return cargosDeBaja;
+}
+
+function resumenDelPlan(alcances: AlcanceParcial[], plan: PlanVaciado): ResumenVaciado {
+  return { alcances, conteo: plan.conteo, porAlcance: plan.porAlcance, lotesBloqueados: plan.lotesBloqueados };
+}
+
+/**
+ * Asienta y ESPERA. El vaciado no se deshace, y su rastro no puede quedar
+ * corriendo después de responder (en Vercel lo que sigue tras la respuesta
+ * puede no terminar). Si aun así falla, el libro ya se vació: se loguea como
+ * error —nunca en silencio— y se responde igual.
+ */
+async function asentar(params: Parameters<typeof auditCtpEsperando>[0]): Promise<void> {
+  try {
+    await auditCtpEsperando(params);
+  } catch (e) {
+    logger.error("[forest-ctp-purga] el libro se vació pero el asiento de auditoría no quedó escrito", {
+      error: String(e),
+      tenantId: params.tenantId,
+      action: params.action,
+      user: params.user,
+    });
+  }
+}
+
+/** Un asiento por alcance, con sus números. */
+async function auditarParcial(
+  tenantId: string,
+  usuario: string,
+  alcances: AlcanceParcial[],
+  plan: PlanVaciado,
+  codigos: { aserrio: string[]; mixtos: string[]; comerciales: string[] },
+  cargosDeBaja: number,
+): Promise<void> {
+  const pa = plan.porAlcance;
+  const juntos = alcances.length > 1 ? ` (vaciado combinado: ${alcances.map((a) => `«${NOMBRE_ALCANCE[a]}»`).join(" + ")})` : "";
+  const lista = (xs: string[]) => (xs.length > 30 ? `${xs.slice(0, 30).join(", ")} y ${xs.length - 30} más` : xs.join(", "));
+  const detalle: Record<AlcanceParcial, () => string> = {
+    trozas_disponibles: () =>
+      `${s(pa.trozas_disponibles?.trozas ?? 0, "pieza")} del patio sin consumir, despachar ni apartar. Los ingresos (GTF) quedaron intactos.`,
+    madera_disponible: () =>
+      `${s(pa.madera_disponible?.corridas ?? 0, "corrida")} con madera declarada, ${s(pa.madera_disponible?.consumos ?? 0, "consumo atribuido", "consumos atribuidos")}.` +
+      (alcances.includes("consumo") ? " Están incluidas en el asiento de Consumos." : ""),
+    consumo: () =>
+      `${s(pa.consumo?.corridas ?? 0, "corrida")} de producción, ${s(pa.consumo?.consumos ?? 0, "consumo atribuido", "consumos atribuidos")}` +
+      `${pa.consumo?.deLotes ? ` (${pa.consumo.deLotes} sólo porque su lote también se borró)` : ""}. ` +
+      `${s(plan.conteo.saltadas ?? 0, "corrida se salvó", "corridas se salvaron")} por tener despacho, reproceso, lote, piezas o consumo congelado encima. ` +
+      `${s(cargosDeBaja, "cargo de aserrío dado", "cargos de aserrío dados")} de baja en la cuenta corriente.`,
+    lotes: () =>
+      `${s(codigos.aserrio.length, "lote de aserrío", "lotes de aserrío")}${codigos.aserrio.length ? ` (${lista(codigos.aserrio)})` : ""}, ` +
+      `${s(codigos.mixtos.length, "lote mixto", "lotes mixtos")}${codigos.mixtos.length ? ` (${lista(codigos.mixtos)})` : ""}, ` +
+      `${s(codigos.comerciales.length, "lote comercial", "lotes comerciales")}${codigos.comerciales.length ? ` (${lista(codigos.comerciales)})` : ""}. ` +
+      `${s(plan.conteo.trozasAlPatio, "troza volvió", "trozas volvieron")} al patio (no se borró madera). ` +
+      (plan.lotesBloqueados.length
+        ? `No se borraron ${plan.lotesBloqueados.length}: ${lista(plan.lotesBloqueados.map((b) => `${b.codigo} (${b.motivo})`))}`
+        : "Ninguno quedó bloqueado."),
+  };
+  await Promise.all(
+    alcances.map((a) =>
+      asentar({
+        tenantId,
+        action: "ctp_libro_purga_parcial",
+        entity: "ForestCtpLibro",
+        entityId: tenantId,
+        detail: `VACIÓ «${NOMBRE_ALCANCE[a]}»${juntos}: ${detalle[a]()}`,
+        user: usuario,
+      }),
+    ),
+  );
+}
+
+function invalidarTodo(tenantId: string) {
+  for (const p of ["forest-ctp", "wood-entries", "forest-lote", "forestal:lote-aserrio", "forestal:lote-mixto"]) {
+    try {
+      invalidateByPrefix(`${p}:${tenantId}`);
+    } catch (e) {
+      logger.error("[forest-ctp-purga] no se pudo invalidar el caché", { error: String(e), prefijo: p });
+    }
+  }
+}
+
+/** Lo que hay en el libro entero, contado con `db` (el global para la vista
+ *  previa; el de la transacción para el borrado). Los lotes, sólo los vivos:
+ *  son los que el operador reconoce como suyos. */
+async function contarTodo(db: Db, tenantId: string): Promise<ResumenVaciado> {
+  const [ingresos, trozas, entradas, consumos, origenes, lotesAserrio, lotesMixtos, lotesComerciales] = await Promise.all([
+    db.woodEntry.count({ where: { tenantId } }),
+    db.woodEntryTroza.count({ where: { tenantId } }),
+    db.forestCtpEntry.groupBy({ by: ["section"], where: { tenantId }, _count: true }),
+    db.forestCtpConsumo.count({ where: { tenantId } }),
+    db.forestCtpDespachoOrigen.count({ where: { tenantId } }),
+    db.forestLoteAserrio.count({ where: { tenantId, deletedAt: null } }),
+    db.forestLoteMixto.count({ where: { tenantId, deletedAt: null } }),
+    db.forestProdLote.count({ where: { tenantId, deletedAt: null } }),
+  ]);
+  const porSeccion = (sec: string) => entradas.find((e) => e.section === sec)?._count ?? 0;
+  const produccion = porSeccion("produccion");
+  const despachos = porSeccion("despacho");
+  const lotes = lotesAserrio + lotesMixtos + lotesComerciales;
+  const conteo: ConteoDelLibro = {
+    ingresos,
+    trozas,
+    produccion,
+    despachos,
+    consumos,
+    origenes,
+    lotes,
+    trozasAlPatio: 0,
+    /* Los REGISTROS del libro, no las filas puente: es el número que el
+       operador reconoce como «lo que cargué». */
+    total: ingresos + produccion + despachos + lotes,
+  };
+  return {
+    alcances: ["todo"],
+    conteo,
+    porAlcance: { todo: { ingresos, trozas, produccion, despachos, consumos, origenes, lotes } },
+    lotesBloqueados: [],
+  };
+}
+
+export type ResultadoVaciado =
+  | { ok: true; resumen: ResumenVaciado }
+  | { ok: false; codigo: "periodo_cerrado" | "libro_cambio"; motivo: string; periodos: string[] };
+
+type FalloVaciado = Extract<ResultadoVaciado, { ok: false }>;
+
+/** Lo que ve la persona cuando el libro ya no es el que revisó. */
+export const MENSAJE_LIBRO_CAMBIO = "El libro cambió desde que lo revisaste: vuelve a mirar qué se borra.";
+
+/** Un mes cerrado sin reabrir, visto DENTRO de la transacción: se deshace todo. */
+class PeriodoCerradoError extends Error {
+  constructor(readonly periodos: string[]) {
+    super(
+      `Hay ${s(periodos.length, "período cerrado", "períodos cerrados")} (${periodos.join(", ")}). ` +
+        `Un mes cerrado ya se presentó ante SERFOR: reábrelo primero si de verdad hay que borrarlo.`,
+    );
+  }
+}
+
+/** Los cierres que bloquean, leídos con `db` y sin caché. Un cierre reabierto
+ *  sigue en el historial pero ya no bloquea: reabrirlo fue una decisión
+ *  explícita, con su motivo y su rastro. */
+async function periodosQueBloqueanEn(tenantId: string, db: Db): Promise<string[]> {
+  const cierres = await ForestCtpCierreDB.listEn(tenantId, db);
+  return cierres.filter((c) => !c.reabierto).map((c) => c.label || c.periodKey);
+}
+
+/**
+ * Corre la transacción del vaciado (Serializable, ver `TX_OPTS`) y traduce sus
+ * finales previstos: mes cerrado, el libro no es el que se miró, u otra
+ * transacción que se cruzó (P2034 / 40001 / 40P01). En los tres no se borró nada.
+ */
+async function enTransaccion<T>(
+  fn: (tx: Prisma.TransactionClient) => Promise<T>,
+): Promise<{ ok: true; valor: T } | FalloVaciado> {
+  try {
+    return { ok: true, valor: await prisma.$transaction(fn, TX_OPTS) };
+  } catch (e) {
+    if (e instanceof PeriodoCerradoError) {
+      return { ok: false, codigo: "periodo_cerrado", motivo: e.message, periodos: e.periodos };
+    }
+    if (e instanceof LibroCambioError) return { ok: false, codigo: "libro_cambio", motivo: e.message, periodos: [] };
+    if (esChoqueDeLocks(e)) {
+      logger.warn("[forest-ctp-purga] otra transacción se cruzó con el vaciado: no se borró nada", { error: String(e) });
+      return { ok: false, codigo: "libro_cambio", motivo: MENSAJE_LIBRO_CAMBIO, periodos: [] };
+    }
+    throw e;
+  }
+}
+
+/** Primer paso de las dos transacciones: un mes cerrado frena todo. */
+async function frenarSiHayCierre(tenantId: string, tx: Prisma.TransactionClient): Promise<void> {
+  const periodos = await periodosQueBloqueanEn(tenantId, tx);
+  if (periodos.length > 0) throw new PeriodoCerradoError(periodos);
+}
+
+/** Segundo: el libro de ahora tiene que ser el que la persona miró. */
+function frenarSiCambio(ahora: ConteoDelLibro, esperado: ConteoEsperado): void {
+  if (!mismoConteo(ahora, esperado)) throw new LibroCambioError(MENSAJE_LIBRO_CAMBIO);
 }
 
 export class ForestCtpPurgaDB {
-  /** Qué hay en el libro (o en el alcance elegido), para mostrarlo ANTES de borrar. */
-  static async contar(tenantId: string, scope: ScopeVaciado = "todo"): Promise<ConteoDelLibro> {
+  /** Qué se borraría con los alcances elegidos, para mostrarlo ANTES de borrar. */
+  static async contar(tenantId: string, alcances: readonly ScopeVaciado[]): Promise<ResumenVaciado> {
     if (!tenantId) throw new Error("tenantId is required");
-
-    if (scope === "trozas_disponibles") {
-      const trozas = await prisma.woodEntryTroza.count({ where: TROZA_DISPONIBLE_WHERE(tenantId) });
-      return { ingresos: 0, trozas, produccion: 0, despachos: 0, consumos: 0, origenes: 0, total: trozas };
-    }
-
-    if (scope === "madera_disponible" || scope === "consumo") {
-      const [candidatas, vivasCount] = await Promise.all([
-        corridasSinTocar(tenantId, scope === "madera_disponible"),
-        prisma.forestCtpEntry.count({ where: { tenantId, section: "produccion", deletedAt: null, status: "registrado" } }),
-      ]);
-      const ids = candidatas.map((c) => c.id);
-      const consumos = ids.length
-        ? await prisma.forestCtpConsumo.count({ where: { tenantId, ctpEntryId: { in: ids } } })
-        : 0;
-      return {
-        ingresos: 0,
-        trozas: 0,
-        produccion: candidatas.length,
-        despachos: 0,
-        consumos,
-        origenes: 0,
-        total: candidatas.length,
-        saltadas: Math.max(0, vivasCount - candidatas.length),
-      };
-    }
-
-    const [ingresos, trozas, entradas, consumos, origenes] = await Promise.all([
-      prisma.woodEntry.count({ where: { tenantId } }),
-      prisma.woodEntryTroza.count({ where: { tenantId } }),
-      prisma.forestCtpEntry.groupBy({ by: ["section"], where: { tenantId }, _count: true }),
-      prisma.forestCtpConsumo.count({ where: { tenantId } }),
-      prisma.forestCtpDespachoOrigen.count({ where: { tenantId } }),
-    ]);
-
-    const porSeccion = (s: string) => entradas.find((e) => e.section === s)?._count ?? 0;
-    const produccion = porSeccion("produccion");
-    const despachos = porSeccion("despacho");
-
-    return {
-      ingresos,
-      trozas,
-      produccion,
-      despachos,
-      consumos,
-      origenes,
-      /* El total cuenta los REGISTROS del libro, no las filas puente: es el
-         número que el operador reconoce como «lo que cargué». */
-      total: ingresos + produccion + despachos,
-    };
+    if (alcances.includes("todo")) return contarTodo(prisma, tenantId);
+    const parciales = alcances.filter(esParcial);
+    const plan = planificarVaciado(await leerSnapshot(prisma, tenantId, parciales), parciales);
+    return resumenDelPlan(parciales, plan);
   }
 
-  /** Los períodos cerrados que impiden vaciar (cualquier alcance). Vacío = se puede. */
+  /** Los períodos cerrados que impiden vaciar (cualquier alcance). Vacío = se
+   *  puede. Sin caché: es lo mismo que el borrado vuelve a mirar en su transacción. */
   static async periodosQueBloquean(tenantId: string): Promise<string[]> {
     if (!tenantId) throw new Error("tenantId is required");
-    const cierres = await ForestCtpCierreDB.list(tenantId);
-    /* Un cierre reabierto sigue en el historial pero ya no bloquea: reabrirlo
-       fue una decisión explícita, con su motivo y su rastro. */
-    return cierres.filter((c) => !c.reabierto).map((c) => c.label || c.periodKey);
+    return periodosQueBloqueanEn(tenantId, prisma);
   }
 
   /**
-   * Vacía el libro — entero o por alcance.
-   *
-   * Devuelve lo que se borró (y, en un alcance parcial, cuánto se salvó), para
-   * poder decir exactamente qué pasó. Todo en una transacción: media purga deja
-   * un libro peor que el que había —corridas sin sus ingresos— y eso sí sería
-   * irrecuperable.
+   * Vacía el libro — entero o por alcances combinados (la unión), todo en UNA
+   * transacción Serializable. `esperado` son las cifras que la vista previa
+   * mostró: se vuelven a contar adentro y, si no coinciden, no se borra nada.
+   * Devuelve lo que se borró, alcance por alcance, y los lotes que no se
+   * pudieron borrar con su motivo.
    */
   static async vaciar(
     tenantId: string,
     usuario: string,
-    scope: ScopeVaciado = "todo",
-  ): Promise<{ ok: true; borrado: ConteoDelLibro } | { ok: false; motivo: string; periodos: string[] }> {
+    alcances: readonly ScopeVaciado[],
+    esperado: ConteoEsperado,
+  ): Promise<ResultadoVaciado> {
     if (!tenantId) throw new Error("tenantId is required");
+    if (!usuario.trim()) throw new Error("usuario vacío: el asiento tiene que decir quién vació el libro");
+    if (alcances.length === 0) throw new Error("alcances vacío: el que llama valida antes");
 
-    const periodos = await ForestCtpPurgaDB.periodosQueBloquean(tenantId);
-    if (periodos.length > 0) {
-      return {
-        ok: false,
-        motivo:
-          `Hay ${periodos.length} período${periodos.length === 1 ? "" : "s"} cerrado${periodos.length === 1 ? "" : "s"} ` +
-          `(${periodos.join(", ")}). Un mes cerrado ya se presentó ante SERFOR: reabrilo primero si de verdad hay que borrarlo.`,
-        periodos,
+    if (alcances.includes("todo")) return ForestCtpPurgaDB.vaciarTodo(tenantId, usuario, esperado);
+
+    const parciales = alcances.filter(esParcial);
+    const r = await enTransaccion(async (tx) => {
+      await frenarSiHayCierre(tenantId, tx);
+      const snap = await leerSnapshot(tx, tenantId, parciales);
+      const plan = planificarVaciado(snap, parciales);
+      frenarSiCambio(plan.conteo, esperado);
+      const codigoDe = (lista: { id: string; code: string }[], ids: string[]) => {
+        const m = new Map(lista.map((l) => [l.id, l.code]));
+        return ids.map((id) => m.get(id) ?? id).sort();
       };
-    }
+      const codigos = {
+        aserrio: codigoDe(snap.lotesAserrio, plan.lotesAserrioABorrar),
+        mixtos: codigoDe(snap.lotesMixtos, plan.lotesMixtosABorrar),
+        comerciales: codigoDe(snap.lotesComerciales, plan.lotesComercialesABorrar),
+      };
+      const cargosDeBaja = await aplicarPlan(tx, tenantId, plan);
+      return { plan, cargosDeBaja, codigos };
+    });
+    if (!r.ok) return r;
 
-    if (scope === "trozas_disponibles") {
-      const borrado = await ForestCtpPurgaDB.contar(tenantId, scope);
-      await prisma.woodEntryTroza.deleteMany({ where: TROZA_DISPONIBLE_WHERE(tenantId) });
-      auditCtp({
-        tenantId,
-        action: "ctp_libro_purga_parcial",
-        entity: "ForestCtpLibro",
-        entityId: tenantId,
-        detail: `VACIÓ trozas disponibles: ${borrado.trozas} pieza(s) del patio sin consumir ni despachar. Los ingresos (GTF) quedaron intactos.`,
-        user: usuario,
-      });
-      try { invalidateByPrefix(`wood-entries:${tenantId}`); } catch (e) {
-        logger.error("[forest-ctp-purga] no se pudo invalidar el caché", { error: String(e) });
-      }
-      return { ok: true, borrado };
-    }
+    const { plan, cargosDeBaja, codigos } = r.valor;
+    invalidarTodo(tenantId);
+    if (cargosDeBaja > 0) ForestCuentaDB.invalidar(tenantId);
+    await auditarParcial(tenantId, usuario, parciales, plan, codigos, cargosDeBaja);
+    return { ok: true, resumen: resumenDelPlan(parciales, plan) };
+  }
 
-    if (scope === "madera_disponible" || scope === "consumo") {
-      const borrado = await ForestCtpPurgaDB.contar(tenantId, scope);
-      const candidatas = await corridasSinTocar(tenantId, scope === "madera_disponible");
-      const ids = candidatas.map((c) => c.id);
-      /* Los cargos de aserrío de esas corridas (ADR-412) caen con ellas y en la
-         MISMA transacción: una deuda viva por una corrida que ya no existe no se
-         explica desde ningún lado. Baja lógica, como toda la cuenta (ADR-322) —
-         el movimiento no cuelga por FK, así que el `deleteMany` no lo alcanza. */
-      let cargosDeBaja = 0;
-      if (ids.length > 0) {
-        await prisma.$transaction(async (tx) => {
-          await tx.forestCtpConsumo.deleteMany({ where: { tenantId, ctpEntryId: { in: ids } } });
-          await tx.forestCtpEntry.deleteMany({ where: { tenantId, id: { in: ids } } });
-          /* DESPUÉS del borrado: si un cobro tenía la corrida bloqueada, el
-             `deleteMany` espera a que confirme, y recién esta sentencia ve el
-             cargo que ese cobro acaba de crear. Antes del borrado se escapaba. */
-          const cargos = await tx.forestCuentaMov.updateMany({
-            where: { tenantId, ctpEntryId: { in: ids }, deletedAt: null },
-            data: { deletedAt: new Date() },
-          });
-          cargosDeBaja = cargos.count;
-        });
-      }
-      auditCtp({
-        tenantId,
-        action: "ctp_libro_purga_parcial",
-        entity: "ForestCtpLibro",
-        entityId: tenantId,
-        detail:
-          `VACIÓ ${scope === "madera_disponible" ? "madera aserrada disponible" : "Consumos"}: ${borrado.produccion} ` +
-          `corrida(s) de producción, ${borrado.consumos} consumo(s) atribuido(s). ` +
-          `${borrado.saltadas ?? 0} corrida(s) se salvaron por tener despacho, reproceso o lote de producción encima. ` +
-          `${cargosDeBaja} cargo(s) de aserrío dado(s) de baja en la cuenta corriente.`,
-        user: usuario,
-      });
-      try { invalidateByPrefix(`forest-ctp:${tenantId}`); } catch (e) {
-        logger.error("[forest-ctp-purga] no se pudo invalidar el caché", { error: String(e) });
-      }
-      if (cargosDeBaja > 0) ForestCuentaDB.invalidar(tenantId);
-      return { ok: true, borrado };
-    }
+  private static async vaciarTodo(tenantId: string, usuario: string, esperado: ConteoEsperado): Promise<ResultadoVaciado> {
+    const r = await enTransaccion(async (tx) => {
+      await frenarSiHayCierre(tenantId, tx);
+      const contado = await contarTodo(tx, tenantId);
+      frenarSiCambio(contado.conteo, esperado);
 
-    const borrado = await ForestCtpPurgaDB.contar(tenantId, "todo");
-
-    let cargosDeBaja = 0;
-    await prisma.$transaction(async (tx) => {
-      /* Los cargos de aserrío (ADR-412) no cuelgan por FK: se juntan los ids de
-         las corridas ANTES de borrarlas —después no queda a qué apuntar— y se
-         dan de baja DESPUÉS del borrado, en la misma transacción (ver abajo).
-         Una deuda viva por una corrida que ya no existe no se explica. */
-      const idsCorridas = (
-        await tx.forestCtpEntry.findMany({ where: { tenantId }, select: { id: true } })
-      ).map((c) => c.id);
-      /* Orden: primero lo que cuelga, después los padres. Las cascadas ya se
-         encargarían, pero borrar explícitamente los puentes deja claro en el
-         código qué se lleva la purga — y no depende de que nadie afloje un
-         `onDelete` más adelante. */
+      /* Los cargos de aserrío (ADR-412) y las respuestas de campos de los lotes
+         (ADR-427) no cuelgan por FK: se juntan los ids ANTES de borrar —después
+         no queda a qué apuntar. */
+      const [idsCorridas, idsLotes] = await Promise.all([
+        tx.forestCtpEntry.findMany({ where: { tenantId }, select: { id: true } }),
+        tx.forestLoteAserrio.findMany({ where: { tenantId }, select: { id: true } }),
+      ]);
+      /* Orden: primero lo que cuelga, después los padres. Los miembros de lotes
+         comerciales son `Restrict` contra la corrida: sin borrarlos antes, el
+         vaciado completo fallaba en cualquier libro con un lote comercial. */
       await tx.forestCtpDespachoOrigen.deleteMany({ where: { tenantId } });
       await tx.forestCtpConsumo.deleteMany({ where: { tenantId } });
       await tx.forestCtpReproceso.deleteMany({ where: { tenantId } });
+      await tx.forestProdLoteMiembro.deleteMany({ where: { tenantId } });
+      const comerciales = (await tx.forestProdLote.deleteMany({ where: { tenantId } })).count;
       await tx.forestCtpEntry.deleteMany({ where: { tenantId } });
-      /* Después del borrado: si un cobro tenía una corrida bloqueada, el
-         `deleteMany` esperó a que confirmara y esta sentencia ya ve su cargo. */
+      let cargosDeBaja = 0;
       if (idsCorridas.length > 0) {
-        const cargos = await tx.forestCuentaMov.updateMany({
-          where: { tenantId, ctpEntryId: { in: idsCorridas }, deletedAt: null },
-          data: { deletedAt: new Date() },
-        });
-        cargosDeBaja = cargos.count;
+        cargosDeBaja = await porTandas(
+          idsCorridas.map((c) => c.id),
+          (ids) =>
+            tx.forestCuentaMov.updateMany({
+              where: { tenantId, ctpEntryId: { in: ids }, deletedAt: null },
+              data: { deletedAt: new Date() },
+            }),
+        );
       }
       /* Los retrozos primero: cuelgan de otra troza y borrar la madre antes
          dispararía la cascada sobre filas que ya no están. */
       await tx.woodEntryTroza.deleteMany({ where: { tenantId, trozaOrigenId: { not: null } } });
       await tx.woodEntryTroza.deleteMany({ where: { tenantId } });
+      if (idsLotes.length > 0) {
+        await porTandas(
+          idsLotes.map((l) => l.id),
+          (ids) => tx.campoPersonalizadoValor.deleteMany({ where: { tenantId, registroId: { in: ids } } }),
+        );
+      }
+      const aserrio = (await tx.forestLoteAserrio.deleteMany({ where: { tenantId } })).count;
+      const mixtos = (await tx.forestLoteMixto.deleteMany({ where: { tenantId } })).count;
       await tx.woodEntry.deleteMany({ where: { tenantId } });
+      /* Lo que de verdad se borró, también los lotes ya dados de baja: la
+         vista previa cuenta los vivos (los que el operador reconoce), pero el
+         asiento tiene que decir todo lo que desapareció. */
+      return { resumen: contado, cargosDeBaja, lotesBorrados: comerciales + aserrio + mixtos };
     });
+    if (!r.ok) return r;
 
-    auditCtp({
+    const { resumen, cargosDeBaja, lotesBorrados } = r.valor;
+    const borrado = resumen.conteo;
+    const deBaja = Math.max(0, lotesBorrados - borrado.lotes);
+    invalidarTodo(tenantId);
+    if (cargosDeBaja > 0) ForestCuentaDB.invalidar(tenantId);
+    await asentar({
       tenantId,
       action: "ctp_libro_purga",
       entity: "ForestCtpLibro",
@@ -371,18 +602,11 @@ export class ForestCtpPurgaDB {
       detail:
         `VACIÓ EL LIBRO DE OPERACIONES COMPLETO: ${borrado.ingresos} ingresos, ${borrado.trozas} trozas, ` +
         `${borrado.produccion} corridas, ${borrado.despachos} despachos, ${borrado.consumos} consumos atribuidos, ` +
-        `${borrado.origenes} orígenes de despacho, ${cargosDeBaja} cargo(s) de aserrío dado(s) de baja en la cuenta corriente.`,
+        `${borrado.origenes} orígenes de despacho, ${s(lotesBorrados, "lote", "lotes")} (aserrío, mixtos y comerciales` +
+        `${deBaja > 0 ? `; ${s(deBaja, "ya dado de baja", "ya dados de baja")}` : ""}), ` +
+        `${cargosDeBaja} cargo(s) de aserrío dado(s) de baja en la cuenta corriente.`,
       user: usuario,
     });
-
-    try {
-      invalidateByPrefix(`forest-ctp:${tenantId}`);
-      invalidateByPrefix(`wood-entries:${tenantId}`);
-    } catch (e) {
-      logger.error("[forest-ctp-purga] no se pudo invalidar el caché", { error: String(e) });
-    }
-    if (cargosDeBaja > 0) ForestCuentaDB.invalidar(tenantId);
-
-    return { ok: true, borrado };
+    return { ok: true, resumen };
   }
 }
