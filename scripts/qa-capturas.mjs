@@ -214,8 +214,8 @@ async function recorrido(t, primero) {
           const marcado = await page
             .waitForFunction(
               (t) => {
-                const raiz = [...document.querySelectorAll("main, [role=dialog], [role=alertdialog]")];
-                const cands = raiz.flatMap((r) => [...r.querySelectorAll("button, [role=tab], [role=radio], [role=option], [role=menuitem], a")]);
+                const raiz = [...document.querySelectorAll("main, [role=dialog], [role=alertdialog], [role=menu], [role=listbox]")];
+                const cands = raiz.flatMap((r) => [...r.querySelectorAll("button, [role=tab], [role=radio], [role=option], [role=menuitem], a, label")]);
                 const b = cands.find((x) => (x.innerText ?? "").trim() === t) ?? cands.find((x) => (x.innerText ?? "").trim().startsWith(t));
                 if (!b) return false;
                 document.querySelectorAll("[data-qa-clic]").forEach((x) => x.removeAttribute("data-qa-clic"));
