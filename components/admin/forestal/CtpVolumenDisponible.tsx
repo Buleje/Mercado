@@ -24,6 +24,8 @@ import { useCallback, useMemo, useState } from "react";
 import { SectionTitle } from "@buleje/design-system";
 import { AlertTriangle, FileDown } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import SegmentedControl from "@/components/ui-system/SegmentedControl";
+import { useLocalStorage } from "@/hooks/use-local-storage";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
 import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
@@ -38,6 +40,7 @@ import {
   entraPorPermiso,
   fuenteDeTroza,
   type FuentesPedidas,
+  type UnidadVolumen,
 } from "@/lib/forestal/volumen-disponible";
 import CtpAvisoAlcancePermiso from "./CtpAvisoAlcancePermiso";
 import CtpProductosDisponibles from "./CtpProductosDisponibles";
@@ -52,12 +55,15 @@ export default function CtpVolumenDisponible({
   onIr,
   fuentesPedidas = null,
   onFuentesUsadas,
+  onAbrirLote,
 }: {
   period: CtpPeriod;
   onIr?: (vista: string) => void;
   /** Un salto desde otra pantalla que pide una pila («Ver trozas disponibles →»). */
   fuentesPedidas?: FuentesPedidas | null;
   onFuentesUsadas?: () => void;
+  /** Clic en un lote de aserrío: abre su historia (Trazabilidad › Historia del lote). */
+  onAbrirLote?: (loteId: string) => void;
 }) {
   const [permisos, setPermisos] = useState<string[]>([]);
   const [especies, setEspecies] = useState<string[]>([]);
@@ -70,6 +76,8 @@ export default function CtpVolumenDisponible({
   });
   const v = useVolumenDisponible(period, fuentes, permisos, especies);
   const [errorExcel, setErrorExcel] = useState<string | null>(null);
+  /* m³ o pies tablares (Brandon 03-10): se recuerda por dispositivo. */
+  const [unidad, setUnidad] = useLocalStorage<UnidadVolumen>("ctp-volumen-disponible:unidad", "m3");
   const una = fuentes.length === 1 ? fuentes[0] : null;
 
   /* Las vistas de adentro, recortadas a su pila y al permiso de arriba.
@@ -114,22 +122,35 @@ export default function CtpVolumenDisponible({
               example="Elige Trozas y Lotes para ver toda la madera en troza que puede ir a la sierra."
             />
           </div>
+          <div className="ml-auto flex items-center gap-2">
+            <SegmentedControl<UnidadVolumen>
+              value={unidad}
+              onChange={setUnidad}
+              size="lg"
+              label="Ver el volumen en"
+              options={[
+                { value: "m3", label: "m³" },
+                { value: "pt", label: "pt" },
+              ]}
+            />
           {!una && (
             <button
               type="button"
               onClick={async () => setErrorExcel(await v.descargarExcel(filtrosEscritos))}
               disabled={v.resumen.total.m3 === 0 || v.descargando}
               title="Resumen por pila, por permiso, por especie y qué se exportó"
-              className="ml-auto inline-flex h-12 shrink-0 items-center gap-2 rounded-2xl border-[1.5px] border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] disabled:opacity-50"
+              className="inline-flex h-12 shrink-0 items-center gap-2 rounded-2xl border-[1.5px] border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] disabled:opacity-50"
             >
               <FileDown className="h-4 w-4" aria-hidden />
               {v.descargando ? "Generando…" : "Excel"}
             </button>
           )}
+          </div>
         </div>
         <SelectorDePilas
           fuentes={fuentes}
           porPila={v.porPila}
+          unidad={unidad}
           cargando={v.sinDatosAun}
           onAlternar={(f) => setFuentes(alternarFuente(fuentes, f))}
         />
@@ -179,7 +200,12 @@ export default function CtpVolumenDisponible({
       ) : una === "productos" ? (
         <CtpProductosDisponibles period={period} recorte={recorteProductos} />
       ) : una === "lotes" ? (
-        <PilaLotes filas={v.filasLotes} cargando={v.cargando} onIrLotes={onIr ? () => onIr("lotes") : undefined} />
+        <PilaLotes
+          filas={v.filasLotes}
+          cargando={v.cargando}
+          onIrLotes={onIr ? () => onIr("lotes") : undefined}
+          onAbrirLote={onAbrirLote}
+        />
       ) : una === "recepcion" ? (
         <PilaPorRecepcionar
           filas={v.filasRecepcion}
@@ -190,6 +216,7 @@ export default function CtpVolumenDisponible({
         <VolumenCombinado
           v={v}
           fuentes={fuentes}
+          unidad={unidad}
           permisos={permisos}
           especies={especies}
           onSolo={(f) => setFuentes([f])}

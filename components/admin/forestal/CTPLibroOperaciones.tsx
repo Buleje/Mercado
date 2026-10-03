@@ -349,6 +349,8 @@ export default function CTPLibroOperaciones() {
 
   /** Estable: la cabina y los paneles la pasan a efectos (atajos de teclado).
    *  El 2° argumento deja el destino filtrado — hoy sólo Ingresos lo entiende. */
+  /** El lote que se abre en Historia del lote desde otra vista (Volumen disponible › Lotes). */
+  const [loteHistoria, setLoteHistoria] = useState<string | null>(null);
   /** Qué pila abrir al llegar con un nombre viejo («trozas-disponibles»). */
   const [fuentesPedidas, setFuentesPedidas] = useState<FuentesPedidas | null>(null);
   const irA = useCallback(
@@ -719,6 +721,10 @@ export default function CTPLibroOperaciones() {
             onIr={irA}
             fuentesPedidas={fuentesPedidas}
             onFuentesUsadas={() => setFuentesPedidas(null)}
+            onAbrirLote={(id) => {
+              setLoteHistoria(id);
+              irA("historia-lote");
+            }}
           />
         )}
         {view === "reprocesos" && <CtpReprocesosDeclarados period={period} />}
@@ -733,7 +739,9 @@ export default function CTPLibroOperaciones() {
           />
         )}
         {view === "radar" && <CtpTrazaRadar period={period} />}
-        {view === "historia-lote" && <CtpHistoriaLoteView />}
+        {view === "historia-lote" && (
+          <CtpHistoriaLoteView key={loteHistoria ?? "elegir"} loteInicial={loteHistoria} />
+        )}
         {view === "planta" && <CtpPlantaView period={period} />}
         {view === "saldos" && (
           <CtpSaldosView

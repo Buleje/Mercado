@@ -51,6 +51,8 @@ import {
 import type { CorridaAMedioDeclarar } from "./produccion-paquetes";
 
 export type FuenteVolumen = "trozas" | "productos" | "lotes" | "recepcion";
+/** En qué se mira el volumen: m³ tal como está o pt aprovechables (derivado). */
+export type UnidadVolumen = "m3" | "pt";
 /** El orden de los chips y de las columnas: el del patio a la venta. */
 export const FUENTES_VOLUMEN: readonly FuenteVolumen[] = ["trozas", "lotes", "recepcion", "productos"];
 export const ETIQUETA_FUENTE: Record<FuenteVolumen, string> = {
@@ -299,8 +301,11 @@ const sumar = (r: Reparto, p: PartidaVolumen) => {
 };
 const m3De = (r: Reparto, f: FuenteVolumen) => r.rolliza[f] + r.aserrada[f];
 const sumaDe = (x: Record<FuenteVolumen, number>) => FUENTES_VOLUMEN.reduce((a, f) => a + x[f], 0);
-/* El pt de un total sale de los m³ de cada clase, no de sumar pt redondeados. */
-const ptDeReparto = (r: Reparto) => ptAprovechable(sumaDe(r.rolliza), sumaDe(r.aserrada));
+/* El pt de un total es la SUMA de los pt de cada pila, ya redondeados: si se
+   recalculara de los m³ juntos, «3 209 + 2 268 + 2 962» daría 8 440 arriba y
+   8 439 a mano (medido 03-10). Un pt de diferencia no vale una suma que no cierra. */
+const ptDePila = (r: Reparto, f: FuenteVolumen) => ptAprovechable(r.rolliza[f], r.aserrada[f]);
+const ptDeReparto = (r: Reparto) => FUENTES_VOLUMEN.reduce((a, f) => a + ptDePila(r, f), 0);
 
 export function resumenVolumen(partidas: readonly PartidaVolumen[]): ResumenVolumen {
   const r = repartoVacio();
@@ -316,7 +321,7 @@ export function resumenVolumen(partidas: readonly PartidaVolumen[]): ResumenVolu
       f,
       {
         m3: r4(m3De(r, f)),
-        pt: ptAprovechable(r.rolliza[f], r.aserrada[f]),
+        pt: ptDePila(r, f),
         unidades: unidades.get(f)?.size ?? 0,
       },
     ]),
@@ -334,6 +339,8 @@ export interface FilaVolumen {
   clave: string;
   etiqueta: string;
   porFuente: Record<FuenteVolumen, number>;
+  /** El pt aprovechable de cada pila en este grupo (para ver la tabla en pt). */
+  ptPorFuente: Record<FuenteVolumen, number>;
   m3: number;
   pt: number;
   /** Cuánto del m³ de la tabla es de este grupo (0-100, un decimal). */
@@ -368,6 +375,7 @@ export function volumenPorGrupo(
           ? grafiaPreferida([...a.grafias.entries()].map(([texto, usos]) => ({ texto, usos }))) || clave
           : sin,
         porFuente: Object.fromEntries(FUENTES_VOLUMEN.map((f) => [f, r4(m3De(a.r, f))])) as Record<FuenteVolumen, number>,
+        ptPorFuente: Object.fromEntries(FUENTES_VOLUMEN.map((f) => [f, ptDePila(a.r, f)])) as Record<FuenteVolumen, number>,
         m3: r4(m3),
         pt: ptDeReparto(a.r),
         pct: total > 0 ? Math.round((m3 / total) * 1000) / 10 : 0,

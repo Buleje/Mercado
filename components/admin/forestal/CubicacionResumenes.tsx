@@ -35,6 +35,7 @@ import {
 } from "@/lib/forestal/cubicacion-resumen";
 import { fmtM3, fmtPct, fmtPiezas, fmtPt, fmtSoles } from "@/lib/forestal/cubicacion-formato";
 import { analizarLote } from "@/lib/forestal/cubicacion-insights";
+import { useVariadoDelLote } from "./hooks/use-config-variado";
 import { LecturaDelLote } from "./resumen-vistas";
 import { DondeEstaElVolumen, HeroResumen } from "./resumen-hero";
 import { SeccionResumen, TablaGrupos } from "./resumen-tabla";
@@ -144,11 +145,18 @@ export default function CubicacionResumenes() {
   const { lista: guardadas, cargando: cargandoGuardadas } = useCubicacionesGuardadas();
   /** Dimensión libre: la pregunta al vender casi nunca es "por especie". */
   const [dim, setDim] = useState<DimensionResumen>("medida");
-  const porEspecie = useMemo(() => agruparPor(rows, "especie", precioDe), [rows, precioDe]);
-  const porTipo = useMemo(() => agruparPor(rows, "tipo", precioDe), [rows, precioDe]);
-  const porMedida = useMemo(() => agruparPor(rows, "medida", precioDe), [rows, precioDe]);
-  const porDim = useMemo(() => (dim === "medida" ? porMedida : agruparPor(rows, dim, precioDe)), [porMedida, rows, dim, precioDe]);
-  const bloques = useMemo(() => resumenPorEspecie(rows, precioDe), [rows, precioDe]);
+  /* Los indicadores y las tablas cuentan el Variado ABIERTO (Brandon 03-10):
+     las medidas reales con su tipo (Tabla, Larga angosta, Corta) y su especie
+     por proporción, no «Variado · Paquetería 71 %». Es el mismo lote abierto
+     que va al papel y al Libro (`useVariadoDelLote`); sin Variado, `envio` es
+     el lote tal cual. La Distribución recibe el lote crudo: lo abre ella. */
+  const variado = useVariadoDelLote(rows, rows, true);
+  const lote = variado.envio;
+  const porEspecie = useMemo(() => agruparPor(lote, "especie", precioDe), [lote, precioDe]);
+  const porTipo = useMemo(() => agruparPor(lote, "tipo", precioDe), [lote, precioDe]);
+  const porMedida = useMemo(() => agruparPor(lote, "medida", precioDe), [lote, precioDe]);
+  const porDim = useMemo(() => (dim === "medida" ? porMedida : agruparPor(lote, dim, precioDe)), [porMedida, lote, dim, precioDe]);
+  const bloques = useMemo(() => resumenPorEspecie(lote, precioDe), [lote, precioDe]);
 
   /**
    * Filas tildadas de «Por especie y tipo» para bajar SU Anexo 04 (Brandon,
@@ -171,10 +179,10 @@ export default function CubicacionResumenes() {
   /* Las piezas que esas filas representan: es lo que va al papel. */
   const piezasElegidas = useMemo(() => {
     if (elegidas.size === 0) return [];
-    return rows.filter((r) =>
+    return lote.filter((r) =>
       elegidas.has(claveFila(r.especie?.trim() || "Sin especie", claveYLabel(r, "tipo").clave)),
     );
-  }, [rows, elegidas, claveFila]);
+  }, [lote, elegidas, claveFila]);
   const totalElegido = useMemo(
     () => piezasElegidas.reduce(
       (a, r) => ({
@@ -206,7 +214,7 @@ export default function CubicacionResumenes() {
     ),
     [bloques],
   );
-  const insights = useMemo(() => analizarLote(rows, precioDe), [rows, precioDe]);
+  const insights = useMemo(() => analizarLote(lote, precioDe), [lote, precioDe]);
   const total = porEspecie.total;
 
   /**
@@ -305,6 +313,12 @@ export default function CubicacionResumenes() {
         @page { size: A4 portrait; margin: 12mm; }
       }`}</style>
 
+      {variado.des && variado.des.grupos.length > 0 && (
+        <p className="flex items-center gap-1.5 text-sm text-[var(--text-secondary)] print:hidden">
+          <Boxes className="h-4 w-4 shrink-0 text-[var(--accent)]" aria-hidden />
+          Los {fmtPiezas(variado.paquetes)} paq. 6×6 Variado se cuentan abiertos: sus medidas con su tipo y especie, por proporción.
+        </p>
+      )}
       <HeroResumen
         total={total}
         renglones={rows.length}

@@ -19,6 +19,7 @@ import {
   UNIDAD_FUENTE,
   type FilaVolumen,
   type FuenteVolumen,
+  type UnidadVolumen,
 } from "@/lib/forestal/volumen-disponible";
 import CtpApartados, { CtpApartadoPanel, useApartado, type Apartado } from "./ctp-apartados";
 import { FilaVacia, TablaCtp, TbodyCtp, TheadCtp } from "./ctp-tabla";
@@ -34,6 +35,7 @@ const PESTANAS: readonly Apartado[] = [
 export function VolumenCombinado({
   v,
   fuentes,
+  unidad,
   permisos,
   especies,
   onSolo,
@@ -42,6 +44,7 @@ export function VolumenCombinado({
 }: {
   v: EstadoVolumenDisponible;
   fuentes: readonly FuenteVolumen[];
+  unidad: UnidadVolumen;
   permisos: readonly string[];
   especies: readonly string[];
   onSolo: (f: FuenteVolumen) => void;
@@ -51,7 +54,12 @@ export function VolumenCombinado({
   const idBase = useId();
   const { activo, ir } = useApartado("volumen-disponible", PESTANAS);
   const r = v.resumen;
-  const total = r.total.m3;
+  const enPt = unidad === "pt";
+  /* La barra y los % van en la unidad que se mira: en pt la troza pesa menos
+     (56 % aserrable) que la madera ya aserrada. */
+  const de = (x: { m3: number; pt: number }) => (enPt ? x.pt : x.m3);
+  const total = de(r.total);
+  const escrito = (x: { m3: number; pt: number }) => (enPt ? `${nf(x.pt)} pt` : `${fmtM3(x.m3)} m³`);
   /* Grupos CON nombre (lección de Trozas: «5 permisos» sobre un pie de 4); si
      sólo queda lo que no lo declara, se dice así y no «1 permiso». */
   const apartados: Apartado[] = PESTANAS.map((p) => {
@@ -78,18 +86,18 @@ export function VolumenCombinado({
               />
             </p>
             <p className="text-3xl font-bold tabular-nums text-[var(--text-primary)]">
-              {v.sinDatosAun ? "…" : `${fmtM3(total)} m³`}
+              {v.sinDatosAun ? "…" : escrito(r.total)}
             </p>
           </div>
           <p className="pb-1 text-base tabular-nums text-[var(--text-secondary)]">
-            ≈ {v.sinDatosAun ? "…" : nf(r.total.pt)} pt aprovechables
+            {v.sinDatosAun ? "…" : enPt ? `= ${fmtM3(r.total.m3)} m³` : `≈ ${nf(r.total.pt)} pt aprovechables`}
           </p>
         </div>
         {total > 0 && (
-          <div className="flex h-3 w-full overflow-hidden rounded-full bg-[var(--surface-sunken)]" role="img" aria-label={`Reparto: ${fuentes.map((f) => `${ETIQUETA_FUENTE[f]} ${fmtM3(r.porFuente[f].m3)} m³`).join(", ")}`}>
+          <div className="flex h-3 w-full overflow-hidden rounded-full bg-[var(--surface-sunken)]" role="img" aria-label={`Reparto: ${fuentes.map((f) => `${ETIQUETA_FUENTE[f]} ${escrito(r.porFuente[f])}`).join(", ")}`}>
             {fuentes.map((f) =>
-              r.porFuente[f].m3 > 0 ? (
-                <span key={f} style={{ width: `${(r.porFuente[f].m3 / total) * 100}%`, background: COLOR_FUENTE[f] }} />
+              de(r.porFuente[f]) > 0 ? (
+                <span key={f} style={{ width: `${(de(r.porFuente[f]) / total) * 100}%`, background: COLOR_FUENTE[f] }} />
               ) : null,
             )}
           </div>
@@ -97,7 +105,7 @@ export function VolumenCombinado({
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
           {fuentes.map((f) => {
             const p = r.porFuente[f];
-            const pct = total > 0 ? Math.round((p.m3 / total) * 1000) / 10 : 0;
+            const pct = total > 0 ? Math.round((de(p) / total) * 1000) / 10 : 0;
             return (
               <div key={f} className="min-w-0 rounded-xl border border-[var(--rule-base)] p-3">
                 <div className="flex items-center justify-between gap-2">
@@ -115,7 +123,7 @@ export function VolumenCombinado({
                   </button>
                 </div>
                 <p className="whitespace-nowrap text-xl font-bold tabular-nums text-[var(--text-primary)]">
-                  {v.sinDatosAun ? "…" : `${fmtM3(p.m3)} m³`}
+                  {v.sinDatosAun ? "…" : escrito(p)}
                 </p>
                 <p className="text-sm text-[var(--text-secondary)]">
                   {nf(p.unidades)} {UNIDAD_FUENTE[f][p.unidades === 1 ? 0 : 1]} · {pct}% · {DETALLE_FUENTE[f]}
@@ -143,6 +151,7 @@ export function VolumenCombinado({
             fuentes={fuentes}
             activos={activo === "permiso" ? permisos : especies}
             onElegir={activo === "permiso" ? onElegirPermiso : onElegirEspecie}
+            unidad={unidad}
             total={r.total}
             cargando={v.sinDatosAun}
           />
@@ -158,6 +167,7 @@ function TablaVolumen({
   fuentes,
   activos,
   onElegir,
+  unidad,
   total,
   cargando,
 }: {
@@ -166,13 +176,18 @@ function TablaVolumen({
   fuentes: readonly FuenteVolumen[];
   activos: readonly string[];
   onElegir?: (clave: string) => void;
+  unidad: UnidadVolumen;
   /** El del resumen: la fila Total dice lo mismo que la cifra grande (pt sin redondeos sumados). */
   total: { m3: number; pt: number };
   cargando: boolean;
 }) {
   const celda = "px-3 py-2";
   const cols = fuentes.length + 4;
-  const suma = (f: FuenteVolumen) => filas.reduce((a, x) => a + x.porFuente[f], 0);
+  const enPt = unidad === "pt";
+  const celdaDe = (g: FilaVolumen, f: FuenteVolumen) => (enPt ? g.ptPorFuente[f] : g.porFuente[f]);
+  const fmt = (n: number) => (enPt ? nf(n) : fmtM3(n));
+  const suma = (f: FuenteVolumen) => filas.reduce((a, x) => a + celdaDe(x, f), 0);
+  const pctDe = (g: FilaVolumen) => (enPt ? (total.pt > 0 ? Math.round((g.pt / total.pt) * 1000) / 10 : 0) : g.pct);
   return (
     <TablaCtp>
       <caption className="sr-only">Volumen disponible por {dim}</caption>
@@ -185,11 +200,13 @@ function TablaVolumen({
                 <span aria-hidden className="h-2 w-2 rounded-full" style={{ background: COLOR_FUENTE[f] }} />
                 {ETIQUETA_FUENTE[f]}
               </span>
-              <span className="sr-only"> en m³</span>
+              <span className="sr-only"> en {enPt ? "pt" : "m³"}</span>
             </th>
           ))}
-          <th scope="col" className={`${celda} text-right`}>Total m³</th>
-          <th scope="col" className={`${celda} text-right`}>≈pt<span className="sr-only"> aprovechables, estimado</span></th>
+          <th scope="col" className={`${celda} text-right`}>{enPt ? "Total pt" : "Total m³"}</th>
+          <th scope="col" className={`${celda} text-right`}>
+            {enPt ? "m³" : <>≈pt<span className="sr-only"> aprovechables, estimado</span></>}
+          </th>
           <th scope="col" className={`${celda} max-sm:hidden! text-right`}>% del total</th>
         </tr>
       </TheadCtp>
@@ -217,12 +234,12 @@ function TablaVolumen({
               </td>
               {fuentes.map((f) => (
                 <td key={f} className={`${celda} text-right tabular-nums ${g.porFuente[f] > 0 ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)]"}`}>
-                  {g.porFuente[f] > 0 ? fmtM3(g.porFuente[f]) : "—"}
+                  {g.porFuente[f] > 0 ? fmt(celdaDe(g, f)) : "—"}
                 </td>
               ))}
-              <td className={`${celda} text-right font-bold tabular-nums text-[var(--text-primary)]`}>{fmtM3(g.m3)}</td>
-              <td className={`${celda} text-right tabular-nums text-[var(--text-secondary)]`}>{nf(g.pt)}</td>
-              <td className={`${celda} max-sm:hidden! text-right tabular-nums text-[var(--text-secondary)]`}>{g.pct}%</td>
+              <td className={`${celda} text-right font-bold tabular-nums text-[var(--text-primary)]`}>{enPt ? nf(g.pt) : fmtM3(g.m3)}</td>
+              <td className={`${celda} text-right tabular-nums text-[var(--text-secondary)]`}>{enPt ? fmtM3(g.m3) : nf(g.pt)}</td>
+              <td className={`${celda} max-sm:hidden! text-right tabular-nums text-[var(--text-secondary)]`}>{pctDe(g)}%</td>
             </tr>
           );
         })}
@@ -230,10 +247,11 @@ function TablaVolumen({
           <tr className="border-t-2 border-[var(--rule-base)] font-bold">
             <th scope="row" className={`${celda} text-left text-[var(--text-primary)]`}>Total</th>
             {fuentes.map((f) => (
-              <td key={f} className={`${celda} text-right tabular-nums text-[var(--text-primary)]`}>{fmtM3(suma(f))}</td>
+              <td key={f} className={`${celda} text-right tabular-nums text-[var(--text-primary)]`}>{fmt(suma(f))}</td>
             ))}
-            <td className={`${celda} text-right tabular-nums text-[var(--text-primary)]`}>{fmtM3(total.m3)}</td>
-            <td className={`${celda} text-right tabular-nums text-[var(--text-secondary)]`}>{nf(total.pt)}</td>
+            {/* En pt, el pie suma las filas que se ven (cada una ya redondeada). */}
+            <td className={`${celda} text-right tabular-nums text-[var(--text-primary)]`}>{enPt ? nf(filas.reduce((a, g) => a + g.pt, 0)) : fmtM3(total.m3)}</td>
+            <td className={`${celda} text-right tabular-nums text-[var(--text-secondary)]`}>{enPt ? fmtM3(total.m3) : nf(filas.reduce((a, g) => a + g.pt, 0))}</td>
             <td className={`${celda} max-sm:hidden! text-right tabular-nums text-[var(--text-secondary)]`}>100%</td>
           </tr>
         )}

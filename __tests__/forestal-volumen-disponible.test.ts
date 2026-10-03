@@ -150,15 +150,16 @@ describe("las cuatro pilas no se pisan", () => {
     expect(r.porFuente.lotes).toMatchObject({ m3: 5.0208, unidades: 3 });
     expect(r.porFuente.lotes.pt).toBe(ptRolliza(4.5) + ptAserrada(0.5208));
     expect(r.total.m3).toBe(16.7708);
-    expect(r.total.pt).toBe(ptRolliza(13.5) + ptAserrada(2.75 + 0.5208));
+    // El total en pt es la suma de lo que dicen los chips.
+    expect(r.total.pt).toBe(FUENTES_VOLUMEN.reduce((a, f) => a + r.porFuente[f].pt, 0));
   });
 
-  it("el pt aprovechable: troza al 56 %, aserrada × 424, total desde los m³ de cada clase", () => {
+  it("el pt aprovechable: troza al 56 %, aserrada × 424; el total suma los pt de cada pila", () => {
     const r = resumenVolumen(partidas());
     expect(r.porFuente.trozas.pt).toBe(ptRolliza(4));
     expect(r.porFuente.productos.pt).toBe(ptAserrada(2.75));
     expect(r.porFuente.productos.pt).toBe(Math.round(2.75 * 424));
-    expect(r.total.pt).toBe(ptRolliza(13.5) + ptAserrada(2.75));
+    expect(r.total.pt).toBe(ptRolliza(4) + ptRolliza(4.5) + ptRolliza(5) + ptAserrada(2.75));
   });
   it("los paquetes se cuentan uno por uno; su m³ es la parte del libro", () => {
     const paq = (id: string, m3: number) => ({ id, codigo: id, producto: null, presentacion: null, cantidad: 10, volumenM3: m3, espesorCm: null, anchoCm: null, largoM: null, observations: null, apartado: null });
@@ -210,6 +211,10 @@ describe("tablas combinadas", () => {
     expect(filas.reduce((a, f) => a + f.m3, 0)).toBeCloseTo(resumenVolumen(ps).total.m3, 6);
     const p1 = filas.find((f) => f.clave === P1);
     expect(p1?.porFuente).toEqual({ trozas: 1.5, lotes: 4.5, recepcion: 5, productos: 0 });
+    // En pt, cada pila con su clase: troza al 56 %, aserrada × 424.
+    expect(p1?.ptPorFuente).toEqual({ trozas: ptRolliza(1.5), lotes: ptRolliza(4.5), recepcion: ptRolliza(5), productos: 0 });
+    const p2 = filas.find((f) => f.clave === P2);
+    expect(p2?.ptPorFuente.productos).toBe(ptAserrada(2));
   });
 
   it("por especie usa la especie de la troza y la de la corrida", () => {

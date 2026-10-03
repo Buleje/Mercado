@@ -61,10 +61,13 @@ export function PilaLotes({
   filas,
   cargando,
   onIrLotes,
+  onAbrirLote,
 }: {
   filas: readonly FilaLoteSobrante[];
   cargando: boolean;
   onIrLotes?: () => void;
+  /** Abre la historia del lote (sólo lotes de aserrío: el mixto no tiene historia propia). */
+  onAbrirLote?: (loteId: string) => void;
 }) {
   const sinAserrar = suma(filas, (f) => f.m3SinAserrar);
   const porDeclarar = suma(filas, (f) => f.m3PorDeclarar);
@@ -111,7 +114,20 @@ export function PilaLotes({
           {filas.map((f) => (
             <tr key={f.id} className="hover:bg-[var(--surface-sunken)]">
               <td className={celda}>
-                <span className="font-bold text-[var(--text-primary)]">{f.codigo}</span>
+                {onAbrirLote && !f.esMixto ? (
+                  <button
+                    type="button"
+                    onClick={() => onAbrirLote(f.id)}
+                    aria-label={`Ver la historia del lote ${f.codigo}`}
+                    title="Ver la historia del lote: trozas, corridas, producción y despachos"
+                    className="-mx-1 inline-flex min-h-8 items-center gap-1 rounded-lg border-2 border-transparent px-1 text-left font-bold text-[var(--accent-ink)] transition-colors hover:border-[var(--accent)] dark:text-[var(--accent)]"
+                  >
+                    {f.codigo}
+                    <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+                  </button>
+                ) : (
+                  <span className="font-bold text-[var(--text-primary)]">{f.codigo}</span>
+                )}
                 {f.estado && <span className="block text-sm text-[var(--text-secondary)]">{f.estado}</span>}
               </td>
               <td className={`${celda} text-[var(--text-primary)]`}>{f.especie}</td>

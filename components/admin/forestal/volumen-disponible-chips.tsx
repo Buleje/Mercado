@@ -19,6 +19,7 @@ import {
   type FuenteVolumen,
   type OpcionPermiso,
   type ResumenVolumen,
+  type UnidadVolumen,
 } from "@/lib/forestal/volumen-disponible";
 
 /** El color de cada pila: el mismo en el chip, la barra y la tabla. */
@@ -39,17 +40,20 @@ const tono = (activo: boolean) =>
 export function SelectorDePilas({
   fuentes,
   porPila,
+  unidad,
   cargando,
   onAlternar,
 }: {
   fuentes: readonly FuenteVolumen[];
   /** Cada pila con el filtro de permiso puesto (elegida o no). */
   porPila: ResumenVolumen;
+  unidad: UnidadVolumen;
   cargando: boolean;
   onAlternar: (f: FuenteVolumen | "todo") => void;
 }) {
   const todas = sonTodas(fuentes);
-  const valor = (m3: number) => (cargando ? "…" : `${fmtM3(m3)} m³`);
+  const valor = (v: { m3: number; pt: number }) =>
+    cargando ? "…" : unidad === "pt" ? `${formatNumber(v.pt)} pt` : `${fmtM3(v.m3)} m³`;
   return (
     <div role="group" aria-label="Qué volumen mirar" className="flex flex-wrap items-center gap-2">
       <button
@@ -62,7 +66,7 @@ export function SelectorDePilas({
         <span className="flex flex-col leading-tight">
           <span className="text-sm font-bold text-[var(--text-primary)]">Todo</span>
           <span className="text-sm tabular-nums text-[var(--text-secondary)]">
-            {valor(porPila.total.m3)}
+            {valor(porPila.total)}
           </span>
         </span>
       </button>
@@ -88,7 +92,7 @@ export function SelectorDePilas({
             <span className="flex flex-col leading-tight">
               <span className="text-sm font-bold text-[var(--text-primary)]">{ETIQUETA_FUENTE[f]}</span>
               <span className="text-sm tabular-nums text-[var(--text-secondary)]">
-                {valor(p.m3)}
+                {valor(p)}
                 {!cargando && p.unidades > 0 && (
                   <span className="max-sm:hidden"> · {formatNumber(p.unidades)} {UNIDAD_FUENTE[f][p.unidades === 1 ? 0 : 1]}</span>
                 )}
