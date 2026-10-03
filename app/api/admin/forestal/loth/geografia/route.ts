@@ -5,6 +5,8 @@ import { applyRateLimit, applyRateLimitWithTenant } from "@/lib/rate-limit";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
+import { PLAN_ID_VALIDO } from "@/lib/forestal/loth-alcance-geo";
+import { ForestPlanDB } from "@/lib/db/forest-plan.db";
 import { contextoDelPlan, obtenerGeografia } from "@/lib/forestal/loth-geografia-servidor";
 
 /**
@@ -35,7 +37,7 @@ import { contextoDelPlan, obtenerGeografia } from "@/lib/forestal/loth-geografia
  */
 
 const querySchema = z.object({
-  planId: z.string().trim().max(64).optional(),
+  planId: z.string().trim().regex(PLAN_ID_VALIDO, "El permiso no es válido.").optional(),
   refrescar: z.enum(["0", "1", "true", "false"]).optional(),
   soloCache: z.enum(["0", "1", "true", "false"]).optional(),
 });
@@ -67,6 +69,10 @@ export const GET = withApiHandler("forestal-loth-geografia", async (req: NextReq
   }
 
   try {
+    // Un permiso ajeno o dado de baja no abre filas de caché ni sale a internet.
+    if (parsed.data.planId && !(await ForestPlanDB.getPlan(auth.tenantId, parsed.data.planId))) {
+      return NextResponse.json({ error: "plan_not_found", message: "Ese permiso no existe en este negocio o fue dado de baja." }, { status: 404 });
+    }
     const ctx = await contextoDelPlan(auth.tenantId, parsed.data.planId || null);
     const r = await obtenerGeografia(auth.tenantId, ctx, { refrescar, soloCache, user: auth.username ?? "unknown" });
     if (!r.ok) return NextResponse.json({ error: "zona_invalida", message: r.motivo }, { status: 422 });

@@ -63,7 +63,7 @@ async function medirNubes(escenas: EscenaS2[], bbox: Bbox, previas: readonly Esc
 
 export async function obtenerImagenes(
   tenantId: string,
-  ctx: Pick<ContextoPlan, "contorno" | "contornoEs" | "arboles">,
+  ctx: Pick<ContextoPlan, "contorno" | "contornoEs" | "arboles"> & { planId?: string | null },
   opts: { refrescar?: boolean; ahoraIso?: string; user?: string } = {},
 ): Promise<ResultadoImagenes> {
   if (!tenantId) throw new Error("tenantId is required");
@@ -72,7 +72,7 @@ export async function obtenerImagenes(
 
   let cache: ImagenesDelArea | null = null;
   try {
-    cache = await ForestLothImagenesDB.get(tenantId);
+    cache = await ForestLothImagenesDB.get(tenantId, ctx.planId ?? null);
   } catch (err) {
     logger.error("[loth.imagenes] no se pudo leer la caché", { error: String(err), tenantId });
   }
@@ -140,7 +140,7 @@ export async function obtenerImagenes(
   const imagenes: ImagenesDelArea = { version: VERSION_IMAGENES, bbox, consultadoAt, escenas, sugerida: elegirEscena(escenas)?.fecha ?? null, esri, vivas };
   if (fresco) {
     try {
-      await ForestLothImagenesDB.set(tenantId, imagenes, opts.user ?? "sistema");
+      await ForestLothImagenesDB.set(tenantId, imagenes, opts.user ?? "sistema", ctx.planId ?? null);
     } catch (err) {
       logger.error("[loth.imagenes] no se pudo guardar la caché", { error: String(err), tenantId });
     }

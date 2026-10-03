@@ -84,8 +84,11 @@ export function useLothCanvasPuntos(ctx: LeafletCtx, p: LothMapaCanvasProps): vo
     const inside = (p: LatLng) => (declarada ? pointInPolygon(p, parcela) : true);
 
     for (const g of geo) {
-      const dentro = inside([g.lat, g.lng]);
-      if (declarada && !dentro) {
+      /* Con «Todos» el punto ya viene medido contra el área de SU permiso (`dentro`); `null` = sin área con que medirlo. */
+      const medido = g.dentro !== undefined;
+      const hayArea = medido ? g.dentro !== null : declarada;
+      const dentro = medido ? g.dentro !== false : inside([g.lat, g.lng]);
+      if (hayArea && !dentro) {
         L.circleMarker([g.lat, g.lng], { radius: 12, color: "#e11d48", weight: 2, opacity: 0.9, fill: false }).addTo(group);
       }
       L.circleMarker([g.lat, g.lng], {
@@ -95,7 +98,7 @@ export function useLothCanvasPuntos(ctx: LeafletCtx, p: LothMapaCanvasProps): vo
         fillColor: SECTION_COLOR[g.section] ?? "#334155",
         fillOpacity: 0.9,
       })
-        .bindPopup(operacionPopupHtml(g, dentro, declarada))
+        .bindPopup(operacionPopupHtml(g, dentro, hayArea))
         .addTo(group);
     }
   }, [ready, geo, parcela, declarada, LRef, markersRef]);

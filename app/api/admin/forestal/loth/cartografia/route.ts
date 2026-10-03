@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { ForestPlanDB } from "@/lib/db/forest-plan.db";
+import { PLAN_ID_VALIDO, leerAlcanceGeo } from "@/lib/forestal/loth-alcance-geo";
+import { hasCartografia } from "@/lib/forestal/loth-cartografia";
 import { CartografiaCambioError, ForestLothCartografiaDB } from "@/lib/db/forest-loth-cartografia.db";
 import { RUTAS_PANEL } from "@/lib/auth/roles-rutas-panel";
 import { isSpecializationEnabled } from "@/lib/specializations";
@@ -13,11 +16,14 @@ import { withApiHandler } from "@/lib/api-handler";
  * referencias georreferenciadas (centros poblados, campamentos, ingreso a la
  * UMF…) y el cuadro de ACCESOS (tramo · tiempo · movilidad).
  *
- * GET — lee la cartografía del tenant.
- * PUT — la reemplaza { referencias[], vias[], accesos[], nota, baseUpdatedAt? }.
+ * GET — lee la cartografía del tenant. ADR-462: una por permiso, con la misma
+ *       lectura que la parcela (`planId`, `solo`, `todos`). En `todos` suma
+ *       `porPermiso: [{ planId, cartografia }]` y mezcla las listas (referencias,
+ *       vías, accesos) del negocio y de cada plan, cada ítem con su `planId`.
+ * PUT — la reemplaza { referencias[], vias[], accesos[], nota, baseUpdatedAt?, planId? }.
  *       Con `baseUpdatedAt` (el `updatedAt` que se leyó) y otro guardó en el
  *       medio → 409 `cartografia_cambio` con la versión actual, sin escribir.
- *       Sin él (clientes viejos) se guarda como siempre.
+ *       Sin él (clientes viejos) se guarda como siempre. El 409 es POR PLAN.
  *
  * Guard: requireAdmin → rate limit → spec:forestal:loth-libro.
  */
@@ -78,7 +84,17 @@ const putSchema = z.object({
   nota: z.string().trim().max(300).default(""),
   /** La versión que el cliente leyó (control optimista); null = nunca se guardó. */
   baseUpdatedAt: z.string().trim().max(40).nullable().optional(),
+  /** El permiso al que pertenece; sin él (o null) es la del negocio. */
+  planId: z.string().regex(PLAN_ID_VALIDO).nullable().optional(),
 });
+
+/** Un permiso ajeno o dado de baja no se acepta: su clave quedaría huérfana, invisible para todo filtro. */
+async function planInvalido(tenantId: string, planId: string | null | undefined) {
+  if (!planId) return null;
+  const plan = await ForestPlanDB.getPlan(tenantId, planId);
+  return plan ? null : NextResponse.json({ error: "plan_not_found", message: "Ese permiso no existe en este negocio o fue dado de baja." }, { status: 404 });
+}
+
 
 async function ensureSpec(tenantId: string) {
   const enabled = await isSpecializationEnabled(tenantId, "spec:forestal:loth-libro");
@@ -95,8 +111,30 @@ export const GET = withApiHandler("forestal-loth-cartografia-get", async (req: N
   const guard = await ensureSpec(auth.tenantId);
   if (guard) return guard;
 
+  const lectura = leerAlcanceGeo(new URL(req.url).searchParams);
+  if (!lectura.ok) return NextResponse.json({ error: "validation_error", message: lectura.mensaje }, { status: 400 });
+  const { alcance } = lectura;
+
   try {
-    return NextResponse.json({ cartografia: await ForestLothCartografiaDB.get(auth.tenantId) });
+    if (alcance.tipo === "plan") {
+      const propia = await ForestLothCartografiaDB.get(auth.tenantId, alcance.planId);
+      if (hasCartografia(propia) || !alcance.heredar) return NextResponse.json({ cartografia: propia, heredada: false, porPermiso: [] });
+      return NextResponse.json({ cartografia: await ForestLothCartografiaDB.get(auth.tenantId), heredada: true, porPermiso: [] });
+    }
+    const negocio = await ForestLothCartografiaDB.get(auth.tenantId);
+    if (alcance.tipo === "todos") {
+      const planes = await ForestPlanDB.listPlans(auth.tenantId);
+      const porPermiso = await ForestLothCartografiaDB.listarPorPlan(auth.tenantId, planes.map((p) => p.id).filter((id) => PLAN_ID_VALIDO.test(id)));
+      const conPlan = <T,>(items: T[], planId: string | null) => items.map((i) => ({ ...i, planId }));
+      const cartografia = {
+        ...negocio,
+        referencias: [...conPlan(negocio.referencias, null), ...porPermiso.flatMap((p) => conPlan(p.cartografia.referencias, p.planId))],
+        vias: [...conPlan(negocio.vias, null), ...porPermiso.flatMap((p) => conPlan(p.cartografia.vias, p.planId))],
+        accesos: [...conPlan(negocio.accesos, null), ...porPermiso.flatMap((p) => conPlan(p.cartografia.accesos, p.planId))],
+      };
+      return NextResponse.json({ cartografia, heredada: false, porPermiso });
+    }
+    return NextResponse.json({ cartografia: negocio, heredada: false, porPermiso: [] });
   } catch (err) {
     logger.error("[loth.cartografia.GET] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
@@ -128,9 +166,11 @@ export const PUT = withApiHandler("forestal-loth-cartografia-put", async (req: N
     );
   }
 
-  const { baseUpdatedAt, ...cartografiaNueva } = parsed.data;
+  const { baseUpdatedAt, planId, ...cartografiaNueva } = parsed.data;
   try {
-    const cartografia = await ForestLothCartografiaDB.set(auth.tenantId, cartografiaNueva, auth.username ?? "unknown", undefined, { baseUpdatedAt });
+    const ajeno = await planInvalido(auth.tenantId, planId);
+    if (ajeno) return ajeno;
+    const cartografia = await ForestLothCartografiaDB.set(auth.tenantId, cartografiaNueva, auth.username ?? "unknown", undefined, { baseUpdatedAt, planId: planId ?? null });
     return NextResponse.json({ cartografia });
   } catch (err) {
     if (err instanceof CartografiaCambioError) {

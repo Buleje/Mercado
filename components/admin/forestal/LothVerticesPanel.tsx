@@ -19,6 +19,7 @@ import { DataTable } from "@buleje/design-system";
 import type { LatLng } from "@/lib/forestal/loth-geo";
 import { formatMeters } from "@/lib/forestal/loth-utm";
 import { cuadroDeCoordenadas } from "./loth-mapa-coordenadas";
+import { areaVsDeclarada } from "./loth-mapa-alcance";
 
 /** Vértices, área, perímetro y zona en una línea, para la cabecera plegada. */
 export function resumenVertices(vertices: LatLng[]): string {
@@ -29,8 +30,21 @@ export function resumenVertices(vertices: LatLng[]): string {
 
 const TH = "border-b border-[var(--rule-base)] px-3 py-2 font-bold";
 
-export default function LothVerticesPanel({ vertices, censoCount }: { vertices: LatLng[]; censoCount: number }) {
+export default function LothVerticesPanel({
+  vertices,
+  censoCount,
+  declaradaHa = null,
+  heredada = false,
+}: {
+  vertices: LatLng[];
+  censoCount: number;
+  /** Las hectáreas que declara el plan del permiso (ADR-462 §6): se comparan con las dibujadas. */
+  declaradaHa?: number | null;
+  /** El área es la del negocio (el permiso no tiene la suya): la diferencia con lo declarado no es de este permiso. */
+  heredada?: boolean;
+}) {
   const { zona, rows, areaHa, perimKm } = useMemo(() => cuadroDeCoordenadas(vertices), [vertices]);
+  const vs = declaradaHa != null ? areaVsDeclarada(areaHa, declaradaHa, 2) : null;
 
   if (rows.length === 0) {
     return (
@@ -75,7 +89,20 @@ export default function LothVerticesPanel({ vertices, censoCount }: { vertices: 
           Vértices: <b className="font-mono tabular-nums">{rows.length}</b>
         </span>
         <span>
-          Área: <b className="font-mono tabular-nums">{areaHa.toFixed(2)} ha</b>
+          {heredada ? "Área del negocio: " : "Área: "}
+          <b className="font-mono tabular-nums">{areaHa.toFixed(2)} ha</b>
+          {heredada && " (heredada)"}
+          {vs?.declarada && (
+            <span className="text-[var(--text-tertiary)]">
+              {" "}· declarada <b className="font-mono tabular-nums">{vs.declarada}</b>
+              {!heredada && (
+                <>
+                  {" "}·{" "}
+                  <b className="font-mono tabular-nums text-[var(--text-primary)]">{vs.diferencia}</b>
+                </>
+              )}
+            </span>
+          )}
         </span>
         <span>
           Perímetro: <b className="font-mono tabular-nums">{perimKm.toFixed(2)} km</b>

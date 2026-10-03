@@ -24,12 +24,13 @@ import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { printLothPlano } from "@/lib/forestal/loth-plano-print";
 import { elegirFondoPlano, elegirFondoVista, fondoDeLaImagen, textoDelFondo } from "@/lib/forestal/loth-plano-fondo";
 import type { EscenaS2, FechaEsri } from "@/lib/forestal/loth-imagenes";
-import { printLothEudrDds } from "@/lib/forestal/loth-eudr-print";
+import { printLothEudrDds, type OpcionesDds } from "@/lib/forestal/loth-eudr-print";
 import type { ChecklistPlano } from "@/lib/forestal/loth-plano-checklist";
 import type { BasemapId } from "../LothMapaCanvas";
 import { OVERLAYS, type OverlayId } from "../loth-mapa-overlays";
 import { SECTION_COLOR, SECTION_LABEL, type CensoTree, type GeoEntry } from "../loth-mapa-shared";
 import { cuadroDeCoordenadas, csvDeCoordenadas, descargarTexto } from "../loth-mapa-coordenadas";
+import { featuresDeAreas, type AreaNombrada } from "../loth-mapa-alcance";
 import type { CaratulaMapa, PlanActivoMapa } from "./use-loth-mapa-datos";
 import type { VistaMapa } from "./use-loth-mapa-herramientas";
 import { formatDateLong } from "@/lib/format";
@@ -56,12 +57,19 @@ interface Deps {
    */
   imagen: { escena: EscenaS2 | null; esri: FechaEsri | null };
   onError: (msg: string | null) => void;
+  /**
+   * ADR-462: con qué permiso sale la DDS (el de la banda) y cómo se llama cada
+   * uno. Con «Todos», cada tala se mide contra el área de SU plan.
+   */
+  dds?: OpcionesDds;
+  /** Con «Todos»: las áreas de cada permiso, que el GeoJSON suma a la del negocio. */
+  areasNombradas?: AreaNombrada[];
 }
 
 const mensaje = (err: unknown) => (err instanceof Error ? err.message : String(err));
 
 export function useLothMapaExportes(d: Deps) {
-  const { parcela, verticesCuadro, carto, plan, caratula, geoAll, geoShown, censoAll, censoShown, basemap, overlays, vista, checkPlano, imagen, onError } = d;
+  const { parcela, verticesCuadro, carto, plan, caratula, geoAll, geoShown, censoAll, censoShown, basemap, overlays, vista, checkPlano, imagen, onError, dds, areasNombradas } = d;
   const { confirm } = useConfirm();
   const [descargando, setDescargando] = useState(false);
   const nombreArea = `Área de aprovechamiento${plan?.parcelaCorta ? ` · ${plan.parcelaCorta}` : ""}`;
@@ -164,11 +172,13 @@ export function useLothMapaExportes(d: Deps) {
       date: g.date,
     }));
     const fc = buildEudrGeoJson({ parcela, points, titular: plan?.titularName, titulo: plan?.planNumber });
+    // Con «Todos», cada permiso con su polígono (la del negocio ya va arriba).
+    if (areasNombradas?.length) fc.features.push(...featuresDeAreas(areasNombradas));
     descargarTexto(JSON.stringify(fc, null, 2), "dds-eudr-libro-th.geojson", "application/geo+json");
   };
 
   const imprimirDds = () => {
-    printLothEudrDds().catch((err) => onError(mensaje(err)));
+    printLothEudrDds(dds).catch((err) => onError(mensaje(err)));
   };
 
   /** KML del área + censo + operaciones — para abrirlo en Google Earth. */

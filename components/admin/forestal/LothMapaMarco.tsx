@@ -43,10 +43,12 @@ import { herramientasDelMapa, menuCapas, menuDibujar, menuExportar } from "./lot
 import type { LothMapaDatos } from "./hooks/use-loth-mapa-datos";
 import type { LothMapaDibujo } from "./hooks/use-loth-mapa-dibujo";
 import type { LothMapaHerramientasEstado } from "./hooks/use-loth-mapa-herramientas";
-import type { LothMapaDerivados } from "./hooks/use-loth-mapa-derivados";
+import { fueraDeTodasLasAreas, type LothMapaDerivados } from "./hooks/use-loth-mapa-derivados";
 import type { LothMapaExportes } from "./hooks/use-loth-mapa-exportes";
 import { BRAND_GEO } from "@/lib/geo";
 import type { LatLng } from "@/lib/forestal/loth-geo";
+import type { LothMapaCanvasProps } from "./loth-mapa-canvas-ctx";
+import LothMapaElegirPermiso from "./LothMapaElegirPermiso";
 
 /** El canvas re-monta capas por efecto: memo evita repintarlo al mover el mouse. */
 const LothMapaCanvas = memo(LothMapaCanvasRaw);
@@ -71,9 +73,11 @@ interface Props {
   rutas: LothMapaRutas;
   /** Sentinel-2, la fecha de la foto de Esri y lo de hoy (NASA). Vive en la vista: el plano impreso sale con la misma imagen. */
   img: LothMapaImagenes;
+  /** ADR-462: con «Todos», las áreas de cada permiso; con uno, lo del negocio como contexto. */
+  capasPermiso?: Pick<LothMapaCanvasProps, "areasOtras" | "contexto">;
 }
 
-const LothMapaMarco = forwardRef<HTMLElement, Props>(function LothMapaMarco({ datos, dib, herr, der, exp, arb, variosTala, onTalarVarios, verticesCuadro, plan, rutas, img }, ref) {
+const LothMapaMarco = forwardRef<HTMLElement, Props>(function LothMapaMarco({ datos, dib, herr, der, exp, arb, variosTala, onTalarVarios, verticesCuadro, plan, rutas, img, capasPermiso }, ref) {
   const { fullscreen, setFullscreen } = herr;
   const rios = datos.carto.vias.filter((v) => v.tipo === "rio");
   /** Una herramienta usa el clic del mapa: los árboles no lo toman y la ficha se guarda. */
@@ -185,6 +189,8 @@ const LothMapaMarco = forwardRef<HTMLElement, Props>(function LothMapaMarco({ da
           draft={dib.draft}
           drawMode={dib.drawMode}
           drawTarget={dib.drawTarget}
+          areasOtras={capasPermiso?.areasOtras}
+          contexto={capasPermiso?.contexto}
           basemap={herr.basemap}
           s2={img.s2}
           s2Comparar={img.s2Comparar}
@@ -211,7 +217,7 @@ const LothMapaMarco = forwardRef<HTMLElement, Props>(function LothMapaMarco({ da
           <LothMapaArbolFicha
             arbol={elegido}
             desdeTi={arb.desdeTi}
-            fuera={der.declarada && !pointInPolygon([elegido.lat, elegido.lng], datos.parcela.vertices)}
+            fuera={der.areasMedidas ? fueraDeTodasLasAreas([elegido.lat, elegido.lng], der.areasMedidas) : der.declarada && !pointInPolygon([elegido.lat, elegido.lng], datos.parcela.vertices)}
             leyendoLibro={arb.etapas?.cargando ?? false}
             onCerrar={() => arb.elegir(null)}
             onCentrar={() => herr.centrar([elegido.lat, elegido.lng])}
@@ -254,6 +260,7 @@ const LothMapaMarco = forwardRef<HTMLElement, Props>(function LothMapaMarco({ da
           <LothMapaViaBar puntos={dib.viaDraft} onUndo={dib.deshacerVia} onTerminar={dib.terminarVia} onCancel={dib.cancelarVia} />
         )}
         {dib.markMode && <LothMapaMarcaBar onCancel={() => dib.setMarkMode(false)} />}
+        {dib.pidiendoPermiso && <LothMapaElegirPermiso accion={dib.pidiendoPermiso} onElegir={dib.elegirPermisoPara} onCancelar={dib.cancelarPermiso} />}
 
         {datos.raw !== null && der.totalPuntos === 0 && !der.declarada && !dib.drawMode && <LothMapaSinGeo />}
       </div>

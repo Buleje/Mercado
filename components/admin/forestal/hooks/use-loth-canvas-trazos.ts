@@ -15,6 +15,7 @@ import type { LatLng } from "@/lib/forestal/loth-geo";
 import { centroid } from "@/lib/forestal/loth-geo";
 import { dominantZone, gridLabel, utmGrid, vertexCode } from "@/lib/forestal/loth-utm";
 import { construirFaja } from "@/lib/forestal/loth-faja";
+import { referenciaMeta, viaMeta } from "@/lib/forestal/loth-cartografia";
 import { COLOR_HERRAMIENTA, PARCELA_COLOR } from "../loth-mapa-shared";
 import { MAX_PERMANENT_LABELS, PREDIO_COLOR, type LeafletCtx, type LothMapaCanvasProps } from "../loth-mapa-canvas-ctx";
 
@@ -23,7 +24,7 @@ import { MAX_PERMANENT_LABELS, PREDIO_COLOR, type LeafletCtx, type LothMapaCanva
    re-dispara ningún efecto. */
 export function useLothCanvasTrazos(ctx: LeafletCtx, p: LothMapaCanvasProps): void {
   const { ready, mapRef, LRef, gridRef, parcelaRef, predioRef, draftRef, fajaRef, medicionRef } = ctx;
-  const { showGrid, vias, parcela, declarada, drawMode, drawTarget, predio, draft, onInsertVertex, onMoveVertex, onDeleteVertex, fajaAnchoM, medicion, medicionModo } = p;
+  const { showGrid, vias, parcela, declarada, drawMode, drawTarget, predio, draft, onInsertVertex, onMoveVertex, onDeleteVertex, fajaAnchoM, medicion, medicionModo, areasOtras, contexto } = p;
 
   // ── Cuadrícula UTM (se recalcula al mover/zoomear) ─────────────────────────
   useEffect(() => {
@@ -122,6 +123,24 @@ export function useLothCanvasTrazos(ctx: LeafletCtx, p: LothMapaCanvasProps): vo
           .addTo(group),
       );
     }
+    // Con «Todos», el área de cada permiso con su nombre (ADR-462). Sin
+    // interacción: se toca el mapa de abajo, no el polígono.
+    for (const a of areasOtras ?? []) {
+      if (a.vertices.length < 3) continue;
+      L.polygon(a.vertices, { color: PARCELA_COLOR, weight: 2, dashArray: "2 5", fillColor: PARCELA_COLOR, fillOpacity: 0.06, interactive: false })
+        .bindTooltip(a.nombre, { permanent: true, direction: "center", className: "loth-vertex-label" })
+        .addTo(group);
+    }
+    // Con un permiso elegido, lo del negocio es contexto común: tenue y sin ficha.
+    for (const v of contexto?.vias ?? []) {
+      const m = viaMeta(v.tipo);
+      L.polyline(v.puntos, { color: m.color, weight: 2, opacity: 0.35, dashArray: m.dash || undefined, interactive: false }).addTo(group);
+    }
+    for (const r of contexto?.referencias ?? []) {
+      L.circleMarker([r.lat, r.lng], { radius: 5, color: referenciaMeta(r.tipo).color, weight: 1.5, opacity: 0.45, fillOpacity: 0.2, interactive: false })
+        .bindTooltip(`${r.nombre} · del negocio`, { direction: "top", className: "loth-vertex-label" })
+        .addTo(group);
+    }
     const centro = declarada && !(drawMode && drawTarget === "area") ? centroid(parcela) : null;
     if (centro) {
       // Cruz de centroide (el símbolo del plano), no un pin: un marcador más
@@ -131,7 +150,7 @@ export function useLothCanvasTrazos(ctx: LeafletCtx, p: LothMapaCanvasProps): vo
         .bindTooltip("Centroide", { permanent: false, direction: "top", className: "loth-vertex-label" })
         .addTo(group);
     }
-  }, [ready, predio, parcela, declarada, drawMode, drawTarget, LRef, predioRef]);
+  }, [ready, predio, parcela, declarada, drawMode, drawTarget, areasOtras, contexto, LRef, predioRef]);
 
   // ── Borrador en vivo: vértices arrastrables + puntos medios para insertar ──
   useEffect(() => {

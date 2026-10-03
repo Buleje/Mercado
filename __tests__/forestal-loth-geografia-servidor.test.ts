@@ -82,7 +82,17 @@ describe("obtenerGeografia", () => {
     expect(r.ok && r.geografia.desdeCache).toBe(true);
     expect(H.overpass).not.toHaveBeenCalled();
     expect(H.grilla).not.toHaveBeenCalled();
-    expect(H.geoGet).toHaveBeenCalledWith("t1");
+    expect(H.geoGet).toHaveBeenCalledWith("t1", null);
+  });
+
+  it("ADR-462: la caché es del plan (get y set con su planId)", async () => {
+    H.geoGet.mockResolvedValue(null);
+    H.overpass.mockImplementation(async () => ({ rios: [], caminos: [], espejo: "x" }));
+    H.grilla.mockImplementation(async (b) => ({ grilla: grilla(b), faltan: 0, total: 4 }));
+    const ctx = { contorno: [[-9.8, -74.8], [-9.8, -74.79], [-9.79, -74.79]] as [number, number][], contornoEs: "parcela" as const, arboles: [], planId: "p1" };
+    await obtenerGeografia("t1", ctx, {});
+    expect(H.geoGet).toHaveBeenCalledWith("t1", "p1");
+    expect(H.geoSet).toHaveBeenCalledWith("t1", expect.anything(), "sistema", "p1");
   });
 
   it("sin caché: pide las dos fuentes sobre el recuadro del servidor y guarda", async () => {
@@ -98,7 +108,7 @@ describe("obtenerGeografia", () => {
     const b = H.overpass.mock.calls[0][0];
     expect(b.sur).toBeLessThan(-9.79);
     expect(b.norte).toBeGreaterThan(-9.788);
-    expect(H.geoSet).toHaveBeenCalledWith("t1", expect.objectContaining({ bbox: b }), "sistema");
+    expect(H.geoSet).toHaveBeenCalledWith("t1", expect.objectContaining({ bbox: b }), "sistema", null);
   });
 
   it("refrescar con OpenStreetMap caído → usa los ríos guardados con su fecha, y el relieve nuevo", async () => {
@@ -221,8 +231,8 @@ describe("contextoDelPlan", () => {
     const c = await contextoDelPlan("t1");
     expect(H.activo).toHaveBeenCalledWith("t1");
     expect(H.arboles).toHaveBeenCalledWith("t1", "plan-activo");
-    expect(H.parcela).toHaveBeenCalledWith("t1");
-    expect(H.carto).toHaveBeenCalledWith("t1");
+    expect(H.parcela).toHaveBeenCalledWith("t1", "plan-activo");
+    expect(H.carto).toHaveBeenCalledWith("t1", "plan-activo");
     expect(c.contornoEs).toBe("predio");
     expect(c.sinCoordenadas).toBe(1);
     expect(c.arboles).toHaveLength(1);
@@ -231,6 +241,17 @@ describe("contextoDelPlan", () => {
     expect(c.arboles[0].lat).toBeCloseTo(-9.7874228, 6);
     expect(c.arboles[0].lng).toBeCloseTo(-74.7979688, 6);
     expect(c.arboles[0].m3).toBeCloseTo(8.684, 3);
+  });
+
+  it("ADR-462: el plan sin área propia usa la del negocio; con la suya, la suya", async () => {
+    const negocio = { ...emptyParcela(), vertices: [[-9.8, -74.8], [-9.8, -74.79], [-9.79, -74.79]] as [number, number][] };
+    const propia = { ...emptyParcela(), vertices: [[-9.5, -74.5], [-9.5, -74.49], [-9.49, -74.49]] as [number, number][] };
+    H.arboles.mockResolvedValue({ trees: [], total: 0, truncado: false });
+    H.carto.mockResolvedValue(emptyCartografia());
+    H.parcela.mockImplementation(async (_t: string, plan?: string) => (plan === "p-con" ? propia : plan === "p-sin" ? emptyParcela() : negocio));
+    expect((await contextoDelPlan("t1", "p-sin")).contorno).toEqual(negocio.vertices);
+    expect(H.parcela).toHaveBeenCalledWith("t1");
+    expect((await contextoDelPlan("t1", "p-con")).contorno).toEqual(propia.vertices);
   });
 
   it("sin plan activo → sin árboles, sin consultar el censo", async () => {

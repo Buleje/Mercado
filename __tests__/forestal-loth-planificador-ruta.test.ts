@@ -23,6 +23,17 @@ vi.mock("@/lib/session", async (real) => ({
 vi.mock("@/lib/auth/session-revocation", () => ({ isSessionRevoked: () => false }));
 vi.mock("@/lib/logger", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() } }));
 vi.mock("@/lib/prisma", () => ({ prisma: {} }));
+/* La ruta valida el planId contra el negocio y vivo (ADR-462): «plan-1» existe en
+   cualquier negocio de prueba; se registra con qué tenant se preguntó. */
+const planesConsultados: [string, string][] = [];
+vi.mock("@/lib/db/forest-plan.db", () => ({
+  ForestPlanDB: {
+    getPlan: async (tenantId: string, id: string) => {
+      planesConsultados.push([tenantId, id]);
+      return id === "plan-1" ? { id } : null;
+    },
+  },
+}));
 vi.mock("@/lib/specializations", () => ({ isSpecializationEnabled: async () => true }));
 vi.mock("@/lib/forestal/loth-geografia-servidor", () => ({
   contextoDelPlan: (...a: unknown[]) => H.contexto(...a),
@@ -78,6 +89,7 @@ describe("GET /loth/geografia", () => {
     const r = await geografiaGET(pedir("geografia?planId=plan-1&tenantId=otro", true, { "x-tenant-id": "otro-negocio" }));
     expect(r.status).toBe(200);
     expect(H.contexto).toHaveBeenCalledWith("tenant-de-la-sesion", "plan-1");
+    expect(planesConsultados.at(-1)).toEqual(["tenant-de-la-sesion", "plan-1"]);
     expect(H.geografia.mock.calls[0][0]).toBe("tenant-de-la-sesion");
     expect(H.geografia.mock.calls[0][2]).toMatchObject({ refrescar: false });
     const j = await r.json();

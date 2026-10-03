@@ -64,6 +64,10 @@ export interface GeoEntry {
   unit: string | null;
   photoUrl: string | null;
   date: string;
+  /** Permiso de la operación (ADR-462): con «Todos» decide contra qué área se mide. */
+  planId?: string | null;
+  /** Medida contra el área de SU permiso: `null` = no hay área con que verificarla; ausente = el mapa mide con el área única. */
+  dentro?: boolean | null;
 }
 
 export interface CensoTree {
@@ -153,6 +157,7 @@ export function toGeo(entries: LothEntryDTO[]): GeoEntry[] {
       unit: e.unit,
       photoUrl: e.photoUrl,
       date: e.entryDate,
+      planId: e.planId ?? null,
     });
   }
   return out;

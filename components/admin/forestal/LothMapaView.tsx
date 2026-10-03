@@ -14,6 +14,9 @@
  *      cumplimiento EUDR, plano del expediente, cuadro de coordenadas, predio,
  *      y referencias/vías/acceso. Plegados, cada uno dice su resumen.
  *
+ * Por permiso (ADR-462): el área, el predio, las vías y las referencias son
+ * del permiso de la banda (`use-loth-mapa-permiso` → `use-loth-mapa-geo`).
+ *
  * Esta vista sólo arma: los datos y el guardado viven en `use-loth-mapa-datos`,
  * el dibujo en `use-loth-mapa-dibujo`, las capas y herramientas en
  * `use-loth-mapa-herramientas`, lo calculado en `use-loth-mapa-derivados` y lo
@@ -37,9 +40,8 @@ import LothRutasPuntosPanel, { resumenRutas } from "./LothRutasPuntosPanel";
 import LothRutasExportar from "./LothRutasExportar";
 import LothCaratulaBanner, { type CaratulaUbicacion } from "./LothCaratulaBanner";
 import LothCoordsModal from "./LothCoordsModal";
-import { useLothMapaDatos } from "./hooks/use-loth-mapa-datos";
-import { useLothPermiso } from "./hooks/use-loth-libro-permiso";
-import { PERMISO_SIN_PLAN } from "@/lib/forestal/loth-filtro-permiso";
+import LothMapaAreaHeredada from "./LothMapaAreaHeredada";
+import { useLothMapaPermiso } from "./hooks/use-loth-mapa-permiso";
 import { useLothMapaDibujo } from "./hooks/use-loth-mapa-dibujo";
 import { useLothMapaHerramientas } from "./hooks/use-loth-mapa-herramientas";
 import { useLothMapaDerivados } from "./hooks/use-loth-mapa-derivados";
@@ -72,10 +74,6 @@ const PASTILLA = "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-x
 const BTN_BLOQUE =
   "inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40";
 
-/** Referencias estables: un `[]` nuevo por render re-dispararía los hooks derivados. */
-const SIN_ARBOLES: never[] = [];
-const SIN_ESPECIES: never[] = [];
-
 export default function LothMapaView({
   focusTree,
   onFocusHandled,
@@ -91,17 +89,11 @@ export default function LothMapaView({
   reloadSignal?: number;
 } = {}) {
   const marcoRef = useRef<HTMLElement>(null);
-  /* El permiso del libro (chip de la banda): su censo, su POA y sus líneas. Sin
-     uno elegido, el plan activo, como antes. */
-  const libro = useLothPermiso();
-  const planDelLibro = libro?.planSel && libro.planSel !== PERMISO_SIN_PLAN ? libro.planSel : null;
-  const datosCrudos = useLothMapaDatos({ planId: planDelLibro, filtro: libro?.filtro ?? null });
-  /* «Sin permiso»: ningún censo ni plan (mismo criterio que Trazabilidad); el hook trae el del plan activo y acá se descarta. */
-  const sinPlan = libro?.planSel === PERMISO_SIN_PLAN;
-  const datos = sinPlan ? { ...datosCrudos, trees: SIN_ARBOLES, planSpecies: SIN_ESPECIES, plan: null } : datosCrudos;
+  /* El permiso del libro (chip de la banda): su censo, su POA, sus líneas y —ADR-462— su área y su cartografía. */
+  const { datos, hayLibro, planDelLibro, todos, nombrePermiso, elegirPlan, areasNombradas, capasPermiso, dds } = useLothMapaPermiso();
   const herr = useLothMapaHerramientas({ onError: datos.setError });
-  const der = useLothMapaDerivados({ ...datos, showCenso: herr.showCenso, showGrid: herr.showGrid, hidden: herr.hidden });
-  const dib = useLothMapaDibujo({ ...datos, censo: der.censoAll });
+  const der = useLothMapaDerivados({ ...datos, areasPermisos: todos ? areasNombradas : undefined, showCenso: herr.showCenso, showGrid: herr.showGrid, hidden: herr.hidden });
+  const dib = useLothMapaDibujo({ ...datos, censo: der.censoAll, elegirPlan });
   // Lo que el libro hizo con cada árbol (tala, trozas, despachos, CTP): se vuelve a leer con cada carga
   // y cada vez que el libro escribe — la tala registrada desde el mapa cambia la etiqueta ahí mismo.
   const etapas = useLothMapaEtapas(datos.plan?.id ?? null, datos.fitKey, reloadSignal);
@@ -133,7 +125,7 @@ export default function LothMapaView({
   const verticesCuadro = dib.drawMode && dib.draft.length >= 3 ? dib.draft : datos.parcela.vertices;
   // Sentinel-2 y la fecha de la foto de Esri (se pide al terminar de cargar el mapa): el mapa la pinta y el plano sale con ella.
   const img = useLothMapaImagenes({ planId: datos.plan?.id ?? null, listo: datos.fitKey > 0, waybackActivo: !!herr.wayback, apagarWayback: herr.apagarWayback });
-  const exp = useLothMapaExportes({ ...datos, ...der, verticesCuadro, basemap: herr.basemap, overlays: herr.overlays, vista: herr.vista, imagen: img, onError: datos.setError });
+  const exp = useLothMapaExportes({ ...datos, ...der, verticesCuadro, basemap: herr.basemap, overlays: herr.overlays, vista: herr.vista, imagen: img, onError: datos.setError, dds, areasNombradas });
   const { centrar } = herr;
   const { elegir } = arb;
   const { raw, caratula, plan, parcela } = datos;
@@ -153,16 +145,23 @@ export default function LothMapaView({
     <div className="space-y-4" data-vista-mapa>
       <LothMapaCabecera
         cargando={datos.loading && raw === null}
-        permiso={plan ? { nombre: plan.planNumber ?? plan.titularName ?? "Plan sin número", elegido: planDelLibro != null } : null}
+        permiso={todos ? { tipo: "todos" } : !hayLibro ? (plan ? { tipo: "plan", nombre: plan.planNumber ?? plan.titularName ?? "Plan sin número", activo: true } : null) : planDelLibro ? { tipo: "plan", nombre: nombrePermiso ?? plan?.planNumber ?? "Permiso", activo: false } : { tipo: "sin-permiso" }}
         operaciones={geoAll.length}
         arboles={censoAll.length}
-        areaHa={declarada ? readiness.areaHa : null}
+        /* Con «Todos» no se suma: «Pasar a este permiso» COPIA el área del negocio, así
+           que mientras convivan la suma contaba el mismo polígono dos veces (11,6 ha por
+           5,8 medido en main, 02-10). Cada área se ve con su nombre; sus ha, al elegirla. */
+        areaHa={declarada && !todos ? readiness.areaHa : null}
+        declaradaHa={todos ? null : (plan?.areaHa ?? null)}
+        heredada={datos.heredada}
+        areasPermisos={areasNombradas.length}
         fuera={readiness.fuera}
         rutas={rutas.rutas.length}
         puntos={rutas.puntos.length}
       />
 
       {datos.error && <ErrorAlert title="No se pudo completar" description={datos.error} />}
+      {datos.heredada && nombrePermiso && <LothMapaAreaHeredada permiso={nombrePermiso} copiando={datos.copiando} onPasar={() => void datos.copiarAlPermiso()} />}
 
       <LothMapaMarco
         ref={marcoRef}
@@ -178,6 +177,7 @@ export default function LothMapaView({
         plan={planificador}
         rutas={rutas}
         img={img}
+        capasPermiso={capasPermiso}
       />
 
       <div className="space-y-3">
@@ -245,7 +245,7 @@ export default function LothMapaView({
             </>
           }
         >
-          <LothVerticesPanel vertices={verticesCuadro} censoCount={censoAll.length} />
+          <LothVerticesPanel vertices={verticesCuadro} censoCount={censoAll.length} declaradaHa={todos ? null : (plan?.areaHa ?? null)} heredada={datos.heredada} />
         </LothMapaBloque>
 
         <LothMapaBloque clave={CLAVES_BLOQUES_MAPA.predio} titulo="El predio" icono={Square} resumen={resumenPredio(datos.carto.predio)}>
@@ -258,6 +258,8 @@ export default function LothMapaView({
             onDibujarPredio={() => alMapa(dib.startDrawPredio)}
             onImportPredio={() => dib.setCoordsOpen("predio")}
             onCopiarDelArea={() => datos.setCarto((c) => ({ ...c, predio: { ...c.predio, vertices: parcela.vertices } }))}
+            deQuien={!hayLibro ? null : nombrePermiso ? `del permiso ${nombrePermiso}` : todos ? null : "del negocio (sin permiso)"}
+            soloLectura={todos && hayLibro ? "Con «Todos» ves el predio del negocio: elige un permiso en la banda para editar el suyo." : null}
           />
         </LothMapaBloque>
 

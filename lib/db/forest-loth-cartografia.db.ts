@@ -1,7 +1,8 @@
 import "server-only";
 import { PlatformSettingsDB } from "@/lib/db/platform-settings.db";
+import { claveGeo } from "@/lib/forestal/loth-alcance-geo";
 import { auditLoth } from "@/lib/forestal/loth-audit";
-import { normalizeCartografia, emptyCartografia, hasPredio, type LothCartografia } from "@/lib/forestal/loth-cartografia";
+import { normalizeCartografia, emptyCartografia, hasPredio, hasCartografia, type LothCartografia } from "@/lib/forestal/loth-cartografia";
 
 /**
  * ForestLothCartografiaDB — referencias (centros poblados, campamentos, ingreso
@@ -39,10 +40,17 @@ export const ForestLothCartografiaDB = {
    * el caché por instancia: el `updatedAt` que se lee acá es la versión contra
    * la que el cliente guarda después, y una vieja daría un 409 falso.
    */
-  async get(tenantId: string): Promise<LothCartografia> {
+  async get(tenantId: string, planId?: string | null): Promise<LothCartografia> {
     if (!tenantId) throw new Error("tenantId is required");
-    const raw = await PlatformSettingsDB.getFresco<unknown>(`${KEY_PREFIX}${tenantId}`);
+    const raw = await PlatformSettingsDB.getFresco<unknown>(claveGeo(KEY_PREFIX, tenantId, planId));
     return raw ? normalizeCartografia(raw) : emptyCartografia();
+  },
+
+  /** La de cada plan de la lista que tenga algo (ADR-462). */
+  async listarPorPlan(tenantId: string, planIds: readonly string[]): Promise<{ planId: string; cartografia: LothCartografia }[]> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const todas = await Promise.all(planIds.map(async (planId) => ({ planId, cartografia: await ForestLothCartografiaDB.get(tenantId, planId) })));
+    return todas.filter((x) => hasCartografia(x.cartografia));
   },
 
   /**
@@ -54,12 +62,12 @@ export const ForestLothCartografiaDB = {
    * PUT con la misma base no pasan los dos. Sin `baseUpdatedAt` (clientes
    * viejos) se guarda como siempre.
    */
-  async set(tenantId: string, input: unknown, user = "unknown", nowIso?: string, opts: { baseUpdatedAt?: string | null } = {}): Promise<LothCartografia> {
+  async set(tenantId: string, input: unknown, user = "unknown", nowIso?: string, opts: { baseUpdatedAt?: string | null; planId?: string | null } = {}): Promise<LothCartografia> {
     if (!tenantId) throw new Error("tenantId is required");
     const carto = normalizeCartografia(input);
     carto.updatedAt = nowIso ?? new Date().toISOString();
     const r = await PlatformSettingsDB.actualizar<unknown, LothCartografia | null>(
-      `${KEY_PREFIX}${tenantId}`,
+      claveGeo(KEY_PREFIX, tenantId, opts.planId),
       (actualRaw) => {
         if (opts.baseUpdatedAt !== undefined) {
           const actual = actualRaw ? normalizeCartografia(actualRaw) : emptyCartografia();
@@ -74,7 +82,7 @@ export const ForestLothCartografiaDB = {
       tenantId,
       action: "loth_cartografia_update",
       entity: "ForestLothCartografia",
-      entityId: tenantId,
+      entityId: opts.planId || tenantId,
       detail: `Actualizó la cartografía del plano (${carto.referencias.length} referencia(s) · ${carto.vias.length} vía(s) · ${carto.accesos.length} tramo(s) de acceso${hasPredio(carto.predio) ? ` · predio de ${carto.predio.vertices.length} vértices` : ""})`,
       user,
     });

@@ -113,6 +113,13 @@ export interface LothMapaCanvasProps {
   drawMode: boolean;
   /** Cuál de los dos polígonos está en el borrador. */
   drawTarget: "area" | "predio";
+  /**
+   * Con «Todos» (ADR-462): las áreas de cada permiso, con su nombre. Se pintan
+   * debajo del área principal, que sigue siendo la del negocio.
+   */
+  areasOtras?: { nombre: string; vertices: LatLng[] }[];
+  /** Con un permiso elegido: las referencias y vías del NEGOCIO, tenues (contexto común, no se editan acá). */
+  contexto?: { referencias: LothReferencia[]; vias: LothVia[] } | null;
   basemap: BasemapId;
   /** La escena de Sentinel-2 elegida (sólo se pinta con `basemap === "s2"`; null = todavía no llegó). */
   s2: EscenaEnMapa | null;

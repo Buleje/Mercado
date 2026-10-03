@@ -45,6 +45,12 @@ interface Props {
   onImportPredio: () => void;
   /** Copia el área declarada como contorno provisional del predio. */
   onCopiarDelArea: () => void;
+  /**
+   * ADR-462: de qué permiso es este predio («del permiso X», «del negocio»).
+   * Con «Todos» no es de ninguno: `soloLectura` dice por qué no se edita.
+   */
+  deQuien?: string | null;
+  soloLectura?: string | null;
 }
 
 export default function LothPredioPanel({
@@ -56,6 +62,8 @@ export default function LothPredioPanel({
   onDibujarPredio,
   onImportPredio,
   onCopiarDelArea,
+  deQuien = null,
+  soloLectura = null,
 }: Props) {
   const { confirm } = useConfirm();
   const [guardado, setGuardado] = useState(false);
@@ -82,7 +90,12 @@ export default function LothPredioPanel({
   };
 
   return (
-    <div className="space-y-3 p-4">
+    <fieldset disabled={!!soloLectura} className="min-w-0 space-y-3 p-4">
+      {(soloLectura || deQuien) && (
+        <p className="text-xs font-semibold text-[var(--text-secondary)]" data-predio-de>
+          {soloLectura ?? `Predio ${deQuien}`}
+        </p>
+      )}
       <div className="grid gap-x-4 gap-y-3 sm:grid-cols-3">
         <Field label="Nombre del predio" hint="Como figura en el título de propiedad">
           <input
@@ -160,6 +173,6 @@ export default function LothPredioPanel({
           </Btn>
         </span>
       </div>
-    </div>
+    </fieldset>
   );
 }

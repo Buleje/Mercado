@@ -14,6 +14,8 @@ import { NextRequest } from "next/server";
 
 const H = vi.hoisted(() => ({
   guardado: null as unknown,
+  porClave: {} as Record<string, unknown>,
+  claves: [] as string[],
   escrituras: 0,
   fila: Promise.resolve() as Promise<unknown>,
   payload: null as null | { username: string; role: string; tenantId: string },
@@ -25,17 +27,24 @@ vi.mock("@/lib/forestal/loth-audit", () => ({ auditLoth: vi.fn() }));
 vi.mock("@/lib/specializations", () => ({ isSpecializationEnabled: async () => true }));
 vi.mock("@/lib/session", async (real) => ({ ...(await real<typeof import("@/lib/session")>()), getSessionPayload: async () => H.payload }));
 vi.mock("@/lib/auth/session-revocation", () => ({ isSessionRevoked: () => false }));
+vi.mock("@/lib/db/forest-plan.db", () => ({
+  ForestPlanDB: { getPlan: async (t: string, id: string) => (t === "t1" && (id === "A" || id === "B") ? { id } : null) },
+}));
 vi.mock("@/lib/db/platform-settings.db", () => ({
   PREFIJO_INTERNO: "interno:",
   PlatformSettingsDB: {
-    getFresco: async () => H.guardado,
+    getFresco: async (key: string) => H.porClave[key] ?? (key.split(":").length === 2 ? H.guardado : null),
     /** Como el advisory lock: cada `actualizar` espera al anterior, lee y escribe. */
-    actualizar: (_key: string, cambio: (actual: unknown) => Promise<{ valor?: unknown; resultado: unknown }> | { valor?: unknown; resultado: unknown }) => {
+    actualizar: (key: string, cambio: (actual: unknown) => Promise<{ valor?: unknown; resultado: unknown }> | { valor?: unknown; resultado: unknown }) => {
       const turno = H.fila.then(async () => {
         await new Promise((r) => setTimeout(r, 5));
-        const r = await cambio(H.guardado);
+        const delNegocio = key.split(":").length === 2;
+        const r = await cambio(delNegocio ? H.guardado : (H.porClave[key] ?? null));
         if (r.valor !== undefined) {
-          H.guardado = JSON.parse(JSON.stringify(r.valor));
+          const v = JSON.parse(JSON.stringify(r.valor));
+          if (delNegocio) H.guardado = v;
+          else H.porClave[key] = v;
+          H.claves.push(key);
           H.escrituras++;
         }
         return r.resultado;
@@ -53,6 +62,8 @@ const ref = (id: string, nombre: string) => ({ id, nombre, tipo: "hito", lat: -9
 
 beforeEach(() => {
   H.guardado = null;
+  H.porClave = {};
+  H.claves = [];
   H.escrituras = 0;
   H.fila = Promise.resolve();
   H.payload = { username: "qa-admin", role: "admin", tenantId: "t1" };
@@ -114,5 +125,39 @@ describe("PUT /loth/cartografia", () => {
   it("el almacenero no guarda (403): la misma regla que el planificador devuelve como `puedeGuardar`", async () => {
     H.payload = { username: "qa-alm", role: "almacenero", tenantId: "t1" };
     expect((await put({ referencias: [] })).status).toBe(403);
+  });
+});
+
+describe("ADR-462: la cartografía por permiso", () => {
+  const put = (cuerpo: unknown) =>
+    PUT(
+      new NextRequest("http://localhost/api/admin/forestal/loth/cartografia", {
+        method: "PUT",
+        headers: { cookie: "buleje-admin-sess=token-falso", "content-type": "application/json" },
+        body: JSON.stringify(cuerpo),
+      }),
+    );
+
+  it("dos planes con la misma base guardan los dos (el 409 es por plan)", async () => {
+    const a = await put({ referencias: [ref("r1", "De A")], baseUpdatedAt: null, planId: "A" });
+    const b = await put({ referencias: [ref("r1", "De B")], baseUpdatedAt: null, planId: "B" });
+    expect(a.status).toBe(200);
+    expect(b.status).toBe(200);
+    expect(H.claves).toEqual(["loth-cartografia:t1:A", "loth-cartografia:t1:B"]);
+    expect(H.guardado).toBeNull();
+    // …y el mismo plan con base vieja sigue chocando.
+    expect((await put({ referencias: [], baseUpdatedAt: null, planId: "A" })).status).toBe(409);
+  });
+
+  it("plan ajeno o inexistente → 404 plan_not_found y no escribe", async () => {
+    const r = await put({ referencias: [], planId: "Z" });
+    expect(r.status).toBe(404);
+    expect((await r.json()).error).toBe("plan_not_found");
+    expect(H.escrituras).toBe(0);
+  });
+
+  it("sin planId escribe la clave vieja", async () => {
+    await put({ referencias: [ref("r1", "Negocio")] });
+    expect(H.claves).toEqual(["loth-cartografia:t1"]);
   });
 });

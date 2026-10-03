@@ -7,8 +7,8 @@ import { ForestLothParcelaDB } from "@/lib/db/forest-loth-parcela.db";
 import { ForestLothCartografiaDB } from "@/lib/db/forest-loth-cartografia.db";
 import { ForestLothPoaDB } from "@/lib/db/forest-loth-poa.db";
 import { ForestLothGeografiaDB } from "@/lib/db/forest-loth-geografia.db";
-import type { LatLng } from "./loth-geo";
-import type { LothCartografia } from "./loth-cartografia";
+import { hasParcela, type LatLng } from "./loth-geo";
+import { hasCartografia, type LothCartografia } from "./loth-cartografia";
 import { latLngDelArbol } from "./loth-censo-uso";
 import { normalizarCondicion } from "./loth-mapa-arboles";
 import type { EtapaArbol, EstadoArbol } from "./loth-etapa-arbol";
@@ -60,11 +60,14 @@ const num = (v: unknown): number | null => {
 export async function contextoDelPlan(tenantId: string, planId?: string | null): Promise<ContextoPlan> {
   if (!tenantId) throw new Error("tenantId is required");
   const plan = planId?.trim() || (await ForestPlanDB.getActivePlan(tenantId))?.id || null;
-  const [parcela, carto, censo] = await Promise.all([
-    ForestLothParcelaDB.get(tenantId),
-    ForestLothCartografiaDB.get(tenantId),
+  // ADR-462: el área y la cartografía son del PLAN; si no tiene la suya, vale la del negocio.
+  const [parcelaPlan, cartoPlan, censo] = await Promise.all([
+    plan ? ForestLothParcelaDB.get(tenantId, plan) : Promise.resolve(null),
+    plan ? ForestLothCartografiaDB.get(tenantId, plan) : Promise.resolve(null),
     plan ? ForestPlanDB.listTrees(tenantId, plan) : Promise.resolve({ trees: [], total: 0, truncado: false }),
   ]);
+  const parcela = parcelaPlan && hasParcela(parcelaPlan) ? parcelaPlan : await ForestLothParcelaDB.get(tenantId);
+  const carto = cartoPlan && hasCartografia(cartoPlan) ? cartoPlan : await ForestLothCartografiaDB.get(tenantId);
   const arboles: ArbolDelCenso[] = [];
   let sinCoordenadas = 0;
   for (const t of censo.trees) {
@@ -121,7 +124,7 @@ const horaTxt = (ms: number) => formatTime(new Date(ms));
  */
 export async function obtenerGeografia(
   tenantId: string,
-  ctx: Pick<ContextoPlan, "contorno" | "contornoEs" | "arboles">,
+  ctx: Pick<ContextoPlan, "contorno" | "contornoEs" | "arboles"> & { planId?: string | null },
   opts: { refrescar?: boolean; soloCache?: boolean; ahoraIso?: string; user?: string } = {},
 ): Promise<ResultadoGeografia> {
   if (!tenantId) throw new Error("tenantId is required");
@@ -130,7 +133,7 @@ export async function obtenerGeografia(
 
   let cache: GeografiaPredio | null = null;
   try {
-    cache = await ForestLothGeografiaDB.get(tenantId);
+    cache = await ForestLothGeografiaDB.get(tenantId, ctx.planId ?? null);
   } catch (err) {
     logger.error("[loth.geografia] no se pudo leer la caché", { error: String(err), tenantId });
   }
@@ -226,7 +229,7 @@ export async function obtenerGeografia(
   // Se guarda TODO intento —lo que llegó y lo que falló—: el fallo es la caché negativa.
   if (necesitaOsm || necesitaElev) {
     try {
-      await ForestLothGeografiaDB.set(tenantId, geo, opts.user ?? "sistema");
+      await ForestLothGeografiaDB.set(tenantId, geo, opts.user ?? "sistema", ctx.planId ?? null);
     } catch (err) {
       logger.error("[loth.geografia] no se pudo guardar la caché", { error: String(err), tenantId });
     }

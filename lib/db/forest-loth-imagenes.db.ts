@@ -1,4 +1,5 @@
 import "server-only";
+import { claveGeo } from "@/lib/forestal/loth-alcance-geo";
 import { PREFIJO_INTERNO, PlatformSettingsDB } from "@/lib/db/platform-settings.db";
 import { normalizarImagenes, type ImagenesDelArea } from "@/lib/forestal/loth-imagenes";
 
@@ -21,15 +22,15 @@ const KEY_PREFIX = `${PREFIJO_INTERNO}loth-imagenes:`;
 
 export const ForestLothImagenesDB = {
   /** Lo guardado del tenant; null si nunca se pidió o está roto. */
-  async get(tenantId: string): Promise<ImagenesDelArea | null> {
+  async get(tenantId: string, planId?: string | null): Promise<ImagenesDelArea | null> {
     if (!tenantId) throw new Error("tenantId is required");
-    const raw = await PlatformSettingsDB.get<unknown>(`${KEY_PREFIX}${tenantId}`);
+    const raw = await PlatformSettingsDB.get<unknown>(claveGeo(KEY_PREFIX, tenantId, planId));
     return raw ? normalizarImagenes(raw) : null;
   },
 
   /** Reemplaza la caché. */
-  async set(tenantId: string, img: ImagenesDelArea, user = "sistema"): Promise<void> {
+  async set(tenantId: string, img: ImagenesDelArea, user = "sistema", planId?: string | null): Promise<void> {
     if (!tenantId) throw new Error("tenantId is required");
-    await PlatformSettingsDB.set(`${KEY_PREFIX}${tenantId}`, img, user);
+    await PlatformSettingsDB.set(claveGeo(KEY_PREFIX, tenantId, planId), img, user);
   },
 };

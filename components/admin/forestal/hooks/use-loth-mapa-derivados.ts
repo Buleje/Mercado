@@ -12,7 +12,8 @@
 
 import { useMemo } from "react";
 import type { LothEntryDTO } from "@/lib/forestal/loth-constants";
-import { computeEudrReadiness, hasParcela, type LatLng, type LothParcela, type OpForEudr } from "@/lib/forestal/loth-geo";
+import { computeEudrReadiness, hasParcela, pointInPolygon, type LatLng, type LothParcela, type OpForEudr } from "@/lib/forestal/loth-geo";
+import { areaDeSuPlan, readinessPorPermiso, type AreaEudr } from "@/lib/forestal/loth-eudr-print";
 import { dominantZone, zoneLabel } from "@/lib/forestal/loth-utm";
 import { viaMeta, type LothCartografia } from "@/lib/forestal/loth-cartografia";
 import { analizarPoa, type PoaConfig } from "@/lib/forestal/loth-poa";
@@ -26,11 +27,13 @@ import {
   SECTION_COLOR,
   SECTION_LABEL,
   type CensusTreeDTO,
+  type GeoEntry,
 } from "../loth-mapa-shared";
 import type { CaratulaMapa, EspeciePlanMapa, PlanActivoMapa } from "./use-loth-mapa-datos";
 
-function toOps(entries: LothEntryDTO[]): OpForEudr[] {
+function toOps(entries: LothEntryDTO[]): (OpForEudr & { planId: string | null })[] {
   return entries.map((e) => ({
+    planId: e.planId ?? null,
     section: e.section,
     lat: e.gpsLat != null ? Number(e.gpsLat) : null,
     lng: e.gpsLng != null ? Number(e.gpsLng) : null,
@@ -39,12 +42,32 @@ function toOps(entries: LothEntryDTO[]): OpForEudr[] {
   }));
 }
 
+/**
+ * Con «Todos» (ADR-462): cada operación contra el área de SU permiso, la misma
+ * regla de la DDS (`areaDeSuPlan`). `dentro: null` = su permiso no tiene área ni
+ * hay una del negocio. Las áreas = la del negocio + la de cada permiso.
+ */
+export function medirContraSuArea(geo: readonly GeoEntry[], areas: readonly AreaEudr[]): GeoEntry[] {
+  return geo.map((g) => {
+    const a = areaDeSuPlan(g.planId, areas);
+    return { ...g, dentro: a ? pointInPolygon([g.lat, g.lng], a.parcela.vertices) : null };
+  });
+}
+
+/** Un punto sin permiso conocido (un árbol del censo) está «fuera» sólo si hay áreas y no cae en ninguna. */
+export function fueraDeTodasLasAreas(punto: LatLng, areas: readonly AreaEudr[]): boolean {
+  const conArea = areas.filter((a) => hasParcela(a.parcela));
+  return conArea.length > 0 && !conArea.some((a) => pointInPolygon(punto, a.parcela.vertices));
+}
+
 interface Deps {
   raw: LothEntryDTO[] | null;
   trees: CensusTreeDTO[];
   planSpecies: EspeciePlanMapa[];
   poaConfig: PoaConfig;
   parcela: LothParcela;
+  /** Sólo con «Todos»: las áreas de cada permiso (con área). `undefined` = un solo alcance, un área. */
+  areasPermisos?: AreaEudr[];
   plan: PlanActivoMapa | null;
   caratula: CaratulaMapa | null;
   carto: LothCartografia;
@@ -54,7 +77,7 @@ interface Deps {
 }
 
 export function useLothMapaDerivados(d: Deps) {
-  const { raw, trees, planSpecies, poaConfig, parcela, plan, caratula, carto, showCenso, showGrid, hidden } = d;
+  const { raw, trees, planSpecies, poaConfig, parcela, areasPermisos, plan, caratula, carto, showCenso, showGrid, hidden } = d;
 
   const geoAll = useMemo(() => (raw ? toGeo(raw) : []), [raw]);
   const censoBase = useMemo(() => toCenso(trees), [trees]);
@@ -89,8 +112,19 @@ export function useLothMapaDerivados(d: Deps) {
 
   const censoShown = useMemo(() => (showCenso ? censoAll : []), [showCenso, censoAll]);
   const sectionsPresent = useMemo(() => Array.from(new Set(geoAll.map((g) => g.section))), [geoAll]);
-  const geoShown = useMemo(() => geoAll.filter((g) => !hidden.has(g.section)), [geoAll, hidden]);
-  const readiness = useMemo(() => computeEudrReadiness(raw ? toOps(raw) : [], parcela), [raw, parcela]);
+  /** Con «Todos»: la del negocio + la de cada permiso (null = un solo área). */
+  const areasMedidas = useMemo<AreaEudr[] | null>(
+    () => (areasPermisos ? [{ planId: null, nombre: "Negocio", parcela }, ...areasPermisos] : null),
+    [areasPermisos, parcela],
+  );
+  const geoShown = useMemo(() => {
+    const visibles = geoAll.filter((g) => !hidden.has(g.section));
+    return areasMedidas ? medirContraSuArea(visibles, areasMedidas) : visibles;
+  }, [geoAll, hidden, areasMedidas]);
+  const readiness = useMemo(
+    () => (areasMedidas ? readinessPorPermiso(raw ? toOps(raw) : [], areasMedidas) : computeEudrReadiness(raw ? toOps(raw) : [], parcela)),
+    [raw, parcela, areasMedidas],
+  );
   const declarada = hasParcela(parcela);
 
   /**
@@ -162,6 +196,7 @@ export function useLothMapaDerivados(d: Deps) {
     geoShown,
     readiness,
     declarada,
+    areasMedidas,
     legendItems,
     zonaSugerida,
     checkPlano,

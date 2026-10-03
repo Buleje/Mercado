@@ -1,4 +1,5 @@
 import "server-only";
+import { claveGeo } from "@/lib/forestal/loth-alcance-geo";
 import { PREFIJO_INTERNO, PlatformSettingsDB } from "@/lib/db/platform-settings.db";
 import { normalizarGeografia, type GeografiaPredio } from "@/lib/forestal/loth-geografia";
 
@@ -24,14 +25,14 @@ const KEY_PREFIX = `${PREFIJO_INTERNO}loth-geografia:`;
 
 export const ForestLothGeografiaDB = {
   /** La geografía guardada del tenant; null si nunca se pidió o está rota. */
-  async get(tenantId: string): Promise<GeografiaPredio | null> {
+  async get(tenantId: string, planId?: string | null): Promise<GeografiaPredio | null> {
     if (!tenantId) throw new Error("tenantId is required");
-    const raw = await PlatformSettingsDB.get<unknown>(`${KEY_PREFIX}${tenantId}`);
+    const raw = await PlatformSettingsDB.get<unknown>(claveGeo(KEY_PREFIX, tenantId, planId));
     return raw ? normalizarGeografia(raw) : null;
   },
 
   /** Reemplaza la caché. Los avisos no se guardan: son de cada consulta. */
-  async set(tenantId: string, geo: GeografiaPredio, user = "sistema"): Promise<void> {
+  async set(tenantId: string, geo: GeografiaPredio, user = "sistema", planId?: string | null): Promise<void> {
     if (!tenantId) throw new Error("tenantId is required");
     const guardable: Omit<GeografiaPredio, "avisos"> = {
       bbox: geo.bbox,
@@ -42,6 +43,6 @@ export const ForestLothGeografiaDB = {
       fuentes: geo.fuentes,
       fallos: geo.fallos ?? { osm: null, elevacion: null },
     };
-    await PlatformSettingsDB.set(`${KEY_PREFIX}${tenantId}`, guardable, user);
+    await PlatformSettingsDB.set(claveGeo(KEY_PREFIX, tenantId, planId), guardable, user);
   },
 };
