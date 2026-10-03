@@ -4831,12 +4831,21 @@ export class ForestCtpDB {
   static async availableSource(
     tenantId: string,
     section: CtpSection,
-    opts: { excludeCtpEntryId?: string } = {},
+    opts: {
+      excludeCtpEntryId?: string;
+      /**
+       * Acota a estos ids (Mapa de Planta, ADR-465): para confirmar que una
+       * ubicación es huérfana sin depender del tope de 300 — una pila vieja
+       * con saldo queda fuera de la ventana y no por eso dejó el patio.
+       */
+      ids?: string[];
+    } = {},
   ) {
     if (!tenantId) throw new Error("tenantId is required");
+    const soloIds = opts.ids ? { id: { in: opts.ids } } : {};
     if (section === "produccion") {
       const ing = await prisma.woodEntry.findMany({
-        where: { tenantId, deletedAt: null, status: { in: ["validado", "procesado"] } },
+        where: { tenantId, deletedAt: null, status: { in: ["validado", "procesado"] }, ...soloIds },
         orderBy: { entryDate: "desc" },
         take: 300,
         select: {
@@ -4849,6 +4858,13 @@ export class ForestCtpDB {
           volumeM3: true,
           costoTotal: true,
           moneda: true,
+          /* Lo que la ficha de zona del Mapa de Planta muestra (ADR-465):
+             piezas declaradas, permiso y de quién es la madera. */
+          pieces: true,
+          originCode: true,
+          providerName: true,
+          maderaDeTercero: true,
+          duenoNombre: true,
         },
       });
       if (ing.length === 0) return [];
@@ -4886,6 +4902,11 @@ export class ForestCtpDB {
                   ? Math.round((Number(w.costoTotal) / total) * 100) / 100
                   : null,
               moneda: w.moneda ?? "PEN",
+              piezas: w.pieces,
+              permiso: w.originCode,
+              proveedor: w.providerName,
+              maderaDeTercero: w.maderaDeTercero,
+              duenoNombre: w.duenoNombre,
             };
           })
           // Ya consumido del todo = no es "available".
@@ -4901,7 +4922,7 @@ export class ForestCtpDB {
       // Elegir corridas (y no "un producto en stock") es además lo que espeja a
       // producción, que elige guías y no "una especie disponible".
       const corridas = await prisma.forestCtpEntry.findMany({
-        where: { tenantId, deletedAt: null, status: "registrado", section: "produccion" },
+        where: { tenantId, deletedAt: null, status: "registrado", section: "produccion", ...soloIds },
         orderBy: { entryDate: "desc" },
         take: 300,
         select: {
@@ -4914,6 +4935,11 @@ export class ForestCtpDB {
           cites: true,
           quantity: true,
           unit: true,
+          /* Ficha de zona del Mapa de Planta (ADR-465). */
+          pieces: true,
+          originCode: true,
+          duenoMadera: true,
+          titularNombre: true,
         },
       });
       if (corridas.length === 0) return [];
@@ -4948,6 +4974,10 @@ export class ForestCtpDB {
             producido,
             /** Lo que I5 va a exigir igual: mejor mostrarlo que fallar al guardar. */
             disponible: r4(producido - (usado.get(c.id) ?? 0)),
+            piezas: c.pieces,
+            permiso: c.originCode,
+            duenoMadera: c.duenoMadera,
+            titularNombre: c.titularNombre,
           };
         })
         .filter((c) => c.disponible > 0);

@@ -77,6 +77,8 @@ export type CtpAuditEntity =
   | "ForestOrigenGeo"
   // KV: zonas físicas del aserradero para el Mapa de Planta (ADR-142).
   | "ForestPlantaZona"
+  // KV: croquis del aserradero en metros, imagen y máquinas (ADR-465).
+  | "ForestPlantaCroquis"
   // KV: cubicaciones guardadas del cubicador — la medición del lote, previa al
   // libro (al libro entra después como producción, con su propio registro).
   | "ForestCubicacion"
@@ -327,6 +329,11 @@ export type CtpAuditAction =
   | "ctp_planta_zona_delete"
   // Ubicación de una troza/ingreso en una zona de la planta (ADR-142 follow-up)
   | "ctp_planta_asignar"
+  // Croquis del aserradero en metros (ADR-465): ubicar varias a la vez, el
+  // plano (medidas, imagen, máquinas) y la limpieza de ubicaciones huérfanas.
+  | "ctp_planta_asignar_lote"
+  | "ctp_planta_croquis_set"
+  | "ctp_planta_limpiar"
   // Cubicaciones guardadas del cubicador (la medición del lote, previa al libro)
   | "ctp_cubicacion_create"
   // Trámites y oficios ante la autoridad (ADR-308): qué se presentó y cuándo es

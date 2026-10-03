@@ -103,3 +103,23 @@ export function aplicarUbicacion(
   out[id] = u;
   return out;
 }
+
+/**
+ * Aplica VARIOS cambios de una sola vez (PUT por lote, ADR-465). Cada uno con
+ * la misma regla que `aplicarUbicacion`; el orden importa sólo si la misma
+ * clave viene dos veces (gana la última, como en el arrastre).
+ *
+ * Existe porque ubicar diez pilas mandaba diez PUT en paralelo y cada uno leía
+ * y reescribía la lista entera: quedaba sólo la última.
+ */
+export function aplicarUbicaciones(
+  ubis: Record<string, Ubicacion>,
+  cambios: readonly { clave: string; zonaId: string | null; lat?: number | null; lng?: number | null }[],
+): Record<string, Ubicacion> {
+  let out = { ...ubis };
+  for (const c of cambios) {
+    const pos = typeof c.lat === "number" && typeof c.lng === "number" ? { lat: c.lat, lng: c.lng } : null;
+    out = aplicarUbicacion(out, c.clave, c.zonaId, pos);
+  }
+  return out;
+}
