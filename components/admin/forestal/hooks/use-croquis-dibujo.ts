@@ -86,6 +86,10 @@ export function useCroquisDibujo(opts: {
 
   /** Elegir la zona a la que se le mueven los límites: un tirador por vértice. */
   const editarZona = useCallback((zonaId: string) => {
+    // Tocar adentro de la zona que ya se está moviendo (errarle al tirador por
+    // unos px) no la recarga: volvía a los vértices guardados y se perdía lo
+    // arrastrado. Para empezar de nuevo está «Salir».
+    if (editSel?.id === zonaId) return;
     const L = LRef.current, g = capa();
     const z = zonas.find((x) => x.id === zonaId);
     const pts = parsearPoligono(z?.poligono);
@@ -110,7 +114,7 @@ export function useCroquisDibujo(opts: {
       });
     });
     setArea(areaPlanaM2(vertsRef.current));
-  }, [LRef, capa, zonas, croquis]);
+  }, [LRef, capa, zonas, croquis, editSel]);
 
   const guardarEdicion = useCallback(async () => {
     const z = zonas.find((x) => x.id === editSel?.id);
