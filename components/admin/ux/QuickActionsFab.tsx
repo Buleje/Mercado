@@ -119,7 +119,33 @@ export function QuickActionsFab() {
       window.removeEventListener("resize", medir);
     };
   }, []);
-  const retirado = alFondo && !open && !enfocado;
+  /* Con un modal abierto el «+» también se retira (Brandon 2026-10-03): está
+     en la misma capa z-50 que los modales y tapaba la esquina del Anexo 04 y
+     del Cuadre. Se mira el DOM porque los modales del panel son de varias
+     familias (Radix, a mano); una vez por cuadro, no en cada mutación. */
+  const [hayModal, setHayModal] = useState(false);
+  useEffect(() => {
+    let cuadro = 0;
+    const mirar = () => {
+      if (cuadro) return;
+      cuadro = requestAnimationFrame(() => {
+        cuadro = 0;
+        /* Sólo los VISIBLES: el menú de navegación del celular vive montado
+           como diálogo con `display:none`, y contarlo escondía el «+» siempre
+           (medido 03-10). Sin caja dibujada = no hay modal a la vista. */
+        const modales = document.querySelectorAll<HTMLElement>('[role="dialog"][aria-modal="true"], [role="alertdialog"]');
+        setHayModal([...modales].some((d) => d.getClientRects().length > 0));
+      });
+    };
+    mirar();
+    const mo = new MutationObserver(mirar);
+    mo.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["aria-modal", "role"] });
+    return () => {
+      mo.disconnect();
+      if (cuadro) cancelAnimationFrame(cuadro);
+    };
+  }, []);
+  const retirado = (alFondo || hayModal) && !open && !enfocado;
 
   useEffect(() => {
     if (!open) return;
