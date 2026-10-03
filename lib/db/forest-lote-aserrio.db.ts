@@ -32,6 +32,8 @@ import {
   atadoSoloPorPuntero,
 } from "@/lib/forestal/lote-aserrio-coherencia";
 import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
+import { maderaDeLotes } from "./forest-ctp-usado-lotes.db";
+import type { MaderaDelLote } from "@/lib/forestal/madera-del-lote";
 import { ForestVincularCorridaDB } from "./forest-vincular-corrida.db";
 import { closedPeriodOf } from "@/lib/forestal/ctp-cierre-types";
 import { formatDateNumeric, formatDateTime } from "@/lib/format";
@@ -396,7 +398,7 @@ export class ForestLoteAserrioDB {
        muere en Producción, se despacha. Mismo criterio que el listado de
        corridas (`ForestCtpDB.list`) — sólo cuentan despachos y reprocesos
        VIVOS; uno anulado devolvió el producto al patio. */
-    const [corridas, salidas, reprocesos] = await Promise.all([
+    const [corridas, salidas, reprocesos, maderas] = await Promise.all([
       corridaIds.length
         ? prisma.forestCtpEntry.findMany({
             where: { tenantId, id: { in: corridaIds } },
@@ -461,6 +463,25 @@ export class ForestLoteAserrioDB {
             _sum: { quantity: true },
           })
         : [],
+      /* La etiqueta de madera de cada lote (Brandon, 2026-10-02): con el MISMO
+         filtro que Productos disponibles, en una pasada para todos. Las
+         corridas muertas las descarta `maderaDeLotes`. */
+      maderaDeLotes(
+        tenantId,
+        new Map(
+          lotes.map((l) => [
+            l.id,
+            [
+              ...(l.produccionEntryId ? [l.produccionEntryId] : []),
+              ...l.trozas.map((t) => t.consumidaEn?.id).filter((x): x is string => Boolean(x)),
+            ],
+          ]),
+        ),
+        /* Una etiqueta que falla no esconde los lotes: van sin `madera`. */
+      ).catch((err: unknown) => {
+        logger.error("[lote-aserrio] no se pudo calcular la madera de los lotes", { tenantId, error: String(err) });
+        return new Map<string, MaderaDelLote>();
+      }),
     ]);
     const porCorrida = new Map(corridas.map((c) => [c.id, c]));
     const despachado = new Map(
@@ -545,6 +566,7 @@ export class ForestLoteAserrioDB {
            las de arriba — dos serializaciones de lo mismo divergen a la primera
            columna nueva. */
         produccion: c ? verCorrida(c) : null,
+        madera: maderas.get(l.id),
         piezas: l.trozas.length,
         /* Un lote de inventario (`crearInventario`) no tiene trozas reales: su
            volumen es el `volumeInputM3` que declaró la corrida que lo generó, NO

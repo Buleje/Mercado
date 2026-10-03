@@ -184,6 +184,37 @@ export function uidsDespachables(resumenes: readonly ResumenDeLote[]): string[] 
   return uids;
 }
 
+/**
+ * Las filas de una guía a partir de IDs de corrida (Brandon, 2026-10-02:
+ * «despachar directo» desde los lotes elegidos).
+ *
+ * A diferencia de `uidsDespachables`, que agrupa por el TEXTO del lote
+ * (`materiaPrimaRef`), acá manda el id: las corridas de un lote las da el
+ * servidor por sus trozas (`marcar_usado_lotes` con `dryRun`, o `lote.corridas`),
+ * y una corrida que mezcló dos lotes lleva el código de uno solo.
+ *
+ * Mismo corte que el resto: sólo lo DISPONIBLE entra (ni lo usado ni lo
+ * agotado), paquete por paquete o la corrida entera si no tiene. Respeta el
+ * orden de `ids` y no repite.
+ */
+export function uidsDeCorridas(
+  ids: readonly string[],
+  corridas: readonly CorridaConSaldo[],
+): string[] {
+  const porId = new Map(corridas.map((c) => [c.id, c]));
+  const uids: string[] = [];
+  for (const id of new Set(ids)) {
+    const c = porId.get(id);
+    if (!c || destinoDe(c) !== "disponible") continue;
+    if (c.paquetes.length > 0) {
+      for (const paq of c.paquetes) uids.push(uidDeFila(c.id, paq.id));
+    } else {
+      uids.push(uidDeFila(c.id, null));
+    }
+  }
+  return uids;
+}
+
 /** Lo despachable de varios lotes, en una sola cuenta para la barra de selección. */
 export function totalDespachable(resumenes: readonly ResumenDeLote[]): {
   corridas: number;

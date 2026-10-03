@@ -18,6 +18,10 @@ import { PT_POR_M3 } from "./cubicacion";
 import { juzgarRendimientoConsumo } from "./loctp-consumos-analisis";
 import { corridasAMedioDeclarar, type CorridaAMedioDeclarar } from "./produccion-paquetes";
 import type { SniffsRefLote } from "./sniffs-produccion-parse";
+import type { MaderaDelLote } from "./madera-del-lote";
+
+export type { EstadoMaderaLote, MaderaDelLote } from "./madera-del-lote";
+export { AYUDA_MADERA, ETIQUETA_MADERA } from "./madera-del-lote";
 
 export type EstadoLoteAserrio = "abierto" | "consumido" | "cerrado";
 
@@ -172,6 +176,12 @@ export interface LoteAserrio {
   trozas: TrozaDelLote[];
   /** Lo que el SNIFFS declaró de este lote, si se armó desde su pantalla (ADR-398). */
   sniffs?: SniffsRefLote | null;
+  /**
+   * En qué está la madera aserrada del lote (Brandon, 2026-10-02): la calcula el
+   * servidor (`maderaDeLotes`) con el mismo filtro que Productos disponibles.
+   * Opcional: sólo la trae el listado de lotes.
+   */
+  madera?: MaderaDelLote;
 }
 
 /** Cómo cuadra el lote con lo que el SNIFFS declaró de él (ADR-398). */

@@ -12,6 +12,9 @@
 import { useMemo, useState } from "react";
 import type { FiltroLotes, OrdenLotes } from "@/lib/forestal/lotes-aserrio";
 
+/** El filtro rápido de la barra (2026-10-02): ¿al lote le queda madera aserrada en patio? */
+export type FiltroMadera = "todos" | "con" | "sin";
+
 export function useFiltrosLotes() {
   const [texto, setTexto] = useState("");
   const [especie, setEspecie] = useState<string[]>([]);
@@ -20,6 +23,8 @@ export function useFiltrosLotes() {
   const [sobra, setSobra] = useState<string[]>([]);
   const [situacion, setSituacion] = useState<string[]>([]);
   const [orden, setOrden] = useState<OrdenLotes>("urgencia");
+  /* A la vista, como la búsqueda: no cuenta en el globo de «Filtros». */
+  const [madera, setMadera] = useState<FiltroMadera>("todos");
 
   const filtro: FiltroLotes = useMemo(
     () => ({ texto, especie, estado, sobra, situacion }),
@@ -41,15 +46,18 @@ export function useFiltrosLotes() {
     setSituacion,
     orden,
     setOrden,
+    madera,
+    setMadera,
     filtro,
     activos,
-    filtrando: Boolean(texto) || activos > 0,
+    filtrando: Boolean(texto) || activos > 0 || madera !== "todos",
     limpiar: () => {
       setTexto("");
       setEspecie([]);
       setEstado([]);
       setSobra([]);
       setSituacion([]);
+      setMadera("todos");
     },
   };
 }

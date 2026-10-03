@@ -16,12 +16,21 @@ import type { ReactNode } from "react";
 import { ArrowUpDown, Search, SlidersHorizontal, X } from "@buleje/design-system/icons";
 import { BTN_FILTRO, CampoDeFiltro, usePanelFiltros } from "./ctp-filtros-panel";
 import { ETIQUETA_ORDEN, type FacetaLotes, type OrdenLotes } from "@/lib/forestal/lotes-aserrio";
-import type { FiltrosLotes } from "./hooks/use-filtros-lotes";
+import type { FiltroMadera, FiltrosLotes } from "./hooks/use-filtros-lotes";
+import SegmentedControl from "@/components/ui-system/SegmentedControl";
 
 const CAMPO =
   "h-12 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]";
 
 type Facetas = { especie: FacetaLotes[]; estado: FacetaLotes[]; sobra: FacetaLotes[]; situacion: FacetaLotes[] };
+
+/* Filtro rápido (2026-10-02): a la vista, no detrás de «Filtros» — es la
+   pregunta del despacho, «¿qué lotes tienen madera para sacar?». */
+const OPCIONES_MADERA: { value: FiltroMadera; label: string }[] = [
+  { value: "todos", label: "Todos" },
+  { value: "con", label: "Con madera" },
+  { value: "sin", label: "Sin madera" },
+];
 
 function Orden({ f, className }: { f: FiltrosLotes; className: string }) {
   return (
@@ -58,11 +67,14 @@ export default function CtpLotesBarra({
   f,
   facetas,
   kpiBoton,
+  conMadera,
 }: {
   f: FiltrosLotes;
   facetas: Facetas;
   /** El botón «Indicadores» (Brandon, 2026-09-24: alineado con los demás botones). */
   kpiBoton: ReactNode;
+  /** Algún lote trae el dato de su madera: sin él, el filtro rápido no filtraría nada. */
+  conMadera: boolean;
 }) {
   const { panelId, abierto, alternar } = usePanelFiltros(f.activos);
   /* Un filtro con una sola opción no se dibuja: ocupaba lugar sin filtrar nada
@@ -124,6 +136,16 @@ export default function CtpLotesBarra({
             </span>
           )}
         </button>
+        {conMadera && (
+          <SegmentedControl
+            value={f.madera}
+            onChange={f.setMadera}
+            options={OPCIONES_MADERA}
+            size="lg"
+            label="Lotes con o sin madera aserrada en patio"
+            className="max-sm:w-full max-sm:justify-between"
+          />
+        )}
         <Orden f={f} className="hidden sm:flex" />
       </div>
 

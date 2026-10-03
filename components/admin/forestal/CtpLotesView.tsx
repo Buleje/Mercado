@@ -30,6 +30,9 @@ import { useLotesAserrio } from "./hooks/use-lotes-aserrio";
 import { useEspeciesFotos } from "./hooks/use-especies-fotos";
 import { useFiltrosLotes } from "./hooks/use-filtros-lotes";
 import { useLotesModales } from "./hooks/use-lotes-modales";
+import { useSeleccionLotes } from "./hooks/use-seleccion-lotes";
+import { claseMadera, maderaDe } from "./ctp-lotes-seleccion";
+import CtpLotesSeleccionBarra, { ElegirTodosLotes } from "./CtpLotesSeleccionBarra";
 import CtpLoteCard from "./CtpLoteCard";
 import CtpPropuestaLotes from "./CtpPropuestaLotes";
 import CtpLotesBarra from "./CtpLotesBarra";
@@ -71,10 +74,16 @@ export default function CtpLotesView({
   const ahora = useMemo(() => new Date(), [lotes]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const resumen = useMemo(() => resumenLotes(lotes), [lotes]);
-  const visibles = useMemo(
-    () => ordenarLotes(filtrarLotes(lotes, f.filtro, ahora), f.orden, ahora),
-    [lotes, f.filtro, f.orden, ahora],
-  );
+  /* El filtro rápido «con / sin madera» va después de los demás: es de la
+     pantalla (lee `lote.madera`), no del filtro del libro. */
+  const visibles = useMemo(() => {
+    const base = ordenarLotes(filtrarLotes(lotes, f.filtro, ahora), f.orden, ahora);
+    return f.madera === "todos" ? base : base.filter((l) => claseMadera(l) === f.madera);
+  }, [lotes, f.filtro, f.orden, f.madera, ahora]);
+  const conMadera = useMemo(() => lotes.some((l) => maderaDe(l) != null), [lotes]);
+  /* Tildar varios lotes (2026-10-02): cambiar un filtro o recargar limpia. */
+  const claveFiltro = useMemo(() => `${JSON.stringify(f.filtro)}|${f.madera}`, [f.filtro, f.madera]);
+  const sel = useSeleccionLotes(lotes, visibles, claveFiltro);
   /* Cada filtro cuenta sobre los OTROS, no sobre sí mismo: si no, al elegir una
      especie el desplegable dejaría de ofrecer las demás. */
   const facetas = useMemo(() => facetasDeLotes(lotes, f.filtro, ahora), [lotes, f.filtro, ahora]);
@@ -176,7 +185,7 @@ export default function CtpLotesView({
         onVerCuadre={() => m.setVerCuadre(true)}
       />
 
-      <CtpLotesBarra f={f} facetas={facetas} kpiBoton={kpiBoton} />
+      <CtpLotesBarra f={f} facetas={facetas} kpiBoton={kpiBoton} conMadera={conMadera} />
 
       {kpiPanel}
 
@@ -218,6 +227,8 @@ export default function CtpLotesView({
           )}
         </div>
       ) : (
+        <div className="space-y-1">
+        <ElegirTodosLotes sel={sel} total={visibles.length} />
         <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {visibles.map((l) => (
             <li key={l.id}>
@@ -231,16 +242,29 @@ export default function CtpLotesView({
                 onDeshacer={() => m.setDetalleId(l.id)}
                 onResolverCuadre={() => m.setResolviendoId(l.id)}
                 onVerProductos={() => m.setProductosDe({ code: l.code, especie: l.speciesCommon })}
+                elegido={sel.elegidos.has(l.id)}
+                onElegir={() => sel.alternar(l.id)}
               />
             </li>
           ))}
         </ul>
+        </div>
       )}
 
       {cargando && lotes.length > 0 && (
         <p className="flex items-center gap-2 text-sm text-[var(--text-tertiary)]">
           <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> Actualizando…
         </p>
+      )}
+
+      {sel.lista.length > 0 && (
+        <CtpLotesSeleccionBarra
+          sel={sel}
+          todos={lotes}
+          onDespachar={m.setUidsParaGuia}
+          setAviso={setAviso}
+          onCambio={() => void recargar()}
+        />
       )}
 
       <CtpLotesModales

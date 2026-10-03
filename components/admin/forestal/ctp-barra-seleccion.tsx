@@ -15,7 +15,7 @@
  * pisarlos.
  */
 
-import { useEffect } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { X, type LucideIcon } from "@buleje/design-system/icons";
 
 export interface CifraSeleccion {
@@ -72,12 +72,14 @@ export default function CtpBarraSeleccion({
   accionDisabled,
   onAccion,
   aviso,
+  avisoTono = "error",
   /**
    * Otras cosas que se pueden hacer con lo tildado, antes de la acción
    * principal. Botón secundario (borde, no relleno) para que la acción
    * principal siga siendo la que más pesa visualmente.
    */
   accionesSecundarias,
+  menu,
 }: {
   cifras: CifraSeleccion[];
   onLimpiar: () => void;
@@ -88,7 +90,11 @@ export default function CtpBarraSeleccion({
   onAccion: () => void;
   /** Por qué no se puede seguir. Sin esto, el botón apagado no explica nada. */
   aviso?: string | null;
+  /** `error` (el de siempre) frena; `aviso` (ámbar) sólo informa lo que queda afuera. */
+  avisoTono?: "error" | "aviso";
   accionesSecundarias?: AccionSeleccion[];
+  /** Un menú «Más» junto a las secundarias, para lo de vez en cuando (Lotes, 2026-10-02). */
+  menu?: ReactNode;
 }) {
   /* Los toasts del módulo se apoyan en esta variable para no quedar debajo de
      la barra. Se limpia al desmontar: si quedara puesta, los toasts flotarían
@@ -103,15 +109,34 @@ export default function CtpBarraSeleccion({
     };
   }, []);
 
+  /* El alto REAL de la barra: con un aviso largo o cuatro botones, a 400 px
+     pasa de una fila a tres y el `h-36` fijo dejaba la última tarjeta debajo
+     (Lotes, 2026-10-02). El hueco nunca baja del mínimo de siempre. */
+  const barraRef = useRef<HTMLDivElement>(null);
+  const [alto, setAlto] = useState(0);
+  useEffect(() => {
+    const el = barraRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => setAlto(el.offsetHeight));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   return (
     <>
       {/* Reserva el alto en el flujo: al ser `fixed`, sin esto tapa el final de
-          la pantalla y no hay forma de llegar a lo que quedó abajo. */}
-      <div aria-hidden className="h-20 max-sm:h-36" />
+          la pantalla y no hay forma de llegar a lo que quedó abajo. En móvil
+          suma los 4.5rem de la navegación sobre la que se apoya. */}
+      <div
+        aria-hidden
+        style={{ "--alto-barra": `${alto}px` } as CSSProperties}
+        className="h-20 min-h-[calc(var(--alto-barra)+1rem)] max-sm:h-36 max-sm:min-h-[calc(var(--alto-barra)+5.5rem)]"
+      />
       {/* En móvil se apoya ARRIBA de la barra de navegación del admin en vez de
           taparla: elegir veinte trozas no puede dejar al operador sin cómo
           salir de la pantalla. En sm+ esa barra no existe y va al pie. */}
       <div
+        ref={barraRef}
         role="status"
         aria-live="polite"
         data-barra-seleccion
@@ -132,12 +157,18 @@ export default function CtpBarraSeleccion({
           ))}
 
           {aviso && (
-            <span className="text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+            <span
+              className={`text-sm font-bold ${
+                avisoTono === "aviso"
+                  ? "text-[var(--data-warning-ink)]"
+                  : "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
+              }`}
+            >
               {aviso}
             </span>
           )}
 
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
             <button
               type="button"
               onClick={onLimpiar}
@@ -156,6 +187,7 @@ export default function CtpBarraSeleccion({
                 <a.icon className="h-4 w-4" aria-hidden /> {a.label}
               </button>
             ))}
+            {menu}
             <button
               type="button"
               disabled={accionDisabled}

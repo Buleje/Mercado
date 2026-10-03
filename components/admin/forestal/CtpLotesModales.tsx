@@ -56,8 +56,8 @@ export default function CtpLotesModales({
     deshacer,
     deshacerForzado,
   } = estado;
-  /* Los `uid`s que van a la guía: `null` = la guía no está abierta. */
-  const [uidsParaGuia, setUidsParaGuia] = useState<string[] | null>(null);
+  /* Los `uid`s que van a la guía viven en `m`: también la abre la barra de lotes elegidos. */
+  const { uidsParaGuia, setUidsParaGuia } = m;
 
   /**
    * El material del modo INVENTARIO, entre el paso 1 (especie + volumen

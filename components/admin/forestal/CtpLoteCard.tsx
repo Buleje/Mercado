@@ -40,6 +40,7 @@ import { tipoCorto } from "./permiso-volumen-ui";
 import { LoteCifras, LoteLineaPrincipal, unidadLegible } from "./ctp-lote-card-partes";
 import { LoteCuando } from "./ctp-lote-cuando";
 import { LoteCuadreSniffs } from "./ctp-lote-cuadre-sniffs";
+import { LoteMaderaChip } from "./ctp-lote-madera-chip";
 
 /* La pastilla de «¿ya salió esa madera?»: texto primario sobre el tinte del
    tono (el texto de color sobre su propio tinte no llegaba a AA). */
@@ -58,6 +59,8 @@ export default function CtpLoteCard({
   onDeshacer,
   onResolverCuadre,
   onVerProductos,
+  elegido = false,
+  onElegir,
 }: {
   lote: LoteAserrio;
   fotos: Map<string, FotoEspecie>;
@@ -80,6 +83,9 @@ export default function CtpLoteCard({
    * SALIÓ, con su saldo. Son las dos mitades del lote y hacían falta las dos.
    */
   onVerProductos?: () => void;
+  /** Tildado para la barra de lotes elegidos (2026-10-02). Sin `onElegir` no hay casilla. */
+  elegido?: boolean;
+  onElegir?: () => void;
 }) {
   const estado = ESTADO_LOTE[lote.status];
   const abierto = lote.status === "abierto";
@@ -93,7 +99,11 @@ export default function CtpLoteCard({
   /* ¿La madera de este lote ya se fue? La regla es la MISMA que usa la tabla de
      Producción para sus corridas — se importa, no se re-escribe (ADR-337). */
   const salida = salidaDelLote(lote);
-  const salio = corrida
+  /* Con `lote.madera` manda la etiqueta nueva (`LoteMaderaChip`): la pastilla
+     vieja mira sólo la corrida que cerró el lote, ignora lo marcado como usado
+     y cuenta un reproceso como salida — se contradecían. Queda de respaldo
+     para una lectura que no traiga `madera`. */
+  const salio = corrida && !lote.madera
     ? estadoSalida({
         section: "produccion",
         quantity: corrida.quantity != null ? String(corrida.quantity) : null,
@@ -105,13 +115,28 @@ export default function CtpLoteCard({
   return (
     <article
       className={`flex h-full flex-col gap-2.5 rounded-2xl border-2 bg-[var(--surface-raised)] p-4 transition-colors ${
-        vencido
-          ? "border-[var(--data-error-500)] hover:border-[var(--data-error-700)]"
-          : "border-[var(--rule-base)] hover:border-[var(--accent)]"
+        elegido
+          ? "border-[var(--accent)] ring-2 ring-[var(--accent-muted)]"
+          : vencido
+            ? "border-[var(--data-error-500)] hover:border-[var(--data-error-700)]"
+            : "border-[var(--rule-base)] hover:border-[var(--accent)]"
       }`}
     >
       <header className="flex flex-wrap items-center justify-between gap-2">
         <span className="flex items-center gap-2">
+          {/* La casilla con 44 px de toque, sin correr el código: el margen
+              negativo se come el relleno que la agranda. */}
+          {onElegir && (
+            <label className="-my-2 -ml-2 inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center">
+              <input
+                type="checkbox"
+                checked={elegido}
+                onChange={onElegir}
+                aria-label={`Elegir el lote ${lote.code}`}
+                className="h-5 w-5 cursor-pointer accent-[var(--accent-dark)]"
+              />
+            </label>
+          )}
           <CardTitle as="h3" className="font-mono text-base font-bold text-[var(--text-primary)]">
             {lote.code}
           </CardTitle>
@@ -148,6 +173,9 @@ export default function CtpLoteCard({
             vista, la especie como se nombra en el patio. */}
         <b className="min-w-0 text-base text-[var(--text-primary)]">{lote.speciesCommon}</b>
       </p>
+
+      {/* ¿Le queda madera aserrada en el patio, o ya salió? (2026-10-02) */}
+      <LoteMaderaChip lote={lote} />
 
       <LoteLineaPrincipal lote={lote} />
       <LoteCifras lote={lote} />

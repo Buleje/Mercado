@@ -36,6 +36,7 @@ import {
   type NivelDeSobra,
 } from "@/lib/forestal/lotes-aserrio";
 import { TOPE_RENDIMIENTO_PCT } from "@/lib/forestal/vincular-produccion";
+import { PT_POR_M3 } from "@/lib/forestal/cubicacion";
 
 /** m³ para leer de un vistazo: dos decimales, separador del panel («3.75»). */
 export const m3Card = (v: number): string => formatNumber(v, 2);
@@ -201,17 +202,25 @@ export function LoteLineaPrincipal({ lote }: { lote: LoteAserrio }) {
             <InfoTip
               title="Por declarar"
               body={
-                margen ? (
-                  <>
+                <>
+                  {margen ? (
+                    <>
+                      <Linea>
+                        Con {m3Card(margen.entradaM3)} m³ que entraron, el tope del {TOPE_RENDIMIENTO_PCT} % permite{" "}
+                        {m3Card(margen.topeM3)} m³.
+                      </Linea>
+                      <Linea>Ya declaraste {m3Card(margen.declaradoM3)} m³. El resto se declara en Producción.</Linea>
+                    </>
+                  ) : (
+                    <Linea>{etiquetaDeSobra(sobra).ayuda}</Linea>
+                  )}
+                  {sobra.nivel !== "sin_sobra" && (
                     <Linea>
-                      Con {m3Card(margen.entradaM3)} m³ que entraron, el tope del {TOPE_RENDIMIENTO_PCT} % permite{" "}
-                      {m3Card(margen.topeM3)} m³.
+                      Conversión aproximada a pies tablares de madera ya aserrada: m³ × {PT_POR_M3}. El{" "}
+                      {TOPE_RENDIMIENTO_PCT} % ya está aplicado en los m³.
                     </Linea>
-                    <Linea>Ya declaraste {m3Card(margen.declaradoM3)} m³. El resto se declara en Producción.</Linea>
-                  </>
-                ) : (
-                  etiquetaDeSobra(sobra).ayuda
-                )
+                  )}
+                </>
               }
             />
           }
@@ -221,7 +230,13 @@ export function LoteLineaPrincipal({ lote }: { lote: LoteAserrio }) {
           ) : (
             <>
               Quedan <b className="font-bold tabular-nums text-[var(--text-primary)]">{m3Card(sobra.m3)} m³</b> por
-              declarar
+              declarar{" "}
+              {/* Pies de lo que falta declarar (Brandon, 2026-10-02). El 56 % ya
+                  está en `sobra.m3`: NO se vuelve a multiplicar. */}
+              <span className="whitespace-nowrap">
+                ≈ <b className="font-bold tabular-nums text-[var(--text-primary)]">{formatNumber(pieTablarDe(sobra.m3), 0)}</b>{" "}
+                pies (aserrada, aprox.)
+              </span>
             </>
           )}
         </ConTip>

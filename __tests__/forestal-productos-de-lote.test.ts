@@ -11,6 +11,7 @@ import {
   agruparPorLote,
   destinoDe,
   totalDespachable,
+  uidsDeCorridas,
   uidsDespachables,
   type CorridaConSaldo,
 } from "@/lib/forestal/productos-de-lote";
@@ -136,5 +137,21 @@ describe("totalDespachable", () => {
       corrida({ id: "b", disponible: 5, usadoAt: "2026-09-08T00:00:00Z" }),
     ]);
     expect(totalDespachable([...mapa.values()])).toEqual({ corridas: 1, paquetes: 1, m3: 10 });
+  });
+});
+
+describe("uidsDeCorridas", () => {
+  it("arma el preset de la guía por ID de corrida: sólo lo disponible, en el orden pedido y sin repetir", () => {
+    const corridas = [
+      corrida({ id: "a", paquetes: [paquete("p1"), paquete("p2")] }),
+      corrida({ id: "b" }),
+      corrida({ id: "usada", usadoAt: "2026-09-01", usadoMotivo: "merma" }),
+      corrida({ id: "agotada", disponible: 0, despachado: 10 }),
+    ];
+    expect(uidsDeCorridas(["b", "a", "usada", "agotada", "b", "no-existe"], corridas)).toEqual([
+      "b:corrida",
+      "a:p1",
+      "a:p2",
+    ]);
   });
 });

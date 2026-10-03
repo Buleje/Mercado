@@ -31,6 +31,10 @@ export function useLotesModales() {
   const [productosDe, setProductosDe] = useState<LoteDeProductos | null>(null);
   /* Armar una guía eligiendo lotes, en vez de producto por producto. */
   const [despachando, setDespachando] = useState(false);
+  /* Los `uid`s que van a la guía: `null` = la guía no está abierta. Vive acá
+     (y no en `CtpLotesModales`) porque también la abre la barra de lotes
+     elegidos (2026-10-02). */
+  const [uidsParaGuia, setUidsParaGuia] = useState<string[] | null>(null);
   return {
     armar,
     setArmar,
@@ -48,6 +52,8 @@ export function useLotesModales() {
     setProductosDe,
     despachando,
     setDespachando,
+    uidsParaGuia,
+    setUidsParaGuia,
   };
 }
 

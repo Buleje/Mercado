@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { motivoOpcionalSchema } from "@/lib/forestal/motivo";
+import { motivoLegible, motivoOpcionalSchema } from "@/lib/forestal/motivo";
 import { leerContratoId } from "@/lib/forestal/contrato-filtro";
 import { requireAdmin } from "@/lib/require-admin";
 import { RUTAS_PANEL } from "@/lib/auth/roles-rutas-panel";
@@ -8,6 +8,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { ForestLoteAserrioDB } from "@/lib/db/forest-lote-aserrio.db";
 import { ForestCtpDB, CTP_SECTIONS } from "@/lib/db/forest-ctp.db";
 import { ForestCtpDespachoDB } from "@/lib/db/forest-ctp-despacho.db";
+import { marcarUsadoDeLotes } from "@/lib/db/forest-ctp-usado-lotes.db";
 import { WoodEntriesDB } from "@/lib/db/wood-entries.db";
 import { ForestEspeciesDB } from "@/lib/db/forest-especies.db";
 import { ForestCtpFichaDB } from "@/lib/db/forest-ctp-ficha.db";
@@ -315,6 +316,23 @@ const patchSchema = z.discriminatedUnion("action", [
     action: z.literal("marcar_usado"),
     usado: z.boolean(),
     motivo: motivoOpcionalSchema(500),
+  }),
+  /**
+   * Lo mismo para VARIOS lotes de aserrío (Brandon, 2026-10-02): la madera
+   * disponible de sus corridas —por id, no por el texto del lote— sale de
+   * Productos disponibles como «Salió sin guía · uso interno / merma».
+   * `dryRun` devuelve lo que se marcaría sin escribir: el modal pregunta antes
+   * «¿salió con guía?» (si salió con guía, se registra la guía, no esto).
+   */
+  z.object({
+    action: z.literal("marcar_usado_lotes"),
+    loteIds: z
+      .array(z.string().trim().min(1).max(60))
+      .min(1, { error: "Elige al menos un lote." })
+      .max(200, { error: "Elige hasta 200 lotes por vez." }),
+    usado: z.boolean(),
+    motivo: motivoOpcionalSchema(500),
+    dryRun: z.boolean().optional(),
   }),
   /**
    * Rellenar los campos VACÍOS de una corrida (ADR-401 §1.2). No sobrescribe:
@@ -1226,6 +1244,29 @@ export const PATCH = withApiHandler("forestal-ctp-patch", async (req: NextReques
         user: auth.username ?? "unknown",
       });
       return NextResponse.json({ entry });
+    }
+    if (parsed.data.action === "marcar_usado_lotes") {
+      const { loteIds, usado, motivo, dryRun } = parsed.data;
+      /* Marcar y desmarcar lo piden; el dryRun no (el modal pregunta antes). */
+      if (!dryRun && !motivoLegible(motivo)) {
+        return NextResponse.json(
+          {
+            error: "MOTIVO_REQUERIDO",
+            message: usado
+              ? "Pon el motivo por el que se marca como usado (al menos 3 letras)."
+              : "Pon el motivo por el que vuelve a Productos disponibles (al menos 3 letras).",
+          },
+          { status: 400 },
+        );
+      }
+      return NextResponse.json(
+        await marcarUsadoDeLotes(auth.tenantId, loteIds, {
+          usado,
+          motivo,
+          dryRun,
+          user: auth.username ?? "unknown",
+        }),
+      );
     }
     if (parsed.data.action === "apartar_producto") {
       const apartado = await ForestCtpDB.apartarProducto(

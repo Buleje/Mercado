@@ -113,7 +113,7 @@ function apartadoDto(a: {
  * Es la mitad del criterio que se puede decir en el WHERE; la otra mitad es el
  * saldo (`tieneDisponible`), que sale de `saldosDeCorridas`.
  */
-function whereCorridaEnElPatio(
+export function whereCorridaEnElPatio(
   tenantId: string,
   opts: { incluirUsados?: boolean } = {},
 ): Prisma.ForestCtpEntryWhereInput {
