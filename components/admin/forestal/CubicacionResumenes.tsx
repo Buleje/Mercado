@@ -44,6 +44,7 @@ import ResumenReparto from "./ResumenReparto";
 import ResumenTrozas from "./ResumenTrozas";
 import Anexo04Modal from "./Anexo04Modal";
 import TablaDeTrabajo, { type FilaTrabajo } from "./resumen-tabla-trabajo";
+import { useMarcasEspecie } from "./resumen-tabla-marcas";
 import { useCubicacionesGuardadas } from "@/hooks/use-cubicaciones-guardadas";
 import { leerPreciosGuardados, useResolverDePrecio, type PreciosGuardados } from "./hooks/use-precio-cubicador";
 import { useEspeciesCatalogo } from "./hooks/use-especies-catalogo";
@@ -156,6 +157,7 @@ export default function CubicacionResumenes() {
    * La clave es `especie||claveDelTipo` y no la clave del tipo sola: la misma
    * paquetería existe en dos maderas y tildar una marcaría las dos.
    */
+  const marcasEspecie = useMarcasEspecie("-marcas-especie");
   const [elegidas, setElegidas] = useState<Set<string>>(new Set());
   const claveFila = useCallback((especie: string, claveTipo: string) => `${especie}||${claveTipo}`, []);
   const alternarFila = useCallback((clave: string) => {
@@ -458,12 +460,14 @@ export default function CubicacionResumenes() {
             </div>
           </SeccionResumen>
 
-          {/* Dos secciones en la MISMA fila desde 1024 px y no desde 1280
-              (Brandon, 2026-09-09): en el monitor del aserradero quedaban una
-              debajo de la otra y había que scrollear para comparar. */}
-          <div className="grid gap-5 lg:grid-cols-2">
+          {/* Lado a lado para comparar (Brandon, 2026-09-09), pero SÓLO si cada
+              tarjeta tiene 40 rem: con «m³ (R)» y el check (02-10) la tabla por
+              especie mide ~594 px y en media pantalla de 1280 (426 px) esas dos
+              columnas quedaban detrás de un scroll lateral. En el monitor del
+              aserradero (1920) siguen lado a lado; más angosto, una debajo de otra. */}
+          <div className="grid gap-5 grid-cols-[repeat(auto-fit,minmax(min(100%,40rem),1fr))]">
             <SeccionResumen icon={Layers} titulo="General por especie" hint="Una fila por madera, con lo que pesa en el lote.">
-              <TablaGrupos grupos={porEspecie.grupos} total={porEspecie.total} primeraCol="Especie" conValor={conValor} compacta caption="Totales por especie" />
+              <TablaGrupos grupos={porEspecie.grupos} total={porEspecie.total} primeraCol="Especie" conValor={conValor} compacta rolliza marcas={marcasEspecie} caption="Totales por especie" />
             </SeccionResumen>
 
             <SeccionResumen icon={Boxes} titulo="General por tipo" hint="El mix comercial del lote, todas las especies juntas.">

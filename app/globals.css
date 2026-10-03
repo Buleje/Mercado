@@ -1290,14 +1290,21 @@ body {
   }
 }
 
-/* ── Mejora 17: Zebra striping global para tablas admin ─────────────────── */
-[data-admin-shell="true"] table tbody tr:nth-child(even),
-.admin-mobile-cards table tbody tr:nth-child(even) {
-  background-color: rgba(0, 0, 0, 0.015);
-}
-.dark [data-admin-shell="true"] table tbody tr:nth-child(even),
-.dark .admin-mobile-cards table tbody tr:nth-child(even) {
-  background-color: rgba(255, 255, 255, 0.02);
+/* ── Mejora 17: Zebra striping global para tablas admin ───────────────────
+ * En @layer base desde 2026-10-02: SIN capa le ganaba a TODA utilidad de Tailwind 4
+ * (las utilidades viven en @layer utilities) y una fila PAR marcada o resaltada
+ * (check de «General por especie», «Reg.» de la distribución, la última pieza del
+ * cubicador) se quedaba con el rayado: medido rgba(0,0,0,0.016) con la clase verde
+ * puesta. En base, el rayado sigue en las filas comunes y el color a propósito gana. */
+@layer base {
+  [data-admin-shell="true"] table tbody tr:nth-child(even),
+  .admin-mobile-cards table tbody tr:nth-child(even) {
+    background-color: rgba(0, 0, 0, 0.015);
+  }
+  .dark [data-admin-shell="true"] table tbody tr:nth-child(even),
+  .dark .admin-mobile-cards table tbody tr:nth-child(even) {
+    background-color: rgba(255, 255, 255, 0.02);
+  }
 }
 
 /* ── Dark mode shell root override ─────────────────────────────────────────

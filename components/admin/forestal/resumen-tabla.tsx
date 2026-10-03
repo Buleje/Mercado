@@ -19,6 +19,7 @@ import { fmtM3, fmtPct, fmtPiezas, fmtPt, fmtSoles } from "@/lib/forestal/cubica
 import type { TipoComercial } from "@/lib/forestal/cubicacion-tipo";
 import { TipoBadge } from "./tipo-badge";
 import { FiltroColumnaMulti } from "@/components/admin/shared/filtros-columna";
+import { FILA_MARCADA, InfoM3R, clicEnFila, m3Rolliza, type MarcasEspecie } from "./resumen-tabla-marcas";
 import { BotonRestablecerColumnas, EnOrden, useOrdenColumnas } from "@/components/admin/shared/columnas-ordenables";
 
 /**
@@ -131,9 +132,9 @@ const NUM = "text-right font-mono tabular-nums";
  * especie, y verlas con órdenes distintos obligaría a releer cada cabecera.
  * `useLocalStorage` avisa a las demás instancias, así que se mueven juntas.
  */
-const ORDEN_GRUPOS = ["grupo", "piezas", "m3", "pt", "participacion", "precio", "importe"] as const;
+const ORDEN_GRUPOS = ["grupo", "piezas", "m3", "pt", "participacion", "m3r", "precio", "importe", "marca"] as const;
 
-export function TablaGrupos({ grupos, total, primeraCol, conValor, esTipo, caption, compacta, seleccion }: {
+export function TablaGrupos({ grupos, total, primeraCol, conValor, esTipo, caption, compacta, seleccion, rolliza, marcas }: {
   grupos: GrupoResumen[];
   total: ResumenLote["total"];
   primeraCol: string;
@@ -162,6 +163,10 @@ export function TablaGrupos({ grupos, total, primeraCol, conValor, esTipo, capti
    * medias detrás de un scroll que nadie descubre.
    */
   compacta?: boolean;
+  /** Agrega «m³ (R)» (m³ ÷ rendimiento meta) junto a Participación. */
+  rolliza?: boolean;
+  /** Agrega la columna de check: la fila marcada se pinta entera y se recuerda. */
+  marcas?: MarcasEspecie;
 }) {
   /* Con muchas filas la tabla toma su propio scroll: sin eso, `sticky` no se
      pega a nada y al llegar al final ya no se sabe qué columna era cuál. */
@@ -223,6 +228,8 @@ export function TablaGrupos({ grupos, total, primeraCol, conValor, esTipo, capti
   }, [filtrada, visibles, total]);
   const orden = useOrdenColumnas("ctp-resumen-grupos", ORDEN_GRUPOS);
   const claves = seleccion ? visibles.map(seleccion.claveDe) : [];
+  const clavesMarcas = marcas ? visibles.map((g) => g.clave) : [];
+  const todasConMarca = marcas != null && clavesMarcas.length > 0 && clavesMarcas.every((k) => marcas.marcadas.has(k));
   const todasMarcadas = seleccion != null && claves.length > 0 && claves.every((k) => seleccion.marcadas.has(k));
   return (
     <>
@@ -279,11 +286,28 @@ export function TablaGrupos({ grupos, total, primeraCol, conValor, esTipo, capti
                 participacion: (
                   <th scope="col" data-col="participacion" className={`${TH} ${compacta ? "w-[22%]" : "w-[26%]"}`}>Participación</th>
                 ),
+                m3r: rolliza && (
+                  <th scope="col" data-col="m3r" className={`${TH} text-right`}>
+                    <span className="inline-flex items-center gap-1">m³ (R) <InfoM3R /></span>
+                  </th>
+                ),
                 precio: conRendimiento && (
                   <th scope="col" data-col="precio" className={`${TH} text-right`} title="Precio unitario del grupo: lo que sale cada pie tablar (importe ÷ PT)">Precio S/ PT</th>
                 ),
                 importe: conValor && (
                   <th scope="col" data-col="importe" className={`${TH} text-right`} title="Pie tablar × precio unitario">Importe S/</th>
+                ),
+                marca: marcas && (
+                  <th scope="col" data-col="marca" className={`${TH} w-8 text-center`}>
+                    <input
+                      type="checkbox"
+                      checked={todasConMarca}
+                      onChange={() => marcas.todas(clavesMarcas, !todasConMarca)}
+                      aria-label={todasConMarca ? "Desmarcar todas las especies" : "Marcar todas las especies"}
+                      title={todasConMarca ? "Desmarcar todas" : "Marcar todas"}
+                      className="h-4 w-4 cursor-pointer accent-[var(--accent)]"
+                    />
+                  </th>
                 ),
               }}
             />
@@ -293,12 +317,16 @@ export function TablaGrupos({ grupos, total, primeraCol, conValor, esTipo, capti
           {visibles.map((g, i) => {
             const clave = seleccion?.claveDe(g);
             const marcada = clave != null && seleccion!.marcadas.has(clave);
+            const conMarca = marcas?.marcadas.has(g.clave) ?? false;
             return (
             <tr
               key={g.clave}
-              className={`border-t transition-colors hover:bg-primary/5 ${marcada
-                ? "border-[var(--accent)]/40 bg-[var(--accent)]/8"
-                : "border-[var(--rule-soft)] even:bg-[var(--surface-canvas)]/50"}`}
+              onClick={marcas ? (e) => clicEnFila(e, () => marcas.alternar(g.clave)) : undefined}
+              className={`border-t transition-colors ${marcas ? "cursor-pointer" : ""} ${conMarca
+                ? `border-[var(--data-success-500)]/40 ${FILA_MARCADA} underline decoration-[var(--data-success-500)]/40 underline-offset-4`
+                : marcada
+                  ? "border-[var(--accent)]/40 bg-[var(--accent)]/8 hover:bg-primary/5"
+                  : "border-[var(--rule-soft)] even:bg-[var(--surface-canvas)]/50 hover:bg-primary/5"}`}
             >
               {seleccion && clave != null && (
                 <td className={`${TD} text-center`}>
@@ -336,6 +364,7 @@ export function TablaGrupos({ grupos, total, primeraCol, conValor, esTipo, capti
                       </div>
                     </td>
                   ),
+                  m3r: rolliza && <td className={`${TD} ${NUM} text-[var(--text-secondary)]`}>{fmtM3(m3Rolliza(g.m3))}</td>,
                   precio: conRendimiento && (
                     <td className={`${TD} ${NUM} text-[var(--text-secondary)]`}>
                       {g.pieTablar > 0 ? fmtSoles(g.valor / g.pieTablar) : "—"}
@@ -347,6 +376,17 @@ export function TablaGrupos({ grupos, total, primeraCol, conValor, esTipo, capti
                       title={`${fmtPt(g.pieTablar)} PT × S/ ${g.pieTablar > 0 ? fmtSoles(g.valor / g.pieTablar) : "0.00"}`}
                     >
                       {fmtSoles(g.valor)}
+                    </td>
+                  ),
+                  marca: marcas && (
+                    <td className={`${TD} text-center`}>
+                      <input
+                        type="checkbox"
+                        checked={conMarca}
+                        onChange={() => marcas.alternar(g.clave)}
+                        aria-label={`Marcar ${g.label}`}
+                        className="h-4 w-4 cursor-pointer accent-[var(--accent)]"
+                      />
                     </td>
                   ),
                 }}
@@ -377,6 +417,7 @@ export function TablaGrupos({ grupos, total, primeraCol, conValor, esTipo, capti
                 m3: <td className={`${TD} ${NUM}`}>{fmtM3(totalVisible.m3)}</td>,
                 pt: <td className={`${TD} ${NUM}`}>{fmtPt(totalVisible.pieTablar)}</td>,
                 participacion: <td className={`${TD} text-[length:var(--ts-2xs)] uppercase tracking-wide`}>{fmtPct(totalVisible.pct)}%</td>,
+                m3r: rolliza && <td className={`${TD} ${NUM}`}>{fmtM3(m3Rolliza(totalVisible.m3))}</td>,
                 precio: conRendimiento && (
                   <td className={`${TD} ${NUM}`}>
                     {totalVisible.pieTablar > 0 ? fmtSoles(totalVisible.valor / totalVisible.pieTablar) : "—"}
@@ -385,6 +426,7 @@ export function TablaGrupos({ grupos, total, primeraCol, conValor, esTipo, capti
                 /* La suma de la columna Importe: el número por el que se abre esta
                    pantalla cuando hay precio cargado. */
                 importe: conValor && <td className={`${TD} ${NUM}`}>{fmtSoles(totalVisible.valor)}</td>,
+                marca: marcas && <td className={TD} />,
               }}
             />
           </tr>
