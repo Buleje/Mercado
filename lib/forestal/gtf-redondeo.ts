@@ -162,3 +162,98 @@ export function claveFilaGTF(f: {
 }): string {
   return [normal(f.cientifico) || `comun:${normal(f.comun)}`, normal(f.tipo), normal(f.unidad)].join("|");
 }
+
+// ─── Repartir las filas oficiales entre otras tablas ────────────────────────
+//
+// Brandon 2026-10-03: «todo el volumen en todas las tablas tiene que cuadrar el
+// mismo volumen; de ahí se sacan los tres primeros decimales». Una fila de la
+// GTF (especie × tipo) tiene UN m³ oficial; cualquier otra tabla del mismo
+// lote (por medida, por largo, por bloque, por permiso, lo que falta…) parte
+// esas mismas filas. Para que todas sumen EXACTO lo mismo, cada fila oficial se
+// reparte en milésimos ENTEROS entre sus partes, en proporción a lo exacto de
+// cada una y dando los milésimos que sobran a los restos más grandes (método
+// del mayor resto). Así ninguna tabla «pierde» ni «gana» un milésimo.
+
+/** La fila de la GTF de una pieza: especie (sin mayúsculas ni espacios de más) × tipo. */
+export const filaGtf = (especie: string | null | undefined, tipo: string | null | undefined): string =>
+  `${normal(especie) || "sin especie"}|${normal(tipo)}`;
+
+/**
+ * Reparte `total` (ya oficial) entre partes con sus valores exactos, en
+ * unidades enteras de 10^-decimales, por mayor resto: Σ de lo devuelto = total.
+ * Empates: la parte más grande y después la primera.
+ */
+export function repartirAlTotal(exactos: readonly Valor[], total: Valor, decimales: number = DECIMALES_GTF): number[] {
+  const n = exactos.length;
+  if (n === 0) return [];
+  const unidad = new Decimal(10).pow(-decimales);
+  const T = aDecimal(total).dividedBy(unidad).toDecimalPlaces(0, Decimal.ROUND_HALF_UP);
+  const e = exactos.map((v) => Decimal.max(aDecimal(v), 0));
+  const suma = e.reduce((a, v) => a.plus(v), new Decimal(0));
+  if (suma.isZero()) {
+    // Sin pesos: todo a la primera (no se inventa una proporción).
+    return e.map((_, i) => (i === 0 ? T.times(unidad).toNumber() : 0));
+  }
+  const cuotas = e.map((v) => v.dividedBy(suma).times(T));
+  const pisos = cuotas.map((q) => q.floor());
+  let resto = T.minus(pisos.reduce((a, v) => a.plus(v), new Decimal(0))).toNumber();
+  const orden = cuotas
+    .map((q, i) => ({ i, r: q.minus(pisos[i]), v: e[i] }))
+    .sort((a, b) => b.r.comparedTo(a.r) || b.v.comparedTo(a.v) || a.i - b.i);
+  for (let k = 0; resto > 0 && k < orden.length; k++, resto--) pisos[orden[k].i] = pisos[orden[k].i].plus(1);
+  return pisos.map((p) => p.times(unidad).toNumber());
+}
+
+export interface ParteGTF {
+  /** La fila GTF a la que pertenece (`filaGtf`). */
+  fila: string;
+  /** La parte de la otra tabla (una medida, un bloque, un largo…). */
+  parte: string;
+  exacto: Valor;
+}
+
+export interface RepartoGTF {
+  /** Σ de las filas oficiales: el volumen del lote. */
+  total: number;
+  /** m³ oficial de cada fila. */
+  porFila: Map<string, number>;
+  /** m³ de cada parte (Σ de lo que le tocó de cada fila); suman `total`. */
+  porParte: Map<string, number>;
+  /** Lo que le tocó a cada parte DENTRO de cada fila: clave `${fila}␟${parte}`. */
+  porFilaParte: Map<string, number>;
+}
+
+/** Separador de `porFilaParte` (no aparece en especies, tipos ni medidas). */
+export const SEP_FILA_PARTE = "␟";
+
+/**
+ * Cada fila oficial (Σ exacta redondeada UNA vez) repartida entre sus partes por
+ * mayor resto. Cualquier tabla armada con `porParte` suma exactamente `total`.
+ */
+export function repartirFilasGTF(partes: readonly ParteGTF[], decimales: number = DECIMALES_GTF): RepartoGTF {
+  const filas = new Map<string, Map<string, Decimal>>();
+  for (const p of partes) {
+    const f = filas.get(p.fila) ?? new Map<string, Decimal>();
+    f.set(p.parte, (f.get(p.parte) ?? new Decimal(0)).plus(aDecimal(p.exacto)));
+    filas.set(p.fila, f);
+  }
+  const porFila = new Map<string, number>();
+  const porParte = new Map<string, Decimal>();
+  const porFilaParte = new Map<string, number>();
+  for (const [fila, ps] of filas) {
+    const claves = [...ps.keys()];
+    const exactos = claves.map((k) => ps.get(k) as Decimal);
+    const oficial = m3OficialDeFila(exactos, decimales);
+    porFila.set(fila, oficial);
+    repartirAlTotal(exactos, oficial, decimales).forEach((v, i) => {
+      porParte.set(claves[i], (porParte.get(claves[i]) ?? new Decimal(0)).plus(v));
+      porFilaParte.set(`${fila}${SEP_FILA_PARTE}${claves[i]}`, v);
+    });
+  }
+  return {
+    total: totalizarGTF([...porFila.values()].map((m3) => ({ m3 })), decimales).m3,
+    porFila,
+    porParte: new Map([...porParte].map(([k, v]) => [k, v.toDecimalPlaces(decimales).toNumber()])),
+    porFilaParte,
+  };
+}

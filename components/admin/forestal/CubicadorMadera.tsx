@@ -25,7 +25,7 @@ import {
 import { pitido, prepararPitido } from "@/lib/forestal/pitido";
 import { exportarPDF, exportarExcel } from "@/lib/forestal/cubicador-export";
 import { hoyISO, nombreSugerido, type CubicacionRegistro } from "@/lib/forestal/cubicacion-registro";
-import { agruparPor, resumenACsv, DIMENSIONES_RESUMEN, ETIQUETA_DIMENSION, type DimensionResumen } from "@/lib/forestal/cubicacion-resumen";
+import { agruparOficial, resumenACsv, DIMENSIONES_RESUMEN, ETIQUETA_DIMENSION, type DimensionResumen } from "@/lib/forestal/cubicacion-resumen";
 import {
   siguienteApartado, filasPendientes, asignarApartado, disolverApartado,
   quitarAsignaciones, podarAsignados, resumenApartados, totalizarFilas,
@@ -1904,7 +1904,7 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
 
   // Resumen agrupado por la dimensión elegida (especie/largo/sección/…), con el
   // valor resuelto por especie cuando corresponde.
-  const resumen = useMemo(() => agruparPor(rows, dimResumen, precioDe), [rows, dimResumen, precioDe]);
+  const resumen = useMemo(() => agruparOficial(rows, dimResumen, precioDe), [rows, dimResumen, precioDe]);
   const exportarResumenCSV = () => {
     const csv = resumenACsv(resumen, dimResumen, conValor);
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
@@ -1960,7 +1960,7 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
        proporción); el PT y las piezas declaradas siguen siendo lo medido. */
     const especies = [...new Set(variado.envio.map((r) => r.especie).filter(Boolean))] as string[];
     const speciesCommon = especies.length === 1 ? especies[0] : (especie && !esVariado(especie) ? especie : null);
-    const porMedida = agruparPor(enOrdenDelPapel(variado.envio, ordenFilas), "medida").grupos;
+    const porMedida = agruparOficial(enOrdenDelPapel(variado.envio, ordenFilas), "medida").grupos;
     const resumenTxt = porMedida.slice(0, 6).map((g) => `${g.cantidad}× ${g.label}`).join("; ");
     const cantidad = Math.round(totales.pt * 100) / 100;
     let codigoLote: string | null = null;
@@ -2145,7 +2145,7 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
    * el comprador quiere el detalle por medida, el total en PT y el precio.
    */
   const compartirWhatsApp = () => {
-    const gruposWa = agruparPor(rows, "medida").grupos;
+    const gruposWa = agruparOficial(rows, "medida").grupos;
     const lineas = gruposWa.slice(0, 12).map((g) => `• ${g.cantidad}× ${g.label} = ${fmtPt(g.pieTablar)} PT`);
     const extra = gruposWa.length > 12 ? `\n…y ${gruposWa.length - 12} medidas más` : "";
     const texto = [

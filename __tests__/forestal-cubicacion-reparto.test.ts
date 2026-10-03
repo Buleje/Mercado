@@ -917,7 +917,7 @@ describe("distribucionACsv", () => {
 
   it("usa `;` y coma decimal como el resto del libro", () => {
     expect(csv).toContain("Especie;Bloque;");
-    expect(csv).toContain("3,0000"); // los 3 m³ sin amparar
+    expect(csv).toContain("3,000"); // los 3 m³ sin amparar (m³ a 3 decimales: lo que se copia, regla GTF)
   });
 
   it("informa la capacidad libre", () => {

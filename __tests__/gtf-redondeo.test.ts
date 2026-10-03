@@ -126,3 +126,32 @@ describe("la GTF que imprime el sistema (tabla 37a–37g)", () => {
     expect(html).toMatch(/MADERA ASERRADA \(COMERCIAL\)<\/td>[\s\S]*?<td class="num">0\.096<\/td>/);
   });
 });
+
+describe("repartir las filas oficiales entre otras tablas (mayor resto)", () => {
+  it("repartirAlTotal: suma EXACTO el total, en milésimos enteros", async () => {
+    const { repartirAlTotal } = await import("@/lib/forestal/gtf-redondeo");
+    // 3 partes iguales de 0,1 → 0,1 oficial: 0,034 + 0,033 + 0,033
+    expect(repartirAlTotal([1, 1, 1], 0.1)).toEqual([0.034, 0.033, 0.033]);
+    const r = repartirAlTotal([0.0165, 0.0035, 0.0566], 0.078);
+    expect(Math.round(r.reduce((a, v) => a + v, 0) * 1000)).toBe(78);
+    expect(repartirAlTotal([0, 0], 0.005)).toEqual([0.005, 0]);
+    expect(repartirAlTotal([], 1)).toEqual([]);
+  });
+
+  it("repartirFilasGTF: cualquier tabla armada con las partes suma el total de las filas", async () => {
+    const { repartirFilasGTF, filaGtf } = await import("@/lib/forestal/gtf-redondeo");
+    // Una fila (Tornillo Comercial) con 3 medidas cuyo redondeo propio suma de más.
+    const partes = [
+      { fila: filaGtf("Tornillo", "Comercial"), parte: "2x6x6", exacto: 0.0005 * 3 },
+      { fila: filaGtf("Tornillo", "Comercial"), parte: "2x6x8", exacto: 0.0005 * 3 },
+      { fila: filaGtf("TORNILLO", "Comercial"), parte: "2x6x10", exacto: 0.0005 * 3 },
+      { fila: filaGtf("Tornillo", "Tabla"), parte: "1x4x8", exacto: 0.0124 },
+    ];
+    const r = repartirFilasGTF(partes);
+    // «Tornillo» y «TORNILLO» son la misma fila: 0,0045 → 0,005 oficial.
+    expect(r.porFila.get(filaGtf("tornillo", "comercial"))).toBe(0.005);
+    expect(r.total).toBe(0.017);
+    const sumaPartes = Math.round([...r.porParte.values()].reduce((a, v) => a + v, 0) * 1000) / 1000;
+    expect(sumaPartes).toBe(r.total);
+  });
+});

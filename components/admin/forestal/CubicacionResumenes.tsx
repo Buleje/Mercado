@@ -30,7 +30,7 @@ import SegmentedControl from "@/components/ui-system/SegmentedControl";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
 import { recubicarPiezas } from "@/lib/forestal/cubicacion";
 import {
-  agruparPor, claveYLabel, resumenPorEspecie, resumenACsv, DIMENSIONES_RESUMEN, ETIQUETA_DIMENSION,
+  agruparOficial, claveYLabel, resumenPorEspecie, resumenACsv, DIMENSIONES_RESUMEN, ETIQUETA_DIMENSION,
   type DimensionResumen,
 } from "@/lib/forestal/cubicacion-resumen";
 import { fmtM3, fmtPct, fmtPiezas, fmtPt, fmtSoles } from "@/lib/forestal/cubicacion-formato";
@@ -152,10 +152,12 @@ export default function CubicacionResumenes() {
      el lote tal cual. La Distribución recibe el lote crudo: lo abre ella. */
   const variado = useVariadoDelLote(rows, rows, true);
   const lote = variado.envio;
-  const porEspecie = useMemo(() => agruparPor(lote, "especie", precioDe), [lote, precioDe]);
-  const porTipo = useMemo(() => agruparPor(lote, "tipo", precioDe), [lote, precioDe]);
-  const porMedida = useMemo(() => agruparPor(lote, "medida", precioDe), [lote, precioDe]);
-  const porDim = useMemo(() => (dim === "medida" ? porMedida : agruparPor(lote, dim, precioDe)), [porMedida, lote, dim, precioDe]);
+  /* Volumen OFICIAL (regla GTF): cada tabla —por especie, tipo, medida, largo,
+     dueño— suma exacto el mismo total, igual que la Distribución y el Anexo 04. */
+  const porEspecie = useMemo(() => agruparOficial(lote, "especie", precioDe), [lote, precioDe]);
+  const porTipo = useMemo(() => agruparOficial(lote, "tipo", precioDe), [lote, precioDe]);
+  const porMedida = useMemo(() => agruparOficial(lote, "medida", precioDe), [lote, precioDe]);
+  const porDim = useMemo(() => (dim === "medida" ? porMedida : agruparOficial(lote, dim, precioDe)), [porMedida, lote, dim, precioDe]);
   const bloques = useMemo(() => resumenPorEspecie(lote, precioDe), [lote, precioDe]);
 
   /**

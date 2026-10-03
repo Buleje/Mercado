@@ -8,7 +8,7 @@
  */
 
 import type { PiezaCubicada, Unidad } from "./cubicacion";
-import { m3ExactoDePieza, m3OficialDeFila, ptExactoDePieza, redondearGTF, sumaExacta, totalizarGTF } from "./gtf-redondeo";
+import { filaGtf, m3ExactoDePieza, ptExactoDePieza, repartirFilasGTF } from "./gtf-redondeo";
 import { tipoDePieza } from "./cubicacion-tipo";
 
 /** Cómo se puede agrupar el lote. El orden es el de los chips en la UI. */
@@ -138,6 +138,58 @@ export function agruparPor(rows: PiezaCubicada[], dim: DimensionResumen, precio:
   };
 }
 
+/**
+ * Lo mismo que `agruparPor`, pero con el volumen OFICIAL (regla GTF, Brandon
+ * 2026-10-03): es la que se MUESTRA y se EXPORTA. `agruparPor` sigue dando
+ * las sumas tal cual porque la usa el motor del reparto para decidir.
+ */
+export function agruparOficial(rows: PiezaCubicada[], dim: DimensionResumen, precio: PrecioPt = 0): ResumenLote {
+  const precioDe = typeof precio === "function" ? precio : () => precio;
+  const map = new Map<string, GrupoResumen>();
+  let totalCant = 0, totalValor = 0;
+
+  for (const r of rows) {
+    const { clave, label } = claveYLabel(r, dim);
+    const g = map.get(clave) ?? { clave, label, cantidad: 0, pieTablar: 0, m3: 0, valor: 0, pctPt: 0 };
+    const valorPieza = r.pieTablar * precioDe(r);
+    g.cantidad += r.cantidad;
+    g.pieTablar += r.pieTablar;
+    g.m3 += r.m3;
+    g.valor += valorPieza;
+    map.set(clave, g);
+    totalCant += r.cantidad;
+    totalValor += valorPieza;
+  }
+
+  /* El m³ de cada grupo y del total salen de las FILAS de la GTF (especie ×
+     tipo, cada una con su Σ exacta redondeada UNA vez) repartidas entre los
+     grupos por mayor resto (Brandon 2026-10-03: «todo el volumen en todas las
+     tablas tiene que cuadrar»). Por especie o por tipo los grupos son filas
+     enteras; por medida, largo o dueño, cada fila se parte en milésimos
+     enteros. Toda tabla suma EXACTO el volumen oficial del lote. El PT, igual
+     a 2 decimales. */
+  const fila = (r: PiezaCubicada) => filaGtf(r.especie, tipoDePieza(r));
+  const reparto = repartirFilasGTF(rows.map((r) => ({ fila: fila(r), parte: claveYLabel(r, dim).clave, exacto: m3ExactoDePieza(r) })));
+  const repartoPt = repartirFilasGTF(rows.map((r) => ({ fila: fila(r), parte: claveYLabel(r, dim).clave, exacto: ptExactoDePieza(r) })), 2);
+  const ptOficial = repartoPt.total;
+  const grupos = [...map.values()].map((g) => {
+    const pt = repartoPt.porParte.get(g.clave) ?? 0;
+    return {
+      ...g,
+      pieTablar: pt,
+      m3: reparto.porParte.get(g.clave) ?? 0,
+      valor: r2(g.valor),
+      pctPt: ptOficial > 0 ? Math.round((pt / ptOficial) * 1000) / 10 : 0,
+    };
+  });
+  grupos.sort((a, b) => b.pieTablar - a.pieTablar || a.label.localeCompare(b.label));
+
+  return {
+    grupos,
+    total: { cantidad: totalCant, pieTablar: ptOficial, m3: reparto.total, valor: r2(totalValor) },
+  };
+}
+
 export interface BloqueEspecie {
   especie: string;
   /** Desglose por tipo comercial dentro de la especie (ordenado por PT). */
@@ -159,29 +211,11 @@ export function resumenPorEspecie(rows: PiezaCubicada[], precio: PrecioPt = 0): 
     else porEspecie.set(e, [r]);
   }
   const bloques = [...porEspecie.entries()].map(([especie, rs]) => {
-    const g = agruparPor(rs, "tipo", precio);
-    /* Cada especie × tipo es una FILA de la GTF (2026-10-03): su m³ es la suma
-       EXACTA de sus piezas (desde las medidas) redondeada UNA vez a 3 decimales
-       HALF_UP, y el total de la especie es la suma de esas filas. Así esta
-       tabla, el Anexo 04 y su comparación salen de la misma cuenta. */
-    const porTipo = new Map<string, PiezaCubicada[]>();
-    for (const r of rs) {
-      const k = claveYLabel(r, "tipo").clave;
-      (porTipo.get(k) ?? porTipo.set(k, []).get(k)!).push(r);
-    }
-    const tipos = g.grupos.map((t) => {
-      const piezas = porTipo.get(t.clave) ?? [];
-      return {
-        ...t,
-        pieTablar: redondearGTF(sumaExacta(piezas.map(ptExactoDePieza)), 2),
-        m3: m3OficialDeFila(piezas.map(m3ExactoDePieza)),
-      };
-    });
-    const total = {
-      ...g.total,
-      pieTablar: redondearGTF(sumaExacta(rs.map(ptExactoDePieza)), 2),
-      m3: totalizarGTF(tipos.map((t) => ({ m3: t.m3 }))).m3,
-    };
+    const g = agruparOficial(rs, "tipo", precio);
+    /* Cada especie × tipo es una FILA de la GTF: `agruparPor` ya le pone su m³
+       oficial y el total de la especie es la suma de esas filas. */
+    const tipos = g.grupos;
+    const total = g.total;
     return { especie, tipos, total };
   });
   bloques.sort((a, b) => b.total.pieTablar - a.total.pieTablar || a.especie.localeCompare(b.especie));
@@ -192,7 +226,7 @@ export function resumenPorEspecie(rows: PiezaCubicada[], precio: PrecioPt = 0): 
 export function resumenACsv(resumen: ResumenLote, dim: DimensionResumen, conValor: boolean): string {
   const cab = [ETIQUETA_DIMENSION[dim].replace("Por ", ""), "Piezas", "PieTablar", "m3", "%", ...(conValor ? ["ValorS/"] : [])];
   const filas = resumen.grupos.map((g) =>
-    [g.label, g.cantidad, g.pieTablar.toFixed(2), g.m3.toFixed(4), g.pctPt.toFixed(1), ...(conValor ? [g.valor.toFixed(2)] : [])].join(","));
-  const total = ["TOTAL", resumen.total.cantidad, resumen.total.pieTablar.toFixed(2), resumen.total.m3.toFixed(4), "100.0", ...(conValor ? [resumen.total.valor.toFixed(2)] : [])].join(",");
+    [g.label, g.cantidad, g.pieTablar.toFixed(2), g.m3.toFixed(3), g.pctPt.toFixed(1), ...(conValor ? [g.valor.toFixed(2)] : [])].join(","));
+  const total = ["TOTAL", resumen.total.cantidad, resumen.total.pieTablar.toFixed(2), resumen.total.m3.toFixed(3), "100.0", ...(conValor ? [resumen.total.valor.toFixed(2)] : [])].join(",");
   return "﻿" + [cab.join(","), ...filas, total].join("\n");
 }

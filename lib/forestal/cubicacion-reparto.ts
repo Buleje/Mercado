@@ -2515,7 +2515,8 @@ export function bloquesDesdeTrozas(
 export function distribucionACsv(d: Distribucion, etiquetaDim: string): string {
   const cel = (v: unknown) => { const s = v == null ? "" : String(v); return /[";\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
   const fila = (c: unknown[]) => c.map(cel).join(";");
-  const num = (v: number | null, dec = 4) => (v == null ? "" : v.toFixed(dec).replace(".", ","));
+  /* m³ a 3 decimales: es lo que se copia (Brandon 2026-10-03, regla GTF). */
+  const num = (v: number | null, dec = 3) => (v == null ? "" : v.toFixed(dec).replace(".", ","));
 
   const lineas: string[] = [
     fila(["Distribucion de rolliza sobre aserrada", etiquetaDim]),

@@ -9,7 +9,7 @@ import { PT_POR_M3, toInches, toFeet } from "./cubicacion";
 import type { TipoComercial } from "./cubicacion-tipo";
 import { tipoDePieza, ordenTipo } from "./cubicacion-tipo";
 import type { PrecioPt, ResumenLote } from "./cubicacion-resumen";
-import { agruparPor } from "./cubicacion-resumen";
+import { agruparOficial } from "./cubicacion-resumen";
 import type { DatosLiquidacion, Liquidacion } from "./cubicacion-liquidacion";
 import { fechaLarga } from "./cubicacion-liquidacion";
 import type { ApartadosAsignados, NombresApartado } from "./cubicacion-apartados";
@@ -462,15 +462,15 @@ export async function exportarExcel(rows: PiezaCubicada[], opts: ExportOpts): Pr
   if (conPrecio) ws.getColumn("val").numFmt = "#,##0.00";
 
   // ── Hoja 2: Resumen por tipo (mismo orden canónico que el detalle) ──
-  const porTipo = agruparPor(rows, "tipo", precio);
+  const porTipo = agruparOficial(rows, "tipo", precio);
   porTipo.grupos.sort((a, b) => ordenTipo(a.clave as TipoComercial) - ordenTipo(b.clave as TipoComercial));
   hojaResumen(wb, "Resumen por tipo", "Tipo", porTipo, conPrecio);
 
   // ── Hoja 3: Por especie (ordenada por pie tablar, la que más pesa arriba) ──
-  hojaResumen(wb, "Por especie", "Especie", agruparPor(rows, "especie", precio), conPrecio);
+  hojaResumen(wb, "Por especie", "Especie", agruparOficial(rows, "especie", precio), conPrecio);
 
   // ── Hoja 4: Por dueño (sólo si el lote tiene algo asignado) ──
-  if (conDue) hojaResumen(wb, "Por dueño", "Dueño", agruparPor(rows, "dueno", precio), conPrecio);
+  if (conDue) hojaResumen(wb, "Por dueño", "Dueño", agruparOficial(rows, "dueno", precio), conPrecio);
 
   // ── Hoja 5: Por apartado (sólo si el lote separó en bloques) ──
   if (conAp) hojaApartados(wb, rows, opts.asignados ?? {}, opts.nombresApartado ?? {});

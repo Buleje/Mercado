@@ -87,7 +87,7 @@ import { cuadreDelPapel } from "@/lib/forestal/cuadre-del-papel";
 import { controlDe, estadoDeControles } from "@/lib/forestal/reparto-cuadre";
 import { paquetesVariado, useConfigVariado } from "./hooks/use-config-variado";
 import { agruparPiezasIguales, desglosarVariado, esVariado } from "@/lib/forestal/variado-desglose";
-import { totalizarGTF } from "@/lib/forestal/gtf-redondeo";
+import { distConVolumenOficial, repartoOficial } from "@/lib/forestal/reparto-oficial";
 
 
 /** Mismo botón que la cabecera de Resúmenes: un solo alto para toda la pestaña. */
@@ -910,6 +910,13 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
   );
 
   const dist = useMemo(() => distribuirPorCapacidad(bloques, piezas, dim, precioDe), [bloques, piezas, dim, precioDe]);
+  /* El volumen OFICIAL de cada pedazo (Brandon 2026-10-03: «todo el volumen en
+     todas las tablas tiene que cuadrar»): las filas especie × tipo del lote,
+     cada una redondeada UNA vez, repartidas en milésimos entre bloques,
+     medidas, jornadas y lo que falta. `distVista` es la que se DIBUJA y se
+     EXPORTA; las cuentas (cuadre, revisión, reprocesos) siguen con `dist`. */
+  const oficial = useMemo(() => repartoOficial(dist), [dist]);
+  const distVista = useMemo(() => distConVolumenOficial(dist, oficial), [dist, oficial]);
   /* Por qué quedó capacidad libre y con qué medidas se cierra. Se calcula con
      el MISMO `dim` que la distribución: los filtros por grupo se guardan con la
      clave de la vista vigente y leerlos con otra los daría por inactivos. */
@@ -996,7 +1003,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
       medidasM3: detalle.m3,
     };
   }, [rows, metaMix, precioDe, reprocesos]);
-  const t = dist.totales;
+  const t = distVista.totales;
   /** Cada bloque YA distribuido, con su especie — para poder buscarlo por id
    *  sin importar bajo qué grupo de especie terminó cayendo. */
   const bloquesDistribuidos = useMemo(
@@ -1087,7 +1094,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
   );
 
   const exportar = () => {
-    const blob = new Blob([`﻿${distribucionACsv(filtrarPorEspecies(dist, soloEspecies), ETIQUETA_DIMENSION[dim])}`], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob([`﻿${distribucionACsv(filtrarPorEspecies(distVista, soloEspecies), ETIQUETA_DIMENSION[dim])}`], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -1124,8 +1131,8 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
       // están en el Libro y cuáles no — que es la mitad del valor de tildarlas.
       /* Con Variado, el papel dice que su reparto por especie es calculado. */
       const nota = desVariado ? NOTA_VARIADO_PAPEL : undefined;
-      if (que === "pdf") await exportarDistribucionPDF(dist, etiqueta, marcadas, firma, soloEspecies, nota);
-      else await exportarDistribucionExcel(dist, etiqueta, marcadas, firma, soloEspecies, nota);
+      if (que === "pdf") await exportarDistribucionPDF(distVista, etiqueta, marcadas, firma, soloEspecies, nota);
+      else await exportarDistribucionExcel(distVista, etiqueta, marcadas, firma, soloEspecies, nota);
     } catch (err) {
       // Un `catch` vacío dejaría el botón en «Generando…» para siempre y nadie
       // sabría por qué no bajó el archivo.
@@ -1155,15 +1162,15 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
          Anexos 04 por permiso — la suma de sus totales, cada uno = Σ de sus filas
          especie × tipo ya redondeadas. Así la tarjeta, el encabezado y el bloque
          «Anexo 04 por permiso» dicen el MISMO número que se copia al LO-CTP. */
-      hechoM3: totalizarGTF(anexosDePermiso.map((a) => ({ m3: a.totalM3 }))).m3,
+      hechoM3: oficial.distribuido,
       hechoPt: t.amparadaPt, hechoPiezas: puestas,
-      faltaM3: totalizarGTF(falta.map((f) => ({ m3: f.m3 }))).m3,
+      faltaM3: oficial.falta,
       faltaPt: falta.reduce((a, f) => a + f.pieTablar, 0),
       faltaPiezas: falta.reduce((a, f) => a + f.piezas, 0),
       /** Rolliza que habría que agregar para taparlo, al aprovechamiento vigente. */
       faltaRollizaM3: t.rollizaFaltanteM3,
     };
-  }, [dist, t, anexosDePermiso]);
+  }, [dist, t, oficial]);
 
   /**
    * El repaso antes de registrar. Vive en `lib/forestal/reparto-revision.ts`
@@ -1593,7 +1600,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
             /* De qué está hecho: bloque por bloque, lo que cada uno ampara. */
             cuenta={{
               formula: "Suma de lo que cada bloque ampara de verdad (m³ A)",
-              filas: dist.especies.flatMap((e) =>
+              filas: distVista.especies.flatMap((e) =>
                 e.bloques
                   .filter((b) => b.usadoM3 > 0)
                   .map((b) => ({
@@ -1616,7 +1623,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
             /* Y acá, qué grupo de aserrada quedó sin respaldo. */
             cuenta={{
               formula: "Aserrada cubicada que ningún bloque alcanzó a amparar",
-              filas: dist.especies.flatMap((e) =>
+              filas: distVista.especies.flatMap((e) =>
                 e.faltante
                   .filter((f) => f.m3 > 0)
                   .map((f) => ({
@@ -2407,7 +2414,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
         </ul>
       )}
 
-      {dist.especies.map((e) => (
+      {distVista.especies.map((e) => (
         <BloqueEspecie
           key={e.especie}
           e={e}
