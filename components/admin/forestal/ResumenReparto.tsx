@@ -87,6 +87,7 @@ import { cuadreDelPapel } from "@/lib/forestal/cuadre-del-papel";
 import { controlDe, estadoDeControles } from "@/lib/forestal/reparto-cuadre";
 import { paquetesVariado, useConfigVariado } from "./hooks/use-config-variado";
 import { agruparPiezasIguales, desglosarVariado, esVariado } from "@/lib/forestal/variado-desglose";
+import { totalizarGTF } from "@/lib/forestal/gtf-redondeo";
 
 
 /** Mismo botón que la cabecera de Resúmenes: un solo alto para toda la pestaña. */
@@ -1150,14 +1151,19 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
     );
     const falta = dist.especies.flatMap((e) => e.faltante);
     return {
-      hechoM3: t.amparadaM3, hechoPt: t.amparadaPt, hechoPiezas: puestas,
-      faltaM3: t.faltanteM3,
+      /* Regla GTF (Brandon 2026-10-03): lo distribuido es lo que imprimen los
+         Anexos 04 por permiso — la suma de sus totales, cada uno = Σ de sus filas
+         especie × tipo ya redondeadas. Así la tarjeta, el encabezado y el bloque
+         «Anexo 04 por permiso» dicen el MISMO número que se copia al LO-CTP. */
+      hechoM3: totalizarGTF(anexosDePermiso.map((a) => ({ m3: a.totalM3 }))).m3,
+      hechoPt: t.amparadaPt, hechoPiezas: puestas,
+      faltaM3: totalizarGTF(falta.map((f) => ({ m3: f.m3 }))).m3,
       faltaPt: falta.reduce((a, f) => a + f.pieTablar, 0),
       faltaPiezas: falta.reduce((a, f) => a + f.piezas, 0),
       /** Rolliza que habría que agregar para taparlo, al aprovechamiento vigente. */
       faltaRollizaM3: t.rollizaFaltanteM3,
     };
-  }, [dist, t]);
+  }, [dist, t, anexosDePermiso]);
 
   /**
    * El repaso antes de registrar. Vive en `lib/forestal/reparto-revision.ts`
@@ -1461,7 +1467,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
       /* El dato, no la explicación: una línea con lo que se vino a ver. */
       hint={bloques.length === 0 ? "Todavía no hay bloques cargados." : (
         <span className="font-mono tabular-nums">
-          {fmtM3(t.amparadaM3)} m³ <span className="font-sans">amparados de verdad</span>
+          {fmtM3(balance.hechoM3)} m³ <span className="font-sans">amparados de verdad</span>
           {" · "}{fmtPiezas(dist.especies.reduce((a, e) => a + e.bloques.reduce((x, bl) => x + bl.asignado.reduce((y, g) => y + g.piezas, 0), 0), 0))} <span className="font-sans">piezas</span>
           {" · "}{bloques.length} <span className="font-sans">bloque{bloques.length === 1 ? "" : "s"}</span>
         </span>

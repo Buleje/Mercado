@@ -34,6 +34,7 @@ import {
   type AnexoDePermiso,
 } from "@/lib/forestal/anexo-por-permiso";
 import { slugKey } from "@/lib/forestal/sembrar-reparto";
+import { textoGTF } from "@/lib/forestal/gtf-redondeo";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
 import { FiltroColumnaMulti } from "@/components/admin/shared/filtros-columna";
 import { formatNumber } from "@/lib/format";
@@ -197,13 +198,16 @@ export default function AnexoPorPermiso({
     if (!actual) return;
     const cab = ["Especie", "Tipo", "Medida", "Piezas", "m3", "PieTablar", ...(conValor ? ["PrecioPT", "Importe"] : [])];
     const cuerpo = filas.map((f) => [
-      f.especie, f.tipo, f.medida, f.piezas, f.m3.toFixed(4), f.pieTablar.toFixed(2),
+      f.especie, f.tipo, f.medida, f.piezas, textoGTF(f.m3), f.pieTablar.toFixed(2),
       ...(conValor ? [(f.pieTablar > 0 ? f.valor / f.pieTablar : 0).toFixed(2), f.valor.toFixed(2)] : []),
     ].join(","));
-    const total = ["TOTAL", "", "", actual.totalPiezas, actual.totalM3.toFixed(4), actual.totalPt.toFixed(2),
+    /* Dos totales, cada uno de su tabla: el de las medidas tal como se ven y el
+       oficial (filas especie × tipo, el que suma SERFOR al copiar el resumen). */
+    const total = ["TOTAL medidas", "", "", actual.totalPiezas, textoGTF(actual.totalMedidasM3), actual.totalPt.toFixed(2),
       ...(conValor ? ["", importeTotal.toFixed(2)] : [])].join(",");
+    const oficial = ["TOTAL GTF (especie × tipo)", "", "", actual.totalPiezas, textoGTF(actual.totalM3), "", ...(conValor ? ["", ""] : [])].join(",");
     /* BOM: sin él Excel abre las tildes como símbolos. */
-    const csv = "\ufeff" + [cab.join(","), ...cuerpo, total].join("\n");
+    const csv = "\ufeff" + [cab.join(","), ...cuerpo, total, oficial].join("\n");
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
     const a = document.createElement("a");
     a.href = url;
@@ -315,7 +319,7 @@ export default function AnexoPorPermiso({
               <>
                 <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
                 <span>
-                  No cuadra: el detalle suma {fmtM3(actual.totalM3)} m³ y sus bloques amparan{" "}
+                  No cuadra: el detalle suma {fmtM3(actual.totalExactoM3)} m³ y sus bloques amparan{" "}
                   {fmtM3(actual.amparadoM3)} ({actual.diferenciaM3 > 0 ? "+" : ""}
                   {fmtM3(actual.diferenciaM3)}). Revisa los overrides de línea antes de imprimir.
                 </span>
@@ -517,7 +521,7 @@ export default function AnexoPorPermiso({
                         <td className={`${TD} font-bold text-[var(--text-primary)]`}>
                           {primerLabel === "especie" && (
                             <>
-                              Total del anexo
+                              Suma de las medidas
                               {acotada && (
                                 <span className="ml-1.5 font-normal text-[var(--text-tertiary)]">
                                   · mostrando {filasVisibles.length} de {filas.length} medidas
@@ -531,7 +535,7 @@ export default function AnexoPorPermiso({
                         <td className={`${TD} font-bold text-[var(--text-primary)]`}>
                           {primerLabel === "tipo" && (
                             <>
-                              Total del anexo
+                              Suma de las medidas
                               {acotada && (
                                 <span className="ml-1.5 font-normal text-[var(--text-tertiary)]">
                                   · mostrando {filasVisibles.length} de {filas.length} medidas
@@ -545,7 +549,7 @@ export default function AnexoPorPermiso({
                         <td className={`${TD} font-bold text-[var(--text-primary)]`}>
                           {primerLabel === "medida" && (
                             <>
-                              Total del anexo
+                              Suma de las medidas
                               {acotada && (
                                 <span className="ml-1.5 font-normal text-[var(--text-tertiary)]">
                                   · mostrando {filasVisibles.length} de {filas.length} medidas
@@ -556,7 +560,8 @@ export default function AnexoPorPermiso({
                         </td>
                       ),
                       piezas: <td className={`${NUM} font-bold text-[var(--text-primary)]`}>{fmtPiezas(actual.totalPiezas)}</td>,
-                      m3: <td className={`${NUM} font-bold text-[var(--text-primary)]`}>{fmtM3(actual.totalM3)}</td>,
+                      /* El pie del detalle suma lo que se VE: cada medida a 3 decimales. */
+                      m3: <td className={`${NUM} font-bold text-[var(--text-primary)]`}>{fmtM3(actual.totalMedidasM3)}</td>,
                       pieTablar: <td className={`${NUM} font-bold text-[var(--text-primary)]`}>{fmtPt(actual.totalPt)}</td>,
                       precio: conValor && (
                         <td className={`${NUM} font-bold text-[var(--text-primary)]`}>
@@ -573,6 +578,18 @@ export default function AnexoPorPermiso({
                 </tr>
               </tfoot>
             </table>
+            {/* Cada medida se ve a 3 decimales y redondea por su lado: su suma puede
+                no ser el total oficial (filas especie × tipo, el que suma SERFOR al
+                copiar el resumen). Se dice, no se esconde (Brandon 2026-10-03). */}
+            {Math.abs(actual.totalMedidasM3 - actual.totalM3) >= 0.0005 && (
+              <p className="flex items-start gap-1.5 px-3 py-2 text-sm text-[var(--text-secondary)]">
+                <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" aria-hidden />
+                <span>
+                  Medida por medida, tal como se ven, suman {fmtM3(actual.totalMedidasM3)} m³. El total oficial del permiso es{" "}
+                  <b className="text-[var(--text-primary)]">{fmtM3(actual.totalM3)} m³</b>: la suma del resumen por especie y tipo, el que se copia al LO-CTP y a la GTF.
+                </span>
+              </p>
+            )}
           </div>
           )}
         </div>

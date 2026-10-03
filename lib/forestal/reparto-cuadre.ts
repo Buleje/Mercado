@@ -416,16 +416,18 @@ export function cuadrarReparto(input: {
       rotulo: a.label,
       nota: `${a.bloques.length} ${a.bloques.length === 1 ? "bloque" : "bloques"} · ${a.especies.join(", ")}`,
       esperado,
-      obtenido: { piezas: a.totalPiezas, pt: a.totalPt, m3: a.totalM3 },
+      /* La madera que lleva el anexo, EXACTA: este control busca piezas perdidas,
+         no el redondeo de las filas (el total oficial es `a.totalM3`). */
+      obtenido: { piezas: a.totalPiezas, pt: a.totalPt, m3: a.totalExactoM3 },
     }, a.piezas.length + a.bloques.length);
     if (f.estado === "difiere") {
-      f.comoCuadrar = `El detalle del anexo suma ${fmtM3(a.totalM3)} m³ y sus bloques amparan ${fmtM3(esperado.m3)} m³: revisa en «Por bloque» las líneas con m³ escrito a mano de ${a.bloques.map((b) => b.etiqueta).join(", ")}.`;
+      f.comoCuadrar = `El detalle del anexo suma ${fmtM3(a.totalExactoM3)} m³ y sus bloques amparan ${fmtM3(esperado.m3)} m³: revisa en «Por bloque» las líneas con m³ escrito a mano de ${a.bloques.map((b) => b.etiqueta).join(", ")}.`;
     } else if (a.permiso == null) {
       f.comoCuadrar = "Cuadra, pero el papel sale como «Sin permiso declarado»: ponle a esos bloques su N° de permiso.";
     }
     return f;
   });
-  const sumaAnexos = anexos.reduce<Trio>((a, x) => suma(a, { piezas: x.totalPiezas, pt: x.totalPt, m3: x.totalM3 }), cero());
+  const sumaAnexos = anexos.reduce<Trio>((a, x) => suma(a, { piezas: x.totalPiezas, pt: x.totalPt, m3: x.totalExactoM3 }), cero());
   controles.push(control({
     id: "anexos",
     titulo: "Anexos 04 por permiso = Distribuido",

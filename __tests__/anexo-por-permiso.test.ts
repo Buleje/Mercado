@@ -157,3 +157,38 @@ describe("resumenPorEspecieTipo — qué sale de este permiso", () => {
     expect(vacio).toEqual([]);
   });
 });
+
+describe("el total que se copia al LO-CTP (regla GTF, Brandon 2026-10-03)", () => {
+  /* Brandon: «copio la tabla como está, con sus 3 decimales; en el LO-CTP de
+     SERFOR da 31.188 y aquí sale 31.185». Caso chico con medidas reales:
+     Larga angosta 7 × 1″×2″×6′ = 0,01651 → 0,017 · Tabla 1 × 1″×3″×6′ =
+     0,00354 → 0,004 · Comercial 4 × 2″×6″×6′ = 0,05660 → 0,057.
+     Crudo: 0,07665 → 0,077. Copiando las filas: 0,078. */
+  const conTipo = (p: PiezaCubicada, tipo: NonNullable<PiezaCubicada["tipo"]>): PiezaCubicada => ({ ...p, tipo });
+  const piezas = [
+    conTipo(pieza("la", 7, 1, 2, 6), "Larga angosta"),
+    conTipo(pieza("ta", 1, 1, 3, 6), "Tabla"),
+    conTipo(pieza("co", 4, 2, 6, 6), "Comercial"),
+  ];
+  const dist = distribuirPorCapacidad([bloque({ id: "b1", permiso: "CON-25-UCA-0142" })], piezas);
+  const [anexo] = anexosPorPermiso(dist);
+
+  it("el total del anexo es la SUMA de las filas especie × tipo tal como se ven (0,078, no 0,077)", () => {
+    const resumen = resumenPorEspecieTipo(anexo);
+    expect(resumen.map((r) => r.m3)).toEqual([0.057, 0.004, 0.017]);
+    expect(anexo.totalM3).toBe(0.078);
+    expect(Math.round(resumen.reduce((a, r) => a + r.m3, 0) * 1000) / 1000).toBe(anexo.totalM3);
+  });
+
+  it("que lleve toda su madera se controla con lo EXACTO: el redondeo no es madera que falte", () => {
+    // Σ de las piezas como las guarda el reparto (4 decimales c/u): la misma
+    // base con la que el reparto calcula lo que amparan los bloques.
+    expect(anexo.totalExactoM3).toBeCloseTo(0.0766, 4);
+    expect(anexo.cuadra).toBe(true);
+  });
+
+  it("el detalle por medida suma lo que se ve, cada medida a 3 decimales", () => {
+    expect(filasDelAnexo(anexo).map((f) => f.m3).sort()).toEqual([0.004, 0.017, 0.057]);
+    expect(anexo.totalMedidasM3).toBe(0.078);
+  });
+});
