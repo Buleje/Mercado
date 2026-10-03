@@ -2,7 +2,7 @@
  * El volumen OFICIAL en toda la distribución (Brandon 2026-10-03: «Resúmenes
  * en tablas, la tabla por especie, los bloques y el Anexo 04 por permiso: todo
  * el volumen tiene que cuadrar el mismo; de ahí se sacan los tres primeros
- * decimales»).
+ * decimales»). Con 2+ permisos, cada permiso suma lo suyo (Brandon, mismo día).
  */
 import { describe, expect, it } from "vitest";
 import { cubicarPieza, type PiezaCubicada } from "@/lib/forestal/cubicacion";
@@ -10,6 +10,8 @@ import { distribuirPorCapacidad, type BloqueRolliza } from "@/lib/forestal/cubic
 import { agruparOficial, resumenPorEspecie } from "@/lib/forestal/cubicacion-resumen";
 import { anexosPorPermiso, filasDelAnexo, resumenPorEspecieTipo } from "@/lib/forestal/anexo-por-permiso";
 import { distConVolumenOficial, repartoOficial } from "@/lib/forestal/reparto-oficial";
+import { m3DeLinea, m3OficialDeFila } from "@/lib/forestal/gtf-redondeo";
+import { tipoDePieza } from "@/lib/forestal/cubicacion-tipo";
 import { filasDeMedidas, resumenDeBloques } from "@/lib/forestal/distribucion-export";
 
 let n = 0;
@@ -53,9 +55,25 @@ describe("un solo volumen en todas las tablas", () => {
     for (const b of bloquesEsp) expect(suma(b.tipos.map((x) => x.m3))).toBe(b.total.m3);
   });
 
-  it("Distribuido + Falta = el volumen del lote; hay falta de verdad en este caso", () => {
+  it("Distribuido + Falta + redondeo entre permisos = el volumen del lote; hay falta de verdad en este caso", () => {
     expect(of.falta).toBeGreaterThan(0);
-    expect(r3(of.distribuido + of.falta)).toBe(of.total);
+    expect(r3(of.distribuido + of.falta + of.redondeo)).toBe(of.total);
+    // Milésimos: a lo sumo uno por fila que quedó partida entre papeles.
+    expect(Math.abs(of.redondeo)).toBeLessThanOrEqual(0.003);
+  });
+
+  it("cada permiso suma lo suyo: su fila = Σ de SUS piezas redondeada una vez (como su GTF en SERFOR)", () => {
+    for (const a of anexosPorPermiso(dist)) {
+      const propias = new Map<string, PiezaCubicada[]>();
+      for (const p of a.piezas) {
+        const k = `${(p.especie ?? "").toLowerCase()}|${tipoDePieza(p)}`;
+        propias.set(k, [...(propias.get(k) ?? []), p]);
+      }
+      for (const f of resumenPorEspecieTipo(a)) {
+        const ps = propias.get(`${f.especie.toLowerCase()}|${f.tipo}`) ?? [];
+        expect(f.m3, `${a.label} ${f.especie} ${f.tipo}`).toBe(m3OficialDeFila(ps.map(m3DeLinea)));
+      }
+    }
   });
 
   it("Σ bloques = Distribuido = Σ Anexos 04 por permiso", () => {
@@ -84,7 +102,7 @@ describe("un solo volumen en todas las tablas", () => {
     }
     expect(vista.totales.amparadaM3).toBe(of.distribuido);
     expect(vista.totales.faltanteM3).toBe(of.falta);
-    expect(vista.totales.aserradaM3).toBe(of.total);
+    expect(vista.totales.aserradaM3).toBe(r3(of.distribuido + of.falta));
   });
 
   it("todo valor oficial va en milésimos enteros (lo que se copia con 3 decimales es lo que hay)", () => {

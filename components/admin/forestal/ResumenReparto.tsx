@@ -1591,7 +1591,9 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
         <div className="mb-4 grid gap-2 sm:grid-cols-2">
           <CifraBalance
             titulo="Distribuido"
-            ayuda="Lo que los bloques respaldan de verdad — es lo que se imprime en los Anexos 04."
+            ayuda={`Lo que los bloques respaldan de verdad — es lo que se imprime en los Anexos 04.${oficial.redondeo !== 0
+              ? ` Cada permiso redondea sus filas por su cuenta: Distribuido + Falta da ${fmtM3(Math.abs(oficial.redondeo))} m³ ${oficial.redondeo > 0 ? "menos" : "más"} que los ${fmtM3(oficial.total)} m³ de Resúmenes (redondeo entre permisos).`
+              : ""}`}
             m3={balance.hechoM3}
             pt={balance.hechoPt}
             piezas={balance.hechoPiezas}
