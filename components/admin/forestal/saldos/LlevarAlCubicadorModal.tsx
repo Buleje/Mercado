@@ -40,6 +40,7 @@ import {
 import { abrirResumenesDelCubicador, sembrarBloques } from "@/lib/forestal/sembrar-reparto";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import FilaCandidato, { ChipEspecie } from "./llevar-al-cubicador-fila";
+import ResumenLlevarAlCubicador from "./resumen-llevar-al-cubicador";
 
 export default function LlevarAlCubicadorModal({
   candidatos,
@@ -110,7 +111,7 @@ export default function LlevarAlCubicadorModal({
         role="dialog"
         aria-modal="true"
         aria-label="Llevar la madera filtrada al cubicador"
-        className="relative max-h-[90vh] w-full max-w-2xl overflow-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 shadow-[var(--shadow-lg)]"
+        className="relative max-h-[90vh] w-full max-w-[60rem] overflow-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 shadow-[var(--shadow-lg)]"
       >
         <div {...ventana.asaProps} className="mb-1 flex items-start justify-between gap-3">
           <div>
@@ -141,8 +142,13 @@ export default function LlevarAlCubicadorModal({
             intentar.
           </p>
         ) : (
-          <>
-            <ul className="mt-4 space-y-1.5">
+          <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start">
+            {/* Resumen: arriba en móvil (plegable), al lado en escritorio. */}
+            <div className="order-first lg:order-last lg:sticky lg:top-0">
+              <ResumenLlevarAlCubicador seleccion={seleccion} candidatos={candidatos} />
+            </div>
+            <div className="min-w-0">
+            <ul className="space-y-1.5">
               {candidatos.map((c) => (
                 <li key={c.clave}>
                   <FilaCandidato
@@ -191,7 +197,8 @@ export default function LlevarAlCubicadorModal({
                 ))}
               </p>
             </div>
-          </>
+            </div>
+          </div>
         )}
 
         <div className="mt-5 flex flex-wrap items-center justify-end gap-2">

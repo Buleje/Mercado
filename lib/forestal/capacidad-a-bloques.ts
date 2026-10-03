@@ -40,6 +40,7 @@ import {
   type LoteDeCapacidad,
 } from "@/lib/forestal/capacidad-de-planta";
 import type { BloqueSembrable } from "@/lib/forestal/sembrar-reparto";
+import { m3OficialDeFila, totalizarGTF } from "@/lib/forestal/gtf-redondeo";
 
 const r4 = (v: number) => Math.round(v * 10000) / 10000;
 const txt = (v: unknown) => String(v ?? "").trim();
@@ -263,8 +264,20 @@ export function bloquesDesdeCapacidad(
 
 /** m³ de rolliza y de aserrada de una selección — nunca sumados entre sí. */
 export function totalesDeCandidatos(candidatos: readonly CandidatoDeCapacidad[]) {
-  const rolliza = r4(candidatos.filter((c) => c.tipo === "rolliza").reduce((a, c) => a + c.m3, 0));
-  const aserrada = r4(candidatos.filter((c) => c.tipo === "aserrada").reduce((a, c) => a + c.m3, 0));
+  /* Regla GTF (2026-10-03): cada especie es una fila redondeada UNA vez a 3
+     decimales y el total suma esas filas — lo mismo que la tabla «Lo que se va
+     al cubicador» de al lado; con la suma cruda decían 8,148 y 8,149. */
+  const deTipo = (tipo: CandidatoDeCapacidad["tipo"]) => {
+    const porEspecie = new Map<string, number[]>();
+    for (const c of candidatos) {
+      if (c.tipo !== tipo) continue;
+      const k = c.especie.trim().toLowerCase();
+      porEspecie.set(k, [...(porEspecie.get(k) ?? []), c.m3]);
+    }
+    return totalizarGTF([...porEspecie.values()].map((vs) => ({ m3: m3OficialDeFila(vs) }))).m3;
+  };
+  const rolliza = deTipo("rolliza");
+  const aserrada = deTipo("aserrada");
   return {
     rolliza,
     aserrada,
