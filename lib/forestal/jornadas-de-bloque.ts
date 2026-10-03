@@ -49,6 +49,8 @@ export type LoteParaLibro = Pick<LoteAserrio, "id" | "code" | "trozas" | "corrid
 export type EstadoJornadaLibro = "en-libro" | "abierta" | "lista" | "apagada" | "sin-produccion";
 
 export interface JornadaDelBloque extends Jornada {
+  /** Día que todavía no pasó y sin escribir: se registrará más adelante, así que «Completar» no se ofrece por él. */
+  enEspera?: boolean;
   estado: EstadoJornadaLibro;
   /** Por qué no se puede registrar (o qué falta en una corrida abierta). */
   motivo: string | null;
@@ -82,6 +84,24 @@ export function fechaCorta(iso: string): string {
 
 const vol = (t: Pick<TrozaDelLote, "volumenM3">) => Number(t.volumenM3) || 0;
 const rotulo = (t: Pick<TrozaDelLote, "id" | "codigoPlanta" | "codificacion">) => t.codigoPlanta || t.codificacion || t.id;
+
+/**
+ * Las líneas («Por tipo») que ya salieron con «Completar». Un complemento cuya
+ * corrida ya no está viva en el Libro no cuenta: si se anuló, la línea vuelve
+ * a estar pendiente (sin esto el bloque quedaba trabado para siempre). Sin la
+ * lista de vivas, o sin corrida anotada (reprocesos viejos), cuenta — el lado
+ * seguro es no declarar dos veces.
+ */
+export function clavesCompletadas(
+  b: Pick<BloqueDistribuido["bloque"], "complementos">,
+  vivas: ReadonlySet<string> | null,
+): Set<string> {
+  return new Set(
+    (b.complementos ?? [])
+      .filter((c) => !vivas || !c.corridaId || vivas.has(c.corridaId))
+      .flatMap((c) => c.claves),
+  );
+}
 
 /** El bloque no escribe en el Libro: por qué (o `null` si puede). */
 export function motivoDelBloque(
@@ -151,8 +171,10 @@ export function planLibroDeBloque(
       : null;
   }
 
-  /* 2 · Una línea que ya salió con «Completar» no se declara otra vez. */
-  const completadas = new Set((b.complementos ?? []).flatMap((c) => c.claves));
+  /* 2 · Una línea que ya salió con «Completar» no se declara otra vez — si su
+     corrida sigue viva: anulada, la línea vuelve a estar pendiente. */
+  const completadas = clavesCompletadas(b, vivas ? new Set(vivas.keys()) : null);
+  for (const c of b.complementos ?? []) if (c.corridaId && (!vivas || vivas.has(c.corridaId))) nuestras.add(c.corridaId);
   for (const j of jornadas) {
     if (j.estado !== "lista") continue;
     const ya = j.grupos.find((g) => completadas.has(g.clave));
@@ -260,6 +282,9 @@ export function planLibroDeBloque(
     }
     anterior ??= j.dia;
   }
+  /* Un día futuro sin escribir no es «lo que falta»: se registra cuando pase.
+     Sin esto «Completar» declaraba hoy la producción de días que no pasaron. */
+  for (const j of jornadas) if (j.corridaId == null && j.estado !== "sin-produccion" && j.fecha > hoy) j.enEspera = true;
 
   return { oculto: false, motivo: null, jornadas, noDisponibles, sinAtribuirM3 };
 }
@@ -323,7 +348,7 @@ export function completarDelLote(
   /* Lo que falta: los días que no se escribieron desde acá, sin las líneas
      que ya salieron con «Completar». */
   const escritos = new Set((b.jornadasLibro ?? []).filter((j) => vivas.some((c) => c.id === j.corridaId)).map((j) => j.dia));
-  const completadas = new Set((b.complementos ?? []).flatMap((c) => c.claves));
+  const completadas = clavesCompletadas(b, new Set(vivas.map((c) => c.id)));
   const lineas = bd.porDia
     .filter((d) => !escritos.has(d.dia))
     .reduce<AsignacionGrupo[]>((acc, d) => juntarGrupos(acc, d.grupos), [])

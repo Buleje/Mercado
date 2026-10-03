@@ -1436,10 +1436,23 @@ export class ForestLoteAserrioDB {
           { cierres },
         );
       }
-      await tx.woodEntryTroza.updateMany({
+      const marcadas = await tx.woodEntryTroza.updateMany({
         where: { id: { in: libres.map((t) => t.id) }, tenantId, consumidaEnId: null },
         data: { consumidaEnId: corridaId, fechaConsumo: fecha ?? new Date() },
       });
+      /* Dos pedidos a la vez (dos equipos con «Registrar día 1»): los dos leyeron
+         las trozas libres antes del commit del otro; el segundo espera el lock,
+         escribe sus m³ por guía y su `updateMany` marca 0 filas. Sin esto
+         devolvía la lectura vieja y la producción quedaba declarada dos veces
+         con el consumo por guía duplicado. Tirar acá deshace la transacción
+         entera (también los m³ por guía) y el que llama retira la corrida. */
+      if (marcadas.count !== libres.length) {
+        throw new CtpInvariantError(
+          "Otra corrida consumió trozas de este lote al mismo tiempo. No se consumió nada: vuelve a intentarlo.",
+          "VALIDACION",
+          { motivo: "TROZA_YA_CONSUMIDA", esperadas: libres.length, marcadas: marcadas.count },
+        );
+      }
       /* El lote se cierra sólo si NO le quedó madera. Con un consumo parcial
          sigue ABIERTO: darlo por consumido escondería las piezas que todavía
          están apartadas esperando la corrida siguiente. */

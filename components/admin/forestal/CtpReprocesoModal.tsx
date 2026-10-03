@@ -66,7 +66,8 @@ export default function CtpReprocesoModal({
    * el operario, no el cálculo.
    */
   sugerencia?: { producto: string | null; m3: number; desdeTipo?: string };
-  onListo: (mensaje: string, detalle: string) => void;
+  /** El 3.º argumento dice QUÉ se escribió (la corrida nueva, su producto y m³): quien lo anota lo guarda tal cual. */
+  onListo: (mensaje: string, detalle: string, hecho?: { corridaId: string; lineNo: number | null; producto: string; m3: number }) => void;
   onClose: () => void;
 }) {
   const [fecha, setFecha] = useState(hoyIso);
@@ -178,6 +179,12 @@ export default function CtpReprocesoModal({
         "Reproceso registrado",
         `Volvieron a la sierra ${r4(entraN).toFixed(4)} de la corrida N° ${origen.lineNo ?? "—"} y salieron ` +
           `${fmtM3(r4(saleN))} m³ de ${producto}. El producto original deja de estar disponible.`,
+        {
+          corridaId: destinoEntryId,
+          lineNo: typeof jCorrida?.entry?.lineNo === "number" ? jCorrida.entry.lineNo : null,
+          producto,
+          m3: r4(saleN),
+        },
       );
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));

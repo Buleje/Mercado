@@ -136,6 +136,8 @@ const H = vi.hoisted(() => {
     trozas: [] as ReturnType<typeof trozaViva>[],
     escrituras: [] as string[],
     marcadas: [] as unknown[],
+    /** `count` que devuelve el `updateMany` de las trozas (null = 1): 0 simula otra corrida que las tomó a la vez. */
+    cuentaTrozas: null as number | null,
     setConsumos: vi.fn(async () => []),
     trozaViva,
   };
@@ -169,7 +171,7 @@ const H = vi.hoisted(() => {
       updateMany: async (args: { where: unknown; data: unknown }) => {
         estado.escrituras.push("trozas");
         estado.marcadas.push(args);
-        return { count: 1 };
+        return { count: estado.cuentaTrozas ?? 1 };
       },
     },
   };
@@ -214,6 +216,7 @@ import { CtpInvariantError } from "@/lib/db/forest-ctp-consumo.db";
 beforeEach(() => {
   H.estado.escrituras.length = 0;
   H.estado.marcadas.length = 0;
+  H.estado.cuentaTrozas = null;
   H.estado.setConsumos.mockClear();
   H.estado.corrida = { ...H.estado.corrida, entryDate: new Date("2026-09-07T00:00:00.000Z") };
 });
@@ -259,6 +262,14 @@ describe("T3 · consumir (lote → corrida, Consumos y jornadas)", () => {
     await t3(ForestLoteAserrioDB.consumir("tenant-blas", "L-1", "corrida-29", undefined, "qaadmin"));
     expect(H.estado.setConsumos).not.toHaveBeenCalled();
     expect(H.estado.escrituras).toEqual([]);
+  });
+
+  it("dos pedidos a la vez: si otra corrida marcó la troza primero, tira (y la tx deshace los m³ por guía)", async () => {
+    H.estado.trozas = [H.estado.trozaViva("t1", { guiaRecepcion: "2026-09-07T00:00:00.000Z" })];
+    H.estado.cuentaTrozas = 0;
+    await expect(
+      ForestLoteAserrioDB.consumir("tenant-blas", "L-1", "corrida-29", undefined, "qaadmin"),
+    ).rejects.toMatchObject({ detail: { motivo: "TROZA_YA_CONSUMIDA" } });
   });
 
   it("misma fecha → pasa", async () => {

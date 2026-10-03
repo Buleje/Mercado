@@ -16,6 +16,7 @@ import RepartoCompletarLote from "../reparto-completar-lote";
 import { AvisoDelLibro, JornadaLibro } from "../reparto-jornada-libro";
 import { anotarLibroEnLaGuardada } from "../reparto-lotes-sugeridos-api";
 import { useLibroDeBloques } from "./use-libro-de-bloques";
+import { useMiRol } from "@/hooks/use-mi-rol";
 import type { EstadoLotesAserrio } from "./use-lotes-aserrio";
 
 /**
@@ -75,6 +76,8 @@ export function useLibroDelReparto({
     [guardar, distribucionId],
   );
   const libro = useLibroDeBloques(lotes, aplicar);
+  const rol = useMiRol();
+  const puedeDeclarar = rol === "admin" || rol === "owner";
 
   const distLibro = useMemo(
     () => (dim === "tipo" ? distVista : distConVolumenOficial(distPorTipo, repartoOficial(distPorTipo))),
@@ -119,9 +122,15 @@ export function useLibroDelReparto({
         </span>
       );
     }
+    /* Declarar la producción (PATCH del Libro) es de admin y dueño: el
+       almacenero puede consumir pero no declarar, y su «Registrar» dejaba la
+       corrida abierta sin producción. Se le apaga con el motivo. */
+    const jVista = j.estado === "lista" && !puedeDeclarar
+      ? { ...j, estado: "apagada" as const, motivo: "Registrar la producción en el Libro es de admin o dueño: tu rol puede consumir, pero no declarar lo que salió." }
+      : j;
     return (
       <JornadaLibro
-        jornada={j}
+        jornada={jVista}
         ocupado={libro.ocupado === `${id}#${d}`}
         bloqueado={libro.ocupado != null}
         onRegistrar={() => void registrar(id, d)}
@@ -133,9 +142,9 @@ export function useLibroDelReparto({
     const id = b.bloque.id;
     const c = completos.get(id);
     const plan = planes.get(id);
-    /* Mientras una jornada se pueda registrar, ése es el camino: «Completar»
-       es para lo que las jornadas ya no pueden escribir. */
-    if (!c?.ofrecer || c.lineas.length === 0 || plan?.jornadas.some((j) => j.estado === "lista")) return null;
+    /* Mientras una jornada se pueda registrar —hoy o cuando llegue su fecha—,
+       ése es el camino: «Completar» es para lo que las jornadas ya no pueden escribir. */
+    if (!puedeDeclarar || !c?.ofrecer || c.lineas.length === 0 || plan?.jornadas.some((j) => j.estado === "lista" || j.enEspera)) return null;
     return (
       <button type="button" onClick={() => setCompletarDe(id)} disabled={libro.ocupado != null} title={`Declarar lo que falta del lote ${c.loteCode} (LPC o LRE)`} className={`${BTN_BLOQUE} disabled:opacity-50`}>
         <BookOpen className="h-4 w-4" aria-hidden /> Completar
@@ -200,8 +209,8 @@ export function useLibroDelReparto({
             disponible: lre.origen.disponibleM3,
           }}
           sugerencia={{ producto: productoDelTipoComercial(primera.label) ?? primera.label, m3: sumaLre.m3 }}
-          onListo={(mensaje, detalle) => {
-            libro.anotarLre(bdLre.bloque, lre.elegidas, hoy, `${mensaje}: ${detalle}`);
+          onListo={(mensaje, detalle, hecho) => {
+            libro.anotarLre(bdLre.bloque, lre.elegidas, hoy, `${mensaje}: ${detalle}`, hecho);
             setLre(null);
           }}
           onClose={() => setLre(null)}

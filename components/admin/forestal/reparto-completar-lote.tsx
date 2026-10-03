@@ -103,7 +103,7 @@ export default function RepartoCompletarLote({
           <button type="button" onClick={onCerrar} className={BTN}>Cancelar</button>
           <button type="button" onClick={() => void confirmar()} disabled={Boolean(motivo) || ocupado} className={BTN_PRIMARIO}>
             {ocupado ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : linea === "LRE" ? <RefreshCw className="h-4 w-4" aria-hidden /> : <BookOpen className="h-4 w-4" aria-hidden />}
-            {ocupado ? "Escribiendo…" : linea === "LRE" ? "Abrir el reproceso" : nueva ? "Declarar corrida LPC" : "Sumar a la corrida"}
+            {ocupado ? "Escribiendo…" : linea === "LRE" ? "Abrir el reproceso" : nueva ? "Declarar corrida LPC" : "Sumar a su corrida (queda en su línea)"}
           </button>
         </div>
       }
@@ -167,7 +167,7 @@ export default function RepartoCompletarLote({
               <InfoTip
                 title="Sin rolliza nueva"
                 what="Todas las trozas del lote ya entraron a la sierra: una corrida nueva no tendría materia prima y el tope no se podría medir."
-                affects="Lo que falta entra como filas nuevas de esa corrida (no la reescribe), con el tope medido sobre su total."
+                affects="Lo que falta entra como filas nuevas de esa corrida (no la reescribe), con el tope medido sobre su total. Quedan en la línea de esa corrida (la LP de su jornada), no como LPC: el Libro guarda una línea por corrida."
               />
             </span>
             <select value={corridaLpc} onChange={(e) => setCorridaLpc(e.target.value)} className={`${CAMPO} mt-1`}>

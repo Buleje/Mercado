@@ -137,6 +137,19 @@ describe("planLibroDeBloque — fase 3", () => {
     expect(p.jornadas[0]!.motivo).toMatch(/no registra un día que no pasó/);
   });
 
+  it("un día futuro sin escribir queda «en espera» (por él no se ofrece «Completar»)", () => {
+    const p = planLibroDeBloque({ bloque: bloque({ fecha: "2026-10-03" }), porDia: dosDias() }, lote(cuatroTrozas()), HOY);
+    expect(p.jornadas[0]!.enEspera).toBeFalsy();
+    expect(p.jornadas[1]!.enEspera).toBe(true); // el día 2 cae el 04-10
+  });
+
+  it("un «Completar» cuya corrida se anuló ya no apaga el día (no traba el bloque)", () => {
+    const b = bloque({ complementos: [{ linea: "LPC", corridaId: "c-anulada", lineNo: 9, claves: ["tipo|comercial"], m3: 0.9, fecha: HOY }] });
+    const l = lote(cuatroTrozas(), [corrida("c-anulada", 9, 0.9, { viva: false })]);
+    const p = planLibroDeBloque({ bloque: b, porDia: dosDias() }, l, HOY);
+    expect(p.jornadas[0]!.motivo ?? "").not.toMatch(/ya se declaró con «Completar»/);
+  });
+
   it("madera ya aserrada: no dibuja nada", () => {
     expect(planLibroDeBloque({ bloque: bloque({ tipo: "aserrada" }), porDia: dosDias() }, lote(cuatroTrozas()), HOY).oculto).toBe(true);
   });

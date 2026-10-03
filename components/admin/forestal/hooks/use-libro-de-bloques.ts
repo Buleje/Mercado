@@ -188,7 +188,7 @@ export function useLibroDeBloques(lotes: LotesParaJornadas, aplicar: Aplicar) {
         invalidarCtp("/forestal/");
         await lotes.recargar();
         anotarComplemento(b, { linea: "LPC", corridaId: c.id, lineNo: c.lineNo, claves, m3: suma.m3, fecha: destino.fecha });
-        setAviso({ bloqueId: b.id, tono: "ok", texto: `Se sumaron ${suma.piezas} pzas (${suma.m3} m³) a la corrida N° ${c.lineNo}.` });
+        setAviso({ bloqueId: b.id, tono: "ok", texto: `Se sumaron ${suma.piezas} pzas (${suma.m3} m³) a la corrida N° ${c.lineNo}, en la línea de esa corrida (no como LPC: el Libro guarda una línea por corrida).` });
         return true;
       } catch (e) {
         setAviso({ bloqueId: b.id, tono: "error", texto: `No se completó: ${texto(e)}` });
@@ -201,8 +201,24 @@ export function useLibroDeBloques(lotes: LotesParaJornadas, aplicar: Aplicar) {
   );
 
   /** Fase 4, LRE: el reproceso ya se registró con su modal; acá se anota. */
-  const anotarLre = useCallback((b: BloqueRolliza, elegidas: readonly AsignacionGrupo[], fecha: string, detalle: string) => {
-    anotarComplemento(b, { linea: "LRE", corridaId: null, lineNo: null, claves: elegidas.map((g) => g.clave), m3: sumaDeLineas(elegidas).m3, fecha });
+  const anotarLre = useCallback((
+    b: BloqueRolliza,
+    elegidas: readonly AsignacionGrupo[],
+    fecha: string,
+    detalle: string,
+    hecho?: { corridaId: string; lineNo: number | null; m3: number },
+  ) => {
+    /* Con su corrida: si se anula en el Libro, el complemento deja de contar y
+       el bloque no queda trabado (revisión de ADR-464). El m³ es el que se
+       declaró en el reproceso, no el que sugería la Distribución. */
+    anotarComplemento(b, {
+      linea: "LRE",
+      corridaId: hecho?.corridaId ?? null,
+      lineNo: hecho?.lineNo ?? null,
+      claves: elegidas.map((g) => g.clave),
+      m3: hecho?.m3 ?? sumaDeLineas(elegidas).m3,
+      fecha,
+    });
     setAviso({ bloqueId: b.id, tono: "ok", texto: detalle });
     lotes.recargar().catch((err: unknown) => setAviso({ bloqueId: b.id, tono: "aviso", texto: `${detalle} (no se pudo recargar el lote: ${texto(err)})` }));
   }, [lotes, anotarComplemento]);
