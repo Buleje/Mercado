@@ -27,7 +27,9 @@ Stack: React 19.2, Next.js 16 (App Router, Turbopack), Tailwind 4 (`@theme` toke
 `motion` suelto crashea en runtime y los gates estáticos no lo ven), Lucide.
 
 ## Reglas críticas
-1. **Sin hex hardcodeados**: tokens del DS (`lint-design-tokens.ts` corre en lint-staged). Un modal
+1. **Sin hex hardcodeados**: tokens del DS (`lint-design-tokens.ts` corre en lint-staged). Antes de
+   reportar, 1 llamada: `npx tsx scripts/lint-design-tokens.ts <archivos tocados>` con 0 errores (03-10:
+   un `border-2` neutro rebotó el commit de 16 archivos; el commit lo corre, pero el error vuelve al hilo principal). Un modal
    en portal hereda tokens de la TIENDA: `usePanelTokens` (memoria
    `modal-portal-hereda-tokens-de-la-tienda`).
 2. Dark mode completo; `min-w-*` en Tailwind 4 puede estar muerta; `[&_th]:x` del padre pisa la
