@@ -29,6 +29,8 @@ export interface ResultadoJornada {
   estado: "declarada" | "corrida-abierta" | "no-consumio";
   /** N° de línea del libro, cuando llegó a existir. */
   lineNo?: number;
+  /** Id de la corrida, cuando llegó a existir: quien llama lo guarda (ADR-464). */
+  corridaId?: string;
   detalle?: string;
 }
 
@@ -94,13 +96,14 @@ export async function registrarJornadas(
     ultimoMotivo = null;
     try {
       await io.declarar(corrida.id, j);
-      resultados.push({ dia: j.dia, fecha: j.fecha, estado: "declarada", lineNo: corrida.lineNo });
+      resultados.push({ dia: j.dia, fecha: j.fecha, estado: "declarada", lineNo: corrida.lineNo, corridaId: corrida.id });
     } catch (e) {
       resultados.push({
         dia: j.dia,
         fecha: j.fecha,
         estado: "corrida-abierta",
         lineNo: corrida.lineNo,
+        corridaId: corrida.id,
         detalle: texto(e),
       });
     }

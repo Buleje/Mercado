@@ -7,6 +7,7 @@
 
 import { csrfHeaders } from "@/lib/csrf-client";
 import { invalidarCtp } from "@/lib/forestal/ctp-fetch";
+import type { BloqueRolliza } from "@/lib/forestal/cubicacion-reparto";
 import type { LoteDelBloque, PedidoPorBloque, ResultadoLotesPorBloque } from "@/lib/forestal/lotes-por-bloque";
 
 const URL_PROPUESTAS = "/api/admin/forestal/lotes-aserrio/propuestas";
@@ -52,26 +53,58 @@ const URL_DISTRIBUCIONES = "/api/admin/forestal/distribuciones";
  * versión del servidor y se le agrega sólo el lote de cada bloque.
  */
 export async function marcarLotesEnLaGuardada(id: string, loteDe: ReadonlyMap<string, string>): Promise<void> {
+  await reescribirLaGuardada(id, (b) => {
+    const loteId = loteDe.get(b.id);
+    return !loteId || b.loteId === loteId ? null : { ...b, loteId };
+  });
+}
+
+/**
+ * Lo mismo para lo que el bloque escribió en el Libro (ADR-464, fases 3 y 4):
+ * sus corridas, qué jornada quedó en cuál y qué líneas se completaron. Sólo
+ * esos tres campos, del bloque que los cambió; el resto de la guardada queda
+ * como estaba.
+ */
+export async function anotarLibroEnLaGuardada(
+  id: string,
+  bloque: Pick<BloqueRolliza, "id" | "corridaIds" | "jornadasLibro" | "complementos">,
+): Promise<void> {
+  await reescribirLaGuardada(id, (b) =>
+    b.id !== bloque.id
+      ? null
+      : {
+          ...b,
+          corridaIds: bloque.corridaIds ?? null,
+          jornadasLibro: bloque.jornadasLibro ?? null,
+          complementos: bloque.complementos ?? null,
+        },
+  );
+}
+
+type BloqueGuardado = { id: string } & Partial<BloqueRolliza>;
+
+/** Lee la versión del servidor, cambia los bloques que `cambio` devuelva y la vuelve a guardar. */
+async function reescribirLaGuardada(id: string, cambio: (b: BloqueGuardado) => BloqueGuardado | null): Promise<void> {
   const r = await fetch(URL_DISTRIBUCIONES, { credentials: "include", cache: "no-store" });
   if (!r.ok) throw new Error(`No se pudo leer la distribución guardada (HTTP ${r.status})`);
   const { distribuciones } = (await r.json()) as {
-    distribuciones?: { id: string; nombre: string; fecha: string; notas?: string | null; bloques: { id: string; loteId?: string | null }[] }[];
+    distribuciones?: { id: string; nombre: string; fecha: string; notas?: string | null; bloques: BloqueGuardado[] }[];
   };
   const d = distribuciones?.find((x) => x.id === id);
   if (!d) return;
-  let cambio = false;
+  let hubo = false;
   const bloques = d.bloques.map((b) => {
-    const loteId = loteDe.get(b.id);
-    if (!loteId || b.loteId === loteId) return b;
-    cambio = true;
-    return { ...b, loteId };
+    const nuevo = cambio(b);
+    if (!nuevo) return b;
+    hubo = true;
+    return nuevo;
   });
-  if (!cambio) return;
+  if (!hubo) return;
   const w = await fetch(URL_DISTRIBUCIONES, {
     method: "POST",
     headers: csrfHeaders({ "Content-Type": "application/json" }),
     credentials: "include",
     body: JSON.stringify({ id: d.id, nombre: d.nombre, fecha: d.fecha, notas: d.notas ?? null, bloques }),
   });
-  if (!w.ok) throw new Error(`No se pudo anotar el lote en la distribución guardada (HTTP ${w.status})`);
+  if (!w.ok) throw new Error(`No se pudo anotar en la distribución guardada (HTTP ${w.status})`);
 }

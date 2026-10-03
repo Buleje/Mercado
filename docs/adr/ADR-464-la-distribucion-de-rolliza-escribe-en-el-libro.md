@@ -1,6 +1,6 @@
 # ADR-464 — La Distribución de rolliza escribe en el Libro CTP: el bloque recuerda sus trozas y arma un lote por bloque
 
-- **Estado:** aceptado (2026-10-03). Fases 1 y 2 construidas; fase 3 pendiente. Sin cambio de schema (los campos nuevos viven dentro del JSON de la distribución guardada).
+- **Estado:** aceptado (2026-10-03). Fases 1 a 4 construidas (3 y 4 sin commitear al 03-10). Sin cambio de schema (los campos nuevos viven dentro del JSON de la distribución guardada).
 - **Relacionados:** ADR-334 (lote de aserrío), ADR-393 (un lote, un título habilitante), ADR-326/T1 (consumo por pieza), ADR-404 (sugerencia de reproceso), ADR-463 (variado); «Lotes que puedes armar» (2026-09-27).
 - **Pedido (Brandon, 03-10):** que la Distribución de rolliza deje de ser una hoja aparte y escriba en el Libro: el bloque traído del Libro arma su lote y, después, cada jornada suya es una producción.
 
@@ -32,6 +32,15 @@
 - Crear el lote no consume nada: cierre de mes y `congeladoAt` aplican en la fase 3, al escribir la producción (las puertas de consumo ya los respetan).
 - En Blas y en `main` hoy no se arma ningún lote: todos sus ingresos están sin permiso. El primer uso real pasa por poner el permiso en Ingresos.
 
-## Fase 3 (pendiente)
+## Fase 3 — cada jornada del bloque es una corrida (construida)
 
-Cada jornada del bloque (`dias`, `fecha`) es una producción en el Libro, consumiendo `trozaIds` y guardando `corridaIds`. `lib/forestal/consumo-en-jornadas.ts:127` hoy supone 1 bloque = 1 troza: hay que repartir las piezas del bloque entre sus jornadas sin partir una troza (T1) y respetar cierre/congelado.
+- **Plan puro** `lib/forestal/jornadas-de-bloque.ts` (`planLibroDeBloque`): abre el bloque en sus `trozaIds` libres EN SU LOTE (lo que dice el Libro manda sobre la lista guardada) y reparte **trozas enteras** entre los días pendientes, en proporción a lo aserrado de cada día (la más grande al día que más le falta). La producción se declara por producto: el plan sale del reparto «Por tipo» con el volumen oficial (el del Anexo 04), mire la tabla lo que mire.
+- **Se apaga con motivo**, antes de abrir la corrida: bloque a mano («Tráelo del Libro»), sin lote («Crea su lote primero»), día que no pasó, día que pasaría el 56 % con sus trozas, menos trozas que días (T1), día anterior sin registrar (el Libro se llena en orden), línea ya completada, y **trozas del bloque consumidas por una corrida que no salió de acá** (puede ser la misma jornada registrada desde otro equipo: repartir lo que queda declararía dos veces).
+- **Escritura**: las puertas de siempre (`consumir` en `/lotes-aserrio` + `declarar_produccion` en `/ctp`, línea LP) vía `useRegistrarJornadas`, con `exigirTodas`: si entraron menos trozas que las pedidas no se declara (I1) y la corrida queda abierta con su N°. Sin ruta nueva.
+- **Idempotencia**: `BloqueRolliza.jornadasLibro` (día → corrida, N°, estado) + `corridaIds`, en el dispositivo y en la guardada abierta (sólo esos campos: `anotarLibroEnLaGuardada`). Botón apagado mientras escribe (candado síncrono). Si la corrida se anuló, el día vuelve a poder registrarse. La segunda llave es el servidor: una troza consumida no entra dos veces.
+
+## Fase 4 — «Completar el lote» (construida)
+
+- Se ofrece en un bloque cuyo lote ya declaró producción, cuando ninguna jornada se puede registrar. Lo que falta = las líneas de los días no escritos desde acá, sin las ya completadas (`BloqueRolliza.complementos`).
+- **LPC**: con rolliza libre en el lote, corrida **nueva** (consume esa rolliza, declara en LPC, tope propio). **Sin rolliza libre, se suma a una corrida del lote con margen** (`ampliar_produccion`, ADR-361: filas nuevas, tope al 56 % acumulado). Una corrida nueva sin materia prima no se crea: `declararProduccion` no mide el tope cuando la entrada es 0, sería el agujero. Si se quiere una línea LPC sin rolliza, hace falta un vínculo corrida↔lote que hoy no existe (schema + ADR).
+- **LRE**: abre el mismo `CtpReprocesoModal` desde la corrida del lote elegida, con lo elegido como sugerencia; al terminar se anota el complemento (el reproceso no devuelve el id de su corrida).

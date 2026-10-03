@@ -39,6 +39,7 @@ import { fmtM3, fmtPct, fmtPiezas, fmtPt, fmtSoles } from "@/lib/forestal/cubica
 import { ptDesdeM3, toFeet, unificarPorMedida } from "@/lib/forestal/cubicacion";
 import { margenLote, volumenLibre, type LoteAserrio } from "@/lib/forestal/lotes-aserrio";
 import { useLotesAserrio } from "./hooks/use-lotes-aserrio";
+import { useLibroDelReparto } from "./hooks/use-libro-del-reparto";
 import { KpiResumen, SeccionResumen } from "./resumen-tabla";
 import { BloqueEspecie } from "./reparto-vistas";
 import { DiferenciaDistribucion } from "./reparto-diferencia";
@@ -74,6 +75,7 @@ import { ColumnasMenu, useColumnasVisibles } from "./ctp-shared";
 import { colorDeBloque, indicesDeBloques } from "./reparto-colores";
 import DistribucionesGuardadas from "./DistribucionesGuardadas";
 import RepartoLotesSugeridos from "./reparto-lotes-sugeridos";
+import { marcarLotesEnLaGuardada } from "./reparto-lotes-sugeridos-api";
 import { logger } from "@/lib/logger";
 import type { LoteCreadoDeBloque } from "@/lib/forestal/lotes-por-bloque";
 import RepartoPaquetesPicker, { type PaqueteElegible } from "./reparto-paquetes";
@@ -412,7 +414,8 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
    * de lo que el lote realmente puede cubrir. Un lote ya agregado como
    * bloque no se vuelve a ofrecer: declararlo dos veces duplicaría su m³.
    */
-  const { lotes: lotesAserrio, recargar: recargarLotesAserrio } = useLotesAserrio();
+  const estadoLotes = useLotesAserrio();
+  const { lotes: lotesAserrio, recargar: recargarLotesAserrio, cargando: cargandoLotes } = estadoLotes;
   const lotesConRolliza = useMemo(() => {
     const yaAgregados = new Set(bloques.filter((b) => b.loteId).map((b) => b.loteId));
     return lotesAserrio
@@ -773,7 +776,8 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
    * ADR-464: los lotes recién armados con «Crear lotes». Cada bloque guarda su
    * `loteId` —no se le arma otro ni se vuelve a ofrecer ese lote como bloque— y
    * se guarda en el dispositivo; si hay una distribución guardada abierta,
-   * también en el servidor, para que al reabrirla siga diciendo «Ya tiene lote».
+   * se anota SÓLO el lote en su versión del servidor (sin subir lo que no se
+   * guardó ni saltar el candado), para que al reabrirla diga «Ya tiene lote».
    */
   const asignarLotesCreados = (creados: LoteCreadoDeBloque[]) => {
     const loteDe = new Map(creados.map((c) => [c.bloqueId, c.loteId]));
@@ -782,7 +786,11 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
       return loteId ? { ...b, loteId } : b;
     });
     guardar(next);
-    if (distribucionActual) void guardarDistribucion(next);
+    if (distribucionActual?.id) {
+      marcarLotesEnLaGuardada(distribucionActual.id, loteDe).catch((err: unknown) =>
+        logger.error("[reparto] anotar lotes en la distribución guardada falló", { error: String(err) }),
+      );
+    }
     recargarLotesAserrio().catch((err: unknown) =>
       logger.error("[reparto] recargar lotes tras crearlos falló", { error: String(err) }),
     );
@@ -958,6 +966,12 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
     () => (dim === "tipo" ? dist : distribuirPorCapacidad(bloquesDiferidos, piezasDiferidas, "tipo", precioDe)),
     [dim, dist, bloquesDiferidos, piezasDiferidas, precioDe],
   );
+  /* ADR-464, fases 3 y 4: cada jornada del bloque escribe su corrida en el
+     Libro y «Completar» declara lo que falta del lote (LPC o LRE). */
+  const libroReparto = useLibroDelReparto({
+    bloques, guardar, distribucionId: distribucionActual?.id ?? null,
+    dim, distVista, distPorTipo, lotes: estadoLotes, marcar,
+  });
   const reprocesos = useMemo(() => sugerenciasDeReproceso(distPorTipo), [distPorTipo]);
   /**
    * Lo que un bloque ampara y de él NO puede salir (ADR-407): de paquetería no
@@ -1831,6 +1845,8 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
               bloques={bloques}
               codigoDeLote={(id) => lotesAserrio.find((l) => l.id === id)?.code ?? null}
               onCreados={asignarLotesCreados}
+              lotesCargados={!cargandoLotes}
+              onQuitarLote={(id) => guardar(bloques.map((b) => (b.id === id ? { ...b, loteId: null } : b)))}
             />
             {/* Guardar/abrir la distribución de bloques (Brandon, 2026-09-01):
                 mismo patrón que "Guardadas" en el Cubicador de madera — vive
@@ -2478,8 +2494,10 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
           valorTextoLinea={valorTextoLinea}
           onCambioDecimalLinea={onCambioDecimalLinea}
           onBlurDecimalLinea={onBlurDecimalLinea}
+          libro={libroReparto.libro}
         />
       ))}
+      {libroReparto.nodo}
 
       {/* ── El diferenciador: lo repartido contra lo que falta ─────────────── */}
       {(t.aserradaM3 > 0 || t.faltanteM3 > 0) && (

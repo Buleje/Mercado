@@ -58,7 +58,7 @@ const redondear = (n: number, dec = 4) => {
 };
 
 /** Días CORRIDOS: en un aserradero se trabaja sábado. */
-function sumarDias(fechaIso: string, dias: number): string {
+export function sumarDias(fechaIso: string, dias: number): string {
   const d = new Date(`${fechaIso}T00:00:00Z`);
   if (Number.isNaN(d.getTime())) return fechaIso;
   d.setUTCDate(d.getUTCDate() + dias);
@@ -66,7 +66,7 @@ function sumarDias(fechaIso: string, dias: number): string {
 }
 
 /** Suma dos listas de grupos por clave, conservando el detalle de medidas. */
-function juntarGrupos(acumulado: AsignacionGrupo[], entran: AsignacionGrupo[]): AsignacionGrupo[] {
+export function juntarGrupos(acumulado: AsignacionGrupo[], entran: AsignacionGrupo[]): AsignacionGrupo[] {
   const porClave = new Map<string, AsignacionGrupo>();
   for (const g of [...acumulado, ...entran]) {
     const previo = porClave.get(g.clave);

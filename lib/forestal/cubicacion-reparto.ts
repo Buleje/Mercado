@@ -153,6 +153,19 @@ export interface BloqueRolliza {
    * botón y no registrar dos veces la misma jornada.
    */
   corridaIds?: string[] | null;
+  /**
+   * Qué jornada quedó escrita en qué corrida (ADR-464, fase 3). `corridaIds`
+   * dice QUÉ se escribió; esto dice CUÁL día: sin él no se sabe qué botón
+   * apagar ni qué día falta. La verdad sigue siendo el Libro: si esa corrida
+   * se anuló, el día vuelve a poder registrarse (`planLibroDeBloque`).
+   */
+  jornadasLibro?: JornadaEnLibro[] | null;
+  /**
+   * Lo que se declaró con «Completar» (ADR-464, fase 4): qué líneas (claves de
+   * grupo bajo «Por tipo») ya salieron como complemento (LPC) o recuperación
+   * (LRE), para no ofrecerlas otra vez.
+   */
+  complementos?: ComplementoEnLibro[] | null;
   /** Costo por m³ de rolliza, si se conoce. `null` nunca se sustituye por 0. */
   costoM3?: number | null;
   /** % de la rolliza que se convierte en aserrada. Sin valor, `APROVECHABLE_DEFAULT`. */
@@ -238,6 +251,29 @@ export interface BloqueRolliza {
    * que lo calcule el reparto proporcional como siempre.
    */
   overridesLinea?: Record<string, { piezas?: number | null; m3?: number | null }> | null;
+}
+
+/** Una jornada del bloque ya escrita en el Libro (ADR-464, fase 3). */
+export interface JornadaEnLibro {
+  dia: number;
+  corridaId: string;
+  lineNo: number;
+  /** `abierta` = consumió las trozas y la producción quedó por declarar. */
+  estado: "declarada" | "abierta";
+  /** `AAAA-MM-DD`: la fecha con la que se registró. */
+  fecha: string;
+}
+
+/** Un complemento declarado desde «Completar» (ADR-464, fase 4). */
+export interface ComplementoEnLibro {
+  linea: "LPC" | "LRE";
+  /** La corrida que lo lleva; `null` cuando el reproceso no la devuelve. */
+  corridaId: string | null;
+  lineNo: number | null;
+  /** Claves de grupo «Por tipo» (`AsignacionGrupo.clave`) que cubrió. */
+  claves: string[];
+  m3: number;
+  fecha: string;
 }
 
 /** Clave de un override de línea: el `dim` va adentro para no aplicar un override armado bajo otra vista. */

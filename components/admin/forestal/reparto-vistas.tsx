@@ -10,7 +10,7 @@
  * archivo).
  */
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { DataTable } from "@buleje/design-system";
 import { AlertTriangle, ChevronRight, FileText, Info, Plus, Ruler } from "@buleje/design-system/icons";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
@@ -48,9 +48,19 @@ export function BloqueEspecie({
   e, dim, conCosto, marcadas, marcar, onAnexo, onAnexoDia, anexoElegidos, onAlternarAnexo,
   editarBloque, valorTexto, onCambioDecimal, onBlurDecimal, onAgregarBloqueSugerido,
   onEditarLinea, valorTextoLinea, onCambioDecimalLinea, onBlurDecimalLinea,
-  indiceBloque,
+  indiceBloque, libro,
 }: {
   e: EspecieDistribucion;
+  /**
+   * El Libro desde la distribución (ADR-464, fases 3 y 4): la acción del
+   * bloque («Completar»), su aviso y el botón de cada jornada. Lo arma
+   * `use-libro-del-reparto`; acá sólo se ubica.
+   */
+  libro?: {
+    bloque: (b: BloqueDistribuido) => ReactNode;
+    aviso: (b: BloqueDistribuido) => ReactNode;
+    dia: (b: BloqueDistribuido, dia: number) => ReactNode;
+  };
   dim: DimensionResumen;
   conCosto: boolean;
   /**
@@ -405,9 +415,11 @@ export function BloqueEspecie({
                     <FileText className="h-4 w-4" aria-hidden /> Anexo 04
                   </button>
                 )}
+                {libro?.bloque(b)}
               </span>
             </span>
           </div>
+          {libro?.aviso(b)}
           {b.asignado.length === 0 ? (
             <p className="px-3 pb-2 text-xs text-[var(--text-tertiary)]">Sin usar todavía: no quedó aserrada que asignarle.</p>
           ) : (
@@ -432,6 +444,7 @@ export function BloqueEspecie({
                 onAnexoDia={onAnexoDia ? (d) => onAnexoDia(b, d) : undefined}
                 anexoElegido={anexoElegidos?.has(`${b.bloque.id}#${dia.dia}`)}
                 onAlternarAnexo={onAlternarAnexo ? (d) => onAlternarAnexo(`${b.bloque.id}#${d}`) : undefined}
+                libro={libro?.dia(b, dia.dia)}
               />
             ))
           )}
@@ -525,10 +538,12 @@ export function BloqueEspecie({
 function JornadaBloque({
   bloque, dia, dias, dim, etiquetaCol, marcadas, marcar,
   editableLinea, onEditarLinea, valorTextoLinea, onCambioDecimalLinea, onBlurDecimalLinea,
-  onAnexoDia, anexoElegido, onAlternarAnexo,
+  onAnexoDia, anexoElegido, onAlternarAnexo, libro,
 }: {
   bloque: BloqueRolliza;
   dia: DiaDistribuido;
+  /** El botón «Registrar en el Libro» de ESTA jornada (ADR-464, fase 3). */
+  libro?: ReactNode;
   /**
    * El Anexo 04 de ESA jornada. El Libro se registra día por día: el papel que
    * respalda un día no puede traer las piezas de los otros (ADR-405).
@@ -611,8 +626,14 @@ function JornadaBloque({
                 <FileText className="h-3.5 w-3.5" aria-hidden /> Anexo del día
               </button>
             )}
+            {libro}
           </span>
         </div>
+      )}
+      {/* Con un solo día no hay cabecera de jornada: el botón del Libro va en
+          una franja propia, arriba de la tabla. */}
+      {dias === 1 && libro && (
+        <div className="flex flex-wrap items-center justify-end gap-2 bg-[var(--surface-sunken)] px-3 py-1.5 print:hidden">{libro}</div>
       )}
       {dia.grupos.length === 0 ? null : (
         <div className="overflow-x-auto">

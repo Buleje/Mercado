@@ -28,6 +28,25 @@ const filtroLargoSchema = z.object({
   pct: z.coerce.number().positive().max(100),
 });
 
+const fechaDia = z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/);
+
+const jornadaEnLibroSchema = z.object({
+  dia: z.coerce.number().int().positive().max(366),
+  corridaId: z.string().trim().min(1).max(40),
+  lineNo: z.coerce.number().int().nonnegative().max(9999999),
+  estado: z.enum(["declarada", "abierta"]),
+  fecha: fechaDia,
+});
+
+const complementoSchema = z.object({
+  linea: z.enum(["LPC", "LRE"]),
+  corridaId: z.string().trim().max(40).nullable(),
+  lineNo: z.coerce.number().int().nonnegative().max(9999999).nullable(),
+  claves: z.array(z.string().trim().min(1).max(200)).max(60),
+  m3: z.coerce.number().nonnegative().max(999999),
+  fecha: fechaDia,
+});
+
 const bloqueSchema = z.object({
   id: z.string().trim().min(1).max(80),
   etiqueta: z.string().trim().max(120),
@@ -49,6 +68,11 @@ const bloqueSchema = z.object({
      «traído del Libro» queda como uno cargado a mano: no puede crear su lote. */
   trozaIds: z.array(z.string().trim().max(40)).max(MAX_TROZAS_POR_BLOQUE).nullish(),
   corridaIds: z.array(z.string().trim().max(40)).max(MAX_TROZAS_POR_BLOQUE).nullish(),
+  /* Fases 3 y 4: qué jornada quedó en qué corrida y qué líneas se completaron.
+     Sin declararlos, Zod los borra y al reabrir la distribución los botones
+     vuelven a ofrecer registrar lo ya escrito (el Libro igual lo rechaza: T1). */
+  jornadasLibro: z.array(jornadaEnLibroSchema).max(366).nullish(),
+  complementos: z.array(complementoSchema).max(200).nullish(),
   costoM3: z.coerce.number().nonnegative().max(999999).nullish(),
   aprovechablePct: z.coerce.number().nonnegative().max(100).nullish(),
   amparaManualM3: z.coerce.number().nonnegative().max(999999).nullish(),
@@ -134,6 +158,8 @@ export const POST = withApiHandler("forestal-distribuciones-post", async (req: N
           paqueteId: b.paqueteId ?? undefined,
           trozaIds: b.trozaIds ?? undefined,
           corridaIds: b.corridaIds ?? undefined,
+          jornadasLibro: b.jornadasLibro ?? undefined,
+          complementos: b.complementos ?? undefined,
           costoM3: b.costoM3 ?? undefined,
           aprovechablePct: b.aprovechablePct ?? undefined,
           amparaManualM3: b.amparaManualM3 ?? undefined,
