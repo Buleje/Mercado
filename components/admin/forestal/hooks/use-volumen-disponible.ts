@@ -22,13 +22,16 @@ import type { CtpPeriod } from "@/lib/forestal/ctp-period";
 import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import type { LoteAserrio } from "@/lib/forestal/lotes-aserrio";
 import {
-  clavePermiso,
   filasDeProductos,
   type CorridaDisponible,
 } from "@/lib/forestal/productos-disponibles-resumen";
 import {
   ETIQUETA_FUENTE,
+  SIN_ESPECIE,
+  SIN_PERMISO,
   TODAS_LAS_FUENTES,
+  conLasElegidas,
+  entraPorEspecie,
   entraPorPermiso,
   escribirFuentes,
   fuenteDeVistaVieja,
@@ -36,7 +39,9 @@ import {
   guiasPorRecepcionar,
   hojasDeVolumen,
   lotesConSobrante,
+  opcionesDeEspecie,
   opcionesDePermiso,
+  partidasDeLotes,
   partidasDeProductos,
   partidasDeTrozas,
   resumenVolumen,
@@ -51,6 +56,7 @@ export function useVolumenDisponible(
   period: CtpPeriod,
   fuentes: readonly FuenteVolumen[],
   permisos: readonly string[],
+  especies: readonly string[],
 ) {
   const { contratoFiltro, activo } = useContratoActivo();
   const [trozas, setTrozas] = useState<TrozaConsumible[]>([]);
@@ -84,9 +90,10 @@ export function useVolumenDisponible(
     } else fallas.push(`el patio (${String(rt.reason instanceof Error ? rt.reason.message : rt.reason)})`);
     if (rp.status === "fulfilled") setCorridas(rp.value.corridas ?? []);
     else fallas.push(`los productos (${String(rp.reason instanceof Error ? rp.reason.message : rp.reason)})`);
-    /* Los lotes sólo agregan estado y volumen apartado: sin ellos la pila de
-       Lotes se cuenta igual, desde el patio. No es un error de la suma. */
-    setLotes(rl.status === "fulfilled" ? (rl.value.lotes ?? []) : []);
+    /* Los lotes traen lo por declarar de los ya aserrados: sin ellos la pila
+       de Lotes sería sólo la troza sin aserrar, y eso se avisa. */
+    if (rl.status === "fulfilled") setLotes(rl.value.lotes ?? []);
+    else fallas.push(`los lotes (${String(rl.reason instanceof Error ? rl.reason.message : rl.reason)})`);
     setError(fallas.length ? `No se pudo leer ${fallas.join(" ni ")}.` : null);
     setCargando(false);
   }, [urls]);
@@ -109,36 +116,62 @@ export function useVolumenDisponible(
   useEffect(() => setAhora(new Date()), [trozas, corridas]);
 
   const todas = useMemo(
-    () => [...partidasDeTrozas(trozas), ...partidasDeProductos(filasDeProductos(corridas, ahora))],
-    [trozas, corridas, ahora],
+    () => [
+      ...partidasDeTrozas(trozas),
+      ...partidasDeLotes(lotes),
+      ...partidasDeProductos(filasDeProductos(corridas, ahora)),
+    ],
+    [trozas, lotes, corridas, ahora],
   );
-  /** Las opciones de permiso salen de TODO: si se achicaran con el filtro, no se podría deshacer. */
-  const opcionesPermiso = useMemo(() => opcionesDePermiso(todas), [todas]);
+  /* Filtro CRUZADO: las opciones de un filtro se pesan con el OTRO puesto
+     (la faceta se excluye a sí misma) y lo elegido nunca pierde su chip. */
   const delPermiso = useMemo(
     () => todas.filter((p) => entraPorPermiso(p.permisoClave, permisos)),
     [todas, permisos],
   );
+  const deLaEspecie = useMemo(
+    () => todas.filter((p) => entraPorEspecie(p.especieClave, especies)),
+    [todas, especies],
+  );
+  const etiquetas = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const o of [...opcionesDePermiso(todas), ...opcionesDeEspecie(todas)]) m.set(o.clave, o.etiqueta);
+    return m;
+  }, [todas]);
+  const opcionesPermiso = useMemo(
+    () => conLasElegidas(opcionesDePermiso(deLaEspecie), permisos, etiquetas, SIN_PERMISO),
+    [deLaEspecie, permisos, etiquetas],
+  );
+  const opcionesEspecie = useMemo(
+    () => conLasElegidas(opcionesDeEspecie(delPermiso), especies, etiquetas, SIN_ESPECIE),
+    [delPermiso, especies, etiquetas],
+  );
+  const filtradas = useMemo(
+    () => delPermiso.filter((p) => entraPorEspecie(p.especieClave, especies)),
+    [delPermiso, especies],
+  );
   /** Los chips dicen el m³ de CADA pila aunque no esté elegida: es lo que invita a sumarla. */
-  const porPila = useMemo(() => resumenVolumen(delPermiso), [delPermiso]);
+  const porPila = useMemo(() => resumenVolumen(filtradas), [filtradas]);
   const elegidas = useMemo(
-    () => delPermiso.filter((p) => fuentes.includes(p.fuente)),
-    [delPermiso, fuentes],
+    () => filtradas.filter((p) => fuentes.includes(p.fuente)),
+    [filtradas, fuentes],
   );
   const resumen = useMemo(() => resumenVolumen(elegidas), [elegidas]);
   const porPermiso = useMemo(() => volumenPorGrupo(elegidas, "permiso"), [elegidas]);
   const porEspecie = useMemo(() => volumenPorGrupo(elegidas, "especie"), [elegidas]);
 
-  const trozasDelPermiso = useMemo(
-    () => trozas.filter((t) => entraPorPermiso(clavePermiso(t.permiso), permisos)),
-    [trozas, permisos],
+  const entra = useCallback(
+    (permisoClave: string, especieClave: string) =>
+      entraPorPermiso(permisoClave, permisos) && entraPorEspecie(especieClave, especies),
+    [permisos, especies],
   );
   const filasLotes = useMemo(
-    () => (ahora ? lotesConSobrante(trozasDelPermiso, lotes, ahora) : []),
-    [trozasDelPermiso, lotes, ahora],
+    () => (ahora ? lotesConSobrante(trozas, lotes, ahora, entra) : []),
+    [trozas, lotes, ahora, entra],
   );
   const filasRecepcion = useMemo(
-    () => (ahora ? guiasPorRecepcionar(trozasDelPermiso, ahora) : []),
-    [trozasDelPermiso, ahora],
+    () => (ahora ? guiasPorRecepcionar(trozas, ahora, entra) : []),
+    [trozas, ahora, entra],
   );
 
   const [descargando, setDescargando] = useState(false);
@@ -177,6 +210,7 @@ export function useVolumenDisponible(
     truncado,
     recargar,
     opcionesPermiso,
+    opcionesEspecie,
     porPila,
     resumen,
     porPermiso,

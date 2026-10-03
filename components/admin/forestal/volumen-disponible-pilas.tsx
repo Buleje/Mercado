@@ -66,38 +66,48 @@ export function PilaLotes({
   cargando: boolean;
   onIrLotes?: () => void;
 }) {
-  const m3 = suma(filas, (f) => f.m3);
-  const trozas = suma(filas, (f) => f.trozas);
+  const sinAserrar = suma(filas, (f) => f.m3SinAserrar);
+  const porDeclarar = suma(filas, (f) => f.m3PorDeclarar);
+  const partes = [
+    sinAserrar > 0 ? `${fmtM3(sinAserrar)} sin aserrar` : null,
+    porDeclarar > 0 ? `${fmtM3(porDeclarar)} por declarar` : null,
+  ].filter(Boolean);
   return (
     <section aria-label="Lotes" className="space-y-3">
       <Encabezado
-        titulo="Lo que sobra en los lotes"
+        titulo="Volumen sobrante de los lotes"
         ayuda={{
-          what: "Trozas apartadas en un lote y todavía sin aserrar: lo que le queda a cada lote.",
-          affects: "El % es lo que sigue sin aserrar del volumen apartado. El pt es aserrable al 56 %.",
-          example: "Un lote de 7.5 m³ con 2.0 sin aserrar: le sobra el 27 %.",
+          what: "Lo que le queda a cada lote, como en Lotes de aserrío: si está abierto, sus trozas sin aserrar; si ya se aserró, lo que todavía se puede declarar hasta el tope del 56 %.",
+          affects: "La madera aserrada que le queda al lote ya cuenta en Productos: se muestra, pero no se suma acá.",
+          example: "QA-SEM-L4 aserrado: entraron 6.285 m³, tope 3.520, declarados 2.999 → sobran 0.521 por declarar.",
         }}
-        resumen={cargando && filas.length === 0 ? "Leyendo…" : `${nf(filas.length)} ${filas.length === 1 ? "lote" : "lotes"} · ${nf(trozas)} trozas · ${fmtM3(m3)} m³`}
+        resumen={
+          cargando && filas.length === 0
+            ? "Leyendo…"
+            : `${nf(filas.length)} ${filas.length === 1 ? "lote" : "lotes"} · ${partes.length > 1 ? `${partes.join(" + ")} = ` : ""}${fmtM3(sinAserrar + porDeclarar)} m³`
+        }
         accion="Abrir Lotes de aserrío"
         onAccion={onIrLotes}
       />
       <TablaCtp>
-        <caption className="sr-only">Volumen que sobra en cada lote</caption>
+        <caption className="sr-only">Volumen sobrante de cada lote</caption>
         <TheadCtp>
           <tr>
             <th scope="col" className={celda}>Lote</th>
             <th scope="col" className={celda}>Especie</th>
             <th scope="col" className={`${celda} ${SOLO_ANCHO}`}>Permiso</th>
-            <th scope="col" className={`${celda} text-right`}>Trozas</th>
-            <th scope="col" className={`${celda} text-right`}>Sobra m³</th>
-            <th scope="col" className={`${celda} text-right`}>≈pt<span className="sr-only"> aserrable al 56 %</span></th>
-            <th scope="col" className={`${celda} ${SOLO_ANCHO} text-right`}>Del lote</th>
-            <th scope="col" className={`${celda} ${SOLO_ANCHO}`}>Abierto hace</th>
+            <th scope="col" className={`${celda} text-right`}>Sobrante m³</th>
+            <th scope="col" className={`${celda} text-right`}>≈pt<span className="sr-only"> aprovechables, estimado</span></th>
+            <th scope="col" className={`${celda} ${SOLO_ANCHO}`}>Cómo va</th>
+            <th scope="col" className={`${celda} ${SOLO_ANCHO} text-right`}>
+              Aserrada que queda<span className="sr-only">, ya contada en Productos</span>
+            </th>
+            <th scope="col" className={`${celda} ${SOLO_ANCHO}`}>Armado hace</th>
           </tr>
         </TheadCtp>
         <TbodyCtp>
           {cargando && filas.length === 0 && <FilaVacia cols={8}>Leyendo los lotes…</FilaVacia>}
-          {!cargando && filas.length === 0 && <FilaVacia cols={8}>Ningún lote tiene trozas sin aserrar.</FilaVacia>}
+          {!cargando && filas.length === 0 && <FilaVacia cols={8}>Ningún lote tiene volumen sobrante.</FilaVacia>}
           {filas.map((f) => (
             <tr key={f.id} className="hover:bg-[var(--surface-sunken)]">
               <td className={celda}>
@@ -106,17 +116,21 @@ export function PilaLotes({
               </td>
               <td className={`${celda} text-[var(--text-primary)]`}>{f.especie}</td>
               <td className={`${celda} ${SOLO_ANCHO} text-[var(--text-secondary)]`}>{f.permisos.join(", ") || "Sin permiso"}</td>
-              <td className={`${celda} text-right tabular-nums text-[var(--text-primary)]`}>{nf(f.trozas)}</td>
-              <td className={`${celda} text-right font-bold tabular-nums text-[var(--text-primary)]`}>{fmtM3(f.m3)}</td>
+              <td className={`${celda} text-right tabular-nums`}>
+                <span className="font-bold text-[var(--text-primary)]">{fmtM3(f.m3)}</span>
+                <span className="block text-sm text-[var(--text-secondary)]">
+                  {[
+                    f.m3SinAserrar > 0 ? `${nf(f.trozas)} ${f.trozas === 1 ? "troza" : "trozas"} sin aserrar` : null,
+                    f.m3PorDeclarar > 0 ? (f.m3SinAserrar > 0 ? `${fmtM3(f.m3PorDeclarar)} por declarar` : "por declarar") : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </span>
+              </td>
               <td className={`${celda} text-right tabular-nums text-[var(--text-secondary)]`}>{nf(f.pt)}</td>
+              <td className={`${celda} ${SOLO_ANCHO} text-[var(--text-secondary)]`}>{f.nivel ?? "—"}</td>
               <td className={`${celda} ${SOLO_ANCHO} text-right tabular-nums text-[var(--text-secondary)]`}>
-                {f.pctSobra != null && f.m3Lote != null ? (
-                  <span title={`Se apartaron ${fmtM3(f.m3Lote)} m³`}>
-                    {f.pctSobra}% de {fmtM3(f.m3Lote)}
-                  </span>
-                ) : (
-                  "—"
-                )}
+                {f.m3Aserrada != null ? <span title="Ya cuenta en Productos: no suma acá">{fmtM3(f.m3Aserrada)}</span> : "—"}
               </td>
               <td className={`${celda} ${SOLO_ANCHO}`}>
                 {f.diasAbierto != null ? <Dias dias={f.diasAbierto} /> : <span className="text-[var(--text-secondary)]">—</span>}

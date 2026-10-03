@@ -26,6 +26,7 @@ import { AlertTriangle, FileDown } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
 import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
+import { claveEspecie } from "@/lib/forestal/loth-constants";
 import {
   clavePermiso,
   permisoDeCorrida,
@@ -33,6 +34,7 @@ import {
 } from "@/lib/forestal/productos-disponibles-resumen";
 import {
   alternarFuente,
+  entraPorEspecie,
   entraPorPermiso,
   fuenteDeTroza,
   type FuentesPedidas,
@@ -41,7 +43,7 @@ import CtpAvisoAlcancePermiso from "./CtpAvisoAlcancePermiso";
 import CtpProductosDisponibles from "./CtpProductosDisponibles";
 import CtpTrozasDisponibles from "./CtpTrozasDisponibles";
 import { useFuentesElegidas, useVolumenDisponible } from "./hooks/use-volumen-disponible";
-import { FiltroDePermisos, SelectorDePilas } from "./volumen-disponible-chips";
+import { FiltroDeChips, SelectorDePilas } from "./volumen-disponible-chips";
 import { VolumenCombinado } from "./volumen-disponible-combinado";
 import { PilaLotes, PilaPorRecepcionar } from "./volumen-disponible-pilas";
 
@@ -58,13 +60,15 @@ export default function CtpVolumenDisponible({
   onFuentesUsadas?: () => void;
 }) {
   const [permisos, setPermisos] = useState<string[]>([]);
+  const [especies, setEspecies] = useState<string[]>([]);
   /* Un salto desde otra pantalla (la ficha de un paquete, una reserva vencida)
-     busca algo puntual: arrastrar el permiso elegido antes lo escondería. */
+     busca algo puntual: arrastrar los filtros de antes lo escondería. */
   const [fuentes, setFuentes] = useFuentesElegidas(fuentesPedidas, () => {
     setPermisos([]);
+    setEspecies([]);
     onFuentesUsadas?.();
   });
-  const v = useVolumenDisponible(period, fuentes, permisos);
+  const v = useVolumenDisponible(period, fuentes, permisos, especies);
   const [errorExcel, setErrorExcel] = useState<string | null>(null);
   const una = fuentes.length === 1 ? fuentes[0] : null;
 
@@ -72,24 +76,30 @@ export default function CtpVolumenDisponible({
      Identidad estable: cambiarla recalcula toda la vista de abajo. */
   const recorteTrozas = useCallback(
     (t: TrozaConsumible) =>
-      fuenteDeTroza(t) === "trozas" && entraPorPermiso(clavePermiso(t.permiso), permisos),
-    [permisos],
+      fuenteDeTroza(t) === "trozas" &&
+      entraPorPermiso(clavePermiso(t.permiso), permisos) &&
+      entraPorEspecie(claveEspecie(t.especieComun), especies),
+    [permisos, especies],
   );
   const recorteProductos = useMemo(
     () =>
-      permisos.length > 0
-        ? (c: CorridaDisponible) => entraPorPermiso(permisoDeCorrida(c), permisos)
+      permisos.length > 0 || especies.length > 0
+        ? (c: CorridaDisponible) =>
+            entraPorPermiso(permisoDeCorrida(c), permisos) &&
+            entraPorEspecie(claveEspecie(c.especie), especies)
         : undefined,
-    [permisos],
+    [permisos, especies],
   );
-  const alternarPermiso = useCallback(
-    (clave: string) =>
-      setPermisos((p) => (p.includes(clave) ? p.filter((x) => x !== clave) : [...p, clave])),
-    [],
-  );
-  const nombresPermiso = permisos.map(
-    (k) => v.opcionesPermiso.find((o) => o.clave === k)?.etiqueta ?? k,
-  );
+  const alternarEn = (set: typeof setPermisos) => (clave: string) =>
+    set((p) => (p.includes(clave) ? p.filter((x) => x !== clave) : [...p, clave]));
+  const alternarPermiso = useCallback((clave: string) => alternarEn(setPermisos)(clave), []);
+  const alternarEspecie = useCallback((clave: string) => alternarEn(setEspecies)(clave), []);
+  const nombres = (elegidos: string[], opciones: typeof v.opcionesPermiso) =>
+    elegidos.map((k) => opciones.find((o) => o.clave === k)?.etiqueta ?? k);
+  const filtrosEscritos = [
+    ...(permisos.length ? [`Permiso: ${nombres(permisos, v.opcionesPermiso).join(" o ")}`] : []),
+    ...(especies.length ? [`Especie: ${nombres(especies, v.opcionesEspecie).join(" o ")}`] : []),
+  ];
 
   return (
     <div className="space-y-4" data-vista-volumen>
@@ -107,13 +117,7 @@ export default function CtpVolumenDisponible({
           {!una && (
             <button
               type="button"
-              onClick={async () =>
-                setErrorExcel(
-                  await v.descargarExcel(
-                    nombresPermiso.length ? [`Permiso: ${nombresPermiso.join(" o ")}`] : [],
-                  ),
-                )
-              }
+              onClick={async () => setErrorExcel(await v.descargarExcel(filtrosEscritos))}
               disabled={v.resumen.total.m3 === 0 || v.descargando}
               title="Resumen por pila, por permiso, por especie y qué se exportó"
               className="ml-auto inline-flex h-12 shrink-0 items-center gap-2 rounded-2xl border-[1.5px] border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] disabled:opacity-50"
@@ -129,11 +133,21 @@ export default function CtpVolumenDisponible({
           cargando={v.sinDatosAun}
           onAlternar={(f) => setFuentes(alternarFuente(fuentes, f))}
         />
-        <FiltroDePermisos
+        <FiltroDeChips
+          titulo="Permiso"
+          todos="Todos"
           opciones={v.opcionesPermiso}
           elegidos={permisos}
           onAlternar={alternarPermiso}
           onTodos={() => setPermisos([])}
+        />
+        <FiltroDeChips
+          titulo="Especie"
+          todos="Todas"
+          opciones={v.opcionesEspecie}
+          elegidos={especies}
+          onAlternar={alternarEspecie}
+          onTodos={() => setEspecies([])}
         />
       </div>
 
@@ -177,8 +191,10 @@ export default function CtpVolumenDisponible({
           v={v}
           fuentes={fuentes}
           permisos={permisos}
+          especies={especies}
           onSolo={(f) => setFuentes([f])}
           onElegirPermiso={alternarPermiso}
+          onElegirEspecie={alternarEspecie}
         />
       )}
     </div>

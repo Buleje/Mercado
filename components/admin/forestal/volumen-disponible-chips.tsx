@@ -102,17 +102,22 @@ export function SelectorDePilas({
 }
 
 /**
- * Los permisos para acotar las cuatro pilas a la vez. Sólo aparece si hay
- * entre qué elegir: con todo «sin permiso» (o uno solo) no filtra nada. Con un
- * permiso puesto se queda SIEMPRE: si su madera se despachó entera, «Todos» es
- * la única salida de una pantalla en cero.
+ * Un filtro de las cuatro pilas a la vez (permiso o especie). Sólo aparece si
+ * hay entre qué elegir: con todo «sin permiso» (o uno solo) no filtra nada.
+ * Con algo puesto se queda SIEMPRE: si esa madera se despachó entera, «Todos»
+ * es la única salida de una pantalla en cero.
  */
-export function FiltroDePermisos({
+export function FiltroDeChips({
+  titulo,
+  todos,
   opciones,
   elegidos,
   onAlternar,
   onTodos,
 }: {
+  titulo: string;
+  /** «Todos» o «Todas». */
+  todos: string;
   opciones: readonly OpcionPermiso[];
   elegidos: readonly string[];
   onAlternar: (clave: string) => void;
@@ -126,16 +131,16 @@ export function FiltroDePermisos({
       ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
       : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:border-[var(--accent)]";
   return (
-    <div role="group" aria-label="Filtrar por permiso" className="flex flex-wrap items-center gap-2">
-      <span className="text-sm font-bold text-[var(--text-secondary)]">Permiso</span>
+    <div role="group" aria-label={`Filtrar por ${titulo.toLowerCase()}`} className="flex flex-wrap items-center gap-2">
+      <span className="w-16 text-sm font-bold text-[var(--text-secondary)]">{titulo}</span>
       <button type="button" onClick={onTodos} aria-pressed={elegidos.length === 0} className={`${chip} ${color(elegidos.length === 0)}`}>
-        Todos
+        {todos}
       </button>
       {opciones.map((o) => {
         const activo = elegidos.includes(o.clave);
         return (
           <button
-            key={o.clave || "sin-permiso"}
+            key={o.clave || "sin-nombre"}
             type="button"
             onClick={() => onAlternar(o.clave)}
             aria-pressed={activo}

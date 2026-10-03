@@ -21,6 +21,8 @@ import { ptDe as ptRolliza } from "@/lib/forestal/trozas-disponibles";
 import {
   FUENTES_VOLUMEN,
   alternarFuente,
+  conLasElegidas,
+  entraPorEspecie,
   entraPorPermiso,
   escribirFuentes,
   fuenteDeTroza,
@@ -28,7 +30,9 @@ import {
   guiasPorRecepcionar,
   leerFuentes,
   lotesConSobrante,
+  opcionesDeEspecie,
   opcionesDePermiso,
+  partidasDeLotes,
   partidasDeProductos,
   partidasDeTrozas,
   resumenVolumen,
@@ -104,6 +108,16 @@ const partidas = () => [
   ...partidasDeProductos(filasDeProductos(CORRIDAS, AHORA)),
 ];
 
+/* Un lote ya aserrado como QA-SEM-L4 de main (03-10): entraron 6.285 m³, el
+   tope es 3.5196 y se declararon 2.9988 → sobran 0.5208 por declarar. */
+const LOTE_ASERRADO = {
+  id: "L4", code: "QA-SEM-L4", status: "consumido", volumenM3: 6.285, speciesCommon: "Tornillo",
+  fechaApertura: "2026-09-25T00:00:00.000Z", trozas: [{ id: "x", volumenM3: 6.285, permiso: P2, consumidaEnId: "c-l4" }],
+  produccion: { id: "c-l4", lineNo: 1, entryDate: "2026-10-01", productType: "MADERA ASERRADA", speciesCommon: "Tornillo", volumeInputM3: 6.285, quantity: 2.9988, unit: "m3", status: "registrado", viva: true },
+  madera: { estado: "con_madera", m3Disponible: 2.9988, ptDisponible: 1271.49, aserradaEl: null, salioEl: null, guias: [] },
+} as unknown as LoteAserrio;
+const LOTE_ABIERTO = { id: "L1", code: "L-001", status: "abierto", volumenM3: 8, speciesCommon: "Cachimbo", fechaApertura: "2026-09-30T00:00:00.000Z", trozas: [] } as unknown as LoteAserrio;
+
 describe("las cuatro pilas no se pisan", () => {
   it("cada troza viva cae en una sola pila; la consumida en ninguna", () => {
     const pila = Object.fromEntries(TROZAS.map((t) => [t.id, fuenteDeTroza(t)]));
@@ -127,6 +141,16 @@ describe("las cuatro pilas no se pisan", () => {
     expect(r.porFuente.productos).toMatchObject({ m3: 2.75, unidades: 0 }); // corridas sin paquete: suman m³, no se cuentan
     expect(r.total.m3).toBe(16.25);
     expect(FUENTES_VOLUMEN.reduce((a, f) => a + r.porFuente[f].m3, 0)).toBeCloseTo(r.total.m3, 6);
+  });
+
+  it("el lote aserrado suma lo por declarar a Lotes, como m³ de producto (pt × 424)", () => {
+    const ps = [...partidas(), ...partidasDeLotes([LOTE_ABIERTO, LOTE_ASERRADO])];
+    const r = resumenVolumen(ps);
+    expect(partidasDeLotes([LOTE_ABIERTO])).toEqual([]); // el abierto sale del patio
+    expect(r.porFuente.lotes).toMatchObject({ m3: 5.0208, unidades: 3 });
+    expect(r.porFuente.lotes.pt).toBe(ptRolliza(4.5) + ptAserrada(0.5208));
+    expect(r.total.m3).toBe(16.7708);
+    expect(r.total.pt).toBe(ptRolliza(13.5) + ptAserrada(2.75 + 0.5208));
   });
 
   it("el pt aprovechable: troza al 56 %, aserrada × 424, total desde los m³ de cada clase", () => {
@@ -163,6 +187,21 @@ describe("filtro por permiso", () => {
   });
 });
 
+describe("filtro por especie", () => {
+  it("acota por la clave de la especie; las opciones traen su peso", () => {
+    expect(entraPorEspecie("copal", ["copal"])).toBe(true);
+    expect(entraPorEspecie("cachimbo", ["copal"])).toBe(false);
+    expect(entraPorEspecie("", [])).toBe(true);
+    const op = opcionesDeEspecie(partidas());
+    expect(op.find((o) => o.etiqueta === "Copal")?.m3).toBe(2.5);
+  });
+
+  it("lo elegido conserva su chip aunque se quede sin madera", () => {
+    const op = conLasElegidas([{ clave: "a", etiqueta: "A", m3: 1 }], ["a", "b", ""], new Map([["b", "B"]]), "Sin especie");
+    expect(op.map((o) => [o.etiqueta, o.m3])).toEqual([["A", 1], ["B", 0], ["Sin especie", 0]]);
+  });
+});
+
 describe("tablas combinadas", () => {
   it("por permiso: las filas suman el total y «Sin permiso» va al final", () => {
     const ps = [...partidas(), ...partidasDeTrozas([troza({ id: "sp", permiso: null, volumenM3: 0.25 })])];
@@ -180,12 +219,18 @@ describe("tablas combinadas", () => {
 });
 
 describe("detalle de lotes y de lo por recepcionar", () => {
-  it("lo que sobra por lote, con el % del volumen apartado", () => {
-    const lote = { id: "L1", code: "L-001", status: "abierto", volumenM3: 8, speciesCommon: "Cachimbo", fechaApertura: "2026-09-30T00:00:00.000Z", trozas: [] } as unknown as LoteAserrio;
-    const filas = lotesConSobrante(TROZAS, [lote], AHORA);
-    expect(filas).toHaveLength(2);
-    expect(filas[0]).toMatchObject({ codigo: "L-001", estado: "Abierto", trozas: 2, m3: 4, m3Lote: 8, pctSobra: 50, diasAbierto: 3 });
-    expect(filas[1]).toMatchObject({ codigo: "LM-01", esMixto: true, estado: "Mixto", m3: 0.5, m3Lote: null });
+  it("el sobrante por lote: troza sin aserrar en el abierto, por declarar en el aserrado", () => {
+    const filas = lotesConSobrante(TROZAS, [LOTE_ABIERTO, LOTE_ASERRADO], AHORA);
+    expect(filas.map((f) => f.codigo)).toEqual(["L-001", "QA-SEM-L4", "LM-01"]);
+    expect(filas[0]).toMatchObject({ estado: "Abierto", trozas: 2, m3SinAserrar: 4, m3PorDeclarar: 0, m3: 4, diasAbierto: 3 });
+    expect(filas[1]).toMatchObject({ estado: "Aserrado", trozas: 0, m3SinAserrar: 0, m3PorDeclarar: 0.5208, m3: 0.5208, m3Aserrada: 2.9988 });
+    expect(filas[1].nivel).toBe("Cupo corto · 14.8%");
+    expect(filas[2]).toMatchObject({ esMixto: true, estado: "Mixto", m3: 0.5 });
+  });
+
+  it("los filtros de arriba también acotan el detalle de lotes", () => {
+    const soloCopal = (_p: string, e: string) => entraPorEspecie(e, ["copal"]);
+    expect(lotesConSobrante(TROZAS, [LOTE_ABIERTO, LOTE_ASERRADO], AHORA, soloCopal)).toEqual([]);
   });
 
   it("guías por recepcionar: una fila por guía con sus trozas", () => {

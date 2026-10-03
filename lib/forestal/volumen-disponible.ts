@@ -10,15 +10,20 @@
  * LAS CUATRO PILAS NO SE PISAN: cada m³ cae en UNA sola, o la suma de «Todo»
  * contaría dos veces la misma troza.
  *  · trozas     — recibida, sin lote: puede ir hoy a la sierra;
- *  · lotes      — recibida y apartada en un lote de aserrío o mixto, sin
- *                 aserrar todavía: lo que le sobra al lote;
+ *  · lotes      — el SOBRANTE de cada lote, el mismo que «Lotes de aserrío»
+ *                 (`sobraDeLote`): en el abierto (y el mixto), sus trozas sin
+ *                 aserrar; en el ya aserrado, lo que todavía se puede declarar
+ *                 bajo el tope del 56 % (su «Volumen sobrante»). Brandon
+ *                 03-10: «en lotes hay volumen sobrante pero pones que no hay
+ *                 nada» — la primera versión sólo contaba las trozas;
  *  · recepcion  — anotada, con la guía todavía en la bandeja;
  *  · productos  — madera aserrada con saldo (libre + apartada). Lo marcado
  *                 usado NO entra: ya no está para trabajar.
  *
  * Los m³ se suman tal como están (troza y aserrada juntas, que es lo que se
  * pidió). El pt «aprovechable» es un DERIVADO y se dice que lo es: la troza al
- * 56 % aserrable (`ptDe` de trozas) y lo aserrado a m³ × 424.
+ * 56 % aserrable (`ptDe` de trozas) y lo aserrado —también lo por declarar,
+ * que ya es m³ de producto— a m³ × 424. Por eso cada partida dice su clase.
  *
  * PURO y client-safe.
  */
@@ -27,13 +32,23 @@ import type { HojaExcel } from "@/lib/export-excel";
 import { estaDisponible, type TrozaConsumible } from "./consumo-trozas";
 import { grafiaPreferida } from "./especies-catalogo";
 import { claveEspecie } from "./loth-constants";
-import { ESTADO_LOTE, diasDeEspera, type LoteAserrio } from "./lotes-aserrio";
+import {
+  ESTADO_LOTE,
+  TOLERANCIA_CUADRE_SNIFFS_M3,
+  diasDeEspera,
+  etiquetaDeSobra,
+  margenLote,
+  permisosDelLote,
+  sobraDeLote,
+  type LoteAserrio,
+} from "./lotes-aserrio";
 import { ptDe as ptRolliza } from "./trozas-disponibles";
 import {
   clavePermiso,
   ptDe as ptAserrada,
   type FilaProducto,
 } from "./productos-disponibles-resumen";
+import type { CorridaAMedioDeclarar } from "./produccion-paquetes";
 
 export type FuenteVolumen = "trozas" | "productos" | "lotes" | "recepcion";
 /** El orden de los chips y de las columnas: el del patio a la venta. */
@@ -48,7 +63,7 @@ export const ETIQUETA_FUENTE: Record<FuenteVolumen, string> = {
 export const DETALLE_FUENTE: Record<FuenteVolumen, string> = {
   trozas: "libres en el patio",
   productos: "madera aserrada",
-  lotes: "sobrante sin aserrar",
+  lotes: "sobrante: sin aserrar y por declarar",
   recepcion: "guías sin recepcionar",
 };
 /** Cómo se cuenta cada pila: trozas, paquetes, lotes o guías. */
@@ -57,12 +72,6 @@ export const UNIDAD_FUENTE: Record<FuenteVolumen, [string, string]> = {
   productos: ["paquete", "paquetes"],
   lotes: ["lote", "lotes"],
   recepcion: ["guía", "guías"],
-};
-const ES_ROLLIZA: Record<FuenteVolumen, boolean> = {
-  trozas: true,
-  lotes: true,
-  recepcion: true,
-  productos: false,
 };
 
 export const SIN_PERMISO = "Sin permiso";
@@ -92,6 +101,8 @@ export interface PartidaVolumen {
   especieClave: string;
   especie: string;
   m3: number;
+  /** Troza (pt al 56 %) o madera aserrada / por declarar (pt = m³ × 424). */
+  rolliza: boolean;
   /**
    * Lo que se cuenta en `UNIDAD_FUENTE`: la troza, el paquete, el lote o la
    * guía. `null` = suma m³ pero no se cuenta (la corrida sin paquetes: Productos
@@ -121,6 +132,7 @@ export function partidasDeTrozas(trozas: readonly TrozaConsumible[]): PartidaVol
       especieClave: claveEspecie(t.especieComun),
       especie: texto(t.especieComun),
       m3: num(t.volumenM3),
+      rolliza: true,
       unidad:
         fuente === "lotes"
           ? `lote:${t.loteAserrioId ?? `mixto:${t.loteMixtoId}`}`
@@ -143,11 +155,51 @@ export function partidasDeProductos(filas: readonly FilaProducto[]): PartidaVolu
       especieClave: f.especieClave,
       especie: texto(f.corrida.especie),
       m3: f.m3Libro,
+      rolliza: false,
       unidad: f.paquete ? f.clave : null,
     }));
 }
 
-// ── Filtro por permiso ───────────────────────────────────────────────────────
+/** Lo que todavía se puede declarar de un lote ya aserrado. `null` = nada (o está abierto). */
+function porDeclarar(l: LoteAserrio): CorridaAMedioDeclarar | null {
+  if (l.status === "abierto") return null;
+  const m = margenLote(l);
+  return m && m.margenM3 > TOLERANCIA_CUADRE_SNIFFS_M3 ? m : null;
+}
+const permisoDeLote = (l: LoteAserrio) => {
+  const escritos = permisosDelLote(l).length ? permisosDelLote(l) : texto(l.permiso) ? [texto(l.permiso)] : [];
+  return {
+    clave: [...new Set(escritos.map(clavePermiso).filter(Boolean))].sort().join(SEP_PERMISOS),
+    escrito: [...new Set(escritos)].sort().join(SEP_PERMISOS),
+  };
+};
+
+/**
+ * El sobrante de los lotes YA ASERRADOS: lo declarable bajo el tope (la misma
+ * cuenta que «Volumen sobrante» de Lotes de aserrío). Lo de los abiertos sale
+ * del patio (`partidasDeTrozas`): así la troza no puede caer en dos pilas.
+ */
+export function partidasDeLotes(lotes: readonly LoteAserrio[]): PartidaVolumen[] {
+  const out: PartidaVolumen[] = [];
+  for (const l of lotes) {
+    const m = porDeclarar(l);
+    if (!m) continue;
+    const permiso = permisoDeLote(l);
+    out.push({
+      fuente: "lotes",
+      permisoClave: permiso.clave,
+      permiso: permiso.escrito,
+      especieClave: claveEspecie(l.speciesCommon),
+      especie: texto(l.speciesCommon),
+      m3: r4(m.margenM3),
+      rolliza: false,
+      unidad: `lote:${l.id}`,
+    });
+  }
+  return out;
+}
+
+// ── Filtro por permiso y por especie ─────────────────────────────────────────
 
 /** Los permisos de una clave: una corrida con madera de dos entra por cualquiera. */
 export const partesDePermiso = (clave: string): string[] =>
@@ -160,10 +212,36 @@ export function entraPorPermiso(permisoClave: string, elegidos: readonly string[
   return partes.length === 0 ? elegidos.includes("") : partes.some((p) => elegidos.includes(p));
 }
 
+/** ¿Entra por especie? `elegidas` vacío = todas; «» elige lo que no la declara. */
+export const entraPorEspecie = (especieClave: string, elegidas: readonly string[]): boolean =>
+  elegidas.length === 0 || elegidas.includes(especieClave);
+
 export interface OpcionPermiso {
   clave: string;
   etiqueta: string;
   m3: number;
+}
+
+/** Las especies para elegir, con su peso en m³ (la del lote o la troza, la de la corrida). */
+export function opcionesDeEspecie(partidas: readonly PartidaVolumen[]): OpcionPermiso[] {
+  return volumenPorGrupo(partidas, "especie").map((g) => ({ clave: g.clave, etiqueta: g.etiqueta, m3: g.m3 }));
+}
+
+/**
+ * Las opciones de un filtro, sin perder las ya elegidas: si lo elegido se quedó
+ * sin madera (se despachó, o el otro filtro lo dejó afuera) igual tiene su chip
+ * en 0, para poder soltarlo.
+ */
+export function conLasElegidas(
+  opciones: readonly OpcionPermiso[],
+  elegidas: readonly string[],
+  etiquetas: ReadonlyMap<string, string>,
+  sinNombre: string,
+): OpcionPermiso[] {
+  const faltan = elegidas
+    .filter((k) => !opciones.some((o) => o.clave === k))
+    .map((k) => ({ clave: k, etiqueta: k ? (etiquetas.get(k) ?? k) : sinNombre, m3: 0 }));
+  return [...opciones, ...faltan];
 }
 
 /** Los permisos para elegir, de TODAS las pilas y con su peso (sin achicarse con el filtro). */
@@ -210,19 +288,26 @@ export interface ResumenVolumen {
 
 const cero = (): Record<FuenteVolumen, number> => ({ trozas: 0, productos: 0, lotes: 0, recepcion: 0 });
 
-/** m³ de rolliza y de aserrada de un reparto por pila. */
-const ptDeReparto = (m3: Record<FuenteVolumen, number>) =>
-  ptAprovechable(
-    FUENTES_VOLUMEN.filter((f) => ES_ROLLIZA[f]).reduce((a, f) => a + m3[f], 0),
-    m3.productos,
-  );
+/** m³ por pila, partidos en troza y aserrada: el pt se calcula por clase, no por pila. */
+interface Reparto {
+  rolliza: Record<FuenteVolumen, number>;
+  aserrada: Record<FuenteVolumen, number>;
+}
+const repartoVacio = (): Reparto => ({ rolliza: cero(), aserrada: cero() });
+const sumar = (r: Reparto, p: PartidaVolumen) => {
+  (p.rolliza ? r.rolliza : r.aserrada)[p.fuente] += p.m3;
+};
+const m3De = (r: Reparto, f: FuenteVolumen) => r.rolliza[f] + r.aserrada[f];
+const sumaDe = (x: Record<FuenteVolumen, number>) => FUENTES_VOLUMEN.reduce((a, f) => a + x[f], 0);
+/* El pt de un total sale de los m³ de cada clase, no de sumar pt redondeados. */
+const ptDeReparto = (r: Reparto) => ptAprovechable(sumaDe(r.rolliza), sumaDe(r.aserrada));
 
 export function resumenVolumen(partidas: readonly PartidaVolumen[]): ResumenVolumen {
-  const m3 = cero();
+  const r = repartoVacio();
   const unidades = new Map<FuenteVolumen, Set<string>>(FUENTES_VOLUMEN.map((f) => [f, new Set()]));
   const permisos = new Set<string>();
   for (const p of partidas) {
-    m3[p.fuente] += p.m3;
+    sumar(r, p);
     if (p.unidad) unidades.get(p.fuente)?.add(p.unidad);
     for (const k of partesDePermiso(p.permisoClave)) permisos.add(k);
   }
@@ -230,16 +315,15 @@ export function resumenVolumen(partidas: readonly PartidaVolumen[]): ResumenVolu
     FUENTES_VOLUMEN.map((f) => [
       f,
       {
-        m3: r4(m3[f]),
-        pt: ES_ROLLIZA[f] ? ptRolliza(m3[f]) : ptAserrada(m3[f]),
+        m3: r4(m3De(r, f)),
+        pt: ptAprovechable(r.rolliza[f], r.aserrada[f]),
         unidades: unidades.get(f)?.size ?? 0,
       },
     ]),
   ) as Record<FuenteVolumen, VolumenDeFuente>;
   return {
     porFuente,
-    /* El pt del total sale de los m³ de cada clase, no de sumar pt redondeados. */
-    total: { m3: r4(FUENTES_VOLUMEN.reduce((a, f) => a + m3[f], 0)), pt: ptDeReparto(m3) },
+    total: { m3: r4(sumaDe(r.rolliza) + sumaDe(r.aserrada)), pt: ptDeReparto(r) },
     permisos: permisos.size,
   };
 }
@@ -264,11 +348,11 @@ export function volumenPorGrupo(
   partidas: readonly PartidaVolumen[],
   dim: DimensionVolumen,
 ): FilaVolumen[] {
-  const acc = new Map<string, { m3: Record<FuenteVolumen, number>; grafias: Map<string, number> }>();
+  const acc = new Map<string, { r: Reparto; grafias: Map<string, number> }>();
   for (const p of partidas) {
     const k = dim === "permiso" ? p.permisoClave : p.especieClave;
-    const a = acc.get(k) ?? { m3: cero(), grafias: new Map<string, number>() };
-    a.m3[p.fuente] += p.m3;
+    const a = acc.get(k) ?? { r: repartoVacio(), grafias: new Map<string, number>() };
+    sumar(a.r, p);
     const g = dim === "permiso" ? p.permiso : p.especie;
     if (g) a.grafias.set(g, (a.grafias.get(g) ?? 0) + 1);
     acc.set(k, a);
@@ -277,15 +361,15 @@ export function volumenPorGrupo(
   const sin = dim === "permiso" ? SIN_PERMISO : SIN_ESPECIE;
   return [...acc.entries()]
     .map(([clave, a]) => {
-      const m3 = FUENTES_VOLUMEN.reduce((s, f) => s + a.m3[f], 0);
+      const m3 = FUENTES_VOLUMEN.reduce((s, f) => s + m3De(a.r, f), 0);
       return {
         clave,
         etiqueta: clave
           ? grafiaPreferida([...a.grafias.entries()].map(([texto, usos]) => ({ texto, usos }))) || clave
           : sin,
-        porFuente: Object.fromEntries(FUENTES_VOLUMEN.map((f) => [f, r4(a.m3[f])])) as Record<FuenteVolumen, number>,
+        porFuente: Object.fromEntries(FUENTES_VOLUMEN.map((f) => [f, r4(m3De(a.r, f))])) as Record<FuenteVolumen, number>,
         m3: r4(m3),
-        pt: ptDeReparto(a.m3),
+        pt: ptDeReparto(a.r),
         pct: total > 0 ? Math.round((m3 / total) * 1000) / 10 : 0,
       };
     })
@@ -303,28 +387,40 @@ export interface FilaLoteSobrante {
   estado: string | null;
   especie: string;
   permisos: string[];
+  /** Sus trozas vivas, sin aserrar (lote abierto o mixto). */
   trozas: number;
-  /** Lo que le sobra: sus trozas vivas, sin aserrar. */
+  m3SinAserrar: number;
+  /** Lo que todavía se puede declarar bajo el tope del 56 % (lote ya aserrado). */
+  m3PorDeclarar: number;
+  /** El sobrante: sin aserrar + por declarar. Es lo que suma la pila. */
   m3: number;
   pt: number;
-  /** Cuánto se apartó en el lote, si se conoce, y qué parte sigue sin aserrar. */
-  m3Lote: number | null;
-  pctSobra: number | null;
+  /** Cómo lo lee «Lotes de aserrío»: «Queda poco · 12 %», «Cupo corto · 10.4 %»… */
+  nivel: string | null;
+  /** Madera aserrada del lote que sigue disponible. YA cuenta en Productos: no suma acá. */
+  m3Aserrada: number | null;
   diasAbierto: number | null;
 }
 
-/** Lo que le sobra a cada lote: sus trozas vivas, agrupadas. `lotes` agrega estado y volumen. */
+/**
+ * El sobrante de cada lote, como lo lee «Lotes de aserrío». `entra` aplica los
+ * filtros de arriba (permiso y especie) con las mismas claves que las partidas.
+ */
 export function lotesConSobrante(
   trozas: readonly TrozaConsumible[],
   lotes: readonly LoteAserrio[],
   ahora: Date,
+  entra: (permisoClave: string, especieClave: string) => boolean = () => true,
 ): FilaLoteSobrante[] {
   const porId = new Map(lotes.map((l) => [l.id, l]));
-  const acc = new Map<string, { t: TrozaConsumible; trozas: number; m3: number; especies: Map<string, number>; permisos: Set<string> }>();
+  type Acc = { t: TrozaConsumible | null; lote: LoteAserrio | null; trozas: number; m3: number; porDeclarar: number; especies: Map<string, number>; permisos: Set<string> };
+  const acc = new Map<string, Acc>();
+  const nuevo = (t: TrozaConsumible | null, lote: LoteAserrio | null): Acc => ({ t, lote, trozas: 0, m3: 0, porDeclarar: 0, especies: new Map(), permisos: new Set() });
   for (const t of trozas) {
     if (fuenteDeTroza(t) !== "lotes") continue;
+    if (!entra(clavePermiso(t.permiso), claveEspecie(t.especieComun))) continue;
     const id = t.loteAserrioId ?? `mixto:${t.loteMixtoId}`;
-    const a = acc.get(id) ?? { t, trozas: 0, m3: 0, especies: new Map<string, number>(), permisos: new Set<string>() };
+    const a = acc.get(id) ?? nuevo(t, t.loteAserrioId ? (porId.get(t.loteAserrioId) ?? null) : null);
     a.trozas += 1;
     a.m3 += num(t.volumenM3);
     const esp = texto(t.especieComun);
@@ -332,25 +428,37 @@ export function lotesConSobrante(
     if (texto(t.permiso)) a.permisos.add(texto(t.permiso));
     acc.set(id, a);
   }
+  for (const l of lotes) {
+    const m = porDeclarar(l);
+    if (!m) continue;
+    const permiso = permisoDeLote(l);
+    if (!entra(permiso.clave, claveEspecie(l.speciesCommon))) continue;
+    const a = acc.get(l.id) ?? nuevo(null, l);
+    a.porDeclarar += m.margenM3;
+    for (const p of permisosDelLote(l)) a.permisos.add(p);
+    acc.set(l.id, a);
+  }
   return [...acc.entries()]
     .map(([id, a]) => {
-      const esMixto = !a.t.loteAserrioId;
-      const lote = esMixto ? undefined : porId.get(id);
-      const m3 = r4(a.m3);
-      const m3Lote = lote && lote.volumenM3 > 0 ? r4(lote.volumenM3) : null;
+      const lote = a.lote;
+      const esMixto = !lote && !a.t?.loteAserrioId;
+      const m3SinAserrar = r4(a.m3);
+      const m3PorDeclarar = r4(a.porDeclarar);
       const especies = [...a.especies.entries()].sort((x, y) => y[1] - x[1]).map(([e]) => e);
       return {
         id,
-        codigo: (esMixto ? a.t.loteMixtoCode : a.t.loteAserrioCode ?? lote?.code) || "Sin código",
+        codigo: (esMixto ? a.t?.loteMixtoCode : (lote?.code ?? a.t?.loteAserrioCode)) || "Sin código",
         esMixto,
         estado: esMixto ? "Mixto" : lote ? (ESTADO_LOTE[lote.status]?.label ?? lote.status) : null,
         especie: esMixto ? especies.join(", ") || SIN_ESPECIE : texto(lote?.speciesCommon) || especies[0] || SIN_ESPECIE,
         permisos: [...a.permisos].sort(),
         trozas: a.trozas,
-        m3,
-        pt: ptRolliza(m3),
-        m3Lote,
-        pctSobra: m3Lote ? Math.min(100, Math.round((m3 / m3Lote) * 1000) / 10) : null,
+        m3SinAserrar,
+        m3PorDeclarar,
+        m3: r4(m3SinAserrar + m3PorDeclarar),
+        pt: ptAprovechable(m3SinAserrar, m3PorDeclarar),
+        nivel: lote ? etiquetaDeSobra(sobraDeLote(lote)).texto : null,
+        m3Aserrada: lote?.madera && lote.madera.m3Disponible > 0 ? r4(lote.madera.m3Disponible) : null,
         diasAbierto: lote ? diasDeEspera(lote, ahora) : null,
       };
     })
@@ -379,10 +487,12 @@ export interface FilaGuiaPorRecepcionar {
 export function guiasPorRecepcionar(
   trozas: readonly TrozaConsumible[],
   ahora: Date,
+  entra: (permisoClave: string, especieClave: string) => boolean = () => true,
 ): FilaGuiaPorRecepcionar[] {
   const acc = new Map<string, { t: TrozaConsumible; trozas: number; m3: number; especies: Map<string, number> }>();
   for (const t of trozas) {
     if (fuenteDeTroza(t) !== "recepcion") continue;
+    if (!entra(clavePermiso(t.permiso), claveEspecie(t.especieComun))) continue;
     const a = acc.get(t.woodEntryId) ?? { t, trozas: 0, m3: 0, especies: new Map<string, number>() };
     a.trozas += 1;
     a.m3 += num(t.volumenM3);

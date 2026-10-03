@@ -35,14 +35,18 @@ export function VolumenCombinado({
   v,
   fuentes,
   permisos,
+  especies,
   onSolo,
   onElegirPermiso,
+  onElegirEspecie,
 }: {
   v: EstadoVolumenDisponible;
   fuentes: readonly FuenteVolumen[];
   permisos: readonly string[];
+  especies: readonly string[];
   onSolo: (f: FuenteVolumen) => void;
   onElegirPermiso: (clave: string) => void;
+  onElegirEspecie: (clave: string) => void;
 }) {
   const idBase = useId();
   const { activo, ir } = useApartado("volumen-disponible", PESTANAS);
@@ -70,7 +74,7 @@ export function VolumenCombinado({
                 title="Total para trabajar"
                 what="La suma de los m³ de las pilas elegidas. Cada m³ está en una sola pila: nada se cuenta dos veces."
                 affects="Suma troza y madera aserrada tal como están. Los pt aprovechables son un estimado: la troza al 56 %, lo aserrado a m³ × 424."
-                example="Trozas 13.5 + Lotes 7.5 + Productos 7.0 = 28.0 m³."
+                example="Trozas 13.5 + Lotes 8.6 + Productos 7.0 = 29.1 m³."
               />
             </p>
             <p className="text-3xl font-bold tabular-nums text-[var(--text-primary)]">
@@ -128,7 +132,7 @@ export function VolumenCombinado({
           <InfoTip
             title={activo === "permiso" ? "Por permiso" : "Por especie"}
             what="Una columna por pila elegida y su total."
-            affects={activo === "permiso" ? "Clic en un permiso: toda la pestaña muestra solo lo suyo." : "La especie de la troza o de la corrida."}
+            affects={activo === "permiso" ? "Clic en un permiso: toda la pestaña muestra solo lo suyo." : "Clic en una especie: toda la pestaña muestra solo esa."}
             example="Elige solo Trozas y Lotes arriba para ver la madera en troza."
           />
         </div>
@@ -137,8 +141,8 @@ export function VolumenCombinado({
             dim={activo === "especie" ? "especie" : "permiso"}
             filas={activo === "especie" ? v.porEspecie : v.porPermiso}
             fuentes={fuentes}
-            activos={activo === "permiso" ? permisos : []}
-            onElegir={activo === "permiso" ? onElegirPermiso : undefined}
+            activos={activo === "permiso" ? permisos : especies}
+            onElegir={activo === "permiso" ? onElegirPermiso : onElegirEspecie}
             total={r.total}
             cargando={v.sinDatosAun}
           />
