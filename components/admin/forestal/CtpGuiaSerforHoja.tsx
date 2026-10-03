@@ -177,7 +177,7 @@ export default function CtpGuiaSerforHoja({
   const [verCasilleros, setVerCasilleros] = useLocalStorage<boolean>(recordarComo, casillerosAbiertos);
 
   const ubicacion = [gtf.distrito, gtf.provincia, gtf.departamento].filter(Boolean).join(" · ");
-  const productos = gtf.productos ?? [];
+  const productos = useMemo(() => gtf.productos ?? [], [gtf.productos]);
   /* Fase 3 (2026-10-03): una guía ajena también puede traer el tipo cambiado; se avisa antes de aceptarla. */
   const avisosTipo = useMemo(
     () => revisarTiposGTF(productos.map((p) => ({ comun: p.comun, cientifico: p.cientifico, tipoProducto: p.tipoProducto, cantidad: p.cantidad, total: p.volumen, unidad: p.unidad }))),

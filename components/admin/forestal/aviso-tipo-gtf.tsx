@@ -5,7 +5,7 @@
  * lleva. Una línea con qué fila revisar y el porqué en el ⓘ. Sin avisos no
  * dibuja nada.
  */
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import type { AvisoTipo } from "@/lib/forestal/gtf-validador-tipo";
 
