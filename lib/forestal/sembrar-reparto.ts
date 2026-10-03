@@ -67,11 +67,64 @@ export interface ResultadoSiembra {
   sembrados: number;
   /** Los que ya estaban cargados y no se repitieron. */
   repetidos: number;
+  /** De esos repetidos, los que estaban SIN especie y ahora la recibieron. */
+  conEspecie?: number;
 }
 
 /** La huella con la que se decide si un bloque ya está cargado. */
 const huella = (b: Pick<BloqueRolliza, "etiqueta" | "especie" | "paqueteId">) =>
   b.paqueteId ? `ref::${b.paqueteId}` : `${b.etiqueta}::${b.especie}`;
+
+/** `""`, `"  "` y `null` son «sin especie». */
+const sinEspecie = (b: Pick<BloqueRolliza, "especie">) => !String(b.especie ?? "").trim();
+
+/**
+ * La hoja de rolliza después de sembrar — PURO, sin `localStorage`.
+ *
+ * Además de sumar los nuevos sin repetir, completa la especie de un bloque que
+ * ya estaba cargado SIN ella (Brandon, 2026-10-02: «que se pase a distribución
+ * con la especie asignada»). Sin esto, volver a llevar el mismo lote:
+ *  · por `paqueteId` lo daba por repetido y la especie no llegaba nunca;
+ *  · por `etiqueta::especie` la huella cambiaba («Lote 7::» ≠ «Lote 7::Copal»)
+ *    y sembraba un SEGUNDO bloque con el mismo m³ — madera contada dos veces
+ *    en la hoja que se firma.
+ * Una especie ya puesta NO se pisa: la eligió alguien en la tabla.
+ */
+export function unirSiembra(
+  actuales: readonly BloqueRolliza[],
+  candidatos: readonly BloqueSembrable[],
+  prefijo: string,
+  marca: string,
+): { lista: BloqueRolliza[]; sembrados: number; repetidos: number; conEspecie: number } {
+  const lista = actuales.map((b) => ({ ...b }));
+  const yaEstan = new Set(lista.map(huella));
+  let sembrados = 0;
+  let conEspecie = 0;
+  for (const c of candidatos) {
+    /* El mismo bloque, cargado antes sin especie: se le pone, no se duplica.
+       Va ANTES de la huella: por `paqueteId` la huella ya coincide y lo daría
+       por repetido sin completarlo. */
+    const vacio = sinEspecie(c)
+      ? undefined
+      : lista.find((b) =>
+          sinEspecie(b) &&
+          (c.paqueteId ? b.paqueteId === c.paqueteId : !b.paqueteId && b.etiqueta === c.etiqueta),
+        );
+    if (vacio) {
+      yaEstan.delete(huella(vacio));
+      vacio.especie = c.especie;
+      yaEstan.add(huella(vacio));
+      conEspecie += 1;
+      continue;
+    }
+    const h = huella(c);
+    if (yaEstan.has(h)) continue;
+    yaEstan.add(h);
+    lista.push({ ...c, id: `${prefijo}-${marca}-${sembrados}` });
+    sembrados += 1;
+  }
+  return { lista, sembrados, repetidos: candidatos.length - sembrados, conEspecie };
+}
 
 /**
  * Escribe los bloques nuevos en la hoja de rolliza y deja la vista de
@@ -86,22 +139,14 @@ export function sembrarBloques(
   try {
     const raw = localStorage.getItem(slugKey("-rolliza"));
     const actuales: BloqueRolliza[] = raw ? (JSON.parse(raw) as BloqueRolliza[]) : [];
-    const yaEstan = new Set(actuales.map(huella));
-    const marca = Date.now().toString(36);
-    const nuevos: BloqueRolliza[] = [];
-    for (const c of candidatos) {
-      const h = huella(c);
-      if (yaEstan.has(h)) continue;
-      yaEstan.add(h);
-      nuevos.push({ ...c, id: `${prefijo}-${marca}-${nuevos.length}` });
-    }
-    if (nuevos.length > 0) {
-      localStorage.setItem(slugKey("-rolliza"), JSON.stringify([...actuales, ...nuevos]));
+    const r = unirSiembra(actuales, candidatos, prefijo, Date.now().toString(36));
+    if (r.sembrados > 0 || (r.conEspecie ?? 0) > 0) {
+      localStorage.setItem(slugKey("-rolliza"), JSON.stringify(r.lista));
     }
     /* Que Resúmenes abra en la pestaña donde están los bloques recién
        sembrados: llegar a «Tablas» y tener que buscarlos es la mitad del viaje. */
     localStorage.setItem(slugKey("-vista-resumen"), "rolliza");
-    return { sembrados: nuevos.length, repetidos: candidatos.length - nuevos.length };
+    return { sembrados: r.sembrados, repetidos: r.repetidos, conEspecie: r.conEspecie };
   } catch {
     /* localStorage puede fallar (modo privado). Se informa que no se sembró
        nada; quien llama decide si navega igual. */

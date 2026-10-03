@@ -27,16 +27,19 @@ import {
   ControlesDeVentana,
   TiradorDeVentana,
 } from "@/components/admin/shared/modal-controles-ventana";
-import { ArrowRight, Loader2, Ruler, TreePine, X } from "@buleje/design-system/icons";
+import { ArrowRight, Loader2, X } from "@buleje/design-system/icons";
 import { SectionTitle } from "@buleje/design-system";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { RENDIMIENTO_META } from "@/lib/forestal/loctp-catalogos";
 import {
+  bloqueDeCandidato,
+  especiesDeCandidatos,
   totalesDeCandidatos,
   type CandidatoDeCapacidad,
 } from "@/lib/forestal/capacidad-a-bloques";
 import { abrirResumenesDelCubicador, sembrarBloques } from "@/lib/forestal/sembrar-reparto";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import FilaCandidato, { ChipEspecie } from "./llevar-al-cubicador-fila";
 
 export default function LlevarAlCubicadorModal({
   candidatos,
@@ -68,6 +71,12 @@ export default function LlevarAlCubicadorModal({
     [candidatos, elegidos],
   );
   const totales = useMemo(() => totalesDeCandidatos(seleccion), [seleccion]);
+  /* Con qué especie llega cada bloque — de lo tildado; sin nada tildado, de
+     todo el modal, para que se vea igual qué madera hay. */
+  const especies = useMemo(
+    () => especiesDeCandidatos(seleccion.length > 0 ? seleccion : candidatos),
+    [seleccion, candidatos],
+  );
   const pct = Math.round(RENDIMIENTO_META * 100);
 
   const alternar = (clave: string) =>
@@ -81,28 +90,10 @@ export default function LlevarAlCubicadorModal({
   const llevar = () => {
     if (seleccion.length === 0 || yendo) return;
     setYendo(true);
+    /* Cada bloque lleva SU especie (`bloqueDeCandidato`): la distribución
+       agrupa por ella y no hay que volver a elegirla en la tabla. */
     sembrarBloques(
-      seleccion.map((c) => ({
-        /* La etiqueta va LIMPIA: es la columna «GTF / lote» del cubicador y lo
-           que después imprime el papel. Meterle el recorte del filtro —«(permisos
-           A, B · especie TORNILLO)»— la volvía ilegible y, peor, mostraba dos
-           permisos sobre un bloque que declara uno solo (Brandon, 2026-09-09).
-           El permiso viaja en su campo (`permiso`), que es donde se lee. */
-        etiqueta: c.etiqueta,
-        especie: c.especie,
-        m3: c.m3,
-        permiso: c.permiso,
-        origen: "manual" as const,
-        tipo: c.tipo,
-        aprovechablePct: c.aprovechablePct,
-        piezasManual: c.piezasManual,
-        costoM3: null,
-        /* Qué tipo de madera es, cuando el Libro lo dice: es lo que permite
-           sugerir el reproceso del lado del cubicador (ADR-404). */
-        ...(c.tipoProducto ? { tipoProducto: c.tipoProducto } : {}),
-        ...(c.piezas > 0 ? { piezasOrigen: c.piezas } : {}),
-        ...(c.paqueteId ? { paqueteId: c.paqueteId } : {}),
-      })),
+      seleccion.map(bloqueDeCandidato),
       "capacidad",
     );
     abrirResumenesDelCubicador();
@@ -128,7 +119,7 @@ export default function LlevarAlCubicadorModal({
             </SectionTitle>
             <p className="text-sm text-[var(--text-tertiary)]">
               {recorte ? `Sólo ${recorte}` : "Toda la planta"} · se cargan como bloques en la
-              distribución de rolliza sobre lo aserrado
+              distribución de rolliza sobre lo aserrado, cada uno con su especie
             </p>
           </div>
           <span className="ml-auto flex items-center gap-1">
@@ -154,46 +145,12 @@ export default function LlevarAlCubicadorModal({
             <ul className="mt-4 space-y-1.5">
               {candidatos.map((c) => (
                 <li key={c.clave}>
-                  <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 hover:border-[var(--accent)]">
-                    <input
-                      type="checkbox"
-                      checked={elegidos.has(c.clave)}
-                      onChange={() => alternar(c.clave)}
-                      className="h-4 w-4 shrink-0 rounded border border-[var(--rule-base)] accent-[var(--accent)]"
-                    />
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-bold text-[var(--text-primary)]">
-                        {c.etiqueta}
-                      </span>
-                      <span className="block text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-                        {c.fuenteLabel}
-                        {c.permiso ? ` · ${c.permiso}` : ""}
-                        {c.piezas > 0 ? ` · ${c.piezas} ${c.piezas === 1 ? "pieza" : "piezas"}` : ""}
-                      </span>
-                    </span>
-                    {/* Qué clase de madera es: el bloque de rolliza pasa por el
-                        %, el de aserrada ampara su propio m³ y punto. */}
-                    <span
-                      className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold ${
-                        c.tipo === "rolliza"
-                          ? "bg-[var(--data-info-500)]/15 text-[var(--data-info-700)] dark:text-[var(--data-info-500)]"
-                          : "bg-[var(--data-success-500)]/15 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
-                      }`}
-                    >
-                      {c.tipo === "rolliza" ? (
-                        <>
-                          <TreePine className="h-3 w-3" aria-hidden /> Rolliza · {pct} %
-                        </>
-                      ) : (
-                        <>
-                          <Ruler className="h-3 w-3" aria-hidden /> Ya aserrada
-                        </>
-                      )}
-                    </span>
-                    <span className="w-24 shrink-0 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
-                      {fmtM3(c.m3)} m³
-                    </span>
-                  </label>
+                  <FilaCandidato
+                    c={c}
+                    elegido={elegidos.has(c.clave)}
+                    onAlternar={() => alternar(c.clave)}
+                    pct={pct}
+                  />
                 </li>
               ))}
             </ul>
@@ -226,6 +183,12 @@ export default function LlevarAlCubicadorModal({
                     affects="Esto no descuenta ni reserva nada del Libro: la distribución es un papel de respaldo."
                   />
                 </span>
+              </p>
+              <p className="mt-2 flex flex-wrap items-center gap-1.5 border-t border-[var(--rule-soft)] pt-2 text-[var(--text-secondary)]">
+                <span>{seleccion.length > 0 ? "Llegan a la distribución como" : "Especies en el modal"}</span>
+                {especies.map((e) => (
+                  <ChipEspecie key={e.especie || "sin-especie"} especie={e.especie} bloques={e.bloques} />
+                ))}
               </p>
             </div>
           </>

@@ -37,7 +37,9 @@ import {
   type ClaveFuente,
   type EntradaCapacidad,
   type FiltrosCapacidad,
+  type LoteDeCapacidad,
 } from "@/lib/forestal/capacidad-de-planta";
+import type { BloqueSembrable } from "@/lib/forestal/sembrar-reparto";
 
 const r4 = (v: number) => Math.round(v * 10000) / 10000;
 const txt = (v: unknown) => String(v ?? "").trim();
@@ -100,6 +102,23 @@ function unicoONull(valores: readonly (string | null | undefined)[]): string | n
   return unicos.length === 1 ? unicos[0] : null;
 }
 
+/**
+ * La especie de un lote, para el bloque: la suya, y si viniera vacía, la ÚNICA
+ * de sus piezas. Un lote es de una sola especie (regla del aserradero, schema);
+ * con piezas de varias no se elige una al azar: queda vacía y el modal lo dice.
+ */
+function especieDeLote(l: Pick<LoteDeCapacidad, "especie" | "trozas">): string {
+  const propia = txt(l.especie);
+  if (propia) return especieDelCatalogo(propia);
+  /* «CUMALA» y «Cumala» son la misma madera: se comparan normalizadas. */
+  const norm = (v: string) =>
+    v.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const deLasPiezas = new Map(
+    l.trozas.map((t) => txt(t.especie)).filter(Boolean).map((e) => [norm(e), e] as const),
+  );
+  return deLasPiezas.size === 1 ? especieDelCatalogo([...deLasPiezas.values()][0]!) : "";
+}
+
 /** Agrupa trozas por especie; la especie vacía queda junta y se dice. */
 function porEspecie(
   trozas: readonly { especieComun?: string | null; volumenM3?: number | string | null; permiso?: string | null }[],
@@ -157,6 +176,12 @@ export function bloquesDesdeCapacidad(
   }
 
   const lotes = lotesDeFuente(entrada.lotes, filtros);
+  /* La especie de cada lote por su código, de TODOS los lotes (no sólo los
+     filtrados): una corrida sin especie propia la hereda del lote que la
+     alimentó, que es la madera que de verdad entró a la sierra. */
+  const especiePorLote = new Map(
+    entrada.lotes.map((l) => [txt(l.code).toUpperCase(), especieDeLote(l)] as const),
+  );
 
   /* Piezas apartadas en un lote que TODAVÍA están enteras: siguen siendo
      rolliza, aunque ya tengan lote asignado. */
@@ -167,7 +192,7 @@ export function bloquesDesdeCapacidad(
       fuente: "apartado",
       fuenteLabel: "Apartado en lotes, sin aserrar",
       etiqueta: `Lote ${l.code} · apartado`,
-      especie: especieDelCatalogo(txt(l.especie)),
+      especie: especieDeLote(l),
       m3: r4(l.apartadoM3),
       tipo: "rolliza",
       permiso: unicoONull(l.permisos),
@@ -189,7 +214,7 @@ export function bloquesDesdeCapacidad(
       fuente: "lotes",
       fuenteLabel: "Lo que los lotes admiten",
       etiqueta: `Lote ${l.code} · margen`,
-      especie: especieDelCatalogo(txt(l.especie)),
+      especie: especieDeLote(l),
       m3: r4(admite),
       tipo: "aserrada",
       permiso: unicoONull(l.permisos),
@@ -215,7 +240,8 @@ export function bloquesDesdeCapacidad(
       fuente: "productos",
       fuenteLabel: "Productos terminados",
       etiqueta: `${txt(c.producto) || "Producto"}${c.lote ? ` · ${c.lote}` : ""}`,
-      especie: especieDelCatalogo(txt(c.especie)),
+      especie:
+        especieDelCatalogo(txt(c.especie)) || (especiePorLote.get(txt(c.lote).toUpperCase()) ?? ""),
       m3: r4(c.disponible),
       tipo: "aserrada",
       /* Igual que el picker de paquetes: el payload trae GTF y titular, no el
@@ -245,4 +271,53 @@ export function totalesDeCandidatos(candidatos: readonly CandidatoDeCapacidad[])
     /** Lo que ampararía: la rolliza pasada por el % de la tarjeta, más la aserrada. */
     amparaM3: r4(rolliza * RENDIMIENTO_META + aserrada),
   };
+}
+
+/**
+ * El candidato tal como se siembra en la distribución. La ESPECIE viaja
+ * siempre con él (Brandon, 2026-10-02: «que se pase a distribución con la
+ * especie asignada»): es lo que agrupa el reparto, y un bloque que llega vacío
+ * obliga a elegirla otra vez en la tabla.
+ *
+ * La etiqueta va LIMPIA: es la columna «GTF / lote» del cubicador y lo que
+ * imprime el papel. Meterle el recorte del filtro —«(permisos A, B · especie
+ * TORNILLO)»— la volvía ilegible y mostraba dos permisos sobre un bloque que
+ * declara uno solo (Brandon, 2026-09-09). El permiso viaja en su campo.
+ */
+export function bloqueDeCandidato(c: CandidatoDeCapacidad): BloqueSembrable {
+  return {
+    etiqueta: c.etiqueta,
+    especie: c.especie,
+    m3: c.m3,
+    permiso: c.permiso,
+    origen: "manual",
+    tipo: c.tipo,
+    aprovechablePct: c.aprovechablePct,
+    piezasManual: c.piezasManual,
+    costoM3: null,
+    /* Qué tipo de madera es, cuando el Libro lo dice: es lo que permite
+       sugerir el reproceso del lado del cubicador (ADR-404). */
+    ...(c.tipoProducto ? { tipoProducto: c.tipoProducto } : {}),
+    ...(c.piezas > 0 ? { piezasOrigen: c.piezas } : {}),
+    ...(c.paqueteId ? { paqueteId: c.paqueteId } : {}),
+  };
+}
+
+/**
+ * Las especies de una selección, en el orden en que aparecen, con cuántos
+ * bloques lleva cada una. `""` = sin especie (se dice, no se esconde). Sin m³:
+ * troza y tabla no se suman entre sí, y un total por especie las mezclaría.
+ */
+export function especiesDeCandidatos(
+  candidatos: readonly Pick<CandidatoDeCapacidad, "especie">[],
+): { especie: string; bloques: number }[] {
+  const grupos = new Map<string, { especie: string; bloques: number }>();
+  for (const c of candidatos) {
+    const especie = txt(c.especie);
+    const clave = especie.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    const g = grupos.get(clave) ?? { especie, bloques: 0 };
+    g.bloques += 1;
+    grupos.set(clave, g);
+  }
+  return [...grupos.values()];
 }

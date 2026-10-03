@@ -12,9 +12,13 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  bloqueDeCandidato,
   bloquesDesdeCapacidad,
+  especiesDeCandidatos,
   totalesDeCandidatos,
 } from "@/lib/forestal/capacidad-a-bloques";
+import { unirSiembra } from "@/lib/forestal/sembrar-reparto";
+import type { BloqueRolliza } from "@/lib/forestal/cubicacion-reparto";
 import type {
   CorridaDisponible,
   EntradaCapacidad,
@@ -162,5 +166,123 @@ describe("totalesDeCandidatos", () => {
     expect(t.rolliza).toBe(24);
     expect(t.aserrada).toBe(12);
     expect(t.amparaM3).toBeCloseTo(24 * 0.56 + 12, 4);
+  });
+});
+
+/* Brandon, 2026-10-02: «en los lotes ponle la especie … para que luego se pase
+   a distribución con la especie asignada». La especie es lo que agrupa el
+   reparto: un bloque que llega vacío obliga a elegirla otra vez en la tabla. */
+describe("la especie viaja del modal a la distribución", () => {
+  const conLotes: EntradaCapacidad = {
+    ...ENTRADA,
+    patio: [],
+    lotes: [
+      lote({ code: "20-2026", especie: "Panguana", restaM3: 1.5 }),
+      lote({ code: "LA-2026-002", especie: "Copal", restaM3: 0.8 }),
+    ],
+    corridas: [
+      corrida({ id: "p1", lote: "20-2026", especie: "Panguana", disponible: 2 }),
+      /* Sin especie propia: la hereda del lote que la alimentó. */
+      corrida({ id: "p2", lote: "LA-2026-002", especie: null, disponible: 1 }),
+      /* Sin especie y sin lote conocido: no se inventa. */
+      corrida({ id: "p3", lote: "OTRO", especie: null, disponible: 1 }),
+    ],
+  };
+
+  it("cada lote y cada producto llega al bloque con su especie", () => {
+    const bloques = bloquesDesdeCapacidad(conLotes, {}).map(bloqueDeCandidato);
+    const por = (etq: string) => bloques.find((b) => b.etiqueta.includes(etq))?.especie;
+    expect(por("Lote 20-2026")).toBe("Panguana");
+    expect(por("Lote LA-2026-002")).toBe("Copal");
+    expect(bloques.find((b) => b.paqueteId === "corrida:p1")?.especie).toBe("Panguana");
+    expect(bloques.find((b) => b.paqueteId === "corrida:p2")?.especie).toBe("Copal");
+    expect(bloques.find((b) => b.paqueteId === "corrida:p3")?.especie).toBe("");
+  });
+
+  it("un lote sin especie toma la ÚNICA de sus piezas; con dos, queda vacía", () => {
+    const pieza = (id: string, especie: string) =>
+      ({ id, codigo: id, especie, m3: 1, permiso: "", guia: "", consumida: false });
+    const entrada: EntradaCapacidad = {
+      ...ENTRADA,
+      patio: [],
+      corridas: [],
+      lotes: [
+        lote({ code: "U", especie: null, apartadoM3: 2, trozas: [pieza("a", "CUMALA"), pieza("b", "Cumala")] }),
+        lote({ code: "M", especie: null, apartadoM3: 2, trozas: [pieza("c", "CUMALA"), pieza("d", "COPAL")] }),
+      ],
+    };
+    const todo = bloquesDesdeCapacidad(entrada, {});
+    expect(todo.find((c) => c.clave === "apartado:U")?.especie.toUpperCase()).toBe("CUMALA");
+    expect(todo.find((c) => c.clave === "apartado:M")?.especie).toBe("");
+  });
+
+  it("el resumen de especies agrupa sin mirar mayúsculas ni tildes", () => {
+    expect(
+      especiesDeCandidatos([{ especie: "Copal" }, { especie: "COPAL" }, { especie: "Azúcar huayo" }, { especie: "Azucar huayo" }, { especie: "" }]),
+    ).toEqual([
+      { especie: "Copal", bloques: 2 },
+      { especie: "Azúcar huayo", bloques: 2 },
+      { especie: "", bloques: 1 },
+    ]);
+  });
+});
+
+describe("unirSiembra", () => {
+  const ya = (o: Partial<BloqueRolliza> & { id: string }): BloqueRolliza => ({
+    etiqueta: "",
+    especie: "",
+    m3: 1,
+    origen: "manual",
+    tipo: "aserrada",
+    costoM3: null,
+    aprovechablePct: null,
+    ...o,
+  });
+  const nuevo = (o: Partial<Omit<BloqueRolliza, "id">>): Omit<BloqueRolliza, "id"> => ({
+    etiqueta: "",
+    especie: "",
+    m3: 1,
+    origen: "manual",
+    tipo: "aserrada",
+    costoM3: null,
+    aprovechablePct: null,
+    ...o,
+  });
+
+  it("completa la especie de un bloque cargado sin ella, sin duplicarlo", () => {
+    const actuales = [
+      ya({ id: "a", etiqueta: "Lote 20-2026 · margen", m3: 1.5 }),
+      ya({ id: "b", etiqueta: "MADERA ASERRADA · LA-2026-002", paqueteId: "corrida:p2", m3: 1 }),
+    ];
+    const r = unirSiembra(
+      actuales,
+      [
+        nuevo({ etiqueta: "Lote 20-2026 · margen", especie: "Panguana", m3: 1.5 }),
+        nuevo({ etiqueta: "MADERA ASERRADA · LA-2026-002", paqueteId: "corrida:p2", especie: "Copal" }),
+      ],
+      "capacidad",
+      "t",
+    );
+    expect(r).toMatchObject({ sembrados: 0, repetidos: 2, conEspecie: 2 });
+    expect(r.lista.map((b) => [b.id, b.especie])).toEqual([
+      ["a", "Panguana"],
+      ["b", "Copal"],
+    ]);
+  });
+
+  it("no pisa una especie ya elegida y suma lo nuevo con la suya", () => {
+    const actuales = [ya({ id: "a", etiqueta: "Lote 7 · margen", especie: "Tornillo" })];
+    const r = unirSiembra(
+      actuales,
+      [
+        nuevo({ etiqueta: "Lote 7 · margen", especie: "Tornillo" }),
+        nuevo({ etiqueta: "Lote 8 · margen", especie: "Copal" }),
+      ],
+      "capacidad",
+      "t",
+    );
+    expect(r).toMatchObject({ sembrados: 1, repetidos: 1, conEspecie: 0 });
+    expect(r.lista.map((b) => b.especie)).toEqual(["Tornillo", "Copal"]);
+    expect(actuales[0]!.especie).toBe("Tornillo");
   });
 });
