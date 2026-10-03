@@ -43,6 +43,8 @@ import Anexo04BloquesPapel from "./Anexo04BloquesPapel";
 import CtpApartados, { CtpApartadoPanel, type Apartado } from "./ctp-apartados";
 import { useAnexo04Comparar } from "./hooks/use-anexo04-comparar";
 import { useTraseraDelPapel } from "./hooks/use-anexo04-trasera";
+import { useAnexo04Vista } from "./hooks/use-anexo04-vista";
+import Anexo04Filtros from "./Anexo04Filtros";
 import type { TraseraParaPdf } from "@/lib/forestal/anexo04-pdf";
 import { formatNumber } from "@/lib/format";
 
@@ -274,18 +276,28 @@ export default function Anexo04Modal({
     }));
   }, []);
 
+  /**
+   * Filtro tipo × especie y formato de la cantidad (Brandon, 2026-10-03). De
+   * acá para abajo TODO usa `filasPapel`: hoja, PDF, Excel, registro, cuadre,
+   * checklist y comparación — un anexo filtrado es otro papel, no una vista.
+   */
+  const vista = useAnexo04Vista(filasEditadas, especie, origen);
+  const { filasPapel } = vista;
   const anexo = useMemo(
-    () => construirAnexo04(filasEditadas, { unidadV: datos.unidadV, modo: datos.modo }, { especieGlobal: especie, totalManualM3: totalManual }),
-    [filasEditadas, datos.unidadV, datos.modo, especie, totalManual],
+    () => construirAnexo04(filasPapel, { unidadV: datos.unidadV, modo: datos.modo }, { especieGlobal: especie, totalManualM3: totalManual }),
+    [filasPapel, datos.unidadV, datos.modo, especie, totalManual],
   );
   const escala = Math.max(0.25, fit * factor);
 
   /* «Comparar con el resumen» (pestaña) y la trasera que viaja en el PDF. */
   const cmp = useAnexo04Comparar({
-    rows, filasOrigen: filas, filasEditadas, dueno: duenoFiltro, unidadV: datos.unidadV, especieGlobal: especie,
+    rows, filasOrigen: filas, filasEditadas: filasPapel, dueno: duenoFiltro, unidadV: datos.unidadV, especieGlobal: especie,
     totalManualM3: totalManual, corregidas: Object.keys(overrides).length, otroOrigen: piezasGuardadas != null, rotuloDeLasPiezas,
+    pasa: vista.filtrado ? vista.pasa : undefined, rotuloFiltro: vista.rotulo,
   });
-  const traseraPapel = useTraseraDelPapel(trasera, { origenActual: piezasGuardadas == null, dueno: duenoFiltro, correcciones: overrides });
+  const traseraPapel = useTraseraDelPapel(trasera, {
+    origenActual: piezasGuardadas == null, dueno: duenoFiltro, correcciones: overrides, pasa: vista.filtrado ? vista.pasa : undefined,
+  });
   const papeles: Apartado[] = [
     { id: "anexo", label: "ANEXO N° 04", contador: `${anexo.hojas.length} hoja${anexo.hojas.length === 1 ? "" : "s"}` },
     { id: "comparar", label: "Comparar con el resumen", contador: cmp.pastilla, hint: "Por especie y tipo: el resumen contra lo que imprime la hoja" },
@@ -293,7 +305,7 @@ export default function Anexo04Modal({
   ];
 
   const { generando, descargarPdf, descargarExcel, reDescargar, pdfDeLote } = useAnexo04Salidas({
-    filas: filasEditadas, datos, especieGlobal: especie, ctpEntryId, totalManualM3: totalManual, trasera: traseraPapel, onAviso,
+    filas: filasPapel, datos, especieGlobal: especie, ctpEntryId, totalManualM3: totalManual, trasera: traseraPapel, onAviso,
     onRegistrado: () => setHistorialToken((t) => t + 1),
   });
   // Checklist de emisión: lo que la ARFFS devuelve (errores) y lo que un
@@ -301,13 +313,13 @@ export default function Anexo04Modal({
   // llenar a mano es un uso legítimo del formato.
   const avisos = useMemo(
     () => [
-      ...validarAnexo04(datos, anexo, filasEditadas, { declarado: contraste, emitidos, ctpEntryId, ficha }),
+      ...validarAnexo04(datos, anexo, filasPapel, { declarado: contraste, emitidos, ctpEntryId, ficha }),
       /* Al final: es lo que hay que MIRAR, no lo que impide presentar — los
          errores del formato siguen arriba, donde se leen primero. */
       ...avisosDeProcedencia(procedencia),
       ...(avisosExtra ?? []),
     ],
-    [datos, anexo, filasEditadas, contraste, emitidos, ctpEntryId, ficha, procedencia, avisosExtra],
+    [datos, anexo, filasPapel, contraste, emitidos, ctpEntryId, ficha, procedencia, avisosExtra],
   );
   const presentable = anexoPresentable(avisos);
 
@@ -445,9 +457,13 @@ export default function Anexo04Modal({
 
         {/* «Me pasé por 0,003 m³»: qué medida mover y hasta cuánto. Va pegado
             al volumen porque es la respuesta a lo que se acaba de tipear. */}
-        {totalManual != null && filasEditadas.length > 0 && (
+        {totalManual != null && filasPapel.length > 0 && (
           <div className="mt-3 shrink-0">
-            <Anexo04Cuadre filas={filasEditadas} objetivoM3={totalManual} onAplicar={onEditarCelda} />
+            {vista.editable ? (
+              <Anexo04Cuadre filas={filasPapel} objetivoM3={totalManual} onAplicar={onEditarCelda} />
+            ) : (
+              <p className="text-xs text-[var(--text-tertiary)]">Para ver qué medida mover y cerrar el volumen, vuelve a «Como se cargó».</p>
+            )}
           </div>
         )}
 
@@ -560,7 +576,9 @@ export default function Anexo04Modal({
                 ) : undefined
               }
               checklist={<Anexo04Checklist avisos={avisos} presentable={presentable} onSugerencia={(campo, valor) => set({ [campo]: valor })} />}
+              filtros={filas.length > 0 ? <Anexo04Filtros vista={vista} piezasPapel={anexo.totalPiezas} /> : undefined}
               onEditarCelda={onEditarCelda}
+              bloqueoEdicion={vista.editable ? undefined : "Para editar medidas, vuelve a «Como se cargó»"}
             />
             </div>
             )}

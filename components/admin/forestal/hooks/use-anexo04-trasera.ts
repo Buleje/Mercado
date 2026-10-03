@@ -11,6 +11,8 @@
  *  · Con un dueño elegido, sólo sus piezas (cada dueño se lleva su papel).
  *  · Con medidas corregidas en «Editar medidas», el croquis usa las corregidas:
  *    la hoja y el dibujo no pueden decir dos largos distintos.
+ *  · Con el anexo filtrado por tipo/especie, sólo las piezas que pasan (ya
+ *    corregidas, como la hoja); si no queda ninguna, el PDF va sin croquis.
  */
 import { useMemo } from "react";
 import { cubicarPieza, type PiezaCubicada } from "@/lib/forestal/cubicacion";
@@ -20,9 +22,9 @@ type Correcciones = Record<string, Partial<PiezaCubicada>>;
 
 export function useTraseraDelPapel(
   trasera: TraseraParaPdf | null | undefined,
-  ctx: { origenActual: boolean; dueno: string | "todos"; correcciones: Correcciones },
+  ctx: { origenActual: boolean; dueno: string | "todos"; correcciones: Correcciones; pasa?: (r: PiezaCubicada) => boolean },
 ): TraseraParaPdf | null {
-  const { origenActual, dueno, correcciones } = ctx;
+  const { origenActual, dueno, correcciones, pasa } = ctx;
   return useMemo(() => {
     if (!trasera || trasera.piezas.length === 0 || !origenActual) return null;
     const piezas = trasera.piezas
@@ -32,7 +34,8 @@ export function useTraseraDelPapel(
         if (!c) return r;
         const upd = { ...r, ...c };
         return { ...upd, ...cubicarPieza(upd) };
-      });
+      })
+      .filter((r) => !pasa || pasa(r));
     return piezas.length > 0 ? { piezas, anchoM: trasera.anchoM, catalogo: trasera.catalogo } : null;
-  }, [trasera, origenActual, dueno, correcciones]);
+  }, [trasera, origenActual, dueno, correcciones, pasa]);
 }

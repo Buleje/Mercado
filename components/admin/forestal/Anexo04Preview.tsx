@@ -49,12 +49,20 @@ const Anexo04Preview = forwardRef<HTMLDivElement, {
   /** Filtro por dueño — sólo se pasa cuando el origen trae más de uno. */
   duenoSelector?: ReactNode;
   checklist: ReactNode;
+  /** Filtros (tipo × especie) y formato de la cantidad: pegados a la hoja. */
+  filtros?: ReactNode;
   /** Corrige Cant./E/A/L directo en la hoja — el volumen se recalcula solo. */
   onEditarCelda?: (id: string, campo: CampoEditable, valor: number) => void;
-}>(function Anexo04Preview({ anexo, datos, escala, onZoom, origen, duenoSelector, checklist, onEditarCelda }, hojasRef) {
+  /**
+   * Por qué no se puede editar ahora (formato «Sumada» / «Una por pieza»: las
+   * filas ya no son las del lote y editar por id corregiría la equivocada).
+   */
+  bloqueoEdicion?: string;
+}>(function Anexo04Preview({ anexo, datos, escala, onZoom, origen, duenoSelector, checklist, filtros, onEditarCelda, bloqueoEdicion }, hojasRef) {
   const scrollRef = useRef<HTMLDivElement>(null);
   useScrollSinDiagonal(scrollRef);
-  const [editando, setEditando] = useState(false);
+  const [editandoPedido, setEditando] = useState(false);
+  const editando = editandoPedido && !bloqueoEdicion;
 
   return (
     <>
@@ -68,8 +76,9 @@ const Anexo04Preview = forwardRef<HTMLDivElement, {
             type="button"
             onClick={() => setEditando((v) => !v)}
             aria-pressed={editando}
-            title="Corregir Cant./E/A/L directo en la hoja — el volumen se recalcula solo, como en Excel"
-            className={`inline-flex h-8 items-center gap-1.5 rounded-lg border-2 px-2.5 text-xs font-bold transition ${editando ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]"}`}
+            disabled={!!bloqueoEdicion}
+            title={bloqueoEdicion ?? "Corregir Cant./E/A/L directo en la hoja — el volumen se recalcula solo, como en Excel"}
+            className={`inline-flex h-8 items-center gap-1.5 rounded-lg border-2 px-2.5 text-xs font-bold transition disabled:cursor-not-allowed disabled:opacity-50 ${editando ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]"}`}
           >
             {editando ? <Check className="h-3.5 w-3.5" /> : <Pencil className="h-3.5 w-3.5" />}
             {editando ? "Editando" : "Editar medidas"}
@@ -81,6 +90,7 @@ const Anexo04Preview = forwardRef<HTMLDivElement, {
           </div>
         </div>
       </div>
+      {filtros}
       {editando && (
         <p className="mb-2 rounded-lg border-2 border-[var(--accent)] bg-primary/10 px-2.5 py-1.5 text-xs font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)]">
           Toca una celda amarilla (Cant./E/A/L) y escribe el valor correcto — el pie tablar, el m³ y los totales se recalculan solos.
@@ -93,7 +103,7 @@ const Anexo04Preview = forwardRef<HTMLDivElement, {
           {anexo.hojas.map((hoja, i) => (
             <div key={i} className="mb-3 shadow-[var(--shadow-md)]" style={{ width: A4_PX * escala, height: A4_ALTO * escala }}>
               <div style={{ transform: `scale(${escala})`, transformOrigin: "top left" }}>
-                <Anexo04Hoja hoja={hoja} datos={datos} anexo={anexo} nro={i + 1} total={anexo.hojas.length} editando={editando} onEditarCelda={onEditarCelda} />
+                <Anexo04Hoja hoja={hoja} datos={datos} anexo={anexo} nro={i + 1} total={anexo.hojas.length} editando={editando} onEditarCelda={bloqueoEdicion ? undefined : onEditarCelda} />
               </div>
             </div>
           ))}

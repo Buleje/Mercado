@@ -166,9 +166,14 @@ const ptExacto = (r: PiezaCubicada): number =>
   ((toInches(r.espesor, r.uEspesor) * toInches(r.ancho, r.uAncho) * toFeet(r.largo, r.uLargo)) / 12) *
   (r.cantidad > 0 ? r.cantidad : 1);
 
-/** Especie de la pieza, con el fallback del lote y en MAYÚSCULA como el anexo. */
-const especieDe = (r: PiezaCubicada, global?: string): string =>
+/**
+ * Especie de la pieza, con el fallback del lote y en MAYÚSCULA como el anexo.
+ * Exportada para los filtros de la vista previa (`anexo04-vista.ts`): filtran
+ * por la MISMA especie que encabeza el bloque impreso.
+ */
+export const especieDelAnexo = (r: Pick<PiezaCubicada, "especie">, global?: string): string =>
   (r.especie || global || "SIN ESPECIE").toUpperCase();
+const especieDe = especieDelAnexo;
 
 /** Tipo de producto (nomenclatura del aserradero) en MAYÚSCULA. */
 const tipoDe = (r: PiezaCubicada): TipoComercial => tipoDePieza(r);

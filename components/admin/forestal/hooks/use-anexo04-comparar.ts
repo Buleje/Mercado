@@ -10,6 +10,10 @@
  * cubicación elegida como origen, antes de corregir medidas.
  *
  * El ANEXO son las filas que van a la hoja (`filasEditadas`).
+ *
+ * Con el anexo filtrado por tipo/especie (2026-10-03), el resumen se filtra
+ * igual: comparar «sólo Comercial» contra el lote entero haría «faltar» todo
+ * lo demás, cuando faltar es justo lo que se pidió.
  */
 import { useMemo } from "react";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
@@ -31,13 +35,18 @@ export function useAnexo04Comparar(ctx: {
   /** El origen NO es el lote con que se abrió (otra cubicación, un emitido). */
   otroOrigen: boolean;
   rotuloDeLasPiezas?: string;
+  /** El filtro del anexo (tipo × especie); sin filtro, todas pasan. */
+  pasa?: (r: PiezaCubicada) => boolean;
+  /** «Comercial · Tornillo» — vacío sin filtro. */
+  rotuloFiltro?: string;
 }): { comparacion: ComparacionAnexo; rotulo: string; contexto: string[]; pastilla?: string } {
-  const { rows, filasOrigen, filasEditadas, dueno, unidadV, especieGlobal, totalManualM3, corregidas, otroOrigen, rotuloDeLasPiezas } = ctx;
+  const { rows, filasOrigen, filasEditadas, dueno, unidadV, especieGlobal, totalManualM3, corregidas, otroOrigen, rotuloDeLasPiezas, pasa, rotuloFiltro } = ctx;
 
   const referencia = useMemo(() => {
     const base = rows.length > 0 ? rows : filasOrigen;
-    return dueno === "todos" ? base : base.filter((r) => (r.dueno?.trim() || "") === dueno);
-  }, [rows, filasOrigen, dueno]);
+    const delDueno = dueno === "todos" ? base : base.filter((r) => (r.dueno?.trim() || "") === dueno);
+    return pasa ? delDueno.filter(pasa) : delDueno;
+  }, [rows, filasOrigen, dueno, pasa]);
 
   const comparacion = useMemo(
     () => compararAnexoConResumen({ filasAnexo: filasEditadas, referencia, unidadImpresa: unidadV, especieGlobal, totalManualM3 }),
@@ -47,7 +56,7 @@ export function useAnexo04Comparar(ctx: {
   const base = rows.length > 0
     ? rotuloDeLasPiezas ?? `las ${rows.length} medidas con que se abrió`
     : "la cubicación elegida";
-  const rotulo = dueno === "todos" ? base : `${base} · ${dueno}`;
+  const rotulo = [base, dueno === "todos" ? "" : dueno, rotuloFiltro ? `sólo ${rotuloFiltro}` : ""].filter(Boolean).join(" · ");
 
   /* Sólo lo que EXPLICA una diferencia: el dueño no, porque el resumen ya
      está filtrado por el mismo dueño. */
