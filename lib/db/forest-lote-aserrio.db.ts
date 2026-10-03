@@ -1080,6 +1080,10 @@ export class ForestLoteAserrioDB {
     loteId: string,
     trozaIds: string[],
     user: string,
+    /** `exigirTodas`: si UNA no entra, no entra ninguna — se tira DENTRO de la
+     *  transacción y se deshace junta (el lote de un bloque de la Distribución,
+     *  ADR-464: un lote con menos trozas que su bloque declara madera que no tiene). */
+    opts: { exigirTodas?: boolean } = {},
   ): Promise<{
     agregadas: number;
     rechazadas: { id: string; codigo: string | null; motivo: string }[];
@@ -1200,6 +1204,14 @@ export class ForestLoteAserrioDB {
         rechazadas.push({ id, codigo: null, motivo: "no existe en este centro" });
       }
 
+      /* Todo o nada: con una sola rechazada no se escribe nada. */
+      const noEntro = (r: { codigo: string | null; motivo: string }) =>
+        new CtpInvariantError(
+          `No se armó: una troza${r.codigo ? ` (${r.codigo})` : ""} cambió mientras tanto — ${r.motivo}. Vuelve a intentar.`,
+          "VALIDACION",
+        );
+      if (opts.exigirTodas && rechazadas.length > 0) throw noEntro(rechazadas[0]);
+
       if (aceptadas.length > 0) {
         /* `loteMixtoId: null` en el WHERE es LM2 escrito en la base: si un mixto
            la apartó entre la lectura y acá, la fila no se toca. */
@@ -1227,6 +1239,8 @@ export class ForestLoteAserrioDB {
               motivo: motivoEnMixto(t.loteMixto?.code ?? "abierto"),
             });
           }
+          /* Se tira acá, todavía dentro de la transacción: lo escrito se deshace. */
+          if (opts.exigirTodas && rechazadas.length > 0) throw noEntro(rechazadas[0]);
         }
       }
 

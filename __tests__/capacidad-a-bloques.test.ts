@@ -270,6 +270,24 @@ describe("unirSiembra", () => {
     ]);
   });
 
+  it("un lote que ya está en un bloque no entra otra vez con otra etiqueta (misma madera dos veces)", () => {
+    // El bloque de la guía creó su lote L1 desde la Distribución; después, en
+    // Saldos, se trae «Lote L1 · apartado».
+    const actuales = [ya({ id: "g", etiqueta: "019-001-0000011 · Tornillo", especie: "Tornillo", tipo: "rolliza", loteId: "L1", trozaIds: ["t1", "t2"] })];
+    const r = unirSiembra(
+      actuales,
+      [
+        nuevo({ etiqueta: "Lote L1 · apartado", especie: "Tornillo", tipo: "rolliza", loteId: "L1" }),
+        // El margen del mismo lote es aserrada que todavía admite: madera distinta, entra.
+        nuevo({ etiqueta: "Lote L1 · margen", especie: "Tornillo", tipo: "aserrada", loteId: "L1" }),
+      ],
+      "capacidad",
+      "t",
+    );
+    expect(r.sembrados).toBe(1);
+    expect(r.lista.map((b) => b.etiqueta)).toEqual(["019-001-0000011 · Tornillo", "Lote L1 · margen"]);
+  });
+
   it("no pisa una especie ya elegida y suma lo nuevo con la suya", () => {
     const actuales = [ya({ id: "a", etiqueta: "Lote 7 · margen", especie: "Tornillo" })];
     const r = unirSiembra(

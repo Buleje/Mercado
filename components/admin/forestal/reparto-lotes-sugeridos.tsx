@@ -37,10 +37,14 @@ type Props = {
   codigoDeLote: (loteId: string) => string | null;
   /** Los lotes recién armados: quien llama les pone el `loteId` a sus bloques y guarda. */
   onCreados: (creados: LoteCreadoDeBloque[]) => void;
+  /** Ya llegó la lista de lotes del Libro: recién ahí un lote que no aparece es un lote borrado. */
+  lotesCargados?: boolean;
+  /** Le saca al bloque la marca de un lote que ya no está en el Libro. */
+  onQuitarLote?: (bloqueId: string) => void;
 };
 
 /** El botón de la barra de la Distribución + su modal. */
-export default function RepartoLotesSugeridos({ bloques, codigoDeLote, onCreados }: Props) {
+export default function RepartoLotesSugeridos({ bloques, codigoDeLote, onCreados, lotesCargados, onQuitarLote }: Props) {
   const [abierto, setAbierto] = useState(false);
   const pedibles = bloques.filter((b) => estadoLocalDelBloque(b) === "pedible").length;
   return (
@@ -55,13 +59,13 @@ export default function RepartoLotesSugeridos({ bloques, codigoDeLote, onCreados
         <PackagePlus className="h-3.5 w-3.5" aria-hidden /> Crear lotes{pedibles > 0 ? ` (${pedibles})` : ""}
       </button>
       {abierto && (
-        <ModalLotesSugeridos bloques={bloques} codigoDeLote={codigoDeLote} onCreados={onCreados} onCerrar={() => setAbierto(false)} />
+        <ModalLotesSugeridos bloques={bloques} codigoDeLote={codigoDeLote} onCreados={onCreados} lotesCargados={lotesCargados} onQuitarLote={onQuitarLote} onCerrar={() => setAbierto(false)} />
       )}
     </>
   );
 }
 
-function ModalLotesSugeridos({ bloques, codigoDeLote, onCreados, onCerrar }: Props & { onCerrar: () => void }) {
+function ModalLotesSugeridos({ bloques, codigoDeLote, onCreados, lotesCargados, onQuitarLote, onCerrar }: Props & { onCerrar: () => void }) {
   const cajaRef = useRef<HTMLDivElement>(null);
   useModalAccesible(cajaRef, { onCerrar });
 
@@ -80,6 +84,8 @@ function ModalLotesSugeridos({ bloques, codigoDeLote, onCreados, onCerrar }: Pro
   const [error, setError] = useState<string | null>(null);
   const [creando, setCreando] = useState(false);
   const [resultado, setResultado] = useState<ResultadoLotesPorBloque | null>(null);
+  /* Bloques a los que se les sacó la marca de un lote borrado en esta apertura. */
+  const [quitados, setQuitados] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (pedidos.length === 0) return;
@@ -90,7 +96,12 @@ function ModalLotesSugeridos({ bloques, codigoDeLote, onCreados, onCerrar }: Pro
         setPrevia(new Map(r.map((x) => [x.bloqueId, x])));
         setElegidos(new Set(r.filter((x) => x.listo).map((x) => x.bloqueId)));
       })
-      .catch((e: unknown) => vivo && setError(e instanceof Error ? e.message : String(e)));
+      .catch((e: unknown) => {
+        if (!vivo) return;
+        setError(e instanceof Error ? e.message : String(e));
+        // Sin esto las filas quedaban girando en «Revisando…» para siempre.
+        setPrevia(new Map());
+      });
     return () => {
       vivo = false;
     };
@@ -166,7 +177,17 @@ function ModalLotesSugeridos({ bloques, codigoDeLote, onCreados, onCerrar }: Pro
               </thead>
               <tbody>
                 {foto.map((b) => (
-                  <FilaBloque key={b.id} bloque={b} previa={previa} elegido={elegidos.has(b.id)} onAlternar={() => alternar(b.id)} codigoDeLote={codigoDeLote} />
+                  <FilaBloque
+                    key={b.id}
+                    bloque={b}
+                    previa={previa}
+                    elegido={elegidos.has(b.id)}
+                    onAlternar={() => alternar(b.id)}
+                    codigoDeLote={codigoDeLote}
+                    loteBorrado={Boolean(lotesCargados && b.loteId && !codigoDeLote(b.loteId))}
+                    quitado={quitados.has(b.id)}
+                    onQuitar={onQuitarLote ? () => { onQuitarLote(b.id); setQuitados((prev) => new Set(prev).add(b.id)); } : undefined}
+                  />
                 ))}
               </tbody>
             </table>
@@ -191,12 +212,15 @@ function ModalLotesSugeridos({ bloques, codigoDeLote, onCreados, onCerrar }: Pro
   );
 }
 
-function FilaBloque({ bloque: b, previa, elegido, onAlternar, codigoDeLote }: {
+function FilaBloque({ bloque: b, previa, elegido, onAlternar, codigoDeLote, loteBorrado, quitado, onQuitar }: {
   bloque: BloqueRolliza;
   previa: Map<string, LoteDelBloque> | null;
   elegido: boolean;
   onAlternar: () => void;
   codigoDeLote: (loteId: string) => string | null;
+  loteBorrado: boolean;
+  quitado: boolean;
+  onQuitar?: () => void;
 }) {
   const local = estadoLocalDelBloque(b);
   const d = local === "pedible" ? previa?.get(b.id) : undefined;
@@ -204,7 +228,21 @@ function FilaBloque({ bloque: b, previa, elegido, onAlternar, codigoDeLote }: {
   const apagado = !lote;
   const avisos = lote ? avisosDelBloque(b, lote) : [];
   let estado: ReactNode;
-  if (local === "ya-tiene-lote") {
+  if (local === "ya-tiene-lote" && quitado) {
+    estado = <span className="text-[var(--text-secondary)]">Marca quitada: vuelve a abrir «Crear lotes» para armar su lote.</span>;
+  } else if (local === "ya-tiene-lote" && loteBorrado) {
+    /* El lote se borró en el Libro: sin esto el bloque decía «Ya tiene lote» para siempre. */
+    estado = (
+      <span className="flex flex-wrap items-center gap-2 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+        No encuentro su lote en el Libro (¿se borró?).
+        {onQuitar && (
+          <button type="button" onClick={onQuitar} className="rounded-lg border border-[var(--rule-base)] px-2 py-0.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
+            Quitar la marca
+          </button>
+        )}
+      </span>
+    );
+  } else if (local === "ya-tiene-lote") {
     const code = b.loteId ? codigoDeLote(b.loteId) : null;
     estado = <span className="text-[var(--text-secondary)]">{TEXTO_ESTADO_LOCAL["ya-tiene-lote"]}{code ? ` ${code}` : ""}</span>;
   } else if (local !== "pedible") {

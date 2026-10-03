@@ -119,6 +119,13 @@ export function unirSiembra(
 ): { lista: BloqueRolliza[]; sembrados: number; repetidos: number; conEspecie: number; conTrozas: number } {
   const lista = actuales.map((b) => ({ ...b }));
   const yaEstan = new Set(lista.map(huella));
+  /* Un lote ya puesto en un bloque (el que se creó desde la Distribución, o uno
+     traído antes) no entra otra vez con otra etiqueta: sería la misma madera
+     dos veces (revisión de ADR-464). Por lote Y tipo: el «apartado» (rolliza
+     sin aserrar) y el «margen» (aserrada que admite) del mismo lote son madera
+     distinta y van los dos. */
+  const deLote = (b: Pick<BloqueRolliza, "loteId" | "tipo">) => (b.loteId ? `${b.loteId}|${b.tipo ?? "rolliza"}` : null);
+  const lotes = new Set(lista.map(deLote).filter((k): k is string => k !== null));
   let sembrados = 0;
   let conEspecie = 0;
   let conTrozas = 0;
@@ -143,6 +150,8 @@ export function unirSiembra(
       }
       continue;
     }
+    const kLote = deLote(c);
+    if (kLote && lotes.has(kLote)) continue;
     const h = huella(c);
     if (yaEstan.has(h)) {
       /* Sembrado antes de que el bloque guardara sus trozas (ADR-464): volver
@@ -155,6 +164,7 @@ export function unirSiembra(
       continue;
     }
     yaEstan.add(h);
+    if (kLote) lotes.add(kLote);
     lista.push({ ...c, id: `${prefijo}-${marca}-${sembrados}` });
     sembrados += 1;
   }

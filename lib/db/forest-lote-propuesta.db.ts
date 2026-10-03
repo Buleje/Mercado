@@ -231,25 +231,22 @@ export class ForestLotePropuestaDB {
         continue;
       }
 
+      /* Todo o nada DENTRO de la transacción (`exigirTodas`): si una troza no
+         entra, no queda ninguna en el lote; lo único que puede sobrar es el lote
+         VACÍO, que se deshace acá (y si eso falla, queda vacío, nunca a medias). */
       let r: Awaited<ReturnType<typeof ForestLoteAserrioDB.agregarTrozas>>;
       try {
-        r = await ForestLoteAserrioDB.agregarTrozas(tenantId, lote.id, d.trozaIds, user);
+        r = await ForestLoteAserrioDB.agregarTrozas(tenantId, lote.id, d.trozaIds, user, { exigirTodas: true });
       } catch (e) {
         await ForestLotePropuestaDB.deshacerVacio(tenantId, lote.id, user);
         resultado.noCreados.push({ bloqueId: d.bloqueId, motivo: motivoDeFalla(e, tenantId) });
         continue;
       }
 
-      if (r.agregadas < d.trozaIds.length || r.rechazadas.length > 0) {
-        /* Todo o nada: se deshace aunque hayan entrado algunas. */
+      if (r.agregadas < d.trozaIds.length) {
+        /* Ids repetidos o ya en este lote: no debería pasar (el lote nace vacío). */
         await ForestLotePropuestaDB.deshacerVacio(tenantId, lote.id, user);
-        const primera = r.rechazadas[0];
-        resultado.noCreados.push({
-          bloqueId: d.bloqueId,
-          motivo: primera
-            ? `No se armó: una troza${primera.codigo ? ` (${primera.codigo})` : ""} cambió mientras tanto — ${primera.motivo}. Vuelve a intentar.`
-            : "No se armó: sus trozas cambiaron mientras tanto. Vuelve a intentar.",
-        });
+        resultado.noCreados.push({ bloqueId: d.bloqueId, motivo: "No se armó: sus trozas cambiaron mientras tanto. Vuelve a intentar." });
         continue;
       }
 

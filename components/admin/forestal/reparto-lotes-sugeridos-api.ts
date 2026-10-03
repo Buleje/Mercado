@@ -41,3 +41,37 @@ export async function crearLotesPorBloque(bloques: PedidoPorBloque[]): Promise<R
   if (r.creados.length > 0) invalidarCtp("/forestal/");
   return { creados: r.creados ?? [], noCreados: r.noCreados ?? [] };
 }
+
+const URL_DISTRIBUCIONES = "/api/admin/forestal/distribuciones";
+
+/**
+ * Anota el `loteId` recién creado en los bloques de la distribución GUARDADA,
+ * sin subir lo demás de la tabla (revisión de ADR-464): lo que el operador
+ * cambió y no guardó sigue sin guardar, y el candado del cuadre —que mira las
+ * cifras— no hace falta, porque marcar el lote no cambia ninguna. Se lee la
+ * versión del servidor y se le agrega sólo el lote de cada bloque.
+ */
+export async function marcarLotesEnLaGuardada(id: string, loteDe: ReadonlyMap<string, string>): Promise<void> {
+  const r = await fetch(URL_DISTRIBUCIONES, { credentials: "include", cache: "no-store" });
+  if (!r.ok) throw new Error(`No se pudo leer la distribución guardada (HTTP ${r.status})`);
+  const { distribuciones } = (await r.json()) as {
+    distribuciones?: { id: string; nombre: string; fecha: string; notas?: string | null; bloques: { id: string; loteId?: string | null }[] }[];
+  };
+  const d = distribuciones?.find((x) => x.id === id);
+  if (!d) return;
+  let cambio = false;
+  const bloques = d.bloques.map((b) => {
+    const loteId = loteDe.get(b.id);
+    if (!loteId || b.loteId === loteId) return b;
+    cambio = true;
+    return { ...b, loteId };
+  });
+  if (!cambio) return;
+  const w = await fetch(URL_DISTRIBUCIONES, {
+    method: "POST",
+    headers: csrfHeaders({ "Content-Type": "application/json" }),
+    credentials: "include",
+    body: JSON.stringify({ id: d.id, nombre: d.nombre, fecha: d.fecha, notas: d.notas ?? null, bloques }),
+  });
+  if (!w.ok) throw new Error(`No se pudo anotar el lote en la distribución guardada (HTTP ${w.status})`);
+}

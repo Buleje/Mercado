@@ -6,6 +6,7 @@
  * por cada bloque, qué ids llegaron al escritor, qué se deshizo y qué se auditó.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { CtpInvariantError } from "@/lib/db/forest-ctp-consumo.db";
 
 const H = vi.hoisted(() => {
   const PERMISO = "19-SEC/REG-PLT-2021-017";
@@ -39,7 +40,7 @@ const H = vi.hoisted(() => {
     filas: [] as ReturnType<typeof fila>[],
     wheres: [] as Record<string, unknown>[],
     creados: [] as Record<string, unknown>[],
-    agregar: [] as { loteId: string; ids: string[] }[],
+    agregar: [] as { loteId: string; ids: string[]; exigirTodas: boolean }[],
     deshechos: [] as string[],
     auditados: [] as Record<string, unknown>[],
     respuestaAgregar: null as null | ((ids: string[]) => { agregadas: number; rechazadas: { id: string; codigo: string | null; motivo: string }[] }),
@@ -79,8 +80,8 @@ vi.mock("@/lib/db/forest-lote-aserrio.db", async (real) => {
         H.estado.creados.push(input);
         return { id: `L${H.estado.creados.length}`, code: `LA-2026-0${10 + H.estado.creados.length}` };
       },
-      agregarTrozas: async (_tenantId: string, loteId: string, ids: string[]) => {
-        H.estado.agregar.push({ loteId, ids });
+      agregarTrozas: async (_tenantId: string, loteId: string, ids: string[], _user: string, opts?: { exigirTodas?: boolean }) => {
+        H.estado.agregar.push({ loteId, ids, exigirTodas: opts?.exigirTodas ?? false });
         return H.estado.respuestaAgregar ? H.estado.respuestaAgregar(ids) : { agregadas: ids.length, rechazadas: [] };
       },
       softDelete: async (_tenantId: string, loteId: string) => {
@@ -108,8 +109,8 @@ describe("crearPorBloques — un lote por bloque, por las puertas de siempre", (
       "qaadmin",
     );
     expect(H.estado.agregar).toEqual([
-      { loteId: "L1", ids: ["a", "b"] },
-      { loteId: "L2", ids: ["c"] },
+      { loteId: "L1", ids: ["a", "b"], exigirTodas: true },
+      { loteId: "L2", ids: ["c"], exigirTodas: true },
     ]);
     expect(H.estado.creados.map((c) => [c.speciesCommon, c.permiso])).toEqual([
       ["Tornillo", H.PERMISO],
@@ -150,10 +151,14 @@ describe("crearPorBloques — un lote por bloque, por las puertas de siempre", (
     expect(r.noCreados[0].motivo).toBe("Sus trozas ya están en el lote LA-2026-009: no se arma otro.");
   });
 
-  it("todo o nada: si en la carrera el escritor rechaza UNA, el lote se deshace (devuelve las que entraron)", async () => {
+  it("todo o nada DENTRO de la transacción: se pide `exigirTodas`, y si el escritor tira por UNA, el lote vacío se deshace", async () => {
     H.estado.filas = [H.fila("a"), H.fila("b")];
-    H.estado.respuestaAgregar = () => ({ agregadas: 1, rechazadas: [{ id: "b", codigo: "3037752", motivo: "ya está en otro lote" }] });
+    // Lo que hace `agregarTrozas` con `exigirTodas`: tira dentro de la tx (no escribe ninguna).
+    H.estado.respuestaAgregar = () => {
+      throw new CtpInvariantError("No se armó: una troza (3037752) cambió mientras tanto — ya está en otro lote. Vuelve a intentar.", "VALIDACION");
+    };
     const r = await ForestLotePropuestaDB.crearPorBloques("t-qa", [{ bloqueId: "b1", trozaIds: ["a", "b"] }], "qaadmin");
+    expect(H.estado.agregar[0]).toMatchObject({ exigirTodas: true });
     expect(H.estado.deshechos).toEqual(["L1"]);
     expect(r.creados).toEqual([]);
     expect(r.noCreados[0].motivo).toContain("(3037752)");
