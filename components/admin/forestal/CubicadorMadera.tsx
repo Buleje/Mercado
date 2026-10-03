@@ -38,6 +38,7 @@ import ImportarCubicacionModal from "./ImportarCubicacionModal";
 import LiquidacionModal from "./LiquidacionModal";
 import EnviarLibroModal from "./EnviarLibroModal";
 import Anexo04Modal from "./Anexo04Modal";
+import { descargarAnexo04EnBlanco } from "./cubicador-anexo-en-blanco";
 import DuenosModal from "./DuenosModal";
 import { clasificarTipo, ORDEN_TIPO, tipoDePieza, tipoEsManual, type TipoComercial } from "@/lib/forestal/cubicacion-tipo";
 import { TipoSelect } from "./tipo-badge";
@@ -2498,6 +2499,20 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
               Icono={FileText}
               alineacion="derecha"
               items={[
+                {
+                  key: "anexo-blanco",
+                  label: "Anexo 04 en blanco (1 hoja)",
+                  Icono: FileText,
+                  hint: "El formato oficial sin datos, para llenar a mano en el campo",
+                  onClick: () => descargarConAviso(descargarAnexo04EnBlanco(1), "Anexo 04 en blanco descargado", "No se pudo generar el PDF."),
+                },
+                {
+                  key: "anexo-blanco-5",
+                  label: "Anexo 04 en blanco (5 hojas)",
+                  Icono: FileText,
+                  hint: "Cinco hojas del formato oficial sin datos, para un día de campo",
+                  onClick: () => descargarConAviso(descargarAnexo04EnBlanco(5), "Anexo 04 en blanco (5 hojas) descargado", "No se pudo generar el PDF."),
+                },
                 { key: "guardadas", label: "Cubicaciones guardadas", Icono: FileText, activo: showHistorial, onClick: () => setShowHistorial((v) => !v) },
                 ...(variadoActivo
                   ? [{ key: "variado", label: "Variado (paquetes 6×6)", Icono: Layers, hint: "Qué medidas entran en el paquete y qué especies no aplican", onClick: () => modales.abrir("variado") }]
