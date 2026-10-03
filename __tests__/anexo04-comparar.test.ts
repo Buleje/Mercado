@@ -50,14 +50,15 @@ describe("compararAnexoConResumen", () => {
     expect(c.exactas).toBe(2);
   });
 
-  it("regla GTF: el resumen y la hoja salen de las MISMAS medidas exactas → exacto (antes el PT redondeado por fila daba «redondeo»)", () => {
-    // 2"×5"×7' = 5,8333 PT: el cubicador guarda 5,83 por fila, pero las dos
-    // columnas suman el PT exacto de las medidas: 58,333 y 58,333.
+  it("el PT redondeado por fila del cubicador vs el exacto de la hoja es «redondeo», no «difiere»", () => {
+    // 2"×5"×7' = 5,8333 PT: el cubicador guarda 5,83 por fila (lo que muestra
+    // Resúmenes y lo que ya está en SERFOR); la hoja en PT imprime 58,333.
     const filas = Array.from({ length: 10 }, () => pieza(1, 2, 5, 7, "Tornillo"));
     const c = comparar(filas, filas);
     expect(c.filas).toHaveLength(1);
-    expect(c.filas[0].dif.pt).toBeCloseTo(0, 6);
-    expect(c.filas[0].estado).toBe("exacto");
+    expect(c.filas[0].dif.pt).toBeCloseTo(0.033, 3);
+    expect(c.filas[0].dif.m3).toBeCloseTo(0, 6);
+    expect(c.filas[0].estado).toBe("redondeo");
     expect(c.difieren).toBe(0);
   });
 

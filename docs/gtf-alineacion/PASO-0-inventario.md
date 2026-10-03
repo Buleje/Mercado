@@ -185,7 +185,7 @@ Conteo aproximado: ~109 `toFixed` y ~68 `Math.round(…×1000/10000)` sobre vol�
 | 1 | El m³ oficial se calcula al armar la fila GTF y se guarda en lo emitido (JSON); **sin migrar columnas** |
 | 2 | Paquetería larga → COMERCIAL, corta → CORTA; «Otro» no se emite sin revisar |
 | 3 | Validador: marca si el m³/pieza cae en la banda de OTRO tipo (bandas del histórico, configurables) |
-| 4 | El m³ de la pieza sale del PT **exacto** (sin redondear el PT antes) |
+| 4 | ~~El m³ de la pieza sale del PT **exacto**~~ **Revertida 2026-10-03**: el m³ de cada línea vuelve a ser PT a 2 decimales ÷ 424 a 4 decimales (`cubicarPieza`), porque es lo que ya está en el LO-CTP de SERFOR. Con el PT exacto, 7 de las 39 filas de la GTF real se movían 0,001 (31,183 contra 31,188). Verificado con las 3 cubicaciones reales de Blas: 0 filas distintas de lo que mostraba el sistema antes. El Anexo 04 en pie tablar sigue imprimiendo el PT exacto de cada renglón (`ptExactoDeLinea`). |
 | 5 y 6 | Asumidos sin objeción: factor 424; las GTF de ingreso de SERFOR no se recalculan |
 
 ## 7. Fases propuestas (cada una con su commit y resumen)

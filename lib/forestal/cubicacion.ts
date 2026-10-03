@@ -136,14 +136,13 @@ export function cubicarPieza(p: {
   const largoPies = toFeet(p.largo, p.uLargo);
   const ptUnit = (espPulg * anchoPulg * largoPies) / 12;
   const cant = p.cantidad > 0 ? p.cantidad : 1;
-  /* El m³ sale del PT EXACTO (Brandon 2026-10-03, alinear con la GTF: «calcula
-     el volumen de cada pieza con precisión completa»). Antes se derivaba del PT
-     ya redondeado a 2 decimales para que `PT ÷ 424` de la pantalla diera el m³
-     de al lado; eso metía un redondeo ANTES de sumar la fila de la GTF. El PT
-     se sigue mostrando a 2 decimales; la diferencia con el m³ queda en el 4.º. */
-  const ptExacto = ptUnit * cant;
-  const pieTablar = r2(ptExacto);
-  return { pieTablar, m3: r4(ptExacto / PT_POR_M3) };
+  /* El PT se redondea PRIMERO y el m³ se deriva de ese PT ya redondeado: así el
+     número que se ve en la columna de al lado es exactamente el que hay que
+     dividir por 424 para llegar al m³ que se ve. Y es el m³ que ya está en el
+     LO-CTP de SERFOR: sacarlo del PT exacto movió 7 de 39 filas de la GTF real
+     en 0,001 (Brandon 2026-10-03, 31,183 contra 31,188). */
+  const pieTablar = r2(ptUnit * cant);
+  return { pieTablar, m3: r4(pieTablar / PT_POR_M3) };
 }
 
 /** m³ a partir del pie tablar — la conversión comercial, en un solo lugar. */

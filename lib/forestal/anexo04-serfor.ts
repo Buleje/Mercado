@@ -13,7 +13,7 @@
  */
 import type { PiezaCubicada } from "./cubicacion";
 import { toInches, toFeet } from "./cubicacion";
-import { m3ExactoDePieza, m3OficialDeFila, ptExactoDePieza, redondearGTF, totalizarGTF } from "./gtf-redondeo";
+import { m3DeLinea, m3OficialDeFila, ptExactoDeLinea, redondearGTF, totalizarGTF } from "./gtf-redondeo";
 import { tipoDePieza, ordenTipo, type TipoComercial } from "./cubicacion-tipo";
 
 // ─── Datos que llena el emisor (cabecera y pie del anexo) ───────────────────
@@ -242,7 +242,7 @@ export function totalGtfDelAnexo(rows: readonly PiezaCubicada[], especieGlobal?:
     if (g) g.push(r);
     else grupos.set(k, [r]);
   }
-  return totalizarGTF([...grupos.values()].map((g) => ({ m3: m3OficialDeFila(g.map(m3ExactoDePieza)) }))).m3;
+  return totalizarGTF([...grupos.values()].map((g) => ({ m3: m3OficialDeFila(g.map(m3DeLinea)) }))).m3;
 }
 
 export function construirAnexo04(
@@ -251,9 +251,9 @@ export function construirAnexo04(
   opts: Anexo04Opts = {},
 ): Anexo04 {
   const { unidadV, modo } = datos;
-  /* El valor EXACTO de cada renglón, desde sus medidas (m³ = PT/424 sin
-     redondear en el camino): lo que se suma DENTRO de una fila de la GTF. */
-  const vDe = (r: PiezaCubicada) => (unidadV === "m3" ? m3ExactoDePieza(r) : ptExactoDePieza(r));
+  /* El valor de cada renglón: su m³ de línea (el del sistema, PT a 2 decimales
+     ÷ 424) o su PT exacto; es lo que se suma DENTRO de una fila de la GTF. */
+  const vDe = (r: PiezaCubicada) => (unidadV === "m3" ? m3DeLinea(r) : ptExactoDeLinea(r));
 
   // Agrupar por especie × tipo conservando el orden de aparición de la especie.
   const grupos = new Map<string, { especie: string; tipo: TipoComercial; piezas: PiezaCubicada[]; orden: number }>();
@@ -292,7 +292,7 @@ export function construirAnexo04(
         // El subtotal suma los valores EXACTOS (como el Excel del formato), no
         // los ya redondeados de cada fila: así cierra con la guía llenada a mano.
         subtotal: m3OficialDeFila(chunk.map(vDe)),
-        m3: m3OficialDeFila(chunk.map(m3ExactoDePieza)),
+        m3: m3OficialDeFila(chunk.map(m3DeLinea)),
         continuacion: i > 0,
       });
     });
@@ -302,7 +302,7 @@ export function construirAnexo04(
     const partes = bloques.slice(desde);
     if (partes.length > 1) {
       const oficialV = m3OficialDeFila(g.piezas.map(vDe));
-      const oficialM3 = m3OficialDeFila(g.piezas.map(m3ExactoDePieza));
+      const oficialM3 = m3OficialDeFila(g.piezas.map(m3DeLinea));
       reconciliarTotales(partes.map((b) => b.subtotal), oficialV).forEach((v, j) => { partes[j].subtotal = v; });
       reconciliarTotales(partes.map((b) => b.m3), oficialM3).forEach((v, j) => { partes[j].m3 = v; });
     }

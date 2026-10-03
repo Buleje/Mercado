@@ -118,28 +118,39 @@ export function filasGTF<P>(
   }));
 }
 
-/**
- * El m³ EXACTO de un renglón aserrado, desde sus medidas: PT = espesor″ ×
- * ancho″ × largo′ / 12 × cantidad, y m³ = PT / 424, sin redondear nada en el
- * camino (decisión 4 del 2026-10-03). Sin medidas, el m³ que trae.
- */
-export function m3ExactoDePieza(p: Pick<PiezaCubicada, "cantidad" | "espesor" | "ancho" | "largo" | "uEspesor" | "uAncho" | "uLargo" | "m3">): Decimal {
-  const e = toInches(Number(p.espesor) || 0, p.uEspesor);
-  const a = toInches(Number(p.ancho) || 0, p.uAncho);
-  const l = toFeet(Number(p.largo) || 0, p.uLargo);
-  if (!(e > 0 && a > 0 && l > 0)) return aDecimal(p.m3);
-  const cant = Number(p.cantidad) > 0 ? Number(p.cantidad) : 1;
-  return new Decimal(e).times(a).times(l).times(cant).dividedBy(12).dividedBy(PT_POR_M3);
-}
+type LineaAserrada = Pick<PiezaCubicada, "cantidad" | "espesor" | "ancho" | "largo" | "uEspesor" | "uAncho" | "uLargo">;
 
-/** El PT exacto de un renglón aserrado (sin el redondeo a 2 decimales por fila). */
-export function ptExactoDePieza(p: Pick<PiezaCubicada, "cantidad" | "espesor" | "ancho" | "largo" | "uEspesor" | "uAncho" | "uLargo" | "pieTablar">): Decimal {
+/**
+ * El PT EXACTO de una línea (espesor″ × ancho″ × largo′ / 12 × cantidad), sin
+ * redondear: el que imprime la columna (10) del Anexo 04 en pie tablar, donde
+ * una pieza 2″×5″×7′ es 5,833 y no 5,83. Sin medidas, el PT que trae.
+ */
+export function ptExactoDeLinea(p: LineaAserrada & Pick<PiezaCubicada, "pieTablar">): Decimal {
   const e = toInches(Number(p.espesor) || 0, p.uEspesor);
   const a = toInches(Number(p.ancho) || 0, p.uAncho);
   const l = toFeet(Number(p.largo) || 0, p.uLargo);
   if (!(e > 0 && a > 0 && l > 0)) return aDecimal(p.pieTablar);
   const cant = Number(p.cantidad) > 0 ? Number(p.cantidad) : 1;
   return new Decimal(e).times(a).times(l).times(cant).dividedBy(12);
+}
+
+/** El PT de UNA línea como lo muestra el sistema: a 2 decimales. Si la línea ya trae su PT, ese. */
+export function ptDeLinea(p: LineaAserrada & Pick<PiezaCubicada, "pieTablar">): Decimal {
+  if (Number(p.pieTablar) > 0) return aDecimal(p.pieTablar);
+  return ptExactoDeLinea(p).toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
+}
+
+/**
+ * El m³ de UNA línea tal como el sistema la muestra y como se copió siempre al
+ * LO-CTP: m³ = PT de la línea (2 decimales) ÷ 424, a 4 decimales
+ * (`cubicarPieza`). Si la línea ya trae su m³ —el reparto lo prorratea al
+ * partirla entre bloques y días— se usa ESE. Brandon 2026-10-03: con el m³
+ * sacado del PT exacto, 7 de las 39 filas de la GTF real se movían 0,001 y el
+ * permiso daba 31,183 contra los 31,188 de SERFOR.
+ */
+export function m3DeLinea(p: LineaAserrada & Pick<PiezaCubicada, "m3" | "pieTablar">): Decimal {
+  if (Number(p.m3) > 0) return aDecimal(p.m3);
+  return ptDeLinea({ ...p, pieTablar: 0 }).dividedBy(PT_POR_M3).toDecimalPlaces(4, Decimal.ROUND_HALF_UP);
 }
 
 /** El m³ oficial escrito con sus decimales, para el papel: «0.096» (sin pasar por `toFixed` del float). */

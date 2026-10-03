@@ -18,7 +18,7 @@
  * es «Redondeo», no «Difiere»: siete rojos falsos enseñan a ignorar la lista.
  */
 import type { PiezaCubicada } from "./cubicacion";
-import { m3ExactoDePieza, m3OficialDeFila, ptExactoDePieza } from "./gtf-redondeo";
+import { m3DeLinea, m3OficialDeFila, ptDeLinea } from "./gtf-redondeo";
 import { construirAnexo04, type UnidadVolumen } from "./anexo04-serfor";
 import { ORDEN_TIPO, ordenTipo, tipoDePieza, type TipoComercial } from "./cubicacion-tipo";
 
@@ -137,8 +137,8 @@ function agruparReferencia(rows: readonly PiezaCubicada[], especieGlobal?: strin
      las medidas, redondeada UNA vez (regla de la GTF, 2026-10-03). */
   for (const [k, g] of out) {
     const piezas = exactos.get(k) ?? [];
-    g.lado.pt = m3OficialDeFila(piezas.map(ptExactoDePieza));
-    g.lado.m3 = m3OficialDeFila(piezas.map(m3ExactoDePieza));
+    g.lado.pt = m3OficialDeFila(piezas.map(ptDeLinea));
+    g.lado.m3 = m3OficialDeFila(piezas.map(m3DeLinea));
   }
   return out;
 }

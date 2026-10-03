@@ -6,9 +6,10 @@
 import { describe, expect, it } from "vitest";
 import {
   filasGTF,
-  m3ExactoDePieza,
+  m3DeLinea,
   m3OficialDeFila,
-  ptExactoDePieza,
+  ptDeLinea,
+  ptExactoDeLinea,
   redondearGTF,
   sumaExacta,
   totalizarGTF,
@@ -90,16 +91,26 @@ describe("filas y piezas", () => {
     ]);
   });
 
-  it("m³ y PT exactos desde las medidas, sin redondear el PT antes (decisión 4)", () => {
-    // 3 piezas de 1″ × 4″ × 7′: PT = 7 exacto → m³ = 7/424 = 0,016509…
+  it("m³ de la línea = el del sistema (PT a 2 decimales ÷ 424, a 4 decimales), como está en SERFOR", () => {
+    // 3 piezas de 1″ × 4″ × 7′: PT = 7 → m³ = 7/424 = 0,0165 (no 0,016509).
     const p = { cantidad: 3, espesor: 1, ancho: 4, largo: 7, uEspesor: "pulg" as const, uAncho: "pulg" as const, uLargo: "pies" as const, m3: 0, pieTablar: 0 };
-    expect(ptExactoDePieza(p).toNumber()).toBe(7);
-    expect(m3ExactoDePieza(p).toDecimalPlaces(6).toNumber()).toBe(0.016509);
-    // Un PT que no cierra a 2 decimales: 1 × 1 × 1 / 12 = 0,08333…
+    expect(ptDeLinea(p).toNumber()).toBe(7);
+    expect(m3DeLinea(p).toNumber()).toBe(0.0165);
+    // Un PT que no cierra: 1 × 1 × 1 / 12 = 0,08333… → 0,08 PT en la línea; el
+    // Anexo 04 en pie tablar sigue imprimiendo el exacto.
     const q = { ...p, cantidad: 1, ancho: 1, largo: 1 };
-    expect(ptExactoDePieza(q).toDecimalPlaces(6).toNumber()).toBe(0.083333);
-    // Sin medidas, el m³ que trae.
-    expect(m3ExactoDePieza({ ...p, espesor: 0, m3: 0.123 }).toNumber()).toBe(0.123);
+    expect(ptDeLinea(q).toNumber()).toBe(0.08);
+    expect(ptExactoDeLinea(q).toDecimalPlaces(6).toNumber()).toBe(0.083333);
+    // La línea que ya trae su m³/PT (el reparto la prorratea al partirla) usa ESOS.
+    expect(m3DeLinea({ ...p, m3: 0.0123 }).toNumber()).toBe(0.0123);
+    expect(ptDeLinea({ ...p, pieTablar: 5.21 }).toNumber()).toBe(5.21);
+  });
+
+  it("la fila oficial sale de las líneas del sistema: 7 filas de la GTF real ya no se mueven", () => {
+    // Una fila cuya Σ de líneas (4 decimales) es 0,1625 → 0,163; desde el PT
+    // exacto daba 0,16249… → 0,162 (el 0,005 de Brandon, 2026-10-03).
+    const lineas = [0.0812, 0.0813].map((m3) => ({ cantidad: 1, espesor: 1, ancho: 1, largo: 1, uEspesor: "pulg" as const, uAncho: "pulg" as const, uLargo: "pies" as const, m3, pieTablar: 0 }));
+    expect(m3OficialDeFila(lineas.map(m3DeLinea))).toBe(0.163);
   });
 });
 

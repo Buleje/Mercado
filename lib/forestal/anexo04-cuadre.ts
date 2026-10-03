@@ -29,7 +29,7 @@
  */
 import { cubicarPieza, toFeet, toInches, type PiezaCubicada, type Unidad } from "./cubicacion";
 import { claveFilaDelAnexo, totalGtfDelAnexo } from "./anexo04-serfor";
-import { m3ExactoDePieza, redondearGTF, sumaExacta } from "./gtf-redondeo";
+import { m3DeLinea, redondearGTF, sumaExacta } from "./gtf-redondeo";
 
 /** Las tres dimensiones que el anexo imprime (la cantidad no se toca acá). */
 export type DimensionAnexo = "espesor" | "ancho" | "largo";
@@ -179,7 +179,7 @@ export function ajustesParaCuadrar(
   const exactaDeFila = new Map<string, ReturnType<typeof sumaExacta>>();
   for (const r of filas) {
     const k = claveFilaDelAnexo(r);
-    exactaDeFila.set(k, (exactaDeFila.get(k) ?? sumaExacta([])).plus(m3ExactoDePieza(r)));
+    exactaDeFila.set(k, (exactaDeFila.get(k) ?? sumaExacta([])).plus(m3DeLinea(r)));
   }
   const oficialDeFila = new Map([...exactaDeFila].map(([k, v]) => [k, redondearGTF(v)]));
   const totalOficial = sumaExacta(oficialDeFila.values());
@@ -189,7 +189,7 @@ export function ajustesParaCuadrar(
     if (opts.soloId && p.id !== opts.soloId) continue;
     if (!((p.cantidad ?? 0) > 0) || !(p.m3 > 0)) continue;
     const fila = claveFilaDelAnexo(p);
-    const sinLaPieza = (exactaDeFila.get(fila) ?? sumaExacta([])).minus(m3ExactoDePieza(p));
+    const sinLaPieza = (exactaDeFila.get(fila) ?? sumaExacta([])).minus(m3DeLinea(p));
     const otrasFilas = totalOficial.minus(oficialDeFila.get(fila) ?? 0);
     const medida = etiquetaMedida(valorImpreso(p, "espesor"), valorImpreso(p, "ancho"), valorImpreso(p, "largo"));
 
@@ -211,7 +211,7 @@ export function ajustesParaCuadrar(
         if (!(sugerido > 0) || sugerido === actual) continue;
         const cambioPct = Math.abs((sugerido - actual) / actual) * 100;
         if (cambioPct > CAMBIO_MAX_PCT) continue;
-        const nuevaFila = redondearGTF(sinLaPieza.plus(m3ExactoDePieza(conMedida(p, campo, sugerido))));
+        const nuevaFila = redondearGTF(sinLaPieza.plus(m3DeLinea(conMedida(p, campo, sugerido))));
         const nuevaTotal = redondearGTF(otrasFilas.plus(nuevaFila));
         const restaM3 = r3(nuevaTotal - objetivoM3);
         /* Sólo sirve si acerca: un «ajuste» que deja más diferencia que la que

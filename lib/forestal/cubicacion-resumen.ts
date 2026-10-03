@@ -8,7 +8,7 @@
  */
 
 import type { PiezaCubicada, Unidad } from "./cubicacion";
-import { filaGtf, m3ExactoDePieza, ptExactoDePieza, repartirFilasGTF } from "./gtf-redondeo";
+import { filaGtf, m3DeLinea, ptDeLinea, repartirFilasGTF } from "./gtf-redondeo";
 import { tipoDePieza } from "./cubicacion-tipo";
 
 /** Cómo se puede agrupar el lote. El orden es el de los chips en la UI. */
@@ -169,8 +169,8 @@ export function agruparOficial(rows: PiezaCubicada[], dim: DimensionResumen, pre
      enteros. Toda tabla suma EXACTO el volumen oficial del lote. El PT, igual
      a 2 decimales. */
   const fila = (r: PiezaCubicada) => filaGtf(r.especie, tipoDePieza(r));
-  const reparto = repartirFilasGTF(rows.map((r) => ({ fila: fila(r), parte: claveYLabel(r, dim).clave, exacto: m3ExactoDePieza(r) })));
-  const repartoPt = repartirFilasGTF(rows.map((r) => ({ fila: fila(r), parte: claveYLabel(r, dim).clave, exacto: ptExactoDePieza(r) })), 2);
+  const reparto = repartirFilasGTF(rows.map((r) => ({ fila: fila(r), parte: claveYLabel(r, dim).clave, exacto: m3DeLinea(r) })));
+  const repartoPt = repartirFilasGTF(rows.map((r) => ({ fila: fila(r), parte: claveYLabel(r, dim).clave, exacto: ptDeLinea(r) })), 2);
   const ptOficial = repartoPt.total;
   const grupos = [...map.values()].map((g) => {
     const pt = repartoPt.porParte.get(g.clave) ?? 0;

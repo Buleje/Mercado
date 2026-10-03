@@ -25,7 +25,7 @@
 import { ORDEN_TIPO, tipoDePieza, type TipoComercial } from "./cubicacion-tipo";
 import type { AsignacionMedida, Distribucion } from "./cubicacion-reparto";
 import type { Unidad } from "./cubicacion";
-import { filaGtf, m3ExactoDePieza, repartirFilasGTF, type ParteGTF } from "./gtf-redondeo";
+import { filaGtf, m3DeLinea, repartirFilasGTF, type ParteGTF } from "./gtf-redondeo";
 
 const normal = (v: string | null | undefined) => (v ?? "").trim().replace(/\s+/g, " ").toLowerCase();
 
@@ -39,9 +39,9 @@ function tipoDe(label: string, m: AsignacionMedida): string {
 }
 
 const exactoDe = (m: AsignacionMedida) =>
-  m3ExactoDePieza({
+  m3DeLinea({
     cantidad: m.piezas, espesor: m.espesor, ancho: m.ancho, largo: m.largo,
-    uEspesor: m.uEspesor as Unidad, uAncho: m.uAncho as Unidad, uLargo: m.uLargo as Unidad, m3: m.m3,
+    uEspesor: m.uEspesor as Unidad, uAncho: m.uAncho as Unidad, uLargo: m.uLargo as Unidad, m3: m.m3, pieTablar: m.pieTablar,
   });
 
 /** La medida como la une el Anexo por permiso (`unificarPorMedida`): dimensiones con su unidad. */
