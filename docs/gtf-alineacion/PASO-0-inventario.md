@@ -192,6 +192,6 @@ Conteo aproximado: ~109 `toFixed` y ~68 `Math.round(…×1000/10000)` sobre vol�
 
 1. **Redondeo central**: `lib/forestal/gtf-redondeo.ts` con `redondearGTF` (HALF_UP, `decimal.js`) y `totalizarGTF(filas)`; test 0,0955 → 0,096 y 0,0954 → 0,095; fixture de la GTF real (31,188 · 2 082 · 5,633 + 25,555). Se enchufa primero en §1 (GTF impresa, Anexo 04, total de `forest-gtf.db`), después en exportadores y pantallas; los `r2/r3/r4` sueltos se reemplazan por archivo tocado.
 2. **Catálogo**: los 4 tipos con el texto exacto de la GTF; especie por científico (llave) con el común al lado; reporte de lo que no calce.
-3. **Validador** de m³/pieza por tipo (según la decisión 3).
+3. **Validador** de m³/pieza por tipo (según la decisión 3). **Hecho `84635f6d3`**: `lib/forestal/gtf-validador-tipo.ts` (banda = mediana ÷3 a ×3, de la guía con ≥3 filas del tipo o del histórico); con la GTF real sólo marca Copal COMERCIAL. Aviso en pantalla en la sección GTF del despacho, la guía registrada, la GTF desde el Anexo 04 y la hoja de la guía de SERFOR al aceptarla.
 4. **Conciliación GTF vs sistema**: ingreso manual y CSV (punto de extensión para PDF), semáforo ✅ 🟡 🔴 ⚫, totales, PDF/Excel, candado del cierre con justificación. Reusa `anexo04-comparar`, `guia-descuadre` y el cierre existente.
 5. **Migración**: reporte antes/después de qué totales cambian y respaldo; espera tu OK antes de sobrescribir.
