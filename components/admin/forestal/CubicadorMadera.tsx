@@ -9,7 +9,7 @@
  * en localStorage (sin DB). Reconocimiento: Web Speech API (Chrome, es-PE).
  */
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Mic, MicOff, Table, Trash2, Plus, Volume2, Check, Square, Send, Copy, AlertTriangle, MessageCircle, Save, FileText, Loader2, X, FileSpreadsheet, Receipt, Search, Sigma, Layers, Columns3, ChevronDown, Maximize2, Minimize2, ArrowUp, UserCheck } from "@buleje/design-system/icons";
+import { Mic, MicOff, Table, Trash2, Plus, Volume2, Check, Square, Send, Copy, AlertTriangle, MessageCircle, Save, FileText, Loader2, X, FileSpreadsheet, Receipt, Search, Sigma, Layers, Truck, ChevronDown, Maximize2, Minimize2, ArrowUp, UserCheck } from "@buleje/design-system/icons";
 import { CardTitle, DataTable } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
@@ -81,9 +81,14 @@ import {
 } from "@/lib/forestal/observacion-de-pieza";
 import { useTablaVentaneada } from "@/hooks/use-tabla-ventaneada";
 import { AnfitrionDeModales, useModalAislado } from "./hooks/use-modal-aislado";
+import { AsaColumna, COLS_DEFAULT, COLS_ORDEN_DEFAULT, MenuColumnas, type ColOpcional } from "./cubicador-columnas-menu";
+import { useArrastreColumnas, useOrdenColumnas, type PropsThArrastrable } from "./hooks/use-orden-columnas";
+import { useTraseraCamion } from "./hooks/use-trasera-camion";
+import { TraseraCamionModal } from "./cubicador-trasera-camion";
+import { segmentosDelPie } from "@/lib/forestal/cubicador-orden-columnas";
 
 /** Los modales del cubicador que se abren sin redibujar la tabla. */
-type ModalDelCubicador = "importar" | "especies" | "duenos" | "liquidacion" | "anexo" | "enviar" | "variado";
+type ModalDelCubicador = "importar" | "especies" | "duenos" | "liquidacion" | "anexo" | "enviar" | "variado" | "trasera";
 import { formatNumber } from "@/lib/format";
 
 // Web Speech API no está en lib.dom — tipado mínimo local.
@@ -123,64 +128,34 @@ const ALTO_VISOR_TABLA = 600;
 const ALTO_CHROME_EXPANDIDA = 250;
 /** Orden de tabulación de la fila de carga: Cant → Espesor → Ancho → Largo. */
 const COL_CANT = 0, COL_ESPESOR = 1, COL_ANCHO = 2, COL_LARGO = 3;
-/** Las 4 columnas navegables de la fila de carga, en orden — TODAS. Dentro
- *  del componente se filtra por `colsVisibles` (ver `tablaColumnas`): con
- *  Cant./Espesor/Ancho/Largo ahora ocultables en la TABLA, la fila de carga
- *  de arriba sigue teniendo las 4 fijas — sólo cambia la navegación de la
- *  tabla, que ya no puede ser un array de módulo (depende de estado). */
-const TABLA_COLUMNAS_TODAS = [COL_CANT, COL_ESPESOR, COL_ANCHO, COL_LARGO] as const;
-
 /**
- * Índice de cada columna de la tabla del lote, para la selección de rango.
- *
- * Es un mapa aparte del `COL_*` de arriba: aquél ordena el TABULADO de la fila
- * de carga (4 campos), éste ubica columnas en la tabla (12). Compartir la
- * numeración haría que agregar una columna a la tabla moviera el foco del
- * teclado de la carga.
+ * Qué columna de la TABLA es cada campo navegable con flechas. El orden de la
+ * navegación sale del orden VISIBLE de las columnas (que se puede cambiar
+ * arrastrando la cabecera, ver `ordenVisible`): una flecha a la derecha va a
+ * la que está a la derecha EN PANTALLA, no a la de fábrica. La fila de carga de
+ * arriba sigue con sus 4 fijas.
  */
-const TCOL = {
-  numero: 0, cant: 1, espesor: 2, ancho: 3, largo: 4, medida: 5,
-  tipo: 6, especie: 7, apartado: 8, pt: 9, m3: 10, acciones: 11,
-} as const;
+const COL_NAV: Partial<Record<ColOpcional, number>> = { cant: COL_CANT, espesor: COL_ESPESOR, ancho: COL_ANCHO, largo: COL_LARGO };
+/** Las columnas con total en el pie de la tabla. */
+const COLS_CON_TOTAL: ReadonlySet<ColOpcional> = new Set<ColOpcional>(["m3", "pt"]);
 
-/**
- * Columnas OPCIONALES de la tabla del lote — TODAS se pueden ocultar/mostrar
- * y la elección queda guardada por tenant hasta que se cambie de nuevo.
+/*
+ * Columnas OPCIONALES de la tabla del lote (`cubicador-columnas-menu`): TODAS
+ * se pueden ocultar/mostrar y MOVER, y la elección queda guardada por tenant.
+ * Sólo "Marcar" (el tilde del PDF/Anexo 04) y "Acciones" quedan fijas en los
+ * bordes. Ocultar Cant./Espesor/Ancho/Largo las saca de la navegación de
+ * teclado de la TABLA (`tablaColumnasVisibles`).
  *
- * Sólo "Marcar" (el tilde del PDF/Anexo 04) y "Acciones" (duplicar/editar
- * por voz/borrar) quedan fijas: son controles operativos, no datos. Ocultar
- * Cant./Espesor/Ancho/Largo saca esa columna de la navegación de teclado de
- * la TABLA (`tablaColumnasVisibles`, dentro del componente) — la fila de
- * carga de arriba (`TABLA_COLUMNAS_TODAS`) no se toca, sigue con las 4.
+ * La selección de rango (`useSeleccionRango`) ubica cada celda por su
+ * POSICIÓN visible (`colSel`), no por un índice fijo: con columnas movidas,
+ * arrastrar de Cant. a m³ tiene que abarcar lo que queda ENTRE ellas en
+ * pantalla.
  */
-type ColOpcional = "numero" | "cant" | "espesor" | "ancho" | "largo" | "medida" | "tipo" | "codigo" | "especie" | "dueno" | "observacion" | "apartado" | "pt" | "m3";
 /* Las dos cuentas del cubicador, escritas una sola vez y mostradas al pasar el
    mouse por el encabezado: el pie tablar es la fórmula comercial y el m³ SALE
    de él (÷ 424), no del volumen geométrico. */
 const FORMULA_PT = "Pie tablar = espesor″ × ancho″ × largo′ × cantidad ÷ 12";
 const FORMULA_M3 = `m³ = pie tablar ÷ ${PT_POR_M3}`;
-
-const COLS_OPCIONALES: { key: ColOpcional; label: string }[] = [
-  { key: "numero", label: "N°" },
-  { key: "cant", label: "Cant." },
-  { key: "espesor", label: "Espesor" },
-  { key: "ancho", label: "Ancho" },
-  { key: "largo", label: "Largo" },
-  { key: "medida", label: "Medida" },
-  { key: "tipo", label: "Tipo" },
-  /* Sólo se ofrece con `codigoDeTroza` («Producir sin lote»). */
-  { key: "codigo", label: "Código" },
-  { key: "especie", label: "Especie" },
-  { key: "dueno", label: "Dueño" },
-  { key: "observacion", label: "Observación" },
-  { key: "apartado", label: "Apartado" },
-  { key: "pt", label: "Pie tablar" },
-  { key: "m3", label: "m³" },
-];
-const COLS_DEFAULT: Record<ColOpcional, boolean> = {
-  numero: true, cant: true, espesor: true, ancho: true, largo: true,
-  medida: true, tipo: true, codigo: true, especie: true, dueno: true, observacion: true, apartado: true, pt: true, m3: true,
-};
 
 // Especies de madera comunes en la Selva Central peruana (single-source en cubicacion.ts).
 /** Las de fábrica: el piso cuando el catálogo del tenant todavía no cargó. */
@@ -611,6 +586,21 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
     try { return { ...COLS_DEFAULT, ...(JSON.parse(raw) as Partial<Record<ColOpcional, boolean>>) }; } catch { return COLS_DEFAULT; }
   });
   useEffect(() => { try { localStorage.setItem(`${storageKey(espacio)}-cols`, JSON.stringify(colsVisibles)); } catch { /* quota */ } }, [colsVisibles]);
+  /** Dónde guarda ESTE cubicador lo suyo (orden de columnas, trasera): misma libreta que el lote. */
+  const claveLote = useMemo(() => storageKey(espacio), [espacio]);
+  /** El orden de las columnas (arrastrando la cabecera o con el menú), por tenant. */
+  const {
+    orden: ordenColumnas,
+    mover: moverColumnaGuardada,
+    desplazar: desplazarColumna,
+    restablecer: restablecerOrdenColumnas,
+    deFabrica: ordenColumnasDeFabrica,
+  } = useOrdenColumnas<ColOpcional>(`${claveLote}-cols-orden`, COLS_ORDEN_DEFAULT);
+  /**
+   * La parte trasera del camión (Brandon, 2026-10-03): filas marcadas como
+   * las que se ven al abrir la compuerta. Se guarda aparte del lote.
+   */
+  const trasera = useTraseraCamion(claveLote, rows);
   /**
    * Qué paneles están plegados. Es una preferencia de trabajo, no un estado de
    * la sesión: quien revisa un lote ya medido no quiere el micrófono ocupando
@@ -1692,19 +1682,27 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
     const fila = filasVisibles[posicion];
     if (fila) duplicar(fila.r.id);
   }, [filasVisibles, duplicar]);
+  /** Las columnas de datos que se ven, en el orden en que se ven. */
+  const ordenVisible = useMemo(
+    () => ordenColumnas.filter((k) => (k === "codigo" ? conCodigo && colsVisibles.codigo : colsVisibles[k])),
+    [ordenColumnas, conCodigo, colsVisibles],
+  );
+  /** La posición visible de cada columna (la casilla de tilde es la 0). */
+  const colSel = useMemo(() => {
+    const pos: Partial<Record<ColOpcional, number>> = {};
+    ordenVisible.forEach((k, i) => { pos[k] = i + 1; });
+    return pos;
+  }, [ordenVisible]);
   /**
-   * Cant./Espesor/Ancho/Largo ahora se pueden ocultar en la TABLA — la
-   * navegación de teclado tiene que saltearse la que no está. Sin esto, una
-   * flecha hacia la columna oculta buscaba un `data-col` que ya no existe en
-   * el DOM y se quedaba quieta en vez de saltar a la siguiente visible.
+   * Cant./Espesor/Ancho/Largo se pueden ocultar y mover en la TABLA — la
+   * navegación de teclado tiene que saltearse la que no está y seguir el orden
+   * de pantalla. Sin esto, una flecha hacia la columna oculta buscaba un
+   * `data-col` que ya no existe en el DOM y se quedaba quieta en vez de saltar
+   * a la siguiente visible.
    */
   const tablaColumnasVisibles = useMemo(
-    () => TABLA_COLUMNAS_TODAS.filter((c) =>
-      c === COL_CANT ? colsVisibles.cant
-      : c === COL_ESPESOR ? colsVisibles.espesor
-      : c === COL_ANCHO ? colsVisibles.ancho
-      : colsVisibles.largo),
-    [colsVisibles.cant, colsVisibles.espesor, colsVisibles.ancho, colsVisibles.largo],
+    () => ordenVisible.flatMap((k) => (COL_NAV[k] != null ? [COL_NAV[k]] : [])),
+    [ordenVisible],
   );
   const teclasTabla = useTecladoGrilla({
     grilla: GRILLA_TABLA,
@@ -1736,22 +1734,81 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
     // rango arrastrado que la salte numéricamente (de Cant. a m³, por ej.) no
     // debe mostrar la cuenta de una columna que ni siquiera se ve.
     const cols: ColumnaSeleccionable[] = [];
-    if (colsVisibles.cant) cols.push({ col: TCOL.cant, label: "Cant.", unidad: "pzas", decimales: 0, leer: (p) => pieza(p)?.cantidad ?? null });
-    if (colsVisibles.pt) cols.push({ col: TCOL.pt, label: "Pie tablar", unidad: "PT", decimales: 2, leer: (p) => pieza(p)?.pieTablar ?? null });
-    if (colsVisibles.m3) cols.push({ col: TCOL.m3, label: "m³", unidad: "m³", decimales: 3, leer: (p) => pieza(p)?.m3 ?? null });
-    return cols;
-  }, [filasVisibles, colsVisibles.cant, colsVisibles.pt, colsVisibles.m3]);
-  /** La columna «Código» existe sólo en «Producir sin lote», y ahí se puede ocultar. */
-  const verCodigo = conCodigo && colsVisibles.codigo;
-  /** Cuántas columnas hay ANTES de Pie tablar/m³ ahora mismo — el rótulo del
-   *  pie de tabla las abarca todas; con columnas ocultas, un colSpan fijo se
-   *  quedaba corto o largo y desalineaba los totales. */
-  const colSpanTotales = 1 // "Marcar" (el tilde del PDF) es la única fija de las de la izquierda
-    + (colsVisibles.numero ? 1 : 0) + (colsVisibles.cant ? 1 : 0)
-    + (colsVisibles.espesor ? 1 : 0) + (colsVisibles.ancho ? 1 : 0) + (colsVisibles.largo ? 1 : 0)
-    + (colsVisibles.medida ? 1 : 0) + (colsVisibles.tipo ? 1 : 0)
-    + (verCodigo ? 1 : 0) + (colsVisibles.especie ? 1 : 0) + (colsVisibles.dueno ? 1 : 0)
-    + (colsVisibles.observacion ? 1 : 0) + (colsVisibles.apartado ? 1 : 0);
+    if (colSel.cant != null) cols.push({ col: colSel.cant, label: "Cant.", unidad: "pzas", decimales: 0, leer: (p) => pieza(p)?.cantidad ?? null });
+    if (colSel.pt != null) cols.push({ col: colSel.pt, label: "Pie tablar", unidad: "PT", decimales: 2, leer: (p) => pieza(p)?.pieTablar ?? null });
+    if (colSel.m3 != null) cols.push({ col: colSel.m3, label: "m³", unidad: "m³", decimales: 3, leer: (p) => pieza(p)?.m3 ?? null });
+    // En el orden de pantalla: la cuenta y lo que se copia salen de izquierda a derecha.
+    return cols.sort((a, b) => a.col - b.col);
+  }, [filasVisibles, colSel]);
+  /** Mover una columna limpia la selección: el rango se mide en posiciones y dejaría de abarcar lo marcado. */
+  const limpiarSeleccion = sel.limpiar;
+  const moverColumna = useCallback((clave: ColOpcional, antesDe: ColOpcional | null) => {
+    moverColumnaGuardada(clave, antesDe);
+    limpiarSeleccion();
+  }, [moverColumnaGuardada, limpiarSeleccion]);
+  const arrastreCols = useArrastreColumnas(ordenVisible, moverColumna);
+
+  /* La trasera del camión desde lo tildado: si TODO lo tildado ya va atrás,
+     el mismo botón lo saca. Después se quita el tilde —el tilde decide qué va
+     al papel y la trasera tiene su propio color—. */
+  const { ids: idsTrasera, agregar: agregarTrasera, quitar: quitarTrasera } = trasera;
+  const marcadasEnTrasera = useMemo(() => [...marcadas].filter((id) => idsTrasera.has(id)).length, [marcadas, idsTrasera]);
+  const todasMarcadasAtras = marcadas.size > 0 && marcadasEnTrasera === marcadas.size;
+  const alternarTrasera = useCallback(() => {
+    const ids = [...marcadas];
+    if (ids.length === 0) return;
+    const piezas = rows.reduce((a, r) => a + (marcadas.has(r.id) ? r.cantidad : 0), 0);
+    const filas = `${ids.length} ${ids.length === 1 ? "fila" : "filas"} (${piezas} ${piezas === 1 ? "pieza" : "piezas"})`;
+    if (todasMarcadasAtras) {
+      quitarTrasera(ids);
+      pushToast({ tono: "success", msg: `${filas} fuera de la trasera` });
+    } else {
+      agregarTrasera(ids);
+      pushToast({ tono: "success", msg: `${filas} a la parte trasera`, detail: "Toca «Ver trasera» para el croquis y el formato." });
+    }
+    setMarcadas(new Set());
+  }, [marcadas, rows, todasMarcadasAtras, quitarTrasera, agregarTrasera, pushToast]);
+  const piezasTrasera = useMemo(() => trasera.piezas.reduce((a, r) => a + r.cantidad, 0), [trasera.piezas]);
+  /* Con algo en la trasera, la casilla reserva lugar para el camioncito: así la
+     columna no cambia de ancho fila por fila. */
+  const hayTrasera = trasera.piezas.length > 0;
+
+  /**
+   * La cabecera de cada columna de datos, en el orden que el usuario eligió.
+   * Todas se arrastran (`arrastreCols`); las que suman (Cant., m³, PT) además
+   * marcan la columna entera al hacer clic, como en una planilla. Es una
+   * función que DEVUELVE celdas, no un componente: llamarla no remonta nada.
+   */
+  const thDe = (key: ColOpcional): React.ReactNode => {
+    const th = arrastreCols.propsTh(key);
+    const arr = arrastreCols.claseTh(key);
+    const filas = filasVisibles.length;
+    switch (key) {
+      case "numero": return <th key={key} {...th} className={`px-2 py-2 text-center ${arr}`}><AsaColumna />N°</th>;
+      /* Click en el título = columna entera marcada, como en una planilla. Sólo
+         en las que aportan una cuenta: marcar "Medida" no suma nada y el gesto
+         quedaría sin respuesta. */
+      case "cant": return <ThCol key={key} th={th} claseTh={arr} col={colSel.cant ?? -1} sel={sel} filas={filas}>Cant.</ThCol>;
+      /* La unidad va en el título, una vez, y no en cada fila (Brandon, 2026-09-23). */
+      case "espesor": return <th key={key} {...th} className={`px-3 py-2 ${arr}`}><AsaColumna />Espesor <span className="font-normal normal-case">(pulg)</span></th>;
+      case "ancho": return <th key={key} {...th} className={`px-3 py-2 ${arr}`}><AsaColumna />Ancho <span className="font-normal normal-case">(pulg)</span></th>;
+      case "largo": return <th key={key} {...th} className={`px-3 py-2 ${arr}`}><AsaColumna />Largo <span className="font-normal normal-case">(pies)</span></th>;
+      case "medida": return <th key={key} {...th} className={`px-3 py-2 ${arr}`}><AsaColumna />Medida</th>;
+      case "tipo": return <th key={key} {...th} className={`px-3 py-2 ${arr}`}><AsaColumna />Tipo</th>;
+      case "codigo": return <th key={key} {...th} className={`px-3 py-2 ${arr}`}><AsaColumna />Código</th>;
+      case "especie": return <th key={key} {...th} className={`px-3 py-2 ${arr}`}><AsaColumna />Especie</th>;
+      case "dueno": return <th key={key} {...th} className={`px-3 py-2 ${arr}`}><AsaColumna />Dueño</th>;
+      case "observacion": return <th key={key} {...th} className={`px-3 py-2 ${arr}`}><AsaColumna />Observación</th>;
+      case "apartado": return <th key={key} {...th} className={`px-3 py-2 ${arr}`}><AsaColumna />Apartado</th>;
+      /* m³ antes que PT por defecto: Piezas · m³ · PT en todo el módulo (2026-09-09). */
+      case "m3": return <ThCol key={key} th={th} claseTh={arr} col={colSel.m3 ?? -1} sel={sel} filas={filas} className="text-right" hint={FORMULA_M3}>m³</ThCol>;
+      case "pt": return <ThCol key={key} th={th} claseTh={arr} col={colSel.pt ?? -1} sel={sel} filas={filas} className="text-right" hint={FORMULA_PT}>Pie tablar</ThCol>;
+    }
+  };
+  /** Las celdas del pie con las columnas en cualquier orden: m³ y PT con su
+   *  total, el resto juntado en tramos. Un colSpan fijo desalineaba los
+   *  totales apenas se ocultaba o movía una columna. */
+  const segmentosPie = useMemo(() => segmentosDelPie(ordenVisible, COLS_CON_TOTAL), [ordenVisible]);
 
   /**
    * Arrastre de relleno: se toma el asa de una celda y se baja.
@@ -2400,9 +2457,31 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
                   ]}
                 />
 
+                {/* Lo tildado a la parte trasera del camión (Brandon, 2026-10-03). */}
+                {marcadas.size > 0 && (
+                  <button
+                    type="button"
+                    onClick={alternarTrasera}
+                    title={todasMarcadasAtras ? "Sacar lo marcado de la parte trasera del camión" : "Marcar lo tildado como lo que va en la parte trasera del camión (lo que se ve al abrir la compuerta)"}
+                    className="inline-flex items-center gap-1 rounded-lg border border-[var(--data-8)] bg-[var(--data-8)]/10 px-3 py-1.5 text-xs font-bold text-[var(--text-primary)] transition hover:bg-[var(--data-8)]/20"
+                  >
+                    <Truck className="h-3.5 w-3.5 text-[var(--data-8)]" aria-hidden />
+                    {todasMarcadasAtras ? `Sacar de la trasera (${marcadas.size})` : `Parte trasera del camión (${marcadas.size})`}
+                  </button>
+                )}
+                {hayTrasera && (
+                  <button
+                    type="button"
+                    onClick={() => modales.abrir("trasera")}
+                    title="Ver el croquis y el formato de la parte trasera del camión"
+                    className="inline-flex items-center gap-1 rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--data-8)] hover:text-[var(--text-primary)]"
+                  >
+                    <Truck className="h-3.5 w-3.5 text-[var(--data-8)]" aria-hidden /> Ver trasera · {piezasTrasera} pzas
+                  </button>
+                )}
                 {marcadas.size > 0 && (
                   <button type="button" onClick={() => setMarcadas(new Set())} className="rounded-lg px-2 py-1.5 text-xs font-bold text-[var(--text-tertiary)] underline hover:text-[var(--text-primary)]">
-                    Quitar las {marcadas.size} marcas
+                    {marcadas.size === 1 ? "Quitar la marca" : `Quitar las ${marcadas.size} marcas`}
                   </button>
                 )}
               </>
@@ -2712,48 +2791,19 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
                   </button>
                 </>
               )}
-              {/* Columnas opcionales: ocultar/mostrar y restablecer — queda
-                  guardado por tenant hasta que se vuelva a tocar. */}
-              <div className="relative ml-auto">
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); setColsMenuOpen((v) => !v); }}
-                  title="Elegir columnas visibles de la tabla"
-                  aria-label="Elegir columnas visibles"
-                  aria-expanded={colsMenuOpen}
-                  className={`inline-flex h-10 items-center gap-1.5 rounded-xl border px-3 text-sm font-semibold transition ${colsMenuOpen ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"}`}
-                >
-                  <Columns3 className="h-4 w-4" /> Columnas
-                </button>
-                {colsMenuOpen && (
-                  <div
-                    onClick={(e) => e.stopPropagation()}
-                    className="absolute right-0 top-full z-20 mt-1 min-w-[190px] rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-2 shadow-[var(--shadow-lg)]"
-                  >
-                    <p className="px-2 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Columnas visibles</p>
-                    {COLS_OPCIONALES.filter(({ key }) => key !== "codigo" || conCodigo).map(({ key, label }) => (
-                      <label key={key} className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">
-                        <input
-                          type="checkbox"
-                          checked={colsVisibles[key]}
-                          onChange={(e) => setColsVisibles((c) => ({ ...c, [key]: e.target.checked }))}
-                          className="h-4 w-4 rounded border border-[var(--rule-base)] accent-[var(--color-primary)]"
-                        />
-                        {label}
-                      </label>
-                    ))}
-                    <div className="mt-1 border-t border-[var(--rule-soft)] pt-1">
-                      <button
-                        type="button"
-                        onClick={() => setColsVisibles(COLS_DEFAULT)}
-                        className="w-full rounded-lg px-2 py-1.5 text-left text-sm font-bold text-[var(--accent)] hover:bg-primary/10"
-                      >
-                        Restablecer todas
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
+              {/* Columnas opcionales: ocultar/mostrar, ordenar y restablecer —
+                  queda guardado por tenant hasta que se vuelva a tocar. */}
+              <MenuColumnas
+                abierto={colsMenuOpen}
+                onAlternar={() => setColsMenuOpen((v) => !v)}
+                visibles={colsVisibles}
+                onVisibles={setColsVisibles}
+                orden={ordenColumnas}
+                onDesplazar={(k, dir) => { desplazarColumna(k, dir, (c) => c !== "codigo" || conCodigo); sel.limpiar(); }}
+                onRestablecerOrden={() => { restablecerOrdenColumnas(); sel.limpiar(); }}
+                ordenDeFabrica={ordenColumnasDeFabrica}
+                conCodigo={conCodigo}
+              />
             </div>
             {conCodigo && (
               <datalist id="cub-codigos-datalist">
@@ -2786,7 +2836,7 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
               <thead>
                 <tr className={`bg-[var(--surface-sunken)] text-left text-[length:var(--ts-xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)] ${virtualizarTabla ? "sticky top-0 z-10" : ""}`}>
                   {/* El tilde manda: lo marcado es lo que se lleva el papel. */}
-                  <th className="w-10 px-2 py-2 text-center" title="Marca las piezas que van al PDF y al Anexo 04">
+                  <th className={`${hayTrasera ? "w-14" : "w-10"} px-2 py-2 text-center`} title="Marca las piezas que van al PDF y al Anexo 04">
                     <input
                       type="checkbox"
                       aria-label="Marcar todas las piezas visibles"
@@ -2808,25 +2858,7 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
                       className="h-4 w-4 accent-[var(--accent)]"
                     />
                   </th>
-                  {colsVisibles.numero && <th className="px-2 py-2 text-center">N°</th>}
-                  {/* Click en el título = columna entera marcada, como en una
-                      planilla. Sólo en las que aportan una cuenta: marcar
-                      "Medida" no suma nada y el gesto quedaría sin respuesta. */}
-                  {colsVisibles.cant && <ThCol col={TCOL.cant} sel={sel} filas={filasVisibles.length}>Cant.</ThCol>}
-                  {/* La unidad va en el título, una vez, y no en cada fila (Brandon, 2026-09-23). */}
-                  {colsVisibles.espesor && <th className="px-3 py-2">Espesor <span className="font-normal normal-case">(pulg)</span></th>}
-                  {colsVisibles.ancho && <th className="px-3 py-2">Ancho <span className="font-normal normal-case">(pulg)</span></th>}
-                  {colsVisibles.largo && <th className="px-3 py-2">Largo <span className="font-normal normal-case">(pies)</span></th>}
-                  {colsVisibles.medida && <th className="px-3 py-2">Medida</th>}
-                  {colsVisibles.tipo && <th className="px-3 py-2">Tipo</th>}
-                  {verCodigo && <th className="px-3 py-2">Código</th>}
-                  {colsVisibles.especie && <th className="px-3 py-2">Especie</th>}
-                  {colsVisibles.dueno && <th className="px-3 py-2">Dueño</th>}
-                  {colsVisibles.observacion && <th className="px-3 py-2">Observación</th>}
-                  {colsVisibles.apartado && <th className="px-3 py-2">Apartado</th>}
-                  {/* m³ antes que PT: Piezas · m³ · PT en todo el módulo (2026-09-09). */}
-                  {colsVisibles.m3 && <ThCol col={TCOL.m3} sel={sel} filas={filasVisibles.length} className="text-right" hint={FORMULA_M3}>m³</ThCol>}
-                  {colsVisibles.pt && <ThCol col={TCOL.pt} sel={sel} filas={filasVisibles.length} className="text-right" hint={FORMULA_PT}>Pie tablar</ThCol>}
+                  {ordenVisible.map(thDe)}
                   <th className="px-3 py-2" />
                 </tr>
               </thead>
@@ -2848,11 +2880,22 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
                   const pos = inicioVentana + i;
                   const leyendo = readingId === r.id;
                   const editando = editingId === r.id;
+                  /* Tildada = teñida de teal con raya a la izquierda; en la trasera
+                     del camión = morado con su camioncito (Brandon, 2026-10-03).
+                     Tildada Y atrás: fondo de trasera con la raya del tilde.
+                     Morado (`--data-8`) y no `--data-info-*`: dentro del panel
+                     admin el «info» resuelve al MISMO teal del acento (medido
+                     02-10 en el radar y hoy acá) y las dos marcas se confundían. */
+                  const marcada = marcadas.has(r.id);
+                  const enTrasera = idsTrasera.has(r.id);
+                  const tinte = enTrasera
+                    ? `bg-[var(--data-8)]/12 dark:bg-[var(--data-8)]/20 ${marcada ? "[&>td:first-child]:shadow-[inset_4px_0_0_var(--accent)]" : "[&>td:first-child]:shadow-[inset_4px_0_0_var(--data-8)]"}`
+                    : marcada ? "bg-[var(--accent)]/15 dark:bg-[var(--accent)]/20 [&>td:first-child]:shadow-[inset_4px_0_0_var(--accent)]" : "";
                   const rowCls = leyendo
                     ? "bg-primary/10 outline outline-2 -outline-offset-2 outline-[var(--accent)] shadow-lg [&_td]:border-b-2 [&_td]:border-b-[var(--accent)]"
                     : editando
                       ? "bg-primary/10 outline outline-2 -outline-offset-2 outline-[var(--data-warning-500)]"
-                      : lastAdded?.id === r.id ? "bg-[var(--data-success-50)]" : "";
+                      : tinte || (lastAdded?.id === r.id ? "bg-[var(--data-success-50)]" : "");
                   // Medida fuera de rango: se AVISA, no se corrige — el dato es del operario.
                   const rara = avisarRaras && medidaSospechosa(r.espesor, r.ancho, r.largo);
                   const tipo = tipoDePieza(r);
@@ -2878,39 +2921,48 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
                     className={`${inicioBloque ? "border-t-2! border-t-[var(--rule-strong)]!" : "border-t border-[var(--rule-soft)]"} transition-colors ${enRelleno ? "bg-primary/10 outline-dashed outline-2 -outline-offset-2 outline-[var(--accent)]" : rowCls || (rara ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/12" : "")}`}
                   >
                     <td className="px-2 py-2 text-center">
-                      <input
-                        type="checkbox"
-                        checked={marcadas.has(r.id)}
-                        onChange={(e) => setMarcadas((prev) => {
-                          const next = new Set(prev);
-                          if (e.target.checked) next.add(r.id); else next.delete(r.id);
-                          return next;
-                        })}
-                        aria-label={`Marcar la pieza ${r.espesor}×${r.ancho}×${r.largo}`}
-                        className="h-4 w-4 accent-[var(--accent)]"
-                      />
+                      <span className="inline-flex items-center gap-1 align-middle">
+                        <input
+                          type="checkbox"
+                          checked={marcada}
+                          onChange={(e) => setMarcadas((prev) => {
+                            const next = new Set(prev);
+                            if (e.target.checked) next.add(r.id); else next.delete(r.id);
+                            return next;
+                          })}
+                          aria-label={`Marcar la pieza ${r.espesor}×${r.ancho}×${r.largo}`}
+                          className="h-4 w-4 accent-[var(--accent)]"
+                        />
+                        {hayTrasera && (
+                          <span title={enTrasera ? "Va en la parte trasera del camión" : undefined} className={enTrasera ? "text-[var(--data-8)]" : "invisible"}>
+                            <Truck className="h-3.5 w-3.5" aria-label={enTrasera ? "En la parte trasera del camión" : undefined} aria-hidden={!enTrasera} />
+                          </span>
+                        )}
+                      </span>
                     </td>
-                    {colsVisibles.numero && <td className="px-2 py-2 text-center font-mono text-[length:var(--ts-2xs)] tabular-nums text-[var(--text-tertiary)]">{numeroDeFila(indice, rows.length, ordenFilas)}</td>}
-                    {colsVisibles.cant && (
-                      <td {...sel.props(pos, TCOL.cant)} className={`px-3 py-2 ${sel.seleccionada(pos, TCOL.cant) ? CELDA_SELECCIONADA : ""}`}><Num v={r.cantidad} onV={(n) => editarCampo(r.id, "cantidad", n)} etiqueta={`Cantidad de la fila ${r.espesor}×${r.ancho}×${r.largo}`} fila={pos} col={COL_CANT} onKeyDown={teclasTabla} /></td>
-                    )}
-                    {colsVisibles.espesor && (
-                      <td className="px-3 py-2"><Dim v={r.espesor} u={r.uEspesor} estandar={UNIDAD_ESTANDAR.espesor} onEstandar={() => aUnidadEstandar(r.id, "espesor")} onV={(n) => editarCampo(r.id, "espesor", n)} etiqueta="Espesor" fila={pos} col={COL_ESPESOR} onKeyDown={teclasTabla} /></td>
-                    )}
-                    {colsVisibles.ancho && (
-                      <td className="px-3 py-2"><Dim v={r.ancho} u={r.uAncho} estandar={UNIDAD_ESTANDAR.ancho} onEstandar={() => aUnidadEstandar(r.id, "ancho")} onV={(n) => editarCampo(r.id, "ancho", n)} etiqueta="Ancho" fila={pos} col={COL_ANCHO} onKeyDown={teclasTabla} /></td>
-                    )}
-                    {colsVisibles.largo && (
-                      <td className="px-3 py-2"><Dim v={r.largo} u={r.uLargo} estandar={UNIDAD_ESTANDAR.largo} onEstandar={() => aUnidadEstandar(r.id, "largo")} onV={(n) => editarCampo(r.id, "largo", n)} etiqueta="Largo" fila={pos} col={COL_LARGO} onKeyDown={teclasTabla} /></td>
-                    )}
-                    {colsVisibles.medida && (
-                      <td className="px-3 py-2 whitespace-nowrap font-mono text-sm font-bold tabular-nums text-[var(--text-secondary)]">
+                    {ordenVisible.map((key): React.ReactNode => {
+                      switch (key) {
+                      case "numero": return <td key="numero" className="px-2 py-2 text-center font-mono text-[length:var(--ts-2xs)] tabular-nums text-[var(--text-tertiary)]">{numeroDeFila(indice, rows.length, ordenFilas)}</td>;
+                      case "cant": return (
+                      <td key="cant" {...sel.props(pos, colSel.cant ?? -1)} className={`px-3 py-2 ${sel.seleccionada(pos, colSel.cant ?? -1) ? CELDA_SELECCIONADA : ""}`}><Num v={r.cantidad} onV={(n) => editarCampo(r.id, "cantidad", n)} etiqueta={`Cantidad de la fila ${r.espesor}×${r.ancho}×${r.largo}`} fila={pos} col={COL_CANT} onKeyDown={teclasTabla} /></td>
+                      );
+                      case "espesor": return (
+                      <td key="espesor" className="px-3 py-2"><Dim v={r.espesor} u={r.uEspesor} estandar={UNIDAD_ESTANDAR.espesor} onEstandar={() => aUnidadEstandar(r.id, "espesor")} onV={(n) => editarCampo(r.id, "espesor", n)} etiqueta="Espesor" fila={pos} col={COL_ESPESOR} onKeyDown={teclasTabla} /></td>
+                      );
+                      case "ancho": return (
+                      <td key="ancho" className="px-3 py-2"><Dim v={r.ancho} u={r.uAncho} estandar={UNIDAD_ESTANDAR.ancho} onEstandar={() => aUnidadEstandar(r.id, "ancho")} onV={(n) => editarCampo(r.id, "ancho", n)} etiqueta="Ancho" fila={pos} col={COL_ANCHO} onKeyDown={teclasTabla} /></td>
+                      );
+                      case "largo": return (
+                      <td key="largo" className="px-3 py-2"><Dim v={r.largo} u={r.uLargo} estandar={UNIDAD_ESTANDAR.largo} onEstandar={() => aUnidadEstandar(r.id, "largo")} onV={(n) => editarCampo(r.id, "largo", n)} etiqueta="Largo" fila={pos} col={COL_LARGO} onKeyDown={teclasTabla} /></td>
+                      );
+                      case "medida": return (
+                      <td key="medida" className="px-3 py-2 whitespace-nowrap font-mono text-sm font-bold tabular-nums text-[var(--text-secondary)]">
                         {r.espesor}×{r.ancho}×{r.largo}
                       </td>
-                    )}
-                    {/* Tipo editable: la medida propone, el operario dispone. */}
-                    {colsVisibles.tipo && (
-                      <td className="group/celda relative px-3 py-2">
+                      );
+                      /* Tipo editable: la medida propone, el operario dispone. */
+                      case "tipo": return (
+                      <td key="tipo" className="group/celda relative px-3 py-2">
                         <TipoSelect
                           tipo={tipo}
                           auto={clasificarTipo(r)}
@@ -2921,17 +2973,17 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
                         />
                         <AsaRelleno onTomar={() => rellenoTipo.iniciar(pos)} titulo="Arrastra hacia abajo para poner este tipo en las filas siguientes" />
                       </td>
-                    )}
-                    {/* Código de la troza (sólo «Producir sin lote»): texto libre,
-                        como el dueño, con los códigos del patio de sugerencia. */}
-                    {verCodigo && (
-                      <td className="group/celda relative px-3 py-2">
+                      );
+                      /* Código de la troza (sólo «Producir sin lote»): texto libre,
+                        como el dueño, con los códigos del patio de sugerencia. */
+                      case "codigo": return (
+                      <td key="codigo" className="group/celda relative px-3 py-2">
                         <CodigoCell valor={r.codigo ?? ""} onCommit={(v) => editarCodigo(r.id, v)} />
                         <AsaRelleno onTomar={() => rellenoCodigo.iniciar(pos)} titulo="Arrastra hacia abajo para poner este código en las filas siguientes" />
                       </td>
-                    )}
-                    {colsVisibles.especie && (
-                      <td className="group/celda relative px-3 py-2">
+                      );
+                      case "especie": return (
+                      <td key="especie" className="group/celda relative px-3 py-2">
                         <select
                           value={r.especie ?? ""}
                           onChange={(e) => { editarEspecie(r.id, e.target.value); avisarVariadoNo6x6(r, e.target.value); }}
@@ -2950,27 +3002,27 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
                         </select>
                         <AsaRelleno onTomar={() => rellenoEspecie.iniciar(pos)} titulo="Arrastra hacia abajo para poner esta especie en las filas siguientes" />
                       </td>
-                    )}
-                    {/* Dueño: sin catálogo cerrado (a diferencia de especie) — input +
-                        datalist para poder escribir uno nuevo o elegir uno ya usado. */}
-                    {colsVisibles.dueno && (
-                      <td className="group/celda relative px-3 py-2">
+                      );
+                      /* Dueño: sin catálogo cerrado (a diferencia de especie) — input +
+                        datalist para poder escribir uno nuevo o elegir uno ya usado. */
+                      case "dueno": return (
+                      <td key="dueno" className="group/celda relative px-3 py-2">
                         <span className="inline-flex items-center gap-1">
                           <DuenoCell valor={r.dueno ?? ""} opciones={duenosParaElegir} onCommit={(v) => editarDueno(r.id, v)} />
                           {r.duenoParteId && <PrecioDelDueno pieza={r} ctx={precios.ctx} />}
                         </span>
                         <AsaRelleno onTomar={() => rellenoDueno.iniciar(pos)} titulo="Arrastra hacia abajo para poner este dueño en las filas siguientes" />
                       </td>
-                    )}
-                    {colsVisibles.observacion && (
-                      <td className="px-3 py-2">
+                      );
+                      case "observacion": return (
+                      <td key="observacion" className="px-3 py-2">
                         <ObservacionCell valor={r.observacion ?? ""} onCommit={(v) => editarObservacion(r.id, v)} />
                       </td>
-                    )}
-                    {/* Apartado: se asigna con "Cerrar apartado" (o arrastrando
-                        el asa como especie/tipo) — acá sólo se ve y se copia. */}
-                    {colsVisibles.apartado && (
-                      <td className="group/celda relative px-3 py-2">
+                      );
+                      /* Apartado: se asigna con "Cerrar apartado" (o arrastrando
+                        el asa como especie/tipo) — acá sólo se ve y se copia. */
+                      case "apartado": return (
+                      <td key="apartado" className="group/celda relative px-3 py-2">
                         {numeroAp != null ? (
                           <span className={`font-mono text-sm font-bold ${colorClaseApartado(numeroAp)}`}>{etiquetaApartado(numeroAp, nombresApartado)}</span>
                         ) : (
@@ -2978,13 +3030,15 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
                         )}
                         <AsaRelleno onTomar={() => rellenoApartado.iniciar(pos)} titulo="Arrastra hacia abajo para poner este apartado en las filas siguientes" />
                       </td>
-                    )}
-                    {colsVisibles.m3 && (
-                      <td {...sel.props(pos, TCOL.m3)} className={`px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)] ${sel.seleccionada(pos, TCOL.m3) ? CELDA_SELECCIONADA : ""}`}>{fmtM3(r.m3)}</td>
-                    )}
-                    {colsVisibles.pt && (
-                      <td {...sel.props(pos, TCOL.pt)} className={`px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)] ${sel.seleccionada(pos, TCOL.pt) ? CELDA_SELECCIONADA : ""}`}>{fmtPt(r.pieTablar)}</td>
-                    )}
+                      );
+                      case "m3": return (
+                      <td key="m3" {...sel.props(pos, colSel.m3 ?? -1)} className={`px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)] ${sel.seleccionada(pos, colSel.m3 ?? -1) ? CELDA_SELECCIONADA : ""}`}>{fmtM3(r.m3)}</td>
+                      );
+                      case "pt": return (
+                      <td key="pt" {...sel.props(pos, colSel.pt ?? -1)} className={`px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)] ${sel.seleccionada(pos, colSel.pt ?? -1) ? CELDA_SELECCIONADA : ""}`}>{fmtPt(r.pieTablar)}</td>
+                      );
+                      }
+                    })}
                     <td className="px-3 py-2">
                       <div className="flex items-center justify-end gap-1.5">
                         {rara && (
@@ -3024,32 +3078,41 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
               </tbody>
               <tfoot>
                 <tr className="border-t-2 border-[var(--rule-base)] bg-primary/10 font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
-                  <td className="px-3 py-2.5" colSpan={colSpanTotales}>{filtrando ? "Filtro" : "Total"} · {(filtrando ? totalesVisibles : totales).piezas} piezas</td>
-                  {/*
-                    Los `title` dicen la equivalencia entre las dos columnas
-                    (Brandon, 2026-09-02: «30.738 × 424 me da 13032 pero en PT
-                    sale 13026»). Ya no hay nada que reconciliar —el m³ SALE del
-                    PT dividido por 424— pero el factor se dice igual: sin él,
-                    quien cruce las columnas con la calculadora no tiene con qué
-                    verificar que le está dando bien.
-                  */}
-                  {colsVisibles.m3 && (
-                    <td
-                      className="px-3 py-2.5 text-right font-mono text-base tabular-nums text-[var(--accent)]"
-                      title={`${fmtM3((filtrando ? totalesVisibles : totales).m3)} m³ × ${PT_POR_M3} = ${fmtPt((filtrando ? totalesVisibles : totales).m3 * PT_POR_M3)} PT. El total suma cada fila ya redondeada, así que puede moverse unas centésimas del cociente exacto.`}
-                    >
-                      {fmtM3((filtrando ? totalesVisibles : totales).m3)}
-                    </td>
-                  )}
-                  {colsVisibles.pt && (
-                    <td
-                      className="px-3 py-2.5 text-right font-mono tabular-nums text-[var(--accent)]"
-                      title={`${fmtPt((filtrando ? totalesVisibles : totales).pt)} PT ÷ ${PT_POR_M3} = ${fmtM3((filtrando ? totalesVisibles : totales).pt / PT_POR_M3)} m³`}
-                    >
-                      {fmtPt((filtrando ? totalesVisibles : totales).pt)} PT
-                    </td>
-                  )}
-                  <td />
+                  {segmentosPie.map((seg, i) => {
+                    const t = filtrando ? totalesVisibles : totales;
+                    if (seg.tipo === "resto") {
+                      return (
+                        <td key={`resto-${i}`} className="px-3 py-2.5" colSpan={seg.span}>
+                          {seg.rotulo && <>{filtrando ? "Filtro" : "Total"} · {t.piezas} piezas</>}
+                        </td>
+                      );
+                    }
+                    /*
+                      Los `title` dicen la equivalencia entre las dos columnas
+                      (Brandon, 2026-09-02: «30.738 × 424 me da 13032 pero en PT
+                      sale 13026»). Ya no hay nada que reconciliar —el m³ SALE del
+                      PT dividido por 424— pero el factor se dice igual: sin él,
+                      quien cruce las columnas con la calculadora no tiene con qué
+                      verificar que le está dando bien.
+                    */
+                    return seg.clave === "m3" ? (
+                      <td
+                        key="m3"
+                        className="px-3 py-2.5 text-right font-mono text-base tabular-nums text-[var(--accent)]"
+                        title={`${fmtM3(t.m3)} m³ × ${PT_POR_M3} = ${fmtPt(t.m3 * PT_POR_M3)} PT. El total suma cada fila ya redondeada, así que puede moverse unas centésimas del cociente exacto.`}
+                      >
+                        {fmtM3(t.m3)}
+                      </td>
+                    ) : (
+                      <td
+                        key="pt"
+                        className="px-3 py-2.5 text-right font-mono tabular-nums text-[var(--accent)]"
+                        title={`${fmtPt(t.pt)} PT ÷ ${PT_POR_M3} = ${fmtM3(t.pt / PT_POR_M3)} m³`}
+                      >
+                        {fmtPt(t.pt)} PT
+                      </td>
+                    );
+                  })}
                 </tr>
               </tfoot>
             </DataTable>
@@ -3146,6 +3209,19 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
               />
             )}
 
+            {abiertos.has("trasera") && (
+              <TraseraCamionModal
+                piezas={trasera.piezas}
+                catalogo={especiesDelSelector}
+                anchoM={trasera.anchoM}
+                onAncho={trasera.cambiarAncho}
+                onQuitar={(id) => quitarTrasera([id])}
+                onVaciar={() => { trasera.vaciar(); cerrar("trasera"); pushToast({ tono: "success", msg: "Trasera vaciada", detail: "Las filas siguen en el lote." }); }}
+                onAviso={(msg, tono) => pushToast({ tono, msg })}
+                onCerrar={() => cerrar("trasera")}
+              />
+            )}
+
             {abiertos.has("enviar") && (
               <EnviarLibroModal
                 piezas={totales.piezas}
@@ -3183,6 +3259,8 @@ function ThCol({
   filas,
   className = "",
   hint,
+  th,
+  claseTh = "",
   children,
 }: {
   col: number;
@@ -3191,10 +3269,14 @@ function ThCol({
   className?: string;
   /** Cómo se calcula la columna — se lee al pasar el mouse por el encabezado. */
   hint?: string;
+  /** Lo que la hace arrastrable (`useArrastreColumnas`). */
+  th?: PropsThArrastrable;
+  claseTh?: string;
   children: React.ReactNode;
 }) {
   return (
-    <th className={`px-3 py-2 ${className}`}>
+    <th {...th} className={`px-3 py-2 ${className} ${claseTh}`}>
+      {th && <AsaColumna />}
       <button
         type="button"
         onClick={() => sel.marcarColumna(col, filas)}
