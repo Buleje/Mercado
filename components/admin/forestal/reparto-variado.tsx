@@ -15,13 +15,22 @@ import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { fmtPiezas } from "@/lib/forestal/cubicacion-formato";
 import type { BloqueRolliza } from "@/lib/forestal/cubicacion-reparto";
 import { formatNumber, formatTime, formatWeekday } from "@/lib/format";
-import type { ConfigVariado, MotivoSinDesglosar, ResultadoVariado } from "@/lib/forestal/variado-desglose";
+import type { ConfigVariado, DesgloseGrupo, MotivoSinDesglosar, ResultadoVariado } from "@/lib/forestal/variado-desglose";
+import { ordenTipo, tipoCorto, type TipoComercial } from "@/lib/forestal/cubicacion-tipo";
 import { medidaVariadoTxt, pesosTxt } from "./cubicador-variado";
 import { useAplicarVariado, type AplicarVariado } from "./hooks/use-aplicar-variado";
 
 /** La línea que se imprime en el PDF/Excel de la Distribución cuando hay Variado. */
 export const NOTA_VARIADO_PAPEL =
-  "Variado: los paquetes 6×6 se abren en medidas y especies por proporción del volumen libre de cada permiso — es un reparto calculado, no una medición.";
+  "Variado: los paquetes 6×6 se abren en medidas y especies por proporción del volumen libre de cada permiso — es un reparto calculado, no una medición. Cada medida lleva su tipo (Tabla, Larga angosta, Corta).";
+
+type MedidaAbierta = DesgloseGrupo["porEspecie"][number]["medidas"][number];
+/** Las medidas de una especie juntas bajo su tipo: «L. angosta 2×4 ×12 · 2×2 ×9 | Tabla 1×3 ×5». */
+function porTipo(medidas: readonly MedidaAbierta[]): { tipo: TipoComercial; medidas: MedidaAbierta[] }[] {
+  const g = new Map<TipoComercial, MedidaAbierta[]>();
+  for (const m of medidas) g.set(m.tipo, [...(g.get(m.tipo) ?? []), m]);
+  return [...g.entries()].sort((a, b) => ordenTipo(a[0]) - ordenTipo(b[0])).map(([tipo, ms]) => ({ tipo, medidas: ms }));
+}
 
 const MOTIVO: Record<MotivoSinDesglosar, string> = {
   "no-6x6": "no es 6×6",
@@ -94,7 +103,7 @@ export default function RepartoVariado({ des, paquetes, bloques, cfg }: {
         <span className="rounded-full border border-[var(--rule-base)] px-1.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">por proporción</span>
         <InfoTip
           title="Variado en la Distribución"
-          what="Cada paquete 6×6 Variado se abre en las medidas que entran (2×2, 2×3, 2×4, 1×4, 1×3, 1×2 y poco de 1.5×3 y 3×3) hasta cerrar su sección, y las piezas se reparten entre especies."
+          what="Cada paquete 6×6 Variado se abre en las medidas que entran (2×2, 2×3, 2×4, 1×4, 1×3, 1×2 y poco de 1.5×3 y 3×3) hasta cerrar su sección. Ya no es paquetería: cada medida lleva su tipo (1×3 y 1×4 largas son Tabla, el resto largo Larga angosta, lo de menos de 6′ Corta) y va a los bloques que admiten ese tipo."
           affects="La especie sale del volumen libre de cada permiso en los bloques: más volumen, más piezas de esa especie. Es un reparto calculado, no medido; así lo dice también el PDF y el Excel."
           example="Tornillo con 62 % del libre y Cumala con 38 %: de cada 100 piezas, ~62 van a Tornillo."
         />
@@ -149,7 +158,13 @@ export default function RepartoVariado({ des, paquetes, bloques, cfg }: {
                 {g.porEspecie.map((e) => (
                   <span key={e.especie} className="ml-2 inline-block text-[var(--text-secondary)]">
                     <b className="text-[var(--text-primary)]">{e.especie}:</b>{" "}
-                    <span className="font-mono tabular-nums">{e.medidas.map((m) => `${medidaVariadoTxt(m)} ×${formatNumber(m.piezas, 0)}`).join(" · ")}</span>
+                    {porTipo(e.medidas).map((t, i) => (
+                      <span key={t.tipo}>
+                        {i > 0 && <span aria-hidden> | </span>}
+                        <span className="font-bold text-[var(--text-primary)]">{tipoCorto(t.tipo)}</span>{" "}
+                        <span className="font-mono tabular-nums">{t.medidas.map((m) => `${medidaVariadoTxt(m)} ×${formatNumber(m.piezas, 0)}`).join(" · ")}</span>
+                      </span>
+                    ))}
                   </span>
                 ))}
               </li>

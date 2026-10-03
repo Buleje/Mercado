@@ -89,12 +89,36 @@ describe("desglosarVariado", () => {
     }
   });
 
-  it("tipo = el del paquete (larga ≥ 6′, corta < 6′), mismo largo, ids estables", () => {
+  it("tipo = el de cada MEDIDA abierta, ya no «Paquetería» (Brandon 03-10); mismo largo, ids estables", () => {
     const largo = desglosarVariado([pieza("v", 4, 6, 6, 8, ESPECIE_VARIADO)], bloques, VARIADO_DEFAULT);
-    expect(largo.piezas.every((p) => p.tipo === "Paquetería larga" && p.largo === 8)).toBe(true);
+    expect(largo.piezas.every((p) => p.largo === 8)).toBe(true);
+    expect(largo.piezas.some((p) => String(p.tipo).startsWith("Paquetería"))).toBe(false);
+    for (const p of largo.piezas) {
+      // 1×3 y 1×4 largas son Tabla; el resto largo (2×2, 2×4, 1×2, 3×3…) es Larga angosta.
+      expect(p.tipo, `${p.espesor}×${p.ancho}`).toBe(p.espesor === 1 && p.ancho >= 3 ? "Tabla" : "Larga angosta");
+    }
     expect(largo.piezas.map((p) => p.id)).toEqual(largo.piezas.map((_, i) => `v-v-${i + 1}`));
+    // El detalle de la tarjeta dice el mismo tipo que la pieza.
+    const delGrupo = largo.grupos[0].porEspecie.flatMap((e) => e.medidas);
+    expect(delGrupo.every((m) => m.tipo === (m.espesor === 1 && m.ancho >= 3 ? "Tabla" : "Larga angosta"))).toBe(true);
     const corto = desglosarVariado([pieza("v", 4, 6, 6, 4, ESPECIE_VARIADO)], bloques, VARIADO_DEFAULT);
-    expect(corto.piezas.every((p) => p.tipo === "Paquetería corta")).toBe(true);
+    expect(corto.piezas.every((p) => p.tipo === "Corta")).toBe(true);
+  });
+
+  it("cada medida va sólo a las especies cuyo bloque admite su tipo («Lleva sólo»)", () => {
+    const bl: BloqueRolliza[] = [
+      bloque("a", "Tornillo", 5),
+      { ...bloque("b", "Cedro", 5), gruposFiltro: ["tipo|Larga angosta"] },
+    ];
+    const r = desglosarVariado([pieza("v", 20, 6, 6, 8, ESPECIE_VARIADO)], bl, VARIADO_DEFAULT);
+    expect(r.sinDesglosar).toEqual([]);
+    const cedro = r.piezas.filter((p) => p.especie === "Cedro");
+    expect(cedro.length).toBeGreaterThan(0);
+    expect(cedro.every((p) => p.tipo === "Larga angosta")).toBe(true);
+    expect(r.piezas.filter((p) => p.tipo === "Tabla").every((p) => p.especie === "Tornillo")).toBe(true);
+    // Un tipo que ningún bloque admite deja la fila sin abrir.
+    const soloAngosta: BloqueRolliza[] = [{ ...bloque("b", "Cedro", 5), gruposFiltro: ["tipo|Larga angosta"] }];
+    expect(desglosarVariado([pieza("v", 20, 6, 6, 8, ESPECIE_VARIADO)], soloAngosta, VARIADO_DEFAULT).sinDesglosar[0]?.motivo).toBe("sin-especies");
   });
 
   it("peso 0 por medida y especie exceptuada no aparecen", () => {

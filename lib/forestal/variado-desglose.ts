@@ -10,6 +10,11 @@
  *  · El reparto por especie es en PIEZAS ENTERAS; el PT sólo difiere por el
  *    redondeo a centésimas de cada fila (≤ 0,005 por fila).
  *  · Una especie exceptuada, o con peso 0, no recibe nada.
+ *  · Cada pieza abierta lleva el TIPO DE SU MEDIDA (Brandon 03-10: «ya no se
+ *    llamará paquetería sino de acuerdo a las medidas: larga angosta, corta…»):
+ *    1×3 y 1×4 largas son Tabla, el resto largo es Larga angosta y todo lo de
+ *    menos de 6′ es Corta (`clasificarTipo`). Por eso cada pieza va sólo a las
+ *    especies cuyos bloques ADMITEN su tipo («Lleva sólo»).
  *
  * PURO y client-safe: sin React, sin fetch, sin DOM. Determinista.
  */
@@ -21,7 +26,7 @@ import {
   gruposAdmitidos,
   type BloqueRolliza,
 } from "./cubicacion-reparto";
-import { tipoDePieza, type TipoComercial } from "./cubicacion-tipo";
+import { clasificarTipo, tipoDePieza, type TipoComercial } from "./cubicacion-tipo";
 import { claveEspecie } from "./loth-constants";
 
 export const ESPECIE_VARIADO = "Variado";
@@ -263,7 +268,11 @@ export interface DesgloseGrupo {
   /** Largo en pies. */
   largo: number;
   paquetes: number;
-  porEspecie: { especie: string; medidas: { espesor: number; ancho: number; piezas: number }[] }[];
+  porEspecie: {
+    especie: string;
+    /** `tipo` = el de la medida abierta (Tabla, Larga angosta, Corta…), no «Paquetería». */
+    medidas: { espesor: number; ancho: number; piezas: number; tipo: TipoComercial }[];
+  }[];
 }
 
 export type MotivoSinDesglosar = "sin-especies" | "no-6x6" | "no-cierra";
@@ -319,13 +328,6 @@ export function desglosarVariado(
       salida.push(p);
       continue;
     }
-    const tipo: TipoComercial = tipoDePieza(p);
-    const { pesos: pesosT, total: totalPeso } = pesosPara(tipo);
-    if (pesosT.length === 0 || totalPeso <= 0) {
-      sinDesglosar.push({ id: p.id, motivo: "sin-especies" });
-      salida.push(p);
-      continue;
-    }
     const paquetes = p.cantidad > 0 ? Math.round(p.cantidad) : 1;
     const cuentas = desglosarPaquetes(paquetes, cfg.medidas);
     if (!cuentas) {
@@ -338,16 +340,49 @@ export function desglosarVariado(
     const ordenadas = cuentas
       .map((c) => ({ ...c, a: areaMedia(c) }))
       .sort((x, y) => y.a - x.a || y.espesor - x.espesor || y.ancho - x.ancho);
+    const tipoDe = (m: { espesor: number; ancho: number }): TipoComercial =>
+      clasificarTipo({ espesor: m.espesor, ancho: m.ancho, largo: p.largo, uEspesor: "pulg", uAncho: "pulg", uLargo: p.uLargo });
 
-    // Cada pieza a la especie a la que más le falta (en área).
-    const T = AREA_PAQUETE * paquetes;
-    const falta = pesosT.map((e) => (e.peso / totalPeso) * T);
-    const reparto: Map<string, number>[] = pesosT.map(() => new Map());
+    // Cada tipo que sale del paquete con sus especies posibles y su área.
+    const porTipo = new Map<TipoComercial, { pesos: PesoEspecie[]; total: number; area: number }>();
+    for (const m of ordenadas) {
+      const t = tipoDe(m);
+      const g = porTipo.get(t) ?? { ...pesosPara(t), area: 0 };
+      g.area += m.a * m.piezas;
+      porTipo.set(t, g);
+    }
+    // Un tipo sin especie que lo admita deja la fila sin abrir (no se inventa dónde va).
+    if ([...porTipo.values()].some((g) => g.pesos.length === 0 || g.total <= 0)) {
+      sinDesglosar.push({ id: p.id, motivo: "sin-especies" });
+      salida.push(p);
+      continue;
+    }
+
+    // Lo que le toca a cada especie: el área de cada tipo repartida según los
+    // pesos de ESE tipo. Sin «Lleva sólo», todos los tipos pesan igual y el
+    // reparto es el mismo que cuando las piezas seguían siendo paquetería.
+    const objetivo = new Map<string, { especie: string; falta: number }>();
+    for (const g of porTipo.values()) {
+      for (const e of g.pesos) {
+        const o = objetivo.get(e.clave) ?? { especie: e.especie, falta: 0 };
+        o.falta += (e.peso / g.total) * g.area;
+        objetivo.set(e.clave, o);
+      }
+    }
+    const claves = [...objetivo.keys()];
+    const falta = claves.map((k) => objetivo.get(k)?.falta ?? 0);
+    const elegibles = new Map<TipoComercial, number[]>(
+      [...porTipo.entries()].map(([t, g]) => [t, g.pesos.map((e) => claves.indexOf(e.clave))]),
+    );
+
+    // Cada pieza, a la especie (que admite su tipo) a la que más le falta en área.
+    const reparto: Map<string, number>[] = claves.map(() => new Map());
     for (const m of ordenadas) {
       const clave = `${m.espesor}x${m.ancho}`;
+      const candidatas = elegibles.get(tipoDe(m)) ?? [];
       for (let k = 0; k < m.piezas; k++) {
-        let mejor = 0;
-        for (let s = 1; s < pesosT.length; s++) if (falta[s] > falta[mejor] + 1e-9) mejor = s;
+        let mejor = candidatas[0];
+        for (const s of candidatas) if (falta[s] > falta[mejor] + 1e-9) mejor = s;
         falta[mejor] -= m.a;
         reparto[mejor].set(clave, (reparto[mejor].get(clave) ?? 0) + 1);
       }
@@ -356,12 +391,13 @@ export function desglosarVariado(
     const largoPies = toFeet(p.largo, p.uLargo);
     const porEspecie: DesgloseGrupo["porEspecie"] = [];
     let n = 0;
-    pesosT.forEach((e, s) => {
+    claves.forEach((k, s) => {
+      const especie = objetivo.get(k)?.especie ?? k;
       const medidas = ordenadas
-        .map((m) => ({ espesor: m.espesor, ancho: m.ancho, piezas: reparto[s].get(`${m.espesor}x${m.ancho}`) ?? 0 }))
+        .map((m) => ({ espesor: m.espesor, ancho: m.ancho, piezas: reparto[s].get(`${m.espesor}x${m.ancho}`) ?? 0, tipo: tipoDe(m) }))
         .filter((m) => m.piezas > 0);
       if (medidas.length === 0) return;
-      porEspecie.push({ especie: e.especie, medidas });
+      porEspecie.push({ especie, medidas });
       for (const m of medidas) {
         n += 1;
         filas += 1;
@@ -379,12 +415,12 @@ export function desglosarVariado(
         salida.push({
           id: `${p.id}-v-${n}`,
           ...base,
-          especie: e.especie,
+          especie,
           ...(p.dueno !== undefined ? { dueno: p.dueno } : {}),
           ...(p.duenoParteId !== undefined ? { duenoParteId: p.duenoParteId } : {}),
           ...(p.codigo !== undefined ? { codigo: p.codigo } : {}),
           ...(p.observacion !== undefined ? { observacion: p.observacion } : {}),
-          tipo,
+          tipo: m.tipo,
           pieTablar,
           m3,
         });
