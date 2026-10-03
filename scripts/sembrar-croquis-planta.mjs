@@ -1,25 +1,32 @@
 #!/usr/bin/env node
 /**
- * sembrar-croquis-planta — carga el croquis del aserradero de Blas (Lámina 01/02
- * «Planta v8», 54 × 48 m) por la API, como lo haría la pantalla (ADR-465):
+ * sembrar-croquis-planta — carga el croquis del aserradero de Blas («Lámina
+ * única · Planta v9», 54 × 48 m) por la API, como lo haría la pantalla (ADR-465):
  *
- *   1. recorta la imagen al terreno (sin la leyenda ni la calle) y la sube
- *      a POST /api/admin/forestal/ctp/planta/croquis/imagen;
- *   2. PUT /api/admin/forestal/ctp/planta/croquis con medidas, versión 8,
+ *   1. recorta la imagen al terreno (0–54 m × 0–48 m, sin la leyenda ni la
+ *      calle) y la sube a POST /api/admin/forestal/ctp/planta/croquis/imagen;
+ *   2. PUT /api/admin/forestal/ctp/planta/croquis con medidas, versión 9,
  *      la imagen y las máquinas D1–D7 del patio de maquinaria;
- *   3. crea (o actualiza, por código) las 10 zonas del plano en METROS con
+ *   3. crea (o actualiza, por código) las 12 zonas del plano en METROS con
  *      POST/PATCH /api/admin/forestal/ctp/planta.
  *
- * Idempotente: correrlo dos veces actualiza las mismas zonas (no duplica).
- * Las zonas y máquinas se midieron sobre la imagen (píxel → metro); las áreas
- * las calcula el servidor con la fórmula plana.
+ * La v9 trae EJES en metros (origen 0,0 = esquina de la oficina, abajo a la
+ * izquierda): las zonas y máquinas se midieron sobre esos ticks, ya no
+ * estimando píxel → metro. Las áreas las calcula el servidor (fórmula plana).
+ *
+ * Idempotente: correrlo dos veces actualiza las mismas zonas (no duplica). Una
+ * zona que cambió de código entre versiones (MN-18 → PP-18) se RENOMBRA, no se
+ * duplica: así conserva lo que ya estaba ubicado en ella.
  *
  * Uso (sesión del tenant destino en el entorno, la de `admin-auth.mjs`):
  *   node scripts/dev-helpers/admin-auth.mjs && source /tmp/bsm-auth.env
- *   node scripts/sembrar-croquis-planta.mjs [--imagen docs/forestal/croquis-blas-v8.png] [--seco]
+ *   node scripts/sembrar-croquis-planta.mjs [--imagen docs/forestal/croquis-blas-v9.png] [--seco]
  *
  * Para BLAS hace falta una sesión de Blas y además `--si-es-blas`: sin esa
- * bandera el script se niega (los datos reales no se tocan por accidente).
+ * bandera el script se niega (los datos reales no se tocan por accidente):
+ *   BSM_TENANT=inversiones-agroforestales-blas-sociedad-anonima BSM_USER=<tu usuario> BSM_PASS='<tu clave>' \
+ *     node scripts/dev-helpers/admin-auth.mjs && source /tmp/bsm-auth.env
+ *   node scripts/sembrar-croquis-planta.mjs --si-es-blas
  */
 import { readFile } from "node:fs/promises";
 import sharp from "sharp";
@@ -35,7 +42,8 @@ const BASE = process.env.BSM_BASE;
 const COOKIE = process.env.BSM_COOKIE;
 const CSRF = process.env.BSM_CSRF;
 const TENANT = process.env.BSM_TENANT ?? "";
-const IMAGEN = valor("--imagen", "docs/forestal/croquis-blas-v8.png");
+const IMAGEN = valor("--imagen", "docs/forestal/croquis-blas-v9.png");
+const VERSION = 9;
 const SECO = flag("--seco");
 
 if (!BASE || !COOKIE || !CSRF) {
@@ -50,51 +58,64 @@ if (/blas/i.test(TENANT) && !flag("--si-es-blas")) {
 // ─── Medidas del plano ────────────────────────────────────────────────────
 const ANCHO_M = 54;
 const ALTO_M = 48;
-/** El terreno dentro de la imagen de 1518 × 921 px (cerco izquierdo, línea punteada del límite). */
-const TERRENO_PX = { x0: 159, y0: 46, x1: 1026, y1: 807 };
+/**
+ * Ejes de la lámina v9 (1288 × 902 px), leídos en los ticks: x = 0 en 139,5 px y
+ * x = 50 en 853,5 px; y = 0 en 797 px e y = 45 en 154,5 px (la y de la imagen
+ * crece hacia abajo).
+ */
+const EJE = { x0: 139.5, pxPorMx: (853.5 - 139.5) / 50, y0: 797, pxPorMy: (797 - 154.5) / 45 };
 const r2 = (n) => Math.round(n * 100) / 100;
-/** Píxel de la imagen → `[y, x]` en metros (origen abajo a la izquierda, y hacia arriba). */
-const m = ([px, py]) => [
-  r2(((TERRENO_PX.y1 - py) / (TERRENO_PX.y1 - TERRENO_PX.y0)) * ALTO_M),
-  r2(((px - TERRENO_PX.x0) / (TERRENO_PX.x1 - TERRENO_PX.x0)) * ANCHO_M),
-];
+/** El terreno (0–54 × 0–48 m) en píxeles de la imagen: es lo que se recorta. */
+const TERRENO_PX = {
+  x0: Math.round(EJE.x0),
+  y0: Math.round(EJE.y0 - ALTO_M * EJE.pxPorMy),
+  x1: Math.round(EJE.x0 + ANCHO_M * EJE.pxPorMx),
+  y1: Math.round(EJE.y0),
+};
+/** `[x, y]` en metros del plano → `[y, x]` del croquis (CRS.Simple). */
+const m = ([x, y]) => [r2(y), r2(x)];
 const rect = (x0, y0, x1, y1) => [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
 
 /**
- * Zonas en el orden en que se crean: las grandes primero (la lista vuelve
- * ordenada de la más nueva a la más vieja). El número es el de la leyenda.
+ * Zonas en `[x, y]` metros, leídas sobre los ejes. El número es el de la
+ * leyenda. No se pisan entre sí: tocar una pila del punto 2 abre ESA zona y no
+ * el techo que la cubre.
  */
 const ZONAS = [
   { codigo: "AS-36", nombre: "Techo parabólico · zona de aserrío", tipo: "aserrado", n: 36,
-    px: [[236, 515], [620, 515], [620, 605], [790, 605], [790, 745], [236, 745]],
-    notas: "Mesas 1 y 2, coches, cinta principal, rodillos y despuntadora. El techo cubre también el acopio 14, la zona 19 y maniobras (zonas aparte)." },
-  { codigo: "PP-30", nombre: "Ramada 2 · recuperación y paquetería", tipo: "patio_producto", n: 30, px: rect(797, 637, 1016, 800) },
-  { codigo: "PT-35", nombre: "Patio / acopio de madera 2", tipo: "patio_trozas", n: 35, px: rect(437, 131, 699, 182),
+    pts: [[7.4, 18.3], [29.2, 18.3], [29.2, 12.9], [39.4, 12.9], [39.4, 0.2], [20.9, 0.2], [20.9, 3.5], [7.4, 3.5]],
+    notas: "Mesas 1 y 2, coches 22 y 26, cinta principal, rodillos y despuntadora. El techo cubre de 0 a 39,5 m; el acopio 14, la zona 19, las pilas 5 y el patio 18 están bajo el mismo techo como zonas aparte." },
+  { codigo: "PP-30", nombre: "Ramada 2 · recuperación y paquetería", tipo: "patio_producto", n: 30, pts: rect(40.1, 0.5, 53.9, 10.6) },
+  { codigo: "PT-35", nombre: "Patio / acopio de madera 2", tipo: "patio_trozas", n: 35, pts: rect(17.35, 39.5, 34, 42.65),
     notas: "Tipo a confirmar: el plano dice «madera», no si es rolliza o aserrada." },
-  { codigo: "PT-08", nombre: "Patio de trozas", tipo: "patio_trozas", n: 8, px: rect(163, 147, 301, 307) },
-  { codigo: "PT-14", nombre: "Acopio de trozas para el coche", tipo: "patio_trozas", n: 14, px: rect(628, 537, 786, 600) },
-  { codigo: "PP-05", nombre: "Madera aserrada apilada", tipo: "patio_producto", n: 5, px: rect(186, 467, 340, 505),
-    notas: "El plano marca 3 puntos; este es el de la ramada de calamina (los otros dos están bajo el techo parabólico)." },
-  { codigo: "PP-19", nombre: "Zona de apilado exterior", tipo: "patio_producto", n: 19,
-    px: [[163, 518], [186, 518], [206, 600], [232, 662], [235, 700], [163, 700]] },
-  { codigo: "MN-18", nombre: "Patio de maniobras", tipo: "otro", n: 18, px: rect(232, 748, 500, 806) },
-  { codigo: "CB-24", nombre: "Zona de carbón", tipo: "otro", n: 24, px: rect(715, 120, 838, 190) },
-  { codigo: "LN-29", nombre: "Leña", tipo: "otro", n: 29, px: rect(818, 522, 953, 605) },
+  { codigo: "PT-08", nombre: "Patio de trozas", tipo: "patio_trozas", n: 8, pts: rect(0.2, 31.5, 8.85, 41.65),
+    notas: "Inicio de la ruta 1: de acá el cargador lleva las trozas al acopio 14." },
+  { codigo: "PT-14", nombre: "Acopio de trozas para el coche", tipo: "patio_trozas", n: 14, pts: rect(29.5, 13.2, 39.4, 17.1) },
+  { codigo: "PP-05", nombre: "Madera aserrada apilada · bajo la ramada", tipo: "patio_producto", n: 5, pts: rect(1.5, 19, 11.4, 21.5),
+    notas: "Uno de los 3 puntos de apilado; llega por la ruta 5 desde la despuntadora." },
+  { codigo: "PP-05-2", nombre: "Madera aserrada apilada · punto 2", tipo: "patio_producto", n: 5, pts: rect(4, 10.2, 7.1, 14.1),
+    notas: "Bajo el techo parabólico; llega por la ruta 5 desde la despuntadora." },
+  { codigo: "PP-05-3", nombre: "Madera aserrada apilada · punto 3", tipo: "patio_producto", n: 5, pts: rect(0.5, 4, 3.8, 6.3),
+    notas: "Junto a la oficina." },
+  { codigo: "PP-19", nombre: "Zona de apilado y cubicación", tipo: "patio_producto", n: 19,
+    pts: [[0.2, 18.4], [1.6, 18.4], [2.1, 16.6], [3, 14.5], [3.4, 11], [4.3, 9.2], [4.3, 6.6], [0.2, 6.6]],
+    notas: "Entre el cerco y la malla raschel; acá se apila y se cubica." },
+  { codigo: "PP-18", antes: "MN-18", nombre: "Patio 18 · madera corta", tipo: "patio_producto", n: 18, pts: rect(6.8, 0.2, 20.6, 3.3),
+    notas: "La madera corta sale de la despuntadora por la ruta 5." },
+  { codigo: "CB-24", nombre: "Zona de carbón", tipo: "otro", n: 24, pts: rect(35, 38.9, 42.75, 43.35) },
+  { codigo: "LN-29", nombre: "Leña", tipo: "otro", n: 29, pts: rect(41.5, 12.8, 50, 17.8) },
 ];
 
-/** Máquinas del patio de maquinaria (centro de cada rectángulo amarillo). */
+/** Máquinas del patio de maquinaria: el centro de cada rectángulo amarillo, en `[x, y]` metros. */
 const MAQUINAS = [
-  { codigo: "D1", nombre: "Cargador frontal", px: [461, 350] },
-  { codigo: "D2", nombre: "Forestal mecánico", px: [563, 350] },
-  { codigo: "D3", nombre: "Forestal automático", px: [369, 280] },
-  { codigo: "D4", nombre: "Camión Volvo 1", px: [383, 219] },
-  { codigo: "D5", nombre: "Camión Volvo 3", px: [671, 219] },
-  { codigo: "D6", nombre: "Camión Volvo 2", px: [671, 280] },
-  { codigo: "D7", nombre: "Oruga", px: [660, 350] },
-].map(({ px, ...r }) => {
-  const [y, x] = m(px);
-  return { ...r, x, y, fuera: false };
-});
+  { codigo: "D1", nombre: "Cargador frontal", xy: [18.95, 28.75] },
+  { codigo: "D2", nombre: "Forestal mecánico", xy: [25.35, 28.75] },
+  { codigo: "D3", nombre: "Forestal automático", xy: [13.15, 33.2] },
+  { codigo: "D4", nombre: "Camión Volvo 1", xy: [14.05, 37] },
+  { codigo: "D5", nombre: "Camión Volvo 3", xy: [32.2, 37] },
+  { codigo: "D6", nombre: "Camión Volvo 2", xy: [32.2, 33.2] },
+  { codigo: "D7", nombre: "Oruga", xy: [31.5, 28.75] },
+].map(({ xy, ...r }) => ({ ...r, x: xy[0], y: xy[1], fuera: false }));
 
 // ─── API ──────────────────────────────────────────────────────────────────
 const headers = (extra = {}) => ({ Cookie: COOKIE, "x-csrf-token": CSRF, "x-tenant-id": TENANT, ...extra });
@@ -110,9 +131,9 @@ async function api(metodo, ruta, body) {
   return json;
 }
 
-const zonasEnMetros = ZONAS.map((z) => ({ ...z, poligono: JSON.stringify(z.px.map(m)) }));
+const zonasEnMetros = ZONAS.map((z) => ({ ...z, poligono: JSON.stringify(z.pts.map(m)) }));
 if (SECO) {
-  console.log(JSON.stringify({ maquinas: MAQUINAS, zonas: zonasEnMetros.map(({ px, ...z }) => z) }, null, 2));
+  console.log(JSON.stringify({ terrenoPx: TERRENO_PX, maquinas: MAQUINAS, zonas: zonasEnMetros.map(({ pts, ...z }) => z) }, null, 2));
   process.exit(0);
 }
 
@@ -129,7 +150,7 @@ console.log(`imagen: ${subida.ancho}×${subida.alto} px, ${subida.bytes} bytes �
 
 // 2. Croquis: medidas, versión del plano, imagen y máquinas.
 const { croquis } = await api("PUT", "/api/admin/forestal/ctp/planta/croquis", {
-  version: 8,
+  version: VERSION,
   anchoM: ANCHO_M,
   altoM: ALTO_M,
   imagenRef: subida.imagenRef,
@@ -141,7 +162,7 @@ console.log(`croquis v${croquis.version}: ${croquis.anchoM}×${croquis.altoM} m,
 const { zonas: existentes } = await api("GET", "/api/admin/forestal/ctp/planta?plano=croquis");
 const porCodigo = new Map(existentes.filter((z) => z.plano === "croquis").map((z) => [z.codigo, z]));
 for (const z of zonasEnMetros) {
-  const previa = porCodigo.get(z.codigo);
+  const previa = porCodigo.get(z.codigo) ?? (z.antes ? porCodigo.get(z.antes) : undefined);
   const cuerpo = {
     ...(previa ? { id: previa.id } : {}),
     codigo: z.codigo,
@@ -149,8 +170,9 @@ for (const z of zonasEnMetros) {
     tipo: z.tipo,
     plano: "croquis",
     poligono: z.poligono,
-    notas: [`N° ${z.n} de la leyenda del plano v8.`, z.notas].filter(Boolean).join(" "),
+    notas: [`N° ${z.n} de la leyenda del plano v${VERSION}.`, z.notas].filter(Boolean).join(" "),
   };
   const { zona } = await api(previa ? "PATCH" : "POST", "/api/admin/forestal/ctp/planta", cuerpo);
-  console.log(`${previa ? "actualizó" : "creó"} ${zona.codigo.padEnd(6)} ${zona.tipo.padEnd(15)} ${String(zona.areaM2).padStart(8)} m²  centro [${zona.lat}, ${zona.lng}]`);
+  const accion = !previa ? "creó" : previa.codigo !== z.codigo ? `renombró ${previa.codigo} →` : "actualizó";
+  console.log(`${accion} ${zona.codigo.padEnd(7)} ${zona.tipo.padEnd(15)} ${String(zona.areaM2).padStart(8)} m²  centro [${zona.lat}, ${zona.lng}]`);
 }

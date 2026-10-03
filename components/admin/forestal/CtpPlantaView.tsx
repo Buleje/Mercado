@@ -31,9 +31,11 @@ import CtpPlantaZonas from "./CtpPlantaZonas";
 import CtpPlantaIndicadores from "./CtpPlantaIndicadores";
 import CtpDespachoGuiaModal from "./CtpDespachoGuiaModal";
 import CtpPlantaReservaModal from "./CtpPlantaReservaModal";
+import CtpDocumentoVisor from "./CtpDocumentoVisor";
 import { ZonaFichaModal } from "./ctp-planta-zona-modales";
 import { usePlantaDatos } from "./hooks/use-planta-datos";
 import { usePlantaUbicados } from "./hooks/use-planta-ubicados";
+import { useCroquisImprimir } from "./hooks/use-croquis-imprimir";
 import type { SeleccionCroquis } from "./hooks/use-croquis-leaflet";
 
 export type { Item, ItemKind, ZonaInv };
@@ -56,6 +58,7 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
   const u = plano === "croquis" ? cro : sat;
   const zonasActivas = plano === "croquis" ? zonasCroquis : zonasSat;
   const contenido = useMemo(() => contenidoPorZona(items, ubicaciones, new Set(zonasCroquis.map((z) => z.id))), [items, ubicaciones, zonasCroquis]);
+  const hoja = useCroquisImprimir({ croquis, zonas: zonasCroquis, contenido });
 
   /** El ítem tomado (de la lista o de una ficha), esperando que se toque una zona. */
   const [enMano, setEnMano] = useState<Item | null>(null);
@@ -156,11 +159,17 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
           )}
           <button
             type="button"
-            onClick={() => { try { printPlantaPlano({ zonas: zonasSat, invByZona: sat.invObj, areaTotalM2: sat.areaTotal, periodLabel: period.label }); } catch (e) { setError(e instanceof Error ? e.message : String(e)); } }}
-            title="Imprimir el plano de la planta (satélite + zonas + inventario) para la visita de la ARFFS"
-            aria-label="Imprimir plano"
+            // Con el croquis a la vista se imprime el CROQUIS (hoja A4 apaisada con
+            // vista previa); con el satélite, el plano satelital de siempre.
+            onClick={() => {
+              if (verCroquis) { void hoja.abrir().then((motivo) => { if (motivo) setAviso(motivo); }); return; }
+              try { printPlantaPlano({ zonas: zonasSat, invByZona: sat.invObj, areaTotalM2: sat.areaTotal, periodLabel: period.label }); } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+            }}
+            disabled={hoja.armando}
+            title={verCroquis ? "Imprimir el croquis (zonas con lo que tienen, pilas, máquinas y rutas) en una hoja A4 apaisada" : "Imprimir el plano de la planta (satélite + zonas + inventario) para la visita de la ARFFS"}
+            aria-label={verCroquis ? "Imprimir croquis" : "Imprimir plano"}
             className={BTN}
-          ><Printer className="h-4 w-4" /><span className="hidden lg:inline">Imprimir plano</span></button>
+          ><Printer className="h-4 w-4" /><span className="hidden lg:inline">{verCroquis ? "Imprimir croquis" : "Imprimir plano"}</span></button>
           <button type="button" onClick={() => void load()} disabled={loading} aria-label="Recargar" className={BTN}><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /><span className="hidden lg:inline">Recargar</span></button>
         </div>
       </div>
@@ -253,6 +262,7 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
         />
       )}
 
+      {hoja.doc && <CtpDocumentoVisor documentos={[hoja.doc]} activo={0} onActivo={() => undefined} onClose={hoja.cerrar} />}
       {zonaEditando && (
         <ZonaFichaModal
           zona={zonaEditando}

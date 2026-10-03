@@ -142,9 +142,10 @@ describe("máquinas", () => {
 });
 
 describe("flujo y fechas", () => {
-  it("el dibujo del flujo solo aplica al plano de 54×48", () => {
-    expect(flujoAplica(CROQUIS)).toBe(true);
-    expect(flujoAplica({ anchoM: 80, altoM: 40 })).toBe(false);
+  it("el dibujo del flujo solo aplica al plano v9 de 54×48", () => {
+    expect(flujoAplica({ ...CROQUIS, version: 9 })).toBe(true);
+    expect(flujoAplica(CROQUIS)).toBe(false);
+    expect(flujoAplica({ anchoM: 80, altoM: 40, version: 9 })).toBe(false);
     expect(flujoAplica(null)).toBe(false);
   });
   it("la punta de la flecha nace en el destino", () => {

@@ -26,9 +26,8 @@
  * fidelidad; para buscar dentro está el libro, que es la fuente, no el papel.
  */
 
-import { ALTO_UTIL_MM, ANCHO_HOJA_MM, MARGEN_MM, paginar } from "./ctp-documento-print";
+import { MARGEN_MM, medidasHoja, orientacionDe, paginar } from "./ctp-documento-print";
 
-const ANCHO_UTIL_MM = ANCHO_HOJA_MM - MARGEN_MM * 2;
 const PX_POR_MM = 96 / 25.4;
 /**
  * Cuánto se agranda la hoja al fotografiarla. 2× (≈192 dpi) mantiene legible la
@@ -78,8 +77,11 @@ export async function documentoAPdf(doc: Document, opts: PdfDocumentoOpts = {}):
       style: { boxShadow: "none", border: "none", margin: "0" },
     });
 
-    const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait", compress: true });
-    const escala = lienzo.width / (ANCHO_HOJA_MM * PX_POR_MM); // px de lienzo por px CSS
+    // La hoja apaisada (croquis de la planta) sale apaisada también en el PDF.
+    const { anchoMm, altoMm, utilMm } = medidasHoja(orientacionDe(doc));
+    const anchoUtilMm = anchoMm - MARGEN_MM * 2;
+    const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: anchoMm > altoMm ? "landscape" : "portrait", compress: true });
+    const escala = lienzo.width / (anchoMm * PX_POR_MM); // px de lienzo por px CSS
     const pad = MARGEN_MM * PX_POR_MM * escala;
 
     // Los cortes vienen en px CSS medidos desde el inicio del CONTENIDO; el
@@ -91,7 +93,7 @@ export async function documentoAPdf(doc: Document, opts: PdfDocumentoOpts = {}):
       const desde = limites[i];
       // La última página termina donde termina el contenido, no a los 273 mm:
       // estirar la imagen hasta el borde deformaría la hoja final.
-      const hasta = Math.min(limites[i + 1] ?? lienzo.height - pad * 2, desde + ALTO_UTIL_MM * PX_POR_MM * escala);
+      const hasta = Math.min(limites[i + 1] ?? lienzo.height - pad * 2, desde + utilMm * PX_POR_MM * escala);
       const alto = Math.max(1, Math.round(hasta - desde));
 
       const trozo = doc.createElement("canvas");
@@ -110,7 +112,7 @@ export async function documentoAPdf(doc: Document, opts: PdfDocumentoOpts = {}):
         "JPEG",
         MARGEN_MM,
         MARGEN_MM,
-        ANCHO_UTIL_MM,
+        anchoUtilMm,
         (alto / escala) / PX_POR_MM,
         undefined,
         "FAST",
@@ -121,7 +123,7 @@ export async function documentoAPdf(doc: Document, opts: PdfDocumentoOpts = {}):
       pdf.setFontSize(6.5);
       pdf.setTextColor(110, 116, 122);
       const pie = [opts.pieCorrido, `Hoja ${i + 1} de ${hojas}`].filter(Boolean).join(" · ");
-      pdf.text(pie, ANCHO_HOJA_MM / 2, 297 - 6, { align: "center", maxWidth: ANCHO_UTIL_MM });
+      pdf.text(pie, anchoMm / 2, altoMm - 6, { align: "center", maxWidth: anchoUtilMm });
     }
 
     return pdf.output("blob");

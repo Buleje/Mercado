@@ -47,7 +47,7 @@ import {
   Printer,
   X,
 } from "@buleje/design-system/icons";
-import { AIRE_HOJA_MM, ANCHO_HOJA_MM, esperarImagenes, marcarCortes, paginar } from "@/lib/forestal/ctp-documento-print";
+import { AIRE_HOJA_MM, esperarImagenes, marcarCortes, medidasHoja, orientacionDeHtml, paginar, type OrientacionHoja } from "@/lib/forestal/ctp-documento-print";
 import { SendWhatsAppModal } from "@/components/admin/documentos/SendWhatsAppModal";
 import { useDocumentoAcciones, type MetaArchivado } from "@/hooks/use-documento-acciones";
 
@@ -70,8 +70,8 @@ export interface DocumentoImprimible {
   pieCorrido?: string;
 }
 
-/** Ancho del lienzo del documento: la hoja más su aire lateral, en px de 96 dpi. */
-const ANCHO_DOC = Math.round(((ANCHO_HOJA_MM + AIRE_HOJA_MM * 2) / 25.4) * 96);
+/** Ancho del lienzo del documento: la hoja (vertical o apaisada) más su aire lateral, en px de 96 dpi. */
+const anchoDocDe = (o: OrientacionHoja) => Math.round(((medidasHoja(o).anchoMm + AIRE_HOJA_MM * 2) / 25.4) * 96);
 
 const ZOOMS = [0.5, 0.65, 0.8, 1, 1.25, 1.5, 2] as const;
 const cerca = (z: number) => ZOOMS.reduce((a, b) => (Math.abs(b - z) < Math.abs(a - z) ? b : a), ZOOMS[0]);
@@ -109,6 +109,9 @@ export default function CtpDocumentoVisor({
   const mesa = useRef<HTMLDivElement>(null);
   const doc = documentos[activo] ?? documentos[0];
   const srcDoc = useMemo(() => doc?.html ?? "", [doc]);
+  const orientacion = useMemo(() => orientacionDeHtml(srcDoc), [srcDoc]);
+  const anchoDoc = anchoDocDe(orientacion);
+  const tamano = orientacion === "apaisada" ? "A4 apaisado" : "A4";
 
   // `null` = ajustar al ancho. Un número = zoom fijo elegido por el usuario.
   const [zoom, setZoom] = useState<number | null>(null);
@@ -164,8 +167,8 @@ export default function CtpDocumentoVisor({
     limpiar();
   }, [srcDoc, limpiar]);
 
-  const escala = zoom ?? Math.min(1, Math.max(0.35, (anchoMesa - 8) / ANCHO_DOC));
-  const desfase = Math.max(0, (anchoMesa - ANCHO_DOC * escala) / 2);
+  const escala = zoom ?? Math.min(1, Math.max(0.35, (anchoMesa - 8) / anchoDoc));
+  const desfase = Math.max(0, (anchoMesa - anchoDoc * escala) / 2);
 
   const imprimir = useCallback(async () => {
     // Se imprime el iframe, no la página: lo que se ve es exactamente lo que
@@ -226,7 +229,7 @@ export default function CtpDocumentoVisor({
           <div className="min-w-0 flex-1">
             <p className="truncate text-base font-bold text-[var(--text-primary)]">{doc?.nombre ?? "Documento"}</p>
             <p className="text-sm text-[var(--text-secondary)]">
-              Vista previa en tamaño A4 · {hojas} hoja{hojas === 1 ? "" : "s"} · revísalo antes de imprimir
+              Vista previa en tamaño {tamano} · {hojas} hoja{hojas === 1 ? "" : "s"} · revísalo antes de imprimir
             </p>
           </div>
           <ControlesDeVentana ventana={ventana} />
@@ -375,7 +378,7 @@ export default function CtpDocumentoVisor({
               style={
                 alto
                   ? {
-                      width: ANCHO_DOC,
+                      width: anchoDoc,
                       height: alto,
                       transform: `translateX(${desfase}px) scale(${escala})`,
                       transformOrigin: "top left",
@@ -400,7 +403,7 @@ export default function CtpDocumentoVisor({
             </span>
           ) : (
             <>
-              Así sale al imprimir y en el PDF: {hojas} hoja{hojas === 1 ? "" : "s"} A4.
+              Así sale al imprimir y en el PDF: {hojas} hoja{hojas === 1 ? "" : "s"} {tamano}.
               <span className="max-sm:hidden"> La línea tenue marca dónde corta cada página.</span>
             </>
           )}

@@ -16,11 +16,11 @@ import { pointInPolygon } from "@/lib/forestal/loth-geo";
 import { marcasDeZona } from "@/lib/forestal/planta-marcadores";
 import { etiquetaCorta, marcaHtml, marcaSobranteHtml } from "@/lib/forestal/planta-iconos";
 import {
-  centroidePlano, codigoCorto, codigoTroza, fmtMedidaCorta, flujoAplica, coincide, parsearPoligono, posicionMaquina, puntaDeFlecha,
-  resumirZonaCroquis, soltarMaquina, zonaCoincide, FLUJO_PLANO_V8, FRANJA_FUERA_M,
+  centroidePlano, codigoCorto, codigoTroza, fmtMedidaCorta, coincide, parsearPoligono, posicionMaquina, puntaDeTramo, rotuloDeTramo,
+  resumirZonaCroquis, rutasDelPlano, soltarMaquina, zonaCoincide, FRANJA_FUERA_M,
   type ContenidoZona, type FiltrosCroquis, type Punto,
 } from "@/lib/forestal/planta-croquis";
-import { etiquetaZonaHtml, maquinaHtml, rotuloHtml, trozaSueltaHtml } from "@/lib/forestal/planta-croquis-html";
+import { etiquetaZonaHtml, maquinaHtml, numeroTramoHtml, rotuloHtml, trozaSueltaHtml } from "@/lib/forestal/planta-croquis-html";
 import { zonaTipoMeta, type MaquinaPlanta, type PlantaCroquis, type PlantaZona } from "@/lib/forestal/planta-zona-types";
 
 export interface MarcaCroquis { tipo: "pila" | "troza"; id: string; zonaId: string }
@@ -46,8 +46,6 @@ export interface CroquisLeafletOpts {
   onMoverMaquina: (m: MaquinaPlanta) => void;
   onTocarFondo: (p: Punto) => void;
 }
-
-const COLOR_FLUJO = "var(--data-warning-500)";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- instancias Leaflet (import dinámico)
 type Any = any;
@@ -221,18 +219,24 @@ export function useCroquisLeaflet(containerRef: RefObject<HTMLDivElement | null>
     }
   }, [ready, maquinas, seleccion, anchoM, altoM, LRef]);
 
-  // Flujo de producción: el DIBUJO del plano, no datos del Libro.
+  // Flujo de producción: las rutas numeradas del plano (DIBUJO, no datos del Libro),
+  // cada una con su color y el número de cada tramo donde lo pinta la lámina.
   const { mostrarFlujo } = o;
+  const version = o.croquis.version;
   useEffect(() => {
     const L = LRef.current, g = capas.current.flujo;
     if (!ready || !L || !g) return;
     g.clearLayers();
-    if (!mostrarFlujo || !flujoAplica({ anchoM, altoM })) return;
-    for (const f of FLUJO_PLANO_V8) {
-      L.polyline([f.de, f.a], { pane: "ctpFlujo", color: COLOR_FLUJO, weight: 3.5, className: "ctp-flujo", interactive: false }).addTo(g);
-      L.polygon(puntaDeFlecha(f.de, f.a), { pane: "ctpFlujo", color: COLOR_FLUJO, fillColor: COLOR_FLUJO, fillOpacity: 1, weight: 1, interactive: false }).addTo(g);
+    const rutas = mostrarFlujo ? rutasDelPlano({ anchoM, altoM, version }) : null;
+    for (const r of rutas ?? []) {
+      for (const t of r.tramos) {
+        L.polyline(t.puntos, { pane: "ctpFlujo", color: r.color, weight: 3.5, className: r.punteada ? "ctp-flujo ctp-flujo-punteada" : "ctp-flujo", interactive: false }).addTo(g);
+        L.polygon(puntaDeTramo(t), { pane: "ctpFlujo", color: r.color, fillColor: r.color, fillOpacity: 1, weight: 1, interactive: false }).addTo(g);
+        const rot = rotuloDeTramo(t);
+        if (rot) L.marker(rot, { pane: "ctpFlujo", interactive: false, keyboard: false, icon: L.divIcon({ className: "", html: numeroTramoHtml({ n: t.n, color: r.color }), iconSize: [0, 0] }) }).addTo(g);
+      }
     }
-  }, [ready, mostrarFlujo, anchoM, altoM, LRef]);
+  }, [ready, mostrarFlujo, anchoM, altoM, version, LRef]);
 
   /** De un punto de pantalla (soltar algo arrastrado) a la zona del croquis que lo contiene. */
   const zonaEnPunto = useCallback((clientX: number, clientY: number): { zonaId: string; p: Punto } | null => {

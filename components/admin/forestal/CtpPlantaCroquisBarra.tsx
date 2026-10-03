@@ -92,7 +92,7 @@ export default function CtpPlantaCroquisBarra(p: CtpPlantaCroquisBarraProps) {
         {p.flujoDisponible && (
           <span className="inline-flex items-center gap-0.5">
             <button type="button" onClick={p.onFlujo} aria-pressed={p.mostrarFlujo} className={p.mostrarFlujo ? BTN_ON : BTN}><Route className="h-4 w-4" /><span className="hidden md:inline">Flujo</span></button>
-            <InfoTip title="Flujo de producción" what="Las flechas del plano: acopio → coche → cinta → mesas → despuntadora → apilado." affects="Es un DIBUJO fijo, no datos: el Libro no registra el paso por coche, mesas, cinta ni despuntadora." />
+            <InfoTip title="Flujo de producción" what="Las rutas numeradas del plano: 1–4 principal (patio → acopio → coche → cinta → rodillos), A para cantear, B solo despuntar y 5 salida." affects="Es un DIBUJO fijo, no datos: el Libro no registra el paso por coche, mesas, cinta ni despuntadora." />
           </span>
         )}
         {/* Lo que no se usa a cada rato va al menú: la columna del mapa mide

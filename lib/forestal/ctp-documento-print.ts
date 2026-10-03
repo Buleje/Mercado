@@ -39,6 +39,23 @@ export const ALTO_UTIL_MM = 297 - MARGEN_MM * 2;
 export const ANCHO_HOJA_MM = 210;
 export const AIRE_HOJA_MM = 8;
 
+/** Cómo va la hoja: vertical (todo el libro) o apaisada (el croquis de la planta). */
+export type OrientacionHoja = "vertical" | "apaisada";
+
+/** Las medidas de una A4 según su orientación, en mm; `utilMm` = alto donde cae el corte. */
+export function medidasHoja(o: OrientacionHoja = "vertical"): { anchoMm: number; altoMm: number; utilMm: number } {
+  const [anchoMm, altoMm] = o === "apaisada" ? [297, 210] : [ANCHO_HOJA_MM, 297];
+  return { anchoMm, altoMm, utilMm: altoMm - MARGEN_MM * 2 };
+}
+
+/** La orientación que declara un documento armado con `documentoHtml` (`<html data-hoja>`). */
+export const orientacionDe = (d: Document): OrientacionHoja =>
+  d.documentElement?.getAttribute("data-hoja") === "apaisada" ? "apaisada" : "vertical";
+
+/** Lo mismo, leído del HTML sin montarlo: el visor dimensiona la mesa antes de cargar el iframe. */
+export const orientacionDeHtml = (html: string): OrientacionHoja =>
+  /<html[^>]*\sdata-hoja="apaisada"/.test(html) ? "apaisada" : "vertical";
+
 /** Marca del documento: la sección de un tronco. Sin assets externos. */
 const MONOGRAMA = `<svg class="doc-mono" viewBox="0 0 40 40" aria-hidden="true">
   <circle cx="20" cy="20" r="18.5" fill="none" stroke="currentColor" stroke-width="1.6"/>
@@ -188,6 +205,8 @@ export interface HojaDocumento {
   pieCorrido?: string;
   /** Margen de `@page` en mm. Por defecto `MARGEN_MM` (el que asume `ALTO_UTIL_MM`). */
   margenMm?: number;
+  /** Apaisada = A4 acostada (297 × 210): el visor, la paginación y el PDF la leen de `<html data-hoja>`. */
+  orientacion?: OrientacionHoja;
 }
 
 /** El documento completo y autocontenido, listo para el visor o para imprimir. */
@@ -196,9 +215,13 @@ export function documentoHtml(h: HojaDocumento): string {
   const cuerpo = Array.isArray(h.cuerpo)
     ? h.cuerpo.map((c) => `<section class="doc-parte">${c}</section>`).join("")
     : h.cuerpo;
-  return `<!doctype html><html lang="es"><head><meta charset="utf-8">
+  const apaisada = h.orientacion === "apaisada";
+  // En pantalla la hoja acostada mide 297 × 210; en papel manda `@page` (por
+  // eso va en `@media screen`: fuera de él pisaría el `width:auto` de impresión).
+  const cssHoja = apaisada ? "@media screen{.doc-hoja{width:297mm;min-height:210mm}}" : "";
+  return `<!doctype html><html lang="es"${apaisada ? ' data-hoja="apaisada"' : ""}><head><meta charset="utf-8">
 <title>${esc(h.titulo)}</title>
-<style>@page{size:A4;margin:${margen}mm}${CSS_DOCUMENTO}${h.css ?? ""}</style>
+<style>@page{size:A4${apaisada ? " landscape" : ""};margin:${margen}mm}${CSS_DOCUMENTO}${cssHoja}${h.css ?? ""}</style>
 </head><body>
 <div class="doc-hoja">${cuerpo}</div>
 ${h.pieCorrido ? `<div class="doc-corrido">${esc(h.pieCorrido)}</div>` : ""}
@@ -275,7 +298,7 @@ export function paginar(d: Document): Paginado {
 
   // Alto aprovechable por página: la caja de `@page` menos lo que se reserva
   // abajo para el pie corrido (`body { padding-bottom }` de la vista impresa).
-  const util = px(ALTO_UTIL_MM - 7);
+  const util = px(medidasHoja(orientacionDe(d)).utilMm - 7);
   const cero = hoja.getBoundingClientRect().top + px(MARGEN_MM);
 
   const cortes: number[] = [];

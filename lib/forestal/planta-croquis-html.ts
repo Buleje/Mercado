@@ -23,6 +23,11 @@ export function maquinaHtml(d: { codigo: string; fuera: boolean; seleccionada: b
   return `<div class="ctp-maquina${d.fuera ? " ctp-maquina-fuera" : ""}${d.seleccionada ? " ctp-croquis-sel" : ""}" role="img" aria-label="Máquina ${esc(d.codigo)}${d.fuera ? " fuera de la planta" : ""}">${esc(d.codigo)}</div>`;
 }
 
+/** El número de un tramo del flujo («1», «A2», «B», «5»), con el color de su ruta. */
+export function numeroTramoHtml(d: { n: string; color: string }): string {
+  return `<div class="ctp-flujo-n" style="--ruta-color:${d.color}" aria-hidden="true">${esc(d.n)}</div>`;
+}
+
 /** Rótulo fijo (la franja «fuera de la planta», cotas del terreno). */
 export function rotuloHtml(texto: string): string {
   return `<div class="ctp-croquis-rotulo">${esc(texto)}</div>`;
@@ -50,8 +55,12 @@ export const CROQUIS_CSS = `
 .ctp-croquis-img{transition:filter .2s}
 .dark .ctp-croquis-img{filter:brightness(.78) contrast(1.05)}
 .ctp-flujo{stroke-dasharray:6 6;animation:ctp-flujo-corre 1.2s linear infinite}
+.ctp-flujo-punteada{stroke-dasharray:2 4;stroke-linecap:round}
 @keyframes ctp-flujo-corre{to{stroke-dashoffset:-12}}
 @media (prefers-reduced-motion: reduce){.ctp-flujo{animation:none}}
+.ctp-flujo-n{transform:translate(-50%,-50%);display:inline-flex;align-items:center;justify-content:center;min-width:22px;
+  height:18px;padding:0 5px;white-space:nowrap;border-radius:6px;border:2px solid var(--ruta-color);
+  background:var(--surface-raised);color:var(--text-primary);font:800 10px/1 system-ui;box-shadow:var(--shadow-sm)}
 [data-dibujando="1"] .leaflet-marker-pane *{pointer-events:none!important}
 [data-dibujando="1"] .leaflet-marker-pane{opacity:.45}
 [data-lejos="1"] .ctp-marca-cant{display:none}

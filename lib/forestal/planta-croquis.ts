@@ -366,29 +366,96 @@ export function soltarMaquina(m: MaquinaPlanta, p: Punto, c: Pick<PlantaCroquis,
 
 // ─── Flujo de producción (DIBUJO fijo del plano, no datos) ─────────────────
 
-export interface FlechaFlujo {
-  de: Punto;
-  a: Punto;
+/** Un tramo de una ruta: «A2 Coche de aserrío (26) → mesa 2 (17)». */
+export interface TramoFlujo {
+  /** El número pintado en el plano: «1», «A2», «B», «5». */
+  n: string;
+  texto: string;
+  /** La línea en metros `[y, x]`; la flecha apunta al último punto. */
+  puntos: readonly Punto[];
+  /** Dónde va el número (el mismo lugar que en la lámina); `null` = sin número. */
+  rotulo?: Punto | null;
+}
+
+export type RutaFlujoId = "principal" | "cantear" | "despuntar" | "salida";
+
+/** Una ruta del plano con su nombre, su número y su color (token del DS). */
+export interface RutaFlujo {
+  id: RutaFlujoId;
+  numero: string;
+  nombre: string;
+  color: string;
+  /** La salida va punteada, como en la lámina. */
+  punteada: boolean;
+  tramos: readonly TramoFlujo[];
 }
 
 /**
- * Las flechas naranjas de la «Lámina 01/02 · Planta v8» de Blas (54 × 48 m),
- * pasadas a metros. Es el dibujo del plano: el sistema no registra coche,
- * mesas, cinta ni despuntadora, así que esto no se mueve con el Libro.
+ * Las rutas numeradas de la «Lámina única · Planta v9» de Blas (54 × 48 m,
+ * origen en la esquina de la oficina), medidas sobre los ejes del plano. Es el
+ * dibujo del plano: el sistema no registra coche, mesas, cinta ni despuntadora,
+ * así que esto no se mueve con el Libro.
  */
-export const FLUJO_PLANO_V8: readonly FlechaFlujo[] = [
-  { de: [12.9, 35.6], a: [5.9, 35.6] }, // acopio de trozas → coche de la cinta
-  { de: [4.1, 38.1], a: [4.1, 29.5] }, // rieles → coche
-  { de: [7.9, 28.7], a: [7.9, 23.1] }, // cinta principal → rodillos
-  { de: [7.3, 20.6], a: [16.2, 20.6] }, // mesa 1 sube
-  { de: [15.2, 19.4], a: [15.2, 14.5] }, // mesa 1 → mesa 2
-  { de: [6.3, 11.7], a: [10.4, 7.0] }, // despuntadora → apilado
-  { de: [6.6, 11.9], a: [18.3, 8.7] }, // despuntadora → ramada
+export const RUTAS_PLANO_V9: readonly RutaFlujo[] = [
+  {
+    id: "principal", numero: "1–4", nombre: "Ruta principal", color: "var(--data-warning-500)", punteada: false,
+    tramos: [
+      { n: "1", texto: "Patio de trozas (8) → acopio (14), con cargador", puntos: [[31.05, 9.3], [31.05, 37.5], [27, 39.9], [17.3, 38.2]], rotulo: [31.05, 23.55] },
+      { n: "2", texto: "Acopio (14) → coche (22)", puntos: [[13.1, 36], [5.9, 36]], rotulo: [10.64, 36] },
+      { n: "3", texto: "Coche (22) → corte en cinta (15)", puntos: [[4.4, 37.9], [4.4, 29.65]], rotulo: [4.4, 34.73] },
+      { n: "4", texto: "Cinta (15) → rodillos (16)", puntos: [[7.95, 29.1], [7.95, 22.8]], rotulo: [7.95, 28.08] },
+    ],
+  },
+  {
+    id: "cantear", numero: "A", nombre: "Comercial para cantear", color: "var(--data-8)", punteada: false,
+    tramos: [
+      { n: "A1", texto: "Rodillos (16) → mesa 1 (17)", puntos: [[9.4, 20.5], [15.9, 20.5]], rotulo: [12.47, 20.5] },
+      { n: "A2", texto: "Coche de aserrío (26) → mesa 2 (17)", puntos: [[15.27, 19.8], [15.27, 14.56]], rotulo: [15.27, 17.11] },
+      { n: "A3", texto: "Mesa 2 (17) → despuntadora (23)", puntos: [[14.5, 13.5], [6.8, 13.5]], rotulo: [11.69, 13.5] },
+    ],
+  },
+  {
+    id: "despuntar", numero: "B", nombre: "Comercial solo despuntar", color: "var(--data-success-500)", punteada: false,
+    tramos: [
+      { n: "B", texto: "Rodillos (16) → directo a la despuntadora (23), sin pasar por las mesas", puntos: [[7.95, 19.45], [7.95, 16.3], [6.8, 14.9]], rotulo: [7.95, 17.99] },
+    ],
+  },
+  {
+    id: "salida", numero: "5", nombre: "Salida", color: "var(--data-2)", punteada: true,
+    tramos: [
+      { n: "5", texto: "Apilado bajo la ramada (5)", puntos: [[5.6, 11.85], [18.15, 8.95]], rotulo: null },
+      { n: "5", texto: "Apilado en el punto 2 (5)", puntos: [[5.25, 11.8], [10.65, 6.88]], rotulo: null },
+      { n: "5", texto: "Zona 19: apilado y cubicación", puntos: [[4.43, 11.7], [8.9, 2.94]], rotulo: [4.66, 9.95] },
+      { n: "5", texto: "Madera corta → patio 18", puntos: [[3.8, 14.9], [2.25, 18.05]], rotulo: null },
+    ],
+  },
 ];
 
-/** El dibujo solo calza sobre el plano para el que se trazó (±1 m). */
-export const flujoAplica = (c: Pick<PlantaCroquis, "anchoM" | "altoM"> | null): boolean =>
-  !!c && Math.abs(c.anchoM - 54) <= 1 && Math.abs(c.altoM - 48) <= 1;
+/** La versión del plano para la que se midieron las rutas. */
+export const VERSION_RUTAS = 9;
+
+/**
+ * Las rutas que calzan sobre ESTE croquis, o `null`: el dibujo solo vale sobre
+ * el plano para el que se trazó (v9, 54 × 48 m ± 1 m). Sobre otra versión las
+ * flechas caerían encima de otras cosas.
+ */
+export function rutasDelPlano(c: { anchoM: number; altoM: number; version?: number } | null): readonly RutaFlujo[] | null {
+  if (!c || c.version !== VERSION_RUTAS) return null;
+  return Math.abs(c.anchoM - 54) <= 1 && Math.abs(c.altoM - 48) <= 1 ? RUTAS_PLANO_V9 : null;
+}
+
+export const flujoAplica = (c: { anchoM: number; altoM: number; version?: number } | null): boolean => rutasDelPlano(c) !== null;
+
+/** Dónde va el número de un tramo: el de la lámina o, si no tiene, la mitad del tramo más largo. */
+export function rotuloDeTramo(t: TramoFlujo): Punto | null {
+  if (t.rotulo !== undefined) return t.rotulo;
+  let mejor: Punto = t.puntos[0], largo = -1;
+  for (let i = 1; i < t.puntos.length; i++) {
+    const a = t.puntos[i - 1], b = t.puntos[i], d = distanciaPlana(a, b);
+    if (d > largo) { largo = d; mejor = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]; }
+  }
+  return mejor;
+}
 
 /** Los tres puntos de la punta de una flecha que va de `de` hacia `a`. */
 export function puntaDeFlecha(de: Punto, a: Punto, largo = 1.2, abre = 0.6): [Punto, Punto, Punto] {
@@ -396,6 +463,12 @@ export function puntaDeFlecha(de: Punto, a: Punto, largo = 1.2, abre = 0.6): [Pu
   const uy = (a[0] - de[0]) / d, ux = (a[1] - de[1]) / d;
   const by = a[0] - uy * largo, bx = a[1] - ux * largo;
   return [a, [by + ux * abre, bx - uy * abre], [by - ux * abre, bx + uy * abre]];
+}
+
+/** La punta de un tramo: sobre su ÚLTIMO segmento. */
+export function puntaDeTramo(t: TramoFlujo, largo?: number, abre?: number): [Punto, Punto, Punto] {
+  const n = t.puntos.length;
+  return puntaDeFlecha(t.puntos[n - 2], t.puntos[n - 1], largo, abre);
 }
 
 // ─── Historia de una troza ─────────────────────────────────────────────────
