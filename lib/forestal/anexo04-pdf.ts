@@ -212,11 +212,38 @@ function agregarAnexo(doc: jsPDF, rows: PiezaCubicada[], datos: DatosAnexo04, op
   });
 }
 
+/**
+ * La parte trasera del camión que viaja con el anexo (Brandon, 2026-10-03:
+ * «el chofer lleva una sola hoja»). Va como ÚLTIMA página, después de las
+ * hojas del formato: el ANEXO N° 04 no cambia ni un casillero.
+ */
+export interface TraseraParaPdf {
+  piezas: readonly PiezaCubicada[];
+  anchoM: number;
+  /** Catálogo de especies del cubicador: el mismo color por especie que en pantalla. */
+  catalogo?: readonly string[];
+}
+
+/** Lo que el PDF lleva además del anexo. */
+export interface ExtrasPdfAnexo {
+  trasera?: TraseraParaPdf | null;
+}
+
 /** Construye el documento (compartido por descarga y cualquier otra salida). */
-async function construirDoc(rows: PiezaCubicada[], datos: DatosAnexo04, opts: Anexo04Opts = {}) {
+async function construirDoc(rows: PiezaCubicada[], datos: DatosAnexo04, opts: Anexo04Opts = {}, extras: ExtrasPdfAnexo = {}) {
   const { jsPDF: JsPDF } = await import("jspdf");
   const doc = new JsPDF({ unit: "pt", format: "a4" });
   agregarAnexo(doc, rows, datos, opts, true);
+  const trasera = extras.trasera;
+  if (trasera && trasera.piezas.length > 0) {
+    /* Import dinámico: el croquis y la tabla sólo se cargan si hay trasera. */
+    const [{ dibujarTraseraEnDoc }, autoTable] = await Promise.all([
+      import("./camion-croquis-pdf"),
+      import("jspdf-autotable").then((m) => m.default),
+    ]);
+    doc.addPage();
+    dibujarTraseraEnDoc(doc, autoTable, trasera.piezas, trasera.anchoM, trasera.catalogo ?? []);
+  }
   return doc;
 }
 
@@ -245,8 +272,8 @@ export async function exportarAnexosPDF(
 }
 
 /** Descarga el ANEXO N° 04 del lote cubicado. */
-export async function exportarAnexo04PDF(rows: PiezaCubicada[], datos: DatosAnexo04, opts: Anexo04Opts = {}): Promise<void> {
-  const doc = await construirDoc(rows, datos, opts);
+export async function exportarAnexo04PDF(rows: PiezaCubicada[], datos: DatosAnexo04, opts: Anexo04Opts = {}, extras: ExtrasPdfAnexo = {}): Promise<void> {
+  const doc = await construirDoc(rows, datos, opts, extras);
   doc.save(nombreArchivo(datos));
 }
 

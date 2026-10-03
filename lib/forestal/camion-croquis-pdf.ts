@@ -76,10 +76,21 @@ function dibujarCroquis(doc: Doc, c: Croquis, x0: number, y0: number, ancho: num
   return totalPulgH * k + 18;
 }
 
-export async function exportarTraseraPDF(piezas: readonly PiezaCubicada[], anchoM: number, catalogo: readonly string[] = []): Promise<void> {
-  const { jsPDF } = await import("jspdf");
-  const autoTable = (await import("jspdf-autotable")).default;
-  const doc = new jsPDF({ unit: "pt", format: "a4", orientation: "portrait" });
+type AutoTable = (typeof import("jspdf-autotable"))["default"];
+
+/**
+ * Dibuja la trasera —título, croquis, leyenda y formato— en la página ACTUAL
+ * de un `jsPDF` ya abierto (A4 vertical, en pt). La usan el PDF propio de la
+ * trasera y el del ANEXO N° 04, que la agrega como última hoja (Brandon,
+ * 2026-10-03: «el chofer lleva una sola hoja»).
+ */
+export function dibujarTraseraEnDoc(
+  doc: Doc,
+  autoTable: AutoTable,
+  piezas: readonly PiezaCubicada[],
+  anchoM: number,
+  catalogo: readonly string[] = [],
+): void {
   const croquis = acomodarCroquis(piezas, { anchoM, catalogo });
   const formato = formatoTrasera(piezas, catalogo);
   const W = doc.internal.pageSize.getWidth();
@@ -135,6 +146,12 @@ export async function exportarTraseraPDF(piezas: readonly PiezaCubicada[], ancho
       doc.rect(data.cell.x + 4, data.cell.y + data.cell.height / 2 - 4, 8, 8, "F");
     },
   });
+}
 
+export async function exportarTraseraPDF(piezas: readonly PiezaCubicada[], anchoM: number, catalogo: readonly string[] = []): Promise<void> {
+  const { jsPDF } = await import("jspdf");
+  const autoTable = (await import("jspdf-autotable")).default;
+  const doc = new jsPDF({ unit: "pt", format: "a4", orientation: "portrait" });
+  dibujarTraseraEnDoc(doc, autoTable, piezas, anchoM, catalogo);
   doc.save(`trasera-camion-${fecha()}.pdf`);
 }

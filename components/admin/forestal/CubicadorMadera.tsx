@@ -2078,6 +2078,8 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
           precioPt: precio,
           /* En el orden del papel: el Anexo 04 numera lo guardado tal cual llega. */
           piezas: piezasParaGuardar(rows, ordenFilas),
+          /* La trasera viaja con la cubicación: armada en la PC, se ve en el celular. */
+          trasera: { ids: [...trasera.ids], anchoM: trasera.anchoM },
         }),
       });
       if (!r.ok) {
@@ -2113,6 +2115,8 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
       confirmLabel: "Sí, reemplazar",
     }))) return;
     persist(recubicarPiezas(c.piezas));
+    /* Sin trasera guardada (cubicaciones viejas) se vacía: no arrastra la del lote anterior. */
+    trasera.restaurar(c.trasera?.ids ?? [], c.trasera?.anchoM);
     setEspecie(c.especie ?? "");
     precios.setPrecioPt(c.precioPt ? String(c.precioPt) : "");
     setForm({ nombre: c.nombre, fecha: c.fecha, cliente: c.cliente ?? "", notas: c.notas ?? "" });
@@ -3195,6 +3199,8 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
                 )}
                 onAviso={(msg, tono) => pushToast({ tono, msg })}
                 onCerrar={() => cerrar("anexo")}
+                /* La trasera del camión viaja como última hoja del PDF. */
+                trasera={trasera.piezas.length > 0 ? { piezas: trasera.piezas, anchoM: trasera.anchoM, catalogo: especiesDelSelector } : null}
               />
             )}
 

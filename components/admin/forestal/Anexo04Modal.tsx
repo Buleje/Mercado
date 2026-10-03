@@ -11,9 +11,9 @@
  * tenant en localStorage: en el aserradero se emite guía tras guía y nadie
  * quiere re-tipear la razón social ni el DNI del responsable.
  */
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { CardTitle } from "@buleje/design-system";
-import { FileText, X } from "@buleje/design-system/icons";
+import { FileText, Truck, X } from "@buleje/design-system/icons";
 import { cubicarPieza, type PiezaCubicada } from "@/lib/forestal/cubicacion";
 import { construirAnexo04, fmtAnexo } from "@/lib/forestal/anexo04-serfor";
 import { validarAnexo04, avisosDeProcedencia, anexoPresentable, type AvisoAnexo04, type DeclaradoEnLibro, type ProcedenciaBloques } from "@/lib/forestal/anexo04-validacion";
@@ -38,9 +38,21 @@ import { useAnexo04Contraste } from "@/hooks/use-anexo04-contraste";
 import { useFichaCtp } from "@/hooks/use-ficha-ctp";
 import Anexo04GtfSalida, { type DespachoParaGtf } from "./Anexo04GtfSalida";
 import Anexo04Cuadre from "./Anexo04Cuadre";
+import Anexo04Comparar from "./Anexo04Comparar";
+import Anexo04BloquesPapel from "./Anexo04BloquesPapel";
+import CtpApartados, { CtpApartadoPanel, type Apartado } from "./ctp-apartados";
+import { useAnexo04Comparar } from "./hooks/use-anexo04-comparar";
+import { useTraseraDelPapel } from "./hooks/use-anexo04-trasera";
+import type { TraseraParaPdf } from "@/lib/forestal/anexo04-pdf";
 import { formatNumber } from "@/lib/format";
 
 const A4_PX = 794; // ancho de una hoja A4 a 96 dpi
+/**
+ * Hasta cuánto se agranda la hoja SOLA para llenar el panel. Era 1 (tamaño
+ * real); con el modal casi a pantalla completa (2026-10-03, «más ancho para
+ * que se vea») una hoja a 1:1 dejaba media columna vacía y la letra de 8 pt.
+ */
+const ESCALA_AUTO_MAX = 1.3;
 
 /** Tira de dato de la cabecera: el mismo alto para que la fila se lea pareja. */
 const CHIP_HEAD =
@@ -62,8 +74,14 @@ function imprimirHtml(html: string) {
 }
 
 export default function Anexo04Modal({
-  rows, especieGlobal, onPdfDetallado, onCerrar, onAviso, ctpEntryId, declarado, abrirHistorial = false, despacho, procedencia, avisosExtra, rotuloDeLasPiezas,
+  rows, especieGlobal, onPdfDetallado, onCerrar, onAviso, ctpEntryId, declarado, abrirHistorial = false, despacho, procedencia, avisosExtra, rotuloDeLasPiezas, trasera,
 }: {
+  /**
+   * La parte trasera del camión del lote (cubicador): el PDF la agrega como
+   * última hoja, croquis + formato (Brandon, 2026-10-03). Sin trasera, el PDF
+   * no cambia.
+   */
+  trasera?: TraseraParaPdf | null;
   /** Lote abierto en el cubicador; puede venir vacío (p. ej. desde el Libro CTP). */
   rows: PiezaCubicada[];
   especieGlobal?: string;
@@ -110,8 +128,9 @@ export default function Anexo04Modal({
   /** Contra qué se coteja: la guía si vino del Libro, si no la corrida de origen. */
   const { contraste, usarCorrida } = useAnexo04Contraste(declarado);
   const [verHistorial, setVerHistorial] = useState(abrirHistorial);
-  /** Qué papel se está mirando: el anexo o la guía con la que sale el camión. */
-  const [docActivo, setDocActivo] = useState<"anexo" | "gtf">("anexo");
+  /** Qué se está mirando: el anexo, su comparación con el resumen o la guía con la que sale el camión. */
+  const [docActivo, setDocActivo] = useState<"anexo" | "comparar" | "gtf">("anexo");
+  const idPapeles = useId();
   const [, setGtfHtml] = useState<string | null>(null);
   const [historialToken, setHistorialToken] = useState(0);
   /** Los emitidos alimentan la bandeja Y el checklist (N° repetido, volumen ya
@@ -181,7 +200,7 @@ export default function Anexo04Modal({
   useLayoutEffect(() => {
     const el = areaRef.current;
     if (!el) return;
-    const medir = () => setFit(Math.min(1, (el.clientWidth - 24) / A4_PX));
+    const medir = () => setFit(Math.min(ESCALA_AUTO_MAX, (el.clientWidth - 24) / A4_PX));
     medir();
     const ro = new ResizeObserver(medir);
     ro.observe(el);
@@ -261,9 +280,20 @@ export default function Anexo04Modal({
   );
   const escala = Math.max(0.25, fit * factor);
 
+  /* «Comparar con el resumen» (pestaña) y la trasera que viaja en el PDF. */
+  const cmp = useAnexo04Comparar({
+    rows, filasOrigen: filas, filasEditadas, dueno: duenoFiltro, unidadV: datos.unidadV, especieGlobal: especie,
+    totalManualM3: totalManual, corregidas: Object.keys(overrides).length, otroOrigen: piezasGuardadas != null, rotuloDeLasPiezas,
+  });
+  const traseraPapel = useTraseraDelPapel(trasera, { origenActual: piezasGuardadas == null, dueno: duenoFiltro, correcciones: overrides });
+  const papeles: Apartado[] = [
+    { id: "anexo", label: "ANEXO N° 04", contador: `${anexo.hojas.length} hoja${anexo.hojas.length === 1 ? "" : "s"}` },
+    { id: "comparar", label: "Comparar con el resumen", contador: cmp.pastilla, hint: "Por especie y tipo: el resumen contra lo que imprime la hoja" },
+    ...(despacho?.gtfNumber ? [{ id: "gtf", label: `GTF ${despacho.gtfNumber}`, contador: "Original + 2 copias" }] : []),
+  ];
 
   const { generando, descargarPdf, descargarExcel, reDescargar, pdfDeLote } = useAnexo04Salidas({
-    filas: filasEditadas, datos, especieGlobal: especie, ctpEntryId, totalManualM3: totalManual, onAviso,
+    filas: filasEditadas, datos, especieGlobal: especie, ctpEntryId, totalManualM3: totalManual, trasera: traseraPapel, onAviso,
     onRegistrado: () => setHistorialToken((t) => t + 1),
   });
   // Checklist de emisión: lo que la ARFFS devuelve (errores) y lo que un
@@ -328,8 +358,12 @@ export default function Anexo04Modal({
           alargado»): antes el modal crecía con su contenido y el backdrop
           scrolleaba la página entera, así que el pie con «Descargar PDF»
           quedaba a dos pantallas del título. Ahora el marco entra siempre en la
-          ventana, el pie está fijo y lo que scrollea es cada columna. */}
-      <div ref={cajaRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Vista previa del Anexo N° 04" className="relative flex max-h-[94vh] w-full max-w-[76rem] flex-col rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 shadow-[var(--shadow-lg)]">
+          ventana, el pie está fijo y lo que scrollea es cada columna.
+          Casi a pantalla completa (2026-10-03, «más ancho para que se vea»):
+          con 76rem fijos, en 1920 sobraban 700 px a los costados. 110rem y no
+          más: en 1920 el borde derecho queda en x=1840, justo donde empieza el
+          botón flotante de acciones rápidas (z-50, igual que el modal). */}
+      <div ref={cajaRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Vista previa del Anexo N° 04" className="relative flex max-h-[94vh] w-full max-w-[min(96vw,110rem)] flex-col rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 shadow-[var(--shadow-lg)]">
         <div {...ventana.asaProps} className="flex shrink-0 items-start justify-between gap-3">
           <div className="min-w-0">
             <CardTitle as="h3" className="flex items-center gap-2 text-base font-bold text-[var(--text-primary)]">
@@ -348,6 +382,18 @@ export default function Anexo04Modal({
                 {anexo.hojas.length} hoja{anexo.hojas.length === 1 ? "" : "s"}
               </span>
               <span className={CHIP_HEAD}>{anexo.totalPiezas} piezas</span>
+              <span className={CHIP_HEAD} title="Pie tablar exacto de todas las piezas de la hoja">
+                {formatNumber(anexo.totalPt, { max: 2 })} PT
+              </span>
+              <span className={CHIP_HEAD} title="Bloques impresos (uno por especie y tipo, de a 35 renglones)">
+                {anexo.hojas.reduce((a, h) => a + h.bloques.length, 0)} bloques
+              </span>
+              {traseraPapel && (
+                <span className={`${CHIP_HEAD} gap-1`} title="El PDF lleva al final una hoja con el croquis y el formato de la parte trasera del camión">
+                  <Truck className="h-3.5 w-3.5 text-[var(--data-8)]" aria-hidden />
+                  + trasera · {traseraPapel.piezas.reduce((a, r) => a + r.cantidad, 0)} pzas
+                </span>
+              )}
               <label className={`${CHIP_HEAD} gap-1`}>
                 <span className="font-bold uppercase tracking-wide text-[var(--text-tertiary)]">(3) Volumen</span>
                 <input
@@ -405,7 +451,9 @@ export default function Anexo04Modal({
           </div>
         )}
 
-        <div className="mt-3 grid min-h-0 flex-1 gap-4 overflow-y-auto lg:grid-cols-[19rem_1fr] lg:overflow-hidden">
+        {/* En monitores anchos, una tercera columna con lo que lleva el papel
+            (sólo con la hoja a la vista: la comparación usa todo el ancho). */}
+        <div className={`mt-3 grid min-h-0 flex-1 gap-4 overflow-y-auto lg:grid-cols-[19rem_1fr] lg:overflow-hidden xl:grid-cols-[21rem_1fr] ${docActivo === "anexo" ? "2xl:grid-cols-[22rem_1fr_19rem]" : "2xl:grid-cols-[22rem_1fr]"}`}>
           {/* Datos del formato */}
           <div className="lg:min-h-0 lg:overflow-y-auto lg:pr-1">
             <Anexo04Campos datos={datos} onChange={set} ficha={ficha} onError={(msg) => onAviso?.(msg, "error")} anexo={anexo} />
@@ -438,38 +486,31 @@ export default function Anexo04Modal({
 
           {/* Preview del papel */}
           <div ref={areaRef} className="min-w-0 overflow-y-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
-            {/* Los dos papeles del camión. La guía sólo se ofrece si el despacho
-                ya tiene número: sin GTF emitida no hay guía que mirar, y una
-                pestaña que abre un papel vacío hace pensar que se perdió algo. */}
-            {despacho?.gtfNumber && (
-              <div className="mb-3 flex flex-wrap gap-2">
-                {([
-                  { id: "anexo" as const, label: "ANEXO N° 04", nota: `${anexo.hojas.length} hoja(s)` },
-                  { id: "gtf" as const, label: `GTF ${despacho.gtfNumber}`, nota: "Original + 2 copias" },
-                ]).map((p) => (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => setDocActivo(p.id)}
-                    aria-pressed={docActivo === p.id}
-                    className={`inline-flex min-h-11 flex-col items-start justify-center rounded-2xl border-2 px-4 py-1 text-left transition-colors ${
-                      docActivo === p.id
-                        ? "border-[var(--accent)] bg-primary/10"
-                        : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--rule-strong)]"
-                    }`}
-                  >
-                    <span className={`text-sm font-bold ${docActivo === p.id ? "text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--text-secondary)]"}`}>
-                      {p.label}
-                    </span>
-                    <span className="text-xs text-[var(--text-tertiary)]">{p.nota}</span>
-                  </button>
-                ))}
-              </div>
-            )}
+            {/* El anexo, su comparación con el resumen (Brandon, 2026-10-03) y
+                la guía con que sale el camión. La guía sólo se ofrece si el
+                despacho ya tiene número: sin GTF emitida no hay guía que mirar,
+                y una pestaña que abre un papel vacío hace pensar que se perdió
+                algo. */}
+            <div className="mb-3">
+              <CtpApartados
+                apartados={papeles}
+                activo={docActivo}
+                onIr={(id) => setDocActivo(id as typeof docActivo)}
+                idBase={idPapeles}
+                etiqueta="Qué mirar del anexo"
+              />
+            </div>
 
+            <CtpApartadoPanel idBase={idPapeles} id={docActivo}>
+            {docActivo === "comparar" && (
+              <Anexo04Comparar comparacion={cmp.comparacion} rotuloResumen={cmp.rotulo} contexto={cmp.contexto} />
+            )}
             {docActivo === "gtf" && despacho ? (
               <Anexo04GtfSalida despacho={despacho} ficha={ficha} onHtml={setGtfHtml} />
             ) : (
+            /* Con la comparación a la vista la hoja sigue montada (oculta):
+               «Imprimir» imprime sus hojas y «Editar medidas» no se pierde. */
+            <div className={docActivo === "comparar" ? "hidden" : undefined}>
             <Anexo04Preview
               ref={hojasRef}
               anexo={anexo}
@@ -521,8 +562,16 @@ export default function Anexo04Modal({
               checklist={<Anexo04Checklist avisos={avisos} presentable={presentable} onSugerencia={(campo, valor) => set({ [campo]: valor })} />}
               onEditarCelda={onEditarCelda}
             />
+            </div>
             )}
+            </CtpApartadoPanel>
           </div>
+
+          {docActivo === "anexo" && (
+            <aside className="hidden 2xl:block 2xl:min-h-0 2xl:overflow-y-auto 2xl:pr-1" aria-label="Lo que lleva el papel">
+              <Anexo04BloquesPapel anexo={anexo} />
+            </aside>
+          )}
         </div>
 
         <div className="shrink-0">

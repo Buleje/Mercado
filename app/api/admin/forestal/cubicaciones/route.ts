@@ -15,6 +15,7 @@ import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
 import { ORDEN_TIPO, type TipoComercial } from "@/lib/forestal/cubicacion-tipo";
 import { OBSERVACION_MAX } from "@/lib/forestal/observacion-de-pieza";
+import { ANCHO_CAMION_M_MAX, ANCHO_CAMION_M_MIN } from "@/lib/forestal/camion-croquis";
 import { esVariado } from "@/lib/forestal/variado-desglose";
 
 /**
@@ -63,6 +64,12 @@ const saveSchema = z.object({
    *  (ADR-369): un camión se cubica entero contra los N paquetes que salen. */
   ctpEntryIds: z.array(z.string().trim().min(1).max(60)).max(100).optional(),
   gtfNumber: z.string().trim().max(60).nullish(),
+  /** Parte trasera del camión (ids de piezas + ancho del croquis). Los ids que no
+   *  están entre `piezas` se descartan al guardar, no dan 400. */
+  trasera: z.object({
+    ids: z.array(z.string().trim().min(1).max(60)).max(1000),
+    anchoM: z.coerce.number().min(ANCHO_CAMION_M_MIN).max(ANCHO_CAMION_M_MAX),
+  }).optional(),
   /** `updatedAt` de la versión que se leyó (ADR-445): si la guardada es otra,
    *  409 en vez de reescribir piezas viejas. Opcional: sin él, como siempre. */
   updatedAt: z.string().trim().max(40).optional(),

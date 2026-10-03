@@ -14,12 +14,19 @@ import type { PiezaCubicada } from "./cubicacion";
 import { cubicarPieza, m3DesdePt } from "./cubicacion";
 import { ORDEN_TIPO, type TipoComercial } from "./cubicacion-tipo";
 import { OBSERVACION_MAX } from "./observacion-de-pieza";
+import { ANCHO_CAMION_M_DEFAULT, ANCHO_CAMION_M_MAX, ANCHO_CAMION_M_MIN } from "./camion-croquis";
 import { limaDateKey } from "@/lib/utils";
 
 export interface CubicacionTotales {
   piezas: number;
   pieTablar: number;
   m3: number;
+}
+
+/** La trasera que viaja con la cubicación guardada (antes vivía sólo en localStorage). */
+export interface TraseraGuardada {
+  ids: string[];
+  anchoM: number;
 }
 
 export interface CubicacionRegistro {
@@ -52,9 +59,29 @@ export interface CubicacionRegistro {
   ctpEntryIds?: string[];
   /** GTF de salida asociada, si ya se conoce (informativo). */
   gtfNumber?: string;
+  /** Parte trasera del camión: ids de las piezas que se ven al abrir la compuerta
+   *  y el ancho del croquis. Sin el campo = sin trasera (cubicaciones viejas). */
+  trasera?: TraseraGuardada;
   createdAt: string;
   updatedAt: string;
   createdBy?: string;
+}
+
+/**
+ * La trasera a guardar: sólo ids que existen entre las piezas (los que no, se
+ * descartan sin error) y el ancho dentro de rango. Sin ids y con el ancho de
+ * fábrica no hay nada que guardar → `undefined`.
+ */
+export function normalizarTrasera(
+  trasera: { ids: readonly string[]; anchoM: number } | undefined,
+  piezas: readonly { id: string }[],
+): TraseraGuardada | undefined {
+  if (!trasera) return undefined;
+  const existentes = new Set(piezas.map((p) => p.id));
+  const ids = [...new Set(trasera.ids)].filter((id) => existentes.has(id));
+  const anchoM = Math.min(ANCHO_CAMION_M_MAX, Math.max(ANCHO_CAMION_M_MIN, Number.isFinite(trasera.anchoM) ? trasera.anchoM : ANCHO_CAMION_M_DEFAULT));
+  if (ids.length === 0 && anchoM === ANCHO_CAMION_M_DEFAULT) return undefined;
+  return { ids, anchoM };
 }
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
@@ -140,6 +167,7 @@ export function construirRegistro(input: {
   ctpEntryId?: string;
   ctpEntryIds?: string[];
   gtfNumber?: string;
+  trasera?: { ids: string[]; anchoM: number };
   createdAt?: string;
   createdBy?: string;
 }): CubicacionRegistro {
@@ -165,6 +193,7 @@ export function construirRegistro(input: {
       ? [...new Set(input.ctpEntryIds.map((x) => x.trim().slice(0, 60)).filter(Boolean))].slice(0, 100)
       : undefined,
     gtfNumber: input.gtfNumber?.trim().slice(0, 60) || undefined,
+    trasera: normalizarTrasera(input.trasera, piezas),
     createdAt: input.createdAt ?? ahora,
     updatedAt: ahora,
     createdBy: input.createdBy,

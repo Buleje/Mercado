@@ -215,6 +215,9 @@ export const ForestCubicacionesDB = {
           ...input,
           ctpEntryId: todas[0],
           ctpEntryIds: todas.length > 0 ? todas : undefined,
+          /* Sin trasera en el pedido (Vincular, Enviar al Libro) se conserva la
+             que ya tenía; con ella —aunque vacía— manda el pedido. */
+          trasera: input.trasera ?? existente?.trasera,
           createdAt: existente?.createdAt,
           createdBy: existente?.createdBy ?? user,
         });

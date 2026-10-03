@@ -78,5 +78,15 @@ export function useTraseraCamion(claveLote: string, filas: readonly PiezaCubicad
     if (Number.isFinite(m)) setAnchoM(Math.min(ANCHO_CAMION_M_MAX, Math.max(ANCHO_CAMION_M_MIN, m)));
   }, []);
 
-  return { ids, piezas, agregar, quitar, vaciar, anchoM, cambiarAncho };
+  /** Reemplaza ids y ancho desde afuera: al abrir una cubicación guardada que trae su trasera. */
+  const restaurar = useCallback((nuevosIds: Iterable<string>, ancho?: number) => {
+    setIds(new Set(nuevosIds));
+    setAnchoM(
+      typeof ancho === "number" && Number.isFinite(ancho)
+        ? Math.min(ANCHO_CAMION_M_MAX, Math.max(ANCHO_CAMION_M_MIN, ancho))
+        : ANCHO_CAMION_M_DEFAULT,
+    );
+  }, []);
+
+  return { ids, piezas, agregar, quitar, vaciar, anchoM, cambiarAncho, restaurar };
 }

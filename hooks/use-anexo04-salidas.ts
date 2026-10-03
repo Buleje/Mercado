@@ -13,7 +13,7 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
 import type { DatosAnexo04 } from "@/lib/forestal/anexo04-serfor";
 import type { AnexoEmitido } from "@/lib/forestal/anexo04-registro";
-import { exportarAnexo04PDF, exportarAnexosPDF } from "@/lib/forestal/anexo04-pdf";
+import { exportarAnexo04PDF, exportarAnexosPDF, type TraseraParaPdf } from "@/lib/forestal/anexo04-pdf";
 import { exportarAnexo04Excel } from "@/lib/forestal/anexo04-excel";
 
 export function useAnexo04Salidas(ctx: {
@@ -33,11 +33,17 @@ export function useAnexo04Salidas(ctx: {
    * otro número en el casillero (3).
    */
   totalManualM3?: number | null;
+  /**
+   * La parte trasera del camión: si viene, el PDF la agrega como última hoja
+   * (el croquis + su formato). Sólo la descarga de ESTE anexo: re-descargar
+   * uno del historial no sabe qué iba atrás en aquel viaje.
+   */
+  trasera?: TraseraParaPdf | null;
   onAviso?: (msg: string, tono: "success" | "error") => void;
   /** Se llama cuando la bandeja cambió (para releerla). */
   onRegistrado: () => void;
 }) {
-  const { filas, datos, especieGlobal, ctpEntryId, totalManualM3, onAviso, onRegistrado } = ctx;
+  const { filas, datos, especieGlobal, ctpEntryId, totalManualM3, trasera, onAviso, onRegistrado } = ctx;
   const [generando, setGenerando] = useState(false);
 
   /**
@@ -65,14 +71,15 @@ export function useAnexo04Salidas(ctx: {
 
   const descargarPdf = useCallback(() => {
     setGenerando(true);
-    exportarAnexo04PDF(filas, datos, { especieGlobal, totalManualM3 })
+    const conTrasera = trasera && trasera.piezas.length > 0 ? trasera : null;
+    exportarAnexo04PDF(filas, datos, { especieGlobal, totalManualM3 }, { trasera: conTrasera })
       .then(() => {
-        onAviso?.("Anexo N° 04 descargado y registrado", "success");
+        onAviso?.(conTrasera ? "Anexo N° 04 + parte trasera del camión, descargado y registrado" : "Anexo N° 04 descargado y registrado", "success");
         registrar(filas, datos, totalManualM3);
       })
       .catch(() => onAviso?.("No se pudo generar el PDF.", "error"))
       .finally(() => setGenerando(false));
-  }, [filas, datos, especieGlobal, totalManualM3, onAviso, registrar]);
+  }, [filas, datos, especieGlobal, totalManualM3, trasera, onAviso, registrar]);
 
   const descargarExcel = useCallback(() => {
     exportarAnexo04Excel(filas, datos, { especieGlobal, totalManualM3 })
