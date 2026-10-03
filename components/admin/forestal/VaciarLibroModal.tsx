@@ -9,8 +9,11 @@
  * frase. Un botón de confirmar se aprieta sin leer; una frase hay que copiarla
  * mirando la lista que tiene justo arriba.
  *
- * Si hay períodos cerrados ni siquiera ofrece el botón: ese mes ya se presentó
- * ante SERFOR y reabrirlo es otra decisión, con su propio motivo y rastro.
+ * Meses cerrados (Brandon 2026-10-02, «Solo protege su mes»): con «Todo el
+ * libro» ni siquiera ofrece el botón —borraría un mes que ya se presentó ante
+ * SERFOR, y reabrirlo es otra decisión, con su motivo y su rastro— y el aviso
+ * va SOLO, sin la caja roja de «Esto borra…». Con las demás casillas se borra
+ * lo de los meses abiertos y la lista dice qué se queda por ser de uno cerrado.
  *
  * **Varias a la vez (Brandon, 2026-10-02):** las casillas se suman (la unión;
  * una corrida que cae en dos se cuenta una vez). «Todo el libro» no se suma:
@@ -25,7 +28,13 @@ import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/
 import { AlertTriangle, Trash2, X } from "@buleje/design-system/icons";
 import { SectionTitle } from "@buleje/design-system";
 import { useVaciarLibro } from "./hooks/use-vaciar-libro";
-import { AlcancesVaciado, ListaDeLoQueSeBorra, LotesQueNoSeBorran } from "./vaciar-libro-partes";
+import {
+  AlcancesVaciado,
+  ListaDeLoQueSeBorra,
+  LoDeMesCerrado,
+  LotesQueNoSeBorran,
+  TodoConMesCerrado,
+} from "./vaciar-libro-partes";
 
 export default function VaciarLibroModal({ onClose, onVaciado }: { onClose: () => void; onVaciado?: () => void }) {
   /* Sin esto el foco se queda atrás del modal: Tab se va a la pantalla
@@ -54,10 +63,11 @@ export default function VaciarLibroModal({ onClose, onVaciado }: { onClose: () =
   }, [onClose]);
 
   const { resumen, hecho } = v;
-  const bloqueado = v.periodos.length > 0;
+  const esTodo = v.elegidos.includes("todo");
+  /* Sólo «Todo el libro» se frena por un mes cerrado; lo parcial lo salva. */
+  const bloqueado = esTodo && v.periodos.length > 0;
   const nada = v.elegidos.length === 0;
   const vacio = resumen != null && resumen.conteo.total === 0 && resumen.conteo.trozasAlPatio === 0;
-  const esTodo = v.elegidos.includes("todo");
   const puedeBorrar = !hecho && !nada && !vacio && !bloqueado && resumen != null && !v.cargando;
 
   return (
@@ -94,7 +104,7 @@ export default function VaciarLibroModal({ onClose, onVaciado }: { onClose: () =
                 </p>
                 <p className="mt-1 text-sm text-[var(--text-secondary)]">Quedó registrado en la auditoría.</p>
               </div>
-              <ListaDeLoQueSeBorra resumen={hecho} />
+              <ListaDeLoQueSeBorra resumen={hecho} hecho />
               <LotesQueNoSeBorran lotes={hecho.lotesBloqueados} />
             </div>
           ) : (
@@ -110,8 +120,11 @@ export default function VaciarLibroModal({ onClose, onVaciado }: { onClose: () =
                     <p className="text-base text-[var(--text-secondary)]">
                       {esTodo ? "El libro ya está vacío: no hay nada que borrar." : "No hay nada que borrar con lo que marcaste."}
                     </p>
+                    <LoDeMesCerrado salvado={resumen.conteo.deMesCerrado} />
                     <LotesQueNoSeBorran lotes={resumen.lotesBloqueados} />
                   </>
+                ) : bloqueado ? (
+                  <TodoConMesCerrado periodos={v.periodos} />
                 ) : (
                   <>
                     <div className="rounded-xl bg-[var(--data-error)]/10 p-4">
@@ -129,34 +142,23 @@ export default function VaciarLibroModal({ onClose, onVaciado }: { onClose: () =
 
                     <LotesQueNoSeBorran lotes={resumen.lotesBloqueados} />
 
-                    {bloqueado ? (
-                      <p className="flex items-start gap-2 rounded-xl bg-[var(--data-warning)]/10 px-4 py-3 text-base font-semibold text-[var(--data-warning)]">
-                        <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" aria-hidden />
-                        <span>
-                          No se puede vaciar: hay {v.periodos.length} período{v.periodos.length === 1 ? "" : "s"} cerrado
-                          {v.periodos.length === 1 ? "" : "s"} ({v.periodos.join(", ")}). Ese mes ya se presentó ante SERFOR
-                          — reábrelo desde el libro si de verdad hay que borrarlo.
-                        </span>
-                      </p>
-                    ) : (
-                      <div className="space-y-3 rounded-xl border-2 border-[var(--data-error)]/40 p-4">
-                        <p className="text-base font-extrabold text-[var(--text-primary)]">Vas a borrar</p>
-                        <ListaDeLoQueSeBorra resumen={resumen} />
-                        <div>
-                          <label htmlFor="confirmar-purga" className="text-base font-semibold text-[var(--text-primary)]">
-                            Escribe <strong className="font-mono">{v.palabra}</strong> para confirmar
-                          </label>
-                          <input
-                            id="confirmar-purga"
-                            value={escrito}
-                            onChange={(e) => setEscrito(e.target.value)}
-                            autoComplete="off"
-                            placeholder={v.palabra}
-                            className="mt-1 h-12 w-full rounded-xl bg-[var(--surface-sunken)] px-4 text-base font-bold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-[var(--data-error)]"
-                          />
-                        </div>
+                    <div className="space-y-3 rounded-xl border-2 border-[var(--data-error)]/40 p-4">
+                      <p className="text-base font-extrabold text-[var(--text-primary)]">Vas a borrar</p>
+                      <ListaDeLoQueSeBorra resumen={resumen} />
+                      <div>
+                        <label htmlFor="confirmar-purga" className="text-base font-semibold text-[var(--text-primary)]">
+                          Escribe <strong className="font-mono">{v.palabra}</strong> para confirmar
+                        </label>
+                        <input
+                          id="confirmar-purga"
+                          value={escrito}
+                          onChange={(e) => setEscrito(e.target.value)}
+                          autoComplete="off"
+                          placeholder={v.palabra}
+                          className="mt-1 h-12 w-full rounded-xl bg-[var(--surface-sunken)] px-4 text-base font-bold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-[var(--data-error)]"
+                        />
                       </div>
-                    )}
+                    </div>
                   </>
                 )
               )}

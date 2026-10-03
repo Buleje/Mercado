@@ -4,10 +4,17 @@ import type { Prisma } from "@/lib/generated/prisma/client";
 import { auditCtpEsperando } from "@/lib/forestal/ctp-audit";
 import { esChoqueDeLocks } from "@/lib/forestal/choque-de-locks";
 import { ForestCtpCierreDB } from "@/lib/db/forest-ctp-cierre.db";
+import type { CtpCierrePeriodo } from "@/lib/forestal/ctp-cierre-types";
 import { ForestCuentaDB } from "@/lib/db/forest-cuenta.db";
 import { invalidateByPrefix } from "@/lib/cache";
 import { logger } from "@/lib/logger";
-import { mismoConteo, planificarVaciado, type PlanVaciado, type SnapshotLibro } from "@/lib/forestal/ctp-purga-plan";
+import {
+  mesCerradoParaVaciar,
+  mismoConteo,
+  planificarVaciado,
+  type PlanVaciado,
+  type SnapshotLibro,
+} from "@/lib/forestal/ctp-purga-plan";
 import type {
   AlcanceParcial,
   ConteoDelLibro,
@@ -29,8 +36,15 @@ export type { ScopeVaciado, ConteoDelLibro, ResumenVaciado } from "@/lib/foresta
  * GUARDS, y ninguno es opcional:
  *
  * 1. **Los períodos cerrados no se tocan.** Un mes cerrado ya se presentó ante
- *    SERFOR. Si hay alguno sin reabrir, el vaciado se niega ENTERO y dice cuál
- *    (mirado DENTRO de la transacción y sin caché).
+ *    SERFOR. Como en el resto del libro (ADR-139), protege SÓLO las líneas
+ *    fechadas en ese mes (Brandon 2026-10-02, «Solo protege su mes»): un
+ *    alcance parcial borra lo de los meses abiertos y deja lo del cerrado —
+ *    qué fecha manda en cada fila, en `ctp-purga-plan.ts`. «Todo el libro»
+ *    borraría el mes cerrado, así que con alguno sin reabrir se niega ENTERO y
+ *    dice cuál. Los cierres se leen DENTRO de la transacción, sin caché, como
+ *    su primera sentencia y bajo el candado que comparte con el cierre de mes
+ *    (`ForestCtpCierreDB.listBajoCandado`): un mes que se cierra a la vez no
+ *    se cuela entre la foto y el borrado.
  *    Además, una corrida con el consumo congelado (mes cerrado y reabierto) no
  *    se borra por ningún alcance parcial: congelar es irreversible.
  * 2. **Un alcance parcial nunca rompe lo que deja vivo.** Qué cae y qué se
@@ -94,22 +108,43 @@ const NOMBRE_ALCANCE: Record<AlcanceParcial, string> = {
 
 const s = (n: number, sing: string, plur = `${sing}s`) => `${n} ${n === 1 ? sing : plur}`;
 
-/** La foto del libro que necesita el plan. Sólo trozas si es lo único que se pidió. */
+/**
+ * La foto del libro que necesita el plan. Sólo trozas si es lo único que se
+ * pidió. `cierres` se leyeron con el mismo `db` (en el borrado, la
+ * transacción): cada fila sale con el mes cerrado en que cae su fecha, y sin
+ * ningún cierre activo ni se leen las fechas.
+ */
 async function leerSnapshot(
   db: Db,
   tenantId: string,
   alcances: readonly AlcanceParcial[],
+  cierres: CtpCierrePeriodo[],
 ): Promise<SnapshotLibro> {
-  const trozasQ = db.woodEntryTroza.findMany({
-    where: { tenantId },
-    select: {
-      id: true,
-      consumidaEnId: true,
-      despachadaEnId: true,
-      loteAserrioId: true,
-      loteMixtoId: true,
-      trozaOrigenId: true,
-    },
+  const hayCierres = cierres.some((c) => !c.reabierto);
+  /* Protege de más a propósito (instante, mes UTC y mes de Lima): ver
+     `mesCerradoParaVaciar`. */
+  const mesDe = (fecha: Date | null | undefined): string | null => (hayCierres ? mesCerradoParaVaciar(cierres, fecha) : null);
+
+  /* La troza toma la fecha de su ingreso (GTF). */
+  const trozasQ = Promise.all([
+    db.woodEntryTroza.findMany({
+      where: { tenantId },
+      select: {
+        id: true,
+        woodEntryId: true,
+        consumidaEnId: true,
+        despachadaEnId: true,
+        loteAserrioId: true,
+        loteMixtoId: true,
+        trozaOrigenId: true,
+      },
+    }),
+    hayCierres
+      ? db.woodEntry.findMany({ where: { tenantId }, select: { id: true, entryDate: true } })
+      : Promise.resolve([] as { id: string; entryDate: Date }[]),
+  ]).then(([trozas, ingresos]) => {
+    const mesDelIngreso = new Map(ingresos.map((i) => [i.id, mesDe(i.entryDate)]));
+    return trozas.map(({ woodEntryId, ...t }) => ({ ...t, mesCerrado: mesDelIngreso.get(woodEntryId) ?? null }));
   });
   const vacio: Omit<SnapshotLibro, "trozas"> = {
     corridas: [],
@@ -128,7 +163,16 @@ async function leerSnapshot(
     await Promise.all([
       db.forestCtpEntry.findMany({
         where: { tenantId },
-        select: { id: true, section: true, status: true, deletedAt: true, quantity: true, lineNo: true, gtfNumber: true },
+        select: {
+          id: true,
+          section: true,
+          status: true,
+          deletedAt: true,
+          quantity: true,
+          lineNo: true,
+          gtfNumber: true,
+          entryDate: true,
+        },
       }),
       trozasQ,
       db.forestCtpDespachoOrigen.findMany({
@@ -142,17 +186,30 @@ async function leerSnapshot(
          ya soltó sus piezas (`softDelete`). */
       db.forestLoteAserrio.findMany({
         where: { tenantId, deletedAt: null },
-        select: { id: true, code: true, status: true, produccionEntryId: true, loteMixtoId: true },
+        select: {
+          id: true,
+          code: true,
+          status: true,
+          produccionEntryId: true,
+          loteMixtoId: true,
+          fechaApertura: true,
+          createdAt: true,
+        },
       }),
       conLotes
-        ? db.forestLoteMixto.findMany({ where: { tenantId, deletedAt: null }, select: { id: true, code: true, status: true } })
-        : Promise.resolve([] as { id: string; code: string; status: string }[]),
+        ? db.forestLoteMixto.findMany({
+            where: { tenantId, deletedAt: null },
+            select: { id: true, code: true, status: true, abiertoEn: true, createdAt: true },
+          })
+        : Promise.resolve([] as { id: string; code: string; status: string; abiertoEn: Date | null; createdAt: Date }[]),
       conLotes
         ? db.forestProdLote.findMany({
             where: { tenantId, deletedAt: null },
-            select: { id: true, loteCode: true, status: true },
+            select: { id: true, loteCode: true, status: true, fechaInicio: true, createdAt: true },
           })
-        : Promise.resolve([] as { id: string; loteCode: string; status: string }[]),
+        : Promise.resolve(
+            [] as { id: string; loteCode: string; status: string; fechaInicio: Date | null; createdAt: Date }[],
+          ),
     ]);
 
   return {
@@ -164,15 +221,24 @@ async function leerSnapshot(
       quantity: Number(c.quantity ?? 0),
       lineNo: c.lineNo,
       gtfNumber: c.gtfNumber,
+      mesCerrado: mesDe(c.entryDate),
     })),
     trozas,
     despachoOrigenes,
     reprocesos,
     loteMiembros,
     consumos: consumos.map((c) => ({ ctpEntryId: c.ctpEntryId, congelado: c.congeladoAt != null })),
-    lotesAserrio,
-    lotesMixtos,
-    lotesComerciales: lotesComerciales.map((l) => ({ id: l.id, code: l.loteCode, status: l.status })),
+    lotesAserrio: lotesAserrio.map(({ fechaApertura, createdAt, ...l }) => ({
+      ...l,
+      mesCerrado: mesDe(fechaApertura ?? createdAt),
+    })),
+    lotesMixtos: lotesMixtos.map(({ abiertoEn, createdAt, ...l }) => ({ ...l, mesCerrado: mesDe(abiertoEn ?? createdAt) })),
+    lotesComerciales: lotesComerciales.map((l) => ({
+      id: l.id,
+      code: l.loteCode,
+      status: l.status,
+      mesCerrado: mesDe(l.fechaInicio ?? l.createdAt),
+    })),
   };
 }
 
@@ -181,6 +247,20 @@ async function porTandas(ids: string[], fn: (tanda: string[]) => Promise<{ count
   let n = 0;
   for (let i = 0; i < ids.length; i += TANDA) n += (await fn(ids.slice(i, i + TANDA))).count;
   return n;
+}
+
+/**
+ * Las respuestas de campos personalizados (ADR-427) de filas que se borran.
+ * Cuelgan por `registroId` SUELTO (sin FK: un campo puede ser de cualquier
+ * modelo), así que nada las arrastra: sin esto quedaban huérfanas para
+ * siempre. Corridas, ingresos y lotes de aserrío las tienen. No es `exacto`:
+ * cuántas respuestas tiene cada fila no es parte de lo que se mostró.
+ */
+async function borrarRespuestasDeCampos(tx: Prisma.TransactionClient, tenantId: string, ids: string[]): Promise<void> {
+  if (ids.length === 0) return;
+  await porTandas(ids, (tanda) =>
+    tx.campoPersonalizadoValor.deleteMany({ where: { tenantId, registroId: { in: tanda } } }),
+  );
 }
 
 /**
@@ -273,15 +353,11 @@ async function aplicarPlan(tx: Prisma.TransactionClient, tenantId: string, plan:
         data: { deletedAt: new Date() },
       }),
     );
+    await borrarRespuestasDeCampos(tx, tenantId, plan.corridasABorrar);
   }
 
-  /* 5. Lotes de aserrío: sus respuestas de campos personalizados (ADR-427)
-        cuelgan por id suelto, así que se van con ellos. */
-  if (plan.lotesAserrioABorrar.length > 0) {
-    await porTandas(plan.lotesAserrioABorrar, (ids) =>
-      tx.campoPersonalizadoValor.deleteMany({ where: { tenantId, registroId: { in: ids } } }),
-    );
-  }
+  /* 5. Lotes de aserrío, con sus respuestas de campos personalizados. */
+  await borrarRespuestasDeCampos(tx, tenantId, plan.lotesAserrioABorrar);
   await exacto("lotes de aserrío", plan.lotesAserrioABorrar, (ids) =>
     tx.forestLoteAserrio.deleteMany({ where: { tenantId, id: { in: ids }, deletedAt: null } }),
   );
@@ -329,6 +405,14 @@ async function auditarParcial(
   const pa = plan.porAlcance;
   const juntos = alcances.length > 1 ? ` (vaciado combinado: ${alcances.map((a) => `«${NOMBRE_ALCANCE[a]}»`).join(" + ")})` : "";
   const lista = (xs: string[]) => (xs.length > 30 ? `${xs.slice(0, 30).join(", ")} y ${xs.length - 30} más` : xs.join(", "));
+  /* Lo que un mes cerrado salvó va en cada asiento: es la unión de lo marcado. */
+  const dm = plan.conteo.deMesCerrado;
+  const deMes = dm
+    ? ` No se tocó lo de ${dm.meses.join(", ")} (mes${dm.meses.length === 1 ? "" : "es"} cerrado${dm.meses.length === 1 ? "" : "s"}): ` +
+      `quedaron ${[dm.trozas && s(dm.trozas, "troza"), dm.corridas && s(dm.corridas, "corrida"), dm.lotes && s(dm.lotes, "lote")]
+        .filter(Boolean)
+        .join(", ")}.`
+    : "";
   const detalle: Record<AlcanceParcial, () => string> = {
     trozas_disponibles: () =>
       `${s(pa.trozas_disponibles?.trozas ?? 0, "pieza")} del patio sin consumir, despachar ni apartar. Los ingresos (GTF) quedaron intactos.`,
@@ -356,7 +440,7 @@ async function auditarParcial(
         action: "ctp_libro_purga_parcial",
         entity: "ForestCtpLibro",
         entityId: tenantId,
-        detail: `VACIÓ «${NOMBRE_ALCANCE[a]}»${juntos}: ${detalle[a]()}`,
+        detail: `VACIÓ «${NOMBRE_ALCANCE[a]}»${juntos}: ${detalle[a]()}${deMes}`,
         user: usuario,
       }),
     ),
@@ -431,12 +515,27 @@ class PeriodoCerradoError extends Error {
   }
 }
 
-/** Los cierres que bloquean, leídos con `db` y sin caché. Un cierre reabierto
- *  sigue en el historial pero ya no bloquea: reabrirlo fue una decisión
- *  explícita, con su motivo y su rastro. */
-async function periodosQueBloqueanEn(tenantId: string, db: Db): Promise<string[]> {
-  const cierres = await ForestCtpCierreDB.listEn(tenantId, db);
+/** Los meses que siguen cerrados, con su nombre. Un cierre reabierto sigue en
+ *  el historial pero ya no protege: reabrirlo fue una decisión explícita, con
+ *  su motivo y su rastro. */
+function mesesCerrados(cierres: CtpCierrePeriodo[]): string[] {
   return cierres.filter((c) => !c.reabierto).map((c) => c.label || c.periodKey);
+}
+
+/** Mientras se cierra o reabre un mes, no se borra nada. */
+export const MENSAJE_CIERRE_EN_CURSO =
+  "Se está cerrando o reabriendo un mes del libro en este momento. No se borró nada: vuelve a intentarlo en unos segundos.";
+
+/**
+ * PRIMER paso de las dos transacciones del borrado: los cierres, bajo el
+ * candado compartido con el cierre de mes y sin caché
+ * (`ForestCtpCierreDB.listBajoCandado`, que explica por qué tiene que ser la
+ * primera sentencia). Un cierre a medio grabar → «el libro cambió».
+ */
+async function cierresBajoCandado(tenantId: string, tx: Prisma.TransactionClient): Promise<CtpCierrePeriodo[]> {
+  const cierres = await ForestCtpCierreDB.listBajoCandado(tenantId, tx);
+  if (cierres == null) throw new LibroCambioError(MENSAJE_CIERRE_EN_CURSO);
+  return cierres;
 }
 
 /**
@@ -462,9 +561,11 @@ async function enTransaccion<T>(
   }
 }
 
-/** Primer paso de las dos transacciones: un mes cerrado frena todo. */
+/** Primer paso de «Todo el libro»: borraría los meses cerrados, así que
+ *  cualquiera sin reabrir lo frena entero. (Los parciales no pasan por acá:
+ *  cada mes cerrado salva sólo lo suyo, en el plan.) */
 async function frenarSiHayCierre(tenantId: string, tx: Prisma.TransactionClient): Promise<void> {
-  const periodos = await periodosQueBloqueanEn(tenantId, tx);
+  const periodos = mesesCerrados(await cierresBajoCandado(tenantId, tx));
   if (periodos.length > 0) throw new PeriodoCerradoError(periodos);
 }
 
@@ -479,15 +580,18 @@ export class ForestCtpPurgaDB {
     if (!tenantId) throw new Error("tenantId is required");
     if (alcances.includes("todo")) return contarTodo(prisma, tenantId);
     const parciales = alcances.filter(esParcial);
-    const plan = planificarVaciado(await leerSnapshot(prisma, tenantId, parciales), parciales);
+    const cierres = await ForestCtpCierreDB.listEn(tenantId, prisma);
+    const plan = planificarVaciado(await leerSnapshot(prisma, tenantId, parciales, cierres), parciales);
     return resumenDelPlan(parciales, plan);
   }
 
-  /** Los períodos cerrados que impiden vaciar (cualquier alcance). Vacío = se
-   *  puede. Sin caché: es lo mismo que el borrado vuelve a mirar en su transacción. */
+  /** Los meses cerrados sin reabrir, con su nombre. Frenan «Todo el libro»
+   *  entero; en un vaciado parcial sólo salvan lo suyo (el resumen lo cuenta
+   *  en `conteo.deMesCerrado`). Sin caché: es lo mismo que el borrado vuelve a
+   *  mirar en su transacción. */
   static async periodosQueBloquean(tenantId: string): Promise<string[]> {
     if (!tenantId) throw new Error("tenantId is required");
-    return periodosQueBloqueanEn(tenantId, prisma);
+    return mesesCerrados(await ForestCtpCierreDB.listEn(tenantId, prisma));
   }
 
   /**
@@ -507,12 +611,18 @@ export class ForestCtpPurgaDB {
     if (!usuario.trim()) throw new Error("usuario vacío: el asiento tiene que decir quién vació el libro");
     if (alcances.length === 0) throw new Error("alcances vacío: el que llama valida antes");
 
+    /* Fuera de la transacción y antes de su foto: que la fila de cierres
+       exista para que su `FOR SHARE` tenga qué bloquear (primer cierre). */
+    await ForestCtpCierreDB.asegurarFila(tenantId);
     if (alcances.includes("todo")) return ForestCtpPurgaDB.vaciarTodo(tenantId, usuario, esperado);
 
     const parciales = alcances.filter(esParcial);
     const r = await enTransaccion(async (tx) => {
-      await frenarSiHayCierre(tenantId, tx);
-      const snap = await leerSnapshot(tx, tenantId, parciales);
+      /* Un mes cerrado no frena: salva sus filas. Si se cerró (o reabrió)
+         después de la vista previa, cambian las cifras y `frenarSiCambio`
+         deshace todo antes de escribir. */
+      const cierres = await cierresBajoCandado(tenantId, tx);
+      const snap = await leerSnapshot(tx, tenantId, parciales, cierres);
       const plan = planificarVaciado(snap, parciales);
       frenarSiCambio(plan.conteo, esperado);
       const codigoDe = (lista: { id: string; code: string }[], ids: string[]) => {
@@ -542,12 +652,13 @@ export class ForestCtpPurgaDB {
       const contado = await contarTodo(tx, tenantId);
       frenarSiCambio(contado.conteo, esperado);
 
-      /* Los cargos de aserrío (ADR-412) y las respuestas de campos de los lotes
-         (ADR-427) no cuelgan por FK: se juntan los ids ANTES de borrar —después
-         no queda a qué apuntar. */
-      const [idsCorridas, idsLotes] = await Promise.all([
+      /* Los cargos de aserrío (ADR-412) y las respuestas de campos de
+         corridas, ingresos y lotes (ADR-427) no cuelgan por FK: se juntan los
+         ids ANTES de borrar —después no queda a qué apuntar. */
+      const [idsCorridas, idsLotes, idsIngresos] = await Promise.all([
         tx.forestCtpEntry.findMany({ where: { tenantId }, select: { id: true } }),
         tx.forestLoteAserrio.findMany({ where: { tenantId }, select: { id: true } }),
+        tx.woodEntry.findMany({ where: { tenantId }, select: { id: true } }),
       ]);
       /* Orden: primero lo que cuelga, después los padres. Los miembros de lotes
          comerciales son `Restrict` contra la corrida: sin borrarlos antes, el
@@ -573,12 +684,11 @@ export class ForestCtpPurgaDB {
          dispararía la cascada sobre filas que ya no están. */
       await tx.woodEntryTroza.deleteMany({ where: { tenantId, trozaOrigenId: { not: null } } });
       await tx.woodEntryTroza.deleteMany({ where: { tenantId } });
-      if (idsLotes.length > 0) {
-        await porTandas(
-          idsLotes.map((l) => l.id),
-          (ids) => tx.campoPersonalizadoValor.deleteMany({ where: { tenantId, registroId: { in: ids } } }),
-        );
-      }
+      await borrarRespuestasDeCampos(
+        tx,
+        tenantId,
+        [...idsCorridas, ...idsLotes, ...idsIngresos].map((x) => x.id),
+      );
       const aserrio = (await tx.forestLoteAserrio.deleteMany({ where: { tenantId } })).count;
       const mixtos = (await tx.forestLoteMixto.deleteMany({ where: { tenantId } })).count;
       await tx.woodEntry.deleteMany({ where: { tenantId } });

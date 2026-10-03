@@ -25,7 +25,8 @@
  * | De aserrío sin corrida viva (abierto, o su corrida se anuló) | sus trozas | El lote se borra; sus trozas quedan en el patio (`loteAserrioId`, y el `consumidaEnId` a una corrida muerta, en null). |
  * | De aserrío con corrida viva | la corrida y sus piezas | Se borra SÓLO si esa corrida también cae en este vaciado («Consumos», o «Madera aserrada» si declaró madera). Entonces la corrida se borra con sus consumos y sus piezas vuelven al patio. Si no, NO se borra y se dice por qué. |
  * | Cualquiera cuya corrida salió (despacho, aunque esté anulado) o se reprocesó | la guía de salida | NO se borra: eso sólo lo borra «Todo el libro». |
- * | Cualquiera cuya corrida tiene el consumo congelado | el mes cerrado | NO se borra. |
+ * | Cualquiera cuya corrida es de un mes cerrado | el acta del mes | NO se borra (ver abajo). |
+ * | Cualquiera cuya corrida tiene el consumo congelado (mes cerrado y reabierto) | el costo congelado | NO se borra. |
  * | Mixto (ADR-441) | sus trozas apartadas y sus lotes hijos | Se borra si todos sus lotes hijos se borran; sus trozas vuelven al patio. |
  * | Comercial (ADR-136) | sus miembros (corrida + cantidad) | Se borran el lote y sus miembros; las corridas NO. No se borra si está «despachado» o si alguna de sus corridas salió con una guía viva. |
  *
@@ -35,6 +36,29 @@
  *
  * Un lote bloqueado no se toca EN NADA (ni se le sueltan las piezas): o se
  * borra entero con lo suyo, o queda como estaba.
+ *
+ * ## Meses cerrados: cada uno protege SÓLO lo suyo (Brandon 2026-10-02)
+ *
+ * Como en el resto del libro (ADR-139, `closedPeriodOf`), un mes cerrado no
+ * frena el vaciado parcial: salva las filas fechadas en ese mes. La fecha de
+ * cada fila la pone `leerSnapshot` en `mesCerrado` (el nombre del mes, o null):
+ *
+ * | Fila | Su fecha | Si es de un mes cerrado |
+ * |---|---|---|
+ * | Troza del patio | `entryDate` de su ingreso (GTF) | Se queda. |
+ * | Corrida | `entryDate` | Se queda (protección `mes_cerrado`): el lote que la necesita queda bloqueado y dice «su corrida N° 12 es de mayo de 2026, un mes cerrado». |
+ * | Lote de aserrío / mixto / comercial | `fechaApertura` / `abiertoEn` / `fechaInicio` (si falta, `createdAt`) | Bloqueado: «es de mayo de 2026, un mes cerrado». |
+ *
+ * Soltar al patio una troza cuyo ingreso es de un mes cerrado, porque cae su
+ * lote o su corrida (de un mes abierto), SÍ se hace: no cambia ninguna línea
+ * del mes cerrado — el ingreso queda igual y lo que se borra es de otro mes.
+ * Lo que NO se suelta es el consumo de una corrida ANULADA de un mes cerrado
+ * (`corridaMuertaDeMesCerrado`): ese consumo es del mes cerrado.
+ * Por lo mismo, un lote hijo de un mes abierto puede caer aunque su lote mixto
+ * sea de un mes cerrado (el mixto se queda; ya pasaba con un hermano bloqueado).
+ *
+ * «Todo el libro» no pasa por acá: borraría los meses cerrados, así que
+ * cualquier mes cerrado lo frena entero (`forest-ctp-purga.db.ts`).
  */
 import { z } from "zod";
 import {
@@ -45,7 +69,9 @@ import {
   type ConteoEsperado,
   type ConteoPorAlcance,
   type LoteBloqueado,
+  type SalvadoPorMesCerrado,
 } from "./ctp-purga-tipos";
+import { closedPeriodOf, monthKeyOf, type CtpCierrePeriodo } from "./ctp-cierre-types";
 
 // ── Entrada ─────────────────────────────────────────────────────────────────
 
@@ -101,10 +127,58 @@ export function mismoConteo(ahora: ConteoDelLibro, esperado: ConteoEsperado): bo
   return CLAVES_CONTEO_ESPERADO.every((k) => ahora[k] === esperado[k]);
 }
 
+// ── Meses cerrados: qué mes es una fecha ───────────────────────────────────
+
+/** Lima no tiene horario de verano: UTC−5 todo el año. */
+const LIMA_MS = 5 * 60 * 60 * 1000;
+
+/** "YYYY-MM" del calendario UTC de un instante. */
+function mesUtc(d: Date): string {
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+/**
+ * El mes cerrado (sin reabrir) en que cae `fecha` PARA EL VACIADO, con su
+ * nombre; null = ninguno. Protege de más a propósito: una fila es del mes
+ * cerrado si CUALQUIERA de estas lecturas lo dice —
+ *
+ *  1. el instante cae entre `from` y `to` del cierre (`closedPeriodOf`, la
+ *     regla del resto del libro);
+ *  2. el mes calendario UTC de la fecha es el `periodKey` del cierre;
+ *  3. el mes calendario de Lima (UTC−5) es el `periodKey` del cierre;
+ *  4. el mes local del servidor que corre esto (`monthKeyOf`).
+ *
+ * Por qué no basta la 1: `from`/`to` los calculó `monthRange` con la hora del
+ * servidor que CERRÓ el mes. Medido con el cierre real de `main`: `from` =
+ * 2026-05-01T05:00Z (hora Lima), y un ingreso «del 1 de mayo» guardado como
+ * date-only (00:00Z) quedaba ANTES del cierre → abierto → su troza se borraba.
+ * Al revés, con un cierre hecho en UTC, un lote abierto el 31-may a las 21:00
+ * de Lima (01:00Z de junio) quedaba fuera. Borrar una fila de un mes cerrado
+ * no tiene vuelta; dejar una de más, sí (se borra a mano o reabriendo el mes).
+ */
+export function mesCerradoParaVaciar(cierres: readonly CtpCierrePeriodo[], fecha: Date | null | undefined): string | null {
+  if (!fecha || Number.isNaN(fecha.getTime())) return null;
+  const activos = cierres.filter((c) => !c.reabierto);
+  if (activos.length === 0) return null;
+  const nombre = (c: CtpCierrePeriodo) => c.label || c.periodKey;
+  const porInstante = closedPeriodOf([...activos], fecha);
+  if (porInstante) return nombre(porInstante);
+  const claves = new Set([mesUtc(fecha), mesUtc(new Date(fecha.getTime() - LIMA_MS)), monthKeyOf(fecha)]);
+  const porCalendario = activos.find((c) => claves.has(c.periodKey));
+  return porCalendario ? nombre(porCalendario) : null;
+}
+
 // ── La foto del libro ───────────────────────────────────────────────────────
 
+/**
+ * El mes cerrado (sin reabrir) en que cae la fecha de la fila, con su nombre
+ * («mayo de 2026»); null o ausente = mes abierto. Lo calcula `leerSnapshot`
+ * con `mesCerradoParaVaciar`: el plan no ve fechas ni cierres, sólo este dato.
+ */
+type ConMes = { mesCerrado?: string | null };
+
 /** Una línea del libro: corrida de producción o línea de despacho, viva o no. */
-export type SnapCorrida = {
+export type SnapCorrida = ConMes & {
   id: string;
   section: string;
   status: string;
@@ -114,7 +188,8 @@ export type SnapCorrida = {
   gtfNumber: string | null;
 };
 
-export type SnapTroza = {
+/** `mesCerrado` = el del `entryDate` de su ingreso (GTF). */
+export type SnapTroza = ConMes & {
   id: string;
   consumidaEnId: string | null;
   despachadaEnId: string | null;
@@ -123,7 +198,7 @@ export type SnapTroza = {
   trozaOrigenId: string | null;
 };
 
-export type SnapLoteAserrio = {
+export type SnapLoteAserrio = ConMes & {
   id: string;
   code: string;
   status: string;
@@ -131,7 +206,7 @@ export type SnapLoteAserrio = {
   loteMixtoId: string | null;
 };
 
-export type SnapLote = { id: string; code: string; status: string };
+export type SnapLote = ConMes & { id: string; code: string; status: string };
 
 export type SnapshotLibro = {
   /** TODAS las líneas del negocio (ambas secciones, vivas y anuladas). */
@@ -189,19 +264,23 @@ function etiquetaGuia(d: SnapCorrida | undefined): string {
 type Proteccion =
   | { tipo: "despacho"; guia: string; vivo: boolean }
   | { tipo: "reproceso" }
+  | { tipo: "mes_cerrado"; periodo: string }
   | { tipo: "congelado" }
   | { tipo: "lote_comercial"; codigo: string | null }
   | { tipo: "lote_aserrio"; codigo: string }
   | { tipo: "trozas"; piezas: number };
 
-/** Orden en que se elige el motivo para mostrar: lo que no tiene arreglo, primero. */
+/** Orden en que se elige el motivo para mostrar: lo que no tiene arreglo, primero.
+ *  El mes cerrado va antes que el congelado: cerrar el mes congela sus
+ *  consumos, y «es de mayo de 2026» dice más que «el consumo está congelado». */
 const PRIORIDAD: Record<Proteccion["tipo"], number> = {
   despacho: 0,
   reproceso: 1,
-  congelado: 2,
-  lote_comercial: 3,
-  lote_aserrio: 4,
-  trozas: 5,
+  mes_cerrado: 2,
+  congelado: 3,
+  lote_comercial: 4,
+  lote_aserrio: 5,
+  trozas: 6,
 };
 
 function indexar(snap: SnapshotLibro) {
@@ -258,6 +337,7 @@ function protecciones(c: SnapCorrida, ix: Indice, A: ReadonlySet<string>, K: Rea
     p.push({ tipo: "despacho", guia: etiquetaGuia(d), vivo: esViva(d) });
   }
   if (ix.reprocesadas.has(c.id)) p.push({ tipo: "reproceso" });
+  if (c.mesCerrado) p.push({ tipo: "mes_cerrado", periodo: c.mesCerrado });
   if (ix.congeladas.has(c.id)) p.push({ tipo: "congelado" });
   for (const m of ix.miembrosDe.get(c.id) ?? []) {
     if (!K.has(m.loteId)) p.push({ tipo: "lote_comercial", codigo: ix.comercial.get(m.loteId)?.code ?? null });
@@ -282,17 +362,23 @@ function protecciones(c: SnapCorrida, ix: Indice, A: ReadonlySet<string>, K: Rea
 
 const NINGUNO: ReadonlySet<string> = new Set();
 
+/**
+ * Las corridas que caen con estos lotes. `salvadas` = las que algo encima
+ * protege; `deMesCerrado` = los meses (uno por corrida) de las que se quedan
+ * por ser de un mes cerrado — ésas no cuentan en `salvadas`.
+ */
 function corridasQueCaen(
   snap: SnapshotLibro,
   ix: Indice,
   A: ReadonlySet<string>,
   K: ReadonlySet<string>,
   alc: { madera: boolean; consumo: boolean },
-): { ids: Set<string>; salvadas: number; deLotes: number } {
+): { ids: Set<string>; salvadas: number; deLotes: number; deMesCerrado: string[] } {
   const ids = new Set<string>();
   let salvadas = 0;
   let deLotes = 0;
-  if (!alc.madera && !alc.consumo) return { ids, salvadas, deLotes };
+  const deMesCerrado: string[] = [];
+  if (!alc.madera && !alc.consumo) return { ids, salvadas, deLotes, deMesCerrado };
   for (const c of snap.corridas) {
     if (!esCorridaDelLibro(c)) continue;
     const enDominio = alc.consumo || (alc.madera && c.quantity > 0);
@@ -300,11 +386,13 @@ function corridasQueCaen(
     if (protecciones(c, ix, A, K).length === 0) {
       ids.add(c.id);
       if ((A.size > 0 || K.size > 0) && protecciones(c, ix, NINGUNO, NINGUNO).length > 0) deLotes++;
+    } else if (c.mesCerrado) {
+      deMesCerrado.push(c.mesCerrado);
     } else {
       salvadas++;
     }
   }
-  return { ids, salvadas, deLotes };
+  return { ids, salvadas, deLotes, deMesCerrado };
 }
 
 /** Las corridas VIVAS que un lote de aserrío tiene atadas: la que declara y las de sus piezas. */
@@ -315,6 +403,21 @@ function corridasVivasDelLote(l: SnapLoteAserrio, ix: Indice): SnapCorrida[] {
   return [...ids].map((id) => ix.corrida.get(id)).filter(esViva).sort((a, b) => a.lineNo - b.lineNo);
 }
 
+/**
+ * Una corrida ANULADA de un mes cerrado que todavía figura como la que
+ * consumió una pieza del lote. Borrar el lote soltaría esa pieza (le vacía
+ * `consumidaEnId` y `fechaConsumo`), y ese consumo es una línea del mes
+ * cerrado: el lote queda bloqueado (security 2026-10-02). Reabierto el mes,
+ * se suelta como cualquier consumo muerto.
+ */
+function corridaMuertaDeMesCerrado(l: SnapLoteAserrio, ix: Indice): SnapCorrida | undefined {
+  for (const t of ix.trozasDelLote.get(l.id) ?? []) {
+    const c = t.consumidaEnId ? ix.corrida.get(t.consumidaEnId) : undefined;
+    if (c?.mesCerrado && !esViva(c)) return c;
+  }
+  return undefined;
+}
+
 function textoProteccion(p: Proteccion, n: number): string {
   switch (p.tipo) {
     case "despacho":
@@ -323,6 +426,8 @@ function textoProteccion(p: Proteccion, n: number): string {
         : `la guía anulada ${p.guia} todavía cita su corrida N° ${n}. Sólo «Todo el libro» la borra.`;
     case "reproceso":
       return `su corrida N° ${n} se reprocesó en otra corrida. Sólo «Todo el libro» la borra.`;
+    case "mes_cerrado":
+      return `su corrida N° ${n} es de ${p.periodo}, un mes cerrado.`;
     case "congelado":
       return `su corrida N° ${n} es de un mes que ya se cerró (el consumo está congelado).`;
     case "lote_comercial":
@@ -390,26 +495,49 @@ export function planificarVaciado(snap: SnapshotLibro, alcances: readonly Alcanc
   const enLotes = quiere("lotes");
   const ix = indexar(snap);
 
-  const trozasABorrar = quiere("trozas_disponibles")
-    ? snap.trozas.filter((t) => esTrozaDelPatio(t, ix)).map((t) => t.id)
-    : [];
+  /* Lo que se queda por ser de un mes cerrado: un mes por fila salvada. */
+  const mesesDe = { trozas: [] as string[], lotes: [] as string[] };
 
-  /* Comerciales: su bloqueo no depende de qué corridas caen. */
-  const K = new Set<string>();
+  const trozasABorrar: string[] = [];
+  if (quiere("trozas_disponibles")) {
+    for (const t of snap.trozas) {
+      if (!esTrozaDelPatio(t, ix)) continue;
+      if (t.mesCerrado) mesesDe.trozas.push(t.mesCerrado);
+      else trozasABorrar.push(t.id);
+    }
+  }
+
+  /* Un lote abierto/armado en un mes cerrado es una línea de ese mes. */
   const bloqueados: LoteBloqueado[] = [];
+  const bloquearPorMes = (l: SnapLote, tipo: LoteBloqueado["tipo"]): boolean => {
+    if (!l.mesCerrado) return false;
+    mesesDe.lotes.push(l.mesCerrado);
+    bloqueados.push({ id: l.id, codigo: l.code, tipo, motivo: `es de ${l.mesCerrado}, un mes cerrado.` });
+    return true;
+  };
+
+  /* Comerciales: su bloqueo no depende de qué corridas caen. Uno de un mes
+     abierto SÍ se borra aunque un miembro sea una corrida de un mes cerrado
+     (decisión 2026-10-02): se va la fila del miembro, que es del lote; la
+     corrida no cambia —igual que soltar al patio una troza de un ingreso
+     cerrado—. */
+  const K = new Set<string>();
   if (enLotes) {
     for (const l of snap.lotesComerciales) {
+      if (bloquearPorMes(l, "comercial")) continue;
       const motivo = motivoComercial(l, ix);
       if (motivo) bloqueados.push({ id: l.id, codigo: l.code, tipo: "comercial", motivo });
       else K.add(l.id);
     }
   }
 
-  /* De aserrío: punto fijo. Se arranca suponiendo que caen todos; un lote con
-     una corrida viva que NO cae sale del conjunto, lo que puede volver a
-     proteger otra corrida (compartida con ese lote), y así hasta que nada
-     cambia. El conjunto sólo achica: termina. */
-  let A = new Set<string>(enLotes ? snap.lotesAserrio.map((l) => l.id) : []);
+  /* De aserrío: punto fijo. Se arranca suponiendo que caen todos (menos los de
+     un mes cerrado); un lote con una corrida viva que NO cae sale del
+     conjunto, lo que puede volver a proteger otra corrida (compartida con ese
+     lote), y así hasta que nada cambia. El conjunto sólo achica: termina. */
+  let A = new Set<string>(
+    enLotes ? snap.lotesAserrio.filter((l) => !l.mesCerrado && !corridaMuertaDeMesCerrado(l, ix)).map((l) => l.id) : [],
+  );
   let C = corridasQueCaen(snap, ix, A, K, alc);
   for (;;) {
     const siguiente = new Set(
@@ -425,7 +553,17 @@ export function planificarVaciado(snap: SnapshotLibro, alcances: readonly Alcanc
 
   if (enLotes) {
     for (const l of snap.lotesAserrio) {
-      if (A.has(l.id)) continue;
+      if (A.has(l.id) || bloquearPorMes(l, "aserrio")) continue;
+      const muerta = corridaMuertaDeMesCerrado(l, ix);
+      if (muerta) {
+        bloqueados.push({
+          id: l.id,
+          codigo: l.code,
+          tipo: "aserrio",
+          motivo: `sus trozas figuran consumidas en la corrida anulada N° ${muerta.lineNo}, de ${muerta.mesCerrado}, un mes cerrado.`,
+        });
+        continue;
+      }
       const conEste = new Set([...A, l.id]);
       const fuera = corridasVivasDelLote(l, ix).filter((c) => !C.ids.has(c.id));
       const motivo =
@@ -442,6 +580,7 @@ export function planificarVaciado(snap: SnapshotLibro, alcances: readonly Alcanc
   const M = new Set<string>();
   if (enLotes) {
     for (const m of snap.lotesMixtos) {
+      if (bloquearPorMes(m, "mixto")) continue;
       const hijoQueQueda = (ix.hijosDelMixto.get(m.id) ?? []).find((h) => !A.has(h.id));
       if (hijoQueQueda) {
         bloqueados.push({
@@ -502,6 +641,17 @@ export function planificarVaciado(snap: SnapshotLibro, alcances: readonly Alcanc
     };
   }
 
+  const meses = [...mesesDe.trozas, ...C.deMesCerrado, ...mesesDe.lotes];
+  const deMesCerrado: SalvadoPorMesCerrado | null =
+    meses.length > 0
+      ? {
+          trozas: mesesDe.trozas.length,
+          corridas: C.deMesCerrado.length,
+          lotes: mesesDe.lotes.length,
+          meses: [...new Set(meses)],
+        }
+      : null;
+
   const tipoOrden = { aserrio: 0, mixto: 1, comercial: 2 } as const;
   bloqueados.sort((a, b) => tipoOrden[a.tipo] - tipoOrden[b.tipo] || a.codigo.localeCompare(b.codigo));
 
@@ -529,6 +679,7 @@ export function planificarVaciado(snap: SnapshotLibro, alcances: readonly Alcanc
       trozasAlPatio,
       total: trozasABorrar.length + corridasABorrar.length + lotes,
       ...(alc.madera || alc.consumo ? { saltadas: C.salvadas } : {}),
+      ...(deMesCerrado ? { deMesCerrado } : {}),
     },
   };
 }

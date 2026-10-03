@@ -74,3 +74,16 @@ export function closedPeriodOf(cierres: CtpCierrePeriodo[], date: Date): CtpCier
   if (Number.isNaN(t)) return null;
   return cierres.find((c) => !c.reabierto && t >= new Date(c.from).getTime() && t <= new Date(c.to).getTime()) ?? null;
 }
+
+/**
+ * El libro cambió entre que se armó el acta de cierre y el momento de grabarla
+ * (un vaciado, una corrida nueva…): el acta ya no describe el libro y no se
+ * graba. La ruta lo traduce a 409. Pura, sin server-only: la importa la ruta y
+ * su test sin arrastrar la base.
+ */
+export class LibroCambioAlCerrarError extends Error {
+  constructor() {
+    super("El libro cambió mientras se cerraba el mes: vuelve a intentarlo.");
+    this.name = "LibroCambioAlCerrarError";
+  }
+}

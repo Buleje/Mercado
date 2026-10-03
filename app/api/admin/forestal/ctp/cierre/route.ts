@@ -7,7 +7,8 @@ import { isSpecializationEnabled } from "@/lib/specializations";
 import { ForestCtpDB } from "@/lib/db/forest-ctp.db";
 import { ForestCtpConsumoDB } from "@/lib/db/forest-ctp-consumo.db";
 import { ForestCtpCierreDB } from "@/lib/db/forest-ctp-cierre.db";
-import { monthRange, type CtpCierrePeriodo } from "@/lib/forestal/ctp-cierre-types";
+import { ClaveOcupadaError } from "@/lib/db/platform-settings.db";
+import { LibroCambioAlCerrarError, monthRange, type CtpCierrePeriodo } from "@/lib/forestal/ctp-cierre-types";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
 
@@ -19,7 +20,30 @@ import { withApiHandler } from "@/lib/api-handler";
  *        la existencia de cierre + bloquea el período. admin/owner.
  * POST { action:"reabrir", periodKey, motivo } → deja de bloquear (los costos ya
  *        congelados siguen congelados). owner. Motivo obligatorio (auditable).
+ *
+ * Contra el vaciado del libro (2026-10-02): grabar el cierre toma el candado
+ * exclusivo de los cierres (el vaciado, el compartido). Si un vaciado lo tiene
+ * más de 32 s → 409 `vaciado_en_curso`. Y como el acta se arma ANTES del
+ * candado, se toma una huella del libro hasta fin de mes al empezar y se
+ * vuelve a medir bajo el candado: si cambió → 409 `libro_cambio`, sin grabar.
  */
+
+/** Las dos esperas que no son error del servidor: se reintenta y listo. */
+function enConflicto(e: unknown): NextResponse | null {
+  if (e instanceof LibroCambioAlCerrarError) {
+    return NextResponse.json({ error: "libro_cambio", message: e.message }, { status: 409 });
+  }
+  if (e instanceof ClaveOcupadaError) {
+    return NextResponse.json(
+      {
+        error: "vaciado_en_curso",
+        message: "Se está vaciando el Libro de Operaciones en este momento: vuelve a intentarlo en unos segundos.",
+      },
+      { status: 409 },
+    );
+  }
+  return null;
+}
 
 const bodySchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("cerrar"), year: z.number().int().min(2000).max(2100), month: z.number().int().min(1).max(12) }),
@@ -61,8 +85,14 @@ export const POST = withApiHandler("forestal-ctp-cierre", async (req: NextReques
     const cierre = await ForestCtpCierreDB.findByKey(auth.tenantId, parsed.data.periodKey);
     if (!cierre) return NextResponse.json({ error: "not_found", message: "Ese período no está cerrado." }, { status: 404 });
     if (cierre.reabierto) return NextResponse.json({ error: "already_reopened", message: "El período ya está reabierto." }, { status: 409 });
-    const cierres = await ForestCtpCierreDB.reabrir(auth.tenantId, parsed.data.periodKey, parsed.data.motivo, user);
-    return NextResponse.json({ ok: true, cierres });
+    try {
+      const cierres = await ForestCtpCierreDB.reabrir(auth.tenantId, parsed.data.periodKey, parsed.data.motivo, user);
+      return NextResponse.json({ ok: true, cierres });
+    } catch (e) {
+      const r = enConflicto(e);
+      if (r) return r;
+      throw e;
+    }
   }
 
   // ── Cerrar ─────────────────────────────────────────────────────────────
@@ -78,6 +108,10 @@ export const POST = withApiHandler("forestal-ctp-cierre", async (req: NextReques
     return NextResponse.json({ error: "already_closed", message: `El período ${label} ya está cerrado.` }, { status: 409 });
   }
 
+  // 0) Huella del libro hasta fin de mes ANTES de leer nada del acta: se vuelve
+  //    a medir bajo el candado al grabar (ver el encabezado).
+  const huella = await ForestCtpCierreDB.huellaDelLibroHasta(auth.tenantId, to);
+
   // 1) Existencia de cierre = acumulada hasta `to` (será la apertura del mes siguiente).
   const saldoAll = await ForestCtpDB.saldos(auth.tenantId, { toDate: to });
   // 2) Movimientos del propio mes (para los totales del cierre).
@@ -87,6 +121,9 @@ export const POST = withApiHandler("forestal-ctp-cierre", async (req: NextReques
 
   // 3) Congelar costos de las corridas del mes (best-effort: una corrida sin
   //    factura o sin materia prima no bloquea el cierre — el libro admite huecos).
+  //    Va FUERA del candado: si después el acta no se graba (409), lo congelado
+  //    queda congelado (irreversible, como en un mes reabierto). Reintentar es
+  //    seguro: `congelarCosto` no repisa lo ya congelado.
   let corridasCongeladas = 0, corridasSinCostear = 0;
   for (const corrida of corridasMes.entries) {
     try {
@@ -121,6 +158,15 @@ export const POST = withApiHandler("forestal-ctp-cierre", async (req: NextReques
     reabierto: null,
   };
 
-  const cierres = await ForestCtpCierreDB.save(auth.tenantId, cierre, user);
-  return NextResponse.json({ ok: true, cierre, cierres });
+  try {
+    const cierres = await ForestCtpCierreDB.save(auth.tenantId, cierre, user, { huella });
+    return NextResponse.json({ ok: true, cierre, cierres });
+  } catch (e) {
+    const r = enConflicto(e);
+    if (r) {
+      logger.warn("[ctp.cierre] no se grabó el cierre", { tenantId: auth.tenantId, periodKey, error: String(e) });
+      return r;
+    }
+    throw e;
+  }
 });

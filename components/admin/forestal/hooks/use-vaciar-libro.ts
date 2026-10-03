@@ -11,7 +11,7 @@
  *
  * Al confirmar se devuelven las cifras que se MOSTRARON: el servidor las vuelve
  * a contar dentro de la transacción y, si el libro cambió, responde 409
- * `libro_cambio` sin borrar nada. Entonces se recuenta solo, sin borrar el aviso,
+ * `libro_cambio` (o `periodo_cerrado`) sin borrar nada. Entonces se recuenta solo, sin borrar el aviso,
  * para que la persona vea los números de ahora antes de volver a confirmar.
  */
 
@@ -96,7 +96,9 @@ export function useVaciarLibro(onVaciado?: () => void) {
         const j = await r.json();
         if (!r.ok) {
           setErr(j?.message ?? "No se pudo vaciar el libro.");
-          if (j?.error === "libro_cambio") {
+          /* Un mes que se cerró después de la vista previa también recuenta:
+             así el modal pasa a mostrar el bloqueo en vez del botón. */
+          if (j?.error === "libro_cambio" || j?.error === "periodo_cerrado") {
             conservarAviso.current = true;
             setRecuento((n) => n + 1);
           }

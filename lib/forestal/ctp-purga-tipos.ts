@@ -36,8 +36,30 @@ export type ConteoDelLibro = {
   trozasAlPatio: number;
   /** Registros que el operador reconoce como «lo que cargué». */
   total: number;
-  /** Corridas que un alcance de producción no pudo tocar (tienen algo encima). */
+  /** Corridas que un alcance de producción no pudo tocar (tienen algo encima).
+   *  NO incluye las de un mes cerrado: ésas van en `deMesCerrado`. */
   saltadas?: number;
+  /** Lo que se salvó por estar fechado en un mes cerrado. Sólo aparece si
+   *  salvó algo. Informativo: no entra en `CLAVES_CONTEO_ESPERADO` (lo que
+   *  cambie ahí ya mueve las cifras de lo que se borra). */
+  deMesCerrado?: SalvadoPorMesCerrado;
+};
+
+/**
+ * Un mes cerrado (ADR-139) protege SÓLO las líneas fechadas en ese mes, como
+ * en el resto del libro (Brandon 2026-10-02, «Solo protege su mes»). En un
+ * vaciado parcial esas filas se quedan; esto dice cuántas, por tipo, y qué
+ * meses pesaron («mayo de 2026»), para que la pantalla lo diga en palabras.
+ */
+export type SalvadoPorMesCerrado = {
+  /** Trozas del patio cuyo ingreso (GTF) es de un mes cerrado. */
+  trozas: number;
+  /** Corridas que habrían caído y son de un mes cerrado. */
+  corridas: number;
+  /** Lotes abiertos (o armados) en un mes cerrado. */
+  lotes: number;
+  /** Los meses, con su nombre: «mayo de 2026». */
+  meses: string[];
 };
 
 /** Qué aporta cada alcance elegido. Con varios, sus números pueden solaparse;

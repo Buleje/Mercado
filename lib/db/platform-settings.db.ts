@@ -54,6 +54,15 @@ function invalidarClave(key: string): void {
   if (!esInterna(key)) invalidate(cacheKey("__all__"));
 }
 
+/**
+ * El texto del `pg_advisory_xact_lock` que toma `actualizar` sobre una clave.
+ * Exportado para quien necesite el MISMO candado desde su propia transacción
+ * (el vaciado del libro frente al cierre de mes: `ForestCtpCierreDB`).
+ */
+export function candadoDeClave(key: string): string {
+  return `platform-setting:${key}`;
+}
+
 /** Otra transacción tiene tomada la clave (`actualizar` con `soloSiLibre` o `esperaMaxMs`). */
 export class ClaveOcupadaError extends Error {
   constructor(readonly key: string) {
@@ -211,7 +220,7 @@ export const PlatformSettingsDB = {
       esperaMaxMs?: number;
     },
   ): Promise<R> {
-    const lockKey = `platform-setting:${key}`;
+    const lockKey = candadoDeClave(key);
     const { soloSiLibre, esperaMaxMs, ...txOpciones } = opciones ?? {};
     const espera = esperaMaxMs != null ? Math.max(1, Math.trunc(esperaMaxMs)) : null;
     let tomado = false;

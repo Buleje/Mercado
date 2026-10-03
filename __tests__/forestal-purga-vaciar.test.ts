@@ -1,6 +1,7 @@
 /**
- * El vaciado ESCRIBE: todo o nada, sin referencias colgando, y un mes cerrado
- * lo frena entero.
+ * El vaciado ESCRIBE: todo o nada, sin referencias colgando. Un mes cerrado
+ * frena «Todo el libro» entero; en un vaciado parcial salva SÓLO lo suyo
+ * (Brandon 2026-10-02, «Solo protege su mes»).
  *
  * Base simulada en memoria con transacción de verdad: `$transaction` trabaja
  * sobre una copia y sólo la confirma si la función termina; si tira, la copia
@@ -112,6 +113,9 @@ const H = vi.hoisted(() => {
     txOpciones,
     audit: vi.fn(),
     cierres: vi.fn(),
+    /** `listBajoCandado` (el lector de la transacción); por omisión delega en `cierres`. */
+    cierresBajoCandado: vi.fn(),
+    asegurarFila: vi.fn(),
     invalidar: vi.fn(),
     logError: vi.fn(),
   };
@@ -119,12 +123,15 @@ const H = vi.hoisted(() => {
 
 vi.mock("@/lib/prisma", () => ({ prisma: H.prisma }));
 vi.mock("@/lib/forestal/ctp-audit", () => ({ auditCtpEsperando: H.audit }));
-vi.mock("@/lib/db/forest-ctp-cierre.db", () => ({ ForestCtpCierreDB: { listEn: H.cierres } }));
+vi.mock("@/lib/db/forest-ctp-cierre.db", () => ({
+  ForestCtpCierreDB: { listEn: H.cierres, listBajoCandado: H.cierresBajoCandado, asegurarFila: H.asegurarFila },
+}));
 vi.mock("@/lib/db/forest-cuenta.db", () => ({ ForestCuentaDB: { invalidar: H.invalidar } }));
 vi.mock("@/lib/cache", () => ({ invalidateByPrefix: vi.fn() }));
 vi.mock("@/lib/logger", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: H.logError, debug: vi.fn() } }));
 
-const { ForestCtpPurgaDB, MENSAJE_LIBRO_CAMBIO } = await import("@/lib/db/forest-ctp-purga.db");
+const { ForestCtpPurgaDB, MENSAJE_LIBRO_CAMBIO, MENSAJE_CIERRE_EN_CURSO } = await import("@/lib/db/forest-ctp-purga.db");
+const { monthRange } = await import("@/lib/forestal/ctp-cierre-types");
 type Alcances = Parameters<typeof ForestCtpPurgaDB.vaciar>[2];
 
 /** Como el modal: cuenta (vista previa) y confirma con lo que mostró. */
@@ -134,6 +141,9 @@ async function vaciarLoQueSeVio(alcances: Alcances, usuario = "qa") {
 }
 
 const T = "t1";
+/** Septiembre (abierto) para todo lo sembrado; agosto es el mes que se cierra. */
+const FECHA = new Date("2026-09-10T12:00:00Z");
+const AGOSTO = new Date("2026-08-15T12:00:00Z");
 const entrada = (id: string, extra: Fila = {}): Fila => ({
   id,
   tenantId: T,
@@ -143,11 +153,13 @@ const entrada = (id: string, extra: Fila = {}): Fila => ({
   quantity: 5,
   lineNo: Number(id.replace(/\D/g, "")) || 1,
   gtfNumber: null,
+  entryDate: FECHA,
   ...extra,
 });
 const pieza = (id: string, extra: Fila = {}): Fila => ({
   id,
   tenantId: T,
+  woodEntryId: "w1",
   consumidaEnId: null,
   fechaConsumo: null,
   despachadaEnId: null,
@@ -157,7 +169,11 @@ const pieza = (id: string, extra: Fila = {}): Fila => ({
   trozaOrigenId: null,
   ...extra,
 });
-const FECHA = new Date("2026-09-10T00:00:00Z");
+/** El cierre de agosto de 2026, como lo guarda `ForestCtpCierreDB`. */
+function cierreAgosto(reabierto: { at: string; by: string; motivo: string } | null = null) {
+  const m = monthRange(2026, 7);
+  return { periodKey: m.periodKey, from: m.from.toISOString(), to: m.to.toISOString(), label: "agosto de 2026", reabierto };
+}
 
 /**
  * El libro de prueba:
@@ -168,9 +184,16 @@ const FECHA = new Date("2026-09-10T00:00:00Z");
  *  · LM-1 mixto abierto con 1 troza → se borra, la troza al patio.
  *  · L-1 comercial abierto (c4) → se borra; L-2 despachado (c5) → bloqueado.
  *  · Una troza suelta y filas de OTRO negocio que nada puede tocar.
+ *  · Todo fechado en septiembre (mes abierto). Respuestas de campos
+ *    personalizados de un lote (LA-1), dos corridas (c2 cae, c3 no), un
+ *    ingreso y otro negocio.
  */
 function sembrar(): Tablas {
   return {
+    woodEntry: [
+      { id: "w1", tenantId: T, entryDate: FECHA },
+      { id: "wx", tenantId: "t2", entryDate: FECHA },
+    ],
     forestCtpEntry: [
       entrada("c2"),
       entrada("c3"),
@@ -188,7 +211,7 @@ function sembrar(): Tablas {
       pieza("z5", { loteAserrioId: "la3", consumidaEnId: "c3", fechaConsumo: FECHA }),
       pieza("z6", { loteMixtoId: "lm1", reservadaMixtoEn: FECHA }),
       pieza("z7"),
-      { ...pieza("zx"), tenantId: "t2" },
+      { ...pieza("zx", { woodEntryId: "wx" }), tenantId: "t2" },
     ],
     forestCtpDespachoOrigen: [{ tenantId: T, despachoEntryId: "d1", produccionEntryId: "c3" }],
     forestCtpReproceso: [],
@@ -201,19 +224,40 @@ function sembrar(): Tablas {
       { tenantId: T, ctpEntryId: "c3", congeladoAt: null },
     ],
     forestLoteAserrio: [
-      { id: "la1", tenantId: T, code: "LA-1", status: "abierto", produccionEntryId: null, loteMixtoId: null, deletedAt: null },
-      { id: "la2", tenantId: T, code: "LA-2", status: "consumido", produccionEntryId: "c2", loteMixtoId: null, deletedAt: null },
-      { id: "la3", tenantId: T, code: "LA-3", status: "consumido", produccionEntryId: "c3", loteMixtoId: null, deletedAt: null },
-      { id: "la9", tenantId: T, code: "LA-9", status: "consumido", produccionEntryId: "c6", loteMixtoId: null, deletedAt: FECHA },
-      { id: "lax", tenantId: "t2", code: "LA-X", status: "abierto", produccionEntryId: null, loteMixtoId: null, deletedAt: null },
+      loteAserrio("la1", "LA-1"),
+      loteAserrio("la2", "LA-2", { status: "consumido", produccionEntryId: "c2" }),
+      loteAserrio("la3", "LA-3", { status: "consumido", produccionEntryId: "c3" }),
+      loteAserrio("la9", "LA-9", { status: "consumido", produccionEntryId: "c6", deletedAt: FECHA }),
+      loteAserrio("lax", "LA-X", { tenantId: "t2" }),
     ],
-    forestLoteMixto: [{ id: "lm1", tenantId: T, code: "LM-1", status: "abierto", deletedAt: null }],
+    forestLoteMixto: [{ id: "lm1", tenantId: T, code: "LM-1", status: "abierto", deletedAt: null, abiertoEn: FECHA, createdAt: FECHA }],
     forestProdLote: [
-      { id: "l1", tenantId: T, loteCode: "L-1", status: "abierto", deletedAt: null },
-      { id: "l2", tenantId: T, loteCode: "L-2", status: "despachado", deletedAt: null },
+      { id: "l1", tenantId: T, loteCode: "L-1", status: "abierto", deletedAt: null, fechaInicio: null, createdAt: FECHA },
+      { id: "l2", tenantId: T, loteCode: "L-2", status: "despachado", deletedAt: null, fechaInicio: FECHA, createdAt: FECHA },
     ],
     forestCuentaMov: [{ id: "m1", tenantId: T, ctpEntryId: "c2", deletedAt: null }],
-    campoPersonalizadoValor: [{ id: "v1", tenantId: T, registroId: "la1", valor: "patio norte" }],
+    campoPersonalizadoValor: [
+      { id: "v1", tenantId: T, registroId: "la1", valor: "patio norte" },
+      { id: "v2", tenantId: T, registroId: "c2", valor: "turno noche" },
+      { id: "v3", tenantId: T, registroId: "c3", valor: "turno día" },
+      { id: "v4", tenantId: T, registroId: "w1", valor: "chofer Ramos" },
+      { id: "vx", tenantId: "t2", registroId: "x1", valor: "de otro negocio" },
+    ],
+  };
+}
+
+function loteAserrio(id: string, code: string, extra: Fila = {}): Fila {
+  return {
+    id,
+    tenantId: T,
+    code,
+    status: "abierto",
+    produccionEntryId: null,
+    loteMixtoId: null,
+    deletedAt: null,
+    fechaApertura: FECHA,
+    createdAt: FECHA,
+    ...extra,
   };
 }
 
@@ -239,7 +283,11 @@ function colgantes(t: Tablas): string[] {
     if (l.produccionEntryId && !corridas.has(l.produccionEntryId)) out.push(`${l.id}.produccionEntryId`);
   }
   for (const c of t.forestCtpConsumo) if (!corridas.has(c.ctpEntryId)) out.push(`consumo → ${c.ctpEntryId}`);
-  for (const v of t.campoPersonalizadoValor) if (!lotes.has(v.registroId)) out.push(`campo → ${v.registroId}`);
+  /* Las respuestas de campos cuelgan por id suelto de lotes, corridas o ingresos. */
+  const registros = new Set([...lotes, ...corridas, ...de("woodEntry")]);
+  for (const v of t.campoPersonalizadoValor.filter((f) => f.tenantId === T)) {
+    if (!registros.has(v.registroId)) out.push(`campo → ${v.registroId}`);
+  }
   return out;
 }
 
@@ -252,6 +300,8 @@ beforeEach(() => {
   H.txOpciones.length = 0;
   H.estado.t = sembrar();
   H.cierres.mockResolvedValue([]);
+  H.cierresBajoCandado.mockImplementation((t: string, db: unknown) => H.cierres(t, db));
+  H.asegurarFila.mockResolvedValue(undefined);
 });
 
 describe("«Lotes» + «Consumos»: coherente con lo que cuelga", () => {
@@ -282,6 +332,8 @@ describe("«Lotes» + «Consumos»: coherente con lo que cuelga", () => {
 
     expect(colgantes(H.estado.t)).toEqual([]);
     expect(fila("forestCuentaMov", "m1")?.deletedAt).toBeInstanceOf(Date);
+    // Las respuestas de campos de LA-1 y de c2 se fueron con ellos; las de c3 y del ingreso, no.
+    expect(ids("campoPersonalizadoValor")).toEqual(["v3", "v4"]);
 
     const bloqueados = Object.fromEntries(r.resumen.lotesBloqueados.map((b) => [b.codigo, b.motivo]));
     expect(Object.keys(bloqueados).sort()).toEqual(["L-2", "LA-3"]);
@@ -337,20 +389,181 @@ describe("todo o nada", () => {
   });
 });
 
-describe("meses cerrados", () => {
-  it("un período cerrado sin reabrir frena el vaciado ENTERO, con cualquier alcance", async () => {
-    H.cierres.mockResolvedValue([{ reabierto: false, label: "Agosto 2026", periodKey: "2026-08" }]);
-    const antes = structuredClone(H.estado.t);
-    const r = await vaciarLoQueSeVio(["lotes"]);
-    expect(r).toMatchObject({ ok: false, codigo: "periodo_cerrado", periodos: ["Agosto 2026"] });
-    expect(r.ok === false && r.motivo).toContain("Agosto 2026");
-    expect(H.estado.t).toEqual(antes);
+describe("meses cerrados: cada uno protege SÓLO lo suyo", () => {
+  /** Filas de agosto (cerrado) junto al libro de septiembre:
+   *  · w8 ingresó en agosto: su troza z10 está en el patio.
+   *  · c8 es una corrida de agosto sin nada encima.
+   *  · LA-8 se abrió en agosto (con z11, de septiembre).
+   *  · LA-4 es de septiembre, aserrado en c9 de agosto.
+   *  · LA-5 es de septiembre, con z12 apartada: z12 ingresó en agosto (w8). */
+  function sembrarAgosto() {
+    const t = H.estado.t;
+    t.woodEntry.push({ id: "w8", tenantId: T, entryDate: AGOSTO });
+    t.forestCtpEntry.push(entrada("c8", { entryDate: AGOSTO }), entrada("c9", { entryDate: AGOSTO, lineNo: 12 }));
+    t.forestLoteAserrio.push(
+      loteAserrio("la8", "LA-8", { fechaApertura: AGOSTO, createdAt: AGOSTO }),
+      loteAserrio("la4", "LA-4", { status: "consumido", produccionEntryId: "c9" }),
+      loteAserrio("la5", "LA-5"),
+    );
+    t.woodEntryTroza.push(
+      pieza("z10", { woodEntryId: "w8" }),
+      pieza("z11", { loteAserrioId: "la8" }),
+      pieza("z12", { woodEntryId: "w8", loteAserrioId: "la5" }),
+    );
+  }
+
+  it("parcial con agosto cerrado: borra lo de septiembre y deja lo de agosto (ya no 409 periodo_cerrado)", async () => {
+    sembrarAgosto();
+    H.cierres.mockResolvedValue([cierreAgosto()]);
+    const r = await vaciarLoQueSeVio(["trozas_disponibles", "consumo", "lotes"]);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+
+    // Lo de septiembre cae como siempre.
+    expect(fila("woodEntryTroza", "z7")).toBeUndefined();
+    expect(ids("forestLoteAserrio")).not.toContain("la1");
+    expect(ids("forestCtpEntry")).not.toContain("c2");
+    // Lo de agosto se queda, tal cual.
+    expect(fila("woodEntryTroza", "z10")).toBeDefined();
+    expect(ids("forestCtpEntry")).toEqual(expect.arrayContaining(["c8", "c9"]));
+    expect(fila("forestLoteAserrio", "la8")).toBeDefined();
+    expect(fila("woodEntryTroza", "z11")).toMatchObject({ loteAserrioId: "la8" });
+    // LA-4 (septiembre) necesita a c9 (agosto): bloqueado, con el motivo.
+    expect(fila("forestLoteAserrio", "la4")).toBeDefined();
+    const motivos = Object.fromEntries(r.resumen.lotesBloqueados.map((b) => [b.codigo, b.motivo]));
+    expect(motivos["LA-4"]).toBe("su corrida N° 12 es de agosto de 2026, un mes cerrado.");
+    expect(motivos["LA-8"]).toBe("es de agosto de 2026, un mes cerrado.");
+    // LA-5 (septiembre) cae y suelta al patio z12 aunque su ingreso sea de agosto.
+    expect(fila("forestLoteAserrio", "la5")).toBeUndefined();
+    expect(fila("woodEntryTroza", "z12")).toMatchObject({ loteAserrioId: null, woodEntryId: "w8" });
+
+    expect(r.resumen.conteo.deMesCerrado).toEqual({ trozas: 1, corridas: 2, lotes: 1, meses: ["agosto de 2026"] });
+    expect(colgantes(H.estado.t)).toEqual([]);
+    const detalles = H.audit.mock.calls.map((c) => c[0].detail as string);
+    expect(detalles.every((d) => d.includes("No se tocó lo de agosto de 2026 (mes cerrado)"))).toBe(true);
   });
 
-  it("uno reabierto ya no frena", async () => {
-    H.cierres.mockResolvedValue([{ reabierto: true, label: "Agosto 2026", periodKey: "2026-08" }]);
+  it("«Todo el libro» con un mes cerrado sigue frenado ENTERO (borraría agosto)", async () => {
+    sembrarAgosto();
+    H.cierres.mockResolvedValue([cierreAgosto()]);
+    const antes = structuredClone(H.estado.t);
+    const r = await vaciarLoQueSeVio(["todo"]);
+    expect(r).toMatchObject({ ok: false, codigo: "periodo_cerrado", periodos: ["agosto de 2026"] });
+    expect(r.ok === false && r.motivo).toContain("agosto de 2026");
+    expect(H.estado.t).toEqual(antes);
+    expect(H.audit).not.toHaveBeenCalled();
+  });
+
+  it("un mes reabierto ya no protege: lo de agosto cae como lo demás", async () => {
+    sembrarAgosto();
+    H.cierres.mockResolvedValue([cierreAgosto({ at: "2026-09-02", by: "brandon", motivo: "corregir guía" })]);
+    const r = await vaciarLoQueSeVio(["trozas_disponibles", "consumo", "lotes"]);
+    expect(r.ok).toBe(true);
+    expect(fila("woodEntryTroza", "z10")).toBeUndefined();
+    expect(fila("forestCtpEntry", "c8")).toBeUndefined();
+    expect(fila("forestLoteAserrio", "la8")).toBeUndefined();
+    expect(r.ok && r.resumen.conteo.deMesCerrado).toBeUndefined();
+  });
+
+  it("agosto se cierra entre la vista previa y el borrado → «el libro cambió», sin borrar nada", async () => {
+    sembrarAgosto();
+    H.cierres.mockResolvedValueOnce([]).mockResolvedValueOnce([cierreAgosto()]);
+    const antes = structuredClone(H.estado.t);
+    const r = await vaciarLoQueSeVio(["trozas_disponibles"]);
+    expect(r).toMatchObject({ ok: false, codigo: "libro_cambio", motivo: MENSAJE_LIBRO_CAMBIO });
+    expect(H.estado.t).toEqual(antes);
+    expect(H.audit).not.toHaveBeenCalled();
+  });
+
+  it("si TODO lo marcado es de agosto, no se borra nada y el resumen lo dice", async () => {
+    H.estado.t.woodEntryTroza = H.estado.t.woodEntryTroza.filter((z) => z.id !== "z7");
+    sembrarAgosto();
+    H.cierres.mockResolvedValue([cierreAgosto()]);
+    const previa = await ForestCtpPurgaDB.contar(T, ["trozas_disponibles"]);
+    expect(previa.conteo).toMatchObject({ trozas: 0, total: 0, deMesCerrado: { trozas: 1, meses: ["agosto de 2026"] } });
+  });
+
+  /* Bordes del mes (reviewer 2026-10-02): `from`/`to` los calculó la hora del
+     servidor que cerró. Cierres LITERALES, sin `monthRange`, para no depender
+     del TZ de esta máquina. */
+  const cierreLiteral = (from: string, to: string) => ({ periodKey: "2026-08", from, to, label: "agosto de 2026", reabierto: null });
+  const ingresoConTroza = (fecha: string) => {
+    H.estado.t.woodEntry.push({ id: "wb", tenantId: T, entryDate: new Date(fecha) });
+    H.estado.t.woodEntryTroza.push(pieza("zb", { woodEntryId: "wb" }));
+  };
+
+  it("cierre hecho en hora Lima: un ingreso «del 1 de agosto» guardado a 00:00Z NO se borra", async () => {
+    ingresoConTroza("2026-08-01T00:00:00.000Z");
+    H.cierres.mockResolvedValue([cierreLiteral("2026-08-01T05:00:00.000Z", "2026-09-01T04:59:59.999Z")]);
+    const r = await vaciarLoQueSeVio(["trozas_disponibles"]);
+    expect(r.ok).toBe(true);
+    expect(fila("woodEntryTroza", "zb")).toBeDefined();
+    expect(fila("woodEntryTroza", "z7")).toBeUndefined();
+  });
+
+  it("cierre hecho en UTC: un ingreso del 31-ago 23:00 de Lima (2026-09-01T04:00Z) NO se borra", async () => {
+    ingresoConTroza("2026-09-01T04:00:00.000Z");
+    H.cierres.mockResolvedValue([cierreLiteral("2026-08-01T00:00:00.000Z", "2026-08-31T23:59:59.999Z")]);
+    const r = await vaciarLoQueSeVio(["trozas_disponibles"]);
+    expect(r.ok).toBe(true);
+    expect(fila("woodEntryTroza", "zb")).toBeDefined();
+    expect(r.ok && r.resumen.conteo.deMesCerrado).toMatchObject({ trozas: 1, meses: ["agosto de 2026"] });
+  });
+
+  it("mixto de agosto con un hijo de septiembre: el hijo cae, el mixto queda y sus trozas siguen en él", async () => {
+    H.cierres.mockResolvedValue([cierreAgosto()]);
+    H.estado.t.forestLoteMixto.push({ id: "lm8", tenantId: T, code: "LM-8", status: "repartido", deletedAt: null, abiertoEn: AGOSTO, createdAt: AGOSTO });
+    H.estado.t.forestLoteAserrio.push(loteAserrio("la6", "LA-6", { loteMixtoId: "lm8" }));
+    H.estado.t.woodEntryTroza.push(
+      pieza("z13", { loteMixtoId: "lm8", loteAserrioId: "la6", reservadaMixtoEn: AGOSTO }),
+      pieza("z14", { loteMixtoId: "lm8", reservadaMixtoEn: AGOSTO }),
+    );
     const r = await vaciarLoQueSeVio(["lotes"]);
     expect(r.ok).toBe(true);
+    expect(fila("forestLoteAserrio", "la6")).toBeUndefined();
+    expect(fila("forestLoteMixto", "lm8")).toBeDefined();
+    expect(fila("woodEntryTroza", "z13")).toMatchObject({ loteAserrioId: null, loteMixtoId: "lm8" });
+    expect(fila("woodEntryTroza", "z14")).toMatchObject({ loteMixtoId: "lm8" });
+    expect(r.ok && r.resumen.lotesBloqueados.find((b) => b.codigo === "LM-8")?.motivo).toBe("es de agosto de 2026, un mes cerrado.");
+    expect(colgantes(H.estado.t)).toEqual([]);
+  });
+
+  it.each([
+    ["con alcances", ["trozas_disponibles", "lotes"]],
+    ["todo el libro", ["todo"]],
+  ] as const)("%s: los cierres bajo candado son la PRIMERA lectura de la transacción", async (_, alcances) => {
+    const previa = await ForestCtpPurgaDB.contar(T, [...alcances]);
+    const eventos: string[] = [];
+    H.hooks.antes = (modelo, op) => {
+      eventos.push(`${modelo}.${op}`);
+    };
+    H.cierresBajoCandado.mockImplementationOnce(async () => {
+      eventos.push("candado");
+      return [];
+    });
+    // La fila de cierres se asegura ANTES y FUERA de la transacción (primer cierre).
+    H.asegurarFila.mockImplementationOnce(async () => {
+      eventos.push(`fila con ${H.txOpciones.length} tx abiertas`);
+    });
+    const r = await ForestCtpPurgaDB.vaciar(T, "qa", [...alcances], previa.conteo);
+    expect(r.ok).toBe(true);
+    expect(eventos.slice(0, 2)).toEqual(["fila con 0 tx abiertas", "candado"]);
+    expect(H.asegurarFila).toHaveBeenCalledWith(T);
+    expect(H.cierresBajoCandado).toHaveBeenCalledTimes(1);
+    expect(H.cierresBajoCandado.mock.calls[0][1]).not.toBe(H.prisma);
+  });
+
+  it.each([
+    ["con alcances", ["trozas_disponibles", "lotes"]],
+    ["todo el libro", ["todo"]],
+  ] as const)("%s: un cierre a medio grabar (candado ocupado) → «el libro cambió», sin borrar nada", async (_, alcances) => {
+    const previa = await ForestCtpPurgaDB.contar(T, [...alcances]);
+    H.cierresBajoCandado.mockResolvedValueOnce(null);
+    const antes = structuredClone(H.estado.t);
+    const r = await ForestCtpPurgaDB.vaciar(T, "qa", [...alcances], previa.conteo);
+    expect(r).toEqual({ ok: false, codigo: "libro_cambio", motivo: MENSAJE_CIERRE_EN_CURSO, periodos: [] });
+    expect(H.estado.t).toEqual(antes);
+    expect(H.audit).not.toHaveBeenCalled();
   });
 });
 
@@ -414,17 +627,29 @@ describe("lo que se vio es lo que se borra (security 2026-10-02)", () => {
     expect(H.audit).not.toHaveBeenCalled();
   });
 
-  it("el mes cerrado se mira DENTRO de la transacción, no con el cliente global", async () => {
+  it.each([
+    ["con alcances", ["lotes"]],
+    ["todo el libro", ["todo"]],
+  ] as const)("%s: el mes cerrado se mira DENTRO de la transacción, no con el cliente global", async (_, alcances) => {
+    const previa = await ForestCtpPurgaDB.contar(T, [...alcances]);
+    H.cierres.mockClear();
     let transaccionesAbiertas = -1;
     H.cierres.mockImplementationOnce(async () => {
       transaccionesAbiertas = H.txOpciones.length;
       return [];
     });
-    await vaciarLoQueSeVio(["lotes"]);
+    await ForestCtpPurgaDB.vaciar(T, "qa", [...alcances], previa.conteo);
     expect(H.cierres).toHaveBeenCalledTimes(1);
     expect(H.cierres.mock.calls[0][0]).toBe(T);
     expect(H.cierres.mock.calls[0][1]).not.toBe(H.prisma);
     expect(transaccionesAbiertas).toBe(1);
+  });
+
+  it("la vista previa parcial lee los cierres con el cliente global", async () => {
+    await ForestCtpPurgaDB.contar(T, ["trozas_disponibles"]);
+    expect(H.cierres).toHaveBeenCalledTimes(1);
+    expect(H.cierres.mock.calls[0][0]).toBe(T);
+    expect(H.cierres.mock.calls[0][1]).toBe(H.prisma);
   });
 
   it("«Todo el libro»: el asiento cuenta también los lotes dados de baja que se borran", async () => {
@@ -439,6 +664,9 @@ describe("lo que se vio es lo que se borra (security 2026-10-02)", () => {
     expect(asiento.user).toBe("brandon");
     expect(fila("forestLoteAserrio", "lax")).toBeDefined();
     expect(fila("forestCtpEntry", "x1")).toBeDefined();
+    // Sin respuestas de campos huérfanas (lotes, corridas e ingresos); las de otro negocio, intactas.
+    expect(ids("campoPersonalizadoValor")).toEqual([]);
+    expect(fila("campoPersonalizadoValor", "vx")).toBeDefined();
   });
 
   it("si el asiento no se puede escribir, el vaciado responde igual y queda un logger.error", async () => {

@@ -10,6 +10,7 @@ import { describe, expect, it } from "vitest";
 import {
   alcancesDeLaUrl,
   alcancesSchema,
+  mesCerradoParaVaciar,
   planificarVaciado,
   type PlanVaciado,
   type SnapCorrida,
@@ -17,6 +18,7 @@ import {
   type SnapshotLibro,
 } from "@/lib/forestal/ctp-purga-plan";
 import type { AlcanceParcial } from "@/lib/forestal/ctp-purga-tipos";
+import { closedPeriodOf, monthRange, type CtpCierrePeriodo } from "@/lib/forestal/ctp-cierre-types";
 
 const corrida = (id: string, extra: Partial<SnapCorrida> = {}): SnapCorrida => ({
   id,
@@ -374,6 +376,159 @@ describe("«Lotes»: qué pasa con lo que cuelga", () => {
   });
 });
 
+// ── Meses cerrados ─────────────────────────────────────────────────────────
+
+describe("meses cerrados: cada uno protege SÓLO lo suyo (Brandon 2026-10-02)", () => {
+  const MAYO = "mayo de 2026";
+
+  it("troza del patio, corrida y lote de un mes cerrado se quedan y se cuentan", () => {
+    const snap = libro({
+      corridas: [corrida("c1"), corrida("c2", { mesCerrado: MAYO })],
+      trozas: [troza("z1"), troza("z2", { mesCerrado: MAYO }), troza("z3", { loteAserrioId: "la2" })],
+      lotesAserrio: [lote("la1"), lote("la2", { mesCerrado: MAYO })],
+      lotesMixtos: [{ id: "lm1", code: "LM-1", status: "abierto", mesCerrado: MAYO }],
+      lotesComerciales: [{ id: "k1", code: "L-1", status: "abierto", mesCerrado: MAYO }],
+    });
+    const p = plan(snap, "trozas_disponibles", "consumo", "lotes");
+    expect(p.trozasABorrar).toEqual(["z1"]);
+    expect(p.corridasABorrar).toEqual(["c1"]);
+    expect(p.lotesAserrioABorrar).toEqual(["la1"]);
+    expect(p.lotesMixtosABorrar).toEqual([]);
+    expect(p.lotesComercialesABorrar).toEqual([]);
+    // Un lote de mayo no suelta sus piezas: no se toca en nada.
+    expect(p.soltarDeLote).toEqual([]);
+    expect(p.lotesBloqueados.map((b) => [b.codigo, b.motivo])).toEqual([
+      ["LA2", "es de mayo de 2026, un mes cerrado."],
+      ["LM-1", "es de mayo de 2026, un mes cerrado."],
+      ["L-1", "es de mayo de 2026, un mes cerrado."],
+    ]);
+    expect(p.conteo.deMesCerrado).toEqual({ trozas: 1, corridas: 1, lotes: 3, meses: [MAYO] });
+    // La corrida de mayo NO cuenta como «salvada por tener algo encima».
+    expect(p.conteo.saltadas).toBe(0);
+    expect(colgantes(snap, p)).toEqual([]);
+  });
+
+  it("un lote de un mes abierto cuya corrida es de un mes cerrado queda bloqueado y dice por qué", () => {
+    const snap = libro({
+      corridas: [corrida("c12", { mesCerrado: MAYO })],
+      consumos: [{ ctpEntryId: "c12", congelado: true }],
+      lotesAserrio: [lote("la1", { status: "consumido", produccionEntryId: "c12" })],
+      trozas: [troza("z1", { loteAserrioId: "la1", consumidaEnId: "c12" })],
+    });
+    const p = plan(snap, "consumo", "lotes");
+    expect(p.lotesAserrioABorrar).toEqual([]);
+    expect(p.corridasABorrar).toEqual([]);
+    expect(p.soltarConsumo).toEqual([]);
+    expect(p.soltarDeLote).toEqual([]);
+    // El mes cerrado se dice antes que el congelado: «es de mayo» dice más.
+    expect(p.lotesBloqueados[0].motivo).toBe("su corrida N° 12 es de mayo de 2026, un mes cerrado.");
+    expect(p.conteo.deMesCerrado).toEqual({ trozas: 0, corridas: 1, lotes: 0, meses: [MAYO] });
+    // Sólo «Lotes»: el motivo es el mes, no «marca también Consumos» (no lo arreglaría).
+    expect(plan(snap, "lotes").lotesBloqueados[0].motivo).toContain("un mes cerrado");
+  });
+
+  it("una troza cuyo ingreso es de un mes cerrado se suelta al patio si cae su lote (de un mes abierto)", () => {
+    const snap = libro({
+      corridas: [corrida("c1")],
+      lotesAserrio: [lote("la1", { status: "consumido", produccionEntryId: "c1" })],
+      trozas: [troza("z1", { loteAserrioId: "la1", consumidaEnId: "c1", mesCerrado: MAYO })],
+    });
+    const p = plan(snap, "consumo", "lotes");
+    expect(p.lotesAserrioABorrar).toEqual(["la1"]);
+    expect(p.corridasABorrar).toEqual(["c1"]);
+    expect(p.soltarConsumo).toEqual(["z1"]);
+    expect(p.soltarDeLote).toEqual(["z1"]);
+    // No se borra (no es del patio) y no cuenta como salvada: sigue en el patio.
+    expect(p.trozasABorrar).toEqual([]);
+    expect(p.conteo.deMesCerrado).toBeUndefined();
+  });
+
+  it("un mes reabierto no protege (la fecha se mira con `closedPeriodOf`, como el resto del libro)", () => {
+    const m = monthRange(2026, 4);
+    const cierre = (reabierto: CtpCierrePeriodo["reabierto"]) =>
+      ({ periodKey: m.periodKey, from: m.from.toISOString(), to: m.to.toISOString(), label: MAYO, reabierto }) as CtpCierrePeriodo;
+    const enMayo = new Date(2026, 4, 15, 12);
+    const mesDe = (cierres: CtpCierrePeriodo[]) => closedPeriodOf(cierres, enMayo)?.label ?? null;
+    const snapCon = (cierres: CtpCierrePeriodo[]) =>
+      libro({ trozas: [troza("z1", { mesCerrado: mesDe(cierres) })], corridas: [corrida("c1", { mesCerrado: mesDe(cierres) })] });
+
+    const cerrado = plan(snapCon([cierre(null)]), "trozas_disponibles", "consumo");
+    expect(cerrado.conteo).toMatchObject({ trozas: 0, produccion: 0, deMesCerrado: { trozas: 1, corridas: 1 } });
+    const reabierto = plan(snapCon([cierre({ at: "2026-06-02", by: "brandon", motivo: "corregir" })]), "trozas_disponibles", "consumo");
+    expect(reabierto.conteo).toMatchObject({ trozas: 1, produccion: 1 });
+    expect(reabierto.conteo.deMesCerrado).toBeUndefined();
+  });
+
+  it("un lote comercial de un mes abierto SÍ se borra aunque su corrida sea de un mes cerrado (la corrida no)", () => {
+    const snap = libro({
+      corridas: [corrida("c1", { mesCerrado: MAYO })],
+      lotesComerciales: [{ id: "k1", code: "L-1", status: "abierto" }],
+      loteMiembros: [{ loteId: "k1", produccionEntryId: "c1" }],
+    });
+    const p = plan(snap, "consumo", "lotes");
+    expect(p.lotesComercialesABorrar).toEqual(["k1"]);
+    expect(p.miembrosABorrar).toBe(1);
+    expect(p.corridasABorrar).toEqual([]);
+    expect(p.lotesBloqueados).toEqual([]);
+    expect(p.conteo.deMesCerrado).toMatchObject({ corridas: 1, lotes: 0 });
+    expect(colgantes(snap, p)).toEqual([]);
+  });
+
+  it("una pieza consumida por una corrida ANULADA de un mes cerrado no se suelta: su lote queda bloqueado", () => {
+    const snap = (mesCerrado: string | null) =>
+      libro({
+        corridas: [corrida("c7", { status: "anulado", mesCerrado })],
+        lotesAserrio: [lote("la7", { status: "consumido", produccionEntryId: "c7" })],
+        trozas: [troza("z9", { loteAserrioId: "la7", consumidaEnId: "c7" })],
+      });
+    const p = plan(snap(MAYO), "consumo", "lotes");
+    expect(p.lotesAserrioABorrar).toEqual([]);
+    expect(p.soltarConsumo).toEqual([]);
+    expect(p.soltarDeLote).toEqual([]);
+    expect(p.lotesBloqueados[0]).toMatchObject({ codigo: "LA7", tipo: "aserrio" });
+    expect(p.lotesBloqueados[0].motivo).toBe(
+      "sus trozas figuran consumidas en la corrida anulada N° 7, de mayo de 2026, un mes cerrado.",
+    );
+    // Con el mes abierto (o reabierto), el consumo muerto se suelta como siempre.
+    const abierto = plan(snap(null), "consumo", "lotes");
+    expect(abierto.lotesAserrioABorrar).toEqual(["la7"]);
+    expect(abierto.soltarConsumo).toEqual(["z9"]);
+  });
+
+  it("los meses que pesaron van con su nombre, una vez cada uno", () => {
+    const p = plan(
+      libro({
+        trozas: [troza("z1", { mesCerrado: MAYO }), troza("z2", { mesCerrado: "junio de 2026" }), troza("z3", { mesCerrado: MAYO })],
+      }),
+      "trozas_disponibles",
+    );
+    expect(p.conteo.deMesCerrado).toEqual({ trozas: 3, corridas: 0, lotes: 0, meses: [MAYO, "junio de 2026"] });
+  });
+});
+
+describe("mesCerradoParaVaciar: en los bordes del mes protege de más", () => {
+  /* Cierres LITERALES: `from`/`to` dependen de la hora del servidor que cerró. */
+  const cierre = (from: string, to: string, reabierto: CtpCierrePeriodo["reabierto"] = null) =>
+    ({ periodKey: "2026-08", from, to, label: "agosto de 2026", reabierto }) as CtpCierrePeriodo;
+  const HECHO_EN_LIMA = cierre("2026-08-01T05:00:00.000Z", "2026-09-01T04:59:59.999Z");
+  const HECHO_EN_UTC = cierre("2026-08-01T00:00:00.000Z", "2026-08-31T23:59:59.999Z");
+
+  it("date-only del 1 de agosto (00:00Z) con un cierre hecho en hora Lima → agosto", () => {
+    expect(mesCerradoParaVaciar([HECHO_EN_LIMA], new Date("2026-08-01T00:00:00.000Z"))).toBe("agosto de 2026");
+  });
+
+  it("31-ago 23:00 de Lima (2026-09-01T04:00Z) con un cierre hecho en UTC → agosto", () => {
+    expect(mesCerradoParaVaciar([HECHO_EN_UTC], new Date("2026-09-01T04:00:00.000Z"))).toBe("agosto de 2026");
+  });
+
+  it("mediados del mes siguiente, un cierre reabierto o sin fecha → ninguno", () => {
+    expect(mesCerradoParaVaciar([HECHO_EN_LIMA, HECHO_EN_UTC], new Date("2026-09-15T12:00:00.000Z"))).toBeNull();
+    const reabierto = cierre("2026-08-01T05:00:00.000Z", "2026-09-01T04:59:59.999Z", { at: "x", by: "y", motivo: "z" });
+    expect(mesCerradoParaVaciar([reabierto], new Date("2026-08-15T12:00:00.000Z"))).toBeNull();
+    expect(mesCerradoParaVaciar([HECHO_EN_LIMA], null)).toBeNull();
+  });
+});
+
 // ── Invariante sobre todas las combinaciones ───────────────────────────────
 
 describe("ninguna combinación deja referencias colgando", () => {
@@ -385,6 +540,7 @@ describe("ninguna combinación deja referencias colgando", () => {
       corrida("c4"),
       corrida("c5", { status: "anulado" }),
       corrida("c6"),
+      corrida("c7", { mesCerrado: "mayo de 2026" }),
       corrida("d1", { section: "despacho", gtfNumber: "G-1" }),
     ],
     despachoOrigenes: [{ despachoEntryId: "d1", produccionEntryId: "c3" }],
@@ -399,6 +555,8 @@ describe("ninguna combinación deja referencias colgando", () => {
       lote("la2", { status: "consumido", produccionEntryId: "c2" }),
       lote("la3", { status: "consumido", produccionEntryId: "c3", loteMixtoId: "lm2" }),
       lote("la5", { status: "consumido", produccionEntryId: "c5" }),
+      lote("la7", { status: "consumido", produccionEntryId: "c7" }),
+      lote("la8", { mesCerrado: "mayo de 2026" }),
     ],
     lotesMixtos: [
       { id: "lm1", code: "LM-1", status: "abierto" },
@@ -417,8 +575,14 @@ describe("ninguna combinación deja referencias colgando", () => {
       troza("p5", { loteAserrioId: "la5", consumidaEnId: "c5" }),
       troza("p6", { loteMixtoId: "lm1" }),
       troza("p7", { consumidaEnId: "c4" }),
+      troza("p8", { mesCerrado: "mayo de 2026" }),
+      troza("p9", { loteAserrioId: "la7", consumidaEnId: "c7", mesCerrado: "mayo de 2026" }),
+      troza("p10", { loteAserrioId: "la8" }),
     ],
   });
+  const deMayo = new Set(
+    [...snap.corridas, ...snap.trozas, ...snap.lotesAserrio].filter((x) => x.mesCerrado).map((x) => x.id),
+  );
   const PARCIALES: AlcanceParcial[] = ["trozas_disponibles", "madera_disponible", "consumo", "lotes"];
   const combos = Array.from({ length: 15 }, (_, i) => PARCIALES.filter((_, b) => (i + 1) & (1 << b)));
 
@@ -436,5 +600,8 @@ describe("ninguna combinación deja referencias colgando", () => {
     // Una troza nunca se borra Y se suelta a la vez.
     const borradas = new Set(p.trozasABorrar);
     expect([...p.soltarConsumo, ...p.soltarDeLote, ...p.soltarDeMixto].some((id) => borradas.has(id))).toBe(false);
+    // Nada fechado en el mes cerrado se borra, con ninguna combinación.
+    const caen = [...p.trozasABorrar, ...p.corridasABorrar, ...p.lotesAserrioABorrar];
+    expect(caen.filter((id) => deMayo.has(id))).toEqual([]);
   });
 });

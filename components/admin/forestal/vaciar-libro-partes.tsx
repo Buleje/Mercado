@@ -10,9 +10,15 @@
  * NO, y el ejemplo en el ⓘ — nunca un párrafo a la vista.
  */
 
+import { AlertTriangle } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { formatNumber } from "@/lib/format";
-import type { ResumenVaciado, ScopeVaciado, LoteBloqueado } from "@/lib/forestal/ctp-purga-tipos";
+import type {
+  LoteBloqueado,
+  ResumenVaciado,
+  SalvadoPorMesCerrado,
+  ScopeVaciado,
+} from "@/lib/forestal/ctp-purga-tipos";
 
 type Alcance = { valor: ScopeVaciado; titulo: string; linea: string; que: string; ejemplo: string };
 
@@ -92,11 +98,11 @@ export function AlcancesVaciado({
                   checked={marcado}
                   onChange={() => onAlternar(a.valor)}
                   disabled={apagado}
-                  className="mt-1 h-4 w-4 shrink-0 accent-[var(--accent)]"
+                  className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--accent)]"
                 />
                 <span>
-                  <span className="block text-sm font-bold text-[var(--text-primary)]">{a.titulo}</span>
-                  <span className="block text-xs text-[var(--text-tertiary)]">{a.linea}</span>
+                  <span className="block text-base font-bold text-[var(--text-primary)]">{a.titulo}</span>
+                  <span className="block text-sm text-[var(--text-tertiary)]">{a.linea}</span>
                 </span>
               </label>
               <InfoTip title={a.titulo} what={a.que} example={a.ejemplo} side="left" />
@@ -157,7 +163,50 @@ function filas(r: ResumenVaciado): { alcance: ScopeVaciado; detalle: string }[] 
   return out;
 }
 
-export function ListaDeLoQueSeBorra({ resumen }: { resumen: ResumenVaciado }) {
+/** «a», «a y b», «a, b y c». */
+const enLista = (xs: string[]) => (xs.length <= 1 ? (xs[0] ?? "") : `${xs.slice(0, -1).join(", ")} y ${xs[xs.length - 1]}`);
+
+/**
+ * «Lo de mayo de 2026 (mes cerrado) no se toca: se quedan 3 trozas, 1 corrida
+ * y 1 lote.» Un mes cerrado protege sólo lo suyo (ADR-139): esto dice qué.
+ */
+export function LoDeMesCerrado({ salvado, hecho = false }: { salvado?: SalvadoPorMesCerrado; hecho?: boolean }) {
+  if (!salvado || salvado.meses.length === 0) return null;
+  const partes = [
+    salvado.trozas ? n(salvado.trozas, "troza") : null,
+    salvado.corridas ? n(salvado.corridas, "corrida") : null,
+    salvado.lotes ? n(salvado.lotes, "lote") : null,
+  ].filter((x): x is string => x != null);
+  const varios = salvado.meses.length > 1;
+  return (
+    <p className="mt-1 text-sm tabular-nums text-[var(--text-secondary)]">
+      Lo de {enLista(salvado.meses)} ({varios ? "meses cerrados" : "mes cerrado"}) {hecho ? "no se tocó" : "no se toca"}
+      {partes.length > 0 ? `: ${hecho ? "se quedaron" : "se quedan"} ${enLista(partes)}.` : "."}
+    </p>
+  );
+}
+
+/** «Todo el libro» con un mes cerrado: el aviso va solo (nada que confirmar). */
+export function TodoConMesCerrado({ periodos }: { periodos: string[] }) {
+  const varios = periodos.length > 1;
+  return (
+    <div className="flex items-start gap-2 rounded-xl bg-[var(--data-warning)]/10 px-4 py-3">
+      <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-[var(--data-warning)]" aria-hidden />
+      <p className="flex-1 text-base font-semibold text-[var(--text-primary)]">
+        «Todo el libro» no se puede: {enLista(periodos)} {varios ? "son meses cerrados" : "es un mes cerrado"}.
+        Marca las otras casillas para borrar lo de los meses abiertos.
+      </p>
+      <InfoTip
+        title="Mes cerrado"
+        what={`Un mes cerrado ya se presentó ante SERFOR: «Todo el libro» lo borraría. Si de verdad hay que borrarlo, reábrelo desde el libro (queda el motivo y quién lo hizo). Las otras casillas sí se pueden: borran lo de los meses abiertos y dejan intacto lo del cerrado.`}
+        example={`Mayo está cerrado y junio no: «Trozas que están en el patio» borra las trozas que ingresaron en junio y deja las de mayo.`}
+        side="left"
+      />
+    </div>
+  );
+}
+
+export function ListaDeLoQueSeBorra({ resumen, hecho = false }: { resumen: ResumenVaciado; hecho?: boolean }) {
   const { conteo } = resumen;
   return (
     <div>
@@ -179,6 +228,7 @@ export function ListaDeLoQueSeBorra({ resumen }: { resumen: ResumenVaciado }) {
           Se quedan {n(conteo.saltadas, "corrida")} porque ya tienen salida, reproceso, lote o piezas encima.
         </p>
       ) : null}
+      <LoDeMesCerrado salvado={conteo.deMesCerrado} hecho={hecho} />
     </div>
   );
 }

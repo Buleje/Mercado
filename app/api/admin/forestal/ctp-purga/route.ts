@@ -15,7 +15,10 @@ import { logger } from "@/lib/logger";
  *
  * GET  `?scope=trozas_disponibles,lotes` → qué se borraría (la unión, sin
  *      contar dos veces), alcance por alcance, los lotes que no se pueden y
- *      si hay un mes cerrado que lo impide. Para mostrarlo antes de preguntar.
+ *      los meses cerrados (`periodos`). Para mostrarlo antes de preguntar.
+ *      `sePuede` es falso SÓLO con «Todo el libro» y algún mes cerrado: en un
+ *      vaciado parcial cada mes cerrado salva lo suyo (`conteo.deMesCerrado`)
+ *      y lo demás se borra (Brandon 2026-10-02, «Solo protege su mes»).
  * POST `{ confirmacion, scopes: [...], esperado }` → lo vacía, todo en una
  *      transacción. `esperado` son las cifras que la vista previa MOSTRÓ: si el
  *      libro de ahora no da lo mismo, 409 `libro_cambio` y no se borra nada.
@@ -77,7 +80,8 @@ export const GET = withApiHandler("forestal-ctp-purga-get", async (req: NextRequ
     ForestCtpPurgaDB.contar(auth.tenantId, alcances.data),
     ForestCtpPurgaDB.periodosQueBloquean(auth.tenantId),
   ]);
-  return NextResponse.json({ ...resumen, periodos, sePuede: periodos.length === 0, palabra: PALABRA });
+  const esTodo = alcances.data.includes("todo");
+  return NextResponse.json({ ...resumen, periodos, sePuede: !(esTodo && periodos.length > 0), palabra: PALABRA });
 });
 
 export const POST = withApiHandler("forestal-ctp-purga", async (req: NextRequest) => {

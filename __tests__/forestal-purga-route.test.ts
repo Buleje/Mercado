@@ -81,6 +81,14 @@ describe("GET: vista previa", () => {
     expect(H.contar).not.toHaveBeenCalled();
   });
 
+  it("mes cerrado + alcances parciales → se puede (cada mes cerrado salva lo suyo); con «todo», no", async () => {
+    H.periodos.mockResolvedValue(["agosto de 2026"]);
+    const parcial = await (await get("?scope=trozas_disponibles,lotes")).json();
+    expect(parcial).toMatchObject({ sePuede: true, periodos: ["agosto de 2026"] });
+    const todo = await (await get("?scope=todo")).json();
+    expect(todo).toMatchObject({ sePuede: false, periodos: ["agosto de 2026"] });
+  });
+
   it("sin sesión → 401 (nunca 404)", async () => {
     H.requireAdmin.mockResolvedValue(NextResponse.json({ error: "unauthorized" }, { status: 401 }));
     const r = await get("?scope=lotes");
@@ -168,9 +176,9 @@ describe("POST: vaciar", () => {
     expect(H.vaciar).not.toHaveBeenCalled();
   });
 
-  it("mes cerrado → 409 con el motivo", async () => {
+  it("«Todo el libro» con un mes cerrado → 409 con el motivo", async () => {
     H.vaciar.mockResolvedValue({ ok: false, codigo: "periodo_cerrado", motivo: "Hay 1 período cerrado", periodos: ["Agosto 2026"] });
-    const r = await post({ confirmacion: "VACIAR LIBRO", scopes: ["lotes"], esperado: ESPERADO });
+    const r = await post({ confirmacion: "VACIAR LIBRO", scopes: ["todo"], esperado: ESPERADO });
     expect(r.status).toBe(409);
     expect(await r.json()).toMatchObject({ error: "periodo_cerrado", periodos: ["Agosto 2026"] });
   });
