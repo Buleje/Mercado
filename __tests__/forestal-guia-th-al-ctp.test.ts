@@ -97,10 +97,11 @@ describe("ingresosDesdeGuiaTh — un ingreso por especie, con sus trozas", () =>
     expect(r.ok).toBe(true);
     if (!r.ok) return;
     expect(r.lineas.map((l) => [l.especieComun, l.trozas.length, l.volumenM3])).toEqual([
-      ["Tornillo", 2, 1.8843],
-      ["Capirona", 1, 0.6315],
+      // m³ oficial de la línea: Σ exacta de sus trozas a 3 decimales HALF_UP (regla GTF, 2026-10-03).
+      ["Tornillo", 2, 1.884],
+      ["Capirona", 1, 0.632],
     ]);
-    expect(r.totalM3).toBe(2.5158);
+    expect(r.totalM3).toBe(2.516);
     expect(r.trozas).toBe(3);
     expect(r.lineas[0].especieCientifica).toBe("Cedrelinga cateniformis");
     expect(r.lineas[0].presentacion).toBe("TROZAS");

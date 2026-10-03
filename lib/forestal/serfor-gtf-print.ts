@@ -19,6 +19,7 @@
  */
 
 import type { GtfSerfor } from "./serfor-gtf";
+import { totalizarGTF } from "./gtf-redondeo";
 import { SERFOR_GTF_FORM, urlConsultaGtf } from "./serfor-gtf";
 
 const esc = (v: unknown) =>
@@ -40,7 +41,8 @@ export async function printGtfSerfor(gtf: GtfSerfor): Promise<void> {
 
   const productos = gtf.productos ?? [];
   const trozas = gtf.trozas ?? [];
-  const total = gtf.volumenTotal ?? productos.reduce((a, p) => a + (p.volumen ?? 0), 0);
+  /* El total de SERFOR manda; si no vino, Σ de las filas YA redondeadas. */
+  const total = gtf.volumenTotal ?? totalizarGTF(productos.map((p) => ({ m3: p.volumen }))).m3;
 
   const filasProducto = productos
     .map(

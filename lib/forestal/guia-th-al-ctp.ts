@@ -23,6 +23,7 @@
  */
 
 import { z } from "zod";
+import { m3OficialDeFila, totalizarGTF } from "./gtf-redondeo";
 import { claveEspecie } from "./loth-constants";
 import type { GtfDatos } from "./ctp-gtf-datos";
 import { esFechaReal } from "./guias-guardadas";
@@ -290,15 +291,19 @@ export function ingresosDesdeGuiaTh(
       trozadoId: it.trozadoId ?? null,
       arbolCodigo: txt(it.treeCode) || null,
     });
-    g.volumenM3 = r4(g.volumenM3 + volumenM3);
+    g.volumenM3 = g.volumenM3 + volumenM3;
     g.piezas += cantidad;
     grupos.set(clave, g);
   });
 
+  /* Cada línea es una fila de la GTF: su m³ oficial es la suma exacta de sus
+     trozas redondeada UNA vez a 3 decimales HALF_UP, y el total es la suma de
+     esas líneas (regla de la GTF, 2026-10-03). */
+  for (const g of grupos.values()) g.volumenM3 = m3OficialDeFila(g.trozas.map((t) => t.volumenM3));
   const lineas = [...grupos.values()].sort(
     (a, b) => b.volumenM3 - a.volumenM3 || a.especieComun.localeCompare(b.especieComun, "es"),
   );
-  const totalM3 = r4(lineas.reduce((a, l) => a + l.volumenM3, 0));
+  const totalM3 = totalizarGTF(lineas.map((l) => ({ m3: l.volumenM3 }))).m3;
   const trozas = lineas.reduce((a, l) => a + l.trozas.length, 0);
   const avisos: string[] = [];
   const declarado = opts.volumenDeclaradoM3;

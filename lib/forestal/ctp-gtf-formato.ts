@@ -21,6 +21,7 @@
  */
 
 import { esc, seccionDoc } from "@/lib/forestal/ctp-documento-print";
+import { claveFilaGTF, filasGTF, textoGTF, totalizarGTF } from "@/lib/forestal/gtf-redondeo";
 import { tituloDeGuia, type CtpFicha, type PermisoDeGuia } from "@/lib/forestal/ctp-ficha-types";
 import type { GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 
@@ -126,20 +127,40 @@ export interface LineaProducto {
   total: number;
 }
 
+/**
+ * Las líneas como FILAS de la GTF (Brandon 2026-10-03): una por nombre
+ * científico + tipo de producto, con su total = Σ exacta de las líneas que la
+ * forman redondeada UNA vez a 3 decimales (HALF_UP). Una guía con dos asientos
+ * de la misma especie y producto imprime una fila, como SERFOR.
+ */
+export function filasDeLaGuia(lineas: ReadonlyArray<LineaProducto>): LineaProducto[] {
+  return filasGTF(
+    lineas,
+    (l) => claveFilaGTF({ cientifico: l.cientifico, comun: l.comun, tipo: l.tipoProducto, unidad: l.unidad }),
+    (l) => l.total,
+    (l) => l.cantidad,
+  ).map((f) => ({ ...f.items[0], cantidad: f.piezas, total: f.m3 }));
+}
+
+/** El Volumen Total de la guía: la suma de sus filas YA redondeadas, nunca la del crudo. */
+export const volumenTotalDeLaGuia = (lineas: ReadonlyArray<LineaProducto>): number =>
+  totalizarGTF(filasDeLaGuia(lineas).map((l) => ({ m3: l.total }))).m3;
+
 /** El detalle (37a–37g) con su fila de Volumen Total, como el formato oficial. */
-export function tablaProductos(lineas: ReadonlyArray<LineaProducto>): string {
+export function tablaProductos(lineasDeEntrada: ReadonlyArray<LineaProducto>): string {
+  const lineas = filasDeLaGuia(lineasDeEntrada);
   const filas = lineas
     .map(
       (l) => `<tr>
         <td>${esc(l.cientifico)}</td><td>${esc(l.comun)}</td><td>${esc(l.tipoProducto)}</td>
         <td>${esc(l.presentacion)}</td><td class="num">${esc(l.cantidad)}</td>
-        <td>${esc(l.unidad)}</td><td class="num">${l.total.toFixed(3)}</td>
+        <td>${esc(l.unidad)}</td><td class="num">${textoGTF(l.total)}</td>
       </tr>`,
     )
     .join("");
-  // Se suman SOLO las líneas: el total es de lo que se está moviendo, y un
-  // número que no cierra con el detalle es lo primero que se revisa.
-  const total = lineas.reduce((a, l) => a + (Number(l.total) || 0), 0);
+  // Se suman SOLO las filas, ya redondeadas: el total es de lo que se está
+  // moviendo y cierra EXACTO con el detalle impreso (31,188 y no 31,185).
+  const total = totalizarGTF(lineas.map((l) => ({ m3: l.total }))).m3;
   return `<table class="det">
     <thead><tr>
       <th rowspan="2">(37a) N. Científico</th><th rowspan="2">(37b) N. Común</th>
@@ -149,7 +170,7 @@ export function tablaProductos(lineas: ReadonlyArray<LineaProducto>): string {
       <th>(37d) Descripción</th><th>(37e) Cant.</th><th>(37f) Unidad</th><th>(37g) Total</th>
     </tr></thead>
     <tbody>${filas || `<tr><td colspan="7" class="vacio">Sin líneas declaradas</td></tr>`}</tbody>
-    <tfoot><tr><td colspan="6" class="tot">Volumen Total:</td><td class="num tot">${total.toFixed(3)}</td></tr></tfoot>
+    <tfoot><tr><td colspan="6" class="tot">Volumen Total:</td><td class="num tot">${textoGTF(total)}</td></tr></tfoot>
   </table>`;
 }
 

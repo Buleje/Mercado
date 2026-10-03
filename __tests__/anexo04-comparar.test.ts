@@ -50,21 +50,25 @@ describe("compararAnexoConResumen", () => {
     expect(c.exactas).toBe(2);
   });
 
-  it("el PT redondeado por fila del cubicador vs el exacto de la hoja es «redondeo», no «difiere»", () => {
-    // 2"×5"×7' = 5,8333 PT: el cubicador guarda 5,83 por fila; la hoja suma 58,333.
+  it("regla GTF: el resumen y la hoja salen de las MISMAS medidas exactas → exacto (antes el PT redondeado por fila daba «redondeo»)", () => {
+    // 2"×5"×7' = 5,8333 PT: el cubicador guarda 5,83 por fila, pero las dos
+    // columnas suman el PT exacto de las medidas: 58,333 y 58,333.
     const filas = Array.from({ length: 10 }, () => pieza(1, 2, 5, 7, "Tornillo"));
     const c = comparar(filas, filas);
     expect(c.filas).toHaveLength(1);
-    expect(c.filas[0].dif.pt).toBeCloseTo(0.033, 3);
-    expect(c.filas[0].estado).toBe("redondeo");
+    expect(c.filas[0].dif.pt).toBeCloseTo(0, 6);
+    expect(c.filas[0].estado).toBe("exacto");
     expect(c.difieren).toBe(0);
   });
 
   it("tolerancia en la unidad del negocio: 0,001 m³ es exacto, 0,002 m³ sin redondeo que lo explique difiere", () => {
+    // 4 × 2"×8"×10' = 53,333 PT → fila oficial 0,126 m³ en la hoja. El resumen
+    // de referencia viene sin medidas (sólo su m³/PT declarado, mismo tipo).
     const base = pieza(4, 2, 8, 10, "Tornillo");
-    expect(comparar([base], [{ ...base, m3: base.m3 + 0.001 }]).filas[0].estado).toBe("exacto");
-    expect(comparar([base], [{ ...base, m3: base.m3 + 0.002 }]).filas[0].estado).toBe("difiere");
-    expect(comparar([base], [{ ...base, pieTablar: base.pieTablar + 0.01 }]).filas[0].estado).toBe("exacto");
+    const ref = (m3: number, pt = 53.333) => [{ ...base, espesor: 0, tipo: "Comercial" as const, m3, pieTablar: pt }];
+    expect(comparar([base], ref(0.127)).filas[0].estado).toBe("exacto");
+    expect(comparar([base], ref(0.128)).filas[0].estado).toBe("difiere");
+    expect(comparar([base], ref(0.126, 53.343)).filas[0].estado).toBe("exacto");
   });
 
   it("una especie·tipo que no llegó al papel (otro dueño) queda al final, con el anexo vacío", () => {

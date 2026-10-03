@@ -18,6 +18,7 @@
  * es «Redondeo», no «Difiere»: siete rojos falsos enseñan a ignorar la lista.
  */
 import type { PiezaCubicada } from "./cubicacion";
+import { m3ExactoDePieza, m3OficialDeFila, ptExactoDePieza } from "./gtf-redondeo";
 import { construirAnexo04, type UnidadVolumen } from "./anexo04-serfor";
 import { ORDEN_TIPO, ordenTipo, tipoDePieza, type TipoComercial } from "./cubicacion-tipo";
 
@@ -120,16 +121,24 @@ function comparada(
  */
 function agruparReferencia(rows: readonly PiezaCubicada[], especieGlobal?: string): Map<string, Acumulado> {
   const out = new Map<string, Acumulado>();
+  const exactos = new Map<string, PiezaCubicada[]>();
   for (const r of rows) {
     const especie = r.especie?.trim() || especieGlobal?.trim() || "Sin especie";
     const tipo: TipoComercial = tipoDePieza(r);
     const k = clave(especie, tipo);
     const g = out.get(k) ?? { especie, tipo, lado: vacio(), orden: out.size, bloques: 0, ubicacion: [] };
     g.lado.piezas += r.cantidad;
-    g.lado.pt += r.pieTablar;
-    g.lado.m3 += r.m3;
     g.lado.filas += 1;
+    (exactos.get(k) ?? exactos.set(k, []).get(k)!).push(r);
     out.set(k, g);
+  }
+  /* Cada especie × tipo es una fila de la GTF, como en la tabla «Por especie y
+     tipo» de Resúmenes (`resumenPorEspecie`): suma EXACTA de sus piezas desde
+     las medidas, redondeada UNA vez (regla de la GTF, 2026-10-03). */
+  for (const [k, g] of out) {
+    const piezas = exactos.get(k) ?? [];
+    g.lado.pt = m3OficialDeFila(piezas.map(ptExactoDePieza));
+    g.lado.m3 = m3OficialDeFila(piezas.map(m3ExactoDePieza));
   }
   return out;
 }

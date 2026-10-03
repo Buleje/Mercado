@@ -94,12 +94,16 @@ describe("listaDeTrozas — la lista que acompaña la guía", () => {
     expect(l.map((f) => f.codificacion)).toEqual(["9-TOR-A", "10-TOR-A", "85-TOR-A", "85-TOR-B"]);
   });
 
-  it("el total del (37) cierra con el total de la lista", () => {
+  it("el total del (37) es la suma de sus líneas y cada línea redondea sus trozas UNA vez (regla GTF)", () => {
     const piezas = [C, D, pieza({ codigo: "7-CAP-A", arbol: "7-CAP", comun: "Capirona", volumeM3: 0.3333 })];
-    const porEspecie = detallePorEspecie(piezas).reduce((a, l) => a + l.total, 0);
+    const lineas = detallePorEspecie(piezas);
+    const porEspecie = Math.round(lineas.reduce((a, l) => a + l.total, 0) * 1000) / 1000;
     const porTroza = listaDeTrozas(piezas).reduce((a, f) => a + (f.volumenM3 ?? 0), 0);
-    expect(Number(porEspecie.toFixed(4))).toBe(Number(porTroza.toFixed(4)));
-    expect(totalM3(piezas)).toBe(2.4593);
+    // El «Volumen Total» del papel = Σ de las líneas ya redondeadas, exacto.
+    expect(totalM3(piezas)).toBe(porEspecie);
+    expect(totalM3(piezas)).toBe(2.459);
+    // Contra la lista troza por troza sólo difiere el redondeo: medio milésimo por línea.
+    expect(Math.abs(porTroza - totalM3(piezas))).toBeLessThanOrEqual(0.0005 * lineas.length);
   });
 });
 

@@ -29,7 +29,7 @@ import {
 } from "./ctp-documento-print";
 import type { CtpFicha } from "./ctp-ficha-types";
 import { leerGtfDatos, type GtfDatos } from "./ctp-gtf-datos";
-import { cuerpoGtfOficial, type LineaProducto } from "./ctp-gtf-formato";
+import { cuerpoGtfOficial, volumenTotalDeLaGuia, type LineaProducto } from "./ctp-gtf-formato";
 import type { GuiaIngreso } from "./ingresos-por-guia";
 import type { TrozaListada } from "./ctp-lista-trozas";
 import { fmtM3 } from "./cubicacion-formato";
@@ -168,7 +168,8 @@ export function documentoGtfDesdeLibro(
 ): string {
   const { ficha, datos } = insumosDesdeLibro(guia);
   const lineas = lineasDesdeLibro(guia);
-  const volumen = lineas.reduce((a, l) => a + l.total, 0);
+  /* El volumen de la ficha es el MISMO que imprime la guía: Σ de filas oficiales. */
+  const volumen = volumenTotalDeLaGuia(lineas);
   const piezas = lineas.reduce((a, l) => a + (l.cantidad ?? 0), 0);
   const especies = new Set(lineas.map((l) => l.comun.toLowerCase()).filter(Boolean)).size;
   /* (3) es la fecha de EXPEDICIÓN de la guía, no la del asiento: si el libro no

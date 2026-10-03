@@ -154,15 +154,17 @@ export default function RepartoCuadreModal({ cuadre, inicial, onCerrar }: {
       >
         <div className="flex shrink-0 flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
+            <div className="flex items-center gap-2">
             <CardTitle as="h3" className="flex items-center gap-2 text-base font-bold text-[var(--text-primary)]">
               <Scale className="h-5 w-5 text-[var(--accent)]" aria-hidden /> Cuadre de la distribución
+            </CardTitle>
               <InfoTip
                 title="Qué se cuadra"
                 what="La misma madera se cuenta en varias vistas: el lote, las tarjetas Distribuido y Falta, cada bloque, las medidas que imprime el PDF, los Anexos 04 por permiso y el resumen por especie. Acá se cruzan todas."
                 affects="Exacto = hasta 0,01 PT y 0,001 m³. Redondeo = el arrastre de redondear cada fila. Difiere = cualquier pieza de diferencia o un volumen que no explica el redondeo."
                 example="Tornillo 2×4×10: 21 en el lote, 20 distribuidas y 0 en falta → Difiere 1 pieza."
               />
-            </CardTitle>
+            </div>
             <div className="mt-1"><Veredicto c={cuadre} /></div>
           </div>
           <div className="flex flex-wrap items-center gap-2">

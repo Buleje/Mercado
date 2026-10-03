@@ -22,6 +22,7 @@
  */
 
 import { claveEspecie } from "./loth-constants";
+import { filasGTF, m3OficialDeFila, totalizarGTF } from "./gtf-redondeo";
 import { componerPunto, conPunto, faltantesGtf, gtfDatosVacio, llegadaDelDestinatario, mismaUbicacion, type FaltanteGtf, type GtfDatos, type UbicacionTraslado } from "./ctp-gtf-datos";
 
 /* Viven en `ctp-gtf-datos` (las usa también la guía del CTP); se re-exportan para no mover a nadie. */
@@ -105,9 +106,16 @@ export function ordenarPiezas<T extends PiezaGuia>(piezas: readonly T[]): T[] {
   return [...piezas].sort((a, b) => porCodigo(a.arbol ?? a.codigo, b.arbol ?? b.codigo) || porCodigo(a.codigo, b.codigo));
 }
 
-/** Volumen total de lo que viaja, a 4 decimales. */
+/** La especie que agrupa una troza en el detalle (37): la misma vara del balance del plan. */
+const claveDeLinea = (p: PiezaGuia) => claveEspecie(txt(p.comun) || txt(p.cientifico)) || "(sin especie)";
+
+/**
+ * Volumen total de lo que viaja: la SUMA de las líneas del detalle (37), cada
+ * una ya redondeada a 3 decimales HALF_UP — la regla de la GTF (2026-10-03).
+ * Así el «Volumen Total» del papel cierra exacto con sus filas.
+ */
 export function totalM3(piezas: readonly PiezaGuia[]): number {
-  return r4(piezas.reduce((a, p) => a + (Number(p.volumeM3) || 0), 0));
+  return totalizarGTF(filasGTF(piezas, claveDeLinea, (p) => p.volumeM3)).m3;
 }
 
 /**
@@ -127,13 +135,14 @@ export function detallePorEspecie(
   piezas: readonly PiezaGuia[],
   cientificoDe?: (comun: string) => string | null | undefined,
 ): LineaDetalle[] {
-  const grupos = new Map<string, { comun: string; cientifico: string; n: number; m3: number }>();
+  const grupos = new Map<string, { comun: string; cientifico: string; n: number; m3: number; volumenes: number[] }>();
   for (const p of piezas) {
     const comun = txt(p.comun) || txt(p.cientifico);
-    const clave = claveEspecie(comun) || "(sin especie)";
-    const g = grupos.get(clave) ?? { comun, cientifico: "", n: 0, m3: 0 };
+    const clave = claveDeLinea(p);
+    const g = grupos.get(clave) ?? { comun, cientifico: "", n: 0, m3: 0, volumenes: [] };
     g.n += 1;
     g.m3 += Number(p.volumeM3) || 0;
+    g.volumenes.push(Number(p.volumeM3) || 0);
     if (!g.cientifico) g.cientifico = txt(p.cientifico) || txt(comun ? cientificoDe?.(comun) : "");
     grupos.set(clave, g);
   }
@@ -146,7 +155,8 @@ export function detallePorEspecie(
       presentacion: EMBALAJE_TROZA,
       cantidad: g.n,
       unidad: UNIDAD_TROZA,
-      total: r4(g.m3),
+      /* m³ oficial de la línea: Σ exacta de sus trozas, redondeada UNA vez. */
+      total: m3OficialDeFila(g.volumenes),
     }));
 }
 

@@ -3,6 +3,7 @@
  * Patrón Buleje: tenantId 1er param · cache invalidate.
  */
 import { prisma } from "@/lib/prisma";
+import { claveFilaGTF, filasGTF, totalizarGTF } from "@/lib/forestal/gtf-redondeo";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
 import { auditLoth } from "@/lib/forestal/loth-audit";
@@ -146,10 +147,16 @@ export class ForestGtfDB {
       }
     }
 
-    const volumenTotal = items.reduce(
-      (a, it) => a + Number(it.volumeM3 ?? it.quantity ?? 0),
-      0,
-    );
+    /* El total de la guía es la SUMA de sus filas (científico + tipo), cada una
+       redondeada a 3 decimales HALF_UP — la regla de la GTF (2026-10-03:
+       sumando crudo la guía real daba 31,185 y SERFOR dice 31,188). */
+    const volumenTotal = totalizarGTF(
+      filasGTF(
+        items,
+        (it) => claveFilaGTF({ cientifico: it.scientific, comun: it.species, tipo: it.productType, unidad: it.unit }),
+        (it) => it.volumeM3 ?? it.quantity ?? 0,
+      ),
+    ).m3;
     const piezas = items.reduce((a, it) => a + Number(it.pieces ?? 0), 0);
 
     const gtf = await prisma.$transaction(async (tx) => {

@@ -8,6 +8,7 @@
  */
 
 import type { PiezaCubicada, Unidad } from "./cubicacion";
+import { m3ExactoDePieza, m3OficialDeFila, ptExactoDePieza, redondearGTF, sumaExacta, totalizarGTF } from "./gtf-redondeo";
 import { tipoDePieza } from "./cubicacion-tipo";
 
 /** Cómo se puede agrupar el lote. El orden es el de los chips en la UI. */
@@ -159,7 +160,29 @@ export function resumenPorEspecie(rows: PiezaCubicada[], precio: PrecioPt = 0): 
   }
   const bloques = [...porEspecie.entries()].map(([especie, rs]) => {
     const g = agruparPor(rs, "tipo", precio);
-    return { especie, tipos: g.grupos, total: g.total };
+    /* Cada especie × tipo es una FILA de la GTF (2026-10-03): su m³ es la suma
+       EXACTA de sus piezas (desde las medidas) redondeada UNA vez a 3 decimales
+       HALF_UP, y el total de la especie es la suma de esas filas. Así esta
+       tabla, el Anexo 04 y su comparación salen de la misma cuenta. */
+    const porTipo = new Map<string, PiezaCubicada[]>();
+    for (const r of rs) {
+      const k = claveYLabel(r, "tipo").clave;
+      (porTipo.get(k) ?? porTipo.set(k, []).get(k)!).push(r);
+    }
+    const tipos = g.grupos.map((t) => {
+      const piezas = porTipo.get(t.clave) ?? [];
+      return {
+        ...t,
+        pieTablar: redondearGTF(sumaExacta(piezas.map(ptExactoDePieza)), 2),
+        m3: m3OficialDeFila(piezas.map(m3ExactoDePieza)),
+      };
+    });
+    const total = {
+      ...g.total,
+      pieTablar: redondearGTF(sumaExacta(rs.map(ptExactoDePieza)), 2),
+      m3: totalizarGTF(tipos.map((t) => ({ m3: t.m3 }))).m3,
+    };
+    return { especie, tipos, total };
   });
   bloques.sort((a, b) => b.total.pieTablar - a.total.pieTablar || a.especie.localeCompare(b.especie));
   return bloques;

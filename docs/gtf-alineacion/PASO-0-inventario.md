@@ -178,6 +178,16 @@ Conteo aproximado: ~109 `toFixed` y ~68 `Math.round(…×1000/10000)` sobre vol�
 5. **Factor**: el sistema usa m³ = PT ÷ 424 para aserrada. Lo asumo como el de la GTF salvo que digas otro.
 6. **Las GTF de ingreso que vienen de SERFOR** ya traen su número oficial: propongo NO recalcularlas en la migración (guardar el de SERFOR tal cual) y recalcular sólo lo que el sistema produce (GTF de salida, Anexo 04, totales derivados).
 
+### Decidido por Brandon (2026-10-03)
+
+| # | Decisión |
+|---|---|
+| 1 | El m³ oficial se calcula al armar la fila GTF y se guarda en lo emitido (JSON); **sin migrar columnas** |
+| 2 | Paquetería larga → COMERCIAL, corta → CORTA; «Otro» no se emite sin revisar |
+| 3 | Validador: marca si el m³/pieza cae en la banda de OTRO tipo (bandas del histórico, configurables) |
+| 4 | El m³ de la pieza sale del PT **exacto** (sin redondear el PT antes) |
+| 5 y 6 | Asumidos sin objeción: factor 424; las GTF de ingreso de SERFOR no se recalculan |
+
 ## 7. Fases propuestas (cada una con su commit y resumen)
 
 1. **Redondeo central**: `lib/forestal/gtf-redondeo.ts` con `redondearGTF` (HALF_UP, `decimal.js`) y `totalizarGTF(filas)`; test 0,0955 → 0,096 y 0,0954 → 0,095; fixture de la GTF real (31,188 · 2 082 · 5,633 + 25,555). Se enchufa primero en §1 (GTF impresa, Anexo 04, total de `forest-gtf.db`), después en exportadores y pantallas; los `r2/r3/r4` sueltos se reemplazan por archivo tocado.

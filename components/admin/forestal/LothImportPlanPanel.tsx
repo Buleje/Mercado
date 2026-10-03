@@ -57,15 +57,17 @@ export default function LothImportPlanPanel({
   return (
     <div className="space-y-2">
       <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3">
-        <label htmlFor="loth-import-plan" className="flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
+        <span className="flex items-center gap-1.5">
+        <label htmlFor="loth-import-plan" className="text-sm font-bold text-[var(--text-primary)]">
           Permiso al que van las líneas
+        </label>
           <InfoTip
             title="Importar al permiso correcto"
             what="Cada línea queda atada a este permiso."
             affects="Sólo así se revisa contra su registro y sólo descuenta de su saldo. Una línea sin permiso cuenta en todos a la vez."
             example="Talas de Bolaina importadas a «Plantación QA-459»: bajan el saldo de esa plantación y no el de PO 12."
           />
-        </label>
+        </span>
         <select
           id="loth-import-plan"
           value={planId ?? ""}

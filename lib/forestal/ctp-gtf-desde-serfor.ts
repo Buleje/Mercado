@@ -27,6 +27,7 @@ import {
   type FichaResumen,
 } from "./ctp-documento-print";
 import { cuerpoGtfOficial, fechaGtf, type CuerpoGtfInput, type LineaProducto } from "./ctp-gtf-formato";
+import { textoGTF, totalizarGTF } from "./gtf-redondeo";
 import { subtotalesPorEspecie, type TrozaListada } from "./ctp-lista-trozas";
 import type { GtfSerfor } from "./serfor-gtf";
 import type { CtpFicha } from "./ctp-ficha-types";
@@ -142,11 +143,11 @@ export function documentoGtfSerfor(
   // El volumen es el que declara SERFOR; si no vino, se suma el detalle (37),
   // que es el mismo dato de la misma fuente. Nunca se recalcula desde medidas.
   const volumen =
-    g.volumenTotal ?? (g.productos ?? []).reduce((a, p) => a + (Number(p.volumen) || 0), 0);
+    g.volumenTotal ?? totalizarGTF((g.productos ?? []).map((p) => ({ m3: p.volumen }))).m3;
 
   const fichas: FichaResumen[] = [
     { k: "Estado en SERFOR", v: estado, tono: anulada ? "mal" : estado ? "ok" : undefined },
-    { k: "Volumen amparado", v: volumen ? volumen.toFixed(3) : "", u: "m³" },
+    { k: "Volumen amparado", v: volumen ? textoGTF(volumen) : "", u: "m³" },
     { k: "Piezas en la lista", v: trozas.length ? String(trozas.length) : "" },
     { k: "Especies", v: especies.length ? String(especies.length) : "" },
     { k: "Vence", v: fechaGtf(g.fechaVencimiento) },

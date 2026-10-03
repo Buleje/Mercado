@@ -129,6 +129,7 @@
     "bullmq": "^5.73.0",
     "canvas-confetti": "^1.9.4",
     "clsx": "^2.1.1",
+    "decimal.js": "^10.6.0",
     "embla-carousel-react": "^8.6.0",
     "exceljs": "^4.4.0",
     "framer-motion": "^12.35.0",
