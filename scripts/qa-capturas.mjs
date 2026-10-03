@@ -21,6 +21,11 @@
  *   {"esperar": "<sel>"}          {"esperar": 500}            (ms)
  *   {"eval": "<expresión js>"}    → su resultado sale en el reporte
  *   {"captura": "nombre"}         → la matriz de capturas de ESTE estado
+ *   {"clicTexto": "Rolliza"}      → clic por el DOM en el botón/pestaña/opción cuyo texto
+ *                                   EMPIEZA con eso (dentro de main o de un diálogo). Para
+ *                                   lo que `click` no alcanza: radios segmentados, botones
+ *                                   tapados, títulos repetidos en la barra lateral (02-10:
+ *                                   6 pasos a mano en una sesión → paso propio).
  * Sin ningún paso «captura», se captura el estado final con --nombre.
  *
  * Cada tema es un recorrido aparte: la clave `buleje-theme-session-v2` se pone
@@ -202,6 +207,32 @@ async function recorrido(t, primero) {
       const [tipo, valor] = Object.entries(p)[0] ?? [];
       try {
         if (tipo === "click") await page.locator(valor).first().click({ timeout: 15_000 });
+        if (tipo === "clicTexto") {
+          /* Espera como `click` (hasta 15 s): las vistas del panel cargan por partes. Sólo
+             MARCA el botón; el clic lo hace Playwright, porque el .click() del DOM no dispara
+             el mousedown con que se activan las pestañas (Radix). */
+          const marcado = await page
+            .waitForFunction(
+              (t) => {
+                const raiz = [...document.querySelectorAll("main, [role=dialog], [role=alertdialog]")];
+                const cands = raiz.flatMap((r) => [...r.querySelectorAll("button, [role=tab], [role=radio], [role=option], [role=menuitem], a")]);
+                const b = cands.find((x) => (x.innerText ?? "").trim() === t) ?? cands.find((x) => (x.innerText ?? "").trim().startsWith(t));
+                if (!b) return false;
+                document.querySelectorAll("[data-qa-clic]").forEach((x) => x.removeAttribute("data-qa-clic"));
+                b.setAttribute("data-qa-clic", "1");
+                return true;
+              },
+              String(valor),
+              { timeout: 15_000 },
+            )
+            .then(() => true)
+            .catch(() => false);
+          if (!marcado) throw new Error(`clicTexto: no hay botón que empiece con «${valor}»`);
+          /* Clic normal (espera a que nada lo tape); sólo si no puede, el del DOM —
+             con `force` el clic caía en lo que estuviera encima y la pestaña no cambiaba. */
+          const objetivo = page.locator('[data-qa-clic="1"]').first();
+          await objetivo.click({ timeout: 10_000 }).catch(() => objetivo.evaluate((el) => el.click()));
+        }
         else if (tipo === "llenar") await page.locator(valor[0]).first().fill(String(valor[1]), { timeout: 15_000 });
         else if (tipo === "elegir") await page.locator(valor[0]).first().selectOption(String(valor[1]), { timeout: 15_000 });
         else if (tipo === "tecla") await page.keyboard.press(valor);
