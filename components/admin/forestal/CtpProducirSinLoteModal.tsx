@@ -46,7 +46,7 @@ import {
   TiradorDeVentana,
 } from "@/components/admin/shared/modal-controles-ventana";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
-import { paquetesDeLoCubicado } from "@/lib/forestal/declarar-produccion";
+import { motivoNoDeclarable, paquetesDeLoCubicado } from "@/lib/forestal/declarar-produccion";
 import { gruposPorDueno } from "@/lib/forestal/declarar-por-dueno";
 import CubicadorMadera from "./CubicadorMadera";
 import CtpDeclararProduccionModal from "./CtpDeclararProduccionModal";
@@ -164,6 +164,9 @@ export default function CtpProducirSinLoteModal({
     () => paquetesDeLoCubicado(piezas, { codigosEnPlanta: codigosPlanta }),
     [piezas, codigosPlanta],
   );
+  /* «Variado» (paquetes 6×6 mezclados, ADR-463) no es una especie que se
+     declare: se frena acá, antes de abrir «Declarar». */
+  const motivoVariado = useMemo(() => motivoNoDeclarable(paquetes), [paquetes]);
   /* Se dice ANTES de abrir «Declarar»: lo que no tiene especie no se registra. */
   const piezasSinEspecie = useMemo(
     () => paquetes.filter((p) => !claveEspecie(p.especie)).reduce((a, p) => a + p.cantidad, 0),
@@ -268,14 +271,16 @@ export default function CtpProducirSinLoteModal({
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-x-3 gap-y-2 border-t border-[var(--rule-base)] px-4 py-2.5 sm:px-5">
           <span
             className={`mr-auto text-xs ${
-              piezasSinEspecie > 0
+              piezasSinEspecie > 0 || motivoVariado
                 ? "font-semibold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
                 : "text-[var(--text-tertiary)]"
             }`}
           >
             {paquetes.length === 0
               ? "Cubica al menos una medida para poder declarar."
-              : piezasSinEspecie > 0
+              : motivoVariado
+                ? motivoVariado
+                : piezasSinEspecie > 0
                 ? `${fmtPiezas(piezasSinEspecie)} ${piezasSinEspecie === 1 ? "pieza no tiene" : "piezas no tienen"} especie: pónsela en la columna «Especie» antes de declarar.`
                 : duenos > 1
                   ? `${paquetes.length} medidas · ${duenos} dueños: un registro por dueño, uno a la vez`
@@ -296,7 +301,8 @@ export default function CtpProducirSinLoteModal({
           <button
             type="button"
             onClick={() => setDeclarando(true)}
-            disabled={paquetes.length === 0}
+            disabled={paquetes.length === 0 || Boolean(motivoVariado)}
+            title={motivoVariado ?? undefined}
             className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-semibold text-white transition hover:brightness-95 disabled:opacity-50"
           >
             <Boxes className="h-4 w-4" aria-hidden /> Declarar esta producción

@@ -58,6 +58,11 @@ import { resolverEspecie, type FuenteCodigoDeTroza, type TrozaParaCodigo } from 
 import { piezasParaGuardar, piezasParaVincular } from "@/lib/forestal/cubicacion-para-guardar";
 import CtpEspeciesCatalogoModal from "./CtpEspeciesCatalogoModal";
 import { useEspeciesCatalogo } from "./hooks/use-especies-catalogo";
+import { useVariadoDelLote } from "./hooks/use-config-variado";
+import { AvisoVariado, VariadoModal } from "./cubicador-variado";
+import { ESPECIE_VARIADO, VARIADO_DEFAULT, desglosarVariado, esVariado } from "@/lib/forestal/variado-desglose";
+import { conVariadoHeredado, motivoAbrirVariado } from "@/lib/forestal/variado-aplicar";
+import { MOTIVO_VARIADO_DECLARAR } from "@/lib/forestal/declarar-produccion";
 import CubicadorKpis from "./cubicador-kpis";
 import CubicadorPrecio from "./CubicadorPrecio";
 import { usePrecioCubicador } from "./hooks/use-precio-cubicador";
@@ -78,7 +83,7 @@ import { useTablaVentaneada } from "@/hooks/use-tabla-ventaneada";
 import { AnfitrionDeModales, useModalAislado } from "./hooks/use-modal-aislado";
 
 /** Los modales del cubicador que se abren sin redibujar la tabla. */
-type ModalDelCubicador = "importar" | "especies" | "duenos" | "liquidacion" | "anexo" | "enviar";
+type ModalDelCubicador = "importar" | "especies" | "duenos" | "liquidacion" | "anexo" | "enviar" | "variado";
 import { formatNumber } from "@/lib/format";
 
 // Web Speech API no está en lib.dom — tipado mínimo local.
@@ -448,6 +453,15 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
      especies que el selector no ofrece. */
   const catalogoEspecies = useEspeciesCatalogo();
   const especiesOfrecidas = catalogoEspecies.nombres.length > 0 ? catalogoEspecies.nombres : ESPECIES;
+  /* «Variado» (paquetes 6×6 mezclados, Brandon 2026-10-02) va al final y sólo
+     en el cubicador de Herramientas: no es una especie del catálogo (ADR-410) y
+     se abre en la Distribución, que lee sólo este lote. Misma lista para el
+     selector, la tabla y el dictado («especie variado»). */
+  const variadoActivo = espacio === "";
+  const especiesDelSelector = useMemo<readonly string[]>(
+    () => (variadoActivo ? [...especiesOfrecidas.filter((e) => !esVariado(e)), ESPECIE_VARIADO] : especiesOfrecidas),
+    [variadoActivo, especiesOfrecidas],
+  );
   const [config, setConfig] = useState<CubicadorConfig>(CONFIG_DEFAULT);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [showAjustes, setShowAjustes] = useState(false);
@@ -505,6 +519,28 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
     () => enOrdenDelPapel(marcadas.size > 0 ? rows.filter((r) => marcadas.has(r.id)) : rows, ordenFilas),
     [rows, marcadas, ordenFilas],
   );
+  /* Una fila SIN especie toma la de arriba en el papel: si arriba dice
+     «Variado», cuenta como Variado igual que la que lo dice (ADR-463). */
+  const rowsConVariado = useMemo(() => conVariadoHeredado(rows, especie), [rows, especie]);
+  const papelConVariado = useMemo(() => conVariadoHeredado(rowsParaPapel, especie), [rowsParaPapel, especie]);
+  /** El Variado del lote: abierto para el papel y el envío, o el motivo que los frena. */
+  const variado = useVariadoDelLote(rowsConVariado, papelConVariado, variadoActivo);
+  /**
+   * Con Variado en el lote no se envía ni se vincula al Libro (ADR-463): el
+   * vínculo guarda las piezas TAL CUAL y el Anexo 04 de ese despacho saldría
+   * «VARIADO 6×6». Primero se abre en el lote (Resúmenes › Rolliza › Aplicar el
+   * desglose al lote). Fuera de Herramientas el Variado no se abre: no se
+   * declara. Lo que no se puede ni calcular (`variado.bloqueoEnvio`) va antes.
+   */
+  const bloqueoEnvio = useMemo(() => {
+    if (variado.bloqueoEnvio) return variado.bloqueoEnvio;
+    if (!rowsConVariado.some((r) => esVariado(r.especie))) return null;
+    if (!variadoActivo) return MOTIVO_VARIADO_DECLARAR;
+    return motivoAbrirVariado(rowsConVariado === rows ? 0 : rows.filter((r) => !r.especie?.trim()).length);
+  }, [variado.bloqueoEnvio, rowsConVariado, rows, variadoActivo]);
+  /** El papel fuera de Herramientas: ahí el Variado no se abre, así que no sale. */
+  const bloqueoPapel = variado.bloqueoPapel
+    ?? (!variadoActivo && papelConVariado.some((r) => esVariado(r.especie)) ? MOTIVO_VARIADO_DECLARAR : null);
   /**
    * Apartados — función EXTRA: separar el lote en bloques (10, 14, los que
    * hagan falta) con su propio total. Vive en su PROPIA clave de localStorage
@@ -685,7 +721,7 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
   useEffect(() => { especieRef.current = especie; }, [especie]);
   useEffect(() => { duenoRef.current = dueno; }, [dueno]);
   useEffect(() => { duenosConocidosRef.current = duenosConocidos; }, [duenosConocidos]);
-  useEffect(() => { especiesRef.current = especiesOfrecidas; }, [especiesOfrecidas]);
+  useEffect(() => { especiesRef.current = especiesDelSelector; }, [especiesDelSelector]);
   /** Una troza elegida en el campo «Código»: su código y su especie, con el
    *  nombre que ofrece el catálogo. Sin especie en la troza, no se toca. */
   const elegirTroza = useCallback((t: TrozaParaCodigo) => {
@@ -1837,9 +1873,20 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
     return { triples, resto: nums.slice(i) };
   }, [listening, liveText, fijas]);
 
+  /** Al poner «Variado» a una fila que no es 6×6: el aviso al tiro, con la MISMA regla del desglose. */
+  const avisarVariadoNo6x6 = (r: PiezaCubicada, especieNueva: string) => {
+    if (!esVariado(especieNueva)) return;
+    const [motivo] = desglosarVariado([{ ...r, especie: especieNueva }], [], VARIADO_DEFAULT).sinDesglosar;
+    if (motivo?.motivo === "no-6x6") pushToast({ tono: "warning", msg: "Variado es sólo para paquetes de 6×6", detail: medidaTxt(r) });
+  };
+
   /** Abre el modal para elegir grado y si se envuelve en un lote de producción. */
   const enviarAlLibro = () => {
     if (!rows.length || enviando) return;
+    if (bloqueoEnvio) {
+      pushToast({ tono: "warning", msg: "Falta abrir el Variado", detail: bloqueoEnvio });
+      return;
+    }
     setLoteCreado(null);
     modales.abrir("enviar");
   };
@@ -1851,10 +1898,12 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
    * forzarla acá fabricaría atribuciones inventadas (invariantes I2/I5).
    */
   const confirmarEnvio = async ({ grade, crearLote }: { grade: string; crearLote: boolean }) => {
-    if (!rows.length || enviando) return;
-    const especies = [...new Set(rows.map((r) => r.especie).filter(Boolean))] as string[];
-    const speciesCommon = especies.length === 1 ? especies[0] : (especie || null);
-    const porMedida = agruparPor(enOrdenDelPapel(rows, ordenFilas), "medida").grupos;
+    if (!rows.length || enviando || bloqueoEnvio) return;
+    /* Con Variado, la especie y las medidas salen del lote ABIERTO (por
+       proporción); el PT y las piezas declaradas siguen siendo lo medido. */
+    const especies = [...new Set(variado.envio.map((r) => r.especie).filter(Boolean))] as string[];
+    const speciesCommon = especies.length === 1 ? especies[0] : (especie && !esVariado(especie) ? especie : null);
+    const porMedida = agruparPor(enOrdenDelPapel(variado.envio, ordenFilas), "medida").grupos;
     const resumenTxt = porMedida.slice(0, 6).map((g) => `${g.cantidad}× ${g.label}`).join("; ");
     const cantidad = Math.round(totales.pt * 100) / 100;
     let codigoLote: string | null = null;
@@ -1873,7 +1922,7 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
           quantity: cantidad,
           unit: "pt",
           pieces: totales.piezas,
-          observations: `Cubicado con la herramienta por voz — ${rows.length} filas. ${resumenTxt}`.slice(0, 1000),
+          observations: `Cubicado con la herramienta por voz — ${rows.length} filas. ${variado.hay ? "Variado 6×6 abierto por proporción del permiso. " : ""}${resumenTxt}`.slice(0, 1000),
         }),
       });
       const j = await r.json().catch(() => ({}));
@@ -2130,7 +2179,7 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
         onAplicarFijas={aplicarFijas}
         especie={especie}
         onEspecieChange={setEspecie}
-        especies={especiesOfrecidas}
+        especies={especiesDelSelector}
         onAbrirEspecies={() => modales.abrir("especies")}
         dueno={dueno}
         duenoDelDirectorio={Boolean(dueno && duenoParteId)}
@@ -2273,8 +2322,8 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
                   label={enviando ? "Registrando…" : "Enviar al Libro"}
                   Icono={Send}
                   destacado
-                  disabled={enviando}
-                  hint="Registrar este lote como producción en el Libro CTP"
+                  disabled={enviando || Boolean(bloqueoEnvio)}
+                  hint={bloqueoEnvio ?? "Registrar este lote como producción en el Libro CTP"}
                   onClick={() => void enviarAlLibro()}
                 />
 
@@ -2330,7 +2379,9 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
                       label: "ANEXO N° 04 (SERFOR)",
                       Icono: FileText,
                       badge: marcadas.size > 0 ? `${marcadas.size} pza` : undefined,
-                      hint: marcadas.size > 0 ? `Vista previa con las ${marcadas.size} piezas marcadas` : "Vista previa del ANEXO N° 04 antes de descargar",
+                      disabled: Boolean(bloqueoPapel),
+                      hint: bloqueoPapel
+                        ?? (marcadas.size > 0 ? `Vista previa con las ${marcadas.size} piezas marcadas` : "Vista previa del ANEXO N° 04 antes de descargar"),
                       onClick: () => modales.abrir("anexo"),
                     },
                     {
@@ -2365,6 +2416,9 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
               alineacion="derecha"
               items={[
                 { key: "guardadas", label: "Cubicaciones guardadas", Icono: FileText, activo: showHistorial, onClick: () => setShowHistorial((v) => !v) },
+                ...(variadoActivo
+                  ? [{ key: "variado", label: "Variado (paquetes 6×6)", Icono: Layers, hint: "Qué medidas entran en el paquete y qué especies no aplican", onClick: () => modales.abrir("variado") }]
+                  : []),
                 ...(rows.length > 0
                   ? [
                       { key: "nueva", label: "Empezar un lote nuevo", Icono: Plus, hint: "Lo guardado no se pierde", onClick: nuevaCubicacion },
@@ -2375,6 +2429,16 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
             />
           </div>
         </div>
+
+        {variado.hay && (
+          <AvisoVariado
+            paquetes={variado.paquetes}
+            pesos={variado.des?.pesos ?? []}
+            bloqueo={bloqueoEnvio}
+            papelLibre={!bloqueoPapel}
+            onAjustar={() => modales.abrir("variado")}
+          />
+        )}
 
         {/* Historial de cubicaciones guardadas */}
         {showHistorial && (
@@ -2870,17 +2934,17 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
                       <td className="group/celda relative px-3 py-2">
                         <select
                           value={r.especie ?? ""}
-                          onChange={(e) => editarEspecie(r.id, e.target.value)}
+                          onChange={(e) => { editarEspecie(r.id, e.target.value); avisarVariadoNo6x6(r, e.target.value); }}
                           aria-label="Especie de la pieza"
                           className="max-w-[110px] rounded-xl border border-[var(--rule-base)] bg-transparent px-1 py-0.5 text-xs font-bold text-[var(--text-secondary)] outline-none focus:border-[var(--accent)]"
                         >
                           <option value="">—</option>
-                          {especiesOfrecidas.map((s) => <option key={s} value={s}>{s}</option>)}
+                          {especiesDelSelector.map((s) => <option key={s} value={s}>{s}</option>)}
                           {/* Una pieza cargada con una especie que el catálogo ya
                               no ofrece conserva la suya: sin esta opción el
                               <select> se vería vacío y el primer toque en la
                               fila la borraría sin que nadie lo pidiera. */}
-                          {r.especie && !(especiesOfrecidas as readonly string[]).includes(r.especie) && (
+                          {r.especie && !especiesDelSelector.includes(r.especie) && (
                             <option value={r.especie}>{r.especie}</option>
                           )}
                         </select>
@@ -3059,8 +3123,9 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
 
             {abiertos.has("anexo") && (
               <Anexo04Modal
-                rows={rowsParaPapel}
-                especieGlobal={especie || undefined}
+                rows={variado.papel}
+                /* Las filas que heredan «Variado» ya van abiertas en `variado.papel`. */
+                especieGlobal={especie && !esVariado(especie) ? especie : undefined}
                 onPdfDetallado={() => descargarConAviso(
                   exportarPDF(rowsParaPapel, { precioPt: precio, especieGlobal: especie || undefined, precioDe: precioVariable ? precioDe : undefined, asignados, nombresApartado }),
                   "PDF detallado generado", "No se pudo generar el PDF.",
@@ -3070,12 +3135,23 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
               />
             )}
 
+            {abiertos.has("variado") && (
+              <VariadoModal
+                cfg={variado.cfg}
+                onGuardar={variado.guardar}
+                especies={especiesOfrecidas}
+                bloques={variado.bloques}
+                piezasNoVariado={rowsConVariado.filter((r) => !esVariado(r.especie))}
+                onCerrar={() => cerrar("variado")}
+              />
+            )}
+
             {abiertos.has("enviar") && (
               <EnviarLibroModal
                 piezas={totales.piezas}
                 pieTablar={totales.pt}
                 m3={totales.m3}
-                especie={(() => { const e = [...new Set(rows.map((r) => r.especie).filter(Boolean))] as string[]; return e.length === 1 ? e[0] : (especie || null); })()}
+                especie={(() => { const e = [...new Set(variado.envio.map((r) => r.especie).filter(Boolean))] as string[]; return e.length === 1 ? e[0] : (especie && !esVariado(especie) ? especie : null); })()}
                 enviando={enviando}
                 onConfirmar={confirmarEnvio}
                 onCerrar={() => cerrar("enviar")}

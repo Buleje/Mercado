@@ -13,8 +13,12 @@ import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
 import { recubicarPiezas } from "@/lib/forestal/cubicacion";
 import type { CubicacionRegistro } from "@/lib/forestal/cubicacion-registro";
 import { formatDateShort } from "@/lib/format";
+import { cubicacionTraeVariado } from "@/lib/forestal/variado-aplicar";
 
 export const ORIGEN_ACTUAL = "actual";
+
+/** Una cubicación que todavía dice «Variado»: su anexo saldría «VARIADO 6×6» (ADR-463). */
+const conVariado = (c: CubicacionRegistro) => cubicacionTraeVariado(c.piezas, c.especie);
 
 const fecha = (iso: string) => {
   try { return formatDateShort(iso, { soloFecha: true }); }
@@ -57,7 +61,8 @@ export default function Anexo04Origen({
         // caso normal cuando la madera se cubicó con la herramienta.
         setGuardadas([...lista.filter((c) => ids.includes(c.id)), ...lista.filter((c) => !ids.includes(c.id))]);
         setSugeridas(ids);
-        const auto = lista.find((c) => ids.includes(c.id));
+        /* Una con Variado sin abrir no se elige sola: no se ofrece (ADR-463). */
+        const auto = lista.find((c) => ids.includes(c.id) && !conVariado(c));
         if (auto && piezasActuales === 0) onCambio(auto.id, recubicarPiezas(auto.piezas), auto);
       })
       // Sin historial (o sin red) el selector queda con el lote actual: es una
@@ -71,6 +76,7 @@ export default function Anexo04Origen({
   const elegir = (id: string) => {
     if (id === ORIGEN_ACTUAL) { onCambio(id, null); return; }
     const c = guardadas.find((g) => g.id === id);
+    if (c && conVariado(c)) return;
     onCambio(id, recubicarPiezas(c?.piezas ?? []), c);
   };
 
@@ -88,9 +94,10 @@ export default function Anexo04Origen({
           {`${rotuloActual ?? "Lote actual del cubicador"} (${piezasActuales > 0 ? `${piezasActuales} medidas` : "vacío"})`}
         </option>
         {guardadas.map((c) => (
-          <option key={c.id} value={c.id}>
+          <option key={c.id} value={c.id} disabled={conVariado(c)}>
             {sugeridas.includes(c.id) ? "Sugerida (este despacho) · " : ""}
             {c.nombre} · {fecha(c.fecha)} · {c.totales.piezas} pzas{c.cliente ? ` · ${c.cliente}` : ""}
+            {conVariado(c) ? " · trae Variado sin abrir: ábrelo en el cubicador" : ""}
           </option>
         ))}
       </select>

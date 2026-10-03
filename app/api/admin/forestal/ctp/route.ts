@@ -24,6 +24,7 @@ import { agregarRolliza } from "@/lib/forestal/saldo-por-permiso";
 import { NotificationLogsDB } from "@/lib/db/notifications.db";
 import { ForestAserrioDB } from "@/lib/db/forest-aserrio.db";
 import type { ResultadoCobro } from "@/lib/forestal/tarifa-aserrio";
+import { esVariado } from "@/lib/forestal/variado-desglose";
 
 /**
  * /api/admin/forestal/ctp — Libro CTP: producción + despacho + saldos (ADR-127)
@@ -66,7 +67,7 @@ const createSchema = z.object({
    * LO-CTP pide y que hasta ahora era texto libre en la columna «Lote».
    */
   loteAserrioId: z.string().trim().max(60).nullable().optional(),
-  speciesCommon: z.string().trim().max(120).nullable().optional(),
+  speciesCommon: z.string().trim().max(120).nullable().optional().refine((v) => !esVariado(v), { message: "«Variado» no es una especie que se declare: ábrelo antes (Resúmenes › Rolliza › Aplicar el desglose al lote)." }),
   speciesScientific: z.string().trim().max(150).nullable().optional(),
   cites: z.boolean().optional(),
   productType: z.string().trim().max(80).nullable().optional(),

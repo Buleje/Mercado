@@ -16,7 +16,7 @@
  * está el editor de bloques y el dibujo.
  */
 
-import { Fragment, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { Fragment, useCallback, useDeferredValue, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Trash2, Download, Share2, AlertTriangle, Info, Layers, ArrowDown, FileText, FileSpreadsheet, Scale, HelpCircle, ShieldCheck, SlidersHorizontal, Combine, X, Boxes, Save, FolderOpen, Check, Loader2, RefreshCw, Ruler, Target, TreePine } from "@buleje/design-system/icons";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -77,6 +77,9 @@ import RepartoPaquetesPicker, { type PaqueteElegible } from "./reparto-paquetes"
 import RepartoImportarBloquesModal from "./RepartoImportarBloquesModal";
 import type { BloqueImportado } from "@/lib/forestal/reparto-bloques-import";
 import Anexo04Modal from "./Anexo04Modal";
+import RepartoVariado, { NOTA_VARIADO_PAPEL } from "./reparto-variado";
+import { paquetesVariado, useConfigVariado } from "./hooks/use-config-variado";
+import { agruparPiezasIguales, desglosarVariado, esVariado } from "@/lib/forestal/variado-desglose";
 
 
 /** Mismo botón que la cabecera de Resúmenes: un solo alto para toda la pestaña. */
@@ -873,17 +876,29 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
    * elegir el tipo de un bloque de una lista real y no tipearlo. Se recalculan
    * al cambiar `dim` porque las claves guardadas llevan la dimensión adentro.
    */
+  /* El Variado (paquetes 6×6 mezclados, 2026-10-02) entra al reparto ya
+     ABIERTO en sus medidas y especies, por proporción del libre de cada
+     permiso: desde acá para abajo el reparto ve `piezas`, no `rows`. Lo que
+     no se pudo abrir sigue como «Variado» y cae en Falta por distribuir. */
+  const { cfg: cfgVariado } = useConfigVariado();
+  const hayVariado = useMemo(() => rows.some((r) => esVariado(r.especie)), [rows]);
+  const desVariado = useMemo(() => (hayVariado ? desglosarVariado(rows, bloques, cfgVariado) : null), [hayVariado, rows, bloques, cfgVariado]);
+  /* Abierto, el Variado multiplica las filas (≈700 → 2 298 medido el 02-10) y
+     el reparto se volvía 8× más lento por tecla: las piezas iguales van juntas
+     —el reparto agrupa igual, el resultado no cambia—. */
+  const piezas = useMemo(() => (desVariado ? agruparPiezasIguales(desVariado.piezas) : rows), [desVariado, rows]);
+
   const gruposDisponibles = useMemo(
-    () => agruparPor(rows, dim === "especie" ? "tipo" : dim, precioDe).grupos.map((g) => ({ clave: g.clave, label: g.label })),
-    [rows, dim, precioDe],
+    () => agruparPor(piezas, dim === "especie" ? "tipo" : dim, precioDe).grupos.map((g) => ({ clave: g.clave, label: g.label })),
+    [piezas, dim, precioDe],
   );
 
   const largosDisponibles = useMemo(
-    () => Array.from(new Set(rows.map((r) => Math.round(toFeet(r.largo, r.uLargo))))).sort((a, b) => a - b),
-    [rows],
+    () => Array.from(new Set(piezas.map((r) => Math.round(toFeet(r.largo, r.uLargo))))).sort((a, b) => a - b),
+    [piezas],
   );
 
-  const dist = useMemo(() => distribuirPorCapacidad(bloques, rows, dim, precioDe), [bloques, rows, dim, precioDe]);
+  const dist = useMemo(() => distribuirPorCapacidad(bloques, piezas, dim, precioDe), [bloques, piezas, dim, precioDe]);
   /* Por qué quedó capacidad libre y con qué medidas se cierra. Se calcula con
      el MISMO `dim` que la distribución: los filtros por grupo se guardan con la
      clave de la vista vigente y leerlos con otra los daría por inactivos. */
@@ -894,9 +909,14 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
    * «por medida» los grupos serían 2×8×10 → 6×6×10, que no es un reproceso que
    * alguien pueda mandar a la sierra. Con `dim` ya en tipo se reusa el cálculo.
    */
+  /* Con otra vista, el reparto por tipo es un SEGUNDO cálculo entero: va
+     diferido, así la tecla en un bloque no espera a los dos (sale un instante
+     después, sin frenar lo que se tipea). */
+  const bloquesDiferidos = useDeferredValue(bloques);
+  const piezasDiferidas = useDeferredValue(piezas);
   const distPorTipo = useMemo(
-    () => (dim === "tipo" ? dist : distribuirPorCapacidad(bloques, rows, "tipo", precioDe)),
-    [dim, dist, bloques, rows, precioDe],
+    () => (dim === "tipo" ? dist : distribuirPorCapacidad(bloquesDiferidos, piezasDiferidas, "tipo", precioDe)),
+    [dim, dist, bloquesDiferidos, piezasDiferidas, precioDe],
   );
   const reprocesos = useMemo(() => sugerenciasDeReproceso(distPorTipo), [distPorTipo]);
   /**
@@ -1091,8 +1111,10 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
       const firma: FirmaResponsable | undefined = firmaNombre.trim() ? { nombre: firmaNombre.trim(), cargo: firmaCargo.trim() || undefined } : undefined;
       // Las marcas viajan al papel: el que recibe el archivo ve qué líneas ya
       // están en el Libro y cuáles no — que es la mitad del valor de tildarlas.
-      if (que === "pdf") await exportarDistribucionPDF(dist, etiqueta, marcadas, firma, soloEspecies);
-      else await exportarDistribucionExcel(dist, etiqueta, marcadas, firma, soloEspecies);
+      /* Con Variado, el papel dice que su reparto por especie es calculado. */
+      const nota = desVariado ? NOTA_VARIADO_PAPEL : undefined;
+      if (que === "pdf") await exportarDistribucionPDF(dist, etiqueta, marcadas, firma, soloEspecies, nota);
+      else await exportarDistribucionExcel(dist, etiqueta, marcadas, firma, soloEspecies, nota);
     } catch (err) {
       // Un `catch` vacío dejaría el botón en «Generando…» para siempre y nadie
       // sabría por qué no bajó el archivo.
@@ -1503,6 +1525,8 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
         </>
       }
     >
+
+      <RepartoVariado des={desVariado} paquetes={desVariado ? paquetesVariado(rows) : 0} bloques={bloques} cfg={cfgVariado} />
 
       {/* ── Balance del reparto: lo hecho y lo que falta, en las tres unidades ── */}
       {bloques.length > 0 && (

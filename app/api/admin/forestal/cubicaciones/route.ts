@@ -15,6 +15,7 @@ import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
 import { ORDEN_TIPO, type TipoComercial } from "@/lib/forestal/cubicacion-tipo";
 import { OBSERVACION_MAX } from "@/lib/forestal/observacion-de-pieza";
+import { esVariado } from "@/lib/forestal/variado-desglose";
 
 /**
  * /api/admin/forestal/cubicaciones — historial de cubicaciones del aserradero.
@@ -36,7 +37,7 @@ const piezaSchema = z.object({
   uEspesor: z.enum(["pulg", "cm", "pies", "m"]).optional(),
   uAncho: z.enum(["pulg", "cm", "pies", "m"]).optional(),
   uLargo: z.enum(["pulg", "cm", "pies", "m"]).optional(),
-  especie: z.string().trim().max(60).nullish(),
+  especie: z.string().trim().max(60).nullish().refine((v) => !esVariado(v), { message: "«Variado» no es una especie que se declare: ábrelo antes (Resúmenes › Rolliza › Aplicar el desglose al lote)." }),
   /** De quién es la madera (aserrío por encargo). Texto libre, sin ficha del Directorio. */
   dueno: z.string().trim().max(120).nullish(),
   /** La ficha del Directorio de ese dueño (ADR-430): con ella se precia por su trato. */
@@ -52,7 +53,7 @@ const saveSchema = z.object({
   nombre: z.string().trim().min(1).max(120),
   fecha: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   cliente: z.string().trim().max(120).nullish(),
-  especie: z.string().trim().max(60).nullish(),
+  especie: z.string().trim().max(60).nullish().refine((v) => !esVariado(v), { message: "«Variado» no es una especie que se declare: ábrelo antes (Resúmenes › Rolliza › Aplicar el desglose al lote)." }),
   notas: z.string().trim().max(600).nullish(),
   precioPt: z.coerce.number().nonnegative().max(999999).optional(),
   /** Línea de producción del Libro creada desde esta cubicación (el hilo que

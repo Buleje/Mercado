@@ -28,6 +28,7 @@ import {
 } from "@/lib/forestal/precio-cliente";
 import {
   importe,
+  motivoNoDeclarable,
   precioValido,
   type CorridaDeEspecie,
   type PreciosPorEspecie,
@@ -301,6 +302,9 @@ export function faltaParaRegistrar(args: {
 }): string | null {
   const { corridas } = args;
   if (corridas.length === 0) return "Cubica al menos una medida para poder declarar.";
+  /* Variado (ADR-463) antes que «sin especie»: se arregla abriéndolo, no tipeando. */
+  const variado = motivoNoDeclarable(corridas.flatMap((c) => c.paquetes));
+  if (variado) return variado;
   const sinEspecie = corridas.find((c) => !claveEspecie(c.especie));
   if (sinEspecie) {
     return `${sinEspecie.piezas === 1 ? "Una pieza no tiene" : `${sinEspecie.piezas} piezas no tienen`} especie: el Libro declara una por asiento.`;

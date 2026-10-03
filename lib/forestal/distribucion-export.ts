@@ -313,7 +313,8 @@ export interface FirmaResponsable {
   cargo?: string;
 }
 
-export async function exportarDistribucionPDF(d: Distribucion, etiquetaDim: string, marcadas?: ReadonlySet<string>, firma?: FirmaResponsable, soloEspecies?: ReadonlySet<string>): Promise<void> {
+/** `nota`: una línea extra bajo el encabezado (p. ej. que el Variado se repartió por proporción). */
+export async function exportarDistribucionPDF(d: Distribucion, etiquetaDim: string, marcadas?: ReadonlySet<string>, firma?: FirmaResponsable, soloEspecies?: ReadonlySet<string>, nota?: string): Promise<void> {
   const { jsPDF } = await import("jspdf");
   const autoTable = (await import("jspdf-autotable")).default;
   const doc = new jsPDF({ unit: "pt", format: "a4", orientation: "landscape" });
@@ -340,6 +341,7 @@ export async function exportarDistribucionPDF(d: Distribucion, etiquetaDim: stri
     (t.aserradaDirectaM3 > EPS_FILTRO ? " Los bloques de aserrada directa amparan su propio m³ (A) y no cuentan como rolliza ni en el rendimiento." : ""),
     40, 76,
   );
+  if (nota) doc.text(nota, 40, 88);
 
   // ── 1. Resumen por bloque: qué entró y qué amparó cada uno ───────────────
   const bloques = resumenDeBloques(d);
@@ -352,7 +354,7 @@ export async function exportarDistribucionPDF(d: Distribucion, etiquetaDim: stri
     ]),
     foot: [["TOTAL", "", "", "", "", m3(t.rollizaM3), "", m3(t.capacidadM3), m3(t.amparadaM3), m3(t.libreM3),
       piezasTxt(bloques.reduce((a, b) => a + b.piezas, 0)), t.amparadaPt.toFixed(2)]],
-    startY: 90,
+    startY: nota ? 98 : 90,
     // Sin esto el pie se repite en cada página y el TOTAL aparece ANTES de las
     // filas que suma — se lee como si la tabla ya hubiera terminado.
     showFoot: "lastPage",
@@ -518,7 +520,7 @@ export async function exportarDistribucionPDF(d: Distribucion, etiquetaDim: stri
   doc.save(`distribucion-rolliza-${fecha()}.pdf`);
 }
 
-export async function exportarDistribucionExcel(d: Distribucion, etiquetaDim: string, marcadas?: ReadonlySet<string>, firma?: FirmaResponsable, soloEspecies?: ReadonlySet<string>): Promise<void> {
+export async function exportarDistribucionExcel(d: Distribucion, etiquetaDim: string, marcadas?: ReadonlySet<string>, firma?: FirmaResponsable, soloEspecies?: ReadonlySet<string>, nota?: string): Promise<void> {
   const ExcelJS = (await import("exceljs")).default;
   const wb: Workbook = new ExcelJS.Workbook();
   wb.creator = "Cubicador de Buleje";
@@ -682,6 +684,7 @@ export async function exportarDistribucionExcel(d: Distribucion, etiquetaDim: st
     wr.addRow({ especie: "Aserrada directa cargada", bloque: `${m3(t.aserradaDirectaM3)} m³ (A) sin troza de origen — ampara ${m3(t.amparadaDirectaM3)} m³` });
   }
   wr.addRow({ especie: "Falta por distribuir", bloque: `${m3(t.faltanteM3)} m³ — pide ${m3(t.rollizaFaltanteM3)} m³ de troza` });
+  if (nota) wr.addRow({ especie: "Nota", bloque: nota });
   // La misma firma que va al pie del PDF: el Excel y el PDF tienen que decir
   // lo mismo sobre quién responde por la distribución, no sólo uno de los dos.
   if (firma?.nombre) {

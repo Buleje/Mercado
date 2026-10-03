@@ -33,6 +33,7 @@
 
 import { ESPECIES_MADERA } from "./cubicacion";
 import { claveEspecie } from "./loth-constants";
+import { esVariado } from "./variado-desglose";
 import type { GrupoEspecies } from "./precio-cliente";
 import { findSpeciesByCommonName, listSpecies, type ForestrySpecies } from "@/data/forestry-species";
 
@@ -74,6 +75,9 @@ export interface EspecieDisponible {
   /** `true` si vino del código y no del catálogo del tenant. */
   deFabrica: boolean;
 }
+
+/** «Variado» es una especie especial del cubicador (paquetería 6×6 mezclada): no se crea como propia. */
+const MOTIVO_VARIADO = "«Variado» ya existe en el cubicador como especie especial: no se crea como propia.";
 
 const txt = (v: unknown) => String(v ?? "").trim();
 
@@ -192,6 +196,7 @@ export function agregarEspecie(
   if (!clave) return { ok: false, motivo: "Escribe el nombre de la especie." };
   if (nombre.length > 120)
     return { ok: false, motivo: "El nombre no puede pasar de 120 caracteres." };
+  if (esVariado(nombre)) return { ok: false, motivo: MOTIVO_VARIADO };
   if (catalogo.agregadas.length >= MAX_ESPECIES) {
     return { ok: false, motivo: `El catálogo ya tiene ${MAX_ESPECIES} especies propias.` };
   }
@@ -241,6 +246,7 @@ export function editarEspecie(
   if (cambios.nombre != null && !claveEspecie(nombreNuevo ?? "")) {
     return { ok: false, motivo: "El nombre no puede quedar vacío." };
   }
+  if (nombreNuevo && esVariado(nombreNuevo)) return { ok: false, motivo: MOTIVO_VARIADO };
   const claveNueva = nombreNuevo ? claveEspecie(nombreNuevo) : objetivo;
   if (claveNueva !== objetivo && catalogo.agregadas.some((e) => e.clave === claveNueva)) {
     return { ok: false, motivo: `«${nombreNuevo}» ya está en el catálogo.` };

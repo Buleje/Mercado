@@ -24,6 +24,7 @@ import { toFeet, toInches, unificarPorMedida, type PiezaCubicada } from "./cubic
 import { productoDelTipoComercial } from "./loctp-catalogos";
 import { sugerirCodigoPaquete } from "./produccion-paquetes";
 import type { ResultadoCobro } from "./tarifa-aserrio";
+import { esVariado } from "./variado-desglose";
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
 const r4 = (n: number) => Math.round(n * 10000) / 10000;
@@ -97,6 +98,28 @@ export function paquetesDeLoCubicado(
         pieTablar: p.pieTablar ?? 0,
       };
     });
+}
+
+// ── Variado (ADR-463): no es una especie que se declare ─────────────────────
+
+/**
+ * «Variado» son paquetes 6×6 mezclados: hasta abrirlos en medidas y especies
+ * (Resúmenes › Rolliza › Aplicar el desglose al lote) no hay una especie que
+ * el LO-CTP pueda asentar. Una corrida «Variado» sería un asiento inventado.
+ */
+export const MOTIVO_VARIADO_DECLARAR =
+  "Abre el Variado primero: Resúmenes › Rolliza › Aplicar el desglose al lote (o ponle su especie a cada fila). «Variado» no se declara.";
+
+/** Piezas cubicadas como «Variado» entre lo que se va a declarar. */
+export function piezasVariado(paquetes: readonly Pick<PaqueteDeclarable, "especie" | "cantidad">[]): number {
+  return paquetes.reduce((a, p) => a + (esVariado(p.especie) ? p.cantidad : 0), 0);
+}
+
+/** Por qué lo cubicado no se puede declarar por traer Variado, o `null`. */
+export function motivoNoDeclarable(paquetes: readonly Pick<PaqueteDeclarable, "especie" | "cantidad">[]): string | null {
+  const n = piezasVariado(paquetes);
+  if (n === 0) return null;
+  return `${n === 1 ? "Una pieza es" : `${n} piezas son`} «Variado». ${MOTIVO_VARIADO_DECLARAR}`;
 }
 
 export type TipoServicio = "propia" | "tercero";
@@ -264,7 +287,9 @@ const positivo = (max: number) => z.number().finite().positive().max(max);
 /* Mismo tope que el precio a mano de «Cobrar aserrío» y que un trato con un
    cliente (S/ 1000 por PT): un precio por pie más alto es un error de tipeo. */
 const precioSchema = z.number().finite().positive().max(1000, "Un precio de más de S/ 1000 por pie es un error de tipeo.").nullable();
-const especieSchema = z.string().trim().min(1).max(80);
+/* «Variado» no llega al Libro como especie (ADR-463): lo frena la pantalla y,
+   si igual llega, el servidor. */
+const especieSchema = z.string().trim().min(1).max(80).refine((e) => !esVariado(e), MOTIVO_VARIADO_DECLARAR);
 
 const paqueteSchema = z.object({
   codigo: z.string().trim().min(1).max(40),
