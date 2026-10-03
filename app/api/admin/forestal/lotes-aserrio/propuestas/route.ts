@@ -6,6 +6,7 @@ import { isSpecializationEnabled } from "@/lib/specializations";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { ForestLotePropuestaDB } from "@/lib/db/forest-lote-propuesta.db";
 import { ctpErrorResponse } from "@/lib/forestal/ctp-api-errors";
+import { MAX_TROZAS_POR_BLOQUE } from "@/lib/forestal/cubicacion-reparto";
 
 /**
  * «Lotes que puedes armar» (Brandon, 2026-09-27).
@@ -14,6 +15,11 @@ import { ctpErrorResponse } from "@/lib/forestal/ctp-api-errors";
  *        que ya se puede aserrar, y cuánta espera que recibas su guía.
  * POST → crea uno o varios de esos lotes. El servidor vuelve a armar la
  *        propuesta; los ids que manda la pantalla sólo acotan a «lo que vi».
+ *
+ * POST {modo, bloques} → «Crear lotes sugeridos» de la Distribución de rolliza
+ *        (ADR-464): UN lote por bloque, acotado EXACTAMENTE a sus trozas.
+ *        `modo: "previsualizar"` sólo lee (qué lote saldría o por qué no);
+ *        `modo: "crear"` los arma, todo o nada por bloque.
  *
  * Mismo guard que `/lotes-aserrio` (armar un lote es trabajo de patio:
  * admin, almacenero y dueño) y la misma especialización del libro.
@@ -35,6 +41,33 @@ const postSchema = z.object({
     .min(1, "Elige al menos un lote")
     .max(200, "Son demasiados lotes para un solo pedido"),
 });
+
+/** Tope de piezas por pedido: el mismo que lee el GET del patio. */
+const MAX_TROZAS_POR_PEDIDO = 5000;
+
+const porBloquesSchema = z.object({
+  modo: z.enum(["previsualizar", "crear"]),
+  bloques: z
+    .array(
+      z.object({
+        bloqueId: z.string().trim().min(1).max(80),
+        etiqueta: z.string().trim().max(120).nullish(),
+        trozaIds: z
+          .array(trozaId)
+          .min(1, "El bloque no sabe sus trozas: tráelo del Libro")
+          .max(MAX_TROZAS_POR_BLOQUE, "El bloque tiene demasiadas trozas para un solo lote"),
+      }),
+    )
+    .min(1, "Elige al menos un bloque")
+    .max(200, "Son demasiados bloques para un solo pedido")
+    .refine(
+      (bs) => bs.reduce((a, b) => a + b.trozaIds.length, 0) <= MAX_TROZAS_POR_PEDIDO,
+      "Son demasiadas trozas para un solo pedido",
+    ),
+});
+
+const esPedidoPorBloques = (body: unknown): boolean =>
+  typeof body === "object" && body !== null && "bloques" in body;
 
 async function guard(req: NextRequest) {
   const rl = await applyRateLimit(req, "GENEROUS", "ctp:lotes-aserrio");
@@ -74,6 +107,25 @@ export async function POST(req: NextRequest) {
       body = await req.json();
     } catch {
       return NextResponse.json({ error: "invalid_json", message: "El pedido no es JSON." }, { status: 400 });
+    }
+    if (esPedidoPorBloques(body)) {
+      const pb = porBloquesSchema.safeParse(body);
+      if (!pb.success) {
+        return NextResponse.json(
+          {
+            error: "validation_error",
+            message: pb.error.issues[0]?.message ?? "Datos inválidos.",
+            issues: pb.error.issues.map((i) => ({ path: i.path.join("."), message: i.message })),
+          },
+          { status: 400 },
+        );
+      }
+      if (pb.data.modo === "previsualizar") {
+        const bloques = await ForestLotePropuestaDB.previsualizarPorBloques(tenantId, pb.data.bloques);
+        return NextResponse.json({ bloques });
+      }
+      const r = await ForestLotePropuestaDB.crearPorBloques(tenantId, pb.data.bloques, g.auth.username ?? "unknown");
+      return NextResponse.json(r, { status: r.creados.length > 0 ? 201 : 200 });
     }
     const parsed = postSchema.safeParse(body);
     if (!parsed.success) {

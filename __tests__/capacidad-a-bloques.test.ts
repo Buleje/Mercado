@@ -286,3 +286,37 @@ describe("unirSiembra", () => {
     expect(actuales[0]!.especie).toBe("Tornillo");
   });
 });
+
+describe("ADR-464 — el bloque recuerda sus trozas", () => {
+  it("el patio viaja con SUS trozas (no las que no llegaron) y el lote con su id", () => {
+    const todo = bloquesDesdeCapacidad(ENTRADA, {});
+    const tornillo = todo.find((c) => c.fuente === "patio" && c.especie === "Tornillo")!;
+    expect(tornillo.trozaIds?.sort()).toEqual(["A", "C"]);
+    const bloque = bloqueDeCandidato(tornillo);
+    expect(bloque.trozaIds?.sort()).toEqual(["A", "C"]);
+    expect(bloque.loteId).toBeUndefined();
+
+    const apartado = todo.find((c) => c.clave === "apartado:L-1")!;
+    expect(bloqueDeCandidato(apartado)).toMatchObject({ loteId: "L-1" });
+    expect(bloqueDeCandidato(apartado).trozaIds).toBeUndefined();
+  });
+
+  it("con más de 500 trozas no se pega la lista (no se podría guardar)", () => {
+    const muchas = Array.from({ length: 501 }, (_, i) => troza({ id: `x${i}`, volumenM3: 0.1 }));
+    const [c] = bloquesDesdeCapacidad({ ...ENTRADA, patio: muchas, lotes: [], corridas: [] }, {});
+    expect(c!.trozaIds).toHaveLength(501);
+    expect(bloqueDeCandidato(c!).trozaIds).toBeUndefined();
+  });
+
+  it("volver a traer un bloque viejo (sin trozas) se las pone si es el MISMO m³; si cambió, no", () => {
+    const ya: BloqueRolliza = { id: "a", etiqueta: "G-1", especie: "Tornillo", m3: 2.5, origen: "manual", tipo: "rolliza" };
+    const igual = unirSiembra([ya], [{ etiqueta: "G-1", especie: "Tornillo", m3: 2.5002, origen: "manual", trozaIds: ["t1", "t2"] }], "permiso", "t");
+    expect(igual).toMatchObject({ sembrados: 0, repetidos: 1, conTrozas: 1 });
+    expect(igual.lista[0]!.trozaIds).toEqual(["t1", "t2"]);
+    expect(ya.trozaIds).toBeUndefined();
+
+    const cambio = unirSiembra([ya], [{ etiqueta: "G-1", especie: "Tornillo", m3: 2.0, origen: "manual", trozaIds: ["t1"] }], "permiso", "t");
+    expect(cambio.conTrozas).toBe(0);
+    expect(cambio.lista[0]!.trozaIds).toBeUndefined();
+  });
+});

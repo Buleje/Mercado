@@ -40,6 +40,7 @@ import {
   type LoteDeCapacidad,
 } from "@/lib/forestal/capacidad-de-planta";
 import type { BloqueSembrable } from "@/lib/forestal/sembrar-reparto";
+import { MAX_TROZAS_POR_BLOQUE } from "@/lib/forestal/cubicacion-reparto";
 import { m3OficialDeFila, totalizarGTF } from "@/lib/forestal/gtf-redondeo";
 
 const r4 = (v: number) => Math.round(v * 10000) / 10000;
@@ -66,6 +67,14 @@ export interface CandidatoDeCapacidad {
   piezasManual: number | null;
   /** Para no sembrar dos veces la misma corrida (mismo `ref` que el picker de paquetes). */
   paqueteId?: string;
+  /**
+   * Las trozas reales detrás de la línea (ADR-464). Sólo en las fuentes de
+   * trozas sueltas (patio, por recepcionar): es lo que deja al bloque crear su
+   * lote en el Libro. Un lote o una corrida ya tienen su propia referencia.
+   */
+  trozaIds?: string[];
+  /** El lote de donde sale la línea (apartado o margen): ya tiene lote, no se arma otro. */
+  loteId?: string;
   /**
    * Qué tipo comercial es esta madera («Comercial», «Paquetería larga»), cuando
    * el producto del Libro lo dice. Viaja al bloque para que la distribución
@@ -122,16 +131,20 @@ function especieDeLote(l: Pick<LoteDeCapacidad, "especie" | "trozas">): string {
 
 /** Agrupa trozas por especie; la especie vacía queda junta y se dice. */
 function porEspecie(
-  trozas: readonly { especieComun?: string | null; volumenM3?: number | string | null; permiso?: string | null }[],
+  trozas: readonly { id: string; especieComun?: string | null; volumenM3?: number | string | null; permiso?: string | null }[],
 ) {
-  const grupos = new Map<string, { especie: string; m3: number; piezas: number; permisos: (string | null)[] }>();
+  const grupos = new Map<
+    string,
+    { especie: string; m3: number; piezas: number; permisos: (string | null)[]; trozaIds: string[] }
+  >();
   for (const t of trozas) {
     const especie = txt(t.especieComun);
     const clave = especie.toUpperCase();
-    const g = grupos.get(clave) ?? { especie, m3: 0, piezas: 0, permisos: [] };
+    const g = grupos.get(clave) ?? { especie, m3: 0, piezas: 0, permisos: [], trozaIds: [] };
     g.m3 = r4(g.m3 + (Number(t.volumenM3 ?? 0) || 0));
     g.piezas += 1;
     g.permisos.push(t.permiso ?? null);
+    g.trozaIds.push(t.id);
     grupos.set(clave, g);
   }
   return [...grupos.values()].sort((a, b) => b.m3 - a.m3);
@@ -172,6 +185,7 @@ export function bloquesDesdeCapacidad(
         aprovechablePct: PCT_TARJETA,
         piezasManual: null,
         piezas: g.piezas,
+        trozaIds: g.trozaIds,
       });
     }
   }
@@ -200,6 +214,7 @@ export function bloquesDesdeCapacidad(
       aprovechablePct: PCT_TARJETA,
       piezasManual: null,
       piezas: l.piezas,
+      loteId: l.id,
     });
   }
 
@@ -222,6 +237,7 @@ export function bloquesDesdeCapacidad(
       aprovechablePct: null,
       piezasManual: null,
       piezas: 0,
+      loteId: l.id,
     });
   }
 
@@ -313,6 +329,13 @@ export function bloqueDeCandidato(c: CandidatoDeCapacidad): BloqueSembrable {
     ...(c.tipoProducto ? { tipoProducto: c.tipoProducto } : {}),
     ...(c.piezas > 0 ? { piezasOrigen: c.piezas } : {}),
     ...(c.paqueteId ? { paqueteId: c.paqueteId } : {}),
+    /* ADR-464: las trozas reales viajan con el bloque (sin ellas no puede
+       crear su lote) y el lote de origen también — así la Distribución no
+       ofrece armar otro lote ni vuelve a ofrecer ese mismo lote como bloque. */
+    ...(c.trozaIds && c.trozaIds.length > 0 && c.trozaIds.length <= MAX_TROZAS_POR_BLOQUE
+      ? { trozaIds: [...c.trozaIds] }
+      : {}),
+    ...(c.loteId ? { loteId: c.loteId } : {}),
   };
 }
 

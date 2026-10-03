@@ -53,6 +53,13 @@ import { agruparPor, claveYLabel, type DimensionResumen, type GrupoResumen, type
  */
 export const APROVECHABLE_DEFAULT = 55;
 
+/**
+ * Tope de trozas que un bloque recuerda (`trozaIds`, ADR-464). Es el mismo del
+ * guardado de distribuciones: un bloque con más no se podría guardar, así que
+ * quien siembra no le pega la lista (queda como bloque sin trozas).
+ */
+export const MAX_TROZAS_POR_BLOQUE = 500;
+
 /** Un bloque de rolliza: lo que entró, con su etiqueta para reconocerlo. */
 export interface BloqueRolliza {
   id: string;
@@ -130,6 +137,22 @@ export interface BloqueRolliza {
    * cargar el mismo paquete dos veces duplicaría su m³ dentro de la hoja.
    */
   paqueteId?: string | null;
+  /**
+   * Las trozas REALES del Libro que forman este bloque (ADR-464). Lo llenan
+   * sólo los caminos que siembran desde trozas sueltas del patio (Resumen por
+   * permiso, Saldos «Llevar al cubicador»): ahí se sabe pieza por pieza de
+   * dónde sale el m³. Un bloque cargado a mano, importado de planilla o traído
+   * del cubicador de trozas no lo tiene — y por eso NO puede crear un lote ni
+   * escribir en el Libro (T1: el origen no se inventa). Un bloque que sale de
+   * un lote ya creado tampoco: su referencia es `loteId`.
+   */
+  trozaIds?: string[] | null;
+  /**
+   * Las corridas del Libro que ya se escribieron desde este bloque (ADR-464,
+   * fase 3: cada jornada del bloque es una producción). Sirve para apagar el
+   * botón y no registrar dos veces la misma jornada.
+   */
+  corridaIds?: string[] | null;
   /** Costo por m³ de rolliza, si se conoce. `null` nunca se sustituye por 0. */
   costoM3?: number | null;
   /** % de la rolliza que se convierte en aserrada. Sin valor, `APROVECHABLE_DEFAULT`. */

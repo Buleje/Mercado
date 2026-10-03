@@ -73,6 +73,9 @@ import { contarRevision, revisarDistribucion, type HallazgoRevision } from "@/li
 import { ColumnasMenu, useColumnasVisibles } from "./ctp-shared";
 import { colorDeBloque, indicesDeBloques } from "./reparto-colores";
 import DistribucionesGuardadas from "./DistribucionesGuardadas";
+import RepartoLotesSugeridos from "./reparto-lotes-sugeridos";
+import { logger } from "@/lib/logger";
+import type { LoteCreadoDeBloque } from "@/lib/forestal/lotes-por-bloque";
 import RepartoPaquetesPicker, { type PaqueteElegible } from "./reparto-paquetes";
 import RepartoImportarBloquesModal from "./RepartoImportarBloquesModal";
 import type { BloqueImportado } from "@/lib/forestal/reparto-bloques-import";
@@ -409,7 +412,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
    * de lo que el lote realmente puede cubrir. Un lote ya agregado como
    * bloque no se vuelve a ofrecer: declararlo dos veces duplicaría su m³.
    */
-  const { lotes: lotesAserrio } = useLotesAserrio();
+  const { lotes: lotesAserrio, recargar: recargarLotesAserrio } = useLotesAserrio();
   const lotesConRolliza = useMemo(() => {
     const yaAgregados = new Set(bloques.filter((b) => b.loteId).map((b) => b.loteId));
     return lotesAserrio
@@ -728,8 +731,8 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
    * que se listan en «Guardadas» los recalcula el servidor desde los
    * bloques — el papel guardado no depende de lo que diga la pantalla.
    */
-  const guardarDistribucion = async () => {
-    if (bloques.length === 0 || guardandoDistribucion) return;
+  const guardarDistribucion = async (lista: BloqueRolliza[] = bloques) => {
+    if (lista.length === 0 || guardandoDistribucion) return;
     setGuardandoDistribucion(true);
     setErrorGuardarDistribucion(null);
     try {
@@ -739,10 +742,10 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
         credentials: "include",
         body: JSON.stringify({
           id: distribucionActual?.id || undefined,
-          nombre: formGuardar.nombre.trim() || nombreSugeridoDistribucion(bloques),
+          nombre: formGuardar.nombre.trim() || nombreSugeridoDistribucion(lista),
           fecha: formGuardar.fecha,
           notas: formGuardar.notas.trim() || null,
-          bloques,
+          bloques: lista,
         }),
       });
       if (!r.ok) {
@@ -764,6 +767,25 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
     } finally {
       setGuardandoDistribucion(false);
     }
+  };
+
+  /**
+   * ADR-464: los lotes recién armados con «Crear lotes». Cada bloque guarda su
+   * `loteId` —no se le arma otro ni se vuelve a ofrecer ese lote como bloque— y
+   * se guarda en el dispositivo; si hay una distribución guardada abierta,
+   * también en el servidor, para que al reabrirla siga diciendo «Ya tiene lote».
+   */
+  const asignarLotesCreados = (creados: LoteCreadoDeBloque[]) => {
+    const loteDe = new Map(creados.map((c) => [c.bloqueId, c.loteId]));
+    const next = bloques.map((b) => {
+      const loteId = loteDe.get(b.id);
+      return loteId ? { ...b, loteId } : b;
+    });
+    guardar(next);
+    if (distribucionActual) void guardarDistribucion(next);
+    recargarLotesAserrio().catch((err: unknown) =>
+      logger.error("[reparto] recargar lotes tras crearlos falló", { error: String(err) }),
+    );
   };
 
   /**
@@ -1803,6 +1825,12 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
                     )
                   : [{ label: "Sin lotes con volumen restante", icon: Boxes, disabled: true, dividerBefore: true } satisfies ModuleActionItem]),
               ]}
+            />
+            {/* ADR-464: un lote por bloque traído del Libro, con sus trozas. */}
+            <RepartoLotesSugeridos
+              bloques={bloques}
+              codigoDeLote={(id) => lotesAserrio.find((l) => l.id === id)?.code ?? null}
+              onCreados={asignarLotesCreados}
             />
             {/* Guardar/abrir la distribución de bloques (Brandon, 2026-09-01):
                 mismo patrón que "Guardadas" en el Cubicador de madera — vive

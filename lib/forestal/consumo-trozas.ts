@@ -493,6 +493,9 @@ export interface BloqueDeGuia {
   /** El permiso de la troza — una GTF entra siempre bajo el mismo, así que
    *  alcanza con leerlo de cualquiera de sus trozas (Brandon, 2026-09-01). */
   permiso: string | null;
+  /** Las trozas reales del bloque (ADR-464): sin esto el bloque no sabe de qué
+   *  piezas sale y no puede crear su lote en el Libro. */
+  trozaIds: string[];
 }
 
 /**
@@ -506,8 +509,9 @@ export function bloquesDeGuiaDe(trozas: readonly TrozaConsumible[]): BloqueDeGui
     const etiqueta = t.gtfNumber || "Sin guía";
     const especie = t.especieComun || "";
     const k = `${etiqueta}::${especie}`;
-    const acc = mapa.get(k) ?? { etiqueta, especie, m3: 0, permiso: t.permiso || null };
+    const acc = mapa.get(k) ?? { etiqueta, especie, m3: 0, permiso: t.permiso || null, trozaIds: [] };
     acc.m3 += Number(t.volumenM3 ?? 0);
+    acc.trozaIds.push(t.id);
     mapa.set(k, acc);
   }
   return [...mapa.values()]

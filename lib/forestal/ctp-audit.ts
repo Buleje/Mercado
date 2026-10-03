@@ -127,6 +127,8 @@ export type CtpAuditAction =
   /** Cargó o corrigió la escuadría de un paquete ya declarado (ADR-417). */
   | "ctp_paquete_escuadria"
   | "ctp_lote_aserrio_create"
+  /** Armó el lote de UN bloque de la Distribución de rolliza, con sus trozas (ADR-464). */
+  | "ctp_lote_aserrio_desde_distribucion"
   // Lote declarado como inventario (Brandon, 2026-08-31): entra y sale en el
   // mismo acto, sin trozas reales — ver `ORIGEN_LOTE_INVENTARIO`.
   | "ctp_lote_aserrio_inventario_create"

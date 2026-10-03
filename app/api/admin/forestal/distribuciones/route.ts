@@ -7,6 +7,7 @@ import { ForestDistribucionesDB } from "@/lib/db/forest-distribuciones.db";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
+import { MAX_TROZAS_POR_BLOQUE } from "@/lib/forestal/cubicacion-reparto";
 
 /**
  * /api/admin/forestal/distribuciones — distribuciones de rolliza guardadas
@@ -43,6 +44,11 @@ const bloqueSchema = z.object({
   /* Igual que `tipo`: sin declararlo, Zod lo borra en silencio y al reabrir la
      distribución el buscador volvería a ofrecer paquetes ya cargados. */
   paqueteId: z.string().trim().max(120).nullish(),
+  /* ADR-464: las trozas reales del bloque y las corridas ya escritas desde él.
+     Sin declararlos, Zod los borra y al reabrir la distribución el bloque
+     «traído del Libro» queda como uno cargado a mano: no puede crear su lote. */
+  trozaIds: z.array(z.string().trim().max(40)).max(MAX_TROZAS_POR_BLOQUE).nullish(),
+  corridaIds: z.array(z.string().trim().max(40)).max(MAX_TROZAS_POR_BLOQUE).nullish(),
   costoM3: z.coerce.number().nonnegative().max(999999).nullish(),
   aprovechablePct: z.coerce.number().nonnegative().max(100).nullish(),
   amparaManualM3: z.coerce.number().nonnegative().max(999999).nullish(),
@@ -126,6 +132,8 @@ export const POST = withApiHandler("forestal-distribuciones-post", async (req: N
           permiso: b.permiso ?? undefined,
           loteId: b.loteId ?? undefined,
           paqueteId: b.paqueteId ?? undefined,
+          trozaIds: b.trozaIds ?? undefined,
+          corridaIds: b.corridaIds ?? undefined,
           costoM3: b.costoM3 ?? undefined,
           aprovechablePct: b.aprovechablePct ?? undefined,
           amparaManualM3: b.amparaManualM3 ?? undefined,

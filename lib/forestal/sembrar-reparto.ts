@@ -69,6 +69,8 @@ export interface ResultadoSiembra {
   repetidos: number;
   /** De esos repetidos, los que estaban SIN especie y ahora la recibieron. */
   conEspecie?: number;
+  /** De esos repetidos, los que no sabían sus trozas y ahora las saben (ADR-464). */
+  conTrozas?: number;
 }
 
 /** La huella con la que se decide si un bloque ya está cargado. */
@@ -77,6 +79,25 @@ const huella = (b: Pick<BloqueRolliza, "etiqueta" | "especie" | "paqueteId">) =>
 
 /** `""`, `"  "` y `null` son «sin especie». */
 const sinEspecie = (b: Pick<BloqueRolliza, "especie">) => !String(b.especie ?? "").trim();
+
+/**
+ * Tolerancia para decir «es el mismo m³», en la unidad del negocio: la GTF
+ * declara m³ a 3 decimales, así que medio litro es «igual» y un litro, no.
+ */
+const MISMO_M3 = 0.0005;
+
+/**
+ * ¿Se le pueden poner sus trozas a un bloque que ya estaba cargado sin ellas?
+ * Sólo si es la MISMA madera: misma huella y el mismo m³. Si el m³ cambió
+ * (se consumió o llegó una pieza desde que se sembró), las trozas de hoy no
+ * son las de ese bloque, y pegárselas le haría escribir en el Libro piezas que
+ * no son las suyas (T1). Queda sin trozas y la pantalla dice «Tráelo del Libro».
+ */
+const puedeRecibirTrozas = (b: BloqueRolliza, c: BloqueSembrable) =>
+  !(b.trozaIds && b.trozaIds.length > 0) &&
+  Boolean(c.trozaIds && c.trozaIds.length > 0) &&
+  huella(b) === huella(c) &&
+  Math.abs((Number(b.m3) || 0) - (Number(c.m3) || 0)) <= MISMO_M3;
 
 /**
  * La hoja de rolliza después de sembrar — PURO, sin `localStorage`.
@@ -95,11 +116,12 @@ export function unirSiembra(
   candidatos: readonly BloqueSembrable[],
   prefijo: string,
   marca: string,
-): { lista: BloqueRolliza[]; sembrados: number; repetidos: number; conEspecie: number } {
+): { lista: BloqueRolliza[]; sembrados: number; repetidos: number; conEspecie: number; conTrozas: number } {
   const lista = actuales.map((b) => ({ ...b }));
   const yaEstan = new Set(lista.map(huella));
   let sembrados = 0;
   let conEspecie = 0;
+  let conTrozas = 0;
   for (const c of candidatos) {
     /* El mismo bloque, cargado antes sin especie: se le pone, no se duplica.
        Va ANTES de la huella: por `paqueteId` la huella ya coincide y lo daría
@@ -115,15 +137,28 @@ export function unirSiembra(
       vacio.especie = c.especie;
       yaEstan.add(huella(vacio));
       conEspecie += 1;
+      if (puedeRecibirTrozas(vacio, c)) {
+        vacio.trozaIds = [...c.trozaIds!];
+        conTrozas += 1;
+      }
       continue;
     }
     const h = huella(c);
-    if (yaEstan.has(h)) continue;
+    if (yaEstan.has(h)) {
+      /* Sembrado antes de que el bloque guardara sus trozas (ADR-464): volver
+         a traerlo del Libro se las pone, en vez de dejarlo apagado para siempre. */
+      const previo = lista.find((b) => puedeRecibirTrozas(b, c));
+      if (previo) {
+        previo.trozaIds = [...c.trozaIds!];
+        conTrozas += 1;
+      }
+      continue;
+    }
     yaEstan.add(h);
     lista.push({ ...c, id: `${prefijo}-${marca}-${sembrados}` });
     sembrados += 1;
   }
-  return { lista, sembrados, repetidos: candidatos.length - sembrados, conEspecie };
+  return { lista, sembrados, repetidos: candidatos.length - sembrados, conEspecie, conTrozas };
 }
 
 /**
@@ -140,13 +175,13 @@ export function sembrarBloques(
     const raw = localStorage.getItem(slugKey("-rolliza"));
     const actuales: BloqueRolliza[] = raw ? (JSON.parse(raw) as BloqueRolliza[]) : [];
     const r = unirSiembra(actuales, candidatos, prefijo, Date.now().toString(36));
-    if (r.sembrados > 0 || (r.conEspecie ?? 0) > 0) {
+    if (r.sembrados > 0 || r.conEspecie > 0 || r.conTrozas > 0) {
       localStorage.setItem(slugKey("-rolliza"), JSON.stringify(r.lista));
     }
     /* Que Resúmenes abra en la pestaña donde están los bloques recién
        sembrados: llegar a «Tablas» y tener que buscarlos es la mitad del viaje. */
     localStorage.setItem(slugKey("-vista-resumen"), "rolliza");
-    return { sembrados: r.sembrados, repetidos: r.repetidos, conEspecie: r.conEspecie };
+    return { sembrados: r.sembrados, repetidos: r.repetidos, conEspecie: r.conEspecie, conTrozas: r.conTrozas };
   } catch {
     /* localStorage puede fallar (modo privado). Se informa que no se sembró
        nada; quien llama decide si navega igual. */

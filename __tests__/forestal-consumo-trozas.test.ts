@@ -249,11 +249,11 @@ describe("cuposDeGuia — el tope de I2, antes de firmar (ADR-353)", () => {
 describe("bloquesDeGuiaDe — sembrar la Distribución de rolliza desde el Libro (2026-09-01)", () => {
   it("un bloque por guía+especie, con el permiso de sus trozas", () => {
     const bloques = bloquesDeGuiaDe([
-      troza({ gtfNumber: "019-001-0000011", especieComun: "Tornillo", volumenM3: 0.6, permiso: "19-SEC/REG-PLT-2018-020" }),
-      troza({ gtfNumber: "019-001-0000011", especieComun: "Tornillo", volumenM3: 0.4, permiso: "19-SEC/REG-PLT-2018-020" }),
+      troza({ id: "t1", gtfNumber: "019-001-0000011", especieComun: "Tornillo", volumenM3: 0.6, permiso: "19-SEC/REG-PLT-2018-020" }),
+      troza({ id: "t2", gtfNumber: "019-001-0000011", especieComun: "Tornillo", volumenM3: 0.4, permiso: "19-SEC/REG-PLT-2018-020" }),
     ]);
     expect(bloques).toEqual([
-      { etiqueta: "019-001-0000011", especie: "Tornillo", m3: 1, permiso: "19-SEC/REG-PLT-2018-020" },
+      { etiqueta: "019-001-0000011", especie: "Tornillo", m3: 1, permiso: "19-SEC/REG-PLT-2018-020", trozaIds: ["t1", "t2"] },
     ]);
   });
 

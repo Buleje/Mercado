@@ -94,7 +94,16 @@ interface CorridaDisponibleMin {
 }
 
 /** Un bloque de rolliza listo para sembrar, sin `id` (se lo pone quien siembra). */
-type CandidatoBloque = { etiqueta: string; especie: string; m3: number; permiso?: string | null };
+type CandidatoBloque = {
+  etiqueta: string;
+  especie: string;
+  m3: number;
+  permiso?: string | null;
+  /** ADR-464: las trozas reales de una guía. Sin ellas el bloque no crea su lote. */
+  trozaIds?: string[];
+  /** El lote de donde sale la rolliza sobrante: ya tiene lote, no se arma otro. */
+  loteId?: string;
+};
 
 export default function CtpResumenPermisoModal({
   open,
@@ -319,7 +328,11 @@ export default function CtpResumenPermisoModal({
         especie: c.especie,
         m3: c.m3,
         permiso: c.permiso ?? null,
-        origen: "manual" as const,
+        /* De un lote ya creado → `origen: "lote"` con su id: la Distribución
+           no lo vuelve a ofrecer como bloque ni le arma otro lote (ADR-464). */
+        origen: c.loteId ? ("lote" as const) : ("manual" as const),
+        ...(c.loteId ? { loteId: c.loteId } : {}),
+        ...(c.trozaIds && c.trozaIds.length > 0 ? { trozaIds: c.trozaIds } : {}),
       })),
       "permiso",
     );
@@ -350,7 +363,7 @@ export default function CtpResumenPermisoModal({
     const deGuias = bloquesDeGuiaDe(paraRepartir(grupo.trozas));
     const deLotes: CandidatoBloque[] = lotesConRollizaSobrante
       .filter((l) => lotesElegidos.has(l.id))
-      .map((l) => ({ etiqueta: `Lote ${l.code}`, especie: l.speciesCommon, m3: volumenLibre(l) }));
+      .map((l) => ({ etiqueta: `Lote ${l.code}`, especie: l.speciesCommon, m3: volumenLibre(l), loteId: l.id }));
     sembrarYAbrir([...deGuias, ...deLotes]);
   }
 
@@ -361,7 +374,12 @@ export default function CtpResumenPermisoModal({
     // producida (`aserradaSobranteM3`) nunca se siembra como bloque.
     const deLotes: CandidatoBloque[] = lotesConSobra
       .filter((x) => seleccionLotes.has(x.lote.id) && x.rollizaSobranteM3 > 1e-4)
-      .map((x) => ({ etiqueta: `Lote ${x.lote.code}`, especie: x.lote.speciesCommon, m3: x.rollizaSobranteM3 }));
+      .map((x) => ({
+        etiqueta: `Lote ${x.lote.code}`,
+        especie: x.lote.speciesCommon,
+        m3: x.rollizaSobranteM3,
+        loteId: x.lote.id,
+      }));
     sembrarYAbrir([...deGuias, ...deLotes]);
   }
 

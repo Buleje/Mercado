@@ -14,6 +14,14 @@ import {
   type ResultadoCrearLotes,
   type TrozaQueNoEntro,
 } from "@/lib/forestal/propuesta-de-lotes";
+import {
+  lotesPorBloque,
+  type LoteDelBloque,
+  type PedidoPorBloque,
+  type ResultadoLotesPorBloque,
+  type TrozaDelBloque,
+} from "@/lib/forestal/lotes-por-bloque";
+import { auditCtp, m3 as m3Audit } from "@/lib/forestal/ctp-audit";
 import { CtpInvariantError } from "./forest-ctp-consumo.db";
 import { ForestLoteAserrioDB, motivoNoElegible } from "./forest-lote-aserrio.db";
 import { WoodEntriesDB } from "./wood-entries.db";
@@ -147,6 +155,123 @@ export class ForestLotePropuestaDB {
       gtfNumber: t.entry.gtfNumber,
       estado: estadoParaLote(t),
     };
+  }
+
+  /**
+   * Las trozas de los bloques, estén donde estén (ADR-464). No es el patio:
+   * para decir POR QUÉ un bloque no arma su lote hay que ver también la pieza
+   * que ya está en un lote, la consumida y la de una guía anulada. El
+   * `tenantId` va en el WHERE: un id de otro negocio no vuelve y el bloque se
+   * apaga con «ya no existen en este negocio».
+   */
+  private static async trozasDeBloques(tenantId: string, ids: readonly string[]): Promise<TrozaDelBloque[]> {
+    if (ids.length === 0) return [];
+    const filas = await prisma.woodEntryTroza.findMany({
+      where: { tenantId, id: { in: [...new Set(ids)] } },
+      select: { ...SELECT_TROZA, loteAserrioId: true, loteAserrio: { select: { code: true } } },
+    });
+    return filas.map((t) => ({
+      ...ForestLotePropuestaDB.aTroza(t),
+      enLote: t.loteAserrioId ? (t.loteAserrio?.code ?? "otro lote") : null,
+      motivo: motivoNoElegible(t),
+    }));
+  }
+
+  /** Qué lote armaría cada bloque, o por qué no. Sólo lee. */
+  static async previsualizarPorBloques(
+    tenantId: string,
+    pedidos: readonly PedidoPorBloque[],
+  ): Promise<LoteDelBloque[]> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const trozas = await ForestLotePropuestaDB.trozasDeBloques(tenantId, pedidos.flatMap((p) => p.trozaIds));
+    return lotesPorBloque(pedidos, trozas);
+  }
+
+  /**
+   * Arma UN lote por bloque con EXACTAMENTE sus trozas (ADR-464).
+   *
+   * Vuelve a leer y a decidir con la regla del servidor: lo que la pantalla
+   * previsualizó puede tener minutos. Después, las dos puertas de siempre
+   * (`create` + `agregarTrozas`, con su lock `FOR UPDATE ORDER BY id`).
+   *
+   * **Todo o nada por bloque.** Si en el instante entre leer y lockear otra
+   * persona se llevó UNA pieza, el lote se deshace (`softDelete` devuelve las
+   * que entraron al patio) y el bloque se dice con su motivo: un lote con menos
+   * piezas que el bloque declararía en la Distribución madera que no tiene.
+   * Cada bloque es independiente: el que falla no frena a los demás.
+   */
+  static async crearPorBloques(
+    tenantId: string,
+    pedidos: readonly PedidoPorBloque[],
+    user: string,
+  ): Promise<ResultadoLotesPorBloque> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const decisiones = await ForestLotePropuestaDB.previsualizarPorBloques(tenantId, pedidos);
+    const etiquetaDe = new Map(pedidos.map((p) => [p.bloqueId, (p.etiqueta ?? "").trim() || "sin nombre"]));
+    const resultado: ResultadoLotesPorBloque = { creados: [], noCreados: [] };
+
+    for (const d of decisiones) {
+      if (!d.listo) {
+        resultado.noCreados.push({ bloqueId: d.bloqueId, motivo: d.motivo });
+        continue;
+      }
+      const etiqueta = etiquetaDe.get(d.bloqueId) ?? "sin nombre";
+
+      let lote: Awaited<ReturnType<typeof ForestLoteAserrioDB.create>>;
+      try {
+        lote = await ForestLotePropuestaDB.abrirLote(tenantId, {
+          speciesCommon: d.especie,
+          speciesScientific: d.especieCientifica,
+          permiso: d.permiso,
+          notes: `Armado desde la Distribución de rolliza · bloque «${etiqueta}»`.slice(0, 300),
+          createdBy: user,
+        });
+      } catch (e) {
+        resultado.noCreados.push({ bloqueId: d.bloqueId, motivo: motivoDeFalla(e, tenantId) });
+        continue;
+      }
+
+      let r: Awaited<ReturnType<typeof ForestLoteAserrioDB.agregarTrozas>>;
+      try {
+        r = await ForestLoteAserrioDB.agregarTrozas(tenantId, lote.id, d.trozaIds, user);
+      } catch (e) {
+        await ForestLotePropuestaDB.deshacerVacio(tenantId, lote.id, user);
+        resultado.noCreados.push({ bloqueId: d.bloqueId, motivo: motivoDeFalla(e, tenantId) });
+        continue;
+      }
+
+      if (r.agregadas < d.trozaIds.length || r.rechazadas.length > 0) {
+        /* Todo o nada: se deshace aunque hayan entrado algunas. */
+        await ForestLotePropuestaDB.deshacerVacio(tenantId, lote.id, user);
+        const primera = r.rechazadas[0];
+        resultado.noCreados.push({
+          bloqueId: d.bloqueId,
+          motivo: primera
+            ? `No se armó: una troza${primera.codigo ? ` (${primera.codigo})` : ""} cambió mientras tanto — ${primera.motivo}. Vuelve a intentar.`
+            : "No se armó: sus trozas cambiaron mientras tanto. Vuelve a intentar.",
+        });
+        continue;
+      }
+
+      auditCtp({
+        tenantId,
+        action: "ctp_lote_aserrio_desde_distribucion",
+        entity: "ForestLoteAserrio",
+        entityId: lote.id,
+        detail: `Armó el lote ${lote.code} desde el bloque «${etiqueta}» de la Distribución de rolliza: ${d.trozas} trozas · ${m3Audit(d.m3)} de ${d.especie}${d.permiso ? ` · permiso ${d.permiso}` : ""}`,
+        user,
+      });
+      resultado.creados.push({
+        bloqueId: d.bloqueId,
+        loteId: lote.id,
+        code: lote.code,
+        especie: d.especie,
+        permiso: d.permiso,
+        trozas: d.trozas,
+        m3: d.m3,
+      });
+    }
+    return resultado;
   }
 
   /** Las propuestas del patio de hoy. Sin caché: recibir una guía las cambia al toque. */
