@@ -36,10 +36,12 @@ import { BotonRestablecerColumnas, EnOrden, useOrdenColumnas } from "@/component
  * empuja la tabla fuera de la pantalla. Detrás del ⓘ sigue estando entero para
  * quien lo necesite la primera vez.
  */
-export function SeccionResumen({ id, icon: Icono, titulo, hint, ayuda, acciones, children, className = "" }: {
+export function SeccionResumen({ id, icon: Icono, titulo, etiqueta, hint, ayuda, acciones, children, className = "" }: {
   id?: string;
   icon?: LucideIcon;
   titulo: string;
+  /** Un chip pegado al título (el estado del cuadre, 2026-10-03). */
+  etiqueta?: ReactNode;
   /** El dato de una línea, siempre visible. Corto: si necesita comas, va en `ayuda`. */
   hint?: ReactNode;
   /** La explicación larga — vive detrás del ⓘ del título, no ocupa pantalla. */
@@ -71,6 +73,7 @@ export function SeccionResumen({ id, icon: Icono, titulo, hint, ayuda, acciones,
                 </button>
               </AdminTooltip>
             )}
+            {etiqueta}
           </CardTitle>
           {hint && <div className="mt-0.5 text-sm text-[var(--text-tertiary)]">{hint}</div>}
         </div>

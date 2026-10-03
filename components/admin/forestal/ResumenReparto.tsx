@@ -78,6 +78,10 @@ import RepartoImportarBloquesModal from "./RepartoImportarBloquesModal";
 import type { BloqueImportado } from "@/lib/forestal/reparto-bloques-import";
 import Anexo04Modal from "./Anexo04Modal";
 import RepartoVariado, { NOTA_VARIADO_PAPEL } from "./reparto-variado";
+import RepartoCuadreModal from "./reparto-cuadre-modal";
+import EtiquetaCuadre from "./reparto-cuadre-etiqueta";
+import { useRepartoCuadre } from "./hooks/use-reparto-cuadre";
+import { controlDe, estadoDeControles } from "@/lib/forestal/reparto-cuadre";
 import { paquetesVariado, useConfigVariado } from "./hooks/use-config-variado";
 import { agruparPiezasIguales, desglosarVariado, esVariado } from "@/lib/forestal/variado-desglose";
 
@@ -229,8 +233,10 @@ function RealDeBloque({ valor, unidad, alerta, titulo }: { valor: string; unidad
  * que va a cubrir el faltante necesita saber CUÁNTAS piezas le faltan, no sólo
  * cuánto volumen.
  */
-function CifraBalance({ titulo, ayuda, m3, pt, piezas, tono, cuenta }: {
+function CifraBalance({ titulo, ayuda, m3, pt, piezas, tono, cuenta, etiqueta }: {
   titulo: string;
+  /** El chip del cuadre de esta cifra (2026-10-03). */
+  etiqueta?: ReactNode;
   ayuda: string;
   m3: number;
   pt: number;
@@ -262,6 +268,7 @@ function CifraBalance({ titulo, ayuda, m3, pt, piezas, tono, cuenta }: {
             vacio={cuenta.vacio}
           />
         )}
+        {etiqueta && <span className="ml-auto">{etiqueta}</span>}
       </div>
       <div className="mt-1 flex flex-wrap items-baseline gap-x-4 gap-y-1 font-mono tabular-nums">
         <span className={`flex items-baseline gap-1 text-xl font-extrabold leading-none ${alerta
@@ -1188,6 +1195,12 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
   const cuenta = contarRevision(hallazgos);
   const [revisionAbierta, setRevisionAbierta] = useState(false);
 
+  /* El cuadre de CIFRAS entre vistas (Brandon, 2026-10-03): lote, tarjetas,
+     bloques, medidas del PDF, Anexos 04 y especies tienen que dar lo mismo.
+     Lógica pura en `lib/forestal/reparto-cuadre.ts`; acá sólo se monta. */
+  const cuadreCifras = useRepartoCuadre(dist, piezas, rows, anexosDePermiso);
+  const cc = cuadreCifras.cuadre;
+
   /**
    * El color con el que se reconoce cada bloque, por su posición en la lista
    * MAESTRA. La tabla de arriba y las tarjetas de abajo leen del mismo mapa:
@@ -1432,6 +1445,12 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
     <SeccionResumen
       icon={Share2}
       titulo="Distribución de rolliza sobre lo aserrado"
+      etiqueta={bloques.length > 0 ? (
+        <EtiquetaCuadre
+          control={{ estado: cc.estado, relacion: "igual", titulo: "Cuadre de la distribución", peor: cc.controles.find((x) => x.estado === cc.estado)?.peor ?? { piezas: 0, pt: 0, m3: 0 } }}
+          onAbrir={() => cuadreCifras.abrir()}
+        />
+      ) : undefined}
       /* El dato, no la explicación: una línea con lo que se vino a ver. */
       hint={bloques.length === 0 ? "Todavía no hay bloques cargados." : (
         <span className="font-mono tabular-nums">
@@ -1521,6 +1540,25 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
                 <span className="rounded-full bg-current/15 px-1.5 font-mono text-xs tabular-nums">{hallazgos.length}</span>
               )}
             </button>
+            {/* «Revisar» mira los DATOS (GTF, guía repetida); «Cuadre» mira las
+                CIFRAS: que todas las vistas sumen lo mismo. */}
+            <button
+              type="button"
+              onClick={() => cuadreCifras.abrir()}
+              disabled={bloques.length === 0}
+              title={cc.estado === "exacto" ? "Todas las vistas dan las mismas cifras" : cc.estado === "redondeo" ? "Cuadra con redondeo" : `${cc.difieren} ${cc.difieren === 1 ? "control difiere" : "controles difieren"}`}
+              className={`${BTN} ${cc.estado === "difiere"
+                ? "border-[var(--data-error-500)] text-[var(--data-error-600)] dark:text-[var(--data-error-500)]"
+                : cc.estado === "redondeo"
+                  ? "border-[var(--data-warning-500)] text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
+                  : "border-[var(--data-success-500)] text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"}`}
+            >
+              <Scale className="h-4 w-4" />
+              Cuadre
+              {cc.difieren > 0 && (
+                <span className="rounded-full bg-current/15 px-1.5 font-mono text-xs tabular-nums">{cc.difieren}</span>
+              )}
+            </button>
           </div>
         </>
       }
@@ -1538,6 +1576,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
             pt={balance.hechoPt}
             piezas={balance.hechoPiezas}
             tono="ok"
+            etiqueta={<EtiquetaCuadre control={estadoDeControles(cc, ["medidas", "anexos"])} onAbrir={() => cuadreCifras.abrir(estadoDeControles(cc, ["medidas", "anexos"])?.id)} />}
             /* De qué está hecho: bloque por bloque, lo que cada uno ampara. */
             cuenta={{
               formula: "Suma de lo que cada bloque ampara de verdad (m³ A)",
@@ -1576,6 +1615,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
               vacio: "Todo lo cubicado tiene respaldo.",
             }}
             tono={balance.faltaM3 > TOL_M3 ? "falta" : "ok"}
+            etiqueta={<EtiquetaCuadre control={controlDe(cc, "lote")} onAbrir={() => cuadreCifras.abrir("lote")} />}
           />
         </div>
       )}
@@ -1632,6 +1672,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
         <SeccionResumen
           icon={FileText}
           titulo="Anexo 04 por permiso"
+          etiqueta={<EtiquetaCuadre control={controlDe(cc, "anexos")} onAbrir={() => cuadreCifras.abrir("anexos")} />}
           hint={
             <span>
               {anexosDePermiso.length} {anexosDePermiso.length === 1 ? "permiso" : "permisos"} ·{" "}
@@ -1704,6 +1745,11 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
                     <Info className="h-3.5 w-3.5" aria-hidden />
                   </button>
                 </AdminTooltip>
+                {/* Los bloques cuadran si caben en su capacidad y sus medidas suman lo que amparan. */}
+                <EtiquetaCuadre
+                  control={estadoDeControles(cc, ["capacidad", "medidas"])}
+                  onAbrir={() => cuadreCifras.abrir(estadoDeControles(cc, ["capacidad", "medidas"])?.id)}
+                />
               </>
             )}
           </span>
@@ -2451,6 +2497,10 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
           onCerrar={() => setMostrarImportar(false)}
         />
       )}
+      {cuadreCifras.abierto && bloques.length > 0 && (
+        <RepartoCuadreModal cuadre={cc} inicial={cuadreCifras.abierto} onCerrar={cuadreCifras.cerrar} />
+      )}
+
       {anexoDe && (
         <Anexo04Modal
           rows={anexoDe.piezas}

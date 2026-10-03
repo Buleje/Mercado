@@ -12,7 +12,8 @@
  * Uso:
  *   node scripts/qa-capturas.mjs --tenant <slug> --ruta "/admin?tab=x" \
  *     [--pasos '<json>' | --pasos-archivo pasos.json] [--salida <dir>] \
- *     [--nombre base] [--anchos 1280,400] [--temas claro,oscuro] [--completa]
+ *     [--nombre base] [--anchos 1280,400] [--temas claro,oscuro] [--completa] \
+ *     [--preset cubicador-lote,resumenes-rolliza]   (recorridos de scripts/qa-pasos/, van antes)
  *
  * Pasos (array JSON, una clave por paso; los selectores son de Playwright,
  * p. ej. `text=Guardar`, `role=button[name="Dueños"]`, `#id`):
@@ -66,8 +67,16 @@ const clave = process.env.QA_PASS ?? "Qa-admin-1234";
 
 let pasos = [];
 try {
+  /* `--preset a,b` antepone recorridos guardados en `scripts/qa-pasos/<nombre>.json`
+     (sembrar el cubicador se tipeó a mano 6 veces el 03-10: ahora es un preset). */
+  const presets = (arg("preset", "") || "").split(",").map((x) => x.trim()).filter(Boolean);
+  const dePresets = presets.flatMap((n) => {
+    const lista = JSON.parse(readFileSync(path.join(path.dirname(new URL(import.meta.url).pathname), "qa-pasos", `${n}.json`), "utf8"));
+    if (!Array.isArray(lista)) throw new Error(`el preset ${n} no es un array`);
+    return lista;
+  });
   const crudo = arg("pasos-archivo") ? readFileSync(arg("pasos-archivo"), "utf8") : arg("pasos", "[]");
-  pasos = JSON.parse(crudo);
+  pasos = [...dePresets, ...JSON.parse(crudo)];
   if (!Array.isArray(pasos)) throw new Error("los pasos van en un array");
 } catch (e) {
   console.log(JSON.stringify({ ok: false, error: `pasos inválidos: ${e.message}` }));
