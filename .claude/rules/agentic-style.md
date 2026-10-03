@@ -58,3 +58,4 @@ Medido en 40 sesiones y 592 subagentes: un subagente promedia **136 turnos** y c
 
 - Un fork hereda TODA tu meta: si el hilo principal sigue mutando el mismo estado, decile «NO continúes ninguna otra tarea, sólo esto». Redirigir con `SendMessage`, nunca un fork nuevo con el mismo `name` (memoria `fork-tool-anomalous-response`).
 - Nunca `isolation: "worktree"`: en esta rama larga branchea de una base vieja y se pierde lógica (2026-08-03). Trabajo grande = agentes con archivos disjuntos sobre el checkout principal.
+- Con agentes en paralelo, antes de CREAR un archivo: `ls` la ruta. Un Write pisa lo que otro agente creó y todavía no está en git (03-10: el backend del croquis borró `planta-croquis.ts` del frontend; se salvó desde la transcripción). Contrato de tipos compartido = escribirlo y confirmarlo ANTES de lanzar a los dos.
