@@ -45,6 +45,8 @@ import { useAnexo04Comparar } from "./hooks/use-anexo04-comparar";
 import { useTraseraDelPapel } from "./hooks/use-anexo04-trasera";
 import { useAnexo04Vista } from "./hooks/use-anexo04-vista";
 import Anexo04Filtros from "./Anexo04Filtros";
+import Anexo04Variado from "./Anexo04Variado";
+import { useAnexo04Variado } from "./hooks/use-anexo04-variado";
 import Anexo04PorTipo from "./Anexo04PorTipo";
 import Anexo04ConfirmarCuadre, { LineaCuadre } from "./Anexo04ConfirmarCuadre";
 import { useCandadoCuadre } from "./hooks/use-candado-cuadre";
@@ -82,8 +84,14 @@ function imprimirHtml(html: string) {
 
 export default function Anexo04Modal({
   rows, especieGlobal, onPdfDetallado, onCerrar, onAviso, ctpEntryId, declarado, abrirHistorial = false, despacho, procedencia, avisosExtra, rotuloDeLasPiezas, trasera,
-  cuadre, onVerCuadre,
+  cuadre, onVerCuadre, piezasLote,
 }: {
+  /**
+   * Las piezas del lote con la marca del Variado (`variadoPiezas`), antes de
+   * repartir: con ellas la vista previa puede resaltar las medidas que vienen
+   * de Varios aunque el reparto haya perdido la marca. Sólo pantalla.
+   */
+  piezasLote?: readonly PiezaCubicada[];
   /**
    * El cuadre de la distribución de la que salen estas piezas (Brandon,
    * 2026-10-03: «el cuadre como candado»). Con «difiere», una línea roja
@@ -298,6 +306,7 @@ export default function Anexo04Modal({
    */
   const vista = useAnexo04Vista(filasEditadas, especie, origen);
   const { filasPapel } = vista;
+  const variado = useAnexo04Variado(filasPapel, piezasLote, especie);
   const anexo = useMemo(
     () => construirAnexo04(filasPapel, { unidadV: datos.unidadV, modo: datos.modo }, { especieGlobal: especie, totalManualM3: totalManual }),
     [filasPapel, datos.unidadV, datos.modo, especie, totalManual],
@@ -603,6 +612,8 @@ export default function Anexo04Modal({
               }
               checklist={<Anexo04Checklist avisos={avisos} presentable={presentable} onSugerencia={(campo, valor) => set({ [campo]: valor })} />}
               filtros={filas.length > 0 ? <Anexo04Filtros vista={vista} piezasPapel={anexo.totalPiezas} /> : undefined}
+              variadoControl={variado.hay ? <Anexo04Variado variado={variado} /> : undefined}
+              marcasVariado={variado.marcas}
               onEditarCelda={onEditarCelda}
               bloqueoEdicion={vista.editable ? undefined : "Para editar medidas, vuelve a «Como se cargó»"}
             />

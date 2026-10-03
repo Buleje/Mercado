@@ -49,6 +49,13 @@ export interface PiezaCubicada {
    */
   observacion?: string;
   /**
+   * Cuántas de las `cantidad` piezas salieron de abrir un paquete «Variado»
+   * 6×6 (ADR-463). Marca SOLO de pantalla (la vista previa del Anexo 04 las
+   * resalta): no se manda al servidor, no se imprime, no entra en ningún total
+   * ni cambia la agrupación. Al juntar filas se SUMA. Ausente = ninguna.
+   */
+  variadoPiezas?: number;
+  /**
    * Tipo comercial forzado a mano. `undefined` = lo decide la medida
    * (`clasificarTipo`). Se lee SIEMPRE por `tipoDePieza`, nunca directo: es lo
    * que mantiene la pantalla, el Excel y el Anexo 04 diciendo lo mismo.
@@ -214,6 +221,7 @@ export function unificarPorMedida(piezas: PiezaCubicada[]): PiezaCubicada[] {
       acc.cantidad += p.cantidad;
       acc.pieTablar = r2(acc.pieTablar + p.pieTablar);
       acc.m3 = r4(acc.m3 + p.m3);
+      if (p.variadoPiezas) acc.variadoPiezas = (acc.variadoPiezas ?? 0) + p.variadoPiezas;
     } else {
       /* El código de la troza NO va en la clave (es interno del cubicado,
          Brandon 2026-09-14) y tampoco sobrevive a la unión: una fila que junta

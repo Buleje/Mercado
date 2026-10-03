@@ -423,6 +423,8 @@ export function desglosarVariado(
           tipo: m.tipo,
           pieTablar,
           m3,
+          /* La marca de origen: sobrevive a juntar filas y llega a la vista previa del Anexo 04. */
+          variadoPiezas: m.piezas,
         });
       }
     });
@@ -452,7 +454,7 @@ export const toleranciaCuadrePt = (filasDesglosadas: number): number =>
  * sin pareja queda intacta; el id de un grupo es `g-<id de la primera>`.
  */
 export function agruparPiezasIguales(piezas: readonly PiezaCubicada[]): PiezaCubicada[] {
-  const grupos = new Map<string, { primera: PiezaCubicada; cantidad: number; n: number }>();
+  const grupos = new Map<string, { primera: PiezaCubicada; cantidad: number; n: number; variado: number }>();
   for (const p of piezas) {
     const clave = JSON.stringify([
       claveEspecieMotor(p.especie), p.espesor, p.ancho, p.largo, p.uEspesor, p.uAncho, p.uLargo,
@@ -463,11 +465,15 @@ export function agruparPiezasIguales(piezas: readonly PiezaCubicada[]): PiezaCub
     if (g) {
       g.cantidad += cant;
       g.n += 1;
-    } else grupos.set(clave, { primera: p, cantidad: cant, n: 1 });
+      g.variado += p.variadoPiezas ?? 0;
+    } else grupos.set(clave, { primera: p, cantidad: cant, n: 1, variado: p.variadoPiezas ?? 0 });
   }
-  return [...grupos.values()].map(({ primera, cantidad, n }) => {
+  return [...grupos.values()].map(({ primera, cantidad, n, variado }) => {
     if (n === 1) return primera;
     const { pieTablar, m3 } = cubicarPieza({ ...primera, cantidad });
-    return { ...primera, id: `g-${primera.id}`, cantidad, tipo: tipoDePieza(primera), pieTablar, m3 };
+    const fila: PiezaCubicada = { ...primera, id: `g-${primera.id}`, cantidad, tipo: tipoDePieza(primera), pieTablar, m3 };
+    if (variado > 0) fila.variadoPiezas = variado;
+    else delete fila.variadoPiezas;
+    return fila;
   });
 }

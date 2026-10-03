@@ -156,7 +156,10 @@ export function formatoCantidad(rows: readonly PiezaCubicada[], formato: Formato
       const pts = repartir(r.pieTablar, n, 100);
       const m3s = repartir(r.m3, n, 10_000);
       for (let k = 0; k < n; k++) {
-        out.push({ ...r, id: idLibre(`${r.id}~${k + 1}`, usados), cantidad: 1, pieTablar: pts[k], m3: m3s[k] });
+        const u: PiezaCubicada = { ...r, id: idLibre(`${r.id}~${k + 1}`, usados), cantidad: 1, pieTablar: pts[k], m3: m3s[k] };
+        /* La marca de Variado se reparte: las primeras unidades son las del Variado. */
+        if (r.variadoPiezas) u.variadoPiezas = k < r.variadoPiezas ? 1 : 0;
+        out.push(u);
       }
     }
     return out;
@@ -187,6 +190,9 @@ export function formatoCantidad(rows: readonly PiezaCubicada[], formato: Formato
     };
     /* La nota y el código internos sólo si eran de todas: si no, la línea
        sumada diría de las tres lo que era de una. */
+    const variado = g.reduce((a, r) => a + (r.variadoPiezas ?? 0), 0);
+    if (variado > 0) fila.variadoPiezas = variado;
+    else delete fila.variadoPiezas;
     if (!g.every((r) => r.codigo === primera.codigo)) delete fila.codigo;
     if (!g.every((r) => r.observacion === primera.observacion)) delete fila.observacion;
     return fila;

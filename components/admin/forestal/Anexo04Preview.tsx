@@ -8,7 +8,9 @@
 import { forwardRef, useEffect, useRef, useState, type ReactNode } from "react";
 import { Check, Minus, Pencil, Plus } from "@buleje/design-system/icons";
 import type { Anexo04, DatosAnexo04 } from "@/lib/forestal/anexo04-serfor";
+import type { OrigenFila } from "@/lib/forestal/anexo04-variado";
 import Anexo04Hoja, { ANEXO04_CSS, type CampoEditable } from "./Anexo04Hoja";
+import { ANEXO04_VARIADO_CSS } from "./Anexo04Variado";
 
 const A4_PX = 794;   // ancho de una hoja A4 a 96 dpi
 const A4_ALTO = 1123;
@@ -51,6 +53,9 @@ const Anexo04Preview = forwardRef<HTMLDivElement, {
   checklist: ReactNode;
   /** Filtros (tipo × especie) y formato de la cantidad: pegados a la hoja. */
   filtros?: ReactNode;
+  /** Botón «Resaltar Variado» y, con él encendido, de dónde viene cada renglón (sólo pantalla). */
+  variadoControl?: ReactNode;
+  marcasVariado?: ReadonlyMap<string, OrigenFila>;
   /** Corrige Cant./E/A/L directo en la hoja — el volumen se recalcula solo. */
   onEditarCelda?: (id: string, campo: CampoEditable, valor: number) => void;
   /**
@@ -58,7 +63,7 @@ const Anexo04Preview = forwardRef<HTMLDivElement, {
    * filas ya no son las del lote y editar por id corregiría la equivocada).
    */
   bloqueoEdicion?: string;
-}>(function Anexo04Preview({ anexo, datos, escala, onZoom, origen, duenoSelector, checklist, filtros, onEditarCelda, bloqueoEdicion }, hojasRef) {
+}>(function Anexo04Preview({ anexo, datos, escala, onZoom, origen, duenoSelector, checklist, filtros, variadoControl, marcasVariado, onEditarCelda, bloqueoEdicion }, hojasRef) {
   const scrollRef = useRef<HTMLDivElement>(null);
   useScrollSinDiagonal(scrollRef);
   const [editandoPedido, setEditando] = useState(false);
@@ -91,19 +96,20 @@ const Anexo04Preview = forwardRef<HTMLDivElement, {
         </div>
       </div>
       {filtros}
+      {variadoControl}
       {editando && (
         <p className="mb-2 rounded-lg border-2 border-[var(--accent)] bg-primary/10 px-2.5 py-1.5 text-xs font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)]">
           Toca una celda amarilla (Cant./E/A/L) y escribe el valor correcto — el pie tablar, el m³ y los totales se recalculan solos.
         </p>
       )}
       {checklist}
-      <style>{ANEXO04_CSS}</style>
+      <style>{ANEXO04_CSS}{ANEXO04_VARIADO_CSS}</style>
       <div ref={scrollRef} className="max-h-[64vh] overflow-auto">
         <div ref={hojasRef} style={{ width: A4_PX * escala }}>
           {anexo.hojas.map((hoja, i) => (
             <div key={i} className="mb-3 shadow-[var(--shadow-md)]" style={{ width: A4_PX * escala, height: A4_ALTO * escala }}>
               <div style={{ transform: `scale(${escala})`, transformOrigin: "top left" }}>
-                <Anexo04Hoja hoja={hoja} datos={datos} anexo={anexo} nro={i + 1} total={anexo.hojas.length} editando={editando} onEditarCelda={bloqueoEdicion ? undefined : onEditarCelda} />
+                <Anexo04Hoja hoja={hoja} datos={datos} anexo={anexo} nro={i + 1} total={anexo.hojas.length} editando={editando} onEditarCelda={bloqueoEdicion ? undefined : onEditarCelda} marcas={marcasVariado} />
               </div>
             </div>
           ))}

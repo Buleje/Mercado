@@ -2572,6 +2572,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
       {anexoDe && (
         <Anexo04Modal
           rows={anexoDe.piezas}
+          piezasLote={piezas}
           especieGlobal={anexoDe.especie}
           procedencia={anexoDe.procedencia}
           cuadre={cuadrePapel}

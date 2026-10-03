@@ -7,6 +7,8 @@
  * del formato oficial) y se estiliza con un CSS propio en vez de tokens — lo que
  * se ve acá es exactamente lo que se descarga.
  */
+import type { OrigenFila } from "@/lib/forestal/anexo04-variado";
+import { textoOrigenVariado } from "@/lib/forestal/anexo04-variado";
 import { memo, useEffect, useRef, useState, type CSSProperties } from "react";
 import {
   geometriaHoja, fmtAnexo, fmtMedida, notaUnidad,
@@ -153,8 +155,10 @@ const MS_COMMIT_CELDA = 350;
  * al tocar una medida, `hoja` cambia de referencia (el total se recalcula) y
  * ACÁ SÍ conviene re-renderizar — es la corrección que se está mirando.
  */
-const Bloques = memo(function Bloques({ hoja, compacto, editando, onEditarCelda }: {
+const Bloques = memo(function Bloques({ hoja, compacto, editando, onEditarCelda, marcas }: {
   hoja: HojaAnexo04; compacto: boolean; editando: boolean;
+  /** «Resaltar Variado» (sólo pantalla): de dónde viene cada renglón, por id. */
+  marcas?: ReadonlyMap<string, OrigenFila>;
   onEditarCelda?: (id: string, campo: CampoEditable, valor: number) => void;
 }) {
   const g = geometriaHoja(hoja.filasPorBloque);
@@ -188,8 +192,14 @@ const Bloques = memo(function Bloques({ hoja, compacto, editando, onEditarCelda 
                 { campo: "largo", valor: fila?.l ?? null, texto: fila ? fmtMedida(fila.l) : "" },
                 { campo: null, valor: null, texto: fmtAnexo(fila ? fila.v : 0) },
               ];
+              const origen = fila ? marcas?.get(fila.id) : undefined;
               return (
-                <div key={f} className="anx-fila" style={caja(x0, g.yFilas + f * g.hFila, g.bloqueW, g.hFila)}>
+                <div
+                  key={f}
+                  className={`anx-fila${origen ? (origen.mixta ? " anx-vr-mixto" : " anx-vr-puro") : ""}`}
+                  title={origen ? textoOrigenVariado(origen) : undefined}
+                  style={caja(x0, g.yFilas + f * g.hFila, g.bloqueW, g.hFila)}
+                >
                   {columnas.map(({ campo, valor, texto }, j) => {
                     const editable = editando && fila && campo && valor != null && onEditarCelda;
                     return (
@@ -219,8 +229,9 @@ const Bloques = memo(function Bloques({ hoja, compacto, editando, onEditarCelda 
 });
 
 export default function Anexo04Hoja({
-  hoja, datos, anexo, nro, total, editando = false, onEditarCelda,
+  hoja, datos, anexo, nro, total, editando = false, onEditarCelda, marcas,
 }: {
+  marcas?: ReadonlyMap<string, OrigenFila>;
   hoja: HojaAnexo04;
   datos: DatosAnexo04;
   anexo: Anexo04;
@@ -262,7 +273,7 @@ export default function Anexo04Hoja({
       </div>
 
       {/* Los 4 bloques (especie × tipo, sin mezclar) */}
-      <Bloques hoja={hoja} compacto={datos.modo === "compacto"} editando={editando} onEditarCelda={onEditarCelda} />
+      <Bloques hoja={hoja} compacto={datos.modo === "compacto"} editando={editando} onEditarCelda={onEditarCelda} marcas={marcas} />
 
       {/* (12) Observaciones + firmas (13)-(16) */}
       <div className="anx-b anx-obs" style={caja(m, g.yObs, g.contentW, g.hObs)}>
