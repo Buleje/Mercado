@@ -10,6 +10,8 @@
  * sin migración), patrón ForestOrigenGeoDB / ForestCtpFicha.
  */
 
+export type PlanoPlanta = "satelite" | "croquis";
+
 export type ZonaTipo =
   | "entrada"
   | "patio_trozas"
@@ -35,6 +37,14 @@ export interface PlantaZona {
   /** Superficie estimada del polígono en m² (el aserradero se mide en m², no ha). */
   areaM2: number | null;
   notas: string | null;
+  /**
+   * En qué plano está dibujada (ADR-465, croquis 2026-10-03). Sin el campo =
+   * «satelite»: `poligono` en `[[lat,lng]]` y `areaM2` geodésica. En «croquis»:
+   * `poligono` en `[[y,x]]` METROS sobre el plano (origen en la esquina
+   * inferior izquierda del terreno, y hacia arriba — el `CRS.Simple` de
+   * Leaflet), `lat/lng` = centroide en `[y,x]` y `areaM2` con fórmula plana.
+   */
+  plano?: PlanoPlanta;
   createdAt: string;
   updatedAt: string;
 }
@@ -90,6 +100,7 @@ export function normalizeZona(input: Partial<PlantaZona> & Record<string, unknow
     lng: num(input.lng),
     areaM2: num(input.areaM2),
     notas: input.notas != null && String(input.notas).trim() ? String(input.notas).trim() : null,
+    ...(input.plano === "croquis" ? { plano: "croquis" as const } : {}),
     createdAt: typeof input.createdAt === "string" ? input.createdAt : now,
     updatedAt: now,
   };
@@ -117,6 +128,80 @@ export interface Item {
   cantidad: number;
   unidad: string;
   cites: boolean;
+  /* ── Croquis (ADR-465): lo que pide la ficha de zona y los filtros ── */
+  /** Pie tablar, si la línea lo tiene (aserrada) o se puede derivar (troza con Oxapampino). */
+  pt?: number | null;
+  piezas?: number | null;
+  /** Dueño de la madera (titular/proveedor del ingreso o de la corrida); null = no cargado. */
+  dueno?: string | null;
+  permiso?: string | null;
+  /**
+   * Las trozas de una pila (ítem «troza» = la guía/ingreso). Una troza que se
+   * separa se ubica sola con la clave `claveTroza(id)` y manda sobre su pila.
+   */
+  trozas?: TrozaUbicable[];
+}
+
+export interface TrozaUbicable {
+  id: string;
+  /** Código de planta o codificación de la troza (lo que está pintado en la madera). */
+  codigo: string | null;
+  m3: number | null;
+  pt: number | null;
+}
+
+/**
+ * Clave de ubicación: la PILA se ubica por su `entryId` (como siempre); una
+ * troza SEPARADA, por `troza:<id>`, y su ubicación manda sobre la de su pila.
+ */
+export const claveTroza = (trozaId: string): string => `troza:${trozaId}`;
+export const esClaveTroza = (clave: string): boolean => clave.startsWith("troza:");
+
+/** Una ubicación en el plano: zona y, opcionalmente, el punto (lat/lng en satélite, y/x en metros en croquis). */
+export interface UbicacionPlanta {
+  zonaId: string;
+  lat?: number | null;
+  lng?: number | null;
+}
+
+/** Un cambio de ubicación del PUT por lote (varias a la vez = UNA escritura). `zonaId: null` = sacar del plano. */
+export interface AsignacionPlanta {
+  clave: string;
+  zonaId: string | null;
+  lat?: number | null;
+  lng?: number | null;
+}
+
+/** Una máquina del croquis (D1 cargador, D2/D3 forestales, D4–D6 camiones, D7 oruga). */
+export interface MaquinaPlanta {
+  codigo: string;
+  nombre: string;
+  /** Posición en metros sobre el plano. */
+  x: number;
+  y: number;
+  /** «A veces están en otro almacén»: fuera = no está en la planta. */
+  fuera: boolean;
+}
+
+/** El croquis del aserradero de un negocio (KV `ctp-planta-croquis:{tenantId}`). */
+export interface PlantaCroquis {
+  version: number;
+  anchoM: number;
+  altoM: number;
+  /** Imagen de fondo (plano escaneado/dibujado); null = solo zonas. */
+  imagenUrl: string | null;
+  maquinas: MaquinaPlanta[];
+  actualizadoEn: string;
+}
+
+/** Un hecho de la vida de una troza, con la fecha que el Libro ya guarda (ADR-465: no se inventan estaciones). */
+export interface EventoTroza {
+  tipo: "recepcion" | "apartado" | "lote" | "lote_mixto" | "consumo" | "retrozado" | "descarte" | "despacho";
+  /** ISO; las date-only del libro se formatean con `timeZone: "UTC"`. */
+  fecha: string;
+  /** Lo que se nombra: N° de guía, código de lote, N° de corrida, N° de GTF de salida. */
+  ref: string | null;
+  detalle: string | null;
 }
 
 /**
