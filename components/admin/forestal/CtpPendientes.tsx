@@ -217,7 +217,7 @@ export default function CtpPendientes({
           <CtpReservasVencidas
             reservas={reservasVencidas}
             onResuelta={reservaResuelta}
-            onVer={() => { setAbierto(false); onIr("disponibles"); }}
+            onVer={() => { setAbierto(false); onIr("productos-disponibles"); }}
             className={lista.length > 0 || seViene.length > 0 || cargando || falló || !hayAlgo ? "mt-4" : ""}
           />
         </div>

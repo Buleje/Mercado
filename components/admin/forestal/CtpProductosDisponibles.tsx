@@ -41,7 +41,11 @@ import {
 import CtpApartados, { CtpApartadoPanel, useApartado, type Apartado } from "./ctp-apartados";
 import CtpAvisoAlcancePermiso from "./CtpAvisoAlcancePermiso";
 import ReprocesoSugeridoBanda from "./reproceso-sugerido-banda";
-import { filtrosEnTexto, useProductosDisponibles } from "./hooks/use-productos-disponibles";
+import {
+  filtrosEnTexto,
+  useProductosDisponibles,
+  type RecorteCorridas,
+} from "./hooks/use-productos-disponibles";
 import { candidatasDelSugerido, useAccionesProductos } from "./hooks/use-acciones-productos";
 import { ModalesProductos } from "./productos-disponibles-acciones";
 import { useKpisProductosDisponibles } from "./productos-disponibles-kpis";
@@ -100,8 +104,15 @@ const CLAVE_DIM: Record<DimensionProducto, (v: string) => string> = {
 const activoEn = (dim: DimensionProducto, valores: readonly string[]) => (g: FilaGrupo) =>
   valores.some((v) => (v === SIN_DIM[dim] ? g.clave === "" : CLAVE_DIM[dim](v) === g.clave));
 
-export default function CtpProductosDisponibles({ period }: { period: CtpPeriod }) {
-  const e = useProductosDisponibles(period);
+export default function CtpProductosDisponibles({
+  period,
+  recorte,
+}: {
+  period: CtpPeriod;
+  /** Dentro de «Volumen disponible»: sólo las corridas del permiso elegido arriba. */
+  recorte?: RecorteCorridas;
+}) {
+  const e = useProductosDisponibles(period, recorte);
   const a = useAccionesProductos(e);
   const idBase = useId();
   const { activo, ir } = useApartado("productos-disponibles", PESTANAS);
@@ -141,7 +152,7 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
       <div className="space-y-2">
         <div className="flex flex-wrap items-center gap-2">
           <div className="mr-1 flex min-w-0 items-center gap-1.5">
-            <SectionTitle as="h2">Productos disponibles</SectionTitle>
+            <SectionTitle as="h3">Productos disponibles</SectionTitle>
             <InfoTip
               title="Productos disponibles"
               what="La madera aserrada con saldo: libre o apartada. Lo marcado usado va aparte."

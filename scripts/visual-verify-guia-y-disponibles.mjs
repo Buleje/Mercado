@@ -31,7 +31,7 @@ await page.request.post(`${BASE}/api/auth/login`, {
 });
 
 // ── A · Productos disponibles: la columna de acciones ──
-await page.goto(`${BASE}/admin?tab=ctp-libro-operaciones&vista=disponibles`, { waitUntil: "domcontentloaded", timeout: 120_000 });
+await page.goto(`${BASE}/admin?tab=ctp-libro-operaciones&vista=disponibles&fuentes=productos`, { waitUntil: "domcontentloaded", timeout: 120_000 });
 await page.waitForTimeout(7000);
 /* La lectura de la planta tarda: se espera a que la tabla tenga filas de verdad
    antes de contar botones — medir mientras dice «Leyendo la planta…» da 0. */

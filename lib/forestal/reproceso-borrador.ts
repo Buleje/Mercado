@@ -151,12 +151,12 @@ export function olvidarTodosLosReprocesos(): void {
  */
 export function declararEnElLibro(b: Omit<BorradorDeReproceso, "creadoAt">): void {
   guardarBorradorDeReproceso(b);
-  window.location.href = "/admin?tab=ctp-libro-operaciones&vista=disponibles";
+  window.location.href = "/admin?tab=ctp-libro-operaciones&vista=disponibles&fuentes=productos";
 }
 
 /** Lo mismo, con varios: el Libro los ofrece uno tras otro, en este orden. */
 export function declararColaEnElLibro(bs: readonly Omit<BorradorDeReproceso, "creadoAt">[]): void {
   if (bs.length === 0) return;
   guardarColaDeReprocesos(bs);
-  window.location.href = "/admin?tab=ctp-libro-operaciones&vista=disponibles";
+  window.location.href = "/admin?tab=ctp-libro-operaciones&vista=disponibles&fuentes=productos";
 }

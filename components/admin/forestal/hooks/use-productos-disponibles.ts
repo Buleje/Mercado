@@ -64,7 +64,23 @@ export const filtrosEnTexto = (f: FiltroProductos) => filtrosEnTextoLib(f, produ
 
 type CampoLista = "permiso" | "especie" | "producto" | "tramos";
 
-export function useProductosDisponibles(period: CtpPeriod) {
+/**
+ * La foto del depósito, SIEMPRE con lo marcado usado. Una sola fuente de la url:
+ * «Volumen disponible» pide la misma y `ctpGet` las junta en un pedido.
+ */
+export function urlDeProductosDisponibles(period: CtpPeriod, contratoFiltro: string | null): string {
+  const qs = conContratoId(
+    applyCtpPeriodParams(new URLSearchParams({ disponibles: "1" }), period),
+    contratoFiltro,
+  );
+  qs.set("incluirUsados", "1");
+  return `/api/admin/forestal/ctp?${qs}`;
+}
+
+/** Recorte que impone la pestaña que contiene a esta vista (permiso elegido arriba). */
+export type RecorteCorridas = (c: CorridaDisponible) => boolean;
+
+export function useProductosDisponibles(period: CtpPeriod, recorte?: RecorteCorridas) {
   const { contratoFiltro, activo } = useContratoActivo();
   const [corridas, setCorridas] = useState<CorridaDisponible[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -76,13 +92,10 @@ export function useProductosDisponibles(period: CtpPeriod) {
   const recargar = useCallback(async () => {
     const pedido = ++pedidoRef.current;
     setCargando(true);
-    const qs = conContratoId(
-      applyCtpPeriodParams(new URLSearchParams({ disponibles: "1" }), period),
-      contratoFiltro,
-    );
-    qs.set("incluirUsados", "1");
     try {
-      const r = await ctpGet<{ corridas?: CorridaDisponible[] }>(`/api/admin/forestal/ctp?${qs}`);
+      const r = await ctpGet<{ corridas?: CorridaDisponible[] }>(
+        urlDeProductosDisponibles(period, contratoFiltro),
+      );
       if (pedido !== pedidoRef.current) return;
       setCorridas(r.corridas ?? []);
       setError(null);
@@ -105,7 +118,10 @@ export function useProductosDisponibles(period: CtpPeriod) {
   const [ahora, setAhora] = useState<Date | null>(null);
   useEffect(() => setAhora(new Date()), []);
 
-  const filas = useMemo(() => filasDeProductos(corridas, ahora), [corridas, ahora]);
+  const filas = useMemo(
+    () => filasDeProductos(recorte ? corridas.filter(recorte) : corridas, ahora),
+    [corridas, ahora, recorte],
+  );
 
   const [filtro, setFiltro] = useState<FiltroProductos>(FILTRO_PRODUCTOS_VACIO);
   const poner = useCallback(

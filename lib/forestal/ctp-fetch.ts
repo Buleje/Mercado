@@ -53,14 +53,31 @@ export { laPaginaSeEstaYendo } from "@/lib/navegacion";
  * muestra madera que ya entró a la sierra.
  */
 export function invalidarCtp(fragmento?: string): void {
-  if (!fragmento) {
-    enVuelo.clear();
-    return;
+  if (!fragmento) enVuelo.clear();
+  else {
+    for (const url of enVuelo.keys()) {
+      if (url.includes(fragmento)) enVuelo.delete(url);
+    }
   }
-  for (const url of enVuelo.keys()) {
-    if (url.includes(fragmento)) enVuelo.delete(url);
+  /* Quien resume varias vistas (los chips de «Volumen disponible») se entera
+     de que hubo una escritura y vuelve a leer: si no, arriba queda la cifra de
+     antes del despacho mientras la tabla de abajo ya muestra la nueva. */
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent<string | undefined>(EVENTO_CTP_INVALIDADO, { detail: fragmento }));
   }
 }
+
+/**
+ * Se dispara cada vez que algo invalida el caché del libro (después de
+ * escribir). `detail` = el fragmento invalidado (`undefined` = todo).
+ */
+export const EVENTO_CTP_INVALIDADO = "ctp:invalidado";
+
+/** ¿Esta invalidación tocó alguna de estas urls? El mismo criterio que borra el caché. */
+export const invalidacionToca = (e: Event, urls: readonly string[]): boolean => {
+  const fragmento = (e as CustomEvent<string | undefined>).detail;
+  return !fragmento || urls.some((u) => u.includes(fragmento));
+};
 
 /**
  * GET deduplicado. Devuelve la MISMA promesa a quien pida la misma url.

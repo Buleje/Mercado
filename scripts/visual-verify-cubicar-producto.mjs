@@ -27,7 +27,7 @@ await page.request.post(`${BASE}/api/auth/login`, {
   headers: { "content-type": "application/json", "x-tenant-id": SLUG },
   data: { username: "qaadmin", password: "Qa-admin-1234", tenantSlug: SLUG },
 });
-await page.goto(`${BASE}/admin?tab=ctp-libro-operaciones&vista=disponibles`, { waitUntil: "domcontentloaded", timeout: 120_000 });
+await page.goto(`${BASE}/admin?tab=ctp-libro-operaciones&vista=disponibles&fuentes=productos`, { waitUntil: "domcontentloaded", timeout: 120_000 });
 await page.waitForTimeout(7000);
 await page.getByTitle(/Cubicar/i).first().waitFor({ timeout: 60_000 });
 

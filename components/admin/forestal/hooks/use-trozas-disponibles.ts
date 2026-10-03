@@ -86,7 +86,12 @@ export function filtrosEnTexto(
   return out;
 }
 
-export function useTrozasDisponibles() {
+/**
+ * @param recorte Lo que impone la pestaña que contiene a esta vista («Volumen
+ *   disponible»: sólo la pila de trozas libres, del permiso elegido arriba).
+ *   Sin recorte, la vista es la de siempre: patio entero + lo sin recepcionar.
+ */
+export function useTrozasDisponibles(recorte?: (t: TrozaConsumible) => boolean) {
   const { contratoFiltro, activo } = useContratoActivo();
   const [todas, setTodas] = useState<TrozaConsumible[]>([]);
   const [truncado, setTruncado] = useState<{ hay: number; leidas: number } | null>(null);
@@ -124,7 +129,10 @@ export function useTrozasDisponibles() {
     void recargar();
   }, [recargar]);
 
-  const vivas = useMemo(() => trozasDisponibles(todas), [todas]);
+  const vivas = useMemo(() => {
+    const disponibles = trozasDisponibles(todas);
+    return recorte ? disponibles.filter(recorte) : disponibles;
+  }, [todas, recorte]);
   /* Los días se cuentan con UNA fecha por lectura: no cambian mientras se mira. */
   const ahora = useMemo(() => new Date(), [vivas]); // eslint-disable-line react-hooks/exhaustive-deps
 

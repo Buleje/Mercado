@@ -25,6 +25,7 @@ import { esPantallaAngosta } from "@/lib/forestal/tabla-paginacion";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { formatNumber } from "@/lib/format";
 import { especiesDelPermiso } from "@/lib/forestal/trozas-disponibles";
+import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import CtpApartados, { CtpApartadoPanel, useApartado, type Apartado } from "./ctp-apartados";
 import CtpAvisoAlcancePermiso from "./CtpAvisoAlcancePermiso";
 import CtpPatioPorPermiso from "./CtpPatioPorPermiso";
@@ -71,8 +72,15 @@ function Grafico({ titulo, children }: { titulo: string; children: React.ReactNo
   );
 }
 
-export default function CtpTrozasDisponibles({ onIr }: { onIr?: (vista: string) => void }) {
-  const e = useTrozasDisponibles();
+export default function CtpTrozasDisponibles({
+  onIr,
+  recorte,
+}: {
+  onIr?: (vista: string) => void;
+  /** Dentro de «Volumen disponible»: sólo las trozas libres (del permiso elegido arriba). */
+  recorte?: (t: TrozaConsumible) => boolean;
+}) {
+  const e = useTrozasDisponibles(recorte);
   const idBase = useId();
   const { activo, ir } = useApartado("trozas-disponibles", PESTANAS);
   const [errorExcel, setErrorExcel] = useState<string | null>(null);
@@ -109,13 +117,22 @@ export default function CtpTrozasDisponibles({ onIr }: { onIr?: (vista: string) 
       <div className="space-y-2">
         <div className="flex flex-wrap items-center gap-2">
           <div className="mr-1 flex min-w-0 items-center gap-1.5">
-            <SectionTitle as="h2">Trozas disponibles</SectionTitle>
-            <InfoTip
-              title="Trozas disponibles"
-              what="La madera en troza recibida: libre o en lote. Lo que espera su guía va aparte."
-              affects="Los m³ son pieza por pieza, no el saldo que se declara. El pt es aserrable al 56 %."
-              example="46 trozas en el patio. Otras 38 esperan su guía."
-            />
+            <SectionTitle as="h3">{recorte ? "Trozas libres" : "Trozas disponibles"}</SectionTitle>
+            {recorte ? (
+              <InfoTip
+                title="Trozas libres"
+                what="Trozas recibidas y sin lote: pueden ir hoy a la sierra."
+                affects="Las de los lotes y las por recepcionar tienen su chip arriba. El pt es aserrable al 56 %."
+                example="Elige Trozas y Lotes arriba para sumar las dos."
+              />
+            ) : (
+              <InfoTip
+                title="Trozas disponibles"
+                what="La madera en troza recibida: libre o en lote. Lo que espera su guía va aparte."
+                affects="Los m³ son pieza por pieza, no el saldo que se declara. El pt es aserrable al 56 %."
+                example="46 trozas en el patio. Otras 38 esperan su guía."
+              />
+            )}
           </div>
           {kpis.boton}
           <div className="ml-auto flex flex-wrap items-center justify-end gap-2">

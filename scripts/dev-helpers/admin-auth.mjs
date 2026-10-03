@@ -84,6 +84,10 @@ async function main() {
         `export BSM_TENANT='${TENANT}'`,
         `export BSM_BASE='${BASE}'`,
         `export BSM_CURL_FLAGS='${out.curlFlags}'`,
+        /* `curl $BSM_CURL_FLAGS` NO sirve tal cual: las comillas de adentro se
+           parten por palabra y el servidor responde 401 (03-10, una vuelta
+           perdida). La función arma los encabezados bien. */
+        `bsm_curl() { curl -s -H "Cookie: $BSM_COOKIE" -H "x-csrf-token: $BSM_CSRF" -H "x-tenant-id: $BSM_TENANT" "$@"; }`,
       ].join("\n"),
     );
   } catch {}
@@ -94,7 +98,7 @@ async function main() {
   console.log("");
   console.log("Para usar en bash:");
   console.log("  source /tmp/bsm-auth.env");
-  console.log('  curl $BSM_BASE/api/admin/X $BSM_CURL_FLAGS');
+  console.log('  bsm_curl "$BSM_BASE/api/admin/X"');
 }
 
 main().catch((err) => {

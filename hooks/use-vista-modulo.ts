@@ -62,6 +62,8 @@ export const PARAMS_DE_VISTA = [
   /* La troza abierta en Libro CTP → Trozas, cuando se llega por el QR de una
      etiqueta (ADR-436, `ctp-troza-etiquetas`). */
   "troza",
+  /* Las pilas elegidas en Libro CTP → Volumen disponible. */
+  "fuentes",
 ] as const;
 
 /** Lee la vista que pide la URL, validada contra las que el módulo declara. */
@@ -102,8 +104,12 @@ export type AliasDeVista<T extends string> = Readonly<Record<string, T>>;
 
 export interface UseVistaModuloResult<T extends string> {
   vista: T;
-  /** Cambia de vista: estado + URL (historial) + memoria. */
-  irA: (v: string) => void;
+  /**
+   * Cambia de vista: estado + URL (historial) + memoria. `params` viajan en la
+   * MISMA entrada del historial: escribirlos después con `replaceState` pierde
+   * contra el router de Next, que reaplica la URL del `pushState` al asentarse.
+   */
+  irA: (v: string, params?: Readonly<Record<string, string>>) => void;
 }
 
 export function useVistaModulo<T extends string>(
@@ -244,7 +250,7 @@ function useVistaEnParam<T extends string>(
   }, []);
 
   const irA = useCallback(
-    (pedida: string) => {
+    (pedida: string, params?: Readonly<Record<string, string>>) => {
       const v = aVistaValida(pedida, validas, aliasRef.current);
       if (!v) return;
       setVista(v as T);
@@ -254,6 +260,7 @@ function useVistaEnParam<T extends string>(
         if (saliendo === v) return;
         for (const p of paramsDeVistaRef.current?.[saliendo as T] ?? []) url.searchParams.delete(p);
         url.searchParams.set(param, v);
+        for (const [k, valor] of Object.entries(params ?? {})) url.searchParams.set(k, valor);
         window.history.pushState(null, "", url.toString());
       } catch {
         // history no disponible

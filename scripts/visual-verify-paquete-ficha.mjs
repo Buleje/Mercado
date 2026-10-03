@@ -58,7 +58,7 @@ await page.keyboard.press("Escape");
 await page.waitForTimeout(500);
 
 // ── Puerta B · el código en Productos disponibles ──
-await page.goto(`${BASE}/admin?tab=ctp-libro-operaciones&vista=disponibles`, { waitUntil: "domcontentloaded", timeout: 120_000 });
+await page.goto(`${BASE}/admin?tab=ctp-libro-operaciones&vista=disponibles&fuentes=productos`, { waitUntil: "domcontentloaded", timeout: 120_000 });
 await page.waitForTimeout(6000);
 const enTabla = page.getByRole("button", { name: new RegExp(`^${CODIGO}$`) }).first();
 console.log("código clickeable en disponibles:", (await enTabla.count()) > 0);

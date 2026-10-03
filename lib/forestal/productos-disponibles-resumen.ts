@@ -137,7 +137,7 @@ export const clavePermiso = (v: string | null | undefined) =>
   (v ?? "").trim().toUpperCase().replace(/\s+/g, " ");
 
 /** Los permisos de la corrida en UNA clave: una corrida con dos permisos es una fila, no dos. */
-const permisoDeCorrida = (c: Pick<CorridaDisponible, "titularOrigen">): string =>
+export const permisoDeCorrida = (c: Pick<CorridaDisponible, "titularOrigen">): string =>
   [...new Set((c.titularOrigen ?? []).map(clavePermiso).filter(Boolean))].sort().join(" · ");
 
 // ── Filas ────────────────────────────────────────────────────────────────────

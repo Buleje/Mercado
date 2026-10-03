@@ -334,7 +334,7 @@ export default function CtpPaqueteFicha({
                   {p.saldoCorrida.disponible > 0 && (
                     <button
                       type="button"
-                      onClick={() => { onIrA("disponibles"); onClose(); }}
+                      onClick={() => { onIrA("productos-disponibles"); onClose(); }}
                       className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--accent)] bg-primary/10 px-3 text-sm font-semibold text-[var(--accent-ink)] transition-colors hover:brightness-105 dark:text-[var(--accent)]"
                     >
                       <PackageOpen className="h-4 w-4" aria-hidden /> Ver qué queda para despachar

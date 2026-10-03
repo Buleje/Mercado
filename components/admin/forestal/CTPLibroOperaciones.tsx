@@ -106,8 +106,8 @@ import { useCtpPendientes } from "@/hooks/use-ctp-pendientes";
 import BandaPermiso from "@/components/admin/forestal/BandaPermiso";
 import CtpResumenesSerfor from "./CtpResumenesSerfor";
 import CtpConsumosView from "./CtpConsumosView";
-import CtpProductosDisponibles from "./CtpProductosDisponibles";
-import CtpTrozasDisponibles from "./CtpTrozasDisponibles";
+import CtpVolumenDisponible from "./CtpVolumenDisponible";
+import { fuenteDeVistaVieja, type FuentesPedidas } from "@/lib/forestal/volumen-disponible";
 import CtpReprocesosDeclarados from "./CtpReprocesosDeclarados";
 import CtpLotesView, { type LoteAProducir } from "./CtpLotesView";
 import CtpTrozasView from "./CtpTrozasView";
@@ -128,7 +128,6 @@ type CtpView =
   | "lotes"
   | "consumos"
   | "produccion"
-  | "trozas-disponibles"
   | "disponibles"
   | "despacho"
   | "trozas"
@@ -182,11 +181,11 @@ const CTP_GROUPS: LibroGroup[] = [
       { key: "lotes", ...CTP_VISTAS_POR_KEY["lotes"], icon: Layers, tecla: "l" },
       { key: "consumos", ...CTP_VISTAS_POR_KEY["consumos"], icon: Flame, tecla: "n" },
       { key: "produccion", ...CTP_VISTAS_POR_KEY["produccion"], icon: Boxes, tecla: "p" },
-      /* Al lado de «Productos disponibles» (Brandon 2026-09-27): la madera en
-         troza que queda, por permiso, especie y pieza. Sin tecla: las 26
-         letras ya tienen dueño y adivinar una es peor que no tener atajo. */
-      { key: "trozas-disponibles", ...CTP_VISTAS_POR_KEY["trozas-disponibles"], icon: Trees },
-      { key: "disponibles", ...CTP_VISTAS_POR_KEY["disponibles"], icon: PackageOpen, tecla: "v" },
+      /* «Volumen disponible» (Brandon 2026-10-03) juntó Trozas y Productos
+         disponibles en UNA pestaña, con chips para mirar cada pila —trozas,
+         lotes, por recepcionar, productos— o sumarlas. Conserva la clave y la
+         tecla de Productos: los links, la campana y la «v» siguen llegando. */
+      { key: "disponibles", ...CTP_VISTAS_POR_KEY["disponibles"], icon: Trees, tecla: "v" },
       { key: "despacho", ...CTP_VISTAS_POR_KEY["despacho"], icon: Truck, tecla: "d" },
     ],
   },
@@ -269,8 +268,6 @@ const SIN_PERIODO: CtpView[] = [
   "directorio",
   "lotes",
   "disponibles",
-  /* Lo que hay parado HOY no depende del mes que se mire (igual que Lotes). */
-  "trozas-disponibles",
   "contratos",
   /* Reportes trae su propio período (N semanas, mes o rango): el del libro al
      lado serían dos selectores de fecha y uno no haría nada. */
@@ -282,7 +279,14 @@ const PARAMS_DE_VISTA_CTP: ParamsDeVista<CtpView> = {
   /* La ficha de una troza (ADR-436): al irse de Trozas, si quedó abierta, se
      borra — igual que `contrato` en Contratos. */
   trozas: [PARAM_TROZA],
+  /* Las pilas elegidas en Volumen disponible: al volver, manda la memoria. */
+  disponibles: ["fuentes"],
 };
+/** Las pestañas que se fusionaron en Volumen disponible: sus links viejos siguen llegando. */
+const ALIAS_CTP = {
+  "trozas-disponibles": "disponibles",
+  "productos-disponibles": "disponibles",
+} as const;
 
 export default function CTPLibroOperaciones() {
   /** Un solo estado de cierres para el asistente y el historial. */
@@ -298,7 +302,7 @@ export default function CTPLibroOperaciones() {
     undefined,
     /* La ficha abierta en Contratos (ADR-432) es de esa vista: al irse, se
        borra, y volver a «Contratos» muestra la lista. */
-    { paramsDeVista: PARAMS_DE_VISTA_CTP },
+    { paramsDeVista: PARAMS_DE_VISTA_CTP, alias: ALIAS_CTP },
   );
   // Default = trimestre, no "mes actual": una planta con un mes flojo abriría el
   // libro vacío teniendo datos, y "vacío al abrir" se lee como "roto".
@@ -345,9 +349,13 @@ export default function CTPLibroOperaciones() {
 
   /** Estable: la cabina y los paneles la pasan a efectos (atajos de teclado).
    *  El 2° argumento deja el destino filtrado — hoy sólo Ingresos lo entiende. */
+  /** Qué pila abrir al llegar con un nombre viejo («trozas-disponibles»). */
+  const [fuentesPedidas, setFuentesPedidas] = useState<FuentesPedidas | null>(null);
   const irA = useCallback(
     (v: string, filtro?: CtpIngresosFiltroRapido) => {
-      setView(v as CtpView);
+      const fuente = fuenteDeVistaVieja(v);
+      if (fuente) setFuentesPedidas((prev) => ({ fuentes: [fuente], n: (prev?.n ?? 0) + 1 }));
+      setView(v as CtpView, fuente ? { fuentes: fuente } : undefined);
       // El contador hace que repetir el MISMO salto vuelva a aplicar el filtro.
       if (filtro) setFiltroIngresos((prev) => ({ tipo: filtro, n: (prev?.n ?? 0) + 1 }));
     },
@@ -705,8 +713,14 @@ export default function CTPLibroOperaciones() {
             onVerTodoElHistorico={() => setPeriodKey("todo")}
           />
         )}
-        {view === "trozas-disponibles" && <CtpTrozasDisponibles onIr={irA} />}
-        {view === "disponibles" && <CtpProductosDisponibles period={period} />}
+        {view === "disponibles" && (
+          <CtpVolumenDisponible
+            period={period}
+            onIr={irA}
+            fuentesPedidas={fuentesPedidas}
+            onFuentesUsadas={() => setFuentesPedidas(null)}
+          />
+        )}
         {view === "reprocesos" && <CtpReprocesosDeclarados period={period} />}
         {view === "despacho" && (
           <CtpEntriesView
