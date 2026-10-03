@@ -45,6 +45,11 @@ import { useAnexo04Comparar } from "./hooks/use-anexo04-comparar";
 import { useTraseraDelPapel } from "./hooks/use-anexo04-trasera";
 import { useAnexo04Vista } from "./hooks/use-anexo04-vista";
 import Anexo04Filtros from "./Anexo04Filtros";
+import Anexo04PorTipo from "./Anexo04PorTipo";
+import Anexo04ConfirmarCuadre, { LineaCuadre } from "./Anexo04ConfirmarCuadre";
+import { useCandadoCuadre } from "./hooks/use-candado-cuadre";
+import { cuadreFrena, type CuadreDelPapel } from "@/lib/forestal/cuadre-del-papel";
+import { traseraDelEmitido } from "@/lib/forestal/anexo04-registro";
 import type { TraseraParaPdf } from "@/lib/forestal/anexo04-pdf";
 import { formatNumber } from "@/lib/format";
 
@@ -77,7 +82,17 @@ function imprimirHtml(html: string) {
 
 export default function Anexo04Modal({
   rows, especieGlobal, onPdfDetallado, onCerrar, onAviso, ctpEntryId, declarado, abrirHistorial = false, despacho, procedencia, avisosExtra, rotuloDeLasPiezas, trasera,
+  cuadre, onVerCuadre,
 }: {
+  /**
+   * El cuadre de la distribución de la que salen estas piezas (Brandon,
+   * 2026-10-03: «el cuadre como candado»). Con «difiere», una línea roja
+   * arriba y descargar/imprimir piden confirmar; «redondeo» no frena. Sólo lo
+   * pasa el reparto: las otras pantallas no lo dan y no cambian.
+   */
+  cuadre?: CuadreDelPapel | null;
+  /** «Revisar el cuadre»: quien abre el anexo muestra su modal del cuadre. */
+  onVerCuadre?: () => void;
   /**
    * La parte trasera del camión del lote (cubicador): el PDF la agrega como
    * última hoja, croquis + formato (Brandon, 2026-10-03). Sin trasera, el PDF
@@ -295,9 +310,16 @@ export default function Anexo04Modal({
     totalManualM3: totalManual, corregidas: Object.keys(overrides).length, otroOrigen: piezasGuardadas != null, rotuloDeLasPiezas,
     pasa: vista.filtrado ? vista.pasa : undefined, rotuloFiltro: vista.rotulo,
   });
-  const traseraPapel = useTraseraDelPapel(trasera, {
-    origenActual: piezasGuardadas == null, dueno: duenoFiltro, correcciones: overrides, pasa: vista.filtrado ? vista.pasa : undefined,
+  /* Con un emitido cargado desde la bandeja, SU trasera guardada (si la
+     tiene): volver a bajarlo sin ella borraría el croquis del registro. */
+  const traseraEmitido = useMemo(
+    () => (origen.startsWith("emitido:") ? traseraDelEmitido(emitidos.find((e) => `emitido:${e.id}` === origen)) : null),
+    [origen, emitidos],
+  );
+  const traseraPapel = useTraseraDelPapel(traseraEmitido ?? trasera, {
+    origenActual: piezasGuardadas == null || traseraEmitido != null, dueno: duenoFiltro, correcciones: overrides, pasa: vista.filtrado ? vista.pasa : undefined,
   });
+  const candado = useCandadoCuadre(cuadre);
   const papeles: Apartado[] = [
     { id: "anexo", label: "ANEXO N° 04", contador: `${anexo.hojas.length} hoja${anexo.hojas.length === 1 ? "" : "s"}` },
     { id: "comparar", label: "Comparar con el resumen", contador: cmp.pastilla, hint: "Por especie y tipo: el resumen contra lo que imprime la hoja" },
@@ -455,6 +477,10 @@ export default function Anexo04Modal({
           </button>
         </div>
 
+        {cuadre && cuadreFrena(cuadre) && (
+          <div className="mt-3 shrink-0"><LineaCuadre cuadre={cuadre} onVerCuadre={onVerCuadre} /></div>
+        )}
+
         {/* «Me pasé por 0,003 m³»: qué medida mover y hasta cuánto. Va pegado
             al volumen porque es la respuesta a lo que se acaba de tipear. */}
         {totalManual != null && filasPapel.length > 0 && (
@@ -598,13 +624,28 @@ export default function Anexo04Modal({
             generando={generando}
             onPdfDetallado={onPdfDetallado}
             onExcel={descargarExcel}
-            onImprimir={imprimir}
-            onDescargar={descargarPdf}
+            onImprimir={candado.conCandado(imprimir)}
+            onDescargar={candado.conCandado(descargarPdf)}
+            extra={
+              <Anexo04PorTipo
+                filas={filasPapel} especieGlobal={especie} datos={datos} trasera={traseraPapel}
+                totalManual={totalManual} conCandado={candado.conCandado} onAviso={onAviso}
+              />
+            }
           />
         </div>
 
         <TiradorDeVentana ventana={ventana} />
       </div>
+      {/* Hermano de la caja, no hijo: la caja se mueve con transform. */}
+      {candado.pidiendo && cuadre && (
+        <Anexo04ConfirmarCuadre
+          cuadre={cuadre}
+          onConfirmar={candado.confirmar}
+          onCancelar={candado.cancelar}
+          onVerCuadre={onVerCuadre ? () => { candado.cancelar(); onVerCuadre(); } : undefined}
+        />
+      )}
     </div>
   );
 }

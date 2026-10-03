@@ -3,7 +3,7 @@ import type { Prisma } from "@/lib/generated/prisma/client";
 import { ClaveOcupadaError, PlatformSettingsDB } from "@/lib/db/platform-settings.db";
 import { auditCtp } from "@/lib/forestal/ctp-audit";
 import {
-  construirEmision, claveEmision, etiquetaEmision, filaNoCuadra, recortarBandeja, vinculosDe,
+  construirEmision, claveEmision, etiquetaEmision, filaNoCuadra, recortarBandeja, traseraQueSigue, vinculosDe,
   type AnexoEmitido, type EntradaEmision,
 } from "@/lib/forestal/anexo04-registro";
 import { CtpInvariantError } from "./forest-ctp-consumo.db";
@@ -119,6 +119,9 @@ export const ForestAnexosDB = {
         const registro: AnexoEmitido = {
           ...construirEmision({
             ...input,
+            /* El croquis de la trasera: el que viene, o el que ya tenía si
+               las piezas no cambiaron (ver `traseraQueSigue`). */
+            trasera: traseraQueSigue(existente, input),
             id: existente?.id ?? input.id,
             createdAt: existente?.createdAt,
             createdBy: existente?.createdBy ?? user,

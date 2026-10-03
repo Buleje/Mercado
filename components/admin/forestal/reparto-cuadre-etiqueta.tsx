@@ -12,7 +12,8 @@
  */
 
 import { AlertTriangle, Check } from "@buleje/design-system/icons";
-import type { ControlCuadre, EstadoCuadre, Trio } from "@/lib/forestal/reparto-cuadre";
+import type { ControlCuadre, EstadoCuadre } from "@/lib/forestal/reparto-cuadre";
+import { conSigno, difCorta } from "@/lib/forestal/cuadre-del-papel";
 
 export const ESTADO_CUADRE: Record<EstadoCuadre, { label: string; clase: string }> = {
   exacto: {
@@ -29,15 +30,12 @@ export const ESTADO_CUADRE: Record<EstadoCuadre, { label: string; clase: string 
   },
 };
 
+/* `conSigno` y `difCorta` viven en la lib (los usa también el candado del
+   papel, `cuadre-del-papel.ts`); se re-exportan para la tabla del cuadre. */
+export { conSigno, difCorta };
+
 const nf = (v: number, dec: number) =>
   v.toLocaleString("es-PE", { minimumFractionDigits: dec, maximumFractionDigits: dec });
-
-/** Diferencia con signo y en la resolución que se muestra; lo que redondea a 0 es «0». */
-export function conSigno(v: number, dec: number): string {
-  const r = Math.round(v * 10 ** dec) / 10 ** dec;
-  if (r === 0) return "0";
-  return r > 0 ? `+${nf(r, dec)}` : `−${nf(Math.abs(r), dec)}`;
-}
 
 /** Piezas enteras; PT a 2 decimales; m³ a 3 (como el acta). */
 export const fmtTrio = {
@@ -45,17 +43,6 @@ export const fmtTrio = {
   pt: (v: number) => nf(v, 2),
   m3: (v: number) => nf(v, 3),
 };
-
-/**
- * La diferencia que se cita en una línea, en la unidad que más dice: piezas
- * si se perdió alguna, m³ si no, y PT si sólo el pie tablar se movió.
- */
-export function difCorta(d: Trio): string {
-  if (d.piezas !== 0) return `${conSigno(d.piezas, 0)} pzas`;
-  if (Math.abs(d.m3) >= 0.0005) return `${nf(Math.abs(d.m3), 3)} m³`;
-  if (Math.abs(d.pt) >= 0.005) return `${nf(Math.abs(d.pt), 2)} PT`;
-  return "";
-}
 
 export function IconoEstado({ estado, className = "h-3 w-3" }: { estado: EstadoCuadre; className?: string }) {
   if (estado === "exacto") return <Check className={className} aria-hidden />;

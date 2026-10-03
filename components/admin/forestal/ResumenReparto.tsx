@@ -81,6 +81,9 @@ import RepartoVariado, { NOTA_VARIADO_PAPEL } from "./reparto-variado";
 import RepartoCuadreModal from "./reparto-cuadre-modal";
 import EtiquetaCuadre from "./reparto-cuadre-etiqueta";
 import { useRepartoCuadre } from "./hooks/use-reparto-cuadre";
+import { useCandadoCuadre } from "./hooks/use-candado-cuadre";
+import Anexo04ConfirmarCuadre from "./Anexo04ConfirmarCuadre";
+import { cuadreDelPapel } from "@/lib/forestal/cuadre-del-papel";
 import { controlDe, estadoDeControles } from "@/lib/forestal/reparto-cuadre";
 import { paquetesVariado, useConfigVariado } from "./hooks/use-config-variado";
 import { agruparPiezasIguales, desglosarVariado, esVariado } from "@/lib/forestal/variado-desglose";
@@ -1200,6 +1203,10 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
      Lógica pura en `lib/forestal/reparto-cuadre.ts`; acá sólo se monta. */
   const cuadreCifras = useRepartoCuadre(dist, piezas, rows, anexosDePermiso);
   const cc = cuadreCifras.cuadre;
+  /* El cuadre como candado (Brandon, 2026-10-03): con «difiere», guardar la
+     distribución y sacar el Anexo 04 de un bloque piden confirmar. */
+  const cuadrePapel = useMemo(() => (bloques.length > 0 ? cuadreDelPapel(cc) : null), [bloques.length, cc]);
+  const candadoGuardar = useCandadoCuadre(cuadrePapel);
 
   /**
    * El color con el que se reconoce cada bloque, por su posición en la lista
@@ -1867,7 +1874,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
               </label>
             </div>
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <button type="button" onClick={() => void guardarDistribucion()} disabled={guardandoDistribucion}
+              <button type="button" onClick={candadoGuardar.conCandado(() => void guardarDistribucion())} disabled={guardandoDistribucion}
                 className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white hover:brightness-95 disabled:opacity-50">
                 {guardandoDistribucion ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                 {guardandoDistribucion ? "Guardando…" : distribucionActual ? "Actualizar" : "Guardar"}
@@ -2506,7 +2513,22 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
           rows={anexoDe.piezas}
           especieGlobal={anexoDe.especie}
           procedencia={anexoDe.procedencia}
+          cuadre={cuadrePapel}
+          /* Revisar el cuadre es corregir la distribución, que está detrás:
+             se cierra el anexo (sus datos quedan guardados) y se abre el
+             cuadre parado en lo que no cuadra. */
+          onVerCuadre={() => { setAnexoDe(null); cuadreCifras.abrir(cuadrePapel?.control); }}
           onCerrar={() => setAnexoDe(null)}
+        />
+      )}
+      {candadoGuardar.pidiendo && cuadrePapel && (
+        <Anexo04ConfirmarCuadre
+          cuadre={cuadrePapel}
+          accion="Guardar igual"
+          pregunta="¿Guardar la distribución igual? Queda guardada con estas cifras."
+          onConfirmar={candadoGuardar.confirmar}
+          onCancelar={candadoGuardar.cancelar}
+          onVerCuadre={() => { candadoGuardar.cancelar(); cuadreCifras.abrir(cuadrePapel.control); }}
         />
       )}
       {catalogoEspecies.modal}

@@ -229,21 +229,24 @@ export interface ExtrasPdfAnexo {
   trasera?: TraseraParaPdf | null;
 }
 
+/** Agrega la hoja de la trasera al final de lo que ya tiene el documento. */
+async function agregarTrasera(doc: jsPDF, trasera: TraseraParaPdf | null | undefined): Promise<void> {
+  if (!trasera || trasera.piezas.length === 0) return;
+  /* Import dinámico: el croquis y la tabla sólo se cargan si hay trasera. */
+  const [{ dibujarTraseraEnDoc }, autoTable] = await Promise.all([
+    import("./camion-croquis-pdf"),
+    import("jspdf-autotable").then((m) => m.default),
+  ]);
+  doc.addPage();
+  dibujarTraseraEnDoc(doc, autoTable, trasera.piezas, trasera.anchoM, trasera.catalogo ?? []);
+}
+
 /** Construye el documento (compartido por descarga y cualquier otra salida). */
 async function construirDoc(rows: PiezaCubicada[], datos: DatosAnexo04, opts: Anexo04Opts = {}, extras: ExtrasPdfAnexo = {}) {
   const { jsPDF: JsPDF } = await import("jspdf");
   const doc = new JsPDF({ unit: "pt", format: "a4" });
   agregarAnexo(doc, rows, datos, opts, true);
-  const trasera = extras.trasera;
-  if (trasera && trasera.piezas.length > 0) {
-    /* Import dinámico: el croquis y la tabla sólo se cargan si hay trasera. */
-    const [{ dibujarTraseraEnDoc }, autoTable] = await Promise.all([
-      import("./camion-croquis-pdf"),
-      import("jspdf-autotable").then((m) => m.default),
-    ]);
-    doc.addPage();
-    dibujarTraseraEnDoc(doc, autoTable, trasera.piezas, trasera.anchoM, trasera.catalogo ?? []);
-  }
+  await agregarTrasera(doc, extras.trasera);
   return doc;
 }
 
@@ -259,16 +262,31 @@ export async function exportarAnexosPDF(
     especieGlobal?: string;
     /** El (3) VOLUMEN TOTAL declarado a mano en ESE anexo, si tuvo uno. */
     totalManualM3?: number | null;
+    /** La hoja de la trasera que va DETRÁS de este anexo (el emitido con su croquis). */
+    trasera?: TraseraParaPdf | null;
   }>,
   nombre = `anexos-04-${new Date().toISOString().slice(0, 10)}.pdf`,
 ): Promise<void> {
-  if (items.length === 0) return;
+  const doc = await construirDocDeVarios(items);
+  if (doc) doc.save(nombre);
+}
+
+/**
+ * El documento de varios anexos (sin guardarlo): cada uno empieza en hoja
+ * nueva, con su encabezado y su total, y su trasera detrás si la tiene.
+ * Exportado para contar páginas en las pruebas sin descargar nada.
+ */
+export async function construirDocDeVarios(
+  items: Array<{ piezas: PiezaCubicada[]; datos: DatosAnexo04; especieGlobal?: string; totalManualM3?: number | null; trasera?: TraseraParaPdf | null }>,
+): Promise<jsPDF | null> {
+  if (items.length === 0) return null;
   const { jsPDF: JsPDF } = await import("jspdf");
   const doc = new JsPDF({ unit: "pt", format: "a4" });
-  items.forEach((it, i) =>
-    agregarAnexo(doc, it.piezas, it.datos, { especieGlobal: it.especieGlobal, totalManualM3: it.totalManualM3 }, i === 0),
-  );
-  doc.save(nombre);
+  for (const [i, it] of items.entries()) {
+    agregarAnexo(doc, it.piezas, it.datos, { especieGlobal: it.especieGlobal, totalManualM3: it.totalManualM3 }, i === 0);
+    await agregarTrasera(doc, it.trasera);
+  }
+  return doc;
 }
 
 /** Descarga el ANEXO N° 04 del lote cubicado. */

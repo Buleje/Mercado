@@ -62,8 +62,80 @@ export interface AnexoEmitido {
    * pero no se registra.
    */
   reemplazadoPor?: string | null;
+  /**
+   * La parte trasera del camión que viajó con el papel (Brandon, 2026-10-03:
+   * «el anexo que bajas desde el historial sale sin el croquis»). Lo justo
+   * para redibujarla: medidas y especie de cada fila, y el ancho del camión.
+   * Ausente en los emitidos de antes y en los que salieron sin trasera.
+   */
+  trasera?: TraseraGuardada | null;
   createdAt: string;
   createdBy?: string;
+}
+
+/** Lo que el croquis necesita de cada fila (el PT y el m³ salen de las medidas). */
+export type PiezaDeTrasera = Pick<PiezaCubicada, "id" | "cantidad" | "espesor" | "ancho" | "largo" | "uEspesor" | "uAncho" | "uLargo" | "especie">;
+
+/** La trasera como se guarda con el emitido. */
+export interface TraseraGuardada {
+  anchoM: number;
+  piezas: PiezaDeTrasera[];
+  /** El catálogo de especies del cubicador: el mismo color por especie que en pantalla. */
+  catalogo?: string[];
+}
+
+/**
+ * La trasera del papel, reducida a lo que se guarda: sin dueño, código, nota
+ * ni volumen (el croquis recalcula el PT y el m³ desde las medidas). Un
+ * emitido es un JSON dentro de la bandeja del tenant: cada byte cuenta 200 veces.
+ */
+export function traseraParaGuardar(t: { piezas: readonly PiezaCubicada[]; anchoM: number; catalogo?: readonly string[] } | null | undefined): TraseraGuardada | null {
+  if (!t || t.piezas.length === 0) return null;
+  return {
+    anchoM: t.anchoM,
+    piezas: t.piezas.map((p) => ({
+      id: p.id, cantidad: p.cantidad, espesor: p.espesor, ancho: p.ancho, largo: p.largo,
+      uEspesor: p.uEspesor, uAncho: p.uAncho, uLargo: p.uLargo,
+      ...(p.especie ? { especie: p.especie } : {}),
+    })),
+    ...(t.catalogo && t.catalogo.length > 0 ? { catalogo: [...t.catalogo] } : {}),
+  };
+}
+
+/**
+ * La trasera guardada de un emitido, lista para el PDF: cada fila vuelve a
+ * cubicarse desde sus medidas (lo guardado no trae volumen). `null` en los
+ * emitidos viejos o sin trasera: el PDF sale como siempre, sin el croquis.
+ */
+export function traseraDelEmitido(a: Pick<AnexoEmitido, "trasera"> | null | undefined): { piezas: PiezaCubicada[]; anchoM: number; catalogo: string[] } | null {
+  const t = a?.trasera;
+  if (!t || !Array.isArray(t.piezas) || t.piezas.length === 0 || !Number.isFinite(t.anchoM)) return null;
+  return {
+    anchoM: t.anchoM,
+    catalogo: t.catalogo ?? [],
+    piezas: t.piezas.map((p, i) => ({ ...p, id: p.id ?? `t-${i}`, ...cubicarPieza(p) })),
+  };
+}
+
+/** Las medidas que imprime un anexo, en una cadena: dos papeles con la misma firma llevan las mismas piezas. */
+const firmaPiezas = (piezas: readonly PiezaCubicada[]): string =>
+  JSON.stringify(piezas.map((p) => [p.cantidad, p.espesor, p.ancho, p.largo, p.uEspesor, p.uAncho, p.uLargo, p.especie ?? ""]));
+
+/**
+ * Qué trasera queda al volver a guardar un emitido (upsert por N° + GTF):
+ *  · la que viene, si viene (otra descarga del cubicador con su croquis);
+ *  · si no viene, la que ya tenía, SÓLO si las piezas son las mismas — un
+ *    papel corregido sin trasera a mano no puede quedarse con el croquis de
+ *    otra carga (mejor ninguno que uno equivocado);
+ *  · si no, ninguna.
+ */
+export function traseraQueSigue(
+  existente: Pick<AnexoEmitido, "trasera" | "piezas"> | null | undefined,
+  entrada: Pick<EntradaEmision, "trasera" | "piezas">,
+): TraseraGuardada | null {
+  if (entrada.trasera && entrada.trasera.piezas.length > 0) return entrada.trasera;
+  if (existente?.trasera && firmaPiezas(existente.piezas) === firmaPiezas(entrada.piezas)) return existente.trasera;
+  return null;
 }
 
 /** Los campos que atan el anexo al libro: no los escribe el cubicador, y volver a bajar el papel no los borra. */
@@ -168,6 +240,8 @@ export interface EntradaEmision {
   totalManualM3?: number | null;
   especieGlobal?: string;
   ctpEntryId?: string;
+  /** La parte trasera que viajó con el papel (ver `AnexoEmitido.trasera`). */
+  trasera?: TraseraGuardada | null;
   fecha?: string;
   createdAt?: string;
   createdBy?: string;
@@ -209,6 +283,7 @@ export function construirEmision(input: EntradaEmision): AnexoEmitido {
     piezas,
     especieGlobal: input.especieGlobal,
     ctpEntryId: input.ctpEntryId,
+    ...(input.trasera && input.trasera.piezas.length > 0 ? { trasera: input.trasera } : {}),
     createdAt: input.createdAt ?? ahora,
     createdBy: input.createdBy,
   };

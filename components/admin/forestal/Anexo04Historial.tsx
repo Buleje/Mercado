@@ -170,13 +170,14 @@ export default function Anexo04Historial({
                     <>{fmtAnexo(a.totalM3)} m³</>
                   )}
                   {a.firmante ? ` · ${a.firmante}` : ""}
+                  {a.trasera && a.trasera.piezas.length > 0 ? " · + trasera" : ""}
                 </p>
               </div>
               <div className="flex shrink-0 items-center gap-1">
                 <button type="button" onClick={() => onCargar(a)} title="Traer estos datos y medidas al formulario" aria-label="Cargar en el formulario" className={ICONO}>
                   <RotateCcw className="h-3.5 w-3.5" />
                 </button>
-                <button type="button" onClick={() => onDescargar(a)} title="Re-descargar el PDF tal como se emitió" aria-label="Re-descargar el PDF" className={ICONO}>
+                <button type="button" onClick={() => onDescargar(a)} title={a.trasera && a.trasera.piezas.length > 0 ? "Re-descargar el PDF tal como se emitió, con la hoja de la parte trasera del camión" : "Re-descargar el PDF tal como se emitió"} aria-label="Re-descargar el PDF" className={ICONO}>
                   <Download className="h-3.5 w-3.5" />
                 </button>
                 <button type="button" onClick={() => void borrar(a)} disabled={borrando === a.id} title="Quitar del historial" aria-label="Quitar del historial" className="rounded-xl border border-[var(--rule-base)] p-1.5 text-[var(--text-tertiary)] hover:border-[var(--data-error-500)] hover:text-[var(--data-error-700)] disabled:opacity-50">

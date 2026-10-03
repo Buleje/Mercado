@@ -7,6 +7,7 @@ import { ForestAnexosDB } from "@/lib/db/forest-anexos.db";
 import { CtpInvariantError } from "@/lib/db/forest-ctp-consumo.db";
 import { cubicarPieza, type PiezaCubicada } from "@/lib/forestal/cubicacion";
 import { filaNoCuadra } from "@/lib/forestal/anexo04-registro";
+import { traseraDelBody, traseraRegistroSchema } from "@/lib/forestal/anexo04-trasera-schema";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
@@ -75,6 +76,9 @@ const saveSchema = z.object({
      sigue saliendo de las piezas— pero sin guardarlo no se puede re-imprimir
      el documento que se entregó. */
   totalManualM3: z.coerce.number().nonnegative().max(999999).nullish(),
+  /* La parte trasera que viajó con el papel, para re-descargarlo con su
+     croquis. Opcional: los emitidos sin trasera siguen igual. */
+  trasera: traseraRegistroSchema.nullish(),
   // Un anexo de varias hojas son 35 filas por bloque × 4 × N hojas; el tope
   // protege el KV sin estorbar un despacho grande de verdad.
   piezas: z.array(piezaSchema).min(1).max(1000),
@@ -141,7 +145,7 @@ export const POST = withApiHandler("forestal-anexos-post", async (req: NextReque
       { status: 400 },
     );
   }
-  const { id, fecha, especieGlobal, ctpEntryId, piezas, totalManualM3, ...datos } = parsed.data;
+  const { id, fecha, especieGlobal, ctpEntryId, piezas, totalManualM3, trasera, ...datos } = parsed.data;
   try {
     const anexo = await ForestAnexosDB.save(
       auth.tenantId,
@@ -152,6 +156,9 @@ export const POST = withApiHandler("forestal-anexos-post", async (req: NextReque
         especieGlobal: especieGlobal ?? undefined,
         ctpEntryId: ctpEntryId ?? undefined,
         totalManualM3: totalManualM3 ?? null,
+        /* Sin trasera en el body = `undefined`: la capa de datos conserva la
+           que el registro ya tenía si las piezas no cambiaron. */
+        trasera: trasera ? traseraDelBody(trasera) : undefined,
         // Las piezas llegan ya cubicadas del cliente; los TOTALES del anexo se
         // recalculan igual en `construirEmision`, que es lo que se guarda.
         piezas: piezas.map(piezaDelRegistro),
