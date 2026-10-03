@@ -207,7 +207,7 @@ async function recorrido(t, primero) {
       const [tipo, valor] = Object.entries(p)[0] ?? [];
       try {
         if (tipo === "click") await page.locator(valor).first().click({ timeout: 15_000 });
-        if (tipo === "clicTexto") {
+        else if (tipo === "clicTexto") {
           /* Espera como `click` (hasta 15 s): las vistas del panel cargan por partes. Sólo
              MARCA el botón; el clic lo hace Playwright, porque el .click() del DOM no dispara
              el mousedown con que se activan las pestañas (Radix). */
