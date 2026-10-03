@@ -44,7 +44,8 @@ import {
 } from "@/lib/forestal/ctp-documento-print";
 import type { CtpFicha, PermisoDeGuia } from "@/lib/forestal/ctp-ficha-types";
 import { COPIAS_GTF, faltantesGtf, gtfDatosVacio, type GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
-import { CSS_GTF_OFICIAL, cuerpoGtfOficial, fechaGtf, type LineaProducto } from "@/lib/forestal/ctp-gtf-formato";
+import { CSS_GTF_OFICIAL, cuerpoGtfOficial, fechaGtf, filasDeLaGuia, type LineaProducto } from "@/lib/forestal/ctp-gtf-formato";
+import { revisarTiposGTF, type AvisoTipo } from "@/lib/forestal/gtf-validador-tipo";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { aplicarPiezasGuia } from "@/lib/extensiones/guia-impresa";
 
@@ -82,7 +83,32 @@ export interface DocumentoGtfSalida {
   css: string;
   titulo: string;
   pieCorrido: string;
+  /** Filas cuyo m³ por pieza dice otro tipo de producto (fase 3): se avisan en
+   *  pantalla antes de emitir, nunca se imprimen en el papel. */
+  avisosTipo: AvisoTipo[];
 }
+
+/**
+ * El detalle (37) de la guía de salida: las líneas que vienen, o un único
+ * renglón con lo que declara el despacho (una guía, un producto).
+ */
+export function lineasDeLaGuiaSalida(despacho: GtfDespacho, lineasDeLaGuia?: readonly LineaProducto[]): LineaProducto[] {
+  return lineasDeLaGuia?.length ? [...lineasDeLaGuia] : [{
+    cientifico: despacho.speciesScientific ?? "",
+    comun: despacho.speciesCommon ?? "",
+    tipoProducto: despacho.productType ?? "",
+    // El formato pide la forma de presentación; el despacho no la lleva como
+    // campo propio, así que va la unidad, que es lo que declara el detalle.
+    presentacion: despacho.unitLabel ?? "",
+    cantidad: despacho.pieces ?? 0,
+    unidad: despacho.unitLabel ?? "",
+    total: Number(despacho.quantity ?? 0) || 0,
+  }];
+}
+
+/** Las filas de la guía cuyo m³ por pieza dice otro tipo de producto (fase 3). Se avisa ANTES de emitir. */
+export const avisosTipoDeLaGuia = (despacho: GtfDespacho, lineasDeLaGuia?: readonly LineaProducto[]): AvisoTipo[] =>
+  revisarTiposGTF(filasDeLaGuia(lineasDeLaGuiaSalida(despacho, lineasDeLaGuia)));
 
 export async function documentoGtfSalida(
   despacho: GtfDespacho,
@@ -166,17 +192,7 @@ export async function documentoGtfSalida(
 
   // El cuerpo va con los casilleros numerados del formato de SERFOR: en un
   // puesto de control se pide "el (22)" y "el (31)", no "el destinatario".
-  const lineasProducto: LineaProducto[] = lineasDeLaGuia?.length ? [...lineasDeLaGuia] : [{
-    cientifico: despacho.speciesScientific ?? "",
-    comun: despacho.speciesCommon ?? "",
-    tipoProducto: despacho.productType ?? "",
-    // El formato pide la forma de presentación; el despacho no la lleva como
-    // campo propio, así que va la unidad, que es lo que declara el detalle.
-    presentacion: despacho.unitLabel ?? "",
-    cantidad: despacho.pieces ?? 0,
-    unidad: despacho.unitLabel ?? "",
-    total: Number(despacho.quantity ?? 0) || 0,
-  }];
+  const lineasProducto = lineasDeLaGuiaSalida(despacho, lineasDeLaGuia);
   const cuerpoOficial = cuerpoGtfOficial({
     // La ficha llega parcial (se imprime aunque esté a medio llenar): los
     // casilleros sin dato quedan en blanco, que es el comportamiento correcto.
@@ -251,6 +267,7 @@ export async function documentoGtfSalida(
     css: CSS_GTF_OFICIAL + CSS_GTF_SALIDA,
     titulo: `GTF ${despacho.gtfNumber}`,
     pieCorrido: `GTF ${despacho.gtfNumber} · Emitida por el CTP desde su Libro de Operaciones · ${fecha}`,
+    avisosTipo: avisosTipoDeLaGuia(despacho, lineasProducto),
   };
 
   // ADR-457 · enchufe `forestal.guia-impresa`: las piezas que el negocio tenga

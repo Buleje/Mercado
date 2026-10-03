@@ -13,9 +13,12 @@
  * sola en el expediente, como la del ingreso.
  */
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Check, FileText, Loader2, Printer } from "@buleje/design-system/icons";
 import { documentoGtfSalida } from "@/lib/forestal/ctp-gtf-print";
+import { filasDeLaGuia } from "@/lib/forestal/ctp-gtf-formato";
+import { revisarTiposGTF } from "@/lib/forestal/gtf-validador-tipo";
+import { AvisoTipoGtf } from "./aviso-tipo-gtf";
 import { documentoHtml } from "@/lib/forestal/ctp-documento-print";
 import { cadenaDeGuia, despachoDeGuia, lineasDeGuia } from "@/lib/forestal/guia-desde-lista";
 import { useEspeciesConCatalogo } from "./ctp-especie-campo";
@@ -68,6 +71,11 @@ export default function CtpGuiaRegistrada({
   const { contratos: permisos } = usePermisosForestal();
 
   const faltan = faltantesGtf(datos);
+  /* Fase 3 (2026-10-03): cada fila del detalle contra su m³ por pieza, antes de imprimir. */
+  const avisosTipo = useMemo(
+    () => revisarTiposGTF(filasDeLaGuia(lineasDeGuia(filas, catalogoEspecies.cientificoDe))),
+    [filas, catalogoEspecies.cientificoDe],
+  );
   const total = volumenTotal(filas);
 
   async function imprimir() {
@@ -127,6 +135,7 @@ export default function CtpGuiaRegistrada({
           <InfoTip icono="ayuda" title="Qué sigue" what="Ya se puede emitir el anexo 04 y el certificado desde la ficha de cada despacho." />
         </p>
 
+        {avisosTipo.length > 0 && <div className="mt-3"><AvisoTipoGtf avisos={avisosTipo} /></div>}
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <Btn variant="dark" disabled={generando || faltan.length > 0} onClick={() => void imprimir()}>
             {generando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}

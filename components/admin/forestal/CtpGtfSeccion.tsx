@@ -12,12 +12,13 @@
  * Guardar admite huecos; IMPRIMIR el original no (`faltantesGtf`).
  */
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { CardTitle } from "@buleje/design-system";
 import { ChevronDown, FileText, Loader2, Printer } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { usePermisosForestal } from "@/hooks/use-permisos-forestal";
-import { documentoGtfSalida, type GtfCadena, type GtfDespacho } from "@/lib/forestal/ctp-gtf-print";
+import { avisosTipoDeLaGuia, documentoGtfSalida, type GtfCadena, type GtfDespacho } from "@/lib/forestal/ctp-gtf-print";
+import { AvisoTipoGtf } from "./aviso-tipo-gtf";
 import { documentoHtml } from "@/lib/forestal/ctp-documento-print";
 import CtpDocumentoVisor, { type DocumentoImprimible } from "./CtpDocumentoVisor";
 import CtpArchivadorAuto, { type GuiaParaArchivar } from "./CtpArchivadorAuto";
@@ -58,6 +59,8 @@ export default function CtpGtfSeccion({
   const [abierto, setAbierto] = useState<boolean>(Boolean(despacho.gtfNumber));
   /** La guía armada, esperando que la miren antes de imprimirla o archivarla. */
   const [documento, setDocumento] = useState<DocumentoImprimible | null>(null);
+  /* Fase 3 (2026-10-03): el tipo declarado contra su m³ por pieza, ANTES de emitir. */
+  const avisosTipo = useMemo(() => avisosTipoDeLaGuia(despacho), [despacho]);
   /** La guía de salida también va sola al expediente, igual que las de ingreso. */
   const [colaArchivo, setColaArchivo] = useState<GuiaParaArchivar[]>([]);
   const [archivada, setArchivada] = useState<string | null>(null);
@@ -215,6 +218,7 @@ export default function CtpGtfSeccion({
         </div>
       </div>
 
+      {avisosTipo.length > 0 && <div className="mt-2"><AvisoTipoGtf avisos={avisosTipo} /></div>}
       {aviso && <p className="mt-2 text-sm text-[var(--text-secondary)]">{aviso}</p>}
       {archivada && (
         <p className="mt-2 text-sm font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">

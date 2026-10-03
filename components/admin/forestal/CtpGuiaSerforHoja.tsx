@@ -28,6 +28,8 @@
  */
 
 import { useMemo, useState } from "react";
+import { revisarTiposGTF } from "@/lib/forestal/gtf-validador-tipo";
+import { AvisoTipoGtf } from "./aviso-tipo-gtf";
 import { CardTitle, DataTable } from "@buleje/design-system";
 import { ChevronDown, ChevronRight, FileText, Printer } from "@buleje/design-system/icons";
 import {
@@ -176,6 +178,11 @@ export default function CtpGuiaSerforHoja({
 
   const ubicacion = [gtf.distrito, gtf.provincia, gtf.departamento].filter(Boolean).join(" · ");
   const productos = gtf.productos ?? [];
+  /* Fase 3 (2026-10-03): una guía ajena también puede traer el tipo cambiado; se avisa antes de aceptarla. */
+  const avisosTipo = useMemo(
+    () => revisarTiposGTF(productos.map((p) => ({ comun: p.comun, cientifico: p.cientifico, tipoProducto: p.tipoProducto, cantidad: p.cantidad, total: p.volumen, unidad: p.unidad }))),
+    [productos],
+  );
 
   return (
     <div className="min-w-0 space-y-3 sm:col-span-12">
@@ -252,6 +259,7 @@ export default function CtpGuiaSerforHoja({
       {/* ── (37) El detalle, SIEMPRE a la vista: especie, cantidad, volumen y
           su equivalente en pies tablares. Es lo que se registra. ─────────── */}
             {/* (37) El detalle, con la cabecera agrupada del papel. */}
+            <AvisoTipoGtf avisos={avisosTipo} />
             {productos.length > 0 && (
               <div className="overflow-x-auto rounded-lg border border-[var(--rule-base)]">
                 <DataTable className="w-full text-sm">

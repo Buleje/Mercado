@@ -22,6 +22,8 @@ import { useEffect, useRef, useState } from "react";
 import { AlertTriangle, Loader2 } from "@buleje/design-system/icons";
 import { documentoHtml } from "@/lib/forestal/ctp-documento-print";
 import { documentoGtfSalida, type GtfCadena, type GtfDespacho } from "@/lib/forestal/ctp-gtf-print";
+import type { AvisoTipo } from "@/lib/forestal/gtf-validador-tipo";
+import { AvisoTipoGtf } from "./aviso-tipo-gtf";
 import { leerGtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 import type { CtpFicha } from "@/lib/forestal/ctp-ficha-types";
 import { logger } from "@/lib/logger";
@@ -58,6 +60,7 @@ export default function Anexo04GtfSalida({
   const marco = useRef<HTMLIFrameElement>(null);
   const [html, setHtml] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [avisosTipo, setAvisosTipo] = useState<AvisoTipo[]>([]);
   /* El catálogo de la planta completa el binomio que el asiento no trae. */
   const catalogoEspecies = useEspeciesConCatalogo();
   /* Los permisos cargados (ADR-421/425): el título declarado en la guía puede
@@ -120,6 +123,7 @@ export default function Anexo04GtfSalida({
           pieCorrido: d.pieCorrido,
         });
         if (!vivo) return;
+        setAvisosTipo(d.avisosTipo);
         setHtml(armado);
         onHtml(armado);
       } catch (err) {
@@ -163,6 +167,8 @@ export default function Anexo04GtfSalida({
   }
 
   return (
+    <div className="space-y-2">
+    <AvisoTipoGtf avisos={avisosTipo} />
     <iframe
       ref={marco}
       title={`GTF ${despacho.gtfNumber ?? ""}`}
@@ -173,5 +179,6 @@ export default function Anexo04GtfSalida({
       data-gtf-salida="1"
       className="h-[64vh] w-full rounded-lg border-0 bg-[var(--surface-sunken)]"
     />
+    </div>
   );
 }
