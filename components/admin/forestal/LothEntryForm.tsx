@@ -88,6 +88,8 @@ import { useEspeciesCatalogo } from "./hooks/use-especies-catalogo";
 import { logger } from "@/lib/logger";
 import { Casilla, CitesPill, cls, etiquetaPlan, Field } from "./loth-entry-form-ui";
 import { ROJO } from "./loth-ficha-ui";
+import { useLothPermiso } from "./hooks/use-loth-libro-permiso";
+import { PERMISO_SIN_PLAN } from "@/lib/forestal/loth-filtro-permiso";
 
 interface Props {
   section: LothSection;
@@ -329,6 +331,13 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
   // ── Plan + picker de ítems disponibles (flujo data-driven, ADR-127) ──
   const [plans, setPlans] = useState<PlanOpt[]>([]);
   const [planId, setPlanId] = useState<string | null>(null);
+  /* El permiso elegido en el chip del libro (02-10-2026) es el «acceso directo»
+     al registrar: el formulario abre con ése. Se lee al ABRIR (una ref): cambiar
+     el chip con el formulario abierto no le cambia el plan a lo que ya se llenó. */
+  const libroPermiso = useLothPermiso();
+  const planDelLibro = useRef(
+    libroPermiso?.planSel && libroPermiso.planSel !== PERMISO_SIN_PLAN ? libroPermiso.planSel : null,
+  );
   // Especies autorizadas del plan (normalizadas) — para avisar en vivo si la
   // especie elegida cae fuera del POA antes de que T7 rechace el despacho/GTF.
   const [authorizedSpecies, setAuthorizedSpecies] = useState<Set<string>>(new Set());
@@ -399,7 +408,9 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
         const active = activeRes.ok ? (await activeRes.json()).active : null;
         if (cancel) return;
         setPlans(pl);
-        setPlanId(active?.id ?? pl[0]?.id ?? null);
+        const delLibro = planDelLibro.current;
+        const elegidoEnElLibro = delLibro && pl.some((p: { id: string }) => p.id === delLibro) ? delLibro : null;
+        setPlanId(elegidoEnElLibro ?? active?.id ?? pl[0]?.id ?? null);
       } catch { /* se puede registrar sin plan (código libre) */ }
       if (!cancel) setPlanesListos(true);
     })();

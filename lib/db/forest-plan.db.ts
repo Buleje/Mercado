@@ -487,6 +487,44 @@ export class ForestPlanDB {
     return plan;
   }
 
+  /**
+   * Revierte una baja (02-10-2026: en Blas se dio de baja el plan que tenía el
+   * censo, las líneas y el permiso, y se creó otro vacío con el mismo N° para
+   * corregir el titular). Espejo de `eliminarPlan`: acotado al tenant, sólo
+   * sobre un plan que ESTÁ de baja (si no, `null` → 404), invalida la caché y
+   * deja rastro con lo que vuelve a colgar de él.
+   */
+  static async reactivarPlan(tenantId: string, planId: string, actor: string) {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (!planId) throw new Error("planId is required");
+    const deBaja = await prisma.forestPlan.findFirst({
+      where: { tenantId, id: planId, deletedAt: { not: null } },
+    });
+    if (!deBaja) return null;
+    const plan = await prisma.forestPlan.update({
+      where: { id: planId, tenantId } satisfies Prisma.ForestPlanWhereUniqueInput,
+      data: { deletedAt: null, isActive: true },
+    });
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    } catch (err) {
+      logger.error("[forest-plan] no se pudo invalidar la caché tras reactivar", { error: String(err), tenantId, planId });
+    }
+    const usos = await ForestPlanDB.usosDelPlan(tenantId, planId);
+    auditCtp({
+      tenantId,
+      action: "ctp_plan_reactivado",
+      entity: "ForestPlan",
+      entityId: plan.id,
+      detail:
+        `Reactivado el plan ${plan.planType} ${plan.planNumber ?? "(sin N°)"} — ${plan.titularName}. ` +
+        `Vuelven a colgar: ${usos.especies} especies, ${usos.censo} árboles del censo, ` +
+        `${usos.asientos} asientos del LO-TH, ${usos.guias} guías, ${usos.contratos} permisos`,
+      user: actor,
+    });
+    return plan;
+  }
+
   // ─── Especies autorizadas ──────────────────────────────────────────────
   static async listSpecies(tenantId: string, planId: string) {
     return prisma.forestPlanSpecies.findMany({

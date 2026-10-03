@@ -5,7 +5,9 @@
  *
  * Operaciones del libro, polígono del área, plan activo, carátula y
  * cartografía (predio, referencias, vías, accesos); y, colgando del plan, el
- * censo, las especies autorizadas y el POA. Salió de `LothMapaView` cuando la
+ * censo, las especies autorizadas y el POA. Desde el 02-10-2026 el plan y las
+ * líneas son los del permiso elegido en el chip del libro (si hay uno); el
+ * polígono, las referencias y las vías siguen siendo POR NEGOCIO. Salió de `LothMapaView` cuando la
  * vista pasó las mil líneas: la pantalla ordena, esto trae y guarda.
  *
  * `cartoSinGuardar`: una vía trazada, una referencia marcada o el contorno
@@ -21,13 +23,14 @@
  * «0 referencias» con dos guardadas). Sin lectura buena, no se escribe.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { leerJson } from "@/lib/errores/sin-dato";
 import type { LothEntryDTO } from "@/lib/forestal/loth-constants";
 import { emptyParcela, normalizeParcela, type LatLng, type LothParcela } from "@/lib/forestal/loth-geo";
 import { emptyCartografia, normalizeCartografia, type LothCartografia } from "@/lib/forestal/loth-cartografia";
 import { defaultPoaConfig, type PoaConfig } from "@/lib/forestal/loth-poa";
+import { cumplePermiso, queryDelPermiso, type FiltroPermiso } from "@/lib/forestal/loth-filtro-permiso";
 import type { CensusTreeDTO } from "../loth-mapa-shared";
 
 export interface PlanActivoMapa {
@@ -77,7 +80,85 @@ async function mensajeDeError(r: Response): Promise<string> {
 
 const txt = (v: unknown): string | null => (typeof v === "string" ? v : null);
 
-export function useLothMapaDatos() {
+function planDesdeFila(a: Json): PlanActivoMapa {
+  return {
+    id: String(a.id),
+    areaHa: a.areaHa != null ? Number(a.areaHa) : null,
+    parcelaCorta: txt(a.parcelaCorta),
+    titularName: txt(a.titularName),
+    planNumber: txt(a.planNumber),
+    tituloHabilitante: txt(a.tituloHabilitante),
+    resolucionNumber: txt(a.resolucionNumber),
+    arffs: txt(a.arffs),
+    region: txt(a.region),
+  };
+}
+
+/** Qué partes del NEGOCIO ya se leyeron bien (no se vuelven a pedir). */
+interface PartesNegocio {
+  parcela: boolean;
+  carto: boolean;
+  caratula: boolean;
+}
+
+/**
+ * Lo que es del NEGOCIO y no del plan: polígono del área, carátula y
+ * cartografía. Sólo se piden las partes que faltan; `undefined` = no se pidió,
+ * `null` = se pidió y no se pudo leer.
+ */
+async function leerNegocio(faltan: PartesNegocio): Promise<{
+  parcela?: LothParcela | null;
+  carto?: LothCartografia | null;
+  caratula?: { valor: CaratulaMapa | null } | null;
+  errorLectura: string | null;
+}> {
+  const [pRes, cRes, gRes] = await Promise.all([
+    faltan.parcela ? fetch("/api/admin/forestal/loth/parcela", { credentials: "include" }) : null,
+    faltan.caratula ? fetch("/api/admin/forestal/loth/caratula", { credentials: "include" }) : null,
+    faltan.carto ? fetch("/api/admin/forestal/loth/cartografia", { credentials: "include" }) : null,
+  ]);
+  const parcela = pRes ? (pRes.ok ? normalizeParcela((await pRes.json()).parcela) : null) : undefined;
+  const carto = gRes ? (gRes.ok ? normalizeCartografia((await gRes.json()).cartografia) : null) : undefined;
+  let errorLectura: string | null = null;
+  if ((pRes && !pRes.ok) || (gRes && !gRes.ok)) {
+    const que = [pRes && !pRes.ok && `el polígono (${await mensajeDeError(pRes)})`, gRes && !gRes.ok && `la cartografía (${await mensajeDeError(gRes)})`]
+      .filter(Boolean)
+      .join(" ni ");
+    errorLectura = `No se pudo leer ${que}. Recarga la página antes de guardar: guardar ahora borraría lo que ya está.`;
+  }
+  let caratula: { valor: CaratulaMapa | null } | null | undefined;
+  if (cRes) {
+    const a = cRes.ok ? (((await cRes.json()).active ?? null) as Json | null) : undefined;
+    caratula =
+      a === undefined
+        ? null
+        : {
+            valor: a
+              ? {
+                  id: txt(a.id),
+                  departamento: txt(a.departamento),
+                  provincia: txt(a.provincia),
+                  distrito: txt(a.distrito),
+                  titularName: txt(a.titularName),
+                  tituloHabilitante: txt(a.tituloHabilitante),
+                }
+              : null,
+          };
+  }
+  return { parcela, carto, caratula, errorLectura };
+}
+
+/**
+ * Con qué permiso mira el mapa (el chip del libro, 02-10-2026). `planId` = el
+ * plan elegido (no «sin plan»): de él salen censo, especies y POA; `null` = el
+ * plan activo, como antes. `filtro` = qué líneas del libro se pintan.
+ */
+export interface PermisoDelMapa {
+  planId?: string | null;
+  filtro?: FiltroPermiso | null;
+}
+
+export function useLothMapaDatos({ planId: planElegido = null, filtro = null }: PermisoDelMapa = {}) {
   const [raw, setRaw] = useState<LothEntryDTO[] | null>(null);
   const [trees, setTrees] = useState<CensusTreeDTO[]>([]);
   /** Especies autorizadas + parámetros del POA: pintan el censo por categoría. */
@@ -98,94 +179,93 @@ export function useLothMapaDatos() {
   /** Qué se leyó bien del servidor: sin eso, guardar pisaría lo que hay. */
   const [leido, setLeido] = useState({ parcela: false, carto: false });
 
-  const load = useCallback(async () => {
+  /** Los datos POR NEGOCIO ya leídos bien: cambiar de permiso no los relee (ni pisa lo que está sin guardar). */
+  const negocioLeido = useRef<PartesNegocio>({ parcela: false, carto: false, caratula: false });
+  /** Sólo vale la ÚLTIMA carga: cambiar de permiso rápido no deja la vieja pisando a la nueva. */
+  const ultimaCarga = useRef(0);
+
+  /*
+   * Una carga por permiso. Lo del PLAN (líneas del libro, censo, especies,
+   * POA) se pide cada vez; lo del NEGOCIO, sólo hasta leerlo bien una vez: la
+   * cartografía vive en memoria hasta «Guardar», y releerla al cambiar de
+   * permiso borraría una vía trazada sin guardar.
+   */
+  useEffect(() => {
+    const carga = ++ultimaCarga.current;
+    const vigente = () => carga === ultimaCarga.current;
+    const ya = negocioLeido.current;
+    const faltan: PartesNegocio = { parcela: !ya.parcela, carto: !ya.carto, caratula: !ya.caratula };
+    const conNegocio = faltan.parcela || faltan.carto || faltan.caratula;
     setLoading(true);
     setError(null);
-    try {
-      const [eRes, pRes, plRes, cRes, gRes] = await Promise.all([
-        fetch("/api/admin/forestal/loth?limit=500&includeAnnulled=1", { credentials: "include" }),
-        fetch("/api/admin/forestal/loth/parcela", { credentials: "include" }),
-        fetch("/api/admin/forestal/plan?active=1", { credentials: "include" }),
-        fetch("/api/admin/forestal/loth/caratula", { credentials: "include" }),
-        fetch("/api/admin/forestal/loth/cartografia", { credentials: "include" }),
-      ]);
-      if (!eRes.ok) throw new Error(await mensajeDeError(eRes));
-      setRaw(((await eRes.json()).entries ?? []) as LothEntryDTO[]);
-      if (pRes.ok) setParcela(normalizeParcela((await pRes.json()).parcela));
-      if (gRes.ok) {
-        const c = normalizeCartografia((await gRes.json()).cartografia);
-        setCarto(c);
-        setCartoGuardada(c);
-      }
-      setLeido({ parcela: pRes.ok, carto: gRes.ok });
-      if (!pRes.ok || !gRes.ok) {
-        const que = [!pRes.ok && `el polígono (${await mensajeDeError(pRes)})`, !gRes.ok && `la cartografía (${await mensajeDeError(gRes)})`]
-          .filter(Boolean)
-          .join(" ni ");
-        setError(`No se pudo leer ${que}. Recarga la página antes de guardar: guardar ahora borraría lo que ya está.`);
-      }
-      if (cRes.ok) {
-        const a = (await cRes.json()).active as Json | null;
-        setCaratula(
-          a
-            ? {
-                id: txt(a.id),
-                departamento: txt(a.departamento),
-                provincia: txt(a.provincia),
-                distrito: txt(a.distrito),
-                titularName: txt(a.titularName),
-                tituloHabilitante: txt(a.tituloHabilitante),
-              }
-            : null,
-        );
-      }
-      if (plRes.ok) {
-        const a = (await plRes.json()).active as Json | null;
-        setPlan(
-          a
-            ? {
-                id: String(a.id),
-                areaHa: a.areaHa != null ? Number(a.areaHa) : null,
-                parcelaCorta: txt(a.parcelaCorta),
-                titularName: txt(a.titularName),
-                planNumber: txt(a.planNumber),
-                tituloHabilitante: txt(a.tituloHabilitante),
-                resolucionNumber: txt(a.resolucionNumber),
-                arffs: txt(a.arffs),
-                region: txt(a.region),
-              }
-            : null,
-        );
-        // El censo y el POA cuelgan del plan activo: se piden en cascada (no
-        // bloquean el primer render del mapa).
-        if (a?.id) {
-          const pid = encodeURIComponent(String(a.id));
-          const [tRes, sRes, poaRes] = await Promise.all([
-            fetch(`/api/admin/forestal/plan/census?planId=${pid}`, { credentials: "include" }),
-            fetch(`/api/admin/forestal/plan?planId=${pid}`, { credentials: "include" }),
-            fetch(`/api/admin/forestal/loth/poa?planId=${pid}`, { credentials: "include" }),
-          ]);
-          if (tRes.ok) setTrees((await tRes.json()).trees ?? []);
-          if (sRes.ok) setPlanSpecies((await sRes.json()).species ?? []);
-          // Sin POA guardado —o si su lectura falla— el defecto es el del PLAN (ADR-455):
-          // una plantación no reserva semilleros (0 %), el bosque natural el 10 %. Antes
-          // un GET fallido dejaba el 10 % aunque el plan fuera una plantación.
-          const porDefecto = defaultPoaConfig({ planType: txt(a.planType), planNumber: txt(a.planNumber), tituloHabilitante: txt(a.tituloHabilitante) });
-          const poa = poaRes.ok ? await leerJson<{ config?: PoaConfig | null }>(poaRes) : null;
-          setPoaConfig(poa?.config ?? porDefecto);
+    void (async () => {
+      try {
+        const q = queryDelPermiso(filtro);
+        const [eRes, plRes, negocio] = await Promise.all([
+          fetch(`/api/admin/forestal/loth?limit=500&includeAnnulled=1${q ? `&${q}` : ""}`, { credentials: "include" }),
+          planElegido
+            ? fetch(`/api/admin/forestal/plan?planId=${encodeURIComponent(planElegido)}`, { credentials: "include" })
+            : fetch("/api/admin/forestal/plan?active=1", { credentials: "include" }),
+          conNegocio ? leerNegocio(faltan) : Promise.resolve(null),
+        ]);
+        if (!vigente()) return;
+        if (negocio) {
+          const { parcela: p, carto: c, caratula: ca } = negocio;
+          if (p) setParcela(p);
+          if (c) {
+            setCarto(c);
+            setCartoGuardada(c);
+          }
+          if (ca) setCaratula(ca.valor);
+          negocioLeido.current = { parcela: ya.parcela || p != null, carto: ya.carto || c != null, caratula: ya.caratula || ca != null };
+          setLeido({ parcela: negocioLeido.current.parcela, carto: negocioLeido.current.carto });
+        }
+        if (!eRes.ok) throw new Error(await mensajeDeError(eRes));
+        /* El server ya filtra por `planId`; `cumplePermiso` es la misma regla
+           del lado de la pantalla, por si la ruta devuelve de más. */
+        const entradas = ((await eRes.json()).entries ?? []) as LothEntryDTO[];
+        setRaw(filtro ? entradas.filter((e) => cumplePermiso(e.planId, filtro)) : entradas);
+        if (negocio?.errorLectura) setError(negocio.errorLectura);
+
+        /* El plan del mapa: el elegido en el libro; si no hay, el activo (como antes). */
+        const pj = plRes.ok ? await leerJson<{ plan?: Json | null; active?: Json | null; species?: EspeciePlanMapa[] }>(plRes) : null;
+        const a = (planElegido ? pj?.plan : pj?.active) ?? null;
+        if (!vigente()) return;
+        setPlan(a ? planDesdeFila(a) : null);
+        if (!a?.id) {
+          /* Sin plan no hay censo: vaciarlo, o quedaría pintado el del permiso anterior. */
+          setTrees([]);
+          setPlanSpecies([]);
+          setPoaConfig(defaultPoaConfig());
+          return;
+        }
+        // El censo y el POA cuelgan del plan: se piden en cascada (no bloquean el primer render del mapa).
+        const pid = encodeURIComponent(String(a.id));
+        const [tRes, sRes, poaRes] = await Promise.all([
+          fetch(`/api/admin/forestal/plan/census?planId=${pid}`, { credentials: "include" }),
+          planElegido ? Promise.resolve(null) : fetch(`/api/admin/forestal/plan?planId=${pid}`, { credentials: "include" }),
+          fetch(`/api/admin/forestal/loth/poa?planId=${pid}`, { credentials: "include" }),
+        ]);
+        if (!vigente()) return;
+        setTrees(tRes.ok ? ((await tRes.json()).trees ?? []) : []);
+        const especies = planElegido ? pj?.species : sRes?.ok ? (await sRes.json()).species : null;
+        setPlanSpecies(especies ?? []);
+        // Sin POA guardado —o si su lectura falla— el defecto es el del PLAN (ADR-455):
+        // una plantación no reserva semilleros (0 %), el bosque natural el 10 %. Antes
+        // un GET fallido dejaba el 10 % aunque el plan fuera una plantación.
+        const porDefecto = defaultPoaConfig({ planType: txt(a.planType), planNumber: txt(a.planNumber), tituloHabilitante: txt(a.tituloHabilitante) });
+        const poa = poaRes.ok ? await leerJson<{ config?: PoaConfig | null }>(poaRes) : null;
+        if (vigente()) setPoaConfig(poa?.config ?? porDefecto);
+      } catch (err) {
+        if (vigente()) setError(err instanceof Error ? err.message : String(err));
+      } finally {
+        if (vigente()) {
+          setFitKey((k) => k + 1);
+          setLoading(false);
         }
       }
-      setFitKey((k) => k + 1);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
+    })();
+  }, [planElegido, filtro]);
 
   const persistParcela = useCallback(
     async (next: { vertices: LatLng[]; nota: string; deforestacionCero: boolean }) => {

@@ -13,6 +13,11 @@ const plural = (n: number, uno: string, varios: string) => `${formatNumber(n)} $
 
 interface Props {
   cargando: boolean;
+  /**
+   * De qué plan es el censo pintado (02-10-2026): el elegido en el chip del
+   * libro o, sin elección, el plan activo. `null` = sin plan.
+   */
+  permiso?: { nombre: string; elegido: boolean } | null;
   operaciones: number;
   arboles: number;
   /** Hectáreas de la parcela declarada (null = no hay parcela). */
@@ -22,7 +27,7 @@ interface Props {
   puntos: number;
 }
 
-export default function LothMapaCabecera({ cargando, operaciones, arboles, areaHa, fuera, rutas, puntos }: Props) {
+export default function LothMapaCabecera({ cargando, permiso, operaciones, arboles, areaHa, fuera, rutas, puntos }: Props) {
   return (
     <header className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
       <SectionTitle>Mapa del área de aprovechamiento</SectionTitle>
@@ -33,6 +38,11 @@ export default function LothMapaCabecera({ cargando, operaciones, arboles, areaH
           </span>
         ) : (
           <>
+            {permiso && (
+              <span className="font-semibold text-[var(--text-primary)]">
+                {permiso.elegido ? `Permiso ${permiso.nombre}` : `Plan activo ${permiso.nombre}`} ·{" "}
+              </span>
+            )}
             {plural(operaciones, "operación geolocalizada", "operaciones geolocalizadas")}
             {arboles > 0 && <> · {plural(arboles, "árbol del censo", "árboles del censo")}</>}
             {areaHa != null && <> · parcela {Number(areaHa).toFixed(1)} ha</>}

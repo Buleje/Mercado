@@ -39,6 +39,8 @@ import {
 import { printLothCumplimiento } from "@/lib/forestal/loth-cumplimiento-print";
 import { permisoParaEspecie, type LothCitesPermiso } from "@/lib/forestal/loth-cites-types";
 import { formatNumber } from "@/lib/format";
+import { PERMISO_SIN_PLAN } from "@/lib/forestal/loth-filtro-permiso";
+import { useLothPermiso } from "./hooks/use-loth-libro-permiso";
 
 interface FullCaratula {
   titularName?: string | null;
@@ -98,12 +100,17 @@ export default function LothCompliancePanel({ totalLineas, onNavigate, reloadSig
   const [error, setError] = useState<string | null>(null);
   const [reportError, setReportError] = useState<string | null>(null);
 
+  /* El permiso del libro (02-10): con un plan elegido, el veredicto es de ESE plan; «Todos» y «Sin plan» = el vigente de siempre. */
+  const permiso = useLothPermiso();
+  const permisoListo = permiso?.listo ?? true;
+  const planDelLibro = permiso?.planSel && permiso.planSel !== PERMISO_SIN_PLAN ? permiso.planSel : null;
   const load = useCallback(async () => {
+    if (!permisoListo) return;
     setLoading(true);
     setError(null);
     try {
       const [aRes, cRes, xRes] = await Promise.all([
-        fetch("/api/admin/forestal/plan?analytics=1", { credentials: "include" }),
+        fetch(`/api/admin/forestal/plan?analytics=1${planDelLibro ? `&planId=${encodeURIComponent(planDelLibro)}` : ""}`, { credentials: "include" }),
         fetch("/api/admin/forestal/loth/caratula", { credentials: "include" }),
         fetch("/api/admin/forestal/loth/cites", { credentials: "include" }),
       ]);
@@ -150,7 +157,7 @@ export default function LothCompliancePanel({ totalLineas, onNavigate, reloadSig
       setLoading(false);
       setReady(true);
     }
-  }, []);
+  }, [permisoListo, planDelLibro]);
 
   useEffect(() => {
     void load();

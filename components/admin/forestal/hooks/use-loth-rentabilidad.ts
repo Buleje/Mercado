@@ -17,6 +17,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocalStorage } from "@/hooks/use-local-storage";
+import { PERMISO_SIN_PLAN } from "@/lib/forestal/loth-filtro-permiso";
+import { useLothPermiso } from "./use-loth-libro-permiso";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { construirFlujo, rankingRentabilidad, veredictoLibro } from "@/lib/forestal/loth-analitica";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
@@ -37,7 +39,20 @@ export interface CostosForm {
 
 export function useLothRentabilidad(reloadSignal?: number) {
   const [planes, setPlanes] = useState<PlanOpcion[] | null>(null);
-  const [elegido, setElegido] = useLocalStorage<string | null>("loth:rentabilidad:plan", null);
+  const [elegidoLocal, setElegidoLocal] = useLocalStorage<string | null>("loth:rentabilidad:plan", null);
+  /* El permiso del libro (02-10): con un plan elegido arriba, esta vista arranca en ése; «Todos»/«Sin plan» conservan lo de siempre. */
+  const permiso = useLothPermiso();
+  const planDelLibro = permiso?.planSel && permiso.planSel !== PERMISO_SIN_PLAN ? permiso.planSel : null;
+  const elegido = planDelLibro ?? elegidoLocal;
+  const elegirGlobal = permiso?.elegirPlan;
+  /** Elegir acá vale en todo el libro (dos vías). */
+  const setElegido = useCallback(
+    (id: string | null) => {
+      setElegidoLocal(id);
+      elegirGlobal?.(id);
+    },
+    [setElegidoLocal, elegirGlobal],
+  );
   const [leido, setLeido] = useState<{ deplan: string | undefined; analytics: Analytics } | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);

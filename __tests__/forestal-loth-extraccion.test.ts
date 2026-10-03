@@ -738,44 +738,57 @@ describe("límites", () => {
 });
 
 describe("rendimiento", () => {
-  it("2 000 árboles y 5 000 líneas en menos de 150 ms", () => {
-    const especies = ["Copaiba", "Lupuna", "Catahua", "Mashonaste", "Sapotillo", "Aguanomasha", "Congona", "Quinilla"];
+  /* 02-10-2026: el umbral fijo («< 150 ms») frenó 3 commits: el hook corre ~80
+     archivos de tests a la vez y la MISMA función tardaba el doble con la máquina
+     tomada (aislada pasaba). Ahora se mide lo que de verdad se cuida —que escale—
+     comparando N contra 2N bajo la MISMA carga: lineal da ≈2, cuadrático ≈4. El
+     tope absoluto queda para un desastre, no para el ruido. */
+  const especies = ["Copaiba", "Lupuna", "Catahua", "Mashonaste", "Sapotillo", "Aguanomasha", "Congona", "Quinilla"];
+  const dia = (i: number) => `2026-${String(1 + (i % 9)).padStart(2, "0")}-${String(1 + (i % 28)).padStart(2, "0")}`;
+  /** 2N árboles y 5N líneas, la misma forma que el libro real. */
+  function libro(n: number) {
     const planes = [plan({ id: "pA", planNumber: "A" }), plan({ id: "pB", planNumber: "B", poa: poa(10, false) })];
-    const arboles = Array.from({ length: 2_000 }, (_, i) =>
-      arbol(`t${i}`, String(i + 1), especies[i % 8], 5 + (i % 17), { planId: i < 1_000 ? "pA" : "pB", dapM: 0.4 + (i % 50) / 100 }),
+    const arboles = Array.from({ length: 2 * n }, (_, i) =>
+      arbol(`t${i}`, String(i + 1), especies[i % 8], 5 + (i % 17), { planId: i < n ? "pA" : "pB", dapM: 0.4 + (i % 50) / 100 }),
     );
-    const dia = (i: number) => `2026-${String(1 + (i % 9)).padStart(2, "0")}-${String(1 + (i % 28)).padStart(2, "0")}`;
     const lineas: LineaDeExtraccion[] = [];
-    for (let i = 0; i < 1_000; i++) {
-      const pid = i < 500 ? "pA" : "pB";
-      const code = String(i < 500 ? i + 1 : 1_000 + i - 499);
+    const mitad = n / 2;
+    for (let i = 0; i < n; i++) {
+      const pid = i < mitad ? "pA" : "pB";
+      const code = String(i < mitad ? i + 1 : n + i - (mitad - 1));
       lineas.push(linea("tala", { planId: pid, treeCode: code, speciesCommon: especies[(Number(code) - 1) % 8], volumeM3: 4, entryDate: dia(i) }));
       lineas.push(linea("trozado", { planId: pid, treeCode: code, trozaCode: `${code}-A`, volumeM3: 1.5, entryDate: dia(i) }));
       lineas.push(linea("trozado", { planId: i % 3 === 0 ? null : pid, treeCode: code, trozaCode: `${code}-B`, volumeM3: 1.2, entryDate: dia(i) }));
       lineas.push(linea(i % 4 === 0 ? "consumo_troza" : "despacho_troza", { planId: null, trozaCode: `${code}-A`, entryDate: dia(i + 1) }));
       lineas.push(linea("despacho_troza", { planId: pid, trozaCode: `${code}-B`, status: i % 5 === 0 ? "anulado" : "registrado", entryDate: dia(i + 2) }));
     }
-    expect(lineas).toHaveLength(5_000);
-    const e = entrada({ planes, arboles, lineas, hasta: "2026-12-31", limites: { arbolesLeidos: 2_000, lineasLeidas: 5_000, truncado: false } });
-
-    const t0 = performance.now();
-    const frio = armarExtraccion(e);
-    const tFrio = performance.now() - t0;
-    // El mejor de 3 corridas en caliente: el hook del commit corre ~80 archivos
-    // de tests en paralelo y una sola medición salía 160 ms con la máquina tomada
-    // (85 / 60 ms aislado). Lo que se cuida es que escale, no el ms de una corrida.
-    let tCaliente = Infinity;
+    return entrada({ planes, arboles, lineas, hasta: "2026-12-31", limites: { arbolesLeidos: 2 * n, lineasLeidas: 5 * n, truncado: false } });
+  }
+  /** El mejor de 3 corridas en caliente. */
+  function medir(e: ReturnType<typeof libro>): number {
+    armarExtraccion(e);
+    let mejor = Infinity;
     for (let k = 0; k < 3; k++) {
-      const t1 = performance.now();
+      const t = performance.now();
       armarExtraccion(e);
-      tCaliente = Math.min(tCaliente, performance.now() - t1);
+      mejor = Math.min(mejor, performance.now() - t);
     }
-    console.info(`[extraccion] 2 000 árboles · 5 000 líneas: ${tFrio.toFixed(1)} ms en frío, ${tCaliente.toFixed(1)} ms en caliente`);
+    return mejor;
+  }
 
-    expect(frio.total.talado.n).toBe(1_000);
-    expect(frio.total.trozado.n).toBe(2_000);
-    identidad(frio.total);
-    expect(tCaliente).toBeLessThan(150);
+  it("2 000 árboles y 5 000 líneas: cuadra y escala lineal (2N ≈ 2× N, nunca ≈ 4×)", () => {
+    const grande = libro(1_000);
+    expect(grande.lineas).toHaveLength(5_000);
+    const r = armarExtraccion(grande);
+    expect(r.total.talado.n).toBe(1_000);
+    expect(r.total.trozado.n).toBe(2_000);
+    identidad(r.total);
+
+    const tN = medir(libro(500));
+    const t2N = medir(grande);
+    console.info(`[extraccion] 1 000/2 500: ${tN.toFixed(1)} ms · 2 000/5 000: ${t2N.toFixed(1)} ms · razón ${(t2N / tN).toFixed(2)}`);
+    expect(t2N / tN).toBeLessThan(3.2);
+    expect(t2N).toBeLessThan(600);
   });
 });
 

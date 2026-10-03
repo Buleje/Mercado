@@ -26,6 +26,7 @@ import { CampoPlaca } from "./ctp-campo-placa";
 import { FiltroColumnaMulti, type FacetaOpcion } from "@/components/admin/shared/filtros-columna";
 import { CampoDeFiltro } from "./ctp-filtros-panel";
 import { BotonRestablecerColumnas, EnOrden, useOrdenColumnas } from "@/components/admin/shared/columnas-ordenables";
+import { useLothPermiso } from "./hooks/use-loth-libro-permiso";
 import { leerGtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 import { guiaEsDePlantacion, piezasDeItems, rotuloDelTitulo } from "@/lib/forestal/loth-guia-despacho";
 import { papelesGuiaLoth } from "@/lib/forestal/loth-guia-print";
@@ -102,17 +103,27 @@ export default function LothGtfView({
   /** Identidad del titular para la hoja oficial (casilleros 6 y 7). */
   const [caratula, setCaratula] = useState<LothGtfCaratula | null>(null);
 
+  /* El permiso del libro (02-10): con uno elegido, la lista trae sólo sus guías (filtro en el servidor). */
+  const permiso = useLothPermiso();
+  const permisoListo = permiso?.listo ?? true;
+  const permisoQuery = permiso?.query ?? "";
   const load = useCallback(async () => {
+    if (!permisoListo) return;
     setLoading(true);
+    setError(null);
     try {
       const [rGtf, rPend] = await Promise.all([
-        fetch("/api/admin/forestal/gtf", { credentials: "include" }),
+        fetch(`/api/admin/forestal/gtf${permisoQuery ? `?${permisoQuery}` : ""}`, { credentials: "include" }),
         fetch("/api/admin/forestal/gtf?sinIngresar=1", { credentials: "include" }),
       ]);
       let emitidas: Gtf[] = [];
       if (rGtf.ok) {
         emitidas = ((await rGtf.json()).gtfs ?? []) as Gtf[];
         setGtfs(emitidas);
+      } else {
+        /* Sin lista no se deja la del filtro anterior a la vista: se vacía y se dice. */
+        setGtfs([]);
+        setError(`No se pudo leer la lista de guías (HTTP ${rGtf.status}).`);
       }
       if (rPend.ok) {
         const pend = ((await rPend.json()).gtfs ?? []) as { gtfNumber: string }[];
@@ -123,10 +134,17 @@ export default function LothGtfView({
       // nadie emitió acá. Hasta ahora sólo se veía en Cumplimiento, que es
       // donde menos sirve — el que puede emitirla está en esta pantalla.
       try {
-        const rLib = await fetch("/api/admin/forestal/loth?limit=500", { credentials: "include" });
+        const rLib = await fetch(`/api/admin/forestal/loth?limit=500${permisoQuery ? `&${permisoQuery}` : ""}`, { credentials: "include" });
         if (rLib.ok) {
           const lineas = ((await rLib.json()).entries ?? []) as { section: string; gtfNumber: string | null; status: string }[];
-          const vivas = new Set(emitidas.filter((g) => g.status !== "anulada").map((g) => g.gtfNumber));
+          /* El cruce compara contra TODAS las emitidas: una guía vieja sin plan no se acusa de «sin emitir» por el filtro. */
+          let paraCruce = emitidas;
+          if (permisoQuery) {
+            const rTodas = await fetch("/api/admin/forestal/gtf", { credentials: "include" });
+            if (!rTodas.ok) throw new Error(`HTTP ${rTodas.status}`);
+            paraCruce = ((await rTodas.json()).gtfs ?? []) as Gtf[];
+          }
+          const vivas = new Set(paraCruce.filter((g) => g.status !== "anulada").map((g) => g.gtfNumber));
           const declaradas = new Set(
             lineas
               .filter((l) => l.status !== "anulado" && (l.section === "despacho_troza" || l.section === "despacho_producto") && l.gtfNumber)
@@ -144,9 +162,9 @@ export default function LothGtfView({
         // Falla blanda: sin el cruce no se acusa a nadie.
         console.warn("[loth-gtf] no se pudo cruzar el libro contra las guías emitidas", err);
       }
-    } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+    } catch (e) { setGtfs([]); setError(e instanceof Error ? e.message : String(e)); }
     finally { setLoading(false); }
-  }, []);
+  }, [permisoListo, permisoQuery]);
   useEffect(() => { load(); }, [load, reloadSignal]);
 
   // La carátula del libro es la identidad legal que va en la hoja: sin ella los
@@ -407,7 +425,7 @@ export default function LothGtfView({
         </div>
       )}
 
-      {error && <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">{error}</div>}
+      {error && <div className="flex flex-wrap items-center gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]"><span>{error}</span><button type="button" onClick={() => void load()} className="inline-flex h-9 items-center rounded-lg border-2 border-[var(--data-error-500)] px-3 text-xs font-bold hover:bg-[var(--data-error-100)]">Reintentar</button></div>}
 
       {!loading && gtfs.length > 0 && (
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -722,6 +740,8 @@ function AnularGtfForm({
 
 // ─── Form ─────────────────────────────────────────────────────────────────
 function GtfForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
+  const permiso = useLothPermiso();
+  const planElegido = permiso?.plan ?? null;
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [f, setF] = useState({
@@ -784,14 +804,24 @@ function GtfForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => voi
   );
   const hasInvalidItems = invalidCodes.size > 0;
 
-  // Prefill titular/título del plan activo
+  // Prefill titular/título: el plan ELEGIDO en el libro si hay uno; si no, el plan activo.
   useEffect(() => {
+    if (planElegido) {
+      setF((s) => ({ ...s, titularName: planElegido.titularName ?? "", tituloHabilitante: planElegido.tituloHabilitante ?? "" }));
+      /* La parcela de corta no viaja en la lista del libro: se lee del plan elegido, como con el plan activo. */
+      const ac = new AbortController();
+      fetch(`/api/admin/forestal/plan?planId=${encodeURIComponent(planElegido.id)}`, { credentials: "include", signal: ac.signal })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((j) => { const pc = j?.plan?.parcelaCorta; if (typeof pc === "string" && pc) setF((s) => ({ ...s, parcelaCorta: pc })); })
+        .catch((err) => { if (!ac.signal.aborted) console.warn("[loth-gtf] no se pudo precargar la parcela del plan elegido", err); });
+      return () => ac.abort();
+    }
     fetch("/api/admin/forestal/plan?active=1", { credentials: "include" })
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => { const p = j?.active; if (p) setF((s) => ({ ...s, titularName: p.titularName ?? "", tituloHabilitante: p.tituloHabilitante ?? "", parcelaCorta: p.parcelaCorta ?? "" })); })
       // Prefill best-effort: si no hay plan activo, el usuario completa a mano.
       .catch((err) => console.warn("[loth-gtf] no se pudo precargar el plan activo", err));
-  }, []);
+  }, [planElegido]);
 
   const autoVol = smalian(Number(it.diamMayorM), Number(it.diamMenorM), Number(it.lengthM));
   function addItem() {
@@ -831,6 +861,8 @@ function GtfForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => voi
       const body: Record<string, unknown> = { items };
       for (const [k, v] of Object.entries(f)) body[k] = v === "" ? null : v;
       body.gtfNumber = f.gtfNumber.trim();
+      /* La guía nueva queda atada al permiso elegido: así el filtro del libro la encuentra. */
+      if (planElegido) body.planId = planElegido.id;
       const r = await fetch("/api/admin/forestal/gtf", { method: "POST", headers: csrfHeaders({ "Content-Type": "application/json" }), credentials: "include", body: JSON.stringify(body) });
       if (!r.ok) throw new Error((await r.json().catch(() => ({}))).message ?? `HTTP ${r.status}`);
       onSaved();

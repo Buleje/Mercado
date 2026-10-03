@@ -10,6 +10,7 @@ import { claveEspecie } from "@/lib/forestal/loth-constants";
 import { claveNumeroGtf, colaDeGtf, mismoNumeroGtf } from "@/lib/forestal/gtf-talonario";
 import { chocanEnElLibro, elegirGuiaDelDueno, puedeSerDelDueno, type IdentidadDeGuiaBuscada } from "@/lib/forestal/loth-talonario";
 import { leerGtfDatos } from "@/lib/forestal/ctp-gtf-datos";
+import type { FiltroPermiso } from "@/lib/forestal/loth-filtro-permiso";
 import type { GtfUsadaLoth } from "@/lib/forestal/loth-talonario";
 import { identidadDeGuiaTh, soloDigitos } from "@/lib/forestal/guia-th-al-ctp";
 import { ForestCtpFichaDB } from "./forest-ctp-ficha.db";
@@ -86,6 +87,19 @@ export interface GtfInput {
   items: GtfItem[];
   observations?: string | null;
   createdBy: string;
+}
+
+/**
+ * El `where` del listado por permiso. Mismo criterio que `cumplePermiso` del libro:
+ * plan → sólo ése (con `conSinPlan`, también las guías sin plan) · sin-plan → `planId null`.
+ * Siempre con `tenantId` y sin dadas de baja.
+ */
+export function dondeDelPermiso(tenantId: string, permiso?: FiltroPermiso | null) {
+  const base = { tenantId, deletedAt: null };
+  if (!permiso) return base;
+  if (permiso.tipo === "sin-plan") return { ...base, planId: null };
+  if (permiso.conSinPlan) return { ...base, OR: [{ planId: permiso.planId }, { planId: null }] };
+  return { ...base, planId: permiso.planId };
 }
 
 export class ForestGtfDB {
@@ -337,10 +351,14 @@ export class ForestGtfDB {
     return g?.gtfDatos ?? null;
   }
 
-  static async list(tenantId: string) {
+  /**
+   * `permiso` (02-10-2026): `null`/ausente = todas · `{tipo:"plan"}` = sólo las de ese
+   * plan · `{tipo:"sin-plan"}` = las que no citan plan.
+   */
+  static async list(tenantId: string, permiso?: FiltroPermiso | null) {
     if (!tenantId) throw new Error("tenantId is required");
     return prisma.forestGtf.findMany({
-      where: { tenantId, deletedAt: null },
+      where: dondeDelPermiso(tenantId, permiso),
       orderBy: { createdAt: "desc" },
       take: 200,
     });

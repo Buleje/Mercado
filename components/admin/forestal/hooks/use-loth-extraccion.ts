@@ -23,6 +23,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocalStorage } from "@/hooks/use-local-storage";
+import { useLothPermiso } from "./use-loth-libro-permiso";
 import { leerJson } from "@/lib/errores/sin-dato";
 import { logger } from "@/lib/logger";
 import { resolveCtpPeriod, type CtpPeriod, type CtpPeriodKey } from "@/lib/forestal/ctp-period";
@@ -80,7 +81,24 @@ interface PlanCrudo {
 const texto = (v: unknown): string | null => (typeof v === "string" && v.trim() ? v.trim() : null);
 
 export function useLothExtraccion(reloadSignal = 0): EstadoExtraccion {
-  const [planId, setPlanId] = useLocalStorage<string | null>("loth-extraccion:plan", null);
+  const [planLocal, setPlanLocal] = useLocalStorage<string | null>("loth-extraccion:plan", null);
+  /* El permiso del libro (02-10): con uno elegido arriba (un plan o «Sin plan») esta vista mira ése; con «Todos» conserva lo suyo, sin escribir el global. */
+  const permiso = useLothPermiso();
+  const planGlobal = permiso?.planSel ?? null;
+  const permisoListo = permiso?.listo ?? true;
+  /* Un plan que el servidor ya no tiene (404): ESTA vista muestra «Todos»; el global no se toca (el aviso «se dio de baja» es del chip). */
+  const [planCaido, setPlanCaido] = useState<string | null>(null);
+  const planPedido = planGlobal ?? planLocal;
+  const planId = planPedido && planPedido === planCaido ? null : planPedido;
+  const elegirGlobal = permiso?.elegirPlan;
+  const setPlanId = useCallback(
+    (id: string | null) => {
+      setPlanCaido(null);
+      setPlanLocal(id);
+      elegirGlobal?.(id);
+    },
+    [setPlanLocal, elegirGlobal],
+  );
   const [periodKey, setPeriodKey] = useLocalStorage<CtpPeriodKey>("loth-extraccion:periodo", "todo");
   const [custom, setCustom] = useLocalStorage<CtpCustomRange>("loth-extraccion:rango", RANGO_VACIO);
   const [especieCruda, setEspecie] = useState<string | null>(null);
@@ -117,6 +135,8 @@ export function useLothExtraccion(reloadSignal = 0): EstadoExtraccion {
   }, [reloadSignal]);
 
   useEffect(() => {
+    /* Con el permiso del libro todavía sin leer, `planId` puede ser el recordado de antes: no se pide aún. */
+    if (!permisoListo) return;
     const ac = new AbortController();
     setCargando(true);
     setError(null);
@@ -128,7 +148,8 @@ export function useLothExtraccion(reloadSignal = 0): EstadoExtraccion {
         });
         if (ac.signal.aborted) return;
         if (r.status === 404 && planId) {
-          setPlanId(null);
+          setPlanCaido(planId);
+          if (planLocal === planId) setPlanLocal(null);
           return;
         }
         const json = await leerJson<unknown>(r);
@@ -154,7 +175,7 @@ export function useLothExtraccion(reloadSignal = 0): EstadoExtraccion {
       }
     })();
     return () => ac.abort();
-  }, [query, intento, reloadSignal, planId, setPlanId]);
+  }, [query, intento, reloadSignal, planId, permisoListo, planLocal, setPlanLocal]);
 
   const reintentar = useCallback(() => setIntento((n) => n + 1), []);
   /* Unir un plan con su permiso (acá o en Plan de Manejo) cambia el permiso de

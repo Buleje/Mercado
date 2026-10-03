@@ -13,6 +13,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useLothPermiso } from "./use-loth-libro-permiso";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { leerJson } from "@/lib/errores/sin-dato";
 import { logger } from "@/lib/logger";
@@ -77,7 +78,11 @@ export function useLothTableroPermiso(reloadSignal = 0) {
   }, [reloadSignal]);
 
   /* Un plan recordado que ya no está en la lista se suelta (vuelve a «Todos»). */
-  const efectivo = permisoInicial(guardado, planes);
+  /* El permiso del libro (02-10): con uno elegido arriba (un plan o «Sin plan») el Control mira ése;
+     con «Todos» conserva su propia elección, sin escribir el global. */
+  const global = useLothPermiso();
+  const planGlobal = global?.planSel ?? null;
+  const efectivo = planGlobal ?? permisoInicial(guardado, planes);
   const planSel: string | null =
     efectivo == null || efectivo === PLAN_SIN_PLAN
       ? efectivo
@@ -124,7 +129,15 @@ export function useLothTableroPermiso(reloadSignal = 0) {
     return () => ac.abort();
   }, [idSaldo, reloadSignal, intento]);
 
-  const elegirPlan = useCallback((id: string | null) => setGuardado(id), [setGuardado]);
+  const elegirGlobal = global?.elegirPlan;
+  /** Elegir acá vale en todo el libro (dos vías). */
+  const elegirPlan = useCallback(
+    (id: string | null) => {
+      setGuardado(id);
+      elegirGlobal?.(id);
+    },
+    [setGuardado, elegirGlobal],
+  );
   const reintentarSaldo = useCallback(() => setIntento((n) => n + 1), []);
 
   return { planes: planes ?? [], cargandoPlanes: planes == null, errorPlanes, planSel, plan, elegirPlan, saldo, reintentarSaldo };

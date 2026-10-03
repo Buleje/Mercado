@@ -38,6 +38,8 @@ import LothRutasExportar from "./LothRutasExportar";
 import LothCaratulaBanner, { type CaratulaUbicacion } from "./LothCaratulaBanner";
 import LothCoordsModal from "./LothCoordsModal";
 import { useLothMapaDatos } from "./hooks/use-loth-mapa-datos";
+import { useLothPermiso } from "./hooks/use-loth-libro-permiso";
+import { PERMISO_SIN_PLAN } from "@/lib/forestal/loth-filtro-permiso";
 import { useLothMapaDibujo } from "./hooks/use-loth-mapa-dibujo";
 import { useLothMapaHerramientas } from "./hooks/use-loth-mapa-herramientas";
 import { useLothMapaDerivados } from "./hooks/use-loth-mapa-derivados";
@@ -70,6 +72,10 @@ const PASTILLA = "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-x
 const BTN_BLOQUE =
   "inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40";
 
+/** Referencias estables: un `[]` nuevo por render re-dispararía los hooks derivados. */
+const SIN_ARBOLES: never[] = [];
+const SIN_ESPECIES: never[] = [];
+
 export default function LothMapaView({
   focusTree,
   onFocusHandled,
@@ -85,7 +91,14 @@ export default function LothMapaView({
   reloadSignal?: number;
 } = {}) {
   const marcoRef = useRef<HTMLElement>(null);
-  const datos = useLothMapaDatos();
+  /* El permiso del libro (chip de la banda): su censo, su POA y sus líneas. Sin
+     uno elegido, el plan activo, como antes. */
+  const libro = useLothPermiso();
+  const planDelLibro = libro?.planSel && libro.planSel !== PERMISO_SIN_PLAN ? libro.planSel : null;
+  const datosCrudos = useLothMapaDatos({ planId: planDelLibro, filtro: libro?.filtro ?? null });
+  /* «Sin permiso»: ningún censo ni plan (mismo criterio que Trazabilidad); el hook trae el del plan activo y acá se descarta. */
+  const sinPlan = libro?.planSel === PERMISO_SIN_PLAN;
+  const datos = sinPlan ? { ...datosCrudos, trees: SIN_ARBOLES, planSpecies: SIN_ESPECIES, plan: null } : datosCrudos;
   const herr = useLothMapaHerramientas({ onError: datos.setError });
   const der = useLothMapaDerivados({ ...datos, showCenso: herr.showCenso, showGrid: herr.showGrid, hidden: herr.hidden });
   const dib = useLothMapaDibujo({ ...datos, censo: der.censoAll });
@@ -140,6 +153,7 @@ export default function LothMapaView({
     <div className="space-y-4" data-vista-mapa>
       <LothMapaCabecera
         cargando={datos.loading && raw === null}
+        permiso={plan ? { nombre: plan.planNumber ?? plan.titularName ?? "Plan sin número", elegido: planDelLibro != null } : null}
         operaciones={geoAll.length}
         arboles={censoAll.length}
         areaHa={declarada ? readiness.areaHa : null}

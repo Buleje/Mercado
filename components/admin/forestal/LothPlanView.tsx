@@ -338,7 +338,7 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
             onClose={() => d.setShowPlanForm(false)}
             /* El plan recién creado queda elegido: una plantación se crea para
                ver su «Registro y saldo», no para volver al plan de antes. */
-            onSaved={(id) => { d.setShowPlanForm(false); if (id) d.setPlanId(id); d.loadPlans(); }}
+            onSaved={(id) => { d.setShowPlanForm(false); if (id) d.mostrarPlanNuevo(id); d.loadPlans(); }}
             /* Los planes que ya existen: de ellos sale lo que se repite entre
                un documento y el siguiente (ARFFS, región, regente, UIT,
                costos) y las autoridades ya escritas. */

@@ -196,3 +196,29 @@ describe("eliminarPlan — baja lógica auditada", () => {
     await expect(ForestPlanDB.eliminarPlan("t-main", "", "qaadmin")).rejects.toThrow("planId is required");
   });
 });
+
+describe("reactivarPlan — revierte una baja, auditado", () => {
+  it("sólo busca planes DE BAJA del tenant y los vuelve vivos y activos", async () => {
+    H.estado.plan = { ...PLAN, deletedAt: new Date(), isActive: false };
+    await ForestPlanDB.reactivarPlan("t-main", PLAN.id, "qaadmin");
+    expect(H.wheres[0]).toMatchObject({ modelo: "planFindFirst", tenantId: "t-main", deletedAt: { not: null } });
+    expect(H.updates).toHaveLength(1);
+    expect(H.updates[0].where).toMatchObject({ id: PLAN.id, tenantId: "t-main" });
+    expect(H.updates[0].data).toEqual({ deletedAt: null, isActive: true });
+    expect(H.invalidados).toEqual(["forest-plan:t-main"]);
+  });
+
+  it("deja rastro con lo que vuelve a colgar", async () => {
+    H.estado.plan = { ...PLAN, deletedAt: new Date(), isActive: false };
+    await ForestPlanDB.reactivarPlan("t-main", PLAN.id, "qaadmin");
+    expect(H.audits[0]).toMatchObject({ action: "ctp_plan_reactivado", entityId: PLAN.id, user: "qaadmin" });
+    expect(String(H.audits[0].detail)).toContain("11 asientos");
+  });
+
+  it("un plan vivo o de otro tenant devuelve null y no escribe nada", async () => {
+    H.estado.plan = null;
+    expect(await ForestPlanDB.reactivarPlan("t-otro", PLAN.id, "qaadmin")).toBeNull();
+    expect(H.updates).toHaveLength(0);
+    expect(H.audits).toHaveLength(0);
+  });
+});

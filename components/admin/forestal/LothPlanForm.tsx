@@ -57,6 +57,9 @@ import { copiarDePlanPrevio, etiquetaPlanPrevio, type PlanPrevio } from "@/lib/f
 import { SelectConOtra } from "./campos-elegibles";
 import { Field, cls } from "./loth-plan-ui";
 import LothPlanFormUbicacion from "./LothPlanFormUbicacion";
+import LothPlanFormPermisoDelLibro from "./LothPlanFormPermisoDelLibro";
+import { useLothPermiso } from "./hooks/use-loth-libro-permiso";
+import { nombreDelPlan } from "@/lib/forestal/loth-tablero-permiso";
 import LothPlanFormPlantacion, { EspeciesSeCorrigenEnRegistro } from "./LothPlanFormPlantacion";
 import LothPlanConstanciaLector, { LineaLectorConstancia } from "./LothPlanConstanciaLector";
 import { filaDesdeLeida, useLectorConstancia } from "./hooks/use-lector-constancia";
@@ -219,6 +222,16 @@ export default function LothPlanForm({
   /* Los permisos, una sola vez para el formulario y su picker: dos consultas de
      la misma lista en la misma pantalla pueden contestar distinto. */
   const { contratos, actualizar: actualizarPermiso } = usePermisosForestal();
+  /* El plan elegido en el chip del libro, si está atado a un permiso del
+     Directorio: en un ALTA se propone el mismo permiso (02-10-2026). Sólo se
+     propone mientras no se haya elegido uno a mano ni descartado la propuesta. */
+  const libroPermiso = useLothPermiso();
+  const [propuestaDescartada, setPropuestaDescartada] = useState(false);
+  const planDelLibro = libroPermiso?.plan ?? null;
+  const contratoDelLibro =
+    !editando && !permiso && !propuestaDescartada && planDelLibro?.contratoId
+      ? (contratos.find((c) => c.id === planDelLibro.contratoId) ?? null)
+      : null;
   const arffsUsadas = useMemo(
     () => opcionesEscritas([...contratos.map((c) => c.arffs), ...planesPrevios.map((p) => p.arffs), f.arffs]),
     [contratos, planesPrevios, f.arffs],
@@ -290,6 +303,20 @@ export default function LothPlanForm({
     setF(campos);
     setCopiadoDe(completados.length > 0 ? { plan: etiquetaPlanPrevio(plan), campos: completados } : null);
     setMenuCopiar(false);
+  }
+
+  /** «Usar» el permiso del plan del libro: lo mismo que elegirlo en el Directorio, sin pisar lo escrito. */
+  function usarPermisoDelLibro(c: Contrato) {
+    const { campos, completados } = completarPlanDesdeDirectorio(
+      f,
+      // Sin nombre si ya hay titular escrito: `completarPlanDesdeDirectorio` pondría el del permiso encima.
+      { nombre: f.titularName.trim() ? "" : c.titularNombre },
+      c,
+      { tipoTocado, regionPorDefecto: REGION_POR_DEFECTO },
+    );
+    setF({ ...campos, contratoId: c.id });
+    setPermiso(c);
+    setTraidos(completados);
   }
 
   /** Soltar el permiso NO borra lo cargado: eso ya es parte del formulario. */
@@ -539,6 +566,14 @@ export default function LothPlanForm({
           onElegir={traerDelDirectorio}
         />
       }>
+        {contratoDelLibro && planDelLibro && (
+          <LothPlanFormPermisoDelLibro
+            contrato={contratoDelLibro}
+            planDelLibro={nombreDelPlan(planDelLibro)}
+            onUsar={() => usarPermisoDelLibro(contratoDelLibro)}
+            onDescartar={() => setPropuestaDescartada(true)}
+          />
+        )}
         {permiso && (
           <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-[var(--data-info-100)] bg-[var(--data-info-50)] px-3 py-2 dark:border-[var(--data-info-500)]/30 dark:bg-[var(--data-info-500)]/10">
             <FileText className="h-4 w-4 shrink-0 text-[var(--data-info-700)] dark:text-[var(--data-info-500)]" aria-hidden="true" />

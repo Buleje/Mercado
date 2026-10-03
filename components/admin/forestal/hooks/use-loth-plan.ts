@@ -15,7 +15,9 @@ import { claveEspecie } from "@/lib/forestal/loth-constants";
 import { normalizarCondicion } from "@/lib/forestal/loth-mapa-arboles";
 import { analizarZafra } from "@/lib/forestal/loth-zafra";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { PERMISO_SIN_PLAN } from "@/lib/forestal/loth-filtro-permiso";
 import type { FichaEspecie } from "../LothEspecieFichas";
+import { useLothPermiso } from "./use-loth-libro-permiso";
 import {
   CENSO_LIMITE,
   FLAG_LABEL,
@@ -36,6 +38,19 @@ interface UsoDelLibro {
 export function useLothPlan(reloadSignal?: number) {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [planId, setPlanId] = useState<string | null>(null);
+  /*
+   * El permiso del libro (chip de la banda, 02-10-2026), en las dos vías: con
+   * un plan elegido ahí, esta vista abre en ése y lo sigue; elegir otro acá lo
+   * cambia para todo el libro. Con «Todos» (o «sin plan») la vista sigue con su
+   * defecto —el primer plan— sin tocar el filtro del libro. Fuera del libro
+   * (`null`), como siempre.
+   */
+  const libro = useLothPermiso();
+  const planDelLibro = libro?.planSel && libro.planSel !== PERMISO_SIN_PLAN ? libro.planSel : null;
+  const planDelLibroRef = useRef(planDelLibro);
+  useEffect(() => {
+    planDelLibroRef.current = planDelLibro;
+  }, [planDelLibro]);
   const [species, setSpecies] = useState<Species[]>([]);
   const [trees, setTrees] = useState<Tree[]>([]);
   /** Cuántos árboles tiene el censo DE VERDAD, y si lo cargado se quedó corto. */
@@ -71,8 +86,12 @@ export function useLothPlan(reloadSignal?: number) {
       const r = await fetch("/api/admin/forestal/plan", { credentials: "include" });
       if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error ?? `HTTP ${r.status}`);
       const data = await r.json();
-      setPlans(data.plans ?? []);
-      if (!planId && data.plans?.[0]) setPlanId(data.plans[0].id);
+      const lista: Plan[] = data.plans ?? [];
+      setPlans(lista);
+      if (!planId && lista[0]) {
+        const delLibro = planDelLibroRef.current;
+        setPlanId(delLibro && lista.some((p) => p.id === delLibro) ? delLibro : lista[0].id);
+      }
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setLoading(false); }
   }, [planId]);
@@ -131,6 +150,41 @@ export function useLothPlan(reloadSignal?: number) {
   }, []);
   // reloadSignal en deps: tras una tala/despacho el balance (loadDetail) se refresca solo.
   useEffect(() => { if (planId) loadDetail(planId); }, [planId, loadDetail, reloadSignal]);
+
+  /* Cambió el permiso del libro (desde el chip o desde otra vista): ésta lo sigue. */
+  useEffect(() => {
+    if (!planDelLibro || planDelLibro === planId || !plans.some((p) => p.id === planDelLibro)) return;
+    setPlanId(planDelLibro);
+  }, [planDelLibro, planId, plans]);
+
+  /**
+   * Elegir el plan EN esta vista lo elige para todo el libro. Soltarlo (se
+   * eliminó) suelta el del libro sólo si era ése: no se pisa otra elección.
+   */
+  const elegirDelLibro = libro?.elegirPlan;
+  const planSelDelLibro = libro?.planSel ?? null;
+  const elegirPlanVista = useCallback(
+    (id: string | null) => {
+      setPlanId(id);
+      if (!elegirDelLibro) return;
+      if (id) elegirDelLibro(id);
+      else if (planSelDelLibro && planSelDelLibro === planId) elegirDelLibro(null);
+    },
+    [elegirDelLibro, planSelDelLibro, planId],
+  );
+
+  /**
+   * Un plan recién creado se muestra en esta vista; al libro entero sólo si el
+   * libro ya estaba en un plan concreto (con «Todos» o «Sin permiso» no se toca).
+   * Editar un plan nunca llama acá.
+   */
+  const mostrarPlanNuevo = useCallback(
+    (id: string) => {
+      setPlanId(id);
+      if (planDelLibroRef.current) elegirDelLibro?.(id);
+    },
+    [elegirDelLibro],
+  );
 
   const plan = plans.find((p) => p.id === planId) ?? null;
   const autorizadoTotal = useMemo(() => species.reduce((a, s) => a + Number(s.volumenAutorizadoM3 ?? 0), 0), [species]);
@@ -351,7 +405,7 @@ export function useLothPlan(reloadSignal?: number) {
   return {
     poaSucio,
     detalleListo,
-    plans, planId, setPlanId, plan, species, trees, censoTotal, censoTruncado, censusStat,
+    plans, planId, setPlanId: elegirPlanVista, mostrarPlanNuevo, plan, species, trees, censoTotal, censoTruncado, censusStat,
     especieFuera, setEspecieFuera, loading, error, showPlanForm, setShowPlanForm, balance,
     poaConfig, setPoaConfig, poaSaving, savePoaConfig, loadPlans, loadDetail,
     autorizadoTotal, controlRows, fichasEspecie, movilizadoTotal, aprovechamientoPct, saldoTotal,

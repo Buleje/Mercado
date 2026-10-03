@@ -387,6 +387,9 @@ export type CtpAuditAction =
   // LO-TH: sacarlo del selector no borra sus asientos ni sus guías, pero sí
   // cambia qué plan se declara — y eso no puede pasar sin nombre y fecha.
   | "ctp_plan_baja"
+  // Revertir una baja y corregir el titular de un plan (Blas, 02-10-2026).
+  | "ctp_plan_reactivado"
+  | "ctp_plan_titular_corregido"
   // ADR-459: el alta del plan (con su registro) y cada cambio de una especie.
   // El volumen de la especie es el techo del despacho (T6): quién lo subió y de
   // cuánto a cuánto es lo primero que pregunta un fiscalizador.

@@ -32,6 +32,12 @@ export interface PlanTablero {
   vigenciaHasta: string | null;
   estado: string | null;
   isActive: boolean;
+  /**
+   * El permiso del Directorio (`ForestContrato`) al que está atado el plan, si
+   * lo está. Opcional: los tableros que arman un `PlanTablero` a mano no lo
+   * necesitan; el chip del permiso del libro lo usa para que el CTP lo siga.
+   */
+  contratoId?: string | null;
 }
 
 const texto = (v: unknown): string | null => (typeof v === "string" && v.trim() ? v.trim() : null);
@@ -55,6 +61,7 @@ export function planDesdeJson(raw: unknown): PlanTablero | null {
     vigenciaHasta: texto(r.vigenciaHasta),
     estado: texto(r.estado),
     isActive: r.isActive === true,
+    contratoId: texto(r.contratoId),
   };
 }
 

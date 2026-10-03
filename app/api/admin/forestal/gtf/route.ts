@@ -9,6 +9,7 @@ import { withApiHandler } from "@/lib/api-handler";
 import { motivoSchema } from "@/lib/forestal/motivo";
 import { leerPlaca } from "@/lib/forestal/placa-peru";
 import { GuiaThAlCtpDB } from "@/lib/db/guia-th-al-ctp.db";
+import { permisoDelPedido } from "@/lib/forestal/loth-permiso-pedido";
 import { GuiaYaEnElCtpError } from "@/lib/db/gtf-numero.db";
 
 /**
@@ -125,7 +126,10 @@ export const GET = withApiHandler("forestal-gtf-get", async (req: NextRequest) =
     if (serie) {
       return NextResponse.json({ sugerido: await ForestGtfDB.sugerirNumero(auth.tenantId, serie) });
     }
-    return NextResponse.json({ gtfs: await ForestGtfDB.list(auth.tenantId) });
+    // Filtro por permiso del libro (`?planId=&solo=1`): plan ajeno → 404, mal formado → 400.
+    const permiso = await permisoDelPedido(auth.tenantId, url.searchParams);
+    if (permiso instanceof NextResponse) return permiso;
+    return NextResponse.json({ gtfs: await ForestGtfDB.list(auth.tenantId, permiso.filtro) });
   } catch (err) {
     logger.error("[gtf.GET] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
@@ -144,6 +148,15 @@ export const POST = withApiHandler("forestal-gtf-post", async (req: NextRequest)
   const parsed = createSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "validation_error", message: parsed.error.issues[0]?.message, issues: parsed.error.issues }, { status: 400 });
   try {
+    /* Un `planId` ajeno o dado de baja no se guarda: el control de especies no
+       frenaría nada y la guía quedaría colgada de un plan que ningún filtro ve. */
+    if (parsed.data.planId) {
+      const { ForestPlanDB } = await import("@/lib/db/forest-plan.db");
+      const plan = await ForestPlanDB.getPlan(auth.tenantId, parsed.data.planId);
+      if (!plan) {
+        return NextResponse.json({ error: "plan_not_found", message: "Ese permiso no existe en este negocio o fue dado de baja." }, { status: 404 });
+      }
+    }
     const gtf = await ForestGtfDB.create(auth.tenantId, { ...parsed.data, createdBy: auth.username ?? "unknown" });
     return NextResponse.json({ gtf }, { status: 201 });
   } catch (err) {

@@ -36,7 +36,7 @@ import {
 import LibroChrome, { type LibroAction, type LibroGroup } from "@/components/admin/shared/libro-chrome";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
-import ContratoActivoChip from "@/components/admin/forestal/ContratoActivoChip";
+import LothPermisoChip, { useContratoDelPlan } from "./LothPermisoChip";
 import { downloadLothExcel, printLothLibro } from "@/lib/forestal/loth-print";
 import { printLothInforme } from "@/lib/forestal/loth-informe-print";
 import { printTrozaLabels } from "@/lib/forestal/loth-labels";
@@ -94,9 +94,8 @@ import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import { LOTH_VISTAS } from "@/lib/admin/subvistas-modulos";
 import { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { formatNumber } from "@/lib/format";
-import { cumplePermiso } from "@/lib/forestal/loth-filtro-permiso";
-import { useLothLibroPermiso } from "./hooks/use-loth-libro-permiso";
-import LothLibroPermisoSelect from "./LothLibroPermisoSelect";
+import { cumplePermiso, PERMISO_SIN_PLAN } from "@/lib/forestal/loth-filtro-permiso";
+import { LothPermisoContext, useLothLibroPermiso } from "./hooks/use-loth-libro-permiso";
 import LothAtarSinPlan from "./LothAtarSinPlan";
 import { CLAVE_PLAN_TABLERO } from "./hooks/use-loth-tablero-permiso";
 
@@ -264,13 +263,16 @@ export default function LothLibroOperaciones() {
   // Misma cabina que el CTP: la vista vive en la URL con memoria de respaldo.
   const { vista: view, irA } = useVistaModulo<LothView>(LOTH_MODULE_ID, LOTH_VIEW_KEYS_TIPADAS, "secciones", undefined, { alias: LOTH_VISTAS_FUSIONADAS });
   const setView = irA;
-  /* El permiso de la vista Secciones (02-10-2026): tabla, contadores, Excel e
-     impreso. Las otras vistas siguen mirando el libro entero. */
-  const permiso = useLothLibroPermiso(reloadSignal);
+  /* EL permiso del libro (02-10-2026): lo elige el chip de la banda (o «Ver
+     libro de» en Secciones, que es el MISMO estado) y lo leen todas las vistas
+     por `LothPermisoContext`: tabla, contadores, Excel, impreso, plan de manejo,
+     mapa, trazabilidad y los formularios de alta. `recargaPermiso` relee la
+     lista cuando se elige un plan recién creado que todavía no está en ella. */
+  const [recargaPermiso, setRecargaPermiso] = useState(0);
+  const permiso = useLothLibroPermiso(reloadSignal + recargaPermiso);
   const qPermiso = permiso.query;
   /** Los contadores del permiso elegido; `null` = «Todos» (se usan los del libro). */
   const [statsPermiso, setStatsPermiso] = useState<{ q: string; stats: SectionStat[] } | null>(null);
-  const [haySinPlan, setHaySinPlan] = useState(false);
   /** Sólo vale la ÚLTIMA lista pedida: cambiar de permiso rápido no deja la vieja pisando a la nueva. */
   const pedidoLista = useRef(0);
   const [allEntries, setAllEntries] = useState<LothEntry[]>([]);
@@ -314,7 +316,7 @@ export default function LothLibroOperaciones() {
   const [showDespachoGuia, setShowDespachoGuia] = useState(false);
   /** Trozas que llegan elegidas a la guía desde el Control del permiso (ADR-459). */
   const [despachoElegidas, setDespachoElegidas] = useState<string[] | null>(null);
-  /** Censo del plan activo — alimenta el cuadro "censo vs realidad". */
+  /** Censo del permiso elegido (o del plan activo con «Todos») — alimenta el cuadro "censo vs realidad". */
   const [censoArboles, setCensoArboles] = useState<
     { treeCode: string; speciesCommon: string; dapM: number | null; volumenEstimadoM3: number | null; estado: string }[]
   >([]);
@@ -429,7 +431,7 @@ export default function LothLibroOperaciones() {
       const count = await imprimirEtiquetasTrozasLoth(lineas, {
         origin: window.location.origin,
         tituloHabilitante: caratula?.tituloHabilitante ?? null,
-        planNumber: planNumeroActivo,
+        planNumber: permiso.plan?.planNumber ?? planNumeroActivo,
         ventana,
       });
       if (count === 0) {
@@ -453,10 +455,10 @@ export default function LothLibroOperaciones() {
     void doPrintLabelsCtp(lineas, ventana);
   }
 
-  /* El PDF y el Excel salen del permiso elegido sólo desde Secciones, donde se
-     ve el selector; desde otra vista, el libro entero, como siempre. */
-  const permisoExport = view === "secciones" ? permiso.filtro : null;
-  const planExport = view === "secciones" ? permiso.plan : null;
+  /* El PDF y el Excel salen del permiso elegido desde CUALQUIER vista: el
+     selector ahora vive en la banda (02-10-2026) y se ve en todas. */
+  const permisoExport = permiso.filtro;
+  const planExport = permiso.plan;
   const rotuloPermiso = !permisoExport
     ? ""
     : permisoExport.tipo === "sin-plan"
@@ -587,7 +589,6 @@ export default function LothLibroOperaciones() {
       if (statsRes.ok) {
         const j = await statsRes.json();
         setStats(j.stats ?? []);
-        setHaySinPlan(Number(j.lineasSinPlan ?? 0) > 0);
       }
       if (caratulaRes.ok) {
         const json = await caratulaRes.json();
@@ -638,27 +639,12 @@ export default function LothLibroOperaciones() {
         })
         .catch((err) => console.warn("[loth] no se pudieron leer las GTF emitidas", err));
 
-      // El censo del plan activo: sin él, la trazabilidad arranca en la tala y
-      // el volumen ESTIMADO (el que sustenta la autorización) no se compara.
+      // El N° del plan activo, para la etiqueta de la troza cuando el libro se
+      // mira con «Todos». El censo de la trazabilidad va aparte: depende del
+      // permiso elegido (efecto de abajo).
       const planRes = await fetch("/api/admin/forestal/plan?active=1", { credentials: "include" });
       const planJson = planRes.ok ? await planRes.json() : null;
-      const planId = planJson?.active?.id ?? null;
       setPlanNumeroActivo(planJson?.active?.planNumber ?? null);
-      if (planId) {
-        const cRes = await fetch(`/api/admin/forestal/plan/census?planId=${encodeURIComponent(planId)}`, { credentials: "include" });
-        if (cRes.ok) {
-          const trees = (await cRes.json()).trees ?? [];
-          setCensoArboles(
-            trees.map((t: { treeCode: string; speciesCommon: string; dapM: string | null; volumenEstimadoM3: string | null; estado: string }) => ({
-              treeCode: t.treeCode,
-              speciesCommon: t.speciesCommon,
-              dapM: t.dapM != null ? Number(t.dapM) : null,
-              volumenEstimadoM3: t.volumenEstimadoM3 != null ? Number(t.volumenEstimadoM3) : null,
-              estado: t.estado,
-            })),
-          );
-        }
-      }
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -700,15 +686,58 @@ export default function LothLibroOperaciones() {
     return () => ac.abort();
   }, [qPermiso, reloadSignal]);
 
-  /** Elegir permiso: vuelve a la primera página y suelta la selección (eran filas de otro permiso). */
-  const { elegirPlan } = permiso;
+  /**
+   * Elegir permiso (desde el chip, «Ver libro de» o una vista con selector
+   * propio): vuelve a la primera página y suelta la selección (eran filas de
+   * otro permiso); si el plan está atado a un permiso del Directorio, el
+   * permiso de trabajo del CTP lo sigue.
+   */
+  const { elegirPlan, planes: planesDelLibro } = permiso;
+  const seguirContrato = useContratoDelPlan();
+  /** Un plan recién creado que todavía no está en la lista: mientras se relee, no es «se dio de baja». */
+  const [planEsperado, setPlanEsperado] = useState<string | null>(null);
   const elegirPermiso = useCallback(
     (id: string | null) => {
       elegirPlan(id);
       setPage(0);
       setSeleccion(new Set());
+      if (!id || id === PERMISO_SIN_PLAN) return;
+      const p = planesDelLibro.find((x) => x.id === id);
+      if (p) {
+        void seguirContrato(p);
+        return;
+      }
+      setPlanEsperado(id);
+      setRecargaPermiso((n) => n + 1);
     },
-    [elegirPlan],
+    [elegirPlan, planesDelLibro, seguirContrato],
+  );
+  /* Llegó la lista nueva: el plan esperado ya está (y su permiso se sigue) o
+     de verdad no existe (y entonces sí se avisa). */
+  useEffect(() => {
+    if (!planEsperado) return;
+    const p = planesDelLibro.find((x) => x.id === planEsperado);
+    if (p) void seguirContrato(p);
+    setPlanEsperado(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [planesDelLibro]);
+  /* Campo por campo y no `...permiso`: el hook devuelve un objeto nuevo en cada
+     render, y las vistas no deben releer por eso. */
+  const { planSel, plan: planDelLibro, filtro: filtroDelLibro, listo: permisoListo, seCayo: permisoSeCayo, errorLista, reintentar } = permiso;
+  const permisoDelLibro = useMemo(
+    () => ({
+      planes: planesDelLibro,
+      planSel,
+      plan: planDelLibro,
+      filtro: filtroDelLibro,
+      query: qPermiso,
+      listo: permisoListo,
+      seCayo: permisoSeCayo && planEsperado == null,
+      errorLista,
+      reintentar,
+      elegirPlan: elegirPermiso,
+    }),
+    [planesDelLibro, planSel, planDelLibro, filtroDelLibro, qPermiso, permisoListo, permisoSeCayo, planEsperado, errorLista, reintentar, elegirPermiso],
   );
 
   // Otra sección empieza en su primera página: quedarse en la 4 de una lista
@@ -740,6 +769,54 @@ export default function LothLibroOperaciones() {
     if (view === "trazabilidad" || view === "tablero" || view === "secciones" || view === "cierre" || view === "rentabilidad") loadAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view]);
+
+  /* El censo de la trazabilidad por árbol: sin él arranca en la tala y el
+     volumen ESTIMADO (el que sustenta la autorización) no se compara. Es el
+     del permiso elegido; con «Todos», el del plan activo (como antes); con
+     «Líneas sin permiso», ninguno: esas líneas no son de ningún censo. */
+  const planDelCenso = permiso.planSel && permiso.planSel !== PERMISO_SIN_PLAN ? permiso.planSel : null;
+  const censoSinPlan = permiso.planSel === PERMISO_SIN_PLAN;
+  useEffect(() => {
+    if (view !== "trazabilidad" || !permiso.listo) return;
+    if (censoSinPlan) {
+      setCensoArboles([]);
+      return;
+    }
+    const ac = new AbortController();
+    (async () => {
+      try {
+        let pid = planDelCenso;
+        if (!pid) {
+          const r = await fetch("/api/admin/forestal/plan?active=1", { credentials: "include", signal: ac.signal });
+          pid = r.ok ? ((await r.json())?.active?.id ?? null) : null;
+        }
+        if (!pid) {
+          if (!ac.signal.aborted) setCensoArboles([]);
+          return;
+        }
+        const cRes = await fetch(`/api/admin/forestal/plan/census?planId=${encodeURIComponent(pid)}`, { credentials: "include", signal: ac.signal });
+        if (!cRes.ok) throw new Error(`HTTP ${cRes.status}`);
+        const trees = (await cRes.json()).trees ?? [];
+        if (ac.signal.aborted) return;
+        setCensoArboles(
+          trees.map((t: { treeCode: string; speciesCommon: string; dapM: string | null; volumenEstimadoM3: string | null; estado: string }) => ({
+            treeCode: t.treeCode,
+            speciesCommon: t.speciesCommon,
+            dapM: t.dapM != null ? Number(t.dapM) : null,
+            volumenEstimadoM3: t.volumenEstimadoM3 != null ? Number(t.volumenEstimadoM3) : null,
+            estado: t.estado,
+          })),
+        );
+      } catch (err) {
+        if (ac.signal.aborted) return;
+        /* Falla blanda: sin censo la trazabilidad sigue desde la tala. Se vacía
+           para no cruzar el libro de este permiso con el censo de otro. */
+        setCensoArboles([]);
+        console.warn("[loth] no se pudo leer el censo de la trazabilidad", err);
+      }
+    })();
+    return () => ac.abort();
+  }, [view, planDelCenso, censoSinPlan, permiso.listo, reloadSignal]);
 
   /**
    * Asienta N líneas de una. Va de a una porque el backend numera el `lineNo`
@@ -832,6 +909,11 @@ export default function LothLibroOperaciones() {
   // el libro entero en el cliente exigiría bajarlo entero, que es justo lo que
   // la paginación evita. El contador de abajo dice siempre cuántas hay en total.
   const correcciones = useMemo(() => mapaCorrecciones(allEntries), [allEntries]);
+  /** El libro del permiso elegido, para la trazabilidad por árbol (con «Todos», el libro entero). */
+  const entriesDelPermiso = useMemo(
+    () => (permiso.filtro ? allEntries.filter((e) => cumplePermiso(e.planId, permiso.filtro)) : allEntries),
+    [allEntries, permiso.filtro],
+  );
   const lineasSeccion = useMemo(
     () => allEntries.filter((e) => e.section === section && cumplePermiso(e.planId, permiso.filtro)),
     [allEntries, section, permiso.filtro],
@@ -917,6 +999,7 @@ export default function LothLibroOperaciones() {
   ];
 
   return (
+    <LothPermisoContext.Provider value={permisoDelLibro}>
     <LibroChrome
       moduleId={LOTH_MODULE_ID}
       eyebrow="Forestal · LO-TH SERFOR"
@@ -925,12 +1008,13 @@ export default function LothLibroOperaciones() {
       groups={LOTH_GROUPS}
       view={view}
       onView={irA}
-      /* El permiso de TRABAJO, al lado de la carátula (Brandon 2026-09-19).
-         Son dos cosas distintas y por eso van separadas: la carátula es la
-         identidad del libro —de quién es este LO-TH— y el contrato es bajo qué
-         papel se está registrando ahora, que se elige acá y vale en todo el
-         panel. */
-      contrato={<ContratoActivoChip />}
+      /* El permiso del LIBRO, al lado de la carátula (Brandon 02-10-2026; antes,
+         19-09, el permiso de trabajo del CTP). Son dos cosas distintas y por
+         eso van separadas: la carátula es la identidad del libro —de quién es
+         este LO-TH— y el permiso es con qué plan se mira y se registra ahora,
+         en todas las vistas. Si el plan está atado a un permiso del
+         Directorio, el CTP lo sigue (`useContratoDelPlan`). */
+      contrato={<LothPermisoChip />}
       status={
         // La carátula ES la identidad del libro: sin ella, ningún export es
         // presentable. Por eso el chip vive en la cabina y no en un banner.
@@ -1092,7 +1176,7 @@ export default function LothLibroOperaciones() {
                `nav` es lo que saca a la pantalla del callejón sin salida: la
                troza abre su cadena, la GTF su guía y el árbol el mapa. */
             <LothTraceView
-              entries={allEntries}
+              entries={entriesDelPermiso}
               caratula={caratula}
               censo={censoArboles}
               gtfEmitidas={gtfEmitidas}
@@ -1127,13 +1211,8 @@ export default function LothLibroOperaciones() {
 
       {/* Las 6 secciones en un riel: bosque (RDE 264-2019 §1-3) | transformación
           en el propio TH (§4-6) — dos momentos del MISMO libro, no dos libros. */}
-      <LothLibroPermisoSelect
-        planes={permiso.planes}
-        planSel={permiso.planSel}
-        onElegir={elegirPermiso}
-        haySinPlan={haySinPlan}
-      />
-
+      {/* «Ver libro de» se sacó el 02-10 (Brandon): repetía el chip de la banda, que ya
+          filtra todo el libro. */}
       {/* Líneas sin permiso: cuentan en el saldo de todos. Una línea; «Atarlas» abre el modal. */}
       <LothAtarSinPlan
         planes={permiso.planes}
@@ -1441,6 +1520,8 @@ export default function LothLibroOperaciones() {
             } catch (err) {
               console.warn("[loth] no se pudo dejar elegido el permiso importado", err);
             }
+            // Y el permiso del libro: las demás vistas también abren en el importado.
+            elegirPermiso(planId);
             setView("tablero");
           }}
         />
@@ -1595,6 +1676,7 @@ export default function LothLibroOperaciones() {
       )}
       {cadenaCode && <LothCadenaModal code={cadenaCode} onClose={() => setCadenaCode(null)} />}
     </LibroChrome>
+    </LothPermisoContext.Provider>
   );
 }
 
