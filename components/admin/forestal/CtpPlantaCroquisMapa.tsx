@@ -16,7 +16,7 @@ import { Map as MapIcon, Settings2 } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { formatNumber } from "@/lib/format";
-import { FILTROS_VACIOS, flujoAplica, opcionesDeFiltro, type ContenidoZona, type FiltrosCroquis, type Punto } from "@/lib/forestal/planta-croquis";
+import { FILTROS_VACIOS, opcionesDeFiltro, rutasDelPlano, type ContenidoZona, type FiltrosCroquis, type Punto } from "@/lib/forestal/planta-croquis";
 import { CROQUIS_CSS } from "@/lib/forestal/planta-croquis-html";
 import { MARCA_CSS } from "@/lib/forestal/planta-iconos";
 import { ZONA_TIPOS, claveTroza, type AsignacionPlanta, type Item, type MaquinaPlanta, type PlantaCroquis, type PlantaZona } from "@/lib/forestal/planta-zona-types";
@@ -24,6 +24,7 @@ import { DND_ITEM } from "./CtpPlantaPanel";
 import { AsignarZonaModal } from "./ctp-planta-zona-modales";
 import CtpPlantaCroquisBarra from "./CtpPlantaCroquisBarra";
 import CtpPlantaCroquisConfigModal from "./CtpPlantaCroquisConfigModal";
+import CtpPlantaCroquisLeyendaRutas from "./CtpPlantaCroquisLeyendaRutas";
 import { useCroquisLeaflet, type MarcaCroquis, type SeleccionCroquis } from "./hooks/use-croquis-leaflet";
 import { useCroquisDibujo } from "./hooks/use-croquis-dibujo";
 
@@ -75,7 +76,7 @@ export default function CtpPlantaCroquisMapa(props: CtpPlantaCroquisMapaProps) {
           </div>
         </div>
       )}
-      {config && <CtpPlantaCroquisConfigModal croquis={props.croquis} onClose={() => setConfig(false)} onGuardar={props.onGuardarCroquis} />}
+      {config && <CtpPlantaCroquisConfigModal croquis={props.croquis} onClose={() => setConfig(false)} onGuardar={props.onGuardarCroquis} onZonasCreadas={props.onChanged} />}
       {/* Leaflet inserta el HTML de las marcas fuera del árbol de React: el CSS va global. */}
       <style jsx global>{MARCA_CSS}</style>
     </>
@@ -96,6 +97,7 @@ function Lienzo(props: CtpPlantaCroquisMapaProps & { croquis: PlantaCroquis; onC
   /** Zona bajo el puntero mientras se arrastra algo desde la lista. */
   const [sobre, setSobre] = useState<string | null>(null);
   const opciones = useMemo(() => opcionesDeFiltro(items), [items]);
+  const rutas = rutasDelPlano(croquis);
   const dibujo = useCroquisDibujo({ LRef, mapRef, croquis, zonas, onChanged });
 
   const leaflet = useCroquisLeaflet(containerRef, { LRef, mapRef }, {
@@ -161,7 +163,7 @@ function Lienzo(props: CtpPlantaCroquisMapaProps & { croquis: PlantaCroquis; onC
         onDibujar={() => { onSeleccion(null); dibujo.iniciar(); }} onDeshacer={dibujo.deshacer} onTerminar={dibujo.terminar} onCancelar={dibujo.cancelar}
         onEditar={() => { onSeleccion(null); dibujo.iniciarEdicion(); }} onGuardarEdicion={() => void dibujo.guardarEdicion()}
         zonas={zonas} onIrA={irAZona}
-        flujoDisponible={flujoAplica(croquis)} mostrarFlujo={flujo} onFlujo={() => setFlujo((v) => !v)}
+        flujoDisponible={!!rutas} mostrarFlujo={flujo} onFlujo={() => setFlujo((v) => !v)}
         mostrarEtiquetas={etiquetas} onEtiquetas={() => setEtiquetas((v) => !v)}
         onConfigurar={props.onConfigurar} fullscreen={fullscreen} onFullscreen={() => setFullscreen((v) => !v)}
         filtros={filtros} onFiltros={setFiltros} opciones={opciones}
@@ -206,6 +208,7 @@ function Lienzo(props: CtpPlantaCroquisMapaProps & { croquis: PlantaCroquis; onC
           </details>
         )}
       </div>
+      {flujo && rutas && <CtpPlantaCroquisLeyendaRutas rutas={rutas} version={croquis.version} />}
       {dibujo.errorEdicion && <p className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 py-2 text-xs font-bold text-[var(--data-error-700)]">{dibujo.errorEdicion}</p>}
 
       <style jsx global>{CROQUIS_CSS}</style>

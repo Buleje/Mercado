@@ -94,6 +94,53 @@ export const ForestPlantaZonaDB = {
     return zona;
   },
 
+  /**
+   * Alta en LOTE de zonas del croquis (importar el PDF del plano): una sola
+   * lectura y una sola escritura bajo el lock. Nunca pisa: un código que ya
+   * existe (sin importar mayúsculas, en cualquier plano) o un polígono fuera
+   * del terreno queda en `omitidas` con su motivo, y el resto se crea igual.
+   */
+  async crearVarias(
+    tenantId: string,
+    inputs: Array<Partial<PlantaZona> & Record<string, unknown>>,
+    user = "unknown",
+  ): Promise<{ creadas: PlantaZona[]; omitidas: { codigo: string; motivo: string }[] }> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const croquis = await ForestPlantaCroquisDB.get(tenantId);
+    if (!croquis) throw new ZonaCroquisInvalidaError("Primero carga el croquis del aserradero (ancho y alto del terreno).");
+    const r = await PlatformSettingsDB.actualizar<unknown, { creadas: PlantaZona[]; omitidas: { codigo: string; motivo: string }[] }>(
+      `${KEY_PREFIX}${tenantId}`,
+      (actual) => {
+        const list = normalizarLista(actual);
+        const usados = new Set(list.map((z) => z.codigo.toUpperCase()));
+        const creadas: PlantaZona[] = [];
+        const omitidas: { codigo: string; motivo: string }[] = [];
+        for (const input of inputs) {
+          const zona = normalizeZona({ ...input, id: randomUUID(), plano: "croquis", createdAt: undefined });
+          if (!zona.codigo) { omitidas.push({ codigo: "", motivo: "sin código" }); continue; }
+          if (usados.has(zona.codigo.toUpperCase())) { omitidas.push({ codigo: zona.codigo, motivo: "ya existe una zona con ese código" }); continue; }
+          const g = geometriaZonaCroquis(zona.poligono, croquis);
+          if (!g.ok) { omitidas.push({ codigo: zona.codigo, motivo: g.error }); continue; }
+          usados.add(zona.codigo.toUpperCase());
+          creadas.push({ ...zona, areaM2: g.areaM2, lat: g.lat, lng: g.lng });
+        }
+        return creadas.length ? { valor: [...creadas, ...list], resultado: { creadas, omitidas } } : { resultado: { creadas, omitidas } };
+      },
+      user,
+    );
+    if (r.creadas.length) {
+      auditCtp({
+        tenantId,
+        action: "ctp_planta_zona_set",
+        entity: "ForestPlantaZona",
+        entityId: r.creadas[0].id,
+        detail: `Importó ${r.creadas.length} zonas del croquis desde el PDF del plano: ${r.creadas.slice(0, 12).map((z) => z.codigo).join(", ")}${r.creadas.length > 12 ? "…" : ""}`,
+        user,
+      });
+    }
+    return r;
+  },
+
   /** Borra una zona por id. Devuelve true si existía. */
   async remove(tenantId: string, id: string, user = "unknown"): Promise<boolean> {
     if (!tenantId) throw new Error("tenantId is required");

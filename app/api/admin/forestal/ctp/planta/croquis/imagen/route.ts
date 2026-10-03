@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import sharp from "sharp";
+import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
@@ -8,6 +9,8 @@ import { isSpecializationEnabled } from "@/lib/specializations";
 import { withApiHandler } from "@/lib/api-handler";
 import { logger } from "@/lib/logger";
 import { ForestPlantaCroquisDB } from "@/lib/db/forest-planta-croquis.db";
+import { ForestPlantaZonaDB } from "@/lib/db/forest-planta-zona.db";
+import { procesarCroquisPdf } from "@/lib/forestal/croquis-pdf-servidor";
 import { firmarImagenCroquis, subirImagenCroquis } from "@/lib/forestal/croquis-storage";
 import { esPathImagenCroquis, pathImagenCroquis } from "@/lib/forestal/planta-croquis-guardado";
 
@@ -23,6 +26,12 @@ import { esPathImagenCroquis, pathImagenCroquis } from "@/lib/forestal/planta-cr
  *        `PUT croquis { imagenRef }` junto con las medidas (mismo patrón que las
  *        fotos de la carga: subir, después guardar). `ancho/alto` en píxeles
  *        sirven para avisar si la proporción no es la del terreno.
+ * POST multipart `file` PDF (≤ 4 MB, página 1) [+ `anchoM`, `altoM` tipeados]
+ *        → lo mismo + `pdf` (PropuestaCroquisPdf: medidas, componentes de la
+ *        leyenda en fracción de la imagen, máquinas, avisos) + `existentes`
+ *        (códigos de zona del negocio, para no pisarlos). El fondo sale de la
+ *        página dibujada y recortada al terreno según los ejes en metros
+ *        (`lib/forestal/croquis-pdf-servidor.ts`).
  *
  * POST: admin/owner (cambia el plano). GET: quien ve el plano.
  */
@@ -79,15 +88,17 @@ export const POST = withApiHandler("forestal-ctp-planta-croquis-imagen-post", as
   }
   const file = form.get("file");
   if (!(file instanceof File)) return NextResponse.json({ error: "sin_archivo", message: "No llegó ninguna imagen." }, { status: 400 });
-  if (!TIPOS.has(file.type)) {
-    return NextResponse.json({ error: "tipo_no_permitido", message: `Tipo no permitido: ${file.type || "desconocido"}. Usa JPG, PNG o WebP.` }, { status: 400 });
+  const esPdf = file.type === "application/pdf" || (/\.pdf$/i.test(file.name) && (!file.type || file.type === "application/octet-stream"));
+  if (!esPdf && !TIPOS.has(file.type)) {
+    return NextResponse.json({ error: "tipo_no_permitido", message: `Tipo no permitido: ${file.type || "desconocido"}. Usa JPG, PNG, WebP o PDF.` }, { status: 400 });
   }
   if (file.size > MAX_BYTES) {
     return NextResponse.json(
-      { error: "muy_grande", message: `La imagen pesa ${(file.size / 1024 / 1024).toFixed(1).replace(".", ",")} MB. El máximo es 4 MB.` },
+      { error: "muy_grande", message: `${esPdf ? "El PDF" : "La imagen"} pesa ${(file.size / 1024 / 1024).toFixed(1).replace(".", ",")} MB. El máximo es 4 MB.` },
       { status: 413 },
     );
   }
+  if (esPdf) return importarPdf(auth.tenantId, file, form);
 
   let webp: Buffer;
   let ancho = 0;
@@ -116,3 +127,26 @@ export const POST = withApiHandler("forestal-ctp-planta-croquis-imagen-post", as
   if (!r.ok) return NextResponse.json({ error: "upload_failed", message: "No se pudo guardar la imagen. Prueba de nuevo." }, { status: 502 });
   return NextResponse.json({ ok: true, imagenRef: path, ancho, alto, bytes: webp.length });
 });
+
+/** Medidas tipeadas en la pantalla: sirven si la lámina no las dice. */
+const pistaSchema = z.object({ anchoM: z.coerce.number().min(5).max(2000), altoM: z.coerce.number().min(5).max(2000) });
+
+/** El PDF del plano: fondo recortado al terreno + componentes propuestos (no crea zonas: eso lo confirma la pantalla). */
+async function importarPdf(tenantId: string, file: File, form: FormData) {
+  const buf = Buffer.from(await file.arrayBuffer());
+  if (!buf.subarray(0, 1024).toString("latin1").includes("%PDF-")) {
+    return NextResponse.json({ error: "tipo_no_permitido", message: "El archivo no es un PDF." }, { status: 400 });
+  }
+  const pista = pistaSchema.safeParse({ anchoM: form.get("anchoM"), altoM: form.get("altoM") });
+  const r = await procesarCroquisPdf(buf, pista.success ? pista.data : null);
+  if (!r.ok) return NextResponse.json({ error: "pdf_invalido", message: r.error }, { status: 400 });
+
+  const path = pathImagenCroquis(tenantId, randomUUID());
+  const up = await subirImagenCroquis(path, r.webp);
+  if (!up.ok) return NextResponse.json({ error: "upload_failed", message: "No se pudo guardar el plano. Prueba de nuevo." }, { status: 502 });
+  const zonas = await ForestPlantaZonaDB.list(tenantId);
+  return NextResponse.json({
+    ok: true, imagenRef: path, ancho: r.ancho, alto: r.alto, bytes: r.webp.length, pdf: r.propuesta,
+    existentes: { codigos: zonas.map((z) => z.codigo), croquis: zonas.filter((z) => z.plano === "croquis").map((z) => z.codigo) },
+  });
+}

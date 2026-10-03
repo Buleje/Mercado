@@ -1,0 +1,180 @@
+import { describe, expect, it } from "vitest";
+import {
+  aplicarMaquinasPdf, ladoMarcaM, numeroDeCodigo, proponerCroquisDesdePdf, tipoSugerido, zonasDesdeComponentes,
+  type TextoPdf,
+} from "@/lib/forestal/croquis-desde-pdf";
+import { LEYENDA_V9, MARCAS_V9, V9, textosV9, type TextoV9 } from "./fixtures/croquis-v9-pdf";
+
+/** Como lo entrega pdf.js (ancho aproximado: medio cuerpo por letra). */
+const aPdf = (t: TextoV9): TextoPdf => {
+  const w = 0.55 * t.h * t.str.length;
+  const x = t.alinea === "izq" ? t.px : t.alinea === "centro" ? t.px - w / 2 : t.px - w;
+  return { str: t.str, x, y: t.py + 0.36 * t.h, w, h: t.h, angulo: t.angulo ?? 0 };
+};
+const hoja = { ancho: V9.ancho, alto: V9.alto };
+const v9 = () => proponerCroquisDesdePdf({ textos: textosV9().map(aPdf), hoja });
+/** Metros reales de un píxel de la lámina. */
+const metros = (px: number, py: number) => ({ x: (px - V9.origen.px) / V9.pxPorM.x, y: (V9.origen.py - py) / V9.pxPorM.y });
+
+describe("croquis desde PDF — lámina tipo v9", () => {
+  it("toma la escala de los ejes, las medidas escritas y recorta al terreno", () => {
+    const p = v9();
+    expect(p.escaneado).toBe(false);
+    expect(p.escala).toBe("ejes");
+    expect([p.anchoM, p.altoM, p.medidasDe]).toEqual([54, 48, "texto"]);
+    expect(p.recorte.x).toBeCloseTo(139, 0);
+    expect(p.recorte.x + p.recorte.w).toBeCloseTo(139 + 54 * 14.28, 0);
+    expect(p.recorte.y + p.recorte.h).toBeCloseTo(795, 0);
+    expect(p.recorte.y).toBeCloseTo(795 - 48 * 14.27, 0);
+    expect(p.avisos).toEqual([]);
+  });
+
+  it("lee los 37 nombres de la leyenda y ubica a todos", () => {
+    const p = v9();
+    expect(p.leyenda).toBe(37);
+    expect(p.sinUbicar).toEqual([]);
+    const numeros = new Set(p.componentes.map((c) => c.numero));
+    expect(numeros.size).toBe(37);
+    expect(p.componentes.find((c) => c.numero === 21)?.nombre).toBe(LEYENDA_V9[20]);
+  });
+
+  it("cada componente cae a menos de 0,3 m de su círculo", () => {
+    const p = v9();
+    for (const [n, px, py] of MARCAS_V9) {
+      const real = metros(px, py);
+      if (real.x < 0 || real.y < 0) continue; // los de afuera van al borde (otro test)
+      const cerca = p.componentes.filter((c) => c.numero === n).some((c) => Math.hypot(c.fx * 54 - real.x, c.fy * 48 - real.y) < 0.3);
+      expect(cerca, `componente ${n}`).toBe(true);
+    }
+  });
+
+  it("varios puntos del mismo número; el rótulo de ruta (otra letra) queda sin marcar", () => {
+    const p = v9();
+    const cinco = p.componentes.filter((c) => c.numero === 5);
+    expect(cinco).toHaveLength(4);
+    expect(cinco.filter((c) => c.sugerido)).toHaveLength(3);
+    expect(cinco.every((c) => c.puntos === 4)).toBe(true);
+    expect(p.componentes.filter((c) => c.numero === 17 && c.sugerido)).toHaveLength(2);
+    const ruta1 = p.componentes.find((c) => c.numero === 1 && !c.sugerido);
+    expect(ruta1 && Math.hypot(ruta1.fx * 54 - metros(475, 352).x, ruta1.fy * 48 - metros(475, 352).y)).toBeLessThan(0.3);
+  });
+
+  it("lo de afuera del cerco va al borde y se avisa; la caja del proceso y la escala gráfica no son marcas", () => {
+    const p = v9();
+    const via = p.componentes.find((c) => c.numero === 20)!;
+    expect(via.fuera).toBe(true);
+    expect(via.fx).toBe(0);
+    const cerco = p.componentes.find((c) => c.numero === 1 && c.sugerido)!;
+    expect(cerco.fuera).toBe(true);
+    // El «1», «2», «3», «4» de la caja del proceso y el 2/4/6/8 de la escala no suman puntos.
+    expect(p.componentes.filter((c) => c.numero === 2)).toHaveLength(2); // marca + rótulo de ruta
+    expect(p.componentes.filter((c) => c.numero === 6)).toHaveLength(1);
+    expect(p.componentes.filter((c) => c.numero === 8)).toHaveLength(1);
+  });
+
+  it("el número pegado a un rótulo («34» junto a «Cámara 2») sigue siendo marca", () => {
+    const p = v9();
+    expect(p.componentes.filter((c) => c.numero === 34)).toHaveLength(1);
+  });
+
+  it("sugiere el tipo por el nombre", () => {
+    const tipo = (n: number) => v9().componentes.find((c) => c.numero === n)!.tipo;
+    expect(tipo(8)).toBe("patio_trozas");
+    expect(tipo(14)).toBe("patio_trozas");
+    expect(tipo(23)).toBe("aserrado");
+    expect(tipo(36)).toBe("aserrado");
+    expect(tipo(31)).toBe("entrada");
+    expect(tipo(32)).toBe("oficina");
+    expect(tipo(21)).toBe("otro"); // cámara (oficina) es una cámara
+    expect(tipo(5)).toBe("patio_producto");
+    expect(tipo(30)).toBe("patio_producto");
+    expect(tipo(27)).toBe("otro");
+  });
+
+  it("las máquinas D1–D7 con su rótulo de abajo", () => {
+    const p = v9();
+    expect(p.maquinas.map((m) => m.codigo)).toEqual(["D1", "D2", "D3", "D4", "D5", "D6", "D7"]);
+    const d4 = p.maquinas.find((m) => m.codigo === "D4")!;
+    expect(d4.nombre).toBe("Camión Volvo 1");
+    expect(Math.hypot(d4.fx * 54 - metros(339, 262).x, d4.fy * 48 - metros(339, 262).y)).toBeLessThan(0.3);
+  });
+});
+
+describe("croquis desde PDF — sin ejes, escaneado, pegado", () => {
+  it("sin texto = escaneado: solo el fondo", () => {
+    const p = proponerCroquisDesdePdf({ textos: [], hoja, pista: { anchoM: 54, altoM: 48 } });
+    expect(p.escaneado).toBe(true);
+    expect(p.componentes).toEqual([]);
+    expect([p.anchoM, p.altoM, p.medidasDe]).toEqual([54, 48, "pista"]);
+    expect(p.recorte).toEqual({ x: 0, y: 0, w: V9.ancho, h: V9.alto });
+  });
+
+  it("sin ejes: la hoja entera es el terreno y las fracciones son de la hoja", () => {
+    const textos: TextoPdf[] = [
+      ...["Patio de trozas", "Despuntadora", "Oficina"].flatMap((nombre, i) => [
+        { str: String(i + 1), x: 500, y: 40 + 12 * i, w: 4, h: 7 },
+        { str: nombre, x: 510, y: 40 + 12 * i, w: 50, h: 7 },
+      ]),
+      { str: "1", x: 98, y: 102.52, w: 4, h: 7 }, // centro (100, 100)
+      { str: "3", x: 298, y: 302.52, w: 4, h: 7 },
+    ];
+    const p = proponerCroquisDesdePdf({ textos, hoja: { ancho: 600, alto: 400 }, pista: { anchoM: 30, altoM: 20 } });
+    expect(p.escala).toBe("hoja");
+    expect(p.avisos[0]).toMatch(/ejes/);
+    expect([p.anchoM, p.altoM]).toEqual([30, 20]);
+    const uno = p.componentes.find((c) => c.numero === 1)!;
+    expect(uno.fx).toBeCloseTo(100 / 600, 3);
+    expect(uno.fy).toBeCloseTo(1 - 100 / 400, 3);
+    expect(p.sinUbicar).toEqual([{ numero: 2, nombre: "Despuntadora" }]);
+  });
+
+  it("un número pegado a una palabra («Cámara 1») no es marca", () => {
+    const textos: TextoPdf[] = [
+      ...["Cerco", "Malla", "Losa"].flatMap((nombre, i) => [
+        { str: String(i + 1), x: 500, y: 40 + 12 * i, w: 4, h: 7 },
+        { str: nombre, x: 510, y: 40 + 12 * i, w: 30, h: 7 },
+      ]),
+      { str: "Cámara", x: 50, y: 200, w: 24, h: 7 },
+      { str: "1", x: 76, y: 200, w: 4, h: 7 },
+    ];
+    const p = proponerCroquisDesdePdf({ textos, hoja: { ancho: 600, alto: 400 } });
+    expect(p.componentes).toEqual([]);
+  });
+});
+
+describe("de la propuesta a zonas y máquinas", () => {
+  it("marca cuadrada dentro del terreno, código tipo + número y letra si se repite", () => {
+    const zs = zonasDesdeComponentes([
+      { numero: 8, nombre: "Patio de trozas", tipo: "patio_trozas", fx: 0.5, fy: 0.5 },
+      { numero: 5, nombre: "Madera apilada", tipo: "patio_producto", fx: 0, fy: 1 },
+      { numero: 5, nombre: "Madera apilada", tipo: "patio_producto", fx: 0.2, fy: 0.2 },
+    ], { anchoM: 54, altoM: 48 });
+    expect(zs.map((z) => z.codigo)).toEqual(["PT-08", "PP-05a", "PP-05b"]);
+    expect(JSON.parse(zs[0].poligono)).toEqual([[23, 26], [23, 28], [25, 28], [25, 26]]);
+    // En la esquina: no se sale del terreno.
+    expect(JSON.parse(zs[1].poligono)).toEqual([[46, 0], [46, 2], [48, 2], [48, 0]]);
+    expect(ladoMarcaM(54, 48)).toBe(2);
+    expect(ladoMarcaM(10, 8)).toBe(1);
+  });
+
+  it("número de la leyenda en un código de zona", () => {
+    expect(numeroDeCodigo("PT-08")).toBe(8);
+    expect(numeroDeCodigo("pp-05b")).toBe(5);
+    expect(numeroDeCodigo("PP-05-3")).toBe(5);
+    expect(numeroDeCodigo("Patio")).toBeNull();
+    expect(tipoSugerido("Portón principal")).toBe("entrada");
+  });
+
+  it("máquinas: mueve las que hay (el nombre tipeado manda) y agrega las nuevas", () => {
+    const r = aplicarMaquinasPdf(
+      [{ codigo: "D1", nombre: "Mi cargador", x: 0, y: 0, fuera: true }, { codigo: "D9", nombre: "Otra", x: 1, y: 1, fuera: true }],
+      [{ codigo: "D1", nombre: "Cargador frontal", fx: 0.5, fy: 0.25 }, { codigo: "D2", nombre: null, fx: 0.1, fy: 0.1 }],
+      { anchoM: 54, altoM: 48 },
+    );
+    expect(r).toEqual([
+      { codigo: "D1", nombre: "Mi cargador", x: 27, y: 12, fuera: false },
+      { codigo: "D9", nombre: "Otra", x: 1, y: 1, fuera: true },
+      { codigo: "D2", nombre: "D2", x: 5.4, y: 4.8, fuera: false },
+    ]);
+  });
+});

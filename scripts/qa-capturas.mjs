@@ -22,6 +22,7 @@
  *   {"esperar": "<sel>"}          {"esperar": 500}            (ms)
  *   {"eval": "<expresión js>"}    → su resultado sale en el reporte
  *   {"captura": "nombre"}         → la matriz de capturas de ESTE estado
+ *   {"subir": ["<sel input[type=file]>", "/ruta/archivo.pdf"]} → elige el archivo (03-10: importar el PDF del croquis)
  *   {"clicTexto": "Rolliza"}      → clic por el DOM en el botón/pestaña/opción cuyo texto
  *                                   EMPIEZA con eso (dentro de main o de un diálogo). Para
  *                                   lo que `click` no alcanza: radios segmentados, botones
@@ -244,6 +245,7 @@ async function recorrido(t, primero) {
         }
         else if (tipo === "llenar") await page.locator(valor[0]).first().fill(String(valor[1]), { timeout: 15_000 });
         else if (tipo === "elegir") await page.locator(valor[0]).first().selectOption(String(valor[1]), { timeout: 15_000 });
+        else if (tipo === "subir") await page.locator(valor[0]).first().setInputFiles(String(valor[1]), { timeout: 15_000 });
         else if (tipo === "tecla") await page.keyboard.press(valor);
         else if (tipo === "esperar") {
           if (typeof valor === "number") await page.waitForTimeout(valor);
