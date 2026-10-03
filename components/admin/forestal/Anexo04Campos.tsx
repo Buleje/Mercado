@@ -36,6 +36,7 @@ import {
 } from "@/lib/forestal/anexo04-serfor";
 import { PT_POR_M3 } from "@/lib/forestal/cubicacion";
 import { claveTenant } from "@/hooks/use-anexo04-datos";
+import Anexo04GtfPropuesta from "./Anexo04GtfPropuesta";
 
 /**
  * Junta los bloques de una MISMA especie·tipo aunque el lote haya pasado de
@@ -407,6 +408,7 @@ export default function Anexo04Campos({
             </label>
             <label className="block"><span className={LABEL}>(2) GTF N°</span>
               <input value={datos.gtf} onChange={(e) => onChange({ gtf: e.target.value })} placeholder="19-001-0000052" className={`mt-1 ${INPUT}`} />
+              {!datos.gtf.trim() && <Anexo04GtfPropuesta onUsar={(gtf) => onChange({ gtf })} />}
             </label>
           </div>
 

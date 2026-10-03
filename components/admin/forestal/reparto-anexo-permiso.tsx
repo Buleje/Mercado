@@ -38,6 +38,7 @@ import { textoGTF } from "@/lib/forestal/gtf-redondeo";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
 import { FiltroColumnaMulti } from "@/components/admin/shared/filtros-columna";
 import { formatNumber } from "@/lib/format";
+import AnexoAlLibro from "./reparto-anexo-al-libro";
 import { BotonRestablecerColumnas, EnOrden, useOrdenColumnas } from "@/components/admin/shared/columnas-ordenables";
 
 /** Las columnas movibles del detalle por medida (Brandon, 2026-09-26). Precio
@@ -88,6 +89,7 @@ export default function AnexoPorPermiso({
   onAbrir: (piezas: PiezaCubicada[], etiqueta: string, especie: string) => void;
 }) {
   const [elegido, setElegido] = useState<string | null>(null);
+  /** Sube al abrir el Anexo 04: el estado «guardado / en el libro» se relee mientras se guarda. */
   /** La tabla del detalle se puede plegar: son tantas filas como medidas, y
    *  muchas veces sólo se quiere el total o abrir el papel (Brandon). */
   const [abierta, setAbierta] = useState(true);
@@ -280,9 +282,9 @@ export default function AnexoPorPermiso({
             </button>
             <button
               type="button"
-              onClick={() =>
-                onAbrir(actual.piezas, actual.label, actual.especies[0] ?? "")
-              }
+              onClick={() => {
+                onAbrir(actual.piezas, actual.label, actual.especies[0] ?? "");
+              }}
               className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--accent)] bg-primary/10 px-2.5 py-1 text-xs font-bold text-[var(--accent-ink)] transition-colors hover:brightness-95 dark:text-[var(--accent)]"
             >
               <FileText className="h-3.5 w-3.5" aria-hidden /> Anexo 04 de este permiso
@@ -298,6 +300,9 @@ export default function AnexoPorPermiso({
               <Download className="h-3.5 w-3.5" aria-hidden /> CSV
             </button>
           </div>
+
+          {/* El anexo guardado de este permiso y su paso al libro (Fase 5). */}
+          <AnexoAlLibro piezas={actual.piezas} />
 
           {/* El cuadre, antes que el detalle: si no cierra, no se imprime. */}
           <p

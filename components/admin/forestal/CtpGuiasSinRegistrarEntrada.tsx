@@ -13,7 +13,7 @@
  * pierde lo elegido ni corta un registro en curso.
  */
 import dynamic from "next/dynamic";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { FileStack } from "@buleje/design-system/icons";
 import BarraDeuda, { type DeudaItem } from "@/components/admin/shared/BarraDeuda";
@@ -224,4 +224,18 @@ export function BotonGuiasSinRegistrar() {
       <Flujo estado={estado} abierto={abierto} onCerrar={cerrar} conProduccion={false} />
     </>
   );
+}
+
+/**
+ * La tercera puerta: «Pasar al libro» desde la Distribución, por permiso.
+ * Es el MISMO flujo (propuesta del servidor, elegir la corrida de origen,
+ * una guía por transacción): sólo cambia quién lo abre. Devuelve `abrir` y el
+ * `modal` que hay que renderizar al lado del botón. Sin «Producir sin lote»:
+ * la Distribución vive dentro del cubicador, y un cubicador dentro de otro
+ * cerraría el de abajo con su Escape.
+ */
+export function useFlujoAlLibro(onCambio?: () => void): { abrir: () => void; modal: ReactNode } {
+  const estado = useGuiasSinRegistrar({ onCambio });
+  const { abierto, abrir, cerrar } = useAbrirReleyendo(estado);
+  return { abrir, modal: <Flujo estado={estado} abierto={abierto} onCerrar={cerrar} conProduccion={false} /> };
 }

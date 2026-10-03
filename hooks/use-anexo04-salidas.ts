@@ -15,6 +15,7 @@ import type { DatosAnexo04 } from "@/lib/forestal/anexo04-serfor";
 import { traseraDelEmitido, traseraParaGuardar, type AnexoEmitido } from "@/lib/forestal/anexo04-registro";
 import { exportarAnexo04PDF, exportarAnexosPDF, type TraseraParaPdf } from "@/lib/forestal/anexo04-pdf";
 import { exportarAnexo04Excel } from "@/lib/forestal/anexo04-excel";
+import { EVENTO_ANEXO_GUARDADO } from "@/hooks/use-anexos-emitidos";
 
 export function useAnexo04Salidas(ctx: {
   filas: PiezaCubicada[];
@@ -70,7 +71,11 @@ export function useAnexo04Salidas(ctx: {
         ...(traseraGuardada ? { trasera: traseraGuardada } : {}),
       }),
     })
-      .then((r) => { if (r.ok) onRegistrado(); })
+      .then((r) => {
+        if (!r.ok) return;
+        onRegistrado();
+        window.dispatchEvent(new Event(EVENTO_ANEXO_GUARDADO));
+      })
       .catch((err) => onAviso?.(`El PDF salió, pero no quedó en el historial (${String(err).slice(0, 60)}).`, "error"));
   }, [especieGlobal, ctpEntryId, onAviso, onRegistrado]);
 

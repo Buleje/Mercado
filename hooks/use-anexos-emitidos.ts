@@ -13,6 +13,9 @@ import { useCallback, useEffect, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import type { AnexoEmitido } from "@/lib/forestal/anexo04-registro";
 
+/** Se dispara en `window` cuando un Anexo 04 queda guardado en la bandeja: quien muestra su estado relee sin sondear. */
+export const EVENTO_ANEXO_GUARDADO = "anexo04:guardado";
+
 export function useAnexosEmitidos(token: number): {
   lista: AnexoEmitido[];
   cargando: boolean;
