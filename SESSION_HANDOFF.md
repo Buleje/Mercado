@@ -1,3 +1,22 @@
+# SESSION HANDOFF — 2026-10-04: Configuración en 8 secciones, mezcla de dos sesiones, cupo/T6 del importador, seguridad del Drive, Documentos del plan
+
+**Estado:** ✅ TODO COMMITEADO Y SUBIDO (último `6ce5d15a5`, rama `audit/storefront-mejoras-verificadas-2026-06-15`). Árbol limpio salvo `.claude/` sin versionar. Typecheck 0; suite completa en verde al cierre (las 2 fallas que dio, corregidas).
+
+**Hecho:**
+1. **Configuración (`?tab=config`)**: 20 tarjetas → 8 secciones con `?vista=` y buscador por campo; fuera 36 de 91 campos sin lector; sin datos de ejemplo de Buleje; bloqueo si `/api/settings` falla; «Te falta» con datos reales; Mi panel y Tienda web plegables (memoria `ajustes-auditoria-2026-10-04`).
+2. **Mezcla** de la rama remota (28 commits de otra sesión, Libro TH/cámaras) con la local (117): 18 conflictos resueltos conservando las dos (`4e449f940`). El arranque ahora avisa si GitHub va adelante.
+3. **Libro TH**: cupo T9 también al agrandar talas en el importador; vista previa con T9/T6 y motivo; **T6 con motivo** para guías verificadas en SERFOR (ADR-468); Control del permiso con un solo selector; plan cargado 1 vez.
+4. **Seguridad Drive (CRÍTICO, ya existía)**: permisos por toda la cadena de carpetas en todas las rutas, `/api/api-keys` solo admin/dueño, carpetas de otro negocio y ciclos rechazados (`6e0105ded`, `bfd2774b8`; memoria `drive-permisos-por-rol-2026-10-04`).
+5. **Documentos del plan de manejo** rescatado de un stash olvidado del 30-09 (ADR-467). Stash y ramas de respaldo borrados; `.claude/autonomo/plan-2026-09-29.md` restaurado (solo vivía en el stash).
+6. Herramientas: pre-commit corre los 13 tests guardianes y los que leen el fuente; `scripts/dev-helpers/rol-probe.mjs --todos` (usuarios QA por rol: memoria `qa-usuarios-por-rol`); paso `fallar` en `qa-capturas`.
+
+**PENDIENTE (decisiones de Brandon):**
+- Importador: dos guías del mismo árbol con el interruptor de talas apagado en una (caso raro, anotado por el agente).
+- La capa `z-10` del menú «Copiar» del plan sigue disparando el aviso informativo `ds-no-z-arbitrary-admin` (cambiarla taparía el desplegable del directorio).
+- El tenant QA forestal responde 403 en `/api/tenants/resolve` (está marcado inactivo).
+
+---
+
 # SESSION HANDOFF — 2026-09-27 (noche): PC + monitor, despacho ADR-444, guía rediseñada, días de producción ADR-445
 
 **Estado:** ⚠️ **SIN COMMIT** — ~204 archivos (esta sesión + las 5 rondas de la anterior). Gates verdes al cierre: typecheck ✅ · eslint (168 archivos tocados) exit 0 · 13 archivos de test del área 149/149 · base real ADR-444 13/13. Brandon NO pidió commitear: **primera decisión de mañana** (sugerido: commits por ronda con el método de `commit-aislado-exportar-el-indice`).
