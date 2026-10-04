@@ -1,6 +1,6 @@
 "use client";
 
-import { LoadingState, SectionTitle } from "@buleje/design-system";
+import { LoadingState } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { Field } from '@/components/admin/shared/Field';
 import { useState, useEffect, useCallback } from "react";
@@ -193,14 +193,18 @@ export default function TeamTab() {
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex flex-wrap items-center gap-2">
-          <Users className="w-5 h-5 text-primary" />
-          <SectionTitle className="text-lg font-bold">Equipo de la tienda</SectionTitle>
-          <span className="text-xs text-muted bg-(--color-surface) px-2 py-0.5 rounded-full">
+      {/* Cabecera: el título lo pone Configuración › «Equipo y acceso»; acá el
+          conteo, la leyenda de roles y la acción, en una fila. */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <span className="text-sm font-semibold text-[var(--text-primary)]">
             {users.length} usuario{users.length !== 1 ? "s" : ""}
           </span>
+          {(["admin", "cajero", "almacenero"] as Role[]).map((r) => (
+            <span key={r} className={cn("flex items-center gap-1 px-2 py-1 rounded-lg font-medium", ROLE_COLORS[r])}>
+              {ROLE_ICONS[r]} {ROLE_LABELS[r]}
+            </span>
+          ))}
         </div>
         <button
           onClick={openCreate}
@@ -209,15 +213,6 @@ export default function TeamTab() {
           <UserPlus className="w-4 h-4" />
           Agregar
         </button>
-      </div>
-
-      {/* Role legend */}
-      <div className="flex flex-wrap gap-2 text-xs">
-        {(["admin", "cajero", "almacenero"] as Role[]).map((r) => (
-          <span key={r} className={cn("flex items-center gap-1 px-2 py-1 rounded-lg font-medium", ROLE_COLORS[r])}>
-            {ROLE_ICONS[r]} {ROLE_LABELS[r]}
-          </span>
-        ))}
       </div>
 
       {/* User list */}

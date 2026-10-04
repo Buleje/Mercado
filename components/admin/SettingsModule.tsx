@@ -306,8 +306,11 @@ export default function SettingsModule({
     return sinNombre >= 0 ? [{ id: `settings-zona-${sinNombre}`, label: "Nombre de la zona" }] : [];
   }, [deliveryZones]);
 
+  // Tienda web: la tienda muestra el slogan bajo el nombre.
+  const faltanTienda = useMemo((): FaltaItem[] => slogan.trim() ? [] : [{ id: "settings-slogan", label: "Slogan" }], [slogan]);
+
   const pendientes: Partial<Record<SeccionAjustes, number>> = {
-    negocio: faltan.length, cobros: faltanCobros.length, delivery: faltanDelivery.length,
+    negocio: faltan.length, cobros: faltanCobros.length, delivery: faltanDelivery.length, tienda: faltanTienda.length,
   };
 
   const irACampo = (id: string) => {
@@ -773,8 +776,13 @@ export default function SettingsModule({
     </div>
   );
 
+  // Vista previa: el nombre del negocio, o el del tenant si todavía no lo escribiste.
+  const nombreVisible = businessName.trim() || branding.name || "Tu tienda";
+
   const renderTienda = () => (
     <div className="space-y-6">
+      {renderTeFalta(faltanTienda)}
+      <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
       {/* Maintenance mode */}
       <SectionCard title="Modo vacaciones / mantenimiento" desc="Bloquea compras mostrando un banner">
         <Toggle enabled={maintenanceMode} onChange={async v => {
@@ -825,14 +833,14 @@ export default function SettingsModule({
               <TextInput value={secondaryColor} onChange={setSecondaryColor} mono />
             </div>
           </div>
-          <div className="sm:col-span-2"><FieldLabel>Slogan</FieldLabel><TextInput value={slogan} onChange={setSlogan} placeholder="Productos frescos, precios justos" /></div>
+          <div className="sm:col-span-2"><FieldLabel>Slogan</FieldLabel><TextInput id="settings-slogan" value={slogan} onChange={setSlogan} placeholder="Productos frescos, precios justos" /></div>
         </div>
         {/* Live preview */}
         <div className="mt-4 p-4 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)]" style={{ background: `linear-gradient(135deg, ${primaryColor}15, ${secondaryColor}15)` }}>
           <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-2">Vista previa</p>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-sm" style={{ backgroundColor: primaryColor }}>Buleje</div>
-            <div><p className="text-sm font-extrabold" style={{ color: primaryColor }}>{businessName}</p><p className="text-xs" style={{ color: secondaryColor }}>{slogan}</p></div>
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-sm" style={{ backgroundColor: primaryColor }}>{nombreVisible.slice(0, 1).toUpperCase()}</div>
+            <div><p className="text-sm font-extrabold" style={{ color: primaryColor }}>{nombreVisible}</p><p className="text-xs" style={{ color: secondaryColor }}>{slogan || "Tu slogan"}</p></div>
           </div>
           <div className="mt-3 flex gap-2">
             <span className="px-3 py-1.5 rounded-lg text-xs font-bold text-white" style={{ backgroundColor: primaryColor }}>Primario</span>
@@ -840,6 +848,8 @@ export default function SettingsModule({
           </div>
         </div>
       </SectionCard>
+
+      </div>
 
       <SaveButton saving={saving} saved={savedSection === "tienda"} label="Guardar colores y mensaje" onClick={() => patch({ primaryColor, secondaryColor, slogan, maintenanceMessage: maintenanceMsg })} />
 

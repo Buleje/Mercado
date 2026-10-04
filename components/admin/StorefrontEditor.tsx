@@ -18,6 +18,7 @@ import {
   X, Search, Plus, ChevronUp, ChevronDown, Pencil, Lightbulb,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { useLocalStorage } from "@/hooks/use-local-storage";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
   DndContext,
@@ -1124,6 +1125,9 @@ export default function StorefrontEditor() {
   const [tiendaSections, setTiendaSections] = useState<TiendaSection[]>([]);
   const [navItems, setNavItems] = useState<NavItem[]>([]);
   const [activeTab, setActiveTab] = useState<"tienda" | "navegacion">("tienda");
+  // Grupos plegados por defecto y recordados (ley del admin, regla 3): plegado
+  // sigue mostrando «activas/total». Abiertos los 4 medían ~1.500 px.
+  const [gruposAbiertos, setGruposAbiertos] = useLocalStorage<Record<string, boolean>>("storefront-editor-grupos-abiertos", {});
   const [loadingSettings, setLoadingSettings] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -1356,7 +1360,7 @@ export default function StorefrontEditor() {
             items={currentSections.map((s) => s.key)}
             strategy={verticalListSortingStrategy}
           >
-            <div className="space-y-6">
+            <div className="space-y-3">
               {(() => {
                 // Agrupamos visualmente sin alterar el orden funcional
                 // (dnd-kit sigue trabajando sobre el array plano).
@@ -1366,18 +1370,28 @@ export default function StorefrontEditor() {
                   const sectionsInGroup = tiendaSections.filter((s) => getSectionGroup(s.key) === groupKey);
                   if (sectionsInGroup.length === 0) return null;
                   const enabledInGroup = sectionsInGroup.filter((s) => s.enabled).length;
+                  const abierto = gruposAbiertos[groupKey] ?? false;
                   return (
-                    <section key={groupKey} className="space-y-2.5">
-                      <header className="flex items-center justify-between gap-2 px-1">
-                        <Kicker as="h3" className="text-[var(--text-secondary)]">
-                          {SECTION_GROUPS[groupKey].label}
-                        </Kicker>
-                        <span className="text-xs font-mono tabular-nums text-muted shrink-0">
-                          {enabledInGroup}/{sectionsInGroup.length}
-                        </span>
-                      </header>
-                      {/* Grid 2-col en >= xl, single col en mobile/tablet */}
-                      <div className="grid gap-2 grid-cols-1 xl:grid-cols-2">
+                    <section key={groupKey} className="space-y-2.5 rounded-xl border border-[var(--rule-soft)] px-3 py-1">
+                      <Kicker as="h3" className="text-[var(--text-secondary)]">
+                        <button
+                          type="button"
+                          aria-expanded={abierto}
+                          onClick={() => setGruposAbiertos((p) => ({ ...p, [groupKey]: !abierto }))}
+                          className="w-full flex items-center justify-between gap-2 min-h-10 text-left"
+                        >
+                          <span>{SECTION_GROUPS[groupKey].label}</span>
+                          <span className="flex items-center gap-1.5 shrink-0">
+                            <span className="text-xs font-mono tabular-nums text-muted">
+                              {enabledInGroup}/{sectionsInGroup.length}
+                            </span>
+                            <ChevronDown className={cn("h-4 w-4 transition-transform", abierto && "rotate-180")} aria-hidden />
+                          </span>
+                        </button>
+                      </Kicker>
+                      {/* Plegado = oculto pero montado: dnd-kit sigue viendo todas las filas.
+                          Grid 2-col en >= xl, single col en mobile/tablet */}
+                      <div hidden={!abierto} className="grid gap-2 grid-cols-1 xl:grid-cols-2 pb-2">
                         {sectionsInGroup.map((section) => (
                           <SortableRow
                             key={section.key}
