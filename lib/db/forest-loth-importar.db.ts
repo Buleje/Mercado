@@ -21,13 +21,14 @@ import { invalidateByPrefix } from "@/lib/cache";
 import { logger } from "@/lib/logger";
 import { esEsperaDeLockVencida } from "@/lib/errores/codigo-pg";
 import { fichaGtfSchema } from "@/lib/forestal/loth-importar-guia-esquemas";
-import { ForestLothDB, LothInvariantError, describeEntry } from "@/lib/db/forest-loth.db";
+import { ForestLothDB, LothInvariantError, LothPermisoError, describeEntry } from "@/lib/db/forest-loth.db";
 import { ContratoAjenoError, ForestPlanDB } from "@/lib/db/forest-plan.db";
 import { ForestLothCierreDB } from "@/lib/db/forest-loth-cierre.db";
 import { ESTADOS_SIN_INGRESO, GtfNumeroDB } from "@/lib/db/gtf-numero.db";
 import { auditLoth } from "@/lib/forestal/loth-audit";
 import { colaDeGtf } from "@/lib/forestal/gtf-talonario";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { motivoCupoValido, notaSobreCupo } from "@/lib/forestal/loth-cupo-especie";
 import { repararFichaSerfor } from "@/lib/forestal/serfor-texto-danado";
 import { closedPeriodOf } from "@/lib/forestal/loth-cierre-types";
 import { esPlanDePlantacion } from "@/lib/forestal/loth-poa";
@@ -348,6 +349,14 @@ export class ForestLothImportarDB {
        * en curso, se rechaza sin esperar. `true`: espera su turno (15 s).
        */
       esperarTurno?: boolean;
+      /**
+       * T9: el motivo y la decisión de rol para pasar lo AUTORIZADO de una
+       * especie, como en el alta (`puedeExcederCupo` lo decide la ruta por el
+       * JWT, nunca el body). Valen para las talas nuevas y las que se agrandan.
+       * Hoy la ruta no los manda: sobre lo autorizado, la guía se rechaza (422).
+       */
+      motivoSobreCupo?: string | null;
+      puedeExcederCupo?: boolean;
     },
   ): Promise<Omit<ResultadoImportarGuia, "clave">> {
     if (!tenantId) throw new Error("tenantId is required");
@@ -469,7 +478,12 @@ export class ForestLothImportarDB {
         const correlativos = new Map<string, number>();
         const talasNuevas: Awaited<ReturnType<typeof ForestLothDB.registrarLineaEnTx>>[] = [];
         const talasAmpliadas: { id: string; lineNo: number; treeCode: string; antes: number | null; despues: number | null; trozas: string[] }[] = [];
-        for (const t of talasAEscribir(rev.talas, input.crearTala)) {
+        /* Las nuevas antes que las ampliadas: así el lock del cupo (T9) que toma
+           una ampliación llega con el correlativo de la Tala ya tomado, como en
+           `asentarEnTx`. Al revés, la guía tendría el cupo esperando ese
+           correlativo y un alta de tala, el correlativo esperando el cupo. */
+        const aEscribir = talasAEscribir(rev.talas, input.crearTala);
+        for (const t of [...aEscribir.filter((x) => x.estado === "nueva"), ...aEscribir.filter((x) => x.estado !== "nueva")]) {
           if (t.estado === "nueva") {
             talasNuevas.push(
               await ForestLothDB.registrarLineaEnTx(
@@ -488,6 +502,8 @@ export class ForestLothImportarDB {
                   volumeM3: t.volumeM3,
                   medicionCruda: marcaReferencial(t, [numero], [registro]),
                   observations: observacionTala([numero], t.trozas),
+                  motivoSobreCupo: input.motivoSobreCupo,
+                  puedeExcederCupo: input.puedeExcederCupo,
                   createdBy: input.createdBy,
                 },
                 fechaLinea,
@@ -501,6 +517,16 @@ export class ForestLothImportarDB {
           if (!previa) continue;
           const gtfs = [...(previa.referencial?.gtfs ?? []), numero];
           const registros = [...(previa.referencial?.registros ?? []), registro];
+          /* T9 también al agrandar (revisión de seguridad 04-10): sólo el aumento,
+             con el plan y la especie del censo, ANTES del update. Sobre lo
+             autorizado sin motivo, el 422 rechaza la guía entera (catch de abajo). */
+          const cupo = await ForestLothDB.cupoAlAmpliarTalaEnTx(
+            tx,
+            tenantId,
+            { planId: previa.planId ?? plan.id, treeCode: t.treeCode, speciesScientific: previa.speciesScientific, antesM3: previa.volumeM3, despuesM3: t.volumeM3 },
+            { motivoSobreCupo: input.motivoSobreCupo, puedeExcederCupo: input.puedeExcederCupo, createdBy: input.createdBy },
+          );
+          const obs = observacionTala([...new Set(gtfs)], t.trozas);
           await tx.forestLothEntry.update({
             where: { id: previa.id, tenantId } satisfies Prisma.ForestLothEntryWhereUniqueInput,
             data: {
@@ -509,9 +535,22 @@ export class ForestLothImportarDB {
               lengthM: dec(t.lengthM),
               volumeM3: dec(t.volumeM3),
               medicionCruda: marcaReferencial(t, gtfs, registros) as unknown as Prisma.InputJsonValue,
-              observations: observacionTala([...new Set(gtfs)], t.trozas),
+              observations:
+                cupo && motivoCupoValido(input.motivoSobreCupo) ? `${notaSobreCupo(cupo, input.motivoSobreCupo ?? "")} ${obs}`.slice(0, 2000) : obs,
             },
           });
+          if (cupo) {
+            const aumento = (t.volumeM3 ?? 0) - (previa.volumeM3 ?? 0);
+            await ForestLothDB.auditarSobreCupoEnTx(
+              tx,
+              tenantId,
+              cupo,
+              { id: previa.id, lineNo: previa.lineNo, treeCode: t.treeCode },
+              input.motivoSobreCupo,
+              input.createdBy,
+              `(agrandada con la GTF ${numero}: ${fmtM3(previa.volumeM3 ?? 0)} → ${fmtM3(t.volumeM3 ?? 0)} m³, +${fmtM3(aumento)}; exceso ${fmtM3(cupo.excesoM3)} m³)`,
+            );
+          }
           talasAmpliadas.push({ id: previa.id, lineNo: previa.lineNo, treeCode: t.treeCode, antes: previa.volumeM3, despues: t.volumeM3, trozas: t.trozas });
         }
 
@@ -596,6 +635,8 @@ export class ForestLothImportarDB {
       }
       if (err instanceof ImportacionRechazadaError) return rechazo(err.codigo, err.message);
       if (err instanceof LothInvariantError) return rechazo(err.code, err.message);
+      /* T9 con motivo pero sin rol decidido: rechazo de la guía, no un 500. */
+      if (err instanceof LothPermisoError) return rechazo(err.code, err.message);
       if (err instanceof ContratoAjenoError) return rechazo("contrato_ajeno", "El permiso propuesto no es de este negocio: créalo sin atarlo a un permiso.");
       if (err instanceof ImportacionEnCursoError) return rechazo("importacion_en_curso", err.message);
       if (esEsperaDeLockVencida(err)) {

@@ -12,9 +12,14 @@ import { avisoCupoAlTalar, entradaDelPlan } from "@/lib/forestal/loth-cupo-espec
 describe("T9 · orden de los locks en ForestLothDB.create", () => {
   it("enforceCupoEspecie va DESPUÉS del FOR UPDATE del correlativo", () => {
     const src = readFileSync("lib/db/forest-loth.db.ts", "utf8");
-    const create = src.slice(src.indexOf("static async create("), src.indexOf("static async trozasParaGuia("));
-    const correlativo = create.indexOf('"caratulaId" IS NOT DISTINCT FROM');
-    const cupo = create.indexOf("enforceCupoEspecie(tx");
+    // El alta (`create`) y el importador (`registrarLineaEnTx`) asientan por `asentarEnTx`:
+    // el orden de los locks se mide ahí. (Desde `create(` el tramo incluía
+    // `cupoAlAmpliarTalaEnTx`, que mide sin correlativo: no es un alta.)
+    const create = src.slice(src.indexOf("static async create("), src.indexOf("static async registrarLineaEnTx("));
+    expect(create).toContain("ForestLothDB.asentarEnTx(tx, tenantId, input, entryDate)");
+    const alta = src.slice(src.indexOf("private static async asentarEnTx("), src.indexOf("static async trozasParaGuia("));
+    const correlativo = alta.indexOf('"caratulaId" IS NOT DISTINCT FROM');
+    const cupo = alta.indexOf("enforceCupoEspecie(tx");
     expect(correlativo).toBeGreaterThan(0);
     expect(cupo).toBeGreaterThan(correlativo);
   });

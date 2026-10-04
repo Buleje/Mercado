@@ -396,7 +396,7 @@ export class ForestLothDB {
    * Lo que `create` resuelve antes de la tx y acá no hay quién: la tala de un
    * árbol del censo de SU plan va con la especie del censo (`especieDelCensoEnTx`).
    * Sin esto, una ficha con otra especie esquivaba el cupo (auditoría T9, 30-09).
-   * Quien llama no decide el rol (`puedeExcederCupo` sin definir): pasar lo
+   * Si quien llama no decide el rol (`puedeExcederCupo` sin definir), pasar lo
    * AUTORIZADO se rechaza siempre (sin motivo, el 422 de T9).
    *
    * `correlativos` (opcional) recuerda el último N° por sección dentro de la
@@ -413,6 +413,90 @@ export class ForestLothDB {
     if (!tenantId) throw new Error("tenantId is required");
     const resuelta = await ForestLothDB.especieDelCensoEnTx(tx, tenantId, input);
     return ForestLothDB.asentarEnTx(tx, tenantId, resuelta, entryDate, correlativos);
+  }
+
+  /**
+   * T9 al AGRANDAR una tala que ya está en el libro (revisión de seguridad
+   * 04-10): el importador de guías (ADR-461) amplía la tala referencial de un
+   * árbol con las trozas de otra guía, y antes actualizaba `volumeM3` sin medir
+   * el cupo ni dejar `loth_tala_sobre_cupo`. Ahora se mide como una tala nueva
+   * del importador: plan y especie DEL CENSO (`especieDelCensoEnTx`) y la misma
+   * `enforceCupoEspecie`, con su lock, en la tx de quien llama.
+   *
+   * Sólo entra el AUMENTO: la tala previa ya suma en el libro y
+   * `avisoCupoAlTalar` REEMPLAZA la tala del mismo árbol por la medida nueva
+   * (el árbol no cuenta dos veces). Midiendo con el total nuevo y el código del
+   * árbol, lo talado de la especie sube exactamente `nuevo − previo`; pasar el
+   * aumento suelto reemplazaría a la previa y mediría de menos. Si baja o queda
+   * igual, no se mide (`null`).
+   *
+   * La especie no se toma de la tala vieja: la pone el censo (una tala de antes
+   * del 30-09 con otro nombre no esquiva el cupo ni frena la guía por el
+   * nombre). Sobre lo AUTORIZADO sin motivo → 422 `T9_CUPO_ESPECIE`; con motivo
+   * sin rol decidido → 403: lo mismo que una tala nueva. El evento lo escribe
+   * quien llama con `auditarSobreCupoEnTx`, en la misma tx.
+   */
+  static async cupoAlAmpliarTalaEnTx(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+    tala: { planId: string | null; treeCode: string | null; speciesScientific?: string | null; antesM3: number | null; despuesM3: number | null },
+    decision: { motivoSobreCupo?: string | null; puedeExcederCupo?: boolean; createdBy: string },
+  ): Promise<AvisoCupo | null> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const despues = tala.despuesM3;
+    if (despues == null || !Number.isFinite(despues) || despues <= (tala.antesM3 ?? 0)) return null;
+    const resuelta = await ForestLothDB.especieDelCensoEnTx(tx, tenantId, {
+      section: "tala",
+      planId: tala.planId,
+      treeCode: tala.treeCode,
+      speciesCommon: null,
+      speciesScientific: tala.speciesScientific ?? null,
+      createdBy: decision.createdBy,
+    });
+    return ForestLothDB.enforceCupoEspecie(tx, tenantId, {
+      ...resuelta,
+      volumeM3: despues,
+      motivoSobreCupo: decision.motivoSobreCupo,
+      puedeExcederCupo: decision.puedeExcederCupo,
+    });
+  }
+
+  /**
+   * El evento sobre-cupo, en la MISMA tx que la tala (nueva o agrandada): la
+   * excepción que el titular tiene que poder explicar no puede quedar asentada
+   * sin su rastro (con `auditLoth`, fire-and-forget, un fallo del log la
+   * perdía). Se busca por su nombre: contra el censo es un aviso
+   * (`loth_tala_sobre_censo`), contra lo autorizado, la excepción con motivo
+   * (`loth_tala_sobre_cupo`). Si el log no se escribe, no se escribe la tala.
+   * `contexto` va tras el código del árbol (la ampliación dice de cuánto a cuánto).
+   */
+  static async auditarSobreCupoEnTx(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+    cupo: AvisoCupo,
+    linea: { id: string; lineNo: number; treeCode: string | null },
+    motivo: string | null | undefined,
+    user: string | null | undefined,
+    contexto?: string,
+  ): Promise<void> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const action: LothAuditAction = cupo.exigeMotivo ? "loth_tala_sobre_cupo" : "loth_tala_sobre_censo";
+    // ActivityLog tiene RLS por `app.tenant_id` (ADR-114): sin fijarlo, con
+    // el rol sin BYPASSRLS el INSERT fallaría y tumbaría la tala. `true` =
+    // sólo para esta tx (lo mismo que hace `withRlsTx`).
+    await tx.$executeRaw`SELECT set_config('app.tenant_id', ${tenantId}, true)`;
+    await tx.activityLog.create({
+      data: {
+        tenantId,
+        action,
+        entity: "ForestLothEntry" satisfies LothAuditEntity,
+        entityId: linea.id,
+        user: user || "unknown",
+        detail: `Tala #${linea.lineNo} ${linea.treeCode ?? "—"}${contexto ? ` ${contexto}` : ""}: ${
+          motivoCupoValido(motivo) ? notaSobreCupo(cupo, motivo ?? "") : `[Aviso sin motivo] ${cupo.mensaje}`
+        }`,
+      },
+    });
   }
 
   /**
@@ -503,32 +587,8 @@ export class ForestLothDB {
 
     const creada = await tx.forestLothEntry.create({ data: ForestLothDB.datosDeLinea(tenantId, inputFinal, entryDate, caratulaId, lineNo) });
 
-    // 4. El evento sobre-cupo, en la MISMA tx: la excepción que el titular
-    //    tiene que poder explicar no puede quedar asentada sin su rastro (con
-    //    `auditLoth`, fire-and-forget, un fallo del log la perdía). Se busca
-    //    por su nombre: contra el censo es un aviso (`loth_tala_sobre_censo`),
-    //    contra lo autorizado, la excepción con motivo (`loth_tala_sobre_cupo`).
-    //    Si el log no se escribe, no se escribe la tala.
-    if (cupo) {
-      const motivo = input.motivoSobreCupo ?? "";
-      const action: LothAuditAction = cupo.exigeMotivo ? "loth_tala_sobre_cupo" : "loth_tala_sobre_censo";
-      // ActivityLog tiene RLS por `app.tenant_id` (ADR-114): sin fijarlo, con
-      // el rol sin BYPASSRLS el INSERT fallaría y tumbaría la tala. `true` =
-      // sólo para esta tx (lo mismo que hace `withRlsTx`).
-      await tx.$executeRaw`SELECT set_config('app.tenant_id', ${tenantId}, true)`;
-      await tx.activityLog.create({
-        data: {
-          tenantId,
-          action,
-          entity: "ForestLothEntry" satisfies LothAuditEntity,
-          entityId: creada.id,
-          user: input.createdBy || "unknown",
-          detail: `Tala #${creada.lineNo} ${creada.treeCode ?? "—"}: ${
-            motivoCupoValido(motivo) ? notaSobreCupo(cupo, motivo) : `[Aviso sin motivo] ${cupo.mensaje}`
-          }`,
-        },
-      });
-    }
+    // 4. El evento sobre-cupo, en la MISMA tx (`auditarSobreCupoEnTx`).
+    if (cupo) await ForestLothDB.auditarSobreCupoEnTx(tx, tenantId, cupo, creada, input.motivoSobreCupo, input.createdBy);
     return creada;
   }
 
