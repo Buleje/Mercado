@@ -25,6 +25,7 @@ const MODULOS: Record<string, { archivo: string; extraer: (src: string) => strin
   clientes: { archivo: "components/admin/unified/CRMClientesModule.tsx", extraer: idsDeTABS },
   recetas: { archivo: "components/admin/RecetasModule.tsx", extraer: idsDeRecetas },
   "pagina-inicio": { archivo: "components/admin/unified/MiTiendaHubModule.tsx", extraer: idsDeTABS },
+  config: { archivo: "components/admin/settings/secciones.ts", extraer: idsDeTABS },
   // Mi Plata es de dos niveles: las vistas direccionables son las HOJAS (la
   // sección dentro de la pestaña), no las pestañas.
   plata: { archivo: "components/admin/unified/finanzas/estructura.ts", extraer: idsDeFinanzas },

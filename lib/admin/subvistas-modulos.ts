@@ -124,6 +124,16 @@ export const VISTAS_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[
   ],
   // Mi Tienda: la puerta del hub. Las sub-vistas de «Mi tienda pública» van
   // aparte, en ANIDADAS_POR_MODULO.
+  config: [
+    { key: "negocio", label: "Datos del negocio", hint: "Nombre, RUC, WhatsApp, dirección, horario, logo, portada y redes" },
+    { key: "cobros", label: "Cobros y comprobantes", hint: "Efectivo, Yape, Plin, transferencia, alerta de caja, hora de cierre, RUC emisor e IGV" },
+    { key: "delivery", label: "Delivery", hint: "Zonas con tarifa y tiempo, y desde cuánto el envío es gratis" },
+    { key: "tienda", label: "Tienda web", hint: "Colores, slogan, modo vacaciones y las secciones y menú de la tienda" },
+    { key: "plan", label: "Plan", hint: "Tu suscripción: Básico, Pro, Enterprise o Max" },
+    { key: "equipo", label: "Equipo y acceso", hint: "Usuarios y roles, cambiar contraseña, sesión activa y dispositivos" },
+    { key: "panel", label: "Mi panel", hint: "Módulos, orden de la barra lateral, accesos directos y pestaña por defecto" },
+    { key: "sistema", label: "Sistema", hint: "Lenguaje simple o técnico, tutorial y respaldo de tus datos" },
+  ],
   "pagina-inicio": [
     { key: "identidad", label: "Identidad y tema", hint: "Logo, colores y cómo se ve tu tienda" },
     { key: "pagina", label: "Mi tienda pública", hint: "Secciones, banners y promociones de la página de inicio" },

@@ -61,7 +61,12 @@ function relative(iso: string): string {
   return formatDate(iso);
 }
 
-export default function LoginDevicesCard() {
+/**
+ * `embebido`: dentro de otra tarjeta (Configuración › Equipo y acceso) va sin
+ * marco propio y muestra los 3 últimos accesos con «Ver todos».
+ */
+export default function LoginDevicesCard({ embebido = false }: { embebido?: boolean } = {}) {
+  const [verTodos, setVerTodos] = useState(false);
   const [devices, setDevices] = useState<Device[]>([]);
   const [trusted, setTrusted] = useState<TrustedDevice[]>([]);
   const [loading, setLoading] = useState(true);
@@ -114,7 +119,7 @@ export default function LoginDevicesCard() {
   if (devices.length === 0 && trusted.length === 0) return null;
 
   return (
-    <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+    <div className={embebido ? "pt-4 border-t border-[var(--rule-soft)]" : "rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5"}>
       <div className="flex items-center gap-2">
         <ShieldCheck className="h-5 w-5 text-[var(--accent)]" aria-hidden />
         <CardTitle as="h3" className="text-base font-bold text-[var(--text-primary)]">Dispositivos y accesos</CardTitle>
@@ -124,7 +129,7 @@ export default function LoginDevicesCard() {
       </p>
 
       <ul className="mt-4 space-y-2">
-        {devices.map((d, i) => {
+        {(embebido && !verTodos ? devices.slice(0, 3) : devices).map((d, i) => {
           const dev = friendlyDevice(d.userAgent);
           const Icon = dev.mobile ? Smartphone : Monitor;
           return (
@@ -161,6 +166,15 @@ export default function LoginDevicesCard() {
           );
         })}
       </ul>
+      {embebido && devices.length > 3 && (
+        <button
+          type="button"
+          onClick={() => setVerTodos((v) => !v)}
+          className="mt-2 text-[length:var(--ts-xs)] font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:underline"
+        >
+          {verTodos ? "Ver menos" : `Ver los ${devices.length} accesos`}
+        </button>
+      )}
 
       {/* ADR-304: dispositivos de confianza (saltan el 2FA). Revocables acá. */}
       {trusted.length > 0 && (
