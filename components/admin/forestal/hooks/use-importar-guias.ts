@@ -42,7 +42,7 @@ import {
   enOrdenDeImportacion,
   esImportable,
   faltaMotivoDeCupo,
-  sobreCupoEfectivo,
+  pideMotivo,
   pedidoDirectorio,
   planNuevoCompleto,
   registrosDelTexto,
@@ -335,7 +335,8 @@ export function useImportarGuias({ onImportadas }: { onImportadas: () => void })
           faltaMotivo.push(g.guia?.gtfNumber ? `GTF ${g.guia.gtfNumber}` : g.clave);
           continue;
         }
-        const conMotivo = sobreCupoEfectivo(g, crearTala).some((f) => f.exigeMotivo);
+        /* T9 contra lo autorizado, o T6 de una guía verificada (ADR-468): el mismo motivo. */
+        const conMotivo = pideMotivo(g, crearTala);
         const directorio = pedidoDirectorio(g.directorio, alDirectorio[g.clave] ?? {});
         listas.push({
           g,
@@ -345,6 +346,8 @@ export function useImportarGuias({ onImportadas }: { onImportadas: () => void })
             crearTala,
             ...(directorio ? { directorio } : {}),
             ...(conMotivo && motivo ? { motivoSobreCupo: motivo.trim() } : {}),
+            /* T6 (ADR-468): sólo si la vista mostró el despacho sobre lo autorizado y se escribió el motivo. */
+            ...(g.t6ConMotivo && motivo ? { confirmaDespacho: true } : {}),
           },
         });
         fichas += cuantasAlDirectorio(directorio);

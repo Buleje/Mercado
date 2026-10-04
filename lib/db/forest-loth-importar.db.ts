@@ -25,11 +25,17 @@ import { ForestLothDB, LothInvariantError, LothPermisoError, describeEntry } fro
 import { ContratoAjenoError, ForestPlanDB } from "@/lib/db/forest-plan.db";
 import { ForestLothCierreDB } from "@/lib/db/forest-loth-cierre.db";
 import { ESTADOS_SIN_INGRESO, GtfNumeroDB } from "@/lib/db/gtf-numero.db";
-import { auditLoth } from "@/lib/forestal/loth-audit";
+import { auditLoth, type LothAuditAction, type LothAuditEntity, type SesionDeAuditoria } from "@/lib/forestal/loth-audit";
 import { colaDeGtf } from "@/lib/forestal/gtf-talonario";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
-import { motivoCupoValido, notaSobreCupo } from "@/lib/forestal/loth-cupo-especie";
-import { claveT6, type EstadoT6DelPlan } from "@/lib/forestal/loth-t6";
+import { limpiarMotivo, motivoCupoValido, notaSobreCupo } from "@/lib/forestal/loth-cupo-especie";
+import {
+  claveT6,
+  detalleDespachoSobreAutorizado,
+  excesosDelDespacho,
+  type DespachoT6DeLaEspecie,
+  type EstadoT6DelPlan,
+} from "@/lib/forestal/loth-t6";
 import { rehacerTanda } from "@/lib/forestal/loth-importar-guia-tanda";
 import { repararFichaSerfor } from "@/lib/forestal/serfor-texto-danado";
 import { closedPeriodOf } from "@/lib/forestal/loth-cierre-types";
@@ -41,6 +47,7 @@ import {
   claveTitulo,
   destinoDe,
   detectarPermiso,
+  porQueNoAplicaExcepcionT6,
   fechaDelLibro,
   fechaIsoDeSerfor,
   gtfDatosConFicha,
@@ -171,6 +178,32 @@ const LINEA_SELECT = {
   speciesCommon: true, speciesScientific: true, diamMayorM: true, diamMenorM: true, lengthM: true, volumeM3: true,
   entryDate: true, medicionCruda: true,
 } as const;
+
+/**
+ * El evento de una guía VERIFICADA importada sobre lo AUTORIZADO (T6 con
+ * motivo, ADR-468), en la tx de la guía: lo que el titular explica ante
+ * OSINFOR no puede quedar asentado sin su rastro (como `auditarSobreCupoEnTx`).
+ * ActivityLog tiene RLS por `app.tenant_id` (ADR-114): se fija sólo para la tx.
+ */
+async function auditarDespachoSobreAutorizadoEnTx(
+  tx: Prisma.TransactionClient,
+  tenantId: string,
+  e: { gtfId: string; detail: string; user: string; sesion?: SesionDeAuditoria },
+): Promise<void> {
+  await tx.$executeRaw`SELECT set_config('app.tenant_id', ${tenantId}, true)`;
+  await tx.activityLog.create({
+    data: {
+      tenantId,
+      action: "loth_despacho_sobre_autorizado" satisfies LothAuditAction,
+      entity: "ForestGtf" satisfies LothAuditEntity,
+      entityId: e.gtfId,
+      user: e.user || "unknown",
+      ipAddress: e.sesion?.ipAddress ?? null,
+      userAgent: e.sesion?.userAgent ?? null,
+      detail: e.detail.slice(0, 2000),
+    },
+  });
+}
 
 export class ForestLothImportarDB {
   /** La ficha de SERFOR que guardó un ingreso del Libro CTP de ESTE negocio (o `null`). */
@@ -321,8 +354,16 @@ export class ForestLothImportarDB {
    * La vista previa de una tanda: sin escribir nada. Devuelve las guías (con
    * T6/T9 de la tanda entera, `rehacerTanda`) y lo leído por plan (`tanda`),
    * para que la pantalla rehaga esas sumas con las guías que deje marcadas.
+   *
+   * `puedePasarT6` (ADR-468): quien mira es admin o dueño (lo decide la ruta
+   * por el JWT). Con él, una guía VERIFICADA que pasa T6 pide motivo en vez de
+   * bloquearse; sin él (o sin pasarlo), se bloquea como siempre.
    */
-  static async vistaPrevia(tenantId: string, guias: readonly GuiaParaRevisar[]): Promise<{ guias: GuiaVistaPrevia[]; tanda: ContextoTanda }> {
+  static async vistaPrevia(
+    tenantId: string,
+    guias: readonly GuiaParaRevisar[],
+    opts: { puedePasarT6?: boolean } = {},
+  ): Promise<{ guias: GuiaVistaPrevia[]; tanda: ContextoTanda }> {
     if (!tenantId) throw new Error("tenantId is required");
     const fichas = guias.map((g) => g.ficha).filter((f): f is GtfSerfor => !!f);
     const { planes, contratos } = await ForestLothImportarDB.planesYContratos(tenantId);
@@ -349,6 +390,7 @@ export class ForestLothImportarDB {
         delPlan: e.delPlan.map((x) => ({ speciesCommon: x.speciesCommon, speciesScientific: x.speciesScientific ?? null })),
         medidas: [...e.medidas].map(([clave, m]) => ({ clave, autorizado: m.autorizado, movilizado: m.movilizado })),
       })),
+      puedePasarT6: opts.puedePasarT6 === true,
     };
     const base = vistaPreviaDeTanda(guias, { planes, contratos, libro, bajoDmc });
     /* Todas marcadas, cada una con su interruptor por defecto: lo que importaría «Importar todas». */
@@ -420,6 +462,22 @@ export class ForestLothImportarDB {
        */
       motivoSobreCupo?: string | null;
       puedeExcederCupo?: boolean;
+      /**
+       * T6 (ADR-468): admin o dueño, decidido por la ruta con el JWT. Una guía
+       * `verificada` (la resolvió el servidor: SNIFFS o ficha guardada en el
+       * CTP) que despacha más de lo AUTORIZADO entra sólo con esto Y un
+       * `motivoSobreCupo` válido (el mismo motivo de T9): queda el evento
+       * `loth_despacho_sobre_autorizado` en su transacción. Si falta algo,
+       * `T6_EXCESO_AUTORIZADO` como siempre.
+       */
+      puedeExcederDespacho?: boolean;
+      /**
+       * T6: la persona VIO el despacho sobre lo autorizado en la vista previa
+       * (consentimiento, no permiso). Sin esto, el motivo de T9 no lo destraba.
+       */
+      confirmaDespacho?: boolean;
+      /** IP y navegador del pedido (la ruta): van a los eventos sobre-cupo y sobre-autorizado. */
+      sesion?: SesionDeAuditoria;
     },
   ): Promise<Omit<ResultadoImportarGuia, "clave">> {
     if (!tenantId) throw new Error("tenantId is required");
@@ -448,6 +506,8 @@ export class ForestLothImportarDB {
           ])).get(destinoPedido.planId)
         : undefined;
     const fechaLinea = fechaDelLibro(fecha);
+    /* T6: si la guía, verificada y firmada, igual no se exime, el rechazo dice por qué. */
+    let t6SinExcepcion: string | null = null;
 
     try {
       const r = await prisma.$transaction(async (tx) => {
@@ -462,7 +522,7 @@ export class ForestLothImportarDB {
         await GtfNumeroDB.bloquear(tx, tenantId, numero);
 
         // 2. El plan: el elegido, el que ya creó otra guía con este título, o uno nuevo.
-        const { planes } = await ForestLothImportarDB.planesYContratos(tenantId, tx);
+        const { planes, contratos } = await ForestLothImportarDB.planesYContratos(tenantId, tx);
         let plan: PlanDelLibro;
         let planCreado: { id: string; planType: string; planNumber: string | null; titularName: string } | null = null;
         if (destinoPedido.tipo === "existente") {
@@ -567,6 +627,7 @@ export class ForestLothImportarDB {
                   observations: observacionTala([numero], t.trozas),
                   motivoSobreCupo: input.motivoSobreCupo,
                   puedeExcederCupo: input.puedeExcederCupo,
+                  sesion: input.sesion,
                   createdBy: input.createdBy,
                 },
                 fechaLinea,
@@ -613,6 +674,7 @@ export class ForestLothImportarDB {
               input.motivoSobreCupo,
               input.createdBy,
               `(agrandada con la GTF ${numero}: ${fmtM3(previa.volumeM3 ?? 0)} → ${fmtM3(t.volumeM3 ?? 0)} m³, +${fmtM3(aumento)}; exceso ${fmtM3(cupo.excesoM3)} m³)`,
+              input.sesion,
             );
           }
           talasAmpliadas.push({ id: previa.id, lineNo: previa.lineNo, treeCode: t.treeCode, antes: previa.volumeM3, despues: t.volumeM3, trozas: t.trozas });
@@ -647,6 +709,17 @@ export class ForestLothImportarDB {
         }
 
         // 6. El despacho con su guía (T1/T2/T6/T7 por troza, la guía con la foto de lo que viajó).
+        /* T6 con motivo (ADR-468): sólo la guía que SERFOR ya emitió (lo dice el
+           servidor, no el cuerpo), con motivo, rol y la confirmación de la vista,
+           si su título es el de ESTE permiso y el libro mide lo que dice la guía
+           (`porQueNoAplicaExcepcionT6`, la misma de la vista previa). Si no, el despacho rechaza. */
+        const firmada = input.verificada && input.puedeExcederDespacho === true && motivoCupoValido(input.motivoSobreCupo);
+        const reparo = firmada
+          ? porQueNoAplicaExcepcionT6(g, destino, detectarPermiso(g, planes, contratos), rev.trozas, libro) ??
+            (input.confirmaDespacho === true ? null : "no se confirmó en la vista previa el despacho sobre lo autorizado")
+          : null;
+        t6SinExcepcion = reparo;
+        const excepcionT6 = firmada && !reparo ? new Map<string, DespachoT6DeLaEspecie>() : undefined;
         const despacho = await ForestLothDB.despacharConGuiaEnTx(
           tx,
           tenantId,
@@ -660,8 +733,18 @@ export class ForestLothImportarDB {
             createdBy: input.createdBy,
           },
           caratulaId,
-          { controlDeRepetidos: "ninguno" },
+          { controlDeRepetidos: "ninguno", ...(excepcionT6 ? { excepcionT6 } : {}) },
         );
+        /* El rastro para OSINFOR, en la MISMA tx: sin el evento, no entra la guía. */
+        const sobreAutorizado = excepcionT6 ? excesosDelDespacho(excepcionT6) : [];
+        for (const e of sobreAutorizado) {
+          await auditarDespachoSobreAutorizadoEnTx(tx, tenantId, {
+            gtfId: despacho.gtf.id,
+            detail: detalleDespachoSobreAutorizado(e, { gtfNumber: numero, registro }, limpiarMotivo(input.motivoSobreCupo), destino.plantacion),
+            user: input.createdBy,
+            sesion: input.sesion,
+          });
+        }
         return {
           plan,
           planCreado,
@@ -670,6 +753,7 @@ export class ForestLothImportarDB {
           trozados,
           reusados: rev.trozas.filter((t) => t.estado === "ya_trozada").length,
           despacho,
+          sobreAutorizado,
         };
       }, IMPORTAR_TX_OPTS);
 
@@ -678,7 +762,10 @@ export class ForestLothImportarDB {
         estado: "importada",
         mensaje:
           `GTF ${numero} anotada en ${nombreDelPlan(r.plan)}${r.planCreado ? " (permiso creado)" : ""}: ` +
-          `${r.despacho.lineas.length} troza(s), ${fmtM3(r.despacho.volumen)} m³.`,
+          `${r.despacho.lineas.length} troza(s), ${fmtM3(r.despacho.volumen)} m³.` +
+          (r.sobreAutorizado.length
+            ? ` Pasa lo autorizado de ${r.sobreAutorizado.map((e) => `${e.especie} (exceso ${fmtM3(e.excesoM3)} m³)`).join(", ")}: quedó en la auditoría con el motivo.`
+            : ""),
         codigo: null,
         gtfId: r.despacho.gtf.id,
         gtfNumber: numero,
@@ -698,7 +785,10 @@ export class ForestLothImportarDB {
         return { ...rechazo("ya_estaba", err.message), estado: "ya_estaba" };
       }
       if (err instanceof ImportacionRechazadaError) return rechazo(err.codigo, err.message);
-      if (err instanceof LothInvariantError) return rechazo(err.code, err.message);
+      if (err instanceof LothInvariantError) {
+        const porque = err.code === "T6_EXCESO_AUTORIZADO" && t6SinExcepcion ? ` Aunque está verificada en SERFOR, ${t6SinExcepcion}.` : "";
+        return rechazo(err.code, `${err.message}${porque}`);
+      }
       /* T9 con motivo pero sin rol decidido: rechazo de la guía, no un 500. */
       if (err instanceof LothPermisoError) return rechazo(err.code, err.message);
       if (err instanceof ContratoAjenoError) return rechazo("contrato_ajeno", "El permiso propuesto no es de este negocio: créalo sin atarlo a un permiso.");

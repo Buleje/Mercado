@@ -22,6 +22,7 @@ import type {
   PlanNuevoPropuesto,
   RespuestaImportar,
   ResultadoImportarGuia,
+  SobreAutorizadoDeLaGuia,
   SobreCupoDeLaGuia,
 } from "@/lib/forestal/loth-importar-guia-tipos";
 
@@ -109,12 +110,24 @@ export const sobreCupoEfectivo = (g: GuiaVistaPrevia, crearTala: boolean): Sobre
   (crearTala ? g.sobreCupo?.conTala : g.sobreCupo?.sinTala) ?? [];
 
 /**
+ * T6 con motivo (ADR-468): lo que la guía VERIFICADA despacha por encima de lo
+ * autorizado, cuando quien mira es admin o dueño. Vacío si no aplica.
+ */
+export const sobreAutorizadoConMotivo = (g: GuiaVistaPrevia): SobreAutorizadoDeLaGuia[] =>
+  g.t6ConMotivo ? (g.sobreAutorizado ?? []) : [];
+
+/** ¿La guía pide motivo? T9 contra lo AUTORIZADO, o T6 de una guía verificada: UN motivo vale para los dos. */
+export const pideMotivo = (g: GuiaVistaPrevia, crearTala: boolean): boolean =>
+  sobreCupoConMotivo(sobreCupoEfectivo(g, crearTala)).length > 0 || sobreAutorizadoConMotivo(g).length > 0;
+
+/**
  * ¿Le falta el motivo para entrar? Sólo si pasa lo AUTORIZADO (lo censado
  * avisa y entra igual) y el motivo no llega a 5 letras: el mismo criterio que
- * la ruta (`motivoCupoValido`), que la rechazaría con `T9_CUPO_ESPECIE`.
+ * la ruta (`motivoCupoValido`), que la rechazaría con `T9_CUPO_ESPECIE` (o
+ * `T6_EXCESO_AUTORIZADO`, si lo que pasa es el despacho).
  */
 export const faltaMotivoDeCupo = (g: GuiaVistaPrevia, crearTala: boolean, motivo: string | undefined): boolean =>
-  sobreCupoConMotivo(sobreCupoEfectivo(g, crearTala)).length > 0 && !motivoCupoValido(motivo);
+  pideMotivo(g, crearTala) && !motivoCupoValido(motivo);
 
 /** Por fecha y N° de guía, como las revisa y las importa el servidor (`ordenDeImportacion`). */
 export function enOrdenDeImportacion<T extends { fecha: string | null; gtfNumber: string | null }>(

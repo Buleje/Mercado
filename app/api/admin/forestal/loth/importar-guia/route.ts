@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { applyRateLimitWithTenant } from "@/lib/rate-limit";
+import { applyRateLimitWithTenant, getClientIp } from "@/lib/rate-limit";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
 import { soloAdminODueno } from "@/lib/forestal/plata-de-guia-rol";
+import { puedePasarT6ConMotivo } from "@/lib/forestal/loth-t6";
 import { lothValidationResponse } from "@/lib/forestal/loth-api-errors";
 import { pedidoImportarSchema } from "@/lib/forestal/loth-importar-guia-esquemas";
 import { cobrarConsultasSerfor, resolverFuentes } from "@/lib/forestal/loth-importar-guia-fuentes";
@@ -36,6 +37,16 @@ import type { RespuestaImportar, ResultadoImportarGuia } from "@/lib/forestal/lo
  * `motivoSobreCupo` (lo pide la vista previa); sin él la guía vuelve
  * `rechazada` con `T9_CUPO_ESPECIE`. Con él, la tala se escribe con su nota y
  * el evento `loth_tala_sobre_cupo`, en la misma transacción.
+ *
+ * T6 (ADR-468): una guía que SERFOR ya emitió y despacha más de lo AUTORIZADO
+ * entra con el MISMO `motivoSobreCupo` sólo si la ficha la resolvió el servidor
+ * (`verificada` de `resolverFuentes`: SNIFFS o ficha guardada en el CTP; nunca
+ * del cuerpo) y el rol es admin o dueño (`puedePasarT6ConMotivo`, del JWT).
+ * Además: el ítem trae `confirmaDespacho` (la vista mostró el exceso), el
+ * título de la guía es el del permiso elegido y las trozas que ya estaban en
+ * el Trozado miden lo que dice la guía (`porQueNoAplicaExcepcionT6`). Queda
+ * `loth_despacho_sobre_autorizado` (con IP y navegador) en su transacción.
+ * Si falta algo: `T6_EXCESO_AUTORIZADO` como siempre, con el porqué.
  *
  * Directorio (02-10 noche): si el ítem trae `directorio` (qué agregar o
  * completar) y la guía ENTRÓ, después de su transacción se guardan las partes,
@@ -86,6 +97,8 @@ export const POST = withApiHandler("forestal-loth-importar-guia-post", async (re
   const cobro = cobrarConsultasSerfor(req, consultasSerforDe(items.map((x) => x.fuente)));
   if (cobro) return cobro;
   const user = auth.username ?? "unknown";
+  /* IP y navegador para los eventos sobre-cupo y sobre-autorizado (OSINFOR). */
+  const sesion = { ipAddress: getClientIp(req), userAgent: req.headers.get("user-agent")?.slice(0, 500) ?? null };
   /* Primero las fichas (la red de SERFOR, fuera de toda transacción, de a 3 a
      la vez), después las guías por fecha, una transacción cada una. */
   const resueltas = await resolverFuentes(auth.tenantId, items.map((x) => x.fuente));
@@ -114,6 +127,11 @@ export const POST = withApiHandler("forestal-loth-importar-guia-post", async (re
         /* T9: el motivo viene de la pantalla; QUIÉN puede pasar lo autorizado, de la sesión. */
         motivoSobreCupo: items[i].motivoSobreCupo ?? null,
         puedeExcederCupo: PUEDEN_EXCEDER_CUPO.includes(auth.role),
+        /* T6 (ADR-468): la verificación es la del servidor (`x.verificada`), el rol de la sesión. */
+        puedeExcederDespacho: puedePasarT6ConMotivo(auth.role),
+        /* …y la persona vio el exceso en la vista previa (consentimiento, no permiso). */
+        confirmaDespacho: items[i].confirmaDespacho === true,
+        sesion,
         /* La 1.ª no espera (otra importación en curso → rechazo); las que siguen esperan su turno. */
         esperarTurno: intentadas++ > 0,
       });

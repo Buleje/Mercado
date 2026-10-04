@@ -15,7 +15,7 @@ const H = vi.hoisted(() => ({
 vi.mock("@/lib/require-admin", () => ({
   requireAdmin: async () => ({ tenantId: "tenant-blas", username: "u", role: H.role }),
 }));
-vi.mock("@/lib/rate-limit", () => ({ applyRateLimit: () => null }));
+vi.mock("@/lib/rate-limit", () => ({ applyRateLimit: () => null, getClientIp: () => "127.0.0.1" }));
 vi.mock("@/lib/specializations", () => ({ isSpecializationEnabled: async () => true }));
 vi.mock("@/lib/prisma", () => ({ prisma: {} }));
 vi.mock("@/lib/db/rrhh-colaboradores.db", () => ({ ColaboradoresDB: { existe: async () => false } }));

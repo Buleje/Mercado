@@ -38,6 +38,7 @@ import { esPlanDePlantacion } from "./loth-poa";
 import { componerPunto, gtfDatosSchema, gtfDatosVacio, type GtfDatos } from "./ctp-gtf-datos";
 import { fichaParaMostrar } from "./loth-importar-guia-ficha";
 import type { DespachoT6 } from "./loth-t6";
+import { fmtM3 } from "./cubicacion-formato";
 import type {
   AvisoImportacion,
   EstadoVistaPrevia,
@@ -1131,6 +1132,43 @@ function despachoDeLaGuia(trozas: readonly TrozaImportada[], libro: LibroDeLaGui
   });
 }
 
+/**
+ * ¿Por qué una guía VERIFICADA NO puede pasar T6 con motivo? (ADR-468,
+ * revisión 04-10). Lo que se exime tiene que ser lo que SERFOR verificó:
+ *  1. el título de la guía es el del permiso al que va (`detectarPermiso`
+ *     resuelve a ese plan, o lo cuenta entre los candidatos si el código es
+ *     ambiguo): «verificada» prueba que la guía existe, no que sea de ese permiso;
+ *  2. el despacho mide la línea de Trozado de cada troza: en una que YA estaba
+ *     en el libro (escrita a mano) su volumen tiene que ser el de la guía, ±
+ *     `TOLERANCIA_VOLUMEN_M3`; si no, se eximiría un volumen que nadie verificó.
+ * `null` = no hay reparo (el rol, la verificación y el motivo se miran aparte).
+ * La misma función en la vista previa y en la importación.
+ */
+export function porQueNoAplicaExcepcionT6(
+  g: GtfSerfor,
+  destino: { planId: string; nombre: string },
+  permiso: PermisoDetectado,
+  trozas: readonly TrozaImportada[],
+  libro: Pick<LibroDeLaGuia, "trozados">,
+): string | null {
+  const delTitulo =
+    permiso.estado === "existente" ? [permiso.plan.planId] : permiso.estado === "ambiguo" ? permiso.candidatos.map((c) => c.planId) : [];
+  if (!delTitulo.includes(destino.planId)) {
+    return `el título de la guía (${txt(g.numeroTitulo) || "sin título"}) no es el del permiso elegido (${destino.nombre})`;
+  }
+  const igual = (a: number | null, b: number | null) => (a == null || b == null ? a == null && b == null : Math.abs(a - b) <= TOLERANCIA_VOLUMEN_M3);
+  const distintas = trozas.flatMap((t) => {
+    if (t.estado !== "ya_trozada") return [];
+    const tz = libro.trozados.find((x) => x.trozaCode === t.trozaCode && x.planId === destino.planId);
+    const enLibro = tz?.volumeM3 ?? null;
+    return igual(enLibro, t.volumeM3) ? [] : [{ code: t.trozaCode, enLibro, enGuia: t.volumeM3 }];
+  });
+  if (distintas.length === 0) return null;
+  const m3 = (v: number | null) => (v == null ? "sin volumen" : `${fmtM3(v)} m³`);
+  const lista = distintas.slice(0, 3).map((d) => `${d.code}: ${m3(d.enLibro)} en el Trozado, ${m3(d.enGuia)} en la guía`).join("; ");
+  return `${distintas.length === 1 ? "una troza ya estaba en el Trozado con otro volumen" : `${distintas.length} trozas ya estaban en el Trozado con otro volumen`} (${lista}${distintas.length > 3 ? "; …" : ""})`;
+}
+
 /** La línea de la guía según su estado (también la usa `rehacerTanda`). */
 export function mensajeDelEstado(
   estado: EstadoVistaPrevia,
@@ -1230,6 +1268,7 @@ export function vistaPreviaDeTanda(guias: readonly GuiaParaRevisar[], ctx: Conte
         avisos: [...rev.avisos],
         talas: rev.talas,
         despachoT6: destino.nuevo ? [] : despachoDeLaGuia(rev.trozas, libro, destino.planId),
+        noAplicaT6ConMotivo: destino.nuevo ? null : porQueNoAplicaExcepcionT6(g, destino, permiso, rev.trozas, libro),
       },
     };
     if (estado === "lista") libro = libroDespuesDe(libro, g, destino, rev, crearTala);

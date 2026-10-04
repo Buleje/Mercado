@@ -172,6 +172,8 @@ export const pedidoImportarSchema = z.object({
           .transform(limpiarMotivo)
           .pipe(z.string().max(500, "El motivo va en hasta 500 letras.").refine(motivoCupoValido, MENSAJE_MOTIVO_CUPO))
           .optional(),
+        /* T6 (ADR-468): la persona vio el despacho sobre lo autorizado. Consentimiento, no permiso. */
+        confirmaDespacho: z.boolean().optional(),
       }),
     )
     .min(1, "Elige al menos una guía")

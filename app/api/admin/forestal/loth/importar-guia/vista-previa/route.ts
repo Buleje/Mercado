@@ -7,6 +7,7 @@ import { lothErrorResponse, lothValidationResponse } from "@/lib/forestal/loth-a
 import { pedidoVistaPreviaSchema } from "@/lib/forestal/loth-importar-guia-esquemas";
 import { cobrarConsultasSerfor, resolverFuentes } from "@/lib/forestal/loth-importar-guia-fuentes";
 import { consultasSerforDe } from "@/lib/forestal/loth-importar-guia-esquemas";
+import { puedePasarT6ConMotivo } from "@/lib/forestal/loth-t6";
 import { ForestLothImportarDB } from "@/lib/db/forest-loth-importar.db";
 import { ForestLothImportarDirectorioDB } from "@/lib/db/forest-loth-importar-directorio.db";
 import type { RespuestaVistaPrevia } from "@/lib/forestal/loth-importar-guia-tipos";
@@ -58,7 +59,8 @@ export const POST = withApiHandler("forestal-loth-importar-guia-vista-previa", a
 
   try {
     const guias = await resolverFuentes(auth.tenantId, parsed.data.fuentes, parsed.data.planes ?? []);
-    const { guias: vista, tanda } = await ForestLothImportarDB.vistaPrevia(auth.tenantId, guias);
+    /* ADR-468: el motivo para pasar T6 (guía verificada) sólo se le ofrece a admin o dueño, por la sesión. */
+    const { guias: vista, tanda } = await ForestLothImportarDB.vistaPrevia(auth.tenantId, guias, { puedePasarT6: puedePasarT6ConMotivo(auth.role) });
     const respuesta: RespuestaVistaPrevia = { guias: await ForestLothImportarDirectorioDB.anotarVistaPrevia(auth.tenantId, guias, vista), tanda };
     return NextResponse.json(respuesta);
   } catch (err) {

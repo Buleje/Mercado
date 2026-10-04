@@ -35,6 +35,10 @@
  *    la pantalla rehace T6/T9 con las guías MARCADAS (`rehacerTanda`, la misma
  *    función que corre el servidor) al desmarcar o cambiar el interruptor.
  *    Aviso nuevo `especie_distinta_al_censo`. Todo AGREGADO y opcional.
+ *  - 04-10 (T6 con motivo, ADR-468): `GuiaVistaPrevia.t6ConMotivo` (la guía
+ *    VERIFICADA en SERFOR que pasa T6 y quien mira es admin/dueño: pide el
+ *    motivo en vez de bloquearse) y `ContextoTanda.puedePasarT6`. El motivo es
+ *    el mismo `ItemImportarGuia.motivoSobreCupo`. Todo AGREGADO y opcional.
  */
 
 import type { GtfSerfor } from "./serfor-gtf";
@@ -211,7 +215,11 @@ export type CodigoAvisoImportacion =
   | "especie_fuera_del_plan"
   | "no_verificada"
   | "volumen_distinto"
-  /** T6: lo despachado de una especie pasaría lo autorizado del permiso. Bloquea: no admite motivo. */
+  /**
+   * T6: lo despachado de una especie pasaría lo autorizado del permiso. Bloquea
+   * (no admite motivo) salvo la guía VERIFICADA en SERFOR vista por admin o
+   * dueño (ADR-468): ésa no lleva este aviso, va con `t6ConMotivo`.
+   */
   | "exceso_autorizado"
   /** La tala nueva va con otra especie que la del censo del árbol (`TALA_ESPECIE_DISTINTA_AL_CENSO`). */
   | "especie_distinta_al_censo";
@@ -301,9 +309,17 @@ export interface GuiaVistaPrevia {
   /**
    * T6: las especies que esta guía DESPACHARÍA por encima de lo autorizado
    * (`despachoT6DeLaGuia` sobre `ForestLothDB.medidaT6`, la lectura del
-   * despacho). Si hay alguna, la guía va `bloqueada` con `exceso_autorizado`.
+   * despacho). Si hay alguna, la guía va `bloqueada` con `exceso_autorizado`,
+   * salvo con `t6ConMotivo`.
    */
   sobreAutorizado?: SobreAutorizadoDeLaGuia[] | null;
+  /**
+   * T6 con motivo (ADR-468): la guía pasa lo autorizado de despacho, está
+   * VERIFICADA en SERFOR (`guia.verificadaEnSerfor`, del servidor) y quien mira
+   * es admin o dueño. No se bloquea: pide el motivo (el mismo de T9) y las
+   * cuentas van en `sobreAutorizado`. La importación lo vuelve a decidir.
+   */
+  t6ConMotivo?: boolean;
   /**
    * La revisión ANTES de lo que depende de la tanda (T6, T9) y del censo
    * (especie): `rehacerTanda` parte siempre de acá. `null` = sin ficha.
@@ -327,6 +343,12 @@ export interface BaseDeLaGuia {
   talas: TalaReferencial[];
   /** Lo que despacharía para T6: especie y volumen de la línea de Trozado de cada troza. */
   despachoT6: { speciesCommon: string | null; speciesScientific: string | null; volumeM3: number | null }[];
+  /**
+   * ADR-468: por qué esta guía, aunque esté verificada, NO puede pasar T6 con
+   * motivo (`porQueNoAplicaExcepcionT6`: título de otro permiso, trozas del
+   * libro con otro volumen que la guía). `null`/ausente = no hay reparo.
+   */
+  noAplicaT6ConMotivo?: string | null;
 }
 
 /** Lo que el servidor leyó por plan para T9 y T6 (sin lock): la tanda se rehace con esto. */
@@ -337,6 +359,8 @@ export interface ContextoTanda {
     delPlan: EspecieReconocible[];
     medidas: { clave: string; autorizado: number | null; movilizado: number }[];
   }[];
+  /** ADR-468: quien mira es admin o dueño (del JWT): una guía verificada que pasa T6 pide motivo en vez de bloquearse. */
+  puedePasarT6?: boolean;
 }
 
 /** T6 de UNA especie de la guía (vista previa): el tope legal de lo despachado. */
@@ -410,8 +434,17 @@ export interface ItemImportarGuia {
    * T9: por qué la guía pasa lo AUTORIZADO de una especie (5 letras o más).
    * Queda en la tala y en `loth_tala_sobre_cupo`. Sólo vale con rol admin o
    * dueño, que decide el servidor por la sesión (nunca este cuerpo).
+   * T6 (ADR-468): el MISMO motivo vale para el despacho de una guía verificada
+   * en SERFOR que pasa lo autorizado (`loth_despacho_sobre_autorizado`).
    */
   motivoSobreCupo?: string;
+  /**
+   * T6 (ADR-468): la persona VIO el despacho sobre lo autorizado en la vista
+   * previa (`t6ConMotivo`) y lo firma con el motivo. Es consentimiento, no
+   * permiso: el permiso sigue siendo rol + verificada + motivo. Sin esto, un
+   * motivo escrito para T9 no destraba un exceso de T6 que nadie vio.
+   */
+  confirmaDespacho?: boolean;
 }
 
 export type EstadoImportacion = "importada" | "ya_estaba" | "rechazada";

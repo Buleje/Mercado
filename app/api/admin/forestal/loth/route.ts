@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
-import { applyRateLimit } from "@/lib/rate-limit";
+import { applyRateLimit, getClientIp } from "@/lib/rate-limit";
 import { ForestLothDB, LOTH_SECTIONS, LothInvariantError } from "@/lib/db/forest-loth.db";
 import { ForestPlanDB } from "@/lib/db/forest-plan.db";
 import { ColaboradoresDB } from "@/lib/db/rrhh-colaboradores.db";
@@ -234,6 +234,8 @@ export const POST = withApiHandler("forestal-loth-post", async (req: NextRequest
       // titular — sólo admin/owner (por el rol del JWT; el body no lo decide,
       // y el schema ni siquiera acepta el campo). Otro rol → 403 desde la DB class.
       puedeExcederCupo: PUEDEN_EXCEDER_CUPO.includes(auth.role),
+      // IP y navegador del pedido: van al evento `loth_tala_sobre_cupo`, no a la línea.
+      sesion: { ipAddress: getClientIp(req), userAgent: req.headers.get("user-agent")?.slice(0, 500) ?? null },
       createdBy: auth.username ?? "unknown",
     });
     // ADR-126: al talar, el árbol del censo pasa a "talado" (consume saldo).

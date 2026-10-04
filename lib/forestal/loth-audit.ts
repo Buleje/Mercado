@@ -37,6 +37,16 @@ export type LothAuditEntity =
   // KV: parámetros del Plan Operativo (DMC por especie, % de semilleros).
   | "ForestLothPoa";
 
+/**
+ * De dónde vino el pedido (IP y navegador), para los eventos que el titular
+ * explica ante OSINFOR (`loth_tala_sobre_cupo`, `loth_despacho_sobre_autorizado`).
+ * Lo arma la ruta con `getClientIp` y el `user-agent`, nunca el cuerpo.
+ */
+export interface SesionDeAuditoria {
+  ipAddress?: string | null;
+  userAgent?: string | null;
+}
+
 /** Acciones auditables del LO-TH. */
 export type LothAuditAction =
   // Líneas del libro (las 6 secciones SERFOR)
@@ -49,6 +59,8 @@ export type LothAuditAction =
   | "loth_tala_sobre_cupo"
   // Tala que pasa lo CENSADO de su especie (sin autorizado en el plan): aviso, sin freno
   | "loth_tala_sobre_censo"
+  // Guía VERIFICADA en SERFOR importada aunque su despacho pase lo AUTORIZADO, con motivo (T6, ADR-468)
+  | "loth_despacho_sobre_autorizado"
   // Carátula (identidad del título habilitante que encabeza el libro)
   | "loth_caratula_create"
   | "loth_caratula_update"

@@ -17,6 +17,7 @@ import type { AvisoImportacion, GuiaVistaPrevia, SobreAutorizadoDeLaGuia } from 
 import {
   esImportable,
   estadoEfectivo,
+  sobreAutorizadoConMotivo,
   sobreCupoEfectivo,
   type DecisionFicha,
   type DecisionesDirectorio,
@@ -67,7 +68,7 @@ export default function LothImportarGuiasGuia({
   onDirectorio: (ficha: string, cambio: Partial<DecisionFicha>) => void;
   /** Con pocas guías en la vista previa, sus datos arrancan abiertos. */
   abiertaDeEntrada: boolean;
-  /** T9: el motivo escrito para pasar lo autorizado (sin él, la guía no entra). */
+  /** T9 (y T6 de una guía verificada, ADR-468): el motivo escrito para pasar lo autorizado (sin él, la guía no entra). */
   motivoCupo: string;
   onMotivoCupo: (texto: string) => void;
 }) {
@@ -130,6 +131,7 @@ export default function LothImportarGuiasGuia({
               key={`${a.codigo}-${i}`}
               a={a}
               t6={a.codigo === "exceso_autorizado" ? (g.sobreAutorizado ?? []) : undefined}
+              verificada={d?.verificadaEnSerfor === true}
             />
           ))}
         </ul>
@@ -138,6 +140,7 @@ export default function LothImportarGuiasGuia({
       {importable && (
         <LothImportarGuiasCupo
           filas={sobreCupoEfectivo(g, conTala)}
+          t6={sobreAutorizadoConMotivo(g)}
           motivo={motivoCupo}
           onMotivo={onMotivoCupo}
           activa={incluida}
@@ -188,8 +191,8 @@ export default function LothImportarGuiasGuia({
   );
 }
 
-/** `t6`: el aviso de T6 lleva su ⓘ con las cuentas (no hay motivo que lo destrabe). */
-function Aviso({ a, t6 }: { a: AvisoImportacion; t6?: SobreAutorizadoDeLaGuia[] }) {
+/** `t6`: el aviso de T6 lleva su ⓘ con las cuentas (para quien lo ve, no hay motivo que lo destrabe). */
+function Aviso({ a, t6, verificada }: { a: AvisoImportacion; t6?: SobreAutorizadoDeLaGuia[]; verificada: boolean }) {
   const Icono =
     a.nivel === "bloquea" ? AlertOctagon : a.nivel === "atencion" ? AlertTriangle : Info;
   const color =
@@ -202,7 +205,7 @@ function Aviso({ a, t6 }: { a: AvisoImportacion; t6?: SobreAutorizadoDeLaGuia[] 
     <li className={`flex items-start gap-2 text-sm ${color}`}>
       <Icono className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
       <span className={t6 ? "font-semibold" : undefined}>{a.mensaje}</span>
-      {t6 && <InfoT6 filas={t6} />}
+      {t6 && <InfoT6 filas={t6} verificada={verificada} />}
     </li>
   );
 }

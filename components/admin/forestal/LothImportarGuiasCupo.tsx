@@ -7,8 +7,12 @@
  * motivo de una línea —sin él la guía no entra—; contra lo censado sólo avisa
  * (el censo puede estar incompleto y la importación no lo frena).
  *
- * `InfoT6`: el ⓘ del aviso que bloquea la guía por T6 (lo DESPACHADO pasaría
- * lo autorizado): ahí no se ofrece motivo, porque el servidor no lo admite.
+ * T6 (lo DESPACHADO pasa lo autorizado, ADR-468): si la guía está VERIFICADA
+ * en SERFOR y quien mira es admin o dueño (`t6`), sus cuentas van acá en rojo
+ * y piden el MISMO motivo (uno solo vale para la tala y el despacho).
+ *
+ * `InfoT6`: el ⓘ del aviso que bloquea la guía por T6 (leída de una foto o
+ * PDF, o vista por otro rol): ahí no se ofrece motivo.
  */
 
 import { useId } from "react";
@@ -21,23 +25,37 @@ import type { SobreAutorizadoDeLaGuia, SobreCupoDeLaGuia } from "@/lib/forestal/
 const ROJO = "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]";
 const AMBAR = "text-[var(--data-warning-ink)]";
 
+/** «Despacho de Azúcar huayo: 10 + 40 = 50 de 45 m³ autorizados — exceso 5 m³». */
+const lineaT6 = (f: SobreAutorizadoDeLaGuia) =>
+  `Despacho de ${f.especie}: ${fmtM3(f.yaSalioM3)} + ${fmtM3(f.despachaM3)} = ${fmtM3(f.yaSalioM3 + f.despachaM3)} de ` +
+  `${fmtM3(f.autorizadoM3)} m³ ${f.plantacion ? "registrados" : "autorizados"} — exceso ${fmtM3(f.excesoM3)} m³`;
+
 export default function LothImportarGuiasCupo({
   filas,
+  t6 = [],
   motivo,
   onMotivo,
   activa,
 }: {
   filas: SobreCupoDeLaGuia[];
+  /** T6 con motivo (guía verificada, admin o dueño): lo despachado sobre lo autorizado. */
+  t6?: SobreAutorizadoDeLaGuia[];
   motivo: string;
   onMotivo: (texto: string) => void;
   /** La guía va marcada para importar: si no, el motivo no se pide. */
   activa: boolean;
 }) {
   const id = useId();
-  if (filas.length === 0) return null;
-  const pideMotivo = filas.some((f) => f.exigeMotivo);
+  if (filas.length === 0 && t6.length === 0) return null;
+  const pideT9 = filas.some((f) => f.exigeMotivo);
+  const pideMotivo = pideT9 || t6.length > 0;
   const valido = motivoCupoValido(motivo);
   const escrito = limpiarMotivo(motivo).length > 0;
+  const dondeQueda = pideT9 && t6.length > 0
+    ? "Un solo motivo vale para la tala y el despacho: se anota en la tala y en la auditoría."
+    : t6.length > 0
+      ? "Se anota en la auditoría, para OSINFOR."
+      : "Se anota en la tala y en la auditoría.";
   return (
     <div
       data-aviso-cupo={pideMotivo ? "autorizado" : "censo"}
@@ -54,7 +72,18 @@ export default function LothImportarGuiasCupo({
             <span className="tabular-nums">{f.mensaje}</span>
           </li>
         ))}
+        {t6.map((f) => (
+          <li key={`t6-${f.especie}`} data-t6-con-motivo className={`flex items-start gap-2 font-semibold ${ROJO}`}>
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+            <span className="tabular-nums">{lineaT6(f)}</span>
+          </li>
+        ))}
       </ul>
+      {t6.length > 0 && (
+        <p className="text-xs text-[var(--text-secondary)]">
+          SERFOR ya emitió y verificó esta guía: entra con motivo y queda el aviso en la auditoría.
+        </p>
+      )}
       {pideMotivo && (
         <div className={activa ? "" : "opacity-60"}>
           <div className="flex items-center gap-2">
@@ -74,15 +103,23 @@ export default function LothImportarGuiasCupo({
             />
             <InfoTip
               title="Pasa lo autorizado"
-              what="El plan autoriza un volumen por especie. Esta guía, con sus talas nuevas o agrandadas, lo pasa."
-              affects="Sin motivo no se importa. Con él, la tala se anota con el motivo y queda en la auditoría: es lo que cruza OSINFOR."
-              example="Tornillo: 8 de 7 m³ autorizados — exceso 1 m³. Motivo: ampliación de volumen en trámite."
+              what={
+                t6.length > 0
+                  ? "El permiso autoriza un volumen por especie. Lo que despacha esta guía, sumado a lo que ya salió, lo pasa. La guía ya la emitió SERFOR: el libro la anota igual, con el motivo."
+                  : "El plan autoriza un volumen por especie. Esta guía, con sus talas nuevas o agrandadas, lo pasa."
+              }
+              affects="Sin motivo no se importa. Con él, queda en la auditoría con tu usuario: es lo que cruza OSINFOR. El Control del permiso marcará el exceso."
+              example={
+                t6.length > 0
+                  ? `${lineaT6(t6[0])}. Motivo: SERFOR emitió la guía con el volumen medido en el bosque.`
+                  : "Tornillo: 8 de 7 m³ autorizados — exceso 1 m³. Motivo: ampliación de volumen en trámite."
+              }
               side="left"
             />
           </div>
           <p id={`${id}-nota`} className={`mt-1 text-xs font-semibold ${valido ? "text-[var(--text-secondary)]" : ROJO}`}>
             {valido
-              ? "Se anota en la tala y en la auditoría."
+              ? dondeQueda
               : escrito
                 ? `El motivo necesita ${MOTIVO_CUPO_MIN} letras o más.`
                 : "Sin motivo no se importa esta guía."}
@@ -93,16 +130,27 @@ export default function LothImportarGuiasCupo({
   );
 }
 
-/** El detalle de T6 detrás del ⓘ: cuánto salió, cuánto despacha la guía y el tope del permiso. */
-export function InfoT6({ filas }: { filas: SobreAutorizadoDeLaGuia[] }) {
+/**
+ * El detalle de T6 detrás del ⓘ: cuánto salió, cuánto despacha la guía y el
+ * tope del permiso. `verificada`: SERFOR ya la emitió (sólo falta el rol).
+ */
+export function InfoT6({ filas, verificada = false }: { filas: SobreAutorizadoDeLaGuia[]; verificada?: boolean }) {
   const f = filas[0];
   if (!f) return null;
   const tope = f.plantacion ? "registrado de la plantación" : "autorizado por el permiso";
   return (
     <InfoTip
       title="Pasa lo autorizado de despacho"
-      what={`Lo que sale del bosque de una especie no puede pasar lo ${tope}. Es el tope legal que fiscaliza OSINFOR: no admite motivo.`}
-      affects="Para importarla, que la ARFFS amplíe el volumen autorizado, o corrige el plan si lo autorizado está mal cargado."
+      what={
+        verificada
+          ? `Lo que sale del bosque de una especie no puede pasar lo ${tope}. Esta guía ya la emitió SERFOR: el dueño o el administrador pueden importarla con motivo, y queda en la auditoría para OSINFOR.`
+          : `Lo que sale del bosque de una especie no puede pasar lo ${tope}. Es el tope legal que fiscaliza OSINFOR: una guía leída de una foto o PDF no entra ni con motivo.`
+      }
+      affects={
+        verificada
+          ? "Pídele al dueño o al administrador que la importe. O que la ARFFS amplíe el volumen autorizado, o corrige el plan si lo autorizado está mal cargado."
+          : "Si SERFOR ya la emitió, impórtala por su N° de registro (queda verificada) y el dueño o el administrador podrán importarla con motivo. Si no: que la ARFFS amplíe el volumen autorizado, o corrige el plan."
+      }
       example={filas
         .map((x) => `${x.especie}: salieron ${fmtM3(x.yaSalioM3)} m³ + esta guía ${fmtM3(x.despachaM3)} m³ = ${fmtM3(x.yaSalioM3 + x.despachaM3)} de ${fmtM3(x.autorizadoM3)} m³ (exceso ${fmtM3(x.excesoM3)} m³).`)
         .join(" ")}

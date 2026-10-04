@@ -105,7 +105,10 @@ const vista = async (...fichas: GtfSerfor[]) =>
   (
     await ForestLothImportarDB.vistaPrevia(
       T,
-      fichas.map((f, i) => ({ clave: `c${i}`, fuente: { tipo: "ficha", ficha: f } as never, ficha: f, verificada: true, falla: null, planElegido: "P1" })),
+      /* Leída de una foto (`tipo: "ficha"`): NO verificada, como la resuelve el
+         servidor. La verificada que pasa T6 pide motivo a admin/dueño (ADR-468):
+         eso va en `loth-importar-guia-t6-con-motivo`. */
+      fichas.map((f, i) => ({ clave: `c${i}`, fuente: { tipo: "ficha", ficha: f } as never, ficha: f, verificada: false, falla: null, planElegido: "P1" })),
     )
   ).guias;
 

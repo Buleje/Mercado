@@ -25,7 +25,7 @@ vi.mock("@/lib/session", async (real) => ({
 vi.mock("@/lib/auth/session-revocation", () => ({ isSessionRevoked: () => false }));
 vi.mock("@/lib/logger", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() } }));
 vi.mock("@/lib/prisma", () => ({ prisma: {} }));
-vi.mock("@/lib/rate-limit", () => ({ applyRateLimit: async () => null }));
+vi.mock("@/lib/rate-limit", () => ({ applyRateLimit: async () => null, getClientIp: () => "127.0.0.1" }));
 vi.mock("@/lib/specializations", () => ({ isSpecializationEnabled: async () => true }));
 vi.mock("@/lib/db/forest-loth.db", async (real) => ({
   ...(await real<typeof import("@/lib/db/forest-loth.db")>()),

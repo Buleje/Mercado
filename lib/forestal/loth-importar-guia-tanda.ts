@@ -24,7 +24,7 @@
  */
 import { estadoDeLaRevision, mensajeDelEstado, ordenDeImportacion, talasAEscribir } from "./loth-importar-guia";
 import { cupoDeLaGuia } from "./loth-importar-guia-cupo";
-import { avisoT6DeLaGuia, despachoT6DeLaGuia, type EstadoT6DelPlan } from "./loth-t6";
+import { avisoT6DeLaGuia, avisoT6SinExcepcion, avisoT6SoloDueno, despachoT6DeLaGuia, type EstadoT6DelPlan } from "./loth-t6";
 import { resolverTalaContraCenso } from "./loth-tala-del-censo";
 import type { EntradaCupo } from "./loth-cupo-especie";
 import type { AvisoImportacion, ContextoTanda, EstadoVistaPrevia, GuiaVistaPrevia, TalaReferencial } from "./loth-importar-guia-tipos";
@@ -131,7 +131,7 @@ export function rehacerTanda(
     const b = g.base;
     if (!b) continue;
     if (b.yaImportada || !b.planId) {
-      out[i] = { ...g, talas: b.talas, avisos: b.avisos, sobreCupo: null, sobreAutorizado: null };
+      out[i] = { ...g, talas: b.talas, avisos: b.avisos, sobreCupo: null, sobreAutorizado: null, t6ConMotivo: false };
       continue;
     }
     const planId = b.planId;
@@ -143,7 +143,17 @@ export function rehacerTanda(
     const previo = despachado.get(planId) ?? new Map<string, number>();
     const r6 = medida ? despachoT6DeLaGuia(b.despachoT6, medida, previo, b.plantacion) : null;
     const avisos = [...b.avisos, ...avisosDeEspecie(talas, planId, entrada)];
-    if (r6 && r6.excesos.length > 0) avisos.push({ nivel: "bloquea", codigo: "exceso_autorizado", mensaje: avisoT6DeLaGuia(r6.excesos) });
+    /* T6 (ADR-468): la guía que SERFOR ya emitió pide motivo a admin/dueño, si
+       es de ESTE permiso y el libro mide lo que la guía dice (`noAplicaT6ConMotivo`).
+       Leída de una foto o PDF, con reparo o vista por otro rol: bloqueada. */
+    const pasaT6 = !!r6 && r6.excesos.length > 0;
+    const verificada = g.guia?.verificadaEnSerfor === true;
+    const reparo = b.noAplicaT6ConMotivo ?? null;
+    const t6ConMotivo = pasaT6 && verificada && !reparo && tanda?.puedePasarT6 === true;
+    if (r6 && pasaT6 && !t6ConMotivo) {
+      const mensaje = !verificada ? avisoT6DeLaGuia(r6.excesos) : reparo ? avisoT6SinExcepcion(r6.excesos, reparo) : avisoT6SoloDueno(r6.excesos);
+      avisos.push({ nivel: "bloquea", codigo: "exceso_autorizado", mensaje });
+    }
     const rev = { avisos, yaImportada: null };
     const estado = estadoDeLaRevision(rev, g.permiso, g.crearTalaPorDefecto, b.elegido);
     const estadoSinTala = estadoDeLaRevision(rev, g.permiso, false, b.elegido);
@@ -158,6 +168,7 @@ export function rehacerTanda(
       mensaje: g.permiso ? mensajeDelEstado(estado, rev, g.permiso, g.crearTalaPorDefecto) : g.mensaje,
       sobreCupo: cupoCon && cupoSin ? { conTala: cupoCon.sobreCupo, sinTala: cupoSin.sobreCupo } : null,
       sobreAutorizado: r6 ? r6.excesos : null,
+      t6ConMotivo,
     };
     /* Lo que deja para las siguientes: sólo si va marcada y entra así. */
     const { marcada, crearTala } = eleccion(g);
@@ -184,5 +195,6 @@ export function mezclarTanda(antes: ContextoTanda | null | undefined, nuevo: Con
   return {
     cupos: [...antes.cupos.filter((c) => !nCupos.has(c.planId)), ...nuevo.cupos],
     t6: [...antes.t6.filter((c) => !nT6.has(c.planId)), ...nuevo.t6],
+    puedePasarT6: nuevo.puedePasarT6 ?? antes.puedePasarT6,
   };
 }

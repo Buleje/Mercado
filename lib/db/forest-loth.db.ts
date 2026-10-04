@@ -16,7 +16,7 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
 import { LOTH_SECTIONS, claveEnElPlan, claveEspecie, type LothSection } from "@/lib/forestal/loth-constants";
-import { auditLoth, type LothAuditAction, type LothAuditEntity } from "@/lib/forestal/loth-audit";
+import { auditLoth, type LothAuditAction, type LothAuditEntity, type SesionDeAuditoria } from "@/lib/forestal/loth-audit";
 import { ForestLothCierreDB } from "@/lib/db/forest-loth-cierre.db";
 import { ForestLothPoaDB } from "@/lib/db/forest-loth-poa.db";
 import { dmcParaEspecie, esPlanDePlantacion } from "@/lib/forestal/loth-poa";
@@ -40,7 +40,7 @@ import { closedPeriodOf } from "@/lib/forestal/loth-cierre-types";
 import type { AtarSinPlanConteo, AtarSinPlanResultado, AtarSeccion } from "@/lib/forestal/loth-atar-sin-plan";
 import { avisoCupoAlTalar, entradaDelPlan, motivoCupoValido, notaSobreCupo, MOTIVO_CUPO_MIN, type AvisoCupo, type EntradaCupo } from "@/lib/forestal/loth-cupo-especie";
 import { resolverTalaContraCenso } from "@/lib/forestal/loth-tala-del-censo";
-import { claveT6, excedeT6, mensajeT6, type MedidaT6 } from "@/lib/forestal/loth-t6";
+import { anotarDespachoT6, claveT6, excedeT6, mensajeT6, type DespachoT6DeLaEspecie, type MedidaT6 } from "@/lib/forestal/loth-t6";
 import { ForestPlanDB } from "@/lib/db/forest-plan.db";
 
 export { LOTH_SECTIONS };
@@ -182,6 +182,8 @@ export interface LothEntryCreateInput {
    * (undefined) se niega: el default seguro.
    */
   puedeExcederCupo?: boolean;
+  /** IP y navegador de quien asienta (los pone la ruta): van al evento sobre-cupo, no a la línea. */
+  sesion?: SesionDeAuditoria;
 
   correctsLineNo?: number | null;
   correctionNote?: string | null;
@@ -481,6 +483,7 @@ export class ForestLothDB {
     motivo: string | null | undefined,
     user: string | null | undefined,
     contexto?: string,
+    sesion?: SesionDeAuditoria,
   ): Promise<void> {
     if (!tenantId) throw new Error("tenantId is required");
     const action: LothAuditAction = cupo.exigeMotivo ? "loth_tala_sobre_cupo" : "loth_tala_sobre_censo";
@@ -495,6 +498,8 @@ export class ForestLothDB {
         entity: "ForestLothEntry" satisfies LothAuditEntity,
         entityId: linea.id,
         user: user || "unknown",
+        ipAddress: sesion?.ipAddress ?? null,
+        userAgent: sesion?.userAgent ?? null,
         detail: `Tala #${linea.lineNo} ${linea.treeCode ?? "—"}${contexto ? ` ${contexto}` : ""}: ${
           motivoCupoValido(motivo) ? notaSobreCupo(cupo, motivo ?? "") : `[Aviso sin motivo] ${cupo.mensaje}`
         }`,
@@ -595,7 +600,7 @@ export class ForestLothDB {
     //    exceso en m³ y de dónde salió (como el de una tala agrandada).
     if (cupo) {
       const contexto = `(${origen ? `${origen}; ` : ""}exceso ${fmtM3(cupo.excesoM3)} m³)`;
-      await ForestLothDB.auditarSobreCupoEnTx(tx, tenantId, cupo, creada, input.motivoSobreCupo, input.createdBy, contexto);
+      await ForestLothDB.auditarSobreCupoEnTx(tx, tenantId, cupo, creada, input.motivoSobreCupo, input.createdBy, contexto, input.sesion);
     }
     return creada;
   }
@@ -739,6 +744,11 @@ export class ForestLothDB {
    * `controlDeRepetidos: "ninguno"` = quien llama ya decidió, bajo el MISMO
    * candado del N°, que la guía no está en el libro (el importador mira sólo
    * las vigentes: una guía de SERFOR anulada en el libro se vuelve a anotar).
+   *
+   * `excepcionT6` (sólo el importador, ADR-468): T6 mide igual, con su lock,
+   * pero en vez de rechazar anota en ese Map lo que la guía despacha de cada
+   * especie con techo; quien llama decide con `excesosDelDespacho` y deja el
+   * evento. Sin él (todo otro camino), T6 rechaza como siempre.
    */
   static async despacharConGuiaEnTx(
     tx: Prisma.TransactionClient,
@@ -753,7 +763,7 @@ export class ForestLothDB {
       createdBy: string;
     },
     caratulaId: string | null,
-    opts: { controlDeRepetidos?: "talonario" | "ninguno" } = {},
+    opts: { controlDeRepetidos?: "talonario" | "ninguno"; excepcionT6?: Map<string, DespachoT6DeLaEspecie> } = {},
   ) {
     if (!tenantId) throw new Error("tenantId is required");
     const num = input.gtfNumber.trim();
@@ -822,7 +832,7 @@ export class ForestLothDB {
         createdBy: input.createdBy,
       };
       // T2 (sin trozado) y T1 (ya salió) salen de acá con su mensaje.
-      await ForestLothDB.enforceInvariants(tx, tenantId, linea);
+      await ForestLothDB.enforceInvariants(tx, tenantId, linea, opts.excepcionT6);
       lineNo += 1;
       lineas.push(await tx.forestLothEntry.create({ data: ForestLothDB.datosDeLinea(tenantId, linea, input.gtfDate, caratulaId, lineNo) }));
     }
@@ -1293,6 +1303,8 @@ export class ForestLothDB {
     tx: Prisma.TransactionClient,
     tenantId: string,
     input: LothEntryCreateInput,
+    /** Sólo el importador (ADR-468): T6 del despacho de trozas anota en vez de rechazar. */
+    excepcionT6?: Map<string, DespachoT6DeLaEspecie>,
   ): Promise<void> {
     const section = input.section;
     const treeCode = input.treeCode?.trim() || null;
@@ -1420,6 +1432,7 @@ export class ForestLothDB {
         await ForestLothDB.enforceT6(
           tx, tenantId, input.planId ?? null,
           trozada.speciesCommon, trozada.speciesScientific, trozada.volumeM3 != null ? Number(trozada.volumeM3) : 0,
+          excepcionT6,
         );
       }
       return;
@@ -1491,6 +1504,11 @@ export class ForestLothDB {
    * plan y las sin plan (ADR-459; antes, el libro entero — el despacho de otro
    * plan con la misma especie se comía el techo de éste), despacho de trozas
    * (volumen resuelto vía Trozado) + despacho de producto en m³.
+   *
+   * `excepcion` (sólo el importador de guías ya emitidas por SERFOR, ADR-468):
+   * misma especie, mismo lock, misma medida; en vez de rechazar, anota la troza
+   * en lo que la guía despacha de su especie (`anotarDespachoT6`). Sin él, el
+   * rechazo es el de siempre, palabra por palabra.
    */
   private static async enforceT6(
     tx: Prisma.TransactionClient,
@@ -1499,6 +1517,7 @@ export class ForestLothDB {
     speciesCommon: string | null,
     speciesScientific: string | null,
     nuevoVolumen: number,
+    excepcion?: Map<string, DespachoT6DeLaEspecie>,
   ): Promise<void> {
     const species = speciesCommon?.trim() || null;
     if (!species || !(nuevoVolumen > 0)) return;
@@ -1525,6 +1544,10 @@ export class ForestLothDB {
       ORDER BY "id" FOR UPDATE`;
     // Releída bajo el lock: lo que vale es lo autorizado DESPUÉS de esperar.
     const medida = await ForestLothDB.medidaT6(tx, tenantId, planId, delPlan, clave);
+    if (excepcion && medida.autorizado != null) {
+      anotarDespachoT6(excepcion, clave, species, { autorizado: medida.autorizado, movilizado: medida.movilizado }, nuevoVolumen);
+      return;
+    }
     if (medida.autorizado == null || !excedeT6(medida, nuevoVolumen)) return;
 
     // En una plantación no hay POA que autorice: el techo es lo REGISTRADO (ADR-459).
