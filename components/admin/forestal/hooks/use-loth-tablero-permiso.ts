@@ -5,8 +5,11 @@
  *
  *   · Los planes salen de `GET /api/admin/forestal/plan` (la lista entera, para
  *     poder ofrecer todos aunque se esté mirando uno).
- *   · El elegido se RECUERDA en este navegador. Uno recordado que ya no existe
- *     (se dio de baja) vuelve a «Todos» en vez de dejar la vista vacía.
+ *   · El permiso lo elige el LIBRO (`LothPermisoChip`, `useLothPermiso`) y el
+ *     tablero lo obedece, «Todos» incluido (04-10: el tablero tenía su propio
+ *     selector y recordaba otro plan con el libro en «Todos» — dos «Todos los
+ *     permisos» en pantalla). Sólo fuera del libro (sin contexto) usa lo
+ *     recordado en este navegador. Uno que ya no existe vuelve a «Todos».
  *   · Con un plan elegido trae su saldo (`?balance=<planId>`): sólo cuenta las
  *     líneas de ESE plan (contrato ADR-459 §4). Sólo vale el ÚLTIMO pedido:
  *     cambiar dos veces seguidas no deja el saldo viejo pisando al nuevo.
@@ -48,7 +51,7 @@ export function useLothTableroPermiso(reloadSignal = 0) {
   /* Sin elección guardada (`AUTO`): con UN solo permiso vivo se abre en ése —el
      volumen del permiso a la vista sin tocar nada—; con varios, «Todos». Elegir
      «Todos» a mano guarda `null` y se respeta. */
-  const [guardado, setGuardado] = useLocalStorage<string | null>(CLAVE_PLAN_TABLERO, AUTO);
+  const [guardado] = useLocalStorage<string | null>(CLAVE_PLAN_TABLERO, AUTO);
   const [planes, setPlanes] = useState<PlanTablero[] | null>(null);
   const [errorPlanes, setErrorPlanes] = useState<string | null>(null);
   const [saldo, setSaldo] = useState<SaldoPermiso>({ planId: null, rows: [], cargando: false, error: null });
@@ -77,12 +80,10 @@ export function useLothTableroPermiso(reloadSignal = 0) {
     return () => ac.abort();
   }, [reloadSignal]);
 
-  /* Un plan recordado que ya no está en la lista se suelta (vuelve a «Todos»). */
-  /* El permiso del libro (02-10): con uno elegido arriba (un plan o «Sin plan») el Control mira ése;
-     con «Todos» conserva su propia elección, sin escribir el global. */
+  /* Dentro del libro manda su permiso, también cuando es «Todos». Un plan
+     recordado que ya no está en la lista se suelta (vuelve a «Todos»). */
   const global = useLothPermiso();
-  const planGlobal = global?.planSel ?? null;
-  const efectivo = planGlobal ?? permisoInicial(guardado, planes);
+  const efectivo = global ? global.planSel : permisoInicial(guardado, planes);
   const planSel: string | null =
     efectivo == null || efectivo === PLAN_SIN_PLAN
       ? efectivo
@@ -129,18 +130,9 @@ export function useLothTableroPermiso(reloadSignal = 0) {
     return () => ac.abort();
   }, [idSaldo, reloadSignal, intento]);
 
-  const elegirGlobal = global?.elegirPlan;
-  /** Elegir acá vale en todo el libro (dos vías). */
-  const elegirPlan = useCallback(
-    (id: string | null) => {
-      setGuardado(id);
-      elegirGlobal?.(id);
-    },
-    [setGuardado, elegirGlobal],
-  );
   const reintentarSaldo = useCallback(() => setIntento((n) => n + 1), []);
 
-  return { planes: planes ?? [], cargandoPlanes: planes == null, errorPlanes, planSel, plan, elegirPlan, saldo, reintentarSaldo };
+  return { planes: planes ?? [], cargandoPlanes: planes == null, errorPlanes, planSel, plan, saldo, reintentarSaldo };
 }
 
 export type LothTableroPermiso = ReturnType<typeof useLothTableroPermiso>;

@@ -3,8 +3,18 @@
 /**
  * La fila de arriba del Control del permiso, en UNA fila (ley de la vista,
  * rule `ui-components`): el título con su ⓘ y las cifras que contesta, y a la
- * derecha «Escanear troza» — en el patio es LA acción (primera y rellena) —,
- * el permiso que se mira y el menú «Opciones».
+ * derecha «Escanear troza» — en el patio es LA acción (primera y rellena) — y
+ * el menú «Opciones».
+ *
+ * El permiso que se mira NO se elige acá (04-10, Brandon): manda el selector
+ * del libro (`LothPermisoChip`, en la banda, al lado de las pestañas) y el
+ * tablero lo obedece. Tenía un `<select>` propio y se veían dos «Todos los
+ * permisos»; el del libro ya ofrecía todo lo que éste (cada plan con su
+ * titular, «Sin plan»), más la vigencia de cada uno.
+ *
+ * El «Informe del permiso (PDF)» también vive en el menú, al lado del reporte
+ * impreso (lo trae el libro en `accionesExtra`): en una fila propia era un
+ * botón huérfano.
  *
  * Merge 2026-10-04 (dos sesiones hicieron esta cabecera): el «Exportar Excel»
  * para OSINFOR (todas las columnas, hoja resumen por estado) entra al menú
@@ -18,9 +28,7 @@ import { FileSpreadsheet, ScanBarcode } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
-import { nombreDelPlan, type PlanTablero } from "@/lib/forestal/loth-tablero-permiso";
 import {
-  PLAN_SIN_PLAN,
   UMBRAL_PATIO_DIAS,
   type ResumenEstado,
   type ResumenViejas,
@@ -31,11 +39,8 @@ import type { CaratulaTablero } from "./LothTableroBanda";
 export default function LothTableroCabecera({
   resumen,
   viejas,
-  planes,
-  planSel,
-  haySinPlan,
-  onElegirPlan,
   acciones,
+  accionesExtra = [],
   filas,
   caratula,
   cargando,
@@ -43,11 +48,9 @@ export default function LothTableroCabecera({
 }: {
   resumen: readonly ResumenEstado[];
   viejas: ResumenViejas;
-  planes: readonly PlanTablero[];
-  planSel: string | null;
-  haySinPlan: boolean;
-  onElegirPlan: (id: string | null) => void;
   acciones: MenuAccion[];
+  /** Las que trae el libro (el informe del permiso): van después del reporte impreso. */
+  accionesExtra?: readonly MenuAccion[];
   /** Las trozas del permiso elegido (sin los filtros de la tabla): lo que lleva el Excel para OSINFOR. */
   filas: readonly TrozaTablero[];
   caratula?: CaratulaTablero | null;
@@ -57,7 +60,6 @@ export default function LothTableroCabecera({
 }) {
   const disp = resumen.find((r) => r.estado === "disponible");
   const desp = resumen.find((r) => r.estado === "despachada");
-  const elegido = planes.find((p) => p.id === planSel) ?? null;
 
   const [exportando, setExportando] = useState(false);
   const [errorExport, setErrorExport] = useState<string | null>(null);
@@ -88,7 +90,13 @@ export default function LothTableroCabecera({
   };
   /* Al lado del otro Excel: los dos exportan, pero éste es el que se presenta. */
   const iExcel = acciones.findIndex((a) => a.id === "excel");
-  const menu = iExcel < 0 ? [osinfor, ...acciones] : [...acciones.slice(0, iExcel + 1), osinfor, ...acciones.slice(iExcel + 1)];
+  const conOsinfor = iExcel < 0 ? [osinfor, ...acciones] : [...acciones.slice(0, iExcel + 1), osinfor, ...acciones.slice(iExcel + 1)];
+  /* Los dos papeles impresos, juntos: el reporte de control y el informe del permiso. */
+  const iReporte = conOsinfor.findIndex((a) => a.id === "reporte");
+  const menu =
+    iReporte < 0
+      ? [...conOsinfor, ...accionesExtra]
+      : [...conOsinfor.slice(0, iReporte + 1), ...accionesExtra, ...conOsinfor.slice(iReporte + 1)];
 
   return (
     <>
@@ -120,41 +128,20 @@ export default function LothTableroCabecera({
           </p>
         </div>
         <div className="ml-auto flex flex-wrap items-center gap-2">
-          {/* Entre 640 y 1536 px la fila no entra con el rótulo: queda el ícono
-              (rellena, sigue siendo LA acción) antes que partir la cabecera. */}
+          {/* Entre 640 y 1280 px la fila no entra con el rótulo: queda el ícono
+              (rellena, sigue siendo LA acción) antes que partir la cabecera. Sin
+              el selector de permiso (04-10) a 1280 sobran ~250 px: va con rótulo. */}
           <button
             type="button"
             onClick={onEscanear}
             disabled={filas.length === 0}
             aria-label="Escanear troza"
             title="Escanear troza: con la cámara del celular, o tipea el código"
-            className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-[var(--accent)] px-2.5 text-sm font-bold text-white transition-colors hover:bg-[var(--accent-600)] disabled:cursor-not-allowed disabled:opacity-50 max-sm:px-3.5 2xl:px-3.5"
+            className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-[var(--accent)] px-2.5 text-sm font-bold text-white transition-colors hover:bg-[var(--accent-600)] disabled:cursor-not-allowed disabled:opacity-50 max-sm:px-3.5 xl:px-3.5"
           >
             <ScanBarcode className="h-5 w-5" aria-hidden="true" />
-            <span className="hidden max-sm:inline 2xl:inline">Escanear troza</span>
+            <span className="hidden max-sm:inline xl:inline">Escanear troza</span>
           </button>
-          <label className="sr-only" htmlFor="tablero-permiso">
-            Permiso
-          </label>
-          <select
-            id="tablero-permiso"
-            value={planSel ?? ""}
-            onChange={(e) => onElegirPlan(e.target.value || null)}
-            title={elegido ? `${nombreDelPlan(elegido)} · ${elegido.titularName ?? ""}` : "Las trozas de todos los permisos del libro"}
-            /* `dark:bg-…` saca al select del respaldo oscuro de globals.css, que le pisaba
-               el borde con --rule-base: elegido, el borde de acento no se veía en oscuro. */
-            className={`h-10 w-48 rounded-xl border-2 bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none dark:bg-[var(--surface-raised)] ${
-              planSel ? "border-[var(--accent)]" : "border-[var(--rule-base)]"
-            }`}
-          >
-            <option value="">Todos los permisos</option>
-            {planes.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.titularName && p.titularName !== nombreDelPlan(p) ? `${nombreDelPlan(p)} · ${p.titularName}` : nombreDelPlan(p)}
-              </option>
-            ))}
-            {(haySinPlan || planSel === PLAN_SIN_PLAN) && <option value={PLAN_SIN_PLAN}>Sin plan</option>}
-          </select>
           <ActionMenu label="Opciones del control" actions={menu} size="sm" soloIcono />
         </div>
       </header>

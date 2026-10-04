@@ -24,6 +24,7 @@
  */
 
 import { useCallback, useMemo, useState, type ReactNode } from "react";
+import type { MenuAccion } from "@/components/admin/shared/action-menu";
 import SegmentedControl from "@/components/ui-system/SegmentedControl";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import type { LothEntryDTO } from "@/lib/forestal/loth-constants";
@@ -75,6 +76,8 @@ export interface DatosEncabezadoTablero {
   /** Todos los planes no dados de baja; `null` = no se pudieron leer. */
   planes: readonly PlanFichaApi[] | null;
   cargando: boolean;
+  /** El permiso que mira la tabla (el del chip del libro): el encabezado habla de ése. */
+  planSel?: string | null;
 }
 
 export default function LothTableroTrozas({
@@ -84,6 +87,7 @@ export default function LothTableroTrozas({
   reloadSignal = 0,
   onDespacharConGuia,
   encabezado,
+  accionesExtra,
 }: {
   entries: LothEntryDTO[];
   caratula?: CaratulaTablero | null;
@@ -101,6 +105,8 @@ export default function LothTableroTrozas({
    * códigos más la vigencia — dos veces el mismo código es ruido.
    */
   encabezado?: ReactNode | ((datos: DatosEncabezadoTablero) => ReactNode);
+  /** Opciones que el libro suma al menú «⋯» de la cabecera (el informe del permiso). */
+  accionesExtra?: (datos: DatosEncabezadoTablero) => MenuAccion[];
 }) {
   const permiso = useLothTableroPermiso(reloadSignal);
   const ctx = useTableroContexto();
@@ -110,7 +116,6 @@ export default function LothTableroTrozas({
   const [escaner, setEscaner] = useState(0);
 
   const todas = useMemo(() => construirTablero(entries, new Date(), ctx.contexto), [entries, ctx.contexto]);
-  const haySinPlan = useMemo(() => todas.some((f) => f.planId == null), [todas]);
   const filas = useMemo(() => filtrarPorPlan(todas, permiso.planSel), [todas, permiso.planSel]);
   const resumen = useMemo(() => resumirTablero(filas), [filas]);
   const viejas = useMemo(() => resumirViejas(filas), [filas]);
@@ -138,15 +143,12 @@ export default function LothTableroTrozas({
 
   const t = useLothTableroTabla(filas, permiso.planSel != null);
   const ordenadas = useMemo(() => ordenarTablero(t.visibles, columnas.orden), [t.visibles, columnas.orden]);
-  const { reiniciar } = t;
-  const { elegirPlan: guardarPlan } = permiso;
-  const elegirPlan = useCallback(
-    (id: string | null) => {
-      guardarPlan(id);
-      reiniciar();
-    },
-    [guardarPlan, reiniciar],
-  );
+  /* Cambió el permiso del libro: lo elegido, la especie y la última lectura eran del anterior. */
+  const [planVisto, setPlanVisto] = useState(permiso.planSel);
+  if (planVisto !== permiso.planSel) {
+    setPlanVisto(permiso.planSel);
+    t.reiniciar();
+  }
 
   const datos: DatosControl = useMemo(
     () => ({
@@ -184,6 +186,11 @@ export default function LothTableroTrozas({
     onIrAlPlan: nav?.onIrAlPlan,
   });
 
+  const datosEncabezado: DatosEncabezadoTablero = useMemo(
+    () => ({ filas: todas, gtfs: ctx.gtfs, planes: ctx.planes, cargando: ctx.cargando, planSel: permiso.planSel }),
+    [todas, ctx.gtfs, ctx.planes, ctx.cargando, permiso.planSel],
+  );
+
   /* «Ver en la tabla» del escáner: la tabla queda sólo con esa troza. */
   const verEnTabla = (code: string) => {
     setPestana("trozas");
@@ -198,11 +205,8 @@ export default function LothTableroTrozas({
       <LothTableroCabecera
         resumen={resumen}
         viejas={viejas}
-        planes={planes}
-        planSel={permiso.planSel}
-        haySinPlan={haySinPlan}
-        onElegirPlan={elegirPlan}
         acciones={acc.acciones}
+        accionesExtra={accionesExtra?.(datosEncabezado)}
         filas={filas}
         caratula={caratula}
         cargando={ctx.cargando}
@@ -225,7 +229,7 @@ export default function LothTableroTrozas({
       {encabezado == null ? (
         <LothTableroBanda banda={banda} caratula={caratula} />
       ) : typeof encabezado === "function" ? (
-        encabezado({ filas: todas, gtfs: ctx.gtfs, planes: ctx.planes, cargando: ctx.cargando })
+        encabezado(datosEncabezado)
       ) : (
         encabezado
       )}

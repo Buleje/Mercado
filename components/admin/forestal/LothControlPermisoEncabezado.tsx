@@ -13,12 +13,24 @@
  * especies autorizadas los trae el libro; las trozas cruzadas, TODAS las GTF
  * (anuladas incluidas) y los planes los trae el tablero (`useTableroContexto`).
  * Acá sólo se calcula con las funciones puras y se pinta.
+ *
+ * El «Informe del permiso» (PDF) ya no es un botón en una fila propia encima
+ * de la ficha (04-10, ley de la vista: sin botones huérfanos): es una opción
+ * del menú «⋯» de la cabecera del Control (`accionInformeDelControl`).
+ *
+ * De qué plan habla (04-10): del permiso del chip del libro si es uno puntual
+ * — ficha, planes vivos, saldo, cuadre e informe, igual que la tabla —; con
+ * «Todos» o «Líneas sin permiso», del plan activo del libro, y lo dice en una
+ * línea (`planDelControl`).
  */
 
-import { useMemo, useState } from "react";
-import { Printer } from "@buleje/design-system/icons";
+import { useMemo } from "react";
+import { toast } from "sonner";
+import { FileText } from "@buleje/design-system/icons";
+import type { MenuAccion } from "@/components/admin/shared/action-menu";
 import type { CaratulaFicha, PlanFicha } from "@/lib/forestal/loth-ficha-permiso";
-import { planesVivos } from "@/lib/forestal/loth-ficha-permiso";
+import { cuadreDelControl, planDelControl, trozasDelControl } from "@/lib/forestal/loth-control-del-plan";
+import { nombreDelPlan } from "@/lib/forestal/loth-ficha-permiso";
 import {
   VEREDICTOS_META,
   VEREDICTOS_ROJOS,
@@ -64,6 +76,47 @@ const ORDEN_VEREDICTOS = (Object.keys(VEREDICTOS_META) as VeredictoGuia[]).sort(
   (a, b) => VEREDICTOS_META[a].orden - VEREDICTOS_META[b].orden,
 );
 
+/** Lo que lleva el «Informe del permiso»: lo mismo que pinta este encabezado. */
+export type EntradaInformeControl = Pick<LothControlPermisoEncabezadoProps, "datos" | "caratula" | "planActivo" | "saldo">;
+
+/**
+ * Arma e imprime el informe con las MISMAS funciones puras que la pantalla
+ * (ficha del plan del libro, planes vivos, saldo, cuadre, trozas). Síncrono y
+ * dentro del clic: la ventana de impresión no cae en el bloqueador de pop-ups.
+ */
+export function imprimirInformeDelControl({ datos, caratula, planActivo, saldo }: EntradaInformeControl): void {
+  const pc = planDelControl(datos.planSel, datos.planes, planActivo);
+  if (pc.puntual && !pc.plan) throw new Error("Todavía se está leyendo el plan elegido. Vuelve a intentarlo en un momento.");
+  imprimirInformePermiso({
+    caratula,
+    plan: pc.plan,
+    planes: pc.vivos,
+    saldo: saldoPorEspecie({ ...saldo, planId: pc.id }),
+    // Sin la lista de guías no se cuadra (cruzar contra [] acusaría a todas).
+    cuadre: cuadreDelControl(datos.gtfs ? cuadrarGuias(datos.filas, datos.gtfs) : null, datos.filas, pc.puntual),
+    trozas: trozasDelControl(datos.filas, pc.puntual),
+  });
+}
+
+/** La opción del menú «⋯» de la cabecera del Control: va junto al reporte impreso. */
+export function accionInformeDelControl(entrada: EntradaInformeControl): MenuAccion {
+  return {
+    id: "informe-permiso",
+    label: "Informe del permiso (PDF)",
+    hint: "Ficha, saldo por especie, cuadre por guía y trozas: para la ARFFS u OSINFOR",
+    icon: FileText,
+    tone: "dark",
+    disabled: entrada.datos.cargando,
+    onSelect: () => {
+      try {
+        imprimirInformeDelControl(entrada);
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "No se pudo abrir el informe.");
+      }
+    },
+  };
+}
+
 export default function LothControlPermisoEncabezado({
   datos,
   caratula,
@@ -73,69 +126,55 @@ export default function LothControlPermisoEncabezado({
   onCompletarPlan,
   onVerGtf,
 }: LothControlPermisoEncabezadoProps) {
-  const activoId = planActivo?.id ?? null;
-  const vivos = useMemo(() => planesVivos(datos.planes ?? [], activoId), [datos.planes, activoId]);
-  // La ficha grande sigue al plan del libro; si `?active=1` no llegó, al primero vivo.
-  const planFicha = planActivo ?? vivos[0] ?? null;
+  // El plan del chip del libro si es uno puntual; si no, el activo (o el primero vivo).
+  const pc = useMemo(() => planDelControl(datos.planSel, datos.planes, planActivo), [datos.planSel, datos.planes, planActivo]);
+  const { puntual, vivos } = pc;
+  const planId = pc.id;
+  const medido = vivos.find((p) => p.id === planId) ?? null;
 
   const saldoPlan = useMemo(
-    () => saldoPorEspecie({ ...saldo, planId: activoId }),
-    [saldo, activoId],
+    () => saldoPorEspecie({ ...saldo, planId }),
+    [saldo, planId],
   );
   const saldoRojo = saldoPlan.filas.some((f) => f.veredicto === "excedido");
   const tot = saldoPlan.totales;
 
   // Sin la lista de guías no se cuadra: cruzar contra [] acusaría a todas de «citada, sin registrar».
   const cuadre = useMemo(
-    () => (datos.gtfs ? cuadrarGuias(datos.filas, datos.gtfs) : null),
-    [datos.filas, datos.gtfs],
+    () => cuadreDelControl(datos.gtfs ? cuadrarGuias(datos.filas, datos.gtfs) : null, datos.filas, puntual),
+    [datos.filas, datos.gtfs, puntual],
   );
   const conteo = useMemo(() => (cuadre ? contarVeredictos(cuadre) : null), [cuadre]);
   const cuadreRojo = conteo != null && VEREDICTOS_ROJOS.some((v) => conteo[v] > 0);
 
-  // Síncrono y dentro del clic: la ventana de impresión no cae en el bloqueador de pop-ups.
-  const [errorInforme, setErrorInforme] = useState<string | null>(null);
-  const imprimirInforme = () => {
-    try {
-      imprimirInformePermiso({
-        caratula,
-        plan: planFicha,
-        planes: vivos,
-        saldo: saldoPlan,
-        cuadre,
-        trozas: datos.filas,
-      });
-      setErrorInforme(null);
-    } catch (err) {
-      setErrorInforme(err instanceof Error ? err.message : "No se pudo abrir el informe.");
-    }
-  };
-
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
-        {errorInforme && (
-          <p role="alert" className="min-w-0 flex-1 text-xs font-semibold text-[var(--data-error-ink)]">
-            {errorInforme}
-          </p>
-        )}
-        <button
-          type="button"
-          onClick={imprimirInforme}
-          disabled={datos.cargando}
-          className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 disabled:opacity-50 sm:h-9"
-        >
-          <Printer className="h-4 w-4" aria-hidden="true" />
-          Informe PDF
-        </button>
-      </div>
-      <LothFichaPermiso
-        caratula={caratula}
-        plan={planFicha}
-        onCompletarCaratula={onCompletarCaratula}
+      {/* Con «Todos» no hay UN papel que mostrar: se dice cuál se mide (sólo si hay más de uno vivo). */}
+      {!puntual && vivos.length > 1 && medido && (
+        <p className="text-sm text-[var(--text-secondary)]">
+          Con {datos.planSel ? "«Líneas sin permiso»" : "«Todos los permisos»"}, la ficha y el saldo son del plan
+          activo del libro, <b className="font-semibold text-[var(--text-primary)]">{nombreDelPlan(medido)}</b>. Elige
+          otro arriba para verlo.
+        </p>
+      )}
+      {puntual && !pc.plan ? (
+        <p role={datos.cargando ? "status" : "alert"} className="text-sm text-[var(--text-secondary)]">
+          {datos.cargando ? "Leyendo el plan elegido…" : "No se pudo leer el plan elegido. Vuelve a cargar la vista."}
+        </p>
+      ) : (
+        <LothFichaPermiso
+          caratula={caratula}
+          plan={pc.plan}
+          onCompletarCaratula={onCompletarCaratula}
+          onCompletarPlan={onCompletarPlan}
+        />
+      )}
+      <LothPlanesVivos
+        planes={vivos}
+        activoId={planId}
+        etiquetaActivo={puntual ? "el elegido" : undefined}
         onCompletarPlan={onCompletarPlan}
       />
-      <LothPlanesVivos planes={vivos} activoId={activoId} onCompletarPlan={onCompletarPlan} />
 
       <SeccionPlegable
         clave={CLAVE_PLEGABLE_SALDO}
@@ -144,7 +183,7 @@ export default function LothControlPermisoEncabezado({
         rojo={saldoRojo}
         resumen={
           saldoPlan.filas.length === 0 ? (
-            <span>Sin censo ni especies autorizadas en el plan del libro</span>
+            <span>Sin censo ni especies autorizadas en {puntual ? "el plan elegido" : "el plan del libro"}</span>
           ) : (
             <span className="tabular-nums">
               <b className="font-semibold text-[var(--text-primary)]">{fmtM3(tot.saldoPorTalarM3)} m³</b> por talar

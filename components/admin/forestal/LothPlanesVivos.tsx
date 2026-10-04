@@ -26,6 +26,8 @@ export interface LothPlanesVivosProps {
   planes: readonly PlanFichaApi[];
   /** El plan contra el que el libro mide saldo y cupo. */
   activoId: string | null;
+  /** Cómo se marca ese plan: «el del libro» (el activo) o «el elegido» (el del chip del libro). */
+  etiquetaActivo?: string;
   onCompletarPlan?: () => void;
 }
 
@@ -38,7 +40,7 @@ function cuanto(dias: number | null): string | null {
   return `${dias === 1 ? "queda" : "quedan"} ${formatNumber(dias)} ${dias === 1 ? "día" : "días"}`;
 }
 
-export default function LothPlanesVivos({ planes, activoId, onCompletarPlan }: LothPlanesVivosProps) {
+export default function LothPlanesVivos({ planes, activoId, etiquetaActivo = "el del libro", onCompletarPlan }: LothPlanesVivosProps) {
   const filas = useMemo(
     () => planes.map((p) => ({ plan: p, ficha: construirFichaPermiso(null, p) })),
     [planes],
@@ -78,7 +80,7 @@ export default function LothPlanesVivos({ planes, activoId, onCompletarPlan }: L
               </span>
               {plan.id === activoId && (
                 <span className="rounded-md bg-[var(--accent-soft)] px-1.5 py-0.5 text-xs font-semibold text-[var(--accent-dark)] dark:text-[var(--accent)]">
-                  el del libro
+                  {etiquetaActivo}
                 </span>
               )}
               {ficha.parcelaCorta && (

@@ -57,7 +57,7 @@ import LothCupoEnPie from "./LothCupoEnPie";
 import { talasDelPlan } from "@/lib/forestal/loth-cupo-vista";
 import { cupoPorEspecie, type EspecieAutorizadaCupo } from "@/lib/forestal/loth-cupo-especie";
 import LothTableroTrozas from "./LothTableroTrozas";
-import LothControlPermisoEncabezado from "./LothControlPermisoEncabezado";
+import LothControlPermisoEncabezado, { accionInformeDelControl } from "./LothControlPermisoEncabezado";
 import { planFichaDesdeApi, type CaratulaFicha, type PlanFichaApi } from "@/lib/forestal/loth-ficha-permiso";
 import LothPlanView from "./LothPlanView";
 import LothGtfView from "./LothGtfView";
@@ -332,8 +332,8 @@ export default function LothLibroOperaciones() {
     { treeCode: string; speciesCommon: string; dapM: number | null; volumenEstimadoM3: number | null; estado: string }[]
   >([]);
   /** N° del plan activo — va en la etiqueta de la troza (28-09). */
-  /** Especies autorizadas del plan activo (volumen y árboles): el cupo de cada una. */
-  const [especiesAutorizadas, setEspeciesAutorizadas] = useState<EspecieAutorizadaCupo[]>([]);
+  /** Especies autorizadas (volumen y árboles) del plan que se mide: el cupo de cada una. De qué plan son, para no mostrar las de otro mientras llegan. */
+  const [especiesDe, setEspeciesDe] = useState<{ planId: string; especies: EspecieAutorizadaCupo[] } | null>(null);
   const [planIdActivo, setPlanIdActivo] = useState<string | null>(null);
   const [planNumeroActivo, setPlanNumeroActivo] = useState<string | null>(null);
   /** El plan activo COMPLETO (vigencia, parcela, estado): lo lee la ficha del permiso. */
@@ -666,18 +666,7 @@ export default function LothLibroOperaciones() {
       setPlanNumeroActivo(planJson?.active?.planNumber ?? null);
       setPlanIdActivo(planId);
       setPlanActivo(planFichaDesdeApi(planJson?.active));
-      if (planId) {
-        // Falla blanda: sin las especies el cupo sale «del censo», no se inventa.
-        fetch(`/api/admin/forestal/plan?planId=${encodeURIComponent(planId)}`, { credentials: "include" })
-          .then((r) => (r.ok ? r.json() : null))
-          .then((d) => {
-            const sp = (d?.species ?? []) as { speciesCommon: string; volumenAutorizadoM3: string | number | null; arbolesAutorizados: number | null }[];
-            setEspeciesAutorizadas(
-              sp.map((s) => ({ speciesCommon: s.speciesCommon, volumenAutorizadoM3: s.volumenAutorizadoM3, arbolesAutorizados: s.arbolesAutorizados })),
-            );
-          })
-          .catch((err) => console.warn("[loth] no se pudieron leer las especies del plan", err));
-      }
+      // Las especies autorizadas van aparte: son las del plan que se mide (efecto de abajo).
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -852,6 +841,34 @@ export default function LothLibroOperaciones() {
     return () => ac.abort();
   }, [view, planDelCenso, censoSinPlan, permiso.listo, reloadSignal]);
 
+  /* Contra qué plan se miden el cupo y el saldo por especie de «Control del
+     permiso»: el del chip si es uno puntual (04-10, como la tabla y el censo);
+     con «Todos» o «Líneas sin permiso», el activo del libro, como antes. */
+  const planDelControl = planDelCenso ?? planIdActivo;
+  useEffect(() => {
+    if (!planDelControl) return;
+    const ac = new AbortController();
+    // Falla blanda: sin las especies el cupo sale «del censo», no se inventa.
+    fetch(`/api/admin/forestal/plan?planId=${encodeURIComponent(planDelControl)}`, { credentials: "include", signal: ac.signal })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (ac.signal.aborted) return;
+        const sp = (d?.species ?? []) as { speciesCommon: string; volumenAutorizadoM3: string | number | null; arbolesAutorizados: number | null }[];
+        setEspeciesDe({
+          planId: planDelControl,
+          especies: sp.map((x) => ({ speciesCommon: x.speciesCommon, volumenAutorizadoM3: x.volumenAutorizadoM3, arbolesAutorizados: x.arbolesAutorizados })),
+        });
+      })
+      .catch((err) => {
+        if (!ac.signal.aborted) console.warn("[loth] no se pudieron leer las especies del plan", err);
+      });
+    return () => ac.abort();
+  }, [planDelControl, reloadSignal]);
+  const especiesAutorizadas = useMemo(
+    () => (especiesDe && especiesDe.planId === planDelControl ? especiesDe.especies : []),
+    [especiesDe, planDelControl],
+  );
+
   /**
    * Asienta N líneas de una. Va de a una porque el backend numera el `lineNo`
    * correlativo por libro; y devuelve cuántas entraron DE VERDAD, no cuántas se
@@ -962,11 +979,11 @@ export default function LothLibroOperaciones() {
         talas: talasDelPlan(
           allEntries.filter((e) => e.section === "tala" && e.status === "registrado"),
           new Set(censoArboles.map((c) => c.treeCode.trim())),
-          planIdActivo,
+          planDelControl,
         ).delPlan,
         autorizadas: especiesAutorizadas,
       }),
-    [censoArboles, allEntries, especiesAutorizadas, planIdActivo],
+    [censoArboles, allEntries, especiesAutorizadas, planDelControl],
   );
   /** Lo que el saldo por especie de «Control del permiso» mide: lo mismo que el cupo. */
   const entradaSaldo = useMemo(
@@ -1208,6 +1225,7 @@ export default function LothLibroOperaciones() {
                 },
                 onIrAlPlan: () => setView("plan"),
               }}
+              accionesExtra={(datos) => [accionInformeDelControl({ datos, caratula, planActivo, saldo: entradaSaldo })]}
               encabezado={(datos) => (
                 <LothControlPermisoEncabezado
                   datos={datos}
@@ -1269,7 +1287,8 @@ export default function LothLibroOperaciones() {
               }}
             />
           )}
-          <LothCensoAltaDesdeTrace planId={planIdActivo} arbol={altaCenso} onClose={() => setAltaCenso(null)} onAgregado={refreshAll} />
+          {/* El alta va al censo que se está mirando (el del chip; con «Todos», el activo), no siempre al activo. */}
+          <LothCensoAltaDesdeTrace planId={planDelControl} arbol={altaCenso} onClose={() => setAltaCenso(null)} onAgregado={refreshAll} />
         </>
       )}
 
