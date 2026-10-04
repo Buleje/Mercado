@@ -43,6 +43,8 @@ export interface CtpPlantaCroquisBarraProps {
   onConfigurar: () => void;
   fullscreen: boolean;
   onFullscreen: () => void;
+  /** Pantalla completa en el celular: los filtros se pliegan para dejar sitio al plano. */
+  compacta?: boolean;
   filtros: FiltrosCroquis;
   onFiltros: (f: FiltrosCroquis) => void;
   opciones: { especies: string[]; permisos: string[]; duenos: string[] };
@@ -107,6 +109,8 @@ export default function CtpPlantaCroquisBarra(p: CtpPlantaCroquisBarraProps) {
         />
       </div>
 
+      <details open={!p.compacta} key={p.compacta ? "c" : "n"} className="group [&_summary::-webkit-details-marker]:hidden">
+      <summary className={p.compacta ? "mb-1.5 flex h-11 cursor-pointer list-none items-center text-sm font-bold text-[var(--text-secondary)]" : "hidden"}>Filtros{hayFiltro(f) ? " (activos)" : ""}</summary>
       <div className="flex flex-wrap items-center gap-1.5">
         <SegmentedControl<EstadoFiltro>
           size="sm" label="Filtrar por estado" value={f.estado} onChange={(estado) => p.onFiltros({ ...f, estado })}
@@ -117,6 +121,7 @@ export default function CtpPlantaCroquisBarra(p: CtpPlantaCroquisBarraProps) {
         <Filtro label="Dueño" valor={f.dueno} opciones={p.opciones.duenos} onChange={(dueno) => p.onFiltros({ ...f, dueno })} />
         {hayFiltro(f) && <button type="button" onClick={() => p.onFiltros(FILTROS_VACIOS)} className={BTN}><X className="h-4 w-4" />Limpiar</button>}
       </div>
+      </details>
     </div>
   );
 }

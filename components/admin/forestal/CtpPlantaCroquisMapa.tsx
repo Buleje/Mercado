@@ -11,10 +11,12 @@
  */
 
 import "leaflet/dist/leaflet.css";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Map as MapIcon, Settings2 } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useLocalStorage } from "@/hooks/use-local-storage";
+import { useMediaQuery } from "@/hooks/use-media-query";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { formatNumber } from "@/lib/format";
 import { FILTROS_VACIOS, opcionesDeFiltro, rutasDelPlano, type ContenidoZona, type FiltrosCroquis, type Punto } from "@/lib/forestal/planta-croquis";
 import { CROQUIS_CSS } from "@/lib/forestal/planta-croquis-html";
@@ -24,6 +26,9 @@ import { DND_ITEM } from "./CtpPlantaPanel";
 import { AsignarZonaModal } from "./ctp-planta-zona-modales";
 import CtpPlantaCroquisBarra from "./CtpPlantaCroquisBarra";
 import CtpPlantaCroquisConfigModal from "./CtpPlantaCroquisConfigModal";
+import CtpPlantaCroquisControles, { CONTROLES_CSS } from "./CtpPlantaCroquisControles";
+import CtpPlantaCroquisHoja from "./CtpPlantaCroquisHoja";
+import { useCroquisPantallaCompleta } from "./hooks/use-croquis-pantalla-completa";
 import CtpPlantaCroquisLeyendaRutas from "./CtpPlantaCroquisLeyendaRutas";
 import { useCroquisLeaflet, type MarcaCroquis, type SeleccionCroquis } from "./hooks/use-croquis-leaflet";
 import { useCroquisDibujo } from "./hooks/use-croquis-dibujo";
@@ -47,8 +52,13 @@ export interface CtpPlantaCroquisMapaProps {
   onMoverMaquina: (m: MaquinaPlanta) => void;
   onGuardarCroquis: (c: PlantaCroquis, imagen?: { imagenRef: string | null }) => Promise<boolean>;
   onChanged: () => void;
+  /** La ficha de lo tocado: en pantalla completa se muestra como hoja inferior. */
+  ficha?: ReactNode;
+  onPantallaCompleta?: (abierta: boolean) => void;
 }
 
+/** styled-jsx exige un identificador (no una expresión) dentro del <style>. */
+const CSS_LIENZO = CROQUIS_CSS + CONTROLES_CSS;
 const r1 = (n: number) => Math.round(n * 10) / 10;
 
 /** Sugerencia de código por tipo (PT-01, AS-01…) para la próxima zona del croquis. */
@@ -93,7 +103,12 @@ function Lienzo(props: CtpPlantaCroquisMapaProps & { croquis: PlantaCroquis; onC
   const [filtros, setFiltros] = useState<FiltrosCroquis>(FILTROS_VACIOS);
   const [flujo, setFlujo] = useLocalStorage<boolean>("ctp-croquis-flujo", false);
   const [etiquetas, setEtiquetas] = useState(true);
-  const [fullscreen, setFullscreen] = useState(false);
+  const { abierta: fullscreen, cerrar: cerrarFull, alternar: alternarFull } = useCroquisPantallaCompleta();
+  const [hojaBaja, setHojaBaja] = useState(false);
+  const cajaRef = useRef<HTMLDivElement>(null);
+  // Celular: el plano toma todo el ancho y un dedo no se pelea con el scroll de la página.
+  const movil = useMediaQuery("(max-width: 767px)");
+  const tactil = useMediaQuery("(max-width: 767px) and (pointer: coarse)");
   /** Zona bajo el puntero mientras se arrastra algo desde la lista. */
   const [sobre, setSobre] = useState<string | null>(null);
   const opciones = useMemo(() => opcionesDeFiltro(items), [items]);
@@ -103,6 +118,7 @@ function Lienzo(props: CtpPlantaCroquisMapaProps & { croquis: PlantaCroquis; onC
   const leaflet = useCroquisLeaflet(containerRef, { LRef, mapRef }, {
     croquis, zonas, contenido, filtros, mostrarFlujo: flujo, mostrarEtiquetas: etiquetas, seleccion,
     resaltada: sobre ?? zonaResaltada, recien, dibujando: dibujo.modo === "dibujar",
+    arrastrarUnDedo: !tactil || fullscreen, ajustado: movil,
     onTocarFondo: dibujo.agregarPunto,
     onTocarZona: (zid, p) => {
       if (dibujo.modo === "editar") { dibujo.editarZona(zid); return; }
@@ -127,16 +143,17 @@ function Lienzo(props: CtpPlantaCroquisMapaProps & { croquis: PlantaCroquis; onC
   const { irAZona, invalidar, encuadrar } = leaflet;
   useEffect(() => { if (irA?.zonaId) irAZona(irA.zonaId); }, [irA, irAZona]);
 
-  // Pantalla completa: Leaflet tiene que volver a medir su caja; Escape sale.
-  useEffect(() => {
-    const t = setTimeout(() => { invalidar(); encuadrar(); }, 220);
-    if (!fullscreen) return () => clearTimeout(t);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape" && !dibujo.pendiente) setFullscreen(false); };
-    window.addEventListener("keydown", onKey);
-    return () => { clearTimeout(t); document.body.style.overflow = prev; window.removeEventListener("keydown", onKey); };
-  }, [fullscreen, invalidar, encuadrar, dibujo.pendiente]);
+  // Pantalla completa: Leaflet vuelve a medir su caja; Escape (o «atrás») sale,
+  // el foco queda adentro y la página de atrás no se mueve (useModalAccesible).
+  useModalAccesible(cajaRef, { activo: fullscreen, onCerrar: cerrarFull });
+  const { onPantallaCompleta } = props;
+  useEffect(() => { onPantallaCompleta?.(fullscreen); }, [fullscreen, onPantallaCompleta]);
+  useEffect(() => { const t = setTimeout(() => { invalidar(); encuadrar(); }, 220); return () => clearTimeout(t); }, [fullscreen, invalidar, encuadrar]);
+  // La hoja vuelve a abrirse con cada cosa nueva que se toca, y baja sola al ubicar (hay que ver el plano).
+  useEffect(() => { setHojaBaja(false); }, [seleccion]);
+  useEffect(() => { if (enMano) setHojaBaja(true); }, [enMano]);
+  // Con algo en la mano hay que tocar una zona: si el plano quedó fuera de la pantalla, se lo trae.
+  useEffect(() => { if (enMano && !fullscreen) containerRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" }); }, [enMano, fullscreen]);
 
   const onDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     if (!e.dataTransfer.types.includes(DND_ITEM)) return;
@@ -157,7 +174,11 @@ function Lienzo(props: CtpPlantaCroquisMapaProps & { croquis: PlantaCroquis; onC
   const cursor = dibujo.modo === "dibujar" ? "crosshair" : enMano ? "copy" : "";
 
   return (
-    <div className={fullscreen ? "fixed inset-0 z-dropdown flex flex-col gap-3 bg-[var(--surface-canvas)] p-3 sm:p-4" : "space-y-2"}>
+    <div
+      ref={cajaRef}
+      role={fullscreen ? "dialog" : undefined} aria-modal={fullscreen ? true : undefined} aria-label={fullscreen ? "Croquis de la planta en pantalla completa" : undefined}
+      className={fullscreen ? "fixed inset-0 z-dropdown flex flex-col gap-2 bg-[var(--surface-canvas)] px-2 pb-0 pt-[max(0.5rem,env(safe-area-inset-top))] sm:p-4" : "space-y-2"}
+    >
       <CtpPlantaCroquisBarra
         modo={dibujo.modo} resumenDibujo={dibujo.resumen} areaTexto={`${formatNumber(Math.round(dibujo.area))} m²`} nVerts={dibujo.nVerts} editSel={dibujo.editSel} guardando={dibujo.guardando}
         onDibujar={() => { onSeleccion(null); dibujo.iniciar(); }} onDeshacer={dibujo.deshacer} onTerminar={dibujo.terminar} onCancelar={dibujo.cancelar}
@@ -165,10 +186,10 @@ function Lienzo(props: CtpPlantaCroquisMapaProps & { croquis: PlantaCroquis; onC
         zonas={zonas} onIrA={irAZona}
         flujoDisponible={!!rutas} mostrarFlujo={flujo} onFlujo={() => setFlujo((v) => !v)}
         mostrarEtiquetas={etiquetas} onEtiquetas={() => setEtiquetas((v) => !v)}
-        onConfigurar={props.onConfigurar} fullscreen={fullscreen} onFullscreen={() => setFullscreen((v) => !v)}
+        onConfigurar={props.onConfigurar} fullscreen={fullscreen} onFullscreen={alternarFull} compacta={fullscreen && movil}
         filtros={filtros} onFiltros={setFiltros} opciones={opciones}
       />
-      <div className={fullscreen ? "relative min-h-0 flex-1" : "relative"}>
+      <div className={fullscreen ? "relative min-h-0 flex-1" : "relative -mx-4 sm:mx-0"}>
         <div
           ref={containerRef}
           onDragOver={onDragOver}
@@ -176,14 +197,15 @@ function Lienzo(props: CtpPlantaCroquisMapaProps & { croquis: PlantaCroquis; onC
           onDrop={onDrop}
           // La caja toma la forma del terreno (+ la franja de «fuera»): con un
           // alto fijo sobraba una banda gris debajo del plano.
-          style={fullscreen ? { height: "100%", cursor } : { aspectRatio: `${croquis.anchoM + (croquis.maquinas.some((m) => m.fuera) ? 6 : 0) + 2} / ${croquis.altoM + 2}`, maxHeight: "78vh", minHeight: 320, cursor }}
+          style={fullscreen ? { height: "100%", cursor } : movil ? { aspectRatio: `${croquis.anchoM + (croquis.maquinas.some((m) => m.fuera) ? 6 : 0)} / ${croquis.altoM}`, maxHeight: "70svh", cursor } : { aspectRatio: `${croquis.anchoM + (croquis.maquinas.some((m) => m.fuera) ? 6 : 0) + 2} / ${croquis.altoM + 2}`, maxHeight: "78vh", minHeight: 320, cursor }}
           // className FIJO: Leaflet escribe sus clases en este div y un className
           // de React que cambia se las lleva puestas. Los estados van por data-*.
           data-dibujando={dibujo.modo === "dibujar" ? "1" : undefined}
-          className="isolate w-full overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)]"
+          data-movil={movil ? "1" : undefined}
+          className={`isolate w-full overflow-hidden border-y border-[var(--rule-base)] bg-[var(--surface-sunken)] sm:rounded-2xl sm:border`}
         />
         {enMano && (
-          <div aria-hidden className="pointer-events-none absolute inset-0 z-10 rounded-2xl ring-4 ring-inset ring-[var(--accent)]">
+          <div aria-hidden className="pointer-events-none absolute inset-0 z-10 sm:rounded-2xl ring-4 ring-inset ring-[var(--accent)]">
             <span className="absolute left-1/2 top-3 max-w-[90%] -translate-x-1/2 truncate rounded-full bg-[var(--accent)] px-3 py-1 text-xs font-bold text-white shadow-[var(--shadow-md)]">
               Toca la zona donde está {enMano.label}
             </span>
@@ -208,10 +230,17 @@ function Lienzo(props: CtpPlantaCroquisMapaProps & { croquis: PlantaCroquis; onC
           </details>
         )}
       </div>
+      {leaflet.ready && movil && (
+        <CtpPlantaCroquisControles
+          onAcercar={leaflet.acercar} onAlejar={leaflet.alejar} onEncajar={encuadrar}
+          fullscreen={fullscreen} onFullscreen={alternarFull} pista={tactil && !fullscreen}
+        />
+      )}
+      {fullscreen && props.ficha && <CtpPlantaCroquisHoja minimizada={hojaBaja} onMinimizar={setHojaBaja}>{props.ficha}</CtpPlantaCroquisHoja>}
       {flujo && rutas && <CtpPlantaCroquisLeyendaRutas rutas={rutas} version={croquis.version} />}
       {dibujo.errorEdicion && <p className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 py-2 text-xs font-bold text-[var(--data-error-700)]">{dibujo.errorEdicion}</p>}
 
-      <style jsx global>{CROQUIS_CSS}</style>
+      <style jsx global>{CSS_LIENZO}</style>
       {dibujo.pendiente && (
         <AsignarZonaModal
           plano="croquis"

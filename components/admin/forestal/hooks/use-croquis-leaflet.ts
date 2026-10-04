@@ -38,6 +38,10 @@ export interface CroquisLeafletOpts {
   recien: string | null;
   /** Mientras se dibuja, tocar una zona agrega un vértice (no abre su ficha). */
   dibujando: boolean;
+  /** Falso en el celular con la página debajo: un dedo desplaza la página, dos mueven el plano. */
+  arrastrarUnDedo: boolean;
+  /** Encuadre sin margen de sobra (celular): el plano toma todo el ancho de la caja. */
+  ajustado: boolean;
   onTocarZona: (zonaId: string, p: Punto) => void;
   onTocarMarca: (m: MarcaCroquis) => void;
   onTocarMaquina: (codigo: string) => void;
@@ -96,7 +100,12 @@ export function useCroquisLeaflet(containerRef: RefObject<HTMLDivElement | null>
     if (!L || !map) return;
     const { anchoM: an, altoM: al, maquinas: mq } = optsRef.current.croquis;
     const extra = mq.some((m) => m.fuera) ? FRANJA_FUERA_M : 0;
-    map.fitBounds([[0, 0], [al, an + extra]], { padding: [10, 10] });
+    if (!optsRef.current.ajustado) { map.fitBounds([[0, 0], [al, an + extra]], { padding: [10, 10] }); return; }
+    // zoomSnap 0 solo mientras encaja: con 0,25 el plano quedaba hasta 16 % más chico que la caja.
+    const snap = map.options.zoomSnap;
+    map.options.zoomSnap = 0;
+    map.fitBounds([[0, 0], [al, an + extra]], { padding: [4, 4], animate: false });
+    map.options.zoomSnap = snap;
   }, [LRef, mapRef]);
 
   // Si la caja cambia de ancho (girar el celular, abrir el menú lateral), el
@@ -104,16 +113,25 @@ export function useCroquisLeaflet(containerRef: RefObject<HTMLDivElement | null>
   useEffect(() => {
     const el = containerRef.current;
     if (!ready || !el || typeof ResizeObserver === "undefined") return;
-    let ancho = el.clientWidth;
+    let ancho = el.clientWidth, alto = el.clientHeight;
     const ro = new ResizeObserver(() => {
-      if (Math.abs(el.clientWidth - ancho) < 8) return;
-      ancho = el.clientWidth;
+      // El alto cuenta: abrir o cerrar la ficha en pantalla completa lo cambia.
+      if (Math.abs(el.clientWidth - ancho) < 8 && Math.abs(el.clientHeight - alto) < 8) return;
+      ancho = el.clientWidth; alto = el.clientHeight;
       mapRef.current?.invalidateSize();
       encuadrar();
     });
     ro.observe(el);
     return () => ro.disconnect();
   }, [ready, containerRef, mapRef, encuadrar]);
+
+  // Un dedo mueve el plano solo si no compite con el desplazamiento de la página.
+  const { arrastrarUnDedo } = o;
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map) return;
+    if (arrastrarUnDedo) map.dragging.enable(); else map.dragging.disable();
+  }, [ready, arrastrarUnDedo, mapRef]);
 
   // Encuadre y límites: el terreno entero a la vista, sin poder perderlo.
   useEffect(() => {
@@ -263,5 +281,8 @@ export function useCroquisLeaflet(containerRef: RefObject<HTMLDivElement | null>
 
   const invalidar = useCallback(() => { mapRef.current?.invalidateSize(); }, [mapRef]);
 
-  return { ready, zonaEnPunto, irAZona, encuadrar, invalidar };
+  const acercar = useCallback(() => { mapRef.current?.zoomIn(1); }, [mapRef]);
+  const alejar = useCallback(() => { mapRef.current?.zoomOut(1); }, [mapRef]);
+
+  return { ready, zonaEnPunto, irAZona, encuadrar, invalidar, acercar, alejar };
 }

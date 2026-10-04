@@ -71,6 +71,8 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
   const [recien, setRecien] = useState<string | null>(null);
   /** Lo tocado en el croquis: su ficha reemplaza a la lista mientras está abierta. */
   const [seleccion, setSeleccion] = useState<SeleccionCroquis | null>(null);
+  /** Croquis a pantalla completa: la ficha pasa a su hoja inferior. */
+  const [croquisFull, setCroquisFull] = useState(false);
   const [zonaEditando, setZonaEditando] = useState<PlantaZona | null>(null);
   const [bloque, setBloque] = useState<{ corridas: string[]; titulo: string } | null>(null);
   const [despachando, setDespachando] = useState<{ uids: string[]; destino: string } | null>(null);
@@ -132,6 +134,13 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
   }, [croquis, datos]);
 
   const verCroquis = plano === "croquis";
+  const fichaCroquis = verCroquis && seleccion ? (
+    <CtpPlantaCroquisFicha
+      seleccion={seleccion} zonaById={cro.zonaById} items={items} contenido={contenido} ubicaciones={ubicaciones} croquis={croquis}
+      onCerrar={() => setSeleccion(null)} onAbrir={setSeleccion} onEnMano={setEnMano}
+      onAsignar={(a) => void asignar(a)} onEditarZona={setZonaEditando} onDespachar={abrirDespacho} onMoverMaquina={moverMaquina}
+    />
+  ) : null;
   const decidiendo = !pref && !datos.croquisSabido && loading;
 
   return (
@@ -190,6 +199,7 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
             enMano={enMano} onSoltarEnZona={soltarEnZona} onAviso={setAviso}
             seleccion={seleccion} onSeleccion={setSeleccion} zonaResaltada={resaltada} irA={irA} recien={recien}
             onAsignar={(a) => void asignar(a)} onMoverMaquina={moverMaquina} onGuardarCroquis={datos.guardarCroquis} onChanged={load}
+            ficha={fichaCroquis} onPantallaCompleta={setCroquisFull}
           />
         ) : (
           <CtpPlantaMapa
@@ -212,11 +222,7 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
           />
         )}
         {verCroquis && seleccion ? (
-          <CtpPlantaCroquisFicha
-            seleccion={seleccion} zonaById={cro.zonaById} items={items} contenido={contenido} ubicaciones={ubicaciones} croquis={croquis}
-            onCerrar={() => setSeleccion(null)} onAbrir={setSeleccion} onEnMano={setEnMano}
-            onAsignar={(a) => void asignar(a)} onEditarZona={setZonaEditando} onDespachar={abrirDespacho} onMoverMaquina={moverMaquina}
-          />
+          croquisFull ? null : fichaCroquis
         ) : (
           <CtpPlantaPanel
             items={items}
