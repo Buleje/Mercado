@@ -4,7 +4,7 @@ import { z } from "zod";
 import { requirePlatformAPI } from "@/lib/superadmin-auth";
 import { validateSuperadminCsrf, csrfForbiddenResponse } from "@/lib/csrf";
 import { applyRateLimit } from "@/lib/rate-limit";
-import { DocumentsDB } from "@/lib/db/documents.db";
+import { CarpetaAjenaError, DocumentsDB } from "@/lib/db/documents.db";
 import { logger } from "@/lib/logger";
 import { SUPERADMIN_DOCS_TENANT } from "@/lib/documents/superadmin-vault";
 
@@ -49,6 +49,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ folder });
 
   } catch (e) {
+    // Carpeta de otro negocio (o inexistente): 404 como en el resto del Drive, no un 500.
+    if (e instanceof CarpetaAjenaError) return NextResponse.json({ error: "folder_not_found" }, { status: 404 });
     logger.error("[sa-documents/folders/post] error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }

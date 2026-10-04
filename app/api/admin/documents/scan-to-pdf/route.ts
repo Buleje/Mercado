@@ -3,7 +3,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { logger } from "@/lib/logger";
-import { DocumentsDB } from "@/lib/db/documents.db";
+import { CarpetaAjenaError, DocumentsDB } from "@/lib/db/documents.db";
 import { buildStoragePath, uploadToStorage } from "@/lib/documents/storage";
 import { mergeToPdf, type MergeItem } from "@/lib/documents/pdf-merge";
 
@@ -70,6 +70,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ document: { ...draft, storagePath }, pageCount: merged.pageCount });
   } catch (e) {
+    // Carpeta de otro negocio (o inexistente): 404 como en el resto del Drive, no un 500.
+    if (e instanceof CarpetaAjenaError) return NextResponse.json({ error: "folder_not_found" }, { status: 404 });
     logger.error("[documents.scan-to-pdf] error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "scan_failed" }, { status: 500 });
   }

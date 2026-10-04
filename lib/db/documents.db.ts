@@ -194,6 +194,48 @@ function mapTemplate(t: PDocumentTemplate): DbDocumentTemplate {
   };
 }
 
+// ── Carpeta de destino: siempre de ESTE negocio ───────────────────────────────
+
+/**
+ * La carpeta de destino no existe en este negocio.
+ *
+ * Hasta el 2026-09-29 `POST /api/admin/documents` guardaba el `folderId` que
+ * mandaba el cliente sin mirar de quién era (hallazgo del architect en
+ * ADR-456): un documento del negocio A podía quedar colgado de una carpeta del
+ * negocio B — contaba en el «N archivos» de la carpeta ajena, heredaba sus
+ * permisos y se soltaba a la raíz si B la borraba. La ruta lo traduce a 404
+ * (igual que una carpeta que no existe: no se confirma que exista en otro lado).
+ */
+export class CarpetaAjenaError extends Error {
+  constructor(public readonly folderId: string) {
+    super("Esa carpeta no existe en este negocio.");
+    this.name = "CarpetaAjenaError";
+  }
+}
+
+/**
+ * Mover la carpeta ahí la dejaría adentro de sí misma (hija, nieta…): el árbol
+ * se cerraría en un ciclo y la carpeta —con todo lo que tiene— desaparecería
+ * del Drive, porque ya no cuelga de la raíz por ningún camino.
+ */
+export class CicloDeCarpetasError extends Error {
+  constructor(
+    public readonly folderId: string,
+    public readonly parentId: string,
+  ) {
+    super("No se puede mover una carpeta adentro de sí misma ni de una de sus subcarpetas.");
+    this.name = "CicloDeCarpetasError";
+  }
+}
+
+/** Tope de niveles al subir por los padres: corta aunque la base ya tuviera un ciclo. */
+const MAX_NIVELES_CARPETA = 200;
+
+/** ¿La carpeta existe EN ESTE negocio? El `tenantId` va en el WHERE, no en un `if`. */
+async function carpetaEsDelNegocio(tenantId: string, folderId: string): Promise<boolean> {
+  return (await prisma.documentFolder.count({ where: { id: folderId, tenantId } })) > 0;
+}
+
 // ── DocumentsDB class ─────────────────────────────────────────────────────────
 
 export class DocumentsDB {
@@ -398,6 +440,10 @@ export class DocumentsDB {
       supplierId?: string;
     }
   ): Promise<DbDocument> {
+    // Una carpeta de otro negocio no se acepta como destino (ver `CarpetaAjenaError`).
+    if (input.folderId && !(await carpetaEsDelNegocio(tenantId, input.folderId))) {
+      throw new CarpetaAjenaError(input.folderId);
+    }
     const doc = await prisma.document.create({
       data: {
         tenantId,
@@ -450,6 +496,15 @@ export class DocumentsDB {
       where: { id, tenantId, deletedAt: null },
     });
     if (!existing) return null;
+    /* Mover a una carpeta de otro negocio = «no existe» (la ruta ya responde 404
+       con `null`). Sólo se consulta cuando de verdad cambia de carpeta. */
+    if (
+      typeof patch.folderId === "string" &&
+      patch.folderId !== existing.folderId &&
+      !(await carpetaEsDelNegocio(tenantId, patch.folderId))
+    ) {
+      return null;
+    }
 
     // ADR-119 — al mover/cambiar la fecha de vencimiento, re-armamos el ciclo
     // de recordatorios: limpiamos la marca para que el cron vuelva a avisar.
@@ -716,6 +771,8 @@ export class DocumentsDB {
     ids: string[],
     folderId: string | null
   ): Promise<number> {
+    // Mismo hueco que `create`: el destino tiene que ser de este negocio. 0 = nada movido.
+    if (folderId && !(await carpetaEsDelNegocio(tenantId, folderId))) return 0;
     const r = await prisma.document.updateMany({
       where: { id: { in: ids }, tenantId, deletedAt: null },
       data: { folderId },
@@ -926,6 +983,10 @@ export class DocumentsDB {
       icon?: string;
     }
   ): Promise<DbDocumentFolder> {
+    // El padre tiene que ser de este negocio (mismo hueco que el `folderId` de un documento).
+    if (input.parentId && !(await carpetaEsDelNegocio(tenantId, input.parentId))) {
+      throw new CarpetaAjenaError(input.parentId);
+    }
     const f = await prisma.documentFolder.create({
       data: {
         tenantId,
@@ -1058,12 +1119,54 @@ export class DocumentsDB {
       allowedRoles?: string[];
     }
   ): Promise<DbDocumentFolder | null> {
-    const existing = await prisma.documentFolder.findFirst({ where: { id, tenantId } });
+    const existing = await prisma.documentFolder.findFirst({ where: { id, tenantId }, select: { parentId: true } });
     if (!existing) return null;
-    const f = await prisma.documentFolder.update({
-      where: { id },
-      data: patch as Record<string, unknown>,
-      include: { _count: { select: { documents: true } } },
+    const include = { _count: { select: { documents: true } } } as const;
+    const nuevoPadre = patch.parentId;
+    /* Sin padre nuevo (no se mueve, o va a la raíz) no puede haber ciclo. Con
+       padre nuevo se va SIEMPRE por el candado, aunque parezca el mismo de antes:
+       `existing` se leyó afuera y con 3 movimientos casi a la vez podía estar
+       viejo (revisión de seguridad 04-10). */
+    if (typeof nuevoPadre !== "string") {
+      const f = await prisma.documentFolder.update({
+        where: { id, tenantId },
+        data: patch as Record<string, unknown>,
+        include,
+      });
+      return mapFolder(f);
+    }
+
+    /* Mover de carpeta. Dos reglas, en la base y bajo un candado por negocio:
+       · el padre nuevo es de ESTE negocio (antes se aceptaba cualquier id y la
+         carpeta quedaba colgando del árbol de otro tenant);
+       · el padre nuevo no está adentro de la carpeta que se mueve (ciclo).
+       El candado es porque dos movimientos cruzados a la vez («A adentro de B» y
+       «B adentro de A») pasaban cada uno su chequeo y juntos cerraban el ciclo.
+       Antes esto lo miraba la ruta, fuera de la transacción y leyendo el árbol
+       entero del negocio en cada PATCH. */
+    const f = await prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`documents-carpetas:${tenantId}`}))`;
+      const padre = await tx.documentFolder.count({ where: { id: nuevoPadre, tenantId } });
+      if (padre === 0) throw new CarpetaAjenaError(nuevoPadre);
+      // Los antepasados del padre nuevo (él incluido): si aparece la que se mueve, es un ciclo.
+      const antepasados = await tx.$queryRaw<{ id: string }[]>`
+        WITH RECURSIVE sube AS (
+          SELECT id, "parentId", 1 AS nivel
+            FROM "DocumentFolder"
+           WHERE id = ${nuevoPadre} AND "tenantId" = ${tenantId}
+          UNION ALL
+          SELECT f.id, f."parentId", s.nivel + 1
+            FROM "DocumentFolder" f
+            JOIN sube s ON f.id = s."parentId"
+           WHERE f."tenantId" = ${tenantId} AND s.nivel < ${MAX_NIVELES_CARPETA}
+        )
+        SELECT id FROM sube`;
+      if (antepasados.some((a) => a.id === id)) throw new CicloDeCarpetasError(id, nuevoPadre);
+      return tx.documentFolder.update({
+        where: { id, tenantId },
+        data: patch as Record<string, unknown>,
+        include,
+      });
     });
     return mapFolder(f);
   }

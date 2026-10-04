@@ -3,7 +3,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
-import { DocumentsDB } from "@/lib/db/documents.db";
+import { CarpetaAjenaError, DocumentsDB } from "@/lib/db/documents.db";
 import {
   buildStoragePath,
   isMimeAllowed,
@@ -205,6 +205,11 @@ export async function POST(req: NextRequest) {
       ai: { source: heur.source, suggestedCategory: heur.category, suggestedTags: heur.tags },
     });
   } catch (err) {
+    // `folderId` de otro negocio (o inexistente): 404, nunca un documento
+    // colgado de la carpeta de otro tenant. Se corta antes de subir el archivo.
+    if (err instanceof CarpetaAjenaError) {
+      return NextResponse.json({ error: "folder_not_found" }, { status: 404 });
+    }
     logger.error("documents.upload.exception", { err: String(err) });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }

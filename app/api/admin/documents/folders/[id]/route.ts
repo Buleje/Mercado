@@ -2,10 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
-import { DocumentsDB } from "@/lib/db/documents.db";
+import { CarpetaAjenaError, CicloDeCarpetasError, DocumentsDB } from "@/lib/db/documents.db";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { logger } from "@/lib/logger";
-import { buildChildrenMap, descendantIds } from "@/lib/documentos/folder-tree";
 
 
 const PatchBody = z.object({
@@ -34,15 +33,12 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
       return NextResponse.json({ error: "invalid_body", issues: parsed.error.issues }, { status: 400 });
     }
 
-    // Prevenir loops: no permitir parentId === id, ni asignar el folder a un descendiente
+    // Prevenir loops: no permitir parentId === id. Que el padre nuevo no sea una
+    // subcarpeta (ciclo) y que sea de ESTE negocio lo decide `updateFolder` en la
+    // base, bajo candado: acá antes se leía el árbol entero y un `parentId` de
+    // otro tenant pasaba, porque no estaba en el árbol de éste.
     if (parsed.data.parentId === id) {
       return NextResponse.json({ error: "folder_cannot_parent_itself" }, { status: 400 });
-    }
-    if (parsed.data.parentId) {
-      const all = await DocumentsDB.listFolders(auth.tenantId);
-      if (descendantIds(buildChildrenMap(all), id).has(parsed.data.parentId)) {
-        return NextResponse.json({ error: "folder_cannot_be_moved_into_descendant" }, { status: 400 });
-      }
     }
 
     const f = await DocumentsDB.updateFolder(auth.tenantId, id, parsed.data);
@@ -50,6 +46,12 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     return NextResponse.json({ folder: f });
 
   } catch (e) {
+    if (e instanceof CarpetaAjenaError) {
+      return NextResponse.json({ error: "folder_not_found" }, { status: 404 });
+    }
+    if (e instanceof CicloDeCarpetasError) {
+      return NextResponse.json({ error: "folder_cannot_be_moved_into_descendant" }, { status: 400 });
+    }
     logger.error("[patch] error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }

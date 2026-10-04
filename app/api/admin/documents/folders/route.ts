@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
-import { DocumentsDB } from "@/lib/db/documents.db";
+import { CarpetaAjenaError, DocumentsDB } from "@/lib/db/documents.db";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { logger } from "@/lib/logger";
 
@@ -51,6 +51,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ folder });
 
   } catch (e) {
+    // `parentId` de otro negocio (o inexistente): 404, igual que una carpeta que no existe.
+    if (e instanceof CarpetaAjenaError) {
+      return NextResponse.json({ error: "folder_not_found" }, { status: 404 });
+    }
     logger.error("[post] error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }

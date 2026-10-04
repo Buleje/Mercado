@@ -3,7 +3,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
-import { DocumentsDB } from "@/lib/db/documents.db";
+import { CarpetaAjenaError, DocumentsDB } from "@/lib/db/documents.db";
 import { ensureSystemTemplatesSeeded } from "@/lib/documents/templates-seed";
 import { renderTemplateToPdf } from "@/lib/documents/template-renderer";
 import {
@@ -96,6 +96,8 @@ export async function POST(req: NextRequest) {
       document: { ...draft, storagePath, size: pdfBytes.length },
     });
   } catch (err) {
+    // Carpeta de otro negocio (o inexistente): 404 como en el resto del Drive, no un 500.
+    if (err instanceof CarpetaAjenaError) return NextResponse.json({ error: "folder_not_found" }, { status: 404 });
     logger.error("documents.templates.generate.exception", { err: String(err) });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
