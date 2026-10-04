@@ -23,6 +23,9 @@
  *   {"eval": "<expresión js>"}    → su resultado sale en el reporte
  *   {"captura": "nombre"}         → la matriz de capturas de ESTE estado
  *   {"subir": ["<sel input[type=file]>", "/ruta/archivo.pdf"]} → elige el archivo (03-10: importar el PDF del croquis)
+ *   {"fallar": "/api/settings"}   → ese GET responde 500 (o ["/api/x", 503]); {"fallar": null} lo
+ *                                   quita. Para probar «la carga falló» (04-10: sin esto fue un
+ *                                   parche de fetch + history.back a mano). Recargá con {"eval": "location.reload()"}.
  *   {"clicTexto": "Rolliza"}      → clic por el DOM en el botón/pestaña/opción cuyo texto
  *                                   EMPIEZA con eso (dentro de main o de un diálogo). Para
  *                                   lo que `click` no alcanza: radios segmentados, botones
@@ -246,6 +249,16 @@ async function recorrido(t, primero) {
         else if (tipo === "llenar") await page.locator(valor[0]).first().fill(String(valor[1]), { timeout: 15_000 });
         else if (tipo === "elegir") await page.locator(valor[0]).first().selectOption(String(valor[1]), { timeout: 15_000 });
         else if (tipo === "subir") await page.locator(valor[0]).first().setInputFiles(String(valor[1]), { timeout: 15_000 });
+        else if (tipo === "fallar") {
+          if (valor == null) await page.unrouteAll({ behavior: "ignoreErrors" });
+          else {
+            const [ruta, status = 500] = Array.isArray(valor) ? valor : [valor, 500];
+            await page.route((u) => u.pathname === ruta, (r) =>
+              r.request().method() === "GET"
+                ? r.fulfill({ status, contentType: "application/json", body: "{}" })
+                : r.fallback());
+          }
+        }
         else if (tipo === "tecla") await page.keyboard.press(valor);
         else if (tipo === "esperar") {
           if (typeof valor === "number") await page.waitForTimeout(valor);
