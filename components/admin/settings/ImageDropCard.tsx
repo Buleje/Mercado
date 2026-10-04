@@ -5,6 +5,7 @@
  * `SettingsModule` tal cual estaba.
  */
 import Image from "next/image";
+import { BlockTitle } from "@buleje/design-system";
 import { Loader2, Store, Upload } from "@buleje/design-system/icons";
 
 // ─── Image Drop Card ─────────────────────────────────────────────────────────
@@ -48,7 +49,7 @@ export function ImageDropCard({
       {/* Header */}
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <h4 className="text-base font-extrabold text-[var(--text-primary)] truncate">{label}</h4>
+          <BlockTitle className="truncate">{label}</BlockTitle>
           <p className="text-xs text-[var(--text-tertiary)]">{hint}</p>
         </div>
       </div>
@@ -121,7 +122,7 @@ export function ImageDropCard({
 
 export function MockHeader({ logoUrl }: { logoUrl: string }) {
   return (
-    <div className="rounded-md bg-[#0b1f2b] text-white/80 px-2 py-1.5 flex items-center gap-1.5 text-[length:var(--ts-2xs)]">
+    <div className="rounded-md bg-[var(--brand-ink)] text-white/80 px-2 py-1.5 flex items-center gap-1.5 text-[length:var(--ts-2xs)]">
       <div className="w-1 h-3 bg-white/15 rounded-sm" />
       <div className="ml-auto inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-[color-mix(in_oklab,var(--accent)_45%,transparent)] bg-[color-mix(in_oklab,var(--accent)_18%,transparent)] text-[color-mix(in_oklab,var(--accent)_70%,white)] font-bold">
         {logoUrl ? (

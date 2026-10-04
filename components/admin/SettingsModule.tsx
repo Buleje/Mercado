@@ -20,6 +20,7 @@ import { m, AnimatePresence } from "@/components/admin/providers";
 import { cn } from "@/lib/utils";
 import type { StoreMode } from "@/lib/jsondb";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { useTenant } from "@/contexts/tenant-context";
 import { KeepAliveSwitch } from "@/components/shared/KeepAliveSwitch";
 import { toast } from "sonner";
 import dynamic from "next/dynamic";
@@ -91,6 +92,8 @@ export default function SettingsModule({
   onNavigateTab,
 }: SettingsModuleProps) {
   const [loading, setLoading] = useState(true);
+  // El nombre del tenant (no «Mi Bodega», que es el rótulo genérico del vertical).
+  const { branding } = useTenant();
   // Si /api/settings no respondió, el formulario tiene valores vacíos: guardar
   // pisaría lo real con vacío. Las secciones que dependen de él se bloquean.
   const [cargaFallida, setCargaFallida] = useState(false);
@@ -273,11 +276,49 @@ export default function SettingsModule({
     { id: "settings-logo", label: "Logo", vacio: !logoUrl },
   ].filter(f => f.vacio), [businessName, razonSocial, ruc, businessPhone, businessEmail, businessAddress, businessLat, logoUrl]);
 
+  // Cobros: lo que lee el pago de la tienda (número y QR) y la boleta
+  // electrónica (RUC y denominación del emisor). Plin y transferencia sólo si
+  // están prendidos; Yape apagado se ofrece prender (es el que más se usa).
+  const faltanCobros = useMemo(() => {
+    const f: { id: string; label: string; prender?: true }[] = [];
+    if (!yapeEnabled) f.push({ id: "settings-yapePhone", label: "Activar Yape", prender: true });
+    else {
+      if (!yapePhone.trim()) f.push({ id: "settings-yapePhone", label: "Número de Yape" });
+      if (!yapeImage) f.push({ id: "settings-yape-qr", label: "QR de Yape" });
+    }
+    if (plinEnabled && !plinPhone.trim()) f.push({ id: "settings-plinPhone", label: "Número de Plin" });
+    if (transferEnabled && !transferAccountNum.trim()) f.push({ id: "settings-transferAccountNum", label: "N° de cuenta" });
+    if (!sunatRuc.trim()) f.push({ id: "settings-sunatRuc", label: "RUC del emisor" });
+    if (!sunatDenominacion.trim()) f.push({ id: "settings-sunatDenominacion", label: "Denominación" });
+    return f;
+  }, [yapeEnabled, yapePhone, yapeImage, plinEnabled, plinPhone, transferEnabled, transferAccountNum, sunatRuc, sunatDenominacion]);
+
+  const pendientes: Partial<Record<SeccionAjustes, number>> = { negocio: faltan.length, cobros: faltanCobros.length };
+
   const irACampo = (id: string) => {
     const el = document.getElementById(id);
     el?.scrollIntoView({ behavior: "smooth", block: "center" });
-    if (el instanceof HTMLInputElement) el.focus({ preventScroll: true });
+    if (el instanceof HTMLInputElement || el instanceof HTMLButtonElement) el.focus({ preventScroll: true });
   };
+
+  const renderTeFalta = (items: { id: string; label: string; prender?: true }[]) => items.length > 0 && (
+    <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/15 px-4 py-3">
+      <span className="text-sm font-bold text-[var(--text-primary)]">Te falta:</span>
+      {items.map(f => (
+        <button
+          key={f.label}
+          type="button"
+          onClick={() => {
+            if (f.prender) { setYapeEnabled(true); setTimeout(() => irACampo(f.id), 60); }
+            else irACampo(f.id);
+          }}
+          className="inline-flex items-center h-8 px-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs font-semibold text-[var(--text-primary)] hover:border-primary transition-colors"
+        >
+          {f.label}
+        </button>
+      ))}
+    </div>
+  );
 
   // ── Save helper ─────────────────────────────────────────────────────────────
 
@@ -456,21 +497,7 @@ export default function SettingsModule({
 
   const renderNegocio = () => (
     <div className="space-y-6">
-      {faltan.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/15 px-4 py-3">
-          <span className="text-sm font-bold text-[var(--text-primary)]">Te falta:</span>
-          {faltan.map(f => (
-            <button
-              key={f.label}
-              type="button"
-              onClick={() => irACampo(f.id)}
-              className="inline-flex items-center h-8 px-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs font-semibold text-[var(--text-primary)] hover:border-primary transition-colors"
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
-      )}
+      {renderTeFalta(faltan)}
       {/* Store mode selector */}
       <SectionCard title="Modo de tienda" desc="Cómo reciben pedidos tus clientes">
         <div className="grid grid-cols-2 gap-3">
@@ -489,7 +516,13 @@ export default function SettingsModule({
       {/* Business identity */}
       <SectionCard title="Identidad del Negocio" desc="Datos legales y de contacto">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div><FieldLabel icon={<Store className="h-3.5 w-3.5" />} htmlFor="settings-businessName">Nombre comercial</FieldLabel><TextInput id="settings-businessName" value={businessName} onChange={setBusinessName} /></div>
+          <div><FieldLabel icon={<Store className="h-3.5 w-3.5" />} htmlFor="settings-businessName">Nombre comercial</FieldLabel><TextInput id="settings-businessName" value={businessName} onChange={setBusinessName} />
+            {!businessName.trim() && branding.name && (
+              <button type="button" onClick={() => setBusinessName(branding.name ?? "")} className="mt-1.5 text-xs font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:underline">
+                Usar «{branding.name}»
+              </button>
+            )}
+          </div>
           <div><FieldLabel icon={<FileText className="h-3.5 w-3.5" />} htmlFor="settings-razonSocial">Razón social</FieldLabel><TextInput id="settings-razonSocial" value={razonSocial} onChange={setRazonSocial} placeholder="Inversiones San Martín S.A.C." /></div>
           <div><FieldLabel icon={<Hash className="h-3.5 w-3.5" />} htmlFor="settings-ruc">RUC</FieldLabel><TextInput id="settings-ruc" value={ruc} onChange={setRuc} placeholder="20123456789" mono /></div>
           <div><FieldLabel icon={<Phone className="h-3.5 w-3.5" />} htmlFor="settings-businessPhone">WhatsApp</FieldLabel><TextInput id="settings-businessPhone" value={businessPhone} onChange={setBusinessPhone} placeholder="51987654321" mono /></div>
@@ -616,6 +649,7 @@ export default function SettingsModule({
 
   const renderCobros = () => (
     <div className="space-y-6">
+      {renderTeFalta(faltanCobros)}
       <SectionCard title="Métodos de pago" desc="Configura los métodos que aceptas">
         <div className="space-y-3">
           <Toggle enabled={cashEnabled} onChange={setCashEnabled} label="Efectivo" desc="Pago contra entrega" />
@@ -624,11 +658,11 @@ export default function SettingsModule({
             <div className="pl-4 border-l-2 border-[var(--rule-base)] space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div><FieldLabel>Titular</FieldLabel><TextInput value={yapeName} onChange={setYapeName} placeholder="Juan Pérez" /></div>
-                <div><FieldLabel>Número</FieldLabel><TextInput value={yapePhone} onChange={setYapePhone} placeholder="987654321" mono /></div>
+                <div><FieldLabel>Número</FieldLabel><TextInput id="settings-yapePhone" value={yapePhone} onChange={setYapePhone} placeholder="987654321" mono /></div>
               </div>
               <div>
                 <FieldLabel>QR de Yape</FieldLabel>
-                <button onClick={() => yapeImgRef.current?.click()} className="w-full min-h-11 rounded-xl border border-dashed border-[var(--rule-base)] hover:border-[var(--rule-base)]0 text-sm font-semibold text-[var(--text-secondary)] bg-[var(--surface-sunken)] transition-colors"><Upload className="h-4 w-4 inline mr-1.5" />Subir QR</button>
+                <button id="settings-yape-qr" type="button" onClick={() => yapeImgRef.current?.click()} className="w-full min-h-11 rounded-xl border border-dashed border-[var(--rule-base)] hover:border-[var(--rule-base)]0 text-sm font-semibold text-[var(--text-secondary)] bg-[var(--surface-sunken)] transition-colors"><Upload className="h-4 w-4 inline mr-1.5" />Subir QR</button>
                 <input ref={yapeImgRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileUpload(setYapeImage, "yape", "payments")} />
                 {yapeImage && <div className="mt-2 flex items-center gap-3 p-2 bg-[var(--surface-sunken)] rounded-lg"><Image src={yapeImage} alt="QR" width={64} height={64} className="rounded-lg object-contain border" unoptimized /><button onClick={() => setYapeImage("")} className="text-xs text-[var(--data-error-500)] hover:text-[var(--data-error-500)]">Quitar</button></div>}
               </div>
@@ -639,7 +673,7 @@ export default function SettingsModule({
             <div className="pl-4 border-l-2 border-[var(--data-success-500)]/30 space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div><FieldLabel>Titular</FieldLabel><TextInput value={plinName} onChange={setPlinName} /></div>
-                <div><FieldLabel>Número</FieldLabel><TextInput value={plinPhone} onChange={setPlinPhone} mono /></div>
+                <div><FieldLabel>Número</FieldLabel><TextInput id="settings-plinPhone" value={plinPhone} onChange={setPlinPhone} mono /></div>
               </div>
               <div>
                 <button onClick={() => plinImgRef.current?.click()} className="w-full py-3 rounded-xl border-2 border-dashed border-[var(--data-success-500)]/30 hover:border-[var(--data-success-500)]/30 text-sm font-semibold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 transition-colors"><Upload className="h-4 w-4 inline mr-1.5" />Subir QR Plin</button>
@@ -653,7 +687,7 @@ export default function SettingsModule({
             <div className="pl-4 border-l-2 border-[var(--data-success-500)]/30 space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div><FieldLabel icon={<Landmark className="h-3.5 w-3.5" />}>Banco</FieldLabel><TextInput value={transferBankName} onChange={setTransferBankName} placeholder="BCP" /></div>
-                <div><FieldLabel>N° de cuenta</FieldLabel><TextInput value={transferAccountNum} onChange={setTransferAccountNum} mono /></div>
+                <div><FieldLabel>N° de cuenta</FieldLabel><TextInput id="settings-transferAccountNum" value={transferAccountNum} onChange={setTransferAccountNum} mono /></div>
                 <div><FieldLabel>Titular</FieldLabel><TextInput value={transferAccountHolder} onChange={setTransferAccountHolder} /></div>
               </div>
             </div>
@@ -670,8 +704,8 @@ export default function SettingsModule({
 
       <SectionCard title="Comprobantes" desc="Emisor e IGV de tus boletas y facturas">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div><FieldLabel icon={<Hash className="h-3.5 w-3.5" />}>RUC del emisor</FieldLabel><TextInput value={sunatRuc} onChange={setSunatRuc} placeholder="20123456789" mono /></div>
-          <div><FieldLabel icon={<FileText className="h-3.5 w-3.5" />}>Denominación</FieldLabel><TextInput value={sunatDenominacion} onChange={setSunatDenominacion} placeholder="Inversiones San Martín S.A.C." /></div>
+          <div><FieldLabel htmlFor="settings-sunatRuc" icon={<Hash className="h-3.5 w-3.5" />}>RUC del emisor</FieldLabel><TextInput id="settings-sunatRuc" value={sunatRuc} onChange={setSunatRuc} placeholder="20123456789" mono /></div>
+          <div><FieldLabel htmlFor="settings-sunatDenominacion" icon={<FileText className="h-3.5 w-3.5" />}>Denominación</FieldLabel><TextInput id="settings-sunatDenominacion" value={sunatDenominacion} onChange={setSunatDenominacion} placeholder="Inversiones San Martín S.A.C." /></div>
           <div><FieldLabel htmlFor="settings-taxRate" icon={<Percent className="h-3.5 w-3.5" />}>IGV</FieldLabel><NumberInput id="settings-taxRate" value={taxRate} onChange={setTaxRate} min={0} max={100} step={0.1} suffix="%" /></div>
         </div>
         <button type="button" onClick={() => onNavigateTab?.("facturacion")} className={LINK_A_OTRA_PANTALLA}>
@@ -1038,6 +1072,9 @@ export default function SettingsModule({
               )}
             >
               <Icon className="h-4 w-4" /> {s.label}
+              {(pendientes[s.id] ?? 0) > 0 && (
+                <span className="rounded-full border border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-1.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)]">{pendientes[s.id]}</span>
+              )}
             </button>
           );
         })}
@@ -1047,7 +1084,7 @@ export default function SettingsModule({
         <p className="text-sm text-[var(--text-secondary)]">Ningún ajuste coincide con «{searchQuery}».</p>
       )}
 
-      <div className="lg:grid lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-6 lg:items-start">
+      <div className="lg:grid lg:grid-cols-[16.5rem_minmax(0,1fr)] lg:gap-6 lg:items-start">
         {/* Escritorio: el menú agrupado por lo que vienes a hacer */}
         <nav aria-label="Secciones de configuración" className="hidden lg:block space-y-4 lg:sticky lg:top-4">
           {GRUPOS_AJUSTES.map(g => {
@@ -1076,8 +1113,8 @@ export default function SettingsModule({
                       >
                         <Icon className="h-4 w-4 shrink-0" />
                         <span className="truncate">{s.label}</span>
-                        {s.id === "negocio" && faltan.length > 0 && (
-                          <span className="ml-auto shrink-0 rounded-full border border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-1.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)]" title={`Te faltan ${faltan.length} datos`}>{faltan.length}</span>
+                        {(pendientes[s.id] ?? 0) > 0 && (
+                          <span className="ml-auto shrink-0 rounded-full border border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-1.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)]" title={`Te faltan ${pendientes[s.id]} datos`}>{pendientes[s.id]}</span>
                         )}
                       </button>
                     );
