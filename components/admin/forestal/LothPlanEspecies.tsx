@@ -27,6 +27,7 @@ import type { ArbolCensoAutorizar } from "@/lib/forestal/loth-autorizar-lote";
 import LothPlanAutorizarLote from "./LothPlanAutorizarLote";
 import { n, soles, type Species } from "./loth-plan-shared";
 import { AddBtn, BloquePlan, BotonPlegar, Cell, CitesPill, Field, Mono, Table, cls, editCls } from "./loth-plan-ui";
+import { useMiRol } from "@/hooks/use-mi-rol";
 
 /** Clave de la preferencia. Exportada: la prueba en navegador la lee. */
 export const CLAVE_AUTORIZACIONES_PLAN = "loth:plan:autorizaciones-abiertas";
@@ -62,6 +63,11 @@ export default function LothPlanEspecies({ planId, species, onChange, pedido, ce
   const [open, setOpen] = useState(false);
   const [f, setF] = useState(VACIO);
   const [lote, setLote] = useState<{ especie: string | null } | null>(null);
+  /* «Cargar varias» guarda con el PUT por lote, que sólo aceptan admin y dueño
+     (`plan/species/route.ts`): al resto le respondía 403. `null` = todavía no
+     se sabe: se ofrece y el servidor decide. */
+  const rolActual = useMiRol();
+  const puedeCargarVarias = rolActual == null || rolActual === "admin" || rolActual === "owner" || rolActual === "superadmin";
   const loteAtendido = useRef(0);
   useEffect(() => {
     if (!pedidoLote || pedidoLote.n === loteAtendido.current) return;
@@ -192,16 +198,18 @@ export default function LothPlanEspecies({ planId, species, onChange, pedido, ce
               titulo="Se recuerda en este navegador"
             />
           )}
-          <button
-            type="button"
-            onClick={() => setLote({ especie: null })}
-            title="Todas las especies del censo en una tabla: m³ y árboles de la resolución, un solo guardar"
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
-            data-cargar-varias
-          >
-            <ClipboardList className="h-3.5 w-3.5" aria-hidden="true" />
-            Cargar varias
-          </button>
+          {puedeCargarVarias && (
+            <button
+              type="button"
+              onClick={() => setLote({ especie: null })}
+              title="Todas las especies del censo en una tabla: m³ y árboles de la resolución, un solo guardar"
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+              data-cargar-varias
+            >
+              <ClipboardList className="h-3.5 w-3.5" aria-hidden="true" />
+              Cargar varias
+            </button>
+          )}
           <AddBtn onClick={() => setOpen(true)} />
         </>
       }

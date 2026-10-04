@@ -43,6 +43,11 @@ vi.mock("@/lib/prisma", () => {
       const [planId, tenantId] = vals as string[];
       return H.estado.planes.get(tenantId)?.has(planId) ? [{ id: planId }] : [];
     },
+    // El turno de especies del plan (el mismo que toma el alta suelta): merge 04-10.
+    $executeRaw: async (strings: TemplateStringsArray, ...vals: unknown[]) => {
+      H.locks.push([strings.join("?"), ...vals]);
+      return 1;
+    },
     forestPlanSpecies: {
       findMany: async ({ where }: { where: { tenantId: string; planId: string } }) =>
         H.estado.especies.filter((e) => e.tenantId === where.tenantId && e.planId === where.planId),
@@ -207,6 +212,9 @@ describe("ForestPlanDB.guardarAutorizadasLote", () => {
     expect(r).toEqual({ creadas: 1, actualizadas: 1 });
     expect(H.locks[0][0]).toMatch(/FOR UPDATE/);
     expect(H.locks[0].slice(1)).toEqual(["plan-grande", "t-blas"]);
+    // Después de la fila, el turno de especies: así un alta suelta simultánea espera.
+    expect(H.locks[1][0]).toMatch(/pg_advisory_xact_lock/);
+    expect(H.locks[1].slice(1)).toEqual(["t-blas", "forest-plan-especies:plan-grande"]);
     expect(H.updates[0].where).toEqual({ id: "sp-1", tenantId: "t-blas" });
     expect(H.creates[0]).toMatchObject({ tenantId: "t-blas", planId: "plan-grande", speciesCommon: "Copaiba", arbolesAutorizados: 14 });
     expect(String(H.creates[0].volumenAutorizadoM3)).toBe("120.5");

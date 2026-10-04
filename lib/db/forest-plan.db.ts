@@ -778,6 +778,11 @@ export class ForestPlanDB {
         WHERE "id" = ${planId} AND "tenantId" = ${tenantId} AND "deletedAt" IS NULL
         FOR UPDATE`;
       if (plan.length === 0) throw new PlanNoEncontradoError();
+      /* El mismo turno que el alta y el renombre de una especie (merge 04-10):
+         con sólo el FOR UPDATE, un POST simultáneo no esperaba y la especie
+         quedaba dos veces, sumando el cupo doble. POST/PATCH no toman la fila
+         del plan, así que el orden fila → turno no se cruza con nadie. */
+      await ForestPlanDB.turnoDelPlan(tx, tenantId, planId);
 
       const existentes = await tx.forestPlanSpecies.findMany({
         where: { tenantId, planId, deletedAt: null },
