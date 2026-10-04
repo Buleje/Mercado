@@ -11,6 +11,8 @@ import { enviarWhatsAppDelNegocio } from "@/lib/whatsapp-tenant";
 import { describirEnvioWhatsApp, sufijoDeFallo } from "@/lib/whatsapp/aviso-plantilla";
 import { sendAvisoPlazosCtp } from "@/lib/email/resend";
 import { construirAviso, fraseLote, frasePlazo } from "@/lib/forestal/ctp-aviso-plazos";
+import { construirAvisoTh } from "@/lib/forestal/loth-aviso-plazos";
+import { ForestLothDB } from "@/lib/db/forest-loth.db";
 import { documentosVencimientoDeFicha } from "@/lib/forestal/ctp-ficha-types";
 import { logger } from "@/lib/logger";
 
@@ -50,6 +52,18 @@ async function tenantsForestales(): Promise<string[]> {
 }
 
 /**
+ * El tenant de una fila forestal. `tenantId` en esas tablas viene MIXTO: unas
+ * filas guardan el cuid del tenant y otras el slug ("main"). Buscar sólo por
+ * `id` dejaba a esos tenants sin teléfono y, por lo tanto, sin WhatsApp.
+ */
+function tenantDelLibro(tenantId: string) {
+  return prisma.tenant.findFirst({
+    where: { OR: [{ id: tenantId }, { slug: tenantId }] },
+    select: { id: true, ownerPhone: true, ownerEmail: true, name: true },
+  });
+}
+
+/**
  * Dejar constancia de cada envío, salga o no.
  *
  * Sin esto, que el correo vuelva rechazado o el WhatsApp dé 401 sólo se ve en
@@ -65,10 +79,11 @@ async function registrar(
   destino: string,
   ok: boolean,
   detalle: string,
+  libro: "ctp" | "loth" = "ctp",
 ) {
   await NotificationLogsDB.add(
     {
-      type: `ctp_plazos_${canal}`,
+      type: `${libro}_plazos_${canal}`,
       recipient: destino,
       status: ok ? "sent" : "failed",
       message: detalle.slice(0, 500),
@@ -81,6 +96,71 @@ async function registrar(
       err: String(err).slice(0, 200),
     }),
   );
+}
+
+/**
+ * Libro de Operaciones de Títulos Habilitantes (LO-TH, RDE 264-2019).
+ *
+ * Mismo mecanismo y mismo canal que el CTP: campana del panel + WhatsApp del
+ * negocio, con la misma ventana anti-spam. Qué se avisa y por qué, en
+ * `loth-aviso-plazos`. Diferencia a propósito: en la campana va UNA
+ * notificación por bloque (`entityId` = bloque), así cada una lleva su propio
+ * clic — «Asentar el despacho» abre Despacho de trozas, «Abrir el plan» el
+ * plan — en vez de un enlace genérico al libro. El WhatsApp va uno solo.
+ *
+ * Sin correo: la plantilla de `sendAvisoPlazosCtp` lleva el botón al Libro
+ * CTP; mandarla para el TH llevaría al libro equivocado.
+ */
+async function avisarLibroTh(hoy: Date) {
+  const r = { revisados: 0, conAviso: 0, notificaciones: 0, whatsappEnviados: 0, whatsappFallidos: 0, sinTelefono: 0 };
+  const tenants = await ForestLothDB.tenantsConLibroTh();
+
+  for (const tenantId of tenants) {
+    r.revisados += 1;
+    try {
+      const [datos, tenant] = await Promise.all([ForestLothDB.datosAvisoPlazos(tenantId), tenantDelLibro(tenantId)]);
+      const aviso = construirAvisoTh(datos, hoy, tenant?.name ?? undefined);
+      if (!aviso.hayQueAvisar) continue;
+      r.conAviso += 1;
+
+      for (const g of aviso.grupos) {
+        const n = await NotificationCenterDB.createOrReuse({
+          tenantId,
+          type: "LOTH_PLAZO_SERFOR",
+          entityId: `loth-${g.clave}`,
+          severity: g.severidad,
+          title: g.titulo,
+          body: g.resumen,
+          actionUrl: g.accion.url,
+          actionLabel: g.accion.label,
+          dedupWindowHours: 20,
+        });
+        if (n.created) r.notificaciones += 1;
+      }
+
+      const phone = tenant?.ownerPhone?.replace(/\D/g, "");
+      if (!phone || phone.length < 9) {
+        r.sinTelefono += 1;
+        logger.warn("[cron/forestal-plazos] libro TH: tenant sin ownerPhone", { tenantId });
+        await registrar(tenantId, "whatsapp", "—", false, "El negocio no tiene WhatsApp cargado (Ajustes → Datos del negocio).", "loth");
+        continue;
+      }
+      const wa = await enviarWhatsAppDelNegocio(tenant?.id ?? tenantId, phone, aviso.whatsapp, { contexto: "loth_plazos" });
+      if (wa.ok) {
+        r.whatsappEnviados += 1;
+        await registrar(tenantId, "whatsapp", phone, true, `${aviso.titulo} · ${describirEnvioWhatsApp(wa)}`, "loth");
+      } else {
+        r.whatsappFallidos += 1;
+        const motivo = `${(wa.error ?? "la API respondió que no").slice(0, 400)}${sufijoDeFallo(wa.via)}`;
+        logger.error("[cron/forestal-plazos] libro TH: whatsapp NO enviado", { tenantId, via: wa.via, modo: wa.modo });
+        await registrar(tenantId, "whatsapp", phone, false, motivo, "loth");
+      }
+    } catch (err) {
+      // Un tenant que falla no puede dejar sin aviso a los demás.
+      logger.error("[cron/forestal-plazos] libro TH: tenant failed", { tenantId, err: String(err).slice(0, 300) });
+    }
+  }
+  return r;
 }
 
 export const GET = withCronAuth("forestal-plazos", async () => {
@@ -109,14 +189,9 @@ export const GET = withCronAuth("forestal-plazos", async () => {
         (e) => !e.gtfNumber || !String(e.gtfNumber).trim(),
       ).length;
 
-      // `tenantId` en las tablas forestales viene MIXTO: unas filas guardan el
-      // cuid del tenant y otras el slug ("main"). Buscar sólo por `id` dejaba a
-      // esos tenants sin teléfono y, por lo tanto, sin WhatsApp — el aviso se
-      // creaba en la campana y nadie se enteraba.
-      const tenant = await prisma.tenant.findFirst({
-        where: { OR: [{ id: tenantId }, { slug: tenantId }] },
-        select: { id: true, ownerPhone: true, ownerEmail: true, name: true },
-      });
+      // Con cuid o slug (ver `tenantDelLibro`): sin esto el aviso se creaba en
+      // la campana y el WhatsApp no salía.
+      const tenant = await tenantDelLibro(tenantId);
 
       // La Ficha CTP (KV) se guarda SIEMPRE con el cuid canónico
       // (`auth.tenantId` del endpoint `ctp-ficha`, nunca el slug) — hay que
@@ -253,8 +328,11 @@ export const GET = withCronAuth("forestal-plazos", async () => {
     }
   }
 
+  const libroTh = await avisarLibroTh(hoy);
+
   return NextResponse.json({
     ok: true,
+    libroTh,
     revisados,
     conAviso,
     whatsappEnviados,

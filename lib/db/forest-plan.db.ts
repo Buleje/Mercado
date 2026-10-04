@@ -28,6 +28,8 @@ import {
   type PlanDeExtraccion,
 } from "@/lib/forestal/loth-extraccion";
 import type { ExtraccionFiltro, ExtraccionResponse } from "@/lib/forestal/loth-extraccion-tipos";
+import { planDeUpsert, type ItemAutorizar } from "@/lib/forestal/loth-autorizar-lote";
+import { findSpeciesByCommonName } from "@/data/forestry-species";
 
 const CACHE_PREFIX = "forest-plan";
 const dec = (v: number | string | null | undefined) =>
@@ -107,18 +109,34 @@ export interface SpeciesInput {
 export type EspecieDelAlta = Omit<SpeciesInput, "planId">;
 
 /**
- * La misma especie ya está en el plan (por clave: «Bolaina» = «bolaina» =
+ * La misma especie dos veces (por clave: «Bolaina» = «bolaina» =
  * «Bolaina (Guazuma crinita)»). Dos filas de la misma especie se llevan cada una
- * el volumen talado entero y el saldo se cuenta doble → 409 en la ruta.
+ * el volumen talado entero y el saldo se cuenta doble.
+ *
+ * - Con un nombre (alta/corrección de a una): ya está en el plan → 409 en la ruta.
+ * - Con una lista (carga por lote, PUT): el pedido la trae dos veces → 400; no se
+ *   adivina cuál vale.
+ * `especies` siempre trae la lista (de uno o de varios) para la ruta.
  */
 export class EspecieRepetidaError extends Error {
-  constructor(readonly especie: string, readonly yaEsta: string = especie) {
+  readonly especie: string;
+  readonly yaEsta: string;
+  readonly especies: string[];
+  constructor(especie: string | readonly string[], yaEsta?: string) {
+    const lista = typeof especie === "string" ? [especie] : [...especie];
+    const primera = lista[0] ?? "";
+    const ya = yaEsta ?? primera;
     super(
-      yaEsta === especie
-        ? `«${especie}» ya está en el plan: una especie va una sola vez.`
-        : `«${especie}» ya está en el plan como «${yaEsta}»: corrige esa fila en vez de agregarla de nuevo.`,
+      typeof especie !== "string"
+        ? `La especie ${lista.join(", ")} viene dos veces.`
+        : ya === primera
+          ? `«${primera}» ya está en el plan: una especie va una sola vez.`
+          : `«${primera}» ya está en el plan como «${ya}»: corrige esa fila en vez de agregarla de nuevo.`,
     );
     this.name = "EspecieRepetidaError";
+    this.especie = primera;
+    this.yaEsta = ya;
+    this.especies = lista;
   }
 }
 
@@ -172,6 +190,14 @@ export interface TreeInput {
    *  ESTE tenant: no hay FK que lo haga (ADR-426). */
   contratoId?: string | null;
   createdBy: string;
+}
+
+/** La especie ya está DOS veces en el plan (409): se limpia antes en el editor de a una. */
+export class EspecieDuplicadaEnPlanError extends Error {
+  constructor(readonly especies: string[]) {
+    super(`${especies.join(", ")} ya figura dos veces en el plan: borra la repetida antes de cargar.`);
+    this.name = "EspecieDuplicadaEnPlanError";
+  }
 }
 
 /** Un código de árbol que ya está en el censo del plan (409 en el endpoint). */
@@ -718,6 +744,101 @@ export class ForestPlanDB {
       user: actor,
     });
     return row;
+  }
+
+  /**
+   * Lo autorizado por la resolución, varias especies en UNA llamada.
+   *
+   * Upsert por especie **normalizada** (`claveEspecie`): si el plan ya tiene la
+   * especie —aunque la escriba «Tornillo (Cedrelinga…)» y el pedido «tornillo»—
+   * se corrigen sus números; si no, se crea. El nombre de una fila existente no
+   * se toca (lo cruzan el balance y el control).
+   *
+   * - El plan tiene que ser de ESTE tenant y estar vivo: se bloquea su fila
+   *   (`FOR UPDATE`, con `tenantId` en el WHERE) y, si no aparece, es
+   *   `PlanNoEncontradoError` → 404. El lock además serializa dos guardados
+   *   simultáneos: sin él, los dos verían la especie ausente y la crearían dos
+   *   veces (no hay índice único que lo impida), duplicando el cupo.
+   * - Todo o nada, en una transacción: una resolución a medio cargar declara
+   *   un cupo que nadie firmó.
+   */
+  static async guardarAutorizadasLote(
+    tenantId: string,
+    planId: string,
+    items: readonly ItemAutorizar[],
+    actor: string,
+  ): Promise<{ creadas: number; actualizadas: number }> {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (!planId) throw new Error("planId is required");
+    if (items.length === 0) return { creadas: 0, actualizadas: 0 };
+
+    const r = await prisma.$transaction(async (tx) => {
+      const plan = await tx.$queryRaw<{ id: string }[]>`
+        SELECT "id" FROM "ForestPlan"
+        WHERE "id" = ${planId} AND "tenantId" = ${tenantId} AND "deletedAt" IS NULL
+        FOR UPDATE`;
+      if (plan.length === 0) throw new PlanNoEncontradoError();
+
+      const existentes = await tx.forestPlanSpecies.findMany({
+        where: { tenantId, planId, deletedAt: null },
+        select: { id: true, speciesCommon: true },
+      });
+      const decision = planDeUpsert(existentes, items);
+      if (decision.repetidas.length > 0) throw new EspecieRepetidaError(decision.repetidas);
+      if (decision.duplicadasEnPlan.length > 0) throw new EspecieDuplicadaEnPlanError(decision.duplicadasEnPlan);
+
+      for (const it of decision.actualizar) {
+        await tx.forestPlanSpecies.update({
+          where: { id: it.id, tenantId } satisfies Prisma.ForestPlanSpeciesWhereUniqueInput,
+          data: {
+            volumenAutorizadoM3: new Prisma.Decimal(it.volumenAutorizadoM3),
+            arbolesAutorizados: it.arbolesAutorizados,
+          },
+        });
+      }
+      if (decision.crear.length > 0) {
+        await tx.forestPlanSpecies.createMany({
+          data: decision.crear.map((it) => {
+            /* Lo mismo que hace el alta de a una: el científico y CITES salen
+               del catálogo, no de lo que se tipee. */
+            const cat = findSpeciesByCommonName(it.speciesCommon);
+            return {
+              tenantId,
+              planId,
+              speciesCommon: it.speciesCommon,
+              speciesScientific: cat?.scientificName ?? null,
+              cites: cat?.cites ?? false,
+              volumenAutorizadoM3: new Prisma.Decimal(it.volumenAutorizadoM3),
+              arbolesAutorizados: it.arbolesAutorizados,
+            };
+          }),
+        });
+      }
+      return decision;
+    });
+
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    } catch (err) {
+      logger.error("[forest-plan] no se pudo invalidar la caché tras cargar lo autorizado", {
+        error: String(err),
+        tenantId,
+        planId,
+      });
+    }
+    const linea = (it: ItemAutorizar) =>
+      `${it.speciesCommon} ${it.volumenAutorizadoM3} m³${it.arbolesAutorizados != null ? ` / ${it.arbolesAutorizados} árb.` : ""}`;
+    auditCtp({
+      tenantId,
+      action: "ctp_plan_especies_lote",
+      entity: "ForestPlan",
+      entityId: planId,
+      detail:
+        `Autorizado por especie: ${r.crear.length} nuevas, ${r.actualizar.length} corregidas. ` +
+        [...r.crear, ...r.actualizar].map(linea).join("; "),
+      user: actor,
+    });
+    return { creadas: r.crear.length, actualizadas: r.actualizar.length };
   }
 
   // ─── Censo (árboles) ───────────────────────────────────────────────────

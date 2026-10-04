@@ -406,6 +406,9 @@ export type CtpAuditAction =
   | "ctp_plan_especie_alta"
   | "ctp_plan_especie_editar"
   | "ctp_plan_especie_baja"
+  // Carga del volumen autorizado por especie, varias de una vez (30-09): es el
+  // cupo contra el que se mide cada tala — quién lo escribió queda escrito.
+  | "ctp_plan_especies_lote"
   | "ctp_anexo04_emit"
   | "ctp_anexo04_update"
   | "ctp_anexo04_delete"

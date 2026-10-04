@@ -52,7 +52,13 @@ import LothEntryForm, { SECTION_META } from "./LothEntryForm";
 import { olvidarCensoDeTala } from "./hooks/use-censo-de-tala";
 import LothCaratulaForm from "./LothCaratulaForm";
 import LothTraceView from "./LothTraceView";
+import LothCensoAltaDesdeTrace from "./LothCensoAltaDesdeTrace";
+import LothCupoEnPie from "./LothCupoEnPie";
+import { talasDelPlan } from "@/lib/forestal/loth-cupo-vista";
+import { cupoPorEspecie, type EspecieAutorizadaCupo } from "@/lib/forestal/loth-cupo-especie";
 import LothTableroTrozas from "./LothTableroTrozas";
+import LothControlPermisoEncabezado from "./LothControlPermisoEncabezado";
+import { planFichaDesdeApi, type CaratulaFicha, type PlanFichaApi } from "@/lib/forestal/loth-ficha-permiso";
 import LothPlanView from "./LothPlanView";
 import LothGtfView from "./LothGtfView";
 import LothCompliancePanel from "./LothCompliancePanel";
@@ -74,7 +80,7 @@ import LothEtiquetasRecienTrozadas from "./LothEtiquetasRecienTrozadas";
 import LothTalaTandaModal from "./LothTalaTandaModal";
 import type { TandaTalaInicial } from "./hooks/use-tala-en-tanda";
 import LothDespachoGuiaModal from "./LothDespachoGuiaModal";
-import type { FilaImport } from "@/lib/forestal/loth-import-lineas";
+import { mensajeErrorFilaImport, type FilaImport } from "@/lib/forestal/loth-import-lineas";
 import {
   FILTRO_VACIO,
   filtrarLineas,
@@ -104,7 +110,12 @@ type LothEntry = LothEntryDTO;
 /** `?arbol=113`: el mapa llega parado en ese árbol. Lo escribe `urlDelArbolEnElMapa` (tarjeta-troza). */
 const PARAM_ARBOL = "arbol";
 
-interface Caratula {
+/**
+ * La carátula tal como la devuelve `/loth/caratula` (fila completa). Además de
+ * los cinco campos de siempre, la ficha del permiso lee RUC, representante,
+ * documento de gestión y resolución — antes se tiraban al guardar el estado.
+ */
+interface Caratula extends CaratulaFicha {
   id: string;
   registroNumber: string | null;
   tomo: string | null;
@@ -321,7 +332,14 @@ export default function LothLibroOperaciones() {
     { treeCode: string; speciesCommon: string; dapM: number | null; volumenEstimadoM3: number | null; estado: string }[]
   >([]);
   /** N° del plan activo — va en la etiqueta de la troza (28-09). */
+  /** Especies autorizadas del plan activo (volumen y árboles): el cupo de cada una. */
+  const [especiesAutorizadas, setEspeciesAutorizadas] = useState<EspecieAutorizadaCupo[]>([]);
+  const [planIdActivo, setPlanIdActivo] = useState<string | null>(null);
   const [planNumeroActivo, setPlanNumeroActivo] = useState<string | null>(null);
+  /** El plan activo COMPLETO (vigencia, parcela, estado): lo lee la ficha del permiso. */
+  const [planActivo, setPlanActivo] = useState<PlanFichaApi | null>(null);
+  /** «Agregar al censo» desde «Qué falta hacer»: la tala cuyo árbol el censo no declara. */
+  const [altaCenso, setAltaCenso] = useState<{ treeCode: string; speciesCommon: string } | null>(null);
   /**
    * N° de las guías realmente emitidas. Cruzarlas contra las que el libro
    * declara destapa la GTF fantasma: un despacho que nombra una guía que nadie
@@ -644,7 +662,22 @@ export default function LothLibroOperaciones() {
       // permiso elegido (efecto de abajo).
       const planRes = await fetch("/api/admin/forestal/plan?active=1", { credentials: "include" });
       const planJson = planRes.ok ? await planRes.json() : null;
+      const planId = planJson?.active?.id ?? null;
       setPlanNumeroActivo(planJson?.active?.planNumber ?? null);
+      setPlanIdActivo(planId);
+      setPlanActivo(planFichaDesdeApi(planJson?.active));
+      if (planId) {
+        // Falla blanda: sin las especies el cupo sale «del censo», no se inventa.
+        fetch(`/api/admin/forestal/plan?planId=${encodeURIComponent(planId)}`, { credentials: "include" })
+          .then((r) => (r.ok ? r.json() : null))
+          .then((d) => {
+            const sp = (d?.species ?? []) as { speciesCommon: string; volumenAutorizadoM3: string | number | null; arbolesAutorizados: number | null }[];
+            setEspeciesAutorizadas(
+              sp.map((s) => ({ speciesCommon: s.speciesCommon, volumenAutorizadoM3: s.volumenAutorizadoM3, arbolesAutorizados: s.arbolesAutorizados })),
+            );
+          })
+          .catch((err) => console.warn("[loth] no se pudieron leer las especies del plan", err));
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -777,7 +810,8 @@ export default function LothLibroOperaciones() {
   const planDelCenso = permiso.planSel && permiso.planSel !== PERMISO_SIN_PLAN ? permiso.planSel : null;
   const censoSinPlan = permiso.planSel === PERMISO_SIN_PLAN;
   useEffect(() => {
-    if (view !== "trazabilidad" || !permiso.listo) return;
+    // «tablero» también: el saldo por especie de Control del permiso mide contra el censo.
+    if ((view !== "trazabilidad" && view !== "tablero") || !permiso.listo) return;
     if (censoSinPlan) {
       setCensoArboles([]);
       return;
@@ -842,7 +876,7 @@ export default function LothLibroOperaciones() {
         });
         if (!res.ok) {
           const d = await res.json().catch(() => ({}));
-          errores.push(`Fila ${i + 1}: ${d.message ?? d.error ?? `HTTP ${res.status}`}`);
+          errores.push(mensajeErrorFilaImport(i + 1, res.status, d, typeof payload.motivoSobreCupo === "string" ? payload.motivoSobreCupo : null));
           continue;
         }
         const d = await res.json().catch(() => ({}));
@@ -918,6 +952,28 @@ export default function LothLibroOperaciones() {
     () => allEntries.filter((e) => e.section === section && cumplePermiso(e.planId, permiso.filtro)),
     [allEntries, section, permiso.filtro],
   );
+  /** Cupo por especie: censo del plan + talas vivas del libro + especies autorizadas. */
+  const cupoEspecies = useMemo(
+    () =>
+      cupoPorEspecie({
+        censo: censoArboles,
+        // Sólo las talas de ESTE plan: las de otro plan o de códigos fuera de su
+        // censo no gastan su cupo.
+        talas: talasDelPlan(
+          allEntries.filter((e) => e.section === "tala" && e.status === "registrado"),
+          new Set(censoArboles.map((c) => c.treeCode.trim())),
+          planIdActivo,
+        ).delPlan,
+        autorizadas: especiesAutorizadas,
+      }),
+    [censoArboles, allEntries, especiesAutorizadas, planIdActivo],
+  );
+  /** Lo que el saldo por especie de «Control del permiso» mide: lo mismo que el cupo. */
+  const entradaSaldo = useMemo(
+    () => ({ censo: censoArboles, entries: allEntries, autorizadas: especiesAutorizadas }),
+    [censoArboles, allEntries, especiesAutorizadas],
+  );
+  const cupoPorClave = useMemo(() => new Map(cupoEspecies.map((f) => [f.clave, f])), [cupoEspecies]);
   const periodos = useMemo(() => periodosDe(lineasSeccion), [lineasSeccion]);
   const especiesSeccion = useMemo(
     () => Array.from(new Set(lineasSeccion.map((e) => e.speciesCommon).filter((x): x is string => !!x))).sort((a, b) => a.localeCompare(b, "es")),
@@ -1152,6 +1208,20 @@ export default function LothLibroOperaciones() {
                 },
                 onIrAlPlan: () => setView("plan"),
               }}
+              encabezado={(datos) => (
+                <LothControlPermisoEncabezado
+                  datos={datos}
+                  caratula={caratula}
+                  planActivo={planActivo}
+                  saldo={entradaSaldo}
+                  onCompletarCaratula={() => setShowCaratula(true)}
+                  onCompletarPlan={() => irA("plan")}
+                  onVerGtf={(gtf) => {
+                    setFocoGtf(gtf);
+                    setView("gtf");
+                  }}
+                />
+              )}
             />
           )}
         </>
@@ -1179,6 +1249,8 @@ export default function LothLibroOperaciones() {
               entries={entriesDelPermiso}
               caratula={caratula}
               censo={censoArboles}
+              cupoEspecies={cupoEspecies}
+              cupoEnPie={(g) => <LothCupoEnPie fila={cupoPorClave.get(g.clave)} />}
               gtfEmitidas={gtfEmitidas}
               nav={{
                 onVerCadena: (code) => setCadenaCode(code),
@@ -1190,9 +1262,14 @@ export default function LothLibroOperaciones() {
                   setFocoArbol(tree);
                   setView("mapa");
                 },
+                // «Qué falta hacer» → el mismo trozado que abre «Trozarlo ahora».
+                onRegistrarTrozado: abrirTrozado,
+                // «Qué falta hacer» → el alta del censo, con código y especie escritos.
+                onAgregarAlCenso: setAltaCenso,
               }}
             />
           )}
+          <LothCensoAltaDesdeTrace planId={planIdActivo} arbol={altaCenso} onClose={() => setAltaCenso(null)} onAgregado={refreshAll} />
         </>
       )}
 
@@ -1550,6 +1627,8 @@ export default function LothLibroOperaciones() {
               unit: f.unit === "m3" || f.unit === "kg" || f.unit === "unidad" ? f.unit : f.quantity != null ? "m3" : null,
               gtfNumber: f.gtfNumber,
               observations: f.observations,
+              // T9: la misma regla del servidor; sin columna, no se manda.
+              ...(section === "tala" && f.motivoSobreCupo ? { motivoSobreCupo: f.motivoSobreCupo } : {}),
             })),
           );
           return { creadas: r.creadas, errores: reetiquetarErroresImport(r.errores, filas) };

@@ -30,6 +30,7 @@ import { ErrorAlert } from "@buleje/design-system";
 import { ClipboardCopy, Compass, FileCheck, Printer, Route, ShieldCheck, Square, Table, Upload } from "@buleje/design-system/icons";
 import LothMapaMarco from "./LothMapaMarco";
 import LothMapaCabecera from "./LothMapaCabecera";
+import LothMapaSinCoordenadasPanel from "./LothMapaSinCoordenadasPanel";
 import LothMapaBloque from "./LothMapaBloque";
 import LothEudrRail, { resumenEudr, tonoEudr } from "./LothEudrRail";
 import LothPlanoRequisitos, { resumenPlano } from "./LothPlanoRequisitos";
@@ -162,6 +163,8 @@ export default function LothMapaView({
 
       {datos.error && <ErrorAlert title="No se pudo completar" description={datos.error} />}
       {datos.heredada && nombrePermiso && <LothMapaAreaHeredada permiso={nombrePermiso} copiando={datos.copiando} onPasar={() => void datos.copiarAlPermiso()} />}
+
+      <LothMapaSinCoordenadasPanel trees={datos.trees} onGuardado={datos.reemplazarArbol} onCentrar={centrar} />
 
       <LothMapaMarco
         ref={marcoRef}

@@ -89,6 +89,12 @@ vi.mock("@/lib/db/fiados.db", () => ({
   },
 }));
 
+const { mockInvalidarVentas } = vi.hoisted(() => ({ mockInvalidarVentas: vi.fn() }));
+vi.mock("@/lib/caja/invalidar-ventas-overview", () => ({
+  invalidarVentasOverview: mockInvalidarVentas,
+  tagVentasOverview: (t: string) => `ventas-overview-${t}`,
+}));
+
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     customer: { findFirst: mockCustomerFindFirst },
@@ -237,6 +243,22 @@ describe("POST /api/sales — POS↔Fiado integration", () => {
     expect(body.fiadoId).toBeUndefined();
     expect(mockValidateForNewFiado).not.toHaveBeenCalled();
     expect(mockCreateInTransaction).not.toHaveBeenCalled();
+  });
+
+  it("una venta POS creada purga el Tablero de Ventas del tenant", async () => {
+    const { POST } = await import("@/app/api/sales/route");
+    const res = await POST(
+      makeRequest({ items: VALID_ITEMS, payment: "efectivo", amountPaid: 50 }),
+    );
+    expect(res.status).toBe(201);
+    expect(mockInvalidarVentas).toHaveBeenCalledWith("tenant-1");
+  });
+
+  it("una venta rechazada (fiado sin cliente, 400) NO purga el Tablero", async () => {
+    const { POST } = await import("@/app/api/sales/route");
+    const res = await POST(makeRequest({ items: VALID_ITEMS, payment: "fiado" }));
+    expect(res.status).toBe(400);
+    expect(mockInvalidarVentas).not.toHaveBeenCalled();
   });
 
   it("cliente nuevo en fiado → se crea via CustomersDB.upsert antes de la tx", async () => {

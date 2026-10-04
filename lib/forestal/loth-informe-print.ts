@@ -52,6 +52,16 @@ interface Caratula {
   distrito?: string | null;
 }
 
+/** CSS propio del informe del libro; el «Informe del permiso» lo reusa para verse igual. */
+export const INFORME_LOTH_CSS = `
+    .ok{color:#0f5132;font-weight:600;background:#d1e7dd;border-radius:8px;padding:10px 12px}
+    ul.anom{margin:6px 0 0;padding-left:18px;font-size:12px}
+    ul.anom li{margin:3px 0}
+    ul.anom li.error{color:#842029}
+    ul.anom li.warn{color:#8a5a00}
+    .flag{color:#842029;background:#f8d7da;border:1px solid #f1aeb5;border-radius:8px;padding:10px 12px;font-size:12px}
+  `;
+
 const n2 = (n: number) => n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const n1 = (n: number) => n.toLocaleString("es-PE", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
@@ -163,14 +173,7 @@ export async function printLothInforme(): Promise<void> {
   sistema para la gestión del aprovechamiento forestal maderable (Ley 29763, RDE 264-2019). Documento interno
   de gestión — no reemplaza el registro oficial en el SNIFFS.</p>`;
 
-  const css = `
-    .ok{color:#0f5132;font-weight:600;background:#d1e7dd;border-radius:8px;padding:10px 12px}
-    ul.anom{margin:6px 0 0;padding-left:18px;font-size:12px}
-    ul.anom li{margin:3px 0}
-    ul.anom li.error{color:#842029}
-    ul.anom li.warn{color:#8a5a00}
-    .flag{color:#842029;background:#f8d7da;border:1px solid #f1aeb5;border-radius:8px;padding:10px 12px;font-size:12px}
-  `;
+  const css = INFORME_LOTH_CSS;
 
   const body = `
     <h1>Informe de aprovechamiento · Libro de Operaciones TH</h1>

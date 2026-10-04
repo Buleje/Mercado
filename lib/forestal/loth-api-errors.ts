@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { z } from "zod";
-import { LothInvariantError } from "@/lib/db/forest-loth.db";
+import { LothInvariantError, LothPermisoError } from "@/lib/db/forest-loth.db";
 import { GuiaYaEnElCtpError } from "@/lib/db/gtf-numero.db";
 import { logger } from "@/lib/logger";
 
@@ -41,6 +41,11 @@ export function lothErrorResponse(err: unknown, ctx: string, tenantId: string): 
       { error: err.codigo, message: err.message, libroNros: err.libroNros },
       { status: 409 },
     );
+  }
+  /* El dato cuadra, pero este rol no puede asentarlo (T9 sobre lo autorizado:
+     sólo dueño o administrador) → 403 con el mensaje, no 422. */
+  if (err instanceof LothPermisoError) {
+    return NextResponse.json({ error: err.code, message: err.message, detail: err.detail }, { status: 403 });
   }
   if (err instanceof LothInvariantError) {
     return NextResponse.json(

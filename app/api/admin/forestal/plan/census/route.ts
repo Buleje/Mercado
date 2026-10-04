@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
+import { RUTAS_PANEL } from "@/lib/auth/roles-rutas-panel";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { CensoCodigoRepetidoError, ForestPlanDB } from "@/lib/db/forest-plan.db";
 import { DAP_MAX_M, mensajeDapFueraDeRango } from "@/lib/forestal/loth-constants";
@@ -125,7 +126,7 @@ export const POST = withApiHandler("forestal-plan-census-post", async (req: Next
 });
 
 export const PATCH = withApiHandler("forestal-plan-census-patch", async (req: NextRequest) => {
-  const auth = await requireAdmin(req, ["admin", "owner"]);
+  const auth = await requireAdmin(req, RUTAS_PANEL["PATCH /api/admin/forestal/plan/census"]);
   if (auth instanceof NextResponse) return auth;
   const rl = await applyRateLimit(req, "GENEROUS", "loth");
   if (rl) return rl;

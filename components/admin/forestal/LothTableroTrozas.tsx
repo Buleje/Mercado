@@ -8,29 +8,29 @@
  * leer tres secciones y cruzar códigos a mano. Acá cada troza aparece una sola
  * vez, con su estado y su color, bajo los códigos del permiso que la ampara.
  *
- * ADR-459 (2-10-2026, Brandon: «quiero mejoras para esa página, nuevas
- * integraciones, funciones especializadas»): el tablero mezclaba las trozas de
- * los tres planes vivos de Blas, no decía cuánto volumen le quedaba al permiso,
- * no dejaba actuar sobre las trozas y no exportaba. Ahora:
- *   · se elige el permiso (recordado) y la banda habla de ESE plan;
- *   · el volumen del permiso, en cascada (en pie → patio → despachado);
- *   · lo que lleva ≥ 15 / ≥ 30 días en el patio, en ámbar / rojo;
- *   · tanda sobre las del patio: despachar con guía, etiquetas, Excel;
- *   · Excel, reporte impreso y resumen por WhatsApp;
- *   · el buscador lee la etiqueta con la pistola.
+ * Lo construyeron dos sesiones (unidas en el merge del 04-10):
+ *   · ADR-459 (02-10): permiso elegido y recordado, volumen en cascada, patio
+ *     viejo en ámbar/rojo, tanda (guía, etiquetas, Excel), reporte, WhatsApp,
+ *     la pistola en el buscador y la pestaña Kárdex;
+ *   · 30-09/01-10: cada troza cruzada con su GTF (placa, destino) y su plan;
+ *     columnas a elegir con orden y Excel para OSINFOR; «Escanear troza» con
+ *     la cámara; y el `encabezado` que monta el libro (ficha, saldo, cuadre).
  *
- * Orden (ley de la vista, rule `ui-components`): título con cifras + permiso +
- * Opciones en una fila → banda → avisos → volumen → estados → tabla.
+ * Orden (ley de la vista): cabecera en una fila → [escáner] → encabezado (o la
+ * banda) → avisos → volumen → Trozas | Kárdex → estados → tabla.
  *
  * El estado se deriva del libro (`lib/forestal/loth-tablero-trozas.ts`): no hay
  * un contador aparte que se pueda desincronizar.
  */
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState, type ReactNode } from "react";
 import SegmentedControl from "@/components/ui-system/SegmentedControl";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import type { LothEntryDTO } from "@/lib/forestal/loth-constants";
+import type { GtfRegistrada } from "@/lib/forestal/loth-cuadre-guias";
+import type { PlanFichaApi } from "@/lib/forestal/loth-ficha-permiso";
 import { cascadaDelPlan } from "@/lib/forestal/loth-saldo-cascada";
+import { ordenarTablero } from "@/lib/forestal/loth-tablero-columnas";
 import { bandaDelPlan, nombreDelPlan } from "@/lib/forestal/loth-tablero-permiso";
 import type { DatosControl } from "@/lib/forestal/loth-tablero-reporte";
 import {
@@ -40,23 +40,42 @@ import {
   planesDe,
   resumirTablero,
   resumirViejas,
+  type TrozaTablero,
 } from "@/lib/forestal/loth-tablero-trozas";
 import { limaDateKey } from "@/lib/utils";
 import { useLothTableroAcciones } from "./hooks/use-loth-tablero-acciones";
 import { useLothTableroKardex } from "./hooks/use-loth-tablero-kardex";
 import { useLothTableroPermiso } from "./hooks/use-loth-tablero-permiso";
 import { useLothTableroTabla } from "./hooks/use-loth-tablero-tabla";
+import { useTableroColumnas } from "./hooks/use-tablero-columnas";
+import { useTableroContexto } from "./hooks/use-tablero-contexto";
+import LothEscanerTroza from "./LothEscanerTroza";
 import LothTableroAvisos from "./LothTableroAvisos";
 import LothTableroBanda, { type CaratulaTablero } from "./LothTableroBanda";
 import LothTableroCabecera from "./LothTableroCabecera";
 import LothTableroEstados from "./LothTableroEstados";
 import LothTableroKardex from "./LothTableroKardex";
-import LothTableroTabla, { type NavTablero } from "./LothTableroTabla";
+import LothTableroTabla from "./LothTableroTabla";
 import LothTableroTanda from "./LothTableroTanda";
+import type { NavTablero } from "./LothTableroTrozasTabla";
 import LothTableroVolumen from "./LothTableroVolumen";
 
 export type { CaratulaTablero } from "./LothTableroBanda";
-export type { NavTablero } from "./LothTableroTabla";
+export type { NavTablero } from "./LothTableroTrozasTabla";
+
+/**
+ * Lo que el tablero ya leyó y le presta a su encabezado, para que el cuadre por
+ * guía y la ficha de cada plan no vuelvan a pedir lo mismo a la API.
+ */
+export interface DatosEncabezadoTablero {
+  /** Todas las trozas del libro, ya cruzadas (sin el permiso elegido ni los filtros de la tabla). */
+  filas: readonly TrozaTablero[];
+  /** Todas las GTF, anuladas incluidas; `null` = no se pudieron leer. */
+  gtfs: readonly GtfRegistrada[] | null;
+  /** Todos los planes no dados de baja; `null` = no se pudieron leer. */
+  planes: readonly PlanFichaApi[] | null;
+  cargando: boolean;
+}
 
 export default function LothTableroTrozas({
   entries,
@@ -64,6 +83,7 @@ export default function LothTableroTrozas({
   nav,
   reloadSignal = 0,
   onDespacharConGuia,
+  encabezado,
 }: {
   entries: LothEntryDTO[];
   caratula?: CaratulaTablero | null;
@@ -72,11 +92,24 @@ export default function LothTableroTrozas({
   reloadSignal?: number;
   /** Abre «Despachar con guía» con estas trozas ya elegidas. */
   onDespacharConGuia?: (codigos: string[]) => void;
+  /**
+   * Lo que va entre la cabecera y «Estado de las trozas»: la ficha del permiso,
+   * el saldo por especie y el cuadre por guía. El tablero no sabe qué es; le
+   * guarda el lugar y, si es función, le pasa lo que ya leyó.
+   *
+   * Con encabezado NO se dibuja la banda: la ficha del permiso trae los mismos
+   * códigos más la vigencia — dos veces el mismo código es ruido.
+   */
+  encabezado?: ReactNode | ((datos: DatosEncabezadoTablero) => ReactNode);
 }) {
   const permiso = useLothTableroPermiso(reloadSignal);
+  const ctx = useTableroContexto();
+  const columnas = useTableroColumnas();
   const hoyKey = limaDateKey();
+  /** 0 = escáner cerrado; cada «Escanear troza» lo sube y vuelve a abrir la cámara. */
+  const [escaner, setEscaner] = useState(0);
 
-  const todas = useMemo(() => construirTablero(entries), [entries]);
+  const todas = useMemo(() => construirTablero(entries, new Date(), ctx.contexto), [entries, ctx.contexto]);
   const haySinPlan = useMemo(() => todas.some((f) => f.planId == null), [todas]);
   const filas = useMemo(() => filtrarPorPlan(todas, permiso.planSel), [todas, permiso.planSel]);
   const resumen = useMemo(() => resumirTablero(filas), [filas]);
@@ -99,10 +132,12 @@ export default function LothTableroTrozas({
     },
     [planes],
   );
-  /* Con «Todos» y más de un permiso, cada troza dice de cuál es. */
-  const conColumnaPermiso = permiso.planSel == null && (planes.length > 1 || haySinPlan);
+  /* Con «Todos» y trozas de más de un permiso (o con y sin plan), cada troza dice
+     de cuál es. Si todas son del mismo, la columna repetiría lo mismo en cada fila. */
+  const conColumnaPermiso = permiso.planSel == null && planesDe(todas).length > 1;
 
   const t = useLothTableroTabla(filas, permiso.planSel != null);
+  const ordenadas = useMemo(() => ordenarTablero(t.visibles, columnas.orden), [t.visibles, columnas.orden]);
   const { reiniciar } = t;
   const { elegirPlan: guardarPlan } = permiso;
   const elegirPlan = useCallback(
@@ -149,6 +184,15 @@ export default function LothTableroTrozas({
     onIrAlPlan: nav?.onIrAlPlan,
   });
 
+  /* «Ver en la tabla» del escáner: la tabla queda sólo con esa troza. */
+  const verEnTabla = (code: string) => {
+    setPestana("trozas");
+    for (const e of t.estados) t.alternarEstado(e);
+    t.setEspecie(null);
+    t.setSoloViejas(false);
+    t.setTexto(code);
+  };
+
   return (
     <div className="min-w-0 space-y-4" data-vista-control-permiso>
       <LothTableroCabecera
@@ -159,9 +203,32 @@ export default function LothTableroTrozas({
         haySinPlan={haySinPlan}
         onElegirPlan={elegirPlan}
         acciones={acc.acciones}
+        filas={filas}
+        caratula={caratula}
+        cargando={ctx.cargando}
+        onEscanear={() => setEscaner((n) => n + 1)}
       />
+      {escaner > 0 && (
+        <LothEscanerTroza
+          filas={filas}
+          entries={entries}
+          tituloHabilitante={caratula?.tituloHabilitante}
+          nav={nav}
+          pedidoCamara={escaner}
+          onVerEnTabla={verEnTabla}
+          onCerrar={() => setEscaner(0)}
+        />
+      )}
 
-      <LothTableroBanda banda={banda} caratula={caratula} />
+      {/* Lugar para la ficha del permiso, el saldo por especie y el cuadre por
+          guía; sin él, la banda con los códigos que amparan todo lo de abajo. */}
+      {encabezado == null ? (
+        <LothTableroBanda banda={banda} caratula={caratula} />
+      ) : typeof encabezado === "function" ? (
+        encabezado({ filas: todas, gtfs: ctx.gtfs, planes: ctx.planes, cargando: ctx.cargando })
+      ) : (
+        encabezado
+      )}
 
       <LothTableroAvisos
         banda={banda}
@@ -208,8 +275,11 @@ export default function LothTableroTrozas({
 
           <LothTableroTabla
             t={t}
+            filas={ordenadas}
             total={filas.length}
             especies={especies}
+            columnas={columnas}
+            faltante={ctx.faltante}
             nav={nav}
             permisoDe={conColumnaPermiso ? nombrePlanDe : undefined}
             vacio={permiso.planSel ? "Todavía no hay trozas registradas en este permiso." : undefined}

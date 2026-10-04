@@ -6,7 +6,7 @@
  * mismas palabras.
  */
 
-import type { ActividadPatio, CruceChaleco, Captura, LecturaPila } from "@/lib/camaras/camaras";
+import { esDireccionLocal, type ActividadPatio, type CruceChaleco, type Captura, type LecturaPila } from "@/lib/camaras/camaras";
 import type { ResumenDelDia } from "@/lib/camaras/resumen";
 import { ESTADO_ASISTENCIA_META } from "@/components/admin/rrhh/rrhh-ui";
 import type { EstadoAsistencia } from "@/lib/rrhh/tipos";
@@ -237,6 +237,7 @@ export function estadoDireccion(
   dir: DireccionPublica | null,
   origin: string,
   cargando: boolean,
+  baseDelPanel = "",
 ): EstadoDireccion {
   if (dir?.publica) {
     if (dir.origen === "fija") return { tipo: "fija", base: dir.publica };
@@ -248,6 +249,11 @@ export function estadoDireccion(
      la pestaña es `localhost` y la cámara no llega nunca. El aviso tampoco se
      pinta hasta saber. */
   if (cargando && !dir) return { tipo: "cargando", base: "" };
+  /* Sin túnel ni dirección fija del servidor: si el panel se abre en la PC pero
+     el dominio público está configurado, la cámara con chip va a ese, no a
+     `localhost` (copiarlo la dejaba mandando fotos a ninguna parte). */
+  const publica = baseDelPanel.replace(/\/$/, "");
+  if (publica && !esDireccionLocal(publica)) return { tipo: "fija", base: publica };
   return esOrigenLocal(origin) ? { tipo: "local", base: origin } : { tipo: "pagina", base: origin };
 }
 

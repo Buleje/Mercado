@@ -9,6 +9,8 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { soloAdminODueno } from "@/lib/forestal/plata-de-guia-rol";
 import { motivoSchema } from "@/lib/forestal/motivo";
+import { AdelantoNoControlableError, AdelantosControlDB } from "@/lib/db/adelantos-control.db";
+import { PATRON_DIA } from "@/lib/adelantos/control-edicion";
 
 const PatchSchema = z.object({
   notas: z.string().max(1000).nullable().optional(),
@@ -21,7 +23,12 @@ const PatchSchema = z.object({
    * persona — por eso es explícito y por defecto no hace nada.
    */
   devolucionCaja: z.enum(["efectivo", "yape", "plin", "tarjeta", "transferencia"]).nullable().optional(),
-});
+})
+  /* `strict` + el refine: un `{}` o una clave desconocida caían en
+     `updateNotas(null)` y BORRABAN las notas devolviendo 200. Editar notas
+     exige mandar `notas` (aunque sea `null`, que es borrarlas a propósito). */
+  .strict()
+  .refine((d) => d.notas !== undefined || d.cancelar === true, { message: "Manda las notas o `cancelar: true`." });
 
 /**
  * (ADR-448) Re-marcar de qué lado está la plata de un adelanto cargado al
@@ -36,6 +43,27 @@ const CorregirDireccionSchema = z
     motivo: motivoSchema({ mensaje: "Escribe por qué cambias la dirección (al menos 3 letras)." }),
   })
   .strict();
+
+/**
+ * Poner vencimiento o atar a un permiso un adelanto ya dado (2026-09-30).
+ * `strict`: mezclado con `notas` o `cancelar` es otro pedido, y antes de esto un
+ * `{ fechaVencimiento }` caía en el esquema de notas, que lo descartaba y
+ * BORRABA el motivo guardado.
+ */
+const ControlSchema = z
+  .object({
+    /** Día de Lima; `null` = quitar la fecha. */
+    fechaVencimiento: z.string().regex(PATRON_DIA, "La fecha va como AAAA-MM-DD.").nullable().optional(),
+    /** Permiso de este negocio; `null` = desatar. */
+    contratoId: z.string().trim().max(64).nullable().optional(),
+  })
+  .strict()
+  .refine((d) => d.fechaVencimiento !== undefined || d.contratoId !== undefined, {
+    message: "Manda la fecha o el permiso.",
+  });
+
+const esPedidoDeControl = (body: unknown): boolean =>
+  !!body && typeof body === "object" && ("fechaVencimiento" in body || "contratoId" in body);
 
 // GET /api/adelantos/[id]
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -54,7 +82,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   }
 }
 
-// PATCH /api/adelantos/[id] — editar notas o cancelar
+// PATCH /api/adelantos/[id] — editar notas, cancelar, poner vencimiento / permiso, o corregir la dirección
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   const _rl = await applyRateLimit(req, "MODERATE", "adelantos"); if (_rl) return _rl;
@@ -68,6 +96,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (body && typeof body === "object" && (body as { action?: unknown }).action === "corregirDireccion") {
       return corregirDireccion(req, auth, id, body);
     }
+    if (esPedidoDeControl(body)) return controlar(auth, id, body);
     const parsed = PatchSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: "Datos inválidos", issues: parsed.error.issues.map((i) => i.message) }, { status: 400 });
@@ -146,6 +175,40 @@ async function corregirDireccion(
       );
     }
     logger.error("[adelantos/id] corregirDireccion error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Database error" }, { status: 503 });
+  }
+}
+
+/**
+ * PATCH `{ fechaVencimiento?: "AAAA-MM-DD" | null, contratoId?: string | null }`.
+ *
+ * `write` en la matriz (el mismo permiso que editar las notas, chequeado
+ * arriba): no mueve plata. Sólo adelantos ABIERTOS; el permiso tiene que ser de
+ * este negocio (422 si no); el rastro queda en la auditoría dentro de la misma
+ * transacción.
+ */
+async function controlar(
+  auth: { tenantId: string; username: string; role: string },
+  id: string,
+  body: unknown,
+): Promise<NextResponse> {
+  const parsed = ControlSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Datos inválidos", issues: parsed.error.issues.map((i) => i.message) }, { status: 400 });
+  }
+  try {
+    const hecho = await AdelantosControlDB.controlar(auth.tenantId, id, {
+      ...(parsed.data.fechaVencimiento !== undefined ? { fechaVencimiento: parsed.data.fechaVencimiento } : {}),
+      ...(parsed.data.contratoId !== undefined ? { contratoId: parsed.data.contratoId || null } : {}),
+      usuario: auth.username,
+    });
+    if (!hecho) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+    return NextResponse.json({ id, ...hecho });
+  } catch (e) {
+    if (e instanceof AdelantoNoControlableError) {
+      return NextResponse.json({ error: e.message, code: e.code }, { status: e.status });
+    }
+    logger.error("[adelantos/id] controlar error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }

@@ -17,6 +17,7 @@ import { sendPushToPhone } from "@/lib/push-sender";
 import { createNotification } from "@/lib/create-notification";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { cacheStore } from "@/lib/cache";
+import { invalidarVentasOverview } from "@/lib/caja/invalidar-ventas-overview";
 import { logger } from "@/lib/logger";
 import { runWithAuditContext } from "@/lib/audit/audit-context";
 import {
@@ -356,6 +357,10 @@ export async function POST(req: NextRequest) {
           items,
         }),
     );
+
+    // El pedido es del tenant vendedor: su Tablero de Ventas lo cuenta como
+    // canal «Marketplace». Sin purgar el tag quedaba 2 min sin verlo.
+    invalidarVentasOverview(order.sellerTenantId);
 
     // ── PENTEST-001: validar que el monto del comprobante coincide con ──
     // el total real server-side. El token HMAC solo certifica que el

@@ -16,13 +16,15 @@
  */
 
 import { useEffect, useRef, useState } from "react";
-import { Check, ListChecks, Loader2, Pencil, Plus, Trash2, TreePine, X } from "@buleje/design-system/icons";
+import { Check, ClipboardList, ListChecks, Loader2, Pencil, Plus, Trash2, TreePine, X } from "@buleje/design-system/icons";
 import { toast } from "sonner";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { findSpeciesByCommonName } from "@/data/forestry-species";
 import { agregarEspecie, corregirEspecie, numeroDe, quitarEspecie } from "./loth-plan-especies-api";
 import { useLocalStorage } from "@/hooks/use-local-storage";
+import type { ArbolCensoAutorizar } from "@/lib/forestal/loth-autorizar-lote";
+import LothPlanAutorizarLote from "./LothPlanAutorizarLote";
 import { n, soles, type Species } from "./loth-plan-shared";
 import { AddBtn, BloquePlan, BotonPlegar, Cell, CitesPill, Field, Mono, Table, cls, editCls } from "./loth-plan-ui";
 
@@ -44,15 +46,28 @@ const opcional = (v: string): number | null => {
  *  «Editar» sobre la misma especie tiene que volver a abrirla. */
 export interface PedidoEspecie { id: string; accion: "editar" | "borrar"; n: number }
 
-export default function LothPlanEspecies({ planId, species, onChange, pedido }: {
+/** Abrir la carga de varias especies, con una ya elegida (desde «Cupo por especie»). */
+export interface PedidoLote { especie: string | null; n: number }
+
+export default function LothPlanEspecies({ planId, species, onChange, pedido, censo = [], pedidoLote }: {
   planId: string;
   species: Species[];
   onChange: () => void;
   pedido?: PedidoEspecie | null;
+  /** El censo del plan: de él salen las filas de «Cargar varias». */
+  censo?: readonly ArbolCensoAutorizar[];
+  pedidoLote?: PedidoLote | null;
 }) {
   const [abierto, setAbierto] = useLocalStorage<boolean>(CLAVE_AUTORIZACIONES_PLAN, false);
   const [open, setOpen] = useState(false);
   const [f, setF] = useState(VACIO);
+  const [lote, setLote] = useState<{ especie: string | null } | null>(null);
+  const loteAtendido = useRef(0);
+  useEffect(() => {
+    if (!pedidoLote || pedidoLote.n === loteAtendido.current) return;
+    loteAtendido.current = pedidoLote.n;
+    setLote({ especie: pedidoLote.especie });
+  }, [pedidoLote]);
   const [busy, setBusy] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [edit, setEdit] = useState({ volumenAutorizadoM3: "", arbolesAutorizados: "", precioVentaSoles: "", valorEstadoNaturalSoles: "", anioInstalacion: "", superficieHa: "" });
@@ -158,7 +173,7 @@ export default function LothPlanEspecies({ planId, species, onChange, pedido }: 
       titulo="Editar especies autorizadas"
       sub={
         species.length === 0
-          ? "Sin especies: agrega las aprobadas en la resolución."
+          ? "Sin especies: carga las aprobadas en la resolución («Cargar varias»)."
           : <>
               <span className="font-mono tabular-nums">{species.length}</span> {species.length === 1 ? "especie" : "especies"} ·{" "}
               <span className="font-mono tabular-nums">{volTotal.toFixed(2)}</span> m³ ·{" "}
@@ -177,10 +192,29 @@ export default function LothPlanEspecies({ planId, species, onChange, pedido }: 
               titulo="Se recuerda en este navegador"
             />
           )}
+          <button
+            type="button"
+            onClick={() => setLote({ especie: null })}
+            title="Todas las especies del censo en una tabla: m³ y árboles de la resolución, un solo guardar"
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+            data-cargar-varias
+          >
+            <ClipboardList className="h-3.5 w-3.5" aria-hidden="true" />
+            Cargar varias
+          </button>
           <AddBtn onClick={() => setOpen(true)} />
         </>
       }
     >
+      <LothPlanAutorizarLote
+        open={lote != null}
+        onClose={() => setLote(null)}
+        planId={planId}
+        censo={censo}
+        species={species}
+        especiePedida={lote?.especie ?? null}
+        onGuardado={onChange}
+      />
       <AdminModal
         open={open}
         onClose={() => setOpen(false)}

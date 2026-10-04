@@ -16,7 +16,7 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
 import { LOTH_SECTIONS, claveEnElPlan, claveEspecie, resolverEspecie, type LothSection } from "@/lib/forestal/loth-constants";
-import { auditLoth } from "@/lib/forestal/loth-audit";
+import { auditLoth, type LothAuditAction, type LothAuditEntity } from "@/lib/forestal/loth-audit";
 import { ForestLothCierreDB } from "@/lib/db/forest-loth-cierre.db";
 import { ForestLothPoaDB } from "@/lib/db/forest-loth-poa.db";
 import { dmcParaEspecie, esPlanDePlantacion } from "@/lib/forestal/loth-poa";
@@ -27,6 +27,10 @@ import { estadoDeArboles as estadoDeArbolesDelLibro, type EstadoDeArbolesPlan } 
 import { ForestGtfDB } from "@/lib/db/forest-gtf.db";
 import { colaDeGtf, mismoNumeroGtf } from "@/lib/forestal/gtf-talonario";
 import { ESTADOS_SIN_INGRESO, GtfNumeroDB } from "@/lib/db/gtf-numero.db";
+import type { LothEntryDTO } from "@/lib/forestal/loth-constants";
+import { gtfRegistradaDesdeApi } from "@/lib/forestal/loth-cuadre-guias";
+import { planFichaDesdeApi } from "@/lib/forestal/loth-ficha-permiso";
+import type { DatosAvisoTh } from "@/lib/forestal/loth-aviso-plazos";
 import { leerGtfDatos, type GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 import { identidadDeGuiaTh } from "@/lib/forestal/guia-th-al-ctp";
 import { PRODUCTO_TROZA, lineasDeLaGuia, piezasDeItems, type TrozaDelLibro } from "@/lib/forestal/loth-guia-despacho";
@@ -34,6 +38,9 @@ import { armarArbolDeTroza, lineaVigente, type ArbolDeTroza } from "@/lib/forest
 import type { FiltroPermiso } from "@/lib/forestal/loth-filtro-permiso";
 import { closedPeriodOf } from "@/lib/forestal/loth-cierre-types";
 import type { AtarSinPlanConteo, AtarSinPlanResultado, AtarSeccion } from "@/lib/forestal/loth-atar-sin-plan";
+import { avisoCupoAlTalar, entradaDelPlan, motivoCupoValido, notaSobreCupo, MOTIVO_CUPO_MIN, type AvisoCupo } from "@/lib/forestal/loth-cupo-especie";
+import { resolverTalaContraCenso } from "@/lib/forestal/loth-tala-del-censo";
+import { ForestPlanDB } from "@/lib/db/forest-plan.db";
 
 export { LOTH_SECTIONS };
 export type { LothSection };
@@ -65,6 +72,9 @@ export const LOTH_TX_OPTS = { timeout: 20_000, maxWait: 10_000 } as const;
  *   T7 · la especie movilizada debe estar AUTORIZADA en el plan → tala/movilización de especie fuera del POA (infracción)
  *        En una PLANTACIÓN con especies registradas, también la TALA (ADR-459).
  *   T8 · no se tala un árbol censado bajo el DMC de su especie → tala ilegal (RJ 458-2002-INRENA)
+ *   T9 · Σ talado(especie) ≤ volumen AUTORIZADO + 0,01 m³ → se registra IGUAL con
+ *        motivo escrito (el libro refleja lo que pasó en el monte). Sin autorizado,
+ *        el cupo es el censo y pasarlo sólo se avisa y se audita.
  */
 export class LothInvariantError extends Error {
   constructor(
@@ -77,6 +87,7 @@ export class LothInvariantError extends Error {
       | "T4_TROZADO_SUPERA_TALA"
       | "T5_DESPACHO_SUPERA_PRODUCCION"
       | "T8_BAJO_DMC"
+      | "T9_CUPO_ESPECIE"
       | "T6_EXCESO_AUTORIZADO"
       | "T7_ESPECIE_NO_AUTORIZADA"
       // P1 — la línea cae en un mes cerrado: el acta es inmutable hasta reabrir.
@@ -85,12 +96,35 @@ export class LothInvariantError extends Error {
       | "CARATULA_CON_LINEAS"
       // Una guía ampara UN título: trozas de dos planes son dos guías.
       | "GUIA_VARIOS_PLANES"
-      // La línea cita un plan que no es de este negocio o está de baja (→ 400).
-      | "PLAN_NO_EXISTE",
+      | "GUIA_VARIOS_PLANES"
+      // El planId de la línea no es un plan vivo de ESTE negocio (sin FK: se valida
+      // acá). Un solo código para el alta, el importador y «atar sin plan» (→ 400 en el alta).
+      | "PLAN_NO_EXISTE"
+      // La tala de un árbol del censo va con el plan y la especie del censo.
+      | "TALA_PLAN_DISTINTO_AL_CENSO"
+      | "TALA_ARBOL_EN_VARIOS_PLANES"
+      | "TALA_ESPECIE_DISTINTA_AL_CENSO",
     readonly detail?: Record<string, unknown>,
   ) {
     super(message);
     this.name = "LothInvariantError";
+  }
+}
+
+/**
+ * El dato cuadra pero QUIEN lo asienta no puede (→ 403, no 422). Hoy: una tala
+ * por encima de lo AUTORIZADO para su especie la registra sólo el dueño o el
+ * administrador — es la excepción que el titular firma ante OSINFOR, no la
+ * decide el almacenero con su propio motivo (auditoría T9, 30-09).
+ */
+export class LothPermisoError extends Error {
+  readonly code = "T9_SOLO_DUENO" as const;
+  constructor(
+    message: string,
+    readonly detail?: Record<string, unknown>,
+  ) {
+    super(message);
+    this.name = "LothPermisoError";
   }
 }
 
@@ -135,6 +169,18 @@ export interface LothEntryCreateInput {
    * que es lo que se le exige explicar al titular ante la ARFFS.
    */
   justificacionDmc?: string | null;
+  /**
+   * Motivo por el que se registra una tala que deja a su especie por encima del
+   * cupo (T9). Sin esto el alta se rechaza con el número; con esto se registra y
+   * el motivo queda en la línea y en la auditoría.
+   */
+  motivoSobreCupo?: string | null;
+  /**
+   * ¿Quién asienta puede registrar una tala por encima de lo AUTORIZADO? Lo
+   * decide la RUTA por el rol del JWT (admin/owner), nunca el body. Sin esto
+   * (undefined) se niega: el default seguro.
+   */
+  puedeExcederCupo?: boolean;
 
   correctsLineNo?: number | null;
   correctionNote?: string | null;
@@ -240,16 +286,6 @@ export class ForestLothDB {
   // ─── Entries ─────────────────────────────────────────────────────────
 
   /**
-   * Crea una línea del libro dentro de UNA transacción que valida las
-   * invariantes de cadena de custodia (T1–T5, ADR-305) y asigna el correlativo
-   * `lineNo` bajo LOCK. Antes de esto el `create` insertaba sin ninguna guarda:
-   * se podía movilizar dos veces la misma troza, trozar más de lo tumbado o
-   * despachar más de lo producido — justo lo que fiscaliza OSINFOR. La Analítica
-   * lo detectaba DESPUÉS; acá se IMPIDE.
-   *
-   * Lanza `LothInvariantError` (→ 422) si el dato rompe la cadena.
-   */
-  /**
    * El plan de una línea lo decide SU FUENTE, no el selector: el trozado es del
    * plan de su tala, el despacho y el consumo del plan de su troza (revisión
    * ADR-459). El importador con un permiso elegido para un archivo que mezcla
@@ -280,17 +316,36 @@ export class ForestLothDB {
     return vivo ? fuente.planId : pedido;
   }
 
-  static async create(tenantId: string, entrada: LothEntryCreateInput) {
+  /**
+   * Crea una línea del libro dentro de UNA transacción que valida las
+   * invariantes de cadena de custodia (T1–T5, ADR-305) y asigna el correlativo
+   * `lineNo` bajo LOCK. Antes de esto el `create` insertaba sin ninguna guarda:
+   * se podía movilizar dos veces la misma troza, trozar más de lo tumbado o
+   * despachar más de lo producido — justo lo que fiscaliza OSINFOR. La Analítica
+   * lo detectaba DESPUÉS; acá se IMPIDE.
+   *
+   * T9 (cupo de la especie) va en la misma tx, con su lock ÚLTIMO.
+   *
+   * Lanza `LothInvariantError` (→ 422) si el dato rompe la cadena y
+   * `LothPermisoError` (→ 403) si quien asienta no puede pasar lo autorizado.
+   */
+  static async create(tenantId: string, pedido: LothEntryCreateInput) {
     if (!tenantId) throw new Error("tenantId is required");
-    let input = entrada;
-    if (!LOTH_SECTIONS.includes(input.section)) {
-      throw new Error(`invalid section: ${input.section}`);
+    if (!LOTH_SECTIONS.includes(pedido.section)) {
+      throw new Error(`invalid section: ${pedido.section}`);
     }
-    if (!input.createdBy?.trim()) throw new Error("createdBy is required");
+    if (!pedido.createdBy?.trim()) throw new Error("createdBy is required");
+
+    // El plan y la especie los pone la BASE, no el navegador: planId del
+    // tenant y, en la tala de un árbol censado, el plan y la especie del censo
+    // (auditoría T9, 30-09). Antes de todo lo demás: el DMC, T3 y el cupo miden
+    // con esto, y es lo que se guarda. Un plan ajeno o de baja → `PLAN_NO_EXISTE`
+    // (security, 02-10: sin él, T6 y T7 no tenían contra qué juzgar).
+    const resuelta = await ForestLothDB.resolverPlanYArbol(tenantId, pedido);
 
     // P1 (cierre de período): no se puede registrar una línea fechada en un mes
     // cerrado — el acta es inmutable hasta reabrir. Se chequea antes de la tx.
-    const entryDate = input.entryDate ?? new Date();
+    const entryDate = resuelta.entryDate ?? new Date();
     const cerrado = await ForestLothCierreDB.closedPeriodOf(tenantId, entryDate);
     if (cerrado) {
       throw new LothInvariantError(
@@ -300,22 +355,10 @@ export class ForestLothDB {
       );
     }
 
-    // El plan citado tiene que ser de ESTE negocio y estar vivo. `planId` no
-    // tiene FK: un id inventado (o de otro negocio) dejaba a T6 y T7 sin plan
-    // contra qué juzgar — la línea entraba sin techo ni registro (security, 02-10).
-    const planId = await ForestLothDB.planDeLaFuente(tenantId, input);
-    if (planId) {
-      const plan = await prisma.forestPlan.findFirst({ where: { tenantId, id: planId, deletedAt: null }, select: { id: true } });
-      if (!plan) {
-        throw new LothInvariantError(
-          "Ese plan de manejo no existe en este negocio o está dado de baja: elige otro plan para registrar la línea.",
-          "PLAN_NO_EXISTE",
-          { planId },
-        );
-      }
-    }
-    // De acá en adelante (T6/T7, saldo, el asiento) la línea lleva el plan de su fuente.
-    input = { ...input, planId };
+    // De acá en adelante (T6/T7, T9, saldo, el asiento) la línea lleva el plan
+    // de su FUENTE (ADR-459): el trozado, el de su tala; el despacho y el
+    // consumo, el de su troza. `planDeLaFuente` sólo lo cambia por un plan vivo.
+    const input: LothEntryCreateInput = { ...resuelta, planId: await ForestLothDB.planDeLaFuente(tenantId, resuelta) };
 
     // T8 (DMC): un árbol censado por debajo del diámetro mínimo de corta de su
     // especie no se aprovecha. Va ANTES de la tx porque no hay recurso disputado
@@ -323,7 +366,7 @@ export class ForestLothDB {
     await ForestLothDB.enforceDmc(tenantId, input);
 
     const entry = await prisma.$transaction(
-      (tx) => ForestLothDB.registrarLineaEnTx(tx, tenantId, input, entryDate),
+      (tx) => ForestLothDB.asentarEnTx(tx, tenantId, input, entryDate),
       LOTH_TX_OPTS,
     );
 
@@ -341,13 +384,20 @@ export class ForestLothDB {
 
   /**
    * El cuerpo de `create` dentro de una transacción ajena: invariantes (T1–T7,
-   * lockeando el recurso disputado) + correlativo bajo lock + la fila. Lo usa
-   * también el importador de guías ya despachadas (ADR-461), que asienta tala,
-   * trozado y despacho de UNA guía en una sola transacción.
+   * lockeando el recurso disputado) + correlativo bajo lock + T9 (cupo de la
+   * especie) + la fila. Lo usa el importador de guías ya despachadas (ADR-461),
+   * que asienta tala, trozado y despacho de UNA guía en una sola transacción.
    *
    * NO revisa el mes cerrado (P1), el plan ni el DMC (T8): eso lo hace quien
    * llama, antes de abrir la transacción — como `create`. Tampoco audita ni
-   * invalida la caché: eso va DESPUÉS del commit.
+   * invalida la caché: eso va DESPUÉS del commit (el evento sobre-cupo, sí: va
+   * en la tx, como en `create`).
+   *
+   * Lo que `create` resuelve antes de la tx y acá no hay quién: la tala de un
+   * árbol del censo de SU plan va con la especie del censo (`especieDelCensoEnTx`).
+   * Sin esto, una ficha con otra especie esquivaba el cupo (auditoría T9, 30-09).
+   * Quien llama no decide el rol (`puedeExcederCupo` sin definir): pasar lo
+   * AUTORIZADO se rechaza siempre (sin motivo, el 422 de T9).
    *
    * `correlativos` (opcional) recuerda el último N° por sección dentro de la
    * misma transacción: el lock de la sección se toma una vez y las líneas
@@ -361,6 +411,51 @@ export class ForestLothDB {
     correlativos?: Map<string, number>,
   ) {
     if (!tenantId) throw new Error("tenantId is required");
+    const resuelta = await ForestLothDB.especieDelCensoEnTx(tx, tenantId, input);
+    return ForestLothDB.asentarEnTx(tx, tenantId, resuelta, entryDate, correlativos);
+  }
+
+  /**
+   * La tala que entra sin pasar por `create` (el importador, ADR-461) también va
+   * con la especie DEL CENSO. A diferencia de `resolverPlanYArbol`, el plan ya lo
+   * eligió y validó quien llama —dentro de SU tx: puede ser un plan recién
+   * creado, por eso se lee con `tx`—, y se mira sólo el censo de ESE plan: un
+   * código de árbol de otro permiso no es este árbol (como `arbolesBajoDmc`).
+   * Otra especie que la del censo → 422 `TALA_ESPECIE_DISTINTA_AL_CENSO`.
+   */
+  private static async especieDelCensoEnTx(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+    input: LothEntryCreateInput,
+  ): Promise<LothEntryCreateInput> {
+    const treeCode = input.treeCode?.trim() || null;
+    const planId = input.planId?.trim() || null;
+    if (input.section !== "tala" || !treeCode || !planId) return input;
+    const arboles = await tx.forestCensusTree.findMany({
+      where: { tenantId, planId, treeCode, deletedAt: null },
+      select: { planId: true, speciesCommon: true, speciesScientific: true },
+      orderBy: { id: "asc" },
+      take: 1,
+    });
+    const r = resolverTalaContraCenso(
+      { treeCode, planId, speciesCommon: input.speciesCommon ?? null, speciesScientific: input.speciesScientific ?? null },
+      arboles,
+    );
+    if (!r.ok) throw new LothInvariantError(r.mensaje, r.code, r.detail);
+    return { ...input, planId: r.planId, speciesCommon: r.speciesCommon, speciesScientific: r.speciesScientific };
+  }
+
+  /**
+   * Invariantes + correlativo + T9 + la fila (+ el evento sobre-cupo), con el
+   * plan y la especie YA resueltos contra la base (`create` o `registrarLineaEnTx`).
+   */
+  private static async asentarEnTx(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+    input: LothEntryCreateInput,
+    entryDate: Date,
+    correlativos?: Map<string, number>,
+  ) {
     // 1. Invariantes de cadena de custodia (lockean el recurso disputado).
     await ForestLothDB.enforceInvariants(tx, tenantId, input);
 
@@ -387,7 +482,54 @@ export class ForestLothDB {
     lineNo += 1;
     correlativos?.set(llave, lineNo);
 
-    return tx.forestLothEntry.create({ data: ForestLothDB.datosDeLinea(tenantId, input, entryDate, caratulaId, lineNo) });
+    // 3. T9 — cupo de la especie. Su lock (advisory) es el ÚLTIMO de la tx:
+    //    tomado entre el FOR UPDATE de T3 y el del correlativo, dos altas
+    //    podían quedar abrazadas (una con el cupo esperando el correlativo, la
+    //    otra al revés). Al final, nadie que lo tenga espera otro lock del libro.
+    //    En el importador (varias líneas por tx) las líneas siguientes toman más
+    //    locks con el cupo tomado, pero siempre DESPUÉS del correlativo de la
+    //    Tala, que es el que toma antes toda alta de tala: no se cruzan.
+    const cupo = await ForestLothDB.enforceCupoEspecie(tx, tenantId, input);
+    // La nota va al libro sólo con motivo escrito (siempre contra lo
+    // autorizado; opcional contra el censo). Sin motivo, el aviso del censo
+    // queda en la auditoría.
+    const conMotivo = cupo && motivoCupoValido(input.motivoSobreCupo);
+    const inputFinal: LothEntryCreateInput = conMotivo
+      ? {
+          ...input,
+          observations: `${notaSobreCupo(cupo, input.motivoSobreCupo ?? "")}${input.observations?.trim() ? ` ${input.observations.trim()}` : ""}`,
+        }
+      : input;
+
+    const creada = await tx.forestLothEntry.create({ data: ForestLothDB.datosDeLinea(tenantId, inputFinal, entryDate, caratulaId, lineNo) });
+
+    // 4. El evento sobre-cupo, en la MISMA tx: la excepción que el titular
+    //    tiene que poder explicar no puede quedar asentada sin su rastro (con
+    //    `auditLoth`, fire-and-forget, un fallo del log la perdía). Se busca
+    //    por su nombre: contra el censo es un aviso (`loth_tala_sobre_censo`),
+    //    contra lo autorizado, la excepción con motivo (`loth_tala_sobre_cupo`).
+    //    Si el log no se escribe, no se escribe la tala.
+    if (cupo) {
+      const motivo = input.motivoSobreCupo ?? "";
+      const action: LothAuditAction = cupo.exigeMotivo ? "loth_tala_sobre_cupo" : "loth_tala_sobre_censo";
+      // ActivityLog tiene RLS por `app.tenant_id` (ADR-114): sin fijarlo, con
+      // el rol sin BYPASSRLS el INSERT fallaría y tumbaría la tala. `true` =
+      // sólo para esta tx (lo mismo que hace `withRlsTx`).
+      await tx.$executeRaw`SELECT set_config('app.tenant_id', ${tenantId}, true)`;
+      await tx.activityLog.create({
+        data: {
+          tenantId,
+          action,
+          entity: "ForestLothEntry" satisfies LothAuditEntity,
+          entityId: creada.id,
+          user: input.createdBy || "unknown",
+          detail: `Tala #${creada.lineNo} ${creada.treeCode ?? "—"}: ${
+            motivoCupoValido(motivo) ? notaSobreCupo(cupo, motivo) : `[Aviso sin motivo] ${cupo.mensaje}`
+          }`,
+        },
+      });
+    }
+    return creada;
   }
 
   // ─── Despacho con guía (28-09-2026) ────────────────────────────────────
@@ -826,6 +968,46 @@ export class ForestLothDB {
   }
 
   /**
+   * El plan y la especie de la línea, validados contra la BASE (auditoría T9,
+   * 30-09). `ForestLothEntry.planId` no tiene FK: sin esto, un planId inventado
+   * o de otro negocio dejaba el censo vacío y el cupo (T9) y lo autorizado
+   * (T6/T7) no medían nada.
+   *
+   *  - Si viene `planId`, tiene que ser un plan vivo de ESTE tenant → si no, 422.
+   *  - Tala de un árbol del censo: el plan y la especie son los del árbol
+   *    (`resolverTalaContraCenso`); otra especie u otro plan → 422. Sin planId,
+   *    se toma el del árbol. Un código fuera del censo queda como vino.
+   *
+   * Va antes de la tx: son lecturas de catálogo (plan y censo), no el recurso
+   * disputado; el lock del cupo sigue siendo el último de la tx.
+   */
+  private static async resolverPlanYArbol(tenantId: string, input: LothEntryCreateInput): Promise<LothEntryCreateInput> {
+    const planPedido = input.planId?.trim() || null;
+    if (planPedido && !(await ForestPlanDB.getPlan(tenantId, planPedido))) {
+      throw new LothInvariantError(
+        "Ese plan de manejo no existe en este negocio o está dado de baja: elige otro plan para registrar la línea.",
+        "PLAN_NO_EXISTE",
+        { planId: planPedido },
+      );
+    }
+    const treeCode = input.treeCode?.trim() || null;
+    if (input.section !== "tala" || !treeCode) return { ...input, planId: planPedido };
+
+    const arboles = await prisma.forestCensusTree.findMany({
+      where: { tenantId, treeCode, deletedAt: null },
+      select: { planId: true, speciesCommon: true, speciesScientific: true },
+      orderBy: { id: "asc" },
+      take: 50,
+    });
+    const r = resolverTalaContraCenso(
+      { treeCode, planId: planPedido, speciesCommon: input.speciesCommon ?? null, speciesScientific: input.speciesScientific ?? null },
+      arboles,
+    );
+    if (!r.ok) throw new LothInvariantError(r.mensaje, r.code, r.detail);
+    return { ...input, planId: r.planId, speciesCommon: r.speciesCommon, speciesScientific: r.speciesScientific };
+  }
+
+  /**
    * T8 — DMC. Si el árbol figura en el censo con su DAP y ese DAP no llega al
    * diámetro mínimo de corta de la especie, la tala se rechaza (422) salvo que
    * el operador escriba una justificación, que queda en el libro.
@@ -839,9 +1021,12 @@ export class ForestLothDB {
     const treeCode = input.treeCode?.trim();
     if (!treeCode) return;
 
+    // El árbol del plan ya resuelto (`resolverPlanYArbol`): con el mismo
+    // código en dos censos, el DAP que cuenta es el del plan de esta tala.
     const arbol = await prisma.forestCensusTree.findFirst({
-      where: { tenantId, treeCode, deletedAt: null },
+      where: { tenantId, treeCode, deletedAt: null, ...(input.planId ? { planId: input.planId } : {}) },
       select: { speciesCommon: true, dapM: true, planId: true },
+      orderBy: { id: "asc" },
     });
     if (!arbol?.dapM) return;
 
@@ -896,6 +1081,119 @@ export class ForestLothDB {
       out.set(a.treeCode, ForestLothDB.errorBajoDmc(a.treeCode, a.speciesCommon, dapCm, dmcCm, fuente));
     }
     return out;
+  }
+
+  /**
+   * T9 — cupo de la especie (30-09: en Blas el Tornillo se taló al 154 % de lo
+   * censado sin que nada lo dijera). Cupo = volumen AUTORIZADO del plan para la
+   * especie; si el plan no lo trae, lo CENSADO. La cuenta es la misma función
+   * pura que usa el formulario para avisar (`avisoCupoAlTalar`), pero la decide
+   * ACÁ con lo que hay en la base: el cliente no decide.
+   *
+   * Sólo contra lo AUTORIZADO se exige motivo (≥ 5 letras; sin él, 422). Contra
+   * el censo se devuelve el aviso sin frenar: el censo puede estar incompleto
+   * (Blas: Tornillo con 2 de 45 árboles autorizados censados) y el importador
+   * no tiene dónde escribir un motivo. Sin plan (ni en la línea ni en el árbol
+   * del censo) no hay cupo contra el cual medir → no aplica. Las talas y la
+   * tala nueva cuentan sólo si su código está en el censo del plan
+   * (`entradaDelPlan` → `talasDelPlan`, el mismo filtro de la vista).
+   *
+   * Lock: advisory por (tenant, plan, especie) — el recurso disputado es el cupo
+   * de la especie, que no es UNA fila. Se toma ÚLTIMO en la tx de `create`
+   * (después del FOR UPDATE del correlativo): quien lo tiene ya no espera
+   * ningún otro lock del libro → no hay ciclo.
+   */
+  private static async enforceCupoEspecie(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+    input: LothEntryCreateInput,
+  ): Promise<AvisoCupo | null> {
+    if (input.section !== "tala") return null;
+    const vol = input.volumeM3 == null || input.volumeM3 === "" ? null : Number(input.volumeM3);
+    if (vol == null || !Number.isFinite(vol) || vol <= 0) return null;
+    const treeCode = input.treeCode?.trim() || null;
+
+    // Plan y especie ya resueltos contra la base (`resolverPlanYArbol`): en la
+    // tala de un árbol censado son los del censo, nunca los del navegador.
+    const planId = input.planId ?? null;
+    const especie = input.speciesCommon?.trim() || null;
+    const clave = claveEspecie(especie);
+    if (!planId || !clave) return null;
+
+    // Dos claves int4 (tenant; plan+especie) en vez de un hashtext de 32 bits
+    // sobre todo junto: 64 bits de espacio y otro keyspace que el de los locks
+    // de una clave (`gtf:…`). Parametrizado: el texto nunca se interpola.
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${tenantId}), hashtext(${`${planId}:${clave}`}))`;
+
+    const [censo, autorizadas] = await Promise.all([
+      tx.forestCensusTree.findMany({
+        where: { tenantId, planId, deletedAt: null },
+        select: { treeCode: true, speciesCommon: true, volumenEstimadoM3: true },
+      }),
+      tx.forestPlanSpecies.findMany({
+        where: { tenantId, planId, deletedAt: null },
+        select: { speciesCommon: true, volumenAutorizadoM3: true, arbolesAutorizados: true },
+      }),
+    ]);
+    // Sólo las talas de un código del censo de ESTE plan (y no asentadas a
+    // otro): el filtro fino es `talasDelPlan`, el mismo de la vista.
+    const codigos = censo.map((c) => c.treeCode);
+    const talas = await tx.forestLothEntry.findMany({
+      where: { tenantId, section: "tala", status: "registrado", deletedAt: null, treeCode: { in: codigos } },
+      select: { treeCode: true, speciesCommon: true, volumeM3: true, planId: true },
+    });
+
+    const n = (v: Prisma.Decimal | null) => (v == null ? null : Number(v));
+    const aviso = avisoCupoAlTalar(
+      entradaDelPlan(
+        planId,
+        censo.map((c) => ({ treeCode: c.treeCode, speciesCommon: c.speciesCommon, volumenEstimadoM3: n(c.volumenEstimadoM3) })),
+        talas.map((t) => ({ treeCode: t.treeCode, speciesCommon: t.speciesCommon, volumeM3: n(t.volumeM3), planId: t.planId })),
+        autorizadas.map((s) => ({
+          speciesCommon: s.speciesCommon,
+          volumenAutorizadoM3: n(s.volumenAutorizadoM3),
+          arbolesAutorizados: s.arbolesAutorizados,
+        })),
+      ),
+      { treeCode, speciesCommon: especie, volumeM3: vol },
+    );
+    if (!aviso) return null;
+    // Contra el censo: aviso, no freno (el censo puede estar incompleto).
+    if (!aviso.exigeMotivo) return aviso;
+    const conMotivo = motivoCupoValido(input.motivoSobreCupo);
+    // Sobre lo AUTORIZADO la excepción la firma el dueño o el administrador:
+    // el almacenero no la asienta con su propio motivo (→ 403, no 422). `false`
+    // = la ruta lo decidió por el rol: se dice ya, traiga o no motivo. Sin
+    // decidir (`undefined`: el importador de guías, ADR-461, que no tiene dónde
+    // escribir un motivo) también se niega: con motivo, 403; sin él, el 422 de
+    // abajo, que el importador muestra como rechazo de la guía (no un 500).
+    if (input.puedeExcederCupo === false || (!input.puedeExcederCupo && conMotivo)) {
+      throw new LothPermisoError(`${aviso.mensaje} Pídele al dueño o al administrador que registre esta tala.`, {
+        especie: aviso.especie,
+        fuente: aviso.fuente,
+        cupoM3: aviso.cupoM3,
+        taladoConEsteM3: aviso.taladoConEsteM3,
+        pctConEste: aviso.pctConEste,
+        avisoCupo: aviso.mensaje,
+      });
+    }
+    if (conMotivo) return aviso;
+
+    throw new LothInvariantError(
+      `${aviso.mensaje} Si igual corresponde registrarla —el libro tiene que reflejar lo que pasó en el monte—, confirma y escribe el motivo (${MOTIVO_CUPO_MIN} letras o más): queda en la línea y en la auditoría.`,
+      "T9_CUPO_ESPECIE",
+      {
+        especie: aviso.especie,
+        fuente: aviso.fuente,
+        cupoM3: aviso.cupoM3,
+        taladoAntesM3: aviso.taladoAntesM3,
+        taladoConEsteM3: aviso.taladoConEsteM3,
+        pctConEste: aviso.pctConEste,
+        excesoM3: aviso.excesoM3,
+        yaExcedida: aviso.yaExcedida,
+        avisoCupo: aviso.mensaje,
+      },
+    );
   }
 
   /**
@@ -2219,4 +2517,65 @@ export class ForestLothDB {
     try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
     return caratula;
   }
+
+  /**
+   * Lo que lee el aviso de plazos del Libro TH (`loth-aviso-plazos`, cron
+   * `forestal-plazos`), con la MISMA forma que ve la pantalla: las líneas
+   * serializadas como las devuelve la API (Decimals → string), las guías por
+   * el mismo normalizador del cuadre (`gtfRegistradaDesdeApi`) y los planes de
+   * `ForestPlanDB.listPlans` + `planFichaDesdeApi`, como la ficha del permiso.
+   */
+  static async datosAvisoPlazos(tenantId: string): Promise<DatosAvisoTh> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const [lineas, gtfs, planes] = await Promise.all([
+      prisma.forestLothEntry.findMany({
+        where: { tenantId, deletedAt: null, status: "registrado" },
+        orderBy: [{ section: "asc" }, { lineNo: "asc" }, { id: "asc" }],
+        take: LIMITE_LINEAS_AVISO,
+      }),
+      /* TODAS las guías, no `ForestGtfDB.list` (corta en 200): con el tope, una
+         guía vieja que el libro cita saldría «citada sin registrar» por WhatsApp
+         — un rojo falso que enseña a ignorar el aviso. */
+      prisma.forestGtf.findMany({
+        where: { tenantId, deletedAt: null },
+        orderBy: { createdAt: "desc" },
+        select: {
+          gtfNumber: true, gtfDate: true, tipo: true, status: true, volumenTotalM3: true,
+          piezasTotal: true, placaVehiculo: true, gtfDatos: true,
+        },
+        take: LIMITE_LINEAS_AVISO,
+      }),
+      ForestPlanDB.listPlans(tenantId),
+    ]);
+    // JSON ida y vuelta = exactamente lo que serializa la API (Decimal.toJSON, Date ISO).
+    const comoApi = <T>(v: unknown): T => JSON.parse(JSON.stringify(v)) as T;
+    return {
+      lineas: comoApi<LothEntryDTO[]>(lineas),
+      gtfs: comoApi<unknown[]>(gtfs).flatMap((raw) => {
+        const g = gtfRegistradaDesdeApi(raw);
+        const tipo = (raw as { tipo?: unknown }).tipo;
+        return g ? [{ ...g, tipo: typeof tipo === "string" && tipo ? tipo : "trozas" }] : [];
+      }),
+      planes: comoApi<unknown[]>(planes).flatMap((raw) => {
+        const p = planFichaDesdeApi(raw);
+        return p ? [p] : [];
+      }),
+    };
+  }
+
+  /**
+   * Tenants con Libro TH (líneas o un plan vivo), para el cron de plazos.
+   * Excepción documentada a «tenantId primer parámetro»: es la enumeración que
+   * el cron recorre de a un tenant, igual que `DocumentsDB.tenantsCon…`.
+   */
+  static async tenantsConLibroTh(): Promise<string[]> {
+    const [conLineas, conPlan] = await Promise.all([
+      prisma.forestLothEntry.findMany({ where: { deletedAt: null }, select: { tenantId: true }, distinct: ["tenantId"] }),
+      prisma.forestPlan.findMany({ where: { deletedAt: null, isActive: true }, select: { tenantId: true }, distinct: ["tenantId"] }),
+    ]);
+    return [...new Set([...conLineas, ...conPlan].map((r) => r.tenantId))];
+  }
 }
+
+/** Tope de líneas que lee el aviso (un libro real anda en cientos; esto es sólo un techo). */
+const LIMITE_LINEAS_AVISO = 20_000;

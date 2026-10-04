@@ -14,6 +14,17 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/lib/generated/prisma/client";
 import { ConflictError } from "@/lib/api-error";
+import { invalidate } from "@/lib/cache";
+import { saldoEsperadoDeCaja } from "@/lib/caja/saldo-esperado";
+import {
+  efectoEnElEsperado,
+  medioCorregible,
+  nombreDelMedio,
+  whereDePagoDeLiquidacion,
+  type MedioDeCaja,
+  type PagoDeLiquidacion,
+} from "@/lib/caja/cambiar-medio";
+import { invalidarVentasOverview } from "@/lib/caja/invalidar-ventas-overview";
 
 /**
  * La caja se cerró mientras llegaba el movimiento (F4): no se anota en una caja
@@ -24,6 +35,31 @@ export class CajaNoAbiertaError extends ConflictError {
     super("La caja ya está cerrada: el movimiento no se anotó. Abre una caja y vuelve a intentarlo.");
     this.name = "CajaNoAbiertaError";
   }
+}
+
+/**
+ * El medio de un movimiento no se pudo cambiar (409): la caja ya se cerró (su
+ * arqueo quedó fijado), el movimiento no es un ingreso/egreso, ya estaba en ese
+ * medio, u otro cambio llegó primero. `motivo` va en `details` para la pantalla.
+ */
+export class MedioNoCambiadoError extends ConflictError {
+  constructor(
+    message: string,
+    readonly motivo: "caja_cerrada" | "tipo" | "sin_cambio" | "liquidacion" | "carrera",
+  ) {
+    super(message, { motivo });
+    this.name = "MedioNoCambiadoError";
+  }
+}
+
+/** Lo que devuelve `cambiarMedio`: el movimiento ya corregido y el esperado antes/después. */
+export interface CambioDeMedio {
+  movimiento: DbCashMovementRecord;
+  metodoAnterior: string;
+  /** Efectivo esperado de la caja antes del cambio (derivado del de después). */
+  esperadoAntes: number;
+  /** Efectivo esperado de la caja con el cambio, sumado en la base bajo el lock. */
+  esperadoDespues: number;
 }
 
 export type DbCashMovementRecord = {
@@ -117,6 +153,7 @@ export const CashRegistersMovementsDB = {
       if (caja?.status !== "abierta") throw new CajaNoAbiertaError();
       return tx.cashMovement.create({ data });
     });
+    invalidarVentasOverview(tenantId);
     return mapMovement(row);
   },
 
@@ -196,13 +233,142 @@ export const CashRegistersMovementsDB = {
     return filas.length > 0;
   },
 
-  /** `createMovement` dentro de la transacción de quien llama (ver arriba). */
+  /**
+   * `createMovement` dentro de la transacción de quien llama (ver arriba).
+   *
+   * `tenantId` (1er parámetro, como todo método) sólo sirve para invalidar el
+   * Tablero de Ventas. Se invalida acá, dentro de la tx, porque es el único
+   * punto común de adelantos y liquidaciones (`moverCajaEnTx`); el commit llega
+   * unos ms después, así que un GET del tablero justo en medio podría re-cachear
+   * el saldo viejo hasta 2 min (ventana chica, acotada por el TTL).
+   */
   async createMovementEnTx(
     tx: Prisma.TransactionClient,
+    tenantId: string,
     data: { cashRegisterId: string; type: "ingreso" | "egreso"; amount: number; method: string; description: string },
   ): Promise<DbCashMovementRecord> {
+    if (!tenantId) throw new Error("tenantId is required");
     const row = await tx.cashMovement.create({ data });
+    invalidarVentasOverview(tenantId);
     return mapMovement(row);
+  },
+
+  /**
+   * Qué movimientos de estos son el PAGO de una liquidación (mismo criterio que
+   * el 409 `liquidacion` de `cambiarMedio`: `whereDePagoDeLiquidacion`). La
+   * pantalla de caja lo usa para no ofrecer «Cambiar medio» donde el servidor lo
+   * va a rechazar.
+   */
+  async liquidacionesDeMovimientos(tenantId: string, movimientoIds: readonly string[]): Promise<PagoDeLiquidacion[]> {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (movimientoIds.length === 0) return [];
+    return prisma.liquidacionCuenta.findMany({
+      where: whereDePagoDeLiquidacion(tenantId, movimientoIds),
+      select: { codigo: true, cajaMovimientoId: true },
+    });
+  },
+
+  /**
+   * Corrige el MEDIO de un ingreso/egreso ya anotado en una caja ABIERTA (un
+   * adelanto anotado como efectivo que se pagó por transferencia). No toca el
+   * monto, el tipo ni la descripción.
+   *
+   * Lock: la caja en `FOR SHARE` como primera sentencia, igual que quien anota
+   * (`createMovement`, `moverCajaEnTx`). Choca con el cierre (`FOR UPDATE`): si
+   * un cierre está en curso, esto espera y relee el `status`; cerrada → 409 (el
+   * arqueo de una caja cerrada ya quedó fijado y no se reescribe). Si esto llega
+   * primero, el cierre espera y cuenta el medio corregido. Después del lock sólo
+   * se toca la fila del movimiento, que nadie más bloquea (los demás caminos
+   * sólo INSERTan o leen movimientos): no puede cerrar un ciclo.
+   *
+   * Carrera entre dos correcciones: el UPDATE lleva el medio LEÍDO en el WHERE;
+   * si otro lo cambió primero, 0 filas → 409 «carrera», no se pisa.
+   *
+   * `null` si la caja o el movimiento no existen en ESTE negocio (el `tenantId`
+   * va en el WHERE por la relación: `CashMovement` no tiene columna propia).
+   */
+  async cambiarMedio(
+    tenantId: string,
+    data: { cashRegisterId: string; movementId: string; metodo: MedioDeCaja },
+  ): Promise<CambioDeMedio | null> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const { cashRegisterId, movementId, metodo } = data;
+    const resultado = await prisma.$transaction(async (tx) => {
+      const caja = await CashRegistersMovementsDB.bloquearCajaParaAnotarEnTx(tx, tenantId, cashRegisterId);
+      if (!caja) return null;
+      if (caja.status !== "abierta") {
+        throw new MedioNoCambiadoError(
+          "La caja ya está cerrada: su arqueo quedó fijado y el medio no se puede cambiar.",
+          "caja_cerrada",
+        );
+      }
+
+      const mov = await tx.cashMovement.findFirst({
+        where: { id: movementId, cashRegisterId, cashRegister: { tenantId } },
+        select: { id: true, cashRegisterId: true, type: true, amount: true, method: true, description: true, createdAt: true },
+      });
+      if (!mov) return null;
+      if (!medioCorregible(mov.type)) {
+        throw new MedioNoCambiadoError("Sólo se puede cambiar el medio de un ingreso o un egreso.", "tipo");
+      }
+      const anterior = mov.method;
+      if (nombreDelMedio(anterior) === nombreDelMedio(metodo)) {
+        throw new MedioNoCambiadoError(`Ya está anotado en ${nombreDelMedio(metodo)}: no hay nada que cambiar.`, "sin_cambio");
+      }
+      /* El pago de una liquidación lleva su medio también en `LiquidacionCuenta.metodoPago`
+         y en el acta congelada (el PDF firmado): cambiarlo sólo acá los despega. Se
+         corrige anulando y rehaciendo la liquidación. Lectura simple, sin lock: el
+         vínculo se escribe en la misma transacción que crea el movimiento. La
+         reversión de una anulación (`cajaReversionId`) no guarda el medio en otro
+         lado: ésa sí se puede corregir. Un adelanto tampoco lo guarda aparte. */
+      const liq = await tx.liquidacionCuenta.findFirst({
+        where: whereDePagoDeLiquidacion(tenantId, movementId),
+        select: { codigo: true },
+      });
+      if (liq) {
+        throw new MedioNoCambiadoError(
+          `Es el pago de la liquidación ${liq.codigo}: su medio también está en el acta. Corrígelo anulando y rehaciendo la liquidación.`,
+          "liquidacion",
+        );
+      }
+
+      const upd = await tx.cashMovement.updateMany({
+        where: { id: movementId, cashRegisterId, method: anterior, cashRegister: { tenantId } },
+        data: { method: metodo },
+      });
+      if (upd.count === 0) {
+        throw new MedioNoCambiadoError("Otro cambio llegó primero: recarga la caja y vuelve a intentarlo.", "carrera");
+      }
+
+      /* El esperado DESPUÉS, sumado en la base con TODOS los movimientos (el
+         listado de cajas corta en 100) y LA cuenta del arqueo. El de antes se
+         deriva con la misma función: no hace falta otra suma. */
+      const [reg, grupos] = await Promise.all([
+        tx.cashRegister.findFirst({ where: { id: cashRegisterId, tenantId }, select: { openingAmount: true } }),
+        tx.cashMovement.groupBy({
+          by: ["type", "method"],
+          where: { cashRegisterId, cashRegister: { tenantId } },
+          _sum: { amount: true },
+        }),
+      ]);
+      const despues = saldoEsperadoDeCaja(
+        Number(reg?.openingAmount ?? 0),
+        grupos.map((g) => ({ type: g.type, method: g.method, amount: Number(g._sum.amount ?? 0) })),
+      ).esperado;
+      const efecto = efectoEnElEsperado({ type: mov.type, method: anterior, amount: Number(mov.amount) }, metodo);
+      return {
+        movimiento: mapMovement({ ...mov, method: metodo }),
+        metodoAnterior: anterior,
+        esperadoAntes: Math.round((despues - efecto) * 100) / 100,
+        esperadoDespues: despues,
+      } satisfies CambioDeMedio;
+    });
+    /* El banner del panel cachea 60 s la cuenta de la caja abierta (AlertsDB). */
+    if (resultado) {
+      invalidate(`admin:alerts-summary:${tenantId}`);
+      invalidarVentasOverview(tenantId);
+    }
+    return resultado;
   },
 
   /**

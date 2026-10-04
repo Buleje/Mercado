@@ -29,6 +29,9 @@ import { permisoDelPedido } from "@/lib/forestal/loth-permiso-pedido";
 
 const sectionEnum = z.enum(LOTH_SECTIONS);
 
+/** Quién registra una tala por encima de lo AUTORIZADO para su especie (T9). */
+const PUEDEN_EXCEDER_CUPO: readonly string[] = ["admin", "owner"];
+
 const createSchema = z.object({
   caratulaId: z.string().trim().min(1).nullable().optional(),
   planId: z.string().trim().min(1).nullable().optional(),
@@ -77,6 +80,10 @@ const createSchema = z.object({
   observations: z.string().trim().max(1000).nullable().optional(),
   // T8: motivo para talar un árbol bajo el DMC de su especie (queda en el libro).
   justificacionDmc: z.string().trim().max(500).nullable().optional(),
+  // T9: motivo para registrar una tala que deja a su especie por encima del
+  // cupo (autorizado o censado). El servidor recalcula el cupo: esto no decide
+  // si hace falta, sólo explica por qué se asienta igual.
+  motivoSobreCupo: z.string().trim().max(500).nullable().optional(),
 
   correctsLineNo: z.coerce.number().int().positive().nullable().optional(),
   correctionNote: z.string().trim().max(500).nullable().optional(),
@@ -223,6 +230,10 @@ export const POST = withApiHandler("forestal-loth-post", async (req: NextRequest
     const entry = await ForestLothDB.create(auth.tenantId, {
       ...parsed.data,
       motosierristaId,
+      // T9: pasar lo AUTORIZADO de una especie es la excepción que firma el
+      // titular — sólo admin/owner (por el rol del JWT; el body no lo decide,
+      // y el schema ni siquiera acepta el campo). Otro rol → 403 desde la DB class.
+      puedeExcederCupo: PUEDEN_EXCEDER_CUPO.includes(auth.role),
       createdBy: auth.username ?? "unknown",
     });
     // ADR-126: al talar, el árbol del censo pasa a "talado" (consume saldo).

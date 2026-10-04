@@ -593,8 +593,6 @@ export function computeCosteo(rows: CosteoSpeciesInput[], params: CosteoParams):
 /** DTO de una entrada del LO-TH tal como la devuelve la API (Decimals → string). */
 export interface LothEntryDTO {
   id: string;
-  /** Plan de manejo de origen (el GET devuelve la fila entera; antes no se tipaba). */
-  planId?: string | null;
   section: LothSection;
   lineNo: number;
   entryDate: string;
@@ -650,6 +648,8 @@ export interface LothEntryDTO {
   createdAt?: string | null;
   /** Quién asentó la línea. Viaja en el JSON; hace falta para auditar el libro. */
   createdBy?: string | null;
+  /** Plan de manejo al que se asentó la línea (puede faltar en líneas viejas). */
+  planId?: string | null;
   /** Subsanación SERFOR: esta línea corrige a la N° tal (la vieja NO se borra). */
   correctsLineNo?: number | null;
   correctionNote?: string | null;

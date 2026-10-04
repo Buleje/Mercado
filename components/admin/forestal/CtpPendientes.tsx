@@ -38,6 +38,8 @@ import {
 import { formatDateTimeShort } from "@/lib/format";
 import { resumenReservasVencidas } from "@/lib/forestal/reservas-vencidas";
 import CtpReservasVencidas from "./CtpReservasVencidas";
+import CtpPaquetesSinMedidas from "./CtpPaquetesSinMedidas";
+import { resumenPaquetesSinMedidas } from "@/lib/forestal/paquetes-sin-medidas";
 
 const TONO: Record<Pendiente["urgencia"], string> = {
   bloquea:
@@ -68,17 +70,24 @@ export default function CtpPendientes({
   /** Salta a la pestaña donde se resuelve ese pendiente, con su filtro puesto. */
   onIr: (vista: string, filtro?: Pendiente["filtro"]) => void;
 }) {
-  const { lista, seViene, reservasVencidas, reservaResuelta, cargando, falló, recargar } = estado;
+  const {
+    lista, seViene, reservasVencidas, reservaResuelta, paquetesSinMedidas, paquetesSinMedidasTotal, paquetesSinMedidasEnElPatio,
+    cargando, falló, recargar,
+  } = estado;
   const [abierto, setAbierto] = useState(false);
 
-  const total = lista.reduce((a, p) => a + p.cantidad, 0) + seViene.length + reservasVencidas.length;
+  /* La cuenta de paquetes es la TOTAL del servidor, no la de la lista: ésta viene
+     recortada y el badge no puede decir 100 con 240 pendientes. */
+  const total =
+    lista.reduce((a, p) => a + p.cantidad, 0) + seViene.length + reservasVencidas.length + paquetesSinMedidasTotal;
   const traba = lista.some((p) => p.urgencia === "bloquea");
   /* Un plazo que vence mañana no traba el cierre pero es igual de urgente que
      uno que ya venció — y a diferencia de ése, todavía se puede evitar. */
   const urge = seViene.some((a) => a.gravedad === "urgente");
   /* Una reserva vencida no traba el cierre (tono ámbar, no rojo), pero es
      madera congelada: cuenta en el badge y en el resumen como cualquier aviso. */
-  const hayAlgo = lista.length > 0 || seViene.length > 0 || reservasVencidas.length > 0;
+  const hayAlgo =
+    lista.length > 0 || seViene.length > 0 || reservasVencidas.length > 0 || paquetesSinMedidas.length > 0;
   /* `resumenPendientes` sólo sabe de lo pendiente: solo, diría «el libro está
      al día» con dos plazos venciéndose en pantalla. */
   const resumen = !hayAlgo
@@ -89,6 +98,7 @@ export default function CtpPendientes({
           ? `${seViene.length} ${seViene.length === 1 ? "aviso" : "avisos"} de lo que se viene`
           : null,
         reservasVencidas.length > 0 ? resumenReservasVencidas(reservasVencidas.length) : null,
+        paquetesSinMedidas.length > 0 ? resumenPaquetesSinMedidas(paquetesSinMedidasTotal, paquetesSinMedidasEnElPatio) : null,
       ]
         .filter(Boolean)
         .join(" · ");
@@ -219,6 +229,18 @@ export default function CtpPendientes({
             onResuelta={reservaResuelta}
             onVer={() => { setAbierto(false); onIr("productos-disponibles"); }}
             className={lista.length > 0 || seViene.length > 0 || cargando || falló || !hayAlgo ? "mt-4" : ""}
+          />
+          {/* Mismo trato: fuera del «hay algo / al día», con su «listo» a la vista.
+              El margen lo pide todo lo que se dibuja arriba, reservas incluidas. */}
+          <CtpPaquetesSinMedidas
+            paquetes={paquetesSinMedidas}
+            total={paquetesSinMedidasTotal}
+            enElPatio={paquetesSinMedidasEnElPatio}
+            className={
+              lista.length > 0 || seViene.length > 0 || reservasVencidas.length > 0 || cargando || falló || !hayAlgo
+                ? "mt-4"
+                : ""
+            }
           />
         </div>
       </AdminModal>

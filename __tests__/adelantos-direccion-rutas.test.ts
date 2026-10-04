@@ -75,6 +75,7 @@ vi.mock("@/lib/db/adelantos.db", () => ({
   DireccionNoCorregibleError: H.DireccionNoCorregibleError,
   ReglaDeRecibidoError: H.ReglaDeRecibidoError,
   IdempotenciaDistintaError: H.IdempotenciaDistintaError,
+  ContratoInvalidoError: class ContratoInvalidoError extends Error {},
   AdelantoNoCancelableError: H.AdelantoNoCancelableError,
   AdelantoConLiquidacionError: H.AdelantoConLiquidacionError,
 }));

@@ -263,3 +263,38 @@ describe("la celda de la tabla", () => {
     expect(within(container).queryByRole("button")).toBeNull();
   });
 });
+
+/* El aviso «paquetes sin medidas» (2026-09-30) abre el editor también para los
+   que traen UNA o DOS medidas: abrirlo en blanco obligaba a retipear lo que el
+   libro ya tenía, y al guardar el «no tocado» no se conservaba. */
+describe("un paquete con sólo alguna medida abre con las que ya tiene", () => {
+  const SIN_LARGO: PaqueteAMedir = {
+    ...SIN_MEDIDAS,
+    id: "pq-sin-largo",
+    codigo: "SL-9",
+    espesorCm: 5.1,
+    anchoCm: 20.32,
+    largoM: null,
+  };
+
+  it("muestra espesor y ancho en pulgadas y deja vacío sólo el largo", () => {
+    montar(SIN_LARGO);
+    expect(campo("Espesor (pulg)").value).toBe("2");
+    expect(campo("Ancho (pulg)").value).toBe("8");
+    expect(campo("Largo (pies)").value).toBe("");
+    expect((guardarBtn() as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("al poner el largo guarda las dos que ya tenía con su cm original, sin redondeo", () => {
+    const { onGuardar } = montar(SIN_LARGO);
+    fireEvent.change(campo("Largo (pies)"), { target: { value: "5" } });
+    fireEvent.click(guardarBtn());
+    expect(onGuardar).toHaveBeenCalledWith({
+      paqueteId: "pq-sin-largo",
+      ctpEntryId: "corrida-25",
+      espesorCm: 5.1, // sin tocar: el original exacto, no 5.08
+      anchoCm: 20.32,
+      largoM: 1.52,
+    });
+  });
+});

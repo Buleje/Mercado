@@ -25,6 +25,8 @@ import {
 } from "@/lib/forestal/vigencia-avisos";
 import type { ReservaVencida } from "@/lib/forestal/reservas-vencidas";
 import { alCambiarApartados } from "@/lib/forestal/apartados-evento";
+import type { PaqueteSinMedidas } from "@/lib/forestal/paquetes-sin-medidas";
+import { alCambiarEscuadrias } from "@/lib/forestal/escuadria-guardar";
 
 const VACIO: DatosPendientes = {
   ingresosPendientes: 0, fueraDePlazo: 0, guiasSinIngresar: 0,
@@ -74,6 +76,8 @@ type Respuesta = {
   sinFoto?: { guias?: number; detalle?: { gtf: string }[] };
   /** `guias/plata?sinPagar=1` (ADR-437): compras con algo por pagar, por proveedor. */
   porParte?: unknown;
+  /** `ctp?paquetesSinMedidas=1`: los paquetes sin alguna medida, recortados, y cuántos son en total. */
+  paquetesSinMedidas?: { paquetes?: unknown; total?: unknown; enElPatio?: unknown };
 };
 
 /** Lo que devuelve el hook. Exportado: el shell lo carga una vez y lo reparte
@@ -91,6 +95,16 @@ export interface CtpPendientesState {
   reservasVencidas: ReservaVencida[];
   /** Saca la reserva de la lista al instante y vuelve a leer las vencidas. */
   reservaResuelta: (id: string) => void;
+  /**
+   * Paquetes del libro sin alguna de las tres medidas (2026-09-30): sin ellas no
+   * se recalcula el volumen ni se imprime la lista de empaque. Se resuelven AHÍ
+   * MISMO —«Poner medidas» abre el editor de escuadría—, como las reservas.
+   * Puede venir recortada: la cuenta honesta es `paquetesSinMedidasTotal`.
+   */
+  paquetesSinMedidas: PaqueteSinMedidas[];
+  paquetesSinMedidasTotal: number;
+  /** De ésos, los que SIGUEN en el patio: lo que cuenta el badge de Productos disponibles. */
+  paquetesSinMedidasEnElPatio: number;
   cargando: boolean;
   falló: boolean;
   recargar: () => void;
@@ -146,9 +160,37 @@ export function useCtpPendientes(period: CtpPeriod): CtpPendientesState {
     [recargarReservas],
   );
 
+  /* Lo mismo para los paquetes sin medidas: se vuelve a leer sólo esto al guardar
+     una escuadría —desde la campana o desde cualquier otra pantalla—, y una
+     lectura vieja que vuelve tarde no resucita un paquete ya medido. */
+  const [sinMedidas, setSinMedidas] = useState<{ paquetes: PaqueteSinMedidas[]; total: number; enElPatio: number }>({
+    paquetes: [],
+    total: 0,
+    enElPatio: 0,
+  });
+  const sinMedidasRef = useRef(0);
+  const recargarSinMedidas = useCallback(() => {
+    const miCarga = ++sinMedidasRef.current;
+    void json("/api/admin/forestal/ctp?paquetesSinMedidas=1").then((r) => {
+      if (miCarga !== sinMedidasRef.current) return;
+      const paquetes = Array.isArray(r?.paquetesSinMedidas?.paquetes)
+        ? (r.paquetesSinMedidas.paquetes as PaqueteSinMedidas[])
+        : [];
+      const total = Number(r?.paquetesSinMedidas?.total);
+      const cuenta = Number.isFinite(total) ? Math.max(total, paquetes.length) : paquetes.length;
+      const enElPatio = Number(r?.paquetesSinMedidas?.enElPatio);
+      setSinMedidas({
+        paquetes,
+        total: cuenta,
+        enElPatio: Number.isFinite(enElPatio) ? Math.min(Math.max(enElPatio, 0), cuenta) : 0,
+      });
+    });
+  }, []);
+
   const recargar = useCallback(() => {
     const miCarga = ++cargaRef.current;
     recargarReservas();
+    recargarSinMedidas();
     setCargando(true);
     setFalló(false);
     const p = new URLSearchParams();
@@ -276,11 +318,13 @@ export function useCtpPendientes(period: CtpPeriod): CtpPendientesState {
       })
       .catch(() => { if (miCarga === cargaRef.current) { setFalló(true); setSeViene([]); } })
       .finally(() => { if (miCarga === cargaRef.current) setCargando(false); });
-  }, [period, recargarReservas]);
+  }, [period, recargarReservas, recargarSinMedidas]);
 
   useEffect(recargar, [recargar]);
   /* Una reserva liberada o extendida desde la TABLA también sale de la campana. */
   useEffect(() => alCambiarApartados(recargarReservas), [recargarReservas]);
+  /* Una escuadría cargada desde otra pantalla también saca al paquete de la campana. */
+  useEffect(() => alCambiarEscuadrias(recargarSinMedidas), [recargarSinMedidas]);
 
   return {
     datos,
@@ -288,6 +332,9 @@ export function useCtpPendientes(period: CtpPeriod): CtpPendientesState {
     seViene,
     reservasVencidas,
     reservaResuelta,
+    paquetesSinMedidas: sinMedidas.paquetes,
+    paquetesSinMedidasTotal: sinMedidas.total,
+    paquetesSinMedidasEnElPatio: sinMedidas.enElPatio,
     cargando,
     falló,
     recargar,

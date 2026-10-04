@@ -56,7 +56,7 @@ export function useDireccionPublica() {
 
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const estado: EstadoDireccion = useMemo(
-    () => (sinPermiso ? { tipo: "pagina", base: origin } : estadoDireccion(dir, origin, cargando)),
+    () => (sinPermiso ? { tipo: "pagina", base: origin } : estadoDireccion(dir, origin, cargando, process.env.NEXT_PUBLIC_BASE_URL ?? "")),
     [dir, origin, cargando, sinPermiso],
   );
 

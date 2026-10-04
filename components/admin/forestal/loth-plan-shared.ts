@@ -24,6 +24,8 @@ export interface Plan {
   propietarioDocTipo?: string | null; propietarioDoc?: string | null;
   provincia?: string | null; distrito?: string | null;
   sector?: string | null; cuenca?: string | null; contratoId?: string | null;
+  /** El plan contra el que el libro mide el cupo (`?active=1`). */
+  isActive?: boolean;
 }
 export interface Species {
   id: string; speciesCommon: string; speciesScientific: string | null; cites: boolean;

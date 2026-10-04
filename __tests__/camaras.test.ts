@@ -189,7 +189,7 @@ describe("buscar en lo que se ve", () => {
 
 /* ── Avisar por WhatsApp cuando la foto muestra a alguien (2026-09-12) ───── */
 
-import { configurarAvisos, debeAvisar, textoDelAviso, whatsappValido } from "@/lib/camaras/camaras";
+import { configurarAvisos, debeAvisar, esDireccionLocal, textoDelAviso, whatsappValido } from "@/lib/camaras/camaras";
 
 const camaraConAviso = (cuando: "siempre" | "noche" | "nunca", ultimoAvisoEn: string | null = null) => ({
   activa: true,
@@ -283,5 +283,22 @@ describe("revisión de seguridad 2026-10-01", () => {
 
   it("una descripción normal pasa igual (placas y horas cortas no son teléfonos)", () => {
     expect(descripcionParaAviso("Un camión ABC-123 entra al patio a las 10:15")).toBe("Un camión ABC-123 entra al patio a las 10:15");
+  });
+});
+
+describe("esDireccionLocal — la dirección que se pega en una cámara con chip", () => {
+  it("las de la casa no las alcanza una cámara 4G", () => {
+    for (const o of ["http://localhost:3000", "http://127.0.0.1:3000", "http://192.168.1.50:3000", "http://10.0.0.4", "http://172.20.1.1", "http://pc-brandon.local:3000", "http://[::1]:3000"]) {
+      expect(esDireccionLocal(o), o).toBe(true);
+    }
+  });
+  it("el dominio público sí", () => {
+    for (const o of ["https://buleje.pe", "https://www.buleje.pe", "https://main.buleje.pe", "http://172.32.0.1"]) {
+      expect(esDireccionLocal(o), o).toBe(false);
+    }
+  });
+  it("lo que no es una dirección se trata como inalcanzable", () => {
+    expect(esDireccionLocal("")).toBe(true);
+    expect(esDireccionLocal("buleje.pe")).toBe(true);
   });
 });

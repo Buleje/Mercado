@@ -2,6 +2,35 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 
+/** Lo mínimo de un cliente Prisma (o de una `tx`) que necesita `contratoVigente`. */
+export interface LectorDeContratos {
+  forestContrato: {
+    findFirst(args: {
+      where: { id: string; tenantId: string; deletedAt: null };
+      select: { id: true; codigo: true };
+    }): PromiseLike<{ id: string; codigo: string } | null>;
+  };
+}
+
+/**
+ * LA validación de «este permiso es de este negocio y sigue vivo», con
+ * `tenantId` y `deletedAt: null` en el WHERE (`contratoId` es una FK global).
+ * `null` = no existe acá o está dado de baja; quien llama decide si lo rechaza
+ * (PATCH y alta de adelantos: 422) o lo deja pasar sin permiso (`contratoPropio`).
+ * Recibe el cliente para poder correr dentro de una transacción.
+ */
+export async function contratoVigente(
+  db: LectorDeContratos,
+  tenantId: string,
+  contratoId: string,
+): Promise<{ id: string; codigo: string } | null> {
+  if (!tenantId) throw new Error("tenantId is required");
+  return db.forestContrato.findFirst({
+    where: { id: contratoId, tenantId, deletedAt: null },
+    select: { id: true, codigo: true },
+  });
+}
+
 /**
  * El permiso (`ForestContrato`) sólo si es uno VIVO de ESTE negocio; si no,
  * `null`. `contratoId` es una FK global: sin este filtro, un id de otro tenant

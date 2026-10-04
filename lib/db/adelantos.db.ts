@@ -2,7 +2,7 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { limaDateKey } from "@/lib/utils";
 import { logger } from "@/lib/logger";
-import { contratoPropio } from "./contrato-propio.db";
+import { contratoVigente } from "./contrato-propio.db";
 import type { Prisma } from "@/lib/generated/prisma/client";
 import {
   PREFIJO_ADELANTO,
@@ -12,6 +12,7 @@ import {
 } from "@/lib/adelantos/codigo-operacion";
 import { estadoDelSaldo } from "@/lib/adelantos/saldo-adelanto";
 import { resumirPersona, type ResumenPersona } from "@/lib/adelantos/saldo-persona";
+import { resumirSinControl, type ResumenSinControl } from "@/lib/adelantos/sin-control";
 import {
   etiquetaEgreso,
   etiquetaIngreso,
@@ -338,6 +339,21 @@ export class IdempotenciaDistintaError extends Error {
         : "Ya guardaste una entrega con otros datos en este intento; revísala en el detalle del adelanto.",
     );
     this.name = "IdempotenciaDistintaError";
+  }
+}
+
+/**
+ * El alta trajo un `contratoId` que no es de este negocio o está dado de baja.
+ * Antes se guardaba el adelanto SIN contrato y se respondía 201: quien lo cargó
+ * creía que quedaba imputado. La ruta responde 422 `contrato_invalido`; no se
+ * creó nada ni se tocó la caja (se valida antes de ambos).
+ */
+export class ContratoInvalidoError extends Error {
+  readonly status = 422 as const;
+  readonly code = "contrato_invalido" as const;
+  constructor() {
+    super("Ese contrato no existe o está dado de baja: elige otro o crea el adelanto sin contrato");
+    this.name = "ContratoInvalidoError";
   }
 }
 
@@ -908,6 +924,20 @@ export const AdelantosDB = {
     const problema = problemaDeDireccion({ direccion, conceptoRecibido: data.conceptoRecibido ?? null, modalidad });
     if (problema) throw new Error(problema);
 
+    /* El permiso: ausente / null / "" = sin permiso. Uno pedido que no es de este
+       negocio o está dado de baja se RECHAZA (422) — antes de la caja y del INSERT.
+       Va DESPUÉS de `yaCreado()` a propósito: la clave de idempotencia sólo queda
+       reservada cuando la fila se inserta, así que un rechazo acá no la quema (el
+       reintento con el permiso corregido entra), y un reintento de un alta que ya
+       se hizo devuelve el adelanto aunque el permiso se haya dado de baja después. */
+    const contratoPedido = data.contratoId?.trim() || null;
+    let contratoValidado: string | null = null;
+    if (contratoPedido) {
+      const c = await contratoVigente(prisma, tenantId, contratoPedido);
+      if (!c) throw new ContratoInvalidoError();
+      contratoValidado = c.id;
+    }
+
     // ADR-118: límite de crédito por persona (saldo abierto + nuevo monto ≤ límite)
     const benef = await prisma.adelantoBeneficiario.findFirst({
       where: { id: data.beneficiarioId, tenantId },
@@ -963,7 +993,7 @@ export const AdelantosDB = {
     }
 
     const codigoOperacion = await siguienteCodigoDeTenant(tenantId);
-    const contratoId = await contratoPropio(tenantId, data.contratoId);
+    const contratoId = contratoValidado;
     const crear = async (db: Db) => db.adelanto.create({
       data: {
         tenantId,
@@ -1642,6 +1672,59 @@ export const AdelantosDB = {
         .sort(solesPrimero),
       recibido: resumirRecibidos(recibidos),
     };
+  },
+
+  /**
+   * Los adelantos que diste y quedaron sin control: quietos ≥ 30 días, sin
+   * fecha para devolverlos o vencidos (regla en `lib/adelantos/sin-control.ts`).
+   *
+   * SIN TOPE DE FILAS, a diferencia de `list()` (500): un aviso que dice
+   * «3 sin control» cuando son 40 es peor que no avisar. Por adelanto se trae
+   * sólo lo que la regla mira: la ÚLTIMA entrega viva (no todas) y las cuotas
+   * pendientes con fecha.
+   */
+  async sinControl(tenantId: string, ahora: Date = new Date()): Promise<ResumenSinControl> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const filas = await prisma.adelanto.findMany({
+      where: { tenantId, status: "ABIERTO", saldoPendiente: { gt: 0 }, ...SOLO_DADOS },
+      select: {
+        id: true,
+        codigoOperacion: true,
+        beneficiarioId: true,
+        status: true,
+        direccion: true,
+        saldoPendiente: true,
+        moneda: true,
+        fechaAdelanto: true,
+        fechaVencimiento: true,
+        contratoId: true,
+        beneficiario: { select: { nombre: true } },
+        /* ADR-413 §7: una entrega anulada no existe para nadie. */
+        entregas: { where: { anuladaAt: null }, select: { fecha: true }, orderBy: { fecha: "desc" }, take: 1 },
+        entregasPactadas: {
+          where: { cumplidaEn: null, fechaEsperada: { not: null } },
+          select: { numero: true, fechaEsperada: true, cumplidaEn: true },
+        },
+      },
+    });
+    return resumirSinControl(
+      filas.map((f) => ({
+        id: f.id,
+        codigoOperacion: f.codigoOperacion,
+        beneficiarioId: f.beneficiarioId,
+        nombre: f.beneficiario?.nombre ?? null,
+        status: f.status,
+        direccion: f.direccion,
+        saldoPendiente: toNum(f.saldoPendiente),
+        moneda: f.moneda,
+        fechaAdelanto: f.fechaAdelanto,
+        fechaVencimiento: f.fechaVencimiento,
+        contratoId: f.contratoId,
+        entregas: f.entregas,
+        entregasPactadas: f.entregasPactadas,
+      })),
+      ahora,
+    );
   },
 
   /**

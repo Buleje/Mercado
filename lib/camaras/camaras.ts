@@ -166,6 +166,20 @@ export function esNocheEnLima(cuando: Date | string): boolean {
   return hora >= 19 || hora < 6;
 }
 
+/** ¿Es una dirección que sólo existe dentro de la casa? (localhost, 192.168.x, 10.x…) */
+export function esDireccionLocal(origen: string): boolean {
+  try {
+    const h = new URL(origen).hostname;
+    return (
+      h === "localhost" ||
+      h.endsWith(".local") ||
+      /^(127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|0\.0\.0\.0$|\[?::1\]?$)/.test(h)
+    );
+  } catch {
+    return true;
+  }
+}
+
 /** Un número de WhatsApp peruano: 9 dígitos, o 11 con el 51 adelante. */
 export function whatsappValido(v: string): boolean {
   const d = v.replace(/\D/g, "");

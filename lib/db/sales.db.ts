@@ -15,7 +15,10 @@ import {
 } from "./misc.db";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { saldoEsperadoDeCaja } from "@/lib/caja/saldo-esperado";
+import { contarVentas, cuentaEfectivoCaja, type CuentaCaja } from "@/lib/caja/efectivo-esperado";
 import { CajaNoAbiertaError, CashRegistersMovementsDB } from "@/lib/db/cash-registers-movements.db";
+import { liquidacionDelMovimiento, medioCorregible, type PagoDeLiquidacion } from "@/lib/caja/cambiar-medio";
+import { invalidarVentasOverview } from "@/lib/caja/invalidar-ventas-overview";
 
 // ── Local Types ───────────────────────────────────────────────────────────────
 
@@ -30,6 +33,12 @@ export type DbCashMovement = {
   description: string;
   saleId?: string;
   createdAt: string;
+  /**
+   * Sólo en los ingresos/egresos de una caja ABIERTA que son el pago de una
+   * liquidación: su código. La pantalla no ofrece «Cambiar medio» ahí (criterio
+   * de `lib/caja/cambiar-medio`, el mismo del 409 del servidor).
+   */
+  liquidacionCodigo?: string;
 };
 
 export type DbCashRegister = {
@@ -43,7 +52,21 @@ export type DbCashRegister = {
   status: CashRegisterStatus;
   notes?: string;
   movements: DbCashMovement[];
+  /**
+   * Sólo en cajas ABIERTAS: el efectivo que debería haber ahora, con la fórmula
+   * del cierre sobre TODOS sus movimientos (no sobre los 100 que trae el
+   * include). `expectedAmount` sigue siendo el que se congeló al cerrar.
+   */
+  efectivoEsperado?: number;
 };
+
+/** Lo que el aviso del panel necesita de la caja abierta más vieja. */
+export interface CajaAbiertaResumen {
+  id: string;
+  openedAt: string;
+  ventas: number;
+  cuenta: CuentaCaja;
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -226,14 +249,82 @@ export const SalesDB = {
       include: { items: true },
     });
     });
+    invalidarVentasOverview(tenantId);
     return mapSale(row);
   },
   async delete(tenantId: string, id: string): Promise<void> {
     await withRlsTx(tenantId, (tx) => tx.sale.deleteMany({ where: { id, tenantId } })).catch((err) => logger.error("[sales.db] sale delete failed", { error: String(err), id, tenantId }));
+    invalidarVentasOverview(tenantId);
   },
 };
 
 // ── Cash Registers DB ─────────────────────────────────────────────────────────
+
+/**
+ * La cuenta de efectivo de UNA caja, sumada en la base (groupBy por tipo y
+ * método) en vez de traer sus movimientos: una caja abierta meses puede tener
+ * miles, y el include de getAll corta en 100. CashMovement no tiene tenantId
+ * propio: el aislamiento va por la relación, en el WHERE.
+ */
+async function sumarCaja(tenantId: string, cashRegisterId: string, apertura: number): Promise<CuentaCaja> {
+  const grupos = await prisma.cashMovement.groupBy({
+    by: ["type", "method"],
+    where: { cashRegisterId, cashRegister: { tenantId } },
+    _sum: { amount: true },
+  });
+  return cuentaEfectivoCaja(
+    apertura,
+    grupos.map((g) => ({ type: g.type, method: g.method, amount: toNumOrZero(g._sum.amount) })),
+  );
+}
+
+/** Ventas distintas de una caja (un pago mixto son varias líneas con el mismo saleId). */
+async function contarVentasDeCaja(tenantId: string, cashRegisterId: string): Promise<number> {
+  const grupos = await prisma.cashMovement.groupBy({
+    by: ["saleId"],
+    where: { cashRegisterId, cashRegister: { tenantId }, type: "venta" },
+    _count: { _all: true },
+  });
+  return contarVentas(grupos.map((g) => ({ saleId: g.saleId, movimientos: g._count._all })));
+}
+
+/** Le pone a cada caja ABIERTA el efectivo que debería tener ahora. */
+async function conEfectivoEsperado(tenantId: string, cajas: DbCashRegister[]): Promise<DbCashRegister[]> {
+  const abiertas = cajas.filter((c) => c.status === "abierta" && !c.closedAt);
+  if (abiertas.length === 0) return cajas;
+  const esperados = new Map(
+    await Promise.all(
+      abiertas.map(async (c) => [c.id, (await sumarCaja(tenantId, c.id, c.openingAmount)).esperado] as const),
+    ),
+  );
+  const liquidaciones = await liquidacionesDeLasAbiertas(tenantId, abiertas);
+  return cajas.map((c) => {
+    if (!esperados.has(c.id)) return c;
+    return {
+      ...c,
+      efectivoEsperado: esperados.get(c.id),
+      movements: c.movements.map((m) => {
+        const codigo = medioCorregible(m.type) ? liquidacionDelMovimiento(m.id, liquidaciones) : null;
+        return codigo ? { ...m, liquidacionCodigo: codigo } : m;
+      }),
+    };
+  });
+}
+
+/**
+ * Las liquidaciones cuyo pago está entre los ingresos/egresos de las cajas
+ * abiertas. Si la lectura falla, la pantalla sigue (ofrece el selector y el
+ * servidor rechaza con su 409): perder este dato no debe tumbar la caja.
+ */
+async function liquidacionesDeLasAbiertas(tenantId: string, abiertas: DbCashRegister[]): Promise<PagoDeLiquidacion[]> {
+  const ids = abiertas.flatMap((c) => c.movements.filter((m) => medioCorregible(m.type)).map((m) => m.id));
+  try {
+    return await CashRegistersMovementsDB.liquidacionesDeMovimientos(tenantId, ids);
+  } catch (err) {
+    logger.warn("[sales.db] no se pudo leer qué movimientos son de una liquidación", { error: String(err), tenantId });
+    return [];
+  }
+}
 
 export const CashRegistersDB = {
   async getAll(tenantId: string): Promise<DbCashRegister[]> {
@@ -243,7 +334,8 @@ export const CashRegistersDB = {
     // por tenant activo, OOM potencial en Vercel Fluid Compute (512 MB).
     // Frontend usa los movimientos recientes para mostrar últimas operaciones;
     // historial completo debe ir por endpoint paginado dedicado.
-    return (await prisma.cashRegister.findMany({ where, include: { movements: { orderBy: { createdAt: "desc" }, take: 100 } }, orderBy: { openedAt: "desc" } })).map(mapCashRegister);
+    const cajas = (await prisma.cashRegister.findMany({ where, include: { movements: { orderBy: { createdAt: "desc" }, take: 100 } }, orderBy: { openedAt: "desc" } })).map(mapCashRegister);
+    return conEfectivoEsperado(tenantId, cajas);
   },
   async getAllPaginated(tenantId: string, limit = 25, cursor?: string): Promise<{ items: DbCashRegister[]; nextCursor: string | null }> {
     const rows = await prisma.cashRegister.findMany({
@@ -256,7 +348,28 @@ export const CashRegistersDB = {
     });
     const hasMore = rows.length > limit;
     const items = hasMore ? rows.slice(0, limit) : rows;
-    return { items: items.map(mapCashRegister), nextCursor: hasMore ? items[items.length - 1].id : null };
+    return {
+      items: await conEfectivoEsperado(tenantId, items.map(mapCashRegister)),
+      nextCursor: hasMore ? items[items.length - 1].id : null,
+    };
+  },
+  /**
+   * La caja abierta MÁS VIEJA con su cuenta (ventas + efectivo esperado), para
+   * el aviso del panel: «abierta hace 111 días · 3 ventas · S/ 245.00». `null`
+   * si no hay caja abierta.
+   */
+  async cuentaCajaAbierta(tenantId: string): Promise<CajaAbiertaResumen | null> {
+    const caja = await prisma.cashRegister.findFirst({
+      where: { tenantId, status: "abierta", closedAt: null },
+      orderBy: { openedAt: "asc" },
+      select: { id: true, openedAt: true, openingAmount: true },
+    });
+    if (!caja) return null;
+    const [cuenta, ventas] = await Promise.all([
+      sumarCaja(tenantId, caja.id, toNumOrZero(caja.openingAmount)),
+      contarVentasDeCaja(tenantId, caja.id),
+    ]);
+    return { id: caja.id, openedAt: toISO(caja.openedAt), ventas, cuenta };
   },
   async getOpen(tenantId: string): Promise<DbCashRegister | null> {
     const row = await prisma.cashRegister.findFirst({ where: { tenantId, status: "abierta" }, include: { movements: { orderBy: { createdAt: "desc" } } } });
@@ -277,6 +390,7 @@ export const CashRegistersDB = {
     });
     // El banner avisa de cajas abiertas desde un día anterior (AlertsDB, cache 60 s).
     invalidate(`admin:alerts-summary:${tenantId}`);
+    invalidarVentasOverview(tenantId);
     return mapCashRegister(row);
   },
   async close(tenantId: string, id: string, closingAmount: number, notes?: string): Promise<DbCashRegister | null> {
@@ -330,7 +444,10 @@ export const CashRegistersDB = {
          que está anotando en esta caja: margen sobre los 5 s por defecto. */
     }, { timeout: 15_000, maxWait: 5_000 });
 
-    if (row) invalidate(`admin:alerts-summary:${tenantId}`);
+    if (row) {
+      invalidate(`admin:alerts-summary:${tenantId}`);
+      invalidarVentasOverview(tenantId);
+    }
     return row ? mapCashRegister(row) : null;
   },
   async addMovement(cashRegisterId: string, movement: { type: string; amount: number; method: string; description: string; saleId?: string }, tenantId: string): Promise<DbCashMovement> {
@@ -352,6 +469,7 @@ export const CashRegistersDB = {
       if (caja.status !== "abierta") throw new CajaNoAbiertaError();
       return tx.cashMovement.create({ data: { cashRegisterId, ...movement } });
     });
+    invalidarVentasOverview(tenantId);
     return mapCashMovement(row);
   },
 };

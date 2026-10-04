@@ -36,6 +36,24 @@ export interface EscuadriaAGuardar {
   cantidad?: number;
 }
 
+/**
+ * «Cambió la escuadría de un paquete», avisado por evento de ventana (2026-09-30).
+ *
+ * La escuadría se carga desde varias pantallas (Productos disponibles, la ficha,
+ * el día de producción) y se AVISA en otra: la campana de avisos del libro, ya
+ * montada, lista los paquetes sin medidas. `invalidarCtp` borra el caché de GET
+ * pero una pantalla montada no vuelve a pedir sola. Mismo patrón que
+ * `apartados-evento.ts`: el que escribe avisa, el que muestra escucha.
+ */
+export const EVENTO_ESCUADRIAS = "ctp-escuadrias-cambio";
+
+/** Suscribe `alCambiar`; devuelve la baja, lista para el `return` de un `useEffect`. */
+export function alCambiarEscuadrias(alCambiar: () => void): () => void {
+  if (typeof window === "undefined") return () => undefined;
+  window.addEventListener(EVENTO_ESCUADRIAS, alCambiar);
+  return () => window.removeEventListener(EVENTO_ESCUADRIAS, alCambiar);
+}
+
 export async function guardarEscuadriaDePaquete(medidas: EscuadriaAGuardar): Promise<void> {
   const r = await fetch("/api/admin/forestal/ctp", {
     method: "PATCH",
@@ -56,4 +74,5 @@ export async function guardarEscuadriaDePaquete(medidas: EscuadriaAGuardar): Pro
     throw new Error(data?.message ?? data?.error ?? `El servidor respondió ${r.status}`);
   }
   invalidarCtp("/forestal/ctp");
+  if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent(EVENTO_ESCUADRIAS));
 }

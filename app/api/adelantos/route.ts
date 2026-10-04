@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { AdelantosDB, IdempotenciaDistintaError } from "@/lib/db/adelantos.db";
+import { AdelantosDB, ContratoInvalidoError, IdempotenciaDistintaError } from "@/lib/db/adelantos.db";
 import { requireAdmin } from "@/lib/require-admin";
 import { permisoAdelantos } from "@/lib/adelantos/permisos";
 import { logActivity } from "@/lib/activity-logger";
@@ -146,7 +146,7 @@ export async function POST(req: NextRequest) {
       adelanto = await AdelantosDB.create(auth.tenantId, parsed.data);
     } catch (bizErr) {
       /* La misma clave con otro cuerpo: no es un reintento (ADR-448). */
-      if (bizErr instanceof IdempotenciaDistintaError) {
+      if (bizErr instanceof IdempotenciaDistintaError || bizErr instanceof ContratoInvalidoError) {
         return NextResponse.json({ error: bizErr.message, code: bizErr.code }, { status: bizErr.status });
       }
       // Errores de negocio (límite de crédito, persona inexistente) → 400 claro.

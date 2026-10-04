@@ -51,6 +51,8 @@ export interface FilaTala {
   fotoUrl: string | null;
   /** T8: por qué se tumba uno bajo el DMC. Queda escrito en el libro. */
   justificacionDmc: string;
+  /** T9: por qué se registra por encima del cupo de la especie. Se pide cuando la ruta lo rechaza. */
+  motivoCupo: string;
   /** Observación libre de ESTA tala (item 10). */
   nota: string;
   resultado: ResultadoFila | null;
@@ -87,6 +89,7 @@ export function filaDeArbol(a: ArbolParaElegir): FilaTala {
     gps: p ? { lat: p[0], lng: p[1], origen: "censo" } : null,
     fotoUrl: null,
     justificacionDmc: "",
+    motivoCupo: "",
     nota: "",
     resultado: null,
   };
@@ -305,6 +308,7 @@ export function payloadDeFila(
     marcadoTocon: false,
     observations: f.nota.trim() || null,
     ...(f.justificacionDmc.trim() ? { justificacionDmc: f.justificacionDmc.trim() } : {}),
+    ...(f.motivoCupo.trim() ? { motivoSobreCupo: f.motivoCupo.trim() } : {}),
     gpsLat: f.gps?.lat ?? null,
     gpsLng: f.gps?.lng ?? null,
     gpsOrigen: f.gps?.origen ?? null,
@@ -335,9 +339,10 @@ export function resultadoDeRespuesta(status: number, body: unknown): ResultadoFi
 }
 
 /** Qué hay que tocar en la fila que falló. */
-export function queCorregir(r: ResultadoFila | null): "justificacion" | "fecha" | "codigo" | "especie" | "otro" | null {
+export function queCorregir(r: ResultadoFila | null): "justificacion" | "cupo" | "fecha" | "codigo" | "especie" | "otro" | null {
   if (r?.estado !== "fallida") return null;
   if (r.codigo === "T8_BAJO_DMC") return "justificacion";
+  if (r.codigo === "T9_CUPO_ESPECIE") return "cupo";
   if (r.codigo === "PERIODO_CERRADO") return "fecha";
   // T3: ese código ya está talado en el negocio (en una plantación, se cambia el código).
   if (r.codigo === "T3_TALA_DUPLICADA") return "codigo";

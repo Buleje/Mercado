@@ -39,6 +39,7 @@ import { productoDelTipoComercial } from "./loctp-catalogos";
 import { uidDeFila } from "./despacho-lista";
 import { TRAMOS_EDAD, edadEnDias, resumenDeEdad, tramoDeEdad, type ResumenEdad, type TramoEdad } from "./edad-del-patio";
 import { plazoDeApartado } from "./plazo-de-apartado";
+import { escuadriaCompleta } from "./escuadria-del-paquete";
 import { compararDisponibles, type Orden } from "./disponibles-orden";
 import {
   valorDeCorrida,
@@ -384,7 +385,8 @@ const volumen = (filas: readonly FilaProducto[]): VolumenProductos => {
   };
 };
 
-const tieneEscuadria = (p: PaqueteDisponible) => Boolean(p.espesorCm && p.anchoCm && p.largoM);
+/* La misma vara que el badge de la pestaña (`contarSinMedidasEnElPatio`): una sola. */
+const tieneEscuadria = (p: PaqueteDisponible) => escuadriaCompleta(p);
 
 export function resumenProductos(filas: readonly FilaProducto[], ahora: Date | null): ResumenProductos {
   const disp = filas.filter((f) => f.estado !== "usado");

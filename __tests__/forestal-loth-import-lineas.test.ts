@@ -5,7 +5,7 @@
  * veredicto y su motivo; el que decide es el usuario mirando la previa.
  */
 import { describe, it, expect } from "vitest";
-import { aFecha, aNumero, detectarSeparador, parseImportLineas, parseImportLineasCeldas } from "@/lib/forestal/loth-import-lineas";
+import { aFecha, aNumero, detectarSeparador, mensajeErrorFilaImport, parseImportLineas, parseImportLineasCeldas } from "@/lib/forestal/loth-import-lineas";
 
 describe("lectura de celdas", () => {
   it("acepta coma o punto decimal (un Excel peruano usa coma)", () => {
@@ -202,5 +202,48 @@ describe("parseImportLineasCeldas · un .xlsx leído a celdas (28-09, plantilla 
   it("una hoja vacía o de una sola fila no rompe", () => {
     expect(parseImportLineasCeldas([], "tala").filas).toHaveLength(0);
     expect(parseImportLineasCeldas([["Cód. árbol", "Especie"]], "tala").filas).toHaveLength(0);
+  });
+});
+
+describe("columna «motivo» (T9, tala sobre lo autorizado)", () => {
+  const fila = (encabezado: string, motivo: string) =>
+    parseImportLineas(`Cód. árbol,Especie,Longitud,${encabezado}\n001-TOR,Tornillo,8,${motivo}`, "tala").filas[0];
+
+  it.each(["motivo", "Motivo", "Motivo sobre cupo", "MOTIVO SOBRE CUPO", "justificación", "Justificacion"])(
+    "reconoce el encabezado «%s»",
+    (h) => {
+      const r = parseImportLineas(`Cód. árbol,Especie,Longitud,${h}\n001-TOR,Tornillo,8,Rebrote por lluvia`, "tala");
+      expect(r.ignoradas).toEqual([]);
+      expect(r.filas[0].motivoSobreCupo).toBe("Rebrote por lluvia");
+    },
+  );
+
+  it("sin la columna o con la celda vacía, el motivo es null", () => {
+    expect(fila("motivo", "").motivoSobreCupo).toBeNull();
+    expect(parseImportLineas("Cód. árbol,Especie,Longitud\n001-TOR,Tornillo,8", "tala").filas[0].motivoSobreCupo).toBeNull();
+  });
+
+  it("también llega desde un .xlsx ya leído a celdas", () => {
+    const r = parseImportLineasCeldas([["Cód. árbol", "Especie", "Longitud", "Motivo sobre cupo"], ["001-TOR", "Tornillo", 8, "Tala de seguridad"]], "tala");
+    expect(r.filas[0].motivoSobreCupo).toBe("Tala de seguridad");
+  });
+});
+
+describe("mensajeErrorFilaImport · T9", () => {
+  const t9 = { error: "T9_CUPO_ESPECIE", message: "x", detail: { especie: "Tornillo", cupoM3: 320, taladoConEsteM3: 325.1 } };
+
+  it("fila sin motivo: dice qué columna agregar y cuántas letras", () => {
+    expect(mensajeErrorFilaImport(7, 422, t9, null)).toBe(
+      'Fila 7: Tornillo pasa lo autorizado (325,1 de 320 m³). Agrega una columna "motivo" con al menos 5 letras',
+    );
+  });
+
+  it("motivo demasiado corto: pide alargarlo (misma regla del servidor)", () => {
+    expect(mensajeErrorFilaImport(7, 422, t9, "sí")).toContain("muy corto");
+  });
+
+  it("otros errores conservan el mensaje del servidor", () => {
+    expect(mensajeErrorFilaImport(2, 422, { error: "T3_TALA_DUPLICADA", message: "Ya talado" }, null)).toBe("Fila 2: Ya talado");
+    expect(mensajeErrorFilaImport(3, 500, {}, null)).toBe("Fila 3: HTTP 500");
   });
 });

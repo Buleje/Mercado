@@ -103,6 +103,7 @@ import CtpPaqueteFicha from "./CtpPaqueteFicha";
 import CtpEntryDetailModal from "./CtpEntryDetailModal";
 import type { WoodEntry } from "./ctp-shared";
 import { useCtpPendientes } from "@/hooks/use-ctp-pendientes";
+import { alertasPorVistaDe } from "@/lib/forestal/alertas-por-vista";
 import BandaPermiso from "@/components/admin/forestal/BandaPermiso";
 import CtpResumenesSerfor from "./CtpResumenesSerfor";
 import CtpConsumosView from "./CtpConsumosView";
@@ -472,17 +473,11 @@ export default function CTPLibroOperaciones() {
    *  el número aparece en el grupo y el punto en la vista. Misma fuente que la
    *  tira de abajo — no puede decir "3" arriba y listar dos. */
   const alertasPorVista = useMemo(() => {
-    const acc = pendientes.lista.reduce<Record<string, number>>((a, p) => {
-      a[p.vista] = (a[p.vista] ?? 0) + p.cantidad;
-      return a;
-    }, {});
-    /* Las reservas vencidas se resuelven en la campana, pero la madera es de
-       Productos disponibles: el contador va en SU pestaña, a la vista sin abrir
-       Herramientas (la campana queda a dos clics). */
-    const vencidas = pendientes.reservasVencidas.length;
-    if (vencidas > 0) acc.disponibles = (acc.disponibles ?? 0) + vencidas;
-    return acc;
-  }, [pendientes.lista, pendientes.reservasVencidas]);
+    return alertasPorVistaDe(pendientes.lista, {
+      reservasVencidas: pendientes.reservasVencidas.length,
+      sinMedidasEnElPatio: pendientes.paquetesSinMedidasEnElPatio,
+    });
+  }, [pendientes.lista, pendientes.reservasVencidas, pendientes.paquetesSinMedidasEnElPatio]);
 
   /** Importar/exportar/informar se usan una vez por mes: van plegadas en el
    *  menú, no ocupando dos filas de la cabecera todo el tiempo. */

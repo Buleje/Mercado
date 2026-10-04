@@ -12,7 +12,7 @@
  * pantalla ordena, esto trae y guarda.
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { leerJson } from "@/lib/errores/sin-dato";
 import type { LothEntryDTO } from "@/lib/forestal/loth-constants";
 import { defaultPoaConfig, type PoaConfig } from "@/lib/forestal/loth-poa";
@@ -189,6 +189,14 @@ export function useLothMapaDatos({ planId: planElegido = null, filtro = null, al
     })();
   }, [planElegido, filtro]);
 
+  /**
+   * Un árbol del censo que se acaba de corregir en el servidor (p. ej. se le
+   * cargaron las coordenadas): entra al mapa sin recargar todo ni re-encuadrar.
+   */
+  const reemplazarArbol = useCallback((arbol: CensusTreeDTO) => {
+    setTrees((prev) => prev.map((t) => (t.id === arbol.id ? { ...t, ...arbol } : t)));
+  }, []);
+
   return {
     raw,
     trees,
@@ -202,6 +210,7 @@ export function useLothMapaDatos({ planId: planElegido = null, filtro = null, al
     error,
     setError,
     fitKey,
+    reemplazarArbol,
   };
 }
 

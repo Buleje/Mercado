@@ -28,6 +28,9 @@ const H = vi.hoisted(() => {
   const creadas: Record<string, unknown>[] = [];
   const tx = {
     $queryRaw: async () => [],
+    // Merge 04-10: T9 (cupo por especie) lee el censo y audita dentro de la tx.
+    $executeRaw: async () => 1,
+    forestCensusTree: { findMany: async () => [] },
     forestPlan: { findFirst: async () => estado.plan },
     forestPlanSpecies: {
       findMany: async () => estado.registro,
@@ -53,7 +56,7 @@ const H = vi.hoisted(() => {
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     $transaction: (fn: (tx: unknown) => unknown) => fn(H.tx),
-    forestCensusTree: { findFirst: async () => null },
+    forestCensusTree: { findFirst: async () => null, findMany: async () => [] },
     // La fuente de la línea (tala/trozado) fuera de la tx: sin plan propio, manda el de la línea.
     forestLothEntry: { findFirst: async () => null },
     // El plan citado por la línea: existe en este negocio si la prueba puso uno.

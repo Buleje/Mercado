@@ -37,6 +37,8 @@ interface Props {
   autorizadas: ReadonlySet<string>;
   dmcOverrides: Record<string, number>;
   onAgregado: () => void;
+  /** Código y especie ya escritos (p. ej. una tala que el censo no declara). Se leen al montar. */
+  inicial?: { treeCode: string; speciesCommon: string };
 }
 
 const FORM_ID = "loth-censo-arbol-form";
@@ -44,12 +46,18 @@ const INPUT = "h-10 w-full rounded-lg border bg-[var(--surface-raised)] px-3 tex
 const inputCls = (mal: boolean) =>
   `${INPUT} ${mal ? "border-[var(--data-error-500)] focus:border-[var(--data-error-500)] focus:ring-[var(--data-error-500)]/20" : "border-[var(--rule-base)] focus:border-[var(--accent)] focus:ring-[var(--accent)]/20"}`;
 
-export default function LothCensoArbolForm({ open, onClose, planId, arboles, especiesPlan, autorizadas, dmcOverrides, onAgregado }: Props) {
-  const [b, setB] = useState<BorradorArbol>(BORRADOR_VACIO);
-  const [busy, setBusy] = useState(false);
-  const codigoRef = useRef<HTMLInputElement>(null);
+export default function LothCensoArbolForm({ open, onClose, planId, arboles, especiesPlan, autorizadas, dmcOverrides, onAgregado, inicial }: Props) {
   /** Lo último que puso la sugerencia: si el campo sigue así, se puede reemplazar. */
   const sugerido = useRef<{ cientifico: string | null; nativo: string | null }>({ cientifico: null, nativo: null });
+  const [b, setB] = useState<BorradorArbol>(() => {
+    if (!inicial) return BORRADOR_VACIO;
+    // Lo que entra sin tipear: con la especie viene su científico y su nombre nativo.
+    const s = sugerirPorEspecie(inicial.speciesCommon, especiesPlan, arboles);
+    sugerido.current = s;
+    return { ...BORRADOR_VACIO, treeCode: inicial.treeCode, speciesCommon: inicial.speciesCommon, speciesScientific: s.cientifico ?? "", speciesNative: s.nativo ?? "" };
+  });
+  const [busy, setBusy] = useState(false);
+  const codigoRef = useRef<HTMLInputElement>(null);
   const set = (k: keyof BorradorArbol, v: string) => setB((p) => ({ ...p, [k]: v }));
 
   const codigos = useMemo(() => new Set(arboles.map((a) => a.treeCode.trim().toLowerCase())), [arboles]);

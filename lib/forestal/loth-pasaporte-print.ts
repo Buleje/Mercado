@@ -52,7 +52,7 @@ const plural = (n: number, sing: string, plur: string) => `${n} ${n === 1 ? sing
  * troza (`/verificar/[code]`), para que el inspector abra desde el papel la
  * misma trazabilidad que ve el titular en pantalla.
  */
-async function qrDe(code: string): Promise<string | null> {
+export async function qrDe(code: string): Promise<string | null> {
   try {
     const QR = (await import("qrcode")).default;
     const origin = typeof window === "undefined" ? "" : window.location.origin;
@@ -138,7 +138,7 @@ function pasaporteBody(op: TraceOperation, caratula?: PasaporteCaratula | null, 
   `;
 }
 
-const PASAPORTE_CSS = `
+export const PASAPORTE_CSS = `
       .phead { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
       .phead h1 { font-size: 20px; margin: 0; }
       .qrbox { text-align: center; flex: 0 0 auto; }

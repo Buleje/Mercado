@@ -37,6 +37,8 @@ import TarjetaPersona from "./personas/TarjetaPersona";
 import FichaPersonaModal from "./personas/FichaPersonaModal";
 import CobranzaView from "./cobranza/CobranzaView";
 import ProximosVencimientos from "./cobranza/ProximosVencimientos";
+import SinControl from "./cobranza/SinControl";
+import type { ResumenSinControl } from "@/lib/adelantos/sin-control";
 import CrearPersonaModal from "./personas/CrearPersonaModal";
 import CuentasPorPersona from "./cuentas/CuentasPorPersona";
 import { leerPedidoLiquidar } from "./cuentas/liquidar-por-url";
@@ -86,6 +88,8 @@ type Resumen = {
    * que diste. Ausente = el servidor todavía no sabe de direcciones.
    */
   recibido?: { abiertos: number; porMoneda: { moneda: string; total: number; porDevolver: number; excedente: number; abiertos: number }[] };
+  /** Lo dado que quedó suelto (quieto, sin fecha o vencido). `null` = el servidor no pudo contarlo. */
+  sinControl?: ResumenSinControl | null;
 };
 
 const MODULE_ID = "adelantos";
@@ -152,7 +156,10 @@ export default function AdelantosModule() {
     setError(null);
     try {
       const [r, a, b] = await Promise.all([
-        fetch("/api/adelantos/resumen", { credentials: "include" }).then((x) => (x.ok ? x.json() : null)),
+        /* `no-store`: la ruta manda `max-age=30`, y después de registrar una
+           entrega el navegador devolvía el resumen de antes (el aviso de
+           «sin control» seguía mostrando el adelanto que se acaba de mover). */
+        fetch("/api/adelantos/resumen", { credentials: "include", cache: "no-store" }).then((x) => (x.ok ? x.json() : null)),
         /* `todas`: la lista muestra lo dado Y lo recibido (ADR-448). Las vistas
            que cuentan plata por cobrar reciben sólo lo dado (`dados`, abajo). */
         fetch("/api/adelantos?direccion=todas", { credentials: "include" }).then((x) => (x.ok ? x.json() : [])),
@@ -218,7 +225,7 @@ export default function AdelantosModule() {
           )}
 
           {tab === "resumen" && (
-            <ResumenView resumen={resumen} adelantos={dados} recibidos={recibidos} loading={loading} onGoTab={setTab} />
+            <ResumenView resumen={resumen} adelantos={dados} recibidos={recibidos} loading={loading} onGoTab={setTab} onChange={reload} />
           )}
           {tab === "lista" && (
             <AdelantosView
@@ -262,6 +269,7 @@ function ResumenView({
   recibidos,
   loading,
   onGoTab,
+  onChange,
 }: {
   resumen: Resumen | null;
   /** Sólo lo DADO: todo lo de esta vista es «lo que te deben». */
@@ -270,6 +278,8 @@ function ResumenView({
   recibidos: DbAdelanto[];
   loading: boolean;
   onGoTab: (tab: string) => void;
+  /** Recargar después de tocar un adelanto desde su ficha (aviso «sin control»). */
+  onChange: () => void;
 }) {
   if (loading) return <SkeletonGrid />;
   if (!resumen) return <EmptyState icon={Wallet} title="Sin datos aún" hint="Crea tu primer adelanto en la pestaña Adelantos." />;
@@ -420,6 +430,9 @@ function ResumenView({
       </div>
 
       <CuentasPorPersona onGoTab={onGoTab} />
+
+      {/* Los dos avisos juntos: lo que ya se escapó y lo que vence esta semana. */}
+      <SinControl datos={resumen.sinControl} onChange={onChange} />
 
       <ProximosVencimientos adelantos={adelantos} />
 

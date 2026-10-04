@@ -24,6 +24,9 @@ import { diaLocal, ultimosDiasLocales } from "@/lib/fechas/dia-local";
 import { medioDeMovimiento, saldoEsperadoDeCaja } from "@/lib/caja/saldo-esperado";
 import { cuentasDeCajaParaPantalla } from "@/lib/caja/cuentas-de-pantalla";
 import { htmlReporteDeCaja } from "@/lib/caja/reporte-impreso";
+import { medioCorregible } from "@/lib/caja/cambiar-medio";
+import { useMiRol } from "@/hooks/use-mi-rol";
+import { CambiarMedioMovimiento } from "./cash-register/CambiarMedioMovimiento";
 import { formatCurrency, formatDateLong, formatDateShort, formatDateTime, formatDateTimeShort, formatTime, formatWeekday } from "@/lib/format";
 
 const CashRegisterChart = dynamic(
@@ -42,6 +45,8 @@ interface CashMovement {
   id: string; cashRegisterId: string; type: string;
   amount: number; method: string; description: string;
   saleId?: string; createdAt: string;
+  /** Pago de una liquidación: su medio se corrige anulándola, no desde la caja. */
+  liquidacionCodigo?: string;
 }
 
 interface CashRegister {
@@ -53,7 +58,7 @@ interface CashRegister {
 }
 
 type View = "current" | "history" | "reconcile" | "auditoria";
-type MethodFilter = "all" | "efectivo" | "yape" | "plin" | "tarjeta";
+type MethodFilter = "all" | "efectivo" | "yape" | "plin" | "tarjeta" | "transferencia";
 
 function fmt(n: number) { return `${formatCurrency(n)}`; }
 
@@ -191,6 +196,9 @@ function YapePlinConciliation({ breakdown }: { breakdown: Record<string, number>
 
 export default function CashRegisterTab() {
   const { confirm } = useConfirm();
+  /* «Cambiar medio» sólo para admin/dueño: el servidor devuelve 403 al resto. */
+  const rol = useMiRol();
+  const puedeCambiarMedio = rol === "admin" || rol === "owner";
   const [registers, setRegisters] = useState<CashRegister[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<View>("current");
@@ -375,7 +383,7 @@ export default function CashRegisterTab() {
     if (!currentRegister) return [];
     const mvs = currentRegister.movements;
     if (mvFilter === "all") return mvs;
-    return mvs.filter(m => m.method === mvFilter);
+    return mvs.filter(m => medioDeMovimiento(m.method) === mvFilter);
   }, [currentRegister, mvFilter]);
 
   // Filtered closed registers for history search
@@ -1107,7 +1115,7 @@ export default function CashRegisterTab() {
                   <CardTitle className="text-base font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex-1">Movimientos</CardTitle>
                   {/* Method filter pills */}
                   <div className="flex gap-1.5 overflow-x-auto scrollbar-none">
-                    {(["all", "efectivo", "yape", "plin", "tarjeta"] as const).map(m => (
+                    {(["all", "efectivo", "yape", "plin", "tarjeta", "transferencia"] as const).map(m => (
                       <button
                         key={m}
                         onClick={() => setMvFilter(m)}
@@ -1146,6 +1154,19 @@ export default function CashRegisterTab() {
                               {isPos ? "+" : "&minus;"}{fmt(m.amount)}
                             </p>
                             <p className="text-sm text-[var(--text-tertiary)] dark:text-muted tabular-nums">{fmtDate(m.createdAt)}</p>
+                            {/* Un adelanto anotado como efectivo que se pagó por transferencia:
+                                corregir el medio mueve el «Efectivo actual» (lib/caja/cambiar-medio). */}
+                            {puedeCambiarMedio && medioCorregible(m.type) && (
+                              <div className="mt-1">
+                                <CambiarMedioMovimiento
+                                  cashRegisterId={currentRegister.id}
+                                  movimiento={m}
+                                  esperadoActual={stats?.expectedCash ?? 0}
+                                  formato={fmt}
+                                  onCambiado={() => void fetchData()}
+                                />
+                              </div>
+                            )}
                           </div>
                         </div>
                       );
@@ -1276,6 +1297,7 @@ export default function CashRegisterTab() {
               {trail.map((t) => {
                 const esApertura = t.action === "Abrir";
                 const esCierre = t.action === "Cerrar";
+                const esCorreccion = t.action === "Editar";
                 return (
                   <li key={t.id} className="flex flex-wrap items-start gap-3 px-5 py-3">
                     <span
@@ -1288,7 +1310,7 @@ export default function CashRegisterTab() {
                             : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
                       )}
                     >
-                      {esApertura ? "Apertura" : esCierre ? "Cierre" : "Movimiento"}
+                      {esApertura ? "Apertura" : esCierre ? "Cierre" : esCorreccion ? "Corrección" : "Movimiento"}
                     </span>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm text-[var(--text-primary)]">{t.detail}</p>
