@@ -32,6 +32,11 @@ import type { RespuestaImportar, ResultadoImportarGuia } from "@/lib/forestal/lo
  * asienta guías ajenas) → rate limit por IP y por NEGOCIO → spec:forestal:loth-libro
  * → cada N° de registro cobrado al límite de la consulta suelta a SERFOR.
  *
+ * T9 (04-10): si la guía deja una especie sobre lo AUTORIZADO, el ítem trae
+ * `motivoSobreCupo` (lo pide la vista previa); sin él la guía vuelve
+ * `rechazada` con `T9_CUPO_ESPECIE`. Con él, la tala se escribe con su nota y
+ * el evento `loth_tala_sobre_cupo`, en la misma transacción.
+ *
  * Directorio (02-10 noche): si el ítem trae `directorio` (qué agregar o
  * completar) y la guía ENTRÓ, después de su transacción se guardan las partes,
  * el vehículo y el permiso marcados (`ForestLothImportarDirectorioDB.guardar`).
@@ -44,6 +49,14 @@ import type { RespuestaImportar, ResultadoImportarGuia } from "@/lib/forestal/lo
  * `maxDuration` 300 s (también en `vercel.json`, que manda sobre `app/api/**`):
  * hasta 10 guías en serie, cada una su transacción.
  */
+/**
+ * T9: pasar lo AUTORIZADO de una especie lo firma el titular — admin o dueño,
+ * como en el alta (`/api/admin/forestal/loth`). Sale del JWT, nunca del cuerpo
+ * (el schema ni acepta el campo). Hoy la ruta entera ya es de esos dos roles;
+ * se decide igual acá para que abrirla a otro rol no abra también el cupo.
+ */
+const PUEDEN_EXCEDER_CUPO: readonly string[] = ["admin", "owner"];
+
 export const maxDuration = 300;
 export const POST = withApiHandler("forestal-loth-importar-guia-post", async (req: NextRequest) => {
   const auth = await requireAdmin(req, ["admin", "owner"]);
@@ -98,6 +111,9 @@ export const POST = withApiHandler("forestal-loth-importar-guia-post", async (re
         planDestino: items[i].planDestino,
         crearTala: items[i].crearTala,
         createdBy: user,
+        /* T9: el motivo viene de la pantalla; QUIÉN puede pasar lo autorizado, de la sesión. */
+        motivoSobreCupo: items[i].motivoSobreCupo ?? null,
+        puedeExcederCupo: PUEDEN_EXCEDER_CUPO.includes(auth.role),
         /* La 1.ª no espera (otra importación en curso → rechazo); las que siguen esperan su turno. */
         esperarTurno: intentadas++ > 0,
       });

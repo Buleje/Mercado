@@ -7,6 +7,8 @@
 
 import { esNumeroRegistroValido, normalizarNumeroRegistro } from "@/lib/forestal/serfor-gtf";
 import { hayQueCompletar } from "@/lib/forestal/loth-importar-guia-directorio";
+import { motivoCupoValido } from "@/lib/forestal/loth-cupo-especie";
+import { sobreCupoConMotivo } from "@/lib/forestal/loth-importar-guia-cupo";
 import type {
   AccionDirectorio,
   DirectorioDeLaGuia,
@@ -20,6 +22,7 @@ import type {
   PlanNuevoPropuesto,
   RespuestaImportar,
   ResultadoImportarGuia,
+  SobreCupoDeLaGuia,
 } from "@/lib/forestal/loth-importar-guia-tipos";
 
 export type PestanaFuente = "recibidas" | "registro" | "foto";
@@ -100,6 +103,18 @@ export const esImportable = (g: GuiaVistaPrevia, crearTala = true) => {
   const e = estadoEfectivo(g, crearTala);
   return e === "lista" || e === "elegir_permiso";
 };
+
+/** T9 con el interruptor de la tala como está: apagado, sólo cuentan las talas que se agrandan. */
+export const sobreCupoEfectivo = (g: GuiaVistaPrevia, crearTala: boolean): SobreCupoDeLaGuia[] =>
+  (crearTala ? g.sobreCupo?.conTala : g.sobreCupo?.sinTala) ?? [];
+
+/**
+ * ¿Le falta el motivo para entrar? Sólo si pasa lo AUTORIZADO (lo censado
+ * avisa y entra igual) y el motivo no llega a 5 letras: el mismo criterio que
+ * la ruta (`motivoCupoValido`), que la rechazaría con `T9_CUPO_ESPECIE`.
+ */
+export const faltaMotivoDeCupo = (g: GuiaVistaPrevia, crearTala: boolean, motivo: string | undefined): boolean =>
+  sobreCupoConMotivo(sobreCupoEfectivo(g, crearTala)).length > 0 && !motivoCupoValido(motivo);
 
 /** Por fecha y N° de guía, como las revisa y las importa el servidor (`ordenDeImportacion`). */
 export function enOrdenDeImportacion<T extends { fecha: string | null; gtfNumber: string | null }>(

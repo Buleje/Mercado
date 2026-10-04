@@ -98,6 +98,8 @@ function GrupoDeGuias({
             alDirectorio={s.alDirectorio[g.clave]}
             onDirectorio={(ficha, cambio) => s.decidirDirectorio(g.clave, ficha, cambio)}
             abiertaDeEntrada={pocas}
+            motivoCupo={s.motivosCupo[g.clave] ?? ""}
+            onMotivoCupo={(texto) => s.escribirMotivoCupo(g.clave, texto)}
           />
         ))}
       </div>

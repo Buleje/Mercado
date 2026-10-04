@@ -23,9 +23,23 @@
  *    al directorio); `ItemImportarGuia.directorio` (qué guardar) y
  *    `ResultadoImportarGuia.directorio` (qué pasó con cada uno). Todo AGREGADO
  *    y opcional: un cliente de antes sigue funcionando igual.
+ *  - 04-10 (T9 al importar): `GuiaVistaPrevia.sobreCupo` (lo que la guía deja
+ *    por encima del cupo de cada especie, con y sin talas nuevas) e
+ *    `ItemImportarGuia.motivoSobreCupo` (el motivo para pasar lo AUTORIZADO;
+ *    el rol lo decide el servidor por el JWT). Todo AGREGADO y opcional.
+ *  - 04-10 (T6 al importar): `GuiaVistaPrevia.sobreAutorizado` (lo que la guía
+ *    DESPACHA por encima de lo autorizado; sin motivo posible) y el aviso
+ *    `exceso_autorizado`, que bloquea la guía. Todo AGREGADO.
+ *  - 04-10 (tanda): `GuiaVistaPrevia.base` (la revisión ANTES de T6/T9) y
+ *    `RespuestaVistaPrevia.tanda` (lo que el servidor leyó por plan): con eso
+ *    la pantalla rehace T6/T9 con las guías MARCADAS (`rehacerTanda`, la misma
+ *    función que corre el servidor) al desmarcar o cambiar el interruptor.
+ *    Aviso nuevo `especie_distinta_al_censo`. Todo AGREGADO y opcional.
  */
 
 import type { GtfSerfor } from "./serfor-gtf";
+import type { EntradaCupo } from "./loth-cupo-especie";
+import type { EspecieReconocible } from "./loth-constants";
 import type { RolParte } from "./directorio";
 
 // ── De dónde sale la guía ───────────────────────────────────────────────────
@@ -196,7 +210,11 @@ export type CodigoAvisoImportacion =
   | "plan_nuevo_sin_especies"
   | "especie_fuera_del_plan"
   | "no_verificada"
-  | "volumen_distinto";
+  | "volumen_distinto"
+  /** T6: lo despachado de una especie pasaría lo autorizado del permiso. Bloquea: no admite motivo. */
+  | "exceso_autorizado"
+  /** La tala nueva va con otra especie que la del censo del árbol (`TALA_ESPECIE_DISTINTA_AL_CENSO`). */
+  | "especie_distinta_al_censo";
 
 export interface AvisoImportacion {
   /** `bloquea` = la guía no se importa así; `atencion` = se importa, pero conviene mirarlo; `info` = para saber. */
@@ -272,6 +290,85 @@ export interface GuiaVistaPrevia {
   ficha?: GtfSerfor | null;
   /** Quién de la guía ya está en el directorio y quién es nuevo. `null` si no se pudo mirar. */
   directorio?: DirectorioDeLaGuia | null;
+  /**
+   * T9: las especies que esta guía deja por encima de su cupo, medidas con la
+   * MISMA regla que la importación (`avisoCupoAlTalar` sobre la lectura de
+   * `ForestLothDB.entradaCupoDelPlan`). `conTala`: las talas nuevas + las que
+   * se agrandan; `sinTala`: sólo las que se agrandan (se escriben igual con el
+   * interruptor apagado). `null`/ausente = el plan no tiene contra qué medir.
+   */
+  sobreCupo?: { conTala: SobreCupoDeLaGuia[]; sinTala: SobreCupoDeLaGuia[] } | null;
+  /**
+   * T6: las especies que esta guía DESPACHARÍA por encima de lo autorizado
+   * (`despachoT6DeLaGuia` sobre `ForestLothDB.medidaT6`, la lectura del
+   * despacho). Si hay alguna, la guía va `bloqueada` con `exceso_autorizado`.
+   */
+  sobreAutorizado?: SobreAutorizadoDeLaGuia[] | null;
+  /**
+   * La revisión ANTES de lo que depende de la tanda (T6, T9) y del censo
+   * (especie): `rehacerTanda` parte siempre de acá. `null` = sin ficha.
+   */
+  base?: BaseDeLaGuia | null;
+}
+
+/** La revisión de la guía sin T6/T9: de acá se rehace la tanda. */
+export interface BaseDeLaGuia {
+  /** El plan EXISTENTE al que va (`null` = permiso nuevo: no hay contra qué medir). */
+  planId: string | null;
+  plantacion: boolean;
+  /** El permiso lo eligió la persona (o se detectó sin dudas). */
+  elegido: boolean;
+  /** Ya está en el libro: ni T6 ni T9 (sus trozas ya cuentan en la base). */
+  yaImportada: boolean;
+  /** La revisión la dio por «lista»: las guías siguientes la vieron en el libro (sus trozas, su tala). */
+  avanzaLibro: boolean;
+  avisos: AvisoImportacion[];
+  /** Las talas como las armó la revisión (contando a TODAS las guías anteriores de la tanda). */
+  talas: TalaReferencial[];
+  /** Lo que despacharía para T6: especie y volumen de la línea de Trozado de cada troza. */
+  despachoT6: { speciesCommon: string | null; speciesScientific: string | null; volumeM3: number | null }[];
+}
+
+/** Lo que el servidor leyó por plan para T9 y T6 (sin lock): la tanda se rehace con esto. */
+export interface ContextoTanda {
+  cupos: { planId: string; entrada: EntradaCupo }[];
+  t6: {
+    planId: string;
+    delPlan: EspecieReconocible[];
+    medidas: { clave: string; autorizado: number | null; movilizado: number }[];
+  }[];
+}
+
+/** T6 de UNA especie de la guía (vista previa): el tope legal de lo despachado. */
+export interface SobreAutorizadoDeLaGuia {
+  especie: string;
+  /** Lo autorizado del permiso (o lo registrado de la plantación), m³. */
+  autorizadoM3: number;
+  /** Lo que ya salió de la especie (más lo de las guías anteriores de la tanda), m³. */
+  yaSalioM3: number;
+  /** Lo que despacha esta guía de la especie, m³. */
+  despachaM3: number;
+  excesoM3: number;
+  plantacion: boolean;
+  /** «despacha 50.000 m³ de Azúcar huayo y el permiso autoriza 45.000 m³». */
+  mensaje: string;
+}
+
+/** Una especie que la guía deja por encima de su cupo (vista previa). */
+export interface SobreCupoDeLaGuia {
+  especie: string;
+  /** `autorizado` = lo del plan (pide motivo); `censo` = lo censado (sólo avisa). */
+  fuente: "autorizado" | "censo";
+  /** Lo autorizado (o censado) de la especie, m³. */
+  cupoM3: number;
+  /** Lo talado de la especie después de importar la guía, m³. */
+  totalConLaGuiaM3: number;
+  excesoM3: number;
+  pct: number;
+  /** Contra lo autorizado: sin motivo, la importación rechaza la guía (422 `T9_CUPO_ESPECIE`). */
+  exigeMotivo: boolean;
+  /** «Con este árbol, Tornillo llega a 114 % de lo autorizado (8 de 7 m³).» */
+  mensaje: string;
 }
 
 /** Cuerpo de `POST …/importar-guia/vista-previa`. */
@@ -291,6 +388,8 @@ export interface PedidoVistaPrevia {
  */
 export interface RespuestaVistaPrevia {
   guias: GuiaVistaPrevia[];
+  /** Para rehacer T6/T9 con las guías marcadas (opcional: un servidor viejo no lo manda). */
+  tanda?: ContextoTanda;
 }
 
 // ── Importar ────────────────────────────────────────────────────────────────
@@ -307,6 +406,12 @@ export interface ItemImportarGuia {
   crearTala: boolean;
   /** Qué guardar en el directorio DESPUÉS de anotar la guía (si entró). */
   directorio?: PedidoDirectorio;
+  /**
+   * T9: por qué la guía pasa lo AUTORIZADO de una especie (5 letras o más).
+   * Queda en la tala y en `loth_tala_sobre_cupo`. Sólo vale con rol admin o
+   * dueño, que decide el servidor por la sesión (nunca este cuerpo).
+   */
+  motivoSobreCupo?: string;
 }
 
 export type EstadoImportacion = "importada" | "ya_estaba" | "rechazada";

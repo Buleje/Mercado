@@ -15,7 +15,7 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
-import { LOTH_SECTIONS, claveEnElPlan, claveEspecie, resolverEspecie, type LothSection } from "@/lib/forestal/loth-constants";
+import { LOTH_SECTIONS, claveEnElPlan, claveEspecie, type LothSection } from "@/lib/forestal/loth-constants";
 import { auditLoth, type LothAuditAction, type LothAuditEntity } from "@/lib/forestal/loth-audit";
 import { ForestLothCierreDB } from "@/lib/db/forest-loth-cierre.db";
 import { ForestLothPoaDB } from "@/lib/db/forest-loth-poa.db";
@@ -38,8 +38,9 @@ import { armarArbolDeTroza, lineaVigente, type ArbolDeTroza } from "@/lib/forest
 import type { FiltroPermiso } from "@/lib/forestal/loth-filtro-permiso";
 import { closedPeriodOf } from "@/lib/forestal/loth-cierre-types";
 import type { AtarSinPlanConteo, AtarSinPlanResultado, AtarSeccion } from "@/lib/forestal/loth-atar-sin-plan";
-import { avisoCupoAlTalar, entradaDelPlan, motivoCupoValido, notaSobreCupo, MOTIVO_CUPO_MIN, type AvisoCupo } from "@/lib/forestal/loth-cupo-especie";
+import { avisoCupoAlTalar, entradaDelPlan, motivoCupoValido, notaSobreCupo, MOTIVO_CUPO_MIN, type AvisoCupo, type EntradaCupo } from "@/lib/forestal/loth-cupo-especie";
 import { resolverTalaContraCenso } from "@/lib/forestal/loth-tala-del-censo";
+import { claveT6, excedeT6, mensajeT6, type MedidaT6 } from "@/lib/forestal/loth-t6";
 import { ForestPlanDB } from "@/lib/db/forest-plan.db";
 
 export { LOTH_SECTIONS };
@@ -409,10 +410,12 @@ export class ForestLothDB {
     input: LothEntryCreateInput,
     entryDate: Date,
     correlativos?: Map<string, number>,
+    /** De dónde sale la línea, para el evento sobre-cupo («tala nueva de la GTF …»). */
+    origen?: string,
   ) {
     if (!tenantId) throw new Error("tenantId is required");
     const resuelta = await ForestLothDB.especieDelCensoEnTx(tx, tenantId, input);
-    return ForestLothDB.asentarEnTx(tx, tenantId, resuelta, entryDate, correlativos);
+    return ForestLothDB.asentarEnTx(tx, tenantId, resuelta, entryDate, correlativos, origen);
   }
 
   /**
@@ -539,6 +542,7 @@ export class ForestLothDB {
     input: LothEntryCreateInput,
     entryDate: Date,
     correlativos?: Map<string, number>,
+    origen?: string,
   ) {
     // 1. Invariantes de cadena de custodia (lockean el recurso disputado).
     await ForestLothDB.enforceInvariants(tx, tenantId, input);
@@ -587,8 +591,12 @@ export class ForestLothDB {
 
     const creada = await tx.forestLothEntry.create({ data: ForestLothDB.datosDeLinea(tenantId, inputFinal, entryDate, caratulaId, lineNo) });
 
-    // 4. El evento sobre-cupo, en la MISMA tx (`auditarSobreCupoEnTx`).
-    if (cupo) await ForestLothDB.auditarSobreCupoEnTx(tx, tenantId, cupo, creada, input.motivoSobreCupo, input.createdBy);
+    // 4. El evento sobre-cupo, en la MISMA tx (`auditarSobreCupoEnTx`), con el
+    //    exceso en m³ y de dónde salió (como el de una tala agrandada).
+    if (cupo) {
+      const contexto = `(${origen ? `${origen}; ` : ""}exceso ${fmtM3(cupo.excesoM3)} m³)`;
+      await ForestLothDB.auditarSobreCupoEnTx(tx, tenantId, cupo, creada, input.motivoSobreCupo, input.createdBy, contexto);
+    }
     return creada;
   }
 
@@ -1144,6 +1152,50 @@ export class ForestLothDB {
   }
 
   /**
+   * Lo que T9 mide en un plan: su censo, lo AUTORIZADO por especie y las talas
+   * vivas del libro de un código de ese censo (`entradaDelPlan` →
+   * `talasDelPlan`, el mismo filtro de la vista). UNA lectura para las dos
+   * puntas: `enforceCupoEspecie` la llama con `tx` bajo el lock de la especie,
+   * y la vista previa del importador (ADR-461) con `prisma`, sin lock ni
+   * escritura, para avisar ANTES el mismo exceso que la importación rechaza.
+   */
+  static async entradaCupoDelPlan(
+    db: Prisma.TransactionClient | typeof prisma,
+    tenantId: string,
+    planId: string,
+  ): Promise<EntradaCupo> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const [censo, autorizadas] = await Promise.all([
+      db.forestCensusTree.findMany({
+        where: { tenantId, planId, deletedAt: null },
+        select: { treeCode: true, speciesCommon: true, volumenEstimadoM3: true },
+      }),
+      db.forestPlanSpecies.findMany({
+        where: { tenantId, planId, deletedAt: null },
+        select: { speciesCommon: true, volumenAutorizadoM3: true, arbolesAutorizados: true },
+      }),
+    ]);
+    // Sólo las talas de un código del censo de ESTE plan (y no asentadas a
+    // otro): el filtro fino es `talasDelPlan`, el mismo de la vista.
+    const codigos = censo.map((c) => c.treeCode);
+    const talas = await db.forestLothEntry.findMany({
+      where: { tenantId, section: "tala", status: "registrado", deletedAt: null, treeCode: { in: codigos } },
+      select: { treeCode: true, speciesCommon: true, volumeM3: true, planId: true },
+    });
+    const n = (v: Prisma.Decimal | null) => (v == null ? null : Number(v));
+    return entradaDelPlan(
+      planId,
+      censo.map((c) => ({ treeCode: c.treeCode, speciesCommon: c.speciesCommon, volumenEstimadoM3: n(c.volumenEstimadoM3) })),
+      talas.map((t) => ({ treeCode: t.treeCode, speciesCommon: t.speciesCommon, volumeM3: n(t.volumeM3), planId: t.planId })),
+      autorizadas.map((s) => ({
+        speciesCommon: s.speciesCommon,
+        volumenAutorizadoM3: n(s.volumenAutorizadoM3),
+        arbolesAutorizados: s.arbolesAutorizados,
+      })),
+    );
+  }
+
+  /**
    * T9 — cupo de la especie (30-09: en Blas el Tornillo se taló al 154 % de lo
    * censado sin que nada lo dijera). Cupo = volumen AUTORIZADO del plan para la
    * especie; si el plan no lo trae, lo CENSADO. La cuenta es la misma función
@@ -1152,8 +1204,8 @@ export class ForestLothDB {
    *
    * Sólo contra lo AUTORIZADO se exige motivo (≥ 5 letras; sin él, 422). Contra
    * el censo se devuelve el aviso sin frenar: el censo puede estar incompleto
-   * (Blas: Tornillo con 2 de 45 árboles autorizados censados) y el importador
-   * no tiene dónde escribir un motivo. Sin plan (ni en la línea ni en el árbol
+   * (Blas: Tornillo con 2 de 45 árboles autorizados censados) y frenar ahí
+   * trabaría el importador por un censo a medias. Sin plan (ni en la línea ni en el árbol
    * del censo) no hay cupo contra el cual medir → no aplica. Las talas y la
    * tala nueva cuentan sólo si su código está en el censo del plan
    * (`entradaDelPlan` → `talasDelPlan`, el mismo filtro de la vista).
@@ -1185,38 +1237,11 @@ export class ForestLothDB {
     // de una clave (`gtf:…`). Parametrizado: el texto nunca se interpola.
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${tenantId}), hashtext(${`${planId}:${clave}`}))`;
 
-    const [censo, autorizadas] = await Promise.all([
-      tx.forestCensusTree.findMany({
-        where: { tenantId, planId, deletedAt: null },
-        select: { treeCode: true, speciesCommon: true, volumenEstimadoM3: true },
-      }),
-      tx.forestPlanSpecies.findMany({
-        where: { tenantId, planId, deletedAt: null },
-        select: { speciesCommon: true, volumenAutorizadoM3: true, arbolesAutorizados: true },
-      }),
-    ]);
-    // Sólo las talas de un código del censo de ESTE plan (y no asentadas a
-    // otro): el filtro fino es `talasDelPlan`, el mismo de la vista.
-    const codigos = censo.map((c) => c.treeCode);
-    const talas = await tx.forestLothEntry.findMany({
-      where: { tenantId, section: "tala", status: "registrado", deletedAt: null, treeCode: { in: codigos } },
-      select: { treeCode: true, speciesCommon: true, volumeM3: true, planId: true },
+    const aviso = avisoCupoAlTalar(await ForestLothDB.entradaCupoDelPlan(tx, tenantId, planId), {
+      treeCode,
+      speciesCommon: especie,
+      volumeM3: vol,
     });
-
-    const n = (v: Prisma.Decimal | null) => (v == null ? null : Number(v));
-    const aviso = avisoCupoAlTalar(
-      entradaDelPlan(
-        planId,
-        censo.map((c) => ({ treeCode: c.treeCode, speciesCommon: c.speciesCommon, volumenEstimadoM3: n(c.volumenEstimadoM3) })),
-        talas.map((t) => ({ treeCode: t.treeCode, speciesCommon: t.speciesCommon, volumeM3: n(t.volumeM3), planId: t.planId })),
-        autorizadas.map((s) => ({
-          speciesCommon: s.speciesCommon,
-          volumenAutorizadoM3: n(s.volumenAutorizadoM3),
-          arbolesAutorizados: s.arbolesAutorizados,
-        })),
-      ),
-      { treeCode, speciesCommon: especie, volumeM3: vol },
-    );
     if (!aviso) return null;
     // Contra el censo: aviso, no freno (el censo puede estar incompleto).
     if (!aviso.exigeMotivo) return aviso;
@@ -1224,9 +1249,10 @@ export class ForestLothDB {
     // Sobre lo AUTORIZADO la excepción la firma el dueño o el administrador:
     // el almacenero no la asienta con su propio motivo (→ 403, no 422). `false`
     // = la ruta lo decidió por el rol: se dice ya, traiga o no motivo. Sin
-    // decidir (`undefined`: el importador de guías, ADR-461, que no tiene dónde
-    // escribir un motivo) también se niega: con motivo, 403; sin él, el 422 de
-    // abajo, que el importador muestra como rechazo de la guía (no un 500).
+    // decidir (`undefined`: quien llama no miró el rol) también se niega: con
+    // motivo, 403; sin él, el 422 de abajo. El importador de guías (ADR-461)
+    // manda el motivo de la pantalla y el rol del JWT; lo que rechace lo
+    // muestra como rechazo de la guía (no un 500).
     if (input.puedeExcederCupo === false || (!input.puedeExcederCupo && conMotivo)) {
       throw new LothPermisoError(`${aviso.mensaje} Pídele al dueño o al administrador que registre esta tala.`, {
         especie: aviso.especie,
@@ -1489,36 +1515,79 @@ export class ForestLothDB {
     if (!planId) return;
 
     // La especie del plan que le corresponde (común o científico) y, sobre sus filas, el lock.
-    const delPlan = await tx.forestPlanSpecies.findMany({
-      where: { tenantId, planId, deletedAt: null },
-      select: { id: true, speciesCommon: true, speciesScientific: true },
-    });
-    const suya = resolverEspecie(delPlan, species, speciesScientific);
-    if (!suya) return; // sin techo declarado → no se bloquea
-    const clave = claveEspecie(suya.speciesCommon);
+    const delPlan = await ForestLothDB.especiesT6DelPlan(tx, tenantId, planId);
+    const clave = claveT6(delPlan, species, speciesScientific);
+    if (!clave) return; // sin techo declarado → no se bloquea
     const ids = delPlan.filter((f) => claveEspecie(f.speciesCommon) === clave).map((f) => f.id).sort();
     await tx.$queryRaw`
       SELECT "id" FROM "ForestPlanSpecies"
       WHERE "tenantId" = ${tenantId} AND "id" IN (${Prisma.join(ids)}) AND "deletedAt" IS NULL
       ORDER BY "id" FOR UPDATE`;
     // Releída bajo el lock: lo que vale es lo autorizado DESPUÉS de esperar.
-    const auth = await tx.forestPlanSpecies.aggregate({
+    const medida = await ForestLothDB.medidaT6(tx, tenantId, planId, delPlan, clave);
+    if (medida.autorizado == null || !excedeT6(medida, nuevoVolumen)) return;
+
+    // En una plantación no hay POA que autorice: el techo es lo REGISTRADO (ADR-459).
+    const plan = await tx.forestPlan.findFirst({
+      where: { tenantId, id: planId },
+      select: { planType: true, planNumber: true, tituloHabilitante: true },
+    });
+    const m = { autorizado: medida.autorizado, movilizado: medida.movilizado };
+    throw new LothInvariantError(mensajeT6(species, m, nuevoVolumen, esPlanDePlantacion(plan)), "T6_EXCESO_AUTORIZADO", {
+      species,
+      autorizado: r4(m.autorizado),
+      movilizado: r4(m.movilizado),
+      pedido: r4(nuevoVolumen),
+    });
+  }
+
+  /** Las especies del plan con su id: de ellas sale la clave que pone el techo de T6. */
+  static async especiesT6DelPlan(db: Prisma.TransactionClient | typeof prisma, tenantId: string, planId: string) {
+    if (!tenantId) throw new Error("tenantId is required");
+    return db.forestPlanSpecies.findMany({
+      where: { tenantId, planId, deletedAt: null },
+      select: { id: true, speciesCommon: true, speciesScientific: true },
+    });
+  }
+
+  /**
+   * Lo que T6 mide de UNA especie (su `clave` en el plan): lo autorizado (Σ de
+   * sus filas; `null` = sin techo) y lo ya movilizado. UNA lectura para las dos
+   * puntas: `enforceT6` la llama con `tx` después del lock de la especie; la
+   * vista previa del importador de guías (ADR-461), con `prisma`, sin lock ni
+   * escritura.
+   *
+   * `movilizado` espeja EXACTO a `ForestPlanDB.balanceExtraccion`: líneas de
+   * ESTE plan y las sin plan, despacho de trozas (volumen resuelto vía Trozado)
+   * + despacho de producto en m³.
+   */
+  static async medidaT6(
+    db: Prisma.TransactionClient | typeof prisma,
+    tenantId: string,
+    planId: string,
+    delPlan: readonly { id: string; speciesCommon: string; speciesScientific: string | null }[],
+    clave: string,
+  ): Promise<MedidaT6> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const ids = delPlan.filter((f) => claveEspecie(f.speciesCommon) === clave).map((f) => f.id).sort();
+    if (ids.length === 0) return { autorizado: null, movilizado: 0 };
+    const auth = await db.forestPlanSpecies.aggregate({
       where: { tenantId, id: { in: ids }, deletedAt: null },
       _sum: { volumenAutorizadoM3: true },
     });
-    if (auth._sum.volumenAutorizadoM3 == null) return;
+    if (auth._sum.volumenAutorizadoM3 == null) return { autorizado: null, movilizado: 0 };
     const autorizado = Number(auth._sum.volumenAutorizadoM3);
 
     const delAlcance = { tenantId, status: "registrado" as const, deletedAt: null, OR: [{ planId }, { planId: null }] };
     //  (a) trozas ya despachadas → su volumen según Trozado, de la especie
-    const despachadas = await tx.forestLothEntry.findMany({
+    const despachadas = await db.forestLothEntry.findMany({
       where: { ...delAlcance, section: "despacho_troza" },
       select: { trozaCode: true },
     });
     const codes = [...new Set(despachadas.map((d) => d.trozaCode).filter((c): c is string => !!c))];
     let movTrozas = 0;
     if (codes.length > 0) {
-      const trozados = await tx.forestLothEntry.groupBy({
+      const trozados = await db.forestLothEntry.groupBy({
         by: ["speciesCommon", "speciesScientific"],
         where: { ...delAlcance, section: "trozado", trozaCode: { in: codes } },
         _sum: { volumeM3: true },
@@ -1528,7 +1597,7 @@ export class ForestLothDB {
         .reduce((acc, t) => acc + Number(t._sum.volumeM3 ?? 0), 0);
     }
     //  (b) producto terminado despachado en m³ de la especie
-    const prodDesp = await tx.forestLothEntry.groupBy({
+    const prodDesp = await db.forestLothEntry.groupBy({
       by: ["speciesCommon", "speciesScientific"],
       where: { ...delAlcance, section: "despacho_producto", unit: "m3" },
       _sum: { quantity: true },
@@ -1536,24 +1605,7 @@ export class ForestLothDB {
     const movProducto = prodDesp
       .filter((p) => claveEnElPlan(delPlan, p.speciesCommon, p.speciesScientific) === clave)
       .reduce((acc, p) => acc + Number(p._sum.quantity ?? 0), 0);
-    const movilizado = movTrozas + movProducto;
-
-    if (r4(movilizado + nuevoVolumen) > r4(autorizado)) {
-      // En una plantación no hay POA que autorice: el techo es lo REGISTRADO (ADR-459).
-      const plan = await tx.forestPlan.findFirst({
-        where: { tenantId, id: planId },
-        select: { planType: true, planNumber: true, tituloHabilitante: true },
-      });
-      const [techo, exceso] = esPlanDePlantacion(plan)
-        ? [`El registro de la plantación tiene ${r4(autorizado)} m³ de ${species}`, "excede lo registrado"]
-        : [`El POA autoriza ${r4(autorizado)} m³ de ${species}`, "excede lo autorizado"];
-      throw new LothInvariantError(
-        `${techo} y ya se movilizaron ${r4(movilizado)} m³; ` +
-          `este despacho de ${r4(nuevoVolumen)} m³ ${exceso}. Es la infracción que sanciona OSINFOR.`,
-        "T6_EXCESO_AUTORIZADO",
-        { species, autorizado: r4(autorizado), movilizado: r4(movilizado), pedido: r4(nuevoVolumen) },
-      );
-    }
+    return { autorizado, movilizado: movTrozas + movProducto };
   }
 
   /**

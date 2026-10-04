@@ -58,8 +58,8 @@ export const POST = withApiHandler("forestal-loth-importar-guia-vista-previa", a
 
   try {
     const guias = await resolverFuentes(auth.tenantId, parsed.data.fuentes, parsed.data.planes ?? []);
-    const vista = await ForestLothImportarDB.vistaPrevia(auth.tenantId, guias);
-    const respuesta: RespuestaVistaPrevia = { guias: await ForestLothImportarDirectorioDB.anotarVistaPrevia(auth.tenantId, guias, vista) };
+    const { guias: vista, tanda } = await ForestLothImportarDB.vistaPrevia(auth.tenantId, guias);
+    const respuesta: RespuestaVistaPrevia = { guias: await ForestLothImportarDirectorioDB.anotarVistaPrevia(auth.tenantId, guias, vista), tanda };
     return NextResponse.json(respuesta);
   } catch (err) {
     return lothErrorResponse(err, "loth-importar-guia.vista-previa", auth.tenantId);

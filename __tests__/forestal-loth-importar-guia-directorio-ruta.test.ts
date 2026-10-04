@@ -102,7 +102,7 @@ describe("POST …/importar-guia/vista-previa", () => {
     const guias = [resuelta("1")];
     const vista = [{ clave: "ctp:w1", directorio: null }];
     H.resolver.mockResolvedValue(guias);
-    H.vista.mockResolvedValue(vista);
+    H.vista.mockResolvedValue({ guias: vista, tanda: { cupos: [], t6: [] } });
     H.anotar.mockResolvedValue([{ clave: "ctp:w1", directorio: { partes: [], vehiculo: null, permiso: null } }]);
     const r = await postVista(pedido("/api/admin/forestal/loth/importar-guia/vista-previa", { fuentes: [{ tipo: "ctp", woodEntryId: "w1" }] }));
     expect(r.status).toBe(200);

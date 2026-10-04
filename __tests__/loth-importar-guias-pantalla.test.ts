@@ -11,12 +11,14 @@ import {
   enOrdenDeImportacion,
   esImportable,
   estadoEfectivo,
+  faltaMotivoDeCupo,
   planNuevoCompleto,
   registrosDelTexto,
   respuestaDe,
 } from "@/components/admin/forestal/hooks/importar-guias-pantalla";
 import type {
   GuiaVistaPrevia,
+  SobreCupoDeLaGuia,
   PlanNuevoPropuesto,
   PermisoDetectado,
 } from "@/lib/forestal/loth-importar-guia-tipos";
@@ -206,6 +208,33 @@ describe("con y sin tala", () => {
       guia("b", nuevo, { crearTalaPorDefecto: true }),
     ]);
     expect(decisionInicial(grupo).crearTala).toBe(true);
+  });
+});
+
+describe("T9: el motivo para pasar lo autorizado (04-10)", () => {
+  const fila = (fuente: "autorizado" | "censo"): SobreCupoDeLaGuia => ({
+    especie: "Tornillo",
+    fuente,
+    cupoM3: 7,
+    totalConLaGuiaM3: 8,
+    excesoM3: 1,
+    pct: 114.3,
+    exigeMotivo: fuente === "autorizado",
+    mensaje: "Tornillo: 8,000 de 7,000 m³ autorizados — exceso 1,000 m³",
+  });
+
+  it("sobre lo autorizado falta el motivo hasta que tenga 5 letras (el criterio de la ruta)", () => {
+    const g = guia("a", null, { sobreCupo: { conTala: [fila("autorizado")], sinTala: [] } });
+    expect(faltaMotivoDeCupo(g, true, undefined)).toBe(true);
+    expect(faltaMotivoDeCupo(g, true, "....... ")).toBe(true);
+    expect(faltaMotivoDeCupo(g, true, "Ampliación en trámite")).toBe(false);
+    // Con la tala apagada sólo cuentan las que se agrandan: acá ninguna pasa.
+    expect(faltaMotivoDeCupo(g, false, undefined)).toBe(false);
+  });
+
+  it("sobre lo censado sólo avisa; sin `sobreCupo` (plan nuevo o vista vieja) no pide nada", () => {
+    expect(faltaMotivoDeCupo(guia("a", null, { sobreCupo: { conTala: [fila("censo")], sinTala: [] } }), true, undefined)).toBe(false);
+    expect(faltaMotivoDeCupo(guia("b", null), true, undefined)).toBe(false);
   });
 });
 

@@ -23,6 +23,7 @@ import { normalizarNumeroRegistro } from "@/lib/forestal/serfor-gtf";
 import {
   IMPORTAR_GUIAS_MAX,
   IMPORTAR_SERFOR_POR_PEDIDO,
+  type ContextoTanda,
   type FuenteImportarGuia,
   type GuiaVistaPrevia,
   type ItemImportarGuia,
@@ -31,13 +32,17 @@ import {
   type RespuestaVistaPrevia,
   type ResultadoImportarGuia,
 } from "@/lib/forestal/loth-importar-guia-tipos";
+import { mezclarTanda, rehacerTanda } from "@/lib/forestal/loth-importar-guia-tanda";
 import {
   agruparPorPermiso,
+  claveDeGrupo,
   cuantasAlDirectorio,
   decisionInicial,
   decisionesDirectorioIniciales,
   enOrdenDeImportacion,
   esImportable,
+  faltaMotivoDeCupo,
+  sobreCupoEfectivo,
   pedidoDirectorio,
   planNuevoCompleto,
   registrosDelTexto,
@@ -122,6 +127,10 @@ export function useImportarGuias({ onImportadas }: { onImportadas: () => void })
   /** Qué se agrega o completa en el directorio, por guía (clave de la guía → ficha → decisión). */
   const [alDirectorio, setAlDirectorio] = useState<Record<string, DecisionesDirectorio>>({});
   const [excluidas, setExcluidas] = useState<Set<string>>(new Set());
+  /** Lo que el servidor leyó por plan para T6/T9: con esto se rehace la tanda al marcar/desmarcar. */
+  const [tanda, setTanda] = useState<ContextoTanda | null>(null);
+  /** T9: el motivo escrito por guía (clave → texto) para pasar lo autorizado. */
+  const [motivosCupo, setMotivosCupo] = useState<Record<string, string>>({});
   const [envio, setEnvio] = useState<Envio>(ENVIO_VACIO);
   const pedido = useRef(0);
   /** «Detener»: termina la guía en curso y no manda la siguiente. También al cerrar el modal. */
@@ -206,6 +215,8 @@ export function useImportarGuias({ onImportadas }: { onImportadas: () => void })
         Object.fromEntries(agruparPorPermiso(j.guias).map((g) => [g.clave, decisionInicial(g)])),
       );
       setExcluidas(new Set());
+      setTanda(j.tanda ?? null);
+      setMotivosCupo({});
       setAlDirectorio(Object.fromEntries(j.guias.map((g) => [g.clave, decisionesDirectorioIniciales(g.directorio)])));
       setVista({ cargando: false, error: null, guias: j.guias });
     } catch (err) {
@@ -219,7 +230,17 @@ export function useImportarGuias({ onImportadas }: { onImportadas: () => void })
     }
   }, [fuentes]);
 
-  const grupos = useMemo(() => agruparPorPermiso(vista.guias), [vista.guias]);
+  /* T6/T9 dependen de qué guías anteriores entran: se rehacen con las MARCADAS
+     y el interruptor de cada grupo (la misma `rehacerTanda` que corre el servidor). */
+  const guiasDeLaTanda = useMemo(
+    () =>
+      rehacerTanda(vista.guias, tanda, (g) => ({
+        marcada: !excluidas.has(g.clave),
+        crearTala: decisiones[claveDeGrupo(g)]?.crearTala ?? g.crearTalaPorDefecto,
+      })),
+    [vista.guias, tanda, excluidas, decisiones],
+  );
+  const grupos = useMemo(() => agruparPorPermiso(guiasDeLaTanda), [guiasDeLaTanda]);
 
   const decidir = useCallback((clave: string, cambio: Partial<DecisionGrupo>) => {
     setDecisiones((d) => {
@@ -249,6 +270,7 @@ export function useImportarGuias({ onImportadas }: { onImportadas: () => void })
         if (mio !== pedido.current) return;
         const nuevas = new Map(j.guias.map((g) => [g.clave, g]));
         setVista((v) => ({ ...v, guias: v.guias.map((g) => nuevas.get(g.clave) ?? g) }));
+        setTanda((t) => mezclarTanda(t, j.tanda));
       } catch (err) {
         logger.warn("[importar-guias] recalcular grupo", { error: String(err) });
       } finally {
@@ -271,6 +293,10 @@ export function useImportarGuias({ onImportadas }: { onImportadas: () => void })
     });
   }, []);
 
+  const escribirMotivoCupo = useCallback((clave: string, texto: string) => {
+    setMotivosCupo((m) => ({ ...m, [clave]: texto }));
+  }, []);
+
   const incluir = useCallback((clave: string, on: boolean) => {
     setExcluidas((prev) => {
       const s = new Set(prev);
@@ -287,18 +313,40 @@ export function useImportarGuias({ onImportadas }: { onImportadas: () => void })
     let m3 = 0;
     let fichas = 0;
     const faltaPermiso: string[] = [];
+    /** Guías que pasan lo autorizado sin motivo: la ruta las rechazaría (T9). */
+    const faltaMotivo: string[] = [];
+    /** Guías que despacharían más de lo autorizado (T6): no entran ni con motivo. */
+    const pasanDespacho: string[] = [];
     for (const grupo of grupos) {
       const d = decisiones[grupo.clave];
       const crearTala = d?.crearTala ?? false;
       for (const g of grupo.guias) {
-        if (!esImportable(g, crearTala) || excluidas.has(g.clave)) continue;
+        if (!esImportable(g, crearTala) || excluidas.has(g.clave)) {
+          if (g.avisos.some((a) => a.codigo === "exceso_autorizado")) pasanDespacho.push(g.guia?.gtfNumber ? `GTF ${g.guia.gtfNumber}` : g.clave);
+          continue;
+        }
         const destino = d?.destino ?? null;
         if (!destino || (destino.tipo === "nuevo" && !planNuevoCompleto(destino.plan))) {
           faltaPermiso.push(grupo.titulo ?? g.clave);
           continue;
         }
+        const motivo = motivosCupo[g.clave];
+        if (faltaMotivoDeCupo(g, crearTala, motivo)) {
+          faltaMotivo.push(g.guia?.gtfNumber ? `GTF ${g.guia.gtfNumber}` : g.clave);
+          continue;
+        }
+        const conMotivo = sobreCupoEfectivo(g, crearTala).some((f) => f.exigeMotivo);
         const directorio = pedidoDirectorio(g.directorio, alDirectorio[g.clave] ?? {});
-        listas.push({ g, item: { fuente: g.fuente, planDestino: destino, crearTala, ...(directorio ? { directorio } : {}) } });
+        listas.push({
+          g,
+          item: {
+            fuente: g.fuente,
+            planDestino: destino,
+            crearTala,
+            ...(directorio ? { directorio } : {}),
+            ...(conMotivo && motivo ? { motivoSobreCupo: motivo.trim() } : {}),
+          },
+        });
         fichas += cuantasAlDirectorio(directorio);
         trozas += g.trozas.filter((t) => t.estado === "nueva").length;
         m3 += g.guia?.volumenTrozasM3 ?? 0;
@@ -311,8 +359,8 @@ export function useImportarGuias({ onImportadas }: { onImportadas: () => void })
         gtfNumber: x.g.guia?.gtfNumber ?? null,
       })),
     );
-    return { listas: ordenadas, trozas, m3, fichas, faltaPermiso: [...new Set(faltaPermiso)] };
-  }, [grupos, decisiones, excluidas, alDirectorio]);
+    return { listas: ordenadas, trozas, m3, fichas, faltaPermiso: [...new Set(faltaPermiso)], faltaMotivo, pasanDespacho };
+  }, [grupos, decisiones, excluidas, alDirectorio, motivosCupo]);
 
   /** Importa de a una, por fecha. Lo que ya entró queda aunque se detenga o falle la red. */
   const confirmar = useCallback(async () => {
@@ -385,6 +433,8 @@ export function useImportarGuias({ onImportadas }: { onImportadas: () => void })
     incluir,
     alDirectorio,
     decidirDirectorio,
+    motivosCupo,
+    escribirMotivoCupo,
     plan,
     envio,
     respuesta: respuestaDe(envio.resultados),

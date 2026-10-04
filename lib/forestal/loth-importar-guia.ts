@@ -37,6 +37,7 @@ import { closedPeriodOf, type LothCierrePeriodo } from "./loth-cierre-types";
 import { esPlanDePlantacion } from "./loth-poa";
 import { componerPunto, gtfDatosSchema, gtfDatosVacio, type GtfDatos } from "./ctp-gtf-datos";
 import { fichaParaMostrar } from "./loth-importar-guia-ficha";
+import type { DespachoT6 } from "./loth-t6";
 import type {
   AvisoImportacion,
   EstadoVistaPrevia,
@@ -854,7 +855,9 @@ export const avisoAplica = (a: AvisoImportacion, crearTala: boolean): boolean =>
 /**
  * Qué talas se escriben con el interruptor como esté: `ampliar` SIEMPRE (si no,
  * las trozas nuevas del árbol pasan su tala referencial y T4 las frena); las
- * `nueva` sólo si se pidió crear talas.
+ * `nueva` sólo si se pidió crear talas. Apagado o prendido, cada `ampliar`
+ * que crece pasa por T9 (`cupoAlAmpliarTalaEnTx`) y la vista previa lo avisa
+ * en `sobreCupo.sinTala` (`cupoDeLaGuia`).
  */
 export function talasAEscribir(talas: readonly TalaReferencial[], crearTala: boolean): TalaReferencial[] {
   return talas.filter((t) => t.estado === "ampliar" || (crearTala && t.estado === "nueva"));
@@ -1114,7 +1117,27 @@ export interface ContextoImportacion {
   bajoDmc: ReadonlyMap<string, ReadonlyMap<string, string>>;
 }
 
-function mensajeDelEstado(estado: EstadoVistaPrevia, rev: RevisionDeGuia, permiso: PermisoDetectado, crearTala: boolean): string | null {
+/**
+ * Lo que la guía despacharía para T6: cada troza con la especie y el volumen
+ * de SU línea de Trozado — la nueva, la de la guía; la que ya estaba, la del
+ * libro (es la que mide el despacho). Las que chocan no salen.
+ */
+function despachoDeLaGuia(trozas: readonly TrozaImportada[], libro: LibroDeLaGuia, planId: string): DespachoT6[] {
+  return trozas.flatMap((t): DespachoT6[] => {
+    if (t.estado === "nueva") return [{ speciesCommon: t.speciesCommon, speciesScientific: t.speciesScientific, volumeM3: t.volumeM3 }];
+    if (t.estado !== "ya_trozada") return [];
+    const tz = libro.trozados.find((x) => x.trozaCode === t.trozaCode && x.planId === planId);
+    return tz ? [{ speciesCommon: tz.speciesCommon, speciesScientific: tz.speciesScientific, volumeM3: tz.volumeM3 }] : [];
+  });
+}
+
+/** La línea de la guía según su estado (también la usa `rehacerTanda`). */
+export function mensajeDelEstado(
+  estado: EstadoVistaPrevia,
+  rev: Pick<RevisionDeGuia, "avisos" | "yaImportada">,
+  permiso: PermisoDetectado,
+  crearTala: boolean,
+): string | null {
   if (estado === "ya_importada") {
     const y = rev.yaImportada;
     return y ? `Ya está en el libro: GTF ${y.gtfNumber}.` : "Ya está en el libro.";
@@ -1132,6 +1155,11 @@ function mensajeDelEstado(estado: EstadoVistaPrevia, rev: RevisionDeGuia, permis
  * La vista previa de varias guías. Se revisan en el orden en que se
  * importarían (por fecha) y cada una ve lo que dejan las anteriores de la
  * tanda; las respuestas salen en el orden pedido.
+ *
+ * Sale la revisión BASE (con `base`): T6 y T9 dependen de qué guías de la
+ * tanda van marcadas, así que los suma `rehacerTanda`
+ * (`loth-importar-guia-tanda`), que corre el servidor con todas y la pantalla
+ * con las marcadas.
  */
 export function vistaPreviaDeTanda(guias: readonly GuiaParaRevisar[], ctx: ContextoImportacion): GuiaVistaPrevia[] {
   const out: GuiaVistaPrevia[] = new Array(guias.length);
@@ -1191,6 +1219,18 @@ export function vistaPreviaDeTanda(guias: readonly GuiaParaRevisar[], ctx: Conte
       ficha: fichaParaMostrar(g),
       /* Lo llena el servidor después, con el directorio del negocio (`ForestLothImportarDirectorioDB`). */
       directorio: null,
+      sobreCupo: null,
+      sobreAutorizado: null,
+      base: {
+        planId: destino.nuevo ? null : destino.planId,
+        plantacion: destino.plantacion,
+        elegido,
+        yaImportada: rev.yaImportada != null,
+        avanzaLibro: estado === "lista",
+        avisos: [...rev.avisos],
+        talas: rev.talas,
+        despachoT6: destino.nuevo ? [] : despachoDeLaGuia(rev.trozas, libro, destino.planId),
+      },
     };
     if (estado === "lista") libro = libroDespuesDe(libro, g, destino, rev, crearTala);
   }

@@ -29,6 +29,8 @@ import { auditLoth } from "@/lib/forestal/loth-audit";
 import { colaDeGtf } from "@/lib/forestal/gtf-talonario";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { motivoCupoValido, notaSobreCupo } from "@/lib/forestal/loth-cupo-especie";
+import { claveT6, type EstadoT6DelPlan } from "@/lib/forestal/loth-t6";
+import { rehacerTanda } from "@/lib/forestal/loth-importar-guia-tanda";
 import { repararFichaSerfor } from "@/lib/forestal/serfor-texto-danado";
 import { closedPeriodOf } from "@/lib/forestal/loth-cierre-types";
 import { esPlanDePlantacion } from "@/lib/forestal/loth-poa";
@@ -64,6 +66,7 @@ import {
 import type {
   GrupoCandidatas,
   GuiaCandidata,
+  ContextoTanda,
   GuiaVistaPrevia,
   PlanDestino,
   RespuestaCandidatas,
@@ -314,8 +317,12 @@ export class ForestLothImportarDB {
     return out;
   }
 
-  /** La vista previa de una tanda: sin escribir nada. */
-  static async vistaPrevia(tenantId: string, guias: readonly GuiaParaRevisar[]): Promise<GuiaVistaPrevia[]> {
+  /**
+   * La vista previa de una tanda: sin escribir nada. Devuelve las guías (con
+   * T6/T9 de la tanda entera, `rehacerTanda`) y lo leído por plan (`tanda`),
+   * para que la pantalla rehaga esas sumas con las guías que deje marcadas.
+   */
+  static async vistaPrevia(tenantId: string, guias: readonly GuiaParaRevisar[]): Promise<{ guias: GuiaVistaPrevia[]; tanda: ContextoTanda }> {
     if (!tenantId) throw new Error("tenantId is required");
     const fichas = guias.map((g) => g.ficha).filter((f): f is GtfSerfor => !!f);
     const { planes, contratos } = await ForestLothImportarDB.planesYContratos(tenantId);
@@ -327,8 +334,63 @@ export class ForestLothImportarDB {
       if (destino.nuevo) return [];
       return [{ planId: destino.planId, treeCodes: trozasDeLaGuia(x.ficha).map((t) => t.treeCode).filter((c): c is string => !!c) }];
     });
-    const bajoDmc = await ForestLothImportarDB.bajoDmcDe(tenantId, pedidos);
-    return vistaPreviaDeTanda(guias, { planes, contratos, libro, bajoDmc });
+    /* T9: la MISMA lectura que mide la importación (`entradaCupoDelPlan`),
+       sin lock ni escritura, una vez por plan existente. */
+    const planIds = [...new Set(pedidos.map((p) => p.planId))];
+    const [bajoDmc, entradas, t6] = await Promise.all([
+      ForestLothImportarDB.bajoDmcDe(tenantId, pedidos),
+      Promise.all(planIds.map((planId) => ForestLothDB.entradaCupoDelPlan(prisma, tenantId, planId))),
+      ForestLothImportarDB.t6De(tenantId, guias, planes, contratos, libro),
+    ]);
+    const tanda: ContextoTanda = {
+      cupos: planIds.map((planId, i) => ({ planId, entrada: entradas[i] })),
+      t6: [...t6].map(([planId, e]) => ({
+        planId,
+        delPlan: e.delPlan.map((x) => ({ speciesCommon: x.speciesCommon, speciesScientific: x.speciesScientific ?? null })),
+        medidas: [...e.medidas].map(([clave, m]) => ({ clave, autorizado: m.autorizado, movilizado: m.movilizado })),
+      })),
+    };
+    const base = vistaPreviaDeTanda(guias, { planes, contratos, libro, bajoDmc });
+    /* Todas marcadas, cada una con su interruptor por defecto: lo que importaría «Importar todas». */
+    return { guias: rehacerTanda(base, tanda, (g) => ({ marcada: true, crearTala: g.crearTalaPorDefecto })), tanda };
+  }
+
+  /**
+   * T6 de los planes existentes a los que van las guías: sus especies y, por
+   * cada especie que las guías despacharían (la de la guía o, si la troza ya
+   * estaba trozada, la de su línea), la MISMA medida del despacho
+   * (`ForestLothDB.medidaT6`), sin lock ni escritura.
+   */
+  private static async t6De(
+    tenantId: string,
+    guias: readonly GuiaParaRevisar[],
+    planes: PlanDelLibro[],
+    contratos: ContratoDelLibro[],
+    libro: Awaited<ReturnType<typeof ForestLothImportarDB.libroDe>>,
+  ): Promise<Map<string, EstadoT6DelPlan>> {
+    const especies = new Map<string, { comun: string | null; cientifico: string | null }[]>();
+    for (const x of guias) {
+      if (!x.ficha) continue;
+      const { destino } = destinoDe(x.ficha, detectarPermiso(x.ficha, planes, contratos), x.planElegido, planes);
+      if (destino.nuevo) continue;
+      const l = especies.get(destino.planId) ?? [];
+      for (const t of trozasDeLaGuia(x.ficha)) {
+        l.push({ comun: t.speciesCommon, cientifico: t.speciesScientific });
+        const tz = libro.trozados.find((z) => z.trozaCode === t.trozaCode && z.planId === destino.planId);
+        if (tz) l.push({ comun: tz.speciesCommon, cientifico: tz.speciesScientific });
+      }
+      especies.set(destino.planId, l);
+    }
+    const out = new Map<string, EstadoT6DelPlan>();
+    await Promise.all(
+      [...especies].map(async ([planId, lista]) => {
+        const delPlan = await ForestLothDB.especiesT6DelPlan(prisma, tenantId, planId);
+        const claves = [...new Set(lista.map((e) => claveT6(delPlan, e.comun, e.cientifico)).filter((c): c is string => !!c))];
+        const medidas = await Promise.all(claves.map((c) => ForestLothDB.medidaT6(prisma, tenantId, planId, delPlan, c)));
+        out.set(planId, { delPlan, medidas: new Map(claves.map((c, i) => [c, medidas[i]])) });
+      }),
+    );
+    return out;
   }
 
   /**
@@ -353,7 +415,8 @@ export class ForestLothImportarDB {
        * T9: el motivo y la decisión de rol para pasar lo AUTORIZADO de una
        * especie, como en el alta (`puedeExcederCupo` lo decide la ruta por el
        * JWT, nunca el body). Valen para las talas nuevas y las que se agrandan.
-       * Hoy la ruta no los manda: sobre lo autorizado, la guía se rechaza (422).
+       * El motivo lo escribe la persona en la vista previa (que mide el mismo
+       * exceso con `entradaCupoDelPlan`); sin él, sobre lo autorizado → 422.
        */
       motivoSobreCupo?: string | null;
       puedeExcederCupo?: boolean;
@@ -508,6 +571,7 @@ export class ForestLothImportarDB {
                 },
                 fechaLinea,
                 correlativos,
+                `tala nueva de la GTF ${numero}: ${fmtM3(t.volumeM3 ?? 0)} m³`,
               ),
             );
             continue;

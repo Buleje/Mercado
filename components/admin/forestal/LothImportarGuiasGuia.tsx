@@ -13,16 +13,18 @@ import { AlertOctagon, AlertTriangle, Info } from "@buleje/design-system/icons";
 import { fmtM3, fmtPt } from "@/lib/forestal/cubicacion-formato";
 import { ptAserrableDeRolliza } from "@/lib/forestal/loth-restante";
 import { fechaConDia } from "@/lib/forestal/loth-tablero-reporte";
-import type { AvisoImportacion, GuiaVistaPrevia } from "@/lib/forestal/loth-importar-guia-tipos";
+import type { AvisoImportacion, GuiaVistaPrevia, SobreAutorizadoDeLaGuia } from "@/lib/forestal/loth-importar-guia-tipos";
 import {
   esImportable,
   estadoEfectivo,
+  sobreCupoEfectivo,
   type DecisionFicha,
   type DecisionesDirectorio,
 } from "./hooks/importar-guias-pantalla";
 import { TablaTalas, TablaTrozas, TONO } from "./LothImportarGuiasTablas";
 import LothImportarGuiasDatos from "./LothImportarGuiasDatos";
 import LothImportarGuiasDirectorio from "./LothImportarGuiasDirectorio";
+import LothImportarGuiasCupo, { InfoT6 } from "./LothImportarGuiasCupo";
 
 const ETIQUETA_ESTADO: Record<
   GuiaVistaPrevia["estado"],
@@ -52,6 +54,8 @@ export default function LothImportarGuiasGuia({
   alDirectorio,
   onDirectorio,
   abiertaDeEntrada,
+  motivoCupo,
+  onMotivoCupo,
 }: {
   g: GuiaVistaPrevia;
   incluida: boolean;
@@ -63,6 +67,9 @@ export default function LothImportarGuiasGuia({
   onDirectorio: (ficha: string, cambio: Partial<DecisionFicha>) => void;
   /** Con pocas guías en la vista previa, sus datos arrancan abiertos. */
   abiertaDeEntrada: boolean;
+  /** T9: el motivo escrito para pasar lo autorizado (sin él, la guía no entra). */
+  motivoCupo: string;
+  onMotivoCupo: (texto: string) => void;
 }) {
   /* Con el interruptor de la tala apagado vale el estado «sin tala» y sus avisos de tala no aplican. */
   const est = ETIQUETA_ESTADO[estadoEfectivo(g, conTala)];
@@ -119,9 +126,22 @@ export default function LothImportarGuiasGuia({
       {avisos.length > 0 && (
         <ul className="space-y-1 px-3 pb-2">
           {avisos.map((a, i) => (
-            <Aviso key={`${a.codigo}-${i}`} a={a} />
+            <Aviso
+              key={`${a.codigo}-${i}`}
+              a={a}
+              t6={a.codigo === "exceso_autorizado" ? (g.sobreAutorizado ?? []) : undefined}
+            />
           ))}
         </ul>
+      )}
+
+      {importable && (
+        <LothImportarGuiasCupo
+          filas={sobreCupoEfectivo(g, conTala)}
+          motivo={motivoCupo}
+          onMotivo={onMotivoCupo}
+          activa={incluida}
+        />
       )}
 
       {(g.ficha || g.trozas.length > 0) && (
@@ -168,7 +188,8 @@ export default function LothImportarGuiasGuia({
   );
 }
 
-function Aviso({ a }: { a: AvisoImportacion }) {
+/** `t6`: el aviso de T6 lleva su ⓘ con las cuentas (no hay motivo que lo destrabe). */
+function Aviso({ a, t6 }: { a: AvisoImportacion; t6?: SobreAutorizadoDeLaGuia[] }) {
   const Icono =
     a.nivel === "bloquea" ? AlertOctagon : a.nivel === "atencion" ? AlertTriangle : Info;
   const color =
@@ -180,7 +201,8 @@ function Aviso({ a }: { a: AvisoImportacion }) {
   return (
     <li className={`flex items-start gap-2 text-sm ${color}`}>
       <Icono className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-      <span>{a.mensaje}</span>
+      <span className={t6 ? "font-semibold" : undefined}>{a.mensaje}</span>
+      {t6 && <InfoT6 filas={t6} />}
     </li>
   );
 }

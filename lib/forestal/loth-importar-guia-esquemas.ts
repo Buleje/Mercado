@@ -7,7 +7,8 @@
  */
 import { z } from "zod";
 import type { GtfSerfor } from "./serfor-gtf";
-import { motivoSchema } from "./motivo";
+import { limpiarMotivo, motivoSchema } from "./motivo";
+import { MOTIVO_CUPO_MIN, motivoCupoValido } from "./loth-cupo-especie";
 import { IMPORTAR_GUIAS_MAX, IMPORTAR_GUIAS_POR_PEDIDO, IMPORTAR_SERFOR_POR_PEDIDO } from "./loth-importar-guia-tipos";
 
 /** Texto opcional de la ficha: vacío o ausente = `null`. */
@@ -153,6 +154,9 @@ export const pedidoDirectorioSchema = z.object({
   permiso: z.object({ accion: accionDirectorio }).nullable().optional(),
 });
 
+/** El «no» del motivo T9: falta, no dice nada o tiene menos de 5 letras. */
+const MENSAJE_MOTIVO_CUPO = `Escribe por qué la guía pasa lo autorizado de la especie (${MOTIVO_CUPO_MIN} letras o más).`;
+
 export const pedidoImportarSchema = z.object({
   items: z
     .array(
@@ -161,6 +165,13 @@ export const pedidoImportarSchema = z.object({
         planDestino: planDestinoSchema,
         crearTala: z.boolean(),
         directorio: pedidoDirectorioSchema.optional(),
+        /* T9: limpio de invisibles y recortado; 5 LETRAS como el alta (`motivoCupoValido`).
+           El rol que lo autoriza no viaja: lo decide la ruta por la sesión. */
+        motivoSobreCupo: z
+          .string()
+          .transform(limpiarMotivo)
+          .pipe(z.string().max(500, "El motivo va en hasta 500 letras.").refine(motivoCupoValido, MENSAJE_MOTIVO_CUPO))
+          .optional(),
       }),
     )
     .min(1, "Elige al menos una guía")
