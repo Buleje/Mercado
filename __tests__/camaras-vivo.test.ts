@@ -34,16 +34,28 @@ const camara = (extra: Partial<Camara> = {}): Camara => ({
 });
 
 describe("diferenciaPct", () => {
+  it("un cambio chico y local (persona o camión en un rincón) pasa el umbral aunque el promedio casi no se mueva", () => {
+    const a = new Uint8Array(32 * 32).fill(60);
+    const b = new Uint8Array(a);
+    for (let y = 2; y < 8; y++) for (let x = 2; x < 8; x++) b[y * 32 + x] = 220; // 6×6 = 3,5 % del cuadro
+    expect(diferenciaPct(a, b)).toBeGreaterThan(8);
+    // Ruido parejo de compresión (±3 grises) no pasa.
+    const c = a.map((v, i) => v + (i % 2 ? 3 : -3));
+    expect(diferenciaPct(a, Uint8Array.from(c))).toBeLessThan(3);
+  });
+
   it("igual = 0, negro contra blanco = 100, largos distintos = 100", () => {
     expect(diferenciaPct(huella(40), huella(40))).toBe(0);
     expect(diferenciaPct(huella(0), huella(255))).toBe(100);
     expect(diferenciaPct(huella(0), new Uint8Array(10))).toBe(100);
   });
 
-  it("es la diferencia MEDIA: un cuarto de la imagen cambiado del todo = 25 %", () => {
+  it("cuenta el bloque que más cambió: un cuarto de la imagen cambiado del todo = 100 % (el promedio sería 25 %)", () => {
     const b = huella(0);
     b.fill(255, 0, 256);
-    expect(diferenciaPct(huella(0), b)).toBe(25);
+    expect(diferenciaPct(huella(0), b)).toBe(100);
+    // Huellas que no son de 32×32: el promedio de siempre.
+    expect(diferenciaPct(new Uint8Array(4), Uint8Array.from([255, 0, 0, 0]))).toBe(25);
   });
 });
 

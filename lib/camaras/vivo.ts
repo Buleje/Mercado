@@ -68,16 +68,36 @@ export function ajustesVivo(camara: Pick<Camara, "vivo">): Required<AjustesVivo>
   };
 }
 
+/** Lado de cada bloque de la huella: 8×8 → 16 bloques en la de 32×32. */
+const LADO_BLOQUE = 8;
+
 /**
- * Cuánto cambió la imagen, de 0 a 100: la diferencia media entre dos huellas
- * (cada punto es un gris 0–255). Si no tienen el mismo largo no se pueden
- * comparar y cuenta como cambio total.
+ * Cuánto cambió la imagen, de 0 a 100 (cada punto es un gris 0–255). Cuenta
+ * el BLOQUE que más cambió, no el promedio de toda la imagen: una persona o un
+ * camión que ocupa el 5 % del cuadro movía el promedio 2–3 % y no pasaba el
+ * umbral de 8 % (medido 03-10); en su bloque de 8×8 lo mueve ~40 %. El ruido
+ * de compresión cambia cada punto apenas y sigue por debajo. Si las huellas no
+ * tienen el mismo largo no se pueden comparar y cuenta como cambio total.
  */
 export function diferenciaPct(a: Uint8Array, b: Uint8Array): number {
   if (a.length === 0 || a.length !== b.length) return 100;
-  let suma = 0;
-  for (let i = 0; i < a.length; i++) suma += Math.abs(a[i]! - b[i]!);
-  return (suma / a.length / 255) * 100;
+  const global = (() => {
+    let suma = 0;
+    for (let i = 0; i < a.length; i++) suma += Math.abs(a[i]! - b[i]!);
+    return (suma / a.length / 255) * 100;
+  })();
+  if (a.length !== LADO_HUELLA * LADO_HUELLA) return global;
+  let maxBloque = 0;
+  for (let by = 0; by < LADO_HUELLA; by += LADO_BLOQUE) {
+    for (let bx = 0; bx < LADO_HUELLA; bx += LADO_BLOQUE) {
+      let suma = 0;
+      for (let y = by; y < by + LADO_BLOQUE; y++) {
+        for (let x = bx; x < bx + LADO_BLOQUE; x++) suma += Math.abs(a[y * LADO_HUELLA + x]! - b[y * LADO_HUELLA + x]!);
+      }
+      maxBloque = Math.max(maxBloque, (suma / (LADO_BLOQUE * LADO_BLOQUE) / 255) * 100);
+    }
+  }
+  return Math.max(global, maxBloque);
 }
 
 const DIA_LIMA = new Intl.DateTimeFormat("en-CA", {

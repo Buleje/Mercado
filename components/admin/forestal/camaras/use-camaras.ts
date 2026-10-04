@@ -157,13 +157,14 @@ export function useCamaras() {
     try {
       const form = new FormData();
       form.append("file", archivo);
-      const r = await fetch(
-        `${direccionLocal(c.token)}&evento=manual&nota=${encodeURIComponent("subida desde el panel")}`,
-        {
-          method: "POST",
-          body: form,
-        },
-      );
+      /* Con la sesión, sin el token de la cámara (que sólo ven admin y dueño):
+         el almacenero también sube a mano (revisión de seguridad 03-10). */
+      const r = await fetch(`/api/admin/camaras/${encodeURIComponent(c.id)}/foto`, {
+        method: "POST",
+        headers: csrfHeaders(),
+        credentials: "include",
+        body: form,
+      });
       const j = (await r.json().catch(() => ({}))) as { ok?: boolean; error?: string };
       if (!r.ok || !j.ok) {
         throw new Error(
