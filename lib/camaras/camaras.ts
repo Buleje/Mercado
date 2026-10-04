@@ -73,6 +73,44 @@ export interface Camara {
    * si la pila bajó en un día sin despacho registrado, se avisa (2026-10-01).
    */
   vigilaPila?: boolean;
+  /**
+   * De dónde salen sus imágenes (ADR-466). Informativo para la pantalla: la
+   * entrada es la misma para todas. `puente_pc` = una PC que tiene abierta la
+   * app del fabricante (Hik-Connect en BlueStacks o iVMS-4200) captura esa
+   * ventana y manda cuadros con `?modo=vivo`. Sin dato = lo de siempre.
+   */
+  fuente?: FuenteCamara;
+  /**
+   * Qué parte de la ventana capturada es la cámara, en fracciones 0–1 de la
+   * imagen que llega (ADR-466). Saca los botones de Hik-Connect o elige un
+   * cuadrante de la vista de 4. Se aplica en el servidor sólo a los cuadros
+   * del puente (`modo=vivo`): una foto subida desde el celular tiene otra forma.
+   */
+  recorte?: RecorteCamara | null;
+  /** Cuándo un cuadro del puente pasa al historial (ADR-466). Sin dato = los valores por defecto. */
+  vivo?: AjustesVivo | null;
+}
+
+export const FUENTES_CAMARA = ["isapi", "webhook", "puente_pc"] as const;
+export type FuenteCamara = (typeof FUENTES_CAMARA)[number];
+
+/** Rectángulo en fracciones de la imagen: `x`,`y` = esquina superior izquierda. */
+export interface RecorteCamara {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+/**
+ * Cuándo un cuadro en vivo se guarda como foto `programada` (y la IA la lee):
+ * si cambió más de `umbralPct` % respecto de la última guardada, o pasaron
+ * `cadaMin` minutos — y nunca más de `maxDia` por día de Lima.
+ */
+export interface AjustesVivo {
+  umbralPct?: number;
+  cadaMin?: number;
+  maxDia?: number;
 }
 
 /**

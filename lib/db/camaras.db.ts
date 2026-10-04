@@ -41,6 +41,7 @@ import {
   type ResultadoChalecos,
   type ResultadoConfirmar,
 } from "@/lib/camaras/cruces";
+import { configurarPuente, type CambiosPuente } from "@/lib/camaras/vivo";
 
 /**
  * CamarasDB — las cámaras del negocio y lo que mandan.
@@ -323,6 +324,27 @@ export const CamarasDB = {
     return r;
   },
 
+  /**
+   * Fuente, recorte y ajustes del puente de pantalla de una cámara (ADR-466).
+   * Va en la misma lista de cámaras (sin migración): `porToken` la lee en cada
+   * cuadro y el recorte se aplica desde el siguiente.
+   */
+  async configurarPuente(tenantId: string, camaraId: string, cambios: CambiosPuente, user: string): Promise<ResultadoCamaras> {
+    const r = await mutarCamaras(tenantId, user, (camaras) => configurarPuente(camaras, camaraId, cambios));
+    if (r.ok) {
+      logActivity(
+        "camara.puente",
+        "camara",
+        `Ajustó el puente de pantalla de «${r.camaras.find((c) => c.id === camaraId)?.nombre ?? camaraId}»: ${JSON.stringify(cambios).slice(0, 300)}`,
+        camaraId,
+        user,
+        undefined,
+        tenantId,
+      ).catch((err) => logger.error("[camaras] no se pudo auditar el puente", { error: String(err), tenantId }));
+    }
+    return r;
+  },
+
   /** Deja anotado que se mandó un aviso: es lo que frena el siguiente. */
   async marcarAvisada(tenantId: string, camaraId: string, cuando: Date): Promise<void> {
     await mutarCamaras(tenantId, "camara", (camaras) =>
@@ -344,7 +366,9 @@ export const CamarasDB = {
     const limpio = (token ?? "").trim();
     if (limpio.length < 16) return null;
     const indice = (await PlatformSettingsDB.get<Indice>(CLAVE_INDICE)) ?? {};
-    const donde = indice[limpio];
+    /* `Object.hasOwn`: un token como `__defineGetter__` daba 500 al tomar una
+       función heredada del prototipo (revisión de seguridad 03-10). */
+    const donde = Object.hasOwn(indice, limpio) ? indice[limpio] : undefined;
     if (!donde) return null;
     const camara = (await this.list(donde.tenantId)).find((c) => c.id === donde.camaraId);
     /* El índice puede quedar viejo (una cámara borrada a mano en el KV): la

@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse, after } from "next/server";
-import sharp from "sharp";
+import { ImagenNoPermitida, sharpSeguro, verificarImagen } from "@/lib/camaras/imagen-segura";
+import { z } from "zod";
 import { getSupabaseAdmin } from "@/lib/supabase";
-import { applyRateLimit } from "@/lib/rate-limit";
+import { applyRateLimit, getClientIp, rateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
 import { CamarasDB } from "@/lib/db/camaras.db";
-import { normalizarEvento } from "@/lib/camaras/camaras";
+import { normalizarEvento, type Camara, type EventoCamara } from "@/lib/camaras/camaras";
 import { procesarCapturaNueva } from "@/lib/camaras/cruces.server";
+import { CuadroIlegible, recibirCuadro } from "@/lib/camaras/cuadro-vivo.server";
 import {
   alertaDelAviso,
   eventoDeAlerta,
@@ -19,6 +21,10 @@ import {
 
 /**
  * POST /api/webhooks/camara?k=<token>[&evento=motion][&nota=...]
+ * POST /api/webhooks/camara?k=<token>&modo=vivo — un cuadro del puente de
+ *      pantalla (ADR-466): JPEG/WebP ≤ 1 MB, crudo o en multipart. Responde
+ *      `{ ok, guardada, motivo: "cambio"|"intervalo"|"sin_cambio"|"tope_del_dia" }`.
+ *      Misma RUTA a propósito: el portero del túnel compara la ruta exacta.
  *
  * La puerta por la que ENTRA una foto del patio.
  *
@@ -55,14 +61,186 @@ const TIPOS = new Set(["image/jpeg", "image/jpg", "image/png", "image/webp"]);
 /** Responde igual ante token malo y cámara inexistente: no confirma cuál existe. */
 const rechazo = () => NextResponse.json({ ok: false }, { status: 401 });
 
-export const POST = withApiHandler("camaras-ingesta", async (req: NextRequest) => {
-  const rl = await applyRateLimit(req, "MODERATE", "camara-ingesta");
-  if (rl) return rl;
+/**
+ * Lo que trae la dirección. El token se valida igual que siempre (≥ 16, lo
+ * resuelve el índice); `modo` sólo conoce `vivo` — otro valor es un error del
+ * script, no una foto normal con un parámetro de más.
+ */
+const consultaSchema = z.object({
+  k: z.string().trim().min(16).max(128),
+  modo: z.enum(["vivo"]).optional(),
+});
 
+/* ── Modo vivo (ADR-466) ─────────────────────────────────────────────────── */
+
+/** Un cuadro de una ventana de 1280–1920 px en JPEG ronda 100–400 KB. */
+const MAX_VIVO = 1024 * 1024;
+const MAX_CUERPO_VIVO = MAX_VIVO + 16 * 1024;
+const TIPOS_VIVO = new Set(["image/jpeg", "image/jpg", "image/webp"]);
+/**
+ * Topes propios: la PC manda ~1 cuadro/s y el MODERATE de las fotos (20 cada 5
+ * min) lo cortaría en 20 segundos. Por IP antes del token (corta un bucle o un
+ * barrido de tokens) y por cámara después (≈ 2/s). En memoria de la instancia,
+ * a propósito: cada cuadro ya gasta comandos de Upstash y el techo distribuido
+ * por IP lo pone el middleware en producción.
+ */
+const VIVO_POR_IP = { max: 300, ventanaSeg: 60 };
+const VIVO_POR_CAMARA = { max: 20, ventanaSeg: 10 };
+
+const demasiado = (resetAt: number) =>
+  NextResponse.json(
+    { ok: false, error: "muy_seguido" },
+    { status: 429, headers: { "Retry-After": String(Math.max(1, Math.ceil((resetAt - Date.now()) / 1000))) } },
+  );
+
+/**
+ * La foto entra al historial por el camino de siempre: storage, historial y la
+ * lectura de la IA después de contestar. `false` = el storage no la aceptó.
+ */
+async function guardarFoto(
+  destino: { tenantId: string; camara: Camara },
+  webp: Buffer,
+  meta: { evento: EventoCamara; nota: string | null },
+): Promise<boolean> {
+  const ahora = new Date();
+  const dia = ahora.toISOString().slice(0, 10);
+  const path = `${destino.tenantId}/camaras/${destino.camara.id}/${dia}/${ahora.getTime()}.webp`;
+
+  const supabase = getSupabaseAdmin();
+  const { error } = await supabase.storage.from(BUCKET).upload(path, webp, {
+    contentType: "image/webp",
+    cacheControl: "public, max-age=31536000, immutable",
+    upsert: false,
+  });
+  if (error) {
+    logger.error("[camaras.ingesta] storage", { err: error.message, path });
+    return false;
+  }
+
+  const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
+  const { captura, descartadas } = await CamarasDB.registrarCaptura(destino.tenantId, {
+    camaraId: destino.camara.id,
+    url: data.publicUrl,
+    evento: meta.evento,
+    nota: meta.nota,
+  });
+  if (descartadas > 0) {
+    logger.info("[camaras.ingesta] historial en el tope, se descartaron las más viejas", {
+      tenantId: destino.tenantId,
+      descartadas,
+    });
+  }
+
+  /**
+   * La IA lee la foto DESPUÉS de contestar.
+   *
+   * La cámara está en el patio con 4G: dejarla esperando a que un modelo mire
+   * la imagen es tenerla con la radio encendida y la batería corriendo por
+   * algo que a ella no le importa. Responde ya; la lectura, los cruces
+   * (placa ↔ guía/flete, chaleco ↔ persona) y la pila aparecen cuando estén,
+   * guardados en UNA escritura. `after()` mantiene viva la función hasta que
+   * termine: en Vercel, lo que sigue corriendo después de la respuesta sin
+   * él se puede cortar a mitad. Si el análisis falla, la foto ya está
+   * guardada — por eso el `catch` sólo loguea (code-quality §4).
+   */
+  after(() =>
+    procesarCapturaNueva(destino.tenantId, destino.camara, captura).catch((err) =>
+      logger.error("[camaras.ingesta] el análisis de la foto falló", {
+        error: String(err),
+        capturaId: captura.id,
+      }),
+    ),
+  );
+  return true;
+}
+
+/**
+ * Un cuadro del puente de pantalla. El cuadro queda 60 s para mirar; pasa al
+ * historial como foto `programada` sólo si cambió o pasó el intervalo, con
+ * tope diario (`lib/camaras/vivo.ts`). Responde siempre rápido: la PC manda el
+ * siguiente en un segundo.
+ */
+async function ingestaVivo(req: NextRequest, destino: { tenantId: string; camara: Camara }): Promise<Response> {
+  const porCamara = rateLimit(
+    `camara-vivo:${destino.tenantId}:${destino.camara.id}`,
+    VIVO_POR_CAMARA.max,
+    VIVO_POR_CAMARA.ventanaSeg,
+  );
+  if (!porCamara.allowed) return demasiado(porCamara.resetAt);
+
+  if (Number(req.headers.get("content-length") ?? 0) > MAX_CUERPO_VIVO) {
+    return NextResponse.json({ ok: false, error: "muy_grande" }, { status: 413 });
+  }
+  let bytes: Buffer | null = null;
+  let tipo = req.headers.get("content-type") ?? "";
+  try {
+    const cuerpo = Buffer.from(await req.arrayBuffer());
+    if (cuerpo.length > MAX_CUERPO_VIVO) return NextResponse.json({ ok: false, error: "muy_grande" }, { status: 413 });
+    if (tipo.includes("multipart/")) {
+      const imagen = imagenDelAviso(partesMultipart(cuerpo, tipo));
+      if (imagen) {
+        bytes = imagen.datos;
+        tipo = imagen.tipo;
+      }
+    } else if (tipo.startsWith("image/")) {
+      bytes = cuerpo;
+    }
+  } catch (err) {
+    logger.warn("[camaras.vivo] cuerpo ilegible", { error: String(err) });
+    return NextResponse.json({ ok: false, error: "cuerpo_invalido" }, { status: 400 });
+  }
+  if (!bytes || bytes.length === 0) return NextResponse.json({ ok: false, error: "sin_imagen" }, { status: 400 });
+  if (bytes.length > MAX_VIVO) return NextResponse.json({ ok: false, error: "muy_grande" }, { status: 413 });
+  if (!TIPOS_VIVO.has(tipo.split(";")[0]!.trim().toLowerCase())) {
+    return NextResponse.json({ ok: false, error: "formato_no_permitido" }, { status: 415 });
+  }
+
+  try {
+    const paso = await recibirCuadro(destino.tenantId, destino.camara, bytes, async (foto, motivo) => {
+      const ok = await guardarFoto(destino, foto, {
+        evento: "programada",
+        nota: motivo === "cambio" ? "Puente de pantalla: cambió la imagen" : "Puente de pantalla: foto de intervalo",
+      });
+      if (!ok) throw new Error("storage");
+    });
+    return NextResponse.json({ ok: true, guardada: paso.guardada, motivo: paso.motivo });
+  } catch (err) {
+    if (err instanceof CuadroIlegible) {
+      return NextResponse.json({ ok: false, error: "formato_no_permitido" }, { status: 415 });
+    }
+    logger.error("[camaras.vivo] falló", { error: String(err), camaraId: destino.camara.id });
+    const storage = err instanceof Error && err.message === "storage";
+    return NextResponse.json(
+      { ok: false, error: storage ? "storage" : "no_se_pudo_procesar" },
+      { status: storage ? 502 : 500 },
+    );
+  }
+}
+
+export const POST = withApiHandler("camaras-ingesta", async (req: NextRequest) => {
   const url = new URL(req.url);
-  const token = (url.searchParams.get("k") ?? "").trim();
-  const destino = await CamarasDB.porToken(token);
+  const vivo = url.searchParams.has("modo");
+  if (vivo) {
+    const porIp = rateLimit(`camara-vivo-ip:${getClientIp(req)}`, VIVO_POR_IP.max, VIVO_POR_IP.ventanaSeg);
+    if (!porIp.allowed) return demasiado(porIp.resetAt);
+  } else {
+    const rl = applyRateLimit(req, "MODERATE", "camara-ingesta");
+    if (rl) return rl;
+  }
+
+  const consulta = consultaSchema.safeParse({
+    k: url.searchParams.get("k") ?? "",
+    modo: url.searchParams.get("modo") ?? undefined,
+  });
+  if (!consulta.success) {
+    if (consulta.error.issues.some((i) => i.path[0] === "modo")) {
+      return NextResponse.json({ ok: false, error: "modo_invalido" }, { status: 400 });
+    }
+    return rechazo();
+  }
+  const destino = await CamarasDB.porToken(consulta.data.k);
   if (!destino) return rechazo();
+  if (consulta.data.modo === "vivo") return ingestaVivo(req, destino);
 
   /* La imagen puede venir en un multipart (lo normal: la cámara manda la alerta
      y la foto en partes con el nombre que elige su firmware, o un formulario),
@@ -112,30 +290,15 @@ export const POST = withApiHandler("camaras-ingesta", async (req: NextRequest) =
   try {
     /* Re-codificada por nosotros: lo que se guarda es una imagen nuestra, no el
        archivo que llegó de afuera. Si sharp no la puede leer, no era una foto. */
-    const webp = await sharp(bytes)
+    /* Formato REAL y techo de píxeles (revisión de seguridad 03-10): el
+       content-type del cliente no alcanza. */
+    await verificarImagen(bytes, new Set(["jpeg", "png", "webp"]));
+    const webp = await sharpSeguro(bytes)
       .resize({ width: ANCHO_MAX, withoutEnlargement: true })
       .webp({ quality: 80 })
       .toBuffer();
 
-    const ahora = new Date();
-    const dia = ahora.toISOString().slice(0, 10);
-    const path = `${destino.tenantId}/camaras/${destino.camara.id}/${dia}/${ahora.getTime()}.webp`;
-
-    const supabase = getSupabaseAdmin();
-    const { error } = await supabase.storage.from(BUCKET).upload(path, webp, {
-      contentType: "image/webp",
-      cacheControl: "public, max-age=31536000, immutable",
-      upsert: false,
-    });
-    if (error) {
-      logger.error("[camaras.ingesta] storage", { err: error.message, path });
-      return NextResponse.json({ ok: false, error: "storage" }, { status: 502 });
-    }
-
-    const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
-    const { captura, descartadas } = await CamarasDB.registrarCaptura(destino.tenantId, {
-      camaraId: destino.camara.id,
-      url: data.publicUrl,
+    const guardada = await guardarFoto(destino, webp, {
       /* La alerta de la cámara dice qué disparó la foto; sin alerta (subida a
          mano, un FTP que reenvía) manda el `?evento=` de la dirección. */
       evento: alerta ? eventoDeAlerta(alerta) : normalizarEvento(url.searchParams.get("evento")),
@@ -143,37 +306,14 @@ export const POST = withApiHandler("camaras-ingesta", async (req: NextRequest) =
          para entender qué mandó, no para confiar en ello. */
       nota: (url.searchParams.get("nota") ?? "").slice(0, 200) || (alerta ? notaDeAlerta(alerta) : null),
     });
-    if (descartadas > 0) {
-      logger.info("[camaras.ingesta] historial en el tope, se descartaron las más viejas", {
-        tenantId: destino.tenantId,
-        descartadas,
-      });
-    }
-
-    /**
-     * La IA lee la foto DESPUÉS de contestar.
-     *
-     * La cámara está en el patio con 4G: dejarla esperando a que un modelo mire
-     * la imagen es tenerla con la radio encendida y la batería corriendo por
-     * algo que a ella no le importa. Responde ya; la lectura, los cruces
-     * (placa ↔ guía/flete, chaleco ↔ persona) y la pila aparecen cuando estén,
-     * guardados en UNA escritura. `after()` mantiene viva la función hasta que
-     * termine: en Vercel, lo que sigue corriendo después de la respuesta sin
-     * él se puede cortar a mitad. Si el análisis falla, la foto ya está
-     * guardada — por eso el `catch` sólo loguea (code-quality §4).
-     */
-    after(() =>
-      procesarCapturaNueva(destino.tenantId, destino.camara, captura).catch((err) =>
-        logger.error("[camaras.ingesta] el análisis de la foto falló", {
-          error: String(err),
-          capturaId: captura.id,
-        }),
-      ),
-    );
+    if (!guardada) return NextResponse.json({ ok: false, error: "storage" }, { status: 502 });
 
     /* Respuesta mínima: la cámara sólo necesita saber que entró. */
     return NextResponse.json({ ok: true });
   } catch (err) {
+    if (err instanceof ImagenNoPermitida) {
+      return NextResponse.json({ ok: false, error: err.message }, { status: 415 });
+    }
     logger.error("[camaras.ingesta] falló", { error: String(err) });
     return NextResponse.json({ ok: false, error: "no_se_pudo_procesar" }, { status: 500 });
   }

@@ -7,11 +7,13 @@ import { withApiHandler } from "@/lib/api-handler";
 import { logger } from "@/lib/logger";
 import { CamarasDB, destinoResuelto } from "@/lib/db/camaras.db";
 import {
+  FUENTES_CAMARA,
   camaraParaPantalla,
   camarasParaPantalla,
   textoDeFalla,
   type PruebaDeCamara,
 } from "@/lib/camaras/camaras";
+import { LADO_MINIMO_RECORTE, RANGO_VIVO } from "@/lib/camaras/vivo";
 import { moverPtz, probarCamara } from "@/lib/camaras/isapi";
 import { chalecosParaPantalla } from "@/lib/camaras/cruces";
 import { ColaboradoresDB } from "@/lib/db/rrhh-colaboradores.db";
@@ -33,6 +35,10 @@ import { ColaboradoresDB } from "@/lib/db/rrhh-colaboradores.db";
  *          `{ id, accion: "ptz", x, y, zoom, ms? }`: mueve la cámara y la frena.
  *          `{ id, accion: "vigila-pila", activa }`: compara cada foto con la
  *            anterior y avisa si la pila bajó sin movimiento en el libro.
+ *          `{ id, accion: "puente", fuente?, recorte?, vivo? }`: el puente de
+ *            pantalla (ADR-466). `fuente` "isapi"|"webhook"|"puente_pc";
+ *            `recorte` {x,y,w,h} en fracciones 0–1; `vivo` {umbralPct?,
+ *            cadaMin?, maxDia?} se mezcla con lo guardado. `null` = quitar.
  *          `{ accion: "chalecos", numero, colaboradorId | null }`: asigna (o
  *            libera) un número de chaleco/casco. Sin `id`: es del negocio.
  *          `{ accion: "confirmar-cruce", capturaId, refId }`: marca en la FOTO
@@ -70,6 +76,29 @@ const chalecoSchema = z.object({
 });
 
 const vigilaPilaSchema = z.object({ activa: z.boolean() });
+
+/** Fracciones 0–1 de la ventana que captura la PC; el modelo puro revalida y redondea. */
+const recorteSchema = z
+  .object({
+    x: z.number().min(0).lt(1),
+    y: z.number().min(0).lt(1),
+    w: z.number().min(LADO_MINIMO_RECORTE).max(1),
+    h: z.number().min(LADO_MINIMO_RECORTE).max(1),
+  })
+  .refine((r) => r.x + r.w <= 1.0005 && r.y + r.h <= 1.0005, { message: "El recorte se sale de la imagen." });
+
+const puenteSchema = z.object({
+  fuente: z.enum(FUENTES_CAMARA).nullable().optional(),
+  recorte: recorteSchema.nullable().optional(),
+  vivo: z
+    .object({
+      umbralPct: z.number().min(RANGO_VIVO.umbralPct.min).max(RANGO_VIVO.umbralPct.max).optional(),
+      cadaMin: z.number().int().min(RANGO_VIVO.cadaMin.min).max(RANGO_VIVO.cadaMin.max).optional(),
+      maxDia: z.number().int().min(RANGO_VIVO.maxDia.min).max(RANGO_VIVO.maxDia.max).optional(),
+    })
+    .nullable()
+    .optional(),
+});
 
 const confirmarCruceSchema = z.object({
   capturaId: z.string().trim().min(1).max(64),
@@ -153,7 +182,11 @@ export const GET = withApiHandler("camaras-get", async (req: NextRequest) => {
       puesto: c.puesto?.nombre ?? null,
       chaleco: numeroDe.get(c.id) ?? null,
     }));
-  return NextResponse.json({ camaras, capturas, chalecos: chalecosParaPantalla(mapa, nombres), colaboradores });
+  /* El token de la cámara deja subir cuadros como si fuera ella: sólo lo ven
+     admin y dueño (revisión de seguridad 03-10, ADR-466). */
+  const veToken = auth.role === "admin" || auth.role === "owner";
+  const camarasVisibles = veToken ? camaras : camaras.map((c) => ({ ...c, token: "" }));
+  return NextResponse.json({ camaras: camarasVisibles, capturas, chalecos: chalecosParaPantalla(mapa, nombres), colaboradores });
 });
 
 /** Las escrituras comparten guardas: admin/owner, CSRF y rate limit. */
@@ -249,6 +282,18 @@ export const PATCH = withApiHandler("camaras-patch", (req: NextRequest) =>
 
       if (!d.id) return { error: "validation_error", message: "No se entendió qué cambiar de la cámara." };
       const id = d.id;
+
+      if (d.accion === "puente") {
+        const p = puenteSchema.safeParse(body);
+        if (!p.success) {
+          /* El mensaje de Zod sale en inglés salvo el del `refine`, que es nuestro. */
+          const propio = p.error.issues.find((i) => i.code === "custom")?.message;
+          return { error: "validation_error", message: propio ?? "Revisa el recorte y los ajustes del puente." };
+        }
+        const r = await CamarasDB.configurarPuente(tenantId, id, p.data, user);
+        if (!r.ok) return { error: "rechazado", message: r.motivo };
+        return { camaras: camarasParaPantalla(r.camaras), mensaje: r.mensaje };
+      }
 
       if (d.accion === "vigila-pila") {
         const p = vigilaPilaSchema.safeParse(body);

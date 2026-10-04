@@ -81,6 +81,17 @@ const DRIVE_READ_MAX_REQUESTS = 300;
 const DRIVE_READ_PREFIX = "/api/admin/documents";
 
 /**
+ * Presupuesto aparte para las cámaras «casi en vivo» (ADR-466): el cuadro que
+ * la PC del puente manda cada segundo (`POST /api/webhooks/camara?modo=vivo`)
+ * y el que el panel pide para mirarlo (`GET /api/admin/camaras/<id>/cuadro`).
+ * Con el techo general de 60/min, una sola cámara a 1 cuadro/s ya lo agotaba y
+ * dos cámaras desde la misma PC se cortaban a la mitad. Las dos rutas aplican
+ * además su propio tope por cámara/usuario; el resto de /api sigue en 60/min.
+ */
+const CAMARA_VIVO_MAX_REQUESTS = 300;
+const CAMARA_CUADRO_RE = /^\/api\/admin\/camaras\/[^/]+\/cuadro$/;
+
+/**
  * Legacy alias — kept so existing unit tests that import `RateLimitEntry`
  * from this module keep compiling. New code should not reference it.
  */
@@ -121,6 +132,25 @@ function getDriveReadLimiter(): DistributedRateLimiter {
     windowMs: WINDOW_MS,
   });
   return _driveReadLimiter;
+}
+
+/** Limitador propio de las cámaras en vivo — namespace y cupo aparte. */
+let _camaraVivoLimiter: DistributedRateLimiter | null = null;
+function getCamaraVivoLimiter(): DistributedRateLimiter {
+  if (_camaraVivoLimiter) return _camaraVivoLimiter;
+  _camaraVivoLimiter = createDistributedRateLimiter({
+    key: "mw:camara-vivo",
+    maxRequests: CAMARA_VIVO_MAX_REQUESTS,
+    windowMs: WINDOW_MS,
+  });
+  return _camaraVivoLimiter;
+}
+
+/** ¿Es un cuadro de cámara en vivo (subirlo o mirarlo)? Le corresponde su propio cupo. */
+export function esCamaraEnVivo(req: NextRequest): boolean {
+  const { pathname, searchParams } = req.nextUrl;
+  if (req.method === "POST" && pathname === "/api/webhooks/camara") return searchParams.get("modo") === "vivo";
+  return req.method === "GET" && CAMARA_CUADRO_RE.test(pathname);
 }
 
 /** ¿Es una lectura del drive (le corresponde el cupo grande)? */
@@ -178,7 +208,11 @@ export async function checkRateLimit(req: NextRequest): Promise<NextResponse | n
   const tenantId = req.headers.get("x-tenant-id") ?? "global";
   const identifier = `${tenantId}:${ip}`;
 
-  const limiter = esLecturaDeDrive(req) ? getDriveReadLimiter() : getEdgeLimiter();
+  const limiter = esLecturaDeDrive(req)
+    ? getDriveReadLimiter()
+    : esCamaraEnVivo(req)
+      ? getCamaraVivoLimiter()
+      : getEdgeLimiter();
   const allowed = await limiter.check(identifier);
   if (allowed) return null;
 
@@ -198,6 +232,7 @@ export async function checkRateLimit(req: NextRequest): Promise<NextResponse | n
 export function __resetEdgeLimiterForTests(): void {
   _edgeLimiter = null;
   _driveReadLimiter = null;
+  _camaraVivoLimiter = null;
   rlStore.clear();
 }
 
