@@ -89,6 +89,10 @@ export default function CamaraFila({
     null,
   );
   const archivoRef = useRef<HTMLInputElement>(null);
+  /* Sin `capture`: abre la galería, para subir una captura de pantalla de la
+     app de la cámara (Hik-Connect) — con `capture` el celular solo ofrecía
+     sacar una foto nueva (Brandon 2026-10-03, puente con el celular). */
+  const galeriaRef = useRef<HTMLInputElement>(null);
   const avisos = edit ?? {
     whatsapp: c.avisos?.whatsapp ?? "",
     cuando: c.avisos?.cuando ?? "noche",
@@ -112,6 +116,14 @@ export default function CamaraFila({
       icon: Upload,
       busy: subiendo,
       onSelect: () => archivoRef.current?.click(),
+    },
+    {
+      id: "galeria",
+      label: "Subir desde la galería",
+      hint: "Una captura de pantalla de la app de la cámara (Hik-Connect): la IA la lee igual",
+      icon: Upload,
+      busy: subiendo,
+      onSelect: () => galeriaRef.current?.click(),
     },
     {
       id: "quitar",
@@ -209,6 +221,19 @@ export default function CamaraFila({
           className="sr-only"
           tabIndex={-1}
           aria-label={`Subir una foto a mano a ${c.nombre}`}
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            e.target.value = "";
+            if (f) onSubir(f);
+          }}
+        />
+        <input
+          ref={galeriaRef}
+          type="file"
+          accept="image/*"
+          className="sr-only"
+          tabIndex={-1}
+          aria-label={`Subir una imagen de la galería a ${c.nombre}`}
           onChange={(e) => {
             const f = e.target.files?.[0];
             e.target.value = "";
