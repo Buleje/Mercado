@@ -15,6 +15,7 @@ import type { DatosAnexo04 } from "@/lib/forestal/anexo04-serfor";
 import { traseraDelEmitido, traseraParaGuardar, type AnexoEmitido } from "@/lib/forestal/anexo04-registro";
 import { exportarAnexo04PDF, exportarAnexosPDF, type TraseraParaPdf } from "@/lib/forestal/anexo04-pdf";
 import { exportarAnexo04Excel } from "@/lib/forestal/anexo04-excel";
+import { exportarResumenPapelPDF } from "@/lib/forestal/anexo04-resumen-papel-pdf";
 import { EVENTO_ANEXO_GUARDADO } from "@/hooks/use-anexos-emitidos";
 
 export function useAnexo04Salidas(ctx: {
@@ -97,6 +98,13 @@ export function useAnexo04Salidas(ctx: {
       .catch(() => onAviso?.("No se pudo generar el Excel.", "error"));
   }, [filas, datos, especieGlobal, totalManualM3, onAviso]);
 
+  /** El «Resumen del papel»: las tablas por hoja y el general, del MISMO anexo que se ve. */
+  const descargarResumenPapel = useCallback(() => {
+    exportarResumenPapelPDF(filas, datos, { especieGlobal, totalManualM3 })
+      .then((r) => onAviso?.(r.cuadra ? "Resumen del papel descargado: todo cuadra" : "Resumen del papel descargado: hay diferencias, mira el control de cuadre", r.cuadra ? "success" : "error"))
+      .catch(() => onAviso?.("No se pudo generar el resumen del papel.", "error"));
+  }, [filas, datos, especieGlobal, totalManualM3, onAviso]);
+
   /** Re-descarga un anexo tal como se emitió, sin tocar lo que hay en pantalla. */
   const reDescargar = useCallback((a: AnexoEmitido) => {
     /* Con su total declarado (es el número que llevaba el papel) y con su
@@ -118,5 +126,5 @@ export function useAnexo04Salidas(ctx: {
       .catch(() => onAviso?.("No se pudo generar el PDF del lote.", "error"));
   }, [datos, onAviso]);
 
-  return { generando, descargarPdf, descargarExcel, reDescargar, pdfDeLote };
+  return { generando, descargarPdf, descargarExcel, descargarResumenPapel, reDescargar, pdfDeLote };
 }

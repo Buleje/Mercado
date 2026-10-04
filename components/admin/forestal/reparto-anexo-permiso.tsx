@@ -39,6 +39,7 @@ import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
 import { FiltroColumnaMulti } from "@/components/admin/shared/filtros-columna";
 import { formatNumber } from "@/lib/format";
 import AnexoAlLibro from "./reparto-anexo-al-libro";
+import BotonResumenPapel from "./reparto-anexo-resumen-papel";
 import { BotonRestablecerColumnas, EnOrden, useOrdenColumnas } from "@/components/admin/shared/columnas-ordenables";
 
 /** Las columnas movibles del detalle por medida (Brandon, 2026-09-26). Precio
@@ -289,6 +290,7 @@ export default function AnexoPorPermiso({
             >
               <FileText className="h-3.5 w-3.5" aria-hidden /> Anexo 04 de este permiso
             </button>
+            <BotonResumenPapel piezas={actual.piezas} especie={actual.especies[0] ?? ""} etiqueta={actual.label} />
             {/* El mismo detalle en CSV — se abre en Excel para pasarle el
                 precio al cliente o para el contador. */}
             <button

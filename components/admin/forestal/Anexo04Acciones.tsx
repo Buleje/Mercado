@@ -12,7 +12,7 @@ import { Download, FileSpreadsheet, FileText, Printer } from "@buleje/design-sys
 const BTN = "inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]";
 
 export default function Anexo04Acciones({
-  presentable, generando, onPdfDetallado, onExcel, onImprimir, onDescargar, extra,
+  presentable, generando, onPdfDetallado, onExcel, onResumenPapel, onImprimir, onDescargar, extra,
 }: {
   /** Salidas de más, a la izquierda del pie («Un anexo por tipo»). */
   extra?: ReactNode;
@@ -21,6 +21,8 @@ export default function Anexo04Acciones({
   /** Sólo desde el cubicador: el PDF interno con tipos y precios. */
   onPdfDetallado?: () => void;
   onExcel: () => void;
+  /** El PDF de cuadre: lo que lleva cada hoja, por tipo y especie. */
+  onResumenPapel?: () => void;
   onImprimir: () => void;
   onDescargar: () => void;
 }) {
@@ -30,6 +32,11 @@ export default function Anexo04Acciones({
       {onPdfDetallado && (
         <button type="button" onClick={onPdfDetallado} title="El PDF interno de siempre: tipos, precios y subtotales" className={BTN}>
           <FileText className="h-4 w-4" /> PDF detallado (interno)
+        </button>
+      )}
+      {onResumenPapel && (
+        <button type="button" onClick={onResumenPapel} title="PDF con lo que lleva cada hoja (tipo, especie, reg, piezas, m³, PT), el resumen general y el control de cuadre" className={BTN}>
+          <FileText className="h-4 w-4" /> Resumen del papel (PDF)
         </button>
       )}
       <button type="button" onClick={onExcel} title="El mismo anexo en Excel, con fórmulas para editarlo antes de imprimir" className={BTN}>

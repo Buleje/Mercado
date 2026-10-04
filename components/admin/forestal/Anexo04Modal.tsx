@@ -335,7 +335,7 @@ export default function Anexo04Modal({
     ...(despacho?.gtfNumber ? [{ id: "gtf", label: `GTF ${despacho.gtfNumber}`, contador: "Original + 2 copias" }] : []),
   ];
 
-  const { generando, descargarPdf, descargarExcel, reDescargar, pdfDeLote } = useAnexo04Salidas({
+  const { generando, descargarPdf, descargarExcel, descargarResumenPapel, reDescargar, pdfDeLote } = useAnexo04Salidas({
     filas: filasPapel, datos, especieGlobal: especie, ctpEntryId, totalManualM3: totalManual, trasera: traseraPapel, onAviso,
     onRegistrado: () => setHistorialToken((t) => t + 1),
   });
@@ -635,6 +635,7 @@ export default function Anexo04Modal({
             generando={generando}
             onPdfDetallado={onPdfDetallado}
             onExcel={descargarExcel}
+            onResumenPapel={descargarResumenPapel}
             onImprimir={candado.conCandado(imprimir)}
             onDescargar={candado.conCandado(descargarPdf)}
             extra={
