@@ -10,6 +10,11 @@
 5. **Documentos del plan de manejo** rescatado de un stash olvidado del 30-09 (ADR-467). Stash y ramas de respaldo borrados; `.claude/autonomo/plan-2026-09-29.md` restaurado (solo vivía en el stash).
 6. Herramientas: pre-commit corre los 13 tests guardianes y los que leen el fuente; `scripts/dev-helpers/rol-probe.mjs --todos` (usuarios QA por rol: memoria `qa-usuarios-por-rol`); paso `fallar` en `qa-capturas`.
 
+**PRÓXIMA SESIÓN — Brandon eligió las 3 (en este orden):**
+1. **Reactivar el tenant QA forestal** (`inversiones-agroforestales-blas-sociedad-op-qa-ui`): `/api/tenants/resolve` responde 403 «tenant inactivo» (`app/api/tenants/resolve/route.ts:48`) y ensucia la consola de cada `qa-capturas` forestal. Hacerlo por superadmin/endpoint (no SQL a mano) y verificar con una captura: consola 0.
+2. **Script que compara el HTML antes/después de partir un componente** (`scripts/dev-helpers/comparar-dom.mjs` o similar): el agente que partió `LothPlanForm` lo armó a mano (render del original y del partido con RTL, 12 pasos, comparar `innerHTML`); su receta está en su memoria `partir-componente-mismo-dom.md`. Usarlo en el punto 3.
+3. **Partir el Drive** (`components/admin/documentos/DocumentosModule.tsx`, 3.545 líneas) sin cambiar lo que dibuja, con el script del punto 2. Contexto: hoy se endurecieron sus permisos por rol (`bfd2774b8`). Quedan 408 componentes del admin >300 líneas; los otros 4 más grandes: `StoreCreativeMode` 5.023, `InventoryTab` 4.152, `StoreCustomizer` 3.672, `CubicadorMadera` 3.500.
+
 **PENDIENTE (decisiones de Brandon):**
 - Importador: dos guías del mismo árbol con el interruptor de talas apagado en una (caso raro, anotado por el agente).
 - La capa `z-10` del menú «Copiar» del plan sigue disparando el aviso informativo `ds-no-z-arbitrary-admin` (cambiarla taparía el desplegable del directorio).
