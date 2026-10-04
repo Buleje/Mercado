@@ -21,6 +21,7 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import type { AvisosCamara, Captura } from "@/lib/camaras/camaras";
 import type { CamaraConConexion } from "./ConectarCamaraModal";
 import { API_CAMARAS, type ChalecosPantalla, type ColaboradorOpcion } from "./camaras-ui";
+import type { CamposPuente } from "./puente-pc";
 
 interface RespuestaGet {
   camaras?: CamaraConConexion[];
@@ -209,6 +210,9 @@ export function useCamaras() {
     guardarAvisos: (id: string, whatsapp: string, cuando: AvisosCamara["cuando"]) =>
       patch({ id, accion: "avisos", whatsapp, cuando }),
     vigilarPila: (id: string, activa: boolean) => patch({ id, accion: "vigila-pila", activa }),
+    /** El puente de pantalla (ADR-466): fuente, recorte y ajustes del modo vivo. `fuente: null` lo apaga. */
+    ajustarPuente: async (id: string, campos: CamposPuente) =>
+      Boolean(await patch({ id, accion: "puente", ...campos })),
     asignarChaleco: (numero: string, colaboradorId: string | null) =>
       patch({ accion: "chalecos", numero, colaboradorId }),
     confirmarCruce: (capturaId: string, refId: string) =>

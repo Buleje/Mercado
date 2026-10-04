@@ -173,6 +173,7 @@ export default function CamarasView() {
           direccionParaCamara={dir.direccionParaCamara}
           onConectar={setConectando}
           onAbrirChalecos={() => abrirChalecos(null)}
+          onAsignarChaleco={abrirChalecos}
         />
       )}
 
@@ -187,6 +188,8 @@ export default function CamarasView() {
           onDesconectar={async () => {
             await d.desconectar(camaraAConectar.id);
           }}
+          onGuardarPuente={(campos) => d.ajustarPuente(camaraAConectar.id, campos)}
+          error={d.error}
         />
       )}
       {chalecos && (

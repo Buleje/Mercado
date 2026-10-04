@@ -12,7 +12,9 @@ import { Check, Copy, RefreshCw } from "@buleje/design-system/icons";
 import { estaCallada } from "@/lib/camaras/camaras";
 import { cn } from "@/lib/utils";
 import type { CamaraConConexion } from "./ConectarCamaraModal";
-import { BTN, horaODia } from "./camaras-ui";
+import { BTN, horaODia, SOLO_ADMIN_DIRECCION } from "./camaras-ui";
+import { camposPuente } from "./puente-pc";
+import { SenalPuente } from "./VisorPuentePc";
 
 interface Props {
   camaras: CamaraConConexion[];
@@ -76,6 +78,7 @@ export default function EstadoCamaras({
                 {callada ? " · no manda hace más de un día" : ""}
               </span>
             </span>
+            {camposPuente(c).fuente === "puente_pc" && <SenalPuente camaraId={c.id} />}
             {/* Los dos botones viajan juntos: sueltos, a 400 px el de girar quedaba solo en otra fila. */}
             <span className="flex shrink-0 items-center gap-2">
               <button
@@ -85,7 +88,9 @@ export default function EstadoCamaras({
                 title={
                   direccionParaCamara(c.token)
                     ? "Copiar la dirección para pegarla en la cámara"
-                    : motivoSinDireccion
+                    : c.token
+                      ? motivoSinDireccion
+                      : SOLO_ADMIN_DIRECCION
                 }
                 className={BTN}
               >

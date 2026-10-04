@@ -256,7 +256,15 @@ export function estadoDireccion(
  * mientras se averigua, y con el túnel caído (la vieja ya no recibe y al
  * reabrirlo sale otra). Con `""` los botones de copiar quedan apagados.
  */
+/**
+ * El servidor manda `token: ""` a quien no es admin ni dueño (revisión de
+ * seguridad 2026-10-03): la dirección de la cámara deja subir imágenes como
+ * ella, así que no se copia ni se muestra.
+ */
+export const SOLO_ADMIN_DIRECCION = "Solo admin o dueño ve la dirección de la cámara";
+
 export function direccionCopiable(estado: EstadoDireccion, token: string): string {
+  if (!token) return "";
   if (estado.tipo === "cargando" || estado.tipo === "tunel-caido" || !estado.base) return "";
   return `${estado.base}/api/webhooks/camara?k=${token}`;
 }

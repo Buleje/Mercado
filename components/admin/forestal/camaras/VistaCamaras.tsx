@@ -12,6 +12,9 @@ import { CardTitle } from "@buleje/design-system";
 import { Camera, Hash, Loader2, Plus } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import CamaraFila from "./CamaraFila";
+import LecturaUltimaFoto from "./LecturaUltimaFoto";
+import { camposPuente, ultimaCapturaDe } from "./puente-pc";
+import { useRecargaPuente } from "./use-puente-pc";
 import GuiaHikvision from "./GuiaHikvision";
 import { DireccionAviso } from "./AvisosCamaras";
 import { direccionLocal, type DatosCamaras } from "./use-camaras";
@@ -23,6 +26,7 @@ import {
   CHIP_TONO,
   nombreCorto,
   porQueNoSeCopia,
+  SOLO_ADMIN_DIRECCION,
   type EstadoDireccion,
 } from "./camaras-ui";
 
@@ -36,6 +40,8 @@ interface Props {
   direccionParaCamara: (token: string) => string;
   onConectar: (id: string) => void;
   onAbrirChalecos: () => void;
+  /** Tocar un chaleco sin dueño en la lectura del puente: abre la asignación con ese número. */
+  onAsignarChaleco: (numero: string) => void;
 }
 
 export default function VistaCamaras({
@@ -45,6 +51,7 @@ export default function VistaCamaras({
   direccionParaCamara,
   onConectar,
   onAbrirChalecos,
+  onAsignarChaleco,
 }: Props) {
   const [nombre, setNombre] = useState("");
   const [lugar, setLugar] = useState("");
@@ -54,6 +61,8 @@ export default function VistaCamaras({
       setLugar("");
     }
   };
+  const esPuente = (c: (typeof d.camaras)[number]) => camposPuente(c).fuente === "puente_pc";
+  useRecargaPuente(d.camaras.some(esPuente), () => void d.cargar({ silenciosa: true }));
   const asignados = Object.entries(d.chalecos).sort(([a], [b]) =>
     a.localeCompare(b, "es", { numeric: true }),
   );
@@ -122,7 +131,7 @@ export default function VistaCamaras({
               key={c.id}
               camara={c}
               direccion={direccionParaCamara(c.token)}
-              motivoSinDireccion={porQueNoSeCopia(estadoDireccion)}
+              motivoSinDireccion={c.token ? porQueNoSeCopia(estadoDireccion) : SOLO_ADMIN_DIRECCION}
               direccionLocal={direccionLocal(c.token)}
               guardando={d.guardando}
               subiendo={d.subiendo === c.id}
@@ -137,6 +146,16 @@ export default function VistaCamaras({
               onFotoGuardada={() => void d.cargar({ silenciosa: true })}
               onErrorCopia={() =>
                 d.setError("El navegador no dejó copiar. Selecciona la dirección a mano.")
+              }
+              lecturaPuente={
+                esPuente(c) ? (
+                  <LecturaUltimaFoto
+                    captura={ultimaCapturaDe(d.capturas, c.id)}
+                    chalecosVivos={d.chalecos}
+                    onConfirmar={d.confirmarCruce}
+                    onAsignarChaleco={onAsignarChaleco}
+                  />
+                ) : undefined
               }
             />
           ))}
