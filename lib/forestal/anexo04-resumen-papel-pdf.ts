@@ -5,10 +5,11 @@
  * Client-only: jsPDF y autotable entran por import dinámico.
  */
 import type { jsPDF } from "jspdf";
+import type { CellHookData } from "jspdf-autotable";
 import type { PiezaCubicada } from "./cubicacion";
 import { construirAnexo04, fmtAnexo, type Anexo04Opts, type DatosAnexo04 } from "./anexo04-serfor";
 import {
-  resumenDelPapel, type FilaResumenPapel, type ResumenPapel, type TotalResumenPapel,
+  resumenDelPapel, type FilaResumenPapel, type HojaResumenPapel, type ResumenPapel, type TotalResumenPapel,
 } from "./anexo04-resumen-papel";
 
 const VERDE: [number, number, number] = [0, 128, 96];
@@ -36,6 +37,24 @@ function cuerpo(filas: readonly FilaResumenPapel[], r: ResumenPapel): Fila[] {
     f.tipo, f.especie, String(f.reg), String(f.piezas), fmtAnexo(f.m3),
     f.pt == null ? "—" : miles(f.pt, r.decimalesPt),
   ]);
+}
+
+/** La hoja con el detalle de cada columna y, si una especie × tipo ocupa varias, su subtotal. */
+function cuerpoDeHoja(h: HojaResumenPapel, r: ResumenPapel): { filas: Fila[]; subtotales: Set<number> } {
+  const filas: Fila[] = [];
+  const subtotales = new Set<number>();
+  const pt = (v: number | null) => (v == null ? "—" : miles(v, r.decimalesPt));
+  for (const g of h.grupos) {
+    for (const c of g.columnas) {
+      filas.push([`Col. ${c.columna}${c.continuacion ? " (sigue)" : ""}`, c.tipo, c.especie, String(c.reg), String(c.piezas), fmtAnexo(c.m3), pt(c.pt)]);
+    }
+    if (g.columnas.length > 1) {
+      subtotales.add(filas.length);
+      const t = g.subtotal;
+      filas.push(["", `Subtotal ${t.tipo}`, t.especie, String(t.reg), String(t.piezas), fmtAnexo(t.m3), pt(t.pt)]);
+    }
+  }
+  return { filas, subtotales };
 }
 
 const pie = (rotulo: string, t: TotalResumenPapel, m3: number, r: ResumenPapel): Fila[] => [[
@@ -67,7 +86,7 @@ export async function construirDocResumenPapel(
     `Anexo N° ${datos.numero || "—"}   ·   GTF N° ${datos.gtf || "—"}   ·   ${fechaCorta()}`,
     `${resumen.hojas.length} hoja${resumen.hojas.length === 1 ? "" : "s"} del formato   ·   volumen del anexo ${fmtAnexo(resumen.totalImpresoM3)} m³`,
     resumen.ptDerivado
-      ? "El anexo va en m³: el PT no está impreso en el papel, sale de las piezas del cubicado (por fila, redondeado una vez a 2 decimales)."
+      ? "El anexo va en m³: el PT no está impreso en el papel, sale de las piezas del cubicado (por columna, redondeado una vez a 2 decimales; los subtotales suman sus columnas)."
       : "El anexo va en pie tablar: el PT es el que imprime el papel (suma de los subtotales).",
   ].filter(Boolean);
   for (const l of lineas) { doc.text(l, MARGEN, y, { maxWidth: ancho - 2 * MARGEN }); y += l.length > 110 ? 22 : 12; }
@@ -95,11 +114,36 @@ export async function construirDocResumenPapel(
     y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 18;
   };
 
+  /* Las hojas llevan una columna más (en qué columna del papel está cada bloque). */
+  const headHoja = [["Col.", "Tipo", "Especie", "Reg", "Piezas", "m³", colPt]];
+  const columnasHoja = {
+    0: { cellWidth: 58 }, 1: { cellWidth: 92 }, 2: { cellWidth: 110 },
+    3: { halign: "right" as const, cellWidth: 42 }, 4: { halign: "right" as const, cellWidth: 52 },
+    5: { halign: "right" as const, cellWidth: 62 }, 6: { halign: "right" as const },
+  };
   for (const h of resumen.hojas) {
     titulo(`Hoja ${h.numero} de ${resumen.hojas.length}`);
     /* El total de la hoja es el que imprime el papel (3); si las filas no lo
        sostienen, el control de abajo dice cuánto falta. */
-    tabla(cuerpo(h.filas, resumen), pie(`Total de la hoja ${h.numero}`, h.suma, h.totalImpresoM3, resumen));
+    const { filas, subtotales } = cuerpoDeHoja(h, resumen);
+    const t = h.suma;
+    autoTable(doc, {
+      ...estilos,
+      head: headHoja,
+      body: filas,
+      foot: [[`Total de la hoja ${h.numero}`, "", "", String(t.reg), String(t.piezas), fmtAnexo(h.totalImpresoM3), t.pt == null ? "—" : miles(t.pt, resumen.decimalesPt)]],
+      columnStyles: columnasHoja,
+      startY: y,
+      didParseCell: (d: CellHookData) => {
+        if ((d.section === "head" || d.section === "foot") && d.column.index >= 3) d.cell.styles.halign = "right";
+        /* El subtotal de una especie × tipo partida en columnas, en negrita y sombreado. */
+        if (d.section === "body" && subtotales.has(d.row.index)) {
+          d.cell.styles.fontStyle = "bold";
+          d.cell.styles.fillColor = [240, 244, 236];
+        }
+      },
+    });
+    y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 18;
   }
 
   titulo("Resumen general — tipo y especie de todo el anexo");

@@ -241,7 +241,12 @@ export const SEP_FILA_PARTE = "␟";
  * Cada fila oficial (Σ exacta redondeada UNA vez) repartida entre sus partes por
  * mayor resto. Cualquier tabla armada con `porParte` suma exactamente `total`.
  */
-export function repartirFilasGTF(partes: readonly ParteGTF[], decimales: number = DECIMALES_GTF): RepartoGTF {
+export function repartirFilasGTF(
+  partes: readonly ParteGTF[],
+  decimales: number = DECIMALES_GTF,
+  /** El total OFICIAL de una fila cuando ya está dicho en otro lado (la Distribución: Σ por permiso + falta). */
+  totalesDeFila?: ReadonlyMap<string, number> | null,
+): RepartoGTF {
   const filas = new Map<string, Map<string, Decimal>>();
   for (const p of partes) {
     const f = filas.get(p.fila) ?? new Map<string, Decimal>();
@@ -254,7 +259,7 @@ export function repartirFilasGTF(partes: readonly ParteGTF[], decimales: number 
   for (const [fila, ps] of filas) {
     const claves = [...ps.keys()];
     const exactos = claves.map((k) => ps.get(k) as Decimal);
-    const oficial = m3OficialDeFila(exactos, decimales);
+    const oficial = totalesDeFila?.get(fila) ?? m3OficialDeFila(exactos, decimales);
     porFila.set(fila, oficial);
     repartirAlTotal(exactos, oficial, decimales).forEach((v, i) => {
       porParte.set(claves[i], (porParte.get(claves[i]) ?? new Decimal(0)).plus(v));

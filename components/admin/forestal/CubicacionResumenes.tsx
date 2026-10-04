@@ -36,6 +36,7 @@ import {
 import { fmtM3, fmtPct, fmtPiezas, fmtPt, fmtSoles } from "@/lib/forestal/cubicacion-formato";
 import { analizarLote } from "@/lib/forestal/cubicacion-insights";
 import { useVariadoDelLote } from "./hooks/use-config-variado";
+import { useFilasOficialesDelReparto } from "./hooks/use-filas-oficiales-del-reparto";
 import { LecturaDelLote } from "./resumen-vistas";
 import { DondeEstaElVolumen, HeroResumen } from "./resumen-hero";
 import { SeccionResumen, TablaGrupos } from "./resumen-tabla";
@@ -154,11 +155,19 @@ export default function CubicacionResumenes() {
   const lote = variado.envio;
   /* Volumen OFICIAL (regla GTF): cada tabla —por especie, tipo, medida, largo,
      dueño— suma exacto el mismo total, igual que la Distribución y el Anexo 04. */
-  const porEspecie = useMemo(() => agruparOficial(lote, "especie", precioDe), [lote, precioDe]);
-  const porTipo = useMemo(() => agruparOficial(lote, "tipo", precioDe), [lote, precioDe]);
-  const porMedida = useMemo(() => agruparOficial(lote, "medida", precioDe), [lote, precioDe]);
-  const porDim = useMemo(() => (dim === "medida" ? porMedida : agruparOficial(lote, dim, precioDe)), [porMedida, lote, dim, precioDe]);
-  const bloques = useMemo(() => resumenPorEspecie(lote, precioDe), [lote, precioDe]);
+  /* Con bloques de rolliza, las filas oficiales son las de la Distribución
+     (cada permiso redondea como su guía, más la falta): sin esto las tablas
+     decían 13,191 y la Distribución 13,188 (Brandon 2026-10-03). Mismo reparto
+     que la Distribución en su vista por defecto («Por tipo»). */
+  const filasOficiales = useFilasOficialesDelReparto(rows, variado, precioDe);
+  const porEspecie = useMemo(() => agruparOficial(lote, "especie", precioDe, filasOficiales), [lote, precioDe, filasOficiales]);
+  const porTipo = useMemo(() => agruparOficial(lote, "tipo", precioDe, filasOficiales), [lote, precioDe, filasOficiales]);
+  const porMedida = useMemo(() => agruparOficial(lote, "medida", precioDe, filasOficiales), [lote, precioDe, filasOficiales]);
+  const porDim = useMemo(
+    () => (dim === "medida" ? porMedida : agruparOficial(lote, dim, precioDe, filasOficiales)),
+    [porMedida, lote, dim, precioDe, filasOficiales],
+  );
+  const bloques = useMemo(() => resumenPorEspecie(lote, precioDe, filasOficiales), [lote, precioDe, filasOficiales]);
 
   /**
    * Filas tildadas de «Por especie y tipo» para bajar SU Anexo 04 (Brandon,

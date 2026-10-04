@@ -143,7 +143,18 @@ export function agruparPor(rows: PiezaCubicada[], dim: DimensionResumen, precio:
  * 2026-10-03): es la que se MUESTRA y se EXPORTA. `agruparPor` sigue dando
  * las sumas tal cual porque la usa el motor del reparto para decidir.
  */
-export function agruparOficial(rows: PiezaCubicada[], dim: DimensionResumen, precio: PrecioPt = 0): ResumenLote {
+export function agruparOficial(
+  rows: PiezaCubicada[],
+  dim: DimensionResumen,
+  precio: PrecioPt = 0,
+  /**
+   * El m³ oficial de cada fila (`filaGtf`) cuando hay Distribución: cada
+   * permiso redondea sus filas como su guía y la falta aparte, y la fila del
+   * lote es la suma (Brandon 2026-10-03: «Tablas decía 13,191 y la
+   * Distribución 13,188, el real es el de la guía»). Sin esto, la Σ del lote.
+   */
+  filasOficiales?: ReadonlyMap<string, number> | null,
+): ResumenLote {
   const precioDe = typeof precio === "function" ? precio : () => precio;
   const map = new Map<string, GrupoResumen>();
   let totalCant = 0, totalValor = 0;
@@ -169,7 +180,7 @@ export function agruparOficial(rows: PiezaCubicada[], dim: DimensionResumen, pre
      enteros. Toda tabla suma EXACTO el volumen oficial del lote. El PT, igual
      a 2 decimales. */
   const fila = (r: PiezaCubicada) => filaGtf(r.especie, tipoDePieza(r));
-  const reparto = repartirFilasGTF(rows.map((r) => ({ fila: fila(r), parte: claveYLabel(r, dim).clave, exacto: m3DeLinea(r) })));
+  const reparto = repartirFilasGTF(rows.map((r) => ({ fila: fila(r), parte: claveYLabel(r, dim).clave, exacto: m3DeLinea(r) })), undefined, filasOficiales);
   const repartoPt = repartirFilasGTF(rows.map((r) => ({ fila: fila(r), parte: claveYLabel(r, dim).clave, exacto: ptDeLinea(r) })), 2);
   const ptOficial = repartoPt.total;
   const grupos = [...map.values()].map((g) => {
@@ -202,7 +213,7 @@ export interface BloqueEspecie {
  * tipo comercial. Para leer "el Tornillo: cuánto comercial, cuánta paquetería…".
  * Reusa agruparPor("tipo") sobre las filas de cada especie.
  */
-export function resumenPorEspecie(rows: PiezaCubicada[], precio: PrecioPt = 0): BloqueEspecie[] {
+export function resumenPorEspecie(rows: PiezaCubicada[], precio: PrecioPt = 0, filasOficiales?: ReadonlyMap<string, number> | null): BloqueEspecie[] {
   const porEspecie = new Map<string, PiezaCubicada[]>();
   for (const r of rows) {
     const e = r.especie?.trim() || "Sin especie";
@@ -211,7 +222,7 @@ export function resumenPorEspecie(rows: PiezaCubicada[], precio: PrecioPt = 0): 
     else porEspecie.set(e, [r]);
   }
   const bloques = [...porEspecie.entries()].map(([especie, rs]) => {
-    const g = agruparOficial(rs, "tipo", precio);
+    const g = agruparOficial(rs, "tipo", precio, filasOficiales);
     /* Cada especie × tipo es una FILA de la GTF: `agruparPor` ya le pone su m³
        oficial y el total de la especie es la suma de esas filas. */
     const tipos = g.grupos;

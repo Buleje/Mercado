@@ -108,3 +108,23 @@ describe("control de cuadre", () => {
     expect(r.general.total.m3).toBe(0);
   });
 });
+
+describe("detalle por columna y subtotal por especie × tipo (Brandon 2026-10-03)", () => {
+  it("una especie × tipo en dos columnas: cada columna aparte y su subtotal suma m³, PT y piezas", () => {
+    for (const u of ["pt", "m3"] as const) {
+      const rows = lote();
+      const r = resumenDelPapel(construirAnexo04(rows, datos(u)), rows);
+      const partida = r.hojas.flatMap((h) => h.grupos).find((g) => g.columnas.length > 1);
+      expect(partida, u).toBeDefined();
+      const g = partida!;
+      const r3 = (vs: number[]) => Math.round(vs.reduce((a, v) => a + Math.round(v * 1000), 0)) / 1000;
+      expect(g.subtotal.m3).toBe(r3(g.columnas.map((c) => c.m3)));
+      expect(g.subtotal.piezas).toBe(g.columnas.reduce((a, c) => a + c.piezas, 0));
+      expect(g.subtotal.reg).toBe(g.columnas.reduce((a, c) => a + c.reg, 0));
+      expect(g.subtotal.pt).toBe(r3(g.columnas.map((c) => c.pt ?? 0)));
+      expect(g.columnas.map((c) => c.columna)).toEqual([...g.columnas.map((c) => c.columna)].sort((a, b) => a - b));
+      // La hoja suma sus subtotales y cuadra con lo impreso.
+      expect(r.cuadra).toBe(true);
+    }
+  });
+});

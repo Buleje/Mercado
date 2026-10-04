@@ -67,8 +67,14 @@ describe("LothAvisoPlazo", () => {
 describe("dónde aparece", () => {
   beforeEach(() => {
     vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false, json: async () => ({}) })));
+    /* El formulario registra «ahora»: sin fijarlo, «55 días antes de AHORA»
+       se volvía 60 cuando el reloj real avanzaba (falló el 03-10 a las 20:38 de
+       Lima = 04-10 en UTC). Sólo se fija `Date`: los timers de React siguen reales. */
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(AHORA);
   });
   afterEach(() => {
+    vi.useRealTimers();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
@@ -80,7 +86,7 @@ describe("dónde aparece", () => {
       const fecha = document.querySelector('input[type="date"]') as HTMLInputElement;
       expect(aviso()).toBeNull();
       fireEvent.change(fecha, { target: { value: haceDias(55) } });
-      // Sin `ahora` fijo: el registro es hoy; 55 días atrás está fuera igual.
+      // `Date` fijo en AHORA: el registro es «hoy» = AHORA, 55 días después de la fecha.
       expect(aviso()).toBeTruthy();
       expect(aviso()?.textContent).toMatch(/Registras esto 5\d días después: la norma pide 15/);
       // Va pegado al campo de la fecha (su misma columna), fuera del <label>.

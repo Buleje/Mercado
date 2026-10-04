@@ -13,11 +13,11 @@
  *
  *   Σ bloques = Distribuido = Σ Anexos 04 por permiso,
  *   Σ medidas de un bloque = lo que usa el bloque,
- *   Distribuido + Falta + redondeo entre permisos = el volumen de Resúmenes,
+ *   Distribuido + Falta = el volumen del lote = las tablas de Resúmenes,
  *
- * donde el redondeo entre permisos es de milésimos (cero si cada fila queda
- * entera en un solo permiso, o en la falta)
- * y se muestra: no se esconde repartiéndolo.
+ * porque las tablas toman estas mismas filas (`porFila`: Σ por permiso +
+ * falta) en vez de redondear el lote entero (Brandon 2026-10-03: Tablas decía
+ * 13,191 y la Distribución 13,188; el real es el de la guía).
  *
  * El motor del reparto (`cubicacion-reparto.ts`) no cambia: decide QUÉ piezas
  * van a cada bloque; esto sólo dice cuántos m³ oficiales lleva cada pedazo.
@@ -56,13 +56,17 @@ export const claveFilaAnexo = (especie: string | null | undefined, tipo: string 
   `${normal(especie) || "sin especie"}|${normal(tipo) || "sin tipo"}`;
 
 export interface RepartoOficial {
-  /** El volumen del lote: Σ de sus filas especie × tipo, el de las tablas de Resúmenes. */
+  /**
+   * El volumen del lote = Distribuido + Falta: cada fila especie × tipo es la
+   * suma de lo que redondeó cada permiso (como su guía) y la falta. Las tablas
+   * de Resúmenes usan estas mismas filas (`porFila`), así todo dice lo mismo.
+   */
   total: number;
   /** Σ de los Anexos 04 por permiso (cada permiso con sus filas redondeadas). */
   distribuido: number;
   falta: number;
-  /** total − distribuido − falta: los milésimos que deja redondear cada permiso por separado. */
-  redondeo: number;
+  /** El m³ oficial de cada fila del lote (`filaGtf(especie, tipo)`): Σ por permiso + falta. */
+  porFila: Map<string, number>;
   porBloque: Map<string, number>;
   /** `${bloqueId}|${dia}|${grupo}|${medida}` — la fila del PDF/Excel. */
   porBloqueDiaGrupoMedida: Map<string, number>;
@@ -90,10 +94,7 @@ const suma = (m: Map<string, number>, k: string, v: number) => m.set(k, Math.rou
 export function repartoOficial(dist: Distribucion): RepartoOficial {
   type Meta = { tipo: "b"; bloque: string; dia: number; grupo: string; medida: string; permiso: string; especie: string; fila: string; m: AsignacionMedida }
     | { tipo: "f"; especie: string; grupo: string; medida: string };
-  /* Dos redondeos de las MISMAS líneas: por permiso (lo que se imprime) y por
-     lote (lo que dicen las tablas de Resúmenes). */
   const partes: ParteGTF[] = [];
-  const delLote: ParteGTF[] = [];
   const metas = new Map<string, Meta>();
 
   for (const e of dist.especies) {
@@ -107,7 +108,6 @@ export function repartoOficial(dist: Distribucion): RepartoOficial {
             const tipo = tipoDe(g.label, m);
             const parte = `b${S}${b.bloque.id}${S}${d.dia}${S}${g.clave}${S}${m.clave}`;
             partes.push({ fila: `${permiso}${S}${filaGtf(e.especie, tipo)}`, parte, exacto: exactoDe(m) });
-            delLote.push({ fila: filaGtf(e.especie, tipo), parte, exacto: exactoDe(m) });
             metas.set(parte, { tipo: "b", bloque: b.bloque.id, dia: d.dia, grupo: g.clave, medida: m.clave, permiso, especie: e.especie, fila: claveFilaAnexo(e.especie, g.label), m });
           }
         }
@@ -118,7 +118,6 @@ export function repartoOficial(dist: Distribucion): RepartoOficial {
         if (!(m.piezas > 0)) continue;
         const parte = `f${S}${e.especie}${S}${f.clave}${S}${m.clave}`;
         partes.push({ fila: `falta${S}${filaGtf(e.especie, tipoDe(f.label, m))}`, parte, exacto: exactoDe(m) });
-        delLote.push({ fila: filaGtf(e.especie, tipoDe(f.label, m)), parte, exacto: exactoDe(m) });
         metas.set(parte, { tipo: "f", especie: e.especie, grupo: f.clave, medida: m.clave });
       }
     }
@@ -126,10 +125,10 @@ export function repartoOficial(dist: Distribucion): RepartoOficial {
 
   const r = repartirFilasGTF(partes);
   const out: RepartoOficial = {
-    total: repartirFilasGTF(delLote).total,
+    total: r.total,
     distribuido: 0,
     falta: 0,
-    redondeo: 0,
+    porFila: new Map(),
     porBloque: new Map(),
     porBloqueDiaGrupoMedida: new Map(),
     porBloqueGrupo: new Map(),
@@ -164,7 +163,9 @@ export function repartoOficial(dist: Distribucion): RepartoOficial {
   }
   out.distribuido = Math.round(distribuido * 1000) / 1000;
   out.falta = Math.round(falta * 1000) / 1000;
-  out.redondeo = Math.round((out.total - out.distribuido - out.falta) * 1000) / 1000;
+  /* Cada clave de `r.porFila` es `${permiso}␟${fila}` o `falta␟${fila}`: la
+     fila del lote es la suma de sus pedazos (milésimos enteros). */
+  for (const [k, v] of r.porFila) suma(out.porFila, k.slice(k.indexOf(S) + 1), v);
   return out;
 }
 
@@ -231,9 +232,9 @@ export function distConVolumenOficial(dist: Distribucion, of: RepartoOficial = r
       ...dist.totales,
       amparadaM3: of.distribuido,
       faltanteM3: of.falta,
-      /* Lo producido según los papeles: Distribuido + Falta. El total de
-         Resúmenes (`of.total`) difiere en `of.redondeo`, que se muestra aparte. */
-      aserradaM3: Math.round((of.distribuido + of.falta) * 1000) / 1000,
+      /* Lo producido según los papeles: Distribuido + Falta (= `of.total`, lo
+         mismo que dicen las tablas de Resúmenes). */
+      aserradaM3: of.total,
       libreM3: r4(especies.reduce((a, e) => a + e.libreM3, 0)),
     },
   };

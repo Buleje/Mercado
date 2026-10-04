@@ -40,26 +40,26 @@ const r3 = (v: number) => Math.round(v * 1000) / 1000;
 const suma = (vs: Iterable<number>) => r3([...vs].reduce((a, v) => a + v, 0));
 
 describe("un solo volumen en todas las tablas", () => {
-  it("el volumen del lote es el de las tablas de Resúmenes (filas especie × tipo)", () => {
-    const tablas = agruparOficial(LOTE, "especie");
-    expect(of.total).toBe(tablas.total.m3);
+  it("el volumen del lote es el de las tablas de Resúmenes con las filas de la Distribución (Σ por permiso + falta)", () => {
+    const tablas = agruparOficial(LOTE, "especie", 0, of.porFila);
+    expect(tablas.total.m3).toBe(of.total);
     // Cualquier dimensión suma lo mismo, y sus filas suman su total.
     for (const dim of ["especie", "tipo", "medida", "largo", "espesor", "ancho", "seccion"] as const) {
-      const t = agruparOficial(LOTE, dim);
+      const t = agruparOficial(LOTE, dim, 0, of.porFila);
       expect(t.total.m3, dim).toBe(of.total);
       expect(suma(t.grupos.map((g) => g.m3)), dim).toBe(of.total);
     }
     // La tabla por especie y tipo: cada especie = Σ de sus filas, y entre todas el total.
-    const bloquesEsp = resumenPorEspecie(LOTE);
+    const bloquesEsp = resumenPorEspecie(LOTE, 0, of.porFila);
     expect(suma(bloquesEsp.map((b) => b.total.m3))).toBe(of.total);
     for (const b of bloquesEsp) expect(suma(b.tipos.map((x) => x.m3))).toBe(b.total.m3);
+    // Las filas del lote son la suma de las de cada permiso y la falta.
+    expect(suma(of.porFila.values())).toBe(of.total);
   });
 
-  it("Distribuido + Falta + redondeo entre permisos = el volumen del lote; hay falta de verdad en este caso", () => {
+  it("Distribuido + Falta = el volumen del lote (sin redondeo entre permisos); hay falta de verdad en este caso", () => {
     expect(of.falta).toBeGreaterThan(0);
-    expect(r3(of.distribuido + of.falta + of.redondeo)).toBe(of.total);
-    // Milésimos: a lo sumo uno por fila que quedó partida entre papeles.
-    expect(Math.abs(of.redondeo)).toBeLessThanOrEqual(0.003);
+    expect(r3(of.distribuido + of.falta)).toBe(of.total);
   });
 
   it("cada permiso suma lo suyo: su fila = Σ de SUS piezas redondeada una vez (como su GTF en SERFOR)", () => {

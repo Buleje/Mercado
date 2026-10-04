@@ -9,8 +9,11 @@
  *  · Total de la hoja = `hoja.totalM3`; total del anexo = `anexo.totalM3`.
  *  · PT con el anexo en pie tablar = lo IMPRESO (Σ de los subtotales). Con el
  *    anexo en m³ el PT no está en el papel: se saca de las piezas
- *    (`ptExactoDeLinea`, sumado y redondeado UNA vez a 2 decimales por fila) y
- *    el resumen lo declara `derivado` — un derivado no se presenta como el dato.
+ *    (`ptExactoDeLinea`, sumado y redondeado UNA vez a 2 decimales por columna
+ *    del papel; los subtotales y totales suman esas columnas) y el resumen lo
+ *    declara `derivado` — un derivado no se presenta como el dato.
+ *  · Cada hoja trae el detalle por columna y el subtotal de cada especie × tipo
+ *    que ocupa más de una columna (Brandon 2026-10-03).
  *  · Los totales suman filas ya redondeadas, con aritmética decimal exacta.
  */
 import type { PiezaCubicada } from "./cubicacion";
@@ -33,8 +36,28 @@ export interface TotalResumenPapel {
   pt: number | null;
 }
 
+/** Una columna (bloque) del papel tal como se imprime. */
+export interface ColumnaResumenPapel extends FilaResumenPapel {
+  /** Posición del bloque en la hoja (1-based: el papel lleva 4 columnas). */ columna: number;
+  /** El bloque sigue de la hoja anterior (misma especie y tipo partidos). */ continuacion: boolean;
+}
+
+/**
+ * Una especie × tipo de la hoja con el detalle de cada columna donde aparece y
+ * su subtotal (Brandon 2026-10-03: «sale en dos columnas, en una 10 m³
+ * Panguana y en la otra 15 m³ Panguana: tiene que tener el detalle de cada una
+ * y aparte el subtotal con la suma de ambas en m³, pies y piezas»).
+ */
+export interface GrupoHojaResumen {
+  tipo: string;
+  especie: string;
+  columnas: ColumnaResumenPapel[];
+  /** La suma de sus columnas (= la fila de `filas`). */ subtotal: FilaResumenPapel;
+}
+
 export interface HojaResumenPapel {
   /** 1-based. */ numero: number;
+  /** El detalle por columna con su subtotal por especie × tipo. */ grupos: GrupoHojaResumen[];
   filas: FilaResumenPapel[];
   /** Lo que suman las filas. */ suma: TotalResumenPapel;
   /** (3) VOLUMEN TOTAL impreso en esa hoja. */ totalImpresoM3: number;
@@ -76,36 +99,51 @@ function totalDe(filas: readonly FilaResumenPapel[], decPt: number): TotalResume
   };
 }
 
-/** Junta bloques de un mismo tipo × especie (dentro de una hoja o entre hojas). */
+type PtDeBloque = (b: BloqueAnexo04) => number[] | null;
+
+/**
+ * Una columna (bloque) como fila del resumen. PT: en pie tablar, su subtotal
+ * impreso; en m³, Σ exacta de sus piezas redondeada UNA vez a 2 decimales por
+ * columna — así el subtotal de varias columnas es la suma de lo que se ve.
+ */
+function filaDeBloque(b: BloqueAnexo04, unidadV: Anexo04["unidadV"], ptDeBloque: PtDeBloque): FilaResumenPapel {
+  const exactos = unidadV === "pt" ? null : ptDeBloque(b);
+  return {
+    tipo: b.tipo,
+    especie: b.especie,
+    reg: b.filas.length,
+    piezas: entero(b.filas.map((f) => f.cantidad)),
+    m3: sumar([b.m3], 3),
+    pt: unidadV === "pt" ? sumar([b.subtotal], 3) : exactos == null ? null : sumaExacta(exactos).toDecimalPlaces(2).toNumber(),
+  };
+}
+
+/** Suma filas de la misma especie × tipo (ya redondeadas). */
+function sumarFilas(fs: readonly FilaResumenPapel[], decPt: number): FilaResumenPapel {
+  const t = totalDe(fs, decPt);
+  return { tipo: fs[0].tipo, especie: fs[0].especie, ...t };
+}
+
+/** Agrupa por tipo × especie en el orden de aparición. */
+function agrupar<T extends { tipo: string; especie: string }>(xs: readonly T[]): T[][] {
+  const grupos = new Map<string, T[]>();
+  for (const x of xs) {
+    const k = `${x.tipo}||${x.especie}`;
+    const g = grupos.get(k);
+    if (g) g.push(x);
+    else grupos.set(k, [x]);
+  }
+  return [...grupos.values()];
+}
+
+/** Junta bloques de un mismo tipo × especie (dentro de una hoja o entre hojas): Σ de sus columnas. */
 function filasPorTipoEspecie(
   bloques: readonly BloqueAnexo04[],
   unidadV: Anexo04["unidadV"],
-  ptDeBloque: (b: BloqueAnexo04) => number[] | null,
+  ptDeBloque: PtDeBloque,
+  decPt: number,
 ): FilaResumenPapel[] {
-  const grupos = new Map<string, BloqueAnexo04[]>();
-  for (const b of bloques) {
-    const k = `${b.tipo}||${b.especie}`;
-    const g = grupos.get(k);
-    if (g) g.push(b);
-    else grupos.set(k, [b]);
-  }
-  return [...grupos.values()].map((bs) => {
-    const exactos = bs.map(ptDeBloque);
-    const pt =
-      unidadV === "pt"
-        ? sumar(bs.map((b) => b.subtotal), 3)
-        : exactos.some((e) => e == null)
-          ? null
-          : sumaExacta(exactos.flat() as number[]).toDecimalPlaces(2).toNumber();
-    return {
-      tipo: bs[0].tipo,
-      especie: bs[0].especie,
-      reg: bs.reduce((a, b) => a + b.filas.length, 0),
-      piezas: entero(bs.flatMap((b) => b.filas.map((f) => f.cantidad))),
-      m3: sumar(bs.map((b) => b.m3), 3),
-      pt,
-    };
-  });
+  return agrupar(bloques.map((b) => filaDeBloque(b, unidadV, ptDeBloque))).map((fs) => sumarFilas(fs, decPt));
 }
 
 /**
@@ -128,11 +166,22 @@ export function resumenDelPapel(anexo: Anexo04, piezas: readonly PiezaCubicada[]
   };
 
   const hojas: HojaResumenPapel[] = anexo.hojas.map((h, i) => {
-    const filas = filasPorTipoEspecie(h.bloques, anexo.unidadV, ptDeBloque);
-    return { numero: i + 1, filas, suma: totalDe(filas, decimalesPt), totalImpresoM3: h.totalM3 };
+    const columnas: ColumnaResumenPapel[] = h.bloques.map((b, j) => ({
+      ...filaDeBloque(b, anexo.unidadV, ptDeBloque),
+      columna: j + 1,
+      continuacion: b.continuacion,
+    }));
+    const grupos: GrupoHojaResumen[] = agrupar(columnas).map((cs) => ({
+      tipo: cs[0].tipo,
+      especie: cs[0].especie,
+      columnas: cs,
+      subtotal: sumarFilas(cs, decimalesPt),
+    }));
+    const filas = grupos.map((g) => g.subtotal);
+    return { numero: i + 1, grupos, filas, suma: totalDe(filas, decimalesPt), totalImpresoM3: h.totalM3 };
   });
 
-  const filasGenerales = filasPorTipoEspecie(anexo.hojas.flatMap((h) => h.bloques), anexo.unidadV, ptDeBloque);
+  const filasGenerales = filasPorTipoEspecie(anexo.hojas.flatMap((h) => h.bloques), anexo.unidadV, ptDeBloque, decimalesPt);
   const total = totalDe(filasGenerales, decimalesPt);
 
   const ctl = (texto: string, esperado: number, obtenido: number, unidad: ControlCuadre["unidad"] = "m3"): ControlCuadre => {
