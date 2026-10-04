@@ -808,11 +808,9 @@ export default function LothLibroOperaciones() {
     const ac = new AbortController();
     (async () => {
       try {
-        let pid = planDelCenso;
-        if (!pid) {
-          const r = await fetch("/api/admin/forestal/plan?active=1", { credentials: "include", signal: ac.signal });
-          pid = r.ok ? ((await r.json())?.active?.id ?? null) : null;
-        }
+        /* Con «Todos», el activo que ya trajo la carga inicial (04-10: antes se
+           volvía a pedir `?active=1` acá; el efecto corre otra vez cuando llega). */
+        const pid = planDelCenso ?? planIdActivo;
         if (!pid) {
           if (!ac.signal.aborted) setCensoArboles([]);
           return;
@@ -839,7 +837,7 @@ export default function LothLibroOperaciones() {
       }
     })();
     return () => ac.abort();
-  }, [view, planDelCenso, censoSinPlan, permiso.listo, reloadSignal]);
+  }, [view, planDelCenso, planIdActivo, censoSinPlan, permiso.listo, reloadSignal]);
 
   /* Contra qué plan se miden el cupo y el saldo por especie de «Control del
      permiso»: el del chip si es uno puntual (04-10, como la tabla y el censo);

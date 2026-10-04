@@ -23,6 +23,7 @@ import { logger } from "@/lib/logger";
 import type { FilaBalanceCascada } from "@/lib/forestal/loth-saldo-cascada";
 import { AUTO, permisoInicial, planDesdeJson, type PlanTablero } from "@/lib/forestal/loth-tablero-permiso";
 import { PLAN_SIN_PLAN } from "@/lib/forestal/loth-tablero-trozas";
+import { leerPlanesDelLibro, PlanesHttpError } from "./planes-del-libro";
 
 /** Clave de la preferencia (la prueba en navegador la lee). */
 export const CLAVE_PLAN_TABLERO = "loth-tablero:plan";
@@ -61,9 +62,10 @@ export function useLothTableroPermiso(reloadSignal = 0) {
     const ac = new AbortController();
     (async () => {
       try {
-        const r = await fetch("/api/admin/forestal/plan", { credentials: "include", signal: ac.signal });
-        if (!r.ok) throw new Error(mensajeDeEstado(r.status, "los permisos"));
-        const j = await leerJson<{ plans?: unknown[] }>(r);
+        // Compartida con el chip del libro y el contexto del tablero (04-10).
+        const j = (await leerPlanesDelLibro().catch((e: unknown) => {
+          throw e instanceof PlanesHttpError ? new Error(mensajeDeEstado(e.status, "los permisos")) : e;
+        })) as { plans?: unknown[] } | null;
         const lista = (j?.plans ?? []).map(planDesdeJson).filter((p): p is PlanTablero => p != null);
         if (!ac.signal.aborted) {
           setPlanes(lista);

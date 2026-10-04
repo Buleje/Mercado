@@ -28,6 +28,7 @@ import {
 } from "@/lib/forestal/loth-tablero-trozas";
 import { gtfRegistradaDesdeApi, type GtfRegistrada } from "@/lib/forestal/loth-cuadre-guias";
 import { planFichaDesdeApi, type PlanFichaApi } from "@/lib/forestal/loth-ficha-permiso";
+import { leerPlanesDelLibro } from "./planes-del-libro";
 
 export interface ContextoTableroEstado {
   contexto: ContextoTablero;
@@ -65,7 +66,11 @@ export function useTableroContexto(): ContextoTableroEstado {
     let vivo = true;
     Promise.allSettled([
       leerCrudo("/api/admin/forestal/gtf", "gtfs"),
-      leerCrudo("/api/admin/forestal/plan", "plans"),
+      // La lista de planes, compartida con el chip del libro y el tablero (04-10).
+      leerPlanesDelLibro().then((j) => {
+        const lista = j && typeof j === "object" ? (j as Record<string, unknown>).plans : null;
+        return Array.isArray(lista) ? lista : [];
+      }),
     ]).then(([g, p]) => {
       if (!vivo) return;
       const faltan: string[] = [];

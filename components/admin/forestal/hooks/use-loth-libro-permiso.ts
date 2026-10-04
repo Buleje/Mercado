@@ -24,7 +24,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { tenantKey, useTenantSlug } from "@/contexts/tenant-context";
 import { useLocalStorage } from "@/hooks/use-local-storage";
-import { leerJson } from "@/lib/errores/sin-dato";
 import { logger } from "@/lib/logger";
 import {
   filtroDeSeleccion,
@@ -33,6 +32,7 @@ import {
   queryDelPermiso,
 } from "@/lib/forestal/loth-filtro-permiso";
 import { AUTO, planDesdeJson, type PlanTablero } from "@/lib/forestal/loth-tablero-permiso";
+import { leerPlanesDelLibro } from "./planes-del-libro";
 
 /** Clave de la preferencia, por negocio (la prueba en navegador la lee). */
 /** Uno solo para todos los renders: `planes ?? []` daba un arreglo nuevo cada vez y las vistas releían. */
@@ -54,12 +54,8 @@ export function useLothLibroPermiso(reloadSignal = 0) {
     const ac = new AbortController();
     (async () => {
       try {
-        const r = await fetch("/api/admin/forestal/plan", {
-          credentials: "include",
-          signal: ac.signal,
-        });
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        const j = await leerJson<{ plans?: unknown[] }>(r);
+        // Compartida con el tablero y su contexto (una consulta en vuelo, 04-10).
+        const j = (await leerPlanesDelLibro()) as { plans?: unknown[] } | null;
         const lista = (j?.plans ?? [])
           .map(planDesdeJson)
           .filter((p): p is PlanTablero => p != null);
