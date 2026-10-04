@@ -14,8 +14,10 @@
  *   node scripts/dev-helpers/rol-probe.mjs --escribir "POST /api/x {\"a\":1}"
  *   node scripts/dev-helpers/rol-probe.mjs --preset drive --json
  *
- * Roles (por defecto admin y cajero de QA en `main`):
- *   BSM_ROLES="admin:qaadmin:Qa-admin-1234,cajero:qacajero:Qa-cajero-1234,almacenero:<usuario>:<clave>"
+ * Roles (por defecto admin y cajero de QA en `main`; `--todos` = los 4 de QA):
+ *   qaadmin/Qa-admin-1234 · qacajero/Qa-cajero-1234 · qaalmacen/Qa-almacen-1234
+ *   · qaencargado/Qa-encargado-1234 (rol `manager`, creado 04-10 por invitación)
+ *   BSM_ROLES="admin:qaadmin:Qa-admin-1234,cajero:qacajero:Qa-cajero-1234"
  *   BSM_TENANT=<slug>   BSM_BASE=http://localhost:3000
  *
  * Sin `--escribir` sólo se mandan GET/HEAD: un POST/PATCH/DELETE de prueba con
@@ -68,8 +70,11 @@ function rutasPedidas() {
   });
 }
 
+const QA_TODOS =
+  "admin:qaadmin:Qa-admin-1234,encargado:qaencargado:Qa-encargado-1234,cajero:qacajero:Qa-cajero-1234,almacenero:qaalmacen:Qa-almacen-1234";
+
 function rolesPedidos() {
-  const crudo = process.env.BSM_ROLES || "admin:qaadmin:Qa-admin-1234,cajero:qacajero:Qa-cajero-1234";
+  const crudo = process.env.BSM_ROLES || (flag("--todos") ? QA_TODOS : "admin:qaadmin:Qa-admin-1234,cajero:qacajero:Qa-cajero-1234");
   return crudo.split(",").map((r) => {
     const [rol, usuario, clave] = r.split(":");
     if (!rol || !usuario || !clave) throw new Error(`BSM_ROLES mal escrito: «${r}» (rol:usuario:clave)`);
