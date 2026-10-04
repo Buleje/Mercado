@@ -22,11 +22,11 @@ const projectRoot =
   process.env.BSM_PROJECT_ROOT ||
   process.cwd();
 
-function runGit(cmd) {
+function runGit(cmd, timeout = 2_000) {
   try {
     return execSync(`git -C "${projectRoot}" ${cmd}`, {
       encoding: "utf8",
-      timeout: 2_000,
+      timeout,
       stdio: ["ignore", "pipe", "ignore"],
     }).trim();
   } catch {
@@ -59,6 +59,17 @@ const evolutionLog = readJSON(join(projectRoot, ".claude/evolution-log.json"));
 // ── Build minimal context message ───────────────────────────────
 const lines = [];
 lines.push(`**Branch:** \`${branch}\` → \`${upstream}\` · **Dirty:** ${filesDirty} archivos`);
+
+/* 2026-10-04: dos sesiones trabajaron 5 días sobre esta misma rama sin verse
+   (28 commits remotos vs 117 locales, 18 conflictos del Libro TH). Un fetch
+   corto al arrancar lo avisa el primer día, no al hacer push. */
+if (upstream !== "(sin upstream)") {
+  runGit(`fetch -q --no-tags origin ${branch}`, 4_000);
+  const [adelante, atras] = (runGit(`rev-list --left-right --count HEAD...${upstream}`) || "0 0").split(/\s+/).map(Number);
+  if (atras > 0) {
+    lines.push(`⚠️ **GitHub tiene ${atras} commit(s) que no están acá** (otra sesión u otra PC) · local adelante: ${adelante}. Juntar ANTES de trabajar: \`git pull --no-rebase\` (o avisar a Brandon si hay WIP).`);
+  }
+}
 
 if (recentCommits) {
   lines.push("");
