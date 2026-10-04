@@ -170,13 +170,14 @@ export default function PuentePcPanel({ camara, a }: Props) {
         </span>
         <div className="grid gap-3 sm:grid-cols-3 sm:items-end">
           {CAMPOS_VIVO.map((c) => (
-            <label key={c.campo} className="block">
+            <div key={c.campo} className="block">
               <span className="flex items-center gap-1">
-                <span className={ETIQUETA}>{c.rotulo}</span>
+                <label htmlFor={`puente-${c.campo}`} className={ETIQUETA}>{c.rotulo}</label>
                 <InfoTip title={c.rotulo} what={c.what} example={c.example} />
               </span>
               <span className="relative mt-1 block">
                 <input
+                  id={`puente-${c.campo}`}
                   value={textos[c.campo]}
                   onChange={(e) => setters[c.campo](e.target.value.replace(/[^\d.,]/g, "").slice(0, 5))}
                   inputMode="numeric"
@@ -190,7 +191,7 @@ export default function PuentePcPanel({ camara, a }: Props) {
               <span id={`puente-rango-${c.campo}`} className="sr-only">
                 Entre {LIMITES_VIVO[c.campo][0]} y {LIMITES_VIVO[c.campo][1]}
               </span>
-            </label>
+            </div>
           ))}
         </div>
         <p className="flex items-center gap-1.5 text-sm text-[var(--text-secondary)]">

@@ -33,44 +33,49 @@ function Numero({ ruta, n }: { ruta: RutaFlujo; n: string }) {
 
 export default function CtpPlantaCroquisLeyendaRutas({ rutas, version }: { rutas: readonly RutaFlujo[]; version: number }) {
   return (
-    <details className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 [&_summary::-webkit-details-marker]:hidden">
-      <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-4 gap-y-1.5">
-        <span className="flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
-          Rutas del plano v{version}
-          <InfoTip
-            title="Rutas de producción"
-            what="Las flechas numeradas de la lámina: por dónde viaja la madera desde el patio de trozas hasta la salida."
-            affects="Es un dibujo fijo del plano, no datos: el Libro no registra el paso por coche, mesas, cinta ni despuntadora."
-            example="Ruta B: de los rodillos (16) directo a la despuntadora (23), sin pasar por las mesas."
-          />
-        </span>
-        {rutas.map((r) => (
-          <span key={r.id} className="flex items-center gap-1.5 text-xs font-bold text-[var(--text-secondary)]">
-            <Trazo ruta={r} />
-            <Numero ruta={r} n={r.numero} />
-            {r.nombre}
+    <div className="flex items-start gap-1.5">
+      <details className="min-w-0 flex-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 [&_summary::-webkit-details-marker]:hidden">
+        <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-4 gap-y-1.5">
+          <span className="flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
+            Rutas del plano v{version}
           </span>
-        ))}
-        <span className="text-xs font-semibold text-[var(--accent-ink)] underline-offset-2 hover:underline dark:text-[var(--accent)]">Ver los tramos</span>
-      </summary>
-      <div className="mt-2 grid gap-3 border-t border-[var(--rule-soft)] pt-2 sm:grid-cols-2 xl:grid-cols-4">
-        {rutas.map((r) => (
-          <div key={r.id} className="min-w-0">
-            <p className="mb-1 flex items-center gap-1.5 text-xs font-bold text-[var(--text-primary)]">
+          {rutas.map((r) => (
+            <span key={r.id} className="flex items-center gap-1.5 text-xs font-bold text-[var(--text-secondary)]">
               <Trazo ruta={r} />
-              {r.numero} · {r.nombre}
-            </p>
-            <ol className="space-y-1">
-              {r.tramos.map((t, i) => (
-                <li key={`${t.n}-${i}`} className="flex items-start gap-1.5 text-xs text-[var(--text-secondary)]">
-                  <Numero ruta={r} n={t.n} />
-                  <span className="min-w-0 pt-0.5">{t.texto}</span>
-                </li>
-              ))}
-            </ol>
-          </div>
-        ))}
-      </div>
-    </details>
+              <Numero ruta={r} n={r.numero} />
+              {r.nombre}
+            </span>
+          ))}
+          <span className="text-xs font-semibold text-[var(--accent-ink)] underline-offset-2 hover:underline dark:text-[var(--accent)]">Ver los tramos</span>
+        </summary>
+        <div className="mt-2 grid gap-3 border-t border-[var(--rule-soft)] pt-2 sm:grid-cols-2 xl:grid-cols-4">
+          {rutas.map((r) => (
+            <div key={r.id} className="min-w-0">
+              <p className="mb-1 flex items-center gap-1.5 text-xs font-bold text-[var(--text-primary)]">
+                <Trazo ruta={r} />
+                {r.numero} · {r.nombre}
+              </p>
+              <ol className="space-y-1">
+                {r.tramos.map((t, i) => (
+                  <li key={`${t.n}-${i}`} className="flex items-start gap-1.5 text-xs text-[var(--text-secondary)]">
+                    <Numero ruta={r} n={t.n} />
+                    <span className="min-w-0 pt-0.5">{t.texto}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          ))}
+        </div>
+      </details>
+      {/* El ⓘ va fuera del <summary>: adentro, el toque lo pliega (infotip-no-anidado). */}
+      <span className="mt-2.5 shrink-0">
+        <InfoTip
+          title="Rutas de producción"
+          what="Las flechas numeradas de la lámina: por dónde viaja la madera desde el patio de trozas hasta la salida."
+          affects="Es un dibujo fijo del plano, no datos: el Libro no registra el paso por coche, mesas, cinta ni despuntadora."
+          example="Ruta B: de los rodillos (16) directo a la despuntadora (23), sin pasar por las mesas."
+        />
+      </span>
+    </div>
   );
 }

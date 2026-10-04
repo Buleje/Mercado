@@ -161,22 +161,22 @@ export default function RepartoCompletarLote({
             </label>
           </div>
         ) : (
-          <label className="block text-xs font-bold text-[var(--text-tertiary)]">
+          <div className="block text-xs font-bold text-[var(--text-tertiary)]">
             <span className="inline-flex items-center gap-1">
-              Se suma a la corrida
+              <label htmlFor="reparto-corrida-lpc">Se suma a la corrida</label>
               <InfoTip
                 title="Sin rolliza nueva"
                 what="Todas las trozas del lote ya entraron a la sierra: una corrida nueva no tendría materia prima y el tope no se podría medir."
                 affects="Lo que falta entra como filas nuevas de esa corrida (no la reescribe), con el tope medido sobre su total. Quedan en la línea de esa corrida (la LP de su jornada), no como LPC: el Libro guarda una línea por corrida."
               />
             </span>
-            <select value={corridaLpc} onChange={(e) => setCorridaLpc(e.target.value)} className={`${CAMPO} mt-1`}>
+            <select id="reparto-corrida-lpc" value={corridaLpc} onChange={(e) => setCorridaLpc(e.target.value)} className={`${CAMPO} mt-1`}>
               {conMargen.length === 0 && <option value="">Ninguna corrida del lote tiene margen</option>}
               {conMargen.map((c) => (
                 <option key={c.id} value={c.id}>N° {c.lineNo} · {fechaCorta(c.fecha)} · {c.producto ?? "—"} · margen {fmtM3(c.margen!.margenM3)} m³</option>
               ))}
             </select>
-          </label>
+          </div>
         ))}
 
         {linea === "LRE" && (

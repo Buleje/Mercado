@@ -40,9 +40,11 @@ export default function SinControl({
   return (
     <div className="rounded-xl bg-[var(--data-warning)]/8 p-5 ring-1 ring-[var(--data-warning)]/25">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <CardTitle className="flex items-center gap-2 text-base font-extrabold text-[var(--text-primary)]">
-          <AlertTriangle className="h-5 w-5 shrink-0 text-[var(--data-warning)]" aria-hidden />
-          {n} adelanto{n === 1 ? "" : "s"} sin control · {fmtMonedas(datos.porMoneda)}
+        <div className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-base font-extrabold text-[var(--text-primary)]">
+            <AlertTriangle className="h-5 w-5 shrink-0 text-[var(--data-warning)]" aria-hidden />
+            {n} adelanto{n === 1 ? "" : "s"} sin control · {fmtMonedas(datos.porMoneda)}
+          </CardTitle>
           <InfoTip
             title="Adelantos sin control"
             what={
@@ -54,7 +56,7 @@ export default function SinControl({
             affects={<span>La cifra es el saldo que todavía te deben de esos adelantos. Lo que recibiste no entra.</span>}
             example={<span>Diste S/ 17 000 el 03/08, sin fecha y sin entregas: sale acá hasta que entregue algo.</span>}
           />
-        </CardTitle>
+        </div>
       </div>
 
       <ul className="divide-y divide-[var(--rule-soft)]">
