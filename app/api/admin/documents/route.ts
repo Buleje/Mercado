@@ -52,7 +52,8 @@ export async function GET(req: NextRequest) {
 
   // ADR-119 — vista "Por vencer": atajo dedicado, ignora el resto de filtros.
   if (f.expiring) {
-    const expiring = await DocumentsDB.listExpiring(auth.tenantId, f.expiring);
+    // Filtrado por rol como el listado (antes devolvía el OCR de lo restringido).
+    const expiring = await DocumentsDB.listExpiring(auth.tenantId, f.expiring, auth.role);
     return NextResponse.json({ documents: expiring });
   }
 
@@ -129,6 +130,8 @@ export async function POST(req: NextRequest) {
     const originalName = file.name || "archivo";
 
     // 1) Crear row con storagePath temporal (lo necesitamos para el path estable)
+    // `viewerRole`: una carpeta con roles que este rol no ve se responde 404
+    // `folder_not_found`, igual que una que no existe (no se confirma que esté).
     const draft = await DocumentsDB.create(auth.tenantId, {
       folderId,
       name: originalName,
@@ -137,6 +140,7 @@ export async function POST(req: NextRequest) {
       size: file.size,
       storagePath: "pending",
       uploadedById: auth.username,
+      viewerRole: auth.role,
     });
 
     const storagePath = buildStoragePath({

@@ -34,7 +34,8 @@ async function buscar(task: AgentTask, ctx: AgentContext): Promise<AgentResult> 
   if (!q) return { success: false, error: "Dime qué documento buscar (nombre, proveedor, número…)." };
   log.info("Buscando documentos", { q });
 
-  const docs = await DocumentsDB.list(task.tenantId, { q });
+  // Con el rol: el asistente no puede nombrar papeles que el Drive le oculta.
+  const docs = await DocumentsDB.list(task.tenantId, { q }, ctx.actorRole);
   return {
     success: true,
     data: {
@@ -66,7 +67,7 @@ async function porVencer(task: AgentTask, ctx: AgentContext): Promise<AgentResul
   const dias = Number(task.payload.dias) > 0 ? Number(task.payload.dias) : 30;
   log.info("Documentos por vencer", { dias });
 
-  const docs = await DocumentsDB.listExpiring(task.tenantId, dias);
+  const docs = await DocumentsDB.listExpiring(task.tenantId, dias, ctx.actorRole);
   const hoy = Date.now();
   // `listExpiring` incluye los YA vencidos (todo lo que vence antes del corte).
   // Mezclarlos es perder la única distinción que importa: un contrato vencido

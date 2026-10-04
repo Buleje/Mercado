@@ -21,7 +21,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     if (auth instanceof NextResponse) return auth;
 
     const { id } = await ctx.params;
-    const ok = await DocumentsDB.restore(auth.tenantId, id);
+    const ok = await DocumentsDB.restore(auth.tenantId, id, auth.role);
     if (!ok) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
     DocumentsDB.log(auth.tenantId, {

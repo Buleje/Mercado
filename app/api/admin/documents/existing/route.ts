@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "invalid_body", issues: parsed.error.issues }, { status: 400 });
     }
 
-    const porCarpeta = await DocumentsDB.listNamesInFolders(auth.tenantId, parsed.data.folderIds);
+    const porCarpeta = await DocumentsDB.listNamesInFolders(auth.tenantId, parsed.data.folderIds, auth.role);
     return NextResponse.json({ porCarpeta });
 
   } catch (e) {

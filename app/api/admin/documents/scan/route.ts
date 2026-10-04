@@ -54,6 +54,7 @@ export async function POST(req: NextRequest) {
       size: file.size,
       storagePath: "pending",
       uploadedById: auth.username,
+      viewerRole: auth.role,
     });
 
     const storagePath = buildStoragePath({

@@ -7,14 +7,24 @@ import { logger } from "@/lib/logger";
 import {
   camposDelRegistro,
   claveDesdeNombre,
+  esFormularioDeDocumentosPlan,
   esTipoCampo,
+  esTipoCampoEspecial,
+  motivoTipoFueraDeLugar,
   nombreDelFormulario,
   partirValor,
   reutilizables as reutilizablesPuros,
   type CampoPersonalizado,
-  type TipoCampo,
+  type CampoPersonalizadoGuardado,
+  type TipoCampoGuardado,
   type ValorDeCampo,
 } from "@/lib/campos-personalizados";
+import {
+  FORMULARIO_CARPETAS_PLAN,
+  PREFIJO_FORMULARIO_CARPETA,
+  TIPO_CARPETA,
+  esFormularioDeCarpeta,
+} from "@/lib/forestal/plan-documentos-tipos";
 
 /**
  * CamposPersonalizadosDB — la capa de datos de los campos que inventa el
@@ -107,6 +117,26 @@ export class RegistroDesconocidoError extends Error {
   }
 }
 
+/** El tipo no va en ese formulario (p. ej. un `archivo` fuera de una carpeta del plan). */
+export class TipoFueraDeLugarError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "TipoFueraDeLugarError";
+  }
+}
+
+/**
+ * El formulario es de una carpeta de «Documentos del plan» que no existe en la
+ * plantilla de este negocio (ADR-467). Sin esto, un campo colgaría de una
+ * carpeta que ninguna pantalla muestra.
+ */
+export class CarpetaDesconocidaError extends Error {
+  constructor(public readonly formulario: string) {
+    super("Esa carpeta no existe en los documentos del plan de este negocio.");
+    this.name = "CarpetaDesconocidaError";
+  }
+}
+
 /**
  * Cómo se verifica que un `registroId` existe, según de qué formulario viene.
  *
@@ -148,12 +178,23 @@ const EXISTE_REGISTRO: Record<string, (tenantId: string, registroId: string) => 
  * hueco que no filtra nada. Queda el aviso en el log, que es lo que después
  * dice qué formulario falta mapear.
  */
+/**
+ * El verificador de un formulario: por id exacto y, si no, por prefijo. Los de
+ * «Documentos del plan» (la plantilla y cada carpeta, ADR-467) cuelgan del plan:
+ * su `registroId` es el id del `ForestPlan`.
+ */
+function verificadorDeRegistro(
+  formulario: string,
+): ((tenantId: string, registroId: string) => Promise<boolean>) | undefined {
+  return EXISTE_REGISTRO[formulario] ?? (esFormularioDeDocumentosPlan(formulario) ? EXISTE_REGISTRO["forestal.plan"] : undefined);
+}
+
 async function registroExiste(
   tenantId: string,
   formulario: string,
   registroId: string,
 ): Promise<boolean> {
-  const verificar = EXISTE_REGISTRO[formulario];
+  const verificar = verificadorDeRegistro(formulario);
   if (!verificar) {
     logger.warn("[campos-personalizados] formulario sin verificación de registro — se guarda sin comprobar", {
       formulario,
@@ -168,7 +209,8 @@ export interface CampoNuevo {
   formulario: string;
   nombre: string;
   descripcion?: string | null;
-  tipo: TipoCampo;
+  /** `archivo` sólo bajo `PREFIJO_FORMULARIO_CARPETA`; `carpeta` nunca por acá (ver `motivoTipoFueraDeLugar`). */
+  tipo: TipoCampoGuardado;
   opciones?: string[];
   /** Con id = temporal (vive sólo en ese registro). `null`/ausente = permanente. */
   soloParaRegistroId?: string | null;
@@ -202,21 +244,77 @@ type CampoRow = {
   activo: boolean;
 };
 
-/** `tipo` es un String en la base; si llegara algo desconocido se lee como
- *  texto en vez de romper la pantalla entera por una fila. */
-function aCampo(r: CampoRow): CampoPersonalizado {
+/**
+ * Una fila tal como está, con su tipo real (incluidos `archivo`/`carpeta`).
+ * `null` si el tipo no es ninguno conocido.
+ */
+function aCampoGuardado(r: CampoRow): CampoPersonalizadoGuardado | null {
+  if (!esTipoCampo(r.tipo) && !esTipoCampoEspecial(r.tipo)) return null;
   return {
     id: r.id,
     formulario: r.formulario,
     clave: r.clave,
     nombre: r.nombre,
     descripcion: r.descripcion,
-    tipo: esTipoCampo(r.tipo) ? r.tipo : "texto",
+    tipo: r.tipo,
     opciones: r.opciones,
     soloParaRegistroId: r.soloParaRegistroId,
     orden: r.orden,
     activo: r.activo,
   };
+}
+
+function avisarTipoDesconocido(r: CampoRow): void {
+  logger.warn("[campos-personalizados] campo con un tipo desconocido — no se muestra", {
+    campoId: r.id,
+    formulario: r.formulario,
+    tipo: r.tipo,
+  });
+}
+
+/**
+ * Una fila de un formulario, con su tipo REAL, o `null` si ahí no va.
+ *
+ * Hasta el 2026-09-29 un tipo desconocido se leía como «texto» «en vez de
+ * romper la pantalla entera por una fila». Con ADR-467 eso dejó de ser
+ * inofensivo: un casillero `archivo` («DNI del jefe») salía como `texto`, se
+ * pintaba como una caja de texto y lo escrito se guardaba como si fuera el
+ * papel. Ahora:
+ *
+ * · `archivo`/`carpeta` salen con su tipo, y SÓLO en los formularios de
+ *   «Documentos del plan» (la pantalla de la plantilla los necesita para el
+ *   alta, cuando todavía no hay plan al que pedirle la vista). Quien los pinte
+ *   en un bloque genérico tiene que saltearlos; y aunque no lo haga,
+ *   `guardarValores` no les escribe nada.
+ * · Un tipo desconocido se deja afuera con un aviso en el log, que es lo que
+ *   dice qué fila hay que mirar. La pantalla sigue sin romperse.
+ */
+function aCampoDelFormulario(r: CampoRow): CampoPersonalizadoGuardado | null {
+  const c = aCampoGuardado(r);
+  if (!c) {
+    avisarTipoDesconocido(r);
+    return null;
+  }
+  if (esTipoCampoEspecial(c.tipo) && !esFormularioDeDocumentosPlan(r.formulario)) return null;
+  return c;
+}
+
+/**
+ * Una fila para el catálogo de REUTILIZABLES: sólo los seis tipos del
+ * formulario genérico. Una `carpeta` no es una pregunta que se copie, y un
+ * `archivo` fuera de su carpeta no tiene dónde guardar sus papeles.
+ */
+function aCampo(r: CampoRow): CampoPersonalizado | null {
+  if (esTipoCampo(r.tipo)) return { ...(aCampoGuardado(r) as CampoPersonalizadoGuardado), tipo: r.tipo };
+  if (!esTipoCampoEspecial(r.tipo)) avisarTipoDesconocido(r);
+  return null;
+}
+
+const noNulo = <T,>(c: T | null): c is T => c != null;
+
+/** Borra la caché de definiciones de un negocio (la usa también `ForestPlanDocumentosDB`). */
+export function invalidarCamposPersonalizados(tenantId: string): void {
+  invalidar(tenantId);
 }
 
 const SELECT_CAMPO = {
@@ -320,6 +418,15 @@ export const ORIGEN_DEL_FORMULARIO: Readonly<Record<string, OrigenDeRegistro>> =
      declarar la tabla equivocada acá sería peor que no declararla — metería en
      el export de alguien el dato de otro. Sin línea = sale en `fueraDeAlcance`. */
 };
+
+/**
+ * De qué tabla es el registro de un formulario: por id exacto y, si no, por
+ * prefijo. Los de «Documentos del plan» (ADR-467) cuelgan del plan, igual que
+ * `forestal.plan` — es el mismo par que `verificadorDeRegistro`.
+ */
+function origenDelFormulario(formulario: string): OrigenDeRegistro | undefined {
+  return ORIGEN_DEL_FORMULARIO[formulario] ?? (esFormularioDeDocumentosPlan(formulario) ? "forestPlan" : undefined);
+}
 
 /** Los ids que el que llama YA sabe de esta persona, agrupados por tabla. */
 export type RegistrosDeUnaPersona = Partial<Record<OrigenDeRegistro, readonly string[]>>;
@@ -490,7 +597,7 @@ async function resolverValoresDePersona(
       });
       continue;
     }
-    const origen = ORIGEN_DEL_FORMULARIO[campo.formulario];
+    const origen = origenDelFormulario(campo.formulario);
     const esSuyo = origen != null && (origenes.get(origen)?.has(fila.registroId) ?? false);
     if (!esSuyo) {
       sinAtribuir.set(campo.formulario, (sinAtribuir.get(campo.formulario) ?? 0) + 1);
@@ -527,7 +634,7 @@ async function formulariosFueraDeAlcance(
 
   const fuera: FueraDeAlcance[] = [];
   for (const formulario of formularios) {
-    const origen = ORIGEN_DEL_FORMULARIO[formulario];
+    const origen = origenDelFormulario(formulario);
     if (origen != null && cubiertos.has(origen)) continue;
     fuera.push({
       formulario,
@@ -561,7 +668,7 @@ export const CamposPersonalizadosDB = {
     tenantId: string,
     formulario: string,
     registroId?: string | null,
-  ): Promise<CampoPersonalizado[]> {
+  ): Promise<CampoPersonalizadoGuardado[]> {
     if (!tenantId) throw new Error("tenantId is required");
     if (!formulario) throw new Error("formulario is required");
     const registro = registroId?.trim() || null;
@@ -588,7 +695,7 @@ export const CamposPersonalizadosDB = {
           })
         : Promise.resolve([] as CampoRow[]),
     ]);
-    const todos = [...permanentes, ...temporales].map(aCampo);
+    const todos = [...permanentes, ...temporales].map(aCampoDelFormulario).filter(noNulo);
     const apagados = todos.filter((c) => !c.activo);
     return [...camposDelRegistro(todos, registro), ...apagados];
   },
@@ -610,7 +717,10 @@ export const CamposPersonalizadosDB = {
         take: MAX_CAMPOS,
       }),
     );
-    return reutilizablesPuros(rows.map(aCampo), formulario);
+    /* `aCampo` deja afuera `carpeta` y `archivo`: una carpeta del plan no es una
+       pregunta que se pueda copiar a otro formulario, y un casillero de archivo
+       fuera de su carpeta no tiene dónde guardar sus papeles (ADR-467). */
+    return reutilizablesPuros(rows.map(aCampo).filter(noNulo), formulario);
   },
 
   /** Lo contestado en un registro, acotado a los campos que se están mostrando. */
@@ -633,13 +743,29 @@ export const CamposPersonalizadosDB = {
    * que quien lo crea no tiene que pensarla y renombrarlo después no rompe lo
    * ya guardado.
    */
-  async crear(tenantId: string, input: CampoNuevo, usuario: string): Promise<CampoPersonalizado> {
+  async crear(tenantId: string, input: CampoNuevo, usuario: string): Promise<CampoPersonalizadoGuardado> {
     if (!tenantId) throw new Error("tenantId is required");
     const formulario = input.formulario.trim();
     const nombre = input.nombre.trim();
     const clave = claveDesdeNombre(nombre);
     if (!clave) throw new Error("nombre is required");
     const soloParaRegistroId = input.soloParaRegistroId?.trim() || null;
+
+    // La ruta ya lo valida; se repite acá porque la DB class es la última
+    // puerta y un `archivo` suelto no tendría dónde guardar sus papeles.
+    const fueraDeLugar = motivoTipoFueraDeLugar(input.tipo, formulario);
+    if (fueraDeLugar) throw new TipoFueraDeLugarError(fueraDeLugar);
+
+    /* Un campo de una carpeta del plan (ADR-467) cuelga de una carpeta de la
+       plantilla de ESTE negocio: si no existe, el campo quedaría en un
+       formulario que ninguna pantalla pinta. */
+    if (esFormularioDeCarpeta(formulario)) {
+      const claveCarpeta = formulario.slice(PREFIJO_FORMULARIO_CARPETA.length);
+      const carpeta = await prisma.campoPersonalizado.count({
+        where: { tenantId, formulario: FORMULARIO_CARPETAS_PLAN, clave: claveCarpeta, tipo: TIPO_CARPETA, deletedAt: null },
+      });
+      if (carpeta === 0) throw new CarpetaDesconocidaError(formulario);
+    }
 
     /* Un campo TEMPORAL cuelga de un registro: si ese registro no existe, la
        pregunta no la va a ver nunca nadie y queda como basura. Mismo chequeo
@@ -707,7 +833,8 @@ export const CamposPersonalizadosDB = {
         row.id,
         usuario,
       );
-      return aCampo(row);
+      // El tipo se acaba de validar: `aCampoGuardado` no puede dar null acá.
+      return aCampoGuardado(row) as CampoPersonalizadoGuardado;
     } catch (err) {
       // Para un campo TEMPORAL el índice único es el árbitro real contra dos
       // altas simultáneas. Para un PERMANENTE **no**: `soloParaRegistroId` es
@@ -736,7 +863,7 @@ export const CamposPersonalizadosDB = {
     id: string,
     patch: CampoPatch,
     usuario: string,
-  ): Promise<CampoPersonalizado | null> {
+  ): Promise<CampoPersonalizadoGuardado | null> {
     if (!tenantId) throw new Error("tenantId is required");
     if (!id) throw new Error("id is required");
     const data: Prisma.CampoPersonalizadoUpdateManyMutationInput = {};
@@ -750,7 +877,7 @@ export const CamposPersonalizadosDB = {
         where: { tenantId, id, deletedAt: null },
         select: SELECT_CAMPO,
       });
-      return actual ? aCampo(actual) : null;
+      return actual ? aCampoGuardado(actual) : null;
     }
 
     const { count } = await prisma.campoPersonalizado.updateMany({
@@ -771,7 +898,7 @@ export const CamposPersonalizadosDB = {
       id,
       usuario,
     );
-    return row ? aCampo(row) : null;
+    return row ? aCampoGuardado(row) : null;
   },
 
   /**
@@ -866,8 +993,16 @@ export const CamposPersonalizadosDB = {
         ignorados += 1;
         continue;
       }
+      /* Un `archivo` (o una `carpeta`) NO tiene valor: sus papeles son
+         documentos del Drive con la etiqueta `campo:<id>` (ADR-467). Antes se
+         partía como «texto» y lo tipeado quedaba guardado como si fuera el
+         papel. Un tipo desconocido tampoco se adivina. */
+      if (!esTipoCampo(campo.tipo)) {
+        ignorados += 1;
+        continue;
+      }
       const crudo = entradas.find((e) => e.campoId === campoId)?.valor ?? null;
-      const partido = partirValor(esTipoCampo(campo.tipo) ? campo.tipo : "texto", crudo);
+      const partido = partirValor(campo.tipo, crudo);
 
       /* Vaciar se puede SIEMPRE, exista o no el registro: borrar no crea
          basura, la saca. Si el chequeo de abajo tapara también el borrado, una

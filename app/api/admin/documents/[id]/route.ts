@@ -8,6 +8,7 @@ import { getSignedUrl, deleteFromStorage } from "@/lib/documents/storage";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { ESTADOS_DOC } from "@/lib/documents/estados-doc";
 import { conDescripcionPropia } from "@/lib/documents/texto-buscable";
+import { isPrivilegedRole } from "@/lib/documents/doc-access";
 
 const ROLES_ETIQUETAS_DE_GUIA = new Set(["admin", "owner", "almacenero"]);
 
@@ -84,6 +85,27 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
 
     const before = await DocumentsDB.getById(auth.tenantId, id, auth.role);
     if (!before) return NextResponse.json({ error: "not_found" }, { status: 404 });
+
+    /* Permisos y movimientos (revisión de seguridad 04-10). Un rol no
+       privilegiado que VE el papel no puede abrírselo a otros: ni cambiarle los
+       roles, ni sacarlo de una carpeta con roles (lo dejaría a la vista de
+       quien hoy no lo ve), ni meterlo en una carpeta que no ve (404 igual que
+       una que no existe). */
+    if (!isPrivilegedRole(auth.role)) {
+      const cambiaRoles =
+        parsed.data.allowedRoles !== undefined &&
+        [...parsed.data.allowedRoles].sort().join("|") !== [...(before.allowedRoles ?? [])].sort().join("|");
+      const mueve = parsed.data.folderId !== undefined && parsed.data.folderId !== before.folderId;
+      if (cambiaRoles || (mueve && (await DocumentsDB.tieneRoles(auth.tenantId, id)))) {
+        return NextResponse.json(
+          { error: "forbidden", message: "Solo el dueño, un admin o el encargado cambian quién ve un documento con permisos." },
+          { status: 403 },
+        );
+      }
+      if (mueve && parsed.data.folderId && !(await DocumentsDB.accesoACarpeta(auth.tenantId, parsed.data.folderId, auth.role)).ve) {
+        return NextResponse.json({ error: "folder_not_found" }, { status: 404 });
+      }
+    }
 
     /* Las etiquetas `gtf:`/`casillero:` meten o sacan un papel del casillero de
        una guía (ADR-438): sólo los roles que manejan esos documentos pueden
@@ -180,9 +202,17 @@ export async function DELETE(req: NextRequest, ctx: Ctx) {
 
     const { id } = await ctx.params;
     const purge = req.nextUrl.searchParams.get("purge") === "1";
+    // Borrar de verdad es lo único sin vuelta atrás: los mismos roles que
+    // vaciar la papelera (`trash/route.ts`). Antes cualquier admin lo hacía.
+    if (purge && !isPrivilegedRole(auth.role)) {
+      return NextResponse.json({ error: "forbidden" }, { status: 403 });
+    }
 
     const doc = await DocumentsDB.getByIdIncludingDeleted(auth.tenantId, id);
-    if (!doc) return NextResponse.json({ error: "not_found" }, { status: 404 });
+    // Un papel que el rol no ve (también en la papelera) no se puede borrar: 404.
+    if (!doc || !(await DocumentsDB.puedeVer(auth.tenantId, id, auth.role, { incluirBorrados: true }))) {
+      return NextResponse.json({ error: "not_found" }, { status: 404 });
+    }
 
     if (purge) {
       // Hard delete + remove storage objects (incluyendo versiones históricas)

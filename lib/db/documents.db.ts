@@ -2,7 +2,14 @@ import "server-only";
 import { randomBytes, createHash } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
-import { canRoleSeeDoc, isPrivilegedRole } from "@/lib/documents/doc-access";
+import {
+  canRoleSeeEnCadena,
+  enlaceSigueSirviendo,
+  estaRestringido,
+  isPrivilegedRole,
+  rolesDeLaCadena,
+  type CarpetaConRoles,
+} from "@/lib/documents/doc-access";
 import { palabrasUtiles } from "@/lib/documentos/terminos-busqueda";
 import { Prisma } from "@/lib/generated/prisma/client";
 import type {
@@ -201,7 +208,7 @@ function mapTemplate(t: PDocumentTemplate): DbDocumentTemplate {
  *
  * Hasta el 2026-09-29 `POST /api/admin/documents` guardaba el `folderId` que
  * mandaba el cliente sin mirar de quién era (hallazgo del architect en
- * ADR-456): un documento del negocio A podía quedar colgado de una carpeta del
+ * ADR-467): un documento del negocio A podía quedar colgado de una carpeta del
  * negocio B — contaba en el «N archivos» de la carpeta ajena, heredaba sus
  * permisos y se soltaba a la raíz si B la borraba. La ruta lo traduce a 404
  * (igual que una carpeta que no existe: no se confirma que exista en otro lado).
@@ -234,6 +241,49 @@ const MAX_NIVELES_CARPETA = 200;
 /** ¿La carpeta existe EN ESTE negocio? El `tenantId` va en el WHERE, no en un `if`. */
 async function carpetaEsDelNegocio(tenantId: string, folderId: string): Promise<boolean> {
   return (await prisma.documentFolder.count({ where: { id: folderId, tenantId } })) > 0;
+}
+
+// ── Permisos por rol: la cadena entera de carpetas ───────────────────────────
+//
+// Revisión de seguridad 2026-10-04 (veto del rescate de ADR-467): el rol se
+// miraba sólo contra la carpeta DIRECTA y sólo al listar/abrir. Compartir,
+// lote, «Por vencer», versiones, papelera, etiquetas… no lo miraban. Todo pasa
+// ahora por estos tres helpers; «no lo puede ver» se responde igual que «no
+// existe» (null / 0 / lista sin el doc → 404 en la ruta).
+
+/** ¿Hace falta filtrar? Sin rol (procesos internos) o con rol privilegiado, no. */
+function filtraPorRol(viewerRole: string | null | undefined): viewerRole is string {
+  return !!viewerRole && !isPrivilegedRole(viewerRole);
+}
+
+/** Todas las carpetas del negocio con su madre y sus roles (60 en `main`: 1 consulta). */
+async function mapaDeCarpetas(tenantId: string): Promise<Map<string, CarpetaConRoles>> {
+  const filas = await prisma.documentFolder.findMany({
+    where: { tenantId },
+    select: { id: true, parentId: true, allowedRoles: true },
+  });
+  return new Map(filas.map((f) => [f.id, { parentId: f.parentId ?? null, allowedRoles: f.allowedRoles ?? [] }]));
+}
+
+/** Se queda con lo que el rol ve (doc + cadena de carpetas). */
+async function soloVisibles<T extends { folderId: string | null; allowedRoles?: string[] | null }>(
+  tenantId: string,
+  filas: T[],
+  viewerRole: string,
+  carpetas?: Map<string, CarpetaConRoles>,
+): Promise<T[]> {
+  if (filas.length === 0) return filas;
+  const mapa = carpetas ?? (await mapaDeCarpetas(tenantId));
+  return filas.filter((d) => canRoleSeeEnCadena(viewerRole, d.allowedRoles ?? [], rolesDeLaCadena(d.folderId, mapa)));
+}
+
+/** Rol ACTUAL de quien creó un enlace (null si ya no existe o está inactivo). */
+async function rolDelCreador(tenantId: string, username: string): Promise<string | null> {
+  const u = await prisma.adminUser.findFirst({
+    where: { tenantId, username, active: true },
+    select: { role: true },
+  });
+  return u?.role ?? null;
 }
 
 // ── DocumentsDB class ─────────────────────────────────────────────────────────
@@ -384,29 +434,119 @@ export class DocumentsDB {
       return filters.conTextoCompleto ? doc : { ...doc, ocrMetadata: metadataDeGrilla(doc.ocrMetadata) };
     });
 
-    // Permisos por doc/carpeta: los roles no privilegiados solo ven lo permitido.
-    if (viewerRole && !isPrivilegedRole(viewerRole)) {
-      const folders = await prisma.documentFolder.findMany({
-        where: { tenantId },
-        select: { id: true, allowedRoles: true },
-      });
-      const folderRoles = new Map(folders.map((f) => [f.id, f.allowedRoles ?? []]));
-      return mapped.filter((d) => canRoleSeeDoc(viewerRole, d.allowedRoles, d.folderId ? folderRoles.get(d.folderId) ?? [] : []));
-    }
+    // Permisos por doc y por TODA la cadena de carpetas: los roles no
+    // privilegiados solo ven lo permitido.
+    if (filtraPorRol(viewerRole)) return soloVisibles(tenantId, mapped, viewerRole);
     return mapped;
   }
 
   static async getById(tenantId: string, id: string, viewerRole?: string): Promise<DbDocument | null> {
     const doc = await prisma.document.findFirst({
       where: { id, tenantId, deletedAt: null },
-      include: { _count: { select: { versions: true, shares: true } }, folder: { select: { allowedRoles: true } } },
+      include: {
+        _count: { select: { versions: true, shares: true } },
+        folder: { select: { allowedRoles: true, parentId: true } },
+      },
     });
     if (!doc) return null;
     // Permisos: un rol no privilegiado no puede acceder a un doc restringido.
-    if (viewerRole && !isPrivilegedRole(viewerRole) && !canRoleSeeDoc(viewerRole, doc.allowedRoles ?? [], doc.folder?.allowedRoles ?? [])) {
-      return null;
-    }
+    if (filtraPorRol(viewerRole) && !(await this.rolVeFila(tenantId, doc, viewerRole))) return null;
     return mapDoc(doc);
+  }
+
+  /**
+   * ¿El rol ve esta fila? Si la carpeta directa cuelga de la raíz no hace
+   * falta leer el árbol: la cadena es ella sola.
+   */
+  private static async rolVeFila(
+    tenantId: string,
+    doc: {
+      folderId: string | null;
+      allowedRoles?: string[] | null;
+      folder?: { allowedRoles?: string[] | null; parentId?: string | null } | null;
+    },
+    viewerRole: string,
+  ): Promise<boolean> {
+    const propios = doc.allowedRoles ?? [];
+    if (!doc.folderId) return canRoleSeeEnCadena(viewerRole, propios, []);
+    if (doc.folder && !doc.folder.parentId) {
+      const directa = doc.folder.allowedRoles ?? [];
+      return canRoleSeeEnCadena(viewerRole, propios, directa.length ? [directa] : []);
+    }
+    return canRoleSeeEnCadena(viewerRole, propios, rolesDeLaCadena(doc.folderId, await mapaDeCarpetas(tenantId)));
+  }
+
+  /**
+   * ¿Este rol ve el documento? Con `incluirBorrados` mira también la papelera
+   * (restaurar, borrar, historial). Sin rol o con rol privilegiado = existe.
+   */
+  static async puedeVer(
+    tenantId: string,
+    id: string,
+    viewerRole: string | null | undefined,
+    opciones: { incluirBorrados?: boolean } = {},
+  ): Promise<boolean> {
+    const doc = await prisma.document.findFirst({
+      where: { id, tenantId, ...(opciones.incluirBorrados ? {} : { deletedAt: null }) },
+      select: { folderId: true, allowedRoles: true, folder: { select: { allowedRoles: true, parentId: true } } },
+    });
+    if (!doc) return false;
+    return filtraPorRol(viewerRole) ? this.rolVeFila(tenantId, doc, viewerRole) : true;
+  }
+
+  /**
+   * De estos ids, los que el rol ve (incluye la papelera: el que llama ya
+   * filtra por `deletedAt`). Sin rol o privilegiado vuelven tal cual, sin
+   * consulta. Con `soloSinRoles` descarta además lo restringido: un rol no
+   * privilegiado no puede MOVER un papel restringido (lo sacaría de su carpeta
+   * y lo dejaría a la vista de roles que hoy no lo ven).
+   */
+  static async idsVisibles(
+    tenantId: string,
+    ids: string[],
+    viewerRole: string | null | undefined,
+    opciones: { soloSinRoles?: boolean } = {},
+  ): Promise<string[]> {
+    if (!filtraPorRol(viewerRole) || ids.length === 0) return ids;
+    const filas = await prisma.document.findMany({
+      where: { id: { in: ids }, tenantId },
+      select: { id: true, folderId: true, allowedRoles: true },
+    });
+    const mapa = await mapaDeCarpetas(tenantId);
+    return filas
+      .filter((d) => {
+        const cadena = rolesDeLaCadena(d.folderId, mapa);
+        if (opciones.soloSinRoles && estaRestringido(d.allowedRoles ?? [], cadena)) return false;
+        return canRoleSeeEnCadena(viewerRole, d.allowedRoles ?? [], cadena);
+      })
+      .map((d) => d.id);
+  }
+
+  /** ¿El documento o alguna carpeta de su cadena tiene roles? (null = no existe). */
+  static async tieneRoles(tenantId: string, id: string): Promise<boolean | null> {
+    const doc = await prisma.document.findFirst({
+      where: { id, tenantId },
+      select: { folderId: true, allowedRoles: true },
+    });
+    if (!doc) return null;
+    const cadena = doc.folderId ? rolesDeLaCadena(doc.folderId, await mapaDeCarpetas(tenantId)) : [];
+    return estaRestringido(doc.allowedRoles ?? [], cadena);
+  }
+
+  /**
+   * ¿El rol ve la carpeta? (existe en el negocio + pasa todas las puertas de su
+   * cadena). `restringida` dice si alguna carpeta de la cadena tiene roles.
+   */
+  static async accesoACarpeta(
+    tenantId: string,
+    folderId: string,
+    viewerRole: string | null | undefined,
+  ): Promise<{ existe: boolean; ve: boolean; restringida: boolean }> {
+    const mapa = await mapaDeCarpetas(tenantId);
+    if (!mapa.has(folderId)) return { existe: false, ve: false, restringida: false };
+    const cadena = rolesDeLaCadena(folderId, mapa);
+    const ve = filtraPorRol(viewerRole) ? canRoleSeeEnCadena(viewerRole, [], cadena) : true;
+    return { existe: true, ve, restringida: cadena.length > 0 };
   }
 
   /**
@@ -438,10 +578,20 @@ export class DocumentsDB {
       customerId?: string;
       orderId?: string;
       supplierId?: string;
+      /** Rol de quien sube: una carpeta que no ve es, para él, una que no existe. */
+      viewerRole?: string;
     }
   ): Promise<DbDocument> {
     // Una carpeta de otro negocio no se acepta como destino (ver `CarpetaAjenaError`).
     if (input.folderId && !(await carpetaEsDelNegocio(tenantId, input.folderId))) {
+      throw new CarpetaAjenaError(input.folderId);
+    }
+    // Ni una que el rol no ve: subir ahí confirmaba que existía (404 igual).
+    if (
+      input.folderId &&
+      filtraPorRol(input.viewerRole) &&
+      !(await this.accesoACarpeta(tenantId, input.folderId, input.viewerRole)).ve
+    ) {
       throw new CarpetaAjenaError(input.folderId);
     }
     const doc = await prisma.document.create({
@@ -530,7 +680,8 @@ export class DocumentsDB {
    */
   static async listExpiring(
     tenantId: string,
-    withinDays = 30
+    withinDays = 30,
+    viewerRole?: string
   ): Promise<DbDocument[]> {
     const limit = new Date();
     limit.setDate(limit.getDate() + withinDays);
@@ -544,7 +695,10 @@ export class DocumentsDB {
       include: { _count: { select: { versions: true, shares: true } } },
       take: 200,
     });
-    return docs.map(mapDoc);
+    // Mismo filtro que `list`: «Por vencer» devolvía el texto OCR de papeles
+    // que el rol no puede abrir (revisión de seguridad 04-10).
+    const mapped = docs.map(mapDoc);
+    return filtraPorRol(viewerRole) ? soloVisibles(tenantId, mapped, viewerRole) : mapped;
   }
 
   /**
@@ -703,7 +857,10 @@ export class DocumentsDB {
     return r.count > 0;
   }
 
-  static async restore(tenantId: string, id: string): Promise<boolean> {
+  static async restore(tenantId: string, id: string, viewerRole?: string): Promise<boolean> {
+    if (filtraPorRol(viewerRole) && !(await this.puedeVer(tenantId, id, viewerRole, { incluirBorrados: true }))) {
+      return false;
+    }
     const r = await prisma.document.updateMany({
       where: { id, tenantId, deletedAt: { not: null } },
       data: { deletedAt: null },
@@ -918,11 +1075,13 @@ export class DocumentsDB {
   }
 
   /** Etiquetas del tenant con conteo (solo docs activos), ordenadas por uso. */
-  static async listTags(tenantId: string): Promise<{ tag: string; count: number }[]> {
-    const docs = await prisma.document.findMany({
+  static async listTags(tenantId: string, viewerRole?: string): Promise<{ tag: string; count: number }[]> {
+    const todos = await prisma.document.findMany({
       where: { tenantId, deletedAt: null },
-      select: { tags: true },
+      select: { tags: true, folderId: true, allowedRoles: true },
     });
+    // Las etiquetas de un papel restringido también lo describen («despido-juan»).
+    const docs = filtraPorRol(viewerRole) ? await soloVisibles(tenantId, todos, viewerRole) : todos;
     const counts = new Map<string, number>();
     for (const d of docs) for (const t of d.tags) counts.set(t, (counts.get(t) ?? 0) + 1);
     return Array.from(counts, ([tag, count]) => ({ tag, count })).sort(
@@ -931,13 +1090,15 @@ export class DocumentsDB {
   }
 
   /** Renombra/fusiona una etiqueta en todos los docs (dedupe si el destino ya existe). */
-  static async renameTag(tenantId: string, from: string, to: string): Promise<number> {
+  static async renameTag(tenantId: string, from: string, to: string, viewerRole?: string): Promise<number> {
     const toN = to.trim().toLowerCase();
     if (!toN || toN === from) return 0;
-    const docs = await prisma.document.findMany({
+    const todos = await prisma.document.findMany({
       where: { tenantId, deletedAt: null, tags: { has: from } },
-      select: { id: true, tags: true },
+      select: { id: true, tags: true, folderId: true, allowedRoles: true },
     });
+    // Un rol restringido sólo re-etiqueta lo que ve.
+    const docs = filtraPorRol(viewerRole) ? await soloVisibles(tenantId, todos, viewerRole) : todos;
     await Promise.all(
       docs.map((d) => {
         const next = Array.from(new Set(d.tags.map((t) => (t === from ? toN : t))));
@@ -948,11 +1109,12 @@ export class DocumentsDB {
   }
 
   /** Elimina una etiqueta de todos los docs del tenant. */
-  static async deleteTag(tenantId: string, tag: string): Promise<number> {
-    const docs = await prisma.document.findMany({
+  static async deleteTag(tenantId: string, tag: string, viewerRole?: string): Promise<number> {
+    const todos = await prisma.document.findMany({
       where: { tenantId, deletedAt: null, tags: { has: tag } },
-      select: { id: true, tags: true },
+      select: { id: true, tags: true, folderId: true, allowedRoles: true },
     });
+    const docs = filtraPorRol(viewerRole) ? await soloVisibles(tenantId, todos, viewerRole) : todos;
     await Promise.all(
       docs.map((d) =>
         prisma.document.update({ where: { id: d.id }, data: { tags: d.tags.filter((t) => t !== tag) } }),
@@ -963,7 +1125,7 @@ export class DocumentsDB {
 
   // ── Folders ────────────────────────────────────────────────────────────────
 
-  static async listFolders(tenantId: string): Promise<DbDocumentFolder[]> {
+  static async listFolders(tenantId: string, viewerRole?: string): Promise<DbDocumentFolder[]> {
     const folders = await prisma.documentFolder.findMany({
       where: { tenantId },
       orderBy: [{ name: "asc" }],
@@ -971,7 +1133,13 @@ export class DocumentsDB {
         _count: { select: { documents: { where: { deletedAt: null } } } },
       },
     });
-    return folders.map(mapFolder);
+    if (!filtraPorRol(viewerRole)) return folders.map(mapFolder);
+    // Una carpeta que el rol no ve no aparece en el árbol (ni su nombre). Con
+    // la cadena entera, si ve una hija ve también a todas sus madres.
+    const mapa = new Map(folders.map((f) => [f.id, { parentId: f.parentId ?? null, allowedRoles: f.allowedRoles ?? [] }]));
+    return folders
+      .filter((f) => canRoleSeeEnCadena(viewerRole, [], rolesDeLaCadena(f.id, mapa)))
+      .map(mapFolder);
   }
 
   static async createFolder(
@@ -981,11 +1149,24 @@ export class DocumentsDB {
       parentId?: string | null;
       color?: string;
       icon?: string;
-    }
+      allowedRoles?: string[];
+    },
+    viewerRole?: string
   ): Promise<DbDocumentFolder> {
-    // El padre tiene que ser de este negocio (mismo hueco que el `folderId` de un documento).
-    if (input.parentId && !(await carpetaEsDelNegocio(tenantId, input.parentId))) {
-      throw new CarpetaAjenaError(input.parentId);
+    // El padre tiene que ser de este negocio (mismo hueco que el `folderId` de
+    // un documento) y, para un rol restringido, una carpeta que VE: si no, 404
+    // igual que una que no existe.
+    let rolesDelPadre: string[] = [];
+    if (input.parentId) {
+      const padre = await prisma.documentFolder.findFirst({
+        where: { id: input.parentId, tenantId },
+        select: { allowedRoles: true },
+      });
+      if (!padre) throw new CarpetaAjenaError(input.parentId);
+      if (filtraPorRol(viewerRole) && !(await this.accesoACarpeta(tenantId, input.parentId, viewerRole)).ve) {
+        throw new CarpetaAjenaError(input.parentId);
+      }
+      rolesDelPadre = padre.allowedRoles ?? [];
     }
     const f = await prisma.documentFolder.create({
       data: {
@@ -994,6 +1175,9 @@ export class DocumentsDB {
         parentId: input.parentId ?? null,
         color: input.color ?? null,
         icon: input.icon ?? null,
+        // Hereda los roles de la madre si no se mandan: una subcarpeta nueva
+        // adentro de «solo admin» nace «solo admin» y el candado se ve en la UI.
+        allowedRoles: input.allowedRoles ?? rolesDelPadre,
       },
       include: { _count: { select: { documents: true } } },
     });
@@ -1016,19 +1200,25 @@ export class DocumentsDB {
   static async createFolderTree(
     tenantId: string,
     input: { parentId?: string | null; rutas: string[] },
+    viewerRole?: string,
   ): Promise<{ idPorRuta: Record<string, string>; creadas: number }> {
     const raiz = input.parentId ?? null;
     if (raiz) {
-      // El destino tiene que ser una carpeta de ESTE tenant.
+      // El destino tiene que ser una carpeta de ESTE tenant (y una que el rol ve).
       const padre = await prisma.documentFolder.findFirst({ where: { id: raiz, tenantId }, select: { id: true } });
       if (!padre) throw new Error("parent_not_found");
+      if (filtraPorRol(viewerRole) && !(await this.accesoACarpeta(tenantId, raiz, viewerRole)).ve) {
+        throw new Error("parent_not_found");
+      }
     }
 
     // Índice de lo que ya existe: (padre, nombre en minúscula) → id.
     const existentes = await prisma.documentFolder.findMany({
       where: { tenantId },
-      select: { id: true, name: true, parentId: true },
+      select: { id: true, name: true, parentId: true, allowedRoles: true },
     });
+    // Roles de cada carpeta: la que se crea hereda los de su madre (como `createFolder`).
+    const rolesPorId = new Map(existentes.map((f) => [f.id, f.allowedRoles ?? []]));
     // Separador NUL: no puede aparecer ni en un id ni en un nombre de carpeta.
     const clave = (parentId: string | null, name: string) => `${parentId ?? ""}\u0000${name.trim().toLowerCase()}`;
     const indice = new Map(existentes.map((f) => [clave(f.parentId, f.name), f.id]));
@@ -1053,10 +1243,12 @@ export class DocumentsDB {
           padreId = existente;
           continue;
         }
+        const heredados = padreId ? rolesPorId.get(padreId) ?? [] : [];
         const creada = await prisma.documentFolder.create({
-          data: { tenantId, name: nombre.slice(0, 80), parentId: padreId },
+          data: { tenantId, name: nombre.slice(0, 80), parentId: padreId, allowedRoles: heredados },
           select: { id: true },
         });
+        rolesPorId.set(creada.id, heredados);
         indice.set(clave(padreId, nombre), creada.id);
         idPorRuta[acumulada] = creada.id;
         padreId = creada.id;
@@ -1078,12 +1270,13 @@ export class DocumentsDB {
   static async listNamesInFolders(
     tenantId: string,
     folderIds: (string | null)[],
+    viewerRole?: string,
   ): Promise<Record<string, { id: string; name: string; size: number }[]>> {
     const ids = folderIds.filter((f): f is string => typeof f === "string");
     const incluirRaiz = folderIds.includes(null);
     if (ids.length === 0 && !incluirRaiz) return {};
 
-    const docs = await prisma.document.findMany({
+    const todos = await prisma.document.findMany({
       where: {
         tenantId,
         deletedAt: null,
@@ -1095,8 +1288,9 @@ export class DocumentsDB {
       },
       // El id hace falta para REEMPLAZAR: sin él no se sabe a qué documento
       // subirle la versión nueva y el importador terminaba duplicando.
-      select: { id: true, folderId: true, name: true, originalName: true, size: true },
+      select: { id: true, folderId: true, name: true, originalName: true, size: true, allowedRoles: true },
     });
+    const docs = filtraPorRol(viewerRole) ? await soloVisibles(tenantId, todos, viewerRole) : todos;
 
     const out: Record<string, { id: string; name: string; size: number }[]> = {};
     for (const d of docs) {
@@ -1188,7 +1382,7 @@ export class DocumentsDB {
   static async eliminarCarpetas(
     tenantId: string,
     ids: string[],
-    opciones: { conDocumentos?: boolean } = {},
+    opciones: { conDocumentos?: boolean; viewerRole?: string } = {},
   ): Promise<{ carpetas: number; documentos: number }> {
     if (!tenantId) throw new Error("tenantId is required");
     const limpios = [...new Set(ids.filter((x) => typeof x === "string" && x.trim()))];
@@ -1197,13 +1391,68 @@ export class DocumentsDB {
     let documentos = 0;
     if (opciones.conDocumentos) {
       // Antes del delete: después ya no hay forma de saber qué había adentro.
+      // Un rol restringido sólo manda a la papelera lo que ve; lo demás (papeles
+      // con roles propios) cae a la raíz con sus roles intactos.
+      const soloEstos = filtraPorRol(opciones.viewerRole)
+        ? (
+            await soloVisibles(
+              tenantId,
+              await prisma.document.findMany({
+                where: { tenantId, folderId: { in: limpios }, deletedAt: null },
+                select: { id: true, folderId: true, allowedRoles: true },
+              }),
+              opciones.viewerRole,
+            )
+          ).map((d) => d.id)
+        : null;
       const r = await prisma.document.updateMany({
-        where: { tenantId, folderId: { in: limpios }, deletedAt: null },
+        where: { tenantId, folderId: { in: limpios }, deletedAt: null, ...(soloEstos ? { id: { in: soloEstos } } : {}) },
         data: { deletedAt: new Date() },
       });
       documentos = r.count;
     }
-    const { count } = await prisma.documentFolder.deleteMany({ where: { id: { in: limpios }, tenantId } });
+    /* Lo que no se fue a la papelera cae a la raíz (FK ON DELETE SET NULL, y las
+       subcarpetas se van en cascada). Antes perdía la restricción de su cadena de
+       carpetas y quedaba a la vista de todos los roles (security 04-10). Se le
+       copia el equivalente: la intersección de sus roles propios y los de cada
+       carpeta con roles; vacía = sólo roles privilegiados (`["admin"]`). */
+    const mapa = await mapaDeCarpetas(tenantId);
+    const seBorran = new Set(limpios.filter((id) => mapa.has(id)));
+    for (let crecio = true; crecio; ) {
+      crecio = false;
+      for (const [id, c] of mapa) {
+        if (c.parentId && seBorran.has(c.parentId) && !seBorran.has(id)) {
+          seBorran.add(id);
+          crecio = true;
+        }
+      }
+    }
+    const caen = seBorran.size
+      ? await prisma.document.findMany({
+          where: { tenantId, folderId: { in: [...seBorran] }, deletedAt: null },
+          select: { id: true, folderId: true, allowedRoles: true },
+        })
+      : [];
+    const porRoles = new Map<string, { roles: string[]; ids: string[] }>();
+    for (const d of caen) {
+      const cadena = rolesDeLaCadena(d.folderId, mapa);
+      if (cadena.length === 0) continue;
+      const propios = d.allowedRoles ?? [];
+      const niveles = propios.length ? [propios, ...cadena] : cadena;
+      const comunes = niveles.reduce((acc, r) => acc.filter((x) => r.includes(x)));
+      const roles = comunes.length ? [...new Set(comunes)].sort() : ["admin"];
+      const k = roles.join(",");
+      const g = porRoles.get(k) ?? { roles, ids: [] };
+      g.ids.push(d.id);
+      porRoles.set(k, g);
+    }
+    const count = await prisma.$transaction(async (tx) => {
+      for (const { roles, ids } of porRoles.values()) {
+        await tx.document.updateMany({ where: { tenantId, id: { in: ids } }, data: { allowedRoles: roles } });
+      }
+      const r = await tx.documentFolder.deleteMany({ where: { id: { in: limpios }, tenantId } });
+      return r.count;
+    });
     return { carpetas: count, documentos };
   }
 
@@ -1290,13 +1539,11 @@ export class DocumentsDB {
 
   static async listVersions(
     tenantId: string,
-    documentId: string
+    documentId: string,
+    viewerRole?: string
   ): Promise<DbDocumentVersion[]> {
-    const doc = await prisma.document.findFirst({
-      where: { id: documentId, tenantId },
-      select: { id: true },
-    });
-    if (!doc) return [];
+    // Las versiones viejas son el MISMO papel: mismo permiso que el actual.
+    if (!(await this.puedeVer(tenantId, documentId, viewerRole, { incluirBorrados: true }))) return [];
     const versions = await prisma.documentVersion.findMany({
       where: { documentId },
       orderBy: { versionNumber: "desc" },
@@ -1308,13 +1555,10 @@ export class DocumentsDB {
   static async getVersion(
     tenantId: string,
     documentId: string,
-    versionId: string
+    versionId: string,
+    viewerRole?: string
   ): Promise<DbDocumentVersion | null> {
-    const doc = await prisma.document.findFirst({
-      where: { id: documentId, tenantId },
-      select: { id: true },
-    });
-    if (!doc) return null;
+    if (!(await this.puedeVer(tenantId, documentId, viewerRole, { incluirBorrados: true }))) return null;
     const v = await prisma.documentVersion.findFirst({ where: { id: versionId, documentId } });
     return v ? mapVersion(v) : null;
   }
@@ -1393,13 +1637,11 @@ export class DocumentsDB {
       createdById: string;
       expiresInDays?: number;
       password?: string;
+      /** Rol de quien lo crea: un papel que no puede abrir tampoco lo puede publicar. */
+      viewerRole?: string;
     }
   ): Promise<DbDocumentShare | null> {
-    const doc = await prisma.document.findFirst({
-      where: { id: documentId, tenantId, deletedAt: null },
-      select: { id: true },
-    });
-    if (!doc) return null;
+    if (!(await this.puedeVer(tenantId, documentId, input.viewerRole))) return null;
 
     const ttlDays = Math.max(1, Math.min(90, input.expiresInDays ?? 7));
     const expiresAt = new Date(Date.now() + ttlDays * 24 * 60 * 60 * 1000);
@@ -1419,8 +1661,10 @@ export class DocumentsDB {
 
   static async listShares(
     tenantId: string,
-    documentId: string
+    documentId: string,
+    viewerRole?: string
   ): Promise<DbDocumentShare[]> {
+    if (filtraPorRol(viewerRole) && !(await this.puedeVer(tenantId, documentId, viewerRole))) return [];
     const shares = await prisma.documentShare.findMany({
       where: { documentId, tenantId },
       orderBy: { createdAt: "desc" },
@@ -1428,7 +1672,12 @@ export class DocumentsDB {
     return shares.map(mapShare);
   }
 
-  static async revokeShare(tenantId: string, shareId: string): Promise<boolean> {
+  static async revokeShare(tenantId: string, shareId: string, viewerRole?: string): Promise<boolean> {
+    if (filtraPorRol(viewerRole)) {
+      // Cortar el enlace de un papel que el rol no ve = mismo 404 que «no existe».
+      const s = await prisma.documentShare.findFirst({ where: { id: shareId, tenantId }, select: { documentId: true } });
+      if (!s || !(await this.puedeVer(tenantId, s.documentId, viewerRole, { incluirBorrados: true }))) return false;
+    }
     const r = await prisma.documentShare.updateMany({
       where: { id: shareId, tenantId, revokedAt: null },
       data: { revokedAt: new Date() },
@@ -1456,6 +1705,17 @@ export class DocumentsDB {
     if (share.revokedAt) return null;
     if (share.expiresAt.getTime() < Date.now()) return null;
     if (share.document.deletedAt) return null;
+    // Un papel restringido sólo sigue publicado si quien sacó el enlace lo
+    // puede ver HOY (ver `enlaceSigueSirviendo`). Lo que no tiene roles no paga
+    // ninguna consulta extra.
+    const propios = share.document.allowedRoles ?? [];
+    const cadena = share.document.folderId
+      ? rolesDeLaCadena(share.document.folderId, await mapaDeCarpetas(share.tenantId))
+      : [];
+    if (estaRestringido(propios, cadena)) {
+      const rol = await rolDelCreador(share.tenantId, share.createdById);
+      if (!enlaceSigueSirviendo(rol, propios, cadena)) return null;
+    }
     return { doc: mapDoc(share.document), share: mapShare(share) };
   }
 
@@ -1539,8 +1799,10 @@ export class DocumentsDB {
       include: { folder: { select: { id: true, name: true } } },
     });
     if (!share || share.revokedAt || share.expiresAt.getTime() < Date.now()) return null;
+    const visibles = await this.docsDelEnlaceDeCarpeta(share);
+    if (!visibles) return null;
     const docs = await prisma.document.findMany({
-      where: { folderId: share.folderId, tenantId: share.tenantId, deletedAt: null },
+      where: { id: { in: visibles }, tenantId: share.tenantId, deletedAt: null },
       orderBy: { name: "asc" },
       select: { id: true, name: true, mimeType: true, size: true, uploadedAt: true },
     });
@@ -1552,16 +1814,42 @@ export class DocumentsDB {
     };
   }
 
-  /** storagePath de un doc dentro de una carpeta compartida (valida pertenencia). */
+  /**
+   * Ids de los documentos directos que un enlace de carpeta puede servir, o
+   * null si la carpeta entera ya no se sirve. Misma regla que un enlace de
+   * documento: lo restringido (la carpeta, su cadena o el doc) sólo si quien
+   * creó el enlace lo ve hoy. Desde el 04-10 sólo un rol privilegiado crea
+   * enlaces de carpeta; esto cubre los que se sacaron antes.
+   */
+  private static async docsDelEnlaceDeCarpeta(share: {
+    folderId: string;
+    tenantId: string;
+    createdById: string;
+  }): Promise<string[] | null> {
+    const filas = await prisma.document.findMany({
+      where: { folderId: share.folderId, tenantId: share.tenantId, deletedAt: null },
+      select: { id: true, allowedRoles: true },
+    });
+    const cadena = rolesDeLaCadena(share.folderId, await mapaDeCarpetas(share.tenantId));
+    const hayRestringido = cadena.length > 0 || filas.some((d) => (d.allowedRoles ?? []).length > 0);
+    if (!hayRestringido) return filas.map((d) => d.id);
+    const rol = await rolDelCreador(share.tenantId, share.createdById);
+    if (cadena.length > 0 && !enlaceSigueSirviendo(rol, [], cadena)) return null;
+    return filas.filter((d) => enlaceSigueSirviendo(rol, d.allowedRoles ?? [], cadena)).map((d) => d.id);
+  }
+
+  /** storagePath de un doc dentro de una carpeta compartida (valida pertenencia y permisos). */
   static async getFolderShareDocPath(
     token: string,
     docId: string
   ): Promise<{ storagePath: string; mimeType: string; name: string } | null> {
     const share = await prisma.documentFolderShare.findUnique({
       where: { token },
-      select: { folderId: true, tenantId: true, revokedAt: true, expiresAt: true },
+      select: { folderId: true, tenantId: true, revokedAt: true, expiresAt: true, createdById: true },
     });
     if (!share || share.revokedAt || share.expiresAt.getTime() < Date.now()) return null;
+    const visibles = await this.docsDelEnlaceDeCarpeta(share);
+    if (!visibles?.includes(docId)) return null;
     const doc = await prisma.document.findFirst({
       where: { id: docId, folderId: share.folderId, tenantId: share.tenantId, deletedAt: null },
       select: { storagePath: true, mimeType: true, name: true },
@@ -1660,17 +1948,19 @@ export class DocumentsDB {
    */
   static async gruposDuplicados(
     tenantId: string,
-    opts: { minBytes?: number } = {}
+    opts: { minBytes?: number; viewerRole?: string } = {}
   ): Promise<{ clave: string; nombre: string; size: number; docs: DbDocument[] }[]> {
     // Un archivo vacío o minúsculo (un .txt de 12 bytes) coincide con cualquier
     // otro igual de chico sin ser el mismo: no vale la pena mirarlos.
     const minBytes = opts.minBytes ?? 1024;
 
-    const docs = await prisma.document.findMany({
+    const todos = await prisma.document.findMany({
       where: { tenantId, deletedAt: null, size: { gte: minBytes } },
       orderBy: { uploadedAt: "desc" },
       include: { _count: { select: { versions: true, shares: true } } },
     });
+    // Sólo los que el rol ve: el listado devuelve el documento entero (OCR incluido).
+    const docs = filtraPorRol(opts.viewerRole) ? await soloVisibles(tenantId, todos, opts.viewerRole) : todos;
 
     /** "informe final.pdf" y "informe final (1).pdf" son el mismo documento. */
     const nombreBase = (n: string) =>
@@ -1695,9 +1985,10 @@ export class DocumentsDB {
   }
 
   /** storagePath de varios documentos (para comparar su contenido de verdad). */
-  static async rutasDe(tenantId: string, ids: string[]): Promise<{ id: string; storagePath: string }[]> {
+  static async rutasDe(tenantId: string, ids: string[], viewerRole?: string): Promise<{ id: string; storagePath: string }[]> {
+    const permitidos = await this.idsVisibles(tenantId, ids, viewerRole);
     const docs = await prisma.document.findMany({
-      where: { id: { in: ids }, tenantId, deletedAt: null },
+      where: { id: { in: permitidos }, tenantId, deletedAt: null },
       select: { id: true, storagePath: true },
     });
     return docs;
@@ -1793,13 +2084,10 @@ export class DocumentsDB {
   static async listAudit(
     tenantId: string,
     documentId: string,
-    limit = 100
+    limit = 100,
+    viewerRole?: string
   ): Promise<DbDocumentAuditLog[]> {
-    const doc = await prisma.document.findFirst({
-      where: { id: documentId, tenantId },
-      select: { id: true },
-    });
-    if (!doc) return [];
+    if (!(await this.puedeVer(tenantId, documentId, viewerRole, { incluirBorrados: true }))) return [];
     const logs = await prisma.documentAuditLog.findMany({
       where: { documentId, tenantId },
       orderBy: { createdAt: "desc" },
@@ -1809,14 +2097,25 @@ export class DocumentsDB {
   }
 
   /** Feed de actividad global del tenant (cross-documento), con nombre del doc. */
-  static async recentActivity(tenantId: string, limit = 40): Promise<DbDocumentActivity[]> {
+  static async recentActivity(tenantId: string, limit = 40, viewerRole?: string): Promise<DbDocumentActivity[]> {
     const take = Math.min(200, Math.max(1, limit));
-    const logs = await prisma.documentAuditLog.findMany({
+    const todos = await prisma.documentAuditLog.findMany({
       where: { tenantId },
       orderBy: { createdAt: "desc" },
       take,
-      include: { document: { select: { name: true, deletedAt: true } } },
+      include: { document: { select: { name: true, deletedAt: true, folderId: true, allowedRoles: true } } },
     });
+    // El feed muestra el NOMBRE del papel: sin filtrar, el cajero leía «Despido
+    // de Juan.pdf» aunque no pudiera abrirlo. Las filas sin documento quedan.
+    let logs = todos;
+    if (filtraPorRol(viewerRole)) {
+      const mapa = await mapaDeCarpetas(tenantId);
+      logs = todos.filter(
+        (a) =>
+          !a.document ||
+          canRoleSeeEnCadena(viewerRole, a.document.allowedRoles ?? [], rolesDeLaCadena(a.document.folderId, mapa)),
+      );
+    }
     return logs.map((a) => ({
       id: a.id,
       documentId: a.documentId,

@@ -84,6 +84,14 @@ import { BulkTagModal } from "./BulkTagModal";
 import { PapeleraView } from "./PapeleraView";
 import { formatBytes, getFileIcon } from "./archivo-visual";
 import { formatDate, formatDateLong, formatDateNumeric, formatDateShort, formatNumber } from "@/lib/format";
+import { esTagDeMaquinaPlan } from "@/lib/forestal/plan-documentos-tipos";
+
+/**
+ * Las etiquetas que se muestran como chips. Las de máquina de «Documentos del
+ * plan» (`plan:`, `plan-carpeta:`, `campo:`, ADR-467) no: son un id que nadie
+ * lee, y quitarlas a mano saca el papel de su casillero. Siguen en el dato.
+ */
+const tagsVisibles = (tags: readonly string[] | null | undefined): string[] => (tags ?? []).filter((t) => !esTagDeMaquinaPlan(t));
 
 // ─────────────────────────────────────────────────────────────────
 // Helpers
@@ -462,7 +470,7 @@ export default function DocumentosModule() {
   /** Taxonomía completa del tenant, para sugerir al escribir y evitar duplicados por typo. */
   const [allTags, setAllTags] = useState<string[]>([]);
   const reloadAllTags = useCallback(() => {
-    fetchTags().then((r) => setAllTags(r.map((t) => t.tag))).catch((err) => console.warn("[documentos] no pude cargar la taxonomía de etiquetas", err));
+    fetchTags().then((r) => setAllTags(r.map((t) => t.tag).filter((t) => !esTagDeMaquinaPlan(t)))).catch((err) => console.warn("[documentos] no pude cargar la taxonomía de etiquetas", err));
   }, []);
   useEffect(() => { reloadAllTags(); }, [reloadAllTags]);
   /** Menú "Más" de la barra de selección — agrupa las acciones menos frecuentes
@@ -864,7 +872,7 @@ export default function DocumentosModule() {
 
   /** Etiquetas ya usadas en carpetas: para reusar en vez de inventar sinónimos. */
   const folderTagSuggestions = useMemo(
-    () => [...new Set(folders.flatMap((f) => f.tags ?? []))].sort(),
+    () => [...new Set(folders.flatMap((f) => tagsVisibles(f.tags)))].sort(),
     [folders],
   );
 
@@ -1819,9 +1827,9 @@ export default function DocumentosModule() {
                         {/* Con el checkbox puesto, el ancho del sidebar no alcanza
                             para nombre + etiquetas: en modo selección hay que poder
                             LEER qué se marca, así que los chips se guardan. */}
-                        {(f.tags?.length ?? 0) > 0 && !selectingFolders && (
-                          <span className="hidden shrink-0 items-center gap-0.5 xl:flex" title={`Etiquetas: ${(f.tags ?? []).join(", ")}`}>
-                            {(f.tags ?? []).slice(0, 2).map((t) => (
+                        {tagsVisibles(f.tags).length > 0 && !selectingFolders && (
+                          <span className="hidden shrink-0 items-center gap-0.5 xl:flex" title={`Etiquetas: ${tagsVisibles(f.tags).join(", ")}`}>
+                            {tagsVisibles(f.tags).slice(0, 2).map((t) => (
                               <span
                                 key={t}
                                 className="rounded-full bg-[var(--surface-sunken)] px-1.5 text-[length:var(--ts-2xs,11px)] font-medium text-[var(--text-tertiary)]"
@@ -1829,8 +1837,8 @@ export default function DocumentosModule() {
                                 {t}
                               </span>
                             ))}
-                            {(f.tags ?? []).length > 2 && (
-                              <span className="text-[length:var(--ts-2xs,11px)] text-[var(--text-tertiary)]">+{(f.tags ?? []).length - 2}</span>
+                            {tagsVisibles(f.tags).length > 2 && (
+                              <span className="text-[length:var(--ts-2xs,11px)] text-[var(--text-tertiary)]">+{tagsVisibles(f.tags).length - 2}</span>
                             )}
                           </span>
                         )}
@@ -2628,13 +2636,13 @@ export default function DocumentosModule() {
                         )}
                         {colsVisibles.etiquetas && (
                           <td className="px-4 py-3 hidden lg:table-cell">
-                            {(doc.tags?.length ?? 0) > 0 ? (
+                            {tagsVisibles(doc.tags).length > 0 ? (
                               <div className="flex flex-wrap items-center gap-1">
-                                {(doc.tags ?? []).slice(0, 3).map((t) => (
+                                {tagsVisibles(doc.tags).slice(0, 3).map((t) => (
                                   <span key={t} className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[length:var(--ts-2xs,11px)] font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">#{t}</span>
                                 ))}
-                                {(doc.tags ?? []).length > 3 && (
-                                  <span className="text-[length:var(--ts-2xs,11px)] text-[var(--text-tertiary)]">+{(doc.tags ?? []).length - 3}</span>
+                                {tagsVisibles(doc.tags).length > 3 && (
+                                  <span className="text-[length:var(--ts-2xs,11px)] text-[var(--text-tertiary)]">+{tagsVisibles(doc.tags).length - 3}</span>
                                 )}
                               </div>
                             ) : (
@@ -2929,7 +2937,7 @@ export default function DocumentosModule() {
         return (
           <TagEditModal
             nombre={doc.name}
-            tags={doc.tags ?? []}
+            tags={tagsVisibles(doc.tags)}
             todasLasTags={allTags}
             onAdd={async (tag) => {
               await patch(doc.id, { tags: [...(doc.tags ?? []), tag] });
@@ -3375,12 +3383,14 @@ function DocCard({
           <ExpiryBadge expiresAt={doc.expiresAt} />
           <StructuredChip doc={doc} />
         </div>
-        {(doc.tags.length > 0 || doc.aiTags.length > 0) && (() => {
+        {(tagsVisibles(doc.tags).length > 0 || doc.aiTags.length > 0) && (() => {
           // Una sola etiqueta a la vista (la tuya; si no hay, la sugerida por la
-          // IA) y el resto en el «+N» al pasar el mouse.
+          // IA) y el resto en el «+N» al pasar el mouse. Las de máquina del
+          // plan (`plan:`, `campo:`) no se cuentan: nadie las lee.
+          const tags = tagsVisibles(doc.tags);
           const sugeridas = doc.aiTags.filter((t) => !doc.tags.includes(t));
-          const primera = doc.tags[0];
-          const resto = [...doc.tags.slice(primera ? 1 : 0), ...sugeridas.slice(primera ? 0 : 1)];
+          const primera = tags[0];
+          const resto = [...tags.slice(primera ? 1 : 0), ...sugeridas.slice(primera ? 0 : 1)];
           const ia = !primera ? sugeridas[0] : undefined;
           return (
             <div className="mt-2 flex flex-wrap items-center gap-1">

@@ -36,7 +36,7 @@
  * oficiales.
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Check, ChevronDown, Copy, FileText, Loader2, Plus, X as XIcon } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -57,6 +57,14 @@ import { copiarDePlanPrevio, etiquetaPlanPrevio, type PlanPrevio } from "@/lib/f
 import { SelectConOtra } from "./campos-elegibles";
 import { Field, cls } from "./loth-plan-ui";
 import LothPlanFormUbicacion from "./LothPlanFormUbicacion";
+import PlanDocumentosEnFormulario from "./plan-documentos/PlanDocumentosEnFormulario";
+import {
+  documentosVacios,
+  guardarDocumentosPendientes,
+  hayDocumentosPendientes,
+  type PasoGuardado,
+  type PendientesDocumentos,
+} from "./plan-documentos/pendientes";
 import LothPlanFormPermisoDelLibro from "./LothPlanFormPermisoDelLibro";
 import { useLothPermiso } from "./hooks/use-loth-libro-permiso";
 import { nombreDelPlan } from "@/lib/forestal/loth-tablero-permiso";
@@ -166,6 +174,7 @@ export default function LothPlanForm({
   planesPrevios = [],
   plan,
   onIrARegistro,
+  onEstadoCierre,
 }: {
   onClose: () => void;
   /** `planId` del plan recién creado o editado: la vista lo deja elegido. */
@@ -185,6 +194,11 @@ export default function LothPlanForm({
   planesPrevios?: readonly PlanPrevio[];
   /** El plan que se está EDITANDO. Sin esto, el formulario es un alta. */
   plan?: Plan | null;
+  /**
+   * Para que el modal pregunte antes de cerrarse: hay archivos cargados que
+   * todavía no se subieron, o algo está subiendo ahora mismo (ADR-467).
+   */
+  onEstadoCierre?: (e: { pendientes: boolean; ocupado: boolean; creado: boolean }) => void;
 }) {
   const editando = Boolean(plan);
   const [f, setF] = useState<FormularioPlan>(() => (plan ? desdePlan(plan) : formularioVacio()));
@@ -207,6 +221,19 @@ export default function LothPlanForm({
      colgarlo hasta que el servidor devuelve el plan (ADR-427). */
   const [camposPendientes, setCamposPendientes] = useState<PendientesCampos>(() => pendientesVacios(FORMULARIO));
   const set = (k: keyof typeof f, v: string) => setF((p) => ({ ...p, [k]: v }));
+  /* «Documentos» (ADR-467): en un alta, los archivos con su carpeta y su
+     casillero quedan en memoria hasta que el plan tenga id. */
+  const [docsPend, setDocsPend] = useState<PendientesDocumentos>(documentosVacios);
+  const [pasoDocs, setPasoDocs] = useState<PasoGuardado | null>(null);
+  const [subiendoEnEdicion, setSubiendoEnEdicion] = useState(false);
+  /* El plan que este alta YA creó. Si después falla algo (una especie, el
+     permiso, un archivo), «Reintentar» manda un PATCH a este id: volver a hacer
+     POST duplicaba el plan. */
+  const [creadoId, setCreadoId] = useState<string | null>(null);
+  const hayDocsPendientes = hayDocumentosPendientes(docsPend);
+  useEffect(() => {
+    onEstadoCierre?.({ pendientes: hayDocsPendientes, ocupado: busy || subiendoEnEdicion, creado: creadoId != null });
+  }, [onEstadoCierre, hayDocsPendientes, busy, subiendoEnEdicion, creadoId]);
   /**
    * Las especies del registro de una plantación, en el ALTA (ADR-459). Viven
    * fuera de `f` a propósito: `desdePlan` copia el plan campo por campo y su
@@ -351,17 +378,21 @@ export default function LothPlanForm({
       for (const [k, v] of Object.entries(f)) body[k] = v === "" ? null : v;
       body.titularName = f.titularName.trim();
       // Editar manda el id y va por PATCH; el resto del cuerpo es idéntico.
-      if (plan) body.id = plan.id;
+      // El reintento de un alta ya creada también: es el mismo plan.
+      const idExistente = plan?.id ?? creadoId;
+      if (idExistente) body.id = idExistente;
       // Lo que este tipo no usa no se manda: un campo escondido que igual viaja
       // deja datos que la pantalla nunca va a mostrar.
       if (!pideCampo(f.planType, "parcelaCorta")) body.parcelaCorta = null;
       if (!pideCampo(f.planType, "tituloHabilitante")) body.tituloHabilitante = null;
       /* El registro y sus especies viajan JUNTOS: el servidor los crea en una
          transacción, y una plantación nunca queda a medias sin su base. */
-      const paraGuardar = especiesConDatos.map(aEspecieParaGuardar);
+      /* En el reintento ya entraron con el POST (el PATCH las ignora y
+         agregarlas de nuevo daba «ya existe»). */
+      const paraGuardar = idExistente ? [] : especiesConDatos.map(aEspecieParaGuardar);
       if (paraGuardar.length > 0) body.species = paraGuardar;
       const r = await fetch("/api/admin/forestal/plan", {
-        method: plan ? "PATCH" : "POST",
+        method: idExistente ? "PATCH" : "POST",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         credentials: "include",
         body: JSON.stringify(body),
@@ -372,6 +403,8 @@ export default function LothPlanForm({
       /* El rechazo de una especie («Bolaina ya está en la fila 1») viene en
          `issues`: decirlo vale más que un «HTTP 400». */
       if (!r.ok) throw new Error(creado.message ?? creado.issues?.find((i) => i.message)?.message ?? `HTTP ${r.status}`);
+      const idPlan = idExistente ?? creado.plan?.id;
+      if (!plan && idPlan && !creadoId) setCreadoId(idPlan);
       /* Un servidor que todavía no conoce `species` las ignora y devuelve sólo
          el plan: entonces se agregan de a una, como lo haría la pestaña
          Registro. Si alguna no entra, el plan YA existe: se dice cuál falta. */
@@ -386,8 +419,8 @@ export default function LothPlanForm({
       /* El permiso y su documento de gestión quedan atados: `ForestContrato.planId`
          existía desde ADR-421 y ninguna pantalla lo llenaba (0 de 6 medidos).
          Si falla, el plan YA está creado: se avisa, no se pierde el alta. */
-      if (permiso && creado.plan?.id) {
-        const atado = await actualizarPermiso(permiso.id, { planId: creado.plan.id });
+      if (permiso && idPlan) {
+        const atado = await actualizarPermiso(permiso.id, { planId: idPlan });
         if (atado.error) {
           setErr(`El plan se creó, pero no se pudo atar al permiso ${permiso.codigo}: ${atado.error}`);
           setBusy(false);
@@ -397,11 +430,30 @@ export default function LothPlanForm({
       /* Los campos personalizados cargados durante el alta se guardan recién
          acá: antes no había registro al que colgarlos. Si fallan, el plan YA
          está creado — se avisa y no se pierde el alta. */
-      const idPlan = plan?.id ?? creado.plan?.id;
       if (idPlan) {
         const r = await guardarValoresPendientes(idPlan, camposPendientes);
         if (r.errores.length > 0) {
           setErr(`El plan se guardó, pero sus campos personalizados no: ${r.errores.join(" · ")}`);
+          setBusy(false);
+          return;
+        }
+        // Ya entraron: el reintento no los vuelve a crear («ya existe»).
+        setCamposPendientes(pendientesVacios(FORMULARIO));
+      }
+      /* Los documentos del alta: preparar carpetas → subir → etiquetar. Lo que
+         entra sale de los pendientes; lo que falla queda con su motivo y el
+         modal sigue abierto con «Reintentar». */
+      if (idPlan && !plan && hayDocumentosPendientes(docsPend)) {
+        const r = await guardarDocumentosPendientes(idPlan, docsPend, setPasoDocs);
+        setDocsPend(r.restante);
+        setPasoDocs(null);
+        if (r.errores.length > 0) {
+          const faltan = r.restante.archivos.length;
+          setErr(
+            `El plan se guardó${r.subidos > 0 ? ` y subieron ${r.subidos} ${r.subidos === 1 ? "archivo" : "archivos"}` : ""}` +
+              `${faltan > 0 ? `, pero ${faltan} ${faltan === 1 ? "archivo no" : "archivos no"}` : ", pero algo no entró"}: ${r.errores.join(" · ")}. ` +
+              "Toca «Reintentar» para mandar sólo lo que faltó.",
+          );
           setBusy(false);
           return;
         }
@@ -723,7 +775,31 @@ export default function LothPlanForm({
         onCambio={(k: keyof CamposDeCosteo, v: string) => set(k, v)}
       />
 
-      {/* 6 · Lo que este negocio necesita y el formulario no previó (ADR-427) */}
+      {/* Los papeles del plan, en sus carpetas del Drive (ADR-467). El costeo
+          de arriba no lleva número: éste sigue al de la vigencia. */}
+      <Bloque
+        n={esPlantacion ? 6 : 5}
+        titulo="Documentos"
+        ayuda={{
+          what: "Resolución o registro de plantación, papeles del jefe, títulos y lo que necesites: cada uno en su carpeta. Quedan en Documentos, dentro de «Libro TH».",
+          example: "La vigencia de poder vence en marzo: ponle la fecha al archivo y te avisa antes.",
+        }}
+      >
+        <PlanDocumentosEnFormulario
+          planId={plan?.id ?? null}
+          pendientes={docsPend}
+          onPendientes={setDocsPend}
+          onOcupado={setSubiendoEnEdicion}
+          delPlan={{
+            resolucionNumber: f.resolucionNumber || null,
+            resolucionDate: f.resolucionDate || null,
+            representanteLegal: f.representanteLegal || null,
+            propietarioNombre: f.propietarioNombre || null,
+          }}
+        />
+      </Bloque>
+
+      {/* Lo que este negocio necesita y el formulario no previó (ADR-427) */}
       <CamposPersonalizados
         formulario={FORMULARIO}
         registroId={plan?.id ?? null}
@@ -732,8 +808,20 @@ export default function LothPlanForm({
         onPendientes={setCamposPendientes}
       />
 
-      <div className="sticky bottom-0 -mx-5 -mb-5 flex justify-end gap-2 border-t-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 py-3">
-        <button type="button" onClick={onClose} className="h-11 rounded-xl px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">
+      <div className="sticky bottom-0 -mx-5 -mb-5 flex flex-wrap items-center justify-end gap-2 border-t-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 py-3">
+        {pasoDocs && (
+          <p role="status" className="mr-auto flex items-center gap-2 text-sm font-semibold text-[var(--text-secondary)]">
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+            {pasoDocs.fase === "preparando"
+              ? "Preparando las carpetas del plan…"
+              : pasoDocs.fase === "carpetas"
+                ? "Creando carpetas y documentos…"
+                : pasoDocs.fase === "subiendo"
+                  ? `Subiendo ${Math.min(pasoDocs.hechos + 1, pasoDocs.total)} de ${pasoDocs.total}…`
+                  : "Guardando los datos de las carpetas…"}
+          </p>
+        )}
+        <button type="button" onClick={onClose} disabled={busy} className="h-11 rounded-xl px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50">
           Cancelar
         </button>
         <button
@@ -742,7 +830,7 @@ export default function LothPlanForm({
           className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent-dark)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
         >
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : editando ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-          {editando ? "Guardar cambios" : `Crear ${meta.sigla}`}
+          {creadoId ? "Reintentar lo que faltó" : editando ? "Guardar cambios" : `Crear ${meta.sigla}`}
         </button>
       </div>
     </form>

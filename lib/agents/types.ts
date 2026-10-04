@@ -93,6 +93,12 @@ export interface AgentContext {
   tenantId: string;
   traceId: string;
   parentTaskId?: string;
+  /**
+   * Rol de quien pidió la tarea (sólo en `executeSync`, que lo exige). Los
+   * dominios que devuelven datos con permisos propios —el Drive— lo usan para
+   * no mostrarle al cajero lo que su panel no le muestra.
+   */
+  actorRole?: string;
 }
 
 // ── Contract that every domain agent must satisfy ─────────────────────────────

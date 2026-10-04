@@ -1,7 +1,7 @@
 // @vitest-environment node
 /**
  * IDOR del Drive: un `folderId` de OTRO negocio (hallazgo del architect en
- * ADR-456, ya existía).
+ * ADR-467, ya existía).
  *
  * Hasta el 2026-09-29 `POST /api/admin/documents` guardaba el `folderId` del
  * formulario sin mirar de quién era: un documento del negocio A quedaba colgado

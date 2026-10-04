@@ -95,7 +95,8 @@ export async function analyzeDocumentContent(
   if (!doc) return { ok: false, error: "not_found", status: 404 };
 
   // Carpetas del drive: la IA elige entre ELLAS (o ninguna) — nunca inventa.
-  const carpetas = await DocumentsDB.listFolders(tenantId).catch(() => []);
+  // Con el rol: sugerir una carpeta que quien sube no ve sería revelar su nombre.
+  const carpetas = await DocumentsDB.listFolders(tenantId, viewerRole).catch(() => []);
   const nombresCarpetas = carpetas.map((c) => c.name);
 
   let text = "";

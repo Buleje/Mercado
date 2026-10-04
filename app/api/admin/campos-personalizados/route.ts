@@ -6,16 +6,21 @@ import { withApiHandler } from "@/lib/api-handler";
 import { logger } from "@/lib/logger";
 import {
   CamposPersonalizadosDB,
+  CarpetaDesconocidaError,
   ClaveDuplicadaError,
   DemasiadosCamposError,
   RegistroDesconocidoError,
+  TipoFueraDeLugarError,
 } from "@/lib/db/campos-personalizados.db";
 import {
   TIPOS_CAMPO,
   claveDesdeNombre,
+  motivoTipoFueraDeLugar,
   nombreDelFormulario,
+  puedeEscribirFormulario,
   puedeLeerFormulario,
 } from "@/lib/campos-personalizados";
+import { TIPO_ARCHIVO } from "@/lib/forestal/plan-documentos-tipos";
 
 /**
  * /api/admin/campos-personalizados — los campos que inventa el negocio (ADR-427).
@@ -52,14 +57,25 @@ const nombreConClave = z
   .max(60)
   .refine((n) => claveDesdeNombre(n).length > 0, "Ese nombre no deja ninguna letra ni número para identificarlo.");
 
-const crearSchema = z.object({
-  formulario: z.string().trim().min(1).max(80),
-  nombre: nombreConClave,
-  descripcion: z.string().trim().max(300).nullable().optional(),
-  tipo: z.enum(TIPOS_CAMPO),
-  opciones: z.array(z.string().trim().min(1).max(80)).max(50).optional(),
-  soloParaRegistroId: z.string().trim().max(40).nullable().optional(),
-});
+/**
+ * `archivo` (ADR-467) entra por esta ruta, pero SÓLO dentro de una carpeta de
+ * «Documentos del plan» (`forestal.plan.documentos.<clave>`): es un casillero de
+ * papeles, sin valor propio. `carpeta` no entra nunca por acá — las carpetas las
+ * crea `/api/admin/forestal/plan/documentos`, que además hace la del Drive.
+ */
+const crearSchema = z
+  .object({
+    formulario: z.string().trim().min(1).max(80),
+    nombre: nombreConClave,
+    descripcion: z.string().trim().max(300).nullable().optional(),
+    tipo: z.enum([...TIPOS_CAMPO, TIPO_ARCHIVO]),
+    opciones: z.array(z.string().trim().min(1).max(80)).max(50).optional(),
+    soloParaRegistroId: z.string().trim().max(40).nullable().optional(),
+  })
+  .superRefine((v, ctx) => {
+    const motivo = motivoTipoFueraDeLugar(v.tipo, v.formulario);
+    if (motivo) ctx.addIssue({ code: "custom", path: ["tipo"], message: motivo });
+  });
 
 const patchSchema = z.object({
   id: z.string().trim().min(1).max(40),
@@ -137,6 +153,16 @@ export const POST = withApiHandler("campos-personalizados-post", async (req: Nex
   if (!parsed.success) {
     return NextResponse.json({ error: "validation_error", issues: parsed.error.issues }, { status: 400 });
   }
+  /* Inventar una pregunta en un formulario es escribir en su módulo: los de
+     «Documentos del plan» exigen los roles del plan (ADR-467). Management tier
+     pasa igual que en `requireAdmin`, así que hoy esto sólo cambia algo si se
+     suma un rol a ROLES_DEFINICION. */
+  if (!puedeEscribirFormulario(auth.role, parsed.data.formulario)) {
+    return NextResponse.json(
+      { error: "forbidden", message: `Tu rol no puede crear campos en ${nombreDelFormulario(parsed.data.formulario)}.` },
+      { status: 403 },
+    );
+  }
   try {
     const campo = await CamposPersonalizadosDB.crear(
       auth.tenantId,
@@ -157,6 +183,13 @@ export const POST = withApiHandler("campos-personalizados-post", async (req: Nex
     // `valores` para que la pantalla diga siempre lo mismo.
     if (err instanceof RegistroDesconocidoError) {
       return NextResponse.json({ error: "registro_desconocido", message: err.message }, { status: 409 });
+    }
+    // 404 y no 409: el 409 de esta ruta dice «ya existe» y la pantalla lo lee así.
+    if (err instanceof CarpetaDesconocidaError) {
+      return NextResponse.json({ error: "carpeta_desconocida", message: err.message }, { status: 404 });
+    }
+    if (err instanceof TipoFueraDeLugarError) {
+      return NextResponse.json({ error: "validation_error", message: err.message }, { status: 400 });
     }
     logger.error("[campos-personalizados.POST] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });

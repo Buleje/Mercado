@@ -49,6 +49,7 @@ export default function CampoPersonalizadoNuevo({
   onCargarReutilizables,
   onCrear,
   onCancelar,
+  excluirTipos,
 }: {
   /** Cómo se llama en criollo lo que este formulario carga: «planes», «ingresos». */
   etiquetaFormulario: string;
@@ -60,8 +61,11 @@ export default function CampoPersonalizadoNuevo({
   /** Devuelve el motivo si no se pudo crear, o `null` si entró. */
   onCrear: (input: CampoNuevoInput) => Promise<string | null>;
   onCancelar: () => void;
+  /** Tipos que este formulario no ofrece (ver `CamposPersonalizados`). */
+  excluirTipos?: readonly string[];
 }) {
   const id = useId();
+  const tipos = excluirTipos?.length ? TIPOS_CAMPO.filter((t) => !excluirTipos.includes(t)) : TIPOS_CAMPO;
   const [nombre, setNombre] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [tipo, setTipo] = useState<TipoCampo>("texto");
@@ -140,7 +144,7 @@ export default function CampoPersonalizadoNuevo({
             Qué se escribe
           </label>
           <select id={`${id}-tipo`} className={CAMPO_INPUT} value={tipo} aria-describedby={`${id}-tipo-ayuda`} onChange={(e) => setTipo(e.target.value as TipoCampo)}>
-            {TIPOS_CAMPO.map((t) => (
+            {tipos.map((t) => (
               <option key={t} value={t}>
                 {TIPO_CAMPO_LABEL[t]}
               </option>

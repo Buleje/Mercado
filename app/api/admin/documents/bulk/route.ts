@@ -58,23 +58,38 @@ export async function POST(req: NextRequest) {
     }
     const data = parsed.data;
 
+    // Sólo los ids que este rol VE (revisión de seguridad 04-10: el lote movía,
+    // borraba y etiquetaba papeles restringidos con sólo mandar su id). Para
+    // MOVER, además, nada restringido: sacarlo de su carpeta lo dejaría a la
+    // vista de roles que hoy no lo ven. Sin rol restringido no hay consulta.
+    const ids = await DocumentsDB.idsVisibles(auth.tenantId, data.ids, auth.role, {
+      soloSinRoles: data.action === "move",
+    });
+    // Mover adentro de una carpeta que el rol no ve = como una que no existe: 0.
+    const destinoOculto =
+      data.action === "move" &&
+      !!data.folderId &&
+      !(await DocumentsDB.accesoACarpeta(auth.tenantId, data.folderId, auth.role)).ve;
+
     let affected = 0;
-    switch (data.action) {
-      case "delete":
-        affected = await DocumentsDB.bulkSoftDelete(auth.tenantId, data.ids);
-        break;
-      case "move":
-        affected = await DocumentsDB.bulkMove(auth.tenantId, data.ids, data.folderId);
-        break;
-      case "tag":
-        affected = await DocumentsDB.bulkAddTag(auth.tenantId, data.ids, data.tag);
-        break;
-      case "favorite":
-        affected = await DocumentsDB.bulkSetFavorite(auth.tenantId, data.ids, data.favorite);
-        break;
-      case "status":
-        affected = await DocumentsDB.bulkSetStatus(auth.tenantId, data.ids, data.status);
-        break;
+    if (ids.length > 0 && !destinoOculto) {
+      switch (data.action) {
+        case "delete":
+          affected = await DocumentsDB.bulkSoftDelete(auth.tenantId, ids);
+          break;
+        case "move":
+          affected = await DocumentsDB.bulkMove(auth.tenantId, ids, data.folderId);
+          break;
+        case "tag":
+          affected = await DocumentsDB.bulkAddTag(auth.tenantId, ids, data.tag);
+          break;
+        case "favorite":
+          affected = await DocumentsDB.bulkSetFavorite(auth.tenantId, ids, data.favorite);
+          break;
+        case "status":
+          affected = await DocumentsDB.bulkSetStatus(auth.tenantId, ids, data.status);
+          break;
+      }
     }
 
     // Audit: una entrada por documento, en un solo insert. El detalle de la
@@ -85,10 +100,10 @@ export async function POST(req: NextRequest) {
       : data.action === "favorite" ? { favorite: data.favorite }
       : data.action === "status" ? { status: data.status }
       : {};
-    DocumentsDB.logMany(auth.tenantId, data.ids, {
+    DocumentsDB.logMany(auth.tenantId, destinoOculto ? [] : ids, {
       actorId: auth.username,
       action: data.action === "delete" ? "delete" : data.action === "move" ? "move" : "tag",
-      metadata: { bulk: true, action: data.action, total: data.ids.length, ...detalle },
+      metadata: { bulk: true, action: data.action, total: ids.length, ...detalle },
     }).catch((err) => logger.warn("documents.audit.fail", { err: String(err) }));
 
     return NextResponse.json({ ok: true, affected });

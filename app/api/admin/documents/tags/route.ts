@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
     if (rl) return rl;
     const auth = await requireAdmin(req);
     if (auth instanceof NextResponse) return auth;
-    const tags = await DocumentsDB.listTags(auth.tenantId);
+    const tags = await DocumentsDB.listTags(auth.tenantId, auth.role);
     return NextResponse.json({ tags });
   } catch (e) {
     logger.error("[documents.tags.get] error", { err: e instanceof Error ? e.message : String(e) });
@@ -46,8 +46,8 @@ export async function POST(req: NextRequest) {
 
     const affected =
       parsed.data.action === "rename"
-        ? await DocumentsDB.renameTag(auth.tenantId, parsed.data.from, parsed.data.to)
-        : await DocumentsDB.deleteTag(auth.tenantId, parsed.data.tag);
+        ? await DocumentsDB.renameTag(auth.tenantId, parsed.data.from, parsed.data.to, auth.role)
+        : await DocumentsDB.deleteTag(auth.tenantId, parsed.data.tag, auth.role);
 
     return NextResponse.json({ affected });
   } catch (e) {

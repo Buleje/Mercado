@@ -49,10 +49,11 @@ export async function POST(req: NextRequest) {
     }
     if (rutas.length === 0) return NextResponse.json({ error: "invalid_body" }, { status: 400 });
 
-    const { idPorRuta, creadas } = await DocumentsDB.createFolderTree(auth.tenantId, {
-      parentId: parsed.data.parentId ?? null,
-      rutas,
-    });
+    const { idPorRuta, creadas } = await DocumentsDB.createFolderTree(
+      auth.tenantId,
+      { parentId: parsed.data.parentId ?? null, rutas },
+      auth.role,
+    );
     return NextResponse.json({ idPorRuta, creadas });
 
   } catch (e) {

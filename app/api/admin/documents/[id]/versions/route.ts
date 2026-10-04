@@ -24,7 +24,11 @@ export async function GET(req: NextRequest, ctx: Ctx) {
   if (auth instanceof NextResponse) return auth;
 
   const { id } = await ctx.params;
-  const versions = await DocumentsDB.listVersions(auth.tenantId, id);
+  // Mismo permiso que el documento: un papel que el rol no ve no tiene versiones (404).
+  if (!(await DocumentsDB.puedeVer(auth.tenantId, id, auth.role, { incluirBorrados: true }))) {
+    return NextResponse.json({ error: "not_found" }, { status: 404 });
+  }
+  const versions = await DocumentsDB.listVersions(auth.tenantId, id, auth.role);
   return NextResponse.json({ versions });
 }
 
@@ -58,7 +62,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     }
     const changeNote = (form.get("changeNote") as string | null) ?? undefined;
 
-    const versions = await DocumentsDB.listVersions(auth.tenantId, id);
+    const versions = await DocumentsDB.listVersions(auth.tenantId, id, auth.role);
     const nextLabel = `v${(versions[0]?.versionNumber ?? 1) + 1}`;
 
     const storagePath = buildStoragePath({

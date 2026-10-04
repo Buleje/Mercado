@@ -7,6 +7,8 @@
  *   · «Especies»      — ¿de qué especie queda saldo, cuánto es aprovechable por
  *                       DMC, y dónde corrijo lo que autorizó la resolución?
  *   · «Censo»         — el detalle árbol por árbol, en tabla y en el croquis.
+ *   · «Documentos»    — resolución, papeles del jefe, títulos: ¿qué falta o
+ *                       vence? (ADR-467). La tienen los dos tipos de plan.
  *
  * Una PLANTACIÓN (ADR-459) tiene otras dos: «Registro y saldo» —sus especies y
  * m³ registrados, y dónde está hoy ese volumen— y «Árboles marcados», que es el
@@ -24,11 +26,11 @@
 
 import type { ReactNode } from "react";
 
-export type PestanaPlan = "avance" | "especies" | "censo" | "registro";
+export type PestanaPlan = "avance" | "especies" | "censo" | "registro" | "documentos";
 /** Las de un plan de bosque natural (PO, PMFI, DEMA, PGMF). */
-export const PESTANAS_PLAN: readonly PestanaPlan[] = ["avance", "especies", "censo"];
+export const PESTANAS_PLAN: readonly PestanaPlan[] = ["avance", "especies", "censo", "documentos"];
 /** Las de una plantación: el registro manda; los árboles marcados son opcionales. */
-export const PESTANAS_PLANTACION: readonly PestanaPlan[] = ["registro", "censo"];
+export const PESTANAS_PLANTACION: readonly PestanaPlan[] = ["registro", "censo", "documentos"];
 
 export interface PestanaDef {
   id: PestanaPlan;

@@ -19,7 +19,7 @@ export async function GET(req: NextRequest, ctx: Ctx) {
   if (auth instanceof NextResponse) return auth;
 
   const { id } = await ctx.params;
-  const doc = await DocumentsDB.getById(auth.tenantId, id);
+  const doc = await DocumentsDB.getById(auth.tenantId, id, auth.role);
   if (!doc) return NextResponse.json({ error: "not_found" }, { status: 404 });
   if (doc.mimeType !== "application/pdf") return NextResponse.json({ error: "only_pdf" }, { status: 415 });
   const buf = await downloadFromStorage(doc.storagePath);

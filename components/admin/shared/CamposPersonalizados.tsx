@@ -30,7 +30,7 @@ import {
   CAMPO_AYUDA,
   FilaCampo,
 } from "@/components/admin/shared/campos-personalizados-ui";
-import { esPermanente, textoDelValor, type CampoPersonalizado } from "@/lib/campos-personalizados";
+import { esPermanente, esTipoCampo, textoDelValor, type CampoPersonalizado } from "@/lib/campos-personalizados";
 import {
   clavePendiente,
   pendientesVacios,
@@ -48,6 +48,7 @@ export default function CamposPersonalizados({
   etiquetaFormulario = "registros",
   pendientes,
   onPendientes,
+  excluirTipos,
   className = "",
 }: {
   /** Id estable de la pantalla, ej. `"forestal.plan"`. */
@@ -58,10 +59,26 @@ export default function CamposPersonalizados({
   etiquetaFormulario?: string;
   pendientes?: PendientesCampos;
   onPendientes?: (p: PendientesCampos) => void;
+  /**
+   * Tipos que este bloque no maneja: no se pintan, no se ofrecen al inventar
+   * un campo ni al reutilizar uno de otra pantalla. Las carpetas de
+   * «Documentos del plan» (ADR-467) sacan `archivo` (esos casilleros los pinta
+   * la sección, con su zona para subir) y lo que no es texto, número o fecha.
+   * Aunque no se pase, un tipo que el bloque no sabe pintar (`archivo`,
+   * `carpeta`) nunca sale como caja de texto.
+   */
+  excluirTipos?: readonly string[];
   className?: string;
 }) {
-  const { campos, apagados, valores, reutilizables, cargando, cargandoCatalogo, guardando, error, disponible, cargarReutilizables, crear, actualizar, eliminar, guardarValores } =
-    useCamposPersonalizados({ formulario, registroId });
+  const hook = useCamposPersonalizados({ formulario, registroId });
+  const { valores, cargando, cargandoCatalogo, guardando, error, disponible, cargarReutilizables, crear, actualizar, eliminar, guardarValores } = hook;
+  /* Sólo lo que este bloque sabe pintar y pedir. La lectura puede traer tipos
+     especiales (`archivo`, `carpeta`) en los formularios de «Documentos del
+     plan»: pintados acá serían una caja de texto donde va un papel. */
+  const sePinta = (c: CampoPersonalizado) => esTipoCampo(c.tipo) && !excluirTipos?.includes(c.tipo);
+  const campos = hook.campos.filter(sePinta);
+  const apagados = hook.apagados.filter(sePinta);
+  const reutilizables = hook.reutilizables.filter(sePinta);
   const { confirm } = useConfirm();
   const [alta, setAlta] = useState(false);
   const [verApagados, setVerApagados] = useState(false);
@@ -179,8 +196,11 @@ export default function CamposPersonalizados({
       {alta && (
         <CampoPersonalizadoNuevo
           etiquetaFormulario={etiquetaFormulario}
-          existentes={[...campos, ...apagados]}
+          /* El nombre choca con TODO lo del formulario, también con lo que
+             este bloque no pinta (un casillero de archivo de la carpeta). */
+          existentes={[...hook.campos, ...hook.apagados]}
           reutilizables={reutilizables}
+          excluirTipos={excluirTipos}
           cargandoCatalogo={cargandoCatalogo}
           guardando={guardando}
           onCargarReutilizables={cargarReutilizables}

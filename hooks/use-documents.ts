@@ -82,19 +82,7 @@ export interface UseDocumentsResult {
   loading: boolean;
   error: string | null;
   refresh: () => Promise<void>;
-  upload: (files: File[], opts?: {
-    folderId?: string | null;
-    onProgress?: (done: number, total: number) => void;
-    onEstado?: (file: File, estado: "en-cola" | "comprimiendo" | "subiendo" | "listo" | "error", motivo?: string) => void;
-    /**
-     * Carpeta POR archivo (el importador manda todo junto). Si está, gana sobre
-     * `folderId`: permite una sola tanda con el pool aprovechado en vez de una
-     * llamada por carpeta.
-     */
-    folderIdDe?: (file: File) => string | null | undefined;
-    /** Para frenar la subida a mitad (400 archivos son varios minutos). */
-    signal?: AbortSignal;
-  }) => Promise<DbDocument[]>;
+  upload: (files: File[], opts?: OpcionesSubida) => Promise<DbDocument[]>;
   scan: (file: File, opts?: { folderId?: string | null }) => Promise<{ document: DbDocument; scan: { ok: boolean; suggestedName?: string; category?: string; expiresAt?: string | null } }>;
   patch: (id: string, patch: Partial<{ name: string; folderId: string | null; category: string; tags: string[]; favorite: boolean; status: string; expiresAt: string | null; allowedRoles: string[]; customerId: string | null; orderId: string | null; supplierId: string | null }>) => Promise<void>;
   remove: (id: string) => Promise<void>;
@@ -115,6 +103,132 @@ export interface UseDocumentsResult {
   /** Acciones sobre VARIAS carpetas. Devuelve cuántas cambió el servidor. */
   bulkFolders: (ids: string[], accion: BulkFolderAccion) => Promise<number>;
   deleteFolder: (id: string, opciones?: { conDocumentos?: boolean }) => Promise<void>;
+}
+
+/** Lo que se le puede pedir a una subida del drive. */
+export interface OpcionesSubida {
+  folderId?: string | null;
+  onProgress?: (done: number, total: number) => void;
+  /** Estado por archivo, con su nombre ORIGINAL (el panel de progreso). */
+  onEstado?: (file: File, estado: "en-cola" | "comprimiendo" | "subiendo" | "listo" | "error", motivo?: string) => void;
+  /**
+   * Carpeta POR archivo (el importador manda todo junto). Si está, gana sobre
+   * `folderId`: permite una sola tanda con el pool aprovechado en vez de una
+   * llamada por carpeta.
+   */
+  folderIdDe?: (file: File) => string | null | undefined;
+  /** Para frenar la subida a mitad (400 archivos son varios minutos). */
+  signal?: AbortSignal;
+  /**
+   * Cada archivo que llegó, con el documento que creó. La lista que devuelve la
+   * subida sale en orden de llegada, no en el de `files`: quien tiene que hacer
+   * algo con UN archivo en particular (etiquetarlo, ponerle vencimiento) lo
+   * reconoce acá, por el `File` original.
+   */
+  onSubido?: (file: File, doc: DbDocument) => void;
+}
+
+/**
+ * La subida del drive, sin el estado de la lista: comprime las fotos, descarta
+ * lo que el servidor rechazaría, sube en un pool y reintenta los cortes de red.
+ * La usa `useDocuments().upload` y quien necesita subir sin cargar el drive
+ * entero (los documentos del plan de manejo, ADR-467).
+ */
+export async function subirArchivosAlDrive(files: File[], opts?: OpcionesSubida): Promise<DbDocument[]> {
+  // Las fotos grandes se comprimen ANTES de subir (varias veces más
+  // rápido con datos móviles); lo que no es imagen sale intacto.
+  const listos = await Promise.all(files.map(async (f) => {
+    if (f.type.startsWith("image/")) opts?.onEstado?.(f, "comprimiendo");
+    const c = await comprimirImagen(f);
+    opts?.onEstado?.(f, "en-cola");
+    return c;
+  }));
+
+  // Lo que el servidor va a rechazar igual (pesado, tipo no admitido) se
+  // descarta ACÁ: mandar 50 MB para recibir un 413 es tirar la subida a la
+  // basura. Se mide DESPUÉS de comprimir: una foto de 12 MB puede entrar.
+  const rechazos = new Map<number, string>();
+  listos.forEach((f, i) => {
+    const motivo = motivoRechazo(f);
+    if (motivo) {
+      rechazos.set(i, motivo);
+      opts?.onEstado?.(files[i], "error", motivo);
+    }
+  });
+
+  // Cuántas subidas van a la vez.
+  //
+  // Estaba fijo en 3 con la idea de que más saturaba las conexiones lentas.
+  // Medido con 12 archivos: pool 3 = 676 ms por archivo, pool 6 = 339, pool
+  // 10 = 313. O sea que 3 dejaba la mitad de la velocidad sin usar, porque
+  // el tiempo se va esperando la red, no ocupando la máquina; y pasar de 6
+  // ya casi no gana nada.
+  //
+  // El tamaño sí importa: con archivos grandes el cuello es el ancho de
+  // banda —mandar seis a la vez sólo los hace competir entre ellos— así que
+  // ahí se vuelve al pool chico.
+  const pesoPromedio = listos.reduce((s, f) => s + f.size, 0) / Math.max(1, listos.length);
+  const POOL = pesoPromedio > 4 * 1024 * 1024 ? 3 : 6;
+
+  const out: DbDocument[] = [];
+  let hechos = 0;
+  let siguiente = 0;
+  const subirUno = async () => {
+    for (;;) {
+      if (opts?.signal?.aborted) return;
+      const idx = siguiente++;
+      if (idx >= listos.length) return;
+      if (rechazos.has(idx)) { hechos++; opts?.onProgress?.(hechos, listos.length); continue; }
+      const f = listos[idx];
+      const original = files[idx]; // la compresión pudo renombrar
+      const fd = new FormData();
+      fd.append("file", f);
+      const carpeta = opts?.folderIdDe ? opts.folderIdDe(original) : opts?.folderId;
+      if (carpeta !== undefined && carpeta !== null) fd.append("folderId", carpeta);
+      opts?.onEstado?.(original, "subiendo");
+      // Un corte de red daba el archivo por muerto sin reintentar: subiendo
+      // una carpeta con datos móviles se perdían archivos de a montones y
+      // el usuario sólo veía "error". Se reintenta SOLO el corte de red (un
+      // 413/415/429 fallaría igual); el riesgo es duplicar un archivo que
+      // sí había llegado, y en un drive duplicar se ve y se borra —
+      // perderlo, no.
+      for (let intento = 1; ; intento++) {
+        try {
+          const r = await http<{ document: DbDocument }>(BASE, { method: "POST", body: fd, signal: opts?.signal });
+          out.push(r.document);
+          opts?.onSubido?.(original, r.document);
+          opts?.onEstado?.(original, "listo");
+          break;
+        } catch (e) {
+          // Frenado a propósito: el archivo no falló, simplemente no le tocó.
+          if (opts?.signal?.aborted) { opts?.onEstado?.(original, "en-cola"); return; }
+          const msg = e instanceof Error ? e.message : String(e);
+          const esRed = e instanceof TypeError || /failed to fetch|network|load failed/i.test(msg);
+          if (!esRed || intento >= 3) {
+            // warn y no error: la falla está MANEJADA (el archivo queda
+            // marcado en rojo en el panel). Un console.error acá levanta el
+            // overlay de Next en dev como si nada lo hubiera atrapado.
+            console.warn("upload_fail", f.name, msg);
+            opts?.onEstado?.(original, "error", motivoSubida(msg));
+            break;
+          }
+          await new Promise((r) => setTimeout(r, intento * 1000));
+          opts?.onEstado?.(original, "subiendo");
+        }
+      }
+      hechos++;
+      opts?.onProgress?.(hechos, listos.length);
+    }
+  };
+  const arranqueSubida = performance.now();
+  await Promise.all(Array.from({ length: Math.min(POOL, listos.length) }, subirUno));
+  // Cuánto tardó por archivo: el total de una tanda de 400 no se puede
+  // comparar con el de una de 3, y lo que se quiere saber es si subir se
+  // puso más lento.
+  if (out.length > 0) {
+    reportarVelocidad("subida", (performance.now() - arranqueSubida) / out.length, out.length);
+  }
+  return out;
 }
 
 export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsResult {
@@ -259,115 +373,8 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
   }, []);
 
   const upload = useCallback(
-    async (
-      files: File[],
-      opts?: {
-        folderId?: string | null;
-        onProgress?: (done: number, total: number) => void;
-        /** Estado por archivo, con su nombre ORIGINAL (el panel de progreso). */
-        onEstado?: (file: File, estado: "en-cola" | "comprimiendo" | "subiendo" | "listo" | "error", motivo?: string) => void;
-    /**
-     * Carpeta POR archivo (el importador manda todo junto). Si está, gana sobre
-     * `folderId`: permite una sola tanda con el pool aprovechado en vez de una
-     * llamada por carpeta.
-     */
-    folderIdDe?: (file: File) => string | null | undefined;
-    /** Para frenar la subida a mitad (400 archivos son varios minutos). */
-    signal?: AbortSignal;
-      },
-    ) => {
-      // Las fotos grandes se comprimen ANTES de subir (varias veces más
-      // rápido con datos móviles); lo que no es imagen sale intacto.
-      const listos = await Promise.all(files.map(async (f) => {
-        if (f.type.startsWith("image/")) opts?.onEstado?.(f, "comprimiendo");
-        const c = await comprimirImagen(f);
-        opts?.onEstado?.(f, "en-cola");
-        return c;
-      }));
-
-      // Lo que el servidor va a rechazar igual (pesado, tipo no admitido) se
-      // descarta ACÁ: mandar 50 MB para recibir un 413 es tirar la subida a la
-      // basura. Se mide DESPUÉS de comprimir: una foto de 12 MB puede entrar.
-      const rechazos = new Map<number, string>();
-      listos.forEach((f, i) => {
-        const motivo = motivoRechazo(f);
-        if (motivo) {
-          rechazos.set(i, motivo);
-          opts?.onEstado?.(files[i], "error", motivo);
-        }
-      });
-
-      // Cuántas subidas van a la vez.
-      //
-      // Estaba fijo en 3 con la idea de que más saturaba las conexiones lentas.
-      // Medido con 12 archivos: pool 3 = 676 ms por archivo, pool 6 = 339, pool
-      // 10 = 313. O sea que 3 dejaba la mitad de la velocidad sin usar, porque
-      // el tiempo se va esperando la red, no ocupando la máquina; y pasar de 6
-      // ya casi no gana nada.
-      //
-      // El tamaño sí importa: con archivos grandes el cuello es el ancho de
-      // banda —mandar seis a la vez sólo los hace competir entre ellos— así que
-      // ahí se vuelve al pool chico.
-      const pesoPromedio = listos.reduce((s, f) => s + f.size, 0) / Math.max(1, listos.length);
-      const POOL = pesoPromedio > 4 * 1024 * 1024 ? 3 : 6;
-
-      const out: DbDocument[] = [];
-      let hechos = 0;
-      let siguiente = 0;
-      const subirUno = async () => {
-        for (;;) {
-          if (opts?.signal?.aborted) return;
-          const idx = siguiente++;
-          if (idx >= listos.length) return;
-          if (rechazos.has(idx)) { hechos++; opts?.onProgress?.(hechos, listos.length); continue; }
-          const f = listos[idx];
-          const original = files[idx]; // la compresión pudo renombrar
-          const fd = new FormData();
-          fd.append("file", f);
-          const carpeta = opts?.folderIdDe ? opts.folderIdDe(original) : opts?.folderId;
-          if (carpeta !== undefined && carpeta !== null) fd.append("folderId", carpeta);
-          opts?.onEstado?.(original, "subiendo");
-          // Un corte de red daba el archivo por muerto sin reintentar: subiendo
-          // una carpeta con datos móviles se perdían archivos de a montones y
-          // el usuario sólo veía "error". Se reintenta SOLO el corte de red (un
-          // 413/415/429 fallaría igual); el riesgo es duplicar un archivo que
-          // sí había llegado, y en un drive duplicar se ve y se borra —
-          // perderlo, no.
-          for (let intento = 1; ; intento++) {
-            try {
-              const r = await http<{ document: DbDocument }>(BASE, { method: "POST", body: fd, signal: opts?.signal });
-              out.push(r.document);
-              opts?.onEstado?.(original, "listo");
-              break;
-            } catch (e) {
-              // Frenado a propósito: el archivo no falló, simplemente no le tocó.
-              if (opts?.signal?.aborted) { opts?.onEstado?.(original, "en-cola"); return; }
-              const msg = e instanceof Error ? e.message : String(e);
-              const esRed = e instanceof TypeError || /failed to fetch|network|load failed/i.test(msg);
-              if (!esRed || intento >= 3) {
-                // warn y no error: la falla está MANEJADA (el archivo queda
-                // marcado en rojo en el panel). Un console.error acá levanta el
-                // overlay de Next en dev como si nada lo hubiera atrapado.
-                console.warn("upload_fail", f.name, msg);
-                opts?.onEstado?.(original, "error", motivoSubida(msg));
-                break;
-              }
-              await new Promise((r) => setTimeout(r, intento * 1000));
-              opts?.onEstado?.(original, "subiendo");
-            }
-          }
-          hechos++;
-          opts?.onProgress?.(hechos, listos.length);
-        }
-      };
-      const arranqueSubida = performance.now();
-      await Promise.all(Array.from({ length: Math.min(POOL, listos.length) }, subirUno));
-      // Cuánto tardó por archivo: el total de una tanda de 400 no se puede
-      // comparar con el de una de 3, y lo que se quiere saber es si subir se
-      // puso más lento.
-      if (out.length > 0) {
-        reportarVelocidad("subida", (performance.now() - arranqueSubida) / out.length, out.length);
-      }
+    async (files: File[], opts?: OpcionesSubida) => {
+      const out = await subirArchivosAlDrive(files, opts);
       // Los recién subidos se agregan a la lista tal como los devolvió el
       // servidor: recargar todo para enterarse de lo que uno mismo acaba de
       // subir es un viaje de más.

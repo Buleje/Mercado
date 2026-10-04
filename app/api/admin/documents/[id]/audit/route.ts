@@ -15,7 +15,10 @@ export async function GET(req: NextRequest, ctx: Ctx) {
     if (auth instanceof NextResponse) return auth;
 
     const { id } = await ctx.params;
-    const logs = await DocumentsDB.listAudit(auth.tenantId, id, 200);
+    if (!(await DocumentsDB.puedeVer(auth.tenantId, id, auth.role, { incluirBorrados: true }))) {
+      return NextResponse.json({ error: "not_found" }, { status: 404 });
+    }
+    const logs = await DocumentsDB.listAudit(auth.tenantId, id, 200, auth.role);
     return NextResponse.json({ logs });
 
   } catch (e) {

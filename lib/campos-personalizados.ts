@@ -29,6 +29,14 @@
  */
 
 import type { AdminRole } from "@/lib/session";
+import {
+  FORMULARIO_CARPETAS_PLAN,
+  ROLES_ESCRITURA_DOCS_PLAN,
+  ROLES_LECTURA_DOCS_PLAN,
+  TIPO_ARCHIVO,
+  TIPO_CARPETA,
+  esFormularioDeCarpeta,
+} from "@/lib/forestal/plan-documentos-tipos";
 
 // ── Tipos de campo ──────────────────────────────────────────────────────────
 
@@ -63,6 +71,59 @@ export function esTipoCampo(v: string): v is TipoCampo {
   return (TIPOS_CAMPO as readonly string[]).includes(v);
 }
 
+/**
+ * Los dos tipos que NO se eligen en el formulario genérico (ADR-467).
+ *
+ * · `carpeta` — una fila de la plantilla de carpetas del plan de manejo
+ *   (`FORMULARIO_CARPETAS_PLAN`). La crea sólo la ruta de «Documentos del plan».
+ * · `archivo` — un casillero de papeles («DNI del jefe»). **No guarda valor**:
+ *   sus archivos son los documentos del Drive con la etiqueta `campo:<id>`.
+ *   Sólo vale dentro de una carpeta (`PREFIJO_FORMULARIO_CARPETA`).
+ *
+ * Quedan FUERA de `TIPOS_CAMPO` a propósito: esa lista es el menú de tipos del
+ * formulario genérico, y ofrecer «carpeta» en la ficha del Directorio sería
+ * ofrecer algo que ahí no significa nada. Hasta el 2026-09-29 la lectura
+ * convertía en silencio cualquier tipo desconocido en «texto», así que un
+ * casillero de archivo se pintaba como una caja de texto y lo escrito se
+ * guardaba como si fuera el papel.
+ */
+export const TIPOS_CAMPO_ESPECIALES = [TIPO_ARCHIVO, TIPO_CARPETA] as const;
+export type TipoCampoEspecial = (typeof TIPOS_CAMPO_ESPECIALES)[number];
+/** Todo lo que puede estar guardado en `CampoPersonalizado.tipo`. */
+export type TipoCampoGuardado = TipoCampo | TipoCampoEspecial;
+
+export function esTipoCampoEspecial(v: string): v is TipoCampoEspecial {
+  return (TIPOS_CAMPO_ESPECIALES as readonly string[]).includes(v);
+}
+
+export function esTipoCampoGuardado(v: string): v is TipoCampoGuardado {
+  return esTipoCampo(v) || esTipoCampoEspecial(v);
+}
+
+/** ¿El formulario es de «Documentos del plan» (la plantilla o una carpeta)? */
+export const esFormularioDeDocumentosPlan = (formulario: string): boolean =>
+  formulario === FORMULARIO_CARPETAS_PLAN || esFormularioDeCarpeta(formulario);
+
+/**
+ * Por qué ese tipo no va en ese formulario, o `null` si va.
+ *
+ * El formulario de la plantilla (`forestal.plan.documentos`) sólo guarda
+ * carpetas, y las carpetas sólo las crea su ruta; un `archivo` sólo tiene
+ * sentido dentro de una carpeta, que es la que sabe dónde están sus papeles.
+ */
+export function motivoTipoFueraDeLugar(tipo: string, formulario: string): string | null {
+  if (tipo === TIPO_CARPETA) {
+    return "Las carpetas del plan se crean desde «Documentos del plan», no como un campo.";
+  }
+  if (formulario === FORMULARIO_CARPETAS_PLAN) {
+    return "Ese formulario es la lista de carpetas del plan: los campos van dentro de cada carpeta.";
+  }
+  if (tipo === TIPO_ARCHIVO && !esFormularioDeCarpeta(formulario)) {
+    return "Un campo de archivo sólo va dentro de una carpeta de «Documentos del plan».";
+  }
+  return null;
+}
+
 // ── La definición y su valor ────────────────────────────────────────────────
 
 export interface CampoPersonalizado {
@@ -78,6 +139,14 @@ export interface CampoPersonalizado {
   orden: number;
   activo: boolean;
 }
+
+/**
+ * Un campo tal como está en la base, incluidos los tipos especiales. Es lo que
+ * devuelven crear/editar: el formulario genérico nunca los lista (ver
+ * `TIPOS_CAMPO_ESPECIALES`), pero quien crea un casillero `archivo` tiene que
+ * recibirlo de vuelta con su tipo real.
+ */
+export type CampoPersonalizadoGuardado = Omit<CampoPersonalizado, "tipo"> & { tipo: TipoCampoGuardado };
 
 export interface ValorDeCampo {
   campoId: string;
@@ -113,8 +182,19 @@ export const FORMULARIOS: Record<string, string> = {
   "adelantos.adelanto": "Adelanto",
 };
 
-/** El nombre del formulario, o su id si todavía no está en el catálogo. */
-export const nombreDelFormulario = (id: string): string => FORMULARIOS[id] ?? id;
+/**
+ * El nombre del formulario, o su id si todavía no está en el catálogo.
+ *
+ * Los de «Documentos del plan» no entran al catálogo uno por uno: hay uno por
+ * carpeta y las carpetas las inventa el negocio (ADR-467).
+ */
+export const nombreDelFormulario = (id: string): string => {
+  const fijo = FORMULARIOS[id];
+  if (fijo) return fijo;
+  if (id === FORMULARIO_CARPETAS_PLAN) return "Carpetas de los documentos del plan";
+  if (esFormularioDeCarpeta(id)) return `Documentos del plan (carpeta «${id.slice(FORMULARIO_CARPETAS_PLAN.length + 1)}»)`;
+  return id;
+};
 
 // ── Quién puede ver y llenar cada formulario ────────────────────────────────
 
@@ -191,6 +271,28 @@ export const MODULO_POR_FORMULARIO: Record<string, ModuloDeFormulario> = {
      entrada se agrega con los mismos roles. */
 };
 
+/**
+ * «Documentos del plan» (ADR-467): la plantilla y TODAS sus carpetas, que son un
+ * formulario por carpeta (`forestal.plan.documentos.<clave>`). Se resuelven por
+ * PREFIJO porque las carpetas las inventa el negocio y no pueden estar una por
+ * una en el mapa — y sin esto caían en la regla 2 de abajo («sin entrada = se
+ * permite»): un cajero leía el N° de partida registral de un plan que no puede
+ * abrir. Los roles son los del contrato, espejo de `app/api/admin/forestal/plan`.
+ */
+const MODULO_DOCUMENTOS_PLAN: ModuloDeFormulario = {
+  modulo: "Documentos del plan de manejo (Libro TH)",
+  rolesLectura: ROLES_LECTURA_DOCS_PLAN,
+  rolesEscritura: ROLES_ESCRITURA_DOCS_PLAN,
+};
+
+/** El módulo dueño de un formulario: por id exacto y, si no, por prefijo. */
+export function moduloDeFormulario(formulario: string): ModuloDeFormulario | undefined {
+  return (
+    MODULO_POR_FORMULARIO[formulario] ??
+    (esFormularioDeDocumentosPlan(formulario) ? MODULO_DOCUMENTOS_PLAN : undefined)
+  );
+}
+
 /** Espejo de `managementTier` en lib/require-admin.ts — no reordenar sin mirar ahí. */
 const MANAGEMENT_TIER: readonly AdminRole[] = ["admin", "owner", "manager"];
 
@@ -202,7 +304,8 @@ const MANAGEMENT_TIER: readonly AdminRole[] = ["admin", "owner", "manager"];
  * 1. **Management tier pasa siempre** (admin/owner/manager), igual que en
  *    `requireAdmin`: si acá fuera más estricto, el dueño vería huecos en
  *    pantalla que el servidor sí le contesta.
- * 2. **Formulario sin entrada = se permite.** Es el default elegido a
+ * 2. **Formulario sin entrada = se permite** (los de «Documentos del plan» SÍ
+ *    tienen entrada, por prefijo: ver `moduloDeFormulario`). Es el default elegido a
  *    conciencia: el motor se va cableando modal por modal (ADR-427, 174
  *    candidatos) y exigir mapa convertiría cada pantalla nueva en un 403 que
  *    nadie entiende. El costo de permitir es acotado —el `campoId` ya se valida
@@ -217,7 +320,7 @@ function puedeEnFormulario(
 ): boolean {
   if (!rol) return false;
   if (MANAGEMENT_TIER.includes(rol)) return true;
-  const modulo = MODULO_POR_FORMULARIO[formulario];
+  const modulo = moduloDeFormulario(formulario);
   if (!modulo) return true;
   const roles = accion === "leer" ? modulo.rolesLectura : modulo.rolesEscritura;
   return roles.includes(rol);
@@ -344,14 +447,13 @@ export function textoDelValor(campo: Pick<CampoPersonalizado, "tipo">, v: Pick<V
  * más los temporales de este registro. Los temporales van al final, porque son
  * la excepción y no deberían empujar hacia abajo lo que se pregunta siempre.
  */
-export function camposDelRegistro(
-  todos: readonly CampoPersonalizado[],
-  registroId: string | null | undefined,
-): CampoPersonalizado[] {
+export function camposDelRegistro<
+  T extends Pick<CampoPersonalizado, "activo" | "soloParaRegistroId" | "orden" | "nombre">,
+>(todos: readonly T[], registroId: string | null | undefined): T[] {
   const vivos = todos.filter((c) => c.activo);
   const permanentes = vivos.filter(esPermanente);
   const temporales = registroId ? vivos.filter((c) => c.soloParaRegistroId === registroId) : [];
-  const porOrden = (a: CampoPersonalizado, b: CampoPersonalizado) => a.orden - b.orden || a.nombre.localeCompare(b.nombre, "es");
+  const porOrden = (a: T, b: T) => a.orden - b.orden || a.nombre.localeCompare(b.nombre, "es");
   return [...permanentes.sort(porOrden), ...temporales.sort(porOrden)];
 }
 

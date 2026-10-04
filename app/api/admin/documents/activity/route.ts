@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
 
     const limitRaw = Number(req.nextUrl.searchParams.get("limit") ?? "40");
     const limit = Number.isFinite(limitRaw) ? limitRaw : 40;
-    const activity = await DocumentsDB.recentActivity(auth.tenantId, limit);
+    const activity = await DocumentsDB.recentActivity(auth.tenantId, limit, auth.role);
     return NextResponse.json({ activity });
   } catch (e) {
     logger.error("[documents.activity] error", { err: e instanceof Error ? e.message : String(e) });

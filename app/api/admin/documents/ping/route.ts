@@ -13,8 +13,8 @@ export async function GET(req: NextRequest) {
     if (auth instanceof NextResponse) return auth;
 
     const [docs, folders] = await Promise.all([
-      DocumentsDB.list(auth.tenantId),
-      DocumentsDB.listFolders(auth.tenantId),
+      DocumentsDB.list(auth.tenantId, {}, auth.role),
+      DocumentsDB.listFolders(auth.tenantId, auth.role),
     ]);
 
     return NextResponse.json({

@@ -25,8 +25,8 @@
  * derecho (son de bosque natural), y la zafra sólo si el registro trae período.
  */
 
-import { useState, type ReactNode } from "react";
-import { AlertCircle, FileText, Loader2, Pencil, Plus, Printer, Trash2, Upload } from "@buleje/design-system/icons";
+import { useCallback, useMemo, useRef, useState, type ReactNode } from "react";
+import { AlertCircle, ExternalLink, FileText, Loader2, Pencil, Plus, Printer, Trash2, Upload } from "@buleje/design-system/icons";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { printLothPoa } from "@/lib/forestal/loth-poa-print";
@@ -50,6 +50,10 @@ import LothPlanPestanas, { PESTANAS_PLAN, PESTANAS_PLANTACION, idPanel, idTab, t
 import LothPlantacionRegistro from "./LothPlantacionRegistro";
 import { printInforme } from "./loth-plan-informe";
 import { useLothPlan } from "./hooks/use-loth-plan";
+import { usePlanDocumentos } from "./hooks/use-plan-documentos";
+import PlanDocumentosDelPlan from "./plan-documentos/PlanDocumentosDelPlan";
+import { loQueFalta } from "./plan-documentos/modelo";
+import { enlaceAlDrive } from "./plan-documentos/plan-documentos-api";
 import { formatNumber } from "@/lib/format";
 import { siglaDePlan } from "@/lib/forestal/loth-tipos-plan";
 
@@ -72,10 +76,8 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
   const [pestanaPlantacion, setPestanaPlantacion] = useLocalStorage<PestanaPlan>(CLAVE_PESTANA_PLANTACION, "registro");
   const esPlantacion = d.esPlantacion;
   const setPestana = esPlantacion ? setPestanaPlantacion : setPestanaBosque;
-  /* Un valor viejo o tocado a mano en el navegador no deja la vista sin panel. */
   const validas = esPlantacion ? PESTANAS_PLANTACION : PESTANAS_PLAN;
   const pestanaGuardada = esPlantacion ? pestanaPlantacion : pestanaBosque;
-  const pestana: PestanaPlan = validas.includes(pestanaGuardada) ? pestanaGuardada : validas[0];
   const [pedidoEspecie, setPedidoEspecie] = useState<PedidoEspecie | null>(null);
   const [importarSignal, setImportarSignal] = useState(0);
   /** El plan abierto para corregir sus datos (ADR-426). */
@@ -83,6 +85,40 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
   const [borrandoPlan, setBorrandoPlan] = useState(false);
   const [errorPlan, setErrorPlan] = useState<string | null>(null);
   const { confirm } = useConfirm();
+  /* Documentos del plan (ADR-467): una sola instancia para la pestaña y su cifra. */
+  const docs = usePlanDocumentos({ planId: plan?.id ?? null, activo: plan != null });
+  const faltaDocs = useMemo(() => loQueFalta(docs.carpetas), [docs.carpetas]);
+  /* Un valor viejo o tocado a mano en el navegador no deja la vista sin panel
+     (tampoco «documentos» en un despliegue donde esa pestaña no está). */
+  const pestana: PestanaPlan =
+    validas.includes(pestanaGuardada) && (pestanaGuardada !== "documentos" || docs.disponible) ? pestanaGuardada : validas[0];
+
+  /* Cerrar el formulario del plan con archivos cargados sin subir pregunta
+     antes; con algo subiendo, no se cierra (cortaría la subida a la mitad). */
+  const cierreRef = useRef({ pendientes: false, ocupado: false, creado: false });
+  const onEstadoCierre = useCallback((e: { pendientes: boolean; ocupado: boolean; creado: boolean }) => {
+    cierreRef.current = e;
+  }, []);
+  async function cerrarFormulario(cerrar: () => void) {
+    const { pendientes, ocupado, creado } = cierreRef.current;
+    if (ocupado) return;
+    if (pendientes) {
+      const ok = await confirm({
+        title: "¿Cerrar sin subir los documentos?",
+        description: creado
+          ? "El plan ya se guardó. Los archivos que no subieron se descartan: puedes subirlos después desde su pestaña «Documentos»."
+          : "Cargaste archivos que se suben al guardar el plan. Si cierras ahora, se descartan.",
+        intent: "warning",
+        confirmLabel: "Cerrar y descartarlos",
+      });
+      if (!ok) return;
+    }
+    cierreRef.current = { pendientes: false, ocupado: false, creado: false };
+    cerrar();
+    /* Un alta que creó el plan y falló en un archivo no pasó por `onSaved`:
+       sin recargar, el plan recién creado no aparecía en el selector. */
+    if (creado) d.loadPlans();
+  }
 
   const pedirEspecie = (id: string, accion: PedidoEspecie["accion"]) =>
     setPedidoEspecie((p) => ({ id, accion, n: (p?.n ?? 0) + 1 }));
@@ -236,6 +272,21 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
      semilleros): una plantación no lo presenta. */
   const opciones = esPlantacion ? todasLasOpciones.filter((o) => o.id !== "anexo-poa") : todasLasOpciones;
 
+  /* «Documentos» (ADR-467): la tienen el bosque natural y la plantación —la
+     resolución o la constancia de registro también vencen y se piden—. Sin
+     las rutas en el despliegue, no aparece. */
+  const pestanaDocumentos: PestanaDef[] = docs.disponible
+    ? [{
+        id: "documentos",
+        label: "Documentos",
+        cuenta: faltaDocs.esperados > 0 ? `${faltaDocs.cargados}/${faltaDocs.esperados}` : undefined,
+        alerta: faltaDocs.vencidos > 0 ? "danger" : faltaDocs.faltan > 0 || faltaDocs.vencenPronto > 0 ? "warn" : undefined,
+        alertaTexto:
+          faltaDocs.vencidos > 0 ? `${faltaDocs.vencidos} ${faltaDocs.vencidos === 1 ? "documento vencido" : "documentos vencidos"}`
+            : faltaDocs.faltan > 0 ? `${faltaDocs.faltan} ${faltaDocs.faltan === 1 ? "documento falta" : "documentos faltan"}`
+              : faltaDocs.vencenPronto > 0 ? `${faltaDocs.vencenPronto} por vencer` : undefined,
+      }]
+    : [];
   const peligro = d.fichasEspecie.filter((f) => f.tone === "danger").length;
   const atencion = d.fichasEspecie.filter((f) => f.tone === "warn").length;
   const pestanas: PestanaDef[] = [
@@ -255,6 +306,7 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
           : atencion > 0 ? `${atencion} ${atencion === 1 ? "especie con aviso" : "especies con aviso"}` : undefined,
     },
     { id: "censo", label: "Censo", cuenta: formatNumber(d.censoTotal) },
+    ...pestanaDocumentos,
   ];
   const excedidas = d.cascada.especies.filter((c) => c.excedido).length;
   const pestanasPlantacion: PestanaDef[] = [
@@ -274,6 +326,7 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
       labelCorto: "Árboles marcados",
       cuenta: d.censoTotal > 0 ? formatNumber(d.censoTotal) : undefined,
     },
+    ...pestanaDocumentos,
   ];
   const conPeriodo = zafra.estado !== "sin_vigencia";
 
@@ -335,7 +388,7 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
           en un panel que empuja el resto de la pestaña fuera de la vista. */}
       <AdminModal
         open={d.showPlanForm}
-        onClose={() => d.setShowPlanForm(false)}
+        onClose={() => void cerrarFormulario(() => d.setShowPlanForm(false))}
         title="Nuevo plan de manejo"
         description="El permiso aprobado que autoriza el aprovechamiento. De acá cuelgan las especies y el censo."
         icon={FileText}
@@ -348,10 +401,11 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
       >
         {d.showPlanForm && (
           <LothPlanForm
-            onClose={() => d.setShowPlanForm(false)}
+            onClose={() => void cerrarFormulario(() => d.setShowPlanForm(false))}
             /* El plan recién creado queda elegido: una plantación se crea para
                ver su «Registro y saldo», no para volver al plan de antes. */
             onSaved={(id) => { d.setShowPlanForm(false); if (id) d.mostrarPlanNuevo(id); d.loadPlans(); }}
+            onEstadoCierre={onEstadoCierre}
             /* Los planes que ya existen: de ellos sale lo que se repite entre
                un documento y el siguiente (ARFFS, región, regente, UIT,
                costos) y las autoridades ya escritas. */
@@ -364,7 +418,7 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
           valores adentro. Un plan mal cargado se arregla, no se duplica. */}
       <AdminModal
         open={editandoPlan && plan != null}
-        onClose={() => setEditandoPlan(false)}
+        onClose={() => void cerrarFormulario(() => { setEditandoPlan(false); void docs.recargar(); })}
         title={esPlantacion ? "Editar registro de plantación" : "Editar plan de manejo"}
         description={plan ? `${siglaDePlan(plan.planType)} ${plan.planNumber ?? ""} — ${plan.titularName}` : ""}
         icon={FileText}
@@ -373,10 +427,11 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
         {editandoPlan && plan && (
           <LothPlanForm
             plan={plan}
-            onClose={() => setEditandoPlan(false)}
-            onSaved={() => { setEditandoPlan(false); d.loadPlans(); }}
+            onClose={() => void cerrarFormulario(() => { setEditandoPlan(false); void docs.recargar(); })}
+            onSaved={() => { setEditandoPlan(false); d.loadPlans(); void docs.recargar(); }}
+            onEstadoCierre={onEstadoCierre}
             planesPrevios={d.plans}
-            onIrARegistro={() => { setEditandoPlan(false); setPestanaPlantacion("registro"); }}
+            onIrARegistro={() => { setEditandoPlan(false); void docs.recargar(); setPestanaPlantacion("registro"); }}
           />
         )}
       </AdminModal>
@@ -505,6 +560,28 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
               />
             )}
           </Panel>
+
+          {docs.disponible && (
+            <Panel id="documentos" activa={pestana}>
+              {docs.vista?.preparada && docs.vista.carpetaRaizId && (
+                <p className="flex flex-wrap items-center justify-between gap-2 text-xs text-[var(--text-tertiary)]">
+                  <span className="min-w-0 truncate" title={docs.vista.rutaRaiz}>
+                    En Documentos: <span className="font-semibold text-[var(--text-secondary)]">{docs.vista.rutaRaiz}</span>
+                  </span>
+                  <a
+                    href={enlaceAlDrive(docs.vista.carpetaRaizId)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-2 text-sm font-semibold text-[var(--accent-ink)] hover:bg-[var(--surface-sunken)]"
+                  >
+                    <ExternalLink className="h-4 w-4" aria-hidden="true" />
+                    Abrir en Documentos
+                  </a>
+                </p>
+              )}
+              <PlanDocumentosDelPlan planId={plan.id} docs={docs} />
+            </Panel>
+          )}
 
           {d.especieFuera && (
             <LothEspecieFueraModal

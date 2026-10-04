@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { DocumentsDB } from "@/lib/db/documents.db";
+import { isPrivilegedRole } from "@/lib/documents/doc-access";
 import { logger } from "@/lib/logger";
 
 /**
@@ -26,6 +27,14 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     if (auth instanceof NextResponse) return auth;
 
     const { id } = await ctx.params;
+    // Publicar una carpeta entera es de dueño/admin/encargado: el enlace sirve
+    // todo lo que tiene adentro. Un rol restringido recibe 404 si no la ve
+    // (no se confirma que exista) y 403 si la ve.
+    if (!isPrivilegedRole(auth.role)) {
+      const acceso = await DocumentsDB.accesoACarpeta(auth.tenantId, id, auth.role);
+      if (!acceso.ve) return NextResponse.json({ error: "not_found" }, { status: 404 });
+      return NextResponse.json({ error: "forbidden" }, { status: 403 });
+    }
     const body = await req.json().catch(() => ({}));
     const parsed = Body.safeParse(body);
 

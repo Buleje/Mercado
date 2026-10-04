@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
     const auth = await requireAdmin(req);
     if (auth instanceof NextResponse) return auth;
 
-    const grupos = await DocumentsDB.gruposDuplicados(auth.tenantId);
+    const grupos = await DocumentsDB.gruposDuplicados(auth.tenantId, { viewerRole: auth.role });
     const recuperable = grupos.reduce((t, g) => t + g.size * (g.docs.length - 1), 0);
 
     return NextResponse.json({ grupos, recuperable });
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "invalid_body", issues: parsed.error.issues }, { status: 400 });
     }
 
-    const rutas = await DocumentsDB.rutasDe(auth.tenantId, parsed.data.ids);
+    const rutas = await DocumentsDB.rutasDe(auth.tenantId, parsed.data.ids, auth.role);
     const hashes: Record<string, string | null> = {};
     for (const { id, storagePath } of rutas) {
       const buf = await downloadFromStorage(storagePath);

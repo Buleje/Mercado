@@ -7,6 +7,7 @@ import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
 import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
+import { esTagDeMaquinaPlan } from "@/lib/forestal/plan-documentos-tipos";
 
 type TagRow = { tag: string; count: number };
 
@@ -30,7 +31,9 @@ export function TagTaxonomyModal({ onChanged, onClose }: { onChanged: () => void
 
   const load = () => {
     setLoading(true);
-    fetchTags().then(setTags).catch(() => setTags([])).finally(() => setLoading(false));
+    // Las etiquetas de máquina de «Documentos del plan» (ADR-467) no se
+    // renombran ni se borran a mano: sacarían los papeles de su casillero.
+    fetchTags().then((r) => setTags(r.filter((t) => !esTagDeMaquinaPlan(t.tag)))).catch(() => setTags([])).finally(() => setLoading(false));
   };
   useEffect(() => { load(); }, []);
   useEffect(() => {

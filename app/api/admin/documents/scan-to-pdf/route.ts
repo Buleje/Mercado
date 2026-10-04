@@ -51,6 +51,7 @@ export async function POST(req: NextRequest) {
       storagePath: "pending",
       category: "otros",
       uploadedById: auth.username,
+      viewerRole: auth.role,
     });
     const storagePath = buildStoragePath({ tenantId: auth.tenantId, documentId: draft.id, versionLabel: "v1", originalName: fileName });
     const up = await uploadToStorage(storagePath, merged.bytes, "application/pdf");

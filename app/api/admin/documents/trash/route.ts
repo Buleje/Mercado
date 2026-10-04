@@ -55,11 +55,13 @@ export async function POST(req: NextRequest) {
     if (auth instanceof NextResponse) return auth;
 
     if (data.action === "restore") {
-      const restored = await DocumentsDB.bulkRestore(auth.tenantId, data.ids);
-      DocumentsDB.logMany(auth.tenantId, data.ids, {
+      // Sólo lo que este rol ve (la papelera ya se lista filtrada por rol).
+      const ids = await DocumentsDB.idsVisibles(auth.tenantId, data.ids, auth.role);
+      const restored = ids.length > 0 ? await DocumentsDB.bulkRestore(auth.tenantId, ids) : 0;
+      DocumentsDB.logMany(auth.tenantId, ids, {
         actorId: auth.username,
         action: "restore",
-        metadata: { bulk: true, total: data.ids.length },
+        metadata: { bulk: true, total: ids.length },
       }).catch((err) => logger.warn("documents.audit.fail", { err: String(err) }));
       return NextResponse.json({ ok: true, restored });
     }

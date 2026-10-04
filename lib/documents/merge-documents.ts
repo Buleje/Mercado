@@ -15,11 +15,12 @@ export type MergeResult =
 export async function mergeDocuments(
   tenantId: string,
   ids: string[],
-  input: { name?: string; folderId?: string | null; actorId: string; ipAddress?: string },
+  input: { name?: string; folderId?: string | null; actorId: string; ipAddress?: string; viewerRole?: string },
 ): Promise<MergeResult> {
   if (ids.length < 2) return { ok: false, error: "need_at_least_two", status: 400 };
 
-  const docs = await Promise.all(ids.map((id) => DocumentsDB.getById(tenantId, id)));
+  // Con el rol: combinar es leer el contenido, y un papel restringido no se lee.
+  const docs = await Promise.all(ids.map((id) => DocumentsDB.getById(tenantId, id, input.viewerRole)));
   const found = docs.filter((d): d is DbDocument => !!d);
   if (found.length < 2) return { ok: false, error: "not_found", status: 404 };
 
@@ -45,6 +46,7 @@ export async function mergeDocuments(
     storagePath: "pending",
     category: "otros",
     uploadedById: input.actorId,
+    viewerRole: input.viewerRole,
   });
 
   const storagePath = buildStoragePath({ tenantId, documentId: draft.id, versionLabel: "v1", originalName: fileName });

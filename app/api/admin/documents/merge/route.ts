@@ -29,6 +29,7 @@ export async function POST(req: NextRequest) {
       name: parsed.data.name,
       folderId: parsed.data.folderId ?? null,
       actorId: auth.username,
+      viewerRole: auth.role,
       ipAddress: req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? undefined,
     });
   } catch (e) {

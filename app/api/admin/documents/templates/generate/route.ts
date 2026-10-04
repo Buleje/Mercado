@@ -69,6 +69,7 @@ export async function POST(req: NextRequest) {
       category: tpl.key.startsWith("contrato") ? "contratos" : tpl.key === "cotizacion" ? "facturas" : "otros",
       tags: ["generado", tpl.key],
       uploadedById: auth.username,
+      viewerRole: auth.role,
     });
 
     const storagePath = buildStoragePath({

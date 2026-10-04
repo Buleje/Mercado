@@ -14,6 +14,9 @@ import { CATALOGO_VACIO } from "@/lib/forestal/especies-catalogo";
 import type { Plan } from "@/components/admin/forestal/loth-plan-shared";
 
 vi.mock("@/components/admin/forestal/DirectorioPicker", () => ({ default: () => null }));
+/* La sección «Documentos» (ADR-467) tiene su propia prueba
+   (`loth-plan-form-documentos-alta`); acá estorbaría con su `useConfirm`. */
+vi.mock("@/components/admin/forestal/plan-documentos/PlanDocumentosEnFormulario", () => ({ default: () => null }));
 vi.mock("@/components/admin/shared/CamposPersonalizados", () => ({
   default: () => null,
   guardarValoresPendientes: async () => ({ errores: [] }),

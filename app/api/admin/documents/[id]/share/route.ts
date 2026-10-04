@@ -24,7 +24,11 @@ export async function GET(req: NextRequest, ctx: Ctx) {
     if (auth instanceof NextResponse) return auth;
 
     const { id } = await ctx.params;
-    const shares = await DocumentsDB.listShares(auth.tenantId, id);
+    // Los enlaces de un papel que el rol no ve: 404 igual que si no existiera.
+    if (!(await DocumentsDB.puedeVer(auth.tenantId, id, auth.role))) {
+      return NextResponse.json({ error: "not_found" }, { status: 404 });
+    }
+    const shares = await DocumentsDB.listShares(auth.tenantId, id, auth.role);
     return NextResponse.json({ shares });
 
   } catch (e) {
@@ -49,7 +53,10 @@ export async function POST(req: NextRequest, ctx: Ctx) {
       return NextResponse.json({ error: "invalid_body", issues: parsed.error.issues }, { status: 400 });
     }
 
+    // Un papel que el rol no puede abrir tampoco lo puede publicar (null → 404,
+    // el mismo cuerpo que «no existe»). Antes sólo se miraba que existiera.
     const share = await DocumentsDB.createShare(auth.tenantId, id, {
+      viewerRole: auth.role,
       createdById: auth.username,
       expiresInDays: parsed.data.expiresInDays,
       password: parsed.data.password,

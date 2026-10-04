@@ -15,7 +15,7 @@ import { guardGuias } from "../guard";
 export const GET = withApiHandler("forestal-papeles-viejos-get", async (req: NextRequest) => {
   const g = await guardGuias(req, false);
   if ("res" in g) return g.res;
-  const papeles = await CtpGuiaPapelesViejosDB.pendientes(g.auth.tenantId);
+  const papeles = await CtpGuiaPapelesViejosDB.pendientes(g.auth.tenantId, g.auth.role);
   return NextResponse.json({
     pendientes: papeles.length,
     papeles: papeles.slice(0, 20).map((p) => ({ name: p.name, gtf: p.gtf, destino: p.destino })),

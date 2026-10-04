@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { auditCtp } from "@/lib/forestal/ctp-audit";
 import { DocumentsDB } from "./documents.db";
+import { canRoleSeeEnCadena, rolesDeLaCadena } from "@/lib/documents/doc-access";
 import { CtpGuiaDocumentosDB } from "./ctp-guia-documentos.db";
 import {
   CARPETA_GUIAS,
@@ -41,11 +42,16 @@ const ES_MES = /^\d{2}$/;
 
 export class CtpGuiaPapelesViejosDB {
   /** Qué se mudaría y adónde (no escribe nada). */
-  static async pendientes(tenantId: string): Promise<PapelViejo[]> {
+  /**
+   * `viewerRole`: la lista muestra NOMBRES de documentos; un rol que no ve la
+   * carpeta (o el papel) no los recibe (security 04-10). Sin rol = todo, como
+   * antes (lo usa `ordenar`, que ya exige admin o dueño).
+   */
+  static async pendientes(tenantId: string, viewerRole?: string): Promise<PapelViejo[]> {
     if (!tenantId) throw new Error("tenantId is required");
     const carpetas = await prisma.documentFolder.findMany({
       where: { tenantId },
-      select: { id: true, name: true, parentId: true },
+      select: { id: true, name: true, parentId: true, allowedRoles: true },
     });
     const raiz = carpetas.find(
       (c) => c.parentId === null && c.name.trim().toLowerCase() === CARPETA_GUIAS.toLowerCase(),
@@ -57,11 +63,15 @@ export class CtpGuiaPapelesViejosDB {
     );
     const viejas = [raiz.id, ...anios.map((a) => a.id), ...meses.map((m) => m.id)];
 
-    const docs = await prisma.document.findMany({
+    const todos = await prisma.document.findMany({
       where: { tenantId, deletedAt: null, folderId: { in: viejas } },
-      select: { id: true, name: true, tags: true },
+      select: { id: true, name: true, tags: true, folderId: true, allowedRoles: true },
       take: 1000,
     });
+    const mapa = new Map(carpetas.map((c) => [c.id, { parentId: c.parentId ?? null, allowedRoles: c.allowedRoles ?? [] }]));
+    const docs = viewerRole
+      ? todos.filter((d) => canRoleSeeEnCadena(viewerRole, d.allowedRoles ?? [], rolesDeLaCadena(d.folderId, mapa)))
+      : todos;
     if (docs.length === 0) return [];
 
     /* ¿De qué guía es? Candidatos: la etiqueta de máquina, o cualquier

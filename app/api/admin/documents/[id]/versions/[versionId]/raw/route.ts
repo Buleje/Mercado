@@ -20,7 +20,8 @@ export async function GET(req: NextRequest, ctx: Ctx) {
     if (auth instanceof NextResponse) return auth;
 
     const { id, versionId } = await ctx.params;
-    const version = await DocumentsDB.getVersion(auth.tenantId, id, versionId);
+    // Con el rol: una versión vieja de un papel restringido es el mismo papel.
+    const version = await DocumentsDB.getVersion(auth.tenantId, id, versionId, auth.role);
     if (!version) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
     const buf = await downloadFromStorage(version.storagePath);

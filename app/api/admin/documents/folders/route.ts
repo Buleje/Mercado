@@ -23,7 +23,8 @@ export async function GET(req: NextRequest) {
     const auth = await requireAdmin(req);
     if (auth instanceof NextResponse) return auth;
 
-    const folders = await DocumentsDB.listFolders(auth.tenantId);
+    // Las carpetas que el rol no ve no aparecen (ni su nombre).
+    const folders = await DocumentsDB.listFolders(auth.tenantId, auth.role);
     return NextResponse.json({ folders });
 
   } catch (e) {
@@ -47,7 +48,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "invalid_body", issues: parsed.error.issues }, { status: 400 });
     }
 
-    const folder = await DocumentsDB.createFolder(auth.tenantId, parsed.data);
+    const folder = await DocumentsDB.createFolder(auth.tenantId, parsed.data, auth.role);
     return NextResponse.json({ folder });
 
   } catch (e) {
