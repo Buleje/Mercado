@@ -22,12 +22,16 @@
  * izquierda): la pantalla las pasa a metros con el ancho/largo final, así la
  * zona cae donde está dibujada aunque Brandon corrija las medidas.
  *
- * Límites: un PDF escaneado no trae textos (solo queda el fondo); números
- * convertidos a curvas tampoco se leen; el contorno real de cada zona no se
- * adivina (se crea una marca cuadrada en su lugar).
+ *  5. El CONTORNO de cada uno: si el PDF trae trazados (rectángulos, polígonos),
+ *     el que encierra o toca su número (`croquis-pdf-contornos.ts`); si no, una
+ *     marca cuadrada en su lugar.
+ *
+ * Límites: un PDF escaneado no trae textos ni trazados (solo queda el fondo);
+ * números convertidos a curvas tampoco se leen.
  */
 
 import type { MaquinaPlanta, ZonaTipo } from "@/lib/forestal/planta-zona-types";
+import { areaContornoM2, elegirContornos, type ContornoDe, type TrazadoPdf } from "./croquis-pdf-contornos";
 
 /** Un texto del PDF en puntos de la hoja: origen arriba a la izquierda, y hacia abajo; (x, y) = inicio de la línea base. */
 export interface TextoPdf { str: string; x: number; y: number; w: number; h: number; angulo?: number }
@@ -49,6 +53,11 @@ export interface ComponentePdf {
   sugerido: boolean;
   /** El número cae fuera del terreno: se pone en el borde. */
   fuera: boolean;
+  /** Contorno del plano (fracción de la imagen, origen abajo a la izquierda) o null = marca cuadrada. */
+  contorno: [number, number][] | null;
+  contornoDe: ContornoDe | null;
+  /** Otros números marcados que quedan dentro de su contorno. */
+  encierra: number[];
 }
 
 export interface MaquinaPdf { codigo: string; nombre: string | null; fx: number; fy: number }
@@ -66,6 +75,10 @@ export interface PropuestaCroquisPdf {
   sinUbicar: { numero: number; nombre: string }[];
   maquinas: MaquinaPdf[];
   avisos: string[];
+  /** Trazados cerrados del plano que sirven de contorno (0 = PDF sin dibujos vectoriales). */
+  trazados: number;
+  /** El fondo en chico (data URL WebP) para la vista previa de la revisión; lo pone el servidor. */
+  vistaPrevia?: string;
 }
 
 // ─── Tipo y código sugeridos ───────────────────────────────────────────────
@@ -286,6 +299,8 @@ export function proponerCroquisDesdePdf(entrada: {
   textos: TextoPdf[];
   hoja: HojaPdf;
   pista?: { anchoM: number; altoM: number } | null;
+  /** Polígonos pintados de la página, en puntos de la hoja (`trazadosDeOperadores`). */
+  trazados?: TrazadoPdf[];
 }): PropuestaCroquisPdf {
   const hoja = { ancho: Math.max(1, entrada.hoja.ancho), alto: Math.max(1, entrada.hoja.alto) };
   const textos = entrada.textos.filter((t) => t.str.trim() && Number.isFinite(t.x) && Number.isFinite(t.y) && t.h > 0);
@@ -296,7 +311,7 @@ export function proponerCroquisDesdePdf(entrada: {
     const p = entrada.pista && enRango(entrada.pista.anchoM) && enRango(entrada.pista.altoM) ? entrada.pista : null;
     return {
       escaneado: true, escala: "hoja", anchoM: p?.anchoM ?? null, altoM: p?.altoM ?? null, medidasDe: p ? "pista" : null,
-      recorte: hojaEntera, leyenda: 0, componentes: [], sinUbicar: [], maquinas: [],
+      recorte: hojaEntera, leyenda: 0, componentes: [], sinUbicar: [], maquinas: [], trazados: 0,
       avisos: ["El PDF es una imagen escaneada: no trae textos. Quedó solo el fondo; los componentes se marcan a mano."],
     };
   }
@@ -356,22 +371,36 @@ export function proponerCroquisDesdePdf(entrada: {
   }
   const h0 = mediana([...porNumero.values()].filter((l) => l.length === 1).map((l) => l[0].h));
   const componentes: ComponentePdf[] = [];
+  const textoDe = new Map<string, TextoPdf>();
   for (const [numero, lista] of [...porNumero.entries()].sort((a, b) => a[0] - b[0])) {
     const nombre = mapa.get(numero)!;
     const orden = lista.map((t) => ({ t, ...frac(t) })).sort((a, b) => b.fy - a.fy || a.fx - b.fx);
     orden.forEach(({ t, fx, fy }, i) => {
       const fuera = fx < 0 || fx > 1 || fy < 0 || fy > 1;
+      textoDe.set(`${numero}:${i + 1}`, t);
       componentes.push({
         clave: `${numero}:${i + 1}`, numero, nombre, tipo: tipoSugerido(nombre),
         fx: r4(Math.min(1, Math.max(0, fx))), fy: r4(Math.min(1, Math.max(0, fy))),
         punto: i + 1, puntos: lista.length,
         sugerido: lista.length === 1 || !h0 || Math.abs(t.h - h0) <= 0.15 * h0,
-        fuera,
+        fuera, contorno: null, contornoDe: null, encierra: [],
       });
     });
   }
   const sinUbicar = [...mapa.entries()].filter(([n]) => !porNumero.has(n)).sort((a, b) => a[0] - b[0]).map(([numero, nombre]) => ({ numero, nombre }));
   if (!mapa.size) avisos.push("No encontré la leyenda (renglones «número + nombre»): quedó solo el fondo.");
+
+  // Contornos: el trazado que encierra (o toca) cada número, con el mismo recorte que el fondo.
+  const marcasC = componentes.map((c) => {
+    const t = textoDe.get(c.clave)!;
+    return { clave: c.clave, numero: c.numero, nombre: c.nombre, x: cx(t), y: cy(t), h: t.h, sugerido: c.sugerido };
+  });
+  const { porClave, utiles } = elegirContornos(entrada.trazados ?? [], recorte, marcasC, segs.map((s) => ({ texto: s.texto, x: centroSeg(s), y: cy(s.items[0]) })));
+  for (const c of componentes) {
+    const k = porClave.get(c.clave);
+    if (k) { c.contorno = k.puntos; c.contornoDe = k.de; c.encierra = k.encierra; }
+  }
+  if (componentes.length && !utiles) avisos.push("El PDF no trae trazados (rectángulos o polígonos) en el terreno: cada componente entra como un cuadrado.");
 
   // Máquinas: «D1» suelto en el plano; nombre = rótulo de abajo o la leyenda «D1 Cargador frontal».
   const nombresLeyenda = new Map<string, string>();
@@ -391,6 +420,7 @@ export function proponerCroquisDesdePdf(entrada: {
   return {
     escaneado: false, escala, anchoM, altoM, medidasDe, recorte, leyenda: mapa.size,
     componentes, sinUbicar, maquinas: maquinas.sort((a, b) => a.codigo.localeCompare(b.codigo, "es", { numeric: true })), avisos,
+    trazados: utiles,
   };
 }
 
@@ -401,13 +431,24 @@ export interface ZonaDesdePdf { codigo: string; nombre: string; tipo: ZonaTipo; 
 /** Lado de la marca cuadrada: 4 % del lado corto del terreno, entre 1 y 4 m (2 m en 54 × 48). */
 export const ladoMarcaM = (anchoM: number, altoM: number) => Math.min(4, Math.max(1, Math.round(Math.min(anchoM, altoM) * 0.04 * 2) / 2));
 
+/** m² de lo que se crearía para un componente: su contorno o la marca cuadrada. */
+export function areaComponenteM2(c: { contorno?: [number, number][] | null }, terreno: { anchoM: number; altoM: number }): number {
+  if (c.contorno && c.contorno.length >= 3) return areaContornoM2(c.contorno, terreno);
+  return ladoMarcaM(terreno.anchoM, terreno.altoM) ** 2;
+}
+
+const coma = (n: number) => String(n).replace(".", ",");
+
 /**
- * Zonas a crear: una marca cuadrada centrada en el número, dentro del terreno,
- * con el código del tipo + número de la leyenda (PT-08). Un número con varios
- * puntos elegidos lleva letra (PP-05a, PP-05b) en el orden recibido.
+ * Zonas a crear, con el código del tipo + número de la leyenda (PT-08); un
+ * número con varios puntos elegidos lleva letra (PP-05a, PP-05b) en el orden
+ * recibido. Forma: el contorno del PDF si viene (en metros con las medidas
+ * finales), o una marca cuadrada centrada en el número, dentro del terreno.
+ * Salen de la más grande a la más chica: el mapa dibuja la lista en ese orden
+ * y así la losa queda ENCIMA de la ramada que la encierra (se puede tocar).
  */
 export function zonasDesdeComponentes(
-  elegidos: Pick<ComponentePdf, "numero" | "nombre" | "tipo" | "fx" | "fy">[],
+  elegidos: (Pick<ComponentePdf, "numero" | "nombre" | "tipo" | "fx" | "fy"> & Partial<Pick<ComponentePdf, "contorno" | "contornoDe">>)[],
   terreno: { anchoM: number; altoM: number },
 ): ZonaDesdePdf[] {
   const { anchoM, altoM } = terreno;
@@ -416,21 +457,34 @@ export function zonasDesdeComponentes(
   const cuantos = new Map<number, number>();
   for (const c of elegidos) cuantos.set(c.numero, (cuantos.get(c.numero) ?? 0) + 1);
   const vistos = new Map<number, number>();
-  return elegidos.map((c) => {
+  const zonas = elegidos.map((c) => {
     const k = (vistos.get(c.numero) ?? 0) + 1;
     vistos.set(c.numero, k);
     const letra = (cuantos.get(c.numero) ?? 1) > 1 ? String.fromCharCode(96 + Math.min(k, 26)) : "";
-    const x0 = r2(Math.min(Math.max(c.fx * anchoM - lado / 2, 0), anchoM - lado));
-    const y0 = r2(Math.min(Math.max(c.fy * altoM - lado / 2, 0), altoM - lado));
-    const x1 = r2(x0 + lado), y1 = r2(y0 + lado);
+    let poligono: [number, number][];
+    let notas: string;
+    if (c.contorno && c.contorno.length >= 3) {
+      poligono = c.contorno.map(([fx, fy]) => [r2(Math.min(1, Math.max(0, fy)) * altoM), r2(Math.min(1, Math.max(0, fx)) * anchoM)]);
+      notas = `Del PDF del croquis: contorno del plano (${coma(r1(areaContornoM2(c.contorno, terreno)))} m²) ${c.contornoDe === "al_lado" ? "pegado al" : "que encierra el"} número ${c.numero}.`;
+    } else {
+      const x0 = r2(Math.min(Math.max(c.fx * anchoM - lado / 2, 0), anchoM - lado));
+      const y0 = r2(Math.min(Math.max(c.fy * altoM - lado / 2, 0), altoM - lado));
+      const x1 = r2(x0 + lado), y1 = r2(y0 + lado);
+      poligono = [[y0, x0], [y0, x1], [y1, x1], [y1, x0]];
+      notas = `Del PDF del croquis: marca de ${coma(lado)} × ${coma(lado)} m en el número ${c.numero}. Dibuja el contorno real si lo necesitas.`;
+    }
     return {
-      codigo: `${PREFIJO_TIPO[c.tipo]}-${String(c.numero).padStart(2, "0")}${letra}`,
-      nombre: c.nombre.slice(0, 120),
-      tipo: c.tipo,
-      poligono: JSON.stringify([[y0, x0], [y0, x1], [y1, x1], [y1, x0]]),
-      notas: `Del PDF del croquis: marca de ${String(lado).replace(".", ",")} × ${String(lado).replace(".", ",")} m en el número ${c.numero}. Dibuja el contorno real si lo necesitas.`,
+      zona: {
+        codigo: `${PREFIJO_TIPO[c.tipo]}-${String(c.numero).padStart(2, "0")}${letra}`,
+        nombre: c.nombre.slice(0, 120),
+        tipo: c.tipo,
+        poligono: JSON.stringify(poligono),
+        notas,
+      },
+      area: areaComponenteM2(c, terreno),
     };
   });
+  return zonas.sort((a, b) => b.area - a.area).map((z) => z.zona);
 }
 
 /** Las máquinas del PDF sobre las del croquis: mueve las que ya están (y las trae a la planta), agrega las nuevas; el nombre tipeado manda. */

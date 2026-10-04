@@ -7,7 +7,8 @@
  *
  * Coordenadas = centro (o borde) del texto en píxeles de esa imagen. Lo usan
  * el test de `croquis-desde-pdf` y el armado del PDF de prueba (con anchos
- * reales de la fuente y la imagen de fondo).
+ * reales de la fuente y la imagen de fondo). `ZONAS_V9` = los rectángulos
+ * dibujados de la lámina (para los contornos), medidos sobre la misma imagen.
  */
 
 export type Alinea = "centro" | "izq" | "der";
@@ -47,6 +48,47 @@ export const MAQUINAS_V9: [string, string, number, number][] = [
   ["D7", "Oruga", 586, 379],
 ];
 
+/**
+ * Rectángulos de la v9 (px: x0, y0, x1, y1) y el número que deberían tomar
+ * (null = sin número: el patio de máquinas, las cajas de D1–D7). En la v9 la
+ * mitad de los círculos va AL LADO de su rectángulo, no adentro.
+ */
+export const ZONAS_V9: [string, number | null, number, number, number, number][] = [
+  ["Vivero", 27, 142, 110, 390, 190],
+  ["Patio de trozas", 8, 142, 200, 265, 335],
+  ["Patio / acopio de madera 2", 35, 387, 187, 623, 233],
+  ["Zona de carbón", 24, 638, 178, 748, 240],
+  ["Casa de campo", 25, 764, 116, 907, 196],
+  ["Cuarto de trabajadores", 37, 852, 205, 918, 262],
+  ["Patio de maquinaria", null, 272, 240, 664, 410],
+  ["D4", null, 282, 248, 385, 288], ["D5", null, 541, 248, 655, 288], ["D3", null, 282, 300, 372, 340],
+  ["D6", null, 541, 300, 655, 340], ["D1", null, 370, 365, 448, 405], ["D2", null, 461, 365, 540, 405], ["D7", null, 551, 365, 623, 405],
+  ["Tanque", 12, 782, 323, 818, 363],
+  ["Baño", 13, 832, 323, 880, 363],
+  ["Piso de cemento", 33, 750, 373, 880, 445],
+  ["Ramada de calamina", 3, 153, 368, 358, 530],
+  ["Losa con motor", 4, 180, 420, 232, 462],
+  ["Zona de cintas", 7, 270, 440, 340, 475],
+  ["Afilado", 11, 340, 440, 380, 475],
+  ["Madera apilada (ramada)", 5, 238, 493, 298, 522],
+  ["Almacén de herramientas", 6, 380, 415, 495, 530],
+  ["Central de energía", null, 512, 502, 535, 525],
+  ["Techo parabólico", 36, 140, 532, 705, 795],
+  ["Acopio de trozas", 14, 560, 553, 700, 610],
+  ["Leña", 29, 732, 543, 852, 612],
+  ["Madera apilada (malla)", 5, 200, 598, 237, 648],
+  ["Mesa 2", 17, 321, 565, 331, 700],
+  ["Mesa 1", 17, 425, 565, 445, 700],
+  ["Cinta principal", 15, 560, 650, 612, 705],
+  ["Ramada 2", 30, 712, 645, 910, 790],
+  ["Cubicación", 19, 142, 677, 177, 700],
+  ["Rodillos", 16, 262, 672, 560, 692],
+  ["Despuntadora", 23, 309, 702, 355, 745],
+  ["Coche", null, 483, 712, 550, 755],
+  ["Madera apilada (oficina)", 5, 148, 708, 190, 738],
+  ["Oficina", 32, 142, 742, 200, 795],
+];
+
 export function textosV9(): TextoV9[] {
   const t: TextoV9[] = [];
   const { origen, pxPorM } = V9;
@@ -75,6 +117,8 @@ export function textosV9(): TextoV9[] {
     ["Coordenadas locales (m): origen 0,0 = esquina de la oficina · ~54 × 48 m", 30, 877, 6],
     ["PROCESO DE PRODUCCIÓN (siga las flechas y sus números)", 315, 819, 7],
     ["A1 Rodillos (16) → Mesa 1 (17)", 482, 846, 6], ["A2 Coche de aserrío (26) → Mesa 2 (17)", 482, 857, 6],
+    ["ALMACÉN DE", 405, 452, 6.5], ["HERRAMIENTAS", 400, 466, 6.5],
+    ["TECHO PARABÓLICO – cubre toda la zona de aserrío", 465, 779, 6.5],
   ];
   for (const [str, px, py, h] of rotulos) t.push({ str, px, py, h, alinea: "izq" });
   // La caja del proceso: «número + texto» en columna — una lista, no marcas del plano.

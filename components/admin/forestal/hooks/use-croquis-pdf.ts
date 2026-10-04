@@ -3,8 +3,9 @@
 /**
  * Estado de la importación del PDF del croquis (ADR-465): la propuesta que
  * devolvió el servidor, qué componentes quedan marcados y con qué tipo, y el
- * alta en lote de las zonas confirmadas. Las posiciones viajan en fracción de
- * la imagen; a metros se pasan recién al crear, con el ancho/largo final.
+ * alta en lote de las zonas confirmadas. Las posiciones y los contornos viajan
+ * en fracción de la imagen; a metros se pasan recién al crear, con el
+ * ancho/largo final. Cada renglón con contorno puede volver al cuadrado.
  */
 
 import { useCallback, useMemo, useState } from "react";
@@ -12,7 +13,8 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { numeroDeCodigo, zonasDesdeComponentes, type PropuestaCroquisPdf } from "@/lib/forestal/croquis-desde-pdf";
 import type { ZonaTipo } from "@/lib/forestal/planta-zona-types";
 
-export interface FilaPdf { incluir: boolean; tipo: ZonaTipo }
+/** `forma`: el contorno del PDF (si lo trae) o la marca cuadrada en el número. */
+export interface FilaPdf { incluir: boolean; tipo: ZonaTipo; forma: "contorno" | "cuadrado" }
 /** Códigos de zona del negocio al momento de importar (todos y los del croquis). */
 export interface ExistentesPdf { codigos: string[]; croquis: string[] }
 export type ResultadoZonasPdf =
@@ -43,7 +45,9 @@ export function useCroquisPdf() {
     setPropuesta(p);
     setExistentes(ex);
     // Un número que ya tiene zona en el croquis entra SIN marcar: re-importar no duplica.
-    setFilas(Object.fromEntries(p.componentes.map((c) => [c.clave, { incluir: c.sugerido && !usados.has(c.numero), tipo: c.tipo }])));
+    setFilas(Object.fromEntries(p.componentes.map((c) => [c.clave, {
+      incluir: c.sugerido && !usados.has(c.numero), tipo: c.tipo, forma: c.contorno ? "contorno" : "cuadrado",
+    } satisfies FilaPdf])));
   }, []);
 
   const cambiarFila = useCallback((clave: string, cambio: Partial<FilaPdf>) => {
@@ -55,7 +59,9 @@ export function useCroquisPdf() {
   }, []);
 
   const elegidos = useMemo(
-    () => (propuesta?.componentes ?? []).filter((c) => filas[c.clave]?.incluir).map((c) => ({ ...c, tipo: filas[c.clave].tipo })),
+    () => (propuesta?.componentes ?? []).filter((c) => filas[c.clave]?.incluir).map((c) => ({
+      ...c, tipo: filas[c.clave].tipo, contorno: filas[c.clave].forma === "contorno" ? c.contorno : null,
+    })),
     [propuesta, filas],
   );
 

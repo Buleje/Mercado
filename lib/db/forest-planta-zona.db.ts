@@ -115,8 +115,12 @@ export const ForestPlantaZonaDB = {
         const usados = new Set(list.map((z) => z.codigo.toUpperCase()));
         const creadas: PlantaZona[] = [];
         const omitidas: { codigo: string; motivo: string }[] = [];
-        for (const input of inputs) {
-          const zona = normalizeZona({ ...input, id: randomUUID(), plano: "croquis", createdAt: undefined });
+        // Un milisegundo menos por zona, en el orden recibido: la lista se ordena por
+        // fecha y el mapa dibuja la más vieja ENCIMA. Con la misma fecha para todas el
+        // orden dependía del reloj (medido 03-10: la ramada quedó tapando su losa).
+        const base = Date.now();
+        for (const [i, input] of inputs.entries()) {
+          const zona = normalizeZona({ ...input, id: randomUUID(), plano: "croquis", createdAt: new Date(base - i).toISOString() });
           if (!zona.codigo) { omitidas.push({ codigo: "", motivo: "sin código" }); continue; }
           if (usados.has(zona.codigo.toUpperCase())) { omitidas.push({ codigo: zona.codigo, motivo: "ya existe una zona con ese código" }); continue; }
           const g = geometriaZonaCroquis(zona.poligono, croquis);

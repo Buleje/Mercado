@@ -3,15 +3,18 @@ import sharp from "sharp";
 import { logger } from "@/lib/logger";
 import { asegurarFuentesPdf } from "@/lib/documents/miniatura-doc";
 import { proponerCroquisDesdePdf, type PropuestaCroquisPdf, type TextoPdf } from "./croquis-desde-pdf";
+import { componer as por, trazadosDeOperadores, type TrazadoPdf } from "./croquis-pdf-contornos";
 
 /**
  * croquis-pdf-servidor — leer el PDF del plano en el servidor (ADR-465).
  *
- * Una sola apertura del PDF (página 1) para las dos cosas:
+ * Una sola apertura del PDF (página 1) para las tres cosas:
  *  1. Los textos con su posición (pdf.js `getTextContent`) llevados a puntos de
  *     la hoja (origen arriba a la izquierda) → `proponerCroquisDesdePdf`, que
  *     decide escala, medidas, recorte y componentes.
- *  2. La página dibujada (unpdf + @napi-rs/canvas, la misma tubería de las
+ *  2. Los trazados (`getOperatorList`: rectángulos, polígonos, círculos) como
+ *     polígonos en esos mismos puntos → el contorno real de cada componente.
+ *  3. La página dibujada (unpdf + @napi-rs/canvas, la misma tubería de las
  *     miniaturas del drive) y recortada al terreno → WebP del fondo.
  *
  * En el servidor y no en el navegador: pdf.js pesa 1,6 MB y el recorte depende
@@ -22,24 +25,20 @@ import { proponerCroquisDesdePdf, type PropuestaCroquisPdf, type TextoPdf } from
 const LADO_OBJETIVO = 3200;
 /** Tope de la hoja dibujada (RAM de la función): un A0 baja la escala sola. */
 const MAX_PIXELES_HOJA = 50_000_000;
+/** Lado de la vista previa que viaja en la respuesta (data URL, ~40 KB). */
+const LADO_VISTA = 720;
 
 export type CroquisPdfProcesado =
   | { ok: true; webp: Buffer; ancho: number; alto: number; propuesta: PropuestaCroquisPdf }
   | { ok: false; error: string };
 
-type Matriz = [number, number, number, number, number, number];
-const por = (m: number[], t: number[]): Matriz => [
-  m[0] * t[0] + m[2] * t[1], m[1] * t[0] + m[3] * t[1],
-  m[0] * t[2] + m[2] * t[3], m[1] * t[2] + m[3] * t[3],
-  m[0] * t[4] + m[2] * t[5] + m[4], m[1] * t[4] + m[3] * t[5] + m[5],
-];
 const entre = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n));
 
 export async function procesarCroquisPdf(
   datos: Buffer,
   pista: { anchoM: number; altoM: number } | null,
 ): Promise<CroquisPdfProcesado> {
-  const { createIsomorphicCanvasFactory, getDocumentProxy, renderPageAsImage } = await import("unpdf");
+  const { createIsomorphicCanvasFactory, getDocumentProxy, getResolvedPDFJS, renderPageAsImage } = await import("unpdf");
   const canvasImport = () => import("@napi-rs/canvas");
   let pdf: Awaited<ReturnType<typeof getDocumentProxy>>;
   try {
@@ -62,7 +61,16 @@ export async function procesarCroquisPdf(
       const m = por(vp.transform, it.transform as number[]);
       textos.push({ str: it.str, x: m[4], y: m[5], w: it.width, h: Math.hypot(m[2], m[3]), angulo: (Math.atan2(m[1], m[0]) * 180) / Math.PI });
     }
-    const propuesta = proponerCroquisDesdePdf({ textos, hoja: { ancho: vp.width, alto: vp.height }, pista });
+    // Sin trazados el plano sigue: cada componente entra como cuadrado.
+    let trazados: TrazadoPdf[] = [];
+    try {
+      const { OPS } = await getResolvedPDFJS();
+      const ops = await page.getOperatorList();
+      trazados = trazadosDeOperadores(ops.fnArray, ops.argsArray, vp.transform, OPS);
+    } catch (e) {
+      logger.warn("[croquis-pdf] sin trazados", { err: e instanceof Error ? e.message : String(e) });
+    }
+    const propuesta = proponerCroquisDesdePdf({ textos, hoja: { ancho: vp.width, alto: vp.height }, pista, trazados });
     if (pdf.numPages > 1) propuesta.avisos.push(`El PDF tiene ${pdf.numPages} páginas: usé la primera.`);
 
     const r = propuesta.recorte;
@@ -80,6 +88,10 @@ export async function procesarCroquisPdf(
       .resize({ width: LADO_OBJETIVO, height: LADO_OBJETIVO, fit: "inside", withoutEnlargement: true })
       .webp({ quality: 88 })
       .toBuffer({ resolveWithObject: true });
+    if (propuesta.componentes.length) {
+      const chica = await sharp(data).resize({ width: LADO_VISTA, height: LADO_VISTA, fit: "inside" }).webp({ quality: 70 }).toBuffer();
+      propuesta.vistaPrevia = `data:image/webp;base64,${chica.toString("base64")}`;
+    }
     return { ok: true, webp: data, ancho: info.width, alto: info.height, propuesta };
   } catch (e) {
     logger.warn("[croquis-pdf] no se pudo leer o dibujar", { err: e instanceof Error ? e.message : String(e) });

@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
-  aplicarMaquinasPdf, ladoMarcaM, numeroDeCodigo, proponerCroquisDesdePdf, tipoSugerido, zonasDesdeComponentes,
+  aplicarMaquinasPdf, areaComponenteM2, ladoMarcaM, numeroDeCodigo, proponerCroquisDesdePdf, tipoSugerido, zonasDesdeComponentes,
   type TextoPdf,
 } from "@/lib/forestal/croquis-desde-pdf";
-import { LEYENDA_V9, MARCAS_V9, V9, textosV9, type TextoV9 } from "./fixtures/croquis-v9-pdf";
+import { areaPoligono, subtrazadosCerrados, trazadosDeOperadores, type Matriz, type TrazadoPdf } from "@/lib/forestal/croquis-pdf-contornos";
+import { LEYENDA_V9, MARCAS_V9, V9, ZONAS_V9, textosV9, type TextoV9 } from "./fixtures/croquis-v9-pdf";
 
 /** Como lo entrega pdf.js (ancho aproximado: medio cuerpo por letra). */
 const aPdf = (t: TextoV9): TextoPdf => {
@@ -18,7 +19,7 @@ const metros = (px: number, py: number) => ({ x: (px - V9.origen.px) / V9.pxPorM
 
 describe("croquis desde PDF — lámina tipo v9", () => {
   it("toma la escala de los ejes, las medidas escritas y recorta al terreno", () => {
-    const p = v9();
+    const p = v9c();
     expect(p.escaneado).toBe(false);
     expect(p.escala).toBe("ejes");
     expect([p.anchoM, p.altoM, p.medidasDe]).toEqual([54, 48, "texto"]);
@@ -176,5 +177,140 @@ describe("de la propuesta a zonas y máquinas", () => {
       { codigo: "D9", nombre: "Otra", x: 1, y: 1, fuera: true },
       { codigo: "D2", nombre: "D2", x: 5.4, y: 4.8, fuera: false },
     ]);
+  });
+});
+
+// ─── Contornos reales desde los trazados ───────────────────────────────────
+
+const rect = (x0: number, y0: number, x1: number, y1: number): TrazadoPdf => ({ puntos: [[x0, y0], [x1, y0], [x1, y1], [x0, y1]] });
+const circulo = (cx: number, cy: number, r: number): TrazadoPdf => ({
+  puntos: Array.from({ length: 16 }, (_, k) => [cx + r * Math.cos((k * Math.PI) / 8), cy + r * Math.sin((k * Math.PI) / 8)] as [number, number]),
+});
+/** Lo que trae un PDF vectorial de la v9: los rectángulos, el círculo de cada número, el borde del terreno, la hoja y la caja de la leyenda. */
+const trazadosV9 = (): TrazadoPdf[] => [
+  rect(0, 0, V9.ancho, V9.alto),
+  rect(139, 110, 910, 795),
+  rect(1000, 55, 1275, 550),
+  ...ZONAS_V9.map(([, , x0, y0, x1, y1]) => rect(x0, y0, x1, y1)),
+  ...MARCAS_V9.map(([, px, py]) => circulo(px, py, 9)),
+];
+const v9c = () => proponerCroquisDesdePdf({ textos: textosV9().map(aPdf), hoja, trazados: trazadosV9() });
+/** La caja [fx0, fy0, fx1, fy1] de un rectángulo de la lámina en fracción del terreno recortado. */
+const cajaFrac = (x0: number, y0: number, x1: number, y1: number, p: ReturnType<typeof v9c>) => {
+  const r = p.recorte, l = (n: number) => Math.min(1, Math.max(0, n));
+  return [l((x0 - r.x) / r.w), l((r.y + r.h - y1) / r.h), l((x1 - r.x) / r.w), l((r.y + r.h - y0) / r.h)];
+};
+const cajaDe = (pts: [number, number][]) => [Math.min(...pts.map((q) => q[0])), Math.min(...pts.map((q) => q[1])), Math.max(...pts.map((q) => q[0])), Math.max(...pts.map((q) => q[1]))];
+
+describe("contornos — trazados de pdf.js", () => {
+  const vista: Matriz = [1, 0, 0, -1, 0, 300];
+
+  it("rectángulo cerrado, círculo de curvas, línea abierta y relleno que cierra solo", () => {
+    expect(subtrazadosCerrados([0, 0, 0, 1, 100, 0, 1, 100, 40, 1, 0, 40, 4], vista, false)).toEqual([[[0, 300], [100, 300], [100, 260], [0, 260]]]);
+    expect(subtrazadosCerrados([0, 0, 0, 1, 50, 50], vista, false)).toEqual([]);
+    expect(subtrazadosCerrados([0, 0, 0, 1, 30, 0, 1, 30, 20], vista, true)).toHaveLength(1);
+    // Círculo de pdf-lib: 4 curvas, sin closePath, relleno.
+    const k = 8 * 0.5523;
+    const c = subtrazadosCerrados([0, 192, 150, 2, 192, 150 - k, 200 - k, 142, 200, 142, 2, 200 + k, 142, 208, 150 - k, 208, 150,
+      2, 208, 150 + k, 200 + k, 158, 200, 158, 2, 200 - k, 158, 192, 150 + k, 192, 150], vista, true);
+    expect(c).toHaveLength(1);
+    expect(areaPoligono(c[0])).toBeCloseTo(Math.PI * 64, -0.5);
+  });
+
+  it("sigue la matriz (save/transform/restore), ignora el recorte y no repite relleno + borde", () => {
+    const OPS = { save: 10, restore: 11, transform: 12, constructPath: 91, fill: 22, stroke: 20, fillStroke: 24, endPath: 28, paintFormXObjectBegin: 74, paintFormXObjectEnd: 75 };
+    const caja = new Float32Array([0, 0, 0, 1, 100, 0, 1, 100, 40, 1, 0, 40, 4]);
+    const t = trazadosDeOperadores(
+      [10, 12, 91, 91, 11, 91, 74, 91, 75],
+      [null, [1, 0, 0, 1, 50, 60], [24, [caja], null], [20, [caja], null], null, [28, [caja], null], [[2, 0, 0, 2, 0, 0], null], [22, [caja], null], null],
+      vista, OPS,
+    );
+    expect(t.map((x) => cajaDe(x.puntos))).toEqual([[50, 200, 150, 240], [0, 220, 200, 300]]);
+  });
+});
+
+describe("contornos — lámina tipo v9 con sus rectángulos", () => {
+  it("cada número toma su rectángulo (adentro o al lado) con su área real", () => {
+    const p = v9c();
+    expect(p.trazados).toBeGreaterThan(30);
+    for (const [nombre, numero, x0, y0, x1, y1] of ZONAS_V9) {
+      if (numero == null) continue;
+      const esperado = cajaFrac(x0, y0, x1, y1, p);
+      const c = p.componentes.find((k) => k.numero === numero && k.contorno && cajaDe(k.contorno).every((v, i) => Math.abs(v - esperado[i]) < 0.002));
+      expect(c, `${numero} ${nombre}`).toBeDefined();
+    }
+    const ramada = p.componentes.find((c) => c.numero === 3)!;
+    expect(ramada.contornoDe).toBe("adentro");
+    expect(ramada.encierra).toEqual([4, 5, 7]);
+    // 205 × 162 px a 14,28 × 14,27 px/m = 163 m² (fórmula plana).
+    expect(areaComponenteM2(ramada, { anchoM: 54, altoM: 48 })).toBeCloseTo((205 / 14.28) * (162 / 14.27), 0);
+    expect(p.componentes.find((c) => c.numero === 8)?.contornoDe).toBe("al_lado");
+    expect(p.componentes.find((c) => c.numero === 27)?.contornoDe).toBe("adentro");
+  });
+
+  it("nunca el círculo del número, el borde del terreno, la hoja ni un trazado para dos", () => {
+    const p = v9c();
+    const usados = p.componentes.filter((c) => c.contorno).map((c) => JSON.stringify(c.contorno));
+    expect(new Set(usados).size).toBe(usados.length);
+    for (const c of p.componentes.filter((k) => k.contorno)) {
+      const a = areaPoligono(c.contorno!);
+      expect(a, `${c.numero}`).toBeGreaterThan(0.0005);
+      expect(a, `${c.numero}`).toBeLessThan(0.4);
+      expect(c.contorno!.flat().every((v) => v >= 0 && v <= 1)).toBe(true);
+    }
+    // Sin rectángulo a su alcance: cuadrado (y la revisión dice «sin contorno»).
+    for (const n of [1, 2, 9, 18, 21, 22, 26, 31]) expect(p.componentes.find((c) => c.numero === n)?.contorno, `${n}`).toBeNull();
+    // Los rótulos de ruta (sin marcar) no se llevan el patio de máquinas.
+    expect(p.componentes.filter((c) => !c.sugerido).every((c) => c.contorno === null)).toBe(true);
+  });
+
+  it("dos números en un trazado: gana el que nombran los rótulos de adentro", () => {
+    const p = v9c();
+    // Almacén: el 6 «Almacén de herramientas» y no el 34 «Cámara 2 (esquina del almacén)».
+    expect(p.componentes.find((c) => c.numero === 6)?.encierra).toEqual([34]);
+    expect(p.componentes.find((c) => c.numero === 34)?.contorno).toBeNull();
+    // Techo parabólico: lo encierra casi todo, pero lo nombra su rótulo.
+    const techo = p.componentes.find((c) => c.numero === 36)!;
+    expect(techo.contornoDe).toBe("adentro");
+    expect(techo.encierra.length).toBeGreaterThan(8);
+  });
+
+  it("sin trazados (texto sin dibujos o escaneado): todo cuadrado, sin romper", () => {
+    const p = v9();
+    expect(p.trazados).toBe(0);
+    expect(p.componentes.every((c) => c.contorno === null && c.contornoDe === null)).toBe(true);
+    expect(p.avisos.some((a) => /trazados/.test(a))).toBe(true);
+    const esc = proponerCroquisDesdePdf({ textos: [], hoja, trazados: trazadosV9() });
+    expect([esc.escaneado, esc.componentes.length, esc.trazados]).toEqual([true, 0, 0]);
+  });
+
+  it("un trazado gigante solo si no hay otro", () => {
+    const textos: TextoPdf[] = [
+      ...["Patio de maniobras", "Balanza", "Oficina"].flatMap((nombre, i) => [
+        { str: String(i + 1), x: 500, y: 40 + 12 * i, w: 4, h: 7 },
+        { str: nombre, x: 510, y: 40 + 12 * i, w: 50, h: 7 },
+      ]),
+      { str: "1", x: 98, y: 102.52, w: 4, h: 7 },
+      { str: "2", x: 298, y: 302.52, w: 4, h: 7 },
+    ];
+    const p = proponerCroquisDesdePdf({
+      textos, hoja: { ancho: 600, alto: 400 }, pista: { anchoM: 30, altoM: 20 },
+      trazados: [rect(20, 20, 420, 380), rect(260, 280, 340, 330)],
+    });
+    expect(p.componentes.find((c) => c.numero === 1)?.contornoDe).toBe("grande");
+    expect(p.componentes.find((c) => c.numero === 2)?.contornoDe).toBe("adentro");
+  });
+});
+
+describe("contornos — a zonas en metros", () => {
+  it("el contorno pasa a [y, x] en metros; las grandes salen primero y el cuadrado queda de respaldo", () => {
+    const zs = zonasDesdeComponentes([
+      { numero: 4, nombre: "Losa", tipo: "aserrado", fx: 0.5, fy: 0.5 },
+      { numero: 3, nombre: "Ramada", tipo: "patio_producto", fx: 0.1, fy: 0.1, contorno: [[0, 0], [0.5, 0], [0.5, 0.5], [0, 0.5]], contornoDe: "adentro" },
+    ], { anchoM: 54, altoM: 48 });
+    expect(zs.map((z) => z.codigo)).toEqual(["PP-03", "AS-04"]);
+    expect(JSON.parse(zs[0].poligono)).toEqual([[0, 0], [0, 27], [24, 27], [24, 0]]);
+    expect(zs[0].notas).toMatch(/contorno del plano \(648 m²\) que encierra el número 3/);
+    expect(zs[1].notas).toMatch(/marca de 2 × 2 m/);
   });
 });
