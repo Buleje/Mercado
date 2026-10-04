@@ -4,7 +4,9 @@
  * Tarjeta para subir Logo / Portada / Banner con su mini-maqueta. Salió de
  * `SettingsModule` tal cual estaba.
  */
+import { useState } from "react";
 import Image from "next/image";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { BlockTitle } from "@buleje/design-system";
 import { Loader2, Store, Upload } from "@buleje/design-system/icons";
 
@@ -44,29 +46,25 @@ export function ImageDropCard({
   mockup,
 }: ImageDropCardProps) {
   const safeUrl = value && !value.startsWith("data:") ? value : "";
+  // La maqueta de «dónde aparece» medía la mitad de la tarjeta: ahora se abre a pedido.
+  const [verMaqueta, setVerMaqueta] = useState(false);
   return (
     <div className="rounded-2xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 flex flex-col gap-3">
       {/* Header */}
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <BlockTitle className="truncate">{label}</BlockTitle>
+          <div className="flex items-center gap-1.5">
+            <BlockTitle className="truncate">{label}</BlockTitle>
+            <InfoTip title={`Dónde aparece: ${label}`} what={whereVisible} />
+          </div>
           <p className="text-xs text-[var(--text-tertiary)]">{hint}</p>
         </div>
-      </div>
-
-      {/* Donde aparece (mini-mockup) */}
-      <div className="rounded-xl bg-[var(--surface-sunken)] p-3 border border-[var(--rule-soft)]">
-        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-2">
-          Aparece en
-        </p>
-        <p className="text-xs text-[var(--text-secondary)] mb-2">{whereVisible}</p>
-        {mockup}
       </div>
 
       {/* Preview o dropzone */}
       <div className="space-y-2">
         {value ? (
-          <div className={`relative w-full overflow-hidden rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] ${previewClass}`}>
+          <div className={`relative w-full max-h-36 overflow-hidden rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] ${previewClass}`}>
             <Image src={value} alt={label} fill className="object-contain" unoptimized onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
             <button
               onClick={() => onChange("")}
@@ -88,7 +86,7 @@ export function ImageDropCard({
             type="button"
             disabled={uploading}
             onClick={() => inputRef.current?.click()}
-            className={`w-full flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-[var(--rule-base)] hover:border-primary text-[var(--text-secondary)] hover:text-primary bg-[var(--surface-sunken)] transition-all disabled:opacity-60 disabled:cursor-wait ${previewClass}`}
+            className={`w-full flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-[var(--rule-base)] hover:border-primary text-[var(--text-secondary)] hover:text-primary bg-[var(--surface-sunken)] transition-all disabled:opacity-60 disabled:cursor-wait max-h-36 ${previewClass}`}
           >
             {uploading ? (
               <>
@@ -113,6 +111,20 @@ export function ImageDropCard({
           className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:ring-2 focus:ring-primary/30"
         />
       </div>
+
+      <button
+        type="button"
+        onClick={() => setVerMaqueta((v) => !v)}
+        aria-expanded={verMaqueta}
+        className="self-start text-xs font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:underline"
+      >
+        {verMaqueta ? "Ocultar dónde aparece" : "Ver dónde aparece"}
+      </button>
+      {verMaqueta && (
+        <div className="rounded-xl bg-[var(--surface-sunken)] p-3 border border-[var(--rule-soft)]">
+          {mockup}
+        </div>
+      )}
     </div>
   );
 }

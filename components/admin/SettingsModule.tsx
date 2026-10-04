@@ -65,6 +65,9 @@ type ReorderCategory = { id: string; label: string };
 // Secciones que se llenan con /api/settings (Plan, Equipo, Mi panel y Sistema traen lo suyo).
 const SECCIONES_CON_DATOS: ReadonlySet<SeccionAjustes> = new Set(["negocio", "cobros", "delivery", "tienda"]);
 
+// Un dato que falta: a dónde ir y, si hace falta, qué preparar antes (prender Yape, agregar una zona).
+type FaltaItem = { id: string; label: string; antes?: () => void };
+
 // Botón que lleva a otra pantalla del panel donde vive el ajuste de verdad.
 const LINK_A_OTRA_PANTALLA = "w-full flex items-center gap-3 p-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-left hover:border-primary transition-colors";
 
@@ -280,8 +283,8 @@ export default function SettingsModule({
   // electrónica (RUC y denominación del emisor). Plin y transferencia sólo si
   // están prendidos; Yape apagado se ofrece prender (es el que más se usa).
   const faltanCobros = useMemo(() => {
-    const f: { id: string; label: string; prender?: true }[] = [];
-    if (!yapeEnabled) f.push({ id: "settings-yapePhone", label: "Activar Yape", prender: true });
+    const f: FaltaItem[] = [];
+    if (!yapeEnabled) f.push({ id: "settings-yapePhone", label: "Activar Yape", antes: () => setYapeEnabled(true) });
     else {
       if (!yapePhone.trim()) f.push({ id: "settings-yapePhone", label: "Número de Yape" });
       if (!yapeImage) f.push({ id: "settings-yape-qr", label: "QR de Yape" });
@@ -293,7 +296,19 @@ export default function SettingsModule({
     return f;
   }, [yapeEnabled, yapePhone, yapeImage, plinEnabled, plinPhone, transferEnabled, transferAccountNum, sunatRuc, sunatDenominacion]);
 
-  const pendientes: Partial<Record<SeccionAjustes, number>> = { negocio: faltan.length, cobros: faltanCobros.length };
+  // Delivery: el marketplace lee las zonas (tarifa y minutos) para mostrar el envío.
+  const faltanDelivery = useMemo((): FaltaItem[] => {
+    if (deliveryZones.length === 0) return [{
+      id: "settings-zona-0", label: "Al menos una zona",
+      antes: () => setDeliveryZones([{ name: "", fee: 0, estimatedMin: 30 }]),
+    }];
+    const sinNombre = deliveryZones.findIndex(z => !z.name.trim());
+    return sinNombre >= 0 ? [{ id: `settings-zona-${sinNombre}`, label: "Nombre de la zona" }] : [];
+  }, [deliveryZones]);
+
+  const pendientes: Partial<Record<SeccionAjustes, number>> = {
+    negocio: faltan.length, cobros: faltanCobros.length, delivery: faltanDelivery.length,
+  };
 
   const irACampo = (id: string) => {
     const el = document.getElementById(id);
@@ -301,7 +316,7 @@ export default function SettingsModule({
     if (el instanceof HTMLInputElement || el instanceof HTMLButtonElement) el.focus({ preventScroll: true });
   };
 
-  const renderTeFalta = (items: { id: string; label: string; prender?: true }[]) => items.length > 0 && (
+  const renderTeFalta = (items: readonly FaltaItem[]) => items.length > 0 && (
     <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/15 px-4 py-3">
       <span className="text-sm font-bold text-[var(--text-primary)]">Te falta:</span>
       {items.map(f => (
@@ -309,7 +324,7 @@ export default function SettingsModule({
           key={f.label}
           type="button"
           onClick={() => {
-            if (f.prender) { setYapeEnabled(true); setTimeout(() => irACampo(f.id), 60); }
+            if (f.antes) { f.antes(); setTimeout(() => irACampo(f.id), 60); }
             else irACampo(f.id);
           }}
           className="inline-flex items-center h-8 px-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs font-semibold text-[var(--text-primary)] hover:border-primary transition-colors"
@@ -727,12 +742,13 @@ export default function SettingsModule({
 
   const renderDelivery = () => (
     <div className="space-y-6">
+      {renderTeFalta(faltanDelivery)}
       <SectionCard title="Zonas de delivery" desc="Define zonas con tarifas y tiempos diferentes">
         <div className="space-y-2">
           {deliveryZones.map((zone, idx) => (
             <div key={idx} className="flex items-center gap-2 p-3 bg-[var(--surface-sunken)] rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               <div className="flex-1 grid grid-cols-3 gap-2">
-                <input value={zone.name} onChange={e => setDeliveryZones(p => p.map((z, i) => i === idx ? { ...z, name: e.target.value } : z))} placeholder="Nombre" className="px-2 py-1.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm bg-[var(--surface-raised)] outline-none" />
+                <input id={`settings-zona-${idx}`} aria-label="Nombre de la zona" value={zone.name} onChange={e => setDeliveryZones(p => p.map((z, i) => i === idx ? { ...z, name: e.target.value } : z))} placeholder="Nombre" className="px-2 py-1.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm bg-[var(--surface-raised)] outline-none" />
                 <div className="flex items-center gap-1">
                   <input type="number" value={zone.fee} onChange={e => setDeliveryZones(p => p.map((z, i) => i === idx ? { ...z, fee: Number(e.target.value) } : z))} min={0} className="w-full px-2 py-1.5 rounded-xl border border-[var(--rule-base)] text-sm font-mono bg-[var(--surface-raised)] outline-none" />
                   <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] shrink-0">S/</span>
