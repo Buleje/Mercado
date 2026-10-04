@@ -16,6 +16,7 @@ import RepartoCompletarLote from "../reparto-completar-lote";
 import { AvisoDelLibro, JornadaLibro } from "../reparto-jornada-libro";
 import { anotarLibroEnLaGuardada } from "../reparto-lotes-sugeridos-api";
 import { useLibroDeBloques } from "./use-libro-de-bloques";
+import { MOTIVO_ROL, useTandaDelLibro } from "./use-tanda-del-libro";
 import { useMiRol } from "@/hooks/use-mi-rol";
 import type { EstadoLotesAserrio } from "./use-lotes-aserrio";
 
@@ -60,6 +61,10 @@ export function useLibroDelReparto({
   useEffect(() => {
     bloquesRef.current = bloques;
   }, [bloques]);
+  /* Anotar en la guardada es leer-cambiar-escribir en el servidor: dos a la vez
+     (la tanda escribe un día tras otro) se pisaban y el segundo borraba al
+     primero. En fila, cada uno lee lo que dejó el anterior. */
+  const filaGuardada = useRef<Promise<void>>(Promise.resolve());
 
   const aplicar = useCallback<Aplicar>(
     (id, cambio) => {
@@ -68,9 +73,9 @@ export function useLibroDelReparto({
       guardar(next);
       const actual = next.find((b) => b.id === id);
       if (distribucionId && actual) {
-        anotarLibroEnLaGuardada(distribucionId, actual).catch((err: unknown) =>
-          logger.error("[reparto] anotar el Libro en la distribución guardada falló", { error: String(err) }),
-        );
+        filaGuardada.current = filaGuardada.current
+          .then(() => anotarLibroEnLaGuardada(distribucionId, bloquesRef.current.find((b) => b.id === id) ?? actual))
+          .catch((err: unknown) => logger.error("[reparto] anotar el Libro en la distribución guardada falló", { error: String(err) }));
       }
     },
     [guardar, distribucionId],
@@ -89,6 +94,25 @@ export function useLibroDelReparto({
   const loteDe = useCallback((bd: BloqueDistribuido) => (bd.bloque.loteId ? lotePorId.get(bd.bloque.loteId) : undefined), [lotePorId]);
   const planes = useMemo(() => new Map([...porId].map(([id, bd]) => [id, planLibroDeBloque(bd, loteDe(bd), hoy)])), [porId, loteDe, hoy]);
   const completos = useMemo(() => new Map([...porId].map(([id, bd]) => [id, completarDelLote(bd, loteDe(bd))])), [porId, loteDe]);
+  const entradas = useMemo(() => [...porId.values()].map((bd) => ({ bd, lote: loteDe(bd) })), [porId, loteDe]);
+  /* «Registrar toda la producción»: el plan de todo lo pendiente, un resumen
+     para confirmar y un día por vez con el mismo escritor del botón del día. */
+  const tanda = useTandaDelLibro({
+    entradas,
+    hoy,
+    puedeDeclarar,
+    leyendo: lotes.cargando,
+    ocupado: libro.ocupado != null,
+    registrarTodo: libro.registrarTodo,
+    bloqueDe: (id) => bloquesRef.current.find((b) => b.id === id),
+    alEscribir: (pasos) =>
+      marcar(
+        pasos.flatMap((p) =>
+          (vistaPorId.get(p.bloqueId)?.porDia.find((d) => d.dia === p.jornada.dia)?.grupos ?? []).map((g) => claveMarca(p.bloqueId, p.jornada.dia, g.clave)),
+        ),
+        true,
+      ),
+  });
 
   const [completarDe, setCompletarDe] = useState<string | null>(null);
   const [lre, setLre] = useState<{ bloqueId: string; origen: CorridaDelLoteParaCompletar; elegidas: AsignacionGrupo[] } | null>(null);
@@ -126,7 +150,7 @@ export function useLibroDelReparto({
        almacenero puede consumir pero no declarar, y su «Registrar» dejaba la
        corrida abierta sin producción. Se le apaga con el motivo. */
     const jVista = j.estado === "lista" && !puedeDeclarar
-      ? { ...j, estado: "apagada" as const, motivo: "Registrar la producción en el Libro es de admin o dueño: tu rol puede consumir, pero no declarar lo que salió." }
+      ? { ...j, estado: "apagada" as const, motivo: MOTIVO_ROL }
       : j;
     return (
       <JornadaLibro
@@ -144,7 +168,9 @@ export function useLibroDelReparto({
     const plan = planes.get(id);
     /* Mientras una jornada se pueda registrar —hoy o cuando llegue su fecha—,
        ése es el camino: «Completar» es para lo que las jornadas ya no pueden escribir. */
-    if (!puedeDeclarar || !c?.ofrecer || c.lineas.length === 0 || plan?.jornadas.some((j) => j.estado === "lista" || j.enEspera)) return null;
+    /* «Registrar sus N días» sólo con 2 o más listos: excluye a «Completar», que pide que no quede ninguno. */
+    const todos = tanda.botonBloque(b.bloque);
+    if (!puedeDeclarar || !c?.ofrecer || c.lineas.length === 0 || plan?.jornadas.some((j) => j.estado === "lista" || j.enEspera)) return todos;
     return (
       <button type="button" onClick={() => setCompletarDe(id)} disabled={libro.ocupado != null} title={`Declarar lo que falta del lote ${c.loteCode} (LPC o LRE)`} className={`${BTN_BLOQUE} disabled:opacity-50`}>
         <BookOpen className="h-4 w-4" aria-hidden /> Completar
@@ -183,6 +209,7 @@ export function useLibroDelReparto({
 
   const nodo = (
     <>
+      {tanda.nodo}
       {bdCompletar && planCompletar && (
         <RepartoCompletarLote
           etiqueta={bdCompletar.bloque.etiqueta || "sin etiqueta"}
@@ -219,5 +246,5 @@ export function useLibroDelReparto({
     </>
   );
 
-  return { libro: { bloque, aviso, dia }, nodo };
+  return { libro: { bloque, aviso, dia }, nodo, barra: tanda.barra };
 }

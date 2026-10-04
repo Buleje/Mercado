@@ -60,6 +60,21 @@ export async function marcarLotesEnLaGuardada(id: string, loteDe: ReadonlyMap<st
 }
 
 /**
+ * Panel «Lotes» (03-10): el lote y las trozas que un bloque ganó al vincularse
+ * a un lote o al elegirle piezas. Sólo esos dos campos, del bloque que los
+ * cambió; un bloque que no está en la guardada (recién traído) no se sube.
+ */
+export async function anotarLoteEnLaGuardada(
+  id: string,
+  cambios: ReadonlyMap<string, Pick<BloqueRolliza, "loteId" | "trozaIds">>,
+): Promise<void> {
+  await reescribirLaGuardada(id, (b) => {
+    const c = cambios.get(b.id);
+    return c ? { ...b, loteId: c.loteId ?? null, trozaIds: c.trozaIds ?? null } : null;
+  });
+}
+
+/**
  * Lo mismo para lo que el bloque escribió en el Libro (ADR-464, fases 3 y 4):
  * sus corridas, qué jornada quedó en cuál y qué líneas se completaron. Sólo
  * esos tres campos, del bloque que los cambió; el resto de la guardada queda
@@ -83,8 +98,20 @@ export async function anotarLibroEnLaGuardada(
 
 type BloqueGuardado = { id: string } & Partial<BloqueRolliza>;
 
-/** Lee la versión del servidor, cambia los bloques que `cambio` devuelva y la vuelve a guardar. */
-async function reescribirLaGuardada(id: string, cambio: (b: BloqueGuardado) => BloqueGuardado | null): Promise<void> {
+/* Una sola fila para TODAS las reescrituras de la guardada (leer → cambiar →
+   guardar): dos en vuelo leían la misma versión y la segunda borraba lo que
+   anotó la primera (revisión 03-10: vincular dos lotes seguidos, o agregar y
+   quitar trozas a la vez). Una que falla no frena a las siguientes. */
+let filaDeLaGuardada: Promise<unknown> = Promise.resolve();
+
+/** Lee la versión del servidor, cambia los bloques que `cambio` devuelva y la vuelve a guardar — de a una. */
+function reescribirLaGuardada(id: string, cambio: (b: BloqueGuardado) => BloqueGuardado | null): Promise<void> {
+  const turno = filaDeLaGuardada.then(() => reescribirAhora(id, cambio));
+  filaDeLaGuardada = turno.catch(() => undefined);
+  return turno;
+}
+
+async function reescribirAhora(id: string, cambio: (b: BloqueGuardado) => BloqueGuardado | null): Promise<void> {
   const r = await fetch(URL_DISTRIBUCIONES, { credentials: "include", cache: "no-store" });
   if (!r.ok) throw new Error(`No se pudo leer la distribución guardada (HTTP ${r.status})`);
   const { distribuciones } = (await r.json()) as {

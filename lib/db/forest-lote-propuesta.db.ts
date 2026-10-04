@@ -406,6 +406,7 @@ export class ForestLotePropuestaDB {
         permiso: propuesta.permiso,
         trozas: r.agregadas,
         m3: r4(entraron.reduce((a, id) => a + (m3De.get(id) ?? 0), 0)),
+        trozaIds: entraron,
         noEntraron: [...r.rechazadas, ...yaNoLibres],
       });
     }

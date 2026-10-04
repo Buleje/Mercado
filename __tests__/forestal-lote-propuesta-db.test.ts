@@ -151,7 +151,7 @@ describe("crear — por las puertas de siempre", () => {
     ]);
     expect(H.estado.agregar).toEqual([{ loteId: "L1", ids: ["c1", "c2"] }]);
     expect(r.creados).toEqual([
-      expect.objectContaining({ code: "LA-2026-001", especie: "Copal", trozas: 2, m3: 5, noEntraron: [] }),
+      expect.objectContaining({ code: "LA-2026-001", especie: "Copal", trozas: 2, m3: 5, trozaIds: ["c1", "c2"], noEntraron: [] }),
     ]);
   });
 
@@ -164,6 +164,8 @@ describe("crear — por las puertas de siempre", () => {
     );
     expect(H.estado.agregar[0].ids).toEqual(["c1", "c3"]);
     expect(r.creados[0].noEntraron.map((x) => x.id)).toEqual(["id-de-otro-negocio", "p1"]);
+    /* El bloque de la Distribución recuerda sólo las que entraron (panel «Lotes»). */
+    expect(r.creados[0].trozaIds).toEqual(["c1", "c3"]);
   });
 
   it("la madera de una guía sin recibir no se puede pedir: no hay lote que crear", async () => {

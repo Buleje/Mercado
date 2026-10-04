@@ -115,6 +115,8 @@ export interface LoteCreadoDesdePropuesta {
   permiso: string | null;
   trozas: number;
   m3: number;
+  /** Las piezas que SÍ entraron: el bloque de la Distribución las recuerda (panel «Lotes», 03-10). */
+  trozaIds: string[];
   noEntraron: TrozaQueNoEntro[];
 }
 

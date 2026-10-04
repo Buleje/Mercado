@@ -44,3 +44,13 @@
 - Se ofrece en un bloque cuyo lote ya declaró producción, cuando ninguna jornada se puede registrar. Lo que falta = las líneas de los días no escritos desde acá, sin las ya completadas (`BloqueRolliza.complementos`).
 - **LPC**: con rolliza libre en el lote, corrida **nueva** (consume esa rolliza, declara en LPC, tope propio). **Sin rolliza libre, se suma a una corrida del lote con margen** (`ampliar_produccion`, ADR-361: filas nuevas, tope al 56 % acumulado). Una corrida nueva sin materia prima no se crea: `declararProduccion` no mide el tope cuando la entrada es 0, sería el agujero. Si se quiere una línea LPC sin rolliza, hace falta un vínculo corrida↔lote que hoy no existe (schema + ADR).
 - **LRE**: abre el mismo `CtpReprocesoModal` desde la corrida del lote elegida, con lo elegido como sugerencia; al terminar se anota el complemento (el reproceso no devuelve el id de su corrida).
+
+## Panel «Lotes» (construido 03-10)
+
+Pedido de Brandon: crear lotes desde la Distribución, usar uno ya creado y elegir ahí mismo las trozas del lote. Botón «Lotes» en la barra, un modal con tres pestañas (`reparto-panel-lotes.tsx`; lógica en `hooks/use-panel-lotes.ts` y `lib/forestal/panel-lotes-reparto.ts`). Sin ruta nueva:
+
+- **Sugeridos**: lo que propone el patio (`GET /lotes-aserrio/propuestas`, especie + permiso) con casillas y «Crear N lotes» (`POST {propuestas}` → `ForestLotePropuestaDB.crear`, que ahora devuelve también los `trozaIds` que entraron). Cada lote creado entra como bloque `origen: "lote"` con `loteId` y sus trozas. Sin propuestas, el motivo con dónde se arregla (sin permiso → Ingresos).
+- **Lotes del Libro**: un lote abierto con rolliza libre se trae como bloque (con sus trozas libres; también el «Agregar bloque → Lote X» de siempre) o se vincula a un bloque sin lote, con avisos si la especie, el permiso o el m³ no coinciden.
+- **Trozas**: bloque con lote abierto → piezas libres del patio de su especie y permiso → `PATCH {accion: "agregar"}` (rechazadas con motivo) y «Quitar» (`accion: "quitar"`, nunca la última: un lote no queda vacío). Bloque sin lote → «Crear su lote» con exactamente lo elegido (`modo: "crear"` por bloque, todo o nada).
+- **Permiso**: un lote nuevo exige permiso en el ingreso (igual que la creación por bloque); un lote con permiso sólo admite trozas de ese permiso (más estricto que `agregarTrozas`, que deja entrar una troza sin permiso); un lote viejo «de todos» no exige.
+- La guardada abierta recibe sólo `loteId` + `trozaIds` del bloque tocado (`anotarLoteEnLaGuardada`); un bloque nuevo vive en el dispositivo hasta que se guarde. El descuento de volumen sigue siendo el consumo al registrar la producción.

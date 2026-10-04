@@ -40,6 +40,7 @@ import { ptDesdeM3, toFeet, unificarPorMedida } from "@/lib/forestal/cubicacion"
 import { margenLote, volumenLibre, type LoteAserrio } from "@/lib/forestal/lotes-aserrio";
 import { useLotesAserrio } from "./hooks/use-lotes-aserrio";
 import { useLibroDelReparto } from "./hooks/use-libro-del-reparto";
+import { ID_SECCION_ANEXO } from "./reparto-registrar-todo";
 import { KpiResumen, SeccionResumen } from "./resumen-tabla";
 import { BloqueEspecie } from "./reparto-vistas";
 import { DiferenciaDistribucion } from "./reparto-diferencia";
@@ -75,6 +76,8 @@ import { ColumnasMenu, useColumnasVisibles } from "./ctp-shared";
 import { colorDeBloque, indicesDeBloques } from "./reparto-colores";
 import DistribucionesGuardadas from "./DistribucionesGuardadas";
 import RepartoLotesSugeridos from "./reparto-lotes-sugeridos";
+import RepartoPanelLotes from "./reparto-panel-lotes";
+import { trozaIdsLibresDelLote } from "@/lib/forestal/panel-lotes-reparto";
 import { marcarLotesEnLaGuardada } from "./reparto-lotes-sugeridos-api";
 import { logger } from "@/lib/logger";
 import type { LoteCreadoDeBloque } from "@/lib/forestal/lotes-por-bloque";
@@ -714,6 +717,9 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
     guardar([...bloques, {
       id: nuevoId(), etiqueta: `Lote ${lote.code}`, especie: lote.speciesCommon || "", m3, permiso,
       origen: "lote", loteId: lote.id, costoM3: null,
+      /* Panel «Lotes» (03-10): el bloque recuerda las trozas libres del lote
+         para registrar sus jornadas en el Libro; el margen ya aserrado no tiene. */
+      trozaIds: esMargen ? null : trozaIdsLibresDelLote(lote),
       /* El margen del 56 % ya viene en unidades de ASERRADA (`topeM3 −
          declaradoM3`), no en rolliza por aserrar: es exactamente un bloque de
          aserrada directa. Cargarlo como rolliza al 100 % daba el mismo
@@ -1728,6 +1734,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
           unificadas y cuadradas (ADR-406). */}
       {anexosDePermiso.length > 0 && (
         <SeccionResumen
+          id={ID_SECCION_ANEXO}
           icon={FileText}
           titulo="Anexo 04 por permiso"
           etiqueta={<EtiquetaCuadre control={controlDe(cc, "anexos")} onAbrir={() => cuadreCifras.abrir("anexos")} />}
@@ -1848,6 +1855,8 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
               lotesCargados={!cargandoLotes}
               onQuitarLote={(id) => guardar(bloques.map((b) => (b.id === id ? { ...b, loteId: null } : b)))}
             />
+            {/* Panel «Lotes» (03-10): sugeridos del patio, lotes del Libro y trozas del bloque. */}
+            <RepartoPanelLotes bloques={bloques} onGuardar={guardar} estadoLotes={estadoLotes} distribucionId={distribucionActual?.id ?? null} />
             {/* Guardar/abrir la distribución de bloques (Brandon, 2026-09-01):
                 mismo patrón que "Guardadas" en el Cubicador de madera — vive
                 en el servidor para verse desde otro lado después. */}
@@ -2459,6 +2468,9 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
           ))}
         </ul>
       )}
+
+      {/* «Registrar toda la producción» (ADR-464): todo lo pendiente al Libro con una confirmación. */}
+      {libroReparto.barra}
 
       {distVista.especies.map((e) => (
         <BloqueEspecie

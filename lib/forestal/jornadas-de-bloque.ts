@@ -51,6 +51,8 @@ export type EstadoJornadaLibro = "en-libro" | "abierta" | "lista" | "apagada" | 
 export interface JornadaDelBloque extends Jornada {
   /** Día que todavía no pasó y sin escribir: se registrará más adelante, así que «Completar» no se ofrece por él. */
   enEspera?: boolean;
+  /** Apagada sólo porque un día anterior falta (el Libro se llena en orden): su motivo propio se ve recién cuando el anterior entra. */
+  porOrden?: boolean;
   estado: EstadoJornadaLibro;
   /** Por qué no se puede registrar (o qué falta en una corrida abierta). */
   motivo: string | null;
@@ -217,7 +219,8 @@ export function planLibroDeBloque(
   /* 4 · Trozas enteras a cada día pendiente, en proporción a lo aserrado. */
   const pendientes = jornadas.filter((j) => j.estado === "lista");
   if (pendientes.length > 0 && ajenas.length > 0) {
-    const nros = ajenas.map((c) => vivas?.get(c)?.lineNo).filter((n): n is number => n != null);
+    /* `n > 0`: la corrida simulada de la tanda lleva N° 0 y no se nombra. */
+    const nros = ajenas.map((c) => vivas?.get(c)?.lineNo).filter((n): n is number => n != null && n > 0);
     const cual = nros.length > 0 ? `la corrida N° ${nros.join(", ")}` : "otra corrida";
     for (const j of pendientes) {
       j.estado = "apagada";
@@ -229,7 +232,8 @@ export function planLibroDeBloque(
     const porque =
       delBloque.length === 0
         ? `Sus trozas ya no están en el lote ${lote.code}: vuelve a crear el lote del bloque.`
-        : "Sus trozas ya entraron a la sierra por otra corrida: lo que falta se declara con «Completar».";
+        : /* Sin ajenas (esa rama va antes): se las llevaron los días ya registrados desde acá. */
+          "Las trozas del bloque ya entraron en los días registrados: a este día no le queda madera propia (una troza no se parte entre dos corridas). Lo que falta se declara con «Completar».";
     for (const j of pendientes) {
       j.estado = "apagada";
       j.motivo = porque;
@@ -270,6 +274,7 @@ export function planLibroDeBloque(
         `${pendientes.length} días: una troza no se parte entre dos corridas (T1). Baja los días del bloque.`;
     } else if (anterior != null) {
       j.estado = "apagada";
+      j.porOrden = true;
       j.motivo = `Registra primero el día ${anterior}: el Libro se llena en orden.`;
     } else if (j.fecha > hoy) {
       j.estado = "apagada";

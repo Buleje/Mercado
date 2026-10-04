@@ -6,6 +6,7 @@ import { invalidarCtp } from "@/lib/forestal/ctp-fetch";
 import type { AsignacionGrupo, BloqueRolliza, ComplementoEnLibro, JornadaEnLibro } from "@/lib/forestal/cubicacion-reparto";
 import { sumaDeLineas, type JornadaDelBloque, type PlanCompletar } from "@/lib/forestal/jornadas-de-bloque";
 import type { ResultadoJornada } from "@/lib/forestal/registrar-jornadas";
+import { recorrerPlan, type AvanceDeTanda, type PasoDeProduccion, type RecorridoDeTanda, type ResultadoDePaso } from "@/lib/forestal/toda-la-produccion";
 import { codigosExistentes, paquetesDeGrupos, useRegistrarJornadas, type LotesParaJornadas } from "./use-registrar-jornadas";
 
 /**
@@ -59,11 +60,19 @@ export function useLibroDeBloques(lotes: LotesParaJornadas, aplicar: Aplicar) {
     setOcupado(null);
   }, []);
 
-  /** Fase 3: una jornada del bloque → una corrida del Libro (línea principal). */
-  const registrarJornada = useCallback(
-    async (b: BloqueRolliza, j: JornadaDelBloque, totalDias: number): Promise<ResultadoJornada["estado"] | null> => {
-      if (j.estado !== "lista" || !b.loteId || !tomar(`${b.id}#${j.dia}`)) return null;
+  /**
+   * Fase 3: una jornada del bloque → una corrida del Libro (línea principal).
+   * Sin candado propio: lo toma quien llama (`registrarJornada` para un día,
+   * `registrarTodo` para la tanda entera). `silencioso` = la tanda dice el
+   * resultado en su panel, no en el aviso del bloque.
+   */
+  const escribirJornada = useCallback(
+    async (b: BloqueRolliza, j: JornadaDelBloque, totalDias: number, silencioso: boolean): Promise<ResultadoDePaso> => {
+      if (j.estado !== "lista" || !b.loteId) return { estado: "error", detalle: "Este día ya no se puede registrar: vuelve a revisar el plan." };
       const nota = `Jornada ${j.dia} de ${totalDias} · bloque ${b.etiqueta || "sin etiqueta"} · distribución de rolliza`;
+      const decir = (a: Omit<AvisoLibro, "bloqueId">) => {
+        if (!silencioso) setAviso({ bloqueId: b.id, ...a });
+      };
       try {
         const r = await registrar([j], {
           loteId: b.loteId,
@@ -72,7 +81,7 @@ export function useLibroDeBloques(lotes: LotesParaJornadas, aplicar: Aplicar) {
           lineaProduccion: "LP",
           exigirTodas: true,
         });
-        const res = r.resultados[0];
+        const res: ResultadoJornada | undefined = r.resultados[0];
         if (res?.corridaId && res.lineNo != null && res.estado !== "no-consumio") {
           const escrito: JornadaEnLibro = {
             dia: j.dia,
@@ -87,8 +96,7 @@ export function useLibroDeBloques(lotes: LotesParaJornadas, aplicar: Aplicar) {
             jornadasLibro: [...(prev.jornadasLibro ?? []).filter((x) => x.dia !== j.dia), escrito],
           }));
         }
-        setAviso({
-          bloqueId: b.id,
+        decir({
           tono: res?.estado === "declarada" ? "ok" : res?.estado === "corrida-abierta" ? "aviso" : "error",
           texto:
             res?.estado === "declarada"
@@ -97,15 +105,60 @@ export function useLibroDeBloques(lotes: LotesParaJornadas, aplicar: Aplicar) {
                 ? `Día ${j.dia}: la corrida N° ${res.lineNo} consumió sus trozas pero la producción no se declaró (${res.detalle ?? "sin detalle"}). Declárala desde la tabla del Libro.`
                 : `Día ${j.dia} no se registró: ${res?.detalle ?? r.mensaje}`,
         });
-        return res?.estado ?? null;
+        return res
+          ? { estado: res.estado, corridaId: res.corridaId ?? null, lineNo: res.lineNo ?? null, detalle: res.detalle ?? null }
+          : { estado: "error", detalle: r.mensaje };
       } catch (e) {
-        setAviso({ bloqueId: b.id, tono: "error", texto: `Día ${j.dia} no se registró: ${texto(e)}` });
-        return null;
+        decir({ tono: "error", texto: `Día ${j.dia} no se registró: ${texto(e)}` });
+        return { estado: "error", detalle: texto(e) };
+      }
+    },
+    [registrar],
+  );
+
+  /** El botón de un día: toma el candado, escribe y lo suelta. */
+  const registrarJornada = useCallback(
+    async (b: BloqueRolliza, j: JornadaDelBloque, totalDias: number): Promise<ResultadoJornada["estado"] | null> => {
+      if (j.estado !== "lista" || !b.loteId || !tomar(`${b.id}#${j.dia}`)) return null;
+      try {
+        const r = await escribirJornada(b, j, totalDias, false);
+        return r.estado === "error" ? null : r.estado;
       } finally {
         soltar();
       }
     },
-    [registrar, tomar, soltar],
+    [escribirJornada, tomar, soltar],
+  );
+
+  /**
+   * «Registrar toda la producción»: los pasos del plan, uno por vez, con el
+   * MISMO escritor del botón de cada día. El candado se toma una sola vez para
+   * toda la tanda (entre un día y otro nadie se cuela con otro botón) y se
+   * corta en el primer día que no quede declarado.
+   */
+  const registrarTodo = useCallback(
+    async (
+      pasos: readonly PasoDeProduccion[],
+      bloqueDe: (id: string) => BloqueRolliza | undefined,
+      opciones: { onAvance?: (a: AvanceDeTanda<PasoDeProduccion>) => void; detener?: () => boolean } = {},
+    ): Promise<RecorridoDeTanda<PasoDeProduccion> | null> => {
+      if (pasos.length === 0 || !tomar("todo")) return null;
+      try {
+        return await recorrerPlan(
+          pasos,
+          async (p) => {
+            const b = bloqueDe(p.bloqueId);
+            if (!b) return { estado: "error", detalle: "El bloque ya no está en la distribución." };
+            setOcupado(`${p.bloqueId}#${p.jornada.dia}`);
+            return escribirJornada(b, p.jornada, p.totalDias, true);
+          },
+          opciones,
+        );
+      } finally {
+        soltar();
+      }
+    },
+    [escribirJornada, tomar, soltar],
   );
 
   const anotarComplemento = useCallback(
@@ -223,5 +276,5 @@ export function useLibroDeBloques(lotes: LotesParaJornadas, aplicar: Aplicar) {
     lotes.recargar().catch((err: unknown) => setAviso({ bloqueId: b.id, tono: "aviso", texto: `${detalle} (no se pudo recargar el lote: ${texto(err)})` }));
   }, [lotes, anotarComplemento]);
 
-  return { registrarJornada, completarLpc, anotarLre, ocupado, aviso, cerrarAviso: () => setAviso(null) };
+  return { registrarJornada, registrarTodo, completarLpc, anotarLre, ocupado, aviso, cerrarAviso: () => setAviso(null) };
 }
