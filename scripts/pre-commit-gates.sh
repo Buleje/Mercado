@@ -101,11 +101,21 @@ if [ "${SKIP_VITEST_GATE:-0}" != "1" ]; then
   if [ -n "$VITEST_TODO" ]; then
     lanzar vitest npx vitest run --changed HEAD --passWithNoTests
   else
+    # Tests que leen el FUENTE con readFileSync (no lo importan): `related` no
+    # los ve. 04-10: `loth-cupo-t9-reglas` quedó rojo con un commit verde. Se
+    # suman los que nombran la ruta de algún archivo staged.
+    LEEN_FUENTE=$(grep -l "readFileSync" __tests__/*.ts __tests__/*.tsx 2>/dev/null || true)
+    EXTRA_TESTS=""
+    if [ -n "$LEEN_FUENTE" ]; then
+      EXTRA_TESTS=$(printf '%s\n' "$STAGED_CODE" | while IFS= read -r f; do
+        [ -n "$f" ] && printf '%s\n' "$LEEN_FUENTE" | xargs grep -lF -- "$f" 2>/dev/null
+      done | sort -u | tr '\n' ' ')
+    fi
     # set -f: 342 rutas del repo llevan corchetes ([tenantSlug]) y sin esto el
     # shell las toma como comodines al expandir la lista.
     set -f
     # shellcheck disable=SC2086
-    lanzar vitest npx vitest related $STAGED_CODE --run --passWithNoTests
+    lanzar vitest npx vitest related $STAGED_CODE $EXTRA_TESTS --run --passWithNoTests
     set +f
   fi
 fi
