@@ -30,7 +30,8 @@
  * números convertidos a curvas tampoco se leen.
  */
 
-import type { MaquinaPlanta, ZonaTipo } from "@/lib/forestal/planta-zona-types";
+import type { CategoriaComponente, ComponenteZona, MaquinaPlanta, ZonaTipo } from "@/lib/forestal/planta-zona-types";
+import { categoriaDeNombre, numeroDeCodigo, tipoDeComponente } from "./croquis-componentes";
 import { areaContornoM2, elegirContornos, type ContornoDe, type TrazadoPdf } from "./croquis-pdf-contornos";
 
 /** Un texto del PDF en puntos de la hoja: origen arriba a la izquierda, y hacia abajo; (x, y) = inicio de la línea base. */
@@ -43,6 +44,8 @@ export interface ComponentePdf {
   clave: string;
   numero: number;
   nombre: string;
+  /** Qué es según la leyenda (madera, maquinaria, techo…): de ahí sale el `tipo` sugerido. */
+  categoria: CategoriaComponente;
   tipo: ZonaTipo;
   /** Fracción de la imagen recortada (0…1), origen abajo a la izquierda. */
   fx: number;
@@ -83,24 +86,12 @@ export interface PropuestaCroquisPdf {
 
 // ─── Tipo y código sugeridos ───────────────────────────────────────────────
 
-const normal = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-
-/** Orden = prioridad: «Acopio de trozas para el coche» es patio de trozas, no aserrado. */
-const REGLAS_TIPO: [RegExp, ZonaTipo][] = [
-  [/^camara\b/, "otro"],
-  [/oficina|administraci/, "oficina"],
-  [/porton|entrada|ingreso|balanza|recepcion/, "entrada"],
-  [/troza/, "patio_trozas"],
-  [/despuntadora|coche|cinta|mesa|techo parabolico|rodillo|aserrio|sierra/, "aserrado"],
-  [/secad|horno/, "secado"],
-  [/reserva|apartad/, "reserva"],
-  [/despacho|embarque/, "despacho"],
-  [/ramada|acopio|apilad|paqueter|aserrada|madera corta|cubicacion|patio/, "patio_producto"],
-];
-
+/**
+ * El tipo sale de la CATEGORÍA del renglón (`croquis-componentes.ts`): «Acopio
+ * de trozas para el coche» es madera → patio de trozas, no aserrado.
+ */
 export function tipoSugerido(nombre: string): ZonaTipo {
-  const n = normal(nombre);
-  return REGLAS_TIPO.find(([re]) => re.test(n))?.[1] ?? "otro";
+  return tipoDeComponente(categoriaDeNombre(nombre), nombre);
 }
 
 /** Prefijo del código por tipo (el de las zonas sembradas: PT-08, AS-36, PP-30…). */
@@ -109,11 +100,8 @@ export const PREFIJO_TIPO: Record<ZonaTipo, string> = {
   reserva: "RS", despacho: "DS", oficina: "OF", otro: "OT",
 };
 
-/** El número de la leyenda que lleva un código de zona («PT-08» → 8, «PP-05b» y «PP-05-3» → 5); null si no sigue el patrón. */
-export function numeroDeCodigo(codigo: string): number | null {
-  const m = /^[A-Z]{1,4}-0*(\d{1,3})(?:[a-z]|-\d{1,2})?$/i.exec(codigo.trim());
-  return m ? Number(m[1]) : null;
-}
+/** Vive en el catálogo de componentes; se re-exporta para no romper a quien lo importa de acá. */
+export { numeroDeCodigo };
 
 // ─── Geometría de textos ───────────────────────────────────────────────────
 
@@ -379,7 +367,7 @@ export function proponerCroquisDesdePdf(entrada: {
       const fuera = fx < 0 || fx > 1 || fy < 0 || fy > 1;
       textoDe.set(`${numero}:${i + 1}`, t);
       componentes.push({
-        clave: `${numero}:${i + 1}`, numero, nombre, tipo: tipoSugerido(nombre),
+        clave: `${numero}:${i + 1}`, numero, nombre, categoria: categoriaDeNombre(nombre), tipo: tipoSugerido(nombre),
         fx: r4(Math.min(1, Math.max(0, fx))), fy: r4(Math.min(1, Math.max(0, fy))),
         punto: i + 1, puntos: lista.length,
         sugerido: lista.length === 1 || !h0 || Math.abs(t.h - h0) <= 0.15 * h0,
@@ -426,7 +414,7 @@ export function proponerCroquisDesdePdf(entrada: {
 
 // ─── De la propuesta a zonas y máquinas en metros ──────────────────────────
 
-export interface ZonaDesdePdf { codigo: string; nombre: string; tipo: ZonaTipo; poligono: string; notas: string }
+export interface ZonaDesdePdf { codigo: string; nombre: string; tipo: ZonaTipo; poligono: string; notas: string; componente: ComponenteZona }
 
 /** Lado de la marca cuadrada: 4 % del lado corto del terreno, entre 1 y 4 m (2 m en 54 × 48). */
 export const ladoMarcaM = (anchoM: number, altoM: number) => Math.min(4, Math.max(1, Math.round(Math.min(anchoM, altoM) * 0.04 * 2) / 2));
@@ -448,7 +436,7 @@ const coma = (n: number) => String(n).replace(".", ",");
  * y así la losa queda ENCIMA de la ramada que la encierra (se puede tocar).
  */
 export function zonasDesdeComponentes(
-  elegidos: (Pick<ComponentePdf, "numero" | "nombre" | "tipo" | "fx" | "fy"> & Partial<Pick<ComponentePdf, "contorno" | "contornoDe">>)[],
+  elegidos: (Pick<ComponentePdf, "numero" | "nombre" | "tipo" | "fx" | "fy"> & Partial<Pick<ComponentePdf, "contorno" | "contornoDe" | "categoria">>)[],
   terreno: { anchoM: number; altoM: number },
 ): ZonaDesdePdf[] {
   const { anchoM, altoM } = terreno;
@@ -480,6 +468,7 @@ export function zonasDesdeComponentes(
         tipo: c.tipo,
         poligono: JSON.stringify(poligono),
         notas,
+        componente: { numero: c.numero, nombre: c.nombre.slice(0, 120), categoria: c.categoria ?? categoriaDeNombre(c.nombre) },
       },
       area: areaComponenteM2(c, terreno),
     };

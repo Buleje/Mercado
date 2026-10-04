@@ -24,6 +24,7 @@ import type { Item, ItemKind, MaquinaPlanta, PlanoPlanta, PlantaZona, ZonaInv } 
 import { printPlantaPlano } from "@/lib/forestal/planta-plano-print";
 import CtpPlantaMapa from "./CtpPlantaMapa";
 import CtpPlantaCroquisMapa from "./CtpPlantaCroquisMapa";
+import { categoriaMeta, guardaMadera } from "@/lib/forestal/croquis-componentes";
 import CtpPlantaCroquisFicha from "./CtpPlantaCroquisFicha";
 import CtpPlantaPanel from "./CtpPlantaPanel";
 import CtpPlantaEspecies from "./CtpPlantaEspecies";
@@ -86,8 +87,10 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
   const soltarEnZona = useCallback((zonaId: string, p?: Punto) => {
     const it = enMano;
     if (!it) return;
-    setEnMano(null);
     const z = zonas.find((x) => x.id === zonaId);
+    // Al baño, a la cámara o al cerco no se lleva una pila: se avisa y sigue en la mano.
+    if (z && !guardaMadera(z)) { setAviso(`${z.codigo}${z.componente ? ` es ${categoriaMeta(z.componente.categoria).label.toLowerCase()}` : ""}: ahí no se ubica madera. Toca un patio, una ramada o la zona de aserrío.`); return; }
+    setEnMano(null);
     setAviso(`${it.label} → ${z ? `${z.codigo}${z.nombre ? ` · ${z.nombre}` : ""}` : "la zona"}`);
     setRecien(it.id);
     void asignar([{ clave: it.id, zonaId, ...(p ? { lat: p[0], lng: p[1] } : {}) }]);

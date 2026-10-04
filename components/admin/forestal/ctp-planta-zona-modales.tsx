@@ -13,7 +13,8 @@ import AdminModal from "@/components/admin/shared/AdminModal";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { geodesicAreaM2, haversineM, formatDist } from "@/lib/cacao/geo-area";
 import { areaPlanaM2, centroidePlano, perimetroPlanoM } from "@/lib/forestal/planta-croquis";
-import { ZONA_TIPOS, zonaTipoMeta, type PlanoPlanta, type PlantaZona, type ZonaTipo } from "@/lib/forestal/planta-zona-types";
+import { ZONA_TIPOS, isCategoriaComponente, zonaTipoMeta, type CategoriaComponente, type PlanoPlanta, type PlantaZona, type ZonaTipo } from "@/lib/forestal/planta-zona-types";
+import { CATEGORIAS, numeroDeCodigo, tipoDeComponente } from "@/lib/forestal/croquis-componentes";
 import { Btn, CampoGrid, Field, I, MODAL_BODY, ModalBody, ModalFooter } from "./ctp-shared";
 import { formatNumber } from "@/lib/format";
 
@@ -177,6 +178,8 @@ export function AsignarZonaModal({ poligono, suggest, onClose, onSaved, plano = 
 export function ZonaFichaModal({ zona, onClose, onSaved, onDeleted }: { zona: PlantaZona; onClose: () => void; onSaved: () => void; onDeleted: () => void }) {
   const [tipo, setTipo] = useState<ZonaTipo>(zona.tipo);
   const [f, setF] = useState({ codigo: zona.codigo, nombre: zona.nombre ?? "", notas: zona.notas ?? "" });
+  /** Qué es según la leyenda (solo croquis); "" = sin identificar. Cambiarlo sugiere el tipo. */
+  const [categoria, setCategoria] = useState<CategoriaComponente | "">(zona.componente?.categoria ?? "");
   const [submitting, setSubmitting] = useState(false);
   const [confirmDel, setConfirmDel] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -189,7 +192,11 @@ export function ZonaFichaModal({ zona, onClose, onSaved, onDeleted }: { zona: Pl
     try {
       const r = await fetch("/api/admin/forestal/ctp/planta", {
         method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), credentials: "include",
-        body: JSON.stringify({ id: zona.id, codigo: f.codigo.trim(), nombre: f.nombre.trim() || null, tipo, notas: f.notas.trim() || null, poligono: zona.poligono, lat: zona.lat, lng: zona.lng, areaM2: zona.areaM2, ...(zona.plano === "croquis" ? { plano: "croquis" } : {}) }),
+        body: JSON.stringify({
+          id: zona.id, codigo: f.codigo.trim(), nombre: f.nombre.trim() || null, tipo, notas: f.notas.trim() || null, poligono: zona.poligono, lat: zona.lat, lng: zona.lng, areaM2: zona.areaM2,
+          // El renglón de la leyenda se conserva; sin componente previo, sale del nombre y el código (PT-08 → 8).
+          ...(zona.plano === "croquis" ? { plano: "croquis", componente: categoria ? { numero: zona.componente?.numero ?? numeroDeCodigo(f.codigo.trim()), nombre: (zona.componente?.nombre || f.nombre.trim() || f.codigo.trim()).slice(0, 120), categoria } : null } : {}),
+        }),
       });
       if (!r.ok) throw new Error((await r.json().catch(() => ({}))).message ?? `HTTP ${r.status}`);
       onSaved();
@@ -234,6 +241,18 @@ export function ZonaFichaModal({ zona, onClose, onSaved, onDeleted }: { zona: Pl
       }
     >
       <form id="planta-zona-ficha" onSubmit={save} className={`space-y-4 ${MODAL_BODY}`}>
+        {zona.plano === "croquis" && (
+          <Field label="Qué es en el plano">
+            <select
+              value={categoria}
+              onChange={(e) => { const v = e.target.value; if (v === "") setCategoria(""); else if (isCategoriaComponente(v)) { setCategoria(v); setTipo(tipoDeComponente(v, zona.componente?.nombre || f.nombre)); } }}
+              className={I}
+            >
+              <option value="">Sin identificar</option>
+              {CATEGORIAS.map((c) => <option key={c.categoria} value={c.categoria}>{c.label} · {c.hint}</option>)}
+            </select>
+          </Field>
+        )}
         <div>
           <p className="mb-1.5 text-sm font-bold text-[var(--text-primary)]">Tipo de zona</p>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">

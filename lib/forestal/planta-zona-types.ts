@@ -45,8 +45,49 @@ export interface PlantaZona {
    * Leaflet), `lat/lng` = centroide en `[y,x]` y `areaM2` con fórmula plana.
    */
   plano?: PlanoPlanta;
+  /**
+   * Qué ES según la leyenda del plano (03-10): «15 Cinta principal» →
+   * maquinaria. Sin el campo = zona vieja o dibujada a mano (se ve por su
+   * tipo). Va en el mismo KV: sin migración.
+   */
+  componente?: ComponenteZona;
   createdAt: string;
   updatedAt: string;
+}
+
+// ─── Componente del plano (la leyenda del croquis, 03-10) ──────────────────
+
+/**
+ * Qué ES una zona según la leyenda del plano —madera, una máquina, un techo,
+ * el baño—, que no es lo mismo que qué se HACE ahí (el `ZonaTipo`). El
+ * catálogo (formato, ícono, clasificador) vive en `croquis-componentes.ts`.
+ */
+export const CATEGORIAS_COMPONENTE = [
+  "madera", "maquinaria", "techo", "servicio", "oficina", "seguridad", "acceso", "limite", "naturaleza", "otro",
+] as const;
+export type CategoriaComponente = (typeof CATEGORIAS_COMPONENTE)[number];
+
+export interface ComponenteZona {
+  /** El número de la leyenda (el círculo del plano); null = sin número. */
+  numero: number | null;
+  /** El renglón de la leyenda («Cinta principal»). */
+  nombre: string;
+  categoria: CategoriaComponente;
+}
+
+const CATEGORIA_SET = new Set<string>(CATEGORIAS_COMPONENTE);
+
+export function isCategoriaComponente(v: unknown): v is CategoriaComponente {
+  return typeof v === "string" && CATEGORIA_SET.has(v);
+}
+
+/** De un valor crudo (KV o cliente) a un componente válido; null = la zona no tiene. */
+export function normalizarComponente(v: unknown): ComponenteZona | null {
+  if (!v || typeof v !== "object") return null;
+  const o = v as Record<string, unknown>;
+  if (!isCategoriaComponente(o.categoria)) return null;
+  const n = typeof o.numero === "number" && Number.isInteger(o.numero) && o.numero > 0 && o.numero < 1000 ? o.numero : null;
+  return { numero: n, nombre: typeof o.nombre === "string" ? o.nombre.trim().slice(0, 120) : "", categoria: o.categoria };
 }
 
 /** Config por tipo: etiqueta, color del anillo (token DS → resuelve en Leaflet) e ícono lucide. */
@@ -82,14 +123,18 @@ export function zonaTipoMeta(tipo: ZonaTipo) {
   return ZONA_TIPOS.find((z) => z.tipo === tipo) ?? ZONA_TIPOS[ZONA_TIPOS.length - 1];
 }
 
+/** Lo que llega de KV o del cliente: el componente puede venir roto o en null (= borrarlo). */
+export type ZonaCruda = Partial<Omit<PlantaZona, "componente">> & { componente?: unknown } & Record<string, unknown>;
+
 /** Normaliza un registro crudo (de KV o del cliente) a una PlantaZona válida. */
-export function normalizeZona(input: Partial<PlantaZona> & Record<string, unknown>): PlantaZona {
+export function normalizeZona(input: ZonaCruda): PlantaZona {
   const now = new Date().toISOString();
   const num = (v: unknown): number | null => {
     const n = typeof v === "string" ? Number(v) : typeof v === "number" ? v : null;
     return n != null && Number.isFinite(n) ? n : null;
   };
   const tipo = isZonaTipo(input.tipo) ? input.tipo : "otro";
+  const componente = normalizarComponente(input.componente);
   return {
     id: String(input.id ?? "").trim(),
     codigo: String(input.codigo ?? "").trim(),
@@ -101,6 +146,7 @@ export function normalizeZona(input: Partial<PlantaZona> & Record<string, unknow
     areaM2: num(input.areaM2),
     notas: input.notas != null && String(input.notas).trim() ? String(input.notas).trim() : null,
     ...(input.plano === "croquis" ? { plano: "croquis" as const } : {}),
+    ...(componente ? { componente } : {}),
     createdAt: typeof input.createdAt === "string" ? input.createdAt : now,
     updatedAt: now,
   };

@@ -2,8 +2,9 @@
 
 /**
  * Revisar los componentes que salieron del PDF del croquis antes de crearlos
- * (ADR-465): cada renglón de la leyenda ubicado en el plano, con su tipo
- * sugerido (se puede cambiar), su forma (el contorno del plano o un cuadrado)
+ * (ADR-465): cada renglón de la leyenda ubicado en el plano, con QUÉ ES
+ * (categoría de la leyenda: madera, maquinaria, techo…) y su tipo sugerido
+ * (los dos se pueden cambiar), su forma (el contorno del plano o un cuadrado)
  * con el área, y si entra o no. Lo que ya tiene zona en el croquis entra sin
  * marcar y lo dice; los números repetidos con otra letra (rótulos de rutas)
  * también. Al lado, la vista previa de lo que se va a crear.
@@ -13,14 +14,16 @@ import { useState } from "react";
 import { AlertTriangle, FileText } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { formatNumber } from "@/lib/format";
-import { ZONA_TIPOS, isZonaTipo } from "@/lib/forestal/planta-zona-types";
+import { ZONA_TIPOS, isCategoriaComponente, isZonaTipo } from "@/lib/forestal/planta-zona-types";
+import { CATEGORIAS, formatoComponente } from "@/lib/forestal/croquis-componentes";
+import { MuestraFormato } from "./CtpPlantaCroquisLeyendaCategorias";
 import { areaComponenteM2, ladoMarcaM, type ComponentePdf } from "@/lib/forestal/croquis-desde-pdf";
 import type { CroquisPdfEstado } from "./hooks/use-croquis-pdf";
 import CtpPlantaCroquisPdfVista from "./CtpPlantaCroquisPdfVista";
 
 const CHIP = "shrink-0 rounded-md px-1.5 py-0.5 text-xs font-bold";
 /* Propio y no `I` de ctp-shared: con `I h-9` gana su h-11 (orden del CSS) y cada renglón medía 56 px. */
-const SELECT = "h-9 w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-xs text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)] sm:w-40";
+const SELECT = "h-9 min-w-0 flex-1 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-xs text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)] sm:w-36 sm:flex-none";
 const m1 = (n: number) => formatNumber(n, { max: 1 });
 /* Sobre el lienzo y no sobre el tinte: --accent-dark en --accent-soft da 4,4:1; en --surface-canvas, 4,6:1 (medido 03-10). */
 const CHIP_CONTORNO = `${CHIP} bg-[var(--surface-canvas)] text-[var(--accent-dark)] ring-1 ring-inset ring-[var(--accent-muted)] dark:text-[var(--accent)]`;
@@ -48,7 +51,7 @@ export default function CtpPlantaCroquisPdfRevision({ pdf, terreno }: {
         <p className="text-sm font-bold text-[var(--text-primary)]">Componentes del PDF</p>
         <InfoTip
           title="Componentes del PDF"
-          what={`Leí la leyenda (número + nombre) y busqué cada número en el plano. Cada uno marcado se crea como zona con el código del tipo y el número: con el contorno del plano que encierra su número (o el que está pegado a él), y si no hay, un cuadrado de ${m1(lado)} × ${m1(lado)} m en su lugar.`}
+          what={`Leí la leyenda (número + nombre), clasifiqué cada renglón (madera, maquinaria, techo, servicio, cámara…) y busqué cada número en el plano. Cada uno marcado se crea como zona con el código del tipo y el número: con el contorno del plano que encierra su número (o el que está pegado a él), y si no hay, un cuadrado de ${m1(lado)} × ${m1(lado)} m en su lugar.`}
           affects="Un número que aparece varias veces da varios puntos; si tiene otra letra (rótulos de rutas) queda sin marcar. Lo que ya tiene zona en el croquis no se toca y lo de fuera del cerco va al borde. Un contorno que no te convence vuelve al cuadrado con «Usar cuadrado»."
           example="3 Ramada de calamina → PP-03 con su contorno de 163 m² (encierra también el 4, 5 y 7); 22 Coche de la cinta, lejos de su dibujo → sin contorno, cuadrado de 2 × 2 m."
         />
@@ -85,6 +88,7 @@ export default function CtpPlantaCroquisPdfRevision({ pdf, terreno }: {
           <ul className="mt-1 max-h-[20rem] space-y-0.5 overflow-y-auto pr-1">
             {p.componentes.map((c) => {
               const fila = pdf.filas[c.clave];
+              const categoria = fila?.categoria ?? c.categoria;
               const ya = pdf.yaEnCroquis.get(c.numero);
               const conContorno = !!c.contorno && fila?.forma === "contorno";
               const area = terreno ? areaComponenteM2({ contorno: conContorno ? c.contorno : null }, terreno) : null;
@@ -117,6 +121,16 @@ export default function CtpPlantaCroquisPdfRevision({ pdf, terreno }: {
                       </span>
                     </span>
                   </label>
+                  <span className="flex w-full items-center gap-1.5 sm:w-auto">
+                  <MuestraFormato formato={formatoComponente({ categoria, nombre: c.nombre })} />
+                  <select
+                    value={categoria}
+                    onChange={(e) => { if (isCategoriaComponente(e.target.value)) pdf.cambiarCategoria(c.clave, e.target.value); }}
+                    aria-label={`Qué es ${c.numero} ${c.nombre} según la leyenda`}
+                    className={SELECT}
+                  >
+                    {CATEGORIAS.map((k) => <option key={k.categoria} value={k.categoria}>{k.label}</option>)}
+                  </select>
                   <select
                     value={fila?.tipo ?? c.tipo}
                     onChange={(e) => { if (isZonaTipo(e.target.value)) pdf.cambiarFila(c.clave, { tipo: e.target.value }); }}
@@ -125,6 +139,7 @@ export default function CtpPlantaCroquisPdfRevision({ pdf, terreno }: {
                   >
                     {ZONA_TIPOS.map((z) => <option key={z.tipo} value={z.tipo}>{z.label}</option>)}
                   </select>
+                  </span>
                   {c.contorno && (
                     <button
                       type="button"

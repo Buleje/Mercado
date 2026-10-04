@@ -11,10 +11,11 @@
 import { useCallback, useMemo, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { numeroDeCodigo, zonasDesdeComponentes, type PropuestaCroquisPdf } from "@/lib/forestal/croquis-desde-pdf";
-import type { ZonaTipo } from "@/lib/forestal/planta-zona-types";
+import { tipoDeComponente } from "@/lib/forestal/croquis-componentes";
+import type { CategoriaComponente, ZonaTipo } from "@/lib/forestal/planta-zona-types";
 
-/** `forma`: el contorno del PDF (si lo trae) o la marca cuadrada en el número. */
-export interface FilaPdf { incluir: boolean; tipo: ZonaTipo; forma: "contorno" | "cuadrado" }
+/** `forma`: el contorno del PDF (si lo trae) o la marca cuadrada en el número. `categoria`: qué es según la leyenda. */
+export interface FilaPdf { incluir: boolean; categoria: CategoriaComponente; tipo: ZonaTipo; forma: "contorno" | "cuadrado" }
 /** Códigos de zona del negocio al momento de importar (todos y los del croquis). */
 export interface ExistentesPdf { codigos: string[]; croquis: string[] }
 export type ResultadoZonasPdf =
@@ -46,7 +47,7 @@ export function useCroquisPdf() {
     setExistentes(ex);
     // Un número que ya tiene zona en el croquis entra SIN marcar: re-importar no duplica.
     setFilas(Object.fromEntries(p.componentes.map((c) => [c.clave, {
-      incluir: c.sugerido && !usados.has(c.numero), tipo: c.tipo, forma: c.contorno ? "contorno" : "cuadrado",
+      incluir: c.sugerido && !usados.has(c.numero), categoria: c.categoria, tipo: c.tipo, forma: c.contorno ? "contorno" : "cuadrado",
     } satisfies FilaPdf])));
   }, []);
 
@@ -54,13 +55,19 @@ export function useCroquisPdf() {
     setFilas((f) => (f[clave] ? { ...f, [clave]: { ...f[clave], ...cambio } } : f));
   }, []);
 
+  /** Cambiar qué es también cambia el tipo sugerido (se puede volver a elegir después). */
+  const cambiarCategoria = useCallback((clave: string, categoria: CategoriaComponente) => {
+    const nombre = propuesta?.componentes.find((c) => c.clave === clave)?.nombre ?? "";
+    setFilas((f) => (f[clave] ? { ...f, [clave]: { ...f[clave], categoria, tipo: tipoDeComponente(categoria, nombre) } } : f));
+  }, [propuesta]);
+
   const marcarTodas = useCallback((incluir: boolean) => {
     setFilas((f) => Object.fromEntries(Object.entries(f).map(([k, x]) => [k, { ...x, incluir }])));
   }, []);
 
   const elegidos = useMemo(
     () => (propuesta?.componentes ?? []).filter((c) => filas[c.clave]?.incluir).map((c) => ({
-      ...c, tipo: filas[c.clave].tipo, contorno: filas[c.clave].forma === "contorno" ? c.contorno : null,
+      ...c, categoria: filas[c.clave].categoria, tipo: filas[c.clave].tipo, contorno: filas[c.clave].forma === "contorno" ? c.contorno : null,
     })),
     [propuesta, filas],
   );
@@ -83,7 +90,7 @@ export function useCroquisPdf() {
     }
   }, [elegidos]);
 
-  return { propuesta, existentes, yaEnCroquis, filas, cargar, cambiarFila, marcarTodas, elegidos, limpiar, crearZonas };
+  return { propuesta, existentes, yaEnCroquis, filas, cargar, cambiarFila, cambiarCategoria, marcarTodas, elegidos, limpiar, crearZonas };
 }
 
 export type CroquisPdfEstado = ReturnType<typeof useCroquisPdf>;

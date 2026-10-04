@@ -4,7 +4,7 @@ import { PlatformSettingsDB } from "@/lib/db/platform-settings.db";
 import { ForestPlantaCroquisDB } from "@/lib/db/forest-planta-croquis.db";
 import { auditCtp } from "@/lib/forestal/ctp-audit";
 import { geometriaZonaCroquis } from "@/lib/forestal/planta-croquis-guardado";
-import { normalizeZona, zonaTipoMeta, type PlantaZona } from "@/lib/forestal/planta-zona-types";
+import { normalizarComponente, normalizeZona, zonaTipoMeta, type ComponenteZona, type PlantaZona, type ZonaCruda } from "@/lib/forestal/planta-zona-types";
 
 /**
  * ForestPlantaZonaDB — zonas físicas del aserradero (Mapa de Planta, ADR-142).
@@ -53,7 +53,7 @@ export const ForestPlantaZonaDB = {
    * Lee y escribe bajo el lock de la clave (`actualizar`): dos altas a la vez
    * no se pisan (sembrar diez zonas seguidas perdía alguna).
    */
-  async save(tenantId: string, input: Partial<PlantaZona> & Record<string, unknown>, user = "unknown"): Promise<PlantaZona> {
+  async save(tenantId: string, input: ZonaCruda, user = "unknown"): Promise<PlantaZona> {
     if (!tenantId) throw new Error("tenantId is required");
     // Siempre: una edición de sólo el nombre de una zona del croquis también
     // recalcula su geometría (y sin el terreno no se puede).
@@ -102,7 +102,7 @@ export const ForestPlantaZonaDB = {
    */
   async crearVarias(
     tenantId: string,
-    inputs: Array<Partial<PlantaZona> & Record<string, unknown>>,
+    inputs: ZonaCruda[],
     user = "unknown",
   ): Promise<{ creadas: PlantaZona[]; omitidas: { codigo: string; motivo: string }[] }> {
     if (!tenantId) throw new Error("tenantId is required");
@@ -139,6 +139,51 @@ export const ForestPlantaZonaDB = {
         entity: "ForestPlantaZona",
         entityId: r.creadas[0].id,
         detail: `Importó ${r.creadas.length} zonas del croquis desde el PDF del plano: ${r.creadas.slice(0, 12).map((z) => z.codigo).join(", ")}${r.creadas.length > 12 ? "…" : ""}`,
+        user,
+      });
+    }
+    return r;
+  },
+
+  /**
+   * «Identificar la leyenda»: el componente del plano de varias zonas en UNA
+   * escritura bajo el lock. Solo toca `componente` (null = lo borra): tipo,
+   * código y polígono quedan como estaban. Un id que ya no existe va a `faltan`.
+   */
+  async asignarComponentes(
+    tenantId: string,
+    cambios: Array<{ id: string; componente: ComponenteZona | null }>,
+    user = "unknown",
+  ): Promise<{ actualizadas: PlantaZona[]; faltan: string[] }> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const r = await PlatformSettingsDB.actualizar<unknown, { actualizadas: PlantaZona[]; faltan: string[] }>(
+      `${KEY_PREFIX}${tenantId}`,
+      (actual) => {
+        const list = normalizarLista(actual);
+        const porId = new Map(cambios.map((c) => [c.id, normalizarComponente(c.componente)] as const));
+        const actualizadas: PlantaZona[] = [];
+        const next = list.map((z) => {
+          if (!porId.has(z.id)) return z;
+          const comp = porId.get(z.id) ?? null;
+          const nz: PlantaZona = { ...z };
+          if (comp) nz.componente = comp;
+          else delete nz.componente;
+          actualizadas.push(nz);
+          return nz;
+        });
+        const vivos = new Set(list.map((z) => z.id));
+        const faltan = cambios.filter((c) => !vivos.has(c.id)).map((c) => c.id);
+        return actualizadas.length ? { valor: next, resultado: { actualizadas, faltan } } : { resultado: { actualizadas, faltan } };
+      },
+      user,
+    );
+    if (r.actualizadas.length) {
+      auditCtp({
+        tenantId,
+        action: "ctp_planta_zona_set",
+        entity: "ForestPlantaZona",
+        entityId: r.actualizadas[0].id,
+        detail: `Identificó con la leyenda del plano ${r.actualizadas.length} zonas del croquis: ${r.actualizadas.slice(0, 12).map((z) => `${z.codigo}${z.componente ? ` (${z.componente.categoria})` : ""}`).join(", ")}${r.actualizadas.length > 12 ? "…" : ""}`,
         user,
       });
     }

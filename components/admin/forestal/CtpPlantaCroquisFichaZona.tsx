@@ -4,6 +4,8 @@
  * Ficha de una ZONA del croquis: cuánto hay parado ahí (PT primero, después m³
  * y piezas), de qué especie, con qué permiso y de qué dueño, y la lista de
  * pilas y trozas sueltas que tiene adentro. Tocar una fila abre su ficha.
+ * Arriba, lo que es según la leyenda del plano y sus acciones (máquina →
+ * Activos, cámara → Cámaras); una zona que no guarda madera no invita a ubicar.
  */
 
 import { useMemo, useState } from "react";
@@ -13,6 +15,8 @@ import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { formatNumber } from "@/lib/format";
 import { codigoTroza, fmtMedidaCorta, resumirZonaCroquis, especieDe, type ContenidoZona, type GrupoMedida } from "@/lib/forestal/planta-croquis";
 import { zonaTipoMeta, type PlantaZona } from "@/lib/forestal/planta-zona-types";
+import { guardaMadera } from "@/lib/forestal/croquis-componentes";
+import CtpPlantaCroquisFichaComponente from "./CtpPlantaCroquisFichaComponente";
 import { BOTON_PRIMARIO, BOTON_SECUNDARIO } from "./ctp-lotes-modal-marco";
 import type { SeleccionCroquis } from "./hooks/use-croquis-leaflet";
 
@@ -55,19 +59,21 @@ export default function CtpPlantaCroquisFichaZona({ zona, contenido, onAbrir, on
   const sueltas = contenido?.sueltas ?? [];
   const grupos = eje === "especie" ? r.porEspecie : eje === "permiso" ? r.porPermiso : r.porDueno;
   const puedeDespachar = zona.tipo === "reserva" && pilas.some((p) => p.item.kind === "producto");
+  const conMadera = guardaMadera(zona);
 
   return (
     <div className="space-y-3">
+      <CtpPlantaCroquisFichaComponente zona={zona} />
       <p className="flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)]">
         <span className="h-3 w-3 shrink-0 rounded-full" style={{ background: meta.ring }} />
         {meta.label}{zona.areaM2 != null ? ` · ${formatNumber(Math.round(zona.areaM2))} m²` : ""}
       </p>
 
-      {r.pilas + r.sueltas === 0 ? (
+      {r.pilas + r.sueltas === 0 ? (!conMadera ? null : (
         <p className="rounded-xl bg-[var(--surface-sunken)] px-3 py-2.5 text-sm text-[var(--text-secondary)]">
           Zona vacía. Toca una guía de la lista y después esta zona.
         </p>
-      ) : (
+      )) : (
         <>
           <div className="grid grid-cols-3 gap-2">
             <Cifra label="Pie tablar" valor={r.pt > 0 ? formatNumber(r.pt, { max: 0 }) : "—"} fuerte />

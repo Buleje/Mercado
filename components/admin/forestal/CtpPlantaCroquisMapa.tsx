@@ -21,7 +21,7 @@ import { formatNumber } from "@/lib/format";
 import { FILTROS_VACIOS, opcionesDeFiltro, rutasDelPlano, type ContenidoZona, type FiltrosCroquis, type Punto } from "@/lib/forestal/planta-croquis";
 import { CROQUIS_CSS } from "@/lib/forestal/planta-croquis-html";
 import { MARCA_CSS } from "@/lib/forestal/planta-iconos";
-import { ZONA_TIPOS, claveTroza, type AsignacionPlanta, type Item, type MaquinaPlanta, type PlantaCroquis, type PlantaZona } from "@/lib/forestal/planta-zona-types";
+import { claveTroza, type AsignacionPlanta, type Item, type MaquinaPlanta, type PlantaCroquis, type PlantaZona } from "@/lib/forestal/planta-zona-types";
 import { DND_ITEM } from "./CtpPlantaPanel";
 import { AsignarZonaModal } from "./ctp-planta-zona-modales";
 import CtpPlantaCroquisBarra from "./CtpPlantaCroquisBarra";
@@ -30,6 +30,8 @@ import CtpPlantaCroquisControles, { CONTROLES_CSS } from "./CtpPlantaCroquisCont
 import CtpPlantaCroquisHoja from "./CtpPlantaCroquisHoja";
 import { useCroquisPantallaCompleta } from "./hooks/use-croquis-pantalla-completa";
 import CtpPlantaCroquisLeyendaRutas from "./CtpPlantaCroquisLeyendaRutas";
+import CtpPlantaCroquisLeyendaCategorias, { CroquisPatrones } from "./CtpPlantaCroquisLeyendaCategorias";
+import { useCroquisIdentificar } from "./hooks/use-croquis-identificar";
 import { useCroquisLeaflet, type MarcaCroquis, type SeleccionCroquis } from "./hooks/use-croquis-leaflet";
 import { useCroquisDibujo } from "./hooks/use-croquis-dibujo";
 
@@ -87,6 +89,8 @@ export default function CtpPlantaCroquisMapa(props: CtpPlantaCroquisMapaProps) {
         </div>
       )}
       {config && <CtpPlantaCroquisConfigModal croquis={props.croquis} onClose={() => setConfig(false)} onGuardar={props.onGuardarCroquis} onZonasCreadas={props.onChanged} />}
+      {/* Los rayados de la simbología (ramada, cemento): el mapa, las muestras y la revisión del PDF los usan. */}
+      <CroquisPatrones />
       {/* Leaflet inserta el HTML de las marcas fuera del árbol de React: el CSS va global. */}
       <style jsx global>{MARCA_CSS}</style>
     </>
@@ -101,6 +105,9 @@ function Lienzo(props: CtpPlantaCroquisMapaProps & { croquis: PlantaCroquis; onC
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mapRef = useRef<any>(null);
   const [filtros, setFiltros] = useState<FiltrosCroquis>(FILTROS_VACIOS);
+  /** Entrada de la leyenda que se está mirando (`cat:maquinaria`, `tipo:otro`): el resto se atenúa. */
+  const [filtroLeyenda, setFiltroLeyenda] = useState<string | null>(null);
+  const ident = useCroquisIdentificar(zonas, onChanged, onAviso);
   const [flujo, setFlujo] = useLocalStorage<boolean>("ctp-croquis-flujo", false);
   const [etiquetas, setEtiquetas] = useState(true);
   const { abierta: fullscreen, cerrar: cerrarFull, alternar: alternarFull } = useCroquisPantallaCompleta();
@@ -116,7 +123,7 @@ function Lienzo(props: CtpPlantaCroquisMapaProps & { croquis: PlantaCroquis; onC
   const dibujo = useCroquisDibujo({ LRef, mapRef, croquis, zonas, onChanged });
 
   const leaflet = useCroquisLeaflet(containerRef, { LRef, mapRef }, {
-    croquis, zonas, contenido, filtros, mostrarFlujo: flujo, mostrarEtiquetas: etiquetas, seleccion,
+    croquis, zonas, contenido, filtros, filtroLeyenda, mostrarFlujo: flujo, mostrarEtiquetas: etiquetas, seleccion,
     resaltada: sobre ?? zonaResaltada, recien, dibujando: dibujo.modo === "dibujar",
     arrastrarUnDedo: !tactil || fullscreen, ajustado: movil,
     onTocarFondo: dibujo.agregarPunto,
@@ -137,6 +144,7 @@ function Lienzo(props: CtpPlantaCroquisMapaProps & { croquis: PlantaCroquis; onC
       if (zid !== m.zonaId) { const z = zonas.find((x) => x.id === zid); onAviso(`Movido a ${z ? `${z.codigo}${z.nombre ? ` · ${z.nombre}` : ""}` : "otra zona"}`); }
     },
     onMarcaAfuera: () => onAviso("Ese punto no está dentro de ninguna zona del croquis: la marca vuelve a su lugar."),
+    onDestinoSinMadera: (zid) => { const z = zonas.find((x) => x.id === zid); onAviso(`${z ? z.codigo : "Esa zona"} no guarda madera (según la leyenda del plano): la marca vuelve a su lugar.`); },
     onMoverMaquina,
   });
 
@@ -170,7 +178,6 @@ function Lienzo(props: CtpPlantaCroquisMapaProps & { croquis: PlantaCroquis; onC
     else onAviso("Suéltalo DENTRO de una zona del croquis; ahí afuera no hay nada dibujado.");
   }, [leaflet, onSoltarEnZona, onAviso]);
 
-  const tiposPresentes = ZONA_TIPOS.filter((t) => zonas.some((z) => z.tipo === t.tipo));
   const cursor = dibujo.modo === "dibujar" ? "crosshair" : enMano ? "copy" : "";
 
   return (
@@ -219,16 +226,6 @@ function Lienzo(props: CtpPlantaCroquisMapaProps & { croquis: PlantaCroquis; onC
             </p>
           </div>
         )}
-        {leaflet.ready && tiposPresentes.length > 0 && (
-          <details className="pointer-events-auto absolute right-3 top-3 z-10 hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 shadow-[var(--shadow-md)] sm:block [&_summary::-webkit-details-marker]:hidden">
-            <summary className="cursor-pointer list-none text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]">Leyenda</summary>
-            <div className="mt-1 space-y-0.5">
-              {tiposPresentes.map((t) => <span key={t.tipo} className="flex items-center gap-1.5 text-xs font-bold text-[var(--text-secondary)]"><span className="h-3 w-3 shrink-0 rounded-full" style={{ background: t.ring }} />{t.label}</span>)}
-              <span className="flex items-center gap-1.5 text-xs font-bold text-[var(--text-secondary)]"><span className="h-3 w-4 shrink-0 rounded-sm border-2 border-[var(--data-warning-500)] bg-[var(--text-primary)]" />Máquina (gris = fuera)</span>
-              <span className="flex items-center gap-1.5 text-xs font-bold text-[var(--text-secondary)]"><span className="h-3 w-4 shrink-0 rounded-full border-2 border-[var(--text-tertiary)] bg-[var(--surface-raised)]" />Troza separada</span>
-            </div>
-          </details>
-        )}
       </div>
       {leaflet.ready && movil && (
         <CtpPlantaCroquisControles
@@ -237,6 +234,12 @@ function Lienzo(props: CtpPlantaCroquisMapaProps & { croquis: PlantaCroquis; onC
         />
       )}
       {fullscreen && props.ficha && <CtpPlantaCroquisHoja minimizada={hojaBaja} onMinimizar={setHojaBaja}>{props.ficha}</CtpPlantaCroquisHoja>}
+      {leaflet.ready && !(fullscreen && movil) && (
+        <CtpPlantaCroquisLeyendaCategorias
+          zonas={zonas} filtro={filtroLeyenda} onFiltro={setFiltroLeyenda} onIrA={irAZona}
+          pendientes={ident.pendientes} identificando={ident.identificando} onIdentificar={() => void ident.identificar()}
+        />
+      )}
       {flujo && rutas && <CtpPlantaCroquisLeyendaRutas rutas={rutas} version={croquis.version} />}
       {dibujo.errorEdicion && <p className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 py-2 text-xs font-bold text-[var(--data-error-700)]">{dibujo.errorEdicion}</p>}
 

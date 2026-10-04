@@ -6,7 +6,7 @@ import { isSpecializationEnabled } from "@/lib/specializations";
 import { ForestPlantaZonaDB, ZonaCroquisInvalidaError } from "@/lib/db/forest-planta-zona.db";
 import { ForestPlantaAsignacionDB, MAX_ASIGNACIONES_POR_LOTE, ZonaInexistenteError } from "@/lib/db/forest-planta-asignacion.db";
 import { ForestPlantaDB } from "@/lib/db/forest-planta.db";
-import { isZonaTipo } from "@/lib/forestal/planta-zona-types";
+import { CATEGORIAS_COMPONENTE, isZonaTipo } from "@/lib/forestal/planta-zona-types";
 import { withApiHandler } from "@/lib/api-handler";
 
 /**
@@ -39,6 +39,12 @@ const zonaSchema = z.object({
   notas: z.string().trim().max(2000).nullable().optional(),
   /** En qué plano está dibujada (ADR-465). Sin el campo = satélite. */
   plano: z.enum(["satelite", "croquis"]).optional(),
+  /** Qué es según la leyenda del plano. Sin el campo = no se toca; null = se borra. */
+  componente: z.object({
+    numero: z.number().int().min(1).max(999).nullable(),
+    nombre: z.string().trim().max(120),
+    categoria: z.enum(CATEGORIAS_COMPONENTE),
+  }).nullable().optional(),
 });
 
 async function guard(req: NextRequest) {

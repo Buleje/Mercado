@@ -4,7 +4,7 @@
  * useCroquisLeaflet — el mapa del CROQUIS del aserradero (ADR-465): Leaflet con
  * `L.CRS.Simple`, donde una unidad es un METRO y un punto es `[y, x]` desde la
  * esquina inferior izquierda del terreno. Sobre la imagen del plano dibuja las
- * zonas (color de su tipo), lo que hay parado en cada una —la pila entera o la
+ * zonas (formato de su componente de la leyenda, o color de su tipo), lo que hay parado en cada una —la pila entera o la
  * troza separada—, las máquinas D1–D7 y, si se pide, el flujo del plano.
  *
  * Los handlers de Leaflet se registran una vez y viven fuera de React: leen
@@ -21,7 +21,8 @@ import {
   type ContenidoZona, type FiltrosCroquis, type Punto,
 } from "@/lib/forestal/planta-croquis";
 import { etiquetaZonaHtml, maquinaHtml, numeroTramoHtml, rotuloHtml, trozaSueltaHtml } from "@/lib/forestal/planta-croquis-html";
-import { zonaTipoMeta, type MaquinaPlanta, type PlantaCroquis, type PlantaZona } from "@/lib/forestal/planta-zona-types";
+import { claveLeyenda, etiquetaDeZona, formatoDeZona, guardaMadera } from "@/lib/forestal/croquis-componentes";
+import type { MaquinaPlanta, PlantaCroquis, PlantaZona } from "@/lib/forestal/planta-zona-types";
 
 export interface MarcaCroquis { tipo: "pila" | "troza"; id: string; zonaId: string }
 export type SeleccionCroquis = { tipo: "zona" | "pila" | "troza" | "maquina"; id: string };
@@ -31,6 +32,8 @@ export interface CroquisLeafletOpts {
   zonas: PlantaZona[];
   contenido: Record<string, ContenidoZona>;
   filtros: FiltrosCroquis;
+  /** Entrada de la leyenda que se mira (`claveLeyenda`): las otras zonas se atenúan. */
+  filtroLeyenda: string | null;
   mostrarFlujo: boolean;
   mostrarEtiquetas: boolean;
   seleccion: SeleccionCroquis | null;
@@ -47,6 +50,8 @@ export interface CroquisLeafletOpts {
   onTocarMaquina: (codigo: string) => void;
   onMoverMarca: (m: MarcaCroquis, zonaId: string, p: Punto) => void;
   onMarcaAfuera: () => void;
+  /** Soltó una marca en una zona que no guarda madera (servicio, cámara, límite…). */
+  onDestinoSinMadera: (zonaId: string) => void;
   onMoverMaquina: (m: MaquinaPlanta) => void;
   onTocarFondo: (p: Punto) => void;
 }
@@ -161,27 +166,31 @@ export function useCroquisLeaflet(containerRef: RefObject<HTMLDivElement | null>
   }, [ready, imagenUrl, anchoM, altoM, hayFuera, LRef]);
 
   // Zonas y lo que hay parado en ellas.
-  const { zonas, contenido, filtros, mostrarEtiquetas, seleccion, resaltada, recien } = o;
+  const { zonas, contenido, filtros, filtroLeyenda, mostrarEtiquetas, seleccion, resaltada, recien } = o;
   useEffect(() => {
     const L = LRef.current, gz = capas.current.zonas, gm = capas.current.marcas;
     if (!ready || !L || !gz || !gm) return;
     gz.clearLayers(); gm.clearLayers();
     const zonasConPol = zonas.map((z) => ({ z, pts: parsearPoligono(z.poligono) })).filter((x): x is { z: PlantaZona; pts: Punto[] } => !!x.pts);
-    const zonaEn = (p: Punto) => { for (let i = zonasConPol.length - 1; i >= 0; i--) if (pointInPolygon(p, zonasConPol[i].pts)) return zonasConPol[i].z.id; return null; };
+    const zonaEn = (p: Punto) => { for (let i = zonasConPol.length - 1; i >= 0; i--) if (pointInPolygon(p, zonasConPol[i].pts)) return zonasConPol[i].z; return null; };
     for (const { z, pts } of zonasConPol) {
-      const meta = zonaTipoMeta(z.tipo);
+      // El formato del componente (la simbología del plano) o, sin él, el color del tipo.
+      const f = formatoDeZona(z);
+      const meta = { ring: f.color };
       const c = contenido[z.id];
-      const ok = zonaCoincide(c, filtros);
+      const okLeyenda = !filtroLeyenda || claveLeyenda(z) === filtroLeyenda;
+      const ok = zonaCoincide(c, filtros) && okLeyenda;
       const marcada = (seleccion?.tipo === "zona" && seleccion.id === z.id) || resaltada === z.id;
-      const poly = L.polygon(pts, { color: marcada ? "var(--text-primary)" : meta.ring, weight: marcada ? 3.5 : 2, fillColor: meta.ring, fillOpacity: ok ? (marcada ? 0.45 : 0.26) : 0.05, opacity: ok ? 1 : 0.35 });
-      poly.bindTooltip(`${z.codigo} · ${meta.label}`, { sticky: true });
+      const poly = L.polygon(pts, { color: marcada ? "var(--text-primary)" : f.color, weight: marcada ? f.peso + 1.5 : f.peso, dashArray: f.trazo, fillColor: f.relleno, fillOpacity: ok ? (marcada ? Math.min(1, f.opacidad + 0.2) : f.opacidad) : f.opacidad * 0.2, opacity: ok ? 1 : 0.3 });
+      poly.bindTooltip(`${z.codigo} · ${etiquetaDeZona(z)}`, { sticky: true });
       poly.on("click", (e: { latlng: { lat: number; lng: number } }) => { if (!optsRef.current.dibujando) optsRef.current.onTocarZona(z.id, [e.latlng.lat, e.latlng.lng]); });
       poly.addTo(gz);
+      poly.getElement?.()?.setAttribute("data-zona", z.codigo);
 
       const pilas = (c?.pilas ?? []).filter((p) => !p.vacia);
       const lista = [
-        ...pilas.map((p) => ({ m: { tipo: "pila" as const, id: p.item.id, zonaId: z.id }, pos: p.pos, ok: coincide(p.item, filtros), html: marcaHtml({ kind: p.item.kind, texto: etiquetaCorta(p.item.label), cantidad: fmtMedidaCorta(p.medida) ?? undefined, color: meta.ring, cites: p.item.cites, entrando: recien === p.item.id }), size: [26, 26] as [number, number] })),
-        ...(c?.sueltas ?? []).map((s) => ({ m: { tipo: "troza" as const, id: s.troza.id, zonaId: z.id }, pos: s.pos, ok: coincide(s.pila, filtros), html: trozaSueltaHtml({ codigo: codigoCorto(codigoTroza(s.troza)), color: meta.ring, seleccionada: seleccion?.tipo === "troza" && seleccion.id === s.troza.id }), size: [44, 20] as [number, number] })),
+        ...pilas.map((p) => ({ m: { tipo: "pila" as const, id: p.item.id, zonaId: z.id }, pos: p.pos, ok: okLeyenda && coincide(p.item, filtros), html: marcaHtml({ kind: p.item.kind, texto: etiquetaCorta(p.item.label), cantidad: fmtMedidaCorta(p.medida) ?? undefined, color: meta.ring, cites: p.item.cites, entrando: recien === p.item.id }), size: [26, 26] as [number, number] })),
+        ...(c?.sueltas ?? []).map((s) => ({ m: { tipo: "troza" as const, id: s.troza.id, zonaId: z.id }, pos: s.pos, ok: okLeyenda && coincide(s.pila, filtros), html: trozaSueltaHtml({ codigo: codigoCorto(codigoTroza(s.troza)), color: meta.ring, seleccionada: seleccion?.tipo === "troza" && seleccion.id === s.troza.id }), size: [44, 20] as [number, number] })),
       ];
       // El punto guardado vale si sigue adentro del polígono (alguien pudo
       // redibujar la zona); los demás se reparten solos.
@@ -199,8 +208,8 @@ export function useCroquisLeaflet(containerRef: RefObject<HTMLDivElement | null>
           const ll = mk.getLatLng();
           const p: Punto = [ll.lat, ll.lng];
           const destino = zonaEn(p);
-          if (destino) optsRef.current.onMoverMarca(x.m, destino, p);
-          else { mk.setLatLng(pos); optsRef.current.onMarcaAfuera(); }
+          if (destino && guardaMadera(destino)) optsRef.current.onMoverMarca(x.m, destino.id, p);
+          else { mk.setLatLng(pos); if (destino) optsRef.current.onDestinoSinMadera(destino.id); else optsRef.current.onMarcaAfuera(); }
         });
         mk.addTo(gm);
       }
@@ -217,7 +226,7 @@ export function useCroquisLeaflet(containerRef: RefObject<HTMLDivElement | null>
         L.marker(ancla, { interactive: false, icon: L.divIcon({ className: "", html: etiquetaZonaHtml({ codigo: z.codigo, color: meta.ring, dato, atenuada: !ok }), iconSize: [0, 0] }) }).addTo(gz);
       }
     }
-  }, [ready, zonas, contenido, filtros, mostrarEtiquetas, seleccion, resaltada, recien, LRef]);
+  }, [ready, zonas, contenido, filtros, filtroLeyenda, mostrarEtiquetas, seleccion, resaltada, recien, LRef]);
 
   // Máquinas: arrastrables; soltarlas fuera del terreno las marca «fuera».
   useEffect(() => {

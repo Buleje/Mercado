@@ -37,6 +37,7 @@ import {
   type ItemKind,
   type PlantaZona,
 } from "@/lib/forestal/planta-zona-types";
+import { guardaMadera } from "@/lib/forestal/croquis-componentes";
 
 /** El tipo que se arrastra. Un `dataTransfer` propio evita que el mapa acepte
  *  cualquier cosa que alguien arrastre de otra pestaña. */
@@ -336,7 +337,8 @@ function SelectLote({ kind, zonas, disabled, onUbicarLote }: {
       className="h-6 max-w-[8.5rem] rounded border border-[var(--rule-base)] bg-[var(--surface-raised)] px-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] outline-none focus:border-[var(--accent)] disabled:opacity-60"
     >
       <option value="">Todas en…</option>
-      {zonas.map((z) => <option key={z.id} value={z.id}>{z.codigo}</option>)}
+      {/* Solo donde se ubica madera: el baño o la cámara del plano no son destino. */}
+      {zonas.filter(guardaMadera).map((z) => <option key={z.id} value={z.id}>{z.codigo}</option>)}
       <option value="__none__">— Quitar —</option>
     </select>
   );
