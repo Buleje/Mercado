@@ -1,5 +1,4 @@
 "use client";
-import { CardTitle } from "@buleje/design-system";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { GripVertical, ArrowUp, ArrowDown, Save, RotateCcw, Check } from "@buleje/design-system/icons";
@@ -57,11 +56,8 @@ export default function SidebarReorderPanel({ categories, onSave }: SidebarReord
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Ordenar categorías de la barra lateral</CardTitle>
-          <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-0.5">Arrastra o usa las flechas para mover cada categoría</p>
-        </div>
+      {/* El título lo pone el plegable de Configuración › Mi panel. */}
+      <div className="flex items-center justify-end">
         <div className="flex gap-2">
           <button
             onClick={handleReset}

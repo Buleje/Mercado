@@ -432,7 +432,8 @@ function SectionEditorModal({
   });
 
   return (
-    <div className="modal-backdrop flex items-center justify-center p-4" onClick={(e) => { if (e.target === e.currentTarget && !ventana.fijado) onClose(); }}>
+    // Fondo: clic afuera cierra; con teclado cierra Escape (useModalAccesible), por eso es decorativo.
+    <div className="modal-backdrop flex items-center justify-center p-4" role="presentation" onClick={(e) => { if (e.target === e.currentTarget && !ventana.fijado) onClose(); }}>
       <div
         ref={modalRef}
         role="dialog"

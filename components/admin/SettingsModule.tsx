@@ -33,7 +33,7 @@ import {
 } from "@buleje/design-system/icons";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { CardTitle, BlockTitle } from "@buleje/design-system";
-import { FieldLabel, TextInput, NumberInput, SelectInput, Toggle, SectionCard, SaveButton } from "@/components/admin/settings/campos";
+import { FieldLabel, TextInput, NumberInput, SelectInput, Toggle, SectionCard, SaveButton, Plegable } from "@/components/admin/settings/campos";
 import { ImageDropCard, MockHeader, MockStoreCard, MockStorefront } from "@/components/admin/settings/ImageDropCard";
 import { TABS, IDS_AJUSTES, GRUPOS_AJUSTES, filtrarSecciones, type SeccionAjustes } from "@/components/admin/settings/secciones";
 
@@ -473,8 +473,7 @@ export default function SettingsModule({
     };
 
     return (
-      <div className="space-y-6">
-        <SectionCard title="Mis accesos directos" desc="Aparecen como favoritos en tu barra lateral (máx. 6)">
+      <div className="space-y-4">
           {customShortcuts.length === 0 && (
             <p className="text-sm text-[var(--text-tertiary)] dark:text-muted text-center py-4">No tienes accesos directos aún. Agrega uno para navegar más rápido.</p>
           )}
@@ -508,7 +507,6 @@ export default function SettingsModule({
               <Plus className="h-4 w-4" /> Agregar acceso directo
             </button>
           )}
-        </SectionCard>
       </div>
     );
   };
@@ -917,18 +915,21 @@ export default function SettingsModule({
 
   const renderPanel = () => (
     <div className="space-y-6">
-      <SectionCard title="Módulos activos" desc="Controla qué módulos ves en tu panel">
-        <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Activa, oculta o limpia datos de ejemplo por módulo. Los cambios se aplican inmediatamente.</p>
-        <button
-          onClick={() => window.dispatchEvent(new CustomEvent("open-module-manager"))}
-          className="w-full flex items-center justify-center gap-2 px-5 min-h-11 rounded-xl bg-primary text-white font-semibold text-sm hover:bg-primary/90 transition-colors mt-2"
-        >
-          <Layers className="h-4 w-4" /> Abrir gestión de módulos
-        </button>
-      </SectionCard>
-      <NavDefaultTabsConfig />
-      {renderSidebarOrder()}
-      {renderShortcuts()}
+      <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("open-module-manager"))} className={LINK_A_OTRA_PANTALLA}>
+        <Layers className="h-4 w-4 text-primary shrink-0" />
+        <span className="flex-1 min-w-0 text-sm font-semibold text-[var(--text-primary)]">Activar u ocultar módulos</span>
+        <span className="text-xs text-[var(--text-secondary)]">también limpia datos de ejemplo</span>
+        <ChevronRight className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" />
+      </button>
+      <Plegable clave="pestana-defecto" titulo="Pestaña por defecto" resumen="Qué vista se abre al entrar a cada sección">
+        <NavDefaultTabsConfig />
+      </Plegable>
+      <Plegable clave="barra-lateral" titulo="Orden de la barra lateral" resumen={`${reorderCategories?.length ?? 0} categorías`}>
+        {renderSidebarOrder()}
+      </Plegable>
+      <Plegable clave="accesos-directos" titulo="Accesos directos" resumen={`${customShortcuts.length} de 6 · aparecen como favoritos en tu barra lateral`}>
+        {renderShortcuts()}
+      </Plegable>
     </div>
   );
 

@@ -6,7 +6,8 @@
  */
 import { cn } from "@/lib/utils";
 import { BlockTitle } from "@buleje/design-system";
-import { Check, Loader2, Save } from "@buleje/design-system/icons";
+import { Check, ChevronDown, Loader2, Save } from "@buleje/design-system/icons";
+import { useLocalStorage } from "@/hooks/use-local-storage";
 
 export function FieldLabel({ icon, children, htmlFor }: { icon?: React.ReactNode; children: React.ReactNode; htmlFor?: string }) {
   return (
@@ -126,5 +127,34 @@ export function SaveButton({ saving, saved, onClick, label = "Guardar cambios" }
        saved ? <><Check className="h-4 w-4" /> ¡Guardado!</> :
        <><Save className="h-4 w-4" /> {label}</>}
     </button>
+  );
+}
+
+/**
+ * Bloque plegable y recordado (ley del admin, regla 3): plegado sigue mostrando
+ * su resumen en una línea. Lo de adentro se monta recién al abrir.
+ */
+export function Plegable({ clave, titulo, resumen, children }: {
+  clave: string; titulo: string; resumen: string; children: React.ReactNode;
+}) {
+  const [abierto, setAbierto] = useLocalStorage<boolean>(`ajustes-plegable-${clave}`, false);
+  return (
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden">
+      <BlockTitle as="h3">
+        <button
+          type="button"
+          aria-expanded={abierto}
+          onClick={() => setAbierto((v) => !v)}
+          className="w-full flex items-center gap-3 px-5 min-h-14 py-2 text-left hover:bg-[var(--surface-sunken)] transition-colors"
+        >
+          <span className="flex-1 min-w-0">
+            <span className="block">{titulo}</span>
+            <span className="block text-xs font-normal text-[var(--text-secondary)]">{resumen}</span>
+          </span>
+          <ChevronDown className={cn("h-4 w-4 shrink-0 text-[var(--text-tertiary)] transition-transform", abierto && "rotate-180")} aria-hidden />
+        </button>
+      </BlockTitle>
+      {abierto && <div className="px-5 pb-5 pt-4 border-t border-[var(--rule-soft)]">{children}</div>}
+    </div>
   );
 }

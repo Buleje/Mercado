@@ -88,7 +88,7 @@ export function NavDefaultTabsConfig() {
   };
 
   return (
-    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-5 ">
+    <div>
       <div className="space-y-1">
         {NAV_MODULES.map((mod) => (
           <div
