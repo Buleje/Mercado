@@ -111,11 +111,16 @@ if [ "${SKIP_VITEST_GATE:-0}" != "1" ]; then
         [ -n "$f" ] && printf '%s\n' "$LEEN_FUENTE" | xargs grep -lF -- "$f" 2>/dev/null
       done | sort -u | tr '\n' ' ')
     fi
+    # Guardianes de TODO el repo (recorren carpetas: ⓘ anidados, tenant «main»
+    # hardcodeado, XSS en JSON-LD…): no dependen de un archivo, así que `related`
+    # nunca los elige. 04-10: `infotip-no-anidado` estuvo rojo 4 días sin que
+    # nadie lo viera. Son 13 y suman ~5 s; se buscan acá para que uno nuevo entre solo.
+    GUARDIAS=$(grep -lE "readdirSync|globSync|fast-glob|from \"glob\"|git ls-files|walk\(|recorrer\(" __tests__/*.ts __tests__/*.tsx 2>/dev/null | tr '\n' ' ' || true)
     # set -f: 342 rutas del repo llevan corchetes ([tenantSlug]) y sin esto el
     # shell las toma como comodines al expandir la lista.
     set -f
     # shellcheck disable=SC2086
-    lanzar vitest npx vitest related $STAGED_CODE $EXTRA_TESTS --run --passWithNoTests
+    lanzar vitest npx vitest related $STAGED_CODE $EXTRA_TESTS $GUARDIAS --run --passWithNoTests
     set +f
   fi
 fi
