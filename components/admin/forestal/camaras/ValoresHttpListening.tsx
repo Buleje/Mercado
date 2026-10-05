@@ -67,13 +67,23 @@ interface Props {
   estado: EstadoDireccion;
   /** Sin token = quien mira no es admin ni dueño. */
   conToken: boolean;
+  /** Todavía no hay una cámara creada en el sistema: la dirección sale de su token. */
+  sinCamara?: boolean;
   onErrorCopia: () => void;
 }
 
-export default function ValoresHttpListening({ direccion, estado, conToken, onErrorCopia }: Props) {
+export default function ValoresHttpListening({ direccion, estado, conToken, sinCamara, onErrorCopia }: Props) {
   const [verToken, setVerToken] = useState(false);
   const v = valoresParaCamara(direccion);
 
+  /* 05-10: sin cámara decía «Solo admin o dueño» a un admin, que no sabía qué faltaba. */
+  if (sinCamara)
+    return (
+      <p className="text-sm text-[var(--text-secondary)]">
+        Primero crea la cámara en el sistema: pestaña <b>Cámaras</b> → escribe un nombre (p. ej. «Patio») →{" "}
+        <b>Agregar</b>. Con eso aparece acá la dirección para copiar.
+      </p>
+    );
   if (!conToken)
     return <p className="text-sm text-[var(--text-tertiary)]">{SOLO_ADMIN_DIRECCION}.</p>;
   if (!v) {

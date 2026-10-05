@@ -210,6 +210,7 @@ export default function GuiaHikvision({
               direccion={direccion}
               estado={estado}
               conToken={Boolean(camara?.token)}
+              sinCamara={!camara}
               onErrorCopia={onErrorCopia}
             />
           </Paso>
@@ -224,7 +225,7 @@ export default function GuiaHikvision({
           <Paso n={5} icono={CheckCircle2} titulo="Comprueba">
             <ProbarRecepcion
               camaraId={camara?.id ?? null}
-              bloqueo={camara?.token ? null : "Solo admin o dueño"}
+              bloqueo={!camara ? "Primero crea la cámara (pestaña Cámaras → Agregar)" : camara.token ? null : "Solo admin o dueño"}
             />
             {camara && (
               <p data-testid="guia-ultimo-aviso">
