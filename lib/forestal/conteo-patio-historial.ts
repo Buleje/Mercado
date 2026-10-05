@@ -24,6 +24,32 @@ export function diaDelConteo(fecha: string): string {
 
 const plural = (n: number, uno: string, varios: string) => (n === 1 ? uno : varios);
 
+/** El día anterior a `hoy` (AAAA-MM-DD), por día UTC. */
+function diaAnterior(hoy: string): string {
+  const t = Date.parse(`${hoy.slice(0, 10)}T00:00:00Z`);
+  return Number.isFinite(t) ? new Date(t - 86_400_000).toISOString().slice(0, 10) : "";
+}
+
+/** «hoy», «ayer» o «sábado 26/09»: `hoy` es el día de Lima (`limaDateKey()`). */
+export function cuandoDelConteo(fecha: string, hoy: string): string {
+  if (fecha === hoy) return "hoy";
+  if (fecha === diaAnterior(hoy)) return "ayer";
+  return diaDelConteo(fecha);
+}
+
+/**
+ * La línea de la pestaña Trozas (Brandon 05-10): «Último conteo: hoy, 12 de 13».
+ * Si sobró algo, se suma («· sobraron 2»): lo que falta ya lo dice el «de».
+ */
+export function lineaDelUltimoConteo(
+  r: { fecha: string; contadas: number; esperadas: number; sobrantes: number; sorpresas: number },
+  hoy: string,
+): string {
+  const sobran = r.sobrantes + r.sorpresas;
+  const cola = sobran > 0 ? ` · ${plural(sobran, "sobró", "sobraron")} ${sobran}` : "";
+  return `Último conteo: ${cuandoDelConteo(r.fecha, hoy)}, ${r.contadas} de ${r.esperadas}${cola}`;
+}
+
 /**
  * Lo que dejó el conteo, en una frase corta: «faltaron 3 · sobró 1». Si no
  * faltó nada, se dice (es la buena noticia que se busca).

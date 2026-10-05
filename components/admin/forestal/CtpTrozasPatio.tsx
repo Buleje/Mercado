@@ -44,6 +44,7 @@ import {
   DIAS_RIESGO,
   fiscalizacionDelPatio,
   flujoDelPatio,
+  guiasSinCostoDelPatio,
   primeroALaSierra,
   ptEstimados,
   riesgoDelPatio,
@@ -55,6 +56,7 @@ import { useKpisPlegables } from "./kpis-plegables";
 import { CifraPatio, n2, Pastilla, puntoDeTono, type TonoPatio } from "./ctp-trozas-ui";
 import { TarjetaRotacion, TarjetaSierra, TarjetaValor } from "./ctp-trozas-kpi-decidir";
 import { TarjetaCalibre, TarjetaFiscal } from "./ctp-trozas-kpi-pila";
+import { useCostosDelPatio } from "./ctp-trozas-costo-modal";
 import type { PatioMeta, TrozaPatioAPI } from "./hooks/use-trozas-patio";
 
 export interface IndicadoresPatioProps {
@@ -75,12 +77,16 @@ export interface IndicadoresPatioProps {
   onAnotarMedidas?: (ids: string[]) => void;
   /** Mostrar en la lista sólo las piezas sin título declarado. */
   onVerSinTitulo?: () => void;
+  /** Releer el patio tras cargar costos. Sin él, la tarjeta usa lo que contestó el servidor. */
+  onRecargar?: () => void;
 }
 
 export function useIndicadoresPatio({
-  trozas, meta, cargando, estadoFiltro, onEstadoFiltro, tramoFiltro, onTramoFiltro, especie, guia, titulo,
-  onImprimirEtiquetas, onAnotarMedidas, onVerSinTitulo,
+  trozas: leidas, meta, cargando, estadoFiltro, onEstadoFiltro, tramoFiltro, onTramoFiltro, especie, guia, titulo,
+  onImprimirEtiquetas, onAnotarMedidas, onVerSinTitulo, onRecargar,
 }: IndicadoresPatioProps): { boton: ReactNode; panel: ReactNode } {
+  /* «Cargar costos» (tarjeta Valor parado): lo guardado ya cuenta, sin releer el patio. */
+  const { trozas, abrir: abrirCostos, modal: modalCostos } = useCostosDelPatio(leidas, onRecargar);
   /* `hoy` fijo mientras no cambien los datos: si no, la antigüedad se mueve sola. */
   const hoy = useMemo(() => new Date(), [trozas]); // eslint-disable-line react-hooks/exhaustive-deps
   const delFiltro = useMemo(() => filtrarPatio(trozas, { especie, guia, titulo }, hoy), [trozas, especie, guia, titulo, hoy]);
@@ -89,7 +95,7 @@ export function useIndicadoresPatio({
   const extra = useMemo(() => cifrasExtraPatio(delFiltro), [delFiltro]);
   const kpis = useMemo(
     () => ({
-      valor: valorDelPatio(delFiltro),
+      valor: valorDelPatio(delFiltro, hoy),
       flujo: flujoDelPatio(delFiltro, hoy),
       clases: clasesDiametricas(delFiltro).clases,
       fisc: fiscalizacionDelPatio(delFiltro),
@@ -246,7 +252,7 @@ export function useIndicadoresPatio({
         onTramoFiltro([p.tramo]);
       }}
     />,
-    <TarjetaValor key="valor" valor={kpis.valor} />,
+    <TarjetaValor key="valor" valor={kpis.valor} onCargar={() => abrirCostos(guiasSinCostoDelPatio(delFiltro, hoy))} />,
     <TarjetaRotacion key="rotacion" flujo={kpis.flujo} />,
     <TarjetaCalibre
       key="calibre"
@@ -271,7 +277,7 @@ export function useIndicadoresPatio({
   ];
 
   const filtrosActivos = especie.length + guia.length + titulo.length;
-  return useKpisPlegables({
+  const plegables = useKpisPlegables({
     claveMemoria: "ctp-trozas",
     tarjetas,
     resumen: leyendo
@@ -288,4 +294,6 @@ export function useIndicadoresPatio({
     filtrosActivos,
     sinDatosAun: leyendo,
   });
+  /* Plegado, el panel es null (la vista no dibuja su caja): el modal sólo se abre desde adentro. */
+  return { boton: plegables.boton, panel: plegables.panel ? <>{plegables.panel}{modalCostos}</> : null };
 }

@@ -5,7 +5,12 @@ import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { isSpecializationEnabled } from "@/lib/specializations";
-import { MedidasGuiaDB } from "@/lib/db/forest-medidas-guia.db";
+import { MedidasGuiaDB, type GuiaParaMedidas } from "@/lib/db/forest-medidas-guia.db";
+import { TituloGuiaDB } from "@/lib/db/forest-titulo-guia.db";
+import { ForestContratoDB } from "@/lib/db/forest-contrato.db";
+import { CtpInvariantError } from "@/lib/db/forest-ctp-consumo.db";
+import { logger } from "@/lib/logger";
+import { tituloDesdeFicha, type TituloDeLaFicha } from "@/lib/forestal/titulo-de-guia";
 import { ctpErrorResponse } from "@/lib/forestal/ctp-api-errors";
 import { esNumeroRegistroValido, normalizarNumeroRegistro, type GtfSerfor } from "@/lib/forestal/serfor-gtf";
 import { consultarGtfEnSerfor } from "@/lib/forestal/serfor-gtf-fetch";
@@ -31,9 +36,16 @@ import {
  *   · Sin ficha guardada ni número: `estado: "falta_registro"` (no sale a la red).
  *   · `aplicar: false` (default) = vista previa; `true` = escribe sólo sobre
  *     vacío y si la ficha es de ESTA guía (si no, 422).
+ *   · `titulo` (05-10, «Completar Blas con el QR»): el título habilitante de la
+ *     ficha (casilleros 6 y 8) y qué pasa con él (`tituloDesdeFicha`). Al
+ *     aplicar, DESPUÉS de las medidas y en su propia transacción, se declara por
+ *     `TituloGuiaDB.declarar` (sólo vacío, mes abierto, vínculo al permiso si el
+ *     código es de la lista, auditado). Si no se puede —rol, mes, error—, las
+ *     medidas quedan igual y `aplicado.titulo.motivo` dice por qué.
  *
  * Roles: los de `PATCH /trozas/medidas` (anotar D1/D2 en planta): admin,
- * almacenero, owner. El dato lo pone SERFOR, no el que aprieta el botón.
+ * almacenero, owner. El dato lo pone SERFOR, no el que aprieta el botón. El
+ * título, sólo admin/dueño (`bloqueoRolTitulo`, como `PATCH /wood-entries/titulo`).
  */
 
 const ROLES = ["admin", "almacenero", "owner"] as const;
@@ -44,6 +56,18 @@ const schema = z.object({
   enlaceQr: z.string().trim().max(600).optional(),
   aplicar: z.boolean().optional(),
 });
+
+/** El título de la ficha frente a los ingresos de la guía (¿se declara, ya está, choca?). */
+async function tituloDeLaRespuesta(
+  tenantId: string,
+  rol: string,
+  guia: GuiaParaMedidas,
+  ficha: GtfSerfor,
+): Promise<TituloDeLaFicha> {
+  const codigo = ficha.numeroTitulo?.trim() || null;
+  const contratoId = codigo ? await ForestContratoDB.idPorCodigo(tenantId, codigo) : null;
+  return tituloDesdeFicha(guia.ingresosTitulo, ficha, contratoId, rol);
+}
 
 async function guardias(req: NextRequest, mutacion: boolean) {
   const rl = await applyRateLimit(req, "GENEROUS", "ctp:medidas-guia");
@@ -125,6 +149,7 @@ export async function POST(req: NextRequest) {
       trozasLibro: guia.trozas.length,
       trozasGuia: 0,
       plan: null,
+      titulo: null,
     };
 
     /* La ficha: la guardada si es la misma (o no se pidió otra); si no, SERFOR. */
@@ -165,6 +190,7 @@ export async function POST(req: NextRequest) {
       estadoSerfor: ficha.estado,
       trozasGuia: ficha.trozas?.length ?? 0,
       plan: planearMedidasDesdeGuia(guia.trozas, ficha.trozas ?? []),
+      titulo: await tituloDeLaRespuesta(auth.tenantId, auth.role, guia, ficha),
     };
     if (!aplicar) return NextResponse.json(respuesta);
 
@@ -189,10 +215,46 @@ export async function POST(req: NextRequest) {
       { gtfNumber: guia.gtfNumber, numeroRegistro: respuesta.numeroRegistro, ficha, guardarFicha: fuente === "serfor" },
       auth.username ?? "unknown",
     );
+
+    /* El título, después de las medidas y por su cuenta: si no entra, las medidas quedan. */
+    let titulo: NonNullable<RespuestaMedidasGuia["aplicado"]>["titulo"] = null;
+    const t = respuesta.titulo;
+    if (t?.estado === "declarar" && t.codigo) {
+      if (t.bloqueoRol) {
+        titulo = { declarados: 0, codigo: t.codigo, motivo: t.bloqueoRol };
+      } else {
+        try {
+          const d = await TituloGuiaDB.declarar(
+            auth.tenantId,
+            {
+              gtfNumber: guia.gtfNumber,
+              originCode: t.codigo,
+              originSourceNumber: t.resolucion,
+              origen: `la ficha SERFOR${respuesta.numeroRegistro ? ` (registro ${respuesta.numeroRegistro})` : ""}`,
+            },
+            auth.username ?? "unknown",
+          );
+          titulo = {
+            declarados: d.actualizados.length,
+            codigo: d.originCode,
+            motivo: d.actualizados.length > 0 ? null : (d.omitidos[0]?.motivo ?? "no había nada que declarar"),
+          };
+        } catch (e) {
+          if (!(e instanceof CtpInvariantError)) {
+            logger.error("[medidas-guia] declarar el título failed", { tenantId: auth.tenantId, gtf: guia.gtfNumber, error: String(e) });
+          }
+          titulo = {
+            declarados: 0,
+            codigo: t.codigo,
+            motivo: e instanceof CtpInvariantError ? e.message : "no se pudo declarar el título; las medidas sí quedaron",
+          };
+        }
+      }
+    }
     return NextResponse.json({
       ...respuesta,
       plan: r.plan,
-      aplicado: { escritas: r.escritas, omitidas: r.omitidas, fichaGuardadaEn: r.fichaGuardadaEn },
+      aplicado: { escritas: r.escritas, omitidas: r.omitidas, fichaGuardadaEn: r.fichaGuardadaEn, titulo },
     } satisfies RespuestaMedidasGuia);
   } catch (e) {
     return ctpErrorResponse(e, "forestal.trozas.medidas-guia.POST", auth.tenantId);

@@ -1,9 +1,9 @@
 "use client";
 
 /**
- * Las tres listas de «Contar el patio»: Faltan (agrupadas por especie o guía),
- * Encontradas y Sorpresas. Separadas de `PatioConteo` para que la pantalla
- * quede en su flujo.
+ * Las tres listas de «Contar el patio»: Faltan (agrupadas por especie, guía o
+ * cancha), Encontradas y Sobran (lo escaneado que el libro no tiene en el
+ * patio). Separadas de `PatioConteo` para que la pantalla quede en su flujo.
  */
 
 import { useMemo, useState } from "react";
@@ -75,6 +75,8 @@ export default function ListasDelConteo({
   const [lista, setLista] = useState<ListaConteo>("faltan");
   const [agrupar, setAgrupar] = useState<AgruparPor>("especie");
   const grupos = useMemo(() => agruparFaltan(resumen.faltan, agrupar), [resumen.faltan, agrupar]);
+  /* «Cancha» sólo si el Mapa de Planta ubica alguna: si no, sería un único grupo «Sin cancha». */
+  const hayCanchas = useMemo(() => resumen.esperadas.some((t) => t.cancha), [resumen.esperadas]);
 
   return (
     <section className="space-y-3" aria-label="Listas del conteo">
@@ -90,7 +92,7 @@ export default function ListasDelConteo({
           Encontradas <span className="tabular-nums">{resumen.encontradas.length}</span>
         </Opcion>
         <Opcion activa={lista === "sorpresas"} onClick={() => setLista("sorpresas")}>
-          Sorpresas <span className="tabular-nums">{resumen.sorpresas.length}</span>
+          Sobran <span className="tabular-nums">{resumen.sorpresas.length}</span>
         </Opcion>
       </div>
 
@@ -105,6 +107,11 @@ export default function ListasDelConteo({
               <Opcion activa={agrupar === "guia"} onClick={() => setAgrupar("guia")}>
                 Guía
               </Opcion>
+              {hayCanchas && (
+                <Opcion activa={agrupar === "cancha"} onClick={() => setAgrupar("cancha")}>
+                  Cancha
+                </Opcion>
+              )}
             </div>
           </div>
           {grupos.length === 0 ? (
@@ -161,7 +168,7 @@ export default function ListasDelConteo({
 
       {lista === "sorpresas" &&
         (resumen.sorpresas.length === 0 ? (
-          <Vacio texto="Ninguna sorpresa: todo lo escaneado era del patio." />
+          <Vacio texto="No sobra ninguna: todo lo escaneado era del patio." />
         ) : (
           <ul className="space-y-2" data-lista-conteo="sorpresas">
             {resumen.sorpresas.map((s) => {

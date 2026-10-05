@@ -12,9 +12,9 @@
  * es una trampa.
  */
 
-import { ChevronDown, X } from "@buleje/design-system/icons";
+import { ChevronDown, Filter, X } from "@buleje/design-system/icons";
 import type { FacetaOpcion } from "@/lib/admin/filtros-columna";
-import { SUMMARY_CABECERA, usePopoverCabecera } from "./use-popover-cabecera";
+import { SUMMARY_CABECERA, SUMMARY_CABECERA_COMPACTO, usePopoverCabecera } from "./use-popover-cabecera";
 
 /** Qué dice el disparador sin abrirlo: el valor cuando es uno, cuántos cuando
  *  son varios — tres especies no entran sin romper el ancho de la columna. */
@@ -36,6 +36,8 @@ export interface FiltroColumnaMultiProps {
   onChange: (v: string[]) => void;
   placeholder?: string;
   className?: string;
+  /** Sólo el ícono de embudo (32 px) en vez del disparador de 96 px: tablas anchas. */
+  compacto?: boolean;
 }
 
 export function FiltroColumnaMulti({
@@ -46,6 +48,7 @@ export function FiltroColumnaMulti({
   onChange,
   placeholder = "Todos",
   className = "",
+  compacto = false,
 }: FiltroColumnaMultiProps) {
   const { ref, alAbrir, estilo } = usePopoverCabecera(288);
   const elegidos = value ? [...value].filter(Boolean) : [];
@@ -54,21 +57,27 @@ export function FiltroColumnaMulti({
     <details
       ref={ref}
       onToggle={alAbrir}
-      className={`mt-1.5 block font-normal normal-case tracking-normal ${className}`}
+      className={`${compacto ? "inline-block align-middle" : "mt-1.5 block"} font-normal normal-case tracking-normal ${className}`}
     >
       <summary
         role="button"
         aria-label={`Filtrar por ${label}${elegidos.length > 0 ? `: ${elegidos.join(", ")}` : ""}`}
         title={elegidos.length > 0 ? elegidos.join(" · ") : `Filtrar por ${label}`}
-        className={`${SUMMARY_CABECERA} ${vacio ? "pointer-events-none opacity-50" : ""} ${
+        className={`${compacto ? SUMMARY_CABECERA_COMPACTO : SUMMARY_CABECERA} ${vacio ? "pointer-events-none opacity-50" : ""} ${
           elegidos.length > 0 ? "border-[var(--accent)] bg-primary/10" : "border-[var(--rule-base)]"
         }`}
       >
-        <span className="truncate">{vacio ? "—" : rotuloDeFiltro(elegidos, placeholder, etiqueta)}</span>
-        <ChevronDown
-          className={`h-3.5 w-3.5 shrink-0 ${elegidos.length > 0 ? "text-[var(--accent)]" : "text-[var(--text-tertiary)]"}`}
-          aria-hidden
-        />
+        {compacto ? (
+          <Filter className={`h-4 w-4 ${elegidos.length > 0 ? "text-[var(--accent)]" : "text-[var(--text-tertiary)]"}`} aria-hidden />
+        ) : (
+          <>
+            <span className="truncate">{vacio ? "—" : rotuloDeFiltro(elegidos, placeholder, etiqueta)}</span>
+            <ChevronDown
+              className={`h-3.5 w-3.5 shrink-0 ${elegidos.length > 0 ? "text-[var(--accent)]" : "text-[var(--text-tertiary)]"}`}
+              aria-hidden
+            />
+          </>
+        )}
       </summary>
       <div
         role="group"

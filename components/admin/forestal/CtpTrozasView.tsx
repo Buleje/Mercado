@@ -35,7 +35,7 @@
 
 import { useMemo, useState } from "react";
 import { SectionTitle } from "@buleje/design-system";
-import { AlertTriangle, RefreshCw, Search, ShieldAlert } from "@buleje/design-system/icons";
+import { AlertTriangle, Axe, RefreshCw, Search, ShieldAlert } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { SIN_TITULO, type EstadoTroza } from "@/lib/forestal/trozas-patio";
 import { faltanMedidas, piezasSinTitulo } from "@/lib/forestal/trozas-patio-medidas";
@@ -46,6 +46,7 @@ import CtpCodigosDuplicados from "./CtpCodigosDuplicados";
 import CtpEtiquetasTrozasModal from "./CtpEtiquetasTrozasModal";
 import CtpConteosPatio from "./CtpConteosPatio";
 import CtpTrozaFichaModal from "./CtpTrozaFichaModal";
+import CtpTrozasPlanAserrioModal from "./CtpTrozasPlanAserrioModal";
 import EscanerTrozas from "./EscanerTrozas";
 import CtpTrozasBuscador from "./CtpTrozasBuscador";
 import CtpTrozasLista from "./CtpTrozasLista";
@@ -111,6 +112,8 @@ export default function CtpTrozasView() {
   const [verSinTitulo, setVerSinTitulo] = useState(false);
   /** La planilla «Anotar D1 y D2»: qué piezas y cuál primero. */
   const [medir, setMedir] = useState<{ ids: string[]; inicial?: string } | null>(null);
+  /** «Plan del día»: qué trozas mandar hoy a la sierra. */
+  const [verPlan, setVerPlan] = useState(false);
   /** Etiquetas QR de las piezas del patio que no tienen (tarjeta «Con etiqueta QR»). */
   const [etiquetando, setEtiquetando] = useState<string[] | null>(null);
   const canchas = usePlantaUbicacion();
@@ -122,6 +125,7 @@ export default function CtpTrozasView() {
     onImprimirEtiquetas: setEtiquetando,
     onAnotarMedidas: (ids) => setMedir({ ids }),
     onVerSinTitulo: () => setTitulo([SIN_TITULO]),
+    onRecargar: () => void recargar(),
   });
   /* Del patio ENTERO, no del recorte: es deuda de todo el libro y el botón
      está en la cabecera de la vista, no dentro de los indicadores. */
@@ -162,6 +166,13 @@ export default function CtpTrozasView() {
           </button>
         )}
         <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-2">
+          {/* Qué mandar hoy a la sierra (Brandon 05-10): las más viejas primero, por especie. */}
+          <button
+            type="button" onClick={() => setVerPlan(true)} disabled={cargando}
+            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-[var(--accent)] px-3 text-sm font-bold text-[var(--accent-ink)] transition-colors hover:bg-primary/10 disabled:opacity-60 dark:text-[var(--accent)]"
+          >
+            <Axe className="h-4 w-4" aria-hidden="true" /> Plan del día
+          </button>
           {/* El conteo físico del patio (acta del modo patio, 2026-09-26). */}
           <CtpConteosPatio />
           <button
@@ -297,6 +308,17 @@ export default function CtpTrozasView() {
           onFiltrarTabla={() => setTitulo([SIN_TITULO])}
           onDeclarado={() => void recargar()}
           onAnotar={(id) => setMedir({ ids: sinTitulo.filter(faltanMedidas).map((t) => t.id), inicial: id })}
+        />
+      )}
+      {verPlan && (
+        <CtpTrozasPlanAserrioModal
+          trozas={trozas}
+          hoy={hoy}
+          canchas={canchas}
+          rendimientoPct={meta.rendimientoLibro?.pct}
+          onApartar={setApartando}
+          onVerFicha={abrirFicha}
+          onClose={() => setVerPlan(false)}
         />
       )}
       {etiquetando && (

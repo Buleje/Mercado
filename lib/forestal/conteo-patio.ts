@@ -19,7 +19,7 @@
  * hook, con try/catch).
  */
 
-import { motivoBloqueo, LABEL_BLOQUEO, type MotivoBloqueo, type TrozaConsumible } from "./consumo-trozas";
+import { fechaIngresoDeTroza, motivoBloqueo, LABEL_BLOQUEO, type MotivoBloqueo, type TrozaConsumible } from "./consumo-trozas";
 import { claveDeCodigo } from "./leer-escaneo-troza";
 
 /** Lo que el conteo guarda de cada troza del patio: lo justo para reconocerla y nombrarla. */
@@ -32,6 +32,15 @@ export interface TrozaDelConteo {
   volumenM3: number | null;
   /** `null` = está en el patio y se espera encontrarla. */
   motivo: MotivoBloqueo | null;
+  /**
+   * Tiene etiqueta QR impresa (`etiquetadaEn`, ADR-436). `undefined` = foto
+   * guardada antes del 05-10: no se sabe (el paso «Etiquetas» no inventa).
+   */
+  etiquetada?: boolean;
+  /** La cancha del Mapa de Planta (la de la troza o la de su carga). `null` = sin ubicar. */
+  cancha?: string | null;
+  /** Desde cuándo está en el patio, AAAA-MM-DD (`fechaIngresoDeTroza`): da los días del acta. */
+  desde?: string | null;
 }
 
 /** Una lectura aceptada. `trozaId: null` = el código no es de ninguna troza del patio. */
@@ -79,6 +88,8 @@ export function aTrozaDelConteo(t: TrozaConsumible): TrozaDelConteo {
      * fantasma sin explicar.
      */
     motivo: t.guiaRecepcionada === false ? "no_recepcionada" : motivoBloqueo(t),
+    etiquetada: Boolean(t.etiquetadaEn),
+    desde: fechaIngresoDeTroza(t),
   };
 }
 
@@ -214,7 +225,11 @@ export function codigoDeTroza(t: Pick<TrozaDelConteo, "id" | "codigoPlanta" | "c
   return t.codigoPlanta?.trim() || t.codificacion?.trim() || `…${t.id.slice(-6)}`;
 }
 
-export type AgruparPor = "especie" | "guia";
+export type AgruparPor = "especie" | "guia" | "cancha";
+
+const SIN_GRUPO: Record<AgruparPor, string> = { especie: "Sin especie", guia: "Sin guía", cancha: "Sin cancha" };
+const claveDeGrupo = (t: TrozaDelConteo, por: AgruparPor): string | null | undefined =>
+  por === "especie" ? t.especieComun : por === "guia" ? t.gtfNumber : t.cancha;
 
 export interface GrupoFaltan {
   clave: string;
@@ -222,13 +237,11 @@ export interface GrupoFaltan {
   m3: number;
 }
 
-/** Lo que falta, agrupado como se va a buscarlo: por especie o por guía. Los grupos más grandes primero. */
+/** Lo que falta, agrupado como se va a buscarlo: por especie, guía o cancha. Los grupos más grandes primero. */
 export function agruparFaltan(faltan: readonly TrozaDelConteo[], por: AgruparPor): GrupoFaltan[] {
   const grupos = new Map<string, TrozaDelConteo[]>();
   for (const t of faltan) {
-    const clave =
-      (por === "especie" ? t.especieComun?.trim() : t.gtfNumber?.trim()) ||
-      (por === "especie" ? "Sin especie" : "Sin guía");
+    const clave = claveDeGrupo(t, por)?.trim() || SIN_GRUPO[por];
     const g = grupos.get(clave);
     if (g) g.push(t);
     else grupos.set(clave, [t]);
@@ -273,7 +286,10 @@ function esTroza(v: unknown): v is TrozaDelConteo {
     esTextoONulo(t.especieComun) &&
     esTextoONulo(t.gtfNumber) &&
     (t.volumenM3 === null || typeof t.volumenM3 === "number") &&
-    (t.motivo === null || (esTexto(t.motivo) && t.motivo in LABEL_BLOQUEO))
+    (t.motivo === null || (esTexto(t.motivo) && t.motivo in LABEL_BLOQUEO)) &&
+    (t.etiquetada === undefined || typeof t.etiquetada === "boolean") &&
+    (t.cancha === undefined || esTextoONulo(t.cancha)) &&
+    (t.desde === undefined || esTextoONulo(t.desde))
   );
 }
 

@@ -1,24 +1,43 @@
 "use client";
 
 /**
- * «Último conteo: sábado 26/09 · faltaron 3» — el conteo físico del patio,
- * visto desde el libro (Brandon 2026-09-26).
+ * «Último conteo: hoy, 12 de 13» — el conteo físico del patio, visto desde el
+ * libro (Brandon 2026-09-26 → 10-05).
  *
- * El conteo se hace en el modo patio con la pistola (`PatioConteo`) y al
- * terminar su acta se guarda en el servidor. Acá, en la pestaña Trozas, una
- * línea dice cómo salió el último; al tocarla se abre el historial (quién,
- * cuántas se esperaban y se encontraron, qué faltó y qué sobró) y cada acta se
- * puede reimprimir tal cual salió en la tablet.
+ * El conteo se hace con el celular en el modo patio (`PatioConteo`: etiquetas,
+ * recorrer, acta) y su acta se guarda en el servidor. Acá, en la pestaña
+ * Trozas, una línea dice cómo salió el último; al tocarla se abre el historial
+ * (quién, cuántas se esperaban y se encontraron, qué faltó y qué sobró), cada
+ * acta se reimprime tal cual salió y «Contar el patio» abre un conteo nuevo.
+ *
+ * Hasta el 05-10 nadie llegaba: sin actas, el botón abría un modal que decía
+ * «se hacen en el modo patio» sin llevar a ningún lado. Ahora, sin actas, el
+ * botón ES la entrada (`/admin/patio?contar=1&volver=…`).
  */
 
 import { useState } from "react";
-import { ArrowLeft, ClipboardList, Loader2, Printer } from "@buleje/design-system/icons";
+import { ArrowLeft, ClipboardList, Loader2, Printer, ScanLine } from "@buleje/design-system/icons";
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
-import { cn } from "@/lib/utils";
+import { cn, limaDateKey } from "@/lib/utils";
 import { actaDelConteo } from "@/lib/forestal/conteo-patio-acta";
-import { diaDelConteo, fraseDelConteo } from "@/lib/forestal/conteo-patio-historial";
+import { fraseDelConteo, lineaDelUltimoConteo } from "@/lib/forestal/conteo-patio-historial";
+import { urlContarElPatio } from "@/lib/forestal/conteo-patio-pasos";
+import { TAB_LIBRO_CTP } from "@/lib/forestal/ctp-troza-url";
 import { openCtpReport } from "@/lib/forestal/ctp-print-shared";
 import { Btn, ModalFooter } from "./ctp-shared";
+import { BOTON_PRIMARIO, BOTON_SECUNDARIO } from "./ctp-lotes-modal-marco";
+
+/** Al terminar el conteo, el celular vuelve acá: la línea ya dice cómo salió. */
+const URL_CONTAR = urlContarElPatio(`/admin?tab=${TAB_LIBRO_CTP}&vista=trozas`);
+
+/** La entrada al conteo: un enlace (abre el modo patio en el celular), no un botón. */
+function ContarElPatio({ className }: { className?: string }) {
+  return (
+    <a href={URL_CONTAR} className={cn(BOTON_PRIMARIO, "no-underline", className)} data-contar-patio>
+      <ScanLine className="h-4 w-4" aria-hidden /> Contar el patio
+    </a>
+  );
+}
 import { Cargando, DetalleConteo, ErrorConReintento, HistorialConteos } from "./ctp-conteos-patio-partes";
 import { useActaConteo, useHistorialConteos, useNombreDelNegocio, useUltimoConteo } from "./hooks/use-conteos-patio";
 
@@ -66,7 +85,12 @@ function ConteosPatioModal({ onClose }: { onClose: () => void }) {
               </Btn>
             </>
           ) : (
-            <Btn onClick={onClose}>Cerrar</Btn>
+            <>
+              <button type="button" onClick={onClose} className={BOTON_SECUNDARIO}>
+                Cerrar
+              </button>
+              <ContarElPatio />
+            </>
           )}
         </ModalFooter>
       }
@@ -91,7 +115,7 @@ function ConteosPatioModal({ onClose }: { onClose: () => void }) {
           <Cargando texto="Trayendo los conteos…" />
         ) : historial.conteos.length === 0 ? (
           <p className="rounded-xl bg-[var(--surface-sunken)] px-4 py-6 text-center text-sm text-[var(--text-secondary)]">
-            Todavía no hay conteos guardados: se hacen en el modo patio, con «Contar el patio».
+            Todavía no hay conteos guardados: «Contar el patio» lo hace con el celular.
           </p>
         ) : (
           <HistorialConteos conteos={historial.conteos} onVer={setElegida} />
@@ -108,12 +132,27 @@ export default function CtpConteosPatio() {
   /* Faltó o sobró algo: la línea va en el color del aviso. */
   const pideMirar = ultimo ? ultimo.faltan + ultimo.sobrantes + ultimo.sorpresas > 0 : false;
   const texto = ultimo
-    ? `Último conteo: ${diaDelConteo(ultimo.fecha)} · ${fraseDelConteo(ultimo)}`
+    ? lineaDelUltimoConteo(ultimo, limaDateKey())
     : cargando
       ? "Último conteo…"
-      : error
-        ? "Conteos del patio"
-        : "Conteos del patio: ninguno todavía";
+      : "Conteos del patio";
+
+  /* Nunca se contó: el botón ES la entrada al conteo (antes abría un modal
+     vacío que decía «se hacen en el modo patio» sin llevar a ningún lado). */
+  if (!ultimo && !cargando && !error) {
+    return (
+      <a
+        href={URL_CONTAR}
+        className="inline-flex min-h-9 max-w-full items-center gap-1.5 rounded-lg border border-[var(--accent)] px-2.5 py-1 text-left text-sm font-bold text-[var(--text-primary)] no-underline transition-colors hover:bg-[var(--accent-soft)]"
+        title="Recorre el patio con el celular: etiquetas, escanear cada troza y el acta de lo que falta o sobra"
+        data-ultimo-conteo
+        data-contar-patio
+      >
+        <ScanLine className="h-4 w-4 shrink-0 text-[var(--accent)]" aria-hidden />
+        <span className="min-w-0">Contar el patio · nunca se contó</span>
+      </a>
+    );
+  }
 
   return (
     <>
@@ -121,6 +160,7 @@ export default function CtpConteosPatio() {
         type="button"
         onClick={() => setAbierto(true)}
         aria-haspopup="dialog"
+        title={ultimo ? fraseDelConteo(ultimo) : undefined}
         className="inline-flex min-h-9 max-w-full items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 py-1 text-left text-sm font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]"
         data-ultimo-conteo
       >

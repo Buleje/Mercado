@@ -14,6 +14,7 @@ import {
   type PlanMedidasGuia,
   type TrozaDelLibro,
 } from "@/lib/forestal/medidas-desde-guia";
+import type { IngresoParaTitulo } from "@/lib/forestal/titulo-de-guia";
 import { CtpInvariantError } from "./forest-ctp-consumo.db";
 import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
 
@@ -45,6 +46,8 @@ export interface GuiaParaMedidas {
   trozas: TrozaDelLibro[];
   /** La ficha ya guardada en algún ingreso de la guía: se usa sin salir a la red. */
   ficha: { numeroRegistro: string | null; gtf: GtfSerfor } | null;
+  /** Los ingresos con su título declarado: para decir si la ficha trae uno que falta. */
+  ingresosTitulo: IngresoParaTitulo[];
 }
 
 export interface PedidoMedidasGuia {
@@ -96,7 +99,10 @@ export class MedidasGuiaDB {
     const [ingresos, cierres] = await Promise.all([
       prisma.woodEntry.findMany({
         where: { tenantId, gtfNumber: gtf, deletedAt: null, status: { notIn: NO_VIVOS } },
-        select: { id: true, entryDate: true, serforNumeroRegistro: true, serforGtf: true },
+        select: {
+          id: true, entryDate: true, serforNumeroRegistro: true, serforGtf: true,
+          speciesCommonName: true, status: true, originCode: true, originSourceNumber: true, contratoId: true,
+        },
         orderBy: { id: "asc" },
       }),
       ForestCtpCierreDB.list(tenantId),
@@ -127,6 +133,16 @@ export class MedidasGuiaDB {
             gtf: conFicha.serforGtf as unknown as GtfSerfor,
           }
         : null,
+      ingresosTitulo: ingresos.map((i) => ({
+        id: i.id,
+        especie: i.speciesCommonName,
+        status: i.status,
+        anulado: false,
+        originCode: i.originCode,
+        originSourceNumber: i.originSourceNumber,
+        contratoId: i.contratoId,
+        periodoCerrado: cerrado.get(i.id) ?? null,
+      })),
     };
   }
 
@@ -205,11 +221,13 @@ export class MedidasGuiaDB {
         if (ids.length > 0) {
           fichaGuardadaEn = await tx.$executeRaw`
             UPDATE "WoodEntry" SET
-              "serforGtf" = COALESCE("serforGtf", ${JSON.stringify(pedido.ficha)}::jsonb),
-              "serforNumeroRegistro" = COALESCE(NULLIF(TRIM("serforNumeroRegistro"), ''), ${pedido.numeroRegistro}::text),
+              "serforGtf" = ${JSON.stringify(pedido.ficha)}::jsonb,
+              "serforNumeroRegistro" = COALESCE(${pedido.numeroRegistro}::text, NULLIF(TRIM("serforNumeroRegistro"), '')),
               "updatedAt" = NOW()
             WHERE "tenantId" = ${tenantId} AND "id" = ANY(${ids}::text[])
               AND ("serforGtf" IS NULL OR (COALESCE(TRIM("serforNumeroRegistro"), '') = '' AND ${pedido.numeroRegistro}::text IS NOT NULL))
+              /* Ficha y N° de registro van JUNTOS (security 05-10): nunca la ficha de un registro con otro. */
+              AND (COALESCE(TRIM("serforNumeroRegistro"), '') = '' OR TRIM("serforNumeroRegistro") = ${pedido.numeroRegistro}::text)
           `;
         }
       }

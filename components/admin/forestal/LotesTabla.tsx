@@ -141,20 +141,20 @@ export default function LotesTabla({
           acá NO va el degradé de borde que sí llevan los cuadros SERFOR —esos
           sí optan por quedarse como tabla, porque son el formato oficial. */}
       <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
-        <DataTable className="w-full text-sm">
+        <DataTable className="w-full text-sm [&_thead_th]:px-2! [&_tbody_td]:px-2! [&_tfoot_td]:px-2!">
           <thead>
             <tr className="border-b-2 border-[var(--rule-base)] align-top text-left text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-              <th className="px-3 py-2.5 font-bold">Código<FiltroEnCabecera id="codigo" f={f} /></th>
-              <th className="px-3 py-2.5 font-bold">Producto · especie<FiltroEnCabecera id="producto" f={f} /></th>
-              <th className="px-3 py-2.5 font-bold">Grado<FiltroEnCabecera id="grado" f={f} /></th>
-              <th className="px-3 py-2.5 text-right font-bold">Armado</th>
-              <th className="px-3 py-2.5 text-right font-bold">Despachado</th>
-              <th className="px-3 py-2.5 text-right font-bold">Disponible</th>
-              <th className="px-3 py-2.5 text-right font-bold">Trozas m³<FiltroEnCabecera id="trozas" f={f} /></th>
-              <th className="px-3 py-2.5 text-right font-bold">Ref. SERFOR {RENDIMIENTO_REF_ASERRADA}%<FiltroEnCabecera id="ref" f={f} /></th>
-              <th className="px-3 py-2.5 text-right font-bold">Vs. referencial<FiltroEnCabecera id="vs" f={f} /></th>
-              <th className="px-3 py-2.5 text-right font-bold">Rend.<FiltroEnCabecera id="rend" f={f} /></th>
-              <th className="px-3 py-2.5 font-bold">Destino<FiltroEnCabecera id="destino" f={f} /></th>
+              <th className="px-2 py-2.5 font-bold">Código<FiltroEnCabecera id="codigo" f={f} compacto /></th>
+              <th className="px-2 py-2.5 font-bold">Producto · especie<FiltroEnCabecera id="producto" f={f} compacto /></th>
+              <th className="px-2 py-2.5 font-bold">Grado<FiltroEnCabecera id="grado" f={f} compacto /></th>
+              <th className="px-2 py-2.5 text-right font-bold">Armado</th>
+              <th className="px-2 py-2.5 text-right font-bold">Despachado</th>
+              <th className="px-2 py-2.5 text-right font-bold">Disponible</th>
+              <th className="px-2 py-2.5 text-right font-bold">Trozas m³<FiltroEnCabecera id="trozas" f={f} compacto /></th>
+              <th className="px-2 py-2.5 text-right font-bold">Ref. SERFOR {RENDIMIENTO_REF_ASERRADA}%<FiltroEnCabecera id="ref" f={f} compacto /></th>
+              <th className="px-2 py-2.5 text-right font-bold">Vs. referencial<FiltroEnCabecera id="vs" f={f} compacto /></th>
+              <th className="px-2 py-2.5 text-right font-bold">Rend.<FiltroEnCabecera id="rend" f={f} compacto /></th>
+              <th className="px-2 py-2.5 font-bold">Destino<FiltroEnCabecera id="destino" f={f} compacto /></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--rule-soft)]">
@@ -168,10 +168,10 @@ export default function LotesTabla({
                 onKeyDown={(e) => { if (e.target !== e.currentTarget) return; if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onAbrir(l.id); } }}
                 className="cursor-pointer transition-colors hover:bg-[var(--surface-sunken)]"
               >
-                <td className="whitespace-nowrap px-3 py-2 font-mono font-bold text-[var(--text-primary)]">
+                <td className="whitespace-nowrap px-2 py-2 font-mono font-bold text-[var(--text-primary)]">
                   {l.loteCode}
                 </td>
-                <td className="px-3 py-2 text-[var(--text-secondary)]">
+                <td className="px-2 py-2 text-[var(--text-secondary)]">
                   {l.productType ?? "—"}
                   {l.speciesCommon && <> · {l.speciesCommon}</>}
                   {l.cites && (
@@ -180,7 +180,7 @@ export default function LotesTabla({
                     </span>
                   )}
                 </td>
-                <td className="px-3 py-2 text-[var(--text-secondary)]">
+                <td className="px-2 py-2 text-[var(--text-secondary)]">
                   {l.grade ? (
                     <span className="inline-flex items-center gap-1">
                       <Tag className="h-3.5 w-3.5" aria-hidden /> {l.grade}
@@ -189,28 +189,28 @@ export default function LotesTabla({
                     "—"
                   )}
                 </td>
-                <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-primary)]">
+                <td className="px-2 py-2 text-right font-mono tabular-nums text-[var(--text-primary)]">
                   {nCantidad(l.totalCantidad, l.unit)} <span className="text-[var(--text-tertiary)]">{UNIDAD[l.unit] ?? l.unit}</span>
                 </td>
-                <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                <td className="px-2 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
                   {nCantidad(l.despachado, l.unit)}
                 </td>
-                <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
+                <td className="px-2 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
                   {nCantidad(l.disponible, l.unit)}
                 </td>
-                <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                <td className="px-2 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
                   {l.meta ? fmtM3(l.meta.trozasM3) : "—"}
                 </td>
-                <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                <td className="px-2 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
                   {l.meta ? fmtM3(l.meta.metaM3) : "—"}
                 </td>
-                <td className="px-3 py-2 text-right">
+                <td className="px-2 py-2 text-right">
                   <SaldoMeta meta={l.meta} />
                 </td>
-                <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                <td className="px-2 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
                   {l.meta?.rendimientoPct != null ? `${l.meta.rendimientoPct}%` : "—"}
                 </td>
-                <td className="max-w-48 truncate px-3 py-2 text-[var(--text-secondary)]">
+                <td className="max-w-48 truncate px-2 py-2 text-[var(--text-secondary)]">
                   {l.destino ?? "—"}
                 </td>
               </tr>
@@ -218,7 +218,7 @@ export default function LotesTabla({
           </tbody>
           <tfoot>
             <tr className="border-t-2 border-[var(--rule-base)] font-bold text-[var(--text-primary)]">
-              <td className="px-3 py-2.5" colSpan={3}>
+              <td className="px-2 py-2.5" colSpan={3}>
                 Totales · {enM3.length} en m³{f.activos > 0 && " (lo filtrado)"}
                 {filtrados.length > enM3.length && (
                   <span className="ml-1 font-normal text-[var(--text-tertiary)]">
@@ -226,12 +226,12 @@ export default function LotesTabla({
                   </span>
                 )}
               </td>
-              <td className="px-3 py-2.5 text-right font-mono tabular-nums">{fmtM3(tot.armado)}</td>
-              <td className="px-3 py-2.5 text-right font-mono tabular-nums">{fmtM3(tot.despachado)}</td>
-              <td className="px-3 py-2.5 text-right font-mono tabular-nums">{fmtM3(tot.disponible)}</td>
-              <td className="px-3 py-2.5" colSpan={2} />
-              <td className="px-3 py-2.5 text-right font-mono tabular-nums">{fmtM3(tot.saldo)}</td>
-              <td className="px-3 py-2.5" colSpan={2} />
+              <td className="px-2 py-2.5 text-right font-mono tabular-nums">{fmtM3(tot.armado)}</td>
+              <td className="px-2 py-2.5 text-right font-mono tabular-nums">{fmtM3(tot.despachado)}</td>
+              <td className="px-2 py-2.5 text-right font-mono tabular-nums">{fmtM3(tot.disponible)}</td>
+              <td className="px-2 py-2.5" colSpan={2} />
+              <td className="px-2 py-2.5 text-right font-mono tabular-nums">{fmtM3(tot.saldo)}</td>
+              <td className="px-2 py-2.5" colSpan={2} />
             </tr>
           </tfoot>
         </DataTable>

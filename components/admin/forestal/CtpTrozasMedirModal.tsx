@@ -15,7 +15,9 @@
  *
  * Arriba, «Traer de la guía (SERFOR)» (05-10, ADR-469): por cada guía, las
  * medidas de la lista de trozas de la ficha SERFOR, por código. Lo que se llena
- * así sale de la planilla al releer el patio.
+ * así sale de la planilla al releer el patio. Con «Escanear QR» (05-10) se lee
+ * el QR de la guía de papel con la cámara, y el título habilitante que falta se
+ * declara junto con las medidas, guía tras guía.
  */
 
 import { useMemo, useState } from "react";
@@ -28,7 +30,7 @@ import type { CambioMedidaTroza } from "@/lib/forestal/medidas-troza";
 import { Btn, ModalBody } from "./ctp-shared";
 import CtpTrozasMedirFila, { leerCm, medidaInvalida, type ValoresMedida } from "./ctp-trozas-medir-fila";
 import CtpTrozasMedirPegar, { repartirPegado } from "./ctp-trozas-medir-pegar";
-import CtpTrozasMedirGuia from "./ctp-trozas-medir-guia";
+import CtpTrozasMedirGuia, { guiasSinMedidas } from "./ctp-trozas-medir-guia";
 import { useGuardarMedidas } from "./hooks/use-medidas-trozas";
 import type { TrozaPatioAPI } from "./hooks/use-trozas-patio";
 
@@ -55,6 +57,10 @@ export default function CtpTrozasMedirModal({
     const i = piezas.findIndex((p) => p.id === inicialId);
     return i > 0 ? [piezas[i], ...piezas.slice(0, i), ...piezas.slice(i + 1)] : [...piezas];
   }, [piezas, inicialId]);
+  /* Con guías para traer (QR), el foco inicial no salta a la tabla: el modal
+     bajaría hasta ella y en el celular abriría el teclado. Si se abrió desde
+     una pieza, esa pieza manda. */
+  const hayGuias = useMemo(() => guiasSinMedidas(filas).length > 0, [filas]);
 
   /* Lo que se manda: sólo las casillas tipeadas y válidas, y sólo la punta que
      falta (la que ya está no viaja: el servidor no la pisaría igual). */
@@ -153,7 +159,7 @@ export default function CtpTrozasMedirModal({
                   key={t.id}
                   t={t}
                   indice={i}
-                  autoFocus={i === 0}
+                  autoFocus={i === 0 && (Boolean(inicialId) || !hayGuias)}
                   valores={valores[t.id] ?? VACIO}
                   onCambio={(v) => setValores((prev) => ({ ...prev, [t.id]: v }))}
                   onPegarTabla={repartir}

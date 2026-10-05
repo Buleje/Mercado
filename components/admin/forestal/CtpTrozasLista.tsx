@@ -195,7 +195,7 @@ export default function CtpTrozasLista({
         titulo={titulo} onTitulo={onTitulo} titulosFaceta={titulosFaceta}
         guia={guia} onGuia={onGuia} guiasFaceta={guiasFaceta}
       />
-      <CtpTrozasFiltrosMovil f={extra} />
+      <CtpTrozasFiltrosMovil f={extra} estadoFiltro={estadoFiltro} onEstadoFiltro={onEstadoFiltro} estadosFaceta={estadosFaceta} />
 
       <CtpTrozasFiltrosActivos
         texto={texto} onTexto={setTexto}

@@ -31,7 +31,8 @@
 import { medidasDeTroza } from "./serfor-gtf-a-ingresos";
 import { partirDimensiones } from "./serfor-gtf-campos";
 import { claveNumeroGtf } from "./gtf-talonario";
-import { normalizarNumeroRegistro } from "./serfor-gtf";
+import { esNumeroRegistroValido, normalizarNumeroRegistro } from "./serfor-gtf";
+import type { TituloDeLaFicha } from "./titulo-de-guia";
 
 /** Más que esto entre el largo del libro y el de la guía = no es la misma pieza (o se cortó). */
 export const TOLERANCIA_LARGO_M = 0.3;
@@ -249,6 +250,61 @@ export function numeroRegistroDesdeTexto(texto: string | null | undefined): stri
   return normalizarNumeroRegistro(t) || null;
 }
 
+/* ── El QR de la GTF con la cámara (05-10, «Completar Blas con el QR») ──── */
+
+/** El N° de registro impreso: tipo-región-correlativo (`1-19-0313629`, `2-17-0002328`). */
+const REGISTRO_IMPRESO = /^\d{1,3}-\d{1,3}-\d{4,10}$/;
+
+export type LecturaQrGuia = { ok: true; registro: string } | { ok: false; motivo: string };
+
+/**
+ * Lo que leyó la cámara, ¿es el QR de una GTF de SERFOR? Más estricto que el
+ * campo tipeado: la cámara lee CUALQUIER QR que tenga delante (la etiqueta de
+ * una troza, el de un certificado de este sistema) y un número suelto sin la
+ * forma del registro no se manda a SERFOR. Si no lo es, se dice qué se leyó.
+ */
+export function leerQrDeGuia(texto: string | null | undefined): LecturaQrGuia {
+  const t = (texto ?? "").trim();
+  if (!t) return { ok: false, motivo: "El QR no trae texto. Acerca la cámara e intenta de nuevo." };
+  const visto = t.length > 60 ? `${t.slice(0, 57)}…` : t;
+  if (/nuRegistroGuia=/i.test(t)) {
+    const n = numeroRegistroDesdeTexto(t);
+    if (n && esNumeroRegistroValido(n)) return { ok: true, registro: n };
+    return { ok: false, motivo: "Es el enlace de la consulta de SERFOR, pero el N° de registro que trae no se entiende. Tipéalo como está impreso." };
+  }
+  if (/^[a-z][a-z0-9+.-]*:\/\//i.test(t) || t.startsWith("/")) {
+    if (/serfor\.gob\.pe/i.test(t)) {
+      return { ok: false, motivo: "Es un enlace de SERFOR, pero sin el N° de registro de la guía (nuRegistroGuia). Tipea el N° de registro impreso." };
+    }
+    if (/\/verificar\//i.test(t)) {
+      return { ok: false, motivo: "Es el QR de un documento impreso por este sistema, no el de la GTF de SERFOR." };
+    }
+    return { ok: false, motivo: `Leí un enlace que no es de SERFOR («${visto}»). Apunta al QR impreso en la GTF.` };
+  }
+  const n = normalizarNumeroRegistro(t);
+  if (REGISTRO_IMPRESO.test(n)) return { ok: true, registro: n };
+  return {
+    ok: false,
+    motivo: `Leí «${visto}»: no es el QR de una guía de SERFOR. Si lo es, tipea el N° de registro impreso (con guiones).`,
+  };
+}
+
+/**
+ * La ficha leída es de OTRA guía: ¿de cuál de las pendientes? Sólo si una
+ * —y una sola— la acepta por `relacionDeGuias`; con dos candidatas no se elige.
+ */
+export function guiaQueCorresponde(gtfs: readonly string[], guiaSerfor: string | null | undefined): string | null {
+  const c = [...new Set(gtfs)].filter((g) => relacionPermiteAplicar(relacionDeGuias(g, guiaSerfor)));
+  return c.length === 1 ? c[0] : null;
+}
+
+/** «Guía tras guía»: la siguiente pendiente después de `actual` (da la vuelta), o null. */
+export function siguienteGuiaPendiente(orden: readonly string[], actual: string, hechas: ReadonlySet<string>): string | null {
+  const i = orden.indexOf(actual);
+  const rotada = i < 0 ? [...orden] : [...orden.slice(i + 1), ...orden.slice(0, i)];
+  return rotada.find((g) => g !== actual && !hechas.has(g)) ?? null;
+}
+
 /* ── Contrato de `POST /api/admin/forestal/trozas/medidas-guia` ─────────── */
 
 export type EstadoMedidasGuia = "lista" | "falta_registro" | "no_encontrada" | "sin_respuesta";
@@ -268,11 +324,15 @@ export interface RespuestaMedidasGuia {
   trozasLibro: number;
   trozasGuia: number;
   plan: PlanMedidasGuia | null;
+  /** El título habilitante que trae la ficha y qué pasa con él al guardar (`tituloDesdeFicha`). */
+  titulo: TituloDeLaFicha | null;
   /** Sólo con `aplicar: true`. */
   aplicado?: {
     escritas: { id: string; codificacion: string }[];
     omitidas: { id: string; codificacion: string; motivo: string }[];
     fichaGuardadaEn: number;
+    /** El título: en cuántos ingresos se declaró y, si en ninguno, por qué (`null` = no tocaba). */
+    titulo: { declarados: number; codigo: string | null; motivo: string | null } | null;
   };
 }
 

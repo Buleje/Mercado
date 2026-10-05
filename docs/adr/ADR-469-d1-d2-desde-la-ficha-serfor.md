@@ -24,3 +24,12 @@
 
 - Una guía del inventario se completa con un dato que el operador tiene en el papel (el QR), sin tipear 3 × N números.
 - Si SERFOR publica la guía con otro formato de número (más de un tramo de diferencia), la relación sale `distinta` y no se escribe: se ve en la vista previa y se completa a mano.
+
+## Cambio 2026-10-05 — «Completar Blas con el QR» (título y cámara)
+
+- **QR con la cámara:** cada guía de la planilla tiene «Escanear QR» (la cámara del escáner de trozas, `CamaraEscaneo`). `leerQrDeGuia` (puro) acepta el enlace de la consulta SNIFFS (`nuRegistroGuia`) o el N° de registro con forma `tipo-región-correlativo`; cualquier otro QR (etiqueta de troza, certificado propio, enlace ajeno) se rechaza diciendo qué se leyó. La vista previa sale sola.
+- **QR de otra guía:** la vista previa con `relacionGuia: "distinta"` no deja guardar (el 422 sigue); si la ficha es de UNA de las otras guías pendientes (`guiaQueCorresponde`), un toque la lleva allá y se consulta sola.
+- **Título habilitante:** la respuesta trae `titulo` (`tituloDesdeFicha`: casilleros 6 y 8 de la ficha frente a los ingresos de la guía, con `planearTitulo`). Al aplicar, DESPUÉS de las medidas y en su propia transacción, `TituloGuiaDB.declarar` con el código y la resolución de la ficha (sólo vacío, mes abierto, vínculo al permiso si el código es de la lista; `ActivityLog` `ctp_ingreso_titulo_declarado` con «tomado de la ficha SERFOR (registro …)»). Si no entra —rol, mes cerrado, error— las medidas quedan y `aplicado.titulo.motivo` dice por qué. Si el libro declara OTRO título, no se pisa y la vista previa lo muestra.
+- **Roles del título:** admin y dueño (`bloqueoRolTitulo`), chequeado a mano porque `requireAdmin` deja pasar al encargado por el bypass de gestión. Almacenero y encargado guardan las medidas; el título queda afuera con el motivo. ⚠️ `PATCH /wood-entries/titulo` declara admin/dueño pero hoy deja pasar al encargado (mismo bypass): pendiente alinearlo.
+- **Guía tras guía:** al guardar una, el foco pasa a la siguiente pendiente (`siguienteGuiaPendiente`) sin cerrar, con «N de M guías completas» (las que pasaron por la lista desde que se abrió).
+- **Verificado:** vista previa real en `main` (SERFOR `1-19-0313629` → título `19-SEC/PER-FMC-2024-008`, `vinculaPermiso: true`, relación `distinta`) y `aplicar` → 422 `guia_distinta` sin escribir. La escritura de medidas + título en Blas espera un N° de registro (o el papel) de una de sus 7 guías.

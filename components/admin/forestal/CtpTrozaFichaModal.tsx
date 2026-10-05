@@ -107,7 +107,7 @@ export default function CtpTrozaFichaModal({
             onArmarLote={armable && onArmarLote ? () => onArmarLote(t.id) : undefined}
             motivoSinLote={onArmarLote && PUEDE_IR_A_LOTE.has(estado) ? motivo : null}
             onEtiqueta={estaEnPatio(estado) ? () => setEtiquetando(true) : undefined}
-            onCroquis={cancha ? () => { onClose(); irAlCroquis(); } : undefined}
+            onCroquis={cancha ? () => { onClose(); irAlCroquis(cancha.zonaId); } : undefined}
             canchaNombre={cancha?.nombre}
           />
         ) : undefined

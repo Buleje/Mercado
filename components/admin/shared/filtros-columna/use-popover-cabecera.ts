@@ -87,3 +87,11 @@ export function usePopoverCabecera(alto: number, ancho = 256) {
  */
 export const SUMMARY_CABECERA =
   "flex h-9 min-w-24! max-w-56 cursor-pointer list-none items-center justify-between gap-1 rounded-lg border-[1.5px] bg-[var(--surface-raised)] pl-2.5 pr-2 text-sm font-medium text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none [&::-webkit-details-marker]:hidden";
+
+/**
+ * El disparador en su versión COMPACTA: sólo el ícono de embudo, 32 px. Para
+ * tablas con muchas columnas, donde cada control de 96 px empuja la tabla al
+ * scroll horizontal (Lotes, 05-10: 11 columnas × 96 px a 1280).
+ */
+export const SUMMARY_CABECERA_COMPACTO =
+  "inline-flex h-8 w-8 min-w-0! cursor-pointer list-none items-center justify-center rounded-lg border-[1.5px] bg-[var(--surface-raised)] text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none [&::-webkit-details-marker]:hidden";

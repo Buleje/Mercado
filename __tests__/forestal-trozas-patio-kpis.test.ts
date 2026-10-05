@@ -2,11 +2,14 @@ import { describe, expect, it } from "vitest";
 import {
   DIAS_RIESGO,
   clasesDiametricas,
+  conCostosCargados,
   costoM3DeGuia,
   fiscalizacionDelPatio,
   flujoDelPatio,
+  guiasSinCostoDelPatio,
   primeroALaSierra,
   ptEstimados,
+  repartoDeGuia,
   riesgoDelPatio,
   valorDelPatio,
   type PiezaKpi,
@@ -39,7 +42,7 @@ const pieza = (o: Partial<PiezaKpi> = {}): PiezaKpi => ({
 
 describe("valorDelPatio — a costo de su guía, nunca S/ 0 inventado", () => {
   it("sin ninguna factura el valor es null, no 0, y cuenta las guías que faltan", () => {
-    const v = valorDelPatio([pieza(), pieza({ id: "t2", woodEntryId: "g2" })]);
+    const v = valorDelPatio([pieza(), pieza({ id: "t2", woodEntryId: "g2", gtfNumber: "002" })]);
     expect(v.soles).toBeNull();
     expect(v.guiasSinCosto).toBe(2);
     expect(v.m3SinCosto).toBe(4);
@@ -47,7 +50,7 @@ describe("valorDelPatio — a costo de su guía, nunca S/ 0 inventado", () => {
   it("pieza × (factura ÷ m³ del asiento), y lo parcial se separa", () => {
     const v = valorDelPatio([
       pieza({ guiaCostoTotal: 1000, guiaVolumenM3: 10 }), // 100 S/ por m³ → 200
-      pieza({ id: "t2", woodEntryId: "g2", guiaCostoTotal: null, guiaVolumenM3: 5 }),
+      pieza({ id: "t2", woodEntryId: "g2", gtfNumber: "002", guiaCostoTotal: null, guiaVolumenM3: 5 }),
     ]);
     expect(v.soles).toBe(200);
     expect(v.m3Costeado).toBe(2);
@@ -69,6 +72,90 @@ describe("valorDelPatio — a costo de su guía, nunca S/ 0 inventado", () => {
   it("un costo 0 o un asiento sin volumen no es un costo", () => {
     expect(costoM3DeGuia({ guiaCostoTotal: 0, guiaVolumenM3: 5 })).toBeNull();
     expect(costoM3DeGuia({ guiaCostoTotal: 500, guiaVolumenM3: 0 })).toBeNull();
+  });
+});
+
+describe("valorDelPatio — por guía, la más cara y la más vieja", () => {
+  it("dos asientos de la MISMA guía (dos especies) son una guía, no dos", () => {
+    const v = valorDelPatio([pieza(), pieza({ id: "t2", woodEntryId: "g2", especieComun: "Cumala" })]);
+    expect(v.guiasSinCosto).toBe(1);
+  });
+  it("la guía con más soles parados y la pieza costeada más vieja con su valor", () => {
+    const v = valorDelPatio(
+      [
+        pieza({ id: "a", guiaCostoTotal: 1000, guiaVolumenM3: 10, fechaIngreso: "2026-10-03" }), // 2 m³ × 100 = 200
+        pieza({ id: "b", codificacion: "7/B", woodEntryId: "g2", gtfNumber: "002", proveedor: "Ríos", guiaCostoTotal: 3000, guiaVolumenM3: 10, fechaIngreso: "2026-09-15" }), // 600, 20 d
+        pieza({ id: "c", woodEntryId: "g2", gtfNumber: "002", guiaCostoTotal: 3000, guiaVolumenM3: 10, volumenM3: 1 }), // 300
+        pieza({ id: "d", woodEntryId: "g3", gtfNumber: "003", fechaIngreso: "2026-08-01" }), // sin costo: no es «la más vieja costeada»
+      ],
+      HOY,
+    );
+    expect(v.soles).toBe(1100);
+    expect(v.guiasConCosto).toBe(2);
+    expect(v.guiaMayor).toEqual({ gtfNumber: "002", proveedor: "Ríos", soles: 900, m3: 3 });
+    expect(v.masVieja).toEqual({ id: "b", codigo: "7/B", gtfNumber: "002", dias: 20, soles: 600 });
+  });
+  it("sin `hoy` no inventa la más vieja", () => {
+    expect(valorDelPatio([pieza({ guiaCostoTotal: 1000, guiaVolumenM3: 10 })]).masVieja).toBeNull();
+  });
+});
+
+describe("guiasSinCostoDelPatio — lo que el modal «Cargar costos» lista", () => {
+  it("agrupa por N° de guía, sólo lo parado y sin servicio, la de más m³ primero", () => {
+    const g = guiasSinCostoDelPatio(
+      [
+        pieza({ id: "a", proveedor: "Ríos", fechaIngreso: "2026-09-25" }),
+        pieza({ id: "b", woodEntryId: "g1b", especieComun: "Cumala", volumenM3: 1.5 }),
+        pieza({ id: "c", consumidaEnId: "x" }), // ya aserrada
+        pieza({ id: "d", woodEntryId: "g2", gtfNumber: "002", volumenM3: 9 }),
+        pieza({ id: "e", woodEntryId: "g3", gtfNumber: "003", guiaMaderaDeTercero: true }),
+        pieza({ id: "f", woodEntryId: "g4", gtfNumber: "004", guiaCostoTotal: 500, guiaVolumenM3: 5 }),
+      ],
+      HOY,
+    );
+    expect(g.map((x) => x.gtfNumber)).toEqual(["002", "001"]);
+    expect(g[1]).toEqual({ gtfNumber: "001", proveedor: "Ríos", especies: ["Cumala", "Tornillo"], piezas: 2, m3Patio: 3.5, diasMax: 10 });
+  });
+});
+
+describe("repartoDeGuia — un costo para la guía entera, por m³ de cada asiento", () => {
+  const asientos = [
+    { id: "tornillo", volumeM3: 10 },
+    { id: "cumala", volumeM3: 5 },
+  ];
+  it("un total se reparte por m³ y todas las especies quedan al mismo S/ por m³", () => {
+    const r = repartoDeGuia({ de: "total", valor: 6000 }, asientos);
+    expect(r).toEqual({
+      total: 6000,
+      porM3: 400,
+      m3Guia: 15,
+      lineas: [
+        { id: "tornillo", costoTotal: 4000 },
+        { id: "cumala", costoTotal: 2000 },
+      ],
+    });
+  });
+  it("S/ por m³ × m³ de la guía da el total, y la suma cierra al céntimo", () => {
+    const r = repartoDeGuia({ de: "m3", valor: 333.33 }, [
+      { id: "a", volumeM3: 1 },
+      { id: "b", volumeM3: 1 },
+      { id: "c", volumeM3: 1 },
+    ]);
+    expect(r?.total).toBe(999.99);
+    expect(r?.lineas.reduce((a, l) => a + l.costoTotal, 0)).toBeCloseTo(999.99, 2);
+  });
+  it("un costo 0, negativo o sin m³ no es un costo: null", () => {
+    expect(repartoDeGuia({ de: "total", valor: 0 }, asientos)).toBeNull();
+    expect(repartoDeGuia({ de: "m3", valor: -5 }, asientos)).toBeNull();
+    expect(repartoDeGuia({ de: "total", valor: Number.NaN }, asientos)).toBeNull();
+    expect(repartoDeGuia({ de: "total", valor: 100 }, [{ id: "a", volumeM3: 0 }])).toBeNull();
+  });
+});
+
+describe("conCostosCargados — la tarjeta cambia con lo que contestó el servidor", () => {
+  it("pisa el costo sólo de los asientos guardados", () => {
+    const t = conCostosCargados([pieza(), pieza({ id: "t2", woodEntryId: "g2" })], new Map([["g2", 800]]));
+    expect(t.map((x) => x.guiaCostoTotal ?? null)).toEqual([null, 800]);
   });
 });
 

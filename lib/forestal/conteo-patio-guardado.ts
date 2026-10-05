@@ -22,6 +22,7 @@
 import { z } from "zod";
 import { LABEL_BLOQUEO, type MotivoBloqueo } from "./consumo-trozas";
 import { codigoDeTroza, motivoDeSorpresa, resumirConteo, type ConteoPatio } from "./conteo-patio";
+import { diasEnElPatio } from "./conteo-patio-pasos";
 
 /** Lo que cabe: el patio que el servidor manda (5.000) con holgura, y sus lecturas. */
 export const MAX_TROZAS_CONTEO = 6000;
@@ -45,6 +46,12 @@ const trozaDelConteoSchema = z.object({
     .refine(esMotivo, "Motivo desconocido")
     .transform((m) => m as MotivoBloqueo)
     .nullable(),
+  /* Opcionales (05-10): una tablet con la versión anterior no los manda. Son
+     para leer el acta, no deciden nada: una fecha rara no tumba el acta entera
+     (`diasEnElPatio` la descarta y el día sale «—»). */
+  etiquetada: z.boolean().optional(),
+  cancha: textoONulo(120).optional(),
+  desde: textoONulo(10).optional(),
 });
 
 const lecturaSchema = z.object({
@@ -79,6 +86,10 @@ export interface FaltanteConteo {
   especieComun: string | null;
   gtfNumber: string | null;
   volumenM3: number | null;
+  /** Dónde ir a buscarla (Mapa de Planta). Ausente en actas anteriores al 05-10. */
+  cancha?: string | null;
+  /** Días que llevaba en el patio el día del conteo. Ausente en actas anteriores al 05-10. */
+  dias?: number | null;
 }
 
 export interface SobranteConteo {
@@ -164,6 +175,8 @@ export function actaParaGuardar(c: ConteoPatio): ActaParaGuardar {
       especieComun: t.especieComun,
       gtfNumber: t.gtfNumber,
       volumenM3: t.volumenM3,
+      cancha: t.cancha ?? null,
+      dias: diasEnElPatio(t, c.fecha),
     })),
     sobrantes,
     sorpresas,

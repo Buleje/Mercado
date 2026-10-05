@@ -7,7 +7,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
-import { PARAM_TROZA, TAB_LIBRO_CTP } from "@/lib/forestal/ctp-troza-url";
+import { PARAM_CANCHA, PARAM_TROZA, TAB_LIBRO_CTP } from "@/lib/forestal/ctp-troza-url";
 import type { EventoTroza } from "@/lib/forestal/planta-zona-types";
 import type { FichaTroza } from "@/lib/forestal/troza-ficha-recorrido";
 
@@ -111,17 +111,19 @@ export function useFlechasDeFicha(
  * del panel (el patio), navegando de verdad. Se va el `?troza=`: la ficha
  * queda atrás.
  */
-export function irAlCroquis(): void {
+export function irAlCroquis(canchaId?: string): void {
   const url = new URL(window.location.href);
   const enElPanel = /\/admin\/?$/.test(url.pathname);
   const destino = new URL("/admin", url.origin);
   destino.searchParams.set("tab", TAB_LIBRO_CTP);
   destino.searchParams.set("vista", "planta");
+  if (canchaId) destino.searchParams.set(PARAM_CANCHA, canchaId);
   if (!enElPanel) {
     window.location.assign(destino.toString());
     return;
   }
   url.searchParams.set("vista", "planta");
+  if (canchaId) url.searchParams.set(PARAM_CANCHA, canchaId);
   url.searchParams.delete(PARAM_TROZA);
   if (url.searchParams.get("tab") === TAB_LIBRO_CTP) {
     window.history.pushState(null, "", url.toString());

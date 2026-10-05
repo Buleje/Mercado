@@ -33,6 +33,8 @@ export interface PedidoTituloGuia {
   /** O el código escrito a mano (si es de un permiso cargado, se vincula solo). */
   originCode?: string | null;
   originSourceNumber?: string | null;
+  /** De dónde salió el dato, para el rastro («la ficha SERFOR (registro 1-19-0313629)»). */
+  origen?: string | null;
 }
 
 export interface ResultadoTituloGuia {
@@ -128,7 +130,8 @@ export class TituloGuiaDB {
         detail:
           `Declaró el título ${originCode}${originSourceNumber ? ` (Res. ${originSourceNumber})` : ""} ` +
           `en el ingreso de ${a.especie ?? "—"} de la guía ${gtf}, que no lo traía` +
-          `${contratoId ? " · vinculado al permiso de la lista" : ""}.`,
+          `${contratoId ? " · vinculado al permiso de la lista" : ""}` +
+          `${pedido.origen?.trim() ? ` · tomado de ${pedido.origen.trim()}` : ""}.`,
         user: usuario,
       });
     }

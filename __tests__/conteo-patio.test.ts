@@ -164,7 +164,7 @@ describe("actaDelConteo", () => {
     const { body, title } = actaDelConteo({ ...c, terminadoEn: T0 }, "Blas");
     expect(title).toContain("26/09/2026");
     expect(body).toContain("Faltan (2)");
-    expect(body).toContain("Sorpresas (1)");
+    expect(body).toContain("Sobran: el libro dice que no están (1)");
     expect(body).toContain("Encontradas (1)");
     expect(body).toContain("QA Admin");
     expect(body).toContain("&lt;script&gt;");

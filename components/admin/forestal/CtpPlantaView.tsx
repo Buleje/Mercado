@@ -35,6 +35,7 @@ import CtpPlantaReservaModal from "./CtpPlantaReservaModal";
 import CtpDocumentoVisor from "./CtpDocumentoVisor";
 import { ZonaFichaModal } from "./ctp-planta-zona-modales";
 import { usePlantaDatos } from "./hooks/use-planta-datos";
+import { usePlantaCanchaUrl } from "./hooks/use-planta-cancha-url";
 import { usePlantaUbicados } from "./hooks/use-planta-ubicados";
 import { useCroquisImprimir } from "./hooks/use-croquis-imprimir";
 import type { SeleccionCroquis } from "./hooks/use-croquis-leaflet";
@@ -78,6 +79,15 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
   const [bloque, setBloque] = useState<{ corridas: string[]; titulo: string } | null>(null);
   const [despachando, setDespachando] = useState<{ uids: string[]; destino: string } | null>(null);
   const irAZona = useCallback((zid: string) => setIrA((p) => ({ zonaId: zid, n: (p?.n ?? 0) + 1 })), []);
+
+  /* «Ver en el croquis» desde la ficha de una troza: `&cancha=<id>` → croquis, cancha resaltada y centrada. */
+  const alCroquis = useCallback(() => setPref("croquis"), [setPref]);
+  const alEncontrarCancha = useCallback((zid: string) => { setSeleccion({ tipo: "zona", id: zid });
+    /* El mapa se encuadra entero ~220 ms después de montar: volar antes lo deshace. */
+    setTimeout(() => irAZona(zid), 700);
+  }, [irAZona]);
+  const zonaIdsCroquis = useMemo(() => zonasCroquis.map((z) => z.id), [zonasCroquis]);
+  usePlantaCanchaUrl({ listo: !loading && !!croquis, zonaIds: zonaIdsCroquis, enCroquis: plano === "croquis", alCroquis, alEncontrar: alEncontrarCancha });
 
   /**
    * Lo que estaba en la mano cayó en una zona. Confirma con el nombre de la

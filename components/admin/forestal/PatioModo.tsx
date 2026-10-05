@@ -75,8 +75,8 @@ export default function PatioModo() {
   const [verTodasLasGuias, setVerTodasLasGuias] = useState(false);
   const [avisoCola, setAvisoCola] = useState<string | null>(null);
   const [guiasDeCache, setGuiasDeCache] = useState<string | null>(null);
-  /** «Contar el patio» (ADR-436): ocupa la pantalla entera, como la recepción. */
-  const [contando, setContando] = useState(false);
+  /** «Contar el patio» (ADR-436), pantalla entera. `?contar=1` lo abre directo (pestaña Trozas, 05-10). */
+  const [contando, setContando] = useState(() => new URLSearchParams(location.search).get("contar") === "1");
   /** «Armar un lote escaneando» (2026-09-26): pantalla entera, como el conteo. */
   const [armandoLote, setArmandoLote] = useState(false);
   /** «Medir escaneando» (2026-09-26): pantalla entera, como el conteo. */

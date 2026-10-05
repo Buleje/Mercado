@@ -15,6 +15,9 @@
 /** El parámetro de la URL que abre la ficha de una troza (lo lee `CtpTrozasView`). */
 export const PARAM_TROZA = "troza";
 
+/** La cancha que la vista Planta resalta y centra al abrir («Ver en el croquis»). Se consume y se borra. */
+export const PARAM_CANCHA = "cancha";
+
 /**
  * El id de la pestaña del Libro CTP. Es el mismo valor que `CTP_MODULE_TAB_ID`
  * (`components/admin/forestal/ctp-shared.tsx`); no se importa de ahí porque ese

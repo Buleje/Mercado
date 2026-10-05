@@ -9,7 +9,7 @@ export { FiltroColumnaMulti, type FiltroColumnaMultiProps } from "./filtro-colum
 export { FiltroColumnaRango, type FiltroColumnaRangoProps } from "./filtro-columna-rango";
 export { FiltroColumnaTexto, type FiltroColumnaTextoProps } from "./filtro-columna-texto";
 export { ChipsDeFiltros, type ChipsDeFiltrosProps } from "./chips-de-filtros";
-export { usePopoverCabecera, SUMMARY_CABECERA, type PosicionPopover } from "./use-popover-cabecera";
+export { usePopoverCabecera, SUMMARY_CABECERA, SUMMARY_CABECERA_COMPACTO, type PosicionPopover } from "./use-popover-cabecera";
 export { useFiltrosDeColumna, type UseFiltrosDeColumnaResult } from "./use-filtros-de-columna";
 export type {
   ColumnaFiltro,

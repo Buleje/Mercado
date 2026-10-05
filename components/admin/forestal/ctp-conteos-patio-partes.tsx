@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { formatTime } from "@/lib/format";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { agruparFaltantes, diaDelConteo, fraseDelConteo } from "@/lib/forestal/conteo-patio-historial";
+import { textoDias } from "@/lib/forestal/conteo-patio-pasos";
 import type { ActaConteoDetalle, ResumenActaConteo } from "@/lib/forestal/conteo-patio-guardado";
 
 const m3 = (v: number | null) => (v == null ? "—" : fmtM3(v));
@@ -180,11 +181,16 @@ export function DetalleConteo({ acta }: { acta: ActaConteoDetalle }) {
                 </span>
               </p>
               <ul className="mt-1.5 flex flex-wrap gap-1.5">
-                {g.piezas.map((p) => (
-                  <li key={p.id} className={CHIP} title={p.gtfNumber ? `Guía ${p.gtfNumber}` : undefined}>
-                    {p.codigo}
-                  </li>
-                ))}
+                {g.piezas.map((p) => {
+                  /* Cancha y días: actas desde el 05-10 (las anteriores no los guardaron). */
+                  const donde = [p.cancha, textoDias(p.dias ?? null)].filter(Boolean).join(" · ");
+                  return (
+                    <li key={p.id} className={CHIP} title={p.gtfNumber ? `Guía ${p.gtfNumber}` : undefined}>
+                      {p.codigo}
+                      {donde && <span className="font-sans text-[var(--text-secondary)]"> · {donde}</span>}
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           ))}

@@ -29,7 +29,7 @@ function Renglon({ titulo, texto, tono }: { titulo: string; texto: string; tono?
 /** Lo que le impide escribir a esta vista previa, en palabras del operador (o null). */
 export function bloqueoDeGuia(r: RespuestaMedidasGuia): string | null {
   if (r.relacionGuia === "distinta") {
-    return `Esa ficha es de la guía ${r.guiaSerfor ?? "—"}, no de la ${r.gtfNumber}. Revisa el N° de registro.`;
+    return `Ese QR (o N° de registro) es de la guía ${r.guiaSerfor ?? "—"}, no de la ${r.gtfNumber}. Escanea el de esta guía.`;
   }
   if (r.relacionGuia === "sin_numero") return "La ficha de SERFOR no trae el N° de guía: no se puede saber si es ésta.";
   return null;
@@ -56,7 +56,8 @@ export default function CtpTrozasMedirGuiaResumen({ r }: { r: RespuestaMedidasGu
         </span>
       </p>
       {bloqueo && <p className={`font-semibold ${ERROR}`}>{bloqueo}</p>}
-      {r.relacionGuia === "sufijo" && (
+      {/* Con la ficha de otra guía, el detalle de códigos es ruido: basta el porqué. */}
+      {!bloqueo && r.relacionGuia === "sufijo" && (
         <p className={AVISO}>
           SERFOR la publica como <b>{r.guiaSerfor}</b> y el libro como <b>{r.gtfNumber}</b>: mismo número, con un tramo menos.
         </p>
@@ -64,6 +65,7 @@ export default function CtpTrozasMedirGuiaResumen({ r }: { r: RespuestaMedidasGu
       {r.estadoSerfor && /anulad/i.test(r.estadoSerfor) && (
         <p className={`font-semibold ${AVISO}`}>SERFOR dice que la guía está «{r.estadoSerfor}».</p>
       )}
+      {!bloqueo && (
       <ul className="space-y-0.5">
         <Renglon
           titulo={`Se llenan ${p.llenar.length}`}
@@ -96,6 +98,7 @@ export default function CtpTrozasMedirGuiaResumen({ r }: { r: RespuestaMedidasGu
         />
         <Renglon titulo="No se pueden tocar" tono={AVISO} texto={lista(p.bloqueadas.map((b) => `${b.codificacion} (${b.motivo})`), 6)} />
       </ul>
+      )}
     </div>
   );
 }

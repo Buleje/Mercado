@@ -53,6 +53,8 @@ export default function EscanerTrozas<T extends TrozaDelEscaner>({
   mostrarCuenta = true,
   avisoAlTomar,
   onDesconocido,
+  camaraGrande = false,
+  pieCamara,
   className,
 }: {
   /** Entre cuáles se busca lo escaneado. */
@@ -74,6 +76,10 @@ export default function EscanerTrozas<T extends TrozaDelEscaner>({
   avisoAlTomar?: (t: T) => { tono: Tono; mensaje: string } | null;
   /** Un código que no está en la lista. Si devuelve un texto, ese es el aviso. */
   onDesconocido?: (codigo: string) => string | void;
+  /** La cámara como botón ancho con texto, debajo del campo (celular a una mano). */
+  camaraGrande?: boolean;
+  /** Lo que la pantalla quiere ver mientras la cámara está abierta (el conteo: «8 de 13»). */
+  pieCamara?: React.ReactNode;
   className?: string;
 }) {
   const campoId = useId();
@@ -219,14 +225,16 @@ export default function EscanerTrozas<T extends TrozaDelEscaner>({
             className="min-w-0 flex-1 bg-transparent dark:bg-transparent text-base text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)] focus-visible:[box-shadow:none]! focus-visible:outline-none!"
           />
         </label>
-        <button
-          type="button"
-          onClick={() => setCamara(true)}
-          aria-label="Escanear con la cámara"
-          className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent)] text-white transition-colors hover:bg-[var(--accent-600)]"
-        >
-          <Camera className="h-5 w-5" aria-hidden />
-        </button>
+        {!camaraGrande && (
+          <button
+            type="button"
+            onClick={() => setCamara(true)}
+            aria-label="Escanear con la cámara"
+            className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent)] text-white transition-colors hover:bg-[var(--accent-600)]"
+          >
+            <Camera className="h-5 w-5" aria-hidden />
+          </button>
+        )}
         <InfoTip
           title="Escanear trozas"
           what="Apunta la pistola a la etiqueta (o tipea el código y Enter): la troza queda marcada sin buscarla."
@@ -235,6 +243,17 @@ export default function EscanerTrozas<T extends TrozaDelEscaner>({
           side="left"
         />
       </div>
+
+      {camaraGrande && (
+        <button
+          type="button"
+          onClick={() => setCamara(true)}
+          className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[var(--accent-dark)] px-4 text-lg font-bold text-white transition-opacity hover:opacity-90"
+          data-escaner-camara
+        >
+          <Camera className="h-6 w-6" aria-hidden /> Escanear con la cámara
+        </button>
+      )}
 
       <div role="status" aria-live="polite" className="space-y-2">
         {aviso && <LineaResultado key={aviso.n} aviso={aviso} onElegir={aplicar} />}
@@ -252,6 +271,7 @@ export default function EscanerTrozas<T extends TrozaDelEscaner>({
           onCerrar={cerrarCamara}
           pie={
             <div className="space-y-1">
+              {pieCamara}
               {aviso ? (
                 <LineaResultado key={aviso.n} aviso={aviso} onElegir={aplicar} />
               ) : (

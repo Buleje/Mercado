@@ -18,11 +18,14 @@
  */
 
 import { useCallback, useMemo, useState } from "react";
+import { Search } from "@buleje/design-system/icons";
 import {
   ChipsDeFiltros,
   FiltroColumnaMulti,
   FiltroColumnaRango,
   FiltroColumnaTexto,
+  SUMMARY_CABECERA_COMPACTO,
+  usePopoverCabecera,
   useFiltrosDeColumna,
   type ChipFiltro,
   type ColumnaFiltro,
@@ -113,14 +116,39 @@ export function useFiltrosTabla<T>(filas: readonly T[], columnas: readonly Colum
   };
 }
 
-function Control<T>({ c, f }: { c: ColumnaFiltro<T>; f: FiltrosTabla<T> }) {
+/** La búsqueda de texto en versión compacta: una lupa de 32 px que abre el buscador. */
+function TextoCompacto({ label, value, onChange }: { label: string; value: string | undefined; onChange: (v: string) => void }) {
+  const { ref, alAbrir, estilo } = usePopoverCabecera(64, 224);
+  return (
+    <details ref={ref} onToggle={alAbrir} className="inline-block align-middle font-normal normal-case tracking-normal">
+      <summary
+        role="button"
+        aria-label={`Buscar en ${label}`}
+        title={value ? `${label}: «${value}»` : `Buscar en ${label}`}
+        className={`${SUMMARY_CABECERA_COMPACTO} ${value ? "border-[var(--accent)] bg-primary/10" : "border-[var(--rule-base)]"}`}
+      >
+        <Search className={`h-4 w-4 ${value ? "text-[var(--accent)]" : "text-[var(--text-tertiary)]"}`} aria-hidden />
+      </summary>
+      <div style={estilo} className="z-50 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-2 shadow-[var(--shadow-lg)]">
+        <FiltroColumnaTexto label={label} value={value} onChange={onChange} className="mt-0! w-52!" />
+      </div>
+    </details>
+  );
+}
+
+function Control<T>({ c, f, compacto = false }: { c: ColumnaFiltro<T>; f: FiltrosTabla<T>; compacto?: boolean }) {
   if (c.tipo === "texto") {
-    return <FiltroColumnaTexto label={c.label} value={f.textos[c.id]} onChange={(v) => f.setTexto(c.id, v)} />;
+    return compacto ? (
+      <TextoCompacto label={c.label} value={f.textos[c.id]} onChange={(v) => f.setTexto(c.id, v)} />
+    ) : (
+      <FiltroColumnaTexto label={c.label} value={f.textos[c.id]} onChange={(v) => f.setTexto(c.id, v)} />
+    );
   }
   if (c.tipo === "multi") {
     return (
       <FiltroColumnaMulti
         label={c.label}
+        compacto={compacto}
         value={f.facetas[c.id] as string[] | undefined}
         options={f.opciones[c.id] ?? []}
         onChange={(v) => f.setFaceta(c.id, v.length > 0 ? v : undefined)}
@@ -130,6 +158,7 @@ function Control<T>({ c, f }: { c: ColumnaFiltro<T>; f: FiltrosTabla<T> }) {
   return (
     <FiltroColumnaRango
       label={c.label}
+      compacto={compacto}
       unidad={c.unidad}
       paso={c.paso}
       esFecha={c.tipo === "fecha"}
@@ -140,11 +169,20 @@ function Control<T>({ c, f }: { c: ColumnaFiltro<T>; f: FiltrosTabla<T> }) {
 }
 
 /** El control de UNA columna, para montar dentro de su `<th>` (el `<thead>`
- *  necesita `align-top`). No dibuja nada si la columna no lo pide. */
-export function FiltroEnCabecera<T>({ id, f }: { id: string; f: FiltrosTabla<T> }) {
+ *  necesita `align-top`). No dibuja nada si la columna no lo pide.
+ *  `compacto`: un ícono de 32 px (embudo o lupa) pegado al título, con el mismo
+ *  popover — para tablas de muchas columnas que con el control de 96 px debajo
+ *  de cada título se pasan del ancho. Ningún filtro se pierde. */
+export function FiltroEnCabecera<T>({ id, f, compacto = false }: { id: string; f: FiltrosTabla<T>; compacto?: boolean }) {
   const c = f.columnas.find((x) => x.id === id);
   if (!c || !f.enCabecera[c.id] || !f.conAutofiltro[c.id]) return null;
-  return <Control c={c} f={f} />;
+  return compacto ? (
+    <span className="ml-1 inline-block align-middle">
+      <Control c={c} f={f} compacto />
+    </span>
+  ) : (
+    <Control c={c} f={f} />
+  );
 }
 
 /** Arriba de la tabla: «Filtros por columna» (sólo mobile, donde no hay

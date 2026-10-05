@@ -32,6 +32,7 @@ import {
   type LecturaConteo,
   type TrozaDelConteo,
 } from "@/lib/forestal/conteo-patio";
+import { canchaDe, nombreDeCancha } from "@/lib/forestal/conteo-patio-pasos";
 
 /** Quién está contando y en qué negocio: se recuerda para poder abrir sin señal. */
 const CLAVE_YO = "conteo-patio:yo";
@@ -81,6 +82,22 @@ async function quienSoy(): Promise<Yo> {
   return yoGuardado() ?? { tenant: getActiveTenantSlug(), quien: "" };
 }
 
+/**
+ * `zonaId → nombre` de las canchas del Mapa de Planta, para decir en el acta
+ * dónde ir a buscar lo que falta. Falla en `{}`: sin mapa se cuenta igual.
+ */
+async function canchasDelMapa(): Promise<Record<string, string>> {
+  try {
+    const r = await fetch("/api/admin/forestal/ctp/planta", { credentials: "include" });
+    if (!r.ok) return {};
+    const d = (await r.json()) as { zonas?: { id: string; codigo?: string | null; nombre?: string | null }[] };
+    return Object.fromEntries((d.zonas ?? []).map((z) => [z.id, nombreDeCancha(z)]));
+  } catch (err) {
+    logger.warn("[conteo-patio] mapa de planta no disponible", { error: String(err) });
+    return {};
+  }
+}
+
 /** Lo que el botón del patio necesita saber: hay un conteo de HOY sin terminar. */
 export function conteoDeHoyEnCurso(): { contadas: number; total: number } | null {
   const yo = yoGuardado();
@@ -127,11 +144,14 @@ export function useConteoPatio() {
       .then((d) => setNegocio(d?.nombre?.trim() || null))
       .catch((err) => logger.warn("[conteo-patio] membrete no disponible", { error: String(err) }));
 
+    /* En paralelo con el patio: sólo pone nombre a la cancha, no lo frena. */
+    const canchasP = canchasDelMapa();
     try {
       const r = await fetch("/api/admin/forestal/trozas/patio", { credentials: "include" });
       if (!r.ok) throw new Error(`El servidor respondió ${r.status}`);
-      const d = (await r.json()) as { trozas?: TrozaConsumible[]; truncado?: boolean };
-      const trozas = (d.trozas ?? []).map(aTrozaDelConteo);
+      const d = (await r.json()) as { trozas?: (TrozaConsumible & { zonaId?: string | null })[]; truncado?: boolean };
+      const canchas = await canchasP;
+      const trozas = (d.trozas ?? []).map((t) => ({ ...aTrozaDelConteo(t), cancha: canchaDe(t, canchas) }));
       const truncado = d.truncado === true;
       fotoRef.current = { trozas, truncado };
       if (!vigente()) return;

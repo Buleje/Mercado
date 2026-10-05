@@ -4,6 +4,9 @@ import { describe, expect, it } from "vitest";
 import { parsearConsultaGtf } from "@/lib/forestal/serfor-gtf";
 import {
   coincidenciasDe,
+  guiaQueCorresponde,
+  leerQrDeGuia,
+  siguienteGuiaPendiente,
   medidasDeLaGuia,
   numeroRegistroDesdeTexto,
   planearMedidasDesdeGuia,
@@ -163,5 +166,43 @@ describe("ambigua flexible con el código repetido en el libro", () => {
     expect(p.llenar).toHaveLength(0);
     expect(p.ambiguas).toEqual([{ codigo: "62-B", candidatos: ["62/B", "62-B", "62 B"] }]);
     expect(p.sinCoincidencia).toEqual({ libro: [], guia: [] });
+  });
+});
+
+/* ── El QR de la GTF con la cámara y «guía tras guía» (05-10) ── */
+
+describe("leerQrDeGuia — lo que leyó la cámara", () => {
+  it("el enlace de la consulta SNIFFS da el N° de registro", () => {
+    expect(
+      leerQrDeGuia("https://sniffs.serfor.gob.pe/control/gtf/consultas/consultarGtf.do?nuRegistroGuia=1-19-0313629&tipoBusqueda=GTF&tipoSeguimiento=MAP"),
+    ).toEqual({ ok: true, registro: "1-19-0313629" });
+    expect(leerQrDeGuia(" 2-17-0002328 ")).toEqual({ ok: true, registro: "2-17-0002328" });
+  });
+  it("un enlace de SERFOR sin el parámetro, o con basura, no se adivina", () => {
+    expect(leerQrDeGuia("https://sniffs.serfor.gob.pe/control/gtf/consultas.do")).toMatchObject({ ok: false, motivo: expect.stringMatching(/sin el N° de registro/) });
+    expect(leerQrDeGuia("https://x.pe/c.do?nuRegistroGuia=abc")).toMatchObject({ ok: false });
+  });
+  it("la etiqueta de una troza, un certificado propio o un número suelto NO son la guía", () => {
+    expect(leerQrDeGuia("116-A")).toMatchObject({ ok: false, motivo: expect.stringMatching(/Leí «116-A»/) });
+    expect(leerQrDeGuia("12345")).toMatchObject({ ok: false });
+    expect(leerQrDeGuia("https://buleje.pe/verificar/ABC123")).toMatchObject({ ok: false, motivo: expect.stringMatching(/este sistema/) });
+    expect(leerQrDeGuia("https://otro.com/x")).toMatchObject({ ok: false, motivo: expect.stringMatching(/no es de SERFOR/) });
+    expect(leerQrDeGuia("")).toMatchObject({ ok: false });
+  });
+});
+
+describe("guiaQueCorresponde y siguienteGuiaPendiente", () => {
+  const blas = ["010-001-0000005", "010-001-0000009", "010-001-0000014"];
+  it("la ficha 001-0000009 es de la 010-001-0000009 (sufijo); sin pareja o con dos, null", () => {
+    expect(guiaQueCorresponde(blas, "001-0000009")).toBe("010-001-0000009");
+    expect(guiaQueCorresponde(blas, "019-0000003")).toBeNull();
+    expect(guiaQueCorresponde(["010-001-0000009", "020-001-0000009"], "001-0000009")).toBeNull();
+    expect(guiaQueCorresponde(blas, null)).toBeNull();
+  });
+  it("pasa a la siguiente sin hacer, da la vuelta y termina en null", () => {
+    expect(siguienteGuiaPendiente(blas, blas[0], new Set([blas[0]]))).toBe(blas[1]);
+    expect(siguienteGuiaPendiente(blas, blas[2], new Set([blas[2]]))).toBe(blas[0]);
+    expect(siguienteGuiaPendiente(blas, blas[1], new Set([blas[0], blas[1]]))).toBe(blas[2]);
+    expect(siguienteGuiaPendiente(blas, blas[1], new Set(blas))).toBeNull();
   });
 });

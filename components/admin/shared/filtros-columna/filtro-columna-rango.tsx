@@ -12,10 +12,10 @@
  * dd/mm — el resto de la mecánica (popover, chip, quitar) es la misma.
  */
 
-import { ChevronDown, X } from "@buleje/design-system/icons";
+import { ChevronDown, Filter, X } from "@buleje/design-system/icons";
 import type { Rango } from "@/lib/admin/filtros-columna";
 import { rangoActivo } from "@/lib/admin/filtros-columna";
-import { SUMMARY_CABECERA, usePopoverCabecera } from "./use-popover-cabecera";
+import { SUMMARY_CABECERA, SUMMARY_CABECERA_COMPACTO, usePopoverCabecera } from "./use-popover-cabecera";
 
 /** dd/mm, en UTC — una fecha date-only nunca se lee con la hora local (el
  *  off-by-one de Lima: a las 20:00 el UTC ya es mañana). */
@@ -36,6 +36,8 @@ export interface FiltroColumnaRangoProps {
   onChange: (r: Rango<number> | Rango<string>) => void;
   placeholder?: string;
   className?: string;
+  /** Sólo el ícono de embudo (32 px) en vez del disparador de 96 px: tablas anchas. */
+  compacto?: boolean;
 }
 
 export function FiltroColumnaRango({
@@ -47,6 +49,7 @@ export function FiltroColumnaRango({
   onChange,
   placeholder = "Todos",
   className = "",
+  compacto = false,
 }: FiltroColumnaRangoProps) {
   /* El ancho que se mide tiene que ser el que se dibuja (`w-64`/`w-60`): con
      240 fijo, el de fechas (256) se salía por la derecha en un celular. */
@@ -76,18 +79,25 @@ export function FiltroColumnaRango({
     <details
       ref={ref}
       onToggle={alAbrir}
-      className={`mt-1.5 block font-normal normal-case tracking-normal ${className}`}
+      className={`${compacto ? "inline-block align-middle" : "mt-1.5 block"} font-normal normal-case tracking-normal ${className}`}
     >
       <summary
         role="button"
         aria-label={`Filtrar ${label} por rango`}
-        className={`${SUMMARY_CABECERA} ${activo ? "border-[var(--accent)] bg-primary/10" : "border-[var(--rule-base)]"}`}
+        title={activo ? `${label}: ${resumen}` : `Filtrar ${label} por rango`}
+        className={`${compacto ? SUMMARY_CABECERA_COMPACTO : SUMMARY_CABECERA} ${activo ? "border-[var(--accent)] bg-primary/10" : "border-[var(--rule-base)]"}`}
       >
-        <span className="truncate tabular-nums">{resumen}</span>
-        <ChevronDown
-          className={`h-3.5 w-3.5 shrink-0 ${activo ? "text-[var(--accent)]" : "text-[var(--text-tertiary)]"}`}
-          aria-hidden
-        />
+        {compacto ? (
+          <Filter className={`h-4 w-4 ${activo ? "text-[var(--accent)]" : "text-[var(--text-tertiary)]"}`} aria-hidden />
+        ) : (
+          <>
+            <span className="truncate tabular-nums">{resumen}</span>
+            <ChevronDown
+              className={`h-3.5 w-3.5 shrink-0 ${activo ? "text-[var(--accent)]" : "text-[var(--text-tertiary)]"}`}
+              aria-hidden
+            />
+          </>
+        )}
       </summary>
       <div
         style={estilo}

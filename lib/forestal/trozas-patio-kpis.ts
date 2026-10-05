@@ -8,7 +8,8 @@
  *   · ¿qué aserro primero?         → `primeroALaSierra` (las libres más viejas)
  *                                     y `ptEstimados` (cuánto rinde lo libre);
  *   · ¿qué se me está echando a perder? → `riesgoDelPatio` (30 días o más);
- *   · ¿cuánto vale lo parado?      → `valorDelPatio` (a costo de su guía);
+ *   · ¿cuánto vale lo parado?      → `valorDelPatio` (a costo de su guía) y,
+ *     para cargar lo que falta, `guiasSinCostoDelPatio` + `repartoDeGuia`;
  *   · ¿aguanta una fiscalización?  → `fiscalizacionDelPatio`;
  *   · y cómo se mueve: `flujoDelPatio` (entradas contra sierra, 30 días) y
  *     `clasesDiametricas` (de qué grosor es la pila).
@@ -29,6 +30,7 @@
 import { esSinCodigo } from "./consumo-trozas";
 import { PT_POR_M3 } from "./cubicacion";
 import { TRAMOS_DIAS_PATIO, diasEnPatio, diasParada } from "./patio-dias";
+import { repartirPorVolumen, type LineaParaRepartir } from "./plata-de-guia";
 import {
   TRAMOS_ANTIGUEDAD,
   estaEnPatio,
@@ -94,23 +96,39 @@ export interface ValorPatio {
   m3SinCosto: number;
   /** Madera de servicio: está parada, pero no es nuestra. */
   m3DeServicio: number;
+  /** Guías (por N° de GTF, no por asiento) con algo parado y costeado. */
   guiasConCosto: number;
   /** Guías con piezas paradas que deberían tener factura y no la tienen. */
   guiasSinCosto: number;
+  /** La guía con más plata parada en la cancha. */
+  guiaMayor: { gtfNumber: string; proveedor: string | null; soles: number; m3: number } | null;
+  /** La pieza COSTEADA que más días lleva parada y lo que vale (sin `hoy`, `null`). */
+  masVieja: { id: string; codigo: string | null; gtfNumber: string | null; dias: number; soles: number } | null;
 }
 
-/** Valor de lo que sigue en el patio, pieza × costo por m³ de SU guía. */
-export function valorDelPatio(trozas: readonly PiezaKpi[]): ValorPatio {
+/**
+ * Una guía es su N° de GTF, no su asiento: una guía de dos especies son dos
+ * asientos (ADR-312) y la tarjeta decía «2 guías sin factura» por una sola.
+ */
+const claveGuia = (t: { gtfNumber?: string | null; woodEntryId?: string }) =>
+  t.gtfNumber?.trim() || t.woodEntryId || "sin-guia";
+
+/**
+ * Valor de lo que sigue en el patio, pieza × costo por m³ de SU asiento.
+ * Con `hoy`, además, la pieza costeada más vieja y lo que vale.
+ */
+export function valorDelPatio(trozas: readonly PiezaKpi[], hoy?: Date): ValorPatio {
   let soles = 0;
   let m3Total = 0;
   let m3Costeado = 0;
   let m3SinCosto = 0;
   let m3DeServicio = 0;
-  const conCosto = new Set<string>();
+  const conCosto = new Map<string, { proveedor: string | null; soles: number; m3: number }>();
   const sinCosto = new Set<string>();
+  let masVieja: ValorPatio["masVieja"] = null;
   for (const t of enPatio(trozas)) {
     const v = vol(t);
-    const guia = t.woodEntryId ?? t.gtfNumber ?? "sin-guia";
+    const guia = claveGuia(t);
     m3Total += v;
     if (t.guiaMaderaDeTercero === true) {
       m3DeServicio += v;
@@ -120,11 +138,21 @@ export function valorDelPatio(trozas: readonly PiezaKpi[]): ValorPatio {
     if (porM3 == null) {
       m3SinCosto += v;
       sinCosto.add(guia);
-    } else {
-      soles += v * porM3;
-      m3Costeado += v;
-      conCosto.add(guia);
+      continue;
     }
+    const vale = v * porM3;
+    soles += vale;
+    m3Costeado += v;
+    const g = conCosto.get(guia) ?? { proveedor: t.proveedor ?? null, soles: 0, m3: 0 };
+    conCosto.set(guia, { ...g, soles: g.soles + vale, m3: g.m3 + v });
+    const dias = hoy ? diasEnPatio(t, hoy) : null;
+    if (dias != null && (masVieja == null || dias > masVieja.dias || (dias === masVieja.dias && vale > masVieja.soles))) {
+      masVieja = { id: t.id, codigo: t.codificacion ?? null, gtfNumber: t.gtfNumber ?? null, dias, soles: r2(vale) };
+    }
+  }
+  let guiaMayor: ValorPatio["guiaMayor"] = null;
+  for (const [gtfNumber, g] of conCosto) {
+    if (guiaMayor == null || g.soles > guiaMayor.soles) guiaMayor = { gtfNumber, ...g };
   }
   return {
     soles: conCosto.size > 0 ? r2(soles) : null,
@@ -134,7 +162,97 @@ export function valorDelPatio(trozas: readonly PiezaKpi[]): ValorPatio {
     m3DeServicio: r3(m3DeServicio),
     guiasConCosto: conCosto.size,
     guiasSinCosto: sinCosto.size,
+    guiaMayor: guiaMayor ? { ...guiaMayor, soles: r2(guiaMayor.soles), m3: r3(guiaMayor.m3) } : null,
+    masVieja,
   };
+}
+
+// ─── Cargar el costo desde el patio ───────────────────────────────────────
+
+/** Una guía con piezas paradas que debería tener factura y no la tiene. */
+export interface GuiaSinCosto {
+  gtfNumber: string;
+  proveedor: string | null;
+  especies: string[];
+  /** Piezas y m³ de esta guía que siguen en la cancha. */
+  piezas: number;
+  m3Patio: number;
+  /** Días de su pieza parada más vieja (`null` = ninguna con fecha). */
+  diasMax: number | null;
+}
+
+/**
+ * Las guías que la tarjeta «Valor parado» cuenta como «sin factura», con lo
+ * que hace falta para cargarles el costo: mismo criterio que `valorDelPatio`
+ * (sólo lo parado, sin la madera de servicio). Primero la de más m³ parados:
+ * es la que más mueve la cifra.
+ */
+export function guiasSinCostoDelPatio(trozas: readonly PiezaKpi[], hoy: Date): GuiaSinCosto[] {
+  const porGuia = new Map<string, GuiaSinCosto & { _esp: Set<string> }>();
+  for (const t of enPatio(trozas)) {
+    if (t.guiaMaderaDeTercero === true || costoM3DeGuia(t) != null) continue;
+    const clave = claveGuia(t);
+    const g = porGuia.get(clave) ?? {
+      gtfNumber: clave,
+      proveedor: t.proveedor ?? null,
+      especies: [],
+      piezas: 0,
+      m3Patio: 0,
+      diasMax: null,
+      _esp: new Set<string>(),
+    };
+    g.piezas += 1;
+    g.m3Patio += vol(t);
+    if (t.especieComun) g._esp.add(t.especieComun);
+    const d = diasEnPatio(t, hoy);
+    if (d != null && (g.diasMax == null || d > g.diasMax)) g.diasMax = d;
+    porGuia.set(clave, g);
+  }
+  return [...porGuia.values()]
+    .map(({ _esp, ...g }) => ({ ...g, m3Patio: r3(g.m3Patio), especies: [..._esp].sort((a, b) => a.localeCompare(b, "es")) }))
+    .sort((a, b) => b.m3Patio - a.m3Patio || a.gtfNumber.localeCompare(b.gtfNumber, "es"));
+}
+
+export interface RepartoDeGuia {
+  /** S/ de la guía entera (lo que va como «total de la factura»). */
+  total: number;
+  /** S/ por m³ de la guía: el mismo para todas sus especies. */
+  porM3: number;
+  m3Guia: number;
+  /** Lo que le toca a cada asiento, proporcional a sus m³; suma exacta al céntimo. */
+  lineas: Array<{ id: string; costoTotal: number }>;
+}
+
+/**
+ * Un costo para la guía ENTERA, dicho como total o como S/ por m³, repartido
+ * entre sus asientos (una especie cada uno) por los m³ que declara cada uno —
+ * la misma regla que «Plata de la guía» en modo «total de la factura»
+ * (`repartirPorVolumen`): todas las especies quedan al mismo S/ por m³. Si cada
+ * especie tiene su precio, eso se carga en Ingresos → Plata de la guía.
+ *
+ * `null` si el monto no es un número > 0 o la guía no declara m³: un costo 0
+ * diría «gratis», y sin m³ no hay contra qué repartir.
+ */
+export function repartoDeGuia(
+  entrada: { de: "total" | "m3"; valor: number },
+  asientos: readonly LineaParaRepartir[],
+): RepartoDeGuia | null {
+  const m3Guia = r3(asientos.reduce((a, l) => a + Math.max(0, Number(l.volumeM3) || 0), 0));
+  if (!(entrada.valor > 0) || !Number.isFinite(entrada.valor) || !(m3Guia > 0)) return null;
+  const total = r2(entrada.de === "total" ? entrada.valor : entrada.valor * m3Guia);
+  if (!(total > 0)) return null;
+  return { total, porM3: r2(total / m3Guia), m3Guia, lineas: repartirPorVolumen(total, asientos) };
+}
+
+/**
+ * Las piezas con el costo recién guardado de su asiento (lo que contestó el
+ * servidor), para que la tarjeta cambie sin esperar a releer el patio entero.
+ */
+export function conCostosCargados<T extends PiezaKpi>(trozas: readonly T[], costos: ReadonlyMap<string, number>): readonly T[] {
+  if (costos.size === 0) return trozas;
+  return trozas.map((t) =>
+    t.woodEntryId && costos.has(t.woodEntryId) ? { ...t, guiaCostoTotal: costos.get(t.woodEntryId)! } : t,
+  );
 }
 
 // ─── ¿Qué aserro primero? ─────────────────────────────────────────────────

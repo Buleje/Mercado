@@ -77,18 +77,21 @@ export function TarjetaSierra({
   );
 }
 
-export function TarjetaValor({ valor }: { valor: ValorPatio }) {
+export function TarjetaValor({ valor, onCargar }: { valor: ValorPatio; onCargar?: () => void }) {
   const propio = Math.max(0, valor.m3Total - valor.m3DeServicio);
   const sinNada = valor.m3Total === 0;
+  const faltan = valor.guiasSinCosto;
+  const guias = `${faltan} ${faltan === 1 ? "guía" : "guías"}`;
   const contexto = sinNada
     ? "no hay nada parado"
     : valor.soles == null
-      ? valor.guiasSinCosto > 0
-        ? `${valor.guiasSinCosto} ${valor.guiasSinCosto === 1 ? "guía" : "guías"} sin factura · se carga en Ingresos`
+      ? faltan > 0
+        ? `${guias} sin factura · ${n2(valor.m3SinCosto)} m³`
         : "madera de servicio: no se compró"
       : valor.m3SinCosto > 0
-        ? `parcial: ${n2(valor.m3Costeado)} de ${n2(propio)} m³ costeados`
-        : `a costo de guía · ${n2(valor.m3Costeado)} m³`;
+        ? `parados · faltan ${guias}: ${n2(valor.m3SinCosto)} de ${n2(propio)} m³ sin costear`
+        : `parados · todo costeado · ${n2(valor.m3Costeado)} m³`;
+  const { guiaMayor, masVieja } = valor;
   return (
     <TarjetaPatio
       label="Valor parado"
@@ -98,9 +101,16 @@ export function TarjetaValor({ valor }: { valor: ValorPatio }) {
       tono={valor.soles == null ? "muted" : valor.m3SinCosto > 0 ? "warning" : "neutral"}
       info={{
         what: "Lo que costó la madera que sigue parada: cada pieza × el costo por m³ de su guía (factura ÷ m³ del asiento).",
-        affects: "Sin factura no se valoriza: nunca S/ 0, que diría que esa madera no costó nada. La madera de servicio no es tuya y no entra.",
-        example: "Guía de S/ 4,000 por 10 m³ → S/ 400 el m³; una troza de 1.5 m³ vale S/ 600.",
+        affects: "Sin factura no se valoriza: nunca S/ 0, que diría que esa madera no costó nada. La madera de servicio no es tuya y no entra. «Cargar costos» guarda la factura de cada guía sin ir a Ingresos.",
+        example: "Guía de S/ 4,000.00 por 10 m³ → S/ 400.00 el m³; una troza de 1.5 m³ vale S/ 600.00.",
       }}
+      accion={
+        onCargar && faltan > 0 ? (
+          <AccionTarjeta onClick={onCargar} titulo="El costo de cada guía sin factura, sin ir a Ingresos">
+            Cargar costos · {guias}
+          </AccionTarjeta>
+        ) : undefined
+      }
     >
       {!sinNada && (
         <div className="space-y-1">
@@ -114,6 +124,18 @@ export function TarjetaValor({ valor }: { valor: ValorPatio }) {
             {valor.m3SinCosto > 0 && <Leyenda color="var(--data-warning-500)" texto={`sin factura ${n2(valor.m3SinCosto)} m³`} />}
             {valor.m3DeServicio > 0 && <Leyenda color="var(--data-3)" texto={`de servicio ${n2(valor.m3DeServicio)} m³`} />}
           </p>
+          {masVieja && (
+            <p className="text-xs text-[var(--text-secondary)]">
+              La más vieja ({masVieja.dias} d){masVieja.codigo ? ` · ${masVieja.codigo}` : ""}:{" "}
+              <b className="tabular-nums text-[var(--text-primary)]">{formatCurrency(masVieja.soles)}</b>
+            </p>
+          )}
+          {guiaMayor && valor.guiasConCosto > 1 && (
+            <p className="text-xs text-[var(--text-secondary)]">
+              Más plata: guía <span className="font-mono">{guiaMayor.gtfNumber}</span> ·{" "}
+              <b className="tabular-nums text-[var(--text-primary)]">{formatCurrency(guiaMayor.soles)}</b>
+            </p>
+          )}
         </div>
       )}
     </TarjetaPatio>
