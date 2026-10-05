@@ -66,10 +66,19 @@ while true; do
   fi
 
   # 1. Chromiums huerfanos (ppid=1) — mata todos
-  ORPHAN_CHROMIUM=$(ps -eo pid,ppid,etimes,cmd | awk '$2==1 && /chrome|chromium/ && $3>300 {print $1}' | head -10)
+  # Por el NOMBRE del proceso, no por la línea entera (05-10): el argv de earlyoom
+  # trae «--prefer (…|^chrome|chromium|headless_shell…)» y lo tomaba por huérfano (pid 217).
+  ORPHAN_CHROMIUM=$(ps -eo pid,ppid,etimes,comm | awk '$2==1 && $4 ~ /^(chrome|chromium|headless_shell)/ && $3>300 {print $1}' | head -10)
   if [[ -n "$ORPHAN_CHROMIUM" ]]; then
     echo "$ORPHAN_CHROMIUM" | xargs -r kill -9 2>/dev/null || true
     log "killed orphan chromium pids: $(echo $ORPHAN_CHROMIUM | tr '\n' ' ')"
+  fi
+
+  # 2b. vitest colgado (05-10: un `vitest run --root /` siguió 87 min con 8,2 GB y tumbó el dev 2 veces).
+  VITEST_VIEJO=$(ps -eo pid,etimes,cmd | awk '$2>1800 && /node .*vitest run/ && !/awk/ {print $1}' | head -5)
+  if [[ -n "$VITEST_VIEJO" ]]; then
+    echo "$VITEST_VIEJO" | xargs -r kill -9 2>/dev/null || true
+    log "vitest de más de 30 min cerrado: $(echo $VITEST_VIEJO | tr '\n' ' ')"
   fi
 
   # 2. tsc huerfanos (ppid=1) — mata

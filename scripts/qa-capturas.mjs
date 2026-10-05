@@ -315,7 +315,12 @@ try {
     // compila y pinta el marketplace entero (5-6 s en el navegador, medido
     // 2026-09-25) sólo para sembrar una cookie. Mismo `ctx`: el Set-Cookie de
     // `page.request` queda en el contexto.
-    await page.request.get(`${BASE}/api/health`, { timeout: 60_000 });
+    /* Hasta 3 intentos (05-10): con varios agentes compilando, el dev tarda >60 s o se está
+       reiniciando tras earlyoom; cortar al primer timeout tiraba la corrida entera. */
+    for (let intento = 1; ; intento++) {
+      try { await page.request.get(`${BASE}/api/health`, { timeout: 60_000 }); break; }
+      catch (e) { if (intento >= 3) throw e; await page.waitForTimeout(10_000); }
+    }
     const csrf = (await ctx.cookies()).find((c) => c.name === "csrf-token")?.value ?? "";
     const r = await page.request.post(`${BASE}/api/auth/login`, {
       headers: { "content-type": "application/json", "x-tenant-id": tenant, "x-csrf-token": csrf },

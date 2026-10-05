@@ -213,6 +213,7 @@ const BLOCK_PATTERNS = [
   { pattern: /\brm\s+(?:-[a-zA-Z]*[rR][a-zA-Z]*|--recursive)\b/, label: "rm -rf (recursivo)", severity: "critical", reason: "Borrado recursivo peligroso. Usá `git rm` o `rimraf` si es node_modules." },
   { pattern: /\brm\b.*(--no-preserve-root|\s\/(?:\s|$)|\s~(?:\s|$|\/))/, label: "rm sobre / o ~", severity: "critical", reason: "rm apuntando a raíz o home. Bloqueado siempre." },
   { pattern: /\bDROP\s+(TABLE|DATABASE|SCHEMA|INDEX)\b/i, label: "DROP SQL", severity: "critical", reason: "Usá migration Prisma + DIRECT_URL." },
+  { pattern: /\bvitest\b[^|;&]*--root[= ]\/(?:\s|$)/, label: "vitest --root /", severity: "critical", reason: "Recorre TODO el disco: el 05-10 quedó 87 min colgado con 8,2 GB y tumbó el dev 2 veces. Agregá el caso a un test del repo o usá --root del proyecto." },
   { pattern: /\bTRUNCATE\s+TABLE\b/i, label: "TRUNCATE TABLE", severity: "critical", reason: "Usá soft-delete o migration formal." },
   { pattern: /\bDELETE\s+FROM\s+[A-Za-z_][A-Za-z0-9_]*\s*(?!WHERE|LIMIT)/i, label: "DELETE sin WHERE", severity: "critical", reason: "Agregá WHERE explícito." },
   { pattern: /\bgit\s+push\s+(?:-[a-z]*f[a-z]*|--force(?!-with-lease))\s+.*(?:master|main)\b/, label: "git push --force a master/main", severity: "critical", reason: "Usá --force-with-lease en branch personal." },
