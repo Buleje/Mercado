@@ -18,6 +18,7 @@
  * Pasos (array JSON, una clave por paso; los selectores son de Playwright,
  * p. ej. `text=Guardar`, `role=button[name="Dueños"]`, `#id`):
  *   {"click": "<sel>"}            {"llenar": ["<sel>", "texto"]}
+ *   {"abrir": "<sel>"}            → click sólo si su aria-expanded no es "true" (plegables recordados)
  *   {"tecla": "Enter"}            {"elegir": ["<sel>", "valor o etiqueta"]}
  *   {"esperar": "<sel>"}          {"esperar": 500}            (ms)
  *   {"eval": "<expresión js>"}    → su resultado sale en el reporte
@@ -26,6 +27,9 @@
  *   {"fallar": "/api/settings"}   → ese GET responde 500 (o ["/api/x", 503]); {"fallar": null} lo
  *                                   quita. Para probar «la carga falló» (04-10: sin esto fue un
  *                                   parche de fetch + history.back a mano). Recargá con {"eval": "location.reload()"}.
+ *   {"parchear": ["/api/x", {...}]} → ese GET responde 200 con ESE JSON (05-10: tablas forestales sin datos en
+ *                                   main; el barrido parcheaba fetch a mano, 3 intentos). Igual que `fallar`: se quita
+ *                                   con {"fallar": null} y rige desde la próxima carga ({"eval": "location.reload()"}).
  *   {"clicTexto": "Rolliza"}      → clic por el DOM en el botón/pestaña/opción cuyo texto
  *                                   EMPIEZA con eso (dentro de main o de un diálogo). Para
  *                                   lo que `click` no alcanza: radios segmentados, botones
@@ -121,6 +125,14 @@ const respuestas = [];
 
 /** El fondo real del centro: el primer ancestro con fondo casi opaco (un tinte
  *  `bg-primary/10` no dice de qué tema es la superficie de abajo). */
+
+/* El primer control VISIBLE del selector (05-10): la tabla de trozas monta el mismo
+   filtro en la cabecera y en un bloque móvil oculto; con `.first()` el paso esperaba
+   al oculto hasta el timeout. `subir` sigue con `.first()`: el input de archivo va oculto. */
+function visible(page, sel) {
+  return page.locator(sel).filter({ visible: true }).first();
+}
+
 async function fondoCentro(page) {
   return page.evaluate(() => {
     let el = document.elementFromPoint(innerWidth / 2, innerHeight / 2);
@@ -219,7 +231,13 @@ async function recorrido(t, primero) {
     for (const [i, p] of pasos.entries()) {
       const [tipo, valor] = Object.entries(p)[0] ?? [];
       try {
-        if (tipo === "click") await page.locator(valor).first().click({ timeout: 15_000 });
+        if (tipo === "click") await visible(page, valor).click({ timeout: 15_000 });
+        else if (tipo === "abrir") {
+          /* Como click, pero sólo si está cerrado (aria-expanded ≠ true): un plegable que se
+             recuerda abierto se cerraba con el click del segundo tema (05-10, indicadores). */
+          const el = visible(page, valor);
+          if ((await el.getAttribute("aria-expanded", { timeout: 15_000 })) !== "true") await el.click({ timeout: 15_000 });
+        }
         else if (tipo === "clicTexto") {
           /* Espera como `click` (hasta 15 s): las vistas del panel cargan por partes. Sólo
              MARCA el botón; el clic lo hace Playwright, porque el .click() del DOM no dispara
@@ -246,8 +264,8 @@ async function recorrido(t, primero) {
           const objetivo = page.locator('[data-qa-clic="1"]').first();
           await objetivo.click({ timeout: 10_000 }).catch(() => objetivo.evaluate((el) => el.click()));
         }
-        else if (tipo === "llenar") await page.locator(valor[0]).first().fill(String(valor[1]), { timeout: 15_000 });
-        else if (tipo === "elegir") await page.locator(valor[0]).first().selectOption(String(valor[1]), { timeout: 15_000 });
+        else if (tipo === "llenar") await visible(page, valor[0]).fill(String(valor[1]), { timeout: 15_000 });
+        else if (tipo === "elegir") await visible(page, valor[0]).selectOption(String(valor[1]), { timeout: 15_000 });
         else if (tipo === "subir") await page.locator(valor[0]).first().setInputFiles(String(valor[1]), { timeout: 15_000 });
         else if (tipo === "fallar") {
           if (valor == null) await page.unrouteAll({ behavior: "ignoreErrors" });
@@ -258,6 +276,13 @@ async function recorrido(t, primero) {
                 ? r.fulfill({ status, contentType: "application/json", body: "{}" })
                 : r.fallback());
           }
+        }
+        else if (tipo === "parchear") {
+          const [ruta, json] = valor;
+          await page.route((u) => u.pathname === ruta, (r) =>
+            r.request().method() === "GET"
+              ? r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(json) })
+              : r.fallback());
         }
         else if (tipo === "tecla") await page.keyboard.press(valor);
         else if (tipo === "esperar") {
