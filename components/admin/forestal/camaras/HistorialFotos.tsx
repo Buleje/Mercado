@@ -15,6 +15,7 @@ import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { buscarCapturas, type Captura } from "@/lib/camaras/camaras";
 import type { CamaraConConexion } from "./ConectarCamaraModal";
 import CapturaTarjeta from "./CapturaTarjeta";
+import BotonEnVivo, { tieneVisorPropio } from "./BotonEnVivo";
 import { BLOQUE, BTN, type ChalecosPantalla } from "./camaras-ui";
 
 const DE_A = 12;
@@ -30,6 +31,8 @@ interface Props {
   /** Número de chaleco → dueño HOY: las fotos viejas también dicen de quién es. */
   chalecosVivos: ChalecosPantalla;
   onIrACamaras: () => void;
+  /** «En vivo» de una cámara con visor propio: llevarla a la vista «Cámaras». */
+  onVerVisor: (id: string) => void;
 }
 
 export default function HistorialFotos({
@@ -42,6 +45,7 @@ export default function HistorialFotos({
   onAsignarChaleco,
   chalecosVivos,
   onIrACamaras,
+  onVerVisor,
 }: Props) {
   const [filtro, setFiltro] = useState("");
   const [texto, setTexto] = useState("");
@@ -54,6 +58,18 @@ export default function HistorialFotos({
   }, [capturas, filtro, texto]);
   const porId = useMemo(() => new Map(capturas.map((c) => [c.id, c])), [capturas]);
   const nombreDe = (id: string) => camaras.find((c) => c.id === id)?.nombre ?? "Cámara quitada";
+  /* Una foto de una cámara quitada no tiene «En vivo»: ya no hay a quién mirar. */
+  const enVivoDe = (id: string) => {
+    const camara = camaras.find((c) => c.id === id);
+    if (!camara) return null;
+    return (
+      <BotonEnVivo
+        nombre={camara.nombre}
+        forma="tarjeta"
+        onVisorPropio={tieneVisorPropio(camara) ? () => onVerVisor(camara.id) : undefined}
+      />
+    );
+  };
 
   const confirmar = async (capturaId: string, refId: string) => {
     setConfirmando({ captura: capturaId, ref: refId });
@@ -152,6 +168,7 @@ export default function HistorialFotos({
                 onConfirmar={(refId) => void confirmar(c.id, refId)}
                 onAsignarChaleco={onAsignarChaleco}
                 chalecosVivos={chalecosVivos}
+                enVivo={enVivoDe(c.camaraId)}
               />
             ))}
           </ul>

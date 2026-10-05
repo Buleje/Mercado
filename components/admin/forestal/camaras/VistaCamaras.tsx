@@ -7,7 +7,7 @@
  * pantalla de formularios antes de mostrarse.
  */
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { CardTitle } from "@buleje/design-system";
 import { Camera, Hash, Loader2, Plus } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -61,6 +61,8 @@ export default function VistaCamaras({
       setLugar("");
     }
   };
+  const { cargar } = d;
+  const recargarCamaras = useCallback(() => void cargar({ silenciosa: true }), [cargar]);
   const esPuente = (c: (typeof d.camaras)[number]) => camposPuente(c).fuente === "puente_pc";
   useRecargaPuente(d.camaras.some(esPuente), () => void d.cargar({ silenciosa: true }));
   const asignados = Object.entries(d.chalecos).sort(([a], [b]) =>
@@ -166,7 +168,15 @@ export default function VistaCamaras({
             </li>
           )}
         </ul>
-        <GuiaHikvision />
+        <GuiaHikvision
+          camaras={d.camaras}
+          estado={estadoDireccion}
+          direccionParaCamara={direccionParaCamara}
+          onRecargar={recargarCamaras}
+          onErrorCopia={() =>
+            d.setError("El navegador no dejó copiar. Selecciona el valor a mano.")
+          }
+        />
       </section>
 
       <section className={BLOQUE} aria-labelledby="camaras-chalecos-titulo">

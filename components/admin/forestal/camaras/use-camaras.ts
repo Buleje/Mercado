@@ -48,6 +48,16 @@ interface RespuestaEscritura {
 export const direccionLocal = (token: string) =>
   `${typeof window !== "undefined" ? window.location.origin : ""}/api/webhooks/camara?k=${token}`;
 
+function conAvisoPrevio(
+  nuevas: CamaraConConexion[],
+  previas: CamaraConConexion[],
+): CamaraConConexion[] {
+  const aviso = new Map(previas.map((c) => [c.id, c.ultimoAviso] as const));
+  return nuevas.map((c) =>
+    c.ultimoAviso === undefined ? { ...c, ultimoAviso: aviso.get(c.id) ?? null } : c,
+  );
+}
+
 export function useCamaras() {
   const [camaras, setCamaras] = useState<CamaraConConexion[]>([]);
   const [capturas, setCapturas] = useState<Captura[]>([]);
@@ -107,7 +117,10 @@ export function useCamaras() {
         const j = (await r.json().catch(() => ({}))) as RespuestaEscritura;
         if (!r.ok || j.error)
           throw new Error(j.message ?? j.error ?? `El servidor respondió ${r.status}`);
-        if (j.camaras) setCamaras(j.camaras);
+        const llegadas = j.camaras;
+        /* Las escrituras devuelven la lista sin `ultimoAviso` (lo arma el GET):
+           se conserva el que había para que no parpadee «nunca». */
+        if (llegadas) setCamaras((prev) => conAvisoPrevio(llegadas, prev));
         if (j.chalecos) setChalecos(j.chalecos);
         const nueva = j.captura;
         if (nueva) setCapturas((prev) => prev.map((c) => (c.id === nueva.id ? nueva : c)));

@@ -17,13 +17,17 @@ import { LADO_MINIMO_RECORTE, RANGO_VIVO } from "@/lib/camaras/vivo";
 import { moverPtz, probarCamara } from "@/lib/camaras/isapi";
 import { chalecosParaPantalla } from "@/lib/camaras/cruces";
 import { ColaboradoresDB } from "@/lib/db/rrhh-colaboradores.db";
+import { leerContactos } from "@/lib/camaras/contacto.server";
+import { ultimoAvisoDe } from "@/lib/camaras/contacto";
 
 /**
  * /api/admin/camaras — las cámaras del negocio y su historial.
  *
  * GET    — cámaras + últimas capturas (`?camara=` acota, `?limite=`) + `chalecos`
  *          (número → { colaboradorId, nombre }) + `colaboradores` (los que no
- *          están cesados, para el selector del número).
+ *          están cesados, para el selector del número). Cada cámara trae
+ *          `ultimoAviso` { at, tipo } | null: la última vez que la CÁMARA tocó
+ *          la puerta, con o sin foto (`lib/camaras/contacto.ts`).
  * POST   — alta; devuelve la cámara CON su token, que es lo único que hay que
  *          copiar en el aparato.
  * PATCH  — `{ id, accion: "rotar" }`: dirección nueva, la vieja deja de entrar.
@@ -71,7 +75,10 @@ const avisosSchema = z.object({
 
 /** Un número de chaleco/casco y su dueño. `null` = liberarlo. La forma fina la decide `normalizarChaleco`. */
 const chalecoSchema = z.object({
-  numero: z.union([z.string(), z.number()]).transform((v) => String(v).trim()).pipe(z.string().min(1).max(10)),
+  numero: z
+    .union([z.string(), z.number()])
+    .transform((v) => String(v).trim())
+    .pipe(z.string().min(1).max(10)),
   colaboradorId: z.string().trim().min(1).max(64).nullable(),
 });
 
@@ -85,7 +92,9 @@ const recorteSchema = z
     w: z.number().min(LADO_MINIMO_RECORTE).max(1),
     h: z.number().min(LADO_MINIMO_RECORTE).max(1),
   })
-  .refine((r) => r.x + r.w <= 1.0005 && r.y + r.h <= 1.0005, { message: "El recorte se sale de la imagen." });
+  .refine((r) => r.x + r.w <= 1.0005 && r.y + r.h <= 1.0005, {
+    message: "El recorte se sale de la imagen.",
+  });
 
 const puenteSchema = z.object({
   fuente: z.enum(FUENTES_CAMARA).nullable().optional(),
@@ -185,8 +194,21 @@ export const GET = withApiHandler("camaras-get", async (req: NextRequest) => {
   /* El token de la cámara deja subir cuadros como si fuera ella: sólo lo ven
      admin y dueño (revisión de seguridad 03-10, ADR-466). */
   const veToken = auth.role === "admin" || auth.role === "owner";
-  const camarasVisibles = veToken ? camaras : camaras.map((c) => ({ ...c, token: "" }));
-  return NextResponse.json({ camaras: camarasVisibles, capturas, chalecos: chalecosParaPantalla(mapa, nombres), colaboradores });
+  const contactos = await leerContactos(
+    auth.tenantId,
+    camaras.map((c) => c.id),
+  );
+  const camarasVisibles = camaras.map((c) => ({
+    ...c,
+    token: veToken ? c.token : "",
+    ultimoAviso: ultimoAvisoDe(c.id, capturas, contactos[c.id]),
+  }));
+  return NextResponse.json({
+    camaras: camarasVisibles,
+    capturas,
+    chalecos: chalecosParaPantalla(mapa, nombres),
+    colaboradores,
+  });
 });
 
 /** Las escrituras comparten guardas: admin/owner, CSRF y rate limit. */
@@ -227,10 +249,15 @@ async function escribir(
 export const POST = withApiHandler("camaras-post", (req: NextRequest) =>
   escribir(req, async (tenantId, user, body) => {
     const parsed = altaSchema.safeParse(body);
-    if (!parsed.success) return { error: "validation_error", message: "Ponle un nombre a la cámara." };
+    if (!parsed.success)
+      return { error: "validation_error", message: "Ponle un nombre a la cámara." };
     const r = await CamarasDB.crear(tenantId, parsed.data, user);
     if (!r.ok) return { error: "rechazado", message: r.motivo };
-    return { camara: camaraParaPantalla(r.camara), camaras: camarasParaPantalla(r.camaras), mensaje: r.mensaje };
+    return {
+      camara: camaraParaPantalla(r.camara),
+      camaras: camarasParaPantalla(r.camaras),
+      mensaje: r.mensaje,
+    };
   }),
 );
 
@@ -238,12 +265,21 @@ export const PATCH = withApiHandler("camaras-patch", (req: NextRequest) =>
   escribir(
     req,
     async (tenantId, user, body) => {
-      const d = (body ?? {}) as { id?: string; accion?: string; whatsapp?: unknown; cuando?: unknown };
+      const d = (body ?? {}) as {
+        id?: string;
+        accion?: string;
+        whatsapp?: unknown;
+        cuando?: unknown;
+      };
 
       /* Las dos acciones que no son de UNA cámara van antes de exigir el `id`. */
       if (d.accion === "chalecos") {
         const p = chalecoSchema.safeParse(body);
-        if (!p.success) return { error: "validation_error", message: "Indica el número del chaleco y a quién es." };
+        if (!p.success)
+          return {
+            error: "validation_error",
+            message: "Indica el número del chaleco y a quién es.",
+          };
         /* El colaborador se busca DENTRO de este negocio: un id de otro no
            existe acá y se rechaza antes de guardar nada. */
         const personal = await ColaboradoresDB.listar(tenantId, { incluirCesados: true });
@@ -252,12 +288,18 @@ export const PATCH = withApiHandler("camaras-patch", (req: NextRequest) =>
           const quien = personal.find((c) => c.id === p.data.colaboradorId);
           if (!quien) {
             return NextResponse.json(
-              { error: "no_encontrado", message: "Esa persona no está en el personal de este negocio." },
+              {
+                error: "no_encontrado",
+                message: "Esa persona no está en el personal de este negocio.",
+              },
               { status: 404 },
             );
           }
           if (quien.estado === "CESADO") {
-            return { error: "rechazado", message: `${quien.nombre} ya no trabaja acá: no se le asigna un chaleco.` };
+            return {
+              error: "rechazado",
+              message: `${quien.nombre} ya no trabaja acá: no se le asigna un chaleco.`,
+            };
           }
         }
         const r = await CamarasDB.asignarChaleco(
@@ -273,14 +315,20 @@ export const PATCH = withApiHandler("camaras-patch", (req: NextRequest) =>
 
       if (d.accion === "confirmar-cruce") {
         const p = confirmarCruceSchema.safeParse(body);
-        if (!p.success) return { error: "validation_error", message: "No se entendió qué coincidencia confirmar." };
+        if (!p.success)
+          return {
+            error: "validation_error",
+            message: "No se entendió qué coincidencia confirmar.",
+          };
         /* El historial es por negocio: una foto de otro no se encuentra acá. */
         const r = await CamarasDB.confirmarCruce(tenantId, p.data.capturaId, p.data.refId, user);
-        if (!r.ok) return NextResponse.json({ error: "no_encontrado", message: r.motivo }, { status: 404 });
+        if (!r.ok)
+          return NextResponse.json({ error: "no_encontrado", message: r.motivo }, { status: 404 });
         return { captura: r.captura, mensaje: r.mensaje };
       }
 
-      if (!d.id) return { error: "validation_error", message: "No se entendió qué cambiar de la cámara." };
+      if (!d.id)
+        return { error: "validation_error", message: "No se entendió qué cambiar de la cámara." };
       const id = d.id;
 
       if (d.accion === "puente") {
@@ -288,7 +336,10 @@ export const PATCH = withApiHandler("camaras-patch", (req: NextRequest) =>
         if (!p.success) {
           /* El mensaje de Zod sale en inglés salvo el del `refine`, que es nuestro. */
           const propio = p.error.issues.find((i) => i.code === "custom")?.message;
-          return { error: "validation_error", message: propio ?? "Revisa el recorte y los ajustes del puente." };
+          return {
+            error: "validation_error",
+            message: propio ?? "Revisa el recorte y los ajustes del puente.",
+          };
         }
         const r = await CamarasDB.configurarPuente(tenantId, id, p.data, user);
         if (!r.ok) return { error: "rechazado", message: r.motivo };
@@ -297,15 +348,23 @@ export const PATCH = withApiHandler("camaras-patch", (req: NextRequest) =>
 
       if (d.accion === "vigila-pila") {
         const p = vigilaPilaSchema.safeParse(body);
-        if (!p.success) return { error: "validation_error", message: "Indica si la cámara vigila la pila (sí o no)." };
+        if (!p.success)
+          return {
+            error: "validation_error",
+            message: "Indica si la cámara vigila la pila (sí o no).",
+          };
         const r = await CamarasDB.configurarVigilaPila(tenantId, id, p.data.activa, user);
         if (!r.ok) return { error: "rechazado", message: r.motivo };
         return { camaras: camarasParaPantalla(r.camaras), mensaje: r.mensaje };
       }
 
       if (d.accion === "avisos") {
-        const p = avisosSchema.safeParse({ whatsapp: d.whatsapp ?? "", cuando: d.cuando ?? "siempre" });
-        if (!p.success) return { error: "validation_error", message: "Revisa el WhatsApp y cuándo avisar." };
+        const p = avisosSchema.safeParse({
+          whatsapp: d.whatsapp ?? "",
+          cuando: d.cuando ?? "siempre",
+        });
+        if (!p.success)
+          return { error: "validation_error", message: "Revisa el WhatsApp y cuándo avisar." };
         const r = await CamarasDB.configurarAvisos(tenantId, id, p.data, user);
         if (!r.ok) return { error: "rechazado", message: r.motivo };
         return { camaras: camarasParaPantalla(r.camaras), mensaje: r.mensaje };
@@ -327,7 +386,12 @@ export const PATCH = withApiHandler("camaras-patch", (req: NextRequest) =>
            TODAS las IP a las que resuelve. Antes de hablar con nadie. */
         const destino = await destinoResuelto(p.data.host, p.data.puerto);
         if (!destino.ok) {
-          return { error: "bloqueado", motivo: destino.motivo, detalle: destino.detalle, message: destino.detalle };
+          return {
+            error: "bloqueado",
+            motivo: destino.motivo,
+            detalle: destino.detalle,
+            message: destino.detalle,
+          };
         }
         const prueba = comoPrueba(
           await probarCamara({
@@ -371,11 +435,21 @@ export const PATCH = withApiHandler("camaras-patch", (req: NextRequest) =>
             await CamarasDB.registrarPrueba(
               tenantId,
               id,
-              { ok: false, motivo: cred.motivo, detalle: cred.detalle, en: new Date().toISOString() },
+              {
+                ok: false,
+                motivo: cred.motivo,
+                detalle: cred.detalle,
+                en: new Date().toISOString(),
+              },
               user,
             );
           }
-          return { error: "no_responde", motivo: cred.motivo, detalle: cred.detalle, message: cred.detalle };
+          return {
+            error: "no_responde",
+            motivo: cred.motivo,
+            detalle: cred.detalle,
+            message: cred.detalle,
+          };
         }
         const prueba = comoPrueba(await probarCamara(cred.credenciales));
         const r = await CamarasDB.registrarPrueba(tenantId, id, prueba, user);
@@ -391,12 +465,18 @@ export const PATCH = withApiHandler("camaras-patch", (req: NextRequest) =>
       if (d.accion === "ptz") {
         const p = ptzSchema.safeParse(body);
         if (!p.success) {
-          return { error: "validation_error", message: "El movimiento tiene que ir entre −100 y 100." };
+          return {
+            error: "validation_error",
+            message: "El movimiento tiene que ir entre −100 y 100.",
+          };
         }
         const cred = await CamarasDB.credenciales(tenantId, id);
         if (!cred.ok) return { error: "sin_conexion", motivo: cred.motivo, message: cred.detalle };
         if (cred.camara.conexion?.soportaPtz === false) {
-          return { error: "rechazado", message: "Esta cámara es fija: no se mueve desde el panel." };
+          return {
+            error: "rechazado",
+            message: "Esta cámara es fija: no se mueve desde el panel.",
+          };
         }
         /* El empujón dura `ms` y el freno lo manda el propio cliente ISAPI: un
            `continuous` sin cero deja la cámara girando sola. Acá sólo se acota
@@ -407,7 +487,12 @@ export const PATCH = withApiHandler("camaras-patch", (req: NextRequest) =>
           { ms: p.data.ms },
         );
         if (!r.ok) {
-          return { error: "no_responde", motivo: r.motivo, detalle: r.detalle, message: textoDeFalla(r.motivo, r.detalle) };
+          return {
+            error: "no_responde",
+            motivo: r.motivo,
+            detalle: r.detalle,
+            message: textoDeFalla(r.motivo, r.detalle),
+          };
         }
         return { mensaje: "Listo." };
       }

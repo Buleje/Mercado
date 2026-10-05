@@ -9,7 +9,7 @@
  * quitar van en «Más»; quitar pregunta antes porque corta lo que la cámara manda.
  */
 
-import { useRef, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   AlertTriangle,
   Check,
@@ -17,15 +17,9 @@ import {
   Eye,
   EyeOff,
   Loader2,
-  MoreHorizontal,
   RefreshCw,
-  Trash2,
-  Upload,
   Wifi,
 } from "@buleje/design-system/icons";
-import ActionMenu from "@/components/admin/shared/action-menu";
-import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
-import { formatDateTimeShort } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { AvisosCamara } from "@/lib/camaras/camaras";
 import {
@@ -41,6 +35,10 @@ import { usePuenteDeFila } from "./use-puente-pc";
 import InterruptorPila from "./InterruptorPila";
 import ControlPtz from "./ControlPtz";
 import { BTN } from "./camaras-ui";
+import BotonEnVivo from "./BotonEnVivo";
+import MenuMasCamara from "./MenuMasCamara";
+import { lineaDeAviso } from "./ultimo-aviso";
+import { useAhora } from "./use-plataforma";
 
 interface Props {
   camara: CamaraConConexion;
@@ -85,15 +83,10 @@ export default function CamaraFila({
   onErrorCopia,
   lecturaPuente,
 }: Props) {
-  const { confirm } = useConfirm();
   const est = estadoDeConexion(c);
   const [copiado, setCopiado] = useState(false);
   const [visorOculto, setVisorOculto] = useState(false);
-  const archivoRef = useRef<HTMLInputElement>(null);
-  /* Sin `capture`: abre la galería, para subir una captura de pantalla de la
-     app de la cámara (Hik-Connect) — con `capture` el celular solo ofrecía
-     sacar una foto nueva (Brandon 2026-10-03, puente con el celular). */
-  const galeriaRef = useRef<HTMLInputElement>(null);
+  const ahora = useAhora();
   /* Puente de pantalla (ADR-466): la pastilla y el visor leen el mismo cuadro. */
   const puente = usePuenteDeFila(c, visorOculto);
 
@@ -107,45 +100,10 @@ export default function CamaraFila({
     }
   };
 
-  const menu = [
-    {
-      id: "subir",
-      label: "Subir una foto a mano",
-      hint: "Por la misma puerta que usa la cámara",
-      icon: Upload,
-      busy: subiendo,
-      onSelect: () => archivoRef.current?.click(),
-    },
-    {
-      id: "galeria",
-      label: "Subir desde la galería",
-      hint: "Una captura de pantalla de la app de la cámara (Hik-Connect): la IA la lee igual",
-      icon: Upload,
-      busy: subiendo,
-      onSelect: () => galeriaRef.current?.click(),
-    },
-    {
-      id: "quitar",
-      label: "Quitar la cámara",
-      hint: "Las fotos que mandó se quedan",
-      icon: Trash2,
-      tone: "danger" as const,
-      disabled: guardando,
-      onSelect: async () => {
-        const ok = await confirm({
-          title: `¿Quitar ${c.nombre}?`,
-          description: "Deja de recibir fotos. Las que ya mandó siguen en el historial.",
-          intent: "danger",
-          confirmLabel: "Quitar",
-        });
-        if (ok) onQuitar();
-      },
-    },
-  ];
-
   return (
     <li
-      className="rounded-xl border border-[var(--rule-base)] px-3 py-2.5"
+      id={`camara-${c.id}`}
+      className="scroll-mt-4 rounded-xl border border-[var(--rule-base)] px-3 py-2.5"
       data-testid="camara-fila"
     >
       <div className="flex flex-wrap items-center gap-2">
@@ -155,13 +113,16 @@ export default function CamaraFila({
             {c.nombre}
           </span>
           <span className="block truncate text-xs text-[var(--text-tertiary)]">
-            {c.lugar || "Sin lugar declarado"} ·{" "}
-            {c.ultimaCapturaEn
-              ? `última foto ${formatDateTimeShort(c.ultimaCapturaEn)}`
-              : "todavía no mandó nada"}
+            {c.lugar || "Sin lugar declarado"} · {lineaDeAviso(c, ahora)}
           </span>
         </span>
-        {puente.esPuente ? <PastillaPuente cuadro={puente.cuadro} /> : <PastillaConexion estado={est} />}
+        {puente.esPuente ? (
+          <PastillaPuente cuadro={puente.cuadro} />
+        ) : (
+          <PastillaConexion estado={est} />
+        )}
+        {/* Sin visor propio, «En vivo» abre Hik-Connect; con él, lo hace el ojo de abajo. */}
+        {est.tipo !== "conectada" && !puente.esPuente && <BotonEnVivo nombre={c.nombre} />}
         <button
           type="button"
           onClick={() => void copiar()}
@@ -190,12 +151,16 @@ export default function CamaraFila({
           <button
             type="button"
             onClick={() => setVisorOculto((v) => !v)}
-            title={visorOculto ? "Ver la cámara ahora" : "Ocultar el visor"}
+            title={visorOculto ? "Ver en vivo con el visor del panel" : "Ocultar el visor"}
             aria-label={visorOculto ? `Ver ${c.nombre} ahora` : `Ocultar el visor de ${c.nombre}`}
             aria-pressed={!visorOculto}
             className={cn(BTN, "w-9 justify-center px-0")}
           >
-            {visorOculto ? <Eye className="h-4 w-4" aria-hidden /> : <EyeOff className="h-4 w-4" aria-hidden />}
+            {visorOculto ? (
+              <Eye className="h-4 w-4" aria-hidden />
+            ) : (
+              <EyeOff className="h-4 w-4" aria-hidden />
+            )}
           </button>
         )}
         <button
@@ -208,39 +173,12 @@ export default function CamaraFila({
         >
           <RefreshCw className="h-4 w-4" aria-hidden />
         </button>
-        <ActionMenu
-          label={`Más de ${c.nombre}`}
-          icon={MoreHorizontal}
-          soloIcono
-          size="sm"
-          actions={menu}
-        />
-        <input
-          ref={archivoRef}
-          type="file"
-          accept="image/*"
-          capture="environment"
-          className="sr-only"
-          tabIndex={-1}
-          aria-label={`Subir una foto a mano a ${c.nombre}`}
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            e.target.value = "";
-            if (f) onSubir(f);
-          }}
-        />
-        <input
-          ref={galeriaRef}
-          type="file"
-          accept="image/*"
-          className="sr-only"
-          tabIndex={-1}
-          aria-label={`Subir una imagen de la galería a ${c.nombre}`}
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            e.target.value = "";
-            if (f) onSubir(f);
-          }}
+        <MenuMasCamara
+          nombre={c.nombre}
+          guardando={guardando}
+          subiendo={subiendo}
+          onSubir={onSubir}
+          onQuitar={onQuitar}
         />
       </div>
 
@@ -268,7 +206,12 @@ export default function CamaraFila({
       )}
       {puente.esPuente && !visorOculto && (
         <div className="mt-2 border-t border-[var(--rule-soft)] pt-2">
-          <VisorPuentePc nombre={c.nombre} cuadro={puente.cuadro} cajaRef={puente.cajaRef} onAjustar={onConectar}>
+          <VisorPuentePc
+            nombre={c.nombre}
+            cuadro={puente.cuadro}
+            cajaRef={puente.cajaRef}
+            onAjustar={onConectar}
+          >
             {lecturaPuente}
           </VisorPuentePc>
         </div>

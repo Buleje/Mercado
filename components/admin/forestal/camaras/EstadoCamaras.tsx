@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * Arriba de las fotos, una línea por cámara: si está viva, cuándo mandó la
- * última y la dirección para pegarle. Lo que se mira todas las mañanas no
+ * Arriba de las fotos, una línea por cámara: si está viva, cuándo avisó la
+ * cámara por última vez (con o sin foto), «En vivo» y la dirección para pegarle. Lo que se mira todas las mañanas no
  * puede estar una pestaña más allá; el resto de la configuración (avisos,
  * pila, chalecos, alta) vive en «Cámaras».
  */
@@ -12,7 +12,10 @@ import { Check, Copy, RefreshCw } from "@buleje/design-system/icons";
 import { estaCallada } from "@/lib/camaras/camaras";
 import { cn } from "@/lib/utils";
 import type { CamaraConConexion } from "./ConectarCamaraModal";
-import { BTN, horaODia, SOLO_ADMIN_DIRECCION } from "./camaras-ui";
+import { BTN, SOLO_ADMIN_DIRECCION } from "./camaras-ui";
+import BotonEnVivo, { tieneVisorPropio } from "./BotonEnVivo";
+import { lineaDeAviso } from "./ultimo-aviso";
+import { useAhora } from "./use-plataforma";
 import { camposPuente } from "./puente-pc";
 import { SenalPuente } from "./VisorPuentePc";
 
@@ -24,6 +27,8 @@ interface Props {
   guardando: boolean;
   onRotar: (id: string) => void;
   onErrorCopia: () => void;
+  /** «En vivo» de una cámara con visor propio: llevarla a la vista «Cámaras». */
+  onVerVisor: (id: string) => void;
 }
 
 export default function EstadoCamaras({
@@ -33,8 +38,10 @@ export default function EstadoCamaras({
   guardando,
   onRotar,
   onErrorCopia,
+  onVerVisor,
 }: Props) {
   const [copiada, setCopiada] = useState<string | null>(null);
+  const ahora = useAhora();
   if (camaras.length === 0) return null;
 
   const copiar = async (c: CamaraConConexion) => {
@@ -72,15 +79,17 @@ export default function EstadoCamaras({
               <span className="font-bold text-[var(--text-primary)]">{c.nombre}</span>
               <span className="text-[var(--text-tertiary)]">
                 {" · "}
-                {c.ultimaCapturaEn
-                  ? `última foto ${horaODia(c.ultimaCapturaEn)}`
-                  : "todavía no mandó nada"}
+                {lineaDeAviso(c, ahora)}
                 {callada ? " · no manda hace más de un día" : ""}
               </span>
             </span>
             {camposPuente(c).fuente === "puente_pc" && <SenalPuente camaraId={c.id} />}
             {/* Los dos botones viajan juntos: sueltos, a 400 px el de girar quedaba solo en otra fila. */}
             <span className="flex shrink-0 items-center gap-2">
+              <BotonEnVivo
+                nombre={c.nombre}
+                onVisorPropio={tieneVisorPropio(c) ? () => onVerVisor(c.id) : undefined}
+              />
               <button
                 type="button"
                 onClick={() => void copiar(c)}

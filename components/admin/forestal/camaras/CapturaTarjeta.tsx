@@ -9,6 +9,7 @@
  * de scroll. Desde `sm` vuelve a ser tarjeta con la imagen arriba.
  */
 
+import type { ReactNode } from "react";
 import { Trash2 } from "@buleje/design-system/icons";
 import { EVENTO_LABEL, type Captura } from "@/lib/camaras/camaras";
 import { formatDateTimeShort } from "@/lib/format";
@@ -25,6 +26,8 @@ interface Props {
   onConfirmar: (refId: string) => void;
   onAsignarChaleco: (numero: string) => void;
   chalecosVivos: ChalecosPantalla;
+  /** «En vivo» de la cámara de esta foto: ¿qué pasa ahí ahora? */
+  enVivo?: ReactNode;
 }
 
 export default function CapturaTarjeta({
@@ -37,6 +40,7 @@ export default function CapturaTarjeta({
   onConfirmar,
   onAsignarChaleco,
   chalecosVivos,
+  enVivo,
 }: Props) {
   const cuando = formatDateTimeShort(c.at);
   return (
@@ -69,6 +73,7 @@ export default function CapturaTarjeta({
               {cuando} · {EVENTO_LABEL[c.evento]}
             </span>
           </span>
+          {enVivo}
           <button
             type="button"
             onClick={onBorrar}

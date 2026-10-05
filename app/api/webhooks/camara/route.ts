@@ -8,6 +8,8 @@ import { withApiHandler } from "@/lib/api-handler";
 import { CamarasDB } from "@/lib/db/camaras.db";
 import { normalizarEvento, type Camara, type EventoCamara } from "@/lib/camaras/camaras";
 import { CuadroIlegible, recibirCuadro } from "@/lib/camaras/cuadro-vivo.server";
+import { anotarContacto } from "@/lib/camaras/contacto.server";
+import { esLatido } from "@/lib/camaras/contacto";
 import {
   alertaDelAviso,
   eventoDeAlerta,
@@ -24,6 +26,10 @@ import {
  *      pantalla (ADR-466): JPEG/WebP ≤ 1 MB, crudo o en multipart. Responde
  *      `{ ok, guardada, motivo: "cambio"|"intervalo"|"sin_cambio"|"tope_del_dia" }`.
  *      Misma RUTA a propósito: el portero del túnel compara la ruta exacta.
+ * POST /api/webhooks/camara?k=<token>&modo=prueba — «Probar recepción»
+ *      (2026-10-05): lee el aviso ENTERO (multipart, alerta, foto, sharp) y
+ *      contesta `{ ok, prueba: true, conFoto, evento }` SIN escribir nada: ni
+ *      storage, ni historial, ni IA, ni «último aviso». Ver `lib/camaras/recepcion.ts`.
  *
  * La puerta por la que ENTRA una foto del patio.
  *
@@ -66,7 +72,7 @@ const rechazo = () => NextResponse.json({ ok: false }, { status: 401 });
  */
 const consultaSchema = z.object({
   k: z.string().trim().min(16).max(128),
-  modo: z.enum(["vivo"]).optional(),
+  modo: z.enum(["vivo", "prueba"]).optional(),
 });
 
 /* ── Modo vivo (ADR-466) ─────────────────────────────────────────────────── */
@@ -88,7 +94,10 @@ const VIVO_POR_CAMARA = { max: 20, ventanaSeg: 10 };
 const demasiado = (resetAt: number) =>
   NextResponse.json(
     { ok: false, error: "muy_seguido" },
-    { status: 429, headers: { "Retry-After": String(Math.max(1, Math.ceil((resetAt - Date.now()) / 1000))) } },
+    {
+      status: 429,
+      headers: { "Retry-After": String(Math.max(1, Math.ceil((resetAt - Date.now()) / 1000))) },
+    },
   );
 
 /**
@@ -97,7 +106,10 @@ const demasiado = (resetAt: number) =>
  * tope diario (`lib/camaras/vivo.ts`). Responde siempre rápido: la PC manda el
  * siguiente en un segundo.
  */
-async function ingestaVivo(req: NextRequest, destino: { tenantId: string; camara: Camara }): Promise<Response> {
+async function ingestaVivo(
+  req: NextRequest,
+  destino: { tenantId: string; camara: Camara },
+): Promise<Response> {
   const porCamara = rateLimit(
     `camara-vivo:${destino.tenantId}:${destino.camara.id}`,
     VIVO_POR_CAMARA.max,
@@ -112,7 +124,8 @@ async function ingestaVivo(req: NextRequest, destino: { tenantId: string; camara
   let tipo = req.headers.get("content-type") ?? "";
   try {
     const cuerpo = Buffer.from(await req.arrayBuffer());
-    if (cuerpo.length > MAX_CUERPO_VIVO) return NextResponse.json({ ok: false, error: "muy_grande" }, { status: 413 });
+    if (cuerpo.length > MAX_CUERPO_VIVO)
+      return NextResponse.json({ ok: false, error: "muy_grande" }, { status: 413 });
     if (tipo.includes("multipart/")) {
       const imagen = imagenDelAviso(partesMultipart(cuerpo, tipo));
       if (imagen) {
@@ -126,20 +139,30 @@ async function ingestaVivo(req: NextRequest, destino: { tenantId: string; camara
     logger.warn("[camaras.vivo] cuerpo ilegible", { error: String(err) });
     return NextResponse.json({ ok: false, error: "cuerpo_invalido" }, { status: 400 });
   }
-  if (!bytes || bytes.length === 0) return NextResponse.json({ ok: false, error: "sin_imagen" }, { status: 400 });
-  if (bytes.length > MAX_VIVO) return NextResponse.json({ ok: false, error: "muy_grande" }, { status: 413 });
+  if (!bytes || bytes.length === 0)
+    return NextResponse.json({ ok: false, error: "sin_imagen" }, { status: 400 });
+  if (bytes.length > MAX_VIVO)
+    return NextResponse.json({ ok: false, error: "muy_grande" }, { status: 413 });
   if (!TIPOS_VIVO.has(tipo.split(";")[0]!.trim().toLowerCase())) {
     return NextResponse.json({ ok: false, error: "formato_no_permitido" }, { status: 415 });
   }
 
   try {
-    const paso = await recibirCuadro(destino.tenantId, destino.camara, bytes, async (foto, motivo) => {
-      const ok = await guardarFoto(destino, foto, {
-        evento: "programada",
-        nota: motivo === "cambio" ? "Puente de pantalla: cambió la imagen" : "Puente de pantalla: foto de intervalo",
-      });
-      if (!ok) throw new Error("storage");
-    });
+    const paso = await recibirCuadro(
+      destino.tenantId,
+      destino.camara,
+      bytes,
+      async (foto, motivo) => {
+        const ok = await guardarFoto(destino, foto, {
+          evento: "programada",
+          nota:
+            motivo === "cambio"
+              ? "Puente de pantalla: cambió la imagen"
+              : "Puente de pantalla: foto de intervalo",
+        });
+        if (!ok) throw new Error("storage");
+      },
+    );
     return NextResponse.json({ ok: true, guardada: paso.guardada, motivo: paso.motivo });
   } catch (err) {
     if (err instanceof CuadroIlegible) {
@@ -154,11 +177,93 @@ async function ingestaVivo(req: NextRequest, destino: { tenantId: string; camara
   }
 }
 
+/* ── El aviso: leerlo y, en modo prueba, contestar sin guardar ─────────────── */
+
+interface AvisoLeido {
+  bytes: Buffer | null;
+  tipo: string;
+  alerta: AlertaHikvision | null;
+}
+
+/**
+ * La imagen puede venir en un multipart (lo normal: la cámara manda la alerta
+ * y la foto en partes con el nombre que elige su firmware, o un formulario),
+ * como el cuerpo crudo (algunos aparatos postean el JPEG pelado) o no venir:
+ * la alerta sola en XML/JSON, o el latido de «sigo viva». Las partes se leen
+ * sobre los bytes — ver `lib/camaras/hikvision-push.ts` por qué.
+ */
+async function leerAviso(req: NextRequest): Promise<AvisoLeido | Response> {
+  let bytes: Buffer | null = null;
+  let tipo = req.headers.get("content-type") ?? "";
+  let alerta: AlertaHikvision | null = null;
+  try {
+    const cuerpo = Buffer.from(await req.arrayBuffer());
+    if (cuerpo.length > MAX_CUERPO)
+      return NextResponse.json({ ok: false, error: "muy_grande" }, { status: 413 });
+    if (tipo.includes("multipart/")) {
+      const partes = partesMultipart(cuerpo, tipo);
+      alerta = alertaDelAviso(partes);
+      const imagen = imagenDelAviso(partes);
+      if (imagen) {
+        bytes = imagen.datos;
+        tipo = imagen.tipo;
+      }
+    } else if (tipo.startsWith("image/")) {
+      bytes = cuerpo;
+    } else {
+      alerta = leerAlerta(cuerpo.toString("utf8"));
+    }
+  } catch (err) {
+    logger.warn("[camaras.ingesta] cuerpo ilegible", { error: String(err) });
+    return NextResponse.json({ ok: false, error: "cuerpo_invalido" }, { status: 400 });
+  }
+  return { bytes, tipo, alerta };
+}
+
+/**
+ * «Probar recepción»: las mismas validaciones que una foto real —tamaño,
+ * formato declarado, formato REAL y que sharp la decodifique— y ninguna
+ * escritura. Lo que contesta dice si una foto así se habría guardado.
+ */
+async function contestarPrueba(
+  bytes: Buffer | null,
+  tipo: string,
+  alerta: AlertaHikvision | null,
+): Promise<Response> {
+  const evento: EventoCamara | null = alerta ? eventoDeAlerta(alerta) : null;
+  if (!bytes || bytes.length === 0) {
+    if (alerta) return NextResponse.json({ ok: true, prueba: true, conFoto: false, evento });
+    return NextResponse.json({ ok: false, prueba: true, error: "sin_imagen" }, { status: 400 });
+  }
+  if (bytes.length > MAX_SIZE)
+    return NextResponse.json({ ok: false, prueba: true, error: "muy_grande" }, { status: 413 });
+  if (!TIPOS.has(tipo.split(";")[0]!.trim().toLowerCase())) {
+    return NextResponse.json(
+      { ok: false, prueba: true, error: "formato_no_permitido" },
+      { status: 415 },
+    );
+  }
+  try {
+    await verificarImagen(bytes, new Set(["jpeg", "png", "webp"]));
+    await sharpSeguro(bytes)
+      .resize({ width: ANCHO_MAX, withoutEnlargement: true })
+      .webp({ quality: 80 })
+      .toBuffer();
+  } catch (err) {
+    const motivo = err instanceof ImagenNoPermitida ? err.message : "formato_no_permitido";
+    return NextResponse.json({ ok: false, prueba: true, error: motivo }, { status: 415 });
+  }
+  return NextResponse.json({ ok: true, prueba: true, conFoto: true, evento });
+}
+
 export const POST = withApiHandler("camaras-ingesta", async (req: NextRequest) => {
   const url = new URL(req.url);
-  const vivo = url.searchParams.has("modo");
-  if (vivo) {
-    const porIp = rateLimit(`camara-vivo-ip:${getClientIp(req)}`, VIVO_POR_IP.max, VIVO_POR_IP.ventanaSeg);
+  if (url.searchParams.get("modo") === "vivo") {
+    const porIp = rateLimit(
+      `camara-vivo-ip:${getClientIp(req)}`,
+      VIVO_POR_IP.max,
+      VIVO_POR_IP.ventanaSeg,
+    );
     if (!porIp.allowed) return demasiado(porIp.resetAt);
   } else {
     const rl = applyRateLimit(req, "MODERATE", "camara-ingesta");
@@ -179,34 +284,10 @@ export const POST = withApiHandler("camaras-ingesta", async (req: NextRequest) =
   if (!destino) return rechazo();
   if (consulta.data.modo === "vivo") return ingestaVivo(req, destino);
 
-  /* La imagen puede venir en un multipart (lo normal: la cámara manda la alerta
-     y la foto en partes con el nombre que elige su firmware, o un formulario),
-     como el cuerpo crudo (algunos aparatos postean el JPEG pelado) o no venir:
-     la alerta sola en XML/JSON, o el latido de «sigo viva». Las partes se leen
-     sobre los bytes — ver `lib/camaras/hikvision-push.ts` por qué. */
-  let bytes: Buffer | null = null;
-  let tipo = req.headers.get("content-type") ?? "";
-  let alerta: AlertaHikvision | null = null;
-  try {
-    const cuerpo = Buffer.from(await req.arrayBuffer());
-    if (cuerpo.length > MAX_CUERPO) return NextResponse.json({ ok: false, error: "muy_grande" }, { status: 413 });
-    if (tipo.includes("multipart/")) {
-      const partes = partesMultipart(cuerpo, tipo);
-      alerta = alertaDelAviso(partes);
-      const imagen = imagenDelAviso(partes);
-      if (imagen) {
-        bytes = imagen.datos;
-        tipo = imagen.tipo;
-      }
-    } else if (tipo.startsWith("image/")) {
-      bytes = cuerpo;
-    } else {
-      alerta = leerAlerta(cuerpo.toString("utf8"));
-    }
-  } catch (err) {
-    logger.warn("[camaras.ingesta] cuerpo ilegible", { error: String(err) });
-    return NextResponse.json({ ok: false, error: "cuerpo_invalido" }, { status: 400 });
-  }
+  const leido = await leerAviso(req);
+  if (leido instanceof Response) return leido;
+  const { bytes, tipo, alerta } = leido;
+  if (consulta.data.modo === "prueba") return contestarPrueba(bytes, tipo, alerta);
 
   /* Una alerta sin foto —el latido de «sigo viva» (`videoloss` / `inactive`) o
      un evento sin captura— se contesta 200 y no se escribe nada: con un error la
@@ -214,12 +295,19 @@ export const POST = withApiHandler("camaras-ingesta", async (req: NextRequest) =
      gastados en algo que no deja nada para ver. Con foto se guarda siempre,
      diga lo que diga el estado: perder una imagen es peor que un duplicado. */
   if (alerta && (!bytes || bytes.length === 0)) {
+    /* Sin foto igual cuenta como «la cámara llegó»: es lo que dice si quedó conectada. */
+    await anotarContacto(
+      destino.tenantId,
+      destino.camara.id,
+      esLatido(alerta) ? "latido" : "alerta",
+    );
     return NextResponse.json({ ok: true, guardada: false });
   }
   if (!bytes || bytes.length === 0) {
     return NextResponse.json({ ok: false, error: "sin_imagen" }, { status: 400 });
   }
-  if (bytes.length > MAX_SIZE) return NextResponse.json({ ok: false, error: "muy_grande" }, { status: 413 });
+  if (bytes.length > MAX_SIZE)
+    return NextResponse.json({ ok: false, error: "muy_grande" }, { status: 413 });
   if (!TIPOS.has(tipo.split(";")[0]!.trim().toLowerCase())) {
     return NextResponse.json({ ok: false, error: "formato_no_permitido" }, { status: 415 });
   }
@@ -241,9 +329,16 @@ export const POST = withApiHandler("camaras-ingesta", async (req: NextRequest) =
       evento: alerta ? eventoDeAlerta(alerta) : normalizarEvento(url.searchParams.get("evento")),
       /* Lo que el aparato diga de sí mismo se guarda tal cual y acotado: sirve
          para entender qué mandó, no para confiar en ello. */
-      nota: (url.searchParams.get("nota") ?? "").slice(0, 200) || (alerta ? notaDeAlerta(alerta) : null),
+      nota:
+        (url.searchParams.get("nota") ?? "").slice(0, 200) ||
+        (alerta ? notaDeAlerta(alerta) : null),
     });
     if (!guardada) return NextResponse.json({ ok: false, error: "storage" }, { status: 502 });
+    /* «Guardar» del visor manda `evento=manual` por esta misma puerta: eso lo
+       subió una persona, no dice que la cámara esté conectada. */
+    if (alerta || url.searchParams.get("evento") !== "manual") {
+      await anotarContacto(destino.tenantId, destino.camara.id, "foto");
+    }
 
     /* Respuesta mínima: la cámara sólo necesita saber que entró. */
     return NextResponse.json({ ok: true });
@@ -263,6 +358,8 @@ export const GET = withApiHandler("camaras-ingesta-ping", async (req: NextReques
   const token = (new URL(req.url).searchParams.get("k") ?? "").trim();
   const destino = await CamarasDB.porToken(token);
   if (!destino) return rechazo();
-  /* Ni el nombre del negocio ni el de la cámara: sólo que la dirección sirve. */
-  return NextResponse.json({ ok: true, listo: true });
+  /* Ni el nombre del negocio ni el de la cámara: sólo que la dirección sirve.
+     `prueba: true` = este servidor conoce `modo=prueba` («Probar recepción»
+     pregunta antes de mandar la foto: uno viejo la guardaría como real). */
+  return NextResponse.json({ ok: true, listo: true, prueba: true });
 });

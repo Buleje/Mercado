@@ -24,7 +24,7 @@
  * `use-conexion-directa.ts`.
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { CalendarDays, Camera, Image as ImageIcon, RefreshCw } from "@buleje/design-system/icons";
 import SegmentedControl from "@/components/ui-system/SegmentedControl";
 import { useVistaModulo } from "@/hooks/use-vista-modulo";
@@ -57,6 +57,19 @@ export default function CamarasView() {
   const [recarga, setRecarga] = useState(0);
   const [conectando, setConectando] = useState<string | null>(null);
   const [chalecos, setChalecos] = useState<{ numero: string | null } | null>(null);
+  /* «En vivo» desde Fotos de una cámara con visor propio: el visor vive en
+     «Cámaras». Se cambia de vista y, ya montada, se baja hasta esa cámara. */
+  const focoRef = useRef<string | null>(null);
+  const verVisor = (id: string) => {
+    focoRef.current = id;
+    irA("camaras");
+  };
+  useEffect(() => {
+    const id = focoRef.current;
+    if (vista !== "camaras" || !id) return;
+    focoRef.current = null;
+    document.getElementById(`camara-${id}`)?.scrollIntoView({ block: "start", behavior: "smooth" });
+  }, [vista]);
 
   const calladas = useMemo(() => d.camaras.filter((c) => estaCallada(c)), [d.camaras]);
   const sinIa = useMemo(() => faltaClaveIa(d.capturas), [d.capturas]);
@@ -147,6 +160,7 @@ export default function CamarasView() {
           onErrorCopia={() =>
             d.setError("El navegador no dejó copiar. Selecciona la dirección a mano.")
           }
+          onVerVisor={verVisor}
         />
       )}
       {vista === "fotos" && (
@@ -160,6 +174,7 @@ export default function CamarasView() {
           onAsignarChaleco={abrirChalecos}
           chalecosVivos={d.chalecos}
           onIrACamaras={() => irA("camaras")}
+          onVerVisor={verVisor}
         />
       )}
       {vista === "patio" && (

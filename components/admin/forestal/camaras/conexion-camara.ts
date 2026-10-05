@@ -7,7 +7,12 @@
  * importaban de ahí siguen andando.
  */
 
-import { textoDeFalla, type CamaraPublica, type ConexionCamaraPublica } from "@/lib/camaras/camaras";
+import {
+  textoDeFalla,
+  type CamaraPublica,
+  type ConexionCamaraPublica,
+} from "@/lib/camaras/camaras";
+import type { ContactoCamara } from "@/lib/camaras/contacto";
 
 /**
  * Lo que la pantalla recibe de la conexión: todo menos el secreto.
@@ -17,7 +22,11 @@ import { textoDeFalla, type CamaraPublica, type ConexionCamaraPublica } from "@/
  * servidor y esta pantalla no tiene forma de pedirla.
  */
 export type ConexionCamara = ConexionCamaraPublica;
-export type CamaraConConexion = CamaraPublica;
+/**
+ * `ultimoAviso`: la última vez que la CÁMARA tocó la puerta, con o sin foto
+ * (lo arma el GET; las escrituras no lo traen y la pantalla conserva el que tenía).
+ */
+export type CamaraConConexion = CamaraPublica & { ultimoAviso?: ContactoCamara | null };
 
 export interface DatosConexion {
   host: string;
