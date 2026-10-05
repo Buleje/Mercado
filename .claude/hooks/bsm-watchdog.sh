@@ -50,6 +50,12 @@ cleanup() {
 }
 trap cleanup TERM INT EXIT
 
+# Cierra el árbol completo del dev (npm → dev-with-canary → next dev → next-server)
+# y lo relanza. Single source con `npm run dev:restart`.
+reiniciar_dev() {
+  bash "$PROJECT_DIR/scripts/dev-restart.sh" >/dev/null 2>&1 || true
+}
+
 log "watchdog started pid=$$ interval=${INTERVAL}s"
 
 while true; do
@@ -73,18 +79,20 @@ while true; do
     log "killed orphan tsc pids: $(echo $ORPHAN_TSC | tr '\n' ' ')"
   fi
 
-  # 3. RAM check — si <500MB libre, mata MCP mas grande (no critico)
+  # 3. RAM baja → anotar QUIÉN la come (05-10 07:33: 75 MB libres durante 9 min
+  #    y el log sólo decía «sin MCP gordo»; no se supo quién era). Antes acá se
+  #    mataba un MCP (context7/firecrawl, ~100 MB: no salvaba nada y dejaba sin
+  #    esa herramienta a la sesión). La emergencia ahora la atiende earlyoom
+  #    (systemd, mira cada 0,1-1 s, prefiere dev server/tsc/chromium y nunca a
+  #    Claude: /etc/default/earlyoom); este bucle de 60 s llega tarde para eso.
   AVAIL=$(awk '/MemAvailable/ {print int($2/1024)}' /proc/meminfo)
-  if [[ "$AVAIL" -lt 500 ]]; then
-    # Mata el MCP mas pesado que NO sea playwright (Brandon lo usa para QA)
-    BIG_MCP=$(ps -eo pid,rss,cmd --sort=-rss | grep -E 'firecrawl-mcp|chrome-devtools-mcp|context7-mcp' | grep -v grep | grep -v playwright | head -1 | awk '{print $1}')
-    if [[ -n "$BIG_MCP" ]]; then
-      kill -9 "$BIG_MCP" 2>/dev/null || true
-      log "RAM critico ${AVAIL}MB libre — killed heavy MCP pid=$BIG_MCP"
-    else
-      log "RAM critico ${AVAIL}MB libre — sin MCP gordo para liberar"
-    fi
+  if [[ "$AVAIL" -lt 1500 ]]; then
+    TOP=$(ps -eo rss,comm --sort=-rss | awk 'NR>1 && NR<=6 {printf "%s %.1fG, ", $2, $1/1048576}')
+    ZRAM=$(awk '$1 ~ /zram/ {printf "%.1fG", $4/1048576}' /proc/swaps)
+    log "RAM baja ${AVAIL}MB libres · zram ${ZRAM:-0} · top: ${TOP%, }"
   fi
+  # Lo que earlyoom cerró en el último ciclo, al mismo log (el journal no se mira).
+  journalctl -u earlyoom --since "-${INTERVAL}s" -o cat 2>/dev/null | grep -E 'sending SIG' | while read -r l; do log "earlyoom: $l"; done
 
   # 3b. Dev server inflado — la RAM la come COMPILAR, no el paso del tiempo
   #     (medido 2026-09-18: 6.6 GB tras 25 min de uso normal, y 8.76 GB a los
@@ -99,15 +107,32 @@ while true; do
   #     apretado — presión de memoria 0,3 %, 0 OOM kills. Ahora sólo con
   #     presión REAL: < 1,2 GB libres, o el kernel esperando memoria (PSI full
   #     avg60 ≥ 15 %).
-  NEXT_PID=$(ps -eo pid,rss,comm --sort=-rss | awk '$3 == "next-server" {print $1; exit}')
-  NEXT_GB=$(ps -eo pid,rss,comm --sort=-rss | awk '$3 == "next-server" {printf "%d", $2/1048576; exit}')
+  #     05-10: el piso de tamaño era ≥ 10 GB y en una VM de 16 GB nunca se
+  #     alcanza (07:33: 75 MB libres 9 min sin reciclar nada) → ≥ 4 GB.
+  #     Se recicla el árbol entero: matar sólo
+  #     next-server deja a `next dev` vivo y sin hijo (no reintenta si muere por
+  #     señal, next-dev.js:302).
+  NEXT_PID=$(pgrep -f '^next-server' | head -1)
+  NEXT_GB=0
+  [[ -n "$NEXT_PID" ]] && NEXT_GB=$(awk '/^VmRSS/ {printf "%d", $2/1048576}' "/proc/$NEXT_PID/status" 2>/dev/null || echo 0)
   PSI_FULL=$(awk '/^full/ {split($3, a, "="); printf "%d", a[2]}' /proc/pressure/memory 2>/dev/null || echo 0)
-  if [[ -n "$NEXT_PID" && "${NEXT_GB:-0}" -ge 10 && ( "$AVAIL" -lt 1200 || "${PSI_FULL:-0}" -ge 15 ) ]]; then
-    kill "$NEXT_PID" 2>/dev/null || true
-    sleep 3
-    kill -9 "$NEXT_PID" 2>/dev/null || true
-    ( cd "$PROJECT_DIR" && nohup npm run dev > /tmp/dev-server.log 2>&1 & disown ) 2>/dev/null || true
+  if [[ -n "$NEXT_PID" && "${NEXT_GB:-0}" -ge 4 && ( "$AVAIL" -lt 1200 || "${PSI_FULL:-0}" -ge 15 ) ]]; then
+    reiniciar_dev
     log "dev server reciclado: ${NEXT_GB}GB de RSS con ${AVAIL}MB libres, PSI full ${PSI_FULL}% (pid=$NEXT_PID)"
+  fi
+
+  # 3c. `next dev` vivo sin next-server (lo cerró earlyoom o murió por señal):
+  #     el puerto 3000 queda muerto con el padre colgado. Dos ciclos seguidos
+  #     (el arranque normal tarda segundos) y RAM para volver a compilar.
+  if [[ -z "$NEXT_PID" ]] && pgrep -f '[n]ext dev' >/dev/null; then
+    DEV_SIN_HIJO=$((${DEV_SIN_HIJO:-0} + 1))
+    if [[ "$DEV_SIN_HIJO" -ge 2 && "$AVAIL" -ge 3000 ]]; then
+      reiniciar_dev
+      log "dev server rearmado: next dev seguía vivo sin next-server (${AVAIL}MB libres)"
+      DEV_SIN_HIJO=0
+    fi
+  else
+    DEV_SIN_HIJO=0
   fi
 
   # 4. Heartbeat cada 5 ciclos (~5 min)

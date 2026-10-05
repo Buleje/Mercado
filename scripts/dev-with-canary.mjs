@@ -19,9 +19,9 @@
  * `BULEJE_APP_DATABASE_URL=...` a .env.local. Para DESACTIVAR el canary, borrá
  * esa línea (y el archivo /tmp/buleje_app.env) → el dev vuelve a `postgres`.
  */
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { existsSync, readFileSync, rmSync, utimesSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 
 const KEY = "BULEJE_APP_DATABASE_URL";
 
@@ -96,7 +96,26 @@ if (canaryUrl) {
 }
 
 const bin = process.platform === "win32" ? "node_modules\\.bin\\next.cmd" : "node_modules/.bin/next";
-const child = spawn(bin, ["dev", "--turbopack"], { stdio: "inherit", env });
+// ── Techo de RAM propio (Brandon 2026-10-05) ───────────────────────────────
+// Turbopack llega a 6,6-8,8 GB de memoria nativa, y el reinicio por memoria de
+// Next sólo mira el heap de V8 (start-server.js), así que nunca salta. En un
+// scope de systemd con MemoryHigh, pasado el techo el kernel manda lo frío a la
+// RAM comprimida (zram) en vez de quitársela a Claude, y el server sigue vivo.
+// No es un tope duro: la emergencia la atiende earlyoom. `systemd-run --scope`
+// ejecuta el comando en este mismo proceso hijo (mismo PID, mismo env), así que
+// las señales de abajo siguen llegando a `next dev`.
+// Apagar: BSM_DEV_SIN_TECHO=1 · otro valor: BSM_DEV_TECHO=8G.
+function conTecho(cmd, args) {
+  if (process.platform !== "linux" || process.env.BSM_DEV_SIN_TECHO === "1") return [cmd, args];
+  const r = spawnSync("systemctl", ["--user", "is-system-running"], { encoding: "utf8", timeout: 2000 });
+  if (!/^(running|degraded)/.test(r.stdout ?? "")) return [cmd, args];
+  const techo = process.env.BSM_DEV_TECHO || "6G";
+  console.log(`[dev] techo de RAM ${techo}: pasado eso lo frío se comprime y el server sigue.`);
+  return ["systemd-run", ["--user", "--scope", "--collect", "--quiet", "-p", `MemoryHigh=${techo}`, "--", resolve(cmd), ...args]];
+}
+
+const [cmd, args] = conTecho(bin, ["dev", "--turbopack"]);
+const child = spawn(cmd, args, { stdio: "inherit", env });
 child.on("exit", (code) => process.exit(code ?? 0));
 for (const sig of ["SIGINT", "SIGTERM"]) {
   process.on(sig, () => child.kill(sig));
