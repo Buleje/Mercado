@@ -84,6 +84,7 @@
     "claude:dreaming": "node scripts/claude-dreaming-apply.mjs",
     "claude:dreaming:apply": "node scripts/claude-dreaming-apply.mjs --safe",
     "typecheck": "node scripts/tsc7.mjs --noEmit",
+    "test:guardianes": "bash scripts/test-guardianes.sh",
     "typecheck:fast": "node scripts/tsc7.mjs --noEmit",
     "typecheck:legacy": "NODE_OPTIONS=--max-old-space-size=8192 tsc --noEmit",
     "compiler:census": "node scripts/react-compiler-census.mjs",
