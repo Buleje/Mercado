@@ -28,6 +28,7 @@ import {
   TreePine,
 } from "@buleje/design-system/icons";
 import { Kicker, StatCard, WarningAlert } from "@buleje/design-system";
+import { CtpKpisPlegables } from "./kpis-plegables";
 import { fmtM3, fmtPct } from "@/lib/forestal/cubicacion-formato";
 import type { BalanceContrato, resumirBalance } from "@/lib/forestal/contratos";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -145,35 +146,86 @@ export default function CtpContratoBalance({
 
   return (
     <div className="space-y-4">
-      {/* ── Las dos cifras que se preguntan primero ── */}
-      <section className="grid gap-5 rounded-2xl border-2 border-[var(--accent)]/30 bg-[var(--surface-sunken)] p-5 sm:grid-cols-2">
-        <CifraHero
-          rotulo="Egresos totales"
-          valor={soles(egresos)}
-          parcial={sinValorizar > 0}
-          nota={
-            egresos == null
-              ? sinValorizar > 0
-                ? `Los ${sinValorizar} ingresos de madera están sin precio: no hay nada que sumar todavía`
-                : "Todavía no hay nada imputado a este contrato"
-              : sinValorizar > 0
-                ? `No incluye ${sinValorizar} ${sinValorizar === 1 ? "ingreso" : "ingresos"} de madera sin precio`
-                : "Madera + gastos + fletes + adelantos entregados"
-          }
-        />
-        <CifraHero
-          rotulo="Costo por m³ recibido"
-          valor={costo == null ? "—" : soles(costo)}
-          parcial={sinValorizar > 0 && costo != null}
-          nota={
-            costo == null
-              ? "Todavía no hay egresos cargados para este contrato"
-              : sinValorizar > 0
-                ? `Parcial: faltan ${sinValorizar} de ${m.documentos} ingresos por valorizar`
-                : `Sobre ${fmtM3(m.m3 ?? 0)} m³ recibidos`
-          }
-        />
-      </section>
+      {/* Las cifras del contrato, plegables (Brandon 05-10): las dos que se
+          preguntan primero van arriba del panel; el volumen, en tarjetas. */}
+      {/* Abiertas de entrada: en la ficha del contrato el balance ES el
+          contenido. El aviso de ingresos sin precio vive AFUERA del panel
+          (`WarningAlert` de abajo): plegar no lo esconde. */}
+      <CtpKpisPlegables
+        claveMemoria="ctp-contrato-balance"
+        abiertoPorDefecto
+        antes={<span className="text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Balance del contrato</span>}
+        resumen={`egresos ${soles(egresos)} · ${costo == null ? "sin costo por m³" : `${soles(costo)}/m³`} · ${fmtM3(m.m3 ?? 0)} m³ recibidos${resumen.rendimientoPct == null ? "" : ` · rend. ${fmtPct(resumen.rendimientoPct)} %`}`}
+        encabezado={
+          <section className="grid gap-5 rounded-2xl border-2 border-[var(--accent)]/30 bg-[var(--surface-sunken)] p-5 sm:grid-cols-2">
+            <CifraHero
+              rotulo="Egresos totales"
+              valor={soles(egresos)}
+              parcial={sinValorizar > 0}
+              nota={
+                egresos == null
+                  ? sinValorizar > 0
+                    ? `Los ${sinValorizar} ingresos de madera están sin precio: no hay nada que sumar todavía`
+                    : "Todavía no hay nada imputado a este contrato"
+                  : sinValorizar > 0
+                    ? `No incluye ${sinValorizar} ${sinValorizar === 1 ? "ingreso" : "ingresos"} de madera sin precio`
+                    : "Madera + gastos + fletes + adelantos entregados"
+              }
+            />
+            <CifraHero
+              rotulo="Costo por m³ recibido"
+              valor={costo == null ? "—" : soles(costo)}
+              parcial={sinValorizar > 0 && costo != null}
+              nota={
+                costo == null
+                  ? "Todavía no hay egresos cargados para este contrato"
+                  : sinValorizar > 0
+                    ? `Parcial: faltan ${sinValorizar} de ${m.documentos} ingresos por valorizar`
+                    : `Sobre ${fmtM3(m.m3 ?? 0)} m³ recibidos`
+              }
+            />
+          </section>
+        }
+        tarjetas={[
+            <StatCard
+                key="recibida"
+              label="Madera recibida"
+              value={`${fmtM3(m.m3 ?? 0)} m³`}
+              icon={TreePine}
+              subValue={`${m.documentos} ${m.documentos === 1 ? "ingreso" : "ingresos"} · ${todoSinPrecio ? "sin valorizar" : soles(m.monto)}`}
+            />,
+            <StatCard
+                key="produccion"
+              label="Producción"
+              value={`${fmtM3(balance.produccion.m3 ?? 0)} m³`}
+              icon={Boxes}
+              subValue={`${balance.produccion.documentos} ${balance.produccion.documentos === 1 ? "corrida" : "corridas"} bajo este contrato`}
+            />,
+            <StatCard
+                key="rend"
+              label="Rendimiento"
+              value={resumen.rendimientoPct == null ? "—" : `${fmtPct(resumen.rendimientoPct)} %`}
+              icon={Scale}
+              subValue={
+                resumen.rendimientoPct == null
+                  ? "Falta volumen recibido o producido"
+                  : "Del volumen que entró, cuánto salió como producto"
+              }
+            />,
+            <StatCard
+                key="recuperar"
+              label="Por recuperar"
+              value={<span className="font-mono">{soles(porRecuperar)}</span>}
+              icon={Coins}
+              emphasis={(porRecuperar ?? 0) > 0 ? "warning" : "neutral"}
+              subValue={
+                porRecuperar == null
+                  ? "Sin adelantos ni cuenta corriente bajo este contrato"
+                  : "Saldo de adelantos + neto de la cuenta corriente"
+              }
+            />,
+        ]}
+      />
 
       {sinValorizar > 0 && (
         <WarningAlert
@@ -196,43 +248,6 @@ export default function CtpContratoBalance({
           />
         </p>
       )}
-
-      {/* ── Volumen: lo que entró y lo que salió de la sierra ── */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          label="Madera recibida"
-          value={`${fmtM3(m.m3 ?? 0)} m³`}
-          icon={TreePine}
-          subValue={`${m.documentos} ${m.documentos === 1 ? "ingreso" : "ingresos"} · ${todoSinPrecio ? "sin valorizar" : soles(m.monto)}`}
-        />
-        <StatCard
-          label="Producción"
-          value={`${fmtM3(balance.produccion.m3 ?? 0)} m³`}
-          icon={Boxes}
-          subValue={`${balance.produccion.documentos} ${balance.produccion.documentos === 1 ? "corrida" : "corridas"} bajo este contrato`}
-        />
-        <StatCard
-          label="Rendimiento"
-          value={resumen.rendimientoPct == null ? "—" : `${fmtPct(resumen.rendimientoPct)} %`}
-          icon={Scale}
-          subValue={
-            resumen.rendimientoPct == null
-              ? "Falta volumen recibido o producido"
-              : "Del volumen que entró, cuánto salió como producto"
-          }
-        />
-        <StatCard
-          label="Por recuperar"
-          value={<span className="font-mono">{soles(porRecuperar)}</span>}
-          icon={Coins}
-          emphasis={(porRecuperar ?? 0) > 0 ? "warning" : "neutral"}
-          subValue={
-            porRecuperar == null
-              ? "Sin adelantos ni cuenta corriente bajo este contrato"
-              : "Saldo de adelantos + neto de la cuenta corriente"
-          }
-        />
-      </div>
 
       {/* ── El detalle, bloque por bloque ── */}
       <CtpContratoCuentas balance={balance} resumen={resumen} />

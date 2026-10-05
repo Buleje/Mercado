@@ -25,6 +25,7 @@ import { leerPlaca } from "@/lib/forestal/placa-peru";
 import { CampoPlaca } from "./ctp-campo-placa";
 import { FiltroColumnaMulti, type FacetaOpcion } from "@/components/admin/shared/filtros-columna";
 import { CampoDeFiltro } from "./ctp-filtros-panel";
+import { useKpisPlegables } from "./kpis-plegables";
 import { BotonRestablecerColumnas, EnOrden, useOrdenColumnas } from "@/components/admin/shared/columnas-ordenables";
 import { useLothPermiso } from "./hooks/use-loth-libro-permiso";
 import { leerGtfDatos } from "@/lib/forestal/ctp-gtf-datos";
@@ -311,6 +312,18 @@ export default function LothGtfView({
 
   useEffect(() => setPagina(0), [busqueda, tipoFiltro, estadoFiltro]);
   const orden = useOrdenColumnas("loth-gtf", ORDEN_GTF_DEFECTO);
+  /* Las cuatro fichas se pliegan (Brandon 05-10); cerradas dicen lo esencial en el botón. */
+  const kpis = useKpisPlegables({
+    claveMemoria: "loth-gtf",
+    alto: "md",
+    resumen: `${resumen.emitidas} ${resumen.emitidas === 1 ? "guía" : "guías"} · ${Number(resumen.volumen).toFixed(3)} m³${resumen.pendientes > 0 ? ` · ${resumen.pendientes} sin ingresar` : ""}`,
+    tarjetas: loading || gtfs.length === 0 ? [] : [
+      <ResumenChip key="e" valor={resumen.emitidas} label="Guías emitidas" />,
+      <ResumenChip key="v" valor={Number(resumen.volumen).toFixed(3)} sufijo="m³" label="Volumen movilizado" />,
+      <ResumenChip key="p" valor={resumen.pendientes} label="Sin ingresar al CTP" tono={resumen.pendientes > 0 ? "warning" : undefined} />,
+      <ResumenChip key="a" valor={resumen.anuladas} label="Anuladas" tono={resumen.anuladas > 0 ? "danger" : undefined} />,
+    ],
+  });
 
   return (
     <div className="space-y-5">
@@ -389,6 +402,7 @@ export default function LothGtfView({
           propio <th> más abajo. */}
       {!loading && gtfs.length > 0 && (
         <div className="flex flex-wrap items-center gap-2">
+          {kpis.boton}
           <div className="flex h-11 min-w-[16rem] flex-1 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3">
             <Search className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" />
             <input
@@ -427,14 +441,7 @@ export default function LothGtfView({
 
       {error && <div className="flex flex-wrap items-center gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]"><span>{error}</span><button type="button" onClick={() => void load()} className="inline-flex h-9 items-center rounded-lg border-2 border-[var(--data-error-500)] px-3 text-xs font-bold hover:bg-[var(--data-error-100)]">Reintentar</button></div>}
 
-      {!loading && gtfs.length > 0 && (
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          <ResumenChip valor={resumen.emitidas} label="Guías emitidas" />
-          <ResumenChip valor={Number(resumen.volumen).toFixed(3)} sufijo="m³" label="Volumen movilizado" />
-          <ResumenChip valor={resumen.pendientes} label="Sin ingresar al CTP" tono={resumen.pendientes > 0 ? "warning" : undefined} />
-          <ResumenChip valor={resumen.anuladas} label="Anuladas" tono={resumen.anuladas > 0 ? "danger" : undefined} />
-        </div>
-      )}
+      {kpis.panel}
 
       {/* Emitir: el formulario es un documento (12 campos + lista de trozas), no
           un panel que empuje la tabla — va en modal ancho con footer fijo. */}

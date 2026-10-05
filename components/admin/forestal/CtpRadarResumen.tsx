@@ -31,6 +31,7 @@ import type { AnalisisTiempo } from "@/lib/forestal/ctp-radar-tiempo";
 import type { CadenaGtf } from "@/lib/forestal/ctp-radar-cadena";
 import type { DetailTarget } from "./CtpNodeDetailLoader";
 import CtpRadarCadenaGtf from "./CtpRadarCadenaGtf";
+import { useKpisPlegables } from "./kpis-plegables";
 import { fmtNum, SummaryChip, trunc } from "./ctp-radar-svg";
 import type { Foco, Vista } from "./ctp-radar-tipos";
 import { VISTAS } from "./ctp-radar-tipos";
@@ -129,20 +130,17 @@ export default function CtpRadarResumen({
   /** Con un solo medidor, el grid de dos columnas deja media fila vacía. */
   const hayDosMedidores = a.totales.trazabilidadPct != null && a.totales.consumoPct != null;
 
-  return (
-    <>
-          {/* Los dos números que un fiscalizador lee primero: cuánta salida traza
-              hasta su GTF, y cuánto de lo que entró ya pasó por producción. */}
-          {/* Salud de la cadena en UNA tira: los dos porcentajes que lee un
-              fiscalizador y los cuatro conteos accionables. Antes eran dos
-              filas de tarjetas (≈250px) para seis cifras. */}
-          <div className="space-y-2.5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
-            {/*
-              Dos columnas SÓLO si hay dos medidores. Sin despachos en el
-              período `trazabilidadPct` es null y queda uno solo: el grid fijo de
-              dos columnas le daba media pantalla de aire a la derecha, que es lo
-              que hacía ver esta cabecera vacía y empujaba el grafo hacia abajo.
-            */}
+  const resumenKpis = [
+    a.totales.trazabilidadPct != null ? `trazabilidad ${Math.round(a.totales.trazabilidadPct)} %` : null,
+    a.totales.consumoPct != null ? `consumida ${Math.round(a.totales.consumoPct)} %` : null,
+    `${a.totales.despachosHueco + a.totales.corridasHuerfanas} sin origen`,
+  ].filter(Boolean).join(" · ");
+  /* Plegables (Brandon 05-10): el botón va junto a las lecturas del período. */
+  const kpis = useKpisPlegables({
+    claveMemoria: "ctp-radar",
+    resumen: resumenKpis,
+    tarjetas: [
+      <div key="medidores" className="space-y-2.5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
             <div className={`grid gap-3 ${hayDosMedidores ? "sm:grid-cols-2" : ""}`}>
               {a.totales.trazabilidadPct != null && (
                 <Medidor
@@ -160,20 +158,27 @@ export default function CtpRadarResumen({
                 />
               )}
             </div>
-
+      </div>,
+      <div key="conteos" className="space-y-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
+        <p className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Qué falta cerrar (toca para filtrar el grafo)</p>
             {/* Píldoras, no tarjetas: cuatro tarjetas con ícono de 40px son 190px
                 de alto para cuatro números. Cada una filtra el grafo al tocarla. */}
-            <div className="flex flex-wrap items-center gap-2 border-t border-[var(--rule-soft)] pt-2.5">
+            <div className="flex flex-wrap items-center gap-2">
               <SummaryChip pill icon={CheckCircle2} tone="success" value={a.totales.despachosCompletos} label="con cadena completa" />
               <SummaryChip pill icon={AlertTriangle} tone="warning" value={a.totales.despachosHueco + a.totales.corridasHuerfanas} label="sin origen" onClick={() => toggleFoco("huecos")} activo={foco === "huecos"} />
               <SummaryChip pill icon={Boxes} tone="info" value={a.totales.despachosParciales} label="a medio atribuir" onClick={() => toggleFoco("parciales")} activo={foco === "parciales"} />
               <SummaryChip pill icon={ShieldAlert} tone="danger" value={a.totales.citesCount} label="ingresos CITES" onClick={() => toggleFoco("cites")} activo={foco === "cites"} />
             </div>
-          </div>
+      </div>,
+    ],
+  });
 
+  return (
+    <>
           {/* Tres lecturas del mismo período. Apiladas serían tres pantallas de
               scroll; como pestañas, cada pregunta tiene su lugar. */}
           <div className="flex flex-wrap items-center gap-2">
+            {kpis.boton}
             <div className="inline-flex h-11 items-center overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
               {VISTAS.map((v) => {
                 const Icon = v.icon;
@@ -201,6 +206,8 @@ export default function CtpRadarResumen({
               </button>
             )}
           </div>
+
+          {kpis.panel}
 
           {/* Seguimiento de una GTF: la vista que se arma a mano cuando OSINFOR
               pregunta por un ingreso puntual. */}

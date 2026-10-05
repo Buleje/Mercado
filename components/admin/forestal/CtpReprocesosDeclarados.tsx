@@ -31,6 +31,7 @@ import {
   Scissors,
 } from "@buleje/design-system/icons";
 import { StatCard } from "@buleje/design-system";
+import { CtpKpisPlegables } from "./kpis-plegables";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
 import { ctpGet } from "@/lib/forestal/ctp-fetch";
@@ -125,42 +126,56 @@ export default function CtpReprocesosDeclarados({ period }: { period: CtpPeriod 
 
   return (
     <div className="space-y-3">
-      {/* 1 · Lo que entró, lo que salió y la merma del conjunto. */}
-      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          label="Volvió a la sierra"
-          value={`${fmtM3(resumen.entro)} m³`}
-          icon={Scissors}
-          subValue={`${resumen.cuantos} ${resumen.cuantos === 1 ? "reproceso" : "reprocesos"} · ${resumen.especies.join(" · ") || "sin especie"}`}
-        />
-        <StatCard
-          label="Salió del reproceso"
-          value={`${fmtM3(resumen.salio)} m³`}
-          subValue="Lo que declaró la corrida nueva"
-        />
-        <StatCard
-          label="Merma de aserrío"
-          value={`${fmtM3(resumen.mermaM3)} m³`}
-          /* Sobre 40 % ya no es merma de corte: es un asiento para mirar. El
-             umbral se dice en el subtítulo para que no sea un color mudo. */
-          emphasis={resumen.mermaPct != null && resumen.mermaPct > 40 ? "warning" : "neutral"}
-          subValue={
-            resumen.mermaPct != null
-              ? `${resumen.mermaPct} % de lo que entró${resumen.mermaPct > 40 ? " — alto para un reaserrado" : ""}`
-              : "sin base para el %"
-          }
-        />
-        <StatCard
-          label="Hay que explicarlos"
-          value={String(resumen.noHabituales + resumen.sospechosos)}
-          emphasis={resumen.noHabituales + resumen.sospechosos > 0 ? "warning" : "success"}
-          subValue={
-            resumen.noHabituales + resumen.sospechosos === 0
-              ? "todas las conversiones son de las habituales"
-              : `${resumen.noHabituales} fuera de lo habitual · ${resumen.sospechosos} salió más de lo que entró`
-          }
-        />
-      </div>
+      {/* 1 · Lo que entró, lo que salió y la merma del conjunto — plegables
+          (Brandon 05-10); «Actualizar» sube a la misma fila. */}
+      <CtpKpisPlegables
+        claveMemoria="ctp-reprocesos"
+        resumen={`${fmtM3(resumen.entro)} m³ entró · ${fmtM3(resumen.salio)} m³ salió${resumen.mermaPct != null ? ` · merma ${resumen.mermaPct} %` : ""}${resumen.noHabituales + resumen.sospechosos > 0 ? ` · ${resumen.noHabituales + resumen.sospechosos} por explicar` : ""}`}
+        acciones={
+          <button
+            type="button"
+            onClick={() => void cargar()}
+            className="inline-flex h-12 items-center gap-1 rounded-2xl border-[1.5px] border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+          >
+            <RefreshCw className="h-4 w-4" aria-hidden /> Actualizar
+          </button>
+        }
+        tarjetas={[
+          <StatCard key="0"
+            label="Volvió a la sierra"
+            value={`${fmtM3(resumen.entro)} m³`}
+            icon={Scissors}
+            subValue={`${resumen.cuantos} ${resumen.cuantos === 1 ? "reproceso" : "reprocesos"} · ${resumen.especies.join(" · ") || "sin especie"}`}
+          />,
+          <StatCard key="1"
+            label="Salió del reproceso"
+            value={`${fmtM3(resumen.salio)} m³`}
+            subValue="Lo que declaró la corrida nueva"
+          />,
+          <StatCard key="2"
+            label="Merma de aserrío"
+            value={`${fmtM3(resumen.mermaM3)} m³`}
+            /* Sobre 40 % ya no es merma de corte: es un asiento para mirar. El
+               umbral se dice en el subtítulo para que no sea un color mudo. */
+            emphasis={resumen.mermaPct != null && resumen.mermaPct > 40 ? "warning" : "neutral"}
+            subValue={
+              resumen.mermaPct != null
+                ? `${resumen.mermaPct} % de lo que entró${resumen.mermaPct > 40 ? " — alto para un reaserrado" : ""}`
+                : "sin base para el %"
+            }
+          />,
+          <StatCard key="3"
+            label="Hay que explicarlos"
+            value={String(resumen.noHabituales + resumen.sospechosos)}
+            emphasis={resumen.noHabituales + resumen.sospechosos > 0 ? "warning" : "success"}
+            subValue={
+              resumen.noHabituales + resumen.sospechosos === 0
+                ? "todas las conversiones son de las habituales"
+                : `${resumen.noHabituales} fuera de lo habitual · ${resumen.sospechosos} salió más de lo que entró`
+            }
+          />
+        ]}
+      />
 
       {/* 2 · Qué se convirtió en qué, sumado. Lo raro primero. */}
       <div className="overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)]">
@@ -177,13 +192,6 @@ export default function CtpReprocesosDeclarados({ period }: { period: CtpPeriod 
           <span className="text-xs text-[var(--text-tertiary)]">
             {pares.length} {pares.length === 1 ? "conversión" : "conversiones"} distintas
           </span>
-          <button
-            type="button"
-            onClick={() => void cargar()}
-            className="ml-auto inline-flex items-center gap-1 rounded-lg border border-[var(--rule-base)] px-2 py-1 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
-          >
-            <RefreshCw className="h-3.5 w-3.5" aria-hidden /> Actualizar
-          </button>
         </div>
         <div className="overflow-x-auto px-3 pb-3">
           <table className="w-full">

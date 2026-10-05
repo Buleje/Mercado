@@ -24,7 +24,9 @@ import {
 } from "@/lib/forestal/trozas-patio";
 import { FiltroColumnaMulti, type FacetaOpcion } from "@/components/admin/shared/filtros-columna";
 import { EnOrden, BotonRestablecerColumnas, useOrdenColumnas } from "@/components/admin/shared/columnas-ordenables";
+import { medidasDePieza } from "@/lib/forestal/trozas-patio-medidas";
 import { claseDias, n, NUM, tituloDias } from "./ctp-trozas-lista-shared";
+import { BotonAnotarMedidas, ValorMedida } from "./ctp-trozas-medidas-ui";
 import { puntoDeTono } from "./ctp-trozas-ui";
 import EspecieFoto from "./EspecieFoto";
 import type { UbicacionDeCarga } from "./hooks/use-planta-ubicacion";
@@ -37,8 +39,11 @@ const TH = "align-top";
 
 /** Las columnas que se arrastran (Brandon, 2026-09-26). La casilla de elegir
  *  queda fija: no es un dato de la pieza. */
+/* D1 y D2 en columnas propias (Brandon 05-10): «64 · 64» en una sola celda
+   no se podía leer de un vistazo ni ordenar en la cabeza. `fusionarOrden`
+   descarta la vieja «medidas» de un orden guardado y suma las nuevas. */
 const ORDEN_TROZAS_DEFECTO = [
-  "codigo", "especie", "estado", "parada", "medidas", "largo", "volumen", "guia",
+  "codigo", "especie", "estado", "parada", "d1", "d2", "largo", "volumen", "guia",
 ] as const;
 
 export interface CtpTrozasTablaProps {
@@ -50,6 +55,8 @@ export interface CtpTrozasTablaProps {
   onElegirTodas: () => void;
   onAlternar: (id: string) => void;
   onVerFicha: (id: string) => void;
+  /** Abre la planilla «Anotar D1 y D2» con esta pieza primero. */
+  onAnotar: (id: string) => void;
   hoy: Date;
   canchas: Record<string, UbicacionDeCarga>;
   fotosEspecie: Map<string, FotoEspecie>;
@@ -70,7 +77,7 @@ export interface CtpTrozasTablaProps {
 }
 
 export default function CtpTrozasTabla({
-  visibles, elegidas, apartables, todasElegidas, onElegirTodas, onAlternar, onVerFicha,
+  visibles, elegidas, apartables, todasElegidas, onElegirTodas, onAlternar, onVerFicha, onAnotar,
   hoy, canchas, fotosEspecie,
   especie, onEspecie, especiesFaceta, estadoFiltro, onEstadoFiltro, estadosFaceta,
   guia, onGuia, guiasFaceta, titulo, onTitulo, titulosFaceta, altoClase,
@@ -87,7 +94,9 @@ export default function CtpTrozasTabla({
         /* Una sola caja para los dos ejes: `DataTable` ya trae la suya, y
            envolverla en otra deja el `<thead>` pegado a la que no scrollea. */
         wrapperClassName={`hidden rounded-none border-0 md:block ${altoClase}`}
-        className="w-full text-sm [&_thead_th]:shadow-[inset_0_-1px_0_var(--rule-base)]"
+        /* `px-2` en vez del `px-3` del DS: con D1 y D2 en columnas propias la
+           tabla pasaba la caja por 86 px a 1280 y la guía quedaba cortada. */
+        className="w-full text-sm [&_tbody_td]:px-2! [&_thead_th]:px-2! [&_thead_th]:shadow-[inset_0_-1px_0_var(--rule-base)]"
       >
         <thead ref={orden.refCabecera}>
           <tr>
@@ -129,9 +138,10 @@ export default function CtpTrozasTabla({
                 parada: (
                   <th data-col="parada" className={`${TH} text-right`} title="Días que lleva parada en el patio">Parada</th>
                 ),
-                medidas: <th data-col="medidas" className={`${TH} text-right`}>D1 · D2 (cm)</th>,
+                d1: <th data-col="d1" className={`${TH} text-right`} title="Diámetro 1 en cm. Una marca P/R/Ox dice que no vino de la guía">D1 (cm)</th>,
+                d2: <th data-col="d2" className={`${TH} text-right`} title="Diámetro 2 en cm">D2 (cm)</th>,
                 largo: <th data-col="largo" className={`${TH} text-right`}>Largo (m)</th>,
-                volumen: <th data-col="volumen" className={`${TH} text-right`}>Volumen</th>,
+                volumen: <th data-col="volumen" className={`${TH} text-right`}>Vol. (m³)</th>,
                 /* Dos filtros en una columna porque son dos preguntas del mismo eje:
                    «esta guía» y «este título habilitante». El de título ofrece además
                    «Sin título declarado», que es como se encuentran las piezas sin
@@ -142,10 +152,10 @@ export default function CtpTrozasTabla({
                     {/* Lado a lado y no apilados: apilados hacían esta columna el doble
                         de alta que las demás y descuadraban la cabecera entera. */}
                     <div className="flex flex-wrap gap-1">
-                      <span className="min-w-[8rem] flex-1">
+                      <span className="min-w-[6.5rem] flex-1">
                         <FiltroColumnaMulti label="Guía" value={guia} options={guiasFaceta} onChange={onGuia} placeholder="Guía" />
                       </span>
-                      <span className="min-w-[8rem] flex-1">
+                      <span className="min-w-[6.5rem] flex-1">
                         <FiltroColumnaMulti
                           label="Título habilitante"
                           value={titulo}
@@ -168,6 +178,8 @@ export default function CtpTrozasTabla({
           const m = ESTADO_META[e];
           const d = diasParada(t, hoy);
           const puedeApartarse = e === "libre";
+          const md = medidasDePieza(t);
+          const cancha = canchas[t.woodEntryId]?.nombre;
           return (
             <tr
               key={t.id}
@@ -200,7 +212,7 @@ export default function CtpTrozasTabla({
                 orden={orden.orden}
                 celdas={{
                   codigo: (
-                    <td>
+                    <td className="whitespace-nowrap">
                       <span className="block font-mono font-bold text-[var(--text-primary)]">{t.codificacion ?? t.codigoPlanta ?? "—"}</span>
                       {/* El código de planta sólo cuando DIFIERE del del bosque: en el
                           tenant real son el mismo número, y cada fila pagaba el doble
@@ -211,26 +223,30 @@ export default function CtpTrozasTabla({
                     </td>
                   ),
                   especie: (
-                    <td>
+                    <td className="whitespace-nowrap">
                       <span className="flex items-center gap-2 text-[var(--text-secondary)]">
-                        <EspecieFoto especie={t.especieComun} indice={fotosEspecie} size={24} />
+                        <EspecieFoto especie={t.especieComun} indice={fotosEspecie} size={20} />
                         {t.especieComun ?? "—"}
                       </span>
                     </td>
                   ),
                   estado: (
-                    <td>
+                    /* Dos renglones como máximo: el estado, y debajo su lote y su
+                       cancha en UNA línea (antes eran tres renglones y cada fila
+                       pagaba 67 px). */
+                    <td className="whitespace-nowrap">
                       <span className="flex items-center gap-1.5" title={m.hint}>
                         <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: puntoDeTono(m.tono) }} aria-hidden="true" />
                         <span className="text-xs font-bold text-[var(--text-secondary)]">{m.label}</span>
                       </span>
-                      {t.loteAserrioCode && <span className="ml-3.5 block font-mono text-[length:var(--ts-2xs)] leading-tight text-[var(--text-secondary)]">{t.loteAserrioCode}</span>}
-                      {canchas[t.woodEntryId] && (
+                      {(t.loteAserrioCode || cancha) && (
                         <span
-                          className="ml-3.5 block truncate text-[length:var(--ts-2xs)] leading-tight text-[var(--text-secondary)]"
-                          title="Dónde está apilada su carga en el mapa de planta"
+                          className="ml-3.5 block max-w-[9rem] truncate text-[length:var(--ts-2xs)] leading-tight text-[var(--text-secondary)]"
+                          title={cancha ? `Su carga está apilada en ${cancha} (mapa de planta)` : undefined}
                         >
-                          en {canchas[t.woodEntryId].nombre}
+                          {t.loteAserrioCode && <span className="font-mono">{t.loteAserrioCode}</span>}
+                          {t.loteAserrioCode && cancha && " · "}
+                          {cancha && `en ${cancha}`}
                         </span>
                       )}
                     </td>
@@ -242,13 +258,24 @@ export default function CtpTrozasTabla({
                       </span>
                     </td>
                   ),
-                  medidas: <td className={`${NUM} text-[var(--text-secondary)]`}>{n(t.d1Cm, 0)} · {n(t.d2Cm, 0)}</td>,
+                  /* Si no hay D1 en NINGUNA fuente, la celda ofrece anotarlo en vez de
+                     un «—» mudo: el dato está en papel o en la cinta, no acá. */
+                  d1: (
+                    <td className={`${NUM} text-[var(--text-secondary)]`} onClick={md.d1 == null ? (ev) => ev.stopPropagation() : undefined}>
+                      {md.d1 == null ? <BotonAnotarMedidas onClick={() => onAnotar(t.id)} /> : <ValorMedida v={md.d1} fuente={md.fuente} />}
+                    </td>
+                  ),
+                  d2: (
+                    <td className={`${NUM} text-[var(--text-secondary)]`}>
+                      <ValorMedida v={md.d2} fuente={md.fuente} />
+                    </td>
+                  ),
                   largo: <td className={`${NUM} text-[var(--text-secondary)]`}>{n(t.largoM)}</td>,
-                  volumen: <td className={`${NUM} font-bold text-[var(--text-primary)]`}>{t.volumenM3 == null ? "—" : `${fmtM3(t.volumenM3)} m³`}</td>,
+                  volumen: <td className={`${NUM} whitespace-nowrap font-bold text-[var(--text-primary)]`}>{t.volumenM3 == null ? "—" : fmtM3(t.volumenM3)}</td>,
                   guia: (
                     <td>
-                      <span className="block font-mono text-xs leading-tight text-[var(--text-secondary)]">{t.gtfNumber ?? "—"}</span>
-                      <span className="block truncate text-[length:var(--ts-2xs)] leading-tight text-[var(--text-secondary)]">{t.permiso ?? t.proveedor ?? ""}</span>
+                      <span className="block whitespace-nowrap font-mono text-xs leading-tight text-[var(--text-secondary)]">{t.gtfNumber ?? "—"}</span>
+                      <span className="block max-w-[13rem] truncate text-[length:var(--ts-2xs)] leading-tight text-[var(--text-secondary)]" title={t.permiso ?? t.proveedor ?? undefined}>{t.permiso ?? t.proveedor ?? ""}</span>
                     </td>
                   ),
                 }}

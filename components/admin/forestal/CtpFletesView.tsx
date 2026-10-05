@@ -35,7 +35,7 @@ import {
 import CtpFleteModal from "./CtpFleteModal";
 import CtpFletesCandidatosBanner from "./CtpFletesCandidatosBanner";
 import CtpCuentaCorriente from "./CtpCuentaCorriente";
-import { Btn, IconAction, TablaSkeleton, VistaHeader } from "./ctp-shared";
+import { Btn, IconAction, TablaSkeleton, VistaHeader, useKpisPlegables } from "./ctp-shared";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { formatCurrency, formatDateShort, formatNumber } from "@/lib/format";
 
@@ -102,57 +102,70 @@ export default function CtpFletesView({ period }: { period: CtpPeriod }) {
 
   const progreso = colaInfo ? { actual: colaInfo.total - cola.length, total: colaInfo.total, grupo: colaInfo.nombre } : undefined;
 
+  /* Los cuatro indicadores del gasto, plegables (Brandon 05-10): el botón va en
+     la fila del título y el titular viaja adentro. */
+  const kpis = useKpisPlegables({
+    claveMemoria: "ctp-fletes",
+    resumen: `${soles(resumen.gastoCtp)} de gasto · ${soles(resumen.pendiente)} pendiente${resumen.costoPorM3 == null ? "" : ` · ${soles(resumen.costoPorM3)}/m³`}${resumen.sinMonto > 0 ? ` · ${resumen.sinMonto} sin monto` : ""}`,
+    tarjetas: [
+            <StatCard
+              key="gasto"
+              density="compact"
+              label="Gasto del CTP"
+              value={soles(resumen.gastoCtp)}
+              subValue={`${resumen.viajesCtp} de ${resumen.viajes} viaje${resumen.viajes === 1 ? "" : "s"} salen de su caja`}
+              icon={Coins}
+              emphasis="neutral"
+            />,
+            <StatCard
+              key="pendiente"
+              density="compact"
+              label="Pendiente de pago"
+              value={soles(resumen.pendiente)}
+              subValue={resumen.pendiente > 0 ? "Deuda con transportistas" : "Todo saldado"}
+              icon={Wallet}
+              emphasis={resumen.pendiente > 0 ? "warning" : "success"}
+            />,
+            <StatCard
+              key="m3"
+              density="compact"
+              label="Costo por m³"
+              value={resumen.costoPorM3 == null ? "—" : soles(resumen.costoPorM3)}
+              subValue={
+                resumen.costoPorM3 == null
+                  ? "Falta monto o volumen"
+                  : `ponderado · ${fmtM3(Number(resumen.volumen))} m³ movidos`
+              }
+              icon={Truck}
+              emphasis="success"
+            />,
+            <StatCard
+              key="sinmonto"
+              density="compact"
+              label="Sin monto"
+              value={String(resumen.sinMonto)}
+              subValue={resumen.sinMonto > 0 ? "No entran en los promedios" : "Todos con precio cerrado"}
+              icon={Coins}
+              emphasis={resumen.sinMonto > 0 ? "warning" : "neutral"}
+            />,
+    ],
+  });
+
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard
-          density="compact"
-          label="Gasto del CTP"
-          value={soles(resumen.gastoCtp)}
-          subValue={`${resumen.viajesCtp} de ${resumen.viajes} viaje${resumen.viajes === 1 ? "" : "s"} salen de su caja`}
-          icon={Coins}
-          emphasis="neutral"
-        />
-        <StatCard
-          density="compact"
-          label="Pendiente de pago"
-          value={soles(resumen.pendiente)}
-          subValue={resumen.pendiente > 0 ? "Deuda con transportistas" : "Todo saldado"}
-          icon={Wallet}
-          emphasis={resumen.pendiente > 0 ? "warning" : "success"}
-        />
-        <StatCard
-          density="compact"
-          label="Costo por m³"
-          value={resumen.costoPorM3 == null ? "—" : soles(resumen.costoPorM3)}
-          subValue={
-            resumen.costoPorM3 == null
-              ? "Falta monto o volumen"
-              : `ponderado · ${fmtM3(Number(resumen.volumen))} m³ movidos`
-          }
-          icon={Truck}
-          emphasis="success"
-        />
-        <StatCard
-          density="compact"
-          label="Sin monto"
-          value={String(resumen.sinMonto)}
-          subValue={resumen.sinMonto > 0 ? "No entran en los promedios" : "Todos con precio cerrado"}
-          icon={Coins}
-          emphasis={resumen.sinMonto > 0 ? "warning" : "neutral"}
-        />
-      </div>
-
       <VistaHeader
         titulo="Fletes"
         meta={period.label}
         hint="El viaje que trae la madera y el que se lleva el producto. Un flete sin monto no vale 0: queda pendiente de cerrar."
       >
+        {kpis.boton}
         <Btn size="sm" variant="primary" onClick={() => abrirIndividual({ flete: null })}>
           <Plus className="h-4 w-4" />
           Anotar viaje
         </Btn>
       </VistaHeader>
+
+      {kpis.panel}
 
       <div className="flex flex-wrap gap-1.5">
         {(

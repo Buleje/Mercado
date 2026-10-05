@@ -23,7 +23,7 @@ import {
   type EstadoGuia,
   type GuiaEmitida,
 } from "@/lib/forestal/guias-emitidas";
-import { Btn, I, TablaSkeleton, VistaHeader } from "./ctp-shared";
+import { Btn, I, TablaSkeleton, VistaHeader, useKpisPlegables } from "./ctp-shared";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { formatDateShort } from "@/lib/format";
 
@@ -122,20 +122,10 @@ export default function CtpGuiasEmitidasView({
     return filtrarGuias(base, q);
   }, [delFiltro, q, soloIncompletas]);
 
-  return (
-    <div className="space-y-3">
-      {/*
-        Los cuatro conteos de calidad SÓLO cuando hay guías.
-
-        Con el período en cero decían «todas completas», «todas verificadas»,
-        «todas con origen declarado»: cuatro tarjetas felicitando por un
-        conjunto vacío. No es un cero neutro como el de un tramo de antigüedad
-        —es una afirmación FALSA sobre documentos que se presentan ante SERFOR—
-        y encima repetía lo que el estado vacío de abajo ya dice mejor
-        («Todavía no se emitió ninguna guía»), con el botón para ir a Despacho.
-      */}
-      {/* Los filtros, pegados a las cifras que cambian (ADR-400). */}
-      <CtpKpiFiltros
+  /* Los filtros y las cifras, plegables (Brandon 05-10): el botón va en la fila
+     del título; con el período en cero queda sólo la tarjeta del total. */
+  const filtros = (
+    <CtpKpiFiltros
         campos={[
           {
             key: "especie",
@@ -175,52 +165,74 @@ export default function CtpGuiasEmitidasView({
             : null
         }
       />
+  );
+  const kpis = useKpisPlegables({
+    claveMemoria: "ctp-guias",
+    filtros,
+    filtrosActivos: [especie, producto, destino].filter((v) => v.length > 0).length,
+    resumen:
+      resumen.total === 0
+        ? "Sin guías emitidas en el período"
+        : `${resumen.total} guía${resumen.total === 1 ? "" : "s"} · ${resumen.incompletas} a medio llenar · ${resumen.sinVerificar} sin verificar${resumen.sinOrigen > 0 ? ` · ${resumen.sinOrigen} sin origen` : ""}`,
+    tarjetas: [
+        <StatCard key="total" density="compact" label="Guías emitidas" value={String(resumen.total)} subValue={period.label} icon={FileText} emphasis="neutral" />,
+      ...(resumen.total > 0
+        ? [
+          <StatCard key="listas"
+            density="compact"
+            label="Listas para imprimir"
+            value={String(resumen.completas)}
+            subValue={resumen.completas === resumen.total - resumen.anuladas ? "todas completas" : "con todos sus datos"}
+            icon={Check}
+            emphasis="success"
+          />,
+          <StatCard key="medio"
+            density="compact"
+            label="A medio llenar"
+            value={String(resumen.incompletas)}
+            subValue={resumen.incompletas > 0 ? "no se pueden imprimir así" : "ninguna pendiente"}
+            icon={AlertTriangle}
+            emphasis={resumen.incompletas > 0 ? "warning" : "neutral"}
+          />,
+          <StatCard key="verificar"
+            density="compact"
+            label="Sin verificar en SERFOR"
+            value={String(resumen.sinVerificar)}
+            subValue={resumen.sinVerificar > 0 ? "lo primero que mira un control" : "todas verificadas"}
+            icon={AlertTriangle}
+            emphasis={resumen.sinVerificar > 0 ? "warning" : "success"}
+          />,
+          <StatCard key="origen"
+            density="compact"
+            label="Amparan madera sin origen"
+            value={String(resumen.sinOrigen)}
+            subValue={resumen.sinOrigen > 0 ? "el documento ya salió" : "todas con origen declarado"}
+            icon={AlertTriangle}
+            emphasis={resumen.sinOrigen > 0 ? "warning" : "success"}
+          />,
+          ]
+        : []),
+    ],
+  });
 
-      <div className={`grid grid-cols-2 gap-3 ${resumen.total > 0 ? "lg:grid-cols-5" : ""}`}>
-        <StatCard density="compact" label="Guías emitidas" value={String(resumen.total)} subValue={period.label} icon={FileText} emphasis="neutral" />
-        {resumen.total > 0 && (
-          <>
-        <StatCard
-          density="compact"
-          label="Listas para imprimir"
-          value={String(resumen.completas)}
-          subValue={resumen.completas === resumen.total - resumen.anuladas ? "todas completas" : "con todos sus datos"}
-          icon={Check}
-          emphasis="success"
-        />
-        <StatCard
-          density="compact"
-          label="A medio llenar"
-          value={String(resumen.incompletas)}
-          subValue={resumen.incompletas > 0 ? "no se pueden imprimir así" : "ninguna pendiente"}
-          icon={AlertTriangle}
-          emphasis={resumen.incompletas > 0 ? "warning" : "neutral"}
-        />
-        <StatCard
-          density="compact"
-          label="Sin verificar en SERFOR"
-          value={String(resumen.sinVerificar)}
-          subValue={resumen.sinVerificar > 0 ? "lo primero que mira un control" : "todas verificadas"}
-          icon={AlertTriangle}
-          emphasis={resumen.sinVerificar > 0 ? "warning" : "success"}
-        />
-        <StatCard
-          density="compact"
-          label="Amparan madera sin origen"
-          value={String(resumen.sinOrigen)}
-          subValue={resumen.sinOrigen > 0 ? "el documento ya salió" : "todas con origen declarado"}
-          icon={AlertTriangle}
-          emphasis={resumen.sinOrigen > 0 ? "warning" : "success"}
-        />
-          </>
-        )}
-      </div>
+  return (
+    <div className="space-y-3">
+      {/*
+        Los cuatro conteos de calidad SÓLO cuando hay guías.
 
+        Con el período en cero decían «todas completas», «todas verificadas»,
+        «todas con origen declarado»: cuatro tarjetas felicitando por un
+        conjunto vacío. No es un cero neutro como el de un tramo de antigüedad
+        —es una afirmación FALSA sobre documentos que se presentan ante SERFOR—
+        y encima repetía lo que el estado vacío de abajo ya dice mejor
+        («Todavía no se emitió ninguna guía»), con el botón para ir a Despacho.
+      */}
       <VistaHeader
         titulo="Guías emitidas"
         meta={`${visibles.length} de ${guias.length}`}
         hint="Las GTF de salida del CTP. Cada fila es un despacho: para imprimir o completar, se abre desde Despacho."
       >
+        {kpis.boton}
         {onAbrirDespacho && (
           <Btn size="sm" variant="secondary" onClick={onAbrirDespacho}>
             <FileText className="h-4 w-4" />
@@ -228,6 +240,8 @@ export default function CtpGuiasEmitidasView({
           </Btn>
         )}
       </VistaHeader>
+
+      {kpis.panel}
 
       {repetidos.length > 0 && (
         <p className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] p-3 text-sm font-medium text-[var(--data-warning-700)]">

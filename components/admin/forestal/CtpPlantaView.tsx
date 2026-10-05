@@ -29,7 +29,7 @@ import CtpPlantaCroquisFicha from "./CtpPlantaCroquisFicha";
 import CtpPlantaPanel from "./CtpPlantaPanel";
 import CtpPlantaEspecies from "./CtpPlantaEspecies";
 import CtpPlantaZonas from "./CtpPlantaZonas";
-import CtpPlantaIndicadores from "./CtpPlantaIndicadores";
+import usePlantaIndicadores from "./CtpPlantaIndicadores";
 import CtpDespachoGuiaModal from "./CtpDespachoGuiaModal";
 import CtpPlantaReservaModal from "./CtpPlantaReservaModal";
 import CtpDocumentoVisor from "./CtpDocumentoVisor";
@@ -146,9 +146,12 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
   ) : null;
   const decidiendo = !pref && !datos.croquisSabido && loading;
 
+  const indicadores = usePlantaIndicadores({ zonas: zonasActivas.length, areaTotal: u.areaTotal, saldos, period });
+
   return (
     <div className="space-y-3">
       <div className="flex items-start justify-between gap-3">
+        {indicadores.boton}
         <p className="min-w-0 flex-1 truncate text-sm text-[var(--text-tertiary)]" title="El croquis o el satélite muestran dónde está la madera; el Libro, cuánta se mueve.">
           <strong className="text-[var(--text-secondary)]">Mapa de tu aserradero.</strong> El mapa dice <em>dónde</em> está la madera; el Libro, <em>cuánta</em>.
         </p>
@@ -188,7 +191,7 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
 
       {error && <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>Error:</strong> {error}</div></div>}
 
-      <CtpPlantaIndicadores zonas={zonasActivas.length} areaTotal={u.areaTotal} saldos={saldos} period={period} />
+      {indicadores.panel}
 
       {/* Mapa + barra lateral: la lista de lo que hay para ubicar (o la ficha de
           lo tocado en el croquis) vive AL LADO del mapa, no debajo. Debajo de

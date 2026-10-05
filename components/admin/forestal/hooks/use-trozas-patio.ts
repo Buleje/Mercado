@@ -29,6 +29,16 @@ export interface TrozaPatioAPI extends TrozaPatio {
   resolucion: string | null;
   guiaRecepcionada: boolean;
   loteAserrioId: string | null;
+  /* Las otras fuentes de las puntas (`medidasDePieza`) y lo que cuentan los
+     indicadores nuevos del patio. Ya venían en el JSON (`trozasComoConsumibles`);
+     faltaba declararlas para que la pantalla las lea. */
+  d1d2MedidoEnPlanta?: boolean;
+  recibidaD1Cm?: number | null;
+  recibidaD2Cm?: number | null;
+  oxD1Pulg?: number | null;
+  oxD2Pulg?: number | null;
+  oxPt?: number | null;
+  etiquetadaEn?: string | null;
 }
 
 export interface PatioMeta {

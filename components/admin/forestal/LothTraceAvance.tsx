@@ -20,8 +20,9 @@
  */
 
 import { useId, type ReactNode } from "react";
+import { useLocalStorage } from "@/hooks/use-local-storage";
 import { CardTitle, Kicker } from "@buleje/design-system";
-import { Calculator, ChevronDown } from "@buleje/design-system/icons";
+import { BarChart3, Calculator, ChevronDown } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import type { ResumenTrace } from "@/lib/forestal/loth-trace-tabla";
 import { avisosDelAvance, pctTaladoDelCenso, type PasoAvance } from "@/lib/forestal/loth-trace-grupos";
@@ -61,6 +62,8 @@ export default function LothTraceAvance({
   cupoFilas?: readonly CupoEspecie[];
 }) {
   const id = useId();
+  /* Los cuatro pasos se pliegan y se recuerda (Brandon 05-10); cerrados dicen sus cifras en el botón. */
+  const [pasosAbiertos, setPasosAbiertos] = useLocalStorage<boolean>("loth-trace:avance-pasos", false);
   const hayCenso = r.censados > 0;
   const m = r.m3;
   const pct = pctTaladoDelCenso(r);
@@ -83,21 +86,44 @@ export default function LothTraceAvance({
           />
           {alcance && <span className="text-sm text-[var(--text-tertiary)]">{alcance}</span>}
         </div>
+        <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-2">
+        <button
+          type="button"
+          onClick={() => setPasosAbiertos(!pasosAbiertos)}
+          aria-expanded={pasosAbiertos}
+          aria-controls={`${id}-pasos`}
+          title={pasosAbiertos ? "Ocultar los indicadores" : "Ver los indicadores"}
+          className="inline-flex h-10 min-w-0 max-w-full shrink items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
+        >
+          <BarChart3 className="h-4 w-4 shrink-0" aria-hidden="true" />
+          <span className="shrink-0">Indicadores</span>
+          {!pasosAbiertos && (
+            <span className="min-w-0 truncate font-mono text-sm font-normal tabular-nums">
+              {hayCenso ? `${formatNumber(r.censados)} censados · ` : ""}{formatNumber(r.talados)} talados · {formatNumber(r.trozados)} trozados · {formatNumber(r.conSalida)} salieron
+            </span>
+          )}
+          {!pasosAbiertos && paso && (
+            <span className="shrink-0 rounded-full bg-[var(--accent-muted)] px-2 py-0.5 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">filtra: {paso}</span>
+          )}
+          <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${pasosAbiertos ? "rotate-180" : ""}`} aria-hidden="true" />
+        </button>
         <button
           type="button"
           onClick={() => onCuentas(!cuentasAbiertas)}
           aria-expanded={cuentasAbiertas}
           aria-controls={`${id}-cuentas`}
           title={cuentasAbiertas ? "Oculta las cuentas. Se recuerda en este navegador." : "Cómo cierran los m³ entre un paso y el siguiente"}
-          className="ml-auto inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
+          className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
         >
           <Calculator className="h-4 w-4" aria-hidden="true" />
           Cuentas
           <ChevronDown className={`h-4 w-4 transition-transform ${cuentasAbiertas ? "rotate-180" : ""}`} aria-hidden="true" />
         </button>
+        </div>
       </div>
 
       <div className="space-y-3 px-4 pb-4 pt-3">
+        <div id={`${id}-pasos`} hidden={!pasosAbiertos} className="space-y-3">
         <ol className="grid grid-cols-2 gap-2 lg:grid-cols-4" aria-label="Pasos del permiso">
           <Paso n={1} label="Censo" valor={hayCenso ? r.censados : null} m3={hayCenso ? m.censo : null} activo={paso === "censo"} onClick={() => onPaso("censo")} disabled={!hayCenso}>
             {hayCenso ? `${formatNumber(r.enPie)} en pie` : "sin censo cargado"}
@@ -125,6 +151,7 @@ export default function LothTraceAvance({
             </div>
           </div>
         )}
+        </div>
 
         {avisos.length > 0 && (
           <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-[var(--text-secondary)]" aria-label="Avisos" data-avisos>

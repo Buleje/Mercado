@@ -14,7 +14,7 @@
  */
 
 import { CardTitle } from "@buleje/design-system";
-import { Download, Search } from "@buleje/design-system/icons";
+import { Download, Ruler, Search } from "@buleje/design-system/icons";
 import { SIN_TITULO, type OrdenTrozas } from "@/lib/forestal/trozas-patio";
 import { CampoDeFiltro, type FacetaOpcion } from "./ctp-filtros-panel";
 import { ORDENES } from "./ctp-trozas-lista-shared";
@@ -34,6 +34,9 @@ export interface CtpTrozasBarraProps {
   piezasTotales: number;
   m3Filtrados: number;
   onExportar: () => void;
+  /** Piezas de la lista sin sus dos puntas: el botón aparece sólo si hay. */
+  sinMedidas: number;
+  onAnotarMedidas: () => void;
   especie: readonly string[];
   onEspecie: (v: string[]) => void;
   especiesFaceta: FacetaOpcion[];
@@ -47,6 +50,7 @@ export interface CtpTrozasBarraProps {
 
 export default function CtpTrozasBarra({
   texto, onTexto, orden, onOrden, leyendo, piezasFiltradas, piezasTotales, m3Filtrados, onExportar,
+  sinMedidas, onAnotarMedidas,
   especie, onEspecie, especiesFaceta, titulo, onTitulo, titulosFaceta, guia, onGuia, guiasFaceta,
 }: CtpTrozasBarraProps) {
   return (
@@ -93,6 +97,17 @@ export default function CtpTrozasBarra({
         >
           {ORDENES.map((o) => <option key={o.v} value={o.v}>{o.label}</option>)}
         </select>
+        {sinMedidas > 0 && (
+          <button
+            type="button"
+            onClick={onAnotarMedidas}
+            title="Piezas de esta lista sin D1/D2 en ninguna fuente: ábrelas en una planilla y anótalas de una"
+            className={`${CAMPO} inline-flex items-center gap-1.5 border-dashed px-3 font-semibold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]`}
+          >
+            <Ruler className="h-4 w-4" aria-hidden="true" /> Anotar D1/D2
+            <span className="rounded-full bg-[var(--data-warning-500)]/18 px-1.5 font-mono text-xs font-bold tabular-nums text-[var(--text-primary)]">{sinMedidas}</span>
+          </button>
+        )}
         <button
           type="button" onClick={onExportar} disabled={piezasFiltradas === 0}
           className={`${CAMPO} inline-flex items-center gap-1.5 px-3 font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50`}

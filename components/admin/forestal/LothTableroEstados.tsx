@@ -8,6 +8,7 @@
 
 import { CardTitle } from "@buleje/design-system";
 import { Clock } from "@buleje/design-system/icons";
+import { useKpisPlegables } from "./kpis-plegables";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { TONO_ESTADO } from "./loth-tablero-estilos";
 import {
@@ -42,13 +43,14 @@ export default function LothTableroEstados({
     viejas.criticas > 0
       ? "border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/12"
       : "border-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/12";
-  return (
-    <section className="space-y-2">
-      <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
-        Estado de las trozas
-      </CardTitle>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
-        {resumen.map((r) => {
+  /* Las seis cifras se pliegan (Brandon 05-10); cada una sigue siendo el filtro de su estado. */
+  const total = resumen.reduce((a, r) => a + r.n, 0);
+  const { boton, panel } = useKpisPlegables({
+    claveMemoria: "loth-tablero-estados",
+    resumen: `${total} ${total === 1 ? "troza" : "trozas"}${viejas.n > 0 ? ` · ${viejas.n} con +${UMBRAL_PATIO_DIAS.atencion} días en patio` : ""}`,
+    filtrosActivos: estados.length + (soloViejas ? 1 : 0),
+    tarjetas: [
+      ...resumen.map((r) => {
           const activo = estados.includes(r.estado);
           return (
             <button
@@ -70,8 +72,9 @@ export default function LothTableroEstados({
               </span>
             </button>
           );
-        })}
+      }),
         <button
+          key="viejas"
           type="button"
           aria-pressed={soloViejas}
           title={`Trozas que siguen en el patio hace ${UMBRAL_PATIO_DIAS.atencion} días o más; en rojo las de ${UMBRAL_PATIO_DIAS.critico} o más. La madera rolliza se mancha (mancha azul) si no se mueve.`}
@@ -89,8 +92,18 @@ export default function LothTableroEstados({
           <span className="block text-xs text-[var(--text-tertiary)]">
             {fmtM3(viejas.m3)} m³{viejas.criticas > 0 && ` · ${viejas.criticas} con +${UMBRAL_PATIO_DIAS.critico}`}
           </span>
-        </button>
+        </button>,
+    ],
+  });
+  return (
+    <section className="space-y-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
+          Estado de las trozas
+        </CardTitle>
+        {boton}
       </div>
+      {panel}
     </section>
   );
 }

@@ -129,28 +129,3 @@ export function CifraPatio({
     </div>
   );
 }
-
-/**
- * Una cifra de apoyo, en una línea: el hueco de trazabilidad y el tamaño de lo
- * leído no merecen una tarjeta cada uno, pero tampoco desaparecer.
- */
-export function MicroCifra({ label, valor, nota, tono = "muted", icono: Icono, conteoId }: {
-  label: string; valor: string; nota?: string; tono?: TonoPatio; icono?: IconoDS;
-  /** Marca la cifra para poder cruzarla contra la lista (`data-conteo`). */
-  conteoId?: string;
-}) {
-  const t = TONO[tono];
-  return (
-    <span className="inline-flex items-baseline gap-1.5">
-      {Icono && <Icono className={`h-3.5 w-3.5 self-center ${t.texto}`} aria-hidden="true" />}
-      <Kicker as="span">{label}</Kicker>
-      <span
-        data-conteo={conteoId}
-        className={`font-mono text-sm font-bold tabular-nums ${tono === "muted" ? "text-[var(--text-primary)]" : t.texto}`}
-      >
-        {valor}
-      </span>
-      {nota && <span className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">{nota}</span>}
-    </span>
-  );
-}

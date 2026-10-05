@@ -44,7 +44,7 @@ import {
   type TotalesMovimiento,
 } from "@/lib/forestal/movimiento-libro";
 import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
-import { Btn, VistaHeader } from "./ctp-shared";
+import { Btn, VistaHeader, useKpisPlegables } from "./ctp-shared";
 import CtpPuestaEnMarcha from "./CtpPuestaEnMarcha";
 import { formatNumber } from "@/lib/format";
 
@@ -211,6 +211,71 @@ export default function CtpTableroControl({ period, onIr }: { period: CtpPeriod;
     [mov],
   );
 
+  /* Las cinco cifras del período, plegables (Brandon 05-10). Abiertas de
+     entrada: el tablero ES el movimiento del mes y las cifras son lo primero
+     que se mira; quien las quiera fuera de la vista las pliega y se recuerda. */
+  const kpis = useKpisPlegables({
+    claveMemoria: "ctp-tablero",
+    abiertoPorDefecto: true,
+    sinDatosAun: cargando && !mov,
+    resumen: t
+      ? `${m3(t.ingresoM3)} entró · ${m3(t.consumoM3)} a la sierra · ${t.producido.toFixed(2)} producido · ${t.despachado.toFixed(2)} despachado${t.rendimiento > 0 ? ` · rend. ${t.rendimiento.toFixed(1)}%` : ""}`
+      : undefined,
+    tarjetas: t
+      ? [
+              <Kpi
+                key="entro"
+                icon={PackageOpen}
+                label="Entró al patio"
+                valor={m3(t.ingresoM3)}
+                pie={`${formatNumber(pieTablarDe(t.ingresoM3))} pt`}
+                delta={previo ? variacionPct(t.ingresoM3, previo.ingresoM3) : null}
+                hayPrevio={previo != null}
+              />,
+              <Kpi
+                key="sierra"
+                icon={Flame}
+                label="A la sierra"
+                valor={m3(t.consumoM3)}
+                pie="materia prima consumida"
+                delta={previo ? variacionPct(t.consumoM3, previo.consumoM3) : null}
+                hayPrevio={previo != null}
+              />,
+              <Kpi
+                key="producido"
+                icon={TrendingUp}
+                label="Producido"
+                valor={t.producido.toFixed(2)}
+                pie="producto declarado"
+                delta={previo ? variacionPct(t.producido, previo.producido) : null}
+                hayPrevio={previo != null}
+              />,
+              <Kpi
+                key="despachado"
+                icon={Truck}
+                label="Despachado"
+                valor={t.despachado.toFixed(2)}
+                pie="salidas del período"
+                delta={previo ? variacionPct(t.despachado, previo.despachado) : null}
+                hayPrevio={previo != null}
+              />,
+              <Kpi
+                key="rend"
+                icon={Scale}
+                label="Rendimiento"
+                valor={t.rendimiento > 0 ? `${t.rendimiento.toFixed(1)}%` : "—"}
+                pie={
+                  t.corridasOtraUnidad > 0
+                    ? `${t.corridasOtraUnidad} corrida(s) fuera: declaran en otra unidad`
+                    : "producido ÷ consumido, sólo en m³"
+                }
+                delta={previo ? variacionPct(t.rendimiento, previo.rendimiento) : null}
+                hayPrevio={previo != null}
+              />,
+        ]
+      : [],
+  });
+
   return (
     <div className="space-y-3">
       <VistaHeader
@@ -218,6 +283,7 @@ export default function CtpTableroControl({ period, onIr }: { period: CtpPeriod;
         meta={`${ctpPeriodShortLabel(period)}${mov ? ` · ${NOMBRE_PASO[mov.paso]}` : ""}`}
         hint="Las cuatro secciones del LO-CTP en el tiempo: lo que entró, lo que fue a la sierra, lo que salió de producto y lo que se despachó. Mismos números que el balance de Saldos."
       >
+        {kpis.boton}
         <Btn variant="secondary" onClick={() => void cargar()} disabled={cargando}>
           <RefreshCw className={`h-4 w-4 ${cargando ? "animate-spin" : ""}`} /> Recargar
         </Btn>
@@ -262,52 +328,7 @@ export default function CtpTableroControl({ period, onIr }: { period: CtpPeriod;
         <p className="text-sm text-[var(--text-tertiary)]">Sumando el movimiento del libro…</p>
       ) : !t ? null : (
         <>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-            <Kpi
-              icon={PackageOpen}
-              label="Entró al patio"
-              valor={m3(t.ingresoM3)}
-              pie={`${formatNumber(pieTablarDe(t.ingresoM3))} pt`}
-              delta={previo ? variacionPct(t.ingresoM3, previo.ingresoM3) : null}
-              hayPrevio={previo != null}
-            />
-            <Kpi
-              icon={Flame}
-              label="A la sierra"
-              valor={m3(t.consumoM3)}
-              pie="materia prima consumida"
-              delta={previo ? variacionPct(t.consumoM3, previo.consumoM3) : null}
-              hayPrevio={previo != null}
-            />
-            <Kpi
-              icon={TrendingUp}
-              label="Producido"
-              valor={t.producido.toFixed(2)}
-              pie="producto declarado"
-              delta={previo ? variacionPct(t.producido, previo.producido) : null}
-              hayPrevio={previo != null}
-            />
-            <Kpi
-              icon={Truck}
-              label="Despachado"
-              valor={t.despachado.toFixed(2)}
-              pie="salidas del período"
-              delta={previo ? variacionPct(t.despachado, previo.despachado) : null}
-              hayPrevio={previo != null}
-            />
-            <Kpi
-              icon={Scale}
-              label="Rendimiento"
-              valor={t.rendimiento > 0 ? `${t.rendimiento.toFixed(1)}%` : "—"}
-              pie={
-                t.corridasOtraUnidad > 0
-                  ? `${t.corridasOtraUnidad} corrida(s) fuera: declaran en otra unidad`
-                  : "producido ÷ consumido, sólo en m³"
-              }
-              delta={previo ? variacionPct(t.rendimiento, previo.rendimiento) : null}
-              hayPrevio={previo != null}
-            />
-          </div>
+          {kpis.panel}
 
           <Bloque
             titulo="Flujo del libro"

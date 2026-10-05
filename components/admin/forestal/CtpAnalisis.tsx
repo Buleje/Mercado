@@ -28,7 +28,7 @@ import {
 } from "@buleje/design-system/icons";
 import { BulejeComposedChart, BulejeLineChart, BulejeDonutChart, BulejeSparkline } from "@/components/ui-system/charts";
 import { SERIES_PALETTE } from "@/components/ui-system/charts/palette";
-import { Btn } from "./ctp-shared";
+import { Btn, useKpisPlegables } from "./ctp-shared";
 import type { ReordenProyeccion, TendenciaMes } from "@/lib/db/forest-ctp.db";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 
@@ -121,28 +121,42 @@ export default function CtpAnalisis() {
     };
   }, [reordenSorted]);
 
+  /* El resumen ejecutivo, plegable (Brandon 05-10). Abierto de entrada: la vista
+     son estas cifras y el reorden; quien quiera la pantalla limpia lo pliega y
+     se recuerda. */
+  const kpis = useKpisPlegables({
+    claveMemoria: "ctp-analisis",
+    abiertoPorDefecto: true,
+    resumen: resumen
+      ? `ingresado ${n2(resumen.ingresado)} m³ · producido ${n2(resumen.producido)} · rend. ${Number(resumen.rendimiento).toFixed(1)}%`
+      : undefined,
+    tarjetas: resumen
+      ? [
+        <DeltaStat key="ing" label="Ingresado" hint={`suma últimos ${resumen.monthsRecent}m`} value={n2(resumen.ingresado)} unit="m³" icon={Layers} delta={resumen.ingresadoDelta} deltaSuffix="%" priorLabel={`${resumen.monthsPrior}m previos`} tone="directional" spark={spark.ingreso} />,
+        <DeltaStat key="prod" label="Producido" hint={`suma últimos ${resumen.monthsRecent}m`} value={n2(resumen.producido)} unit="" icon={Boxes} delta={resumen.producidoDelta} deltaSuffix="%" priorLabel={`${resumen.monthsPrior}m previos`} tone="directional" spark={spark.producido} />,
+        <DeltaStat key="rend" label="Rendimiento prom." hint={`ponderado últimos ${resumen.monthsRecent}m`} value={Number(resumen.rendimiento).toFixed(1)} unit="%" icon={Scale} delta={resumen.rendimientoDelta} deltaSuffix=" pts" priorLabel={`${resumen.monthsPrior}m previos`} tone="neutral" spark={spark.rendimiento} />,
+        ]
+      : [],
+  });
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
+        <span className="flex min-w-0 flex-wrap items-center gap-2">
         <InfoTip
           title="Análisis"
           what="Reorden predictivo (¿cuándo me quedo sin madera?) y tendencias de los últimos 6 meses."
           affects="Se deriva del libro, sin configurar nada."
         />
+        {kpis.boton}
+        </span>
         <Btn variant="secondary" size="md" onClick={() => void load()} disabled={loading} className="shrink-0"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Recargar</Btn>
       </div>
 
       {error && <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>Error:</strong> {error}</div></div>}
       {loading && !ready && <div className="p-8 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Calculando…</p></div>}
 
-      {/* Resumen ejecutivo: tramo reciente vs tramo previo (mitades del rango cargado). */}
-      {resumen && (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <DeltaStat label="Ingresado" hint={`suma últimos ${resumen.monthsRecent}m`} value={n2(resumen.ingresado)} unit="m³" icon={Layers} delta={resumen.ingresadoDelta} deltaSuffix="%" priorLabel={`${resumen.monthsPrior}m previos`} tone="directional" spark={spark.ingreso} />
-          <DeltaStat label="Producido" hint={`suma últimos ${resumen.monthsRecent}m`} value={n2(resumen.producido)} unit="" icon={Boxes} delta={resumen.producidoDelta} deltaSuffix="%" priorLabel={`${resumen.monthsPrior}m previos`} tone="directional" spark={spark.producido} />
-          <DeltaStat label="Rendimiento prom." hint={`ponderado últimos ${resumen.monthsRecent}m`} value={Number(resumen.rendimiento).toFixed(1)} unit="%" icon={Scale} delta={resumen.rendimientoDelta} deltaSuffix=" pts" priorLabel={`${resumen.monthsPrior}m previos`} tone="neutral" spark={spark.rendimiento} />
-        </div>
-      )}
+      {kpis.panel}
 
       {reorden && (
         <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">

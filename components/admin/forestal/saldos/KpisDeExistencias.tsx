@@ -41,6 +41,7 @@ import {
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
 import { formatNumber } from "@/lib/format";
 import { Derivado, Movimiento, TONO_VALOR, type Tono } from "./KpisCeldas";
+import { CtpKpisPlegables } from "../kpis-plegables";
 
 /* Volúmenes con 3 decimales, como el patio y la capacidad: el mismo m³ salía
    «80.30» acá y «80.296» en la pestaña de al lado. */
@@ -138,8 +139,9 @@ export default function KpisDeExistencias({
      normal — un hueco que se lee como una tarjeta que no cargó. */
   const hayDespachoDirecto = (mp.despachadoDirectoM3 ?? 0) > 0;
 
-  return (
+  const tarjeta = (
     <section
+      key="existencias"
       className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]"
       aria-label="Existencias del período"
     >
@@ -296,5 +298,15 @@ export default function KpisDeExistencias({
         />
       </dl>
     </section>
+  );
+
+  /* Plegable (Brandon 05-10): cerrado queda el saldo —lo que se firma— y lo que
+     entró y salió, en el botón; las dos tiras de apoyo vuelven al abrirlo. */
+  return (
+    <CtpKpisPlegables
+      claveMemoria="ctp-saldos"
+      resumen={`saldo ${m3(mp.saldoM3)} · ingresado ${m3(mp.ingresoM3)} · consumido ${m3(mp.consumidoM3)}${kpis.coberturaDias != null ? ` · ${kpis.coberturaDias} días de patio` : ""}`}
+      tarjetas={[tarjeta]}
+    />
   );
 }

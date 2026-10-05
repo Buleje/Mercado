@@ -22,13 +22,23 @@
  * Antes había dos encabezados casi iguales —«El patio, troza por troza» y «El
  * patio, pieza por pieza»— y cinco `<h3>` del mismo peso: con todo al mismo
  * nivel, nada es el título.
+ *
+ * ## Compacta (Brandon 05-10)
+ *
+ * Todo lo que no es la tabla vive en DOS renglones: la cabecera (título,
+ * «Indicadores» plegable con su titular, «Sin título declarado», conteos y
+ * actualizar) y el de buscar (escáner + «Buscar en el libro», que antes era
+ * una caja al pie). Los indicadores arrancan plegados y se recuerdan; «Sin
+ * título» es un botón con su tabla en un modal, y D1/D2 se anotan desde la
+ * tabla cuando ninguna fuente los trae.
  */
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { SectionTitle } from "@buleje/design-system";
-import { AlertTriangle, RefreshCw, Search } from "@buleje/design-system/icons";
+import { AlertTriangle, RefreshCw, Search, ShieldAlert } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
-import type { EstadoTroza } from "@/lib/forestal/trozas-patio";
+import { SIN_TITULO, type EstadoTroza } from "@/lib/forestal/trozas-patio";
+import { faltanMedidas, piezasSinTitulo } from "@/lib/forestal/trozas-patio-medidas";
 import { escribirTrozaEnUrl, trozaDeUrl } from "@/lib/forestal/ctp-troza-etiquetas";
 import CtpApartarEnLoteModal from "./CtpApartarEnLoteModal";
 import { CtpArmarLoteEscaneoSuelto } from "./CtpArmarLoteEscaneoModal";
@@ -38,7 +48,11 @@ import CtpTrozaFichaModal from "./CtpTrozaFichaModal";
 import EscanerTrozas from "./EscanerTrozas";
 import CtpTrozasBuscador from "./CtpTrozasBuscador";
 import CtpTrozasLista from "./CtpTrozasLista";
-import CtpTrozasPatio from "./CtpTrozasPatio";
+import CtpTrozasMedirModal from "./CtpTrozasMedirModal";
+import { useIndicadoresPatio } from "./CtpTrozasPatio";
+import CtpTrozasSinTituloModal from "./CtpTrozasSinTituloModal";
+import { n2 } from "./ctp-trozas-ui";
+import { usePlantaUbicacion } from "./hooks/use-planta-ubicacion";
 import { useTrozasPatio } from "./hooks/use-trozas-patio";
 
 /** El escáner de fichas no marca nada: todas se pueden volver a mirar. */
@@ -87,10 +101,29 @@ export default function CtpTrozasView() {
    * modal encima de otro es el que se monta detrás.
    */
   const [armandoCon, setArmandoCon] = useState<string | null>(null);
+  const [verSinTitulo, setVerSinTitulo] = useState(false);
+  /** La planilla «Anotar D1 y D2»: qué piezas y cuál primero. */
+  const [medir, setMedir] = useState<{ ids: string[]; inicial?: string } | null>(null);
+  const canchas = usePlantaUbicacion();
+  const hoy = useMemo(() => new Date(), [trozas]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const { boton: botonKpis, panel: panelKpis } = useIndicadoresPatio({
+    trozas, meta, cargando, estadoFiltro, onEstadoFiltro: setEstadoFiltro,
+    tramoFiltro, onTramoFiltro: setTramoFiltro, especie, guia, titulo,
+  });
+  /* Del patio ENTERO, no del recorte: es deuda de todo el libro y el botón
+     está en la cabecera de la vista, no dentro de los indicadores. */
+  const sinTitulo = useMemo(() => piezasSinTitulo(trozas), [trozas]);
+  const m3SinTitulo = sinTitulo.reduce((a, t) => a + (t.volumenM3 ?? 0), 0);
+  /* En vivo: al guardar, las anotadas salen solas de la planilla. */
+  const piezasMedir = useMemo(
+    () => (medir ? trozas.filter((t) => medir.ids.includes(t.id) && faltanMedidas(t)) : []),
+    [medir, trozas],
+  );
 
   return (
     <div data-vista-trozas className="space-y-2.5">
-      <header className="flex flex-wrap items-start justify-between gap-2">
+      <header className="flex flex-wrap items-center gap-2">
         <div className="flex min-w-0 items-center gap-1.5">
           <SectionTitle>El patio, troza por troza</SectionTitle>
           <InfoTip
@@ -99,17 +132,41 @@ export default function CtpTrozasView() {
             affects="Consumos cuenta m³ por guía; acá la unidad es la pieza."
           />
         </div>
-        <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
+        {botonKpis}
+        {/* La deuda de origen legal, a la vista aunque los indicadores estén
+            plegados; abre su tabla. Sólo cuando existe: un cero en verde sería
+            una felicitación que nadie pidió. */}
+        {sinTitulo.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setVerSinTitulo(true)}
+            title="Piezas paradas sin título habilitante: ver cuáles y de qué guía"
+            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/10 px-2.5 text-sm font-bold text-[var(--text-primary)] transition-colors hover:bg-[var(--data-warning-500)]/20"
+          >
+            <ShieldAlert className="h-4 w-4 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" aria-hidden="true" />
+            Sin título declarado
+            <span className="font-mono tabular-nums">{sinTitulo.length}</span>
+            <span className="font-mono text-xs font-normal tabular-nums text-[var(--text-secondary)]">{n2(m3SinTitulo)} m³</span>
+          </button>
+        )}
+        <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-2">
           {/* El conteo físico del patio (acta del modo patio, 2026-09-26). */}
           <CtpConteosPatio />
           <button
             type="button" onClick={() => void recargar()} disabled={cargando}
-            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:opacity-60"
+            title="Actualizar el patio" aria-label="Actualizar el patio"
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[var(--rule-base)] text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:opacity-60"
           >
-            <RefreshCw className={`h-4 w-4 ${cargando ? "animate-spin" : ""}`} /> Actualizar
+            <RefreshCw className={`h-4 w-4 ${cargando ? "animate-spin" : ""}`} />
           </button>
         </div>
       </header>
+
+      {panelKpis && (
+        <section aria-label="Indicadores del patio" className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
+          {panelKpis}
+        </section>
+      )}
 
       {error && (
         <p className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm font-bold text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
@@ -123,29 +180,42 @@ export default function CtpTrozasView() {
           entra en una línea: el problema se anuncia, pero no tapa el patio. */}
       <CtpCodigosDuplicados />
 
-      {/* Escanear = ver su ficha (Brandon, 2026-09-26): guía, permiso, m³,
-          medidas, fechas, lote y lo que pasó con ella. Sin «ya estaba»: se
-          puede volver a mirar la misma pieza cuantas veces haga falta. */}
-      <EscanerTrozas
-        trozas={trozas}
-        yaElegidas={SIN_MARCAR}
-        accion="— su ficha abierta"
-        mostrarCuenta={false}
-        onTroza={(t) => abrirFicha(t.id)}
-      />
-
-      <CtpTrozasPatio
-        trozas={trozas}
-        meta={meta}
-        cargando={cargando}
-        estadoFiltro={estadoFiltro}
-        onEstadoFiltro={setEstadoFiltro}
-        tramoFiltro={tramoFiltro}
-        onTramoFiltro={setTramoFiltro}
-        especie={especie}
-        guia={guia}
-        titulo={titulo}
-      />
+      {/* Los dos «encontrar una pieza», en el mismo renglón: el escáner abre la
+          ficha de lo que está en el patio; «Buscar en el libro» pregunta al
+          servidor (sin el tope de 5.000 y también lo ya consumido). Escanear
+          = ver su ficha (Brandon, 2026-09-26), sin «ya estaba». */}
+      <div className="flex flex-wrap items-start gap-2">
+        <EscanerTrozas
+          trozas={trozas}
+          yaElegidas={SIN_MARCAR}
+          accion="— su ficha abierta"
+          mostrarCuenta={false}
+          onTroza={(t) => abrirFicha(t.id)}
+          className="min-w-[16rem] flex-1 space-y-1 border-0 bg-transparent p-0"
+        />
+        <button
+          type="button"
+          onClick={() => setBuscadorAbierto((v) => !v)}
+          aria-expanded={buscadorAbierto}
+          title={`La consulta del fiscalizador: llega con un código del POA y pregunta con qué guía entró esa troza.${meta.truncado ? " Acá no rige el tope de 5.000 piezas." : ""}`}
+          className={`inline-flex h-12 shrink-0 items-center gap-2 rounded-2xl border px-3 text-sm font-bold transition-colors ${
+            buscadorAbierto
+              ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+              : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)]"
+          }`}
+        >
+          <Search className="h-4 w-4" aria-hidden="true" /> Buscar en el libro
+        </button>
+      </div>
+      {buscadorAbierto && (
+        <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
+          <p className="mb-2 text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">
+            La consulta del fiscalizador: llega con un código del POA y pregunta con qué guía entró esa troza.
+            {meta.truncado && " Acá no rige el tope de 5.000 piezas."}
+          </p>
+          <CtpTrozasBuscador />
+        </div>
+      )}
 
       <CtpTrozasLista
         trozas={trozas}
@@ -162,6 +232,7 @@ export default function CtpTrozasView() {
         onTitulo={setTitulo}
         onVerFicha={(id) => abrirFicha(id)}
         onApartar={setApartando}
+        onAnotar={(ids, inicial) => setMedir({ ids, inicial })}
       />
 
       {ficha && (
@@ -195,35 +266,25 @@ export default function CtpTrozasView() {
         />
       )}
 
-      {/* El buscador del fiscalizador va plegado: la lista de arriba ya busca en
-          lo que está cargado. Este pregunta al servidor, así que es el que vale
-          cuando el patio pasa el tope y también encuentra piezas de guías ya
-          consumidas hace meses. */}
-      <div className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
-        <button
-          type="button"
-          onClick={() => setBuscadorAbierto((v) => !v)}
-          aria-expanded={buscadorAbierto}
-          className="flex w-full items-center gap-2 px-3 py-2.5 text-left transition-colors hover:bg-[var(--surface-sunken)]"
-        >
-          <Search className="h-4 w-4 shrink-0 text-[var(--accent)]" />
-          <span className="min-w-0 flex-1">
-            <span className="block text-sm font-bold text-[var(--text-primary)]">Buscar una pieza en todo el libro</span>
-            <span className="block text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">
-              La consulta del fiscalizador: llega con un código del POA y pregunta con qué guía entró esa troza.
-              {meta.truncado && " Acá no rige el tope de 5.000 piezas."}
-            </span>
-          </span>
-          <span className="shrink-0 text-[length:var(--ts-2xs)] font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
-            {buscadorAbierto ? "Cerrar" : "Abrir"}
-          </span>
-        </button>
-        {buscadorAbierto && (
-          <div className="border-t border-[var(--rule-base)] p-3">
-            <CtpTrozasBuscador />
-          </div>
-        )}
-      </div>
+      {verSinTitulo && (
+        <CtpTrozasSinTituloModal
+          piezas={sinTitulo}
+          hoy={hoy}
+          canchas={canchas}
+          onClose={() => setVerSinTitulo(false)}
+          onVerFicha={abrirFicha}
+          onFiltrarTabla={() => setTitulo([SIN_TITULO])}
+          onAnotar={(id) => setMedir({ ids: sinTitulo.filter(faltanMedidas).map((t) => t.id), inicial: id })}
+        />
+      )}
+      {medir && (
+        <CtpTrozasMedirModal
+          piezas={piezasMedir}
+          inicialId={medir.inicial}
+          onClose={() => setMedir(null)}
+          onGuardado={() => void recargar()}
+        />
+      )}
     </div>
   );
 }

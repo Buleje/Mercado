@@ -24,6 +24,7 @@ import { TOLERANCIA_EXCESO_PT } from "@/lib/forestal/semaforo-permiso";
 import CtpDescontarMaderaModal from "./CtpDescontarMaderaModal";
 import CtpPermisoAvisos from "./CtpPermisoAvisos";
 import CtpPermisoPuestaAlDia from "./CtpPermisoPuestaAlDia";
+import { CtpKpisPlegables } from "./kpis-plegables";
 import { TablaPorEspecie, TablaPorTipo } from "./CtpPermisoTablas";
 import { Cifra, esNegativo, m3, plural } from "./permiso-volumen-ui";
 
@@ -55,103 +56,131 @@ export default function CtpPermisoVolumen({
       {/* Lo que falta para que el saldo cuadre, arriba de todo (orden por pregunta). */}
       <CtpPermisoPuestaAlDia volumen={volumen} onRecargar={onRecargar} />
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 2xl:grid-cols-6">
-        <StatCard
-          density="compact"
-          label="Ingresado"
-          icon={TreePine}
-          value={hayIngreso ? <Cifra valor={m3(t.ingresadoM3)} unidad="m³" /> : SIN("Sin guías")}
-          subValue={
-            hayIngreso
-              ? `${plural(t.guias, "guía", "guías")} · ${plural(t.trozas, "troza", "trozas")}`
-              : "Ninguna guía de ingreso bajo este permiso"
-          }
-        />
-        <StatCard
-          density="compact"
-          label="Consumido registrado"
-          icon={Layers}
-          value={<Cifra valor={m3(t.consumidoM3)} unidad="m³" />}
-          subValue={
-            pctConsumido == null
-              ? "Sin ingreso para comparar"
-              : `${fmtPct(pctConsumido)} % de lo ingresado`
-          }
-        />
-        <StatCard
-          density="compact"
-          label="Saldo rolliza del libro"
-          icon={Scale}
-          emphasis={saldoRollizaNeg ? "error" : "neutral"}
-          value={hayIngreso ? <Cifra valor={m3(t.saldoRollizaM3)} unidad="m³" /> : SIN("—")}
-          subValue={
-            saldoRollizaNeg
-              ? "Se consumió más de lo que entró"
-              : t.despachadoRollizaM3 > 0
-                ? `Ya descuenta ${m3(t.despachadoRollizaM3)} m³ salidos en troza`
-                : "Ingresado − consumido (no es el patio físico)"
-          }
-        />
-        <StatCard
-          density="compact"
-          label="Producido"
-          icon={Boxes}
-          value={
-            t.corridas > 0 ? <Cifra valor={m3(t.producidoM3)} unidad="m³" /> : SIN("Sin producción")
-          }
-          subValue={
-            t.corridas > 0
-              ? `${fmtPt(t.producidoPt)} pt · ${plural(t.corridas, "corrida", "corridas")}${
-                  t.rendimientoPct == null ? "" : ` · rinde ${fmtPct(t.rendimientoPct)} %`
-                }`
-              : "Ninguna corrida bajo este permiso todavía"
-          }
-        />
-        <StatCard
-          density="compact"
-          label="Saldo aserrable"
-          icon={PackageOpen}
-          emphasis={saldoPtNeg ? "error" : "neutral"}
-          value={
-            hayIngreso ? <Cifra valor={`≈ ${fmtPt(t.saldoPt)}`} unidad="pt aserr." /> : SIN("—")
-          }
-          subValue={
-            saldoPtNeg ? (
-              "Se produjo más que el techo del 56 %"
-            ) : hayIngreso ? (
-              `De ≈ ${fmtPt(t.aserrablePt)} pt aserr. que da lo ingresado`
-            ) : (
-              <span className="inline-flex items-center gap-1">
-                Sin techo que medir
-                <InfoTip
-                  title="Saldo aserrable"
-                  what="Sin madera ingresada por este permiso: no hay rolliza contra la cual medir lo producido."
-                  affects="El techo es el 56 % de la rolliza que entró por las guías del permiso."
-                />
-              </span>
-            )
-          }
-        />
-        <StatCard
-          density="compact"
-          label="Despachado"
-          icon={Truck}
-          value={
-            t.despachos > 0 ? (
-              <Cifra valor={m3(t.despachadoM3)} unidad="m³" />
-            ) : (
-              SIN("Sin despachos todavía")
-            )
-          }
-          subValue={
-            t.despachos > 0
-              ? `${plural(t.despachos, "despacho", "despachos")}${
-                  t.despachadoRollizaM3 > 0 ? ` · ${m3(t.despachadoRollizaM3)} m³ en troza` : ""
-                }`
-              : "Ninguna GTF de salida con esta madera"
-          }
-        />
-      </div>
+      {/* Las seis cifras del permiso, plegables (Brandon 05-10): cerrado queda
+          lo que entró, lo que salió y lo que queda, en el botón. ABIERTAS de
+          entrada: en la ficha del permiso estas cifras SON el contenido. Y el
+          exceso no se pliega nunca: con el panel cerrado viaja como chip rojo
+          en el botón (un rojo escondido tras un clic no lo ve nadie). */}
+      <CtpKpisPlegables
+        claveMemoria="ctp-permiso-volumen"
+        abiertoPorDefecto
+        resumenExtra={
+          saldoPtNeg || saldoRollizaNeg ? (
+            <span className="rounded-full bg-[var(--data-error-500)]/15 px-2 py-0.5 text-xs font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+              {saldoPtNeg ? "se produjo de más" : "se consumió de más"}
+            </span>
+          ) : undefined
+        }
+        antes={<span className="text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Volumen del permiso</span>}
+        resumen={
+          hayIngreso
+            ? `${m3(t.ingresadoM3)} m³ ingresado · ${m3(t.consumidoM3)} consumido · ${m3(t.producidoM3)} producido · ${m3(t.despachadoM3)} despachado`
+            : "Sin guías de ingreso bajo este permiso"
+        }
+        tarjetas={[
+          <StatCard
+              key="ing"
+            density="compact"
+            label="Ingresado"
+            icon={TreePine}
+            value={hayIngreso ? <Cifra valor={m3(t.ingresadoM3)} unidad="m³" /> : SIN("Sin guías")}
+            subValue={
+              hayIngreso
+                ? `${plural(t.guias, "guía", "guías")} · ${plural(t.trozas, "troza", "trozas")}`
+                : "Ninguna guía de ingreso bajo este permiso"
+            }
+          />,
+          <StatCard
+              key="cons"
+            density="compact"
+            label="Consumido registrado"
+            icon={Layers}
+            value={<Cifra valor={m3(t.consumidoM3)} unidad="m³" />}
+            subValue={
+              pctConsumido == null
+                ? "Sin ingreso para comparar"
+                : `${fmtPct(pctConsumido)} % de lo ingresado`
+            }
+          />,
+          <StatCard
+              key="saldoroll"
+            density="compact"
+            label="Saldo rolliza del libro"
+            icon={Scale}
+            emphasis={saldoRollizaNeg ? "error" : "neutral"}
+            value={hayIngreso ? <Cifra valor={m3(t.saldoRollizaM3)} unidad="m³" /> : SIN("—")}
+            subValue={
+              saldoRollizaNeg
+                ? "Se consumió más de lo que entró"
+                : t.despachadoRollizaM3 > 0
+                  ? `Ya descuenta ${m3(t.despachadoRollizaM3)} m³ salidos en troza`
+                  : "Ingresado − consumido (no es el patio físico)"
+            }
+          />,
+          <StatCard
+              key="prod"
+            density="compact"
+            label="Producido"
+            icon={Boxes}
+            value={
+              t.corridas > 0 ? <Cifra valor={m3(t.producidoM3)} unidad="m³" /> : SIN("Sin producción")
+            }
+            subValue={
+              t.corridas > 0
+                ? `${fmtPt(t.producidoPt)} pt · ${plural(t.corridas, "corrida", "corridas")}${
+                    t.rendimientoPct == null ? "" : ` · rinde ${fmtPct(t.rendimientoPct)} %`
+                  }`
+                : "Ninguna corrida bajo este permiso todavía"
+            }
+          />,
+          <StatCard
+              key="saldoaser"
+            density="compact"
+            label="Saldo aserrable"
+            icon={PackageOpen}
+            emphasis={saldoPtNeg ? "error" : "neutral"}
+            value={
+              hayIngreso ? <Cifra valor={`≈ ${fmtPt(t.saldoPt)}`} unidad="pt aserr." /> : SIN("—")
+            }
+            subValue={
+              saldoPtNeg ? (
+                "Se produjo más que el techo del 56 %"
+              ) : hayIngreso ? (
+                `De ≈ ${fmtPt(t.aserrablePt)} pt aserr. que da lo ingresado`
+              ) : (
+                <span className="inline-flex items-center gap-1">
+                  Sin techo que medir
+                  <InfoTip
+                    title="Saldo aserrable"
+                    what="Sin madera ingresada por este permiso: no hay rolliza contra la cual medir lo producido."
+                    affects="El techo es el 56 % de la rolliza que entró por las guías del permiso."
+                  />
+                </span>
+              )
+            }
+          />,
+          <StatCard
+              key="desp"
+            density="compact"
+            label="Despachado"
+            icon={Truck}
+            value={
+              t.despachos > 0 ? (
+                <Cifra valor={m3(t.despachadoM3)} unidad="m³" />
+              ) : (
+                SIN("Sin despachos todavía")
+              )
+            }
+            subValue={
+              t.despachos > 0
+                ? `${plural(t.despachos, "despacho", "despachos")}${
+                    t.despachadoRollizaM3 > 0 ? ` · ${m3(t.despachadoRollizaM3)} m³ en troza` : ""
+                  }`
+                : "Ninguna GTF de salida con esta madera"
+            }
+          />,
+        ]}
+      />
 
       <CtpPermisoAvisos avisos={volumen.avisos} onVincular={() => setDescontar(true)} />
       {descontar && (

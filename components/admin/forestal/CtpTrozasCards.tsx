@@ -12,7 +12,9 @@
 import type { FotoEspecie } from "@/lib/forestal/especies-fotos";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { diasParada, ESTADO_META, estadoDeTroza } from "@/lib/forestal/trozas-patio";
+import { medidasDePieza } from "@/lib/forestal/trozas-patio-medidas";
 import { claseDias, n, tituloDias } from "./ctp-trozas-lista-shared";
+import { cm } from "./ctp-trozas-medidas-ui";
 import { puntoDeTono } from "./ctp-trozas-ui";
 import EspecieFoto from "./EspecieFoto";
 import type { UbicacionDeCarga } from "./hooks/use-planta-ubicacion";
@@ -68,7 +70,7 @@ export default function CtpTrozasCards({
                   </span>
                   <span className={`font-mono font-bold ${claseDias(d)}`} title={tituloDias(d)}>{d == null ? "sin fecha" : `${d} d parada`}</span>
                   <span className="font-mono text-[var(--text-secondary)]">
-                    {n(t.d1Cm, 0)}·{n(t.d2Cm, 0)} cm · {n(t.largoM)} m · {t.gtfNumber ?? "—"}
+                    {cm(medidasDePieza(t).d1)}·{cm(medidasDePieza(t).d2)} cm · {n(t.largoM)} m · {t.gtfNumber ?? "—"}
                   </span>
                   {canchas[t.woodEntryId] && (
                     <span className="text-[var(--text-secondary)]">en {canchas[t.woodEntryId].nombre}</span>

@@ -79,6 +79,14 @@ async function montar() {
     if (/Volvió a la sierra|no volvió madera/i.test(document.body.innerText)) break;
     await new Promise((res) => setTimeout(res, 50));
   }
+  /* Los indicadores arrancan plegados (Brandon 05-10) y recuerdan su estado
+     entre pruebas: se abren sólo si están cerrados. Plegados, el titular
+     («… · 1 por explicar») sigue en el botón. */
+  const boton = [...document.querySelectorAll("button")].find((b) => b.textContent?.startsWith("Indicadores"));
+  if (boton?.getAttribute("aria-expanded") === "false") {
+    boton.click();
+    await new Promise((res) => setTimeout(res, 50));
+  }
   return r;
 }
 

@@ -25,6 +25,7 @@ import { construirExpedienteEudr, nombreExpediente } from "@/lib/forestal/eudr-e
 import { origenGeolocalizado, computeCtpEudrReadiness, buildOriginsGeoJson, type DdsData, type OrigenGeo } from "@/lib/forestal/eudr-types";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
 import type { CtpIngresosFiltroRapido } from "./ctp-shared";
+import { CtpKpisPlegables } from "./kpis-plegables";
 
 interface OriginRow { originCode: string; originType: string | null; region: string | null; ingresos: number }
 interface DespachoRow { id: string; lineNo: number; productType: string | null; speciesCommon: string | null; gtfNumber: string | null; destino: string | null }
@@ -196,9 +197,25 @@ export default function CtpEudrPanel({
         </div>
       )}
 
-      {/* Cockpit de readiness EUDR de la planta */}
-      <div className={`rounded-2xl border-2 p-5 ${readiness.listo ? "border-[var(--data-success-500)] bg-[var(--data-success-50)]" : "border-[var(--rule-base)] bg-[var(--surface-raised)]"}`}>
-        <div className="flex flex-wrap items-start gap-4">
+      {/* Cockpit de readiness EUDR de la planta — plegable (Brandon 05-10): cerrado
+          queda el puntaje y los orígenes en el botón; el GeoJSON sigue a la mano. */}
+      <CtpKpisPlegables
+        claveMemoria="ctp-eudr"
+        resumen={`${readiness.score} % · ${readiness.geolocalizados}/${readiness.total} geolocalizados · ${readiness.deforestationFree}/${readiness.total} sin deforestación`}
+        acciones={
+          <button
+            type="button"
+            onClick={exportGeoJson}
+            disabled={readiness.geolocalizados === 0}
+            title={readiness.geolocalizados > 0 ? "Descargar la geolocalización de los orígenes en GeoJSON (dossier UE)" : "Geolocaliza al menos un origen"}
+            className="inline-flex h-12 items-center gap-1.5 rounded-2xl border-[1.5px] border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
+          >
+            <Download className="h-4 w-4" /> GeoJSON
+          </button>
+        }
+        tarjetas={[
+          <div key="cockpit" className={`rounded-2xl border-2 p-4 ${readiness.listo ? "border-[var(--data-success-500)] bg-[var(--data-success-50)]" : "border-[var(--rule-base)] bg-[var(--surface-raised)]"}`}>
+            <div className="flex flex-wrap items-start gap-4">
           <EudrGauge value={readiness.score} tone={rTone} />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
@@ -212,28 +229,19 @@ export default function CtpEudrPanel({
               {readiness.geolocalizados}/{readiness.total} orígenes geolocalizados · {readiness.deforestationFree}/{readiness.total} sin deforestación · {readiness.ingresosCubiertos}/{readiness.ingresosTotal} ingresos cubiertos.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={exportGeoJson}
-            disabled={readiness.geolocalizados === 0}
-            title={readiness.geolocalizados > 0 ? "Descargar la geolocalización de los orígenes en GeoJSON (dossier UE)" : "Geolocaliza al menos un origen"}
-            className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
-          >
-            <Download className="h-4 w-4" /> GeoJSON
-          </button>
-        </div>
-        <div className="mt-4 grid gap-2 sm:grid-cols-2">
-          {readiness.checks.map((c) => (
-            <div key={c.key} className="flex items-start gap-2.5">
+            </div>
+          </div>,
+          ...readiness.checks.map((c) => (
+            <div key={c.key} className="flex items-start gap-2.5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
               {c.ok ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[var(--data-success-600)]" /> : <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--data-warning-600)]" />}
               <div className="min-w-0">
                 <p className="text-sm font-bold text-[var(--text-primary)]">{c.label}</p>
                 <p className="text-xs text-[var(--text-tertiary)]">{c.detail}</p>
               </div>
             </div>
-          ))}
-        </div>
-      </div>
+          )),
+        ]}
+      />
 
       {/* Mapa de los orígenes de la planta */}
       <CtpEudrMap origins={origins ?? []} geoByCode={geo} />

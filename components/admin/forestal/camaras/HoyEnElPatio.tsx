@@ -21,6 +21,7 @@ import {
   UserX,
 } from "@buleje/design-system/icons";
 import { cn, limaDateKey } from "@/lib/utils";
+import { useKpisPlegables } from "../kpis-plegables";
 import GentePorHora from "./GentePorHora";
 import { ActividadYCamaras, CamionesDelDia, ChalecosDelDia, PilaDelDia } from "./ListasDelDia";
 import { useResumenPatio } from "./use-resumen-patio";
@@ -56,6 +57,51 @@ export default function HoyEnElPatio({ activo, recarga, onAsignarChaleco }: Prop
   const sinMarcar = r?.chalecos.filter((c) => c.sinMarcacion).length ?? 0;
   const conFotos = r?.porCamara.filter((c) => c.fotos > 0).length ?? 0;
 
+  /* Las cuatro cifras del día se pliegan (Brandon 05-10). Sin fotos no hay cifras que plegar. */
+  const kpis = useKpisPlegables({
+    claveMemoria: "camaras-hoy",
+    resumen: r && r.fotos > 0
+      ? `${r.fotos} ${r.fotos === 1 ? "foto" : "fotos"} · ${r.camiones.length} ${r.camiones.length === 1 ? "camión" : "camiones"} · ${sinMarcar} sin marcación`
+      : undefined,
+    tarjetas: r && r.fotos > 0 ? [
+      <StatCard
+        key="fotos"
+        label="Fotos"
+        value={r.fotos}
+        icon={Camera}
+        subValue={
+          r.sinLectura > 0
+            ? `${r.sinLectura} sin leer`
+            : `de ${conFotos} ${conFotos === 1 ? "cámara" : "cámaras"}`
+        }
+      />,
+      <StatCard
+        key="camiones"
+        label="Camiones"
+        value={r.camiones.length}
+        icon={Truck}
+        subValue={`${conGuia} con guía o flete`}
+      />,
+      <StatCard
+        key="pico"
+        label="Más gente junta"
+        value={pico ? pico.max : "—"}
+        icon={Users}
+        subValue={
+          pico ? `a las ${String(pico.hora).padStart(2, "0")} h, en una foto` : "sin fotos"
+        }
+      />,
+      <StatCard
+        key="sin-marcar"
+        label="Sin marcación"
+        value={sinMarcar}
+        icon={UserX}
+        emphasis={sinMarcar > 0 ? "warning" : "neutral"}
+        subValue={`de ${r.chalecos.length} ${r.chalecos.length === 1 ? "chaleco visto" : "chalecos vistos"}`}
+      />,
+    ] : [],
+  });
+
   return (
     <div className="space-y-4" data-testid="camaras-hoy">
       <div className="flex flex-wrap items-center gap-2">
@@ -67,6 +113,7 @@ export default function HoyEnElPatio({ activo, recarga, onAsignarChaleco }: Prop
             </span>
           )}
         </SectionTitle>
+        {kpis.boton}
         <div className="flex items-center gap-1" role="group" aria-label="Elegir el día">
           <button
             type="button"
@@ -131,42 +178,7 @@ export default function HoyEnElPatio({ activo, recarga, onAsignarChaleco }: Prop
         </div>
       ) : (
         <>
-          <div
-            className={`grid grid-cols-2 gap-3 lg:grid-cols-4 ${cargando ? "opacity-60" : ""}`}
-            aria-busy={cargando}
-          >
-            <StatCard
-              label="Fotos"
-              value={r.fotos}
-              icon={Camera}
-              subValue={
-                r.sinLectura > 0
-                  ? `${r.sinLectura} sin leer`
-                  : `de ${conFotos} ${conFotos === 1 ? "cámara" : "cámaras"}`
-              }
-            />
-            <StatCard
-              label="Camiones"
-              value={r.camiones.length}
-              icon={Truck}
-              subValue={`${conGuia} con guía o flete`}
-            />
-            <StatCard
-              label="Más gente junta"
-              value={pico ? pico.max : "—"}
-              icon={Users}
-              subValue={
-                pico ? `a las ${String(pico.hora).padStart(2, "0")} h, en una foto` : "sin fotos"
-              }
-            />
-            <StatCard
-              label="Sin marcación"
-              value={sinMarcar}
-              icon={UserX}
-              emphasis={sinMarcar > 0 ? "warning" : "neutral"}
-              subValue={`de ${r.chalecos.length} ${r.chalecos.length === 1 ? "chaleco visto" : "chalecos vistos"}`}
-            />
-          </div>
+          <div className={cargando ? "opacity-60" : undefined} aria-busy={cargando}>{kpis.panel}</div>
           <GentePorHora filas={r.personasPorHora} />
           <div className="grid gap-4 lg:grid-cols-2">
             <CamionesDelDia camiones={r.camiones} />

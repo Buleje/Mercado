@@ -53,6 +53,14 @@ export interface KpisPlegablesProps {
    * h-12; `sm` (h-9) suelto. Default `sm`.
    */
   alto?: "sm" | "md";
+  /**
+   * Cómo arranca la PRIMERA vez, antes de que se haya elegido nada (Brandon
+   * 05-10: «todos los KPIs para poder ocultar y mostrar»). Cerrado en las
+   * vistas de trabajo, donde la tabla manda; abierto en las vistas cuyo
+   * contenido SON las cifras (Tablero, Análisis): plegarlas de entrada dejaría
+   * la pantalla vacía. Lo que se elija después se recuerda igual.
+   */
+  abiertoPorDefecto?: boolean;
 }
 
 export function useKpisPlegables({
@@ -66,12 +74,22 @@ export function useKpisPlegables({
   trabajoActivo = false,
   alto = "sm",
   sinDatosAun = false,
+  abiertoPorDefecto = false,
 }: KpisPlegablesProps): { boton: ReactNode; panel: ReactNode; abierto: boolean } {
   /* Clave `v2`: la v1 guardaba «¿está abierta la SEGUNDA fila?», otra pregunta. */
-  const [abierto, setAbierto] = useState(false);
+  const [abierto, setAbierto] = useState(abiertoPorDefecto);
+  /* Sin nada guardado manda el default de la vista; «0» guardado gana siempre. */
+  const leerGuardado = () => {
+    try {
+      const v = localStorage.getItem(`ctp-kpis-v2:${claveMemoria}`);
+      return v == null ? abiertoPorDefecto : v === "1";
+    } catch {
+      return abiertoPorDefecto; /* modo privado */
+    }
+  };
   useEffect(() => {
-    try { setAbierto(localStorage.getItem(`ctp-kpis-v2:${claveMemoria}`) === "1"); } catch { /* modo privado */ }
-  }, [claveMemoria]);
+    setAbierto(leerGuardado());
+  }, [claveMemoria]); // eslint-disable-line react-hooks/exhaustive-deps
   const alternar = () => {
     setAbierto((v) => {
       const next = !v;
@@ -86,11 +104,9 @@ export function useKpisPlegables({
   const trabajoPrevio = useRef(trabajoActivo);
   useEffect(() => {
     if (trabajoActivo && !trabajoPrevio.current) setAbierto(false);
-    if (!trabajoActivo && trabajoPrevio.current) {
-      try { setAbierto(localStorage.getItem(`ctp-kpis-v2:${claveMemoria}`) === "1"); } catch { /* modo privado */ }
-    }
+    if (!trabajoActivo && trabajoPrevio.current) setAbierto(leerGuardado());
     trabajoPrevio.current = trabajoActivo;
-  }, [trabajoActivo, claveMemoria]);
+  }, [trabajoActivo, claveMemoria]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (tarjetas.length === 0) return { boton: null, panel: null, abierto: false };
 

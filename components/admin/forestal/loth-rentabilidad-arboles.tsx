@@ -9,6 +9,7 @@
 import { StatCard, DataTable } from "@buleje/design-system";
 import { Award, Coins, TrendingUp } from "@buleje/design-system/icons";
 import type { margenPorArbol, resumirMargenArbol } from "@/lib/forestal/loth-margen-arbol";
+import { useKpisPlegables } from "./kpis-plegables";
 import { BarraMargen, Td, Th, soles } from "./loth-rentabilidad-celdas";
 
 export default function LothRentabilidadArboles({
@@ -18,26 +19,24 @@ export default function LothRentabilidadArboles({
   filas: ReturnType<typeof margenPorArbol>;
   resumen: ReturnType<typeof resumirMargenArbol>;
 }) {
-  if (filas.length === 0) {
-    return (
-      <div className="rounded-xl border border-dashed border-[var(--rule-base)] p-6 text-center text-sm text-[var(--text-tertiary)]">
-        Todavía no hay árboles talados para valorizar.
-      </div>
-    );
-  }
-  const maxAbs = Math.max(...filas.map((a) => Math.abs(a.margen)), 1);
-  return (
-    <div className="space-y-3">
-      <div className="grid gap-3 sm:grid-cols-3">
+  /* Las tres cifras se pliegan (Brandon 05-10): el botón y las cifras, arriba de la tabla. */
+  const kpis = useKpisPlegables({
+    claveMemoria: "loth-rentabilidad-arboles",
+    resumen: filas.length === 0
+      ? undefined
+      : `${resumen.conMovimiento}/${resumen.arboles} rindieron · margen ${soles(resumen.margen)}`,
+    tarjetas: filas.length === 0 ? [] : [
         <StatCard
+          key="rinden"
           density="compact"
           label="Árboles que rindieron"
           value={`${resumen.conMovimiento}/${resumen.arboles}`}
           subValue={resumen.sinMovilizar > 0 ? `${Number(resumen.sinMovilizarM3).toFixed(2)} m³ tumbados sin salir` : "todos movilizados"}
           icon={TrendingUp}
           emphasis={resumen.sinMovilizar > 0 ? "warning" : "success"}
-        />
+        />,
         <StatCard
+          key="margen"
           density="compact"
           label="Margen de trozas vendidas"
           value={soles(resumen.margen)}
@@ -48,16 +47,30 @@ export default function LothRentabilidadArboles({
           }
           icon={Coins}
           emphasis={resumen.margen > 0 ? "success" : "neutral"}
-        />
+        />,
         <StatCard
+          key="mejor"
           density="compact"
           label="El que más dejó"
           value={resumen.mejor?.tree ?? "—"}
           subValue={resumen.mejor ? `${soles(resumen.mejor.margen)} · ${Number(resumen.mejor.movilizadoM3).toFixed(2)} m³` : "sin movimiento"}
           icon={Award}
           emphasis="neutral"
-        />
+        />,
+    ],
+  });
+  if (filas.length === 0) {
+    return (
+      <div className="rounded-xl border border-dashed border-[var(--rule-base)] p-6 text-center text-sm text-[var(--text-tertiary)]">
+        Todavía no hay árboles talados para valorizar.
       </div>
+    );
+  }
+  const maxAbs = Math.max(...filas.map((a) => Math.abs(a.margen)), 1);
+  return (
+    <div className="space-y-3">
+      {kpis.boton}
+      {kpis.panel}
 
       <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
         <DataTable className="w-full text-sm">

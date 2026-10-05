@@ -24,6 +24,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CardTitle, StatCard } from "@buleje/design-system";
+import { CtpKpisPlegables } from "./kpis-plegables";
 import { AlertCircle, Coins, PackageOpen, Percent } from "@buleje/design-system/icons";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
 import { esValorizable } from "@/lib/forestal/precio-en-tanda";
@@ -155,12 +156,17 @@ export default function CtpValorizarIngresos({ period }: { period: CtpPeriod }) 
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-4">
-        <StatCard density="compact" icon={Coins} label="Invertido en madera" value={solesDe(resumen.invertido, resumen.moneda)} subValue={resumen.mezcladas ? "hay soles y dólares mezclados" : `${ingresos.length - resumen.sinCosto} de ${ingresos.length} ingresos`} emphasis={resumen.mezcladas ? "warning" : "neutral"} />
-        <StatCard density="compact" icon={Percent} label="Patio valorizado" value={resumen.cobertura == null ? "—" : `${Number(resumen.cobertura).toFixed(0)}%`} subValue={`${m3De(resumen.m3ConCosto)} de ${m3De(resumen.m3Total)}`} emphasis={resumen.cobertura != null && resumen.cobertura < 80 ? "warning" : "success"} />
-        <StatCard density="compact" icon={PackageOpen} label="Costo promedio" value={resumen.costoM3 == null ? "—" : `${solesDe(resumen.costoM3, resumen.moneda)}/m³`} subValue={resumen.mezcladas ? "no se puede promediar" : "de lo que sí tiene factura"} emphasis="neutral" />
-        <StatCard density="compact" icon={AlertCircle} label="Sin costo" value={String(resumen.sinCosto)} subValue="no entran al margen" emphasis={resumen.sinCosto > 0 ? "warning" : "success"} />
-      </div>
+      <CtpKpisPlegables
+        claveMemoria="ctp-valorizar-ingresos"
+        antes={<span className="text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Costo de la madera que entró</span>}
+        resumen={`${solesDe(resumen.invertido, resumen.moneda)} invertido${resumen.cobertura == null ? "" : ` · ${Number(resumen.cobertura).toFixed(0)}% valorizado`} · ${resumen.sinCosto} sin costo`}
+        tarjetas={[
+          <StatCard key="invertido" density="compact" icon={Coins} label="Invertido en madera" value={solesDe(resumen.invertido, resumen.moneda)} subValue={resumen.mezcladas ? "hay soles y dólares mezclados" : `${ingresos.length - resumen.sinCosto} de ${ingresos.length} ingresos`} emphasis={resumen.mezcladas ? "warning" : "neutral"} />,
+          <StatCard key="patio" density="compact" icon={Percent} label="Patio valorizado" value={resumen.cobertura == null ? "—" : `${Number(resumen.cobertura).toFixed(0)}%`} subValue={`${m3De(resumen.m3ConCosto)} de ${m3De(resumen.m3Total)}`} emphasis={resumen.cobertura != null && resumen.cobertura < 80 ? "warning" : "success"} />,
+          <StatCard key="costo" density="compact" icon={PackageOpen} label="Costo promedio" value={resumen.costoM3 == null ? "—" : `${solesDe(resumen.costoM3, resumen.moneda)}/m³`} subValue={resumen.mezcladas ? "no se puede promediar" : "de lo que sí tiene factura"} emphasis="neutral" />,
+          <StatCard key="sin" density="compact" icon={AlertCircle} label="Sin costo" value={String(resumen.sinCosto)} subValue="no entran al margen" emphasis={resumen.sinCosto > 0 ? "warning" : "success"} />,
+        ]}
+      />
 
       {servicio && (
         <p className="text-sm text-[var(--text-secondary)]">

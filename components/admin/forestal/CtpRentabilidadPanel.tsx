@@ -10,6 +10,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { CardTitle, DataTable, StatCard } from "@buleje/design-system";
+import { CtpKpisPlegables } from "./kpis-plegables";
 import { PanelSkeleton } from "./ctp-shared";
 import { AlertCircle, Award, CheckCircle2, Coins, Loader2, Sparkles, TrendingDown, TrendingUp, Wallet } from "@buleje/design-system/icons";
 import { BulejeWaterfallChart, type WaterfallStep } from "@/components/ui-system/charts";
@@ -142,12 +143,17 @@ export default function CtpRentabilidadPanel({ period }: { period: CtpPeriod }) 
       {error && <div className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error-700)]"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /><div>{error}</div></div>}
 
       {/* Resumen — StatCard del DS (mismo patrón que Ingresos/Producción/Saldos) */}
-      <div className="grid gap-3 sm:grid-cols-4">
-        <StatCard density="compact" icon={Coins} label="Ventas" value={money(pnl.ventasTotal, pnl.moneda)} subValue={`${pnl.completos} despachos costeados${pnl.deServicio ? ` · ${pnl.deServicio} de servicio` : ""}`} emphasis="neutral" />
-        <StatCard density="compact" icon={Wallet} label="COGS" value={money(pnl.cogsTotal, pnl.moneda)} subValue="costo de lo vendido" emphasis="neutral" />
-        <StatCard density="compact" icon={TrendingUp} label="Margen" value={money(pnl.margenTotal, pnl.moneda)} subValue={pct(pnl.margenPct)} emphasis={pnl.margenTotal < 0 ? "error" : "success"} />
-        <StatCard density="compact" icon={AlertCircle} label="Incompletos" value={`${pnl.sinVenta + pnl.sinCosto}`} subValue={`${pnl.sinVenta} sin venta · ${pnl.sinCosto} sin costo${pnl.mixtos ? ` (${pnl.mixtos} mixtos)` : ""}`} emphasis={pnl.sinVenta + pnl.sinCosto > 0 ? "warning" : "neutral"} />
-      </div>
+      <CtpKpisPlegables
+        claveMemoria="ctp-rentabilidad"
+        antes={<span className="text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Margen del período</span>}
+        resumen={`${money(pnl.ventasTotal, pnl.moneda)} ventas · margen ${money(pnl.margenTotal, pnl.moneda)}${pnl.margenPct != null ? ` (${pct(pnl.margenPct)})` : ""}${pnl.sinVenta + pnl.sinCosto > 0 ? ` · ${pnl.sinVenta + pnl.sinCosto} incompletos` : ""}`}
+        tarjetas={[
+          <StatCard key="ventas" density="compact" icon={Coins} label="Ventas" value={money(pnl.ventasTotal, pnl.moneda)} subValue={`${pnl.completos} despachos costeados${pnl.deServicio ? ` · ${pnl.deServicio} de servicio` : ""}`} emphasis="neutral" />,
+          <StatCard key="cogs" density="compact" icon={Wallet} label="COGS" value={money(pnl.cogsTotal, pnl.moneda)} subValue="costo de lo vendido" emphasis="neutral" />,
+          <StatCard key="margen" density="compact" icon={TrendingUp} label="Margen" value={money(pnl.margenTotal, pnl.moneda)} subValue={pct(pnl.margenPct)} emphasis={pnl.margenTotal < 0 ? "error" : "success"} />,
+          <StatCard key="incompletos" density="compact" icon={AlertCircle} label="Incompletos" value={`${pnl.sinVenta + pnl.sinCosto}`} subValue={`${pnl.sinVenta} sin venta · ${pnl.sinCosto} sin costo${pnl.mixtos ? ` (${pnl.mixtos} mixtos)` : ""}`} emphasis={pnl.sinVenta + pnl.sinCosto > 0 ? "warning" : "neutral"} />,
+        ]}
+      />
 
       {(pnl.sinVenta > 0 || pnl.sinCosto > 0) && (
         <p className="rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] p-3 text-xs text-[var(--data-warning-700)]">El margen cubre solo los {pnl.completos} despachos con venta Y costo conocidos. {pnl.sinVenta} sin valor de venta y {pnl.sinCosto} sin costo (falta factura o atribución{pnl.mixtos ? `, o ${pnl.mixtos} que mezclan madera tuya y de servicio` : ""}) NO se suman — no se inventa margen.{pnl.ventasSinMargen ? ` Ventas registradas que quedan fuera del margen: ${money(pnl.ventasSinMargen, pnl.moneda)}.` : ""}</p>

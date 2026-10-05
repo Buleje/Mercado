@@ -35,7 +35,6 @@ import {
   TreePine,
 } from "@buleje/design-system/icons";
 import { CardTitle, WarningAlert, ErrorAlert, LoadingState } from "@buleje/design-system";
-import { BulejeGaugeChart } from "@/components/ui-system/charts";
 import CtpComplianceHistoria from "./CtpComplianceHistoria";
 import CtpEspeciesCatalogoModal from "./CtpEspeciesCatalogoModal";
 import { useEspeciesCatalogo } from "./hooks/use-especies-catalogo";
@@ -45,6 +44,8 @@ import CtpDescuadresPanel from "./CtpDescuadresPanel";
 import CtpSobreTopePanel from "./CtpSobreTopePanel";
 import { Btn, VistaHeader } from "./ctp-shared";
 import { useCtpCompliance } from "@/hooks/use-ctp-compliance";
+import CtpComplianceScore, { TONE_LABEL, plural } from "./CtpComplianceScore";
+import { useKpisPlegables } from "./kpis-plegables";
 import { ctpComplianceTone, ctpComplianceBreakdown, type CtpComplianceTone } from "@/lib/forestal/ctp-compliance";
 import { printCumplimiento } from "@/lib/forestal/ctp-cumplimiento-print";
 import { ctpPeriodShortLabel, type CtpPeriod } from "@/lib/forestal/ctp-period";
@@ -81,20 +82,6 @@ interface CheckDescriptor {
   onAction?: () => void;
 }
 
-const TONE_LABEL: Record<CtpComplianceTone, string> = {
-  success: "Cumplimiento en orden",
-  warning: "Hay puntos que revisar",
-  error: "Requiere atención antes de cerrar",
-};
-
-/** Color del arco del gauge por tono (tokens del DS). */
-const GAUGE_COLOR: Record<CtpComplianceTone, string> = {
-  success: "var(--data-success-500)",
-  warning: "var(--data-warning-500)",
-  error: "var(--data-error-500)",
-};
-
-const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
 
 export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliancePanelProps) {
   /**
@@ -118,6 +105,15 @@ export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliance
   const dosFormas = especies.duplicadas;
   const [verEspecies, setVerEspecies] = useState(false);
 
+  /* El puntaje, plegable (Brandon 05-10): el botón va en la fila del título y el
+     titular viaja adentro. ARRIBA de los `return` tempranos (ver la nota de
+     arriba): sin datos aún no hay tarjeta y el botón no se dibuja. */
+  const kpis = useKpisPlegables({
+    claveMemoria: "ctp-cumplimiento",
+    resumen: data ? `${data.score}/100 · ${TONE_LABEL[ctpComplianceTone(data.score)]}` : undefined,
+    tarjetas: data ? [<CtpComplianceScore key="puntaje" data={data} />] : [],
+  });
+
   if (loading && !data) return <LoadingState message="Calculando cumplimiento del período..." />;
 
   if (error && !data) {
@@ -137,7 +133,6 @@ export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliance
 
   const tone = ctpComplianceTone(data.score);
   const breakdown = ctpComplianceBreakdown(data.counts);
-  const totalRestado = breakdown.reduce((a, d) => a + d.puntos, 0);
 
   const cites = data.citesSinPermisoEspecies;
   const citesIng = data.citesSinPermisoIngresos;
@@ -372,6 +367,7 @@ export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliance
         meta={`${ctpPeriodShortLabel(period)} · ${formatNumber(data.totalIngresos)} ingresos`}
         hint="Los mismos números que exporta el libro a Excel."
       >
+        {kpis.boton}
         <Btn variant="dark" size="md" onClick={() => void handleReport()}>
           <FileDown className="h-4 w-4" /> Descargar reporte
         </Btn>
@@ -410,44 +406,7 @@ export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliance
 
       <ReadinessBanner readiness={readiness} bloqueos={bloqueos} advertencias={advertencias} periodLabel={period.label} onNavigate={onNavigate} />
 
-      {/* Score con gauge firma + desglose transparente de cómo se compone. */}
-      <div className="grid gap-4 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 sm:grid-cols-[auto_1fr] sm:items-center sm:gap-6">
-        <div className="flex justify-center">
-          <BulejeGaugeChart value={data.score} max={100} size={190} color={GAUGE_COLOR[tone]} sublabel="de 100" label={TONE_LABEL[tone]} />
-        </div>
-        <div>
-          <div className="mb-2 flex items-center gap-2">
-            <Gauge className="h-4 w-4 text-[var(--text-tertiary)]" />
-            <p className="text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
-              Cómo se compone · 100 {totalRestado > 0 ? `− ${totalRestado} deducidos` : "· sin deducciones"}
-            </p>
-          </div>
-          <ul className="space-y-1.5">
-            {breakdown.map((d) => (
-              <li key={d.key} className="text-sm">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="inline-flex min-w-0 items-center gap-2">
-                    <span className={`h-2 w-2 shrink-0 rounded-full ${d.puntos > 0 ? "bg-[var(--data-error-500)]" : "bg-[var(--data-success-500)]"}`} aria-hidden="true" />
-                    <span className="truncate text-[var(--text-secondary)]">{d.label}</span>
-                  </span>
-                  {d.puntos > 0 ? (
-                    <span className="shrink-0 font-mono font-bold tabular-nums text-[var(--data-error-700)]">
-                      −{d.puntos} pts <span className="text-[length:var(--ts-2xs)] font-normal text-[var(--text-tertiary)]">({d.casos}{d.topeAlcanzado ? "+" : ""} {plural(d.casos, "caso", "casos")})</span>
-                    </span>
-                  ) : (
-                    <span className="shrink-0 text-xs font-bold text-[var(--data-success-700)]">sin restar</span>
-                  )}
-                </div>
-                {/* Qué hacer para recuperarlos: el label solo diagnostica, y un
-                    diagnóstico sin acción se mira una vez y se deja de mirar. */}
-                {d.puntos > 0 && (
-                  <p className="ml-4 mt-0.5 text-[length:var(--ts-2xs)] leading-snug text-[var(--text-tertiary)]">{d.accion}</p>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
+      {kpis.panel}
 
       {/* El gauge dice cómo estoy; esto, cómo vengo (ADR-384). Va pegado
           debajo porque la pregunta que sigue a «74/100» es siempre «¿y antes?». */}

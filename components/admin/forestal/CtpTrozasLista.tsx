@@ -35,6 +35,7 @@ import {
   type EstadoTroza,
   type OrdenTrozas,
 } from "@/lib/forestal/trozas-patio";
+import { faltanMedidas } from "@/lib/forestal/trozas-patio-medidas";
 import { exportarTrozasCsv } from "./ctp-trozas-lista-shared";
 import CtpTrozasBarra from "./CtpTrozasBarra";
 import CtpTrozasCards from "./CtpTrozasCards";
@@ -68,6 +69,11 @@ export interface CtpTrozasListaProps {
   onGuia: (v: string[]) => void;
   titulo: readonly string[];
   onTitulo: (v: string[]) => void;
+  /**
+   * Abrir la planilla «Anotar D1 y D2» con las piezas de ESTA lista (lo
+   * filtrado) a las que les falta alguna punta; `inicial` va primero.
+   */
+  onAnotar: (ids: string[], inicial?: string) => void;
   /** Mandar las elegidas a un lote de aserrío. */
   onApartar: (piezas: { id: string; codigo: string | null; especie: string | null }[]) => void;
 }
@@ -75,7 +81,7 @@ export interface CtpTrozasListaProps {
 export default function CtpTrozasLista({
   trozas, cargando, estadoFiltro, onEstadoFiltro, tramoFiltro, onTramoFiltro,
   especie, onEspecie, guia, onGuia, titulo, onTitulo,
-  onVerFicha, onApartar,
+  onVerFicha, onApartar, onAnotar,
 }: CtpTrozasListaProps) {
   const [texto, setTexto] = useState("");
   const [orden, setOrden] = useState<OrdenTrozas>("antiguedad");
@@ -115,6 +121,9 @@ export default function CtpTrozasLista({
     [trozas, texto, estadoFiltro, especie, tramoFiltro, guia, titulo, orden, hoy],
   );
   const visibles = filtradas.slice(0, tope);
+  /* Las de la lista sin sus dos puntas: el botón de la barra y el atajo de cada
+     fila abren la MISMA planilla con este conjunto. */
+  const sinMedidasIds = useMemo(() => filtradas.filter(faltanMedidas).map((t) => t.id), [filtradas]);
   const sumaVisible = filtradas.reduce((a, t) => a + (t.volumenM3 ?? 0), 0);
 
   /* Sólo lo LIBRE se puede apartar: lo apartado ya está en un lote y lo demás
@@ -167,6 +176,8 @@ export default function CtpTrozasLista({
         piezasTotales={trozas.length}
         m3Filtrados={sumaVisible}
         onExportar={exportar}
+        sinMedidas={sinMedidasIds.length}
+        onAnotarMedidas={() => onAnotar(sinMedidasIds)}
         especie={especie} onEspecie={onEspecie} especiesFaceta={especiesFaceta}
         titulo={titulo} onTitulo={onTitulo} titulosFaceta={titulosFaceta}
         guia={guia} onGuia={onGuia} guiasFaceta={guiasFaceta}
@@ -234,6 +245,7 @@ export default function CtpTrozasLista({
             onElegirTodas={() => setElegidas(todasElegidas ? new Set() : new Set(apartables.map((t) => t.id)))}
             onAlternar={alternar}
             onVerFicha={onVerFicha}
+            onAnotar={(id) => onAnotar(sinMedidasIds, id)}
             hoy={hoy}
             canchas={canchas}
             fotosEspecie={fotosEspecie}

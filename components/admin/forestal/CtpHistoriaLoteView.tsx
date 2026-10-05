@@ -17,7 +17,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Clock, Printer, RefreshCw } from "@buleje/design-system/icons";
-import { Btn, PanelSkeleton, VistaHeader } from "./ctp-shared";
+import { Btn, PanelSkeleton, VistaHeader, useKpisPlegables } from "./ctp-shared";
 import { COLOR_ETAPA, Etapa, ProduccionDelLote, SalidaDelLote, TablaDeTrozas } from "./historia/EtapasDelLote";
 import DescargarLotes from "./historia/DescargarLotes";
 import { useHistoriaLote } from "@/hooks/use-historia-lote";
@@ -49,6 +49,29 @@ export default function CtpHistoriaLoteView({ loteInicial }: { loteInicial?: str
   const lote = useMemo(() => lotes.find((l) => l.id === loteId) ?? null, [lotes, loteId]);
   const deInventario = Boolean(lote && esLoteDeInventario(lote));
 
+  /* El recorrido en cuatro cifras, plegable (Brandon 05-10): el botón va en la
+     fila de acciones y el titular viaja adentro mientras está cerrado. */
+  const kpis = useKpisPlegables({
+    claveMemoria: "ctp-historia-lote",
+    sinDatosAun: false,
+    resumen: h ? `${nf(h.armado.piezas)} pz · ${n4(h.consumo.m3Total)} m³ a la sierra · ${n4(h.salida.total)} m³ despachado` : undefined,
+    tarjetas: h
+      ? [
+          <PasoTarjeta key="1"><Paso n={1} termino="Se apartó" valor={`${nf(h.armado.piezas)} pz`} pie={`${n4(h.armado.m3)} m³ en la pila`} /></PasoTarjeta>,
+          <PasoTarjeta key="2"><Paso n={2} termino="Entró a la sierra" valor={`${n4(h.consumo.m3Total)} m³`} pie={`${nf(h.consumo.piezasConsumidas)} piezas consumidas`} /></PasoTarjeta>,
+          <PasoTarjeta key="3">
+            <Paso
+              n={3}
+              termino="Salió aserrado"
+              valor={h.produccion.total ? `${n4(h.produccion.total.cantidad)} ${unidad(h.produccion.total.unit)}` : "—"}
+              pie={pieRendimiento(h)}
+            />
+          </PasoTarjeta>,
+          <PasoTarjeta key="4"><Paso n={4} termino="Se despachó" valor={`${n4(h.salida.total)} m³`} pie={`${n4(h.salida.enStock)} m³ todavía en planta`} /></PasoTarjeta>,
+        ]
+      : [],
+  });
+
   return (
     <div className="space-y-3">
       <VistaHeader
@@ -56,6 +79,7 @@ export default function CtpHistoriaLoteView({ loteInicial }: { loteInicial?: str
         meta={h ? `${h.lote.code} · ${h.lote.speciesCommon ?? "sin especie"}` : undefined}
         hint="Todo lo que pasó con una pila de madera: qué trozas se apartaron, qué corrida se las comió, qué salió de ellas y con qué guía se fueron."
       >
+        {kpis.boton}
         <select
           value={loteId ?? ""}
           onChange={(e) => setLoteId(e.target.value || null)}
@@ -112,18 +136,7 @@ export default function CtpHistoriaLoteView({ loteInicial }: { loteInicial?: str
             </ul>
           )}
 
-          {/* El recorrido en una línea: quien sólo quiere el número no baja. */}
-          <dl className="grid grid-cols-2 divide-[var(--rule-soft)] overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] sm:grid-cols-4 sm:divide-x">
-            <Paso n={1} termino="Se apartó" valor={`${nf(h.armado.piezas)} pz`} pie={`${n4(h.armado.m3)} m³ en la pila`} />
-            <Paso n={2} termino="Entró a la sierra" valor={`${n4(h.consumo.m3Total)} m³`} pie={`${nf(h.consumo.piezasConsumidas)} piezas consumidas`} />
-            <Paso
-              n={3}
-              termino="Salió aserrado"
-              valor={h.produccion.total ? `${n4(h.produccion.total.cantidad)} ${unidad(h.produccion.total.unit)}` : "—"}
-              pie={pieRendimiento(h)}
-            />
-            <Paso n={4} termino="Se despachó" valor={`${n4(h.salida.total)} m³`} pie={`${n4(h.salida.enStock)} m³ todavía en planta`} />
-          </dl>
+          {kpis.panel}
 
           {/* Cuánto tardó entre etapa y etapa. No sale de ninguna tabla del
               libro y es con lo que se decide: una pila que espera se degrada, y
@@ -243,6 +256,11 @@ export default function CtpHistoriaLoteView({ loteInicial }: { loteInicial?: str
  * arriba y la línea de tiempo son dos vistas de lo mismo, y sin el color
  * compartido hay que leer las dos para saber cuál corresponde a cuál.
  */
+/** Cada etapa del recorrido como tarjeta suelta del panel plegable. */
+function PasoTarjeta({ children }: { children: React.ReactNode }) {
+  return <dl className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">{children}</dl>;
+}
+
 function Paso({ n, termino, valor, pie }: { n: 1 | 2 | 3 | 4; termino: string; valor: string; pie: string }) {
   return (
     <div className="border-t border-[var(--rule-soft)] px-4 py-3 first:border-t-0 sm:border-t-0">

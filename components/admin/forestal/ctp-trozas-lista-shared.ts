@@ -12,6 +12,7 @@ import {
   estadoDeTroza,
   type OrdenTrozas,
 } from "@/lib/forestal/trozas-patio";
+import { FUENTE_MEDIDA_META, medidasDePieza } from "@/lib/forestal/trozas-patio-medidas";
 import type { UbicacionDeCarga } from "./hooks/use-planta-ubicacion";
 import type { TrozaPatioAPI } from "./hooks/use-trozas-patio";
 
@@ -52,22 +53,29 @@ export function exportarTrozasCsv(
   filtradas: readonly TrozaPatioAPI[],
   hoy: Date,
   canchas: Record<string, UbicacionDeCarga>,
+  /** El comienzo del nombre del archivo (el modal «sin título» baja el suyo). */
+  nombre = "patio-trozas",
 ) {
   const cel = (v: unknown) => { const s = String(v ?? ""); return /[";\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
   const num = (v: number | null | undefined) => (v == null ? "" : String(v).replace(".", ","));
-  const cab = ["N°", "Codigo troza", "Codigo planta", "Especie", "Estado", "Dias parada", "D1(cm)", "D2(cm)", "Largo(m)", "Volumen(m3)", "GTF", "Proveedor", "Titulo", "Lote", "Cancha"];
-  const filas = filtradas.map((t, i) => [
+  const cab = ["N°", "Codigo troza", "Codigo planta", "Especie", "Estado", "Dias parada", "D1(cm)", "D2(cm)", "Fuente D1/D2", "Largo(m)", "Volumen(m3)", "GTF", "Proveedor", "Titulo", "Lote", "Cancha"];
+  const filas = filtradas.map((t, i) => {
+    /* Las mismas puntas que pinta la tabla, con su origen al lado: en Excel un
+       D1 de Oxapampa no puede pasar por uno de la guía. */
+    const md = medidasDePieza(t);
+    return [
     i + 1, t.codificacion ?? "", t.codigoPlanta ?? "", t.especieComun ?? "",
     ESTADO_META[estadoDeTroza(t)].label, diasParada(t, hoy) ?? "",
-    num(t.d1Cm), num(t.d2Cm), num(t.largoM), num(t.volumenM3),
+    num(md.d1), num(md.d2), md.fuente ? FUENTE_MEDIDA_META[md.fuente].label : "", num(t.largoM), num(t.volumenM3),
     t.gtfNumber ?? "", t.proveedor ?? "", t.permiso ?? "", t.loteAserrioCode ?? "",
     canchas[t.woodEntryId]?.nombre ?? "",
-  ]);
+    ];
+  });
   const csv = "﻿" + [cab, ...filas].map((f) => f.map(cel).join(";")).join("\r\n");
   const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
   const a = document.createElement("a");
   a.href = url;
-  a.download = `patio-trozas-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.download = `${nombre}-${new Date().toISOString().slice(0, 10)}.csv`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
