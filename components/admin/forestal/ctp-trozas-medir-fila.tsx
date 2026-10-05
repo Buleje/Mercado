@@ -10,6 +10,7 @@
 import type { KeyboardEvent } from "react";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { MAX_DIAMETRO_CM } from "@/lib/forestal/medidas-troza";
+import { pareceTablaPegada } from "@/lib/forestal/pegar-medidas-trozas";
 import { diametroEquivalenteCm, medidasDePieza, volumenHuberM3 } from "@/lib/forestal/trozas-patio-medidas";
 import { n, NUM } from "./ctp-trozas-lista-shared";
 import { cm } from "./ctp-trozas-medidas-ui";
@@ -39,7 +40,7 @@ const CASILLA =
   "h-9 w-20 rounded-lg border bg-[var(--surface-raised)] px-2 text-right font-mono text-sm tabular-nums text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]";
 
 export default function CtpTrozasMedirFila({
-  t, valores, onCambio, indice, error, autoFocus,
+  t, valores, onCambio, indice, error, autoFocus, onPegarTabla,
 }: {
   t: TrozaPatioAPI;
   valores: ValoresMedida;
@@ -49,6 +50,8 @@ export default function CtpTrozasMedirFila({
   /** Lo que el servidor rechazó de esta pieza (mes cerrado, etc.). */
   error?: string;
   autoFocus?: boolean;
+  /** Pegaron varias líneas/columnas en una casilla: se reparte en la planilla. */
+  onPegarTabla?: (texto: string) => void;
 }) {
   const ya = medidasDePieza(t);
   const d1 = ya.d1 ?? leerCm(valores.d1);
@@ -98,6 +101,12 @@ export default function CtpTrozasMedirFila({
                 value={valores[k]}
                 onChange={(e) => onCambio({ ...valores, [k]: e.target.value })}
                 onKeyDown={(e) => alEnter(e, indice * 2 + j)}
+                onPaste={(e) => {
+                  const txt = e.clipboardData.getData("text");
+                  if (!onPegarTabla || !pareceTablaPegada(txt)) return;
+                  e.preventDefault();
+                  onPegarTabla(txt);
+                }}
                 placeholder={pista}
                 title={titPista}
                 aria-label={`${k.toUpperCase()} en cm de ${t.codificacion ?? t.codigoPlanta ?? "la pieza"}`}

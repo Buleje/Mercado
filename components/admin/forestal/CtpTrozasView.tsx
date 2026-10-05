@@ -43,6 +43,7 @@ import { escribirTrozaEnUrl, trozaDeUrl } from "@/lib/forestal/ctp-troza-etiquet
 import CtpApartarEnLoteModal from "./CtpApartarEnLoteModal";
 import { CtpArmarLoteEscaneoSuelto } from "./CtpArmarLoteEscaneoModal";
 import CtpCodigosDuplicados from "./CtpCodigosDuplicados";
+import CtpEtiquetasTrozasModal from "./CtpEtiquetasTrozasModal";
 import CtpConteosPatio from "./CtpConteosPatio";
 import CtpTrozaFichaModal from "./CtpTrozaFichaModal";
 import EscanerTrozas from "./EscanerTrozas";
@@ -104,12 +105,15 @@ export default function CtpTrozasView() {
   const [verSinTitulo, setVerSinTitulo] = useState(false);
   /** La planilla «Anotar D1 y D2»: qué piezas y cuál primero. */
   const [medir, setMedir] = useState<{ ids: string[]; inicial?: string } | null>(null);
+  /** Etiquetas QR de las piezas del patio que no tienen (tarjeta «Con etiqueta QR»). */
+  const [etiquetando, setEtiquetando] = useState<string[] | null>(null);
   const canchas = usePlantaUbicacion();
   const hoy = useMemo(() => new Date(), [trozas]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const { boton: botonKpis, panel: panelKpis } = useIndicadoresPatio({
     trozas, meta, cargando, estadoFiltro, onEstadoFiltro: setEstadoFiltro,
     tramoFiltro, onTramoFiltro: setTramoFiltro, especie, guia, titulo,
+    onImprimirEtiquetas: setEtiquetando,
   });
   /* Del patio ENTERO, no del recorte: es deuda de todo el libro y el botón
      está en la cabecera de la vista, no dentro de los indicadores. */
@@ -274,7 +278,16 @@ export default function CtpTrozasView() {
           onClose={() => setVerSinTitulo(false)}
           onVerFicha={abrirFicha}
           onFiltrarTabla={() => setTitulo([SIN_TITULO])}
+          onDeclarado={() => void recargar()}
           onAnotar={(id) => setMedir({ ids: sinTitulo.filter(faltanMedidas).map((t) => t.id), inicial: id })}
+        />
+      )}
+      {etiquetando && (
+        <CtpEtiquetasTrozasModal
+          ids={etiquetando}
+          contexto={`${etiquetando.length} ${etiquetando.length === 1 ? "troza del patio sin etiqueta" : "trozas del patio sin etiqueta"}`}
+          onClose={() => setEtiquetando(null)}
+          onListo={() => void recargar()}
         />
       )}
       {medir && (

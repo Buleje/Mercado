@@ -23,6 +23,7 @@ import { medidasDePieza } from "@/lib/forestal/trozas-patio-medidas";
 import type { CambioMedidaTroza } from "@/lib/forestal/medidas-troza";
 import { Btn, ModalBody } from "./ctp-shared";
 import CtpTrozasMedirFila, { leerCm, medidaInvalida, type ValoresMedida } from "./ctp-trozas-medir-fila";
+import CtpTrozasMedirPegar, { repartirPegado } from "./ctp-trozas-medir-pegar";
 import { useGuardarMedidas } from "./hooks/use-medidas-trozas";
 import type { TrozaPatioAPI } from "./hooks/use-trozas-patio";
 
@@ -42,6 +43,7 @@ export default function CtpTrozasMedirModal({
   const [valores, setValores] = useState<Record<string, ValoresMedida>>({});
   const [errores, setErrores] = useState<Record<string, string>>({});
   const [aviso, setAviso] = useState<string | null>(null);
+  const [pegado, setPegado] = useState<string | null>(null);
   const { guardar, guardando, error } = useGuardarMedidas();
 
   const filas = useMemo(() => {
@@ -68,6 +70,12 @@ export default function CtpTrozasMedirModal({
     const v = valores[t.id];
     return v && (medidaInvalida(leerCm(v.d1)) || medidaInvalida(leerCm(v.d2)));
   });
+
+  const repartir = (texto: string) => {
+    const r = repartirPegado(texto, filas, valores);
+    setValores(r.valores);
+    setPegado(r.resumen);
+  };
 
   const enviar = async () => {
     const r = await guardar(cambios);
@@ -114,6 +122,7 @@ export default function CtpTrozasMedirModal({
             example="Troza 62B, 7,75 m y 3,424 m³: la pista dice ≈75. Si anotas 76 y 74, la diferencia es +0 %."
           />
         </p>
+        {filas.length > 0 && <CtpTrozasMedirPegar onRepartir={repartir} resultado={pegado} />}
         {filas.length === 0 ? (
           <p className="rounded-xl border border-dashed border-[var(--rule-base)] p-6 text-center text-sm text-[var(--text-secondary)]">
             Todas las piezas de la lista tienen sus dos puntas.
@@ -141,6 +150,7 @@ export default function CtpTrozasMedirModal({
                   autoFocus={i === 0}
                   valores={valores[t.id] ?? VACIO}
                   onCambio={(v) => setValores((prev) => ({ ...prev, [t.id]: v }))}
+                  onPegarTabla={repartir}
                   error={errores[t.id]}
                 />
               ))}

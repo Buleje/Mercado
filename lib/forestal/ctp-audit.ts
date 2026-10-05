@@ -235,6 +235,10 @@ export type CtpAuditAction =
   /** Cargó en planta los D1/D2 en cm que la guía no traía. Sólo sobre vacío:
    *  el dato de SERFOR no se pisa. Éste SÍ es del libro (lo frena el cierre). */
   | "ctp_troza_d1d2_planta"
+  /** Declaró el título habilitante (código de origen, resolución, permiso) de
+   *  un ingreso ya asentado que no lo traía (05-10). Sólo sobre vacío y con el
+   *  mes abierto: llena un hueco, no corrige lo declarado. */
+  | "ctp_ingreso_titulo_declarado"
   /** Guardó (o actualizó) el acta de un conteo físico del patio. */
   | "ctp_patio_conteo"
   /** Alguien abrió una foto privada de la carga (GPS + nombre: Ley 29733). */

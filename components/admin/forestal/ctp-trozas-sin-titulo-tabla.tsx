@@ -8,9 +8,12 @@
  */
 
 import { DataTable } from "@buleje/design-system";
+import { ShieldCheck } from "@buleje/design-system/icons";
+import type { Contrato } from "@/lib/forestal/contratos";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { diasParada, ESTADO_META, estadoDeTroza } from "@/lib/forestal/trozas-patio";
 import { medidasDePieza } from "@/lib/forestal/trozas-patio-medidas";
+import CtpTrozasDeclararTitulo from "./ctp-trozas-declarar-titulo";
 import { claseDias, n, NUM, tituloDias } from "./ctp-trozas-lista-shared";
 import { BotonAnotarMedidas, ValorMedida } from "./ctp-trozas-medidas-ui";
 import { puntoDeTono } from "./ctp-trozas-ui";
@@ -43,12 +46,18 @@ export function agruparPorGuia(trozas: readonly TrozaPatioAPI[]): GrupoSinTitulo
 const COLUMNAS = 8;
 
 export default function CtpTrozasSinTituloTabla({
-  grupos, hoy, onVerFicha, onAnotar,
+  grupos, hoy, onVerFicha, onAnotar, contratos, declarando, onDeclarando, onDeclarado,
 }: {
   grupos: GrupoSinTitulo[];
   hoy: Date;
   onVerFicha: (id: string) => void;
   onAnotar: (id: string) => void;
+  /** Los permisos del negocio, para elegir el título de una guía. */
+  contratos: readonly Contrato[];
+  /** La guía cuyo formulario «Declarar título» está abierto (una a la vez). */
+  declarando: string | null;
+  onDeclarando: (gtf: string | null) => void;
+  onDeclarado: (aviso: string) => void;
 }) {
   const piezas = grupos.reduce((a, g) => a + g.piezas.length, 0);
   const m3 = grupos.reduce((a, g) => a + g.m3, 0);
@@ -78,9 +87,32 @@ export default function CtpTrozasSinTituloTabla({
                   {g.piezas.length} {g.piezas.length === 1 ? "pieza" : "piezas"} · {fmtM3(g.m3)} m³
                   {g.especies.length > 0 && ` · ${g.especies.join(", ")}`}
                 </span>
+                {/* El título se corrige UNA vez por guía: acá mismo, sin ir a
+                    Ingresos (Brandon 05-10). «Sin guía» no tiene dónde. */}
+                {g.gtf !== "Sin guía" && declarando !== g.gtf && (
+                  <button
+                    type="button"
+                    onClick={() => onDeclarando(g.gtf)}
+                    className="inline-flex h-7 items-center gap-1 rounded-lg border border-[var(--accent)] px-2 text-xs font-bold text-[var(--accent-ink)] transition-colors hover:bg-primary/10 dark:text-[var(--accent)]"
+                  >
+                    <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" /> Declarar título
+                  </button>
+                )}
               </span>
             </td>
           </tr>
+          {declarando === g.gtf && (
+            <tr className="bg-[var(--surface-sunken)]">
+              <td colSpan={COLUMNAS} className="!pt-0">
+                <CtpTrozasDeclararTitulo
+                  gtf={g.gtf}
+                  contratos={contratos}
+                  onDeclarado={onDeclarado}
+                  onCancelar={() => onDeclarando(null)}
+                />
+              </td>
+            </tr>
+          )}
           {g.piezas.map((t) => {
             const e = estadoDeTroza(t);
             const d = diasParada(t, hoy);

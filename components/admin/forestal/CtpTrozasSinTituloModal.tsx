@@ -15,11 +15,14 @@
  * `permiso`): lo aserrado o despachado se arregla en su asiento, no acá.
  */
 
-import { useMemo, useState } from "react";
-import { Download, Filter, Search, ShieldAlert } from "@buleje/design-system/icons";
+import { useEffect, useMemo, useState } from "react";
+import { Check, Download, Filter, Search, ShieldAlert } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import type { Contrato } from "@/lib/forestal/contratos";
+import { ctpGet } from "@/lib/forestal/ctp-fetch";
+import { logger } from "@/lib/logger";
 import { Btn, ModalBody } from "./ctp-shared";
 import { exportarTrozasCsv } from "./ctp-trozas-lista-shared";
 import CtpTrozasSinTituloTabla, { agruparPorGuia } from "./ctp-trozas-sin-titulo-tabla";
@@ -29,7 +32,7 @@ import type { TrozaPatioAPI } from "./hooks/use-trozas-patio";
 const norm = (s: string | null | undefined) => (s ?? "").toLowerCase();
 
 export default function CtpTrozasSinTituloModal({
-  piezas, hoy, canchas, onClose, onVerFicha, onFiltrarTabla, onAnotar,
+  piezas, hoy, canchas, onClose, onVerFicha, onFiltrarTabla, onAnotar, onDeclarado,
 }: {
   /** Ya filtradas por `piezasSinTitulo`. */
   piezas: readonly TrozaPatioAPI[];
@@ -41,8 +44,20 @@ export default function CtpTrozasSinTituloModal({
   onFiltrarTabla: () => void;
   /** Abre la planilla de D1/D2 con esa pieza primero. */
   onAnotar: (id: string) => void;
+  /** Se declaró un título: releer el patio (esas piezas salen de la lista). */
+  onDeclarado: () => void;
 }) {
   const [q, setQ] = useState("");
+  const [declarando, setDeclarando] = useState<string | null>(null);
+  const [avisos, setAvisos] = useState<string[]>([]);
+  /* Los permisos del negocio, para elegir el título en vez de tipearlo. Si no
+     se pueden leer, el formulario queda con el código a mano. */
+  const [contratos, setContratos] = useState<Contrato[]>([]);
+  useEffect(() => {
+    ctpGet<{ contratos?: Contrato[] }>("/api/admin/forestal/contratos")
+      .then((j) => setContratos(j.contratos ?? []))
+      .catch((err) => logger.warn("[sin-titulo] no se pudo leer los permisos", { error: String(err) }));
+  }, []);
   const visibles = useMemo(() => {
     const t = q.trim().toLowerCase();
     if (!t) return piezas;
@@ -122,6 +137,11 @@ export default function CtpTrozasSinTituloModal({
           </label>
         </div>
 
+        {avisos.map((a) => (
+          <p key={a} role="status" className="flex items-center gap-1.5 rounded-xl bg-[var(--data-success-500)]/12 px-3 py-2 text-sm font-bold text-[var(--text-primary)]">
+            <Check className="h-4 w-4 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" aria-hidden="true" /> {a}
+          </p>
+        ))}
         {grupos.length === 0 ? (
           <p className="rounded-xl border border-dashed border-[var(--rule-base)] p-6 text-center text-sm text-[var(--text-secondary)]">
             {piezas.length === 0 ? "Todas las piezas del patio tienen título declarado." : `Ninguna pieza coincide con «${q.trim()}».`}
@@ -137,6 +157,14 @@ export default function CtpTrozasSinTituloModal({
             onAnotar={(id) => {
               onClose();
               onAnotar(id);
+            }}
+            contratos={contratos}
+            declarando={declarando}
+            onDeclarando={setDeclarando}
+            onDeclarado={(aviso) => {
+              setAvisos((prev) => [...prev, aviso]);
+              setDeclarando(null);
+              onDeclarado();
             }}
           />
         )}

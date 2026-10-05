@@ -31,6 +31,8 @@ import { Axe, Box, Boxes, Clock, QrCode, Ruler, Scale, Sigma } from "@buleje/des
 import {
   antiguedadDelPatio,
   ESTADO_META,
+  estaEnPatio,
+  estadoDeTroza,
   filtrarPatio,
   resumirPatio,
   SIN_TITULO,
@@ -54,10 +56,12 @@ export interface IndicadoresPatioProps {
   especie: readonly string[];
   guia: readonly string[];
   titulo: readonly string[];
+  /** Imprimir las etiquetas de estas piezas (las del patio sin `etiquetadaEn`). */
+  onImprimirEtiquetas?: (ids: string[]) => void;
 }
 
 export function useIndicadoresPatio({
-  trozas, meta, cargando, estadoFiltro, onEstadoFiltro, tramoFiltro, onTramoFiltro, especie, guia, titulo,
+  trozas, meta, cargando, estadoFiltro, onEstadoFiltro, tramoFiltro, onTramoFiltro, especie, guia, titulo, onImprimirEtiquetas,
 }: IndicadoresPatioProps): { boton: ReactNode; panel: ReactNode } {
   /* `hoy` fijo mientras no cambien los datos: si no, la antigüedad se mueve sola. */
   const hoy = useMemo(() => new Date(), [trozas]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -65,6 +69,11 @@ export function useIndicadoresPatio({
   const resumen = useMemo(() => resumirPatio(delFiltro), [delFiltro]);
   const edad = useMemo(() => antiguedadDelPatio(delFiltro, hoy), [delFiltro, hoy]);
   const extra = useMemo(() => cifrasExtraPatio(delFiltro), [delFiltro]);
+  /* Las del patio sin chapa, del MISMO recorte que cuenta la tarjeta. */
+  const idsSinEtiqueta = useMemo(
+    () => delFiltro.filter((t) => estaEnPatio(estadoDeTroza(t)) && !t.etiquetadaEn).map((t) => t.id),
+    [delFiltro],
+  );
 
   const hayApartadas = resumen.apartadas > 0;
   const tramosConPiezas = edad.tramos.filter((t) => t.piezas > 0);
@@ -210,9 +219,12 @@ export function useIndicadoresPatio({
       key="qr"
       label="Con etiqueta QR"
       value={cifra(`${extra.etiquetadas} de ${extra.enPatio}`)}
-      subValue={extra.enPatio > 0 && extra.etiquetadas === extra.enPatio ? "todas con su chapa" : `${extra.enPatio - extra.etiquetadas} sin etiqueta en el patio`}
+      subValue={extra.enPatio > 0 && extra.etiquetadas === extra.enPatio ? "todas con su chapa" : idsSinEtiqueta.length > 0 && onImprimirEtiquetas
+          ? `toca para imprimir las ${idsSinEtiqueta.length} que faltan`
+          : `${extra.enPatio - extra.etiquetadas} sin etiqueta en el patio`}
       icon={QrCode}
       emphasis={extra.etiquetadas < extra.enPatio ? "warning" : "success"}
+      onClick={idsSinEtiqueta.length > 0 && onImprimirEtiquetas ? () => onImprimirEtiquetas(idsSinEtiqueta) : undefined}
     />,
     /* Una cifra en cero es ruido: Oxapampa sólo aparece cuando se cubicó algo. */
     ...(extra.cubicadasOx > 0
