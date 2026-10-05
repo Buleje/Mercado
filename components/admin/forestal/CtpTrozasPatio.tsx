@@ -2,23 +2,25 @@
 
 /**
  * Los indicadores del patio, pieza por pieza — plegables (Brandon 05-10: «los
- * KPIs para poder ocultar y mostrar, que no ocupen mucho espacio»).
+ * KPIs para poder ocultar y mostrar, que no ocupen mucho espacio»; y después,
+ * el mismo día: «mejora y agrega más KPIs»).
  *
- * Consumos cuenta metros cúbicos por guía; acá la unidad es **la troza**:
- * cuántas hay paradas, cuáles se pueden llevar a la sierra hoy y —lo que cuesta
- * plata— hace cuánto que están ahí (la madera en troza se mancha y se raja).
+ * Consumos cuenta metros cúbicos por guía; acá la unidad es **la troza**.
  *
  * Es un HOOK y no un panel: devuelve el botón «Indicadores», que va en la
  * cabecera de la vista junto a las demás acciones, y el panel, que la vista
  * pone debajo. Cerrado, el botón lleva el titular en una línea (plegar no es
- * esconder el dato). Abierto:
- *   · las dos cifras con su desglose colgando (en qué anda · paradas hace), cuyas
- *     pastillas filtran la lista de abajo;
- *   · las tarjetas nuevas sobre datos que el endpoint YA traía y no se pintaban:
- *     listas para la sierra, calibre, largo, tamaño de pieza, etiquetas QR,
- *     cubicación Oxapampa y piezas leídas.
- * «Sin título declarado» ya no vive acá: es deuda, no un indicador, y tiene su
- * botón con su tabla (`CtpTrozasSinTituloModal`).
+ * esconder el dato). Abierto, en orden de pregunta:
+ *   · arriba, lo que hay y hace cuánto (las dos cifras con su desglose, cuyas
+ *     pastillas filtran la lista) y, en la nota de «La más vieja», cuánto falta
+ *     para que algo entre a riesgo de mancha (30 d);
+ *   · abajo, cinco tarjetas para DECIDIR: qué llevar a la sierra (y cuántos pt
+ *     daría, estimado con el rendimiento real del libro), cuánto vale lo
+ *     parado, a qué ritmo rota la cancha, de qué grosor es la pila y qué tan
+ *     lista está para una fiscalización.
+ * La cuenta vive en `lib/forestal/trozas-patio-kpis.ts` (puro, con tests).
+ * «Sin título declarado» no vive acá como cifra suelta: es deuda, tiene su
+ * botón con su tabla (`CtpTrozasSinTituloModal`); acá es una fila del chequeo.
  *
  * Los filtros de especie/guía/título recortan estas cifras (ADR-400): es el
  * MISMO `filtrarPatio` que la lista. Estado y tramo NO, porque son el desglose
@@ -27,21 +29,32 @@
 
 import { useMemo, type ReactNode } from "react";
 import { Kicker } from "@buleje/design-system";
-import { Axe, Box, Boxes, Clock, QrCode, Ruler, Scale, Sigma } from "@buleje/design-system/icons";
+import { Boxes, Clock, Sigma } from "@buleje/design-system/icons";
 import {
   antiguedadDelPatio,
   ESTADO_META,
-  estaEnPatio,
-  estadoDeTroza,
   filtrarPatio,
   resumirPatio,
   SIN_TITULO,
   type EstadoTroza,
 } from "@/lib/forestal/trozas-patio";
 import { cifrasExtraPatio } from "@/lib/forestal/trozas-patio-medidas";
+import {
+  clasesDiametricas,
+  DIAS_RIESGO,
+  fiscalizacionDelPatio,
+  flujoDelPatio,
+  primeroALaSierra,
+  ptEstimados,
+  riesgoDelPatio,
+  valorDelPatio,
+  type FilaFiscal,
+} from "@/lib/forestal/trozas-patio-kpis";
 import CtpKpi from "./CtpKpi";
 import { useKpisPlegables } from "./kpis-plegables";
 import { CifraPatio, n2, Pastilla, puntoDeTono, type TonoPatio } from "./ctp-trozas-ui";
+import { TarjetaRotacion, TarjetaSierra, TarjetaValor } from "./ctp-trozas-kpi-decidir";
+import { TarjetaCalibre, TarjetaFiscal } from "./ctp-trozas-kpi-pila";
 import type { PatioMeta, TrozaPatioAPI } from "./hooks/use-trozas-patio";
 
 export interface IndicadoresPatioProps {
@@ -58,10 +71,15 @@ export interface IndicadoresPatioProps {
   titulo: readonly string[];
   /** Imprimir las etiquetas de estas piezas (las del patio sin `etiquetadaEn`). */
   onImprimirEtiquetas?: (ids: string[]) => void;
+  /** Abrir la planilla «Anotar D1/D2» con estas piezas. Sin él, la fila no es botón. */
+  onAnotarMedidas?: (ids: string[]) => void;
+  /** Mostrar en la lista sólo las piezas sin título declarado. */
+  onVerSinTitulo?: () => void;
 }
 
 export function useIndicadoresPatio({
-  trozas, meta, cargando, estadoFiltro, onEstadoFiltro, tramoFiltro, onTramoFiltro, especie, guia, titulo, onImprimirEtiquetas,
+  trozas, meta, cargando, estadoFiltro, onEstadoFiltro, tramoFiltro, onTramoFiltro, especie, guia, titulo,
+  onImprimirEtiquetas, onAnotarMedidas, onVerSinTitulo,
 }: IndicadoresPatioProps): { boton: ReactNode; panel: ReactNode } {
   /* `hoy` fijo mientras no cambien los datos: si no, la antigüedad se mueve sola. */
   const hoy = useMemo(() => new Date(), [trozas]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -69,18 +87,27 @@ export function useIndicadoresPatio({
   const resumen = useMemo(() => resumirPatio(delFiltro), [delFiltro]);
   const edad = useMemo(() => antiguedadDelPatio(delFiltro, hoy), [delFiltro, hoy]);
   const extra = useMemo(() => cifrasExtraPatio(delFiltro), [delFiltro]);
-  /* Las del patio sin chapa, del MISMO recorte que cuenta la tarjeta. */
-  const idsSinEtiqueta = useMemo(
-    () => delFiltro.filter((t) => estaEnPatio(estadoDeTroza(t)) && !t.etiquetadaEn).map((t) => t.id),
-    [delFiltro],
+  const kpis = useMemo(
+    () => ({
+      valor: valorDelPatio(delFiltro),
+      flujo: flujoDelPatio(delFiltro, hoy),
+      clases: clasesDiametricas(delFiltro).clases,
+      fisc: fiscalizacionDelPatio(delFiltro),
+      primero: primeroALaSierra(delFiltro, hoy),
+    }),
+    [delFiltro, hoy],
   );
+  const riesgo = riesgoDelPatio(edad.tramos, edad.masVieja);
 
   const hayApartadas = resumen.apartadas > 0;
   const tramosConPiezas = edad.tramos.filter((t) => t.piezas > 0);
-  const maxEspecie = Math.max(1, ...resumen.porEspecie.map((e) => e.m3));
+  /* Las pastillas de especie hablan de lo LIBRE (lo que se puede aserrar hoy),
+     no de lo registrado: al lado de «Paradas en patio», 28.64 m³ de Tornillo
+     que incluían lo ya aserrado no sumaban con nada de lo que estaba arriba. */
+  const maxEspecie = Math.max(0.001, ...resumen.porEspecie.map((e) => e.m3Libres));
   const especiesVisibles = resumen.porEspecie.slice(0, 6);
   const tonoEdad: TonoPatio =
-    edad.masVieja == null ? "muted" : edad.masVieja >= 60 ? "danger" : edad.masVieja >= 30 ? "warn" : "ok";
+    edad.masVieja == null ? "muted" : edad.masVieja >= 60 ? "danger" : edad.masVieja >= DIAS_RIESGO ? "warn" : "ok";
   /* Mientras se lee: «…», nunca 0 — un cero se lee como un patio vacío. */
   const leyendo = cargando && trozas.length === 0;
   const cifra = (v: number | string) => (leyendo ? "…" : String(v));
@@ -94,6 +121,13 @@ export function useIndicadoresPatio({
     guia.length > 0 ? `guía: ${guia.join(" o ")}` : "",
   ].filter(Boolean).join(" · ");
 
+  const notaEdad =
+    edad.masVieja == null
+      ? "sin fecha en ninguna pieza"
+      : riesgo.piezas > 0
+        ? `${riesgo.piezas} con ${DIAS_RIESGO} d o más · ${n2(riesgo.m3)} m³ en riesgo de mancha`
+        : `días parada · la primera entra a riesgo en ${riesgo.faltanDias} d`;
+
   const encabezado = (
     <div className="space-y-2.5">
       <div className="grid gap-2.5 lg:grid-cols-2">
@@ -102,7 +136,11 @@ export function useIndicadoresPatio({
           icono={Boxes}
           label={hayApartadas ? "Paradas en patio" : "En patio, listas"}
           valor={cifra(resumen.enPatio.piezas)}
-          nota={leyendo ? "leyendo el patio…" : `${n2(resumen.enPatio.m3)} m³ ${hayApartadas ? "ocupando cancha" : "· ninguna apartada"}`}
+          nota={
+            leyendo
+              ? "leyendo el patio…"
+              : `${n2(resumen.enPatio.m3)} m³ ${hayApartadas ? "ocupando cancha" : "· ninguna apartada"} · de ${resumen.total.piezas} registradas`
+          }
           desglose="En qué anda"
           explicacion="De qué está hecho ese número: cada estado filtra la lista de abajo."
         >
@@ -126,7 +164,7 @@ export function useIndicadoresPatio({
           icono={Clock}
           label="La más vieja"
           valor={cifra(edad.masVieja != null ? `${edad.masVieja} d` : "—")}
-          nota={edad.masVieja == null ? "sin fecha en ninguna pieza" : edad.masVieja >= 60 ? "riesgo de mancha" : "días parada"}
+          nota={notaEdad}
           tono={tonoEdad}
           desglose="Paradas hace"
           explicacion="Desde que la pieza bajó del camión (o el asiento de su guía) y sólo lo que sigue parado."
@@ -152,18 +190,20 @@ export function useIndicadoresPatio({
       </div>
       {resumen.porEspecie.length > 1 && (
         <p className="flex flex-wrap items-center gap-1.5">
-          <Kicker as="span">Especies</Kicker>
+          <Kicker as="span" title="Lo libre de cada especie: lo que se puede llevar a la sierra hoy">Libres por especie</Kicker>
           {especiesVisibles.map((e) => (
             <span
               key={e.especie}
-              title={`${n2(e.m3Libres)} m³ libres de ${n2(e.m3)} m³`}
+              title={`${e.libres} libres (${n2(e.m3Libres)} m³) de ${e.piezas} registradas (${n2(e.m3)} m³, también las ya aserradas)`}
               className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-2 py-0.5"
             >
               <span className="h-1.5 w-8 shrink-0 overflow-hidden rounded-full bg-[var(--rule-base)]" aria-hidden="true">
-                <span className="block h-full rounded-full bg-[var(--accent)]" style={{ width: `${(e.m3 / maxEspecie) * 100}%` }} />
+                <span className="block h-full rounded-full bg-[var(--accent)]" style={{ width: `${(e.m3Libres / maxEspecie) * 100}%` }} />
               </span>
               <span className="truncate text-xs font-bold text-[var(--text-primary)]">{e.especie}</span>
-              <span className="font-mono text-[length:var(--ts-2xs)] tabular-nums text-[var(--text-secondary)]">{e.piezas} pz</span>
+              <span className="font-mono text-[length:var(--ts-2xs)] tabular-nums text-[var(--text-secondary)]">
+                {e.libres} · {n2(e.m3Libres)} m³
+              </span>
             </span>
           ))}
           {resumen.porEspecie.length > especiesVisibles.length && (
@@ -176,56 +216,45 @@ export function useIndicadoresPatio({
           {resumen.sinCodificar} {resumen.sinCodificar === 1 ? "pieza no tiene" : "piezas no tienen"} codificación: no se pueden pedir por su código en una fiscalización.
         </p>
       )}
+      {meta.truncado && (
+        <p className="rounded-lg bg-[var(--data-warning-500)]/12 px-2.5 py-1.5 text-xs font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+          Se leyeron {meta.devueltas} de {meta.total} piezas: los totales son sobre lo leído.
+        </p>
+      )}
     </div>
   );
 
-  const sinMedir = extra.sinMedidas > 0 ? `${extra.sinMedidas} sin D1/D2` : "todas con D1/D2";
+  /* Qué hace cada fila incompleta del chequeo. Sin el callback, no es botón. */
+  const onFila: Partial<Record<FilaFiscal["clave"], (ids: string[]) => void>> = {
+    ...(onImprimirEtiquetas ? { etiqueta: onImprimirEtiquetas } : {}),
+    ...(onAnotarMedidas ? { medidas: onAnotarMedidas } : {}),
+    ...(onVerSinTitulo ? { titulo: () => onVerSinTitulo() } : {}),
+  };
+  const sinMedidas = kpis.fisc.filas.find((f) => f.clave === "medidas")?.faltan ?? [];
+
   const tarjetas: ReactNode[] = [
-    <CtpKpi
+    <TarjetaSierra
       key="sierra"
-      label="Listas para la sierra"
-      value={cifra(libres.piezas)}
-      subValue={`${n2(libres.m3)} m³ libres · toca para filtrar`}
-      icon={Axe}
-      emphasis="success"
-      onClick={() => alternarEstado("libre")}
+      libres={libres}
+      pt={ptEstimados(libres.m3, meta.rendimientoLibro?.pct)}
+      rendimiento={meta.rendimientoLibro ?? null}
+      primero={kpis.primero}
       filtrando={estadoFiltro.includes("libre")}
+      onLibres={() => alternarEstado("libre")}
+      onPrimero={(p) => {
+        onEstadoFiltro(["libre"]);
+        onTramoFiltro([p.tramo]);
+      }}
     />,
-    <CtpKpi
+    <TarjetaValor key="valor" valor={kpis.valor} />,
+    <TarjetaRotacion key="rotacion" flujo={kpis.flujo} />,
+    <TarjetaCalibre
       key="calibre"
-      label="Calibre promedio"
-      value={cifra(extra.calibrePromedioCm != null ? `${extra.calibrePromedioCm} cm` : "—")}
-      subValue={extra.calibreMayorCm != null ? `la más gruesa ${extra.calibreMayorCm} cm · ${sinMedir}` : sinMedir}
-      icon={Ruler}
-      emphasis={extra.sinMedidas > 0 ? "warning" : "neutral"}
+      clases={kpis.clases}
+      extra={extra}
+      onAnotar={onAnotarMedidas && sinMedidas.length > 0 ? () => onAnotarMedidas(sinMedidas) : undefined}
     />,
-    <CtpKpi
-      key="largo"
-      label="Largo promedio"
-      value={cifra(extra.largoPromedioM != null ? `${n2(extra.largoPromedioM)} m` : "—")}
-      subValue={extra.largoMayorM != null ? `la más larga ${n2(extra.largoMayorM)} m` : "sin largos cargados"}
-      icon={Scale}
-      emphasis="neutral"
-    />,
-    <CtpKpi
-      key="pieza"
-      label="Volumen por troza"
-      value={cifra(extra.m3PromedioPorPieza != null ? `${n2(extra.m3PromedioPorPieza)} m³` : "—")}
-      subValue={extra.m3MayorPieza != null ? `la mayor ${n2(extra.m3MayorPieza)} m³` : "promedio de lo parado"}
-      icon={Box}
-      emphasis="neutral"
-    />,
-    <CtpKpi
-      key="qr"
-      label="Con etiqueta QR"
-      value={cifra(`${extra.etiquetadas} de ${extra.enPatio}`)}
-      subValue={extra.enPatio > 0 && extra.etiquetadas === extra.enPatio ? "todas con su chapa" : idsSinEtiqueta.length > 0 && onImprimirEtiquetas
-          ? `toca para imprimir las ${idsSinEtiqueta.length} que faltan`
-          : `${extra.enPatio - extra.etiquetadas} sin etiqueta en el patio`}
-      icon={QrCode}
-      emphasis={extra.etiquetadas < extra.enPatio ? "warning" : "success"}
-      onClick={idsSinEtiqueta.length > 0 && onImprimirEtiquetas ? () => onImprimirEtiquetas(idsSinEtiqueta) : undefined}
-    />,
+    <TarjetaFiscal key="fiscal" fisc={kpis.fisc} onFila={onFila} />,
     /* Una cifra en cero es ruido: Oxapampa sólo aparece cuando se cubicó algo. */
     ...(extra.cubicadasOx > 0
       ? [
@@ -239,14 +268,6 @@ export function useIndicadoresPatio({
           />,
         ]
       : []),
-    <CtpKpi
-      key="leidas"
-      label="Piezas registradas"
-      value={cifra(resumen.total.piezas)}
-      subValue={meta.truncado ? `de ${meta.total} que hay: los totales son sobre lo leído` : "de todas las guías, también las ya aserradas"}
-      icon={Boxes}
-      emphasis={meta.truncado ? "warning" : "neutral"}
-    />,
   ];
 
   const filtrosActivos = especie.length + guia.length + titulo.length;

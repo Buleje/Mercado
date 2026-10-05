@@ -17,6 +17,7 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { invalidarCtp } from "@/lib/forestal/ctp-fetch";
 import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import type { CambioMedidaTroza } from "@/lib/forestal/medidas-troza";
+import type { EstadoGuiaMedidas, RespuestaMedidasGuia } from "@/lib/forestal/medidas-desde-guia";
 
 export interface ResultadoMedidas {
   /** Las trozas releídas después de guardar: con su PT del servidor. */
@@ -53,4 +54,62 @@ export function useGuardarMedidas() {
   }, []);
 
   return { guardar, guardando, error };
+}
+
+/* ── «Traer D1/D2 de la guía» (05-10, ADR-469) ───────────────────────────── */
+
+export interface PedidoMedidasGuia {
+  gtfNumber: string;
+  /** El N° de registro o el enlace del QR, tal como lo pegó el operador. */
+  registroOEnlace?: string;
+  aplicar?: boolean;
+}
+
+const URL_MEDIDAS_GUIA = "/api/admin/forestal/trozas/medidas-guia";
+
+/** Qué guías traen la ficha guardada (una sola lectura para toda la planilla). */
+export async function leerEstadoGuias(gtfs: readonly string[]): Promise<EstadoGuiaMedidas[]> {
+  if (gtfs.length === 0) return [];
+  const q = new URLSearchParams();
+  gtfs.forEach((g) => q.append("gtf", g));
+  const r = await fetch(`${URL_MEDIDAS_GUIA}?${q.toString()}`, { credentials: "include" });
+  const j = (await r.json().catch(() => ({}))) as { guias?: EstadoGuiaMedidas[]; message?: string; error?: string };
+  if (!r.ok) throw new Error(j.message ?? j.error ?? `El servidor respondió ${r.status}`);
+  return j.guias ?? [];
+}
+
+/** Vista previa o escritura de UNA guía. El enlace del QR viaja como `enlaceQr`. */
+export function useMedidasDeGuia() {
+  const [cargando, setCargando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const consultar = useCallback(async (p: PedidoMedidasGuia): Promise<RespuestaMedidasGuia | null> => {
+    setCargando(true);
+    setError(null);
+    const texto = (p.registroOEnlace ?? "").trim();
+    const esEnlace = /^https?:\/\//i.test(texto) || /nuRegistroGuia=/i.test(texto);
+    try {
+      const r = await fetch(URL_MEDIDAS_GUIA, {
+        method: "POST",
+        credentials: "include",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          gtfNumber: p.gtfNumber,
+          ...(texto ? (esEnlace ? { enlaceQr: texto } : { numeroRegistro: texto }) : {}),
+          aplicar: p.aplicar === true,
+        }),
+      });
+      const j = (await r.json().catch(() => ({}))) as Partial<RespuestaMedidasGuia> & { message?: string; error?: string };
+      if (!r.ok) throw new Error(j.message ?? j.error ?? `El servidor respondió ${r.status}`);
+      if (p.aplicar) invalidarCtp("trozas");
+      return j as RespuestaMedidasGuia;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo consultar la guía.");
+      return null;
+    } finally {
+      setCargando(false);
+    }
+  }, []);
+
+  return { consultar, cargando, error };
 }

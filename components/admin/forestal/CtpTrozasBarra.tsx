@@ -26,8 +26,9 @@ const CAMPO =
 export interface CtpTrozasBarraProps {
   texto: string;
   onTexto: (v: string) => void;
-  orden: OrdenTrozas;
-  onOrden: (v: OrdenTrozas) => void;
+  /** `columna` = el orden viene de un clic en el título de una columna. */
+  orden: OrdenTrozas | "columna";
+  onOrden: (v: OrdenTrozas | "columna") => void;
   /** Mientras se lee, el conteo no puede afirmar un patio vacío. */
   leyendo: boolean;
   piezasFiltradas: number;
@@ -91,10 +92,11 @@ export default function CtpTrozasBarra({
         </div>
         <select
           value={orden}
-          onChange={(e) => onOrden(e.target.value as OrdenTrozas)}
+          onChange={(e) => onOrden(e.target.value as OrdenTrozas | "columna")}
           aria-label="Ordenar por"
           className={`${CAMPO} px-2.5 font-medium`}
         >
+          {orden === "columna" && <option value="columna">Por la columna elegida</option>}
           {ORDENES.map((o) => <option key={o.v} value={o.v}>{o.label}</option>)}
         </select>
         {sinMedidas > 0 && (

@@ -13,6 +13,10 @@ import type { Contrato } from "@/lib/forestal/contratos";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { diasParada, ESTADO_META, estadoDeTroza } from "@/lib/forestal/trozas-patio";
 import { medidasDePieza } from "@/lib/forestal/trozas-patio-medidas";
+import { FiltroColumnaTexto } from "@/components/admin/shared/filtros-columna";
+import type { CampoOrdenTroza, OrdenColumnaTroza } from "./ctp-trozas-filtros-columnas";
+import type { FiltrosTrozas } from "./ctp-trozas-filtros-hook";
+import { FiltroMultiTroza, FiltroRangoTroza, ThTroza } from "./ctp-trozas-filtros-th";
 import CtpTrozasDeclararTitulo from "./ctp-trozas-declarar-titulo";
 import { claseDias, n, NUM, tituloDias } from "./ctp-trozas-lista-shared";
 import { BotonAnotarMedidas, ValorMedida } from "./ctp-trozas-medidas-ui";
@@ -46,7 +50,7 @@ export function agruparPorGuia(trozas: readonly TrozaPatioAPI[]): GrupoSinTitulo
 const COLUMNAS = 8;
 
 export default function CtpTrozasSinTituloTabla({
-  grupos, hoy, onVerFicha, onAnotar, contratos, declarando, onDeclarando, onDeclarado,
+  grupos, hoy, onVerFicha, onAnotar, contratos, declarando, onDeclarando, onDeclarado, f, orden, onOrdenar,
 }: {
   grupos: GrupoSinTitulo[];
   hoy: Date;
@@ -58,21 +62,26 @@ export default function CtpTrozasSinTituloTabla({
   declarando: string | null;
   onDeclarando: (gtf: string | null) => void;
   onDeclarado: (aviso: string) => void;
+  /** Los filtros de columna (estado compartido con los chips del modal). */
+  f: FiltrosTrozas;
+  orden: OrdenColumnaTroza;
+  onOrdenar: (c: CampoOrdenTroza) => void;
 }) {
+  const th = { orden, onOrdenar };
   const piezas = grupos.reduce((a, g) => a + g.piezas.length, 0);
   const m3 = grupos.reduce((a, g) => a + g.m3, 0);
   return (
-    <DataTable stickyHeader wrapperClassName="max-h-[56vh]" className="w-full text-sm">
+    <DataTable stickyHeader wrapperClassName="max-h-[56vh]" className="w-full text-sm [&_thead_th]:px-2!">
       <thead>
         <tr>
-          <th>Código</th>
-          <th>Especie</th>
-          <th className="text-right" title="Diámetro 1, en cm">D1 (cm)</th>
-          <th className="text-right" title="Diámetro 2, en cm">D2 (cm)</th>
-          <th className="text-right">Largo (m)</th>
-          <th className="text-right">Volumen (m³)</th>
-          <th>Estado</th>
-          <th className="text-right" title="Días que lleva parada">Parada</th>
+          <ThTroza {...th} campo="codigo" filtro={<FiltroColumnaTexto label="Código" value={f.codigo} onChange={f.setCodigo} placeholder="Contiene…" />}>Código</ThTroza>
+          <ThTroza {...th} campo="especie" filtro={<FiltroMultiTroza id="especie" label="Especie" f={f} />}>Especie</ThTroza>
+          <ThTroza {...th} campo="d1" align="right" title="Diámetro 1, en cm" filtro={<FiltroRangoTroza id="d1" label="D1" unidad="cm" paso={1} f={f} />}>D1 (cm)</ThTroza>
+          <ThTroza {...th} campo="d2" align="right" title="Diámetro 2, en cm" filtro={<FiltroRangoTroza id="d2" label="D2" unidad="cm" paso={1} f={f} />}>D2 (cm)</ThTroza>
+          <ThTroza {...th} campo="largo" align="right" filtro={<FiltroRangoTroza id="largo" label="Largo" unidad="m" paso={0.1} f={f} />}>Largo (m)</ThTroza>
+          <ThTroza {...th} campo="volumen" align="right" filtro={<FiltroRangoTroza id="volumen" label="Volumen" unidad="m³" paso={0.01} f={f} />}>Vol. (m³)</ThTroza>
+          <ThTroza {...th} campo="estado" filtro={<FiltroMultiTroza id="estado" label="Estado" f={f} />}>Estado</ThTroza>
+          <ThTroza {...th} campo="parada" align="right" title="Días que lleva parada" filtro={<FiltroRangoTroza id="parada" label="Parada" unidad="d" paso={1} f={f} />}>Parada</ThTroza>
         </tr>
       </thead>
       {grupos.map((g) => (

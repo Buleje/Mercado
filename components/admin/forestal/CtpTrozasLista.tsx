@@ -33,18 +33,25 @@ import {
   opcionesDeOrigen,
   resumirPatio,
   type EstadoTroza,
-  type OrdenTrozas,
 } from "@/lib/forestal/trozas-patio";
 import { faltanMedidas } from "@/lib/forestal/trozas-patio-medidas";
 import { exportarTrozasCsv } from "./ctp-trozas-lista-shared";
 import CtpTrozasBarra from "./CtpTrozasBarra";
 import CtpTrozasCards from "./CtpTrozasCards";
 import CtpTrozasFiltrosActivos from "./CtpTrozasFiltrosActivos";
+import {
+  alternarOrden, ORDEN_PRESETS, ordenarTrozas, presetDeOrden, type IdColumnaTroza, type OrdenColumnaTroza,
+} from "./ctp-trozas-filtros-columnas";
+import { useFiltrosTrozas } from "./ctp-trozas-filtros-hook";
+import CtpTrozasFiltrosMovil from "./ctp-trozas-filtros-movil";
 import CtpTrozasTabla from "./CtpTrozasTabla";
 import { useEspeciesFotos } from "./hooks/use-especies-fotos";
 import { usePlantaUbicacion } from "./hooks/use-planta-ubicacion";
 import type { TrozaPatioAPI } from "./hooks/use-trozas-patio";
 import { formatNumber } from "@/lib/format";
+
+/** Las columnas cuyo filtro vive acá (las otras cuatro son del padre). */
+const COLUMNAS_PROPIAS: readonly IdColumnaTroza[] = ["proveedor", "parada", "d1", "d2", "largo", "volumen"];
 
 /** El alto de la caja con scroll: entra en pantalla y deja ver lo que sigue. */
 const ALTO_LISTA = "max-h-[62vh]";
@@ -57,8 +64,8 @@ export interface CtpTrozasListaProps {
   onEstadoFiltro: (e: EstadoTroza[]) => void;
   tramoFiltro: readonly string[];
   onTramoFiltro: (k: string[]) => void;
-  /** Abrir la historia de una pieza. */
-  onVerFicha: (id: string) => void;
+  /** Abrir la historia de una pieza; `orden` = lo filtrado, para ‹ › en la ficha. */
+  onVerFicha: (id: string, orden?: readonly string[]) => void;
   /**
    * Especie, guía y título habilitante: los gobierna el PADRE (ADR-400) para
    * que el panorama de arriba y esta lista describan el mismo conjunto.
@@ -84,7 +91,7 @@ export default function CtpTrozasLista({
   onVerFicha, onApartar, onAnotar,
 }: CtpTrozasListaProps) {
   const [texto, setTexto] = useState("");
-  const [orden, setOrden] = useState<OrdenTrozas>("antiguedad");
+  const [orden, setOrden] = useState<OrdenColumnaTroza>(ORDEN_PRESETS.antiguedad);
   const [tope, setTope] = useState(200);
   const [elegidas, setElegidas] = useState<Set<string>>(new Set());
   const { indice: fotosEspecie } = useEspeciesFotos();
@@ -116,13 +123,19 @@ export default function CtpTrozasLista({
     () => resumen.porEstado.map((e) => ({ value: e.estado, count: e.piezas })),
     [resumen],
   );
-  const filtradas = useMemo(
-    () => filtrarPatio(trozas, { texto, estado: estadoFiltro, especie, tramo: tramoFiltro, guia, titulo, orden }, hoy),
-    [trozas, texto, estadoFiltro, especie, tramoFiltro, guia, titulo, orden, hoy],
+  /* Código, Proveedor y rangos: un estado para cabecera, teléfono y chips (AND con el padre). */
+  const extra = useFiltrosTrozas(trozas, hoy, COLUMNAS_PROPIAS);
+  const idsExtra = useMemo(
+    () => (extra.activos > 0 ? new Set(extra.filtradas.map((t) => t.id)) : null),
+    [extra.activos, extra.filtradas],
   );
+  const filtradas = useMemo(() => {
+    const base = filtrarPatio(trozas, { texto, estado: estadoFiltro, especie, tramo: tramoFiltro, guia, titulo }, hoy);
+    return ordenarTrozas(idsExtra ? base.filter((t) => idsExtra.has(t.id)) : base, orden, hoy);
+  }, [trozas, texto, estadoFiltro, especie, tramoFiltro, guia, titulo, idsExtra, orden, hoy]);
   const visibles = filtradas.slice(0, tope);
-  /* Las de la lista sin sus dos puntas: el botón de la barra y el atajo de cada
-     fila abren la MISMA planilla con este conjunto. */
+  const verFicha = (id: string) => onVerFicha(id, filtradas.map((t) => t.id));
+  /* Sin sus dos puntas: el botón de la barra y el atajo de cada fila abren la MISMA planilla. */
   const sinMedidasIds = useMemo(() => filtradas.filter(faltanMedidas).map((t) => t.id), [filtradas]);
   const sumaVisible = filtradas.reduce((a, t) => a + (t.volumenM3 ?? 0), 0);
 
@@ -161,7 +174,7 @@ export default function CtpTrozasLista({
   }, []);
 
   const limpiar = () => {
-    setTexto(""); onEspecie([]); onEstadoFiltro([]); onTramoFiltro([]); onGuia([]); onTitulo([]);
+    setTexto(""); onEspecie([]); onEstadoFiltro([]); onTramoFiltro([]); onGuia([]); onTitulo([]); extra.limpiar();
   };
 
   const exportar = useCallback(() => exportarTrozasCsv(filtradas, hoy, canchas), [filtradas, hoy, canchas]);
@@ -170,7 +183,7 @@ export default function CtpTrozasLista({
     <section className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
       <CtpTrozasBarra
         texto={texto} onTexto={setTexto}
-        orden={orden} onOrden={setOrden}
+        orden={presetDeOrden(orden)} onOrden={(v) => v !== "columna" && setOrden(ORDEN_PRESETS[v])}
         leyendo={cargando && trozas.length === 0}
         piezasFiltradas={filtradas.length}
         piezasTotales={trozas.length}
@@ -182,6 +195,7 @@ export default function CtpTrozasLista({
         titulo={titulo} onTitulo={onTitulo} titulosFaceta={titulosFaceta}
         guia={guia} onGuia={onGuia} guiasFaceta={guiasFaceta}
       />
+      <CtpTrozasFiltrosMovil f={extra} />
 
       <CtpTrozasFiltrosActivos
         texto={texto} onTexto={setTexto}
@@ -190,6 +204,7 @@ export default function CtpTrozasLista({
         especie={especie} onEspecie={onEspecie}
         guia={guia} onGuia={onGuia}
         titulo={titulo} onTitulo={onTitulo}
+        extra={extra}
         onLimpiar={limpiar}
       />
 
@@ -244,7 +259,7 @@ export default function CtpTrozasLista({
             todasElegidas={todasElegidas}
             onElegirTodas={() => setElegidas(todasElegidas ? new Set() : new Set(apartables.map((t) => t.id)))}
             onAlternar={alternar}
-            onVerFicha={onVerFicha}
+            onVerFicha={verFicha}
             onAnotar={(id) => onAnotar(sinMedidasIds, id)}
             hoy={hoy}
             canchas={canchas}
@@ -253,13 +268,15 @@ export default function CtpTrozasLista({
             estadoFiltro={estadoFiltro} onEstadoFiltro={onEstadoFiltro} estadosFaceta={estadosFaceta}
             guia={guia} onGuia={onGuia} guiasFaceta={guiasFaceta}
             titulo={titulo} onTitulo={onTitulo} titulosFaceta={titulosFaceta}
+            extra={extra}
+            orden={orden} onOrdenar={(c) => setOrden((o) => alternarOrden(o, c))}
             altoClase={ALTO_LISTA}
           />
           <CtpTrozasCards
             visibles={visibles}
             elegidas={elegidas}
             onAlternar={alternar}
-            onVerFicha={onVerFicha}
+            onVerFicha={verFicha}
             hoy={hoy}
             canchas={canchas}
             fotosEspecie={fotosEspecie}

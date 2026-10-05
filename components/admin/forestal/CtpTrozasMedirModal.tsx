@@ -12,6 +12,10 @@
  * Escribe por `PATCH /trozas/medidas` (`useGuardarMedidas`), el mismo camino
  * que «Medir escaneando»: sólo sobre lo vacío (nunca pisa a SERFOR), queda
  * marcado `d1d2MedidoEnPlanta` y respeta el mes cerrado. No toca el volumen.
+ *
+ * Arriba, «Traer de la guía (SERFOR)» (05-10, ADR-469): por cada guía, las
+ * medidas de la lista de trozas de la ficha SERFOR, por código. Lo que se llena
+ * así sale de la planilla al releer el patio.
  */
 
 import { useMemo, useState } from "react";
@@ -24,6 +28,7 @@ import type { CambioMedidaTroza } from "@/lib/forestal/medidas-troza";
 import { Btn, ModalBody } from "./ctp-shared";
 import CtpTrozasMedirFila, { leerCm, medidaInvalida, type ValoresMedida } from "./ctp-trozas-medir-fila";
 import CtpTrozasMedirPegar, { repartirPegado } from "./ctp-trozas-medir-pegar";
+import CtpTrozasMedirGuia from "./ctp-trozas-medir-guia";
 import { useGuardarMedidas } from "./hooks/use-medidas-trozas";
 import type { TrozaPatioAPI } from "./hooks/use-trozas-patio";
 
@@ -122,6 +127,7 @@ export default function CtpTrozasMedirModal({
             example="Troza 62B, 7,75 m y 3,424 m³: la pista dice ≈75. Si anotas 76 y 74, la diferencia es +0 %."
           />
         </p>
+        {filas.length > 0 && <CtpTrozasMedirGuia piezas={filas} onGuardado={onGuardado} />}
         {filas.length > 0 && <CtpTrozasMedirPegar onRepartir={repartir} resultado={pegado} />}
         {filas.length === 0 ? (
           <p className="rounded-xl border border-dashed border-[var(--rule-base)] p-6 text-center text-sm text-[var(--text-secondary)]">

@@ -235,6 +235,11 @@ export type CtpAuditAction =
   /** Cargó en planta los D1/D2 en cm que la guía no traía. Sólo sobre vacío:
    *  el dato de SERFOR no se pisa. Éste SÍ es del libro (lo frena el cierre). */
   | "ctp_troza_d1d2_planta"
+  /** Trajo de la ficha SERFOR de la guía (lista de trozas, por codificación) los
+   *  D1/D2 que el ingreso no tenía (05-10, ADR-469). Sólo sobre vacío, con el mes
+   *  abierto y si la ficha es de ESA guía; si la ficha vino recién de SERFOR,
+   *  queda guardada en el ingreso. */
+  | "ctp_troza_d1d2_guia"
   /** Declaró el título habilitante (código de origen, resolución, permiso) de
    *  un ingreso ya asentado que no lo traía (05-10). Sólo sobre vacío y con el
    *  mes abierto: llena un hueco, no corrige lo declarado. */

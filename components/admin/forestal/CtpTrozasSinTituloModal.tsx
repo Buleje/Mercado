@@ -23,11 +23,20 @@ import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import type { Contrato } from "@/lib/forestal/contratos";
 import { ctpGet } from "@/lib/forestal/ctp-fetch";
 import { logger } from "@/lib/logger";
+import { ChipsDeFiltros } from "@/components/admin/shared/filtros-columna";
 import { Btn, ModalBody } from "./ctp-shared";
 import { exportarTrozasCsv } from "./ctp-trozas-lista-shared";
+import {
+  alternarOrden, ORDEN_PRESETS, ordenarTrozas, type IdColumnaTroza, type OrdenColumnaTroza,
+} from "./ctp-trozas-filtros-columnas";
+import { useFiltrosTrozas } from "./ctp-trozas-filtros-hook";
+import { FiltroMultiTroza } from "./ctp-trozas-filtros-th";
 import CtpTrozasSinTituloTabla, { agruparPorGuia } from "./ctp-trozas-sin-titulo-tabla";
 import type { UbicacionDeCarga } from "./hooks/use-planta-ubicacion";
 import type { TrozaPatioAPI } from "./hooks/use-trozas-patio";
+
+/** Todas las columnas de esta tabla filtran; Guía y Proveedor van junto al buscador (la tabla ya está agrupada por guía). */
+const COLUMNAS: readonly IdColumnaTroza[] = ["especie", "estado", "guia", "proveedor", "parada", "d1", "d2", "largo", "volumen"];
 
 const norm = (s: string | null | undefined) => (s ?? "").toLowerCase();
 
@@ -48,6 +57,8 @@ export default function CtpTrozasSinTituloModal({
   onDeclarado: () => void;
 }) {
   const [q, setQ] = useState("");
+  const [orden, setOrden] = useState<OrdenColumnaTroza>(ORDEN_PRESETS.antiguedad);
+  const f = useFiltrosTrozas(piezas, hoy, COLUMNAS);
   const [declarando, setDeclarando] = useState<string | null>(null);
   const [avisos, setAvisos] = useState<string[]>([]);
   /* Los permisos del negocio, para elegir el título en vez de tipearlo. Si no
@@ -60,11 +71,13 @@ export default function CtpTrozasSinTituloModal({
   }, []);
   const visibles = useMemo(() => {
     const t = q.trim().toLowerCase();
-    if (!t) return piezas;
-    return piezas.filter((p) =>
-      [p.codificacion, p.codigoPlanta, p.especieComun, p.gtfNumber, p.proveedor].some((v) => norm(v).includes(t)),
-    );
-  }, [piezas, q]);
+    const base = t
+      ? f.filtradas.filter((p) =>
+          [p.codificacion, p.codigoPlanta, p.especieComun, p.gtfNumber, p.proveedor].some((v) => norm(v).includes(t)),
+        )
+      : f.filtradas;
+    return ordenarTrozas(base, orden, hoy);
+  }, [f.filtradas, q, orden, hoy]);
   const grupos = useMemo(() => agruparPorGuia(visibles), [visibles]);
   const m3 = piezas.reduce((a, p) => a + (p.volumenM3 ?? 0), 0);
   const guias = new Set(piezas.map((p) => p.gtfNumber ?? "")).size;
@@ -137,6 +150,12 @@ export default function CtpTrozasSinTituloModal({
           </label>
         </div>
 
+        <div className="flex flex-wrap items-start gap-x-2 gap-y-1">
+          <FiltroMultiTroza id="guia" label="Guía" f={f} placeholder="Guía" />
+          <FiltroMultiTroza id="proveedor" label="Proveedor" f={f} placeholder="Proveedor" />
+          <ChipsDeFiltros chips={f.chips} onQuitar={f.quitar} onLimpiarTodo={f.limpiar} className="mt-1.5 flex-1" />
+        </div>
+
         {avisos.map((a) => (
           <p key={a} role="status" className="flex items-center gap-1.5 rounded-xl bg-[var(--data-success-500)]/12 px-3 py-2 text-sm font-bold text-[var(--text-primary)]">
             <Check className="h-4 w-4 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" aria-hidden="true" /> {a}
@@ -144,7 +163,7 @@ export default function CtpTrozasSinTituloModal({
         ))}
         {grupos.length === 0 ? (
           <p className="rounded-xl border border-dashed border-[var(--rule-base)] p-6 text-center text-sm text-[var(--text-secondary)]">
-            {piezas.length === 0 ? "Todas las piezas del patio tienen título declarado." : `Ninguna pieza coincide con «${q.trim()}».`}
+            {piezas.length === 0 ? "Todas las piezas del patio tienen título declarado." : "Ninguna pieza cumple con eso. Prueba quitando un filtro."}
           </p>
         ) : (
           <CtpTrozasSinTituloTabla
@@ -159,6 +178,9 @@ export default function CtpTrozasSinTituloModal({
               onAnotar(id);
             }}
             contratos={contratos}
+            f={f}
+            orden={orden}
+            onOrdenar={(c) => setOrden((o) => alternarOrden(o, c))}
             declarando={declarando}
             onDeclarando={setDeclarando}
             onDeclarado={(aviso) => {

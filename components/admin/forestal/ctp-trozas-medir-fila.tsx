@@ -11,7 +11,7 @@ import type { KeyboardEvent } from "react";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { MAX_DIAMETRO_CM } from "@/lib/forestal/medidas-troza";
 import { pareceTablaPegada } from "@/lib/forestal/pegar-medidas-trozas";
-import { diametroEquivalenteCm, medidasDePieza, volumenHuberM3 } from "@/lib/forestal/trozas-patio-medidas";
+import { diametroEquivalenteCm, medidasDePieza, UMBRAL_HUBER, volumenHuberM3 } from "@/lib/forestal/trozas-patio-medidas";
 import { n, NUM } from "./ctp-trozas-lista-shared";
 import { cm } from "./ctp-trozas-medidas-ui";
 import type { TrozaPatioAPI } from "./hooks/use-trozas-patio";
@@ -60,7 +60,7 @@ export default function CtpTrozasMedirFila({
   const malo2 = ya.d2 == null && medidaInvalida(leerCm(valores.d2));
   const equivalente = diametroEquivalenteCm(t.volumenM3, t.largoM);
   const desvio = !malo1 && !malo2 ? desvioHuber(t, d1, d2) : null;
-  const lejos = desvio != null && Math.abs(desvio) > 0.1;
+  const lejos = desvio != null && Math.abs(desvio) > UMBRAL_HUBER;
 
   /* Enter = siguiente casilla, como en una planilla de papel. */
   const alEnter = (ev: KeyboardEvent<HTMLInputElement>, propio: number) => {

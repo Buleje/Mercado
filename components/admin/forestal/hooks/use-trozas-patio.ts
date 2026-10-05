@@ -14,9 +14,10 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { TrozaPatio } from "@/lib/forestal/trozas-patio";
+import type { DatosKpiPatio } from "@/lib/forestal/trozas-patio-kpis";
 
 /** La pieza tal como la devuelve `/api/admin/forestal/trozas/patio`. */
-export interface TrozaPatioAPI extends TrozaPatio {
+export interface TrozaPatioAPI extends TrozaPatio, DatosKpiPatio {
   woodEntryId: string;
   codificacion: string | null;
   codigoPlanta: string | null;
@@ -45,6 +46,12 @@ export interface PatioMeta {
   total: number;
   devueltas: number;
   truncado: boolean;
+  /**
+   * El rendimiento REAL del libro (corridas registradas con entrada, ponderado
+   * por m³). Sólo para ESTIMAR pies tablares de lo libre; `null` = no hay
+   * corridas con qué medirlo, y entonces no se estima nada.
+   */
+  rendimientoLibro?: { pct: number; entradaM3: number; corridas: number } | null;
 }
 
 export function useTrozasPatio() {
@@ -62,9 +69,20 @@ export function useTrozasPatio() {
         const j = (await r.json().catch(() => ({}))) as { error?: string };
         throw new Error(j.error ?? `HTTP ${r.status}`);
       }
-      const j = (await r.json()) as { trozas?: TrozaPatioAPI[]; total?: number; devueltas?: number; truncado?: boolean };
+      const j = (await r.json()) as {
+        trozas?: TrozaPatioAPI[];
+        total?: number;
+        devueltas?: number;
+        truncado?: boolean;
+        rendimientoLibro?: PatioMeta["rendimientoLibro"];
+      };
       setTrozas(j.trozas ?? []);
-      setMeta({ total: j.total ?? 0, devueltas: j.devueltas ?? 0, truncado: Boolean(j.truncado) });
+      setMeta({
+        total: j.total ?? 0,
+        devueltas: j.devueltas ?? 0,
+        truncado: Boolean(j.truncado),
+        rendimientoLibro: j.rendimientoLibro ?? null,
+      });
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {

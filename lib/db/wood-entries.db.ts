@@ -38,6 +38,7 @@ import { auditCtp, m3 } from "@/lib/forestal/ctp-audit";
 import { calcularRetrozado, motivoNoRetrozable, type RetrozoNuevo } from "@/lib/forestal/ctp-retrozado";
 import type { CambioRecepcion } from "@/lib/forestal/recepcion-trozas";
 import { guiaRecibida, type TrozaConsumible } from "@/lib/forestal/consumo-trozas";
+import type { DatosKpiPatio } from "@/lib/forestal/trozas-patio-kpis";
 import { asignarCorrelativos, planearEtiquetado, tieneCodigoPlanta } from "@/lib/forestal/etiquetado-trozas";
 import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
 import { closedPeriodOf } from "@/lib/forestal/ctp-cierre-types";
@@ -2293,16 +2294,21 @@ export class WoodEntriesDB {
                de ahí (I2), así que el picker tiene que poder avisar ANTES de
                armar el acta —y no cuando el servidor la rechaza—. */
             volumeM3: true,
+            /* La plata de la guía (ADR-134/437) para el «Valor parado» del
+               patio: factura ÷ m³ del asiento. Sin factura = NULL, nunca 0. */
+            costoTotal: true,
+            maderaDeTercero: true,
           },
         },
         // La corrida que se la comió: hace falta su ESTADO, no sólo el id. Una
         // corrida anulada devuelve la madera al patio, y sin mirarlo la pieza
         // quedaría bloqueada para siempre con "ya entró a otra corrida".
-        consumidaEn: { select: { id: true, status: true, deletedAt: true } },
+        // `entryDate`: el día que entró a la sierra (rotación del patio).
+        consumidaEn: { select: { id: true, status: true, deletedAt: true, entryDate: true } },
         // El despacho que se la llevó SIN ASERRAR (ADR-363). Con su estado, por
         // lo mismo que la corrida: un despacho anulado devuelve la troza al
         // patio, y sin mirarlo la pieza quedaría bloqueada para siempre.
-        despachadaEn: { select: { id: true, status: true, deletedAt: true } },
+        despachadaEn: { select: { id: true, status: true, deletedAt: true, entryDate: true } },
         // El lote de aserrío donde está apartada (ADR-334). Sin esto, el picker
         // ofrece piezas que ya están reservadas para otra corrida y la pantalla
         // de Trozas no puede decir dónde está la que se busca.
@@ -2367,7 +2373,7 @@ export class WoodEntriesDB {
   static async trozasComoConsumibles(
     tenantId: string,
     opts: { limite?: number; loteId?: string; contratoId?: string; ids?: string[] } = {},
-  ): Promise<TrozaConsumible[]> {
+  ): Promise<(TrozaConsumible & DatosKpiPatio)[]> {
     const filas = await WoodEntriesDB.trozasDelPatio(tenantId, opts);
     const [consumido, filaDeSuEspecie] = await Promise.all([
       WoodEntriesDB.consumidoPorIngreso(
@@ -2463,6 +2469,18 @@ export class WoodEntriesDB {
       recibidaD2Cm: num(t.recibidaD2Cm),
       recibidaLargoM: num(t.recibidaLargoM),
       recibidaVolumenM3: num(t.recibidaVolumenM3),
+      /* Los indicadores del patio (`trozas-patio-kpis`). La fecha de la
+         corrida/despacho sólo si sigue viva: una anulada devolvió la pieza. */
+      guiaCostoTotal: num(t.entry.costoTotal),
+      guiaMaderaDeTercero: t.entry.maderaDeTercero === true,
+      consumidaFecha:
+        t.consumidaEn && t.consumidaEn.status === "registrado" && !t.consumidaEn.deletedAt
+          ? t.consumidaEn.entryDate.toISOString()
+          : null,
+      despachadaFecha:
+        t.despachadaEn && t.despachadaEn.status === "registrado" && !t.despachadaEn.deletedAt
+          ? t.despachadaEn.entryDate.toISOString()
+          : null,
     }));
   }
 

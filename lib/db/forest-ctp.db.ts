@@ -5103,6 +5103,31 @@ export class ForestCtpDB {
   }
 
   /**
+   * Las corridas de producción con lo justo para el rendimiento del libro
+   * (`rendimientoPonderado`): estado, rendimiento declarado y m³ de entrada.
+   *
+   * Lo pide el patio de trozas para estimar los pies tablares de lo libre con
+   * el rendimiento REAL de la planta (nunca el tope de 56 %, ADR-358). Tres
+   * columnas y sin includes: traer la corrida entera para un promedio sería
+   * pagar paquetes y consumos por nada.
+   */
+  static async lineasDeRendimiento(
+    tenantId: string,
+  ): Promise<{ status: string; rendimientoPct: number | null; volumeInputM3: number | null }[]> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const filas = await prisma.forestCtpEntry.findMany({
+      /* Sólo corridas en m³ (revisión 05-10): un rendimiento declarado en pt o kg no se mezcla con m³. */
+      where: { tenantId, section: "produccion", status: "registrado", deletedAt: null, volumeInputM3: { gt: 0 }, unit: "m3" },
+      select: { status: true, rendimientoPct: true, volumeInputM3: true },
+    });
+    return filas.map((f) => ({
+      status: f.status,
+      rendimientoPct: f.rendimientoPct == null ? null : Number(f.rendimientoPct),
+      volumeInputM3: f.volumeInputM3 == null ? null : Number(f.volumeInputM3),
+    }));
+  }
+
+  /**
    * Cuántas corridas del período quedaron SIN ORIGEN, y cuánto produjeron.
    *
    * Por qué existe (radar 2026-09-15): el pendiente «corridas sin origen» del

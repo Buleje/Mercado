@@ -7,6 +7,12 @@ import { isSpecializationEnabled } from "@/lib/specializations";
 import { WoodEntriesDB } from "@/lib/db/wood-entries.db";
 import { ctpErrorResponse } from "@/lib/forestal/ctp-api-errors";
 import { leerContratoId } from "@/lib/forestal/contrato-filtro";
+import { ForestCtpDB } from "@/lib/db/forest-ctp.db";
+import { ForestPlantaAsignacionDB } from "@/lib/db/forest-planta-asignacion.db";
+import { ForestPlantaZonaDB } from "@/lib/db/forest-planta-zona.db";
+import { claveTroza } from "@/lib/forestal/planta-zona-types";
+import { rendimientoPonderado } from "@/lib/forestal/ctp-kpis-seccion";
+import { logger } from "@/lib/logger";
 
 /**
  * /api/admin/forestal/trozas/patio — las piezas que están en el patio (ADR-326).
@@ -21,6 +27,25 @@ import { leerContratoId } from "@/lib/forestal/contrato-filtro";
  * El VOLUMEN del consumo no pasa por acá: sigue viviendo en `ForestCtpConsumo`
  * con sus invariantes I1-I6. Esto registra cuáles fueron.
  */
+
+/**
+ * `clave → zona` del Mapa de Planta, sólo con zonas que existen (una asignación
+ * a una cancha borrada no ubica nada). Falla en `null`, no en error: no saber
+ * dónde está apilada una carga no puede tumbar el patio.
+ */
+async function canchasVigentes(tenantId: string): Promise<Record<string, string> | null> {
+  try {
+    const [mapa, zonas] = await Promise.all([
+      ForestPlantaAsignacionDB.getMap(tenantId),
+      ForestPlantaZonaDB.list(tenantId),
+    ]);
+    const vivas = new Set(zonas.map((z) => z.id));
+    return Object.fromEntries(Object.entries(mapa).filter(([, z]) => vivas.has(z)));
+  } catch (err) {
+    logger.error("[forestal.trozas.patio] canchas failed", { tenantId, error: String(err) });
+    return null;
+  }
+}
 
 async function guard(tenantId: string) {
   const ok = await isSpecializationEnabled(tenantId, "spec:forestal:ctp-libro");
@@ -67,12 +92,31 @@ export async function GET(req: NextRequest) {
        de cada guía, ADR-353) vive en `WoodEntriesDB.trozasComoConsumibles` —
        single source: un segundo llamador (el planificador de consumo) no
        reinventa el whitelist. */
-    const [trozas, total] = await Promise.all([
+    const [filas, total, canchas, lineas] = await Promise.all([
       WoodEntriesDB.trozasComoConsumibles(auth.tenantId, { loteId, contratoId }),
       WoodEntriesDB.contarTrozasDelPatio(auth.tenantId, { loteId, contratoId }),
+      canchasVigentes(auth.tenantId),
+      ForestCtpDB.lineasDeRendimiento(auth.tenantId).catch((err) => {
+        logger.error("[forestal.trozas.patio] rendimiento failed", { tenantId: auth.tenantId, error: String(err) });
+        return null;
+      }),
     ]);
+    /* La cancha de cada pieza (ADR-465): la de la troza separada manda sobre
+       la de su pila. Sin mapa legible no se manda el campo — `undefined` es
+       «no sé», y el indicador no cuenta «0 ubicadas». */
+    const trozas = canchas
+      ? filas.map((t) => ({ ...t, zonaId: canchas[claveTroza(t.id)] ?? canchas[t.woodEntryId] ?? null }))
+      : filas;
+    /* El rendimiento REAL del libro, ponderado por m³ de entrada (la misma
+       función que la cabecera de Producción). Para estimar pies tablares de lo
+       libre; `null` = sin corridas con entrada, y entonces no se estima. */
+    const rend = lineas ? rendimientoPonderado(lineas) : null;
     return NextResponse.json({
       trozas,
+      rendimientoLibro:
+        rend && rend.pct != null
+          ? { pct: Math.round(rend.pct * 100) / 100, entradaM3: Math.round(rend.entradaM3 * 1000) / 1000, corridas: (lineas ?? []).filter((l) => (l.rendimientoPct ?? 0) > 0).length }
+          : null,
       /**
        * `total` es el patio DE VERDAD y `devueltas` lo que entró en esta
        * respuesta. Antes `total` era `filas.length` —el mismo número acotado— así

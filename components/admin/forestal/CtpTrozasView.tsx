@@ -94,6 +94,12 @@ export default function CtpTrozasView() {
     setFichaState(id);
     escribirTrozaEnUrl(id);
   };
+  /** El orden de la tabla (filtrada) al abrir la ficha: lo recorren ‹ › y ←/→. */
+  const [ordenFicha, setOrdenFicha] = useState<readonly string[]>([]);
+  const vecinosFicha = useMemo(() => {
+    const i = ficha ? ordenFicha.indexOf(ficha) : -1;
+    return i < 0 ? undefined : { anterior: ordenFicha[i - 1] ?? null, siguiente: ordenFicha[i + 1] ?? null };
+  }, [ficha, ordenFicha]);
   /** Las piezas que van camino a un lote. */
   const [apartando, setApartando] = useState<{ id: string; codigo: string | null; especie: string | null }[] | null>(null);
   /**
@@ -114,6 +120,8 @@ export default function CtpTrozasView() {
     trozas, meta, cargando, estadoFiltro, onEstadoFiltro: setEstadoFiltro,
     tramoFiltro, onTramoFiltro: setTramoFiltro, especie, guia, titulo,
     onImprimirEtiquetas: setEtiquetando,
+    onAnotarMedidas: (ids) => setMedir({ ids }),
+    onVerSinTitulo: () => setTitulo([SIN_TITULO]),
   });
   /* Del patio ENTERO, no del recorte: es deuda de todo el libro y el botón
      está en la cabecera de la vista, no dentro de los indicadores. */
@@ -234,7 +242,10 @@ export default function CtpTrozasView() {
         onGuia={setGuia}
         titulo={titulo}
         onTitulo={setTitulo}
-        onVerFicha={(id) => abrirFicha(id)}
+        onVerFicha={(id, orden) => {
+          setOrdenFicha(orden ?? []);
+          abrirFicha(id);
+        }}
         onApartar={setApartando}
         onAnotar={(ids, inicial) => setMedir({ ids, inicial })}
       />
@@ -246,6 +257,12 @@ export default function CtpTrozasView() {
           trozaId={ficha}
           onClose={() => abrirFicha(null)}
           onVerOtra={abrirFicha}
+          vecinos={vecinosFicha}
+          onNavegar={abrirFicha}
+          onAnotar={(id) => {
+            abrirFicha(null);
+            setMedir({ ids: [id] });
+          }}
           onArmarLote={(id) => {
             abrirFicha(null);
             setArmandoCon(id);

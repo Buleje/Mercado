@@ -100,6 +100,10 @@ export const faltanMedidas = (t: PiezaConMedidas): boolean => {
  * Es la fórmula con la que la guía de SERFOR reproduce sus volúmenes al
  * milésimo (ADR-312), así que sirve para avisar un D1/D2 mal tipeado.
  */
+/** Huber con las puntas vs volumen declarado: más de esto de diferencia = revisar la pieza.
+ *  Una sola cifra para la planilla «Anotar D1 y D2» y la ficha de la troza (05-10). */
+export const UMBRAL_HUBER = 0.1;
+
 export function volumenHuberM3(d1: number | null, d2: number | null, largoM: number | null | undefined): number | null {
   if (!valida(d1) || !valida(d2) || !valida(largoM)) return null;
   const dm = (d1 + d2) / 2 / 100;

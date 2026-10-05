@@ -19,12 +19,10 @@ import {
   diasParada,
   ESTADO_META,
   estadoDeTroza,
-  SIN_TITULO,
-  type EstadoTroza,
 } from "@/lib/forestal/trozas-patio";
-import { FiltroColumnaMulti, type FacetaOpcion } from "@/components/admin/shared/filtros-columna";
 import { EnOrden, BotonRestablecerColumnas, useOrdenColumnas } from "@/components/admin/shared/columnas-ordenables";
 import { medidasDePieza } from "@/lib/forestal/trozas-patio-medidas";
+import { celdasCabeceraTrozas, type FiltrosCabeceraProps } from "./ctp-trozas-filtros-thead";
 import { claseDias, n, NUM, tituloDias } from "./ctp-trozas-lista-shared";
 import { BotonAnotarMedidas, ValorMedida } from "./ctp-trozas-medidas-ui";
 import { puntoDeTono } from "./ctp-trozas-ui";
@@ -46,7 +44,7 @@ const ORDEN_TROZAS_DEFECTO = [
   "codigo", "especie", "estado", "parada", "d1", "d2", "largo", "volumen", "guia",
 ] as const;
 
-export interface CtpTrozasTablaProps {
+export interface CtpTrozasTablaProps extends FiltrosCabeceraProps {
   visibles: readonly TrozaPatioAPI[];
   elegidas: ReadonlySet<string>;
   /** Las que se pueden apartar de lo visible: gobiernan la casilla de arriba. */
@@ -60,28 +58,15 @@ export interface CtpTrozasTablaProps {
   hoy: Date;
   canchas: Record<string, UbicacionDeCarga>;
   fotosEspecie: Map<string, FotoEspecie>;
-  especie: readonly string[];
-  onEspecie: (v: string[]) => void;
-  especiesFaceta: FacetaOpcion[];
-  estadoFiltro: readonly EstadoTroza[];
-  onEstadoFiltro: (v: EstadoTroza[]) => void;
-  estadosFaceta: FacetaOpcion[];
-  guia: readonly string[];
-  onGuia: (v: string[]) => void;
-  guiasFaceta: FacetaOpcion[];
-  titulo: readonly string[];
-  onTitulo: (v: string[]) => void;
-  titulosFaceta: FacetaOpcion[];
   /** Alto máximo de la caja con scroll. */
   altoClase: string;
 }
 
-export default function CtpTrozasTabla({
-  visibles, elegidas, apartables, todasElegidas, onElegirTodas, onAlternar, onVerFicha, onAnotar,
-  hoy, canchas, fotosEspecie,
-  especie, onEspecie, especiesFaceta, estadoFiltro, onEstadoFiltro, estadosFaceta,
-  guia, onGuia, guiasFaceta, titulo, onTitulo, titulosFaceta, altoClase,
-}: CtpTrozasTablaProps) {
+export default function CtpTrozasTabla(props: CtpTrozasTablaProps) {
+  const {
+    visibles, elegidas, apartables, todasElegidas, onElegirTodas, onAlternar, onVerFicha, onAnotar,
+    hoy, canchas, fotosEspecie, altoClase,
+  } = props;
   /* Se arrastran los títulos para cambiarlas de lugar (Brandon, 2026-09-26). */
   const orden = useOrdenColumnas("ctp-trozas-patio", ORDEN_TROZAS_DEFECTO);
   return (
@@ -110,66 +95,7 @@ export default function CtpTrozasTabla({
                 className="h-4 w-4 accent-[var(--accent)]"
               />
             </th>
-            <EnOrden
-              orden={orden.orden}
-              celdas={{
-                codigo: <th data-col="codigo" className={TH}>Código</th>,
-                especie: (
-                  <th data-col="especie" className={TH}>
-                    <span className="block">Especie</span>
-                    <FiltroColumnaMulti label="Especie" value={especie} options={especiesFaceta} onChange={onEspecie} placeholder="Todas" />
-                  </th>
-                ),
-                estado: (
-                  <th data-col="estado" className={TH}>
-                    <span className="block">Estado</span>
-                    {/* El mismo filtro que las pastillas del panorama (`onEstadoFiltro`):
-                        tocar la pastilla o elegir acá es lo mismo. */}
-                    <FiltroColumnaMulti
-                      label="Estado"
-                      value={estadoFiltro}
-                      options={estadosFaceta}
-                      etiqueta={(v) => ESTADO_META[v as EstadoTroza]?.label ?? v}
-                      onChange={(v) => onEstadoFiltro(v as EstadoTroza[])}
-                      placeholder="Todos"
-                    />
-                  </th>
-                ),
-                parada: (
-                  <th data-col="parada" className={`${TH} text-right`} title="Días que lleva parada en el patio">Parada</th>
-                ),
-                d1: <th data-col="d1" className={`${TH} text-right`} title="Diámetro 1 en cm. Una marca P/R/Ox dice que no vino de la guía">D1 (cm)</th>,
-                d2: <th data-col="d2" className={`${TH} text-right`} title="Diámetro 2 en cm">D2 (cm)</th>,
-                largo: <th data-col="largo" className={`${TH} text-right`}>Largo (m)</th>,
-                volumen: <th data-col="volumen" className={`${TH} text-right`}>Vol. (m³)</th>,
-                /* Dos filtros en una columna porque son dos preguntas del mismo eje:
-                   «esta guía» y «este título habilitante». El de título ofrece además
-                   «Sin título declarado», que es como se encuentran las piezas sin
-                   origen legal para cerrarlas. */
-                guia: (
-                  <th data-col="guia" className={TH}>
-                    <span className="block">Guía / origen</span>
-                    {/* Lado a lado y no apilados: apilados hacían esta columna el doble
-                        de alta que las demás y descuadraban la cabecera entera. */}
-                    <div className="flex flex-wrap gap-1">
-                      <span className="min-w-[6.5rem] flex-1">
-                        <FiltroColumnaMulti label="Guía" value={guia} options={guiasFaceta} onChange={onGuia} placeholder="Guía" />
-                      </span>
-                      <span className="min-w-[6.5rem] flex-1">
-                        <FiltroColumnaMulti
-                          label="Título habilitante"
-                          value={titulo}
-                          options={titulosFaceta}
-                          etiqueta={(v) => (v === SIN_TITULO ? "Sin título" : v)}
-                          onChange={onTitulo}
-                          placeholder="Título"
-                        />
-                      </span>
-                    </div>
-                  </th>
-                ),
-              }}
-            />
+            <EnOrden orden={orden.orden} celdas={celdasCabeceraTrozas(props)} />
           </tr>
         </thead>
         <tbody>
