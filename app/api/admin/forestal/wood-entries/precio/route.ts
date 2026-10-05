@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
+import { soloAdminODueno } from "@/lib/forestal/plata-de-guia-rol";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { withApiHandler } from "@/lib/api-handler";
@@ -74,6 +75,9 @@ export const GET = withApiHandler("forestal-wood-entries-precio-get", async (req
 export const POST = withApiHandler("forestal-wood-entries-precio-post", async (req: NextRequest) => {
   const auth = await requireAdmin(req, ["admin", "owner"]);
   if (auth instanceof NextResponse) return auth;
+  /* El encargado entra por `requireAdmin`; la plata es sólo de admin/dueño (security 05-10). */
+  const rol = soloAdminODueno(auth.role, "cambiar el precio de las guías");
+  if (rol) return rol;
   /* Además del de `proxy.ts`: escribe la plata de muchas guías de una vez. */
   const csrf = assertCsrf(req);
   if (csrf) return csrf;

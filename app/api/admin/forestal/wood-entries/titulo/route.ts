@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
+import { soloAdminODueno } from "@/lib/forestal/plata-de-guia-rol";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { isSpecializationEnabled } from "@/lib/specializations";
@@ -38,6 +39,10 @@ export async function PATCH(req: NextRequest) {
   if (rl) return rl;
   const auth = await requireAdmin(req, ["admin", "owner"]);
   if (auth instanceof NextResponse) return auth;
+  /* `requireAdmin` deja pasar al encargado (bypass de gestión): «sólo admin/dueño» se chequea
+     a mano (security 05-10, veto: el encargado declaraba el título). */
+  const rol = soloAdminODueno(auth.role, "declarar el título de una guía");
+  if (rol) return rol;
   const csrf = assertCsrf(req);
   if (csrf) return csrf;
   if (!(await isSpecializationEnabled(auth.tenantId, "spec:forestal:ctp-libro"))) {

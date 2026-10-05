@@ -3,6 +3,7 @@ import { gtfDatosSchema } from "@/lib/forestal/ctp-gtf-datos";
 import { z } from "zod";
 import { motivoOpcionalSchema, motivoSchema } from "@/lib/forestal/motivo";
 import { requireAdmin } from "@/lib/require-admin";
+import { soloAdminODueno } from "@/lib/forestal/plata-de-guia-rol";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { WoodEntriesDB, TOPE_TROZAS_POR_INGRESO } from "@/lib/db/wood-entries.db";
 import { GuiasGuardadasDB } from "@/lib/db/guias-guardadas.db";
@@ -334,6 +335,9 @@ export const PATCH = withApiHandler(
           );
         }
       } else if (parsed.data.action === "set_costo") {
+        /* Plata: sólo admin/dueño; `requireAdmin` deja pasar al encargado (security 05-10). */
+        const rol = soloAdminODueno(auth.role, "cambiar el costo de una guía");
+        if (rol) return rol;
         const actual = await WoodEntriesDB.getById(auth.tenantId, id);
         if (!actual) return NextResponse.json({ error: "not_found" }, { status: 404 });
         entry = await WoodEntriesDB.setCosto(
