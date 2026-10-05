@@ -11,6 +11,26 @@ import { Award, Coins, TrendingUp } from "@buleje/design-system/icons";
 import type { margenPorArbol, resumirMargenArbol } from "@/lib/forestal/loth-margen-arbol";
 import { useKpisPlegables } from "./kpis-plegables";
 import { BarraMargen, Td, Th, soles } from "./loth-rentabilidad-celdas";
+import {
+  BarraFiltrosTabla,
+  FiltroEnCabecera,
+  SinCoincidenciasFila,
+  useFiltrosTabla,
+  type ColumnaFiltro,
+} from "./filtros-tabla-forestal";
+
+type FilaArbol = ReturnType<typeof margenPorArbol>[number];
+
+/** Ingreso y Margen en blanco (—) cuando no hay plata que contar: un rango no los trae. */
+const COLUMNAS_ARBOLES: ColumnaFiltro<FilaArbol>[] = [
+  { id: "arbol", label: "Árbol", tipo: "texto", valor: (f) => f.tree },
+  { id: "especie", label: "Especie", tipo: "multi", valor: (f) => f.especie },
+  { id: "talado", label: "Talado", tipo: "rango", numero: (f) => f.taladoM3, unidad: "m³", paso: 0.1 },
+  { id: "movilizado", label: "Movilizado", tipo: "rango", numero: (f) => (f.movilizadoM3 > 0 ? f.movilizadoM3 : null), unidad: "m³", paso: 0.1 },
+  { id: "rend", label: "Rend.", tipo: "rango", numero: (f) => f.rendimientoPct, unidad: "%", paso: 1 },
+  { id: "ingreso", label: "Ingreso", tipo: "rango", numero: (f) => (f.ingreso > 0 ? f.ingreso : null), unidad: "S/", paso: 100 },
+  { id: "margen", label: "Margen", tipo: "rango", numero: (f) => (f.margen > 0 ? f.margen : null), unidad: "S/", paso: 100 },
+];
 
 export default function LothRentabilidadArboles({
   filas,
@@ -59,6 +79,7 @@ export default function LothRentabilidadArboles({
         />,
     ],
   });
+  const f = useFiltrosTabla(filas, COLUMNAS_ARBOLES);
   if (filas.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-[var(--rule-base)] p-6 text-center text-sm text-[var(--text-tertiary)]">
@@ -71,22 +92,24 @@ export default function LothRentabilidadArboles({
     <div className="space-y-3">
       {kpis.boton}
       {kpis.panel}
+      <BarraFiltrosTabla f={f} />
 
       <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
         <DataTable className="w-full text-sm">
-          <thead className="bg-[var(--surface-sunken)] text-left">
+          <thead className="bg-[var(--surface-sunken)] text-left align-top">
             <tr>
-              <Th>Árbol</Th>
-              <Th>Especie</Th>
-              <Th className="text-right">Talado</Th>
-              <Th className="text-right">Movilizado</Th>
-              <Th className="text-right">Rend.</Th>
-              <Th className="text-right">Ingreso</Th>
-              <Th className="text-right">Margen</Th>
+              <Th>Árbol<FiltroEnCabecera id="arbol" f={f} /></Th>
+              <Th>Especie<FiltroEnCabecera id="especie" f={f} /></Th>
+              <Th className="text-right">Talado<FiltroEnCabecera id="talado" f={f} /></Th>
+              <Th className="text-right">Movilizado<FiltroEnCabecera id="movilizado" f={f} /></Th>
+              <Th className="text-right">Rend.<FiltroEnCabecera id="rend" f={f} /></Th>
+              <Th className="text-right">Ingreso<FiltroEnCabecera id="ingreso" f={f} /></Th>
+              <Th className="text-right">Margen<FiltroEnCabecera id="margen" f={f} /></Th>
             </tr>
           </thead>
           <tbody>
-            {filas.map((f) => (
+            {f.filtradas.length === 0 && <SinCoincidenciasFila colSpan={7} />}
+            {f.filtradas.map((f) => (
               <tr key={f.tree} className={`border-t border-[var(--rule-soft)] ${f.movilizadoM3 <= 0 ? "opacity-60" : ""}`}>
                 <Td>
                   <span className="font-mono font-bold text-[var(--text-primary)]">{f.tree}</span>

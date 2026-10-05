@@ -18,13 +18,20 @@
  * inventar una unidad. Por eso tampoco se totaliza junto con la materia prima.
  */
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { CardTitle, DataTable } from "@buleje/design-system";
 import { PackageCheck, Truck, ArrowUpDown } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { Btn } from "../ctp-shared";
 import { Th, Td } from "../ctp-section-shared";
 import { formatNumber } from "@/lib/format";
+import {
+  BarraFiltrosTabla,
+  FiltroEnCabecera,
+  SinCoincidenciasFila,
+  useFiltrosTabla,
+  type ColumnaFiltro,
+} from "../filtros-tabla-forestal";
 
 const n2 = (v: number) => formatNumber(v, 2);
 
@@ -34,6 +41,11 @@ export interface FilaProducto {
   despachado: number;
   stock: number;
 }
+
+/** Producido/Despachado/Stock NO llevan rango: la cantidad va en la unidad de cada corrida (m³, pt, u). */
+const COLUMNAS_PRODUCTOS: ColumnaFiltro<FilaProducto>[] = [
+  { id: "producto", label: "Producto · Especie", tipo: "multi", valor: (p) => p.producto },
+];
 
 type Columna = "producto" | "producido" | "despachado" | "stock";
 type Orden = { col: Columna; desc: boolean };
@@ -49,12 +61,14 @@ function EncabezadoOrden({
   onOrdenar,
   children,
   className,
+  filtro,
 }: {
   col: Columna;
   orden: Orden;
   onOrdenar: (col: Columna) => void;
   children: string;
   className?: string;
+  filtro?: ReactNode;
 }) {
   const activa = orden.col === col;
   return (
@@ -73,6 +87,7 @@ function EncabezadoOrden({
         <span className="sr-only">, ordenar</span>
         <ArrowUpDown className="h-3 w-3 opacity-60" aria-hidden />
       </button>
+      {filtro}
     </Th>
   );
 }
@@ -101,8 +116,9 @@ export default function TablaProductos({
   // abre la tabla ("¿qué puedo despachar?"), no el orden alfabético.
   const [orden, setOrden] = useState<Orden>({ col: "stock", desc: true });
 
+  const f = useFiltrosTabla(productos, COLUMNAS_PRODUCTOS);
   const filas = useMemo(() => {
-    const copia = [...productos];
+    const copia = [...f.filtradas];
     const { col, desc } = orden;
     copia.sort((a, b) => {
       const r =
@@ -110,7 +126,7 @@ export default function TablaProductos({
       return desc ? -r : r;
     });
     return copia;
-  }, [productos, orden]);
+  }, [f.filtradas, orden]);
 
   const total = filas.reduce(
     (a, p) => ({ producido: a.producido + p.producido, despachado: a.despachado + p.despachado }),
@@ -151,7 +167,8 @@ export default function TablaProductos({
         </p>
       </div>
 
-      {filas.length === 0 ? (
+      <BarraFiltrosTabla f={f} className="px-4 pt-2" />
+      {productos.length === 0 ? (
         <div className="p-10 text-center text-[var(--text-tertiary)]">
           <PackageCheck className="mx-auto mb-3 h-9 w-9 opacity-30" aria-hidden />
           <p className="text-sm">Sin productos transformados todavía.</p>
@@ -162,9 +179,14 @@ export default function TablaProductos({
           wrapperClassName="rounded-none border-0"
           aria-labelledby="saldos-productos-titulo"
         >
-          <thead className="bg-[var(--surface-sunken)] text-left">
+          <thead className="bg-[var(--surface-sunken)] text-left align-top">
             <tr>
-              <EncabezadoOrden col="producto" orden={orden} onOrdenar={ordenar}>
+              <EncabezadoOrden
+                col="producto"
+                orden={orden}
+                onOrdenar={ordenar}
+                filtro={<FiltroEnCabecera id="producto" f={f} />}
+              >
                 Producto · Especie
               </EncabezadoOrden>
               <EncabezadoOrden
@@ -194,6 +216,7 @@ export default function TablaProductos({
             </tr>
           </thead>
           <tbody>
+            {filas.length === 0 && <SinCoincidenciasFila colSpan={onDespachar ? 5 : 4} />}
             {filas.map((p) => (
               <tr key={p.producto} className="border-t border-[var(--rule-soft)]">
                 <Td className="font-medium text-[var(--text-primary)]">{p.producto}</Td>

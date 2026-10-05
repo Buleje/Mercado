@@ -19,6 +19,12 @@ import { resumirBalance, type BalanceContrato, type Contrato } from "@/lib/fores
 import { ESTADO_CLASE, ESTADO_LABEL, soles, TIPO_LABEL, vigenciaTexto } from "./contratos-ui";
 import { textoDeServicio } from "./CtpContratoBalance";
 import { formatNumber } from "@/lib/format";
+import {
+  BarraFiltrosTabla,
+  FiltroEnCabecera,
+  useFiltrosTabla,
+  type ColumnaFiltro,
+} from "./filtros-tabla-forestal";
 
 /* Sin constantes de padding ni de tipografía: `DataTable` pinta `thead`, `td`
    y `tfoot` con variantes descendientes (`[&_tbody_td]:px-3`) que le GANAN por
@@ -137,6 +143,22 @@ function CeldasDePlata({ balance }: { balance?: BalanceContrato }) {
   );
 }
 
+/** Las columnas de plata salen del balance (aún cargando = sin dato, fuera de un rango). */
+function columnasDeContratos(balances?: Record<string, BalanceContrato>): ColumnaFiltro<Contrato>[] {
+  const r = (c: Contrato) => (balances?.[c.id] ? resumirBalance(balances[c.id]) : null);
+  return [
+    { id: "codigo", label: "Código del permiso", tipo: "texto", valor: (c) => [c.codigo, c.alias ?? ""] },
+    { id: "titular", label: "Titular", tipo: "multi", valor: (c) => c.titularNombre },
+    { id: "tipo", label: "Tipo", tipo: "multi", valor: (c) => (c.tipo ? TIPO_LABEL[c.tipo] : null) },
+    { id: "estado", label: "Estado", tipo: "multi", valor: (c) => ESTADO_LABEL[c.estado] },
+    { id: "vence", label: "Vigencia (hasta)", tipo: "fecha", numero: (c) => c.vigenciaHasta?.slice(0, 10) ?? null },
+    { id: "madera", label: "Madera", tipo: "rango", numero: (c) => balances?.[c.id]?.madera.m3 ?? null, unidad: "m³", paso: 0.1 },
+    { id: "puesto", label: "Puesto", tipo: "rango", numero: (c) => r(c)?.egresos ?? null, unidad: "S/", paso: 100 },
+    { id: "vendido", label: "Vendido", tipo: "rango", numero: (c) => r(c)?.ventas ?? null, unidad: "S/", paso: 100 },
+    { id: "ganancia", label: "Ganancia neta", tipo: "rango", numero: (c) => r(c)?.ganancia ?? null, unidad: "S/", paso: 100 },
+  ];
+}
+
 export default function CtpContratosLista({
   balances,
   contratos,
@@ -149,7 +171,7 @@ export default function CtpContratosLista({
 }) {
   const [busqueda, setBusqueda] = useState("");
 
-  const visibles = useMemo(() => {
+  const buscados = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
     if (!q) return contratos;
     return contratos.filter((c) =>
@@ -159,6 +181,9 @@ export default function CtpContratosLista({
         .includes(q),
     );
   }, [contratos, busqueda]);
+  const columnas = useMemo(() => columnasDeContratos(balances), [balances]);
+  const f = useFiltrosTabla(buscados, columnas);
+  const visibles = f.filtradas;
 
   if (contratos.length === 0) {
     return (
@@ -183,22 +208,24 @@ export default function CtpContratosLista({
         />
       </label>
 
+      <BarraFiltrosTabla f={f} />
+
       {/* ── Escritorio (≥640px) ── */}
       <DataTable wrapperClassName="hidden rounded-2xl bg-[var(--surface-raised)] sm:block">
-        <thead>
+        <thead className="align-top">
           <tr>
-            <th scope="col">Código del permiso</th>
-            <th scope="col">Titular</th>
-            <th scope="col">Tipo</th>
-            <th scope="col">Estado</th>
-            <th scope="col">Vigencia</th>
+            <th scope="col">Código del permiso<FiltroEnCabecera id="codigo" f={f} /></th>
+            <th scope="col">Titular<FiltroEnCabecera id="titular" f={f} /></th>
+            <th scope="col">Tipo<FiltroEnCabecera id="tipo" f={f} /></th>
+            <th scope="col">Estado<FiltroEnCabecera id="estado" f={f} /></th>
+            <th scope="col">Vigencia<FiltroEnCabecera id="vence" f={f} /></th>
             {/* La plata del contrato. Tres columnas y no una: «ganó tanto» sin
                 mostrar lo puesto ni lo vendido es un número que nadie puede
                 discutir — y el que discute un balance es el dueño del permiso. */}
-            <th scope="col" className="text-right">Madera</th>
-            <th scope="col" className="text-right">Puesto</th>
-            <th scope="col" className="text-right">Vendido</th>
-            <th scope="col" className="text-right">Ganancia neta</th>
+            <th scope="col" className="text-right">Madera<FiltroEnCabecera id="madera" f={f} /></th>
+            <th scope="col" className="text-right">Puesto<FiltroEnCabecera id="puesto" f={f} /></th>
+            <th scope="col" className="text-right">Vendido<FiltroEnCabecera id="vendido" f={f} /></th>
+            <th scope="col" className="text-right">Ganancia neta<FiltroEnCabecera id="ganancia" f={f} /></th>
             <th scope="col" className="text-right">
               Balance
             </th>
@@ -282,7 +309,7 @@ export default function CtpContratosLista({
 
       {visibles.length === 0 && (
         <p className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-8 text-center text-base text-[var(--text-tertiary)]">
-          Ningún contrato coincide con «{busqueda}».
+          {busqueda.trim() ? `Ningún contrato coincide con «${busqueda}».` : "Ningún contrato coincide con los filtros de columna."}
         </p>
       )}
     </div>

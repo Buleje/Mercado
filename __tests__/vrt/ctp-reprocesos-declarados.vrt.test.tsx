@@ -111,7 +111,10 @@ test("marca la conversión que hay que explicar y muestra el porqué", async () 
 
 test("el filtro deja sólo los que hay que explicar", async () => {
   await montar();
-  const check = [...document.querySelectorAll("input[type=checkbox]")].at(-1) as HTMLInputElement;
+  /* Por su texto, no «la última casilla»: los autofiltros de columna (05-10) también traen casillas. */
+  const check = [...document.querySelectorAll("label")]
+    .find((l) => /Sólo los que hay que explicar/.test(l.textContent || ""))
+    ?.querySelector("input[type=checkbox]") as HTMLInputElement;
   await userEvent.click(check);
   await new Promise((res) => setTimeout(res, 80));
   const txt = document.body.innerText;

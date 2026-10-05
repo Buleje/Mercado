@@ -165,7 +165,8 @@ describe("Control del permiso — tablero + ficha + saldo + cuadre (Blas)", () =
     const cuadre = panelDe("Cuadre por guía");
     expect(cuadre.boton.getAttribute("aria-expanded")).toBe("true");
     expect(cuadre.panel.hidden).toBe(false);
-    expect(within(cuadre.panel).getByText("Cuadra")).toBeTruthy(); // 019-0000002: 4,951 + 1,659 ≈ 6,6102
+    /* En la fila, no en la lista del autofiltro «Veredicto» (05-10), que también dice «Cuadra». */
+    expect(within(cuadre.panel.querySelector("tbody") as HTMLElement).getByText("Cuadra")).toBeTruthy(); // 019-0000002: 4,951 + 1,659 ≈ 6,6102
 
     const saldo = panelDe("Saldo por especie");
     expect(saldo.boton.getAttribute("aria-expanded")).toBe("false");

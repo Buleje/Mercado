@@ -41,9 +41,17 @@ import {
   analizarReproceso,
   conversionesFrecuentes,
   resumirReprocesos,
+  type ReprocesoAnalizado,
   type ReprocesoDeclarado,
 } from "@/lib/forestal/reprocesos-declarados";
 import { formatDateNumeric } from "@/lib/format";
+import {
+  BarraFiltrosTabla,
+  FiltroEnCabecera,
+  SinCoincidenciasFila,
+  useFiltrosTabla,
+  type ColumnaFiltro,
+} from "./filtros-tabla-forestal";
 
 const TH =
   "px-2 py-1 text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]";
@@ -51,6 +59,19 @@ const TD = "px-2 py-1.5 text-sm text-[var(--text-secondary)]";
 const NUM = `${TD} text-right font-mono tabular-nums`;
 const CHIP =
   "inline-flex items-center rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide";
+
+/** Un m³ sólo se compara con otro m³: un reproceso en otra unidad queda fuera de un rango. */
+const enM3 = (r: ReprocesoAnalizado, v: number) => (r.unidad && r.unidad !== "m3" ? null : v);
+
+const COLUMNAS_UNO_POR_UNO: ColumnaFiltro<ReprocesoAnalizado>[] = [
+  { id: "fecha", label: "Fecha", tipo: "fecha", numero: (r) => r.fecha.slice(0, 10), formatearValor: (v) => fmtFecha(String(v)) },
+  { id: "corrida", label: "Corrida", tipo: "texto", valor: (r) => `N° ${r.lineNo ?? "—"}` },
+  { id: "producto", label: "Salió", tipo: "multi", valor: (r) => [r.producto, r.especie].filter(Boolean).join(" · ") || null },
+  { id: "entro", label: "Entró", tipo: "rango", numero: (r) => enM3(r, r.entro), unidad: "m³", paso: 0.01 },
+  { id: "salio", label: "Salió (m³)", tipo: "rango", numero: (r) => enM3(r, r.salio), unidad: "m³", paso: 0.01 },
+  { id: "merma", label: "Merma", tipo: "rango", numero: (r) => enM3(r, r.mermaM3), unidad: "m³", paso: 0.01 },
+  { id: "origen", label: "De dónde", tipo: "multi", valor: (r) => r.conversiones.map((c) => `${c.desde} → ${c.hacia}`) },
+];
 
 /** Date-only en UTC: con la hora de Lima el asiento del día 1 se ve como el 31. */
 const fmtFecha = (iso: string) =>
@@ -91,6 +112,8 @@ export default function CtpReprocesosDeclarados({ period }: { period: CtpPeriod 
     () => (soloRaros ? analizados.filter((r) => r.tieneNoHabitual || r.sospechoso) : analizados),
     [analizados, soloRaros],
   );
+
+  const f = useFiltrosTabla(visibles, COLUMNAS_UNO_POR_UNO);
 
   if (cargando) {
     return (
@@ -246,7 +269,7 @@ export default function CtpReprocesosDeclarados({ period }: { period: CtpPeriod 
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2">
           <span className="text-sm font-bold text-[var(--text-primary)]">Uno por uno</span>
           <span className="text-xs text-[var(--text-tertiary)]">
-            {visibles.length} de {analizados.length}
+            {f.filtradas.length} de {analizados.length}
           </span>
           <label className="ml-auto inline-flex cursor-pointer items-center gap-1.5 text-xs font-bold text-[var(--text-secondary)]">
             <input
@@ -258,21 +281,23 @@ export default function CtpReprocesosDeclarados({ period }: { period: CtpPeriod 
             Sólo los que hay que explicar
           </label>
         </div>
+        <BarraFiltrosTabla f={f} className="px-3 pt-2" />
         <div className="overflow-x-auto px-3 pb-3">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-[var(--rule-soft)]">
-                <th className={TH}>Fecha</th>
-                <th className={TH}>Corrida</th>
-                <th className={TH}>Salió</th>
-                <th className={`${TH} text-right`}>Entró</th>
-                <th className={`${TH} text-right`}>Salió</th>
-                <th className={`${TH} text-right`}>Merma</th>
-                <th className={TH}>De dónde</th>
+              <tr className="border-b border-[var(--rule-soft)] align-top">
+                <th className={TH}>Fecha<FiltroEnCabecera id="fecha" f={f} /></th>
+                <th className={TH}>Corrida<FiltroEnCabecera id="corrida" f={f} /></th>
+                <th className={TH}>Salió<FiltroEnCabecera id="producto" f={f} /></th>
+                <th className={`${TH} text-right`}>Entró<FiltroEnCabecera id="entro" f={f} /></th>
+                <th className={`${TH} text-right`}>Salió<FiltroEnCabecera id="salio" f={f} /></th>
+                <th className={`${TH} text-right`}>Merma<FiltroEnCabecera id="merma" f={f} /></th>
+                <th className={TH}>De dónde<FiltroEnCabecera id="origen" f={f} /></th>
               </tr>
             </thead>
             <tbody>
-              {visibles.map((r) => {
+              {f.filtradas.length === 0 && <SinCoincidenciasFila colSpan={7} />}
+              {f.filtradas.map((r) => {
                 const marcado = r.tieneNoHabitual || r.sospechoso;
                 const abierta = abierto === r.destinoEntryId;
                 return [

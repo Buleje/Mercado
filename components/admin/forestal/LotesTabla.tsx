@@ -17,6 +17,13 @@ import { cn } from "@/lib/utils";
 import { RENDIMIENTO_REF_ASERRADA } from "@/lib/forestal/ctp-rendimiento";
 import { paginar, type MetaLote } from "@/lib/forestal/lote-metricas";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import {
+  BarraFiltrosTabla,
+  FiltroEnCabecera,
+  SinCoincidenciasFila,
+  useFiltrosTabla,
+  type ColumnaFiltro,
+} from "./filtros-tabla-forestal";
 
 export interface LoteFila {
   id: string;
@@ -41,6 +48,24 @@ const n4 = (v: number | string | null | undefined) => (Number(v) || 0).toFixed(4
  *  de SERFOR sólo aplican cuando de verdad se está declarando m³. */
 const nCantidad = (v: number | string | null | undefined, unit: string) =>
   unit === "m3" ? fmtM3(Number(v) || 0) : n4(v);
+/** Autofiltro por columna. Armado/Despachado/Disponible NO llevan rango: su unidad
+ *  cambia por lote (m³/kg/pt) y «entre 10 y 20» compararía kilos con metros. */
+const COLUMNAS_LOTES: ColumnaFiltro<LoteFila>[] = [
+  { id: "codigo", label: "Código", tipo: "texto", valor: (l) => l.loteCode },
+  {
+    id: "producto",
+    label: "Producto · especie",
+    tipo: "multi",
+    valor: (l) => [l.productType, l.speciesCommon].filter(Boolean).join(" · ") || null,
+  },
+  { id: "grado", label: "Grado", tipo: "multi", valor: (l) => l.grade },
+  { id: "trozas", label: "Trozas m³", tipo: "rango", numero: (l) => l.meta?.trozasM3, unidad: "m³", paso: 0.01 },
+  { id: "ref", label: "Ref. SERFOR", tipo: "rango", numero: (l) => l.meta?.metaM3, unidad: "m³", paso: 0.01 },
+  { id: "vs", label: "Vs. referencial", tipo: "rango", numero: (l) => l.meta?.saldoM3, unidad: "m³", paso: 0.01 },
+  { id: "rend", label: "Rend.", tipo: "rango", numero: (l) => l.meta?.rendimientoPct, unidad: "%", paso: 1 },
+  { id: "destino", label: "Destino", tipo: "multi", valor: (l) => l.destino },
+];
+
 const UNIDAD: Record<string, string> = { m3: "m³", kg: "Kg", pt: "pt", unidad: "u" };
 
 /**
@@ -93,11 +118,13 @@ export default function LotesTabla({
 }) {
   // El recorte vive en `paginar()`, que está probado: acá se cometen los
   // off-by-one y con diez lotes no hay segunda página que cruzar en el navegador.
-  const { visibles, pagina: actual, paginas, desde, hasta } = paginar(lotes, pagina, porPagina);
+  const f = useFiltrosTabla(lotes, COLUMNAS_LOTES);
+  const filtrados = f.filtradas;
+  const { visibles, pagina: actual, paginas, desde, hasta } = paginar(filtrados, pagina, porPagina);
 
   // Los totales son de TODO lo filtrado, no de la página: un total que cambia al
   // pasar de página no es un total, es una casualidad.
-  const enM3 = lotes.filter((l) => l.unit === "m3");
+  const enM3 = filtrados.filter((l) => l.unit === "m3");
   const tot = {
     armado: enM3.reduce((a, l) => a + (Number(l.totalCantidad) || 0), 0),
     despachado: enM3.reduce((a, l) => a + (Number(l.despachado) || 0), 0),
@@ -107,6 +134,7 @@ export default function LotesTabla({
 
   return (
     <div className="@container space-y-3">
+      <BarraFiltrosTabla f={f} />
       {/* Sin `hoja-grilla`: en mobile `.admin-mobile-cards` (globals.css) la
           convierte sola en cards con la etiqueta de cada columna al lado, que
           para once columnas se lee mejor que cualquier scroll lateral. Por eso
@@ -115,21 +143,22 @@ export default function LotesTabla({
       <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
         <DataTable className="w-full text-sm">
           <thead>
-            <tr className="border-b-2 border-[var(--rule-base)] text-left text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-              <th className="px-3 py-2.5 font-bold">Código</th>
-              <th className="px-3 py-2.5 font-bold">Producto · especie</th>
-              <th className="px-3 py-2.5 font-bold">Grado</th>
+            <tr className="border-b-2 border-[var(--rule-base)] align-top text-left text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+              <th className="px-3 py-2.5 font-bold">Código<FiltroEnCabecera id="codigo" f={f} /></th>
+              <th className="px-3 py-2.5 font-bold">Producto · especie<FiltroEnCabecera id="producto" f={f} /></th>
+              <th className="px-3 py-2.5 font-bold">Grado<FiltroEnCabecera id="grado" f={f} /></th>
               <th className="px-3 py-2.5 text-right font-bold">Armado</th>
               <th className="px-3 py-2.5 text-right font-bold">Despachado</th>
               <th className="px-3 py-2.5 text-right font-bold">Disponible</th>
-              <th className="px-3 py-2.5 text-right font-bold">Trozas m³</th>
-              <th className="px-3 py-2.5 text-right font-bold">Ref. SERFOR {RENDIMIENTO_REF_ASERRADA}%</th>
-              <th className="px-3 py-2.5 text-right font-bold">Vs. referencial</th>
-              <th className="px-3 py-2.5 text-right font-bold">Rend.</th>
-              <th className="px-3 py-2.5 font-bold">Destino</th>
+              <th className="px-3 py-2.5 text-right font-bold">Trozas m³<FiltroEnCabecera id="trozas" f={f} /></th>
+              <th className="px-3 py-2.5 text-right font-bold">Ref. SERFOR {RENDIMIENTO_REF_ASERRADA}%<FiltroEnCabecera id="ref" f={f} /></th>
+              <th className="px-3 py-2.5 text-right font-bold">Vs. referencial<FiltroEnCabecera id="vs" f={f} /></th>
+              <th className="px-3 py-2.5 text-right font-bold">Rend.<FiltroEnCabecera id="rend" f={f} /></th>
+              <th className="px-3 py-2.5 font-bold">Destino<FiltroEnCabecera id="destino" f={f} /></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--rule-soft)]">
+            {filtrados.length === 0 && lotes.length > 0 && <SinCoincidenciasFila colSpan={11} />}
             {visibles.map((l) => (
               <tr
                 key={l.id}
@@ -190,10 +219,10 @@ export default function LotesTabla({
           <tfoot>
             <tr className="border-t-2 border-[var(--rule-base)] font-bold text-[var(--text-primary)]">
               <td className="px-3 py-2.5" colSpan={3}>
-                Totales · {enM3.length} en m³
-                {lotes.length > enM3.length && (
+                Totales · {enM3.length} en m³{f.activos > 0 && " (lo filtrado)"}
+                {filtrados.length > enM3.length && (
                   <span className="ml-1 font-normal text-[var(--text-tertiary)]">
-                    (+{lotes.length - enM3.length} en otra unidad, sin sumar)
+                    (+{filtrados.length - enM3.length} en otra unidad, sin sumar)
                   </span>
                 )}
               </td>
@@ -226,7 +255,7 @@ export default function LotesTabla({
         </label>
 
         <p className="text-sm text-[var(--text-tertiary)]" aria-live="polite">
-          {lotes.length === 0 ? "Sin lotes" : `${desde}–${hasta} de ${lotes.length}`}
+          {filtrados.length === 0 ? "Sin lotes" : `${desde}–${hasta} de ${filtrados.length}`}
         </p>
 
         <div className="flex items-center gap-2">

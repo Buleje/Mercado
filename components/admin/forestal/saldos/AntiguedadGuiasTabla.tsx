@@ -20,6 +20,21 @@ import {
 import { formatCurrency, formatNumber } from "@/lib/format";
 import { Th } from "../ctp-section-shared";
 import { PUNTO_TRAMO } from "./AntiguedadTramos";
+import {
+  BarraFiltrosTabla,
+  FiltroEnCabecera,
+  SinCoincidenciasFila,
+  useFiltrosTabla,
+  type ColumnaFiltro,
+} from "../filtros-tabla-forestal";
+
+/** «Valor inmovilizado» NO lleva rango: mezcla soles y dólares por fila. */
+const COLUMNAS_ANTIGUEDAD: ColumnaFiltro<FilaAntiguedad>[] = [
+  { id: "especie", label: "Especie", tipo: "multi", valor: (f) => f.species },
+  { id: "gtf", label: "GTF", tipo: "texto", valor: (f) => f.code },
+  { id: "sinConsumir", label: "Sin consumir", tipo: "rango", numero: (f) => f.disponible, unidad: "m³", paso: 0.01 },
+  { id: "parada", label: "Parada", tipo: "rango", numero: (f) => f.dias, unidad: "días", paso: 1 },
+];
 
 const dinero = (v: number, moneda = "PEN") =>
   moneda === "USD" ? `US$ ${formatNumber(v, 2)}` : formatCurrency(v);
@@ -52,23 +67,27 @@ export default function AntiguedadGuiasTabla({
   /** El título del bloque, para nombrar la tabla. */
   idTitulo: string;
 }) {
+  const f = useFiltrosTabla(filas, COLUMNAS_ANTIGUEDAD);
   return (
+    <>
+    <BarraFiltrosTabla f={f} className="px-4 py-2" />
     <DataTable
       className="w-full text-sm"
       wrapperClassName="rounded-none border-0"
       aria-labelledby={idTitulo}
     >
-      <thead>
+      <thead className="align-top">
         <tr>
-          <Th>Especie</Th>
-          <Th>GTF</Th>
-          <Th className="text-right">Sin consumir (m³)</Th>
-          <Th className="text-right">Parada</Th>
+          <Th>Especie<FiltroEnCabecera id="especie" f={f} /></Th>
+          <Th>GTF<FiltroEnCabecera id="gtf" f={f} /></Th>
+          <Th className="text-right">Sin consumir (m³)<FiltroEnCabecera id="sinConsumir" f={f} /></Th>
+          <Th className="text-right">Parada<FiltroEnCabecera id="parada" f={f} /></Th>
           <Th className="text-right">Valor inmovilizado</Th>
         </tr>
       </thead>
       <tbody>
-        {filas.map((f) => (
+        {f.filtradas.length === 0 && filas.length > 0 && <SinCoincidenciasFila colSpan={5} />}
+        {f.filtradas.map((f) => (
           <tr key={f.id} className="border-t border-[var(--rule-soft)]">
             <td className="px-4 py-3">
               <span className="inline-flex flex-wrap items-center gap-2 font-medium text-[var(--text-primary)]">
@@ -100,5 +119,6 @@ export default function AntiguedadGuiasTabla({
         ))}
       </tbody>
     </DataTable>
+    </>
   );
 }

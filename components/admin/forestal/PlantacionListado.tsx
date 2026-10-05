@@ -35,6 +35,13 @@ import type { PlantacionListItem } from "@/lib/forestal/plantacion-tramite";
 import { Btn, IconAction, TablaSkeleton } from "./ctp-shared";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { formatNumber } from "@/lib/format";
+import {
+  BarraFiltrosTabla,
+  FiltroEnCabecera,
+  SinCoincidenciasFila,
+  useFiltrosTabla,
+  type ColumnaFiltro,
+} from "./filtros-tabla-forestal";
 
 const TONO_BADGE: Record<string, string> = {
   muted: "border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
@@ -64,6 +71,17 @@ const fmtFecha = (iso: string): string => {
     : d.toLocaleString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "America/Lima" });
 };
 
+/** El Estado NO lleva autofiltro de columna: ya se filtra con los chips de arriba (un solo control por estado). */
+const COLUMNAS_PLANTACION: ColumnaFiltro<PlantacionListItem>[] = [
+  { id: "codigo", label: "Código interno", tipo: "texto", valor: (p) => p.codigoInterno },
+  { id: "titular", label: "Titular", tipo: "multi", valor: (p) => p.titular },
+  { id: "predio", label: "Predio", tipo: "multi", valor: (p) => p.predioNombre },
+  { id: "distrito", label: "Distrito", tipo: "multi", valor: (p) => p.predioDistrito },
+  { id: "area", label: "Área", tipo: "rango", numero: (p) => p.predioAreaTotalHa, unidad: "ha", paso: 0.1 },
+  { id: "bloques", label: "Bloques", tipo: "rango", numero: (p) => p.numBloques, paso: 1 },
+  { id: "modificada", label: "Última modificación", tipo: "fecha", numero: (p) => p.updatedAt?.slice(0, 10) ?? null },
+];
+
 export default function PlantacionListado({
   onNueva,
   onAbrir,
@@ -86,10 +104,12 @@ export default function PlantacionListado({
     () => listado.reduce((sum, p) => sum + (p.predioAreaTotalHa ?? 0), 0),
     [listado],
   );
-  const visibles = useMemo(
+  const porEstadoElegido = useMemo(
     () => (filtro ? listado.filter((p) => p.estado === filtro) : listado),
     [listado, filtro],
   );
+  const f = useFiltrosTabla(porEstadoElegido, COLUMNAS_PLANTACION);
+  const visibles = f.filtradas;
 
   async function confirmarBorrar() {
     if (!aBorrar) return;
@@ -154,7 +174,7 @@ export default function PlantacionListado({
 
       {cargando ? (
         <TablaSkeleton columnas={8} />
-      ) : visibles.length === 0 ? (
+      ) : porEstadoElegido.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] py-14 text-center">
           <TreePine className="h-10 w-10 text-[var(--text-tertiary)] opacity-40" aria-hidden="true" />
           <p className="text-xl font-bold text-[var(--text-primary)]">
@@ -171,23 +191,26 @@ export default function PlantacionListado({
           </Btn>
         </div>
       ) : (
+        <>
+        <BarraFiltrosTabla f={f} className="mb-3" />
         <div className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] admin-mobile-cards">
           <div className="max-h-[38rem] overflow-auto">
             <DataTable className="w-full min-w-[960px] text-sm">
               <thead className="sticky top-0 z-10 bg-[var(--surface-sunken)]">
-                <tr className="text-left">
-                  <th scope="col" className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Código interno</th>
-                  <th scope="col" className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Titular</th>
-                  <th scope="col" className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Predio</th>
-                  <th scope="col" className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Distrito</th>
-                  <th scope="col" className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Área</th>
-                  <th scope="col" className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Bloques</th>
+                <tr className="text-left align-top">
+                  <th scope="col" className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Código interno<FiltroEnCabecera id="codigo" f={f} /></th>
+                  <th scope="col" className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Titular<FiltroEnCabecera id="titular" f={f} /></th>
+                  <th scope="col" className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Predio<FiltroEnCabecera id="predio" f={f} /></th>
+                  <th scope="col" className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Distrito<FiltroEnCabecera id="distrito" f={f} /></th>
+                  <th scope="col" className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Área<FiltroEnCabecera id="area" f={f} /></th>
+                  <th scope="col" className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Bloques<FiltroEnCabecera id="bloques" f={f} /></th>
                   <th scope="col" className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Estado</th>
-                  <th scope="col" className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Última modificación</th>
+                  <th scope="col" className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Última modificación<FiltroEnCabecera id="modificada" f={f} /></th>
                   <th scope="col" className="px-4 py-2.5 text-right text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Acciones</th>
                 </tr>
               </thead>
               <motion.tbody variants={staggerContainer} initial="hidden" animate="show">
+                {visibles.length === 0 && <SinCoincidenciasFila colSpan={9} />}
                 {visibles.map((p) => (
                   <motion.tr key={p.id} variants={staggerChild} className="border-t border-[var(--rule-soft)] hover:bg-[var(--surface-canvas)]">
                     <td data-label="Código interno" className="px-4 py-3 font-mono text-xs font-bold text-[var(--text-primary)]">{p.codigoInterno}</td>
@@ -213,6 +236,7 @@ export default function PlantacionListado({
             </DataTable>
           </div>
         </div>
+        </>
       )}
 
       <AdminModal

@@ -13,10 +13,26 @@ import { DataTable } from "@buleje/design-system";
 import { History } from "@buleje/design-system/icons";
 import type { FilaDeSaldo, ResumenDeSaldo } from "@/lib/forestal/ctp-saldos-vista";
 import { formatNumber } from "@/lib/format";
+import {
+  BarraFiltrosTabla,
+  FiltroEnCabecera,
+  SinCoincidenciasFila,
+  useFiltrosTabla,
+  type ColumnaFiltro,
+} from "../filtros-tabla-forestal";
 
 const n3 = (v: number) => formatNumber(v, 3);
 const nf = (v: number) => formatNumber(v);
 const TH = "px-3 py-2 font-bold text-[var(--text-secondary)]";
+
+const COLUMNAS_DISPONIBLE: ColumnaFiltro<FilaDeSaldo>[] = [
+  { id: "nombre", label: "Especie", tipo: "multi", valor: (f) => f.nombre },
+  { id: "disponible", label: "Disponible", tipo: "rango", numero: (f) => f.disponible, unidad: "m³", paso: 0.01 },
+  { id: "piezas", label: "Piezas", tipo: "rango", numero: (f) => f.piezas, paso: 1 },
+  { id: "total", label: "Ingresó", tipo: "rango", numero: (f) => f.total, unidad: "m³", paso: 0.01 },
+  { id: "guias", label: "Guías", tipo: "rango", numero: (f) => f.guias, paso: 1 },
+  { id: "usado", label: "Usado", tipo: "rango", numero: (f) => f.usadoPct, unidad: "%", paso: 1 },
+];
 
 /**
  * «Sin nada» mira las CUATRO cosas a propósito: con sólo «disponible en cero»
@@ -45,7 +61,9 @@ export default function DetalleDisponible({
   const rolliza = vista === "trozas";
   const conKardex = rolliza && Boolean(onKardex);
   const ocultables = filas.filter(sinNada).length;
-  const visibles = soloConAlgo ? filas.filter((f) => !sinNada(f)) : filas;
+  const conAlgo = soloConAlgo ? filas.filter((x) => !sinNada(x)) : filas;
+  const f = useFiltrosTabla(conAlgo, COLUMNAS_DISPONIBLE);
+  const visibles = f.filtradas;
 
   return (
     <div className="space-y-2">
@@ -64,28 +82,35 @@ export default function DetalleDisponible({
           </span>
         </label>
       )}
+      <BarraFiltrosTabla f={f} />
       <DataTable className="w-full text-base" wrapperClassName="rounded-xl">
-        <thead className="bg-[var(--surface-sunken)] text-sm">
+        <thead className="bg-[var(--surface-sunken)] align-top text-sm">
           <tr>
             <th scope="col" className={`${TH} text-left`}>
               {rolliza ? "Especie" : "Producto"}
+              <FiltroEnCabecera id="nombre" f={f} />
             </th>
             <th scope="col" className={`${TH} text-right`}>
               Disponible (m³)
+              <FiltroEnCabecera id="disponible" f={f} />
             </th>
             <th scope="col" className={`${TH} text-right`}>
               Piezas
+              <FiltroEnCabecera id="piezas" f={f} />
             </th>
             <th scope="col" className={`${TH} text-right`}>
               {rolliza ? "Ingresó" : "Se produjo"}
+              <FiltroEnCabecera id="total" f={f} />
             </th>
             {rolliza && (
               <th scope="col" className={`${TH} text-right`}>
                 Guías
+                <FiltroEnCabecera id="guias" f={f} />
               </th>
             )}
             <th scope="col" className={`${TH} text-right`}>
               Usado
+              <FiltroEnCabecera id="usado" f={f} />
             </th>
             {conKardex && (
               <th scope="col" className={TH}>
@@ -95,6 +120,7 @@ export default function DetalleDisponible({
           </tr>
         </thead>
         <tbody>
+          {visibles.length === 0 && <SinCoincidenciasFila colSpan={conKardex ? 7 : rolliza ? 6 : 5} />}
           {visibles.map((f) => (
             <tr key={f.nombre} className="border-t border-[var(--rule-base)]">
               <td className="px-3 py-2">
@@ -167,6 +193,7 @@ export default function DetalleDisponible({
           <tr>
             <td className="px-3 py-2.5 text-[var(--text-primary)]">
               Total · {r.conStock} con stock de {r.totalFilas}
+              {f.activos > 0 && <span className="font-normal text-[var(--text-tertiary)]"> (de toda la lista, no de lo filtrado)</span>}
               {/* La suma es de lo POSITIVO, igual que la tarjeta de arriba. */}
               {r.enNegativo > 0 && (
                 <span className="block text-sm font-normal text-[var(--text-tertiary)]">

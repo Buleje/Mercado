@@ -30,6 +30,8 @@ import type { LoteDeReporte } from "@/lib/forestal/saldos-reporte";
 import { formatNumber } from "@/lib/format";
 import { Th } from "../ctp-section-shared";
 import LotesConSaldoFila from "./LotesConSaldoFila";
+import { COLUMNAS_LOTES_CON_SALDO } from "./lotes-con-saldo-filtros";
+import { BarraFiltrosTabla, FiltroEnCabecera, SinCoincidenciasFila, useFiltrosTabla } from "../filtros-tabla-forestal";
 
 /* Vive en `lib/forestal/saldos-reporte` (la usan el reporte y la tabla); se
    re-exporta para quien la importaba de acá. */
@@ -65,6 +67,7 @@ export default function LotesConSaldo({
   /** Con «Solo este permiso»: lotes que mezclan ese permiso con otro, que quedan afuera. */
   mezcladosFuera?: number;
 }) {
+  const f = useFiltrosTabla(lotes, COLUMNAS_LOTES_CON_SALDO);
   const avisoMezcla =
     mezcladosFuera > 0 ? (
       <p className="px-4 py-2 text-sm text-[var(--text-secondary)]">
@@ -89,11 +92,14 @@ export default function LotesConSaldo({
     );
   }
 
-  const filas = [...lotes].sort(ordenar);
+  const filas = [...f.filtradas].sort(ordenar);
   const eligiendo = Boolean(seleccion && onSeleccion);
   const marcados = seleccion ?? new Set<string>();
   const todosMarcados = filas.every((f) => marcados.has(f.id));
   const alguno = filas.some((f) => marcados.has(f.id));
+  /* Lo tildado que el filtro esconde SIGUE yendo al reporte: se avisa, no se calla. */
+  const idsVisibles = new Set(filas.map((x) => x.id));
+  const elegidosFuera = f.activos > 0 ? [...marcados].filter((id) => !idsVisibles.has(id)).length : 0;
 
   const alternar = (id: string) => {
     if (!onSeleccion) return;
@@ -166,13 +172,20 @@ export default function LotesConSaldo({
         </div>
       )}
       {avisoMezcla}
+      <BarraFiltrosTabla f={f} className="px-4 py-2" />
+      {elegidosFuera > 0 && (
+        <p className="px-4 pb-2 text-sm font-bold text-[var(--data-warning-ink)]">
+          {elegidosFuera} {elegidosFuera === 1 ? "lote elegido queda" : "lotes elegidos quedan"} fuera de este
+          filtro y {elegidosFuera === 1 ? "sigue" : "siguen"} yendo al reporte.
+        </p>
+      )}
 
       <DataTable
         className="w-full text-sm"
         wrapperClassName="rounded-none border-0"
         aria-labelledby={ID_TITULO}
       >
-        <thead className="bg-[var(--surface-sunken)]">
+        <thead className="bg-[var(--surface-sunken)] align-top">
           <tr>
             {eligiendo && (
               <Th className="w-10">
@@ -190,21 +203,22 @@ export default function LotesConSaldo({
                 </label>
               </Th>
             )}
-            <Th>Lote</Th>
-            <Th>N° de permiso</Th>
-            <Th>Especie</Th>
-            <Th>Estado</Th>
-            <Th className="text-right">Consumido (m³)</Th>
-            <Th className="text-right">Al 56 %</Th>
-            <Th className="text-right">Producido (m³)</Th>
-            <Th className="text-right">Resta (m³)</Th>
-            <Th className="text-right">Piezas</Th>
-            <Th className="text-right">Parado</Th>
-            <Th>Fin de proceso</Th>
-            <Th>Plazo</Th>
+            <Th>Lote<FiltroEnCabecera id="lote" f={f} /></Th>
+            <Th>N° de permiso<FiltroEnCabecera id="permiso" f={f} /></Th>
+            <Th>Especie<FiltroEnCabecera id="especie" f={f} /></Th>
+            <Th>Estado<FiltroEnCabecera id="estado" f={f} /></Th>
+            <Th className="text-right">Consumido (m³)<FiltroEnCabecera id="consumido" f={f} /></Th>
+            <Th className="text-right">Al 56 %<FiltroEnCabecera id="al56" f={f} /></Th>
+            <Th className="text-right">Producido (m³)<FiltroEnCabecera id="producido" f={f} /></Th>
+            <Th className="text-right">Resta (m³)<FiltroEnCabecera id="resta" f={f} /></Th>
+            <Th className="text-right">Piezas<FiltroEnCabecera id="piezas" f={f} /></Th>
+            <Th className="text-right">Parado<FiltroEnCabecera id="parado" f={f} /></Th>
+            <Th>Fin de proceso<FiltroEnCabecera id="fin" f={f} /></Th>
+            <Th>Plazo<FiltroEnCabecera id="plazo" f={f} /></Th>
           </tr>
         </thead>
         <tbody>
+          {filas.length === 0 && <SinCoincidenciasFila colSpan={eligiendo ? 13 : 12} />}
           {filas.map((l) => (
             <LotesConSaldoFila
               key={l.id}

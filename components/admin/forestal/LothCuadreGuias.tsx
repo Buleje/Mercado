@@ -7,6 +7,13 @@ import {
   type VeredictoGuia,
 } from "@/lib/forestal/loth-cuadre-guias";
 import { formatNumber } from "@/lib/format";
+import {
+  BarraFiltrosTabla,
+  FiltroEnCabecera,
+  SinCoincidenciasFila,
+  useFiltrosTabla,
+  type ColumnaFiltro,
+} from "./filtros-tabla-forestal";
 
 /**
  * Cuadre de guías: una fila por GTF, con lo que declara contra lo que el libro
@@ -41,6 +48,16 @@ function diferencia(f: CuadreGuia): string {
   return `${signo}${formatNumber(f.diferenciaM3, { min: 3, max: 4 })}`;
 }
 
+/** «Piezas guía / trozas» NO lleva filtro: son dos cifras en una celda. */
+const COLUMNAS_CUADRE: ColumnaFiltro<CuadreGuia>[] = [
+  { id: "guia", label: "Guía", tipo: "texto", valor: (f) => [f.gtf, f.placa ?? ""] },
+  { id: "fecha", label: "Fecha", tipo: "fecha", numero: (f) => f.fecha?.slice(0, 10) ?? null },
+  { id: "guiaM3", label: "Guía m³", tipo: "rango", numero: (f) => f.declaradoM3, unidad: "m³", paso: 0.1 },
+  { id: "libroM3", label: "Libro m³", tipo: "rango", numero: (f) => (f.libroTrozas > 0 ? f.libroM3 : null), unidad: "m³", paso: 0.1 },
+  { id: "dif", label: "Dif. m³", tipo: "rango", numero: (f) => f.diferenciaM3, unidad: "m³", paso: 0.01 },
+  { id: "veredicto", label: "Veredicto", tipo: "multi", valor: (f) => VEREDICTOS_META[f.veredicto].label },
+];
+
 export interface LothCuadreGuiasProps {
   filas: readonly CuadreGuia[];
   /** Clic en el N.º de una guía: el padre decide qué abrir (ficha, filtro del libro…). */
@@ -48,26 +65,30 @@ export interface LothCuadreGuiasProps {
 }
 
 export function LothCuadreGuias({ filas, onVerGtf }: LothCuadreGuiasProps) {
+  const f = useFiltrosTabla(filas, COLUMNAS_CUADRE);
   if (filas.length === 0) {
     return <p className="text-sm text-[var(--text-tertiary)]">Todavía no hay guías emitidas ni trozas despachadas.</p>;
   }
 
   return (
+    <div className="space-y-2">
+    <BarraFiltrosTabla f={f} />
     <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
       <DataTable className="w-full min-w-[720px] text-sm">
         <thead>
-          <tr className="text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
-            <th className="px-3 py-2">Guía</th>
-            <th className="px-3 py-2">Fecha</th>
-            <th className="px-3 py-2 text-right">Guía m³</th>
-            <th className="px-3 py-2 text-right">Libro m³</th>
-            <th className="px-3 py-2 text-right">Dif. m³</th>
+          <tr className="text-left align-top text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
+            <th className="px-3 py-2">Guía<FiltroEnCabecera id="guia" f={f} /></th>
+            <th className="px-3 py-2">Fecha<FiltroEnCabecera id="fecha" f={f} /></th>
+            <th className="px-3 py-2 text-right">Guía m³<FiltroEnCabecera id="guiaM3" f={f} /></th>
+            <th className="px-3 py-2 text-right">Libro m³<FiltroEnCabecera id="libroM3" f={f} /></th>
+            <th className="px-3 py-2 text-right">Dif. m³<FiltroEnCabecera id="dif" f={f} /></th>
             <th className="px-3 py-2 text-right">Piezas guía / trozas</th>
-            <th className="px-3 py-2">Veredicto</th>
+            <th className="px-3 py-2">Veredicto<FiltroEnCabecera id="veredicto" f={f} /></th>
           </tr>
         </thead>
         <tbody>
-          {filas.map((f) => {
+          {f.filtradas.length === 0 && <SinCoincidenciasFila colSpan={7} />}
+          {f.filtradas.map((f) => {
             const meta = VEREDICTOS_META[f.veredicto];
             return (
               <tr key={f.gtf} className="border-t border-[var(--rule-base)]">
@@ -106,6 +127,7 @@ export function LothCuadreGuias({ filas, onVerGtf }: LothCuadreGuiasProps) {
           })}
         </tbody>
       </DataTable>
+    </div>
     </div>
   );
 }
