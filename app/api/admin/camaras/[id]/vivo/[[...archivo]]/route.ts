@@ -1,21 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { applyRateLimit } from "@/lib/rate-limit";
+import { applyRateLimit, createRateLimiter } from "@/lib/rate-limit";
 import { withApiHandler } from "@/lib/api-handler";
 import { CamarasDB } from "@/lib/db/camaras.db";
 import { descifrarSecreto } from "@/lib/cripto-secretos";
 import { urlRtsp } from "@/lib/camaras/isapi";
-import {
-  asegurarStream,
-  esperarPrimerSegmento,
-  estadoDeStream,
-  hayFfmpeg,
-  leerArchivoDeStream,
-  nombreDeArchivoValido,
-} from "@/lib/camaras/hls";
+import type { ConexionCamara } from "@/lib/camaras/camaras";
+import { abrirVivo, hayFfmpeg, leerOReabrir, nombreDeArchivoValido } from "@/lib/camaras/hls";
 
 /**
- * Video en vivo de una cámara (ADR-421).
+ * Video en vivo de una cámara (ADR-470).
  *
  * Tres pedidos sobre la misma ruta:
  *  · `GET .../vivo`            → dice si esta instalación puede dar video y arranca el stream.
@@ -25,7 +19,8 @@ import {
  * El reproductor del navegador pide los dos últimos por su cuenta, así que
  * **cada pedido de segmento cuenta como «alguien sigue mirando»**: es lo que
  * mantiene vivo el `ffmpeg`. Cuando el operario cierra la pestaña dejan de
- * llegar pedidos y el stream se apaga solo a los 30 segundos.
+ * llegar pedidos y el stream se apaga solo a los 30-40 segundos; si vuelve
+ * después, el pedido de la lista lo levanta de nuevo (ADR-470).
  *
  * Por qué no se sirve el RTSP directo al navegador: ningún navegador reproduce
  * RTSP, y la URL lleva la clave de la cámara adentro. Acá la clave nunca sale
@@ -35,18 +30,49 @@ import {
 /** La clave del stream incluye el tenant: dos negocios con la misma cámara no se pisan. */
 const claveDeStream = (tenantId: string, camaraId: string) => `${tenantId}:${camaraId}`;
 
+/**
+ * Cupo aparte para la lista y los segmentos (05-10).
+ *
+ * Un reproductor HLS pide la lista y un segmento cada 2 s: ~60 pedidos por
+ * minuto por pestaña. Con el `GENEROUS` de antes (100/min por IP) bastaban
+ * DOS pestañas —o dos cámaras— para que el pedido 101 diera 429 y el video se
+ * cortara (medido: 130 pedidos en 57 s → 100 pasan, 30 rebotan). 600/min da
+ * para las 4 cámaras del tope × 2 pantallas, con margen. Leer un segmento es
+ * leer un archivo chico ya validado por nombre: no hay nada caro que proteger.
+ * El arranque (que sí levanta un ffmpeg) sigue con su cupo chico.
+ */
+const lecturasDelVideo = createRateLimiter({ maxRequests: 600, windowMs: 60_000 });
+
+/** La URL RTSP con la clave adentro, o `null` si la clave guardada no se descifra. */
+function rtspDe(conexion: ConexionCamara): string | null {
+  const secreto = descifrarSecreto(conexion.claveCifrada);
+  if (secreto === null) return null;
+  return urlRtsp(
+    {
+      host: conexion.host,
+      puerto: conexion.puerto,
+      usuario: conexion.usuario,
+      clave: secreto,
+      https: conexion.https,
+      canal: conexion.canal,
+    },
+    /* El flujo secundario: menos resolución, arranca antes y casi siempre es
+       H.264 —el principal puede venir en H.265, que el navegador no toca—. */
+    "baja",
+  );
+}
+
 export const GET = withApiHandler(
   "camaras-vivo",
   async (req: NextRequest, ctx: { params: Promise<{ id: string; archivo?: string[] }> }) => {
     const auth = await requireAdmin(req, ["admin", "owner", "almacenero"]);
     if (auth instanceof NextResponse) return auth;
-    /* Generoso a propósito: un reproductor pide un segmento cada dos segundos
-       y con el tope normal se quedaría sin video a los pocos minutos. */
-    const rl = await applyRateLimit(req, "GENEROUS", "camaras-vivo");
-    if (rl) return rl;
 
     const { id, archivo } = await ctx.params;
     const nombre = archivo?.[0];
+
+    const rl = nombre ? applyRateLimit(req, lecturasDelVideo) : applyRateLimit(req, "GENEROUS", "camaras-vivo");
+    if (rl) return rl;
 
     const camara = (await CamarasDB.list(auth.tenantId)).find((c) => c.id === id);
     if (!camara) return NextResponse.json({ error: "Esa cámara no existe." }, { status: 404 });
@@ -64,11 +90,12 @@ export const GET = withApiHandler(
     const clave = claveDeStream(auth.tenantId, id);
 
     /* Un pedido de segmento no vuelve a armar la URL RTSP: el stream ya está
-       corriendo y sólo hay que leer del disco. Es el 99 % de los pedidos. */
+       corriendo y sólo hay que leer del disco. Es el 99 % de los pedidos. La
+       lista sí puede revivir el stream si el barrido lo apagó (ver `leerOReabrir`). */
     if (nombre) {
       if (!nombreDeArchivoValido(nombre))
         return NextResponse.json({ error: "Archivo no válido." }, { status: 400 });
-      const leido = await leerArchivoDeStream(clave, nombre);
+      const leido = await leerOReabrir(clave, nombre, () => rtspDe(conexion));
       if (!leido.ok) return NextResponse.json({ error: leido.motivo }, { status: 404 });
       return new NextResponse(new Uint8Array(leido.datos), {
         status: 200,
@@ -93,8 +120,8 @@ export const GET = withApiHandler(
         { status: 200 },
       );
 
-    const secreto = descifrarSecreto(conexion.claveCifrada);
-    if (secreto === null)
+    const rtsp = rtspDe(conexion);
+    if (rtsp === null)
       return NextResponse.json(
         {
           disponible: false,
@@ -103,37 +130,8 @@ export const GET = withApiHandler(
         { status: 409 },
       );
 
-    const rtsp = urlRtsp(
-      {
-        host: conexion.host,
-        puerto: conexion.puerto,
-        usuario: conexion.usuario,
-        clave: secreto,
-        https: conexion.https,
-        canal: conexion.canal,
-      },
-      /* El flujo secundario: menos resolución, arranca antes y casi siempre es
-         H.264 —el principal puede venir en H.265, que el navegador no toca—. */
-      "baja",
-    );
-
-    const arranque = await asegurarStream(clave, rtsp);
-    if (!arranque.ok) return NextResponse.json({ disponible: false, motivo: arranque.motivo }, { status: 200 });
-
-    /* Se espera al primer pedazo antes de contestar: si el reproductor pide la
-       lista y todavía no existe, se rinde y muestra un error sobre un video
-       que iba a funcionar dos segundos después. */
-    const listo = await esperarPrimerSegmento(clave);
-    if (!listo) {
-      const estado = estadoDeStream(clave);
-      return NextResponse.json(
-        {
-          disponible: false,
-          motivo: estado?.error ?? "La cámara no entregó video a tiempo.",
-        },
-        { status: 200 },
-      );
-    }
+    const abierto = await abrirVivo(clave, rtsp);
+    if (!abierto.ok) return NextResponse.json({ disponible: false, motivo: abierto.motivo }, { status: 200 });
 
     return NextResponse.json(
       { disponible: true, lista: `/api/admin/camaras/${id}/vivo/vivo.m3u8` },

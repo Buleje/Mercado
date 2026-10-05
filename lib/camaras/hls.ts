@@ -1,7 +1,7 @@
 import "server-only";
 
 /**
- * Video en vivo de la cámara: RTSP → HLS con ffmpeg (ADR-421).
+ * Video en vivo de la cámara: RTSP → HLS con ffmpeg (ADR-470; el código citaba ADR-421, que es otro tema).
  *
  * El visor de la pantalla se conforma con snapshots encadenados —un JPEG por
  * segundo, que funciona en cualquier lado—, pero eso no es *ver la cámara*:
@@ -61,6 +61,12 @@ const BARRIDO_MS = 10_000;
 const MAX_STREAMS = 4;
 /** Lo que se espera a que aparezca el primer segmento antes de rendirse. */
 const ESPERA_PRIMER_SEGMENTO_MS = 12_000;
+/**
+ * Un stream caído se vuelve a intentar recién pasado este rato. Sin la pausa,
+ * con la cámara apagada cada recarga de la lista (una cada 2 s por pestaña)
+ * levantaría un ffmpeg nuevo que muere a los 8 s: una tormenta de procesos.
+ */
+const REINTENTO_CAIDO_MS = 5_000;
 
 export type EstadoStream = "arrancando" | "vivo" | "caido";
 
@@ -72,6 +78,8 @@ export interface Stream {
   error: string | null;
   desde: number;
   ultimoUso: number;
+  /** Cuándo se cayó: un stream caído se reintenta pasado `REINTENTO_CAIDO_MS`. */
+  caidoEn: number | null;
   proceso: ChildProcess;
 }
 
@@ -82,24 +90,51 @@ export interface Stream {
  * perdería en cada cambio de archivo y los `ffmpeg` viejos quedarían huérfanos,
  * sin nadie que los mate. Colgarlo del global lo hace sobrevivir a la recarga.
  */
+type Arranque = { ok: true; carpeta: string; estado: EstadoStream } | { ok: false; motivo: string };
+
 const global_ = globalThis as unknown as {
   __camarasHls?: Map<string, Stream>;
   __camarasHlsBarrido?: NodeJS.Timeout;
+  __camarasHlsArranques?: Map<string, Promise<Arranque>>;
 };
 const streams = (global_.__camarasHls ??= new Map<string, Stream>());
+/** Arranques en curso por cámara: el segundo pedido espera al primero (ver `asegurarStream`). */
+const arranques = (global_.__camarasHlsArranques ??= new Map<string, Promise<Arranque>>());
 
 // ─── ffmpeg disponible ──────────────────────────────────────────────────────
 
 let ffmpegDisponible: boolean | null = null;
+/** La versión mayor del ffmpeg instalado; `null` = no se pudo leer (compilación nocturna). */
+let ffmpegVersion: number | null = null;
+
+/**
+ * La versión mayor de la primera línea de `ffmpeg -version`.
+ *
+ * `ffmpeg version 6.1.1-3ubuntu5` → 6 · `ffmpeg version n7.1` → 7. Las
+ * compilaciones nocturnas (`2025-09-28-git-…` de gyan.dev, `N-112345-g…` de
+ * BtbN) no traen número: devuelven `null` y se tratan como modernas, que es lo
+ * que son.
+ */
+export function versionMayorDeFfmpeg(texto: string): number | null {
+  const m = /ffmpeg version n?(\d+)\.\d+/.exec(texto);
+  return m ? Number(m[1]) : null;
+}
 
 /** ¿Esta máquina puede transcodificar? Se pregunta una vez y se recuerda. */
 export async function hayFfmpeg(): Promise<boolean> {
   if (ffmpegDisponible !== null) return ffmpegDisponible;
   ffmpegDisponible = await new Promise<boolean>((resolver) => {
     try {
-      const p = spawn("ffmpeg", ["-version"], { stdio: "ignore" });
+      const p = spawn("ffmpeg", ["-version"], { stdio: ["ignore", "pipe", "ignore"] });
+      let salida = "";
+      p.stdout?.on("data", (b: Buffer) => {
+        if (salida.length < 200) salida += b.toString();
+      });
       p.on("error", () => resolver(false));
-      p.on("close", (codigo) => resolver(codigo === 0));
+      p.on("close", (codigo) => {
+        ffmpegVersion = versionMayorDeFfmpeg(salida);
+        resolver(codigo === 0);
+      });
     } catch {
       resolver(false);
     }
@@ -122,13 +157,22 @@ export async function hayFfmpeg(): Promise<boolean> {
  * `-rtsp_transport tcp` porque UDP se pierde cruzando WiFi y deja la imagen
  * con bloques; `-an` porque el patio no necesita audio y muchas cámaras no lo
  * traen; `delete_segments` para que la carpeta no crezca sin fin.
+ *
+ * **El corte por silencio cambió de nombre en ffmpeg 5** (2022): era
+ * `-stimeout` y pasó a ser `-timeout`. Con `-stimeout` un ffmpeg 5, 6 o 7 no
+ * arranca —«Unrecognized option»— y el video no salía NUNCA (medido 05-10 con
+ * el 6.1 de Ubuntu 24.04). Y no vale poner siempre `-timeout`: en el 4.x esa
+ * opción significa «esperar a que la cámara se conecte A MÍ» (modo servidor) y
+ * ffmpeg se quedaría escuchando en vez de llamar. Por eso va según la versión;
+ * sin versión legible (nocturnas) se asume moderna.
  */
-function argumentos(rtsp: string, salida: string): string[] {
+export function argumentos(rtsp: string, salida: string, versionMayor: number | null = ffmpegVersion): string[] {
+  const corte = versionMayor !== null && versionMayor < 5 ? "-stimeout" : "-timeout";
   return [
     "-hide_banner",
     "-loglevel", "error",
     "-rtsp_transport", "tcp",
-    "-stimeout", "8000000",
+    corte, "8000000",
     "-i", rtsp,
     "-an",
     "-c:v", "copy",
@@ -142,8 +186,12 @@ function argumentos(rtsp: string, salida: string): string[] {
 }
 
 /** Lo que se le puede mostrar al operario de un fallo de ffmpeg. */
-function motivoDeSalida(texto: string): string {
+export function motivoDeSalida(texto: string): string {
   const t = texto.toLowerCase();
+  /* Antes que «not found»: «Option not found» es un problema de ESTA máquina,
+     no de la cámara, y caía en «esa ruta no existe» (05-10). */
+  if (t.includes("unrecognized option") || t.includes("option not found"))
+    return "El ffmpeg de esta máquina no acepta las opciones del video: actualízalo o avisa a soporte.";
   if (t.includes("401") || t.includes("unauthorized"))
     return "La cámara rechazó el usuario o la clave para el video.";
   if (t.includes("connection refused") || t.includes("no route"))
@@ -160,16 +208,38 @@ function motivoDeSalida(texto: string): string {
  *
  * Es idempotente: si ya está vivo, sólo marca el uso. `rtsp` lleva la clave de
  * la cámara adentro, así que **no se guarda en el registro ni se loguea**.
+ *
+ * **Un arranque a la vez por cámara** (05-10). Entre «no hay stream» y
+ * «lo anoto» hay dos esperas (`hayFfmpeg`, `mkdtemp`): dos pedidos juntos
+ * —el doble efecto de React en desarrollo, dos pestañas que abren a la vez—
+ * lanzaban DOS ffmpeg y el registro se quedaba con el segundo. El primero
+ * quedaba huérfano: nadie lo mataba y seguía ocupando una conexión de la
+ * cámara para siempre (medido: 2 procesos con 1 cámara). El segundo pedido
+ * ahora espera la respuesta del primero.
  */
-export async function asegurarStream(
-  clave: string,
-  rtsp: string,
-): Promise<{ ok: true; carpeta: string; estado: EstadoStream } | { ok: false; motivo: string }> {
+export function asegurarStream(clave: string, rtsp: string): Promise<Arranque> {
+  const enCurso = arranques.get(clave);
+  if (enCurso) return enCurso;
+  const arranque = asegurarStreamUnaVez(clave, rtsp).finally(() => arranques.delete(clave));
+  arranques.set(clave, arranque);
+  return arranque;
+}
+
+async function asegurarStreamUnaVez(clave: string, rtsp: string): Promise<Arranque> {
   const vivo = streams.get(clave);
   if (vivo) {
     vivo.ultimoUso = Date.now();
-    if (vivo.estado === "caido") return { ok: false, motivo: vivo.error ?? "El video se cortó." };
-    return { ok: true, carpeta: vivo.carpeta, estado: vivo.estado };
+    /* Caído hace rato (la cámara se reinició, se cortó la luz): se vuelve a
+       intentar. Antes quedaba muerto hasta que el barrido lo borraba, y como
+       cada pedido le renovaba el uso, mientras alguien mirara no se borraba
+       nunca. Caído recién: se contesta el motivo, sin levantar otro ffmpeg. */
+    if (vivo.estado === "caido") {
+      if (Date.now() - (vivo.caidoEn ?? 0) < REINTENTO_CAIDO_MS)
+        return { ok: false, motivo: vivo.error ?? "El video se cortó." };
+      detenerStream(clave);
+    } else {
+      return { ok: true, carpeta: vivo.carpeta, estado: vivo.estado };
+    }
   }
 
   if (!(await hayFfmpeg()))
@@ -198,6 +268,7 @@ export async function asegurarStream(
     error: null,
     desde: Date.now(),
     ultimoUso: Date.now(),
+    caidoEn: null,
     proceso,
   };
   streams.set(clave, entrada);
@@ -210,6 +281,7 @@ export async function asegurarStream(
   });
   proceso.on("error", () => {
     entrada.estado = "caido";
+    entrada.caidoEn = Date.now();
     entrada.error = "No se pudo ejecutar ffmpeg en esta máquina.";
   });
   proceso.on("close", () => {
@@ -217,6 +289,7 @@ export async function asegurarStream(
        matamos por falta de uso. Si ya no está en el registro, fue a propósito. */
     if (streams.get(clave) !== entrada) return;
     entrada.estado = "caido";
+    entrada.caidoEn = Date.now();
     entrada.error = motivoDeSalida(ultimoError);
   });
 
@@ -325,6 +398,50 @@ export async function esperarPrimerSegmento(clave: string): Promise<boolean> {
     await new Promise((r) => setTimeout(r, 300));
   }
   return false;
+}
+
+// ─── Lo que hace la ruta `vivo` (compartido con la prueba de punta a punta) ──
+
+type Leido = { ok: true; datos: Buffer; tipo: string } | { ok: false; motivo: string };
+
+/**
+ * Arranca (o reusa) el stream y espera el primer pedazo: el `GET .../vivo`.
+ *
+ * Se espera al primer pedazo antes de contestar: si el reproductor pide la
+ * lista y todavía no existe, se rinde y muestra un error sobre un video que
+ * iba a funcionar dos segundos después.
+ */
+export async function abrirVivo(clave: string, rtsp: string): Promise<{ ok: true } | { ok: false; motivo: string }> {
+  const arranque = await asegurarStream(clave, rtsp);
+  if (!arranque.ok) return arranque;
+  if (await esperarPrimerSegmento(clave)) return { ok: true };
+  return { ok: false, motivo: estadoDeStream(clave)?.error ?? "La cámara no entregó video a tiempo." };
+}
+
+/**
+ * Lo que pide el reproductor por su cuenta: la lista o un segmento.
+ *
+ * **Si pide la LISTA y el stream ya no existe, lo vuelve a levantar.** El
+ * visor suelta el video cuando la pestaña pasa al fondo; si vuelve después de
+ * los 30 s del barrido, el reproductor pide la misma lista de antes y antes
+ * recibía 404 → «el video se cortó» → fotos para siempre, aunque la cámara
+ * estuviera perfecta (05-10). Sólo la lista revive: un segmento suelto de un
+ * stream que no existe es un 404 normal, y el reproductor vuelve a pedir la
+ * lista.
+ *
+ * `rtspPerezoso` arma la URL con la clave sólo si hace falta: en el 99 % de
+ * los pedidos el stream está corriendo y la clave no se descifra.
+ */
+export async function leerOReabrir(clave: string, nombre: string, rtspPerezoso: () => string | null): Promise<Leido> {
+  if (!nombreDeArchivoValido(nombre)) return { ok: false, motivo: "Archivo no válido." };
+  const estado = estadoDeStream(clave);
+  if (nombre === "vivo.m3u8" && (!estado || estado.estado === "caido")) {
+    const rtsp = rtspPerezoso();
+    if (!rtsp) return { ok: false, motivo: "No se pudo leer la clave guardada de la cámara. Vuelve a conectarla." };
+    const abierto = await abrirVivo(clave, rtsp);
+    if (!abierto.ok) return abierto;
+  }
+  return leerArchivoDeStream(clave, nombre);
 }
 
 /** Cuántas cámaras se están viendo ahora. Para el panel de estado. */

@@ -275,3 +275,8 @@ public/tesseract/
 
 # Túnel de la cámara (npm run camaras:tunel): dirección pública que cambia en cada reinicio
 .camaras-tunel.json
+
+# Certificado autofirmado que MediaMTX crea al arrancar en la carpeta actual (05-10, prueba de video)
+auto.crt
+auto.key
+*.key
