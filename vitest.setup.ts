@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import "@testing-library/jest-dom/vitest";
 import { vi } from "vitest";
 import React from "react";
@@ -32,9 +33,9 @@ vi.mock("framer-motion", () => {
     {},
     {
       get: (_t, tag: string) =>
-        React.forwardRef<HTMLElement, Record<string, unknown>>(function MotionTag(
+        React.forwardRef<HTMLElement, { children?: React.ReactNode; [key: string]: unknown }>(function MotionTag(
           { children, ...rest },
-          ref,
+          ref: React.ForwardedRef<HTMLElement>,
         ) {
           return React.createElement(
             typeof tag === "string" ? tag : "div",

@@ -178,3 +178,15 @@ Mostrando top 3. Para crear skill: usá `/luis` o decí "crea skill para X".
 - **Sugerencia:** Files [components/superadmin/banners/BannerImageAdjuster.tsx, components/superadmin/banners/BannerPreviewStudio.tsx] are always edited together. Consider creating a skill that pre-loads all 2 files.
 - **Last seen:** 2026-04-27T01:43:48.118Z
 
+---
+
+## Weekly health 2026-10-05
+
+| Check | Result |
+|---|---|
+| tsc | **5 errors** in `vitest.setup.ts` — `process` not in scope (no `@types/node`) + `children`/`ref` implicit `any` in forwardRef mock |
+| tests | cannot run — `vitest` not in node_modules (env is a fresh clone without `npm install`) |
+| lint | cannot run — ESLint config fails to load (same reason: missing deps) |
+| npm outdated | all packages show MISSING (npm install needed in this ephemeral env) |
+| action | **Fixed** `vitest.setup.ts` Tier 1 tsc errors: added `/// <reference types="node" />` + explicit prop/ref types in forwardRef mock. PR: chore(weekly-2026-10-05) |
+
