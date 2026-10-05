@@ -20,6 +20,9 @@ sleep 3
 for p in "${PATRONES[@]}"; do pkill -KILL -f "$p" || true; done
 sleep 1
 
+# --parar: sólo apaga (modo juego de Windows, .claude-tune\modo-juego\modo-juego.ps1).
+if [[ "${1:-}" == "--parar" ]]; then echo "[dev:restart] dev apagado"; exit 0; fi
+
 cd "$PROJECT_DIR" || exit 1
 setsid nohup npm run dev > /tmp/dev-server.log 2>&1 < /dev/null &
 disown
