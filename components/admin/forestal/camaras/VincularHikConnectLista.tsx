@@ -20,12 +20,17 @@ interface CamaraSistema {
   nombre: string;
 }
 
+/** Opción del selector: crear la cámara del sistema con el nombre de Hikvision y enlazarla. */
+const NUEVA = "__nueva__";
+
 export default function VincularHikConnectLista({
   hik,
   camaras,
+  onCrear,
 }: {
   hik: HikConnect;
   camaras: CamaraSistema[];
+  onCrear?: (nombre: string) => Promise<string | null>;
 }) {
   const lista = hik.camarasHik;
   return (
@@ -56,7 +61,7 @@ export default function VincularHikConnectLista({
       {lista && lista.length > 0 && (
         <ul className="space-y-2">
           {lista.map((c) => (
-            <FilaHik key={c.resourceId} c={c} hik={hik} camaras={camaras} />
+            <FilaHik key={c.resourceId} c={c} hik={hik} camaras={camaras} onCrear={onCrear} />
           ))}
         </ul>
       )}
@@ -68,14 +73,19 @@ function FilaHik({
   c,
   hik,
   camaras,
+  onCrear,
 }: {
   c: CamaraHikPantalla;
   hik: HikConnect;
   camaras: CamaraSistema[];
+  onCrear?: (nombre: string) => Promise<string | null>;
 }) {
+  /* Sin cámaras en el sistema, arranca en «Crear …»: antes había que ir a agregarla
+     arriba y volver (Brandon se trabó ahí el 05-10). */
   const [destino, setDestino] = useState(
-    camaras.find((x) => !hik.estado?.enlaces[x.id])?.id ?? camaras[0]?.id ?? "",
+    camaras.find((x) => !hik.estado?.enlaces[x.id])?.id ?? (onCrear ? NUEVA : (camaras[0]?.id ?? "")),
   );
+  const [creando, setCreando] = useState(false);
   const [codigo, setCodigo] = useState("");
   const [editandoCodigo, setEditandoCodigo] = useState(false);
   const enlazadaA = c.enlazadaA ? camaras.find((x) => x.id === c.enlazadaA) : undefined;
@@ -140,10 +150,17 @@ function FilaHik({
           className="mt-2 flex flex-wrap items-center gap-2"
           onSubmit={(e) => {
             e.preventDefault();
-            if (destino)
-              void hik
-                .enlazar(destino, c.resourceId, codigo.trim() || undefined)
-                .then((ok) => ok && setCodigo(""));
+            if (!destino) return;
+            void (async () => {
+              let id: string | null = destino;
+              if (destino === NUEVA) {
+                if (!onCrear) return;
+                setCreando(true);
+                id = await onCrear(c.nombre).finally(() => setCreando(false));
+                if (!id) return;
+              }
+              if (await hik.enlazar(id, c.resourceId, codigo.trim() || undefined)) setCodigo("");
+            })();
           }}
         >
           <label className="flex w-full min-w-0 items-center gap-2 text-sm text-[var(--text-secondary)] sm:w-auto sm:flex-1">
@@ -154,7 +171,8 @@ function FilaHik({
               className={`${CAMPO} flex-1`}
               aria-label={`Cámara del sistema para ${c.nombre}`}
             >
-              {camaras.length === 0 && <option value="">Primero agrega una cámara arriba</option>}
+              {onCrear && <option value={NUEVA}>+ Crear «{c.nombre}» en el sistema</option>}
+              {!onCrear && camaras.length === 0 && <option value="">Primero agrega una cámara arriba</option>}
               {camaras.map((x) => (
                 <option key={x.id} value={x.id}>
                   {x.nombre}
@@ -172,8 +190,8 @@ function FilaHik({
             aria-label="Código de verificación de la etiqueta"
             className={`${CAMPO} flex-1 font-mono uppercase placeholder:font-sans placeholder:normal-case sm:w-28 sm:flex-none`}
           />
-          <button type="submit" disabled={!destino || ocupado} className={BTN}>
-            {ocupado ? (
+          <button type="submit" disabled={!destino || ocupado || creando} className={BTN}>
+            {ocupado || creando ? (
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
             ) : (
               <Link2 className="h-4 w-4" aria-hidden />

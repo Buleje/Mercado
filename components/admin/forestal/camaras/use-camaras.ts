@@ -143,11 +143,15 @@ export function useCamaras() {
     [escribir],
   );
 
-  const crear = async (nombre: string, lugar: string) => {
-    if (!nombre.trim()) return false;
+  /** Devuelve el id de la cámara creada (o `null`): «Enlazar» de Hik-Connect la crea y la
+   *  enlaza en un toque (05-10). Quien sólo preguntaba si salió sigue leyendo un valor truthy. */
+  const crear = async (nombre: string, lugar: string): Promise<string | null> => {
+    if (!nombre.trim()) return null;
+    const antes = new Set(camaras.map((c) => c.id));
     const ok = await escribir({ method: "POST", body: JSON.stringify({ nombre, lugar }) });
-    if (ok) await cargar();
-    return Boolean(ok);
+    if (!ok) return null;
+    await cargar();
+    return ok.camaras?.find((c) => !antes.has(c.id))?.id ?? null;
   };
 
   const borrarCaptura = async (id: string) => {

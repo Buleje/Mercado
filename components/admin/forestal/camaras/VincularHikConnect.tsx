@@ -36,8 +36,11 @@ const REGIONES: { value: RegionElegida; label: string }[] = [
 
 export default function VincularHikConnect({
   camaras,
+  onCrear,
 }: {
   camaras: { id: string; nombre: string }[];
+  /** Crea una cámara del sistema y devuelve su id (para enlazar en un toque). */
+  onCrear?: (nombre: string) => Promise<string | null>;
 }) {
   const ctx = useVisorNubeContexto();
   const rol = useMiRol();
@@ -189,7 +192,7 @@ export default function VincularHikConnect({
 
       {vinculado && puedeEscribir && (
         <div className="mt-4 space-y-3 border-t border-[var(--rule-base)] pt-3">
-          <VincularHikConnectLista hik={hik} camaras={camaras} />
+          <VincularHikConnectLista hik={hik} camaras={camaras} onCrear={onCrear} />
           <div className="flex flex-wrap items-center justify-end gap-2">
             {confirmarQuitar ? (
               <>

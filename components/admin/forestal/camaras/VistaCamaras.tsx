@@ -180,7 +180,7 @@ export default function VistaCamaras({
         />
       </section>
 
-      <VincularHikConnect camaras={d.camaras} />
+      <VincularHikConnect camaras={d.camaras} onCrear={(nombre) => d.crear(nombre, "")} />
 
       <section className={BLOQUE} aria-labelledby="camaras-chalecos-titulo">
         <div className="flex flex-wrap items-center gap-2">
