@@ -34,9 +34,13 @@ export default function VincularHikConnectPasos() {
       <li className="flex gap-2">
         <Paso n={2} />
         <span>
-          En el equipo, agrega la cámara: importarla desde tu cuenta personal, o con su número de
-          serie y el <b className="text-[var(--text-primary)]">código de verificación</b> (6 letras
-          de la etiqueta).
+          Pasa la cámara al equipo:{" "}
+          <b className="text-[var(--text-primary)]">
+            Dispositivo → Agregar dispositivo → Importar dispositivo personal
+          </b>
+          , elígela e «Importar» (tiene que estar en línea). O agrégala con su número de serie y el{" "}
+          <b className="text-[var(--text-primary)]">código de verificación</b> (6 letras de la
+          etiqueta).
         </span>
       </li>
       <li className="flex gap-2">

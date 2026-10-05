@@ -55,7 +55,9 @@ export default function VincularHikConnectLista({
       </div>
       {lista && lista.length === 0 && (
         <p className="text-sm text-[var(--text-tertiary)]">
-          La cuenta del equipo no tiene cámaras. Agrégala en el portal (paso 2) y recarga.
+          Hikvision dice que el equipo no tiene cámaras: tu cámara sigue en la cuenta personal. En
+          el portal (modo equipo): Dispositivo → Agregar dispositivo → «Importar dispositivo
+          personal» (la cámara tiene que estar en línea). Después toca «Recargar».
         </p>
       )}
       {lista && lista.length > 0 && (
@@ -83,7 +85,8 @@ function FilaHik({
   /* Sin cámaras en el sistema, arranca en «Crear …»: antes había que ir a agregarla
      arriba y volver (Brandon se trabó ahí el 05-10). */
   const [destino, setDestino] = useState(
-    camaras.find((x) => !hik.estado?.enlaces[x.id])?.id ?? (onCrear ? NUEVA : (camaras[0]?.id ?? "")),
+    camaras.find((x) => !hik.estado?.enlaces[x.id])?.id ??
+      (onCrear ? NUEVA : (camaras[0]?.id ?? "")),
   );
   const [creando, setCreando] = useState(false);
   const [codigo, setCodigo] = useState("");
@@ -172,7 +175,9 @@ function FilaHik({
               aria-label={`Cámara del sistema para ${c.nombre}`}
             >
               {onCrear && <option value={NUEVA}>+ Crear «{c.nombre}» en el sistema</option>}
-              {!onCrear && camaras.length === 0 && <option value="">Primero agrega una cámara arriba</option>}
+              {!onCrear && camaras.length === 0 && (
+                <option value="">Primero agrega una cámara arriba</option>
+              )}
               {camaras.map((x) => (
                 <option key={x.id} value={x.id}>
                   {x.nombre}
