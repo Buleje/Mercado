@@ -65,6 +65,7 @@ export default function HistorialFotos({
     return (
       <BotonEnVivo
         nombre={camara.nombre}
+        camaraId={camara.id}
         forma="tarjeta"
         onVisorPropio={tieneVisorPropio(camara) ? () => onVerVisor(camara.id) : undefined}
       />

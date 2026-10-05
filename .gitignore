@@ -273,6 +273,9 @@ reports/visual-verify/
 # OCR en el navegador (ADR-396): assets de tesseract.js copiados por scripts/copy-tesseract-assets.mjs
 public/tesseract/
 
+# Video de Hik-Connect (ADR-471): decodificadores de ezuikit-js copiados por scripts/copy-ezuikit-assets.mjs
+public/ezuikit_static/
+
 # Túnel de la cámara (npm run camaras:tunel): dirección pública que cambia en cada reinicio
 .camaras-tunel.json
 
@@ -280,3 +283,4 @@ public/tesseract/
 auto.crt
 auto.key
 *.key
+.claude/.watchdog.log.old

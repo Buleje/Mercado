@@ -16,6 +16,7 @@ import LecturaUltimaFoto from "./LecturaUltimaFoto";
 import { camposPuente, ultimaCapturaDe } from "./puente-pc";
 import { useRecargaPuente } from "./use-puente-pc";
 import GuiaHikvision from "./GuiaHikvision";
+import VincularHikConnect from "./VincularHikConnect";
 import { DireccionAviso } from "./AvisosCamaras";
 import { direccionLocal, type DatosCamaras } from "./use-camaras";
 import type { useConexionDirecta } from "./use-conexion-directa";
@@ -178,6 +179,8 @@ export default function VistaCamaras({
           }
         />
       </section>
+
+      <VincularHikConnect camaras={d.camaras} />
 
       <section className={BLOQUE} aria-labelledby="camaras-chalecos-titulo">
         <div className="flex flex-wrap items-center gap-2">

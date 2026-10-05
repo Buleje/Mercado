@@ -88,6 +88,7 @@ export default function EstadoCamaras({
             <span className="flex shrink-0 items-center gap-2">
               <BotonEnVivo
                 nombre={c.nombre}
+                camaraId={c.id}
                 onVisorPropio={tieneVisorPropio(c) ? () => onVerVisor(c.id) : undefined}
               />
               <button

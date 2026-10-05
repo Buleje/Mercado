@@ -269,6 +269,34 @@ export function buildCSP(pathname: string, nonce?: string): string {
      CSP3 ignora 'unsafe-inline' cuando hay nonce, por eso lo incluimos sin
      nonce — HMR inyecta scripts inline sin nonce y los necesita aprobados.
      En prod: nonce + strict-dynamic para máxima seguridad. */
+  /* Video de Hik-Connect en el panel (ADR-471, 2026-10-05) — SÓLO en /admin.
+     El reproductor oficial (`ezuikit-js` 9.0.23) habla con la nube de video
+     de la región; sus decodificadores (JS + WASM) se sirven desde el propio
+     sitio (`public/ezuikit_static`, `'self'`): el CDN de EZVIZ no se abre.
+     Cada dominio sale del código del paquete o de su README:
+      · i{sa,us,eu,sgp}open.ezvizlife.com — `env.domain` por región (README,
+        tabla «海外版本»); el servidor sólo entrega uno de esos (`dominioDe`).
+      · {sa,us,eu,sgp}log.ezvizlife.com — `logHost` de cada región en el paquete
+        (estadísticas del reproductor; sin esto, cada video llena /api/csp-report).
+      · wss://*.ezvizlife.com:* — el servidor de medios llega en la respuesta de
+        EZVIZ (`websocketConnectUrl`) con host y puerto variables: no hay lista
+        publicada. Comodín acotado al dominio de EZVIZ, sólo wss. Achicarlo con
+        lo que reporte /api/csp-report en la primera prueba con claves reales.
+     Las regiones que no usa el panel (Rusia, India, Vietnam) no se abren. */
+  /* Sólo /admin: /superadmin no usa el visor (security 05-10, hallazgo bajo). */
+  const ezviz = pathname.startsWith("/admin")
+    ? {
+        connect:
+          " https://isaopen.ezvizlife.com https://iusopen.ezvizlife.com https://ieuopen.ezvizlife.com https://isgpopen.ezvizlife.com" +
+          " https://salog.ezvizlife.com https://uslog.ezvizlife.com https://eulog.ezvizlife.com https://sgplog.ezvizlife.com" +
+          " wss://*.ezvizlife.com:*",
+        /* EZUIKit y hls.js (ADR-470) reproducen desde `blob:` y decodifican en
+           workers armados con `blob:`: son de la propia página, no abren
+           otro origen. */
+        blob: " blob:",
+      }
+    : { connect: "", blob: "" };
+
   let scriptSrc: string;
   if (isDev) {
     scriptSrc = `'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://vitals.vercel-insights.com https://us-assets.i.posthog.com`;
@@ -288,13 +316,13 @@ export function buildCSP(pathname: string, nonce?: string): string {
     "style-src":                 "'self' 'unsafe-inline' https://fonts.googleapis.com",
     "img-src":                   "'self' data: blob: https:",
     "font-src":                  "'self' data: https://fonts.gstatic.com",
-    "connect-src":               "'self' data: https://*.supabase.co wss://*.supabase.co https://www.google-analytics.com https://region1.google-analytics.com https://clarity.ms https://*.clarity.ms https://nominatim.openstreetmap.org https://va.vercel-scripts.com https://vitals.vercel-insights.com https://api.apis.net.pe https://eldni.com https://us.i.posthog.com https://us-assets.i.posthog.com",
-    "media-src":                 "'self'",
+    "connect-src":               "'self' data: https://*.supabase.co wss://*.supabase.co https://www.google-analytics.com https://region1.google-analytics.com https://clarity.ms https://*.clarity.ms https://nominatim.openstreetmap.org https://va.vercel-scripts.com https://vitals.vercel-insights.com https://api.apis.net.pe https://eldni.com https://us.i.posthog.com https://us-assets.i.posthog.com" + ezviz.connect,
+    "media-src":                 "'self'" + ezviz.blob,
     // worker-src: sin declararlo cae en `script-src`, y con `'strict-dynamic'`
     // el navegador IGNORA `'self'` ahí — un `new Worker("/tesseract/worker.min.js")`
     // (OCR en el navegador, ADR-396) quedaba bloqueado en prod aunque el
     // archivo sea propio. Sólo mismo origen: los workers viven en /public.
-    "worker-src":                "'self'",
+    "worker-src":                "'self'" + ezviz.blob,
     // frame-src: sin declararlo hereda `default-src 'self'`, que NO incluye
     // blob: — y la vista previa del drive arma un blob con el archivo para
     // poder leer el status antes de mostrarlo. Resultado: el navegador

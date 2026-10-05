@@ -41,11 +41,21 @@ import { useConexionDirecta } from "./camaras/use-conexion-directa";
 import { useDireccionPublica } from "./camaras/use-direccion-publica";
 import { usePantallaAngosta } from "./camaras/use-pantalla-angosta";
 import EstadoCamaras from "./camaras/EstadoCamaras";
+import { VisorNubeProvider } from "./camaras/VisorNubeContexto";
 import { BTN, faltaClaveIa, porQueNoSeCopia } from "./camaras/camaras-ui";
 
 const VISTAS = ["fotos", "patio", "camaras"] as const;
 
+/* La cuenta de Hik-Connect for Teams y su visor, compartidos por las tres vistas (ADR-471). */
 export default function CamarasView() {
+  return (
+    <VisorNubeProvider>
+      <PantallaCamaras />
+    </VisorNubeProvider>
+  );
+}
+
+function PantallaCamaras() {
   const d = useCamaras();
   const conexion = useConexionDirecta(d);
   const dir = useDireccionPublica();

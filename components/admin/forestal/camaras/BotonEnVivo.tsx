@@ -10,6 +10,10 @@
  *
  * Abre la app, no una cámara en particular: Hikvision no publica un enlace a
  * un dispositivo (ver fuentes en `hik-connect.ts`).
+ *
+ * Con la cuenta de Hik-Connect for Teams vinculada y ESTA cámara enlazada
+ * (ADR-471), el botón abre el visor de la nube dentro del panel. Orden: visor
+ * propio (ISAPI/puente) > nube > app.
  */
 
 import { Video } from "@buleje/design-system/icons";
@@ -19,6 +23,7 @@ import { estadoDeConexion, type CamaraConConexion } from "./conexion-camara";
 import { enlaceEnVivo } from "./hik-connect";
 import { camposPuente } from "./puente-pc";
 import { usePlataforma } from "./use-plataforma";
+import { useVisorNubeContexto } from "./VisorNubeContexto";
 
 /** ¿El panel la puede mostrar él mismo (ISAPI/HLS o el puente de la PC)? */
 export function tieneVisorPropio(c: CamaraConConexion): boolean {
@@ -35,13 +40,16 @@ const FORMA = {
 
 interface Props {
   nombre: string;
+  /** Para saber si está enlazada con Hik-Connect for Teams (visor de la nube). */
+  camaraId?: string;
   /** Con visor propio: lo que lo muestra. Sin esto, abre Hik-Connect. */
   onVisorPropio?: () => void;
   forma?: keyof typeof FORMA;
 }
 
-export default function BotonEnVivo({ nombre, onVisorPropio, forma = "boton" }: Props) {
+export default function BotonEnVivo({ nombre, camaraId, onVisorPropio, forma = "boton" }: Props) {
   const plataforma = usePlataforma();
+  const nube = useVisorNubeContexto();
   const conTexto = forma === "boton";
   const contenido = (
     <>
@@ -57,6 +65,21 @@ export default function BotonEnVivo({ nombre, onVisorPropio, forma = "boton" }: 
         onClick={onVisorPropio}
         title="Verla ahora con el visor del panel"
         aria-label={`Ver ${nombre} en vivo con el visor del panel`}
+        className={FORMA[forma]}
+      >
+        {contenido}
+      </button>
+    );
+  }
+
+  if (camaraId && nube?.enlazada(camaraId)) {
+    return (
+      <button
+        type="button"
+        onClick={() => nube.abrir(camaraId, nombre)}
+        title="Verla ahora acá, por Hik-Connect"
+        aria-label={`Ver ${nombre} en vivo en el panel (Hik-Connect)`}
+        data-visor="nube"
         className={FORMA[forma]}
       >
         {contenido}

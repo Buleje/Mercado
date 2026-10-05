@@ -27,7 +27,7 @@
  *   {"fallar": "/api/settings"}   → ese GET responde 500 (o ["/api/x", 503]); {"fallar": null} lo
  *                                   quita. Para probar «la carga falló» (04-10: sin esto fue un
  *                                   parche de fetch + history.back a mano). Recargá con {"eval": "location.reload()"}.
- *   {"parchear": ["/api/x", {...}]} → ese GET responde 200 con ESE JSON (05-10: tablas forestales sin datos en
+ *   {"parchear": ["/api/x", {...}, "POST"?]} → ese GET (o el método del 3.º) responde 200 con ESE JSON (05-10: tablas forestales sin datos en
  *                                   main; el barrido parcheaba fetch a mano, 3 intentos). Igual que `fallar`: se quita
  *                                   con {"fallar": null} y rige desde la próxima carga ({"eval": "location.reload()"}).
  *   {"clicTexto": "Rolliza"}      → clic por el DOM en el botón/pestaña/opción cuyo texto
@@ -278,9 +278,9 @@ async function recorrido(t, primero) {
           }
         }
         else if (tipo === "parchear") {
-          const [ruta, json] = valor;
+          const [ruta, json, metodo = "GET"] = valor;
           await page.route((u) => u.pathname === ruta, (r) =>
-            r.request().method() === "GET"
+            r.request().method() === metodo
               ? r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(json) })
               : r.fallback());
         }

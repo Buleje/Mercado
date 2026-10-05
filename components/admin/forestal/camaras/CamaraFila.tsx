@@ -122,7 +122,7 @@ export default function CamaraFila({
           <PastillaConexion estado={est} />
         )}
         {/* Sin visor propio, «En vivo» abre Hik-Connect; con él, lo hace el ojo de abajo. */}
-        {est.tipo !== "conectada" && !puente.esPuente && <BotonEnVivo nombre={c.nombre} />}
+        {est.tipo !== "conectada" && !puente.esPuente && <BotonEnVivo nombre={c.nombre} camaraId={c.id} />}
         <button
           type="button"
           onClick={() => void copiar()}
