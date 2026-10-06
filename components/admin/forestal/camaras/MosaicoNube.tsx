@@ -2,7 +2,8 @@
 
 /**
  * «Ver todas en vivo» (ADR-471): todas las cámaras enlazadas a Hik-Connect a
- * la vez — lado a lado en la PC, una debajo de otra en el celular. Arranca en
+ * la vez, a lo ancho de la ventana — 2 columnas grandes en la PC, una debajo
+ * de otra en el celular —, cada una con sus controles (ADR-472). Arranca en
  * SD (menos datos), pide el video de a una (Hikvision corta a 5 pedidos/s) y
  * lleva UN reloj de 5 min sin tocar para todo el mosaico. Al cerrar, cada
  * cuadro suelta su reproductor (`destroy` de EZUIKit en el desmontaje).
@@ -33,7 +34,8 @@ export default function MosaicoNube({ camaras, onCerrar, onVerFotos }: Props) {
       description="Video de Hik-Connect dentro del panel"
       icon={LayoutGrid}
       variant="info"
-      claveVentana="camaras-mosaico"
+      ventana={false}
+      className="sm:max-w-[96vw]"
     >
       <div
         className={`${MODAL_BODY} space-y-3`}
@@ -68,7 +70,7 @@ export default function MosaicoNube({ camaras, onCerrar, onVerFotos }: Props) {
           </div>
         )}
 
-        <ul className="grid gap-3 sm:grid-cols-2">
+        <ul className="grid gap-3 md:grid-cols-2">
           {camaras.map((c, i) => (
             <MosaicoNubeCuadro
               key={c.id}

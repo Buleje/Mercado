@@ -16,7 +16,14 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
 import { rangoDeGrabacion } from "@/lib/camaras/hik-connect-api";
 import { MINUTOS_SIN_TOCAR, mensajeDelReproductor } from "./hik-connect-teams";
-import { capturarCuadro, cargarReproductor, destruir, idSeguro } from "./reproductor-nube";
+import {
+  capturarCuadro,
+  cargarReproductor,
+  destruir,
+  idSeguro,
+  medidaQueEntra,
+  sonar,
+} from "./reproductor-nube";
 
 export type Calidad = "hd" | "sd";
 export type Modo = { tipo: "vivo" } | { tipo: "grabacion"; desde: string; hasta: string };
@@ -57,12 +64,18 @@ const esRespuesta = (j: unknown): j is RespuestaVideo => {
 export function useVisorNube(camaraId: string, opciones: OpcionesVisor = {}) {
   const { activo = true, retrasoMs = 0, onActividad } = opciones;
   const contenedorId = idSeguro(useId());
+  /** El marco = video + controles encima: es lo que va a pantalla completa. */
+  const marcoId = `${contenedorId}-marco`;
   const [calidad, setCalidad] = useState<Calidad>("sd");
   const [modo, setModo] = useState<Modo>({ tipo: "vivo" });
   const [estado, setEstado] = useState<EstadoVisor>("pidiendo");
   const [error, setError] = useState<string | null>(null);
   /* Cambia para volver a pedir todo (Reintentar / Seguir viendo). */
   const [intento, setIntento] = useState(0);
+  /** Sonido del vivo: arranca apagado (no asustar a nadie con el patio a todo volumen). */
+  const [sonido, setSonido] = useState(false);
+  const [teatro, setTeatro] = useState(false);
+  const [enPantallaCompleta, setEnPantallaCompleta] = useState(false);
   const player = useRef<EZUIKitPlayer | null>(null);
   const corte = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -114,6 +127,7 @@ export function useVisorNube(camaraId: string, opciones: OpcionesVisor = {}) {
       return;
     }
     setEstado("pidiendo");
+    setSonido(false);
     actividad();
 
     (async () => {
@@ -164,7 +178,7 @@ export function useVisorNube(camaraId: string, opciones: OpcionesVisor = {}) {
       }
       const caja = document.getElementById(contenedorId);
       if (!vivo || !caja) return;
-      const ancho = caja.clientWidth || 640;
+      const medida = medidaQueEntra(caja.clientWidth || 640, caja.clientHeight);
       try {
         player.current = new Reproductor({
           id: contenedorId,
@@ -179,8 +193,8 @@ export function useVisorNube(camaraId: string, opciones: OpcionesVisor = {}) {
              ABSOLUTA: el worker de EZUIKit ignora una ruta relativa y vuelve al CDN. */
           staticPath: `${window.location.origin}/ezuikit_static`,
           language: "en",
-          width: ancho,
-          height: Math.round((ancho * 9) / 16),
+          width: medida.ancho,
+          height: medida.alto,
           handleSuccess: () => vivo && setEstado("viendo"),
           handleError: (e: unknown) => {
             if (!vivo) return;
@@ -216,8 +230,8 @@ export function useVisorNube(camaraId: string, opciones: OpcionesVisor = {}) {
     const caja = document.getElementById(contenedorId);
     if (!caja || typeof ResizeObserver === "undefined") return;
     const obs = new ResizeObserver(() => {
-      const w = caja.clientWidth;
-      if (w > 0) player.current?.resize?.(w, Math.round((w * 9) / 16));
+      const m = medidaQueEntra(caja.clientWidth, caja.clientHeight);
+      if (m.ancho > 0) player.current?.resize?.(m.ancho, m.alto);
     });
     obs.observe(caja);
     return () => obs.disconnect();
@@ -232,17 +246,43 @@ export function useVisorNube(camaraId: string, opciones: OpcionesVisor = {}) {
     return true;
   }, []);
 
+  /* Pantalla completa del MARCO (video + controles), no la de EZUIKit: así el
+     joystick y la alarma siguen a mano. Si el navegador no deja (iPhone), la
+     de EZUIKit. */
+  useEffect(() => {
+    const cambio = () => setEnPantallaCompleta(document.fullscreenElement?.id === marcoId);
+    document.addEventListener("fullscreenchange", cambio);
+    return () => document.removeEventListener("fullscreenchange", cambio);
+  }, [marcoId]);
+
   const pantallaCompleta = useCallback(() => {
     actividad();
-    const p = player.current;
-    if (p?.fullScreen) {
-      Promise.resolve(p.fullScreen()).catch(() =>
-        document.getElementById(contenedorId)?.requestFullscreen?.(),
-      );
-    } else {
-      void document.getElementById(contenedorId)?.requestFullscreen?.();
+    if (document.fullscreenElement) {
+      void document.exitFullscreen?.();
+      return;
     }
-  }, [actividad, contenedorId]);
+    const marco = document.getElementById(marcoId);
+    const p = player.current;
+    if (marco?.requestFullscreen) {
+      marco.requestFullscreen().catch(() => p?.fullScreen?.());
+    } else if (p?.fullScreen) {
+      Promise.resolve(p.fullScreen()).catch((err: unknown) =>
+        logger.warn("[camaras] pantalla completa no disponible", { error: String(err) }),
+      );
+    }
+  }, [actividad, marcoId]);
+
+  const alternarTeatro = useCallback(() => {
+    actividad();
+    setTeatro((t) => !t);
+  }, [actividad]);
+
+  const alternarSonido = useCallback(async () => {
+    actividad();
+    const ok = await sonar(player.current, !sonido);
+    if (ok) setSonido(!sonido);
+    else setError("El reproductor no dejó cambiar el sonido.");
+  }, [actividad, sonido]);
 
   const foto = useCallback(() => {
     actividad();
@@ -260,6 +300,12 @@ export function useVisorNube(camaraId: string, opciones: OpcionesVisor = {}) {
 
   return {
     contenedorId,
+    marcoId,
+    sonido,
+    alternarSonido,
+    teatro,
+    alternarTeatro,
+    enPantallaCompleta,
     calidad,
     setCalidad,
     modo,

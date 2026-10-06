@@ -150,6 +150,39 @@ describe("GET /api/activity-log", () => {
     expect(call?.where?.entity).toBe("order");
   });
 
+  it("cámaras: cajero/almacenero/encargado no las leen pidiéndolas (403, sin consultar)", async () => {
+    for (const role of ["cajero", "almacenero", "manager"]) {
+      mockRequireAdmin.mockResolvedValue({ ...AUTH, role });
+      const pedidos: Record<string, string>[] = [
+        { entity: "camara" },
+        { entity: " Camara " },
+        { action: "camara.ptz" },
+      ];
+      for (const q of pedidos) {
+        const res = await GET(makeGetRequest(q));
+        expect(res.status).toBe(403);
+      }
+    }
+    expect(mockFindMany).not.toHaveBeenCalled();
+  });
+
+  it("cámaras: en el listado general se ocultan para quien no es admin/dueño", async () => {
+    mockFindMany.mockResolvedValue([]);
+    mockRequireAdmin.mockResolvedValue({ ...AUTH, role: "cajero" });
+    await GET(makeGetRequest());
+    expect(mockFindMany.mock.calls[0][0]?.where?.NOT).toEqual([
+      { entity: { equals: "camara", mode: "insensitive" } },
+      { action: { startsWith: "camara.", mode: "insensitive" } },
+    ]);
+    for (const role of ["admin", "owner"]) {
+      mockFindMany.mockClear();
+      mockRequireAdmin.mockResolvedValue({ ...AUTH, role });
+      const res = await GET(makeGetRequest({ entity: "camara" }));
+      expect(res.status).toBe(200);
+      expect(mockFindMany.mock.calls[0][0]?.where?.NOT).toBeUndefined();
+    }
+  });
+
   it("always scopes to tenantId from auth", async () => {
     mockFindMany.mockResolvedValue([]);
     await GET(makeGetRequest());

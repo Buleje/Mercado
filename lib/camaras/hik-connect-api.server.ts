@@ -10,6 +10,7 @@ import {
   RUTAS_HIK,
   leerCamaras,
   leerDireccion,
+  leerSobre,
   leerStreamToken,
   leerToken,
   pedidoCamaras,
@@ -214,6 +215,42 @@ async function streamTokenDe(
   const r = sinRespuesta<StreamTokenHik>(raw) ?? leerStreamToken(raw, c.region);
   if (r.ok) streamTokens.set(k, { ...r.valor, vence: Date.now() + VIDA_STREAM_TOKEN_MS });
   return r;
+}
+
+/**
+ * El permiso de EZVIZ (`appToken`) y su dominio, para los controles del
+ * aparato que se piden DESDE EL SERVIDOR (ADR-472: mover, detección, foto).
+ * `fresco` descarta el guardado: EZVIZ dijo que venció (10002).
+ */
+export async function permisoDeControl(
+  tenantId: string,
+  c: CredencialesHik,
+  fresco = false,
+): Promise<Leido<StreamTokenHik & TokenHik>> {
+  if (fresco) streamTokens.delete(huella(tenantId, c));
+  return conToken(tenantId, c, async (t) => {
+    const s = await streamTokenDe(tenantId, c, t);
+    if (!s.ok) {
+      streamTokens.delete(huella(tenantId, c));
+      return s;
+    }
+    return { ok: true, valor: { ...s.valor, ...t } };
+  });
+}
+
+/** Un pedido con el token de la API de Teams (no el de EZVIZ), para `capturePic`. */
+export async function llamarConToken(
+  tenantId: string,
+  c: CredencialesHik,
+  ruta: string,
+  cuerpo: unknown,
+): Promise<Leido<unknown>> {
+  return conToken(tenantId, c, async (t) => {
+    const raw = await llamar(`${t.dominioApi}${ruta}`, "POST", cuerpo, t.token);
+    if (raw === null) return { ok: false, error: ERROR_RED };
+    const s = leerSobre(raw);
+    return s.ok ? { ok: true, valor: s.valor } : s;
+  });
 }
 
 export interface VideoNube extends StreamTokenHik {

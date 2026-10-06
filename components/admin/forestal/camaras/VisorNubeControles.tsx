@@ -1,19 +1,33 @@
 "use client";
 
 /**
- * Los controles del visor de la nube (ADR-471): HD/SD, foto, «Analizar» (la IA
- * mira el cuadro), pantalla completa y «Ver grabación» de la microSD por fecha
- * y hora. A 400 px van en dos filas
- * que no se parten: calidad + acciones arriba, la grabación abajo.
+ * Los controles del visor de la nube (ADR-471): HD/SD, sonido, bajar el
+ * cuadro, «Analizar» (la IA mira el cuadro), Teatro, pantalla completa y «Ver
+ * grabación» de la microSD por fecha y hora. Los del APARATO (mover, foto a
+ * Fotos, detección, alarma) van encima del video: `ControlesCamara` (ADR-472).
+ * A 400 px van en dos filas que no se parten: calidad + acciones arriba, la
+ * grabación abajo; en el celular los botones miden 44 px.
  */
 
 import { useState } from "react";
-import { Camera, History, Maximize2, Sparkles, Video } from "@buleje/design-system/icons";
+import {
+  Download,
+  Expand,
+  History,
+  Maximize2,
+  Minimize2,
+  Sparkles,
+  Video,
+  Volume2,
+  VolumeX,
+} from "@buleje/design-system/icons";
 import SegmentedControl from "@/components/ui-system/SegmentedControl";
-import { BTN } from "./camaras-ui";
+import { BTN as BTN_BASE } from "./camaras-ui";
 import { hoyLocal, horaHaceUnaHora } from "./hik-connect-teams";
 import type { AnalisisCuadro } from "./use-analizar-cuadro";
 import type { Calidad, VisorNubeEstado } from "./use-visor-nube";
+
+const BTN = `${BTN_BASE} max-sm:h-11 max-sm:min-w-11 max-sm:justify-center`;
 
 const CAMPO =
   "h-9 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
@@ -60,13 +74,29 @@ export default function VisorNubeControles({
         />
         <button
           type="button"
+          onClick={() => void v.alternarSonido()}
+          disabled={!viendo}
+          aria-pressed={v.sonido}
+          className={BTN}
+          title={v.sonido ? "Silenciar el vivo" : "Escuchar lo que oye la cámara"}
+          data-control="sonido"
+        >
+          {v.sonido ? (
+            <Volume2 className="h-4 w-4" aria-hidden />
+          ) : (
+            <VolumeX className="h-4 w-4" aria-hidden />
+          )}
+          <span className="max-sm:sr-only">{v.sonido ? "Sonido" : "Sin sonido"}</span>
+        </button>
+        <button
+          type="button"
           onClick={v.foto}
           disabled={!viendo}
           className={BTN}
-          title="Bajar una foto del cuadro que se ve"
+          title="Bajar a tu equipo el cuadro que se ve"
         >
-          <Camera className="h-4 w-4" aria-hidden />
-          <span className="max-sm:sr-only">Foto</span>
+          <Download className="h-4 w-4" aria-hidden />
+          <span className="max-sm:sr-only">Bajar</span>
         </button>
         <button
           type="button"
@@ -79,10 +109,25 @@ export default function VisorNubeControles({
         </button>
         <button
           type="button"
+          onClick={v.alternarTeatro}
+          aria-pressed={v.teatro}
+          className={`${BTN} max-sm:hidden`}
+          title={v.teatro ? "Volver al tamaño normal" : "Teatro: el video a toda la ventana"}
+          data-control="teatro"
+        >
+          {v.teatro ? (
+            <Minimize2 className="h-4 w-4" aria-hidden />
+          ) : (
+            <Expand className="h-4 w-4" aria-hidden />
+          )}
+          {v.teatro ? "Normal" : "Teatro"}
+        </button>
+        <button
+          type="button"
           onClick={v.pantallaCompleta}
           disabled={!viendo}
           className={BTN}
-          title="Pantalla completa"
+          title="Pantalla completa (Esc para salir)"
         >
           <Maximize2 className="h-4 w-4" aria-hidden />
           <span className="max-sm:sr-only">Pantalla completa</span>

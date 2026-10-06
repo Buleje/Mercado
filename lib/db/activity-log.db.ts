@@ -152,6 +152,12 @@ export const ActivityLogDB = {
       action?: string;
       limit?: number;
       cursor?: string;
+      /**
+       * Saca una entidad entera del listado (sin importar mayúsculas) y las
+       * acciones `<entidad>.*`: lo que el rol que pide no puede ver (las
+       * cámaras, para quien no es admin/dueño).
+       */
+      ocultarEntidad?: string;
     } = {},
   ): Promise<{ items: ActivityLogPageEntry[]; nextCursor: string | null }> {
     const limit = Math.min(100, Math.max(1, opts.limit ?? 50));
@@ -160,6 +166,11 @@ export const ActivityLogDB = {
     if (opts.entityId) where.entityId = opts.entityId;
     if (opts.user) where.user = opts.user;
     if (opts.action) where.action = opts.action;
+    if (opts.ocultarEntidad)
+      where.NOT = [
+        { entity: { equals: opts.ocultarEntidad, mode: "insensitive" } },
+        { action: { startsWith: `${opts.ocultarEntidad}.`, mode: "insensitive" } },
+      ];
 
     const rows = await prisma.activityLog.findMany({
       where,

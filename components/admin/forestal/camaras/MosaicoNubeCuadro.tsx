@@ -2,13 +2,16 @@
 
 /**
  * Un cuadro del mosaico «Ver todas en vivo» (ADR-471): su nombre y estado, su
- * video, HD/SD, «Analizar» y pantalla completa propios. El corte por
- * inactividad NO es suyo: lo lleva el mosaico (`activo` / `onActividad`).
+ * video, HD/SD, sonido, «Analizar» y pantalla completa propios, y encima los
+ * controles del aparato (ADR-472; las flechas del teclado mueven la cámara del
+ * cuadro que tiene el foco). El corte por inactividad NO es suyo: lo lleva el
+ * mosaico (`activo` / `onActividad`).
  */
 
-import { Maximize2, Sparkles } from "@buleje/design-system/icons";
+import { Maximize2, Sparkles, Volume2, VolumeX } from "@buleje/design-system/icons";
 import SegmentedControl from "@/components/ui-system/SegmentedControl";
 import { BTN } from "./camaras-ui";
+import ControlesCamara from "./ControlesCamara";
 import { useAnalizarCuadro } from "./use-analizar-cuadro";
 import { useVisorNube, type Calidad } from "./use-visor-nube";
 import VisorNubeAnalisis from "./VisorNubeAnalisis";
@@ -51,10 +54,39 @@ export default function MosaicoNubeCuadro({
         <ChipEstadoVivo estado={v.estado} />
       </div>
 
-      <div className="relative aspect-video w-full overflow-hidden rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)]">
-        {/* Vacío a propósito: EZUIKit dibuja acá adentro (React no le pone hijos). */}
-        <div id={v.contenedorId} className="h-full w-full" data-visor-nube={camara.id} />
-        <VisorNubeCapas v={v} conCodigo={camara.conCodigo} compacto />
+      <div
+        id={v.marcoId}
+        className={
+          v.enPantallaCompleta
+            ? "relative flex h-full w-full flex-col bg-[var(--surface-canvas)]"
+            : "relative"
+        }
+      >
+        <div
+          className={
+            v.enPantallaCompleta
+              ? "relative min-h-0 w-full flex-1 overflow-hidden"
+              : "relative aspect-video w-full overflow-hidden rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)]"
+          }
+        >
+          {/* Vacío a propósito: EZUIKit dibuja acá adentro (React no le pone hijos). */}
+          <div
+            id={v.contenedorId}
+            className="flex h-full w-full items-center justify-center"
+            data-visor-nube={camara.id}
+          />
+          <VisorNubeCapas v={v} conCodigo={camara.conCodigo} compacto />
+        </div>
+        <ControlesCamara
+          camaraId={camara.id}
+          nombre={camara.nombre}
+          marcoId={v.marcoId}
+          viendo={viendo}
+          teclado="grupo"
+          compacto
+          onVerFotos={onVerFotos}
+          tomarCuadro={v.tomarCuadro}
+        />
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -71,6 +103,21 @@ export default function MosaicoNubeCuadro({
             { value: "hd", label: "HD" },
           ]}
         />
+        <button
+          type="button"
+          onClick={() => void v.alternarSonido()}
+          disabled={!viendo}
+          aria-pressed={v.sonido}
+          className={`${BTN} w-9 justify-center px-0 max-sm:h-11 max-sm:w-11`}
+          title={v.sonido ? "Silenciar" : "Escuchar lo que oye la cámara"}
+          aria-label={v.sonido ? `Silenciar ${camara.nombre}` : `Escuchar ${camara.nombre}`}
+        >
+          {v.sonido ? (
+            <Volume2 className="h-4 w-4" aria-hidden />
+          ) : (
+            <VolumeX className="h-4 w-4" aria-hidden />
+          )}
+        </button>
         <button
           type="button"
           onClick={() => void a.analizar()}

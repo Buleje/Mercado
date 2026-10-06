@@ -30,6 +30,36 @@ export async function cargarReproductor(): Promise<ClaseReproductor> {
   return (await import("ezuikit-js")).EZUIKitPlayer;
 }
 
+/**
+ * El 16:9 más grande que entra en la caja. Normalmente la caja ya es 16:9 y
+ * manda el ancho; en pantalla completa (celular acostado, monitor 16:10) manda
+ * el alto: sin esto el video se salía por abajo.
+ */
+export function medidaQueEntra(ancho: number, alto: number): { ancho: number; alto: number } {
+  const w = Math.max(0, Math.floor(alto > 0 ? Math.min(ancho, (alto * 16) / 9) : ancho));
+  return { ancho: w, alto: Math.round((w * 9) / 16) };
+}
+
+type ConSonido = { openSound?: () => unknown; closeSound?: () => unknown };
+
+/**
+ * Prende o apaga el SONIDO del vivo (lo que oye el micrófono de la cámara).
+ * `ezuikit-js` 9.0.23: `openSound()`/`closeSound()` (README «方法调用»); el
+ * reproductor arranca mudo (`audio: false`). `false` si no se pudo.
+ */
+export async function sonar(p: EZUIKitPlayer | null, prender: boolean): Promise<boolean> {
+  const r = p as unknown as ConSonido | null;
+  const metodo = prender ? r?.openSound : r?.closeSound;
+  if (!r || !metodo) return false;
+  try {
+    await Promise.resolve(metodo.call(r));
+    return true;
+  } catch (err) {
+    logger.warn("[camaras] el reproductor no cambió el sonido", { error: String(err) });
+    return false;
+  }
+}
+
 /** Suelta el reproductor: `destroy` corta el stream, el websocket y el decodificador. */
 export function destruir(p: EZUIKitPlayer | null, caja: HTMLElement | null) {
   if (!p) return;
