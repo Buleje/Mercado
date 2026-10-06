@@ -115,7 +115,7 @@ export default function CamaraFila({
               {c.nombre}
             </span>
             {/* El lápiz relee la lista con la misma recarga silenciosa que una foto subida. */}
-            <RenombrarCamara id={c.id} nombre={c.nombre} onListo={onFotoGuardada} />
+            <RenombrarCamara id={c.id} nombre={c.nombre} lugar={c.lugar ?? ""} onListo={onFotoGuardada} />
           </span>
           <span className="block truncate text-xs text-[var(--text-tertiary)]">
             {c.lugar || "Sin lugar declarado"} · {lineaDeAviso(c, ahora)}

@@ -19,15 +19,19 @@ const CAMPO =
 export default function RenombrarCamara({
   id,
   nombre,
+  lugar,
   onListo,
 }: {
   id: string;
   nombre: string;
+  /** El lugar se corrige en el mismo formulario (05-10: «Patio de trozas» decía «Entrada y salidas»). */
+  lugar: string;
   /** La lista se relee (el nombre nuevo sale del servidor, no del campo). */
   onListo: () => void;
 }) {
   const [editando, setEditando] = useState(false);
   const [valor, setValor] = useState(nombre);
+  const [donde, setDonde] = useState(lugar);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,12 +41,13 @@ export default function RenombrarCamara({
         type="button"
         onClick={() => {
           setValor(nombre);
+          setDonde(lugar);
           setError(null);
           setEditando(true);
         }}
         className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
-        aria-label={`Cambiar el nombre de ${nombre}`}
-        title="Cambiar el nombre"
+        aria-label={`Cambiar el nombre o el lugar de ${nombre}`}
+        title="Cambiar el nombre o el lugar"
       >
         <Pencil className="h-3.5 w-3.5" aria-hidden />
       </button>
@@ -50,7 +55,8 @@ export default function RenombrarCamara({
 
   const guardar = async () => {
     const limpio = valor.trim();
-    if (!limpio || limpio === nombre) return setEditando(false);
+    const lugarLimpio = donde.trim();
+    if (!limpio || (limpio === nombre && lugarLimpio === lugar.trim())) return setEditando(false);
     setGuardando(true);
     setError(null);
     try {
@@ -58,7 +64,7 @@ export default function RenombrarCamara({
         method: "PATCH",
         credentials: "include",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ id, accion: "renombrar", nombre: limpio }),
+        body: JSON.stringify({ id, accion: "renombrar", nombre: limpio, lugar: lugarLimpio }),
       });
       const j = (await r.json().catch(() => ({}))) as { error?: string; message?: string };
       if (!r.ok || j.error) throw new Error(j.message ?? j.error ?? `El servidor respondió ${r.status}`);
@@ -87,6 +93,15 @@ export default function RenombrarCamara({
         autoFocus
         aria-label="Nombre de la cámara"
         placeholder="Patio de trozas"
+        className={CAMPO}
+      />
+      <input
+        value={donde}
+        onChange={(e) => setDonde(e.target.value)}
+        onKeyDown={(e) => e.key === "Escape" && setEditando(false)}
+        maxLength={120}
+        aria-label="Lugar de la cámara"
+        placeholder="Lugar (opcional)"
         className={CAMPO}
       />
       <button type="submit" disabled={guardando || !valor.trim()} className={BTN}>
