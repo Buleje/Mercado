@@ -1,22 +1,30 @@
 "use client";
 
 /**
- * Los controles del visor de la nube (ADR-471): HD/SD, foto, pantalla completa
- * y «Ver grabación» de la microSD por fecha y hora. A 400 px van en dos filas
+ * Los controles del visor de la nube (ADR-471): HD/SD, foto, «Analizar» (la IA
+ * mira el cuadro), pantalla completa y «Ver grabación» de la microSD por fecha
+ * y hora. A 400 px van en dos filas
  * que no se parten: calidad + acciones arriba, la grabación abajo.
  */
 
 import { useState } from "react";
-import { Camera, History, Maximize2, Video } from "@buleje/design-system/icons";
+import { Camera, History, Maximize2, Sparkles, Video } from "@buleje/design-system/icons";
 import SegmentedControl from "@/components/ui-system/SegmentedControl";
 import { BTN } from "./camaras-ui";
 import { hoyLocal, horaHaceUnaHora } from "./hik-connect-teams";
+import type { AnalisisCuadro } from "./use-analizar-cuadro";
 import type { Calidad, VisorNubeEstado } from "./use-visor-nube";
 
 const CAMPO =
   "h-9 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
 
-export default function VisorNubeControles({ v }: { v: VisorNubeEstado }) {
+export default function VisorNubeControles({
+  v,
+  analisis,
+}: {
+  v: VisorNubeEstado;
+  analisis: AnalisisCuadro;
+}) {
   const [abrirRango, setAbrirRango] = useState(false);
   const [fecha, setFecha] = useState(hoyLocal);
   const [hora, setHora] = useState(horaHaceUnaHora);
@@ -59,6 +67,15 @@ export default function VisorNubeControles({ v }: { v: VisorNubeEstado }) {
         >
           <Camera className="h-4 w-4" aria-hidden />
           <span className="max-sm:sr-only">Foto</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => void analisis.analizar()}
+          disabled={!viendo || analisis.ocupado}
+          className={BTN}
+          title="La IA mira este cuadro: personas, placa y chalecos"
+        >
+          <Sparkles className="h-4 w-4" aria-hidden /> Analizar
         </button>
         <button
           type="button"

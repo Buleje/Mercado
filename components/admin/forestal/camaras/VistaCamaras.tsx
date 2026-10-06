@@ -13,6 +13,7 @@ import { Camera, Hash, Loader2, Plus } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import CamaraFila from "./CamaraFila";
 import LecturaUltimaFoto from "./LecturaUltimaFoto";
+import MosaicoNubeBoton from "./MosaicoNubeBoton";
 import { camposPuente, ultimaCapturaDe } from "./puente-pc";
 import { useRecargaPuente } from "./use-puente-pc";
 import GuiaHikvision from "./GuiaHikvision";
@@ -75,7 +76,7 @@ export default function VistaCamaras({
       <DireccionAviso estado={estadoDireccion} />
 
       <section className={BLOQUE} aria-labelledby="camaras-lista-titulo">
-        <div className="mb-3 flex items-center gap-1.5">
+        <div className="mb-3 flex flex-wrap items-center gap-1.5">
           <Camera className="h-4 w-4 text-[var(--accent-ink)]" aria-hidden />
           <CardTitle as="h3" id="camaras-lista-titulo" className="text-base font-bold">
             Cámaras del patio ({d.camaras.length})
@@ -86,6 +87,7 @@ export default function VistaCamaras({
             affects="Si el panel la alcanza por la red, además se la puede ver ahora mismo con «Conectar»."
             example="Con panel solar y datos móviles conviene lo primero: transmitir todo el día vacía la batería."
           />
+          <MosaicoNubeBoton camaras={d.camaras} />
         </div>
         <form
           className="grid gap-2 sm:grid-cols-[1fr_1fr_auto] sm:items-end"

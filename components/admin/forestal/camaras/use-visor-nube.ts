@@ -16,10 +16,24 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
 import { rangoDeGrabacion } from "@/lib/camaras/hik-connect-api";
 import { MINUTOS_SIN_TOCAR, mensajeDelReproductor } from "./hik-connect-teams";
+import { capturarCuadro, cargarReproductor, destruir, idSeguro } from "./reproductor-nube";
 
 export type Calidad = "hd" | "sd";
 export type Modo = { tipo: "vivo" } | { tipo: "grabacion"; desde: string; hasta: string };
-export type EstadoVisor = "pidiendo" | "cargando" | "viendo" | "error" | "cortado";
+/** `detenido` = el mosaico lo pausó (`activo: false`); `cortado` = su propio corte de 5 min. */
+export type EstadoVisor = "pidiendo" | "cargando" | "viendo" | "error" | "cortado" | "detenido";
+
+export interface OpcionesVisor {
+  /** `false` = no pedir nada y soltar el reproductor (el mosaico cortado por inactividad). */
+  activo?: boolean;
+  /** Espera antes de pedir: el mosaico escalona sus cuadros (Hikvision: 5 pedidos/s). */
+  retrasoMs?: number;
+  /**
+   * Con esto, el corte de 5 min lo lleva quien lo pasa (el mosaico: UN reloj
+   * para todos sus cuadros) y cada toque se le avisa a él.
+   */
+  onActividad?: () => void;
+}
 
 /** Cuánto se espera el primer cuadro (4G + despertar la cámara solar) antes de decir que no llegó. */
 export const SEGUNDOS_SIN_VIDEO = 45;
@@ -40,23 +54,8 @@ const esRespuesta = (j: unknown): j is RespuestaVideo => {
   );
 };
 
-/** EZUIKit busca el contenedor por id (y a veces por selector): sin «:» de `useId`. */
-const idSeguro = (crudo: string) => `visor-nube-${crudo.replace(/[^a-zA-Z0-9_-]/g, "")}`;
-
-function destruir(p: EZUIKitPlayer | null, caja: HTMLElement | null) {
-  if (!p) return;
-  try {
-    Promise.resolve(p.destroy()).catch((err: unknown) =>
-      logger.warn("[camaras] el reproductor de la nube no se cerró limpio", { error: String(err) }),
-    );
-  } catch (err) {
-    /* Destruir un reproductor que no llegó a arrancar tira: no hay nada que limpiar. */
-    logger.warn("[camaras] destruir el reproductor de la nube tiró", { error: String(err) });
-  }
-  if (caja) caja.replaceChildren();
-}
-
-export function useVisorNube(camaraId: string) {
+export function useVisorNube(camaraId: string, opciones: OpcionesVisor = {}) {
+  const { activo = true, retrasoMs = 0, onActividad } = opciones;
   const contenedorId = idSeguro(useId());
   const [calidad, setCalidad] = useState<Calidad>("sd");
   const [modo, setModo] = useState<Modo>({ tipo: "vivo" });
@@ -73,8 +72,17 @@ export function useVisorNube(camaraId: string) {
     setEstado("cortado");
   }, [contenedorId]);
 
+  const externa = useRef(onActividad);
+  useEffect(() => {
+    externa.current = onActividad;
+  }, [onActividad]);
+
   /** Cada toque en el visor o sus controles reinicia la cuenta de los 5 min. */
   const actividad = useCallback(() => {
+    if (externa.current) {
+      externa.current();
+      return;
+    }
     if (corte.current) clearTimeout(corte.current);
     corte.current = setTimeout(cortar, MINUTOS_SIN_TOCAR * 60_000);
   }, [cortar]);
@@ -99,11 +107,18 @@ export function useVisorNube(camaraId: string) {
   useEffect(() => {
     const control = new AbortController();
     let vivo = true;
-    setEstado("pidiendo");
     setError(null);
+    if (!activo) {
+      if (corte.current) clearTimeout(corte.current);
+      setEstado("detenido");
+      return;
+    }
+    setEstado("pidiendo");
     actividad();
 
     (async () => {
+      if (retrasoMs > 0) await new Promise((r) => setTimeout(r, retrasoMs));
+      if (!vivo) return;
       const cuerpo =
         modo.tipo === "vivo"
           ? { tipo: "vivo", calidad }
@@ -140,7 +155,7 @@ export function useVisorNube(camaraId: string) {
       setEstado("cargando");
       let Reproductor: typeof EZUIKitPlayer;
       try {
-        ({ EZUIKitPlayer: Reproductor } = await import("ezuikit-js"));
+        Reproductor = await cargarReproductor();
       } catch {
         if (!vivo) return;
         setError("No se pudo cargar el reproductor de Hikvision. Recarga la página.");
@@ -187,7 +202,7 @@ export function useVisorNube(camaraId: string) {
     };
     // `modo` entra por `claveModo`: un objeto nuevo con el mismo rango no reabre.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [camaraId, calidad, claveModo, intento, contenedorId, actividad]);
+  }, [camaraId, calidad, claveModo, intento, contenedorId, actividad, activo, retrasoMs]);
 
   useEffect(
     () => () => {
@@ -237,6 +252,12 @@ export function useVisorNube(camaraId: string) {
     );
   }, [actividad]);
 
+  /** El cuadro que se ve, en base64, para «Analizar». */
+  const tomarCuadro = useCallback(() => {
+    actividad();
+    return capturarCuadro(player.current, document.getElementById(contenedorId));
+  }, [actividad, contenedorId]);
+
   return {
     contenedorId,
     calidad,
@@ -250,6 +271,7 @@ export function useVisorNube(camaraId: string) {
     actividad,
     pantallaCompleta,
     foto,
+    tomarCuadro,
   };
 }
 

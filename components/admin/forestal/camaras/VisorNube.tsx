@@ -7,19 +7,14 @@
  * sin tocar nada.
  */
 
-import {
-  AlertTriangle,
-  Battery,
-  Loader2,
-  Play,
-  RefreshCw,
-  Video,
-} from "@buleje/design-system/icons";
+import { Battery, Video } from "@buleje/design-system/icons";
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
-import { BTN } from "./camaras-ui";
 import { DATOS_POR_HORA, MINUTOS_SIN_TOCAR } from "./hik-connect-teams";
+import { useAnalizarCuadro } from "./use-analizar-cuadro";
 import { useVisorNube } from "./use-visor-nube";
+import VisorNubeAnalisis from "./VisorNubeAnalisis";
+import VisorNubeCapas from "./VisorNubeCapas";
 import VisorNubeControles from "./VisorNubeControles";
 
 interface Props {
@@ -28,13 +23,13 @@ interface Props {
   /** ¿Hay código de verificación cargado? Sin él, una cámara cifrada no se ve. */
   conCodigo: boolean;
   onCerrar: () => void;
+  /** «Ver en Fotos» del aviso de «Analizar». */
+  onVerFotos: () => void;
 }
 
-const CAPA =
-  "absolute inset-0 flex flex-col items-center justify-center gap-2 bg-[var(--surface-canvas)]/90 px-4 text-center text-sm text-[var(--text-primary)]";
-
-export default function VisorNube({ camaraId, nombre, conCodigo, onCerrar }: Props) {
+export default function VisorNube({ camaraId, nombre, conCodigo, onCerrar, onVerFotos }: Props) {
   const v = useVisorNube(camaraId);
+  const a = useAnalizarCuadro(camaraId, v.tomarCuadro);
   const enGrabacion = v.modo.tipo === "grabacion";
 
   return (
@@ -66,41 +61,11 @@ export default function VisorNube({ camaraId, nombre, conCodigo, onCerrar }: Pro
         <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)]">
           {/* Vacío a propósito: EZUIKit dibuja acá adentro (React no le pone hijos). */}
           <div id={v.contenedorId} className="h-full w-full" data-visor-nube={camaraId} />
-          {(v.estado === "pidiendo" || v.estado === "cargando") && (
-            <div className={CAPA} role="status">
-              <Loader2 className="h-6 w-6 animate-spin text-[var(--accent-ink)]" aria-hidden />
-              {v.estado === "pidiendo"
-                ? "Pidiendo el video a Hikvision…"
-                : "Despertando la cámara… (puede tardar 10-20 s por 4G)"}
-            </div>
-          )}
-          {v.estado === "error" && (
-            <div className={CAPA} role="alert">
-              <AlertTriangle className="h-6 w-6 text-[var(--data-error-ink)]" aria-hidden />
-              <span className="max-w-sm">{v.error}</span>
-              {!conCodigo && (
-                <span className="max-w-sm text-xs text-[var(--text-tertiary)]">
-                  Si la cámara tiene el video cifrado, carga su código de verificación en Cámaras →
-                  Hik-Connect.
-                </span>
-              )}
-              <button type="button" onClick={v.reintentar} className={BTN}>
-                <RefreshCw className="h-4 w-4" aria-hidden /> Reintentar
-              </button>
-            </div>
-          )}
-          {v.estado === "cortado" && (
-            <div className={CAPA} role="status">
-              <Battery className="h-6 w-6 text-[var(--data-warning-ink)]" aria-hidden />
-              Se cortó tras {MINUTOS_SIN_TOCAR} min sin tocar, para cuidar la batería.
-              <button type="button" onClick={v.reintentar} className={BTN}>
-                <Play className="h-4 w-4" aria-hidden /> Seguir viendo
-              </button>
-            </div>
-          )}
+          <VisorNubeCapas v={v} conCodigo={conCodigo} />
         </div>
 
-        <VisorNubeControles v={v} />
+        <VisorNubeControles v={v} analisis={a} />
+        <VisorNubeAnalisis a={a} onVerFotos={onVerFotos} />
       </div>
     </AdminModal>
   );

@@ -18,6 +18,10 @@ import { guardarFoto } from "@/lib/camaras/ingesta.server";
  * mano, así que entra por acá. Hace lo mismo que la entrada por token:
  * formato real y techo de píxeles, re-codificada a WebP, historial y la
  * lectura de la IA (`guardarFoto`).
+ *
+ * «Analizar» del visor de Hik-Connect (ADR-471) sube por acá el cuadro del
+ * vivo con `origen=vivo`: queda anotado en la foto y la respuesta trae su id
+ * para que el visor espere la lectura de ESA foto.
  */
 const MAX_SIZE = 8 * 1024 * 1024;
 const ANCHO_MAX = 1600;
@@ -41,9 +45,12 @@ export const POST = withApiHandler(
     const largo = Number(req.headers.get("content-length") ?? 0);
     if (largo > MAX_SIZE + 64 * 1024) return NextResponse.json({ ok: false, error: "muy_grande" }, { status: 413 });
     let archivo: File | null = null;
+    let delVivo = false;
     try {
-      const f = (await req.formData()).get("file");
+      const form = await req.formData();
+      const f = form.get("file");
       archivo = f instanceof File ? f : null;
+      delVivo = form.get("origen") === "vivo";
     } catch {
       archivo = null;
     }
@@ -54,12 +61,13 @@ export const POST = withApiHandler(
       const bytes = Buffer.from(await archivo.arrayBuffer());
       await verificarImagen(bytes, new Set(["jpeg", "png", "webp"]));
       const webp = await sharpSeguro(bytes).rotate().resize({ width: ANCHO_MAX, withoutEnlargement: true }).webp({ quality: 80 }).toBuffer();
-      const ok = await guardarFoto({ tenantId: auth.tenantId, camara }, webp, {
-        evento: "manual",
-        nota: `subida desde el panel por ${auth.username ?? "alguien"}`.slice(0, 200),
-      });
+      const quien = auth.username ?? "alguien";
+      const nota = (delVivo ? `del vivo (Hik-Connect), analizada por ${quien}` : `subida desde el panel por ${quien}`).slice(0, 200);
+      const ok = await guardarFoto({ tenantId: auth.tenantId, camara }, webp, { evento: "manual", nota });
       if (!ok) return NextResponse.json({ ok: false, error: "storage" }, { status: 502 });
-      return NextResponse.json({ ok: true });
+      /* `guardarFoto` no devuelve la foto: la más nueva de esta cámara con ESTA nota es la recién guardada. */
+      const nueva = (await CamarasDB.capturas(auth.tenantId, { camaraId: camara.id, limite: 5 })).find((c) => c.nota === nota);
+      return NextResponse.json({ ok: true, capturaId: nueva?.id ?? null });
     } catch (err) {
       if (err instanceof ImagenNoPermitida) return NextResponse.json({ ok: false, error: err.message }, { status: 415 });
       logger.error("[camaras.foto-a-mano] falló", { tenantId: auth.tenantId, error: String(err) });

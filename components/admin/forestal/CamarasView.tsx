@@ -37,6 +37,7 @@ import HoyEnElPatio from "./camaras/HoyEnElPatio";
 import VistaCamaras from "./camaras/VistaCamaras";
 import { CalladasAviso, DireccionAviso, MensajeAccion, SinIaAviso } from "./camaras/AvisosCamaras";
 import { useCamaras } from "./camaras/use-camaras";
+import { EVENTO_FOTO_NUEVA } from "./camaras/use-analizar-cuadro";
 import { useConexionDirecta } from "./camaras/use-conexion-directa";
 import { useDireccionPublica } from "./camaras/use-direccion-publica";
 import { usePantallaAngosta } from "./camaras/use-pantalla-angosta";
@@ -80,6 +81,15 @@ function PantallaCamaras() {
     focoRef.current = null;
     document.getElementById(`camara-${id}`)?.scrollIntoView({ block: "start", behavior: "smooth" });
   }, [vista]);
+
+  /* «Analizar» del vivo guarda la foto por fuera de `useCamaras`: se recarga en
+     silencio para que «Fotos» la muestre (y otra vez cuando llega la lectura). */
+  const { cargar } = d;
+  useEffect(() => {
+    const alGuardar = () => void cargar({ silenciosa: true });
+    window.addEventListener(EVENTO_FOTO_NUEVA, alGuardar);
+    return () => window.removeEventListener(EVENTO_FOTO_NUEVA, alGuardar);
+  }, [cargar]);
 
   const calladas = useMemo(() => d.camaras.filter((c) => estaCallada(c)), [d.camaras]);
   const sinIa = useMemo(() => faltaClaveIa(d.capturas), [d.capturas]);
