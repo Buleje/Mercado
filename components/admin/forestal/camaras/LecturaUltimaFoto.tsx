@@ -8,7 +8,7 @@
 
 import { useState } from "react";
 import { Sparkles } from "@buleje/design-system/icons";
-import { EVENTO_LABEL, type Captura } from "@/lib/camaras/camaras";
+import { etiquetaDeCaptura, type Captura } from "@/lib/camaras/camaras";
 import ChipsDeCaptura from "./ChipsDeCaptura";
 import { horaODia, type ChalecosPantalla } from "./camaras-ui";
 
@@ -56,7 +56,7 @@ export default function LecturaUltimaFoto({ captura: c, chalecosVivos, onConfirm
         <p className="flex items-center gap-1.5 text-xs text-[var(--text-tertiary)]">
           <Sparkles className="h-3.5 w-3.5 shrink-0 text-[var(--accent-ink)]" aria-hidden />
           <span className="truncate">
-            Lo que vio la IA · {horaODia(c.at)} · {EVENTO_LABEL[c.evento]}
+            Lo que vio la IA · {horaODia(c.at)} · {etiquetaDeCaptura(c)}
           </span>
         </p>
         {c.lectura?.descripcion && (

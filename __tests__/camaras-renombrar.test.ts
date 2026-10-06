@@ -32,3 +32,13 @@ describe("renombrarCamara (05-10: «Camara 1 oficina» mostraba el patio de troz
     expect(renombrarCamara(lista, "a", { nombre: "CAMARA 1 OFICINA" }).ok).toBe(true);
   });
 });
+
+import { etiquetaDeCaptura } from "@/lib/camaras/camaras";
+
+describe("etiquetaDeCaptura (05-10: la foto de «Analizar» decía «Subida a mano»)", () => {
+  it("la del vivo dice «Del vivo»; la subida a mano y las de la cámara, lo de siempre", () => {
+    expect(etiquetaDeCaptura({ evento: "manual", nota: "del vivo (Hik-Connect), analizada por blasadmin" })).toBe("Del vivo");
+    expect(etiquetaDeCaptura({ evento: "manual", nota: "subida desde el panel por x" })).toBe("Subida a mano");
+    expect(etiquetaDeCaptura({ evento: "persona", nota: null })).toBe("Persona");
+  });
+});

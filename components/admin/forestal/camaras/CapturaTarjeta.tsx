@@ -11,7 +11,7 @@
 
 import type { ReactNode } from "react";
 import { Trash2 } from "@buleje/design-system/icons";
-import { EVENTO_LABEL, type Captura } from "@/lib/camaras/camaras";
+import { etiquetaDeCaptura, type Captura } from "@/lib/camaras/camaras";
 import { formatDateTimeShort } from "@/lib/format";
 import ChipsDeCaptura from "./ChipsDeCaptura";
 import type { ChalecosPantalla } from "./camaras-ui";
@@ -70,7 +70,7 @@ export default function CapturaTarjeta({
               {nombreCamara}
             </span>
             <span className="block truncate text-xs text-[var(--text-tertiary)]">
-              {cuando} · {EVENTO_LABEL[c.evento]}
+              {cuando} · {etiquetaDeCaptura(c)}
             </span>
           </span>
           {enVivo}

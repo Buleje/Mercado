@@ -38,6 +38,14 @@ export const EVENTO_LABEL: Record<EventoCamara, string> = {
   otro: "Otro",
 };
 
+/** La etiqueta de UNA foto: la del vivo (botón «Analizar», 05-10) entra como `manual` —para
+ *  que la pila y los cruces la sigan tratando como foto puesta por una persona— pero no es
+ *  «subida a mano»: la prueba real con Brandon mostraba eso en la tarjeta. */
+export function etiquetaDeCaptura(c: { evento: EventoCamara; nota?: string | null }): string {
+  if (c.evento === "manual" && (c.nota ?? "").startsWith("del vivo")) return "Del vivo";
+  return EVENTO_LABEL[c.evento];
+}
+
 export interface Camara {
   id: string;
   nombre: string;
@@ -564,7 +572,7 @@ export function buscarCapturas(capturas: readonly Captura[], texto: string): Cap
   const norm = (v: string | null | undefined) =>
     (v ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
   return capturas.filter((c) =>
-    [c.lectura?.descripcion, c.lectura?.placa, c.nota, EVENTO_LABEL[c.evento]].some((campo) =>
+    [c.lectura?.descripcion, c.lectura?.placa, c.nota, etiquetaDeCaptura(c)].some((campo) =>
       norm(campo).includes(q),
     ),
   );
