@@ -34,6 +34,7 @@ import FilaAvisosWhatsapp from "./FilaAvisosWhatsapp";
 import { usePuenteDeFila } from "./use-puente-pc";
 import InterruptorPila from "./InterruptorPila";
 import ControlPtz from "./ControlPtz";
+import RenombrarCamara from "./RenombrarCamara";
 import { BTN } from "./camaras-ui";
 import BotonEnVivo from "./BotonEnVivo";
 import MenuMasCamara from "./MenuMasCamara";
@@ -109,8 +110,12 @@ export default function CamaraFila({
       <div className="flex flex-wrap items-center gap-2">
         {/* En celular el nombre se queda con la fila entera (a 400 px se leía «Port…»). */}
         <span className="min-w-0 flex-1 basis-full sm:basis-auto">
-          <span className="block truncate text-sm font-bold text-[var(--text-primary)]">
-            {c.nombre}
+          <span className="flex min-w-0 flex-wrap items-center gap-1">
+            <span className="min-w-0 truncate text-sm font-bold text-[var(--text-primary)]">
+              {c.nombre}
+            </span>
+            {/* El lápiz relee la lista con la misma recarga silenciosa que una foto subida. */}
+            <RenombrarCamara id={c.id} nombre={c.nombre} onListo={onFotoGuardada} />
           </span>
           <span className="block truncate text-xs text-[var(--text-tertiary)]">
             {c.lugar || "Sin lugar declarado"} · {lineaDeAviso(c, ahora)}

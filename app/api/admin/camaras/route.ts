@@ -32,6 +32,7 @@ import { ultimoAvisoDe } from "@/lib/camaras/contacto";
  *          copiar en el aparato.
  * PATCH  — `{ id, accion: "rotar" }`: dirección nueva, la vieja deja de entrar.
  *          `{ id, accion: "avisos", whatsapp, cuando }`: a quién avisa por WhatsApp.
+ *          `{ id, accion: "renombrar", nombre, lugar? }`: nombre y lugar (05-10).
  *          `{ id, accion: "conectar", host, puerto, usuario, clave, https?, canal? }`:
  *            prueba el aparato y, sólo si contesta, guarda cómo llamarlo.
  *          `{ id, accion: "desconectar" }`: borra la conexión y su clave.
@@ -83,6 +84,10 @@ const chalecoSchema = z.object({
 });
 
 const vigilaPilaSchema = z.object({ activa: z.boolean() });
+const renombrarSchema = z.object({
+  nombre: z.string().trim().min(1).max(80),
+  lugar: z.string().trim().max(120).optional(),
+});
 
 /** Fracciones 0–1 de la ventana que captura la PC; el modelo puro revalida y redondea. */
 const recorteSchema = z
@@ -354,6 +359,15 @@ export const PATCH = withApiHandler("camaras-patch", (req: NextRequest) =>
             message: "Indica si la cámara vigila la pila (sí o no).",
           };
         const r = await CamarasDB.configurarVigilaPila(tenantId, id, p.data.activa, user);
+        if (!r.ok) return { error: "rechazado", message: r.motivo };
+        return { camaras: camarasParaPantalla(r.camaras), mensaje: r.mensaje };
+      }
+
+      if (d.accion === "renombrar") {
+        const crudo = body as { nombre?: unknown; lugar?: unknown };
+        const p = renombrarSchema.safeParse({ nombre: crudo.nombre, lugar: crudo.lugar });
+        if (!p.success) return { error: "validation_error", message: "El nombre va de 1 a 80 caracteres." };
+        const r = await CamarasDB.renombrar(tenantId, id, p.data, user);
         if (!r.ok) return { error: "rechazado", message: r.motivo };
         return { camaras: camarasParaPantalla(r.camaras), mensaje: r.mensaje };
       }

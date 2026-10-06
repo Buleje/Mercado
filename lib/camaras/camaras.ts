@@ -261,6 +261,29 @@ export function textoDelAviso(
   return `📷 ${camara.nombre}${camara.lugar ? ` (${camara.lugar})` : ""} · ${hora}\n${que}${placa}.${detalle}\nVer la foto: ${enlace}`;
 }
 
+/** Cambia el nombre (y el lugar, si viene) de una cámara. Mismas reglas que el alta
+ *  (05-10: «Camara 1 oficina» mostraba el patio de trozas y no había cómo corregirlo). */
+export function renombrarCamara(
+  camaras: readonly Camara[],
+  id: string,
+  entrada: { nombre: string; lugar?: string },
+): ResultadoCamaras {
+  const camara = camaras.find((c) => c.id === id);
+  if (!camara) return { ok: false, motivo: "Esa cámara no está en la lista." };
+  const nombre = txt(entrada.nombre);
+  if (!nombre) return { ok: false, motivo: "Ponle un nombre a la cámara." };
+  if (nombre.length > 80) return { ok: false, motivo: "El nombre no puede pasar de 80 caracteres." };
+  if (camaras.some((c) => c.id !== id && c.nombre.toLowerCase() === nombre.toLowerCase())) {
+    return { ok: false, motivo: `Ya hay una cámara que se llama «${nombre}».` };
+  }
+  const lugar = entrada.lugar === undefined ? camara.lugar : txt(entrada.lugar);
+  return {
+    ok: true,
+    camaras: camaras.map((c) => (c.id === id ? { ...c, nombre, lugar } : c)),
+    mensaje: nombre === camara.nombre ? `«${nombre}» quedó igual.` : `«${camara.nombre}» ahora se llama «${nombre}».`,
+  };
+}
+
 /** Cambia a quién y cuándo avisa una cámara. */
 export function configurarAvisos(
   camaras: readonly Camara[],

@@ -25,6 +25,7 @@ import {
   type PruebaDeCamara,
   type ResultadoCamaras,
   configurarAvisos,
+  renombrarCamara,
   type AvisosCamara,
   type ChalecosDelNegocio,
   MAX_CAPTURAS,
@@ -295,6 +296,16 @@ export const CamarasDB = {
     const viejo = r.antes?.find((c) => c.id === camaraId)?.token;
     await this.indexar(tenantId, r.camaras, viejo ? [viejo] : []);
     return r;
+  },
+
+  /** Nombre (y lugar) de una cámara: el id y su token no cambian, ni sus fotos ni su enlace. */
+  async renombrar(
+    tenantId: string,
+    camaraId: string,
+    entrada: { nombre: string; lugar?: string },
+    user: string,
+  ): Promise<ResultadoCamaras> {
+    return mutarCamaras(tenantId, user, (camaras) => renombrarCamara(camaras, camaraId, entrada));
   },
 
   /** A quién y cuándo avisa una cámara por WhatsApp. */
