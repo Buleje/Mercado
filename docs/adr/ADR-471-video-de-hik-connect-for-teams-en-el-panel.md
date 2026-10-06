@@ -1,6 +1,6 @@
 # ADR-471 — Video de Hik-Connect en el panel por la OpenAPI de Hik-Connect for Teams + EZUIKit
 
-- **Estado:** aceptado (2026-10-05). Construido y probado SIN claves reales (tests con las respuestas medidas, ruta real con clave falsa, visor con la respuesta simulada). Falta la prueba con la AppKey de Brandon.
+- **Estado:** aceptado (2026-10-05). Probado con la cuenta REAL de Brandon (tenant Blas, 05-10 19:09): las dos DS-2CFSP4/4G se ven en vivo dentro del panel (visor EZUIKit, SD).
 - **Reemplaza:** ADR-411 §Contexto 3 y §Alternativas «Consumir la nube de Hikvision» («Hik-Connect no abre API a un tercero sin cuenta de partner»), y la misma frase en ADR-466 §Contexto. El resto de ADR-411 (fotos por webhook) y ADR-466 (puente de pantalla) siguen vigentes.
 - **Relacionados:** ADR-470 (video RTSP→HLS, cámaras con cable), ADR-445 (`PlatformSettingsDB.actualizar`), ADR-308 §4 (KV en vez de tablas).
 - **Pedido (Brandon, 05-10):** «quiero que se vincule y se muestre el video en vivo de la cámara en mi sistema». Cámara: Hikvision **DS-2CFSP4/4G** (solar + batería, 4G con chip, sólo Hik-Connect, sin RTSP). Hoy la ve en la app Hik-Connect de su celular (cuenta personal).
@@ -13,11 +13,17 @@
 2. **Forma real de la API** (no toda la documentación pública coincide):
    - Token: `POST {región}/api/hccgw/platform/v1/token/get` `{appKey, secretKey}` → `data.accessToken`, `data.expireTime` (segundos epoch) y `data.areaDomain` (a dónde van los pedidos siguientes). Header `Token:` (no Bearer). Fuente: `api.py` de Frens98 + [Syscom](https://hikconnectapi.syscom.mx/).
    - Cámaras: `POST /api/hccgw/resource/v1/areas/cameras/get` `{pageIndex, pageSize, filter:{areaID:"-1", includeSubArea:"1"}}` → `data.camera[]` (`id`, `name`, `device.devInfo.serialNo`). Syscom documenta otra forma (`data.list`, `cameraName`): se leen las dos.
-   - Video: `POST /api/hccgw/video/v1/live/address/get` `{resourceId, deviceSerial, type, code:"0", protocol:"1", quality}`; `type` 1 vivo · 2 nube · 3 microSD; `protocol` 1 = EZOPEN, el único para video cifrado (HLS/FLV → EVZ60019); fechas «YYYY-MM-DD HH:MM:SS».
+   - Video: `POST /api/hccgw/video/v1/live/address/get` `{resourceId, deviceSerial, type, code, protocol:"1", quality}`; `type` 1 vivo · 2 nube · 3 microSD; `protocol` 1 = EZOPEN, el único para video cifrado (HLS/FLV → EVZ60019); fechas «YYYY-MM-DD HH:MM:SS».
    - Para reproducir: `GET /api/hccgw/platform/v1/streamtoken/get` → `appToken` + `streamAreaDomain`; EZUIKit (`ezuikit-js`) con `accessToken = appToken`, `env.domain = streamAreaDomain` (sin él va a China y falla callado).
    - **Errores medidos** con claves falsas contra `isa/ius/ieu/isgp.hikcentralconnect.com`: HTTP 200 y `{"errorCode":"OPEN000001","message":"AK_NOT_FOUND{OPEN000001}"}`; sin secretKey → `OPEN000010`; token inventado → `OPEN000006 TOKEN_NOT_FOUND`; sin token → `OPEN000007 TOKEN_ERROR`. La tabla «0x2001…» de Syscom **no** es lo que contesta el servidor.
 3. **Video cifrado:** el código de verificación (6 letras de la etiqueta) va dentro de la URL, `ezopen://CODIGO@host/…` (así la arma `ezuikit-js` 9.0.23); error 5 del reproductor = código incorrecto.
 4. **Regiones:** los 4 dominios de API responden; los de video por región salen del README de `ezuikit-js` (América del Sur = `isaopen.ezvizlife.com`).
+
+5. **Medido con la cuenta real (05-10 noche):**
+   - `code` NO es el canal (Syscom dice «usually "0"»): es el **código de verificación**. Sin `code` → `EVZ60019 Encryption is enabled and parameter code is empty`; con "0" o "1" → `EVZ10001 illegal parameter code`; con el código → URL `ezopen://<código>@open.ezviz.com/<serie>/1.live`.
+   - El ítem de la lista trae `online: "1"`, `area`, `device.devInfo.{id, category, serialNo, streamSecretKey (vacío)}`, `device.channelInfo.{id, no}`.
+   - Un equipo recién vinculado tiene **0 cámaras**: hay que **activar «Video Management»** en Service Market (gratis, 32 canales de por vida) — sin eso la importación da «The corresponding service is not activated» — y después **Device → Add Device → Import Personal Devices**.
+   - El código de la etiqueta no hace falta: en el portal, **Device Parameter → Change Verification Code** pone uno nuevo a las cámaras elegidas (aviso del portal: lo ya subido a la nube sigue con el código viejo).
 
 ## Decisión
 

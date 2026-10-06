@@ -13,6 +13,7 @@ const H = vi.hoisted(() => ({
   camarasPorTenant: {} as Record<string, { id: string; nombre: string }[]>,
   hik: (() => ({})) as (url: string, body: unknown) => unknown,
   llamadas: [] as string[],
+  pedidoVideo: null as unknown,
 }));
 
 vi.mock("@/lib/session", async (real) => ({
@@ -106,8 +107,10 @@ function hikvisionReal(url: string, body: unknown) {
         streamAreaDomain: "https://iusopen.ezvizlife.com",
       },
     };
-  if (url.endsWith("/live/address/get"))
+  if (url.endsWith("/live/address/get")) {
+    H.pedidoVideo = b;
     return { errorCode: "0", data: { url: "ezopen://open.ezviz.com/FX9876543/1.live" } };
+  }
   return { errorCode: "OPEN000010", message: "?" };
 }
 
@@ -285,6 +288,8 @@ describe("enlazar y ver", () => {
       dominio: "https://iusopen.ezvizlife.com",
       tipo: "vivo",
     });
+    /* El código va también como `code` del pedido a Hikvision (es la clave del video cifrado). */
+    expect(H.pedidoVideo).toMatchObject({ code: "ABCDEF", type: "1", protocol: "1" });
   });
 
   it("cámara de otro tenant → 404; sin enlace → 409; sin sesión → 401", async () => {

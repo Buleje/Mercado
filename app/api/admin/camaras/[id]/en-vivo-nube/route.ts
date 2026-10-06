@@ -94,6 +94,7 @@ export const POST = withApiHandler(
       calidad: p.calidad,
       desde: p.desde,
       hasta: p.hasta,
+      codigo: enlace.codigo,
     });
     if (!r.ok) {
       logger.info("[hik-connect] video rechazado", {

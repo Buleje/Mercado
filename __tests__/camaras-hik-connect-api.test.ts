@@ -149,6 +149,37 @@ describe("lista de cámaras", () => {
         ],
       },
     };
+    /* La forma medida con la cuenta real (05-10): `online: "1"`, `area`, `channelInfo`. */
+    const medida = {
+      errorCode: "0",
+      data: {
+        totalCount: 1,
+        pageIndex: 1,
+        pageSize: 500,
+        camera: [
+          {
+            id: "r-real",
+            name: "DS-2CFSP4-4G",
+            abilitySet: "x",
+            online: "1",
+            area: { id: "a1", name: "Aserradero" },
+            device: {
+              devInfo: {
+                id: "d1",
+                category: "encodingDevice",
+                serialNo: "GU0000001",
+                streamSecretKey: "",
+              },
+              channelInfo: { id: "c1", no: "1" },
+            },
+          },
+        ],
+      },
+    };
+    expect(leerCamaras(medida)).toMatchObject({
+      ok: true,
+      valor: { camaras: [{ resourceId: "r-real", deviceSerial: "GU0000001", enLinea: true }] },
+    });
     expect(leerCamaras(real)).toEqual({
       ok: true,
       valor: {
@@ -183,18 +214,31 @@ describe("lista de cámaras", () => {
 describe("dirección de video", () => {
   const base = { resourceId: "res1", deviceSerial: "FX1234567", calidad: "sd" as const };
 
-  it("vivo = type 1, EZOPEN, SD = quality 2", () => {
+  it("vivo = type 1, EZOPEN, SD = quality 2; sin código no se manda `code`", () => {
     expect(pedidoDireccion({ ...base, tipo: "vivo" })).toEqual({
       ok: true,
       valor: {
         resourceId: "res1",
         deviceSerial: "FX1234567",
         type: "1",
-        code: "0",
         protocol: "1",
         quality: "2",
       },
     });
+  });
+
+  it("`code` es el código de verificación (medido 05-10: «0»/«1» dan EVZ10001 illegal parameter code)", () => {
+    expect(pedidoDireccion({ ...base, tipo: "vivo", codigo: "ABCDEF" })).toMatchObject({
+      ok: true,
+      valor: { code: "ABCDEF" },
+    });
+    expect(
+      traducirError("EVZ60019", "Encryption is enabled and parameter code is empty{EVZ60019}")
+        .mensaje,
+    ).toMatch(/código de verificación/);
+    expect(traducirError("EVZ10001", "illegal parameter code{EVZ10001}").mensaje).toMatch(
+      /6 letras/,
+    );
   });
 
   it("grabación = type 3 (microSD) con rango del mismo día; uno cruzado se rechaza antes de salir", () => {

@@ -147,6 +147,11 @@ const CONOCIDOS: Record<string, { tipo: TipoErrorHik; mensaje: string }> = {
     mensaje:
       "El video de la cámara está cifrado. Carga el código de verificación (6 letras de la etiqueta) en «Enlazar».",
   },
+  EVZ10001: {
+    tipo: "camara",
+    mensaje:
+      "Hikvision no aceptó el código de verificación. Son las 6 letras MAYÚSCULAS de la etiqueta de la cámara (o de su caja): revísalo en «Código».",
+  },
 };
 
 /** «AK_NOT_FOUND{OPEN000001}» → «AK_NOT_FOUND». */
@@ -347,6 +352,8 @@ export function leerCamaras(raw: unknown): Leido<PaginaCamaras> {
       nombre: texto(c.name) || texto(c.cameraName) || resourceId,
       deviceSerial,
       enLinea: estadoEnLinea(
+        /* `online: "1"` es lo que manda la API real (medido 05-10). */
+        c.online,
         c.onlineStatus,
         c.status,
         dispositivo?.onlineStatus,
@@ -389,6 +396,8 @@ export interface PedidoVideo {
   calidad: CalidadVideo;
   desde?: string;
   hasta?: string;
+  /** Código de verificación de la cámara (la clave del video cifrado). */
+  codigo?: string | null;
 }
 
 export function pedidoDireccion(p: PedidoVideo): Leido<Record<string, string>> {
@@ -397,10 +406,14 @@ export function pedidoDireccion(p: PedidoVideo): Leido<Record<string, string>> {
     deviceSerial: p.deviceSerial,
     /* 3 = la microSD de la cámara (la DS-2CFSP4/4G graba ahí; la nube «2» es un plan pago). */
     type: p.tipo === "vivo" ? "1" : "3",
-    code: "0",
     protocol: "1",
     quality: p.calidad === "hd" ? "1" : "2",
   };
+  /* `code` NO es el canal (como dice Syscom): es el código de verificación.
+     Medido 05-10 con la DS-2CFSP4/4G real: sin `code` → EVZ60019 «Encryption is
+     enabled and parameter code is empty»; con "0" o "1" → EVZ10001 «illegal
+     parameter code». Sin código cargado, se omite y Hikvision dice qué falta. */
+  if (p.codigo) base.code = p.codigo;
   if (p.tipo === "vivo") return { ok: true, valor: base };
   const desde = p.desde ?? "";
   const hasta = p.hasta ?? "";
