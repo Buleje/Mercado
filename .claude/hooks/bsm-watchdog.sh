@@ -53,7 +53,9 @@ trap cleanup TERM INT EXIT
 # Cierra el árbol completo del dev (npm → dev-with-canary → next dev → next-server)
 # y lo relanza. Single source con `npm run dev:restart`.
 reiniciar_dev() {
-  bash "$PROJECT_DIR/scripts/dev-restart.sh" >/dev/null 2>&1 || true
+  # `9>&-`: el dev relanzado NO hereda el candado del guardián (05-10: el `npm run dev`
+  # que relanzó se quedó con el fd 9 y ningún guardián nuevo podía volver a arrancar).
+  bash "$PROJECT_DIR/scripts/dev-restart.sh" 9>&- >/dev/null 2>&1 || true
 }
 
 log "watchdog started pid=$$ interval=${INTERVAL}s"
