@@ -29,6 +29,7 @@ vi.mock("@/lib/rate-limit", () => ({
 vi.mock("@/lib/logger", () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
 }));
+vi.mock("@/lib/camaras/registro-miradas", () => ({ registrarMirada: vi.fn(async () => {}) }));
 vi.mock("@/lib/activity-logger", () => ({ logActivity: vi.fn(async () => {}) }));
 vi.mock("@/lib/db/camaras.db", () => ({
   CamarasDB: { list: async (tenantId: string) => H.camarasPorTenant[tenantId] ?? [] },

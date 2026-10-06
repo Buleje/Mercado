@@ -21,6 +21,7 @@ import { BLOQUE, BTN, CHIP_BASE, CHIP_TONO } from "./camaras-ui";
 import type { RegionElegida } from "./use-hik-connect";
 import { useVisorNubeContexto } from "./VisorNubeContexto";
 import VincularHikConnectLista from "./VincularHikConnectLista";
+import QuienMiro from "./QuienMiro";
 import VincularHikConnectPasos from "./VincularHikConnectPasos";
 
 const CAMPO =
@@ -69,169 +70,174 @@ export default function VincularHikConnect({
   };
 
   return (
-    <section className={BLOQUE} aria-labelledby="camaras-hik-titulo">
-      <div className="mb-3 flex flex-wrap items-center gap-2">
-        <span className="mr-auto flex items-center gap-1.5">
-          <Video className="h-4 w-4 text-[var(--accent-ink)]" aria-hidden />
-          <CardTitle as="h3" id="camaras-hik-titulo" className="text-base font-bold">
-            Video de Hik-Connect
-          </CardTitle>
-          <InfoTip
-            title="Video de Hik-Connect en el panel"
-            what="Con la cuenta de Hik-Connect for Teams vinculada, «En vivo» muestra el video acá, sin abrir la app."
-            affects="Sirve para cámaras sin RTSP, como la solar 4G. Las claves se guardan cifradas y no se vuelven a mostrar."
-            example="Portón → «En vivo» → el video del portón en esta pantalla, en HD o SD, o lo que grabó a las 22:00."
-          />
-        </span>
-        <span className={`${CHIP_BASE} ${CHIP_TONO[vinculado ? "ok" : "neutro"]}`}>
-          {vinculado ? `Vinculada · ${e?.regionNombre} · •••• ${e?.ultimos4}` : "Sin vincular"}
-        </span>
-      </div>
-
-      <MensajeAccion error={hik.error} aviso={hik.aviso} />
-
-      {vinculado && (
-        <button
-          type="button"
-          onClick={() => setVerPasos((v) => !v)}
-          aria-expanded={pasosAbiertos}
-          className="mt-2 inline-flex items-center gap-1 text-sm font-bold text-[var(--text-secondary)]"
-        >
-          <ChevronDown
-            className={`h-4 w-4 transition ${pasosAbiertos ? "rotate-180" : ""}`}
-            aria-hidden
-          />
-          Cómo sacar las claves
-        </button>
-      )}
-      {pasosAbiertos && (
-        <div className="mt-2">
-          <VincularHikConnectPasos />
+    <>
+      <section className={BLOQUE} aria-labelledby="camaras-hik-titulo">
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <span className="mr-auto flex items-center gap-1.5">
+            <Video className="h-4 w-4 text-[var(--accent-ink)]" aria-hidden />
+            <CardTitle as="h3" id="camaras-hik-titulo" className="text-base font-bold">
+              Video de Hik-Connect
+            </CardTitle>
+            <InfoTip
+              title="Video de Hik-Connect en el panel"
+              what="Con la cuenta de Hik-Connect for Teams vinculada, «En vivo» muestra el video acá, sin abrir la app."
+              affects="Sirve para cámaras sin RTSP, como la solar 4G. Las claves se guardan cifradas y no se vuelven a mostrar."
+              example="Portón → «En vivo» → el video del portón en esta pantalla, en HD o SD, o lo que grabó a las 22:00."
+            />
+          </span>
+          <span className={`${CHIP_BASE} ${CHIP_TONO[vinculado ? "ok" : "neutro"]}`}>
+            {vinculado ? `Vinculada · ${e?.regionNombre} · •••• ${e?.ultimos4}` : "Sin vincular"}
+          </span>
         </div>
-      )}
 
-      {!puedeEscribir && !vinculado && (
-        <p className="mt-3 text-sm text-[var(--text-tertiary)]">
-          Solo el administrador o el dueño vincula la cuenta.
-        </p>
-      )}
+        <MensajeAccion error={hik.error} aviso={hik.aviso} />
 
-      {puedeEscribir && (!vinculado || verForm) && (
-        <form
-          className="mt-3 grid gap-2 sm:grid-cols-2"
-          onSubmit={(ev) => {
-            ev.preventDefault();
-            void vincular();
-          }}
-        >
-          <label className="block">
-            <span className="text-sm font-bold text-[var(--text-secondary)]">AppKey (API Key)</span>
-            <input
-              value={appKey}
-              onChange={(ev) => setAppKey(ev.target.value)}
-              autoComplete="off"
-              spellCheck={false}
-              className={`${CAMPO} font-mono`}
-              placeholder={vinculado ? "Otra AppKey para cambiar la cuenta" : "Pega la AppKey"}
+        {vinculado && (
+          <button
+            type="button"
+            onClick={() => setVerPasos((v) => !v)}
+            aria-expanded={pasosAbiertos}
+            className="mt-2 inline-flex items-center gap-1 text-sm font-bold text-[var(--text-secondary)]"
+          >
+            <ChevronDown
+              className={`h-4 w-4 transition ${pasosAbiertos ? "rotate-180" : ""}`}
+              aria-hidden
             />
-          </label>
-          <label className="block">
-            <span className="text-sm font-bold text-[var(--text-secondary)]">
-              SecretKey (API Secret)
-            </span>
-            <input
-              type="password"
-              value={secretKey}
-              onChange={(ev) => setSecretKey(ev.target.value)}
-              autoComplete="new-password"
-              spellCheck={false}
-              className={`${CAMPO} font-mono`}
-              placeholder="Pega la SecretKey"
-            />
-          </label>
-          <label className="block">
-            <span className="text-sm font-bold text-[var(--text-secondary)]">
-              Región de la cuenta
-            </span>
-            <select
-              value={region}
-              onChange={(ev) => setRegion(ev.target.value as RegionElegida)}
-              className={CAMPO}
-            >
-              {REGIONES.map((r) => (
-                <option key={r.value} value={r.value}>
-                  {r.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <div className="flex items-end gap-2">
-            <button
-              type="submit"
-              disabled={
-                hik.trabajando === "vincular" ||
-                appKey.trim().length < 8 ||
-                secretKey.trim().length < 8
-              }
-              className="inline-flex h-11 flex-1 items-center justify-center gap-1.5 rounded-xl bg-[var(--accent-600,var(--accent))] px-4 text-sm font-bold text-white transition hover:brightness-95 disabled:opacity-50"
-            >
-              {hik.trabajando === "vincular" ? (
-                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+            Cómo sacar las claves
+          </button>
+        )}
+        {pasosAbiertos && (
+          <div className="mt-2">
+            <VincularHikConnectPasos />
+          </div>
+        )}
+
+        {!puedeEscribir && !vinculado && (
+          <p className="mt-3 text-sm text-[var(--text-tertiary)]">
+            Solo el administrador o el dueño vincula la cuenta.
+          </p>
+        )}
+
+        {puedeEscribir && (!vinculado || verForm) && (
+          <form
+            className="mt-3 grid gap-2 sm:grid-cols-2"
+            onSubmit={(ev) => {
+              ev.preventDefault();
+              void vincular();
+            }}
+          >
+            <label className="block">
+              <span className="text-sm font-bold text-[var(--text-secondary)]">
+                AppKey (API Key)
+              </span>
+              <input
+                value={appKey}
+                onChange={(ev) => setAppKey(ev.target.value)}
+                autoComplete="off"
+                spellCheck={false}
+                className={`${CAMPO} font-mono`}
+                placeholder={vinculado ? "Otra AppKey para cambiar la cuenta" : "Pega la AppKey"}
+              />
+            </label>
+            <label className="block">
+              <span className="text-sm font-bold text-[var(--text-secondary)]">
+                SecretKey (API Secret)
+              </span>
+              <input
+                type="password"
+                value={secretKey}
+                onChange={(ev) => setSecretKey(ev.target.value)}
+                autoComplete="new-password"
+                spellCheck={false}
+                className={`${CAMPO} font-mono`}
+                placeholder="Pega la SecretKey"
+              />
+            </label>
+            <label className="block">
+              <span className="text-sm font-bold text-[var(--text-secondary)]">
+                Región de la cuenta
+              </span>
+              <select
+                value={region}
+                onChange={(ev) => setRegion(ev.target.value as RegionElegida)}
+                className={CAMPO}
+              >
+                {REGIONES.map((r) => (
+                  <option key={r.value} value={r.value}>
+                    {r.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="flex items-end gap-2">
+              <button
+                type="submit"
+                disabled={
+                  hik.trabajando === "vincular" ||
+                  appKey.trim().length < 8 ||
+                  secretKey.trim().length < 8
+                }
+                className="inline-flex h-11 flex-1 items-center justify-center gap-1.5 rounded-xl bg-[var(--accent-600,var(--accent))] px-4 text-sm font-bold text-white transition hover:brightness-95 disabled:opacity-50"
+              >
+                {hik.trabajando === "vincular" ? (
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                ) : (
+                  <KeyRound className="h-4 w-4" aria-hidden />
+                )}
+                {hik.trabajando === "vincular"
+                  ? "Probando con Hikvision…"
+                  : vinculado
+                    ? "Cambiar cuenta"
+                    : "Vincular"}
+              </button>
+            </div>
+          </form>
+        )}
+
+        {vinculado && puedeEscribir && (
+          <div className="mt-4 space-y-3 border-t border-[var(--rule-base)] pt-3">
+            <VincularHikConnectLista hik={hik} camaras={camaras} onCrear={onCrear} />
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              {confirmarQuitar ? (
+                <>
+                  <span className="mr-auto text-sm text-[var(--text-secondary)]">
+                    ¿Desvincular? Se borran las claves y los enlaces.
+                  </span>
+                  <button type="button" onClick={() => setConfirmarQuitar(false)} className={BTN}>
+                    No
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void hik.desvincular().then(() => setConfirmarQuitar(false))}
+                    disabled={hik.trabajando === "desvincular"}
+                    className={`${BTN} border-[var(--data-error-500)]/60 text-[var(--data-error-ink)]`}
+                  >
+                    <Trash2 className="h-4 w-4" aria-hidden /> Sí, desvincular
+                  </button>
+                </>
               ) : (
-                <KeyRound className="h-4 w-4" aria-hidden />
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setVerForm((v) => !v)}
+                    aria-expanded={verForm}
+                    className={BTN}
+                  >
+                    <KeyRound className="h-4 w-4" aria-hidden />{" "}
+                    <span className="max-sm:hidden">Cambiar claves</span>
+                    <span className="sm:hidden">Claves</span>
+                  </button>
+                  <button type="button" onClick={() => setConfirmarQuitar(true)} className={BTN}>
+                    <Link2 className="h-4 w-4" aria-hidden /> Desvincular
+                    <span className="max-sm:hidden"> cuenta</span>
+                  </button>
+                </>
               )}
-              {hik.trabajando === "vincular"
-                ? "Probando con Hikvision…"
-                : vinculado
-                  ? "Cambiar cuenta"
-                  : "Vincular"}
-            </button>
+            </div>
           </div>
-        </form>
-      )}
-
-      {vinculado && puedeEscribir && (
-        <div className="mt-4 space-y-3 border-t border-[var(--rule-base)] pt-3">
-          <VincularHikConnectLista hik={hik} camaras={camaras} onCrear={onCrear} />
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            {confirmarQuitar ? (
-              <>
-                <span className="mr-auto text-sm text-[var(--text-secondary)]">
-                  ¿Desvincular? Se borran las claves y los enlaces.
-                </span>
-                <button type="button" onClick={() => setConfirmarQuitar(false)} className={BTN}>
-                  No
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void hik.desvincular().then(() => setConfirmarQuitar(false))}
-                  disabled={hik.trabajando === "desvincular"}
-                  className={`${BTN} border-[var(--data-error-500)]/60 text-[var(--data-error-ink)]`}
-                >
-                  <Trash2 className="h-4 w-4" aria-hidden /> Sí, desvincular
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  onClick={() => setVerForm((v) => !v)}
-                  aria-expanded={verForm}
-                  className={BTN}
-                >
-                  <KeyRound className="h-4 w-4" aria-hidden />{" "}
-                  <span className="max-sm:hidden">Cambiar claves</span>
-                  <span className="sm:hidden">Claves</span>
-                </button>
-                <button type="button" onClick={() => setConfirmarQuitar(true)} className={BTN}>
-                  <Link2 className="h-4 w-4" aria-hidden /> Desvincular
-                  <span className="max-sm:hidden"> cuenta</span>
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-    </section>
+        )}
+      </section>
+      <QuienMiro camaras={camaras} />
+    </>
   );
 }

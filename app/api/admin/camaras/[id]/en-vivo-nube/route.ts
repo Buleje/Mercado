@@ -8,6 +8,7 @@ import { logger } from "@/lib/logger";
 import { CamarasDB } from "@/lib/db/camaras.db";
 import { CamarasHikConnectDB } from "@/lib/db/camaras-hik-connect.db";
 import { FECHA_HIK, conCodigo } from "@/lib/camaras/hik-connect-api";
+import { registrarMirada } from "@/lib/camaras/registro-miradas";
 import { direccionDeVideo } from "@/lib/camaras/hik-connect-api.server";
 
 /**
@@ -68,7 +69,8 @@ export const POST = withApiHandler(
         { status: 400 },
       );
 
-    if (!(await CamarasDB.list(auth.tenantId)).some((c) => c.id === id))
+    const camara = (await CamarasDB.list(auth.tenantId)).find((c) => c.id === id);
+    if (!camara)
       return NextResponse.json(
         { error: "not_found", message: "Esa cámara no existe." },
         { status: 404 },
@@ -108,6 +110,13 @@ export const POST = withApiHandler(
         { status },
       );
     }
+    /* Ley 29733: quién miró (sin permiso ni código). Si falla, el video igual sale. */
+    void registrarMirada(
+      auth.tenantId,
+      { usuario: auth.username, rol: auth.role },
+      { id, nombre: camara.nombre },
+      { tipo: p.tipo, calidad: p.calidad, desde: p.desde, hasta: p.hasta },
+    ).catch((err) => logger.warn("[camaras] mirada sin anotar", { error: String(err) }));
     return NextResponse.json(
       {
         url: conCodigo(r.valor.url, enlace.codigo),

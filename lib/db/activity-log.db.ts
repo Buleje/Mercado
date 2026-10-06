@@ -57,6 +57,24 @@ export interface ActivityLogPageEntry {
 }
 
 export const ActivityLogDB = {
+  /** ¿Hay un renglón de esa acción, de ese usuario y sobre ese recurso desde `desde`? */
+  async existeDesde(
+    tenantId: string,
+    q: { action: string; entityId: string; user: string; desde: Date },
+  ): Promise<boolean> {
+    const n = await prisma.activityLog.count({
+      where: {
+        tenantId,
+        action: q.action,
+        entityId: q.entityId,
+        user: q.user,
+        createdAt: { gte: q.desde },
+      },
+      take: 1,
+    });
+    return n > 0;
+  },
+
   /**
    * Lista las entradas de log de un tenant ordenadas por createdAt desc.
    * Filtros opcionales: entity (tipo de recurso) + entityId.
