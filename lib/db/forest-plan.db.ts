@@ -1075,6 +1075,34 @@ export class ForestPlanDB {
     return row;
   }
 
+  /**
+   * Borra varios árboles del censo de UN plan: los elegidos (`ids`) o todos
+   * (`todos`, el «deshacer» de una hoja mal importada). Los talados NO se
+   * tocan —son el origen de la cadena de custodia— y se devuelven contados
+   * para que la pantalla diga cuántos quedaron y por qué.
+   */
+  static async softDeleteTrees(
+    tenantId: string,
+    planId: string,
+    sel: { ids?: string[]; todos?: boolean },
+  ) {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (!planId) throw new Error("planId is required");
+    if (!sel.todos && !sel.ids?.length) return { borrados: 0, taladosConservados: 0 };
+    const elegidos = sel.todos ? {} : { id: { in: sel.ids } };
+    const [r, taladosConservados] = await Promise.all([
+      prisma.forestCensusTree.updateMany({
+        where: { tenantId, planId, deletedAt: null, ...elegidos, estado: { not: "talado" } },
+        data: { deletedAt: new Date() },
+      }),
+      prisma.forestCensusTree.count({ where: { tenantId, planId, deletedAt: null, ...elegidos, estado: "talado" } }),
+    ]);
+    if (r.count > 0) {
+      try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
+    }
+    return { borrados: r.count, taladosConservados };
+  }
+
   // ─── Balance de extracción / saldos (ADR-126, Fase 3) ──────────────────
   /**
    * Saldo SERFOR = autorizado − movilizado(GTF), por especie, con las líneas

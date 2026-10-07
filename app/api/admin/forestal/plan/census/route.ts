@@ -17,6 +17,7 @@ import { withApiHandler } from "@/lib/api-handler";
  * POST              → agrega árbol  ·  POST ?bulk=1 con { planId, rows[] } → import masivo
  * PATCH { id }       → actualiza árbol
  * DELETE ?id         → soft delete
+ * DELETE { planId, ids[] | todos } → borrado en bloque (los talados se conservan)
  */
 
 const treeSchema = z.object({
@@ -47,6 +48,11 @@ const treeSchema = z.object({
   notes: z.string().trim().max(500).nullable().optional(),
 });
 const patchSchema = treeSchema.partial().omit({ planId: true }).extend({ id: z.string().trim().min(1) });
+const borrarVariosSchema = z.object({
+  planId: z.string().trim().min(1),
+  ids: z.array(z.string().trim().min(1)).max(10000).optional(),
+  todos: z.literal(true).optional(),
+}).refine((b) => b.todos || (b.ids?.length ?? 0) > 0, { message: "Elige al menos un árbol" });
 const bulkSchema = z.object({
   planId: z.string().trim().min(1),
   rows: z.array(treeSchema.omit({ planId: true })).min(1).max(2000),
@@ -153,7 +159,18 @@ export const DELETE = withApiHandler("forestal-plan-census-delete", async (req: 
   const guard = await ensureSpec(auth.tenantId);
   if (guard) return guard;
   const id = new URL(req.url).searchParams.get("id");
-  if (!id) return NextResponse.json({ error: "id_required" }, { status: 400 });
+  if (!id) {
+    // Sin ?id: borrado en bloque con { planId, ids[] } o { planId, todos: true }.
+    const parsed = borrarVariosSchema.safeParse(await req.json().catch(() => null));
+    if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "id_required" }, { status: 400 });
+    try {
+      const { planId, ids, todos } = parsed.data;
+      return NextResponse.json({ ok: true, ...(await ForestPlanDB.softDeleteTrees(auth.tenantId, planId, { ids, todos })) });
+    } catch (err) {
+      logger.error("[plan.census.DELETE bulk] failed", { error: String(err), tenantId: auth.tenantId });
+      return NextResponse.json({ error: "internal_error" }, { status: 500 });
+    }
+  }
   try {
     await ForestPlanDB.softDeleteTree(auth.tenantId, id);
     return NextResponse.json({ ok: true });

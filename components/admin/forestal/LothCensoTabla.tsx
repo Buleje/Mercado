@@ -37,7 +37,7 @@ const COLUMNAS: { label: string; derecha?: boolean; dosLineas?: [string, string]
 
 const numero = (v: string | null | undefined, dec: Decimales) => (v == null || v === "" ? "—" : formatNumber(Number(v), dec));
 
-export default function LothCensoTabla({ arboles, vacio, sinCoincidencias, fueraDelPlan, categorias, onBorrar }: {
+export default function LothCensoTabla({ arboles, vacio, sinCoincidencias, fueraDelPlan, categorias, onBorrar, marcados, onMarcar, onMarcarVisibles }: {
   /** Ya filtrados, ordenados y recortados a lo visible. */
   arboles: readonly ArbolCenso[];
   /** El censo no tiene ningún árbol. */
@@ -47,12 +47,29 @@ export default function LothCensoTabla({ arboles, vacio, sinCoincidencias, fuera
   fueraDelPlan: (especie: string) => boolean;
   categorias: Map<string, keyof typeof CATEGORIA_LABEL>;
   onBorrar: (a: ArbolCenso) => void;
+  /** Árboles seleccionados para borrar en bloque (ids). */
+  marcados: ReadonlySet<string>;
+  onMarcar: (id: string) => void;
+  /** Selecciona (o suelta) todas las filas que se ven. */
+  onMarcarVisibles: (marcar: boolean) => void;
 }) {
-  const total = COLUMNAS.length + 1;
+  const total = COLUMNAS.length + 2;
+  const todosVisibles = arboles.length > 0 && arboles.every((t) => marcados.has(t.id));
   return (
     <DataTable className="w-full text-sm" stickyHeader wrapperClassName="max-h-[60vh]">
       <thead className="bg-[var(--surface-sunken)] text-left">
         <tr>
+          <th className="w-9 px-2.5 py-2">
+            <input
+              type="checkbox"
+              checked={todosVisibles}
+              disabled={arboles.length === 0}
+              onChange={() => onMarcarVisibles(!todosVisibles)}
+              aria-label={todosVisibles ? "Quitar la selección de los árboles visibles" : "Seleccionar los árboles visibles"}
+              title={todosVisibles ? "Quitar la selección de los visibles" : "Seleccionar los visibles"}
+              className="h-4 w-4 accent-[var(--accent)]"
+            />
+          </th>
           {COLUMNAS.map((c) => (
             <th key={c.label} data-label={c.label} className={`whitespace-nowrap px-2.5 py-2 font-bold text-[var(--text-primary)] ${c.derecha ? "text-right" : ""}`}>
               {c.dosLineas ? <>{c.dosLineas[0]}<br />{c.dosLineas[1]}</> : c.label}
@@ -77,6 +94,15 @@ export default function LothCensoTabla({ arboles, vacio, sinCoincidencias, fuera
           const discrepa = poaDiscrepa({ condicion: t.condicion, categoria });
           return (
             <tr key={t.id} className={`border-t border-[var(--rule-soft)] align-top ${fuera ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/12" : ""}`}>
+              <Td>
+                <input
+                  type="checkbox"
+                  checked={marcados.has(t.id)}
+                  onChange={() => onMarcar(t.id)}
+                  aria-label={`Seleccionar el árbol ${t.treeCode}`}
+                  className="h-4 w-4 accent-[var(--accent)]"
+                />
+              </Td>
               <Td><span className="whitespace-nowrap"><Mono bold>{t.treeCode}</Mono></span></Td>
               <Td>
                 {/* Un solo hijo: en el celular la celda es flex (rótulo |

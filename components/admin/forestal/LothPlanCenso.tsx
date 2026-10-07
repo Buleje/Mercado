@@ -22,6 +22,7 @@ import { formatNumber } from "@/lib/format";
 import LothCensoArbolForm from "./LothCensoArbolForm";
 import LothCensoImportModal from "./LothCensoImportModal";
 import LothCensoTabla from "./LothCensoTabla";
+import { BarraSeleccion, BotonBorrarTodos, useBorrarArboles } from "./LothCensoSeleccion";
 import { ordenarPorCodigo, sugerirPorEspecie, type ArbolCenso, type EspeciePlanCenso } from "./loth-censo-arbol";
 import type { Tree } from "./loth-plan-shared";
 import { AddBtn, BloquePlan, cls } from "./loth-plan-ui";
@@ -80,6 +81,12 @@ export default function LothPlanCenso({ planId, trees, total, truncado, authoriz
     dmcOverrides,
   }), [trees, authorizedSpecies, dmcOverrides]);
   const { confirm } = useConfirm();
+  /** Seleccionados para borrar en bloque. Sólo cuentan los que siguen en el censo. */
+  const [marcadosRaw, setMarcados] = useState<Set<string>>(() => new Set());
+  const marcados = useMemo(() => new Set(trees.filter((t) => marcadosRaw.has(t.id)).map((t) => t.id)), [trees, marcadosRaw]);
+  const { borrar: borrarVarios, borrando } = useBorrarArboles(planId, () => { setMarcados(new Set()); onChange(); });
+  const alternar = (id: string) => setMarcados((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  const marcarIds = (ids: string[], marcar: boolean) => setMarcados((prev) => { const n = new Set(prev); for (const id of ids) { if (marcar) n.add(id); else n.delete(id); } return n; });
 
   /** Importa las filas ya validadas por el modal (shape del endpoint bulk). */
   async function doImport(filas: Record<string, unknown>[]) {
@@ -150,6 +157,7 @@ export default function LothPlanCenso({ planId, trees, total, truncado, authoriz
       acciones={
         <>
           <button type="button" onClick={() => setImporting(true)} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Upload className="h-3.5 w-3.5" /> {plantacion ? "Importar árboles" : "Importar censo"}</button>
+          <BotonBorrarTodos total={total} borrando={borrando} onBorrar={() => void borrarVarios({ todos: true }, total, plantacion ? `los ${formatNumber(total)} árboles marcados` : `los ${formatNumber(total)} árboles del censo`)} />
           <AddBtn onClick={() => setOpen(true)} />
         </>
       }
@@ -208,8 +216,19 @@ export default function LothPlanCenso({ planId, trees, total, truncado, authoriz
           </span>
         </div>
       )}
+      <BarraSeleccion
+        marcados={marcados.size}
+        filtrados={filtered.length}
+        borrando={borrando}
+        onMarcarFiltrados={() => marcarIds(filtered.map((t) => t.id), true)}
+        onLimpiar={() => setMarcados(new Set())}
+        onBorrar={() => void borrarVarios({ ids: [...marcados] }, marcados.size, marcados.size === 1 ? "el árbol seleccionado" : `los ${formatNumber(marcados.size)} árboles seleccionados`)}
+      />
       <LothCensoTabla
         arboles={filtered.slice(0, visibles)}
+        marcados={marcados}
+        onMarcar={alternar}
+        onMarcarVisibles={(marcar) => marcarIds(filtered.slice(0, visibles).map((t) => t.id), marcar)}
         vacio={trees.length === 0}
         sinCoincidencias={trees.length > 0 && filtered.length === 0}
         fueraDelPlan={outOfPlan}
