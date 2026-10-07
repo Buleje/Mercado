@@ -397,6 +397,25 @@ export class ForestGtfDB {
     });
   }
 
+  /**
+   * Las guías dadas de baja del libro (Brandon 07-10: «otra sección de Anuladas
+   * o Rechazadas»): las anuladas y las borradas (`deletedAt`). Sólo lectura,
+   * mismo filtro de permiso que `list`. La «fecha de baja» de una anulada es su
+   * `updatedAt` (la tabla no guarda la hora de la anulación aparte).
+   */
+  static async listBajas(tenantId: string, permiso?: FiltroPermiso | null) {
+    if (!tenantId) throw new Error("tenantId is required");
+    return prisma.forestGtf.findMany({
+      where: {
+        ...dondeDelPermiso(tenantId, permiso),
+        deletedAt: undefined,
+        AND: [{ OR: [{ status: "anulada" }, { deletedAt: { not: null } }] }],
+      },
+      orderBy: { updatedAt: "desc" },
+      take: 200,
+    });
+  }
+
   static async getById(tenantId: string, id: string) {
     if (!tenantId) throw new Error("tenantId is required");
     return prisma.forestGtf.findFirst({ where: { tenantId, id, deletedAt: null } });

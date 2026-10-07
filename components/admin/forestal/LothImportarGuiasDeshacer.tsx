@@ -9,7 +9,8 @@
  * las talas referenciales que creó, y el permiso si lo creó y queda vacío— y
  * dice antes qué se va a anular y qué queda. Lo decide el servidor.
  *
- * Va en la fila de la guía (vista GTF) y en el resultado de «Importar guías».
+ * Va en el resultado de «Importar guías» (botón) y en el menú ⋯ de la fila de
+ * la guía en la vista GTF (que abre `ModalDeshacer` directo).
  */
 
 import { useState } from "react";
@@ -31,12 +32,9 @@ export default function BotonDeshacerImportacion({
   gtfNumber,
   onHecho,
   aboveModals = false,
-  compacto = false,
 }: {
   gtfId: string;
   gtfNumber: string;
-  /** En la fila de la tabla de guías: sólo el ícono (el texto va en el título y el aria-label). */
-  compacto?: boolean;
   /** Se deshizo: recargar lo que muestra la guía. */
   onHecho: (r: DeshacerImportacion) => void;
   /** Dentro de otro modal (el de «Importar guías»). */
@@ -46,22 +44,9 @@ export default function BotonDeshacerImportacion({
   const titulo = "Deshacer la importación: anula la guía, sus despachos y los trozados y talas referenciales que creó";
   return (
     <>
-      {compacto ? (
-        /* En la fila de la tabla: sólo el ícono, al lado de «Anular» y con su mismo tamaño. */
-        <button
-          type="button"
-          onClick={() => setAbierto(true)}
-          title={titulo}
-          aria-label={`Deshacer la importación de la GTF ${gtfNumber}`}
-          className="inline-flex h-8 items-center gap-1 rounded-lg border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-2.5 text-xs font-bold text-[var(--data-warning-700)] hover:bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]"
-        >
-          <Undo2 className="h-3.5 w-3.5" aria-hidden />
-        </button>
-      ) : (
-        <Btn size="sm" variant="danger" onClick={() => setAbierto(true)} title={titulo} aria-label={`Deshacer la importación de la GTF ${gtfNumber}`}>
-          <Undo2 className="h-4 w-4" aria-hidden /> Deshacer la importación
-        </Btn>
-      )}
+      <Btn size="sm" variant="danger" onClick={() => setAbierto(true)} title={titulo} aria-label={`Deshacer la importación de la GTF ${gtfNumber}`}>
+        <Undo2 className="h-4 w-4" aria-hidden /> Deshacer la importación
+      </Btn>
       {abierto && (
         <ModalDeshacer
           gtfId={gtfId}
@@ -78,7 +63,7 @@ export default function BotonDeshacerImportacion({
   );
 }
 
-function ModalDeshacer({
+export function ModalDeshacer({
   gtfId,
   gtfNumber,
   aboveModals,

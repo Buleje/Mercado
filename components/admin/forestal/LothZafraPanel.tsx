@@ -15,6 +15,8 @@ import { DataTable } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { ZAFRA_ESTADO_LABEL, ZAFRA_ESTADO_TONE, type ZafraAnalisis } from "@/lib/forestal/loth-zafra";
 import { BloquePlan } from "./loth-plan-ui";
+import { BarraFiltrosTabla, FiltroEnCabecera, SinCoincidenciasFila, useFiltrosTabla } from "./filtros-tabla-forestal";
+import { COLUMNAS_ZAFRA, ESTADO_MES } from "./loth-plan-columnas-filtro";
 
 const TONE_CLASS = {
   success: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
@@ -51,7 +53,10 @@ export default function LothZafraPanel({ zafra }: { zafra: ZafraAnalisis }) {
     const desde = Math.max(0, centro - 1);
     return zafra.meses.slice(desde, desde + 4);
   }, [todos, zafra.meses, iActual]);
-  const hayOcultos = mesesVisibles.length < zafra.meses.length;
+  /* Con un filtro de columna puesto se filtran TODOS los meses, no sólo los cercanos. */
+  const fl = useFiltrosTabla(zafra.meses, COLUMNAS_ZAFRA);
+  const filasMeses = fl.activos > 0 ? fl.filtradas : mesesVisibles;
+  const hayOcultos = fl.activos === 0 && mesesVisibles.length < zafra.meses.length;
 
   return (
     <BloquePlan
@@ -110,17 +115,19 @@ export default function LothZafraPanel({ zafra }: { zafra: ZafraAnalisis }) {
           <>
           {/* Sin caja propia alrededor: `DataTable` ya trae la suya con borde, y
               dos cajas anidadas dibujaban un doble filete. */}
+            <BarraFiltrosTabla f={fl} className="mb-2" />
             <DataTable className="w-full border-collapse text-sm">
               <thead className="bg-[var(--surface-canvas)]">
-                <tr className="text-[length:var(--ts-2xs)] uppercase tracking-wide text-[var(--text-tertiary)]">
-                  <th className="px-3 py-2 text-left font-bold">Mes</th>
-                  <th className="px-3 py-2 text-right font-bold">Meta del mes (m³)</th>
-                  <th className="px-3 py-2 text-right font-bold">Meta acumulada (m³)</th>
-                  <th className="px-3 py-2 text-left font-bold">Estado</th>
+                <tr className="align-top text-[length:var(--ts-2xs)] uppercase tracking-wide text-[var(--text-tertiary)]">
+                  <th className="px-3 py-2 text-left font-bold">Mes<FiltroEnCabecera id="mes" f={fl} compacto /></th>
+                  <th className="px-3 py-2 text-right font-bold">Meta del mes (m³)<FiltroEnCabecera id="metaMes" f={fl} compacto /></th>
+                  <th className="px-3 py-2 text-right font-bold">Meta acumulada (m³)<FiltroEnCabecera id="metaAcum" f={fl} compacto /></th>
+                  <th className="px-3 py-2 text-left font-bold">Estado<FiltroEnCabecera id="estado" f={fl} compacto /></th>
                 </tr>
               </thead>
               <tbody>
-                {mesesVisibles.map((m) => (
+                {filasMeses.length === 0 && <SinCoincidenciasFila colSpan={4} />}
+                {filasMeses.map((m) => (
                   <tr
                     key={m.periodo}
                     className={`border-t border-[var(--rule-subtle)] ${m.actual ? "bg-[var(--brand-ink)]/8 font-bold" : ""}`}
@@ -129,7 +136,7 @@ export default function LothZafraPanel({ zafra }: { zafra: ZafraAnalisis }) {
                     <td className="px-3 py-1.5 text-right font-mono tabular-nums text-[var(--text-secondary)]">{Number(m.metaMesM3).toFixed(3)}</td>
                     <td className="px-3 py-1.5 text-right font-mono tabular-nums text-[var(--text-secondary)]">{Number(m.metaAcumuladaM3).toFixed(3)}</td>
                     <td className="px-3 py-1.5 text-xs font-semibold text-[var(--text-tertiary)]">
-                      {m.actual ? "En curso" : m.transcurrido ? "Transcurrido" : "Por venir"}
+                      {ESTADO_MES(m)}
                     </td>
                   </tr>
                 ))}

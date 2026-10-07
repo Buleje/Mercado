@@ -9,6 +9,7 @@ import { NextRequest } from "next/server";
 const H = vi.hoisted(() => ({
   payload: null as null | { username: string; role: string; tenantId: string },
   list: vi.fn(),
+  listBajas: vi.fn(),
   getPlan: vi.fn(),
   create: vi.fn(),
 }));
@@ -24,7 +25,11 @@ vi.mock("@/lib/rate-limit", () => ({ applyRateLimit: async () => null }));
 vi.mock("@/lib/specializations", () => ({ isSpecializationEnabled: async () => true }));
 vi.mock("@/lib/db/forest-gtf.db", async (real) => ({
   ...(await real<typeof import("@/lib/db/forest-gtf.db")>()),
-  ForestGtfDB: { list: (...a: unknown[]) => H.list(...a), create: (...a: unknown[]) => H.create(...a) },
+  ForestGtfDB: {
+    list: (...a: unknown[]) => H.list(...a),
+    listBajas: (...a: unknown[]) => H.listBajas(...a),
+    create: (...a: unknown[]) => H.create(...a),
+  },
 }));
 vi.mock("@/lib/db/guia-th-al-ctp.db", () => ({ GuiaThAlCtpDB: {} }));
 vi.mock("@/lib/db/forest-plan.db", () => ({ ForestPlanDB: { getPlan: (...a: unknown[]) => H.getPlan(...a) } }));
@@ -43,6 +48,7 @@ const como = (tenantId: string) => {
 beforeEach(() => {
   H.payload = null;
   H.list.mockReset().mockResolvedValue([{ id: "g1", gtfNumber: "019-001-1" }]);
+  H.listBajas.mockReset().mockResolvedValue([{ id: "g9", gtfNumber: "019-001-9", status: "anulada" }]);
   H.create.mockReset().mockResolvedValue({ id: "nueva" });
   H.getPlan.mockReset().mockImplementation(async (t: string, id: string) => (t === "t-main" && id === PO12 ? { id: PO12 } : null));
 });
@@ -76,6 +82,25 @@ describe("GET /api/admin/forestal/gtf — filtra por permiso", () => {
     const r = await pedir(`?planId=${encodeURIComponent("x' OR '1'='1")}`);
     expect(r.status).toBe(400);
     expect(H.list).not.toHaveBeenCalled();
+  });
+});
+
+describe("GET ?estado=bajas — anuladas y borradas (Libro TH 07-10)", () => {
+  it("lee las bajas con el tenant de la sesión y el mismo filtro de permiso; no la lista de vigentes", async () => {
+    como("t-main");
+    const r = await pedir(`?estado=bajas&planId=${PO12}&solo=1`);
+    expect(r.status).toBe(200);
+    expect(await r.json()).toEqual({ gtfs: [{ id: "g9", gtfNumber: "019-001-9", status: "anulada" }] });
+    expect(H.listBajas).toHaveBeenCalledWith("t-main", { tipo: "plan", planId: PO12, conSinPlan: false });
+    expect(H.list).not.toHaveBeenCalled();
+  });
+
+  it("plan de OTRO negocio → 404 y no se leen las bajas; sin sesión → 401", async () => {
+    como("t-blas");
+    expect((await pedir(`?estado=bajas&planId=${PO12}&solo=1`)).status).toBe(404);
+    expect(H.listBajas).not.toHaveBeenCalled();
+    H.payload = null;
+    expect((await pedir("?estado=bajas")).status).toBe(401);
   });
 });
 

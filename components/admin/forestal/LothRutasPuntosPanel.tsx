@@ -23,6 +23,8 @@ import { formatNumber } from "@/lib/format";
 import { textoDePunto, textoDeRuta, textoLargo, textoPendiente, type FilaPunto, type FilaRuta } from "@/lib/forestal/loth-rutas-coordenadas";
 import { BotonCopiar, CoordTexto, ListaVertices, MuestraVia } from "./loth-rutas-ui";
 import type { EstadoRelieve } from "./hooks/use-loth-mapa-rutas";
+import { BarraFiltrosTabla, FiltroEnCabecera, SinCoincidenciasFila, useFiltrosTabla } from "./filtros-tabla-forestal";
+import { COLUMNAS_PUNTOS, COLUMNAS_RUTAS } from "./loth-plan-columnas-filtro";
 
 const plural = (n: number, uno: string, varios: string) => `${formatNumber(n)} ${n === 1 ? uno : varios}`;
 
@@ -74,6 +76,9 @@ export default function LothRutasPuntosPanel({ rutas, puntos, relieve, clave, on
       return s;
     });
 
+  const fr = useFiltrosTabla(rutas, COLUMNAS_RUTAS);
+  const fp = useFiltrosTabla(puntos, COLUMNAS_PUNTOS);
+
   // Todas en la misma zona (lo normal: un permiso cae en un huso): va una vez, en el encabezado.
   const zonas = new Set([...rutas.flatMap((r) => [r.inicio.zona, r.fin.zona]), ...puntos.map((p) => p.punto.zona)]);
   const zona = zonas.size === 1 ? [...zonas][0] : null;
@@ -100,21 +105,23 @@ export default function LothRutasPuntosPanel({ rutas, puntos, relieve, clave, on
               example="Toca el nombre y el mapa te la muestra; «vértices» abre cada punto de la traza."
             />
           </p>
+          <BarraFiltrosTabla f={fr} />
           <DataTable wrapperClassName="rounded-xl">
-            <thead>
+            <thead className="align-top">
               <tr>
-                <th>Ruta</th>
-                <th className="text-right">Largo</th>
-                <th className="text-right">Pend. máx.</th>
-                <th>Inicio{zona && ` · UTM ${zona}`}</th>
-                <th>Fin{zona && ` · UTM ${zona}`}</th>
+                <th>Ruta<FiltroEnCabecera id="ruta" f={fr} compacto /></th>
+                <th className="text-right">Largo<FiltroEnCabecera id="largo" f={fr} compacto /></th>
+                <th className="text-right">Pend. máx.<FiltroEnCabecera id="pendiente" f={fr} compacto /></th>
+                <th>Inicio{zona && ` · UTM ${zona}`}<FiltroEnCabecera id="inicio" f={fr} compacto /></th>
+                <th>Fin{zona && ` · UTM ${zona}`}<FiltroEnCabecera id="fin" f={fr} compacto /></th>
                 <th>
                   <span className="sr-only">Acciones</span>
                 </th>
               </tr>
             </thead>
             <tbody>
-              {rutas.map((r) => {
+              {fr.filtradas.length === 0 && <SinCoincidenciasFila colSpan={6} />}
+              {fr.filtradas.map((r) => {
                 const abierta = abiertas.has(r.id);
                 const idLista = `loth-ruta-vertices-${r.id}`;
                 return (
@@ -173,19 +180,21 @@ export default function LothRutasPuntosPanel({ rutas, puntos, relieve, clave, on
               example="Copia la del patio y pégala en el GPS del motosierrista o en WhatsApp."
             />
           </p>
+          <BarraFiltrosTabla f={fp} />
           <DataTable wrapperClassName="rounded-xl">
-            <thead>
+            <thead className="align-top">
               <tr>
-                <th>Punto</th>
-                <th>Tipo</th>
-                <th>Coordenada{zona && ` · UTM ${zona}`}</th>
+                <th>Punto<FiltroEnCabecera id="punto" f={fp} compacto /></th>
+                <th>Tipo<FiltroEnCabecera id="tipo" f={fp} compacto /></th>
+                <th>Coordenada{zona && ` · UTM ${zona}`}<FiltroEnCabecera id="coordenada" f={fp} compacto /></th>
                 <th>
                   <span className="sr-only">Acciones</span>
                 </th>
               </tr>
             </thead>
             <tbody>
-              {puntos.map((p) => (
+              {fp.filtradas.length === 0 && <SinCoincidenciasFila colSpan={4} />}
+              {fp.filtradas.map((p) => (
                 <tr key={p.id} data-punto={p.id} className={clave === p.clave ? FILA_ELEGIDA : undefined}>
                   <td>
                     <button type="button" onClick={() => onVer(p.clave)} aria-pressed={clave === p.clave} title="Verlo en el mapa" className={BTN_NOMBRE}>

@@ -7,14 +7,18 @@
  * servidor; la pantalla no recalcula.
  */
 
+import { useMemo } from "react";
 import { Award, TrendingDown } from "@buleje/design-system/icons";
 import { DataTable } from "@buleje/design-system";
 import type { CosteoRow } from "@/lib/forestal/loth-constants";
 import { formatNumber } from "@/lib/format";
 import { BarraMargen, Td, Th, pct, soles } from "./loth-rentabilidad-celdas";
+import { BarraFiltrosTabla, FiltroEnCabecera, SinCoincidenciasFila, useFiltrosTabla } from "./filtros-tabla-forestal";
+import { COLUMNAS_MARGEN } from "./loth-plan-columnas-filtro";
 
 export default function LothRentabilidadMargen({ filas }: { filas: CosteoRow[] }) {
-  const rows = [...filas].sort((a, b) => b.margen - a.margen);
+  const rows = useMemo(() => [...filas].sort((a, b) => b.margen - a.margen), [filas]);
+  const f = useFiltrosTabla(rows, COLUMNAS_MARGEN);
   const mejor = rows[0];
   const peor = rows[rows.length - 1];
   const maxAbs = Math.max(...rows.map((r) => Math.abs(r.margen)), 1);
@@ -39,24 +43,26 @@ export default function LothRentabilidadMargen({ filas }: { filas: CosteoRow[] }
         )}
       </div>
 
+      <BarraFiltrosTabla f={f} />
       <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
         <DataTable className="w-full text-sm">
-          <thead className="bg-[var(--surface-sunken)] text-left">
+          <thead className="bg-[var(--surface-sunken)] text-left align-top">
             <tr>
-              <Th>Especie</Th>
-              <Th className="text-right">Movilizado</Th>
-              <Th className="text-right">Precio/m³</Th>
-              <Th className="text-right">Costo/m³</Th>
-              <Th className="text-right">Margen/m³</Th>
-              <Th className="text-right">Margen total</Th>
+              <Th>Especie<FiltroEnCabecera id="especie" f={f} compacto /></Th>
+              <Th className="text-right">Movilizado<FiltroEnCabecera id="movilizado" f={f} compacto /></Th>
+              <Th className="text-right">Precio/m³<FiltroEnCabecera id="precio" f={f} compacto /></Th>
+              <Th className="text-right">Costo/m³<FiltroEnCabecera id="costo" f={f} compacto /></Th>
+              <Th className="text-right">Margen/m³<FiltroEnCabecera id="margenM3" f={f} compacto /></Th>
+              <Th className="text-right">Margen total<FiltroEnCabecera id="margen" f={f} compacto /></Th>
             </tr>
           </thead>
           <tbody>
-            {rows.map((r, i) => (
+            {f.filtradas.length === 0 && <SinCoincidenciasFila colSpan={6} />}
+            {f.filtradas.map((r) => (
               <tr key={r.species} className="border-t border-[var(--rule-soft)]">
                 <Td>
                   <span className="inline-flex items-center gap-1.5">
-                    {i === 0 && r.margen > 0 && <Award className="h-3.5 w-3.5 text-[var(--data-warning-600)]" aria-hidden />}
+                    {r === mejor && r.margen > 0 && <Award className="h-3.5 w-3.5 text-[var(--data-warning-600)]" aria-hidden />}
                     <span className="font-medium text-[var(--text-primary)]">{r.species}</span>
                     {r.cites && <span className="rounded bg-[var(--data-error-100)] px-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/15 dark:text-[var(--data-error-500)]">CITES</span>}
                   </span>

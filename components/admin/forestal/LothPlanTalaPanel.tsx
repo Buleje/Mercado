@@ -23,6 +23,8 @@ import {
   type SaldoEspecie,
 } from "@/lib/forestal/loth-plan-tala";
 import { BloquePlan } from "./loth-plan-ui";
+import { BarraFiltrosTabla, FiltroEnCabecera, SinCoincidenciasFila, useFiltrosTabla } from "./filtros-tabla-forestal";
+import { COLUMNAS_TALA, type FilaTala } from "./loth-plan-columnas-filtro";
 import { formatNumber } from "@/lib/format";
 
 const n3 = (v: number) => formatNumber(v, 3);
@@ -52,6 +54,9 @@ export default function LothPlanTalaPanel({
     [ritmoRequeridoM3Dia, dias, diasRestantes, saldoTotalM3],
   );
   const plan = useMemo(() => planDeTala(arboles, saldos, meta), [arboles, saldos, meta]);
+  /* El «#» es el lugar del árbol en el plan (de mayor a menor volumen): se conserva al filtrar. */
+  const filasTala = useMemo<FilaTala[]>(() => plan.lineas.map((l, i) => ({ n: i + 1, l })), [plan.lineas]);
+  const fl = useFiltrosTabla(filasTala, COLUMNAS_TALA);
 
   if (saldoTotalM3 <= 0) return null;
 
@@ -126,22 +131,25 @@ export default function LothPlanTalaPanel({
           No hay árboles aprovechables para proponer. Revisa el censo, el DMC de cada especie y el saldo del plan.
         </p>
       ) : (
+        <>
+        <BarraFiltrosTabla f={fl} className="mb-2" />
         <div className="overflow-x-auto">
           <DataTable className="w-full text-sm">
-            <thead>
+            <thead className="align-top">
               <tr>
                 <th className="px-2 py-2 w-8">#</th>
-                <th className="px-2 py-2">Código</th>
-                <th className="px-2 py-2">Especie</th>
-                <th className="px-2 py-2 text-right">Volumen</th>
-                <th className="px-2 py-2 text-right">Acumulado</th>
-                <th className="px-2 py-2">Dónde</th>
+                <th className="px-2 py-2">Código<FiltroEnCabecera id="codigo" f={fl} compacto /></th>
+                <th className="px-2 py-2">Especie<FiltroEnCabecera id="especie" f={fl} compacto /></th>
+                <th className="px-2 py-2 text-right">Volumen<FiltroEnCabecera id="volumen" f={fl} compacto /></th>
+                <th className="px-2 py-2 text-right">Acumulado<FiltroEnCabecera id="acumulado" f={fl} compacto /></th>
+                <th className="px-2 py-2">Dónde<FiltroEnCabecera id="donde" f={fl} compacto /></th>
               </tr>
             </thead>
             <tbody>
-              {plan.lineas.map((l, i) => (
+              {fl.filtradas.length === 0 && <SinCoincidenciasFila colSpan={6} />}
+              {fl.filtradas.map(({ l, n }) => (
                 <tr key={l.arbol.id} className="border-b border-[var(--rule-soft)] last:border-0">
-                  <td className="px-2 py-1.5 font-mono text-xs tabular-nums text-[var(--text-secondary)]">{i + 1}</td>
+                  <td className="px-2 py-1.5 font-mono text-xs tabular-nums text-[var(--text-secondary)]">{n}</td>
                   <td className="px-2 py-1.5 font-mono font-bold text-[var(--text-primary)]">{l.arbol.treeCode}</td>
                   <td className="px-2 py-1.5 text-[var(--text-secondary)]">{l.arbol.especie}</td>
                   <td className="px-2 py-1.5 text-right font-mono tabular-nums text-[var(--text-primary)]">{n3(l.arbol.volumenM3)}</td>
@@ -157,6 +165,7 @@ export default function LothPlanTalaPanel({
             </tbody>
           </DataTable>
         </div>
+        </>
       )}
 
       {plan.descartes.length > 0 && (

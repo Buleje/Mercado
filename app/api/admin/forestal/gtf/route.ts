@@ -14,7 +14,7 @@ import { GuiaYaEnElCtpError } from "@/lib/db/gtf-numero.db";
 
 /**
  * /api/admin/forestal/gtf — Guía de Transporte Forestal (ADR-126 Fase 4)
- * GET (lista · ?id detalle) · POST (emite) · PATCH { id, action:"annul", reason }
+ * GET (lista · ?id detalle · ?estado=bajas anuladas+borradas) · POST (emite) · PATCH { id, action:"annul", reason }
  */
 
 const itemSchema = z.object({
@@ -129,6 +129,10 @@ export const GET = withApiHandler("forestal-gtf-get", async (req: NextRequest) =
     // Filtro por permiso del libro (`?planId=&solo=1`): plan ajeno → 404, mal formado → 400.
     const permiso = await permisoDelPedido(auth.tenantId, url.searchParams);
     if (permiso instanceof NextResponse) return permiso;
+    // `?estado=bajas` (Libro TH, 07-10): anuladas + borradas, sólo lectura.
+    if (url.searchParams.get("estado") === "bajas") {
+      return NextResponse.json({ gtfs: await ForestGtfDB.listBajas(auth.tenantId, permiso.filtro) });
+    }
     const gtfs = await ForestGtfDB.list(auth.tenantId, permiso.filtro);
     // `?conCtp=1` (Libro TH, 07-10): cada guía de trozas dice si ya entró al
     // Libro CTP. Campo agregado; sin el parámetro la respuesta es la de siempre.

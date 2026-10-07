@@ -16,7 +16,7 @@
  * para cambiarlo, se quita y se vuelve a agregar.
  */
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { DataTable } from "@buleje/design-system";
 import { Check, Loader2, Pencil, Trash2, X } from "@buleje/design-system/icons";
 import { formatNumber } from "@/lib/format";
@@ -26,6 +26,8 @@ import type { CascadaEspecie, CascadaPlan } from "@/lib/forestal/loth-saldo-casc
 import { CitesPill, CitesToggle } from "./loth-plan-ui";
 import { aEspecieParaGuardar, conCites, filaDesdeEspecie, problemaDeFila, type FilaEspecie } from "./loth-plan-especies-api";
 import type { Species } from "./loth-plan-shared";
+import { BarraFiltrosTabla, FiltroEnCabecera, SinCoincidenciasFila, useFiltrosTabla } from "./filtros-tabla-forestal";
+import { COLUMNAS_PLANTACION, type FilaPlantacion } from "./loth-plan-columnas-filtro";
 
 const m3 = (v: number) => formatNumber(v, 3);
 
@@ -69,7 +71,11 @@ export default function LothPlantacionTabla({ species, cascada, acciones }: {
   const [editando, setEditando] = useState<FilaEspecie | null>(null);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const porClave = new Map(cascada.especies.map((c) => [claveEspecie(c.especie), c]));
+  const filas = useMemo<FilaPlantacion[]>(() => {
+    const porClave = new Map(cascada.especies.map((c) => [claveEspecie(c.especie), c]));
+    return species.map((s) => ({ s, c: porClave.get(claveEspecie(s.speciesCommon)) ?? null }));
+  }, [species, cascada.especies]);
+  const fl = useFiltrosTabla(filas, COLUMNAS_PLANTACION);
 
   async function guardar() {
     if (!editando) return;
@@ -89,26 +95,27 @@ export default function LothPlantacionTabla({ species, cascada, acciones }: {
 
   return (
     <div className="space-y-2">
+      <BarraFiltrosTabla f={fl} />
       <DataTable className={`text-sm ${COMPACTA}`} wrapperClassName="rounded-xl" data-tabla-registro>
-        <thead>
+        <thead className="align-top">
           <tr>
-            <th scope="col">Especie</th>
-            <th scope="col" className="text-right" data-label="N° de árboles">Árboles</th>
-            <th scope="col" className="text-right" data-label="Año de instalación">Año</th>
-            <th scope="col" className="text-right" data-label="Superficie (ha)">Sup. ha</th>
-            <th scope="col" className="text-right" data-label="Registrado (m³)">Registrado</th>
-            <th scope="col" className="text-right" data-label="Talado (m³)">Talado</th>
-            <th scope="col" className="text-right" data-label="En pie (m³)">En pie</th>
-            <th scope="col" className="text-right" data-label="Talado sin trozar (m³)" title="Talado que todavía no se trozó">Sin trozar</th>
-            <th scope="col" className="text-right" data-label="Trozas en patio (m³)" title="Trozado que todavía no salió ni se consumió">En patio</th>
-            <th scope="col" className="text-right" data-label="Despachado (m³)">Despachado</th>
-            <th scope="col" data-label="% talado">% talado</th>
+            <th scope="col">Especie<FiltroEnCabecera id="especie" f={fl} compacto /></th>
+            <th scope="col" className="text-right" data-label="N° de árboles">Árboles<FiltroEnCabecera id="arboles" f={fl} compacto /></th>
+            <th scope="col" className="text-right" data-label="Año de instalación">Año<FiltroEnCabecera id="anio" f={fl} compacto /></th>
+            <th scope="col" className="text-right" data-label="Superficie (ha)">Sup. ha<FiltroEnCabecera id="sup" f={fl} compacto /></th>
+            <th scope="col" className="text-right" data-label="Registrado (m³)">Registrado<FiltroEnCabecera id="registrado" f={fl} compacto /></th>
+            <th scope="col" className="text-right" data-label="Talado (m³)">Talado<FiltroEnCabecera id="talado" f={fl} compacto /></th>
+            <th scope="col" className="text-right" data-label="En pie (m³)">En pie<FiltroEnCabecera id="enPie" f={fl} compacto /></th>
+            <th scope="col" className="text-right" data-label="Talado sin trozar (m³)" title="Talado que todavía no se trozó">Sin trozar<FiltroEnCabecera id="sinTrozar" f={fl} compacto /></th>
+            <th scope="col" className="text-right" data-label="Trozas en patio (m³)" title="Trozado que todavía no salió ni se consumió">En patio<FiltroEnCabecera id="enPatio" f={fl} compacto /></th>
+            <th scope="col" className="text-right" data-label="Despachado (m³)">Despachado<FiltroEnCabecera id="despachado" f={fl} compacto /></th>
+            <th scope="col" data-label="% talado">% talado<FiltroEnCabecera id="pct" f={fl} compacto /></th>
             <th scope="col" aria-label="Acciones"><span className="sr-only">Acciones</span></th>
           </tr>
         </thead>
         <tbody>
-          {species.flatMap((s) => {
-            const c = porClave.get(claveEspecie(s.speciesCommon)) ?? null;
+          {fl.filtradas.length === 0 && <SinCoincidenciasFila colSpan={12} />}
+          {fl.filtradas.flatMap(({ s, c }) => {
             const enEdicion = editando?.uid === s.id;
             const fila = enEdicion && editando ? editando : null;
             const set = (k: keyof FilaEspecie, v: string) => setEditando((x) => (x ? { ...x, [k]: v } : x));
@@ -197,7 +204,7 @@ export default function LothPlantacionTabla({ species, cascada, acciones }: {
         {species.length > 1 && (
           <tfoot className="border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] font-bold">
             <tr className={t.excedido ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" : undefined}>
-              <td>Total</td>
+              <td>{fl.activos > 0 ? "Total del registro" : "Total"}</td>
               <td className={NUM}>{arbTotal == null ? "—" : formatNumber(arbTotal)}</td>
               {/* Vacías: en la tarjeta del celular no se pintan (un rótulo sin dato es ruido). */}
               <td className={`${NUM} max-sm:hidden!`} />

@@ -19,27 +19,30 @@ import { formatNumber, type Decimales } from "@/lib/format";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import type { ArbolCenso } from "./loth-censo-arbol";
 import { CategoriaTag, CitesPill, EstadoTag, Mono } from "./loth-plan-ui";
+import { FiltroEnCabecera, type FiltrosTabla } from "./filtros-tabla-forestal";
 
 /* `dosLineas`: el rótulo parte en dos renglones, como las dos cifras de la
    celda. En uno solo, «Este · Norte» era la columna más ancha de la tabla y
    el botón de borrar quedaba afuera a 1280 (medido: 954 px en 928). */
-const COLUMNAS: { label: string; derecha?: boolean; dosLineas?: [string, string] }[] = [
-  { label: "Código" },
-  { label: "Especie" },
-  { label: "DAP (m)", derecha: true },
-  { label: "Hc (m)", derecha: true },
-  { label: "Vol. m³", derecha: true },
+const COLUMNAS: { label: string; filtro?: string; derecha?: boolean; dosLineas?: [string, string] }[] = [
+  { label: "Código", filtro: "codigo" },
+  { label: "Especie", filtro: "especie" },
+  { label: "DAP (m)", filtro: "dap", derecha: true },
+  { label: "Hc (m)", filtro: "hc", derecha: true },
+  { label: "Vol. m³", filtro: "vol", derecha: true },
   { label: "Este · Norte", derecha: true, dosLineas: ["Este", "Norte"] },
-  { label: "Condición" },
-  { label: "Categoría POA" },
-  { label: "Estado" },
+  { label: "Condición", filtro: "condicion" },
+  { label: "Categoría POA", filtro: "categoria" },
+  { label: "Estado", filtro: "estado" },
 ];
 
 const numero = (v: string | null | undefined, dec: Decimales) => (v == null || v === "" ? "—" : formatNumber(Number(v), dec));
 
-export default function LothCensoTabla({ arboles, vacio, sinCoincidencias, fueraDelPlan, categorias, onBorrar, marcados, onMarcar, onMarcarVisibles }: {
+export default function LothCensoTabla({ arboles, filtros, vacio, sinCoincidencias, fueraDelPlan, categorias, onBorrar, marcados, onMarcar, onMarcarVisibles }: {
   /** Ya filtrados, ordenados y recortados a lo visible. */
   arboles: readonly ArbolCenso[];
+  /** El autofiltro de cada encabezado (sobre el censo completo, no sobre lo pintado). */
+  filtros: FiltrosTabla<ArbolCenso>;
   /** El censo no tiene ningún árbol. */
   vacio: boolean;
   /** Hay árboles, pero el filtro no deja ninguno. */
@@ -57,7 +60,7 @@ export default function LothCensoTabla({ arboles, vacio, sinCoincidencias, fuera
   const todosVisibles = arboles.length > 0 && arboles.every((t) => marcados.has(t.id));
   return (
     <DataTable className="w-full text-sm" stickyHeader wrapperClassName="max-h-[60vh]">
-      <thead className="bg-[var(--surface-sunken)] text-left">
+      <thead className="bg-[var(--surface-sunken)] text-left align-top">
         <tr>
           <th className="w-9 px-2.5 py-2">
             <input
@@ -72,7 +75,13 @@ export default function LothCensoTabla({ arboles, vacio, sinCoincidencias, fuera
           </th>
           {COLUMNAS.map((c) => (
             <th key={c.label} data-label={c.label} className={`whitespace-nowrap px-2.5 py-2 font-bold text-[var(--text-primary)] ${c.derecha ? "text-right" : ""}`}>
-              {c.dosLineas ? <>{c.dosLineas[0]}<br />{c.dosLineas[1]}</> : c.label}
+              {c.dosLineas ? (
+                <>
+                  {c.dosLineas[0]}<FiltroEnCabecera id="este" f={filtros} compacto /><br />
+                  {c.dosLineas[1]}<FiltroEnCabecera id="norte" f={filtros} compacto />
+                </>
+              ) : c.label}
+              {c.filtro && <FiltroEnCabecera id={c.filtro} f={filtros} compacto />}
               {c.label === "Categoría POA" && (
                 <InfoTip
                   title="Condición vs. categoría POA"
@@ -168,7 +177,7 @@ export default function LothCensoTabla({ arboles, vacio, sinCoincidencias, fuera
           <tr><td colSpan={total} className="px-4 py-6 text-center text-sm text-[var(--text-tertiary)]"><TreePine className="mx-auto mb-2 h-8 w-8 opacity-30" />Sin árboles censados. Agrega uno o importa la hoja del regente.</td></tr>
         )}
         {sinCoincidencias && (
-          <tr><td colSpan={total} className="px-4 py-6 text-center text-sm text-[var(--text-tertiary)]">Ningún árbol coincide con el filtro.</td></tr>
+          <tr><td colSpan={total} className="px-4 py-6 text-center text-sm text-[var(--text-tertiary)]">Ningún árbol coincide con los filtros de columna.</td></tr>
         )}
       </tbody>
     </DataTable>

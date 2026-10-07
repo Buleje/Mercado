@@ -39,6 +39,9 @@ import { archivoDeGuiaLoth } from "./LothGuiaRegistrada";
 import CtpDocumentoVisor, { type DocumentoImprimible } from "./CtpDocumentoVisor";
 import type { PlanDeLaGuia } from "@/lib/forestal/gtf-columnas";
 import LothGtfTabla from "./LothGtfTabla";
+import LothGtfBajas from "./LothGtfBajas";
+import CtpApartados, { CtpApartadoPanel } from "./ctp-apartados";
+import { useGtfBajas } from "./hooks/use-gtf-bajas";
 import { COLUMNAS_GTF, ORDEN_GTF_DEFECTO, type Gtf, type GtfItem } from "./gtf-tabla-columnas";
 
 /* Las columnas, su autofiltro y sus celdas viven en `gtf-tabla-columnas`; la tabla, en `LothGtfTabla` (07-10). */
@@ -90,6 +93,13 @@ export default function LothGtfView({
   const permiso = useLothPermiso();
   const permisoListo = permiso?.listo ?? true;
   const permisoQuery = permiso?.query ?? "";
+  /* «Guías» (vigentes) y «Anuladas y otras» (Brandon 07-10): la anulada ya no
+     comparte tabla con las vigentes. Las bajas (anuladas + borradas) las trae
+     `?estado=bajas`; `escrituras` sube tras anular o deshacer desde esta vista. */
+  const [seccion, setSeccion] = useState<"guias" | "bajas">("guias");
+  const [escrituras, setEscrituras] = useState(0);
+  const bajas = useGtfBajas(permisoListo, permisoQuery, (reloadSignal ?? 0) + escrituras);
+  const tras = () => setEscrituras((n) => n + 1);
   const load = useCallback(async () => {
     if (!permisoListo) return;
     setLoading(true);
@@ -203,7 +213,7 @@ export default function LothGtfView({
       if (j.ctp.estado === "anulada") toast.success("Guía anulada", { description: j.ctp.mensaje });
       else toast.warning("Guía anulada — revisa tu Libro CTP", { description: j.ctp.mensaje, duration: 12_000 });
     }
-    setAnnulId(null); load();
+    setAnnulId(null); load(); tras();
     return null;
   }
 
@@ -232,14 +242,22 @@ export default function LothGtfView({
    * módulo. Callarlo deja al usuario mirando una lista donde su guía no aparece;
    * decirlo convierte el viaje en un hallazgo de compliance.
    */
-  const focoAusente = !!focusGtf && !loading && !gtfs.some((g) => g.gtfNumber === focusGtf);
+  const focoAusente = !!focusGtf && !loading && !bajas.cargando
+    && !gtfs.some((g) => g.gtfNumber === focusGtf) && !bajas.bajas.some((g) => g.gtfNumber === focusGtf);
+  /* Se llegó buscando una guía que está anulada: se abre «Anuladas y otras». */
+  const vigentes = useMemo(() => gtfs.filter((g) => g.status !== "anulada"), [gtfs]);
+  useEffect(() => {
+    if (!focusGtf || loading || bajas.cargando) return;
+    if (!vigentes.some((g) => g.gtfNumber === focusGtf) && bajas.bajas.some((g) => g.gtfNumber === focusGtf)) setSeccion("bajas");
+  }, [focusGtf, loading, vigentes, bajas.cargando, bajas.bajas]);
 
   // Resumen del período: lo que un titular quiere saber sin leer la tabla.
   const resumen = useMemo(() => {
-    const vivas = gtfs.filter((g) => g.status !== "anulada");
+    const vivas = vigentes;
     return {
       emitidas: vivas.length,
-      anuladas: gtfs.length - vivas.length,
+      /* Anuladas + borradas: lo mismo que cuenta la pestaña «Anuladas y otras». */
+      anuladas: bajas.bajas.length,
       volumen: vivas.reduce((s, g) => s + Number(g.volumenTotalM3 ?? 0), 0),
       /* La misma cuenta que «Por ingresar al CTP» en la columna Estado (el servidor
          lo decide con `conCtp=1`); sin ese dato, la bandeja del CTP como antes. */
@@ -247,7 +265,7 @@ export default function LothGtfView({
         g.ctp !== undefined ? g.ctp === "por_ingresar" : g.tipo !== "producto" && sinIngresar.has(g.gtfNumber),
       ).length,
     };
-  }, [gtfs, sinIngresar]);
+  }, [vigentes, bajas.bajas.length, sinIngresar]);
 
   const orden = useOrdenColumnas("loth-gtf", ORDEN_GTF_DEFECTO);
   /* Ocultar y mostrar columnas (Brandon 07-10), recordado en este navegador. */
@@ -261,7 +279,7 @@ export default function LothGtfView({
       <ResumenChip key="e" valor={resumen.emitidas} label="Guías emitidas" />,
       <ResumenChip key="v" valor={Number(resumen.volumen).toFixed(3)} sufijo="m³" label="Volumen movilizado" />,
       <ResumenChip key="p" valor={resumen.pendientes} label="Sin ingresar al CTP" tono={resumen.pendientes > 0 ? "warning" : undefined} />,
-      <ResumenChip key="a" valor={resumen.anuladas} label="Anuladas" tono={resumen.anuladas > 0 ? "danger" : undefined} />,
+      <ResumenChip key="a" valor={resumen.anuladas} label="Anuladas y otras" tono={resumen.anuladas > 0 ? "danger" : undefined} />,
     ],
   });
 
@@ -340,21 +358,39 @@ export default function LothGtfView({
 
       {/* Buscar: Tipo y Estado son columnas de la tabla, se filtran desde su
           propio <th> más abajo. */}
+      {/* Dos pestañas: las vigentes y las dadas de baja (anuladas + borradas). */}
+      {!loading && (gtfs.length > 0 || bajas.bajas.length > 0) && (
+        <CtpApartados
+          apartados={[
+            { id: "guias", label: "Guías", contador: vigentes.length, unidad: vigentes.length === 1 ? "vigente" : "vigentes" },
+            { id: "bajas", label: "Anuladas y otras", contador: bajas.cargando ? "…" : bajas.bajas.length, hint: "Las guías anuladas y las eliminadas, sólo para consulta" },
+          ]}
+          activo={seccion}
+          onIr={(id) => setSeccion(id === "bajas" ? "bajas" : "guias")}
+          idBase="loth-gtf-seccion"
+          etiqueta="Guías vigentes o dadas de baja"
+        />
+      )}
+
       {!loading && gtfs.length > 0 && (
         <div className="flex flex-wrap items-center gap-2">
           {kpis.boton}
-          <div className="flex h-11 min-w-[16rem] flex-1 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3">
-            <Search className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" />
-            <input
-              type="text"
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-              placeholder="Buscar por N° de guía, titular, destino, transportista o placa…"
-              className="w-full bg-transparent text-base text-[var(--text-primary)] outline-none"
-            />
-          </div>
-          <BotonColumnasVisibles vis={columnasVisibles} />
-          <BotonRestablecerColumnas cambiado={orden.cambiado} onRestablecer={orden.restablecer} />
+          {seccion === "guias" && (
+            <>
+              <div className="flex h-11 min-w-[16rem] flex-1 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3">
+                <Search className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" />
+                <input
+                  type="text"
+                  value={busqueda}
+                  onChange={(e) => setBusqueda(e.target.value)}
+                  placeholder="Buscar por N° de guía, titular, destino, transportista o placa…"
+                  className="w-full bg-transparent text-base text-[var(--text-primary)] outline-none"
+                />
+              </div>
+              <BotonColumnasVisibles vis={columnasVisibles} />
+              <BotonRestablecerColumnas cambiado={orden.cambiado} onRestablecer={orden.restablecer} />
+            </>
+          )}
         </div>
       )}
 
@@ -421,22 +457,37 @@ export default function LothGtfView({
 
       {loading && <div className="p-6 text-center text-[var(--text-tertiary)]"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></div>}
 
-      {!loading && (
-        <LothGtfTabla
-          gtfs={gtfs}
-          planes={permiso?.planes ?? SIN_PLANES}
-          busqueda={busqueda}
-          sinIngresar={sinIngresar}
-          focusGtf={focusGtf}
-          filaEnfocada={filaEnfocada}
-          orden={orden}
-          vis={columnasVisibles}
-          onIngresarCtp={ingresarAlCtp}
-          onHoja={imprimirHoja}
-          onResumen={(g) => void printGtf(g)}
-          onAnular={setAnnulId}
-          onRecargar={() => void load()}
-        />
+      {!loading && seccion === "guias" && (
+        <CtpApartadoPanel idBase="loth-gtf-seccion" id="guias">
+          <LothGtfTabla
+            gtfs={vigentes}
+            planes={permiso?.planes ?? SIN_PLANES}
+            busqueda={busqueda}
+            sinIngresar={sinIngresar}
+            focusGtf={focusGtf}
+            filaEnfocada={filaEnfocada}
+            orden={orden}
+            vis={columnasVisibles}
+            onIngresarCtp={ingresarAlCtp}
+            onHoja={imprimirHoja}
+            onResumen={(g) => void printGtf(g)}
+            onAnular={setAnnulId}
+            onRecargar={() => { void load(); tras(); }}
+          />
+        </CtpApartadoPanel>
+      )}
+      {!loading && seccion === "bajas" && (
+        <CtpApartadoPanel idBase="loth-gtf-seccion" id="bajas">
+          <LothGtfBajas
+            bajas={bajas.bajas}
+            cargando={bajas.cargando}
+            error={bajas.error}
+            focusGtf={focusGtf}
+            onReintentar={bajas.recargar}
+            onHoja={imprimirHoja}
+            onResumen={(g) => void printGtf(g)}
+          />
+        </CtpApartadoPanel>
       )}
     </div>
   );

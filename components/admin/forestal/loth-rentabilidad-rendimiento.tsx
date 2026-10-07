@@ -9,21 +9,27 @@ import { DataTable } from "@buleje/design-system";
 import { fm } from "./loth-analitica-piezas";
 import { Td, Th } from "./loth-rentabilidad-celdas";
 import type { FilaRendimiento } from "./loth-rentabilidad-datos";
+import { BarraFiltrosTabla, FiltroEnCabecera, SinCoincidenciasFila, useFiltrosTabla } from "./filtros-tabla-forestal";
+import { COLUMNAS_RENDIMIENTO } from "./loth-plan-columnas-filtro";
 
 export default function LothRentabilidadRendimiento({ filas }: { filas: FilaRendimiento[] }) {
+  const f = useFiltrosTabla(filas, COLUMNAS_RENDIMIENTO);
   return (
+    <div className="space-y-3">
+    <BarraFiltrosTabla f={f} />
     <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
       <DataTable className="w-full text-sm">
-        <thead className="bg-[var(--surface-sunken)] text-left">
+        <thead className="bg-[var(--surface-sunken)] text-left align-top">
           <tr>
-            <Th>Especie</Th>
-            <Th className="text-right">Rendimiento</Th>
-            <Th className="text-right">Merma (m³)</Th>
-            <Th className="text-right">Valor movilizado</Th>
+            <Th>Especie<FiltroEnCabecera id="especie" f={f} compacto /></Th>
+            <Th className="text-right">Rendimiento<FiltroEnCabecera id="rend" f={f} compacto /></Th>
+            <Th className="text-right">Merma (m³)<FiltroEnCabecera id="merma" f={f} compacto /></Th>
+            <Th className="text-right">Valor movilizado<FiltroEnCabecera id="valor" f={f} compacto /></Th>
           </tr>
         </thead>
         <tbody>
-          {filas.map((s) => (
+          {f.filtradas.length === 0 && <SinCoincidenciasFila colSpan={4} />}
+          {f.filtradas.map((s) => (
             <tr key={s.species} className="border-t border-[var(--rule-soft)]">
               <Td>
                 <span className="font-medium text-[var(--text-primary)]">{s.species}</span>
@@ -42,6 +48,7 @@ export default function LothRentabilidadRendimiento({ filas }: { filas: FilaRend
           ))}
         </tbody>
       </DataTable>
+    </div>
     </div>
   );
 }

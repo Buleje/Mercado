@@ -28,6 +28,7 @@ import {
   type SaldoEspecie,
 } from "@/lib/forestal/loth-saldo-especie";
 import { TONO_CUPO } from "./LothCupoEspecies";
+import { BarraFiltrosTabla, FiltroEnCabecera, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "./filtros-tabla-forestal";
 
 export type LothSaldoEspeciesProps = (
   | { saldo: SaldoDelPlan; entrada?: never }
@@ -54,6 +55,18 @@ export const AYUDA_SALDO = {
 
 const NUM = "whitespace-nowrap px-2 py-1.5 text-right font-mono text-xs tabular-nums";
 const TH = "px-2 py-1.5 font-bold";
+
+/** El autofiltro de cada encabezado: la especie se elige de la lista, los m³ se acotan por rango. */
+const COLUMNAS_SALDO: ColumnaFiltro<SaldoEspecie>[] = [
+  { id: "especie", label: "Especie", tipo: "multi", valor: (f) => f.especie },
+  { id: "cupo", label: "Cupo", tipo: "rango", numero: (f) => f.cupoM3, unidad: "m³", paso: 10 },
+  { id: "talado", label: "Talado", tipo: "rango", numero: (f) => f.taladoM3, unidad: "m³", paso: 10 },
+  { id: "trozado", label: "Trozado", tipo: "rango", numero: (f) => f.trozadoM3, unidad: "m³", paso: 10 },
+  { id: "despachado", label: "Despachado", tipo: "rango", numero: (f) => f.despachadoM3, unidad: "m³", paso: 10 },
+  { id: "consumido", label: "Consumido", tipo: "rango", numero: (f) => f.consumidoM3, unidad: "m³", paso: 10 },
+  { id: "enPatio", label: "En patio", tipo: "rango", numero: (f) => f.enPatioM3, unidad: "m³", paso: 10 },
+  { id: "saldo", label: "Saldo por talar", tipo: "rango", numero: (f) => f.saldoPorTalarM3, unidad: "m³", paso: 10 },
+];
 
 /** Un volumen; el cero se ve como raya para que lo que tiene dato salte a la vista. */
 const vol = (v: number) => (v === 0 ? <span className="text-[var(--text-tertiary)]">—</span> : fmtM3(v));
@@ -124,8 +137,12 @@ export default function LothSaldoEspecies(props: LothSaldoEspeciesProps) {
   const [abierto, setAbierto] = useState(false);
   const saldo = useMemo(() => dado ?? (entrada ? saldoPorEspecie(entrada) : null), [dado, entrada]);
   const filas = useMemo(() => ordenarSaldo(saldo?.filas ?? []), [saldo]);
-  const conTala = filas.filter((f) => !f.sinTalar);
-  const sinTalar = filas.filter((f) => f.sinTalar);
+  const fl = useFiltrosTabla(filas, COLUMNAS_SALDO);
+  const conTala = fl.filtradas.filter((f) => !f.sinTalar);
+  /* Con un filtro puesto, las especies sin talar que pasan el filtro se ven aunque la línea esté plegada. */
+  const sinTalarTodas = filas.filter((f) => f.sinTalar);
+  const sinTalar = fl.filtradas.filter((f) => f.sinTalar);
+  const verSinTalar = abierto || fl.activos > 0;
   const tot = saldo?.totales;
 
   return (
@@ -154,28 +171,30 @@ export default function LothSaldoEspecies(props: LothSaldoEspeciesProps) {
         <p className="py-3 text-sm text-[var(--text-secondary)]">Sin censo ni especies autorizadas en este plan.</p>
       ) : (
         <>
+          <BarraFiltrosTabla f={fl} className="mb-2" />
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-[var(--rule-base)] text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                  <th scope="col" className={`${TH} text-left`}>Especie</th>
-                  <th scope="col" className={`${TH} text-right`}>Cupo</th>
-                  <th scope="col" className={`${TH} text-right`}>Talado</th>
-                  <th scope="col" className={`${TH} text-right`}>Trozado</th>
-                  <th scope="col" className={`${TH} text-right`}>Despachado</th>
-                  <th scope="col" className={`${TH} text-right`}>Consumido</th>
-                  <th scope="col" className={`${TH} text-right`}>En patio</th>
-                  <th scope="col" className={`${TH} text-right text-[var(--text-secondary)]`}>Saldo por talar</th>
+                <tr className="border-b border-[var(--rule-base)] align-top text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                  <th scope="col" className={`${TH} text-left`}>Especie<FiltroEnCabecera id="especie" f={fl} compacto /></th>
+                  <th scope="col" className={`${TH} text-right`}>Cupo<FiltroEnCabecera id="cupo" f={fl} compacto /></th>
+                  <th scope="col" className={`${TH} text-right`}>Talado<FiltroEnCabecera id="talado" f={fl} compacto /></th>
+                  <th scope="col" className={`${TH} text-right`}>Trozado<FiltroEnCabecera id="trozado" f={fl} compacto /></th>
+                  <th scope="col" className={`${TH} text-right`}>Despachado<FiltroEnCabecera id="despachado" f={fl} compacto /></th>
+                  <th scope="col" className={`${TH} text-right`}>Consumido<FiltroEnCabecera id="consumido" f={fl} compacto /></th>
+                  <th scope="col" className={`${TH} text-right`}>En patio<FiltroEnCabecera id="enPatio" f={fl} compacto /></th>
+                  <th scope="col" className={`${TH} text-right text-[var(--text-secondary)]`}>Saldo por talar<FiltroEnCabecera id="saldo" f={fl} compacto /></th>
                 </tr>
               </thead>
               <tbody>
+                {fl.filtradas.length === 0 && <SinCoincidenciasFila colSpan={8} />}
                 {conTala.map((f) => <Fila key={f.clave} f={f} />)}
-                {abierto && sinTalar.map((f) => <Fila key={f.clave} f={f} />)}
+                {verSinTalar && sinTalar.map((f) => <Fila key={f.clave} f={f} />)}
               </tbody>
               {tot && (
                 <tfoot>
                   <tr className="border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] font-bold text-[var(--text-primary)]">
-                    <th scope="row" className="px-2 py-1.5 text-left">Total</th>
+                    <th scope="row" className="px-2 py-1.5 text-left">{fl.activos > 0 ? "Total del plan" : "Total"}</th>
                     <td className={NUM}>{fmtM3(tot.cupoM3)}</td>
                     <td className={NUM}>{fmtM3(tot.taladoM3)}</td>
                     <td className={NUM}>{fmtM3(tot.trozadoM3)}</td>
@@ -189,7 +208,7 @@ export default function LothSaldoEspecies(props: LothSaldoEspeciesProps) {
             </table>
           </div>
 
-          {sinTalar.length > 0 && tot && (
+          {sinTalarTodas.length > 0 && tot && fl.activos === 0 && (
             <button
               type="button"
               onClick={() => setAbierto((v) => !v)}
@@ -199,7 +218,7 @@ export default function LothSaldoEspecies(props: LothSaldoEspeciesProps) {
             >
               <ChevronDown aria-hidden className={`h-4 w-4 shrink-0 transition-transform ${abierto ? "rotate-180" : ""}`} />
               <span>
-                {sinTalar.length} {sinTalar.length === 1 ? "especie sin talar" : "especies sin talar"} · {fmtM3(tot.cupoSinTalarM3)} m³ de cupo intacto
+                {sinTalarTodas.length} {sinTalarTodas.length === 1 ? "especie sin talar" : "especies sin talar"} · {fmtM3(tot.cupoSinTalarM3)} m³ de cupo intacto
               </span>
             </button>
           )}

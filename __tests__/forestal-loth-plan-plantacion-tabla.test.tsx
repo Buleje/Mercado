@@ -27,10 +27,13 @@ const cascada = cascadaDelPlan([
 
 afterEach(cleanup);
 
+/** Las especies también salen como opciones de los filtros del encabezado: se busca sólo en las filas. */
+const cuerpo = () => document.querySelector("tbody") as HTMLElement;
+
 describe("tabla de la cascada por especie", () => {
   it("cada casillero sale de la cascada: en pie, sin trozar, patio, despachado", () => {
     render(<LothPlantacionTabla species={species} cascada={cascada} acciones={{ guardar: vi.fn(), quitar: vi.fn() }} />);
-    const bolaina = screen.getByText("Bolaina").closest("tr")!;
+    const bolaina = within(cuerpo()).getByText("Bolaina").closest("tr")!;
     const crudas = within(bolaina).getAllByRole("cell").map((c) => c.textContent ?? "");
     // El ≈pt aserrable va debajo del m³ (registrado, talado, en pie): se compara el m³ aparte.
     const celdas = crudas.map((t) => t.replace(/≈.*pt$/, ""));
@@ -43,7 +46,7 @@ describe("tabla de la cascada por especie", () => {
 
   it("la especie talada por encima de lo registrado va en rojo y dice cuánto de más", () => {
     render(<LothPlantacionTabla species={species} cascada={cascada} acciones={{ guardar: vi.fn(), quitar: vi.fn() }} />);
-    const capirona = screen.getByText("Capirona").closest("tr")!;
+    const capirona = within(cuerpo()).getByText("Capirona").closest("tr")!;
     expect(capirona.className).toContain("data-error");
     expect(within(capirona).getByText("Se pasó de lo registrado")).toBeTruthy();
     expect(within(capirona).getByText(/-5\.000/)).toBeTruthy();

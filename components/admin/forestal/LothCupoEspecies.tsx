@@ -23,6 +23,7 @@ import {
   type VeredictoCupo,
 } from "@/lib/forestal/loth-cupo-especie";
 import { etiquetaVeredicto as etiqueta } from "@/lib/forestal/loth-cupo-vista";
+import { BarraFiltrosTabla, FiltroEnCabecera, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "./filtros-tabla-forestal";
 
 export type LothCupoEspeciesProps = (
   | { filas: readonly CupoEspecie[]; entrada?: never }
@@ -47,6 +48,17 @@ export const TONO_CUPO: Record<VeredictoCupo, { texto: string; barra: string }> 
 };
 
 const NUM = "whitespace-nowrap px-2 py-1.5 text-right font-mono text-xs tabular-nums";
+
+/** El estado como categoría (sin el «+3,337 m³» de la etiqueta, que daría una opción por especie). */
+const ESTADO_CUPO: Record<VeredictoCupo, string> = { excedido: "Excedido", cerca: "Cerca del cupo", ok: "En regla", sin_cupo: "Sin cupo" };
+
+const COLUMNAS_CUPO: ColumnaFiltro<CupoEspecie>[] = [
+  { id: "especie", label: "Especie", tipo: "multi", valor: (f) => f.especie, clave: (v) => v.toLowerCase() },
+  { id: "arboles", label: "Árboles", tipo: "rango", numero: (f) => f.arbolesTalados, unidad: "talados", paso: 1 },
+  { id: "talado", label: "m³ talado", tipo: "rango", numero: (f) => f.taladoM3, unidad: "m³", paso: 1 },
+  { id: "uso", label: "Uso del cupo", tipo: "rango", numero: (f) => f.pctUsado, unidad: "%", paso: 10 },
+  { id: "estado", label: "Estado", tipo: "multi", valor: (f) => (f.veredicto === "sin_cupo" && f.arbolesTalados > 0 ? "Talada sin cupo" : ESTADO_CUPO[f.veredicto]) },
+];
 
 function Barra({ f }: { f: CupoEspecie }) {
   if (f.pctUsado == null) return <span className="text-xs text-[var(--text-tertiary)]">—</span>;
@@ -75,6 +87,7 @@ export default function LothCupoEspecies(props: LothCupoEspeciesProps) {
   const { entrada, filas: dadas, titulo = "Cupo por especie", className = "", onCargarAutorizado } = props;
   const filas = useMemo(() => ordenarCupos(dadas ?? (entrada ? cupoPorEspecie(entrada) : [])), [dadas, entrada]);
   const tot = useMemo(() => totalesCupo(filas), [filas]);
+  const fl = useFiltrosTabla(filas, COLUMNAS_CUPO);
 
   return (
     <section className={`rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 ${className}`} data-cupo-especies>
@@ -102,19 +115,22 @@ export default function LothCupoEspecies(props: LothCupoEspeciesProps) {
       {filas.length === 0 ? (
         <p className="py-3 text-sm text-[var(--text-secondary)]">Sin censo ni especies autorizadas en este plan.</p>
       ) : (
+        <>
+        <BarraFiltrosTabla f={fl} className="mb-2" />
         <div className="overflow-x-auto">
           <table className="w-full min-w-[36rem] text-sm">
             <thead>
-              <tr className="border-b border-[var(--rule-base)] text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                <th scope="col" className="px-2 py-1.5 text-left font-bold">Especie</th>
-                <th scope="col" className="px-2 py-1.5 text-right font-bold">Árboles</th>
-                <th scope="col" className="px-2 py-1.5 text-right font-bold">m³ talado / cupo</th>
-                <th scope="col" className="px-2 py-1.5 text-left font-bold">Uso</th>
-                <th scope="col" className="px-2 py-1.5 text-left font-bold">Estado</th>
+              <tr className="border-b border-[var(--rule-base)] align-top text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                <th scope="col" className="px-2 py-1.5 text-left font-bold">Especie<FiltroEnCabecera id="especie" f={fl} compacto /></th>
+                <th scope="col" className="px-2 py-1.5 text-right font-bold">Árboles<FiltroEnCabecera id="arboles" f={fl} compacto /></th>
+                <th scope="col" className="px-2 py-1.5 text-right font-bold">m³ talado / cupo<FiltroEnCabecera id="talado" f={fl} compacto /></th>
+                <th scope="col" className="px-2 py-1.5 text-left font-bold">Uso<FiltroEnCabecera id="uso" f={fl} compacto /></th>
+                <th scope="col" className="px-2 py-1.5 text-left font-bold">Estado<FiltroEnCabecera id="estado" f={fl} compacto /></th>
               </tr>
             </thead>
             <tbody>
-              {filas.map((f) => (
+              {fl.filtradas.length === 0 && <SinCoincidenciasFila colSpan={5} />}
+              {fl.filtradas.map((f) => (
                 <tr
                   key={f.clave}
                   data-veredicto={f.veredicto}
@@ -155,6 +171,7 @@ export default function LothCupoEspecies(props: LothCupoEspeciesProps) {
             </tbody>
           </table>
         </div>
+        </>
       )}
     </section>
   );

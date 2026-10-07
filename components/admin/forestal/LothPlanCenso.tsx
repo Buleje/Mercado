@@ -11,7 +11,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Search, Upload } from "@buleje/design-system/icons";
+import { Upload } from "@buleje/design-system/icons";
 import { toast } from "sonner";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -25,7 +25,9 @@ import LothCensoTabla from "./LothCensoTabla";
 import { BarraSeleccion, BotonBorrarTodos, useBorrarArboles } from "./LothCensoSeleccion";
 import { ordenarPorCodigo, sugerirPorEspecie, type ArbolCenso, type EspeciePlanCenso } from "./loth-censo-arbol";
 import type { Tree } from "./loth-plan-shared";
-import { AddBtn, BloquePlan, cls } from "./loth-plan-ui";
+import { AddBtn, BloquePlan } from "./loth-plan-ui";
+import { BarraFiltrosTabla, useFiltrosTabla } from "./filtros-tabla-forestal";
+import { columnasCenso } from "./loth-censo-columnas";
 
 const SIN_ESPECIES: (EspeciePlanCenso & { cites?: boolean })[] = [];
 
@@ -55,24 +57,15 @@ export default function LothPlanCenso({ planId, trees, total, truncado, authoriz
   }, [importarSignal]);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
-  const [q, setQ] = useState("");
-  const [estadoFilter, setEstadoFilter] = useState("todos");
-  const [catFilter, setCatFilter] = useState("todas");
   /** Cuántas filas se pintan. Un censo real tiene miles y el DOM no las aguanta. */
   const [visibles, setVisibles] = useState(200);
 
   /** Por código natural: el servidor ordena como texto y «13» salía antes que «2». */
   const arboles = useMemo(() => ordenarPorCodigo<ArbolCenso>(trees), [trees]);
-  // Buscador (código / especie / científico / nativo) + filtros, sobre el censo completo.
-  const filtered = useMemo(() => {
-    const query = q.trim().toLowerCase();
-    return arboles.filter((t) => {
-      if (estadoFilter !== "todos" && t.estado !== estadoFilter) return false;
-      if (catFilter !== "todas" && categorias.get(t.id) !== catFilter) return false;
-      if (query && !`${t.treeCode} ${t.speciesCommon} ${t.speciesScientific ?? ""} ${t.speciesNative ?? ""}`.toLowerCase().includes(query)) return false;
-      return true;
-    });
-  }, [arboles, q, estadoFilter, catFilter, categorias]);
+  // Autofiltro de cada encabezado sobre el censo COMPLETO: se filtra sobre todas las filas y se pinta de a 200.
+  const columnas = useMemo(() => columnasCenso(categorias), [categorias]);
+  const filtros = useFiltrosTabla(arboles, columnas);
+  const filtered = filtros.filtradas;
   // Un árbol cuya especie NO está autorizada en el plan = tala potencialmente ilegal.
   const outOfPlan = (name: string) => authorizedSpecies.size > 0 && !authorizedSpecies.has(claveEspecie(name));
   const importCtx = useMemo(() => ({
@@ -184,29 +177,6 @@ export default function LothPlanCenso({ planId, trees, total, truncado, authoriz
       />
       {trees.length > 0 && (
         <div className="flex flex-wrap items-center gap-2">
-          <div className="relative min-w-0 grow basis-[14rem]">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Buscar por código o especie…"
-              aria-label="Buscar en el censo por código o especie"
-              className={`${cls} pl-9`}
-            />
-          </div>
-          <select value={estadoFilter} onChange={(e) => setEstadoFilter(e.target.value)} aria-label="Filtrar por estado del árbol" className="h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-medium text-[var(--text-primary)] outline-none">
-            <option value="todos">Todos los estados</option>
-            <option value="en_pie">En pie</option>
-            <option value="talado">Talado</option>
-            <option value="descartado">Descartado</option>
-          </select>
-          <select value={catFilter} onChange={(e) => setCatFilter(e.target.value)} aria-label="Filtrar por categoría POA" className="h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-medium text-[var(--text-primary)] outline-none">
-            <option value="todas">Toda categoría POA</option>
-            <option value="aprovechable">Aprovechables</option>
-            <option value="semillero">Semilleros</option>
-            <option value="bajo_dmc">Bajo DMC</option>
-            <option value="sin_dap">Sin DAP</option>
-          </select>
           <span className="text-xs tabular-nums text-[var(--text-secondary)]">
             {/* Tres números distintos y los tres importan: lo que se ve, lo que
                 pasa el filtro y lo que hay. Con uno solo, 200 filas de 3.000
@@ -216,6 +186,7 @@ export default function LothPlanCenso({ planId, trees, total, truncado, authoriz
           </span>
         </div>
       )}
+      <BarraFiltrosTabla f={filtros} sinConteo />
       <BarraSeleccion
         marcados={marcados.size}
         filtrados={filtered.length}
@@ -226,6 +197,7 @@ export default function LothPlanCenso({ planId, trees, total, truncado, authoriz
       />
       <LothCensoTabla
         arboles={filtered.slice(0, visibles)}
+        filtros={filtros}
         marcados={marcados}
         onMarcar={alternar}
         onMarcarVisibles={(marcar) => marcarIds(filtered.slice(0, visibles).map((t) => t.id), marcar)}
@@ -246,7 +218,7 @@ export default function LothPlanCenso({ planId, trees, total, truncado, authoriz
           </button>
           {truncado && (
             <p className="text-center text-xs text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-              Además hay {formatNumber(total - trees.length)} árboles que no se cargaron: filtra por estado para alcanzarlos.
+              Además hay {formatNumber(total - trees.length)} árboles que no se cargaron: filtra por estado o por especie para alcanzarlos.
             </p>
           )}
         </div>

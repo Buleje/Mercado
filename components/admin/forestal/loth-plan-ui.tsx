@@ -102,15 +102,19 @@ export const editCls = "w-24 h-9 rounded-lg border border-[var(--rule-base)] bg-
 export function Field({ label, children }: { label: string; children: ReactNode }) {
   return <label className="block"><span className="mb-1 block text-xs font-medium text-[var(--text-secondary)]">{label}</span>{children}</label>;
 }
-export function Table({ head, children, alto }: { head: string[]; children: ReactNode; alto?: string }) {
+export function Table({ head, children, alto, filtroDe }: {
+  head: string[]; children: ReactNode; alto?: string;
+  /** El autofiltro de la columna `i`, pegado a su título (ver `filtros-tabla-forestal`). */
+  filtroDe?: (i: number) => ReactNode;
+}) {
   /* Sin un div de scroll alrededor: `DataTable` ya trae su caja, y dos cajas
      anidadas despegan el `<thead>` fijo. Con `alto`, la tabla scrollea adentro
      y la cabecera queda arriba: un censo de miles de árboles no empuja el
      croquis tres pantallas más abajo. */
   return (
     <DataTable className="w-full text-sm" stickyHeader={Boolean(alto)} wrapperClassName={alto}>
-      <thead className="bg-[var(--surface-sunken)] text-left">
-        <tr>{head.map((h, i) => <th key={i} className={`px-4 py-2 font-bold text-[var(--text-primary)] ${i >= 2 ? "text-right" : ""}`}>{h}</th>)}</tr>
+      <thead className={`bg-[var(--surface-sunken)] text-left ${filtroDe ? "align-top" : ""}`}>
+        <tr>{head.map((h, i) => <th key={i} className={`px-4 py-2 font-bold text-[var(--text-primary)] ${i >= 2 ? "text-right" : ""}`}>{h}{filtroDe?.(i)}</th>)}</tr>
       </thead>
       <tbody>{children}</tbody>
     </DataTable>

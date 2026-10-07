@@ -26,6 +26,8 @@ import { useLocalStorage } from "@/hooks/use-local-storage";
 import type { ArbolCensoAutorizar } from "@/lib/forestal/loth-autorizar-lote";
 import LothPlanAutorizarLote from "./LothPlanAutorizarLote";
 import { n, soles, type Species } from "./loth-plan-shared";
+import { BarraFiltrosTabla, FiltroEnCabecera, SinCoincidenciasFila, useFiltrosTabla } from "./filtros-tabla-forestal";
+import { COLUMNAS_PLAN_ESPECIES } from "./loth-plan-columnas-filtro";
 import { AddBtn, BloquePlan, BotonPlegar, Cell, CitesPill, Field, Mono, Table, cls, editCls } from "./loth-plan-ui";
 import { useMiRol } from "@/hooks/use-mi-rol";
 
@@ -168,6 +170,8 @@ export default function LothPlanEspecies({ planId, species, onChange, pedido, ce
   /* Con una fila en edición la tabla se ve aunque la preferencia sea plegada:
      no se edita a ciegas. Terminada la edición vuelve a lo que el usuario eligió. */
   const mostrar = abierto || editingId !== null;
+  const fl = useFiltrosTabla(species, COLUMNAS_PLAN_ESPECIES);
+  const idColumna = ["especie", "vol", "arboles", "anio", "sup", "precio", "ven"];
   const volTotal = species.reduce((a, x) => a + Number(x.volumenAutorizadoM3 ?? 0), 0);
   /* Si a alguna especie le falta el N° de árboles, la suma sería menor que la
      real y se leería como dato: va «—». */
@@ -251,8 +255,13 @@ export default function LothPlanEspecies({ planId, species, onChange, pedido, ce
         </form>
       </AdminModal>
       <div id="loth-plan-autorizaciones-tabla" hidden={!mostrar || species.length === 0} className="p-3">
-      <Table head={["Especie", "Vol. autoriz.", "N° árb.", "Año", "Sup. ha", "Precio/m³", "VEN/m³", ""]}>
-        {species.map((s) => editingId === s.id ? (
+      <BarraFiltrosTabla f={fl} className="mb-2" />
+      <Table
+        head={["Especie", "Vol. autoriz.", "N° árb.", "Año", "Sup. ha", "Precio/m³", "VEN/m³", ""]}
+        filtroDe={(i) => (idColumna[i] ? <FiltroEnCabecera id={idColumna[i]} f={fl} compacto /> : null)}
+      >
+        {fl.filtradas.length === 0 && <SinCoincidenciasFila colSpan={8} />}
+        {fl.filtradas.map((s) => editingId === s.id ? (
           <tr key={s.id} className="border-t border-[var(--rule-soft)] bg-[var(--surface-canvas)]">
             <Cell><span className="font-medium text-[var(--text-primary)]">{s.speciesCommon}</span>{s.cites && <CitesPill />}</Cell>
             <Cell right><input type="number" step="0.0001" value={edit.volumenAutorizadoM3} onChange={(e) => setE("volumenAutorizadoM3", e.target.value)} aria-label={`Volumen autorizado de ${s.speciesCommon}`} className={editCls} /></Cell>

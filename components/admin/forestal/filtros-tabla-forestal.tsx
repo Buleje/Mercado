@@ -186,8 +186,9 @@ export function FiltroEnCabecera<T>({ id, f, compacto = false }: { id: string; f
 }
 
 /** Arriba de la tabla: «Filtros por columna» (sólo mobile, donde no hay
- *  `<thead>`), los chips con cruz y el «N de M». */
-export function BarraFiltrosTabla<T>({ f, className = "" }: { f: FiltrosTabla<T>; className?: string }) {
+ *  `<thead>`), los chips con cruz y el «N de M» (`sinConteo`: la tabla ya
+ *  tiene su propio contador). */
+export function BarraFiltrosTabla<T>({ f, className = "", sinConteo = false }: { f: FiltrosTabla<T>; className?: string; sinConteo?: boolean }) {
   const conControl = f.columnas.filter((c) => f.conAutofiltro[c.id]);
   if (conControl.length === 0) return null;
   return (
@@ -208,7 +209,7 @@ export function BarraFiltrosTabla<T>({ f, className = "" }: { f: FiltrosTabla<T>
         </div>
       </details>
       <ChipsDeFiltros chips={f.chips} onQuitar={f.quitar} onLimpiarTodo={f.limpiar} />
-      {f.activos > 0 && (
+      {f.activos > 0 && !sinConteo && (
         <p className="text-sm text-[var(--text-tertiary)]" aria-live="polite" data-testid="filtros-conteo">
           Mostrando {f.filtradas.length} de {f.total}
         </p>

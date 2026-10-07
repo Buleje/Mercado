@@ -38,6 +38,10 @@ export interface Gtf {
   planId?: string | null;
   /** Dónde está en el Libro CTP (`?conCtp=1`); sólo guías de trozas vivas. */
   ctp?: EstadoCtpGuia | null;
+  /** Borrada del libro (sólo llega con `?estado=bajas`). */
+  deletedAt?: string | null;
+  /** Última modificación: en una anulada, la fecha de la baja. */
+  updatedAt?: string;
 }
 
 /** Una guía con lo que la tabla deriva de ella, calculado una vez por carga. */

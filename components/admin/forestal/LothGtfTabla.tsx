@@ -8,19 +8,18 @@
  *
  * La lista llega ENTERA del servidor (`/api/admin/forestal/gtf`, ≤200) y se
  * pagina acá: por eso el autofiltro local de `filtros-tabla-forestal` aplica.
+ * Las acciones de cada fila van en un menú ⋯ (`gtf-acciones-menu`, 07-10).
  */
 
 import { useEffect, useMemo, useState, type ReactNode, type RefObject } from "react";
 import { DataTable } from "@buleje/design-system";
-import { Ban, FileText, LogIn, Printer } from "@buleje/design-system/icons";
+import { FileText } from "@buleje/design-system/icons";
 import { EnOrden, type UseOrdenColumnasResult, type UseVisibilidadColumnasResult } from "@/components/admin/shared/columnas-ordenables";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
-import { importacionDeLaGuia } from "@/lib/forestal/loth-importar-guia-deshacer";
 import type { PlanDeLaGuia } from "@/lib/forestal/gtf-columnas";
 import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla } from "./filtros-tabla-forestal";
 import { FILTROS_GTF, cabecerasGtf, celdasGtf, filasGtf, type FilaGtf, type Gtf } from "./gtf-tabla-columnas";
-import BotonDeshacerImportacion from "./LothImportarGuiasDeshacer";
-import BotonFichaImportada from "./LothImportarGuiasFicha";
+import AccionesGtf from "./gtf-acciones-menu";
 
 const POR_PAGINA = 25;
 
@@ -92,7 +91,7 @@ export default function LothGtfTabla({
           <thead ref={orden.refCabecera} className="bg-[var(--surface-sunken)] text-left align-top">
             <tr>
               <EnOrden orden={ordenVisible} celdas={soloVisibles(cabecerasGtf(f))} />
-              <th className="px-3 py-2.5 font-bold text-[var(--text-primary)]">Acciones</th>
+              <th className="w-px px-3 py-2.5 text-right font-bold text-[var(--text-primary)]">Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -107,7 +106,7 @@ export default function LothGtfTabla({
                   }`}
                 >
                   <EnOrden orden={ordenVisible} celdas={soloVisibles(celdasGtf(fila))} />
-                  <td className="px-3 py-2.5">
+                  <td data-label="Acciones" className="w-px px-3 py-2.5">
                     <AccionesGtf
                       g={g}
                       porIngresar={g.tipo !== "producto" && g.status !== "anulada" && sinIngresar.has(g.gtfNumber)}
@@ -162,58 +161,6 @@ export default function LothGtfTabla({
             </div>
           )}
         </div>
-      )}
-    </div>
-  );
-}
-
-const BOTON = "inline-flex h-8 items-center gap-1 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]";
-
-function AccionesGtf({
-  g, porIngresar, onIngresarCtp, onHoja, onResumen, onAnular, onRecargar,
-}: {
-  g: Gtf;
-  porIngresar: boolean;
-  onIngresarCtp: (gtfNumber: string) => void;
-  onHoja: (g: Gtf) => void;
-  onResumen: (g: Gtf) => void;
-  onAnular: (id: string) => void;
-  onRecargar: () => void;
-}) {
-  return (
-    <div className="flex items-center justify-end gap-2">
-      {porIngresar && (
-        <button
-          type="button"
-          onClick={() => onIngresarCtp(g.gtfNumber)}
-          title="Registrar estas trozas como ingreso en el Libro de Operaciones del CTP"
-          className="inline-flex h-8 items-center gap-1 rounded-lg border-2 border-[var(--accent)] bg-primary/10 px-2.5 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/15"
-        >
-          <LogIn className="h-3.5 w-3.5" /> Ingresar al CTP
-        </button>
-      )}
-      {/* ADR-461: la guía importada guarda su ficha de SERFOR entera (titular, destinatario, transporte, productos). */}
-      <BotonFichaImportada gtfDatos={g.gtfDatos} gtfNumber={g.gtfNumber} items={g.items} />
-      <button type="button" onClick={() => onHoja(g)} title="Imprimir en la hoja de casilleros SERFOR (mismo formato que el Libro CTP)" className={BOTON}>
-        <Printer className="h-3.5 w-3.5" /> Hoja SERFOR
-      </button>
-      <button type="button" onClick={() => onResumen(g)} title="Imprimir el resumen interno" className={BOTON}>
-        <Printer className="h-3.5 w-3.5" /> Resumen
-      </button>
-      {/* ADR-461 §12: la guía que asentó una importación se deshace entera (su madera ya estaba en el CTP). */}
-      {g.status !== "anulada" && importacionDeLaGuia(g.observations) && (
-        <BotonDeshacerImportacion compacto gtfId={g.id} gtfNumber={g.gtfNumber} onHecho={onRecargar} />
-      )}
-      {g.status !== "anulada" && (
-        <button
-          type="button"
-          onClick={() => onAnular(g.id)}
-          title="Anular esta guía"
-          aria-label={`Anular la GTF ${g.gtfNumber}`}
-          className="inline-flex h-8 items-center gap-1 rounded-lg border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-2.5 text-xs font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]"
-        >
-          <Ban className="h-3.5 w-3.5" />
-        </button>
       )}
     </div>
   );

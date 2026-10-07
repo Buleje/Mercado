@@ -20,6 +20,8 @@ import type { LatLng } from "@/lib/forestal/loth-geo";
 import { formatMeters } from "@/lib/forestal/loth-utm";
 import { cuadroDeCoordenadas } from "./loth-mapa-coordenadas";
 import { areaVsDeclarada } from "./loth-mapa-alcance";
+import { BarraFiltrosTabla, FiltroEnCabecera, SinCoincidenciasFila, useFiltrosTabla } from "./filtros-tabla-forestal";
+import { COLUMNAS_VERTICES } from "./loth-plan-columnas-filtro";
 
 /** Vértices, área, perímetro y zona en una línea, para la cabecera plegada. */
 export function resumenVertices(vertices: LatLng[]): string {
@@ -44,6 +46,7 @@ export default function LothVerticesPanel({
   heredada?: boolean;
 }) {
   const { zona, rows, areaHa, perimKm } = useMemo(() => cuadroDeCoordenadas(vertices), [vertices]);
+  const fl = useFiltrosTabla(rows, COLUMNAS_VERTICES);
   const vs = declaradaHa != null ? areaVsDeclarada(areaHa, declaradaHa, 2) : null;
 
   if (rows.length === 0) {
@@ -60,25 +63,27 @@ export default function LothVerticesPanel({
       <p className="px-4 pt-3 text-xs font-semibold text-[var(--text-tertiary)]">
         Datum WGS 84 · Zona {zona} · Proyección UTM · el plano usa la base que estés viendo en el mapa
       </p>
+      <BarraFiltrosTabla f={fl} className="px-4 pt-2" />
       <div className="max-h-[280px] overflow-auto">
         <DataTable className="w-full border-collapse text-sm">
           <thead className="sticky top-0 bg-[var(--surface-canvas)]">
-            <tr className="text-xs uppercase tracking-wide text-[var(--text-tertiary)]">
-              <th className={`${TH} text-left`}>Vértice</th>
-              <th className={`${TH} text-right`}>Este (m)</th>
-              <th className={`${TH} text-right`}>Norte (m)</th>
-              <th className={`${TH} text-right`}>Lado (m)</th>
-              <th className={`${TH} text-right`}>Azimut</th>
+            <tr className="align-top text-xs uppercase tracking-wide text-[var(--text-tertiary)]">
+              <th className={`${TH} text-left`}>Vértice<FiltroEnCabecera id="vertice" f={fl} compacto /></th>
+              <th className={`${TH} text-right`}>Este (m)<FiltroEnCabecera id="este" f={fl} compacto /></th>
+              <th className={`${TH} text-right`}>Norte (m)<FiltroEnCabecera id="norte" f={fl} compacto /></th>
+              <th className={`${TH} text-right`}>Lado (m)<FiltroEnCabecera id="lado" f={fl} compacto /></th>
+              <th className={`${TH} text-right`}>Azimut<FiltroEnCabecera id="azimut" f={fl} compacto /></th>
             </tr>
           </thead>
           <tbody>
-            {rows.map((r) => (
+            {fl.filtradas.length === 0 && <SinCoincidenciasFila colSpan={5} />}
+            {fl.filtradas.map((r) => (
               <tr key={r.code} className="border-b border-[var(--rule-subtle)] last:border-0">
                 <td className="px-3 py-1.5 font-mono text-sm font-bold text-[var(--text-primary)]">{r.code}</td>
                 <td className="px-3 py-1.5 text-right font-mono tabular-nums text-[var(--text-secondary)]">{formatMeters(r.este)}</td>
                 <td className="px-3 py-1.5 text-right font-mono tabular-nums text-[var(--text-secondary)]">{formatMeters(r.norte)}</td>
-                <td className="px-3 py-1.5 text-right font-mono tabular-nums text-[var(--text-tertiary)]">{r.lado.toFixed(1)}</td>
-                <td className="px-3 py-1.5 text-right font-mono tabular-nums text-[var(--text-tertiary)]">{r.azimut.toFixed(1)}°</td>
+                <td className="px-3 py-1.5 text-right font-mono tabular-nums text-[var(--text-tertiary)]">{Number(r.lado).toFixed(1)}</td>
+                <td className="px-3 py-1.5 text-right font-mono tabular-nums text-[var(--text-tertiary)]">{Number(r.azimut).toFixed(1)}°</td>
               </tr>
             ))}
           </tbody>

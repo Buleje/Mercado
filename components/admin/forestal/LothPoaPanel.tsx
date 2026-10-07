@@ -29,6 +29,8 @@ import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import LothPoaParametros from "./LothPoaParametros";
 import { BloquePlan, BotonPlegar, CifraLinea } from "./loth-plan-ui";
+import { BarraFiltrosTabla, FiltroEnCabecera, SinCoincidenciasFila, useFiltrosTabla } from "./filtros-tabla-forestal";
+import { COLUMNAS_POA } from "./loth-plan-columnas-filtro";
 
 /** Clave de la preferencia. Exportada: la prueba en navegador la lee. */
 export const CLAVE_INDICADORES_POA = "loth:plan:poa-indicadores-abiertos";
@@ -68,6 +70,7 @@ export default function LothPoaPanel({ analisis, config, saving, sucio = false, 
   const [todasLasAlertas, setTodasLasAlertas] = useState(false);
   const [kpisAbiertos, setKpisAbiertos] = useLocalStorage<boolean>(CLAVE_INDICADORES_POA, false);
   const { especies, totales, intensidad } = analisis;
+  const filtros = useFiltrosTabla(especies, COLUMNAS_POA);
   const alertas = useMemo(() => ordenarAlertas(analisis.alertas), [analisis.alertas]);
   const intensidadTxt = intensidad.m3PorHa != null ? `${Number(intensidad.m3PorHa).toFixed(2)} m³/ha` : "—";
   /* El regente y el sistema pueden contar distinto: el regente marca «Semillero»
@@ -187,23 +190,25 @@ export default function LothPoaPanel({ analisis, config, saving, sucio = false, 
       {editando && <LothPoaParametros especies={especies} config={config} onConfig={onConfig} />}
 
       {/* Cuadro por especie */}
+      <BarraFiltrosTabla f={filtros} className="px-4 pt-3" />
       <div className="overflow-x-auto">
         <DataTable className="w-full border-collapse">
           <thead>
-            <tr className="bg-[var(--surface-canvas)] text-[length:var(--ts-2xs)] uppercase tracking-wide text-[var(--text-tertiary)]">
-              <th className={`${CELL} text-left font-bold`}>Especie</th>
-              <th className={`${CELL} text-right font-bold`}>DMC</th>
-              <th className={`${CELL} text-right font-bold`}>Censados</th>
-              <th className={`${CELL} text-right font-bold`}>≥ DMC</th>
-              <th className={`${CELL} text-right font-bold`}>Bajo DMC</th>
-              <th className={`${CELL} text-right font-bold`}>Semilleros</th>
-              <th className={`${CELL} text-right font-bold`}>Aprovech.</th>
-              <th className={`${CELL} text-right font-bold`}>Vol. aprov. (m³)</th>
-              <th className={`${CELL} text-right font-bold`}>Autorizado (m³)</th>
+            <tr className="bg-[var(--surface-canvas)] align-top text-[length:var(--ts-2xs)] uppercase tracking-wide text-[var(--text-tertiary)]">
+              <th className={`${CELL} text-left font-bold`}>Especie<FiltroEnCabecera id="especie" f={filtros} compacto /></th>
+              <th className={`${CELL} text-right font-bold`}>DMC<FiltroEnCabecera id="dmc" f={filtros} compacto /></th>
+              <th className={`${CELL} text-right font-bold`}>Censados<FiltroEnCabecera id="censados" f={filtros} compacto /></th>
+              <th className={`${CELL} text-right font-bold`}>≥ DMC<FiltroEnCabecera id="sobreDmc" f={filtros} compacto /></th>
+              <th className={`${CELL} text-right font-bold`}>Bajo DMC<FiltroEnCabecera id="bajoDmc" f={filtros} compacto /></th>
+              <th className={`${CELL} text-right font-bold`}>Semilleros<FiltroEnCabecera id="semilleros" f={filtros} compacto /></th>
+              <th className={`${CELL} text-right font-bold`}>Aprovech.<FiltroEnCabecera id="aprovechables" f={filtros} compacto /></th>
+              <th className={`${CELL} text-right font-bold`}>Vol. aprov. (m³)<FiltroEnCabecera id="volumen" f={filtros} compacto /></th>
+              <th className={`${CELL} text-right font-bold`}>Autorizado (m³)<FiltroEnCabecera id="autorizado" f={filtros} compacto /></th>
             </tr>
           </thead>
           <tbody>
-            {especies.map((e) => (
+            {especies.length > 0 && filtros.filtradas.length === 0 && <SinCoincidenciasFila colSpan={9} />}
+            {filtros.filtradas.map((e) => (
               <tr
                 key={e.especie}
                 className={`border-t border-[var(--rule-subtle)] ${
@@ -245,7 +250,7 @@ export default function LothPoaPanel({ analisis, config, saving, sucio = false, 
           {especies.length > 0 && (
             <tfoot>
               <tr className="border-t border-[var(--rule-base)] bg-[var(--surface-canvas)] font-bold">
-                <td className={CELL}>Total</td>
+                <td className={CELL}>{filtros.activos > 0 ? "Total del plan" : "Total"}</td>
                 <td className={NUM}>—</td>
                 <td className={NUM}>{totales.censados}</td>
                 <td className={NUM}>{totales.aprovechables + totales.semilleros}</td>
