@@ -199,14 +199,26 @@ async function main() {
       } catch {
         // sin permiso de escritura: seguimos como antes
       }
-      const child = spawn("npm", ["run", "dev"], {
+      // Contenedor en la nube recién clonado (07-10): sin node_modules el dev
+      // muere con ENOENT y la sesión gasta turnos en descubrirlo; npm ci a
+      // secas también falla (engines pide Node 24, el contenedor trae 22).
+      // Instalar + generar Prisma en BG deja listos typecheck y vitest. Sin
+      // .env.local no hay base: no tiene sentido levantar el dev.
+      const sinDeps = !existsSync(join(projectRoot, "node_modules", ".bin"));
+      const conEnv = existsSync(join(projectRoot, ".env.local")) || existsSync(join(projectRoot, ".env"));
+      const cmd = sinDeps
+        ? `npm ci --ignore-scripts --no-audit --no-fund --engine-strict=false && DATABASE_URL="\${DATABASE_URL:-postgresql://x:y@localhost/z}" npx prisma generate${conEnv ? " && npm run dev" : ""}`
+        : "npm run dev";
+      const child = spawn("bash", ["-c", cmd], {
         cwd: projectRoot,
         detached: true,
         stdio,
         env: process.env,
       });
       child.unref();
-      log(`   → npm run dev disparado en BG (pid ${child.pid}) · log: ${DEV_LOG}`);
+      log(sinDeps
+        ? `   → sin node_modules: npm ci + prisma generate en BG (pid ${child.pid})${conEnv ? " y después dev" : ", sin .env no hay dev"} · log: ${DEV_LOG}`
+        : `   → npm run dev disparado en BG (pid ${child.pid}) · log: ${DEV_LOG}`);
     } catch (err) {
       log(`   → no pude arrancar dev: ${err.message?.slice(0, 60)}`);
     }
