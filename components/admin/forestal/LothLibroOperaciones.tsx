@@ -32,6 +32,7 @@ import {
   Upload,
   LayoutGrid,
   FileDown,
+  Trash2,
 } from "@buleje/design-system/icons";
 import LibroChrome, { type LibroAction, type LibroGroup } from "@/components/admin/shared/libro-chrome";
 import AdminModal from "@/components/admin/shared/AdminModal";
@@ -96,6 +97,9 @@ import { formatNumber } from "@/lib/format";
 import { cumplePermiso, PERMISO_SIN_PLAN } from "@/lib/forestal/loth-filtro-permiso";
 import { LothPermisoContext, useLothLibroPermiso } from "./hooks/use-loth-libro-permiso";
 import LothAtarSinPlan from "./LothAtarSinPlan";
+import LothBorrarLineasModal from "./LothBorrarLineasModal";
+import { conColumnaPermiso, mapaDePermisos, mezclaPlanes, opcionBorrarFiltradas } from "./loth-seccion-permiso";
+import { useMiRol } from "@/hooks/use-mi-rol";
 import { CLAVE_PLAN_TABLERO } from "./hooks/use-loth-tablero-permiso";
 
 type LothEntry = LothEntryDTO;
@@ -294,6 +298,11 @@ export default function LothLibroOperaciones() {
   const [arbolInicial, setArbolInicial] = useState<string | null>(null);
   /** Líneas a anular: una desde su fila, o todas las seleccionadas. */
   const [anularLineas, setAnularLineas] = useState<LothEntry[]>([]);
+  /** «Borrar…» de Secciones (Brandon 07-10): las marcadas o las filtradas. */
+  const [borrarLineas, setBorrarLineas] = useState<{ ids: string[]; titulo: string } | null>(null);
+  const rol = useMiRol();
+  /* Los mismos roles que acepta el servidor (`requireAdmin(["admin","owner"])`). */
+  const puedeBorrar = rol === "admin" || rol === "owner";
   const [showImport, setShowImport] = useState(false);
   /** «Importar guías despachadas» (ADR-461): guías ya salidas → trozas, tala referencial y permiso. */
   const [showImportarGuias, setShowImportarGuias] = useState(false);
@@ -962,18 +971,26 @@ export default function LothLibroOperaciones() {
     [censoArboles, allEntries, especiesAutorizadas],
   );
   const cupoPorClave = useMemo(() => new Map(cupoEspecies.map((f) => [f.clave, f])), [cupoEspecies]);
-  const cols = COLS[section];
   /* La tabla filtra (autofiltro de cada cabecera), ordena y pagina la sección
      ENTERA, que llega con el libro (`loadAll`). Mientras tanto se ve la primera
      página que trajo la API. */
   const libroLeido = allEntries.length > 0;
+  const lineasTabla = libroLeido ? lineasSeccion : entries;
+  /* «Permiso · titular» sólo si la sección mezcla planes (ver loth-seccion-permiso). */
+  const planesPorId = useMemo(() => mapaDePermisos(permiso.planes), [permiso.planes]);
+  const variosPlanes = useMemo(() => mezclaPlanes(lineasTabla), [lineasTabla]);
+  const cols = useMemo(
+    () => (variosPlanes ? conColumnaPermiso(COLS[section], planesPorId) : COLS[section]),
+    [section, variosPlanes, planesPorId],
+  );
   const tabla = useLothSeccionTabla({
     section,
     cols,
-    lineas: libroLeido ? lineasSeccion : entries,
+    lineas: lineasTabla,
     corregidaPor: correcciones.corregidaPor,
     orden,
     dir: ordenDir,
+    planes: planesPorId,
   });
   const visibles = tabla.enPagina;
   // La selección es de las líneas que se están viendo: al pasar de página o de
@@ -1048,6 +1065,13 @@ export default function LothLibroOperaciones() {
       meta: `${tabla.ordenadas.length} ${tabla.ordenadas.length === 1 ? "línea" : "líneas"}`,
       onSelect: () => descargarCsv(tabla.ordenadas, `libro-th-${section}.csv`),
     },
+    ...[opcionBorrarFiltradas({
+      filtradas: tabla.ordenadas,
+      hayFiltro: tabla.f.activos > 0 || permiso.filtro != null,
+      /* Hasta que el libro entero no llegó, «las N filtradas» serían sólo la primera página. */
+      puede: puedeBorrar && libroLeido,
+      onBorrar: (ids) => setBorrarLineas({ ids, titulo: `Borrar las ${ids.length} líneas filtradas` }),
+    })].filter((o): o is LibroAction => o != null),
   ];
 
   return (
@@ -1393,6 +1417,18 @@ export default function LothLibroOperaciones() {
           >
             <Ban className="h-4 w-4" /> Anular
           </button>
+          {puedeBorrar && (
+            <button
+              type="button"
+              onClick={() => setBorrarLineas({
+                ids: seleccionadas.map((e) => e.id),
+                titulo: `Borrar ${seleccionadas.length === 1 ? "la línea seleccionada" : `${seleccionadas.length} líneas seleccionadas`}`,
+              })}
+              className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--data-error-600)] px-4 text-sm font-semibold text-white hover:opacity-90"
+            >
+              <Trash2 className="h-4 w-4" /> Borrar…
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setSeleccion(new Set())}
@@ -1676,6 +1712,20 @@ export default function LothLibroOperaciones() {
         onVerCadena={(code) => setCadenaCode(code)}
         onImprimirEtiqueta={(linea) => alImprimirEtiquetasCtp([linea])}
       />
+
+      {borrarLineas && (
+        <LothBorrarLineasModal
+          ids={borrarLineas.ids}
+          titulo={borrarLineas.titulo}
+          planes={planesPorId}
+          onClose={() => setBorrarLineas(null)}
+          onBorrado={() => {
+            setBorrarLineas(null);
+            setSeleccion(new Set());
+            void refreshAll();
+          }}
+        />
+      )}
 
       {/* Anular 1..N con un solo motivo. El libro no borra: la línea queda con
           su razón a la vista (subsanación SERFOR). */}

@@ -12,7 +12,6 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
 import { Loader2, Trash2 } from "@buleje/design-system/icons";
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -21,12 +20,8 @@ import { leerJson } from "@/lib/errores/sin-dato";
 import { formatNumber } from "@/lib/format";
 import type { LothSection } from "@/lib/forestal/loth-constants";
 import { siglaDePlan } from "@/lib/forestal/loth-tipos-plan";
-import { textoDelSalto, type ConteoBorrarDelPlan, type ResultadoBorrarDelPlan } from "@/lib/forestal/loth-borrar-del-plan";
-import { SECTION_META } from "./LothEntryForm";
-
-const PALABRA = "BORRAR";
-const plural = (n: number, uno: string, varios: string) => `${formatNumber(n)} ${n === 1 ? uno : varios}`;
-const nombreSeccion = (s: LothSection) => SECTION_META[s]?.label ?? s;
+import type { ConteoBorrarDelPlan, ResultadoBorrarDelPlan } from "@/lib/forestal/loth-borrar-del-plan";
+import { BotonesBorrar, ConfirmarBorrar, avisarBorrado, confirmaBorrar, nombreSeccion, pluralN as plural } from "./loth-borrar-piezas";
 
 export interface PlanABorrar {
   id: string;
@@ -76,7 +71,7 @@ export default function LothBorrarOperacionesModal({
   const todas = secciones.length > 0 && secciones.every((s) => elegidas.has(s.section));
   /* Las de mes cerrado no se borran: el botón no las promete. */
   const aBorrar = secciones.filter((s) => elegidas.has(s.section)).reduce((a, s) => a + s.lineas - s.cerradas, 0);
-  const confirmado = palabra.trim().toUpperCase() === PALABRA;
+  const confirmado = confirmaBorrar(palabra);
 
   const alternar = (s: LothSection) =>
     setElegidas((prev) => {
@@ -98,13 +93,7 @@ export default function LothBorrarOperacionesModal({
       });
       const j = await leerJson<ResultadoBorrarDelPlan & { message?: string; error?: string }>(r);
       if (!r.ok || !j) throw new Error(j?.message ?? j?.error ?? `HTTP ${r.status}`);
-      const saltos = j.saltadas.map((s) => textoDelSalto(s, nombreSeccion));
-      const liberados = j.arbolesLiberados > 0 ? ` ${plural(j.arbolesLiberados, "árbol volvió", "árboles volvieron")} a «en pie» en el censo.` : "";
-      const titulo = j.borradas > 0
-        ? `Se ${j.borradas === 1 ? "borró" : "borraron"} ${plural(j.borradas, "operación", "operaciones")} (${formatNumber(j.m3, 2)} m³).${liberados}`
-        : "No se borró ninguna operación.";
-      if (saltos.length > 0) toast.warning(titulo, { description: saltos.join(" · "), duration: 12_000 });
-      else toast.success(titulo);
+      avisarBorrado(j);
       onBorrado();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -124,25 +113,7 @@ export default function LothBorrarOperacionesModal({
       icon={Trash2}
       className="max-w-xl"
       footer={
-        <>
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={busy}
-            className="h-11 rounded-xl px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            onClick={() => void borrar()}
-            disabled={busy || !confirmado || aBorrar === 0}
-            className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--data-error-600)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
-          >
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Trash2 className="h-4 w-4" aria-hidden />}
-            {aBorrar > 0 ? `Borrar ${plural(aBorrar, "operación", "operaciones")}` : "Borrar"}
-          </button>
-        </>
+        <BotonesBorrar busy={busy} habilitado={confirmado} n={aBorrar} onCancelar={onClose} onBorrar={() => void borrar()} />
       }
     >
       <div className={`space-y-4 ${MODAL_BODY}`}>
@@ -223,19 +194,7 @@ export default function LothBorrarOperacionesModal({
               ))}
             </fieldset>
 
-            <div className="space-y-1.5">
-              <label htmlFor="borrar-ops-confirmar" className="block text-sm font-semibold text-[var(--text-primary)]">
-                Escribe <b className="font-mono text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">{PALABRA}</b> para confirmar
-              </label>
-              <input
-                id="borrar-ops-confirmar"
-                value={palabra}
-                onChange={(e) => setPalabra(e.target.value)}
-                autoComplete="off"
-                spellCheck={false}
-                className="h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 font-mono text-sm text-[var(--text-primary)] focus:border-[var(--data-error-500)] focus:outline-none dark:bg-[var(--surface-raised)]"
-              />
-            </div>
+            <ConfirmarBorrar id="borrar-ops-confirmar" valor={palabra} onChange={setPalabra} />
           </>
         )}
       </div>

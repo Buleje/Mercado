@@ -36,13 +36,13 @@ export interface ColDef {
   /** Campo por el que ordena esta columna (si se puede ordenar). */
   orden?: OrdenCampo;
   render: (e: LothEntryDTO) => React.ReactNode;
+  filtros?: readonly string[]; // autofiltros de la cabecera si no es sólo `key` («permiso»: Permiso y Titular)
 }
 
 const TH = "px-4 py-2.5 text-left font-bold text-[var(--text-primary)]";
 const TD = "px-4 py-2.5 align-top";
 
-const fmtFecha = (iso: string) =>
-  formatDate(iso, { soloFecha: true });
+const fmtFecha = (iso: string) => formatDate(iso, { soloFecha: true });
 
 export default function LothSeccionTabla({
   section,
@@ -110,7 +110,7 @@ export default function LothSeccionTabla({
             <Encabezado label="N°" campo="lineNo" orden={orden} dir={dir} onOrdenar={onOrdenar} alinear="right" filtro={filtros && <FiltroEnCabecera id="lineNo" f={filtros} compacto />} />
             <Encabezado label="Fecha" campo="fecha" orden={orden} dir={dir} onOrdenar={onOrdenar} filtro={filtros && <FiltroEnCabecera id="fecha" f={filtros} compacto />} />
             {cols.map((c) => {
-              const filtro = filtros && <FiltroEnCabecera id={c.key} f={filtros} compacto />;
+              const filtro = filtros && (c.filtros ?? [c.key]).map((id) => <FiltroEnCabecera key={id} id={id} f={filtros} compacto />);
               return c.orden ? (
                 <Encabezado key={c.key} label={c.label} campo={c.orden} orden={orden} dir={dir} onOrdenar={onOrdenar} alinear={c.align} filtro={filtro} />
               ) : (

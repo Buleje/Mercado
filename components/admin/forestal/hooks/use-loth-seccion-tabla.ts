@@ -15,7 +15,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { LothEntryDTO, LothSection } from "@/lib/forestal/loth-constants";
 import { ordenarLineas, type OrdenCampo, type OrdenDir } from "@/lib/forestal/loth-seccion";
 import { useFiltrosTabla } from "../filtros-tabla-forestal";
-import { filtrosDeSeccion } from "../loth-seccion-filtros";
+import { filtrosDeSeccion, type PermisoDeLinea } from "../loth-seccion-filtros";
 
 export const LINEAS_POR_PAGINA = 50;
 
@@ -26,6 +26,7 @@ export function useLothSeccionTabla({
   corregidaPor,
   orden,
   dir,
+  planes,
 }: {
   section: LothSection;
   /** Las columnas de la sección (constante de módulo: estable entre renders). */
@@ -34,8 +35,13 @@ export function useLothSeccionTabla({
   corregidaPor: ReadonlyMap<number, number>;
   orden: OrdenCampo;
   dir: OrdenDir;
+  /** El permiso y titular de cada plan (estable): los filtros de la columna «permiso». */
+  planes?: ReadonlyMap<string, PermisoDeLinea>;
 }) {
-  const columnas = useMemo(() => filtrosDeSeccion(cols.map((c) => c.key), corregidaPor), [cols, corregidaPor]);
+  const columnas = useMemo(
+    () => filtrosDeSeccion(cols.map((c) => c.key), corregidaPor, planes),
+    [cols, corregidaPor, planes],
+  );
   const f = useFiltrosTabla(lineas, columnas);
   const [pagina, setPagina] = useState(0);
 

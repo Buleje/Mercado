@@ -48,6 +48,20 @@ export function estadosDeLinea(e: LothEntryDTO, corregidaPor: ReadonlyMap<number
   return out;
 }
 
+/** El permiso y el titular de una línea, como se leen en la tabla y en sus filtros. */
+export interface PermisoDeLinea {
+  permiso: string;
+  titular: string;
+}
+export const SIN_PLAN: PermisoDeLinea = { permiso: "Sin plan", titular: "Sin plan" };
+const PLAN_DE_BAJA: PermisoDeLinea = { permiso: "Plan dado de baja", titular: "Plan dado de baja" };
+
+/** De `planId` al permiso y titular del plan; sin plan, «Sin plan»; un plan que ya no está, «dado de baja». */
+export function permisoDeLinea(planId: string | null | undefined, planes: ReadonlyMap<string, PermisoDeLinea>): PermisoDeLinea {
+  if (!planId) return SIN_PLAN;
+  return planes.get(planId) ?? PLAN_DE_BAJA;
+}
+
 /** El filtro de cada columna de las secciones, por la `key` de su `ColDef`. */
 const POR_COLUMNA: Record<string, Omit<ColumnaFiltro<LothEntryDTO>, "id">> = {
   // El código del árbol también trae sus trozas: buscar «113» en Trozado da las trozas del árbol 113.
@@ -74,11 +88,17 @@ const POR_COLUMNA: Record<string, Omit<ColumnaFiltro<LothEntryDTO>, "id">> = {
 export function filtrosDeSeccion(
   keys: readonly string[],
   corregidaPor: ReadonlyMap<number, number>,
+  /** Con la columna «permiso» (varios planes a la vista): sus dos filtros, Permiso y Titular. */
+  planes: ReadonlyMap<string, PermisoDeLinea> = new Map(),
 ): ColumnaFiltro<LothEntryDTO>[] {
+  const dePermiso: ColumnaFiltro<LothEntryDTO>[] = [
+    { id: "permiso", label: "Permiso", tipo: "multi", valor: (e) => permisoDeLinea(e.planId, planes).permiso },
+    { id: "titular", label: "Titular", tipo: "multi", valor: (e) => permisoDeLinea(e.planId, planes).titular },
+  ];
   return [
     { id: "lineNo", label: "N°", tipo: "rango", numero: (e) => e.lineNo, paso: 1 },
     { id: "fecha", label: "Fecha", tipo: "fecha", numero: (e) => e.entryDate?.slice(0, 10) ?? null, formatearValor: ddmm },
-    ...keys.filter((k) => POR_COLUMNA[k]).map((k) => ({ id: k, ...POR_COLUMNA[k] })),
+    ...keys.flatMap((k) => (k === "permiso" ? dePermiso : POR_COLUMNA[k] ? [{ id: k, ...POR_COLUMNA[k] }] : [])),
     { id: "obs", label: "Estado", tipo: "multi", valor: (e) => estadosDeLinea(e, corregidaPor) },
   ];
 }

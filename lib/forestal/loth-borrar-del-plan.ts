@@ -1,7 +1,8 @@
 /**
  * Borrar las operaciones de UN plan de manejo del Libro TH (pedido de Brandon
  * 07-10-2026: «eliminar todas las operaciones de ese plan, sea tala, trozado,
- * despacho»). Seguro para cliente y servidor: sin Prisma.
+ * despacho») y de lo elegido en «Secciones» (filtro o casillas, de varios
+ * planes). Seguro para cliente y servidor: sin Prisma.
  *
  * El borrado es lógico (`deletedAt`) y respeta, línea por línea, las mismas
  * guardas que borrar UNA línea (`ForestLothDB.softDelete`):
@@ -69,6 +70,26 @@ export interface ResultadoBorrarDelPlan {
   arbolesLiberados: number;
 }
 
+/**
+ * Lo borrado elegido línea por línea en «Secciones» (pueden ser varias
+ * secciones y varios planes). `simulado` = vista previa: nada se escribió.
+ */
+export interface ResultadoBorrarLineas {
+  simulado: boolean;
+  /** Ids que llegaron (incluidos los que se sumaron por «lo que cuelga»). */
+  pedidas: number;
+  /** Ids que no son líneas vivas de este negocio: no se miran ni se cuentan. */
+  ignoradas: number;
+  /** Líneas que se sumaron por «incluir lo que cuelga» (trozado, despachos). */
+  agregadas: number;
+  borradas: number;
+  m3: number;
+  porSeccion: Array<{ section: LothSection; borradas: number; m3: number }>;
+  porPlan: Array<{ planId: string | null; borradas: number; m3: number }>;
+  saltadas: SaltoBorrar[];
+  arbolesLiberados: number;
+}
+
 export interface LineaParaBorrar {
   id: string;
   section: string;
@@ -78,8 +99,12 @@ export interface LineaParaBorrar {
   trozaCode: string | null;
   volumeM3: number;
   entryDate: Date;
-  /** `false` = línea sin plan que cuelga de este plan: frena, nunca se borra. */
-  delPlan: boolean;
+  /** El plan de la línea: una hija sólo frena a la fuente de su mismo plan (o sin plan). */
+  planId?: string | null;
+  /** Se pidió borrarla. Las demás sólo frenan (son hijas que quedan vivas). */
+  pedida?: boolean;
+  /** `planearBorradoDelPlan`: `false` = línea sin plan que cuelga de este plan. */
+  delPlan?: boolean;
 }
 
 const SALIDAS_DE_TROZA = new Set(["despacho_troza", "consumo_troza"]);
@@ -120,18 +145,19 @@ function referencia(l: LineaParaBorrar): string {
   return codigo(l.trozaCode) ?? codigo(l.treeCode) ?? `#${l.lineNo}`;
 }
 
+/** Mismo árbol o troza sólo dentro del mismo plan; una línea sin plan puede ser de cualquiera. */
+const mismoPlan = (a: string | null | undefined, b: string | null | undefined) => a == null || b == null || a === b;
+
 /**
  * Decide qué se borra y qué se salta (con su motivo). Puro: la DB le pasa las
- * líneas del plan (y las sin plan que cuelgan de ellas), el mes cerrado de cada
- * fecha y las líneas que el Libro CTP frena.
+ * líneas pedidas (`pedida`) y las hijas vivas que podrían quedar colgando, el
+ * mes cerrado de cada fecha y las líneas que el Libro CTP frena.
  */
-export function planearBorradoDelPlan(input: {
+export function planearBorrado(input: {
   lineas: readonly LineaParaBorrar[];
-  secciones: readonly LothSection[];
   mesCerrado: (d: Date) => string | null;
   enCtp: ReadonlySet<string>;
 }): { porSeccion: Map<LothSection, LineaParaBorrar[]>; saltadas: SaltoBorrar[] } {
-  const pedidas = new Set(input.secciones);
   const borradas = new Set<string>();
   /* Registrada y que no se va: la única que deja colgando a su fuente. */
   const quedaViva = (l: LineaParaBorrar) => l.status === "registrado" && !borradas.has(l.id);
@@ -146,31 +172,44 @@ export function planearBorradoDelPlan(input: {
     if (periodo) s._periodos.add(periodo);
   };
 
+  /* Índices por código: con 5.000 líneas elegidas, buscar la hija recorriendo
+     todo el libro por cada una eran ~25 M comparaciones dentro de la tx. */
+  const indice = (pred: (x: LineaParaBorrar) => boolean, clave: (x: LineaParaBorrar) => string | null) => {
+    const m = new Map<string, LineaParaBorrar[]>();
+    for (const x of input.lineas) {
+      const k = pred(x) ? clave(x) : null;
+      if (k == null) continue;
+      const lista = m.get(k);
+      if (lista) lista.push(x);
+      else m.set(k, [x]);
+    }
+    return m;
+  };
+  const trozadosPorArbol = indice((x) => x.section === "trozado", (x) => codigo(x.treeCode));
+  const salidasPorTroza = indice((x) => SALIDAS_DE_TROZA.has(x.section), (x) => codigo(x.trozaCode));
+  const despProductoPorPlan = indice((x) => x.section === "despacho_producto", (x) => x.planId ?? "∅");
+
   const dependencia = (l: LineaParaBorrar, section: LothSection): MotivoSalto | null => {
     /* Una anulada ya no sostiene nada en el libro: se puede borrar sin mirar. */
     if (l.status !== "registrado") return null;
+    const hijaViva = (x: LineaParaBorrar) => x.id !== l.id && mismoPlan(x.planId, l.planId) && quedaViva(x);
     if (section === "tala") {
       const arbol = codigo(l.treeCode);
-      if (arbol && input.lineas.some((x) => x.section === "trozado" && codigo(x.treeCode) === arbol && quedaViva(x))) {
-        return "tiene_trozado";
-      }
+      if (arbol && (trozadosPorArbol.get(arbol) ?? []).some(hijaViva)) return "tiene_trozado";
     }
     if (section === "trozado") {
       const troza = codigo(l.trozaCode);
-      if (troza && input.lineas.some((x) => SALIDAS_DE_TROZA.has(x.section) && codigo(x.trozaCode) === troza && quedaViva(x))) {
-        return "tiene_salida";
-      }
+      if (troza && (salidasPorTroza.get(troza) ?? []).some(hijaViva)) return "tiene_salida";
     }
-    /* T5 (Σ despacho de producto ≤ Σ producto terminado) es del plan entero. */
-    if (section === "producto_terminado" && input.lineas.some((x) => x.delPlan && x.section === "despacho_producto" && quedaViva(x))) {
+    /* T5 (Σ despacho de producto ≤ Σ producto terminado) es del plan entero: el MISMO plan. */
+    if (section === "producto_terminado" && (despProductoPorPlan.get(l.planId ?? "∅") ?? []).some(quedaViva)) {
       return "tiene_despacho_producto";
     }
     return null;
   };
 
   for (const section of ORDEN_DE_BORRADO) {
-    if (!pedidas.has(section)) continue;
-    const delaSeccion = input.lineas.filter((l) => l.delPlan && l.section === section).sort((a, b) => a.lineNo - b.lineNo);
+    const delaSeccion = input.lineas.filter((l) => l.pedida && l.section === section).sort((a, b) => a.lineNo - b.lineNo);
     for (const l of delaSeccion) {
       const periodo = input.mesCerrado(l.entryDate);
       if (periodo) { saltar(l, section, "mes_cerrado", periodo); continue; }
@@ -190,7 +229,26 @@ export function planearBorradoDelPlan(input: {
   return { porSeccion, saltadas };
 }
 
-/** Por qué una línea se quedó, en palabras de quien la va a buscar. */
+/**
+ * El borrado de UN plan (Opciones › «Borrar operaciones del plan»): las líneas
+ * del plan (`delPlan`) de las secciones elegidas. Las sin plan que cuelgan de
+ * ellas sólo frenan.
+ */
+export function planearBorradoDelPlan(input: {
+  lineas: readonly LineaParaBorrar[];
+  secciones: readonly LothSection[];
+  mesCerrado: (d: Date) => string | null;
+  enCtp: ReadonlySet<string>;
+}): { porSeccion: Map<LothSection, LineaParaBorrar[]>; saltadas: SaltoBorrar[] } {
+  const pedidas = new Set<string>(input.secciones);
+  return planearBorrado({
+    lineas: input.lineas.map((l) => ({ ...l, pedida: l.delPlan === true && pedidas.has(l.section) })),
+    mesCerrado: input.mesCerrado,
+    enCtp: input.enCtp,
+  });
+}
+
+/** Por qué una línea se quedó, en palabras de quien la va a buscar (borrado de un plan). */
 export const MOTIVO_SALTO_TEXTO: Record<MotivoSalto, string> = {
   mes_cerrado: "están en un mes cerrado (reábrelo para borrarlas)",
   en_ctp: "sus trozas ya entraron a tu Libro CTP (anula ese ingreso primero)",
@@ -199,10 +257,25 @@ export const MOTIVO_SALTO_TEXTO: Record<MotivoSalto, string> = {
   tiene_despacho_producto: "hay despachos de producto vivos (marca también Despacho de producto)",
 };
 
+/** Lo mismo para lo elegido en «Secciones»: ahí no hay casillas de sección, hay «lo que cuelga». */
+export const MOTIVO_SALTO_TEXTO_LINEAS: Record<MotivoSalto, string> = {
+  ...MOTIVO_SALTO_TEXTO,
+  tiene_trozado: "su árbol tiene trozado vivo (marca «Incluir lo que cuelga»)",
+  tiene_salida: "su troza tiene despacho o consumo vivo (marca «Incluir lo que cuelga»)",
+  tiene_despacho_producto: "hay despachos de producto vivos de su plan (bórralos primero)",
+};
+
 const plural = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
 
 /** Una línea por salto: «Tala · 3 se quedaron: su árbol tiene trozado vivo (12, 13, 14)». */
-export function textoDelSalto(s: SaltoBorrar, nombreSeccion: (s: LothSection) => string): string {
+export function textoDelSalto(
+  s: SaltoBorrar,
+  nombreSeccion: (s: LothSection) => string,
+  textos: Record<MotivoSalto, string> = MOTIVO_SALTO_TEXTO,
+): string {
   const cuando = s.periodos?.length ? ` · ${s.periodos.join(", ")}` : "";
-  return `${nombreSeccion(s.section)} · ${plural(s.n, "se quedó", "se quedaron")}: ${MOTIVO_SALTO_TEXTO[s.motivo]}${cuando} (${s.ejemplos.join(", ")}${s.n > s.ejemplos.length ? ", …" : ""})`;
+  return `${nombreSeccion(s.section)} · ${plural(s.n, "se quedó", "se quedaron")}: ${textos[s.motivo]}${cuando} (${s.ejemplos.join(", ")}${s.n > s.ejemplos.length ? ", …" : ""})`;
 }
+
+/** Máximo de líneas por pedido (el filtro de una sección entera cabe de sobra). */
+export const MAX_LINEAS_A_BORRAR = 5000;
