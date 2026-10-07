@@ -181,7 +181,10 @@ export function papelesGuiaLoth(g: GuiaLothParaImprimir): { gtf: HojaGuiaLoth; l
     registroSerfor: "",
   });
 
-  const cuerpos = COPIAS_GTF.map(
+  /* Una sola copia, la ORIGINAL (Brandon 07-10: «en el modal de la GTF solo
+     pon 1 copia»): las tres iguales seguidas eran tres páginas del mismo papel
+     en el visor. Las dos copias del art. 5 se sacan imprimiendo de nuevo. */
+  const cuerpos = COPIAS_GTF.slice(0, 1).map(
     (copia) => `
     <div class="gs-tira"><b>${esc(copia.titulo)}</b><span>${esc(copia.destino)}</span></div>
     ${cabeceraDoc({
@@ -237,7 +240,7 @@ export function papelesGuiaLoth(g: GuiaLothParaImprimir): { gtf: HojaGuiaLoth; l
     gtf: {
       nombre: `GTF ${numero}`,
       archivo: `GTF ${numero}`,
-      etiqueta: "Original + 2 copias (art. 5)",
+      etiqueta: "1 copia (original) · imprime 3 para el art. 5",
       pieCorrido: pieGtf,
       html: documentoHtml({ titulo: `GTF ${numero}`, css: CSS_GTF_OFICIAL + CSS_GTF_SALIDA, cuerpo: cuerpos, pieCorrido: pieGtf }),
     },

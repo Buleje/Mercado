@@ -242,8 +242,10 @@ describe("papelesGuiaLoth — la GTF y la lista con el formato del CTP", () => {
     expect(gtf.html).toContain("2.126");
     expect(gtf.html).toContain("Inversiones Agroforestales Blas SAC");
     expect(gtf.html).toMatch(/\(35\)<\/span> <span class="l">Lista\(s\) de Troza\(s\):<\/span> <b>019-0000001<\/b>/);
-    // Original + 2 copias.
-    expect(gtf.html.match(/class="gs-tira"/g)).toHaveLength(3);
+    // Una sola copia en el visor (07-10): la ORIGINAL.
+    expect(gtf.html.match(/class="gs-tira"/g)).toHaveLength(1);
+    expect(gtf.html).toContain("ORIGINAL");
+    expect(gtf.html).not.toContain("COPIA 1");
     // (5): la casilla «Permiso» cruzada.
     expect(gtf.html).toMatch(/Permiso<\/span><span class="bx">X<\/span>/);
   });
