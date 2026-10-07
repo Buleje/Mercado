@@ -11,6 +11,11 @@
  *   Transporte (29)–(34)          · Traslado (partida, llegada, 35, 36)
  *   Resumen por especie (lista)   · Detalle del producto (37, declarado)
  *
+ * `partes` (07-10-2026, Brandon: «los datos en una sección y las trozas y
+ * resúmenes en otra»): la vista previa de importar dibuja los bloques del
+ * documento en «Datos de la guía» y el resumen por especie con el (37) en
+ * «Trozas y resumen». Sin `partes`, todo junto (la ficha leída de un documento).
+ *
  * Los casilleros —número, rótulo, orden— salen de `bloquesDeGuia`, la misma
  * fuente que la hoja del CTP y el PDF: dos pantallas no pueden declarar
  * casilleros distintos del mismo documento. Solo lectura, y lo que SERFOR no
@@ -118,12 +123,17 @@ const ancho =
   (span: CasilleroGtf["span"]) =>
   (c: CasilleroGtf): CasilleroGtf => ({ ...c, span });
 
+/** Qué parte de la guía se dibuja: todo, sólo el documento o sólo el resumen de lo que viaja. */
+export type PartesDeLaGuia = "todo" | "datos" | "resumen";
+
 export default function LothImportarGuiasBloques({
   ficha,
   piezas,
+  partes = "todo",
 }: {
   ficha: GtfSerfor | null;
   piezas: readonly PiezaParaResumen[];
+  partes?: PartesDeLaGuia;
 }) {
   const resumen = useMemo(() => resumenPorEspecie(piezas, ficha?.productos), [piezas, ficha]);
   const bloques = useMemo(
@@ -134,12 +144,27 @@ export default function LothImportarGuiasBloques({
   const extra = useMemo(() => (ficha ? camposNoMapeados(ficha) : []), [ficha]);
 
   /* Sin ficha (un ingreso sin la consulta de SERFOR) sólo hay lista de trozas: va el resumen solo. */
-  if (!ficha || !bloques) return <BloqueEspecies r={resumen} />;
+  if (!ficha || !bloques) return partes === "datos" ? null : <BloqueEspecies r={resumen} />;
+  const productos = ficha.productos ?? [];
+  const cuadroResumen = (
+    <>
+      <BloqueEspecies r={resumen} className={productos.length ? "" : "@3xl/guia:col-span-2"} />
+      {productos.length > 0 && (
+        <BloqueProductos productos={productos} volumenTotal={ficha.volumenTotal} />
+      )}
+    </>
+  );
+  if (partes === "resumen") {
+    return (
+      <div className="@container/guia">
+        <div className="grid gap-3 @3xl/guia:grid-cols-2">{cuadroResumen}</div>
+      </div>
+    );
+  }
 
   const guia = bloques.guia ?? [];
   const transporte = bloques.transportista ?? [];
   const { partida, llegada } = trasladoDeLaFicha(ficha);
-  const productos = ficha.productos ?? [];
   const registrada = [ficha.fechaRegistro, ficha.registradoPor]
     .filter((x) => x?.trim())
     .join(" · ");
@@ -225,10 +250,7 @@ export default function LothImportarGuiasBloques({
           />
         </Bloque>
 
-        <BloqueEspecies r={resumen} className={productos.length ? "" : "@3xl/guia:col-span-2"} />
-        {productos.length > 0 && (
-          <BloqueProductos productos={productos} volumenTotal={ficha.volumenTotal} />
-        )}
+        {partes === "todo" && cuadroResumen}
 
         {extra.length > 0 && (
           <Bloque
