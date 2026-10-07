@@ -29,7 +29,9 @@
  * derecho (son de bosque natural), y la zafra sólo si el registro trae período.
  */
 
+import { useMemo } from "react";
 import { AlertCircle, FileText, Loader2, Plus } from "@buleje/design-system/icons";
+import { analizarAprovechamiento } from "@/lib/forestal/loth-aprovechamiento";
 import LothPlanCabecera from "./LothPlanCabecera";
 import LothPlanModales from "./LothPlanModales";
 import LothPlanPaneles from "./LothPlanPaneles";
@@ -48,6 +50,24 @@ export default function LothPlanView({
 } = {}) {
   const v = useLothPlanView(reloadSignal, onCambioDelLibro);
   const { d, trees, plan, cargando, esPlantacion, errorPlan, opciones } = v;
+  /* El aprovechamiento de la cabecera: la cascada del balance contra la base
+     (registrado o autorizado) y la vigencia. Plantación mide lo talado;
+     bosque, lo movilizado (el «Aprovechamiento POA» de siempre). */
+  const aprovechamiento = useMemo(
+    () =>
+      plan
+        ? analizarAprovechamiento({
+            modo: esPlantacion ? "plantacion" : "bosque",
+            cascada: d.cascada,
+            baseM3: esPlantacion ? undefined : d.autorizadoTotal,
+            vigenciaDesde: plan.vigenciaDesde,
+            vigenciaHasta: plan.vigenciaHasta,
+            taladoSinRegistrarM3: esPlantacion ? d.taladoSinRegistrarM3 : 0,
+            hoy: new Date(),
+          })
+        : null,
+    [plan, esPlantacion, d.cascada, d.autorizadoTotal, d.taladoSinRegistrarM3],
+  );
 
   return (
     <div data-vista-plan className="space-y-4">
@@ -62,6 +82,7 @@ export default function LothPlanView({
         onPlan={d.setPlanId}
         plan={plan}
         opciones={opciones}
+        aprovechamiento={aprovechamiento}
         kpis={
           plan
             ? {

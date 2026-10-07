@@ -37,7 +37,9 @@ import {
 } from "@buleje/design-system/icons";
 import { estadoVigencia, type EstadoVigencia } from "@/lib/forestal/loth-plan-vigencia";
 import { ZAFRA_ESTADO_LABEL, analizarZafra, type ZafraAnalisis } from "@/lib/forestal/loth-zafra";
+import type { Aprovechamiento } from "@/lib/forestal/loth-aprovechamiento";
 import type { Plan } from "./loth-plan-shared";
+import LothAprovechamientoBanda from "./LothAprovechamientoBanda";
 
 export interface KpisPlan {
   autorizadoTotal: number;
@@ -156,12 +158,25 @@ export function ControlIndicadores({ pref, onPref, panel }: {
   );
 }
 
-/** Estado `detalle`: una tarjeta por indicador, con su comparación al pie. */
-export function TarjetasIndicadores({ k, plan }: { k: KpisPlan; plan: Plan | null }) {
+/**
+ * Estado `detalle`: la banda «Aprovechamiento» (el % movilizado con su barra,
+ * ritmo en días, exceso y especies) y debajo una tarjeta por cada otro
+ * indicador. Sin banda (no llegó el análisis), la tarjeta «Aprovechamiento
+ * POA» de siempre ocupa su lugar.
+ */
+export function TarjetasIndicadores({ k, plan, aprovechamiento = null }: {
+  k: KpisPlan;
+  plan: Plan | null;
+  aprovechamiento?: Aprovechamiento | null;
+}) {
   const ctx = useContexto(plan, k);
+  const conBanda = aprovechamiento != null;
   return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-      <Tarjetas k={k} ctx={ctx} />
+    <div className="space-y-3">
+      {aprovechamiento && <LothAprovechamientoBanda a={aprovechamiento} especies={k.especies} />}
+      <div className={`grid grid-cols-2 gap-3 ${conBanda ? "lg:grid-cols-4" : "lg:grid-cols-5"}`}>
+        <Tarjetas k={k} ctx={ctx} conBanda={conBanda} />
+      </div>
     </div>
   );
 }
@@ -225,7 +240,7 @@ function especiesContra(k: KpisPlan): string {
   return "sin excesos ni especies fuera";
 }
 
-function Tarjetas({ k, ctx }: { k: KpisPlan; ctx: Contexto }) {
+function Tarjetas({ k, ctx, conBanda }: { k: KpisPlan; ctx: Contexto; conBanda: boolean }) {
   const pct = k.aprovechamientoPct;
   const ritmo = ritmoDelPoa(ctx.zafra);
   const plural = k.especies === 1 ? "" : "s";
@@ -237,7 +252,7 @@ function Tarjetas({ k, ctx }: { k: KpisPlan; ctx: Contexto }) {
         subValue={`${ent(k.especies)} especie${plural} autorizada${plural}`}
         deltaLabel="techo del POA: no se acumula al vencer"
       />
-      <StatCard
+      {!conBanda && <StatCard
         density="compact" icon={TrendingUp}
         emphasis={pct == null ? "neutral" : pct > 100 ? "error" : pct >= 85 ? "warning" : "success"}
         label="Aprovechamiento POA" value={pctTxt(pct)}
@@ -245,7 +260,7 @@ function Tarjetas({ k, ctx }: { k: KpisPlan; ctx: Contexto }) {
         /* Adelantarse al plazo es buena noticia: el saldo que no sale a tiempo
            se pierde. El exceso sobre lo autorizado ya lo grita el color. */
         delta={ritmo.delta} deltaLabel={ritmo.label} deltaPolarity="normal"
-      />
+      />}
       <StatCard
         density="compact" icon={Scale}
         emphasis={ctx.zafra.estado === "vencida" && k.saldoTotal > 0 ? "error" : "success"}

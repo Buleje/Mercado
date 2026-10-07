@@ -26,15 +26,17 @@
  * no esta cabecera: dos fichas del mismo registro a dos alturas sobran.
  */
 
-import { SectionTitle, StatCard } from "@buleje/design-system";
-import { Leaf, Scale, TreePine, Truck } from "@buleje/design-system/icons";
+import { SectionTitle } from "@buleje/design-system";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { formatNumber } from "@/lib/format";
+import type { Aprovechamiento } from "@/lib/forestal/loth-aprovechamiento";
 import { ptAserrableDeRolliza } from "@/lib/forestal/loth-restante";
 import { siglaDePlan } from "@/lib/forestal/loth-tipos-plan";
 import { agruparPlanesPorTitular } from "@/lib/forestal/loth-planes-por-titular";
 import { type Plan } from "./loth-plan-shared";
+import LothAprovechamientoBanda from "./LothAprovechamientoBanda";
+import LothAprovechamientoBarra from "./LothAprovechamientoBarra";
 import LothPlanIdentidad from "./LothPlanIdentidad";
 import { CifraLinea } from "./loth-plan-ui";
 import {
@@ -79,7 +81,7 @@ export interface KpisPlantacion {
 
 const PANEL_ID = "loth-plan-indicadores";
 
-export default function LothPlanCabecera({ plans, planId, onPlan, plan, kpis, kpisPlantacion, opciones }: {
+export default function LothPlanCabecera({ plans, planId, onPlan, plan, kpis, kpisPlantacion, aprovechamiento, opciones }: {
   plans: Plan[];
   planId: string | null;
   onPlan: (id: string | null) => void;
@@ -87,6 +89,8 @@ export default function LothPlanCabecera({ plans, planId, onPlan, plan, kpis, kp
   kpis: KpisPlan | null;
   /** Con esto, la cabecera es la de una plantación: estas cuatro cifras y sin carátula. */
   kpisPlantacion?: KpisPlantacion | null;
+  /** La banda «Aprovechamiento» (`analizarAprovechamiento`): barra, ritmo, exceso y especies. */
+  aprovechamiento?: Aprovechamiento | null;
   opciones: MenuAccion[];
 }) {
   const [guardada, setPref] = useLocalStorage<PrefIndicadores>(CLAVE_INDICADORES_PLAN, PREF_INDICADORES_DEFAULT);
@@ -140,10 +144,10 @@ export default function LothPlanCabecera({ plans, planId, onPlan, plan, kpis, kp
               el `aria-controls` de los botones apunta a algo que existe. */}
           <div id={PANEL_ID} hidden={vista === "oculto"}>
             {kpisPlantacion
-              ? <IndicadoresPlantacion k={kpisPlantacion} detalle={vista === "detalle"} />
+              ? <IndicadoresPlantacion k={kpisPlantacion} a={aprovechamiento ?? null} detalle={vista === "detalle"} />
               : kpis && (vista === "detalle"
-                ? <TarjetasIndicadores k={kpis} plan={plan} />
-                : <ResumenEnLinea k={kpis} />)}
+                ? <TarjetasIndicadores k={kpis} plan={plan} aprovechamiento={aprovechamiento ?? null} />
+                : <ResumenEnLinea k={kpis} a={aprovechamiento ?? null} />)}
           </div>
         </div>
       )}
@@ -156,25 +160,28 @@ export default function LothPlanCabecera({ plans, planId, onPlan, plan, kpis, kp
  * las mismas cuentas. Cada una en su casilla —etiqueta arriba, número abajo—:
  * ocupa una línea y se encuentra sin leer las otras cuatro.
  */
-function ResumenEnLinea({ k }: { k: KpisPlan }) {
+function ResumenEnLinea({ k, a }: { k: KpisPlan; a: Aprovechamiento | null }) {
   const pct = k.aprovechamientoPct;
   return (
-    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-      <Casilla etiqueta="Autorizado" valor={`${fx(k.autorizadoTotal, 0)} m³`} nota={`${k.especies} ${k.especies === 1 ? "especie" : "especies"}`} />
-      <Casilla etiqueta="Aprovechado" valor={pctTxt(pct)} nota={`${fx(k.movilizadoTotal, 1)} m³ movilizados`} tono={tonoPct(pct)} />
-      <Casilla etiqueta="Saldo" valor={`${fx(k.saldoTotal, 1)} m³`} nota={pct == null ? "sin volumen autorizado" : `${Math.max(0, 100 - pct).toFixed(0)}% del POA`} />
-      <Casilla
-        etiqueta="Censo"
-        valor={ent(k.censoTotal)}
-        nota={k.censoTruncado ? `calculando sobre ${ent(k.cargados)}` : `${k.georrefPct}% con GPS`}
-        tono={k.censoTruncado ? "warn" : undefined}
-      />
-      <Casilla
-        etiqueta="Especies en regla"
-        valor={`${k.okCount}/${k.controlCount}`}
-        nota={k.fueraDelPlan > 0 ? `${k.fueraDelPlan} fuera del plan` : "todo autorizado"}
-        tono={k.fueraDelPlan > 0 ? "danger" : undefined}
-      />
+    <div className="space-y-2">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+        <Casilla etiqueta="Autorizado" valor={`${fx(k.autorizadoTotal, 0)} m³`} nota={`${k.especies} ${k.especies === 1 ? "especie" : "especies"}`} />
+        <Casilla etiqueta="Aprovechado" valor={pctTxt(pct)} nota={`${fx(k.movilizadoTotal, 1)} m³ movilizados`} tono={tonoPct(pct)} />
+        <Casilla etiqueta="Saldo" valor={`${fx(k.saldoTotal, 1)} m³`} nota={pct == null ? "sin volumen autorizado" : `${Math.max(0, 100 - pct).toFixed(0)}% del POA`} />
+        <Casilla
+          etiqueta="Censo"
+          valor={ent(k.censoTotal)}
+          nota={k.censoTruncado ? `calculando sobre ${ent(k.cargados)}` : `${k.georrefPct}% con GPS`}
+          tono={k.censoTruncado ? "warn" : undefined}
+        />
+        <Casilla
+          etiqueta="Especies en regla"
+          valor={`${k.okCount}/${k.controlCount}`}
+          nota={k.fueraDelPlan > 0 ? `${k.fueraDelPlan} fuera del plan` : "todo autorizado"}
+          tono={k.fueraDelPlan > 0 ? "danger" : undefined}
+        />
+      </div>
+      {a && !a.sinDatos && <LothAprovechamientoBarra a={a} compacta />}
     </div>
   );
 }
@@ -182,11 +189,14 @@ function ResumenEnLinea({ k }: { k: KpisPlan }) {
 const m3 = (v: number) => `${formatNumber(v, 3)} m³`;
 
 /**
- * Las cuatro cifras de una plantación, en tarjetas o en una línea (la misma
- * preferencia que el resto de los planes). En pie negativo = se taló más de lo
- * registrado: va en rojo y lo dice.
+ * Las cifras de una plantación. En `detalle`, la banda «Aprovechamiento»
+ * (registrado, talado, en pie, despachado y patio con su barra, ritmo y
+ * especies: lo que antes eran cuatro tarjetas sueltas, ahora con su relación
+ * a la vista). En `cifras`, las cuatro en una línea y la barra fina debajo.
+ * En pie negativo = se taló más de lo registrado: va en rojo y lo dice.
  */
-function IndicadoresPlantacion({ k, detalle }: { k: KpisPlantacion; detalle: boolean }) {
+function IndicadoresPlantacion({ k, a, detalle }: { k: KpisPlantacion; a: Aprovechamiento | null; detalle: boolean }) {
+  if (detalle && a) return <LothAprovechamientoBanda a={a} especies={k.especies} />;
   const especies = `${k.especies} ${k.especies === 1 ? "especie" : "especies"}${k.registrado > 0 ? ` · ≈ ${formatNumber(ptAserrableDeRolliza(k.registrado), 0)} pt` : ""}`;
   const sinReg = k.taladoSinRegistrar ?? 0;
   const pct = sinReg > 0.0001
@@ -196,22 +206,17 @@ function IndicadoresPlantacion({ k, detalle }: { k: KpisPlantacion; detalle: boo
   const pt = (v: number) => `≈ ${formatNumber(ptAserrableDeRolliza(v), 0)} pt`;
   const pie = k.enPie < 0 ? `se taló ${formatNumber(-k.enPie, 3)} m³ de más` : k.registrado > 0 ? `${pt(k.enPie)} por talar` : "sin m³ registrados";
   const patio = `${formatNumber(k.enPatio, 3)} m³ en patio`;
-  if (detalle) {
-    return (
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard density="compact" icon={Leaf} emphasis={k.especies === 0 ? "warning" : "neutral"} label="Registrado" value={m3(k.registrado)} subValue={especies} deltaLabel="la base: la tala descuenta de acá" />
-        <StatCard density="compact" icon={TreePine} emphasis={k.excedido ? "error" : sinReg > 0.0001 ? "warning" : "neutral"} label="Talado" value={m3(k.talado)} subValue={pct} />
-        <StatCard density="compact" icon={Scale} emphasis={k.enPie < 0 ? "error" : "success"} label="En pie" value={m3(k.enPie)} subValue={pie} />
-        <StatCard density="compact" icon={Truck} emphasis="neutral" label="Despachado" value={m3(k.despachado)} subValue={patio} />
-      </div>
-    );
-  }
+  /* El ritmo, si hay plazo: «vas 12 días atrasado» al pie de lo talado. */
+  const ritmo = a?.ritmo?.diasDesfase != null ? ` · ${a.ritmo.titular.toLowerCase()}` : "";
   return (
-    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-      <Casilla etiqueta="Registrado" valor={m3(k.registrado)} nota={especies} tono={k.especies === 0 ? "warn" : undefined} />
-      <Casilla etiqueta="Talado" valor={m3(k.talado)} nota={pct} tono={k.excedido ? "danger" : sinReg > 0.0001 ? "warn" : undefined} />
-      <Casilla etiqueta="En pie" valor={m3(k.enPie)} nota={pie} tono={k.enPie < 0 ? "danger" : undefined} />
-      <Casilla etiqueta="Despachado" valor={m3(k.despachado)} nota={patio} />
+    <div className="space-y-2">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <Casilla etiqueta="Registrado" valor={m3(k.registrado)} nota={especies} tono={k.especies === 0 ? "warn" : undefined} />
+        <Casilla etiqueta="Talado" valor={m3(k.talado)} nota={pct + ritmo} tono={k.excedido ? "danger" : sinReg > 0.0001 ? "warn" : undefined} />
+        <Casilla etiqueta="En pie" valor={m3(k.enPie)} nota={pie} tono={k.enPie < 0 ? "danger" : undefined} />
+        <Casilla etiqueta="Despachado" valor={m3(k.despachado)} nota={patio} />
+      </div>
+      {a && !a.sinDatos && <LothAprovechamientoBarra a={a} compacta />}
     </div>
   );
 }
