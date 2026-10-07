@@ -10,11 +10,14 @@
  *  · **selección múltiple** para etiquetas QR, exportar y anular en lote;
  *  · **totales** —un libro sin suma obliga a sacar la calculadora—, sin contar
  *    las anuladas, que se ven pero no cuadran;
- *  · el vínculo de **subsanación**: qué línea corrige a cuál.
+ *  · el vínculo de **subsanación**: qué línea corrige a cuál;
+ *  · el **autofiltro de Excel** en cada cabecera (Brandon 07-10): el estado de
+ *    la sección vive en `useLothSeccionTabla`; acá sólo se dibuja.
  */
 
 import { DataTable } from "@buleje/design-system";
 import LothLineaAcciones from "./LothLineaAcciones";
+import { FiltroEnCabecera, type FiltrosTabla } from "./filtros-tabla-forestal";
 import {
   diasDeRegistro,
   estaFueraDePlazo,
@@ -44,6 +47,8 @@ const fmtFecha = (iso: string) =>
 export default function LothSeccionTabla({
   section,
   entries,
+  filasTotal,
+  filtros,
   cols,
   loading,
   orden,
@@ -61,7 +66,12 @@ export default function LothSeccionTabla({
   onAnular,
 }: {
   section: LothSection;
+  /** Las líneas de la página que se ve. */
   entries: LothEntryDTO[];
+  /** Todas las que pasan los filtros (todas las páginas): el pie suma éstas. */
+  filasTotal?: readonly LothEntryDTO[];
+  /** El autofiltro de cada columna (`useLothSeccionTabla`). */
+  filtros?: FiltrosTabla<LothEntryDTO>;
   cols: ColDef[];
   loading: boolean;
   orden: OrdenCampo;
@@ -79,13 +89,13 @@ export default function LothSeccionTabla({
   onCorregir: (e: LothEntryDTO) => void;
   onAnular: (e: LothEntryDTO) => void;
 }) {
-  const totales = totalesDe(entries);
+  const totales = totalesDe([...(filasTotal ?? entries)]);
   const queSuma = totalRelevante(section);
   const todasElegidas = entries.length > 0 && entries.every((e) => seleccion.has(e.id));
 
   return (
     <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
-      <DataTable className="w-full text-sm">
+      <DataTable className="w-full text-sm" data-seccion-tabla={section}>
         <thead className="bg-[var(--surface-sunken)]">
           <tr>
             <th className={`${TH} w-10`}>
@@ -97,18 +107,27 @@ export default function LothSeccionTabla({
                 className="h-4 w-4 cursor-pointer accent-[var(--data-info-600)]"
               />
             </th>
-            <Encabezado label="N°" campo="lineNo" orden={orden} dir={dir} onOrdenar={onOrdenar} alinear="right" />
-            <Encabezado label="Fecha" campo="fecha" orden={orden} dir={dir} onOrdenar={onOrdenar} />
-            {cols.map((c) =>
-              c.orden ? (
-                <Encabezado key={c.key} label={c.label} campo={c.orden} orden={orden} dir={dir} onOrdenar={onOrdenar} alinear={c.align} />
+            <Encabezado label="N°" campo="lineNo" orden={orden} dir={dir} onOrdenar={onOrdenar} alinear="right" filtro={filtros && <FiltroEnCabecera id="lineNo" f={filtros} compacto />} />
+            <Encabezado label="Fecha" campo="fecha" orden={orden} dir={dir} onOrdenar={onOrdenar} filtro={filtros && <FiltroEnCabecera id="fecha" f={filtros} compacto />} />
+            {cols.map((c) => {
+              const filtro = filtros && <FiltroEnCabecera id={c.key} f={filtros} compacto />;
+              return c.orden ? (
+                <Encabezado key={c.key} label={c.label} campo={c.orden} orden={orden} dir={dir} onOrdenar={onOrdenar} alinear={c.align} filtro={filtro} />
               ) : (
                 <th key={c.key} className={`${TH} ${c.align === "right" ? "text-right" : ""}`}>
-                  {c.label}
+                  <span className="whitespace-nowrap">
+                    {c.label}
+                    {filtro}
+                  </span>
                 </th>
-              ),
-            )}
-            <th className={TH}>Observaciones</th>
+              );
+            })}
+            <th className={TH}>
+              <span className="whitespace-nowrap">
+                Observaciones
+                {filtros && <FiltroEnCabecera id="obs" f={filtros} compacto />}
+              </span>
+            </th>
             <th className={`${TH} text-right`}>Acciones</th>
           </tr>
         </thead>
@@ -207,7 +226,7 @@ export default function LothSeccionTabla({
                             ? "—"
                             : totales.unidades[0] === "m3"
                               ? `${fmtM3(totales.cantidad)} m³`
-                              : `${totales.cantidad.toFixed(4)} ${totales.unidades[0] ?? ""}`
+                              : `${Number(totales.cantidad).toFixed(4)} ${totales.unidades[0] ?? ""}`
                           : ""}
                     </span>
                   )}
@@ -238,6 +257,7 @@ function Encabezado({
   dir,
   onOrdenar,
   alinear,
+  filtro,
 }: {
   label: string;
   campo: OrdenCampo;
@@ -245,10 +265,13 @@ function Encabezado({
   dir: OrdenDir;
   onOrdenar: (c: OrdenCampo) => void;
   alinear?: "right";
+  /** El autofiltro de la columna, pegado al título. */
+  filtro?: React.ReactNode;
 }) {
   const activo = orden === campo;
   return (
     <th className={`${TH} ${alinear === "right" ? "text-right" : ""}`}>
+      <span className="whitespace-nowrap">
       <button
         type="button"
         onClick={() => onOrdenar(campo)}
@@ -260,6 +283,8 @@ function Encabezado({
         {label}
         {activo && <span aria-hidden="true">{dir === "asc" ? "↑" : "↓"}</span>}
       </button>
+      {filtro}
+      </span>
     </th>
   );
 }

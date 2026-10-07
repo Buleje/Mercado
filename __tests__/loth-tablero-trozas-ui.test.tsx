@@ -50,7 +50,8 @@ describe("LothTableroTrozas", () => {
     const { container } = render(<LothTableroTrozas entries={ENTRIES} />);
     const cab = [...container.querySelectorAll("thead th")].map((th) => th.getAttribute("data-label"));
     expect(cab).toEqual(["Cód. troza", "Árbol", "Especie", "Vol. m³", "Estado", "GTF / salida", "Días en patio", "Placa"]);
-    await waitFor(() => expect(screen.getByText("W2D-835")).toBeTruthy());
+    // En la celda de la tabla (el valor también es una opción del autofiltro de Placa).
+    await waitFor(() => expect(within(container.querySelector("tbody")!).getByText("W2D-835")).toBeTruthy());
   });
 
   it("el encabezado va antes de «Estado de las trozas» y reemplaza a la banda de códigos", () => {

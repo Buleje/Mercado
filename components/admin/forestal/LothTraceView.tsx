@@ -12,14 +12,15 @@
  *   h3  Avance del permiso  [Cuentas]         Censo → Talados → Trozados → Salieron;
  *                                             cada paso filtra la lista
  *   h3  Qué falta hacer                       sólo si hay algo; «Registrar trozado»
- *   h3  Árboles · orden · modo · Opciones     la lista, con sus filtros PEGADOS
- *       buscar · estado · especie · fechas
+ *   h3  Árboles · orden · modo · Opciones     la lista, con sus filtros PEGADOS:
+ *       el autofiltro en la cabecera de cada columna (tabla) o en «Filtros por
+ *       columna» (tarjetas y celular) + las pastillas de lo pendiente
  *       h4 En movimiento  (talados con algo pendiente)  tarjetas o tabla
  *       h4 Terminados     (todas sus trozas salieron)   tarjetas o tabla
  *       h4 En pie  (plegado)                  tabla chica por especie, no 61 tarjetas
  *   ventana  el detalle de un árbol
  *
- * Buscar y los filtros recortan todos los grupos; un grupo vacío no se dibuja.
+ * Los filtros de columna recortan todos los grupos; un grupo vacío no se dibuja.
  *
  * El resumen de arriba, la lista y el CSV salen de la MISMA fila fusionada
  * (`loth-trace-tabla`), que junta la trazabilidad del libro con el censo del
@@ -43,6 +44,7 @@ import LothTraceGrupo from "./LothTraceGrupo";
 import LothTraceEnPie from "./LothTraceEnPie";
 import LothTraceDetalleModal from "./LothTraceDetalleModal";
 import LothTraceUmbralesModal from "./LothTraceUmbralesModal";
+import { BarraFiltrosTabla } from "./filtros-tabla-forestal";
 import { useLothTraceVista } from "./hooks/use-loth-trace-vista";
 import { fmtFecha, type TraceNav } from "./loth-trace-ui";
 
@@ -150,19 +152,14 @@ export default function LothTraceView({
           onModo={v.setModo}
           opciones={opciones}
         />
+        {/* En tabla, cada filtro va en su cabecera; en tarjetas no hay cabecera:
+            los mismos controles, en «Filtros por columna». El contador ya está
+            en la cabecera de la lista. */}
+        <BarraFiltrosTabla f={v.filtros} plegableSiempre={v.modo === "tarjetas"} sinConteo />
         <LothTraceFiltros
-          search={v.search}
-          onSearch={v.setSearch}
-          filtro={v.filtro}
-          onFiltro={v.setFiltro}
+          activos={v.estadosActivos}
+          onAlternar={v.alternarEstado}
           conteos={v.conteos}
-          especie={v.especie}
-          onEspecie={v.setEspecie}
-          especies={v.especies}
-          desde={v.desde}
-          hasta={v.hasta}
-          onDesde={v.setDesde}
-          onHasta={v.setHasta}
           hayFiltros={v.hayFiltros}
           onLimpiar={v.limpiarFiltros}
         />
@@ -201,6 +198,7 @@ export default function LothTraceView({
               onAbrir={v.abrirDetalle}
               orden={v.orden}
               onOrden={v.setOrden}
+              filtros={v.filtros}
             />
           ))
         )}

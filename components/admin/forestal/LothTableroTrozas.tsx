@@ -36,7 +36,6 @@ import { bandaDelPlan, nombreDelPlan } from "@/lib/forestal/loth-tablero-permiso
 import type { DatosControl } from "@/lib/forestal/loth-tablero-reporte";
 import {
   construirTablero,
-  especiesDelTablero,
   filtrarPorPlan,
   planesDe,
   resumirTablero,
@@ -119,7 +118,6 @@ export default function LothTableroTrozas({
   const filas = useMemo(() => filtrarPorPlan(todas, permiso.planSel), [todas, permiso.planSel]);
   const resumen = useMemo(() => resumirTablero(filas), [filas]);
   const viejas = useMemo(() => resumirViejas(filas), [filas]);
-  const especies = useMemo(() => especiesDelTablero(filas), [filas]);
 
   const banda = useMemo(() => (permiso.plan ? bandaDelPlan(permiso.plan, hoyKey) : null), [permiso.plan, hoyKey]);
   const { saldo } = permiso;
@@ -141,9 +139,9 @@ export default function LothTableroTrozas({
      de cuál es. Si todas son del mismo, la columna repetiría lo mismo en cada fila. */
   const conColumnaPermiso = permiso.planSel == null && planesDe(todas).length > 1;
 
-  const t = useLothTableroTabla(filas, permiso.planSel != null);
+  const t = useLothTableroTabla(filas, permiso.planSel != null, columnas.visibles, conColumnaPermiso ? nombrePlanDe : undefined);
   const ordenadas = useMemo(() => ordenarTablero(t.visibles, columnas.orden), [t.visibles, columnas.orden]);
-  /* Cambió el permiso del libro: lo elegido, la especie y la última lectura eran del anterior. */
+  /* Cambió el permiso del libro: lo elegido, los filtros de columna y la última lectura eran del anterior. */
   const [planVisto, setPlanVisto] = useState(permiso.planSel);
   if (planVisto !== permiso.planSel) {
     setPlanVisto(permiso.planSel);
@@ -194,9 +192,7 @@ export default function LothTableroTrozas({
   /* «Ver en la tabla» del escáner: la tabla queda sólo con esa troza. */
   const verEnTabla = (code: string) => {
     setPestana("trozas");
-    for (const e of t.estados) t.alternarEstado(e);
-    t.setEspecie(null);
-    t.setSoloViejas(false);
+    t.mostrarTodo();
     t.setTexto(code);
   };
 
@@ -281,7 +277,6 @@ export default function LothTableroTrozas({
             t={t}
             filas={ordenadas}
             total={filas.length}
-            especies={especies}
             columnas={columnas}
             faltante={ctx.faltante}
             nav={nav}

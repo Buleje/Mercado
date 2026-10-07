@@ -9,6 +9,11 @@
  * alrededor — buscador con pistola, especie, «Columnas», el aviso de lo que no
  * se pudo leer y la tanda — y le pasa la casilla y la fila resaltada.
  *
+ * Los filtros van en la cabecera de cada columna (Brandon 07-10): el
+ * desplegable suelto «Todas las especies» es ahora el filtro de la columna
+ * Especie. El buscador se queda: es el lector de la pistola (Enter elige la
+ * troza leída) y busca en seis columnas a la vez.
+ *
  * A 400 px la tabla hace scroll propio dentro de su marco: la página no se
  * ensancha.
  */
@@ -23,6 +28,7 @@ import type { LothTableroTabla } from "./hooks/use-loth-tablero-tabla";
 import type { useTableroColumnas } from "./hooks/use-tablero-columnas";
 import { BotonColumnas, PanelColumnas } from "./loth-tablero-partes";
 import LothTableroTrozasTabla, { type NavTablero } from "./LothTableroTrozasTabla";
+import { BarraFiltrosTabla } from "./filtros-tabla-forestal";
 
 export type { NavTablero } from "./LothTableroTrozasTabla";
 
@@ -36,7 +42,6 @@ export default function LothTableroTabla({
   t,
   filas,
   total,
-  especies,
   columnas,
   faltante,
   nav,
@@ -49,7 +54,6 @@ export default function LothTableroTabla({
   filas: readonly TrozaTablero[];
   /** Cuántas trozas tiene el permiso (sin filtros). */
   total: number;
-  especies: readonly string[];
   /** Qué columnas se ven y por cuál se ordena (`useTableroColumnas`). */
   columnas: ReturnType<typeof useTableroColumnas>;
   /** Qué no se pudo leer (guías, planes): esas columnas salen vacías. */
@@ -107,17 +111,6 @@ export default function LothTableroTabla({
             what="Pasa la pistola por el QR de la etiqueta (o tipea el código y Enter): la troza se resalta y, si está en el patio, queda elegida. También busca por árbol, especie, GTF, placa o destino."
             example="Lee TROZA 85-TOR-C… → fila resaltada y elegida para la guía."
           />
-          <select
-            value={t.especie ?? ""}
-            onChange={(e) => t.setEspecie(e.target.value || null)}
-            aria-label="Filtrar por especie"
-            className="h-10 rounded-xl border border-[var(--rule-base)] max-sm:basis-full bg-[var(--surface-raised)] px-2 text-sm font-medium text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
-          >
-            <option value="">Todas las especies</option>
-            {especies.map((e) => (
-              <option key={e} value={e}>{e}</option>
-            ))}
-          </select>
           <BotonColumnas
             abierto={verColumnas}
             onToggle={() => setVerColumnas((v) => !v)}
@@ -149,6 +142,8 @@ export default function LothTableroTabla({
         </p>
       )}
 
+      <BarraFiltrosTabla f={t.filtros} sinConteo />
+
       {tanda}
 
       {/* `hoja-grilla` (lo pone la grilla): a menos de 640 px el panel vuelve
@@ -164,6 +159,7 @@ export default function LothTableroTabla({
           onOrdenar={columnas.ordenarPor}
           nav={nav}
           permisoDe={permisoDe}
+          filtros={t.filtros}
           vacio={vacio}
           resaltada={t.resaltada}
           seleccion={{

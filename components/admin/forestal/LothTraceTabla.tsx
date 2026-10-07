@@ -18,6 +18,7 @@ import type { TraceFila } from "@/lib/forestal/loth-trace-tabla";
 import { FLAG_LABEL, FLAG_TONE } from "@/lib/forestal/loth-arbol";
 import { fmtDias, fmtFecha, fmtPct, tonoDe, type TraceOrden } from "./loth-trace-ui";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { FiltroEnCabecera, type FiltrosTabla } from "./filtros-tabla-forestal";
 
 /* El padding lo pone `DataTable` (sus variantes descendientes le ganan a una
    clase en la celda): acá sólo tamaño y alineación. */
@@ -76,6 +77,7 @@ export default function LothTraceTabla({
   onAbrir,
   orden,
   onOrden,
+  filtros,
 }: {
   filas: TraceFila[];
   seleccion?: Set<string>;
@@ -84,6 +86,8 @@ export default function LothTraceTabla({
   onAbrir?: (tree: string) => void;
   orden: TraceOrden;
   onOrden: (o: TraceOrden) => void;
+  /** El autofiltro de cada columna, pegado a su título (Brandon 07-10). */
+  filtros?: FiltrosTabla<TraceFila>;
 }) {
   if (filas.length === 0) {
     return (
@@ -105,6 +109,7 @@ export default function LothTraceTabla({
           )}
           {COLUMNAS.map((c) => (
             <th key={c.key} className={c.num ? "text-right" : "text-left"} title={HEAD_TITLE[c.key]}>
+              <span className="whitespace-nowrap">
               {c.orden ? (
                 <button
                   type="button"
@@ -120,6 +125,8 @@ export default function LothTraceTabla({
               ) : (
                 HEAD[c.key]
               )}
+              {filtros && <FiltroEnCabecera id={c.key} f={filtros} compacto />}
+              </span>
             </th>
           ))}
         </tr>

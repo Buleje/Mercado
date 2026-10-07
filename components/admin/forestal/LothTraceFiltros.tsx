@@ -10,16 +10,19 @@
  *   · la cabecera de la lista (título, cuántos, orden, modo y «Opciones») va
  *     en UNA fila: lo de todos los días a la vista, lo mensual (umbrales, CSV)
  *     en el menú;
- *   · los filtros van en otra, todos iguales, con el estado en un desplegable
- *     que cuenta cada opción (como «Estado» en Secciones);
+ *   · los filtros van en la cabecera de cada columna (Brandon 07-10: «quitar
+ *     los filtros que están sueltos»): el buscador, Estado, Especie y Fechas
+ *     de la fila que vivía acá son ahora los de Árbol, Observaciones, Especie
+ *     y Última (`loth-trace-filtros`); en tarjetas, los mismos controles van
+ *     en «Filtros por columna»;
  *   · y las pastillas sólo existen para lo que PIDE trabajo y está en más de
- *     cero. Una pastilla filtra; volver a tocarla quita el filtro.
+ *     cero: son atajos al filtro de la columna Observaciones. Una pastilla
+ *     filtra; volver a tocarla quita el filtro.
  */
 
-import { Download, LayoutGrid, Rows3, Search, SlidersHorizontal, X } from "@buleje/design-system/icons";
+import { Download, LayoutGrid, Rows3, SlidersHorizontal, X } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
-import type { OpcionEspecie } from "./hooks/use-loth-trace-vista";
 import { FILTROS_ESTADO, ORDEN_LABEL, type TraceFiltro, type TraceModo, type TraceOrden } from "./loth-trace-ui";
 import { formatNumber } from "@/lib/format";
 
@@ -81,110 +84,35 @@ export function LothTraceListaCabecera({
   );
 }
 
-/** Buscar, estado, especie y fechas en una fila; debajo, las pastillas de lo pendiente. */
+/** Las pastillas de lo pendiente (atajos al filtro de Observaciones) y «Quitar filtros». */
 export default function LothTraceFiltros({
-  search,
-  onSearch,
-  filtro,
-  onFiltro,
+  activos,
+  onAlternar,
   conteos,
-  especie,
-  onEspecie,
-  especies,
-  desde,
-  hasta,
-  onDesde,
-  onHasta,
   hayFiltros,
   onLimpiar,
 }: {
-  search: string;
-  onSearch: (v: string) => void;
-  filtro: TraceFiltro;
-  onFiltro: (v: TraceFiltro) => void;
+  /** Los estados elegidos en la columna Observaciones. */
+  activos: readonly TraceFiltro[];
+  onAlternar: (v: TraceFiltro) => void;
   /** Cuántos árboles tiene cada estado con los DEMÁS filtros puestos. */
   conteos: Record<TraceFiltro, number>;
-  especie: string;
-  onEspecie: (v: string) => void;
-  especies: OpcionEspecie[];
-  desde: string;
-  hasta: string;
-  onDesde: (v: string) => void;
-  onHasta: (v: string) => void;
   hayFiltros: boolean;
   onLimpiar: () => void;
 }) {
   const pendientes = FILTROS_ESTADO.filter((e) => e.deuda && conteos[e.key] > 0);
+  if (pendientes.length === 0 && !hayFiltros) return null;
   return (
     <div className="space-y-2">
-      <div className="flex flex-wrap items-center gap-2">
-        <label className={`${CAMPO} min-w-0 flex-1 basis-[14rem] px-4 max-sm:basis-full`}>
-          <Search className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden="true" />
-          <span className="sr-only">Buscar un árbol</span>
-          <input
-            type="search"
-            value={search}
-            onChange={(e) => onSearch(e.target.value)}
-            placeholder="Árbol, especie, troza o N° de GTF"
-            className="w-full min-w-0 bg-transparent text-base text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)]"
-          />
-        </label>
-        <label className={`${CAMPO} max-sm:flex-1`}>
-          <span className="shrink-0 text-[var(--text-tertiary)]">Estado</span>
-          <select value={filtro} onChange={(e) => onFiltro(e.target.value as TraceFiltro)} className={`${SELECT} max-w-[12rem]`}>
-            {FILTROS_ESTADO.map((e) => (
-              <option key={e.key} value={e.key}>
-                {e.label} ({formatNumber(conteos[e.key])})
-              </option>
-            ))}
-          </select>
-        </label>
-        {/* Un desplegable con una sola opción no filtra nada: no se dibuja. */}
-        {especies.length > 1 && (
-          <label className={`${CAMPO} max-sm:flex-1`}>
-            <span className="shrink-0 text-[var(--text-tertiary)]">Especie</span>
-            <select value={especie} onChange={(e) => onEspecie(e.target.value)} className={`${SELECT} max-w-[10rem]`}>
-              <option value="">Todas</option>
-              {especies.map((e) => (
-                <option key={e.clave} value={e.clave}>
-                  {e.label} ({formatNumber(e.count)})
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
-        <fieldset className={`${CAMPO} max-sm:basis-full`}>
-          <legend className="sr-only">Rango de fechas</legend>
-          <span className="shrink-0 text-[var(--text-tertiary)]">Fechas</span>
-          <input
-            type="date"
-            value={desde}
-            onChange={(e) => onDesde(e.target.value)}
-            aria-label="Desde"
-            className={`${SELECT} w-[8.5rem] max-sm:flex-1`}
-          />
-          <span className="text-[var(--text-tertiary)]" aria-hidden="true">
-            –
-          </span>
-          <input
-            type="date"
-            value={hasta}
-            onChange={(e) => onHasta(e.target.value)}
-            aria-label="Hasta"
-            className={`${SELECT} w-[8.5rem] max-sm:flex-1`}
-          />
-        </fieldset>
-      </div>
-
       {(pendientes.length > 0 || hayFiltros) && (
         <div className="flex flex-wrap items-center gap-2" aria-label="Lo que pide revisión">
           {pendientes.map((e) => {
-            const activo = filtro === e.key;
+            const activo = activos.includes(e.key);
             return (
               <button
                 key={e.key}
                 type="button"
-                onClick={() => onFiltro(activo ? "todas" : e.key)}
+                onClick={() => onAlternar(e.key)}
                 aria-pressed={activo}
                 title={activo ? "Quitar este filtro" : `Ver sólo los árboles: ${e.label.toLowerCase()}`}
                 className={`inline-flex h-9 items-center gap-1.5 rounded-lg border px-2.5 text-sm font-bold transition-colors ${

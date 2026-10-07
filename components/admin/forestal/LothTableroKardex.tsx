@@ -31,6 +31,8 @@ import type { BandaPermiso } from "@/lib/forestal/loth-tablero-permiso";
 import { Btn } from "./ctp-shared";
 import type { LothTableroKardexEstado } from "./hooks/use-loth-tablero-kardex";
 import LothTableroKardexTabla from "./LothTableroKardexTabla";
+import { BarraFiltrosTabla, useFiltrosTabla } from "./filtros-tabla-forestal";
+import { filtrosKardex } from "./loth-kardex-filtros";
 import type { NavTablero } from "./LothTableroTabla";
 
 const LINEA =
@@ -81,6 +83,11 @@ export default function LothTableroKardex({
     () => (verAnuladas ? filas : filas.filter((f) => !f.anulada)),
     [filas, verAnuladas],
   );
+  /* El autofiltro de cada columna (Brandon 07-10). Esconde renglones; los saldos
+     de cada uno no cambian (ver `loth-kardex-filtros`). */
+  const sinBase = kardex?.sinBase ?? false;
+  const columnasFiltro = useMemo(() => filtrosKardex(clave, sinBase), [clave, sinBase]);
+  const filtros = useFiltrosTabla(visibles, columnasFiltro);
 
   if (!banda) {
     return (
@@ -215,9 +222,12 @@ export default function LothTableroKardex({
         </p>
       )}
 
+      <BarraFiltrosTabla f={filtros} />
+
       <LothTableroKardexTabla
         k={kardex}
         filas={visibles}
+        filtros={filtros}
         clave={clave}
         banda={banda}
         resumen={resumen}

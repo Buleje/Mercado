@@ -7,10 +7,14 @@
  *
  * Con muchos movimientos se ven los últimos (`VISIBLES`): el cierre, que es lo
  * que se mira primero, queda siempre a la vista.
+ *
+ * Con `filtros`, cada cabecera lleva su autofiltro (Brandon 07-10). Filtrar
+ * esconde renglones: la negrita de «lo que cambió» se sigue midiendo contra el
+ * renglón ANTERIOR del kárdex, no contra el anterior que quedó a la vista.
  */
 
 import { DataTable } from "@buleje/design-system";
-import { useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import {
   cierreDelKardex,
@@ -33,6 +37,8 @@ import {
 } from "./loth-kardex-estilos";
 import { HOJA_MOVIL } from "./loth-tablero-estilos";
 import LothTableroKardexFila from "./LothTableroKardexFila";
+import { FiltroEnCabecera, SinCoincidenciasFila, type FiltrosTabla } from "./filtros-tabla-forestal";
+import { ETIQUETA_CASILLERO } from "./loth-kardex-filtros";
 import type { NavTablero } from "./LothTableroTabla";
 
 const VISIBLES = 300;
@@ -45,9 +51,12 @@ export default function LothTableroKardexTabla({
   resumen,
   hoyKey,
   nav,
+  filtros,
 }: {
   k: KardexPermiso;
   filas: readonly FilaKardex[];
+  /** El autofiltro de cada columna, sobre `filas` (`useFiltrosTabla`). */
+  filtros?: FiltrosTabla<FilaKardex>;
   clave: string | null;
   banda: BandaPermiso;
   resumen: ResumenKardex;
@@ -57,25 +66,29 @@ export default function LothTableroKardexTabla({
   const [verTodo, setVerTodo] = useState(false);
   const casilleros = k.sinBase ? CASILLEROS.slice(1) : CASILLEROS;
   const columnas = 5 + casilleros.length;
-  const ocultas = verTodo ? 0 : Math.max(0, filas.length - VISIBLES);
   const inicial = saldoInicial(k, clave);
   const cierre = cierreDelKardex(k, clave);
+  const conFiltro = (filtros?.activos ?? 0) > 0;
+  const pasan = useMemo(() => (filtros && conFiltro ? new Set(filtros.filtradas.map((f) => f.id)) : null), [filtros, conFiltro]);
 
-  /* Cada renglón con el saldo anterior, para poner en negrita lo que el movimiento cambió. */
-  const vista: { f: FilaKardex; s: CascadaEspecie | null; previo: CascadaEspecie | null }[] = [];
+  /* Cada renglón con el saldo anterior (del kárdex entero, antes de filtrar),
+     para poner en negrita lo que el movimiento cambió. */
+  const todos: { f: FilaKardex; s: CascadaEspecie | null; previo: CascadaEspecie | null }[] = [];
   let previo: CascadaEspecie | null = inicial;
-  for (let i = 0; i < filas.length; i++) {
-    const f = filas[i];
+  for (const f of filas) {
     const s = f.anulada ? null : saldoDeFila(f, clave);
-    if (i >= ocultas) vista.push({ f, s, previo });
+    if (!pasan || pasan.has(f.id)) todos.push({ f, s, previo });
     if (s) previo = s;
   }
+  const ocultas = verTodo ? 0 : Math.max(0, todos.length - VISIBLES);
+  const vista = ocultas > 0 ? todos.slice(ocultas) : todos;
+  const filtro = (id: string) => (filtros ? <FiltroEnCabecera id={id} f={filtros} compacto /> : null);
 
   return (
     <div className="min-w-0 space-y-2">
       {ocultas > 0 && (
         <p className="flex flex-wrap items-center gap-2 text-sm text-[var(--text-secondary)]">
-          Se ven los últimos {VISIBLES} de {filas.length} movimientos.
+          Se ven los últimos {VISIBLES} de {todos.length} movimientos.
           <button
             type="button"
             onClick={() => setVerTodo(true)}
@@ -91,19 +104,35 @@ export default function LothTableroKardexTabla({
       >
         <thead className="bg-[var(--surface-sunken)]">
           <tr>
-            <th className={`${TH} ${FIJA} bg-[var(--surface-sunken)]`}>Fecha · N°</th>
-            <th className={`${TH} ${SOLO_ESCRITORIO}`}>Movimiento</th>
-            <th className={`${TH} ${SOLO_ESCRITORIO}`}>Especie · troza</th>
-            <th className={`${TH} text-right`}>Entra m³</th>
-            <th className={`${TH} text-right`}>Sale m³</th>
-            {!k.sinBase && <th className={`${TH} text-right`}>Por talar</th>}
-            <th
-              className={`${TH} text-right`}
-              title="Talado sin trozar: lo que sigue en el monte, con la merma"
-            >
-              En el monte
+            {/* z-[2], no el z-[1] de FIJA: el popover del filtro tiene que pasar por
+                encima de la primera celda (también fija) de cada renglón. */}
+            <th className={`${TH} sticky left-0 z-[2] border-r border-[var(--rule-soft)] bg-[var(--surface-sunken)]`}>
+              <Titulo>Fecha · N°{filtro("fecha")}{filtro("doc")}</Titulo>
             </th>
-            <th className={`${TH} text-right`}>En patio</th>
+            <th className={`${TH} ${SOLO_ESCRITORIO}`}>
+              <Titulo>Movimiento{filtro("mov")}</Titulo>
+            </th>
+            <th className={`${TH} ${SOLO_ESCRITORIO}`}>
+              <Titulo>Especie · troza{filtro("especie")}</Titulo>
+            </th>
+            <th className={`${TH} text-right`}>
+              <Titulo>Entra m³{filtro("entra")}</Titulo>
+            </th>
+            <th className={`${TH} text-right`}>
+              <Titulo>Sale m³{filtro("sale")}</Titulo>
+            </th>
+            {casilleros.map((c) => (
+              <th
+                key={c}
+                className={`${TH} text-right`}
+                title={c === "taladoSinTrozarM3" ? "Talado sin trozar: lo que sigue en el monte, con la merma" : undefined}
+              >
+                <Titulo>
+                  {ETIQUETA_CASILLERO[c]}
+                  {filtro(c)}
+                </Titulo>
+              </th>
+            ))}
           </tr>
         </thead>
         <tbody>
@@ -132,7 +161,8 @@ export default function LothTableroKardexTabla({
               ))}
             </tr>
           )}
-          {vista.length === 0 && (
+          {conFiltro && filas.length > 0 && vista.length === 0 && <SinCoincidenciasFila colSpan={columnas} />}
+          {filas.length === 0 && (
             <tr>
               <td
                 colSpan={columnas}
@@ -188,4 +218,9 @@ export default function LothTableroKardexTabla({
       </DataTable>
     </div>
   );
+}
+
+/** El título de la columna con su autofiltro pegado, en una sola línea. */
+function Titulo({ children }: { children: ReactNode }) {
+  return <span className="whitespace-nowrap">{children}</span>;
 }

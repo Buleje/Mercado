@@ -2,16 +2,15 @@
  * loth-seccion — período, filtros, orden, totales y correcciones. Puro, sin DB.
  */
 import { describe, it, expect } from "vitest";
-import { estaFueraDePlazo, type LothEntryDTO } from "@/lib/forestal/loth-constants";
+import type { LothEntryDTO } from "@/lib/forestal/loth-constants";
+import { aplicarFacetas, type FacetasEstado } from "@/lib/admin/filtros-columna";
+import { filtrosDeSeccion } from "@/components/admin/forestal/loth-seccion-filtros";
 import {
-  FILTRO_VACIO,
-  filtrarLineas,
   lineasToCsv,
   mapaCorrecciones,
   ordenarLineas,
   periodoDe,
   periodoLabel,
-  periodosDe,
   totalRelevante,
   totalesDe,
 } from "@/lib/forestal/loth-seccion";
@@ -61,19 +60,14 @@ describe("período", () => {
     expect(periodoDe("no-es-fecha")).toBeNull();
   });
 
-  it("los lista del más nuevo al más viejo, con conteo", () => {
-    const ps = periodosDe([
-      entry({ entryDate: "2026-06-02" }),
-      entry({ entryDate: "2026-07-15" }),
-      entry({ entryDate: "2026-07-20" }),
-    ]);
-    expect(ps.map((p) => p.periodo)).toEqual(["2026-07", "2026-06"]);
-    expect(ps[0].count).toBe(2);
+  it("el mes se escribe a mano, no con Intl", () => {
     expect(periodoLabel("2026-07")).toBe("julio 2026");
   });
 });
 
-describe("filtros", () => {
+/* Los filtros de la sección viven en la cabecera de cada columna (Brandon
+   07-10): lo que antes eran Período, Especie y Estado sueltos. */
+describe("filtros de columna de la sección", () => {
   const lineas = [
     entry({ lineNo: 1, entryDate: "2026-07-10", speciesCommon: "Tornillo", createdAt: "2026-07-11" }),
     entry({ lineNo: 2, entryDate: "2026-08-01", speciesCommon: "Cumala", createdAt: "2026-08-02" }),
@@ -82,23 +76,25 @@ describe("filtros", () => {
     entry({ lineNo: 4, entryDate: "2026-08-05", status: "anulado", annulledReason: "error de tipeo" }),
   ];
 
-  it("por período", () => {
-    const r = filtrarLineas(lineas, { ...FILTRO_VACIO, periodo: "2026-08" }, estaFueraDePlazo);
-    expect(r.map((e) => e.lineNo)).toEqual([2, 3, 4]);
+  const filtrar = (facetas: FacetasEstado, corregidaPor: Map<number, number> = new Map()) =>
+    aplicarFacetas(lineas, filtrosDeSeccion(["tree", "esp", "vol"], corregidaPor), facetas).map((e) => e.lineNo);
+
+  it("por período: el rango de la columna Fecha", () => {
+    expect(filtrar({ fecha: { min: "2026-08-01", max: "2026-08-31" } })).toEqual([2, 3, 4]);
   });
 
   it("por especie", () => {
-    const r = filtrarLineas(lineas, { ...FILTRO_VACIO, especie: "Cumala" }, estaFueraDePlazo);
-    expect(r.map((e) => e.lineNo)).toEqual([2]);
+    expect(filtrar({ esp: ["Cumala"] })).toEqual([2]);
   });
 
-  it("por estado, incluido «fuera de plazo» que delega en el predicado único", () => {
-    expect(filtrarLineas(lineas, { ...FILTRO_VACIO, estado: "anulado" }, estaFueraDePlazo).map((e) => e.lineNo)).toEqual([4]);
-    expect(filtrarLineas(lineas, { ...FILTRO_VACIO, estado: "fuera_plazo" }, estaFueraDePlazo).map((e) => e.lineNo)).toEqual([3]);
+  it("por estado (columna Observaciones), incluido «fuera de plazo» que delega en el predicado único", () => {
+    expect(filtrar({ obs: ["Anulada"] })).toEqual([4]);
+    expect(filtrar({ obs: ["Fuera de plazo"] })).toEqual([3]);
   });
 
-  it("«corregidas» necesita el mapa: sin él no inventa nada", () => {
-    expect(filtrarLineas(lineas, { ...FILTRO_VACIO, estado: "corregidas" }, estaFueraDePlazo)).toHaveLength(0);
+  it("«Corregida» necesita el mapa: sin él no inventa nada", () => {
+    expect(filtrar({ obs: ["Corregida"] })).toEqual([]);
+    expect(filtrar({ obs: ["Corregida"] }, new Map([[1, 9]]))).toEqual([1]);
   });
 });
 

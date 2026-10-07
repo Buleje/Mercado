@@ -187,17 +187,28 @@ export function FiltroEnCabecera<T>({ id, f, compacto = false }: { id: string; f
 
 /** Arriba de la tabla: «Filtros por columna» (sólo mobile, donde no hay
  *  `<thead>`), los chips con cruz y el «N de M» (`sinConteo`: la tabla ya
- *  tiene su propio contador). */
-export function BarraFiltrosTabla<T>({ f, className = "", sinConteo = false }: { f: FiltrosTabla<T>; className?: string; sinConteo?: boolean }) {
+ *  tiene su propio contador). `plegableSiempre`: el plegable también en
+ *  escritorio — para una lista que se ve en tarjetas, donde tampoco hay `<thead>`. */
+export function BarraFiltrosTabla<T>({
+  f,
+  className = "",
+  sinConteo = false,
+  plegableSiempre = false,
+}: {
+  f: FiltrosTabla<T>;
+  className?: string;
+  sinConteo?: boolean;
+  plegableSiempre?: boolean;
+}) {
   const conControl = f.columnas.filter((c) => f.conAutofiltro[c.id]);
   if (conControl.length === 0) return null;
   return (
     <div className={`space-y-2 ${className}`}>
-      <details className="sm:hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2">
+      <details className={`${plegableSiempre ? "" : "sm:hidden "}rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2`}>
         <summary className="cursor-pointer text-sm font-bold text-[var(--text-primary)]">
           Filtros por columna{f.activos > 0 ? ` (${f.activos})` : ""}
         </summary>
-        <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2">
+        <div className={`mt-2 grid grid-cols-2 gap-x-3 gap-y-2 ${plegableSiempre ? "sm:grid-cols-4 lg:grid-cols-6" : ""}`}>
           {conControl.map((c) => (
             <div key={c.id} className="min-w-0">
               <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">

@@ -42,7 +42,6 @@ import { printLothInforme } from "@/lib/forestal/loth-informe-print";
 import { printTrozaLabels } from "@/lib/forestal/loth-labels";
 import { imprimirEtiquetasTrozasLoth } from "@/lib/forestal/loth-troza-etiquetas";
 import {
-  estaFueraDePlazo,
   LOTH_SECTIONS,
   type LothSection,
   type LothEntryDTO,
@@ -81,17 +80,11 @@ import LothTalaTandaModal from "./LothTalaTandaModal";
 import type { TandaTalaInicial } from "./hooks/use-tala-en-tanda";
 import LothDespachoGuiaModal from "./LothDespachoGuiaModal";
 import { mensajeErrorFilaImport, type FilaImport } from "@/lib/forestal/loth-import-lineas";
-import {
-  FILTRO_VACIO,
-  filtrarLineas,
-  lineasToCsv,
-  mapaCorrecciones,
-  ordenarLineas,
-  periodosDe,
-  type FiltroSeccion,
-  type OrdenCampo,
-  type OrdenDir,
-} from "@/lib/forestal/loth-seccion";
+import { lineasToCsv, mapaCorrecciones, type OrdenCampo, type OrdenDir } from "@/lib/forestal/loth-seccion";
+import { LINEAS_POR_PAGINA, useLothSeccionTabla } from "./hooks/use-loth-seccion-tabla";
+import { BarraFiltrosTabla } from "./filtros-tabla-forestal";
+import { etiquetaUnidad as unitLabel } from "./loth-seccion-filtros";
+import LothSeccionPaginas from "./LothSeccionPaginas";
 import LothCierrePanel from "./LothCierrePanel";
 import LothMapaView from "./LothMapaView";
 import LothRentabilidadView from "./LothRentabilidadView";
@@ -135,7 +128,7 @@ type Col = ColDef;
 const num = (v: string | null, dp = 4) => (v == null ? "—" : Number(v).toFixed(dp));
 
 /** Renglones por página de la tabla de sección. */
-const POR_PAGINA = 50;
+const POR_PAGINA = LINEAS_POR_PAGINA;
 
 
 const COLS: Record<LothSection, Col[]> = {
@@ -256,7 +249,6 @@ export default function LothLibroOperaciones() {
   const [transformaEnElTh, setTransformaEnElTh] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [showCaratula, setShowCaratula] = useState(false);
   const [annulReason, setAnnulReason] = useState("");
@@ -287,12 +279,10 @@ export default function LothLibroOperaciones() {
   /** Sólo vale la ÚLTIMA lista pedida: cambiar de permiso rápido no deja la vieja pisando a la nueva. */
   const pedidoLista = useRef(0);
   const [allEntries, setAllEntries] = useState<LothEntry[]>([]);
-  /** Página de la sección visible y total real que declara la API. */
-  const [page, setPage] = useState(0);
+  /** Total real de la sección que declara la API (la primera vista, antes de leer el libro entero). */
   const [totalSeccion, setTotalSeccion] = useState(0);
   /** Si ni siquiera 40 páginas alcanzaron, hay que decirlo en vez de mentir. */
   const [libroTruncado, setLibroTruncado] = useState<{ leidas: number; total: number } | null>(null);
-  const [filtro, setFiltro] = useState<FiltroSeccion>(FILTRO_VACIO);
   const [orden, setOrden] = useState<OrdenCampo>("lineNo");
   const [ordenDir, setOrdenDir] = useState<OrdenDir>("asc");
   const [seleccion, setSeleccion] = useState<Set<string>>(new Set());
@@ -560,7 +550,8 @@ export default function LothLibroOperaciones() {
     [exporting, informing, caratula, doExport, permisoExport, rotuloPermiso],
   );
 
-  // Solo la lista de la sección activa — corre en cada cambio de sección/búsqueda.
+  /* La PRIMERA página de la sección: se pinta mientras llega el libro entero
+     (`loadAll`), que es de donde la tabla filtra, ordena y pagina. */
   const loadEntries = useCallback(async () => {
     // Sin saber todavía qué permiso vale, pedir «Todos» sería mostrar otro libro un instante.
     if (!permiso.listo) return;
@@ -571,10 +562,9 @@ export default function LothLibroOperaciones() {
       const params = new URLSearchParams({
         section,
         limit: String(POR_PAGINA),
-        offset: String(page * POR_PAGINA),
+        offset: "0",
         includeAnnulled: "1",
       });
-      if (search) params.set("search", search);
       // El servidor filtra de verdad (antes ignoraba `planId` y devolvía todo el negocio).
       new URLSearchParams(qPermiso).forEach((v, k) => params.set(k, v));
       const res = await fetch(`/api/admin/forestal/loth?${params.toString()}`, { credentials: "include" });
@@ -595,7 +585,7 @@ export default function LothLibroOperaciones() {
     } finally {
       if (pedido === pedidoLista.current) setLoading(false);
     }
-  }, [section, search, page, qPermiso, permiso.listo]);
+  }, [section, qPermiso, permiso.listo]);
 
   // Stats + carátula NO dependen de la sección → solo al montar y tras escrituras.
   const loadMeta = useCallback(async () => {
@@ -683,11 +673,11 @@ export default function LothLibroOperaciones() {
     await Promise.all([loadEntries(), loadMeta(), loadAll()]);
   }, [loadEntries, loadMeta, loadAll]);
 
-  // Cambio de sección/página/permiso → solo la lista (1 request).
+  // Cambio de sección/permiso → solo la primera página (1 request).
   useEffect(() => {
     loadEntries();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [section, page, qPermiso, permiso.listo]);
+  }, [section, qPermiso, permiso.listo]);
 
   // Los contadores por sección del permiso elegido (con «Todos», los del libro).
   // También tras cada escritura (`reloadSignal`).
@@ -721,7 +711,6 @@ export default function LothLibroOperaciones() {
   const elegirPermiso = useCallback(
     (id: string | null) => {
       elegirPlan(id);
-      setPage(0);
       setSeleccion(new Set());
       if (!id || id === PERMISO_SIN_PLAN) return;
       const p = planesDelLibro.find((x) => x.id === id);
@@ -761,19 +750,6 @@ export default function LothLibroOperaciones() {
     }),
     [planesDelLibro, planSel, planDelLibro, filtroDelLibro, qPermiso, permisoListo, permisoSeCayo, planEsperado, errorLista, reintentar, elegirPermiso],
   );
-
-  // Otra sección empieza en su primera página: quedarse en la 4 de una lista
-  // que ahora tiene 3 renglones muestra el vacío y parece un error.
-  useEffect(() => {
-    setPage(0);
-    setFiltro(FILTRO_VACIO);
-  }, [section]);
-
-  // La selección es de las líneas que se están viendo: al pasar de página o de
-  // sección, quedaría apuntando a filas que ya no están en pantalla.
-  useEffect(() => {
-    setSeleccion(new Set());
-  }, [section, page]);
 
   // Montaje → meta una sola vez.
   useEffect(() => {
@@ -954,9 +930,6 @@ export default function LothLibroOperaciones() {
   const cur = statSeccionBy.get(section);
   const totalLines = stats.reduce((a, s) => a + s.count, 0);
   const totalLineasPermiso = statsSecciones.reduce((a, s) => a + s.count, 0);
-  // El orden y los filtros se aplican sobre la PÁGINA que trajo la API: filtrar
-  // el libro entero en el cliente exigiría bajarlo entero, que es justo lo que
-  // la paginación evita. El contador de abajo dice siempre cuántas hay en total.
   const correcciones = useMemo(() => mapaCorrecciones(allEntries), [allEntries]);
   /** El libro del permiso elegido, para la trazabilidad por árbol (con «Todos», el libro entero). */
   const entriesDelPermiso = useMemo(
@@ -989,15 +962,25 @@ export default function LothLibroOperaciones() {
     [censoArboles, allEntries, especiesAutorizadas],
   );
   const cupoPorClave = useMemo(() => new Map(cupoEspecies.map((f) => [f.clave, f])), [cupoEspecies]);
-  const periodos = useMemo(() => periodosDe(lineasSeccion), [lineasSeccion]);
-  const especiesSeccion = useMemo(
-    () => Array.from(new Set(lineasSeccion.map((e) => e.speciesCommon).filter((x): x is string => !!x))).sort((a, b) => a.localeCompare(b, "es")),
-    [lineasSeccion],
-  );
-  const visibles = useMemo(
-    () => ordenarLineas(filtrarLineas(entries, filtro, estaFueraDePlazo, correcciones.corregidaPor), orden, ordenDir),
-    [entries, filtro, orden, ordenDir, correcciones],
-  );
+  const cols = COLS[section];
+  /* La tabla filtra (autofiltro de cada cabecera), ordena y pagina la sección
+     ENTERA, que llega con el libro (`loadAll`). Mientras tanto se ve la primera
+     página que trajo la API. */
+  const libroLeido = allEntries.length > 0;
+  const tabla = useLothSeccionTabla({
+    section,
+    cols,
+    lineas: libroLeido ? lineasSeccion : entries,
+    corregidaPor: correcciones.corregidaPor,
+    orden,
+    dir: ordenDir,
+  });
+  const visibles = tabla.enPagina;
+  // La selección es de las líneas que se están viendo: al pasar de página o de
+  // sección, quedaría apuntando a filas que ya no están en pantalla.
+  useEffect(() => {
+    setSeleccion(new Set());
+  }, [section, tabla.pagina]);
   const seleccionadas = useMemo(() => visibles.filter((e) => seleccion.has(e.id)), [visibles, seleccion]);
 
   const toggleOrden = (campo: OrdenCampo) => {
@@ -1008,8 +991,6 @@ export default function LothLibroOperaciones() {
     }
   };
 
-  const cols = COLS[section];
-
   // Puente al Libro CTP: sólo si el negocio lo tiene (spec habilitada).
   const { enabledKeys } = useEnabledSpecs();
   const hayLibroCtp = enabledKeys.has("spec:forestal:ctp-libro");
@@ -1018,7 +999,7 @@ export default function LothLibroOperaciones() {
     ? () => window.dispatchEvent(new CustomEvent("admin:navigate", { detail: { moduleId: CTP_MODULE_TAB_ID } }))
     : undefined;
   const { estado: gtfEnCtp } = useGtfEnCtp(
-    section === "despacho_troza" ? entries.map((e) => e.gtfNumber) : [],
+    section === "despacho_troza" ? visibles.map((e) => e.gtfNumber) : [],
     hayLibroCtp && view === "secciones" && section === "despacho_troza",
   );
 
@@ -1055,17 +1036,17 @@ export default function LothLibroOperaciones() {
       hint: "Imprime el QR de origen de cada código en pantalla",
       icon: QrCode,
       busy: printingLabels,
-      disabled: entries.length === 0,
-      onSelect: () => void doPrintLabels(),
+      disabled: visibles.length === 0,
+      onSelect: () => void doPrintLabels(visibles),
     },
     {
       id: "csv",
       label: "Descargar CSV",
-      hint: "Las líneas que ves, con los filtros puestos",
+      hint: "Las líneas de la sección con los filtros de columna puestos (todas las páginas)",
       icon: FileSpreadsheet,
-      disabled: visibles.length === 0,
-      meta: `${visibles.length} ${visibles.length === 1 ? "línea" : "líneas"}`,
-      onSelect: () => descargarCsv(visibles, `libro-th-${section}.csv`),
+      disabled: tabla.ordenadas.length === 0,
+      meta: `${tabla.ordenadas.length} ${tabla.ordenadas.length === 1 ? "línea" : "líneas"}`,
+      onSelect: () => descargarCsv(tabla.ordenadas, `libro-th-${section}.csv`),
     },
   ];
 
@@ -1334,15 +1315,9 @@ export default function LothLibroOperaciones() {
         delLibroEntero={allEntries.length > 0 && !libroTruncado}
       />
 
-      {/* Buscar y filtrar a la vista; lo de vez en cuando, en «Opciones». */}
+      {/* La acción del día a la vista; lo de vez en cuando, en «Opciones». Los
+          filtros van en la cabecera de cada columna de la tabla. */}
       <LothSeccionBarra
-        search={search}
-        onSearch={setSearch}
-        onBuscar={() => void loadEntries()}
-        filtro={filtro}
-        setFiltro={setFiltro}
-        periodos={periodos}
-        especies={especiesSeccion}
         opciones={opcionesSeccion}
         onNuevaLinea={() => setShowForm(true)}
         principal={
@@ -1428,10 +1403,16 @@ export default function LothLibroOperaciones() {
         </div>
       )}
 
+      {/* A <640 px la tabla pasa a tarjetas y pierde la cabecera: ahí los
+          filtros viven en «Filtros por columna». Los chips, en todos los anchos. */}
+      <BarraFiltrosTabla f={tabla.f} sinConteo />
+
       <GtfCtpContext.Provider value={gtfEnCtp}>
       <LothSeccionTabla
         section={section}
         entries={visibles}
+        filasTotal={tabla.ordenadas}
+        filtros={tabla.f}
         cols={cols}
         loading={loading}
         orden={orden}
@@ -1470,16 +1451,20 @@ export default function LothLibroOperaciones() {
         <div className="rounded-2xl border border-dashed border-[var(--rule-base)] p-12 text-center text-[var(--text-tertiary)]">
           <TreePine className="mx-auto mb-3 h-10 w-10 opacity-30" />
           <p className="text-base font-medium">
-            {entries.length === 0
+            {tabla.f.total === 0
               ? `Sin registros en ${SECTION_META[section].label.toLowerCase()}.`
-              : "Ninguna línea coincide con el filtro."}
+              : "Ninguna línea coincide con los filtros de columna."}
           </p>
           <p className="mt-1 text-sm">
-            {entries.length > 0
-              ? "Prueba con otro período o estado."
-              : section === "despacho_troza"
-                ? "Usa «Despachar con guía»: la guía y sus trozas se registran juntas."
-                : "Usa «Nueva línea» para registrar el primer movimiento."}
+            {tabla.f.total > 0 ? (
+              <button type="button" onClick={tabla.f.limpiar} className="font-semibold text-[var(--text-primary)] underline underline-offset-4">
+                Quitar los filtros
+              </button>
+            ) : section === "despacho_troza" ? (
+              "Usa «Despachar con guía»: la guía y sus trozas se registran juntas."
+            ) : (
+              "Usa «Nueva línea» para registrar el primer movimiento."
+            )}
           </p>
         </div>
       )}
@@ -1492,38 +1477,17 @@ export default function LothLibroOperaciones() {
 
       {/* Cuántas hay de verdad + cómo llegar al resto. Antes se mostraban las
           primeras 200 y el resto no existía para el usuario. */}
-      {totalSeccion > 0 && (
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-sm font-semibold text-[var(--text-tertiary)]">
-            {totalSeccion <= POR_PAGINA
-              ? `${totalSeccion} línea${totalSeccion === 1 ? "" : "s"} en ${SECTION_META[section].label.toLowerCase()}`
-              : `Mostrando ${page * POR_PAGINA + 1}–${Math.min((page + 1) * POR_PAGINA, totalSeccion)} de ${formatNumber(totalSeccion)}`}
-          </p>
-          {totalSeccion > POR_PAGINA && (
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setPage((p) => Math.max(0, p - 1))}
-                disabled={page === 0 || loading}
-                className="h-10 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40"
-              >
-                Anterior
-              </button>
-              <span className="text-sm font-semibold tabular-nums text-[var(--text-tertiary)]">
-                {page + 1} / {Math.ceil(totalSeccion / POR_PAGINA)}
-              </span>
-              <button
-                type="button"
-                onClick={() => setPage((p) => p + 1)}
-                disabled={(page + 1) * POR_PAGINA >= totalSeccion || loading}
-                className="h-10 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40"
-              >
-                Siguiente
-              </button>
-            </div>
-          )}
-        </div>
-      )}
+      <LothSeccionPaginas
+        seccion={SECTION_META[section].label.toLowerCase()}
+        filtradas={tabla.ordenadas.length}
+        total={libroLeido ? tabla.f.total : totalSeccion}
+        pagina={tabla.pagina}
+        paginas={tabla.paginas}
+        porPagina={POR_PAGINA}
+        leyendoLibro={!libroLeido && totalSeccion > entries.length}
+        disabled={loading}
+        onPagina={tabla.setPagina}
+      />
         </>
       )}
 
@@ -1836,7 +1800,4 @@ function Tag({ children, tone }: { children: React.ReactNode; tone?: "danger" })
     ? "bg-[var(--data-error-100)] text-[var(--data-error-700)]"
     : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]";
   return <span className={`rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide ${cls}`}>{children}</span>;
-}
-function unitLabel(u: string | null) {
-  return u === "m3" ? "m³" : u === "kg" ? "Kg" : u === "unidad" ? "Unidad" : (u ?? "—");
 }

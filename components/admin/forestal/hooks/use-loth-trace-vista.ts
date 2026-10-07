@@ -3,12 +3,13 @@
 /**
  * useLothTraceVista — el estado y las cuentas de la vista «Por árbol».
  *
- * Todo sale de UNA lista de filas (`construirFilasTrace`) y se recorta en tres
+ * Todo sale de UNA lista de filas (`construirFilasTrace`) y se recorta con el
+ * autofiltro de cada columna (`loth-trace-filtros`, Brandon 07-10), en tres
  * pasos, cada uno con su lector:
  *
- *   filas ──facetas (especie, fechas)──▶ porFacetas  → el avance y «Qué falta hacer»
- *         ──+ búsqueda + paso del avance─▶ candidatas → las cuentas del estado
- *         ──+ estado────────────────────▶ visibles   → los grupos y el CSV
+ *   filas ──Especie + Última───────────────▶ porFacetas  → el avance y «Qué falta hacer»
+ *         ──+ las demás columnas + paso────▶ candidatas → las cuentas del estado
+ *         ──+ Estado (Observaciones)───────▶ visibles   → los grupos y el CSV
  *
  * Los visibles se parten en grupos (`loth-trace-grupos`): en movimiento y
  * terminados se paginan juntos, en ese orden; los en pie no se paginan, se
@@ -20,8 +21,9 @@
  * siempre el total de la lista que ya filtró.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocalStorage } from "@/hooks/use-local-storage";
+import { aplicarFacetas } from "@/lib/admin/filtros-columna";
 import type { LothEntryDTO } from "@/lib/forestal/loth-constants";
 import { buildTraceOperations } from "@/lib/forestal/loth-trace";
 import { construirFichasArbol, type ArbolCensoInput } from "@/lib/forestal/loth-arbol";
@@ -30,7 +32,6 @@ import { agruparPorEtapa, enPiePorEspecie, esCensado, pasaPaso, pendientesDe, RA
 import { guardarUmbrales, leerUmbrales, UMBRALES_DEFAULT, type UmbralesMerma } from "@/lib/forestal/loth-trace-umbrales";
 import {
   claveDeFila,
-  enRango,
   filaMatches,
   FILTROS_ESTADO,
   ORDENADORES,
@@ -39,6 +40,19 @@ import {
   type TraceModo,
   type TraceOrden,
 } from "../loth-trace-ui";
+import { useFiltrosTabla } from "../filtros-tabla-forestal";
+import {
+  coincideArbol,
+  estadosElegidos,
+  facetasSin,
+  FILTROS_ALCANCE,
+  FILTROS_TRACE,
+  ID_ARBOL,
+  ID_ESPECIE,
+  ID_ESTADO,
+  labelDeEstado,
+  rangoUltima,
+} from "../loth-trace-filtros";
 
 export const POR_PAGINA = 25;
 /** Claves de las preferencias. Exportadas: la prueba en navegador las lee. */
@@ -70,8 +84,6 @@ export function useLothTraceVista({
   // primer render del cliente discrepe del HTML que llegó.
   useEffect(() => setUmbrales(leerUmbrales()), []);
 
-  const [search, setSearch] = useState("");
-  const [filtro, setFiltro] = useState<TraceFiltro>("todas");
   const [orden, setOrden] = useState<TraceOrden>("volumen");
   const [modoGuardado, setModo] = useLocalStorage<TraceModo>(CLAVE_MODO_ARBOL, "tarjetas");
   // Lo guardado puede venir de otra versión: un valor que no existe cae al default.
@@ -80,9 +92,6 @@ export function useLothTraceVista({
   const [enPieAbierto, setEnPieAbierto] = useLocalStorage<boolean>(CLAVE_EN_PIE_ARBOL, false);
   /** Paso del avance elegido (Censo, Talados…): filtra la lista a esa etapa. */
   const [paso, setPaso] = useState<PasoAvance | null>(null);
-  const [especie, setEspecie] = useState("");
-  const [desde, setDesde] = useState("");
-  const [hasta, setHasta] = useState("");
   const [pagina, setPagina] = useState(0);
   const [seleccion, setSeleccion] = useState<Set<string>>(new Set());
   const [detalle, setDetalle] = useState<string | null>(null);
@@ -108,22 +117,33 @@ export function useLothTraceVista({
     }).sort((a, b) => a.label.localeCompare(b.label, "es"));
   }, [filas]);
 
-  const porFacetas = useMemo(
-    () => filas.filter((f) => (!especie || claveDeFila(f) === especie) && enRango(f, desde, hasta)),
-    [filas, especie, desde, hasta],
-  );
+  /* El autofiltro de cada columna: un solo estado para la cabecera de la
+     tabla, el plegable «Filtros por columna» (tarjetas y celular) y las
+     pastillas de lo pendiente. */
+  const filtros = useFiltrosTabla(filas, FILTROS_TRACE);
+  const { facetas, textos, setFaceta, setTexto, limpiar: limpiarColumnas } = filtros;
+  const search = textos[ID_ARBOL] ?? "";
+  const estadosActivos = useMemo(() => estadosElegidos(facetas), [facetas]);
+
+  const porFacetas = useMemo(() => aplicarFacetas(filas, FILTROS_ALCANCE, facetas), [filas, facetas]);
   const candidatas = useMemo(
-    () => porFacetas.filter((f) => pasaPaso(f, paso)).map((f) => ({ f, m: filaMatches(f, search) })).filter(({ m }) => m.matched),
-    [porFacetas, search, paso],
+    () =>
+      aplicarFacetas(
+        filas.filter((f) => coincideArbol(f, search) && pasaPaso(f, paso)),
+        FILTROS_TRACE,
+        facetasSin(facetas, ID_ESTADO),
+      ),
+    [filas, search, paso, facetas],
   );
   // Primero el grupo (lo que pide trabajo arriba), después el orden elegido:
   // así el «siguiente» del detalle recorre los árboles en el orden en que se ven.
   const visibles = useMemo(
     () =>
       candidatas
-        .filter(({ f }) => pasaFiltro(f, filtro))
+        .filter((f) => estadosActivos.length === 0 || estadosActivos.some((e) => pasaFiltro(f, e)))
+        .map((f) => ({ f, m: filaMatches(f, search) }))
         .sort((a, b) => RANGO_GRUPO[grupoDe(a.f)] - RANGO_GRUPO[grupoDe(b.f)] || ORDENADORES[orden](a.f, b.f)),
-    [candidatas, filtro, orden],
+    [candidatas, estadosActivos, search, orden],
   );
   const grupos = useMemo(() => agruparPorEtapa(visibles.map(({ f }) => f)), [visibles]);
   const enPie = useMemo(() => enPiePorEspecie(grupos.en_pie), [grupos]);
@@ -135,13 +155,13 @@ export function useLothTraceVista({
   const resumen = useMemo(() => resumirFilas(porFacetas), [porFacetas]);
   const conteos = useMemo(() => {
     const out = {} as Record<TraceFiltro, number>;
-    for (const e of FILTROS_ESTADO) out[e.key] = candidatas.filter(({ f }) => pasaFiltro(f, e.key)).length;
+    for (const e of FILTROS_ESTADO) out[e.key] = candidatas.filter((f) => pasaFiltro(f, e.key)).length;
     return out;
   }, [candidatas]);
 
   // Cualquier cambio de filtro deja la paginación en la primera página: quedarse
   // en la página 4 de una lista que ahora tiene 3 elementos muestra el vacío.
-  useEffect(() => setPagina(0), [search, filtro, especie, desde, hasta, orden, modo, paso]);
+  useEffect(() => setPagina(0), [facetas, textos, orden, modo, paso]);
 
   // Se paginan los talados (en movimiento + terminados); los en pie van resumidos.
   const talados = visibles.filter(({ f }) => f.op != null);
@@ -161,15 +181,21 @@ export function useLothTraceVista({
      vista — el mismo botón, dos números distintos. */
   const seleccionadas = useMemo(() => filas.filter((f) => seleccion.has(f.tree)), [filas, seleccion]);
 
-  const hayFiltros = !!(search || especie || desde || hasta || filtro !== "todas" || paso);
+  const hayFiltros = filtros.activos > 0 || paso != null;
   const limpiarFiltros = () => {
     setPaso(null);
-    setSearch("");
-    setEspecie("");
-    setDesde("");
-    setHasta("");
-    setFiltro("todas");
+    limpiarColumnas();
   };
+  /** Una pastilla de lo pendiente: suma o quita su estado del filtro de la columna Observaciones. */
+  const alternarEstado = useCallback(
+    (k: TraceFiltro) => {
+      const sig = estadosActivos.includes(k) ? estadosActivos.filter((x) => x !== k) : [...estadosActivos, k];
+      setFaceta(ID_ESTADO, sig.length > 0 ? sig.map(labelDeEstado) : undefined);
+    },
+    [estadosActivos, setFaceta],
+  );
+  const { desde, hasta } = rangoUltima(facetas);
+  const especiesElegidas = facetas[ID_ESPECIE];
 
   // El detalle navega por lo que se VE: «siguiente» es el árbol de abajo en la lista.
   const conDetalle = visibles.filter(({ f }) => f.op != null).map(({ f }) => f);
@@ -190,29 +216,28 @@ export function useLothTraceVista({
     enPieAbierto,
     setEnPieAbierto,
     /** Los en pie se abren solos cuando lo pedido son justamente ellos. */
-    enPieForzado: paso === "censo" || filtro === "en_pie" || search.trim() !== "",
+    enPieForzado: paso === "censo" || estadosActivos.includes("en_pie") || search.trim() !== "",
     conteos,
     visibles,
     enPagina,
     totalPaginas,
     pagActual,
     setPagina,
+    /** El autofiltro de cada columna (cabecera, plegable y chips). */
+    filtros,
     search,
-    setSearch,
-    filtro,
-    setFiltro,
+    /** La búsqueda de la columna Árbol (la usa «Ver en la lista» desde otras vistas). */
+    setSearch: (v: string) => setTexto(ID_ARBOL, v),
+    estadosActivos,
+    alternarEstado,
     orden,
     setOrden,
     modo,
     setModo,
     resumenAbierto,
     setResumenAbierto,
-    especie,
-    setEspecie,
     desde,
-    setDesde,
     hasta,
-    setHasta,
     hayFiltros,
     limpiarFiltros,
     seleccion,
@@ -235,8 +260,8 @@ export function useLothTraceVista({
     },
     modalUmbrales,
     setModalUmbrales,
-    /** El nombre de la especie elegida, tal como está escrito. */
-    especieLabel: especies.find((e) => e.clave === especie)?.label ?? null,
+    /** Las especies elegidas en su columna, tal como están escritas. */
+    especieLabel: Array.isArray(especiesElegidas) && especiesElegidas.length > 0 ? especiesElegidas.join(", ") : null,
     csvVisibles: () => filasToCsv(visibles.map(({ f }) => f)),
     csvSeleccion: () => filasToCsv(seleccionadas),
   };

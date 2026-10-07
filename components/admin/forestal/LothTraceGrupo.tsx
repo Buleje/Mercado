@@ -16,6 +16,7 @@ import { formatNumber } from "@/lib/format";
 import LothTraceCard from "./LothTraceCard";
 import LothTraceTabla from "./LothTraceTabla";
 import type { TraceModo, TraceOrden } from "./loth-trace-ui";
+import type { FiltrosTabla } from "./filtros-tabla-forestal";
 
 export const GRUPO_META: Record<Exclude<GrupoArbol, "en_pie">, { titulo: string; nota: string }> = {
   movimiento: { titulo: "En movimiento", nota: "talados con algo pendiente" },
@@ -32,6 +33,7 @@ export default function LothTraceGrupo({
   onAbrir,
   orden,
   onOrden,
+  filtros,
 }: {
   grupo: Exclude<GrupoArbol, "en_pie">;
   /** Árboles del grupo con los filtros puestos (todas las páginas). */
@@ -44,6 +46,8 @@ export default function LothTraceGrupo({
   onAbrir: (tree: string) => void;
   orden: TraceOrden;
   onOrden: (o: TraceOrden) => void;
+  /** El autofiltro de cada columna (va en la cabecera de la tabla). */
+  filtros?: FiltrosTabla<TraceFila>;
 }) {
   if (items.length === 0) return null;
   const meta = GRUPO_META[grupo];
@@ -63,6 +67,7 @@ export default function LothTraceGrupo({
           onAbrir={onAbrir}
           orden={orden}
           onOrden={onOrden}
+          filtros={filtros}
         />
       ) : (
         <div className="space-y-2.5">

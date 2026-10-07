@@ -1,6 +1,7 @@
 /**
  * loth-seccion — leer una sección del libro como se lee un libro contable:
- * por período, ordenado, filtrado, y con la suma al pie.
+ * por período, ordenado y con la suma al pie (el filtro de cada columna vive en
+ * `components/admin/forestal/loth-seccion-filtros`).
  *
  * Lo que faltaba en la vista de secciones y esto resuelve:
  *  · el libro se lleva y se cierra **por mes**, y no había forma de mirar un mes;
@@ -34,29 +35,8 @@ export function periodoLabel(periodo: string): string {
   return `${nombre} ${y}`;
 }
 
-/** Los períodos presentes, del más nuevo al más viejo, con su conteo. */
-export function periodosDe(entries: LothEntryDTO[]): { periodo: string; label: string; count: number }[] {
-  const acc = new Map<string, number>();
-  for (const e of entries) {
-    const p = periodoDe(e.entryDate);
-    if (p) acc.set(p, (acc.get(p) ?? 0) + 1);
-  }
-  return [...acc.entries()]
-    .sort((a, b) => b[0].localeCompare(a[0]))
-    .map(([periodo, count]) => ({ periodo, label: periodoLabel(periodo), count }));
-}
-
-export type EstadoFiltro = "todas" | "registrado" | "anulado" | "fuera_plazo" | "corregidas";
 export type OrdenCampo = "lineNo" | "fecha" | "codigo" | "especie" | "volumen";
 export type OrdenDir = "asc" | "desc";
-
-export interface FiltroSeccion {
-  periodo: string; // "" = todos
-  estado: EstadoFiltro;
-  especie: string; // "" = todas
-}
-
-export const FILTRO_VACIO: FiltroSeccion = { periodo: "", estado: "todas", especie: "" };
 
 /**
  * Qué línea corrige a cuál. La corrección SERFOR no borra: asienta una línea
@@ -78,33 +58,6 @@ export function mapaCorrecciones(entries: LothEntryDTO[]): {
     }
   }
   return { corregidaPor, corrige };
-}
-
-/** ¿Esta línea quedó fuera del plazo de registro? (delegado, no re-implementado) */
-type PredicadoPlazo = (entryDate: string, createdAt: string | null | undefined) => boolean;
-
-export function filtrarLineas(
-  entries: LothEntryDTO[],
-  filtro: FiltroSeccion,
-  fueraDePlazo: PredicadoPlazo,
-  corregidaPor?: Map<number, number>,
-): LothEntryDTO[] {
-  return entries.filter((e) => {
-    if (filtro.periodo && periodoDe(e.entryDate) !== filtro.periodo) return false;
-    if (filtro.especie && e.speciesCommon !== filtro.especie) return false;
-    switch (filtro.estado) {
-      case "registrado":
-        return e.status === "registrado";
-      case "anulado":
-        return e.status === "anulado";
-      case "fuera_plazo":
-        return e.status === "registrado" && fueraDePlazo(e.entryDate, e.createdAt);
-      case "corregidas":
-        return corregidaPor ? corregidaPor.has(e.lineNo) : false;
-      default:
-        return true;
-    }
-  });
 }
 
 const valorOrden = (e: LothEntryDTO, campo: OrdenCampo): string | number => {
