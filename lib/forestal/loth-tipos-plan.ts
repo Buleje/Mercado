@@ -91,8 +91,10 @@ export const TIPOS_PLAN_META: Record<TipoPlan, MetaTipoPlan> = {
     sigla: "Plantación",
     nombre: "Registro de plantación forestal",
     para: "Plantaciones forestales con fines de producción",
-    ayuda: "No es un plan de bosque natural: se registra la plantación y su titular. El regente es de la especialidad «plantaciones».",
-    regente: "segun_caso",
+    ayuda: "No es un plan de bosque natural: se registra la plantación, su titular y su encargado. No pide regente forestal.",
+    // Brandon 2026-10-07: el registro de plantación no pide regente, sólo un
+    // encargado (mismo campo `regenteName`, otro rótulo en el formulario).
+    regente: "no_aplica",
     // Una plantación no tiene parcela de corta anual ni título habilitante de
     // bosque: tiene su propio registro.
     ocultar: ["parcelaCorta", "tituloHabilitante"],

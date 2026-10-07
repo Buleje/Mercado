@@ -7,10 +7,12 @@ import { pideCampo } from "@/lib/forestal/loth-tipos-plan";
 import { Field, cls } from "./loth-plan-ui";
 import LothPlanFormUbicacion from "./LothPlanFormUbicacion";
 import Bloque from "./LothPlanFormBloque";
+import { CampoPlan, clsEsencial } from "./LothPlanFormEsencial";
+import { idEsencial } from "@/lib/forestal/loth-plan-esenciales";
 import type { LothPlanFormEstado } from "./hooks/use-loth-plan-form";
 
 export default function LothPlanFormArea({ form }: { form: LothPlanFormEstado }) {
-  const { f, setF, set, esPlantacion, rot, meta, vigenciaAbierta, setVigenciaAbierta } = form;
+  const { f, setF, set, esPlantacion, rot, meta, vigenciaAbierta, setVigenciaAbierta, esencial, intentoGuardar } = form;
   return (
     <Bloque
       n={esPlantacion ? 5 : 4}
@@ -42,9 +44,20 @@ export default function LothPlanFormArea({ form }: { form: LothPlanFormEstado })
             <Field label={rot.vigenciaOpcional ? "Aprovechamiento desde" : "Vigencia desde"}>
               <input type="date" value={f.vigenciaDesde} onChange={(e) => set("vigenciaDesde", e.target.value)} className={cls} />
             </Field>
-            <Field label={rot.vigenciaOpcional ? "Aprovechamiento hasta" : "Vigencia hasta"}>
-              <input type="date" value={f.vigenciaHasta} onChange={(e) => set("vigenciaHasta", e.target.value)} className={cls} />
-            </Field>
+            <CampoPlan
+              label={rot.vigenciaOpcional ? "Aprovechamiento hasta" : "Vigencia hasta"}
+              campo="vigenciaHasta"
+              esencial={esencial("vigenciaHasta")}
+              marcar={intentoGuardar}
+            >
+              <input
+                id={idEsencial("vigenciaHasta")}
+                type="date"
+                value={f.vigenciaHasta}
+                onChange={(e) => set("vigenciaHasta", e.target.value)}
+                className={clsEsencial(esencial("vigenciaHasta"), intentoGuardar)}
+              />
+            </CampoPlan>
           </>
         )}
       </div>

@@ -4,6 +4,11 @@
  * Bloque «Titular y regente» del formulario del plan: quién responde, el
  * permiso bajo el que se aprueba (traído del Directorio o propuesto por el
  * plan del libro) y el aviso si falta el regente.
+ *
+ * En un registro de PLANTACIÓN no hay regente: hay un **encargado** (Brandon
+ * 2026-10-07). Va en el mismo campo de la base (`regenteName`), sin registro
+ * SERFOR ni especialidad. Esos dos se ocultan pero NO se borran: siguen en el
+ * formulario y viajan al guardar, así un plan que ya los traía no los pierde.
  */
 
 import { AlertTriangle, FileText, X as XIcon } from "@buleje/design-system/icons";
@@ -16,15 +21,21 @@ import LothPlanFormPermisoDelLibro from "./LothPlanFormPermisoDelLibro";
 import { nombreDelPlan } from "@/lib/forestal/loth-tablero-permiso";
 import { ESPECIALIDADES_REGENTE } from "@/lib/forestal/loth-tipos-plan";
 import Bloque from "./LothPlanFormBloque";
+import { CampoPlan, clsEsencial } from "./LothPlanFormEsencial";
+import { idEsencial } from "@/lib/forestal/loth-plan-esenciales";
 import type { LothPlanFormEstado } from "./hooks/use-loth-plan-form";
 
 export default function LothPlanFormTitular({ form }: { form: LothPlanFormEstado }) {
   const {
     f, set, esPlantacion, meta, faltaRegente, contratos, traerDelDirectorio, contratoDelLibro, planDelLibro,
-    usarPermisoDelLibro, setPropuestaDescartada, permiso, soltarPermiso, traidos,
+    usarPermisoDelLibro, setPropuestaDescartada, permiso, soltarPermiso, traidos, esencial, intentoGuardar,
   } = form;
+  const eTitular = esencial("titularName");
+  const eRegente = esencial("regenteName");
+  /* Lo de regente que un plan de plantación ya traía: oculto, pero se dice que sigue. */
+  const regenteGuardado = esPlantacion && f.regenteRegistro.trim() ? f.regenteRegistro.trim() : null;
   return (
-    <Bloque n={esPlantacion ? 4 : 3} titulo="Titular y regente" accion={
+    <Bloque n={esPlantacion ? 4 : 3} titulo={esPlantacion ? "Titular y encargado" : "Titular y regente"} accion={
       <DirectorioPicker
         rol="proveedor"
         label="Traer del Directorio"
@@ -69,31 +80,50 @@ export default function LothPlanFormTitular({ form }: { form: LothPlanFormEstado
           )}
           {!habilitaPlanDeManejo(permiso) && (
             <span className="w-full text-xs font-semibold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-              Ojo: ese papel es comercial, no habilita a aprovechar bosque. Revisá si el plan va bajo otro título.
+              Ojo: ese papel es comercial, no habilita a aprovechar bosque. Revisa si el plan va bajo otro título.
             </span>
           )}
         </div>
       )}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Field label="Titular *">
-          <input value={f.titularName} onChange={(e) => set("titularName", e.target.value)} placeholder="Maderera ... SAC" required className={cls} />
-        </Field>
+        <CampoPlan label="Titular" campo="titularName" esencial={eTitular} marcar={intentoGuardar}>
+          <input
+            id={idEsencial("titularName")}
+            value={f.titularName}
+            onChange={(e) => set("titularName", e.target.value)}
+            placeholder="Maderera ... SAC"
+            aria-required="true"
+            aria-invalid={intentoGuardar && eTitular && !eTitular.lleno ? true : undefined}
+            aria-describedby={intentoGuardar && eTitular && !eTitular.lleno ? `${idEsencial("titularName")}-falta` : undefined}
+            className={clsEsencial(eTitular, intentoGuardar)}
+          />
+        </CampoPlan>
         <Field label="Representante legal">
           <input value={f.representanteLegal} onChange={(e) => set("representanteLegal", e.target.value)} placeholder="Si el titular es empresa" className={cls} />
         </Field>
-        <Field label={`Regente forestal${meta.regente === "obligatorio" ? " *" : ""}`}>
-          <input value={f.regenteName} onChange={(e) => set("regenteName", e.target.value)} placeholder="Ing. ..." className={cls} />
-        </Field>
-        <Field label="N° de registro SERFOR">
-          <input value={f.regenteRegistro} onChange={(e) => set("regenteRegistro", e.target.value)} placeholder="RNR-0000" className={`${cls} font-mono`} />
-        </Field>
-        <Field label="Especialidad del regente">
-          <select value={f.regenteEspecialidad} onChange={(e) => set("regenteEspecialidad", e.target.value)} className={cls}>
-            {ESPECIALIDADES_REGENTE.map((x) => (
-              <option key={x.key} value={x.key}>{x.label}</option>
-            ))}
-          </select>
-        </Field>
+        <CampoPlan label={esPlantacion ? "Encargado" : "Regente forestal"} campo="regenteName" esencial={eRegente} marcar={intentoGuardar}>
+          <input
+            id={idEsencial("regenteName")}
+            value={f.regenteName}
+            onChange={(e) => set("regenteName", e.target.value)}
+            placeholder={esPlantacion ? "Quién está a cargo" : "Ing. ..."}
+            className={clsEsencial(eRegente, intentoGuardar)}
+          />
+        </CampoPlan>
+        {!esPlantacion && (
+          <>
+            <Field label="N° de registro SERFOR">
+              <input value={f.regenteRegistro} onChange={(e) => set("regenteRegistro", e.target.value)} placeholder="RNR-0000" className={`${cls} font-mono`} />
+            </Field>
+            <Field label="Especialidad del regente">
+              <select value={f.regenteEspecialidad} onChange={(e) => set("regenteEspecialidad", e.target.value)} className={cls}>
+                {ESPECIALIDADES_REGENTE.map((x) => (
+                  <option key={x.key} value={x.key}>{x.label}</option>
+                ))}
+              </select>
+            </Field>
+          </>
+        )}
         {/* El dueño del predio no siempre es el titular del permiso: en un
             PMFI el papel está a nombre del propietario y quien opera es otro.
             Sin este campo, ese nombre vive en un cuaderno. */}
@@ -114,7 +144,13 @@ export default function LothPlanFormTitular({ form }: { form: LothPlanFormEstado
           <input value={f.alias} onChange={(e) => set("alias", e.target.value)} placeholder="«el de Puerto Inca»" className={cls} />
         </Field>
       </div>
-      {faltaRegente && (
+      {regenteGuardado && (
+        <p className="mt-2 text-xs text-[var(--text-tertiary)]">
+          Este registro ya traía el N° SERFOR {regenteGuardado}: no se muestra en una plantación, pero se conserva.
+        </p>
+      )}
+      {/* Después de «Crear», el aviso lo da el propio campo (`CampoPlan`). */}
+      {faltaRegente && !intentoGuardar && (
         <p className="mt-2 flex items-start gap-2 rounded-xl border border-[var(--data-warning-500)]/50 bg-[var(--data-warning-100)] px-3 py-2 text-xs font-semibold text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/15 dark:text-[var(--data-warning-500)]">
           <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           Un {meta.sigla} lo elabora e implementa un regente forestal, y es quien firma el informe de ejecución junto

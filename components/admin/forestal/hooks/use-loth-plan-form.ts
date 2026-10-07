@@ -24,6 +24,8 @@ import { useLothPermiso } from "./use-loth-libro-permiso";
 import { filaDesdeLeida, useLectorConstancia } from "./use-lector-constancia";
 import { completarPlanDesdeConstancia, sumarEspeciesLeidas } from "@/lib/forestal/loth-constancia-ocr";
 import { especiesRepetidas, filaEnBlanco, filaVacia, problemaDeFila, type FilaEspecie } from "../loth-plan-especies-api";
+import { esencialesDe, resumirEsenciales, type CampoEsencial } from "@/lib/forestal/loth-plan-esenciales";
+import { irAlEsencial } from "../LothPlanFormEsencial";
 import type { Plan } from "../loth-plan-shared";
 import { esTipoPlantacion, especialidadSugerida, metaDe, rotulosDe, type TipoPlan } from "@/lib/forestal/loth-tipos-plan";
 import { FORMULARIO, REGION_POR_DEFECTO, desdePlan, formularioVacio, type FormularioPlan } from "../loth-plan-form-shared";
@@ -132,6 +134,15 @@ export function useLothPlanForm({
 
   const faltaRegente = meta.regente === "obligatorio" && f.regenteName.trim().length < 2;
   const puedeGuardar = f.titularName.trim().length >= 2 && !busy;
+  /* Los esenciales de ESTE tipo de documento (`loth-plan-esenciales`): el
+     único obligatorio es el titular —lo único que exige el servidor—; el
+     resto es recomendado y no frena el alta. */
+  const esenciales = esencialesDe(f, {
+    llevaEspecies,
+    especiesConVolumen: especiesConDatos.filter((x) => problemaDeFila(x) == null).length,
+  });
+  const resumenEsenciales = resumirEsenciales(esenciales);
+  const esencial = (c: CampoEsencial) => esenciales.find((x) => x.campo === c);
   /* La vigencia de una plantación es opcional y va plegada; abierta si ya trae fechas. */
   const [vigenciaAbierta, setVigenciaAbierta] = useState(() => Boolean(f.vigenciaDesde || f.vigenciaHasta));
 
@@ -204,6 +215,14 @@ export function useLothPlanForm({
   }
 
   function submit(e: FormEvent) {
+    /* «Crear» ya no se apaga sin titular: se deja tocar, se marca lo que falta
+       y se lleva el foco ahí. Un botón gris no dice qué le falta. */
+    if (!busy && resumenEsenciales.faltanObligatorios > 0) {
+      e.preventDefault();
+      setIntentoGuardar(true);
+      irAlEsencial(resumenEsenciales.primero);
+      return;
+    }
     return enviarPlan(e, {
       f, plan, creadoId, puedeGuardar, especiesMal, especiesConDatos, permiso, camposPendientes, docsPend,
       actualizarPermiso, onSaved, setErr, setBusy, setIntentoGuardar, setCreadoId, setCamposPendientes,
@@ -216,7 +235,7 @@ export function useLothPlanForm({
     camposPendientes, setCamposPendientes, docsPend, setDocsPend, pasoDocs, setSubiendoEnEdicion, creadoId,
     especies, setEspecies, intentoGuardar, filasLeidas, contratos, planDelLibro, contratoDelLibro,
     setPropuestaDescartada, arffsUsadas, meta, rot, esPlantacion, llevaEspecies, lector, faltaRegente,
-    puedeGuardar, vigenciaAbierta, setVigenciaAbierta, traerDelDirectorio, copiarDe, usarPermisoDelLibro,
+    puedeGuardar, esenciales, esencial, resumenEsenciales, vigenciaAbierta, setVigenciaAbierta, traerDelDirectorio, copiarDe, usarPermisoDelLibro,
     soltarPermiso, elegirTipo, submit,
   };
 }

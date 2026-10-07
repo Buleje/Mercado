@@ -7,16 +7,24 @@ import { SelectConOtra } from "./campos-elegibles";
 import { Field, cls } from "./loth-plan-ui";
 import LothPlanConstanciaLector, { LineaLectorConstancia } from "./LothPlanConstanciaLector";
 import Bloque from "./LothPlanFormBloque";
+import { CampoPlan, clsEsencial } from "./LothPlanFormEsencial";
+import { idEsencial } from "@/lib/forestal/loth-plan-esenciales";
 import type { LothPlanFormEstado } from "./hooks/use-loth-plan-form";
 
 export default function LothPlanFormDocumento({ form }: { form: LothPlanFormEstado }) {
-  const { f, set, rot, esPlantacion, llevaEspecies, lector, arffsUsadas } = form;
+  const { f, set, rot, esPlantacion, llevaEspecies, lector, arffsUsadas, esencial, intentoGuardar } = form;
   return (
     <Bloque n={2} titulo={rot.bloqueDocumento} accion={llevaEspecies ? <LothPlanConstanciaLector lector={lector} /> : undefined}>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Field label={rot.numero}>
-          <input value={f.planNumber} onChange={(e) => set("planNumber", e.target.value)} placeholder={rot.numeroEjemplo} className={`${cls} ${esPlantacion ? "font-mono" : ""}`} />
-        </Field>
+        <CampoPlan label={rot.numero} campo="planNumber" esencial={esencial("planNumber")} marcar={intentoGuardar}>
+          <input
+            id={idEsencial("planNumber")}
+            value={f.planNumber}
+            onChange={(e) => set("planNumber", e.target.value)}
+            placeholder={rot.numeroEjemplo}
+            className={clsEsencial(esencial("planNumber"), intentoGuardar, esPlantacion ? "font-mono" : "")}
+          />
+        </CampoPlan>
         {pideCampo(f.planType, "tituloHabilitante") && (
           <Field label="Título habilitante">
             <input value={f.tituloHabilitante} onChange={(e) => set("tituloHabilitante", e.target.value)} placeholder="17-CPO/C-J-001-02" className={cls} />

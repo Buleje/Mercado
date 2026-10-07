@@ -4,9 +4,10 @@
 
 import { Check, Loader2, Plus } from "@buleje/design-system/icons";
 import type { LothPlanFormEstado } from "./hooks/use-loth-plan-form";
+import { ContadorEsenciales } from "./LothPlanFormEsencial";
 
 export default function LothPlanFormPie({ form, onClose }: { form: LothPlanFormEstado; onClose: () => void }) {
-  const { pasoDocs, busy, puedeGuardar, editando, creadoId, meta } = form;
+  const { pasoDocs, busy, editando, creadoId, meta, resumenEsenciales, intentoGuardar } = form;
   return (
     <div className="sticky bottom-0 -mx-5 -mb-5 flex flex-wrap items-center justify-end gap-2 border-t-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 py-3">
       {pasoDocs && (
@@ -21,12 +22,13 @@ export default function LothPlanFormPie({ form, onClose }: { form: LothPlanFormE
                 : "Guardando los datos de las carpetas…"}
         </p>
       )}
+      {!pasoDocs && <ContadorEsenciales resumen={resumenEsenciales} intento={intentoGuardar} />}
       <button type="button" onClick={onClose} disabled={busy} className="h-11 rounded-xl px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50">
         Cancelar
       </button>
       <button
         type="submit"
-        disabled={!puedeGuardar}
+        disabled={busy}
         className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent-dark)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
       >
         {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : editando ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}

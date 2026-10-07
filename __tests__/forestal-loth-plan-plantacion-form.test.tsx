@@ -52,7 +52,7 @@ const escribir = (el: HTMLElement, v: string) => fireEvent.change(el, { target: 
 
 function cargarDosEspecies() {
   fireEvent.click(screen.getByRole("button", { name: /^Plantación/ }));
-  escribir(screen.getByLabelText("Titular *"), "Agroforestal QA SAC");
+  escribir(screen.getByLabelText("Titular"), "Agroforestal QA SAC");
   escribir(screen.getByLabelText("Código del registro de plantación"), "Plantación QA-459");
   escribir(screen.getAllByLabelText("Especie *")[0], "Bolaina");
   escribir(screen.getAllByLabelText("Volumen (m³) *")[0], "120");
@@ -128,7 +128,7 @@ describe("alta de una plantación con sus especies", () => {
     const llamadas = fetchQueResponde({ plan: { id: "p1" } });
     render(<LothPlanForm onClose={() => {}} onSaved={() => {}} />);
     fireEvent.click(screen.getByRole("button", { name: /^Plantación/ }));
-    escribir(screen.getByLabelText("Titular *"), "Agroforestal QA SAC");
+    escribir(screen.getByLabelText("Titular"), "Agroforestal QA SAC");
     escribir(screen.getAllByLabelText("Especie *")[0], "Bolaina");
     fireEvent.click(screen.getByRole("button", { name: "Crear Plantación" }));
     expect(screen.getByText("Falta el volumen registrado")).toBeTruthy();
@@ -144,7 +144,7 @@ describe("lo que NO cambia", () => {
     expect(screen.getByLabelText("N° resolución")).toBeTruthy();
     expect(screen.getByLabelText("Vigencia hasta")).toBeTruthy();
     expect(screen.queryByText("Especies registradas")).toBeNull();
-    escribir(screen.getByLabelText("Titular *"), "Maderera El Aguajal");
+    escribir(screen.getByLabelText("Titular"), "Maderera El Aguajal");
     fireEvent.click(screen.getByRole("button", { name: "Crear PO" }));
     await waitFor(() => expect(onSaved).toHaveBeenCalled());
     expect(llamadas.find((l) => l.method === "POST")?.body).not.toHaveProperty("species");

@@ -17,21 +17,25 @@
  * Nada de esto es obligatorio para crear el plan: va plegado, y plegado dice lo
  * que trae adentro. Los costos también se editan en Analítica — es el mismo
  * campo, no otra verdad.
+ *
+ * Ronda 2026-10-07 (Brandon: «más detalles y funciones»): total por m³ y costo
+ * estimado del plan (`LothPlanCosteoTotales`), la UIT del año de la resolución
+ * cuando el repo la conoce, la fecha de vencimiento junto al estado con aviso
+ * si ya venció y sigue «vigente» (`LothPlanCosteoEstado`), y contador y frases
+ * rápidas en las observaciones (`LothPlanCosteoNotas`). Todo opcional.
  */
 
 import { useState } from "react";
 import { ChevronDown, Coins } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
-import { ESTADOS_CONTRATO } from "@/lib/forestal/contratos";
+import { anioDe, costoPorM3, uitDelAnio, vencidoPeroVigente } from "@/lib/forestal/loth-plan-costeo";
+import { fmtSoles } from "@/lib/forestal/cubicacion-formato";
+import { limaDateKey } from "@/lib/utils";
 import { Field, cls } from "./loth-plan-ui";
-
-/** Los mismos cuatro estados que un permiso: un plan viejo se carga cerrado. */
-const ESTADO_LABEL: Record<string, string> = {
-  vigente: "Vigente",
-  vencido: "Vencido",
-  cerrado: "Cerrado",
-  suspendido: "Suspendido",
-};
+import LothPlanCosteoTotales from "./LothPlanCosteoTotales";
+import LothPlanCosteoEstado from "./LothPlanCosteoEstado";
+import { ESTADO_LABEL } from "./contratos-ui";
+import LothPlanCosteoNotas from "./LothPlanCosteoNotas";
 
 export interface CamposDeCosteo {
   uitRef: string;
@@ -42,15 +46,42 @@ export interface CamposDeCosteo {
   notes: string;
 }
 
+/** Lo que el bloque lee del resto del formulario (no lo edita). */
+export interface ContextoDeCosteo {
+  resolucionDate: string;
+  vigenciaHasta: string;
+  /** Σ m³ que el formulario conoce; `null` si no lo sabe (plan de bosque: está en el censo). */
+  volumenM3: number | null;
+  /** «autorizado» o «registrado». */
+  base: string;
+}
+
+const COSTOS = [
+  { k: "costoExtraccionM3", label: "Extracción (S/ por m³)", placeholder: "Tala, arrastre y patio" },
+  { k: "costoTransformacionM3", label: "Transformación (S/ por m³)", placeholder: "Aserrío" },
+  { k: "costoFleteM3", label: "Flete (S/ por m³)", placeholder: "Hasta el destino" },
+] as const;
+
+const UIT_ID = "plan-costeo-uit";
+
 export default function LothPlanFormCosteo({
   valores,
   onCambio,
+  contexto,
 }: {
   valores: CamposDeCosteo;
   onCambio: (k: keyof CamposDeCosteo, v: string) => void;
+  contexto?: ContextoDeCosteo;
 }) {
   const [abierto, setAbierto] = useState(false);
-  const cargados = [valores.costoExtraccionM3, valores.costoTransformacionM3, valores.costoFleteM3].filter((v) => v.trim()).length;
+  const hoy = limaDateKey();
+  const costos = COSTOS.map((c) => valores[c.k]);
+  const cargados = costos.filter((v) => v.trim()).length;
+  const total = costoPorM3(costos);
+  const vencido = vencidoPeroVigente(valores.estado, contexto?.vigenciaHasta ?? "", hoy);
+  const anio = anioDe(contexto?.resolucionDate);
+  const uitAnio = uitDelAnio(anio);
+  const uitDistinta = uitAnio != null && Number(valores.uitRef) !== uitAnio;
 
   return (
     <section className="space-y-2">
@@ -68,8 +99,12 @@ export default function LothPlanFormCosteo({
             </span>
             {/* Plegado también dice lo que trae: plegar no es esconder el dato. */}
             <span className="block text-xs text-[var(--text-tertiary)]">
-              UIT S/ {valores.uitRef || "—"} · {cargados === 0 ? "sin costos por m³" : `${cargados} de 3 costos por m³`} ·{" "}
-              {ESTADO_LABEL[valores.estado] ?? "Vigente"}
+              UIT S/ {valores.uitRef || "—"} · {cargados === 0 ? "sin costos por m³" : `${cargados} de 3 costos por m³`}
+              {total && ` (S/ ${fmtSoles(total.total)} por m³)`} · {ESTADO_LABEL[valores.estado as keyof typeof ESTADO_LABEL] ?? "Vigente"}
+              {vencido && (
+                <span className="font-semibold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"> · vigencia terminada</span>
+              )}
+              {valores.notes.trim() && " · con observaciones"}
             </span>
           </span>
           <ChevronDown className={`h-4 w-4 shrink-0 text-[var(--text-tertiary)] transition-transform ${abierto ? "rotate-180" : ""}`} aria-hidden="true" />
@@ -84,8 +119,20 @@ export default function LothPlanFormCosteo({
 
       {abierto && (
         <div className="grid grid-cols-2 gap-3 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-3 lg:grid-cols-4">
-          <Field label="UIT de referencia (S/)">
+          <div>
+            <div className="mb-1 flex items-center gap-1">
+              <label htmlFor={UIT_ID} className="text-xs font-medium text-[var(--text-secondary)]">
+                UIT de referencia (S/)
+              </label>
+              <InfoTip
+                title="UIT de referencia"
+                what="La UIT del año de la resolución: con ella se calcula el pago por derecho de aprovechamiento."
+                affects="Si conozco la UIT de ese año, te propongo usarla. Si no, cópiala de la resolución."
+                example="Resolución de marzo 2025 → UIT 2025, S/ 5 350."
+              />
+            </div>
             <input
+              id={UIT_ID}
               type="number"
               step="0.01"
               min="0"
@@ -93,65 +140,40 @@ export default function LothPlanFormCosteo({
               onChange={(e) => onCambio("uitRef", e.target.value)}
               className={`${cls} tabular-nums`}
             />
-            <span className="mt-1 block text-xs text-[var(--text-tertiary)]">
-              La UIT del año de la resolución: con ella se calcula el pago por derecho de aprovechamiento.
-            </span>
-          </Field>
-          <Field label="Extracción (S/ por m³)">
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              value={valores.costoExtraccionM3}
-              onChange={(e) => onCambio("costoExtraccionM3", e.target.value)}
-              placeholder="Tala, arrastre y patio"
-              className={`${cls} tabular-nums`}
-            />
-          </Field>
-          <Field label="Transformación (S/ por m³)">
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              value={valores.costoTransformacionM3}
-              onChange={(e) => onCambio("costoTransformacionM3", e.target.value)}
-              placeholder="Aserrío"
-              className={`${cls} tabular-nums`}
-            />
-          </Field>
-          <Field label="Flete (S/ por m³)">
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              value={valores.costoFleteM3}
-              onChange={(e) => onCambio("costoFleteM3", e.target.value)}
-              placeholder="Hasta el destino"
-              className={`${cls} tabular-nums`}
-            />
-          </Field>
-          <Field label="Estado del plan">
-            <select value={valores.estado} onChange={(e) => onCambio("estado", e.target.value)} className={cls}>
-              {ESTADOS_CONTRATO.map((e) => (
-                <option key={e} value={e}>
-                  {ESTADO_LABEL[e]}
-                </option>
-              ))}
-            </select>
-            <span className="mt-1 block text-xs text-[var(--text-tertiary)]">
-              Un plan de años anteriores se carga como cerrado: entra al historial sin figurar entre los vigentes.
-            </span>
-          </Field>
-          <Field label="Observaciones">
-            <textarea
-              value={valores.notes}
-              onChange={(e) => onCambio("notes", e.target.value)}
-              rows={2}
-              maxLength={1000}
-              placeholder="Lo que haya que recordar de este documento"
-              className={`${cls} h-auto py-2`}
-            />
-          </Field>
+            {uitDistinta && uitAnio != null && (
+              <button
+                type="button"
+                onClick={() => onCambio("uitRef", String(uitAnio))}
+                className="mt-1 inline-flex min-h-8 items-center rounded-lg px-1.5 text-xs font-bold text-[var(--accent-dark)] transition-colors hover:bg-[var(--accent-soft)] dark:text-[var(--accent)]"
+              >
+                Usar la UIT de {anio} (S/ {fmtSoles(uitAnio)})
+              </button>
+            )}
+            {anio != null && uitAnio == null && (
+              <span className="mt-1 block text-xs text-[var(--text-tertiary)]">Sin la UIT de {anio} cargada: cópiala de la resolución.</span>
+            )}
+          </div>
+          {COSTOS.map((c) => (
+            <Field key={c.k} label={c.label}>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={valores[c.k]}
+                onChange={(e) => onCambio(c.k, e.target.value)}
+                placeholder={c.placeholder}
+                className={`${cls} tabular-nums`}
+              />
+            </Field>
+          ))}
+          <LothPlanCosteoTotales costos={costos} volumenM3={contexto?.volumenM3 ?? null} base={contexto?.base ?? "autorizado"} />
+          <LothPlanCosteoEstado
+            estado={valores.estado}
+            vigenciaHasta={contexto?.vigenciaHasta ?? ""}
+            hoy={hoy}
+            onEstado={(v) => onCambio("estado", v)}
+          />
+          <LothPlanCosteoNotas notas={valores.notes} onNotas={(v) => onCambio("notes", v)} />
         </div>
       )}
     </section>

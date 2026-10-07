@@ -50,6 +50,8 @@ import LothPlanFormDocumento from "./LothPlanFormDocumento";
 import LothPlanFormTitular from "./LothPlanFormTitular";
 import LothPlanFormArea from "./LothPlanFormArea";
 import LothPlanFormPie from "./LothPlanFormPie";
+import { idEsencial } from "@/lib/forestal/loth-plan-esenciales";
+import { totalM3 } from "./loth-plan-especies-api";
 
 /* El formulario vacío y el plan vuelto formulario viven en `loth-plan-form-shared`;
    se siguen exportando desde acá para quien ya los importaba (el test de edición). */
@@ -90,7 +92,7 @@ export default function LothPlanForm({
   const form = useLothPlanForm({ plan, planesPrevios, onSaved, onEstadoCierre });
   const {
     f, set, err, esPlantacion, llevaEspecies, especies, setEspecies, intentoGuardar, filasLeidas,
-    docsPend, setDocsPend, setSubiendoEnEdicion, camposPendientes, setCamposPendientes, submit,
+    docsPend, setDocsPend, setSubiendoEnEdicion, camposPendientes, setCamposPendientes, submit, rot,
   } = form;
 
   return (
@@ -110,20 +112,22 @@ export default function LothPlanForm({
 
       {/* 3 · Plantación: las especies y sus m³ registrados — la base del saldo (ADR-459) */}
       {esPlantacion && (
-        <Bloque
-          n={3}
-          titulo="Especies registradas"
-          ayuda={{
-            what: "Con estas especies y sus m³ trabaja el libro: la tala, el trozado y el despacho descuentan de acá. No hace falta censo.",
-            example: "Bolaina 120 m³ y Capirona 80 m³: el saldo arranca en 200 m³.",
-          }}
-        >
-          {llevaEspecies ? (
-            <LothPlanFormPlantacion filas={especies} onFilas={setEspecies} mostrarErrores={intentoGuardar} leidas={filasLeidas} />
-          ) : (
-            <EspeciesSeCorrigenEnRegistro onIr={onIrARegistro} />
-          )}
-        </Bloque>
+        <div id={idEsencial("especies")}>
+          <Bloque
+            n={3}
+            titulo="Especies registradas"
+            ayuda={{
+              what: "Con estas especies y sus m³ trabaja el libro: la tala, el trozado y el despacho descuentan de acá. No hace falta censo.",
+              example: "Bolaina 120 m³ y Capirona 80 m³: el saldo arranca en 200 m³.",
+            }}
+          >
+            {llevaEspecies ? (
+              <LothPlanFormPlantacion filas={especies} onFilas={setEspecies} mostrarErrores={intentoGuardar} leidas={filasLeidas} />
+            ) : (
+              <EspeciesSeCorrigenEnRegistro onIr={onIrARegistro} />
+            )}
+          </Bloque>
+        </div>
       )}
 
       {/* 3 (4 en plantación) · Quién responde: titular y regente */}
@@ -143,6 +147,14 @@ export default function LothPlanForm({
           notes: f.notes,
         }}
         onCambio={(k: keyof CamposDeCosteo, v: string) => set(k, v)}
+        contexto={{
+          resolucionDate: f.resolucionDate,
+          vigenciaHasta: f.vigenciaHasta,
+          // El volumen sólo lo conoce el alta de una plantación (sus especies);
+          // en un plan de bosque está en el censo, que no vive en este formulario.
+          volumenM3: llevaEspecies ? totalM3(especies) : null,
+          base: rot.base,
+        }}
       />
 
       {/* Los papeles del plan, en sus carpetas del Drive (ADR-467). El costeo
