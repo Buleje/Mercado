@@ -12,7 +12,7 @@
  */
 
 import { NextResponse } from "next/server";
-import { buildCSP } from "@/lib/middleware-utils";
+import { buildCSP, esPaginaTv } from "@/lib/middleware-utils";
 
 /**
  * Mutate the given NextResponse with the standard security headers
@@ -44,8 +44,9 @@ export function applySecurityHeaders(
   // embebible (DENY); el resto SAMEORIGIN para habilitar el preview en vivo del
   // editor (iframe same-origin del storefront). Algunos browsers aplican XFO
   // aunque haya frame-ancestors, así que deben coincidir.
+  /* `/tv` (Modo TV, ADR-473) igual que el panel: alineado con `buildCSP`. */
   const isAdminRoute =
-    pathname.startsWith("/admin") || pathname.startsWith("/superadmin");
+    pathname.startsWith("/admin") || pathname.startsWith("/superadmin") || esPaginaTv(pathname);
   response.headers.set("X-Frame-Options", isAdminRoute ? "DENY" : "SAMEORIGIN");
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   // geolocation=(self) habilita el botón "Usar mi ubicación" en

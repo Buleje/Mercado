@@ -15,6 +15,7 @@ import type { EZUIKitPlayer } from "ezuikit-js";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
 import { rangoDeGrabacion } from "@/lib/camaras/hik-connect-api";
+import { urlCamara, useApiCamaras } from "./api-camaras";
 import { MINUTOS_SIN_TOCAR, mensajeDelReproductor } from "./hik-connect-teams";
 import {
   capturarCuadro,
@@ -40,6 +41,8 @@ export interface OpcionesVisor {
    * para todos sus cuadros) y cada toque se le avisa a él.
    */
   onActividad?: () => void;
+  /** Base de la API (`TV_API_TV` en el televisor). Sin esto, la del contexto. */
+  baseApi?: string;
 }
 
 /** Cuánto se espera el primer cuadro (4G + despertar la cámara solar) antes de decir que no llegó. */
@@ -63,6 +66,7 @@ const esRespuesta = (j: unknown): j is RespuestaVideo => {
 
 export function useVisorNube(camaraId: string, opciones: OpcionesVisor = {}) {
   const { activo = true, retrasoMs = 0, onActividad } = opciones;
+  const { base } = useApiCamaras(opciones.baseApi);
   const contenedorId = idSeguro(useId());
   /** El marco = video + controles encima: es lo que va a pantalla completa. */
   const marcoId = `${contenedorId}-marco`;
@@ -140,7 +144,7 @@ export function useVisorNube(camaraId: string, opciones: OpcionesVisor = {}) {
       let json: unknown = null;
       let ok = false;
       try {
-        const r = await fetch(`/api/admin/camaras/${encodeURIComponent(camaraId)}/en-vivo-nube`, {
+        const r = await fetch(urlCamara(base, camaraId, "en-vivo-nube"), {
           method: "POST",
           credentials: "include",
           headers: csrfHeaders({ "Content-Type": "application/json" }),
@@ -216,7 +220,7 @@ export function useVisorNube(camaraId: string, opciones: OpcionesVisor = {}) {
     };
     // `modo` entra por `claveModo`: un objeto nuevo con el mismo rango no reabre.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [camaraId, calidad, claveModo, intento, contenedorId, actividad, activo, retrasoMs]);
+  }, [camaraId, calidad, claveModo, intento, contenedorId, actividad, activo, retrasoMs, base]);
 
   useEffect(
     () => () => {

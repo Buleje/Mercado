@@ -37,7 +37,8 @@ export default function VisorNubeControles({
   analisis,
 }: {
   v: VisorNubeEstado;
-  analisis: AnalisisCuadro;
+  /** Sin esto (Modo TV, sólo mirar), no hay «Analizar». */
+  analisis?: AnalisisCuadro;
 }) {
   const [abrirRango, setAbrirRango] = useState(false);
   const [fecha, setFecha] = useState(hoyLocal);
@@ -98,15 +99,17 @@ export default function VisorNubeControles({
           <Download className="h-4 w-4" aria-hidden />
           <span className="max-sm:sr-only">Bajar</span>
         </button>
-        <button
-          type="button"
-          onClick={() => void analisis.analizar()}
-          disabled={!viendo || analisis.ocupado}
-          className={BTN}
-          title="La IA mira este cuadro: personas, placa y chalecos"
-        >
-          <Sparkles className="h-4 w-4" aria-hidden /> Analizar
-        </button>
+        {analisis && (
+          <button
+            type="button"
+            onClick={() => void analisis.analizar()}
+            disabled={!viendo || analisis.ocupado}
+            className={BTN}
+            title="La IA mira este cuadro: personas, placa y chalecos"
+          >
+            <Sparkles className="h-4 w-4" aria-hidden /> Analizar
+          </button>
+        )}
         <button
           type="button"
           onClick={v.alternarTeatro}

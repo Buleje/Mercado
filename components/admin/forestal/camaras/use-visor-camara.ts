@@ -22,6 +22,7 @@
 
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import { logger } from "@/lib/logger";
+import { urlCamara, useApiCamaras } from "./api-camaras";
 
 /** De dónde se baja hls.js cuando el navegador no sabe HLS por su cuenta. */
 const CDN_HLS = "https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.17/hls.min.js";
@@ -38,7 +39,8 @@ export type DisponibilidadVideo =
  * a que ffmpeg escriba el primer pedazo antes de decir que sí. Mientras tanto
  * el visor ya está mostrando fotos, así que la espera no se ve.
  */
-export function useDisponibilidadDeVideo(camaraId: string): DisponibilidadVideo {
+export function useDisponibilidadDeVideo(camaraId: string, baseApi?: string): DisponibilidadVideo {
+  const { base } = useApiCamaras(baseApi);
   const [estado, setEstado] = useState<DisponibilidadVideo>({ fase: "consultando" });
 
   useEffect(() => {
@@ -46,7 +48,7 @@ export function useDisponibilidadDeVideo(camaraId: string): DisponibilidadVideo 
     setEstado({ fase: "consultando" });
     void (async () => {
       try {
-        const r = await fetch(`/api/admin/camaras/${encodeURIComponent(camaraId)}/vivo`, {
+        const r = await fetch(urlCamara(base, camaraId, "vivo"), {
           credentials: "include",
         });
         const j = (await r.json().catch(() => ({}))) as {
@@ -63,7 +65,7 @@ export function useDisponibilidadDeVideo(camaraId: string): DisponibilidadVideo 
       }
     })();
     return () => { vivo = false; };
-  }, [camaraId]);
+  }, [camaraId, base]);
 
   return estado;
 }
@@ -201,7 +203,13 @@ const FALLOS_PARA_PARAR = 3;
  * Una foto que no llega es normal; tres seguidas no. Recién ahí se detiene, así
  * no parpadea un error rojo por un cuadro perdido.
  */
-export function useFotosEncadenadas(camaraId: string, ritmo: number, activo: boolean): FotosEncadenadas {
+export function useFotosEncadenadas(
+  camaraId: string,
+  ritmo: number,
+  activo: boolean,
+  baseApi?: string,
+): FotosEncadenadas {
+  const { base } = useApiCamaras(baseApi);
   const [src, setSrc] = useState<string | null>(null);
   const [ultimoAt, setUltimoAt] = useState<number | null>(null);
   const [detenido, setDetenido] = useState<string | null>(null);
@@ -223,9 +231,9 @@ export function useFotosEncadenadas(camaraId: string, ritmo: number, activo: boo
   const pedirCuadro = useCallback(() => {
     cuadroRef.current += 1;
     setSrc(
-      `/api/admin/camaras/${encodeURIComponent(camaraId)}/snapshot?t=${Date.now()}&n=${cuadroRef.current}`,
+      `${urlCamara(base, camaraId, "snapshot")}?t=${Date.now()}&n=${cuadroRef.current}`,
     );
-  }, [camaraId]);
+  }, [camaraId, base]);
 
   const programarSiguiente = useCallback(() => {
     if (temporizadorRef.current) clearTimeout(temporizadorRef.current);

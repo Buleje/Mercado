@@ -9,7 +9,7 @@
  * cuadro suelta su reproductor (`destroy` de EZUIKit en el desmontaje).
  */
 
-import { Battery, LayoutGrid, Play } from "@buleje/design-system/icons";
+import { Battery, LayoutGrid, Play, Tv } from "@buleje/design-system/icons";
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { BTN } from "./camaras-ui";
@@ -21,9 +21,13 @@ interface Props {
   camaras: readonly CamaraMosaico[];
   onCerrar: () => void;
   onVerFotos: () => void;
+  /** Base de la API de cada cuadro (`TV_API_TV` = sólo mirar). */
+  baseApi?: string;
+  /** «Verlo en el televisor» (Modo TV): el canvas de Hik-Connect no se puede transmitir. */
+  onVerEnTv?: () => void;
 }
 
-export default function MosaicoNube({ camaras, onCerrar, onVerFotos }: Props) {
+export default function MosaicoNube({ camaras, onCerrar, onVerFotos, baseApi, onVerEnTv }: Props) {
   const m = useMosaicoNube();
 
   return (
@@ -54,6 +58,17 @@ export default function MosaicoNube({ camaras, onCerrar, onVerFotos }: Props) {
             affects={`Si nadie toca el mosaico por ${MINUTOS_SIN_TOCAR} minutos, se pausan todas. Cerrar esta ventana corta todas.`}
             example="Para mirar una sola con calma, cierra esto y usa «En vivo» de esa cámara."
           />
+          {onVerEnTv && (
+            <button
+              type="button"
+              onClick={onVerEnTv}
+              className="inline-flex shrink-0 items-center gap-1.5 text-sm font-bold text-[var(--accent-ink)] underline-offset-4 hover:underline dark:text-[var(--accent)]"
+              title="El Modo TV muestra las cámaras en el navegador del televisor"
+            >
+              <Tv className="h-4 w-4" aria-hidden />
+              <span className="max-sm:sr-only">Verlo en el televisor</span>
+            </button>
+          )}
         </p>
 
         {m.cortado && (
@@ -79,6 +94,7 @@ export default function MosaicoNube({ camaras, onCerrar, onVerFotos }: Props) {
               retrasoMs={i * RETRASO_ENTRE_CUADROS_MS}
               onActividad={m.actividad}
               onVerFotos={onVerFotos}
+              baseApi={baseApi}
             />
           ))}
         </ul>

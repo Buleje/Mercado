@@ -89,7 +89,15 @@ const DRIVE_READ_PREFIX = "/api/admin/documents";
  * además su propio tope por cámara/usuario; el resto de /api sigue en 60/min.
  */
 const CAMARA_VIVO_MAX_REQUESTS = 300;
-const CAMARA_CUADRO_RE = /^\/api\/admin\/camaras\/[^/]+\/cuadro$/;
+/* El espejo del Modo TV (`/api/tv/camaras/<id>/…`, ADR-473) es el mismo
+   sondeo: mismo cupo. La lista y los segmentos del HLS (ADR-470) también
+   entran: un reproductor pide ~60/min por cámara y con el techo general de 60
+   una sola cámara ya rebotaba en producción (07-10). La foto `snapshot` se
+   pide cada 2 s por cámara: un mosaico de 4 son 120/min. El arranque
+   `.../vivo` (que levanta un ffmpeg) NO entra: sigue en el techo general;
+   cada ruta conserva además su propio cupo. */
+const CAMARA_CUADRO_RE =
+  /^\/api\/(?:admin|tv)\/camaras\/[^/]+\/(?:cuadro|snapshot|vivo\/(?:vivo\.m3u8|s\d{3,}\.ts))$/;
 
 /**
  * Legacy alias — kept so existing unit tests that import `RateLimitEntry`
@@ -253,9 +261,14 @@ export function __resetEdgeLimiterForTests(): void {
  *
  * Keep `'unsafe-inline'` in `style-src` for Tailwind JIT.
  */
+/** `/tv` y lo que cuelgue de ella; NO `/tvfoo` ni `/api/tv`. */
+export const esPaginaTv = (pathname: string) => pathname === "/tv" || pathname.startsWith("/tv/");
+
 export function buildCSP(pathname: string, nonce?: string): string {
+  /* El Modo TV tampoco se embebe (security 07-10): un iframe ajeno no puede
+     mostrar las cámaras del TV dentro de otra página. */
   const isAdminRoute =
-    pathname.startsWith("/admin") || pathname.startsWith("/superadmin");
+    pathname.startsWith("/admin") || pathname.startsWith("/superadmin") || esPaginaTv(pathname);
   // frame-ancestors:
   //  - admin/superadmin → 'none' (jamás embebibles, ni same-origin).
   //  - resto (incl. storefronts /t/[slug]/*) → 'self': permite el preview en
@@ -283,8 +296,9 @@ export function buildCSP(pathname: string, nonce?: string): string {
         publicada. Comodín acotado al dominio de EZVIZ, sólo wss. Achicarlo con
         lo que reporte /api/csp-report en la primera prueba con claves reales.
      Las regiones que no usa el panel (Rusia, India, Vietnam) no se abren. */
-  /* Sólo /admin: /superadmin no usa el visor (security 05-10, hallazgo bajo). */
-  const ezviz = pathname.startsWith("/admin")
+  /* Sólo /admin y el Modo TV (`/tv`, ADR-473: el televisor usa los mismos
+     visores): /superadmin no usa el visor (security 05-10, hallazgo bajo). */
+  const ezviz = pathname.startsWith("/admin") || esPaginaTv(pathname)
     ? {
         connect:
           " https://isaopen.ezvizlife.com https://iusopen.ezvizlife.com https://ieuopen.ezvizlife.com https://isgpopen.ezvizlife.com" +

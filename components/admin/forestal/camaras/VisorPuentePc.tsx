@@ -24,8 +24,8 @@ interface Props {
   nombre: string;
   cuadro: CuadroPuente;
   cajaRef: RefObject<HTMLDivElement | null>;
-  /** Abre «Conectar» en el puente: recorte, ajustes y el comando para la PC. */
-  onAjustar: () => void;
+  /** Abre «Conectar» en el puente: recorte, ajustes y el comando para la PC. Sin esto (Modo TV), sólo mirar. */
+  onAjustar?: () => void;
   /** La última lectura de la IA, debajo del cuadro. */
   children?: ReactNode;
 }
@@ -65,9 +65,11 @@ export default function VisorPuentePc({ nombre, cuadro, cajaRef, onAjustar, chil
               <p className="max-w-[28rem] text-xs text-[var(--text-secondary)]">
                 Arranca el script en la PC y deja la ventana de Hik-Connect a la vista, sin minimizar.
               </p>
-              <button type="button" onClick={onAjustar} className={BOTON_CHICO}>
-                <Monitor className="h-3.5 w-3.5" aria-hidden /> Ver el comando
-              </button>
+              {onAjustar && (
+                <button type="button" onClick={onAjustar} className={BOTON_CHICO}>
+                  <Monitor className="h-3.5 w-3.5" aria-hidden /> Ver el comando
+                </button>
+              )}
             </div>
           )}
           {src && !vivo && (
@@ -88,9 +90,11 @@ export default function VisorPuentePc({ nombre, cuadro, cajaRef, onAjustar, chil
             {senal === "esperando" ? "Conectando…" : textoSenal(senal, edadMs)}
           </span>
           <span className="ml-auto flex items-center gap-1">
-            <button type="button" onClick={onAjustar} className={BOTON_CHICO}>
-              <Crop className="h-3.5 w-3.5" aria-hidden /> Recorte y ajustes
-            </button>
+            {onAjustar && (
+              <button type="button" onClick={onAjustar} className={BOTON_CHICO}>
+                <Crop className="h-3.5 w-3.5" aria-hidden /> Recorte y ajustes
+              </button>
+            )}
             <button
               type="button"
               onClick={pantallaCompleta}
@@ -132,7 +136,7 @@ export function PastillaPuente({ cuadro }: { cuadro: CuadroPuente }) {
 }
 
 /** La pastilla sola, con su propio pedido de señal (un `HEAD` cada 15 s): para la línea de estado de «Fotos». */
-export function SenalPuente({ camaraId }: { camaraId: string }) {
-  const cuadro = useCuadroPuente(camaraId, { activo: true, modo: "senal" });
+export function SenalPuente({ camaraId, baseApi }: { camaraId: string; baseApi?: string }) {
+  const cuadro = useCuadroPuente(camaraId, { activo: true, modo: "senal", baseApi });
   return <PastillaPuente cuadro={cuadro} />;
 }

@@ -338,6 +338,11 @@ export {
   Minimize2,
   MinusCircle,
   Monitor,
+  // Modo TV de las cámaras (2026-10-07)
+  Cast,
+  MonitorSmartphone,
+  Tv,
+  Laptop,
   Moon,
   MousePointer,
   Navigation,

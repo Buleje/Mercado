@@ -14,10 +14,11 @@
  * cámara solar y se corta solo a los 5 min sin tocar nada.
  */
 
-import { Battery, Video } from "@buleje/design-system/icons";
+import { Battery, Tv, Video } from "@buleje/design-system/icons";
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { cn } from "@/lib/utils";
+import { useApiCamaras } from "./api-camaras";
 import ControlesCamara from "./ControlesCamara";
 import { DATOS_POR_HORA, MINUTOS_SIN_TOCAR } from "./hik-connect-teams";
 import { useAnalizarCuadro } from "./use-analizar-cuadro";
@@ -42,10 +43,18 @@ interface Props {
   onCerrar: () => void;
   /** «Ver en Fotos» del aviso de «Analizar» y de «Foto». */
   onVerFotos: () => void;
+  /** Base de la API (`TV_API_TV` = sólo mirar: sin mover, micrófono ni «Analizar»). */
+  baseApi?: string;
+  /**
+   * «Verlo en el televisor»: el video de Hik-Connect se dibuja en un canvas y
+   * no se puede transmitir; esto abre «Ver en otra pantalla» (Modo TV).
+   */
+  onVerEnTv?: () => void;
 }
 
-export default function VisorNube({ camaraId, nombre, conCodigo, onCerrar, onVerFotos }: Props) {
-  const v = useVisorNube(camaraId);
+export default function VisorNube({ camaraId, nombre, conCodigo, onCerrar, onVerFotos, baseApi, onVerEnTv }: Props) {
+  const { base, soloMirar } = useApiCamaras(baseApi);
+  const v = useVisorNube(camaraId, { baseApi: base });
   const a = useAnalizarCuadro(camaraId, v.tomarCuadro);
   const enGrabacion = v.modo.tipo === "grabacion";
   const completa = v.enPantallaCompleta;
@@ -104,19 +113,31 @@ export default function VisorNube({ camaraId, nombre, conCodigo, onCerrar, onVer
             />
             <VisorNubeCapas v={v} conCodigo={conCodigo} />
           </div>
-          <ControlesCamara
-            camaraId={camaraId}
-            nombre={nombre}
-            marcoId={v.marcoId}
-            viendo={v.estado === "viendo"}
-            teclado="documento"
-            onVerFotos={onVerFotos}
-            tomarCuadro={v.tomarCuadro}
-          />
+          {!soloMirar && (
+            <ControlesCamara
+              camaraId={camaraId}
+              nombre={nombre}
+              marcoId={v.marcoId}
+              viendo={v.estado === "viendo"}
+              teclado="documento"
+              onVerFotos={onVerFotos}
+              tomarCuadro={v.tomarCuadro}
+            />
+          )}
         </div>
 
-        <VisorNubeControles v={v} analisis={a} />
-        <VisorNubeAnalisis a={a} onVerFotos={onVerFotos} />
+        <VisorNubeControles v={v} analisis={soloMirar ? undefined : a} />
+        {!soloMirar && <VisorNubeAnalisis a={a} onVerFotos={onVerFotos} />}
+        {onVerEnTv && !v.teatro && (
+          <button
+            type="button"
+            onClick={onVerEnTv}
+            className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--accent-ink)] underline-offset-4 hover:underline dark:text-[var(--accent)]"
+            title="Este video no se puede transmitir: el Modo TV lo muestra en el navegador del televisor"
+          >
+            <Tv className="h-4 w-4" aria-hidden /> Verlo en el televisor
+          </button>
+        )}
       </div>
     </AdminModal>
   );

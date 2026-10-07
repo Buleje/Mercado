@@ -25,7 +25,8 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CalendarDays, Camera, Image as ImageIcon, RefreshCw } from "@buleje/design-system/icons";
+import { CalendarDays, Camera, Image as ImageIcon, MoreHorizontal, RefreshCw, Tv } from "@buleje/design-system/icons";
+import ActionMenu from "@/components/admin/shared/action-menu";
 import SegmentedControl from "@/components/ui-system/SegmentedControl";
 import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import { estaCallada } from "@/lib/camaras/camaras";
@@ -34,6 +35,7 @@ import ConectarCamaraModal from "./camaras/ConectarCamaraModal";
 import ChalecosModal from "./camaras/ChalecosModal";
 import HistorialFotos from "./camaras/HistorialFotos";
 import HoyEnElPatio from "./camaras/HoyEnElPatio";
+import OtraPantallaModal, { type PestanaOtraPantalla } from "./camaras/OtraPantallaModal";
 import VistaCamaras from "./camaras/VistaCamaras";
 import { CalladasAviso, DireccionAviso, MensajeAccion, SinIaAviso } from "./camaras/AvisosCamaras";
 import { useCamaras } from "./camaras/use-camaras";
@@ -47,16 +49,22 @@ import { BTN, faltaClaveIa, porQueNoSeCopia } from "./camaras/camaras-ui";
 
 const VISTAS = ["fotos", "patio", "camaras"] as const;
 
-/* La cuenta de Hik-Connect for Teams y su visor, compartidos por las tres vistas (ADR-471). */
+/** «Ver en otra pantalla» abierto (Modo TV), y en qué pestaña. */
+type OtraPantalla = { pestana: PestanaOtraPantalla; codigo?: string } | null;
+
+/* La cuenta de Hik-Connect for Teams y su visor, compartidos por las tres vistas (ADR-471).
+   «Ver en otra pantalla» vive arriba del proveedor: el visor de la nube lo abre con
+   «Verlo en el televisor» (su video es un canvas y no se puede transmitir). */
 export default function CamarasView() {
+  const [otra, setOtra] = useState<OtraPantalla>(null);
   return (
-    <VisorNubeProvider>
-      <PantallaCamaras />
+    <VisorNubeProvider onVerEnTv={() => setOtra({ pestana: "tv" })}>
+      <PantallaCamaras otra={otra} setOtra={setOtra} />
     </VisorNubeProvider>
   );
 }
 
-function PantallaCamaras() {
+function PantallaCamaras({ otra, setOtra }: { otra: OtraPantalla; setOtra: (o: OtraPantalla) => void }) {
   const d = useCamaras();
   const conexion = useConexionDirecta(d);
   const dir = useDireccionPublica();
@@ -81,6 +89,17 @@ function PantallaCamaras() {
     focoRef.current = null;
     document.getElementById(`camara-${id}`)?.scrollIntoView({ block: "start", behavior: "smooth" });
   }, [vista]);
+
+  /* El QR del televisor trae `?vincularTv=CODIGO`: se abre «Ver en otra pantalla»
+     con el código puesto y se saca de la URL (un refresco no lo vuelve a abrir). */
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const codigo = url.searchParams.get("vincularTv");
+    if (!codigo) return;
+    url.searchParams.delete("vincularTv");
+    window.history.replaceState(window.history.state, "", url.toString());
+    setOtra({ pestana: "tv", codigo });
+  }, [setOtra]);
 
   /* «Analizar» del vivo guarda la foto por fuera de `useCamaras`: se recarga en
      silencio para que «Fotos» la muestre (y otra vez cuando llega la lectura). */
@@ -162,6 +181,21 @@ function PantallaCamaras() {
           <RefreshCw className={`h-4 w-4 ${d.cargando ? "animate-spin" : ""}`} aria-hidden />
           <span className="max-sm:sr-only">Actualizar</span>
         </button>
+        <ActionMenu
+          label="Más acciones de cámaras"
+          icon={MoreHorizontal}
+          soloIcono
+          size="sm"
+          actions={[
+            {
+              id: "otra-pantalla",
+              label: "Ver en otra pantalla",
+              hint: "En tu Smart TV o en tu celular",
+              icon: Tv,
+              onSelect: () => setOtra({ pestana: "tv" }),
+            },
+          ]}
+        />
       </div>
 
       {/* En «Cámaras» el aviso va con la lista (también en verde): acá sólo los problemas, y una vez. */}
@@ -225,6 +259,14 @@ function PantallaCamaras() {
           }}
           onGuardarPuente={(campos) => d.ajustarPuente(camaraAConectar.id, campos)}
           error={d.error}
+        />
+      )}
+      {otra && (
+        <OtraPantallaModal
+          camaras={d.camaras}
+          pestanaInicial={otra.pestana}
+          codigoInicial={otra.codigo}
+          onCerrar={() => setOtra(null)}
         />
       )}
       {chalecos && (

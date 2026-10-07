@@ -10,6 +10,7 @@
 
 import { Maximize2, Sparkles, Volume2, VolumeX } from "@buleje/design-system/icons";
 import SegmentedControl from "@/components/ui-system/SegmentedControl";
+import { useApiCamaras } from "./api-camaras";
 import { BTN } from "./camaras-ui";
 import ControlesCamara from "./ControlesCamara";
 import { useAnalizarCuadro } from "./use-analizar-cuadro";
@@ -29,6 +30,8 @@ interface Props {
   retrasoMs: number;
   onActividad: () => void;
   onVerFotos: () => void;
+  /** Base de la API (`TV_API_TV` = sólo mirar: sin mover, micrófono ni «Analizar»). */
+  baseApi?: string;
 }
 
 export default function MosaicoNubeCuadro({
@@ -37,8 +40,10 @@ export default function MosaicoNubeCuadro({
   retrasoMs,
   onActividad,
   onVerFotos,
+  baseApi,
 }: Props) {
-  const v = useVisorNube(camara.id, { activo, retrasoMs, onActividad });
+  const { base, soloMirar } = useApiCamaras(baseApi);
+  const v = useVisorNube(camara.id, { activo, retrasoMs, onActividad, baseApi: base });
   const a = useAnalizarCuadro(camara.id, v.tomarCuadro);
   const viendo = v.estado === "viendo";
 
@@ -77,16 +82,18 @@ export default function MosaicoNubeCuadro({
           />
           <VisorNubeCapas v={v} conCodigo={camara.conCodigo} compacto />
         </div>
-        <ControlesCamara
-          camaraId={camara.id}
-          nombre={camara.nombre}
-          marcoId={v.marcoId}
-          viendo={viendo}
-          teclado="grupo"
-          compacto
-          onVerFotos={onVerFotos}
-          tomarCuadro={v.tomarCuadro}
-        />
+        {!soloMirar && (
+          <ControlesCamara
+            camaraId={camara.id}
+            nombre={camara.nombre}
+            marcoId={v.marcoId}
+            viendo={viendo}
+            teclado="grupo"
+            compacto
+            onVerFotos={onVerFotos}
+            tomarCuadro={v.tomarCuadro}
+          />
+        )}
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -118,15 +125,17 @@ export default function MosaicoNubeCuadro({
             <VolumeX className="h-4 w-4" aria-hidden />
           )}
         </button>
-        <button
-          type="button"
-          onClick={() => void a.analizar()}
-          disabled={!viendo || a.ocupado}
-          className={BTN}
-          title="La IA mira este cuadro: personas, placa y chalecos"
-        >
-          <Sparkles className="h-4 w-4" aria-hidden /> Analizar
-        </button>
+        {!soloMirar && (
+          <button
+            type="button"
+            onClick={() => void a.analizar()}
+            disabled={!viendo || a.ocupado}
+            className={BTN}
+            title="La IA mira este cuadro: personas, placa y chalecos"
+          >
+            <Sparkles className="h-4 w-4" aria-hidden /> Analizar
+          </button>
+        )}
         <button
           type="button"
           onClick={v.pantallaCompleta}
@@ -139,7 +148,7 @@ export default function MosaicoNubeCuadro({
         </button>
       </div>
 
-      <VisorNubeAnalisis a={a} onVerFotos={onVerFotos} />
+      {!soloMirar && <VisorNubeAnalisis a={a} onVerFotos={onVerFotos} />}
     </li>
   );
 }

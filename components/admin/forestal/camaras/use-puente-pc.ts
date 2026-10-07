@@ -20,6 +20,7 @@
 
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { logger } from "@/lib/logger";
+import { urlCamara, useApiCamaras } from "./api-camaras";
 import {
   camposPuente,
   edadDelCuadro,
@@ -57,9 +58,10 @@ export function usePestanaVisible(): boolean {
 
 export function useCuadroPuente(
   camaraId: string,
-  opciones: { activo: boolean; modo: ModoPuente; ritmoMs?: number },
+  opciones: { activo: boolean; modo: ModoPuente; ritmoMs?: number; baseApi?: string },
 ): CuadroPuente {
   const { activo, modo } = opciones;
+  const { base: baseApi } = useApiCamaras(opciones.baseApi);
   const ritmo = opciones.ritmoMs ?? RITMO[modo];
   const pestanaVisible = usePestanaVisible();
   const corriendo = activo && pestanaVisible;
@@ -91,7 +93,7 @@ export function useCuadroPuente(
       let proxima: SenalPuente = "error";
       try {
         n += 1;
-        const r = await fetch(`/api/admin/camaras/${encodeURIComponent(camaraId)}/cuadro?n=${n}`, {
+        const r = await fetch(`${urlCamara(baseApi, camaraId, "cuadro")}?n=${n}`, {
           method: metodo,
           credentials: "include",
           cache: "no-store",
@@ -153,7 +155,7 @@ export function useCuadroPuente(
       if (temporizador) clearTimeout(temporizador);
       control?.abort();
     };
-  }, [camaraId, corriendo, modo, ritmo]);
+  }, [camaraId, corriendo, modo, ritmo, baseApi]);
 
   /* El reloj del «hace N s»: sólo corre mientras se mira. */
   useEffect(() => {

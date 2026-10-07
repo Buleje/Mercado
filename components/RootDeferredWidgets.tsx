@@ -60,6 +60,9 @@ export default function RootDeferredWidgets() {
   // ahí el guard nunca aplicaba y las dos paletas seguían apiladas.
   const esPanel = /(^|\/)(admin|superadmin)(\/|$)/.test(pathname ?? "");
   const hasOwnPalette = esPanel;
+  /* El Modo TV de las cámaras (`/tv`) se maneja con el control remoto y no
+     scrollea: sin paleta, sin barra de scroll, sin «instalar la app». */
+  const esTv = pathname === "/tv";
 
   return (
     <>
@@ -75,13 +78,13 @@ export default function RootDeferredWidgets() {
        * donde nadie pidió inercia. Acá no se monta: la rueda es del navegador,
        * y de paso el panel se ahorra los ~40 kB.
        */}
-      {!esPanel && <SmoothScrollProvider />}
-      <ScrollProgressBar />
+      {!esPanel && !esTv && <SmoothScrollProvider />}
+      {!esTv && <ScrollProgressBar />}
       <AutoTranslator />
       <ClientEffects />
       <ServiceWorkerRegistrar />
-      <InstallPrompt />
-      {!hasOwnPalette && <CommandPalette />}
+      {!esTv && <InstallPrompt />}
+      {!hasOwnPalette && !esTv && <CommandPalette />}
     </>
   );
 }

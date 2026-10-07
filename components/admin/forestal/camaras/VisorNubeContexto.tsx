@@ -51,7 +51,14 @@ const Ctx = createContext<ValorVisorNube | null>(null);
 /** `null` fuera de la pantalla de Cámaras: el botón sigue abriendo la app. */
 export const useVisorNubeContexto = () => useContext(Ctx);
 
-export function VisorNubeProvider({ children }: { children: ReactNode }) {
+export function VisorNubeProvider({
+  children,
+  onVerEnTv,
+}: {
+  children: ReactNode;
+  /** «Verlo en el televisor» del visor y del mosaico: cierra el video y abre «Ver en otra pantalla». */
+  onVerEnTv?: () => void;
+}) {
   const hik = useHikConnect();
   const { cargar, estado } = hik;
   const [abierta, setAbierta] = useState<CamaraAbierta | null>(null);
@@ -83,6 +90,14 @@ export function VisorNubeProvider({ children }: { children: ReactNode }) {
     [hik, enlazada, abrir, abrirMosaico],
   );
   const conCodigo = (id: string) => !!estado?.enlaces[id]?.conCodigo;
+  /* Nunca dos modales de video a la vez: se cierra el visor antes de abrir el otro. */
+  const verEnTv = onVerEnTv
+    ? () => {
+        setAbierta(null);
+        setMosaico(null);
+        onVerEnTv();
+      }
+    : undefined;
 
   return (
     <Ctx.Provider value={valor}>
@@ -95,6 +110,7 @@ export function VisorNubeProvider({ children }: { children: ReactNode }) {
           conCodigo={conCodigo(abierta.id)}
           onCerrar={() => setAbierta(null)}
           onVerFotos={verFotos}
+          onVerEnTv={verEnTv}
         />
       )}
       {mosaico && (
@@ -102,6 +118,7 @@ export function VisorNubeProvider({ children }: { children: ReactNode }) {
           camaras={mosaico.map((c) => ({ ...c, conCodigo: conCodigo(c.id) }))}
           onCerrar={() => setMosaico(null)}
           onVerFotos={verFotos}
+          onVerEnTv={verEnTv}
         />
       )}
     </Ctx.Provider>

@@ -24,8 +24,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
-  AlertTriangle, Camera, Image as ImageIcon, Loader2, Maximize2, Minimize2, Pause, Play, RefreshCw, Video,
+  AlertTriangle, Camera, Cast, Image as ImageIcon, Loader2, Maximize2, Minimize2, Pause, Play, RefreshCw, Video,
 } from "@buleje/design-system/icons";
+import { useApiCamaras } from "./api-camaras";
+import { useGuardarCuadro } from "./use-guardar-cuadro";
+import { useTransmitir } from "./use-transmitir";
 import { useDisponibilidadDeVideo, useFotosEncadenadas, useReproductorHls } from "./use-visor-camara";
 import { formatTime } from "@/lib/format";
 
@@ -50,16 +53,17 @@ interface Props {
   direccionWebhook: string;
   /** Se guardó un cuadro en el historial: la lista de afuera se refresca. */
   onGuardada?: () => void;
+  /** Base de la API (`TV_API_TV` en el televisor: sólo mirar, sin «Guardar esta foto»). */
+  baseApi?: string;
 }
 
-export default function VisorEnVivo({ camaraId, nombre, direccionWebhook, onGuardada }: Props) {
+export default function VisorEnVivo({ camaraId, nombre, direccionWebhook, onGuardada, baseApi }: Props) {
+  const { base, soloMirar } = useApiCamaras(baseApi);
   const [ritmo, setRitmo] = useState<number>(1000);
   const [enPantalla, setEnPantalla] = useState(true);
   const [pestanaVisible, setPestanaVisible] = useState(true);
   /** `null` = todavía no eligió nadie: manda lo que la instalación pueda dar. */
   const [modoElegido, setModoElegido] = useState<"video" | "fotos" | null>(null);
-  const [guardando, setGuardando] = useState(false);
-  const [avisoGuardar, setAvisoGuardar] = useState<string | null>(null);
   const [pantallaCompleta, setPantallaCompleta] = useState(false);
 
   const cajaRef = useRef<HTMLDivElement>(null);
@@ -67,7 +71,7 @@ export default function VisorEnVivo({ camaraId, nombre, direccionWebhook, onGuar
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const mirando = enPantalla && pestanaVisible;
-  const disponibilidad = useDisponibilidadDeVideo(camaraId);
+  const disponibilidad = useDisponibilidadDeVideo(camaraId, base);
   const hayVideo = disponibilidad.fase === "hay";
   const modo = modoElegido ?? (hayVideo ? "video" : "fotos");
   const falloVideo = useReproductorHls(
@@ -75,7 +79,9 @@ export default function VisorEnVivo({ camaraId, nombre, direccionWebhook, onGuar
     hayVideo ? disponibilidad.lista : null,
     modo === "video" && mirando,
   );
-  const fotos = useFotosEncadenadas(camaraId, ritmo, modo === "fotos" && mirando);
+  const fotos = useFotosEncadenadas(camaraId, ritmo, modo === "fotos" && mirando, base);
+  const g = useGuardarCuadro({ camaraId, direccionWebhook, modo, videoRef, imgRef, onGuardada });
+  const tv = useTransmitir(videoRef, modo === "video" && mirando);
 
   /* Tercer escalón: si el video no se pudo mostrar, las fotos. */
   useEffect(() => { if (falloVideo) setModoElegido("fotos"); }, [falloVideo]);
@@ -108,49 +114,6 @@ export default function VisorEnVivo({ camaraId, nombre, direccionWebhook, onGuar
     else void caja.requestFullscreen?.();
   };
 
-  /**
-   * Guardar el cuadro que se está viendo, en el historial.
-   *
-   * Sale por un canvas de lo que hay en pantalla —el `<video>` o la foto— y no
-   * de un pedido nuevo: lo que se guarda es exactamente lo que la persona está
-   * mirando cuando aprieta. Entra por la MISMA puerta que usa la cámara, como
-   * evento «manual», así que queda al lado del resto y la IA lo lee igual.
-   */
-  const guardarFoto = async () => {
-    const fuente: HTMLVideoElement | HTMLImageElement | null =
-      modo === "video" ? videoRef.current : imgRef.current;
-    const ancho = fuente instanceof HTMLVideoElement ? fuente.videoWidth : (fuente?.naturalWidth ?? 0);
-    const alto = fuente instanceof HTMLVideoElement ? fuente.videoHeight : (fuente?.naturalHeight ?? 0);
-    setAvisoGuardar(null);
-    if (!fuente || !ancho || !alto) {
-      setAvisoGuardar("Todavía no hay ninguna imagen para guardar.");
-      return;
-    }
-    setGuardando(true);
-    try {
-      const lienzo = document.createElement("canvas");
-      lienzo.width = ancho;
-      lienzo.height = alto;
-      lienzo.getContext("2d")?.drawImage(fuente, 0, 0);
-      const blob = await new Promise<Blob | null>((r) => lienzo.toBlob(r, "image/jpeg", 0.9));
-      if (!blob) throw new Error("El navegador no pudo armar la foto.");
-      const form = new FormData();
-      form.append("file", blob, `${camaraId}.jpg`);
-      const r = await fetch(
-        `${direccionWebhook}&evento=manual&nota=${encodeURIComponent("guardada desde el visor en vivo")}`,
-        { method: "POST", body: form },
-      );
-      const j = (await r.json().catch(() => ({}))) as { ok?: boolean; error?: string };
-      if (!r.ok || !j.ok) throw new Error(`No la aceptó (${j.error ?? r.status}).`);
-      setAvisoGuardar("Guardada en el historial de abajo.");
-      onGuardada?.();
-    } catch (e) {
-      setAvisoGuardar(e instanceof Error ? e.message : String(e));
-    } finally {
-      setGuardando(false);
-    }
-  };
-
   /* Por qué no se está viendo nada, si es que no se está viendo. */
   const pausadoPor = fotos.detenido
     ? "Detenido"
@@ -165,6 +128,7 @@ export default function VisorEnVivo({ camaraId, nombre, direccionWebhook, onGuar
   /* La nota del pie: por qué se ven fotos y no video. Discreta a propósito. */
   const nota =
     falloVideo ?? (modo === "fotos" && disponibilidad.fase === "no" ? disponibilidad.motivo : null);
+  const avisos = [nota, g.aviso, tv.aviso].filter(Boolean).join(" · ");
 
   return (
     <div ref={cajaRef} className="overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)]">
@@ -269,10 +233,18 @@ export default function VisorEnVivo({ camaraId, nombre, direccionWebhook, onGuar
           </span>
         )}
 
-        <button type="button" onClick={() => void guardarFoto()} disabled={guardando} className={BOTON_CHICO}>
-          {guardando ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Camera className="h-4 w-4" aria-hidden />}
-          Guardar esta foto
-        </button>
+        {!soloMirar && (
+          <button type="button" onClick={() => void g.guardar()} disabled={g.guardando} className={BOTON_CHICO}>
+            {g.guardando ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Camera className="h-4 w-4" aria-hidden />}
+            Guardar esta foto
+          </button>
+        )}
+        {/* Sólo si el navegador ve un Chromecast o un AirPlay en la red (`use-transmitir`). */}
+        {tv.via && (
+          <button type="button" onClick={tv.transmitir} className={BOTON_CHICO} title="Mandar este video a tu televisor">
+            <Cast className="h-4 w-4" aria-hidden /> Transmitir al TV
+          </button>
+        )}
         <button
           type="button"
           onClick={pantalla}
@@ -282,9 +254,9 @@ export default function VisorEnVivo({ camaraId, nombre, direccionWebhook, onGuar
           {pantallaCompleta ? <Minimize2 className="h-4 w-4" aria-hidden /> : <Maximize2 className="h-4 w-4" aria-hidden />}
         </button>
 
-        {(nota || avisoGuardar) && (
+        {avisos && (
           <span className="basis-full text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]" aria-live="polite">
-            {[nota, avisoGuardar].filter(Boolean).join(" · ")}
+            {avisos}
           </span>
         )}
       </div>
