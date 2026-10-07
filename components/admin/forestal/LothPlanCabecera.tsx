@@ -33,6 +33,7 @@ import { useLocalStorage } from "@/hooks/use-local-storage";
 import { formatNumber } from "@/lib/format";
 import { ptAserrableDeRolliza } from "@/lib/forestal/loth-restante";
 import { siglaDePlan } from "@/lib/forestal/loth-tipos-plan";
+import { agruparPlanesPorTitular } from "@/lib/forestal/loth-planes-por-titular";
 import { type Plan } from "./loth-plan-shared";
 import LothPlanIdentidad from "./LothPlanIdentidad";
 import { CifraLinea } from "./loth-plan-ui";
@@ -103,11 +104,18 @@ export default function LothPlanCabecera({ plans, planId, onPlan, plan, kpis, kp
           className="h-10 min-w-0 max-w-full truncate rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 max-sm:basis-full sm:max-w-[26rem]"
         >
           {plans.length === 0 && <option value="">Sin planes</option>}
-          {plans.map((p) => (
-            <option key={p.id} value={p.id}>
-              {/* «Plantación 19-SEC/…» y no «PLANTACION 19-SEC/…»: la sigla como la dice la norma. */}
-              {siglaDePlan(p.planType)} {p.planNumber ?? ""} — {p.titularName}
-            </option>
+          {/* Agrupados por titular: los permisos de una misma comunidad nativa,
+              juntos. El titular va en el rótulo del grupo Y en la opción,
+              porque el select cerrado sólo muestra el texto de la opción. */}
+          {agruparPlanesPorTitular(plans).map((g) => (
+            <optgroup key={g.clave} label={g.planes.length > 1 ? `${g.titular} · ${g.planes.length} planes` : g.titular}>
+              {g.planes.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {/* «Plantación 19-SEC/…» y no «PLANTACION 19-SEC/…»: la sigla como la dice la norma. */}
+                  {siglaDePlan(p.planType)} {p.planNumber ?? ""} — {p.titularName}
+                </option>
+              ))}
+            </optgroup>
           ))}
         </select>
         <div className="ml-auto flex shrink-0 items-center gap-2">
