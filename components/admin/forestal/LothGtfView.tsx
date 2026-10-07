@@ -37,10 +37,13 @@ import CtpDocumentoVisor, { type DocumentoImprimible } from "./CtpDocumentoVisor
 import BotonDeshacerImportacion from "./LothImportarGuiasDeshacer";
 import BotonFichaImportada from "./LothImportarGuiasFicha";
 import { importacionDeLaGuia } from "@/lib/forestal/loth-importar-guia-deshacer";
+import { ETIQUETA_ORIGEN, origenDeGuia } from "@/lib/forestal/gtf-origen";
+import GtfOrigenChip from "./GtfOrigenChip";
 
 /** Las columnas movibles de la tabla de GTF, en su orden de fábrica
  *  (Brandon, 2026-09-26). «Acciones» queda fija al final. */
-const ORDEN_GTF_DEFECTO = ["gtf", "fecha", "tipo", "titular", "destino", "volumen", "estado"] as const;
+/* «origen» (07-10): importada de SERFOR, de foto/PDF o creada a mano, junto al N°. */
+const ORDEN_GTF_DEFECTO = ["gtf", "origen", "fecha", "tipo", "titular", "destino", "volumen", "estado"] as const;
 
 interface GtfItem {
   code?: string | null; species?: string | null; scientific?: string | null; cites?: boolean;
@@ -98,6 +101,7 @@ export default function LothGtfView({
   // es lo único que no es una columna sola y se queda arriba.
   const [estadoFiltro, setEstadoFiltro] = useState<string[]>([]);
   const [tipoFiltro, setTipoFiltro] = useState<string[]>([]);
+  const [origenFiltro, setOrigenFiltro] = useState<string[]>([]);
   const [pagina, setPagina] = useState(0);
   /** Guías que el LIBRO declara y que no están emitidas acá (se piden aparte). */
   const [declaradasSinEmitir, setDeclaradasSinEmitir] = useState<string[]>([]);
@@ -284,6 +288,7 @@ export default function LothGtfView({
     return {
       tipo: contar((g) => [g.tipo === "producto" ? "producto" : "trozas"]),
       estado: contar(clavesEstado),
+      origen: contar((g) => [origenDeGuia(g.observations).origen]),
     };
   }, [gtfs, clavesEstado]);
 
@@ -292,7 +297,7 @@ export default function LothGtfView({
     const q = busqueda.trim().toLowerCase();
     return gtfs.filter((g) => {
       if (q) {
-        const heno = [g.gtfNumber, g.titularName, g.destino, g.transportista, g.placaVehiculo, g.origen]
+        const heno = [g.gtfNumber, origenDeGuia(g.observations).registro, g.titularName, g.destino, g.transportista, g.placaVehiculo, g.origen]
           .filter(Boolean)
           .join(" ")
           .toLowerCase();
@@ -300,9 +305,10 @@ export default function LothGtfView({
       }
       if (tipoFiltro.length > 0 && !tipoFiltro.includes(g.tipo === "producto" ? "producto" : "trozas")) return false;
       if (estadoFiltro.length > 0 && !clavesEstado(g).some((k) => estadoFiltro.includes(k))) return false;
+      if (origenFiltro.length > 0 && !origenFiltro.includes(origenDeGuia(g.observations).origen)) return false;
       return true;
     });
-  }, [gtfs, busqueda, tipoFiltro, estadoFiltro, clavesEstado]);
+  }, [gtfs, busqueda, tipoFiltro, estadoFiltro, origenFiltro, clavesEstado]);
 
   const POR_PAGINA = 25;
   const totalPaginas = Math.max(1, Math.ceil(filtradas.length / POR_PAGINA));
@@ -310,7 +316,7 @@ export default function LothGtfView({
   const enPagina = filtradas.slice(pagActual * POR_PAGINA, (pagActual + 1) * POR_PAGINA);
   const volumenFiltrado = filtradas.filter((g) => g.status !== "anulada").reduce((a, g) => a + Number(g.volumenTotalM3 ?? 0), 0);
 
-  useEffect(() => setPagina(0), [busqueda, tipoFiltro, estadoFiltro]);
+  useEffect(() => setPagina(0), [busqueda, tipoFiltro, estadoFiltro, origenFiltro]);
   const orden = useOrdenColumnas("loth-gtf", ORDEN_GTF_DEFECTO);
   /* Las cuatro fichas se pliegan (Brandon 05-10); cerradas dicen lo esencial en el botón. */
   const kpis = useKpisPlegables({
@@ -429,6 +435,10 @@ export default function LothGtfView({
             <span className="text-sm font-bold text-[var(--text-secondary)]">Estado</span>
             <CampoDeFiltro label="Estado" value={estadoFiltro} options={opcionesColumna.estado} etiqueta={(v) => ETIQUETA_ESTADO[v] ?? v} onChange={setEstadoFiltro} placeholder="Todos" />
           </div>
+          <div className="col-span-2 flex flex-col gap-1">
+            <span className="text-sm font-bold text-[var(--text-secondary)]">Origen</span>
+            <CampoDeFiltro label="Origen" value={origenFiltro} options={opcionesColumna.origen} etiqueta={(v) => ETIQUETA_ORIGEN[v as keyof typeof ETIQUETA_ORIGEN] ?? v} onChange={setOrigenFiltro} placeholder="Todas" />
+          </div>
         </div>
       )}
 
@@ -503,6 +513,19 @@ export default function LothGtfView({
                   orden={orden.orden}
                   celdas={{
                     gtf: <th data-col="gtf" className="px-4 py-2.5 font-bold text-[var(--text-primary)]">N° GTF</th>,
+                    origen: (
+                      <th data-col="origen" className="px-4 py-2.5 font-bold text-[var(--text-primary)]">
+                        <span className="block">Origen</span>
+                        <FiltroColumnaMulti
+                          label="Origen"
+                          value={origenFiltro}
+                          options={opcionesColumna.origen}
+                          etiqueta={(v) => ETIQUETA_ORIGEN[v as keyof typeof ETIQUETA_ORIGEN] ?? v}
+                          onChange={setOrigenFiltro}
+                          placeholder="Todas"
+                        />
+                      </th>
+                    ),
                     fecha: <th data-col="fecha" className="px-4 py-2.5 font-bold text-[var(--text-primary)]">Fecha</th>,
                     tipo: (
                       <th data-col="tipo" className="px-4 py-2.5 font-bold text-[var(--text-primary)]">
@@ -551,6 +574,7 @@ export default function LothGtfView({
                     orden={orden.orden}
                     celdas={{
                       gtf: <td className="px-4 py-2.5"><span className="font-mono font-bold text-[var(--text-primary)]">{g.gtfNumber}</span></td>,
+                      origen: <td className="px-4 py-2.5"><GtfOrigenChip {...origenDeGuia(g.observations)} /></td>,
                       fecha: <td className="px-4 py-2.5 text-[var(--text-secondary)]">{fmtDate(g.gtfDate)}</td>,
                       tipo: <td className="px-4 py-2.5"><span className="rounded-full bg-[var(--surface-canvas)] px-2 py-0.5 text-xs text-[var(--text-secondary)]">{g.tipo === "producto" ? "Producto" : "Trozas"}</span></td>,
                       titular: <td className="px-4 py-2.5 text-[var(--text-primary)]">{g.titularName ?? "—"}</td>,
@@ -593,7 +617,7 @@ export default function LothGtfView({
                   </td>
                 </tr>
               ))}
-              {gtfs.length === 0 && <tr><td colSpan={8} className="px-4 py-10 text-center text-[var(--text-tertiary)]"><FileText className="mx-auto mb-2 h-8 w-8 opacity-30" />Sin GTF emitidas. Haz click en &quot;Emitir GTF&quot;.</td></tr>}
+              {gtfs.length === 0 && <tr><td colSpan={9} className="px-4 py-10 text-center text-[var(--text-tertiary)]"><FileText className="mx-auto mb-2 h-8 w-8 opacity-30" />Sin GTF emitidas. Haz click en &quot;Emitir GTF&quot;.</td></tr>}
             </tbody>
           </DataTable>
         </div>
