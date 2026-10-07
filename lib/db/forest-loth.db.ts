@@ -26,7 +26,7 @@ import { resumirUsoDelCenso, type UsoArbolCenso } from "@/lib/forestal/loth-cens
 import { estadoDeArboles as estadoDeArbolesDelLibro, type EstadoDeArbolesPlan } from "@/lib/forestal/loth-etapa-arbol";
 import { ForestGtfDB } from "@/lib/db/forest-gtf.db";
 import { colaDeGtf, mismoNumeroGtf } from "@/lib/forestal/gtf-talonario";
-import { ESTADOS_SIN_INGRESO, GtfNumeroDB } from "@/lib/db/gtf-numero.db";
+import { ESTADOS_SIN_INGRESO, GtfNumeroDB, GuiaYaEnElCtpError } from "@/lib/db/gtf-numero.db";
 import type { LothEntryDTO } from "@/lib/forestal/loth-constants";
 import { gtfRegistradaDesdeApi } from "@/lib/forestal/loth-cuadre-guias";
 import { planFichaDesdeApi } from "@/lib/forestal/loth-ficha-permiso";
@@ -42,6 +42,16 @@ import { avisoCupoAlTalar, entradaDelPlan, motivoCupoValido, notaSobreCupo, MOTI
 import { resolverTalaContraCenso } from "@/lib/forestal/loth-tala-del-censo";
 import { anotarDespachoT6, claveT6, excedeT6, mensajeT6, type DespachoT6DeLaEspecie, type MedidaT6 } from "@/lib/forestal/loth-t6";
 import { ForestPlanDB } from "@/lib/db/forest-plan.db";
+import { logger } from "@/lib/logger";
+import {
+  ORDEN_DE_BORRADO,
+  contarLineasDelPlan,
+  esSeccion,
+  planearBorradoDelPlan,
+  type ConteoBorrarDelPlan,
+  type LineaParaBorrar,
+  type ResultadoBorrarDelPlan,
+} from "@/lib/forestal/loth-borrar-del-plan";
 
 export { LOTH_SECTIONS };
 export type { LothSection };
@@ -101,6 +111,7 @@ export class LothInvariantError extends Error {
       // El planId de la línea no es un plan vivo de ESTE negocio (sin FK: se valida
       // acá). Un solo código para el alta, el importador y «atar sin plan» (→ 400 en el alta).
       | "PLAN_NO_EXISTE"
+      | "SIN_SECCIONES"
       // La tala de un árbol del censo va con el plan y la especie del censo.
       | "TALA_PLAN_DISTINTO_AL_CENSO"
       | "TALA_ARBOL_EN_VARIOS_PLANES"
@@ -1960,6 +1971,208 @@ export class ForestLothDB {
     return entry;
   }
 
+  /**
+   * Cuántas líneas (no borradas) tiene el plan por sección, con su volumen y las
+   * que caen en un mes cerrado: lo que «Borrar operaciones del plan» muestra
+   * ANTES de borrar. Sólo las que citan ESTE plan (las sin plan no se tocan).
+   */
+  static async contarDelPlan(tenantId: string, planId: string): Promise<ConteoBorrarDelPlan> {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (!planId?.trim()) throw new Error("planId is required");
+    const [filas, cierres] = await Promise.all([
+      prisma.forestLothEntry.findMany({
+        where: { tenantId, planId, deletedAt: null },
+        select: { section: true, status: true, volumeM3: true, entryDate: true },
+      }),
+      ForestLothCierreDB.list(tenantId),
+    ]);
+    return contarLineasDelPlan(
+      planId,
+      filas.map((f) => ({ ...f, volumeM3: Number(f.volumeM3 ?? 0) })),
+      (d) => closedPeriodOf(cierres, d)?.label ?? null,
+    );
+  }
+
+  /**
+   * Borra (soft) las operaciones de UN plan en las secciones pedidas, con las
+   * mismas guardas que `softDelete` línea por línea —mes cerrado y Libro CTP
+   * saltan la línea en vez de cortar todo— y sin dejar una línea viva colgando
+   * de otra borrada (`planearBorradoDelPlan`). Todo en UNA transacción: o se
+   * borra lo decidido, o nada. Las talas borradas devuelven su árbol a «en pie»
+   * si ya no les queda una tala vigente.
+   */
+  static async softDeleteDelPlan(
+    tenantId: string,
+    planId: string,
+    secciones: readonly string[],
+    user = "unknown",
+  ): Promise<ResultadoBorrarDelPlan> {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (!planId?.trim()) throw new Error("planId is required");
+    const pedidas = [...new Set(secciones.filter(esSeccion))];
+    if (pedidas.length === 0) {
+      throw new LothInvariantError("Elige al menos una sección para borrar.", "SIN_SECCIONES", {});
+    }
+    const cierres = await ForestLothCierreDB.list(tenantId);
+    const mesCerrado = (d: Date) => closedPeriodOf(cierres, d)?.label ?? null;
+    const SEL = {
+      id: true, section: true, status: true, lineNo: true, treeCode: true, trozaCode: true,
+      volumeM3: true, entryDate: true, gtfNumber: true,
+    } as const;
+
+    const { resultado, talas } = await prisma.$transaction(async (tx) => {
+      // En serie: dentro de la tx es UNA conexión.
+      /* Lock de las líneas del plan ANTES de leerlas (review 07-10): el alta de
+         un trozado bloquea la fila de su tala, revisa T4 y confirma. Sin este
+         lock, el bloque leía «sin trozado» y su updateMany borraba la tala
+         igual tras esperar ese candado → trozado huérfano. Con él, el que
+         llega segundo ve lo que dejó el primero. Mismo orden (`id`) que los
+         otros locks del libro: sin abrazo mortal. */
+      await tx.$queryRaw`
+        SELECT "id" FROM "ForestLothEntry"
+        WHERE "tenantId" = ${tenantId} AND "planId" = ${planId} AND "deletedAt" IS NULL
+        ORDER BY "id" FOR UPDATE`;
+      const delPlan = await tx.forestLothEntry.findMany({ where: { tenantId, planId, deletedAt: null }, select: SEL });
+      /* Las sin plan que cuelgan de este plan (trozado de sus árboles, salida
+         de sus trozas) frenan igual que las propias, pero no se borran. */
+      const arboles = [...new Set(delPlan.filter((l) => l.section === "tala").map((l) => l.treeCode?.trim()).filter((c): c is string => !!c))];
+      const trozas = [...new Set(delPlan.filter((l) => l.section === "trozado").map((l) => l.trozaCode?.trim()).filter((c): c is string => !!c))];
+      const externas = arboles.length + trozas.length === 0 ? [] : await tx.forestLothEntry.findMany({
+        where: {
+          tenantId,
+          planId: null,
+          deletedAt: null,
+          status: "registrado",
+          OR: [
+            { section: "trozado", treeCode: { in: arboles } },
+            { section: { in: ["despacho_troza", "consumo_troza"] }, trozaCode: { in: trozas } },
+          ],
+        },
+        select: SEL,
+      });
+      const pedidasSet = new Set<string>(pedidas);
+      const candidatas = delPlan.filter((l) => pedidasSet.has(l.section) && !mesCerrado(l.entryDate));
+      const enCtp = await ForestLothDB.lineasEnElCtp(tx, tenantId, planId, candidatas);
+
+      const aLinea = (l: (typeof delPlan)[number], propia: boolean): LineaParaBorrar => ({
+        ...l, volumeM3: Number(l.volumeM3 ?? 0), delPlan: propia,
+      });
+      const plan = planearBorradoDelPlan({
+        lineas: [...delPlan.map((l) => aLinea(l, true)), ...externas.map((l) => aLinea(l, false))],
+        secciones: pedidas,
+        mesCerrado,
+        enCtp,
+      });
+
+      const ahora = new Date();
+      const porSeccion: ResultadoBorrarDelPlan["porSeccion"] = [];
+      const talas: string[] = [];
+      for (const section of ORDEN_DE_BORRADO) {
+        const lineas = plan.porSeccion.get(section);
+        if (!lineas?.length) continue;
+        // La condición va en el WHERE: lo que otro borró entre el SELECT y acá no se cuenta dos veces.
+        const r = await tx.forestLothEntry.updateMany({
+          where: { tenantId, planId, id: { in: lineas.map((l) => l.id) }, deletedAt: null },
+          data: { deletedAt: ahora },
+        });
+        const m3 = r4(lineas.filter((l) => l.status === "registrado").reduce((a, l) => a + l.volumeM3, 0));
+        porSeccion.push({ section, borradas: r.count, m3 });
+        if (section === "tala") {
+          talas.push(...lineas.filter((l) => l.status === "registrado").map((l) => l.treeCode?.trim() ?? "").filter(Boolean));
+        }
+      }
+      const borradas = porSeccion.reduce((a, s) => a + s.borradas, 0);
+      const resultado: ResultadoBorrarDelPlan = {
+        planId,
+        borradas,
+        m3: r4(porSeccion.reduce((a, s) => a + s.m3, 0)),
+        porSeccion,
+        saltadas: plan.saltadas,
+        arbolesLiberados: 0,
+      };
+      return { resultado, talas };
+    }, LOTH_TX_OPTS);
+
+    if (resultado.borradas > 0) {
+      try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
+      /* El libro ya quedó bien: un fallo al alinear el censo no deshace el borrado. */
+      try {
+        resultado.arbolesLiberados = await ForestLothDB.liberarArboles(tenantId, talas, planId);
+      } catch (err) {
+        logger.error("[loth.borrarDelPlan] liberar árboles failed", { error: String(err), tenantId });
+      }
+      const secs = resultado.porSeccion.map((s) => `${s.section} ${s.borradas}`).join(", ");
+      const saltos = resultado.saltadas.map((s) => `${s.section}/${s.motivo} ${s.n}`).join(", ");
+      auditLoth({
+        tenantId,
+        action: "loth_linea_delete",
+        entity: "ForestLothEntry",
+        entityId: planId,
+        detail: `Borró (soft-delete) en bloque ${resultado.borradas} líneas del plan ${planId} (${secs}; ${fmtM3(resultado.m3)} m³).${saltos ? ` Se quedaron: ${saltos}.` : ""}${resultado.arbolesLiberados > 0 ? ` ${resultado.arbolesLiberados} árboles volvieron a «en pie».` : ""}`,
+        user,
+      });
+    }
+    return resultado;
+  }
+
+  /**
+   * Las candidatas que el Libro CTP frena, con las mismas reglas que
+   * `exigirDespachoFueraDelCtp` (ADR-450 R4) pero en bloque: un trozado cuya
+   * troza entró al CTP, una tala con un trozado de su árbol que entró (en
+   * cualquier estado, del plan o sin plan) y un despacho cuya guía ya se
+   * recibió. Toma los candados de «Recibir» de todas las guías en orden.
+   */
+  private static async lineasEnElCtp(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+    planId: string,
+    candidatas: ReadonlyArray<{ id: string; section: string; status: string; treeCode: string | null; trozaCode: string | null; gtfNumber: string | null }>,
+  ): Promise<Set<string>> {
+    const out = new Set<string>();
+    const talas = candidatas.filter((l) => l.section === "tala" && l.treeCode?.trim());
+    const trozados = candidatas.filter((l) => l.section === "trozado");
+    const despachos = candidatas.filter((l) => l.section === "despacho_troza" && l.status === "registrado" && l.gtfNumber?.trim());
+    const arboles = [...new Set(talas.map((t) => (t.treeCode as string).trim()))];
+    const deLasTalas = arboles.length === 0 ? [] : await tx.forestLothEntry.findMany({
+      where: { tenantId, section: "trozado", treeCode: { in: arboles }, OR: [{ planId }, { planId: null }] },
+      select: { id: true, treeCode: true, trozaCode: true },
+    });
+    const todos = [...trozados, ...deLasTalas];
+    const codigos = [...new Set(todos.map((t) => t.trozaCode?.trim()).filter((c): c is string => !!c))];
+    const guiasDeTrozas = codigos.length === 0 ? [] : await tx.forestLothEntry.findMany({
+      where: { tenantId, section: "despacho_troza", trozaCode: { in: codigos }, gtfNumber: { not: null } },
+      select: { gtfNumber: true },
+    });
+    await GtfNumeroDB.bloquearEnOrden(tx, tenantId, [
+      ...guiasDeTrozas.map((g) => g.gtfNumber ?? ""),
+      ...despachos.map((d) => d.gtfNumber ?? ""),
+    ]);
+    const enElCtp = new Set(
+      (await GtfNumeroDB.trozadosEnElCtp(tx, tenantId, todos.map((t) => t.id))).map((v) => v.lothTrozadoId ?? ""),
+    );
+    for (const t of trozados) if (enElCtp.has(t.id)) out.add(t.id);
+    for (const t of talas) {
+      const arbol = (t.treeCode as string).trim();
+      if (deLasTalas.some((x) => x.treeCode?.trim() === arbol && enElCtp.has(x.id))) out.add(t.id);
+    }
+    /* Un despacho por N° de guía: las líneas de una guía del plan son la misma
+       guía y el mismo ingreso al CTP (decenas de chequeos, no cientos). */
+    const porGuia = new Map<string, string[]>();
+    for (const d of despachos) {
+      const n = (d.gtfNumber as string).trim();
+      porGuia.set(n, [...(porGuia.get(n) ?? []), d.id]);
+    }
+    for (const ids of porGuia.values()) {
+      try {
+        await ForestLothDB.exigirDespachoFueraDelCtp(tx, tenantId, ids[0]);
+      } catch (err) {
+        if (!(err instanceof GuiaYaEnElCtpError)) throw err;
+        for (const id of ids) out.add(id);
+      }
+    }
+    return out;
+  }
+
   /** Totales de un rango de fechas (para el acta de cierre de período). */
   static async resumenPeriodo(tenantId: string, from: Date, to: Date) {
     if (!tenantId) throw new Error("tenantId is required");
@@ -2395,13 +2608,44 @@ export class ForestLothDB {
    */
   /** ¿El árbol tiene una tala vigente (registrada, no borrada) en el libro? */
   static async tieneTalaVigente(tenantId: string, treeCode: string): Promise<boolean> {
+    return (await ForestLothDB.arbolesConTalaVigente(tenantId, [treeCode])).size > 0;
+  }
+
+  /**
+   * Anular o borrar la tala de un árbol lo devuelve «en pie» en el censo —el
+   * espejo de lo que hace el alta, que lo marca «talado»—. Sin esto el árbol
+   * quedaba talado para siempre sin una sola línea que lo respalde (medido
+   * 28-09 en QA: QA-MAPA-3 «talado» en el censo, 0 talas vigentes). Sólo los
+   * códigos sin otra tala vigente en el negocio, y sólo si el censo los tiene
+   * talados (los del plan de la tala; sin plan, los del negocio). Devuelve
+   * cuántos árboles volvieron.
+   */
+  static async liberarArboles(tenantId: string, treeCodes: readonly string[], planId: string | null): Promise<number> {
     if (!tenantId) throw new Error("tenantId is required");
-    const code = treeCode.trim();
-    if (!code) return false;
-    const n = await prisma.forestLothEntry.count({
-      where: { tenantId, section: "tala", treeCode: code, status: "registrado", deletedAt: null },
+    const codigos = [...new Set(treeCodes.map((c) => c.trim()).filter(Boolean))];
+    if (codigos.length === 0) return 0;
+    const conTala = await ForestLothDB.arbolesConTalaVigente(tenantId, codigos, planId);
+    return ForestPlanDB.marcarEnPieLosTalados(tenantId, codigos.filter((c) => !conTala.has(c)), planId);
+  }
+
+  /**
+   * De estos códigos de árbol, los que todavía tienen una tala vigente. Con
+   * `planId`, sólo cuentan las talas de ESE plan o sin plan: el código del
+   * árbol es por plan, y una tala del mismo código en otro plan no puede dejar
+   * «talado» al árbol de éste (review 07-10).
+   */
+  static async arbolesConTalaVigente(tenantId: string, treeCodes: readonly string[], planId?: string | null): Promise<Set<string>> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const codigos = [...new Set(treeCodes.map((c) => c.trim()).filter(Boolean))];
+    if (codigos.length === 0) return new Set();
+    const filas = await prisma.forestLothEntry.findMany({
+      where: {
+        tenantId, section: "tala", treeCode: { in: codigos }, status: "registrado", deletedAt: null,
+        ...(planId ? { OR: [{ planId }, { planId: null }] } : {}),
+      },
+      select: { treeCode: true },
     });
-    return n > 0;
+    return new Set(filas.map((f) => f.treeCode?.trim() ?? "").filter(Boolean));
   }
 
   static async usoDelCenso(tenantId: string): Promise<UsoArbolCenso[]> {

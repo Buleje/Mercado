@@ -3,7 +3,6 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { ForestLothDB } from "@/lib/db/forest-loth.db";
-import { ForestPlanDB } from "@/lib/db/forest-plan.db";
 import { logger } from "@/lib/logger";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { withApiHandler } from "@/lib/api-handler";
@@ -22,21 +21,15 @@ const patchSchema = z.object({
 });
 
 /**
- * Anular o borrar la tala de un árbol lo devuelve «en pie» en el censo —el
- * espejo de lo que hace el alta, que lo marca «talado»—. Sin esto el árbol
- * quedaba talado para siempre sin una sola línea que lo respalde (medido
- * 28-09 en QA: QA-MAPA-3 «talado» en el censo, 0 talas vigentes). Sólo si
- * no queda otra tala vigente del mismo código y el censo lo tiene talado.
- * Fire-and-forget: el libro ya quedó bien; esto sólo alinea el censo.
+ * Anular o borrar la tala de un árbol lo devuelve «en pie» en el censo
+ * (`ForestLothDB.liberarArboles`, la misma regla que el borrado en bloque del
+ * plan). Fire-and-forget: el libro ya quedó bien; esto sólo alinea el censo.
  */
-function liberarArbolSiCorresponde(tenantId: string, linea: { section: string; treeCode: string | null }) {
+function liberarArbolSiCorresponde(tenantId: string, linea: { section: string; treeCode: string | null; planId: string | null }) {
   const code = linea.treeCode?.trim();
   if (linea.section !== "tala" || !code) return;
-  (async () => {
-    if (await ForestLothDB.tieneTalaVigente(tenantId, code)) return;
-    const arbol = await ForestPlanDB.getTreeByCode(tenantId, code);
-    if (arbol?.estado === "talado") await ForestPlanDB.markTreeStatusByCode(tenantId, code, "en_pie");
-  })().catch((err) => logger.error("[loth.liberarArbol] failed", { error: String(err), tenantId }));
+  ForestLothDB.liberarArboles(tenantId, [code], linea.planId)
+    .catch((err) => logger.error("[loth.liberarArbol] failed", { error: String(err), tenantId }));
 }
 
 async function ensureSpec(tenantId: string) {

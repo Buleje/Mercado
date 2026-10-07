@@ -209,6 +209,43 @@ export const GtfNumeroDB = {
   },
 
   /**
+   * Los candados de «Recibir» de varias guías, en el orden de la LLAVE del N°
+   * (la que usa `bloquear`), no del texto: `019-…` y `19-…` son el mismo
+   * candado y dos anulaciones tienen que pedirlos en el mismo orden para no
+   * abrazarse. Repetir uno ya tomado en la misma transacción no espera.
+   */
+  async bloquearEnOrden(tx: Prisma.TransactionClient, tenantId: string, numerosDeGuia: readonly string[]): Promise<void> {
+    const porLlave = new Map<string, string>();
+    for (const n of numerosDeGuia.map((x) => x.trim()).filter(Boolean)) {
+      const k = claveNumeroGtf(n) ?? n;
+      if (!porLlave.has(k)) porLlave.set(k, n);
+    }
+    for (const k of [...porLlave.keys()].sort()) {
+      await GtfNumeroDB.bloquear(tx, tenantId, porLlave.get(k) as string);
+    }
+  },
+
+  /**
+   * Las trozas del Libro CTP (de ingresos vivos) que vienen de estas líneas de
+   * Trozado del Libro TH (`lothTrozadoId`). Vacío = ninguna entró. Llamar con
+   * los candados de sus guías tomados (`bloquearEnOrden`).
+   */
+  async trozadosEnElCtp(tx: Prisma.TransactionClient, tenantId: string, trozadoIds: readonly string[]) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const ids = [...new Set(trozadoIds.filter(Boolean))];
+    if (ids.length === 0) return [];
+    return tx.woodEntryTroza.findMany({
+      where: {
+        tenantId,
+        lothTrozadoId: { in: ids },
+        entry: { tenantId, deletedAt: null, status: { notIn: [...ESTADOS_SIN_INGRESO] } },
+      },
+      select: { lothTrozadoId: true, codificacion: true, entry: { select: { libroNro: true, gtfNumber: true } } },
+      orderBy: { codificacion: "asc" },
+    });
+  },
+
+  /**
    * ADR-450 R4 · antes de anular (o borrar) en el Libro TH una línea de
    * Trozado o de Tala, DENTRO de la transacción que anula: si una troza de
    * esas líneas ya está viva en el Libro CTP (por `lothTrozadoId`), 409 con
@@ -229,26 +266,8 @@ export const GtfNumeroDB = {
     if (!tenantId) throw new Error("tenantId is required");
     const ids = [...new Set(trozadoIds.filter(Boolean))];
     if (ids.length === 0) return;
-    /* En el orden de la LLAVE del N° (la que usa `bloquear`), no del texto:
-       `019-…` y `19-…` son el mismo candado y dos anulaciones tienen que
-       pedirlos en el mismo orden para no abrazarse. */
-    const porLlave = new Map<string, string>();
-    for (const n of numerosDeGuia.map((x) => x.trim()).filter(Boolean)) {
-      const k = claveNumeroGtf(n) ?? n;
-      if (!porLlave.has(k)) porLlave.set(k, n);
-    }
-    for (const k of [...porLlave.keys()].sort()) {
-      await GtfNumeroDB.bloquear(tx, tenantId, porLlave.get(k) as string);
-    }
-    const vivas = await tx.woodEntryTroza.findMany({
-      where: {
-        tenantId,
-        lothTrozadoId: { in: ids },
-        entry: { tenantId, deletedAt: null, status: { notIn: [...ESTADOS_SIN_INGRESO] } },
-      },
-      select: { codificacion: true, entry: { select: { libroNro: true, gtfNumber: true } } },
-      orderBy: { codificacion: "asc" },
-    });
+    await GtfNumeroDB.bloquearEnOrden(tx, tenantId, numerosDeGuia);
+    const vivas = await GtfNumeroDB.trozadosEnElCtp(tx, tenantId, ids);
     if (vivas.length === 0) return;
     const nros = [...new Set(vivas.map((v) => v.entry.libroNro))];
     const cods = [...new Set(vivas.map((v) => v.codificacion?.trim()).filter((c): c is string => !!c))];

@@ -22,7 +22,7 @@ import { useAutorizarDesdeUrl } from "./use-autorizar-desde-url";
 import { useLothPlan } from "./use-loth-plan";
 import { usePlanDocumentos } from "./use-plan-documentos";
 
-export function useLothPlanView(reloadSignal?: number) {
+export function useLothPlanView(reloadSignal?: number, onCambioDelLibro?: () => void) {
   const d = useLothPlan(reloadSignal);
   const { trees, zafra } = d;
   /* El plan se muestra cuando llegó SU detalle: con sólo la lista de planes la
@@ -40,6 +40,8 @@ export function useLothPlanView(reloadSignal?: number) {
   /** El plan abierto para corregir sus datos (ADR-426). */
   const [editandoPlan, setEditandoPlan] = useState(false);
   const [borrandoPlan, setBorrandoPlan] = useState(false);
+  /** «Borrar operaciones del plan» abierto (Brandon 07-10-2026). */
+  const [borrandoOperaciones, setBorrandoOperaciones] = useState(false);
   const [errorPlan, setErrorPlan] = useState<string | null>(null);
   const { confirm } = useConfirm();
   /* Documentos del plan (ADR-467): una sola instancia para la pestaña y su cifra. */
@@ -157,7 +159,7 @@ export function useLothPlanView(reloadSignal?: number) {
   }
 
   const opciones = opcionesDelPlan({
-    d, plan, esPlantacion, borrandoPlan, setErrorPlan, setPestana, setImportarSignal, setEditandoPlan, eliminarPlan,
+    d, plan, esPlantacion, borrandoPlan, setErrorPlan, setPestana, setImportarSignal, setEditandoPlan, setBorrandoOperaciones, eliminarPlan,
   });
   const { pestanas, pestanasPlantacion } = pestanasDelPlan({ d, docs, faltaDocs });
   const conPeriodo = zafra.estado !== "sin_vigencia";
@@ -165,6 +167,7 @@ export function useLothPlanView(reloadSignal?: number) {
   return {
     d, trees, zafra, plan, cargando, esPlantacion, pestana, setPestana, setPestanaPlantacion,
     pedidoEspecie, pedirEspecie, pedidoLote, importarSignal, editandoPlan, setEditandoPlan, errorPlan,
+    borrandoOperaciones, setBorrandoOperaciones, onCambioDelLibro,
     docs, cerrarFormulario, onEstadoCierre, opciones, pestanas, pestanasPlantacion, conPeriodo,
   };
 }

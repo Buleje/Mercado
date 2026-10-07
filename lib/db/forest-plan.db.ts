@@ -1066,6 +1066,25 @@ export class ForestPlanDB {
     return row;
   }
 
+  /**
+   * Devuelve a «en pie» los árboles TALADOS con estos códigos (los de `planId`;
+   * sin plan, los del negocio). El que llama ya comprobó que no les queda una
+   * tala vigente (`liberarArboles`). Devuelve cuántos cambiaron.
+   */
+  static async marcarEnPieLosTalados(tenantId: string, codigos: readonly string[], planId: string | null): Promise<number> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const unicos = [...new Set(codigos.map((c) => c.trim()).filter(Boolean))];
+    if (unicos.length === 0) return 0;
+    const r = await prisma.forestCensusTree.updateMany({
+      where: { tenantId, treeCode: { in: unicos }, estado: "talado", deletedAt: null, ...(planId ? { planId } : {}) },
+      data: { estado: "en_pie" },
+    });
+    if (r.count > 0) {
+      try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
+    }
+    return r.count;
+  }
+
   static async softDeleteTree(tenantId: string, id: string) {
     const row = await prisma.forestCensusTree.update({
       where: { id, tenantId } satisfies Prisma.ForestCensusTreeWhereUniqueInput,

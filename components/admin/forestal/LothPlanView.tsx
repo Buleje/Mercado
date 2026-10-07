@@ -38,8 +38,15 @@ import { useLothPlanView } from "./hooks/use-loth-plan-view";
 /* Exportadas: la prueba en navegador las lee. */
 export { CLAVE_PESTANA_PLAN, CLAVE_PESTANA_PLANTACION } from "./loth-plan-view-shared";
 
-export default function LothPlanView({ reloadSignal }: { reloadSignal?: number } = {}) {
-  const v = useLothPlanView(reloadSignal);
+export default function LothPlanView({
+  reloadSignal,
+  onCambioDelLibro,
+}: {
+  reloadSignal?: number;
+  /** Se borraron líneas del libro desde el plan: la página relee lista, contadores y paneles. */
+  onCambioDelLibro?: () => void;
+} = {}) {
+  const v = useLothPlanView(reloadSignal, onCambioDelLibro);
   const { d, trees, plan, cargando, esPlantacion, errorPlan, opciones } = v;
 
   return (

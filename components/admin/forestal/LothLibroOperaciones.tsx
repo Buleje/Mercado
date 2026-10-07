@@ -1153,7 +1153,7 @@ export default function LothLibroOperaciones() {
     >
 
       {/* Vista Plan de Manejo — base maestra (censo + especies autorizadas) */}
-      {view === "plan" && <LothPlanView reloadSignal={reloadSignal} />}
+      {view === "plan" && <LothPlanView reloadSignal={reloadSignal} onCambioDelLibro={() => void refreshAll()} />}
 
       {/* Vista GTF — guías de transporte forestal */}
       {view === "gtf" && (

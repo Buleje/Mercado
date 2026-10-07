@@ -6,7 +6,7 @@
  * de los bloques; las funciones se llaman en cada render, como antes.
  */
 
-import { FileText, Pencil, Plus, Printer, Trash2, Upload } from "@buleje/design-system/icons";
+import { Eraser, FileText, Pencil, Plus, Printer, Trash2, Upload } from "@buleje/design-system/icons";
 import type { Dispatch, SetStateAction } from "react";
 import type { MenuAccion } from "@/components/admin/shared/action-menu";
 import { printLothPoa } from "@/lib/forestal/loth-poa-print";
@@ -36,6 +36,7 @@ export function opcionesDelPlan({
   setPestana,
   setImportarSignal,
   setEditandoPlan,
+  setBorrandoOperaciones,
   eliminarPlan,
 }: {
   d: DatosPlan;
@@ -46,6 +47,8 @@ export function opcionesDelPlan({
   setPestana: Dispatch<SetStateAction<PestanaPlan>>;
   setImportarSignal: Dispatch<SetStateAction<number>>;
   setEditandoPlan: Dispatch<SetStateAction<boolean>>;
+  /** Abre «Borrar operaciones del plan» (Brandon 07-10-2026). */
+  setBorrandoOperaciones: Dispatch<SetStateAction<boolean>>;
   eliminarPlan: (p: NonNullable<PlanElegido>) => Promise<void>;
 }): MenuAccion[] {
   /* Lo que se hace de vez en cuando —imprimir, importar, crear otro plan— va
@@ -99,6 +102,15 @@ export function opcionesDelPlan({
       icon: Pencil,
       disabled: !plan,
       onSelect: () => setEditandoPlan(true),
+    },
+    {
+      id: "borrar-operaciones",
+      label: "Borrar operaciones del plan",
+      hint: "Tala, trozado y despachos de este plan; antes te dice cuántas hay",
+      icon: Eraser,
+      tone: "danger",
+      disabled: !plan,
+      onSelect: () => setBorrandoOperaciones(true),
     },
     {
       id: "eliminar-plan",

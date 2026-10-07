@@ -8,11 +8,15 @@
 import { FileText } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { siglaDePlan } from "@/lib/forestal/loth-tipos-plan";
+import LothBorrarOperacionesModal from "./LothBorrarOperacionesModal";
 import LothPlanForm from "./LothPlanForm";
 import type { VistaPlan } from "./hooks/use-loth-plan-view";
 
 export default function LothPlanModales({ v }: { v: VistaPlan }) {
-  const { d, plan, esPlantacion, editandoPlan, setEditandoPlan, cerrarFormulario, onEstadoCierre, docs, setPestanaPlantacion } = v;
+  const {
+    d, plan, esPlantacion, editandoPlan, setEditandoPlan, cerrarFormulario, onEstadoCierre, docs, setPestanaPlantacion,
+    borrandoOperaciones, setBorrandoOperaciones, onCambioDelLibro,
+  } = v;
   return (
     <>
       {/* El plan es la base maestra del libro: se carga en un modal enfocado, no
@@ -66,6 +70,21 @@ export default function LothPlanModales({ v }: { v: VistaPlan }) {
           />
         )}
       </AdminModal>
+
+      {/* Borrar las operaciones del libro de ESTE plan: al terminar se relee
+          (balance, avance, censo con los árboles que volvieron, la lista). */}
+      {borrandoOperaciones && plan && (
+        <LothBorrarOperacionesModal
+          plan={plan}
+          onClose={() => setBorrandoOperaciones(false)}
+          onBorrado={() => {
+            setBorrandoOperaciones(false);
+            /* Desde el libro, relee todo (el `reloadSignal` relee también el plan); suelta, sólo el plan. */
+            if (onCambioDelLibro) onCambioDelLibro();
+            else void d.loadDetail(plan.id);
+          }}
+        />
+      )}
     </>
   );
 }
