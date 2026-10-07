@@ -5,3 +5,10 @@
  */
 export { useOrdenColumnas, type UseOrdenColumnasResult } from "./use-orden-columnas";
 export { EnOrden, BotonRestablecerColumnas } from "./en-orden";
+export {
+  useVisibilidadColumnas,
+  columnasQueSeVen,
+  type ColumnaElegible,
+  type UseVisibilidadColumnasResult,
+} from "./use-columnas-visibles";
+export { BotonColumnasVisibles } from "./BotonColumnas";

@@ -129,7 +129,14 @@ export const GET = withApiHandler("forestal-gtf-get", async (req: NextRequest) =
     // Filtro por permiso del libro (`?planId=&solo=1`): plan ajeno → 404, mal formado → 400.
     const permiso = await permisoDelPedido(auth.tenantId, url.searchParams);
     if (permiso instanceof NextResponse) return permiso;
-    return NextResponse.json({ gtfs: await ForestGtfDB.list(auth.tenantId, permiso.filtro) });
+    const gtfs = await ForestGtfDB.list(auth.tenantId, permiso.filtro);
+    // `?conCtp=1` (Libro TH, 07-10): cada guía de trozas dice si ya entró al
+    // Libro CTP. Campo agregado; sin el parámetro la respuesta es la de siempre.
+    if (url.searchParams.get("conCtp") === "1") {
+      const ctp = await ForestGtfDB.estadoCtpDeLista(auth.tenantId, gtfs);
+      return NextResponse.json({ gtfs: gtfs.map((g) => ({ ...g, ctp: ctp.get(g.id) ?? null })) });
+    }
+    return NextResponse.json({ gtfs });
   } catch (err) {
     logger.error("[gtf.GET] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });

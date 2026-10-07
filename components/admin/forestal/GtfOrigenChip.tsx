@@ -2,6 +2,8 @@
  * La pastilla «de dónde salió esta guía» de la tabla GTF del Libro TH (07-10):
  * importada de SERFOR (con su N° de registro), importada de una foto o PDF
  * sin verificar, o creada a mano. La regla vive en `lib/forestal/gtf-origen`.
+ * El N° de registro tiene su propia columna en la tabla (07-10): acá sólo va
+ * en el `title`, para no repetirlo.
  */
 
 import { FileText, PenLine, ShieldCheck } from "@buleje/design-system/icons";
@@ -32,13 +34,12 @@ export default function GtfOrigenChip({ origen, registro }: OrigenDeGuia) {
       ? "Creada a mano en el panel: no viene de una importación."
       : `${ETIQUETA_ORIGEN[origen]}${registro ? ` · N° de registro ${registro}` : " · sin N° de registro"}${origen === "documento" ? " (sin verificar en SERFOR)" : ""}`;
   return (
-    <span className="inline-flex flex-col items-start gap-0.5" title={titulo}>
+    <span className="inline-flex" title={titulo}>
       <span className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-bold ${e.clase}`}>
         <e.Icono className="h-3.5 w-3.5" aria-hidden="true" />
         {e.corto}
         <span className="sr-only">: {titulo}</span>
       </span>
-      {registro && <span className="whitespace-nowrap font-mono text-xs text-[var(--text-tertiary)]">Reg. {registro}</span>}
     </span>
   );
 }

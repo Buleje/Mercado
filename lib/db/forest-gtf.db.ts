@@ -19,6 +19,32 @@ import { ESTADOS_SIN_INGRESO, GtfNumeroDB } from "./gtf-numero.db";
 
 const CACHE_PREFIX = "forest-gtf";
 
+export type EstadoCtpDeGuia = "ingresada" | "por_ingresar" | "otra_empresa";
+
+type IngresoVivo = { gtfNumber: string | null; providerName: string; originCode: string | null };
+
+/** Los ingresos vivos del CTP agrupados por N° de guía normalizado (tramo a tramo). */
+function indexarIngresos(entries: readonly IngresoVivo[]) {
+  const porClave = new Map<string, IngresoVivo[]>();
+  for (const e of entries) {
+    const k = claveNumeroGtf(e.gtfNumber);
+    if (k) porClave.set(k, [...(porClave.get(k) ?? []), e]);
+  }
+  return porClave;
+}
+
+/* Ingresada = un ingreso vivo con su N° Y del mismo titular o permiso: el
+   N° solo no identifica la guía (dos titulares comparten 019-001). */
+function tieneIngresoVivo(
+  porClave: Map<string, IngresoVivo[]>,
+  g: { gtfNumber: string; titularName: string | null; tituloHabilitante: string | null },
+): boolean {
+  const mismos = porClave.get(claveNumeroGtf(g.gtfNumber) ?? "") ?? [];
+  return mismos.some((e) =>
+    puedeSerDelDueno({ titular: e.providerName, permiso: e.originCode }, { titular: g.titularName, permiso: g.tituloHabilitante }),
+  );
+}
+
 /**
  * Se intentó registrar una GTF con un número que ya existe. Es dato del operador
  * (una GTF no se anota dos veces), no un fallo del server → el route lo mapea a 409.
@@ -449,19 +475,49 @@ export class ForestGtfDB {
         select: { gtfNumber: true, providerName: true, originCode: true },
       }),
     ]);
-    /* Ingresada = un ingreso vivo con su N° Y del mismo titular o permiso: el
-       N° solo no identifica la guía (dos titulares comparten 019-001). */
-    const porClave = new Map<string, { providerName: string; originCode: string | null }[]>();
-    for (const e of entries) {
-      const k = claveNumeroGtf(e.gtfNumber);
-      if (k) porClave.set(k, [...(porClave.get(k) ?? []), e]);
+    const porClave = indexarIngresos(entries);
+    return gtfs.filter((g) => !tieneIngresoVivo(porClave, g));
+  }
+
+  /**
+   * Dónde está, respecto del Libro CTP, cada guía de TROZAS emitida de una
+   * lista (columna «Estado» del Libro TH, 07-10). No sale de la bandeja
+   * (`paraLaBandejaDelMonte`): ésa trae sólo las 100 últimas y esconde las
+   * guardadas y las de otra empresa — usarla para decir «ingresada» mentiría.
+   *   · ingresada    → tiene un ingreso vivo con su N° y del mismo dueño;
+   *   · otra_empresa → el destinatario (casillero) es otro RUC: no viene acá;
+   *   · por_ingresar → todavía no entró (aunque esté guardada en el CTP).
+   * Producto y anuladas no llevan estado CTP (no están en el mapa).
+   */
+  static async estadoCtpDeLista(
+    tenantId: string,
+    gtfs: readonly {
+      id: string; gtfNumber: string; tipo: string; status: string;
+      titularName: string | null; tituloHabilitante: string | null; gtfDatos?: unknown;
+    }[],
+  ): Promise<Map<string, EstadoCtpDeGuia>> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const out = new Map<string, EstadoCtpDeGuia>();
+    const trozas = gtfs.filter((g) => g.tipo !== "producto" && g.status !== "anulada");
+    if (trozas.length === 0) return out;
+    const [entries, ficha] = await Promise.all([
+      prisma.woodEntry.findMany({
+        where: { tenantId, deletedAt: null, status: { notIn: [...ESTADOS_SIN_INGRESO] } },
+        select: { gtfNumber: true, providerName: true, originCode: true },
+      }),
+      ForestCtpFichaDB.get(tenantId),
+    ]);
+    const porClave = indexarIngresos(entries);
+    const rucPropio = soloDigitos(ficha.ruc);
+    for (const g of trozas) {
+      if (tieneIngresoVivo(porClave, g)) {
+        out.set(g.id, "ingresada");
+        continue;
+      }
+      const dest = soloDigitos(leerGtfDatos(g.gtfDatos).destinatario.docNumero);
+      out.set(g.id, dest && rucPropio && dest !== rucPropio ? "otra_empresa" : "por_ingresar");
     }
-    return gtfs.filter((g) => {
-      const mismos = porClave.get(claveNumeroGtf(g.gtfNumber) ?? "") ?? [];
-      return !mismos.some((e) =>
-        puedeSerDelDueno({ titular: e.providerName, permiso: e.originCode }, { titular: g.titularName, permiso: g.tituloHabilitante }),
-      );
-    });
+    return out;
   }
 
   /**

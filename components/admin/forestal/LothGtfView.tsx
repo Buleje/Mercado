@@ -6,10 +6,10 @@
  * Interna, no oficial (la GTF oficial se emite vía SNIFFS).
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { toast } from "sonner";
 import { DataTable } from "@buleje/design-system";
-import { AlertTriangle, FileDown, FileText, Plus, Printer, Ban, Loader2, Search, ShieldCheck, Trash2, Truck, LogIn } from "@buleje/design-system/icons";
+import { AlertTriangle, FileDown, Plus, Ban, Loader2, Search, ShieldCheck, Trash2, Truck } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { findSpeciesByCommonName } from "@/data/forestry-species";
 import AdminModal from "@/components/admin/shared/AdminModal";
@@ -23,10 +23,13 @@ import { useLineasDeLaGuia } from "./hooks/use-lineas-de-la-guia";
 import { formatDateNumeric } from "@/lib/format";
 import { leerPlaca } from "@/lib/forestal/placa-peru";
 import { CampoPlaca } from "./ctp-campo-placa";
-import { FiltroColumnaMulti, type FacetaOpcion } from "@/components/admin/shared/filtros-columna";
-import { CampoDeFiltro } from "./ctp-filtros-panel";
 import { useKpisPlegables } from "./kpis-plegables";
-import { BotonRestablecerColumnas, EnOrden, useOrdenColumnas } from "@/components/admin/shared/columnas-ordenables";
+import {
+  BotonColumnasVisibles,
+  BotonRestablecerColumnas,
+  useOrdenColumnas,
+  useVisibilidadColumnas,
+} from "@/components/admin/shared/columnas-ordenables";
 import { useLothPermiso } from "./hooks/use-loth-libro-permiso";
 import { leerGtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 import { guiaEsDePlantacion, piezasDeItems, rotuloDelTitulo } from "@/lib/forestal/loth-guia-despacho";
@@ -34,38 +37,18 @@ import { papelesGuiaLoth } from "@/lib/forestal/loth-guia-print";
 import LothDespachoGuiaModal from "./LothDespachoGuiaModal";
 import { archivoDeGuiaLoth } from "./LothGuiaRegistrada";
 import CtpDocumentoVisor, { type DocumentoImprimible } from "./CtpDocumentoVisor";
-import BotonDeshacerImportacion from "./LothImportarGuiasDeshacer";
-import BotonFichaImportada from "./LothImportarGuiasFicha";
-import { importacionDeLaGuia } from "@/lib/forestal/loth-importar-guia-deshacer";
-import { ETIQUETA_ORIGEN, origenDeGuia } from "@/lib/forestal/gtf-origen";
-import GtfOrigenChip from "./GtfOrigenChip";
+import type { PlanDeLaGuia } from "@/lib/forestal/gtf-columnas";
+import LothGtfTabla from "./LothGtfTabla";
+import { COLUMNAS_GTF, ORDEN_GTF_DEFECTO, type Gtf, type GtfItem } from "./gtf-tabla-columnas";
 
-/** Las columnas movibles de la tabla de GTF, en su orden de fábrica
- *  (Brandon, 2026-09-26). «Acciones» queda fija al final. */
-/* «origen» (07-10): importada de SERFOR, de foto/PDF o creada a mano, junto al N°. */
-const ORDEN_GTF_DEFECTO = ["gtf", "origen", "fecha", "tipo", "titular", "destino", "volumen", "estado"] as const;
-
-interface GtfItem {
-  code?: string | null; species?: string | null; scientific?: string | null; cites?: boolean;
-  diamMayorM?: number | null; diamMenorM?: number | null; lengthM?: number | null; volumeM3?: number | null;
-}
-interface Gtf {
-  id: string; gtfNumber: string; gtfDate: string | null; tipo: string;
-  titularName: string | null; tituloHabilitante: string | null; parcelaCorta: string | null;
-  transportista: string | null; transportistaDoc: string | null; conductor: string | null;
-  conductorLicencia: string | null; placaVehiculo: string | null; origen: string | null; destino: string | null;
-  items: GtfItem[] | null; volumenTotalM3: string | null; piezasTotal: number | null;
-  observations: string | null; status: string; annulledReason: string | null;
-  /** Casilleros completos (2)–(38): sólo las guías hechas con «Despachar con guía». */
-  gtfDatos?: unknown;
-}
+/* Las columnas, su autofiltro y sus celdas viven en `gtf-tabla-columnas`; la tabla, en `LothGtfTabla` (07-10). */
+type PlanDeLaGuiaConId = PlanDeLaGuia & { id: string };
+const SIN_PLANES: readonly PlanDeLaGuiaConId[] = [];
 
 const smalian = (dM: number, dm: number, L: number) =>
   dM > 0 && dm > 0 && L > 0 ? Math.round(0.7854 * Math.pow((dM + dm) / 2, 2) * L * 10000) / 10000 : 0;
 const fmtDate = (iso: string | null) =>
   iso ? formatDateNumeric(iso, { soloFecha: true }) : "—";
-const ETIQUETA_TIPO: Record<string, string> = { trozas: "Trozas", producto: "Producto" };
-const ETIQUETA_ESTADO: Record<string, string> = { emitida: "Emitida", anulada: "Anulada", sin_ingresar: "Sin ingresar al CTP" };
 
 export default function LothGtfView({
   focusGtf,
@@ -96,13 +79,8 @@ export default function LothGtfView({
   // mismo conjunto que la bandeja del lado planta (single source: ?sinIngresar=1).
   const [sinIngresar, setSinIngresar] = useState<Set<string>>(new Set());
   const [busqueda, setBusqueda] = useState("");
-  // Tipo y Estado son columnas de la tabla: su filtro vive en el propio `<th>`
-  // (multi-selección, OR adentro — Brandon, 2026-09-24). El buscador de texto
-  // es lo único que no es una columna sola y se queda arriba.
-  const [estadoFiltro, setEstadoFiltro] = useState<string[]>([]);
-  const [tipoFiltro, setTipoFiltro] = useState<string[]>([]);
-  const [origenFiltro, setOrigenFiltro] = useState<string[]>([]);
-  const [pagina, setPagina] = useState(0);
+  // Cada columna lleva su autofiltro en el `<th>` (LothGtfTabla, 07-10). El
+  // buscador de texto es lo único que no es una columna sola y se queda arriba.
   /** Guías que el LIBRO declara y que no están emitidas acá (se piden aparte). */
   const [declaradasSinEmitir, setDeclaradasSinEmitir] = useState<string[]>([]);
   /** Identidad del titular para la hoja oficial (casilleros 6 y 7). */
@@ -118,7 +96,8 @@ export default function LothGtfView({
     setError(null);
     try {
       const [rGtf, rPend] = await Promise.all([
-        fetch(`/api/admin/forestal/gtf${permisoQuery ? `?${permisoQuery}` : ""}`, { credentials: "include" }),
+        /* `conCtp=1`: cada guía de trozas trae si ya entró al Libro CTP (columna Estado). */
+        fetch(`/api/admin/forestal/gtf?conCtp=1${permisoQuery ? `&${permisoQuery}` : ""}`, { credentials: "include" }),
         fetch("/api/admin/forestal/gtf?sinIngresar=1", { credentials: "include" }),
       ]);
       let emitidas: Gtf[] = [];
@@ -262,62 +241,17 @@ export default function LothGtfView({
       emitidas: vivas.length,
       anuladas: gtfs.length - vivas.length,
       volumen: vivas.reduce((s, g) => s + Number(g.volumenTotalM3 ?? 0), 0),
-      pendientes: vivas.filter((g) => g.tipo !== "producto" && sinIngresar.has(g.gtfNumber)).length,
+      /* La misma cuenta que «Por ingresar al CTP» en la columna Estado (el servidor
+         lo decide con `conCtp=1`); sin ese dato, la bandeja del CTP como antes. */
+      pendientes: vivas.filter((g) =>
+        g.ctp !== undefined ? g.ctp === "por_ingresar" : g.tipo !== "producto" && sinIngresar.has(g.gtfNumber),
+      ).length,
     };
   }, [gtfs, sinIngresar]);
 
-  /** Las claves de estado que aplican a una guía — una puede ser "emitida" Y
-   *  "sin_ingresar" a la vez, no son excluyentes entre sí. */
-  const clavesEstado = useCallback(
-    (g: Gtf): string[] => {
-      const claves = [g.status === "anulada" ? "anulada" : "emitida"];
-      if (g.tipo !== "producto" && g.status !== "anulada" && sinIngresar.has(g.gtfNumber)) claves.push("sin_ingresar");
-      return claves;
-    },
-    [sinIngresar],
-  );
-
-  /** Opciones del autofiltro de Tipo/Estado, con cuántas guías trae cada una —
-   *  de TODA la lista, no de lo ya acotado por la otra columna. */
-  const opcionesColumna = useMemo(() => {
-    const contar = (clave: (g: Gtf) => string[]): FacetaOpcion[] => {
-      const map = new Map<string, number>();
-      for (const g of gtfs) for (const k of clave(g)) map.set(k, (map.get(k) ?? 0) + 1);
-      return [...map.entries()].map(([value, count]) => ({ value, count }));
-    };
-    return {
-      tipo: contar((g) => [g.tipo === "producto" ? "producto" : "trozas"]),
-      estado: contar(clavesEstado),
-      origen: contar((g) => [origenDeGuia(g.observations).origen]),
-    };
-  }, [gtfs, clavesEstado]);
-
-  /** Lo que se está viendo, tras búsqueda y filtros. */
-  const filtradas = useMemo(() => {
-    const q = busqueda.trim().toLowerCase();
-    return gtfs.filter((g) => {
-      if (q) {
-        const heno = [g.gtfNumber, origenDeGuia(g.observations).registro, g.titularName, g.destino, g.transportista, g.placaVehiculo, g.origen]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase();
-        if (!heno.includes(q)) return false;
-      }
-      if (tipoFiltro.length > 0 && !tipoFiltro.includes(g.tipo === "producto" ? "producto" : "trozas")) return false;
-      if (estadoFiltro.length > 0 && !clavesEstado(g).some((k) => estadoFiltro.includes(k))) return false;
-      if (origenFiltro.length > 0 && !origenFiltro.includes(origenDeGuia(g.observations).origen)) return false;
-      return true;
-    });
-  }, [gtfs, busqueda, tipoFiltro, estadoFiltro, origenFiltro, clavesEstado]);
-
-  const POR_PAGINA = 25;
-  const totalPaginas = Math.max(1, Math.ceil(filtradas.length / POR_PAGINA));
-  const pagActual = Math.min(pagina, totalPaginas - 1);
-  const enPagina = filtradas.slice(pagActual * POR_PAGINA, (pagActual + 1) * POR_PAGINA);
-  const volumenFiltrado = filtradas.filter((g) => g.status !== "anulada").reduce((a, g) => a + Number(g.volumenTotalM3 ?? 0), 0);
-
-  useEffect(() => setPagina(0), [busqueda, tipoFiltro, estadoFiltro, origenFiltro]);
   const orden = useOrdenColumnas("loth-gtf", ORDEN_GTF_DEFECTO);
+  /* Ocultar y mostrar columnas (Brandon 07-10), recordado en este navegador. */
+  const columnasVisibles = useVisibilidadColumnas("loth-gtf", COLUMNAS_GTF);
   /* Las cuatro fichas se pliegan (Brandon 05-10); cerradas dicen lo esencial en el botón. */
   const kpis = useKpisPlegables({
     claveMemoria: "loth-gtf",
@@ -419,28 +353,11 @@ export default function LothGtfView({
               className="w-full bg-transparent text-base text-[var(--text-primary)] outline-none"
             />
           </div>
+          <BotonColumnasVisibles vis={columnasVisibles} />
           <BotonRestablecerColumnas cambiado={orden.cambiado} onRestablecer={orden.restablecer} />
         </div>
       )}
 
-      {/* En el celular la tabla es tarjetas (`.admin-mobile-cards` esconde el
-          <thead>): Tipo y Estado se repiten acá, sólo visibles ahí. */}
-      {!loading && gtfs.length > 0 && (
-        <div className="grid grid-cols-2 gap-2 sm:hidden">
-          <div className="flex flex-col gap-1">
-            <span className="text-sm font-bold text-[var(--text-secondary)]">Tipo</span>
-            <CampoDeFiltro label="Tipo" value={tipoFiltro} options={opcionesColumna.tipo} etiqueta={(v) => ETIQUETA_TIPO[v] ?? v} onChange={setTipoFiltro} placeholder="Todos" />
-          </div>
-          <div className="flex flex-col gap-1">
-            <span className="text-sm font-bold text-[var(--text-secondary)]">Estado</span>
-            <CampoDeFiltro label="Estado" value={estadoFiltro} options={opcionesColumna.estado} etiqueta={(v) => ETIQUETA_ESTADO[v] ?? v} onChange={setEstadoFiltro} placeholder="Todos" />
-          </div>
-          <div className="col-span-2 flex flex-col gap-1">
-            <span className="text-sm font-bold text-[var(--text-secondary)]">Origen</span>
-            <CampoDeFiltro label="Origen" value={origenFiltro} options={opcionesColumna.origen} etiqueta={(v) => ETIQUETA_ORIGEN[v as keyof typeof ETIQUETA_ORIGEN] ?? v} onChange={setOrigenFiltro} placeholder="Todas" />
-          </div>
-        </div>
-      )}
 
       {focoAusente && (
         <div className="rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/10 p-3 text-sm text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
@@ -505,154 +422,21 @@ export default function LothGtfView({
       {loading && <div className="p-6 text-center text-[var(--text-tertiary)]"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></div>}
 
       {!loading && (
-        <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
-          <DataTable filtrable className="w-full text-sm">
-            <thead ref={orden.refCabecera} className="bg-[var(--surface-sunken)] text-left align-top">
-              <tr>
-                <EnOrden
-                  orden={orden.orden}
-                  celdas={{
-                    gtf: <th data-col="gtf" className="px-4 py-2.5 font-bold text-[var(--text-primary)]">N° GTF</th>,
-                    origen: (
-                      <th data-col="origen" className="px-4 py-2.5 font-bold text-[var(--text-primary)]">
-                        <span className="block">Origen</span>
-                        <FiltroColumnaMulti
-                          label="Origen"
-                          value={origenFiltro}
-                          options={opcionesColumna.origen}
-                          etiqueta={(v) => ETIQUETA_ORIGEN[v as keyof typeof ETIQUETA_ORIGEN] ?? v}
-                          onChange={setOrigenFiltro}
-                          placeholder="Todas"
-                        />
-                      </th>
-                    ),
-                    fecha: <th data-col="fecha" className="px-4 py-2.5 font-bold text-[var(--text-primary)]">Fecha</th>,
-                    tipo: (
-                      <th data-col="tipo" className="px-4 py-2.5 font-bold text-[var(--text-primary)]">
-                        <span className="block">Tipo</span>
-                        <FiltroColumnaMulti
-                          label="Tipo"
-                          value={tipoFiltro}
-                          options={opcionesColumna.tipo}
-                          etiqueta={(v) => ETIQUETA_TIPO[v] ?? v}
-                          onChange={setTipoFiltro}
-                          placeholder="Todos"
-                        />
-                      </th>
-                    ),
-                    titular: <th data-col="titular" className="px-4 py-2.5 font-bold text-[var(--text-primary)]">Titular</th>,
-                    destino: <th data-col="destino" className="px-4 py-2.5 font-bold text-[var(--text-primary)]">Destino</th>,
-                    volumen: <th data-col="volumen" className="px-4 py-2.5 text-right font-bold text-[var(--text-primary)]">Vol. m³</th>,
-                    estado: (
-                      <th data-col="estado" className="px-4 py-2.5 font-bold text-[var(--text-primary)]">
-                        <span className="block">Estado</span>
-                        <FiltroColumnaMulti
-                          label="Estado"
-                          value={estadoFiltro}
-                          options={opcionesColumna.estado}
-                          etiqueta={(v) => ETIQUETA_ESTADO[v] ?? v}
-                          onChange={setEstadoFiltro}
-                          placeholder="Todos"
-                        />
-                      </th>
-                    ),
-                  }}
-                />
-                <th className="px-4 py-2.5 font-bold text-[var(--text-primary)]">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {enPagina.map((g) => (
-                <tr
-                  key={g.id}
-                  ref={g.gtfNumber === focusGtf ? filaEnfocada : undefined}
-                  className={`border-t border-[var(--rule-soft)] ${g.status === "anulada" ? "opacity-50" : ""} ${
-                    g.gtfNumber === focusGtf ? "bg-[var(--data-info-500)]/15 outline outline-2 -outline-offset-2 outline-[var(--data-info-500)]" : ""
-                  }`}
-                >
-                  <EnOrden
-                    orden={orden.orden}
-                    celdas={{
-                      gtf: <td className="px-4 py-2.5"><span className="font-mono font-bold text-[var(--text-primary)]">{g.gtfNumber}</span></td>,
-                      origen: <td className="px-4 py-2.5"><GtfOrigenChip {...origenDeGuia(g.observations)} /></td>,
-                      fecha: <td className="px-4 py-2.5 text-[var(--text-secondary)]">{fmtDate(g.gtfDate)}</td>,
-                      tipo: <td className="px-4 py-2.5"><span className="rounded-full bg-[var(--surface-canvas)] px-2 py-0.5 text-xs text-[var(--text-secondary)]">{g.tipo === "producto" ? "Producto" : "Trozas"}</span></td>,
-                      titular: <td className="px-4 py-2.5 text-[var(--text-primary)]">{g.titularName ?? "—"}</td>,
-                      destino: <td className="px-4 py-2.5 text-[var(--text-secondary)]">{g.destino ?? "—"}</td>,
-                      volumen: <td className="px-4 py-2.5 text-right"><span className="font-mono font-bold tabular-nums text-[var(--text-primary)]">{g.volumenTotalM3 ? fmtM3(Number(g.volumenTotalM3)) : "—"}</span></td>,
-                      estado: <td className="px-4 py-2.5">{g.status === "anulada" ? <span className="rounded-full bg-[var(--data-error-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)]">ANULADA</span> : <span className="rounded-full bg-[var(--data-success-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-700)]">Emitida</span>}</td>,
-                    }}
-                  />
-                  <td className="px-4 py-2.5">
-                    <div className="flex items-center justify-end gap-2">
-                      {g.tipo !== "producto" && g.status !== "anulada" && sinIngresar.has(g.gtfNumber) && (
-                        <button
-                          type="button"
-                          onClick={() => ingresarAlCtp(g.gtfNumber)}
-                          title="Registrar estas trozas como ingreso en el Libro de Operaciones del CTP"
-                          className="inline-flex h-8 items-center gap-1 rounded-lg border-2 border-[var(--accent)] bg-primary/10 px-2.5 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/15"
-                        >
-                          <LogIn className="h-3.5 w-3.5" /> Ingresar al CTP
-                        </button>
-                      )}
-                      {/* ADR-461: la guía importada guarda su ficha de SERFOR entera (titular, destinatario, transporte, productos). */}
-                      <BotonFichaImportada gtfDatos={g.gtfDatos} gtfNumber={g.gtfNumber} items={g.items} />
-                      <button
-                        type="button"
-                        onClick={() => imprimirHoja(g)}
-                        title="Imprimir en la hoja de casilleros SERFOR (mismo formato que el Libro CTP)"
-                        className="inline-flex h-8 items-center gap-1 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
-                      >
-                        <Printer className="h-3.5 w-3.5" /> Hoja SERFOR
-                      </button>
-                      <button type="button" onClick={() => printGtf(g)} title="Imprimir el resumen interno" className="inline-flex h-8 items-center gap-1 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Printer className="h-3.5 w-3.5" /> Resumen</button>
-                      {/* ADR-461 §12: la guía que asentó una importación se deshace entera (su madera ya estaba en el CTP). */}
-                      {g.status !== "anulada" && importacionDeLaGuia(g.observations) && (
-                        <BotonDeshacerImportacion compacto gtfId={g.id} gtfNumber={g.gtfNumber} onHecho={() => load()} />
-                      )}
-                      {g.status !== "anulada" && (
-                        <button type="button" onClick={() => setAnnulId(g.id)} title="Anular esta guía" aria-label={`Anular la GTF ${g.gtfNumber}`} className="inline-flex h-8 items-center gap-1 rounded-lg border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-2.5 text-xs font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]"><Ban className="h-3.5 w-3.5" /></button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {gtfs.length === 0 && <tr><td colSpan={9} className="px-4 py-10 text-center text-[var(--text-tertiary)]"><FileText className="mx-auto mb-2 h-8 w-8 opacity-30" />Sin GTF emitidas. Haz click en &quot;Emitir GTF&quot;.</td></tr>}
-            </tbody>
-          </DataTable>
-        </div>
-      )}
-      {!loading && filtradas.length > 0 && (
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-sm font-semibold text-[var(--text-tertiary)]">
-            {filtradas.length === gtfs.length
-              ? `${gtfs.length} guía${gtfs.length === 1 ? "" : "s"}`
-              : `${filtradas.length} de ${gtfs.length} guías`}
-            {" · "}
-            <span className="font-mono tabular-nums">{fmtM3(volumenFiltrado)}</span> m³
-            {totalPaginas > 1 && ` · página ${pagActual + 1} de ${totalPaginas}`}
-          </p>
-          {totalPaginas > 1 && (
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setPagina((p) => Math.max(0, p - 1))}
-                disabled={pagActual === 0}
-                className="h-10 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40"
-              >
-                Anterior
-              </button>
-              <button
-                type="button"
-                onClick={() => setPagina((p) => Math.min(totalPaginas - 1, p + 1))}
-                disabled={pagActual >= totalPaginas - 1}
-                className="h-10 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40"
-              >
-                Siguiente
-              </button>
-            </div>
-          )}
-        </div>
+        <LothGtfTabla
+          gtfs={gtfs}
+          planes={permiso?.planes ?? SIN_PLANES}
+          busqueda={busqueda}
+          sinIngresar={sinIngresar}
+          focusGtf={focusGtf}
+          filaEnfocada={filaEnfocada}
+          orden={orden}
+          vis={columnasVisibles}
+          onIngresarCtp={ingresarAlCtp}
+          onHoja={imprimirHoja}
+          onResumen={(g) => void printGtf(g)}
+          onAnular={setAnnulId}
+          onRecargar={() => void load()}
+        />
       )}
     </div>
   );
