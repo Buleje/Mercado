@@ -17,7 +17,9 @@ import { describe, it, expect } from "vitest";
 import { saldosACsv, type LoteCsv } from "@/lib/forestal/ctp-saldos-csv";
 import { diasParaVencer } from "@/components/admin/forestal/saldos/LotesConSaldo";
 
-const HOY = new Date(2026, 8, 6); // 6-sep-2026
+// Mediodía de Lima: `new Date(2026, 8, 6)` es medianoche de la máquina, y en una
+// máquina en UTC eso todavía es el 5 en Lima (fallaba en la nube y en CI).
+const HOY = new Date("2026-09-06T12:00:00-05:00"); // 6-sep-2026
 
 const lote = (over: Partial<LoteCsv> = {}): LoteCsv => ({
   code: "17-2026",
