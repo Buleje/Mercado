@@ -22,6 +22,7 @@
 import { spawn, spawnSync } from "node:child_process";
 import { existsSync, readFileSync, rmSync, utimesSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { iniciarTraerCambios } from "./dev-helpers/traer-cambios.mjs";
 
 const KEY = "BULEJE_APP_DATABASE_URL";
 
@@ -117,6 +118,8 @@ function conTecho(cmd, args) {
 const [cmd, args] = conTecho(bin, ["dev", "--turbopack"]);
 const child = spawn(cmd, args, { stdio: "inherit", env });
 child.on("exit", (code) => process.exit(code ?? 0));
+// Lo que otra sesión sube a GitHub en esta rama aparece solo en la página (07-10).
+iniciarTraerCambios();
 for (const sig of ["SIGINT", "SIGTERM"]) {
   process.on(sig, () => child.kill(sig));
 }
