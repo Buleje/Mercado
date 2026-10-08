@@ -208,8 +208,9 @@ export default function TenantsPage() {
   // ── Stats hero — overview de la base de tenants ────────────────────────
   const stats = useMemo(() => {
     const activeCount = tenants.filter((t) => t.active).length;
+    // Solo tiendas activas (mismo criterio que «Trials activos» de Billing): las de prueba dadas de baja no cuentan.
     const trialCount = tenants.filter(
-      (t) => t.trialEndsAt && new Date(t.trialEndsAt) > new Date(),
+      (t) => t.active && t.trialEndsAt && new Date(t.trialEndsAt) > new Date(),
     ).length;
     const pendingTotal = tenants.reduce((s, t) => s + (t.pendingOrders ?? 0), 0);
     const tenantsWithPending = tenants.filter((t) => (t.pendingOrders ?? 0) > 0).length;
@@ -426,7 +427,7 @@ export default function TenantsPage() {
   // Quick filters virtuales aplican filtros adicionales sobre `sorted`.
   const sortedFinal = useMemo(() => {
     if (quickFilter === "trial") {
-      return sorted.filter((t) => t.trialEndsAt && new Date(t.trialEndsAt) > new Date());
+      return sorted.filter((t) => t.active && t.trialEndsAt && new Date(t.trialEndsAt) > new Date());
     }
     if (quickFilter === "pending") {
       return sorted.filter((t) => (t.pendingOrders ?? 0) > 0);
@@ -495,7 +496,7 @@ export default function TenantsPage() {
           icon={Sparkles}
           label="En prueba"
           value={loading ? "—" : String(stats.trial)}
-          hint={loading ? "Cargando…" : stats.trial > 0 ? "por vencer" : "ninguna"}
+          hint={loading ? "Cargando…" : stats.trial > 0 ? "activas, aún sin cobro" : "ninguna"}
           tone="violet"
         />
         <SAStatChip

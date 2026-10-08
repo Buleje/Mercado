@@ -120,11 +120,11 @@ const DANGER_META: Record<
   },
   danger: {
     label: "Crítico",
-    pill: "border-[var(--data-error-500)] bg-rose-50/60 text-[var(--accent)] dark:border-[var(--data-error-500)] dark:bg-rose-950/30 dark:text-[var(--accent)]",
+    pill: "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:border-[var(--data-error-500)] dark:text-[var(--data-error-500)]",
     dot: "bg-rose-500 animate-pulse",
     border: "border-l-rose-500",
     valueColor: "text-[var(--accent)] dark:text-[var(--accent)]",
-    iconBg: "bg-[var(--data-error-50)] text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]",
+    iconBg: "bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)]",
     icon: AlertTriangle,
   },
 };
@@ -458,7 +458,7 @@ export function OperationsTab() {
                       isActive
                         ? "bg-[var(--accent)]/15 text-[var(--accent)]"
                         : opt.k === "danger"
-                          ? "bg-[var(--data-error-50)] text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]"
+                          ? "bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
                           : opt.k === "delayed"
                             ? "bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300"
                             : "bg-[var(--surface-canvas)] text-[var(--text-tertiary)]"
@@ -524,7 +524,7 @@ export function OperationsTab() {
       </div>
 
       {error && (
-        <div className="flex items-center gap-3 rounded-xl border border-[var(--data-error-500)] bg-rose-50/40 px-4 py-3 text-sm font-semibold text-[var(--accent)] dark:border-[var(--data-error-500)] dark:bg-rose-950/30 dark:text-[var(--accent)]">
+        <div className="flex items-center gap-3 rounded-xl border border-[var(--data-error-500)] bg-[var(--data-error-50)] px-4 py-3 text-sm font-semibold text-[var(--data-error-700)] dark:border-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
           <AlertTriangle className="h-4 w-4 shrink-0" />
           {error}
         </div>
@@ -567,7 +567,7 @@ export function OperationsTab() {
                   <span
                     className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
                       isCritical
-                        ? "bg-[var(--data-error-50)] text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]"
+                        ? "bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
                         : "bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300"
                     }`}
                   >
@@ -910,7 +910,7 @@ function KpiCard({
   const iconBg = {
     accent: "bg-[var(--accent)]/10 text-[var(--accent)]",
     warning: "bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300",
-    danger: "bg-[var(--data-error-50)] text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]",
+    danger: "bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)]",
     neutral: "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
   }[tone];
   const Tag = onClick ? "button" : "div";

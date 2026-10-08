@@ -763,7 +763,7 @@ function NavbarLinkChip({
         }
       }}
       title={`Click para ocultar "${label}"\n${href}`}
-      className="group relative inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 py-1.5 text-sm font-bold text-[var(--text-primary)] transition cursor-pointer hover:border-rose-300 hover:bg-rose-50 hover:text-[var(--accent)] dark:hover:border-rose-700/40 dark:hover:bg-rose-950/30 dark:hover:text-[var(--accent)]"
+      className="group relative inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 py-1.5 text-sm font-bold text-[var(--text-primary)] transition cursor-pointer hover:border-[var(--data-error-500)]/50 hover:bg-[var(--data-error-50)] hover:text-[var(--data-error-700)] dark:hover:text-[var(--data-error-500)]"
     >
       <span>{label}</span>
       <X

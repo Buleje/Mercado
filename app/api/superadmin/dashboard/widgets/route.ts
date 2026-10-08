@@ -6,6 +6,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { getOrSet } from "@/lib/cache";
 import { logger } from "@/lib/logger";
+import { getAllPlanPrices } from "@/lib/plans-server";
 
 async function requirePlatform(req: NextRequest) {
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
@@ -97,22 +98,14 @@ export async function GET(req: NextRequest) {
         where: { createdAt: { gte: windowStart }, status: { not: "cancelado" } },
         select: { createdAt: true, total: true },
       }),
-      Promise.all(
-        arpuWindows.map(({ monthStart, nextMonthStart }) =>
-          Promise.all([
-            prisma.order.aggregate({
-              where: {
-                createdAt: { gte: monthStart, lt: nextMonthStart },
-                status: { not: "cancelado" },
-              },
-              _sum: { total: true },
-            }),
-            prisma.tenant.count({
-              where: { active: true, plan: { not: "free" }, createdAt: { lt: nextMonthStart } },
-            }),
-          ]),
-        ),
-      ),
+      // ARPU = MRR (suscripciones) / tiendas que pagan, al cierre de cada mes. Mismo criterio
+      // que /api/superadmin/analytics (`pagaEn`): activa, ya creada y fuera de prueba.
+      Promise.all([
+        prisma.tenant.findMany({
+          select: { plan: true, active: true, createdAt: true, trialEndsAt: true },
+        }),
+        getAllPlanPrices(),
+      ]),
     ]);
 
     // ── Phase 2: queries que dependen de Phase 1 ───────────────────────────
@@ -229,14 +222,25 @@ export async function GET(req: NextRequest) {
       count,
     }));
 
-    // ARPU desde los pares pre-resueltos en paralelo
-    const arpuSeries = arpuWindows.map(({ monthStart }, idx) => {
-      const [orderSum, payingCount] = arpuMonthly[idx];
-      const total = toNumOrZero(orderSum._sum.total ?? 0);
-      const arpu = payingCount > 0 ? total / payingCount : 0;
+    // ARPU = MRR / tiendas de pago al cierre del mes (el mes en curso, a hoy).
+    const [arpuTenants, planPrices] = arpuMonthly;
+    const arpuSeries = arpuWindows.map(({ monthStart, nextMonthStart }) => {
+      const corte = nextMonthStart > now ? now : new Date(nextMonthStart.getTime() - 1);
+      let mrrMes = 0;
+      let pagan = 0;
+      for (const t of arpuTenants) {
+        const paga =
+          t.active &&
+          t.plan !== "free" &&
+          new Date(t.createdAt) <= corte &&
+          !(t.trialEndsAt && new Date(t.trialEndsAt) > corte);
+        if (!paga) continue;
+        pagan += 1;
+        mrrMes += planPrices[t.plan as keyof typeof planPrices] ?? 0;
+      }
       return {
         month: monthFmt.format(monthStart),
-        arpu: Math.round(arpu * 100) / 100,
+        arpu: pagan > 0 ? Math.round((mrrMes / pagan) * 100) / 100 : 0,
       };
     });
 

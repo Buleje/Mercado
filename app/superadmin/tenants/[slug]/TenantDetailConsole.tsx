@@ -40,7 +40,7 @@ const timeAgo = (iso: string) => {
 };
 const RISK: Record<string, { label: string; cls: string }> = {
   low: { label: "Saludable", cls: "text-[var(--data-success-600,#059669)] bg-[var(--data-success-500)]/10" },
-  medium: { label: "Atención", cls: "text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10" },
+  medium: { label: "Atención", cls: "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)] bg-primary/10" },
   high: { label: "En riesgo", cls: "text-[var(--data-error-600,#dc2626)] bg-[var(--data-error-500)]/10" },
   critical: { label: "Crítico", cls: "text-white bg-[var(--data-error-600,#dc2626)]" },
 };
@@ -153,7 +153,7 @@ export function TenantDetailConsole({ slug }: { slug: string }) {
         <Card title={`Salud & engagement · medido ${timeAgo(h.calculatedAt)}`}>
           <div className="flex items-start gap-5 flex-wrap">
             <div className="text-center shrink-0">
-              <p className={`font-display text-5xl font-extrabold tabular-nums ${h.score >= 70 ? "text-[var(--data-success-600,#059669)]" : h.score >= 40 ? "text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--data-error-600,#dc2626)]"}`}>{h.score}</p>
+              <p className={`font-display text-5xl font-extrabold tabular-nums ${h.score >= 70 ? "text-[var(--data-success-600,#059669)]" : h.score >= 40 ? "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" : "text-[var(--data-error-600,#dc2626)]"}`}>{h.score}</p>
               <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">health /100</p>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 flex-1 min-w-[260px]">
@@ -194,7 +194,7 @@ export function TenantDetailConsole({ slug }: { slug: string }) {
               <p className="text-sm text-[var(--text-secondary)]">{ai.summary}</p>
             </div>
             <div>
-              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent-ink)] dark:text-[var(--accent)] mb-0.5">Acción recomendada</p>
+              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)] mb-0.5">Acción recomendada</p>
               <div className="text-sm text-[var(--text-secondary)]">{ai.action}</div>
             </div>
             <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-3">

@@ -50,7 +50,14 @@ export async function GET(req: NextRequest) {
     // Score más reciente de cada tenant en UNA query (distinct-on en la DB class).
     // Reemplaza el groupBy + N findFirst (N+1: 11 queries con 10 tenants) por 1.
     // Equivalencia verificada before/after contra la DB real (0 diferencias).
-    const nonNull = await SuperadminChurnTenantDB.listLatestHealthScores();
+    // 2026-10-08: las tiendas inactivas (trial vencido en julio, puntaje 0 de julio) inflaban
+    // «Negocios en riesgo» y «Churn» del dashboard; se cuentan aparte y no entran al riesgo.
+    const [allScores, inactiveIds] = await Promise.all([
+      SuperadminChurnTenantDB.listLatestHealthScores(),
+      SuperadminChurnTenantDB.listInactiveTenantIds(),
+    ]);
+    const nonNull = allScores.filter((s) => !inactiveIds.has(s.tenantId));
+    const excludedInactive = allScores.length - nonNull.length;
 
     if (nonNull.length === 0) {
       return NextResponse.json({
@@ -60,6 +67,8 @@ export async function GET(req: NextRequest) {
           byRiskLevel: { low: 0, medium: 0, high: 0, critical: 0 },
           churnRateEstimated: 0,
           avgScore: 0,
+          excludedInactive,
+          calculatedAt: null,
         },
         pagination: { total: 0, limit, offset },
       });
@@ -81,6 +90,8 @@ export async function GET(req: NextRequest) {
           byRiskLevel: { low: 0, medium: 0, high: 0, critical: 0 },
           churnRateEstimated: 0,
           avgScore: 0,
+          excludedInactive,
+          calculatedAt: null,
         },
         pagination: { total: 0, limit, offset },
       });
@@ -152,6 +163,11 @@ export async function GET(req: NextRequest) {
         byRiskLevel,
         churnRateEstimated,
         avgScore,
+        excludedInactive,
+        // Puntaje más viejo entre las tiendas que cuentan: el dashboard lo muestra si no es de hoy.
+        calculatedAt: filteredScores.length
+          ? new Date(Math.min(...filteredScores.map((x) => new Date(x.calculatedAt).getTime()))).toISOString()
+          : null,
       },
       pagination: { total, limit, offset },
     });

@@ -280,15 +280,18 @@ async function getAnalyticsData(fromISO?: string, toISO?: string) {
     ? Math.round((convertedFromTrial / totalTrials) * 100 * 10) / 10
     : 0;
 
+  // ARPU = MRR / tiendas que pagan (misma definición que el widget y su descripción).
+  const payingTenants = allTenants.filter((t) => t.plan !== "free" && pagaEn(t, now)).length;
+
   return {
     overview: {
       totalTenants,
       activeTenants: activeTenants.length,
       inactiveTenants,
-      payingTenants: allTenants.filter((t) => t.plan !== "free" && pagaEn(t, now)).length,
+      payingTenants,
       mrr,
       arr: mrr * 12,
-      arpu: totalTenants > 0 ? Math.round(mrr / totalTenants) : 0,
+      arpu: payingTenants > 0 ? Math.round(mrr / payingTenants) : 0,
       churnRate,
       trialConversionRate,
       cancelingTenants,

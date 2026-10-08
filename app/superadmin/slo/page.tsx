@@ -169,12 +169,12 @@ function SloCard({
 }) {
   const colors = {
     ok: "border-[var(--data-success-500)] text-[var(--data-success-500)]",
-    warning: "border-[var(--accent)] text-[var(--accent-ink)] dark:text-[var(--accent)]",
+    warning: "border-[var(--data-warning-500)] text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]",
     error: "border-[var(--data-error-500)] text-[var(--data-error-500)]",
   };
   const bg = {
     ok: "bg-[color-mix(in_oklch,var(--data-success)_6%,transparent)]",
-    warning: "bg-[color-mix(in_oklch,#0d9488_6%,transparent)]",
+    warning: "bg-[color-mix(in_oklch,var(--data-warning-500)_6%,transparent)]",
     error: "bg-[color-mix(in_oklch,var(--data-error)_6%,transparent)]",
   };
 
@@ -207,7 +207,7 @@ function DeployBadge({ state }: { state: string }) {
   const cfg = {
     READY: { label: "Exitoso", cls: "bg-[var(--data-success-100)] text-[var(--data-success-500)]" },
     ERROR: { label: "Fallido", cls: "bg-[var(--data-error-100)] text-[var(--data-error-500)]" },
-    BUILDING: { label: "En proceso", cls: "bg-[var(--accent)] text-[var(--accent-ink)] dark:text-[var(--accent)]" },
+    BUILDING: { label: "En proceso", cls: "bg-[var(--data-warning-50)] text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" },
     CANCELED: { label: "Cancelado", cls: "bg-[var(--rule-soft)] text-[var(--text-secondary)]" },
   } as Record<string, { label: string; cls: string }>;
   const { label, cls } = cfg[state] ?? { label: state, cls: "bg-[var(--rule-soft)] text-[var(--text-secondary)]" };
@@ -313,10 +313,10 @@ export default function SLODashboardPage() {
         {/* Banner honesto: qué fuentes faltan conectar. Sin esto NO se muestra
           ningún dato inventado — cada sección dice "no configurado". */}
         {unconfigured.length > 0 && (
-          <div className="flex items-start gap-3 p-4 rounded-xl bg-[color-mix(in_oklch,#0d9488_8%,transparent)] border border-[var(--accent)]">
-            <AlertTriangle className="w-5 h-5 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0 mt-0.5" />
+          <div className="flex items-start gap-3 p-4 rounded-xl bg-[var(--data-warning-50)] border border-[var(--data-warning-500)]/40">
+            <AlertTriangle className="w-5 h-5 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)] shrink-0 mt-0.5" />
             <div className="text-sm">
-              <p className="inline-flex items-center gap-1.5 font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)]">
+              <p className="inline-flex items-center gap-1.5 font-semibold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
                 {unconfigured.length} fuente{unconfigured.length > 1 ? "s" : ""} sin conectar
                 <InfoTip
                   title="Fuentes sin conectar"
@@ -439,7 +439,7 @@ export default function SLODashboardPage() {
         {/* Sentry error rate */}
         <div className="bg-[var(--surface-canvas)] border border-[var(--rule-base)] rounded-xl p-6">
           <h3 className="text-base font-bold text-[var(--text-primary)] flex items-center gap-2 mb-4">
-            <AlertTriangle className="w-5 h-5 text-[var(--accent-ink)] dark:text-[var(--accent)]" />
+            <AlertTriangle className="w-5 h-5 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" />
             Sentry — Error rate últimas 24h
             <SourceBadge status={sources.sentry} />
           </h3>
@@ -453,7 +453,7 @@ export default function SLODashboardPage() {
                   <div className="flex items-center gap-2">
                     <div className="w-32 h-2 rounded-full bg-[var(--surface-sunken)] overflow-hidden">
                       <div
-                        className={`h-full rounded-full transition-all ${e.count === 0 ? "bg-[var(--data-success-500)]" : e.count < 10 ? "bg-[var(--accent)]" : "bg-[var(--data-error-500)]"}`}
+                        className={`h-full rounded-full transition-all ${e.count === 0 ? "bg-[var(--data-success-500)]" : e.count < 10 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]"}`}
                         style={{ width: `${Math.min(100, (e.count / 50) * 100)}%` }}
                       />
                     </div>
@@ -547,7 +547,7 @@ export default function SLODashboardPage() {
                   </span>
                   <div className="w-16 text-right">
                     <span
-                      className={`text-xs font-bold ${cron.successRate24h >= 0.9 ? "text-[var(--data-success-500)]" : cron.successRate24h >= 0.7 ? "text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--data-error-500)]"}`}
+                      className={`text-xs font-bold ${cron.successRate24h >= 0.9 ? "text-[var(--data-success-500)]" : cron.successRate24h >= 0.7 ? "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]"}`}
                     >
                       {Math.round(cron.successRate24h * 100)}%
                     </span>

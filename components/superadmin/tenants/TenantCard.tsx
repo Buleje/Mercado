@@ -346,11 +346,14 @@ export function TenantCard({
             · desktop high-impact: gap-3 (más respiro entre cards angostas
               cuando hay grid de 3 col en el page → los valores "S/144 S/0"
               se veían pegados). */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-          <StatCard density="compact" label="Ventas" value={fmtMoney(revenue)} />
-          <StatCard density="compact" label="Gastos" value={fmtMoney(expenses)} />
-          <StatCard density="compact" label="Ganancia" value={fmtMoney(profit)} />
-          <StatCard density="compact" label="Pedidos" value={String(t.monthOrders ?? 0)} />
+        {/* 2026-10-08: 4 columnas solo si la tarjeta es ancha (container query); a 1280 con 3 tarjetas por fila «Ganancia» salía cortado. */}
+        <div className="@container">
+          <div className="grid grid-cols-2 @min-[26rem]:grid-cols-4 gap-2 sm:gap-3">
+            <StatCard density="compact" label="Ventas" value={fmtMoney(revenue)} />
+            <StatCard density="compact" label="Gastos" value={fmtMoney(expenses)} />
+            <StatCard density="compact" label="Ganancia" value={fmtMoney(profit)} />
+            <StatCard density="compact" label="Pedidos" value={String(t.monthOrders ?? 0)} />
+          </div>
         </div>
 
         {/* Resources — chips neutros uniformes (3 cols ya cabe en mobile
@@ -423,7 +426,7 @@ export function TenantCard({
                           usagePct >= 100
                             ? "var(--data-error)"
                             : usagePct >= 80
-                              ? "#0d9488"
+                              ? "var(--data-warning-500)"
                               : "var(--accent)",
                       }}
                     />
@@ -480,7 +483,7 @@ export function TenantCard({
                     totalUsagePct >= 100
                       ? "var(--data-error)"
                       : totalUsagePct >= 80
-                        ? "#0d9488"
+                        ? "var(--data-warning-500)"
                         : "var(--accent)",
                 }}
               />

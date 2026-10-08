@@ -130,6 +130,12 @@ export const SuperadminChurnTenantDB = {
     });
   },
 
+  /** Ids de tiendas dadas de baja/suspendidas: su puntaje (de cuando estaban activas) no cuenta como riesgo. */
+  async listInactiveTenantIds(): Promise<Set<string>> {
+    const rows = await prisma.tenant.findMany({ where: { active: false }, select: { id: true } });
+    return new Set(rows.map((r) => r.id));
+  },
+
   async listTenantsForChurn(ids: string[]) {
     return prisma.tenant.findMany({
       where: { id: { in: ids } },

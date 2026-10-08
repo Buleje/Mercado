@@ -574,7 +574,7 @@ function ExecutiveSummary({ data }: { data: AnalyticsData }) {
             · <strong className="text-[var(--text-primary)]">{paying}</strong> de pago de{" "}
             <strong className="text-[var(--text-primary)]">{total}</strong> tiendas ·{" "}
             {atRisk > 0
-              ? <strong className={health === "healthy" || health === "sinIngresos" ? "text-[var(--text-primary)]" : "text-amber-600 dark:text-amber-400"}>{atRisk} en riesgo</strong>
+              ? <strong className={health === "healthy" || health === "sinIngresos" ? "text-[var(--text-primary)]" : "text-amber-600 dark:text-amber-400"}>{atRisk} con trial vencido o cancelando</strong>
               : <span className="text-[var(--data-success-500)] font-semibold">sin riesgos</span>}{" "}
             · <strong className="text-[var(--text-primary)] tabular-nums">{orders.toLocaleString("es-PE")}</strong> pedidos este mes
           </p>

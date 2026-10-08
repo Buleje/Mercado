@@ -27,7 +27,7 @@ type CC = {
   newSignups7d: number;
   planDist: Record<string, number>;
 };
-type ChurnStats = { byRiskLevel: { low: number; medium: number; high: number; critical: number }; churnRateEstimated: number };
+type ChurnStats = { byRiskLevel: { low: number; medium: number; high: number; critical: number }; churnRateEstimated: number; total?: number; calculatedAt?: string | null };
 // El endpoint usa `stats` en la ruta con datos y `summary` en las ramas vacías
 // (inconsistencia histórica) → leemos ambas.
 type ChurnResponse = { stats?: ChurnStats; summary?: ChurnStats };
@@ -60,6 +60,11 @@ export function CommandCenterStrip() {
 
   const atRisk = (churn?.byRiskLevel.high ?? 0) + (churn?.byRiskLevel.critical ?? 0);
   const critical = churn?.byRiskLevel.critical ?? 0;
+  const scored = churn?.total ?? 0;
+  // Si el puntaje más viejo no es de hoy/ayer, se muestra con su fecha (no pasa por vigente).
+  const puntajeViejo = churn?.calculatedAt && Date.now() - new Date(churn.calculatedAt).getTime() > 2 * 86_400_000
+    ? new Date(churn.calculatedAt).toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit" })
+    : null;
   const in7d = cc?.trialsExpiring.in7d ?? 0;
   const in3d = cc?.trialsExpiring.in3d ?? 0;
 
@@ -86,7 +91,7 @@ export function CommandCenterStrip() {
       href: "/superadmin/tenants?qf=at-risk",
       label: "Negocios en riesgo",
       value: atRisk,
-      subValue: critical > 0 ? `${critical} críticos` : "sin críticos",
+      subValue: `${critical > 0 ? `${critical} críticos` : "sin críticos"} · poca actividad${puntajeViejo ? ` (puntaje del ${puntajeViejo})` : ""}`,
       emphasis: (critical > 0 ? "error" : atRisk > 0 ? "warning" : "success") as "error" | "warning" | "success",
       icon: AlertTriangle,
     },
@@ -94,7 +99,7 @@ export function CommandCenterStrip() {
       href: "/superadmin/rescue",
       label: "Churn estimado",
       value: `${churn?.churnRateEstimated ?? 0}%`,
-      subValue: "high + critical / total",
+      subValue: `riesgo alto o crítico de ${scored} tiendas activas`,
       emphasis: ((churn?.churnRateEstimated ?? 0) >= 20 ? "error" : (churn?.churnRateEstimated ?? 0) >= 10 ? "warning" : "success") as "error" | "warning" | "success",
       icon: TrendingDown,
     },

@@ -91,7 +91,7 @@ const CHECK_STATUS_META: Record<
   },
   missing: {
     label: "Falta",
-    cls: "border-[var(--data-error-500)] bg-rose-50/60 text-[var(--accent)] dark:border-[var(--data-error-500)] dark:bg-rose-950/30 dark:text-[var(--accent)]",
+    cls: "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:border-[var(--data-error-500)] dark:text-[var(--data-error-500)]",
     dot: "bg-rose-500",
     ring: "ring-rose-500/40",
   },
@@ -435,7 +435,7 @@ export function HealthTab() {
       </div>
 
       {error && (
-        <div className="flex items-center gap-3 rounded-xl border border-[var(--data-error-500)] bg-rose-50/40 px-4 py-3 text-sm font-semibold text-[var(--accent)] dark:border-[var(--data-error-500)] dark:bg-rose-950/30 dark:text-[var(--accent)]">
+        <div className="flex items-center gap-3 rounded-xl border border-[var(--data-error-500)] bg-[var(--data-error-50)] px-4 py-3 text-sm font-semibold text-[var(--data-error-700)] dark:border-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
           <AlertTriangle className="h-4 w-4 shrink-0" />
           {error}
         </div>
@@ -570,7 +570,7 @@ export function HealthTab() {
                           {item.plan}
                         </span>
                         {!item.active && (
-                          <span className="rounded-full border border-[var(--data-error-500)] bg-rose-50/60 px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)] dark:border-[var(--data-error-500)] dark:bg-rose-950/30 dark:text-[var(--accent)]">
+                          <span className="rounded-full border border-[var(--data-error-500)] bg-[var(--data-error-50)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--data-error-700)] dark:border-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
                             Inactiva
                           </span>
                         )}
@@ -868,7 +868,7 @@ function KpiCard({
   const iconBg = {
     success: "bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]",
     warning: "bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300",
-    danger: "bg-[var(--data-error-50)] text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]",
+    danger: "bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)]",
     accent: "bg-[var(--accent)]/10 text-[var(--accent)]",
   }[tone];
   return (

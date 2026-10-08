@@ -770,7 +770,7 @@ function KpiCard({
     accent: "bg-[var(--accent)]/10 text-[var(--accent)]",
     success: "bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]",
     warning: "bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300",
-    danger: "bg-[var(--data-error-50)] text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]",
+    danger: "bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)]",
     neutral: "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
   }[tone];
   return (

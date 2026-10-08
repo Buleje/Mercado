@@ -70,8 +70,8 @@ const KIND_LABEL: Record<string, string> = {
 };
 const SEV_STYLE: Record<Severity, { dot: string; chip: string }> = {
   critical: { dot: "bg-[var(--data-error-500)]", chip: "text-[var(--data-error-600,#dc2626)]" },
-  warning: { dot: "bg-teal-500", chip: "text-[var(--accent-ink)] dark:text-[var(--accent)]" },
-  info: { dot: "bg-[var(--accent)]", chip: "text-[var(--accent)]" },
+  warning: { dot: "bg-[var(--data-warning-500)]", chip: "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" },
+  info: { dot: "bg-[var(--data-info-500)]", chip: "text-[var(--data-info-700)] dark:text-[var(--data-info-500)]" },
 };
 
 const TABS: { id: "all" | Severity; label: string }[] = [
@@ -234,9 +234,9 @@ export default function AlertsPage() {
               t.id === "critical"
                 ? "text-[var(--data-error-600,#dc2626)]"
                 : t.id === "warning"
-                  ? "text-[var(--accent-ink)] dark:text-[var(--accent)]"
+                  ? "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
                   : t.id === "info"
-                    ? "text-[var(--accent)]"
+                    ? "text-[var(--data-info-700)] dark:text-[var(--data-info-500)]"
                     : "text-[var(--text-primary)]";
             return (
               <button
@@ -247,7 +247,7 @@ export default function AlertsPage() {
                 className={[
                   "inline-flex items-center gap-2 rounded-xl border-2 px-3.5 h-11 text-sm font-semibold transition-colors",
                   active
-                    ? "border-[var(--accent)] bg-primary/10 text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])]"
+                    ? "border-[var(--accent)] bg-primary/10 text-[var(--text-primary)]"
                     : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)]/40",
                 ].join(" ")}
               >

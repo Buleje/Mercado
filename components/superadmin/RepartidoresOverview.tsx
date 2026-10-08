@@ -106,7 +106,7 @@ export default function RepartidoresOverview() {
                     <ol className="space-y-2">
                       {data.topPerformers.map((p, i) => (
                         <li key={p.id} className="flex items-center gap-3">
-                          <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-extrabold tabular-nums">{i + 1}</span>
+                          <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)] text-xs font-extrabold tabular-nums">{i + 1}</span>
                           <div className="min-w-0 flex-1">
                             <p className="text-sm font-bold text-[var(--text-primary)] truncate">{p.name}{p.isOnline && <span className="ml-1.5 inline-block h-2 w-2 rounded-full bg-[var(--data-success-500)] align-middle" title="Online" />}</p>
                             <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] truncate">{p.zone}{p.tenant ? ` · ${p.tenant}` : ""}</p>
@@ -123,7 +123,7 @@ export default function RepartidoresOverview() {
 
                 <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4">
                   <div className="flex items-center gap-2 mb-3">
-                    <AlertTriangle className="h-4 w-4 text-[var(--accent-ink)] dark:text-[var(--accent)]" />
+                    <AlertTriangle className="h-4 w-4 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" />
                     <h3 className="text-sm font-extrabold text-[var(--text-primary)]">En riesgo / atención <span className="text-[var(--text-tertiary)] font-bold">{data.atRisk.length}</span></h3>
                   </div>
                   {data.atRisk.length === 0 ? (
@@ -138,7 +138,7 @@ export default function RepartidoresOverview() {
                           </div>
                           <div className="flex flex-wrap justify-end gap-1 shrink-0 max-w-[55%]">
                             {p.reasons.map((r) => (
-                              <span key={r} className="rounded-md bg-[color-mix(in_oklch,#0d9488_12%,transparent)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">{r}</span>
+                              <span key={r} className="rounded-md bg-[color-mix(in_oklch,#0d9488_12%,transparent)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">{r}</span>
                             ))}
                           </div>
                         </li>

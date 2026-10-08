@@ -207,7 +207,7 @@ export default function StoresPage() {
         {error && (
           <div
             role="alert"
-            className="flex items-center justify-between gap-3 rounded-xl border border-[var(--data-error-500)] bg-rose-50/40 px-4 py-3 text-sm font-semibold text-[var(--accent)] dark:border-[var(--data-error-500)] dark:bg-rose-950/30 dark:text-[var(--accent)]"
+            className="flex items-center justify-between gap-3 rounded-xl border border-[var(--data-error-500)] bg-[var(--data-error-50)] px-4 py-3 text-sm font-semibold text-[var(--data-error-700)] dark:border-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
           >
             <span>{error}</span>
             <button

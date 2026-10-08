@@ -28,7 +28,7 @@ const ICON_BG: Record<KPITone, string> = {
   // usado por "Tiendas activas") ahora renderiza VERDE esmeralda, sin naranja.
   amber: "bg-[var(--data-success-100)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/50 dark:text-[var(--data-success-500)]",
   purple: "bg-primary/10 text-[var(--accent)] bg-primary/10 dark:text-[var(--accent)]",
-  rose: "bg-[var(--data-error-50)] text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]",
+  rose: "bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)]",
 };
 
 interface Props {
@@ -107,7 +107,7 @@ export function KPIHeroCard({
     trend === "up"
       ? "border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/5 text-[var(--data-success-500)]"
       : trend === "down"
-        ? "border-[var(--data-error-500)] bg-rose-50/60 text-[var(--accent)] dark:border-[var(--data-error-500)] dark:bg-rose-950/30 dark:text-[var(--accent)]"
+        ? "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:border-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
         : "border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-tertiary)]";
 
   return (
