@@ -21,8 +21,8 @@ import { DataTable } from "@buleje/design-system";
 import { EnOrden } from "@/components/admin/shared/columnas-ordenables";
 import LothLineaAcciones from "./LothLineaAcciones";
 import type { FiltrosTabla } from "./filtros-tabla-forestal";
-import { cabecerasSeccion, celdasLinea, PieSeccion, TD, TH, type ColDef } from "./loth-seccion-celdas";
-import { useOrdenSeccion } from "./loth-seccion-columnas";
+import { CAJA_TABLA, cabecerasSeccion, celdasLinea, PieSeccion, TABLA_PIE_FIJO, TD, TH, type ColDef } from "./loth-seccion-celdas";
+import { soloEnOrden, useOrdenSeccion } from "./loth-seccion-columnas";
 import { columnaDelTotal, textoTotal } from "./loth-seccion-cifras";
 import type { LothEntryDTO, LothSection } from "@/lib/forestal/loth-constants";
 import { totalesDe, type OrdenCampo, type OrdenDir } from "@/lib/forestal/loth-seccion";
@@ -87,8 +87,8 @@ export default function LothSeccionTabla({
        tabla es tarjetas y la caja no recorta. */
     <DataTable
       stickyHeader
-      wrapperClassName="rounded-2xl bg-[var(--surface-raised)] sm:max-h-[62vh]"
-      className="w-full text-sm [&_thead_th]:shadow-[inset_0_-1px_0_var(--rule-base)] sm:[&_tfoot]:sticky sm:[&_tfoot]:bottom-0 sm:[&_tfoot]:z-10 [&_tfoot_td]:shadow-[inset_0_1px_0_var(--rule-base)]"
+      wrapperClassName={CAJA_TABLA}
+      className={`w-full text-sm ${TABLA_PIE_FIJO}`}
       data-seccion-tabla={section}
     >
       <thead ref={refCabecera} className="bg-[var(--surface-sunken)]">
@@ -102,7 +102,7 @@ export default function LothSeccionTabla({
               className="h-4 w-4 cursor-pointer accent-[var(--data-info-600)]"
             />
           </th>
-          <EnOrden orden={ordenCols} celdas={cabeceras} />
+          <EnOrden orden={ordenCols} celdas={soloEnOrden(ordenCols, cabeceras)} />
           <th className={`${TH} text-right`}>Acciones</th>
         </tr>
       </thead>
@@ -126,7 +126,7 @@ export default function LothSeccionTabla({
                   className="h-4 w-4 cursor-pointer accent-[var(--data-info-600)]"
                 />
               </td>
-              <EnOrden orden={ordenCols} celdas={celdasLinea(e, cols, corregidaPor.get(e.lineNo))} />
+              <EnOrden orden={ordenCols} celdas={soloEnOrden(ordenCols, celdasLinea(e, cols, corregidaPor.get(e.lineNo)))} />
               <td className={`${TD} whitespace-nowrap text-right`}>
                 <LothLineaAcciones
                   e={e}

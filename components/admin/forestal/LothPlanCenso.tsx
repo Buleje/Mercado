@@ -10,7 +10,7 @@
  * árboles no empuja el croquis tres pantallas más abajo.
  */
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Upload } from "@buleje/design-system/icons";
 import { toast } from "sonner";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
@@ -21,13 +21,15 @@ import type { CATEGORIA_LABEL } from "@/lib/forestal/loth-poa";
 import { formatNumber } from "@/lib/format";
 import LothCensoArbolForm from "./LothCensoArbolForm";
 import LothCensoImportModal from "./LothCensoImportModal";
-import LothCensoTabla from "./LothCensoTabla";
+import LothCensoKpis from "./LothCensoKpis";
+import LothCensoTabla, { LothCensoColumnas } from "./LothCensoTabla";
 import { BarraSeleccion, BotonBorrarTodos, useBorrarArboles } from "./LothCensoSeleccion";
 import { ordenarPorCodigo, sugerirPorEspecie, type ArbolCenso, type EspeciePlanCenso } from "./loth-censo-arbol";
 import type { Tree } from "./loth-plan-shared";
 import { AddBtn, BloquePlan } from "./loth-plan-ui";
 import { BarraFiltrosTabla, useFiltrosTabla } from "./filtros-tabla-forestal";
 import { columnasCenso } from "./loth-censo-columnas";
+import { BotonesColumnas } from "./loth-seccion-columnas";
 
 const SIN_ESPECIES: (EspeciePlanCenso & { cites?: boolean })[] = [];
 
@@ -67,7 +69,7 @@ export default function LothPlanCenso({ planId, trees, total, truncado, authoriz
   const filtros = useFiltrosTabla(arboles, columnas);
   const filtered = filtros.filtradas;
   // Un árbol cuya especie NO está autorizada en el plan = tala potencialmente ilegal.
-  const outOfPlan = (name: string) => authorizedSpecies.size > 0 && !authorizedSpecies.has(claveEspecie(name));
+  const outOfPlan = useCallback((name: string) => authorizedSpecies.size > 0 && !authorizedSpecies.has(claveEspecie(name)), [authorizedSpecies]);
   const importCtx = useMemo(() => ({
     codigosExistentes: new Set(trees.map((t) => t.treeCode.toLowerCase())),
     especiesAutorizadas: authorizedSpecies,
@@ -175,16 +177,27 @@ export default function LothPlanCenso({ planId, trees, total, truncado, authoriz
         dmcOverrides={dmcOverrides}
         onAgregado={onChange}
       />
+      <LothCensoColumnas>
+      {/* La fila de arriba: el contador, las cifras (o sus tarjetas, que filtran) y las columnas. */}
       {trees.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs tabular-nums text-[var(--text-secondary)]">
-            {/* Tres números distintos y los tres importan: lo que se ve, lo que
-                pasa el filtro y lo que hay. Con uno solo, 200 filas de 3.000
-                parecen el censo entero. */}
-            {Math.min(visibles, filtered.length)} de {filtered.length}
-            {filtered.length !== total && <> · {formatNumber(total)} en el censo</>}
-          </span>
-        </div>
+        <LothCensoKpis
+          arboles={arboles}
+          filtros={filtros}
+          categorias={categorias}
+          fueraDelPlan={outOfPlan}
+          hayEspeciesAutorizadas={authorizedSpecies.size > 0}
+          plantacion={plantacion}
+          inicio={
+            <span className="text-xs tabular-nums text-[var(--text-secondary)]">
+              {/* Tres números distintos y los tres importan: lo que se ve, lo que
+                  pasa el filtro y lo que hay. Con uno solo, 200 filas de 3.000
+                  parecen el censo entero. */}
+              {Math.min(visibles, filtered.length)} de {filtered.length}
+              {filtered.length !== total && <> · {formatNumber(total)} en el censo</>}
+            </span>
+          }
+          fin={<BotonesColumnas className="h-10 rounded-xl" />}
+        />
       )}
       <BarraFiltrosTabla f={filtros} sinConteo />
       <BarraSeleccion
@@ -197,6 +210,7 @@ export default function LothPlanCenso({ planId, trees, total, truncado, authoriz
       />
       <LothCensoTabla
         arboles={filtered.slice(0, visibles)}
+        filasTotal={filtered}
         filtros={filtros}
         marcados={marcados}
         onMarcar={alternar}
@@ -207,6 +221,7 @@ export default function LothPlanCenso({ planId, trees, total, truncado, authoriz
         categorias={categorias}
         onBorrar={(t) => void del(t)}
       />
+      </LothCensoColumnas>
       {filtered.length > visibles && (
         <div className="flex flex-col items-center gap-1.5">
           <button

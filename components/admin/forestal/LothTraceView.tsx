@@ -15,8 +15,11 @@
  *   h3  Árboles · orden · modo · Opciones     la lista, con sus filtros PEGADOS:
  *       el autofiltro en la cabecera de cada columna (tabla) o en «Filtros por
  *       columna» (tarjetas y celular) + las pastillas de lo pendiente
- *       h4 En movimiento  (talados con algo pendiente)  tarjetas o tabla
- *       h4 Terminados     (todas sus trozas salieron)   tarjetas o tabla
+ *       h4 En movimiento  (talados con algo pendiente)  tarjetas
+ *       h4 Terminados     (todas sus trozas salieron)   tarjetas
+ *       — o en tabla: UNA tabla con los dos tramos como filas de grupo, su
+ *         caja con cabecera y total fijos, y columnas que se ocultan, se
+ *         arrastran y se recuerdan (08-10, al nivel de las Secciones)
  *       h4 En pie  (plegado)                  tabla chica por especie, no 61 tarjetas
  *   ventana  el detalle de un árbol
  *
@@ -30,17 +33,18 @@
 import { useId } from "react";
 import { SectionTitle } from "@buleje/design-system";
 import type { ReactNode } from "react";
-import { CheckSquare, Printer, TreePine, X } from "@buleje/design-system/icons";
+import { CheckSquare, TreePine } from "@buleje/design-system/icons";
 import type { CupoEspecie } from "@/lib/forestal/loth-cupo-especie";
 import type { LothEntryDTO } from "@/lib/forestal/loth-constants";
 import type { ArbolCensoInput } from "@/lib/forestal/loth-arbol";
-import type { TraceFila } from "@/lib/forestal/loth-trace-tabla";
 import { grupoDe, type EnPieEspecie } from "@/lib/forestal/loth-trace-grupos";
 import { printTrozaPasaportes, type PasaporteCaratula } from "@/lib/forestal/loth-pasaporte-print";
 import LothTraceFiltros, { LothTraceListaCabecera, opcionesDeLaLista } from "./LothTraceFiltros";
 import LothTraceAvance from "./LothTraceAvance";
 import LothTracePendientes from "./LothTracePendientes";
 import LothTraceGrupo from "./LothTraceGrupo";
+import LothTraceTabla, { LothTraceColumnas } from "./LothTraceTabla";
+import LothTraceSeleccion from "./LothTraceSeleccion";
 import LothTraceEnPie from "./LothTraceEnPie";
 import LothTraceDetalleModal from "./LothTraceDetalleModal";
 import LothTraceUmbralesModal from "./LothTraceUmbralesModal";
@@ -48,6 +52,7 @@ import { BarraFiltrosTabla } from "./filtros-tabla-forestal";
 import { useLothTraceVista } from "./hooks/use-loth-trace-vista";
 import { fmtFecha, type TraceNav } from "./loth-trace-ui";
 
+const GRUPOS = ["movimiento", "terminado"] as const;
 const BOTON =
   "inline-flex h-10 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-40";
 
@@ -139,6 +144,7 @@ export default function LothTraceView({
 
       <LothTracePendientes p={v.pendientes} onRegistrarTrozado={nav?.onRegistrarTrozado} onAgregarAlCenso={nav?.onAgregarAlCenso} onAbrir={v.abrirDetalle} />
 
+      <LothTraceColumnas>
       <section aria-labelledby={`${id}-lista`} className="space-y-3">
         <LothTraceListaCabecera
           tituloId={`${id}-lista`}
@@ -165,7 +171,7 @@ export default function LothTraceView({
         />
 
         {v.seleccion.size > 0 && (
-          <BarraSeleccion
+          <LothTraceSeleccion
             seleccionadas={v.seleccionadas}
             onPasaportes={() => {
               printTrozaPasaportes(
@@ -185,20 +191,27 @@ export default function LothTraceView({
               Quitar filtros
             </button>
           </div>
+        ) : v.modo === "tabla" ? (
+          <LothTraceTabla
+            grupos={GRUPOS.map((g) => ({ grupo: g, total: v.grupos[g].length, filas: v.enPagina.filter(({ f }) => grupoDe(f) === g).map(({ f }) => f) }))}
+            filasTotal={[...v.grupos.movimiento, ...v.grupos.terminado]}
+            seleccion={v.seleccion}
+            onSeleccionar={v.toggleSeleccion}
+            onAbrir={v.abrirDetalle}
+            orden={v.orden}
+            onOrden={v.setOrden}
+            filtros={v.filtros}
+          />
         ) : (
-          (["movimiento", "terminado"] as const).map((g) => (
+          GRUPOS.map((g) => (
             <LothTraceGrupo
               key={g}
               grupo={g}
               total={v.grupos[g].length}
               items={v.enPagina.filter(({ f }) => grupoDe(f) === g)}
-              modo={v.modo}
               seleccion={v.seleccion}
               onSeleccionar={v.toggleSeleccion}
               onAbrir={v.abrirDetalle}
-              orden={v.orden}
-              onOrden={v.setOrden}
-              filtros={v.filtros}
             />
           ))
         )}
@@ -230,6 +243,7 @@ export default function LothTraceView({
           cupo={cupoEnPie}
         />
       </section>
+      </LothTraceColumnas>
 
       <LothTraceUmbralesModal
         open={v.modalUmbrales}
@@ -249,46 +263,5 @@ export default function LothTraceView({
         siguiente={v.detalleNav.siguiente}
       />
     </section>
-  );
-}
-
-/** Aparece sólo con algo elegido; queda pegada arriba mientras se recorre la lista. */
-function BarraSeleccion({
-  seleccionadas,
-  onPasaportes,
-  onCsv,
-  onLimpiar,
-}: {
-  seleccionadas: TraceFila[];
-  onPasaportes: () => void;
-  onCsv: () => void;
-  onLimpiar: () => void;
-}) {
-  const conOperacion = seleccionadas.filter((f) => f.op != null).length;
-  const n = seleccionadas.length;
-  return (
-    <div className="sticky top-2 z-20 flex flex-wrap items-center gap-2 rounded-2xl border border-[var(--data-info-500)] bg-[var(--surface-raised)] px-4 py-2 shadow-[var(--shadow-lg)]">
-      <span className="text-sm font-bold text-[var(--text-primary)]">
-        {n} árbol{n === 1 ? "" : "es"} seleccionado{n === 1 ? "" : "s"}
-      </span>
-      <button
-        type="button"
-        onClick={onPasaportes}
-        disabled={conOperacion === 0}
-        className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-40"
-      >
-        <Printer className="h-4 w-4" aria-hidden="true" /> Pasaporte de {conOperacion === 1 ? "1 árbol" : `los ${conOperacion}`}
-      </button>
-      <button type="button" onClick={onCsv} className={BOTON}>
-        CSV de la selección
-      </button>
-      <button
-        type="button"
-        onClick={onLimpiar}
-        className="ml-auto inline-flex h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
-      >
-        <X className="h-4 w-4" aria-hidden="true" /> Limpiar
-      </button>
-    </div>
   );
 }

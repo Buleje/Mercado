@@ -125,14 +125,69 @@ export function celdasLinea(e: LothEntryDTO, cols: readonly ColDef[], corregida:
  * columna visible ya tiene dato (se arrastró «Vol.» al frente), el rótulo pasa
  * al final. PURO en lo que reparte: `repartoDelPie` se prueba sin navegador.
  */
-export function repartoDelPie(orden: readonly string[], conDato: ReadonlySet<string>): { rotuloAntes: number; rotuloDespues: number; conCeldas: string[] } {
+export function repartoDelPie(
+  orden: readonly string[],
+  conDato: ReadonlySet<string>,
+  /** Columnas fijas DESPUÉS de las movibles («Acciones» en las secciones; ninguna en «Por árbol»). */
+  alFinal = 1,
+): { rotuloAntes: number; rotuloDespues: number; conCeldas: string[] } {
   const primera = orden.findIndex((id) => conDato.has(id));
-  if (primera < 0) return { rotuloAntes: orden.length + 2, rotuloDespues: 0, conCeldas: [] };
+  if (primera < 0) return { rotuloAntes: orden.length + 1 + alFinal, rotuloDespues: 0, conCeldas: [] };
   if (primera > 0) return { rotuloAntes: primera + 1, rotuloDespues: 0, conCeldas: orden.slice(primera) };
   let ultima = orden.length - 1;
   while (ultima > 0 && !conDato.has(orden[ultima])) ultima--;
-  // La casilla queda vacía; el rótulo, a la derecha de la última con dato (más «Acciones»).
-  return { rotuloAntes: 0, rotuloDespues: orden.length - ultima, conCeldas: orden.slice(0, ultima + 1) };
+  // La casilla queda vacía; el rótulo, a la derecha de la última con dato (más las fijas del final).
+  return { rotuloAntes: 0, rotuloDespues: orden.length - 1 - ultima + alFinal, conCeldas: orden.slice(0, ultima + 1) };
+}
+
+/**
+ * La caja de una tabla de libro: scroll en los dos ejes, cabecera y pie
+ * pegados arriba y abajo (desde `sm`; en el celular la tabla es tarjetas y la
+ * caja no recorta). La usan las secciones, «Por árbol» y el censo.
+ */
+export const CAJA_TABLA = "rounded-2xl bg-[var(--surface-raised)] sm:max-h-[62vh]";
+export const TABLA_PIE_FIJO =
+  "[&_thead_th]:shadow-[inset_0_-1px_0_var(--rule-base)] sm:[&_tfoot]:sticky sm:[&_tfoot]:bottom-0 sm:[&_tfoot]:z-10 [&_tfoot_td]:shadow-[inset_0_1px_0_var(--rule-base)]";
+
+/**
+ * La fila del pie de cualquier tabla con columnas en orden elegido: el rótulo
+ * («Total · N …») y los datos, cada uno bajo su columna (`repartoDelPie`). Una
+ * casilla fija al principio y `alFinal` columnas fijas al final.
+ */
+export function FilaPie({
+  orden,
+  dato,
+  rotulo,
+  derecha,
+  alFinal = 1,
+}: {
+  orden: readonly string[];
+  /** id de columna → lo que va al pie. Las que no están, quedan vacías. */
+  dato: Record<string, ReactNode>;
+  rotulo: ReactNode;
+  /** ¿La columna alinea a la derecha? (las de números). */
+  derecha: (id: string) => boolean;
+  alFinal?: number;
+}) {
+  const r = repartoDelPie(orden, new Set(Object.keys(dato)), alFinal);
+  return (
+    <tr>
+      {r.rotuloAntes > 0 ? (
+        <td className={TD} colSpan={r.rotuloAntes}>{rotulo}</td>
+      ) : (
+        /* Sin lugar a ningún lado (dato en la primera y en la última, nada fijo al final): va en la casilla. */
+        <td className={TD}>{r.rotuloDespues === 0 ? rotulo : null}</td>
+      )}
+      {r.conCeldas.map((id) => (
+        <td key={id} className={`${TD} ${derecha(id) ? "text-right" : ""}`}>{dato[id]}</td>
+      ))}
+      {r.rotuloDespues > 0 ? (
+        <td className={`${TD} text-right`} colSpan={r.rotuloDespues}>{rotulo}</td>
+      ) : (
+        alFinal > 0 && r.rotuloAntes <= orden.length + alFinal && <td className={TD} colSpan={alFinal > 1 ? alFinal : undefined} />
+      )}
+    </tr>
+  );
 }
 
 export function PieSeccion({
@@ -165,8 +220,6 @@ export function PieSeccion({
   if (piezasEnColumna && totales.piezas > 0) {
     dato.pcs = <span className="whitespace-nowrap font-mono text-xs tabular-nums text-[var(--text-secondary)]">{totales.piezas} piezas</span>;
   }
-  const r = repartoDelPie(orden, new Set(Object.keys(dato)));
-  const alineada = (id: string) => (cols.find((c) => c.key === id)?.align === "right" ? "text-right" : "");
 
   const rotulo = (
     <>
@@ -193,23 +246,7 @@ export function PieSeccion({
     </>
   );
 
-  return (
-    <tr>
-      {r.rotuloAntes > 0 ? (
-        <td className={TD} colSpan={r.rotuloAntes}>{rotulo}</td>
-      ) : (
-        <td className={TD} />
-      )}
-      {r.conCeldas.map((id) => (
-        <td key={id} className={`${TD} ${alineada(id)}`}>{dato[id]}</td>
-      ))}
-      {r.rotuloDespues > 0 ? (
-        <td className={`${TD} text-right`} colSpan={r.rotuloDespues}>{rotulo}</td>
-      ) : (
-        r.rotuloAntes <= orden.length + 1 && <td className={TD} />
-      )}
-    </tr>
-  );
+  return <FilaPie orden={orden} dato={dato} rotulo={rotulo} derecha={(id) => cols.find((c) => c.key === id)?.align === "right"} />;
 }
 
 function Encabezado({

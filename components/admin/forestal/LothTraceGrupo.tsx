@@ -1,9 +1,10 @@
 "use client";
 
 /**
- * LothTraceGrupo — un tramo de la lista de talados: «En movimiento» o
- * «Terminados». Las tarjetas y la tabla son las de siempre (`LothTraceCard`,
- * `LothTraceTabla`); este bloque sólo les pone su subtítulo y su cuenta.
+ * LothTraceGrupo — un tramo de la lista de talados en TARJETAS: «En movimiento»
+ * o «Terminados». Las tarjetas son las de siempre (`LothTraceCard`); este
+ * bloque sólo les pone su subtítulo y su cuenta. En modo tabla los dos tramos
+ * son filas de grupo de UNA tabla (`LothTraceTabla`, 08-10), con un solo pie.
  *
  * La cuenta es la del grupo ENTERO con los filtros puestos, no la de la página:
  * «Terminados 4» aunque la página muestre dos.
@@ -14,9 +15,6 @@ import type { TraceFila } from "@/lib/forestal/loth-trace-tabla";
 import type { GrupoArbol } from "@/lib/forestal/loth-trace-grupos";
 import { formatNumber } from "@/lib/format";
 import LothTraceCard from "./LothTraceCard";
-import LothTraceTabla from "./LothTraceTabla";
-import type { TraceModo, TraceOrden } from "./loth-trace-ui";
-import type { FiltrosTabla } from "./filtros-tabla-forestal";
 
 export const GRUPO_META: Record<Exclude<GrupoArbol, "en_pie">, { titulo: string; nota: string }> = {
   movimiento: { titulo: "En movimiento", nota: "talados con algo pendiente" },
@@ -27,27 +25,18 @@ export default function LothTraceGrupo({
   grupo,
   total,
   items,
-  modo,
   seleccion,
   onSeleccionar,
   onAbrir,
-  orden,
-  onOrden,
-  filtros,
 }: {
   grupo: Exclude<GrupoArbol, "en_pie">;
   /** Árboles del grupo con los filtros puestos (todas las páginas). */
   total: number;
   /** Los de ESTA página. */
   items: { f: TraceFila; m: { hint: string | null } }[];
-  modo: TraceModo;
   seleccion: Set<string>;
   onSeleccionar: (tree: string) => void;
   onAbrir: (tree: string) => void;
-  orden: TraceOrden;
-  onOrden: (o: TraceOrden) => void;
-  /** El autofiltro de cada columna (va en la cabecera de la tabla). */
-  filtros?: FiltrosTabla<TraceFila>;
 }) {
   if (items.length === 0) return null;
   const meta = GRUPO_META[grupo];
@@ -59,30 +48,18 @@ export default function LothTraceGrupo({
           {formatNumber(total)} · {meta.nota}
         </span>
       </div>
-      {modo === "tabla" ? (
-        <LothTraceTabla
-          filas={items.map(({ f }) => f)}
-          seleccion={seleccion}
-          onSeleccionar={onSeleccionar}
-          onAbrir={onAbrir}
-          orden={orden}
-          onOrden={onOrden}
-          filtros={filtros}
-        />
-      ) : (
-        <div className="space-y-2.5">
-          {items.map(({ f, m }) => (
-            <LothTraceCard
-              key={f.tree}
-              fila={f}
-              matchHint={m.hint}
-              seleccionada={seleccion.has(f.tree)}
-              onSeleccionar={onSeleccionar}
-              onAbrir={onAbrir}
-            />
-          ))}
-        </div>
-      )}
+      <div className="space-y-2.5">
+        {items.map(({ f, m }) => (
+          <LothTraceCard
+            key={f.tree}
+            fila={f}
+            matchHint={m.hint}
+            seleccionada={seleccion.has(f.tree)}
+            onSeleccionar={onSeleccionar}
+            onAbrir={onAbrir}
+          />
+        ))}
+      </div>
     </div>
   );
 }

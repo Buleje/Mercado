@@ -94,13 +94,17 @@ async function main() {
     console.error(`❌ login falló (${login.status()}): ¿dev server arriba? ¿existe qaadmin?`);
     process.exit(1);
   }
-  await page.addInitScript(() => {
+  /* `LS='{"loth:plan:pestana":"censo"}'` siembra lo recordado (JSON.stringify de
+     cada valor): así se mide una pestaña interna que no vive en la URL. */
+  const sembrar = process.env.LS ? JSON.parse(process.env.LS) : {};
+  await page.addInitScript((extra) => {
     try {
       localStorage.setItem("onboarding-completed-main", "1");
+      for (const [k, v] of Object.entries(extra)) localStorage.setItem(k, JSON.stringify(v));
     } catch {
       /* sin storage: el onboarding puede tapar la pantalla, pero se mide igual */
     }
-  });
+  }, sembrar);
 
   const filas = [];
   for (const tab of pestanas) {

@@ -25,6 +25,7 @@ import { CardTitle } from "@buleje/design-system";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { FILTROS_ESTADO, ORDEN_LABEL, type TraceFiltro, type TraceModo, type TraceOrden } from "./loth-trace-ui";
 import { formatNumber } from "@/lib/format";
+import { BotonesColumnas } from "./loth-seccion-columnas";
 
 const CAMPO =
   "flex h-12 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm focus-within:border-[var(--accent)] focus-within:ring-2 focus-within:ring-[var(--accent-muted)]";
@@ -78,6 +79,8 @@ export function LothTraceListaCabecera({
           <ModoBtn activo={modo === "tarjetas"} onClick={() => onModo("tarjetas")} icon={<LayoutGrid className="h-4 w-4" aria-hidden="true" />} label="Tarjetas" />
           <ModoBtn activo={modo === "tabla"} onClick={() => onModo("tabla")} icon={<Rows3 className="h-4 w-4" aria-hidden="true" />} label="Tabla" />
         </div>
+        {/* Las columnas son de la tabla: en tarjetas no hay qué elegir. */}
+        {modo === "tabla" && <BotonesColumnas className="h-10 rounded-xl" />}
         <ActionMenu label="Opciones" title="Umbrales de merma, descargar y limpiar filtros" actions={opciones} size="sm" compactoEnMovil />
       </div>
     </div>

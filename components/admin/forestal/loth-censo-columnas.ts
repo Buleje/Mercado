@@ -11,7 +11,7 @@ import { claveEspecie } from "@/lib/forestal/loth-constants";
 import type { ColumnaFiltro } from "./filtros-tabla-forestal";
 import type { ArbolCenso } from "./loth-censo-arbol";
 
-const ESTADO_LABEL: Record<string, string> = { en_pie: "En pie", talado: "Talado", descartado: "Descartado" };
+export const ESTADO_LABEL: Record<string, string> = { en_pie: "En pie", talado: "Talado", descartado: "Descartado" };
 
 const num = (v: string | null | undefined): number | null => {
   if (v == null || v === "") return null;

@@ -142,26 +142,13 @@ export default function LothSeccionKpis({
             </span>
           </p>
         )}
-        <button
-          type="button"
-          onClick={() => setAbierto(!abierto)}
-          aria-expanded={abierto}
-          aria-controls={`${panelId}-panel`}
-          title={
-            abierto
-              ? "Oculta los indicadores. Se recuerda en este navegador para las seis secciones."
-              : "Muestra los indicadores de la sección"
-          }
-          className={`ml-auto inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border px-3 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 ${
-            abierto
-              ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-              : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
-          }`}
-        >
-          <BarChart3 className="h-4 w-4" aria-hidden="true" />
-          Indicadores
-          <ChevronDown className={`h-4 w-4 transition-transform ${abierto ? "rotate-180" : ""}`} aria-hidden="true" />
-        </button>
+        <BotonIndicadores
+          abierto={abierto}
+          onAlternar={() => setAbierto(!abierto)}
+          controla={`${panelId}-panel`}
+          ayudaAbierto="Oculta los indicadores. Se recuerda en este navegador para las seis secciones."
+          ayudaCerrado="Muestra los indicadores de la sección"
+        />
       </div>
 
       <div id={`${panelId}-panel`} hidden={!abierto} className="grid grid-cols-1 items-start gap-3 sm:grid-cols-3">
@@ -217,5 +204,43 @@ export default function LothSeccionKpis({
         />
       </div>
     </section>
+  );
+}
+
+/**
+ * «Indicadores ▾»: pliega y despliega las tarjetas. El mismo botón en las
+ * Secciones y en el Censo (08-10): quien lo aprendió en uno lo reconoce en el otro.
+ */
+export function BotonIndicadores({
+  abierto,
+  onAlternar,
+  controla,
+  ayudaAbierto,
+  ayudaCerrado,
+}: {
+  abierto: boolean;
+  onAlternar: () => void;
+  /** id del panel que pliega. */
+  controla: string;
+  ayudaAbierto: string;
+  ayudaCerrado: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onAlternar}
+      aria-expanded={abierto}
+      aria-controls={controla}
+      title={abierto ? ayudaAbierto : ayudaCerrado}
+      className={`ml-auto inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border px-3 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 ${
+        abierto
+          ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+          : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+      }`}
+    >
+      <BarChart3 className="h-4 w-4" aria-hidden="true" />
+      Indicadores
+      <ChevronDown className={`h-4 w-4 transition-transform ${abierto ? "rotate-180" : ""}`} aria-hidden="true" />
+    </button>
   );
 }

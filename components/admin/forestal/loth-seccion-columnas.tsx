@@ -15,6 +15,9 @@
  * bajo su propia clave al primer arrastre. El botón (en la barra) y la tabla
  * leen el mismo estado del contexto; fuera del proveedor la tabla pinta el
  * orden de fábrica y el botón no aparece.
+ *
+ * `ColumnasRecordadas` es el mismo proveedor sin nada de secciones: lo usan
+ * también la tabla «Por árbol» de la Trazabilidad y la del Censo (08-10).
  */
 
 import { createContext, useContext, useMemo, type ReactNode } from "react";
@@ -56,20 +59,42 @@ export function columnasElegibles(cols: readonly ColumnaDeSeccion[]): ColumnaEle
   ];
 }
 
-interface ColumnasSeccion {
+interface ColumnasRecordadasCtx {
   orden: UseOrdenColumnasResult;
   vis: UseVisibilidadColumnasResult;
 }
 
-const ColumnasCtx = createContext<ColumnasSeccion | null>(null);
+const ColumnasCtx = createContext<ColumnasRecordadasCtx | null>(null);
 
-function Proveedor({ section, cols, children }: { section: LothSection; cols: readonly ColumnaDeSeccion[]; children: ReactNode }) {
-  const clave = `loth-seccion-${section}`;
-  const porDefecto = useMemo(() => ordenDeFabrica(cols), [cols]);
-  const elegibles = useMemo(() => columnasElegibles(cols), [cols]);
+/**
+ * El proveedor genérico: una tabla (o varias que comparten el orden) con su
+ * clave en este navegador. `porDefecto` y `elegibles` tienen que ser estables
+ * (constante de módulo o `useMemo`).
+ */
+export function ColumnasRecordadas({
+  clave,
+  porDefecto,
+  elegibles,
+  children,
+}: {
+  clave: string;
+  porDefecto: readonly string[];
+  elegibles: readonly ColumnaElegible[];
+  children: ReactNode;
+}) {
   const orden = useOrdenColumnas(clave, porDefecto);
   const vis = useVisibilidadColumnas(clave, elegibles);
   return <ColumnasCtx.Provider value={{ orden, vis }}>{children}</ColumnasCtx.Provider>;
+}
+
+function Proveedor({ section, cols, children }: { section: LothSection; cols: readonly ColumnaDeSeccion[]; children: ReactNode }) {
+  const porDefecto = useMemo(() => ordenDeFabrica(cols), [cols]);
+  const elegibles = useMemo(() => columnasElegibles(cols), [cols]);
+  return (
+    <ColumnasRecordadas clave={`loth-seccion-${section}`} porDefecto={porDefecto} elegibles={elegibles}>
+      {children}
+    </ColumnasRecordadas>
+  );
 }
 
 /** Envuelve la barra y la tabla de la sección. Se monta de nuevo al cambiar de sección (ver arriba). */
@@ -77,25 +102,48 @@ export function LothSeccionColumnas(props: { section: LothSection; cols: readonl
   return <Proveedor key={props.section} {...props} />;
 }
 
-/** El orden a pintar (sólo las visibles) y la ref del `<thead>` que escucha el arrastre. */
-export function useOrdenSeccion(cols: readonly { key: string }[]): {
+/** El orden a pintar (sólo las visibles) y la ref del `<thead>` que escucha el arrastre. Fuera del proveedor, el de fábrica. */
+export function useOrdenRecordado(deFabrica: string[]): {
   orden: string[];
   refCabecera?: (el: HTMLTableSectionElement | null) => void;
 } {
   const ctx = useContext(ColumnasCtx);
-  const deFabrica = useMemo(() => ordenDeFabrica(cols), [cols]);
   if (!ctx) return { orden: deFabrica };
   return { orden: ctx.vis.filtrar(ctx.orden.orden), refCabecera: ctx.orden.refCabecera };
 }
 
-/** «Columnas n/m» y, si se movió alguna, «Restablecer» — para la barra de la sección. */
-export function BotonesColumnasSeccion() {
+/** `useOrdenRecordado` con el orden de fábrica de una sección. */
+export function useOrdenSeccion(cols: readonly { key: string }[]): {
+  orden: string[];
+  refCabecera?: (el: HTMLTableSectionElement | null) => void;
+} {
+  const deFabrica = useMemo(() => ordenDeFabrica(cols), [cols]);
+  return useOrdenRecordado(deFabrica);
+}
+
+/** «Columnas n/m» y, si se movió alguna, «Restablecer» — para la barra de la tabla. */
+export function BotonesColumnas({ className = "h-12 rounded-2xl" }: { className?: string } = {}) {
   const ctx = useContext(ColumnasCtx);
   if (!ctx) return null;
   return (
     <>
       <BotonRestablecerColumnas cambiado={ctx.orden.cambiado} onRestablecer={ctx.orden.restablecer} soloIcono />
-      <BotonColumnasVisibles vis={ctx.vis} className="h-12 rounded-2xl" />
+      <BotonColumnasVisibles vis={ctx.vis} className={className} />
     </>
   );
 }
+
+/**
+ * Sólo las celdas de las columnas que se pintan. `EnOrden` avisa (en
+ * desarrollo) de toda celda sin lugar en el orden —pensado para un id mal
+ * escrito—, y una columna OCULTA también lo es: sin esto, el aviso salía una
+ * vez por fila en cada render (200 en el censo).
+ */
+export function soloEnOrden(orden: readonly string[], celdas: Record<string, ReactNode>): Record<string, ReactNode> {
+  const out: Record<string, ReactNode> = {};
+  for (const id of orden) if (id in celdas) out[id] = celdas[id];
+  return out;
+}
+
+/** El nombre de siempre en la barra de la sección. */
+export const BotonesColumnasSeccion = BotonesColumnas;
