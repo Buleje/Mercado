@@ -897,6 +897,7 @@ export function ColumnasMenu<K extends string>({
   visibles,
   onChange,
   className,
+  soloIcono = false,
 }: {
   columnas: readonly { key: K; label: string; porDefecto?: boolean; grupo?: string }[];
   visibles: Record<K, boolean>;
@@ -904,6 +905,9 @@ export function ColumnasMenu<K extends string>({
   /** Alto/redondeo del botón, para que entre en barras que no usan la altura
    *  de filtro (`h-12`) — por ejemplo la cabecera de Resúmenes, que va en `h-9`. */
   className?: string;
+  /** Botón cuadrado de sólo ícono (la cuenta «3/15» pasa al tooltip): para barras
+   *  donde la vista ya tiene demasiados botones con texto. */
+  soloIcono?: boolean;
 }) {
   const [abierto, setAbierto] = useState(false);
   useEffect(() => {
@@ -931,23 +935,27 @@ export function ColumnasMenu<K extends string>({
           e.stopPropagation();
           setAbierto((v) => !v);
         }}
-        className={`inline-flex items-center gap-1.5 border-2 px-3 text-sm font-semibold transition-colors ${className ?? "h-12 rounded-2xl"} ${
+        className={`inline-flex items-center gap-1.5 border-2 text-sm font-semibold transition-colors ${soloIcono ? "w-9 justify-center px-0" : "px-3"} ${className ?? "h-12 rounded-2xl"} ${
           abierto
             ? "border-primary bg-primary/5 text-primary"
             : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-primary hover:text-primary"
         }`}
-        title="Elegir columnas visibles"
+        title={soloIcono ? `Elegir columnas visibles (${prendidas} de ${columnas.length})` : "Elegir columnas visibles"}
         aria-label="Elegir columnas visibles"
         aria-expanded={abierto}
       >
         <Columns3 className="h-4 w-4" aria-hidden />
-        <span className="max-sm:sr-only">Columnas</span>
-        {/* Cuántas hay prendidas de cuántas: con quince opciones, el botón sin
-            número no dice si quedó algo apagado de la sesión pasada (la
-            preferencia persiste por dispositivo). */}
-        <span className="font-mono text-xs tabular-nums opacity-70">
-          {prendidas}/{columnas.length}
-        </span>
+        {!soloIcono && (
+          <>
+            <span className="max-sm:sr-only">Columnas</span>
+            {/* Cuántas hay prendidas de cuántas: con quince opciones, el botón sin
+                número no dice si quedó algo apagado de la sesión pasada (la
+                preferencia persiste por dispositivo). */}
+            <span className="font-mono text-xs tabular-nums opacity-70">
+              {prendidas}/{columnas.length}
+            </span>
+          </>
+        )}
       </button>
       {abierto && (
         <div

@@ -16,7 +16,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { formatDateNumeric } from "@/lib/format";
 import { useMiRol } from "@/hooks/use-mi-rol";
-import { AlertCircle, PackageCheck } from "@buleje/design-system/icons";
+import { AlertCircle, FileText, PackageCheck, TreePine } from "@buleje/design-system/icons";
+import ActionMenu from "@/components/admin/shared/action-menu";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useGuardarPrefs, usePrefsIniciales } from "@/hooks/use-ctp-ingresos-prefs";
@@ -996,32 +997,48 @@ export default function CtpIngresosView({
              izquierda (x=−25 a 400 px, 2026-09-25) para elegir algo que ahí
              no cambia nada. */
           <div className="flex items-center gap-1 max-sm:hidden">
-            <ColumnasMenu columnas={COLUMNAS_GUIAS_OPCIONALES} visibles={colsGuias} onChange={setColsGuias} className="h-9 rounded-full" />
+            <ColumnasMenu columnas={COLUMNAS_GUIAS_OPCIONALES} visibles={colsGuias} onChange={setColsGuias} className="h-9 rounded-full" soloIcono />
             <BotonRestablecerColumnas cambiado={ordenGuias.cambiado} onRestablecer={ordenGuias.restablecer} />
           </div>
         ) : undefined
       }
-      modoLista={
-        <div role="radiogroup" aria-label="Cómo listar los ingresos" className="inline-flex items-center gap-0.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-0.5">
-          {([
-            { v: "guia", label: "Por guía", hint: "Una fila por documento de ingreso" },
-            { v: "troza", label: "Por troza", hint: "Una fila por pieza, con su código y sus tres dimensiones" },
-          ] as const).map((o) => (
-            <button
-              key={o.v}
-              type="button"
-              role="radio"
-              aria-checked={modo === o.v}
-              title={o.hint}
-              onClick={() => setModo(o.v)}
-              className={`inline-flex h-8 items-center rounded-full px-3 text-sm font-bold transition-colors ${modo === o.v
-                ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-sm"
-                : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"}`}
-            >
-              {o.label}
-            </button>
-          ))}
-        </div>
+      /* Cómo se lista (por guía / por troza) vive en «Opciones», al final: se
+         recuerda por tenant y se cambia de vez en cuando; la vista llegó a 31
+         botones (2026-10-08). El tilde dice cuál rige. */
+      modoLista={[
+        { id: "modo-guia", seccion: "Cómo listar", label: "Por guía", hint: "Una fila por documento de ingreso", icon: FileText, activo: modo === "guia", onSelect: () => setModo("guia") },
+        { id: "modo-troza", seccion: "Cómo listar", label: "Por troza", hint: "Una fila por pieza, con su código y sus tres dimensiones", icon: TreePine, activo: modo === "troza", onSelect: () => setModo("troza") },
+      ]}
+      /* La bandeja se puede abrir a todo el libro sin cambiar de pestaña: el
+         operador que busca «esa guía que ya recibí» no tiene por qué saber en
+         cuál de las dos vistas quedó (ADR-339). Va en la fila de los chips de la
+         tabla (antes, una fila propia) y como menú: dos botones por una opción
+         que se cambia de vez en cuando. */
+      recepcionFiltro={
+        recepcion === "pendiente" ? (
+          <>
+            <ActionMenu
+              label={recepcionSel === "pendiente" ? "Por recepcionar" : "Todas las del período"}
+              title="Qué guías lista la bandeja"
+              variant={recepcionSel === "pendiente" ? "accent" : "outline"}
+              size="xs"
+              actions={[
+                { id: "pendiente", label: "Por recepcionar", hint: "Guías que llegaron y falta recibirlas", icon: PackageCheck, activo: recepcionSel === "pendiente", onSelect: () => setRecepcionSel("pendiente") },
+                { id: "todas", label: "Todas las del período", hint: "Incluye también las ya recepcionadas", icon: FileText, activo: recepcionSel === "", onSelect: () => setRecepcionSel("") },
+              ]}
+            />
+            {/* El detalle va en un ⓘ: explicaba en un renglón entero lo que el
+                propio botón ya dice, y ese renglón se paga en TODAS las cargas. */}
+            <InfoTip
+              title={recepcionSel === "pendiente" ? "Por recepcionar" : "Todas las del período"}
+              what={
+                recepcionSel === "pendiente"
+                  ? "Guías que llegaron y falta recibirlas. Al recepcionarlas pasan a «GTF ingresadas» y sus piezas quedan disponibles para la sierra."
+                  : "Incluye también las ya recepcionadas."
+              }
+            />
+          </>
+        ) : undefined
       }
       searchInput={searchInput}
       onSearch={setSearchInput}
@@ -1062,30 +1079,6 @@ export default function CtpIngresosView({
 
   return (
     <div className="space-y-3">
-      {/* La bandeja se puede abrir a todo el libro sin cambiar de pestaña: el
-          operador que busca «esa guía que ya recibí» no tiene por qué saber en
-          cuál de las dos vistas quedó (ADR-339). */}
-      {recepcion === "pendiente" && (
-        <div className="flex flex-wrap items-center gap-2">
-          <ChipRecepcion activo={recepcionSel === "pendiente"} onClick={() => setRecepcionSel("pendiente")}>
-            Por recepcionar
-          </ChipRecepcion>
-          <ChipRecepcion activo={recepcionSel === ""} onClick={() => setRecepcionSel("")}>
-            Todas las del período
-          </ChipRecepcion>
-          {/* El detalle va en un ⓘ: explicaba en un renglón entero lo que el
-              propio chip ya dice, y ese renglón se paga en TODAS las cargas. */}
-          <InfoTip
-            title={recepcionSel === "pendiente" ? "Por recepcionar" : "Todas las del período"}
-            what={
-              recepcionSel === "pendiente"
-                ? "Guías que llegaron y falta recibirlas. Al recepcionarlas pasan a «GTF ingresadas» y sus piezas quedan disponibles para la sierra."
-                : "Incluye también las ya recepcionadas."
-            }
-          />
-        </div>
-      )}
-
       {/* El ARCHIVO tiene sus propios números (ADR-357): «Pendientes validar» y
           «Fuera de plazo» son siempre 0 acá —todo está recepcionado— y una fila
           de KPI que nunca dice nada enseña a no mirarla. */}
@@ -1735,34 +1728,5 @@ export default function CtpIngresosView({
       />
       <ActionToasts toasts={toasts} onDismiss={dismissToast} />
     </div>
-  );
-}
-
-/**
- * Chip de la bandeja: «por recepcionar» vs «todas». Mismo lenguaje visual que
- * los chips de estado de las otras vistas del libro (ADR-339).
- */
-function ChipRecepcion({
-  activo,
-  onClick,
-  children,
-}: {
-  activo: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={activo}
-      className={`inline-flex items-center gap-1.5 rounded-full border-2 px-3 py-1.5 text-sm font-bold transition ${
-        activo
-          ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-          : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
-      }`}
-    >
-      {children}
-    </button>
   );
 }

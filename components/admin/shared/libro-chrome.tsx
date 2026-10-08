@@ -549,7 +549,6 @@ function HerramientasDelLibro({ children }: { children: ReactNode }) {
         }`}
       >
         <SlidersHorizontal className="h-4 w-4" aria-hidden />
-        <span className="sr-only">Herramientas</span>
       </button>
       {typeof document !== "undefined" && panel ? createPortal(panel, portalARef.current ?? document.body) : null}
     </>

@@ -77,7 +77,9 @@ export interface CtpIngresosFiltrosProps {
   legajoDeTodo: boolean;
   armandoLegajo: boolean;
   /** Cómo se lista (por guía / por troza): va con los chips, no en su propia fila. */
-  modoLista?: React.ReactNode;
+  modoLista?: MenuAccion[];
+  /** Qué guías lista la bandeja (por recepcionar / todas): primero en la fila de chips. */
+  recepcionFiltro?: React.ReactNode;
   /**
    * El botón «Columnas» de la tabla (Brandon, 2026-09-08). Va en esta barra y
    * no en la tabla porque es un control de la VISTA, al lado de los otros que
@@ -135,6 +137,7 @@ export default function CtpIngresosFiltros({
   legajoDeTodo,
   armandoLegajo,
   modoLista,
+  recepcionFiltro,
   columnas,
   enCabecera = false,
   antes,
@@ -199,6 +202,21 @@ export default function CtpIngresosFiltros({
           } satisfies MenuAccion,
         ]
       : []),
+    /* ADR-442: la guía se guarda ANTES de que llegue la madera. Se hace de vez
+       en cuando (el ingreso diario es «Nuevo ingreso»), así que vive en el
+       menú, pegada a «Guías guardadas». Antes era un botón-ícono suelto en la
+       barra (2026-10-08: la vista llegó a 31 botones). */
+    ...(onGuardarGuia
+      ? [
+          {
+            id: "guardar-guia",
+            label: "Guardar guía",
+            hint: "Sus datos y sus papeles, antes de que llegue la madera",
+            icon: FolderPlus,
+            onSelect: onGuardarGuia,
+          } satisfies MenuAccion,
+        ]
+      : []),
     /* ADR-442: las guías guardadas antes del ingreso, con sus papeles. */
     ...(onGuiasGuardadas
       ? [
@@ -247,6 +265,7 @@ export default function CtpIngresosFiltros({
       disabled: loading,
       onSelect: onReload,
     },
+    ...(modoLista ?? []),
   ];
 
   return (
@@ -311,21 +330,6 @@ export default function CtpIngresosFiltros({
               <span>{armandoLegajo ? "Armando…" : `Legajo (${legajoCount})`}</span>
             </button>
           )}
-          {/* ADR-442: la guía se guarda ANTES de que llegue la madera. Sólo el
-              ícono hasta 1536 px: a 1280 el rótulo empujaba la fila fuera de la
-              pantalla y el buscador quedaba en «Buscar por C» (medido 27-09).
-              El nombre completo va en el `title` y en el lector de pantalla. */}
-          {onGuardarGuia && (
-            <button
-              type="button"
-              onClick={onGuardarGuia}
-              title="Guardar guía: sus datos y sus papeles antes de que llegue la madera"
-              className="inline-flex h-12 w-12 shrink-0 items-center justify-center gap-2 rounded-2xl border-2 border-[var(--accent)] bg-[var(--surface-raised)] text-base font-semibold text-[var(--accent-ink)] transition hover:bg-primary/10 dark:text-[var(--accent)] 2xl:w-auto 2xl:px-4"
-            >
-              <FolderPlus className="h-5 w-5 shrink-0" aria-hidden />
-              <span className="max-2xl:sr-only">Guardar guía</span>
-            </button>
-          )}
           <button
             type="button"
             onClick={onNuevo}
@@ -341,6 +345,7 @@ export default function CtpIngresosFiltros({
           controles de la tabla de abajo y separados costaban dos renglones en
           cada carga de la vista. */}
       <div className="flex flex-wrap items-center gap-2">
+        {recepcionFiltro}
         <StatusChip label="Todos" count={stats?.totalCount} active={statusFilter === ""} tone="accent" onClick={() => onStatus("")} />
         {/* Sólo los estados que EXISTEN en el período.
             Medido en pantalla: con 3 guías pendientes salían igual «Validado 0»,
@@ -359,12 +364,7 @@ export default function CtpIngresosFiltros({
             onClick={() => onStatus(statusFilter === s ? "" : s)}
           />
         ))}
-        {(modoLista || columnas) && (
-          <div className="ml-auto flex items-center gap-2">
-            {columnas}
-            {modoLista}
-          </div>
-        )}
+        {columnas && <div className="ml-auto flex items-center gap-2">{columnas}</div>}
       </div>
 
       {abierto && (
