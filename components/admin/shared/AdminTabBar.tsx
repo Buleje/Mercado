@@ -129,7 +129,7 @@ export default function AdminTabBar({
   const acciones = bandaConTitulo && heading?.actions ? (
     <div
       className={cn(
-        "ml-auto flex shrink-0 flex-wrap items-center gap-2 pb-2",
+        "ml-auto flex shrink-0 flex-wrap items-center gap-2 pb-2 @max-[60rem]:max-w-full",
         tituloEnLinea ? "order-3 @max-[60rem]:order-2" : "self-center",
       )}
     >
@@ -425,7 +425,16 @@ export default function AdminTabBar({
       )}
     >
       {bandaConTitulo && heading && (
-        <div className={cn("flex min-w-0 items-start gap-2.5 pb-2", tituloEnLinea ? "flex-1" : "basis-full")}>
+        // Angosto: las acciones bajan a su fila. Sin `flex-wrap`, «Gráficos» +
+        // rango de fechas (shrink-0) aplastaban el título del Inicio a 0 px a
+        // 400 px (08-10). Sólo bajo 60rem: arriba la descripción es visible y
+        // su ancho mandaría las acciones abajo sin necesidad.
+        <div
+          className={cn(
+            "flex min-w-0 items-start gap-2.5 pb-2",
+            tituloEnLinea ? "flex-1" : "basis-full @max-[60rem]:flex-wrap",
+          )}
+        >
           {heading.icon && (
             <heading.icon
               className="mt-1 h-5 w-5 shrink-0 text-[var(--text-tertiary)] "
