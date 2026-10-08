@@ -221,6 +221,10 @@ export default function AdminTabBar({
   const tabsRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+  /* Con título en la banda, la flecha derecha va a la altura del riel y no
+     de toda la banda: si no, su degradé tapaba las acciones y el borde del
+     título en el celular (08-10, Inicio a 400 px). */
+  const [riel, setRiel] = useState<{ top: number; alto: number; derecha: number } | null>(null);
   const [draggedTab, setDraggedTab] = useState<string | null>(null);
   const [dragOverTab, setDragOverTab] = useState<string | null>(null);
 
@@ -265,12 +269,27 @@ export default function AdminTabBar({
     if (!element) return;
     setCanScrollLeft(element.scrollLeft > 2);
     setCanScrollRight(element.scrollLeft + element.clientWidth < element.scrollWidth - 2);
+    const banda = element.offsetParent as HTMLElement | null;
+    const top = element.offsetTop;
+    const alto = element.offsetHeight;
+    const derecha = banda ? Math.max(0, banda.clientWidth - element.offsetLeft - element.offsetWidth) : 0;
+    setRiel((prev) =>
+      prev && prev.top === top && prev.alto === alto && prev.derecha === derecha ? prev : { top, alto, derecha },
+    );
   }, []);
 
   useEffect(() => {
     checkScroll();
     window.addEventListener("resize", checkScroll);
-    return () => window.removeEventListener("resize", checkScroll);
+    // La banda cambia de alto sin que cambie la ventana (cargan las acciones,
+    // se pliega el sidebar): la flecha sigue al riel.
+    const banda = tabsRef.current?.parentElement;
+    const ro = banda && typeof ResizeObserver !== "undefined" ? new ResizeObserver(checkScroll) : null;
+    if (banda) ro?.observe(banda);
+    return () => {
+      window.removeEventListener("resize", checkScroll);
+      ro?.disconnect();
+    };
   }, [checkScroll]);
 
   const scrollTabs = (direction: "left" | "right") => {
@@ -589,6 +608,7 @@ export default function AdminTabBar({
       {canScrollRight && (
         <button
           onClick={() => scrollTabs("right")}
+          style={bandaConTitulo && riel ? { top: riel.top, height: riel.alto, right: riel.derecha } : undefined}
           className="absolute right-0 top-0 bottom-0 z-10 flex w-10 items-center justify-end bg-linear-to-l from-[var(--surface-canvas)] via-[var(--surface-canvas)]/90 to-transparent transition-opacity duration-[var(--dur-base)]"
           aria-label="Ver más tabs"
         >

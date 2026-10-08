@@ -19,6 +19,11 @@
  *               «mucho texto por todos lados».
  *   gemelos     pares de títulos casi iguales («El patio, troza por troza» vs
  *               «El patio, pieza por pieza»: el síntoma que destapó todo esto)
+ *   desborde    px que la página se pasa del ancho de la ventana, y cuántos
+ *   cortados    elementos se salen por la derecha sin un ancestro que scrollee
+ *   tituloCero  el h1 del módulo mide <20 px de ancho (08-10: «Gráficos» + el
+ *               rango de fechas lo aplastaban a 0 px en el Inicio a 400 px).
+ *               Estas tres no suman al puntaje: son para `ANCHO=400`.
  *
  * El puntaje suma cuánto se pasa cada cifra del umbral de la ley. 0 = en regla.
  *
@@ -123,6 +128,37 @@ async function main() {
           titulos: heads.map((h) => (h.textContent ?? "").trim().replace(/\s+/g, " ").slice(0, 60)).filter(Boolean),
           botones: visibles("button").filter((b) => (b.textContent ?? "").trim().length > 2).length,
           tablas: visibles("table").length,
+          desborde: Math.max(0, document.documentElement.scrollWidth - window.innerWidth),
+          /* Se sale por la derecha y nada lo contiene: ni un ancestro que
+             scrollee en x ni uno que lo recorte. El primero de cada rama. */
+          cortados: (() => {
+            const W = window.innerWidth;
+            const contiene = (e) => {
+              for (let a = e.parentElement; a && a !== main; a = a.parentElement) {
+                const ox = getComputedStyle(a).overflowX;
+                if (ox !== "visible") return true;
+              }
+              return false;
+            };
+            const fuera = [...main.querySelectorAll("*")].filter((e) => {
+              if (e.offsetParent === null) return false;
+              /* Montado pero no se ve: menú de filtro dentro de un <details>
+                 cerrado, invisible u opaco 0 (08-10: los 3 «cortados» de la
+                 primera corrida eran filtros de un <details> cerrado). */
+              if (e.checkVisibility && !e.checkVisibility({ opacityProperty: true, visibilityProperty: true })) return false;
+              const r = e.getBoundingClientRect();
+              return r.width > 0 && r.right > W + 1 && !contiene(e);
+            });
+            const raices = fuera.filter((e) => !fuera.includes(e.parentElement));
+            return raices.slice(0, 5).map((e) => {
+              const t = (e.innerText ?? "").trim().replace(/\s+/g, " ").slice(0, 30);
+              return `${e.tagName.toLowerCase()}${t ? ` «${t}»` : ""} +${Math.round(e.getBoundingClientRect().right - W)}px`;
+            }).concat(raices.length > 5 ? [`… y ${raices.length - 5} más`] : []);
+          })(),
+          tituloCero: (() => {
+            const h1 = main.querySelector("h1");
+            return h1 ? h1.getBoundingClientRect().width < 20 : false;
+          })(),
           /* Texto corrido a la vista: lo que debería vivir en un ⓘ. */
           ayuda: visibles("p")
             .filter((e) => !e.closest("table,button,[role=tooltip],[role=dialog],[role=menu],label,nav,[role=tablist]"))
@@ -136,7 +172,7 @@ async function main() {
       filas.push(fila);
       const marca = fila.puntaje === 0 ? "✅" : fila.puntaje < 10 ? "🟡" : "🔴";
       console.log(
-        `${marca} ${String(fila.puntaje).padStart(5)}  ${tab.padEnd(26)} ${String(m.pantallas).padStart(5)} pant · ${String(m.botones).padStart(3)} bot · ${m.tablas} tab · ${String(m.ayuda).padStart(4)} pal. ayuda · h2/h3/h4 ${m.h2}/${m.h3}/${m.h4}${fila.gemelos.length ? ` · ${fila.gemelos.length} gemelos` : ""}`,
+        `${marca} ${String(fila.puntaje).padStart(5)}  ${tab.padEnd(26)} ${String(m.pantallas).padStart(5)} pant · ${String(m.botones).padStart(3)} bot · ${m.tablas} tab · ${String(m.ayuda).padStart(4)} pal. ayuda · h2/h3/h4 ${m.h2}/${m.h3}/${m.h4}${fila.gemelos.length ? ` · ${fila.gemelos.length} gemelos` : ""}${m.desborde ? ` · desborde ${m.desborde}px` : ""}${m.cortados.length ? ` · cortados: ${m.cortados.join(", ")}` : ""}${m.tituloCero ? " · TÍTULO APLASTADO" : ""}`,
       );
     } catch (err) {
       filas.push({ tab, error: String(err).slice(0, 160), puntaje: -1 });
@@ -168,6 +204,8 @@ async function main() {
   console.log(`\n─────────────────────────────────`);
   console.log(`${filas.length} pestañas · ${mal.length} fuera de la ley · ${filas.filter((f) => f.puntaje === 0).length} en regla`);
   console.log(`Las 10 peores: ${mal.slice(0, 10).map((f) => f.tab).join(", ")}`);
+  const rotas = filas.filter((f) => f.desborde || f.cortados?.length || f.tituloCero);
+  if (rotas.length) console.log(`Se salen del ancho o aplastan el título (${rotas.length}): ${rotas.map((f) => f.tab).join(", ")}`);
   console.log(`Detalle: ${salida.pathname}`);
 }
 
