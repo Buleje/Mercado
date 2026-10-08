@@ -23,7 +23,15 @@
 import type { ComponentType } from "react";
 import { Plus } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
+import SegmentedControl from "@/components/ui-system/SegmentedControl";
 import { BotonesColumnasSeccion } from "./loth-seccion-columnas";
+
+/** Despacho de trozas (08-10): una fila por guía o una por troza. */
+export type FormatoDespacho = "guia" | "suelto";
+const FORMATOS: { value: FormatoDespacho; label: string }[] = [
+  { value: "guia", label: "Por guía" },
+  { value: "suelto", label: "Suelto" },
+];
 
 const PRIMARIO =
   "inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-4 text-sm font-bold text-white shadow-sm transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 max-sm:flex-1";
@@ -34,6 +42,7 @@ export default function LothSeccionBarra({
   opciones,
   onNuevaLinea,
   principal,
+  formato,
 }: {
   opciones: MenuAccion[];
   onNuevaLinea: () => void;
@@ -43,11 +52,23 @@ export default function LothSeccionBarra({
    * líneas en un solo registro. Con ella, «Nueva línea» pasa a secundario.
    */
   principal?: { label: string; title?: string; icon: ComponentType<{ className?: string }>; onClick: () => void };
+  /** Despacho de trozas: «Por guía» o «Suelto», recordado. «Columnas» es de la tabla suelta. */
+  formato?: { valor: FormatoDespacho; onCambiar: (f: FormatoDespacho) => void };
 }) {
   return (
-    <div className="flex flex-wrap items-start justify-end gap-2">
+    <div className={`flex flex-wrap items-start gap-2 ${formato ? "justify-between" : "justify-end"}`}>
+      {formato && (
+        <SegmentedControl
+          value={formato.valor}
+          onChange={formato.onCambiar}
+          options={FORMATOS}
+          size="lg"
+          label="Ver el despacho por guía o troza por troza"
+          className="max-sm:w-full max-sm:justify-between"
+        />
+      )}
       <div className="flex shrink-0 items-center gap-2 max-sm:w-full">
-        <BotonesColumnasSeccion />
+        {formato?.valor !== "guia" && <BotonesColumnasSeccion />}
         <ActionMenu
           label="Opciones"
           title="Importar, etiquetas QR y descargar"

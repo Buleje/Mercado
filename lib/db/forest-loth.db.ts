@@ -19,6 +19,7 @@ import { LOTH_SECTIONS, claveEnElPlan, claveEspecie, type LothSection } from "@/
 import { auditLoth, type LothAuditAction, type LothAuditEntity, type SesionDeAuditoria } from "@/lib/forestal/loth-audit";
 import { ForestLothCierreDB } from "@/lib/db/forest-loth-cierre.db";
 import { ForestLothPoaDB } from "@/lib/db/forest-loth-poa.db";
+import { ForestLothDespachoDB } from "@/lib/db/forest-loth-despacho.db";
 import { dmcParaEspecie, esPlanDePlantacion } from "@/lib/forestal/loth-poa";
 import { especieEnRegistro, mensajeEspecieFueraDelRegistro } from "@/lib/forestal/loth-plan-especie";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
@@ -2411,10 +2412,14 @@ export class ForestLothDB {
       _count: { _all: true },
       _sum: { volumeM3: true, quantity: true },
     });
+    // El despacho no guarda medidas: su volumen es el del trozado de cada troza (08-10).
+    const m3Despacho = rows.some((r) => r.section === "despacho_troza")
+      ? await ForestLothDespachoDB.m3Despachado(tenantId, where)
+      : 0;
     return rows.map((r) => ({
       section: r.section as LothSection,
       count: r._count._all,
-      totalVolumeM3: r._sum.volumeM3?.toNumber() ?? 0,
+      totalVolumeM3: r.section === "despacho_troza" ? m3Despacho : (r._sum.volumeM3?.toNumber() ?? 0),
       totalQuantity: r._sum.quantity?.toNumber() ?? 0,
     }));
   }

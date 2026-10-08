@@ -36,6 +36,8 @@ import { etiquetaDeFiltro } from "./loth-seccion-filtros";
 interface ColumnaDeSeccion {
   key: string;
   label: string;
+  /** Arranca oculta («Cód. despacho»: vacío en 22 de 22 líneas de Blas). */
+  ocultaPorDefecto?: boolean;
 }
 
 /**
@@ -54,7 +56,7 @@ export function columnasElegibles(cols: readonly ColumnaDeSeccion[]): ColumnaEle
     { id: "lineNo", label: "N°" },
     { id: "fecha", label: "Fecha" },
     // «ci» (consumo interno) no tiene título en la tabla: en el menú se llama como su filtro.
-    ...cols.map((c) => ({ id: c.key, label: c.label || etiquetaDeFiltro(c.key) || c.key })),
+    ...cols.map((c) => ({ id: c.key, label: c.label || etiquetaDeFiltro(c.key) || c.key, ocultaPorDefecto: c.ocultaPorDefecto })),
     { id: "obs", label: "Observaciones" },
   ];
 }

@@ -163,7 +163,7 @@ describe("totales del pie", () => {
   it("cada sección suma lo que le corresponde", () => {
     expect(totalRelevante("tala")).toBe("volumen");
     expect(totalRelevante("producto_terminado")).toBe("cantidad");
-    expect(totalRelevante("despacho_troza")).toBe("conteo");
+    expect(totalRelevante("despacho_troza")).toBe("volumen");
   });
 });
 

@@ -39,7 +39,7 @@ export function useLothSeccionTabla({
   planes?: ReadonlyMap<string, PermisoDeLinea>;
 }) {
   const columnas = useMemo(
-    () => filtrosDeSeccion(cols.map((c) => c.key), corregidaPor, planes),
+    () => filtrosDeSeccion(cols, corregidaPor, planes),
     [cols, corregidaPor, planes],
   );
   const f = useFiltrosTabla(lineas, columnas);

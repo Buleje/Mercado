@@ -18,6 +18,7 @@
 
 import type { ColumnaFiltro } from "@/components/admin/shared/filtros-columna";
 import { claveEspecie, estaFueraDePlazo, type LothEntryDTO } from "@/lib/forestal/loth-constants";
+import { especieDeLinea, medidasDeLinea, volumenDeLinea } from "@/lib/forestal/loth-despacho-medidas";
 
 /** «m3» → «m³»: la unidad como se lee en la tabla y en su filtro. */
 export function etiquetaUnidad(u: string | null): string {
@@ -67,11 +68,12 @@ const POR_COLUMNA: Record<string, Omit<ColumnaFiltro<LothEntryDTO>, "id">> = {
   // El código del árbol también trae sus trozas: buscar «113» en Trozado da las trozas del árbol 113.
   tree: { label: "Cód. árbol", tipo: "texto", valor: (e) => e.treeCode },
   troza: { label: "Cód. troza", tipo: "texto", valor: (e) => [e.trozaCode, e.treeCode].filter((x): x is string => !!x) },
-  esp: { label: "Especie", tipo: "multi", valor: (e) => e.speciesCommon?.trim() || "Sin especie", clave: claveEspecie },
-  dM: { label: "Ø may", tipo: "rango", numero: (e) => numero(e.diamMayorM), unidad: "m", paso: 0.01 },
-  dm: { label: "Ø men", tipo: "rango", numero: (e) => numero(e.diamMenorM), unidad: "m", paso: 0.01 },
-  L: { label: "Long.", tipo: "rango", numero: (e) => numero(e.lengthM), unidad: "m", paso: 0.01 },
-  vol: { label: "Vol. m³", tipo: "rango", numero: (e) => numero(e.volumeM3), unidad: "m³", paso: 0.001 },
+  // Especie y medidas: las de la línea o, en Despacho, las del trozado de su troza (08-10).
+  esp: { label: "Especie", tipo: "multi", valor: (e) => especieDeLinea(e) || "Sin especie", clave: claveEspecie },
+  dM: { label: "Ø may", tipo: "rango", numero: (e) => numero(medidasDeLinea(e).d1), unidad: "m", paso: 0.01 },
+  dm: { label: "Ø men", tipo: "rango", numero: (e) => numero(medidasDeLinea(e).d2), unidad: "m", paso: 0.01 },
+  L: { label: "Long.", tipo: "rango", numero: (e) => numero(medidasDeLinea(e).largo), unidad: "m", paso: 0.01 },
+  vol: { label: "Vol. m³", tipo: "rango", numero: (e) => numero(volumenDeLinea(e)), unidad: "m³", paso: 0.001 },
   desp: { label: "Cód. despacho", tipo: "texto", valor: (e) => e.despachoCode },
   gtf: { label: "N° GTF", tipo: "texto", valor: (e) => e.gtfNumber },
   ci: { label: "Destino de la troza", tipo: "multi", valor: (e) => (e.consumoInterno ? "Consumo interno" : "Aserrío") },
@@ -88,10 +90,11 @@ export function etiquetaDeFiltro(key: string): string | undefined {
 
 /**
  * Las columnas con filtro de una sección: N°, Fecha, las de la sección (en el
- * orden de `keys`) y Observaciones (el estado de la línea).
+ * orden de `keys`) y Observaciones (el estado de la línea). Con `{ key, label }`
+ * el filtro se llama como la columna (Despacho dice «D1» donde Trozado dice «Ø may»).
  */
 export function filtrosDeSeccion(
-  keys: readonly string[],
+  keys: readonly (string | { key: string; label?: string })[],
   corregidaPor: ReadonlyMap<number, number>,
   /** Con la columna «permiso» (varios planes a la vista): sus dos filtros, Permiso y Titular. */
   planes: ReadonlyMap<string, PermisoDeLinea> = new Map(),
@@ -103,7 +106,11 @@ export function filtrosDeSeccion(
   return [
     { id: "lineNo", label: "N°", tipo: "rango", numero: (e) => e.lineNo, paso: 1 },
     { id: "fecha", label: "Fecha", tipo: "fecha", numero: (e) => e.entryDate?.slice(0, 10) ?? null, formatearValor: ddmm },
-    ...keys.flatMap((k) => (k === "permiso" ? dePermiso : POR_COLUMNA[k] ? [{ id: k, ...POR_COLUMNA[k] }] : [])),
+    ...keys.flatMap((c) => {
+      const k = typeof c === "string" ? c : c.key;
+      const label = (typeof c === "string" ? "" : c.label) || POR_COLUMNA[k]?.label;
+      return k === "permiso" ? dePermiso : POR_COLUMNA[k] && label ? [{ id: k, ...POR_COLUMNA[k], label }] : [];
+    }),
     { id: "obs", label: "Estado", tipo: "multi", valor: (e) => estadosDeLinea(e, corregidaPor) },
   ];
 }

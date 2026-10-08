@@ -13,6 +13,7 @@
  */
 
 import type { LothEntryDTO, LothSection } from "./loth-constants";
+import { especieDeLinea, medidasDeLinea, volumenDeLinea } from "./loth-despacho-medidas";
 
 const n = (v: string | null | undefined): number => (v == null ? 0 : Number(v) || 0);
 
@@ -69,9 +70,10 @@ const valorOrden = (e: LothEntryDTO, campo: OrdenCampo): string | number => {
     case "codigo":
       return e.trozaCode ?? e.treeCode ?? e.gtfNumber ?? "";
     case "especie":
-      return e.speciesCommon ?? "";
+      return especieDeLinea(e) ?? "";
     case "volumen":
-      return n(e.volumeM3) || n(e.quantity);
+      // El despacho no guarda medidas: ordena por las de su trozado.
+      return n(volumenDeLinea(e)) || n(e.quantity);
   }
 };
 
@@ -105,7 +107,7 @@ export function totalesDe(entries: LothEntryDTO[]): TotalesSeccion {
   return {
     lineas: vivas.length,
     anuladas: entries.length - vivas.length,
-    volumenM3: Math.round(vivas.reduce((a, e) => a + n(e.volumeM3), 0) * 10000) / 10000,
+    volumenM3: Math.round(vivas.reduce((a, e) => a + n(volumenDeLinea(e)), 0) * 10000) / 10000,
     cantidad: Math.round(vivas.reduce((a, e) => a + n(e.quantity), 0) * 10000) / 10000,
     piezas: vivas.reduce((a, e) => a + (e.pieces ?? 0), 0),
     unidades,
@@ -114,7 +116,8 @@ export function totalesDe(entries: LothEntryDTO[]): TotalesSeccion {
 
 /** Qué columna de totales tiene sentido en cada sección. */
 export function totalRelevante(section: LothSection): "volumen" | "cantidad" | "conteo" {
-  if (section === "tala" || section === "trozado" || section === "consumo_troza") return "volumen";
+  // Despacho de trozas suma el m³ que sale, leído del trozado de cada troza (08-10).
+  if (section === "tala" || section === "trozado" || section === "consumo_troza" || section === "despacho_troza") return "volumen";
   if (section === "producto_terminado" || section === "despacho_producto") return "cantidad";
   return "conteo";
 }
@@ -130,10 +133,11 @@ export function lineasToCsv(entries: LothEntryDTO[]): string {
     "Ø mayor", "Ø menor", "Longitud", "Volumen m³", "Producto", "Cantidad", "Unidad", "Piezas",
     "N° GTF", "Estado", "Corrige a", "Observaciones",
   ];
-  const rows = entries.map((e) => [
-    e.lineNo, e.entryDate?.slice(0, 10) ?? "", e.section, e.treeCode ?? "", e.trozaCode ?? "",
-    e.speciesCommon ?? "", e.speciesScientific ?? "", e.cites ? "Sí" : "No",
-    e.diamMayorM ?? "", e.diamMenorM ?? "", e.lengthM ?? "", e.volumeM3 ?? "",
+  /* Despacho de trozas: árbol, especie y medidas del trozado de su troza (la línea no las guarda). */
+  const rows = entries.map((e) => [e, medidasDeLinea(e)] as const).map(([e, m]) => [
+    e.lineNo, e.entryDate?.slice(0, 10) ?? "", e.section, m.arbol ?? "", e.trozaCode ?? "",
+    m.especie ?? "", m.cientifico ?? "", m.cites ? "Sí" : "No",
+    m.d1 ?? "", m.d2 ?? "", m.largo ?? "", m.m3 ?? "",
     e.productType ?? "", e.quantity ?? "", e.unit ?? "", e.pieces ?? "",
     e.gtfNumber ?? "", e.status, e.correctsLineNo ?? "",
     e.observations ?? "",

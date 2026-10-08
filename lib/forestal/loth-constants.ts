@@ -653,4 +653,27 @@ export interface LothEntryDTO {
   /** Subsanación SERFOR: esta línea corrige a la N° tal (la vieja NO se borra). */
   correctsLineNo?: number | null;
   correctionNote?: string | null;
+  /**
+   * Sólo en Despacho de trozas (08-10): la línea de despacho no guarda medidas
+   * (0 de 22 en Blas); la API le pega las del Trozado de esa troza, del mismo
+   * permiso (`lib/forestal/loth-despacho-medidas`). Las columnas de la línea
+   * siguen vacías: el formulario de corrección no las hereda.
+   */
+  trozado?: TrozadoDelDespacho | null;
+}
+
+/** Lo que el despacho lee de la línea de trozado de su troza. Whitelist: sólo esto viaja. */
+export interface TrozadoDelDespacho {
+  lineaId: string;
+  lineNo: number;
+  treeCode: string | null;
+  speciesCommon: string | null;
+  speciesScientific: string | null;
+  cites: boolean;
+  diamMayorM: string | null;
+  diamMenorM: string | null;
+  lengthM: string | null;
+  volumeM3: string | null;
+  /** La línea de trozado está anulada: la medida se lee igual, pero se avisa. */
+  anulada: boolean;
 }

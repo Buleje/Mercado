@@ -65,13 +65,17 @@ import LothCompliancePanel from "./LothCompliancePanel";
 import LothResumenStrip from "./LothResumenStrip";
 import LothSeccionesRiel from "./LothSeccionesRiel";
 import LothSeccionKpis from "./LothSeccionKpis";
-import LothSeccionBarra from "./LothSeccionBarra";
-import { GtfConCtp, GtfCtpContext } from "./LothGtfCtp";
+import LothSeccionBarra, { type FormatoDespacho } from "./LothSeccionBarra";
+import LothDespachoPorGuia from "./LothDespachoPorGuia";
+import { useLothDespachoGuias } from "./hooks/use-loth-despacho-guias";
+import { useLocalStorage } from "@/hooks/use-local-storage";
+import { GtfCtpContext } from "./LothGtfCtp";
 import { useGtfEnCtp } from "./hooks/use-gtf-en-ctp";
 import { CTP_MODULE_TAB_ID } from "./ctp-shared";
 import { useEnabledSpecs } from "@/hooks/use-enabled-specs";
 import LothCadenaModal from "./LothCadenaModal";
-import LothSeccionTabla, { type ColDef } from "./LothSeccionTabla";
+import LothSeccionTabla from "./LothSeccionTabla";
+import { COLS_SECCION } from "./loth-seccion-cols";
 import LothLineaDetalleModal from "./LothLineaDetalleModal";
 import LothImportLineasModal from "./LothImportLineasModal";
 import { reetiquetarErroresImport } from "@/lib/forestal/loth-import-plan";
@@ -84,7 +88,6 @@ import { mensajeErrorFilaImport, type FilaImport } from "@/lib/forestal/loth-imp
 import { lineasToCsv, mapaCorrecciones, type OrdenCampo, type OrdenDir } from "@/lib/forestal/loth-seccion";
 import { LINEAS_POR_PAGINA, useLothSeccionTabla } from "./hooks/use-loth-seccion-tabla";
 import { BarraFiltrosTabla } from "./filtros-tabla-forestal";
-import { etiquetaUnidad as unitLabel } from "./loth-seccion-filtros";
 import LothSeccionPaginas from "./LothSeccionPaginas";
 import { LothSeccionColumnas } from "./loth-seccion-columnas";
 import LothCierrePanel from "./LothCierrePanel";
@@ -128,58 +131,11 @@ interface SectionStat {
   totalQuantity: number;
 }
 
-type Col = ColDef;
-
-const num = (v: string | null, dp = 4) => (v == null ? "—" : Number(v).toFixed(dp));
-
 /** Renglones por página de la tabla de sección. */
 const POR_PAGINA = LINEAS_POR_PAGINA;
 
-
-const COLS: Record<LothSection, Col[]> = {
-  tala: [
-    { key: "tree", label: "Cód. árbol", orden: "codigo", render: (e) => <Code v={e.treeCode} rama={e.isRama} marcado={estadoMarcadoDe(e)} /> },
-    { key: "esp", label: "Especie", orden: "especie", render: (e) => <Species e={e} /> },
-    { key: "dM", label: "Ø may", align: "right", render: (e) => <Mono v={num(e.diamMayorM, 2)} /> },
-    { key: "dm", label: "Ø men", align: "right", render: (e) => <Mono v={num(e.diamMenorM, 2)} /> },
-    { key: "L", label: "Long.", align: "right", render: (e) => <Mono v={num(e.lengthM, 2)} /> },
-    { key: "vol", label: "Vol. m³", align: "right", orden: "volumen", render: (e) => <Mono v={num(e.volumeM3)} bold /> },
-  ],
-  trozado: [
-    { key: "troza", label: "Cód. troza", orden: "codigo", render: (e) => <Code v={e.trozaCode} rama={e.isRama} /> },
-    { key: "esp", label: "Especie", orden: "especie", render: (e) => <Species e={e} /> },
-    { key: "dM", label: "Ø may", align: "right", render: (e) => <Mono v={num(e.diamMayorM, 2)} /> },
-    { key: "dm", label: "Ø men", align: "right", render: (e) => <Mono v={num(e.diamMenorM, 2)} /> },
-    { key: "L", label: "Long.", align: "right", render: (e) => <Mono v={num(e.lengthM, 2)} /> },
-    { key: "vol", label: "Vol. m³", align: "right", orden: "volumen", render: (e) => <Mono v={num(e.volumeM3)} bold /> },
-  ],
-  despacho_troza: [
-    { key: "troza", label: "Cód. troza", orden: "codigo", render: (e) => <Code v={e.trozaCode} /> },
-    { key: "desp", label: "Cód. despacho", render: (e) => <span className="text-[var(--text-secondary)]">{e.despachoCode ?? "—"}</span> },
-    // La guía es el puente al Libro CTP: la celda dice si ya entró a la planta.
-    { key: "gtf", label: "N° GTF", render: (e) => <GtfConCtp gtf={e.gtfNumber} /> },
-  ],
-  consumo_troza: [
-    { key: "troza", label: "Cód. troza", orden: "codigo", render: (e) => <Code v={e.trozaCode} /> },
-    { key: "esp", label: "Especie", orden: "especie", render: (e) => <Species e={e} /> },
-    { key: "vol", label: "Vol. m³", align: "right", orden: "volumen", render: (e) => <Mono v={num(e.volumeM3)} bold /> },
-    { key: "ci", label: "", render: (e) => (e.consumoInterno ? <Tag>consumo interno</Tag> : null) },
-  ],
-  producto_terminado: [
-    { key: "prod", label: "Producto", render: (e) => <span className="font-medium text-[var(--text-primary)]">{e.productType ?? "—"}</span> },
-    { key: "esp", label: "Especie", orden: "especie", render: (e) => <Species e={e} /> },
-    { key: "qty", label: "Cantidad", align: "right", orden: "volumen", render: (e) => <Mono v={num(e.quantity)} bold /> },
-    { key: "unit", label: "Unidad", render: (e) => <span className="text-[var(--text-secondary)]">{unitLabel(e.unit)}</span> },
-  ],
-  despacho_producto: [
-    { key: "gtf", label: "N° GTF", render: (e) => <Mono v={e.gtfNumber ?? "—"} bold /> },
-    { key: "prod", label: "Producto", render: (e) => <span className="font-medium text-[var(--text-primary)]">{e.productType ?? "—"}</span> },
-    { key: "esp", label: "Especie", orden: "especie", render: (e) => <Species e={e} /> },
-    { key: "pcs", label: "Piezas", align: "right", render: (e) => <Mono v={e.pieces?.toString() ?? "—"} /> },
-    { key: "qty", label: "Cantidad", align: "right", orden: "volumen", render: (e) => <Mono v={num(e.quantity)} bold /> },
-    { key: "unit", label: "Unidad", render: (e) => <span className="text-[var(--text-secondary)]">{unitLabel(e.unit)}</span> },
-  ],
-};
+/** Las columnas de cada sección y sus celdas viven en `loth-seccion-cols` (08-10). */
+const COLS = COLS_SECCION;
 
 type LothView = "secciones" | "trazabilidad" | "tablero" | "plan" | "gtf" | "extraccion" | "cumplimiento" | "cierre" | "mapa" | "rentabilidad";
 
@@ -1017,10 +973,20 @@ export default function LothLibroOperaciones() {
   const irAlCtp = hayLibroCtp
     ? () => window.dispatchEvent(new CustomEvent("admin:navigate", { detail: { moduleId: CTP_MODULE_TAB_ID } }))
     : undefined;
+  /* Despacho de trozas (08-10): «Por guía» (de fábrica) o «Suelto», recordado.
+     Las guías del permiso traen destino, placa y CTP para las dos y el detalle. */
+  const [formatoDespacho, setFormatoDespacho] = useLocalStorage<FormatoDespacho>("loth:despacho:formato", "guia");
+  const enDespacho = view === "secciones" && section === "despacho_troza";
+  const porGuia = enDespacho && formatoDespacho === "guia";
+  const despachoGuias = useLothDespachoGuias(enDespacho && permiso.listo, qPermiso, reloadSignal);
   const { estado: gtfEnCtp } = useGtfEnCtp(
     section === "despacho_troza" ? visibles.map((e) => e.gtfNumber) : [],
-    hayLibroCtp && view === "secciones" && section === "despacho_troza",
+    hayLibroCtp && enDespacho && !porGuia,
   );
+  const verGuia = (gtf: string) => {
+    setFocoGtf(gtf);
+    setView("gtf");
+  };
 
   /** Lo que se hace de vez en cuando en una sección: plegado en «Opciones». */
   const opcionesSeccion: LibroAction[] = [
@@ -1360,6 +1326,7 @@ export default function LothLibroOperaciones() {
               }
             : undefined
         }
+        formato={section === "despacho_troza" ? { valor: formatoDespacho, onCambiar: setFormatoDespacho } : undefined}
       />
 
       {error && (
@@ -1449,6 +1416,16 @@ export default function LothLibroOperaciones() {
           filtros viven en «Filtros por columna». Los chips, en todos los anchos. */}
       <BarraFiltrosTabla f={tabla.f} sinConteo />
 
+      {porGuia ? (
+        <LothDespachoPorGuia
+          lineas={tabla.ordenadas}
+          guias={despachoGuias.guias}
+          guiasError={despachoGuias.error}
+          hayCtp={hayLibroCtp}
+          onDetalle={(e) => setDetalle(e)}
+          onVerGuia={verGuia}
+        />
+      ) : (
       <GtfCtpContext.Provider value={gtfEnCtp}>
       <LothSeccionTabla
         section={section}
@@ -1488,6 +1465,7 @@ export default function LothLibroOperaciones() {
         onAnular={(e) => setAnularLineas([e])}
       />
       </GtfCtpContext.Provider>
+      )}
 
       {!loading && visibles.length === 0 && (
         <div className="rounded-2xl border border-dashed border-[var(--rule-base)] p-12 text-center text-[var(--text-tertiary)]">
@@ -1519,6 +1497,7 @@ export default function LothLibroOperaciones() {
 
       {/* Cuántas hay de verdad + cómo llegar al resto. Antes se mostraban las
           primeras 200 y el resto no existía para el usuario. */}
+      {!porGuia && (
       <LothSeccionPaginas
         seccion={SECTION_META[section].label.toLowerCase()}
         filtradas={tabla.ordenadas.length}
@@ -1530,6 +1509,7 @@ export default function LothLibroOperaciones() {
         disabled={loading}
         onPagina={tabla.setPagina}
       />
+      )}
       </LothSeccionColumnas>
         </>
       )}
@@ -1718,6 +1698,7 @@ export default function LothLibroOperaciones() {
         onClose={() => setDetalle(null)}
         onVerCadena={(code) => setCadenaCode(code)}
         onImprimirEtiqueta={(linea) => alImprimirEtiquetasCtp([linea])}
+        despacho={{ guias: despachoGuias.guias, hayCtp: hayLibroCtp, onVerGuia: verGuia }}
       />
 
       {borrarLineas && (
@@ -1795,66 +1776,4 @@ export default function LothLibroOperaciones() {
     </LibroChrome>
     </LothPermisoContext.Provider>
   );
-}
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function Mono({ v, bold }: { v: string; bold?: boolean }) {
-  return <span className={`font-mono tabular-nums text-[var(--text-primary)] ${bold ? "font-bold" : ""}`}>{v}</span>;
-}
-function Code({ v, rama, marcado }: { v: string | null; rama?: boolean; marcado?: "completo" | "parcial" | "sin" }) {
-  return (
-    <span className="inline-flex items-center gap-1.5">
-      <span className="font-mono font-bold text-[var(--text-primary)]">{v ?? "—"}</span>
-      {rama && <span className="rounded bg-[var(--surface-sunken)] px-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">R</span>}
-      {marcado && marcado !== "sin" && (
-        <span
-          title={
-            marcado === "completo"
-              ? "Código marcado en el fuste y en el tocón (RDE 264-2019, item 3)"
-              : "Marcado declarado a medias: falta el fuste o el tocón"
-          }
-          className={`rounded px-1 text-[length:var(--ts-2xs)] font-bold ${
-            marcado === "completo"
-              ? "bg-[var(--data-success-50)] text-[var(--data-success-700)]"
-              : "bg-[var(--data-warning-100)] text-[var(--data-warning-700)]"
-          }`}
-        >
-          {marcado === "completo" ? "M" : "M·"}
-        </span>
-      )}
-    </span>
-  );
-}
-
-/**
- * El marcado físico del item 3 se guardaba y no se veía en ninguna parte: un
- * dato que no se puede leer no existe para quien fiscaliza. Va como pastilla
- * junto al código —no como columna nueva— para no ensanchar una tabla que ya
- * tiene seis.
- */
-function estadoMarcadoDe(e: LothEntryDTO): "completo" | "parcial" | "sin" {
-  const f = e.marcadoFuste === true;
-  const t = e.marcadoTocon === true;
-  if (f && t) return "completo";
-  if (f || t) return "parcial";
-  return "sin";
-}
-function Species({ e }: { e: LothEntry }) {
-  if (!e.speciesCommon) return <span className="text-[var(--text-tertiary)]">—</span>;
-  return (
-    <div>
-      <div className="flex items-center gap-1.5">
-        <span className="font-medium text-[var(--text-primary)]">{e.speciesCommon}</span>
-        {e.cites && <span className="rounded bg-[var(--data-error-100)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)]">CITES</span>}
-      </div>
-      {e.speciesScientific && <div className="text-xs italic text-[var(--text-tertiary)]">{e.speciesScientific}</div>}
-    </div>
-  );
-}
-function Tag({ children, tone }: { children: React.ReactNode; tone?: "danger" }) {
-  const cls = tone === "danger"
-    ? "bg-[var(--data-error-100)] text-[var(--data-error-700)]"
-    : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]";
-  return <span className={`rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide ${cls}`}>{children}</span>;
 }

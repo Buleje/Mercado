@@ -14,6 +14,7 @@
 
 import { claveEspecie, estaFueraDePlazo, type LothEntryDTO, type LothSection } from "@/lib/forestal/loth-constants";
 import { totalRelevante, totalesDe, type TotalesSeccion } from "@/lib/forestal/loth-seccion";
+import { especieDeLinea, volumenDeLinea } from "@/lib/forestal/loth-despacho-medidas";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import type { ValorFaceta } from "@/lib/admin/filtros-columna";
 import type { FilaDesglose } from "./CtpKpi";
@@ -63,16 +64,20 @@ export function cifrasDeLineas(section: LothSection, lineas: readonly LothEntryD
      y nombrado como lo nombra el filtro de la columna: tocar la fila filtra. */
   const especies = new Map<string, FilaDesglose>();
   const guias = new Map<string, FilaDesglose>();
+  /* En Despacho la especie y el m³ son los del trozado de cada troza (la línea no los guarda). */
+  const suma = (fila: FilaDesglose, e: LothEntryDTO) => {
+    fila.count += 1;
+    if (conVolumen) fila.volumeM3 = Math.round(((fila.volumeM3 ?? 0) + n(volumenDeLinea(e))) * 10000) / 10000;
+  };
   for (const e of vigentes) {
-    const nombre = e.speciesCommon?.trim() || "Sin especie";
+    const nombre = especieDeLinea(e) || "Sin especie";
     const k = claveEspecie(nombre);
     const fila = especies.get(k) ?? { value: nombre, count: 0, volumeM3: conVolumen ? 0 : null };
-    fila.count += 1;
-    if (conVolumen) fila.volumeM3 = Math.round(((fila.volumeM3 ?? 0) + n(e.volumeM3)) * 10000) / 10000;
+    suma(fila, e);
     especies.set(k, fila);
     if (e.gtfNumber) {
-      const g = guias.get(e.gtfNumber) ?? { value: e.gtfNumber, count: 0 };
-      g.count += 1;
+      const g = guias.get(e.gtfNumber) ?? { value: e.gtfNumber, count: 0, volumeM3: conVolumen ? 0 : null };
+      suma(g, e);
       guias.set(e.gtfNumber, g);
     }
   }

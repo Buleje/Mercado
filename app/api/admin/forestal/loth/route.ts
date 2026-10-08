@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit, getClientIp } from "@/lib/rate-limit";
 import { ForestLothDB, LOTH_SECTIONS, LothInvariantError } from "@/lib/db/forest-loth.db";
+import { ForestLothDespachoDB } from "@/lib/db/forest-loth-despacho.db";
 import { ForestPlanDB } from "@/lib/db/forest-plan.db";
 import { ColaboradoresDB } from "@/lib/db/rrhh-colaboradores.db";
 import { isSpecializationEnabled } from "@/lib/specializations";
@@ -193,7 +194,9 @@ export const GET = withApiHandler("forestal-loth-get", async (req: NextRequest) 
       limit: Number(url.searchParams.get("limit")) || undefined,
       offset: Number(url.searchParams.get("offset")) || undefined,
     });
-    return NextResponse.json({ entries, total });
+    // Despacho de trozas: cada línea lleva las medidas del trozado de su troza
+    // (mismo permiso), en un campo aparte y con lista blanca (`trozado`).
+    return NextResponse.json({ entries: await ForestLothDespachoDB.conTrozado(auth.tenantId, entries), total });
   } catch (err) {
     logger.error("[loth.GET] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });

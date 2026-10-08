@@ -27,6 +27,7 @@ export interface ColDef {
   orden?: OrdenCampo;
   render: (e: LothEntryDTO) => ReactNode;
   filtros?: readonly string[]; // autofiltros de la cabecera si no es sólo `key` («permiso»: Permiso y Titular)
+  ocultaPorDefecto?: boolean; // arranca oculta en «Columnas n/m»
 }
 
 export const TH = "px-4 py-2.5 text-left font-bold text-[var(--text-primary)]";

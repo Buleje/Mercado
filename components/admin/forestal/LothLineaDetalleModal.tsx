@@ -23,6 +23,9 @@ import {
   PLAZO_REGISTRO_DIAS,
   type LothEntryDTO,
 } from "@/lib/forestal/loth-constants";
+import { medidasDeLinea } from "@/lib/forestal/loth-despacho-medidas";
+import { guiaDeLineas, type GuiaDelDespacho } from "@/lib/forestal/loth-despacho-por-guia";
+import { DespachoAcciones, DespachoDatos, LineaDatos } from "./LothLineaDatos";
 
 const fFecha = (iso: string | null | undefined, conHora = false) => {
   if (!iso) return "—";
@@ -37,22 +40,23 @@ const fFecha = (iso: string | null | undefined, conHora = false) => {
   });
 };
 
-const n = (v: string | null, dp = 4) => (v == null ? "—" : Number(v).toFixed(dp));
-
 export default function LothLineaDetalleModal({
   linea,
   corregidaPorLineNo,
   onClose,
   onVerCadena,
   onImprimirEtiqueta,
+  despacho,
 }: {
   linea: LothEntryDTO | null;
   /** N° de la línea que enmienda a ésta, si existe. */
   corregidaPorLineNo?: number | null;
   onClose: () => void;
   onVerCadena?: (code: string) => void;
-  /** Sólo para líneas de Trozado: imprime la etiqueta QR de ESTA troza (28-09). */
+  /** Trozado: la etiqueta QR de ESTA troza (28-09). Despacho: la de su troza, con las medidas del trozado (08-10). */
   onImprimirEtiqueta?: (linea: LothEntryDTO) => void;
+  /** Despacho de trozas (08-10): las guías del permiso (destino, placa, CTP) y a dónde llevan sus acciones. */
+  despacho?: { guias: readonly GuiaDelDespacho[]; hayCtp: boolean; onVerGuia: (gtf: string) => void };
 }) {
   /* Sin esto el foco se queda atrás del modal: Tab se va a la pantalla
      de abajo y Escape no cierra (hook medido en el módulo, 2026-09-09). */
@@ -79,6 +83,8 @@ export default function LothLineaDetalleModal({
   const codigo = linea.trozaCode || linea.treeCode;
   const lat = linea.gpsLat != null ? Number(linea.gpsLat) : null;
   const lng = linea.gpsLng != null ? Number(linea.gpsLng) : null;
+  const esDespacho = linea.section === "despacho_troza" && !!despacho;
+  const guia = esDespacho ? guiaDeLineas(linea.gtfNumber, linea.planId, despacho.guias) : null;
 
   return (
     <div
@@ -113,8 +119,8 @@ export default function LothLineaDetalleModal({
               Línea N° {linea.lineNo}
             </p>
             <p className="mt-0.5 text-xs font-semibold text-[var(--text-tertiary)]">
-              {fFecha(linea.entryDate)} · {linea.speciesCommon ?? "sin especie"}
-              {linea.cites ? " · CITES" : ""}
+              {fFecha(linea.entryDate)} · {medidasDeLinea(linea).especie ?? "sin especie"}
+              {medidasDeLinea(linea).cites ? " · CITES" : ""}
             </p>
           </div>
           {/* `ml-auto`: la cabecera reparte con `justify-between`, así que sin
@@ -185,46 +191,8 @@ export default function LothLineaDetalleModal({
             </div>
           )}
 
-          {/* Datos de la línea */}
-          <dl className="grid grid-cols-2 gap-x-4 gap-y-2 rounded-xl border border-[var(--rule-soft)] p-3 text-sm sm:grid-cols-3">
-            <Dato label="Sección" valor={linea.section.replace(/_/g, " ")} />
-            <Dato label="Cód. árbol" valor={linea.treeCode ?? "—"} mono />
-            <Dato label="Cód. troza" valor={linea.trozaCode ?? "—"} mono />
-            <Dato label="Especie" valor={linea.speciesCommon ?? "—"} />
-            <Dato label="Científico" valor={linea.speciesScientific ?? "—"} />
-            <Dato label="N° GTF" valor={linea.gtfNumber ?? "—"} mono />
-            <Dato label="Ø mayor" valor={n(linea.diamMayorM, 2)} mono />
-            <Dato label="Ø menor" valor={n(linea.diamMenorM, 2)} mono />
-            <Dato label="Longitud" valor={n(linea.lengthM, 2)} mono />
-            <Dato label="Volumen m³" valor={n(linea.volumeM3)} mono />
-            <Dato label="Producto" valor={linea.productType ?? "—"} />
-            <Dato label="Cantidad" valor={linea.quantity ? `${n(linea.quantity)} ${linea.unit ?? ""}` : "—"} mono />
-            {linea.pieces != null && <Dato label="Piezas" valor={String(linea.pieces)} mono />}
-            {linea.isRama && <Dato label="Origen" valor="Rama aprovechable" />}
-            {linea.discarded && <Dato label="Descartado" valor="Sí" />}
-            {linea.consumoInterno && <Dato label="Consumo interno" valor="Sí" />}
-            {/* Item 3 de la RDE: el código va marcado en el fuste y en el tocón.
-                Se muestra siempre en tala —incluso cuando falta— porque «no
-                consta» es justamente lo que hay que poder ver antes de que lo
-                vea un supervisor. */}
-            {linea.section === "tala" && (
-              <Dato
-                label="Código marcado"
-                valor={
-                  linea.marcadoFuste && linea.marcadoTocon
-                    ? "Fuste y tocón"
-                    : linea.marcadoFuste
-                      ? "Sólo el fuste — falta el tocón"
-                      : linea.marcadoTocon
-                        ? "Sólo el tocón — falta el fuste"
-                        : "No consta"
-                }
-              />
-            )}
-            {/* Internos: no salen en el formato SERFOR. */}
-            {linea.motosierrista && <Dato label="Motosierrista · interno" valor={linea.motosierrista} />}
-            {linea.horaTala && <Dato label="Hora de tala · interno" valor={linea.horaTala} mono />}
-          </dl>
+          {/* Datos de la línea; un despacho, con su troza, su guía y el CTP */}
+          {esDespacho ? <DespachoDatos linea={linea} guia={guia} /> : <LineaDatos linea={linea} />}
 
           {linea.observations && (
             <p className="rounded-xl border border-[var(--rule-soft)] p-3 text-sm text-[var(--text-secondary)]">
@@ -272,6 +240,17 @@ export default function LothLineaDetalleModal({
         </div>
 
         <footer className="flex flex-wrap items-center justify-end gap-2 border-t-2 border-[var(--rule-base)] px-5 py-3">
+          {esDespacho && (
+            <DespachoAcciones
+              linea={linea}
+              guia={guia}
+              hayCtp={despacho.hayCtp}
+              onVerGuia={despacho.onVerGuia}
+              onVerCadena={onVerCadena}
+              onImprimirEtiqueta={onImprimirEtiqueta}
+              onClose={onClose}
+            />
+          )}
           {linea.section === "trozado" && codigo && onImprimirEtiqueta && (
             <button
               type="button"
@@ -281,7 +260,7 @@ export default function LothLineaDetalleModal({
               <QrCode className="h-4 w-4" /> Imprimir etiqueta
             </button>
           )}
-          {codigo && onVerCadena && (
+          {!esDespacho && codigo && onVerCadena && (
             <button
               type="button"
               onClick={() => {
@@ -304,15 +283,6 @@ export default function LothLineaDetalleModal({
 
         <TiradorDeVentana ventana={ventana} />
       </div>
-    </div>
-  );
-}
-
-function Dato({ label, valor, mono }: { label: string; valor: string; mono?: boolean }) {
-  return (
-    <div>
-      <dt className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">{label}</dt>
-      <dd className={`text-[var(--text-primary)] ${mono ? "font-mono tabular-nums" : ""}`}>{valor}</dd>
     </div>
   );
 }

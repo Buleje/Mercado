@@ -91,15 +91,22 @@ export default function LothSeccionKpis({
   const usaVolumen = section === "tala" || section === "trozado" || section === "consumo_troza";
   const usaCantidad = section === "producto_terminado" || section === "despacho_producto";
   /* En Despacho de trozas la segunda tarjeta repetía la primera («Líneas 2» y
-     «Trozas despachadas 2»: cada línea ES una troza). Lo que sí suma es en
-     cuántas guías salieron. */
+     «Trozas despachadas 2»: cada línea ES una troza). Lo que suma es el m³
+     que salió —el del trozado de cada troza, la línea no lo guarda (08-10)—
+     y en cuántas guías. */
   const volumen = `${fmtM3(filtrando ? c.totales.volumenM3 : (cur?.totalVolumeM3 ?? 0))} m³`;
   const cantidad = filtrando ? c.total : fm(cur?.totalQuantity ?? 0);
   const segunda = usaVolumen
     ? { label: "Volumen registrado", value: volumen, corto: volumen, icon: TreePine, de: `${fmtM3(cur?.totalVolumeM3 ?? 0)} m³` }
     : usaCantidad
       ? { label: "Cantidad registrada", value: cantidad, corto: `cantidad ${cantidad}`, icon: FileText, de: fm(cur?.totalQuantity ?? 0) }
-      : { label: "Guías (GTF)", value: formatNumber(c.guias), corto: plural(c.guias, "guía", "guías"), icon: Truck, de: null };
+      : {
+          label: "Volumen despachado",
+          value: volumen,
+          corto: `${volumen} en ${plural(c.guias, "guía", "guías")}`,
+          icon: Truck,
+          de: `${fmtM3(cur?.totalVolumeM3 ?? 0)} m³`,
+        };
 
   /* Tocar = poner SÓLO ese valor en la columna; otra vez = quitarlo. */
   const estado = filtros?.facetas.obs;
@@ -170,7 +177,7 @@ export default function LothSeccionKpis({
           value={segunda.value}
           subValue={
             (segunda.de && deLaSeccion(segunda.de)) ??
-            (usaVolumen || usaCantidad ? meta.short : plural(count, "troza despachada", "trozas despachadas"))
+            (usaVolumen || usaCantidad ? meta.short : `en ${plural(c.guias, "guía", "guías")} · según el trozado`)
           }
           icon={segunda.icon}
           emphasis="success"
