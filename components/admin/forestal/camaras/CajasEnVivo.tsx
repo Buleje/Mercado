@@ -6,7 +6,8 @@
  * les ponga la etiqueta y avise»). Hasta hoy el detector sólo contaba en la
  * pastilla; ahora cada persona lleva su recuadro coral —el mismo token de las
  * cajas de las fotos guardadas— con «Persona 2 · 87 %», y cada zona con
- * movimiento, un recuadro punteado celeste sin etiqueta.
+ * movimiento, un recuadro punteado celeste sin etiqueta (sólo con «Ver
+ * movimiento» prendido: quien la usa pasa `movimiento` vacío si está apagado).
  *
  * Las cajas vienen en fracciones del CUADRO (0-1), no del marco: en pantalla
  * completa EZUIKit dibuja el video 16:9 centrado con franjas a los lados y un
@@ -21,7 +22,14 @@
  * una caja de 12 px un punto de 10 px se la comía.
  */
 
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+  type RefObject,
+} from "react";
 import type { CajaFraccion, PersonaEnVivo } from "@/lib/camaras/vigia";
 import { cn } from "@/lib/utils";
 import { fuenteDelVideo } from "./reproductor-nube";
@@ -129,7 +137,14 @@ function Etiqueta({
   children: ReactNode;
 }) {
   return (
-    <span className={cn(ETIQUETA, POSICION[lugar.vertical], lugar.derecha ? "right-0" : "left-0", className)}>
+    <span
+      className={cn(
+        ETIQUETA,
+        POSICION[lugar.vertical],
+        lugar.derecha ? "right-0" : "left-0",
+        className,
+      )}
+    >
       {children}
     </span>
   );
@@ -141,14 +156,20 @@ const pct = (n: number) => `${(fraccion(n) * 100).toFixed(2)}%`;
 function estiloCaja(c: CajaFraccion): CSSProperties {
   const x = fraccion(c.x);
   const y = fraccion(c.y);
-  return { left: pct(x), top: pct(y), width: pct(Math.min(c.ancho, 1 - x)), height: pct(Math.min(c.alto, 1 - y)) };
+  return {
+    left: pct(x),
+    top: pct(y),
+    width: pct(Math.min(c.ancho, 1 - x)),
+    height: pct(Math.min(c.alto, 1 - y)),
+  };
 }
 
 /** Dónde cabe la etiqueta sin tapar la caja ni salirse del cuadro (sin medidas: 10 % / 30 %). */
 function lugarEtiqueta(c: CajaFraccion, anchoPx: number, altoPx: number): Lugar {
   const umbralY = altoPx > 0 ? ETIQUETA_ALTO_PX / altoPx : 0.1;
   const umbralX = anchoPx > 0 ? ETIQUETA_ANCHO_PX / anchoPx : 0.3;
-  const vertical: Vertical = c.y >= umbralY ? "arriba" : c.y + c.alto <= 1 - umbralY ? "abajo" : "dentro";
+  const vertical: Vertical =
+    c.y >= umbralY ? "arriba" : c.y + c.alto <= 1 - umbralY ? "abajo" : "dentro";
   return { vertical, derecha: c.x + umbralX > 1 && c.x + c.ancho >= umbralX };
 }
 
@@ -156,7 +177,10 @@ function lugarEtiqueta(c: CajaFraccion, anchoPx: number, altoPx: number): Lugar 
  * El rectángulo del video dentro del padre de la capa, en px. Sin lienzo
  * todavía, el padre entero (el marco 16:9 fuera de pantalla completa).
  */
-function useRectoDelVideo(contenedorId: string, capa: RefObject<HTMLDivElement | null>): Recto | null {
+function useRectoDelVideo(
+  contenedorId: string,
+  capa: RefObject<HTMLDivElement | null>,
+): Recto | null {
   const [recto, setRecto] = useState<Recto | null>(null);
   useEffect(() => {
     const caja = document.getElementById(contenedorId);
@@ -172,7 +196,11 @@ function useRectoDelVideo(contenedorId: string, capa: RefObject<HTMLDivElement |
       }
       const r = rectoVisible(f, padre);
       setRecto((prev) =>
-        prev && prev.left === r.left && prev.top === r.top && prev.width === r.width && prev.height === r.height
+        prev &&
+        prev.left === r.left &&
+        prev.top === r.top &&
+        prev.width === r.width &&
+        prev.height === r.height
           ? prev
           : r,
       );
@@ -210,5 +238,10 @@ function rectoVisible(fuente: Element | null, padre: HTMLElement): Recto {
     width = w;
     height = h;
   }
-  return { left: Math.round(left), top: Math.round(top), width: Math.round(width), height: Math.round(height) };
+  return {
+    left: Math.round(left),
+    top: Math.round(top),
+    width: Math.round(width),
+    height: Math.round(height),
+  };
 }

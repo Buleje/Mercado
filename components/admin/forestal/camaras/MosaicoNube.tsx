@@ -37,6 +37,7 @@ import { navegarEnElPanel } from "./navegar-panel";
 import { useAvisoPersonas } from "./use-aviso-personas";
 import { RETRASO_ENTRE_CUADROS_MS, useMosaicoNube, vecesMas } from "./use-mosaico-nube";
 import { usePersonasMosaico } from "./use-personas-mosaico";
+import { useVerMovimiento } from "./use-ver-movimiento";
 import type { EstadoVisor } from "./use-visor-nube";
 
 interface Props {
@@ -71,6 +72,7 @@ export default function MosaicoNube({
 }: Props) {
   const { soloMirar } = useApiCamaras(baseApi);
   const [detectar, setDetectar] = useState(!soloMirar);
+  const [verMovimiento, setVerMovimiento] = useVerMovimiento();
   const [sinPausa, setSinPausa] = useState(false);
   const m = useMosaicoNube({ sinPausa });
   const p = usePersonasMosaico({ minimizado, conCarpeta: !soloMirar });
@@ -142,6 +144,8 @@ export default function MosaicoNube({
               vigilancia={!soloMirar}
               detectar={detectar}
               onDetectar={setDetectar}
+              verMovimiento={verMovimiento}
+              onVerMovimiento={setVerMovimiento}
               sonido={aviso.sonido}
               onSonido={aviso.cambiarSonido}
               sinPausa={sinPausa}
@@ -184,6 +188,7 @@ export default function MosaicoNube({
                     onVerFotos={verFotos}
                     baseApi={baseApi}
                     detectar={detectar}
+                    verMovimiento={verMovimiento}
                     onFotoPersona={p.onFoto}
                     onEstado={onEstado}
                     registrarCuadro={p.registrarCuadro}

@@ -18,10 +18,9 @@ import {
   Minimize2,
   Sparkles,
   Video,
-  Volume2,
-  VolumeX,
 } from "@buleje/design-system/icons";
 import SegmentedControl from "@/components/ui-system/SegmentedControl";
+import BotonSonido from "./BotonSonido";
 import { BTN as BTN_BASE } from "./camaras-ui";
 import { hoyLocal, horaHaceUnaHora } from "./hik-connect-teams";
 import type { AnalisisCuadro } from "./use-analizar-cuadro";
@@ -73,22 +72,7 @@ export default function VisorNubeControles({
             { value: "hd", label: "HD" },
           ]}
         />
-        <button
-          type="button"
-          onClick={() => void v.alternarSonido()}
-          disabled={!viendo}
-          aria-pressed={v.sonido}
-          className={BTN}
-          title={v.sonido ? "Silenciar el vivo" : "Escuchar lo que oye la cámara"}
-          data-control="sonido"
-        >
-          {v.sonido ? (
-            <Volume2 className="h-4 w-4" aria-hidden />
-          ) : (
-            <VolumeX className="h-4 w-4" aria-hidden />
-          )}
-          <span className="max-sm:sr-only">{v.sonido ? "Sonido" : "Sin sonido"}</span>
-        </button>
+        <BotonSonido v={v} className={BTN} />
         <button
           type="button"
           onClick={v.foto}

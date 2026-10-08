@@ -20,29 +20,29 @@
  * (`onAparicion`), que es el que suena y muestra el mensaje.
  */
 
-import { useCallback, useEffect, useState } from "react";
-import { EyeOff, Maximize2, Sparkles, Users, Volume2, VolumeX } from "@buleje/design-system/icons";
+import { useEffect } from "react";
+import { Maximize2, Sparkles } from "@buleje/design-system/icons";
 import SegmentedControl from "@/components/ui-system/SegmentedControl";
-import { MOTOR_DETECTOR_LABEL, type AparicionPersona } from "@/lib/camaras/vigia";
+import type { AparicionPersona, CajaFraccion } from "@/lib/camaras/vigia";
 import { cn } from "@/lib/utils";
 import { useApiCamaras } from "./api-camaras";
+import BotonSonido from "./BotonSonido";
+import BotonZonasDetector from "./BotonZonasDetector";
 import CajasEnVivo from "./CajasEnVivo";
-import { BTN, CHIP_BASE, CHIP_TONO, ICONO_TONO } from "./camaras-ui";
+import { BTN } from "./camaras-ui";
+import ChipPersonas from "./ChipPersonas";
 import ControlesCamara from "./ControlesCamara";
-import { fuenteDelVideo } from "./reproductor-nube";
 import { useAnalizarCuadro } from "./use-analizar-cuadro";
 import { useAparicionReciente } from "./use-aviso-personas";
-import {
-  useDetectorPersonas,
-  type DetectorPersonas,
-  type UltimaFotoPersona,
-} from "./use-detector-personas";
+import { useDetectorDelVisor } from "./use-detector-del-visor";
+import type { UltimaFotoPersona } from "./use-detector-personas";
 import type { TomarCuadro } from "./use-personas-mosaico";
 import { useVisorNube, type Calidad, type EstadoVisor } from "./use-visor-nube";
 import VisorNubeAnalisis from "./VisorNubeAnalisis";
 import VisorNubeCapas, { ChipEstadoVivo } from "./VisorNubeCapas";
-import { useZonasIgnorar } from "./zonas-detector";
-import ZonasDetectorModal from "./ZonasDetectorModal";
+
+/** «Ver movimiento» apagado: la capa sigue (personas), sin los recuadros celestes. */
+const SIN_MOVIMIENTO: readonly CajaFraccion[] = Object.freeze([]);
 
 export interface CamaraMosaico {
   id: string;
@@ -60,6 +60,8 @@ interface Props {
   baseApi?: string;
   /** «Detectar personas» del mosaico (apagado si no se pasa: el Modo TV no lo usa). */
   detectar?: boolean;
+  /** «Ver movimiento» del mosaico: los recuadros celestes del detector (recordado). */
+  verMovimiento?: boolean;
   onFotoPersona?: (foto: UltimaFotoPersona) => void;
   /** Para el punto «en vivo» de la burbuja. */
   onEstado?: (camaraId: string, estado: EstadoVisor) => void;
@@ -77,6 +79,7 @@ export default function MosaicoNubeCuadro({
   onVerFotos,
   baseApi,
   detectar = false,
+  verMovimiento = true,
   onFotoPersona,
   onEstado,
   registrarCuadro,
@@ -87,17 +90,12 @@ export default function MosaicoNubeCuadro({
   const a = useAnalizarCuadro(camara.id, v.tomarCuadro);
   const viendo = v.estado === "viendo";
   const { contenedorId, estado, tomarCuadroQuieto } = v;
-  const leerFuente = useCallback(() => fuenteDelVideo(document.getElementById(contenedorId)), [contenedorId]);
-  const zonas = useZonasIgnorar(camara.id);
-  const [zonasAbierto, setZonasAbierto] = useState(false);
-  const personas = useDetectorPersonas({
+  const { personas, zonas } = useDetectorDelVisor({
     camaraId: camara.id,
     nombre: camara.nombre,
-    activo: viendo && detectar && !soloMirar,
-    leerFuente,
-    tomarCuadro: tomarCuadroQuieto,
+    v,
+    activo: detectar && !soloMirar,
     onFoto: onFotoPersona,
-    zonasIgnorar: zonas,
   });
   const reciente = useAparicionReciente(personas.aparicion, onAparicion);
   const marcar = detectar && viendo;
@@ -154,7 +152,7 @@ export default function MosaicoNubeCuadro({
           {marcar && (
             <CajasEnVivo
               personas={personas.personasEnVivo}
-              movimiento={personas.movimientoEnVivo}
+              movimiento={verMovimiento ? personas.movimientoEnVivo : SIN_MOVIMIENTO}
               contenedorId={contenedorId}
             />
           )}
@@ -188,21 +186,12 @@ export default function MosaicoNubeCuadro({
             { value: "hd", label: "HD" },
           ]}
         />
-        <button
-          type="button"
-          onClick={() => void v.alternarSonido()}
-          disabled={!viendo}
-          aria-pressed={v.sonido}
+        <BotonSonido
+          v={v}
           className={`${BTN} w-9 justify-center px-0 max-sm:h-11 max-sm:w-11`}
-          title={v.sonido ? "Silenciar" : "Escuchar lo que oye la cámara"}
-          aria-label={v.sonido ? `Silenciar ${camara.nombre}` : `Escuchar ${camara.nombre}`}
-        >
-          {v.sonido ? (
-            <Volume2 className="h-4 w-4" aria-hidden />
-          ) : (
-            <VolumeX className="h-4 w-4" aria-hidden />
-          )}
-        </button>
+          nombre={camara.nombre}
+          soloIcono
+        />
         {!soloMirar && (
           <button
             type="button"
@@ -215,17 +204,13 @@ export default function MosaicoNubeCuadro({
           </button>
         )}
         {!soloMirar && (
-          <button
-            type="button"
-            onClick={() => setZonasAbierto(true)}
-            className={`${BTN} max-sm:h-11 ${zonas.length ? "" : "w-9 justify-center px-0 max-sm:w-11"}`}
-            title="Zonas que el detector de personas ignora (un poste, una casaca colgada)"
-            aria-label={`Zonas que el detector ignora en ${camara.nombre}${zonas.length ? `: ${zonas.length}` : ""}`}
-            data-zonas-boton={camara.id}
-          >
-            <EyeOff className="h-4 w-4" aria-hidden />
-            {zonas.length > 0 && <span className="tabular-nums">{zonas.length}</span>}
-          </button>
+          <BotonZonasDetector
+            camaraId={camara.id}
+            nombre={camara.nombre}
+            zonas={zonas}
+            cargarImagen={tomarCuadroQuieto}
+            className={BTN}
+          />
         )}
         <button
           type="button"
@@ -240,56 +225,6 @@ export default function MosaicoNubeCuadro({
       </div>
 
       {!soloMirar && <VisorNubeAnalisis a={a} onVerFotos={onVerFotos} />}
-      {zonasAbierto && (
-        <ZonasDetectorModal
-          camaraId={camara.id}
-          nombre={camara.nombre}
-          cargarImagen={tomarCuadroQuieto}
-          origen="Cuadro en vivo"
-          sinImagen="Sin video todavía: espera a que la cámara se vea y toca «Otro cuadro»."
-          renovable
-          aboveModals
-          onCerrar={() => setZonasAbierto(false)}
-        />
-      )}
     </li>
-  );
-}
-
-/** «2 personas · 12 fotos» del detector de este cuadro (nada si está apagado). */
-function ChipPersonas({ d }: { d: DetectorPersonas }) {
-  if (d.estado === "apagado") return null;
-  if (d.estado === "error")
-    return (
-      <span className={`${CHIP_BASE} ${CHIP_TONO.alerta}`} title={d.error ?? undefined}>
-        <Users className={`h-3.5 w-3.5 ${ICONO_TONO.alerta}`} aria-hidden /> No detecta
-      </span>
-    );
-  if (d.estado === "cargando")
-    return (
-      <span className={`${CHIP_BASE} ${CHIP_TONO.neutro}`}>
-        <Users className={`h-3.5 w-3.5 ${ICONO_TONO.neutro}`} aria-hidden /> Preparando…
-      </span>
-    );
-  const hay = d.personasAhora > 0;
-  return (
-    <span
-      className={`${CHIP_BASE} ${hay ? CHIP_TONO.aviso : CHIP_TONO.neutro}`}
-      title={`Personas en cuadro ahora (sin las de las zonas ignoradas) · fotos guardadas en la carpeta «Personas»${d.motor ? ` · Mira con: ${MOTOR_DETECTOR_LABEL[d.motor]}` : ""}`}
-      aria-live="polite"
-    >
-      <Users className={`h-3.5 w-3.5 ${hay ? ICONO_TONO.aviso : ICONO_TONO.neutro}`} aria-hidden />
-      {hay ? `${d.personasAhora} ${d.personasAhora === 1 ? "persona" : "personas"}` : "Nadie"}
-      {d.ignoradasAhora > 0 && (
-        <span className="text-[var(--text-tertiary)]">
-          · {d.ignoradasAhora} {d.ignoradasAhora === 1 ? "ignorada" : "ignoradas"}
-        </span>
-      )}
-      {d.fotosTomadas > 0 && (
-        <span className="text-[var(--text-tertiary)]">
-          · {d.fotosTomadas} {d.fotosTomadas === 1 ? "foto" : "fotos"}
-        </span>
-      )}
-    </span>
   );
 }

@@ -2,16 +2,17 @@
 
 /**
  * Cabecera del mosaico «Ver todas en vivo»: título, minimizar y cerrar; debajo,
- * la vigilancia (2026-10-07) — «Detectar personas», «Aviso con sonido»
- * (08-10), «No pausar» y la carpeta «Personas» del Drive. Copia la cabecera de `AdminModal` (el mosaico ya no es
+ * la vigilancia (2026-10-07) — «Detectar personas», «Ver movimiento» y «Aviso
+ * con sonido» (08-10), «No pausar» y la carpeta «Personas» del Drive. Copia la cabecera de `AdminModal` (el mosaico ya no es
  * un `AdminModal`: tiene que poder esconderse sin desmontar los videos).
  */
 
-import type { ComponentType, MouseEvent, ReactNode } from "react";
-import { BellRing, FolderOpen, LayoutGrid, Minimize2, Timer, Users, X } from "@buleje/design-system/icons";
+import type { MouseEvent } from "react";
+import { BellRing, FolderOpen, LayoutGrid, Minimize2, Timer, X } from "@buleje/design-system/icons";
 import { MODAL_GUTTER } from "@/components/admin/shared/AdminModal";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { DATOS_POR_HORA, MINUTOS_SIN_TOCAR } from "./hik-connect-teams";
+import { InterruptoresDetector, InterruptorVivo as Interruptor } from "./InterruptorVivo";
 
 interface Props {
   tituloId: string;
@@ -20,6 +21,9 @@ interface Props {
   vigilancia: boolean;
   detectar: boolean;
   onDetectar: (v: boolean) => void;
+  /** «Ver movimiento»: los recuadros celestes punteados (recordado en este navegador). */
+  verMovimiento: boolean;
+  onVerMovimiento: (v: boolean) => void;
   /** «Aviso con sonido» al aparecer alguien (recordado; el mensaje sale igual). */
   sonido: boolean;
   onSonido: (v: boolean) => void;
@@ -83,16 +87,12 @@ export default function MosaicoNubeCabecera(p: Props) {
       <div className={`flex flex-wrap items-center gap-x-2 gap-y-1 pb-2 ${MODAL_GUTTER}`}>
         {p.vigilancia && (
           <>
-            <Interruptor activo={p.detectar} onCambiar={p.onDetectar} icono={Users}>
-              {/* A 400 px «Detectar personas» partía la fila en dos. */}
-              <span className="sm:hidden">Personas</span>
-              <span className="max-sm:hidden">Detectar personas</span>
-            </Interruptor>
-            <InfoTip
-              title="Detectar personas"
-              what="Esta PC mira el video de cada cámara, marca a cada persona con un recuadro y su número y, cuando aparece alguien, te avisa y guarda la foto en la carpeta «Personas» del Drive."
-              affects="No gasta datos extra: mira el video que ya llega. Minimizado sigue mirando y avisando; pausado o cerrado, no."
-              example="Minimiza el mosaico y sigue trabajando: si entra alguien al patio, suena y sale «Apareció 1 persona en Patio de trozas»."
+            <InterruptoresDetector
+              detectar={p.detectar}
+              onDetectar={p.onDetectar}
+              verMovimiento={p.verMovimiento}
+              onVerMovimiento={p.onVerMovimiento}
+              donde="mosaico"
             />
             <Interruptor activo={p.sonido} onCambiar={p.onSonido} icono={BellRing}>
               <span className="sm:hidden">Sonido</span>
@@ -121,38 +121,5 @@ export default function MosaicoNubeCabecera(p: Props) {
         )}
       </div>
     </header>
-  );
-}
-
-function Interruptor({
-  activo,
-  onCambiar,
-  icono: Icono,
-  children,
-}: {
-  activo: boolean;
-  onCambiar: (v: boolean) => void;
-  icono: ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
-  children: ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={activo}
-      onClick={() => onCambiar(!activo)}
-      className="inline-flex min-h-9 items-center gap-2 rounded-lg pr-1 text-sm font-bold text-[var(--text-secondary)] max-sm:min-h-11"
-    >
-      <span
-        aria-hidden
-        className={`relative h-6 w-10 shrink-0 rounded-full border transition-colors ${activo ? "border-[var(--accent-600,var(--accent))] bg-[var(--accent-600,var(--accent))]" : "border-[var(--rule-strong)]/40 bg-[var(--surface-sunken)]"}`}
-      >
-        <span
-          className={`absolute top-0.5 h-4.5 w-4.5 rounded-full bg-[var(--surface-raised)] shadow-[var(--shadow-sm)] transition-[left] ${activo ? "left-[1.1rem]" : "left-0.5"}`}
-        />
-      </span>
-      <Icono className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
-      {children}
-    </button>
   );
 }

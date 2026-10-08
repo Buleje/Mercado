@@ -23,8 +23,9 @@ import {
   destruir,
   idSeguro,
   medidaQueEntra,
-  sonar,
 } from "./reproductor-nube";
+import { useMarcoNube } from "./use-marco-nube";
+import { useSonidoNube } from "./use-sonido-nube";
 
 export type Calidad = "hd" | "sd";
 export type Modo = { tipo: "vivo" } | { tipo: "grabacion"; desde: string; hasta: string };
@@ -76,10 +77,6 @@ export function useVisorNube(camaraId: string, opciones: OpcionesVisor = {}) {
   const [error, setError] = useState<string | null>(null);
   /* Cambia para volver a pedir todo (Reintentar / Seguir viendo). */
   const [intento, setIntento] = useState(0);
-  /** Sonido del vivo: arranca apagado (no asustar a nadie con el patio a todo volumen). */
-  const [sonido, setSonido] = useState(false);
-  const [teatro, setTeatro] = useState(false);
-  const [enPantallaCompleta, setEnPantallaCompleta] = useState(false);
   const player = useRef<EZUIKitPlayer | null>(null);
   const corte = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -103,6 +100,11 @@ export function useVisorNube(camaraId: string, opciones: OpcionesVisor = {}) {
     if (corte.current) clearTimeout(corte.current);
     corte.current = setTimeout(cortar, MINUTOS_SIN_TOCAR * 60_000);
   }, [cortar]);
+
+  /* Sonido del vivo (arranca apagado en cada reproductor) y si el flujo trae audio. */
+  const s = useSonidoNube(player, actividad);
+  const { reiniciar: reiniciarSonido, alVer } = s;
+  const marco = useMarcoNube(marcoId, player, actividad);
 
   const claveModo = modo.tipo === "vivo" ? "vivo" : `${modo.desde}|${modo.hasta}`;
 
@@ -131,7 +133,7 @@ export function useVisorNube(camaraId: string, opciones: OpcionesVisor = {}) {
       return;
     }
     setEstado("pidiendo");
-    setSonido(false);
+    reiniciarSonido();
     actividad();
 
     (async () => {
@@ -199,7 +201,11 @@ export function useVisorNube(camaraId: string, opciones: OpcionesVisor = {}) {
           language: "en",
           width: medida.ancho,
           height: medida.alto,
-          handleSuccess: () => vivo && setEstado("viendo"),
+          handleSuccess: () => {
+            if (!vivo) return;
+            setEstado("viendo");
+            alVer(player.current);
+          },
           handleError: (e: unknown) => {
             if (!vivo) return;
             setError(mensajeDelReproductor(e));
@@ -220,7 +226,19 @@ export function useVisorNube(camaraId: string, opciones: OpcionesVisor = {}) {
     };
     // `modo` entra por `claveModo`: un objeto nuevo con el mismo rango no reabre.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [camaraId, calidad, claveModo, intento, contenedorId, actividad, activo, retrasoMs, base]);
+  }, [
+    camaraId,
+    calidad,
+    claveModo,
+    intento,
+    contenedorId,
+    actividad,
+    activo,
+    retrasoMs,
+    base,
+    reiniciarSonido,
+    alVer,
+  ]);
 
   useEffect(
     () => () => {
@@ -250,44 +268,6 @@ export function useVisorNube(camaraId: string, opciones: OpcionesVisor = {}) {
     return true;
   }, []);
 
-  /* Pantalla completa del MARCO (video + controles), no la de EZUIKit: así el
-     joystick y la alarma siguen a mano. Si el navegador no deja (iPhone), la
-     de EZUIKit. */
-  useEffect(() => {
-    const cambio = () => setEnPantallaCompleta(document.fullscreenElement?.id === marcoId);
-    document.addEventListener("fullscreenchange", cambio);
-    return () => document.removeEventListener("fullscreenchange", cambio);
-  }, [marcoId]);
-
-  const pantallaCompleta = useCallback(() => {
-    actividad();
-    if (document.fullscreenElement) {
-      void document.exitFullscreen?.();
-      return;
-    }
-    const marco = document.getElementById(marcoId);
-    const p = player.current;
-    if (marco?.requestFullscreen) {
-      marco.requestFullscreen().catch(() => p?.fullScreen?.());
-    } else if (p?.fullScreen) {
-      Promise.resolve(p.fullScreen()).catch((err: unknown) =>
-        logger.warn("[camaras] pantalla completa no disponible", { error: String(err) }),
-      );
-    }
-  }, [actividad, marcoId]);
-
-  const alternarTeatro = useCallback(() => {
-    actividad();
-    setTeatro((t) => !t);
-  }, [actividad]);
-
-  const alternarSonido = useCallback(async () => {
-    actividad();
-    const ok = await sonar(player.current, !sonido);
-    if (ok) setSonido(!sonido);
-    else setError("El reproductor no dejó cambiar el sonido.");
-  }, [actividad, sonido]);
-
   const foto = useCallback(() => {
     actividad();
     const sello = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
@@ -315,11 +295,13 @@ export function useVisorNube(camaraId: string, opciones: OpcionesVisor = {}) {
   return {
     contenedorId,
     marcoId,
-    sonido,
-    alternarSonido,
-    teatro,
-    alternarTeatro,
-    enPantallaCompleta,
+    sonido: s.sonido,
+    alternarSonido: s.alternarSonido,
+    /** ¿El vivo trae audio y con qué códec? (`null` = todavía no se sabe). */
+    audio: s.audio,
+    /** Por qué no se oye, para el ⓘ junto al parlante. */
+    fallaSonido: s.falla,
+    ...marco,
     calidad,
     setCalidad,
     modo,
@@ -329,7 +311,6 @@ export function useVisorNube(camaraId: string, opciones: OpcionesVisor = {}) {
     error,
     reintentar,
     actividad,
-    pantallaCompleta,
     foto,
     tomarCuadro,
     tomarCuadroQuieto,

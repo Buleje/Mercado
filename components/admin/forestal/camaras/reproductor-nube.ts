@@ -23,8 +23,7 @@ type ClaseReproductor = typeof EZUIKitPlayer;
  */
 export async function cargarReproductor(): Promise<ClaseReproductor> {
   if (process.env.NODE_ENV !== "production") {
-    const falso = (window as unknown as { __ezuikitDePrueba?: ClaseReproductor })
-      .__ezuikitDePrueba;
+    const falso = (window as unknown as { __ezuikitDePrueba?: ClaseReproductor }).__ezuikitDePrueba;
     if (falso) return falso;
   }
   return (await import("ezuikit-js")).EZUIKitPlayer;
@@ -46,17 +45,76 @@ type ConSonido = { openSound?: () => unknown; closeSound?: () => unknown };
  * Prende o apaga el SONIDO del vivo (lo que oye el micrófono de la cámara).
  * `ezuikit-js` 9.0.23: `openSound()`/`closeSound()` (README «方法调用»); el
  * reproductor arranca mudo (`audio: false`). `false` si no se pudo.
+ *
+ * La promesa NO falla cuando no se pudo: resuelve con el código del
+ * decodificador (`JS_OpenSound` → `setVolume(.8)` → `JSPlayM4_PlaySoundShare`:
+ * 1 = sonando, 0 = no). Antes se tomaba cualquier respuesta como éxito y el
+ * parlante decía «Sonido» sin que sonara nada (08-10).
  */
 export async function sonar(p: EZUIKitPlayer | null, prender: boolean): Promise<boolean> {
   const r = p as unknown as ConSonido | null;
   const metodo = prender ? r?.openSound : r?.closeSound;
   if (!r || !metodo) return false;
   try {
-    await Promise.resolve(metodo.call(r));
+    const codigo = await Promise.resolve(metodo.call(r));
+    if (codigo === 0) {
+      logger.warn(`[camaras] el decodificador no ${prender ? "abrió" : "cerró"} el sonido`, { prender });
+      return false;
+    }
     return true;
   } catch (err) {
     logger.warn("[camaras] el reproductor no cambió el sonido", { error: String(err) });
     return false;
+  }
+}
+
+/** Lo que el reproductor sabe del audio del vivo. */
+export interface AudioDelVivo {
+  /** `true` = el video trae audio; `false` = llegó sin audio; `null` = todavía no se sabe. */
+  trae: boolean | null;
+  /** «AAC», «G711U»… (nombres de EZUIKit) o `null`. */
+  codec: string | null;
+}
+
+export const AUDIO_SIN_SABER: AudioDelVivo = { trae: null, codec: null };
+
+/**
+ * Lee el evento `audioInfo` de EZUIKit 9.0.23 (también queda en
+ * `player.audioInfo`): `{ audioFormat, audioFormatName, … }`. `audioFormat`
+ * 0 = el flujo no trae audio (la cámara manda «sólo video» o el micrófono está
+ * apagado); 8193 = AAC, 28944 = G711U, 28945 = G711A, etc.
+ */
+export function leerAudio(info: unknown): AudioDelVivo {
+  if (!info || typeof info !== "object") return AUDIO_SIN_SABER;
+  const i = info as { audioFormat?: unknown; audioFormatName?: unknown };
+  const formato = typeof i.audioFormat === "number" ? i.audioFormat : null;
+  const codec =
+    typeof i.audioFormatName === "string" && i.audioFormatName ? i.audioFormatName : null;
+  if (formato === null && !codec) return AUDIO_SIN_SABER;
+  return { trae: !!codec || formato !== 0, codec };
+}
+
+type ConAudio = {
+  audioInfo?: unknown;
+  eventEmitter?: { on?: (evento: string, cb: (info: unknown) => void) => unknown };
+};
+
+/** Lo que el reproductor ya sabe del audio (el flujo avisa al llegar, antes o después del 1.er cuadro). */
+export function audioDelReproductor(p: EZUIKitPlayer | null): AudioDelVivo {
+  return leerAudio((p as unknown as ConAudio | null)?.audioInfo);
+}
+
+/**
+ * Avisa cada vez que EZUIKit informa el audio del flujo. `EZUIKitPlayer.EVENTS.audioInfo`
+ * vale "audioInfo"; el emisor muere con el reproductor (no hace falta soltarlo).
+ */
+export function escucharAudio(p: EZUIKitPlayer | null, cb: (a: AudioDelVivo) => void) {
+  const emisor = (p as unknown as ConAudio | null)?.eventEmitter;
+  if (!emisor?.on) return;
+  try {
+    emisor.on.call(emisor, "audioInfo", (info) => cb(leerAudio(info)));
+  } catch (err) {
+    logger.warn("[camaras] no se pudo escuchar el audio del vivo", { error: String(err) });
   }
 }
 
@@ -91,7 +149,9 @@ function conTope<T>(p: Promise<T>, ms: number): Promise<T | null> {
 }
 
 /** El `<canvas>`/`<video>` donde EZUIKit pinta el cuadro (el detector de personas lo lee). */
-export function fuenteDelVideo(caja: HTMLElement | null): HTMLCanvasElement | HTMLVideoElement | null {
+export function fuenteDelVideo(
+  caja: HTMLElement | null,
+): HTMLCanvasElement | HTMLVideoElement | null {
   return caja?.querySelector<HTMLCanvasElement | HTMLVideoElement>("canvas, video") ?? null;
 }
 
