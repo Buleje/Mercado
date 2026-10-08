@@ -50,6 +50,18 @@ const COMMON_TAIL: ColDef[] = [
   { header: "Estado", width: 12, get: (e) => (e.status === "anulado" ? "ANULADO" : "Registrado") },
   { header: "Días registro", width: 12, get: (e) => lateDays(e) ?? "" },
 ];
+/**
+ * El despacho de trozas sólo guarda código y GTF: especie y medidas son las de
+ * SU línea de trozado, que la ruta pega en `trozado` (`conTrozado`). Lo propio
+ * de la línea manda; si falta, lo del trozado. Las demás secciones no traen
+ * `trozado` y leen lo suyo, como siempre.
+ */
+const delTrozado = (e: AnyEntry): AnyEntry | null =>
+  e.trozado && typeof e.trozado === "object" ? (e.trozado as AnyEntry) : null;
+const propioOTrozado = (e: AnyEntry, k: string): unknown => {
+  const v = e[k];
+  return v != null && v !== "" ? v : (delTrozado(e)?.[k] ?? null);
+};
 const SP = (e: AnyEntry) => e.speciesCommon ?? "";
 const SC = (e: AnyEntry) => e.speciesScientific ?? "";
 const CITES = (e: AnyEntry) => (e.cites ? "SÍ" : "");
@@ -76,6 +88,12 @@ const SECTION_COLS: Record<LothSection, ColDef[]> = {
     { header: "Cód. troza", width: 14, get: (e) => e.trozaCode ?? "" },
     { header: "Cód. despacho", width: 16, get: (e) => e.despachoCode ?? "" },
     { header: "N° GTF", width: 18, get: (e) => e.gtfNumber ?? "" },
+    { header: "Especie", width: 18, get: (e) => propioOTrozado(e, "speciesCommon") ?? "" },
+    { header: "Nombre científico", width: 24, get: (e) => propioOTrozado(e, "speciesScientific") ?? "" },
+    { header: "Ø mayor (m)", width: 12, get: (e) => num(propioOTrozado(e, "diamMayorM")), numFmt: "0.00" },
+    { header: "Ø menor (m)", width: 12, get: (e) => num(propioOTrozado(e, "diamMenorM")), numFmt: "0.00" },
+    { header: "Longitud (m)", width: 12, get: (e) => num(propioOTrozado(e, "lengthM")), numFmt: "0.00" },
+    { header: "Volumen (m³)", width: 14, get: (e) => num(propioOTrozado(e, "volumeM3")), numFmt: "0.0000" },
   ],
   consumo_troza: [
     { header: "Cód. troza", width: 14, get: (e) => e.trozaCode ?? "" },
@@ -231,7 +249,8 @@ export async function buildLothWorkbook(opts: {
       reg.length,
       rows.length - reg.length,
       reg.filter((e) => isLate(e)).length,
-      Math.round(reg.reduce((a, e) => a + (num(e.volumeM3) ?? 0), 0) * 10000) / 10000,
+      // El despacho de trozas suma el m³ de su trozado (la línea no lo guarda).
+      Math.round(reg.reduce((a, e) => a + (num(propioOTrozado(e, "volumeM3")) ?? 0), 0) * 10000) / 10000,
     ]);
     r.getCell(5).numFmt = "0.0000";
   });

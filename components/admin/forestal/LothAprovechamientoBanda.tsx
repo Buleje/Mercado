@@ -7,6 +7,8 @@
  *   · el ritmo contra el plazo, en días («vas 12 días atrasado»);
  *   · la barra apilada con la marca del 100 % y la de hoy;
  *   · la leyenda: m³ y % de cada tramo;
+ *   · la cadena autorizado → talado → trozado → despachado → recibido en el
+ *     CTP con su %, y el patio (con días) y la fecha de término (08-10 tarde);
  *   · el exceso en rojo y en palabras, total y por especie;
  *   · el desglose por especie (top 5 + el resto plegado).
  *
@@ -19,6 +21,8 @@ import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { formatNumber } from "@/lib/format";
 import { tonoAprovechamiento, type Aprovechamiento, type RitmoAprovechamiento } from "@/lib/forestal/loth-aprovechamiento";
 import LothAprovechamientoBarra, { COLOR_TRAMO } from "./LothAprovechamientoBarra";
+import LothAprovechamientoCadena from "./LothAprovechamientoCadena";
+import LothAprovechamientoPlazo from "./LothAprovechamientoPlazo";
 import LothAprovechamientoEspecies from "./LothAprovechamientoEspecies";
 
 const m3 = (v: number) => `${formatNumber(v, 3)} m³`;
@@ -53,7 +57,7 @@ export default function LothAprovechamientoBanda({ a, especies }: {
             <InfoTip
               title="Aprovechamiento"
               what={esPlantacion
-                ? "Cuánto de lo registrado ya se taló. La tala descuenta del registro; el despacho y el patio salen de lo talado."
+                ? "Cuánto de lo registrado ya se taló, más lo que entró con guía (trozas sin tala en el libro). Eso descuenta del registro; el despacho y el patio salen de ahí."
                 : "Cuánto de lo autorizado ya se movilizó con guía. Es la cifra que fiscaliza OSINFOR; lo que no sale antes de vencer la vigencia se pierde."}
               affects="Sale del balance del plan: la misma cuenta que la pestaña de especies y el panel de zafra."
               example={esPlantacion
@@ -67,7 +71,7 @@ export default function LothAprovechamientoBanda({ a, especies }: {
               {a.pct == null ? "—" : `${formatNumber(a.pct, 1)} %`}
             </span>
             <span className="text-sm text-[var(--text-secondary)]">
-              <b className="font-mono tabular-nums text-[var(--text-primary)]">{m3(a.avance)}</b> {a.nombreAvance}s de{" "}
+              <b className="font-mono tabular-nums text-[var(--text-primary)]">{m3(a.avance)}</b> {a.rotuloAvance}s de{" "}
               <b className="font-mono tabular-nums text-[var(--text-primary)]">{m3(a.base)}</b> {a.nombreBase}s
             </span>
           </p>
@@ -87,6 +91,8 @@ export default function LothAprovechamientoBanda({ a, especies }: {
         <>
           <LothAprovechamientoBarra a={a} />
           <Leyenda a={a} />
+          <LothAprovechamientoCadena a={a} />
+          <LothAprovechamientoPlazo a={a} />
         </>
       )}
 

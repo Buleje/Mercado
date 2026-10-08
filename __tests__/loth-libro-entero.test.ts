@@ -102,9 +102,14 @@ describe("Excel del LO-TH (ruta real)", () => {
     vi.doMock("@/lib/db/forest-loth.db", () => ({
       ForestLothDB: { list, getActiveCaratula: async () => ({ titularName: "QA Forestal" }) },
     }));
+    // Las medidas del despacho (`conTrozado`) se prueban en forestal-loth-despacho-impreso.
+    vi.doMock("@/lib/db/forest-loth-despacho.db", () => ({
+      ForestLothDespachoDB: { trozadosDeCodigos: async () => [] },
+    }));
   });
   afterEach(() => {
     vi.doUnmock("@/lib/db/forest-loth.db");
+    vi.doUnmock("@/lib/db/forest-loth-despacho.db");
   });
 
   it("650 líneas → el .xlsx trae las 650 (y lo declara en la cabecera)", async () => {
@@ -139,6 +144,78 @@ describe("Excel del LO-TH (ruta real)", () => {
     const wb = new ExcelJS.Workbook();
     await wb.xlsx.load(buf as unknown as ArrayBuffer);
     expect(String(wb.getWorksheet("Carátula")?.getCell("A3").value)).toMatch(/^Se muestran 500 de 650 líneas/);
+  });
+});
+
+describe("Excel del LO-TH con más de 2000 trozas despachadas", () => {
+  // La lectura de trozados corta en 2000 códigos (`TOPE_CODIGOS`); el Excel lleva
+  // el libro entero: 2500 despachos tienen que salir con su m³, no 2000.
+  const despachos = Array.from({ length: 2500 }, (_, i) => ({
+    id: `d${String(i).padStart(4, "0")}`,
+    tenantId: "t-qa",
+    section: "despacho_troza",
+    lineNo: i + 1,
+    entryDate: "2026-08-01T00:00:00.000Z",
+    createdAt: "2026-08-03T15:00:00.000Z",
+    status: "registrado",
+    planId: null,
+    treeCode: null,
+    trozaCode: `${i}-TOR-A`,
+    speciesCommon: null,
+    volumeM3: null,
+  }));
+  const list = paginador(despachos as unknown as ReturnType<typeof libroDe>);
+  const trozadosDeCodigos = vi.fn(async (_t: string, codigos: readonly string[]) =>
+    codigos.slice(0, 2000).map((c, i) => ({
+      id: `t-${c}`,
+      planId: null,
+      trozaCode: c,
+      lineNo: i + 1,
+      status: "registrado",
+      createdAt: "2026-08-02T00:00:00.000Z",
+      treeCode: c.replace(/-A$/, ""),
+      speciesCommon: "Tornillo",
+      speciesScientific: null,
+      cites: false,
+      diamMayorM: "0.60",
+      diamMenorM: "0.50",
+      lengthM: "4.00",
+      volumeM3: "0.5000",
+    })),
+  );
+
+  beforeEach(() => {
+    vi.resetModules();
+    trozadosDeCodigos.mockClear();
+    vi.doMock("@/lib/require-admin", () => ({ requireAdmin: async () => ({ tenantId: "t-qa", role: "admin" }) }));
+    vi.doMock("@/lib/rate-limit", () => ({ applyRateLimit: () => null }));
+    vi.doMock("@/lib/specializations", () => ({ isSpecializationEnabled: async () => true }));
+    vi.doMock("@/lib/logger", () => ({ logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn() } }));
+    vi.doMock("@/lib/db/forest-loth.db", () => ({ ForestLothDB: { list, getActiveCaratula: async () => null } }));
+    vi.doMock("@/lib/db/forest-loth-despacho.db", () => ({ ForestLothDespachoDB: { trozadosDeCodigos } }));
+  });
+  afterEach(() => {
+    vi.doUnmock("@/lib/db/forest-loth.db");
+    vi.doUnmock("@/lib/db/forest-loth-despacho.db");
+  });
+
+  it("pide los trozados de a 2000 y las 2500 líneas salen con su m³ (Resumen = 1250)", async () => {
+    const { GET } = await import("@/app/api/admin/forestal/loth/export/route");
+    const res = await GET(new NextRequest("http://localhost/api/admin/forestal/loth/export?format=xlsx"));
+    expect(res.status).toBe(200);
+    expect(res.headers.get("X-Libro-Lineas")).toBe("2500/2500");
+    expect(trozadosDeCodigos.mock.calls.map((c) => c[1].length)).toEqual([2000, 500]);
+
+    const ExcelJS = (await import("exceljs")).default;
+    const wb = new ExcelJS.Workbook();
+    await wb.xlsx.load(Buffer.from(await res.arrayBuffer()) as unknown as ArrayBuffer);
+    const rs = wb.getWorksheet("Resumen");
+    let fila: (string | number)[] = [];
+    rs?.eachRow((row) => {
+      const v = row.values as (string | number)[];
+      if (v[1] === "3. Despacho de trozas") fila = v.slice(1);
+    });
+    expect(fila).toEqual(["3. Despacho de trozas", 2500, 0, 0, 1250]);
   });
 });
 

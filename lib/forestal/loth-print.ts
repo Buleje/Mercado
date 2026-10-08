@@ -81,6 +81,25 @@ const unit = (u: unknown) => (u === "m3" ? "m³" : u === "kg" ? "Kg" : u === "un
 const sp = (e: AnyEntry) =>
   `${esc(e.speciesCommon ?? "—")}${e.speciesScientific ? `<br><i style="color:#6b7280">${esc(e.speciesScientific)}</i>` : ""}${e.cites ? ` <b style="color:#b91c1c">CITES</b>` : ""}`;
 
+/**
+ * El despacho de trozas sólo guarda código y GTF: especie y medidas son las de
+ * SU trozado, que la lista ya pega en `trozado` (`conTrozado`, 08-10). Lo
+ * propio de la línea manda; si falta, lo del trozado.
+ */
+const delTrozado = (e: AnyEntry): AnyEntry | null =>
+  e.trozado && typeof e.trozado === "object" ? (e.trozado as AnyEntry) : null;
+const propioOTrozado = (e: AnyEntry, k: string): unknown => {
+  const v = e[k];
+  return v != null && v !== "" ? v : (delTrozado(e)?.[k] ?? null);
+};
+/** La línea con la especie y las medidas de su trozado, para las celdas de siempre. */
+const conMedidas = (e: AnyEntry): AnyEntry => ({
+  ...e,
+  speciesCommon: propioOTrozado(e, "speciesCommon"),
+  speciesScientific: propioOTrozado(e, "speciesScientific"),
+  cites: Boolean(e.cites) || Boolean(delTrozado(e)?.cites),
+});
+
 type PCol = { h: string; align?: "right"; cell: (e: AnyEntry) => string };
 const SECTION_COLS: Record<LothSection, PCol[]> = {
   tala: [
@@ -103,6 +122,11 @@ const SECTION_COLS: Record<LothSection, PCol[]> = {
     { h: "Cód. troza", cell: (e) => `<b>${esc(e.trozaCode ?? "—")}</b>` },
     { h: "Cód. despacho", cell: (e) => esc(e.despachoCode ?? "—") },
     { h: "N° GTF", cell: (e) => `<b>${esc(e.gtfNumber ?? "—")}</b>` },
+    { h: "Especie", cell: (e) => sp(conMedidas(e)) },
+    { h: "Ø may", align: "right", cell: (e) => n(propioOTrozado(e, "diamMayorM"), 2) },
+    { h: "Ø men", align: "right", cell: (e) => n(propioOTrozado(e, "diamMenorM"), 2) },
+    { h: "Long.", align: "right", cell: (e) => n(propioOTrozado(e, "lengthM"), 2) },
+    { h: "Vol. m³", align: "right", cell: (e) => `<b>${n(propioOTrozado(e, "volumeM3"))}</b>` },
   ],
   consumo_troza: [
     { h: "Cód. troza", cell: (e) => `<b>${esc(e.trozaCode ?? "—")}</b>` },

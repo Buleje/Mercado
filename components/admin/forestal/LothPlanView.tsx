@@ -36,6 +36,7 @@ import LothPlanCabecera from "./LothPlanCabecera";
 import LothPlanModales from "./LothPlanModales";
 import LothPlanPaneles from "./LothPlanPaneles";
 import { useLothPlanView } from "./hooks/use-loth-plan-view";
+import { useLothAprovechamientoHechos } from "./hooks/use-loth-aprovechamiento-hechos";
 
 /* Exportadas: la prueba en navegador las lee. */
 export { CLAVE_PESTANA_PLAN, CLAVE_PESTANA_PLANTACION } from "./loth-plan-view-shared";
@@ -50,6 +51,11 @@ export default function LothPlanView({
 } = {}) {
   const v = useLothPlanView(reloadSignal, onCambioDelLibro);
   const { d, trees, plan, cargando, esPlantacion, errorPlan, opciones } = v;
+  /* Lo recibido en el CTP, la edad del patio y las semanas (Extracción del plan):
+     sólo se pregunta si el libro ya movió algo de este plan. */
+  const tc = d.cascada.total;
+  const hayMovimiento = tc.taladoM3 + tc.trozadoM3 + tc.despachadoM3 > 0.01;
+  const hechos = useLothAprovechamientoHechos(plan ? d.planId : null, hayMovimiento, reloadSignal);
   /* El aprovechamiento de la cabecera: la cascada del balance contra la base
      (registrado o autorizado) y la vigencia. Plantación mide lo talado;
      bosque, lo movilizado (el «Aprovechamiento POA» de siempre). */
@@ -63,10 +69,12 @@ export default function LothPlanView({
             vigenciaDesde: plan.vigenciaDesde,
             vigenciaHasta: plan.vigenciaHasta,
             taladoSinRegistrarM3: esPlantacion ? d.taladoSinRegistrarM3 : 0,
+            hechos: hechos.hechos,
+            estadoHechos: hechos.estado,
             hoy: new Date(),
           })
         : null,
-    [plan, esPlantacion, d.cascada, d.autorizadoTotal, d.taladoSinRegistrarM3],
+    [plan, esPlantacion, d.cascada, d.autorizadoTotal, d.taladoSinRegistrarM3, hechos.hechos, hechos.estado],
   );
 
   return (

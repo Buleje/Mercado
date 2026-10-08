@@ -18,6 +18,12 @@
  *   · BOSQUE (PO/POA) → lo MOVILIZADO sobre lo autorizado (el «Aprovechamiento
  *     POA» de siempre: la GTF es lo que fiscaliza OSINFOR).
  *
+ * ENTRÓ CON GUÍA (08-10 tarde): las trozas que el libro tiene sin su tala
+ * (llegaron con una guía importada, ADR-461) también salieron del registro.
+ * En plantación cuentan como avance —Blas: 0 talas y 22 trozas (20,303 m³)
+ * decía «0 %» con la barra pintada—; la cadena, el patio y el término viven
+ * en `loth-aprovechamiento-cadena`.
+ *
  * PURO: sin React, sin fetch, sin `Date.now` (el `hoy` entra por parámetro).
  */
 
@@ -26,6 +32,15 @@ import type { CascadaPlan } from "./loth-saldo-cascada";
 import { TOLERANCIA_CASCADA_M3 } from "./loth-saldo-cascada";
 import { ptAserrableDeRolliza } from "./loth-restante";
 import { analizarZafra, type ZafraEstado } from "./loth-zafra";
+import {
+  cadenaDelAprovechamiento,
+  entroConGuiaDe,
+  terminoDelAprovechamiento,
+  type HechosAprovechamiento,
+  type PasoAprov,
+  type PatioAprov,
+  type TerminoAprov,
+} from "./loth-aprovechamiento-cadena";
 
 export type ModoAprovechamiento = "plantacion" | "bosque";
 export type TramoId = "despachado" | "patio" | "talado" | "enPie";
@@ -76,6 +91,8 @@ export interface Aprovechamiento {
   nombreBase: string;
   /** «talado» o «movilizado»: qué cuenta como avance. */
   nombreAvance: string;
+  /** Cómo se dice el avance en el titular: «aprovechado» si en plantación entró madera con guía. */
+  rotuloAvance: string;
   base: number;
   avance: number;
   /** avance ÷ base × 100; `null` sin base. */
@@ -98,6 +115,14 @@ export interface Aprovechamiento {
   ptEnPie: number | null;
   /** m³ talados de especies que no están en el registro (no descuentan de nada). */
   taladoSinRegistrar: number;
+  /** m³ trozados sin su tala en el libro (llegaron con guía), por especie. */
+  entroConGuia: number;
+  /** Base → talado → (entró con guía) → trozado → despachado → recibido en CTP. */
+  cadena: PasoAprov[];
+  patio: PatioAprov;
+  termino: TerminoAprov;
+  /** Lo que sale de la Extracción (recibido, días en patio, semanas): si ya llegó. */
+  estadoHechos: "ok" | "cargando" | "error";
   ritmo: RitmoAprovechamiento | null;
   /** Sin base ni movimientos: no hay nada que medir todavía. */
   sinDatos: boolean;
@@ -115,6 +140,10 @@ export interface AprovechamientoInput {
   vigenciaDesde: string | Date | null;
   vigenciaHasta: string | Date | null;
   taladoSinRegistrarM3?: number;
+  /** Recibido en el CTP, trozas en patio con su edad y las semanas (`hechosDeExtraccion`). */
+  hechos?: HechosAprovechamiento | null;
+  /** Sin `hechos`: si todavía se leen o la lectura falló. */
+  estadoHechos?: "cargando" | "error" | null;
   hoy: Date;
 }
 
@@ -192,7 +221,10 @@ export function analizarAprovechamiento(input: AprovechamientoInput): Aprovecham
   const talado = Math.max(0, num(t.taladoM3));
   const despachado = Math.max(0, num(t.despachadoM3));
   const enPatio = Math.max(0, num(t.enPatioM3));
-  const avance = esPlantacion ? talado : despachado;
+  const conGuia = entroConGuiaDe(cascada.especies);
+  /* En plantación, lo que entró con guía salió del registro igual que lo talado. */
+  const avance = esPlantacion ? talado + conGuia : despachado;
+  const rotuloAvance = esPlantacion && conGuia > TOL ? "aprovechado" : nombreAvance;
   const saldo = r3(Math.max(0, base - avance));
 
   /* Tramos que no se pisan: lo despachado y el patio salen de lo talado; lo
@@ -213,6 +245,9 @@ export function analizarAprovechamiento(input: AprovechamientoInput): Aprovecham
 
   const excesos: string[] = [];
   if (talado > base + TOL && base > TOL) excesos.push(`Se taló ${m3(talado - base)} más de lo ${nombreBase}`);
+  else if (esPlantacion && avance > base + TOL && base > TOL) {
+    excesos.push(`Entre lo talado y lo que entró con guía, ${m3(avance - base)} más de lo ${nombreBase}`);
+  }
   if (despachado > base + TOL && base > TOL) {
     excesos.push(`Se ${esPlantacion ? "despachó" : "movilizó"} ${m3(despachado - base)} más de lo ${nombreBase}`);
   }
@@ -221,8 +256,9 @@ export function analizarAprovechamiento(input: AprovechamientoInput): Aprovecham
     const b = Math.max(0, num(e.baseM3));
     const tal = Math.max(0, num(e.taladoM3));
     const desp = Math.max(0, num(e.despachadoM3));
-    const av = esPlantacion ? tal : desp;
-    const exceso = Math.max(tal - b, desp - b);
+    const guia = entroConGuiaDe([e]);
+    const av = esPlantacion ? tal + guia : desp;
+    const exceso = Math.max(av - b, tal - b, desp - b);
     return {
       especie: e.especie,
       cites: e.cites,
@@ -239,10 +275,13 @@ export function analizarAprovechamiento(input: AprovechamientoInput): Aprovecham
   const especiesExcedidas = especies.filter((e) => e.excesoM3 > 0).sort((a, b) => b.excesoM3 - a.excesoM3);
 
   const taladoSinRegistrar = r3(Math.max(0, num(input.taladoSinRegistrarM3)));
+  const hechos = input.hechos ?? null;
+  const estadoHechos = hechos ? "ok" : (input.estadoHechos ?? "cargando");
   return {
     modo,
     nombreBase,
     nombreAvance,
+    rotuloAvance,
     base: r3(base),
     avance: r3(avance),
     pct: pctDe(avance, base),
@@ -257,7 +296,29 @@ export function analizarAprovechamiento(input: AprovechamientoInput): Aprovecham
     especies,
     ptEnPie: esPlantacion && enPie > TOL ? ptAserrableDeRolliza(enPie) : null,
     taladoSinRegistrar,
-    ritmo: ritmoDe(input, base, avance, nombreAvance),
+    entroConGuia: conGuia,
+    cadena: cadenaDelAprovechamiento({
+      nombreBase,
+      base,
+      talado,
+      conGuia,
+      trozado: Math.max(0, num(t.trozadoM3)),
+      despachado,
+      recibido: hechos ? hechos.recibidoM3 : null,
+    }),
+    patio: { m3: r3(enPatio), trozas: hechos ? hechos.patioTrozas : null, diasMasVieja: hechos?.patioDiasMasVieja ?? null },
+    termino: terminoDelAprovechamiento({
+      modo,
+      nombreAvance: rotuloAvance,
+      nombreBase,
+      avance,
+      saldo,
+      semanas: hechos?.semanas ?? [],
+      vigenciaHasta: input.vigenciaHasta,
+      hoy: input.hoy,
+    }),
+    estadoHechos,
+    ritmo: ritmoDe(input, base, avance, rotuloAvance),
     sinDatos: base <= TOL && hecho <= TOL && taladoSinRegistrar <= TOL,
   };
 }
