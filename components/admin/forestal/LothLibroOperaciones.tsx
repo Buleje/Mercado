@@ -86,6 +86,7 @@ import { LINEAS_POR_PAGINA, useLothSeccionTabla } from "./hooks/use-loth-seccion
 import { BarraFiltrosTabla } from "./filtros-tabla-forestal";
 import { etiquetaUnidad as unitLabel } from "./loth-seccion-filtros";
 import LothSeccionPaginas from "./LothSeccionPaginas";
+import { LothSeccionColumnas } from "./loth-seccion-columnas";
 import LothCierrePanel from "./LothCierrePanel";
 import LothMapaView from "./LothMapaView";
 import LothRentabilidadView from "./LothRentabilidadView";
@@ -1337,8 +1338,12 @@ export default function LothLibroOperaciones() {
         totalLibro={totalLineasPermiso}
         lineas={allEntries.length > 0 ? lineasSeccion : entries}
         delLibroEntero={allEntries.length > 0 && !libroTruncado}
+        filtros={tabla.f}
       />
 
+      {/* Columnas elegidas y arrastradas, recordadas por sección: el botón va
+          en la barra y el orden en la tabla (loth-seccion-columnas). */}
+      <LothSeccionColumnas section={section} cols={cols}>
       {/* La acción del día a la vista; lo de vez en cuando, en «Opciones». Los
           filtros van en la cabecera de cada columna de la tabla. */}
       <LothSeccionBarra
@@ -1524,6 +1529,7 @@ export default function LothLibroOperaciones() {
         disabled={loading}
         onPagina={tabla.setPagina}
       />
+      </LothSeccionColumnas>
         </>
       )}
 

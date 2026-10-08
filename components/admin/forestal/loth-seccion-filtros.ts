@@ -81,6 +81,11 @@ const POR_COLUMNA: Record<string, Omit<ColumnaFiltro<LothEntryDTO>, "id">> = {
   pcs: { label: "Piezas", tipo: "rango", numero: (e) => e.pieces, paso: 1 },
 };
 
+/** Cómo se llama el filtro de una columna (el menú «Columnas» lo usa para la que no tiene título, «ci»). */
+export function etiquetaDeFiltro(key: string): string | undefined {
+  return POR_COLUMNA[key]?.label;
+}
+
 /**
  * Las columnas con filtro de una sección: N°, Fecha, las de la sección (en el
  * orden de `keys`) y Observaciones (el estado de la línea).

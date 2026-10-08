@@ -15,11 +15,15 @@
  * «Nueva línea» vive acá y no en la cabina: la línea se asienta en la sección
  * que se está mirando, y en la cabina quedaba escondida dentro del panel de
  * Herramientas —la acción de todos los días, a dos clics y sin verse—.
+ *
+ * «Columnas n/m» (y «Restablecer» si se arrastró alguna) vive acá, en la misma
+ * fila, como en la vista GTF: el estado es de `LothSeccionColumnas`.
  */
 
 import type { ComponentType } from "react";
 import { Plus } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
+import { BotonesColumnasSeccion } from "./loth-seccion-columnas";
 
 const PRIMARIO =
   "inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-4 text-sm font-bold text-white shadow-sm transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 max-sm:flex-1";
@@ -43,6 +47,7 @@ export default function LothSeccionBarra({
   return (
     <div className="flex flex-wrap items-start justify-end gap-2">
       <div className="flex shrink-0 items-center gap-2 max-sm:w-full">
+        <BotonesColumnasSeccion />
         <ActionMenu
           label="Opciones"
           title="Importar, etiquetas QR y descargar"

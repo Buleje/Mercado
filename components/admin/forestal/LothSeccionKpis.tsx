@@ -17,10 +17,18 @@
  * (Brandon, 2026-09-03: «que los KPIs estén ocultos y que haya un botón para
  * mostrarlos»); plegada igual dice sus cifras en una línea, así el botón no
  * es una caja ciega.
+ *
+ * Las tarjetas FILTRAN la tabla al tocarlas (backlog L11, 08-10: «al nivel del
+ * Libro CTP», mismo `CtpKpi` y mismo anillo): «Líneas» deja sólo las vigentes,
+ * «Fuera de plazo» sólo las tardías, y el reparto «Por especie» (o «Por guía»)
+ * filtra por la fila tocada. Segundo toque, deshace. Escriben en el MISMO
+ * autofiltro de la cabecera (columna Estado / Especie / N° GTF): un solo
+ * estado, con su chip para quitarlo. Con un filtro puesto, las cifras son de lo
+ * que deja el filtro —la misma cuenta que el pie (`loth-seccion-cifras`)—.
  */
 
 import { useId } from "react";
-import { SectionTitle, StatCard } from "@buleje/design-system";
+import { SectionTitle } from "@buleje/design-system";
 import {
   AlertCircle,
   BarChart3,
@@ -33,22 +41,20 @@ import {
   Truck,
 } from "@buleje/design-system/icons";
 import { useLocalStorage } from "@/hooks/use-local-storage";
-import {
-  PLAZO_REGISTRO_DIAS,
-  estaFueraDePlazo,
-  type LothEntryDTO,
-  type LothSection,
-} from "@/lib/forestal/loth-constants";
-import { SECTION_META } from "./LothEntryForm";
+import { PLAZO_REGISTRO_DIAS, type LothEntryDTO, type LothSection } from "@/lib/forestal/loth-constants";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { formatNumber } from "@/lib/format";
+import CtpKpi, { DesgloseSimple } from "./CtpKpi";
+import { SECTION_META } from "./LothEntryForm";
+import type { FiltrosTabla } from "./filtros-tabla-forestal";
+import { ESTADO_LINEA } from "./loth-seccion-filtros";
+import { alternarSolo, cifrasDeLineas, filtraSolo } from "./loth-seccion-cifras";
 
 /** Clave de la preferencia. Exportada: la prueba en navegador la lee. */
 export const CLAVE_KPIS_SECCION = "loth:secciones:kpis-abiertos";
 
-const fm = (n: number) =>
-  formatNumber(n, 2);
-const plural = (n: number, uno: string, varios: string) =>
-  `${formatNumber(n)} ${n === 1 ? uno : varios}`;
+const fm = (n: number) => formatNumber(n, 2);
+const plural = (n: number, uno: string, varios: string) => `${formatNumber(n)} ${n === 1 ? uno : varios}`;
 
 export default function LothSeccionKpis({
   section,
@@ -56,6 +62,7 @@ export default function LothSeccionKpis({
   totalLibro,
   lineas,
   delLibroEntero,
+  filtros,
 }: {
   section: LothSection;
   /** Lo que declara la API para la sección (sólo líneas vigentes). */
@@ -66,43 +73,44 @@ export default function LothSeccionKpis({
   lineas: LothEntryDTO[];
   /** `true` si `lineas` es la sección entera; `false` si es sólo la página. */
   delLibroEntero: boolean;
+  /** El autofiltro de la tabla (`useLothSeccionTabla`): las tarjetas lo leen y lo escriben. */
+  filtros?: FiltrosTabla<LothEntryDTO>;
 }) {
   const [abierto, setAbierto] = useLocalStorage<boolean>(CLAVE_KPIS_SECCION, false);
   const panelId = useId();
   const meta = SECTION_META[section];
 
-  const vigentes = lineas.filter((e) => e.status === "registrado");
-  const tardias = vigentes.filter((e) => estaFueraDePlazo(e.entryDate, e.createdAt)).length;
-  const cites = vigentes.filter((e) => e.cites).length;
-  const guias = new Set(vigentes.map((e) => e.gtfNumber).filter((g): g is string => !!g)).size;
-  const alcance = delLibroEntero ? "en la sección" : "en pantalla";
+  /* Sin filtro, las cifras de la API (como siempre). Con filtro, las de lo que
+     deja el filtro: las mismas líneas y la misma cuenta que el pie de la tabla. */
+  const filtrando = !!filtros && filtros.activos > 0;
+  const c = cifrasDeLineas(section, filtrando ? filtros.filtradas : lineas);
+  const alcance = filtrando ? "en el filtro" : delLibroEntero ? "en la sección" : "en pantalla";
+  const count = filtrando ? c.totales.lineas : (cur?.count ?? 0);
+  const deLaSeccion = (texto: string) => (filtrando ? `de ${texto} en la sección` : null);
 
-  const count = cur?.count ?? 0;
   const usaVolumen = section === "tala" || section === "trozado" || section === "consumo_troza";
   const usaCantidad = section === "producto_terminado" || section === "despacho_producto";
   /* En Despacho de trozas la segunda tarjeta repetía la primera («Líneas 2» y
      «Trozas despachadas 2»: cada línea ES una troza). Lo que sí suma es en
      cuántas guías salieron. */
+  const volumen = `${fmtM3(filtrando ? c.totales.volumenM3 : (cur?.totalVolumeM3 ?? 0))} m³`;
+  const cantidad = filtrando ? c.total : fm(cur?.totalQuantity ?? 0);
   const segunda = usaVolumen
-    ? {
-        label: "Volumen registrado",
-        value: `${fm(cur?.totalVolumeM3 ?? 0)} m³`,
-        corto: `${fm(cur?.totalVolumeM3 ?? 0)} m³`,
-        icon: TreePine,
-      }
+    ? { label: "Volumen registrado", value: volumen, corto: volumen, icon: TreePine, de: `${fmtM3(cur?.totalVolumeM3 ?? 0)} m³` }
     : usaCantidad
-      ? {
-          label: "Cantidad registrada",
-          value: fm(cur?.totalQuantity ?? 0),
-          corto: `cantidad ${fm(cur?.totalQuantity ?? 0)}`,
-          icon: FileText,
-        }
-      : {
-          label: "Guías (GTF)",
-          value: formatNumber(guias),
-          corto: plural(guias, "guía", "guías"),
-          icon: Truck,
-        };
+      ? { label: "Cantidad registrada", value: cantidad, corto: `cantidad ${cantidad}`, icon: FileText, de: fm(cur?.totalQuantity ?? 0) }
+      : { label: "Guías (GTF)", value: formatNumber(c.guias), corto: plural(c.guias, "guía", "guías"), icon: Truck, de: null };
+
+  /* Tocar = poner SÓLO ese valor en la columna; otra vez = quitarlo. */
+  const estado = filtros?.facetas.obs;
+  const soloVigentes = filtraSolo(estado, ESTADO_LINEA.registrada);
+  const soloTardias = filtraSolo(estado, ESTADO_LINEA.fueraDePlazo);
+  const alternarEstado = (v: string) => filtros?.setFaceta("obs", alternarSolo(filtros.facetas.obs, v));
+  const conEspecie = !!filtros?.columnas.some((x) => x.id === "esp");
+  const elegirEspecie = conEspecie && filtros ? (v: string) => filtros.setFaceta("esp", alternarSolo(filtros.facetas.esp, v)) : undefined;
+  const elegirGuia = filtros?.columnas.some((x) => x.id === "gtf")
+    ? (v: string) => filtros.setTexto("gtf", filtros.textos.gtf === v ? "" : v)
+    : undefined;
 
   return (
     <section aria-labelledby={`${panelId}-titulo`} className="space-y-3">
@@ -112,21 +120,25 @@ export default function LothSeccionKpis({
           <span className="text-sm text-[var(--text-tertiary)]">{meta.help}</span>
         </div>
         {/* Plegados, las cifras siguen a la vista en una línea: las mismas
-            cuentas que las tarjetas, nunca otras. */}
+            cuentas que las tarjetas, nunca otras (y dicen si están filtradas). */}
         {!abierto && (
           <p className="flex flex-wrap items-center gap-x-2 text-sm tabular-nums text-[var(--text-secondary)]">
+            {filtrando && (
+              <>
+                <span className="font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">filtrado</span>
+                <span aria-hidden="true">·</span>
+              </>
+            )}
             <span>{plural(count, "línea", "líneas")}</span>
             <span aria-hidden="true">·</span>
             <span>{segunda.corto}</span>
             <span aria-hidden="true">·</span>
             <span
               className={
-                tardias > 0
-                  ? "font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
-                  : undefined
+                c.tardias > 0 ? "font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" : undefined
               }
             >
-              {formatNumber(tardias)} fuera de plazo
+              {formatNumber(c.tardias)} fuera de plazo
             </span>
           </p>
         )}
@@ -148,53 +160,60 @@ export default function LothSeccionKpis({
         >
           <BarChart3 className="h-4 w-4" aria-hidden="true" />
           Indicadores
-          <ChevronDown
-            className={`h-4 w-4 transition-transform ${abierto ? "rotate-180" : ""}`}
-            aria-hidden="true"
-          />
+          <ChevronDown className={`h-4 w-4 transition-transform ${abierto ? "rotate-180" : ""}`} aria-hidden="true" />
         </button>
       </div>
 
-      <div
-        id={`${panelId}-panel`}
-        hidden={!abierto}
-        className="grid grid-cols-1 gap-3 sm:grid-cols-3"
-      >
-        <StatCard
-          density="compact"
+      <div id={`${panelId}-panel`} hidden={!abierto} className="grid grid-cols-1 items-start gap-3 sm:grid-cols-3">
+        <CtpKpi
           label={`Líneas · ${meta.short}`}
           value={formatNumber(count)}
-          subValue={`${formatNumber(totalLibro)} en el libro`}
+          subValue={
+            soloVigentes
+              ? "Filtrando: sólo las vigentes"
+              : (deLaSeccion(formatNumber(cur?.count ?? 0)) ?? `${formatNumber(totalLibro)} en el libro · ver sólo vigentes`)
+          }
           icon={Boxes}
           emphasis="neutral"
+          onClick={filtros ? () => alternarEstado(ESTADO_LINEA.registrada) : undefined}
+          filtrando={soloVigentes}
         />
-        <StatCard
-          density="compact"
+        <CtpKpi
           label={segunda.label}
           value={segunda.value}
           subValue={
-            usaVolumen || usaCantidad
-              ? meta.short
-              : plural(count, "troza despachada", "trozas despachadas")
+            (segunda.de && deLaSeccion(segunda.de)) ??
+            (usaVolumen || usaCantidad ? meta.short : plural(count, "troza despachada", "trozas despachadas"))
           }
           icon={segunda.icon}
           emphasis="success"
+          desglose={
+            usaVolumen || usaCantidad ? (
+              c.porEspecie.length > 0 ? <DesgloseSimple filas={c.porEspecie} onElegir={elegirEspecie} vacio="Sin líneas vigentes" /> : undefined
+            ) : c.porGuia.length > 0 ? (
+              <DesgloseSimple filas={c.porGuia} onElegir={elegirGuia} vacio="Sin guías" />
+            ) : undefined
+          }
+          desgloseLabel={usaVolumen || usaCantidad ? "Por especie" : "Por guía"}
         />
         {/* Lo que mira primero una fiscalización: el registro tardío. El CITES
             va de subtítulo cuando lo hay, en vez de un tercio de fila en cero. */}
-        <StatCard
-          density="compact"
+        <CtpKpi
           label="Fuera de plazo"
-          value={formatNumber(tardias)}
+          value={formatNumber(c.tardias)}
           subValue={
-            tardias > 0
-              ? `de ${formatNumber(vigentes.length)} ${alcance} · plazo ${PLAZO_REGISTRO_DIAS} días`
-              : cites > 0
-                ? `${plural(cites, "línea", "líneas")} con especie CITES`
-                : "todo asentado en plazo"
+            soloTardias
+              ? "Filtrando: sólo las fuera de plazo"
+              : c.tardias > 0
+                ? `de ${formatNumber(c.totales.lineas)} ${alcance} · plazo ${PLAZO_REGISTRO_DIAS} días · ver cuáles`
+                : c.cites > 0
+                  ? `${plural(c.cites, "línea", "líneas")} con especie CITES`
+                  : "todo asentado en plazo"
           }
-          icon={tardias > 0 ? AlertCircle : cites > 0 ? ShieldAlert : ShieldCheck}
-          emphasis={tardias > 0 ? "warning" : cites > 0 ? "error" : "success"}
+          icon={c.tardias > 0 ? AlertCircle : c.cites > 0 ? ShieldAlert : ShieldCheck}
+          emphasis={c.tardias > 0 ? "warning" : c.cites > 0 ? "error" : "success"}
+          onClick={filtros && (c.tardias > 0 || soloTardias) ? () => alternarEstado(ESTADO_LINEA.fueraDePlazo) : undefined}
+          filtrando={soloTardias}
         />
       </div>
     </section>
