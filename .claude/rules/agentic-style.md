@@ -8,7 +8,7 @@ Medido en 40 sesiones y 592 subagentes: un subagente promedia **136 turnos** y c
 
 | Paso | SÍ | NO (repite el resultado) |
 |---|---|---|
-| `npm run typecheck` | 1 vez al cerrar un lote de edits TS | tras cada edit · antes de `git commit` (el pre-commit lo corre) |
+| `npm run typecheck` | 1 vez al cerrar un lote de edits TS (los errores del archivo editado ya llegan solos tras el Edit: plugin `buleje-ts7-lsp`, 0,4 s) | tras cada edit · antes de `git commit` (el pre-commit lo corre) |
 | `npm run lint` | nunca a mano: falló 2 % de 1.079 veces | lint-staged lo corre en el commit |
 | `vitest run <archivo>` | tocaste lógica que tiene test, o escribiste el test | copy, estilos, config · antes del commit (corre `vitest related`) |
 | Capturas UI | `qa-capturas` en 1 llamada; leer 1 imagen (claro 1280) | leer las 4 sin haber tocado color/layout · MCP para un recorrido conocido |
@@ -18,7 +18,7 @@ Medido en 40 sesiones y 592 subagentes: un subagente promedia **136 turnos** y c
 | Releer un archivo | lo cambió otro agente | lo acabás de editar (Edit falla solo si no matchea) |
 
 - Salidas recortadas: `| tail -20`, `| grep -E 'error|FAIL'`. Nunca volcar archivos o logs enteros.
-- Lectura: `grep -n` → `Read` con offset/limit. Explore solo para preguntas abiertas.
+- Lectura: `grep -n` → `Read` con offset/limit. Explore solo para preguntas abiertas. Símbolos (dónde se define, quién usa X, qué tipo tiene): herramienta `LSP` (82 referencias en 0,1 s) antes que grep.
 - Gate rojo mecánico: 1 intento propio, después `healer`. 2 correcciones fallidas sobre lo mismo → parar y replantear.
 - Antes de proponer una opción, reusar lo medido en la tarea; medir de nuevo solo lo que falta.
 

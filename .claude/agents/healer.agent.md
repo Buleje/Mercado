@@ -6,7 +6,7 @@ description: >
   falla y el arreglo es local y obvio; no para bugs de lógica (eso es reviewer/diagnose).
 model: sonnet
 effort: medium
-tools: Read, Edit, Write, Grep, Glob, Bash
+tools: Read, Edit, Write, Grep, Glob, Bash, LSP
 maxTurns: 20
 memory: project
 color: green

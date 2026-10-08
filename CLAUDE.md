@@ -93,7 +93,7 @@ Env mínimas: `DATABASE_URL`, `AUTH_SECRET`, `NEXT_PUBLIC_BASE_URL` (schema comp
 2. **No matar `node` ni wipear `.next`**: reiniciar Turbopack cuesta 30-90 s.
 3. **Grep/Glob antes que Explore**; `grep -n` → `Read` con rango.
 4. **Nunca `isolation: "worktree"`** (rama larga, base vieja → se pierde lógica).
-5. **Pre-refactor**: grep `function <X>|const <X> =` en todo el repo para evitar shadowing.
+5. **Pre-refactor**: `LSP` findReferences del símbolo + grep `function <X>|const <X> =` en todo el repo para evitar shadowing.
 6. **QA**: `qaadmin` / `Qa-admin-1234` en `main` (forestal: `inversiones-agroforestales-blas-sociedad-op-qa-ui`). Recorrido conocido → `node scripts/qa-capturas.mjs` (1 llamada, ya resuelve onboarding y oscuro); el MCP de Playwright, para explorar. En localhost el panel es siempre el tenant `main`.
 7. **Prisma drift** (`ColumnNotFound`/P2022): `prisma migrate deploy` con DIRECT_URL accesible; ver hub `hub-next-dev-cache`.
 8. **Commits**: `HUSKY_SKIP_POSTCOMMIT=1` es default; el pre-commit corre lint-staged + tsc 7 + vitest related + tokens + anidado en paralelo.

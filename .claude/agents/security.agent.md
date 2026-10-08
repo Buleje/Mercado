@@ -5,7 +5,7 @@ description: >
   rate limit, Ley 29733. Solo lectura, con veto sobre hallazgos críticos. Usar antes de
   mergear zona de peligro (checkout, RBAC, proxy/middleware, schema, marketplace/comisiones).
 model: inherit
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob, Bash, LSP
 disallowedTools: Edit, Write
 maxTurns: 40
 memory: project

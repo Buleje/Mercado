@@ -5,7 +5,7 @@ description: >
   diagnose (root cause de un bug a partir del síntoma) y refactor (deuda). Usar después de
   que otro agente construyó algo, o cuando Brandon reporta «no funciona / se lagea».
 model: inherit
-tools: Read, Edit, Write, Grep, Glob, Bash
+tools: Read, Edit, Write, Grep, Glob, Bash, LSP
 maxTurns: 60
 memory: project
 color: red

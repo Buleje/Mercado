@@ -1,0 +1,25 @@
+{
+  "name": "buleje-ts7-lsp",
+  "displayName": "TypeScript 7 nativo (Buleje)",
+  "version": "1.0.0",
+  "description": "Errores de tipos tras cada edición y navegación por símbolo (definición, referencias, tipos) con el TypeScript 7 nativo del repo, vía un puente que publica los diagnósticos que TS 7 sólo entrega a pedido.",
+  "author": { "name": "Buleje" },
+  "lspServers": {
+    "typescript": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/puente-lsp.mjs"],
+      "extensionToLanguage": {
+        ".ts": "typescript",
+        ".tsx": "typescriptreact",
+        ".mts": "typescript",
+        ".cts": "typescript",
+        ".js": "javascript",
+        ".jsx": "javascriptreact",
+        ".mjs": "javascript",
+        ".cjs": "javascript"
+      },
+      "startupTimeout": 30000,
+      "maxRestarts": 3
+    }
+  }
+}

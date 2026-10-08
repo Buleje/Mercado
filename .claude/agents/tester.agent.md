@@ -5,7 +5,7 @@ description: >
   Usar después de cada feature para dejar red de regresión, para reproducir un bug antes de
   arreglarlo, o para recorrer una pantalla como usuario real con Playwright MCP.
 model: inherit
-tools: Read, Edit, Write, Grep, Glob, Bash, mcp__playwright
+tools: Read, Edit, Write, Grep, Glob, Bash, LSP, mcp__playwright
 mcpServers:
   - playwright
 memory: project

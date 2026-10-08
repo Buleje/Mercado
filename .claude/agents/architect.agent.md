@@ -6,7 +6,7 @@ description: >
   feature de 2+ áreas, un módulo nuevo, un cambio de schema o cuando haya que mapear
   qué existe antes de construir.
 model: inherit
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob, Bash, LSP
 disallowedTools: Edit, Write
 maxTurns: 40
 memory: project
