@@ -1,7 +1,6 @@
 import { Suspense } from "react";
-import { headers } from "next/headers";
 import { ForestLothDespachoDB, type GuiaPublicaLoth } from "@/lib/db/forest-loth-despacho.db";
-import { tenantIdPublico } from "@/lib/resolve-tenant";
+import { tenantDeVerificacion } from "../../_componentes/tenant-verificacion";
 import { BloquePlan, Consultando, MarcoVerificacion, NoEncontrado, fdate } from "../../_componentes/certificado-troza";
 
 /**
@@ -30,7 +29,8 @@ export default function VerificarGuiaPage(props: Props) {
 
 async function Contenido({ params }: Props) {
   const { id } = await params;
-  const tenantId = await tenantIdPublico((await headers()).get("x-tenant-id"));
+  // Host (subdominio, dominio propio, `/t/<slug>`) o el código de `/v/…` (ADR-486).
+  const tenantId = await tenantDeVerificacion();
   const guia = tenantId ? await ForestLothDespachoDB.guiaPublica(tenantId, id.slice(0, 64)).catch(() => null) : null;
   if (!guia) {
     return (

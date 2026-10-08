@@ -34,6 +34,17 @@ describe("leerEscaneo", () => {
     expect(leerEscaneo("https://x.pe/verificar/%E0%A4%A")).toBeNull();
   });
 
+  it("ADR-486: el QR corto (/v/<código>/t/<id>?c=… y /v/t/<id>) se lee igual que el largo", () => {
+    const linea = "cmuxm8tq60003yvvznq98n0go";
+    expect(leerEscaneo(`https://www.buleje.pe/v/il3g4/t/${linea}?c=111-a`)).toEqual({ tipo: "codigo", codigo: "111-A", linea });
+    expect(leerEscaneo(`https://madera.blas.pe/v/t/${linea}?c=12A-019%2F0001`)).toEqual({ tipo: "codigo", codigo: "12A-019/0001", linea });
+    expect(leerEscaneo(`/v/il3g4/c/${encodeURIComponent("13/A (0000008)")}`)).toEqual({ tipo: "codigo", codigo: "13/A (0000008)" });
+    // La guía, el despacho o el lote cortos no son una troza.
+    expect(leerEscaneo(`https://www.buleje.pe/v/il3g4/g/${linea}`)).toBeNull();
+    expect(leerEscaneo(`https://www.buleje.pe/v/il3g4/d/${linea}`)).toBeNull();
+    expect(leerEscaneo("https://www.buleje.pe/v/il3g4")).toBeNull();
+  });
+
   it("revisión 29-09: un QR /admin/q/ mal escapado no revienta, se ignora", () => {
     expect(() => leerEscaneo("https://x.pe/admin/q/%E0")).not.toThrow();
     expect(leerEscaneo("https://x.pe/admin/q/%E0")).toBeNull();

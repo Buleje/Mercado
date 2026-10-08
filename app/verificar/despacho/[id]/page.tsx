@@ -1,6 +1,5 @@
 import { Suspense } from "react";
-import { headers } from "next/headers";
-import { tenantIdPublico } from "@/lib/resolve-tenant";
+import { tenantDeVerificacion } from "../../_componentes/tenant-verificacion";
 import { ForestCtpDespachoDB } from "@/lib/db/forest-ctp-despacho.db";
 import { cotejarAnexoConLibro } from "@/lib/forestal/ctp-verificacion";
 
@@ -79,16 +78,15 @@ export default function VerificarDespachoPage({ params }: { params: Promise<{ id
 
 async function VerificacionContenido({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const h = await headers();
-  // Slug / dominio propio / `/t/<slug>` → el id real (las DB classes filtran por CUID).
-  const tenantId = await tenantIdPublico(h.get("x-tenant-id"));
+  // Host (subdominio, dominio propio, `/t/<slug>`) o el código de `/v/…` (ADR-486).
+  const tenantId = await tenantDeVerificacion();
 
   const data = tenantId
     ? await ForestCtpDespachoDB.verificacionPublica(tenantId, decodeURIComponent(id)).catch(() => null)
     : null;
 
   // Sello de la consulta: una verificación "en vivo" tiene que decir de cuándo
-  // es. Se calcula acá (componente dinámico: ya leyó headers()).
+  // es. Se calcula acá (componente dinámico: corre en cada pedido).
   const sello = new Date().toLocaleString("es-PE", {
     day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "America/Lima",
   });

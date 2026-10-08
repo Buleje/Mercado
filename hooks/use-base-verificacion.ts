@@ -2,7 +2,7 @@
 
 /**
  * useBaseVerificacion — la base pública del negocio para los QR
- * (`https://<dominio>` · subdominio · `…/t/<slug>`), pedida al servidor una vez
+ * (corta desde ADR-486: `https://<host>/v` o `…/v/<código del negocio>`), pedida al servidor una vez
  * por pestaña. Mientras llega, `base` es `null`: el botón que imprime espera
  * (sin caer a `window.location.origin`, ver `lib/base-verificacion-cliente.ts`).
  *

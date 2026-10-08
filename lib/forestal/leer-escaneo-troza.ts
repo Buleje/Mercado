@@ -12,7 +12,9 @@
  *     recibir la guía la troza todavía no existe en el CTP. Desde el 08-10
  *     `…/verificar/troza/<id de la línea>?c=<código>`: el código sigue viajando
  *     (`?c=`, lo que vale sin internet) y el id de la línea va en `linea`
- *     para quien tenga las líneas del libro. La base puede llevar `/t/<slug>`;
+ *     para quien tenga las líneas del libro. La base puede llevar `/t/<slug>`.
+ *     Desde ADR-486 el QR sale corto: `…/v/<código del negocio>/t/<id>?c=…`
+ *     o `…/v/t/<id>?c=…` (y `…/v/…/c/<código>`): se leen igual que las largas;
  *   · el QR grande, con la ficha en texto (`TROZA 118\nEspecie: …`,
  *     `ficha-texto-troza.ts`): vale su primera línea, el código;
  *   · el QR viejo: `…/admin?tab=…&vista=trozas&troza=<trozaId>`;
@@ -27,6 +29,7 @@
 
 import { esSinCodigo, type TrozaConsumible } from "./consumo-trozas";
 import { codigoDeFichaTexto, esFichaDeTroza, esLineaDeFicha } from "./ficha-texto-troza";
+import { rutaLargaDeCorta } from "../tenant-url-publica";
 
 export { esFichaDeTroza, esLineaDeFicha };
 
@@ -79,7 +82,7 @@ export function leerEscaneo(texto: string | null | undefined): LecturaEscaneo | 
   if (esFichaDeTroza(crudo)) return null;
 
   const esDireccion =
-    /^[a-z][a-z0-9+.-]*:\/\//i.test(crudo) || crudo.startsWith("/admin") || crudo.startsWith("/verificar/") || crudo.startsWith("/t/");
+    /^[a-z][a-z0-9+.-]*:\/\//i.test(crudo) || crudo.startsWith("/admin") || crudo.startsWith("/verificar/") || crudo.startsWith("/t/") || crudo.startsWith("/v/");
   if (esDireccion) {
     let url: URL;
     try {
@@ -89,7 +92,7 @@ export function leerEscaneo(texto: string | null | undefined): LecturaEscaneo | 
     }
     /* ADR-450 R3: el QR chico del Libro TH lleva el CÓDIGO de la troza.
        `/verificar/lote/…`, `/despacho/…` y `/guia/…` son de otra cosa. */
-    const ruta = RUTA_VERIFICAR.exec(url.pathname)?.[1] ?? "";
+    const ruta = RUTA_VERIFICAR.exec(rutaLargaDeCorta(url.pathname) ?? url.pathname)?.[1] ?? "";
     const porLinea = /^troza\/([^/?#]+)\/?$/.exec(ruta);
     if (porLinea?.[1]) {
       const codigo = (url.searchParams.get("c") ?? "").trim();

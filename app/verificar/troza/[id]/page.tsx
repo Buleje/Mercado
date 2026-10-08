@@ -1,7 +1,6 @@
 import { Suspense } from "react";
-import { headers } from "next/headers";
 import { ForestLothDB } from "@/lib/db/forest-loth.db";
-import { tenantIdPublico } from "@/lib/resolve-tenant";
+import { tenantDeVerificacion } from "../../_componentes/tenant-verificacion";
 import { CertificadoTroza, Consultando } from "../../_componentes/certificado-troza";
 
 /**
@@ -30,7 +29,8 @@ export default function VerificarTrozaPage(props: Props) {
 async function Contenido({ params, searchParams }: Props) {
   const [{ id }, sp] = await Promise.all([params, searchParams]);
   const c = (Array.isArray(sp.c) ? sp.c[0] : sp.c)?.trim().slice(0, 80) || null;
-  const tenantId = await tenantIdPublico((await headers()).get("x-tenant-id"));
+  // Host (subdominio, dominio propio, `/t/<slug>`) o el código de `/v/…` (ADR-486).
+  const tenantId = await tenantDeVerificacion();
   const trace = tenantId ? await ForestLothDB.traceByLinea(tenantId, id.slice(0, 64), c).catch(() => null) : null;
   return <CertificadoTroza code={trace?.code ?? c ?? "Troza"} trace={trace} />;
 }

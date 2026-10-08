@@ -3,6 +3,8 @@ import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { tryAdmin } from "@/lib/require-admin";
 import { sinDato } from "@/lib/errores/sin-dato";
+import { TenantsDB } from "@/lib/db/tenants.db";
+import { CODIGO_CORTO_RE, codigoCortoNegocio, duenosDeCodigosCortos } from "@/lib/tenant-url-publica";
 
 /** Custom-domain prefix injected by edge middleware */
 const CUSTOM_PREFIX = "custom--";
@@ -130,6 +132,62 @@ async function negocioActivo(id: string): Promise<boolean> {
   const activo = tenant?.active === true;
   activoCache.set(id, { activo, expiresAt: Date.now() + CACHE_TTL_MS });
   return activo;
+}
+
+/* ───────────── Código corto del negocio en los QR (ADR-486) ───────────── */
+
+type DuenosCodigos = Map<string, { id: string; activo: boolean }>;
+let codigosCortos: { mapa: DuenosCodigos; armadoEn: number } | null = null;
+let codigosEnCurso: Promise<DuenosCodigos> | null = null;
+/** Un código que no está puede ser de un negocio recién creado: se relee, a lo sumo una vez por minuto. */
+const RELEER_CODIGOS_MS = 60 * 1000;
+
+async function duenosDeCodigos(forzar = false): Promise<DuenosCodigos> {
+  const actual = codigosCortos;
+  if (actual && !forzar && Date.now() - actual.armadoEn < CACHE_TTL_MS) return actual.mapa;
+  codigosEnCurso ??= TenantsDB.listParaCodigoCorto()
+    .catch(sinDato("resolve-tenant códigos cortos"))
+    .then((filas) => {
+      // Si la base falló se sigue con el mapa anterior (y se reintenta en un minuto).
+      if (!filas) return actual?.mapa ?? new Map();
+      const mapa = duenosDeCodigosCortos(filas);
+      codigosCortos = { mapa, armadoEn: Date.now() };
+      return mapa;
+    })
+    .finally(() => {
+      codigosEnCurso = null;
+    });
+  return codigosEnCurso;
+}
+
+async function duenoDeCodigo(codigo: string) {
+  const dueno = (await duenosDeCodigos()).get(codigo);
+  if (dueno) return dueno;
+  const armadoEn = codigosCortos?.armadoEn ?? 0;
+  return Date.now() - armadoEn > RELEER_CODIGOS_MS ? (await duenosDeCodigos(true)).get(codigo) : undefined;
+}
+
+/**
+ * El negocio de un código corto de QR (`/v/<código>/…`). `null` si el código
+ * no existe o su negocio está dado de baja: la página dice «no encontrado»,
+ * igual que con un id inventado, y nunca cae en otro negocio.
+ */
+export async function tenantIdPorCodigoCorto(codigo: string): Promise<string | null> {
+  const c = codigo.trim().toLowerCase();
+  if (!CODIGO_CORTO_RE.test(c)) return null;
+  const dueno = await duenoDeCodigo(c);
+  return dueno?.activo ? dueno.id : null;
+}
+
+/**
+ * El código corto que puede imprimir este negocio, o `null` si no le toca
+ * (otro más viejo tiene el mismo, o está dado de baja): entonces sus QR salen
+ * con la dirección larga.
+ */
+export async function codigoCortoPublicable(tenantId: string): Promise<string | null> {
+  const c = codigoCortoNegocio(tenantId);
+  const dueno = await duenoDeCodigo(c);
+  return dueno?.id === tenantId && dueno.activo ? c : null;
 }
 
 /**
