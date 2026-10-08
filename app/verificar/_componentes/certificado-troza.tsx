@@ -88,7 +88,7 @@ export function BloquePlan({ plan }: { plan: PlanPublico }) {
 
 export function CertificadoTroza({ code, trace }: { code: string; trace: TrazaPublica | null }) {
   return (
-    <MarcoVerificacion kicker="Certificado de origen forestal" titulo={code}>
+    <MarcoVerificacion kicker="Certificado de origen forestal" titulo={trace ? code : "Código no encontrado"}>
       {!trace ? (
         <NoEncontrado titulo="Código no encontrado">
           No hay registros de origen para <b>{code}</b> en este establecimiento.

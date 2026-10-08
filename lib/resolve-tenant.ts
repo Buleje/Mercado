@@ -113,7 +113,23 @@ export async function tenantIdPublico(rawXTenantId: string | null): Promise<stri
   if (!crudo) return null;
   const slug = await resolveTenantSlug(crudo);
   if (!slug) return null;
-  return (await resolveTenantSlugToId(slug)) || null;
+  const id = await resolveTenantSlugToId(slug);
+  // Un negocio dado de baja no sigue publicando sus guías (security 08-10: el
+  // dominio propio ya pedía `active`, el subdominio y `/t/<slug>` no).
+  return id && (await negocioActivo(id)) ? id : null;
+}
+
+const activoCache = new Map<string, { activo: boolean; expiresAt: number }>();
+
+async function negocioActivo(id: string): Promise<boolean> {
+  const hit = activoCache.get(id);
+  if (hit && hit.expiresAt > Date.now()) return hit.activo;
+  const tenant = await prisma.tenant
+    .findUnique({ where: { id }, select: { active: true } })
+    .catch(sinDato("resolve-tenant negocio activo"));
+  const activo = tenant?.active === true;
+  activoCache.set(id, { activo, expiresAt: Date.now() + CACHE_TTL_MS });
+  return activo;
 }
 
 /**

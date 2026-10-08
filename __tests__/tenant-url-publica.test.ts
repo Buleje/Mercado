@@ -91,9 +91,11 @@ describe("tenantIdPublico", () => {
   });
 
   it("slug → CUID; el negocio por defecto y un CUID pasan tal cual", async () => {
-    findUnique.mockImplementation(async ({ where }: { where: { slug: string } }) =>
-      where.slug === BLAS ? { id: "cmpxiv6p4000bohvzwl6bnfpv" } : where.slug === "main" ? { id: "main" } : null,
-    );
+    // Dos lecturas: slug → id, y si el negocio está activo (por id).
+    findUnique.mockImplementation(async ({ where }: { where: { slug?: string; id?: string } }) => {
+      if (where.id) return ["cmpxiv6p4000bohvzwl6bnfpv", "main"].includes(where.id) ? { active: true } : null;
+      return where.slug === BLAS ? { id: "cmpxiv6p4000bohvzwl6bnfpv" } : where.slug === "main" ? { id: "main" } : null;
+    });
     const { tenantIdPublico } = await import("@/lib/resolve-tenant");
     expect(await tenantIdPublico(BLAS)).toBe("cmpxiv6p4000bohvzwl6bnfpv");
     expect(await tenantIdPublico("main")).toBe("main");
@@ -104,11 +106,19 @@ describe("tenantIdPublico", () => {
     findFirst.mockImplementation(async ({ where }: { where: { customDomain: string } }) =>
       where.customDomain === "madera.blas.pe" ? { slug: BLAS } : null,
     );
-    findUnique.mockResolvedValue({ id: "cmpxiv6p4000bohvzwl6bnfpv" });
+    findUnique.mockResolvedValue({ id: "cmpxiv6p4000bohvzwl6bnfpv", active: true });
     const { tenantIdPublico } = await import("@/lib/resolve-tenant");
     expect(await tenantIdPublico("custom--Madera.Blas.pe")).toBe("cmpxiv6p4000bohvzwl6bnfpv");
     expect(await tenantIdPublico("custom--otro.pe")).toBeNull();
     expect(await tenantIdPublico(null)).toBeNull();
     expect(await tenantIdPublico("  ")).toBeNull();
+  });
+
+  it("negocio dado de baja → null (por subdominio o /t/<slug> no sigue publicando)", async () => {
+    findUnique.mockImplementation(async ({ where }: { where: { slug?: string; id?: string } }) =>
+      where.id ? { active: false } : where.slug === BLAS ? { id: "cmpxiv6p4000bohvzwl6bnfpv" } : null,
+    );
+    const { tenantIdPublico } = await import("@/lib/resolve-tenant");
+    expect(await tenantIdPublico(BLAS)).toBeNull();
   });
 });
