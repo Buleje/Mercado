@@ -31,6 +31,7 @@
 import { medidasDeTroza } from "./serfor-gtf-a-ingresos";
 import { partirDimensiones } from "./serfor-gtf-campos";
 import { claveNumeroGtf } from "./gtf-talonario";
+import { codigoDeLaGuia } from "./codigo-unico-troza";
 import { esNumeroRegistroValido, normalizarNumeroRegistro } from "./serfor-gtf";
 import type { TituloDeLaFicha } from "./titulo-de-guia";
 
@@ -86,8 +87,9 @@ export interface PlanMedidasGuia {
 
 const exacto = (s: string) => s.trim().toUpperCase();
 /** Misma forma flexible que «Pegar desde Excel» (`pegar-medidas-trozas`), más
- *  el paréntesis del precinto que SERFOR agrega a veces: `13/A (0000008)`. */
-const flojo = (s: string) => exacto(s).replace(/\([^)]*\)/g, "").replace(/[-/.\s]+/g, "");
+ *  el paréntesis del precinto que SERFOR agrega a veces: `13/A (0000008)`, y
+ *  sin el sufijo del código único (ADR-477): «12A-0001» ↔ «12A». */
+const flojo = (s: string) => exacto(codigoDeLaGuia(s)).replace(/\([^)]*\)/g, "").replace(/[-/.\s]+/g, "");
 const vacio = (s: string | null | undefined) => !(s ?? "").trim();
 
 /** Medidas legibles de la guía, o null si el texto no trae D1 × D2 × largo. */

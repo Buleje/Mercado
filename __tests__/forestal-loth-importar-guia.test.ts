@@ -227,7 +227,8 @@ describe("la revisión contra el libro", () => {
     const g = ficha(G14);
     const rev = revisarGuia(g, destinoNuevo(g), LIBRO_VACIO, { verificada: true });
     const t186 = rev.talas.find((t) => t.treeCode === "186");
-    expect(t186).toMatchObject({ trozas: ["186A", "186B"], lengthM: 15.69, diamMayorM: 0.76, diamMenorM: 0.52, volumeM3: 5.422, estado: "nueva" });
+    /* ADR-477: las trozas entran con su código único (código de la guía + correlativo). */
+    expect(t186).toMatchObject({ trozas: ["186A-0014", "186B-0014"], lengthM: 15.69, diamMayorM: 0.76, diamMenorM: 0.52, volumeM3: 5.422, estado: "nueva" });
     expect(rev.talas.map((t) => t.treeCode)).toEqual(["186", "62", "85"]);
     expect(rev.trozas.every((t) => t.estado === "nueva")).toBe(true);
     expect(rev.avisos.filter((a) => a.nivel === "bloquea")).toEqual([]);
@@ -302,7 +303,7 @@ describe("la revisión contra el libro", () => {
     };
     const rev = revisarGuia(g, destinoExistente(), libro, { verificada: true });
     expect(rev.trozas.find((t) => t.trozaCode === "186A")?.estado).toBe("ya_trozada");
-    expect(rev.talas.find((t) => t.treeCode === "186")).toMatchObject({ estado: "nueva", volumeM3: 5.422, trozas: ["186A", "186B"] });
+    expect(rev.talas.find((t) => t.treeCode === "186")).toMatchObject({ estado: "nueva", volumeM3: 5.422, trozas: ["186A", "186B-0014"] });
     expect(estadoDeLaRevision(rev, null, true, true)).toBe("lista");
   });
 
@@ -378,7 +379,7 @@ describe("la revisión contra el libro", () => {
     const rev = revisarGuia(g, destinoExistente(), { ...LIBRO_VACIO, talas: [previa], trozados: yaTrozadas }, { verificada: true });
     const t173 = rev.talas.find((t) => t.treeCode === "173");
     expect(t173?.estado).toBe("ampliar");
-    expect(t173?.trozas).toEqual(["173-A", "173-B", "173-C", "173-D"]);
+    expect(t173?.trozas).toEqual(["173-A", "173-B", "173-C", "173-D-0008"]);
     expect(t173?.volumeM3).toBe(Math.round((6.668 + 2 + 1 + 3.139) * 10000) / 10000);
     // `ampliar` se escribe aunque el interruptor de talas esté apagado (si no, T4 frena la troza nueva).
     expect(talasAEscribir(rev.talas, false).map((t) => t.treeCode)).toEqual(["173"]);
@@ -403,9 +404,9 @@ describe("la vista previa de una tanda", () => {
     const out = vistaPreviaDeTanda([entrada(G08), entrada(G07)], ctx());
     expect(out.map((x) => x.clave)).toEqual([`serfor:${G08}`, `serfor:${G07}`]);
     expect(out.map((x) => x.estado)).toEqual(["lista", "lista"]);
-    expect(out[1].talas.find((t) => t.treeCode === "173")).toMatchObject({ estado: "nueva", trozas: ["173-A", "173-B", "173-C"] });
+    expect(out[1].talas.find((t) => t.treeCode === "173")).toMatchObject({ estado: "nueva", trozas: ["173-A-0007", "173-B-0007", "173-C-0007"] });
     const amp = out[0].talas.find((t) => t.treeCode === "173");
-    expect(amp).toMatchObject({ estado: "ampliar", trozas: ["173-A", "173-B", "173-C", "173-D"] });
+    expect(amp).toMatchObject({ estado: "ampliar", trozas: ["173-A-0007", "173-B-0007", "173-C-0007", "173-D-0008"] });
     // Las dos van al MISMO permiso nuevo.
     expect(out[0].permiso?.estado).toBe("nuevo");
     expect(out[1].permiso?.estado).toBe("nuevo");

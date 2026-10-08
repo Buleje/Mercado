@@ -47,6 +47,7 @@ import {
   claveTitulo,
   codigosDeLaGuia,
   codigosParaRevisar,
+  prefijosParaRevisar,
   destinoDe,
   entraComoNueva,
   detectarPermiso,
@@ -260,8 +261,10 @@ export class ForestLothImportarDB {
   ): Promise<LibroDeLaGuia> {
     if (!tenantId) throw new Error("tenantId is required");
     const trozas = fichas.flatMap((g) => trozasDeLaGuia(g));
-    /* Los de la guía y los únicos que se propondrían (ADR-474): si ya están tomados, no se proponen. */
+    /* Los de la guía y los únicos que se propondrían (ADR-477): si ya están tomados, no se proponen. */
     const codigos = [...new Set(fichas.flatMap((g) => codigosParaRevisar(g)))];
+    /* Y los únicos de OTRAS guías con el mismo código de guía («12A-0001»): ¿ya salió con otra guía del permiso? (§2.4) */
+    const conSufijo = [...new Set(fichas.flatMap((g) => prefijosParaRevisar(g)))].map((p) => ({ trozaCode: { startsWith: `${p}-` } }));
     const arboles = [...new Set(trozas.map((t) => t.treeCode).filter((c): c is string => !!c))];
     const vivas = { tenantId, deletedAt: null, status: "registrado" } as const;
 
@@ -278,6 +281,7 @@ export class ForestLothImportarDB {
             ...vivas,
             OR: [
               ...(codigos.length ? [{ section: "trozado", trozaCode: { in: codigos } }] : []),
+              ...(conSufijo.length ? [{ section: "trozado", OR: conSufijo }] : []),
               ...(arboles.length ? [{ section: { in: ["trozado", "tala"] }, treeCode: { in: arboles } }] : []),
             ],
           },
@@ -286,7 +290,11 @@ export class ForestLothImportarDB {
       : [];
     const salidas = codigos.length
       ? await db.forestLothEntry.findMany({
-          where: { ...vivas, section: { in: ["despacho_troza", "consumo_troza"] }, trozaCode: { in: codigos } },
+          where: {
+            ...vivas,
+            section: { in: ["despacho_troza", "consumo_troza"] },
+            OR: [{ trozaCode: { in: codigos } }, ...conSufijo],
+          },
           select: { trozaCode: true, section: true, lineNo: true, gtfNumber: true },
         })
       : [];

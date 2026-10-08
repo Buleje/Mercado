@@ -5,9 +5,9 @@
  * previa de «Importar guías despachadas». Brandon: «en el mismo permiso en
  * plantación los códigos de trozas vienen y son lo mismo pero con diferente
  * guía y eso confunde». Una troza cuyo código ya salió con otra guía del MISMO
- * permiso entra como «12A (0000002)» sólo si la persona dice que es OTRA
- * troza: si fuera la misma, su volumen se contaría dos veces. El servidor
- * vuelve a revisar y rechaza la guía con un renombre sin confirmar.
+ * permiso entra con su código único («12A-0002», ADR-477) sólo si la persona
+ * dice que es OTRA troza: si fuera la misma, su volumen se contaría dos veces.
+ * El servidor vuelve a revisar y rechaza la guía con un renombre sin confirmar.
  */
 
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -66,9 +66,9 @@ export default function LothImportarGuiasRenombres({
       </label>
       <InfoTip
         title="Código único de la troza"
-        what="El código de la guía ya salió con OTRA guía de este mismo permiso (en plantación las guías repiten códigos). En el libro cada troza necesita un código propio: se le suma el correlativo de esta guía entre paréntesis, como lo escribe SERFOR."
+        what="El código de la guía ya salió con OTRA guía de este mismo permiso (en plantación las guías repiten códigos). Toda troza que entra desde una guía lleva su código único: el de la guía más el correlativo de esa guía."
         affects="La hoja de la guía y la lista de trozas siguen imprimiendo el código de la guía. Si fuera la MISMA troza física, no lo confirmes: entraría dos veces y su volumen se contaría doble."
-        example="12A de la GTF 019-001-0000002 → 12A (0000002); el árbol sigue siendo el 12."
+        example="12A de la GTF 019-001-0000002 → 12A-0002; el árbol sigue siendo el 12."
         side="left"
       />
     </div>

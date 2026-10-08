@@ -163,10 +163,11 @@ function porEspecieDe(items: readonly ItemGtfLoth[]): EspecieDeGuia[] | undefine
  * mano. Una medida ausente se OMITE, nunca se marca con un "?" — un casillero
  * que no se sabe se declara vacío, no con un signo que parece un dato real.
  */
-function lineaDeItem(it: ItemGtfLoth): string {
-  /* El código como lo imprime la guía (ADR-474): lo que va a SERFOR tiene que
-     coincidir con SNIFFS, no con el código único del libro («12A (0000002)»). */
-  const codigo = codigoImpreso(it) || null;
+function lineaDeItem(it: ItemGtfLoth, gtfNumber: string | null): string {
+  /* El código como lo imprime la guía (ADR-474/477): lo que va a SERFOR tiene que
+     coincidir con SNIFFS, no con el código único del libro («12A-0001»). Con el
+     N° de la guía, igual que la hoja SERFOR (`loth-gtf-oficial`). */
+  const codigo = codigoImpreso(it, gtfNumber) || null;
   const diam =
     it.diamMayorM != null || it.diamMenorM != null
       ? `Ø${it.diamMayorM ?? "—"}/${it.diamMenorM ?? "—"}m`
@@ -196,7 +197,7 @@ export function filaDesdeGtfLoth(uid: string, g: GtfLothLike): FilaGuiaInforme {
     producto: g.tipo === "trozas" ? "Trozas" : (items[0]?.productType ?? ""),
     cantidad: g.volumenTotalM3 != null ? String(g.volumenTotalM3) : "",
     unidad: "m3",
-    trozas: items.map(lineaDeItem).join("\n"),
+    trozas: items.map((it) => lineaDeItem(it, g.gtfNumber)).join("\n"),
     anulada: g.status === "anulada",
     motivo: g.annulledReason ?? "",
     permiso: g.tituloHabilitante?.trim() ?? "",

@@ -71,6 +71,10 @@ describe("resumirUsoDelCenso", () => {
   it("una troza sin trozado se atribuye por su código", () => {
     expect(arbolDeTroza("111-A")).toBe("111");
     expect(arbolDeTroza("85-TOR-B")).toBe("85-TOR");
+    /* ADR-477: el sufijo del código único no es la pieza. */
+    expect(arbolDeTroza("1-0001")).toBe("1");
+    expect(arbolDeTroza("12-A-019/0001")).toBe("12");
+    expect(arbolDeTroza("85-TOR-A")).toBe("85-TOR");
     const usos = resumirUsoDelCenso([
       { section: "consumo_troza", lineNo: 9, entryDate: "2026-09-28", treeCode: null, trozaCode: "111-A", volumeM3: 4.951 },
     ]);

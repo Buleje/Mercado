@@ -43,6 +43,9 @@
  *    `troza_renombrada` e `ItemImportarGuia.confirmaRenombres` (los códigos
  *    únicos que la persona confirmó como trozas DISTINTAS). Todo AGREGADO: un
  *    cliente de antes no confirma y la guía con renombres vuelve rechazada.
+ *  - 08-10 (ADR-477, reemplaza §2 de ADR-474): `trozaCode` es SIEMPRE el código
+ *    único `12A-0001`; `renombrada` = «su código de guía ya salió con OTRA guía
+ *    de este permiso» (pide casilla); `TrozaImportada.repiteGuia` (opcional).
  */
 
 import type { GtfSerfor } from "./serfor-gtf";
@@ -143,11 +146,12 @@ export type EstadoTrozaImportada =
   /** Ya tiene Trozado en ESTE plan (de una importación anterior de la misma guía o cargada a mano): se usa ésa. */
   | "ya_trozada"
   /**
-   * ADR-474: su código ya SALIÓ con OTRA guía del MISMO permiso (plantación con
-   * códigos repetidos entre guías). Entra como troza nueva con el código único
-   * `12A (0000002)` (código + correlativo de esta guía, como lo escribe SERFOR);
-   * `codificacionGuia` sigue diciendo «12A». Nunca automático: la importación
-   * la exige confirmada (`ItemImportarGuia.confirmaRenombres`).
+   * ADR-477 (antes ADR-474): su código DE LA GUÍA ya salió con OTRA guía del
+   * MISMO permiso (plantación con códigos repetidos entre guías). Entra como
+   * troza nueva con su código único (`12A-0002`, como toda troza que entra
+   * desde una guía); `codificacionGuia` sigue diciendo «12A». Nunca automático:
+   * la importación la exige confirmada (`ItemImportarGuia.confirmaRenombres`):
+   * si fuera la MISMA troza física, su volumen se contaría dos veces.
    */
   | "renombrada"
   /** Choca con el libro (otro plan, otra especie o ya salió): la guía no se importa hasta resolverlo. */
@@ -159,8 +163,11 @@ export interface TrozaImportada {
   /** La codificación tal como la publica la guía («186A», «173-D», «-»). */
   codificacionGuia: string | null;
   /**
-   * El código ÚNICO con que queda en el libro: el de la guía, `SC-<registro>-<n>`
-   * si no tiene, o `12A (0000002)` si está `renombrada` (ADR-474).
+   * El código ÚNICO con que queda en el libro (ADR-477): SIEMPRE
+   * `<código en la guía>-<correlativo corto>` («12A-0001»; otro talonario con
+   * el mismo correlativo → «12A-019/0001»), `SC-<registro>-<n>` si no tiene
+   * código, o el del libro si la troza ya estaba (`ya_trozada`: registrada a
+   * mano o importada antes de ADR-477 con el código crudo).
    */
   trozaCode: string;
   /** El árbol («186A» → «186»). `null` en las sin código: no se trazan a un árbol. */
@@ -177,6 +184,8 @@ export interface TrozaImportada {
   estado: EstadoTrozaImportada;
   /** Por qué choca, o qué línea se reutiliza. */
   detalle: string | null;
+  /** `renombrada`: el N° de la otra guía del permiso con la que ya salió su código (ADR-477). */
+  repiteGuia?: string | null;
 }
 
 /** Qué pasa con la tala referencial de un árbol. */

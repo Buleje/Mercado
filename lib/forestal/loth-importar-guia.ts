@@ -33,7 +33,8 @@
 
 import type { GtfSerfor } from "./serfor-gtf";
 import { claveOrigen, estadoGtf, partirDimensiones, separarDocumento } from "./serfor-gtf-campos";
-import { GTF_DIGITOS_DEFAULT, claveNumeroGtf, mismoNumeroGtf } from "./gtf-talonario";
+import { claveNumeroGtf, mismoNumeroGtf } from "./gtf-talonario";
+import { candidatosCodigoUnico, codigoDeLaGuia } from "./codigo-unico-troza";
 import { claveEspecie } from "./loth-constants";
 import { especieEnRegistro, type EspecieRegistrada } from "./loth-plan-especie";
 import { chocanEnElLibro } from "./loth-talonario";
@@ -94,10 +95,15 @@ export function esSinCodigo(codificacion: string | null | undefined): boolean {
  *
  * Distinto de `arbolDeTroza` (loth-censo-uso), que sólo entiende el guion: el
  * «186A» pegado de las guías de SERFOR lo dejaba como su propio árbol.
+ *
+ * `crudo`: el código tal como lo imprime la GUÍA (todavía sin código único):
+ * no se le quita el sufijo, porque «P1-0234» y «P1-0235» de una guía son dos
+ * árboles, no el «P1» con dos correlativos (revisión de ADR-477).
  */
-export function arbolDeCodificacion(codificacion: string | null | undefined): string | null {
+export function arbolDeCodificacion(codificacion: string | null | undefined, opts: { crudo?: boolean } = {}): string | null {
   if (esSinCodigo(codificacion)) return null;
-  const c = txt((codificacion ?? "").replace(/\([^)]*\)/g, " "));
+  /* ADR-477: el sufijo del código único («12A-0001», «12-A-019/0001») no es la pieza. */
+  const c = txt((opts.crudo ? txt(codificacion) : codigoDeLaGuia(codificacion ?? "")).replace(/\([^)]*\)/g, " "));
   if (!c) return null;
   const separado = /^(.*?[A-Za-z0-9])\s*[-/ ]\s*([A-Za-z]{1,2})$/.exec(c);
   if (separado) return separado[1];
@@ -109,13 +115,14 @@ export function arbolDeCodificacion(codificacion: string | null | undefined): st
 /**
  * Los árboles que puede nombrar un código en la trazabilidad (QR de origen,
  * `ForestLothDB.traceByCode`), el principal primero: el de
- * `arbolDeCodificacion` («12-A (0000002)» → «12», «186A» → «186») y el de la
- * regla vieja del guion sin el paréntesis del código único («85-1» → «85»,
- * «85-TOR» → «85»), para no perder lo que ya encontraba.
+ * `arbolDeCodificacion` («12A-0001» → «12», «12-A (0000002)» → «12», «186A» →
+ * «186») y el de la regla vieja del guion sin el sufijo del código único
+ * («85-1» → «85», «85-TOR» → «85»), para no perder lo que ya encontraba.
  */
 export function arbolesParaTrazar(codigo: string): string[] {
   const norm = txt(codigo);
-  const base = txt(norm.replace(/\([^)]*\)/g, " ")) || norm;
+  const sinSufijo = codigoDeLaGuia(norm);
+  const base = txt(sinSufijo.replace(/\([^)]*\)/g, " ")) || sinSufijo;
   const porGuion = base.includes("-") ? base.replace(/-[A-Za-z0-9]+$/, "") : base;
   return [...new Set([arbolDeCodificacion(norm), porGuion].filter((x): x is string => Boolean(x)))];
 }
@@ -124,22 +131,6 @@ export function arbolesParaTrazar(codigo: string): string[] {
 export function codigoSinCodigo(base: string, indice: number): string {
   const b = txt(base).replace(/\s+/g, "") || "GTF";
   return `SC-${b}-${indice}`;
-}
-
-/**
- * El código ÚNICO de una troza cuyo código ya salió con OTRA guía del MISMO
- * permiso (ADR-474): el de la guía + el correlativo de ESTA guía entre
- * paréntesis, como lo escribe SERFOR («84/A (0000005)»): «12A» de la GTF
- * 019-001-0000002 → «12A (0000002)». `completo` pone el N° entero (dos guías de
- * series distintas con el mismo correlativo). `arbolDeCodificacion` descarta el
- * paréntesis: el árbol sigue siendo «12».
- */
-export function codigoUnicoDeGuia(codigo: string, gtfNumber: string, completo = false): string {
-  const num = txt(gtfNumber);
-  const tramos = num.split(/[^0-9A-Za-z]+/).filter(Boolean);
-  const ultimo = tramos[tramos.length - 1] ?? num;
-  const correlativo = /^\d+$/.test(ultimo) ? ultimo.padStart(GTF_DIGITOS_DEFAULT, "0") : ultimo;
-  return `${txt(codigo)} (${completo ? num : correlativo})`;
 }
 
 /** «07/09/2026» → «2026-09-07». También acepta «2026-09-07». `null` si no es una fecha. */
@@ -185,7 +176,7 @@ export function trozasDeLaGuia(g: GtfSerfor): TrozaArmada[] {
       indice: i + 1,
       codificacionGuia: oNull(x.codificacion),
       trozaCode: sinCodigo ? codigoSinCodigo(base, i + 1) : txt(x.codificacion),
-      treeCode: sinCodigo ? null : arbolDeCodificacion(x.codificacion),
+      treeCode: sinCodigo ? null : arbolDeCodificacion(x.codificacion, { crudo: true }),
       sinCodigo,
       speciesCommon: oNull(x.comun),
       speciesScientific: oNull(x.cientifico),
@@ -199,18 +190,23 @@ export function trozasDeLaGuia(g: GtfSerfor): TrozaArmada[] {
 
 /**
  * Los códigos que la revisión tiene que mirar en el libro: los de la guía y,
- * para cada uno con código, los dos únicos que se le propondrían (ADR-474),
- * para saber si ya están tomados. Lo usa `ForestLothImportarDB.libroDe`.
+ * para cada uno con código, los únicos que se le pueden dar (ADR-477), para
+ * saber si ya están tomados. Lo usa `ForestLothImportarDB.libroDe`.
  */
 export function codigosParaRevisar(g: GtfSerfor): string[] {
   const num = txt(g.gtfNumber);
   return [
-    ...new Set(
-      trozasDeLaGuia(g).flatMap((t) =>
-        t.sinCodigo || !num ? [t.trozaCode] : [t.trozaCode, codigoUnicoDeGuia(t.trozaCode, num), codigoUnicoDeGuia(t.trozaCode, num, true)],
-      ),
-    ),
+    ...new Set(trozasDeLaGuia(g).flatMap((t) => (t.sinCodigo || !num ? [t.trozaCode] : [t.trozaCode, ...candidatosCodigoUnico(t.trozaCode, num)]))),
   ];
+}
+
+/**
+ * Los códigos de la guía cuyo código único de OTRA guía hay que buscar en el
+ * libro (`trozaCode` que empieza con «<código>-»): así se sabe si el código de
+ * la guía ya salió con otra guía del mismo permiso (ADR-477 §2.4).
+ */
+export function prefijosParaRevisar(g: GtfSerfor): string[] {
+  return [...new Set(trozasDeLaGuia(g).filter((t) => !t.sinCodigo).map((t) => t.trozaCode))];
 }
 
 /** El tipo de plan que se propone: por el origen del recurso y el código del título. */
@@ -707,25 +703,28 @@ export function revisarGuia(
     if (vistas.has(t.trozaCode)) repetidas.add(t.trozaCode);
     else vistas.add(t.trozaCode);
   }
+  const asignados = new Set<string>();
 
-  /* ADR-474: ¿el código único propuesto está libre? Lo está si nadie lo usa, o
-     si lo usa ESTA misma guía ya importada (la vista de una guía que ya está). */
-  const libre = (code: string) => {
-    const s = salidaDe.get(code);
-    if (s) return yaImportada != null && !!s.gtfNumber && mismoNumeroGtf(s.gtfNumber, num);
-    return !trozadoDe.has(code) && !vistas.has(code);
+  /* ADR-477: el código único está libre si nadie lo usa en el libro ni otra troza de esta guía. */
+  const libre = (code: string) => !asignados.has(code) && !vistas.has(code) && !salidaDe.has(code) && !trozadoDe.has(code);
+  /* Los Trozados con este código de guía: el crudo («12A», importado antes de ADR-477 o a mano) o con su sufijo («12A-0001»). */
+  const conElCodigo = (codigo: string) => libro.trozados.filter((x) => x.trozaCode && (x.trozaCode === codigo || codigoDeLaGuia(x.trozaCode) === codigo));
+  /* §2.4: el código de la guía ya SALIÓ (despacho con su N°) con OTRA guía de ESTE permiso. */
+  const repiteCon = (codigo: string): SalidaDelLibro | null => {
+    for (const tz of conElCodigo(codigo).filter((x) => x.planId === destino.planId)) {
+      const s = libro.salidas.find((x) => x.trozaCode === tz.trozaCode && x.section === "despacho_troza" && !!x.gtfNumber && !mismoNumeroGtf(x.gtfNumber, num));
+      if (s) return s;
+    }
+    return null;
   };
-  /* El código ya salió con OTRA guía (despacho con su N°, no un consumo) y esa
-     troza es de ESTE permiso → se propone el código único. Otro permiso, la
-     misma guía o sin código libre: sigue siendo un choque. */
-  const renombre = (t: TrozaArmada, salida: SalidaDelLibro): TrozaImportada | null => {
-    if (t.sinCodigo || !num || salida.section !== "despacho_troza" || !salida.gtfNumber || mismoNumeroGtf(salida.gtfNumber, num)) return null;
-    const tz = trozadoDe.get(t.trozaCode);
-    if (!tz || tz.planId !== destino.planId) return null;
-    const candidatos = [codigoUnicoDeGuia(t.trozaCode, num), codigoUnicoDeGuia(t.trozaCode, num, true)];
-    /* La guía YA importada con su renombre: el código único salió con ESTA
-       guía y está en el Trozado de este permiso → es esa línea, no una troza
-       nueva (si no, la vista previa la sumaba otra vez a la tala del árbol). */
+
+  const trozas: TrozaImportada[] = armadas.map((t) => {
+    if (repetidas.has(t.trozaCode)) {
+      return { ...t, estado: "conflicto", detalle: `La guía trae dos veces la troza ${t.trozaCode}.` };
+    }
+    const candidatos = t.sinCodigo || !num ? [] : candidatosCodigoUnico(t.trozaCode, num);
+    /* La guía YA importada con su código único: es esa línea, no una troza nueva
+       (si no, la vista previa la sumaba otra vez a la tala del árbol). */
     if (yaImportada) {
       const propia = candidatos.find((c) => {
         const s = salidaDe.get(c);
@@ -739,40 +738,86 @@ export function revisarGuia(
         return { ...t, trozaCode: propia, estado: "ya_trozada", detalle: `Ya está en el Trozado como «${propia}» (${queLinea(linea, "trozado")}): se usa esa línea.` };
       }
     }
-    const code = candidatos.find(libre);
-    if (!code) return null;
-    return {
-      ...t,
-      trozaCode: code,
-      estado: "renombrada",
-      detalle: `«${t.trozaCode}» ya salió con la GTF ${salida.gtfNumber} de este permiso: entra como «${code}». Confírmalo sólo si es OTRA troza.`,
-    };
-  };
-
-  const trozas: TrozaImportada[] = armadas.map((t) => {
-    if (repetidas.has(t.trozaCode)) {
-      return { ...t, estado: "conflicto", detalle: `La guía trae dos veces la troza ${t.trozaCode}.` };
-    }
+    /* El código CRUDO en el libro: una guía importada antes de ADR-477, o una
+       troza registrada a mano antes de la guía (no se renombra: puede tener etiqueta). */
     const salida = salidaDe.get(t.trozaCode);
-    if (salida && !(num && salida.gtfNumber && mismoNumeroGtf(salida.gtfNumber, num) && yaImportada)) {
-      const nueva = renombre(t, salida);
-      if (nueva) return nueva;
-      const donde = salida.lineNo > 0 && salida.gtfNumber ? `${queLinea(salida, "salida")}, GTF ${salida.gtfNumber}` : queLinea(salida, "salida");
-      const que = salida.section === "despacho_troza" ? `despachada (${donde})` : `consumida (${donde})`;
-      return { ...t, estado: "conflicto", detalle: `La troza ${t.trozaCode} ya salió: está ${que}.` };
-    }
-    const tz = trozadoDe.get(t.trozaCode);
-    if (tz) {
-      if (tz.planId !== destino.planId) {
-        const deQuien = tz.planId ? "de otro permiso" : "sin permiso (átala primero con «Atarlas»)";
-        return { ...t, estado: "conflicto", detalle: `La troza ${t.trozaCode} ya está en el Trozado (${queLinea(tz, "trozado")}) ${deQuien}.` };
+    const salioConEsta = !!salida && !!num && !!salida.gtfNumber && mismoNumeroGtf(salida.gtfNumber, num) && yaImportada != null;
+    if (salida && !salioConEsta) {
+      const salioConOtra =
+        candidatos.length > 0 &&
+        salida.section === "despacho_troza" &&
+        !!salida.gtfNumber &&
+        !mismoNumeroGtf(salida.gtfNumber, num) &&
+        trozadoDe.get(t.trozaCode)?.planId === destino.planId;
+      if (!salioConOtra) {
+        const donde = salida.lineNo > 0 && salida.gtfNumber ? `${queLinea(salida, "salida")}, GTF ${salida.gtfNumber}` : queLinea(salida, "salida");
+        const que = salida.section === "despacho_troza" ? `despachada (${donde})` : `consumida (${donde})`;
+        return { ...t, estado: "conflicto", detalle: `La troza ${t.trozaCode} ya salió: está ${que}.` };
       }
-      if (!mismaEspecieDeTroza(tz, t)) {
-        return { ...t, estado: "conflicto", detalle: `La troza ${t.trozaCode} ya está en el Trozado (${queLinea(tz, "trozado")}) como ${tz.speciesCommon}, y la guía dice ${t.speciesCommon}.` };
+    } else {
+      const tz = trozadoDe.get(t.trozaCode);
+      if (tz) {
+        if (tz.planId !== destino.planId) {
+          const deQuien = tz.planId ? "de otro permiso" : "sin permiso (átala primero con «Atarlas»)";
+          return { ...t, estado: "conflicto", detalle: `La troza ${t.trozaCode} ya está en el Trozado (${queLinea(tz, "trozado")}) ${deQuien}.` };
+        }
+        if (!mismaEspecieDeTroza(tz, t)) {
+          return { ...t, estado: "conflicto", detalle: `La troza ${t.trozaCode} ya está en el Trozado (${queLinea(tz, "trozado")}) como ${tz.speciesCommon}, y la guía dice ${t.speciesCommon}.` };
+        }
+        return { ...t, estado: "ya_trozada", detalle: `Ya está en el Trozado (${queLinea(tz, "trozado")}): se usa esa línea.` };
       }
-      return { ...t, estado: "ya_trozada", detalle: `Ya está en el Trozado (${queLinea(tz, "trozado")}): se usa esa línea.` };
     }
-    return { ...t, estado: "nueva", detalle: null };
+    /* Sin código o sin N°: entra con el suyo (`SC-…` ya es único por guía; sin N° la guía ya está bloqueada). */
+    if (t.sinCodigo || !num) return { ...t, estado: "nueva", detalle: null };
+    /* §2.5: el código de la guía ya está en un Trozado de OTRO permiso: sigue siendo un choque. */
+    const ajeno = conElCodigo(t.trozaCode).find((x) => x.planId !== destino.planId);
+    if (ajeno) {
+      const deQuien = ajeno.planId ? "de otro permiso" : "sin permiso (átala primero con «Atarlas»)";
+      return { ...t, estado: "conflicto", detalle: `La troza ${t.trozaCode} ya está en el Trozado como «${ajeno.trozaCode}» (${queLinea(ajeno, "trozado")}) ${deQuien}.` };
+    }
+    /* Un N° que no da correlativo de 4 a 7 dígitos (último tramo con letras, u 8 o más):
+       sin código único no hay cómo separarla de otra guía (ADR-477: siempre único). */
+    if (!candidatos.length) {
+      return { ...t, estado: "conflicto", detalle: `La troza ${t.trozaCode} no puede llevar código único: el N° de la guía ${num} no da un correlativo de 4 a 7 dígitos.` };
+    }
+    /* Anulada y vuelta a emitir: anular la guía anula sólo el despacho y la troza
+       («62B-0014») vuelve al stock. La guía nueva con «62B» es ESA troza: se usa su
+       línea (si no, la tala del árbol sumaba el volumen otra vez). Mismo permiso,
+       sin salida viva, mismo árbol; de la misma especie y una sola → esa; si no,
+       casilla. */
+    const enStock = conElCodigo(t.trozaCode).filter(
+      (x) =>
+        x.planId === destino.planId &&
+        !salidaDe.has(x.trozaCode as string) &&
+        !asignados.has(x.trozaCode as string) &&
+        (!x.treeCode || !t.treeCode || x.treeCode === t.treeCode),
+    );
+    const mismas = enStock.filter((x) => mismaEspecieDeTroza(x, t));
+    if (mismas.length === 1) {
+      const tz = mismas[0];
+      const suyo = tz.trozaCode as string;
+      asignados.add(suyo);
+      return { ...t, trozaCode: suyo, estado: "ya_trozada", detalle: `Ya está en el Trozado como «${suyo}» (${queLinea(tz, "trozado")}) y sin salida (¿se anuló su guía?): se usa esa línea.` };
+    }
+    const code = candidatos.find(libre);
+    if (!code) {
+      return { ...t, estado: "conflicto", detalle: `La troza ${t.trozaCode} no tiene código único libre: ${candidatos.join(", ")} ya están en el libro.` };
+    }
+    asignados.add(code);
+    const repite = repiteCon(t.trozaCode);
+    if (repite || enStock.length) {
+      const motivo = repite
+        ? `ya salió con la GTF ${repite.gtfNumber} de este permiso`
+        : `ya está en el Trozado de este permiso sin salida (${listaCodigos(enStock.map((x) => `«${x.trozaCode}»`))})`;
+      return {
+        ...t,
+        trozaCode: code,
+        estado: "renombrada",
+        ...(repite ? { repiteGuia: repite.gtfNumber } : {}),
+        detalle: `«${t.trozaCode}» ${motivo}: entra como «${code}». Confírmalo sólo si es OTRA troza.`,
+      };
+    }
+    return { ...t, trozaCode: code, estado: "nueva", detalle: null };
   });
 
   const enConflicto = trozas.filter((t) => t.estado === "conflicto");
@@ -1015,11 +1060,16 @@ export function renombresSinConfirmar(
   return trozas.filter((t) => t.estado === "renombrada" && !ok.has(t.trozaCode)).map((t) => t.trozaCode);
 }
 
-/** ADR-474: código único → código de la guía, de las `renombrada` (va a `ForestGtf.items[].codigoGuia`). */
-export function codigosDeLaGuia(trozas: readonly Pick<TrozaImportada, "estado" | "trozaCode" | "codificacionGuia">[]): Map<string, string> {
+/**
+ * Código único → código de la guía (va a `ForestGtf.items[].codigoGuia`, lo
+ * que imprimen la hoja SERFOR y la Relación): TODA troza cuyo código en el
+ * libro no es el de la guía (ADR-477: «12A-0001» → «12A»). Las sin código y las
+ * que ya estaban con el código crudo no llevan.
+ */
+export function codigosDeLaGuia(trozas: readonly Pick<TrozaImportada, "trozaCode" | "codificacionGuia">[]): Map<string, string> {
   return new Map(
     trozas
-      .filter((t) => t.estado === "renombrada" && txt(t.codificacionGuia) && txt(t.codificacionGuia) !== t.trozaCode)
+      .filter((t) => !esSinCodigo(t.codificacionGuia) && txt(t.codificacionGuia) !== t.trozaCode)
       .map((t) => [t.trozaCode, txt(t.codificacionGuia)]),
   );
 }

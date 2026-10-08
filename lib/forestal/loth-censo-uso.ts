@@ -16,6 +16,7 @@
 
 import { analizarPoa, type PoaCategoria, type PoaConfig } from "./loth-poa";
 import { distanceM, fromUtm, parseUtmZone } from "./loth-utm";
+import { codigoDeLaGuia } from "./codigo-unico-troza";
 import { formatDateNumeric, formatWeekday } from "@/lib/format";
 
 // ─── Lo que el libro ya hizo con cada árbol ──────────────────────────────────
@@ -40,9 +41,12 @@ export interface UsoArbolCenso {
   consumidas: number;
 }
 
-/** El árbol de una troza: «85-TOR-A» → «85-TOR», «111-A» → «111». */
+/**
+ * El árbol de una troza: «85-TOR-A» → «85-TOR», «111-A» → «111». El sufijo del
+ * código único (ADR-477) se quita antes: «1-0001» → «1», «12-A-019/0001» → «12».
+ */
 export function arbolDeTroza(trozaCode: string): string {
-  const t = trozaCode.trim();
+  const t = codigoDeLaGuia(trozaCode);
   return t.includes("-") ? t.replace(/-[A-Za-z0-9]+$/, "") : t;
 }
 

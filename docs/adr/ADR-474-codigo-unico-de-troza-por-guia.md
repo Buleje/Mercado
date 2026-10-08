@@ -1,6 +1,6 @@
 # ADR-474 — Código único de troza por guía (importar y despachar guías del Libro TH)
 
-- **Estado:** aceptado (2026-10-07). Construido y probado (`__tests__/loth-importar-guia-codigo-unico.test.ts`, 15 casos; vista previa → importación → «Deshacer la importación» por la ruta real en `main`, dos guías del mismo permiso que repiten 12A/12B). Sin cambio de schema.
+- **Estado:** aceptado (2026-10-07). **Reemplazado en §2 (cuándo se renombra) por ADR-477 (2026-10-08):** toda troza que entra desde una guía lleva SIEMPRE `<código>-<correlativo>` («12A-0001»); la casilla de §3 sigue. Construido y probado (`__tests__/loth-importar-guia-codigo-unico.test.ts`, 15 casos; vista previa → importación → «Deshacer la importación» por la ruta real en `main`, dos guías del mismo permiso que repiten 12A/12B). Sin cambio de schema.
 - **Relacionados:** ADR-461 (importar guías ya despachadas al Libro TH), ADR-459 (plantación sin censo), ADR-305 (T1-T5 del Libro TH), ADR-450 (la troza recuerda su `trozadoId` al pasar al CTP).
 - **Pedido (Brandon, 07-10):** «cuando se importa [y] despacho guías, cada guía en su listado de trozas tendrá una columna de Código Único […] porque a veces en el mismo permiso en plantación los códigos de trozas vienen y son lo mismo pero con diferente guía y eso confunde».
 

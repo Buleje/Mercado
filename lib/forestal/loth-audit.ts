@@ -78,6 +78,9 @@ export type LothAuditAction =
   | "loth_gtf_deshacer_importar"
   // Tala referencial que se achicó al deshacer una de las guías que la sostenían (ADR-461 §12)
   | "loth_linea_reducir_referencial"
+  // Código único de troza (ADR-477): las trozas de una guía importada pasan a «<código>-<correlativo>» (y su reversión)
+  | "loth_codigo_unico_migrado"
+  | "loth_codigo_unico_revertido"
   // La guía pasó al Libro CTP del mismo negocio (o se recibió allá)
   | "loth_gtf_al_ctp"
   // Cierre de período del libro (acta inmutable)

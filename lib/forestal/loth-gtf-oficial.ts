@@ -101,7 +101,7 @@ export function lineasDeGtf(doc: LothGtfDoc): LineaProducto[] {
     comun: it.species ?? "",
     tipoProducto: it.productType ?? (doc.tipo === "producto" ? "Producto terminado" : "Troza"),
     // La presentación del formato: el código de la pieza como lo dice la guía (ADR-474).
-    presentacion: codigoImpreso(it),
+    presentacion: codigoImpreso(it, doc.gtfNumber),
     cantidad: it.pieces ?? 1,
     unidad: "m³",
     total: num(it.volumeM3),
@@ -114,7 +114,7 @@ export { codigoImpreso };
 
 /** Los códigos de troza que ampara la guía — casillero (35), como los dice la guía. */
 export function listasTrozasDe(doc: LothGtfDoc): string {
-  const codes = (doc.items ?? []).map(codigoImpreso).filter(Boolean);
+  const codes = (doc.items ?? []).map((it) => codigoImpreso(it, doc.gtfNumber)).filter(Boolean);
   return codes.join(", ");
 }
 

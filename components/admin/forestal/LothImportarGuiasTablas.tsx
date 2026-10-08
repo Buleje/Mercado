@@ -36,7 +36,8 @@ function EstadoFila({
     return <CheckCircle2 className="h-4 w-4 text-[var(--data-success-ink)]" aria-label="Nueva" />;
   const texto = {
     ya_trozada: "Ya está",
-    renombrada: "Código nuevo",
+    /* ADR-477: todas entran con su código único; el chip marca sólo las que repiten el código de otra guía del permiso. */
+    renombrada: "Repite código",
     conflicto: "Choca",
     ampliar: "Se amplía",
     existente: "Ya tiene tala",
@@ -59,8 +60,8 @@ function EstadoFila({
 
 /*
  * A 400 px las dos tablas siguen siendo tablas, con su propio scroll.
- * ADR-474: «En la guía» es el código impreso; «Código único» el del libro
- * (difiere en las sin código y en las renombradas, que se resaltan).
+ * ADR-477: «Código en la guía» es el impreso; «Código único» el del libro
+ * («12A-0001», siempre lleno); se resaltan las que repiten el código de otra guía del permiso.
  */
 export function TablaTrozas({ trozas }: { trozas: TrozaImportada[] }) {
   return (
@@ -68,7 +69,7 @@ export function TablaTrozas({ trozas }: { trozas: TrozaImportada[] }) {
       <table className="w-full text-sm">
         <thead>
           <tr>
-            <th className={TH}>En la guía</th>
+            <th className={TH}>Código en la guía</th>
             <th className={TH}>Código único</th>
             <th className={TH}>Árbol</th>
             <th className={TH}>Especie</th>

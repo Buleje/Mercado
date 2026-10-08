@@ -21,6 +21,7 @@
  * y la impresión.
  */
 
+import { codigoDeLaGuia } from "./codigo-unico-troza";
 import { claveEspecie } from "./loth-constants";
 import { filasGTF, m3OficialDeFila, totalizarGTF } from "./gtf-redondeo";
 import { componerPunto, conPunto, faltantesGtf, gtfDatosVacio, llegadaDelDestinatario, mismaUbicacion, type FaltanteGtf, type GtfDatos, type UbicacionTraslado } from "./ctp-gtf-datos";
@@ -171,11 +172,13 @@ const aCm = (m: number | null): number | null => (m == null || !Number.isFinite(
 
 /**
  * El código que imprime un papel (hoja SERFOR, relación de guías): el de la
- * guía si difiere del único del libro (ADR-474: si no, el papel diría
- * «12A (0000002)» y SNIFFS «12A»).
+ * guía si difiere del único del libro (ADR-474/477: si no, el papel diría
+ * «12A-0001» y SNIFFS «12A»). Sin `codigoGuia` guardado y con el N° de la
+ * guía, se deriva quitando el sufijo de ESA guía (`codigoDeLaGuia`).
  */
-export function codigoImpreso(it: { code?: string | null; codigoGuia?: string | null }): string {
-  return (it.codigoGuia ?? "").trim() || (it.code ?? "").trim();
+export function codigoImpreso(it: { code?: string | null; codigoGuia?: string | null }, gtfNumber?: string | null): string {
+  const code = (it.code ?? "").trim();
+  return (it.codigoGuia ?? "").trim() || (code && gtfNumber ? codigoDeLaGuia(code, gtfNumber) : code);
 }
 
 /**

@@ -76,7 +76,7 @@ export interface PropuestaGtf {
 }
 
 /** Los tramos de un número: `« 019 - 001-0000064 »` → `["019", "001", "0000064"]`. */
-function tramosDe(texto: string | null | undefined): string[] | null {
+export function tramosDe(texto: string | null | undefined): string[] | null {
   const limpio = String(texto ?? "").trim().toUpperCase().replace(/^-+|-+$/g, "");
   if (!limpio) return null;
   const tramos = limpio.split(/\s*-\s*/).map((t) => t.replace(/\s+/g, " ").trim());

@@ -102,6 +102,18 @@ describe("planearMedidasDesdeGuia: lo que no se adivina", () => {
     expect(p.ambiguas[0].codigo).toBe("116-A");
   });
 
+  it("ADR-477: el código único del libro («12A-0001», «13/A (0000008)-0003») empareja flexible con el de la guía", () => {
+    const guia = [
+      { codificacion: "12A", dimensiones: "55 X 51 X 7" },
+      { codificacion: "13/A (0000008)", dimensiones: "40 X 38 X 5" },
+    ];
+    const p = planearMedidasDesdeGuia([troza("a", "12A-0001"), troza("b", "13/A (0000008)-0003")], guia);
+    expect(p.llenar.map((f) => [f.id, f.d1, f.coincidencia, f.codigoGuia])).toEqual([
+      ["a", 55, "flexible", "12A"],
+      ["b", 40, "flexible", "13/A (0000008)"],
+    ]);
+  });
+
   it("la exacta gana: `13/A` y `13A` en la guía, cada una con la suya", () => {
     const guia = [
       { codificacion: "13/A", dimensiones: "55 X 51 X 7" },
