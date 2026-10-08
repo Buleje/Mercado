@@ -146,7 +146,7 @@ describe("WoodEntriesPrecioDB.ponerPrecio", () => {
     const err = await WoodEntriesPrecioDB.ponerPrecio("tenant-qa", input(180), "qaadmin").catch((e) => e);
     expect(err).toBeInstanceOf(CtpInvariantError);
     expect(err).toMatchObject({ code: "ESTADO_NO_EDITABLE", detail: { motivo: "GUIA_PAGADA_POR_CUBICACION", gtfNumber: "GTF-b", cubicacion: "CUB-2026-0004" } });
-    expect(H.estado.locksGuia).toEqual(["guia-plata:tenant-qa:GTF-a", "guia-plata:tenant-qa:GTF-b"]);
+    expect(H.estado.locksGuia).toEqual(["guia-plata:tenant-qa:A", "guia-plata:tenant-qa:B"]);
     expect(H.estado.updates).toEqual([]);
   });
 
@@ -182,8 +182,8 @@ describe("WoodEntriesPrecioDB.ponerPrecio", () => {
     // El abono viejo (S/ 1000) no queda: vale lo que la guía vale ahora.
     expect(H.estado.abonosEscritos).toEqual([{ id: "mov-a", monto: "1695.6" }]);
     // Las guías se bloquean ANTES que las filas, en orden (mismo orden que el modal y la liquidación).
-    expect(H.estado.locksGuia).toEqual(["guia-plata:tenant-qa:GTF-a", "guia-plata:tenant-qa:GTF-b"]);
-    expect(H.estado.orden.indexOf("filas")).toBeGreaterThan(H.estado.orden.indexOf("lock:guia-plata:tenant-qa:GTF-b"));
+    expect(H.estado.locksGuia).toEqual(["guia-plata:tenant-qa:A", "guia-plata:tenant-qa:B"]);
+    expect(H.estado.orden.indexOf("filas")).toBeGreaterThan(H.estado.orden.indexOf("lock:guia-plata:tenant-qa:B"));
   });
 
   it("un dedazo sin confirmar NO escribe nada y devuelve el aviso", async () => {

@@ -104,9 +104,9 @@ describe("LiquidacionCuentaDB.crear — orden de los locks", () => {
     await expect(LiquidacionCuentaDB.crear(T, entrada() as never, "qaadmin")).rejects.toBeInstanceOf(PlanCambioError);
     const locks = H.estado.pasos.filter((p) => p.startsWith("lock:"));
     expect(locks.slice(0, 4)).toEqual([
-      `lock:guia-plata:${T}:GTF-A`,
-      `lock:guia-plata:${T}:GTF-B`,
-      `lock:guia-plata:${T}:GTF-C`,
+      `lock:guia-plata:${T}:A`,
+      `lock:guia-plata:${T}:B`,
+      `lock:guia-plata:${T}:C`,
       `lock:liq:${T}:parte:p1`,
     ]);
   });

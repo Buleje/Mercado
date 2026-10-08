@@ -55,6 +55,7 @@ import { limaDateKey } from "@/lib/utils";
 import type { FiltroPago } from "@/lib/forestal/ingresos-filtros-columna";
 import { GuiaPlataDB } from "./guia-plata.db";
 import { cubicacionQuePagoLaGuia, mensajeGuiaPagadaPorCubicacion } from "./guia-cubicacion.db";
+import { claveCandadoGtf } from "@/lib/forestal/gtf-talonario";
 import { planearMedida, type CambioMedidaTroza, type PlanMedida } from "@/lib/forestal/medidas-troza";
 import { fmtPt } from "@/lib/forestal/cubicacion-formato";
 import { mensajeApartadasEnMixto, mixtoVivo } from "@/lib/forestal/lote-mixto";
@@ -1442,6 +1443,17 @@ function costoEnGuiaDeServicio(gtfNumber: string, dueno: string | null): CtpInva
  * código, motivo y mensaje en las tres puertas de este archivo (`create`, la
  * mudanza de guía de `update` y `setCosto`).
  */
+/**
+ * El asiento cambió de guía entre la lectura y el candado: 409, se reintenta
+ * (`setCosto`; la tanda de precios usa el mismo código).
+ */
+function guiaCambiadaAlGuardar(gtfNumber: string): CtpInvariantError {
+  return new CtpInvariantError(`La guía cambió (ahora es ${gtfNumber}) mientras guardabas: vuelve a intentarlo.`, "CAMBIO_DE_GUIA", {
+    motivo: "CAMBIO_DE_GUIA",
+    gtfNumber,
+  });
+}
+
 function guiaPagadaPorCubicacion(gtfNumber: string, codigo: string): CtpInvariantError {
   return new CtpInvariantError(mensajeGuiaPagadaPorCubicacion(gtfNumber, codigo), "ESTADO_NO_EDITABLE", {
     motivo: "GUIA_PAGADA_POR_CUBICACION",
@@ -5615,23 +5627,15 @@ export class WoodEntriesDB {
          cubicación, ponerle costo la valoriza dos veces. Quitarlo (null) sí.
          La guía se RELEE bajo el lock: `actual` se leyó antes de la tx, y una
          mudanza de guía (`update`) que terminó en el medio dejaba el lock y la
-         consulta sobre la guía vieja. Si cambió, se toma también el lock de la
-         nueva —sigue siendo guía primero: antes de escribir y de los locks de
-         persona de la cuenta—; si volvió a cambiar, se pide reintentar. */
+         consulta sobre la guía vieja. Si cambió a OTRO candado, se pide
+         reintentar (409) en vez de tomar el de la nueva: un segundo candado
+         después del primero rompe el orden fijo de las guías
+         (`ForestCuentaDB.bloquearGuiasEnTx`) y dos de estos se abrazaban
+         (40P01). Si sólo cambió cómo está escrita (`019-…` → `19-…`), el
+         candado es el mismo y sigue. */
       await ForestCuentaDB.bloquearGuiasEnTx(tx, tenantId, [actual.gtfNumber]);
-      const guiaHoy = async () =>
-        ((await tx.woodEntry.findFirst({ where: { id, tenantId, deletedAt: null }, select: { gtfNumber: true } }))?.gtfNumber ?? actual.gtfNumber).trim();
-      const gtf = await guiaHoy();
-      if (gtf !== actual.gtfNumber.trim()) {
-        await ForestCuentaDB.bloquearGuiasEnTx(tx, tenantId, [gtf]);
-        if ((await guiaHoy()) !== gtf) {
-          throw new CtpInvariantError(
-            `El ingreso cambió de guía mientras lo valorizabas: vuelve a abrirlo y ponle el costo otra vez.`,
-            "ESTADO_NO_EDITABLE",
-            { motivo: "CAMBIO_DE_GUIA", gtfNumber: gtf },
-          );
-        }
-      }
+      const gtf = ((await tx.woodEntry.findFirst({ where: { id, tenantId, deletedAt: null }, select: { gtfNumber: true } }))?.gtfNumber ?? actual.gtfNumber).trim();
+      if (claveCandadoGtf(gtf) !== claveCandadoGtf(actual.gtfNumber)) throw guiaCambiadaAlGuardar(gtf);
       if (input.costoTotal != null) {
         const porCubicacion = await cubicacionQuePagoLaGuia(tx, tenantId, gtf);
         if (porCubicacion) throw guiaPagadaPorCubicacion(gtf, porCubicacion.codigo);

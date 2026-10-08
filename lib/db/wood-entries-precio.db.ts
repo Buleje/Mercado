@@ -27,6 +27,7 @@ import { ingresosConCostoCongelado } from "./costo-congelado.db";
 import { ForestCuentaDB } from "./forest-cuenta.db";
 import { CtpInvariantError } from "./forest-ctp-consumo.db";
 import { cubicacionQuePagoLaGuia, mensajeGuiaPagadaPorCubicacion } from "./guia-cubicacion.db";
+import { claveCandadoGtf } from "@/lib/forestal/gtf-talonario";
 
 /**
  * WoodEntriesPrecioDB — poner precio a la madera en tanda (proveedor × especie).
@@ -314,10 +315,15 @@ export const WoodEntriesPrecioDB = {
           }
         }
         for (const c of p.cambios) {
-          if (!guiasBloqueadas.has(c.gtfNumber.trim())) {
+          if (!guiasBloqueadas.has(claveCandadoGtf(c.gtfNumber) ?? "")) {
             /* La fila cambió de guía entre la lectura y el lock: no se escribe
-               plata sobre una guía que no está bloqueada. */
-            throw new Error(`La guía ${c.gtfNumber} cambió mientras se ponía el precio. Vuelve a abrir la tanda.`);
+               plata sobre una guía que no está bloqueada. Se compara por la
+               clave del candado (las claves que devuelve el lock), no por el
+               texto: `019-…` → `19-…` es el mismo candado. 409, se reintenta. */
+            throw new CtpInvariantError(`La guía ${c.gtfNumber} cambió mientras se ponía el precio. Vuelve a abrir la tanda.`, "CAMBIO_DE_GUIA", {
+              motivo: "CAMBIO_DE_GUIA",
+              gtfNumber: c.gtfNumber,
+            });
           }
           const r = await tx.woodEntry.updateMany({
             where: { id: c.id, tenantId, deletedAt: null, status: { in: [...ESTADOS_VALORIZABLES] }, ...FILTRO_REQUIERE_COSTO },

@@ -12,6 +12,7 @@ import {
   mensajeCargoDeCorrida,
 } from "@/lib/forestal/aserrio-cobro";
 import { RELACIONES_PARTE, type RelacionParte, type SaldoConsolidado } from "@/lib/forestal/vinculos-parte";
+import { claveCandadoGtf } from "@/lib/forestal/gtf-talonario";
 import { exigirParteDelTenant } from "./forest-parte-tarifa.db";
 
 /**
@@ -435,15 +436,22 @@ export const ForestCuentaDB = {
    * persona (`bloquearPartesEnTx`). Antes, el modal tomaba la guía y la
    * liquidación la persona, y ninguno esperaba al otro: una liquidación podía
    * validar «≤ pendiente» contra un abono que otro estaba cambiando.
+   *
+   * La clave es la forma canónica de la guía (`claveCandadoGtf`), nunca el
+   * texto: `065`, `019-001-0000065` y `19-001-0000065` bloquean el MISMO
+   * recurso, porque el freno de doble pago (`cubicacionQuePagoLaGuia`) los
+   * trata como la misma guía. Devuelve las claves bloqueadas: para saber si una
+   * guía quedó cubierta, comparar con `claveCandadoGtf(gtf)`, no con el texto.
+   * Ninguna puerta arma la clave a mano: todas pasan por acá.
    */
   async bloquearGuiasEnTx(tx: Prisma.TransactionClient, tenantId: string, gtfNumbers: ReadonlyArray<string | null | undefined>): Promise<string[]> {
     if (!tenantId) throw new Error("tenantId is required");
-    const gtfs = [...new Set(gtfNumbers.map((g) => (g ?? "").trim()).filter(Boolean))].sort();
-    for (const gtf of gtfs) {
+    const claves = [...new Set(gtfNumbers.map(claveCandadoGtf).filter((c): c is string => c != null))].sort();
+    for (const clave of claves) {
       // `$executeRaw` con plantilla = parámetros ($1), nunca interpolación.
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`guia-plata:${tenantId}:${gtf}`}))`;
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`guia-plata:${tenantId}:${clave}`}))`;
     }
-    return gtfs;
+    return claves;
   },
 
   /**

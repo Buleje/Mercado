@@ -143,6 +143,25 @@ export function colaDeGtf(texto: string | null | undefined): string | null {
 }
 
 /**
+ * La clave del CANDADO de la plata de una guía (`ForestCuentaDB.bloquearGuiasEnTx`):
+ * la cola del número (`colaDeGtf`). Antes era el texto exacto, y el freno de
+ * «una guía, una sola plata» compara con `mismoNumeroGtf`: un alta con
+ * `019-001-0000065` y un «aplicar» sobre `19-001-0000065` tomaban candados
+ * distintos y los dos pagaban la misma madera (revisión 08-10).
+ *
+ * Amplia a propósito, igual que el filtro de la base (`filtroMismaGuia`): si
+ * `mismoNumeroGtf(a, b)` entonces la clave es la misma (mismo último tramo por
+ * valor), y también `065` a mano ≡ `19-001-0000065` del talonario. Dos guías
+ * distintas con la misma cola sólo esperan una a la otra: nunca se cruzan.
+ * Sin tramos legibles (`19--65`) vale el texto en mayúsculas. `null` = vacío.
+ */
+export function claveCandadoGtf(texto: string | null | undefined): string | null {
+  const limpio = String(texto ?? "").trim();
+  if (!limpio) return null;
+  return colaDeGtf(limpio) ?? limpio.toUpperCase();
+}
+
+/**
  * El correlativo de `numero` si es de `serie`: sus tramos son los de la serie
  * más uno final, todo dígitos. `digitos` es el largo con el que se escribió.
  */

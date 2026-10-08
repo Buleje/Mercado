@@ -29,7 +29,7 @@ import type { Prisma } from "@/lib/generated/prisma/client";
  * ORDEN GLOBAL DE LOCKS (F4, 3ª pasada de seguridad de ADR-448). De afuera
  * hacia adentro; ningún camino los toma al revés:
  *
- *   1. guías de la persona  — `guia-plata:<t>:<gtf>` (`ForestCuentaDB.bloquearGuiasEnTx`)
+ *   1. guías de la persona  — `guia-plata:<t>:<claveCandadoGtf>` (`ForestCuentaDB.bloquearGuiasEnTx`)
  *   2. la persona           — `liq:<t>:benef:<id>`, `liq:<t>:parte:<id>`
  *   3. comprobantes         — `liq:<t>:comprobantes`
  *   4. filas de `Adelanto`  — `FOR UPDATE` (alta, entrega, anulación, liquidación)

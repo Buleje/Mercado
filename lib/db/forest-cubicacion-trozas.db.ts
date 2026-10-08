@@ -617,8 +617,12 @@ export const ForestCubicacionTrozasDB = {
   async anular(tenantId: string, id: string, motivo: string, actor: ActorCubicacion): Promise<{ cubicacion: CubicacionTrozasDTO; repetido: boolean }> {
     if (!tenantId) throw new Error("tenantId is required");
     const hecho = await prisma.$transaction(async (tx) => {
-      const previa = await tx.forestCubicacionTrozas.findFirst({ where: { id, tenantId, deletedAt: null }, select: { beneficiarioId: true, parteId: true } });
+      const previa = await tx.forestCubicacionTrozas.findFirst({ where: { id, tenantId, deletedAt: null }, select: { gtfNumber: true, beneficiarioId: true, parteId: true } });
       if (!previa) throw new CubicacionTrozasError("NO_ENCONTRADA", "Esa cubicación no existe.");
+      /* El candado de la guía antes que el de la persona, como «aplicar»: anular
+         suelta la plata de la guía, y una puerta que le pone costo
+         (`cubicacionQuePagoLaGuia`) espera a que termine en vez de leer a medias. */
+      if (previa.gtfNumber) await ForestCuentaDB.bloquearGuiasEnTx(tx, tenantId, [previa.gtfNumber]);
       const beneficiarioId = await beneficiarioDe(tx, tenantId, previa);
       if (beneficiarioId) await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`liq:${tenantId}:benef:${beneficiarioId}`}))`;
       await tx.$queryRaw`SELECT "id" FROM "ForestCubicacionTrozas" WHERE "id" = ${id} AND "tenantId" = ${tenantId} FOR UPDATE`;

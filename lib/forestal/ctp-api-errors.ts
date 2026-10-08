@@ -52,14 +52,16 @@ export function ctpErrorResponse(err: unknown, ctx: string, tenantId: string): N
     /* Una foto rechazada es un pedido mal formado (firma que no cuadra, foto de
        otra guía), no un dato del libro que no cuadra: 400, como el Zod. Un
        paquete que ya viaja en otra guía choca con un recurso que existe: 409
-       (ADR-444) — reintentar el mismo pedido no lo arregla, anular esa guía sí. */
+       (ADR-444) — reintentar el mismo pedido no lo arregla, anular esa guía sí.
+       Un asiento que cambió de guía mientras se guardaba su plata, 409: el
+       recurso se movió y reintentar sí lo arregla. */
     return NextResponse.json(
       { error: err.code, message: err.message, detail: err.detail },
       {
         status:
           err.code === "FOTO_NO_VALIDA"
             ? 400
-            : err.code === "PAQUETE_YA_DESPACHADO" || err.code === "TROZA_NO_RETROZABLE"
+            : err.code === "PAQUETE_YA_DESPACHADO" || err.code === "TROZA_NO_RETROZABLE" || err.code === "CAMBIO_DE_GUIA"
               ? 409
               : 422,
       },

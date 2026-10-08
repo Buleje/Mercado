@@ -67,6 +67,10 @@ vi.mock("@/lib/db/forest-ctp-cierre.db", () => ({
 
 import { WoodEntriesDB } from "@/lib/db/wood-entries.db";
 import { CtpInvariantError } from "@/lib/db/forest-ctp-consumo.db";
+import { ForestCuentaDB } from "@/lib/db/forest-cuenta.db";
+import { claveCandadoGtf } from "@/lib/forestal/gtf-talonario";
+import { ctpErrorResponse } from "@/lib/forestal/ctp-api-errors";
+import { prisma } from "@/lib/prisma";
 
 const guia = (extra: Record<string, unknown> = {}) => ({
   id: "w1",
@@ -88,6 +92,20 @@ beforeEach(() => {
   H.updates = [];
   H.consultasCongelado = [];
   H.gtfEnTx = null;
+});
+
+describe("ForestCuentaDB.bloquearGuiasEnTx — un candado por guía normalizada", () => {
+  it("«065», «19-001-0000065» y «019-001-0000065» del mismo talonario bloquean el MISMO recurso (una vez)", async () => {
+    const claves = await ForestCuentaDB.bloquearGuiasEnTx(prisma as never, "tenant-qa", ["065", " 19-001-0000065 ", "019-001-0000065"]);
+    expect(claves).toEqual(["65"]);
+    expect(H.locks).toEqual(["guia-plata:tenant-qa:65"]);
+    expect(claveCandadoGtf("065")).toBe(claveCandadoGtf("19-001-0000065"));
+  });
+
+  it("guías distintas, candados distintos y en orden fijo; vacías no bloquean", async () => {
+    await ForestCuentaDB.bloquearGuiasEnTx(prisma as never, "tenant-qa", ["001-0000300", null, "  ", "001-0000201"]);
+    expect(H.locks).toEqual(["guia-plata:tenant-qa:201", "guia-plata:tenant-qa:300"]);
+  });
 });
 
 describe("WoodEntriesDB.setCosto — mismo freno que la tanda", () => {
@@ -135,21 +153,34 @@ describe("WoodEntriesDB.setCosto — mismo freno que la tanda", () => {
     expect(err).toBeInstanceOf(CtpInvariantError);
     expect(err).toMatchObject({ code: "ESTADO_NO_EDITABLE", detail: { motivo: "GUIA_PAGADA_POR_CUBICACION", cubicacion: "CUB-2026-0007" } });
     expect(String(err.message)).toMatch(/001-0000201.*CUB-2026-0007/);
-    expect(H.locks).toEqual(["guia-plata:tenant-qa:001-0000201"]);
+    expect(H.locks).toEqual(["guia-plata:tenant-qa:201"]);
     expect(H.updates).toEqual([]);
     await WoodEntriesDB.setCosto("tenant-qa", "w1", { costoTotal: null }, "qaadmin");
     expect(H.updates).toHaveLength(1);
   });
 
-  it("la guía se relee BAJO el lock: si el ingreso se mudó antes de la tx, bloquea y consulta la NUEVA", async () => {
-    /* `actual` dice 001-0000201; un `update` lo mudó a 001-0000300 (pagada por una CUB) antes del lock. */
+  it("la guía se relee BAJO el lock: si el ingreso se mudó a OTRA guía antes de la tx → CAMBIO_DE_GUIA (409), sin un segundo candado fuera de orden", async () => {
+    /* `actual` dice 001-0000201; un `update` lo mudó a 001-0000300 antes del lock.
+       Tomar también el candado de la nueva, después del de la vieja, rompe el
+       orden fijo de las guías: dos de estos se abrazaban (40P01). */
     H.entry = guia({ costoTotal: null });
     H.gtfEnTx = "001-0000300";
-    H.cubicaciones = [{ codigo: "CUB-2026-0009", gtfNumber: "1-300" }];
     const err = await WoodEntriesDB.setCosto("tenant-qa", "w1", { costoTotal: 100 }, "qaadmin").catch((e) => e);
     expect(err).toBeInstanceOf(CtpInvariantError);
-    expect(err).toMatchObject({ detail: { motivo: "GUIA_PAGADA_POR_CUBICACION", gtfNumber: "001-0000300", cubicacion: "CUB-2026-0009" } });
-    expect(H.locks).toEqual(["guia-plata:tenant-qa:001-0000201", "guia-plata:tenant-qa:001-0000300"]);
+    expect(err).toMatchObject({ code: "CAMBIO_DE_GUIA", detail: { motivo: "CAMBIO_DE_GUIA", gtfNumber: "001-0000300" } });
+    expect(String(err.message)).toMatch(/cambió.*vuelve a intentarlo/);
+    expect(H.locks).toEqual(["guia-plata:tenant-qa:201"]);
+    expect(H.updates).toEqual([]);
+    expect(ctpErrorResponse(err, "test", "tenant-qa").status).toBe(409);
+  });
+
+  it("si sólo cambió cómo está escrita la guía («19-001-0000065» → «065»), el candado es el mismo: sigue y frena por la cubicación", async () => {
+    H.entry = guia({ costoTotal: null, gtfNumber: "19-001-0000065" });
+    H.gtfEnTx = "065";
+    H.cubicaciones = [{ codigo: "CUB-2026-0011", gtfNumber: "065" }];
+    const err = await WoodEntriesDB.setCosto("tenant-qa", "w1", { costoTotal: 100 }, "qaadmin").catch((e) => e);
+    expect(err).toMatchObject({ code: "ESTADO_NO_EDITABLE", detail: { motivo: "GUIA_PAGADA_POR_CUBICACION", cubicacion: "CUB-2026-0011" } });
+    expect(H.locks).toEqual(["guia-plata:tenant-qa:65"]);
     expect(H.updates).toEqual([]);
   });
 

@@ -123,6 +123,10 @@ export class CtpInvariantError extends Error {
       /** Se quiso corregir un ingreso que ya no está pendiente: ahí el camino
        *  es anular con motivo y registrar de nuevo (queda el rastro). */
       | "ESTADO_NO_EDITABLE"
+      /** La guía de un asiento cambió entre la lectura y el candado de la
+       *  plata de la guía (`ForestCuentaDB.bloquearGuiasEnTx`): no se toma un
+       *  segundo candado fuera de orden (40P01), se pide reintentar. Va 409. */
+      | "CAMBIO_DE_GUIA"
       // ── Cierre de período fiscal (ADR-139) ──
       /** La línea cae en un mes cerrado: el acta es inmutable hasta reabrir. */
       | "PERIODO_CERRADO"

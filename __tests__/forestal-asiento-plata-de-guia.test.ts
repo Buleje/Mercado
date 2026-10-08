@@ -154,7 +154,7 @@ describe("update que cambia la guía de un asiento", () => {
 
     await WoodEntriesDB.update("tenant-qa", "a1", { gtfNumber: "GTF-A" }, "qaadmin");
 
-    expect(H.estado.locks.filter((l) => l.startsWith("guia-plata:"))).toEqual(["guia-plata:tenant-qa:GTF-A", "guia-plata:tenant-qa:GTF-B"]);
+    expect(H.estado.locks.filter((l) => l.startsWith("guia-plata:"))).toEqual(["guia-plata:tenant-qa:A", "guia-plata:tenant-qa:B"]);
     expect(H.estado.abonosEscritos).toEqual(
       expect.arrayContaining([
         { id: "mov-b", monto: "700" },
@@ -200,7 +200,7 @@ describe("create en una guía existente", () => {
     H.estado.filas = [fila("s1", "GTF-S", { maderaDeTercero: true, duenoParteId: "wasaco", duenoNombre: "WASACO" })];
     await WoodEntriesDB.create("tenant-qa", alta("GTF-S") as never);
     expect(H.estado.creates[0]).toMatchObject({ gtfNumber: "GTF-S", maderaDeTercero: true, duenoParteId: "wasaco", duenoNombre: "WASACO" });
-    expect(H.estado.locks).toContain("guia-plata:tenant-qa:GTF-S");
+    expect(H.estado.locks).toContain("guia-plata:tenant-qa:S");
   });
 
   it("con costo en una guía de servicio se rechaza (la madera de servicio no lleva costo)", async () => {
@@ -241,7 +241,7 @@ describe("una guía, una sola plata (ADR-478 §7): las puertas que se le escapab
     expect(String(err.message)).toMatch(/001-0000201.*CUB-2026-0007/);
     expect(H.estado.creates).toEqual([]);
     /* Bajo el lock de la guía: el mismo que toma «aplicar». */
-    expect(H.estado.locks).toContain("guia-plata:tenant-qa:001-0000201");
+    expect(H.estado.locks).toContain("guia-plata:tenant-qa:201");
 
     await WoodEntriesDB.create("tenant-qa", alta("001-0000201") as never);
     expect(H.estado.creates).toHaveLength(1);
@@ -258,7 +258,7 @@ describe("una guía, una sola plata (ADR-478 §7): las puertas que se le escapab
     expect(err).toBeInstanceOf(CtpInvariantError);
     expect(err).toMatchObject({ detail: { motivo: "GUIA_PAGADA_POR_CUBICACION", gtfNumber: "001-0000201", cubicacion: "CUB-2026-0007" } });
     expect(H.estado.updates).toEqual([]);
-    expect(H.estado.locks).toEqual(["guia-plata:tenant-qa:001-0000201", "guia-plata:tenant-qa:GTF-C"]);
+    expect(H.estado.locks).toEqual(["guia-plata:tenant-qa:201", "guia-plata:tenant-qa:C"]);
 
     await WoodEntriesDB.update("tenant-qa", "x1", { gtfNumber: "001-0000201" }, "qaadmin");
     expect(H.estado.updates[0].data).toMatchObject({ gtfNumber: "001-0000201" });
