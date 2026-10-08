@@ -44,7 +44,7 @@ describe("galería de personas", () => {
   });
 
   it("lee motivo y personas del nombre si falta la metadata", () => {
-    expect(leerMetaFoto(docs[2])).toEqual({ motivo: "sigue", personas: 2, confianza: null, camaraId: null });
+    expect(leerMetaFoto(docs[2])).toEqual({ motivo: "sigue", personas: 2, confianza: null, camaraId: null, cajas: null });
   });
 
   it("arma cifras del día, por hora y cámara con más", () => {

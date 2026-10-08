@@ -13,6 +13,8 @@ const H = vi.hoisted(() => {
   const estado = {
     filas: [] as Record<string, unknown>[],
     congelados: [] as { woodEntryId: string }[],
+    /* ADR-478: cubicaciones de trozas aplicadas (la base trae candidatas por la cola del N°). */
+    cubicaciones: [] as { codigo: string; gtfNumber: string }[],
     cierres: [] as unknown[],
     updates: [] as { where: Record<string, unknown>; data: Record<string, unknown> }[],
     countPorUpdate: 1,
@@ -55,6 +57,7 @@ const H = vi.hoisted(() => {
       count: async () => 0,
     },
     forestCtpConsumo: { findMany: async () => estado.congelados },
+    forestCubicacionTrozas: { findMany: async () => estado.cubicaciones },
     forestCuentaMov: {
       findFirst: async (args: { where: { gtfNumber: string } }) => estado.abonos.get(args.where.gtfNumber) ?? null,
       update: async (args: { where: { id: string }; data: { monto?: { toString(): string } } }) => {
@@ -90,6 +93,7 @@ vi.mock("@/lib/db/forest-ctp-cierre.db", () => ({ ForestCtpCierreDB: { list: asy
 
 import { WoodEntriesPrecioDB } from "@/lib/db/wood-entries-precio.db";
 import { invalidateByPrefix } from "@/lib/cache";
+import { CtpInvariantError } from "@/lib/db/forest-ctp-consumo.db";
 
 const SANTOS = "SANTOS MUÑOZ JOSE HORD";
 const filaDb = (id: string, especie: string, vol: string, extra: Record<string, unknown> = {}) => ({
@@ -109,6 +113,7 @@ const filaDb = (id: string, especie: string, vol: string, extra: Record<string, 
 beforeEach(() => {
   H.estado.filas = [filaDb("a", "Mashonaste", "9.4200"), filaDb("b", "Ana Caspi", "8.3840")];
   H.estado.congelados = [];
+  H.estado.cubicaciones = [];
   H.estado.cierres = [];
   H.estado.updates = [];
   H.estado.countPorUpdate = 1;
@@ -136,6 +141,15 @@ const input = (precioM3: number, extra: Record<string, unknown> = {}) => ({
 });
 
 describe("WoodEntriesPrecioDB.ponerPrecio", () => {
+  it("ADR-478 (revisión M): una guía pagada con una cubicación aplicada no recibe costo en tanda → GUIA_PAGADA_POR_CUBICACION, sin escribir nada", async () => {
+    H.estado.cubicaciones = [{ codigo: "CUB-2026-0004", gtfNumber: "gtf-b" }];
+    const err = await WoodEntriesPrecioDB.ponerPrecio("tenant-qa", input(180), "qaadmin").catch((e) => e);
+    expect(err).toBeInstanceOf(CtpInvariantError);
+    expect(err).toMatchObject({ code: "ESTADO_NO_EDITABLE", detail: { motivo: "GUIA_PAGADA_POR_CUBICACION", gtfNumber: "GTF-b", cubicacion: "CUB-2026-0004" } });
+    expect(H.estado.locksGuia).toEqual(["guia-plata:tenant-qa:GTF-a", "guia-plata:tenant-qa:GTF-b"]);
+    expect(H.estado.updates).toEqual([]);
+  });
+
   it("escribe cada costo con el tenant en el WHERE, bloquea antes y audita la tanda", async () => {
     const r = await WoodEntriesPrecioDB.ponerPrecio("tenant-qa", input(180), "qaadmin");
     expect(r.estado).toBe("hecho");

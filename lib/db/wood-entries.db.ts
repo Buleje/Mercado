@@ -54,6 +54,7 @@ import { problemaDeLlegada, type ConfirmacionDeVencida } from "@/lib/forestal/fe
 import { limaDateKey } from "@/lib/utils";
 import type { FiltroPago } from "@/lib/forestal/ingresos-filtros-columna";
 import { GuiaPlataDB } from "./guia-plata.db";
+import { cubicacionQuePagoLaGuia, mensajeGuiaPagadaPorCubicacion } from "./guia-cubicacion.db";
 import { planearMedida, type CambioMedidaTroza, type PlanMedida } from "@/lib/forestal/medidas-troza";
 import { fmtPt } from "@/lib/forestal/cubicacion-formato";
 import { mensajeApartadasEnMixto, mixtoVivo } from "@/lib/forestal/lote-mixto";
@@ -5579,6 +5580,20 @@ export class WoodEntriesDB {
        medio, no se escribe costo), y si la guía ya estaba anotada en la cuenta
        del proveedor (ADR-437 §4) el abono `madera` pasa a valer la suma nueva. */
     const { entry, cuenta } = await prisma.$transaction(async (tx) => {
+      /* Una guía, una sola plata (ADR-478 §7): bajo el lock de la guía —el que
+         toma «aplicar» una cubicación—, si su madera ya se pagó con una
+         cubicación, ponerle costo la valoriza dos veces. Quitarlo (null) sí. */
+      await ForestCuentaDB.bloquearGuiasEnTx(tx, tenantId, [actual.gtfNumber]);
+      if (input.costoTotal != null) {
+        const porCubicacion = await cubicacionQuePagoLaGuia(tx, tenantId, actual.gtfNumber);
+        if (porCubicacion) {
+          throw new CtpInvariantError(mensajeGuiaPagadaPorCubicacion(actual.gtfNumber, porCubicacion.codigo), "ESTADO_NO_EDITABLE", {
+            motivo: "GUIA_PAGADA_POR_CUBICACION",
+            gtfNumber: actual.gtfNumber,
+            cubicacion: porCubicacion.codigo,
+          });
+        }
+      }
       const res = await tx.woodEntry.updateMany({
         where: { id, tenantId, deletedAt: null, ...FILTRO_REQUIERE_COSTO },
         data: {

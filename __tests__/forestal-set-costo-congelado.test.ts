@@ -11,6 +11,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const H = vi.hoisted(() => ({
   entry: null as Record<string, unknown> | null,
   congelados: [] as { woodEntryId: string }[],
+  /* ADR-478: cubicaciones aplicadas y los locks de guía tomados. */
+  cubicaciones: [] as { codigo: string; gtfNumber: string }[],
+  locks: [] as string[],
   updates: [] as unknown[],
   consultasCongelado: [] as unknown[],
 }));
@@ -38,6 +41,11 @@ vi.mock("@/lib/prisma", () => {
     },
     /* La guía no está anotada en ninguna cuenta: la re-sincronización no hace nada. */
     forestCuentaMov: { findFirst: vi.fn(async () => null) },
+    forestCubicacionTrozas: { findMany: vi.fn(async () => H.cubicaciones) },
+    $executeRaw: vi.fn(async (s: TemplateStringsArray, ...vals: unknown[]) => {
+      if (s.join("?").includes("pg_advisory_xact_lock")) H.locks.push(String(vals[0]));
+      return 1;
+    }),
   };
   prisma.$transaction = vi.fn(async (fn: (tx: unknown) => Promise<unknown>) => fn(prisma));
   return { prisma };
@@ -71,6 +79,8 @@ const guia = (extra: Record<string, unknown> = {}) => ({
 beforeEach(() => {
   H.entry = guia();
   H.congelados = [];
+  H.cubicaciones = [];
+  H.locks = [];
   H.updates = [];
   H.consultasCongelado = [];
 });
@@ -110,6 +120,20 @@ describe("WoodEntriesDB.setCosto — mismo freno que la tanda", () => {
       expect(String(err.message)).toMatch(/servicio de WASACO/);
     }
     expect(H.updates).toEqual([]);
+  });
+
+  it("ADR-478 (revisión M): con la madera pagada por una cubicación, no escribe costo bajo el lock de la guía; quitarlo (null) sí", async () => {
+    /* «1-201» es la misma guía que «001-0000201» (`mismoNumeroGtf`). */
+    H.entry = guia({ costoTotal: null });
+    H.cubicaciones = [{ codigo: "CUB-2026-0007", gtfNumber: "1-201" }];
+    const err = await WoodEntriesDB.setCosto("tenant-qa", "w1", { costoTotal: 100 }, "qaadmin").catch((e) => e);
+    expect(err).toBeInstanceOf(CtpInvariantError);
+    expect(err).toMatchObject({ code: "ESTADO_NO_EDITABLE", detail: { motivo: "GUIA_PAGADA_POR_CUBICACION", cubicacion: "CUB-2026-0007" } });
+    expect(String(err.message)).toMatch(/001-0000201.*CUB-2026-0007/);
+    expect(H.locks).toEqual(["guia-plata:tenant-qa:001-0000201"]);
+    expect(H.updates).toEqual([]);
+    await WoodEntriesDB.setCosto("tenant-qa", "w1", { costoTotal: null }, "qaadmin");
+    expect(H.updates).toHaveLength(1);
   });
 
   it("anulada o rechazada no lleva costo, igual que en la tanda", async () => {

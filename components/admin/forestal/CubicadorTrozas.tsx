@@ -331,8 +331,6 @@ export default function CubicadorTrozas() {
           )}
           <Ref label="Fórmula" value={u.nombre} hint={u.cuenta} />
         </div>
-
-        {/* ADR-478: el patio con dueño, para descontarlo de su adelanto. */}
         <CuentaDelPatio rows={rows} formula={formula} diametros={diametros} claveLote={claveLoteTrozas(tenantSlug(), formula)} />
       </div>
 

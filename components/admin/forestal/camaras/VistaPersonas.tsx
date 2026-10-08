@@ -18,10 +18,13 @@ import { enlaceAlDrive } from "@/components/admin/forestal/plan-documentos/plan-
 import { limaDateKey } from "@/lib/utils";
 import GentePorHora from "./GentePorHora";
 import GrillaPersonas, { type ChipCamara } from "./GrillaPersonas";
+import ResumenPersonasHoy from "./ResumenPersonasHoy";
+import VisitantesDelDia from "./VisitantesDelDia";
 import SelectorDia from "./SelectorDia";
 import VisorFotoPersona from "./VisorFotoPersona";
 import { navegarEnElPanel } from "./navegar-panel";
 import { useFotosPersonas } from "./use-fotos-personas";
+import { useResumenPersonas } from "./use-resumen-personas";
 import { BLOQUE, BTN, diaLegible } from "./camaras-ui";
 
 const INFO_POR_HORA = {
@@ -45,19 +48,29 @@ export default function VistaPersonas({ activo, recarga, camaras }: Props) {
   const [camara, setCamara] = useState<string | null>(null);
   const [hora, setHora] = useState<number | null>(null);
   const [abierta, setAbierta] = useState<number | null>(null);
+  /**
+   * `clave` del grupo elegido (no la etiqueta: «Visitante A» puede correrse al
+   * actualizar). La grilla muestra sólo sus fotos (su carpeta del día).
+   */
+  const [visitante, setVisitante] = useState<string | null>(null);
   const { galeria: g, cargando, error, recargar } = useFotosPersonas(dia, camara, activo);
+  const personas = useResumenPersonas(dia, activo);
+  const recargarPersonas = personas.recargar;
 
   const recargaVista = useRef(recarga);
   useEffect(() => {
     if (recargaVista.current === recarga) return;
     recargaVista.current = recarga;
-    if (activo) void recargar();
-  }, [recarga, activo, recargar]);
+    if (!activo) return;
+    void recargar();
+    void recargarPersonas();
+  }, [recarga, activo, recargar, recargarPersonas]);
 
   const cambiarDia = (d: string) => {
     setDia(d);
     setHora(null);
     setAbierta(null);
+    setVisitante(null);
   };
   const cambiarCamara = (c: string | null) => {
     setCamara(c);
@@ -73,9 +86,18 @@ export default function VistaPersonas({ activo, recarga, camaras }: Props) {
     return lista;
   }, [g?.camaras, camaras]);
   const anterior = g?.anteriorConFotos ?? null;
+  /* Si tras «Actualizar» ese grupo ya no está (se borró su primera foto), la elección queda limpia. */
+  const elegido = useMemo(
+    () => (visitante ? (personas.resumen?.grupos.find((x) => x.clave === visitante) ?? null) : null),
+    [visitante, personas.resumen],
+  );
+  const delVisitante = useMemo(() => (elegido ? new Set(elegido.fotos.map((f) => f.docId)) : null), [elegido]);
   const fotos = useMemo(
-    () => (g ? (hora === null ? g.fotos : g.fotos.filter((f) => Number(f.hora.slice(0, 2)) === hora)) : []),
-    [g, hora],
+    () =>
+      (g?.fotos ?? []).filter(
+        (f) => (hora === null || Number(f.hora.slice(0, 2)) === hora) && (!delVisitante || delVisitante.has(f.id)),
+      ),
+    [g, hora, delVisitante],
   );
 
   const esHoy = dia === hoy;
@@ -167,6 +189,9 @@ export default function VistaPersonas({ activo, recarga, camaras }: Props) {
                 </>
               )}
               {g.truncado && " · se muestran las 2000 más nuevas"}
+              <span className="ml-2 align-middle">
+                <ResumenPersonasHoy resumen={personas.resumen} esHoy={esHoy} />
+              </span>
             </p>
           )}
           <GentePorHora
@@ -178,9 +203,18 @@ export default function VistaPersonas({ activo, recarga, camaras }: Props) {
             onElegirHora={setHora}
             compacta
           />
-          <section className={BLOQUE} aria-label="Fotos de personas">
+          <VisitantesDelDia
+            resumen={personas.resumen}
+            error={personas.error}
+            elegido={elegido?.clave ?? null}
+            onElegir={(v) => {
+              setVisitante(v);
+              setAbierta(null);
+            }}
+          />
+          <section className={BLOQUE} aria-label={elegido ? `Fotos de ${elegido.etiqueta}` : "Fotos de personas"}>
             <GrillaPersonas
-              key={`${dia}|${camara ?? ""}|${hora ?? ""}`}
+              key={`${dia}|${camara ?? ""}|${hora ?? ""}|${elegido?.clave ?? ""}`}
               fotos={fotos}
               camaras={chips}
               totalDelDia={g.totalDia}

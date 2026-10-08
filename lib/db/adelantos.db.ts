@@ -178,6 +178,8 @@ export type DbAdelantoEntrega = {
   comprobanteUrl?: string | null;
   /** La liquidación de cuenta de la que salió (ADR-413). */
   liquidacionId?: string | null;
+  /** La cubicación de trozas con la que se pagó (ADR-478): «Madera · CUB-… · N trozas». */
+  cubicacionId?: string | null;
   createdAt: string;
 };
 
@@ -259,9 +261,20 @@ export class ParteYaVinculadaError extends Error {
  * mal (el adelanto seguía CANCELADO con el cruce devuelto). 409 `con_liquidacion`.
  */
 export class AdelantoConLiquidacionError extends Error {
-  readonly code = "con_liquidacion" as const;
-  constructor(readonly liquidacion: string) {
-    super(`Tiene un cruce o pago de la liquidación ${liquidacion}: anula esa liquidación primero (Cuenta por persona › Liquidaciones).`);
+  readonly code: "con_liquidacion" | "con_cubicacion";
+  /**
+   * `liquidacion` = el código del documento que hay que anular primero: la
+   * liquidación (`LIQ-…`) o, con `deCubicacion`, la cubicación de trozas
+   * (`CUB-…`, ADR-478) cuya madera se descontó de este adelanto. Las rutas ya
+   * responden 409 con este error: la cubicación no necesita otra rama.
+   */
+  constructor(readonly liquidacion: string, deCubicacion = false) {
+    super(
+      deCubicacion
+        ? `Tiene madera de la cubicación ${liquidacion} descontada: anula esa cubicación primero (Herramientas › Cubicador de trozas).`
+        : `Tiene un cruce o pago de la liquidación ${liquidacion}: anula esa liquidación primero (Cuenta por persona › Liquidaciones).`,
+    );
+    this.code = deCubicacion ? "con_cubicacion" : "con_liquidacion";
     this.name = "AdelantoConLiquidacionError";
   }
 }
@@ -485,6 +498,7 @@ function mapAdelanto(row: AdelantoRow): DbAdelanto {
       valor: toNum(e.valor), sumadoAStock: e.sumadoAStock, notas: e.notas,
       comprobanteUrl: e.comprobanteUrl,
       liquidacionId: e.liquidacionId ?? null,
+      cubicacionId: e.cubicacionId ?? null,
       createdAt: e.createdAt.toISOString(),
     })),
     entregasPactadas: row.entregasPactadas.map((p) => ({
@@ -676,6 +690,45 @@ async function siguienteCodigoDeTenant(tenantId: string): Promise<string> {
 }
 
 // ── DB ───────────────────────────────────────────────────────────────────────
+/**
+ * Da de baja las entregas de una liquidación (ADR-413 §7) o de una cubicación
+ * de trozas (ADR-478) anulada y recalcula el saldo de cada adelanto tocado,
+ * dentro de la tx de quien orquesta. Ver `anularEntregasDeLiquidacionEnTx`.
+ */
+async function anularEntregasMarcadasEnTx(
+  tx: Prisma.TransactionClient,
+  tenantId: string,
+  marca: { liquidacionId: string } | { cubicacionId: string },
+): Promise<{ adelantoIds: string[] }> {
+  if (!tenantId) throw new Error("tenantId is required");
+  if (!Object.values(marca)[0]) throw new Error("falta la liquidación o la cubicación");
+  const entregas = await tx.adelantoEntrega.findMany({
+    where: { ...marca, anuladaAt: null, adelanto: { tenantId } },
+    select: { adelantoId: true },
+  });
+  const adelantoIds = [...new Set(entregas.map((e) => e.adelantoId))].sort();
+  /* Bloqueo en orden de id: dos anulaciones que tocan los mismos adelantos
+     no se abrazan. */
+  for (const adelantoId of adelantoIds) {
+    await tx.$queryRaw`SELECT "id" FROM "Adelanto" WHERE "id" = ${adelantoId} AND "tenantId" = ${tenantId} FOR UPDATE`;
+  }
+  await tx.adelantoEntrega.updateMany({
+    where: { ...marca, anuladaAt: null, adelanto: { tenantId } },
+    data: { anuladaAt: new Date() },
+  });
+  for (const adelantoId of adelantoIds) {
+    const a = await tx.adelanto.findFirst({ where: { id: adelantoId, tenantId }, select: { montoAdelantado: true, status: true } });
+    if (!a) continue;
+    const agg = await tx.adelantoEntrega.aggregate({ where: { adelantoId, anuladaAt: null }, _sum: { valor: true } });
+    const { saldo, status } = estadoDelSaldo(toNum(a.montoAdelantado), toNum(agg._sum.valor));
+    await tx.adelanto.update({
+      where: { id: adelantoId },
+      data: { saldoPendiente: saldo, ...(a.status === "CANCELADO" ? {} : { status }) },
+    });
+  }
+  return { adelantoIds };
+}
+
 export const AdelantosDB = {
   // ── Beneficiarios ──
   /** Una persona sola — para armar su estado de cuenta (ADR-412 §5) sin traer el listado entero. */
@@ -1139,7 +1192,7 @@ export const AdelantosDB = {
     tx: Prisma.TransactionClient,
     tenantId: string,
     adelantoId: string,
-    input: EntregaInput & { liquidacionId?: string },
+    input: EntregaInput & { liquidacionId?: string; cubicacionId?: string },
     permisos: PermisosDeRecibido = {},
   ): Promise<{ entregaId: string; valor: number; saldo: number; status: AdelantoStatus; repetido?: true } | null> {
     if (!tenantId) throw new Error("tenantId is required");
@@ -1251,6 +1304,7 @@ export const AdelantosDB = {
         notas: input.notas?.trim() || null,
         comprobanteUrl: input.comprobanteUrl?.trim() || null,
         liquidacionId: input.liquidacionId ?? null,
+        cubicacionId: input.cubicacionId ?? null,
         idempotencyKey: clave,
         idempotencyHuella: clave ? huella : null,
       },
@@ -1306,32 +1360,21 @@ export const AdelantosDB = {
     tenantId: string,
     liquidacionId: string,
   ): Promise<{ adelantoIds: string[] }> {
-    if (!tenantId) throw new Error("tenantId is required");
-    const entregas = await tx.adelantoEntrega.findMany({
-      where: { liquidacionId, anuladaAt: null, adelanto: { tenantId } },
-      select: { adelantoId: true },
-    });
-    const adelantoIds = [...new Set(entregas.map((e) => e.adelantoId))].sort();
-    /* Bloqueo en orden de id: dos anulaciones que tocan los mismos adelantos
-       no se abrazan. */
-    for (const adelantoId of adelantoIds) {
-      await tx.$queryRaw`SELECT "id" FROM "Adelanto" WHERE "id" = ${adelantoId} AND "tenantId" = ${tenantId} FOR UPDATE`;
-    }
-    await tx.adelantoEntrega.updateMany({
-      where: { liquidacionId, anuladaAt: null, adelanto: { tenantId } },
-      data: { anuladaAt: new Date() },
-    });
-    for (const adelantoId of adelantoIds) {
-      const a = await tx.adelanto.findFirst({ where: { id: adelantoId, tenantId }, select: { montoAdelantado: true, status: true } });
-      if (!a) continue;
-      const agg = await tx.adelantoEntrega.aggregate({ where: { adelantoId, anuladaAt: null }, _sum: { valor: true } });
-      const { saldo, status } = estadoDelSaldo(toNum(a.montoAdelantado), toNum(agg._sum.valor));
-      await tx.adelanto.update({
-        where: { id: adelantoId },
-        data: { saldoPendiente: saldo, ...(a.status === "CANCELADO" ? {} : { status }) },
-      });
-    }
-    return { adelantoIds };
+    return anularEntregasMarcadasEnTx(tx, tenantId, { liquidacionId });
+  },
+
+  /** Lo mismo para las entregas de una cubicación de trozas anulada (ADR-478). */
+  async anularEntregasDeCubicacionEnTx(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+    cubicacionId: string,
+  ): Promise<{ adelantoIds: string[] }> {
+    return anularEntregasMarcadasEnTx(tx, tenantId, { cubicacionId });
+  },
+
+  /** (ADR-478) Para quien escribe entregas con `registrarEntregaEnTx` en su tx: una vez, tras el commit. */
+  invalidarResultado(tenantId: string): void {
+    invalidarResultado(tenantId);
   },
 
   /**
@@ -1380,6 +1423,18 @@ export const AdelantosDB = {
       if (deLiquidacion?.liquidacionId) {
         const liq = await tx.liquidacionCuenta.findFirst({ where: { id: deLiquidacion.liquidacionId, tenantId }, select: { codigo: true } });
         throw new AdelantoConLiquidacionError(liq?.codigo ?? "de esta persona");
+      }
+      /* ADR-478 (revisión M): lo mismo con la madera de una cubicación de
+         trozas aplicada. Anular el adelanto y después la cubicación le
+         devolvía el saldo a un adelanto CANCELADO (no revive) y la madera
+         pagada quedaba sin rastro en la cuenta. */
+      const deCubicacion = await tx.adelantoEntrega.findFirst({
+        where: { adelantoId: id, anuladaAt: null, cubicacionId: { not: null }, adelanto: { tenantId } },
+        select: { cubicacionId: true },
+      });
+      if (deCubicacion?.cubicacionId) {
+        const cub = await tx.forestCubicacionTrozas.findFirst({ where: { id: deCubicacion.cubicacionId, tenantId }, select: { codigo: true } });
+        throw new AdelantoConLiquidacionError(cub?.codigo ?? "de esta persona", true);
       }
       /* ADR-448: anular un recibido devolviendo la plata la SACA de la caja: sólo admin o dueño. */
       if (devolucionCaja && direccionDe(actual.direccion) === "RECIBIDO" && !permisos.puedeSacarPlataDeRecibido) {

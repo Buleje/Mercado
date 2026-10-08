@@ -4,6 +4,7 @@ import { DocumentsDB } from "@/lib/db/documents.db";
 import { buildStoragePath, uploadToStorage } from "@/lib/documents/storage";
 import { logger } from "@/lib/logger";
 import { limaDateKey, STORE_TIMEZONE } from "@/lib/utils";
+import type { CajaGuardada } from "@/lib/camaras/apariencia";
 import {
   CARPETA_PERSONAS,
   MOTIVOS_FOTO_PERSONA,
@@ -131,6 +132,12 @@ export interface GuardarFotoPersonaInput {
   /** Usuario de la sesión que tiene el mosaico abierto. */
   autor: string;
   cuando?: Date;
+  /**
+   * Dónde estaba cada persona + la firma de la ropa que calculó el servidor
+   * (`apariencia.server.ts`, ADR-479). `null` = cliente viejo: la foto queda
+   * «sin cajas» y no entra en el conteo de personas distintas.
+   */
+  cajas?: CajaGuardada[] | null;
 }
 
 export async function guardarFotoPersona(tenantId: string, entrada: GuardarFotoPersonaInput): Promise<RespuestaFotoPersona> {
@@ -185,6 +192,8 @@ export async function guardarFotoPersona(tenantId: string, entrada: GuardarFotoP
         motivo: entrada.meta.motivo,
         personas: n,
         confianza: Math.round(entrada.meta.confianza * 100) / 100,
+        // Vive y muere con la foto (misma retención y papelera): nada más se guarda.
+        ...(entrada.cajas ? { cajas: entrada.cajas } : {}),
       },
     });
 

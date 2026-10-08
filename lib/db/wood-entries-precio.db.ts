@@ -25,6 +25,8 @@ import { FILTRO_REQUIERE_COSTO } from "@/lib/forestal/madera-de-servicio";
 import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
 import { ingresosConCostoCongelado } from "./costo-congelado.db";
 import { ForestCuentaDB } from "./forest-cuenta.db";
+import { CtpInvariantError } from "./forest-ctp-consumo.db";
+import { cubicacionQuePagoLaGuia, mensajeGuiaPagadaPorCubicacion } from "./guia-cubicacion.db";
 
 /**
  * WoodEntriesPrecioDB — poner precio a la madera en tanda (proveedor × especie).
@@ -298,6 +300,19 @@ export const WoodEntriesPrecioDB = {
           tambienConPrecio: input.tambienConPrecio,
           vistos: input.vistos,
         });
+        /* Una guía, una sola plata (ADR-478 §7): una guía cuya madera ya se pagó
+           con una cubicación de trozas no recibe costo (se valorizaría dos
+           veces). Bajo el lock de la guía, el mismo que toma «aplicar». */
+        for (const gtf of [...new Set(p.cambios.map((c) => c.gtfNumber.trim()))].sort()) {
+          const porCubicacion = await cubicacionQuePagoLaGuia(tx, tenantId, gtf);
+          if (porCubicacion) {
+            throw new CtpInvariantError(mensajeGuiaPagadaPorCubicacion(gtf, porCubicacion.codigo), "ESTADO_NO_EDITABLE", {
+              motivo: "GUIA_PAGADA_POR_CUBICACION",
+              gtfNumber: gtf,
+              cubicacion: porCubicacion.codigo,
+            });
+          }
+        }
         for (const c of p.cambios) {
           if (!guiasBloqueadas.has(c.gtfNumber.trim())) {
             /* La fila cambió de guía entre la lectura y el lock: no se escribe

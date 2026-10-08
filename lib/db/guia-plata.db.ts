@@ -47,6 +47,7 @@ import { ForestCuentaDB } from "./forest-cuenta.db";
 import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
 import { ingresosConCostoCongelado, mensajeCostoCongelado } from "./costo-congelado.db";
 import { AdelantosDB } from "./adelantos.db";
+import { cubicacionQuePagoLaGuia, mensajeGuiaPagadaPorCubicacion } from "./guia-cubicacion.db";
 import { ForestDirectorioDB } from "./forest-directorio.db";
 
 /**
@@ -84,7 +85,9 @@ export type CodigoPlataGuia =
   | "CAMBIO_EN_EL_MEDIO"
   | "CUBICACION_CAMBIO"
   | "COSTO_NO_CUADRA"
-  | "PARTE_NO_ENCONTRADA";
+  | "PARTE_NO_ENCONTRADA"
+  /** (ADR-478) La madera de la guía ya se pagó con una cubicación de trozas aplicada. */
+  | "GUIA_PAGADA_POR_CUBICACION";
 
 const STATUS_DE: Record<CodigoPlataGuia, 404 | 409 | 422> = {
   NO_ENCONTRADA: 404,
@@ -98,6 +101,7 @@ const STATUS_DE: Record<CodigoPlataGuia, 404 | 409 | 422> = {
   CUBICACION_CAMBIO: 409,
   COSTO_NO_CUADRA: 422,
   PARTE_NO_ENCONTRADA: 422,
+  GUIA_PAGADA_POR_CUBICACION: 409,
 };
 
 /** Error de negocio con código y status HTTP: la ruta lo devuelve tal cual. */
@@ -582,6 +586,11 @@ export const GuiaPlataDB = {
 
     const r = await prisma.$transaction(async (tx) => {
       await lockGuia(tx, tenantId, gtf, [proveedor?.id]);
+      /* Una guía, una sola plata (ADR-478 §6): si su madera ya se pagó con una
+         cubicación de trozas aplicada, ponerle costo la pagaría dos veces. Bajo
+         el lock de la guía, el mismo que toma «aplicar» antes de mirar acá. */
+      const porCubicacion = await cubicacionQuePagoLaGuia(tx, tenantId, gtf);
+      if (porCubicacion) throw new PlataGuiaError("GUIA_PAGADA_POR_CUBICACION", mensajeGuiaPagadaPorCubicacion(gtf, porCubicacion.codigo));
       const asientos = await tx.woodEntry.findMany({
         where: { tenantId, gtfNumber: gtf, deletedAt: null, status: { notIn: [...ESTADOS_MUERTOS] } },
         orderBy: [{ entryDate: "asc" }, { id: "asc" }],

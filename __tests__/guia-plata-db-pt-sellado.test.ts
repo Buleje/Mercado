@@ -39,7 +39,7 @@ const H = vi.hoisted(() => {
         .filter((t) => args.where.woodEntryId.in.includes(t.woodEntryId))
         .map((t) => ({ especieCientifica: null, oxD1Pulg: null, oxD2Pulg: null, oxLargoPies: null, ...t })),
   };
-  const tx = { woodEntry, woodEntryTroza, forestCuentaMov: { findFirst: async () => null } };
+  const tx = { woodEntry, woodEntryTroza, forestCuentaMov: { findFirst: async () => null }, forestCubicacionTrozas: { findMany: async () => [] } };
   return { estado, tx };
 });
 

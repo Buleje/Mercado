@@ -5,7 +5,8 @@
  * hay muchas cámaras o el detector tarda) con el vigía (`vigia-camara.ts`:
  * movimiento + zoom + D-FINE, ADR-475), sigue a cada persona con su número
  * (`lib/camaras/seguimiento.ts`), decide con `decidirFotoPersona`
- * (lib/camaras/personas) y sube la foto a `POST /api/admin/camaras/[id]/persona`.
+ * (lib/camaras/personas) y sube la foto con dónde estaba cada persona
+ * (`subir-foto-persona.ts` → `POST /api/admin/camaras/[id]/persona`, ADR-479).
  *
  * - Una vuelta a la vez por cámara: el próximo `setTimeout` se agenda recién
  *   cuando terminó la anterior (nunca dos detecciones solapadas).
@@ -23,11 +24,9 @@ import {
   decidirFotoPersona,
   type EstadoDetector,
   type MetaFotoPersona,
-  type RespuestaFotoPersona,
 } from "@/lib/camaras/personas";
 import { filtrarCajasIgnoradas, type ZonaIgnorada } from "@/lib/camaras/zonas-ignorar";
 import type { AparicionPersona, CajaFraccion, MotorDetector, PersonaEnVivo } from "@/lib/camaras/vigia";
-import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
 import { OLVIDAR_PERSONA_MS, crearSeguimiento, seguir } from "@/lib/camaras/seguimiento";
 import {
@@ -39,6 +38,7 @@ import {
   soltarLienzosCuadro,
   type CajaPersona,
 } from "./detector-personas";
+import { cajasEnFraccion, subirFotoPersona } from "./subir-foto-persona";
 import { crearVigia } from "./vigia-camara";
 
 export type EstadoDetectorPersonas = "apagado" | "cargando" | "mirando" | "error";
@@ -99,38 +99,6 @@ function colorDeCajas(cerca: Element | null): string {
   );
 }
 
-/** Sube la foto. `true` = guardada. */
-async function subirFoto(
-  camaraId: string,
-  jpeg: Blob,
-  meta: MetaFotoPersona,
-  at: number,
-): Promise<boolean> {
-  const fd = new FormData();
-  fd.append("file", new File([jpeg], `persona-${at}.jpg`, { type: "image/jpeg" }));
-  fd.append("motivo", meta.motivo);
-  fd.append("personas", String(meta.personas));
-  fd.append("confianza", meta.confianza.toFixed(3));
-  try {
-    const r = await fetch(`/api/admin/camaras/${encodeURIComponent(camaraId)}/persona`, {
-      method: "POST",
-      headers: csrfHeaders(),
-      credentials: "include",
-      body: fd,
-    });
-    if (r.status === 429) return false;
-    const j = (await r.json().catch(() => null)) as RespuestaFotoPersona | null;
-    if (r.ok && j?.ok) return true;
-    logger.warn("[camaras] la foto de persona no se guardó", {
-      status: r.status,
-      error: j && !j.ok ? j.error : null,
-    });
-  } catch (err) {
-    logger.warn("[camaras] la foto de persona no se subió", { error: String(err) });
-  }
-  return false;
-}
-
 export function useDetectorPersonas(opciones: OpcionesDetectorPersonas): DetectorPersonas {
   const { camaraId, activo } = opciones;
   /* Las funciones del visor cambian de identidad en cada render: el bucle lee
@@ -184,7 +152,8 @@ export function useDetectorPersonas(opciones: OpcionesDetectorPersonas): Detecto
         return;
       }
       subiendo = true;
-      void subirFoto(camaraId, hecha.jpeg, meta, at)
+      const enFraccion = cajasEnFraccion(cajas, lienzos.chico.width, lienzos.chico.height);
+      void subirFotoPersona(camaraId, hecha.jpeg, meta, at, enFraccion)
         .then((ok) => {
           subiendo = false;
           if (!ok) alFallar();

@@ -16,6 +16,7 @@
 
 import { CARPETA_PERSONAS, MOTIVOS_FOTO_PERSONA, MOTIVO_FOTO_PERSONA_LABEL, type MotivoFotoPersona } from "./personas";
 import type { PersonasPorHora } from "./resumen";
+import { leerCajasGuardadas, type CajaGuardada } from "./apariencia";
 
 export interface FotoPersonaGaleria {
   id: string;
@@ -140,12 +141,17 @@ const LABEL_A_MOTIVO = new Map(
 /** `14-05-33 · Apareció alguien · 2 personas.webp` */
 const NOMBRE_FOTO = /^\d{2}-\d{2}-\d{2} · (.+?) · (\d+) personas?\.\w+$/i;
 
-/** Motivo y personas: de la metadata; si falta (la anotación va después de subir), del nombre del archivo. */
+/**
+ * Motivo y personas: de la metadata; si falta (la anotación va después de
+ * subir), del nombre del archivo. `cajas` = dónde estaba cada persona y la
+ * firma de su ropa (ADR-479); `null` en las fotos de antes del 08-10.
+ */
 export function leerMetaFoto(doc: Pick<DocGaleria, "name" | "ocrMetadata">): {
   motivo: MotivoFotoPersona | null;
   personas: number | null;
   confianza: number | null;
   camaraId: string | null;
+  cajas: CajaGuardada[] | null;
 } {
   const m = doc.ocrMetadata ?? {};
   const delNombre = NOMBRE_FOTO.exec(doc.name.trim());
@@ -158,6 +164,7 @@ export function leerMetaFoto(doc: Pick<DocGaleria, "name" | "ocrMetadata">): {
     personas: personasMeta ?? (delNombre ? Number(delNombre[2]) : null),
     confianza: typeof m.confianza === "number" && Number.isFinite(m.confianza) ? m.confianza : null,
     camaraId: typeof m.camaraId === "string" && m.camaraId ? m.camaraId : null,
+    cajas: leerCajasGuardadas(m),
   };
 }
 

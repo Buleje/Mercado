@@ -11,13 +11,11 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { CardTitle } from "@buleje/design-system";
-import { ArrowDownToLine, Ban, CheckCircle, FileSignature, FileText, Package, Pencil } from "@buleje/design-system/icons";
+import { ArrowDownToLine, Ban, FileSignature, FileText, Pencil } from "@buleje/design-system/icons";
 import { ETIQUETA_CONCEPTO, quienDebe } from "@/lib/adelantos/direccion";
 import { leerDireccion } from "@/lib/adelantos/modos-alta";
 import { esReciboFirmado, srcDelComprobante } from "@/lib/adelantos/recibo-firmado";
 import type { DbAdelanto } from "@/lib/db/adelantos.db";
-import { formatDate } from "@/lib/format";
 import { MODALIDAD_LABEL, MiniStat, ModalShell, STATUS_BADGE, SkeletonGrid, fmtMon } from "../shared";
 import { imprimirComprobante } from "./comprobante-del-adelanto";
 import ControlarAdelanto from "./ControlarAdelanto";
@@ -28,6 +26,7 @@ import AnularAdelantoModal from "../lista/AnularAdelantoModal";
 import EditarNotasModal from "../lista/EditarNotasModal";
 import FirmarReciboModal from "../firma/FirmarReciboModal";
 import FichaAdelanto from "./FichaAdelanto";
+import HistorialEntregas from "./HistorialEntregas";
 import PlanPactado from "./PlanPactado";
 import CamposPersonalizados from "@/components/admin/shared/CamposPersonalizados";
 
@@ -204,41 +203,7 @@ export default function DetalleAdelantoModal({
             <div className="space-y-4">
               {a.status !== "CANCELADO" && <RegistrarEntrega entrega={entrega} recibido={recibido} aserrioSeCobraSolo={aserrioSeCobraSolo} />}
 
-              <div>
-                <CardTitle className="mb-2 text-base font-extrabold text-[var(--text-primary)]">
-                  {recibido ? "Lo que le diste" : "Historial de entregas"} ({a.entregas.length})
-                </CardTitle>
-                {a.entregas.length === 0 ? (
-                  <p className="text-base text-[var(--text-tertiary)]">Todavía no hay entregas.</p>
-                ) : (
-                  <ul className="space-y-2">
-                    {a.entregas.map((e) => (
-                      <li key={e.id} className="flex items-center gap-3 rounded-2xl border border-[var(--rule-soft)] px-4 py-3">
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--data-success)]/10 text-[var(--data-success)]">
-                          {e.tipo === "PRODUCTO" ? <Package className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-base font-bold text-[var(--text-primary)]">
-                            {e.descripcion || (e.tipo === "PRODUCTO" ? `Producto #${e.productId}` : "Entrega")}
-                          </p>
-                          <p className="text-sm tabular-nums text-[var(--text-tertiary)]">
-                            {formatDate(e.fecha)}
-                            {e.cantidad != null && ` · ${e.cantidad} u.`}
-                            {e.sumadoAStock && " · sumado al stock"}
-                          </p>
-                        </div>
-                        {e.comprobanteUrl && (
-                          <a href={e.comprobanteUrl} target="_blank" rel="noopener noreferrer" title="Ver comprobante" className="shrink-0">
-                            {/* eslint-disable-next-line @next/next/no-img-element -- thumbnail comprobante */}
-                            <img src={e.comprobanteUrl} alt="comprobante" className="h-9 w-9 rounded-lg border border-[var(--rule-base)] object-cover" />
-                          </a>
-                        )}
-                        <span className="shrink-0 text-base font-extrabold tabular-nums text-[var(--data-success)]">{fmtMon(e.valor, a.moneda)}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
+              <HistorialEntregas entregas={a.entregas} moneda={a.moneda} recibido={recibido} />
             </div>
           </div>
 

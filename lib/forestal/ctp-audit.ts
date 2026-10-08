@@ -110,6 +110,8 @@ export type CtpAuditEntity =
   | "ForestReporteDiario"
   /** El acta de un conteo físico del patio (2026-09-26): qué faltó y qué sobró. */
   | "ForestPatioConteo"
+  /** Una cubicación de trozas guardada con dueño y, al aplicarla, plata en sus adelantos (ADR-478). */
+  | "ForestCubicacionTrozas"
   | "Tenant";
 
 /**
@@ -444,7 +446,13 @@ export type CtpAuditAction =
   // reemplazado por otro de la misma guía.
   | "ctp_guia_desde_anexo"
   | "ctp_paquete_partido"
-  | "ctp_anexo04_reemplazado";
+  | "ctp_anexo04_reemplazado"
+  // Cubicación de trozas → cuenta de la persona (ADR-478). Aplicar y anular
+  // mueven plata en sus adelantos: van con `auditCtpEsperando`.
+  | "ctp_cubicacion_trozas_guardar"
+  | "ctp_cubicacion_trozas_aplicar"
+  | "ctp_cubicacion_trozas_anular"
+  | "ctp_cubicacion_trozas_borrar";
 
 /** Lo que describe un evento del libro. */
 export interface CtpAuditParams {

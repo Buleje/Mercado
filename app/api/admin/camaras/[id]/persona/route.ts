@@ -9,6 +9,8 @@ import { CamarasDB } from "@/lib/db/camaras.db";
 import { ImagenNoPermitida, sharpSeguro, verificarImagen } from "@/lib/camaras/imagen-segura";
 import { guardarFotoPersona, metaFotoPersonaSchema } from "@/lib/camaras/personas-drive.server";
 import { avisarPersonaDelMosaico } from "@/lib/camaras/avisar";
+import { MAX_CAJAS_POR_FOTO, leerCajasDelFormulario } from "@/lib/camaras/apariencia";
+import { firmarCajas } from "@/lib/camaras/apariencia.server";
 import type { RespuestaFotoPersona } from "@/lib/camaras/personas";
 
 /**
@@ -17,7 +19,15 @@ import type { RespuestaFotoPersona } from "@/lib/camaras/personas";
  * «Cámaras / Personas / <cámara> / <día>», y NO al historial de la cámara
  * (tope de 800 compartido + IA paga por foto): ver `personas-drive.server.ts`.
  *
- * Multipart: `file` (JPEG/PNG/WebP del cuadro), `motivo`, `personas`, `confianza`.
+ * Multipart: `file` (JPEG/PNG/WebP del cuadro), `motivo`, `personas`, `confianza`
+ * y, desde el 08-10, `cajas` opcional = JSON de `cajaPersonaSchema[]` (en
+ * fracciones de la foto; no más de 10 ni de las `personas` declaradas). Con
+ * cajas, el servidor calcula la firma de la ropa de cada una sin leer la cabeza
+ * (ADR-479) y la guarda dentro de la foto. Sin el campo = cliente viejo (se
+ * acepta igual); JSON roto o cajas de más → 400. La foto tiene que ser apaisada
+ * (el detector manda 16:9): una más alta que ancha → 400 `foto_vertical`, antes
+ * de decodificarla (revisión de seguridad 08-10: 1280 × 16 383 con 50 cajas
+ * costaba 46 s de CPU).
  * Mismos roles que ven el video en vivo (`en-vivo-nube`): admin, dueño, almacenero.
  *
  * Después de contestar, avisa por WhatsApp con la configuración de avisos de la
@@ -58,22 +68,34 @@ export const POST = withApiHandler(
     if (largo > MAX_SIZE + 64 * 1024) return falla("muy_grande", 413);
     let archivo: File | null = null;
     let campos: Record<string, unknown> = {};
+    let cajasCrudas: unknown = null;
     try {
       const form = await req.formData();
       const f = form.get("file");
       archivo = f instanceof File ? f : null;
       campos = { motivo: form.get("motivo"), personas: form.get("personas"), confianza: form.get("confianza") };
+      cajasCrudas = form.get("cajas");
     } catch {
       archivo = null;
     }
     const meta = metaFotoPersonaSchema.safeParse(campos);
     if (!meta.success) return falla("datos_invalidos", 400);
+    const cajas = leerCajasDelFormulario(cajasCrudas);
+    if (!cajas.ok) return falla("cajas_invalidas", 400);
+    if (cajas.cajas && cajas.cajas.length > Math.min(MAX_CAJAS_POR_FOTO, meta.data.personas)) {
+      return falla("cajas_invalidas", 400);
+    }
     if (!archivo) return falla("sin_imagen", 400);
     if (archivo.size > MAX_SIZE) return falla("muy_grande", 413);
 
     try {
       const bytes = Buffer.from(await archivo.arrayBuffer());
-      await verificarImagen(bytes, new Set(["jpeg", "png", "webp"]));
+      const dims = await verificarImagen(bytes, new Set(["jpeg", "png", "webp"]));
+      // Con la orientación EXIF 5-8 la foto se ve girada 90°: ancho y alto se cruzan.
+      const girada = (dims.orientation ?? 1) >= 5;
+      const anchoVisto = (girada ? dims.height : dims.width) ?? 0;
+      const altoVisto = (girada ? dims.width : dims.height) ?? 0;
+      if (altoVisto > anchoVisto) return falla("foto_vertical", 400);
       const webp = await sharpSeguro(bytes).rotate().resize({ width: ANCHO_MAX, withoutEnlargement: true }).webp({ quality: 75 }).toBuffer();
       const cuando = new Date();
       const res = await guardarFotoPersona(auth.tenantId, {
@@ -82,6 +104,7 @@ export const POST = withApiHandler(
         meta: meta.data,
         autor: auth.username ?? "alguien",
         cuando,
+        cajas: cajas.cajas ? await firmarCajas(webp, cajas.cajas) : null,
       });
       /* Aunque el Drive haya fallado: la persona estuvo igual frente a la
          cámara, y el aviso es por ella, no por el archivo. */
