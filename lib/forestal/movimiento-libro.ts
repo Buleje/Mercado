@@ -112,6 +112,8 @@ export interface MovCorrida {
 export interface MovDespacho {
   fecha: Date;
   cantidad: number;
+  /** La unidad en que la línea declara la salida (`m3`, `pt`…). Sin ella, m³ (el default del libro). */
+  unidad?: string | null;
   especie?: string | null;
 }
 
@@ -135,6 +137,14 @@ export interface TotalesMovimiento {
   rendimiento: number;
   /** Cuántas corridas quedaron fuera del rendimiento por declarar en otra unidad. */
   corridasOtraUnidad: number;
+  /**
+   * La unidad de `producido` y de `despachado` cuando TODO el período está en
+   * una sola (`m3`, `pt`, `unidad`…); `null` si mezcla. Las sumas no
+   * convierten: con unidades mezcladas el total no tiene unidad y no se le
+   * pone una (el Inicio le ponía «m³» a pies tablares). Período vacío = `m3`.
+   */
+  unidadProducido: string | null;
+  unidadDespachado: string | null;
   /** `ingreso − consumo`: lo que el patio acumuló (o soltó) en el período. */
   variacionPatioM3: number;
   /**
@@ -177,6 +187,17 @@ const nombreEspecie = (v: string | null | undefined) => (v ?? "").trim() || "Sin
  * tiene que verse VACÍO, no desaparecer. Es la diferencia entre «no entró
  * madera» y «no hay datos», y son cosas distintas para un fiscalizador.
  */
+/** «m3», «m³», «M3 » → `m3`; sin unidad, `m3` (el default del libro). */
+function unidadDeLinea(u: string | null | undefined): string {
+  return (u ?? "").trim().toLowerCase().replace("³", "3") || "m3";
+}
+
+/** La unidad del período si es UNA sola; `null` si mezcla; sin líneas, `m3`. */
+function unidadUnica(unidades: ReadonlySet<string>): string | null {
+  if (unidades.size === 0) return "m3";
+  return unidades.size === 1 ? [...unidades][0] : null;
+}
+
 export function agruparMovimiento(input: {
   ingresos: readonly MovIngreso[];
   corridas: readonly MovCorrida[];
@@ -219,6 +240,8 @@ export function agruparMovimiento(input: {
     sumarEspecie(nombreEspecie(i.especie), "ingresoM3", v);
   }
   let corridasOtraUnidad = 0;
+  const unidadesProducido = new Set<string>();
+  const unidadesDespachado = new Set<string>();
   let m3Producido = 0;
   let m3Consumido = 0;
   for (const c of input.corridas) {
@@ -227,12 +250,13 @@ export function agruparMovimiento(input: {
     const prod = Number(c.producido ?? 0);
     /* Sin unidad declarada se asume m³: es el default del libro y los ingresos
        viejos no la traen. Lo que NO se hace es mezclar pt con m³. */
-    const enM3 = (c.unidad ?? "m3").trim().toLowerCase() === "m3";
+    const enM3 = unidadDeLinea(c.unidad) === "m3";
     if (!enM3 && prod > 0) corridasOtraUnidad += 1;
     if (enM3 && cons > 0 && prod > 0) { m3Producido += prod; m3Consumido += cons; }
     if (b) {
       b.consumoM3 += cons;
       b.producido += prod;
+      if (prod > 0) unidadesProducido.add(unidadDeLinea(c.unidad));
       /* El rendimiento se pondera por el consumo REAL de cada corrida y se
          recalcula desde producido/consumido: tomar el `rendimientoPct` guardado
          mezclaría corridas de unidades distintas. Sólo entran las que tienen
@@ -247,7 +271,9 @@ export function agruparMovimiento(input: {
   }
   for (const d of input.despachos) {
     const b = cuboDe(d.fecha);
-    if (b) b.despachado += Number(d.cantidad ?? 0);
+    const cant = Number(d.cantidad ?? 0);
+    if (b) b.despachado += cant;
+    if (b && cant > 0) unidadesDespachado.add(unidadDeLinea(d.unidad));
   }
 
   const puntos: PuntoMovimiento[] = eje.map((fecha) => {
@@ -281,6 +307,8 @@ export function agruparMovimiento(input: {
          `producido/consumido` global, que sumaría pies tablares al numerador. */
       rendimiento: m3Consumido > 0 ? Math.round((m3Producido / m3Consumido) * 1000) / 10 : 0,
       corridasOtraUnidad,
+      unidadProducido: unidadUnica(unidadesProducido),
+      unidadDespachado: unidadUnica(unidadesDespachado),
       variacionPatioM3: r4(ingresoTotal - consumoTotal),
       saldoPatioM3: r4((input.aperturaM3 ?? 0) + ingresoTotal - consumoTotal),
     },

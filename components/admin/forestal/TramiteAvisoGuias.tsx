@@ -2,7 +2,7 @@
 
 /**
  * El aviso arriba del formulario cuando Trámites se abrió con guías elegidas en
- * la vista GTF del Libro TH: cuántas se trajeron, qué hay que mirar antes de
+ * la vista GTF del Libro TH o en «Guías emitidas» del CTP: cuántas se trajeron, qué hay que mirar antes de
  * presentar (un dato derivado, una anulada que también está emitida o que
  * anuló «Deshacer la importación») y, si se dejó afuera alguna de ésas, el
  * botón para incluirla igual (suma la fila sin rearmar el formulario).
@@ -10,7 +10,8 @@
 
 import { AlertTriangle, Loader2, Truck, X } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
-import type { TramiteDesdeGuias } from "./hooks/use-tramite-desde-guias";
+import { contarGuias } from "@/lib/forestal/tramites-desde-guias";
+import { deLosLibros, type TramiteDesdeGuias } from "./hooks/use-tramite-desde-guias";
 
 const CAJA = "flex items-start gap-3 rounded-2xl border-2 p-4 text-sm";
 
@@ -20,7 +21,7 @@ export default function TramiteAvisoGuias({ d }: { d: TramiteDesdeGuias }) {
     return (
       <div className={`${CAJA} border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)]`} role="status">
         <Loader2 className="mt-0.5 h-5 w-5 shrink-0 animate-spin" aria-hidden />
-        Trayendo {d.pedido.ids.length === 1 ? "la guía elegida" : `las ${d.pedido.ids.length} guías elegidas`} del Libro TH…
+        Trayendo {d.pedido.ids.length === 1 ? "la guía elegida" : `las ${d.pedido.ids.length} guías elegidas`} {deLosLibros(d.libros)}…
       </div>
     );
   }
@@ -37,17 +38,18 @@ export default function TramiteAvisoGuias({ d }: { d: TramiteDesdeGuias }) {
   }
   if (!d.resultado) return null;
 
-  const n = d.guias.length;
+  /* Guías, no líneas: una GTF del CTP con dos líneas de despacho es UNA guía. */
+  const n = contarGuias(d.guias);
   const avisos = d.faltan > 0 ? [...d.resultado.avisos, `${d.faltan} de las elegidas ya no están en el libro (se borraron): no se trajeron.`] : d.resultado.avisos;
   return (
     <div className={`${CAJA} border-[var(--data-info-500)]/50 bg-[var(--data-info-500)]/8 text-[var(--text-primary)]`} role="status">
       <Truck className="mt-0.5 h-5 w-5 shrink-0 text-[var(--data-info-700)] dark:text-[var(--data-info-500)]" aria-hidden />
       <div className="min-w-0 flex-1 space-y-1.5">
         <p className="flex items-center gap-1.5 font-bold">
-          Llenado con {n === 1 ? "1 guía" : `${n} guías`} del Libro TH
+          Llenado con {n === 1 ? "1 guía" : `${n} guías`} {deLosLibros(d.libros)}
           <InfoTip
             title="Datos traídos de las guías"
-            what="N°, fechas, permiso, volumen y lista de trozas salen de las guías que elegiste en la vista GTF."
+            what="N°, fechas, permiso, volumen y lista de trozas salen de las guías que elegiste en el libro (vista GTF del Libro TH o Guías emitidas del CTP)."
             affects="Todo se puede corregir en el formulario antes de guardar."
           />
         </p>

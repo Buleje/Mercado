@@ -57,6 +57,12 @@ describe("Secciones · borrar las filtradas por permiso o titular", () => {
     expect(onBorrar).toHaveBeenCalledWith(LINEAS.filter((e) => e.planId === null).map((e) => e.id));
   });
 
+  it("el permiso no repite la sigla si el N° ya la trae («PO 12», no «PO PO 12»)", () => {
+    const m = mapaDePermisos([plan("P3", "PO 12", "Maderera El Aguajal"), plan("P4", "12", "Juan Pérez")]);
+    expect(m.get("P3")?.permiso).toBe("PO 12");
+    expect(m.get("P4")?.permiso).toBe("PO 12");
+  });
+
   it("sin filtro o sin rol de admin/dueño, no hay opción", () => {
     const base = { filtradas: LINEAS, onBorrar: vi.fn() };
     expect(opcionBorrarFiltradas({ ...base, hayFiltro: false, puede: true })).toBeNull();

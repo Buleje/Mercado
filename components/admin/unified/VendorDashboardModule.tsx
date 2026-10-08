@@ -4,6 +4,9 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import type { VendorDashboardData } from "@/components/admin/vendor-dashboard/vendor-dashboard.types";
 import { usePlanTier } from "@/hooks/use-plan-tier";
+import { useEnabledSpecs } from "@/hooks/use-enabled-specs";
+import { useMiRol } from "@/hooks/use-mi-rol";
+import { puedeVerInicioForestal } from "@/lib/forestal/inicio-forestal";
 import { useAdminTemplateOverlay } from "@/app/admin/_hooks/useAdminTemplateOverlay";
 import type { Tab } from "@/app/admin/_lib/tabs.types";
 import { DashboardDataProvider } from "@/contexts/dashboard-data-context";
@@ -19,6 +22,7 @@ import {
   Truck,
   Users,
   Wallet,
+  TreePine,
 } from "@buleje/design-system/icons";
 import { resolveActiveTenantSlug } from "@/lib/tenant-fetch";
 import DashboardDateRange, { getDefaultRange, type DateRange } from "@/components/admin/inicio/DashboardDateRange";
@@ -53,6 +57,8 @@ const CajaDashboard = dynamic(() => import("@/components/admin/inicio/CajaDashbo
 const InventarioDashboard = dynamic(() => import("@/components/admin/inicio/InventarioDashboard"), { ssr: false, loading: DashboardLoading });
 const ComprasDashboard = dynamic(() => import("@/components/admin/inicio/ComprasDashboard"), { ssr: false, loading: DashboardLoading });
 const ClientesDashboard = dynamic(() => import("@/components/admin/inicio/ClientesDashboard"), { ssr: false, loading: DashboardLoading });
+// 2026-10-08 (N7): el aserradero y la plantación en el Inicio. Sólo si el negocio usa los libros forestales.
+const ForestalDashboard = dynamic(() => import("@/components/admin/inicio/ForestalDashboard"), { ssr: false, loading: DashboardLoading });
 // Brandon 2026-06-07 (idea #2): tarjeta "Tu tienda pública" — puente admin↔tienda.
 const StorePublicCard = dynamic(() => import("@/components/admin/inicio/StorePublicCard"), { ssr: false });
 
@@ -77,12 +83,13 @@ const MorningBriefingCard = dynamic(
 
 const MODULE_ID = "vendor-dashboard";
 
-type InicioTab = "general" | "ventas" | "caja" | "inventario" | "compras" | "clientes" | "marketplace";
-const INICIO_TABS: readonly InicioTab[] = ["general", "ventas", "caja", "inventario", "compras", "clientes", "marketplace"];
+type InicioTab = "general" | "forestal" | "ventas" | "caja" | "inventario" | "compras" | "clientes" | "marketplace";
+const INICIO_TABS: readonly InicioTab[] = ["general", "forestal", "ventas", "caja", "inventario", "compras", "clientes", "marketplace"];
 
 // ── Prefetch map: preload tab chunks on hover ──────────────────────────────
 const TAB_PREFETCH: Record<InicioTab, () => void> = {
   general:     () => { void import("@/components/admin/inicio/InicioDashboardV2"); },
+  forestal:    () => { void import("@/components/admin/inicio/ForestalDashboard"); },
   ventas:      () => { void import("@/components/admin/inicio/VentasDashboard"); },
   caja:        () => { void import("@/components/admin/inicio/CajaDashboard"); },
   inventario:  () => { void import("@/components/admin/inicio/InventarioDashboard"); },
@@ -93,6 +100,7 @@ const TAB_PREFETCH: Record<InicioTab, () => void> = {
 
 const TABS: AdminTab[] = [
   { id: "general",     label: "Resumen",     icon: LayoutDashboard },
+  { id: "forestal",    label: "Forestal",    icon: TreePine },
   { id: "ventas",      label: "Ventas",      icon: ShoppingCart },
   { id: "caja",        label: "Caja",        icon: Wallet },
   { id: "inventario",  label: "Inventario",  icon: Package },
@@ -137,14 +145,28 @@ export default function VendorDashboardModule() {
     (m?: Tab) => !m || (hasTab(m) && !isHiddenByTemplate(m)),
     [hasTab, isHiddenByTemplate],
   );
+  // «Forestal» no depende del plan sino de la especialización del negocio
+  // (ADR-124, la misma bandera que prende los libros en el menú): una bodega
+  // sin libros forestales no la ve.
+  const { enabledModuleIds, isLoading: cargandoSpecs } = useEnabledSpecs();
+  const rol = useMiRol();
+  const tieneForestal =
+    (enabledModuleIds.has("ctp-libro-operaciones") || enabledModuleIds.has("loth-libro-operaciones")) &&
+    puedeVerInicioForestal(rol);
   const availableTabs = useMemo(
-    () => TABS.filter((t) => moduleAvailable(SUBTAB_MODULE[t.id])),
-    [moduleAvailable],
+    () =>
+      TABS.filter((t) =>
+        t.id === "forestal" ? tieneForestal : moduleAvailable(SUBTAB_MODULE[t.id]),
+      ),
+    [moduleAvailable, tieneForestal],
   );
-  // Si el sub-tab activo dejó de estar disponible, volver a Resumen.
+  // Si el sub-tab activo dejó de estar disponible, volver a Resumen. Mientras
+  // las especializaciones cargan, «Forestal» todavía no se sabe: un link con
+  // `?vista=forestal` no tiene que rebotar a Resumen por llegar antes.
   useEffect(() => {
+    if (tab === "forestal" && (cargandoSpecs || rol == null)) return;
     if (!availableTabs.some((t) => t.id === tab)) setTab("general");
-  }, [availableTabs, tab, setTab]);
+  }, [availableTabs, tab, setTab, cargandoSpecs, rol]);
 
   useEffect(() => {
     let active = true;
@@ -206,6 +228,7 @@ export default function VendorDashboardModule() {
 
   const TAB_DESCRIPTIONS: Record<InicioTab, string> = {
     general: `Resumen ${rangeTxt} con KPIs, ventas, caja, inventario y clientes vinculados.`,
+    forestal: `Aserradero y plantación ${rangeTxt}.`,
     ventas: `Ventas ${rangeTxt}: tendencias, tickets y top productos.`,
     caja: `Movimientos de caja ${rangeTxt}: ingresos, egresos y flujo.`,
     inventario: `Inventario y catálogo ${rangeTxt}: stock crítico, rotación, agotados y unidades vendidas.`,
@@ -281,6 +304,9 @@ export default function VendorDashboardModule() {
                    removió para complementar a TodayHub (no duplica KPIs). */}
             <InicioDashboardV2 dateRange={dateRange} onChangeRange={setDateRange} />
           </div>
+        )}
+        {tab === "forestal" && tieneForestal && (
+          <ForestalDashboard dateRange={dateRange} conAdelantos={moduleAvailable("adelantos")} />
         )}
         {tab === "ventas" && <VentasDashboard dateRange={dateRange} onChangeRange={setDateRange} />}
         {tab === "caja" && <CajaDashboard dateRange={dateRange} onChangeRange={setDateRange} />}

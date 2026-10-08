@@ -50,6 +50,7 @@ import { RENDIMIENTO_TOPE_PCT, topeDeclarableM3 } from "@/lib/forestal/produccio
 import { estaDisponible, type TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { claveNumeroGtf, colaDeGtf } from "@/lib/forestal/gtf-talonario";
 import { jornadasDesdeFilas, SIN_DUENO, type JornadaDelLibro } from "@/lib/forestal/detalle-de-jornada";
 import {
   entraConDuenos,
@@ -1203,6 +1204,65 @@ export class ForestCtpDB {
     const creado = await prisma.$transaction((tx) => ForestCtpDB.crearEnTx(tx, tenantId, input, pre), CTP_TX_OPTS);
     await ForestCtpDB.despuesDeCrear(tenantId, input, creado);
     return creado.entry;
+  }
+
+  /**
+   * Los despachos CON GTF de estos ids, anulados incluidos — las guías que el
+   * operador eligió en «Guías emitidas» para llenar un trámite
+   * (`tramites-desde-guias`). Un id ajeno, borrado o sin N° de guía no vuelve:
+   * el endpoint lo cuenta como «ya no está».
+   */
+  static async despachosConGuiaPorIds(tenantId: string, ids: readonly string[]) {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (ids.length === 0) return [];
+    const filas = await prisma.forestCtpEntry.findMany({
+      where: { tenantId, id: { in: [...ids] }, section: "despacho", deletedAt: null, gtfNumber: { not: null } },
+      orderBy: [{ entryDate: "asc" }, { lineNo: "asc" }],
+      take: 200,
+    });
+    return filas.filter((f) => (f.gtfNumber ?? "").trim().length > 0);
+  }
+
+  /**
+   * TODAS las líneas de despacho (vigentes y anuladas, no borradas) de estos
+   * N° de GTF: la guía ENTERA aunque se haya elegido una sola línea, y de paso
+   * las vigentes que dicen si una anulada se volvió a registrar.
+   *
+   * Acotado a los N° pedidos —antes se leían los N° de todas las guías
+   * vigentes del tenant—: `endsWith` de la cola trae las candidatas y
+   * `claveNumeroGtf` decide en memoria (`019-001-0000065` ≡ `19-001-65`), el
+   * mismo patrón que `ForestGtfDB.exigirSinRepetir`.
+   */
+  static async despachosDeLasGuias(tenantId: string, numeros: readonly string[]) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const textos = [...new Set(numeros.map((n) => n.trim()).filter(Boolean))];
+    const claves = new Set(textos.map((n) => claveNumeroGtf(n)).filter((k): k is string => k != null));
+    const colas = [...new Set(textos.map((n) => colaDeGtf(n)).filter((c): c is string => c != null))];
+    if (textos.length === 0) return [];
+    /* Dos pasos: la cola sin ceros es un filtro AMPLIO (`…-0000001` → termina
+       en «1»), así que primero sólo id + N° y después las filas enteras de las
+       que de verdad son esas guías. */
+    const candidatas = await prisma.forestCtpEntry.findMany({
+      where: {
+        tenantId,
+        section: "despacho",
+        deletedAt: null,
+        OR: [{ gtfNumber: { in: textos } }, ...colas.map((c) => ({ gtfNumber: { endsWith: c } }))],
+      },
+      select: { id: true, gtfNumber: true },
+    });
+    const ids = candidatas
+      .filter((f) => {
+        const n = (f.gtfNumber ?? "").trim();
+        const k = claveNumeroGtf(n);
+        return k != null ? claves.has(k) : textos.includes(n);
+      })
+      .map((f) => f.id);
+    if (ids.length === 0) return [];
+    return prisma.forestCtpEntry.findMany({
+      where: { tenantId, id: { in: ids } },
+      orderBy: [{ entryDate: "asc" }, { lineNo: "asc" }],
+    });
   }
 
   static async list(
@@ -5620,7 +5680,7 @@ export class ForestCtpDB {
       }),
       prisma.forestCtpEntry.findMany({
         where: linea("despacho"),
-        select: { entryDate: true, quantity: true, speciesCommon: true },
+        select: { entryDate: true, quantity: true, unit: true, speciesCommon: true },
       }),
     ]);
 
@@ -5674,6 +5734,7 @@ export class ForestCtpDB {
       despachos: despachos.map((d) => ({
         fecha: d.entryDate,
         cantidad: Number(d.quantity ?? 0),
+        unidad: d.unit,
         especie: d.speciesCommon,
       })),
       desde: desde <= hasta ? desde : hasta,

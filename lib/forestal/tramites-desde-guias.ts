@@ -1,6 +1,7 @@
 /**
- * tramites-desde-guias — de las guías elegidas en la vista GTF del Libro TH a
- * los casilleros de un formato de Trámites y Oficios (Brandon 07-10:
+ * tramites-desde-guias — de las guías elegidas en la vista GTF del Libro TH (o
+ * en «Guías emitidas» del Libro CTP) a los casilleros de un formato de
+ * Trámites y Oficios (Brandon 07-10:
  * «seleccionar las guías … usar ese formato, y automático se rellenarán los
  * datos de las guías emitidas, anuladas, lista de trozas, volumen, permiso»).
  *
@@ -14,8 +15,17 @@
  */
 
 import { FORMATOS_TRAMITE, formatoPorId, type DatosTramite, type FormatoTramite } from "./tramites-catalogo";
-import { filaDesdeGtfLoth, parseGuiasInforme, serializeGuiasInforme, type ItemGtfLoth } from "./tramites-relacion-guias";
+import {
+  filaDesdeGtfLoth,
+  filaDesdeGuiaEmitida,
+  parseGuiasInforme,
+  serializeGuiasInforme,
+  type FilaGuiaInforme,
+  type ItemGtfLoth,
+} from "./tramites-relacion-guias";
 import { claveNumeroGtf } from "./gtf-talonario";
+import { leerGtfDatos } from "./ctp-gtf-datos";
+import { m3DesdePt } from "./cubicacion";
 
 // ─── La anulación de «Deshacer la importación» ───────────────────────────────
 
@@ -36,9 +46,32 @@ export function esImportacionDeshecha(annulledReason: string | null | undefined)
   return (annulledReason ?? "").trim().startsWith(`${PREFIJO_IMPORTACION_DESHECHA}:`);
 }
 
-/** Una `ForestGtf` como la necesita un formato (la arma `guiaParaFormato`). */
+/**
+ * Lo propio de una guía del Libro CTP: el despacho declara PRODUCTO con su
+ * unidad (pt, m³, unidades, kg), no una lista de trozas medidas como la GTF
+ * del Libro TH. Se lleva tal cual: convertir pt a m³ acá sería presentar un
+ * derivado como si fuera el dato.
+ */
+export interface LineaDespachoGuia {
+  lineNo: number | null;
+  especie: string | null;
+  producto: string | null;
+  cantidad: number | null;
+  unidad: string | null;
+  /** A quién se entrega (de los datos de la guía); sin él, el destino. */
+  destinatario: string | null;
+}
+
+/** El libro de donde sale una guía elegida. */
+export type OrigenGuiaFormato = "loth" | "ctp";
+
+/** Una `ForestGtf` (o un despacho del CTP) como la necesita un formato (la arman `guiaParaFormato` / `guiaCtpParaFormato`). */
 export interface GuiaParaFormato {
   id: string;
+  /** De qué libro salió. Sin el campo = Libro TH (la forma que tenía antes de que el CTP eligiera guías). */
+  origen?: OrigenGuiaFormato;
+  /** Sólo en las del CTP. */
+  despacho?: LineaDespachoGuia;
   gtfNumber: string;
   /** `YYYY-MM-DD` (fecha sin hora del libro) o `null`. */
   gtfDate: string | null;
@@ -153,6 +186,175 @@ export function marcarReemitidas(guias: GuiaParaFormato[], vigentes: readonly st
   return guias.map((g) => (g.status === "anulada" && claves.has(claveDe(g.gtfNumber)) ? { ...g, reemitida: true } : g));
 }
 
+// ─── Del despacho del Libro CTP al DTO ───────────────────────────────────────
+
+/** Lo que llega de `ForestCtpEntry` (Prisma) para una línea de despacho con GTF. */
+export interface FilaDespachoCruda {
+  id: string;
+  lineNo?: number | null;
+  entryDate: Date | string;
+  gtfNumber: string | null;
+  status: string;
+  annulledReason?: string | null;
+  updatedAt?: Date | string | null;
+  destino?: string | null;
+  productType?: string | null;
+  speciesCommon?: string | null;
+  quantity?: { toString(): string } | number | string | null;
+  unit?: string | null;
+  /** JSON crudo de `gtfDatos`: se lee con `leerGtfDatos` (tolerante). */
+  gtfDatos?: unknown;
+}
+
+/** «m3», «m³», «M3» → `m3`; el resto en minúsculas. */
+const unidadDe = (u: string | null | undefined): string | null => {
+  const t = (u ?? "").trim().toLowerCase().replace("³", "3");
+  return t || null;
+};
+
+/**
+ * Un despacho con GTF del Libro CTP, listo para viajar al formulario.
+ *
+ * - Anulado = `status` distinto de `registrado` (el mismo criterio que
+ *   «Guías emitidas»).
+ * - El permiso es `titulos[0]`: el que imprime la guía.
+ * - SIN titular: la relación del CTP la presenta el CTP (su Ficha). El
+ *   propietario de la guía puede ser un tercero dueño de la madera (art. 172
+ *   inc. d) y no es quien declara.
+ * - Sin ítems: la guía del CTP no imprime lista de trozas medidas.
+ */
+export function guiaCtpParaFormato(f: FilaDespachoCruda): GuiaParaFormato {
+  const datos = leerGtfDatos(f.gtfDatos);
+  const cantidad = f.quantity == null ? null : numero(typeof f.quantity === "object" ? f.quantity.toString() : f.quantity);
+  const unidad = unidadDe(f.unit);
+  return {
+    id: f.id,
+    origen: "ctp",
+    gtfNumber: (f.gtfNumber ?? "").trim(),
+    gtfDate: isoDe(f.entryDate)?.slice(0, 10) ?? null,
+    tipo: "producto",
+    status: f.status === "registrado" ? "emitida" : "anulada",
+    annulledReason: texto(f.annulledReason),
+    updatedAt: isoDe(f.updatedAt),
+    tituloHabilitante: texto(datos.titulos[0]),
+    titularName: null,
+    destino: texto(f.destino),
+    placaVehiculo: texto(datos.vehiculo.placa),
+    conductor: texto(datos.vehiculo.conductor),
+    volumenTotalM3: unidad === "m3" ? cantidad : null,
+    piezasTotal: unidad === "unidad" && cantidad != null ? Math.round(cantidad) : null,
+    items: [],
+    despacho: {
+      lineNo: f.lineNo ?? null,
+      especie: texto(f.speciesCommon),
+      producto: texto(f.productType),
+      cantidad,
+      unidad,
+      destinatario: texto(datos.destinatario.nombre),
+    },
+  };
+}
+
+// ─── Una guía del CTP = todas sus líneas ─────────────────────────────────────
+
+/**
+ * La llave de UNA guía del CTP: su N° y si está vigente. Una GTF puede amparar
+ * varias líneas de despacho y se elige ENTERA; una línea anulada del mismo N°
+ * (se anuló para corregirla y se volvió a registrar) es otro registro.
+ */
+const claveGuiaCtp = (gtfNumber: string | null, vigente: boolean): string => `${claveDe(gtfNumber ?? "")}|${vigente ? "v" : "a"}`;
+
+/**
+ * `?ids=` del Libro CTP → las GUÍAS enteras (08-10). En «Guías emitidas» se
+ * elige la guía, no la línea: con una sola línea de una guía de dos, la
+ * relación declaraba la mitad de la carga sin avisar. A las líneas elegidas se
+ * suman las del mismo N° y estado (`delMismoNumero`, de
+ * `ForestCtpDB.despachosDeLasGuias`); las vigentes de esos N° dicen además si
+ * una anulada se volvió a registrar. `faltan` = ids pedidos que ya no están.
+ */
+export function lineasDeLasGuias<T extends { id: string; status: string; gtfNumber: string | null }>(
+  ids: readonly string[],
+  elegidas: readonly T[],
+  delMismoNumero: readonly T[],
+): { filas: T[]; vigentes: string[]; faltan: number } {
+  const claves = new Set(elegidas.map((f) => claveGuiaCtp(f.gtfNumber, f.status === "registrado")));
+  const porId = new Map<string, T>();
+  for (const f of delMismoNumero) {
+    if (claves.has(claveGuiaCtp(f.gtfNumber, f.status === "registrado"))) porId.set(f.id, f);
+  }
+  for (const f of elegidas) if (!porId.has(f.id)) porId.set(f.id, f);
+  const encontrados = new Set(elegidas.map((f) => f.id));
+  return {
+    filas: [...porId.values()],
+    vigentes: delMismoNumero.filter((f) => f.status === "registrado").map((f) => (f.gtfNumber ?? "").trim()),
+    faltan: [...new Set(ids)].filter((id) => !encontrados.has(id)).length,
+  };
+}
+
+/**
+ * Una línea de despacho del CTP (`guiaCtpParaFormato`). Mira `despacho` además
+ * de `origen`: la GTF del Libro TH tiene su propio `origen` (de dónde salió la
+ * madera) y nunca trae `despacho`.
+ */
+const esLineaCtp = (g: object): boolean => "despacho" in g && g.despacho != null && "origen" in g && g.origen === "ctp";
+
+/**
+ * Lo elegido, agrupado por GUÍA: las líneas del CTP con el mismo N° y estado
+ * son una sola; cada GTF del Libro TH es la suya. Es lo que se cuenta («2
+ * guías», «es de una sola guía»), no las líneas.
+ */
+export function guiasDistintas<T extends GuiaElegida>(guias: readonly T[]): T[][] {
+  const grupos = new Map<string, T[]>();
+  guias.forEach((g, i) => {
+    const k = esLineaCtp(g) ? `ctp|${claveGuiaCtp(g.gtfNumber, g.status !== "anulada")}` : `#${i}`;
+    const ya = grupos.get(k);
+    if (ya) ya.push(g);
+    else grupos.set(k, [g]);
+  });
+  return [...grupos.values()];
+}
+
+/** Cuántas guías (no líneas) hay en lo elegido. */
+export const contarGuias = (guias: readonly GuiaElegida[]): number => guiasDistintas(guias).length;
+
+/**
+ * Para los formatos de UNA guía (anulación, pérdida): si es del CTP con varias
+ * líneas, una sola guía con las líneas juntas —tomar la primera declaraba
+ * sólo su cantidad—: especies y productos unidos, la cantidad sumada si
+ * comparten unidad. La suma es un derivado: se avisa.
+ */
+function unaGuia(guias: GuiaParaFormato[]): { g: GuiaParaFormato; aviso: string | null } {
+  const [base] = guias;
+  const ds = guias.map((x) => x.despacho).filter((d): d is LineaDespachoGuia => d != null);
+  if (guias.length <= 1 || ds.length !== guias.length) return { g: base, aviso: null };
+  const unidades = unicos(ds.map((d) => d.unidad));
+  const sumable = unidades.length === 1 && ds.every((d) => d.cantidad != null);
+  const cantidad = sumable ? Number(ds.reduce((a, d) => a + (d.cantidad ?? 0), 0).toFixed(4)) : null;
+  const unidad = sumable ? unidades[0] : null;
+  const g: GuiaParaFormato = {
+    ...base,
+    updatedAt: guias.map((x) => x.updatedAt ?? "").sort().pop() || base.updatedAt,
+    annulledReason: unicos(guias.map((x) => x.annulledReason)).join(" / ") || null,
+    reemitida: guias.some((x) => x.reemitida) || undefined,
+    volumenTotalM3: unidad === "m3" ? cantidad : null,
+    piezasTotal: unidad === "unidad" && cantidad != null ? Math.round(cantidad) : null,
+    despacho: {
+      lineNo: base.despacho?.lineNo ?? null,
+      especie: unicos(ds.map((d) => d.especie)).join(", ") || null,
+      producto: unicos(ds.map((d) => d.producto)).join(", ") || null,
+      cantidad,
+      unidad,
+      destinatario: unicos(ds.map((d) => d.destinatario)).join(" / ") || null,
+    },
+  };
+  const nros = ds.map((d) => d.lineNo).filter((n): n is number => n != null);
+  const cuales = nros.length === ds.length ? ` (${nros.map((n) => `#${n}`).join(", ")})` : "";
+  const detalle = sumable
+    ? `se toman juntas: ${cantidadConUnidad(g.despacho!)}`
+    : `en distinta unidad (${ds.map(cantidadConUnidad).filter(Boolean).join(" + ")}): completa el volumen a mano`;
+  return { g, aviso: `La GTF ${base.gtfNumber} ampara ${ds.length} líneas de despacho${cuales}: ${detalle}. Revísalo.` };
+}
+
 // ─── Qué formatos se pueden usar con lo elegido ──────────────────────────────
 
 /** Lo mínimo para decidir qué formato se puede usar (la tabla tiene esto de cada guía). */
@@ -189,8 +391,9 @@ const plural = (n: number, uno: string, varios: string) => (n === 1 ? uno : vari
 function motivoNoSirve(uso: NonNullable<FormatoTramite["aceptaGuias"]>, guias: readonly GuiaElegida[]): string | null {
   if (guias.length === 0) return "Elige al menos una guía.";
   if (uso.uso === "una") {
-    if (guias.length !== 1) return `Es de una sola guía: elegiste ${guias.length}.`;
-    const g = guias[0];
+    const grupos = guiasDistintas(guias);
+    if (grupos.length !== 1) return `Es de una sola guía: elegiste ${grupos.length}.`;
+    const g = grupos[0][0];
     if (uso.estado === "anulada" && g.status !== "anulada") return "Es para una guía anulada: ésta está vigente.";
     if (uso.estado === "anulada" && esImportacionDeshecha(g.annulledReason)) {
       return "Se anuló al deshacer su importación al Libro TH, no ante SERFOR: no hay anulación que comunicar.";
@@ -261,8 +464,20 @@ const unicos = (xs: (string | null | undefined)[]): string[] => [...new Set(xs.m
 
 const normalizar = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]/gi, "").toLowerCase();
 
-/** «TORNILLO (22 trozas)» · «Cumala, Tornillo (5 trozas)» · sin especies, el producto. */
+/** La cantidad con su unidad, como la declaró el despacho: «500 pt», «1.4876 m³». */
+const cantidadConUnidad = (d: LineaDespachoGuia): string => {
+  if (d.cantidad == null) return "";
+  const u = d.unidad === "m3" ? "m³" : d.unidad === "unidad" && d.cantidad !== 1 ? "unidades" : d.unidad;
+  return u ? `${d.cantidad} ${u}` : String(d.cantidad);
+};
+
+/** «TORNILLO (22 trozas)» · «Cumala, Tornillo (5 trozas)» · sin especies, el producto. CTP: «Tornillo (Madera aserrada, 500 pt)». */
 function especieProducto(g: GuiaParaFormato): string {
+  if (g.despacho) {
+    const d = g.despacho;
+    const detalle = [d.producto, cantidadConUnidad(d)].filter(Boolean).join(", ");
+    return d.especie ? (detalle ? `${d.especie} (${detalle})` : d.especie) : detalle;
+  }
   const especies = unicos(g.items.map((i) => i.species));
   const piezas = g.piezasTotal ?? (g.items.length || null);
   const producto = g.tipo === "producto" ? unicos(g.items.map((i) => i.productType)).join(", ") || "producto forestal" : "trozas";
@@ -277,17 +492,120 @@ const sumarSinRepetir = (lista: string[], n: string) => {
   if (!lista.includes(n)) lista.push(n);
 };
 
+/**
+ * La llave del N° DENTRO de su libro: el talonario del CTP y el del titular
+ * del bosque son papeles distintos, una anulada del CTP no se «reemite» con
+ * una GTF del Libro TH del mismo N°.
+ */
+const claveEnLibro = (g: GuiaParaFormato): string => `${g.origen ?? "loth"}|${claveDe(g.gtfNumber)}`;
+
+/** La fila de la relación según el libro: el adaptador de cada uno vive en `tramites-relacion-guias`. */
+function filaDeGuia(g: GuiaParaFormato): FilaGuiaInforme {
+  if (g.despacho) {
+    const d = g.despacho;
+    return {
+      ...filaDesdeGuiaEmitida(`ctp-${g.id}`, {
+        gtfNumber: g.gtfNumber,
+        fecha: g.gtfDate ?? "",
+        destinatario: d.destinatario,
+        destino: g.destino,
+        especie: d.especie,
+        producto: d.producto,
+        cantidad: d.cantidad,
+        unidad: d.unidad,
+        /* Sólo se mira si es anulada. */
+        estado: g.status === "anulada" ? "anulada" : "completa",
+      }),
+      motivo: g.status === "anulada" ? (g.annulledReason ?? "") : "",
+      permiso: g.tituloHabilitante ?? "",
+    };
+  }
+  return filaDesdeGtfLoth(`gtf-${g.id}`, {
+    gtfNumber: g.gtfNumber,
+    gtfDate: g.gtfDate,
+    destino: g.destino,
+    tipo: g.tipo,
+    volumenTotalM3: g.volumenTotalM3,
+    status: g.status,
+    annulledReason: g.annulledReason,
+    tituloHabilitante: g.tituloHabilitante,
+    items: g.items,
+  });
+}
+
+/**
+ * Una GTF del CTP puede amparar VARIAS líneas de despacho (dos especies en el
+ * mismo camión: `guias-emitidas.numerosRepetidos` lo admite). A SERFOR va una
+ * fila por guía: las líneas vigentes del mismo N° se juntan en una, con las
+ * cantidades sumadas si tienen la misma unidad (y si no, «a + b»). La suma es
+ * un derivado: se dice en un aviso.
+ */
+function juntarLineas(lineas: GuiaParaFormato[]): { fila: FilaGuiaInforme; aviso: string } {
+  const filas = lineas.map(filaDeGuia);
+  const base = filas[0];
+  const unidades = unicos(filas.map((f) => f.unidad));
+  const nums = filas.map((f) => Number(f.cantidad));
+  const sumables = unidades.length === 1 && filas.every((f) => f.cantidad.trim() !== "") && nums.every(Number.isFinite);
+  const cantidad = sumables
+    ? String(Number(nums.reduce((a, b) => a + b, 0).toFixed(4)))
+    : filas.map((f) => `${f.cantidad} ${f.unidad}`.trim()).filter(Boolean).join(" + ");
+  const fila: FilaGuiaInforme = {
+    ...base,
+    destinatario: unicos(filas.map((f) => f.destinatario)).join(" / "),
+    especie: unicos(filas.map((f) => f.especie)).join(", "),
+    producto: unicos(filas.map((f) => f.producto)).join(", "),
+    cantidad,
+    unidad: sumables ? unidades[0] : "",
+  };
+  const nros = lineas.map((g) => g.despacho?.lineNo).filter((n): n is number => n != null);
+  const cuales = nros.length === lineas.length ? ` (${nros.map((n) => `#${n}`).join(", ")})` : "";
+  return {
+    fila,
+    aviso: `La GTF ${base.numero} ampara ${lineas.length} líneas de despacho${cuales}: va en una sola fila con ${sumables ? `las cantidades sumadas (${cantidad} ${fila.unidad})` : "sus cantidades una tras otra (distinta unidad)"}. Revísala.`,
+  };
+}
+
+/** Las filas en el orden de las guías; las líneas del CTP con el mismo N° se juntan donde aparece la primera. */
+function filasDeGuias(quedan: GuiaParaFormato[]): { filas: FilaGuiaInforme[]; avisos: string[] } {
+  const lineasPorGuia = new Map<string, GuiaParaFormato[]>();
+  const orden: (GuiaParaFormato | string)[] = [];
+  for (const g of quedan) {
+    if (g.origen !== "ctp" || g.status !== "emitida") {
+      orden.push(g);
+      continue;
+    }
+    const k = claveDe(g.gtfNumber);
+    const ya = lineasPorGuia.get(k);
+    if (ya) ya.push(g);
+    else {
+      lineasPorGuia.set(k, [g]);
+      orden.push(k);
+    }
+  }
+  const avisos: string[] = [];
+  const filas = orden.flatMap((x) => {
+    if (typeof x !== "string") return [filaDeGuia(x)];
+    const lineas = lineasPorGuia.get(x) ?? [];
+    if (lineas.length <= 1) return lineas.map(filaDeGuia);
+    const { fila, aviso } = juntarLineas(lineas);
+    avisos.push(aviso);
+    return [fila];
+  });
+  return { filas, avisos };
+}
+
 /** Relación de guías: todas a la tabla, sin declarar dos veces la misma ni una anulación que no existió. */
 function datosRelacion(guias: GuiaParaFormato[], op: OpcionesDesdeGuias): DatosDesdeGuias {
   const avisos: string[] = [];
-  const emitidas = new Set(guias.filter((g) => g.status === "emitida").map((g) => claveDe(g.gtfNumber)));
+  const emitidas = new Set(guias.filter((g) => g.status === "emitida").map(claveEnLibro));
   const reemitidasExcluidas: string[] = [];
   const reemitidasIncluidas: string[] = [];
   /* Las de «Deshacer la importación» que NO se volvieron a registrar (si se reemitieron, manda el aviso de la reemitida). */
   const deshechasExcluidas: string[] = [];
   const deshechasIncluidas: string[] = [];
   const anuladasVistas = new Map<string, GuiaParaFormato>();
-  const repetidasAnuladas = new Set<string>();
+  /* N° → libro: el aviso dice por qué se repite según de dónde sale. */
+  const repetidasAnuladas = new Map<string, OrigenGuiaFormato>();
   const quedan: GuiaParaFormato[] = [];
 
   /* La anulada más reciente primero: si una anulada se repite, queda la última. */
@@ -297,7 +615,7 @@ function datosRelacion(guias: GuiaParaFormato[], op: OpcionesDesdeGuias): DatosD
       quedan.push(g);
       continue;
     }
-    const clave = claveDe(g.gtfNumber);
+    const clave = claveEnLibro(g);
     const reemitida = emitidas.has(clave) || Boolean(g.reemitida);
     if (reemitida || esImportacionDeshecha(g.annulledReason)) {
       if (!op.incluirAnuladasReemitidas) {
@@ -307,7 +625,7 @@ function datosRelacion(guias: GuiaParaFormato[], op: OpcionesDesdeGuias): DatosD
       sumarSinRepetir(reemitida ? reemitidasIncluidas : deshechasIncluidas, g.gtfNumber);
     }
     if (anuladasVistas.has(clave)) {
-      repetidasAnuladas.add(g.gtfNumber);
+      repetidasAnuladas.set(g.gtfNumber, g.origen ?? "loth");
       continue;
     }
     anuladasVistas.set(clave, g);
@@ -331,23 +649,18 @@ function datosRelacion(guias: GuiaParaFormato[], op: OpcionesDesdeGuias): DatosD
   if (deshechasIncluidas.length) {
     avisos.push(`Incluiste como anulada ${deshechasIncluidas.join(", ")}, que se anuló al deshacer su importación: confirma que de verdad se anuló un papel con ese N°.`);
   }
-  if (repetidasAnuladas.size) {
-    avisos.push(`${[...repetidasAnuladas].join(", ")}: anulada varias veces en el libro (se reimportó). Va una sola vez.`);
+  const repetidasDe = (libro: OrigenGuiaFormato) => [...repetidasAnuladas].filter(([, l]) => l === libro).map(([n]) => n);
+  if (repetidasDe("loth").length) {
+    avisos.push(`${repetidasDe("loth").join(", ")}: anulada varias veces en el libro (se reimportó). Va una sola vez.`);
+  }
+  /* En el CTP no hay reimportación: el N° se repite porque la guía amparaba
+     varias líneas o porque la línea se anuló más de una vez al corregirla. */
+  if (repetidasDe("ctp").length) {
+    avisos.push(`${repetidasDe("ctp").join(", ")}: varias líneas anuladas con ese N° en el Libro CTP. Va una sola vez, como anulada.`);
   }
 
-  const filas = quedan.map((g) =>
-    filaDesdeGtfLoth(`gtf-${g.id}`, {
-      gtfNumber: g.gtfNumber,
-      gtfDate: g.gtfDate,
-      destino: g.destino,
-      tipo: g.tipo,
-      volumenTotalM3: g.volumenTotalM3,
-      status: g.status,
-      annulledReason: g.annulledReason,
-      tituloHabilitante: g.tituloHabilitante,
-      items: g.items,
-    }),
-  );
+  const { filas, avisos: avisosLineas } = filasDeGuias(quedan);
+  avisos.push(...avisosLineas);
   const datos: DatosTramite = { guiasJson: serializeGuiasInforme(filas) };
 
   const fechas = quedan.map((g) => g.gtfDate).filter((f): f is string => Boolean(f)).sort();
@@ -373,7 +686,8 @@ function datosRelacion(guias: GuiaParaFormato[], op: OpcionesDesdeGuias): DatosD
   } else if (titulares.length > 1) {
     avisos.push(`Las guías son de ${titulares.length} titulares distintos: la relación va a nombre de uno solo, revísalo.`);
   }
-  const sinTrozas = filas.filter((f) => !f.anulada && !f.trozas.trim()).length;
+  /* Sólo las del Libro TH: la guía del CTP ampara producto y no imprime lista de trozas medidas. */
+  const sinTrozas = filas.filter((f) => f.origen === "loth" && !f.anulada && !f.trozas.trim()).length;
   if (sinTrozas) avisos.push(`${sinTrozas} ${plural(sinTrozas, "guía no trae", "guías no traen")} su lista de trozas en el libro: complétala a mano.`);
   return { datos, avisos, reemitidasExcluidas: [...reemitidasExcluidas, ...deshechasExcluidas] };
 }
@@ -407,13 +721,34 @@ function datosAnulacion(g: GuiaParaFormato): DatosDesdeGuias {
     avisos.push(`La fecha de anulación (${ddmmaaaa(dia)}) sale de la última modificación de la guía: el libro no guarda el día exacto. Confírmala.`);
   }
   if (g.reemitida) {
-    avisos.push(`El N° ${g.gtfNumber} también está emitido en el libro (se volvió a registrar). Si sólo se deshizo una importación, no hay anulación que comunicar.`);
+    /* En el CTP se anula la LÍNEA del libro para corregirla y se vuelve a
+       registrar con la misma guía: el papel nunca se anuló. */
+    const cuando = g.origen === "ctp" ? "se anuló la línea del despacho para corregirla" : "se deshizo una importación";
+    avisos.push(`El N° ${g.gtfNumber} también está emitido en el libro (se volvió a registrar). Si sólo ${cuando}, no hay anulación que comunicar.`);
   }
   return { datos, avisos, reemitidasExcluidas: [] };
 }
 
+/**
+ * El volumen amparado en m³ (el formato lo escribe «… de X m³ de …»). Una
+ * guía del CTP en pie tablar se convierte (÷ 424) y se avisa; en unidades o
+ * kg no hay m³ que dar: queda vacío, con el aviso de completarlo.
+ */
+function volumenAmparado(g: GuiaParaFormato): { vol: string; aviso: string | null } {
+  const d = g.despacho;
+  if (!d || g.volumenTotalM3 != null || d.cantidad == null) return { vol: fmtVolumen(g.volumenTotalM3), aviso: null };
+  if (d.unidad === "pt") {
+    const m3 = m3DesdePt(d.cantidad);
+    return {
+      vol: fmtVolumen(m3),
+      aviso: `El volumen sale de convertir ${d.cantidad} pt a m³ (÷ 424 = ${fmtVolumen(m3)} m³): confírmalo con lo que dice la guía.`,
+    };
+  }
+  return { vol: "", aviso: `La guía ampara ${cantidadConUnidad(d)} y el formato pide m³: completa el volumen a mano.` };
+}
+
 function datosPerdida(g: GuiaParaFormato, formatoId: string): DatosDesdeGuias {
-  const vol = fmtVolumen(g.volumenTotalM3);
+  const { vol, aviso } = volumenAmparado(g);
   const esp = especieProducto(g);
   const datos: DatosTramite =
     formatoId === "denuncia-policial-perdida-gtf"
@@ -431,7 +766,7 @@ function datosPerdida(g: GuiaParaFormato, formatoId: string): DatosDesdeGuias {
           volumenAmparadoPerdidoSerfor: vol,
           destinoGuiaPerdida: g.destino ?? "",
         };
-  return { datos: sinVacios(datos), avisos: [], reemitidasExcluidas: [] };
+  return { datos: sinVacios(datos), avisos: aviso ? [aviso] : [], reemitidasExcluidas: [] };
 }
 
 /** Del primero al último correlativo, con los huecos que haya en medio. */
@@ -475,5 +810,9 @@ export function datosDesdeGuias(formatoId: string, guias: GuiaParaFormato[], op:
   if (!formato || !uso || motivoNoSirve(uso, guias)) return null;
   if (uso.uso === "tabla") return datosRelacion(guias, op);
   if (uso.uso === "rango") return datosRango(guias, formatoId);
-  return formatoId === "anulacion-gtf" ? datosAnulacion(guias[0]) : datosPerdida(guias[0], formatoId);
+  const { g, aviso } = unaGuia(guias);
+  /* La anulación no declara cantidad: el aviso de las líneas sumadas sería ruido. */
+  if (formatoId === "anulacion-gtf") return datosAnulacion(g);
+  const r = datosPerdida(g, formatoId);
+  return aviso ? { ...r, avisos: [aviso, ...r.avisos] } : r;
 }

@@ -13,7 +13,7 @@ import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { formatNumber } from "@/lib/format";
-import { siglaDePlan } from "@/lib/forestal/loth-tipos-plan";
+import { permisoConSigla } from "@/lib/forestal/loth-tipos-plan";
 import type { PedidoEspecie, PedidoLote } from "../LothPlanEspecies";
 import { PESTANAS_PLAN, PESTANAS_PLANTACION, type PestanaPlan } from "../LothPlanPestanas";
 import { CLAVE_PESTANA_PLAN, CLAVE_PESTANA_PLANTACION, opcionesDelPlan, pestanasDelPlan } from "../loth-plan-view-shared";
@@ -132,7 +132,7 @@ export function useLothPlanView(reloadSignal?: number, onCambioDelLibro?: () => 
         ? `Tiene ${partes.join(", ")}.${vol} Nada de eso se borra: el plan deja de aparecer en el selector y lo que ya se declaró sigue igual.`
         : `No tiene especies, ${esPlantacion ? "árboles marcados" : "censo"}, asientos ni guías: se puede sacar sin dejar nada suelto.${vol}`;
       const ok = await confirm({
-        title: `¿Eliminar ${siglaDePlan(p.planType)} ${p.planNumber ?? ""}?`.replace(/\s+\?/, "?"),
+        title: `¿Eliminar ${permisoConSigla(p.planType, p.planNumber)}?`,
         description: `${p.titularName}. ${detalle}`,
         intent: "danger",
         confirmLabel: "Sí, eliminar",

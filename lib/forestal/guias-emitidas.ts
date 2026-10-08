@@ -22,6 +22,7 @@
  */
 
 import { faltantesGtf, leerGtfDatos } from "./ctp-gtf-datos";
+import { claveNumeroGtf } from "./gtf-talonario";
 
 /** Un despacho, como llega del libro. */
 export type FilaDespachoGuia = {
@@ -172,4 +173,64 @@ export function numerosRepetidos(guias: GuiaEmitida[]): string[] {
     cuenta.set(g.gtfNumber, (cuenta.get(g.gtfNumber) ?? 0) + 1);
   }
   return [...cuenta.entries()].filter(([, n]) => n > 1).map(([n]) => n);
+}
+
+/** Lo que amparan las guías elegidas, por unidad. */
+export interface CantidadPorUnidad {
+  unidad: string;
+  total: number;
+}
+
+/** Orden de las unidades del negocio: PT → m³ → unidades → kg; otra, al final. */
+const ORDEN_UNIDAD = ["pt", "m3", "unidad", "kg"];
+
+/**
+ * Cuánto amparan las guías VIGENTES, sumado por unidad (vista previa de la
+ * barra de selección: lo que se declara lo arma el trámite). Una anulada no
+ * ampara nada. Pie tablar y m³ no se mezclan: convertir sería un derivado.
+ */
+export function cantidadesPorUnidad(guias: readonly GuiaEmitida[]): CantidadPorUnidad[] {
+  const m = new Map<string, number>();
+  for (const g of guias) {
+    if (g.estado === "anulada" || g.cantidad == null || !Number.isFinite(g.cantidad)) continue;
+    const u = (g.unidad ?? "").trim().toLowerCase().replace("³", "3") || "sin unidad";
+    m.set(u, (m.get(u) ?? 0) + g.cantidad);
+  }
+  const rango = (u: string) => (ORDEN_UNIDAD.includes(u) ? ORDEN_UNIDAD.indexOf(u) : ORDEN_UNIDAD.length);
+  return [...m.entries()]
+    .map(([unidad, total]) => ({ unidad, total: Number(total.toFixed(4)) }))
+    .sort((a, b) => rango(a.unidad) - rango(b.unidad) || a.unidad.localeCompare(b.unidad));
+}
+
+/**
+ * La llave de UNA guía en «Guías emitidas»: su N° (`claveNumeroGtf`) y si
+ * está anulada. La lista muestra una fila por LÍNEA de despacho, pero se elige
+ * la guía entera (08-10): con una línea de una guía de dos, el trámite
+ * declaraba la mitad de la carga. Una línea anulada del mismo N° (se anuló
+ * para corregirla y se volvió a registrar) es otro registro y va aparte.
+ */
+export function claveDeGuia(g: Pick<GuiaEmitida, "gtfNumber" | "estado">): string {
+  return `${claveNumeroGtf(g.gtfNumber) ?? g.gtfNumber.trim()}|${g.estado === "anulada" ? "a" : "v"}`;
+}
+
+/** Los ids de TODAS las líneas de cada guía (`claveDeGuia` → `despachoId`s). */
+export function lineasPorGuia(guias: readonly GuiaEmitida[]): Map<string, string[]> {
+  const m = new Map<string, string[]>();
+  for (const g of guias) {
+    const k = claveDeGuia(g);
+    m.set(k, [...(m.get(k) ?? []), g.despachoId]);
+  }
+  return m;
+}
+
+/** Las líneas elegidas, agrupadas por guía (en el orden en que aparece cada una). */
+export function agruparPorGuia(lineas: readonly GuiaEmitida[]): { gtfNumber: string; anulada: boolean; lineas: GuiaEmitida[] }[] {
+  const m = new Map<string, { gtfNumber: string; anulada: boolean; lineas: GuiaEmitida[] }>();
+  for (const g of lineas) {
+    const k = claveDeGuia(g);
+    const ya = m.get(k);
+    if (ya) ya.lineas.push(g);
+    else m.set(k, { gtfNumber: g.gtfNumber, anulada: g.estado === "anulada", lineas: [g] });
+  }
+  return [...m.values()];
 }

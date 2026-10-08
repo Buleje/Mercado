@@ -7,7 +7,7 @@
 
 import { FileText } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
-import { siglaDePlan } from "@/lib/forestal/loth-tipos-plan";
+import { permisoConSigla } from "@/lib/forestal/loth-tipos-plan";
 import LothBorrarOperacionesModal from "./LothBorrarOperacionesModal";
 import LothPlanForm from "./LothPlanForm";
 import type { VistaPlan } from "./hooks/use-loth-plan-view";
@@ -55,7 +55,7 @@ export default function LothPlanModales({ v }: { v: VistaPlan }) {
         open={editandoPlan && plan != null}
         onClose={() => void cerrarFormulario(() => { setEditandoPlan(false); void docs.recargar(); })}
         title={esPlantacion ? "Editar registro de plantación" : "Editar plan de manejo"}
-        description={plan ? `${siglaDePlan(plan.planType)} ${plan.planNumber ?? ""} — ${plan.titularName}` : ""}
+        description={plan ? `${permisoConSigla(plan.planType, plan.planNumber)} — ${plan.titularName}` : ""}
         icon={FileText}
         variant="info"
       >

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useRef, useEffect, useId, useCallback, type ReactNode } from "react";
+import { useState, useRef, useEffect, useId, useCallback, useMemo, type ReactNode } from "react";
 import { isEditableTarget, isModalOpen } from "@/lib/keyboard-guards";
 import { ChevronLeft, ChevronRight, GripVertical } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { insertarFaltantes, leerOrdenGuardado } from "./orden-pestanas";
 import type { LucideIcon } from "lucide-react";
 import { useModuleTabs } from "@/contexts/module-tabs-context";
 import { ModuleDepthProvider, useModuleDepth } from "@/components/admin/shared/module-depth";
@@ -223,24 +224,39 @@ export default function AdminTabBar({
   const [draggedTab, setDraggedTab] = useState<string | null>(null);
   const [dragOverTab, setDragOverTab] = useState<string | null>(null);
 
+  /**
+   * El orden COMPLETO: el guardado tal cual —con las pestañas que todavía no
+   * llegaron (una que el usuario movió y aparece tarde conserva su lugar)— más
+   * las de ahora que no estaban guardadas.
+   */
   const [tabOrder, setTabOrder] = useState<string[]>(() => {
-    if (typeof window === "undefined") return tabs.map((tab) => tab.id);
-
+    const deFabrica = tabs.map((tab) => tab.id);
+    if (typeof window === "undefined") return deFabrica;
+    let guardado: string[] | null = null;
     try {
-      const saved = localStorage.getItem(`tab-order-${moduleId}`);
-      if (saved) {
-        const parsed = JSON.parse(saved) as string[];
-        const allIds = tabs.map((tab) => tab.id);
-        const valid = parsed.filter((id) => allIds.includes(id));
-        const missing = allIds.filter((id) => !valid.includes(id));
-        return [...valid, ...missing];
-      }
+      guardado = leerOrdenGuardado(localStorage.getItem(`tab-order-${moduleId}`));
     } catch {}
-
-    return tabs.map((tab) => tab.id);
+    return guardado ? insertarFaltantes(guardado, deFabrica) : deFabrica;
   });
 
-  const orderedTabs = tabOrder
+  /**
+   * El orden de verdad: el guardado (o el de fábrica) MÁS las pestañas que
+   * aparecieron después de montar. `tabOrder` se arma una sola vez, y una
+   * pestaña que llega tarde —gateada por algo que se lee async: el rol, las
+   * especializaciones, el plan— no estaba en él y no se dibujaba NUNCA (08-10:
+   * «Forestal» del Inicio desaparecía al esperar el rol). La nueva entra detrás
+   * de la que la precede en `tabs`, no al final.
+   */
+  const ordenIds = useMemo(
+    () =>
+      insertarFaltantes(
+        tabOrder.filter((id) => tabs.some((tab) => tab.id === id)),
+        tabs.map((tab) => tab.id),
+      ),
+    [tabOrder, tabs],
+  );
+
+  const orderedTabs = ordenIds
     .map((id) => tabs.find((tab) => tab.id === id))
     .filter(Boolean) as AdminTab[];
 
@@ -268,17 +284,20 @@ export default function AdminTabBar({
   const handleDrop = (targetId: string) => {
     if (!draggedTab || draggedTab === targetId) return;
 
-    const newOrder = [...tabOrder];
+    const newOrder = [...ordenIds];
     const fromIndex = newOrder.indexOf(draggedTab);
     const toIndex = newOrder.indexOf(targetId);
 
     newOrder.splice(fromIndex, 1);
     newOrder.splice(toIndex, 0, draggedTab);
+    /* Las que hoy no se ven (llegan tarde o el rol las esconde) vuelven a su
+       lugar relativo: reordenar sin ellas no puede borrarles el sitio. */
+    const completo = insertarFaltantes(newOrder, tabOrder);
 
-    setTabOrder(newOrder);
+    setTabOrder(completo);
 
     try {
-      localStorage.setItem(`tab-order-${moduleId}`, JSON.stringify(newOrder));
+      localStorage.setItem(`tab-order-${moduleId}`, JSON.stringify(completo));
     } catch {}
 
     setDraggedTab(null);
@@ -293,7 +312,7 @@ export default function AdminTabBar({
     } catch {}
   };
 
-  const isReordered = JSON.stringify(tabOrder) !== JSON.stringify(tabs.map((tab) => tab.id));
+  const isReordered = JSON.stringify(ordenIds) !== JSON.stringify(tabs.map((tab) => tab.id));
 
   if (vertical) {
     return (

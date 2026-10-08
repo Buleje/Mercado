@@ -32,7 +32,7 @@ import { useLocalStorage } from "@/hooks/use-local-storage";
 import { formatNumber } from "@/lib/format";
 import type { Aprovechamiento } from "@/lib/forestal/loth-aprovechamiento";
 import { ptAserrableDeRolliza } from "@/lib/forestal/loth-restante";
-import { siglaDePlan } from "@/lib/forestal/loth-tipos-plan";
+import { permisoConSigla } from "@/lib/forestal/loth-tipos-plan";
 import { agruparPlanesPorTitular } from "@/lib/forestal/loth-planes-por-titular";
 import { type Plan } from "./loth-plan-shared";
 import LothAprovechamientoBanda from "./LothAprovechamientoBanda";
@@ -116,7 +116,7 @@ export default function LothPlanCabecera({ plans, planId, onPlan, plan, kpis, kp
               {g.planes.map((p) => (
                 <option key={p.id} value={p.id}>
                   {/* «Plantación 19-SEC/…» y no «PLANTACION 19-SEC/…»: la sigla como la dice la norma. */}
-                  {siglaDePlan(p.planType)} {p.planNumber ?? ""} — {p.titularName}
+                  {permisoConSigla(p.planType, p.planNumber)} — {p.titularName}
                 </option>
               ))}
             </optgroup>

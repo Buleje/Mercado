@@ -66,8 +66,14 @@ export const nuevaFilaGuia = (
   ...over,
 });
 
+/** Lo que la relación lee de una guía del CTP (también lo arma `tramites-desde-guias` con las elegidas). */
+export type GuiaEmitidaParaRelacion = Pick<
+  GuiaEmitida,
+  "gtfNumber" | "fecha" | "destinatario" | "destino" | "especie" | "producto" | "cantidad" | "unidad" | "estado"
+>;
+
 /** Una guía ya derivada del despacho (`guias-emitidas.ts`), lista para la relación. */
-export function filaDesdeGuiaEmitida(uid: string, g: GuiaEmitida): FilaGuiaInforme {
+export function filaDesdeGuiaEmitida(uid: string, g: GuiaEmitidaParaRelacion): FilaGuiaInforme {
   return nuevaFilaGuia(uid, {
     numero: g.gtfNumber,
     fecha: g.fecha.slice(0, 10),

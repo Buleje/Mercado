@@ -1,8 +1,9 @@
 "use client";
 
 /**
- * Trámites abierto desde la vista GTF del Libro TH con guías elegidas
- * (`?formato=…&guias=…`, ver `tramite-guias-url`): pide esas guías al libro y
+ * Trámites abierto con guías elegidas en la vista GTF del Libro TH o en «Guías
+ * emitidas» del Libro CTP (`?formato=…&guias=…`, ver `tramite-guias-url`):
+ * pide a CADA libro las suyas (`ctp:<id>` al CTP, el resto al Libro TH) y
  * arma los casilleros del formato (`datosDesdeGuias`). El shell abre el
  * formulario con el resultado ENCIMA de lo que se llena solo: pisa el titular
  * de la Ficha con el de las guías (RUC y representante quedan los de la Ficha).
@@ -13,10 +14,38 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { datosDesdeGuias, type DatosDesdeGuias, type GuiaParaFormato } from "@/lib/forestal/tramites-desde-guias";
-import { borrarPedidoGuias, leerPedidoGuias, type PedidoGuias } from "../tramite-guias-url";
+import { borrarPedidoGuias, idsPorLibro, leerPedidoGuias, type LibroGuia, type PedidoGuias } from "../tramite-guias-url";
+
+/** Cómo se pide cada libro y qué se dice si no está habilitado. */
+const LIBRO: Record<LibroGuia, { url: string; nombre: string }> = {
+  loth: { url: "/api/admin/forestal/gtf", nombre: "Libro TH" },
+  ctp: { url: "/api/admin/forestal/ctp/guias-emitidas", nombre: "Libro CTP" },
+};
+
+/** «del Libro TH» · «del Libro CTP» · «de los libros TH y CTP». */
+export function deLosLibros(libros: readonly LibroGuia[]): string {
+  if (libros.length === 1) return `del ${LIBRO[libros[0]].nombre}`;
+  return "de los libros TH y CTP";
+}
+
+async function pedirAlLibro(libro: LibroGuia, ids: string[], signal: AbortSignal): Promise<{ guias: GuiaParaFormato[]; faltan: number }> {
+  if (ids.length === 0) return { guias: [], faltan: 0 };
+  const qs = new URLSearchParams({ ids: ids.join(",") });
+  const r = await fetch(`${LIBRO[libro].url}?${qs}`, { credentials: "include", cache: "no-store", signal });
+  const j = (await r.json().catch(() => ({}))) as { guias?: GuiaParaFormato[]; faltan?: number; message?: string };
+  if (!r.ok) {
+    throw new Error(
+      j.message ?? (r.status === 403 ? `El ${LIBRO[libro].nombre} no está habilitado en este negocio.` : `No se pudieron leer las guías del ${LIBRO[libro].nombre} (HTTP ${r.status}).`),
+    );
+  }
+  /* El origen lo pone el cliente también: una GTF del Libro TH llega sin él (su forma de siempre). */
+  return { guias: (j.guias ?? []).map((g) => ({ ...g, origen: libro })), faltan: j.faltan ?? 0 };
+}
 
 export interface TramiteDesdeGuias {
   pedido: PedidoGuias | null;
+  /** De qué libros vienen las guías pedidas (para nombrarlos en el aviso). */
+  libros: LibroGuia[];
   cargando: boolean;
   error: string | null;
   /** Las guías que llegaron (para contar y nombrar en el aviso). */
@@ -42,13 +71,11 @@ export function useTramiteDesdeGuias(listo: boolean, razonSocialFicha: string | 
     if (!pedido) return;
     borrarPedidoGuias();
     const ac = new AbortController();
-    const qs = new URLSearchParams({ ids: pedido.ids.join(",") });
-    fetch(`/api/admin/forestal/gtf?${qs}`, { credentials: "include", cache: "no-store", signal: ac.signal })
-      .then(async (r) => {
-        const j = (await r.json().catch(() => ({}))) as { guias?: GuiaParaFormato[]; faltan?: number; message?: string };
-        if (!r.ok) throw new Error(j.message ?? (r.status === 403 ? "El Libro TH no está habilitado en este negocio." : `No se pudieron leer las guías (HTTP ${r.status}).`));
-        setGuias(j.guias ?? []);
-        setFaltan(j.faltan ?? 0);
+    const ids = idsPorLibro(pedido.ids);
+    Promise.all([pedirAlLibro("loth", ids.loth, ac.signal), pedirAlLibro("ctp", ids.ctp, ac.signal)])
+      .then(([loth, ctp]) => {
+        setGuias([...loth.guias, ...ctp.guias]);
+        setFaltan(loth.faltan + ctp.faltan);
       })
       .catch((err: unknown) => {
         if (ac.signal.aborted) return;
@@ -65,8 +92,15 @@ export function useTramiteDesdeGuias(listo: boolean, razonSocialFicha: string | 
     [pedido, guias, listo, incluir, razonSocialFicha],
   );
 
+  const libros = useMemo<LibroGuia[]>(() => {
+    if (!pedido) return [];
+    const ids = idsPorLibro(pedido.ids);
+    return (["loth", "ctp"] as const).filter((l) => ids[l].length > 0);
+  }, [pedido]);
+
   return {
     pedido,
+    libros,
     cargando: Boolean(pedido) && guias === null && error === null,
     error,
     guias: guias ?? [],

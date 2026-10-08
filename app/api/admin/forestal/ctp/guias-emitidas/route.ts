@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { isSpecializationEnabled } from "@/lib/specializations";
@@ -7,9 +8,16 @@ import { withApiHandler } from "@/lib/api-handler";
 import { ForestCtpDB } from "@/lib/db/forest-ctp.db";
 import { ForestCtpDespachoDB } from "@/lib/db/forest-ctp-despacho.db";
 import { guiasDeDespachos, type FilaDespachoGuia } from "@/lib/forestal/guias-emitidas";
+import { guiaCtpParaFormato, lineasDeLasGuias, marcarReemitidas } from "@/lib/forestal/tramites-desde-guias";
+
+/** Las mismas cotas que `?ids=` de las GTF del Libro TH. */
+const idsSchema = z
+  .array(z.string().min(1).max(60))
+  .min(1, "Elige al menos una guía.")
+  .max(200, "Hasta 200 guías por trámite.");
 
 /**
- * GET /api/admin/forestal/ctp/guias-emitidas?desde&hasta
+ * GET /api/admin/forestal/ctp/guias-emitidas?desde&hasta · ?ids=a,b (para un trámite)
  *
  * Las GTF de salida que emitió el CTP (ADR-321). Se derivan de los despachos con
  * número de guía: no hay tabla propia, porque una guía emitida ES un despacho y
@@ -40,6 +48,34 @@ export const GET = withApiHandler("forestal-guias-emitidas", async (req: NextReq
    * se devuelve UNA, la que sirve de molde.
    */
   const soloUltima = req.nextUrl.searchParams.get("ultimaCompleta") === "1";
+
+  /**
+   * `?ids=a,b` (08-10): las guías elegidas en esta bandeja, listas para llenar
+   * un trámite (`tramites-desde-guias`). Vuelve la GUÍA entera —todas las
+   * líneas del mismo N° y estado— aunque el id sea de una sola línea, y cada
+   * anulada dice si su N° sigue vigente en otro despacho (se anuló la línea y
+   * se volvió a registrar). Sólo se leen los despachos de esos N°.
+   */
+  const idsParam = req.nextUrl.searchParams.get("ids");
+  if (idsParam !== null) {
+    const ids = idsSchema.safeParse(idsParam.split(",").map((s) => s.trim()).filter(Boolean));
+    if (!ids.success) {
+      return NextResponse.json({ error: "validation_error", message: ids.error.issues[0]?.message }, { status: 400 });
+    }
+    try {
+      const elegidas = await ForestCtpDB.despachosConGuiaPorIds(auth.tenantId, ids.data);
+      const delMismoNumero = await ForestCtpDB.despachosDeLasGuias(
+        auth.tenantId,
+        elegidas.map((f) => f.gtfNumber ?? ""),
+      );
+      const { filas, vigentes, faltan } = lineasDeLasGuias(ids.data, elegidas, delMismoNumero);
+      const guias = marcarReemitidas(filas.map(guiaCtpParaFormato), vigentes);
+      return NextResponse.json({ guias, faltan });
+    } catch (err) {
+      logger.error("[guias-emitidas.GET ids] failed", { error: String(err), tenantId: auth.tenantId });
+      return NextResponse.json({ error: "internal_error" }, { status: 500 });
+    }
+  }
 
   const fecha = (v: string | null): Date | undefined => {
     if (!v) return undefined;

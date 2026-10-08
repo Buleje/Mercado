@@ -9,6 +9,9 @@
  * quedaron a medio llenar?"* y *"¿dónde está la del camión que se fue ayer?"*.
  *
  * No guarda nada: cada fila ES un despacho con número de guía.
+ *
+ * Las guías se tildan para llevarlas a un trámite ya lleno (relación de guías,
+ * anulación, pérdida, talonario), igual que en la vista GTF del Libro TH.
  */
 
 import { useEffect, useMemo, useState } from "react";
@@ -16,25 +19,11 @@ import CtpKpiFiltros from "./CtpKpiFiltros";
 import { StatCard } from "@buleje/design-system";
 import { AlertTriangle, Check, FileText, Loader2, Search } from "@buleje/design-system/icons";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
-import {
-  filtrarGuias,
-  numerosRepetidos,
-  resumirGuias,
-  type EstadoGuia,
-  type GuiaEmitida,
-} from "@/lib/forestal/guias-emitidas";
+import { filtrarGuias, numerosRepetidos, resumirGuias, type GuiaEmitida } from "@/lib/forestal/guias-emitidas";
 import { Btn, I, TablaSkeleton, VistaHeader, useKpisPlegables } from "./ctp-shared";
-import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
-import { formatDateShort } from "@/lib/format";
-
-const fecha = (iso: string) =>
-  formatDateShort(iso, { soloFecha: true });
-
-const ESTADO_CLASE: Record<EstadoGuia, string> = {
-  completa: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
-  incompleta: "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]",
-  anulada: "text-[var(--text-tertiary)] line-through",
-};
+import CtpGuiasEmitidasLista from "./CtpGuiasEmitidasLista";
+import CtpGuiasEmitidasBarra from "./CtpGuiasEmitidasBarra";
+import { useSeleccionGuias } from "./hooks/use-seleccion-guias";
 
 export default function CtpGuiasEmitidasView({
   period,
@@ -59,6 +48,14 @@ export default function CtpGuiasEmitidasView({
   const [especie, setEspecie] = useState<string[]>([]);
   const [producto, setProducto] = useState<string[]>([]);
   const [destino, setDestino] = useState<string[]>([]);
+  /**
+   * Las tildadas, por id de despacho. Se cruzan con TODO lo cargado del
+   * período, no con lo filtrado: buscar otra guía no destilda las anteriores
+   * (una relación se arma buscando de a un N°). Con otro período, las que no
+   * están en él dejan de contar.
+   */
+  const seleccion = useSeleccionGuias();
+  const elegidas = useMemo(() => guias.filter((g) => seleccion.tiene(g.despachoId)), [guias, seleccion]);
 
   useEffect(() => {
     let vivo = true;
@@ -288,63 +285,7 @@ export default function CtpGuiasEmitidasView({
             : "Ninguna guía coincide con el filtro."}
         </p>
       ) : (
-        <ul className="space-y-1.5">
-          {visibles.map((g) => (
-            <li
-              key={g.despachoId}
-              className="flex flex-wrap items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2.5"
-            >
-              <span className="w-16 shrink-0 font-mono text-xs tabular-nums text-[var(--text-tertiary)]">
-                {fecha(g.fecha)}
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-baseline gap-x-2">
-                  <span className={`font-mono text-sm font-bold ${ESTADO_CLASE[g.estado]}`}>{g.gtfNumber}</span>
-                  <span className="truncate text-sm text-[var(--text-secondary)]">
-                    {g.destinatario ?? g.destino ?? "sin destinatario"}
-                  </span>
-                  {g.placa && <span className="font-mono text-xs text-[var(--text-tertiary)]">{g.placa}</span>}
-                </div>
-                <span className="block truncate text-xs text-[var(--text-tertiary)]">
-                  {[
-                    g.lineNo != null ? `línea #${g.lineNo}` : null,
-                    g.producto,
-                    g.especie,
-                    g.cantidad != null ? `${g.cantidad} ${g.unidad ?? ""}`.trim() : null,
-                  ]
-                    .filter(Boolean)
-                    .join(" · ")}
-                </span>
-              </div>
-              <span className={`shrink-0 text-sm font-bold ${ESTADO_CLASE[g.estado]}`}>
-                {g.estado === "anulada"
-                  ? "anulada"
-                  : g.estado === "completa"
-                    ? "lista"
-                    : `faltan ${g.faltan}`}
-              </span>
-              {g.estado !== "anulada" && !g.verificada && (
-                <span
-                  className="shrink-0 rounded bg-[var(--surface-sunken)] px-1.5 py-0.5 text-xs font-bold text-[var(--text-tertiary)]"
-                  title="No se verificó contra el SNIFFS de SERFOR"
-                >
-                  sin verificar
-                </span>
-              )}
-              {/* Distinto de «faltan N», que cuenta CAMPOS del documento: una
-                  guía puede estar impecable y amparar madera cuyo origen todavía
-                  no se declaró. Ese documento ya salió a la calle. */}
-              {g.sinOrigen > 0.001 && (
-                <span
-                  className="shrink-0 rounded bg-[var(--data-warning-500)]/15 px-1.5 py-0.5 text-xs font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
-                  title="Esta guía ampara madera sin corrida de producción atribuida. Completa el origen desde Despacho ▸ cadena de custodia."
-                >
-                  {g.unidad === "m3" ? fmtM3(g.sinOrigen) : g.sinOrigen.toFixed(4)} {g.unidad ?? ""} sin origen
-                </span>
-              )}
-            </li>
-          ))}
-        </ul>
+        <CtpGuiasEmitidasLista guias={visibles} todas={guias} sel={seleccion} />
       )}
 
       {cargando && guias.length > 0 && (
@@ -352,6 +293,8 @@ export default function CtpGuiasEmitidasView({
           <Loader2 className="h-4 w-4 animate-spin" /> Actualizando…
         </p>
       )}
+
+      <CtpGuiasEmitidasBarra elegidas={elegidas} onLimpiar={seleccion.limpiar} />
     </div>
   );
 }

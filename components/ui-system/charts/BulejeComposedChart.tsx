@@ -231,7 +231,9 @@ export const BulejeComposedChart = memo(function BulejeComposedChart({
             interval={xInterval}
             angle={-30}
             textAnchor="end"
-            height={isNarrow ? 44 : 60}
+            // 60 también en celular (08-10): con 44 las fechas giradas
+            // («28/09») bajaban ~47 px y se montaban sobre la leyenda a 400 px.
+            height={60}
             dy={8}
             minTickGap={isNarrow ? 8 : 0}
           />

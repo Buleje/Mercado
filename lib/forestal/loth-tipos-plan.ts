@@ -128,6 +128,27 @@ export function siglaDePlan(tipo: string | null | undefined): string {
   return (TIPOS_PLAN as readonly string[]).includes(k) ? TIPOS_PLAN_META[k as TipoPlan].sigla : (tipo ?? "").trim();
 }
 
+const sinTildesMayus = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+
+/**
+ * «PO 12»: la sigla del tipo delante del N° del permiso, SIN repetirla cuando
+ * el N° ya la trae (08-10: «PO PO 12» en el cierre de mes y en la columna
+ * Permiso de Secciones). Cuenta como que ya la trae si el N° empieza con la
+ * sigla o con el tipo crudo como palabra entera, sin mirar tildes ni
+ * mayúsculas («PLANTACION 19-…» ≡ «Plantación»); «POA-7» no empieza con «PO».
+ * Sin N°, sólo la sigla.
+ */
+export function permisoConSigla(tipo: string | null | undefined, numero: string | null | undefined): string {
+  const sigla = siglaDePlan(tipo);
+  const n = (numero ?? "").trim();
+  if (!n) return sigla;
+  const N = sinTildesMayus(n);
+  const yaLaTrae = [sigla, (tipo ?? "").trim()]
+    .map(sinTildesMayus)
+    .some((pre) => pre !== "" && N.startsWith(pre) && !/[A-Z0-9]/.test(N.charAt(pre.length)));
+  return yaLaTrae || !sigla ? n : `${sigla} ${n}`;
+}
+
 export function metaDe(tipo: string | null | undefined): MetaTipoPlan {
   const k = (tipo ?? "").trim().toUpperCase() as TipoPlan;
   return TIPOS_PLAN_META[k] ?? TIPOS_PLAN_META.PO;

@@ -8,6 +8,7 @@
 
 import { describe, it, expect } from "vitest";
 import {
+  permisoConSigla,
   TIPOS_PLAN,
   TIPOS_PLAN_LISTA,
   metaDe,
@@ -113,5 +114,26 @@ describe("plazo del informe de ejecución (45 días de la Directiva OSINFOR)", (
   it("sin fecha, o con una ilegible, no inventa un plazo", () => {
     expect(plazoInformeEjecucion(null, HOY)).toBeNull();
     expect(plazoInformeEjecucion("mañana", HOY)).toBeNull();
+  });
+});
+
+describe("permisoConSigla — la sigla delante del N°, sin repetirla", () => {
+  it("«PO 12» no se vuelve «PO PO 12» (cierre de mes y columna Permiso de Secciones, 08-10)", () => {
+    expect(permisoConSigla("PO", "PO 12")).toBe("PO 12");
+    expect(permisoConSigla("PO", "po-12")).toBe("po-12");
+    expect(permisoConSigla("PLANTACION", "Plantación 19-SEC/REG-PLT-2025-096")).toBe("Plantación 19-SEC/REG-PLT-2025-096");
+    expect(permisoConSigla("PLANTACION", "PLANTACION 19")).toBe("PLANTACION 19");
+  });
+
+  it("si el N° no la trae, la antepone; una palabra que sólo empieza igual no cuenta", () => {
+    expect(permisoConSigla("PO", "12")).toBe("PO 12");
+    expect(permisoConSigla("PO", "POA-7")).toBe("PO POA-7");
+    expect(permisoConSigla("PLANTACION", "19-SEC/REG-PLT-2025-096")).toBe("Plantación 19-SEC/REG-PLT-2025-096");
+  });
+
+  it("sin N°, sólo la sigla; sin tipo, sólo el N°", () => {
+    expect(permisoConSigla("DEMA", null)).toBe("DEMA");
+    expect(permisoConSigla("DEMA", "  ")).toBe("DEMA");
+    expect(permisoConSigla(null, "12")).toBe("12");
   });
 });

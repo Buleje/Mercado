@@ -19,7 +19,7 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { leerJson } from "@/lib/errores/sin-dato";
 import { formatNumber } from "@/lib/format";
 import type { LothSection } from "@/lib/forestal/loth-constants";
-import { siglaDePlan } from "@/lib/forestal/loth-tipos-plan";
+import { permisoConSigla } from "@/lib/forestal/loth-tipos-plan";
 import type { ConteoBorrarDelPlan, ResultadoBorrarDelPlan } from "@/lib/forestal/loth-borrar-del-plan";
 import { BotonesBorrar, ConfirmarBorrar, avisarBorrado, confirmaBorrar, nombreSeccion, pluralN as plural } from "./loth-borrar-piezas";
 
@@ -102,7 +102,7 @@ export default function LothBorrarOperacionesModal({
     }
   }, [plan.id, elegidas, onBorrado]);
 
-  const nombre = `${siglaDePlan(plan.planType)} ${plan.planNumber ?? ""}`.trim();
+  const nombre = permisoConSigla(plan.planType, plan.planNumber);
 
   return (
     <AdminModal

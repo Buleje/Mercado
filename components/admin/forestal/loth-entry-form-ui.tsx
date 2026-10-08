@@ -7,15 +7,14 @@
 
 import type { ReactNode } from "react";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { permisoConSigla } from "@/lib/forestal/loth-tipos-plan";
 
 /**
  * «Plan PO 12 — Maderera El Aguajal SAC». El número del plan muchas veces ya
- * trae el tipo («PO 12»): pegarle el tipo adelante daba «Plan PO PO 12».
+ * trae el tipo («PO 12»): `permisoConSigla` no lo repite («Plan PO PO 12»).
  */
 export function etiquetaPlan(p: { planType: string; planNumber: string | null; titularName: string }): string {
-  const numero = (p.planNumber ?? "").trim();
-  const tipo = numero.toLowerCase().startsWith(p.planType.toLowerCase()) ? "" : p.planType;
-  return `Plan ${[tipo, numero].filter(Boolean).join(" ")} — ${p.titularName}`;
+  return `Plan ${permisoConSigla(p.planType, p.planNumber)} — ${p.titularName}`;
 }
 
 /**

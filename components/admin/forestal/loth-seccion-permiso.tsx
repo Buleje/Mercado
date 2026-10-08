@@ -13,7 +13,7 @@
 import { Eraser } from "@buleje/design-system/icons";
 import type { MenuAccion } from "@/components/admin/shared/action-menu";
 import type { LothEntryDTO } from "@/lib/forestal/loth-constants";
-import { siglaDePlan } from "@/lib/forestal/loth-tipos-plan";
+import { permisoConSigla } from "@/lib/forestal/loth-tipos-plan";
 import { nombreDelPlan, type PlanTablero } from "@/lib/forestal/loth-tablero-permiso";
 import { permisoDeLinea, type PermisoDeLinea } from "./loth-seccion-filtros";
 import type { ColDef } from "./LothSeccionTabla";
@@ -24,7 +24,7 @@ export function mapaDePermisos(planes: readonly PlanTablero[]): Map<string, Perm
     planes.map((p) => [
       p.id,
       {
-        permiso: `${siglaDePlan(p.planType)} ${p.planNumber ?? p.alias ?? "sin número"}`.trim(),
+        permiso: permisoConSigla(p.planType, p.planNumber ?? p.alias ?? "sin número"),
         titular: p.titularName?.trim() || nombreDelPlan(p),
       },
     ]),
