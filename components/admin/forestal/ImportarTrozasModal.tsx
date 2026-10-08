@@ -19,9 +19,9 @@ import { Btn, MODAL_BODY, ModalFooter } from "./ctp-shared";
 import { parsearFilasTrozas, interpretarOcrTrozas, type TrozaImportada, type ResultadoImportTrozas } from "@/lib/forestal/cubicacion-trozas-import";
 import { leerArchivoAFilas } from "@/lib/forestal/cubicacion-import-file";
 import { descargarPlantillaTrozas } from "@/lib/forestal/cubicacion-trozas-excel";
+import { cubicarSegun, fueraDeRango, UNIDADES_FORMULA, type FormulaTrozas } from "@/lib/forestal/cubicacion-trozas-formula";
 import { formatNumber } from "@/lib/format";
 
-const fmtM3 = (v: number) => formatNumber(v, 3);
 
 function leerComoDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -33,8 +33,10 @@ function leerComoDataUrl(file: File): Promise<string> {
 }
 
 export default function ImportarTrozasModal({
-  onAgregar, onCerrar, filasActuales = 0, especiesActuales = [],
+  onAgregar, onCerrar, filasActuales = 0, especiesActuales = [], formula = "smalian",
 }: {
+  /** La fórmula del lote abierto: Oxapampina lee pulgadas y pies, y cubica en PT. */
+  formula?: FormulaTrozas;
   /** Suma las trozas leídas al patio. */
   onAgregar: (trozas: TrozaImportada[]) => void;
   onCerrar: () => void;
@@ -96,13 +98,19 @@ export default function ImportarTrozasModal({
   const [bajando, setBajando] = useState(false);
   const descargarPlantilla = () => {
     setBajando(true);
-    descargarPlantillaTrozas(especiesActuales)
+    descargarPlantillaTrozas(especiesActuales, formula)
       .catch(() => setErrorGeneral("No se pudo generar la plantilla. Prueba de nuevo."))
       .finally(() => setBajando(false));
   };
 
-  const totalM3 = resultado?.trozas.reduce((a, t) => a + t.m3, 0) ?? 0;
-  const raras = resultado?.trozas.filter((t) => t.sospechosa).length ?? 0;
+  /* El parser cubica por Smalian; con el lote Oxapampina el volumen y lo «raro»
+     se miran con SU fórmula (pulgadas, pies, PT), igual que al sumarlas. */
+  const u = UNIDADES_FORMULA[formula];
+  const vol = (t: TrozaImportada) => (formula === "smalian" ? t.m3 : cubicarSegun(formula, t.d1, t.largo, t.d2));
+  const rara = (t: TrozaImportada) => (formula === "smalian" ? t.sospechosa : fueraDeRango(formula, t.d1, t.d2, t.largo));
+  const totalM3 = resultado?.trozas.reduce((a, t) => a + vol(t), 0) ?? 0;
+  const raras = resultado?.trozas.filter(rara).length ?? 0;
+  const columnas = `Especie · D1 (${u.diametro}) · D2 (${u.diametro}) · Largo (${u.largo})`;
   /** Lo que hay para agregar, ya leído: `null` mientras no haya nada. */
   const listas = resultado && !cargando && resultado.trozas.length > 0 ? resultado.trozas : null;
 
@@ -112,12 +120,12 @@ export default function ImportarTrozasModal({
       onClose={onCerrar}
       variant="wide"
       title={modo === "excel" ? "Importar trozas desde Excel" : "Escanear planilla de trozas"}
-      description={modo === "excel" ? "Especie · D1 · D2 · Largo" : "Foto de la planilla de patio, leída con IA"}
+      description={modo === "excel" ? columnas : "Foto de la planilla de patio, leída con IA"}
       icon={modo === "excel" ? FileSpreadsheet : Camera}
       footer={
         <ModalFooter
           error={errorGeneral}
-          nota={listas ? `${listas.length} troza(s) · ${fmtM3(totalM3)} m³${raras > 0 ? ` · ${raras} con medidas raras` : ""}` : undefined}
+          nota={listas ? `${listas.length} troza(s) · ${formatNumber(totalM3, u.decimales)} ${u.volumen}${raras > 0 ? ` · ${raras} con medidas raras` : ""}` : undefined}
         >
           <Btn variant="ghost" onClick={onCerrar}>Cancelar</Btn>
           {listas && (
@@ -143,12 +151,12 @@ export default function ImportarTrozasModal({
 
         {modo === "excel" ? (
           <p className="mb-3 flex items-center gap-1.5 text-sm text-[var(--text-secondary)]">
-            Sube un Excel con <b>Especie · D1 (cm) · D2 (cm) · Largo (m)</b>.
+            Sube un Excel con <b>{columnas}</b>.
             <InfoTip
               icono="ayuda"
               title="Importar trozas desde Excel"
-              what="Especie y D2 son opcionales — sin D2 se asume troza pareja. D1/D2 en centímetros, largo en metros."
-              example="La plantilla trae al lado un resumen por especie en vivo (trozas · m³) que se calcula solo mientras la vas llenando."
+              what={`Especie y D2 son opcionales — sin D2 se asume troza pareja. ${formula === "smalian" ? "D1/D2 en centímetros, largo en metros." : "Lote Oxapampina: D1/D2 en pulgadas, largo en pies; se cubica en PT (Ø × Ø × L ÷ 24,5)."}`}
+              example={`La plantilla trae al lado un resumen por especie en vivo (trozas · ${u.volumen}) que se calcula solo mientras la vas llenando.`}
             />
           </p>
         ) : (
@@ -247,19 +255,19 @@ export default function ImportarTrozasModal({
                 <DataTable className="w-full min-w-[420px] text-sm">
                   <thead className="sticky top-0 bg-[var(--surface-sunken)]">
                     <tr className="text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
-                      <th className="px-3 py-2">Ø menor/mayor</th><th className="px-3 py-2">Largo</th><th className="px-3 py-2">Especie</th><th className="px-3 py-2 text-right">m³</th>
+                      <th className="px-3 py-2">Ø menor/mayor</th><th className="px-3 py-2">Largo</th><th className="px-3 py-2">Especie</th><th className="px-3 py-2 text-right">{u.volumen}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {resultado.trozas.map((t) => (
-                      <tr key={t.id} className={`border-t border-[var(--rule-soft)] ${t.sospechosa ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/12" : ""}`}>
+                      <tr key={t.id} className={`border-t border-[var(--rule-soft)] ${rara(t) ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/12" : ""}`}>
                         <td className="px-3 py-1.5 font-mono font-bold tabular-nums text-[var(--text-primary)]">
-                          {t.d1}/{t.d2} cm
-                          {t.sospechosa && <AlertTriangle className="ml-1 inline h-3 w-3 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" />}
+                          {t.d1}/{t.d2}{u.diametroCorto}
+                          {rara(t) && <AlertTriangle className="ml-1 inline h-3 w-3 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" />}
                         </td>
-                        <td className="px-3 py-1.5 font-mono tabular-nums text-[var(--text-secondary)]">{t.largo} m</td>
+                        <td className="px-3 py-1.5 font-mono tabular-nums text-[var(--text-secondary)]">{t.largo} {u.largo}</td>
                         <td className="px-3 py-1.5 text-[var(--text-secondary)]">{t.especie ?? "—"}</td>
-                        <td className="px-3 py-1.5 text-right font-mono tabular-nums text-[var(--text-primary)]">{fmtM3(t.m3)}</td>
+                        <td className="px-3 py-1.5 text-right font-mono tabular-nums text-[var(--text-primary)]">{formatNumber(vol(t), u.decimales)}</td>
                       </tr>
                     ))}
                   </tbody>

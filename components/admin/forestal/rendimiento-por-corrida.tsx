@@ -1,0 +1,98 @@
+/**
+ * Rendimiento › Por corrida — cada corrida del Libro CTP con su estado contra
+ * las OTRAS de su especie («Bajo lo suyo», «Parcial»…), la plata si el rol la
+ * ve, y el salto al Libro para abrirla.
+ */
+import { DataTable } from "@buleje/design-system";
+import Link from "next/link";
+import { ExternalLink } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import type { RendimientoAserraderoDTO } from "@/lib/forestal/rendimiento-especie";
+import { fechaConDia } from "@/lib/forestal/loth-plan-costeo";
+import { CeldaPlata, EstadoCorridaBadge, HREF_PRODUCCION, fmtM3, fmtPct } from "./rendimiento-compartido";
+
+const TH = "px-3 py-2 text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]";
+const TD = "px-3 py-2 align-middle";
+
+export default function RendimientoPorCorrida({ datos }: { datos: RendimientoAserraderoDTO }) {
+  const { hoy, plataVisible } = datos;
+  /* Lo más reciente arriba: es lo que uno viene a mirar. */
+  const corridas = [...datos.corridas].reverse();
+  if (corridas.length === 0) {
+    return <p className="py-8 text-center text-sm text-[var(--text-tertiary)]">Todavía no hay corridas de producción en el Libro CTP.</p>;
+  }
+  const bajas = corridas.filter((c) => c.estado === "bajo_lo_suyo").length;
+
+  return (
+    <div className="space-y-2">
+      {bajas > 0 && (
+        <p className="flex items-center gap-1.5 text-sm font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+          {bajas === 1 ? "Una corrida salió bajo lo suyo" : `${bajas} corridas salieron bajo lo suyo`}
+          <InfoTip
+            title="Bajo lo suyo"
+            what="Rindió menos que el rango de las otras corridas terminadas de su misma especie."
+            affects="Suele ser producto sin declarar, troza atribuida de más o una sierra que necesita afilado. Ábrela en el Libro para revisar."
+          />
+        </p>
+      )}
+      <div className="overflow-x-auto">
+        <DataTable className="text-sm">
+          <thead className="border-b border-[var(--rule-base)]">
+            <tr>
+              <th scope="col" className={TH}>N°</th>
+              <th scope="col" className={TH}>Fecha</th>
+              <th scope="col" className={TH}>Especie · lote</th>
+              <th scope="col" className={`${TH} text-right`}>Troza → aserrado (m³)</th>
+              <th scope="col" className={`${TH} text-right`}>Rendimiento</th>
+              <th scope="col" className={TH}>Estado</th>
+              {plataVisible && <th scope="col" className={`${TH} text-right`}>Comercial (PT)</th>}
+              {plataVisible && <th scope="col" className={`${TH} text-right`}>Costo por PT</th>}
+              <th scope="col" className={TH}><span className="sr-only">Abrir</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            {corridas.map((c) => (
+              <tr key={c.id}>
+                <th scope="row" className={`${TD} text-left font-mono font-bold text-[var(--text-primary)]`}>#{c.lineNo}</th>
+                <td className={`${TD} whitespace-nowrap text-[var(--text-secondary)]`}>{fechaConDia(c.fecha, hoy)}</td>
+                <td className={TD}>
+                  <span className="inline-flex flex-col items-end gap-0.5 sm:items-start">
+                    <span className="font-semibold text-[var(--text-primary)]">{c.especie}</span>
+                    {c.lote && <span className="whitespace-nowrap font-mono text-xs text-[var(--text-tertiary)]">{c.lote}</span>}
+                  </span>
+                </td>
+                <td className={`${TD} whitespace-nowrap text-right font-mono tabular-nums text-[var(--text-secondary)]`}>
+                  {fmtM3(c.m3Entrada)} → {c.unidad === "m3" ? fmtM3(c.m3Salida) : `— (${c.unidad})`}
+                </td>
+                <td className={`${TD} text-right font-mono font-bold tabular-nums text-[var(--text-primary)]`}>{fmtPct(c.rendimientoPct, 2)}</td>
+                <td className={TD}>
+                  <EstadoCorridaBadge estado={c.estado} rango={c.rango} finProceso={c.finProceso} hoy={hoy} />
+                </td>
+                {plataVisible && (
+                  <td className={`${TD} text-right`}>
+                    <CeldaPlata plata={c.plata} campo="comercial" />
+                  </td>
+                )}
+                {plataVisible && (
+                  <td className={`${TD} text-right`}>
+                    <CeldaPlata plata={c.plata} campo="costo" />
+                  </td>
+                )}
+                <td className={`${TD} text-right`}>
+                  <Link
+                    href={HREF_PRODUCCION}
+                    title={`Abrir la corrida #${c.lineNo} en el Libro CTP › Producción`}
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--rule-base)] text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+                  >
+                    <ExternalLink className="h-4 w-4" aria-hidden />
+                    <span className="sr-only">Abrir la corrida #{c.lineNo} en el Libro CTP</span>
+                  </Link>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </DataTable>
+      </div>
+    </div>
+  );
+}

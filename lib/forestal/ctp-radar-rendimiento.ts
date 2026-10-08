@@ -22,6 +22,7 @@
  */
 
 import type { TrazaGrafo } from "@/lib/db/forest-ctp.db";
+import { fechaConDia } from "./loth-plan-costeo";
 
 /** Corridas mínimas en un grupo para que su mediana signifique algo. */
 export const MIN_GRUPO = 3;
@@ -29,7 +30,15 @@ export const MIN_GRUPO = 3;
 /** Desvío contra la mediana del grupo a partir del cual se marca. */
 export const DESVIO_PCT = 25;
 
-export type RendimientoFlag = "normal" | "bajo" | "alto" | "imposible" | "sin_referencia";
+/**
+ * `parcial` (K4 a, 08-10): la corrida es de un lote con `finProceso` después
+ * de hoy — la producción todavía no está toda declarada, así que su cociente
+ * es un piso. No se marca «bajo» ni entra a la mediana de sus pares.
+ */
+export type RendimientoFlag = "normal" | "bajo" | "alto" | "imposible" | "sin_referencia" | "parcial";
+
+/** Corrida → `AAAA-MM-DD` del fin de proceso de su lote, sólo las que siguen en proceso. */
+export type CorridasEnProceso = ReadonlyMap<string, string>;
 
 export interface RendimientoCorrida {
   id: string;
@@ -58,6 +67,7 @@ export const FLAG_TONE: Record<RendimientoFlag, "success" | "warning" | "danger"
   alto: "warning",
   imposible: "danger",
   sin_referencia: "muted",
+  parcial: "muted",
 };
 
 export const FLAG_LABEL: Record<RendimientoFlag, string> = {
@@ -66,6 +76,7 @@ export const FLAG_LABEL: Record<RendimientoFlag, string> = {
   alto: "Rinde de más",
   imposible: "Imposible",
   sin_referencia: "Sin referencia",
+  parcial: "Parcial",
 };
 
 const round = (n: number, d = 3): number => Number(n.toFixed(d));
@@ -87,16 +98,21 @@ export function mediana(valores: number[]): number | null {
   return v.length % 2 ? v[m] : (v[m - 1] + v[m]) / 2;
 }
 
+/** Lo que se sabe de una corrida antes de compararla con sus pares. */
+type BaseCorrida = Pick<RendimientoCorrida, "id" | "lineNo" | "etiqueta" | "entradaM3" | "salida" | "unidad" | "ratio" | "grupo">;
+
 /**
  * Calcula el rendimiento de cada corrida y marca las que se salen del grupo.
+ * Con `enProceso`, las corridas de un lote que sigue en proceso salen
+ * «parcial» y no cuentan para la mediana de las demás.
  */
-export function analizarRendimiento(g: TrazaGrafo): RendimientoCorrida[] {
+export function analizarRendimiento(g: TrazaGrafo, opts: { enProceso?: CorridasEnProceso; hoy?: string } = {}): RendimientoCorrida[] {
   const entradaPorCorrida = new Map<string, number>();
   for (const c of g.consumos) {
     entradaPorCorrida.set(c.to, (entradaPorCorrida.get(c.to) ?? 0) + (Number(c.volumeM3) || 0));
   }
 
-  const base = g.corridas.map((c) => {
+  const base: BaseCorrida[] = g.corridas.map((c) => {
     const entradaM3 = round(entradaPorCorrida.get(c.id) ?? 0);
     const salida = Number(c.quantity) || 0;
     const ratio = entradaM3 > 0 ? round(salida / entradaM3) : null;
@@ -111,11 +127,29 @@ export function analizarRendimiento(g: TrazaGrafo): RendimientoCorrida[] {
       grupo: `${(c.productType ?? "—").trim().toLowerCase()}|${normUnidad(c.unit)}`,
     };
   });
+  return juzgar(base, opts.enProceso, opts.hoy);
+}
 
-  // Mediana por grupo comparable, sólo con corridas que tengan ratio.
+/**
+ * Vuelve a juzgar un análisis ya hecho sabiendo qué corridas siguen en
+ * proceso — para la pantalla que recibe `rs` armado sin ese dato. Recalcula
+ * las medianas sin las parciales: es el mismo juicio que `analizarRendimiento`
+ * con `enProceso`.
+ */
+export function marcarParciales(rs: readonly RendimientoCorrida[], enProceso: CorridasEnProceso, hoy?: string): RendimientoCorrida[] {
+  if (enProceso.size === 0 || !rs.some((r) => enProceso.has(r.id))) return [...rs];
+  return juzgar(
+    rs.map(({ id, lineNo, etiqueta, entradaM3, salida, unidad, ratio, grupo }) => ({ id, lineNo, etiqueta, entradaM3, salida, unidad, ratio, grupo })),
+    enProceso,
+    hoy,
+  );
+}
+
+function juzgar(base: readonly BaseCorrida[], enProceso?: CorridasEnProceso, hoy?: string): RendimientoCorrida[] {
+  // Mediana por grupo comparable, sólo con corridas que tengan ratio y estén terminadas.
   const porGrupo = new Map<string, number[]>();
   for (const b of base) {
-    if (b.ratio == null) continue;
+    if (b.ratio == null || enProceso?.has(b.id)) continue;
     const arr = porGrupo.get(b.grupo) ?? [];
     arr.push(b.ratio);
     porGrupo.set(b.grupo, arr);
@@ -129,12 +163,20 @@ export function analizarRendimiento(g: TrazaGrafo): RendimientoCorrida[] {
       return { ...b, medianaGrupo: med, desvioPct: null, flag: "sin_referencia" as const, motivo: "Sin materia prima atribuida: no hay rendimiento que medir." };
     }
 
-    // Único juicio absoluto: m³ que salen > m³ que entraron.
+    // Único juicio absoluto: m³ que salen > m³ que entraron. Vale aunque esté en proceso.
     if (esMetrosCubicos(b.unidad) && b.ratio > 1.001) {
       return {
         ...b, medianaGrupo: med, desvioPct: med ? round(((b.ratio - med) / med) * 100, 1) : null,
         flag: "imposible" as const,
         motivo: `Salieron ${round(b.salida, 2)} m³ de ${b.entradaM3} m³ de troza: una corrida no puede rendir más de lo que entró.`,
+      };
+    }
+
+    const fin = enProceso?.get(b.id);
+    if (fin) {
+      return {
+        ...b, medianaGrupo: med, desvioPct: null, flag: "parcial" as const,
+        motivo: `Rendimiento parcial · lote en proceso hasta el ${hoy ? fechaConDia(fin, hoy) : fin}: falta declarar lo que todavía sale de la sierra.`,
       };
     }
 
@@ -162,7 +204,7 @@ export function analizarRendimiento(g: TrazaGrafo): RendimientoCorrida[] {
 
 /** Sólo lo que hay que mirar, lo peor primero. */
 export function alertasRendimiento(rs: RendimientoCorrida[]): RendimientoCorrida[] {
-  const peso: Record<RendimientoFlag, number> = { imposible: 0, bajo: 1, alto: 2, sin_referencia: 3, normal: 4 };
+  const peso: Record<RendimientoFlag, number> = { imposible: 0, bajo: 1, alto: 2, parcial: 3, sin_referencia: 3, normal: 4 };
   return rs
     .filter((r) => r.flag === "imposible" || r.flag === "bajo" || r.flag === "alto")
     .sort((a, b) => peso[a.flag] - peso[b.flag] || Math.abs(b.desvioPct ?? 0) - Math.abs(a.desvioPct ?? 0));

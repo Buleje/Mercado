@@ -23,7 +23,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { slugKey } from "@/lib/forestal/sembrar-reparto";
 import {
-  RefreshCw, Download, PackageOpen, Printer, Layers, Boxes, Lightbulb, Target,
+  RefreshCw, Download, Printer, Layers, Boxes, Lightbulb, Target,
   ArrowLeftRight, SlidersHorizontal, Share2, Compass, Table, FileText,
 } from "@buleje/design-system/icons";
 import SegmentedControl from "@/components/ui-system/SegmentedControl";
@@ -44,6 +44,7 @@ import ResumenComparar from "./ResumenComparar";
 import ResumenMeta from "./ResumenMeta";
 import ResumenReparto from "./ResumenReparto";
 import ResumenTrozas from "./ResumenTrozas";
+import ResumenSinAserrada, { contarTrozasCubicadas } from "./resumen-sin-aserrada";
 import Anexo04Modal from "./Anexo04Modal";
 import TablaDeTrabajo, { type FilaTrabajo } from "./resumen-tabla-trabajo";
 import { useMarcasEspecie } from "./resumen-tabla-marcas";
@@ -123,9 +124,12 @@ export default function CubicacionResumenes() {
    * cargados la pantalla entra igual, con la distribución sola.
    */
   const [bloquesRolliza, setBloquesRolliza] = useState(0);
+  /* Las trozas del Cubicador de trozas: con ellas la Rolliza se ve aunque no haya aserrada. */
+  const [trozasCubicadas, setTrozasCubicadas] = useState(0);
   const recargar = useCallback(() => {
     setLote(leerLote());
     setBloquesRolliza(contarBloquesRolliza());
+    setTrozasCubicadas(contarTrozasCubicadas());
   }, []);
   useEffect(() => {
     recargar();
@@ -276,41 +280,10 @@ export default function CubicacionResumenes() {
     a.click(); setTimeout(() => URL.revokeObjectURL(url), 2000);
   };
 
-  if (rows.length === 0 && bloquesRolliza === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-6 py-16 text-center">
-        <PackageOpen className="h-10 w-10 text-[var(--text-tertiary)]" />
-        <p className="text-base font-bold text-[var(--text-primary)]">Todavía no hay lote cubicado</p>
-        <p className="max-w-sm text-sm text-[var(--text-tertiary)]">Cubica madera en la herramienta <b>Cubicador de madera</b> y vuelve acá para ver los resúmenes por especie y tipo.</p>
-        <button type="button" onClick={recargar} className={`mt-1 ${BTN}`}>
-          <RefreshCw className="h-4 w-4" /> Actualizar
-        </button>
-      </div>
-    );
-  }
-
-  /* Hay bloques y todavía no hay aserrada: se muestra la distribución sola, que
-     ya sabe listar la rolliza sin nada que repartir, y se dice cuál es el paso
-     que falta. Las otras vistas no tendrían nada que mostrar. */
+  /* Sin aserrada cubicada: la Rolliza (trozas y bloques) igual se ve, o el vacío
+     si tampoco hay rolliza (`resumen-sin-aserrada`). */
   if (rows.length === 0) {
-    return (
-      <div className="space-y-4">
-        <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-          <p className="text-base font-bold text-[var(--text-primary)]">
-            {bloquesRolliza} {bloquesRolliza === 1 ? "bloque cargado" : "bloques cargados"}, sin
-            madera cubicada todavía
-          </p>
-          <p className="mt-1 max-w-2xl text-sm text-[var(--text-tertiary)]">
-            La madera que mandaste ya está acá abajo. Para repartirla hay que cubicar lo aserrado
-            en <b>Cubicador de madera</b>: la distribución le pone las medidas a cada bloque.
-          </p>
-          <button type="button" onClick={recargar} className={`mt-3 ${BTN}`}>
-            <RefreshCw className="h-4 w-4" /> Actualizar
-          </button>
-        </div>
-        <ResumenReparto rows={rows} precioDe={precioDe} />
-      </div>
-    );
+    return <ResumenSinAserrada bloquesRolliza={bloquesRolliza} trozas={trozasCubicadas} rows={rows} precioDe={precioDe} onRecargar={recargar} />;
   }
 
   return (

@@ -27,9 +27,11 @@ type Campo = "especie" | "d1" | "d2" | "largo";
 
 const ALIAS: Record<Campo, string[]> = {
   especie: ["especie", "madera", "variedad"],
-  d1: ["d1", "d1 (cm)", "d1cm", "diametro menor", "diametro 1", "dmenor", "o menor", "ø menor"],
-  d2: ["d2", "d2 (cm)", "d2cm", "diametro mayor", "diametro 2", "dmayor", "o mayor", "ø mayor"],
-  largo: ["largo", "largo (m)", "largom", "long", "longitud"],
+  /* Las de pulgadas y pies son de la plantilla Oxapampina: el parser lee los
+     números tal cual y quien importa recubica con la fórmula de su lote. */
+  d1: ["d1", "d1 (cm)", "d1cm", "d1 (pulg)", "d1 (in)", "d1 pulg", "diametro menor", "diametro 1", "dmenor", "o menor", "ø menor"],
+  d2: ["d2", "d2 (cm)", "d2cm", "d2 (pulg)", "d2 (in)", "d2 pulg", "diametro mayor", "diametro 2", "dmayor", "o mayor", "ø mayor"],
+  largo: ["largo", "largo (m)", "largom", "largo (pies)", "largo (pie)", "largo (ft)", "largo pies", "long", "longitud"],
 };
 
 /** ¿Esta fila es el encabezado? (nombra D1 y Largo, las dos columnas sin las que no hay troza) */

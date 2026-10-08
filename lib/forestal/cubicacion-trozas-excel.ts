@@ -59,7 +59,7 @@ function especiesParaResumen(especiesDelPatio: readonly string[]): string[] {
  * lo que ya haya en el patio) + TOTAL. Trozas y m³ por COUNTIF/SUMIF plano —
  * anda igual en Excel viejo, Excel 365 o LibreOffice.
  */
-function agregarResumenPorEspecie(ws: Worksheet, especies: string[]): void {
+function agregarResumenPorEspecie(ws: Worksheet, especies: string[], unidadVol = "m³"): void {
   const rEspecie = `$A$2:$A$${FIN}`;
   const rD1 = `$B$2:$B$${FIN}`;
   const rVol = `$E$2:$E$${FIN}`;
@@ -81,7 +81,7 @@ function agregarResumenPorEspecie(ws: Worksheet, especies: string[]): void {
   titulo.alignment = { vertical: "middle", horizontal: "center" };
 
   const filaEnc = 2;
-  ([["Especie", cLabel], ["Trozas", cTrozas], ["m³", cVol]] as const).forEach(([txt, col]) => {
+  ([["Especie", cLabel], ["Trozas", cTrozas], [unidadVol, cVol]] as const).forEach(([txt, col]) => {
     const c = ws.getCell(`${col}${filaEnc}`);
     c.value = txt;
     c.font = { bold: true, color: { argb: "FF374151" } };
@@ -155,16 +155,23 @@ function agregarResumenPorEspecie(ws: Worksheet, especies: string[]): void {
  * cubicador al momento de descargar — se suman al catálogo para que el
  * resumen al costado nazca con lo que YA se está cubicando.
  */
-export async function descargarPlantillaTrozas(especiesDelPatio: readonly string[] = []): Promise<void> {
+export async function descargarPlantillaTrozas(
+  especiesDelPatio: readonly string[] = [],
+  formula: "smalian" | "oxapampina" = "smalian",
+): Promise<void> {
   const ExcelJS = (await import("exceljs")).default;
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet("Trozas");
+  /* Oxapampina (ADR-440): Ø en pulgadas, largo en pies, PT = Dp² × L ÷ 24,5 con
+     Dp = promedio de las dos puntas — la misma cuenta de `ptOxapampaDelCubicador`.
+     Al importar se recubica igual: la fórmula de la planilla es sólo referencia. */
+  const ox = formula === "oxapampina";
   ws.columns = [
     { header: "Especie", key: "especie", width: 18 },
-    { header: "D1 (cm)", key: "d1", width: 12 },
-    { header: "D2 (cm)", key: "d2", width: 12 },
-    { header: "Largo (m)", key: "largo", width: 12 },
-    { header: "Volumen (m³)", key: "vol", width: 15 },
+    { header: ox ? "D1 (pulg)" : "D1 (cm)", key: "d1", width: 12 },
+    { header: ox ? "D2 (pulg)" : "D2 (cm)", key: "d2", width: 12 },
+    { header: ox ? "Largo (pies)" : "Largo (m)", key: "largo", width: 13 },
+    { header: ox ? "Volumen (PT)" : "Volumen (m³)", key: "vol", width: 15 },
   ];
   const hdr = ws.getRow(1);
   hdr.font = { bold: true, color: { argb: "FFFFFFFF" } };
@@ -176,14 +183,16 @@ export async function descargarPlantillaTrozas(especiesDelPatio: readonly string
   for (let r = 2; r <= FIN; r++) {
     const c = ws.getCell(`E${r}`);
     c.value = {
-      formula: `IF(OR(B${r}="",D${r}=""),"",((PI()/4*(B${r}/100)^2)+(PI()/4*(IF(C${r}="",B${r},C${r})/100)^2))/2*D${r})`,
+      formula: ox
+        ? `IF(OR(B${r}="",D${r}=""),"",((B${r}+IF(C${r}="",B${r},C${r}))/2)^2*D${r}/24.5)`
+        : `IF(OR(B${r}="",D${r}=""),"",((PI()/4*(B${r}/100)^2)+(PI()/4*(IF(C${r}="",B${r},C${r})/100)^2))/2*D${r})`,
       result: "",
     };
-    c.numFmt = NUMFMT_M3;
+    c.numFmt = ox ? "#,##0.00" : NUMFMT_M3;
   }
 
-  agregarResumenPorEspecie(ws, especiesParaResumen(especiesDelPatio));
+  agregarResumenPorEspecie(ws, especiesParaResumen(especiesDelPatio), ox ? "PT" : "m³");
 
   const buf = await wb.xlsx.writeBuffer();
-  descargar(new Blob([buf], { type: MIME_XLSX }), "plantilla-trozas.xlsx");
+  descargar(new Blob([buf], { type: MIME_XLSX }), ox ? "plantilla-trozas-oxapampina.xlsx" : "plantilla-trozas.xlsx");
 }

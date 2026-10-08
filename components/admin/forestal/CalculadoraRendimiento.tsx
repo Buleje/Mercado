@@ -5,9 +5,11 @@
  * (producto obtenido ÷ materia prima consumida), el número que SERFOR pide
  * en cada registro de transformación del LO-CTP.
  *
- * Entrada en m³ de troza; salida en PT o m³ de aserrada. Al lado, el promedio
- * REAL de las corridas registradas en el Libro CTP del tenant — para saber si
- * la corrida que estás por anotar está dentro de lo normal del aserradero.
+ * Entrada en m³ de troza; salida en PT o m³ de aserrada. Al lado, el
+ * rendimiento REAL del Libro CTP del tenant — PONDERADO por m³ (no el promedio
+ * simple de los %, que en Blas daba 24,7 contra el 25,13 del libro) y sin
+ * esconder que las corridas en proceso son parciales. Lo lee el contenedor
+ * (`RendimientoAserradero`) una sola vez para las cuatro vistas.
  */
 import { useEffect, useMemo, useState } from "react";
 import { Gauge, Percent, Download } from "@buleje/design-system/icons";
@@ -40,17 +42,17 @@ const RANGOS = [
 
 const fmtPct = (v: number) => formatNumber(v, 1);
 
-interface PromedioLibro {
-  promedio: number;
+export interface RendimientoDelLibro {
+  /** Ponderado de todas las corridas (Σ salida ÷ Σ entrada). */
+  ponderadoPct: number | null;
   corridas: number;
+  enProceso: number;
 }
 
-export default function CalculadoraRendimiento() {
+export default function CalculadoraRendimiento({ libro, libroError }: { libro: RendimientoDelLibro | null; libroError: boolean }) {
   const [inputM3, setInputM3] = useState("");
   const [salida, setSalida] = useState("");
   const [unidad, setUnidad] = useState<"pt" | "m3">("pt");
-  const [libro, setLibro] = useState<PromedioLibro | null>(null);
-  const [libroError, setLibroError] = useState(false);
   const [disponible, setDisponible] = useState<{ aserradoPt: number; trozasM3: number }>({ aserradoPt: 0, trozasM3: 0 });
 
   // Lo que ya está cubicado en las otras herramientas — para traerlo de un toque.
@@ -60,28 +62,6 @@ export default function CalculadoraRendimiento() {
     if (disponible.trozasM3 > 0) setInputM3(String(Math.round(disponible.trozasM3 * 10000) / 10000));
     if (disponible.aserradoPt > 0) { setSalida(String(Math.round(disponible.aserradoPt * 100) / 100)); setUnidad("pt"); }
   };
-
-  // Promedio real del Libro CTP (rendimientoPct de las corridas registradas).
-  useEffect(() => {
-    let cancelado = false;
-    (async () => {
-      try {
-        const r = await fetch("/api/admin/forestal/ctp?section=produccion", { credentials: "include" });
-        if (!r.ok) throw new Error(String(r.status));
-        const j = (await r.json()) as { entries?: { rendimientoPct?: number | string | null }[] };
-        if (cancelado) return;
-        const valores = (j.entries ?? [])
-          .map((e) => Number(e.rendimientoPct))
-          .filter((v) => Number.isFinite(v) && v > 0);
-        if (valores.length > 0) {
-          setLibro({ promedio: valores.reduce((a, b) => a + b, 0) / valores.length, corridas: valores.length });
-        }
-      } catch {
-        if (!cancelado) setLibroError(true); // sin Libro habilitado: la calculadora sigue sirviendo sola
-      }
-    })();
-    return () => { cancelado = true; };
-  }, []);
 
   const resultado = useMemo(() => {
     const inp = Number(inputM3);
@@ -182,16 +162,17 @@ export default function CalculadoraRendimiento() {
         </div>
       </div>
 
-      {/* Promedio real del Libro del tenant */}
+      {/* El rendimiento real del Libro del tenant, ponderado */}
       <div className="mt-4 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 py-3">
-        {libro ? (
+        {libro && libro.ponderadoPct != null ? (
           <div className="flex flex-wrap items-center justify-between gap-2">
             <span className="text-sm text-[var(--text-secondary)]">
-              Tu aserradero, según el Libro CTP: <b className="font-mono text-[var(--text-primary)]">{fmtPct(libro.promedio)}%</b> de promedio en {libro.corridas} {libro.corridas === 1 ? "corrida" : "corridas"}.
+              Tu aserradero, según el Libro CTP: <b className="font-mono text-[var(--text-primary)]">{fmtPct(libro.ponderadoPct)}%</b> ponderado en {libro.corridas} {libro.corridas === 1 ? "corrida" : "corridas"}
+              {libro.enProceso > 0 && <> ({libro.enProceso} en proceso: parcial)</>}.
             </span>
             {resultado && (
-              <span className={`text-xs font-bold ${Math.abs(resultado.pct - libro.promedio) <= 10 ? "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"}`}>
-                {Math.abs(resultado.pct - libro.promedio) <= 10 ? "En línea con tu histórico" : `Se aparta ${fmtPct(Math.abs(resultado.pct - libro.promedio))} pts de tu histórico`}
+              <span className={`text-xs font-bold ${Math.abs(resultado.pct - libro.ponderadoPct) <= 10 ? "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"}`}>
+                {Math.abs(resultado.pct - libro.ponderadoPct) <= 10 ? "En línea con tu histórico" : `Se aparta ${fmtPct(Math.abs(resultado.pct - libro.ponderadoPct))} pts de tu histórico`}
               </span>
             )}
           </div>
@@ -199,7 +180,7 @@ export default function CalculadoraRendimiento() {
           <p className="text-xs text-[var(--text-tertiary)]">
             {libroError
               ? "No se pudo leer el Libro CTP (¿especialización deshabilitada?). La calculadora funciona igual."
-              : "Sin corridas con rendimiento registrado en el Libro CTP todavía — cuando registres transformaciones, acá aparece tu promedio real."}
+              : "Sin corridas con rendimiento registrado en el Libro CTP todavía — cuando registres transformaciones, acá aparece tu rendimiento real."}
           </p>
         )}
       </div>

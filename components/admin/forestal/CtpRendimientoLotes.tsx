@@ -21,7 +21,7 @@
  * SERFOR es la tabla de arriba.
  */
 
-import { AlertTriangle, CheckCircle2, TrendingDown } from "@buleje/design-system/icons";
+import { AlertTriangle, CheckCircle2, Clock, TrendingDown } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import {
@@ -30,6 +30,8 @@ import {
   RENDIMIENTO_PLAUSIBLE_MIN,
   juzgarRendimiento,
 } from "@/lib/forestal/loctp-catalogos";
+import { fechaConDia } from "@/lib/forestal/loth-plan-costeo";
+import { useCorridasEnProceso } from "./hooks/use-rendimiento-aserradero";
 
 export interface FilaRendimiento {
   lote: string;
@@ -47,8 +49,14 @@ const META_PCT = RENDIMIENTO_META * 100;
  * contra la meta; acá sólo se agrega el caso "por encima de lo creíble", que la
  * meta no puede ver porque mira hacia abajo.
  */
-function estado(pct: number): { tono: "ok" | "aviso" | "malo"; texto: string } {
+function estado(pct: number, finProceso?: string, hoy?: string): { tono: "ok" | "aviso" | "malo" | "parcial"; texto: string } {
   const juicio = juzgarRendimiento(pct);
+  /* Lote todavía en proceso (K4 a): el número es un piso, no un rendimiento
+     bajo. «Imposible» sigue ganando: salir más de lo que entró no se arregla
+     declarando más. */
+  if (finProceso && juicio !== "sospechoso") {
+    return { tono: "parcial", texto: `Parcial · en proceso hasta el ${hoy ? fechaConDia(finProceso, hoy) : finProceso}` };
+  }
   if (juicio === "sospechoso") return { tono: "malo", texto: "Imposible: revisa la carga" };
   if (pct > RENDIMIENTO_PLAUSIBLE_MAX) return { tono: "malo", texto: "Más alto de lo creíble" };
   if (pct < RENDIMIENTO_PLAUSIBLE_MIN) return { tono: "malo", texto: "Muy bajo: falta declarar o se perdió madera" };
@@ -60,16 +68,20 @@ const TONO = {
   ok: { punto: "bg-[var(--data-success-500)]", texto: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]", icono: CheckCircle2 },
   aviso: { punto: "bg-[var(--data-warning-500)]", texto: "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]", icono: TrendingDown },
   malo: { punto: "bg-[var(--data-error-500)]", texto: "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]", icono: AlertTriangle },
+  parcial: { punto: "bg-[var(--text-tertiary)]", texto: "text-[var(--text-secondary)]", icono: Clock },
 } as const;
 
 /** El eje llega a 100: un rendimiento mayor es un error de carga, y se ancla al tope. */
 const posicion = (pct: number) => `${Math.min(100, Math.max(0, pct))}%`;
 
 export default function CtpRendimientoLotes({ filas }: { filas: ReadonlyArray<FilaRendimiento> }) {
+  const enProceso = useCorridasEnProceso();
   const conDato = filas.filter((f) => f.rendimientoPct != null && Number.isFinite(f.rendimientoPct));
   if (conDato.length === 0) return null;
 
-  const fuera = conDato.filter((f) => estado(f.rendimientoPct as number).tono === "malo").length;
+  const estadoDe = (f: FilaRendimiento) => estado(f.rendimientoPct as number, enProceso.porLote.get(f.lote), enProceso.hoy);
+  const fuera = conDato.filter((f) => estadoDe(f).tono === "malo").length;
+  const parciales = conDato.filter((f) => estadoDe(f).tono === "parcial").length;
 
   return (
     <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
@@ -94,11 +106,16 @@ export default function CtpRendimientoLotes({ filas }: { filas: ReadonlyArray<Fi
           {fuera} {fuera === 1 ? "lote está" : "lotes están"} fuera de rango.
         </p>
       )}
+      {parciales > 0 && (
+        <p className="mb-3 text-xs font-semibold text-[var(--text-secondary)]">
+          {parciales} {parciales === 1 ? "lote sigue" : "lotes siguen"} en proceso: su rendimiento es parcial y no se juzga.
+        </p>
+      )}
 
       <ul className="space-y-3">
         {conDato.map((f) => {
           const pct = f.rendimientoPct as number;
-          const e = estado(pct);
+          const e = estadoDe(f);
           const Icono = TONO[e.tono].icono;
           return (
             <li key={`${f.lote}|${f.lineaProduccion}|${f.tipoProducto}|${f.especie}`}>

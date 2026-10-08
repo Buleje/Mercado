@@ -3,8 +3,9 @@
 /**
  * ForestalHerramientas — hub de herramientas especializadas forestales
  * (especialización `spec:forestal:herramientas`, ADR-124). Contenedor extensible:
- * hoy trae el cubicador de madera por voz; se le suman más herramientas como
- * sub-vistas sin tocar el cableado del sidebar.
+ * cubicador de madera (aserrada) y de trozas (Smalian u Oxapampina), resúmenes,
+ * rendimiento del aserradero y fotos de especies; se le suman más herramientas
+ * como sub-vistas sin tocar el cableado del sidebar.
  */
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
@@ -20,7 +21,7 @@ const cargando = (
 );
 const CubicadorMadera = dynamic(() => import("./CubicadorMadera"), { ssr: false, loading: () => cargando });
 const CubicadorTrozas = dynamic(() => import("./CubicadorTrozas"), { ssr: false, loading: () => cargando });
-const CalculadoraRendimiento = dynamic(() => import("./CalculadoraRendimiento"), { ssr: false, loading: () => cargando });
+const RendimientoAserradero = dynamic(() => import("./RendimientoAserradero"), { ssr: false, loading: () => cargando });
 const CubicacionResumenes = dynamic(() => import("./CubicacionResumenes"), { ssr: false, loading: () => cargando });
 const EspeciesFotosBiblioteca = dynamic(() => import("./EspeciesFotosBiblioteca"), { ssr: false, loading: () => cargando });
 
@@ -34,9 +35,9 @@ const HERRAMIENTAS_MODULE_ID = "forestal-herramientas";
 export const TOOL_ONCE_KEY = TOOL_ONCE_STORAGE_KEY;
 const TOOLS: { key: Tool; label: string; icon: typeof Calculator; hint: string }[] = [
   { key: "cubicador", label: "Cubicador de madera", icon: Calculator, hint: "Aserrada: pie tablar + m³ por voz" },
-  { key: "trozas", label: "Cubicador de trozas", icon: Ruler, hint: "Rolliza: Smalian en patio, contra la GTF" },
+  { key: "trozas", label: "Cubicador de trozas", icon: Ruler, hint: "Rolliza en patio: Smalian (m³, contra la GTF) u Oxapampina (PT)" },
   { key: "resumenes", label: "Resúmenes", icon: BarChart3, hint: "Tablas por especie y tipo del lote cubicado" },
-  { key: "rendimiento", label: "Rendimiento", icon: Gauge, hint: "Coeficiente de aserrío (%) con tu histórico del Libro" },
+  { key: "rendimiento", label: "Rendimiento", icon: Gauge, hint: "Por especie y por corrida, tu rango, la plata por PT y el simulador" },
   { key: "especies", label: "Fotos de especies", icon: Trees, hint: "Referencia visual para no confundir dos maderas parecidas" },
 ];
 // Un solo grupo: la cabina dibuja las herramientas y omite la fila de fases
@@ -87,7 +88,7 @@ export default function ForestalHerramientas() {
         {tool === "cubicador" && <CubicadorMadera />}
         {tool === "trozas" && <CubicadorTrozas />}
         {tool === "resumenes" && <CubicacionResumenes />}
-        {tool === "rendimiento" && <CalculadoraRendimiento />}
+        {tool === "rendimiento" && <RendimientoAserradero />}
         {tool === "especies" && <EspeciesFotosBiblioteca />}
       </div>
     </LibroChrome>

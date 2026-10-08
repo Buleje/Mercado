@@ -14,22 +14,19 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle } from "@buleje/design-system/icons";
-import { detectarComando, numerosDeTroza, PT_POR_M3 } from "@/lib/forestal/cubicacion";
+import { PT_POR_M3 } from "@/lib/forestal/cubicacion";
 import type { TrozaImportada } from "@/lib/forestal/cubicacion-trozas-import";
 import {
   claveDiametrosTrozas, claveFormulaTrozas, claveLoteTrozas, conVolumen, diametroUnico, DIAMETROS_POR_DEFECTO,
-  esDiametrosPorTroza, esFormulaTrozas, medidasEnVoz, partirEnMedidas, patioACsv, RANGO_FORMULA, resumenDelPatio, totalesSegun,
+  esDiametrosPorTroza, esFormulaTrozas, fueraDeRango, medidasEnVoz, patioACsv, RANGO_FORMULA, resumenDelPatio, totalesSegun,
   UNIDADES_FORMULA, type DiametrosPorTroza, type FormulaTrozas,
 } from "@/lib/forestal/cubicacion-trozas-formula";
-import { aplicarAjustesDeVoz, loadConfig } from "@/lib/forestal/cubicador-config";
-import { pitido } from "@/lib/forestal/pitido";
-import { useVozContinua } from "@/hooks/use-voz-continua";
+import { loadConfig } from "@/lib/forestal/cubicador-config";
 import { useLecturaEnVoz, type ContextoLectura } from "@/hooks/use-lectura-en-voz";
 import {
-  acomodarAlOrden, enOrdenDelPapel, esOrdenFilas, especieAlInicio, ordenarFilas, textoPorTramos, ultimaAnotada,
+  acomodarAlOrden, enOrdenDelPapel, esOrdenFilas, ordenarFilas, textoPorTramos, ultimaAnotada,
   unidadDeLargoEnVoz, type LargoEnLectura, type OrdenFilas,
 } from "@/lib/forestal/cubicador-bloques-especie";
-import { claveEspecie } from "@/lib/forestal/loth-constants";
 import { formatNumber } from "@/lib/format";
 import ControlLecturaFlotante from "./cubicador-lectura-flotante";
 import ImportarTrozasModal from "./ImportarTrozasModal";
@@ -39,10 +36,11 @@ import CotejoGtfBloque, { useCotejoGtf } from "./cubicador-trozas-gtf";
 import TablaPatioTrozas, { type CampoTroza, type FilaTroza } from "./cubicador-trozas-tabla";
 import BarraPatioTrozas, { COLS_DEFAULT_TROZA, type ColOpcionalTroza } from "./cubicador-trozas-barra";
 import PanelVozTrozas from "./cubicador-trozas-voz";
+import CuentaDelPatio from "./cubicador-trozas-guardadas";
+import { useDictadoTrozas } from "./hooks/use-dictado-trozas";
 
 type Fila = FilaTroza;
 
-const sinAcentos = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 const tenantSlug = () => {
   try { return localStorage.getItem("active-tenant-slug") ?? "main"; } catch { return "main"; }
 };
@@ -59,27 +57,6 @@ const guardarLote = (f: FormulaTrozas, rows: Fila[]) => {
 };
 const acomodarTrozas = (filas: Fila[], orden: OrdenFilas): Fila[] => acomodarAlOrden(filas, orden);
 
-/** Repite en voz lo dictado, con la MISMA config del cubicador de aserrada. */
-function hablar(texto: string) {
-  try {
-    const cfg = loadConfig();
-    if (!cfg.speak) return;
-    const synth = window.speechSynthesis;
-    if (!synth) return;
-    synth.cancel();
-    const u = new SpeechSynthesisUtterance(texto);
-    aplicarAjustesDeVoz(u, cfg, synth.getVoices());
-    synth.speak(u);
-  } catch { /* TTS no disponible */ }
-}
-
-/** El tip de «guardada» con «Repite: no» (2026-09-23). Grave si la troza entró con medidas raras. */
-function tipSiNoRepite(veces: number, rara: boolean) {
-  const cfg = loadConfig();
-  if (cfg.speak || !cfg.pitidoAlGuardar) return;
-  pitido({ veces, tono: rara ? "revisa" : "guardado", volumen: cfg.voiceVolume });
-}
-
 /** El largo al leer con «Largo fijo al leer»: en metros o en pies según la fórmula. */
 const largoEnVoz = (formula: FormulaTrozas, diametros: DiametrosPorTroza): LargoEnLectura<Fila> => ({
   largo: (t) => t.largo,
@@ -91,7 +68,6 @@ export default function CubicadorTrozas() {
   const [rows, setRows] = useState<Fila[]>([]);
   const [especie, setEspecie] = useState("");
   const [lastAdded, setLastAdded] = useState<Fila | null>(null);
-  const [paused, setPaused] = useState(false);
   const [importando, setImportando] = useState(false);
   /**
    * La fórmula elegida y cuántos Ø se miden con cada una — recordadas por
@@ -131,16 +107,10 @@ export default function CubicadorTrozas() {
   }, []);
   useEffect(() => { try { localStorage.setItem(`${storageKey()}-cols`, JSON.stringify(colsVisibles)); } catch { /* quota */ } }, [colsVisibles]);
   const idRef = useRef(0);
-  const carryRef = useRef<number[]>([]);
-  const pausedRef = useRef(false);
   const especieRef = useRef(especie);
   useEffect(() => { especieRef.current = especie; }, [especie]);
-  /* El catálogo de la planta (ADR-410), el mismo que el cubicador de aserrada.
-     Por REF: con la lista capturada en el closure del reconocedor, una especie
-     recién creada no se reconocería al dictarla. */
+  /* El catálogo de la planta (ADR-410), el mismo que el cubicador de aserrada. */
   const catalogoEspecies = useEspeciesConCatalogo();
-  const especiesRef = useRef<readonly string[]>(catalogoEspecies.nombres);
-  useEffect(() => { especiesRef.current = catalogoEspecies.nombres; }, [catalogoEspecies.nombres]);
   const rowsRef = useRef<Fila[]>(rows);
   rowsRef.current = rows;
   const saveLocal = (next: Fila[]) => guardarLote(formulaRef.current, next);
@@ -156,68 +126,39 @@ export default function CubicadorTrozas() {
     return fila;
   };
 
-  const voz = useVozContinua((texto) => {
-    // Comandos compartidos con el cubicador de aserrada (misma config).
-    const cmd = detectarComando(texto, loadConfig().comandos);
-    if (cmd) {
-      if (cmd.tipo === "pausar") { pausedRef.current = true; setPaused(true); carryRef.current = []; hablar("en pausa"); }
-      else if (cmd.tipo === "continuar") { pausedRef.current = false; setPaused(false); carryRef.current = []; hablar("sigo"); }
-      else if (cmd.tipo === "borrar-ultimo") {
-        /* Agrupado por especie, la última fila no es la última dictada. */
-        setRows((prev) => {
-          if (!prev.length) return prev;
-          const victima = ultimaAnotada(prev, ordenRef.current);
-          const next = prev.filter((r) => r.id !== victima?.id);
-          saveLocal(next);
-          return next;
-        });
-        setLastAdded(null); carryRef.current = []; hablar("borrado");
-      } else if (cmd.tipo === "especie") {
-        const found = especiesRef.current.find((s) => sinAcentos(s).startsWith(cmd.palabra));
-        if (found) { especieRef.current = found; setEspecie(found); hablar(found); }
-      }
-      return;
-    }
-    /* La especie sola cambia la de lo que sigue: «panguana» o «panguana treinta cuarenta ocho». */
-    if (pausedRef.current) return; // en pausa, ni números ni especie sola: es charla
-    let dictado = texto;
-    let anuncio = "";
-    const conocidas = [...especiesRef.current, ...rowsRef.current.map((r) => r.especie?.trim() ?? "").filter(Boolean)];
-    const detectada = especieAlInicio(texto, conocidas);
-    if (detectada) {
-      dictado = detectada.resto;
-      /* Ya era la especie en curso: no se anuncia, y sin medidas es el eco del
-         parlante (acá no hay filtro de eco) — repetirla armaba un lazo. */
-      if (claveEspecie(detectada.especie) === claveEspecie(especieRef.current)) {
-        if (!dictado.trim()) return;
-      } else {
-        especieRef.current = detectada.especie; // la troza de esta misma frase ya entra con ella
-        setEspecie(detectada.especie);
-        anuncio = detectada.especie;
-        if (!dictado.trim()) { hablar(detectada.especie); return; }
-      }
-    }
-    /* Pares «Ø largo» con un diámetro, tríos «Ø Ø largo» con dos. */
-    const { trozas, resto } = partirEnMedidas([...carryRef.current, ...numerosDeTroza(dictado)], diametrosRef.current, formulaRef.current);
-    carryRef.current = resto;
-    let ultima: Fila | null = null;
-    for (const t of trozas) ultima = addTroza(t.d1, t.d2, t.largo, t.sospechosa);
-    if (ultima) {
-      const confirmacion = trozas.length === 1 ? medidasEnVoz(ultima, diametrosRef.current) : `${trozas.length} trozas`;
-      hablar(anuncio ? `${anuncio}. ${confirmacion}` : confirmacion);
-      tipSiNoRepite(trozas.length, trozas.some((t) => t.sospechosa));
-    } else if (anuncio) {
-      hablar(anuncio);
-    }
+  /* El dictado por voz (comandos, especie sola, pares y tríos): `use-dictado-trozas`. */
+  const { voz, paused, olvidarSobrante } = useDictadoTrozas({
+    formulaRef, diametrosRef, rowsRef, especieRef, setEspecie,
+    especiesCatalogo: catalogoEspecies.nombres,
+    addTroza,
+    borrarUltima: () => {
+      /* Agrupado por especie, la última fila no es la última dictada. */
+      setRows((prev) => {
+        if (!prev.length) return prev;
+        const victima = ultimaAnotada(prev, ordenRef.current);
+        const next = prev.filter((r) => r.id !== victima?.id);
+        saveLocal(next);
+        return next;
+      });
+      setLastAdded(null);
+    },
   });
 
   const persist = (next: Fila[]) => { const acomodadas = acomodarTrozas(next, ordenRef.current); setRows(acomodadas); saveLocal(acomodadas); };
   const borrar = (id: string) => { persist(rows.filter((r) => r.id !== id)); if (lastAdded?.id === id) setLastAdded(null); };
   const deshacer = () => { if (lastAdded) borrar(lastAdded.id); };
-  const limpiar = () => { persist([]); setLastAdded(null); carryRef.current = []; };
-  /** El import SUMA al patio, nunca reemplaza (mismo criterio que la aserrada). Sólo Smalian: la plantilla viene en cm. */
+  const limpiar = () => { persist([]); setLastAdded(null); olvidarSobrante(); };
+  /** El import SUMA al patio, nunca reemplaza (mismo criterio que la aserrada). Se
+   *  recubica con la fórmula del lote abierto: la plantilla Oxapampina viene en
+   *  pulgadas y pies, y su volumen es PT, no m³. */
   const agregarImportadas = (nuevas: TrozaImportada[]) => {
-    persist([...rows, ...nuevas.map(({ filaOrigen: _filaOrigen, ...t }) => t)]);
+    const f = formulaRef.current;
+    persist([
+      ...rows,
+      ...nuevas.map(({ filaOrigen: _filaOrigen, sospechosa, ...t }) =>
+        f === "smalian" ? { ...t, sospechosa } : { ...conVolumen(f, t), sospechosa: fueraDeRango(f, t.d1, t.d2, t.largo) || undefined },
+      ),
+    ]);
   };
   const editar = (id: string, campo: CampoTroza, valor: number) => {
     persist(rows.map((r) => {
@@ -284,13 +225,13 @@ export default function CubicadorTrozas() {
     try { localStorage.setItem(claveFormulaTrozas(tenantSlug()), f); } catch { /* ignore */ }
     setRows(acomodarTrozas(leerLote(f), ordenRef.current));
     setLastAdded(null);
-    carryRef.current = [];
+    olvidarSobrante();
   };
   const cambiarDiametros = (d: DiametrosPorTroza) => {
     const next = { ...diametrosPor, [formula]: d };
     setDiametrosPor(next);
     diametrosRef.current = d;
-    carryRef.current = []; // un sobrante de tríos no es la mitad de un par
+    olvidarSobrante(); // un sobrante de tríos no es la mitad de un par
     try { localStorage.setItem(claveDiametrosTrozas(tenantSlug()), JSON.stringify(next)); } catch { /* ignore */ }
   };
 
@@ -330,7 +271,7 @@ export default function CubicadorTrozas() {
         <BarraPatioTrozas
           total={rows.length}
           etiquetaVolumen={u.volumen}
-          onImportar={ox ? undefined : () => setImportando(true)}
+          onImportar={() => setImportando(true)}
           onEspecies={catalogoEspecies.abrir}
           ordenFilas={ordenFilas}
           hayQueOrdenar={hayQueOrdenar}
@@ -390,6 +331,9 @@ export default function CubicadorTrozas() {
           )}
           <Ref label="Fórmula" value={u.nombre} hint={u.cuenta} />
         </div>
+
+        {/* ADR-478: el patio con dueño, para descontarlo de su adelanto. */}
+        <CuentaDelPatio rows={rows} formula={formula} diametros={diametros} claveLote={claveLoteTrozas(tenantSlug(), formula)} />
       </div>
 
       {/* Mientras lee, el control va con los ojos. */}
@@ -409,6 +353,7 @@ export default function CubicadorTrozas() {
 
       {importando && (
         <ImportarTrozasModal
+          formula={formula}
           filasActuales={rows.length}
           especiesActuales={especiesActuales}
           onAgregar={agregarImportadas}

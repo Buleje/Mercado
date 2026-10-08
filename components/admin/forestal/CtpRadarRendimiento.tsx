@@ -14,15 +14,18 @@
  * con menos de 3 corridas.
  */
 
-import { AlertTriangle, Eye, Gauge, TrendingDown, TrendingUp } from "@buleje/design-system/icons";
+import { useMemo } from "react";
+import { AlertTriangle, Clock, Eye, Gauge, TrendingDown, TrendingUp } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import {
   alertasRendimiento,
   DESVIO_PCT,
   FLAG_LABEL,
+  marcarParciales,
   MIN_GRUPO,
   type RendimientoCorrida,
 } from "@/lib/forestal/ctp-radar-rendimiento";
+import { useCorridasEnProceso } from "./hooks/use-rendimiento-aserradero";
 
 const TONO = {
   imposible: {
@@ -50,16 +53,26 @@ const TONO = {
     texto: "text-[var(--text-tertiary)]",
     barra: "bg-[var(--rule-base)]",
   },
+  /* En proceso: ni bien ni mal todavía — neutro, con la barra rayada de «falta». */
+  parcial: {
+    card: "border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)]",
+    texto: "text-[var(--text-secondary)]",
+    barra: "bg-[var(--text-tertiary)]/50",
+  },
 } as const;
 
 const fmt = (n: number | null, d = 2): string => (n == null || !Number.isFinite(n) ? "—" : Number(n.toFixed(d)).toString());
 
 export default function CtpRadarRendimiento({
-  rs, onVerCorrida,
+  rs: rsSinLotes, onVerCorrida,
 }: {
   rs: RendimientoCorrida[];
   onVerCorrida: (id: string) => void;
 }) {
+  /* Las corridas de un lote que sigue en proceso (K4 a): se juzgan «parcial» y
+     salen de la mediana. Mientras carga, el radar se ve como siempre. */
+  const enProceso = useCorridasEnProceso();
+  const rs = useMemo(() => marcarParciales(rsSinLotes, enProceso.porCorrida, enProceso.hoy), [rsSinLotes, enProceso]);
   if (rs.length === 0) {
     return <p className="rounded-2xl border border-dashed border-[var(--rule-base)] p-6 text-center text-sm text-[var(--text-tertiary)]">Sin corridas de producción en el período.</p>;
   }
@@ -96,7 +109,7 @@ export default function CtpRadarRendimiento({
       <ul className="space-y-2">
         {[...rs]
           .sort((a, b) => {
-            const peso = { imposible: 0, bajo: 1, alto: 2, sin_referencia: 3, normal: 4 } as const;
+            const peso = { imposible: 0, bajo: 1, alto: 2, parcial: 3, sin_referencia: 3, normal: 4 } as const;
             return peso[a.flag] - peso[b.flag] || a.lineNo - b.lineNo;
           })
           .map((r) => {
@@ -123,9 +136,10 @@ export default function CtpRadarRendimiento({
                       {r.flag === "bajo" && <TrendingDown className="h-3.5 w-3.5" aria-hidden="true" />}
                       {r.flag === "alto" && <TrendingUp className="h-3.5 w-3.5" aria-hidden="true" />}
                       {(r.flag === "normal" || r.flag === "sin_referencia") && <Gauge className="h-3.5 w-3.5" aria-hidden="true" />}
+                      {r.flag === "parcial" && <Clock className="h-3.5 w-3.5" aria-hidden="true" />}
                       {r.flag === "imposible" && <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />}
                       {FLAG_LABEL[r.flag]}
-                      {r.desvioPct != null && r.flag !== "normal" && r.flag !== "sin_referencia" && (
+                      {r.desvioPct != null && (r.flag === "bajo" || r.flag === "alto" || r.flag === "imposible") && (
                         <span className="font-mono tabular-nums">{r.desvioPct > 0 ? "+" : ""}{r.desvioPct}%</span>
                       )}
                     </span>
