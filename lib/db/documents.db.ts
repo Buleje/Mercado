@@ -731,7 +731,10 @@ export class DocumentsDB {
     maxIntentos = 3,
   ): Promise<{ id: string; name: string; mimeType: string; intentos: number; lento: boolean }[]> {
     const docs = await prisma.document.findMany({
-      where: { tenantId, deletedAt: null },
+      /* Las fotos de personas de las cámaras (`lib/camaras/personas-drive.server.ts`)
+         llegan de a cientos por día ya descritas: filtradas ACÁ y no en el bucle,
+         porque si no llenan la ventana de 1000 y un PDF subido antes nunca se indexa. */
+      where: { tenantId, deletedAt: null, NOT: { tags: { has: "personas" } } },
       select: { id: true, name: true, mimeType: true, ocrMetadata: true, uploadedAt: true },
       orderBy: { uploadedAt: "desc" },
       take: 1000,

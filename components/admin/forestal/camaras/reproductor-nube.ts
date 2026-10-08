@@ -90,9 +90,14 @@ function conTope<T>(p: Promise<T>, ms: number): Promise<T | null> {
   return Promise.race([p, new Promise<null>((r) => setTimeout(() => r(null), ms))]);
 }
 
+/** El `<canvas>`/`<video>` donde EZUIKit pinta el cuadro (el detector de personas lo lee). */
+export function fuenteDelVideo(caja: HTMLElement | null): HTMLCanvasElement | HTMLVideoElement | null {
+  return caja?.querySelector<HTMLCanvasElement | HTMLVideoElement>("canvas, video") ?? null;
+}
+
 /** El cuadro pintado en el `<canvas>`/`<video>` del contenedor, si el decodificador lo deja leer. */
 function cuadroDelLienzo(caja: HTMLElement | null): string | null {
-  const fuente = caja?.querySelector<HTMLCanvasElement | HTMLVideoElement>("canvas, video");
+  const fuente = fuenteDelVideo(caja);
   if (!fuente) return null;
   const ancho = fuente instanceof HTMLVideoElement ? fuente.videoWidth : fuente.width;
   const alto = fuente instanceof HTMLVideoElement ? fuente.videoHeight : fuente.height;

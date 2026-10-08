@@ -42,6 +42,7 @@ const TrialCountdownBannerLoader = dynamic(
 import AdminAlertsBanner from "@/components/admin/AdminAlertsBanner";
 import { AdminNavigation } from "./_components/AdminNavigation";
 import { AdminMainContent } from "./_components/AdminMainContent";
+import { MosaicoGlobalProvider } from "@/components/admin/forestal/camaras/MosaicoGlobalContexto";
 
 // ── Deferred chrome (sessions 4-7) ─────────────────────────────────────────────
 // AdminGlobalModals and AdminOverlaysLayer are not on the critical first-paint
@@ -483,6 +484,10 @@ function AdminPage() {
             components/admin/AdminKPIBanner.tsx si se quiere usar en un tab
             específico (p. ej. solo en "Inicio"), no globalmente. */}
 
+        {/* «Ver todas en vivo» de Cámaras, a nivel del panel (2026-10-07): se
+            minimiza a una burbuja y sigue al cambiar de pestaña. No pide nada
+            hasta que alguien lo abre (el mosaico se baja recién ahí). */}
+        <MosaicoGlobalProvider>
         <AdminMainContent
           tab={tab}
           navigateTab={navigateTab}
@@ -511,6 +516,7 @@ function AdminPage() {
           activeTenantSlug={activeTenantSlug}
           onboarding={onboarding}
         />
+        </MosaicoGlobalProvider>
       </div>
 
       {/* Aviso amable antes de cerrar por inactividad (30 min). Se re-arma con

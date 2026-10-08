@@ -142,9 +142,12 @@ export default function LothBorrarLineasModal({
               </div>
             )}
             {cuelga && (
-              <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm font-semibold text-[var(--text-primary)]">
-                <input type="checkbox" checked={incluir} onChange={(e) => setIncluir(e.target.checked)} className="h-5 w-5 shrink-0 accent-[var(--data-error-600)]" />
-                <span className="flex-1">Incluir lo que cuelga</span>
+              /* El ⓘ va al lado de la etiqueta, no adentro: dentro de un <label> su clic marcaba la casilla. */
+              <div className="flex min-h-11 items-center gap-3">
+                <label className="flex flex-1 cursor-pointer items-center gap-3 text-sm font-semibold text-[var(--text-primary)]">
+                  <input type="checkbox" checked={incluir} onChange={(e) => setIncluir(e.target.checked)} className="h-5 w-5 shrink-0 accent-[var(--data-error-600)]" />
+                  <span className="flex-1">Incluir lo que cuelga</span>
+                </label>
                 <InfoTip
                   title="Incluir lo que cuelga"
                   what="Suma a lo elegido el trozado de esas talas y los despachos o consumos de esas trozas, del mismo permiso."
@@ -152,7 +155,7 @@ export default function LothBorrarLineasModal({
                   example="Eliges 10 talas del permiso PO 001: se borran también sus 40 trozas y los despachos de esas trozas."
                   side="left"
                 />
-              </label>
+              </div>
             )}
             {vista.borradas > 0 && <ConfirmarBorrar id="borrar-lineas-confirmar" valor={palabra} onChange={setPalabra} />}
           </>

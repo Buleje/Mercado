@@ -302,6 +302,16 @@ export function useVisorNube(camaraId: string, opciones: OpcionesVisor = {}) {
     return capturarCuadro(player.current, document.getElementById(contenedorId));
   }, [actividad, contenedorId]);
 
+  /**
+   * El mismo cuadro SIN contar como un toque: lo piden solos el detector de
+   * personas y la miniatura de la burbuja. Con `tomarCuadro` el reloj de 5 min
+   * se reiniciaba en cada mirada y el mosaico minimizado no se pausaba nunca.
+   */
+  const tomarCuadroQuieto = useCallback(
+    () => capturarCuadro(player.current, document.getElementById(contenedorId)),
+    [contenedorId],
+  );
+
   return {
     contenedorId,
     marcoId,
@@ -322,6 +332,7 @@ export function useVisorNube(camaraId: string, opciones: OpcionesVisor = {}) {
     pantallaCompleta,
     foto,
     tomarCuadro,
+    tomarCuadroQuieto,
   };
 }
 

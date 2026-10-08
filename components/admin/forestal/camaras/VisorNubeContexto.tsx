@@ -7,6 +7,11 @@
  * vive acá, uno solo, encima de la vista que sea; el mosaico «Ver todas en
  * vivo» también, y abrir uno cierra el otro (nunca dos videos de la misma
  * cámara a la vez).
+ *
+ * Dentro del panel, el mosaico NO vive acá sino en `MosaicoGlobalProvider`
+ * (2026-10-07): se puede minimizar a una burbuja y sigue vivo al cambiar de
+ * pestaña. Este proveedor sólo le pasa las cámaras; el mosaico local queda
+ * para cuando no hay panel alrededor.
  */
 
 import {
@@ -15,10 +20,12 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
 import { useHikConnect, type HikConnect } from "./use-hik-connect";
+import { useMosaicoGlobal } from "./MosaicoGlobalContexto";
 import MosaicoNube from "./MosaicoNube";
 import VisorNube from "./VisorNube";
 
@@ -61,8 +68,22 @@ export function VisorNubeProvider({
 }) {
   const hik = useHikConnect();
   const { cargar, estado } = hik;
+  const global = useMosaicoGlobal();
   const [abierta, setAbierta] = useState<CamaraAbierta | null>(null);
   const [mosaico, setMosaico] = useState<readonly CamaraAbierta[] | null>(null);
+
+  /* «Verlo en el televisor» del mosaico global: sólo mientras esta pantalla
+     está montada (su modal vive acá). Un ref: `onVerEnTv` llega inline. */
+  const verEnTvRef = useRef(onVerEnTv);
+  useEffect(() => {
+    verEnTvRef.current = onVerEnTv;
+  });
+  const hayVerEnTv = !!onVerEnTv;
+  const registrarVerEnTv = global?.registrarVerEnTv;
+  useEffect(() => {
+    if (!registrarVerEnTv || !hayVerEnTv) return;
+    return registrarVerEnTv(() => verEnTvRef.current?.());
+  }, [registrarVerEnTv, hayVerEnTv]);
 
   useEffect(() => {
     void cargar();
@@ -72,14 +93,28 @@ export function VisorNubeProvider({
     (camaraId: string) => !!estado?.vinculado && !!estado.enlaces[camaraId],
     [estado],
   );
-  const abrir = useCallback((id: string, nombre: string) => {
-    setMosaico(null);
-    setAbierta({ id, nombre });
-  }, []);
-  const abrirMosaico = useCallback((camaras: readonly CamaraAbierta[]) => {
-    setAbierta(null);
-    setMosaico(camaras);
-  }, []);
+  const cerrarGlobal = global?.cerrar;
+  const abrirGlobal = global?.abrir;
+  const abrir = useCallback(
+    (id: string, nombre: string) => {
+      setMosaico(null);
+      cerrarGlobal?.();
+      setAbierta({ id, nombre });
+    },
+    [cerrarGlobal],
+  );
+  const abrirMosaico = useCallback(
+    (camaras: readonly CamaraAbierta[]) => {
+      setAbierta(null);
+      if (!abrirGlobal) {
+        setMosaico(camaras);
+        return;
+      }
+      const enlaces = estado?.enlaces ?? {};
+      abrirGlobal(camaras.map((c) => ({ ...c, conCodigo: !!enlaces[c.id]?.conCodigo })));
+    },
+    [abrirGlobal, estado],
+  );
   const verFotos = useCallback(() => {
     setAbierta(null);
     setMosaico(null);
