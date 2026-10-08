@@ -49,7 +49,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
   if (!esComprobantePrivado(url)) {
     return esFotoDelNegocio(url, { tenantId: auth.tenantId, origenStorage: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "" })
-      ? NextResponse.redirect(url, { status: 302, headers: { "Cache-Control": "private, max-age=300" } })
+      ? NextResponse.redirect(url, { status: 302, headers: { "Cache-Control": "private, no-store" } })
       : noEsta();
   }
 
@@ -76,7 +76,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       "Content-Type": "image/webp",
       "Content-Length": String(binario.length),
       "Content-Disposition": "inline",
-      "Cache-Control": "private, max-age=300",
+      /* `no-store`: ni el disco del navegador guarda la hoja (DNI + firma +
+         monto) — en una PC compartida quedaba 5 min al alcance del siguiente.
+         CORP: otro sitio no la puede incrustar con la cookie de quien la mira. */
+      "Cache-Control": "private, no-store",
+      "Cross-Origin-Resource-Policy": "same-origin",
       "X-Content-Type-Options": "nosniff",
       "Referrer-Policy": "no-referrer",
     },

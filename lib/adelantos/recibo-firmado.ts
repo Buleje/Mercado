@@ -129,6 +129,12 @@ export function rutaFirmaPrivada(tenantId: string, adelantoId: string, ms: numbe
   return `${tenantId}/${CARPETA}/${adelantoId}/${Math.trunc(ms)}-${MARCA}-${az}.webp`;
 }
 
+/** `<tenantId>/adelantos/<adelantoId>`: la carpeta privada con todas las hojas del adelanto (la vigente y las archivadas). */
+export function carpetaFirmasDelAdelanto(tenantId: string, adelantoId: string): string {
+  if (!ID_SEGURO.test(tenantId) || !ID_SEGURO.test(adelantoId)) throw new Error("id inválido para la carpeta de las firmas");
+  return `${tenantId}/${CARPETA}/${adelantoId}`;
+}
+
 /** Sólo una hoja de la carpeta de ESTE adelanto de ESTE negocio, un tramo, sin nada raro. */
 export function esRutaFirmaDelAdelanto(ruta: string, tenantId: string, adelantoId: string): boolean {
   if (!ID_SEGURO.test(tenantId) || !ID_SEGURO.test(adelantoId)) return false;
@@ -142,8 +148,9 @@ export function esComprobantePrivado(url?: string | null): url is string {
 
 /**
  * Lo que va en `<img src>`, el enlace de la ficha y el PDF. La privada pasa
- * por la puerta del servidor; `?v=` cambia con cada firma (el navegador guarda
- * 5 min la respuesta: sin esto, tras volver a firmar se veía la anterior).
+ * por la puerta del servidor; `?v=` cambia con cada firma (la puerta responde
+ * `no-store`, pero la miniatura ya pintada no se vuelve a pedir si el `src` no
+ * cambia: sin esto, tras volver a firmar se veía la anterior).
  */
 export function srcDelComprobante(a: { id: string; comprobanteUrl?: string | null }): string | null {
   if (!a.comprobanteUrl) return null;

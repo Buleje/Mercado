@@ -233,7 +233,8 @@ async function controlar(
  * PATCH multipart `{ action: "adjuntarComprobante", anterior, file }` — el
  * recibo firmado en la pantalla (08-10) queda como la foto del comprobante, la
  * misma columna que llena «Adjuntar archivo» en el alta. `write` (chequeado
- * arriba): no mueve plata ni saldo.
+ * arriba): no mueve plata ni saldo. Reemplazar una foto que YA tiene (voucher
+ * o recibo firmado) es sólo de admin o dueño (403 al encargado).
  *
  * Ley 29733: la hoja lleva DNI + firma + monto. El orden es lo que importa:
  *  1. el adelanto (de ESTE negocio, no anulado, con la foto `anterior` que se
@@ -253,7 +254,18 @@ const AdjuntarSchema = z
 
 /** Vercel corta el cuerpo en 4,5 MB; la hoja en JPEG pesa 0,2-1 MB. */
 const MAX_BYTES_HOJA = 4 * 1024 * 1024;
-const MAX_PIXELES_HOJA = 40_000_000;
+/**
+ * La hoja sale de un lienzo de 1000 px de ancho (`hoja-firma.ts`) con el voucher
+ * arriba acotado: ~1-3 MP. 12 MP da aire y corta antes una bomba de
+ * descompresión (un PNG chico que se abre en 40 MP de RAM).
+ */
+const MAX_PIXELES_HOJA = 12_000_000;
+/**
+ * `warning` es lo más estricto de sharp (`none` < `truncated` < `error` <
+ * `warning`) y su valor por defecto en 0.34: explícito para que un cambio de
+ * versión no lo afloje. Un JPEG cortado o con datos corruptos → 422.
+ */
+const OPCIONES_SHARP_HOJA = { limitInputPixels: MAX_PIXELES_HOJA, failOn: "warning" } as const;
 const TIPOS_HOJA = new Set(["image/jpeg", "image/png", "image/webp"]);
 const FORMATOS_HOJA = new Set(["jpeg", "png", "webp"]);
 
@@ -297,18 +309,35 @@ async function adjuntarComprobante(
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
   if (!actual) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
-  const rechazo = rechazoDeFirma(actual.status === "CANCELADO" ? "anulado" : (actual.comprobanteUrl ?? null) !== anterior ? "cambio" : null);
+  const anulado = rechazoDeFirma(actual.status === "CANCELADO" ? "anulado" : null);
+  if (anulado) return anulado;
+  /* Reemplazar la foto que YA tiene (el voucher del alta o un recibo firmado
+     antes) es sólo de admin o dueño: con `write`, un encargado cambiaba el
+     voucher de un RECIBIDO por cualquier imagen. Se mira la columna de la base,
+     no lo que dice el cliente; y el compara-y-cambia de abajo (`anterior` =
+     null → sólo si sigue vacía) cierra la carrera. Firmar uno sin foto sigue
+     siendo `write`.
+     08-10 (integrador): la PRIMERA firma sobre el voucher del alta sigue siendo
+     `write` —si no, un encargado no podía firmar ningún adelanto con voucher, que
+     es el caso normal—; el voucher queda arriba en la hoja y su ruta en la
+     actividad (`anterior`), así que el original siempre se recupera. Lo que
+     exige admin/dueño es reemplazar un recibo YA FIRMADO. */
+  if (actual.comprobanteUrl && esReciboFirmado(actual.comprobanteUrl)) {
+    const prohibido = soloAdminODueno(auth.role, "reemplazar la foto o el recibo firmado que ya tiene un adelanto");
+    if (prohibido) return prohibido;
+  }
+  const rechazo = rechazoDeFirma((actual.comprobanteUrl ?? null) !== anterior ? "cambio" : null);
   if (rechazo) return rechazo;
 
   /* 2. La imagen: lo que ES, no lo que declara el navegador. */
   let webp: Buffer;
   try {
     const buf = Buffer.from(await file.arrayBuffer());
-    const { format } = await sharp(buf, { limitInputPixels: MAX_PIXELES_HOJA }).metadata();
+    const { format } = await sharp(buf, OPCIONES_SHARP_HOJA).metadata();
     if (!format || !FORMATOS_HOJA.has(format)) {
       return NextResponse.json({ error: "La hoja firmada tiene que ser una imagen (JPG, PNG o WebP).", code: "no_es_imagen" }, { status: 422 });
     }
-    webp = await sharp(buf, { limitInputPixels: MAX_PIXELES_HOJA })
+    webp = await sharp(buf, OPCIONES_SHARP_HOJA)
       .resize({ width: 1200, withoutEnlargement: true })
       .webp({ quality: 85 })
       .toBuffer();
@@ -343,8 +372,12 @@ async function adjuntarComprobante(
     return rechazoDeFirma(r) ?? NextResponse.json({ error: "No encontrado" }, { status: 404 });
   }
   /* Al volver a firmar, la hoja anterior NO se borra: queda archivada en la
-     misma carpeta privada (y la nueva la lleva arriba). */
-  const reemplaza = !anterior ? "" : esReciboFirmado(anterior) ? " (reemplaza el recibo firmado anterior, que queda archivado)" : " (la foto que tenía va arriba en la hoja)";
+     misma carpeta privada (y la nueva la lleva arriba). La actividad guarda la
+     referencia a la anterior (`priv:<ruta>` o la URL del voucher: una ruta, sin
+     nombre ni DNI) para poder volver a ella; la nueva está en la columna. */
+  const reemplaza = !anterior
+    ? ""
+    : `${esReciboFirmado(anterior) ? " (reemplaza el recibo firmado anterior, que queda archivado)" : " (la foto que tenía va arriba en la hoja)"} · anterior: ${anterior}`;
   logActivity("Firmar", "adelanto", `Adelanto ${id}: recibo firmado en la pantalla y guardado como comprobante${reemplaza}`, id, auth.username, undefined, auth.tenantId).catch((err) => logger.error("[adelantos] logActivity failed", { error: String(err) }));
   return NextResponse.json({ id, comprobanteUrl });
 }

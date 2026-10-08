@@ -8,6 +8,7 @@ import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
+import { esFotoDelNegocio } from "@/lib/adelantos/recibo-firmado";
 
 const EntregaSchema = z
   .object({
@@ -51,6 +52,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const parsed = EntregaSchema.safeParse(await req.json());
     if (!parsed.success) {
       return NextResponse.json({ error: "Datos inválidos", issues: parsed.error.issues.map((i) => i.message) }, { status: 400 });
+    }
+    /* La foto de la entrega se pinta en `<img>`/`<a>` de la ficha: tiene que ser
+       la que `/api/upload` subió a la carpeta de ESTE negocio, como en el alta.
+       `z.string().url()` dejaba pasar `javascript:`, `priv:` o un sitio ajeno. */
+    const foto = parsed.data.comprobanteUrl?.trim();
+    if (foto && !esFotoDelNegocio(foto, { tenantId: auth.tenantId, origenStorage: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "" })) {
+      return NextResponse.json({ error: "La foto del comprobante tiene que subirse desde el panel de este negocio.", code: "foto_ajena" }, { status: 422 });
     }
     let adelanto;
     try {

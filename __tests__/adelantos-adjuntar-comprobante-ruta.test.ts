@@ -27,6 +27,7 @@ const H = vi.hoisted(() => ({
   comprobanteDe: vi.fn(),
   adjuntar: vi.fn(),
   create: vi.fn(),
+  registrarEntrega: vi.fn(),
   subir: vi.fn(),
   bajar: vi.fn(),
   borrar: vi.fn(),
@@ -55,6 +56,7 @@ vi.mock("@/lib/db/adelantos.db", () => ({
     comprobanteDe: (...a: unknown[]) => H.comprobanteDe(...a),
     adjuntarComprobante: (...a: unknown[]) => H.adjuntar(...a),
     create: (...a: unknown[]) => H.create(...a),
+    registrarEntrega: (...a: unknown[]) => H.registrarEntrega(...a),
   },
   AdelantoConLiquidacionError: class extends Error {},
   AdelantoNoCancelableError: class extends Error {},
@@ -67,6 +69,7 @@ vi.mock("@/lib/db/adelantos.db", () => ({
 import { PATCH } from "@/app/api/adelantos/[id]/route";
 import { GET as GET_COMPROBANTE } from "@/app/api/adelantos/[id]/comprobante/route";
 import { POST } from "@/app/api/adelantos/route";
+import { POST as POST_ENTREGA } from "@/app/api/adelantos/[id]/entregas/route";
 
 let PNG: Buffer;
 const RUTA_OK = /^t1\/adelantos\/a1\/\d{13}-firma-recibo-[a-f0-9]{16}\.webp$/;
@@ -92,6 +95,7 @@ beforeEach(async () => {
   H.subir.mockResolvedValue({ ok: true });
   H.borrar.mockResolvedValue(undefined);
   H.create.mockResolvedValue({ id: "n1", direccion: "DADO" });
+  H.registrarEntrega.mockResolvedValue({ id: "a1", saldoPendiente: 50 });
   vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://x.supabase.co");
 });
 
@@ -196,16 +200,90 @@ describe("PATCH adjuntarComprobante — la hoja la sube el servidor, a lo privad
   });
 });
 
+describe("PATCH adjuntarComprobante — reemplazar lo que ya tiene (auditoría 08-10)", () => {
+  const VOUCHER = "https://x.supabase.co/storage/v1/object/public/media/t1/media/1728000000000-voucher.webp";
+  const FIRMA_VIEJA = "priv:t1/adelantos/a1/1728000000000-firma-recibo-abcdef12.webp";
+
+  it("403 si un encargado (manager) quiere reemplazar un recibo YA FIRMADO — no sube ni toca la columna", async () => {
+    H.auth = { tenantId: "t1", username: "enc", role: "manager" };
+    H.comprobanteDe.mockResolvedValue({ status: "ACTIVO", comprobanteUrl: FIRMA_VIEJA });
+    const r = await firmar({ action: "adjuntarComprobante", anterior: FIRMA_VIEJA });
+    expect(r.status).toBe(403);
+    expect((await r.json()).message).toMatch(/administrador o el dueño pueden reemplazar/);
+    expect(H.subir).not.toHaveBeenCalled();
+    expect(H.adjuntar).not.toHaveBeenCalled();
+  });
+
+  it("el encargado SÍ firma sobre el voucher del alta (primera firma) y la actividad guarda el voucher", async () => {
+    H.auth = { tenantId: "t1", username: "enc", role: "manager" };
+    H.comprobanteDe.mockResolvedValue({ status: "ACTIVO", comprobanteUrl: VOUCHER });
+    const r = await firmar({ action: "adjuntarComprobante", anterior: VOUCHER });
+    expect(r.status).toBe(200);
+    expect(String((H.logActivity.mock.calls[0] as unknown[])[2])).toContain(`anterior: ${VOUCHER}`);
+  });
+
+  it("el encargado SÍ firma uno sin foto (la primera vez), y el compara-y-cambia exige que siga vacía", async () => {
+    H.auth = { tenantId: "t1", username: "enc", role: "manager" };
+    const r = await firmar({ action: "adjuntarComprobante", anterior: "" });
+    expect(r.status).toBe(200);
+    expect(H.adjuntar).toHaveBeenCalledWith("t1", "a1", expect.stringMatching(/^priv:/), null);
+  });
+
+  it("el admin reemplaza: la actividad guarda la referencia a la anterior (no la nueva)", async () => {
+    H.comprobanteDe.mockResolvedValue({ status: "ACTIVO", comprobanteUrl: FIRMA_VIEJA });
+    const r = await firmar({ action: "adjuntarComprobante", anterior: FIRMA_VIEJA });
+    expect(r.status).toBe(200);
+    expect(H.adjuntar).toHaveBeenCalledWith("t1", "a1", expect.stringMatching(/^priv:/), FIRMA_VIEJA);
+    const detalle = String((H.logActivity.mock.calls[0] as unknown[])[2]);
+    expect(detalle).toContain(`anterior: ${FIRMA_VIEJA}`);
+    expect(detalle).not.toContain(H.subir.mock.calls[0][0] as string);
+  });
+
+  it("el dueño (owner) también reemplaza el voucher", async () => {
+    H.auth = { tenantId: "t1", username: "dueno", role: "owner" };
+    H.comprobanteDe.mockResolvedValue({ status: "ACTIVO", comprobanteUrl: VOUCHER });
+    expect((await firmar({ action: "adjuntarComprobante", anterior: VOUCHER })).status).toBe(200);
+    expect(String((H.logActivity.mock.calls[0] as unknown[])[2])).toContain(`anterior: ${VOUCHER}`);
+  });
+
+  it("anulado da 409 antes que el 403 (lo que de verdad lo frena)", async () => {
+    H.auth = { tenantId: "t1", username: "enc", role: "manager" };
+    H.comprobanteDe.mockResolvedValue({ status: "CANCELADO", comprobanteUrl: VOUCHER });
+    const r = await firmar({ action: "adjuntarComprobante", anterior: VOUCHER });
+    expect(r.status).toBe(409);
+    expect((await r.json()).code).toBe("anulado");
+  });
+});
+
+describe("PATCH adjuntarComprobante — la imagen (auditoría 08-10)", () => {
+  it("422 con más de 12 MP (un PNG chico que se abre enorme) — no sube nada", async () => {
+    const grande = await sharp({ create: { width: 1000, height: 12_100, channels: 3, background: "white" } }).png().toBuffer();
+    const r = await firmar({ action: "adjuntarComprobante", anterior: "" }, new Blob([new Uint8Array(grande)], { type: "image/png" }));
+    expect(r.status).toBe(422);
+    expect(H.subir).not.toHaveBeenCalled();
+  });
+
+  it("422 con un JPEG cortado a la mitad — no sube nada", async () => {
+    const jpg = await sharp({ create: { width: 300, height: 300, channels: 3, background: "white", noise: { type: "gaussian", mean: 128, sigma: 40 } } }).jpeg().toBuffer();
+    const cortado = jpg.subarray(0, Math.floor(jpg.length / 2));
+    const r = await firmar({ action: "adjuntarComprobante", anterior: "" }, new Blob([new Uint8Array(cortado)], { type: "image/jpeg" }));
+    expect(r.status).toBe(422);
+    expect(H.subir).not.toHaveBeenCalled();
+  });
+});
+
 describe("GET /api/adelantos/[id]/comprobante — la puerta privada", () => {
   const PRIV = "t1/adelantos/a1/1728000000000-firma-recibo-abcdef1234.webp";
 
-  it("200 con el binario, privado y sin caché compartida", async () => {
+  it("200 con el binario, privado, sin guardarse en disco y sin incrustarse desde otro sitio", async () => {
     H.comprobanteDe.mockResolvedValue({ status: "ACTIVO", comprobanteUrl: `priv:${PRIV}` });
     H.bajar.mockResolvedValue(Buffer.from([1, 2, 3]));
     const r = await verComprobante();
     expect(r.status).toBe(200);
     expect(r.headers.get("content-type")).toBe("image/webp");
-    expect(r.headers.get("cache-control")).toBe("private, max-age=300");
+    expect(r.headers.get("cache-control")).toBe("private, no-store");
+    expect(r.headers.get("cross-origin-resource-policy")).toBe("same-origin");
+    expect(r.headers.get("x-content-type-options")).toBe("nosniff");
     expect(H.bajar).toHaveBeenCalledWith(PRIV);
     expect(H.logActivity).toHaveBeenCalledTimes(1);
   });
@@ -243,6 +321,7 @@ describe("GET /api/adelantos/[id]/comprobante — la puerta privada", () => {
     H.comprobanteDe.mockResolvedValue({ status: "ACTIVO", comprobanteUrl: "https://x.supabase.co/storage/v1/object/public/media/t1/media/1728000000000-voucher.webp" });
     const ok = await verComprobante();
     expect(ok.status).toBe(302);
+    expect(ok.headers.get("cache-control")).toBe("private, no-store");
     H.comprobanteDe.mockResolvedValue({ status: "ACTIVO", comprobanteUrl: "https://evil.com/x.webp" });
     expect((await verComprobante()).status).toBe(404);
   });
@@ -269,5 +348,34 @@ describe("POST /api/adelantos — la foto del alta tiene que ser de este negocio
     expect(r.status).toBe(201);
     expect((await alta(base)).status).toBe(201);
     expect(H.create).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("POST /api/adelantos/[id]/entregas — la foto de la entrega, igual que la del alta (auditoría 08-10)", () => {
+  const entrega = (body: unknown, id = "a1") =>
+    POST_ENTREGA(new NextRequest(`http://localhost/api/adelantos/${id}/entregas`, { method: "POST", body: JSON.stringify(body) }), {
+      params: Promise.resolve({ id }),
+    });
+  const base = { tipo: "LIBRE", valorManual: 50 };
+
+  it.each([
+    ["javascript:alert(1)"],
+    ["data:image/png;base64,AAAA"],
+    ["priv:t1/adelantos/a1/1728000000000-firma-recibo-abcdef12.webp"],
+    ["https://evil.com/storage/v1/object/public/media/t1/media/1728000000000-v.webp"],
+    ["https://x.supabase.co/storage/v1/object/public/media/t2/media/1728000000000-v.webp"],
+  ])("422 `foto_ajena` con %s — no registra la entrega", async (url) => {
+    const r = await entrega({ ...base, comprobanteUrl: url });
+    expect(r.status).toBe(422);
+    expect((await r.json()).code).toBe("foto_ajena");
+    expect(H.registrarEntrega).not.toHaveBeenCalled();
+  });
+
+  it("pasa con la foto que subió /api/upload a la carpeta de este negocio, y sin foto", async () => {
+    const foto = "https://x.supabase.co/storage/v1/object/public/media/t1/media/1728000000000-voucher.webp";
+    expect((await entrega({ ...base, comprobanteUrl: foto })).status).toBe(201);
+    expect((await entrega(base)).status).toBe(201);
+    expect(H.registrarEntrega).toHaveBeenCalledTimes(2);
+    expect(H.registrarEntrega.mock.calls[0][0]).toBe("t1");
   });
 });

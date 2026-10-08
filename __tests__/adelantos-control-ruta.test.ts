@@ -146,7 +146,14 @@ describe("PATCH /api/adelantos/[id] — vencimiento y permiso", () => {
     expect(await r.json()).toMatchObject({ code: "vencimiento_invalido" });
   });
 
-  it.each([[{}], [{ foo: 1 }], [{ cancelar: false }], [{ notas: "x", fechaVencimento: "2026-10-15" }]])(
+  it.each([
+    [{}],
+    [{ foo: 1 }],
+    [{ cancelar: false }],
+    [{ notas: "x", fechaVencimento: "2026-10-15" }],
+    /* El caso de la auditoría 08-10: un PATCH con sólo la foto, sin `notas`. */
+    [{ comprobanteUrl: "https://x.supabase.co/storage/v1/object/public/media/t1/media/1728000000000-v.webp" }],
+  ])(
     "%j → 400: ya no cae en `updateNotas(null)` borrando las notas",
     async (body) => {
       const r = await patch(body);
