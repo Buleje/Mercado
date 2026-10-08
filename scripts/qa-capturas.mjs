@@ -43,6 +43,9 @@
  *                                   la red quede quieta (tope ~1,5 s). Ej.: {"navegar": "/admin?tab=camaras&vista=personas"}
  *   {"marcar": "<sel input checkbox>"} → .click() por JS sobre el input (las casillas personalizadas no
  *                                   se dejan clicar con Playwright). Ej.: {"marcar": "input[type=checkbox]"}
+ *   {"quien": "<sel>"}            → qué componentes de React dibujan ese elemento (del más cercano hacia
+ *                                   afuera), al reporte. 08-10: encontrar el dueño del botón «Gráficos»
+ *                                   costó 5 grep (el texto venía de un valor por defecto). Ej.: {"quien": "text=Gráficos"}
  *   (`esperar` con selector espera el elemento VISIBLE: ya no se cuelga con un [role=dialog] oculto.)
  * Sin ningún paso «captura», se captura el estado final con --nombre.
  *
@@ -339,6 +342,20 @@ async function recorrido(t, primero) {
           await esperarQuietud({ quieto: 500, tope: 1500 });
         }
         else if (tipo === "marcar") await visible(page, valor).evaluate((el) => el.click()); else if (tipo === "eval") { const v = await page.evaluate(valor); if (primero) evals.push({ paso: i, valor: v }); }
+        else if (tipo === "quien") {
+          const v = await visible(page, valor).evaluate((el) => {
+            const clave = Object.keys(el).find((k) => k.startsWith("__reactFiber$"));
+            const nombres = [];
+            for (let f = clave ? el[clave] : null; f && nombres.length < 8; f = f.return) {
+              const ty = f.type;
+              if (!ty || typeof ty === "string") continue;
+              const n = ty.displayName || ty.name || ty.render?.name || ty.type?.displayName || ty.type?.name;
+              if (n && n !== nombres[nombres.length - 1]) nombres.push(n);
+            }
+            return nombres.length ? nombres.join(" ← ") : "sin fiber de React (¿build de producción?)";
+          });
+          if (primero) evals.push({ paso: i, valor: v });
+        }
         else if (tipo === "captura") { await matriz(page, valor, t); huboCaptura = true; }
         else throw new Error(`paso desconocido «${tipo}»`);
       } catch (e) {
