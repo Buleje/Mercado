@@ -1,3 +1,18 @@
+# SESSION HANDOFF — 2026-10-07: Ubuntu + Claude al día (LSP de TS 7, herramientas, MCP remotos, juego fuera, WSL 3.0.1)
+
+**Estado:** ✅ commiteado (`4a6d834ea`, `088a45783`), **sin subir** (no se pidió push). La sesión se cortó a propósito: `wsl --update` a 3.0.1 diferido 90 s. Al volver: `wsl.exe --version` debe decir 3.0.1 y `/mcp` debe mostrar context7/firecrawl como HTTP.
+
+**Hecho:**
+1. **LSP en Claude Code**: plugin `.claude/skills/buleje-ts7-lsp` (carga solo). Errores de tipos 0,3-0,44 s tras cada Edit, también en los archivos que importan al editado; herramienta `LSP` en los 8 agentes. Cuesta 2,6-3,6 GB por sesión (la barra lo muestra).
+2. **Barra de estado**: «LSP X GB» + barra de subagentes; 87 → 43 ms. **Spinner** animado otra vez (`prefersReducedMotion: false`).
+3. **Ubuntu**: apt al día, git 2.55, 24 herramientas (`scripts/ubuntu-herramientas.sh`, corre en el mantenimiento del domingo), fzf/eza/delta/difftastic integrados.
+4. **MCP**: context7 y firecrawl remotos (−176 MB por sesión).
+5. **Windows**: restos de Riot, «Modo juego LoL», Game Bar, búsqueda web del Inicio y arranques huérfanos fuera (respaldos en `.claude-tune\2026-10-07\`). La RAM la usan Ubuntu, Chrome y Acrobat abierto (1,4 GB).
+
+→ detalle: memoria `ubuntu-claude-lsp-2026-10-07`.
+
+---
+
 # SESSION HANDOFF — 2026-10-04: Configuración en 8 secciones, mezcla de dos sesiones, cupo/T6 del importador, seguridad del Drive, Documentos del plan
 
 **Estado:** ✅ TODO COMMITEADO Y SUBIDO (último `6ce5d15a5`, rama `audit/storefront-mejoras-verificadas-2026-06-15`). Árbol limpio salvo `.claude/` sin versionar. Typecheck 0; suite completa en verde al cierre (las 2 fallas que dio, corregidas).
