@@ -1,6 +1,6 @@
 # SESSION HANDOFF — 2026-10-08: noche autónoma (cámaras, Libro TH/CTP, Inicio forestal, adelantos, orden de pantallas, superadmin, tuteo)
 
-**Estado:** ✅ todo commiteado (29+ commits entre `ea4c6f311` y el último de la noche) y SUBIDO a la rama `audit/storefront-mejoras-verificadas-2026-06-15`. Nada en producción. Árbol limpio salvo `.claude/` sin versionar. PDF «Mejoras de la noche» en el Escritorio de Windows (`OneDrive\Documentos\Escritorio`). Plan y bitácora: `.claude/autonomo/plan-2026-10-08.md`.
+**Estado:** ✅ todo commiteado (36 commits desde las 00:15, de `ea4c6f311` a `3bdb8ddb3`+handoff) y SUBIDO a la rama `audit/storefront-mejoras-verificadas-2026-06-15`. Nada en producción. Árbol limpio salvo `.claude/` sin versionar. PDF «Mejoras de la noche» en el Escritorio de Windows (`OneDrive\Documentos\Escritorio`). Plan y bitácora: `.claude/autonomo/plan-2026-10-08.md`.
 
 **Hecho (resumen; detalle en la memoria `noche-autonoma-2026-10-08-resultados`):**
 1. **Cámaras**: galería «Personas», aviso por WhatsApp al aparecer alguien (Blas: 2 cámaras con número «sólo de noche»), zonas a ignorar, fotos a la papelera a los 30 días y fuera del sync a Windows.
@@ -9,6 +9,7 @@
 4. **Adelantos**: leer voucher (OCR en el navegador, nunca guarda solo) y firmar el recibo (hoja en bucket privado `forestal-privado`, GET con permiso; revisado por security, sin críticos).
 5. **Orden**: Adelantos 21,4→0 (+ sub-vistas), Ajustes 9→0, Libro CTP 3→0, Trámites 0,5→0; modales fijados dejan usar la página; 8 modales más como ventana.
 6. **Superadmin**: ingresos reales (de pago 9→0), enlaces 404, colores; **tienda pública** en tuteo (248→0 fuera del checkout).
+7. **Celular (05:20-05:40)**: el h1 del Inicio medía 0 px a 400 (acciones shrink-0) → fila envuelve; flecha de pestañas sólo sobre el riel; «Gráficos» sólo ícono bajo 30rem. `medir-orden-admin` mide desborde/cortados/título aplastado con `ANCHO=400` (63 pestañas: 0 desbordes reales). Un módulo apagado (`?tab=a-medida`) dejaba el panel en blanco: el candado navegaba a «inicio» → `navigateTab` traduce ids viejos (4e53043a6). Humo final 63 × 1280/400: 0 errores. `qa-capturas` tiene `{"quien": sel}` (qué componentes dibujan un elemento).
 
 **Para Brandon (decide):** (a) 65 árboles del censo de la plantación de Blas borrados el 06-10 sin historial — recuperables (memoria `blas-censo-borrado-06-10`); (b) GTF del LO-TH de Blas fechada 09/10/2025; (c) el voucher del alta sigue en el bucket público `media`; (d) probar cámaras reales en Blas; (e) «Por guía/Por troza» del CTP ahora en Opciones.
 
