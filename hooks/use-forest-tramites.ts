@@ -32,6 +32,8 @@ export interface GuardarTramiteInput {
   fechaRespuesta?: string | null;
   fechaLimite?: string | null;
   notas?: string | null;
+  /** La carta se va a imprimir: el servidor la sella con su código (ADR-487). */
+  emitir?: boolean;
 }
 
 export function useForestTramites() {

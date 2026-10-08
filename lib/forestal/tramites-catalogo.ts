@@ -223,6 +223,13 @@ export interface FormatoTramite {
    * Qué casillero llena cada guía: `tramites-desde-guias.ts`.
    */
   aceptaGuias?: { uso: "tabla" | "una" | "rango"; estado?: "anulada" | "emitida" };
+  /**
+   * Prefijo propio del código de la carta (ADR-487, Brandon 08-10: «cada carta
+   * con un código único que se guardará»): `REL` → «REL-2026-0001», correlativo
+   * por negocio y año. Sin prefijo, el código es el de la autoridad
+   * («SERFOR-2026-014», `tramites-registro`).
+   */
+  prefijoCodigo?: string;
 }
 
 const v = (d: DatosTramite, k: string, fallback = "—"): string => {
@@ -601,6 +608,7 @@ export const FORMATOS_TRAMITE: FormatoTramite[] = [
   {
     id: "relacion-guias-serfor",
     aceptaGuias: { uso: "tabla" },
+    prefijoCodigo: "REL",
     nombre: "Relación de guías de transporte forestal emitidas",
     autoridad: "serfor",
     proposito:

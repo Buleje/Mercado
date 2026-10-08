@@ -254,7 +254,8 @@ describe("correlativo (numeroDocumento, ADR-364 ronda 3)", () => {
 });
 
 describe("código interno (codigoInterno, para buscar el trámite — Brandon 2026-08-25)", () => {
-  const base = { formatoId: "relacion-guias-serfor", autoridad: "serfor" as const, ahora: "2026-08-20T10:00:00.000Z" };
+  /* La relación tiene código propio «REL-» desde ADR-487 (forestal-tramites-carta.test.ts): acá, otro formato de SERFOR. */
+  const base = { formatoId: "constancia-cites", autoridad: "serfor" as const, ahora: "2026-08-20T10:00:00.000Z" };
 
   it("un borrador YA saca código — no espera a Presentado como numeroDocumento", () => {
     const t = construirTramite(base);

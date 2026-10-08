@@ -4,6 +4,8 @@ import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { ForestTramitesDB } from "@/lib/db/forest-tramites.db";
+import { CartaYaImpresaError } from "@/lib/forestal/tramites-carta";
+import { limiteDeCampo } from "@/lib/forestal/tramites-registro";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
@@ -26,7 +28,10 @@ import { withApiHandler } from "@/lib/api-handler";
 
 const autoridadEnum = z.enum(["arffs", "serfor", "osinfor", "otra"]);
 const estadoEnum = z.enum(["borrador", "presentado", "observado", "resuelto", "desistido"]);
-const fechaSolo = z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/);
+const fechaSolo = z
+  .string()
+  .trim()
+  .regex(/^\d{4}-\d{2}-\d{2}$/);
 
 const saveSchema = z.object({
   id: z.string().trim().max(80).optional(),
@@ -34,18 +39,33 @@ const saveSchema = z.object({
   formatoNombre: z.string().trim().max(120).optional(),
   autoridad: autoridadEnum,
   asunto: z.string().trim().max(300).optional(),
-  // Los valores del formulario: claves cortas, textos acotados. El tope real lo
-  // vuelve a aplicar `construirTramite` (el KV es un JSON compartido). 20 000 —
-  // no 4 000 — porque `guiasJson` (ADR-364, relación de guías + trozas) es un
-  // array serializado: el mismo tope que `tramites-registro.ts`, o esta validación
-  // rechaza en silencio lo que el otro lado sí aceptaría.
-  datos: z.record(z.string().trim().max(60), z.string().max(20_000)).optional(),
+  // Los valores del formulario: claves cortas, textos acotados. El tope de cada
+  // casillero es el MISMO que aplica `construirTramite` (`limiteDeCampo`): lo que
+  // pasa acá no se corta allá. Cortado, `guiasJson` (la relación de guías con sus
+  // trozas) deja de ser JSON y la carta sellada declararía 0 guías.
+  datos: z
+    .record(z.string().trim().max(60), z.string())
+    .superRefine((datos, ctx) => {
+      for (const [k, v] of Object.entries(datos)) {
+        if (v.length > limiteDeCampo(k)) {
+          const tope = limiteDeCampo(k).toLocaleString("es-PE");
+          const message =
+            k === "guiasJson"
+              ? `la lista de guías pasa de ${tope} caracteres: pártela en dos cartas`
+              : `el casillero «${k}» pasa de ${tope} caracteres`;
+          ctx.addIssue({ code: "custom", path: [k], message });
+        }
+      }
+    })
+    .optional(),
   estado: estadoEnum.optional(),
   expedienteAutoridad: z.string().trim().max(80).nullish(),
   fechaPresentacion: fechaSolo.nullish(),
   fechaRespuesta: fechaSolo.nullish(),
   fechaLimite: fechaSolo.nullish(),
   notas: z.string().trim().max(2000).nullish(),
+  /** La carta se va a imprimir: el servidor la sella con su código (ADR-487). */
+  emitir: z.boolean().optional(),
 });
 
 async function ensureSpec(tenantId: string) {
@@ -99,6 +119,7 @@ export const POST = withApiHandler("forestal-tramites-post", async (req: NextReq
     return NextResponse.json(
       {
         error: "validation_error",
+        message: `No se pudo guardar: ${parsed.error.issues[0]?.message ?? "revisa los datos"}.`,
         issues: parsed.error.issues.map((i) => ({ path: i.path.join("."), message: i.message })),
       },
       { status: 400 },
@@ -120,6 +141,12 @@ export const POST = withApiHandler("forestal-tramites-post", async (req: NextReq
     );
     return NextResponse.json({ tramite }, { status: parsed.data.id ? 200 : 201 });
   } catch (err) {
+    if (err instanceof CartaYaImpresaError) {
+      return NextResponse.json(
+        { error: "carta_impresa", codigo: err.codigo, message: err.message },
+        { status: 409 },
+      );
+    }
     logger.error("[tramites.POST] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }

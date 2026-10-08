@@ -14,10 +14,26 @@
 
 import { esc } from "./ctp-print-shared";
 import { listaDeTrozas, totalesPorEspecie, type FilaGuiaInforme } from "./tramites-relacion-guias";
+import { clavePermisoOficio } from "./tramites-permiso";
 
 export interface OpcionesPapelRelacion {
   /** El papel en pantalla (editable): marca lo que hay que revisar. El que se imprime o va al PDF, sin marcas. */
   marcar?: boolean;
+  /**
+   * El permiso de la carta (ADR-487): ya va en el título, así que la línea
+   * «Permiso:» y la columna «Permiso» sólo salen si alguna guía dice OTRO
+   * («Incluirlas igual»). Repetirlo en cada fila era ruido.
+   */
+  permisoDelOficio?: string | null;
+}
+
+/** ¿Alguna guía dice un permiso distinto al de la carta? Sin permiso de carta, cualquiera que diga uno cuenta. */
+function hayOtroPermiso(filas: FilaGuiaInforme[], permisoDelOficio: string | null | undefined): boolean {
+  const delOficio = clavePermisoOficio(permisoDelOficio);
+  return filas.some((f) => {
+    const k = clavePermisoOficio(f.permiso);
+    return k !== null && k !== delOficio;
+  });
 }
 
 const fmtFechaCorta = (iso: string): string => {
@@ -49,8 +65,8 @@ function lineaGuia(f: FilaGuiaInforme, marcar: boolean): string {
   return `<li>GTF N° ${esc(f.numero.trim() || "—")}${f.anulada ? ` · ${ANULADA}` : ""}${lista}</li>`;
 }
 
-function bloqueNumerado(titulo: string, filas: FilaGuiaInforme[], marcar: boolean): string {
-  const permisos = unicos(filas.map((f) => f.permiso ?? ""));
+function bloqueNumerado(titulo: string, filas: FilaGuiaInforme[], marcar: boolean, permisoDelOficio?: string | null): string {
+  const permisos = hayOtroPermiso(filas, permisoDelOficio) ? unicos(filas.map((f) => f.permiso ?? "")) : [];
   return `<p><strong>${esc(titulo)}:</strong></p>
     ${permisos.length ? `<p><strong>Permiso:</strong> ${esc(`${permisos.join(" ; ")}.`)}</p>` : ""}
     ${filas.length ? `<ul class="por-guia">${filas.map((f) => lineaGuia(f, marcar)).join("")}</ul>` : `<p>—</p>`}`;
@@ -66,7 +82,7 @@ export function resumenNumeradoHtml(filas: FilaGuiaInforme[], op: OpcionesPapelR
   const marcar = Boolean(op.marcar);
   const emitidas = filas.filter((f) => !f.anulada);
   const anuladas = filas.filter((f) => f.anulada);
-  return `${bloqueNumerado("Emitidas", emitidas, marcar)}${anuladas.length > 0 ? bloqueNumerado("Anuladas", anuladas, marcar) : ""}`;
+  return `${bloqueNumerado("Emitidas", emitidas, marcar, op.permisoDelOficio)}${anuladas.length > 0 ? bloqueNumerado("Anuladas", anuladas, marcar, op.permisoDelOficio) : ""}`;
 }
 
 // ─── El anexo ────────────────────────────────────────────────────────────────
@@ -74,35 +90,46 @@ export function resumenNumeradoHtml(filas: FilaGuiaInforme[], op: OpcionesPapelR
 interface Columna {
   titulo: string;
   num?: boolean;
+  /** Un N° o una fecha no se parte en dos renglones («019-001-» / «0000771» se leía como dos datos). */
+  entero?: boolean;
   celda: (f: FilaGuiaInforme, marcar: boolean) => string;
 }
 
 const COL: Record<"numero" | "fecha" | "permiso" | "destinatario" | "especie" | "lista" | "cantidad" | "estado" | "motivo", Columna> = {
-  numero: { titulo: "N° de GTF", celda: (f) => esc(f.numero || "—") },
-  fecha: { titulo: "Fecha", celda: (f) => esc(fmtFechaCorta(f.fecha)) },
+  numero: { titulo: "N° de GTF", entero: true, celda: (f) => esc(f.numero || "—") },
+  fecha: { titulo: "Fecha", entero: true, celda: (f) => esc(fmtFechaCorta(f.fecha)) },
   permiso: { titulo: "Permiso", celda: (f) => esc(f.permiso?.trim() || "—") },
   destinatario: { titulo: "Destinatario", celda: (f) => esc(f.destinatario || "—") },
   especie: { titulo: "Especie / producto", celda: (f) => esc([f.especie, f.producto].filter(Boolean).join(" · ") || "—") },
-  lista: { titulo: "Lista de trozas N°", celda: (f, marcar) => nroLista(f, marcar) },
-  cantidad: { titulo: "Cantidad", num: true, celda: (f) => (f.cantidad.trim() ? esc(`${f.cantidad} ${f.unidad}`.trim()) : "—") },
+  lista: { titulo: "Lista de trozas N°", entero: true, celda: (f, marcar) => nroLista(f, marcar) },
+  cantidad: {
+    titulo: "Cantidad",
+    num: true,
+    entero: true,
+    celda: (f) => (f.cantidad.trim() ? esc(`${f.cantidad} ${/^m3$/i.test(f.unidad.trim()) ? "m³" : f.unidad}`.trim()) : "—"),
+  },
   estado: { titulo: "Estado", celda: () => ANULADA },
   motivo: { titulo: "Motivo de anulación", celda: (f) => esc(f.motivo || "—") },
 };
 
 function tablaGuias(filas: FilaGuiaInforme[], cols: Columna[], marcar: boolean, vacio: string): string {
   if (filas.length === 0) return vacio ? `<p class="vacio">${esc(vacio)}</p>` : "";
-  const th = cols.map((c) => (c.num ? `<th class="num">${esc(c.titulo)}</th>` : `<th>${esc(c.titulo)}</th>`)).join("");
-  const filasHtml = filas
-    .map((f) => `<tr>${cols.map((c) => `<td${c.num ? ` class="num"` : ""}>${c.celda(f, marcar)}</td>`).join("")}</tr>`)
-    .join("");
+  const clase = (c: Columna) => [c.num ? "num" : "", c.entero ? "nw" : ""].filter(Boolean).join(" ");
+  const attr = (c: Columna) => (clase(c) ? ` class="${clase(c)}"` : "");
+  const th = cols.map((c) => `<th${c.num ? ` class="num"` : ""}>${esc(c.titulo)}</th>`).join("");
+  const filasHtml = filas.map((f) => `<tr>${cols.map((c) => `<td${attr(c)}>${c.celda(f, marcar)}</td>`).join("")}</tr>`).join("");
   return `<table class="tabla-guias"><thead><tr>${th}</tr></thead><tbody>${filasHtml}</tbody></table>`;
 }
 
-/** Las columnas de una tabla: «Permiso» y «Lista de trozas N°» sólo si alguna fila las trae (las relaciones viejas o manuales salen como antes). */
-function columnas(filas: FilaGuiaInforme[], base: Columna[], conPermisoEn: number, conListaEn: number): Columna[] {
+/**
+ * Las columnas de una tabla: «Lista de trozas N°» sólo si alguna fila la trae
+ * (las relaciones viejas o manuales salen como antes); «Permiso», sólo si
+ * alguna guía dice uno distinto al de la carta (ADR-487).
+ */
+function columnas(filas: FilaGuiaInforme[], base: Columna[], conPermisoEn: number, conListaEn: number, permisoDelOficio?: string | null): Columna[] {
   const cols = [...base];
   if (filas.some((f) => listaDeTrozas(f))) cols.splice(conListaEn, 0, COL.lista);
-  if (filas.some((f) => f.permiso?.trim())) cols.splice(conPermisoEn, 0, COL.permiso);
+  if (hayOtroPermiso(filas, permisoDelOficio)) cols.splice(conPermisoEn, 0, COL.permiso);
   return cols;
 }
 
@@ -129,8 +156,8 @@ export function tablaGuiasHtml(filas: FilaGuiaInforme[], op: OpcionesPapelRelaci
   const marcar = Boolean(op.marcar);
   const emitidas = filas.filter((f) => !f.anulada);
   const anuladas = filas.filter((f) => f.anulada);
-  const colsEmitidas = columnas(emitidas, [COL.numero, COL.fecha, COL.destinatario, COL.especie, COL.cantidad], 2, 4);
-  const colsAnuladas = columnas(anuladas, [COL.numero, COL.fecha, COL.estado, COL.motivo], 2, 2);
+  const colsEmitidas = columnas(emitidas, [COL.numero, COL.fecha, COL.destinatario, COL.especie, COL.cantidad], 2, 4, op.permisoDelOficio);
+  const colsAnuladas = columnas(anuladas, [COL.numero, COL.fecha, COL.estado, COL.motivo], 2, 2, op.permisoDelOficio);
   const seccionAnuladas = anuladas.length
     ? `<h2>Anexo 2 · Guías anuladas</h2>${tablaGuias(anuladas, colsAnuladas, marcar, "")}`
     : "";

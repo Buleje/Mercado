@@ -213,10 +213,14 @@ describe("datosDesdeGuias — una guía y rangos", () => {
       guia({ id: "c", gtfNumber: "019-001-0000006" }),
     ];
     const r = datosDesdeGuias("reposicion-talonario-gtf", tres)!;
-    expect(r.datos).toEqual({ serieExtraviada: "019-001", rangoNumeros: "019-001-0000005 al 019-001-0000009" });
+    /* ADR-487: con un solo permiso en las guías, su código va al título de la carta. */
+    expect(r.datos).toEqual({ serieExtraviada: "019-001", rangoNumeros: "019-001-0000005 al 019-001-0000009", permisoCodigo: "19-SEC/REG-PLT-2025-096" });
     expect(r.avisos[0]).toMatch(/incluye 2 N° que no elegiste/);
     const visado = datosDesdeGuias("visado-talonario-gtf", tres)!;
-    expect(visado.datos).toEqual({ serieActual: "019-001", ultimoCorrelativo: "0000009" });
+    expect(visado.datos).toEqual({ serieActual: "019-001", ultimoCorrelativo: "0000009", permisoCodigo: "19-SEC/REG-PLT-2025-096" });
+    /* Con guías de dos permisos no se elige por el operador: sin título de permiso. */
+    const mezcla = datosDesdeGuias("visado-talonario-gtf", [...tres, guia({ id: "d", gtfNumber: "019-001-0000010", tituloHabilitante: "10-HUA-PUE/PER-FMP-2026-007" })])!;
+    expect(mezcla.datos.permisoCodigo).toBeUndefined();
   });
 
   it("lo que no sirve devuelve null (el menú ya lo deshabilita)", () => {

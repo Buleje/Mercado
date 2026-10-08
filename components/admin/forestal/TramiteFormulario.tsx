@@ -66,6 +66,8 @@ import TramiteDocumentoModal from "./TramiteDocumentoModal";
 import TramitePreview from "./TramitePreview";
 import TramitePanelMovil from "./TramitePanelMovil";
 import type { GuardarTramiteInput } from "@/hooks/use-forest-tramites";
+import { useTramiteCarta } from "./hooks/use-tramite-carta";
+import { fechaDeEmision } from "@/lib/forestal/tramites-carta";
 
 /** Carpeta del Drive donde se archivan los trámites — distinta de la de guías GTF. */
 const CARPETA_TRAMITES = "Trámites y Oficios (CTP)";
@@ -306,12 +308,54 @@ export default function TramiteFormulario({
   const carpetaRuta = formato.carpetaDrive ? [formato.carpetaDrive] : [CARPETA_TRAMITES, autoridad.corto];
   const carpetaDrive = carpetaRuta.join(" / ");
 
+  /** Lo que devolvió el servidor manda: id, código, N° y estado (lo usan guardar e imprimir). */
+  function adoptar(r: TramiteRegistro) {
+    setIdGuardado(r.id);
+    setEstado(r.estado);
+    setExpediente(r.expedienteAutoridad ?? "");
+    setFechaPresentacion(r.fechaPresentacion ?? "");
+    setFechaLimite(r.fechaLimite ?? "");
+    setNumeroDocumento(r.numeroDocumento);
+    setCodigoInterno(r.codigoInterno);
+  }
+
+  /* La carta de las guías (ADR-487): al imprimir se guarda y se sella con su
+     código; reimprimirla igual no gasta otro, cambiarle las guías la vuelve otra. */
+  const cartaCtl = useTramiteCarta({
+    formato,
+    datos,
+    existente,
+    codigoActual: codigoInterno,
+    onGuardar,
+    payload: datosParaGuardar,
+    adoptar,
+  });
+  /** El código que se MUESTRA: el de una carta impresa que ya cambió no es el de este papel. */
+  const codigoVisible = cartaCtl.cambiada ? null : codigoInterno;
+
   function imprimir() {
-    try {
-      imprimirTramite({ formato, datos, ficha: auto.ficha, numeroDocumento: numeroDocumento ?? undefined, logo, codigoInterno: codigoInterno ?? undefined });
-    } catch (err) {
-      setAviso(err instanceof Error ? err.message : String(err));
+    if (!cartaCtl.carta) {
+      try {
+        imprimirTramite({ formato, datos, ficha: auto.ficha, numeroDocumento: numeroDocumento ?? undefined, logo, codigoInterno: codigoInterno ?? undefined });
+      } catch (err) {
+        setAviso(err instanceof Error ? err.message : String(err));
+      }
+      return;
     }
+    /* La ventana se abre en el MISMO clic: después de esperar el código, el navegador la trataría como pop-up. */
+    const ventana = window.open("", "_blank", "width=980,height=760");
+    ventana?.document.write("<p style='font:14px system-ui;padding:24px'>Dándole su código a la carta…</p>");
+    setAviso(null);
+    void cartaCtl
+      .codigoParaImprimir()
+      .then(({ codigo, aviso: avisoCarta }) => {
+        imprimirTramite({ formato, datos, ficha: auto.ficha, numeroDocumento: numeroDocumento ?? undefined, logo, codigoInterno: codigo, ventana });
+        setAviso(avisoCarta ?? `Carta ${codigo} guardada: búscala en el Expediente para reimprimirla igual.`);
+      })
+      .catch((err: unknown) => {
+        ventana?.close();
+        setAviso(err instanceof Error ? err.message : String(err));
+      });
   }
 
   /**
@@ -323,7 +367,7 @@ export default function TramiteFormulario({
    */
   function verEnPestana() {
     try {
-      imprimirTramite({ formato, datos, ficha: auto.ficha, numeroDocumento: numeroDocumento ?? undefined, logo, codigoInterno: codigoInterno ?? undefined });
+      imprimirTramite({ formato, datos, ficha: auto.ficha, numeroDocumento: numeroDocumento ?? undefined, logo, codigoInterno: codigoVisible ?? undefined });
     } catch (err) {
       setAviso(err instanceof Error ? err.message : String(err));
     }
@@ -340,13 +384,10 @@ export default function TramiteFormulario({
    * que se abre esa vista previa sería invasivo.
    */
   async function asegurarCodigoInterno(): Promise<string> {
-    if (codigoInterno) return codigoInterno;
-    const guardado = await onGuardar(datosParaGuardar());
-    if (!guardado) throw new Error("No se pudo guardar el trámite para asignarle un código.");
-    setIdGuardado(guardado.id);
-    setNumeroDocumento(guardado.numeroDocumento);
-    setCodigoInterno(guardado.codigoInterno);
-    return guardado.codigoInterno;
+    /* La carta (ADR-487) además queda sellada: bajar el PDF o mandarlo al Drive también es imprimirla. */
+    const { codigo, aviso: avisoCarta } = await cartaCtl.codigoParaImprimir();
+    if (avisoCarta) setAviso(avisoCarta);
+    return codigo;
   }
 
   /**
@@ -464,20 +505,18 @@ export default function TramiteFormulario({
   async function guardar() {
     setGuardando(true);
     setAviso(null);
-    const guardado = await onGuardar(datosParaGuardar());
+    /* Una carta ya impresa a la que le cambiaron las guías se guarda como carta nueva (ADR-487). */
+    const g = await cartaCtl.guardarCarta(false);
+    const guardado = g?.registro ?? null;
     setGuardando(false);
     if (guardado) {
-      setIdGuardado(guardado.id);
-      setEstado(guardado.estado);
-      setFechaPresentacion(guardado.fechaPresentacion ?? "");
-      setFechaLimite(guardado.fechaLimite ?? "");
       const numeroNuevo = !numeroDocumento && guardado.numeroDocumento;
-      setNumeroDocumento(guardado.numeroDocumento);
-      setCodigoInterno(guardado.codigoInterno);
       // El primer guardado es también la primera vez que existe `codigoInterno`
       // (se asigna en la creación, no espera a "Presentado" como numeroDocumento)
       // — el aviso lo dice de una vez en vez de un genérico "ya podés seguirlo".
-      let mensaje = numeroNuevo
+      let mensaje = g?.aviso
+        ? g.aviso
+        : numeroNuevo
         ? `Guardado y numerado como N° ${guardado.numeroDocumento} — ya puedes presentarlo.`
         : idGuardado || existente
           ? "Cambios guardados en el expediente."
@@ -529,6 +568,7 @@ export default function TramiteFormulario({
       onLogoArchivo={onLogoArchivo}
       onLogoQuitar={onLogoQuitar}
       ficha={auto.ficha}
+      tramites={tramites}
     />
   );
 
@@ -591,6 +631,12 @@ export default function TramiteFormulario({
                   title="Código interno — para identificarlo y buscarlo en el Expediente, no es el N° oficial ante la autoridad"
                 >
                   {codigoInterno}
+                  {/* La carta impresa (ADR-487): cuándo salió, o que lo cambiado sale con código nuevo. */}
+                  {cartaCtl.emision && (
+                    <span className={`font-sans ${cartaCtl.cambiada ? "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" : ""}`}>
+                      {cartaCtl.cambiada ? "· impresa con otras guías: sale con código nuevo" : `· impresa el ${fechaDeEmision(cartaCtl.emision.en)}`}
+                    </span>
+                  )}
                 </span>
               )}
               {/* Correlativo: se asigna sólo al primer "Presentado" (ADR-364
@@ -703,7 +749,7 @@ export default function TramiteFormulario({
             datos={datos}
             ficha={auto.ficha}
             numeroDocumento={numeroDocumento}
-            codigoInterno={codigoInterno}
+            codigoInterno={codigoVisible}
             logo={logo}
             onCampoChange={set}
             className="xl:sticky xl:top-4"
@@ -738,7 +784,7 @@ export default function TramiteFormulario({
         datos={datos}
         ficha={auto.ficha}
         numeroDocumento={numeroDocumento}
-        codigoInterno={codigoInterno}
+        codigoInterno={codigoVisible}
         logo={logo}
         editor={modalDocumento ? panelCampos : null}
         footer={barraAcciones}

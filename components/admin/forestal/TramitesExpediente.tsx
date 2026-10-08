@@ -28,6 +28,7 @@ import {
   type TramiteRegistro,
 } from "@/lib/forestal/tramites-registro";
 import { mensajeAvisoSinRespuesta } from "@/lib/forestal/tramites-aviso-mensaje";
+import { fechaDeEmision } from "@/lib/forestal/tramites-carta";
 import { Btn } from "./ctp-shared";
 import TramiteAvisoWhatsApp from "./TramiteAvisoWhatsApp";
 import { formatDateLong, formatMonth } from "@/lib/format";
@@ -109,9 +110,17 @@ export default function TramitesExpediente({
     const q = sinTildes(busqueda.trim());
     if (!q) return porEstadoFiltrados;
     return porEstadoFiltrados.filter((t) =>
-      [t.codigoInterno, t.formatoNombre, t.asunto, t.expedienteAutoridad, t.notas].some(
-        (campo) => campo && sinTildes(campo).includes(q),
-      ),
+      /* La carta (ADR-487) también se encuentra por una de sus guías, su permiso o su expediente. */
+      [
+        t.codigoInterno,
+        t.formatoNombre,
+        t.asunto,
+        t.expedienteAutoridad,
+        t.notas,
+        t.datos?.permisoCodigo,
+        t.datos?.expediente,
+        ...(t.emision?.guias ?? []),
+      ].some((campo) => campo && sinTildes(campo).includes(q)),
     );
   }, [tramites, filtro, busqueda]);
 
@@ -127,7 +136,7 @@ export default function TramitesExpediente({
           type="text"
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
-          placeholder="Buscar por código, formato, asunto o N° de expediente…"
+          placeholder="Buscar por código, N° de guía, permiso, formato o expediente…"
           className="w-full bg-transparent text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)]"
         />
       </div>
@@ -259,6 +268,14 @@ export default function TramitesExpediente({
                     Presentado el {fechaLarga(t.fechaPresentacion)}
                     {t.fechaRespuesta ? ` · respondido el ${fechaLarga(t.fechaRespuesta)}` : ""}
                   </p>
+                  {t.emision && (
+                    <p className="mt-1 text-xs text-[var(--text-tertiary)]">
+                      Impresa el {fechaDeEmision(t.emision.en)} por {t.emision.por} · {t.emision.guias.length}{" "}
+                      {t.emision.guias.length === 1 ? "guía" : "guías"}
+                      {t.emision.permisoCodigo ? ` · permiso ${t.emision.permisoCodigo}` : ""}
+                      {t.emision.expediente ? ` · expediente ${t.emision.expediente}` : ""}
+                    </p>
+                  )}
                   {t.notas && <p className="mt-1 text-xs italic text-[var(--text-secondary)]">{t.notas}</p>}
                 </div>
 

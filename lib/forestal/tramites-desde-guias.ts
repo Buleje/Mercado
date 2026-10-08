@@ -892,10 +892,21 @@ export function datosDesdeGuias(formatoId: string, guias: GuiaParaFormato[], op:
   const uso = formato?.aceptaGuias;
   if (!formato || !uso || motivoNoSirve(uso, guias)) return null;
   if (uso.uso === "tabla") return datosRelacion(guias, op);
-  if (uso.uso === "rango") return datosRango(guias, formatoId);
+  if (uso.uso === "rango") return conPermisoUnico(datosRango(guias, formatoId), guias);
   const { g, aviso } = unaGuia(guias);
   /* La anulación no declara cantidad: el aviso de las líneas sumadas sería ruido. */
-  if (formatoId === "anulacion-gtf") return datosAnulacion(g);
-  const r = datosPerdida(g, formatoId);
+  if (formatoId === "anulacion-gtf") return conPermisoUnico(datosAnulacion(g), [g]);
+  const r = conPermisoUnico(datosPerdida(g, formatoId), [g]);
   return aviso ? { ...r, avisos: [aviso, ...r.avisos] } : r;
+}
+
+/**
+ * Los formatos hermanos de la relación también llevan el título del permiso
+ * arriba (ADR-487): si todas las guías dicen el MISMO permiso, va su código;
+ * con dos o ninguno, no se elige por el operador.
+ */
+function conPermisoUnico(r: DatosDesdeGuias, guias: readonly GuiaParaFormato[]): DatosDesdeGuias {
+  const codigos = unicos(guias.map((g) => g.tituloHabilitante ?? "").filter((c) => clavePermisoOficio(c)));
+  const claves = new Set(codigos.map((c) => clavePermisoOficio(c)));
+  return claves.size === 1 ? { ...r, datos: { ...r.datos, permisoCodigo: codigos[0] } } : r;
 }

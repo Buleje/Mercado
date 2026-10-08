@@ -162,7 +162,42 @@ export interface PermisoDelOficio {
   titularNombre: string;
   titularDoc: string | null;
   titularDocTipo: string | null;
+  /** Lo que sale en el título de la carta (ADR-487); opcionales: un permiso sembrado no los trae. */
+  tipo?: string | null;
+  resolucionNumero?: string | null;
+  resolucionFecha?: string | null;
+  region?: string | null;
+  provincia?: string | null;
+  distrito?: string | null;
 }
+
+/**
+ * La modalidad del título habilitante tal como se escribe en una carta a la
+ * autoridad (Ley 29763). Lo que no está acá («CONTRATO», «otro») no se
+ * escribe: la carta no inventa una modalidad.
+ */
+const MODALIDAD_DEL_PERMISO: Record<string, string> = {
+  "PER-FMP": "Permiso de aprovechamiento forestal en predio privado",
+  "PER-FMC": "Permiso de aprovechamiento forestal en comunidad nativa o campesina",
+  "REG-PLT": "Registro de plantación forestal",
+  CONCESION: "Concesión forestal",
+  DEMA: "Declaración de manejo (DEMA)",
+  PMFI: "Plan de manejo forestal intermedio (PMFI)",
+  PO: "Plan operativo",
+};
+
+/** «2025-03-12T00:00:00.000Z» → «12/03/2025» (fecha date-only: en UTC). */
+function fechaCorta(iso: string | null | undefined): string {
+  const t = (iso ?? "").trim();
+  if (!t) return "";
+  const d = new Date(t.length === 10 ? `${t}T12:00:00Z` : t);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" });
+}
+
+/** «Constitución, Oxapampa, Pasco»: de lo fino a lo grueso, sin repetir. */
+const ubicacionDe = (p: PermisoDelOficio): string =>
+  [...new Set([p.distrito, p.provincia, p.region].map((x) => (x ?? "").trim()).filter(Boolean))].join(", ");
 
 /** La ficha del Directorio del titular (si el permiso la tiene atada). */
 export interface ParteDelPermiso {
@@ -205,6 +240,13 @@ function rucDelPermiso(p: PermisoDelOficio, parte: ParteDelPermiso | null, ficha
   return rucDe(p.titularDocTipo, p.titularDoc) || rucDe(parte?.docTipo, parte?.docNumero) || (titularEsElCtp(p, ficha) ? (ficha?.ruc ?? "").trim() : "");
 }
 
+/** El DNI de un documento: el que dice ser DNI o, sin tipo, uno de 8 dígitos. */
+function dniDe(tipo: string | null | undefined, numero: string | null | undefined): string {
+  const n = (numero ?? "").trim();
+  const t = (tipo ?? "").trim().toUpperCase();
+  return n && (t === "DNI" || (!t && /^\d{8}$/.test(n))) ? n : "";
+}
+
 /** Qué le falta al permiso para que el oficio salga completo (el aviso ofrece completarlo). */
 export function faltasDelPermiso(p: PermisoDelOficio, parte: ParteDelPermiso | null, ficha: FichaDelOficio | null): FaltaDelPermiso[] {
   const faltan: FaltaDelPermiso[] = [];
@@ -228,11 +270,21 @@ export function datosDelPermiso(
   actual: DatosTramite,
 ): DatosTramite {
   const delCtp = titularEsElCtp(p, ficha);
+  const resolucion = (p.resolucionNumero ?? "").trim();
+  /* El N° de resolución a veces se sembró igual al código del permiso: no es un dato aparte. */
+  const resolucionPropia = resolucion && claveTitulo(resolucion) !== claveTitulo(p.codigo) ? resolucion : "";
+  const fechaRes = fechaCorta(p.resolucionFecha);
   const cambios: DatosTramite = {
     permisoContratoId: p.id,
     permisoCodigo: p.codigo,
     entidadRuc: rucDelPermiso(p, parte, ficha),
     entidadRepresentante: (parte?.representante ?? "").trim() || (delCtp ? (ficha?.representante ?? "").trim() : ""),
+    /* El título de la carta (ADR-487): modalidad, resolución y ubicación del permiso. Vacío = el permiso no lo sabe. */
+    permisoTipo: MODALIDAD_DEL_PERMISO[(p.tipo ?? "").trim()] ?? "",
+    permisoResolucion: resolucionPropia ? `${resolucionPropia}${fechaRes ? ` del ${fechaRes}` : ""}` : "",
+    permisoUbicacion: ubicacionDe(p),
+    /* Persona natural: su DNI va en el título de la carta (no es RUC, nunca va al casillero del RUC). */
+    permisoTitularDni: dniDe(p.titularDocTipo, p.titularDoc) || dniDe(parte?.docTipo, parte?.docNumero),
   };
   if (!titularPorConfirmar(p.titularNombre)) cambios.entidadNombre = p.titularNombre.trim();
   else if (ficha?.razonSocial && normalizarNombre(actual.entidadNombre) === normalizarNombre(ficha.razonSocial)) cambios.entidadNombre = "";

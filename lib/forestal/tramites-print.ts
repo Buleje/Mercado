@@ -27,6 +27,7 @@ import {
   type FormatoTramite,
 } from "./tramites-catalogo";
 import { parseGuiasInforme } from "./tramites-relacion-guias";
+import { esCarta } from "./tramites-carta";
 import { detalleTrozasHtml, resumenNumeradoHtml, tablaGuiasHtml } from "./tramites-relacion-papel";
 
 /**
@@ -60,9 +61,10 @@ const TRAMITE_CSS = `
   .dest .cargo{font-weight:700}
   .dest .ent{color:#444}
   .meta{margin:12px 0 18px;font-size:12.5px}
-  .meta div{margin:3px 0}
-  .meta .k{color:#666;display:inline-block;min-width:82px}
+  .meta div{margin:3px 0;display:flex;gap:6px;align-items:baseline}
+  .meta .k{color:#666;display:inline-block;min-width:82px;flex-shrink:0}
   .cuerpo p{margin:0 0 12px;text-align:justify}
+  .despedida{margin-top:18px}
   .cuerpo .lead{font-weight:600}
   .por-guia{margin:0 0 12px;padding-left:20px}
   .por-guia li{margin:2px 0}
@@ -87,10 +89,33 @@ const TRAMITE_CSS = `
   .tabla-guias th,.tabla-guias td{padding:5px 7px;vertical-align:top}
   .tabla-guias tfoot td{font-weight:700;border-top:1px solid #111}
   .tabla-guias .sin-dato{color:#777;font-style:italic}
+  .tabla-guias .nw{white-space:nowrap}
   .tabla-trozas th:first-child,.tabla-trozas td:first-child{width:120px;white-space:nowrap;font-weight:700}
   .tabla-totales{width:auto;min-width:50%}
   .anexo-guias .vacio{font-style:italic;color:#666;font-size:12px;margin:0 0 4px}
   .hoja-aparte{break-before:page;page-break-before:always;margin-top:28px}
+  /* La carta de las guías (ADR-487): código arriba a la derecha, título del
+     permiso con su expediente, A4 con márgenes propios y página X de Y. */
+  @page{size:A4;margin:16mm 16mm 18mm;@bottom-right{content:"Página " counter(page) " de " counter(pages);font:9px Arial,sans-serif;color:#555}}
+  .carta-codigo{flex-shrink:0;text-align:right;font-size:10.5px;color:#555;line-height:1.35}
+  .carta-codigo b{display:block;font-size:13.5px;color:#111;font-variant-numeric:tabular-nums;letter-spacing:.3px}
+  .carta-cabeza{margin:16px 0 4px}
+  .carta-titulo{text-align:center;font-size:15px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:#111;line-height:1.35}
+  .carta-sub{text-align:center;font-size:11.5px;color:#555;margin-top:2px}
+  table.carta-permiso{width:100%;margin:12px 0 0;border-collapse:collapse;border-top:1px solid #111;border-bottom:1px solid #bbb;font-size:11.5px;line-height:1.45}
+  table.carta-permiso th,table.carta-permiso td{border:none;padding:3px 12px 3px 0;background:none!important;vertical-align:top;text-align:left}
+  table.carta-permiso tr:first-child th,table.carta-permiso tr:first-child td{padding-top:8px}
+  table.carta-permiso tr:last-child th,table.carta-permiso tr:last-child td{padding-bottom:8px}
+  table.carta-permiso th{width:1%;white-space:nowrap;color:#666;font-weight:400;font-size:11px}
+  table.carta-permiso td{color:#111;overflow-wrap:anywhere}
+  table.carta-permiso .titulo-hab{font-weight:700;font-size:12.5px;letter-spacing:.2px}
+  @media print{
+    body{padding:0;max-width:none}
+    thead{display:table-header-group} tfoot{display:table-row-group}
+    .carta-cabeza,.firma-uno,.tabla-totales{break-inside:avoid}
+    h2,h3{break-after:avoid}
+    .carta .anexo-guias{break-before:page;margin-top:0}
+  }
 `;
 
 export interface TramitePrintOpts {
@@ -123,6 +148,8 @@ export interface TramitePrintOpts {
    * ante la autoridad (ese es `numeroDocumento`).
    */
   codigoInterno?: string;
+  /** Ventana abierta en el MISMO clic (antes de esperar el código al servidor): sin ella el navegador la bloquea. */
+  ventana?: Window | null;
 }
 
 /**
@@ -165,9 +192,110 @@ const hoyLargo = (): string =>
     timeZone: "America/Lima",
   });
 
+/** «2026-09-01» → «01/09/2026» (date-only: UTC). */
+const fechaDdMm = (iso: string | undefined): string => {
+  const t = (iso ?? "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}/.test(t)) return t;
+  return `${t.slice(8, 10)}/${t.slice(5, 7)}/${t.slice(0, 4)}`;
+};
+
+interface DatoPermiso {
+  k: string;
+  v: string;
+  /** Ocupa la fila entera (el título habilitante, la ubicación larga). */
+  ancho?: boolean;
+}
+
+/** Los datos del permiso en filas de dos pares; el ancho va solo en su fila. */
+function filasPermiso(datosPermiso: DatoPermiso[]): string {
+  const filas: string[] = [];
+  let par: DatoPermiso[] = [];
+  const cerrarPar = () => {
+    if (par.length === 2) filas.push(`<tr><th>${par[0].k}</th><td>${par[0].v}</td><th>${par[1].k}</th><td>${par[1].v}</td></tr>`);
+    else if (par.length === 1) filas.push(`<tr><th>${par[0].k}</th><td colspan="3">${par[0].v}</td></tr>`);
+    par = [];
+  };
+  for (const d of datosPermiso) {
+    if (d.ancho) {
+      cerrarPar();
+      filas.push(`<tr><th>${d.k}</th><td colspan="3">${d.v}</td></tr>`);
+      continue;
+    }
+    par.push(d);
+    if (par.length === 2) cerrarPar();
+  }
+  cerrarPar();
+  return filas.join("");
+}
+
+/**
+ * El título de la carta (ADR-487, Brandon 08-10: «arriba en el título el
+ * título del permiso … el N° de expediente automáticamente»): el nombre del
+ * formato y, si la carta es de un permiso, su código y modalidad, el titular
+ * con su RUC, el representante, la resolución, la ubicación, el expediente y
+ * el período. Lo vacío no se imprime; en la vista de la app, el expediente
+ * que falta se marca para llenarlo.
+ */
+function cabezaCartaHtml(o: TramitePrintOpts, autoridadCorto: string): string {
+  const { formato, datos, editable } = o;
+  const d = (k: string) => (datos[k] ?? "").trim();
+  const sub = `${o.numeroDocumento ? `N° ${esc(o.numeroDocumento)} · ` : ""}${esc(autoridadCorto)}`;
+  const codigo = d("permisoCodigo");
+  if (!codigo) {
+    return `<div class="carta-cabeza"><div class="carta-titulo">${esc(formato.nombre)}</div><div class="carta-sub">${sub}</div></div>`;
+  }
+  const expediente = d("expediente");
+  const periodo = d("periodoDesde") || d("periodoHasta") ? `${esc(fechaDdMm(d("periodoDesde")) || "—")} al ${esc(fechaDdMm(d("periodoHasta")) || "—")}` : "";
+  const datosPermiso: DatoPermiso[] = [
+    {
+      k: "Título habilitante",
+      v: `<span class="titulo-hab">${esc(codigo)}</span>${d("permisoTipo") ? ` · ${esc(d("permisoTipo"))}` : ""}`,
+      ancho: true,
+    },
+    ...(d("entidadNombre") ? [{ k: "Titular", v: esc(d("entidadNombre")) }] : []),
+    ...(d("entidadRuc")
+      ? [{ k: /^\d{8}$/.test(d("entidadRuc")) ? "DNI" : "RUC", v: esc(d("entidadRuc")) }]
+      : d("permisoTitularDni")
+        ? [{ k: "DNI", v: esc(d("permisoTitularDni")) }]
+        : []),
+    ...(d("entidadRepresentante") && d("entidadRepresentante") !== d("entidadNombre")
+      ? [{ k: "Representante", v: esc(d("entidadRepresentante")) }]
+      : []),
+    ...(d("permisoResolucion") ? [{ k: "Resolución", v: esc(d("permisoResolucion")) }] : []),
+    ...(d("permisoUbicacion") ? [{ k: "Ubicación", v: esc(d("permisoUbicacion")) }] : []),
+    ...(expediente || editable
+      ? [{ k: "Expediente", v: `N° ${campoSpan(editable, "expediente", expediente || "Falta el N° de expediente", !expediente)}` }]
+      : []),
+    ...(periodo ? [{ k: "Período", v: periodo }] : []),
+  ];
+  return `<div class="carta-cabeza">
+    <div class="carta-titulo">${esc(formato.nombre)}</div>
+    <div class="carta-sub">${sub}</div>
+    <table class="carta-permiso"><tbody>${filasPermiso(datosPermiso)}</tbody></table>
+  </div>`;
+}
+
+/** El código de la carta, arriba a la derecha; sin código todavía, en la app se avisa que sale al imprimir. */
+function codigoCartaHtml(o: TramitePrintOpts): string {
+  const rotulo = etiquetaCodigo(o.formato);
+  if (o.codigoInterno) return `<div class="carta-codigo">${rotulo}<b>${esc(o.codigoInterno)}</b></div>`;
+  return o.editable ? `<div class="carta-codigo">${rotulo}<b class="campo-vacio">se numera al imprimir</b></div>` : "";
+}
+
+/** «Carta REL-…» en la relación; los hermanos (una denuncia, un pedido de talonario) dicen «Código». */
+const etiquetaCodigo = (f: FormatoTramite): string => (f.prefijoCodigo ? "Carta" : "Código");
+
+/** El código también al pie de cada hoja impresa (margen de la página, junto a «Página X de Y»). */
+const pieConCodigo = (f: FormatoTramite, codigo: string | undefined): string =>
+  codigo
+    ? `<style>@page{@bottom-left{content:"${etiquetaCodigo(f)} ${codigo.replace(/["\\\n]/g, "")}";font:9px Arial,sans-serif;color:#555}}</style>`
+    : "";
+
 /** El HTML del documento. Separado del `open` para poder testear el contenido. */
 export function buildTramiteHtml(o: TramitePrintOpts): string {
   const { formato, datos, ficha, editable } = o;
+  /* La carta de las guías (ADR-487): título del permiso arriba, código propio y anexo en hoja aparte. */
+  const carta = esCarta(formato);
   const asunto = asuntoDe(formato, datos);
   const parrafos = cuerpoDe(formato, editable ? datosConFaltas(formato, datos) : datos).map((p) => pintarFaltas(esc(p)));
   const autoridad = AUTORIDADES[formato.autoridad];
@@ -189,7 +317,7 @@ export function buildTramiteHtml(o: TramitePrintOpts): string {
     ${o.numeroDocumento ? `<div><span class="k">Documento:</span> ${esc(o.numeroDocumento)}</div>` : ""}
     <div><span class="k">Asunto:</span> <strong>${campoSpan(editable, "asuntoLibre", asunto || "Asunto del documento", !asunto)}</strong></div>
     ${referenciaRaw || editable ? `<div><span class="k">Referencia:</span> ${campoSpan(editable, "referencia", referenciaRaw || "N° de expediente u oficio anterior", !referenciaRaw)}</div>` : ""}
-    ${expedienteRaw || editable ? `<div><span class="k">Expediente:</span> ${campoSpan(editable, "expediente", expedienteRaw || "N° de expediente", !expedienteRaw)}</div>` : ""}
+    ${!carta && (expedienteRaw || editable) ? `<div><span class="k">Expediente:</span> ${campoSpan(editable, "expediente", expedienteRaw || "N° de expediente", !expedienteRaw)}</div>` : ""}
   </div>`;
 
   // "Tengo el agrado de dirigirme…" y el "Que," de cada párrafo son la fórmula
@@ -201,15 +329,17 @@ export function buildTramiteHtml(o: TramitePrintOpts): string {
   // antes del anexo con el detalle completo. Los demás formatos (sin
   // `tablaGuias`) no cambian: mismo mapeo de siempre.
   const filasGuias = formato.tablaGuias ? parseGuiasInforme(datos.guiasJson) : [];
-  const papelGuias = { marcar: Boolean(editable) };
+  const papelGuias = { marcar: Boolean(editable), permisoDelOficio: datos.permisoCodigo };
   const resumenGuiasHtml = formato.tablaGuias ? resumenNumeradoHtml(filasGuias, papelGuias) : "";
   const cuerpoHtml = formato.tablaGuias
     ? `<p>${parrafos[0] ?? ""}</p>${resumenGuiasHtml}${parrafos.slice(1).map((p) => `<p>${p}</p>`).join("")}`
     : parrafos.map((p) => `<p>${p}</p>`).join("");
+  /* En la carta (ADR-487) la despedida va después de los anexos y la base legal, justo antes de la firma. */
+  const despedida = `<p>Atentamente,</p>`;
   const cuerpo = `<div class="cuerpo">
     <p class="lead">Tengo el agrado de dirigirme a usted para saludarlo(a) cordialmente y, a la vez, exponer lo siguiente:</p>
     ${cuerpoHtml}
-    <p>Atentamente,</p>
+    ${carta ? "" : despedida}
   </div>`;
 
   // El anexo con la tabla de guías va ANTES de la lista de anexos declarados:
@@ -329,10 +459,34 @@ export function buildTramiteHtml(o: TramitePrintOpts): string {
         ${linea2.length ? `<div class="linea2">${linea2.map((x) => `<span>${x}</span>`).join("")}</div>` : ""}
         ${linea3.length ? `<div class="linea2">${linea3.map((x) => `<span>${x}</span>`).join("")}</div>` : ""}
       </div>
+      ${carta ? codigoCartaHtml(o) : ""}
     </div>
   </div>
-  <div class="doc-tipo">${esc(formato.nombre)}${o.numeroDocumento ? ` N° ${esc(o.numeroDocumento)}` : ""} · ${esc(autoridad.corto)}</div>
-  ${o.codigoInterno ? `<div class="doc-codigo">Código ${esc(o.codigoInterno)} <span>— para identificar y buscar este documento, no es el N° oficial</span></div>` : ""}`;
+  ${
+    carta
+      ? cabezaCartaHtml(o, autoridad.corto)
+      : `<div class="doc-tipo">${esc(formato.nombre)}${o.numeroDocumento ? ` N° ${esc(o.numeroDocumento)}` : ""} · ${esc(autoridad.corto)}</div>
+  ${o.codigoInterno ? `<div class="doc-codigo">Código ${esc(o.codigoInterno)} <span>— para identificar y buscar este documento, no es el N° oficial</span></div>` : ""}`
+  }`;
+
+  /* La carta cierra con los anexos declarados, la base legal y la firma; las
+     tablas de guías van DESPUÉS, en hoja aparte (el anexo que se adjunta). Los
+     demás formatos siguen en su orden de siempre. */
+  if (carta) {
+    return `<div class="carta">${pieConCodigo(formato, o.codigoInterno)}
+  ${membrete}
+  ${destinatario}
+  ${meta}
+  ${cuerpo}
+  ${anexos}
+  ${legal}
+  <div class="cuerpo despedida">${despedida}</div>
+  ${firma}
+  ${tablaGuias}
+  ${aviso}
+  ${detalleTrozas}
+  </div>`;
+  }
 
   return `${membrete}
   ${destinatario}
@@ -349,9 +503,10 @@ export function buildTramiteHtml(o: TramitePrintOpts): string {
 /** Abre el documento en una ventana imprimible (guardar como PDF). */
 export function imprimirTramite(o: TramitePrintOpts): void {
   openCtpReport({
-    title: `${o.formato.nombre} — ${o.ficha?.razonSocial ?? "CTP"}`,
+    title: `${o.formato.nombre}${o.codigoInterno ? ` ${o.codigoInterno}` : ""} — ${o.ficha?.razonSocial ?? "CTP"}`,
     css: TRAMITE_CSS,
     body: buildTramiteHtml(o),
+    ventana: o.ventana,
   });
 }
 

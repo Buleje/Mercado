@@ -135,6 +135,7 @@ export default function TramiteCamposPanel({
   onLogoArchivo,
   onLogoQuitar,
   ficha,
+  tramites,
 }: {
   formato: FormatoTramite;
   datos: DatosTramite;
@@ -162,6 +163,8 @@ export default function TramiteCamposPanel({
   onLogoQuitar: () => void;
   /** La Ficha CTP: el permiso sólo hereda su RUC/representante si el titular es el propio CTP. */
   ficha: FichaDelOficio | null;
+  /** Todo el expediente: de la última carta del mismo permiso sale su N° de expediente (ADR-487). */
+  tramites: TramiteRegistro[];
 }) {
   /* Obligatorio vacío = borde ámbar (Brandon 08-10); se apaga al llenarlo o al enfocarlo. */
   const clase = (c: FormatoTramite["campos"][number], base: string) => (c.requerido && !(datos[c.id] ?? "").trim() ? claseFalta(base) : base);
@@ -224,8 +227,17 @@ export default function TramiteCamposPanel({
                 ) : undefined
               }
             />
-            {g.id === "datos" && formato.tablaGuias && (
-              <TramitePermisoBloque datos={datos} setDatos={setDatos} ficha={ficha} editando={Boolean(existente)} />
+            {/* La relación elige su permiso; los formatos hermanos (ADR-487), sólo si sus guías dicen uno. */}
+            {g.id === "datos" && (formato.tablaGuias || (formato.aceptaGuias && (datos.permisoCodigo?.trim() || datos.permisoContratoId?.trim()))) && (
+              <TramitePermisoBloque
+                datos={datos}
+                setDatos={setDatos}
+                ficha={ficha}
+                editando={Boolean(existente)}
+                tramites={tramites}
+                idActual={idActual}
+                proponerActivo={Boolean(formato.tablaGuias)}
+              />
             )}
             <div className="grid gap-4 sm:grid-cols-2">
               {campos.map((c) => (
