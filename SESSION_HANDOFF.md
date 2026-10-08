@@ -1,3 +1,21 @@
+# SESSION HANDOFF — 2026-10-08: noche autónoma (cámaras, Libro TH/CTP, Inicio forestal, adelantos, orden de pantallas, superadmin, tuteo)
+
+**Estado:** ✅ todo commiteado (29+ commits entre `ea4c6f311` y el último de la noche) y SUBIDO a la rama `audit/storefront-mejoras-verificadas-2026-06-15`. Nada en producción. Árbol limpio salvo `.claude/` sin versionar. PDF «Mejoras de la noche» en el Escritorio de Windows (`OneDrive\Documentos\Escritorio`). Plan y bitácora: `.claude/autonomo/plan-2026-10-08.md`.
+
+**Hecho (resumen; detalle en la memoria `noche-autonoma-2026-10-08-resultados`):**
+1. **Cámaras**: galería «Personas», aviso por WhatsApp al aparecer alguien (Blas: 2 cámaras con número «sólo de noche»), zonas a ignorar, fotos a la papelera a los 30 días y fuera del sync a Windows.
+2. **Libro TH/CTP**: Secciones 8,56→1,32 pantallas, Trazabilidad/Censo, cierre de mes con saldo al cierre, cada árbol hasta el aserradero, guías del CTP → formatos de trámite, marcas del día con texto, Tablero con unidad.
+3. **Inicio**: pestaña «Forestal» (cifras del libro) y un forestal sin ventas abre ahí.
+4. **Adelantos**: leer voucher (OCR en el navegador, nunca guarda solo) y firmar el recibo (hoja en bucket privado `forestal-privado`, GET con permiso; revisado por security, sin críticos).
+5. **Orden**: Adelantos 21,4→0 (+ sub-vistas), Ajustes 9→0, Libro CTP 3→0, Trámites 0,5→0; modales fijados dejan usar la página; 8 modales más como ventana.
+6. **Superadmin**: ingresos reales (de pago 9→0), enlaces 404, colores; **tienda pública** en tuteo (248→0 fuera del checkout).
+
+**Para Brandon (decide):** (a) 65 árboles del censo de la plantación de Blas borrados el 06-10 sin historial — recuperables (memoria `blas-censo-borrado-06-10`); (b) GTF del LO-TH de Blas fechada 09/10/2025; (c) el voucher del alta sigue en el bucket público `media`; (d) probar cámaras reales en Blas; (e) «Por guía/Por troza» del CTP ahora en Opciones.
+
+**Al retomar:** borrar los cron de la sesión si siguieran (CronList); la directiva autónoma venció a las 07:00.
+
+---
+
 # SESSION HANDOFF — 2026-10-07: Ubuntu + Claude al día (LSP de TS 7, herramientas, MCP remotos, juego fuera, WSL 3.0.1)
 
 **Estado:** ✅ commiteado (`4a6d834ea`, `088a45783`), **sin subir** (no se pidió push). La sesión se cortó a propósito: `wsl --update` a 3.0.1 diferido 90 s. Al volver: `wsl.exe --version` debe decir 3.0.1 y `/mcp` debe mostrar context7/firecrawl como HTTP.

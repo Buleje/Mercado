@@ -38,7 +38,17 @@
  *                                   lo que `click` no alcanza: radios segmentados, botones
  *                                   tapados, títulos repetidos en la barra lateral (02-10:
  *                                   6 pasos a mano en una sesión → paso propio).
+ *   {"navegar": "/admin?tab=x&vista=y"} → cambia de ruta DENTRO de la misma sesión, sin recargar
+ *                                   (history.pushState + popstate, como el router del panel) y espera a que
+ *                                   la red quede quieta (tope ~1,5 s). Ej.: {"navegar": "/admin?tab=camaras&vista=personas"}
+ *   {"marcar": "<sel input checkbox>"} → .click() por JS sobre el input (las casillas personalizadas no
+ *                                   se dejan clicar con Playwright). Ej.: {"marcar": "input[type=checkbox]"}
+ *   (`esperar` con selector espera el elemento VISIBLE: ya no se cuelga con un [role=dialog] oculto.)
  * Sin ningún paso «captura», se captura el estado final con --nombre.
+ *
+ * Nombres de archivo: sin --nombre, cada corrida antepone la hora (`HHMMSS-`) a TODAS las capturas
+ * (ya no se pisan entre corridas); con o sin --nombre, si el archivo existe se escribe `-2`, `-3`…
+ * Ayuda: `node scripts/qa-capturas.mjs --help` (o `-h`) imprime esta cabecera y sale.
  *
  * Cada tema es un recorrido aparte: la clave `buleje-theme-session-v2` se pone
  * ANTES de cargar la página. Cambiar la clase `dark` con la página ya pintada
@@ -53,9 +63,16 @@
  * Código 1 si hubo `pageerror` o falló un paso.
  */
 import { chromium } from "playwright";
-import { mkdirSync, readFileSync } from "node:fs";
+import { mkdirSync, readFileSync, existsSync } from "node:fs";
 import path from "node:path";
 import { resolverChromium } from "./dev-helpers/chromium-path.mjs";
+
+if (process.argv.includes("--help") || process.argv.includes("-h")) {
+  const fuente = readFileSync(new URL(import.meta.url), "utf8");
+  const cab = fuente.slice(fuente.indexOf("/**"), fuente.indexOf("*/") );
+  console.log(cab.split("\n").map((l) => l.replace(/^\s?\/?\*+ ?/, "")).join("\n").trim());
+  process.exit(0);
+}
 
 const BASE = process.env.QA_BASE ?? "http://localhost:3000";
 
@@ -68,6 +85,8 @@ const bandera = (nombre) => process.argv.includes(`--${nombre}`);
 const tenant = arg("tenant", "main");
 const ruta = arg("ruta", "/admin");
 const nombreBase = arg("nombre", "estado");
+const sinNombre = !process.argv.includes("--nombre");
+const prefijoHora = sinNombre ? new Date().toTimeString().slice(0, 8).replaceAll(":", "") + "-" : "";
 const hoy = new Date().toISOString().slice(0, 10);
 const salida = arg("salida", `reports/visual-verify/${hoy}-qa-capturas`);
 const anchos = arg("anchos", "1280,400").split(",").map(Number).filter(Boolean);
@@ -153,7 +172,9 @@ async function matriz(page, nombre, t) {
   for (const ancho of anchos) {
     await page.setViewportSize({ width: ancho, height: 900 });
     await page.waitForTimeout(200);
-    const archivo = path.join(salida, `${nombre}-${t}-${ancho}.png`);
+    const base = path.join(salida, `${prefijoHora}${nombre}-${t}-${ancho}`);
+    let archivo = `${base}.png`;
+    for (let n = 2; existsSync(archivo); n++) archivo = `${base}-${n}.png`;
     if (completa) {
       /* `fullPage: true` estira la ventana EN el disparo: los gráficos de
          recharts se re-miden, reinician la animación y salen con las barras en
@@ -311,8 +332,13 @@ async function recorrido(t, primero) {
         }
         else if (tipo === "esperar") {
           if (typeof valor === "number") await page.waitForTimeout(valor);
-          else await page.locator(valor).first().waitFor({ timeout: 30_000 });
-        } else if (tipo === "eval") { const v = await page.evaluate(valor); if (primero) evals.push({ paso: i, valor: v }); }
+          else await visible(page, valor).waitFor({ state: "visible", timeout: 30_000 });
+        }
+        else if (tipo === "navegar") {
+          await page.evaluate((r) => { history.pushState({}, "", r); dispatchEvent(new PopStateEvent("popstate")); }, String(valor));
+          await esperarQuietud({ quieto: 500, tope: 1500 });
+        }
+        else if (tipo === "marcar") await visible(page, valor).evaluate((el) => el.click()); else if (tipo === "eval") { const v = await page.evaluate(valor); if (primero) evals.push({ paso: i, valor: v }); }
         else if (tipo === "captura") { await matriz(page, valor, t); huboCaptura = true; }
         else throw new Error(`paso desconocido «${tipo}»`);
       } catch (e) {
