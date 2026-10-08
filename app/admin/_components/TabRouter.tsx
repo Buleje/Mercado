@@ -190,7 +190,7 @@ export function TabRouter({
   const { enabledModuleIds, isLoading: specsLoading } = useEnabledSpecs();
   const specBlocked = SPEC_GATED_MODULE_IDS.has(tab) && !specsLoading && !enabledModuleIds.has(tab);
   useEffect(() => {
-    if (specBlocked) onNavigateTab("inicio" as Tab);
+    if (specBlocked) onNavigateTab("vendor-dashboard" as Tab);
   }, [specBlocked, onNavigateTab]);
   if (specBlocked) return <TabSpinner />;
 

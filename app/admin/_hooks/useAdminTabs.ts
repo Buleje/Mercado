@@ -113,7 +113,11 @@ export function useAdminTabs(addRecent: (id: Tab) => void): UseAdminTabsResult {
   const { trackTab, getTopTabs } = useTabFrequency();
 
   const navigateTab = useCallback(
-    (id: Tab, vista?: string, sub?: string) => {
+    (pedido: Tab, vista?: string, sub?: string) => {
+      // El mismo alias que resuelve la URL al cargar (`inicio` → Inicio). Sin
+      // esto, navegar a un id viejo dejaba el panel en blanco: el router no
+      // tiene rama para él (08-10, candado de `a-medida` → «inicio»).
+      const id: Tab = VALID_TABS.includes(pedido) ? pedido : (TAB_MIGRATION[pedido] ?? pedido);
       setTab(id);
       try {
         localStorage.setItem("admin_active_tab", id);
