@@ -16,9 +16,11 @@ import { SeccionForm } from "@/components/admin/shared/SeccionForm";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { formatDateNumeric, formatNumber, formatWeekday } from "@/lib/format";
 import type { AltaAdelanto } from "../hooks/use-alta-adelanto";
+import { useLeerVoucher } from "../hooks/use-leer-voucher";
 import { cn } from "@/lib/utils";
 import { Field, inputCls } from "../shared";
 import { FechaAdelanto, HOY, MontoRapido, OrigenCaja } from "./campos-monto";
+import { AvisoVoucher, BotonLeerVoucher, MarcaDelVoucher } from "./LeerVoucher";
 import { CLASE_BLOQUE } from "./piezas";
 
 /** «domingo 28/09»: el día como lo dice Brandon. */
@@ -28,6 +30,8 @@ const diaLegible = (iso: string) =>
 export default function BloqueMonto({ alta, montoRef }: { alta: AltaAdelanto; montoRef: RefObject<HTMLInputElement | null> }) {
   const { def, modo, moneda, persona, servicio } = alta;
   const otroDia = alta.fecha !== HOY();
+  /* La captura de Yape/Plin/transferencia prellena monto, fecha, caja y nota (nunca guarda). */
+  const voucher = useLeerVoucher(alta);
   return (
     <SeccionForm
       numero={3}
@@ -40,7 +44,9 @@ export default function BloqueMonto({ alta, montoRef }: { alta: AltaAdelanto; mo
         affects: "La caja abierta: se anota el movimiento para que el arqueo cuadre. «No mover la caja» no anota nada.",
         example: "Si cargas hoy un adelanto de ayer, la caja arranca en «No mover la caja»: esa plata no salió del cajón de hoy.",
       }}
+      accion={<BotonLeerVoucher voucher={voucher} />}
     >
+      <AvisoVoucher voucher={voucher} />
       <div className="grid gap-5 md:grid-cols-2">
         <div className="space-y-3">
           {modo === "servicio" && (
@@ -110,6 +116,7 @@ export default function BloqueMonto({ alta, montoRef }: { alta: AltaAdelanto; mo
               </div>
             )}
           </div>
+          <MarcaDelVoucher voucher={voucher} monto={alta.monto} />
           {modo !== "servicio" && <MontoRapido monto={alta.monto} onCambiar={alta.setMonto} />}
         </div>
 
