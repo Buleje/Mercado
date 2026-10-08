@@ -17,6 +17,17 @@ import { z } from "zod";
 import { cubicarSegun, RANGO_FORMULA, redondearVolumen, UNIDADES_FORMULA, type FormulaTrozas } from "./cubicacion-trozas-formula";
 import { claveEspecie } from "./loth-constants";
 import { limaDateKey } from "@/lib/utils";
+import {
+  origenTrozaCampos,
+  precioGeneralCampo,
+  trozaDescuentoCampo,
+  type CamposComerciales,
+  type FormulaComercial,
+  type LineaTotalCongelada,
+  type MaterialCubicacion,
+  type PiezaCongelada,
+  type TrozaCongeladaComercial,
+} from "./cubicacion-comercial-tipos";
 
 export const PREFIJO_CUBICACION = "CUB";
 export type EstadoCubicacion = "borrador" | "aplicada" | "anulada";
@@ -36,7 +47,9 @@ export const trozaEntradaSchema = z.object({
   /** m (Smalian) | pies (Oxapampina): 100 deja pasar los pies, el tope fino es `RANGO_FORMULA`. */
   largo: z.number().positive().max(100),
 });
-export type TrozaEntrada = z.infer<typeof trozaEntradaSchema>;
+/** ADR-483: la troza puede traer su descuento (hueco, largo que no sirve, castigo %). */
+const trozaEntradaComercialSchema = trozaEntradaSchema.extend(trozaDescuentoCampo);
+export type TrozaEntrada = z.infer<typeof trozaEntradaComercialSchema>;
 
 /** "" o null de un campo opcional = ausente (la pantalla manda el campo vacío). */
 const idOpcional = z.string().trim().max(40).nullish().transform((v) => v || undefined).optional();
@@ -56,37 +69,46 @@ const cuerpoCubicacion = z.object({
   sentido: z.enum(["compra", "venta"]).default("compra"),
   gtfNumber: textoOpcional(80),
   contratoId: idOpcional,
-  trozas: z.array(trozaEntradaSchema).min(1, "La cubicación no tiene trozas.").max(2000),
+  trozas: z.array(trozaEntradaComercialSchema).min(1, "La cubicación no tiene trozas.").max(2000),
   notas: textoOpcional(500),
+  /* ADR-483: de dónde salen las trozas (`loth` = una GTF del Libro TH) y el descuento del lote. */
+  ...origenTrozaCampos,
 });
 const conPersona = (d: { beneficiarioId?: string; parteId?: string }) => Boolean(d.beneficiarioId || d.parteId);
 const PERSONA = { message: "Elige la cuenta de la persona.", path: ["beneficiarioId"] };
+const conOrigen = (d: { origen?: string; origenId?: string }) => d.origen !== "loth" || Boolean(d.origenId);
+const ORIGEN = { message: "Falta la guía del Libro TH.", path: ["origenId"] };
 
-export const guardarCubicacionSchema = cuerpoCubicacion.refine(conPersona, PERSONA);
+export const guardarCubicacionSchema = cuerpoCubicacion.refine(conPersona, PERSONA).refine(conOrigen, ORIGEN);
 /** PATCH: lo mismo + la versión que se leyó (409 `DESACTUALIZADA` si ya es otra). */
-export const editarCubicacionSchema = cuerpoCubicacion.extend({ version: z.number().int().positive() }).refine(conPersona, PERSONA);
+export const editarCubicacionSchema = cuerpoCubicacion
+  .extend({ version: z.number().int().positive() })
+  .refine(conPersona, PERSONA)
+  .refine(conOrigen, ORIGEN);
 export type GuardarCubicacionInput = z.infer<typeof guardarCubicacionSchema>;
 export type EditarCubicacionInput = z.infer<typeof editarCubicacionSchema>;
 
 export const aplicarCubicacionSchema = z.object({
+  /** ADR-483: puede ir vacío si hay `precioGeneral` (el que cubre las especies sin precio propio). */
   precios: z
     .array(z.object({ clave: z.string().trim().min(1).max(80), precio: z.number().positive().max(100_000) }))
-    .min(1)
-    .max(60),
+    .max(60)
+    .default([]),
+  ...precioGeneralCampo,
   montoVisto: z.number().positive().max(9_999_999),
   idempotencyKey: z.string().trim().min(8).max(80),
   version: z.number().int().positive(),
   /** (B2) Elegir a qué adelantos va; sin el campo, todos los abiertos de la persona, el más antiguo primero. */
   adelantoIds: z.array(z.string().trim().min(1).max(40)).min(1).max(50).optional(),
-});
+}).refine((d) => d.precios.length > 0 || d.precioGeneral != null, { message: "Pon el precio de cada especie o un precio general.", path: ["precios"] });
 export type AplicarCubicacionInput = z.infer<typeof aplicarCubicacionSchema>;
 
 export const anularCubicacionSchema = z.object({ motivo: z.string().trim().min(3, "Escribe el motivo (3 letras o más).").max(300) });
 
 // ── Tipos ────────────────────────────────────────────────────────────────────
 
-/** Una troza como la congela el SERVIDOR. `volumen` en la unidad del lote. */
-export interface TrozaCongelada {
+/** Una troza como la congela el SERVIDOR. `volumen` en la unidad del lote (el NETO si tuvo descuento, ADR-483). */
+export interface TrozaCongelada extends TrozaCongeladaComercial {
   n: number;
   codigo?: string;
   especie: string;
@@ -128,12 +150,12 @@ export interface AdelantoAbierto {
   direccion: "DADO" | "RECIBIDO";
 }
 
-/** Fila de la lista (sin las medidas). */
-export interface CubicacionTrozasResumen {
+/** Fila de la lista (sin las medidas). ADR-483: también la de madera aserrada (`material`, fórmula `tablar`). */
+export interface CubicacionTrozasResumen extends CamposComerciales {
   id: string;
   codigo: string;
   fecha: string;
-  formula: FormulaTrozas;
+  formula: FormulaComercial;
   diametros: 1 | 2;
   /** «PT» | «m³»: la unidad del volumen y del precio. */
   unidad: "PT" | "m³";
@@ -163,7 +185,10 @@ export interface CubicacionTrozasResumen {
   updatedAt: string;
 }
 export interface CubicacionTrozasDTO extends CubicacionTrozasResumen {
+  /** Vacío en la madera aserrada: sus medidas van en `piezas` (uno por uno) o `lineas` (rápida). */
   trozas: TrozaCongelada[];
+  piezas?: PiezaCongelada[];
+  lineas?: LineaTotalCongelada[];
 }
 
 // ── Errores de negocio (la DB class los traduce a códigos HTTP) ───────────────
@@ -197,10 +222,13 @@ export class ExcedeLoRecibidoError extends Error {
 
 /** Céntimos enteros, medio céntimo hacia arriba sobre el DECIMAL: 33,33 × 2,5 = 83,325 → 8 333 (el float da 83,32499…). */
 const aCentimos = (n: number) => Math.round(Number((n * 100).toFixed(6)));
-export const unidadDe = (f: FormulaTrozas): "PT" | "m³" => (UNIDADES_FORMULA[f].volumen === "PT" ? "PT" : "m³");
+/** Smalian en m³; Oxapampina y tablar (aserrada) en PT. */
+export const unidadDe = (f: FormulaComercial): "PT" | "m³" => (f === "smalian" ? "m³" : "PT");
 /** Decimales del volumen guardado: PT a 2, m³ a 4 (como `redondearVolumen`). */
-export const decimalesDe = (f: FormulaTrozas): number => (f === "oxapampina" ? 2 : 4);
+export const decimalesDe = (f: FormulaComercial): 2 | 4 => (f === "smalian" ? 4 : 2);
 const redondear = (v: number, dec: number) => Math.round((v + Number.EPSILON) * 10 ** dec) / 10 ** dec;
+/** El redondeo del volumen de un lote: `redondearVolumen` para las trozas, PT a 2 para la aserrada. */
+export const redondearComercial = (v: number, f: FormulaComercial): number => (f === "tablar" ? redondear(v, 2) : redondearVolumen(v, f));
 
 /**
  * Re-cubica en el servidor. Ø o largo por ENCIMA del tope de la fórmula es un
@@ -244,7 +272,10 @@ export function cubicarEnServidor(
 }
 
 /** Las trozas agrupadas por especie (clave sin tildes ni mayúsculas), la de más volumen primero. */
-export function agruparPorEspecie(trozas: readonly TrozaCongelada[], formula: FormulaTrozas): LineaEspecie[] {
+export function agruparPorEspecie(
+  trozas: ReadonlyArray<Pick<TrozaCongelada, "especie" | "volumen">>,
+  formula: FormulaComercial,
+): LineaEspecie[] {
   const porClave = new Map<string, LineaEspecie>();
   for (const t of trozas) {
     const clave = claveEspecie(t.especie) || "sin especie";
@@ -254,24 +285,26 @@ export function agruparPorEspecie(trozas: readonly TrozaCongelada[], formula: Fo
     porClave.set(clave, l);
   }
   return [...porClave.values()]
-    .map((l) => ({ ...l, volumen: redondearVolumen(l.volumen, formula) }))
+    .map((l) => ({ ...l, volumen: redondearComercial(l.volumen, formula) }))
     .sort((a, b) => b.volumen - a.volumen || a.clave.localeCompare(b.clave));
 }
 
 /**
  * Σ por especie al céntimo: monto de cada especie = volumen × precio al céntimo y
- * el total es la suma de esas líneas (la que se ve en la tabla). Una especie con
- * volumen y sin precio → `FaltaPrecioError` con su nombre.
+ * el total es la suma de esas líneas (la que se ve en la tabla). Precio de la
+ * especie > `precioGeneral` (ADR-483) > `FaltaPrecioError` con su nombre.
  */
 export function valorizar(
   lineas: readonly LineaEspecie[],
   precios: ReadonlyArray<{ clave: string; precio: number }>,
+  precioGeneral?: number | null,
 ): { porEspecie: LineaEspecie[]; monto: number } {
   const precioDe = new Map(precios.map((p) => [claveEspecie(p.clave) || p.clave.trim().toLowerCase(), p.precio]));
+  const general = precioGeneral != null && precioGeneral > 0 ? precioGeneral : null;
   let centimos = 0;
   const porEspecie = lineas.map((l) => {
     if (!(l.volumen > 0)) return { ...l, precio: null, monto: null };
-    const precio = precioDe.get(l.clave);
+    const precio = precioDe.get(l.clave) ?? general;
     if (precio == null || !(precio > 0)) throw new FaltaPrecioError(l.nombre);
     const c = aCentimos(l.volumen * precio);
     centimos += c;
@@ -335,29 +368,41 @@ export function repartirFifo(
   return out;
 }
 
-/** La huella del cuerpo de «aplicar»: la misma clave con otro cuerpo → 422. */
+/**
+ * La huella del cuerpo de «aplicar»: la misma clave con otro cuerpo → 422.
+ * El precio general (ADR-483) sólo entra si vino: las huellas guardadas antes
+ * siguen dando lo mismo (un reintento de ayer no se vuelve «otro cuerpo»).
+ */
 export function huellaAplicar(input: AplicarCubicacionInput): string {
   const precios = input.precios
     .map((p) => `${claveEspecie(p.clave) || p.clave.trim().toLowerCase()}=${p.precio.toFixed(4)}`)
     .sort()
     .join(",");
-  return ["aplicar", precios, input.montoVisto.toFixed(2), `v${input.version}`, (input.adelantoIds ?? []).join(",")].join("|");
+  const partes = ["aplicar", precios, input.montoVisto.toFixed(2), `v${input.version}`, (input.adelantoIds ?? []).join(",")];
+  if (input.precioGeneral != null) partes.push(`general=${input.precioGeneral.toFixed(4)}`);
+  return partes.join("|");
 }
 
 /** «2 140,5 PT» · «12,346 m³»: miles con espacio y coma decimal, como se escribe en el papel. */
-export function fmtVolumen(v: number, formula: FormulaTrozas): string {
-  const dec = formula === "oxapampina" ? 2 : 3;
+export function fmtVolumen(v: number, formula: FormulaComercial): string {
+  const dec = formula === "smalian" ? 3 : 2;
   const [ent, frac] = redondear(v, dec).toFixed(dec).split(".");
   const fracLimpia = (frac ?? "").replace(/0+$/, "");
   const miles = ent.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
   return `${miles}${fracLimpia ? `,${fracLimpia}` : ""} ${unidadDe(formula)}`;
 }
 
-/** La descripción de la entrega en el adelanto: «Madera · CUB-2026-0003 · 34 trozas · 2 140 PT». */
+/**
+ * La descripción de la entrega en el adelanto: «Madera · CUB-2026-0003 · 34 trozas · 2 140 PT».
+ * Aserrada (ADR-483): «Madera aserrada · CUB-2026-0004 · 50 piezas · 1 250 PT» (sin piezas si no se contaron).
+ */
 export function descripcionEntregaMadera(
-  c: { codigo: string; nTrozas: number; volumen: number; formula: FormulaTrozas },
+  c: { codigo: string; nTrozas: number; volumen: number; formula: FormulaComercial; material?: MaterialCubicacion },
   parte?: { i: number; de: number },
 ): string {
-  const base = `Madera · ${c.codigo} · ${c.nTrozas} troza${c.nTrozas === 1 ? "" : "s"} · ${fmtVolumen(c.volumen, c.formula)}`;
+  const cuenta = c.material === "aserrada"
+    ? (c.nTrozas > 0 ? `${c.nTrozas} pieza${c.nTrozas === 1 ? "" : "s"} · ` : "")
+    : `${c.nTrozas} troza${c.nTrozas === 1 ? "" : "s"} · `;
+  const base = `${c.material === "aserrada" ? "Madera aserrada" : "Madera"} · ${c.codigo} · ${cuenta}${fmtVolumen(c.volumen, c.formula)}`;
   return parte && parte.de > 1 ? `${base} · parte ${parte.i} de ${parte.de}` : base;
 }

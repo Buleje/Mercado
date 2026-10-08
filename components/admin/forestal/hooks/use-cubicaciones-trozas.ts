@@ -11,12 +11,16 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
+import { formatCurrency } from "@/lib/format";
 import { csrfHeaders } from "@/lib/csrf-client";
 import type { CuentaPersona } from "@/lib/adelantos/cuenta-unificada";
 import type { DbAdelanto } from "@/lib/db/adelantos.db";
 import type {
   AplicarCubicacionInput, CubicacionTrozasResumen, EstadoCubicacion, GuardarCubicacionInput as GuardarCubicacionInputServidor, SentidoCubicacion, TrozaCongelada,
 } from "@/lib/forestal/cubicacion-cuenta";
+import type {
+  LineaTotalCongelada, MaterialCubicacion, OrigenCubicacion, PiezaCongelada,
+} from "@/lib/forestal/cubicacion-comercial-tipos";
 import type { TrozaCubicada } from "@/lib/forestal/cubicacion-trozas";
 import { diametroUnico, type DiametrosPorTroza } from "@/lib/forestal/cubicacion-trozas-formula";
 
@@ -24,8 +28,22 @@ export const RUTA_CUBICACIONES_TROZAS = "/api/admin/forestal/cubicaciones-trozas
 
 export type { EstadoCubicacion, SentidoCubicacion } from "@/lib/forestal/cubicacion-cuenta";
 
-/** Una cubicación como la devuelve el servidor; `trozas` sólo en el detalle (`GET …/[id]`). */
-export type CubicacionTrozas = CubicacionTrozasResumen & { trozas?: TrozaCongelada[] };
+/**
+ * Una cubicación como la devuelve el servidor; las medidas sólo en el detalle
+ * (`GET …/[id]`): `trozas` (rolliza), `piezas` (aserrada uno por uno) o
+ * `lineas` (aserrada rápida, ADR-483).
+ */
+export type CubicacionTrozas = CubicacionTrozasResumen & {
+  trozas?: TrozaCongelada[];
+  piezas?: PiezaCongelada[];
+  lineas?: LineaTotalCongelada[];
+};
+
+/** Lo que se agrupa por especie (`lineasDeEspecie`): las trozas, las piezas o las líneas rápidas. */
+export function medidasDe(c: CubicacionTrozas): ReadonlyArray<{ especie: string; volumen: number }> {
+  if (c.material !== "aserrada") return c.trozas ?? [];
+  return (c.modo === "total" ? c.lineas : c.piezas) ?? [];
+}
 
 /** Lo que el modal de guardar le manda al servidor (`guardarCubicacionSchema` / `editarCubicacionSchema`). */
 export type GuardarCubicacionInput = Omit<GuardarCubicacionInputServidor, "sentido"> & { sentido: SentidoCubicacion; version?: number };
@@ -43,7 +61,7 @@ export const ESTADO_CUB: Record<EstadoCubicacion, { label: string; clase: string
 
 /* ── Errores: el código del servidor → lo que tienes que hacer ─────────────── */
 
-const fmtSoles = (n: unknown) => `S/ ${Number(n).toFixed(2)}`;
+const fmtSoles = (n: unknown) => formatCurrency(Number(n));
 
 export function mensajeDeError(codigo: string | null, extra: Record<string, unknown>, fallback: string): string {
   switch (codigo) {
@@ -63,12 +81,24 @@ export function mensajeDeError(codigo: string | null, extra: Record<string, unkn
       return `Falta el precio de ${String(extra.especie ?? "una especie")}.`;
     case "LIQUIDADA_DESPUES":
       return "Después se liquidó la cuenta de esta persona: anula primero esa liquidación.";
+    case "DESCUENTO_INVALIDO":
+      return "Un descuento deja la madera en negativo o no corresponde a ninguna especie del lote: revísalo.";
+    case "ORIGEN_NO_ENCONTRADO":
+      return "Ese despacho o esa guía ya no está (se borró o es de otra empresa).";
+    case "GUIA_ANULADA":
+      return "Esa guía está anulada: no se cubica para cobrar.";
+    case "DESPACHO_YA_VALORIZADO":
+      return `Este despacho ya se valorizó con ${String(extra.codigo ?? "otra cubicación")}: anúlala antes de hacer otra.`;
+    case "CUBICACION_REF_NO_ENCONTRADA":
+      return "Esa cubicación del Cubicador de madera ya no está guardada: elige otra.";
+    case "MATERIAL_DISTINTO":
+      return "Esta cubicación es de otro material: no se cambia de trozas a aserrada (ni al revés).";
     default:
       return fallback;
   }
 }
 
-async function pedir<T>(url: string, init: RequestInit, leer: (j: unknown) => T): Promise<Resultado<T>> {
+export async function pedir<T>(url: string, init: RequestInit, leer: (j: unknown) => T): Promise<Resultado<T>> {
   try {
     const res = await fetch(url, { credentials: "include", ...init });
     const j: unknown = res.status === 204 ? null : await res.json().catch(() => null);
@@ -88,7 +118,7 @@ async function pedir<T>(url: string, init: RequestInit, leer: (j: unknown) => T)
 }
 
 /** La respuesta puede venir pelada o envuelta (`{ cubicacion }`). */
-const unaCubicacion = (j: unknown): CubicacionTrozas => {
+export const unaCubicacion = (j: unknown): CubicacionTrozas => {
   const o = (j ?? {}) as Record<string, unknown>;
   return (o.cubicacion ?? j) as CubicacionTrozas;
 };
@@ -97,7 +127,7 @@ const muchas = (j: unknown): CubicacionTrozas[] => {
   const arr = Array.isArray(j) ? j : Array.isArray(o.cubicaciones) ? o.cubicaciones : Array.isArray(o.items) ? o.items : [];
   return arr as CubicacionTrozas[];
 };
-const jsonPost = (method: string, body: unknown): RequestInit => ({
+export const jsonPost = (method: string, body: unknown): RequestInit => ({
   method,
   headers: csrfHeaders({ "Content-Type": "application/json" }),
   body: JSON.stringify(body),
@@ -123,18 +153,27 @@ export const borrarCubicacionTrozas = (id: string) =>
 
 export const leerCubicacionTrozas = (id: string) => pedir(`${RUTA_CUBICACIONES_TROZAS}/${id}`, {}, unaCubicacion);
 
-/** Lista (sin medidas). `activo=false` no pide nada: el modal todavía no se abrió. */
-export function useCubicacionesTrozas(filtros: { beneficiario?: string; estado?: EstadoCubicacion }, activo = true) {
+/**
+ * Lista (sin medidas). `activo=false` no pide nada: el modal todavía no se abrió.
+ * Sin `material`, el servidor trae sólo trozas (ADR-483 D12).
+ */
+export function useCubicacionesTrozas(
+  filtros: { beneficiario?: string; estado?: EstadoCubicacion; material?: MaterialCubicacion | "todas"; origen?: OrigenCubicacion; origenId?: string },
+  activo = true,
+) {
   const [lista, setLista] = useState<CubicacionTrozas[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [vuelta, setVuelta] = useState(0);
-  const { beneficiario, estado } = filtros;
+  const { beneficiario, estado, material, origen, origenId } = filtros;
   useEffect(() => {
     if (!activo) return;
     let vivo = true;
     const q = new URLSearchParams();
     if (beneficiario) q.set("beneficiario", beneficiario);
     if (estado) q.set("estado", estado);
+    if (material) q.set("material", material);
+    if (origen) q.set("origen", origen);
+    if (origenId) q.set("origenId", origenId);
     setError(null);
     void pedir(`${RUTA_CUBICACIONES_TROZAS}${q.toString() ? `?${q}` : ""}`, {}, muchas).then((r) => {
       if (!vivo) return;
@@ -142,7 +181,7 @@ export function useCubicacionesTrozas(filtros: { beneficiario?: string; estado?:
       else { setLista([]); setError(r.mensaje); }
     });
     return () => { vivo = false; };
-  }, [activo, beneficiario, estado, vuelta]);
+  }, [activo, beneficiario, estado, material, origen, origenId, vuelta]);
   const recargar = useCallback(() => setVuelta((v) => v + 1), []);
   return { lista, cargando: activo && lista === null && !error, error, recargar };
 }
@@ -199,6 +238,17 @@ export function usePersonasDeLaCuenta(activo: boolean) {
   return { personas, cargando: activo && personas === null, error };
 }
 
+const direccionDeAdelantos = (sentido: SentidoCubicacion) => (sentido === "venta" ? "RECIBIDO" : "DADO");
+
+/**
+ * El GET de los adelantos del lado del sentido. `direccion` va SIEMPRE: sin
+ * ella `/api/adelantos` devuelve sólo los DADO (ADR-448) y una venta nunca
+ * veía el adelanto que el cliente te dio — «Descontar» quedaba apagado (C-V, 08-10).
+ */
+export function urlAdelantosAbiertos(beneficiarioId: string, sentido: SentidoCubicacion): string {
+  return `/api/adelantos?beneficiarioId=${encodeURIComponent(beneficiarioId)}&direccion=${direccionDeAdelantos(sentido)}`;
+}
+
 /**
  * Los adelantos ABIERTOS/EXCEDIDOS de la persona del lado que toca: comprar
  * madera paga lo DADO; venderla devuelve lo RECIBIDO (ADR-448). Sólo para la
@@ -211,9 +261,9 @@ export function useAdelantosAbiertos(beneficiarioId: string | null, sentido: Sen
     if (!beneficiarioId) { setAdelantos([]); return; }
     let vivo = true;
     setAdelantos(null);
-    void pedir(`/api/adelantos?beneficiarioId=${encodeURIComponent(beneficiarioId)}`, {}, (j) => (Array.isArray(j) ? (j as DbAdelanto[]) : [])).then((r) => {
+    const direccion = direccionDeAdelantos(sentido);
+    void pedir(urlAdelantosAbiertos(beneficiarioId, sentido), {}, (j) => (Array.isArray(j) ? (j as DbAdelanto[]) : [])).then((r) => {
       if (!vivo) return;
-      const direccion = sentido === "venta" ? "RECIBIDO" : "DADO";
       setAdelantos(
         r.ok
           ? r.data.filter(
@@ -256,7 +306,8 @@ export function trozasParaGuardar(
  * «último: S/ 1,20» por especie: el precio de la cubicación APLICADA más nueva
  * de esa persona que la traía. No es una tarifa guardada (B4): es memoria.
  * Sólo de la MISMA fórmula (como el detalle del servidor): un precio por PT
- * sugerido para un lote en m³ Smalian es 424 veces otra cosa.
+ * sugerido para un lote en m³ Smalian es 424 veces otra cosa. El PT de la
+ * aserrada («tablar») y el de la rolliza Oxapampina tampoco se mezclan.
  */
 export function ultimosPrecios(aplicadas: readonly CubicacionTrozas[] | null, formula: CubicacionTrozas["formula"]): Record<string, number> {
   const out: Record<string, number> = {};

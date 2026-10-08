@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ForestCubicacionTrozasDB } from "@/lib/db/forest-cubicacion-trozas.db";
+import { CubicacionComercialDB } from "@/lib/db/forest-cubicacion-comercial.db";
 import { editarCubicacionSchema } from "@/lib/forestal/cubicacion-cuenta";
+import { editarAserradaSchema } from "@/lib/forestal/cubicacion-comercial-tipos";
 import { permisoAdelantos } from "@/lib/adelantos/permisos";
-import { ROLES_CUBICAR, ROLES_PLATA, guardCubicacion, invalido, leerJson, noStore, responderError } from "../_comun";
+import { ROLES_CUBICAR, ROLES_PLATA, esAserrada, guardCubicacion, invalido, leerJson, libroDelOrigen, noStore, responderError } from "../_comun";
 
 /**
  * /api/admin/forestal/cubicaciones-trozas/[id] (ADR-478)
  * GET    → `{ cubicacion (con trozas), adelantosAbiertos, ultimosPrecios }` · 404. Sin permiso
  *          de leer Adelantos (el almacenero) sólo `{ cubicacion }`: los saldos de la persona
  *          no salen por acá si `/api/adelantos` se los niega.
- * PATCH  `editarCubicacionSchema` (con `version`) → `{ cubicacion }` · 409 `DESACTUALIZADA` / `YA_APLICADA` / `ANULADA`.
+ * PATCH  `editarCubicacionSchema` (con `version`), o `editarAserradaSchema` con `material: "aserrada"` (ADR-483)
+ *        → `{ cubicacion }` · 409 `DESACTUALIZADA` / `YA_APLICADA` / `ANULADA` / `MATERIAL_DISTINTO` (la fila manda el material).
  * DELETE → 204 (sólo borrador) · 409 `YA_APLICADA`. Borrar: admin y dueño.
  */
 
@@ -35,9 +38,19 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
   const { id } = await params;
   const json = await leerJson(req);
   if (!json.ok) return json.res;
-  const parsed = editarCubicacionSchema.safeParse(json.body);
-  if (!parsed.success) return invalido(parsed.error.issues, "Los datos de la cubicación no son válidos.");
   try {
+    if (esAserrada(json.body)) {
+      const parsed = editarAserradaSchema.safeParse(json.body);
+      if (!parsed.success) return invalido(parsed.error.issues, "Los datos de la cubicación no son válidos.");
+      const sinLibro = await libroDelOrigen(g.auth.tenantId, parsed.data.origen);
+      if (sinLibro) return sinLibro;
+      const cubicacion = await CubicacionComercialDB.editarAserrada(g.auth.tenantId, id, parsed.data, g.actor);
+      return NextResponse.json({ cubicacion }, { headers: noStore });
+    }
+    const parsed = editarCubicacionSchema.safeParse(json.body);
+    if (!parsed.success) return invalido(parsed.error.issues, "Los datos de la cubicación no son válidos.");
+    const sinLibroTH = await libroDelOrigen(g.auth.tenantId, parsed.data.origen);
+    if (sinLibroTH) return sinLibroTH;
     const cubicacion = await ForestCubicacionTrozasDB.editar(g.auth.tenantId, id, parsed.data, g.actor);
     return NextResponse.json({ cubicacion }, { headers: noStore });
   } catch (e) {

@@ -17,7 +17,7 @@
  */
 
 import { DataTable } from "@buleje/design-system";
-import { AlertTriangle, AlertCircle, RefreshCw, ArrowUp, ArrowDown, ArrowUpDown, Boxes, Coins, Download, FileText, HandCoins, Link2, MoreHorizontal, PackagePlus, Paperclip, Truck, X as XIcon } from "@buleje/design-system/icons";
+import { AlertTriangle, AlertCircle, RefreshCw, ArrowUp, ArrowDown, ArrowUpDown, Boxes, Coins, Download, FileText, HandCoins, Link2, MoreHorizontal, PackagePlus, Paperclip, Scale, Truck, X as XIcon } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import CtpSeccionCardMobile from "./CtpSeccionCardMobile";
 import { evaluarRendimiento } from "@/lib/forestal/ctp-rendimiento";
@@ -125,6 +125,8 @@ export interface CtpEntriesTablaProps {
   onAmpliar?: (id: string) => void;
   /** Adjuntar los papeles que viajan con el despacho (ADR-371). */
   onPapeles?: (e: CtpEntry) => void;
+  /** Cubicación COMERCIAL del despacho, con descuentos, a la cuenta del cliente (ADR-483). */
+  onCubicacionComercial?: (e: CtpEntry) => void;
   /** Abrir la guía de transporte de esa línea (borrador editable o emitida). */
   onGuia?: (e: CtpEntry) => void;
   /** Ponerle o cambiarle dueño y precio a una corrida ya declarada (ADR-412). */
@@ -486,6 +488,7 @@ export default function CtpEntriesTabla({
   ampliables,
   onAmpliar,
   onPapeles,
+  onCubicacionComercial,
   onGuia,
   onCobrarAserrio,
   seleccionCobro,
@@ -544,6 +547,15 @@ export default function CtpEntriesTabla({
         hint: "Subir GTF, factura y guías de origen, archivadas con su etiqueta",
         icon: Paperclip,
         onSelect: () => onPapeles(e),
+      });
+    }
+    if (section === "despacho" && onCubicacionComercial && e.status !== "anulado") {
+      lista.push({
+        id: "cubicacion-comercial",
+        label: "Cubicación comercial",
+        hint: "Con descuentos, para cobrarle al cliente o pagar al que te vende",
+        icon: Scale,
+        onSelect: () => onCubicacionComercial(e),
       });
     }
     if (section === "produccion" && onCobrarAserrio) {
@@ -871,6 +883,7 @@ export default function CtpEntriesTabla({
               ampliable={ampliables?.has(e.id)}
               onAmpliar={onAmpliar}
               onPapeles={section === "despacho" ? onPapeles : undefined}
+              onCubicacionComercial={section === "despacho" && e.status !== "anulado" ? onCubicacionComercial : undefined}
               onGuia={section === "despacho" ? onGuia : undefined}
               onCobrarAserrio={section === "produccion" ? onCobrarAserrio : undefined}
               /* Sólo `registrado` se puede cobrar (ADR-412 no cobra anuladas)

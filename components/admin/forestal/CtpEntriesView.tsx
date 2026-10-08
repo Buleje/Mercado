@@ -92,6 +92,8 @@ import {
 
 // El anexo arrastra jsPDF/exceljs: entra solo cuando alguien lo pide.
 const Anexo04Modal = dynamic(() => import("./Anexo04Modal"), { ssr: false });
+/* Cubicación comercial del despacho (ADR-483): se abre poco, va aparte del libro. */
+const CtpCubicacionComercialModal = dynamic(() => import("./CtpCubicacionComercialModal"), { ssr: false });
 import {
   COLUMNAS_PRODUCCION_OPCIONALES,
   type CtpEntry,
@@ -785,6 +787,7 @@ export function CtpEntriesView({
   const [ampliarId, setAmpliarId] = useState<string | null>(null);
   /** Despacho al que se le están adjuntando papeles (ADR-371). */
   const [papelesEntry, setPapelesEntry] = useState<CtpEntry | null>(null);
+  const [comercialEntry, setComercialEntry] = useState<CtpEntry | null>(null);
   /** La línea cuya guía se está mirando/editando (ADR-374). */
   const [guiaEntry, setGuiaEntry] = useState<CtpEntry | null>(null);
   const ampliando = useMemo(
@@ -2051,6 +2054,7 @@ export function CtpEntriesView({
           }}
           ampliables={idsAmpliables}
           onPapeles={setPapelesEntry}
+          onCubicacionComercial={section === "despacho" ? setComercialEntry : undefined}
           onGuia={setGuiaEntry}
           seleccionCobro={section === "produccion" ? seleccionCobro : undefined}
           onSeleccionCobro={section === "produccion" ? marcarCobro : undefined}
@@ -2212,6 +2216,9 @@ export function CtpEntriesView({
           onClose={() => setGuiaEntry(null)}
           onCambio={() => void load()}
         />
+      )}
+      {comercialEntry && (
+        <CtpCubicacionComercialModal despachoId={comercialEntry.id} onClose={() => setComercialEntry(null)} />
       )}
       {papelesEntry && (
         <CtpPapelesDespachoModal

@@ -10,7 +10,7 @@
  * inventario / Anular) full-width. Misma data y mismos handlers que la tabla.
  */
 
-import { AlertCircle, Boxes, Calendar, Coins, Download, FileText, HandCoins, Link2, Paperclip, PackagePlus, Truck, Check } from "@buleje/design-system/icons";
+import { AlertCircle, Boxes, Calendar, Coins, Download, FileText, HandCoins, Link2, Paperclip, PackagePlus, Scale, Truck, Check } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { atribucionDeDespacho, faltaAtribuir, origenDeCorrida } from "@/lib/forestal/atribucion-despacho";
 import { evaluarRendimiento } from "@/lib/forestal/ctp-rendimiento";
@@ -37,6 +37,8 @@ interface CtpSeccionCardMobileProps {
   onAmpliar?: (id: string) => void;
   /** Adjuntar los papeles que viajan con el despacho (ADR-371, solo despachos). */
   onPapeles?: (e: CtpEntry) => void;
+  /** Cubicación comercial del despacho, con descuentos (ADR-483). */
+  onCubicacionComercial?: (e: CtpEntry) => void;
   /** Abrir la guía de transporte de esa línea — borrador editable o emitida (solo despachos). */
   onGuia?: (e: CtpEntry) => void;
   /** Ponerle o cambiarle dueño y precio a una corrida ya declarada (ADR-412, solo producción). */
@@ -53,7 +55,7 @@ const fmtDate = (iso: string) => {
   try { return formatDate(iso, { soloFecha: true }); } catch { return iso; }
 };
 
-export default function CtpSeccionCardMobile({ entry: e, section, toProductId, onChain, onAnexo, anexoEmitido, onSendInventory, onAnnul, ampliable, onAmpliar, onPapeles, onGuia, onCobrarAserrio, marcadaCobro, onMarcarCobro }: CtpSeccionCardMobileProps) {
+export default function CtpSeccionCardMobile({ entry: e, section, toProductId, onChain, onAnexo, anexoEmitido, onSendInventory, onAnnul, ampliable, onAmpliar, onPapeles, onCubicacionComercial, onGuia, onCobrarAserrio, marcadaCobro, onMarcarCobro }: CtpSeccionCardMobileProps) {
   const anulado = e.status === "anulado";
   const KindIcon = section === "produccion" ? Boxes : Truck;
   const rend = section === "produccion" ? evaluarRendimiento(e.productType, e.rendimientoPct != null ? Number(e.rendimientoPct) : null) : null;
@@ -255,6 +257,15 @@ export default function CtpSeccionCardMobile({ entry: e, section, toProductId, o
               className="inline-flex h-9 grow items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
             >
               <Paperclip className="h-3.5 w-3.5" /> Papeles
+            </button>
+          )}
+          {section === "despacho" && onCubicacionComercial && (
+            <button
+              type="button"
+              onClick={() => onCubicacionComercial(e)}
+              className="inline-flex h-9 grow items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
+            >
+              <Scale className="h-3.5 w-3.5" /> Cubicación comercial
             </button>
           )}
           {section === "produccion" && onCobrarAserrio && (

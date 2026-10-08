@@ -12,9 +12,10 @@
  *   · Datos           → sólo si la guía guardó su ficha de SERFOR (importada)
  *   · Hoja SERFOR     → siempre (anulada: con su sello)
  *   · Resumen interno → siempre (R1-R4, `gtf-resumen-interno`)
- *   · Documentos del permiso → siempre; apagada si la guía no tiene permiso
+ *   · Documentos del permiso → siempre; sin permiso sólo los papeles de la guía (ADR-482)
  *     (ADR-467: las carpetas del plan, por `planId`; ver, descargar,
  *     imprimir y enviar por WhatsApp — 08-10)
+ *   · Cubicar en Oxapampina → viva y de trozas (K7 · ADR-483: con descuentos, a la cuenta de una persona)
  *   · Ver ingresos    → la guía ya entró al Libro CTP
  *   · Deshacer la importación → viva e importada
  *   · Anular          → viva
@@ -25,7 +26,7 @@
  */
 
 import { useMemo, useState } from "react";
-import { Ban, Eye, FileText, FolderOpen, LogIn, Printer, Undo2 } from "@buleje/design-system/icons";
+import { Ban, Eye, FileText, FolderOpen, LogIn, Printer, Ruler, Undo2 } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { importacionDeLaGuia } from "@/lib/forestal/loth-importar-guia-deshacer";
 import { fichaDeGuiaImportada } from "@/lib/forestal/loth-importar-guia-ficha";
@@ -35,6 +36,7 @@ import ModalFichaImportada from "./LothImportarGuiasFicha";
 import { ModalDeshacer } from "./LothImportarGuiasDeshacer";
 import { verIngresosDelCtp } from "./LothGtfCtp";
 import GtfDocumentosModal from "./GtfDocumentosModal";
+import LothGtfCubicarModal from "./LothGtfCubicarModal";
 
 /** El código del permiso de la guía: el título que guardó o, en una plantación, el (5) de sus casilleros. */
 export const permisoDeLaGuiaGtf = (g: Pick<Gtf, "tituloHabilitante" | "gtfDatos">): string | null =>
@@ -61,6 +63,7 @@ export function opcionesGtf(
     abrirDatos,
     abrirDeshacer,
     abrirDocumentos,
+    abrirCubicar,
     onHoja,
     onResumen,
     onAnular,
@@ -69,6 +72,7 @@ export function opcionesGtf(
     abrirDatos: () => void;
     abrirDeshacer: () => void;
     abrirDocumentos?: () => void;
+    abrirCubicar?: () => void;
     onHoja: (g: Gtf) => void;
     onResumen: (g: Gtf) => void;
     onAnular?: (id: string) => void;
@@ -95,13 +99,27 @@ export function opcionesGtf(
     onSelect: () => onResumen(g),
   });
   if (abrirDocumentos) {
+    /* Una anulada no recibe papeles (el servidor responde 404): sólo quedan las carpetas del plan. */
+    const baja = g.status === "anulada" || !!g.deletedAt;
     a.push({
       id: "documentos",
       label: "Documentos del permiso",
-      hint: g.planId ? "Las carpetas del plan: ver, descargar, imprimir o enviar por WhatsApp" : "La guía no está atada a un permiso",
+      /* ADR-482: los papeles de la guía (factura, remisión, GTF, lista firmada) no dependen del plan. */
+      hint: baja
+        ? g.planId ? "Guía anulada: sólo las carpetas del plan" : "Guía anulada: ya no recibe papeles"
+        : g.planId ? "Papeles de la guía y carpetas del plan: subir, ver, imprimir o enviar por WhatsApp" : "Papeles de la guía: factura, remisión, GTF, lista firmada",
       icon: FolderOpen,
-      disabled: !g.planId,
+      disabled: baja && !g.planId,
       onSelect: abrirDocumentos,
+    });
+  }
+  if (viva && abrirCubicar && g.tipo === "trozas") {
+    a.push({
+      id: "cubicar",
+      label: "Cubicar en Oxapampina",
+      hint: "Con descuentos, para comprar o vender; al lado la cifra SERFOR",
+      icon: Ruler,
+      onSelect: abrirCubicar,
     });
   }
   if (viva && g.ctp === "ingresada") {
@@ -126,7 +144,7 @@ export function opcionesGtf(
 export default function AccionesGtf({
   g, porIngresar = false, soloLectura = false, onIngresarCtp, onHoja, onResumen, onAnular, onRecargar,
 }: AccionesGtfProps) {
-  const [abierto, setAbierto] = useState<"datos" | "deshacer" | "documentos" | null>(null);
+  const [abierto, setAbierto] = useState<"datos" | "deshacer" | "documentos" | "cubicar" | null>(null);
   const acciones = useMemo(
     () =>
       opcionesGtf(g, {
@@ -134,6 +152,7 @@ export default function AccionesGtf({
         abrirDatos: () => setAbierto("datos"),
         abrirDeshacer: () => setAbierto("deshacer"),
         abrirDocumentos: () => setAbierto("documentos"),
+        abrirCubicar: () => setAbierto("cubicar"),
         onHoja,
         onResumen,
         onAnular,
@@ -156,9 +175,10 @@ export default function AccionesGtf({
       {abierto === "datos" && (
         <ModalFichaImportada gtfDatos={g.gtfDatos} gtfNumber={g.gtfNumber} items={g.items} onClose={() => setAbierto(null)} />
       )}
-      {abierto === "documentos" && g.planId && (
-        <GtfDocumentosModal planId={g.planId} permiso={permisoDeLaGuiaGtf(g)} gtfNumber={g.gtfNumber} onClose={() => setAbierto(null)} />
+      {abierto === "documentos" && (
+        <GtfDocumentosModal planId={g.planId ?? null} permiso={permisoDeLaGuiaGtf(g)} gtfNumber={g.gtfNumber} sinPapeles={g.status === "anulada" || !!g.deletedAt} onClose={() => setAbierto(null)} />
       )}
+      {abierto === "cubicar" && <LothGtfCubicarModal g={g} onClose={() => setAbierto(null)} />}
       {abierto === "deshacer" && (
         <ModalDeshacer
           gtfId={g.id}

@@ -117,7 +117,9 @@ try {
     try {
       await c.query(s);
       await c.query(`RELEASE SAVEPOINT s${i}`);
-      if (avisos.some((m) => m.includes("already exists, skipping"))) {
+      // «does not exist, skipping» = un DROP … IF EXISTS que ya se había hecho
+      // (K7: se suelta el CHECK viejo y se pone una v2 con otro nombre).
+      if (avisos.some((m) => m.includes("already exists, skipping") || m.includes("does not exist, skipping"))) {
         yaEstaban += 1;
         console.log(`  · ya estaba: ${cabeza}`);
       } else {

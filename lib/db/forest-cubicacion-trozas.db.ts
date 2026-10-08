@@ -16,8 +16,6 @@ import {
   MedidaFueraDeRangoError,
   PREFIJO_CUBICACION,
   SinAdelantoAbiertoError,
-  agruparPorEspecie,
-  cubicarEnServidor,
   decimalesDe,
   descripcionEntregaMadera,
   direccionDelSentido,
@@ -37,6 +35,16 @@ import {
   type LineaEspecie,
   type TrozaCongelada,
 } from "@/lib/forestal/cubicacion-cuenta";
+import { aplicarDescuentoLote, cubicarTrozasComercial, DescuentoInvalidoError, lineasDeEspecie } from "@/lib/forestal/cubicacion-comercial";
+import {
+  esFormulaComercial,
+  type DescuentoLote,
+  type FormulaComercial,
+  type LineaTotalCongelada,
+  type MaterialCubicacion,
+  type OrigenCubicacion,
+  type PiezaCongelada,
+} from "@/lib/forestal/cubicacion-comercial-tipos";
 
 /**
  * ForestCubicacionTrozasDB — la cubicación de trozas guardada con dueño y, al
@@ -49,6 +57,11 @@ import {
  *
  * `tenantId` 1er parámetro y en todo WHERE; la persona, el permiso y los
  * adelantos se releen con `tenantId` (refs. app-level sin FK, ADR-426).
+ *
+ * ADR-483: la misma tabla guarda la cubicación COMERCIAL (con descuentos) de
+ * trozas de una GTF del Libro TH (`origen = loth`) y la de madera aserrada
+ * (`material = aserrada`, fórmula `tablar`, alta en `CubicacionComercialDB`).
+ * Aplicar, anular y borrar son los de acá para todas.
  */
 
 export type CodigoCubicacion =
@@ -70,7 +83,15 @@ export type CodigoCubicacion =
   | "ADELANTO_NO_VALIDO"
   | "IDEMPOTENCIA_DISTINTA"
   | "LIQUIDADA_DESPUES"
-  | "ADELANTO_ANULADO";
+  | "ADELANTO_ANULADO"
+  | "DESCUENTO_INVALIDO"
+  | "ORIGEN_NO_ENCONTRADO"
+  | "GUIA_ANULADA"
+  | "DESPACHO_YA_VALORIZADO"
+  | "CUBICACION_REF_NO_ENCONTRADA"
+  | "MATERIAL_DISTINTO"
+  | "ORIGEN_DISTINTO"
+  | "REF_YA_VALORIZADA";
 
 const STATUS: Record<CodigoCubicacion, 404 | 409 | 422> = {
   NO_ENCONTRADA: 404,
@@ -92,6 +113,14 @@ const STATUS: Record<CodigoCubicacion, 404 | 409 | 422> = {
   IDEMPOTENCIA_DISTINTA: 422,
   LIQUIDADA_DESPUES: 409,
   ADELANTO_ANULADO: 409,
+  DESCUENTO_INVALIDO: 422,
+  ORIGEN_NO_ENCONTRADO: 404,
+  GUIA_ANULADA: 422,
+  DESPACHO_YA_VALORIZADO: 409,
+  CUBICACION_REF_NO_ENCONTRADA: 404,
+  MATERIAL_DISTINTO: 409,
+  ORIGEN_DISTINTO: 409,
+  REF_YA_VALORIZADA: 409,
 };
 
 /** Error de negocio: la ruta responde `{ error: code, message, ...extra }` con `status`. */
@@ -114,8 +143,10 @@ export interface ActorCubicacion {
 }
 
 type Tx = Prisma.TransactionClient;
-type Db = Tx | typeof prisma;
-type Row = NonNullable<Awaited<ReturnType<typeof prisma.forestCubicacionTrozas.findFirst>>>;
+export type DbCubicacion = Tx | typeof prisma;
+type Db = DbCubicacion;
+export type RowCubicacion = NonNullable<Awaited<ReturnType<typeof prisma.forestCubicacionTrozas.findFirst>>>;
+type Row = RowCubicacion;
 type RowResumen = Omit<Row, "trozas">;
 
 const CACHE = "forest-cubic-trozas";
@@ -129,6 +160,8 @@ const SELECT_RESUMEN = {
   porEspecie: true, monto: true, moneda: true, estado: true, version: true, aplicadaAt: true, aplicadaPor: true,
   imputacion: true, idempotencyKey: true, idempotencyHuella: true, anuladaAt: true, anuladaPor: true,
   motivoAnulacion: true, notas: true, createdBy: true, createdAt: true, updatedAt: true, deletedAt: true,
+  material: true, origen: true, origenId: true, modo: true, volumenBruto: true, descuentos: true,
+  referenciaSmalianM3: true, cubicacionRefId: true,
 } satisfies Prisma.ForestCubicacionTrozasSelect;
 
 const iso = (d: Date | null) => (d ? d.toISOString() : null);
@@ -138,8 +171,21 @@ const estadoDe = (e: string): EstadoCubicacion => (e === "aplicada" || e === "an
 /** La entrega se fecha con la hora real si es de hoy, y al mediodía de Lima si no (como la liquidación). */
 const fechaEntrega = (fecha: string) => (fecha === limaDateKey() ? undefined : `${fecha}T12:00:00-05:00`);
 
+const ORIGENES = new Set<string>(["libre", "ctp", "loth", "despacho"]);
+const esOrigen = (v: string | null): v is OrigenCubicacion => v != null && ORIGENES.has(v);
+/** Toda fórmula de la fila tal cual (tablar NUNCA se lee como smalian: serían soles por m³ sobre PT). */
+const formulaDe = (f: string): FormulaComercial => (esFormulaComercial(f) ? f : "smalian");
+const materialDe = (m: string | null | undefined): MaterialCubicacion => (m === "aserrada" ? "aserrada" : "troza");
+const decimalONull = (d: Prisma.Decimal | null) => (d == null ? null : Number(d));
+/** El descuento del lote guardado; cualquier otra cosa (null, un DbNull, basura) = sin descuento. */
+function descuentosDe(v: Prisma.JsonValue | null | undefined): DescuentoLote | null {
+  if (!v || typeof v !== "object" || Array.isArray(v)) return null;
+  const d = v as { pct?: unknown; porEspecie?: unknown };
+  return typeof d.pct === "number" || Array.isArray(d.porEspecie) ? (v as unknown as DescuentoLote) : null;
+}
+
 function aResumen(r: RowResumen): CubicacionTrozasResumen {
-  const formula = r.formula === "oxapampina" ? "oxapampina" : "smalian";
+  const formula = formulaDe(r.formula);
   return {
     id: r.id, codigo: r.codigo, fecha: r.fecha.toISOString().slice(0, 10), formula,
     diametros: r.diametros === 1 ? 1 : 2, unidad: unidadDe(formula),
@@ -150,11 +196,23 @@ function aResumen(r: RowResumen): CubicacionTrozasResumen {
     aplicadaAt: iso(r.aplicadaAt), aplicadaPor: r.aplicadaPor, imputacion: arr<ImputacionGuardada>(r.imputacion),
     anuladaAt: iso(r.anuladaAt), anuladaPor: r.anuladaPor, motivoAnulacion: r.motivoAnulacion, notas: r.notas,
     createdBy: r.createdBy, createdAt: r.createdAt.toISOString(), updatedAt: r.updatedAt.toISOString(),
+    material: materialDe(r.material), origen: esOrigen(r.origen) ? r.origen : null, origenId: r.origenId,
+    modo: r.modo === "total" ? "total" : "pieza", volumenBruto: decimalONull(r.volumenBruto),
+    descuentos: descuentosDe(r.descuentos), referenciaSmalianM3: decimalONull(r.referenciaSmalianM3),
+    cubicacionRefId: r.cubicacionRefId,
   };
 }
-const aDTO = (r: Row): CubicacionTrozasDTO => ({ ...aResumen(r), trozas: arr<TrozaCongelada>(r.trozas) ?? [] });
+/** Las medidas congeladas van en `trozas`, `piezas` (aserrada uno por uno) o `lineas` (aserrada rápida). */
+export function aDTO(r: Row): CubicacionTrozasDTO {
+  const base = aResumen(r);
+  const medidas = arr<unknown>(r.trozas) ?? [];
+  if (base.material !== "aserrada") return { ...base, trozas: medidas as TrozaCongelada[] };
+  return base.modo === "total"
+    ? { ...base, trozas: [], lineas: medidas as LineaTotalCongelada[] }
+    : { ...base, trozas: [], piezas: medidas as PiezaCongelada[] };
+}
 
-function invalidar(tenantId: string): void {
+export function invalidar(tenantId: string): void {
   try {
     invalidateByPrefix(`${CACHE}:${tenantId}:`);
   } catch (err) {
@@ -163,7 +221,7 @@ function invalidar(tenantId: string): void {
 }
 
 /** La persona del cuerpo, releída con `tenantId`: otra de otro negocio = 404. */
-async function resolverPersona(db: Db, tenantId: string, input: { beneficiarioId?: string; parteId?: string }) {
+export async function resolverPersona(db: Db, tenantId: string, input: { beneficiarioId?: string; parteId?: string }) {
   const benef = input.beneficiarioId
     ? await db.adelantoBeneficiario.findFirst({ where: { id: input.beneficiarioId, tenantId }, select: { id: true, nombre: true } })
     : null;
@@ -229,16 +287,33 @@ async function abiertosDe(
   }));
 }
 
+/** El error de un descuento que no cuadra, como 422 `DESCUENTO_INVALIDO {troza|pieza|clave}`. */
+export function comoErrorDeDescuento(err: unknown): unknown {
+  return err instanceof DescuentoInvalidoError ? new CubicacionTrozasError("DESCUENTO_INVALIDO", err.message, { ...err.donde }) : err;
+}
+
+/** Sin madera que cobrar después de los descuentos: no se guarda (una cubicación en 0 no paga nada). */
+export function exigirVolumenNeto(neto: number): void {
+  if (!(neto > 0)) throw new CubicacionTrozasError("DESCUENTO_INVALIDO", "Con esos descuentos no queda madera que cobrar: revísalos.");
+}
+
+/** El bruto se guarda sólo si los descuentos lo bajaron (null = bruto igual al volumen). */
+export const brutoSiCambio = (bruto: number, neto: number, f: FormulaComercial): Prisma.Decimal | null =>
+  bruto - neto > 10 ** -decimalesDe(f) / 2 ? new Prisma.Decimal(bruto.toFixed(4)) : null;
+
+/** Re-cubica con los descuentos de cada troza y del lote (ADR-483); sin descuentos, lo de ADR-478. */
 function cubicar(input: GuardarCubicacionInput) {
   try {
-    return cubicarEnServidor(input.formula, input.trozas, input.diametros);
+    const r = cubicarTrozasComercial(input.formula, input.trozas, input.diametros, input.descuentos);
+    exigirVolumenNeto(r.neto);
+    return r;
   } catch (err) {
     if (err instanceof MedidaFueraDeRangoError) throw new CubicacionTrozasError("MEDIDA_FUERA_DE_RANGO", err.message, { troza: err.n });
-    throw err;
+    throw comoErrorDeDescuento(err);
   }
 }
 
-async function exigirContrato(tenantId: string, contratoId: string | undefined): Promise<void> {
+export async function exigirContrato(tenantId: string, contratoId: string | undefined): Promise<void> {
   if (!contratoId) return;
   const c = await prisma.forestContrato.findFirst({ where: { id: contratoId, tenantId, deletedAt: null }, select: { id: true } });
   if (!c) throw new CubicacionTrozasError("CONTRATO_NO_ENCONTRADO", "Ese permiso no existe en este negocio.");
@@ -256,22 +331,252 @@ async function exigirContrato(tenantId: string, contratoId: string | undefined):
 async function guiaCanonica(tenantId: string, sentido: "compra" | "venta", gtf: string | undefined): Promise<string | null> {
   const texto = gtf?.trim();
   if (!texto) return null;
-  const filtro = filtroMismaGuia(texto);
-  const filas = filtro
-    ? await prisma.woodEntry.findMany({
-        where: { tenantId, gtfNumber: filtro, deletedAt: null, status: { notIn: [...ESTADOS_GUIA_MUERTA] } },
-        select: { gtfNumber: true },
-        orderBy: [{ entryDate: "asc" }, { id: "asc" }],
-        take: 500,
-      })
-    : [];
-  const igual = filas.find((f) => mismoNumeroGtf(f.gtfNumber, texto));
-  if (igual) return igual.gtfNumber.trim();
+  const delLibro = await numeroDelLibroCtp(tenantId, texto);
+  if (delLibro) return delLibro;
   if (sentido === "venta") return texto;
   throw new CubicacionTrozasError(
     "GUIA_NO_ENCONTRADA",
     `La guía ${texto} no está en el Libro CTP de este negocio: revisa el número o regístrala primero. Si la madera no vino con guía, deja el campo vacío.`,
   );
+}
+
+/** El N° de la guía como está en el Libro CTP (`WoodEntry` vivo), o null si no está. */
+export async function numeroDelLibroCtp(tenantId: string, texto: string): Promise<string | null> {
+  const filtro = filtroMismaGuia(texto);
+  if (!filtro) return null;
+  const filas = await prisma.woodEntry.findMany({
+    where: { tenantId, gtfNumber: filtro, deletedAt: null, status: { notIn: [...ESTADOS_GUIA_MUERTA] } },
+    select: { gtfNumber: true },
+    orderBy: [{ entryDate: "asc" }, { id: "asc" }],
+    take: 500,
+  });
+  return filas.find((f) => mismoNumeroGtf(f.gtfNumber, texto))?.gtfNumber.trim() ?? null;
+}
+
+/**
+ * La GTF del Libro TH de ESTE negocio (ADR-483): otra, borrada o de otro
+ * negocio = 404 `ORIGEN_NO_ENCONTRADO`; anulada = 422 `GUIA_ANULADA`; de
+ * productos (no de trozas) = 404 (no hay trozas que cubicar).
+ */
+export async function lothDelTenant(db: Db, tenantId: string, id: string | null | undefined) {
+  const gtf = id
+    ? await db.forestGtf.findFirst({
+        where: { id, tenantId, deletedAt: null },
+        select: {
+          id: true, gtfNumber: true, gtfDate: true, tipo: true, status: true, titularName: true,
+          tituloHabilitante: true, volumenTotalM3: true, items: true,
+        },
+      })
+    : null;
+  if (!gtf) throw new CubicacionTrozasError("ORIGEN_NO_ENCONTRADO", "Esa guía no está en el Libro TH de este negocio.");
+  if (gtf.status === "anulada") {
+    throw new CubicacionTrozasError("GUIA_ANULADA", `La guía ${gtf.gtfNumber} está anulada: cubica la que la reemplazó.`);
+  }
+  if (gtf.tipo !== "trozas") {
+    throw new CubicacionTrozasError("ORIGEN_NO_ENCONTRADO", `La guía ${gtf.gtfNumber} es de productos, no de trozas: no se cubica troza por troza.`);
+  }
+  return gtf;
+}
+
+/** El despacho del Libro CTP de ESTE negocio, vivo (ADR-483): si no, 404 `ORIGEN_NO_ENCONTRADO`. */
+export async function despachoDelTenant(db: Db, tenantId: string, id: string | null | undefined) {
+  const d = id
+    ? await db.forestCtpEntry.findFirst({
+        where: { id, tenantId, section: "despacho", deletedAt: null, status: { not: "anulado" } },
+        select: {
+          id: true, gtfNumber: true, entryDate: true, speciesCommon: true, quantity: true, unit: true, pieces: true,
+          valorVenta: true, destino: true, gtfDatos: true,
+        },
+      })
+    : null;
+  if (!d) throw new CubicacionTrozasError("ORIGEN_NO_ENCONTRADO", "Ese despacho no está en el Libro CTP de este negocio, o está anulado.");
+  return d;
+}
+
+/** Item de la GTF del LO-TH tal como se guarda (`GtfItem`, lib/db/forest-gtf.db.ts). */
+interface ItemGtf {
+  code?: string | null;
+  codigoGuia?: string | null;
+  volumeM3?: number | null;
+}
+const claveCodigo = (c: string | null | undefined) => (c ?? "").trim().toUpperCase();
+
+/** El m³ que la GTF declara para cada código de troza (el único y el impreso), para `m3Guia`. */
+export function m3PorCodigoDeGuia(items: Prisma.JsonValue | null): Map<string, number> {
+  const out = new Map<string, number>();
+  for (const it of arr<ItemGtf>(items) ?? []) {
+    const v = typeof it.volumeM3 === "number" && Number.isFinite(it.volumeM3) && it.volumeM3 > 0 ? it.volumeM3 : null;
+    if (v == null) continue;
+    for (const c of [claveCodigo(it.code), claveCodigo(it.codigoGuia)]) if (c && !out.has(c)) out.set(c, v);
+  }
+  return out;
+}
+
+/**
+ * De dónde sale la guía de una cubicación de TROZAS (ADR-483 D3):
+ *   - `loth`: la GTF del Libro TH (validada del negocio y viva). El N° es el del
+ *     Libro CTP si la guía ya ingresó (así los frenos de doble pago la ven como
+ *     la misma), y si no, el de la GTF: **no** se exige que esté en `WoodEntry`.
+ *     El texto de guía del cuerpo se ignora.
+ *   - sin origen, `libre` o `ctp`: como ADR-478 (`guiaCanonica`).
+ */
+async function guiaDelOrigen(
+  tenantId: string,
+  input: { origen?: "libre" | "ctp" | "loth"; origenId?: string; sentido: "compra" | "venta"; gtfNumber?: string },
+): Promise<{ gtfNumber: string | null; origen: OrigenCubicacion | null; origenId: string | null; referenciaSmalianM3: Prisma.Decimal | null; m3PorCodigo: Map<string, number> }> {
+  if (input.origen !== "loth") {
+    return {
+      gtfNumber: await guiaCanonica(tenantId, input.sentido, input.gtfNumber),
+      origen: input.origen ?? null,
+      origenId: null,
+      referenciaSmalianM3: null,
+      m3PorCodigo: new Map(),
+    };
+  }
+  const gtf = await lothDelTenant(prisma, tenantId, input.origenId);
+  return {
+    gtfNumber: (await numeroDelLibroCtp(tenantId, gtf.gtfNumber)) ?? gtf.gtfNumber.trim(),
+    origen: "loth",
+    origenId: gtf.id,
+    referenciaSmalianM3: gtf.volumenTotalM3,
+    m3PorCodigo: m3PorCodigoDeGuia(gtf.items),
+  };
+}
+
+/** Lo que una troza de la guía declara (SERFOR), pegado a la troza con el mismo código. */
+function conM3DeGuia(trozas: TrozaCongelada[], m3PorCodigo: ReadonlyMap<string, number>): TrozaCongelada[] {
+  if (m3PorCodigo.size === 0) return trozas;
+  return trozas.map((t) => {
+    const m3 = t.codigo ? m3PorCodigo.get(claveCodigo(t.codigo)) : undefined;
+    return m3 != null ? { ...t, m3Guia: m3 } : t;
+  });
+}
+
+/**
+ * La fila manda el ORIGEN, como manda el material: un borrador ligado a una
+ * GTF del Libro TH o a un despacho no se suelta al corregirlo (si no, queda
+ * «libre» y sin frenos). Devuelve el `origenId` de la fila para heredarlo
+ * cuando el cuerpo no trae origen; otro origen u otro id → 409 `ORIGEN_DISTINTO`.
+ */
+export async function origenDeLaFila(
+  tenantId: string,
+  id: string,
+  ligado: "loth" | "despacho",
+  cuerpo: { origen?: string; origenId?: string },
+): Promise<string | null> {
+  /* Aplicada o anulada: no se mira acá, la corrección responde YA_APLICADA / ANULADA. */
+  const fila = await prisma.forestCubicacionTrozas.findFirst({
+    where: { id, tenantId, deletedAt: null, estado: "borrador" },
+    select: { codigo: true, origen: true, origenId: true },
+  });
+  if (!fila || fila.origen !== ligado || !fila.origenId) return null;
+  if (cuerpo.origen === undefined || (cuerpo.origen === ligado && cuerpo.origenId === fila.origenId)) return fila.origenId;
+  const de = ligado === "loth" ? "una GTF del Libro TH" : "un despacho del Libro CTP";
+  throw new CubicacionTrozasError("ORIGEN_DISTINTO", `${fila.codigo} se hizo desde ${de}: no se cambia de origen. Haz otra cubicación.`);
+}
+
+/** La GTF de salida que el despacho tiene HOY (se emite después de guardar la cubicación), sin lanzar si ya no está. */
+async function guiaActualDelDespacho(tx: Tx, tenantId: string, id: string): Promise<string | null> {
+  const d = await tx.forestCtpEntry.findFirst({
+    where: { id, tenantId, section: "despacho", deletedAt: null, status: { not: "anulado" } },
+    select: { gtfNumber: true },
+  });
+  return d?.gtfNumber?.trim() || null;
+}
+
+/**
+ * Las líneas de despacho vivas con esa GTF de salida (la cola del N° y
+ * `mismoNumeroGtf`, como el prellenado): la guía puede juntar varias líneas
+ * (`mismaGuiaQue`) y la cubicación de una cobra la madera de todas.
+ */
+export async function lineasDeLaGuiaDeSalida(db: Db, tenantId: string, gtf: string): Promise<string[]> {
+  const filas = await db.forestCtpEntry.findMany({
+    where: { tenantId, section: "despacho", deletedAt: null, status: { not: "anulado" }, gtfNumber: filtroMismaGuia(gtf) ?? gtf },
+    select: { id: true, gtfNumber: true },
+    take: 200,
+  });
+  return filas.filter((f) => f.gtfNumber === gtf || mismoNumeroGtf(f.gtfNumber, gtf)).map((f) => f.id);
+}
+
+/** Lo que «aplicar» bloqueó del despacho antes de leer la fila: su guía de hoy y sus líneas (ordenadas). */
+interface DespachoBloqueado {
+  guia: string | null;
+  lineas: string[];
+}
+
+/**
+ * Un despacho, una sola cubicación aplicada (ADR-483 D8), y el origen sigue
+ * vivo al cobrarse: bajo los locks `cub:{tenant}:despacho:{id}` de TODAS las
+ * líneas de su guía de hoy, que toma «aplicar». Otra aplicada sobre cualquiera
+ * de ellas = 409 (aunque se guardó cuando la línea aún no tenía guía); si la
+ * guía o sus líneas cambiaron después de bloquear, 409 `DESACTUALIZADA`.
+ */
+async function exigirOrigenVivo(
+  tx: Tx,
+  tenantId: string,
+  cub: { id: string; codigo: string; origen: string | null; origenId: string | null },
+  bloqueado: DespachoBloqueado | null,
+): Promise<void> {
+  if (cub.origen === "loth") await lothDelTenant(tx, tenantId, cub.origenId);
+  if (cub.origen !== "despacho" || !cub.origenId) return;
+  const d = await despachoDelTenant(tx, tenantId, cub.origenId);
+  const guia = d.gtfNumber?.trim() || null;
+  const lineas = guia ? await lineasDeLaGuiaDeSalida(tx, tenantId, guia) : [];
+  if (!bloqueado || guia !== bloqueado.guia || lineas.some((l) => !bloqueado.lineas.includes(l))) {
+    throw new CubicacionTrozasError("DESACTUALIZADA", `Al despacho de ${cub.codigo} le cambiaron la guía mientras cobrabas: vuelve a intentarlo.`);
+  }
+  const otra = await tx.forestCubicacionTrozas.findFirst({
+    where: { tenantId, origen: "despacho", origenId: { in: [...new Set([cub.origenId, ...lineas])] }, estado: "aplicada", deletedAt: null, NOT: { id: cub.id } },
+    select: { codigo: true },
+  });
+  if (otra) {
+    throw new CubicacionTrozasError("DESPACHO_YA_VALORIZADO", `Ese despacho ya se cobró con la cubicación ${otra.codigo}: anúlala si quieres hacerla de nuevo.`, {
+      codigo: otra.codigo,
+    });
+  }
+}
+
+/**
+ * Los locks de «aplicar» que van DESPUÉS de los de la guía (ADR-483 §7):
+ * despacho → cubicación del Cubicador. Con origen despacho bloquea TODAS las
+ * líneas de su guía de hoy, en orden de id (sin orden, dos cobros se abrazan
+ * en deadlock).
+ */
+async function bloquearDespachoYRefEnTx(
+  tx: Tx,
+  tenantId: string,
+  previa: { origen: string | null; origenId: string | null; cubicacionRefId: string | null },
+  guiaHoy: string | null,
+): Promise<DespachoBloqueado | null> {
+  let despacho: DespachoBloqueado | null = null;
+  if (previa.origen === "despacho" && previa.origenId) {
+    const lineas = [...new Set([previa.origenId, ...(guiaHoy ? await lineasDeLaGuiaDeSalida(tx, tenantId, guiaHoy) : [])])].sort();
+    for (const l of lineas) await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`cub:${tenantId}:despacho:${l}`}))`;
+    despacho = { guia: guiaHoy, lineas };
+  }
+  if (previa.cubicacionRefId) await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`cub:${tenantId}:ref:${previa.cubicacionRefId}`}))`;
+  return despacho;
+}
+
+/**
+ * Una cubicación guardada del Cubicador de madera se cobra una vez POR
+ * SENTIDO: «uno por uno» copia todas sus piezas, así que dos aplicadas del
+ * mismo sentido cobran el mismo lote dos veces. Comprarlo y después venderlo
+ * sigue valiendo. Bajo el lock `cub:{tenant}:ref:{id}`.
+ */
+async function exigirRefSinCobrar(tx: Tx, tenantId: string, cub: { id: string; cubicacionRefId: string | null; sentido: string }): Promise<void> {
+  if (!cub.cubicacionRefId) return;
+  const otra = await tx.forestCubicacionTrozas.findFirst({
+    where: { tenantId, cubicacionRefId: cub.cubicacionRefId, sentido: cub.sentido, estado: "aplicada", deletedAt: null, NOT: { id: cub.id } },
+    select: { codigo: true },
+  });
+  if (otra) {
+    throw new CubicacionTrozasError(
+      "REF_YA_VALORIZADA",
+      `Esas piezas del Cubicador de madera ya se ${cub.sentido === "venta" ? "vendieron" : "compraron"} con ${otra.codigo}: anúlala si quieres cobrarlas de nuevo.`,
+      { codigo: otra.codigo },
+    );
+  }
 }
 
 /** Una guía, una sola plata (§6): ni abono `madera`, ni costo, ni otra cubicación aplicada. Bajo el lock de la guía; compara con `mismoNumeroGtf`. */
@@ -295,14 +600,17 @@ async function exigirGuiaSinPlata(tx: Tx, tenantId: string, gtf: string, id: str
   if (otra) throw new CubicacionTrozasError("GUIA_YA_VALORIZADA", `La guía ${gtf} ya se pagó con la cubicación ${otra.codigo}.`);
 }
 
-function auditar(action: CtpAuditAction, tenantId: string, row: RowResumen, actor: ActorCubicacion, extra: string) {
-  const formula = row.formula === "oxapampina" ? "oxapampina" : "smalian";
+export function auditar(action: CtpAuditAction, tenantId: string, row: RowResumen, actor: ActorCubicacion, extra: string) {
+  const formula = formulaDe(row.formula);
+  const cuenta = materialDe(row.material) === "aserrada" ? `aserrada · ${row.nTrozas} piezas` : `${row.nTrozas} trozas`;
   const detail = [
     row.codigo,
     row.personaNombre ?? "sin persona",
-    `${row.nTrozas} trozas · ${fmtVolumen(Number(row.volumen), formula)}`,
+    `${cuenta} · ${fmtVolumen(Number(row.volumen), formula)}`,
+    row.volumenBruto != null ? `bruto ${fmtVolumen(Number(row.volumenBruto), formula)}` : null,
     row.monto != null ? `S/ ${Number(row.monto).toFixed(2)}` : null,
     row.gtfNumber ? `guía ${row.gtfNumber}` : null,
+    row.origen === "loth" || row.origen === "despacho" ? `de ${row.origen === "loth" ? "la GTF del Libro TH" : "el despacho"} ${row.origenId ?? ""}`.trim() : null,
     extra || null,
     actor.ip ? `IP ${actor.ip}` : null,
   ].filter(Boolean).join(" · ");
@@ -313,12 +621,24 @@ const textoImputacion = (imp: readonly ImputacionGuardada[]) =>
   imp.map((i) => `${i.codigoOperacion ?? i.adelantoId}: S/ ${i.monto.toFixed(2)}${i.excedido ? " (excedido)" : ""}`).join("; ");
 
 export const ForestCubicacionTrozasDB = {
+  /** Sin `material` = sólo trozas (Herramientas y Cuenta no cambian, ADR-483 D12); `todas` trae también la aserrada. */
   async list(
     tenantId: string,
-    filtros: { beneficiarioId?: string; parteId?: string; estado?: EstadoCubicacion } = {},
+    filtros: {
+      beneficiarioId?: string;
+      parteId?: string;
+      estado?: EstadoCubicacion;
+      material?: MaterialCubicacion | "todas";
+      origen?: OrigenCubicacion;
+      origenId?: string;
+    } = {},
   ): Promise<CubicacionTrozasResumen[]> {
     if (!tenantId) throw new Error("tenantId is required");
-    const clave = `${CACHE}:${tenantId}:list:${filtros.beneficiarioId ?? ""}:${filtros.parteId ?? ""}:${filtros.estado ?? ""}`;
+    const material = filtros.material ?? "troza";
+    const clave = [
+      `${CACHE}:${tenantId}:list`, filtros.beneficiarioId ?? "", filtros.parteId ?? "", filtros.estado ?? "",
+      material, filtros.origen ?? "", filtros.origenId ?? "",
+    ].join(":");
     return getOrSet(clave, 20, async () => {
       const rows = await prisma.forestCubicacionTrozas.findMany({
         where: {
@@ -326,6 +646,9 @@ export const ForestCubicacionTrozasDB = {
           ...(filtros.beneficiarioId ? { beneficiarioId: filtros.beneficiarioId } : {}),
           ...(filtros.parteId ? { parteId: filtros.parteId } : {}),
           ...(filtros.estado ? { estado: filtros.estado } : {}),
+          ...(material === "todas" ? {} : { material }),
+          ...(filtros.origen ? { origen: filtros.origen } : {}),
+          ...(filtros.origenId ? { origenId: filtros.origenId } : {}),
         },
         select: SELECT_RESUMEN,
         orderBy: [{ fecha: "desc" }, { createdAt: "desc" }],
@@ -376,58 +699,51 @@ export const ForestCubicacionTrozasDB = {
     if (!tenantId) throw new Error("tenantId is required");
     const persona = await resolverPersona(prisma, tenantId, input);
     await exigirContrato(tenantId, input.contratoId);
-    const gtfNumber = await guiaCanonica(tenantId, input.sentido, input.gtfNumber);
-    const { trozas, volumen } = cubicar(input);
-    const crear = () =>
-      prisma.$transaction(async (tx) => {
-        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`cub:${tenantId}:codigo`}))`;
-        const anio = Number(input.fecha.slice(0, 4));
-        const emitidos = await tx.forestCubicacionTrozas.findMany({
-          where: { tenantId, codigo: { startsWith: `${PREFIJO_CUBICACION}-${anio}-` } },
-          select: { codigo: true },
-        });
-        return tx.forestCubicacionTrozas.create({
-          data: {
-            tenantId,
-            codigo: siguienteCodigo(emitidos.map((e) => e.codigo), anio, PREFIJO_CUBICACION),
-            fecha: new Date(`${input.fecha}T00:00:00.000Z`),
-            formula: input.formula,
-            diametros: input.diametros,
-            beneficiarioId: persona.beneficiarioId,
-            parteId: persona.parteId,
-            personaNombre: persona.nombre,
-            sentido: input.sentido,
-            gtfNumber,
-            contratoId: input.contratoId || null,
-            trozas: trozas as unknown as Prisma.InputJsonValue,
-            nTrozas: trozas.length,
-            volumen: new Prisma.Decimal(volumen.toFixed(4)),
-            notas: input.notas || null,
-            createdBy: actor.usuario || "unknown",
-          },
-        });
-      }, TX_OPTS);
-    let row: Row;
-    try {
-      row = await crear();
-    } catch (err) {
-      if (!esChoqueUnico(err)) throw err;
-      row = await crear();
-    }
+    const guia = await guiaDelOrigen(tenantId, input);
+    const c = cubicar(input);
+    const trozas = conM3DeGuia(c.trozas, guia.m3PorCodigo);
+    const row = await crearConCodigo(tenantId, input.fecha, {
+      fecha: new Date(`${input.fecha}T00:00:00.000Z`),
+      formula: input.formula,
+      diametros: input.diametros,
+      beneficiarioId: persona.beneficiarioId,
+      parteId: persona.parteId,
+      personaNombre: persona.nombre,
+      sentido: input.sentido,
+      gtfNumber: guia.gtfNumber,
+      contratoId: input.contratoId || null,
+      material: "troza",
+      modo: "pieza",
+      origen: guia.origen,
+      origenId: guia.origenId,
+      referenciaSmalianM3: guia.referenciaSmalianM3,
+      descuentos: input.descuentos ? (input.descuentos as unknown as Prisma.InputJsonValue) : Prisma.DbNull,
+      volumenBruto: brutoSiCambio(c.bruto, c.neto, input.formula),
+      trozas: trozas as unknown as Prisma.InputJsonValue,
+      nTrozas: trozas.length,
+      volumen: new Prisma.Decimal(c.neto.toFixed(4)),
+      notas: input.notas || null,
+      createdBy: actor.usuario || "unknown",
+    });
     invalidar(tenantId);
     auditCtp(auditar("ctp_cubicacion_trozas_guardar", tenantId, row, actor, "borrador nuevo"));
     return aDTO(row);
   },
 
   /** Corrige un BORRADOR con la versión que se leyó. Aplicada o anulada no se edita. */
-  async editar(tenantId: string, id: string, input: EditarCubicacionInput, actor: ActorCubicacion): Promise<CubicacionTrozasDTO> {
+  async editar(tenantId: string, id: string, cuerpo: EditarCubicacionInput, actor: ActorCubicacion): Promise<CubicacionTrozasDTO> {
     if (!tenantId) throw new Error("tenantId is required");
+    /* Corregir desde Herramientas no manda el origen: se hereda el de la fila (409 si trae otro). */
+    const ligadaA = await origenDeLaFila(tenantId, id, "loth", cuerpo);
+    const input: EditarCubicacionInput = ligadaA ? { ...cuerpo, origen: "loth", origenId: ligadaA } : cuerpo;
     const persona = await resolverPersona(prisma, tenantId, input);
     await exigirContrato(tenantId, input.contratoId);
-    const gtfNumber = await guiaCanonica(tenantId, input.sentido, input.gtfNumber);
-    const { trozas, volumen } = cubicar(input);
+    const guia = await guiaDelOrigen(tenantId, input);
+    const c = cubicar(input);
+    const trozas = conM3DeGuia(c.trozas, guia.m3PorCodigo);
     const res = await prisma.forestCubicacionTrozas.updateMany({
-      where: { id, tenantId, estado: "borrador", version: input.version, deletedAt: null },
+      /* La fila manda el material: una de aserrada no se pisa con trozas (409 `MATERIAL_DISTINTO`). */
+      where: { id, tenantId, estado: "borrador", version: input.version, deletedAt: null, material: "troza" },
       data: {
         fecha: new Date(`${input.fecha}T00:00:00.000Z`),
         formula: input.formula,
@@ -436,16 +752,21 @@ export const ForestCubicacionTrozasDB = {
         parteId: persona.parteId,
         personaNombre: persona.nombre,
         sentido: input.sentido,
-        gtfNumber,
+        gtfNumber: guia.gtfNumber,
         contratoId: input.contratoId || null,
+        origen: guia.origen,
+        origenId: guia.origenId,
+        referenciaSmalianM3: guia.referenciaSmalianM3,
+        descuentos: input.descuentos ? (input.descuentos as unknown as Prisma.InputJsonValue) : Prisma.DbNull,
+        volumenBruto: brutoSiCambio(c.bruto, c.neto, input.formula),
         trozas: trozas as unknown as Prisma.InputJsonValue,
         nTrozas: trozas.length,
-        volumen: new Prisma.Decimal(volumen.toFixed(4)),
+        volumen: new Prisma.Decimal(c.neto.toFixed(4)),
         notas: input.notas || null,
         version: { increment: 1 },
       },
     });
-    if (res.count === 0) await explicarNoEditable(tenantId, id);
+    if (res.count === 0) await explicarNoEditable(tenantId, id, "troza");
     const row = await prisma.forestCubicacionTrozas.findFirst({ where: { id, tenantId, deletedAt: null } });
     if (!row) throw new CubicacionTrozasError("NO_ENCONTRADA", "Esa cubicación no existe.");
     invalidar(tenantId);
@@ -484,10 +805,15 @@ export const ForestCubicacionTrozasDB = {
       prisma.$transaction(async (tx) => {
         const previa = await tx.forestCubicacionTrozas.findFirst({
           where: { id, tenantId, deletedAt: null },
-          select: { gtfNumber: true, beneficiarioId: true, parteId: true },
+          select: { gtfNumber: true, beneficiarioId: true, parteId: true, origen: true, origenId: true, cubicacionRefId: true },
         });
         if (!previa) throw new CubicacionTrozasError("NO_ENCONTRADA", "Esa cubicación no existe.");
-        if (previa.gtfNumber) await ForestCuentaDB.bloquearGuiasEnTx(tx, tenantId, [previa.gtfNumber]);
+        /* Orden de locks: guía → despacho → cubicación del Cubicador → persona → fila → adelantos (ADR-483 §7).
+           Con origen despacho manda también la guía de HOY: la GTF de salida se emite después de guardar y junta líneas. */
+        const guiaHoy = previa.origen === "despacho" && previa.origenId ? await guiaActualDelDespacho(tx, tenantId, previa.origenId) : null;
+        const guias = [...new Set([previa.gtfNumber, guiaHoy].filter((g): g is string => Boolean(g)))];
+        if (guias.length) await ForestCuentaDB.bloquearGuiasEnTx(tx, tenantId, guias);
+        const despacho = await bloquearDespachoYRefEnTx(tx, tenantId, previa, guiaHoy);
         const beneficiarioId = await beneficiarioDe(tx, tenantId, previa);
         if (beneficiarioId) await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`liq:${tenantId}:benef:${beneficiarioId}`}))`;
         await tx.$queryRaw`SELECT "id" FROM "ForestCubicacionTrozas" WHERE "id" = ${id} AND "tenantId" = ${tenantId} FOR UPDATE`;
@@ -504,22 +830,32 @@ export const ForestCubicacionTrozasDB = {
           throw new CubicacionTrozasError("YA_APLICADA", `${cub.codigo} ya está aplicada a la cuenta. Para cambiarla, anúlala y hazla de nuevo.`);
         }
         if (cub.estado === "anulada") throw new CubicacionTrozasError("ANULADA", `${cub.codigo} está anulada: guárdala de nuevo para aplicarla.`);
-        const cambioDueno = cub.gtfNumber !== previa.gtfNumber || cub.beneficiarioId !== previa.beneficiarioId || cub.parteId !== previa.parteId;
+        const cambioDueno =
+          cub.gtfNumber !== previa.gtfNumber || cub.beneficiarioId !== previa.beneficiarioId || cub.parteId !== previa.parteId ||
+          cub.origen !== previa.origen || cub.origenId !== previa.origenId || cub.cubicacionRefId !== previa.cubicacionRefId;
         if (cub.version !== input.version || cambioDueno) {
           throw new CubicacionTrozasError("DESACTUALIZADA", `Alguien cambió ${cub.codigo} mientras la mirabas: vuelve a abrirla.`, { version: cub.version });
         }
         const otraConClave = await tx.forestCubicacionTrozas.findFirst({ where: { tenantId, idempotencyKey: clave, NOT: { id } }, select: { codigo: true } });
         if (otraConClave) throw new CubicacionTrozasError("IDEMPOTENCIA_DISTINTA", `Esa clave ya se usó para ${otraConClave.codigo}: vuelve a abrir la cubicación.`);
         if (cub.gtfNumber) await exigirGuiaSinPlata(tx, tenantId, cub.gtfNumber, id);
+        /* La guía que el despacho recibió DESPUÉS de guardar también frena (D8). */
+        if (guiaHoy && !(cub.gtfNumber && (cub.gtfNumber === guiaHoy || mismoNumeroGtf(cub.gtfNumber, guiaHoy)))) {
+          await exigirGuiaSinPlata(tx, tenantId, guiaHoy, id);
+        }
+        await exigirOrigenVivo(tx, tenantId, cub, despacho);
+        await exigirRefSinCobrar(tx, tenantId, cub);
 
-        const formula = cub.formula === "oxapampina" ? "oxapampina" : "smalian";
-        const trozas = arr<TrozaCongelada>(cub.trozas) ?? [];
+        /* La fórmula de la fila tal cual: tablar se cobra por PT, nunca como m³ (ADR-483). */
+        const formula = formulaDe(cub.formula);
+        const material = materialDe(cub.material);
         let valor: ReturnType<typeof valorizar>;
         try {
-          valor = valorizar(agruparPorEspecie(trozas, formula), input.precios);
+          const lineas = lineasDeEspecie({ material, modo: cub.modo === "total" ? "total" : "pieza", formula, trozas: arr<unknown>(cub.trozas) ?? [] });
+          valor = valorizar(aplicarDescuentoLote(lineas, descuentosDe(cub.descuentos), formula).lineas, input.precios, input.precioGeneral);
         } catch (err) {
           if (err instanceof FaltaPrecioError) throw new CubicacionTrozasError("FALTA_PRECIO", err.message, { especie: err.especie });
-          throw err;
+          throw comoErrorDeDescuento(err);
         }
         if (!(valor.monto >= 0.01)) throw new CubicacionTrozasError("MONTO_CERO", "Con esos precios la madera vale S/ 0,00: revisa los precios.");
         if (Math.abs(valor.monto - input.montoVisto) > 0.005) {
@@ -563,7 +899,10 @@ export const ForestCubicacionTrozasDB = {
             tipo: "LIBRE",
             valorManual: p.monto,
             cantidad: Math.round(p.volumen * 1000) / 1000,
-            descripcion: descripcionEntregaMadera({ codigo: cub.codigo, nTrozas: cub.nTrozas, volumen: Number(cub.volumen), formula }, { i: i + 1, de: partes.length }),
+            descripcion: descripcionEntregaMadera(
+              { codigo: cub.codigo, nTrozas: cub.nTrozas, volumen: Number(cub.volumen), formula, material },
+              { i: i + 1, de: partes.length },
+            ),
             fecha,
             idempotencyKey: `${clave}:${p.adelantoId}`,
             cubicacionId: id,
@@ -683,16 +1022,51 @@ export const ForestCubicacionTrozasDB = {
   },
 };
 
-/** Por qué no se pudo editar o borrar: no existe, ya está aplicada/anulada, o la versión es otra. */
-async function explicarNoEditable(tenantId: string, id: string): Promise<never> {
+/**
+ * Por qué no se pudo editar o borrar: no existe, es de otro material (ADR-483),
+ * ya está aplicada/anulada, o la versión es otra.
+ */
+export async function explicarNoEditable(tenantId: string, id: string, material?: MaterialCubicacion): Promise<never> {
   const actual = await prisma.forestCubicacionTrozas.findFirst({
     where: { id, tenantId, deletedAt: null },
-    select: { codigo: true, estado: true, version: true },
+    select: { codigo: true, estado: true, version: true, material: true },
   });
   if (!actual) throw new CubicacionTrozasError("NO_ENCONTRADA", "Esa cubicación no existe.");
+  if (material && materialDe(actual.material) !== material) {
+    const es = materialDe(actual.material) === "aserrada" ? "madera aserrada" : "trozas";
+    throw new CubicacionTrozasError("MATERIAL_DISTINTO", `${actual.codigo} es de ${es}: no se cambia de material. Haz otra cubicación.`);
+  }
   if (actual.estado === "aplicada") {
     throw new CubicacionTrozasError("YA_APLICADA", `${actual.codigo} ya está aplicada a la cuenta: anúlala para cambiarla.`);
   }
   if (actual.estado === "anulada") throw new CubicacionTrozasError("ANULADA", `${actual.codigo} está anulada: no se cambia.`);
   throw new CubicacionTrozasError("DESACTUALIZADA", `Alguien cambió ${actual.codigo} mientras la mirabas: vuelve a abrirla.`, { version: actual.version });
+}
+
+type DatosNueva = Omit<Prisma.ForestCubicacionTrozasUncheckedCreateInput, "tenantId" | "codigo">;
+
+/**
+ * El alta con el siguiente «CUB-AAAA-NNNN» (año de la fecha de la cubicación)
+ * bajo el lock `cub:{tenant}:codigo`; un choque de código se reintenta una vez.
+ * La comparten las trozas y la madera aserrada (ADR-483 P5: un solo prefijo).
+ */
+export async function crearConCodigo(tenantId: string, fecha: string, data: DatosNueva): Promise<Row> {
+  const crear = () =>
+    prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`cub:${tenantId}:codigo`}))`;
+      const anio = Number(fecha.slice(0, 4));
+      const emitidos = await tx.forestCubicacionTrozas.findMany({
+        where: { tenantId, codigo: { startsWith: `${PREFIJO_CUBICACION}-${anio}-` } },
+        select: { codigo: true },
+      });
+      return tx.forestCubicacionTrozas.create({
+        data: { ...data, tenantId, codigo: siguienteCodigo(emitidos.map((e) => e.codigo), anio, PREFIJO_CUBICACION) },
+      });
+    }, TX_OPTS);
+  try {
+    return await crear();
+  } catch (err) {
+    if (!esChoqueUnico(err)) throw err;
+    return crear();
+  }
 }

@@ -61,6 +61,24 @@ export async function guardCubicacion(
   return { auth, actor: { usuario: auth.username ?? "unknown", ip: getClientIp(req) } };
 }
 
+/** El libro de donde sale una cubicación comercial (ADR-483): además de las Herramientas, tiene que estar habilitado. */
+const SPEC_DEL_LIBRO = { loth: "spec:forestal:loth-libro", despacho: "spec:forestal:ctp-libro" } as const;
+const NOMBRE_DEL_LIBRO = { loth: "El Libro de Operaciones del título habilitante", despacho: "El Libro del CTP" } as const;
+
+/** Origen `loth` o `despacho` con su libro apagado → 403 `specialization_disabled`; otro origen → null (pasa). */
+export async function libroDelOrigen(tenantId: string, origen: unknown): Promise<NextResponse | null> {
+  if (origen !== "loth" && origen !== "despacho") return null;
+  if (await isSpecializationEnabled(tenantId, SPEC_DEL_LIBRO[origen])) return null;
+  return NextResponse.json(
+    { error: "specialization_disabled", message: `${NOMBRE_DEL_LIBRO[origen]} no está habilitado para esta tienda.` },
+    { status: 403, headers: noStore },
+  );
+}
+
+/** ADR-483: el cuerpo de la madera aserrada se reconoce por `material: "aserrada"`; lo demás es de trozas. */
+export const esAserrada = (body: unknown): boolean =>
+  typeof body === "object" && body !== null && (body as { material?: unknown }).material === "aserrada";
+
 export async function leerJson(req: NextRequest): Promise<{ ok: true; body: unknown } | { ok: false; res: NextResponse }> {
   try {
     return { ok: true, body: await req.json() };

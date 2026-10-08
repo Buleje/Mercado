@@ -11,6 +11,10 @@
  * Anti doble pago desde acá: el lote recuerda qué CUB salió de él. Guardar otra
  * vez ACTUALIZA esa misma si sigue en borrador; si ya se descontó, pide marcar
  * que son otras trozas antes de guardar una nueva.
+ *
+ * Con `vinculo` (K7 · ADR-483) las trozas salen de una GTF del Libro TH: la
+ * guía queda fija, viajan los descuentos de cada troza y del lote, y el
+ * volumen que se ve es el NETO (la misma `cubicarTrozasComercial` del servidor).
  */
 import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Loader2, Save } from "@buleje/design-system/icons";
@@ -19,6 +23,8 @@ import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useTenant } from "@/contexts/tenant-context";
 import { formatCurrency } from "@/lib/currency";
 import { cubicarEnServidor, fmtVolumen, MedidaFueraDeRangoError } from "@/lib/forestal/cubicacion-cuenta";
+import { cubicarTrozasComercial, DescuentoInvalidoError } from "@/lib/forestal/cubicacion-comercial";
+import type { DescuentoLote, DescuentoTroza } from "@/lib/forestal/cubicacion-comercial-tipos";
 import { limaDateKey } from "@/lib/utils";
 import { UNIDADES_FORMULA, totalesSegun, type DiametrosPorTroza, type FormulaTrozas } from "@/lib/forestal/cubicacion-trozas-formula";
 import { BOTON_PRIMARIO, BOTON_SECUNDARIO } from "./ctp-lotes-modal-marco";
@@ -48,26 +54,45 @@ function etiquetaPersona(p: PersonaCuenta, sentido: SentidoCubicacion): string {
   return `${p.nombre} · ${n} ${n === 1 ? "adelanto" : "adelantos"} · ${quien} ${formatCurrency(monto)}`;
 }
 
+/** Las trozas salen de una guía (K7): la guía fija y los descuentos, alineados por índice con `rows`. */
+export interface VinculoCubicacion {
+  origen: "loth";
+  origenId: string;
+  gtfNumber: string;
+  descuentos: DescuentoLote | null;
+  descuentosPorTroza: Array<DescuentoTroza | null>;
+  sentidoInicial: SentidoCubicacion;
+}
+
+/** Cada troza con su descuento (mismo índice que `rows`). */
+const conDescuentos = (trozas: GuardarCubicacionInput["trozas"], vinculo?: VinculoCubicacion): GuardarCubicacionInput["trozas"] =>
+  vinculo ? trozas.map((t, i) => (vinculo.descuentosPorTroza[i] ? { ...t, descuento: vinculo.descuentosPorTroza[i] } : t)) : trozas;
+
 export default function GuardarEnLaCuentaModal({
-  rows, formula, diametros, previaId, onGuardada, onCerrar,
+  rows, formula, diametros, previaId, vinculo, aboveModals = false, onGuardada, onCerrar,
 }: {
   rows: FilaTroza[];
   formula: FormulaTrozas;
   diametros: DiametrosPorTroza;
   /** La CUB que ya salió de este lote, si salió alguna. */
   previaId: string | null;
+  /** Sin vínculo se porta como siempre (el patio de Herramientas). */
+  vinculo?: VinculoCubicacion;
+  /** Se abre sobre otro modal (la planilla de la guía). */
+  aboveModals?: boolean;
   onGuardada: (c: CubicacionTrozas) => void;
   onCerrar: () => void;
 }) {
   const { branding } = useTenant();
   const { personas, cargando, error: errorPersonas } = usePersonasDeLaCuenta(true);
   const [clave, setClave] = useState("");
-  const [sentido, setSentido] = useState<SentidoCubicacion>("compra");
+  const [sentido, setSentido] = useState<SentidoCubicacion>(vinculo?.sentidoInicial ?? "compra");
   const [fecha, setFecha] = useState(() => limaDateKey());
-  const [gtf, setGtf] = useState("");
+  const [gtf, setGtf] = useState(vinculo?.gtfNumber ?? "");
   const [notas, setNotas] = useState("");
   const [especieFaltante, setEspecieFaltante] = useState("");
   const [previa, setPrevia] = useState<CubicacionTrozas | null>(null);
+  const guiaFija = !!vinculo;
   const [comoNueva, setComoNueva] = useState(false);
   const [sonOtras, setSonOtras] = useState(false);
   const [enviando, setEnviando] = useState(false);
@@ -81,12 +106,12 @@ export default function GuardarEnLaCuentaModal({
       if (!vivo || !r.ok || r.data.estado === "anulada") return;
       setPrevia(r.data);
       setSentido(r.data.sentido);
-      setGtf(r.data.gtfNumber ?? "");
+      if (!guiaFija) setGtf(r.data.gtfNumber ?? "");
       if (r.data.beneficiarioId) setClave(`benef:${r.data.beneficiarioId}`);
       else if (r.data.parteId) setClave(`parte:${r.data.parteId}`);
     });
     return () => { vivo = false; };
-  }, [previaId]);
+  }, [previaId, guiaFija]);
 
   const ordenadas = useMemo(
     () => [...(personas ?? [])].sort((a, b) => abiertosDe(b, sentido).n - abiertosDe(a, sentido).n || a.nombre.localeCompare(b.nombre)),
@@ -100,11 +125,15 @@ export default function GuardarEnLaCuentaModal({
      pasa del tope se avisa acá, antes del 422. */
   const cubicado = useMemo((): { volumen: number; fueraDeRango: string | null } => {
     try {
-      return { volumen: cubicarEnServidor(formula, trozasParaGuardar(rows, diametros, ""), diametros).volumen, fueraDeRango: null };
+      const trozas = trozasParaGuardar(rows, diametros, "");
+      return vinculo
+        ? { volumen: cubicarTrozasComercial(formula, conDescuentos(trozas, vinculo), diametros, vinculo.descuentos).neto, fueraDeRango: null }
+        : { volumen: cubicarEnServidor(formula, trozas, diametros).volumen, fueraDeRango: null };
     } catch (e) {
-      return { volumen: totalesSegun(rows, formula).volumen, fueraDeRango: e instanceof MedidaFueraDeRangoError ? e.message : null };
+      const conocido = e instanceof MedidaFueraDeRangoError || e instanceof DescuentoInvalidoError;
+      return { volumen: totalesSegun(rows, formula).volumen, fueraDeRango: conocido ? e.message : null };
     }
-  }, [rows, formula, diametros]);
+  }, [rows, formula, diametros, vinculo]);
   const volumen = cubicado.volumen;
   const sinEspecie = rows.filter((r) => !r.especie?.trim()).length;
   const especies = useMemo(() => [...new Set(rows.map((r) => r.especie?.trim()).filter((e): e is string => !!e))], [rows]);
@@ -121,7 +150,10 @@ export default function GuardarEnLaCuentaModal({
     setError(null);
     const input: GuardarCubicacionInput = {
       fecha, formula, diametros, sentido,
-      trozas: trozasParaGuardar(rows, diametros, especieFaltante),
+      trozas: conDescuentos(trozasParaGuardar(rows, diametros, especieFaltante), vinculo),
+      ...(vinculo
+        ? { origen: vinculo.origen, origenId: vinculo.origenId, ...(vinculo.descuentos ? { descuentos: vinculo.descuentos } : {}) }
+        : {}),
       ...(persona.beneficiarioId ? { beneficiarioId: persona.beneficiarioId } : {}),
       ...(persona.parteId ? { parteId: persona.parteId } : {}),
       ...(gtf.trim() ? { gtfNumber: gtf.trim() } : {}),
@@ -138,6 +170,7 @@ export default function GuardarEnLaCuentaModal({
     <AdminModal
       open
       onClose={onCerrar}
+      aboveModals={aboveModals}
       title="Guardar en la cuenta"
       description={`${branding.name ?? "Este negocio"} · ${rows.length} ${rows.length === 1 ? "troza" : "trozas"} · ${fmtVolumen(volumen, formula)}`}
       icon={Save}
@@ -202,8 +235,9 @@ export default function GuardarEnLaCuentaModal({
             <input id="cub-fecha" type="date" className={CAMPO_CUENTA} value={fecha} max={limaDateKey()} onChange={(e) => setFecha(e.target.value)} />
           </div>
           <div>
-            <label htmlFor="cub-gtf" className={ETIQUETA}>Guía (si vino con una)</label>
-            <input id="cub-gtf" className={CAMPO_CUENTA} value={gtf} maxLength={80} placeholder="N° de la GTF" onChange={(e) => setGtf(e.target.value)} />
+            <label htmlFor="cub-gtf" className={ETIQUETA}>{vinculo ? "Guía del Libro TH" : "Guía (si vino con una)"}</label>
+            <input id="cub-gtf" className={`${CAMPO_CUENTA} read-only:bg-[var(--surface-sunken)]`} value={gtf} maxLength={80} placeholder="N° de la GTF"
+              readOnly={!!vinculo} onChange={(e) => setGtf(e.target.value)} />
           </div>
           {sinEspecie > 0 && (
             <div>
@@ -221,14 +255,14 @@ export default function GuardarEnLaCuentaModal({
         {previa && previa.estado === "borrador" && (
           <label className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
             <input type="checkbox" className="h-5 w-5 accent-[var(--accent)]" checked={comoNueva} onChange={(e) => setComoNueva(e.target.checked)} />
-            Este patio ya se guardó como <b className="font-mono text-[var(--text-primary)]">{previa.codigo}</b>: guardarlo como otra nueva
+            {vinculo ? "Esta guía" : "Este patio"} ya se guardó como <b className="font-mono text-[var(--text-primary)]">{previa.codigo}</b>: guardarlo como otra nueva
           </label>
         )}
         {yaSeDescontoEste && previa && (
           <label className="flex items-start gap-2 rounded-2xl border border-[var(--data-warning-500)] bg-[var(--data-warning-50)] p-3 text-sm text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
             <input type="checkbox" className="mt-0.5 h-5 w-5 accent-[var(--accent)]" checked={sonOtras} onChange={(e) => setSonOtras(e.target.checked)} />
             <span>
-              Este patio ya se descontó como <b className="font-mono">{previa.codigo}</b> ({formatCurrency(previa.monto ?? 0)}). Marca sólo si son
+              {vinculo ? "Esta guía" : "Este patio"} ya se descontó como <b className="font-mono">{previa.codigo}</b> ({formatCurrency(previa.monto ?? 0)}). Marca sólo si son
               <b> otras trozas</b>: guardar las mismas las pagaría dos veces.
             </span>
           </label>

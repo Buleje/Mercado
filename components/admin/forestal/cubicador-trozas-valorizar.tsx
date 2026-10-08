@@ -1,8 +1,9 @@
 "use client";
 
 /**
- * Una cubicación guardada abierta (ADR-478): quién, cuándo, cuánto y sus
- * medidas congeladas, y lo que se puede hacer según su estado:
+ * Una cubicación guardada abierta (ADR-478; ADR-483 suma la madera aserrada y
+ * los descuentos): quién, cuándo, cuánto y sus medidas congeladas —trozas,
+ * piezas o líneas por especie—, y lo que se puede hacer según su estado:
  *   - borrador → «Valorizar y descontar» (dueño/admin) o borrarla;
  *   - aplicada → a qué adelantos fue y «Anular» (vuelve el saldo);
  *   - anulada  → el motivo.
@@ -15,11 +16,12 @@ import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { formatCurrency } from "@/lib/currency";
 import { fechaConDia } from "@/lib/forestal/loth-tablero-reporte";
 import { fmtVolumen, unidadDe } from "@/lib/forestal/cubicacion-cuenta";
-import { UNIDADES_FORMULA } from "@/lib/forestal/cubicacion-trozas-formula";
+import { lineasDeEspecie, unidadesComercial } from "@/lib/forestal/cubicacion-comercial";
 import { BOTON_SECUNDARIO } from "./ctp-lotes-modal-marco";
+import { MedidasAserrada, ResumenDescuentos } from "./cubicacion-comercial-medidas";
 import MedidasCongeladas from "./cubicador-trozas-medidas";
 import ValorizarPrecios from "./cubicador-trozas-precios";
-import { anularCubicacionTrozas, borrarCubicacionTrozas, ESTADO_CUB, useCubicacionTrozas, type CubicacionTrozas } from "./hooks/use-cubicaciones-trozas";
+import { anularCubicacionTrozas, borrarCubicacionTrozas, ESTADO_CUB, medidasDe, useCubicacionTrozas, type CubicacionTrozas } from "./hooks/use-cubicaciones-trozas";
 
 const ERROR = "flex items-start gap-1.5 text-sm font-semibold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]";
 
@@ -44,7 +46,7 @@ export default function ValorizarCubicacionModal({
 
   const cambio = (c: CubicacionTrozas) => {
     /* La respuesta de aplicar/anular puede venir sin las medidas: se conservan las que ya se ven. */
-    const conMedidas = { ...c, trozas: c.trozas ?? cub?.trozas };
+    const conMedidas = { ...c, trozas: c.trozas ?? cub?.trozas, piezas: c.piezas ?? cub?.piezas, lineas: c.lineas ?? cub?.lineas };
     setCub(conMedidas);
     onCambio?.(conMedidas);
   };
@@ -63,15 +65,25 @@ export default function ValorizarCubicacionModal({
     if (r.ok) { onCambio?.(null); onCerrar(); } else setError(r.mensaje);
   };
 
-  const u = cub ? UNIDADES_FORMULA[cub.formula] : null;
+  const u = cub ? unidadesComercial(cub.formula) : null;
   const estado = cub ? ESTADO_CUB[cub.estado] : null;
+  const aserrada = cub?.material === "aserrada";
+  /* «34 trozas» · «50 piezas» (la aserrada rápida sin piezas contadas no dice cuántas). */
+  const cuenta = !cub ? "" : aserrada
+    ? (cub.nTrozas > 0 ? `${cub.nTrozas} ${cub.nTrozas === 1 ? "pieza" : "piezas"} · ` : "")
+    : `${cub.nTrozas} ${cub.nTrozas === 1 ? "troza" : "trozas"} · `;
+  const nMedidas = aserrada ? (cub?.piezas?.length ?? 0) + (cub?.lineas?.length ?? 0) : (cub?.trozas?.length ?? 0);
+  /* Las líneas por especie con los descuentos de cada troza/pieza, antes de los del lote. */
+  const lineas = cub ? lineasDeEspecie({ material: cub.material ?? "troza", modo: cub.modo ?? "pieza", formula: cub.formula, trozas: medidasDe(cub) }) : [];
+  const nombres = cub?.descuentos?.porEspecie?.length ? Object.fromEntries(lineas.map((l) => [l.clave, l.nombre])) : undefined;
+  const antesDelLote = nMedidas > 0 && lineas.length > 0 ? lineas.reduce((s, l) => s + l.volumen, 0) : null;
   return (
     <AdminModal
       open
       onClose={onCerrar}
       aboveModals={aboveModals}
       title={cub ? `${cub.codigo} · ${cub.personaNombre ?? "sin persona"}` : "Cubicación"}
-      description={cub && u ? `${fechaConDia(cub.fecha)} · ${cub.nTrozas} ${cub.nTrozas === 1 ? "troza" : "trozas"} · ${fmtVolumen(cub.volumen, cub.formula)} · ${u.nombre}` : undefined}
+      description={cub && u ? `${fechaConDia(cub.fecha)} · ${cuenta}${fmtVolumen(cub.volumen, cub.formula)} · ${u.nombre}` : undefined}
       icon={Ruler}
       variant="wide"
       claveVentana="cubicador-trozas-valorizar"
@@ -103,7 +115,10 @@ export default function ValorizarCubicacionModal({
               <span className="rounded-full bg-[var(--surface-sunken)] px-2.5 py-1 font-semibold text-[var(--text-secondary)]">
                 {cub.sentido === "venta" ? "Se la entregaste" : "Te la trajo"}
               </span>
-              {cub.diametros === 1 && (
+              {cub.origen === "despacho" && (
+                <span className="rounded-full bg-[var(--surface-sunken)] px-2.5 py-1 font-semibold text-[var(--text-secondary)]">Del despacho</span>
+              )}
+              {!aserrada && cub.diametros === 1 && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-warning-50)] px-2.5 py-1 font-semibold text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
                   medido con 1 Ø
                   <InfoTip what="Cada troza se midió con un solo diámetro al medio." affects="Con las dos puntas, como en la guía, el volumen sale hasta 21 % más bajo." />
@@ -113,6 +128,7 @@ export default function ValorizarCubicacionModal({
               {cub.monto != null && <span className="ml-auto text-lg font-extrabold tabular-nums text-[var(--text-primary)]">{formatCurrency(cub.monto)}</span>}
             </div>
             {cub.notas && <p className="text-sm text-[var(--text-secondary)]">{cub.notas}</p>}
+            <ResumenDescuentos bruto={cub.volumenBruto} neto={cub.volumen} descuentos={cub.descuentos} formula={cub.formula} nombres={nombres} antesDelLote={antesDelLote} />
 
             {cub.estado === "borrador" && acciones && <ValorizarPrecios cub={cub} onAplicada={cambio} />}
             {cub.estado === "borrador" && !acciones && !soloLectura && (
@@ -127,7 +143,7 @@ export default function ValorizarCubicacionModal({
                   <li key={l.clave} className="flex flex-wrap items-center gap-x-3 px-4 py-2">
                     <span className="flex-1 font-semibold text-[var(--text-primary)]">{l.nombre}</span>
                     <span className="tabular-nums text-[var(--text-tertiary)]">
-                      {l.n} · {fmtVolumen(l.volumen, cub.formula)}{l.precio != null && ` × ${formatCurrency(l.precio)} por ${unidadDe(cub.formula)}`}
+                      {aserrada ? (l.n > 0 ? `${l.n} pzs · ` : "") : `${l.n} · `}{fmtVolumen(l.volumen, cub.formula)}{l.precio != null && ` × ${formatCurrency(l.precio)} por ${unidadDe(cub.formula)}`}
                     </span>
                     <span className="w-28 text-right font-bold tabular-nums text-[var(--text-primary)]">{l.monto != null ? formatCurrency(l.monto) : "—"}</span>
                   </li>
@@ -179,12 +195,16 @@ export default function ValorizarCubicacionModal({
             )}
             {error && <p role="alert" className={ERROR}><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" /> {error}</p>}
 
-            {cub.trozas?.length ? (
+            {nMedidas > 0 ? (
               <details open={soloLectura} className="group">
                 <summary className="cursor-pointer text-sm font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
-                  Medidas ({cub.trozas.length})
+                  Medidas ({nMedidas})
                 </summary>
-                <div className="mt-2"><MedidasCongeladas trozas={cub.trozas} formula={cub.formula} diametros={cub.diametros} /></div>
+                <div className="mt-2">
+                  {aserrada || cub.formula === "tablar"
+                    ? <MedidasAserrada piezas={cub.piezas} lineas={cub.lineas} />
+                    : <MedidasCongeladas trozas={cub.trozas ?? []} formula={cub.formula} diametros={cub.diametros} />}
+                </div>
               </details>
             ) : null}
           </>

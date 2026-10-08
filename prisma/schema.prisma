@@ -5652,51 +5652,67 @@ model LiquidacionCuenta {
 /// Sin relación con Tenant (como LiquidacionCuenta): `tenantId` siempre en el WHERE.
 /// CHECK de estado/fórmula/monto sólo en el SQL (Prisma no los declara).
 model ForestCubicacionTrozas {
-  id                String    @id @default(cuid())
-  tenantId          String
+  id                  String    @id @default(cuid())
+  tenantId            String
   /// «CUB-2026-0001»: el número que se dicta y se escribe en el papel. Único por tenant.
-  codigo            String
-  fecha             DateTime  @db.Date
+  codigo              String
+  fecha               DateTime  @db.Date
   /// "smalian" | "oxapampina" — decide la unidad (m3 | pt) y la de los precios.
-  formula           String
+  formula             String
   /// 1 | 2 — cuántos Ø se midieron por troza.
-  diametros         Int
+  diametros           Int
   /// Dueño de la cuenta. Refs. app-level sin FK (ADR-426): se validan del MISMO tenant en la DB class.
-  beneficiarioId    String?
-  parteId           String?
+  beneficiarioId      String?
+  parteId             String?
   /// Foto del nombre al guardar (la persona puede darse de baja).
-  personaNombre     String?
+  personaNombre       String?
   /// "compra" (el proveedor trae madera) | "venta" (el negocio entrega madera).
-  sentido           String    @default("compra")
-  gtfNumber         String?
-  contratoId        String?
+  sentido             String    @default("compra")
+  gtfNumber           String?
+  /// "troza" | "aserrada" (ADR-483). Las filas de ADR-478 son troza.
+  material            String    @default("troza")
+  /// null (como antes) | "libre" | "ctp" | "loth" | "despacho". Con loth/despacho la guía no se exige en WoodEntry.
+  origen              String?
+  /// loth → ForestGtf.id · despacho → ForestCtpEntry.id. Sin FK (ADR-426): se valida del MISMO tenant en la DB class.
+  origenId            String?
+  /// "pieza" (uno por uno) | "total" (volumen y PT por especie a mano; sólo aserrada).
+  modo                String    @default("pieza")
+  /// Volumen antes de los descuentos, en la unidad del lote. null = sin descuentos (bruto = volumen).
+  volumenBruto        Decimal?  @db.Decimal(14, 4)
+  /// DescuentoLote (lib/forestal/cubicacion-comercial-tipos.ts). Los de cada troza/pieza viven en `trozas`.
+  descuentos          Json?
+  /// Sólo origen loth: el volumen DECLARADO de la GTF (SERFOR, Smalian) al guardar.
+  referenciaSmalianM3 Decimal?  @db.Decimal(14, 4)
+  /// Aserrada «uno por uno»: id de la cubicación del Cubicador de madera (KV) de la que se copiaron las piezas.
+  cubicacionRefId     String?
+  contratoId          String?
   /// [{ n, codigo?, especie, d1, d2, largo, volumen, sospechosa? }] — congelado por el SERVIDOR.
-  trozas            Json
-  nTrozas           Int
+  trozas              Json
+  nTrozas             Int
   /// Total en la unidad del lote (pt 2 decimales | m³ 4 decimales).
-  volumen           Decimal   @db.Decimal(14, 4)
+  volumen             Decimal   @db.Decimal(14, 4)
   /// [{ clave, nombre, n, volumen, precio, monto }] — sólo cuando se valorizó.
-  porEspecie        Json?
+  porEspecie          Json?
   /// Σ porEspecie.monto, calculado en el servidor. NULL = sin valorizar (nunca 0).
-  monto             Decimal?  @db.Decimal(12, 2)
-  moneda            String    @default("PEN")
+  monto               Decimal?  @db.Decimal(12, 2)
+  moneda              String    @default("PEN")
   /// "borrador" | "aplicada" | "anulada"
-  estado            String    @default("borrador")
-  version           Int       @default(1)
-  aplicadaAt        DateTime?
-  aplicadaPor       String?
+  estado              String    @default("borrador")
+  version             Int       @default(1)
+  aplicadaAt          DateTime?
+  aplicadaPor         String?
   /// [{ adelantoId, entregaId, monto, volumen }] — a qué adelantos fue.
-  imputacion        Json?
-  idempotencyKey    String?
-  idempotencyHuella String?
-  anuladaAt         DateTime?
-  anuladaPor        String?
-  motivoAnulacion   String?
-  notas             String?
-  createdBy         String
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  deletedAt         DateTime?
+  imputacion          Json?
+  idempotencyKey      String?
+  idempotencyHuella   String?
+  anuladaAt           DateTime?
+  anuladaPor          String?
+  motivoAnulacion     String?
+  notas               String?
+  createdBy           String
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  deletedAt           DateTime?
 
   @@unique([tenantId, codigo])
   @@unique([tenantId, idempotencyKey])
@@ -5704,6 +5720,7 @@ model ForestCubicacionTrozas {
   @@index([tenantId, parteId, fecha(sort: Desc)])
   @@index([tenantId, estado])
   @@index([tenantId, gtfNumber])
+  @@index([tenantId, origen, origenId])
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
