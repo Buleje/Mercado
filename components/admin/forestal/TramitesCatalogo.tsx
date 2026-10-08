@@ -22,6 +22,7 @@ import {
   BookOpen,
   Building2,
   CalendarClock,
+  ChevronDown,
   ClipboardCheck,
   Compass,
   FileStack,
@@ -110,6 +111,9 @@ const DESTACADO = "visado-talonario-gtf";
 /** Cuatro por fila cuando hay ancho: cada card es sólo ícono + nombre. */
 const GRILLA = "grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4";
 
+/** Cards de un grupo que se ven sin desplegar (dos filas de cuatro). */
+const VISIBLES_POR_GRUPO = 8;
+
 /** Orden de los grupos: el que más trabajo genera primero. */
 const ORDEN_AUTORIDAD: AutoridadTramite[] = ["arffs", "serfor", "osinfor", "otra"];
 
@@ -141,6 +145,11 @@ export default function TramitesCatalogo({
   const [abiertas, setAbiertas] = useState<AutoridadTramite[]>(["arffs"]);
   const alternar = (aut: AutoridadTramite) =>
     setAbiertas((a) => (a.includes(aut) ? a.filter((x) => x !== aut) : [...a, aut]));
+  /** Grupos con todas sus cards a la vista: ARFFS tiene 15 y empujaba el resto
+   *  de la pantalla; se muestran las primeras y el resto se despliega. */
+  const [completas, setCompletas] = useState<AutoridadTramite[]>([]);
+  const alternarCompleta = (aut: AutoridadTramite) =>
+    setCompletas((a) => (a.includes(aut) ? a.filter((x) => x !== aut) : [...a, aut]));
   const usados = (id: string) => tramites.filter((t) => t.formatoId === id).length;
   const destacado = FORMATOS_TRAMITE.find((f) => f.id === DESTACADO);
   const resto = FORMATOS_TRAMITE.filter((f) => f.id !== DESTACADO);
@@ -226,6 +235,9 @@ export default function TramitesCatalogo({
             const grupo = resto.filter((f) => f.autoridad === aut);
             if (grupo.length === 0) return null;
             const meta = AUTORIDADES[aut];
+            const plegable = grupo.length > VISIBLES_POR_GRUPO + 1;
+            const verTodas = !plegable || completas.includes(aut);
+            const visibles = verTodas ? grupo : grupo.slice(0, VISIBLES_POR_GRUPO);
             return (
               <section key={aut} className="space-y-3">
                 <div className="flex flex-wrap items-center gap-1.5 border-b-2 border-[var(--rule-soft)] pb-2">
@@ -240,7 +252,7 @@ export default function TramitesCatalogo({
                   animate="show"
                   className={GRILLA}
                 >
-                  {grupo.map((f) => (
+                  {visibles.map((f) => (
                     // Un grupo de una sola card en una grilla de tres deja dos huecos
                     // que se leen como "falta algo": esa card se estira y pasa a
                     // horizontal. Se ve elegida, no sobrante.
@@ -249,6 +261,17 @@ export default function TramitesCatalogo({
                     </motion.div>
                   ))}
                 </motion.div>
+                {plegable && (
+                  <button
+                    type="button"
+                    onClick={() => alternarCompleta(aut)}
+                    aria-expanded={verTodas}
+                    className="inline-flex h-9 items-center gap-1.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3.5 text-sm font-bold text-[var(--text-secondary)] transition hover:border-[var(--rule-strong)] hover:text-[var(--text-primary)]"
+                  >
+                    {verTodas ? "Ver menos" : `Ver los ${grupo.length - VISIBLES_POR_GRUPO} restantes`}
+                    <ChevronDown className={`h-4 w-4 transition-transform ${verTodas ? "rotate-180" : ""}`} aria-hidden="true" />
+                  </button>
+                )}
               </section>
             );
           })}
