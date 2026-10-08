@@ -2,20 +2,16 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { leerJson } from "@/lib/errores/sin-dato";
-import { CardTitle, SectionTitle, StatCard } from "@buleje/design-system";
+import { CardTitle } from "@buleje/design-system";
 import {
   Coins,
   Users,
   Plus,
-  TrendingDown,
-  TrendingUp,
   Wallet,
   CheckCircle,
-  Clock,
   Ban,
   ChevronRight,
   Search,
-  MessageCircle,
   Trash2,
   BarChart3,
   Activity,
@@ -24,7 +20,6 @@ import {
   Download,
   ChevronLeft,
 } from "@buleje/design-system/icons";
-import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import { AnalisisView } from "./AnalisisView";
@@ -36,11 +31,9 @@ import TablaAdelantos from "./lista/TablaAdelantos";
 import TarjetaPersona from "./personas/TarjetaPersona";
 import FichaPersonaModal from "./personas/FichaPersonaModal";
 import CobranzaView from "./cobranza/CobranzaView";
-import ProximosVencimientos from "./cobranza/ProximosVencimientos";
-import SinControl from "./cobranza/SinControl";
-import type { ResumenSinControl } from "@/lib/adelantos/sin-control";
+import ResumenView from "./resumen/ResumenView";
+import type { Resumen } from "./resumen/tipos";
 import CrearPersonaModal from "./personas/CrearPersonaModal";
-import CuentasPorPersona from "./cuentas/CuentasPorPersona";
 import { leerPedidoLiquidar } from "./cuentas/liquidar-por-url";
 import { sinTildes, fmtMon, sumByMoneda, fmtMonedas, EmptyState, SkeletonGrid, inputCls, Field, ModalShell, ModalActions, STATUS_BADGE } from "./shared";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -55,14 +48,6 @@ import {
   type OrdenPersonas,
 } from "@/lib/adelantos/ordenar-personas";
 import { descargarCsvPersonas } from "@/lib/adelantos/exportar-csv";
-import { enlaceWhatsApp } from "@/lib/adelantos/contacto";
-import {
-  deudoresDeCobranza,
-  explicarAtraso,
-  ordenarPorUrgencia,
-  type DeudorCobranza,
-} from "@/lib/adelantos/urgencia-cobranza";
-import { TRAMOS, tramoDe } from "@/lib/adelantos/gestion-cobranza";
 import { cuentaDePersona, leerDireccion } from "@/lib/adelantos/modos-alta";
 import type { BeneficiarioConSaldo as BeneficiarioConSaldoBase } from "./crear-adelanto/tipos";
 import type {
@@ -74,23 +59,6 @@ import { formatDateShort } from "@/lib/format";
 
 /** Single source: la misma forma que consume el alta (ver crear-adelanto/tipos). */
 type BeneficiarioConSaldo = BeneficiarioConSaldoBase;
-
-type Resumen = {
-  totalAdelantado: number;
-  totalLiquidado: number;
-  saldoPendiente: number;
-  excedente: number;
-  adelantosAbiertos: number;
-  adelantosLiquidados: number;
-  beneficiarios: number;
-  /**
-   * La plata RECIBIDA (ADR-448): los campos de arriba siguen contando sólo lo
-   * que diste. Ausente = el servidor todavía no sabe de direcciones.
-   */
-  recibido?: { abiertos: number; porMoneda: { moneda: string; total: number; porDevolver: number; excedente: number; abiertos: number }[] };
-  /** Lo dado que quedó suelto (quieto, sin fecha o vencido). `null` = el servidor no pudo contarlo. */
-  sinControl?: ResumenSinControl | null;
-};
 
 const MODULE_ID = "adelantos";
 
@@ -258,288 +226,6 @@ export default function AdelantosModule() {
           {tab === "analisis" && <AnalisisView adelantos={dados} recibidos={recibidos} loading={loading} />}
         </div>
       </AdminTabBar>
-    </div>
-  );
-}
-
-// ── Resumen ──────────────────────────────────────────────────────────────────
-function ResumenView({
-  resumen,
-  adelantos,
-  recibidos,
-  loading,
-  onGoTab,
-  onChange,
-}: {
-  resumen: Resumen | null;
-  /** Sólo lo DADO: todo lo de esta vista es «lo que te deben». */
-  adelantos: DbAdelanto[];
-  /** Lo RECIBIDO, para la tarjeta «Le debes». */
-  recibidos: DbAdelanto[];
-  loading: boolean;
-  onGoTab: (tab: string) => void;
-  /** Recargar después de tocar un adelanto desde su ficha (aviso «sin control»). */
-  onChange: () => void;
-}) {
-  if (loading) return <SkeletonGrid />;
-  if (!resumen) return <EmptyState icon={Wallet} title="Sin datos aún" hint="Crea tu primer adelanto en la pestaña Adelantos." />;
-
-  // Sin actividad todavía → guía de 2 pasos en vez del muro de ceros.
-  const sinActividad =
-    resumen.beneficiarios === 0 &&
-    resumen.adelantosAbiertos === 0 &&
-    resumen.adelantosLiquidados === 0;
-
-  if (sinActividad) {
-    return (
-      <div className="space-y-4">
-        <div className="mx-auto max-w-2xl rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
-            <Coins className="h-8 w-8 text-primary" />
-          </div>
-          <SectionTitle className="text-2xl">Empieza a registrar adelantos</SectionTitle>
-          <p className="mt-2 text-base text-[var(--text-secondary)]">
-            Un adelanto es plata que le das a alguien y se va liquidando con lo que te entrega (producto o servicio).
-          </p>
-          <div className="mt-6 grid gap-3 text-left sm:grid-cols-2">
-            <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-4">
-              <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary text-sm font-extrabold text-white">1</span>
-              <p className="mt-2 text-base font-bold text-[var(--text-primary)]">Agrega una persona</p>
-              <p className="text-sm text-[var(--text-secondary)]">A quién le vas a adelantar plata.</p>
-            </div>
-            <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-4">
-              <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary text-sm font-extrabold text-white">2</span>
-              <p className="mt-2 text-base font-bold text-[var(--text-primary)]">Registra el adelanto</p>
-              <p className="text-sm text-[var(--text-secondary)]">El monto y cómo se va a liquidar.</p>
-            </div>
-          </div>
-          <button
-            onClick={() => onGoTab("personas")}
-            className="mt-6 inline-flex h-12 items-center gap-2 rounded-2xl bg-primary px-6 text-base font-semibold text-white transition-colors hover:bg-primary-dark"
-          >
-            <Plus className="h-5 w-5" /> Agregar primera persona
-          </button>
-        </div>
-
-        {/* Un tenant sin UNA sola ficha en Adelantos puede igual tener deuda
-            forestal (aserríos, ventas) contra partes del directorio: sin esto
-            la guía de onboarding la tapaba por completo. */}
-        <CuentasPorPersona onGoTab={onGoTab} />
-      </div>
-    );
-  }
-
-  const adelantado = resumen.totalAdelantado;
-  const liquidado = resumen.totalLiquidado;
-  const pct = adelantado > 0 ? Math.min(100, Math.round((liquidado / adelantado) * 100)) : 0;
-  const abiertos = adelantos.filter((a) => a.status === "ABIERTO" && a.saldoPendiente > 0);
-
-  /**
-   * Quién te debe — antes era la lista de ADELANTOS abiertos (una fila por
-   * cada uno, aunque sean tres de la misma persona) ordenada sólo por monto.
-   * `deudoresDeCobranza` agrupa por PERSONA y `ordenarPorUrgencia` prioriza el
-   * compromiso roto (una pactada o un vencimiento incumplido) sobre la mera
-   * antigüedad — es la misma regla que usa la pestaña Cobranza, no una nueva.
-   */
-  const deudores: DeudorCobranza[] = ordenarPorUrgencia(deudoresDeCobranza(abiertos));
-  const porTramo = TRAMOS.map((t) => ({ ...t, n: deudores.filter((d) => tramoDe(d.dias) === t.id).length })).filter(
-    (t) => t.n > 0,
-  );
-
-  // Cifras segmentadas por moneda (ADR-118) — desde el listado (que trae moneda)
-  const activos = adelantos.filter((a) => a.status !== "CANCELADO");
-  const saldoMap = sumByMoneda(abiertos.map((a) => ({ monto: a.saldoPendiente, moneda: a.moneda })));
-  const adelantadoMap = sumByMoneda(activos.map((a) => ({ monto: a.montoAdelantado, moneda: a.moneda })));
-  const liquidadoMap = sumByMoneda(activos.map((a) => ({ monto: Math.max(0, a.montoAdelantado - a.saldoPendiente), moneda: a.moneda })));
-  const excedenteMap = sumByMoneda(adelantos.filter((a) => a.status === "EXCEDIDO").map((a) => ({ monto: -a.saldoPendiente, moneda: a.moneda })));
-  const hayExcedente = Object.values(excedenteMap).some((v) => v > 0);
-  /* «Le debes» = lo que te entregaron de más + lo que te dieron y todavía
-     devuelves (ADR-448 §2.6: la misma cuenta que la ficha de la persona). */
-  const porDevolverMap = sumByMoneda(recibidos.filter((a) => a.status === "ABIERTO").map((a) => ({ monto: a.saldoPendiente, moneda: a.moneda })));
-  const leDebesMap = sumByMoneda([
-    ...Object.entries(excedenteMap).map(([moneda, monto]) => ({ monto, moneda })),
-    ...Object.entries(porDevolverMap).map(([moneda, monto]) => ({ monto, moneda })),
-  ]);
-  const hayLeDebes = Object.values(leDebesMap).some((v) => v > 0);
-  const hayPorDevolver = Object.values(porDevolverMap).some((v) => v > 0);
-
-  // Mensaje de salud: prioriza lo que te deben; si nada, todo al día; si excedente, a favor de ellos.
-  const health =
-    resumen.saldoPendiente > 0
-      ? { cls: "text-[var(--data-warning)]", Icon: Clock, text: `Te faltan ${fmtMonedas(saldoMap)} por recuperar.` }
-      : hayExcedente
-        ? { cls: "text-[var(--data-info)]", Icon: Coins, text: `Te entregaron ${fmtMonedas(excedenteMap)} de más.` }
-        : { cls: "text-[var(--data-success)]", Icon: CheckCircle, text: "Todo al día — nadie te debe nada." };
-
-  /* Donut de "% recuperado": una sola dona en vez de dos categorías — el
-     resto (surface-sunken) es sólo el fondo del medidor, no una segunda
-     serie que compita en el tooltip. */
-  const donutData = [
-    { name: "Recuperado", value: pct, color: "var(--data-success)" },
-    { name: "Pendiente", value: 100 - pct, color: "var(--surface-sunken)" },
-  ];
-
-  return (
-    <div className="space-y-4">
-      {/* Hero saldo + dona de recuperación */}
-      <div className="grid gap-4 lg:grid-cols-3">
-        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6">
-          <p className="text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Saldo pendiente</p>
-          <p className="mt-1 text-4xl font-extrabold tabular-nums text-[var(--text-primary)]">{fmtMonedas(saldoMap)}</p>
-          <div className={`mt-3 flex items-center gap-2 text-base font-semibold ${health.cls}`}>
-            <health.Icon className="h-5 w-5 shrink-0" />
-            <span>{health.text}</span>
-          </div>
-        </div>
-        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 lg:col-span-2">
-          <div className="flex flex-col items-center gap-5 sm:flex-row">
-            <div className="relative h-[140px] w-[140px] shrink-0">
-              <ResponsiveContainer initialDimension={{ width: 1, height: 1 }} minWidth={0} width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={donutData}
-                    dataKey="value"
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={48}
-                    outerRadius={64}
-                    startAngle={90}
-                    endAngle={-270}
-                    stroke="none"
-                    isAnimationActive={false}
-                  >
-                    {donutData.map((d, i) => (
-                      <Cell key={i} fill={d.color} />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                <span className="text-3xl font-extrabold tabular-nums text-[var(--text-primary)]">{pct}%</span>
-              </div>
-            </div>
-            <div className="min-w-0 flex-1 text-center sm:text-left">
-              <CardTitle className="text-base font-extrabold text-[var(--text-primary)]">Recuperación de adelantos</CardTitle>
-              <div className="mt-2 text-base text-[var(--text-secondary)]">
-                Recuperaste <span className="font-bold text-[var(--text-primary)]">{fmtMonedas(liquidadoMap)}</span> de{" "}
-                <span className="font-bold text-[var(--text-primary)]">{fmtMonedas(adelantadoMap)}</span> adelantados.
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <CuentasPorPersona onGoTab={onGoTab} />
-
-      {/* Los dos avisos juntos: lo que ya se escapó y lo que vence esta semana. */}
-      <SinControl datos={resumen.sinControl} onChange={onChange} />
-
-      <ProximosVencimientos adelantos={adelantos} />
-
-      {/* Quién te debe — deudores (no adelantos sueltos) ordenados por urgencia real */}
-      {deudores.length > 0 && (
-        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-          <div className="mb-3 flex items-center justify-between">
-            <CardTitle className="text-base font-extrabold text-[var(--text-primary)]">Quién te debe ({deudores.length})</CardTitle>
-            <button onClick={() => onGoTab("cobranza")} className="inline-flex items-center gap-1 text-base font-bold text-primary hover:underline">
-              Ver todos <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
-
-          {/* Distribución por antigüedad — mismos tramos y colores que Cobranza */}
-          {porTramo.length > 1 && (
-            <div className="mb-3">
-              <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-[var(--surface-sunken)]">
-                {porTramo.map((t) => (
-                  <div
-                    key={t.id}
-                    style={{ width: `${(t.n / deudores.length) * 100}%`, backgroundColor: t.tono }}
-                    title={`${t.label}: ${t.n}`}
-                  />
-                ))}
-              </div>
-              <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
-                {porTramo.map((t) => (
-                  <span key={t.id} className="inline-flex items-center gap-1.5 text-sm text-[var(--text-tertiary)]">
-                    <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: t.tono }} />
-                    {t.label}: <strong className="text-[var(--text-secondary)]">{t.n}</strong>
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <ul className="divide-y divide-[var(--rule-soft)]">
-            {deudores.slice(0, 5).map((d) => {
-              const tramo = TRAMOS.find((t) => t.id === tramoDe(d.dias)) ?? TRAMOS[0];
-              const wa = enlaceWhatsApp(d.telefono, d.nombre, d.saldo, d.moneda);
-              return (
-                <li key={d.id} className="flex items-center gap-3 py-2.5">
-                  {/* Fila informativa: las cinco llevaban a Cobranza, igual que
-                      «Ver todos» — un solo camino, no cinco botones iguales. */}
-                  <div className="-mx-1 flex min-w-0 flex-1 items-center gap-3 rounded-lg px-1 py-1 text-left">
-                    <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-base font-extrabold text-[var(--accent-ink)] dark:text-[var(--accent)]">
-                      {d.nombre.charAt(0).toUpperCase()}
-                      <span
-                        className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full ring-2 ring-[var(--surface-raised)]"
-                        style={{ backgroundColor: tramo.tono }}
-                        title={tramo.label}
-                      />
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-base font-bold text-[var(--text-primary)]">{d.nombre}</span>
-                      <span className="block truncate text-sm text-[var(--text-tertiary)]">{explicarAtraso(d)}</span>
-                    </span>
-                  </div>
-                  <span className="shrink-0 tabular-nums text-base font-extrabold text-[var(--data-warning)]">{fmtMon(d.saldo, d.moneda)}</span>
-                  {wa ? (
-                    <a
-                      href={wa}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      title={`Recordarle a ${d.nombre} por WhatsApp`}
-                      aria-label={`Recordarle a ${d.nombre} por WhatsApp`}
-                      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--surface-sunken)] text-[var(--text-secondary)] transition-colors hover:bg-primary/12 hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
-                    >
-                      <MessageCircle className="h-4 w-4" />
-                    </a>
-                  ) : null}
-                </li>
-              );
-            })}
-          </ul>
-          <div className="mt-2 flex items-center justify-between border-t-2 border-[var(--rule-base)] pt-3">
-            <span className="text-base font-bold text-[var(--text-secondary)]">Total por recuperar</span>
-            <span className="tabular-nums text-lg font-extrabold text-[var(--data-warning)]">{fmtMonedas(saldoMap)}</span>
-          </div>
-        </div>
-      )}
-
-      {/* Plata (secundario) */}
-      <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard label="Total adelantado" value={fmtMonedas(adelantadoMap)} icon={TrendingDown} subValue="Plata que diste" />
-        <StatCard label="Total liquidado" value={fmtMonedas(liquidadoMap)} icon={TrendingUp} emphasis="success" subValue="Recuperado en entregas" />
-        <StatCard
-          label="Le debes"
-          value={fmtMonedas(leDebesMap)}
-          icon={Coins}
-          emphasis={hayLeDebes ? "warning" : "neutral"}
-          subValue={
-            hayPorDevolver && hayExcedente
-              ? `${fmtMonedas(porDevolverMap)} te pagaron antes · ${fmtMonedas(excedenteMap)} de más`
-              : hayPorDevolver
-                ? "Te pagaron antes o te prestaron"
-                : "Entregaron de más"
-          }
-        />
-      </div>
-
-      {/* Contadores clickeables → llevan a la lista/personas filtrada */}
-      <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard label="Adelantos abiertos" value={String(resumen.adelantosAbiertos)} icon={Coins} density="compact" onClick={() => onGoTab("lista")} />
-        <StatCard label="Liquidados" value={String(resumen.adelantosLiquidados)} icon={CheckCircle} density="compact" onClick={() => onGoTab("lista")} />
-        <StatCard label="Personas" value={String(resumen.beneficiarios)} icon={Users} density="compact" onClick={() => onGoTab("personas")} />
-      </div>
     </div>
   );
 }

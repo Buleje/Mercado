@@ -4,7 +4,7 @@
  * Con HEAD falla: el componente no existía; después, las filas sólo abrían la
  * ficha (no había cómo ponerle vencimiento ni permiso desde el aviso).
  */
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ResumenSinControl } from "@/lib/adelantos/sin-control";
 
@@ -12,7 +12,7 @@ vi.mock("@/components/admin/adelantos/detalle/DetalleAdelantoModal", () => ({
   default: ({ adelantoId }: { adelantoId: string }) => <div data-testid="ficha">{adelantoId}</div>,
 }));
 
-import SinControl from "@/components/admin/adelantos/cobranza/SinControl";
+import SinControl, { CLAVE_SIN_CONTROL_ABIERTO } from "@/components/admin/adelantos/cobranza/SinControl";
 
 const fila = (id: string, saldo: number, moneda = "PEN"): ResumenSinControl["adelantos"][number] => ({
   id,
@@ -29,6 +29,20 @@ const fila = (id: string, saldo: number, moneda = "PEN"): ResumenSinControl["ade
 });
 
 describe("SinControl", () => {
+  /* Desde el 08-10 el aviso arranca plegado en una línea («Revisar»); estas pruebas
+     son de las filas, así que lo abren como si la persona ya lo hubiera abierto. */
+  beforeEach(() => {
+    localStorage.setItem(CLAVE_SIN_CONTROL_ABIERTO, "true");
+  });
+
+  it("plegado por defecto: una línea con cuántos y cuánto; «Revisar» abre las filas", () => {
+    localStorage.removeItem(CLAVE_SIN_CONTROL_ABIERTO);
+    render(<SinControl datos={{ cantidad: 1, porMoneda: { PEN: 17000 }, adelantos: [fila("a17", 17000)] }} onChange={() => {}} />);
+    expect(screen.queryByRole("button", { name: "Poner vencimiento" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Revisar/ }));
+    expect(screen.getByRole("button", { name: "Poner vencimiento" })).toBeInTheDocument();
+  });
+
   it("dice cuántos y cuánta plata, con los motivos de cada uno", () => {
     render(
       <SinControl
